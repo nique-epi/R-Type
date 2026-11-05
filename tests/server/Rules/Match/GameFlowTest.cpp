@@ -1,10 +1,12 @@
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "EntityIdConstants.hpp"
 #include "GameFlowFixture.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameState.hpp"
+#include "GameStateChanged.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "PlayerRoster.hpp"
 #include "SentDatagrams.hpp"
@@ -14,6 +16,7 @@ using rtype::identifiers::NO_ENTITY_ID;
 using rtype::server::ConnectedPlayer;
 using rtype::server::FINISHED_STATE_TICKS;
 using rtype::server::GameState;
+using rtype::server::GameStateChanged;
 using rtype::server::START_BARRIER_TICKS;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::FOURTH_PLAYER;
@@ -419,4 +422,53 @@ TEST_F(GameFlowFixture, ForgetsAGameLoadedFromBeforeTheWait) {
   tick();
 
   EXPECT_EQ(flow().state(), GameState::Starting);
+}
+
+/**
+ * Given a game whose only player is ready
+ * When the game starts
+ * Then the flow announced the wait ending, then the start
+ */
+TEST_F(GameFlowFixture, AnnouncesEachStepOfTheStartOfAGame) {
+  startGameWithOnePlayer();
+
+  EXPECT_EQ(changes(), (std::vector<GameStateChanged>{
+                           {.previous = GameState::WaitingForPlayers,
+                            .current = GameState::Starting},
+                           {.previous = GameState::Starting,
+                            .current = GameState::InProgress}}));
+}
+
+/**
+ * Given a game in progress
+ * When it finishes and FINISHED_STATE_TICKS ticks run
+ * Then the flow announced the end, then the return to the waiting room
+ */
+TEST_F(GameFlowFixture, AnnouncesTheEndThenTheReturnToTheWaitingRoom) {
+  startGameWithOnePlayer();
+
+  flow().finish();
+  runTicks(FINISHED_STATE_TICKS);
+
+  ASSERT_EQ(changes().size(), 4U);
+  EXPECT_EQ(changes().at(2),
+            (GameStateChanged{.previous = GameState::InProgress,
+                              .current = GameState::Finished}));
+  EXPECT_EQ(changes().at(3),
+            (GameStateChanged{.previous = GameState::Finished,
+                              .current = GameState::WaitingForPlayers}));
+}
+
+/**
+ * Given a finished game
+ * When one tick less than FINISHED_STATE_TICKS runs
+ * Then the end was announced once, whatever the ticks in that state
+ */
+TEST_F(GameFlowFixture, AnnouncesAStateOnceWhileTheGameStaysInIt) {
+  startGameWithOnePlayer();
+  flow().finish();
+
+  runTicks(FINISHED_STATE_TICKS - 1);
+
+  EXPECT_EQ(changes().size(), 3U);
 }

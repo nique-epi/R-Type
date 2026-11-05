@@ -3,11 +3,13 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <initializer_list>
+#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "EventBus.hpp"
 #include "GameContext.hpp"
 #include "GameFlow.hpp"
 #include "GameReplication.hpp"
+#include "GameStateChanged.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyKeeper.hpp"
 #include "SessionHooks.hpp"
@@ -49,6 +51,9 @@ class GameFlowFixture : public ::testing::Test {
   [[nodiscard]] GameFlow& flow();
   [[nodiscard]] PlayerRoster& roster();
 
+  /** @returns Every GameStateChanged the flow published, in order. */
+  [[nodiscard]] const std::vector<GameStateChanged>& changes() const;
+
  private:
   engine::EventBus events_;
   engine::SystemScheduler systems_;
@@ -59,6 +64,7 @@ class GameFlowFixture : public ::testing::Test {
   GameReplication replication_;
   GameContext context_;
   GameFlow flow_;
+  std::vector<GameStateChanged> changes_;
 };
 
 }  // namespace rtype::server::testing
