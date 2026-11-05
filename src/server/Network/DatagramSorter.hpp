@@ -117,19 +117,13 @@ class DatagramSorter {
   [[nodiscard]] AdmittedPlayer* findAdmitted(const network::Endpoint& sender);
 
   /** @brief Sends @p datagram, whose header this code does not speak, to the
-   * connection request queue when isRefusedForItsVersion() and within the
-   * allowance of its sender, and drops it otherwise. */
+   * connection request queue when it is of another version of this protocol,
+   * its sender was not admitted, it holds at least
+   * CONNECTION_REFUSED_DATAGRAM_SIZE bytes, and it is within the allowance of
+   * its sender, and drops it otherwise. */
   void sortForeignHeader(const network::Endpoint& sender,
                          const network::PacketHeader& header,
                          std::span<const std::byte> datagram);
-
-  /** @returns Whether the ConnectionAcceptor must refuse a datagram of
-   * @p datagramSize bytes as IncompatibleVersion: its header is of another
-   * version, @p sender was not admitted, and it holds at least
-   * CONNECTION_REFUSED_DATAGRAM_SIZE bytes, so the refusal is never larger. */
-  [[nodiscard]] bool isRefusedForItsVersion(const network::Endpoint& sender,
-                                            const network::PacketHeader& header,
-                                            std::size_t datagramSize);
 
   /** @brief Checks the token of @p datagram, spends its allowance, then puts
    * a copy of it in its queue or drops it. */

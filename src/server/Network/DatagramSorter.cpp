@@ -144,6 +144,16 @@ std::optional<LimitDrop> limitDropOf(network::AllowanceVerdict verdict) {
   return std::nullopt;
 }
 
+/** @returns Whether the ConnectionAcceptor may refuse a datagram of
+ * @p datagramSize bytes as IncompatibleVersion: its header is of another
+ * version, and it holds at least CONNECTION_REFUSED_DATAGRAM_SIZE bytes, so the
+ * refusal is never larger. A sender that was admitted gets no refusal. */
+bool isRefusableForItsVersion(const network::PacketHeader& header,
+                              std::size_t datagramSize) {
+  return network::DatagramCodec::speaksAnotherVersion(header) &&
+         datagramSize >= network::CONNECTION_REFUSED_DATAGRAM_SIZE;
+}
+
 }  // namespace
 
 DatagramSorter::DatagramSorter(DatagramQueues destinations,
@@ -213,7 +223,8 @@ network::AllowanceVerdict DatagramSorter::spendAllowanceOf(
 void DatagramSorter::sortForeignHeader(const network::Endpoint& sender,
                                        const network::PacketHeader& header,
                                        std::span<const std::byte> datagram) {
-  if (!isRefusedForItsVersion(sender, header, datagram.size())) {
+  if (findAdmitted(sender) != nullptr ||
+      !isRefusableForItsVersion(header, datagram.size())) {
     drop(sender, RejectionCause::ForeignHeader,
          network::FOREIGN_HEADER_DROP_REASON);
     return;
@@ -240,14 +251,6 @@ bool DatagramSorter::keptByLimit(network::AllowanceVerdict verdict,
     drop(sender, limitDrop->cause, limitDrop->reason);
   }
   return !limitDrop.has_value();
-}
-
-bool DatagramSorter::isRefusedForItsVersion(const network::Endpoint& sender,
-                                            const network::PacketHeader& header,
-                                            std::size_t datagramSize) {
-  return network::DatagramCodec::speaksAnotherVersion(header) &&
-         findAdmitted(sender) == nullptr &&
-         datagramSize >= network::CONNECTION_REFUSED_DATAGRAM_SIZE;
 }
 
 void DatagramSorter::admit(const network::Endpoint& player,
