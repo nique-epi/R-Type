@@ -44,11 +44,16 @@ constexpr std::string_view ENEMY_MISSILE_SHEET = "enemy_missile";
 constexpr std::string_view VOLTJELLY_SHEET = "voltjelly";
 constexpr std::string_view REAPER_SHEET = "reaper";
 constexpr std::string_view DRILLBACK_SHEET = "drillback";
+constexpr std::string_view BYDOMANCER_SHEET = "bydomancer";
+constexpr std::string_view RUNE_ORB_SHEET = "rune_orb";
+constexpr std::string_view ORB_SHARD_SHEET = "orb_shard";
 
 /** @brief The names of every sheet the game ships, in the order of their
  * names, so of their numbers. */
 constexpr std::array SHIPPED_SHEET_NAMES{
-    DRIFTER_SHEET, DRILLBACK_SHEET, ENEMY_MISSILE_SHEET, PLAYER_MISSILE_SHEET,
-    REAPER_SHEET,  SHIP_SHEET,      VOLTJELLY_SHEET,     WEAVER_SHEET};
+    BYDOMANCER_SHEET,    DRIFTER_SHEET,   DRILLBACK_SHEET,
+    ENEMY_MISSILE_SHEET, ORB_SHARD_SHEET, PLAYER_MISSILE_SHEET,
+    REAPER_SHEET,        RUNE_ORB_SHEET,  SHIP_SHEET,
+    VOLTJELLY_SHEET,     WEAVER_SHEET};
 
 }  // namespace rtype::game::testing

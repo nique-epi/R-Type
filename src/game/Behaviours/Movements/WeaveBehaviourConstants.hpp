@@ -3,7 +3,6 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <numbers>
 #include <string_view>
 #include "BehaviourSetting.hpp"
 #include "SpawningConstants.hpp"
@@ -33,8 +32,5 @@ constexpr std::array WEAVE_SETTINGS{
  */
 constexpr std::size_t AMPLITUDE_SETTING = 0;
 constexpr std::size_t PERIOD_SETTING = 1;
-
-/** @brief One whole turn of the sine a weave follows, in radians. */
-constexpr float FULL_TURN_RADIANS = 2.0F * std::numbers::pi_v<float>;
 
 }  // namespace rtype::game

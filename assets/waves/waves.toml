@@ -48,7 +48,7 @@ wave_pause_ms = 4000
 level_waves = 8
 
 [difficulty.hard]
-enemies = ["weaver", "drifter", "reaper", "weaver", "drillback", "voltjelly", "weaver"]
+enemies = ["weaver", "drifter", "reaper", "weaver", "drillback", "voltjelly", "weaver", "bydomancer"]
 first_wave_bydos = 4
 bydos_added_per_wave = 2
 first_spawn_interval_ms = 1500

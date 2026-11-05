@@ -34,11 +34,14 @@ using rtype::engine::MissingDataFileKeyException;
 using rtype::engine::UnknownDataFileKeyException;
 using rtype::game::EntitySheet;
 using rtype::game::SpriteFrame;
+using rtype::game::testing::BYDOMANCER_SHEET;
 using rtype::game::testing::DRIFTER_SHEET;
 using rtype::game::testing::DRILLBACK_SHEET;
 using rtype::game::testing::ENEMY_MISSILE_SHEET;
+using rtype::game::testing::ORB_SHARD_SHEET;
 using rtype::game::testing::PLAYER_MISSILE_SHEET;
 using rtype::game::testing::REAPER_SHEET;
+using rtype::game::testing::RUNE_ORB_SHEET;
 using rtype::game::testing::SHIP_SHEET;
 using rtype::game::testing::SHIPPED_SHEET_NAMES;
 using rtype::game::testing::shippedEntitySheets;
@@ -304,10 +307,11 @@ TEST(EntityAppearances, EveryShippedAttackFrameShowsOneWholeSprite) {
  * Then it is the one assets/README.md lists for its sprite: 80 ms for the
  * ship, 250 ms for a Bydo, 60 ms for a missile of a player, 120 ms for a
  * missile of an enemy and for the Voltjelly, 250 ms for the Reaper, 200 ms
- * for the Drillback
+ * for the Drillback, 250 ms for the Bydomancer, 120 ms for its orb and 100 ms
+ * for a shard
  */
 TEST(EntityAppearances, ShippedFramesLastWhatTheSheetReadmeLists) {
-  const std::array<std::pair<std::string_view, Duration>, 8> listed{{
+  const std::array<std::pair<std::string_view, Duration>, 11> listed{{
       {SHIP_SHEET, SHIP_FRAME_TIME_LISTED},
       {DRIFTER_SHEET, BYDO_FRAME_TIME_LISTED},
       {WEAVER_SHEET, BYDO_FRAME_TIME_LISTED},
@@ -316,6 +320,9 @@ TEST(EntityAppearances, ShippedFramesLastWhatTheSheetReadmeLists) {
       {VOLTJELLY_SHEET, VOLTJELLY_FRAME_TIME_LISTED},
       {REAPER_SHEET, REAPER_FRAME_TIME_LISTED},
       {DRILLBACK_SHEET, DRILLBACK_FRAME_TIME_LISTED},
+      {BYDOMANCER_SHEET, BYDOMANCER_FRAME_TIME_LISTED},
+      {RUNE_ORB_SHEET, RUNE_ORB_FRAME_TIME_LISTED},
+      {ORB_SHARD_SHEET, ORB_SHARD_FRAME_TIME_LISTED},
   }};
   const EntityAppearances appearances = shippedAppearances();
   for (const auto& [name, frameTime] : listed) {

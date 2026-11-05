@@ -1,6 +1,7 @@
 add_library(rtype_game_behaviours_movements STATIC
   ActionCycle.cpp
   BuiltInBehaviours.cpp
+  BydomancerBehaviour.cpp
   DrillbackBehaviour.cpp
   ReaperBehaviour.cpp
   ScatterBehaviour.cpp
