@@ -19,6 +19,7 @@
 #include "EntitySpawnSender.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
+#include "EntityTypeNumber.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "ServerException.hpp"
@@ -113,12 +114,10 @@ std::optional<std::uint32_t> WaveSpawner::createEnemy(
 
 void WaveSpawner::announce(const game::EntitySheet& sheet,
                            std::uint32_t networkId, game::Position position) {
+  const network::EntitySpawned spawned = entitySpawnedOf(
+      networkId, game::EntityTypeNumber{.number = sheet.number}, position);
   for (ConnectedPlayer* const player : roster_->connected()) {
-    sendEntitySpawned(send_, *player,
-                      network::EntitySpawned{.entityId = networkId,
-                                             .entityType = sheet.number,
-                                             .x = position.x,
-                                             .y = position.y});
+    sendEntitySpawned(send_, *player, spawned);
   }
 }
 

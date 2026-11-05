@@ -14,6 +14,7 @@
 #include "EntitySpawnSender.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
+#include "EntityTypeNumber.hpp"
 #include "Gun.hpp"
 #include "Intent.hpp"
 #include "Muzzle.hpp"
@@ -104,10 +105,9 @@ std::optional<ProjectileLaunch> launchOf(const WeaponShot& shot,
  */
 network::EntitySpawned spawnOf(std::uint32_t networkId,
                                const ProjectileLaunch& launch) {
-  return network::EntitySpawned{.entityId = networkId,
-                                .entityType = launch.sheet.get().number,
-                                .x = launch.start.x,
-                                .y = launch.start.y};
+  return entitySpawnedOf(
+      networkId, game::EntityTypeNumber{.number = launch.sheet.get().number},
+      launch.start);
 }
 
 }  // namespace
