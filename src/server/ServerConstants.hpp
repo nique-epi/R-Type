@@ -244,8 +244,10 @@ constexpr std::size_t DEFAULT_WORLD_STATES_PER_SECOND = 20;
 
 /**
  * @brief The values of the `state-encoding` setting: `delta` writes each world
- * state as the difference from the newest one the player acknowledged, `full`
- * lists every entity in every state.
+ * state as the difference from the newest one the player acknowledged, or with
+ * every entity when it acknowledged none or when the newest it acknowledged is
+ * more than MAXIMUM_REFERENCE_DISTANCE ticks older; `full` lists every entity
+ * in every state.
  */
 constexpr std::string_view DELTA_STATE_ENCODING_TEXT = "delta";
 constexpr std::string_view FULL_STATE_ENCODING_TEXT = "full";

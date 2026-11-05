@@ -14,7 +14,9 @@ set seed none
 set state-rate 20
 
 # How each world state is written: 'delta', as the difference from the
-# newest one the player acknowledged, or 'full', every entity in every state.
+# newest one the player acknowledged, or with every entity when it acknowledged
+# none or when the newest it acknowledged is more than 60 ticks older; 'full',
+# every entity in every state.
 set state-encoding delta
 
 # The ticks every player's input is held before it is applied, from 0 to 30.

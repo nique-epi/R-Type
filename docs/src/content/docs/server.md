@@ -263,7 +263,7 @@ The server reads `server.cfg`, in the folder it is started from, between the ins
 | `set port <port>` | The UDP port, from 1 to 65535. Default: 4242. |
 | `set seed <seed>` or `set seed none` | The seed of the first game, a whole number from 0 to 4294967295; `none` draws one. Default: `none`. |
 | `set state-rate <states>` | The world states sent to each player per second, from 2 to 60. Default: 20. |
-| `set state-encoding delta\|full` | How each world state is written for a player: `delta`, as the difference from the newest state it acknowledged, or `full`, every entity in every state. Default: `delta`. `full` is there to measure what the differences save (see [Network measurements](/R-Type/measurements/)). |
+| `set state-encoding delta\|full` | How each world state is written for a player: `delta`, as the difference from the newest state it acknowledged, or with every entity when it acknowledged none or when the newest it acknowledged is more than 60 ticks older (`MAXIMUM_REFERENCE_DISTANCE`); `full`, every entity in every state. Default: `delta`. `full` is there to measure what the differences save (see [Network measurements](/R-Type/measurements/)). |
 | `set input-delay <ticks>` | The ticks every player's input is held before it is applied, from 0 to 30. Default: 3. |
 | `set database <file>` | The SQLite file the leaderboard of this server is kept in, on a local disk; a name with a space goes in quotes. Default: empty, which keeps it in `r-type_server_<port>.db` next to the executable, with the port of `set port`. |
 | `set master-url <url>` | The master this server is listed on, `http://<host>[:<port>]`. Default: empty, and the server runs alone (see [Link with the master](#link-with-the-master-servermastermodule)). |
@@ -417,7 +417,7 @@ These numbers say nothing about a terminal, GCC, MSVC, Linux or Windows. A repor
 - The `tick` of a state is the tick given to `onTick`, so the client can tell which of two states is newer. The first state of a game carries tick 0 and leaves in the tick that starts the game, right after `GameStarted`. The game's counter is 32 bits and is not made to wrap: it takes 2.27 years at 60 ticks per second. It starts again at 0 with each game.
 - The rate does not have to divide the tick rate. A tick carries a state when `tick × rate % 60` is under the rate, so any rate gives exactly that many states in 60 consecutive ticks, spread as evenly as whole ticks allow: at 45 states per second two states are one or two ticks apart. At 20 this is one tick in three, as before. The lowest rate is 2 because a client removes an entity no state listed for 900 ms (see [Protocol](/R-Type/protocol/#world-state)). A live entity is listed in every state, so this only matters when a state is cut into several datagrams (over 122 entities with four players) and the part that lists the entity is lost. At one state per second the next state is 60 ticks later, 54 or more, so one lost part removes an entity that is alive and brings it back with its appearance effect; at 2 per second the states are 30 ticks apart and two parts in a row must be lost. The highest is the tick rate, one state per tick.
 - The default rate is **provisional**: it will be revised once measured on a real network. Code must read the constants and never repeat the 20.
-- With `set state-encoding full`, the sender writes every state with no reference, as it writes the first state of a game: `baseDistance` 0 and every entity in `changed`. `ServerGamesModule` reads the setting when the games start and gives it to each game in its `GameSettings`; `ReplicationModule` hands it, with the rate, to `GameReplication` as a `StateSending` (`src/server/Replication/Announcements/Streams/`). The value itself is a `StateEncoding` (`src/server/`). The setting changes how the states travel, not the game, so it does not make the games leave vanilla. It exists to measure what the differences save (see [Network measurements](/R-Type/measurements/)).
+- With `set state-encoding full`, the sender writes every state with no reference, as it writes the first state of a game: `baseDistance` 0 and every entity in `changed`. `ServerGamesModule` reads the setting when the games start and gives it to each game in its `GameSettings`; `GameReplication` reads it, with the rate, from the `GameSettings` of its game and hands both to its `WorldStateSender` as a `StateSending` (`src/server/Replication/Announcements/Streams/`). The value itself is a `StateEncoding` (`src/server/`). The setting changes how the states travel, not the game, so it does not make the games leave vanilla. It exists to measure what the differences save (see [Network measurements](/R-Type/measurements/)).
 
 Measured by `StateRateMeasurementTest` (`tests/server/Replication/Announcements/Streams/`), on ten seconds of a game with 4 players and 30 networked entities, nothing else sent: the bytes of the datagrams sent to one player each second, and the longest time that player goes without a state, without loss and when one datagram in ten is lost (the same losses at every rate). The bytes include the 22-byte datagram header and the player list; they do not include IP and UDP headers or the other messages of a game (inputs, heartbeats, events).
 
@@ -441,7 +441,10 @@ The bytes grow in proportion to the rate, since each state holds the same entiti
 
 ```cpp
 rtype::server::WorldStateSender worldStateSender{
-    roster, send, rtype::server::DEFAULT_WORLD_STATES_PER_SECOND};
+    roster, send,
+    rtype::server::StateSending{
+        .statesPerSecond = rtype::server::DEFAULT_WORLD_STATES_PER_SECOND,
+        .encoding = rtype::server::StateEncoding::Delta}};
 worldStateSender.onTick(tick, world.components());
 ```
 
