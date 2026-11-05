@@ -2,6 +2,7 @@
 #include <chrono>
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "DatedStatus.hpp"
 #include "KnownServer.hpp"
@@ -45,6 +46,10 @@ void ServerStatusServiceFixture::registerAgain(std::int64_t serverId,
       .serverId = serverId,
       .registration = rtype::network::testing::parisRegistration(),
       .registeredAt = date});
+}
+
+void ServerStatusServiceFixture::execute(std::string_view statement) {
+  executeStatement(databaseFile_.database(), statement);
 }
 
 std::vector<rtype::network::DatedStatus> ServerStatusServiceFixture::historyOf(

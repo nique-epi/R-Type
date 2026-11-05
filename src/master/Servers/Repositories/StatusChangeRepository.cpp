@@ -1,7 +1,7 @@
 #include "StatusChangeRepository.hpp"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Statement.h>
-#include <SQLiteCpp/Transaction.h>
+#include <chrono>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -42,21 +42,14 @@ network::DatedStatus changeIn(const SQLite::Statement& query) {
 StatusChangeRepository::StatusChangeRepository(MasterDatabase& database)
     : database_(database) {}
 
-void StatusChangeRepository::add(
-    const std::vector<StatusChangeRecord>& changes) {
-  if (changes.empty()) {
-    return;
+void StatusChangeRepository::add(SQLite::Database& connection,
+                                 const std::vector<StatusChangeRecord>& changes,
+                                 std::chrono::sys_seconds now) {
+  for (const StatusChangeRecord& change : changes) {
+    insertChange(connection, change);
   }
-  database_.run([&changes](SQLite::Database& connection) {
-    SQLite::Transaction transaction{connection,
-                                    SQLite::TransactionBehavior::IMMEDIATE};
-    for (const StatusChangeRecord& change : changes) {
-      insertChange(connection, change);
-    }
-    eraseOlderThan(connection, ERASE_OLD_STATUS_CHANGES_STATEMENT,
-                   changes.front().change.since - STATUS_CHANGE_RETENTION);
-    transaction.commit();
-  });
+  eraseOlderThan(connection, ERASE_OLD_STATUS_CHANGES_STATEMENT,
+                 now - STATUS_CHANGE_RETENTION);
 }
 
 std::vector<network::DatedStatus> StatusChangeRepository::changesOf(

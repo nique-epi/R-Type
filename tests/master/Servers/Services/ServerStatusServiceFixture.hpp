@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 #include <vector>
 #include "DatedStatus.hpp"
 #include "KnownServer.hpp"
@@ -31,6 +32,9 @@ class ServerStatusServiceFixture : public ::testing::Test {
   /** @brief Registers the server @p serverId again at @p date, as it does when
    * it restarts. */
   void registerAgain(std::int64_t serverId, std::chrono::sys_seconds date);
+
+  /** @brief Runs @p statement on the database of the test. */
+  void execute(std::string_view statement);
 
   /** @returns The changes of status of @p serverId, newest first. */
   [[nodiscard]] std::vector<rtype::network::DatedStatus> historyOf(

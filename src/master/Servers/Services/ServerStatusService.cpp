@@ -1,12 +1,15 @@
 #include "ServerStatusService.hpp"
+#include <SQLiteCpp/Database.h>
 #include <chrono>
 #include <cstdint>
 #include <vector>
 #include "DatedStatus.hpp"
 #include "MasterDatabase.hpp"
+#include "ServerRepository.hpp"
 #include "ServerStatus.hpp"
 #include "ServerStatusRule.hpp"
 #include "StatusChangeRecord.hpp"
+#include "StatusChangeRepository.hpp"
 #include "WatchedServer.hpp"
 
 namespace rtype::master {
@@ -32,15 +35,17 @@ std::vector<StatusChangeRecord> changesAt(
 }  // namespace
 
 ServerStatusService::ServerStatusService(MasterDatabase& database)
-    : servers_(database), changes_(database) {}
+    : database_(database), servers_(database) {}
 
 std::vector<StatusChangeRecord> ServerStatusService::refreshStatuses(
     std::chrono::sys_seconds now) {
-  std::vector<StatusChangeRecord> changes =
-      changesAt(servers_.watchedServers(), now);
-  changes_.add(changes);
-  servers_.saveStatuses(changes);
-  return changes;
+  return database_.transact([now](SQLite::Database& connection) {
+    std::vector<StatusChangeRecord> changes =
+        changesAt(ServerRepository::watchedServers(connection), now);
+    StatusChangeRepository::add(connection, changes, now);
+    ServerRepository::saveStatuses(connection, changes);
+    return changes;
+  });
 }
 
 bool ServerStatusService::setMaintenance(std::int64_t serverId,

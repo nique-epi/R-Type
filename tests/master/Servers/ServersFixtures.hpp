@@ -5,6 +5,7 @@
 #include <optional>
 #include <string_view>
 #include "KnownServer.hpp"
+#include "MasterDatabase.hpp"
 #include "ServerStatus.hpp"
 #include "ServersService.hpp"
 
@@ -13,6 +14,11 @@
 [[nodiscard]] rtype::master::KnownServer registeredParis(
     rtype::master::ServersService& servers, std::string_view address,
     std::chrono::sys_seconds date);
+
+/** @brief Runs @p statement on @p database, as a test that makes it refuse a
+ * write does. */
+void executeStatement(rtype::master::MasterDatabase& database,
+                      std::string_view statement);
 
 /** @returns The status the list of @p servers gives @p serverId, nothing when
  * the list leaves it out. */

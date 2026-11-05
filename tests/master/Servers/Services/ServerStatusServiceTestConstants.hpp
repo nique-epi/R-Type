@@ -14,6 +14,13 @@ constexpr std::chrono::seconds FIFTEEN_SECONDS{15};
 /** @brief A tick p95 over one tick (16.67 ms). */
 constexpr double SLOW_TICK_P95 = 20.0;
 
+/** @brief Makes the database refuse every write of a status, as a full disk
+ * refuses a write. */
+constexpr std::string_view REFUSE_STATUS_WRITES_TRIGGER = R"sql(
+CREATE TRIGGER refuse_status_writes BEFORE UPDATE OF status ON servers
+BEGIN SELECT RAISE(ABORT, 'refused'); END
+)sql";
+
 /** @brief An id no server has. */
 constexpr std::int64_t UNKNOWN_SERVER_ID = 999;
 

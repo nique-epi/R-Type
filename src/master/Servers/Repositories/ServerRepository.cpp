@@ -228,28 +228,23 @@ std::optional<LastHeartbeat> ServerRepository::lastHeartbeatOf(
       });
 }
 
-std::vector<WatchedServer> ServerRepository::watchedServers() {
-  return database_.run([](SQLite::Database& connection) {
-    SQLite::Statement query{connection, std::string{WATCHED_SERVERS_QUERY}};
-    return rowsOf(query, watchedServerIn);
-  });
+std::vector<WatchedServer> ServerRepository::watchedServers(
+    SQLite::Database& connection) {
+  SQLite::Statement query{connection, std::string{WATCHED_SERVERS_QUERY}};
+  return rowsOf(query, watchedServerIn);
 }
 
 void ServerRepository::saveStatuses(
+    SQLite::Database& connection,
     const std::vector<StatusChangeRecord>& changes) {
-  database_.run([&changes](SQLite::Database& connection) {
-    SQLite::Transaction transaction{connection,
-                                    SQLite::TransactionBehavior::IMMEDIATE};
-    SQLite::Statement update{connection, std::string{UPDATE_STATUS_STATEMENT}};
-    for (const StatusChangeRecord& change : changes) {
-      update.bind(std::string{STATUS_PARAMETER},
-                  std::string{network::serverStatusText(change.change.status)});
-      update.bind(std::string{SERVER_ID_PARAMETER}, change.serverId);
-      update.exec();
-      update.reset();
-    }
-    transaction.commit();
-  });
+  SQLite::Statement update{connection, std::string{UPDATE_STATUS_STATEMENT}};
+  for (const StatusChangeRecord& change : changes) {
+    update.bind(std::string{STATUS_PARAMETER},
+                std::string{network::serverStatusText(change.change.status)});
+    update.bind(std::string{SERVER_ID_PARAMETER}, change.serverId);
+    update.exec();
+    update.reset();
+  }
 }
 
 bool ServerRepository::setMaintenance(std::int64_t serverId, bool maintenance) {

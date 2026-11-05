@@ -1,5 +1,7 @@
 #pragma once
 
+#include <SQLiteCpp/Database.h>
+#include <chrono>
 #include <cstdint>
 #include <vector>
 #include "DatedStatus.hpp"
@@ -11,7 +13,8 @@ namespace rtype::master {
 
 /**
  * @brief The table `status_changes`: the only code that writes its SQL. Each
- * call runs behind the lock of the MasterDatabase.
+ * call runs behind the lock of the MasterDatabase; a static one runs on the
+ * connection its caller holds inside MasterDatabase::transact().
  */
 class StatusChangeRepository {
  public:
@@ -20,10 +23,12 @@ class StatusChangeRepository {
   /**
    * @brief Adds each of @p changes, in place of a change of its server in the
    * same second, then erases every change older than STATUS_CHANGE_RETENTION
-   * before the first of them, of every server; one transaction, none for no
-   * change.
+   * before @p now, of every server, even when @p changes is empty; on
+   * @p connection.
    */
-  void add(const std::vector<StatusChangeRecord>& changes);
+  static void add(SQLite::Database& connection,
+                  const std::vector<StatusChangeRecord>& changes,
+                  std::chrono::sys_seconds now);
 
   /** @returns The changes of the server @p serverId in @p page, newest
    * first. */

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SQLiteCpp/Database.h>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -20,7 +21,9 @@ namespace rtype::master {
 
 /**
  * @brief The table `servers`: the only code that writes its SQL. Each call runs
- * behind the lock of the MasterDatabase, so two requests never interleave.
+ * behind the lock of the MasterDatabase, so two requests never interleave; a
+ * static one runs on the connection its caller holds inside
+ * MasterDatabase::transact(), so its writes join those of other tables.
  */
 class ServerRepository {
  public:
@@ -61,13 +64,15 @@ class ServerRepository {
 
   /**
    * @returns Every registered server, by id, with what its status is computed
-   * from and the status it holds.
+   * from and the status it holds, read on @p connection.
    */
-  [[nodiscard]] std::vector<WatchedServer> watchedServers();
+  [[nodiscard]] static std::vector<WatchedServer> watchedServers(
+      SQLite::Database& connection);
 
   /** @brief Keeps the status of each of @p changes as the status of its
-   * server, in one transaction. */
-  void saveStatuses(const std::vector<StatusChangeRecord>& changes);
+   * server, on @p connection. */
+  static void saveStatuses(SQLite::Database& connection,
+                           const std::vector<StatusChangeRecord>& changes);
 
   /**
    * @brief Puts the server @p serverId in maintenance, or takes it out of it.

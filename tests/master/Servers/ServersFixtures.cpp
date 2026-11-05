@@ -1,4 +1,5 @@
 #include "ServersFixtures.hpp"
+#include <SQLiteCpp/Database.h>
 #include <chrono>
 #include <cstdint>
 #include <optional>
@@ -8,6 +9,7 @@
 #include "CreationAttempt.hpp"
 #include "KnownServer.hpp"
 #include "ListedServer.hpp"
+#include "MasterDatabase.hpp"
 #include "MasterMessageTextFixtures.hpp"
 #include "MasterRouteConstants.hpp"
 #include "MasterTestConstants.hpp"
@@ -35,6 +37,13 @@ rtype::master::KnownServer registeredParis(
       .registeredAt = date});
   return servers.serverOfKey(created.key)
       .value_or(rtype::master::KnownServer{});
+}
+
+void executeStatement(rtype::master::MasterDatabase& database,
+                      std::string_view statement) {
+  database.run([statement](SQLite::Database& connection) {
+    connection.exec(std::string{statement});
+  });
 }
 
 std::optional<rtype::network::ServerStatus> listedStatusOf(

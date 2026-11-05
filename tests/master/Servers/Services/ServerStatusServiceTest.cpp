@@ -1,3 +1,4 @@
+#include <SQLiteCpp/Exception.h>
 #include <gtest/gtest.h>
 #include <cstdint>
 #include <optional>
@@ -226,4 +227,38 @@ TEST_F(ServerStatusServiceFixture, TheListIsReadAPageAtATime) {
 
   ASSERT_EQ(page.size(), 1U);
   EXPECT_EQ(page.front().id, ids.at(SECOND_SERVER));
+}
+
+/**
+ * Given a server that turned online, then beat on for 8 days
+ * When the statuses are refreshed then, nothing changing
+ * Then the change of 8 days ago is erased all the same
+ */
+TEST_F(ServerStatusServiceFixture, AnOldChangeIsErasedWhenNothingChanges) {
+  const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
+  static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
+  beat(server, PARIS_TICK_P95, FIRST_HEARTBEAT_DATE + EIGHT_DAYS);
+
+  const std::vector<StatusChangeRecord> changes =
+      statuses().refreshStatuses(FIRST_HEARTBEAT_DATE + EIGHT_DAYS);
+
+  ASSERT_TRUE(changes.empty());
+  EXPECT_TRUE(historyOf(server.id).empty());
+}
+
+/**
+ * Given a server just registered, and a database that refuses to write a
+ * status
+ * When the statuses are refreshed
+ * Then the refresh fails and keeps no change without its status
+ */
+TEST_F(ServerStatusServiceFixture, ARefreshThatFailsKeepsNoChange) {
+  const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
+  execute(REFUSE_STATUS_WRITES_TRIGGER);
+
+  EXPECT_THROW(
+      static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE)),
+      SQLite::Exception);
+
+  EXPECT_TRUE(historyOf(server.id).empty());
 }

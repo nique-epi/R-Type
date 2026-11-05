@@ -6,7 +6,6 @@
 #include "MasterDatabase.hpp"
 #include "ServerRepository.hpp"
 #include "StatusChangeRecord.hpp"
-#include "StatusChangeRepository.hpp"
 
 namespace rtype::master {
 
@@ -19,10 +18,11 @@ class ServerStatusService {
   /**
    * @brief Computes the status of every registered server at @p now
    * (statusOf()) and keeps each one that differs from the status the server
-   * holds: first every change in the history, then every status, one
-   * transaction each. A stop between the two leaves the changes kept and the
-   * old statuses, which the next refresh writes again; never a status without
-   * its change.
+   * holds, as a change of its history and as its status, then erases the
+   * changes older than STATUS_CHANGE_RETENTION. The read and the writes are
+   * one transaction under the lock of the database: a heartbeat waits for the
+   * refresh to end, so no status is computed from a server heard again
+   * meanwhile, and a refresh that fails keeps no change and no status.
    * @returns The changes kept, by server id.
    */
   std::vector<StatusChangeRecord> refreshStatuses(std::chrono::sys_seconds now);
@@ -35,8 +35,8 @@ class ServerStatusService {
   bool setMaintenance(std::int64_t serverId, bool maintenance);
 
  private:
+  MasterDatabase& database_;
   ServerRepository servers_;
-  StatusChangeRepository changes_;
 };
 
 }  // namespace rtype::master
