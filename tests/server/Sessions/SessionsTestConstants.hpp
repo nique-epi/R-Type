@@ -52,6 +52,9 @@ constexpr std::chrono::nanoseconds PROTOCOL_TIME_BETWEEN_HEARTBEATS{
 constexpr std::chrono::seconds HEARTBEAT_SENDING_TIME{3};
 constexpr std::uint32_t HEARTBEAT_SENDING_TIME_ON_THE_WIRE = 3'000'000;
 
+/** @brief The tick the game is at when the Heartbeats of the tests leave. */
+constexpr std::uint32_t GAME_TICK_TOLD = 600;
+
 /**
  * @brief A Heartbeat of a player that arrives 100 ms before the server sends
  * its own: the time the player sent it, when it arrives, and how long the

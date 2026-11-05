@@ -23,6 +23,7 @@ This page tells you where to look when you need to change something. It describe
 | Rate limit per sender, with temporary bans | Available | `src/network/Handshake/RateLimit/` |
 | Traffic counters: datagrams and bytes by peer and by message type, journal and CSV file | Available | `src/network/Statistics/`: `Counting/` and `Recording/` |
 | Round trip and jitter of a session, measured from the heartbeats | Available | `src/network/Statistics/RoundTrip/` |
+| Tick of the server in its heartbeats, to place it on the clock of the client | Available | `src/network/Protocol/Messages/Heartbeat/`, `src/engine/Time/ServerClock/` |
 | Sessions: admission, session token, sequence, heartbeats, timeouts | Available, written in the server and the client | `src/server/Lobby/`, `src/server/Sessions/`, `src/client/Connection/` |
 | Replication: entities to messages, and back | Available, written in the server and the client | `src/server/Replication/`, `src/client/Replication/` |
 | Guaranteed messages: acknowledgements, sending again | Available | `src/network/Reliability/` |
@@ -250,11 +251,13 @@ These numbers say nothing about a disk, GCC, MSVC, Linux or Windows. A row weigh
 
 ## Round trip and jitter: `RoundTripMeter`
 
-Both programs measure the round trip of each session with the classes of `rtype_network_statistics_round_trip` (`src/network/Statistics/RoundTrip/`), which `rtype_network_statistics` links. `RoundTripMeter` builds each `Heartbeat` to send with `nextHeartbeat(now)` and reads each one received with `receive(heartbeat, receivedAt)`; the fields and the rule of the echo are in [Protocol](/R-Type/protocol/#round-trip). Every time it takes is the time since the epoch of `std::chrono::steady_clock`, the clock `engine::SystemClock` reads: `DatagramRelay` and the server's `DatagramSorter` stamp each datagram on the network thread (`IncomingDatagram::receivedAt`), and the readers carry that time into `MessageOrigin::receivedAt`, so the wait for the next frame or tick is left out of the round trip.
+Both programs measure the round trip of each session with the classes of `rtype_network_statistics_round_trip` (`src/network/Statistics/RoundTrip/`), which `rtype_network_statistics` links. `RoundTripMeter` builds each `Heartbeat` to send with `nextHeartbeat(now)` and reads each one received with `receive(heartbeat, receivedAt)`, which gives back the round trip that Heartbeat closed, before it is smoothed, or nothing when it closed none; the fields and the rule of the echo are in [Protocol](/R-Type/protocol/#round-trip). Every time it takes is the time since the epoch of `std::chrono::steady_clock`, the clock `engine::SystemClock` reads: `DatagramRelay` and the server's `DatagramSorter` stamp each datagram on the network thread (`IncomingDatagram::receivedAt`), and the readers carry that time into `MessageOrigin::receivedAt`, so the wait for the next frame or tick is left out of the round trip.
 
 `RoundTripEstimator` turns the round trips into `RoundTripFigures`: the smoothed round trip, each round trip moving it by 1/`ROUND_TRIP_SMOOTHING_DIVISOR` (8) of its gap to it, as RFC 6298 smooths, and the jitter, the mean gap between two round trips in a row over the `JITTER_WINDOW_SIZE` (16) newest. `figures()` is empty before the first round trip, and the jitter is 0 after a single one. An echo that gives no round trip from 0 to `LONGEST_ROUND_TRIP` (20 s, `SESSION_SILENCE_LIMIT`) is ignored. `RoundTripWire` turns the figures to and from what `RoundTrips` carries, in whole microseconds. The constants are in `RoundTripConstants.hpp`, and they are **provisional**, like the delays of the protocol: code must read them.
 
 The server keeps one meter per player (see [Server](/R-Type/server/#silent-players-heartbeats-and-timeouts)), and the client keeps its own in `RoundTripWatch` (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)).
+
+The `Heartbeat` of the server also carries its tick while a game runs: `sendHeartbeats()` (`src/server/Sessions/Tracking/`) takes it in a `HeartbeatMoment` with the time, and `GameInstance` tells it in the output stage, after the simulation stage that counts the tick, only while the game is in progress. What the client does with it is in [Engine](/R-Type/engine/#game-loop-time) (`ServerClock`) and [Protocol](/R-Type/protocol/#clock-of-the-server).
 
 ## Serialization: `ByteWriter` and `ByteReader`
 

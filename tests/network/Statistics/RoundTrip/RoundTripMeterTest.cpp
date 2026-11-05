@@ -90,6 +90,59 @@ TEST(RoundTripMeter, MeasuresTheRoundTripLessTheTimeHeld) {
 }
 
 /**
+ * Given a meter that sent a Heartbeat at 10 s
+ * When the echo of that Heartbeat, held 3 ms by the peer, arrives 45 ms after
+ * it left
+ * Then receiving it gives back the round trip of 42 ms
+ */
+TEST(RoundTripMeter, GivesBackTheRoundTripItMeasured) {
+  RoundTripMeter meter;
+  const Heartbeat sent = meter.nextHeartbeat(MEASURED_SENDING_TIME);
+
+  const std::optional<std::chrono::microseconds> measured = meter.receive(
+      Heartbeat{.sentAt = NEWER_PEER_SENT_AT,
+                .echo = HeartbeatEcho{.sentAt = sent.sentAt,
+                                      .heldFor = THREE_MILLISECONDS_HELD}},
+      MEASURED_SENDING_TIME + ECHO_BACK_AFTER);
+
+  EXPECT_EQ(measured,
+            std::optional<std::chrono::microseconds>{MEASURED_ROUND_TRIP});
+}
+
+/**
+ * Given a meter
+ * When it receives a Heartbeat that echoes nothing
+ * Then it gives back no round trip
+ */
+TEST(RoundTripMeter, GivesBackNothingForAHeartbeatWithoutAnEcho) {
+  RoundTripMeter meter;
+
+  const std::optional<std::chrono::microseconds> measured = meter.receive(
+      Heartbeat{.sentAt = NEWER_PEER_SENT_AT, .echo = std::nullopt},
+      NEWER_PEER_ARRIVAL);
+
+  EXPECT_EQ(measured, std::nullopt);
+}
+
+/**
+ * Given a meter that sent a Heartbeat at 10 s
+ * When its echo arrives 45 ms later but was held 50 ms, longer than the trip
+ * Then it gives back no round trip
+ */
+TEST(RoundTripMeter, GivesBackNothingForAnEchoHeldLongerThanTheTrip) {
+  RoundTripMeter meter;
+  const Heartbeat sent = meter.nextHeartbeat(MEASURED_SENDING_TIME);
+
+  const std::optional<std::chrono::microseconds> measured = meter.receive(
+      Heartbeat{.sentAt = NEWER_PEER_SENT_AT,
+                .echo = HeartbeatEcho{.sentAt = sent.sentAt,
+                                      .heldFor = HELD_LONGER_THAN_THE_TRIP}},
+      MEASURED_SENDING_TIME + ECHO_BACK_AFTER);
+
+  EXPECT_EQ(measured, std::nullopt);
+}
+
+/**
  * Given a meter that sent a Heartbeat 1 ms before its microsecond counter
  * wraps to 0
  * When its echo, held 3 ms, arrives 45 ms after it left, its counter past 0

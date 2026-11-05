@@ -7,6 +7,7 @@
 #include "EntityMessageQueue.hpp"
 #include "GameWindow.hpp"
 #include "IAudioService.hpp"
+#include "IServerTicks.hpp"
 #include "PlayerSettings.hpp"
 #include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
@@ -37,6 +38,7 @@ struct ScreenServices {
   std::reference_wrapper<WaitingRoom> waitingRoom;
   std::reference_wrapper<EntityMessageQueue> entityMessages;
   std::reference_wrapper<ServerLeaderboard> leaderboard;
+  std::reference_wrapper<const IServerTicks> serverTicks;
   network::Endpoint server;
   std::string nickname;
 };
