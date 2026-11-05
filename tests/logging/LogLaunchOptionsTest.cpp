@@ -132,7 +132,7 @@ TEST_F(LogLaunchOptionsFixture, FirstLineNamesTheJournal) {
   const std::vector<std::string> lines = journal.lines();
   ASSERT_FALSE(lines.empty());
   EXPECT_NE(lines.front().find(std::string(JOURNAL_LINE_START) +
-                               journal.path().string()),
+                               journal.path().generic_string()),
             std::string::npos);
 }
 
@@ -177,7 +177,7 @@ TEST_F(LogLaunchOptionsFixture,
   const std::filesystem::path absoluteJournal =
       std::filesystem::current_path() / relativeJournal;
   EXPECT_NE(lines.front().find(std::string(JOURNAL_LINE_START) +
-                               absoluteJournal.string()),
+                               absoluteJournal.generic_string()),
             std::string::npos);
 }
 
@@ -345,9 +345,10 @@ TEST_F(LogLaunchOptionsFixture,
 
   EXPECT_EQ(Logger::level(), LogLevel::Debug);
   EXPECT_FALSE(std::filesystem::exists(missing));
-  EXPECT_NE(standardError().find(std::string(UNOPENED_JOURNAL_LINE_START) +
-                                 std::filesystem::absolute(missing).string()),
-            std::string::npos);
+  EXPECT_NE(
+      standardError().find(std::string(UNOPENED_JOURNAL_LINE_START) +
+                           std::filesystem::absolute(missing).generic_string()),
+      std::string::npos);
   EXPECT_NE(standardError().find(NO_JOURNAL_LINE), std::string::npos);
 }
 
