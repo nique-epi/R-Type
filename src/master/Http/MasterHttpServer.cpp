@@ -11,6 +11,7 @@
 #include <string>
 #include <string_view>
 #include <thread>
+#include <unordered_map>
 #include <utility>
 #include "ApiHandler.hpp"
 #include "ApiRequest.hpp"
@@ -111,12 +112,27 @@ std::optional<std::string> bearerTokenIn(std::string_view authorization) {
   return std::string{authorization.substr(prefix.size())};
 }
 
+/**
+ * @returns The first value of each parameter of the query of @p request:
+ * cpp-httplib keeps them in a std::multimap in the order of the query, and
+ * emplace() keeps the first value of a name.
+ */
+std::unordered_map<std::string, std::string> queryParametersOf(
+    const httplib::Request& request) {
+  std::unordered_map<std::string, std::string> parameters;
+  for (const auto& [name, value] : request.params) {
+    parameters.emplace(name, value);
+  }
+  return parameters;
+}
+
 ApiRequest apiRequestOf(const httplib::Request& request) {
   return ApiRequest{.body = request.body,
                     .bearerToken = bearerTokenIn(request.get_header_value(
                         std::string{network::AUTHORIZATION_HEADER})),
                     .remoteAddress = request.remote_addr,
-                    .pathParameters = request.path_params};
+                    .pathParameters = request.path_params,
+                    .queryParameters = queryParametersOf(request)};
 }
 
 /**
