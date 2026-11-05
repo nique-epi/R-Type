@@ -7,7 +7,7 @@ This page holds the measurements of the network: what one client of a game recei
 
 ## What is measured
 
-One client is one load-test bot (see [Load-test bots](/R-Type/network/#load-test-bots-load_test_bots)): it drives the `PlayerConnection` of the client, so it receives and sends what a client does, without prediction. Each bot adds up what crossed its socket during its time in game, from the first world state of a game to its end, and divides by that time:
+One client is one load-test bot (see [Load-test bots](/R-Type/network/#load-test-bots-load_test_bots)): it drives the `PlayerConnection` of the client, so it receives and sends what a client does, without prediction, and it confirms its inputs from the world states as the game screen does. Each bot adds up what crossed its socket during its time in game, from the first world state of a game to its end, and divides by that time:
 
 | Figure | Counted by | Holds |
 |---|---|---|
@@ -44,33 +44,34 @@ The campaign takes about 15 minutes. It prints the folder that keeps the report 
 
 ## Results
 
-Measured on 5 November 2026 on an Apple M4 Pro (12 cores) under macOS 27.0, at commit `3a32f583`, the server and the bots built by the `test` preset (Debug) with Apple clang 21.0.0 and CMake 4.3.2, on the loopback interface of that machine:
+Measured on 5 November 2026 on an Apple M4 Pro (12 cores) under macOS 27.0, at commit `f93ae54a` (protocol version 6), the server and the bots built by the `test` preset (Debug) with Apple clang 21.0.0 and CMake 4.3.2, on the loopback interface of that machine:
 
 | Scenario | Entities per state | Received, decoded | Received, on the network | Datagrams received per second | Received with IP and UDP | Sent | Datagrams sent per second |
 |---|---|---|---|---|---|---|---|
-| `full-60` | 9.3 | 11376.1 | 7786.2 | 71.0 | 9774.2 | 1881.3 | 61.9 |
-| `full-20` | 8.9 | 4010.6 | 2820.4 | 30.8 | 3682.8 | 1878.9 | 61.8 |
-| `delta-20` | 8.9 | 3892.2 | 2805.5 | 30.8 | 3667.9 | 1880.3 | 61.8 |
-| `full-20-bad` | 8.9 | 3986.8 | 2884.8 | 36.5 | 3908.2 | 1880.6 | 61.8 |
-| `delta-20-bad` | 9.0 | 4008.0 | 2903.8 | 36.2 | 3922.9 | 1879.1 | 61.8 |
+| `full-60` | 8.9 | 11191.8 | 7711.6 | 70.8 | 9696.8 | 2226.1 | 61.9 |
+| `full-20` | 8.9 | 4009.9 | 2848.7 | 30.9 | 3713.8 | 2271.2 | 61.9 |
+| `delta-20` | 8.9 | 3890.6 | 2830.1 | 30.8 | 3692.5 | 2269.4 | 61.8 |
+| `full-20-bad` | 9.0 | 3984.4 | 2902.7 | 36.3 | 3919.2 | 2838.4 | 61.8 |
+| `delta-20-bad` | 8.9 | 3992.8 | 2922.6 | 36.5 | 3942.4 | 2839.4 | 61.9 |
 
-On the perfect network every bot received 20.0 states per second (60.0 in `full-60`) and sent 59.7 to 59.9 inputs per second, so the rhythm of a client held; over `bad` it received 17.0 to 17.7 states per second, the others lost on the way. No game ended during a run. From one bot to another, what a client received on the network varied by less than 1.5 % on the perfect network (2794.5 to 2825.3 B/s in `full-20`, 2802.2 to 2808.8 in `delta-20`) and by about 3 % over `bad`.
+On the perfect network every bot received 20.0 states per second (60.0 in `full-60`) and sent 59.5 to 60.0 inputs per second, so the rhythm of a client held; over `bad` it received 17.0 to 17.6 states per second, the others lost on the way. No game ended during a run. From one bot to another, what a client received on the network varied by less than 1 % on the perfect network (2821.0 to 2834.4 B/s in `delta-20`) and by 3 to 4 % over `bad`. What a client sent varied more, from 2132.8 to 2536.4 B/s on the perfect network: a `PlayerInput` repeats every input the server has not applied yet (see [Inputs](/R-Type/protocol/#inputs)), and a bot confirms its inputs only from a state that lists its ship, so a bot whose ship is down repeats more; this cause is likely, not measured.
 
 ## What each technique saves
 
 | Technique | Without | With | Saved |
 |---|---|---|---|
-| 20 states per second instead of 60 (`full-60` to `full-20`) | 7786.2 B/s on the network | 2820.4 | 64 % |
-| Differences instead of full states, perfect network (`full-20` to `delta-20`) | 4010.6 B/s decoded, 2820.4 on the network | 3892.2, 2805.5 | 3.0 % decoded, 0.5 % on the network |
-| Differences over `bad` (`full-20-bad` to `delta-20-bad`) | 2884.8 B/s on the network | 2903.8 | none: the gap is within the spread between bots |
-| Compression of what the server sends (`delta-20`, decoded to on the network) | 3892.2 B/s | 2805.5 | 28 %, or 23 % with the headers of IP and UDP |
-| Positions in 16 bits instead of two 32-bit floats, **computed** | about 4723 B/s decoded | 4010.6 (`full-20`) | 712 B/s, 15 % |
-| Each action on one bit instead of one byte, **computed** | about 2119 B/s sent | 1878.9 | 240 B/s, 11 % |
+| 20 states per second instead of 60 (`full-60` to `full-20`) | 7711.6 B/s on the network | 2848.7 | 63 % |
+| Differences instead of full states, perfect network (`full-20` to `delta-20`) | 4009.9 B/s decoded, 2848.7 on the network | 3890.6, 2830.1 | 3.0 % decoded, 0.7 % on the network |
+| Differences over `bad` (`full-20-bad` to `delta-20-bad`) | 2902.7 B/s on the network | 2922.6 | none: the gap, 0.7 %, is within the spread between bots |
+| Compression of what the server sends (`delta-20`, decoded to on the network) | 3890.6 B/s | 2830.1 | 27 %, or 22 % with the headers of IP and UDP |
+| Positions in 16 bits instead of two 32-bit floats, **computed** | about 4722 B/s decoded | 4009.9 (`full-20`) | 712 B/s, 15 % |
+| Each action on one bit instead of one byte, **computed** | about 3837 B/s sent | 2269.4 (`delta-20`) | about 1570 B/s, 41 % |
 
 - **The rate of states** is the largest lever: the bytes received grow with it, since the states are most of what a client receives.
-- **The differences** save little in these games. An entity that moves costs 9 bytes in a difference as in a full state (see [Delta world state](/R-Type/protocol/#delta-world-state)), and the missiles and the Bydos move at every state, the ships whenever their pilot holds a direction: the differences saved 5.9 bytes per state before compression, less than one of the 8.9 entities. What they remove, the compression had mostly removed already, hence 0.5 % on the network. Over `bad` they save nothing measurable; a likely cause, not measured, is that a player acknowledges less, so the reference of a difference is older and the difference lists more.
+- **The differences** save little in these games. An entity that moves costs 9 bytes in a difference as in a full state (see [Delta world state](/R-Type/protocol/#delta-world-state)), and the missiles and the Bydos move at every state, the ships whenever their pilot holds a direction: the differences saved 6.0 bytes per state before compression, less than one of the 8.9 entities. What they remove, the compression had mostly removed already, hence 0.7 % on the network. Over `bad` they save nothing measurable; a likely cause, not measured, is that a player acknowledges less, so the reference of a difference is older and the difference lists more.
 - **The compression** takes out about a quarter of what the server sends (see [Compression](/R-Type/network/#compression-zstdcodec-compressingdatagramsocket)). Nothing the client sends is compressed.
-- **The packing** has no version without it: positions are 16-bit eighths of a unit since the first world state was sent, and the actions are bits since the first `PlayerInput` (see [Positions](/R-Type/protocol/#positions)). Two 32-bit floats would add 4 bytes to each entity of each state: 4 × 8.9 × 20 = 712 B/s more before compression, from the measured `full-20`. A `PlayerInput` holding one byte per action would take 4 bytes more: 4 × 60 = 240 B/s more sent. Both figures are computed, not measured, and the first is an upper bound for differences, which list the entities that moved only.
+- **What a client sends** is its inputs, 60 per second, each repeating the inputs the server has not applied yet. A `PlayerInput` takes 31 bytes and one more per repeated input; with about 85 B/s of other datagrams, the 2269.4 B/s of `delta-20` give about 5.5 repeated inputs each. Over `bad` the 300 ms of delay leave more inputs unconfirmed than a message holds, `MAXIMUM_REPEATED_INPUTS` (15), and every input carries 15: 2839 B/s.
+- **The packing** has no version without it: positions are 16-bit eighths of a unit since the first world state was sent, and the actions are bits since the first `PlayerInput` (see [Positions](/R-Type/protocol/#positions)). Two 32-bit floats would add 4 bytes to each entity of each state: 4 × 8.9 × 20 = 712 B/s more before compression, from the measured `full-20`. One byte per action instead of one bit would add 4 bytes to each set of actions an input carries, its own and the repeated ones: 4 × 6.5 × 60, about 1570 B/s more sent. Both figures are computed, not measured; the first is an upper bound for differences, which list only the entities that moved, and the second rests on the estimate of the repeated inputs above.
 
 ## Limits
 
