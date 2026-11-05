@@ -77,7 +77,7 @@ TEST(RateLimitConstants, BansASenderThatFloodsRequests) {
 }
 
 /**
- * Given a player that sends 60 inputs and a heartbeat every second
+ * Given a player that sends 60 inputs a second and a heartbeat every 500 ms
  * When it does so for ten minutes
  * Then every datagram is allowed: the pace of the protocol never exhausts the
  * limit, however long the game lasts

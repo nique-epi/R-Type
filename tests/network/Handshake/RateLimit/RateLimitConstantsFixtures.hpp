@@ -24,8 +24,9 @@ namespace rtype::network::testing {
 [[nodiscard]] std::vector<std::chrono::nanoseconds> stalledClientTimes();
 
 /**
- * @returns When a player sends for @p duration: PLAYER_INPUTS_PER_SECOND
- * inputs evenly spread over each second, and a heartbeat at its start.
+ * @returns When a player sends for @p duration, in order:
+ * PLAYER_INPUTS_PER_SECOND inputs evenly spread over each second, and a
+ * heartbeat every HEARTBEAT_INTERVAL.
  */
 [[nodiscard]] std::vector<std::chrono::nanoseconds> playerTimes(
     std::chrono::nanoseconds duration);

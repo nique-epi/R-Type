@@ -57,13 +57,17 @@ std::vector<std::chrono::nanoseconds> playerTimes(
   std::vector<std::chrono::nanoseconds> times;
   for (std::chrono::nanoseconds second{0}; second < duration;
        second += engine::testing::ONE_SECOND) {
-    times.push_back(second);
     for (std::chrono::nanoseconds::rep input = 0; input < inputsPerSecond;
          ++input) {
       times.push_back(second +
                       (engine::testing::ONE_SECOND * input / inputsPerSecond));
     }
   }
+  for (std::chrono::nanoseconds heartbeat{0}; heartbeat < duration;
+       heartbeat += HEARTBEAT_INTERVAL) {
+    times.push_back(heartbeat);
+  }
+  std::ranges::sort(times);
   return times;
 }
 
