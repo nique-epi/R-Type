@@ -68,8 +68,12 @@ constexpr std::string_view OFFSET_X_KEY = "offset_x";
 constexpr std::string_view OFFSET_Y_KEY = "offset_y";
 constexpr std::string_view ATTACK_KEY = "attack";
 constexpr std::string_view PHASE_KEY = "phase";
+/** @brief When a box hurts within its phase, in milliseconds into it. */
+constexpr std::string_view FROM_KEY = "from_ms";
+constexpr std::string_view UNTIL_KEY = "until_ms";
 constexpr std::array HURT_BOX_KEYS{OFFSET_X_KEY, OFFSET_Y_KEY, WIDTH_KEY,
-                                   HEIGHT_KEY,   ATTACK_KEY,   PHASE_KEY};
+                                   HEIGHT_KEY,   ATTACK_KEY,   PHASE_KEY,
+                                   FROM_KEY,     UNTIL_KEY};
 
 /** @brief `[gameplay.survives_contact]` is a marker: it holds no key. */
 constexpr std::array<std::string_view, 0> SURVIVES_CONTACT_KEYS{};
@@ -118,6 +122,8 @@ constexpr engine::WholeNumberRange HURT_BOX_OFFSET_RANGE{.lowest = -1024,
                                                          .highest = 1024};
 constexpr engine::WholeNumberRange ATTACK_NUMBER_RANGE{.lowest = 0,
                                                        .highest = 255};
+constexpr engine::WholeNumberRange HURT_BOX_TIME_RANGE{.lowest = 0,
+                                                       .highest = 60000};
 
 /** @brief Half a simulation tick: added before a duration is cut into whole
  * ticks, so the count is the nearest one. */
@@ -148,6 +154,10 @@ constexpr std::string_view HURT_ZONE_BOXES_RULE =
     "a hurt zone holds at least one box";
 constexpr std::string_view HURT_BOX_ACTION_RULE =
     "a box names the attack and the phase it hurts in together, or neither";
+constexpr std::string_view HURT_BOX_TIMING_RULE =
+    "only a box that names its attack and its phase hurts from or until a time";
+constexpr std::string_view HURT_BOX_WINDOW_RULE =
+    "a box stops hurting after it starts: until_ms is above from_ms";
 constexpr std::string_view PROJECTILE_SIDE_RULE =
     "a player fires missiles of a player, an enemy missiles of an enemy";
 

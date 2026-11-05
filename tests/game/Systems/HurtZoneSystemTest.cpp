@@ -18,10 +18,13 @@ using rtype::game::HurtBox;
 using rtype::game::HurtZone;
 using rtype::game::HurtZoneSystem;
 using rtype::game::ShipContact;
+using rtype::game::testing::A_SECOND_INTO_THE_PHASE;
 using rtype::game::testing::ALWAYS_HURTING_BOX;
 using rtype::game::testing::contactsOf;
 using rtype::game::testing::enemyWith;
+using rtype::game::testing::JUST_BEFORE_THE_WINDOW;
 using rtype::game::testing::MOVED_ENEMY_X;
+using rtype::game::testing::OPEN_ENDED_STRIKE_BOX;
 using rtype::game::testing::SHIP_APART_FROM_THE_BOX_X;
 using rtype::game::testing::SHIP_IN_THE_MOVED_BOX_X;
 using rtype::game::testing::SHIP_INSIDE_THE_BOX_X;
@@ -30,6 +33,9 @@ using rtype::game::testing::SIGNAL_OF_ATTACK_ONE;
 using rtype::game::testing::STRIKE_BOX;
 using rtype::game::testing::STRIKE_OF_ATTACK_ONE;
 using rtype::game::testing::STRIKE_OF_ATTACK_TWO;
+using rtype::game::testing::TIMED_STRIKE_BOX;
+using rtype::game::testing::WINDOW_END;
+using rtype::game::testing::WINDOW_START;
 
 /**
  * Given an enemy with a box that hurts all the time and a ship inside it
@@ -197,4 +203,68 @@ TEST(HurtZoneSystem, AnEnemyWithoutAHurtZoneHurtsNothing) {
   scene.spawn(EntityType::Player, 0.0F, 0.0F);
 
   EXPECT_TRUE(contactsOf(scene).empty());
+}
+
+/**
+ * Given an enemy 70 ms into the strike of attack 1, with a box of that strike
+ * that hurts from 70 ms until 140 ms, and a ship inside the box
+ * When the hurt zone system updates
+ * Then the ship is hurt: the window starts at its first time
+ */
+TEST(HurtZoneSystem, ATimedBoxHurtsFromTheStartOfItsWindow) {
+  CollisionScene scene;
+  const Entity enemy = enemyWith(scene, 0.0F, {TIMED_STRIKE_BOX});
+  scene.components.add(
+      enemy, CurrentAction{.key = STRIKE_OF_ATTACK_ONE, .since = WINDOW_START});
+  scene.spawn(EntityType::Player, SHIP_INSIDE_THE_BOX_X, 0.0F);
+
+  EXPECT_EQ(contactsOf(scene).size(), 1U);
+}
+
+/**
+ * Given an enemy one tick short of the window of its timed box, and a ship
+ * inside the box
+ * When the hurt zone system updates
+ * Then the ship is not hurt
+ */
+TEST(HurtZoneSystem, ATimedBoxDoesNotHurtBeforeItsWindow) {
+  CollisionScene scene;
+  const Entity enemy = enemyWith(scene, 0.0F, {TIMED_STRIKE_BOX});
+  scene.components.add(enemy, CurrentAction{.key = STRIKE_OF_ATTACK_ONE,
+                                            .since = JUST_BEFORE_THE_WINDOW});
+  scene.spawn(EntityType::Player, SHIP_INSIDE_THE_BOX_X, 0.0F);
+
+  EXPECT_TRUE(contactsOf(scene).empty());
+}
+
+/**
+ * Given an enemy exactly at the end of the window of its timed box, and a
+ * ship inside the box
+ * When the hurt zone system updates
+ * Then the ship is not hurt: the end of a window is excluded
+ */
+TEST(HurtZoneSystem, ATimedBoxStopsHurtingAtTheEndOfItsWindow) {
+  CollisionScene scene;
+  const Entity enemy = enemyWith(scene, 0.0F, {TIMED_STRIKE_BOX});
+  scene.components.add(
+      enemy, CurrentAction{.key = STRIKE_OF_ATTACK_ONE, .since = WINDOW_END});
+  scene.spawn(EntityType::Player, SHIP_INSIDE_THE_BOX_X, 0.0F);
+
+  EXPECT_TRUE(contactsOf(scene).empty());
+}
+
+/**
+ * Given an enemy a second into its strike, with a box that hurts from 70 ms
+ * and names no end, and a ship inside it
+ * When the hurt zone system updates
+ * Then the ship is hurt: the box hurts to the end of the phase
+ */
+TEST(HurtZoneSystem, ABoxWithoutEndHurtsToTheEndOfItsPhase) {
+  CollisionScene scene;
+  const Entity enemy = enemyWith(scene, 0.0F, {OPEN_ENDED_STRIKE_BOX});
+  scene.components.add(enemy, CurrentAction{.key = STRIKE_OF_ATTACK_ONE,
+                                            .since = A_SECOND_INTO_THE_PHASE});
+  scene.spawn(EntityType::Player, SHIP_INSIDE_THE_BOX_X, 0.0F);
+
+  EXPECT_EQ(contactsOf(scene).size(), 1U);
 }

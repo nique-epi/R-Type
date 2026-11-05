@@ -20,6 +20,7 @@
 #include "GameException.hpp"
 #include "GunSheet.hpp"
 #include "HurtBox.hpp"
+#include "HurtWindow.hpp"
 #include "HurtZone.hpp"
 #include "IBehaviour.hpp"
 #include "MotionKind.hpp"
@@ -213,6 +214,33 @@ std::optional<ActionKey> activeInFrom(const engine::DataFileTable& box) {
       .phase = PHASES.at(engine::choiceAt(box, PHASE_KEY, PHASE_NAMES))};
 }
 
+/** @returns When @p box hurts within its phase: from `from_ms`, 0 without it,
+ * until `until_ms`, the end of the phase without it.
+ * @throws InconsistentEntitySheetException when @p box names a time and no
+ * phase (@p activeIn empty), or stops hurting no later than it starts. */
+HurtWindow windowFrom(const engine::DataFileTable& box,
+                      const std::optional<ActionKey>& activeIn) {
+  const toml::table& keys = box.table.get();
+  if (!activeIn.has_value() &&
+      (keys.contains(FROM_KEY) || keys.contains(UNTIL_KEY))) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(box, keys.contains(FROM_KEY) ? FROM_KEY : UNTIL_KEY),
+        HURT_BOX_TIMING_RULE);
+  }
+  HurtWindow window;
+  if (keys.contains(FROM_KEY)) {
+    window.from = engine::millisecondsAt(box, FROM_KEY, HURT_BOX_TIME_RANGE);
+  }
+  if (keys.contains(UNTIL_KEY)) {
+    window.until = engine::millisecondsAt(box, UNTIL_KEY, HURT_BOX_TIME_RANGE);
+  }
+  if (window.until.has_value() && *window.until <= window.from) {
+    throw InconsistentEntitySheetException(engine::placeOfKey(box, UNTIL_KEY),
+                                           HURT_BOX_WINDOW_RULE);
+  }
+  return window;
+}
+
 /** @returns The value of @p key of @p box as a number of logical units. */
 float unitsAt(const engine::DataFileTable& box, std::string_view key,
               engine::WholeNumberRange range) {
@@ -222,11 +250,13 @@ float unitsAt(const engine::DataFileTable& box, std::string_view key,
 /** @returns The box one table of `[[gameplay.hurt_zone.box]]` describes. */
 HurtBox hurtBoxFrom(const engine::DataFileTable& box) {
   engine::refuseUnknownKeys(box, HURT_BOX_KEYS);
+  const std::optional<ActionKey> activeIn = activeInFrom(box);
   return HurtBox{.offsetX = unitsAt(box, OFFSET_X_KEY, HURT_BOX_OFFSET_RANGE),
                  .offsetY = unitsAt(box, OFFSET_Y_KEY, HURT_BOX_OFFSET_RANGE),
                  .width = unitsAt(box, WIDTH_KEY, HITBOX_SIDE_RANGE),
                  .height = unitsAt(box, HEIGHT_KEY, HITBOX_SIDE_RANGE),
-                 .activeIn = activeInFrom(box)};
+                 .activeIn = activeIn,
+                 .window = windowFrom(box, activeIn)};
 }
 
 /** @returns The zone of `[gameplay.hurt_zone]`, its boxes in the order of the
