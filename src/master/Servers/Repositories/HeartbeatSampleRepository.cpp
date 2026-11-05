@@ -9,8 +9,8 @@
 #include <string_view>
 #include "EpochSeconds.hpp"
 #include "HeartbeatRecord.hpp"
-#include "HostedGame.hpp"
 #include "MasterDatabase.hpp"
+#include "PlayerCount.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerMeasures.hpp"
 #include "ServersRepositoryConstants.hpp"
@@ -26,14 +26,6 @@ void bindMeasure(SQLite::Statement& statement, std::string_view parameter,
   } else {
     statement.bind(std::string{parameter});
   }
-}
-
-std::int64_t playerCountOf(const network::ServerHeartbeat& heartbeat) {
-  std::int64_t count = 0;
-  for (const network::HostedGame& game : heartbeat.games) {
-    count += static_cast<std::int64_t>(game.players.size());
-  }
-  return count;
 }
 
 void insertSample(SQLite::Database& connection, const HeartbeatRecord& record) {

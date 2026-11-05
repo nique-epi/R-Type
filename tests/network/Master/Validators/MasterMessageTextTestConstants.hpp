@@ -129,4 +129,14 @@ constexpr std::string_view PLAIN_TEXT_ERROR = "Bad Gateway";
 constexpr std::string_view POINTER_QUOTE = "\"";
 constexpr std::string_view QUOTED_WHOLE_MESSAGE = "\"\"";
 
+/**
+ * @brief How the statuses of a server are written, and the text of the status
+ * the probe will add, which no status reads yet.
+ */
+constexpr std::string_view ONLINE_TEXT = "online";
+constexpr std::string_view DEGRADED_TEXT = "degraded";
+constexpr std::string_view OFFLINE_TEXT = "offline";
+constexpr std::string_view MAINTENANCE_TEXT = "maintenance";
+constexpr std::string_view UNREACHABLE_TEXT = "unreachable";
+
 }  // namespace rtype::network::testing

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+#include <limits>
 #include <string_view>
 #include "MasterRoute.hpp"
 #include "RouteMethod.hpp"
@@ -35,6 +37,21 @@ constexpr std::string_view SERVER_ID_PATH_PARAMETER = "id";
 /** @brief Lists the games of the server named in the path; open to everyone. */
 constexpr MasterRoute LIST_SERVER_GAMES_ROUTE{.method = RouteMethod::Get,
                                               .path = "/servers/:id/games"};
+
+/**
+ * @brief The parameters of the query of a list, `?limit=50&offset=0`, and
+ * their bounds: a page holds MINIMUM_PAGE_SIZE to MAXIMUM_PAGE_SIZE items,
+ * DEFAULT_PAGE_SIZE when the query leaves limit out, and starts after the
+ * first offset items, FIRST_PAGE_OFFSET when it leaves offset out.
+ */
+constexpr std::string_view LIMIT_QUERY_PARAMETER = "limit";
+constexpr std::string_view OFFSET_QUERY_PARAMETER = "offset";
+constexpr std::int64_t MINIMUM_PAGE_SIZE = 1;
+constexpr std::int64_t DEFAULT_PAGE_SIZE = 50;
+constexpr std::int64_t MAXIMUM_PAGE_SIZE = 100;
+constexpr std::int64_t FIRST_PAGE_OFFSET = 0;
+constexpr std::int64_t HIGHEST_PAGE_OFFSET =
+    std::numeric_limits<std::int64_t>::max();
 
 /** @brief What joins the path of the servers and the id of one of them. */
 constexpr std::string_view PATH_SEPARATOR = "/";

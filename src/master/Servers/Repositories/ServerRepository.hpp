@@ -3,13 +3,18 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 #include "CreationQuota.hpp"
 #include "HeartbeatRecord.hpp"
 #include "KnownServer.hpp"
 #include "LastHeartbeat.hpp"
+#include "ListedServer.hpp"
 #include "MasterDatabase.hpp"
 #include "NewServer.hpp"
+#include "PageRequest.hpp"
 #include "ServerRecord.hpp"
+#include "StatusChangeRecord.hpp"
+#include "WatchedServer.hpp"
 
 namespace rtype::master {
 
@@ -53,6 +58,33 @@ class ServerRepository {
    */
   [[nodiscard]] std::optional<LastHeartbeat> lastHeartbeatOf(
       std::int64_t serverId);
+
+  /**
+   * @returns Every registered server, by id, with what its status is computed
+   * from and the status it holds; a heartbeat kept that no longer reads gives
+   * no measure.
+   */
+  [[nodiscard]] std::vector<WatchedServer> watchedServers();
+
+  /** @brief Keeps the status of @p change as the status of its server. */
+  void saveStatus(const StatusChangeRecord& change);
+
+  /**
+   * @brief Puts the server @p serverId in maintenance, or takes it out of it.
+   * @returns Whether a server has that id.
+   */
+  bool setMaintenance(std::int64_t serverId, bool maintenance);
+
+  /**
+   * @returns The registered servers of @p page, by id, each with the counts of
+   * its last heartbeat: 0 and 0 before the first one, or when the heartbeat
+   * kept no longer reads.
+   */
+  [[nodiscard]] std::vector<network::ListedServer> registeredServers(
+      const PageRequest& page);
+
+  /** @returns Whether a server, registered or not, has the id @p serverId. */
+  [[nodiscard]] bool hasServer(std::int64_t serverId);
 
  private:
   MasterDatabase& database_;

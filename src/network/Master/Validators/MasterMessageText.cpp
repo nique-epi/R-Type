@@ -27,6 +27,7 @@
 #include "ServerHeartbeat.hpp"
 #include "ServerMeasures.hpp"
 #include "ServerRegistration.hpp"
+#include "ServerStatus.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::network {
@@ -486,6 +487,19 @@ GameListing gameListingFromText(std::string_view text) {
   }
   requireDistinctNumbers(games, listing.games);
   return listing;
+}
+
+std::string_view serverStatusText(ServerStatus status) {
+  return SERVER_STATUS_TEXTS.at(static_cast<std::size_t>(status));
+}
+
+std::optional<ServerStatus> serverStatusOf(std::string_view text) {
+  for (std::size_t index = 0; index < SERVER_STATUS_TEXTS.size(); ++index) {
+    if (text == SERVER_STATUS_TEXTS.at(index)) {
+      return static_cast<ServerStatus>(index);
+    }
+  }
+  return std::nullopt;
 }
 
 std::string problemDetailOf(std::string_view text) {

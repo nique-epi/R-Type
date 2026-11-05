@@ -24,11 +24,14 @@
 #include "MasterMessageText.hpp"
 #include "NetworkException.hpp"
 #include "NewServer.hpp"
+#include "PageRequest.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerKey.hpp"
 #include "ServerLimits.hpp"
+#include "ServerListing.hpp"
 #include "ServerRecord.hpp"
 #include "ServersServiceConstants.hpp"
+#include "StatusChangeListing.hpp"
 
 namespace rtype::master {
 
@@ -108,7 +111,7 @@ network::ListedGame listedGameOf(const network::HostedGame& game) {
 }  // namespace
 
 ServersService::ServersService(MasterDatabase& database)
-    : servers_(database), samples_(database) {}
+    : servers_(database), samples_(database), changes_(database) {}
 
 std::optional<network::CreatedServer> ServersService::createServer(
     const CreationAttempt& attempt) {
@@ -166,6 +169,21 @@ std::optional<network::GameListing> ServersService::gameListingOf(
     }
   }
   return listing;
+}
+
+network::ServerListing ServersService::serverListingOf(
+    const PageRequest& page) {
+  return network::ServerListing{.servers = servers_.registeredServers(page)};
+}
+
+std::optional<network::StatusChangeListing>
+ServersService::statusChangeListingOf(std::int64_t serverId,
+                                      const PageRequest& page) {
+  if (!servers_.hasServer(serverId)) {
+    return std::nullopt;
+  }
+  return network::StatusChangeListing{.statusChanges =
+                                          changes_.changesOf(serverId, page)};
 }
 
 }  // namespace rtype::master

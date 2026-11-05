@@ -12,6 +12,7 @@
 #include "ProtocolTestConstants.hpp"
 #include "ServerCreation.hpp"
 #include "ServerRegistration.hpp"
+#include "ServerStatus.hpp"
 
 using rtype::network::CreatedServer;
 using rtype::network::createdServerFromText;
@@ -28,11 +29,14 @@ using rtype::network::ServerCreation;
 using rtype::network::serverCreationFromText;
 using rtype::network::serverCreationText;
 using rtype::network::ServerRegistration;
+using rtype::network::ServerStatus;
+using rtype::network::serverStatusOf;
 using rtype::network::testing::ADDRESS_POINTER;
 using rtype::network::testing::AVERAGE_PING_POINTER;
 using rtype::network::testing::CONFLICT_DETAIL;
 using rtype::network::testing::CONFLICT_PROBLEM;
 using rtype::network::testing::createdServerRefusal;
+using rtype::network::testing::DEGRADED_TEXT;
 using rtype::network::testing::EMPTY_GAME_NAME;
 using rtype::network::testing::FIFTH_PILOT;
 using rtype::network::testing::FIRST_GAME_FIRST_PLAYER_POINTER;
@@ -59,6 +63,7 @@ using rtype::network::testing::KEY_POINTER;
 using rtype::network::testing::KEY_WITHOUT_PREFIX;
 using rtype::network::testing::LOSS_ABOVE_ALL;
 using rtype::network::testing::LOSS_PERCENT_POINTER;
+using rtype::network::testing::MAINTENANCE_TEXT;
 using rtype::network::testing::MAXIMUM_GAMES_POINTER;
 using rtype::network::testing::MAXIMUM_PLAYERS_PER_GAME_POINTER;
 using rtype::network::testing::NAME_OF_32_BYTES;
@@ -68,6 +73,8 @@ using rtype::network::testing::NAME_WITH_LINE_FEED;
 using rtype::network::testing::NEGATIVE_MEASURE;
 using rtype::network::testing::NO_GAME;
 using rtype::network::testing::NOT_JSON;
+using rtype::network::testing::OFFLINE_TEXT;
+using rtype::network::testing::ONLINE_TEXT;
 using rtype::network::testing::PARIS_GAME_LISTING_TEXT;
 using rtype::network::testing::PARIS_ID;
 using rtype::network::testing::PARIS_KEY;
@@ -95,6 +102,7 @@ using rtype::network::testing::TICK_P50_POINTER;
 using rtype::network::testing::UDP_PORT_POINTER;
 using rtype::network::testing::UNKNOWN_MEMBER_POINTER;
 using rtype::network::testing::UNKNOWN_MEMBER_VALUE;
+using rtype::network::testing::UNREACHABLE_TEXT;
 using rtype::network::testing::UPPERCASE_KEY;
 using rtype::network::testing::WAITING_GAME_NUMBER;
 using ::testing::HasSubstr;
@@ -511,4 +519,18 @@ TEST(MasterMessageText, RefusesMoreListedGamesThanAServerMayHost) {
       IsEmpty());
   EXPECT_THAT(gameListingRefusal(gameListingTextOfGames(GAMES_ABOVE_THE_MOST)),
               HasSubstr(quoted(GAMES_POINTER)));
+}
+
+/**
+ * Given the four texts of the statuses, and "unreachable", which comes with
+ * the probe
+ * When each is read
+ * Then each of the four gives its status, and "unreachable" none yet
+ */
+TEST(MasterMessageText, ReadsEveryStatusFromItsText) {
+  EXPECT_EQ(serverStatusOf(ONLINE_TEXT), ServerStatus::Online);
+  EXPECT_EQ(serverStatusOf(DEGRADED_TEXT), ServerStatus::Degraded);
+  EXPECT_EQ(serverStatusOf(OFFLINE_TEXT), ServerStatus::Offline);
+  EXPECT_EQ(serverStatusOf(MAINTENANCE_TEXT), ServerStatus::Maintenance);
+  EXPECT_EQ(serverStatusOf(UNREACHABLE_TEXT), std::nullopt);
 }

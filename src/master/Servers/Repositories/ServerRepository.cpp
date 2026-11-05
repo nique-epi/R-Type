@@ -7,18 +7,28 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 #include "CreationQuota.hpp"
 #include "EpochSeconds.hpp"
 #include "HeartbeatRecord.hpp"
 #include "KnownServer.hpp"
 #include "LastHeartbeat.hpp"
+#include "ListedServer.hpp"
 #include "MasterDatabase.hpp"
 #include "MasterMessageText.hpp"
 #include "NewServer.hpp"
+#include "PageRequest.hpp"
+#include "PlayerCount.hpp"
+#include "ServerHeartbeat.hpp"
 #include "ServerLimits.hpp"
+#include "ServerMeasures.hpp"
 #include "ServerRecord.hpp"
 #include "ServerRegistration.hpp"
 #include "ServersRepositoryConstants.hpp"
+#include "StatementParts.hpp"
+#include "StatusChangeRecord.hpp"
+#include "StatusEvidence.hpp"
+#include "WatchedServer.hpp"
 
 namespace rtype::master {
 
@@ -70,6 +80,45 @@ void bindRegistration(SQLite::Statement& statement,
                  registration.maximumGames);
   statement.bind(std::string{MAXIMUM_PLAYERS_PARAMETER},
                  registration.maximumPlayersPerGame);
+}
+
+WatchedServer watchedServerIn(const SQLite::Statement& query) {
+  const std::optional<network::ServerHeartbeat> heartbeat =
+      readableHeartbeatIn(query.getColumn(WATCHED_HEARTBEAT_COLUMN));
+  return WatchedServer{
+      .serverId = query.getColumn(WATCHED_ID_COLUMN).getInt64(),
+      .evidence =
+          StatusEvidence{
+              .lastHeardAt = dateOfEpochSeconds(
+                  query.getColumn(WATCHED_HEARD_AT_COLUMN).getInt64()),
+              .measures = heartbeat.has_value() ? heartbeat->measures
+                                                : network::ServerMeasures{},
+              .maintenance =
+                  query.getColumn(WATCHED_MAINTENANCE_COLUMN).getInt() != 0},
+      .status = statusIn(query.getColumn(WATCHED_STATUS_COLUMN))};
+}
+
+network::ListedServer listedServerIn(const SQLite::Statement& query) {
+  const std::optional<network::ServerHeartbeat> heartbeat =
+      readableHeartbeatIn(query.getColumn(LISTED_HEARTBEAT_COLUMN));
+  return network::ListedServer{
+      .id = query.getColumn(LISTED_ID_COLUMN).getInt64(),
+      .name = query.getColumn(LISTED_NAME_COLUMN).getString(),
+      .address = query.getColumn(LISTED_ADDRESS_COLUMN).getString(),
+      .udpPort = static_cast<std::uint16_t>(
+          query.getColumn(LISTED_UDP_PORT_COLUMN).getUInt()),
+      .gameVersion = query.getColumn(LISTED_GAME_VERSION_COLUMN).getString(),
+      .protocolVersion = static_cast<std::uint8_t>(
+          query.getColumn(LISTED_PROTOCOL_VERSION_COLUMN).getUInt()),
+      .status = statusIn(query.getColumn(LISTED_STATUS_COLUMN)),
+      .gameCount = static_cast<std::uint16_t>(
+          heartbeat.has_value() ? heartbeat->games.size() : 0),
+      .playerCount = static_cast<std::uint16_t>(
+          heartbeat.has_value() ? playerCountOf(*heartbeat) : 0),
+      .maximumGames = static_cast<std::uint16_t>(
+          query.getColumn(LISTED_MAXIMUM_GAMES_COLUMN).getUInt()),
+      .maximumPlayersPerGame = static_cast<std::uint8_t>(
+          query.getColumn(LISTED_MAXIMUM_PLAYERS_COLUMN).getUInt())};
 }
 
 }  // namespace
@@ -150,6 +199,51 @@ std::optional<LastHeartbeat> ServerRepository::lastHeartbeatOf(
         return LastHeartbeat{.heartbeat =
                                  network::heartbeatFromText(text.getString())};
       });
+}
+
+std::vector<WatchedServer> ServerRepository::watchedServers() {
+  return database_.run([](SQLite::Database& connection) {
+    SQLite::Statement query{connection, std::string{WATCHED_SERVERS_QUERY}};
+    return rowsOf(query, watchedServerIn);
+  });
+}
+
+void ServerRepository::saveStatus(const StatusChangeRecord& change) {
+  database_.run([&change](SQLite::Database& connection) {
+    SQLite::Statement update{connection, std::string{UPDATE_STATUS_STATEMENT}};
+    update.bind(std::string{STATUS_PARAMETER},
+                std::string{network::serverStatusText(change.change.status)});
+    update.bind(std::string{SERVER_ID_PARAMETER}, change.serverId);
+    update.exec();
+  });
+}
+
+bool ServerRepository::setMaintenance(std::int64_t serverId, bool maintenance) {
+  return database_.run([serverId, maintenance](SQLite::Database& connection) {
+    SQLite::Statement update{connection,
+                             std::string{UPDATE_MAINTENANCE_STATEMENT}};
+    update.bind(std::string{MAINTENANCE_PARAMETER},
+                static_cast<int>(maintenance));
+    update.bind(std::string{SERVER_ID_PARAMETER}, serverId);
+    return update.exec() > 0;
+  });
+}
+
+std::vector<network::ListedServer> ServerRepository::registeredServers(
+    const PageRequest& page) {
+  return database_.run([&page](SQLite::Database& connection) {
+    SQLite::Statement query{connection, std::string{REGISTERED_SERVERS_QUERY}};
+    bindPage(query, page);
+    return rowsOf(query, listedServerIn);
+  });
+}
+
+bool ServerRepository::hasServer(std::int64_t serverId) {
+  return database_.run([serverId](SQLite::Database& connection) {
+    SQLite::Statement query{connection, std::string{SERVER_EXISTS_QUERY}};
+    query.bind(std::string{SERVER_ID_PARAMETER}, serverId);
+    return query.executeStep();
+  });
 }
 
 }  // namespace rtype::master

@@ -5,18 +5,22 @@
 #include <vector>
 #include "IModule.hpp"
 #include "InstallContext.hpp"
+#include "MasterDatabase.hpp"
+#include "ServerStatusJob.hpp"
 #include "ServersController.hpp"
 
 namespace rtype::master {
 
 /**
- * @brief The module of the game servers: their creation, their registration
- * and their heartbeats, `POST /api/servers`, `PUT /api/servers/me` and
- * `PUT /api/servers/me/heartbeat`, kept in the tables `servers` and
- * `heartbeat_samples`.
+ * @brief The module of the game servers: their creation, their registration,
+ * their heartbeats and their statuses, `POST /api/servers`,
+ * `PUT /api/servers/me`, `PUT /api/servers/me/heartbeat` and
+ * `GET /api/servers/{id}/games`, kept in the tables `servers`,
+ * `heartbeat_samples` and `status_changes`.
  *
  * install() adds the routes to the MasterHttpServer; they read the database
- * only once the HTTP module listens, after the storage opened it.
+ * only once the HTTP module listens, after the storage opened it. start()
+ * starts the ServerStatusJob, on its thread StatusWatch.
  */
 class ServersModule final : public engine::IModule {
  public:
@@ -26,11 +30,17 @@ class ServersModule final : public engine::IModule {
   /** @brief Adds the routes of the game servers; opens nothing. */
   void install(engine::InstallContext& context) override;
 
+  /** @brief Starts StatusWatch, which refreshes the statuses at once, then
+   * every STATUS_REFRESH_INTERVAL. */
   void start() override;
+
+  /** @brief Stops StatusWatch, once its refresh in progress is done. */
   void stop() override;
 
  private:
+  MasterDatabase* database_{nullptr};
   std::optional<ServersController> controller_;
+  std::optional<ServerStatusJob> statusJob_;
 };
 
 }  // namespace rtype::master

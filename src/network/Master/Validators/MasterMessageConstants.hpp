@@ -74,6 +74,15 @@ constexpr std::string_view IN_GAME_STATE_TEXT = "inGame";
 constexpr auto LISTED_GAME_STATE_TEXTS = std::to_array<std::string_view>(
     {WAITING_STATE_TEXT, IN_GAME_STATE_TEXT, FULL_STATE_TEXT});
 
+/** @brief How each ServerStatus is written, in the order of the enum. */
+constexpr std::string_view ONLINE_STATUS_TEXT = "online";
+constexpr std::string_view DEGRADED_STATUS_TEXT = "degraded";
+constexpr std::string_view OFFLINE_STATUS_TEXT = "offline";
+constexpr std::string_view MAINTENANCE_STATUS_TEXT = "maintenance";
+constexpr auto SERVER_STATUS_TEXTS = std::to_array<std::string_view>(
+    {ONLINE_STATUS_TEXT, DEGRADED_STATUS_TEXT, OFFLINE_STATUS_TEXT,
+     MAINTENANCE_STATUS_TEXT});
+
 /** @brief The member of a listed game that counts its players. */
 constexpr std::string_view PLAYER_COUNT_MEMBER = "playerCount";
 
