@@ -341,6 +341,18 @@ constexpr std::size_t MINIMUM_NICKNAME_SIZE = 1;
 constexpr std::size_t MAXIMUM_NICKNAME_SIZE = 16;
 
 /**
+ * @brief The longest name of a server, in bytes of UTF-8, the master and the
+ * ServerInformation of the server alike.
+ */
+constexpr std::size_t MAXIMUM_SERVER_NAME_SIZE = 32;
+
+/**
+ * @brief The longest version of the game, in bytes: "1.12.0-rc.2" fits. The
+ * master and the ServerInformation of the server alike.
+ */
+constexpr std::size_t MAXIMUM_GAME_VERSION_SIZE = 32;
+
+/**
  * @brief The control characters a nickname may not hold are the bytes below
  * SPACE_BYTE, U+0000 to U+001F, and DELETE_BYTE, U+007F. In UTF-8 each of them
  * is one byte of its own value, and every byte of a longer sequence is 0x80 or
@@ -424,6 +436,41 @@ static_assert(LARGEST_LEADERBOARD_ANSWER_SIZE <= MESSAGE_PAYLOAD_LIMIT,
               "a LeaderboardAnswer always fits in one datagram");
 
 /**
+ * @brief The size of the largest datagram holding a ServerInformation: the
+ * echo of the request (sentAt, heldFor), the protocol version, the longest
+ * game version and server name, then the counts of players, games and free
+ * seats. 106 bytes.
+ */
+constexpr std::size_t LARGEST_SERVER_INFORMATION_DATAGRAM_SIZE =
+    PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT32_WIRE_SIZE +
+    UINT32_WIRE_SIZE + UINT8_WIRE_SIZE + SHORT_STRING_PREFIX_SIZE +
+    MAXIMUM_GAME_VERSION_SIZE + SHORT_STRING_PREFIX_SIZE +
+    MAXIMUM_SERVER_NAME_SIZE + UINT16_WIRE_SIZE + UINT16_WIRE_SIZE +
+    UINT16_WIRE_SIZE;
+
+/**
+ * @brief The size of every datagram holding a ServerInformationRequest: the
+ * size of the largest answer, by definition, so the server never sends a
+ * sender it does not know more bytes than it received, as QUIC pads its first
+ * datagram (RFC 9000, section 8.1).
+ */
+constexpr std::size_t SERVER_INFORMATION_REQUEST_DATAGRAM_SIZE =
+    LARGEST_SERVER_INFORMATION_DATAGRAM_SIZE;
+
+/**
+ * @brief The zero bytes a ServerInformationRequest carries after its sentAt,
+ * so its datagram is SERVER_INFORMATION_REQUEST_DATAGRAM_SIZE long. 77 bytes.
+ */
+constexpr std::size_t SERVER_INFORMATION_REQUEST_PADDING_SIZE =
+    SERVER_INFORMATION_REQUEST_DATAGRAM_SIZE - PACKET_HEADER_SIZE -
+    MESSAGE_PREFIX_SIZE - UINT32_WIRE_SIZE;
+
+/**
+ * @brief The value of every byte of the padding of a ServerInformationRequest.
+ */
+constexpr std::uint8_t PADDING_BYTE = 0;
+
+/**
  * @brief The names of the fields a refused message is reported by, as the
  * protocol page writes them.
  */
@@ -451,6 +498,10 @@ constexpr std::string_view FIRST_KEPT_FIELD = "firstKept";
 constexpr std::string_view INNER_TYPE_FIELD = "innerType";
 constexpr std::string_view CARRIED_PAYLOAD_SIZE_FIELD = "carriedPayloadSize";
 constexpr std::string_view PHASE_FIELD = "phase";
+constexpr std::string_view PADDING_FIELD = "padding";
+constexpr std::string_view FREE_SEAT_COUNT_FIELD = "freeSeatCount";
+constexpr std::string_view GAME_VERSION_FIELD = "gameVersion";
+constexpr std::string_view SERVER_NAME_FIELD = "name";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a

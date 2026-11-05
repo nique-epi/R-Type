@@ -19,7 +19,7 @@ struct ServerRegistration {
    */
   std::optional<std::string> address;
   std::uint16_t udpPort{};
-  /** @brief The version of the game it runs, MAXIMUM_VERSION_SIZE at most. */
+  /** @brief The game version it runs, MAXIMUM_GAME_VERSION_SIZE at most. */
   std::string gameVersion;
   /** @brief The version of the UDP protocol it speaks, PROTOCOL_VERSION. */
   std::uint8_t protocolVersion{};

@@ -11,12 +11,6 @@
 namespace rtype::network {
 
 /**
- * @returns Whether @p name is a name a game server may have: 1 to
- * MAXIMUM_SERVER_NAME_SIZE bytes of printable UTF-8 (isPrintableUtf8()).
- */
-[[nodiscard]] bool isValidServerName(std::string_view name);
-
-/**
  * @returns Whether @p text has the shape of a key the master issues:
  * SERVER_KEY_PREFIX, then lowercase hexadecimal digits, SERVER_KEY_SIZE in
  * all. Anything else is refused before the master looks it up.

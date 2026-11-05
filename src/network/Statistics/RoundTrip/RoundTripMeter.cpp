@@ -1,6 +1,5 @@
 #include "RoundTripMeter.hpp"
 #include <chrono>
-#include <cstdint>
 #include <optional>
 #include "Heartbeat.hpp"
 #include "PeerStamp.hpp"
@@ -39,15 +38,11 @@ std::optional<RoundTripFigures> RoundTripMeter::figures() const {
 
 std::optional<std::chrono::microseconds> RoundTripMeter::measure(
     const HeartbeatEcho& echo, std::chrono::nanoseconds receivedAt) {
-  const std::uint32_t sinceSent = wireMicrosecondsOf(receivedAt) - echo.sentAt;
-  if (echo.heldFor > sinceSent) {
-    return std::nullopt;
+  const std::optional<std::chrono::microseconds> roundTrip =
+      echoedRoundTrip(echo, receivedAt);
+  if (roundTrip.has_value()) {
+    estimator_.add(*roundTrip);
   }
-  const std::chrono::microseconds roundTrip{sinceSent - echo.heldFor};
-  if (roundTrip > LONGEST_ROUND_TRIP) {
-    return std::nullopt;
-  }
-  estimator_.add(roundTrip);
   return roundTrip;
 }
 

@@ -82,12 +82,6 @@ constexpr std::uint64_t MINIMUM_LISTED_PLAYERS = 0;
 /** @brief The longest name of a game, in bytes of UTF-8. */
 constexpr std::size_t MAXIMUM_GAME_NAME_SIZE = 16;
 
-/** @brief The longest name of a server, in bytes of UTF-8. */
-constexpr std::size_t MAXIMUM_SERVER_NAME_SIZE = 32;
-
-/** @brief The longest version of the game, in bytes: "1.12.0-rc.2" fits. */
-constexpr std::size_t MAXIMUM_VERSION_SIZE = 32;
-
 /**
  * @brief The fewest and the most games a server may host, and the number of
  * its first game. A server hosts 8 today (DEFAULT_HOSTED_GAME_COUNT of the
