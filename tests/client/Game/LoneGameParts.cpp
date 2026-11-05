@@ -13,6 +13,7 @@ GameScreenParts LoneGameParts::parts() {
                          .settings = settings,
                          .inputs = inputs,
                          .entityMessages = entityMessages,
+                         .serverTicks = serverTicks,
                          .connection = connection,
                          .waitingRoom = waitingRoom,
                          .sky = sky,

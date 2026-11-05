@@ -31,6 +31,9 @@ using testing::SERVER_HEARTBEAT_ARRIVAL;
 using testing::SERVER_HEARTBEAT_SENT_AT;
 using testing::SERVER_HEARTBEAT_TICK;
 using testing::SERVER_HEARTBEAT_TICK_PLACED_AT;
+using testing::SERVER_TICK_TOLERANCE;
+using testing::TICK_AT_THE_PLACED_INSTANT;
+using testing::TO_REACH_THE_PLACED_TICK;
 using testing::UNREPORTED_PLAYER_NUMBER;
 
 /**
@@ -178,6 +181,40 @@ TEST_F(RoundTripWatchFixture,
   EXPECT_EQ(watch().serverClock().localInstantOf(SERVER_HEARTBEAT_TICK),
             std::optional<engine::Duration>{
                 engine::Duration{SERVER_HEARTBEAT_TICK_PLACED_AT}});
+}
+
+/**
+ * Given a session whose clock placed tick 600 at 4.026 s
+ * When the clock of the client reaches 4.026 s
+ * Then the server is at tick 600
+ */
+TEST_F(RoundTripWatchFixture, ReadsTheTickOfTheServerOnTheClockOfTheClient) {
+  advanceClock(CLOCK_WHEN_THE_SESSION_OPENS);
+  openSession();
+  hold(ONE_HEARTBEAT_INTERVAL);
+  deliver(
+      network::Heartbeat{
+          .sentAt = SERVER_HEARTBEAT_SENT_AT,
+          .echo = network::HeartbeatEcho{.sentAt = FIRST_HEARTBEAT_SENT_AT,
+                                         .heldFor = HELD_BY_THE_SERVER},
+          .tick = SERVER_HEARTBEAT_TICK},
+      ECHO_ARRIVAL);
+
+  advanceClock(TO_REACH_THE_PLACED_TICK);
+
+  EXPECT_NEAR(watch().serverTickNow().value_or(0.0), TICK_AT_THE_PLACED_INSTANT,
+              SERVER_TICK_TOLERANCE);
+}
+
+/**
+ * Given a session that placed no tick of the server
+ * When the tick of the server is asked
+ * Then there is none
+ */
+TEST_F(RoundTripWatchFixture, KnowsNoTickOfTheServerBeforeAHeartbeatPlacedOne) {
+  openSession();
+
+  EXPECT_FALSE(watch().serverTickNow().has_value());
 }
 
 /**

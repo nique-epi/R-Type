@@ -79,6 +79,7 @@ GameScreen::GameScreen(GameScreenParts parts,
       playerCommands_(true, parts.settings.get().keys),
       inputs_(&parts.inputs.get()),
       entityMessageSource_(&parts.entityMessages.get()),
+      serverTicks_(&parts.serverTicks.get()),
       scoreBoard_(parts.waitingRoom.get().lobbyPlayers(),
                   parts.connection.get().status().playerNumber),
       result_(&parts.result.get()),
@@ -131,6 +132,7 @@ void GameScreen::update(engine::Duration elapsed) {
     loggedActions_ = held.bits();
   }
   systems_.run(components_, elapsed);
+  interpolationClock_.follow(serverTicks_->serverTickNow());
   interpolationClock_.advance(elapsed);
   const FlashPreference preference = flashPreferenceOf(*settings_);
   const engine::Duration sinceTheWorld =

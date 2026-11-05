@@ -19,6 +19,7 @@
 #include "EventUse.hpp"
 #include "FrameLoop.hpp"
 #include "GameWindow.hpp"
+#include "IServerTicks.hpp"
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
 #include "ModuleConstants.hpp"
@@ -96,6 +97,7 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   waitingRoom_ = &context.require<WaitingRoom>();
   entityMessages_ = &context.require<EntityMessageQueue>();
   leaderboard_ = &context.require<ServerLeaderboard>();
+  serverTicks_ = &context.require<IServerTicks>();
   loop_ = &context.require<FrameLoop>();
   listeners_ = &context.require<EventListeners>();
   declareSettings(context.require<engine::ConfigurationRegistry>());
@@ -149,6 +151,7 @@ void ClientScreensModule::start() {
                      .waitingRoom = *waitingRoom_,
                      .entityMessages = *entityMessages_,
                      .leaderboard = *leaderboard_,
+                     .serverTicks = *serverTicks_,
                      .server = server,
                      .nickname = nicknameSetting_->text()},
       registry_);

@@ -65,6 +65,10 @@ const engine::IServerClock& RoundTripWatch::serverClock() const {
   return serverClock_;
 }
 
+std::optional<double> RoundTripWatch::serverTickNow() const {
+  return serverClock_.tickAt(clock_->now());
+}
+
 void RoundTripWatch::follow(const network::MessageOrigin& origin,
                             const network::Heartbeat& heartbeat) {
   const std::optional<std::chrono::microseconds> roundTrip =

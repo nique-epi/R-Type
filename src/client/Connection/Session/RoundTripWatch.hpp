@@ -6,6 +6,7 @@
 #include "IClock.hpp"
 #include "IPlayerRoundTrips.hpp"
 #include "IServerClock.hpp"
+#include "IServerTicks.hpp"
 #include "ISessionObserver.hpp"
 #include "ISessionOutbox.hpp"
 #include "LobbyState.hpp"
@@ -38,7 +39,9 @@ namespace rtype::client {
  *
  * Not thread-safe: use it from the frame loop.
  */
-class RoundTripWatch final : public ISessionObserver, public IPlayerRoundTrips {
+class RoundTripWatch final : public ISessionObserver,
+                             public IPlayerRoundTrips,
+                             public IServerTicks {
  public:
   /**
    * @param dispatcher Where it registers the handlers of Heartbeat and
@@ -64,6 +67,10 @@ class RoundTripWatch final : public ISessionObserver, public IPlayerRoundTrips {
    * the instant of a tick; both empty until a Heartbeat of the server in a
    * game closed a measured round trip, and again once the session closes. */
   [[nodiscard]] const engine::IServerClock& serverClock() const;
+
+  /** @returns The tick of the server at the time on the clock given at
+   * construction, as serverClock() places it; nothing while that is empty. */
+  [[nodiscard]] std::optional<double> serverTickNow() const override;
 
  private:
   /** @brief Hands @p heartbeat to the meter, and its tick to the ServerClock

@@ -21,6 +21,7 @@
 #include "IPlayerInputLink.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
+#include "IServerTicks.hpp"
 #include "ISky.hpp"
 #include "InterpolationClock.hpp"
 #include "Logger.hpp"
@@ -169,6 +170,7 @@ class GameScreen : public IScreen {
   PlayerCommands playerCommands_;
   IPlayerInputLink* inputs_;
   IEntityMessageSource* entityMessageSource_;
+  const IServerTicks* serverTicks_;
   std::vector<EntityMessage> receivedEntityMessages_;
   ScoreBoard scoreBoard_;
   GameResult* result_;
