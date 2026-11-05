@@ -17,15 +17,9 @@ HostedGamesWatch::HostedGamesWatch(LatestHostedGames& latest,
     : latest_(latest), difficulty_(std::move(difficulty)) {}
 
 void HostedGamesWatch::watch(engine::EventBus& events) {
-  subscriptions_.emplace_back(
-      &events, events.subscribe<game::PlayerArrival>(
-                   [this](const game::PlayerArrival&) { changed_ = true; }));
-  subscriptions_.emplace_back(
-      &events, events.subscribe<game::PlayerDeparture>(
-                   [this](const game::PlayerDeparture&) { changed_ = true; }));
-  subscriptions_.emplace_back(
-      &events, events.subscribe<GameStateChanged>(
-                   [this](const GameStateChanged&) { changed_ = true; }));
+  markChangedOn<game::PlayerArrival>(events);
+  markChangedOn<game::PlayerDeparture>(events);
+  markChangedOn<GameStateChanged>(events);
 }
 
 void HostedGamesWatch::publishIfChanged(const Games& games) {

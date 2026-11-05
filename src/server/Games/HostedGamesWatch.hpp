@@ -38,6 +38,14 @@ class HostedGamesWatch {
   void forget();
 
  private:
+  /** @brief Marks the list changed each time @p events delivers an Event. */
+  template <typename Event>
+  void markChangedOn(engine::EventBus& events) {
+    subscriptions_.emplace_back(
+        &events,
+        events.subscribe<Event>([this](const Event&) { changed_ = true; }));
+  }
+
   LatestHostedGames& latest_;
   std::string difficulty_;
   bool changed_{true};

@@ -1,10 +1,10 @@
 #include "MasterMessages.hpp"
-#include <chrono>
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
+#include "DurationConversion.hpp"
 #include "HostedGame.hpp"
 #include "MetricsReport.hpp"
 #include "PlayerRoundTripMeasure.hpp"
@@ -14,24 +14,22 @@
 #include "ServerMasterConstants.hpp"
 #include "ServerMeasures.hpp"
 #include "ServerRegistration.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::server {
 
 namespace {
 
-double millisecondsOf(std::chrono::nanoseconds duration) {
-  return std::chrono::duration<double, std::milli>(duration).count();
-}
-
 std::optional<double> averagePingOf(const MetricsReport& report) {
   if (report.roundTrips.empty()) {
     return std::nullopt;
   }
-  std::chrono::nanoseconds total{0};
+  engine::Duration total{0};
   for (const PlayerRoundTripMeasure& player : report.roundTrips) {
     total += player.figures.roundTrip;
   }
-  return millisecondsOf(total) / static_cast<double>(report.roundTrips.size());
+  return engine::inMilliseconds(
+      engine::averageOf(total, report.roundTrips.size()));
 }
 
 }  // namespace
@@ -51,9 +49,9 @@ network::ServerRegistration registrationOf(const ServerIdentity& identity) {
 network::ServerMeasures measuresOf(const MetricsReport& report) {
   network::ServerMeasures measures{};
   if (report.ticks.count > 0) {
-    measures.tickP50Milliseconds = millisecondsOf(report.ticks.median);
+    measures.tickP50Milliseconds = engine::inMilliseconds(report.ticks.median);
     measures.tickP95Milliseconds =
-        millisecondsOf(report.ticks.ninetyFifthPercentile);
+        engine::inMilliseconds(report.ticks.ninetyFifthPercentile);
   }
   measures.averagePingMilliseconds = averagePingOf(report);
   return measures;

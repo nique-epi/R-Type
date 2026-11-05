@@ -1,4 +1,5 @@
 #include "HeartbeatJob.hpp"
+#include <algorithm>
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
@@ -28,6 +29,15 @@ void pause(const std::stop_token& stop, std::chrono::milliseconds duration) {
   static_cast<void>(never.wait_for(lock, stop, duration, [] { return false; }));
 }
 
+/** @returns What is left of @p gap since @p sentAt, zero once it passed. */
+std::chrono::milliseconds untilTheGapEnds(
+    std::chrono::steady_clock::time_point sentAt,
+    std::chrono::milliseconds gap) {
+  const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now() - sentAt);
+  return std::max(gap - elapsed, std::chrono::milliseconds{0});
+}
+
 }  // namespace
 
 HeartbeatJob::HeartbeatJob(HeartbeatJobParts parts)
@@ -50,11 +60,12 @@ void HeartbeatJob::run(const std::stop_token& stop) {
         continue;
       }
     }
-    seen = games_.get().revision();
+    seen = games_.revision();
     registered = sendHeartbeat();
-    pause(stop, times_.noticeGap);
-    static_cast<void>(games_.get().waitForNewer(
-        seen, times_.interval - times_.noticeGap, stop));
+    const auto sentAt = std::chrono::steady_clock::now();
+    if (games_.waitForNewer(seen, times_.interval, stop) > seen) {
+      pause(stop, untilTheGapEnds(sentAt, times_.noticeGap));
+    }
   }
 }
 
@@ -74,9 +85,9 @@ bool HeartbeatJob::registerServer() {
 
 bool HeartbeatJob::sendHeartbeat() {
   try {
-    client_.sendHeartbeat(heartbeatOf(
-        games_.get().value().value_or(std::vector<network::HostedGame>{}),
-        metrics_ != nullptr ? metrics_->value() : std::nullopt));
+    client_.sendHeartbeat(
+        heartbeatOf(games_.value().value_or(std::vector<network::HostedGame>{}),
+                    metrics_ != nullptr ? metrics_->value() : std::nullopt));
     return true;
   } catch (const network::MasterRefusedException& refusal) {
     tell(refusal.what());

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <functional>
 #include <stop_token>
 #include <string>
 #include <thread>
@@ -17,7 +16,9 @@ namespace rtype::server {
 /**
  * @brief The thread that keeps the master told of this server: it registers
  * the server, then sends a heartbeat each time the games change, at most one
- * per noticeGap, and every interval when nothing changes.
+ * per noticeGap, and every interval when nothing changes: it sleeps on the list
+ * of games until a newer one or the end of the interval, so an idle server
+ * wakes once per interval.
  *
  * It never touches a game: it reads the list the games module publishes. A
  * master that refuses or does not answer is written in the journal once, not
@@ -51,7 +52,7 @@ class HeartbeatJob {
 
   network::MasterClient client_;
   ServerIdentity identity_;
-  std::reference_wrapper<const LatestHostedGames> games_;
+  const LatestHostedGames& games_;
   const LatestMetrics* metrics_;
   HeartbeatTimes times_;
   logging::Logger logger_;
