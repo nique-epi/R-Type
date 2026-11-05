@@ -6,6 +6,7 @@
 #include "ClockSample.hpp"
 #include "Heartbeat.hpp"
 #include "IClock.hpp"
+#include "IServerClock.hpp"
 #include "ISessionOutbox.hpp"
 #include "LobbyState.hpp"
 #include "MessageDispatcher.hpp"

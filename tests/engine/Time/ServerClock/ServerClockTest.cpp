@@ -1,11 +1,10 @@
 #include <gtest/gtest.h>
-#include <cstdint>
 #include <optional>
 #include "ClockSample.hpp"
 #include "ServerClock.hpp"
-#include "ServerClockConstants.hpp"
 #include "ServerClockFixtures.hpp"
 #include "ServerClockTestConstants.hpp"
+#include "SymmetricPath.hpp"
 #include "TimeConstants.hpp"
 
 using rtype::engine::ClockSample;
@@ -27,6 +26,7 @@ using rtype::engine::testing::SECOND_GAME_TICK_30_SENT_AT;
 using rtype::engine::testing::SECOND_GAME_TICK_ZERO;
 using rtype::engine::testing::SHORT_ROUND_TRIP;
 using rtype::engine::testing::SHORT_WAY;
+using rtype::engine::testing::SymmetricPath;
 using rtype::engine::testing::symmetricSample;
 using rtype::engine::testing::TEN_SECONDS_IN;
 using rtype::engine::testing::TICK_600_SENT_AT;
@@ -72,8 +72,9 @@ TEST(ServerClock, PlacesATickWhereTheServerSentItOnASymmetricPath) {
  */
 TEST(ServerClock, GivesBackTheTickItPlacedAtAnInstant) {
   ServerClock clock;
-  clock.add(
-      symmetricSample(TEN_SECONDS_IN, Duration::zero(), USUAL_ROUND_TRIP));
+  clock.add(symmetricSample(TEN_SECONDS_IN,
+                            SymmetricPath{.tickZero = Duration::zero(),
+                                          .roundTrip = USUAL_ROUND_TRIP}));
 
   EXPECT_DOUBLE_EQ(clock.tickAt(TICK_600_SENT_AT).value_or(-1.0),
                    static_cast<double>(TEN_SECONDS_IN));
@@ -103,10 +104,12 @@ TEST(ServerClock, ErrsByHalfTheDifferenceOfTheTwoWaysOfAnAsymmetricPath) {
  */
 TEST(ServerClock, LeavesAsideASampleWhoseRoundTripIsLong) {
   ServerClock clock;
-  clock.add(
-      symmetricSample(TEN_SECONDS_IN, Duration::zero(), USUAL_ROUND_TRIP));
+  clock.add(symmetricSample(TEN_SECONDS_IN,
+                            SymmetricPath{.tickZero = Duration::zero(),
+                                          .roundTrip = USUAL_ROUND_TRIP}));
   const ClockSample delayed = symmetricSample(
-      HALF_A_SECOND_LATER, TWO_HUNDRED_MILLISECONDS, LONG_ROUND_TRIP);
+      HALF_A_SECOND_LATER, SymmetricPath{.tickZero = TWO_HUNDRED_MILLISECONDS,
+                                         .roundTrip = LONG_ROUND_TRIP});
 
   clock.add(delayed);
 
@@ -120,11 +123,13 @@ TEST(ServerClock, LeavesAsideASampleWhoseRoundTripIsLong) {
  */
 TEST(ServerClock, ClosesAnEighthOfTheGapToABetterSample) {
   ServerClock clock;
-  clock.add(
-      symmetricSample(TEN_SECONDS_IN, Duration::zero(), USUAL_ROUND_TRIP));
+  clock.add(symmetricSample(TEN_SECONDS_IN,
+                            SymmetricPath{.tickZero = Duration::zero(),
+                                          .roundTrip = USUAL_ROUND_TRIP}));
 
-  clock.add(
-      symmetricSample(ONE_SECOND_LATER, TWO_MILLISECONDS, SHORT_ROUND_TRIP));
+  clock.add(symmetricSample(ONE_SECOND_LATER,
+                            SymmetricPath{.tickZero = TWO_MILLISECONDS,
+                                          .roundTrip = SHORT_ROUND_TRIP}));
 
   EXPECT_EQ(clock.localInstantOf(ONE_SECOND_LATER),
             TICK_660_SENT_AT + AN_EIGHTH_OF_TWO_MILLISECONDS);
@@ -138,11 +143,13 @@ TEST(ServerClock, ClosesAnEighthOfTheGapToABetterSample) {
  */
 TEST(ServerClock, FollowsTheNewestOfTwoSamplesWithTheSameRoundTrip) {
   ServerClock clock;
-  clock.add(
-      symmetricSample(TEN_SECONDS_IN, Duration::zero(), USUAL_ROUND_TRIP));
+  clock.add(symmetricSample(TEN_SECONDS_IN,
+                            SymmetricPath{.tickZero = Duration::zero(),
+                                          .roundTrip = USUAL_ROUND_TRIP}));
 
-  clock.add(
-      symmetricSample(ONE_SECOND_LATER, TWO_MILLISECONDS, USUAL_ROUND_TRIP));
+  clock.add(symmetricSample(ONE_SECOND_LATER,
+                            SymmetricPath{.tickZero = TWO_MILLISECONDS,
+                                          .roundTrip = USUAL_ROUND_TRIP}));
 
   EXPECT_EQ(clock.localInstantOf(ONE_SECOND_LATER),
             TICK_660_SENT_AT + AN_EIGHTH_OF_TWO_MILLISECONDS);
@@ -156,10 +163,13 @@ TEST(ServerClock, FollowsTheNewestOfTwoSamplesWithTheSameRoundTrip) {
  */
 TEST(ServerClock, JumpsOntoASampleFarFromWhereItWas) {
   ServerClock clock;
-  clock.add(
-      symmetricSample(TEN_SECONDS_IN, Duration::zero(), USUAL_ROUND_TRIP));
+  clock.add(symmetricSample(TEN_SECONDS_IN,
+                            SymmetricPath{.tickZero = Duration::zero(),
+                                          .roundTrip = USUAL_ROUND_TRIP}));
 
-  clock.add(symmetricSample(ONE_SECOND_LATER, HALF_A_SECOND, SHORT_ROUND_TRIP));
+  clock.add(symmetricSample(
+      ONE_SECOND_LATER,
+      SymmetricPath{.tickZero = HALF_A_SECOND, .roundTrip = SHORT_ROUND_TRIP}));
 
   EXPECT_EQ(clock.localInstantOf(ONE_SECOND_LATER),
             TICK_660_SENT_AT + HALF_A_SECOND);
@@ -174,11 +184,13 @@ TEST(ServerClock, JumpsOntoASampleFarFromWhereItWas) {
  */
 TEST(ServerClock, ForgetsTheGameBeforeWhenTheTickGoesBack) {
   ServerClock clock;
-  clock.add(
-      symmetricSample(TEN_SECONDS_IN, Duration::zero(), SHORT_ROUND_TRIP));
+  clock.add(symmetricSample(TEN_SECONDS_IN,
+                            SymmetricPath{.tickZero = Duration::zero(),
+                                          .roundTrip = SHORT_ROUND_TRIP}));
 
-  clock.add(symmetricSample(SECOND_GAME_TICK, SECOND_GAME_TICK_ZERO,
-                            USUAL_ROUND_TRIP));
+  clock.add(symmetricSample(SECOND_GAME_TICK,
+                            SymmetricPath{.tickZero = SECOND_GAME_TICK_ZERO,
+                                          .roundTrip = USUAL_ROUND_TRIP}));
 
   EXPECT_EQ(clock.localInstantOf(SECOND_GAME_TICK),
             SECOND_GAME_TICK_30_SENT_AT);
@@ -191,8 +203,9 @@ TEST(ServerClock, ForgetsTheGameBeforeWhenTheTickGoesBack) {
  */
 TEST(ServerClock, AnswersNothingAfterAReset) {
   ServerClock clock;
-  clock.add(
-      symmetricSample(TEN_SECONDS_IN, Duration::zero(), USUAL_ROUND_TRIP));
+  clock.add(symmetricSample(TEN_SECONDS_IN,
+                            SymmetricPath{.tickZero = Duration::zero(),
+                                          .roundTrip = USUAL_ROUND_TRIP}));
 
   clock.reset();
 
@@ -225,7 +238,8 @@ TEST(ServerClock, ForgetsTheBestSampleOnceTheWindowIsFull) {
   addTheBestSampleThenWorseOnes(clock);
 
   clock.add(symmetricSample(TEN_SECONDS_IN + SAMPLES_BEFORE_THE_BEST_LEAVES + 1,
-                            FOUR_MILLISECONDS, USUAL_ROUND_TRIP));
+                            SymmetricPath{.tickZero = FOUR_MILLISECONDS,
+                                          .roundTrip = USUAL_ROUND_TRIP}));
 
   EXPECT_EQ(clock.localInstantOf(TEN_SECONDS_IN),
             TICK_600_SENT_AT + AN_EIGHTH_OF_FOUR_MILLISECONDS);

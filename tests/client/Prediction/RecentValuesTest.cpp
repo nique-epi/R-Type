@@ -1,8 +1,13 @@
 #include <gtest/gtest.h>
 #include <vector>
 #include "RecentValues.hpp"
+#include "RecentValuesTestConstants.hpp"
 
 using rtype::client::RecentValues;
+using rtype::client::testing::FIRST_PUSHED;
+using rtype::client::testing::FOURTH_PUSHED;
+using rtype::client::testing::SECOND_PUSHED;
+using rtype::client::testing::THIRD_PUSHED;
 
 /**
  * Given a window of three values that holds nothing
@@ -23,11 +28,11 @@ TEST(RecentValues, HoldsNothingBeforeAPush) {
 TEST(RecentValues, KeepsWhatWasPushedOldestFirst) {
   RecentValues<int, 3> window;
 
-  window.push(7);
-  window.push(8);
+  window.push(FIRST_PUSHED);
+  window.push(SECOND_PUSHED);
 
   EXPECT_EQ(std::vector<int>(window.values().begin(), window.values().end()),
-            (std::vector<int>{7, 8}));
+            (std::vector<int>{FIRST_PUSHED, SECOND_PUSHED}));
 }
 
 /**
@@ -37,12 +42,12 @@ TEST(RecentValues, KeepsWhatWasPushedOldestFirst) {
  */
 TEST(RecentValues, ForgetsTheOldestValueOnceFull) {
   RecentValues<int, 3> window;
-  window.push(7);
-  window.push(8);
-  window.push(9);
+  window.push(FIRST_PUSHED);
+  window.push(SECOND_PUSHED);
+  window.push(THIRD_PUSHED);
 
-  window.push(10);
+  window.push(FOURTH_PUSHED);
 
   EXPECT_EQ(std::vector<int>(window.values().begin(), window.values().end()),
-            (std::vector<int>{8, 9, 10}));
+            (std::vector<int>{SECOND_PUSHED, THIRD_PUSHED, FOURTH_PUSHED}));
 }
