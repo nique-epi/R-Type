@@ -21,7 +21,7 @@ std::string lastError() {
   // With FORMAT_MESSAGE_ALLOCATE_BUFFER, the buffer argument is the address of
   // the pointer that receives the allocated text, typed as a string pointer.
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-  LPSTR const buffer = reinterpret_cast<LPSTR>(&text);
+  const auto buffer = reinterpret_cast<LPSTR>(&text);
   const DWORD length = FormatMessageA(
       FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
           FORMAT_MESSAGE_IGNORE_INSERTS,
