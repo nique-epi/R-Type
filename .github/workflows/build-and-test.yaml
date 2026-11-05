@@ -292,7 +292,7 @@ jobs:
         # Job control on, or bash starts the server with SIGINT ignored.
         run: |
           set -m
-          ./build-sanitize/r-type_server &
+          ./build-sanitize/r-type_server --mode server &
           server=$!
           sleep 5
           kill -INT "$server"

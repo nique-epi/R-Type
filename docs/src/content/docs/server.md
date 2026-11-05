@@ -115,6 +115,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Configuration file | Available: `server.cfg` (`module`, `set`, `plugin`, `plugin-folder`) | `src/server/Modules/` |
 | Information requests answered outside any session: name, versions, players, games, free seats, and the time the request was held | Available; nothing sends a request yet: the list of servers of the client and the probe of the master are not written | `src/server/Information/` |
 | Letting players in: challenge, acceptance or refusal | Available; a new player joins the first game waiting for players with a free seat, and is refused with `GameInProgress` or `GameFull` only when no game has one; the acceptance carries the entity types of the server | `src/server/Lobby/`, `src/server/Sessions/` |
+| One process per game, started by a supervisor (`--mode supervisor`) | Available: up to 8 game processes, each reporting its state every second and ending by itself or when told to | `src/server/Processes/`, `src/server/SupervisedGames/`, `src/server/SupervisorLink/`, `src/server/SupervisorLobby/` |
 | A game: states, ready rule, new world between two games | Available: eight games side by side, each ending once no player is left in it, no player left has a life, or the last wave of its level is over | `src/server/Rules/Match/` |
 | Newest input of each player, held by the `Intent` of its ship and acted on at each tick of a game in progress | Available: the arrows move the ship, shoot fires its missiles | `src/server/Sessions/Tracking/`, `src/server/Rules/Players/`, `src/game/Components/Intent.hpp` |
 | Heartbeats every 500 ms, and the round trip and jitter of each player measured from their echoes; a player silent for 5 seconds is away and keeps its seat 15 seconds, then its session closes | Available, and a `Disconnection` closes the session at once | `src/server/Sessions/Tracking/` |
@@ -147,7 +148,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 
 | Option | Effect |
 |---|---|
-| `--mode <server\|master>` | The program the binary runs: the game server (`server`, the default) or the master (`master`, see [Master](/R-Type/master/)). It comes before every other option; further on, it is an unknown argument. |
+| `--mode <server\|supervisor\|master>` | The program the binary runs: the supervisor that starts one game server per game (`supervisor`, the default, see [Supervisor and game processes](#supervisor-and-game-processes)), one game server alone (`server`) or the master (`master`, see [Master](/R-Type/master/)). It comes before every other option; further on, it is an unknown argument. |
 | `-p <port>` | The UDP port to listen on, from 1 to 65535 (see [Network](/R-Type/network/#ports-and-addresses-written-as-text-portfromtext-ipv4addressfromtext)). Default: `DEFAULT_SERVER_PORT` (4242). |
 | `--seed <seed>` | The number the random draws of the games start from, a whole number from 0 to 4294967295. Default: drawn at random. See [Waves](#waves-wavespawner). A seed makes the games not vanilla (see [Vanilla games](#vanilla-games-vanillabreaches)). |
 | `--state-rate <states>` | The world states sent to each player per second, a whole number from 2 to 60. Default: `DEFAULT_WORLD_STATES_PER_SECOND` (20). More states move the other ships more smoothly and use more bandwidth; see [World state](#world-state-worldstatesender). |
@@ -156,6 +157,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | `--set <name>=<value>` | Gives a setting a value, as the line `set <name> <value>` of `server.cfg` does (see [Configuration](#configuration-servercfg)). Can be given several times. |
 | `--network <name>`, `--lag <ms>`, `--jitter <ms>`, `--loss <percent>`, `--duplicates <percent>`, `--reorder <percent>` | The simulated network every datagram of the server crosses, for all its players (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)). Default: none, the network is not simulated. |
 | `--traffic-csv <file>` | The file the traffic of the server goes to every second (see [Network](/R-Type/network/#traffic-counters-trafficcounters)). Default: no file. |
+| `--supervisor <port>`, `--link-token <number>` | Only for a game process, which its supervisor starts with them: the UDP port of the supervisor, on the loopback, and the whole number from 1 to 18446744073709551615 they share (see [Supervisor and game processes](#supervisor-and-game-processes)). Given together; one without the other stops the start. Default: none, the server is on its own and hosts the games of `DEFAULT_HOSTED_GAME_COUNT`. |
 | `--help` | Prints the usage, the simulator and logging options included, on standard output, then exits with code 0 without starting anything or opening the journal. |
 
 - `-p`, `--seed`, `--state-rate`, `--input-delay` and `--database` are shortcuts: each forces the setting `port`, `seed`, `state-rate`, `input-delay` or `database` with the line `set <name> <value>`, the first four once their value is checked. The forced lines run after `server.cfg`, so a launch option wins over the file. `--traffic-csv` is no setting: it names the file of this run only.
@@ -163,7 +165,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 - An unknown argument, a `-p`, `--seed`, `--state-rate`, `--input-delay`, `--database` or `--traffic-csv` without a value, an invalid port, a seed that is not a whole number from 0 to 4294967295, a state rate that is not a whole number from 2 to 60, an input delay that is not a whole number from 0 to 30, a `--set` value that is not `name=value`, a simulator option without a value or with one out of its range, or a logging option that does not exist or has no value, stops the server before anything starts: it prints `r-type_server:`, the reason and how to see the usage on standard error, then exits with code 1. When several arguments are wrong, the first one from the left is reported.
 
 ```bash
-./r-type_server -p 4243
+./r-type_server --mode server -p 4243
 ```
 
 ## Threads: `ServerApplication`
@@ -320,9 +322,37 @@ The rule itself is `firstJoinableGame()` (`src/server/Games/`), which reads a `G
 
 Each game has its own `EventBus`, since its rules and its broadcaster subscribe to it: with one bus, a game would apply the collisions of another to its own entities and send its events to the wrong players. The seed of game n, from 0, is the seed given plus n times `GAME_SEED_STRIDE` (65536), so a game can be played again; without a seed, each game draws its own.
 
-Every game runs on the simulation thread, one after the other in each tick, and the network thread is the only other one that handles datagrams during a game. No state is shared between games, so nothing needs a lock, and the queues between the two threads do not change. The cost of a tick grows with the number of games: the journal gives it every 10 s (see [Metrics](#metrics-servermetricsmodule)), and the tick loop reports its late ticks at the same rate. An exception a system of one game throws stops the server (one a message handler throws only drops that message, see [Threads](#threads-serverapplication)), and a slow game slows the others; running each game in a process of its own would isolate them.
+Every game runs on the simulation thread, one after the other in each tick, and the network thread is the only other one that handles datagrams during a game. No state is shared between games, so nothing needs a lock, and the queues between the two threads do not change. The cost of a tick grows with the number of games: the journal gives it every 10 s (see [Metrics](#metrics-servermetricsmodule)), and the tick loop reports its late ticks at the same rate. An exception a system of one game throws stops the server (one a message handler throws only drops that message, see [Threads](#threads-serverapplication)), and a slow game slows the others. Running each game in a process of its own isolates them: see [Supervisor and game processes](#supervisor-and-game-processes).
 
 The waves file is read when the games module starts, after the logger module started, so a missing or wrong file stops the start with an error that names the games module, the file, the line and the key, and the line "waves file …" reaches the journal.
+
+### Supervisor and game processes
+
+`r-type_server`, which runs the supervisor unless `--mode` says otherwise, runs no game. It listens on `DEFAULT_SERVER_PORT` (4242), answers the connection requests, starts one process per game and sends each player to the game that has a place. A game process is the same binary started with `--mode server --supervisor <port> --link-token <number>`: it hosts one game (`GAME_PROCESS_GAME_COUNT`), on a port the supervisor picked, with a journal of its own (`r-type_game_<n>.log`). An exception in a game stops that process only; the supervisor and the other games go on.
+
+| Step | Who | What |
+|---|---|---|
+| 1 | player to supervisor | a `ConnectionRequest` without a cookie gets a `ConnectionChallenge`; nothing is kept or started |
+| 2 | player to supervisor | the request with the cookie: if no game waits with a free seat and fewer than `MAXIMUM_RUNNING_GAMES` (8) run, the supervisor starts a game process; if 8 run and none has a place, it answers `ConnectionRefused` (`GameFull`) |
+| 3 | game process to supervisor | once it runs, a `GameStatus` (its state and its number of players) every `STATUS_INTERVAL` (1 s), and at once when either changes; the supervisor answers each with a `GameStatusAcknowledged` |
+| 4 | supervisor to player | once the game reported, the player's next request (they repeat every 500 ms) gets a `ConnectionRedirect` to the port of the game; while the game starts, the supervisor answers nothing |
+| 5 | player to game | a new handshake with the game process, which places the player as a server does |
+
+The supervisor does not see inside a game: `GameRegistry` (`src/server/SupervisedGames/`) holds, per game, the number, the port, the link token, the state its process reported (`Starting` until the first status), its number of players and the handle of the process. A game that has not reported counts as waiting for players, so a burst of requests starts one process. `firstJoinableGame()` places the player, as it does for the games of one server. A status is taken only if it is newer than the newest one of that game (serial number arithmetic on `sequence`), so a late one never undoes a newer one. A process that ended leaves the registry: with code 0 after it reported, the journal says the game ended; with any other code, or code 0 before any status, it says it crashed. A game that sends no status within `GAME_START_TIMEOUT` (10 s) is killed. A process that cannot be started (no free port, program refused) is logged and nothing else happens.
+
+The supervisor and a game process know each other by the link token, a random 64-bit number the supervisor draws for each game and passes on the command line: each side admits the other's address and token before the first datagram, so the network lets it through. The token is visible in the process list of the machine; it only gives the right to stop that game.
+
+A game process stops by itself, with code 0, when its supervisor has sent nothing for `SUPERVISOR_SILENCE_LIMIT` (5 s), when it had players and has none for `EMPTY_GAME_GRACE` (10 s), when no player came in `IDLE_GAME_TIMEOUT` (30 s), or when the supervisor sends it a `Disconnection`. A game that ends its round waits for players again; it does not stop. The journal line is `stopping: <reason>`.
+
+Stopping the supervisor with Ctrl-C or SIGTERM sends each game a `Disconnection` three times, waits up to `STOP_GRACE_WAIT` (3 s) for the processes to end, then kills the rest. If the supervisor is killed instead, the games do not stay behind:
+
+| System | What ends a game process whose supervisor died |
+|---|---|
+| Linux | `PR_SET_PDEATHSIG` (SIGTERM), asked between `fork` and `exec` |
+| Windows | a job object with `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`, which holds every child |
+| macOS | nothing at the system level; the silence limit above ends it within 5 s |
+
+On Linux the "parent" is the thread that started the child, so the supervisor starts every game from its simulation thread, which lives as long as it does. Processes are started through `IProcessLauncher` (`src/server/Processes/`), implemented with Boost.Process v2 and polled at each tick, never waited for, so the supervisor has no thread more.
 
 ### Stopping: Ctrl-C and SIGTERM
 
@@ -344,7 +374,7 @@ The limit is a choice for this game: during a longer stall the game freezes, the
 Every `TICKS_PER_REPORT` ticks, the loop logs at the `debug` level how late its ticks started, each compared with the moment it was due; a dropped stall shows in full. The lines go to the terminal and to the journal, `r-type_server.log` (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)):
 
 ```bash
-./r-type_server --log-level debug
+./r-type_server --mode server --log-level debug
 ```
 
 After the time stamp, the line reads:
@@ -765,7 +795,7 @@ events.dispatch();
 - The generator is a `std::mt19937` started from a seed. The spawner logs it at the `info` level under `WaveSpawner` when it is built (`wave spawning starts from the seed 42`), so the same seed gives the same heights in the same order. `GameFlow` gives each world the seed of the game plus the number of worlds built before it, so one seed replays every game of a session; without `--seed`, the server draws it from `std::random_device`. The spawner also logs each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`).
 
 ```bash
-./r-type_server --seed 42
+./r-type_server --mode server --seed 42
 ```
 
 ## Piloted bodies: `PilotSystem` and `PlayfieldExitSystem`

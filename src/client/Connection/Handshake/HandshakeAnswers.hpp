@@ -4,6 +4,7 @@
 #include <vector>
 #include "ConnectionAccepted.hpp"
 #include "ConnectionChallenge.hpp"
+#include "ConnectionRedirect.hpp"
 #include "ConnectionRefused.hpp"
 #include "HandshakeAnswersParts.hpp"
 #include "MessageOrigin.hpp"
@@ -25,7 +26,11 @@ namespace rtype::client {
  * at once, then twice more (see SessionDeparture), so the server frees the seat
  * it gave; the status is MissingEntitySheet with the first such name and how
  * many others there are, and the names are logged at the warning level. A
- * ConnectionRefused gives the status Refused with its reason.
+ * ConnectionRefused gives the status Refused with its reason. A
+ * ConnectionRedirect, the first of the attempt, aims the session at the port it
+ * names, at the address it came from, and asks again there with no cookie, as
+ * for a server met for the first time; the delay of the attempt does not start
+ * again, and a redirect from the game it led to is ignored.
  */
 class HandshakeAnswers {
  public:
@@ -38,6 +43,10 @@ class HandshakeAnswers {
                   const network::ConnectionAccepted& accepted);
   void onRefused(const network::MessageOrigin& origin,
                  const network::ConnectionRefused& refused);
+
+  /** @brief Follows a redirect: asks again at the port it names, at the
+   * address of the server that sent it, once per attempt. */
+  void onRedirected(const network::ConnectionRedirect& redirect);
 
   /** @brief Opens the session @p accepted gives, keeping its table. */
   void openSession(const network::MessageOrigin& origin,

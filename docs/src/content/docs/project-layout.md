@@ -145,7 +145,7 @@ src/network/
 
 ### Server
 
-`src/server` builds `r-type_server`: who plays where, and how the state reaches them. Every game owns its `World` and its event bus, and the games run one after the other on the simulation thread; the network thread receives and sends; threads only talk through queues.
+`src/server` builds `r-type_server`: who plays where, and how the state reaches them. Every game owns its `World` and its event bus, and the games of one server run one after the other on the simulation thread; the network thread receives and sends; threads only talk through queues. With `--mode supervisor` the same binary runs no game: it starts one `r-type_server` process per game (see [Server](/R-Type/server/#supervisor-and-game-processes)).
 
 ```
 src/server/
@@ -166,6 +166,10 @@ src/server/
 ├── Platform/         what differs between Windows, macOS and Linux, and the stop signals
 ├── LaunchOptions/    port, name, limits, master address
 ├── Results/          the results module: what each game leaves, and the leaderboard requests
+├── Processes/        starting child processes behind an interface (Boost.Process v2), and tying their life to the program that started them
+├── SupervisedGames/  the supervisor's games module: the registry of the game processes, starting and stopping them
+├── SupervisorLobby/  the supervisor's lobby module: challenge, redirect or refuse a player
+├── SupervisorLink/   the link module of a game process: its status to the supervisor, and when to stop
 ├── Master/           the master module: registration and heartbeats, on the MasterLink thread
 ├── AdminConsole/     kick and close a game from the terminal
 └── Storage/          the storage module: Archive/, the thread that owns the file; Database/, the file and its SQL

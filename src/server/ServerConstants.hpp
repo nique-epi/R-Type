@@ -45,6 +45,24 @@ constexpr std::array SERVER_SETTING_NAMES{
 constexpr std::int64_t HIGHEST_SEED = 4294967295;
 
 /**
+ * @brief Launch option followed by the UDP port of the supervisor that started
+ * this server, on the loopback. Given together with LINK_TOKEN_OPTION: the
+ * server is then a game process, which hosts one game and tells its supervisor
+ * how it stands.
+ */
+constexpr std::string_view SUPERVISOR_OPTION = "--supervisor";
+
+/**
+ * @brief Launch option followed by the whole number the supervisor and the game
+ * process share, put in the header of their datagrams so each knows the other.
+ * Never 0.
+ */
+constexpr std::string_view LINK_TOKEN_OPTION = "--link-token";
+
+/** @brief How many games a game process hosts. */
+constexpr std::size_t GAME_PROCESS_GAME_COUNT = 1;
+
+/**
  * @brief Launch option followed by the seed the random draws of the games start
  * from, a whole number from 0 to 4294967295.
  */
@@ -145,11 +163,12 @@ constexpr std::string_view CHANGED_INPUT_DELAY_BREACH =
 
 /**
  * @brief Launch option followed by the program the binary runs:
- * SERVER_MODE_NAME, the default, or MASTER_MODE_NAME. It comes first, before
- * every other option.
+ * SERVER_MODE_NAME, SUPERVISOR_MODE_NAME, the default, or MASTER_MODE_NAME. It
+ * comes first, before every other option.
  */
 constexpr std::string_view MODE_OPTION = "--mode";
 constexpr std::string_view SERVER_MODE_NAME = "server";
+constexpr std::string_view SUPERVISOR_MODE_NAME = "supervisor";
 constexpr std::string_view MASTER_MODE_NAME = "master";
 
 /** @brief How many arguments MODE_OPTION takes, its value included. */

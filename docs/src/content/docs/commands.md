@@ -161,7 +161,7 @@ A missing file is not an error: the defaults apply and the journal says `server.
 A module reads its settings when it starts, never when it installs, because the file is read between the two. A change to the file therefore takes effect at the next launch.
 
 ```bash
-./r-type_server --set state-rate=30 --seed 7
+./r-type_server --mode server --set state-rate=30 --seed 7
 ```
 
 The same two lines in `server.cfg` would be `set state-rate 30` and `set seed 7`.

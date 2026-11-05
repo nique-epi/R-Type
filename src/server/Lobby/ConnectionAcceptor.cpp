@@ -1,5 +1,4 @@
 #include "ConnectionAcceptor.hpp"
-#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <limits>
@@ -23,20 +22,13 @@
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
+#include "RequestReading.hpp"
 #include "SessionDatagram.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
 
 namespace {
-
-/** @returns Whether @p datagram starts with a header of this protocol and
- * another version. */
-bool isOfAnotherVersion(std::span<const std::byte> datagram) {
-  return datagram.size() >= network::PACKET_HEADER_SIZE &&
-         network::DatagramCodec::speaksAnotherVersion(
-             network::DatagramCodec::decodeHeader(datagram));
-}
 
 /**
  * @returns Why a newcomer asking for @p request must be refused: a game is in

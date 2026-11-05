@@ -6,6 +6,7 @@
 constexpr std::string_view MODE = "--mode";
 constexpr std::string_view SERVER_MODE = "server";
 constexpr std::string_view MASTER_MODE = "master";
+constexpr std::string_view SUPERVISOR_MODE = "supervisor";
 
 /** @brief A name that is no mode of the binary. */
 constexpr std::string_view UNKNOWN_MODE = "orchestra";
