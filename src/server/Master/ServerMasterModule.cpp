@@ -8,7 +8,6 @@
 #include "ConfigurationRegistry.hpp"
 #include "EngineException.hpp"
 #include "Games.hpp"
-#include "HeartbeatJob.hpp"
 #include "HeartbeatJobParts.hpp"
 #include "IListeningPort.hpp"
 #include "InstallContext.hpp"

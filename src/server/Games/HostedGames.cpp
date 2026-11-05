@@ -1,5 +1,4 @@
 #include "HostedGames.hpp"
-#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>

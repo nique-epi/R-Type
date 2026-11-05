@@ -12,7 +12,6 @@
 #include "HeartbeatJobParts.hpp"
 #include "HostedGame.hpp"
 #include "MasterMessages.hpp"
-#include "MetricsReport.hpp"
 #include "NetworkException.hpp"
 #include "ServerConstants.hpp"
 #include "ServerMasterConstants.hpp"

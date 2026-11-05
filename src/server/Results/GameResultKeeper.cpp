@@ -8,6 +8,7 @@
 #include "GameResult.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
+#include "GameStateChanged.hpp"
 #include "IResultsArchive.hpp"
 #include "LivesConstants.hpp"
 #include "PlayerRoster.hpp"

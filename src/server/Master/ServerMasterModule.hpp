@@ -6,6 +6,7 @@
 #include "ConfigurationRegistry.hpp"
 #include "Games.hpp"
 #include "HeartbeatJob.hpp"
+#include "HeartbeatJobParts.hpp"
 #include "IListeningPort.hpp"
 #include "IModule.hpp"
 #include "IOptionalDependencies.hpp"
