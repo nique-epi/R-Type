@@ -8,3 +8,4 @@ target_link_libraries(rtype_client_sector_map_interfaces
 )
 
 add_subdirectory(SectorLayout)
+add_subdirectory(RingedPlanet)
