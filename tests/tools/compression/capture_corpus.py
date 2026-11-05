@@ -1,7 +1,7 @@
 """Records the datagrams of a real game, for the zstd dictionary of the server.
 
 Usage: python3 capture_corpus.py <port> <players> <seconds> <output file>
-                                 [<ServerToClientDictionaryConstants.hpp>]
+                                 [<assets/compression/server_to_client.dict>]
 
 Start the real server first, on <port>, for instance:
   ./r-type_server -p 4301 --seed 1 --no-log-file --no-log-stderr
@@ -12,35 +12,26 @@ directions, as records of: seconds (f64), direction (u8, 0 client to server,
 numbers are big-endian.
 
 The server sends the body of its datagrams as a zstd frame (COMPRESSED flag).
-The script decodes them with the dictionary of <ServerToClientDictionaryConstants.hpp>,
+The script decodes them with the dictionary of <assets/compression/server_to_client.dict>,
 given or found in the repository, through the zstd command line (which must be
 on the PATH), and records the plain datagram, so the captures train a new
 dictionary on the bytes of the messages and not on their code. It also prints
 how many bytes the server saved on the wire. Without a dictionary (before the
 first one exists) it records the datagrams as they arrive.
 """
-import asyncio, atexit, os, random, re, struct, subprocess, sys, tempfile, time
+import asyncio, os, random, struct, subprocess, sys, time
 
 PROTOCOL_VERSION = 4
 COMPRESSED_FLAG = 0x04
 HEADER_SIZE = 22
 FLAGS_OFFSET = 5
 DEFAULT_DICTIONARY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..",
-                                  "src", "network", "Compression", "Zstd",
-                                  "ServerToClientDictionaryConstants.hpp")
+                                  "assets", "compression", "server_to_client.dict")
 
 
 def write_dictionary_file(path):
-    """Writes the dictionary of the header to a temporary file; None when there is none yet."""
-    if not os.path.exists(path):
-        return None
-    text = open(path, encoding="utf-8").read()
-    numbers = re.findall(r"0x[0-9A-Fa-f]{2}", text.split("SERVER_TO_CLIENT_DICTIONARY{", 1)[1])
-    handle, name = tempfile.mkstemp(suffix=".dict")
-    with os.fdopen(handle, "wb") as dictionary:
-        dictionary.write(bytes(int(number, 16) for number in numbers))
-    atexit.register(os.remove, name)
-    return name
+    """The dictionary file itself; None when there is none yet."""
+    return path if os.path.exists(path) else None
 
 
 def plain_form(data, dictionary_file):

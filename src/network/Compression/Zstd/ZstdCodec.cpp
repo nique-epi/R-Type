@@ -6,7 +6,7 @@
 #include <span>
 #include <vector>
 #include "NetworkException.hpp"
-#include "ServerToClientDictionaryConstants.hpp"
+#include "ServerToClientDictionary.hpp"
 #include "ZstdCodecConstants.hpp"
 
 namespace rtype::network {
@@ -30,8 +30,8 @@ void requireSuccess(std::size_t result) {
 
 const ZSTD_CDict& compressionDictionary() {
   static const CompressionDictionary dictionary{
-      ZSTD_createCDict(SERVER_TO_CLIENT_DICTIONARY.data(),
-                       SERVER_TO_CLIENT_DICTIONARY.size(), COMPRESSION_LEVEL),
+      ZSTD_createCDict(serverToClientDictionary().data(),
+                       serverToClientDictionary().size(), COMPRESSION_LEVEL),
       &ZSTD_freeCDict};
   if (!dictionary) {
     throw CompressionUnavailableException();
@@ -41,8 +41,8 @@ const ZSTD_CDict& compressionDictionary() {
 
 const ZSTD_DDict& decompressionDictionary() {
   static const DecompressionDictionary dictionary{
-      ZSTD_createDDict(SERVER_TO_CLIENT_DICTIONARY.data(),
-                       SERVER_TO_CLIENT_DICTIONARY.size()),
+      ZSTD_createDDict(serverToClientDictionary().data(),
+                       serverToClientDictionary().size()),
       &ZSTD_freeDDict};
   if (!dictionary) {
     throw CompressionUnavailableException();

@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 #include <algorithm>
-#include "ServerToClientDictionaryConstants.hpp"
+#include "ServerToClientDictionary.hpp"
 #include "ZstdDictionaryTestConstants.hpp"
 
-using rtype::network::SERVER_TO_CLIENT_DICTIONARY;
+using rtype::network::serverToClientDictionary;
 using rtype::network::testing::DICTIONARY_MAGIC_NUMBER;
 
 /**
@@ -15,5 +15,5 @@ using rtype::network::testing::DICTIONARY_MAGIC_NUMBER;
 TEST(ZstdDictionary, StartsWithTheMagicNumberOfAZstdDictionary) {
   EXPECT_TRUE(std::equal(DICTIONARY_MAGIC_NUMBER.begin(),
                          DICTIONARY_MAGIC_NUMBER.end(),
-                         SERVER_TO_CLIENT_DICTIONARY.begin()));
+                         serverToClientDictionary().begin()));
 }
