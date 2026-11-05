@@ -26,3 +26,7 @@ See `.claude/rules/fix/architecture/fix-architecture-a-route-of-the-master-is-re
 
 - ❌ `POST /api/server-keys` to get the key of a server.
 - ✅ `POST /api/servers` creates the server and answers its key once; the key is replaced later as `PUT /api/servers/me/key`.
+
+## Update (5 November 2026) — the history of the statuses of a server
+
+The plan of RTY-171 listed the statuses a server took at `GET /api/servers/{id}/status-changes`, answering `{"statusChanges":[{"changedAt":…,"status":…}]}`, and checked it against points 1 to 6 as a plural noun. A review answered "not RESTful": "changes" reads as the action of changing, and the changes of the status, an attribute of the server that point 2 names, became a resource of their own. The user chose `GET /api/servers/{id}/statuses`, each item the status and the second it began (`since`); the table `status_changes` keeps its name.
