@@ -7,6 +7,7 @@
 #include <stop_token>
 #include <thread>
 #include <utility>
+#include "CompressingDatagramSocket.hpp"
 #include "CountingDatagramSocket.hpp"
 #include "DatagramQueues.hpp"
 #include "DatagramSocketOpening.hpp"
@@ -69,7 +70,9 @@ network::Endpoint ServerApplication::open() {
     throw ServerAlreadyOpenException();
   }
   socket_ = std::make_unique<network::CountingDatagramSocket>(
-      network::openDatagramSocket(network_, listeningEndpoint_, conditions_),
+      std::make_unique<network::CompressingDatagramSocket>(
+          network::openDatagramSocket(network_, listeningEndpoint_,
+                                      conditions_)),
       traffic_);
   relay_.emplace(*socket_, incoming_, outgoing_);
   return socket_->localEndpoint();

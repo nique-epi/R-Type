@@ -115,6 +115,15 @@ class MalformedDatagramException : public NetworkException {
 };
 
 /**
+ * @brief The compression library could not allocate what it needs to code or
+ * to decode the body of a datagram.
+ */
+class CompressionUnavailableException : public NetworkException {
+ public:
+  CompressionUnavailableException();
+};
+
+/**
  * @brief A bool on the wire holds a byte other than 0 or 1.
  */
 class InvalidBoolException : public MalformedMessageException {

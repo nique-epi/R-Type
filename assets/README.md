@@ -1,6 +1,6 @@
 # Assets
 
-Every file the client reads at run time.
+Every file the client reads at run time, and the source of the dictionary of the protocol.
 
 | Folder | Holds |
 |---|---|
@@ -25,6 +25,10 @@ When an id breaks the rule, or its file is missing or cannot be read, the client
 ## How the programs find this folder
 
 The client and the server look for `assets/` next to their executable, then in the folder above it, where the Visual Studio generator writes `Release/` and `Debug/`. The folder they were launched from does not matter. The server reads only `waves/waves.toml` from it.
+
+## Not read at run time
+
+`compression/server_to_client.dict` is the zstd dictionary of the protocol. CMake compiles it into the client and the server, and the packages do not hold it.
 
 ## Where the files come from
 
