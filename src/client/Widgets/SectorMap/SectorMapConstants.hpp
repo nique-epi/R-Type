@@ -68,6 +68,18 @@ inline constexpr int ANGLE_HASH_BITS = 24;
 inline constexpr int ANGLE_HASH_SHIFT = 64 - ANGLE_HASH_BITS;
 inline constexpr double ANGLE_SPAN_PER_PING = 1.75;
 
+/**
+ * @brief The name of a star: LABEL_GAP pixels right of the star, or
+ * LABEL_GAP + 1 left of it, from LABEL_RISE pixels above it, in a box
+ * LABEL_HEIGHT tall and LABEL_PADDING wider than the name, kept LABEL_MARGIN
+ * inside the map.
+ */
+inline constexpr int LABEL_GAP = 6;
+inline constexpr int LABEL_RISE = 5;
+inline constexpr int LABEL_HEIGHT = 9;
+inline constexpr int LABEL_PADDING = 2;
+inline constexpr int LABEL_MARGIN = 2;
+
 /** @brief The rings of equal ping drawn on the map, in milliseconds, and the
  * step of their dashed line, in degrees around the planet. */
 inline constexpr std::array<int, 4> PING_RINGS_MILLISECONDS{25, 75, 150, 225};
