@@ -61,9 +61,11 @@ void ignoreInput(const ConnectedPlayer& player,
 recorderOf(std::vector<ShownInput>& shown);
 
 /** @returns The datagrams sendHeartbeats() sends the players of @p roster at
- * @p now, in order. */
+ * @p now, in order, with @p tick as the tick of the game: none by default, as
+ * while no game runs. */
 [[nodiscard]] std::vector<network::OutgoingDatagram> heartbeatsSentAt(
-    PlayerRoster& roster, engine::Duration now);
+    PlayerRoster& roster, engine::Duration now,
+    std::optional<std::uint32_t> tick = std::nullopt);
 
 /**
  * @brief Hands @p roster a Heartbeat from @p sender that echoes the Heartbeat

@@ -90,20 +90,21 @@ constexpr std::uint16_t SOME_SEQUENCE = 0x0A0B;
 
 /**
  * @brief Values for the header fields, all different, so a round trip shows
- * each one at its place. SOME_FLAGS sets bits 2 and 3, which version 4 does
- * not know.
+ * each one at its place. SOME_FLAGS sets bits 2 and 3: bit 2 is the flag only
+ * the transport sees and bit 3 is unknown, so no header above the transport
+ * holds either.
  */
-constexpr std::uint8_t SOME_OTHER_VERSION = 5;
+constexpr std::uint8_t SOME_OTHER_VERSION = 6;
 constexpr std::uint32_t SOME_OTHER_PROTOCOL_ID = 0x52545951;
 constexpr std::uint8_t SOME_FLAGS = 0x0C;
 constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
 constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;
 
 /**
- * @brief The 22 bytes of a default header: RTYP, version 4, then zeros.
+ * @brief The 22 bytes of a default header: RTYP, version 5, then zeros.
  */
 constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
-    {0x52, 0x54, 0x59, 0x50, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    {0x52, 0x54, 0x59, 0x50, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
 /**
@@ -215,6 +216,7 @@ constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
 constexpr std::uint32_t HEARTBEAT_SENT_AT = 7;
 constexpr std::uint32_t ECHOED_SENT_AT = 5;
 constexpr std::uint32_t ECHO_HELD_FOR = 3000;
+constexpr std::uint32_t HEARTBEAT_TICK = 600;
 
 /**
  * @brief The round trips of two players in a test, in microseconds, with

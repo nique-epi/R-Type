@@ -16,6 +16,8 @@
 using rtype::network::CreatedServer;
 using rtype::network::createdServerFromText;
 using rtype::network::createdServerText;
+using rtype::network::gameListingFromText;
+using rtype::network::gameListingText;
 using rtype::network::heartbeatFromText;
 using rtype::network::heartbeatText;
 using rtype::network::isWellFormedServerKey;
@@ -31,18 +33,27 @@ using rtype::network::testing::AVERAGE_PING_POINTER;
 using rtype::network::testing::CONFLICT_DETAIL;
 using rtype::network::testing::CONFLICT_PROBLEM;
 using rtype::network::testing::createdServerRefusal;
+using rtype::network::testing::EMPTY_GAME_NAME;
 using rtype::network::testing::FIFTH_PILOT;
 using rtype::network::testing::FIRST_GAME_FIRST_PLAYER_POINTER;
+using rtype::network::testing::FIRST_GAME_NAME_POINTER;
+using rtype::network::testing::FIRST_GAME_PLAYER_COUNT_POINTER;
 using rtype::network::testing::FIRST_GAME_PLAYERS_POINTER;
 using rtype::network::testing::FIRST_GAME_STATE_POINTER;
 using rtype::network::testing::FIRST_PILOT;
 using rtype::network::testing::FIVE_PLAYERS;
 using rtype::network::testing::FOURTH_PILOT;
+using rtype::network::testing::FULL_STATE;
+using rtype::network::testing::GAME_NAME_OF_17_BYTES;
+using rtype::network::testing::gameListingRefusal;
+using rtype::network::testing::gameListingTextOfGames;
+using rtype::network::testing::gameListingTextWith;
 using rtype::network::testing::GAMES_ABOVE_THE_MOST;
 using rtype::network::testing::GAMES_POINTER;
 using rtype::network::testing::heartbeatRefusal;
 using rtype::network::testing::heartbeatTextOfGames;
 using rtype::network::testing::heartbeatTextWith;
+using rtype::network::testing::heartbeatTextWithout;
 using rtype::network::testing::HOST_NAME_ADDRESS;
 using rtype::network::testing::KEY_POINTER;
 using rtype::network::testing::KEY_WITHOUT_PREFIX;
@@ -57,13 +68,16 @@ using rtype::network::testing::NAME_WITH_LINE_FEED;
 using rtype::network::testing::NEGATIVE_MEASURE;
 using rtype::network::testing::NO_GAME;
 using rtype::network::testing::NOT_JSON;
+using rtype::network::testing::PARIS_GAME_LISTING_TEXT;
 using rtype::network::testing::PARIS_ID;
 using rtype::network::testing::PARIS_KEY;
 using rtype::network::testing::PARIS_NAME;
+using rtype::network::testing::parisGameListing;
 using rtype::network::testing::parisHeartbeat;
 using rtype::network::testing::parisRegistration;
 using rtype::network::testing::PAUSED_STATE;
 using rtype::network::testing::PLAIN_TEXT_ERROR;
+using rtype::network::testing::PLAYING_STATE;
 using rtype::network::testing::PORT_ABOVE_THE_RANGE;
 using rtype::network::testing::PORT_AS_TEXT;
 using rtype::network::testing::PORT_BELOW_THE_RANGE;
@@ -270,6 +284,49 @@ TEST(MasterMessageText, RefusesAStateNoGameHas) {
 }
 
 /**
+ * Given a heartbeat whose first game has a name of 17 bytes, the most being 16
+ * When it is read
+ * Then the refusal names the name of that game
+ */
+TEST(MasterMessageText, RefusesAGameNameThatIsTooLong) {
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWith(FIRST_GAME_NAME_POINTER,
+                                                 GAME_NAME_OF_17_BYTES)),
+              HasSubstr(quoted(FIRST_GAME_NAME_POINTER)));
+}
+
+/**
+ * Given a heartbeat whose first game has an empty name
+ * When it is read
+ * Then the refusal names the name of that game
+ */
+TEST(MasterMessageText, RefusesAnEmptyGameName) {
+  EXPECT_THAT(heartbeatRefusal(
+                  heartbeatTextWith(FIRST_GAME_NAME_POINTER, EMPTY_GAME_NAME)),
+              HasSubstr(quoted(FIRST_GAME_NAME_POINTER)));
+}
+
+/**
+ * Given a heartbeat whose first game has no name
+ * When it is read
+ * Then the refusal names the name of that game
+ */
+TEST(MasterMessageText, RefusesAGameWithoutAName) {
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWithout(FIRST_GAME_NAME_POINTER)),
+              HasSubstr(quoted(FIRST_GAME_NAME_POINTER)));
+}
+
+/**
+ * Given a heartbeat whose first game is full
+ * When it is read
+ * Then it is accepted, since full is a state a game has
+ */
+TEST(MasterMessageText, ReadsAFullGame) {
+  EXPECT_THAT(
+      heartbeatRefusal(heartbeatTextWith(FIRST_GAME_STATE_POINTER, FULL_STATE)),
+      IsEmpty());
+}
+
+/**
  * Given a heartbeat whose first player has a nickname of 17 bytes
  * When it is read
  * Then the refusal names that player
@@ -388,4 +445,70 @@ TEST(MasterMessageText, ReadsTheDetailOfAProblemDocument) {
  */
 TEST(MasterMessageText, AnErrorThatIsNoJsonHasNoDetail) {
   EXPECT_EQ(problemDetailOf(PLAIN_TEXT_ERROR), std::string{});
+}
+
+/**
+ * Given the games of "Paris 1"
+ * When their listing is written
+ * Then it is the JSON the master documents, with no nickname in it
+ */
+TEST(MasterMessageText, WritesAGameListingAsTheMasterDocuments) {
+  EXPECT_EQ(nlohmann::json::parse(gameListingText(parisGameListing())),
+            nlohmann::json::parse(PARIS_GAME_LISTING_TEXT));
+}
+
+/**
+ * Given the listing the master writes for the games of "Paris 1"
+ * When it is read back
+ * Then it holds the same games
+ */
+TEST(MasterMessageText, ReadsBackTheGameListingItWrote) {
+  EXPECT_EQ(gameListingFromText(PARIS_GAME_LISTING_TEXT), parisGameListing());
+}
+
+/**
+ * Given a listing whose first game is in the state `playing`, which only a
+ * heartbeat knows
+ * When it is read
+ * Then the refusal names that state
+ */
+TEST(MasterMessageText, RefusesAListedStateOnlyAHeartbeatHas) {
+  EXPECT_THAT(gameListingRefusal(
+                  gameListingTextWith(FIRST_GAME_STATE_POINTER, PLAYING_STATE)),
+              HasSubstr(quoted(FIRST_GAME_STATE_POINTER)));
+}
+
+/**
+ * Given a listing whose first game holds five players, the most being four
+ * When it is read
+ * Then the refusal names its count of players
+ */
+TEST(MasterMessageText, RefusesMorePlayersThanAGameTakesInAListing) {
+  EXPECT_THAT(gameListingRefusal(gameListingTextWith(
+                  FIRST_GAME_PLAYER_COUNT_POINTER, FIVE_PLAYERS)),
+              HasSubstr(quoted(FIRST_GAME_PLAYER_COUNT_POINTER)));
+}
+
+/**
+ * Given a listing whose second game takes the number of the first
+ * When it is read
+ * Then the refusal names the number of the second game
+ */
+TEST(MasterMessageText, RefusesTwoListedGamesOfOneNumber) {
+  EXPECT_THAT(gameListingRefusal(gameListingTextWith(SECOND_GAME_NUMBER_POINTER,
+                                                     WAITING_GAME_NUMBER)),
+              HasSubstr(quoted(SECOND_GAME_NUMBER_POINTER)));
+}
+
+/**
+ * Given a listing of 64 games, the most a server may host, then one of 65
+ * When each is read
+ * Then the first is accepted and the second refusal names the games
+ */
+TEST(MasterMessageText, RefusesMoreListedGamesThanAServerMayHost) {
+  EXPECT_THAT(
+      gameListingRefusal(gameListingTextOfGames(GAMES_ABOVE_THE_MOST - 1)),
+      IsEmpty());
+  EXPECT_THAT(gameListingRefusal(gameListingTextOfGames(GAMES_ABOVE_THE_MOST)),
+              HasSubstr(quoted(GAMES_POINTER)));
 }

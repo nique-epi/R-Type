@@ -19,10 +19,12 @@ This page tells you where to look when you need to change something. It describe
 | Network conditions applied by the system: netem on Linux, dummynet on macOS | Available, never shipped | `tests/tools/network-conditions/` |
 | Serialization | Available | `src/network/Serialization/` |
 | Protocol messages, datagram header, dispatch by type | Available | `src/network/Protocol/` |
+| Compression of the server's datagrams, zstd with a fixed dictionary | Available | `src/network/Compression/`: `Zstd/` and `Sockets/` |
 | Connection cookies | Available | `src/network/Handshake/Cookies/` |
 | Rate limit per sender, with temporary bans | Available | `src/network/Handshake/RateLimit/` |
 | Traffic counters: datagrams and bytes by peer and by message type, journal and CSV file | Available | `src/network/Statistics/`: `Counting/` and `Recording/` |
 | Round trip and jitter of a session, measured from the heartbeats | Available | `src/network/Statistics/RoundTrip/` |
+| Tick of the server in its heartbeats, to place it on the clock of the client | Available | `src/network/Protocol/Messages/Heartbeat/`, `src/engine/Time/ServerClock/` |
 | Sessions: admission, session token, sequence, heartbeats, timeouts | Available, written in the server and the client | `src/server/Lobby/`, `src/server/Sessions/`, `src/client/Connection/` |
 | Replication: entities to messages, and back | Available, written in the server and the client | `src/server/Replication/`, `src/client/Replication/` |
 | Guaranteed messages: acknowledgements, sending again | Available | `src/network/Reliability/` |
@@ -250,11 +252,13 @@ These numbers say nothing about a disk, GCC, MSVC, Linux or Windows. A row weigh
 
 ## Round trip and jitter: `RoundTripMeter`
 
-Both programs measure the round trip of each session with the classes of `rtype_network_statistics_round_trip` (`src/network/Statistics/RoundTrip/`), which `rtype_network_statistics` links. `RoundTripMeter` builds each `Heartbeat` to send with `nextHeartbeat(now)` and reads each one received with `receive(heartbeat, receivedAt)`; the fields and the rule of the echo are in [Protocol](/R-Type/protocol/#round-trip). Every time it takes is the time since the epoch of `std::chrono::steady_clock`, the clock `engine::SystemClock` reads: `DatagramRelay` and the server's `DatagramSorter` stamp each datagram on the network thread (`IncomingDatagram::receivedAt`), and the readers carry that time into `MessageOrigin::receivedAt`, so the wait for the next frame or tick is left out of the round trip.
+Both programs measure the round trip of each session with the classes of `rtype_network_statistics_round_trip` (`src/network/Statistics/RoundTrip/`), which `rtype_network_statistics` links. `RoundTripMeter` builds each `Heartbeat` to send with `nextHeartbeat(now)` and reads each one received with `receive(heartbeat, receivedAt)`, which gives back the round trip that Heartbeat closed, before it is smoothed, or nothing when it closed none; the fields and the rule of the echo are in [Protocol](/R-Type/protocol/#round-trip). Every time it takes is the time since the epoch of `std::chrono::steady_clock`, the clock `engine::SystemClock` reads: `DatagramRelay` and the server's `DatagramSorter` stamp each datagram on the network thread (`IncomingDatagram::receivedAt`), and the readers carry that time into `MessageOrigin::receivedAt`, so the wait for the next frame or tick is left out of the round trip.
 
 `RoundTripEstimator` turns the round trips into `RoundTripFigures`: the smoothed round trip, each round trip moving it by 1/`ROUND_TRIP_SMOOTHING_DIVISOR` (8) of its gap to it, as RFC 6298 smooths, and the jitter, the mean gap between two round trips in a row over the `JITTER_WINDOW_SIZE` (16) newest. `figures()` is empty before the first round trip, and the jitter is 0 after a single one. An echo that gives no round trip from 0 to `LONGEST_ROUND_TRIP` (20 s, `SESSION_SILENCE_LIMIT`) is ignored. `RoundTripWire` turns the figures to and from what `RoundTrips` carries, in whole microseconds. The constants are in `RoundTripConstants.hpp`, and they are **provisional**, like the delays of the protocol: code must read them.
 
 The server keeps one meter per player (see [Server](/R-Type/server/#silent-players-heartbeats-and-timeouts)), and the client keeps its own in `RoundTripWatch` (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)).
+
+The `Heartbeat` of the server also carries its tick while a game runs: `sendHeartbeats()` (`src/server/Sessions/Tracking/`) takes it in a `HeartbeatMoment` with the time, and `GameInstance` tells it in the output stage, after the simulation stage that counts the tick, only while the game is in progress. What the client does with it is in [Engine](/R-Type/engine/#game-loop-time) (`ServerClock`) and [Protocol](/R-Type/protocol/#clock-of-the-server).
 
 ## Serialization: `ByteWriter` and `ByteReader`
 
@@ -291,13 +295,13 @@ const auto decodedName = reader.readString();
 
 `DatagramCodec` (`src/network/Protocol/DatagramCodec/`) turns a header and one or more messages into the bytes of a datagram, and a received datagram back into its header and its messages; the layout is in [Protocol](/R-Type/protocol/#datagram).
 
-- `encode(header, message)` writes the `PACKET_HEADER_SIZE` (22) bytes of the `PacketHeader`, the type of the message, the size of its payload on two bytes, then the payload. A payload over `MESSAGE_PAYLOAD_LIMIT` (1175 bytes) throws `DatagramTooLargeException`. A default `PacketHeader` is version 4 without a session, a flag or an acknowledgement; the sender sets `sessionToken` and `sequence`, and `ReceivedSequences::acknowledgeIn()` the acknowledgement.
+- `encode(header, message)` writes the `PACKET_HEADER_SIZE` (22) bytes of the `PacketHeader`, the type of the message, the size of its payload on two bytes, then the payload. A payload over `MESSAGE_PAYLOAD_LIMIT` (1175 bytes) throws `DatagramTooLargeException`. A default `PacketHeader` is version 5 without a session, a flag or an acknowledgement; the sender sets `sessionToken` and `sequence`, and `ReceivedSequences::acknowledgeIn()` the acknowledgement.
 - `encode(header, messages)` writes the header, then each `EncodedMessage` of the span in order. An empty span throws `EmptyDatagramException`, and more than `MAX_DATAGRAM_SIZE` (1200) bytes in all throws `DatagramTooLargeException`; nothing is encoded then.
 - `decodeHeader(datagram)` reads the header without judging it, so a datagram of another version still gives its version. Fewer than 22 bytes throws `MalformedDatagramException`.
 - `forEachMessage(datagram, onMessage)` hands each message that follows the header to a function, and throws and allocates nothing. It returns whether the sizes add up exactly to the end of the datagram; when they do not, the function may already have seen the messages before the fault.
 - `splitMessages(datagram)` returns the `MessageFrame`s that follow the header: the type byte as it arrived, and a view of the payload into the datagram. Either the sizes add up exactly to the end of the datagram, or it throws `MalformedDatagramException` and returns nothing: a datagram without a message, with a size running past its end, or with bytes after its last message is refused whole. Calling it on a temporary buffer does not compile.
 
-Reading the header and splitting the messages are two calls because a receiver checks the version before it trusts the rest. `speaksThisProtocol(header)` is that check: `protocolId` and `version` are those of this code, and `flags` holds no bit outside `KNOWN_FLAGS` (`ACKNOWLEDGES_FLAG` and `GUARANTEED_FLAG`). The server's `ConnectionAcceptor` and `GameInstance` and the client's `SessionInbound` call it before splitting. Of the checks of [Receiving a datagram](/R-Type/protocol/#receiving-a-datagram) that follow, the server's `DatagramSorter` checks the session token of every datagram from the address of an admitted player (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)) and its `DatagramReader` the sequence of every datagram of a player (see [Server](/R-Type/server/#order-and-loss-arrivalledger)); the client's `SessionInbound`, once accepted, checks the session token and drops a datagram whose `sequence` is not newer than the newest one it accepted (`SessionAcknowledgements`, see [Guaranteed messages](#guaranteed-messages-srcnetworkreliability)).
+Reading the header and splitting the messages are two calls because a receiver checks the version before it trusts the rest. `speaksThisProtocol(header)` is that check: `protocolId` and `version` are those of this code, and `flags` holds no bit outside `KNOWN_FLAGS` (`ACKNOWLEDGES_FLAG` and `GUARANTEED_FLAG`; `COMPRESSED_FLAG` never reaches it, see [Compression](#compression-zstdcodec-compressingdatagramsocket)). The server's `ConnectionAcceptor` and `GameInstance` and the client's `SessionInbound` call it before splitting. Of the checks of [Receiving a datagram](/R-Type/protocol/#receiving-a-datagram) that follow, the server's `DatagramSorter` checks the session token of every datagram from the address of an admitted player (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)) and its `DatagramReader` the sequence of every datagram of a player (see [Server](/R-Type/server/#order-and-loss-arrivalledger)); the client's `SessionInbound`, once accepted, checks the session token and drops a datagram whose `sequence` is not newer than the newest one it accepted (`SessionAcknowledgements`, see [Guaranteed messages](#guaranteed-messages-srcnetworkreliability)).
 
 ## Messages: `src/network/Protocol/Messages/`
 
@@ -343,6 +347,15 @@ dispatcher.dispatch(
 ```
 
 `lobby` stands for the code that will handle the waiting room; `received` is an `IncomingDatagram`. `decodeHeader` and `splitMessages` throw `MalformedDatagramException` for bytes that are not a header followed by whole messages: the code that receives must catch it and drop the datagram, or one forged datagram would stop the server. `messageTypes(datagram)` runs the checks of `splitMessages` without throwing or allocating, and returns the set of message types the datagram holds, or nothing: the server sorts every datagram it receives with it, since throwing and catching an exception costs about 4 µs, a hundred times the cost of sorting a datagram.
+
+## Compression: `ZstdCodec`, `CompressingDatagramSocket`
+
+The server sends the body of its datagrams as a zstd frame when that is shorter; the rules on the wire are in [Protocol](/R-Type/protocol/#compression). The code is in `src/network/Compression/`.
+
+- `compressBody(body)` and `decompressBody(coded, maximumSize)` (`Zstd/ZstdCodec.hpp`) code one body as one frame with the dictionary `serverToClientDictionary()`, at `COMPRESSION_LEVEL` (1), keeping one zstd context per thread, so any thread can call them. `decompressBody` writes into a buffer of `maximumSize` bytes and returns `std::nullopt` for a frame that is cut, corrupt, followed by other bytes or too large; it never allocates from a value of the frame. A failure of zstd to allocate throws `CompressionUnavailableException`.
+- `compressedForm`, `isCompressed` and `plainForm` (`Sockets/DatagramCompression.hpp`) apply the codec to a whole datagram: the header stays in clear with `COMPRESSED_FLAG` raised or cleared. `compressedForm` leaves a datagram as it is when it has no body, carries the token 0 or does not get shorter.
+- `CompressingDatagramSocket` wraps an `IDatagramSocket` in the server: it compresses on `send` and drops what it receives with the flag raised. `DecompressingDatagramSocket` wraps it in the client: it decodes on receive and drops what it cannot decode. `ServerApplication` and `NetworkThread` put them between the counting socket and the UDP socket, so the counters see the plain datagrams.
+- The dictionary is the file `assets/compression/server_to_client.dict`, which CMake compiles into both programs (`serverToClientDictionary()`), so neither reads it at run time and a client and a server never hold two versions. `tests/tools/compression/train_dictionary.py` makes it from captures of real games (`capture_corpus.py`); it is never edited by hand. Changing it changes the protocol, so `PROTOCOL_VERSION` changes with it.
 
 ## Guaranteed messages: `src/network/Reliability/`
 
@@ -477,6 +490,7 @@ Every run held the budget of a tick: the 95th percentile stayed under 0.8 ms, un
 
 | You want to… | Look at |
 |---|---|
+| Retrain the dictionary, or change the level of compression | `tests/tools/compression/`, `COMPRESSION_LEVEL` in `src/network/Compression/Zstd/ZstdCodecConstants.hpp`, then `PROTOCOL_VERSION` |
 | Change the largest datagram | `MAX_DATAGRAM_SIZE` in `src/network/NetworkConstants.hpp`, and the Transport section of [Protocol](/R-Type/protocol/#transport) |
 | Change the port the server listens on by default | `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp` |
 | Change which ports or addresses a program accepts at launch | `portFromText()` and `ipv4AddressFromText()` in `src/network/Transport/EndpointText.cpp`, `LOWEST_PORT` in `NetworkConstants.hpp` |

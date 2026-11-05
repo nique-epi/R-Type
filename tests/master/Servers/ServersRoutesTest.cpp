@@ -5,24 +5,32 @@
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <string>
+#include <vector>
+#include "HostedGameState.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterMessageTextFixtures.hpp"
 #include "MasterMessageTextTestConstants.hpp"
 #include "MasterTestConstants.hpp"
 #include "RouteCall.hpp"
+#include "ServerHeartbeat.hpp"
 #include "ServersRoutesFixture.hpp"
 #include "ServersRoutesTestConstants.hpp"
 
 using rtype::network::heartbeatText;
+using rtype::network::HostedGameState;
 using rtype::network::isWellFormedServerKey;
 using rtype::network::registrationText;
 using rtype::network::testing::ADDRESS_POINTER;
+using rtype::network::testing::FIRST_PILOT;
+using rtype::network::testing::FOURTH_PILOT;
 using rtype::network::testing::parisHeartbeat;
 using rtype::network::testing::parisRegistration;
 using rtype::network::testing::PORT_AS_TEXT;
 using rtype::network::testing::quoted;
 using rtype::network::testing::registrationTextWith;
 using rtype::network::testing::registrationTextWithout;
+using rtype::network::testing::SECOND_PILOT;
+using rtype::network::testing::THIRD_PILOT;
 using rtype::network::testing::UDP_PORT_POINTER;
 
 /**
@@ -222,4 +230,155 @@ TEST_F(ServersRoutesFixture, AHeartbeatGetsTheOrdersWaiting) {
   EXPECT_EQ(answer->status, EXPECTED_OK);
   EXPECT_EQ(nlohmann::json::parse(answer->body).at(COMMANDS_MEMBER_NAME),
             nlohmann::json::array());
+}
+
+/**
+ * Given a registered server that sent the heartbeat of "Paris 1"
+ * When anyone reads its games, with no key
+ * Then it gets 200 and the games of that heartbeat, with their names, states
+ * and numbers of players
+ */
+TEST_F(ServersRoutesFixture, TheGamesOfTheLastHeartbeatAreListedToAnyone) {
+  ASSERT_TRUE(registerParis());
+  ASSERT_TRUE(sendHeartbeat(parisHeartbeat()));
+
+  const httplib::Result answer = readGames(std::to_string(createdId()));
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_OK);
+  EXPECT_EQ(nlohmann::json::parse(answer->body),
+            nlohmann::json::parse(PARIS_GAMES_BODY));
+}
+
+/**
+ * Given a registered server that sent the heartbeat of "Paris 1", whose games
+ * hold pilots
+ * When its games are read
+ * Then no nickname is in the answer
+ */
+TEST_F(ServersRoutesFixture, TheListOfGamesNamesNoPlayer) {
+  ASSERT_TRUE(registerParis());
+  ASSERT_TRUE(sendHeartbeat(parisHeartbeat()));
+
+  const httplib::Result answer = readGames(std::to_string(createdId()));
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->body.find(FIRST_PILOT), std::string::npos);
+  EXPECT_EQ(answer->body.find(SECOND_PILOT), std::string::npos);
+}
+
+/**
+ * Given a registered server whose first game is full and whose second is over
+ * When its games are read
+ * Then the first is listed as full and the second as in game
+ */
+TEST_F(ServersRoutesFixture, AFullGameIsFullAndAFinishedGameIsInGame) {
+  ASSERT_TRUE(registerParis());
+  rtype::network::ServerHeartbeat heartbeat = parisHeartbeat();
+  heartbeat.games.front().state = HostedGameState::Full;
+  heartbeat.games.front().players = {
+      std::string{FIRST_PILOT}, std::string{SECOND_PILOT},
+      std::string{THIRD_PILOT}, std::string{FOURTH_PILOT}};
+  heartbeat.games.back().state = HostedGameState::Finished;
+  ASSERT_TRUE(sendHeartbeat(heartbeat));
+
+  const httplib::Result answer = readGames(std::to_string(createdId()));
+
+  ASSERT_TRUE(answer);
+  const nlohmann::json games =
+      nlohmann::json::parse(answer->body).at(GAMES_MEMBER_NAME);
+  EXPECT_EQ(games.at(0).at(STATE_MEMBER_NAME).get<std::string>(),
+            std::string{FULL_STATE_NAME});
+  EXPECT_EQ(games.at(1).at(STATE_MEMBER_NAME).get<std::string>(),
+            std::string{IN_GAME_STATE_NAME});
+}
+
+/**
+ * Given a registered server whose first game is starting
+ * When its games are read
+ * Then that game is listed as in game
+ */
+TEST_F(ServersRoutesFixture, AStartingGameIsInGame) {
+  ASSERT_TRUE(registerParis());
+  rtype::network::ServerHeartbeat heartbeat = parisHeartbeat();
+  heartbeat.games.front().state = HostedGameState::Starting;
+  ASSERT_TRUE(sendHeartbeat(heartbeat));
+
+  const httplib::Result answer = readGames(std::to_string(createdId()));
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(nlohmann::json::parse(answer->body)
+                .at(GAMES_MEMBER_NAME)
+                .at(0)
+                .at(STATE_MEMBER_NAME)
+                .get<std::string>(),
+            std::string{IN_GAME_STATE_NAME});
+}
+
+/**
+ * Given a registered server that sent no heartbeat yet
+ * When its games are read
+ * Then it gets 200 and no game
+ */
+TEST_F(ServersRoutesFixture, AServerThatSentNoHeartbeatListsNoGame) {
+  ASSERT_TRUE(registerParis());
+
+  const httplib::Result answer = readGames(std::to_string(createdId()));
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_OK);
+  EXPECT_EQ(nlohmann::json::parse(answer->body),
+            nlohmann::json::parse(NO_GAMES_BODY));
+}
+
+/**
+ * Given a server whose heartbeat listed two games
+ * When its next heartbeat lists one
+ * Then its games are the one of the next heartbeat
+ */
+TEST_F(ServersRoutesFixture, TheNextHeartbeatReplacesTheGames) {
+  ASSERT_TRUE(registerParis());
+  ASSERT_TRUE(sendHeartbeat(parisHeartbeat()));
+  rtype::network::ServerHeartbeat oneGame = parisHeartbeat();
+  oneGame.games.pop_back();
+  ASSERT_TRUE(sendHeartbeat(oneGame));
+
+  const httplib::Result answer = readGames(std::to_string(createdId()));
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(nlohmann::json::parse(answer->body).at(GAMES_MEMBER_NAME).size(),
+            1U);
+}
+
+/**
+ * Given a server that sent a heartbeat
+ * When it registers again, as it does when it restarts
+ * Then it lists no game
+ */
+TEST_F(ServersRoutesFixture, ARegistrationEmptiesTheListOfGames) {
+  ASSERT_TRUE(registerParis());
+  ASSERT_TRUE(sendHeartbeat(parisHeartbeat()));
+  ASSERT_TRUE(registerParis());
+
+  const httplib::Result answer = readGames(std::to_string(createdId()));
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(nlohmann::json::parse(answer->body),
+            nlohmann::json::parse(NO_GAMES_BODY));
+}
+
+/**
+ * Given a master with one server
+ * When the games of an id no server has, of a text that is no number, of 0 and
+ * of -1 are read
+ * Then each gets 404
+ */
+TEST_F(ServersRoutesFixture, AnIdThatNamesNoServerIsNotFound) {
+  for (const std::string_view serverId : {UNUSED_SERVER_ID, NOT_A_SERVER_ID,
+                                          ZERO_SERVER_ID, NEGATIVE_SERVER_ID}) {
+    const httplib::Result answer = readGames(serverId);
+
+    ASSERT_TRUE(answer);
+    EXPECT_EQ(answer->status, EXPECTED_NOT_FOUND) << serverId;
+  }
 }

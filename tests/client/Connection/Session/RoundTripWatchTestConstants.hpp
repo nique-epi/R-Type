@@ -58,6 +58,19 @@ constexpr std::uint32_t HELD_BY_THE_SERVER = 2'000;
 constexpr std::chrono::milliseconds ECHO_ARRIVAL{4050};
 constexpr std::chrono::milliseconds OWN_ROUND_TRIP{48};
 
+/** @brief The tick a Heartbeat of the server in a game carries. */
+constexpr std::uint32_t SERVER_HEARTBEAT_TICK = 600;
+/** @brief Where the clock places that tick: half of the round trip of 48 ms,
+ * 24 ms, before the datagram arrived at 4.05 s. */
+constexpr std::chrono::milliseconds SERVER_HEARTBEAT_TICK_PLACED_AT{4026};
+/** @brief How far the clock must move, from 4 s, to reach the instant the
+ * clock placed tick 600 at. */
+constexpr std::chrono::milliseconds TO_REACH_THE_PLACED_TICK{26};
+/** @brief The tick the server is at on that instant. */
+constexpr double TICK_AT_THE_PLACED_INSTANT = 600.0;
+/** @brief The room the tick of the server is read in. */
+constexpr double SERVER_TICK_TOLERANCE = 1e-6;
+
 /**
  * @brief The round trip and the jitter the server reports for the other
  * player, in microseconds as RoundTrips carries them, and as durations.

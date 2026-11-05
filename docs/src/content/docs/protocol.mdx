@@ -1,5 +1,5 @@
 ---
-title: 'Network protocol: version 4'
+title: 'Network protocol: version 5'
 description: The datagrams the client and the server exchange over UDP, byte by byte, and what each side does when one is lost or cannot be read.
 sidebar:
   label: Protocol
@@ -11,7 +11,7 @@ This page is the specification of the protocol the client and the server speak: 
 
 ## Status of this document
 
-- This is version 4 of the protocol. It is the only version the code speaks; [Version 3](#version-3) and [Version 4](#version-4) say what each changed from the version before, and what the rest of the second part of the project will change.
+- This is version 5 of the protocol. It is the only version the code speaks; [Version 3](#version-3), [Version 4](#version-4) and [Version 5](#version-5) say what each changed from the version before, and what the rest of the second part of the project will change.
 - The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
 - Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
 - Numbers are decimal unless written `0x`. A size is in bytes.
@@ -48,7 +48,7 @@ A position is in logical units, in the frame described in [Architecture](/R-Type
 
 ## Datagram
 
-A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 4.
+A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 5.
 
 <ByteLayout
   label="The 22-byte header: protocolId on bytes 0 to 3, version on byte 4, flags on byte 5, sessionToken on bytes 6 to 13, sequence on bytes 14 and 15, acknowledgedSequence on bytes 16 and 17, acknowledgementBits on bytes 18 to 21."
@@ -71,11 +71,11 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
   ]}
 />
 
-| Offset | Size | Field | In version 4 |
+| Offset | Size | Field | In version 5 |
 |---|---|---|---|
 | 0 | 4 | `protocolId` | `0x52545950`, `RTYP` in ASCII |
-| 4 | 1 | `version` | 3 |
-| 5 | 1 | `flags` | `ACKNOWLEDGES` 0x01, `GUARANTEED` 0x02, every other bit 0 |
+| 4 | 1 | `version` | 5 |
+| 5 | 1 | `flags` | `ACKNOWLEDGES` 0x01, `GUARANTEED` 0x02, `COMPRESSED` 0x04, every other bit 0 |
 | 6 | 8 | `sessionToken` | 0 until the connection is accepted, then the token given by the server |
 | 14 | 2 | `sequence` | number of the datagram for its sender |
 | 16 | 2 | `acknowledgedSequence` | the newest sequence accepted from the peer, when `ACKNOWLEDGES` is set |
@@ -86,7 +86,7 @@ Each message is a type (`u8`), the size of its payload in bytes (`u16`, the 3 by
 - `protocolId` and `version` stay at offsets 0 and 4 in every future version, so a receiver tells which version sent a datagram from its first 5 bytes.
 - `sessionToken` is drawn at random by the server when it accepts a connection, never 0. The server writes it in every datagram it sends to that client, and the client copies it into every datagram it sends afterward. Within a session, each side drops and counts a datagram that carries another token, so nobody can steer a ship, or feed a client false states, by forging an address. A `ConnectionRequest` carries 0, since the client has no token yet: it never keeps a session alive, and it only gets a player slot with a valid cookie (see [Connection](#connection)).
 - `sequence` counts the datagrams a side sends to the other: one counter per peer, starting at 0 with the first datagram to that peer, growing by 1 and wrapping from 65535 to 0. Within a session, a receiver drops a datagram that is not newer than the newest one it has accepted from that peer, so a late or duplicated datagram never undoes a newer one. Newer means ahead by 1 to 32767 modulo 65536 (serial number arithmetic, RFC 1982), so the comparison survives the wrap. Datagrams sent before a session exists (`ConnectionChallenge`, `ConnectionRefused`) carry 0 and are not compared.
-- `flags`: `ACKNOWLEDGES` (0x01) says that `acknowledgedSequence` and `acknowledgementBits` name the datagrams the sender accepted from its peer within the session; a side sets it from the first datagram it accepted. `GUARANTEED` (0x02) says that the datagram holds guaranteed messages (see [Guaranteed messages](#guaranteed-messages)). The other six bits are 0.
+- `flags`: `ACKNOWLEDGES` (0x01) says that `acknowledgedSequence` and `acknowledgementBits` name the datagrams the sender accepted from its peer within the session; a side sets it from the first datagram it accepted. `GUARANTEED` (0x02) says that the datagram holds guaranteed messages (see [Guaranteed messages](#guaranteed-messages)). `COMPRESSED` (0x04) says that the body is a zstd frame (see [Compression](#compression)). The other five bits are 0.
 - `acknowledgedSequence` is the newest sequence the sender accepted from its peer, and bit n of `acknowledgementBits` (bit 0 the least significant) is set when the datagram n + 1 before it was accepted too, so a header names the 33 newest datagrams. A datagram dropped for its sequence, late or duplicated, is never acknowledged.
 
 Version 1 reserved these fields, so version 2 guarantees messages without moving a field of any datagram. The header costs 17 bytes per datagram more than a 5-byte header: about 11 kbit/s per client at 60 inputs and 20 states per second.
@@ -101,8 +101,9 @@ A received datagram goes through these checks in order. No buffer is sized from 
 |---|---|
 | The datagram holds 25 to 1200 bytes | dropped |
 | `protocolId` is `RTYP` | dropped |
-| `version` is 3 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
-| `flags` has no bit but `ACKNOWLEDGES` and `GUARANTEED` | dropped |
+| `version` is 5 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
+| `COMPRESSED` is set | the server drops the datagram; the client decodes the body and clears the flag, or drops the datagram when it cannot (see [Compression](#compression)) |
+| `flags` has no bit but `ACKNOWLEDGES` and `GUARANTEED`, once `COMPRESSED` is cleared | dropped |
 | The message sizes add up exactly to the end of the datagram | dropped |
 | The sender is known, or the datagram holds a `ConnectionRequest` | dropped |
 | Within a session, `sessionToken` is the token of the session (a `ConnectionRequest` may carry 0) | dropped and counted |
@@ -124,7 +125,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 |---|---|---|---|
 | 1 | `ConnectionRequest` | `cookie` `u64` (0 until the server gives one), `nickname` `string` (1 to 16 bytes) | every 500 ms until an answer; the client gives up after 5 s |
 | 4 | `Disconnection` | none | when the player closes the client, three times 50 ms apart |
-| 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32` (see [Round trip](#round-trip)) | every 500 ms, whatever else it sends; the client also 40 ms after accepting a datagram that holds guaranteed messages when nothing else was sent |
+| 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32`, `ticks` `bool` (always 0), `tick` `u32` (always 0) (see [Round trip](#round-trip) and [Clock of the server](#clock-of-the-server)) | every 500 ms, whatever else it sends; the client also 40 ms after accepting a datagram that holds guaranteed messages when nothing else was sent |
 | 6 | `ReadyState` | `ready` `bool` | when the player changes it, and again while `LobbyState` shows another value |
 | 9 | `PlayerInput` | `inputNumber` `u32`, `actions` `u8`, `earlierCount` `u8`, then `earlierCount` times `actions` `u8` | 60 times per second during a game |
 | 17 | `GameLoaded` | none | with a `PlayerInput`, at most every 100 ms, from the first one after `GameStarted` until the first state (`WorldState` or `DeltaWorldState`) arrives |
@@ -137,7 +138,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 2 | `ConnectionAccepted` | `playerNumber` `u8` (1 to 4) | in answer to a request; its header carries the session token |
 | 3 | `ConnectionRefused` | `reason` `u8`: 1 `GameFull`, 2 `GameInProgress`, 3 `IncompatibleVersion`, 4 `NicknameTaken` | in answer to a request |
 | 4 | `Disconnection` | none | when the server shuts down, three times 50 ms apart |
-| 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32` (see [Round trip](#round-trip)) | every 500 ms, whatever else it sends |
+| 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32`, `ticks` `bool`, `tick` `u32` (see [Round trip](#round-trip) and [Clock of the server](#clock-of-the-server)) | every 500 ms, whatever else it sends; `ticks` is 1 only while a game is in progress |
 | 7 | `LobbyState` | `playerCount` `u8`, then per player `playerNumber` `u8`, `ready` `bool`, `nickname` `string` | on every change, and at least every 500 ms while no game runs |
 | 8 | `GameStarted` | none | when every connected player is ready, then every 500 ms to the players that did not send `GameLoaded` yet |
 | 10 | `WorldState` | see [World state](#world-state) | not sent by the server since `DeltaWorldState`; a client still reads it |
@@ -166,7 +167,7 @@ A message is accepted only when its payload has exactly the size its fields add 
 | `EntityDestroyed`, `PlayerLeft`, `ConnectionRefused` | `reason` is in the table of its message; `PlayerLeft` names a `playerNumber` of 1 to 4 |
 | `GameEvent` | `kind` is in the table of [Game events](#game-events), and `playerNumber` and `entityId` are 0 or a valid value as that table says |
 | `RoundTrips` | at most 4 players, each `playerNumber` 1 to 4 and listed once |
-| `Heartbeat` | `echoes` is 0 or 1; when it is 0, `echo.sentAt` and `echo.heldFor` are 0 |
+| `Heartbeat` | `echoes` and `ticks` are 0 or 1; when `echoes` is 0, `echo.sentAt` and `echo.heldFor` are 0; when `ticks` is 0, `tick` is 0 |
 | `Disconnection`, `GameStarted` | the payload is empty |
 | `LeaderboardRequest` | `playerCount` is 1 to 4; `difficulty` follows the rules of a nickname: 1 to 16 bytes of valid UTF-8, no control character |
 | `LeaderboardAnswer` | as `LeaderboardRequest` for its first two fields; at most 10 rows; each `rank` is at least 1 and each nickname is valid |
@@ -356,6 +357,12 @@ Each side measures the round trip of the session from the `Heartbeat`s, without 
 
 Each side smooths its round trips, each one moving the estimate by an eighth of its gap to it, and takes as the jitter the mean gap between two round trips in a row over the 16 newest, 8 s of `Heartbeat`s. Right after each of its `Heartbeat`s, the server sends the player `RoundTrips`: the smoothed round trip and the jitter, in microseconds, of each player of the game it measured; a player not measured yet is not listed.
 
+## Clock of the server
+
+The two machines share no clock, so a client cannot tell at which of its own instants the server was at a given tick. The `Heartbeat` of the server answers it: while a game is in progress, `ticks` is 1 and `tick` is the tick the server is simulating when it sends it, the tick of the `WorldState` it sends in the same tick; outside a game the tick stands still, so `ticks` is 0 and `tick` is 0. A client never sets them.
+
+A client that receives such a `Heartbeat` in a session, together with a round trip that its echo closes, may place that tick on its own clock. The server sent it half a round trip before the datagram arrived, so tick 0 stood at the arrival time, less half the round trip, less `tick` ticks of 1/60 s. The client keeps the 8 newest estimates, follows the one with the shortest round trip, as the clock filter of NTP does ([RFC 5905](https://www.rfc-editor.org/rfc/rfc5905)): a datagram that waited in a queue has a long round trip and is left aside. It moves toward that estimate by an eighth of the gap at each estimate, and jumps onto it when the gap is more than 6 ticks, and when a `tick` is lower than the previous one, which is a new game. The estimate is exact when the two ways of the path last the same; a path whose ways differ by some time moves it by half of that time, and nothing in the protocol can tell. This is a rule of the client of this repository, not a requirement on the wire: the protocol only says what the two fields mean.
+
 ## Errors
 
 This section gathers what each side does when something goes wrong, from a datagram it cannot read to a peer that disappears. Most rules are stated in the sections above, which the tables link to; the rest are stated here. Three rules hold for every case:
@@ -469,11 +476,24 @@ Only the messages of [Guaranteed messages](#guaranteed-messages) are sent again 
 
 The rates and delays on this page (60 inputs and 20 states per second by default, 40 ms, 100 ms, 500 ms, 900 ms, 1 s, 5 s, 15 s, 20 s, the 10-second cookie window, and the eighth and the 16 round trips of [Round trip](#round-trip)) are **provisional**: they will be revised once measured on a real network. Code must name each of them as a constant and never repeat the number.
 
+## Compression
+
+From version 4, the server may send the body of a datagram, the bytes after the 22-byte header, as one zstd frame. The client reads the frame back before anything else reads the datagram, so no message changes.
+
+- `COMPRESSED` (0x04) in `flags` says that the body is a zstd frame. The flag belongs to the transport: the receiver clears it once the body is decoded, so a header that still holds it is refused by the `flags` check of [Receiving a datagram](#receiving-a-datagram).
+- Only the server compresses, and only a datagram it sends within a session (`sessionToken` is not 0). `ConnectionChallenge` and `ConnectionRefused` stay readable by a peer of any version, with the size the handshake counts on. The client to server direction is never compressed: its datagrams are about 30 bytes, and the server then never decodes data from an untrusted sender.
+- A sender uses the compressed form only when it is strictly shorter than the original body, so a datagram never grows.
+- Every frame is made with the dictionary of the protocol (2048 bytes, `assets/compression/server_to_client.dict`), at zstd level 1, without checksum, content size or dictionary identifier. The dictionary is part of the protocol: changing it changes `version`.
+- A client decodes into a buffer of at most 1178 bytes (`MAXIMUM_BODY_SIZE`, the datagram less its header) with a decoder window of 2 KiB, so a forged frame allocates nothing from a value it carries. It drops the datagram, without answering, when the token is 0, when the frame is cut, corrupt or followed by other bytes, or when it decodes to more than 1178 bytes. A server drops every datagram it receives with the flag raised.
+- A forger of the address of the server gets nothing from this: the client keeps no state while decoding and answers nothing, and the token is checked afterward as for any datagram.
+
+On the games captured while the dictionary was trained, the datagram of the server is 25.1 % shorter with level 1 (23.9 % with level 3).
+
 ## Version 2
 
 Version 2 guarantees `EntityDestroyed`, `GameEvent` and `PlayerLeft` with `flags`, `acknowledgedSequence` and `acknowledgementBits`, which version 1 wrote as 0 (see [Guaranteed messages](#guaranteed-messages)). The layout of the header is the same, its meaning is not, so `version` became 2. The server also groups the guaranteed messages it sends again in one datagram, which receivers of version 1 already accepted.
 
-Version 2 also gives `Heartbeat` the time it is sent and the echo of the newest `Heartbeat` received, which measure the round trip (see [Round trip](#round-trip)). A build of version 2 from before that sends an empty `Heartbeat`: a newer receiver skips it as a message, and its datagram still keeps the session alive, so the two play together without a round trip.
+Version 2 also gives `Heartbeat` the time it is sent and the echo of the newest `Heartbeat` received, which measure the round trip (see [Round trip](#round-trip)), then the tick of the server while a game runs (see [Clock of the server](#clock-of-the-server)). A build of version 2 from before the echo sends an empty `Heartbeat`, and one from before the tick stops at the echo, 13 bytes instead of 18: a newer receiver skips either as a message, and an older receiver skips the longer one, since bytes follow what it reads. In every case the datagram still keeps the session alive, so the two play together without a round trip or a clock.
 
 ## Version 3
 
@@ -488,18 +508,23 @@ A client and a server of different versions never play together: the connection 
 
 ## Version 4
 
-Version 4 makes `PlayerInput` repeat the inputs the server has not confirmed (see [Inputs](#inputs)). The payload gains `earlierCount` and the earlier `actions` after the newest one, so `version` became 4 and a client and a server of different versions never play together. The datagram of an input with nothing to repeat is 31 bytes (22 + 3 + 6), one more than before, and 1 byte more for each input repeated. The confirmation travels in `acknowledgedInput`, which version 2 already sent.
+Version 4 adds the `COMPRESSED` flag and the compression of the server's datagrams (see [Compression](#compression)). The layout of the header and of every message is the same. A client of version 3 would drop the compressed datagrams it cannot read, so `version` became 4 and the server answers a client of version 3 with `ConnectionRefused` (`IncompatibleVersion`).
+
+## Version 5
+
+Version 5 makes `PlayerInput` repeat the inputs the server has not confirmed (see [Inputs](#inputs)). The payload gains `earlierCount` and the earlier `actions` after the newest one, so `version` became 5 and a client and a server of different versions never play together. The datagram of an input with nothing to repeat is 31 bytes (22 + 3 + 6), one more than before, and 1 byte more for each input repeated. The confirmation travels in `acknowledgedInput`, which version 2 already sent.
 
 ## Implementation status
 
 The code of this repository applies the rules above, with the exceptions listed at the end of this section.
 
+- The socket of the server compresses what it sends within a session, and the socket of the client decodes it, as [Compression](#compression) describes (`src/network/Compression/`). The traffic counters read the datagram before compression and after decoding, so `--traffic-csv` counts the bytes of the plain datagrams, not the bytes on the wire.
 - `src/network` holds the pieces: the socket in `Transport` drops a datagram over 1200 bytes (see [Network](/R-Type/network/)), `Serialization` encodes integers and strings, and `Protocol` holds the header and every message of this page, each checked as listed here. A `WorldState` without players is accepted while the game has none (see [Network](/R-Type/network/#world-state-worldstatecodec)).
 - Both programs drop a datagram whose header is not of this protocol and version, or whose message sizes do not add up. The server drops on its network thread every datagram that is neither a connection request nor from a player it admitted, answers the requests as [Connection](#connection) describes, and answers a datagram of another version from an unknown sender with `ConnectionRefused` (`IncompatibleVersion`). The client reads only the server it contacts.
 - Within a session, each side writes the session token and its next sequence into every datagram it sends: the server in its acceptances, the `EntitySpawned` of the ships, the Bydos and the missiles, `LobbyState`, `GameStarted`, `DeltaWorldState`, the game events, `GameEnded`, `LeaderboardAnswer`, `Heartbeat`, `RoundTrips` and `Disconnection`; the client in its inputs, `ReadyState`, `GameLoaded`, `LeaderboardRequest`, `Heartbeat` and `Disconnection`. Each also acknowledges there the datagrams it accepted, except the client in its `Disconnection`, sent once the session is closed.
 - The server guarantees `EntityDestroyed`, `GameEvent` and `PlayerLeft` as [Guaranteed messages](#guaranteed-messages) describes, and reads the acknowledgements of every datagram of a player it accepts. The client sends a `Heartbeat` 40 ms after a datagram that holds guaranteed messages when nothing else went out, and remembers the `eventNumber` of the last 2 s.
 - The server checks the token of every datagram from the address of a player it admitted, on its network thread before any queue, and the sequence of every datagram it reads from a player, so a duplicate or a late one is dropped whatever its message. The client checks the token, then the sequence, of every datagram of the server.
-- Each side sends a `Heartbeat` every 500 ms and measures the round trip from its echo, and the server sends each player `RoundTrips` after each of its `Heartbeat`s, as [Round trip](#round-trip) describes. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
+- Each side sends a `Heartbeat` every 500 ms and measures the round trip from its echo, and the server sends each player `RoundTrips` after each of its `Heartbeat`s, as [Round trip](#round-trip) describes; the `Heartbeat` of the server also carries its tick during a game, as [Clock of the server](#clock-of-the-server) describes. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
 
 - The client sends `LeaderboardRequest` from its leaderboard screen, and the server answers it.
 - The server limits the datagrams of each address and port, and of each player, on its network thread, as [A sender that sends too much](#a-sender-that-sends-too-much) says.

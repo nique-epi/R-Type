@@ -11,6 +11,8 @@ namespace rtype::network {
 struct HostedGame {
   /** @brief Its number on the server, FIRST_HOSTED_GAME_NUMBER or more. */
   std::uint16_t number{};
+  /** @brief The name players read, MAXIMUM_GAME_NAME_SIZE bytes at most. */
+  std::string name;
   HostedGameState state{HostedGameState::Waiting};
   /** @brief The name of the difficulty it is played in. */
   std::string difficulty;

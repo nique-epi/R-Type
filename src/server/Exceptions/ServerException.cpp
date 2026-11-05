@@ -91,6 +91,12 @@ EmptyEnemyCycleException::EmptyEnemyCycleException()
 NoJoinableGameException::NoJoinableGameException()
     : ServerException("no game to join: the server has not created one") {}
 
+TooManyGamesException::TooManyGamesException(std::size_t requested,
+                                             std::size_t maximum)
+    : ServerException("the server cannot host " + std::to_string(requested) +
+                      " games: a heartbeat lists " + std::to_string(maximum) +
+                      " at most") {}
+
 ServerAlreadyOpenException::ServerAlreadyOpenException()
     : ServerException("the server is already open") {}
 

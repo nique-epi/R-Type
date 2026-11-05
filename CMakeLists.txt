@@ -132,6 +132,7 @@ endif()
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets
   DESTINATION ${RTYPE_CLIENT_ASSETS_PARENT} COMPONENT client
   PATTERN waves EXCLUDE
+  PATTERN compression EXCLUDE
 )
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/waves DESTINATION assets
   COMPONENT server
@@ -285,6 +286,7 @@ rtype_forbid_links(rtype_storage "SFML::" "asio::" "rtype_engine" "rtype_game" "
 rtype_forbid_links(r-type_server "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_server_network_module "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_network_datagram_relay "SFML::" "asio::" "rtype_network_asio" "rtype_client")
+rtype_forbid_links(rtype_network_compression "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_server_platform "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_server_launch_options "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_server_replication_module "SFML::" "asio::" "rtype_network_asio" "rtype_client")

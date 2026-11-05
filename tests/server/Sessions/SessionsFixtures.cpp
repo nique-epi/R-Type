@@ -2,12 +2,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "Endpoint.hpp"
 #include "Heartbeat.hpp"
+#include "HeartbeatMoment.hpp"
 #include "Heartbeats.hpp"
 #include "MessageOrigin.hpp"
 #include "OutgoingDatagram.hpp"
@@ -64,12 +66,14 @@ recorderOf(std::vector<ShownInput>& shown) {
   };
 }
 
-std::vector<network::OutgoingDatagram> heartbeatsSentAt(PlayerRoster& roster,
-                                                        engine::Duration now) {
+std::vector<network::OutgoingDatagram> heartbeatsSentAt(
+    PlayerRoster& roster, engine::Duration now,
+    std::optional<std::uint32_t> tick) {
   std::vector<network::OutgoingDatagram> sent;
-  sendHeartbeats(roster, now, [&sent](network::OutgoingDatagram datagram) {
-    sent.push_back(std::move(datagram));
-  });
+  sendHeartbeats(roster, HeartbeatMoment{.now = now, .tick = tick},
+                 [&sent](network::OutgoingDatagram datagram) {
+                   sent.push_back(std::move(datagram));
+                 });
   return sent;
 }
 

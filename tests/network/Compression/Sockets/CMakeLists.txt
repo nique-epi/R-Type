@@ -1,0 +1,2 @@
+target_sources(network_compression_tests PRIVATE DatagramCompressionTest.cpp DatagramCompressionFixtures.cpp CompressingDatagramSocketTest.cpp DecompressingDatagramSocketTest.cpp)
+target_include_directories(network_compression_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

@@ -1,10 +1,12 @@
 #include "MasterClient.hpp"
 #include <httplib.h>
+#include <cstdint>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include "CreatedServer.hpp"
+#include "GameListing.hpp"
 #include "MasterAccess.hpp"
 #include "MasterClientConstants.hpp"
 #include "MasterHttpConstants.hpp"
@@ -30,6 +32,14 @@ httplib::Request requestOf(MasterRoute route, const std::string& body) {
   request.body = body;
   request.set_header(std::string{CONTENT_TYPE_HEADER},
                      std::string{JSON_CONTENT_TYPE});
+  return request;
+}
+
+/** @returns The request of @p route, which has no body, for @p path. */
+httplib::Request readRequestOf(MasterRoute route, const std::string& path) {
+  httplib::Request request;
+  request.method = std::string{methodNameOf(route.method)};
+  request.path = path;
   return request;
 }
 
@@ -81,8 +91,17 @@ void MasterClient::sendHeartbeat(const ServerHeartbeat& heartbeat) {
       answerOf(REPLACE_OWN_HEARTBEAT_ROUTE, heartbeatText(heartbeat)));
 }
 
+GameListing MasterClient::listGames(std::int64_t serverId) {
+  return gameListingFromText(
+      send(readRequestOf(LIST_SERVER_GAMES_ROUTE,
+                         serverPathOf(LIST_SERVER_GAMES_ROUTE, serverId))));
+}
+
 std::string MasterClient::answerOf(MasterRoute route, const std::string& body) {
-  httplib::Request request = requestOf(route, body);
+  return send(requestOf(route, body));
+}
+
+std::string MasterClient::send(httplib::Request request) {
   authorize(request, key_);
   const httplib::Result result = client_->send(request);
   if (!result) {
