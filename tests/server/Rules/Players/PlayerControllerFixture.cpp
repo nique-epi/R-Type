@@ -29,7 +29,8 @@ ConnectedPlayer& PlayerControllerFixture::addPlayerWithShip(
 
 network::PlayerInput PlayerControllerFixture::inputHolding(
     std::uint8_t actions, std::uint32_t number) {
-  return network::PlayerInput{.inputNumber = number, .actions = actions};
+  return network::PlayerInput{
+      .inputNumber = number, .actions = actions, .earlierActions = {}};
 }
 
 game::World& PlayerControllerFixture::world() { return world_; }

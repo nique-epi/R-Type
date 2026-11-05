@@ -563,7 +563,8 @@ TEST_F(ServerSessionFixture, SendsTheFirstInputOnceAccepted) {
   EXPECT_EQ(sent().back().destination, server());
   EXPECT_EQ(lastInput(),
             (network::PlayerInput{.inputNumber = PROTOCOL_FIRST_INPUT_NUMBER,
-                                  .actions = PROTOCOL_UP_ACTION_BIT}));
+                                  .actions = PROTOCOL_UP_ACTION_BIT,
+                                  .earlierActions = {}}));
 }
 
 /**
@@ -591,6 +592,40 @@ TEST_F(ServerSessionFixture, NumbersEachInputAfterThePreviousOne) {
   session().sendPlayerInput(upHeld());
 
   EXPECT_EQ(lastInput().inputNumber, PROTOCOL_FIRST_INPUT_NUMBER + 1);
+}
+
+/**
+ * Given an attempt the server accepted, and three inputs sent with no
+ * confirmation
+ * When the third input is read
+ * Then it repeats the two inputs before it, so a lost datagram costs none
+ */
+TEST_F(ServerSessionFixture, RepeatsTheInputsTheServerDidNotConfirm) {
+  connectAndGetAccepted();
+  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
+
+  session().sendPlayerInput(upHeld());
+
+  EXPECT_EQ(lastInput().earlierActions.size(), 2U);
+}
+
+/**
+ * Given an attempt the server accepted, and three inputs sent, the server
+ * confirming the first two
+ * When the game sends a fourth input
+ * Then it repeats only the third
+ */
+TEST_F(ServerSessionFixture, StopsRepeatingTheInputsTheServerConfirmed) {
+  connectAndGetAccepted();
+  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld());
+  session().confirmInputsUpTo(PROTOCOL_FIRST_INPUT_NUMBER + 1);
+
+  session().sendPlayerInput(upHeld());
+
+  EXPECT_EQ(lastInput().earlierActions.size(), 1U);
 }
 
 /**

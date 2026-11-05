@@ -1,4 +1,5 @@
 #include "InputKeeper.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <optional>
@@ -38,6 +39,19 @@ void InputKeeper::keepIfNewer(const network::MessageOrigin& origin,
   }
   onNewerInput_(*player, input);
   player->newestInputNumber = input.inputNumber;
+}
+
+void InputKeeper::keepNewerOf(const network::MessageOrigin& origin,
+                              const network::PlayerInput& message) {
+  for (std::size_t back = message.earlierActions.size(); back > 0; --back) {
+    keepIfNewer(origin, {.inputNumber = message.inputNumber -
+                                        static_cast<std::uint32_t>(back),
+                         .actions = message.earlierActions[back - 1],
+                         .earlierActions = {}});
+  }
+  keepIfNewer(origin, {.inputNumber = message.inputNumber,
+                       .actions = message.actions,
+                       .earlierActions = {}});
 }
 
 }  // namespace rtype::server

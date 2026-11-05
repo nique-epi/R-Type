@@ -43,6 +43,15 @@ class InputKeeper {
   void keepIfNewer(const network::MessageOrigin& origin,
                    const network::PlayerInput& input);
 
+  /**
+   * @brief Calls keepIfNewer() for each input @p message holds, the oldest
+   * first, so an input lost on its way and repeated here reaches onNewerInput
+   * once, in order, before the newest. An input the player already has changes
+   * nothing. Each input shown holds no earlierActions.
+   */
+  void keepNewerOf(const network::MessageOrigin& origin,
+                   const network::PlayerInput& message);
+
  private:
   PlayerRoster& roster_;
   std::function<void(const ConnectedPlayer&, const network::PlayerInput&)>

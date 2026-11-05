@@ -174,6 +174,7 @@ class GameScreen : public IScreen {
   std::vector<EntityMessage> receivedEntityMessages_;
   ScoreBoard scoreBoard_;
   GameResult* result_;
+  std::uint8_t playerNumber_;
   OwnShipPredictor prediction_;
   InterpolationClock interpolationClock_;
   std::optional<engine::Duration> endedAt_;

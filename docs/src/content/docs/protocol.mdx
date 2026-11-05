@@ -1,5 +1,5 @@
 ---
-title: 'Network protocol: version 5'
+title: 'Network protocol: version 6'
 description: The datagrams the client and the server exchange over UDP, byte by byte, and what each side does when one is lost or cannot be read.
 sidebar:
   label: Protocol
@@ -11,7 +11,7 @@ This page is the specification of the protocol the client and the server speak: 
 
 ## Status of this document
 
-- This is version 5 of the protocol. It is the only version the code speaks; [Version 5](#version-5) says what it changed from version 4, and [Version 3](#version-3) what the rest of the second part of the project will change.
+- This is version 6 of the protocol. It is the only version the code speaks; [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5) and [Version 6](#version-6) say what each changed from the version before, and what the rest of the second part of the project will change.
 - The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
 - Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
 - Numbers are decimal unless written `0x`. A size is in bytes.
@@ -48,7 +48,7 @@ A position is in logical units, in the frame described in [Architecture](/R-Type
 
 ## Datagram
 
-A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 5.
+A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 6.
 
 <ByteLayout
   label="The 22-byte header: protocolId on bytes 0 to 3, version on byte 4, flags on byte 5, sessionToken on bytes 6 to 13, sequence on bytes 14 and 15, acknowledgedSequence on bytes 16 and 17, acknowledgementBits on bytes 18 to 21."
@@ -71,10 +71,10 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
   ]}
 />
 
-| Offset | Size | Field | In version 5 |
+| Offset | Size | Field | In version 6 |
 |---|---|---|---|
 | 0 | 4 | `protocolId` | `0x52545950`, `RTYP` in ASCII |
-| 4 | 1 | `version` | 4 |
+| 4 | 1 | `version` | 5 |
 | 5 | 1 | `flags` | `ACKNOWLEDGES` 0x01, `GUARANTEED` 0x02, `COMPRESSED` 0x04, every other bit 0 |
 | 6 | 8 | `sessionToken` | 0 until the connection is accepted, then the token given by the server |
 | 14 | 2 | `sequence` | number of the datagram for its sender |
@@ -101,7 +101,7 @@ A received datagram goes through these checks in order. No buffer is sized from 
 |---|---|
 | The datagram holds 25 to 1200 bytes | dropped |
 | `protocolId` is `RTYP` | dropped |
-| `version` is 5 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
+| `version` is 6 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
 | `COMPRESSED` is set | the server drops the datagram; the client decodes the body and clears the flag, or drops the datagram when it cannot (see [Compression](#compression)) |
 | `flags` has no bit but `ACKNOWLEDGES` and `GUARANTEED`, once `COMPRESSED` is cleared | dropped |
 | The message sizes add up exactly to the end of the datagram | dropped |
@@ -127,7 +127,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 4 | `Disconnection` | none | when the player closes the client, three times 50 ms apart |
 | 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32`, `ticks` `bool` (always 0), `tick` `u32` (always 0) (see [Round trip](#round-trip) and [Clock of the server](#clock-of-the-server)) | every 500 ms, whatever else it sends; the client also 40 ms after accepting a datagram that holds guaranteed messages when nothing else was sent |
 | 6 | `ReadyState` | `ready` `bool` | when the player changes it, and again while `LobbyState` shows another value |
-| 9 | `PlayerInput` | `inputNumber` `u32`, `actions` `u8` | 60 times per second during a game |
+| 9 | `PlayerInput` | `inputNumber` `u32`, `actions` `u8`, `earlierCount` `u8`, then `earlierCount` times `actions` `u8` | 60 times per second during a game |
 | 17 | `GameLoaded` | none | with a `PlayerInput`, at most every 100 ms, from the first one after `GameStarted` until the first state (`WorldState` or `DeltaWorldState`) arrives |
 | 18 | `LeaderboardRequest` | `playerCount` `u8` (1 to 4), `difficulty` `string` | when the player opens or changes a leaderboard, then every 500 ms until an answer; the client gives up after 5 s |
 
@@ -223,7 +223,11 @@ Alternative considered: a hash of the name in each entity instead of a table. It
 
 ### Inputs
 
-`actions` holds one bit per action, bit 0 being the least significant: 0 up, 1 down, 2 left, 3 right, 4 shoot. Bits 5 to 7 are 0, otherwise the message is invalid. A `PlayerInput` is sent even when no key is held (`actions` is 0). `inputNumber` starts at 1 and grows by 1 for each `PlayerInput` sent. The server keeps, for each player, the input with the highest `inputNumber`, applies it at every tick of a game in progress until a newer one arrives, and ignores an older one that arrives late.
+`actions` holds one bit per action, bit 0 being the least significant: 0 up, 1 down, 2 left, 3 right, 4 shoot. Bits 5 to 7 are 0, otherwise the message is invalid. A `PlayerInput` is sent even when no key is held (`actions` is 0). `inputNumber` starts at 1 and grows by 1 for each input sent.
+
+A `PlayerInput` also repeats the inputs the server has not confirmed, so the loss of one datagram loses no input. `actions` is the newest input, numbered `inputNumber`; the `earlierCount` actions after it are those of the inputs numbered `inputNumber - 1`, `inputNumber - 2` and so on, newest first. `earlierCount` is at most 15 (`MAXIMUM_REPEATED_INPUTS`, **provisional**: 250 ms at 60 inputs per second, the time between two `WorldState` that confirm inputs plus a round trip, to be revised once measured on a real network) and never reaches below input 1: a message that announces more, or whose earliest input would be numbered 0 or less, is invalid. A sender repeats every input it sent that the server did not confirm, up to that limit; the server confirms an input in `acknowledgedInput` of `WorldState` (see [World state](#world-state)), which is the newest input it applied, so a client forgets the inputs numbered up to that value. Before any confirmation arrives, a sender repeats the 15 inputs before the newest.
+
+The server keeps, for each player, the highest `inputNumber` it has seen. It reads a message from the oldest input to the newest and takes each one whose number is higher than that, so an input lost on its way is taken from the next message, once and in order, and one it already has changes nothing. It applies the newest input at every tick of a game in progress until a newer one arrives, and ignores an older one that arrives late.
 
 ### World state
 
@@ -486,7 +490,7 @@ Only the messages of [Guaranteed messages](#guaranteed-messages) are sent again 
 | `GameStarted` | the copy sent every 500 ms, or the first state | 500 ms |
 | `GameLoaded` | the next one, sent with an input | 100 ms |
 | `LeaderboardRequest`, or its answer | the client sends the request again, the server answers it again | 500 ms |
-| `PlayerInput` | the next input | 17 ms |
+| `PlayerInput` | the next input, which repeats it until the server confirms it | 17 ms |
 | `Heartbeat` | the next one, whose echo measures the round trip again | 500 ms |
 | `RoundTrips` | the next one | 500 ms |
 | `EntitySpawned` | the next `WorldState` creates the entity, with its appearance effect | 50 ms at 20 per second |
@@ -524,7 +528,6 @@ Version 3 gives `GameEnded` the outcome of the game: `outcome`, one byte, comes 
 The rest of the second part of the project changes the protocol again:
 
 - The client measures the loss rate of the server from the gaps in `sequence`, as the server does for each player: nothing changes on the wire.
-- `PlayerInput` repeats the inputs not yet confirmed: this payload changes, with a new version number. The confirmation of the newest input of each player already travels in `acknowledgedInput`.
 - States are already sent as differences from the last one the player acknowledged, by a new message, `DeltaWorldState` (see [Delta world state](#delta-world-state)): `WorldState` is unchanged, so `version` did not change.
 
 A client and a server of different versions never play together: the connection is refused with `IncompatibleVersion`.
@@ -535,7 +538,11 @@ Version 4 adds the `COMPRESSED` flag and the compression of the server's datagra
 
 ## Version 5
 
-Version 5 names the entity types by a table instead of four values fixed in the code: `ConnectionAccepted` carries `typeCount` and the types after `playerNumber`, and the `entityType` of `EntitySpawned`, `WorldState` and `DeltaWorldState` is a number of that table (see [Entity types](#entity-types)). The layout of `ConnectionAccepted` changes, and the meaning of `entityType` too: a receiver of version 4 would read type 1 as the ship of a player, which is why `version` became 5. An acceptance is now larger than the request it answers, which only a request with a valid cookie gets (see [Connection](#connection)).
+Version 5 makes `PlayerInput` repeat the inputs the server has not confirmed (see [Inputs](#inputs)). The payload gains `earlierCount` and the earlier `actions` after the newest one, so `version` became 5 and a client and a server of different versions never play together. The datagram of an input with nothing to repeat is 31 bytes (22 + 3 + 6), one more than before, and 1 byte more for each input repeated. The confirmation travels in `acknowledgedInput`, which version 2 already sent.
+
+## Version 6
+
+Version 6 names the entity types by a table instead of four values fixed in the code: `ConnectionAccepted` carries `typeCount` and the types after `playerNumber`, and the `entityType` of `EntitySpawned`, `WorldState` and `DeltaWorldState` is a number of that table (see [Entity types](#entity-types)). The layout of `ConnectionAccepted` changes, and the meaning of `entityType` too: a receiver of version 5 would read type 1 as the ship of a player, which is why `version` became 6. An acceptance is now larger than the request it answers, which only a request with a valid cookie gets (see [Connection](#connection)).
 
 ## Implementation status
 

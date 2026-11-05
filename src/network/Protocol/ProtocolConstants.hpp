@@ -19,14 +19,16 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 5 names the
+ * @brief The version of the protocol this code speaks. Version 6 names the
  * entity types by a table ConnectionAccepted carries, so the type of
  * EntitySpawned, WorldState and DeltaWorldState is a number of that table,
- * see the Version 5 section of the protocol page; version 4 lets the server
- * send the body of a datagram as a zstd frame, see the Compression section of
- * that page; version 3 adds the outcome of a game to GameEnded.
+ * see the Version 6 section of the protocol page; version 5 makes a
+ * PlayerInput repeat the inputs the server has not confirmed, see the Inputs
+ * section; version 4 lets the server send the body of a datagram as a zstd
+ * frame, see the Compression section; version 3 adds the outcome of a game to
+ * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 5;
+constexpr std::uint8_t PROTOCOL_VERSION = 6;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -174,6 +176,14 @@ constexpr std::uint32_t FIRST_INPUT_NUMBER = 1;
 static_assert(identifiers::MAXIMUM_ENTITY_TYPES <=
                   std::numeric_limits<std::uint8_t>::max(),
               "typeCount is one byte, and so is the number of a type");
+
+/**
+ * @brief The most inputs before the newest that one PlayerInput repeats. At
+ * 60 inputs per second it covers 250 ms: the wait of the 50 ms between two
+ * WorldState that confirm inputs, plus a round trip. Provisional, see the
+ * protocol page.
+ */
+constexpr std::size_t MAXIMUM_REPEATED_INPUTS = 15;
 
 /**
  * @brief PlayerInput a client sends per second during a game. The server
@@ -389,6 +399,7 @@ constexpr std::string_view REASON_FIELD = "reason";
 constexpr std::string_view OUTCOME_FIELD = "outcome";
 constexpr std::string_view KIND_FIELD = "kind";
 constexpr std::string_view ACTIONS_FIELD = "actions";
+constexpr std::string_view EARLIER_COUNT_FIELD = "earlierCount";
 constexpr std::string_view ECHO_SENT_AT_FIELD = "echo.sentAt";
 constexpr std::string_view ECHO_HELD_FOR_FIELD = "echo.heldFor";
 constexpr std::string_view TICK_FIELD = "tick";

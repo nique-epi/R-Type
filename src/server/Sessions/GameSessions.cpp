@@ -54,7 +54,7 @@ void GameSessions::registerHandlers() {
   dispatcher_.registerHandler<network::PlayerInput>(
       [this](const network::MessageOrigin& origin,
              const network::PlayerInput& input) {
-        inputKeeper_.keepIfNewer(origin, input);
+        inputKeeper_.keepNewerOf(origin, input);
       });
   dispatcher_.registerHandler<network::LeaderboardRequest>(
       [this](const network::MessageOrigin& origin,

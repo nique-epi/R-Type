@@ -1472,7 +1472,8 @@ TEST_F(GameInstanceInputTest, IgnoresAnInputNumberedLikeTheOneKept) {
       FIRST_PLAYER,
       inputDatagram(
           network::PlayerInput{.inputNumber = lastInputNumber(FIRST_PLAYER),
-                               .actions = HOLDS_DOWN},
+                               .actions = HOLDS_DOWN,
+                               .earlierActions = {}},
           sessionHeader(FIRST_PLAYER)));
 
   deliver({FIRST_SENT, SECOND_SENT});
@@ -1509,7 +1510,8 @@ TEST_F(GameInstanceInputTest, IgnoresAnInputFromASenderNotInTheRoster) {
   sendDatagram(
       STRANGER,
       inputDatagram(network::PlayerInput{.inputNumber = LARGEST_INPUT_NUMBER,
-                                         .actions = HOLDS_DOWN},
+                                         .actions = HOLDS_DOWN,
+                                         .earlierActions = {}},
                     sessionHeader(FIRST_PLAYER)));
 
   deliver({FIRST_SENT});
@@ -1529,7 +1531,8 @@ TEST_F(GameInstanceInputTest, IgnoresAnInputItsReaderRefuses) {
       network::DatagramCodec::encode(
           sessionHeader(FIRST_PLAYER), network::MessageType::PlayerInput,
           inputPayload(network::PlayerInput{.inputNumber = LARGEST_INPUT_NUMBER,
-                                            .actions = UNLISTED_ACTION})));
+                                            .actions = UNLISTED_ACTION,
+                                            .earlierActions = {}})));
   send(FIRST_PLAYER, HOLDS_UP);
 
   deliver({FIRST_SENT, SECOND_SENT});
