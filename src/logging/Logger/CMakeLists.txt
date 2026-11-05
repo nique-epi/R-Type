@@ -1,6 +1,6 @@
 find_package(Threads REQUIRED)
 
-add_library(rtype_logging_logger STATIC Logger.cpp)
+add_library(rtype_logging_logger STATIC Logger.cpp ProcessJournal.cpp)
 
 target_include_directories(rtype_logging_logger
   PUBLIC
