@@ -164,7 +164,7 @@ constexpr std::string_view PARIS_SAMPLE_LISTING_TEXT =
     R"("playerCount":3,"takenAt":1800000000}]})";
 
 /** @brief A change to degraded, as the master writes it. */
-constexpr std::string_view DEGRADED_CHANGE_LISTING_TEXT =
-    R"({"statusChanges":[{"changedAt":1800000000,"status":"degraded"}]})";
+constexpr std::string_view DEGRADED_STATUS_LISTING_TEXT =
+    R"({"statuses":[{"since":1800000000,"status":"degraded"}]})";
 
 }  // namespace rtype::network::testing

@@ -48,10 +48,10 @@ constexpr MasterRoute LIST_SERVERS_ROUTE{.method = RouteMethod::Get,
 constexpr MasterRoute LIST_SERVER_SAMPLES_ROUTE{.method = RouteMethod::Get,
                                                 .path = "/servers/:id/samples"};
 
-/** @brief Lists the changes of status of the server named in the path, a page
- * at a time, newest first; open to everyone. */
-constexpr MasterRoute LIST_SERVER_STATUS_CHANGES_ROUTE{
-    .method = RouteMethod::Get, .path = "/servers/:id/status-changes"};
+/** @brief Lists the statuses the server named in the path held, each with the
+ * second it took it, a page at a time, newest first; open to everyone. */
+constexpr MasterRoute LIST_SERVER_STATUSES_ROUTE{
+    .method = RouteMethod::Get, .path = "/servers/:id/statuses"};
 
 /**
  * @brief The parameters of the query of a list, `?limit=50&offset=0`, and

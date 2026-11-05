@@ -45,7 +45,7 @@ class ServersRoutesFixture : public ::testing::Test {
   [[nodiscard]] httplib::Result readServers(std::string_view query) const;
 
   /** @returns The answer to @p part ("/games", "/samples" or
-   * "/status-changes") of the server @p serverId, no key sent. */
+   * "/statuses") of the server @p serverId, no key sent. */
   [[nodiscard]] httplib::Result readServerPart(std::string_view serverId,
                                                std::string_view part) const;
 

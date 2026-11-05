@@ -2,9 +2,9 @@
 #include <chrono>
 #include <cstdint>
 #include <vector>
+#include "DatedStatus.hpp"
 #include "MasterDatabase.hpp"
 #include "ServerStatus.hpp"
-#include "ServerStatusChange.hpp"
 #include "ServerStatusRule.hpp"
 #include "StatusChangeRecord.hpp"
 #include "WatchedServer.hpp"
@@ -23,8 +23,7 @@ std::vector<StatusChangeRecord> changesAt(
     if (status != server.status) {
       changes.push_back(StatusChangeRecord{
           .serverId = server.serverId,
-          .change =
-              network::ServerStatusChange{.changedAt = now, .status = status}});
+          .change = network::DatedStatus{.since = now, .status = status}});
     }
   }
   return changes;

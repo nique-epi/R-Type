@@ -115,7 +115,7 @@ A game server is named by its key, sent as `Authorization: Bearer <key>`, never 
 | `GET /api/servers/{id}/games` | lists the games of the last heartbeat of the server `id`, to anyone (see [Listing the games of a server](#listing-the-games-of-a-server)) | 200 and the games; 404 for an id that names no server |
 | `GET /api/servers` | lists the registered servers, a page at a time, to anyone (see [Listing the servers and their history](#listing-the-servers-and-their-history)) | 200 and the servers; 400 for a page out of its bounds |
 | `GET /api/servers/{id}/samples` | lists the samples of the server `id`, newest first | 200 and the samples; 404 for an id that names no server, 400 for a page out of its bounds |
-| `GET /api/servers/{id}/status-changes` | lists the changes of status of the server `id`, newest first | 200 and the changes; 404 and 400 as above |
+| `GET /api/servers/{id}/statuses` | lists the statuses the server `id` held, each with the second it took it, newest first | 200 and the statuses; 404 and 400 as above |
 
 A registration is the state of a server that starts: it forgets the last heartbeat, since the server hosts no game yet. A registration with no `address` takes the address of the TCP peer, since a server often does not know its public address. A sample is written once per second of the clock at most, whatever the rate of the heartbeats, and every sample older than `SAMPLE_RETENTION` (7 days) is erased when a new one is written, of every server.
 
@@ -195,12 +195,12 @@ Three routes read what the master keeps, to anyone, a page at a time. `GET /api/
              "status":"online","gameCount":2,"playerCount":3}]}
 ```
 
-`GET /api/servers/{id}/samples` and `GET /api/servers/{id}/status-changes` list the samples and the changes of status of one server, newest first; a date is in seconds since 1970 UTC, and a measure the server did not take is left out:
+`GET /api/servers/{id}/samples` and `GET /api/servers/{id}/statuses` list the samples of one server and the statuses it held, newest first; a status gives the second it was taken, `since`; a date is in seconds since 1970 UTC, and a measure the server did not take is left out:
 
 ```json
 {"samples":[{"takenAt":1800000000,"gameCount":2,"playerCount":3,
              "measures":{"tickP95Milliseconds":4.25}}]}
-{"statusChanges":[{"changedAt":1800000000,"status":"offline"}]}
+{"statuses":[{"status":"offline","since":1800000000}]}
 ```
 
 - **A page** is `?limit=<n>&offset=<m>`: `limit` from `MINIMUM_PAGE_SIZE` (1) to `MAXIMUM_PAGE_SIZE` (100), `DEFAULT_PAGE_SIZE` (50) when left out; `offset` from `FIRST_PAGE_OFFSET` (0), the items skipped. Each is a whole number with no sign; anything else answers 400, whose `detail` gives the bounds. A parameter given twice keeps its first value.

@@ -85,18 +85,18 @@ constexpr auto SERVER_STATUS_TEXTS = std::to_array<std::string_view>(
 
 /**
  * @brief The members of a listed server beside those of a registration, of a
- * sample, and of a change of status; a date is written in seconds since 1970
+ * sample, and of a dated status; a date is written in seconds since 1970
  * UTC.
  */
 constexpr std::string_view STATUS_MEMBER = "status";
 constexpr std::string_view GAME_COUNT_MEMBER = "gameCount";
 constexpr std::string_view TAKEN_AT_MEMBER = "takenAt";
-constexpr std::string_view CHANGED_AT_MEMBER = "changedAt";
+constexpr std::string_view SINCE_MEMBER = "since";
 
 /** @brief The member that holds the items of each list. */
 constexpr std::string_view SERVERS_MEMBER = "servers";
 constexpr std::string_view SAMPLES_MEMBER = "samples";
-constexpr std::string_view STATUS_CHANGES_MEMBER = "statusChanges";
+constexpr std::string_view STATUSES_MEMBER = "statuses";
 
 /** @brief The member of a listed game that counts its players. */
 constexpr std::string_view PLAYER_COUNT_MEMBER = "playerCount";

@@ -472,12 +472,12 @@ TEST_F(ServersRoutesFixture, TheSamplesOfAServerAreListed) {
 
 /**
  * Given no server of id 999, and an id that is no number
- * When their samples or their changes of status are read
+ * When their samples or their statuses are read
  * Then each read gets 404
  */
 TEST_F(ServersRoutesFixture, TheHistoryOfAnUnknownServerIsNotFound) {
   for (const std::string_view part :
-       {SAMPLES_PATH_SUFFIX, STATUS_CHANGES_PATH_SUFFIX}) {
+       {SAMPLES_PATH_SUFFIX, STATUSES_PATH_SUFFIX}) {
     SCOPED_TRACE(part);
     const httplib::Result unused = readServerPart(UNUSED_SERVER_ID, part);
     const httplib::Result notANumber = readServerPart(NOT_A_SERVER_ID, part);
@@ -491,18 +491,17 @@ TEST_F(ServersRoutesFixture, TheHistoryOfAnUnknownServerIsNotFound) {
 
 /**
  * Given a registered server
- * When anyone reads its changes of status
+ * When anyone reads its statuses
  * Then it gets 200 and a list (whose items the tests of the service check)
  */
-TEST_F(ServersRoutesFixture, TheChangesOfStatusOfAServerAreListed) {
+TEST_F(ServersRoutesFixture, TheStatusesOfAServerAreListed) {
   ASSERT_TRUE(registerParis());
 
   const httplib::Result answer =
-      readServerPart(std::to_string(createdId()), STATUS_CHANGES_PATH_SUFFIX);
+      readServerPart(std::to_string(createdId()), STATUSES_PATH_SUFFIX);
 
   ASSERT_TRUE(answer);
   EXPECT_EQ(answer->status, EXPECTED_OK);
-  EXPECT_TRUE(nlohmann::json::parse(answer->body)
-                  .at(STATUS_CHANGES_MEMBER_NAME)
-                  .is_array());
+  EXPECT_TRUE(
+      nlohmann::json::parse(answer->body).at(STATUSES_MEMBER_NAME).is_array());
 }

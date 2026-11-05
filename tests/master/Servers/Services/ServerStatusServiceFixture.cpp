@@ -3,17 +3,17 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "DatedStatus.hpp"
 #include "KnownServer.hpp"
 #include "MasterMessageTextFixtures.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerRecord.hpp"
-#include "ServerStatusChange.hpp"
 #include "ServerStatusService.hpp"
 #include "ServerStatusServiceTestConstants.hpp"
 #include "ServersFixtures.hpp"
 #include "ServersService.hpp"
 #include "ServersServiceTestConstants.hpp"
-#include "StatusChangeListing.hpp"
+#include "StatusListing.hpp"
 
 rtype::master::ServerStatusService& ServerStatusServiceFixture::statuses() {
   return statuses_;
@@ -47,9 +47,9 @@ void ServerStatusServiceFixture::registerAgain(std::int64_t serverId,
       .registeredAt = date});
 }
 
-std::vector<rtype::network::ServerStatusChange>
-ServerStatusServiceFixture::historyOf(std::int64_t serverId) {
-  return servers_.statusChangeListingOf(serverId, WHOLE_PAGE)
-      .value_or(rtype::network::StatusChangeListing{})
-      .statusChanges;
+std::vector<rtype::network::DatedStatus> ServerStatusServiceFixture::historyOf(
+    std::int64_t serverId) {
+  return servers_.statusListingOf(serverId, WHOLE_PAGE)
+      .value_or(rtype::network::StatusListing{})
+      .statuses;
 }

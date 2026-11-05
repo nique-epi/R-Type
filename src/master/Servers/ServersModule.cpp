@@ -39,9 +39,8 @@ void ServersModule::install(engine::InstallContext& context) {
              std::bind_front(&ServersController::listServers, &controller));
   server.add(network::LIST_SERVER_SAMPLES_ROUTE,
              std::bind_front(&ServersController::listSamples, &controller));
-  server.add(
-      network::LIST_SERVER_STATUS_CHANGES_ROUTE,
-      std::bind_front(&ServersController::listStatusChanges, &controller));
+  server.add(network::LIST_SERVER_STATUSES_ROUTE,
+             std::bind_front(&ServersController::listStatuses, &controller));
 }
 
 void ServersModule::start() {

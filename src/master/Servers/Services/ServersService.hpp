@@ -16,8 +16,8 @@
 #include "ServerListing.hpp"
 #include "ServerRecord.hpp"
 #include "ServerRepository.hpp"
-#include "StatusChangeListing.hpp"
 #include "StatusChangeRepository.hpp"
+#include "StatusListing.hpp"
 
 namespace rtype::master {
 
@@ -80,10 +80,10 @@ class ServersService {
   [[nodiscard]] std::optional<network::SampleListing> sampleListingOf(
       std::int64_t serverId, const PageRequest& page);
 
-  /** @returns The changes of status of the server @p serverId in @p page,
+  /** @returns The statuses the server @p serverId held in @p page,
    * newest first, or nothing when no server has that id. */
-  [[nodiscard]] std::optional<network::StatusChangeListing>
-  statusChangeListingOf(std::int64_t serverId, const PageRequest& page);
+  [[nodiscard]] std::optional<network::StatusListing> statusListingOf(
+      std::int64_t serverId, const PageRequest& page);
 
  private:
   ServerRepository servers_;

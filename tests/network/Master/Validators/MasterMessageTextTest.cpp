@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 #include "CreatedServer.hpp"
+#include "DatedStatus.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterMessageTextFixtures.hpp"
 #include "MasterMessageTextTestConstants.hpp"
@@ -13,12 +14,12 @@
 #include "ServerCreation.hpp"
 #include "ServerRegistration.hpp"
 #include "ServerStatus.hpp"
-#include "ServerStatusChange.hpp"
-#include "StatusChangeListing.hpp"
+#include "StatusListing.hpp"
 
 using rtype::network::CreatedServer;
 using rtype::network::createdServerFromText;
 using rtype::network::createdServerText;
+using rtype::network::DatedStatus;
 using rtype::network::gameListingFromText;
 using rtype::network::gameListingText;
 using rtype::network::heartbeatFromText;
@@ -34,16 +35,15 @@ using rtype::network::serverCreationText;
 using rtype::network::serverListingText;
 using rtype::network::ServerRegistration;
 using rtype::network::ServerStatus;
-using rtype::network::ServerStatusChange;
 using rtype::network::serverStatusOf;
-using rtype::network::StatusChangeListing;
-using rtype::network::statusChangeListingText;
+using rtype::network::StatusListing;
+using rtype::network::statusListingText;
 using rtype::network::testing::ADDRESS_POINTER;
 using rtype::network::testing::AVERAGE_PING_POINTER;
 using rtype::network::testing::CONFLICT_DETAIL;
 using rtype::network::testing::CONFLICT_PROBLEM;
 using rtype::network::testing::createdServerRefusal;
-using rtype::network::testing::DEGRADED_CHANGE_LISTING_TEXT;
+using rtype::network::testing::DEGRADED_STATUS_LISTING_TEXT;
 using rtype::network::testing::DEGRADED_TEXT;
 using rtype::network::testing::EMPTY_GAME_NAME;
 using rtype::network::testing::FIFTH_PILOT;
@@ -570,15 +570,15 @@ TEST(MasterMessageText, WritesASampleWithItsDateInSeconds) {
 }
 
 /**
- * Given a change to degraded
- * When the list of changes is written
- * Then it holds its date in seconds and "degraded"
+ * Given a server degraded since a date
+ * When the list of its statuses is written
+ * Then it holds "degraded" and that date in seconds
  */
-TEST(MasterMessageText, WritesAChangeOfStatus) {
-  const StatusChangeListing listing{
-      .statusChanges = {ServerStatusChange{.changedAt = SAMPLE_DATE,
-                                           .status = ServerStatus::Degraded}}};
+TEST(MasterMessageText, WritesAStatusWithItsDate) {
+  const StatusListing listing{
+      .statuses = {
+          DatedStatus{.since = SAMPLE_DATE, .status = ServerStatus::Degraded}}};
 
-  EXPECT_EQ(nlohmann::json::parse(statusChangeListingText(listing)),
-            nlohmann::json::parse(DEGRADED_CHANGE_LISTING_TEXT));
+  EXPECT_EQ(nlohmann::json::parse(statusListingText(listing)),
+            nlohmann::json::parse(DEGRADED_STATUS_LISTING_TEXT));
 }

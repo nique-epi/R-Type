@@ -32,7 +32,7 @@
 #include "ServerListing.hpp"
 #include "ServerRecord.hpp"
 #include "ServersServiceConstants.hpp"
-#include "StatusChangeListing.hpp"
+#include "StatusListing.hpp"
 
 namespace rtype::master {
 
@@ -185,14 +185,12 @@ std::optional<network::SampleListing> ServersService::sampleListingOf(
   return network::SampleListing{.samples = samples_.samplesOf(serverId, page)};
 }
 
-std::optional<network::StatusChangeListing>
-ServersService::statusChangeListingOf(std::int64_t serverId,
-                                      const PageRequest& page) {
+std::optional<network::StatusListing> ServersService::statusListingOf(
+    std::int64_t serverId, const PageRequest& page) {
   if (!servers_.hasServer(serverId)) {
     return std::nullopt;
   }
-  return network::StatusChangeListing{.statusChanges =
-                                          changes_.changesOf(serverId, page)};
+  return network::StatusListing{.statuses = changes_.changesOf(serverId, page)};
 }
 
 }  // namespace rtype::master

@@ -61,11 +61,11 @@ class ServersController {
   [[nodiscard]] ApiResponse listSamples(const ApiRequest& request);
 
   /**
-   * @returns The answer of `GET /api/servers/{id}/status-changes`: 200 and a
-   * page of the changes of status of the server, newest first, open to
+   * @returns The answer of `GET /api/servers/{id}/statuses`: 200 and a
+   * page of the statuses the server held, newest first, open to
    * everyone; 404 and 400 as listSamples().
    */
-  [[nodiscard]] ApiResponse listStatusChanges(const ApiRequest& request);
+  [[nodiscard]] ApiResponse listStatuses(const ApiRequest& request);
 
  private:
   ServersService service_;

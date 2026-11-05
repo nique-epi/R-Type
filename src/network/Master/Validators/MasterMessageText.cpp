@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 #include "CreatedServer.hpp"
+#include "DatedStatus.hpp"
 #include "EndpointText.hpp"
 #include "GameListing.hpp"
 #include "HostedGame.hpp"
@@ -33,8 +34,7 @@
 #include "ServerRegistration.hpp"
 #include "ServerSample.hpp"
 #include "ServerStatus.hpp"
-#include "ServerStatusChange.hpp"
-#include "StatusChangeListing.hpp"
+#include "StatusListing.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::network {
@@ -423,9 +423,9 @@ nlohmann::json sampleDocument(const ServerSample& sample) {
   return document;
 }
 
-nlohmann::json statusChangeDocument(const ServerStatusChange& change) {
+nlohmann::json statusChangeDocument(const DatedStatus& change) {
   nlohmann::json document;
-  document[CHANGED_AT_MEMBER] = change.changedAt.time_since_epoch().count();
+  document[SINCE_MEMBER] = change.since.time_since_epoch().count();
   document[STATUS_MEMBER] = serverStatusText(change.status);
   return document;
 }
@@ -567,9 +567,8 @@ std::string sampleListingText(const SampleListing& listing) {
   return listingText(SAMPLES_MEMBER, listing.samples, sampleDocument);
 }
 
-std::string statusChangeListingText(const StatusChangeListing& listing) {
-  return listingText(STATUS_CHANGES_MEMBER, listing.statusChanges,
-                     statusChangeDocument);
+std::string statusListingText(const StatusListing& listing) {
+  return listingText(STATUSES_MEMBER, listing.statuses, statusChangeDocument);
 }
 
 std::string problemDetailOf(std::string_view text) {

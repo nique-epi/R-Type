@@ -5,6 +5,7 @@
 #include <vector>
 #include "CreatedServer.hpp"
 #include "CreationAttempt.hpp"
+#include "DatedStatus.hpp"
 #include "KnownServer.hpp"
 #include "ListedServer.hpp"
 #include "MasterMessageTextTestConstants.hpp"
@@ -12,7 +13,6 @@
 #include "PageRequest.hpp"
 #include "ServerCreation.hpp"
 #include "ServerStatus.hpp"
-#include "ServerStatusChange.hpp"
 #include "ServerStatusServiceFixture.hpp"
 #include "ServerStatusServiceTestConstants.hpp"
 #include "ServersFixtures.hpp"
@@ -24,10 +24,10 @@ using rtype::master::KnownServer;
 using rtype::master::PageRequest;
 using rtype::master::StatusChangeRecord;
 using rtype::network::CreatedServer;
+using rtype::network::DatedStatus;
 using rtype::network::ListedServer;
 using rtype::network::ServerCreation;
 using rtype::network::ServerStatus;
-using rtype::network::ServerStatusChange;
 using rtype::network::testing::PARIS_TICK_P95;
 
 /**
@@ -46,8 +46,8 @@ TEST_F(ServerStatusServiceFixture,
   EXPECT_EQ(listedStatusOf(servers(), server.id), ServerStatus::Online);
   EXPECT_EQ(
       historyOf(server.id),
-      (std::vector<ServerStatusChange>{ServerStatusChange{
-          .changedAt = FIRST_HEARTBEAT_DATE, .status = ServerStatus::Online}}));
+      (std::vector<DatedStatus>{DatedStatus{.since = FIRST_HEARTBEAT_DATE,
+                                            .status = ServerStatus::Online}}));
 }
 
 /**
@@ -83,12 +83,11 @@ TEST_F(ServerStatusServiceFixture, AServerSilentForFifteenSecondsTurnsOffline) {
 
   EXPECT_EQ(listedStatusOf(servers(), server.id), ServerStatus::Offline);
   EXPECT_EQ(historyOf(server.id),
-            (std::vector<ServerStatusChange>{
-                ServerStatusChange{
-                    .changedAt = FIRST_HEARTBEAT_DATE + FIFTEEN_SECONDS,
-                    .status = ServerStatus::Offline},
-                ServerStatusChange{.changedAt = FIRST_HEARTBEAT_DATE,
-                                   .status = ServerStatus::Online}}));
+            (std::vector<DatedStatus>{
+                DatedStatus{.since = FIRST_HEARTBEAT_DATE + FIFTEEN_SECONDS,
+                            .status = ServerStatus::Offline},
+                DatedStatus{.since = FIRST_HEARTBEAT_DATE,
+                            .status = ServerStatus::Online}}));
 }
 
 /**
@@ -166,10 +165,9 @@ TEST_F(ServerStatusServiceFixture, TwoChangesInOneSecondKeepTheLater) {
 
   static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
 
-  EXPECT_EQ(historyOf(server.id),
-            (std::vector<ServerStatusChange>{
-                ServerStatusChange{.changedAt = FIRST_HEARTBEAT_DATE,
-                                   .status = ServerStatus::Maintenance}}));
+  EXPECT_EQ(historyOf(server.id), (std::vector<DatedStatus>{DatedStatus{
+                                      .since = FIRST_HEARTBEAT_DATE,
+                                      .status = ServerStatus::Maintenance}}));
 }
 
 /**
@@ -185,9 +183,9 @@ TEST_F(ServerStatusServiceFixture, AChangeOlderThanSevenDaysIsErased) {
       statuses().refreshStatuses(FIRST_HEARTBEAT_DATE + EIGHT_DAYS));
 
   EXPECT_EQ(historyOf(server.id),
-            (std::vector<ServerStatusChange>{ServerStatusChange{
-                .changedAt = FIRST_HEARTBEAT_DATE + EIGHT_DAYS,
-                .status = ServerStatus::Offline}}));
+            (std::vector<DatedStatus>{
+                DatedStatus{.since = FIRST_HEARTBEAT_DATE + EIGHT_DAYS,
+                            .status = ServerStatus::Offline}}));
 }
 
 /**

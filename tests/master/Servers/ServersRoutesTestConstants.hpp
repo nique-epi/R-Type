@@ -27,7 +27,7 @@ constexpr std::string_view NO_GAMES_BODY = R"({"games":[]})";
 
 /** @brief The parts of the history of a server, after its id. */
 constexpr std::string_view SAMPLES_PATH_SUFFIX = "/samples";
-constexpr std::string_view STATUS_CHANGES_PATH_SUFFIX = "/status-changes";
+constexpr std::string_view STATUSES_PATH_SUFFIX = "/statuses";
 
 /** @brief The queries of a list: none, and four out of bounds. */
 constexpr std::string_view NO_QUERY;
@@ -58,7 +58,7 @@ constexpr std::string_view PARIS_MEASURES_BODY =
 /** @brief The members of the lists the tests read. */
 constexpr std::string_view SERVERS_MEMBER_NAME = "servers";
 constexpr std::string_view SAMPLES_MEMBER_NAME = "samples";
-constexpr std::string_view STATUS_CHANGES_MEMBER_NAME = "statusChanges";
+constexpr std::string_view STATUSES_MEMBER_NAME = "statuses";
 constexpr std::string_view STATUS_MEMBER_NAME = "status";
 constexpr std::string_view TAKEN_AT_MEMBER_NAME = "takenAt";
 constexpr std::string_view MEASURES_MEMBER_NAME = "measures";

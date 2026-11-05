@@ -2,9 +2,9 @@
 
 #include <cstdint>
 #include <vector>
+#include "DatedStatus.hpp"
 #include "MasterDatabase.hpp"
 #include "PageRequest.hpp"
-#include "ServerStatusChange.hpp"
 #include "StatusChangeRecord.hpp"
 
 namespace rtype::master {
@@ -27,7 +27,7 @@ class StatusChangeRepository {
 
   /** @returns The changes of the server @p serverId in @p page, newest
    * first. */
-  [[nodiscard]] std::vector<network::ServerStatusChange> changesOf(
+  [[nodiscard]] std::vector<network::DatedStatus> changesOf(
       std::int64_t serverId, const PageRequest& page);
 
  private:

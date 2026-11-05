@@ -15,7 +15,7 @@ namespace rtype::master {
  * @brief The module of the game servers: their creation, their registration,
  * their heartbeats, their statuses and the lists of them, `POST /api/servers`,
  * `PUT /api/servers/me`, `PUT /api/servers/me/heartbeat`, `GET /api/servers`
- * and `GET /api/servers/{id}/games`, `/samples` and `/status-changes`, kept
+ * and `GET /api/servers/{id}/games`, `/samples` and `/statuses`, kept
  * in the tables `servers`, `heartbeat_samples` and `status_changes`.
  *
  * install() adds the routes to the MasterHttpServer; they read the database

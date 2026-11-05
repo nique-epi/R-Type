@@ -5,9 +5,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include "DatedStatus.hpp"
 #include "KnownServer.hpp"
 #include "MasterDatabaseFile.hpp"
-#include "ServerStatusChange.hpp"
 #include "ServerStatusService.hpp"
 #include "ServersService.hpp"
 
@@ -33,7 +33,7 @@ class ServerStatusServiceFixture : public ::testing::Test {
   void registerAgain(std::int64_t serverId, std::chrono::sys_seconds date);
 
   /** @returns The changes of status of @p serverId, newest first. */
-  [[nodiscard]] std::vector<rtype::network::ServerStatusChange> historyOf(
+  [[nodiscard]] std::vector<rtype::network::DatedStatus> historyOf(
       std::int64_t serverId);
 
  private:

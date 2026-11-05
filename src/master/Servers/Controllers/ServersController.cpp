@@ -285,11 +285,10 @@ ApiResponse ServersController::listSamples(const ApiRequest& request) {
       network::sampleListingText);
 }
 
-ApiResponse ServersController::listStatusChanges(const ApiRequest& request) {
+ApiResponse ServersController::listStatuses(const ApiRequest& request) {
   return answerOfServerPage(
-      request,
-      std::bind_front(&ServersService::statusChangeListingOf, &service_),
-      network::statusChangeListingText);
+      request, std::bind_front(&ServersService::statusListingOf, &service_),
+      network::statusListingText);
 }
 
 }  // namespace rtype::master

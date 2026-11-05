@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include "ServerStatusChange.hpp"
+#include "DatedStatus.hpp"
 
 namespace rtype::master {
 
@@ -9,7 +9,7 @@ namespace rtype::master {
  * it. */
 struct StatusChangeRecord {
   std::int64_t serverId{};
-  network::ServerStatusChange change;
+  network::DatedStatus change;
 };
 
 }  // namespace rtype::master

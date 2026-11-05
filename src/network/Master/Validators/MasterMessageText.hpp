@@ -11,7 +11,7 @@
 #include "ServerListing.hpp"
 #include "ServerRegistration.hpp"
 #include "ServerStatus.hpp"
-#include "StatusChangeListing.hpp"
+#include "StatusListing.hpp"
 
 namespace rtype::network {
 
@@ -118,9 +118,8 @@ namespace rtype::network {
 [[nodiscard]] std::string sampleListingText(const SampleListing& listing);
 
 /** @returns @p listing as the JSON answer of
- * `GET /api/servers/{id}/status-changes`. */
-[[nodiscard]] std::string statusChangeListingText(
-    const StatusChangeListing& listing);
+ * `GET /api/servers/{id}/statuses`. */
+[[nodiscard]] std::string statusListingText(const StatusListing& listing);
 
 /**
  * @returns The `detail` of the problem document (RFC 9457) @p text holds, or
