@@ -169,7 +169,13 @@ Once the test preset is built, this sends the server running on port 4242 of the
 ./build/tests/load_test_bots --bots 32 --seconds 60
 ```
 
-This has 32 players with no window join the server on port 4242 of the same machine, fill its eight games and play them for one minute, then prints the world states each one received per second; the server's journal gives the duration of its ticks every 10 s. See [Network](https://nique-epi.github.io/R-Type/network/#load-test-bots-load_test_bots).
+This has 32 players with no window join the server on port 4242 of the same machine, fill its eight games and play them for one minute, then prints the world states each one received per second and what its socket received and sent; the server's journal gives the duration of its ticks every 10 s. See [Network](https://nique-epi.github.io/R-Type/network/#load-test-bots-load_test_bots).
+
+```bash
+sh tests/tools/bandwidth/campaign.sh ./r-type_server ./build/tests/load_test_bots
+```
+
+This runs the bandwidth campaign: a server and four bots from the same seed, three runs of one minute for each scenario, and one Markdown row per scenario with what one client received and sent per second. The results and the method are in [Network measurements](https://nique-epi.github.io/R-Type/measurements/).
 
 ## Logging
 
