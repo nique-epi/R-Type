@@ -6,7 +6,7 @@ target_link_libraries(rtype_game_bydo_kind
   PUBLIC
     rtype_game_components
   PRIVATE
-    rtype_game_behaviours_rtype
+    rtype_game_behaviours_movements
 )
 
 rtype_enable_warnings(rtype_game_bydo_kind)

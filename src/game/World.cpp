@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <optional>
 #include "BehaviourRegistry.hpp"
+#include "BuiltInBehaviours.hpp"
 #include "BydoKind.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
@@ -22,7 +23,6 @@
 #include "NetworkIdentity.hpp"
 #include "Pilot.hpp"
 #include "Position.hpp"
-#include "RtypeBehaviours.hpp"
 #include "ScoreValue.hpp"
 #include "ShipControlConstants.hpp"
 #include "ShipMotion.hpp"
@@ -33,7 +33,7 @@
 
 namespace rtype::game {
 
-World::World() : behaviours_(rtypeBehaviours()) {}
+World::World() : behaviours_(builtInBehaviours()) {}
 
 std::uint32_t World::spawnPlayer(Position position, std::uint8_t lives) {
   const std::uint32_t networkId = networkIds_.allocate();

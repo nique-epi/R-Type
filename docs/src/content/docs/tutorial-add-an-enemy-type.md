@@ -25,7 +25,7 @@ The server owns the game. It creates the Bydos, moves them and tells each client
 
 | Step | What you add | Where |
 |---|---|---|
-| 1 | A new behaviour for the Bydo | `src/game/Behaviours/Rtype/` |
+| 1 | A new behaviour for the Bydo | `src/game/Behaviours/Movements/` |
 | 2 | The kind of enemy and its points | `src/game/Spawning/BydoKind/` |
 | 3 | The name the waves file gives it | `src/server/Spawning/WaveFileConstants.hpp` |
 | 4 | Tests | `tests/` |
@@ -37,13 +37,13 @@ How a kind reaches the world: `BydoKind` is read by `World::spawnBydo`, which gi
 
 ## Step 1: a new behaviour
 
-A behaviour reads the Bydo it pilots (where it is, where it appeared, how old it is, the length of the tick) and returns what the Bydo wants at the end of the tick: a direction, a share of its top speed from -1 to 1 on each axis, and whether it fires (see [Architecture](/R-Type/architecture/#pilot-and-body)). Give yours a name, in `src/game/Behaviours/Rtype/BehaviourConstants.hpp`:
+A behaviour reads the Bydo it pilots (where it is, where it appeared, how old it is, the length of the tick) and returns what the Bydo wants at the end of the tick: a direction, a share of its top speed from -1 to 1 on each axis, and whether it fires (see [Architecture](/R-Type/architecture/#pilot-and-body)). Give yours a name, in `src/game/Behaviours/Movements/BehaviourConstants.hpp`:
 
 ```cpp
 constexpr std::string_view ZIGZAG_BEHAVIOUR_NAME = "zigzag";
 ```
 
-Its numbers go in `src/game/Behaviours/Rtype/ZigzagBehaviourConstants.hpp`, named and documented, with a `static_assert` as the guard: a Bydo must stay inside the room its row keeps above and below it (`BYDO_PATTERN_ROOM`), or it leaves the area of play.
+Its numbers go in `src/game/Behaviours/Movements/ZigzagBehaviourConstants.hpp`, named and documented, with a `static_assert` as the guard: a Bydo must stay inside the room its row keeps above and below it (`BYDO_PATTERN_ROOM`), or it leaves the area of play.
 
 ```cpp
 #pragma once
@@ -76,7 +76,7 @@ static_assert(ZIGZAG_AMPLITUDE <= BYDO_PATTERN_ROOM,
 }  // namespace rtype::game
 ```
 
-The behaviour is a class of `src/game/Behaviours/Rtype/`, next to `WeaveBehaviour`; the contract it implements, `IBehaviour`, sits in `src/game/Behaviours/Piloting/`. Its header, `ZigzagBehaviour.hpp`:
+The behaviour is a class of `src/game/Behaviours/Movements/`, next to `WeaveBehaviour`; the contract it implements, `IBehaviour`, sits in `src/game/Behaviours/Piloting/`. Its header, `ZigzagBehaviour.hpp`:
 
 ```cpp
 /**
@@ -133,7 +133,7 @@ Intent ZigzagBehaviour::steer(const BehaviourView& view) const {
 
 The height grows downwards on screen, so at a quarter of the period the Zigzagger is 48 units below its row, as a Weaver is at a quarter of its own. A behaviour cannot move its Bydo faster than its top speed, 240 logical units per second (`BYDO_SPEED`): the zigzag climbs 4 × 48 = 192 units per second, so it keeps its path.
 
-Register it with the others in `rtypeBehaviours()` (`src/game/Behaviours/Rtype/RtypeBehaviours.cpp`), and add `ZigzagBehaviour.cpp` to the sources of `src/game/Behaviours/Rtype/CMakeLists.txt`:
+Register it with the others in `builtInBehaviours()` (`src/game/Behaviours/Movements/BuiltInBehaviours.cpp`), and add `ZigzagBehaviour.cpp` to the sources of `src/game/Behaviours/Movements/CMakeLists.txt`:
 
 ```cpp
   behaviours.add(std::make_unique<ZigzagBehaviour>());
@@ -349,7 +349,7 @@ cd docs && npm ci && npm run build
 | What you see | What it means |
 |---|---|
 | `enumeration value 'Zigzagger' not handled in switch` | a `switch` over `BydoKind` has no case for yours; add it where the compiler points |
-| `No behaviour is named zigzag` when the server starts a game | the behaviour is not added in `rtypeBehaviours()` |
+| `No behaviour is named zigzag` when the server starts a game | the behaviour is not added in `builtInBehaviours()` |
 | The server stops with `unknown enemy "..."; known: ...` | the name in `waves.toml` is not in `ENEMY_NAMES` (step 3), or is misspelt |
 | The server stops at start with an error naming a line of `waves.toml` | the file is invalid; the message names the line and the key |
 | The Bydos move but do not zigzag | the enemy is not in the `enemies` list of the difficulty you play (`normal`) |

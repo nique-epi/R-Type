@@ -1,4 +1,4 @@
-#include "RtypeBehaviours.hpp"
+#include "BuiltInBehaviours.hpp"
 #include <memory>
 #include "BehaviourRegistry.hpp"
 #include "StraightBehaviour.hpp"
@@ -6,7 +6,7 @@
 
 namespace rtype::game {
 
-BehaviourRegistry rtypeBehaviours() {
+BehaviourRegistry builtInBehaviours() {
   BehaviourRegistry behaviours;
   behaviours.add(std::make_unique<StraightBehaviour>());
   behaviours.add(std::make_unique<WeaveBehaviour>());

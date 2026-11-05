@@ -1,18 +1,18 @@
 #include "PilotSystemFixture.hpp"
 #include <string_view>
 #include "BehaviourTestConstants.hpp"
+#include "BuiltInBehaviours.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "Intent.hpp"
 #include "Pilot.hpp"
 #include "Position.hpp"
-#include "RtypeBehaviours.hpp"
 #include "SteadyMotion.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game::testing {
 
-PilotSystemFixture::PilotSystemFixture() : behaviours_(rtypeBehaviours()) {}
+PilotSystemFixture::PilotSystemFixture() : behaviours_(builtInBehaviours()) {}
 
 engine::Entity PilotSystemFixture::addBody(std::string_view behaviour,
                                            Position start) {

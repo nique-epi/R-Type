@@ -14,7 +14,7 @@
 namespace rtype::game::testing {
 
 /**
- * @brief Bodies piloted by the behaviours of R-Type at the speed of a Bydo,
+ * @brief Bodies piloted by the built-in behaviours at the speed of a Bydo,
  * moved by a PilotSystem then a MovementSystem, as a game runs them.
  */
 class PilotSystemFixture : public ::testing::Test {
