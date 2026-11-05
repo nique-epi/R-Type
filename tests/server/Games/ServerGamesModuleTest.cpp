@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -12,11 +13,13 @@
 #include "MessageType.hpp"
 #include "RecordingPlayerAdmission.hpp"
 #include "SentDatagrams.hpp"
+#include "ServerConstants.hpp"
 #include "ServerGamesFixture.hpp"
 #include "ServerModuleTestConstants.hpp"
 
 using rtype::engine::ModuleStartFailedException;
 using rtype::network::MessageType;
+using rtype::server::IMPOSED_SEED_BREACH;
 using rtype::server::testing::playerEndpoint;
 
 /**
@@ -46,6 +49,31 @@ TEST_F(ServerGamesFixture, CreatesTheFirstGameFromTheShippedWavesFile) {
 
   EXPECT_EQ(probe().games()->joinable().state(),
             rtype::server::GameState::WaitingForPlayers);
+}
+
+/**
+ * Given the shipped waves file and no seed
+ * When the application starts
+ * Then the journal says the games are vanilla
+ */
+TEST_F(ServerGamesFixture, SaysTheGamesAreVanillaWithoutASeed) {
+  rtype::server::GamesSettings settings = shippedWaves();
+  settings.seed = std::nullopt;
+
+  startWith(std::move(settings));
+
+  EXPECT_EQ(journal().linesHolding(VANILLA_GAMES_LINE).size(), 1U);
+}
+
+/**
+ * Given the shipped waves file and a seed
+ * When the application starts
+ * Then the journal says the seed makes the games not vanilla
+ */
+TEST_F(ServerGamesFixture, SaysASeedMakesTheGamesNotVanilla) {
+  startWith(shippedWaves());
+
+  EXPECT_EQ(journal().linesHolding(IMPOSED_SEED_BREACH).size(), 1U);
 }
 
 /**

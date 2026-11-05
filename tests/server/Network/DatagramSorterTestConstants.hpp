@@ -33,3 +33,9 @@ constexpr std::size_t PLAYER_FLOOD_TO_A_BAN =
 /** @brief A nanosecond before the end of a ban of the protocol page. */
 constexpr std::chrono::nanoseconds JUST_BEFORE_THE_BAN_ENDS =
     rtype::network::testing::PROTOCOL_BAN_DURATION - ONE_NANOSECOND;
+
+/**
+ * @brief The time on the clock of the sorter when a datagram arrives, 5 s
+ * after the clock started.
+ */
+constexpr std::chrono::seconds SORTED_ARRIVAL_TIME{5};

@@ -2,6 +2,7 @@
 
 #include <string>
 #include <string_view>
+#include "WaveCatalog.hpp"
 
 namespace rtype::server::testing {
 
@@ -26,5 +27,13 @@ namespace rtype::server::testing {
  * text, after a failure, when it throws none.
  */
 [[nodiscard]] std::string errorReading(std::string_view text);
+
+/** @returns The waves file the game ships, read where the server finds it in
+ * the assets folder of the sources. */
+[[nodiscard]] WaveCatalog shippedCatalog();
+
+/** @returns @p text with each line ending in CRLF, as a Windows checkout that
+ * converts line endings writes it. */
+[[nodiscard]] std::string withCrlfLineEndings(std::string_view text);
 
 }  // namespace rtype::server::testing

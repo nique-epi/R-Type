@@ -22,6 +22,7 @@ add_subdirectory(Reliability)
 add_subdirectory(Transport)
 add_subdirectory(Handshake)
 add_subdirectory(Statistics)
+add_subdirectory(Master)
 
 add_library(rtype_network INTERFACE)
 
@@ -36,6 +37,7 @@ target_link_libraries(rtype_network
     rtype_network_wire_types
     rtype_network_sequence_order
     rtype_network_world_state_codec
+    rtype_network_world_state_delta
     rtype_network_datagram_codec
     rtype_network_messages
     rtype_network_message_dispatcher
@@ -45,4 +47,5 @@ target_link_libraries(rtype_network
     rtype_network_datagram_relay
     rtype_network_handshake
     rtype_network_statistics
+    rtype_network_master
 )

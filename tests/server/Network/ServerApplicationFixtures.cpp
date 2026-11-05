@@ -4,9 +4,11 @@
 #include <cstdint>
 #include <functional>
 #include <future>
+#include <span>
 #include <thread>
 #include <vector>
 #include "Endpoint.hpp"
+#include "IDatagramSocket.hpp"
 #include "IncomingDatagram.hpp"
 #include "ListenOnFixtures.hpp"
 #include "NetworkConstants.hpp"
@@ -14,6 +16,7 @@
 #include "ReceivedDatagrams.hpp"
 #include "ServerApplication.hpp"
 #include "ServerDatagrams.hpp"
+#include "ServerLobbyTestConstants.hpp"
 #include "ServerTestConstants.hpp"
 #include "TickHandler.hpp"
 #include "UdpSocket.hpp"
@@ -108,6 +111,35 @@ bool requestOfAClientReachesATickThroughAFlood() {
   const std::future_status status = arrived.wait_for(THREAD_TIMEOUT);
   server.stop();
   return status == std::future_status::ready;
+}
+
+rtype::network::DatagramHandler ignoringWhatItReceives() {
+  return []([[maybe_unused]] const rtype::network::Endpoint& sender,
+            [[maybe_unused]] std::span<const std::byte> bytes) {};
+}
+
+rtype::server::TickHandler admittingFirstRequester(AdmissionWatch& watch) {
+  return [&watch](const rtype::server::ReceivedDatagrams& datagrams) {
+    if (!datagrams.connectionRequests.empty() &&
+        !watch.admissionDone.exchange(true)) {
+      watch.server->admit(datagrams.connectionRequests.front().sender,
+                          rtype::server::testing::SESSION_TOKEN);
+      watch.admission.set_value();
+    }
+    if (!datagrams.players.empty() && !watch.delivered.exchange(true)) {
+      watch.firstDatagram.set_value(datagrams.players.front());
+    }
+  };
+}
+
+rtype::server::TickHandler queueingOnce(QueuedOnce& once) {
+  return
+      [&once](
+          [[maybe_unused]] const rtype::server::ReceivedDatagrams& datagrams) {
+        if (!once.queued.exchange(true)) {
+          once.server->queueDatagram(once.datagram);
+        }
+      };
 }
 
 SortedReadyState sortReadyStateThenRequest(

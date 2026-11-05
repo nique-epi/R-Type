@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
@@ -22,6 +23,7 @@
 #include "GameInstanceTestConstants.hpp"
 #include "GameState.hpp"
 #include "GuaranteedMessageTestConstants.hpp"
+#include "Heartbeat.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyState.hpp"
 #include "MessageType.hpp"
@@ -34,6 +36,7 @@
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
+#include "RoundTrips.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
@@ -53,6 +56,10 @@ using game::testing::ROLL_DISTANCE;
 using game::testing::ROLL_END_TICK;
 using testing::bydosAmong;
 using testing::bydosIn;
+using testing::ECHO_HELD_FOR;
+using testing::ECHO_ROUND_TRIP_ON_THE_WIRE;
+using testing::ECHO_SEQUENCE;
+using testing::ECHO_TRAVEL_TIME;
 using testing::entityOf;
 using testing::FIRST_PLAYER;
 using testing::FIRST_SENT;
@@ -60,6 +67,7 @@ using testing::FIRST_SEQUENCE;
 using testing::FOURTH_PLAYER;
 using testing::FOURTH_SENT;
 using testing::FOURTH_SEQUENCE;
+using testing::fullStateIn;
 using testing::GameInstanceArrowTest;
 using testing::GameInstanceInputDelayTest;
 using testing::GameInstanceInputShuffleTest;
@@ -67,6 +75,7 @@ using testing::GameInstanceInputTest;
 using testing::GameInstanceLogTest;
 using testing::GameInstanceMovementTest;
 using testing::GameInstanceTest;
+using testing::heartbeatsIn;
 using testing::HeldArrow;
 using testing::HOLDS_DOWN;
 using testing::HOLDS_LEFT;
@@ -449,7 +458,7 @@ TEST_F(GameInstanceTest, SendsGameStartedBeforeTheFirstWorldState) {
   EXPECT_EQ(messageTypesOf(sentTo(FIRST_PLAYER)),
             (std::vector{network::MessageType::EntitySpawned,
                          network::MessageType::GameStarted,
-                         network::MessageType::WorldState}));
+                         network::MessageType::DeltaWorldState}));
 }
 
 /**
@@ -465,11 +474,10 @@ TEST_F(GameInstanceTest, SendsTheWorldStatesUnderTheTokenOfThePlayer) {
   runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   const std::vector<network::OutgoingDatagram> states =
-      ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER));
+      ofType(network::MessageType::DeltaWorldState, sentTo(FIRST_PLAYER));
   ASSERT_EQ(states.size(), 2U);
-  EXPECT_EQ(onlyMessageIn<network::WorldState>(states.at(0)).tick, 0U);
-  EXPECT_EQ(onlyMessageIn<network::WorldState>(states.at(1)).tick,
-            DEFAULT_TICKS_PER_WORLD_STATE);
+  EXPECT_EQ(fullStateIn(states.at(0)).tick, 0U);
+  EXPECT_EQ(fullStateIn(states.at(1)).tick, DEFAULT_TICKS_PER_WORLD_STATE);
   for (const network::OutgoingDatagram& state : states) {
     EXPECT_EQ(network::DatagramCodec::decodeHeader(state.payload).sessionToken,
               testing::SESSION_TOKEN);
@@ -494,12 +502,12 @@ TEST_F(GameInstanceTest, NumbersEveryDatagramToAPlayerFromOneCounter) {
   runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   const std::vector<network::OutgoingDatagram> toPlayer = sentTo(FIRST_PLAYER);
-  ASSERT_EQ(
-      messageTypesOf(toPlayer),
-      (std::vector{
-          network::MessageType::EntitySpawned, network::MessageType::LobbyState,
-          network::MessageType::GameStarted, network::MessageType::WorldState,
-          network::MessageType::WorldState}));
+  ASSERT_EQ(messageTypesOf(toPlayer),
+            (std::vector{network::MessageType::EntitySpawned,
+                         network::MessageType::LobbyState,
+                         network::MessageType::GameStarted,
+                         network::MessageType::DeltaWorldState,
+                         network::MessageType::DeltaWorldState}));
   for (std::size_t index = 0; index < toPlayer.size(); ++index) {
     EXPECT_EQ(network::DatagramCodec::decodeHeader(toPlayer.at(index).payload)
                   .sequence,
@@ -556,7 +564,8 @@ TEST_F(GameInstanceTest, AnnouncesNoStartWhileAPlayerIsNotReady) {
   for (const std::size_t player : {FIRST_PLAYER, SECOND_PLAYER}) {
     const std::vector<network::OutgoingDatagram> toPlayer = sentTo(player);
     EXPECT_TRUE(ofType(network::MessageType::GameStarted, toPlayer).empty());
-    EXPECT_TRUE(ofType(network::MessageType::WorldState, toPlayer).empty());
+    EXPECT_TRUE(
+        ofType(network::MessageType::DeltaWorldState, toPlayer).empty());
   }
 }
 
@@ -571,7 +580,8 @@ TEST_F(GameInstanceTest, SendsNoWorldStateWhileWaiting) {
   runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   EXPECT_TRUE(
-      ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER)).empty());
+      ofType(network::MessageType::DeltaWorldState, sentTo(FIRST_PLAYER))
+          .empty());
 }
 
 /**
@@ -805,18 +815,19 @@ TEST_F(GameInstanceTest, TheOthersPlayOnWhenOneOfThreePlayersTimesOut) {
       shipOf(FIRST_PLAYER), shipOf(SECOND_PLAYER), shipOf(THIRD_PLAYER)};
   timeOut(SECOND_PLAYER);
   const std::size_t sentToTheFirst =
-      ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER)).size();
+      ofType(network::MessageType::DeltaWorldState, sentTo(FIRST_PLAYER))
+          .size();
 
   runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   EXPECT_EQ(game().state(), GameState::InProgress);
   for (const std::size_t player : {FIRST_PLAYER, THIRD_PLAYER}) {
     const std::vector<network::OutgoingDatagram> states =
-        ofType(network::MessageType::WorldState, sentTo(player));
+        ofType(network::MessageType::DeltaWorldState, sentTo(player));
     ASSERT_EQ(states.size(), sentToTheFirst + 1);
     std::vector<std::uint32_t> listed;
     for (const network::EntityState& entity :
-         onlyMessageIn<network::WorldState>(states.back()).entities) {
+         fullStateIn(states.back()).entities) {
       listed.push_back(entity.entityId);
     }
     EXPECT_EQ(std::ranges::count(listed, ships.at(FIRST_PLAYER)), 1);
@@ -1056,102 +1067,163 @@ TEST_F(GameInstanceTest, TheOthersPlayOnWhenAPlayerLeaves) {
 }
 
 /**
- * Given a game that one player started, then finished, which sends that
- * player nothing while it stays finished
- * When one second of ticks less one runs
- * Then the player is sent no Heartbeat yet
+ * Given a game in progress whose player was just sent a Heartbeat
+ * When the ticks of one interval less one run, then one more tick
+ * Then no Heartbeat goes out before that last tick, and one at it: each
+ * Heartbeat comes one interval after the previous one
  */
-TEST_F(GameInstanceTest, WaitsASecondWithoutDatagramBeforeAHeartbeat) {
+TEST_F(GameInstanceTest, SendsTheNextHeartbeatOneIntervalAfterThePrevious) {
   startGameWithOnePlayer();
-  game().finish();
+  const std::size_t before = heartbeatsIn(sentTo(FIRST_PLAYER));
+  for (std::size_t ticks = 0; ticks < PROTOCOL_HEARTBEAT_TICKS &&
+                              heartbeatsIn(sentTo(FIRST_PLAYER)) == before;
+       ++ticks) {
+    tick();
+  }
+  ASSERT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), before + 1);
 
   runTicks(PROTOCOL_HEARTBEAT_TICKS - 1);
+  const std::size_t beforeTheLastTick = heartbeatsIn(sentTo(FIRST_PLAYER));
+  tick();
 
-  EXPECT_TRUE(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).empty());
+  EXPECT_EQ(beforeTheLastTick, before + 1);
+  EXPECT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), before + 2);
 }
 
 /**
  * Given a game that one player started, then finished, which sends that
- * player nothing while it stays finished
- * When one second of ticks runs
+ * player nothing else while it stays finished
+ * When the ticks of one interval run
  * Then the player is sent one Heartbeat, so its client knows the server is
  * still there
  */
-TEST_F(GameInstanceTest, SendsAHeartbeatAfterASecondWithoutDatagram) {
+TEST_F(GameInstanceTest, SendsAHeartbeatWithinAnIntervalOfAFinishedGame) {
   startGameWithOnePlayer();
   game().finish();
+  const std::size_t before = heartbeatsIn(sentTo(FIRST_PLAYER));
 
   runTicks(PROTOCOL_HEARTBEAT_TICKS);
 
-  EXPECT_EQ(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(), 1U);
+  EXPECT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), before + 1);
 }
 
 /**
- * Given a finished game, which sends its player nothing else
- * When the Heartbeat goes out
- * Then it carries the session token of the player and the sequence after the
- * datagram sent before it
+ * Given a finished game
+ * When the ticks of one interval run
+ * Then the Heartbeat the player is sent carries its session token
  */
 TEST_F(GameInstanceTest, SendsTheHeartbeatUnderTheSessionOfThePlayer) {
   startGameWithOnePlayer();
   game().finish();
-  const std::uint16_t sequenceBefore =
-      network::DatagramCodec::decodeHeader(sentTo(FIRST_PLAYER).back().payload)
-          .sequence;
 
   runTicks(PROTOCOL_HEARTBEAT_TICKS);
 
-  const network::PacketHeader header =
-      network::DatagramCodec::decodeHeader(sentTo(FIRST_PLAYER).back().payload);
-  EXPECT_EQ(header.sessionToken, testing::SESSION_TOKEN);
-  EXPECT_EQ(header.sequence, sequenceBefore + 1);
+  const std::vector<network::OutgoingDatagram> heartbeats =
+      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER));
+  ASSERT_FALSE(heartbeats.empty());
+  EXPECT_EQ(network::DatagramCodec::decodeHeader(heartbeats.back().payload)
+                .sessionToken,
+            testing::SESSION_TOKEN);
+}
+
+/**
+ * Given a game in progress that sent its player a Heartbeat, at the time on
+ * its clock
+ * When the player sends the echo of it, held 3 ms, arriving 45 ms after the
+ * Heartbeat left, and the ticks of one interval run
+ * Then the Heartbeat carried the time on the clock of the game, and the
+ * RoundTrips the player is sent next lists it with a round trip of 42 ms
+ */
+TEST_F(GameInstanceTest, MeasuresThePlayerFromTheEchoOfItsHeartbeat) {
+  startGameWithOnePlayer();
+  const std::size_t before = heartbeatsIn(sentTo(FIRST_PLAYER));
+  for (std::size_t ticks = 0; ticks <= PROTOCOL_HEARTBEAT_TICKS &&
+                              heartbeatsIn(sentTo(FIRST_PLAYER)) == before;
+       ++ticks) {
+    tick();
+  }
+  ASSERT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), before + 1);
+  const std::vector<network::Heartbeat> sent =
+      testing::messagesIn<network::Heartbeat>(
+          ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).back());
+  ASSERT_EQ(sent.size(), 1U);
+  const network::Heartbeat heartbeat = sent.front();
+  EXPECT_EQ(std::chrono::microseconds{heartbeat.sentAt},
+            std::chrono::duration_cast<std::chrono::microseconds>(clockNow()));
+  const ConnectedPlayer* const player =
+      game().roster().find(playerEndpoint(FIRST_PLAYER));
+  ASSERT_NE(player, nullptr);
+  network::PacketHeader header;
+  header.sessionToken = player->sessionToken;
+  header.sequence = ECHO_SEQUENCE;
+  const std::chrono::microseconds leftAt{heartbeat.sentAt};
+
+  queue(network::IncomingDatagram{
+      .sender = player->endpoint,
+      .payload = heartbeatDatagram(
+          header,
+          network::Heartbeat{
+              .sentAt = 0,
+              .echo = network::HeartbeatEcho{.sentAt = heartbeat.sentAt,
+                                             .heldFor = ECHO_HELD_FOR}}),
+      .receivedAt = leftAt + ECHO_TRAVEL_TIME});
+  tick();
+  runTicks(PROTOCOL_HEARTBEAT_TICKS);
+
+  const std::vector<network::OutgoingDatagram> reports =
+      ofType(network::MessageType::RoundTrips, sentTo(FIRST_PLAYER));
+  ASSERT_FALSE(reports.empty());
+  EXPECT_EQ(testing::onlyMessageIn<network::RoundTrips>(reports.back()).players,
+            (std::vector<network::PlayerRoundTrip>{
+                {.playerNumber = player->playerNumber,
+                 .roundTrip = ECHO_ROUND_TRIP_ON_THE_WIRE,
+                 .jitter = 0}}));
 }
 
 /**
  * Given a finished game, which sends its player nothing else
- * When three seconds of ticks run
- * Then the player is sent a Heartbeat every second, three in all
+ * When the ticks of three intervals run
+ * Then the player is sent a Heartbeat every interval, three in all
  */
-TEST_F(GameInstanceTest, SendsAHeartbeatEverySecondWhileNothingElseGoesOut) {
+TEST_F(GameInstanceTest, SendsAHeartbeatEveryIntervalWhileNothingElseGoesOut) {
   startGameWithOnePlayer();
   game().finish();
+  const std::size_t before = heartbeatsIn(sentTo(FIRST_PLAYER));
 
   runTicks(3 * PROTOCOL_HEARTBEAT_TICKS);
 
-  EXPECT_EQ(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(), 3U);
+  EXPECT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), before + 3);
 }
 
 /**
  * Given a game in progress, which sends its player the world state 20 times
  * per second
- * When two seconds of ticks run
- * Then no Heartbeat is sent: the world states already prove the server is
- * there
+ * When the ticks of two intervals run
+ * Then the player is still sent a Heartbeat every interval, two in all: the
+ * round trip is measured during a game too
  */
-TEST_F(GameInstanceTest, SendsNoHeartbeatWhileTheWorldStateGoesOut) {
+TEST_F(GameInstanceTest,
+       SendsAHeartbeatEveryIntervalWhileTheWorldStateGoesOut) {
   startGameWithOnePlayer();
+  const std::size_t before = heartbeatsIn(sentTo(FIRST_PLAYER));
 
   runTicks(2 * PROTOCOL_HEARTBEAT_TICKS);
 
-  EXPECT_TRUE(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).empty());
+  EXPECT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), before + 2);
 }
 
 /**
  * Given a waiting room, which sends its player the room every 500 ms
- * When two seconds of ticks run
- * Then no Heartbeat is sent
+ * When the ticks of two intervals run
+ * Then the player is still sent a Heartbeat every interval, two in all
  */
-TEST_F(GameInstanceTest, SendsNoHeartbeatWhileTheRoomGoesOut) {
+TEST_F(GameInstanceTest, SendsAHeartbeatEveryIntervalWhileTheRoomGoesOut) {
   join(FIRST_PLAYER);
+  const std::size_t before = heartbeatsIn(sentTo(FIRST_PLAYER));
 
   runTicks(2 * PROTOCOL_HEARTBEAT_TICKS);
 
-  EXPECT_TRUE(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).empty());
+  EXPECT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), before + 2);
 }
 
 /**
@@ -1166,8 +1238,7 @@ TEST_F(GameInstanceTest, SendsTheRoomAHeartbeatAtTheFirstTickAfterAStall) {
 
   tick(STALL_SHORTER_THAN_THE_SILENCE_LIMIT);
 
-  EXPECT_EQ(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(), 1U);
+  EXPECT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), 1U);
 }
 
 /**
@@ -1182,8 +1253,7 @@ TEST_F(GameInstanceTest,
 
   tick(STALL_SHORTER_THAN_THE_SILENCE_LIMIT);
 
-  EXPECT_EQ(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(), 1U);
+  EXPECT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), 1U);
 }
 
 /**
@@ -1199,8 +1269,7 @@ TEST_F(GameInstanceTest,
 
   tick(STALL_SHORTER_THAN_THE_SILENCE_LIMIT);
 
-  EXPECT_EQ(
-      ofType(network::MessageType::Heartbeat, sentTo(FIRST_PLAYER)).size(), 1U);
+  EXPECT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), 1U);
 }
 
 /**
@@ -1687,9 +1756,9 @@ TEST_F(GameInstanceMovementTest, SendsTheShipWhereItMovedInTheSameTick) {
   const game::Position moved = shipPositionOf(FIRST_PLAYER);
   ASSERT_NE(moved.x, start.x);
   const std::vector<network::OutgoingDatagram> states =
-      ofType(network::MessageType::WorldState, sentTo(FIRST_PLAYER));
+      ofType(network::MessageType::DeltaWorldState, sentTo(FIRST_PLAYER));
   ASSERT_EQ(states.size(), 2U);
-  const auto state = onlyMessageIn<network::WorldState>(states.back());
+  const auto state = fullStateIn(states.back());
   ASSERT_EQ(state.tick, DEFAULT_TICKS_PER_WORLD_STATE);
   const std::optional<network::EntityState> ship =
       entityOf(state, shipIdOf(FIRST_PLAYER));

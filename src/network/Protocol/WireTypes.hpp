@@ -34,6 +34,14 @@ bool readBool(ByteReader& reader);
 void writeCoordinate(ByteWriter& writer, float coordinate);
 
 /**
+ * @returns The count of eighths of a unit that writeCoordinate() sends for
+ * @p coordinate: rounded to the nearest eighth and clamped to the range of the
+ * wire. Two coordinates with the same count are the same to a receiver.
+ * @throws InvalidCoordinateException when @p coordinate is NaN.
+ */
+[[nodiscard]] std::int16_t wireStepsOf(float coordinate);
+
+/**
  * @brief Reads a coordinate written by writeCoordinate(), in logical units.
  * @throws BufferUnderflowException when fewer than two bytes remain.
  */
@@ -47,10 +55,16 @@ float readCoordinate(ByteReader& reader);
 [[nodiscard]] bool isValidUtf8(std::string_view text);
 
 /**
+ * @returns Whether @p text is well-formed UTF-8 (isValidUtf8()) holding no
+ * control character, a byte below SPACE_BYTE or DELETE_BYTE, so a text written
+ * in a log line cannot start a line of its own. An empty text is printable.
+ */
+[[nodiscard]] bool isPrintableUtf8(std::string_view text);
+
+/**
  * @returns Whether @p nickname is a nickname the protocol accepts:
- * MINIMUM_NICKNAME_SIZE to MAXIMUM_NICKNAME_SIZE bytes of well-formed UTF-8,
- * holding no control character (a byte below SPACE_BYTE, or DELETE_BYTE), so
- * a nickname written in a log line cannot start a line of its own.
+ * MINIMUM_NICKNAME_SIZE to MAXIMUM_NICKNAME_SIZE bytes of printable UTF-8
+ * (isPrintableUtf8()).
  */
 [[nodiscard]] bool isValidNickname(std::string_view nickname);
 

@@ -8,6 +8,8 @@
 #include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
 #include "LivesConstants.hpp"
+#include "RoundTripMeter.hpp"
+#include "SentStates.hpp"
 #include "TimeConstants.hpp"
 #include "UnacknowledgedMessages.hpp"
 
@@ -83,16 +85,26 @@ struct ConnectedPlayer {
    * and lives are kept, its input number is cleared and it does not count for
    * the ready check. The next datagram read from the player clears it. */
   bool away{false};
-  /** @brief The real time since the server last sent the player a datagram,
+  /** @brief The real time since the server last sent the player a Heartbeat,
    * added at the start of each tick, a stall of the server included, since
-   * the client waits in real time: a Heartbeat goes out once it reaches
-   * SILENCE_BEFORE_HEARTBEAT. nextSessionHeader() sets it back to zero. */
-  engine::Duration sinceSent{};
+   * the client waits in real time: the next Heartbeat goes out once it reaches
+   * TIME_BETWEEN_HEARTBEATS, whatever else the server sent, and starts it over
+   * (see sendHeartbeats()). */
+  engine::Duration sinceHeartbeat{};
+  /** @brief The round trip between the server and the client of the player,
+   * measured from their Heartbeats, and its jitter. Heartbeats.cpp keeps it.
+   */
+  network::RoundTripMeter roundTrip;
   /** @brief The guaranteed messages sent to the player that it has not
    * acknowledged yet. GameSessions drops those the datagrams of the player
    * acknowledge, and makes them older at the start of each tick;
    * guaranteeToEveryPlayer() and resendGuaranteedMessages() send them. */
   network::UnacknowledgedMessages unacknowledged;
+  /** @brief The world states sent to the player and the newest one it
+   * acknowledged in full. GameSessions gives it the acknowledgement of each
+   * datagram of the player; the world state sender writes each state against
+   * the acknowledged one. */
+  SentStates sentStates;
 };
 
 }  // namespace rtype::server

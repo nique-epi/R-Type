@@ -196,6 +196,15 @@ class TooManyPlayersException : public MalformedMessageException {
 };
 
 /**
+ * @brief A state would need more datagrams than MAXIMUM_DELTA_PARTS, so it
+ * cannot be written.
+ */
+class TooManyDeltaPartsException : public NetworkException {
+ public:
+  TooManyDeltaPartsException(std::size_t partCount, std::size_t maximumCount);
+};
+
+/**
  * @brief A message handler was registered empty.
  */
 class EmptyMessageHandlerException : public NetworkException {
@@ -252,6 +261,52 @@ class SimulatedDelayOutOfRangeException : public NetworkException {
 class TrafficFileOpenException : public NetworkException {
  public:
   explicit TrafficFileOpenException(const std::string& path);
+};
+
+/**
+ * @brief A message exchanged with the master, in JSON, that is not JSON or
+ * holds a member that is missing, of another type or out of its bounds. The
+ * member is named by its JSON Pointer (RFC 6901), such as
+ * `/games/2/players/1`; the empty pointer names the whole message.
+ */
+class InvalidMasterMessageException : public NetworkException {
+ public:
+  explicit InvalidMasterMessageException(const std::string& pointer);
+};
+
+/**
+ * @brief The master answered a request with an error status: the status, and
+ * the `detail` of its problem document (RFC 9457), empty when it gave none.
+ */
+class MasterRefusedException : public NetworkException {
+ public:
+  MasterRefusedException(int status, const std::string& detail);
+
+  /** @returns The HTTP status the master answered, 400 or more. */
+  [[nodiscard]] int status() const;
+
+ private:
+  int status_;
+};
+
+/**
+ * @brief A url of the master the client cannot call: not `http://<host>`,
+ * with an optional port. HTTPS is refused too, since cpp-httplib is built
+ * without TLS.
+ */
+class InvalidMasterUrlException : public NetworkException {
+ public:
+  explicit InvalidMasterUrlException(const std::string& url);
+};
+
+/**
+ * @brief No answer came from the master: no connection, a timeout, or a
+ * connection cut before the answer; @p reason says which, as cpp-httplib names
+ * it.
+ */
+class MasterUnreachableException : public NetworkException {
+ public:
+  explicit MasterUnreachableException(const std::string& reason);
 };
 
 }  // namespace rtype::network

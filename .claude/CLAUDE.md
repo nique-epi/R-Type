@@ -45,6 +45,7 @@ Paths below are relative to `.claude/rules/`.
 | Writing C++ | `architecture/architecture-a-module-is-one-folder-and-one-target.md`, then the rest of `architecture/` and `code-style/` |
 | Writing a test | `code-style/code-style-tests-given-when-then.md`, `code-style/fix-format-a-test-file-holds-only-tests.md`, `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md` |
 | Writing a module (`IModule`, `IGameModule`) | `architecture/architecture-a-module-is-one-folder-and-one-target.md`, `architecture/fix-architecture-a-module-declares-the-modules-it-reads.md`, `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`, `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md` |
+| Adding or changing a route of the master | `fix/architecture/fix-architecture-a-route-of-the-master-is-restful.md` |
 | Touching the network | security section of `core/code-review.md`, `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`, `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md` |
 | Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md`, `fix/process/fix-process-reread-rules-after-switching-branch.md` |
 | Finishing the application of a plan | `core/simplify-after-plan.md` — `/simplify` before the final gates |
@@ -85,10 +86,12 @@ Paths below are relative to `.claude/rules/`.
 - `architecture/fix-architecture-inherit-interfaces-compose-implementations.md`
 - `architecture/fix-architecture-magic-values-as-named-constants.md`
 - `architecture/fix-architecture-no-type-nested-in-a-class.md`
+- `architecture/fix-architecture-the-table-of-categories-is-rerun-on-every-header.md`
 
 **Build architecture — `fix/architecture/` (loaded every session)**
 - `fix/architecture/fix-architecture-a-link-never-points-back-at-a-folder-that-links-it.md`
 - `fix/architecture/fix-architecture-a-new-header-takes-a-name-no-header-has.md`
+- `fix/architecture/fix-architecture-a-route-of-the-master-is-restful.md`
 - `fix/architecture/fix-architecture-one-cmakelists-per-folder.md`
 
 **Code style — `code-style/` (loaded when a C++ file is read)**

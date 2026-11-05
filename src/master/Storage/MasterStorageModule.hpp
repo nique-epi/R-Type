@@ -1,21 +1,21 @@
 #pragma once
 
-#include <SQLiteCpp/Database.h>
 #include <filesystem>
-#include <optional>
 #include <string>
 #include <vector>
 #include "IModule.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
+#include "MasterDatabase.hpp"
 #include "SettingValue.hpp"
 
 namespace rtype::master {
 
 /**
- * @brief The module that keeps the database of the master: it opens the file
- * when it starts, applying the MASTER_MIGRATIONS the file does not hold yet,
- * and closes it when it stops.
+ * @brief The module that keeps the database of the master: it provides the
+ * MasterDatabase the modules after it read, opens the file when it starts,
+ * applying the MASTER_MIGRATIONS the file does not hold yet, and closes it when
+ * it stops.
  *
  * install() declares the `database` setting. While it is empty, the file is
  * DATABASE_FILE_NAME in the default folder. It is listed before the HTTP
@@ -30,7 +30,8 @@ class MasterStorageModule final : public engine::IModule {
   [[nodiscard]] std::string name() const override;
   [[nodiscard]] std::vector<std::string> dependencies() const override;
 
-  /** @brief Declares the `database` setting; opens nothing. */
+  /** @brief Declares the `database` setting and provides the MasterDatabase;
+   * opens nothing. */
   void install(engine::InstallContext& context) override;
 
   /**
@@ -50,7 +51,7 @@ class MasterStorageModule final : public engine::IModule {
   std::filesystem::path defaultFolder_;
   const engine::SettingValue* databaseSetting_{nullptr};
   logging::Logger logger_;
-  std::optional<SQLite::Database> database_;
+  MasterDatabase database_;
 };
 
 }  // namespace rtype::master

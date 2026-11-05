@@ -3,9 +3,7 @@
 #include "SoundPlayer.hpp"
 
 SoundPlayerFixture::SoundPlayerFixture()
-    : library_(folder_.path()),
-      service_(settings_, storage_),
-      player_(library_, service_) {
+    : service_(settings_, storage_), player_(bank_, service_) {
   service_.subscribe(player_);
 }
 

@@ -1,5 +1,6 @@
 #include "DatagramSorter.hpp"
 #include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -46,11 +47,18 @@ bool carriesSessionToken(const network::PacketHeader& header,
          (holdsRequest && header.sessionToken == network::NO_SESSION_TOKEN);
 }
 
-void pushCopy(concurrency::BoundedQueue<network::IncomingDatagram>& queue,
-              const network::Endpoint& sender,
-              std::span<const std::byte> datagram) {
-  queue.push(network::IncomingDatagram{
-      .sender = sender, .payload = {datagram.begin(), datagram.end()}});
+/**
+ * @returns A copy of @p datagram from @p sender, stamped with @p receivedAt,
+ * read on the clock of the sorter: the time it arrived, since the sorter runs
+ * in the handler of the socket.
+ */
+network::IncomingDatagram copyOf(const network::Endpoint& sender,
+                                 std::span<const std::byte> datagram,
+                                 std::chrono::nanoseconds receivedAt) {
+  return network::IncomingDatagram{
+      .sender = sender,
+      .payload = {datagram.begin(), datagram.end()},
+      .receivedAt = receivedAt};
 }
 
 AdmittedPlayer freshPlayer(const network::Endpoint& player,
@@ -134,21 +142,23 @@ void DatagramSorter::sortSpoken(const SpokenDatagram& datagram) {
     drops_->drop(sender, STRANGER_DROP_REASON);
     return;
   }
-  if (keptByLimit(spendAllowanceOf(datagram, player), sender, *drops_)) {
-    pushCopy(datagram.holdsRequest ? *destinations_.connectionRequests
-                                   : *destinations_.players,
-             sender, datagram.bytes);
+  const std::chrono::nanoseconds now = clock_->now();
+  if (keptByLimit(spendAllowanceOf(datagram, player, now), sender, *drops_)) {
+    (datagram.holdsRequest ? *destinations_.connectionRequests
+                           : *destinations_.players)
+        .push(copyOf(sender, datagram.bytes, now));
   }
 }
 
 network::AllowanceVerdict DatagramSorter::spendAllowanceOf(
-    const SpokenDatagram& datagram, AdmittedPlayer* player) {
+    const SpokenDatagram& datagram, AdmittedPlayer* player,
+    std::chrono::nanoseconds now) {
   if (player != nullptr &&
       datagram.header.sessionToken == player->sessionToken) {
     return network::spendAllowance(player->allowance,
-                                   network::PLAYER_RATE_LIMIT, clock_->now());
+                                   network::PLAYER_RATE_LIMIT, now);
   }
-  return requests_.spend(datagram.sender.get(), clock_->now());
+  return requests_.spend(datagram.sender.get(), now);
 }
 
 void DatagramSorter::sortForeignHeader(const network::Endpoint& sender,
@@ -158,8 +168,9 @@ void DatagramSorter::sortForeignHeader(const network::Endpoint& sender,
     drops_->drop(sender, network::FOREIGN_HEADER_DROP_REASON);
     return;
   }
-  if (keptByLimit(requests_.spend(sender, clock_->now()), sender, *drops_)) {
-    pushCopy(*destinations_.connectionRequests, sender, datagram);
+  const std::chrono::nanoseconds now = clock_->now();
+  if (keptByLimit(requests_.spend(sender, now), sender, *drops_)) {
+    destinations_.connectionRequests->push(copyOf(sender, datagram, now));
   }
 }
 

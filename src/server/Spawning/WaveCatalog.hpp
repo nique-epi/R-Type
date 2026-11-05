@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <map>
@@ -53,10 +54,21 @@ class WaveCatalog {
   /** @returns The names of the difficulties, in alphabetical order. */
   [[nodiscard]] std::vector<std::string> difficulties() const;
 
+  /**
+   * @returns SipHash-2-4 of the text the catalog was read from, under
+   * WAVES_FINGERPRINT_KEY. A text has the same fingerprint on every platform,
+   * and any change of it, a comment or a line ending included, gives another
+   * one, unless it hits a collision: one chance in 2^64 for a change made by
+   * chance.
+   */
+  [[nodiscard]] std::uint64_t fingerprint() const;
+
  private:
-  explicit WaveCatalog(std::map<std::string, WavePlan, std::less<>> plans);
+  WaveCatalog(std::map<std::string, WavePlan, std::less<>> plans,
+              std::uint64_t fingerprint);
 
   std::map<std::string, WavePlan, std::less<>> plans_;
+  std::uint64_t fingerprint_{};
 };
 
 }  // namespace rtype::server

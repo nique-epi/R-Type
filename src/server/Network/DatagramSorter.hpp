@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -48,18 +49,21 @@ namespace rtype::server {
  * CONNECTION_REFUSED_DATAGRAM_SIZE bytes, so the refusal is never larger than
  * what it answers, and it is within the allowance of its address and port
  * among the requests. Every other datagram is dropped, counted and logged by
- * the DatagramDrops the sorter is given. The sorter reads the header and the
- * type of each message, never a payload, throws nothing on a malformed
- * datagram, and reads the clock only for a datagram that passed the token, so
- * its cost per datagram stays close to that of the copy into a queue, whatever
- * the datagram holds. Not thread-safe: call it on the network thread only.
+ * the DatagramDrops the sorter is given. A copy kept is stamped with the time
+ * its datagram arrived. The sorter reads the header and the type of each
+ * message, never a payload, throws nothing on a malformed datagram, and reads
+ * the clock once for a datagram that passed the token, both to spend its
+ * allowance and to stamp it, so its cost per datagram stays close to that of
+ * the copy into a queue, whatever the datagram holds. Not thread-safe: call it
+ * on the network thread only.
  */
 class DatagramSorter {
  public:
   /**
    * @param destinations Neither queue may be null.
    * @param drops, clock Where the datagrams dropped are counted and logged,
-   * and the time the allowances are spent at; both must outlive the sorter.
+   * and the time the allowances are spent at, which stamps each datagram kept
+   * as the time it arrived; both must outlive the sorter.
    */
   DatagramSorter(DatagramQueues destinations, DatagramDrops& drops,
                  const engine::IClock& clock);
@@ -114,11 +118,12 @@ class DatagramSorter {
    * a copy of it in its queue or drops it. */
   void sortSpoken(const SpokenDatagram& datagram);
 
-  /** @returns The verdict of the allowance @p datagram spends: the one of
-   * @p player when it carries the token of @p player, the one of its address
-   * and port among the requests otherwise. */
+  /** @returns The verdict of the allowance @p datagram spends at @p now: the
+   * one of @p player when it carries the token of @p player, the one of its
+   * address and port among the requests otherwise. */
   [[nodiscard]] network::AllowanceVerdict spendAllowanceOf(
-      const SpokenDatagram& datagram, AdmittedPlayer* player);
+      const SpokenDatagram& datagram, AdmittedPlayer* player,
+      std::chrono::nanoseconds now);
 
   DatagramQueues destinations_;
   DatagramDrops* drops_;

@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "MessageType.hpp"
 
 namespace rtype::network::testing {
 
@@ -200,16 +201,36 @@ constexpr std::uint32_t LARGEST_U32 = 0xFFFFFFFF;
 constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
 
 /**
+ * @brief The times of a heartbeat in a test, in microseconds: when it was
+ * sent, when the heartbeat it echoes was sent, and how long that one was held.
+ */
+constexpr std::uint32_t HEARTBEAT_SENT_AT = 7;
+constexpr std::uint32_t ECHOED_SENT_AT = 5;
+constexpr std::uint32_t ECHO_HELD_FOR = 3000;
+
+/**
+ * @brief The round trips of two players in a test, in microseconds, with
+ * their jitters.
+ */
+constexpr std::uint32_t FIRST_PLAYER_ROUND_TRIP = 42'000;
+constexpr std::uint32_t FIRST_PLAYER_JITTER = 3'200;
+constexpr std::uint32_t SECOND_PLAYER_ROUND_TRIP = 80'000;
+constexpr std::uint32_t SECOND_PLAYER_JITTER = 12'500;
+
+/**
  * @brief The port a test message is said to come from.
  */
 constexpr std::uint16_t SOME_SENDER_PORT = 50000;
 
 /**
  * @brief Message type bytes no message has: the byte before the first type,
- * the byte after the last, and the largest byte.
+ * the byte after the last, and the largest byte. The byte after the last is
+ * read from the name of the last message, MessageType::RoundTrips: a message
+ * added after it needs this line to follow.
  */
 constexpr std::uint8_t TYPE_BELOW_THE_FIRST = 0;
-constexpr std::uint8_t TYPE_ABOVE_THE_LAST = 20;
+constexpr std::uint8_t TYPE_ABOVE_THE_LAST =
+    static_cast<std::uint8_t>(MessageType::RoundTrips) + 1;
 constexpr std::uint8_t LARGEST_TYPE_BYTE = 255;
 
 /**
@@ -236,5 +257,10 @@ constexpr std::string_view REJECTED_MESSAGE_LINE_TEXT = "a message of type";
  * bytes of the packet header and the 3 of the message prefix.
  */
 constexpr std::size_t DATAGRAM_PAYLOAD_LIMIT = 1175;
+
+/**
+ * @brief Words of the log line about a message whose handler threw.
+ */
+constexpr std::string_view FAILED_HANDLER_LINE_TEXT = "its handler threw";
 
 }  // namespace rtype::network::testing

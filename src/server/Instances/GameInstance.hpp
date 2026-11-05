@@ -125,8 +125,9 @@ class GameInstance {
    * and closes the session of each player who sent a Disconnection, among
    * @p datagrams, oldest first, closes the session of every player not heard
    * from for SESSION_TIMEOUT_TICKS ticks, then runs the work of the modules.
-   * Last, a player the game sent nothing for SILENCE_BEFORE_HEARTBEAT (see
-   * ConnectedPlayer::sinceSent) is sent a Heartbeat.
+   * Last, a player sent no Heartbeat for TIME_BETWEEN_HEARTBEATS (see
+   * ConnectedPlayer::sinceHeartbeat) is sent one, then the round trips of the
+   * players.
    * Nothing caused by the content of a datagram makes it throw.
    * @p datagrams must stay valid until the call returns.
    */

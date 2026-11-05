@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "Endpoint.hpp"
+#include "Heartbeat.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -45,6 +46,12 @@
  * is still there. */
 [[nodiscard]] std::vector<std::byte> heartbeatDatagram(
     const rtype::network::PacketHeader& header = {});
+
+/** @returns A datagram holding @p heartbeat, which a client sends with the echo
+ * of the newest Heartbeat of the server. */
+[[nodiscard]] std::vector<std::byte> heartbeatDatagram(
+    const rtype::network::PacketHeader& header,
+    const rtype::network::Heartbeat& heartbeat);
 
 /** @returns A datagram holding a Disconnection, which a player sends when it
  * leaves. */

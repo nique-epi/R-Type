@@ -159,7 +159,7 @@ Everything else comes from a library: the hash tables and the sort from the stan
 | Serial number comparison ([RFC 1982](https://www.rfc-editor.org/rfc/rfc1982)) | `isNewerSequence()` | constant | a 16-bit counter wraps during a game: newer means ahead by 1 to 32767, and 32768 is never newer | a plain `>`, wrong after the wrap; a wider counter, larger in every datagram |
 | SipHash-2-4 and cookies kept by nobody | `sipHash()`, `CookieIssuer` | linear in the short message hashed | the server stores nothing before the sender proves its address, and whoever lacks the key cannot compute a cookie; checked against the vectors of the reference implementation | a table of pending requests, which a forger fills; a cryptography library, a new dependency for one function |
 | Generic cell rate algorithm, in a table of fixed size | `spendAllowance()`, `RequestAllowances` | constant per datagram, plus the SipHash of the address for a request | one time per sender, and a silence never gives back more than a burst; the table never grows, and a row picked by a keyed hash keeps forged senders from pushing a banned one out | a window that counts the datagrams of each second: twice the rate can pass across the edge of two windows; a table that refuses new senders once full, as ioquake3 does: forged addresses then lock every new player out |
-| Coordinates in eighths of a unit, states split across datagrams | `WorldStateCodec` | linear in the entities | 16 bits instead of a 32-bit `float`, and every datagram stays within `MAX_DATAGRAM_SIZE` (1200 bytes) | see [Binary rather than text](#binary-rather-than-text) |
+| Coordinates in eighths of a unit, states split across datagrams, states written as differences | `WorldStateCodec`, `DeltaWorldStateCodec` | linear in the entities | 16 bits instead of a 32-bit `float`, and every datagram stays within `MAX_DATAGRAM_SIZE` (1200 bytes) | see [Binary rather than text](#binary-rather-than-text) |
 | Gaussian blur in two passes | `GaussianBlur` | 2 × (2r + 1) samples per pixel for a radius r | a Gaussian separates into one horizontal and one vertical pass, against (2r + 1)² samples in one pass | a single two-dimensional pass |
 
 The cost of testing every pair grows with the square of the boxes. It was measured the same way as the storage, for 64 × 64 boxes spread over the play area and without gathering the boxes first:
@@ -266,6 +266,14 @@ The master is `r-type_server --mode master`. The subject lists two binaries, `r-
 The cost is that the server binary holds the code of the master, cpp-httplib and nlohmann-json included, even where it only hosts games. `rtype_forbid_reachable_links` keeps the master away from SFML, Asio, the game and the code of the server, through every link it reaches.
 
 Alternative considered: a third binary, `r-type_master`. It keeps the server smaller and the master deployable alone, but it is a binary the subject does not list, one more to build, package and ship, and it would have needed the stop and the launch of the server moved into the engine first.
+
+### Keys and cryptography: libhydrogen
+
+A game server proves who it is with the key the master gave when its host created it (`POST /api/servers`), as a FiveM server is known by its license key, sent as `Authorization: Bearer <key>` (RFC 6750) and never named by an id in the path, so a key reaches its own server alone. Each server has a key of its own, so no host can act as another one. The key is 256 bits from the random source of the system, shown once, and the master keeps only its hash, so a copy of its database registers nobody. Both come from libhydrogen, which the accounts and the signed tickets will use too.
+
+The subject asks that dependencies go through the package manager and that the project build without altering the system. libhydrogen, by the author of libsodium, builds with CMake through vcpkg and needs nothing installed. Its password hash is not Argon2id: it costs computation and no memory, and a master key, outside the database, encrypts every stored hash, so a stolen database cannot be used to test passwords.
+
+Alternative considered: libsodium. It is the reference, with Argon2id for passwords, but its vcpkg port builds with autotools on macOS and Linux, which every developer and the CI would have to install on the machine, against the subject.
 
 ## Consequences
 

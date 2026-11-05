@@ -4,6 +4,7 @@
 #include "IMusicPlayer.hpp"
 #include "ISoundPlayer.hpp"
 #include "SettingsService.hpp"
+#include "SoundConstants.hpp"
 #include "SoundtrackParts.hpp"
 #include "TimeConstants.hpp"
 
@@ -12,7 +13,7 @@ namespace rtype::client {
 AudioService::AudioService(AssetLibrary& library, SettingsService& settings)
     : library_(&library),
       settings_(&settings),
-      sounds_(library, settings),
+      sounds_(bank_, settings),
       theme_(settings, THEME_TRACK),
       gameMusic_(settings, GAME_TRACK),
       soundtrack_(SoundtrackParts{.theme = theme_, .gameMusic = gameMusic_}) {
@@ -36,6 +37,7 @@ void AudioService::playTheme() { soundtrack_.playTheme(); }
 void AudioService::playGameMusic() { soundtrack_.playGameMusic(); }
 
 void AudioService::open() {
+  bank_.load(*library_, ALL_SOUND_IDS);
   theme_.open(*library_);
   gameMusic_.open(*library_);
 }

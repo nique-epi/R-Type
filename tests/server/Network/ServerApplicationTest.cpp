@@ -13,7 +13,6 @@
 #include "NetworkConstants.hpp"
 #include "NetworkContext.hpp"
 #include "NetworkException.hpp"
-#include "OutgoingDatagram.hpp"
 #include "ReceivedDatagrams.hpp"
 #include "ServerApplication.hpp"
 #include "ServerApplicationFixtures.hpp"
@@ -116,10 +115,9 @@ TEST(ServerApplication, HandsAConnectionRequestToTheTick) {
   server.stop();
 
   ASSERT_EQ(status, std::future_status::ready);
-  EXPECT_EQ(
-      received.get(),
-      (IncomingDatagram{.sender = loopbackEndpoint(client.localEndpoint().port),
-                        .payload = requestDatagram()}));
+  const IncomingDatagram request = received.get();
+  EXPECT_EQ(request.sender, loopbackEndpoint(client.localEndpoint().port));
+  EXPECT_EQ(request.payload, requestDatagram());
 }
 
 /**
@@ -150,10 +148,9 @@ TEST(ServerApplication, HandsAnAdmittedPlayersDatagramToTheTick) {
   server.stop();
 
   ASSERT_EQ(status, std::future_status::ready);
-  EXPECT_EQ(
-      received.get(),
-      (IncomingDatagram{.sender = loopbackEndpoint(client.localEndpoint().port),
-                        .payload = playerReady()}));
+  const IncomingDatagram datagram = received.get();
+  EXPECT_EQ(datagram.sender, loopbackEndpoint(client.localEndpoint().port));
+  EXPECT_EQ(datagram.payload, playerReady());
 }
 
 /**
@@ -163,32 +160,16 @@ TEST(ServerApplication, HandsAnAdmittedPlayersDatagramToTheTick) {
  * Then a tick hands the handler the ReadyState among the players' datagrams
  */
 TEST(ServerApplication, HandsTheTickTheDatagramOfAPlayerItAdmitted) {
-  std::promise<void> admission;
-  const std::future<void> admitted = admission.get_future();
-  std::promise<IncomingDatagram> firstDatagram;
-  std::future<IncomingDatagram> received = firstDatagram.get_future();
-  std::atomic<bool> admissionDone{false};
-  std::atomic<bool> delivered{false};
-  ServerApplication* serverPointer = nullptr;
-  ServerApplication server{
-      loopbackEndpoint(ANY_PORT), [&](const ReceivedDatagrams& datagrams) {
-        if (!datagrams.connectionRequests.empty() &&
-            !admissionDone.exchange(true)) {
-          serverPointer->admit(datagrams.connectionRequests.front().sender,
-                               SESSION_TOKEN);
-          admission.set_value();
-        }
-        if (!datagrams.players.empty() && !delivered.exchange(true)) {
-          firstDatagram.set_value(datagrams.players.front());
-        }
-      }};
-  serverPointer = &server;
+  AdmissionWatch watch;
+  const std::future<void> admitted = watch.admission.get_future();
+  std::future<IncomingDatagram> received = watch.firstDatagram.get_future();
+  ServerApplication server{loopbackEndpoint(ANY_PORT),
+                           admittingFirstRequester(watch)};
+  watch.server = &server;
   const Endpoint bound = server.open();
   rtype::network::NetworkContext clientContext;
   rtype::network::UdpSocket client{clientContext, loopbackEndpoint(ANY_PORT)};
-  client.startReceiving(
-      []([[maybe_unused]] const Endpoint& sender,
-         [[maybe_unused]] std::span<const std::byte> bytes) {});
+  client.startReceiving(ignoringWhatItReceives());
   const Endpoint serverEndpoint = loopbackEndpoint(bound.port);
   const std::jthread serverRunner{[&server] { server.run(); }};
   const std::jthread clientRunner{[&clientContext] { clientContext.run(); }};
@@ -206,10 +187,9 @@ TEST(ServerApplication, HandsTheTickTheDatagramOfAPlayerItAdmitted) {
 
   ASSERT_EQ(admissionStatus, std::future_status::ready);
   ASSERT_EQ(status, std::future_status::ready);
-  EXPECT_EQ(
-      received.get(),
-      (IncomingDatagram{.sender = loopbackEndpoint(client.localEndpoint().port),
-                        .payload = playerReady()}));
+  const IncomingDatagram datagram = received.get();
+  EXPECT_EQ(datagram.sender, loopbackEndpoint(client.localEndpoint().port));
+  EXPECT_EQ(datagram.payload, playerReady());
 }
 
 /**
@@ -282,18 +262,11 @@ TEST(ServerApplication, SendsTheDatagramsTheTickQueued) {
       clientContext.stop();
     }
   });
-  std::atomic<bool> queued{false};
-  ServerApplication* serverPointer = nullptr;
-  ServerApplication server{
-      loopbackEndpoint(ANY_PORT),
-      [&]([[maybe_unused]] const ReceivedDatagrams& datagrams) {
-        if (!queued.exchange(true)) {
-          serverPointer->queueDatagram(rtype::network::OutgoingDatagram{
-              .destination = loopbackEndpoint(client.localEndpoint().port),
-              .payload = payload});
-        }
-      }};
-  serverPointer = &server;
+  QueuedOnce once{
+      .datagram = {.destination = loopbackEndpoint(client.localEndpoint().port),
+                   .payload = payload}};
+  ServerApplication server{loopbackEndpoint(ANY_PORT), queueingOnce(once)};
+  once.server = &server;
   server.open();
   const std::jthread serverRunner{[&server] { server.run(); }};
   const std::jthread clientRunner{[&clientContext] { clientContext.run(); }};

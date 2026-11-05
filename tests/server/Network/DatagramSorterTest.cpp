@@ -75,6 +75,24 @@ TEST_F(DatagramSorterFixture, SendsAPlayersDatagramToThePlayerQueue) {
 }
 
 /**
+ * Given an admitted player, and the clock of the sorter at
+ * SORTED_ARRIVAL_TIME
+ * When the player sends a datagram
+ * Then the datagram queued for the players carries that time, the time it
+ * arrived
+ */
+TEST_F(DatagramSorterFixture, StampsEachKeptDatagramWithItsClock) {
+  admit(player());
+  advanceClock(SORTED_ARRIVAL_TIME);
+
+  sort(player(), playerReady());
+
+  const std::vector<IncomingDatagram> players = drainPlayers();
+  ASSERT_EQ(players.size(), 1U);
+  EXPECT_EQ(players.front().receivedAt, SORTED_ARRIVAL_TIME);
+}
+
+/**
  * Given an admitted player whose acceptance was lost
  * When the player sends its connection request again
  * Then the request goes to the request queue, where it is answered
@@ -151,7 +169,7 @@ TEST_F(DatagramSorterFixture,
        DropsADatagramOfAnotherVersionShorterThanTheRefusal) {
   rtype::network::PacketHeader header;
   header.version = NEXT_PROTOCOL_VERSION;
-  const std::vector<std::byte> datagram = heartbeatDatagram(header);
+  const std::vector<std::byte> datagram = disconnectionDatagram(header);
   ASSERT_EQ(datagram.size(), REFUSAL_DATAGRAM_SIZE - 1);
 
   sort(stranger(), datagram);

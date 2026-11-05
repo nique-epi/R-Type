@@ -89,11 +89,10 @@ constexpr std::uint32_t PROTOCOL_FIRST_INPUT_NUMBER = 1;
 constexpr std::uint8_t PROTOCOL_UP_ACTION_BIT = 0b00001;
 
 /**
- * @brief The longest silence the protocol page lets a side of a session keep:
- * after 1 s without sending anything, it sends a Heartbeat. In milliseconds,
- * so half of it is 500 ms rather than a whole number of seconds.
+ * @brief The 500 ms of the protocol page between two Heartbeats of a side of
+ * a session, whatever else it sends.
  */
-constexpr std::chrono::milliseconds PROTOCOL_HEARTBEAT_INTERVAL{1000};
+constexpr std::chrono::milliseconds PROTOCOL_HEARTBEAT_INTERVAL{500};
 
 /**
  * @brief How long the protocol page lets a server stay silent: after 5 s

@@ -6,6 +6,7 @@ add_subdirectory(Leaderboard)
 
 add_library(rtype_client_connection_module STATIC
   ClientConnectionModule.cpp
+  PlayerConnection.cpp
   ServerSession.cpp
 )
 
@@ -22,6 +23,7 @@ target_link_libraries(rtype_client_connection_module
     rtype_client_waiting_room
     rtype_engine_install_context
     rtype_engine_modules
+    rtype_engine_system_clock
     rtype_engine_time
     rtype_logging
     rtype_network_conditions
