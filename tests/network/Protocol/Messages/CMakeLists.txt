@@ -1,1 +1,3 @@
 add_subdirectory(ConnectionAccepted)
+add_subdirectory(ConnectionRedirect)
+add_subdirectory(GameStatus)

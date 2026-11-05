@@ -373,6 +373,19 @@ static_assert(LARGEST_UNPROVEN_ANSWER_DATAGRAM_SIZE <=
               "address more bytes than the request it answers");
 
 /**
+ * @brief The size of a datagram holding a ConnectionRedirect and its port: the
+ * supervisor answers a request with a valid cookie with it, so it is never
+ * larger than the request it answers, like every answer to a sender.
+ */
+constexpr std::size_t CONNECTION_REDIRECT_DATAGRAM_SIZE =
+    PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT16_WIRE_SIZE;
+
+static_assert(CONNECTION_REDIRECT_DATAGRAM_SIZE <=
+                  SMALLEST_CONNECTION_REQUEST_DATAGRAM_SIZE,
+              "the supervisor never sends a sender more bytes than the "
+              "request it answers");
+
+/**
  * @brief The size of the largest datagram holding a ConnectionAccepted: the
  * player number, the count, then MAXIMUM_ENTITY_TYPES types of a side and a
  * name of the longest length.
@@ -451,6 +464,8 @@ constexpr std::string_view FIRST_KEPT_FIELD = "firstKept";
 constexpr std::string_view INNER_TYPE_FIELD = "innerType";
 constexpr std::string_view CARRIED_PAYLOAD_SIZE_FIELD = "carriedPayloadSize";
 constexpr std::string_view PHASE_FIELD = "phase";
+constexpr std::string_view PORT_FIELD = "port";
+constexpr std::string_view STATE_FIELD = "state";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a
