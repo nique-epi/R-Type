@@ -213,16 +213,3 @@ frame_ms = 120
 /** @brief The most frames an idle animation holds, as the sheet format of
  * the architecture page writes it. */
 constexpr std::size_t MOST_FRAMES_A_SHEET_HOLDS = 16;
-
-/** @brief The names of the five sheets the game ships, and all of them. */
-constexpr std::string_view DRIFTER_TYPE_NAME = "drifter";
-constexpr std::string_view ENEMY_MISSILE_TYPE_NAME = "enemy_missile";
-constexpr std::string_view PLAYER_MISSILE_TYPE_NAME = "player_missile";
-constexpr std::string_view SHIP_TYPE_NAME = "ship";
-constexpr std::string_view WEAVER_TYPE_NAME = "weaver";
-constexpr std::array SHIPPED_TYPE_NAMES{
-    DRIFTER_TYPE_NAME, ENEMY_MISSILE_TYPE_NAME, PLAYER_MISSILE_TYPE_NAME,
-    SHIP_TYPE_NAME, WEAVER_TYPE_NAME};
-
-/** @brief The folder of the shipped sheets, in the assets folder. */
-constexpr std::string_view SHIPPED_SHEET_FOLDER = "entities";

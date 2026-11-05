@@ -15,6 +15,7 @@
 #include "EntitySheet.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "EntitySpriteTestConstants.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "SheetPixels.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "SpriteFrame.hpp"
@@ -31,7 +32,13 @@ using rtype::engine::MissingDataFileKeyException;
 using rtype::engine::UnknownDataFileKeyException;
 using rtype::game::EntitySheet;
 using rtype::game::SpriteFrame;
+using rtype::game::testing::DRIFTER_SHEET;
+using rtype::game::testing::ENEMY_MISSILE_SHEET;
+using rtype::game::testing::PLAYER_MISSILE_SHEET;
+using rtype::game::testing::SHIP_SHEET;
+using rtype::game::testing::SHIPPED_SHEET_NAMES;
 using rtype::game::testing::shippedEntitySheets;
+using rtype::game::testing::WEAVER_SHEET;
 using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
 
@@ -230,7 +237,7 @@ TEST(EntityAppearances, RefusesASpriteSheetThatIsNoText) {
 TEST(EntityAppearances, EveryShippedTypeHasAnAppearance) {
   const EntityAppearances appearances = shippedAppearances();
 
-  for (const std::string_view name : SHIPPED_TYPE_NAMES) {
+  for (const std::string_view name : SHIPPED_SHEET_NAMES) {
     SCOPED_TRACE(name);
     EXPECT_NE(appearances.named(name), nullptr);
   }
@@ -245,7 +252,7 @@ TEST(EntityAppearances, EveryShippedTypeHasAnAppearance) {
  */
 TEST(EntityAppearances, EveryShippedFrameShowsOneWholeSprite) {
   const EntityAppearances appearances = shippedAppearances();
-  for (const std::string_view name : SHIPPED_TYPE_NAMES) {
+  for (const std::string_view name : SHIPPED_SHEET_NAMES) {
     const EntityAppearance* const shipped = appearances.named(name);
     ASSERT_NE(shipped, nullptr);
     const sf::Image sheet = shippedSheet(shipped->sheet);
@@ -269,11 +276,11 @@ TEST(EntityAppearances, EveryShippedFrameShowsOneWholeSprite) {
  */
 TEST(EntityAppearances, ShippedFramesLastWhatTheSheetReadmeLists) {
   const std::array<std::pair<std::string_view, Duration>, 5> listed{{
-      {SHIP_TYPE_NAME, SHIP_FRAME_TIME_LISTED},
-      {DRIFTER_TYPE_NAME, BYDO_FRAME_TIME_LISTED},
-      {WEAVER_TYPE_NAME, BYDO_FRAME_TIME_LISTED},
-      {PLAYER_MISSILE_TYPE_NAME, PLAYER_MISSILE_FRAME_TIME_LISTED},
-      {ENEMY_MISSILE_TYPE_NAME, ENEMY_MISSILE_FRAME_TIME_LISTED},
+      {SHIP_SHEET, SHIP_FRAME_TIME_LISTED},
+      {DRIFTER_SHEET, BYDO_FRAME_TIME_LISTED},
+      {WEAVER_SHEET, BYDO_FRAME_TIME_LISTED},
+      {PLAYER_MISSILE_SHEET, PLAYER_MISSILE_FRAME_TIME_LISTED},
+      {ENEMY_MISSILE_SHEET, ENEMY_MISSILE_FRAME_TIME_LISTED},
   }};
   const EntityAppearances appearances = shippedAppearances();
   for (const auto& [name, frameTime] : listed) {
@@ -293,8 +300,8 @@ TEST(EntityAppearances, ShippedFramesLastWhatTheSheetReadmeLists) {
  */
 TEST(EntityAppearances, ShippedSheetsShareTheirFramesWholeOrNotAtAll) {
   const EntityAppearances appearances = shippedAppearances();
-  for (const std::string_view first : SHIPPED_TYPE_NAMES) {
-    for (const std::string_view second : SHIPPED_TYPE_NAMES) {
+  for (const std::string_view first : SHIPPED_SHEET_NAMES) {
+    for (const std::string_view second : SHIPPED_SHEET_NAMES) {
       const EntityAppearance* const one = appearances.named(first);
       const EntityAppearance* const other = appearances.named(second);
       ASSERT_NE(one, nullptr);
@@ -318,7 +325,7 @@ TEST(EntityAppearances, ShippedSheetsShareTheirFramesWholeOrNotAtAll) {
  */
 TEST(EntityAppearances, TheShippedShipStartsOnTheFirstPilotColorRow) {
   const EntityAppearances appearances = shippedAppearances();
-  const EntityAppearance* const ship = appearances.named(SHIP_TYPE_NAME);
+  const EntityAppearance* const ship = appearances.named(SHIP_SHEET);
   ASSERT_NE(ship, nullptr);
 
   EXPECT_EQ(ship->idleFrames.front(), PLAYER_SHIP_FRAME);

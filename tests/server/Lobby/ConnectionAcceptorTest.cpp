@@ -9,6 +9,8 @@
 #include "ByteWriter.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectionAccepted.hpp"
+#include "ConnectionAcceptedFixtures.hpp"
+#include "ConnectionAcceptedTestConstants.hpp"
 #include "ConnectionAcceptor.hpp"
 #include "ConnectionAcceptorFixture.hpp"
 #include "ConnectionAcceptorFixtures.hpp"
@@ -37,6 +39,9 @@
 
 namespace rtype::server {
 
+using network::testing::acceptanceWithEnemyTypes;
+using network::testing::LONGEST_TYPE_NAME;
+using network::testing::MOST_TYPES_ON_THE_PROTOCOL_PAGE;
 using testing::A_FIFTH_OF_A_SECOND_LATER;
 using testing::A_TENTH_OF_A_SECOND_LATER;
 using testing::ACCEPTANCE_REPEAT_TIME;
@@ -48,7 +53,6 @@ using testing::DROPPED_TOGETHER_COUNT;
 using testing::emptyNicknameRequestDatagram;
 using testing::JUST_AFTER_THE_REPEAT;
 using testing::JUST_BEFORE_THE_REPEAT;
-using testing::largestEntityTypeTable;
 using testing::NEXT_ACCEPTANCE_REPEAT_TIME;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::nicknameOf;
@@ -645,7 +649,9 @@ TEST(ConnectionAcceptor, AnswersTheNextRequestAfterOneWhoseAnswerThrew) {
       .admit = [](const network::Endpoint&, std::uint64_t) {},
       .onPlayerJoined =
           [](ConnectedPlayer&) { throw network::InvalidCoordinateException(); },
-      .entityTypes = largestEntityTypeTable()}};
+      .entityTypes = acceptanceWithEnemyTypes(MOST_TYPES_ON_THE_PROTOCOL_PAGE,
+                                              LONGEST_TYPE_NAME)
+                         .types}};
   const network::IncomingDatagram firstRequest{.sender = playerEndpoint(0),
                                                .payload = requestDatagram(0)};
   acceptor.receive(std::span{&firstRequest, 1}, REQUEST_TIME);
@@ -788,7 +794,9 @@ TEST(ConnectionAcceptor, ChallengesWithNoMoreBytesWhateverTheTable) {
           },
       .admit = [](const network::Endpoint&, std::uint64_t) {},
       .onPlayerJoined = {},
-      .entityTypes = largestEntityTypeTable()}};
+      .entityTypes = acceptanceWithEnemyTypes(MOST_TYPES_ON_THE_PROTOCOL_PAGE,
+                                              LONGEST_TYPE_NAME)
+                         .types}};
   const network::IncomingDatagram request{
       .sender = playerEndpoint(0),
       .payload = network::DatagramCodec::encode(

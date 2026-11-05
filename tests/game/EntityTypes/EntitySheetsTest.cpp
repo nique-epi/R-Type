@@ -15,6 +15,7 @@
 #include "GunSheet.hpp"
 #include "MotionKind.hpp"
 #include "SheetText.hpp"
+#include "SheetTextFixtures.hpp"
 #include "ShippedEntitySheets.hpp"
 
 using rtype::engine::UnknownDataFileChoiceException;

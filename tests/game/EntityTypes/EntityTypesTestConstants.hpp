@@ -42,4 +42,10 @@ constexpr std::string_view WEAVER_SHEET = "weaver";
 constexpr std::string_view PLAYER_MISSILE_SHEET = "player_missile";
 constexpr std::string_view ENEMY_MISSILE_SHEET = "enemy_missile";
 
+/** @brief The names of every sheet the game ships, in the order of their
+ * names, so of their numbers. */
+constexpr std::array SHIPPED_SHEET_NAMES{DRIFTER_SHEET, ENEMY_MISSILE_SHEET,
+                                         PLAYER_MISSILE_SHEET, SHIP_SHEET,
+                                         WEAVER_SHEET};
+
 }  // namespace rtype::game::testing

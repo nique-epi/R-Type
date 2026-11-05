@@ -1,22 +1,14 @@
 #include "EntitySheetsFixtures.hpp"
 #include <cstddef>
 #include <string>
-#include <string_view>
 #include <vector>
-#include "DataFileConstants.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheets.hpp"
 #include "EntitySheetsTestConstants.hpp"
 #include "SheetText.hpp"
+#include "SheetTextFixtures.hpp"
 
 namespace rtype::game::testing {
-
-SheetText sheetText(std::string_view name, std::string_view text) {
-  return SheetText{
-      .name = std::string{name},
-      .source = std::string{name} + std::string{engine::DATA_FILE_EXTENSION},
-      .text = std::string{text}};
-}
 
 std::vector<SheetText> enemyMissileSheets(std::size_t count) {
   std::vector<SheetText> sheets;

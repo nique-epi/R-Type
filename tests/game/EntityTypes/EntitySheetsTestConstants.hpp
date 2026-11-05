@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
@@ -110,17 +109,6 @@ constexpr std::uint8_t ENEMY_MISSILE_NUMBER_AMONG_THREE = 2;
 constexpr std::uint8_t WEAVER_NUMBER_AMONG_THREE = 3;
 constexpr std::uint8_t NO_SHEET_NUMBER = 0;
 constexpr std::uint8_t NUMBER_PAST_THE_THREE = 4;
-
-/** @brief The names of the sheets the game ships with, one per type of today,
- * in the order of their names. */
-constexpr std::string_view SHIPPED_DRIFTER_NAME = "drifter";
-constexpr std::string_view SHIPPED_ENEMY_MISSILE_NAME = "enemy_missile";
-constexpr std::string_view SHIPPED_PLAYER_MISSILE_NAME = "player_missile";
-constexpr std::string_view SHIPPED_SHIP_NAME = "ship";
-constexpr std::string_view SHIPPED_WEAVER_NAME = "weaver";
-constexpr std::array<std::string_view, 5> SHIPPED_SHEET_NAMES{
-    SHIPPED_DRIFTER_NAME, SHIPPED_ENEMY_MISSILE_NAME,
-    SHIPPED_PLAYER_MISSILE_NAME, SHIPPED_SHIP_NAME, SHIPPED_WEAVER_NAME};
 
 /** @brief The first part of the names of generated sheets. */
 constexpr std::string_view GENERATED_SHEET_PREFIX = "missile_";

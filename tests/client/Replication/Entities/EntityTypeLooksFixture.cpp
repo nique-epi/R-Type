@@ -7,7 +7,7 @@
 #include "EntityTypeEntry.hpp"
 #include "EntityTypeLooks.hpp"
 #include "EntityTypeLooksTestConstants.hpp"
-#include "SheetText.hpp"
+#include "SheetTextFixtures.hpp"
 
 namespace rtype::client::testing {
 
@@ -19,9 +19,7 @@ bool drawsEveryType([[maybe_unused]] std::string_view name) { return true; }
 /** @returns The appearance of LOOKED_UP_TYPE_NAME alone. */
 EntityAppearances lookedUpAppearance() {
   const std::array sheets{
-      game::SheetText{.name = std::string{LOOKED_UP_TYPE_NAME},
-                      .source = std::string{LOOKED_UP_TYPE_NAME},
-                      .text = std::string{LOOKED_UP_SHEET_TEXT}}};
+      game::testing::sheetText(LOOKED_UP_TYPE_NAME, LOOKED_UP_SHEET_TEXT)};
   return EntityAppearances::fromTexts(sheets);
 }
 
