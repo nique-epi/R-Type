@@ -411,6 +411,7 @@ constexpr std::string_view PART_COUNT_FIELD = "partCount";
 constexpr std::string_view BASE_DISTANCE_FIELD = "baseDistance";
 constexpr std::string_view TYPE_COUNT_FIELD = "typeCount";
 constexpr std::string_view SIDE_FIELD = "side";
+constexpr std::string_view PHASE_FIELD = "phase";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a
