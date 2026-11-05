@@ -12,6 +12,7 @@
 #include "DeltaWorldState.hpp"
 #include "Endpoint.hpp"
 #include "MessageFrame.hpp"
+#include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "OrderedMessage.hpp"
 #include "OutgoingDatagram.hpp"

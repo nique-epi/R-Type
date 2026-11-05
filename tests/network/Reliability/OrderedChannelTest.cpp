@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <cstdint>
-#include <numeric>
 #include <vector>
 #include "OrderedChannelFixture.hpp"
 #include "ReliabilityTestConstants.hpp"
@@ -17,8 +16,11 @@ namespace rtype::network::testing {
  */
 TEST_F(OrderedChannelFixture,
        DeliversEveryMessageInOrderThroughLossesAndDelays) {
-  std::vector<std::uint16_t> given(DEMONSTRATION_MESSAGE_COUNT);
-  std::iota(given.begin(), given.end(), std::uint16_t{0});
+  std::vector<std::uint16_t> given;
+  given.reserve(DEMONSTRATION_MESSAGE_COUNT);
+  for (std::uint16_t step = 0; step < DEMONSTRATION_MESSAGE_COUNT; ++step) {
+    given.push_back(step);
+  }
 
   runTheDemonstration();
 

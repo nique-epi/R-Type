@@ -8,6 +8,7 @@
 #include "ISessionOutbox.hpp"
 #include "LobbyState.hpp"
 #include "MessageDispatcher.hpp"
+#include "TimeConstants.hpp"
 #include "WaitingRoom.hpp"
 #include "WorldStateAssembler.hpp"
 

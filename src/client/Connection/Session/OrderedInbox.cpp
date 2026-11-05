@@ -2,9 +2,13 @@
 #include <cstdint>
 #include <vector>
 #include "EncodedMessage.hpp"
+#include "ISessionOutbox.hpp"
+#include "LobbyState.hpp"
+#include "MessageDispatcher.hpp"
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
 #include "OrderedMessage.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 

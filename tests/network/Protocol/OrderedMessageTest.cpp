@@ -4,9 +4,9 @@
 #include <vector>
 #include "ByteSequence.hpp"
 #include "MessagePayload.hpp"
+#include "MessageType.hpp"
 #include "NetworkException.hpp"
 #include "OrderedMessage.hpp"
-#include "ProtocolConstants.hpp"
 #include "ProtocolTestConstants.hpp"
 
 namespace rtype::network {

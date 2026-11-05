@@ -26,12 +26,12 @@ std::uint16_t numberOf(const EncodedMessage& message) {
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
-OrderedMessage envelopeOf(std::uint16_t number, std::uint16_t firstKept) {
+OrderedMessage envelopeOf(std::uint16_t position, std::uint16_t oldestKept) {
   return OrderedMessage{
-      .number = number,
-      .firstKept = firstKept,
+      .number = position,
+      .firstKept = oldestKept,
       .innerType = static_cast<std::uint8_t>(MessageType::GameEvent),
-      .payload = numberedMessage(number).payload};
+      .payload = numberedMessage(position).payload};
 }
 
 std::vector<std::uint16_t> carriedNumbers(

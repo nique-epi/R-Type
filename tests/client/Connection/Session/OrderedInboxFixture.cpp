@@ -1,7 +1,9 @@
 #include "OrderedInboxFixture.hpp"
 #include <array>
 #include <cstdint>
+#include <optional>
 #include <vector>
+#include "EncodedMessage.hpp"
 #include "EntityDestroyed.hpp"
 #include "GameEvent.hpp"
 #include "Heartbeat.hpp"
@@ -54,8 +56,8 @@ void OrderedInboxFixture::deliverOrdered(std::uint16_t number,
 }
 
 void OrderedInboxFixture::deliverHeartbeat() {
-  const network::EncodedMessage heartbeat =
-      network::encodedMessage(network::Heartbeat{.sentAt = SOME_SENT_AT});
+  const network::EncodedMessage heartbeat = network::encodedMessage(
+      network::Heartbeat{.sentAt = SOME_SENT_AT, .echo = std::nullopt});
   const std::array<network::MessageFrame, 1> frames{
       network::MessageFrame{.type = static_cast<std::uint8_t>(heartbeat.type),
                             .payload = heartbeat.payload}};

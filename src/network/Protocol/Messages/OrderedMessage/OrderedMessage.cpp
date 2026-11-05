@@ -5,6 +5,7 @@
 #include <type_traits>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
+#include "MessageType.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
 #include "SequenceOrder.hpp"

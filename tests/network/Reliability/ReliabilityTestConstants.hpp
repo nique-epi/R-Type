@@ -3,7 +3,6 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include "ProtocolTestConstants.hpp"
 
 namespace rtype::network::testing {
 

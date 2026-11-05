@@ -7,9 +7,7 @@
 #include <span>
 #include <vector>
 #include "CarriedMessage.hpp"
-#include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
-#include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"

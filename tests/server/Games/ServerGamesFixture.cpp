@@ -9,7 +9,6 @@
 #include "Application.hpp"
 #include "ConfigurationStep.hpp"
 #include "ConnectedPlayer.hpp"
-#include "DatagramCodec.hpp"
 #include "GamePlayers.hpp"
 #include "GamesSettings.hpp"
 #include "IModule.hpp"
