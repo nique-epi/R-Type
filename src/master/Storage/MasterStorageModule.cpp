@@ -40,8 +40,8 @@ void MasterStorageModule::install(engine::InstallContext& context) {
 
 void MasterStorageModule::start() {
   const std::filesystem::path file = databaseFile();
-  database_.open(engine::genericText(file));
-  logger_.info("database ", engine::genericText(file));
+  database_.open(logging::genericText(file));
+  logger_.info("database ", logging::genericText(file));
 }
 
 void MasterStorageModule::stop() { database_.close(); }

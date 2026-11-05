@@ -29,7 +29,7 @@ std::filesystem::path findAssetFolder(
   }
   std::vector<std::string> searchedFolders;
   std::ranges::transform(candidates, std::back_inserter(searchedFolders),
-                         genericText);
+                         logging::genericText);
   throw AssetFolderNotFoundException(searchedFolders);
 }
 

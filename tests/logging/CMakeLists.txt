@@ -1,2 +1,2 @@
 target_sources(master_tests PRIVATE LogLaunchOptionsFixtures.cpp)
-target_sources(logging_tests PRIVATE LogLaunchOptionsTest.cpp LogLaunchOptionsFixture.cpp LogLaunchOptionsFixtures.cpp ThrottledLogTest.cpp ThrottledLogFixture.cpp)
+target_sources(logging_tests PRIVATE LogLaunchOptionsTest.cpp LogLaunchOptionsFixture.cpp LogLaunchOptionsFixtures.cpp ThrottledLogTest.cpp ThrottledLogFixture.cpp PathTextTest.cpp)

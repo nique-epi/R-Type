@@ -31,7 +31,7 @@ void ClientAssetsModule::install(engine::InstallContext& context) {
 }
 
 void ClientAssetsModule::start() {
-  logger_.info("assets folder: ", engine::genericText(library_->folder()));
+  logger_.info("assets folder: ", logging::genericText(library_->folder()));
   for (const AssetLoad& load : startupLoads_) {
     load(*library_);
   }

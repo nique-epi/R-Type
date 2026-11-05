@@ -2,7 +2,7 @@
 #include <filesystem>
 #include <string>
 
-namespace rtype::engine {
+namespace rtype::logging {
 
 std::string genericText(const std::filesystem::path& path) {
   std::string text;
@@ -12,4 +12,4 @@ std::string genericText(const std::filesystem::path& path) {
   return text;
 }
 
-}  // namespace rtype::engine
+}  // namespace rtype::logging
