@@ -119,4 +119,9 @@ AssetFolderNotFoundException::AssetFolderNotFoundException(
     : EngineException("No assets folder found, searched: " +
                       joinedFolders(searchedFolders)) {}
 
+SharedLibraryOpenException::SharedLibraryOpenException(
+    const std::string& file, const std::string& reason)
+    : EngineException("The library \"" + file +
+                      "\" could not be opened: " + reason) {}
+
 }  // namespace rtype::engine

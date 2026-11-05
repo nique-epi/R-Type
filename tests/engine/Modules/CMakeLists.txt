@@ -1,4 +1,4 @@
-target_sources(engine_tests PRIVATE ApplicationTest.cpp ApplicationFixtures.cpp ApplicationLoopTest.cpp ApplicationLoopFixtures.cpp InstallContextTest.cpp StageWorkFixtures.cpp ApplicationConfigurationTest.cpp ApplicationConfigurationFixtures.cpp)
+target_sources(engine_tests PRIVATE ApplicationTest.cpp ApplicationFixtures.cpp ApplicationLoopTest.cpp ApplicationLoopFixtures.cpp InstallContextTest.cpp StageWorkFixtures.cpp ApplicationConfigurationTest.cpp ApplicationConfigurationFixtures.cpp ApplicationPluginsTest.cpp ApplicationPluginsFixtures.cpp)
 
 add_subdirectory(Services)
 add_subdirectory(Stages)

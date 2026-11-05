@@ -206,4 +206,11 @@ class AssetFolderNotFoundException : public EngineException {
       const std::vector<std::string>& searchedFolders);
 };
 
+/** @brief A shared library could not be opened. */
+class SharedLibraryOpenException : public EngineException {
+ public:
+  SharedLibraryOpenException(const std::string& file,
+                             const std::string& reason);
+};
+
 }  // namespace rtype::engine
