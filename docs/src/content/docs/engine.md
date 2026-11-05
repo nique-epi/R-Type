@@ -138,6 +138,7 @@ The simulation runs at a fixed rate, `SIMULATION_TICKS_PER_SECOND` (60), whateve
 
 - `IClock` is the source of time. `SystemClock` reads the real clock; tests use `tests/SimulatedClock.hpp`, so a test never waits and gives the same result at any frame rate.
 - `FixedTimestep` turns the time read from an `IClock` into a whole number of ticks to simulate. The remainder is kept for the next call. A stall longer than `MAXIMUM_TICKS_PER_ADVANCE` ticks is dropped instead of being caught up. `nextTickTime()` gives the time of the clock at which the next tick is due, as of the last `consumeTicks()`: later than that call by more than zero and at most one tick, so a loop can sleep until then. `droppedTime()` gives the time the last `consumeTicks()` dropped, zero when it caught everything up, so a loop can report the stall.
+- `ServerClock` (`rtype_engine_server_clock`, `src/engine/Time/ServerClock/`) follows the tick counter of a server on the clock of the client, which share nothing. It takes a `ClockSample` (the tick of the server, the time the message arrived, the round trip of its exchange), estimates the instant of tick 0 as the arrival less half the round trip less the ticks since, keeps the `CLOCK_FILTER_WINDOW` (8) newest estimates and follows the one with the shortest round trip, the clock filter of NTP. It closes 1/`CLOCK_SMOOTHING_DIVISOR` (8) of the gap at each sample, jumps beyond `CLOCK_SNAP_TICKS` (6) ticks, and forgets everything when the tick goes back (a new game). `IServerClock` gives `localInstantOf(tick)` and `tickAt(localNow)`, both empty before the first sample. The half round trip assumes both ways last the same: an asymmetric path shifts the estimate by half the difference, and nothing can tell. The wire side is in [Protocol](/R-Type/protocol/#clock-of-the-server).
 - `TimerScheduler` runs a callback after a delay (`scheduleOnce`) or at a regular interval (`scheduleRepeating`), and cancels it through the `TimerHandle` it returned. It never reads a clock: the caller passes `SIMULATION_TICK_DURATION` to `advance()` once per tick.
 
 The loop the client and the server will write looks like this; the events published by the systems are delivered at the end of the same tick (see [Event bus](#event-bus-eventbus)):
@@ -312,6 +313,7 @@ The same language is meant for the administration console and the orders of the 
 | Change the stages of a program | `SERVER_LOOP_STAGES` or `CLIENT_LOOP_STAGES` |
 | Change where the programs look for `assets/`, or how the executable is found | `findAssetFolder()` in `src/engine/Paths/AssetFolder.cpp`, `src/engine/Paths/ExecutablePath.cpp` |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
+| Place a tick of the server on the clock of the client | `ServerClock` in `src/engine/Time/ServerClock/`, tests in `tests/engine/Time/ServerClock/` |
 | Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/engine/Time/FixedTimestepTest.cpp` |
 
 Each folder has its own `CMakeLists.txt` declaring one library, linked into `rtype_engine` by `src/engine/CMakeLists.txt`.

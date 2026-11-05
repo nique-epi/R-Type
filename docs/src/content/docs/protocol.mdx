@@ -124,7 +124,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 |---|---|---|---|
 | 1 | `ConnectionRequest` | `cookie` `u64` (0 until the server gives one), `nickname` `string` (1 to 16 bytes) | every 500 ms until an answer; the client gives up after 5 s |
 | 4 | `Disconnection` | none | when the player closes the client, three times 50 ms apart |
-| 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32` (see [Round trip](#round-trip)) | every 500 ms, whatever else it sends; the client also 40 ms after accepting a datagram that holds guaranteed messages when nothing else was sent |
+| 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32`, `ticks` `bool` (always 0), `tick` `u32` (always 0) (see [Round trip](#round-trip) and [Clock of the server](#clock-of-the-server)) | every 500 ms, whatever else it sends; the client also 40 ms after accepting a datagram that holds guaranteed messages when nothing else was sent |
 | 6 | `ReadyState` | `ready` `bool` | when the player changes it, and again while `LobbyState` shows another value |
 | 9 | `PlayerInput` | `inputNumber` `u32`, `actions` `u8` | 60 times per second during a game |
 | 17 | `GameLoaded` | none | with a `PlayerInput`, at most every 100 ms, from the first one after `GameStarted` until the first state (`WorldState` or `DeltaWorldState`) arrives |
@@ -137,7 +137,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 2 | `ConnectionAccepted` | `playerNumber` `u8` (1 to 4) | in answer to a request; its header carries the session token |
 | 3 | `ConnectionRefused` | `reason` `u8`: 1 `GameFull`, 2 `GameInProgress`, 3 `IncompatibleVersion`, 4 `NicknameTaken` | in answer to a request |
 | 4 | `Disconnection` | none | when the server shuts down, three times 50 ms apart |
-| 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32` (see [Round trip](#round-trip)) | every 500 ms, whatever else it sends |
+| 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32`, `ticks` `bool`, `tick` `u32` (see [Round trip](#round-trip) and [Clock of the server](#clock-of-the-server)) | every 500 ms, whatever else it sends; `ticks` is 1 only while a game is in progress |
 | 7 | `LobbyState` | `playerCount` `u8`, then per player `playerNumber` `u8`, `ready` `bool`, `nickname` `string` | on every change, and at least every 500 ms while no game runs |
 | 8 | `GameStarted` | none | when every connected player is ready, then every 500 ms to the players that did not send `GameLoaded` yet |
 | 10 | `WorldState` | see [World state](#world-state) | not sent by the server since `DeltaWorldState`; a client still reads it |
@@ -166,7 +166,7 @@ A message is accepted only when its payload has exactly the size its fields add 
 | `EntityDestroyed`, `PlayerLeft`, `ConnectionRefused` | `reason` is in the table of its message; `PlayerLeft` names a `playerNumber` of 1 to 4 |
 | `GameEvent` | `kind` is in the table of [Game events](#game-events), and `playerNumber` and `entityId` are 0 or a valid value as that table says |
 | `RoundTrips` | at most 4 players, each `playerNumber` 1 to 4 and listed once |
-| `Heartbeat` | `echoes` is 0 or 1; when it is 0, `echo.sentAt` and `echo.heldFor` are 0 |
+| `Heartbeat` | `echoes` and `ticks` are 0 or 1; when `echoes` is 0, `echo.sentAt` and `echo.heldFor` are 0; when `ticks` is 0, `tick` is 0 |
 | `Disconnection`, `GameStarted` | the payload is empty |
 | `LeaderboardRequest` | `playerCount` is 1 to 4; `difficulty` follows the rules of a nickname: 1 to 16 bytes of valid UTF-8, no control character |
 | `LeaderboardAnswer` | as `LeaderboardRequest` for its first two fields; at most 10 rows; each `rank` is at least 1 and each nickname is valid |
@@ -352,6 +352,12 @@ Each side measures the round trip of the session from the `Heartbeat`s, without 
 
 Each side smooths its round trips, each one moving the estimate by an eighth of its gap to it, and takes as the jitter the mean gap between two round trips in a row over the 16 newest, 8 s of `Heartbeat`s. Right after each of its `Heartbeat`s, the server sends the player `RoundTrips`: the smoothed round trip and the jitter, in microseconds, of each player of the game it measured; a player not measured yet is not listed.
 
+## Clock of the server
+
+The two machines share no clock, so a client cannot tell at which of its own instants the server was at a given tick. The `Heartbeat` of the server answers it: while a game is in progress, `ticks` is 1 and `tick` is the tick the server is simulating when it sends it, the tick of the `WorldState` it sends in the same tick; outside a game the tick stands still, so `ticks` is 0 and `tick` is 0. A client never sets them.
+
+A client that receives such a `Heartbeat` in a session, together with a round trip that its echo closes, may place that tick on its own clock. The server sent it half a round trip before the datagram arrived, so tick 0 stood at the arrival time, less half the round trip, less `tick` ticks of 1/60 s. The client keeps the 8 newest estimates, follows the one with the shortest round trip, as the clock filter of NTP does ([RFC 5905](https://www.rfc-editor.org/rfc/rfc5905)): a datagram that waited in a queue has a long round trip and is left aside. It moves toward that estimate by an eighth of the gap at each estimate, and jumps onto it when the gap is more than 6 ticks, and when a `tick` is lower than the previous one, which is a new game. The estimate is exact when the two ways of the path last the same; a path whose ways differ by some time moves it by half of that time, and nothing in the protocol can tell. This is a rule of the client of this repository, not a requirement on the wire: the protocol only says what the two fields mean.
+
 ## Errors
 
 This section gathers what each side does when something goes wrong, from a datagram it cannot read to a peer that disappears. Most rules are stated in the sections above, which the tables link to; the rest are stated here. Three rules hold for every case:
@@ -458,7 +464,7 @@ The rates and delays on this page (60 inputs and 20 states per second by default
 
 Version 2 guarantees `EntityDestroyed`, `GameEvent` and `PlayerLeft` with `flags`, `acknowledgedSequence` and `acknowledgementBits`, which version 1 wrote as 0 (see [Guaranteed messages](#guaranteed-messages)). The layout of the header is the same, its meaning is not, so `version` became 2. The server also groups the guaranteed messages it sends again in one datagram, which receivers of version 1 already accepted.
 
-Version 2 also gives `Heartbeat` the time it is sent and the echo of the newest `Heartbeat` received, which measure the round trip (see [Round trip](#round-trip)). A build of version 2 from before that sends an empty `Heartbeat`: a newer receiver skips it as a message, and its datagram still keeps the session alive, so the two play together without a round trip.
+Version 2 also gives `Heartbeat` the time it is sent and the echo of the newest `Heartbeat` received, which measure the round trip (see [Round trip](#round-trip)), then the tick of the server while a game runs (see [Clock of the server](#clock-of-the-server)). A build of version 2 from before the echo sends an empty `Heartbeat`, and one from before the tick stops at the echo, 13 bytes instead of 18: a newer receiver skips either as a message, and an older receiver skips the longer one, since bytes follow what it reads. In every case the datagram still keeps the session alive, so the two play together without a round trip or a clock.
 
 The rest of the second part of the project changes the protocol again:
 
@@ -477,7 +483,7 @@ The code of this repository applies the rules above, with the exceptions listed 
 - Within a session, each side writes the session token and its next sequence into every datagram it sends: the server in its acceptances, the `EntitySpawned` of the ships, the Bydos and the missiles, `LobbyState`, `GameStarted`, `DeltaWorldState`, the game events, `GameEnded`, `LeaderboardAnswer`, `Heartbeat`, `RoundTrips` and `Disconnection`; the client in its inputs, `ReadyState`, `GameLoaded`, `LeaderboardRequest`, `Heartbeat` and `Disconnection`. Each also acknowledges there the datagrams it accepted, except the client in its `Disconnection`, sent once the session is closed.
 - The server guarantees `EntityDestroyed`, `GameEvent` and `PlayerLeft` as [Guaranteed messages](#guaranteed-messages) describes, and reads the acknowledgements of every datagram of a player it accepts. The client sends a `Heartbeat` 40 ms after a datagram that holds guaranteed messages when nothing else went out, and remembers the `eventNumber` of the last 2 s.
 - The server checks the token of every datagram from the address of a player it admitted, on its network thread before any queue, and the sequence of every datagram it reads from a player, so a duplicate or a late one is dropped whatever its message. The client checks the token, then the sequence, of every datagram of the server.
-- Each side sends a `Heartbeat` every 500 ms and measures the round trip from its echo, and the server sends each player `RoundTrips` after each of its `Heartbeat`s, as [Round trip](#round-trip) describes. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
+- Each side sends a `Heartbeat` every 500 ms and measures the round trip from its echo, and the server sends each player `RoundTrips` after each of its `Heartbeat`s, as [Round trip](#round-trip) describes; the `Heartbeat` of the server also carries its tick during a game, as [Clock of the server](#clock-of-the-server) describes. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
 
 - The client sends `LeaderboardRequest` from its leaderboard screen, and the server answers it.
 
