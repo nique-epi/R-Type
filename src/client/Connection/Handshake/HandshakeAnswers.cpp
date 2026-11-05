@@ -5,7 +5,9 @@
 #include "ConnectionAccepted.hpp"
 #include "ConnectionChallenge.hpp"
 #include "ConnectionPhase.hpp"
+#include "ConnectionRedirect.hpp"
 #include "ConnectionRefused.hpp"
+#include "Endpoint.hpp"
 #include "ErrorText.hpp"
 #include "HandshakeAnswersParts.hpp"
 #include "LobbyState.hpp"
@@ -31,6 +33,11 @@ HandshakeAnswers::HandshakeAnswers(HandshakeAnswersParts parts)
       [this](const network::MessageOrigin& origin,
              const network::ConnectionRefused& refused) {
         onRefused(origin, refused);
+      });
+  dispatcher.registerHandler<network::ConnectionRedirect>(
+      [this](const network::MessageOrigin&,
+             const network::ConnectionRedirect& redirect) {
+        onRedirected(redirect);
       });
 }
 
@@ -89,6 +96,21 @@ void HandshakeAnswers::leaveForMissingSheets(
   parts_.logger.get().warn(
       "accepted, but this client has no sheet for the entity types ",
       engine::listText(undrawable), ": it leaves the server");
+}
+
+void HandshakeAnswers::onRedirected(
+    const network::ConnectionRedirect& redirect) {
+  SessionOutbox& outbox = parts_.outbox.get();
+  const network::Endpoint game{.address = outbox.server().address,
+                               .port = redirect.port};
+  if (!isConnecting() || game == outbox.server() ||
+      !parts_.attempt.get().acceptRedirect()) {
+    return;
+  }
+  parts_.inbound.get().listenTo(game);
+  outbox.aim(game);
+  parts_.attempt.get().answerRedirect(outbox);
+  parts_.logger.get().info("redirected to port ", redirect.port);
 }
 
 void HandshakeAnswers::onRefused(const network::MessageOrigin& origin,
