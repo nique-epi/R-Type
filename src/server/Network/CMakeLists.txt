@@ -18,6 +18,7 @@ target_link_libraries(rtype_server_network_module
     rtype_engine_system_clock
     rtype_engine_time
     rtype_logging
+    rtype_network_compression
     rtype_network_context
     rtype_network_datagram_relay
     rtype_network_handshake_rate_limit

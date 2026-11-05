@@ -13,7 +13,7 @@ constexpr std::uint16_t LINKED_SERVER_PORT = 4242;
 constexpr std::uint16_t LINKED_SERVER_GAMES = 8;
 
 /** @brief What the server announces of the protocol and of its games. */
-constexpr std::uint8_t ANNOUNCED_PROTOCOL_VERSION = 3;
+constexpr std::uint8_t ANNOUNCED_PROTOCOL_VERSION = 4;
 constexpr std::uint8_t ANNOUNCED_PLAYERS_PER_GAME = 4;
 
 /** @brief Ticks of 2 ms at the median and 5 ms at the 95th percentile. */
