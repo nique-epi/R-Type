@@ -97,3 +97,13 @@ After the load-test bots were split into `Launch/`, `Play/` and `Squad/`, the us
 ### Decision
 
 The user removed that rule and lowered the threshold to two classes, everywhere: a role of two classes a reader names is a category, and a folder with two such roles splits. Points 8, 9, 14 and 16 say two. The `Fixtures/` of a folder of `tests/tools/` stays outside the count of levels, so `Play/Pilot/Fixtures/` is allowed. Folders left flat under the older threshold are not reworked by this change.
+
+## Update (5 November 2026) — a role for the work a feature does on its own
+
+### Context
+
+The statuses of the game servers (RTY-171) must be refreshed every 5 s, whether anyone reads them or not. Until then the master did nothing on its own: the threads of its HTTP server answered each request, and its loop has no stage. Point 19 knew four roles, all reached from a request.
+
+### Decision
+
+Of three options put to the user (a new role `Jobs/`, the thread inside `Services/`, or a loop stage driven by a module of its own), the user chose `Jobs/` on 5 November 2026: a class that owns its thread and calls the services at a fixed interval, built by `start()` and destroyed by `stop()` of the module class, as `HeartbeatJob` does in the game server.
