@@ -3,12 +3,27 @@
 #include <string_view>
 #include "BotReport.hpp"
 #include "BotStanding.hpp"
+#include "BotTraffic.hpp"
 #include "Endpoint.hpp"
 #include "EntityMessage.hpp"
 #include "NetworkConditionsConstants.hpp"
+#include "NetworkThread.hpp"
 #include "TimeConstants.hpp"
+#include "TrafficTotals.hpp"
 
 namespace rtype::tools {
+
+namespace {
+
+/** @returns What crossed the socket of @p thread since it was built, as the
+ * client reads it and as the network carried it. */
+BotTraffic trafficOf(client::NetworkThread& thread) {
+  return BotTraffic{
+      .plain = network::trafficTotalsOf(thread.traffic().report()),
+      .wire = network::trafficTotalsOf(thread.wireTraffic().report())};
+}
+
+}  // namespace
 
 Bot::Bot(std::uint32_t seed)
     : connection_(network::PERFECT_NETWORK),
@@ -53,7 +68,9 @@ void Bot::countReceived(engine::Duration elapsed) {
   for (const client::EntityMessage& message : received_) {
     tally_.count(message);
   }
-  tally_.addTime(elapsed, connection_.waitingRoom().gameStarted());
+  const bool gameStarted = connection_.waitingRoom().gameStarted();
+  tally_.addTime(elapsed, gameStarted);
+  tally_.addTraffic(trafficOf(connection_.network()), gameStarted);
 }
 
 }  // namespace rtype::tools

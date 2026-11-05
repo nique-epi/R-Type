@@ -20,7 +20,8 @@ namespace rtype::tools {
  *
  * At each update it reads what the server sent and sends what is due, drains
  * the entity messages of the game, as the game screen does, and has its
- * BotTally count them; then its sender plays when the game started, and the
+ * BotTally count them and the traffic of its socket, decoded and as the
+ * network carried it; then its sender plays when the game started, and the
  * tally counts each input it sent. It asks to be ready only when its squad
  * tells it to (see asksReady()).
  */
@@ -54,8 +55,8 @@ class Bot {
   void leave();
 
  private:
-  /** @brief Drains the entity messages and has the tally count them and the
-   * time of the frame of @p elapsed. */
+  /** @brief Drains the entity messages and has the tally count them, the time
+   * of the frame of @p elapsed and the traffic of the socket. */
   void countReceived(engine::Duration elapsed);
 
   client::PlayerConnection connection_;

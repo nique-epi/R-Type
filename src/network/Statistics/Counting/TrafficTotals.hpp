@@ -19,4 +19,15 @@ struct TrafficTotals {
  */
 [[nodiscard]] TrafficTotals trafficTotalsOf(const TrafficReport& report);
 
+/** @brief Adds the datagrams of @p part to @p total, in both directions. */
+void addTotals(TrafficTotals& total, const TrafficTotals& part);
+
+/**
+ * @returns What crossed the socket between @p older and @p newer, two totals of
+ * the same counters, @p newer taken after @p older, so it holds at least as
+ * much in each direction.
+ */
+[[nodiscard]] TrafficTotals trafficBetween(const TrafficTotals& older,
+                                           const TrafficTotals& newer);
+
 }  // namespace rtype::network
