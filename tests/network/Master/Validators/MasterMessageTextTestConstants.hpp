@@ -63,7 +63,7 @@ constexpr std::string_view PAUSED_STATE = "paused";
 constexpr std::string_view FULL_STATE = "full";
 constexpr std::string_view PLAYING_STATE = "playing";
 constexpr std::string_view GAME_NAME_OF_17_BYTES = "ABCDEFGHIJKLMNOPQ";
-constexpr std::string_view EMPTY_GAME_NAME = "";
+constexpr std::string_view EMPTY_GAME_NAME{};
 constexpr double NEGATIVE_MEASURE = -1.0;
 constexpr double LOSS_ABOVE_ALL = 100.5;
 constexpr std::size_t GAMES_ABOVE_THE_MOST = 65;

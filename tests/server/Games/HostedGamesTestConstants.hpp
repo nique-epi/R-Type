@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 #include <string_view>
 
 /** @brief How the master is to see the games of a server of three games. */

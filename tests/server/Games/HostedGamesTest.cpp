@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <cstddef>
 #include <string>
 #include <vector>
 #include "GameState.hpp"
@@ -9,6 +10,7 @@
 #include "HostedGamesFixture.hpp"
 #include "HostedGamesTestConstants.hpp"
 #include "MasterMessageText.hpp"
+#include "ServerHeartbeat.hpp"
 #include "ServerModuleTestConstants.hpp"
 
 using rtype::network::HostedGame;

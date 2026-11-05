@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <string>
 #include "CreatedServer.hpp"
+#include "GameListing.hpp"
 #include "HttpPortProbe.hpp"
 #include "MasterAccess.hpp"
 #include "MasterClient.hpp"

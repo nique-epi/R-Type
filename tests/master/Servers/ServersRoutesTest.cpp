@@ -6,7 +6,6 @@
 #include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <vector>
-#include "HostedGame.hpp"
 #include "HostedGameState.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterMessageTextFixtures.hpp"
@@ -372,11 +371,11 @@ TEST_F(ServersRoutesFixture, ARegistrationEmptiesTheListOfGames) {
  * Then each gets 404
  */
 TEST_F(ServersRoutesFixture, AnIdThatNamesNoServerIsNotFound) {
-  for (const std::string_view id : {UNUSED_SERVER_ID, NOT_A_SERVER_ID,
-                                    ZERO_SERVER_ID, NEGATIVE_SERVER_ID}) {
-    const httplib::Result answer = readGames(id);
+  for (const std::string_view serverId : {UNUSED_SERVER_ID, NOT_A_SERVER_ID,
+                                          ZERO_SERVER_ID, NEGATIVE_SERVER_ID}) {
+    const httplib::Result answer = readGames(serverId);
 
     ASSERT_TRUE(answer);
-    EXPECT_EQ(answer->status, EXPECTED_NOT_FOUND) << id;
+    EXPECT_EQ(answer->status, EXPECTED_NOT_FOUND) << serverId;
   }
 }

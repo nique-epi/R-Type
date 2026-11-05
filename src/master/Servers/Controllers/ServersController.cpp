@@ -8,6 +8,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <utility>
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
 #include "CreatedServer.hpp"
@@ -59,14 +60,14 @@ std::optional<std::int64_t> serverIdOf(const ApiRequest& request) {
     return std::nullopt;
   }
   const std::string& text = parameter->second;
-  std::int64_t id = 0;
+  std::int64_t serverId = 0;
   const auto [end, error] =
-      std::from_chars(text.data(), text.data() + text.size(), id);
+      std::from_chars(text.data(), text.data() + text.size(), serverId);
   if (error != std::errc{} || end != text.data() + text.size() ||
-      id < static_cast<std::int64_t>(network::FIRST_SERVER_ID)) {
+      std::cmp_less(serverId, network::FIRST_SERVER_ID)) {
     return std::nullopt;
   }
-  return id;
+  return serverId;
 }
 
 /** @returns What @p answer gives, or 400 naming the member it refused. */
