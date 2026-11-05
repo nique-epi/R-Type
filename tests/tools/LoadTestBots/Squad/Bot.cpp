@@ -40,7 +40,7 @@ void Bot::join(const network::Endpoint& server, std::string_view nickname) {
 
 void Bot::update(engine::Duration elapsed) {
   connection_.update(elapsed);
-  countReceived(elapsed);
+  readReceived(elapsed);
   if (inputs_.advance(elapsed)) {
     tally_.countInput();
   }
@@ -66,11 +66,13 @@ void Bot::leave() {
   connection_.network().close();
 }
 
-void Bot::countReceived(engine::Duration elapsed) {
+void Bot::readReceived(engine::Duration elapsed) {
   received_.clear();
   connection_.entityMessages().drainEntityMessages(received_);
+  const std::uint8_t playerNumber = connection_.session().status().playerNumber;
   for (const client::EntityMessage& message : received_) {
     tally_.count(message);
+    inputs_.confirm(message, playerNumber);
   }
   const bool gameStarted = connection_.waitingRoom().gameStarted();
   tally_.addTime(elapsed, gameStarted);
