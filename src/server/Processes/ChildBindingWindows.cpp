@@ -1,7 +1,4 @@
-// clang-format off
-#include <boost/process/v2/default_launcher.hpp>
 #include <windows.h>
-// clang-format on
 #include <boost/process/v2/process.hpp>
 #include <boost/system/detail/error_code.hpp>
 #include "ChildBinding.hpp"
