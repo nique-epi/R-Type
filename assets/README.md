@@ -9,6 +9,7 @@ Every file the client reads at run time.
 | `music/` | music, read from disk while it plays |
 | `fonts/` | fonts |
 | `icons/` | icons drawn smooth, one folder per icon set with its license |
+| `entities/` | one TOML sheet per entity type: its gameplay, read by the server, and its appearance, read by the client (see [Writing an entity sheet](https://nique-epi.github.io/R-Type/entity-sheets/)) |
 
 ## Asset ids
 
@@ -24,7 +25,7 @@ When an id breaks the rule, or its file is missing or cannot be read, the client
 
 ## How the programs find this folder
 
-The client and the server look for `assets/` next to their executable, then in the folder above it, where the Visual Studio generator writes `Release/` and `Debug/`. The folder they were launched from does not matter. The server reads only `waves/waves.toml` from it.
+The client and the server look for `assets/` next to their executable, then in the folder above it, where the Visual Studio generator writes `Release/` and `Debug/`. The folder they were launched from does not matter. The server reads only `waves/waves.toml` and the sheets of `entities/` from it.
 
 ## Where the files come from
 
@@ -72,7 +73,7 @@ The client and the server look for `assets/` next to their executable, then in t
 
 The light shade of player 4, `#ffd38b`, is one step of blue above `#ffd38a`, the gold of every flame, here and in `sprites/hud.png`: a palette for color blindness swaps the three shades of a player color, and this step keeps the flame of player 4 out of the swap.
 
-The game and the squadron of the title screen show the two frames in turn, each for the frame time above. The rectangle, the frames and the animation of each entity type are written once, in `src/client/Rendering/Sprites/EntitySpriteConstants.hpp`. The sheet is listed in `titleAssets()`, for the squadron of the title screen, and in `gameAssets()`.
+The game and the squadron of the title screen show the two frames in turn, each for the frame time above. In the game, the frames and the frame time of each entity type are written once, in the `[appearance]` of its sheet in `entities/`; `src/client/Rendering/Sprites/EntitySpriteConstants.hpp` holds those the title, the intro and the waiting room draw, and the bonus Bydo, which no sheet uses yet. The client tests check that the frame times of the shipped sheets are those of the table above. The sheet is listed in `titleAssets()`, for the squadron of the title screen, and in `gameAssets()`.
 
 ## The effect sheet
 

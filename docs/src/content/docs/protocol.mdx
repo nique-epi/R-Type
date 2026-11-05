@@ -1,5 +1,5 @@
 ---
-title: 'Network protocol: version 3'
+title: 'Network protocol: version 4'
 description: The datagrams the client and the server exchange over UDP, byte by byte, and what each side does when one is lost or cannot be read.
 sidebar:
   label: Protocol
@@ -11,7 +11,7 @@ This page is the specification of the protocol the client and the server speak: 
 
 ## Status of this document
 
-- This is version 3 of the protocol. It is the only version the code speaks; [Version 3](#version-3) says what it changed from version 2, and what the rest of the second part of the project will change.
+- This is version 4 of the protocol. It is the only version the code speaks; [Version 4](#version-4) says what it changed from version 3, and [Version 3](#version-3) what the rest of the second part of the project will change.
 - The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
 - Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
 - Numbers are decimal unless written `0x`. A size is in bytes.
@@ -48,7 +48,7 @@ A position is in logical units, in the frame described in [Architecture](/R-Type
 
 ## Datagram
 
-A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 3.
+A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 4.
 
 <ByteLayout
   label="The 22-byte header: protocolId on bytes 0 to 3, version on byte 4, flags on byte 5, sessionToken on bytes 6 to 13, sequence on bytes 14 and 15, acknowledgedSequence on bytes 16 and 17, acknowledgementBits on bytes 18 to 21."
@@ -71,10 +71,10 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
   ]}
 />
 
-| Offset | Size | Field | In version 3 |
+| Offset | Size | Field | In version 4 |
 |---|---|---|---|
 | 0 | 4 | `protocolId` | `0x52545950`, `RTYP` in ASCII |
-| 4 | 1 | `version` | 3 |
+| 4 | 1 | `version` | 4 |
 | 5 | 1 | `flags` | `ACKNOWLEDGES` 0x01, `GUARANTEED` 0x02, every other bit 0 |
 | 6 | 8 | `sessionToken` | 0 until the connection is accepted, then the token given by the server |
 | 14 | 2 | `sequence` | number of the datagram for its sender |
@@ -101,7 +101,7 @@ A received datagram goes through these checks in order. No buffer is sized from 
 |---|---|
 | The datagram holds 25 to 1200 bytes | dropped |
 | `protocolId` is `RTYP` | dropped |
-| `version` is 2 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
+| `version` is 4 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
 | `flags` has no bit but `ACKNOWLEDGES` and `GUARANTEED` | dropped |
 | The message sizes add up exactly to the end of the datagram | dropped |
 | The sender is known, or the datagram holds a `ConnectionRequest` | dropped |
@@ -112,7 +112,7 @@ A received datagram goes through these checks in order. No buffer is sized from 
 
 The token is checked before the sequence, so a forged datagram never moves the counter. The server reads the acknowledgements of a datagram only once it passed every check above, so a forged or replayed datagram acknowledges nothing. A datagram dropped for its sequence is not heard from the peer: it does not restart the silence count of [A session](#a-session).
 
-The server measures the loss rate of each player from the gaps in `sequence`. Each datagram it accepts counts as received, and the sequences it skips over count as lost; every 100 datagrams counted, received or lost, it takes the share lost as the loss rate of that player and starts counting again. A datagram that arrives late and is dropped stays counted as lost. Nothing is added to the wire. The server never sends an unknown sender more bytes than the datagram it answers, so a forged source address cannot turn it into an amplifier: a `ConnectionRequest` holds at least 35 bytes, and every answer to it at most 33 (`ConnectionChallenge`). A client that receives a datagram of another version decodes nothing in it. While it connects to the server that sent it, it ends the attempt and reports both version numbers to the player: its own, and the one at offset 4; within a session it drops it, so a datagram forged with the address of the server cannot end the session.
+The server measures the loss rate of each player from the gaps in `sequence`. Each datagram it accepts counts as received, and the sequences it skips over count as lost; every 100 datagrams counted, received or lost, it takes the share lost as the loss rate of that player and starts counting again. A datagram that arrives late and is dropped stays counted as lost. Nothing is added to the wire. The server never sends a sender that did not prove its address more bytes than the datagram it answers, so a forged source address cannot turn it into an amplifier: a `ConnectionRequest` holds at least 35 bytes, and every answer to a request without a valid cookie at most 33 (`ConnectionChallenge`). Only a request with a valid cookie gets a `ConnectionAccepted`, which may be larger (see [Connection](#connection)). A client that receives a datagram of another version decodes nothing in it. While it connects to the server that sent it, it ends the attempt and reports both version numbers to the player: its own, and the one at offset 4; within a session it drops it, so a datagram forged with the address of the server cannot end the session.
 
 ## Messages
 
@@ -134,14 +134,14 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 
 | Type | Message | Payload | Sent |
 |---|---|---|---|
-| 2 | `ConnectionAccepted` | `playerNumber` `u8` (1 to 4) | in answer to a request; its header carries the session token |
+| 2 | `ConnectionAccepted` | `playerNumber` `u8` (1 to 4), `typeCount` `u8` (1 to 32), then per type `side` `u8`: 1 `Player`, 2 `Enemy`, 3 `PlayerMissile`, 4 `EnemyMissile`, and `name` `string` (1 to 24 bytes); see [Entity types](#entity-types) | in answer to a request with a valid cookie; its header carries the session token; to a connected player, again at most once per 250 ms |
 | 3 | `ConnectionRefused` | `reason` `u8`: 1 `GameFull`, 2 `GameInProgress`, 3 `IncompatibleVersion`, 4 `NicknameTaken` | in answer to a request |
 | 4 | `Disconnection` | none | when the server shuts down, three times 50 ms apart |
 | 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32` (see [Round trip](#round-trip)) | every 500 ms, whatever else it sends |
 | 7 | `LobbyState` | `playerCount` `u8`, then per player `playerNumber` `u8`, `ready` `bool`, `nickname` `string` | on every change, and at least every 500 ms while no game runs |
 | 8 | `GameStarted` | none | when every connected player is ready, then every 500 ms to the players that did not send `GameLoaded` yet |
 | 10 | `WorldState` | see [World state](#world-state) | not sent by the server since `DeltaWorldState`; a client still reads it |
-| 11 | `EntitySpawned` | `entityId` `u32`, `entityType` `u8`, `position` | when an entity appears; the ship of a player, when the player is accepted; the ship of a player again, when it comes back after a hit; a Bydo, every time one appears; a missile of a player, every time one is fired |
+| 11 | `EntitySpawned` | `entityId` `u32`, `entityType` `u8` (a number of the [entity types](#entity-types)), `position` | when an entity appears; the ship of a player, when the player is accepted; the ship of a player again, when it comes back after a hit; a Bydo, every time one appears; a missile, every time one is fired |
 | 12 | `EntityDestroyed` | `entityId` `u32`, `reason` `u8`: 1 `Killed` (explosion), 2 `Removed` (no effect) | when an entity disappears, guaranteed (see [Guaranteed messages](#guaranteed-messages)) |
 | 13 | `GameEvent` | `eventNumber` `u16`, `kind` `u8`, `playerNumber` `u8`, `entityId` `u32` | see [Game events](#game-events), guaranteed |
 | 14 | `PlayerLeft` | `playerNumber` `u8`, `reason` `u8`: 1 `Left`, 2 `TimedOut` | to the other players, when one leaves or times out, guaranteed |
@@ -158,11 +158,11 @@ A message is accepted only when its payload has exactly the size its fields add 
 | Message | Rule |
 |---|---|
 | `ConnectionRequest` | the nickname follows the rules of [Connection](#connection): 1 to 16 bytes of valid UTF-8, no control character |
-| `ConnectionAccepted` | `playerNumber` is 1 to 4 |
+| `ConnectionAccepted` | `playerNumber` is 1 to 4; `typeCount` is 1 to 32, checked before any type is read; each `side` is 1 to 4; each `name` is 1 to 24 bytes of lowercase ASCII letters, digits and underscores |
 | `LobbyState` | at most 4 players, each `playerNumber` 1 to 4 and listed once, each nickname valid as above |
 | `GameEnded` | `outcome` is 1 or 2; at most 4 players, each `playerNumber` 1 to 4 and listed once |
 | `WorldState` | at most 4 players, each `playerNumber` 1 to 4 and listed once; `motion` follows [World state](#world-state) |
-| `EntitySpawned` | `entityId` is not 0, `entityType` is in the table of [World state](#world-state) |
+| `EntitySpawned` | `entityId` is not 0, `entityType` is not 0 |
 | `EntityDestroyed`, `PlayerLeft`, `ConnectionRefused` | `reason` is in the table of its message; `PlayerLeft` names a `playerNumber` of 1 to 4 |
 | `GameEvent` | `kind` is in the table of [Game events](#game-events), and `playerNumber` and `entityId` are 0 or a valid value as that table says |
 | `RoundTrips` | at most 4 players, each `playerNumber` 1 to 4 and listed once |
@@ -181,13 +181,44 @@ The server reads a request only from a player with a session, in any state of th
 
 ### Connection
 
-A connection takes two round trips, so that a forged address never gets a player slot. The client sends `ConnectionRequest` with `cookie` 0; the server answers `ConnectionChallenge` with a cookie and keeps nothing. The client sends its request again with that cookie, and only then does the server give a slot and a token. The cookie only reaches the real owner of the address, so whoever forges the address cannot send it back. A request with a wrong or expired cookie gets a new challenge; a refusal (`GameFull`, `GameInProgress`, `NicknameTaken`, `IncompatibleVersion`) may be sent at once, since it reserves nothing.
+A connection takes two round trips, so that a forged address never gets a player slot. The client sends `ConnectionRequest` with `cookie` 0; the server answers `ConnectionChallenge` with a cookie and keeps nothing. The client sends its request again with that cookie, and only then does the server give a slot, a token and the [entity types](#entity-types) of the server. The cookie only reaches the real owner of the address, so whoever forges the address cannot send it back. A request with a wrong or expired cookie gets a new challenge; a refusal (`GameFull`, `GameInProgress`, `NicknameTaken`, `IncompatibleVersion`) may be sent at once, since it reserves nothing.
 
 How the server computes the cookie is its own business, as long as it keeps nothing per request and nobody can guess it: a keyed hash of the address, the port and the current 10-second window, with a secret drawn when the server starts, accepted during its window and the next one, does both.
 
-A player keeps the number given by `ConnectionAccepted` until it leaves; the number also picks the color of the player, so no color travels. The nickname travels only in `ConnectionRequest` and `LobbyState`, never during a game. Its limit is 16 bytes, not 16 characters: a letter without accent takes 1 byte, an accented letter 2 and some symbols up to 4, so each accent leaves room for one letter less. The text field of the client counts bytes and refuses a character that would not fit whole; the server drops a request whose nickname is empty, longer than 16 bytes, not valid UTF-8 or holds a control character, U+0000 to U+001F or U+007F, so a nickname can never start a line of its own in a log. The server answers a `ConnectionRequest` with a valid cookie from a sender it already accepted with the same `ConnectionAccepted` again, same number and same token.
+A player keeps the number given by `ConnectionAccepted` until it leaves; the number also picks the color of the player, so no color travels. The nickname travels only in `ConnectionRequest` and `LobbyState`, never during a game. Its limit is 16 bytes, not 16 characters: a letter without accent takes 1 byte, an accented letter 2 and some symbols up to 4, so each accent leaves room for one letter less. The text field of the client counts bytes and refuses a character that would not fit whole; the server drops a request whose nickname is empty, longer than 16 bytes, not valid UTF-8 or holds a control character, U+0000 to U+001F or U+007F, so a nickname can never start a line of its own in a log. The server answers a `ConnectionRequest` with a valid cookie from a sender it already accepted with the same `ConnectionAccepted` again, same number, same token and same table, at most once per 250 ms per player (half the 500 ms between two requests, so a request whose acceptance was lost is not held back because it crossed the network faster than the one before); the requests in between get nothing.
+
+A sender that did not prove its address, that is whose request carries no valid cookie, never gets more bytes than it sent: a challenge (33 bytes) is smaller than the smallest request (35), and so is a refusal (26). Only a request with a valid cookie gets a `ConnectionAccepted`, which carries the table of the entity types and may reach 859 bytes: the cookie went to the address the request came from, so the acceptance goes to an address that proved it receives the datagrams of the server. QUIC lifts its own limit on what it sends an address once it has validated that address the same way (RFC 9000, section 8). Whoever sees the traffic of a player and replays its cookie gets at most four acceptances per second sent to that player, for the 20 s at most that the cookie stays valid.
 
 A nickname is unique on the server: a request whose nickname a player already holds is refused with `NicknameTaken`, before the cookie is checked. Letters of the ASCII alphabet compare without regard to case (`Ace` and `ACE` are the same nickname), every other byte compares as it is, so `É` and `é` are two nicknames. A player whose seat is held (see [A session](#a-session)) still holds its nickname; it is free again once the seat is. A sender already accepted is not refused as a duplicate of itself.
+
+### Entity types
+
+A type is named by the sheet it is read from (`assets/entities/drifter.toml` is `drifter`, see [Writing an entity sheet](/R-Type/entity-sheets/)), never by a number fixed in the code. The server numbers the sheets it loaded in the order of their names, from 1, and keeps those numbers while it runs; `ConnectionAccepted` lists them, and `EntitySpawned`, `WorldState` and `DeltaWorldState` carry them. The number of a type is its place in that list: the first entry is type 1, and 0 names no type. The side says what an entity of that type is, so a receiver knows who it hits and how to draw it without the gameplay of the sheet.
+
+The payload of the `ConnectionAccepted` of player 1 on a server of the five sheets the game ships, byte by byte:
+
+| Bytes | Field | Value |
+|---|---|---|
+| 0 | `playerNumber` | 1 |
+| 1 | `typeCount` | 5 |
+| 2 | `side` of type 1 | 2 (`Enemy`) |
+| 3 to 10 | `name` of type 1 | 7, then `drifter` |
+| 11 | `side` of type 2 | 4 (`EnemyMissile`) |
+| 12 to 25 | `name` of type 2 | 13, then `enemy_missile` |
+| 26 | `side` of type 3 | 3 (`PlayerMissile`) |
+| 27 to 41 | `name` of type 3 | 14, then `player_missile` |
+| 42 | `side` of type 4 | 1 (`Player`) |
+| 43 to 47 | `name` of type 4 | 4, then `ship` |
+| 48 | `side` of type 5 | 2 (`Enemy`) |
+| 49 to 55 | `name` of type 5 | 6, then `weaver` |
+
+With its header and its message prefix, that acceptance takes 81 bytes. The largest one takes 22 + 3 + 1 + 1 + 32 × (1 + 1 + 24) = 859 bytes, so it always fits one datagram.
+
+A player who is accepted holds the table: the request the client sends again every 500 ms until it is answered delivers it as it delivers the acceptance, so no session can reach the waiting room without it. The client keeps the table of the first acceptance of its session; a repeated acceptance changes nothing. A client that has no sheet for a name of the table opens no session: it sends its `Disconnection` with the token of that acceptance, three times, as when a player leaves, so the server frees the seat at once, and it tells the player (see [Joining fails](#joining-fails)). A number a state carries that the table does not hold, past its last entry, names nothing the client can draw: the client creates nothing for it.
+
+Alternative considered: a request and an answer of their own once the session opens. It keeps `ConnectionAccepted` small, but needs two messages, a desk on the server and a watch on the client, and a game could start before the answer arrived.
+
+Alternative considered: a hash of the name in each entity instead of a table. It needs nothing at the connection, but two names can give the same hash, and the side of a type would have no place to travel.
 
 ### Inputs
 
@@ -253,14 +284,7 @@ Measured on October 24, 2026, before `acknowledgedInput` added 4 bytes per playe
 
 `entityId` is given by the server, unique during a game, and never 0. A `u16` would wrap after about 22 minutes at 50 new entities per second, hence 32 bits.
 
-| `entityType` | Entity |
-|---|---|
-| 1 | `PlayerShip` |
-| 2 | `PlayerMissile` |
-| 3 | `Bydo` |
-| 4 | `EnemyMissile` |
-
-An entity of unknown type is skipped: it is left out of the state, and the other entities of the same `WorldState` are read. An entity takes 9 bytes whatever its type, so the next one starts where it should. New kinds of entities are added to this table as the game gets them.
+`entityType` is the number of a type in the table of the `ConnectionAccepted` of the session (see [Entity types](#entity-types)). A `WorldState` or a `DeltaWorldState` may carry any number from 1 to 255: a state is read the same in every session, and what a number names is for the client to look up. An entity of type 0, which no type has, is skipped: it is left out of the state, and the other entities of the same `WorldState` are read. An entity takes 9 bytes whatever its type, so the next one starts where it should. A new kind of entity is a new sheet, and changes nothing on this page.
 
 ### Delta world state
 
@@ -306,7 +330,7 @@ A `GameEvent` drives sounds and effects on the client, never a game rule. `event
 
 An `EntityDamaged` naming an entity the client does not know changes nothing. The explosion of a ship that is hit comes from its `EntityDestroyed` (`Killed`).
 
-A shot has no event of its own: a missile appears through the `EntitySpawned` of a `PlayerMissile` or an `EnemyMissile`.
+A shot has no event of its own: a missile appears through the `EntitySpawned` of a type of side `PlayerMissile` or `EnemyMissile`.
 
 ## A session
 
@@ -321,7 +345,7 @@ sequenceDiagram
   C->>S: ConnectionRequest (cookie 0)
   S->>C: ConnectionChallenge (cookie)
   C->>S: ConnectionRequest (cookie)
-  S->>C: ConnectionAccepted
+  S->>C: ConnectionAccepted (entity types)
   S->>C: LobbyState (repeated)
   C->>S: ReadyState
   S->>C: GameStarted
@@ -371,7 +395,8 @@ This section gathers what each side does when something goes wrong, from a datag
 | A message of an unknown type | skips that message and reads the next one | nothing |
 | A message of a type that only the other side receives, such as `ConnectionAccepted` reaching the server or `PlayerInput` reaching a client | skips that message, as if its type were unknown | nothing |
 | A payload of the wrong size, or a value out of range: a `bool` other than 0 or 1, an enumeration value not listed, a bit 5 to 7 set in `actions`, a bit 6 or 7 set in `motion`, a nickname that is empty, longer than 16 bytes, not UTF-8 or holding a control character (U+0000 to U+001F, U+007F) | drops that message; the other messages of the datagram are read | nothing, even to a `ConnectionRequest` dropped this way |
-| An entity of an unknown type in a `WorldState` | skips that entity and reads the next one (see [World state](#world-state)) | nothing |
+| An entity of type 0 in a `WorldState` or a `DeltaWorldState` | skips that entity and reads the next one (see [World state](#world-state)) | nothing |
+| An `EntitySpawned` or an entity of a state whose type the table of the session does not hold | the client creates nothing for it (see [Entity types](#entity-types)) | nothing |
 
 ### A message at the wrong moment
 
@@ -380,7 +405,7 @@ A message that is valid but means nothing in the current state of its receiver c
 | The receiver gets | Because | It |
 |---|---|---|
 | `ConnectionChallenge`, `ConnectionAccepted` or `ConnectionRefused`, on a client that is not connecting | the attempt was already accepted, refused or given up | ignores it |
-| `ConnectionRequest` from a player already accepted | its acceptance was lost | answers it as [Connection](#connection) says: the same `ConnectionAccepted` with a valid cookie, a `ConnectionChallenge` without one |
+| `ConnectionRequest` from a player already accepted | its acceptance was lost | answers it as [Connection](#connection) says: the same `ConnectionAccepted` with a valid cookie, at most once per 250 ms, a `ConnectionChallenge` without one |
 | `ReadyState` while no game waits for players | the game has started or ended | ignores it (see [A session](#a-session)) |
 | `PlayerInput` while no game runs | the player holds keys before the start | keeps it as the newest input of that player, like any other (see [Inputs](#inputs)) |
 | A `LeaderboardRequest` less than 500 ms after the last one answered | the client asked again, or floods | ignores it (see [Leaderboard](#leaderboard)) |
@@ -398,6 +423,7 @@ A message that is valid but means nothing in the current state of its receiver c
 | `ConnectionRefused` (`GameInProgress`) | stops sending requests | that a game is in progress |
 | `ConnectionRefused` (`NicknameTaken`) | stops sending requests | that the callsign is taken |
 | `ConnectionRefused` (`IncompatibleVersion`) | stops sending requests | both version numbers |
+| `ConnectionAccepted` whose table names a type the client has no sheet for | opens no session, sends its `Disconnection` three times with the token of the acceptance, and stops sending requests | the first such name, and how many more |
 | A request the server drops, such as one with an invalid nickname | gets no answer, so it ends as unreachable after 5 s | that the server is unreachable |
 
 ### A peer disappears
@@ -435,7 +461,7 @@ Only the messages of [Guaranteed messages](#guaranteed-messages) are sent again 
 
 | Lost message | Corrected by | Within |
 |---|---|---|
-| `ConnectionRequest`, or its answer | the client sends the request again, the server answers it again | 500 ms |
+| `ConnectionRequest`, or its answer, the table of the entity types included | the client sends the request again, the server answers it again, an acceptance at most once per 250 ms | 500 ms |
 | `ReadyState` | sent again while `LobbyState` shows another value | 500 ms |
 | `LobbyState`, `GameEnded` | the next one | 500 ms |
 | `WorldState`, `DeltaWorldState` | the next one; a delta lost is not a reference, so the next is written against an older acknowledged state, or in full after a second without one | 50 ms at the default 20 per second, one rate-th of a second at any other |
@@ -452,7 +478,7 @@ Only the messages of [Guaranteed messages](#guaranteed-messages) are sent again 
 | every send of an `EntityDestroyed`, 9 in 1 s | the entity is removed once no `WorldState` has listed it for 900 ms up to a closed tick, without explosion | 950 ms at 20 per second |
 | every send of a `GameEvent` or a `PlayerLeft` | not corrected: the sound, effect or message on screen is missed; lives, scores and players stay right through the state messages | — |
 
-The rates and delays on this page (60 inputs and 20 states per second by default, 40 ms, 100 ms, 500 ms, 900 ms, 1 s, 5 s, 15 s, 20 s, the 10-second cookie window, and the eighth and the 16 round trips of [Round trip](#round-trip)) are **provisional**: they will be revised once measured on a real network. Code must name each of them as a constant and never repeat the number.
+The rates and delays on this page (60 inputs and 20 states per second by default, 40 ms, 100 ms, 250 ms, 500 ms, 900 ms, 1 s, 5 s, 15 s, 20 s, the 10-second cookie window, and the eighth and the 16 round trips of [Round trip](#round-trip)) are **provisional**: they will be revised once measured on a real network. Code must name each of them as a constant and never repeat the number.
 
 ## Version 2
 
@@ -472,6 +498,10 @@ The rest of the second part of the project changes the protocol again:
 
 A client and a server of different versions never play together: the connection is refused with `IncompatibleVersion`.
 
+## Version 4
+
+Version 4 names the entity types by a table instead of four values fixed in the code: `ConnectionAccepted` carries `typeCount` and the types after `playerNumber`, and the `entityType` of `EntitySpawned`, `WorldState` and `DeltaWorldState` is a number of that table (see [Entity types](#entity-types)). The layout of `ConnectionAccepted` changes, and the meaning of `entityType` too: a receiver of version 3 would read type 1 as the ship of a player, which is why `version` became 4. An acceptance is now larger than the request it answers, which only a request with a valid cookie gets (see [Connection](#connection)).
+
 ## Implementation status
 
 The code of this repository applies the rules above, with the exceptions listed at the end of this section.
@@ -484,6 +514,7 @@ The code of this repository applies the rules above, with the exceptions listed 
 - Each side sends a `Heartbeat` every 500 ms and measures the round trip from its echo, and the server sends each player `RoundTrips` after each of its `Heartbeat`s, as [Round trip](#round-trip) describes. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
 
 - The client sends `LeaderboardRequest` from its leaderboard screen, and the server answers it.
+- The server answers a request with a valid cookie with the `ConnectionAccepted` of the player and the table of its entity types, at most once per 250 ms per player once accepted; the client keeps the table of its first acceptance, and leaves a server whose table names a type it has no sheet for.
 
 What the programs do not do yet is listed at the end of [A peer disappears](#a-peer-disappears).
 

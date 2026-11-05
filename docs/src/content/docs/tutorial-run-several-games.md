@@ -33,14 +33,15 @@ There is nothing to ask for: a server always hosts `DEFAULT_HOSTED_GAME_COUNT` (
 [INFO ] [Server] - server starting
 [INFO ] [Server] - listening on UDP port 4242
 [INFO ] [Storage] - results database /path/to/r-type_server_4242.db
-[INFO ] [Server] - waves file assets/waves/waves.toml: 3 difficulties
+[INFO ] [Server] - entity sheets /path/to/assets/entities: 5 types
+[INFO ] [Server] - waves file /path/to/assets/waves/waves.toml: 3 difficulties
 [INFO ] [Server] - games play normal, not vanilla
 [INFO ] [Server] - not vanilla: a seed is set, so the waves can be known in advance
-[INFO ] [BydoSpawner] - Bydo spawning starts from the seed 42
-[INFO ] [BydoSpawner] - Bydo spawning starts from the seed 65578
+[INFO ] [WaveSpawner] - wave spawning starts from the seed 42
+[INFO ] [WaveSpawner] - wave spawning starts from the seed 65578
 ```
 
-The `BydoSpawner` line appears eight times, once per game. The seed of each game is the seed given plus `GAME_SEED_STRIDE` (65536) times its rank from 0, so 42, then 65578, then 131114. It is the one line that shows how many games the server holds.
+The `WaveSpawner` line appears eight times, once per game. The seed of each game is the seed given plus `GAME_SEED_STRIDE` (65536) times its rank from 0, so 42, then 65578, then 131114. It is the one line that shows how many games the server holds.
 
 ## Step 2: fill the first game
 
@@ -97,7 +98,7 @@ constexpr std::size_t DEFAULT_HOSTED_GAME_COUNT = 2;
 cmake --workflow --preset build
 ```
 
-The server now creates two games, so the `BydoSpawner` line appears twice, and the ninth player is refused. Put the value back before you commit. A test that needs another number sets `GamesSettings::gameCount` itself, so no test depends on this constant.
+The server now creates two games, so the `WaveSpawner` line appears twice, and the ninth player is refused. Put the value back before you commit. A test that needs another number sets `GamesSettings::gameCount` itself, so no test depends on this constant.
 
 More games cost more per tick, and the journal gives that cost every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)). Every game runs on the simulation thread, one after the other, so a slow game slows the others, and an exception a system of one game throws stops the server. The tick loop writes a line at the `warn` level when ticks stall; if you see `stalls since the previous report` in the journal, the server is holding more than the machine can run.
 
