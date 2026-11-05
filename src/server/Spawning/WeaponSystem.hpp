@@ -1,11 +1,14 @@
 #pragma once
 
+#include <cstddef>
 #include <optional>
 #include <vector>
 #include "EntitySheets.hpp"
 #include "EntitySpawnSender.hpp"
 #include "EntitySpawned.hpp"
+#include "EventBus.hpp"
 #include "Logger.hpp"
+#include "PendingBurst.hpp"
 #include "PlayerRoster.hpp"
 #include "WeaponShot.hpp"
 #include "WeaponSystemParts.hpp"
@@ -35,6 +38,13 @@ namespace rtype::server {
  * Entities section of the protocol page describes. When every network id was
  * given, no projectile appears, a warning is logged, and the Gun counts its
  * interval all the same.
+ *
+ * Then every projectile with a ShardBurst counts one tick down; one whose time
+ * came is destroyed, announced on the event bus with an EntityDestruction
+ * Removed, and replaced by its shards (see game::World::spawnFrom), which
+ * appear SHARD_START_DISTANCE from its center along directions spread evenly
+ * from FIRST_SHARD_ANGLE_RADIANS, and steer from that center; each is told to
+ * every connected player as a projectile is.
  *
  * A weapon system works on one world: the game builds a new one with each new
  * world.
@@ -76,12 +86,28 @@ class WeaponSystem {
   /** @brief Sends @p projectile to every connected player. */
   void announce(const network::EntitySpawned& projectile);
 
+  /** @brief Counts the tick on every ShardBurst, and lists in bursts_ the
+   * projectiles whose time to burst came. */
+  void collectBursts();
+
+  /** @brief Removes the projectile of @p pending, announces its removal, and
+   * makes its shards appear and tells every connected player. */
+  void burst(const PendingBurst& pending);
+
+  /** @returns The EntitySpawned of the shard @p index of @p pending, or
+   * nothing when its sheet is unknown or every network id was given, which
+   * is logged. */
+  [[nodiscard]] std::optional<network::EntitySpawned> spawnShard(
+      const PendingBurst& pending, std::size_t index);
+
   game::World* world_;
   PlayerRoster* roster_;
   SendDatagram send_;
   const game::EntitySheets* types_;
+  engine::EventBus* events_;
   logging::Logger logger_;
   std::vector<WeaponShot> shots_;
+  std::vector<PendingBurst> bursts_;
 };
 
 }  // namespace rtype::server

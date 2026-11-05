@@ -32,10 +32,11 @@ constexpr std::string_view GUN_KEY = "gun";
 constexpr std::string_view HURT_ZONE_KEY = "hurt_zone";
 constexpr std::string_view SURVIVES_CONTACT_KEY = "survives_contact";
 constexpr std::string_view FRAGILE_KEY = "fragile";
+constexpr std::string_view BURST_KEY = "burst";
 constexpr std::array GAMEPLAY_KEYS{
-    SIDE_KEY,   PILOT_KEY, HITBOX_KEY, MOTION_KEY,    BEHAVIOUR_KEY,
-    HEALTH_KEY, SCORE_KEY, GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
-    FRAGILE_KEY};
+    SIDE_KEY,    PILOT_KEY, HITBOX_KEY, MOTION_KEY,    BEHAVIOUR_KEY,
+    HEALTH_KEY,  SCORE_KEY, GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
+    FRAGILE_KEY, BURST_KEY};
 
 /** @brief The keys of `[gameplay.hitbox]`, in logical units. */
 constexpr std::string_view WIDTH_KEY = "width";
@@ -58,6 +59,13 @@ constexpr std::string_view INTERVAL_KEY = "interval_ms";
 constexpr std::string_view FIRST_SHOT_KEY = "first_shot_ms";
 constexpr std::string_view PROJECTILE_KEY = "projectile";
 constexpr std::array GUN_KEYS{INTERVAL_KEY, FIRST_SHOT_KEY, PROJECTILE_KEY};
+
+/** @brief The keys of `[gameplay.burst]`: when a missile bursts, into how
+ * many shards, and the sheet of its shards. */
+constexpr std::string_view AFTER_KEY = "after_ms";
+constexpr std::string_view COUNT_KEY = "count";
+constexpr std::string_view SHARD_KEY = "shard";
+constexpr std::array BURST_KEYS{AFTER_KEY, COUNT_KEY, SHARD_KEY};
 
 /** @brief The key of `[gameplay.hurt_zone]`: its boxes, an array of tables
  * `[[gameplay.hurt_zone.box]]`. */
@@ -130,6 +138,9 @@ constexpr engine::WholeNumberRange ATTACK_NUMBER_RANGE{.lowest = 0,
                                                        .highest = 255};
 constexpr engine::WholeNumberRange HURT_BOX_TIME_RANGE{.lowest = 0,
                                                        .highest = 60000};
+constexpr engine::WholeNumberRange BURST_AFTER_RANGE{.lowest = 1,
+                                                     .highest = 60000};
+constexpr engine::WholeNumberRange SHARD_COUNT_RANGE{.lowest = 1, .highest = 8};
 
 /** @brief Half a simulation tick: added before a duration is cut into whole
  * ticks, so the count is the nearest one. */
@@ -139,6 +150,9 @@ constexpr engine::Duration HALF_A_TICK = engine::SIMULATION_TICK_DURATION / 2;
  * interval. */
 constexpr std::size_t MINIMUM_GUN_INTERVAL_TICKS = 1;
 
+/** @brief The fewest ticks a missile lives before it bursts. */
+constexpr std::size_t MINIMUM_BURST_TICKS = 1;
+
 /** @brief Why a sheet is refused, after the key it is about. */
 constexpr std::string_view PLAYER_PILOT_RULE =
     "a player pilots a body of side player, and only such a body";
@@ -147,6 +161,10 @@ constexpr std::string_view SHIP_MOTION_RULE =
 constexpr std::string_view SHIP_HITBOX_RULE =
     "a ship collides with the box shipAfter() keeps on screen";
 constexpr std::string_view MISSILE_GUN_RULE = "a missile has no gun";
+constexpr std::string_view BURST_SIDE_RULE =
+    "only a missile bursts into shards";
+constexpr std::string_view SHARD_SIDE_RULE =
+    "a missile bursts into missiles of its own side";
 constexpr std::string_view BEHAVIOUR_TABLE_RULE =
     "only a behaviour that declares settings has a behaviour table";
 constexpr std::string_view MISSILE_HEADING_RULE =

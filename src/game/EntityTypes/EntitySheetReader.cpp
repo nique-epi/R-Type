@@ -11,6 +11,7 @@
 #include "BehaviourRegistry.hpp"
 #include "BehaviourSetting.hpp"
 #include "BehaviourView.hpp"
+#include "BurstSheet.hpp"
 #include "CollisionBox.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
@@ -194,6 +195,25 @@ std::optional<GunSheet> gunFrom(const engine::DataFileTable& gameplay) {
       .projectilePlace = engine::placeOfKey(*gun, PROJECTILE_KEY)};
 }
 
+/** @returns How `[gameplay.burst]` bursts a missile; nothing without it. */
+std::optional<BurstSheet> burstFrom(const engine::DataFileTable& gameplay) {
+  const std::optional<engine::DataFileTable> burst =
+      engine::optionalTableAt(gameplay, BURST_KEY);
+  if (!burst.has_value()) {
+    return std::nullopt;
+  }
+  engine::refuseUnknownKeys(*burst, BURST_KEYS);
+  return BurstSheet{
+      .afterTicks = std::max(MINIMUM_BURST_TICKS,
+                             nearestTicksIn(engine::millisecondsAt(
+                                 *burst, AFTER_KEY, BURST_AFTER_RANGE))),
+      .count = static_cast<std::uint8_t>(
+          engine::wholeNumberAt(*burst, COUNT_KEY, SHARD_COUNT_RANGE)),
+      .shard = engine::textAt(*burst, SHARD_KEY),
+      .shardNumber = 0,
+      .shardPlace = engine::placeOfKey(*burst, SHARD_KEY)};
+}
+
 /** @returns The attack and the phase @p table names, both required.
  * @throws What wholeNumberAt() and choiceAt() throw. */
 ActionKey actionKeyAt(const engine::DataFileTable& table) {
@@ -364,12 +384,17 @@ bool isAMissile(EntityType side) {
   return side == EntityType::PlayerMissile || side == EntityType::EnemyMissile;
 }
 
-/** @throws InconsistentEntitySheetException when a missile has a gun. */
-void checkMissileHasNoGun(const EntitySheet& sheet,
-                          const engine::DataFileTable& gameplay) {
+/** @throws InconsistentEntitySheetException when a missile has a gun, or
+ * another body bursts. */
+void checkWhatItFires(const EntitySheet& sheet,
+                      const engine::DataFileTable& gameplay) {
   if (isAMissile(sheet.side) && sheet.gun.has_value()) {
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, GUN_KEY), MISSILE_GUN_RULE);
+  }
+  if (!isAMissile(sheet.side) && sheet.burst.has_value()) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, BURST_KEY), BURST_SIDE_RULE);
   }
 }
 
@@ -429,10 +454,11 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .gun = gunFrom(gameplay),
       .hurtZone = hurtZoneFrom(gameplay),
       .survivesContact = survivesContactFrom(gameplay),
-      .fragileIn = fragileFrom(gameplay)};
+      .fragileIn = fragileFrom(gameplay),
+      .burst = burstFrom(gameplay)};
   checkPilotMatchesSide(read, gameplay);
   checkShipMotion(read, gameplay);
-  checkMissileHasNoGun(read, gameplay);
+  checkWhatItFires(read, gameplay);
   checkMissileFliesTowardsItsEdge(read, gameplay);
   checkContactPartsBelongToAnEnemy(read, gameplay);
   return read;

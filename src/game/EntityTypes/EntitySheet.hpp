@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 #include "ActionKey.hpp"
+#include "BurstSheet.hpp"
 #include "CollisionBox.hpp"
 #include "EntityType.hpp"
 #include "GunSheet.hpp"
@@ -51,6 +52,8 @@ struct EntitySheet {
   /** @brief The action in which any hit destroys it; nothing for a body that
    * loses one point a hit all the time. */
   std::optional<ActionKey> fragileIn{std::nullopt};
+  /** @brief How it bursts into shards; nothing for a body that does not. */
+  std::optional<BurstSheet> burst{std::nullopt};
 };
 
 }  // namespace rtype::game

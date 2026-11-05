@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include "BodyPlacement.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
@@ -43,7 +44,8 @@ class World {
    * when a behaviour pilots it, steering it from @p position, at age zero,
    * with the settings of the sheet; its Health, its ScoreValue and its Gun
    * when the sheet gives them, the gun waiting the first shot of the sheet;
-   * its HurtZone, its SurvivesContact and its Fragile when the sheet
+   * its ShardBurst, its HurtZone, its SurvivesContact and its Fragile when
+   * the sheet
    * declares them, and a
    * CurrentAction, idle, for every body of side enemy.
    * A body no behaviour pilots is the ship of a player: it also gets
@@ -56,6 +58,16 @@ class World {
    */
   std::uint32_t spawn(const EntitySheet& sheet, Position position,
                       std::optional<std::uint8_t> owner = std::nullopt);
+
+  /**
+   * @brief As spawn(), the entity appearing at @p placement.position while
+   * its Pilot steers from @p placement.origin: the shards of a burst fly
+   * away from the center of the projectile they came out of.
+   * @returns The network id the entity was given, never NO_ENTITY_ID.
+   * @throws NetworkIdExhaustedException as spawn() does.
+   */
+  std::uint32_t spawnFrom(const EntitySheet& sheet, BodyPlacement placement,
+                          std::optional<std::uint8_t> owner = std::nullopt);
 
   /**
    * @brief Destroys the ship of a player, found by the network id spawn()

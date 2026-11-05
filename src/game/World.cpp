@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <optional>
+#include "BodyPlacement.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
@@ -27,6 +28,7 @@
 #include "PilotSheet.hpp"
 #include "Position.hpp"
 #include "ScoreValue.hpp"
+#include "ShardBurst.hpp"
 #include "ShipMotion.hpp"
 #include "SteadyMotion.hpp"
 #include "SurvivesContact.hpp"
@@ -36,12 +38,13 @@ namespace rtype::game {
 
 namespace {
 
-/** @brief A body being made: the entity, the sheet of its type, and where it
- * appears. */
+/** @brief A body being made: the entity, the sheet of its type, where it
+ * appears and the point its Pilot steers from. */
 struct BodyStart {
   engine::Entity body;
   std::reference_wrapper<const EntitySheet> sheet;
   Position position;
+  Position origin;
 };
 
 /** @brief Gives @p start what every entity of a sheet has: where it is, its
@@ -72,13 +75,13 @@ void addPilot(engine::ComponentRegistry& components, const BodyStart& start) {
     return;
   }
   components.add(start.body, Pilot{.behaviour = pilot->behaviour,
-                                   .origin = start.position,
+                                   .origin = start.origin,
                                    .age = engine::Duration::zero(),
                                    .settings = pilot->settings});
 }
 
-/** @brief Gives @p start the Health, the ScoreValue and the Gun its sheet
- * gives. */
+/** @brief Gives @p start the Health, the ScoreValue, the Gun and the
+ * ShardBurst its sheet gives. */
 void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
   if (sheet.health.has_value()) {
@@ -93,6 +96,12 @@ void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
                    Gun{.intervalTicks = sheet.gun->intervalTicks,
                        .ticksUntilReady = sheet.gun->firstShotTicks,
                        .projectileNumber = sheet.gun->projectileNumber});
+  }
+  if (sheet.burst.has_value()) {
+    components.add(start.body,
+                   ShardBurst{.ticksLeft = sheet.burst->afterTicks,
+                              .shardNumber = sheet.burst->shardNumber,
+                              .count = sheet.burst->count});
   }
 }
 
@@ -126,9 +135,18 @@ void addShipParts(engine::ComponentRegistry& components, engine::Entity ship) {
 
 std::uint32_t World::spawn(const EntitySheet& sheet, Position position,
                            std::optional<std::uint8_t> owner) {
+  return spawnFrom(
+      sheet, BodyPlacement{.position = position, .origin = position}, owner);
+}
+
+std::uint32_t World::spawnFrom(const EntitySheet& sheet,
+                               BodyPlacement placement,
+                               std::optional<std::uint8_t> owner) {
   const std::uint32_t networkId = networkIds_.allocate();
-  const BodyStart start{
-      .body = registry_.create(), .sheet = sheet, .position = position};
+  const BodyStart start{.body = registry_.create(),
+                        .sheet = sheet,
+                        .position = placement.position,
+                        .origin = placement.origin};
   addPlace(components_, start);
   addMotion(components_, start);
   addPilot(components_, start);

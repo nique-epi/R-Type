@@ -206,7 +206,8 @@ void GameFlow::buildWorld() {
       WeaponSystemParts{.world = world,
                         .roster = game_.roster.get(),
                         .send = game_.send,
-                        .types = game_.settings.types});
+                        .types = game_.settings.types,
+                        .events = game_.events.get()});
   lifeKeeper_ = std::make_unique<LifeKeeper>(
       LifeKeeperParts{.events = game_.events.get(),
                       .world = world,

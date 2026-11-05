@@ -29,7 +29,8 @@ WeaponSystemFixture::WeaponSystemFixture()
                                 [this](network::OutgoingDatagram datagram) {
                                   sent_.push_back(std::move(datagram));
                                 },
-                            .types = game::testing::shippedEntitySheets()}),
+                            .types = game::testing::shippedEntitySheets(),
+                            .events = events_}),
       pilots_(events_) {}
 
 void WeaponSystemFixture::connectWithoutShip(std::size_t index) {

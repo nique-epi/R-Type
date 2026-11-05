@@ -1,2 +1,2 @@
-target_sources(game_tests PRIVATE ActionCycleTest.cpp ActionCycleFixtures.cpp StraightBehaviourTest.cpp WeaveBehaviourTest.cpp)
+target_sources(game_tests PRIVATE ActionCycleTest.cpp ActionCycleFixtures.cpp ScatterBehaviourTest.cpp StraightBehaviourTest.cpp WeaveBehaviourTest.cpp)
 target_include_directories(game_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

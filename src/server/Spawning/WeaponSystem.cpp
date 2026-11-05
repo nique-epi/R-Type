@@ -1,27 +1,34 @@
 #include "WeaponSystem.hpp"
+#include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
 #include <utility>
+#include "BodyPlacement.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EngineException.hpp"
 #include "Entity.hpp"
+#include "EntityDestruction.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheets.hpp"
 #include "EntitySpawnSender.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
 #include "EntityTypeNumber.hpp"
+#include "EventBus.hpp"
 #include "Gun.hpp"
 #include "Intent.hpp"
 #include "Muzzle.hpp"
 #include "NetworkIdentity.hpp"
+#include "PendingBurst.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "ProjectileStartPosition.hpp"
+#include "ShardBurst.hpp"
 #include "WeaponShot.hpp"
 #include "WeaponSystemConstants.hpp"
 #include "WeaponSystemParts.hpp"
@@ -110,6 +117,20 @@ network::EntitySpawned spawnOf(std::uint32_t networkId,
       launch.start);
 }
 
+/** @returns Where the shard @p index of @p pending appears and steers from:
+ * SHARD_START_DISTANCE from the center of the projectile, along the direction
+ * of that shard, y growing downwards. */
+game::BodyPlacement shardPlacementOf(const PendingBurst& pending,
+                                     std::size_t index) {
+  const float angle = FIRST_SHARD_ANGLE_RADIANS +
+                      (SHARD_SPREAD_RADIANS * static_cast<float>(index) /
+                       static_cast<float>(pending.count));
+  const game::Position start{
+      .x = pending.center.x + (SHARD_START_DISTANCE * std::cos(angle)),
+      .y = pending.center.y - (SHARD_START_DISTANCE * std::sin(angle))};
+  return game::BodyPlacement{.position = start, .origin = pending.center};
+}
+
 }  // namespace
 
 WeaponSystem::WeaponSystem(WeaponSystemParts parts)
@@ -117,12 +138,17 @@ WeaponSystem::WeaponSystem(WeaponSystemParts parts)
       roster_(&parts.roster.get()),
       send_(std::move(parts.send)),
       types_(&parts.types.get()),
+      events_(&parts.events.get()),
       logger_(std::string{WEAPON_SYSTEM_LOGGER_NAME}) {}
 
 void WeaponSystem::onTick() {
   collectShots();
   for (const WeaponShot& shot : shots_) {
     fire(shot);
+  }
+  collectBursts();
+  for (const PendingBurst& pending : bursts_) {
+    burst(pending);
   }
 }
 
@@ -172,6 +198,60 @@ std::optional<network::EntitySpawned> WeaponSystem::spawnProjectile(
 void WeaponSystem::announce(const network::EntitySpawned& projectile) {
   for (ConnectedPlayer* const player : roster_->connected()) {
     sendEntitySpawned(send_, *player, projectile);
+  }
+}
+
+void WeaponSystem::collectBursts() {
+  bursts_.clear();
+  engine::ComponentRegistry& components = world_->components();
+  components.forEach<game::ShardBurst, game::Position>(
+      [this, &components](engine::Entity projectile, game::ShardBurst& burst,
+                          const game::Position& position) {
+        if (burst.ticksLeft > 0) {
+          --burst.ticksLeft;
+        }
+        const auto* const identity =
+            components.get<game::NetworkIdentity>(projectile);
+        if (burst.ticksLeft > 0 || identity == nullptr) {
+          return;
+        }
+        bursts_.push_back(PendingBurst{.projectile = projectile,
+                                       .networkId = identity->networkId,
+                                       .center = position,
+                                       .shardNumber = burst.shardNumber,
+                                       .count = burst.count});
+      });
+}
+
+void WeaponSystem::burst(const PendingBurst& pending) {
+  world_->components().destroy(pending.projectile);
+  events_->publish(
+      game::EntityDestruction{.networkId = pending.networkId,
+                              .cause = game::DestructionCause::Removed});
+  for (std::size_t index = 0; index < pending.count; ++index) {
+    const std::optional<network::EntitySpawned> shard =
+        spawnShard(pending, index);
+    if (!shard.has_value()) {
+      return;
+    }
+    announce(*shard);
+  }
+}
+
+std::optional<network::EntitySpawned> WeaponSystem::spawnShard(
+    const PendingBurst& pending, std::size_t index) {
+  const game::EntitySheet* const sheet = types_->numbered(pending.shardNumber);
+  if (sheet == nullptr) {
+    return std::nullopt;
+  }
+  const game::BodyPlacement placement = shardPlacementOf(pending, index);
+  try {
+    return entitySpawnedOf(world_->spawnFrom(*sheet, placement),
+                           game::EntityTypeNumber{.number = sheet->number},
+                           placement.position);
+  } catch (const engine::NetworkIdExhaustedException&) {
+    logger_.warn("no shard appeared: every network id was given");
+    return std::nullopt;
   }
 }
 
