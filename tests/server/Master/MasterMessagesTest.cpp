@@ -39,7 +39,7 @@ using rtype::server::testing::SLOW_TICK_MILLISECONDS;
 /**
  * Given a server named, on a port, hosting eight games
  * When its registration is written
- * Then it carries them, protocol 2, four players a game and no address
+ * Then it carries them, protocol 3, four players a game and no address
  */
 TEST(MasterMessages, TheRegistrationTellsWhatTheServerIs) {
   const ServerRegistration registration =
