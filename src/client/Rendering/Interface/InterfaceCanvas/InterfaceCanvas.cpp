@@ -9,13 +9,16 @@
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/Vertex.hpp>
+#include <SFML/Graphics/VertexArray.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <array>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
 #include "AssetLibrary.hpp"
+#include "ColoredPixel.hpp"
 #include "FragmentShader.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
@@ -111,6 +114,21 @@ void InterfaceCanvas::fill(sf::IntRect area, sf::Color color) {
       sf::Vertex{.position = bottomRight, .color = color}};
   canvas_.canvas().draw(corners.data(), corners.size(),
                         sf::PrimitiveType::TriangleStrip);
+}
+
+void InterfaceCanvas::plot(std::span<const ColoredPixel> pixels) {
+  sf::VertexArray triangles{sf::PrimitiveType::Triangles};
+  for (const ColoredPixel& pixel : pixels) {
+    const sf::Vector2f topLeft(pixel.position);
+    const sf::Vector2f bottomRight = topLeft + sf::Vector2f{1.0F, 1.0F};
+    const sf::Vector2f topRight{bottomRight.x, topLeft.y};
+    const sf::Vector2f bottomLeft{topLeft.x, bottomRight.y};
+    for (const sf::Vector2f corner :
+         {topLeft, topRight, bottomLeft, topRight, bottomRight, bottomLeft}) {
+      triangles.append(sf::Vertex{.position = corner, .color = pixel.color});
+    }
+  }
+  canvas_.canvas().draw(triangles);
 }
 
 void InterfaceCanvas::write(std::string_view text, sf::Vector2i anchor,

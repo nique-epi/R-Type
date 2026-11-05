@@ -32,6 +32,14 @@ void RecordingInterfaceCanvas::fill(sf::IntRect area, sf::Color color) {
   record_->fills.push_back({.area = area, .color = color});
 }
 
+void RecordingInterfaceCanvas::plot(
+    std::span<const rtype::client::ColoredPixel> pixels) {
+  for (const rtype::client::ColoredPixel& pixel : pixels) {
+    record_->fills.push_back(
+        {.area = sf::IntRect{pixel.position, {1, 1}}, .color = pixel.color});
+  }
+}
+
 void RecordingInterfaceCanvas::write(std::string_view text, sf::Vector2i anchor,
                                      rtype::client::TextStyle style) {
   record_->writings.push_back(

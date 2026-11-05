@@ -9,9 +9,11 @@
 #include <functional>
 #include <optional>
 #include <set>
+#include <span>
 #include <string>
 #include <string_view>
 #include "AssetTextureSource.hpp"
+#include "ColoredPixel.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
 #include "Logger.hpp"
@@ -58,6 +60,8 @@ class InterfaceCanvas : public IInterfaceCanvas {
 
   void clear() override;
   void fill(sf::IntRect area, sf::Color color) override;
+  /** @brief Draws the pixels as two triangles each, in one draw call. */
+  void plot(std::span<const ColoredPixel> pixels) override;
   void write(std::string_view text, sf::Vector2i anchor,
              TextStyle style) override;
   void drawImage(TextureArea image, ImagePlacement placement,

@@ -80,6 +80,9 @@ class RecordingInterfaceCanvas : public rtype::client::IInterfaceCanvas {
 
   void clear() override;
   void fill(sf::IntRect area, sf::Color color) override;
+  /** @brief Writes each pixel down as a fill of one pixel, so litPixelsOf()
+   * sees it. */
+  void plot(std::span<const rtype::client::ColoredPixel> pixels) override;
   void write(std::string_view text, sf::Vector2i anchor,
              rtype::client::TextStyle style) override;
   void drawImage(rtype::client::TextureArea image,
