@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <span>
 #include <utility>
 #include <vector>
@@ -87,6 +88,15 @@ GameContext contextOf(GameInstanceParts parts, GameSessions& sessions,
                      }};
 }
 
+/** @returns The tick the Heartbeats tell the players: the one of @p flow while
+ * the game is in progress, none otherwise, since the tick stands still then. */
+std::optional<std::uint32_t> tickToTell(const IGameFlow& flow) {
+  if (flow.state() != GameState::InProgress) {
+    return std::nullopt;
+  }
+  return flow.tick();
+}
+
 }  // namespace
 
 GameInstance::GameInstance(GameInstanceParts parts,
@@ -116,7 +126,7 @@ GameInstance::GameInstance(GameInstanceParts parts,
       });
   modules_.addWork(GAME_OUTPUT_STAGE,
                    [this]([[maybe_unused]] engine::Duration elapsed) {
-                     sessions_.endTick();
+                     sessions_.endTick(tickToTell(*flow_));
                    });
   modules_.installAndStart(context_);
   flow_ = &modules_.require<IGameFlow>();

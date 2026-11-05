@@ -60,6 +60,21 @@ std::size_t heartbeatsIn(
   return ofType(network::MessageType::Heartbeat, datagrams).size();
 }
 
+std::optional<network::Heartbeat> newestHeartbeatIn(
+    const std::vector<network::OutgoingDatagram>& datagrams) {
+  const std::vector<network::OutgoingDatagram> heartbeats =
+      ofType(network::MessageType::Heartbeat, datagrams);
+  if (heartbeats.empty()) {
+    return std::nullopt;
+  }
+  const std::vector<network::Heartbeat> messages =
+      messagesIn<network::Heartbeat>(heartbeats.back());
+  if (messages.empty()) {
+    return std::nullopt;
+  }
+  return messages.back();
+}
+
 std::vector<network::OutgoingDatagram> ofType(
     network::MessageType type,
     const std::vector<network::OutgoingDatagram>& datagrams) {
