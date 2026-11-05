@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <chrono>
 #include <vector>
 #include "AllowanceVerdict.hpp"
 #include "HandshakeTestConstants.hpp"
@@ -9,9 +10,13 @@
 
 using rtype::network::AllowanceVerdict;
 using rtype::network::RequestAllowances;
+using rtype::network::testing::fillARowWithStaggeredBans;
 using rtype::network::testing::FORGED_SENDER_COUNT;
+using rtype::network::testing::forgedSender;
 using rtype::network::testing::limitedSender;
 using rtype::network::testing::OTHER_SENDER_PORT;
+using rtype::network::testing::ROW_SENDER_BANNED_FIRST;
+using rtype::network::testing::ROW_SENDER_BANNED_LAST;
 using rtype::network::testing::spendFromSender;
 using rtype::network::testing::spendOnceFromEachForged;
 using rtype::network::testing::START;
@@ -19,6 +24,7 @@ using rtype::network::testing::TEST_BURST;
 using rtype::network::testing::TEST_DROPS_BEFORE_BAN;
 using rtype::network::testing::TEST_KEY;
 using rtype::network::testing::TEST_RATE_LIMIT;
+using rtype::network::testing::TIME_BETWEEN_BANS;
 
 /**
  * Given a sender that spent its whole burst
@@ -80,4 +86,35 @@ TEST(RequestAllowances, ReplacesASenderNotBannedOnceItsRowFills) {
 
   EXPECT_EQ(allowances.spend(limitedSender(), START + ONE_NANOSECOND),
             AllowanceVerdict::Allowed);
+}
+
+/**
+ * Given a row whose four slots hold senders banned at different times, the
+ * one in its second slot first, then a fifth sender of that row
+ * When the sender whose ban ends first sends again
+ * Then its request is allowed: the fifth sender took its slot, so it starts
+ * again with a whole burst
+ */
+TEST(RequestAllowances, GivesUpTheBanThatEndsFirstOnceEverySlotOfARowIsBanned) {
+  RequestAllowances allowances{TEST_RATE_LIMIT, TEST_KEY};
+  const std::chrono::nanoseconds filled = fillARowWithStaggeredBans(allowances);
+
+  EXPECT_EQ(allowances.spend(forgedSender(ROW_SENDER_BANNED_FIRST),
+                             filled + TIME_BETWEEN_BANS),
+            AllowanceVerdict::Allowed);
+}
+
+/**
+ * Given a row whose four slots hold senders banned at different times, then a
+ * fifth sender of that row
+ * When the sender banned last sends again
+ * Then it is still banned: only the ban that ends first was given up
+ */
+TEST(RequestAllowances, KeepsTheOtherBansOfARowFullOfBannedSenders) {
+  RequestAllowances allowances{TEST_RATE_LIMIT, TEST_KEY};
+  const std::chrono::nanoseconds filled = fillARowWithStaggeredBans(allowances);
+
+  EXPECT_EQ(allowances.spend(forgedSender(ROW_SENDER_BANNED_LAST),
+                             filled + TIME_BETWEEN_BANS),
+            AllowanceVerdict::Banned);
 }

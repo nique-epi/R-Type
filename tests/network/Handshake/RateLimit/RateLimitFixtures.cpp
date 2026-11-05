@@ -75,6 +75,37 @@ std::vector<AllowanceVerdict> spendFromSender(RequestAllowances& allowances,
   return verdicts;
 }
 
+void banAt(RequestAllowances& allowances, const Endpoint& sender,
+           std::chrono::nanoseconds now) {
+  for (std::size_t sent = 0; sent < TEST_BURST + TEST_DROPS_BEFORE_BAN;
+       ++sent) {
+    static_cast<void>(allowances.spend(sender, now));
+  }
+}
+
+std::chrono::nanoseconds fillARowWithStaggeredBans(
+    RequestAllowances& allowances) {
+  for (const std::size_t number :
+       {ROW_SENDER_BANNED_THIRD, ROW_SENDER_BANNED_FIRST,
+        ROW_SENDER_BANNED_LAST, ROW_SENDER_BANNED_SECOND}) {
+    static_cast<void>(allowances.spend(forgedSender(number), START));
+  }
+  std::chrono::nanoseconds now = START;
+  for (const std::size_t number :
+       {ROW_SENDER_BANNED_FIRST, ROW_SENDER_BANNED_SECOND,
+        ROW_SENDER_BANNED_THIRD, ROW_SENDER_BANNED_LAST}) {
+    now += TIME_BETWEEN_BANS;
+    banAt(allowances, forgedSender(number), now);
+  }
+  now += TIME_BETWEEN_BANS;
+  static_cast<void>(
+      allowances.spend(forgedSender(ROW_SENDER_BANNED_FIRST), now));
+  now += TIME_BETWEEN_BANS;
+  static_cast<void>(
+      allowances.spend(forgedSender(ROW_SENDER_ARRIVING_LAST), now));
+  return now;
+}
+
 void spendOnceFromEachForged(RequestAllowances& allowances, std::size_t count,
                              std::chrono::nanoseconds now) {
   for (std::size_t number = 0; number < count; ++number) {

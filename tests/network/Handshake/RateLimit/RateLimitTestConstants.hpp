@@ -68,4 +68,20 @@ constexpr std::size_t FORGED_SENDER_COUNT = 10000;
 constexpr std::string_view FORGED_ADDRESS = "198.51.100.1";
 constexpr std::uint16_t FIRST_FORGED_PORT = 10000;
 
+/**
+ * @brief Five forged senders whose row under TEST_KEY is the same, row 190,
+ * computed with a SipHash-2-4 written in Python and calibrated on the vectors
+ * of SipHashTest. Their names say when each of the first four is banned; they
+ * fill the row in the order of their numbers, so the ban that ends first is
+ * not the one of its first slot. The fifth arrives once all four are banned.
+ */
+constexpr std::size_t ROW_SENDER_BANNED_THIRD = 0;
+constexpr std::size_t ROW_SENDER_BANNED_FIRST = 63;
+constexpr std::size_t ROW_SENDER_BANNED_LAST = 88;
+constexpr std::size_t ROW_SENDER_BANNED_SECOND = 150;
+constexpr std::size_t ROW_SENDER_ARRIVING_LAST = 171;
+
+/** @brief The time between two bans of the senders of that row. */
+constexpr std::chrono::milliseconds TIME_BETWEEN_BANS{1};
+
 }  // namespace rtype::network::testing

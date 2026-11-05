@@ -55,6 +55,25 @@ namespace rtype::network::testing {
     RequestAllowances& allowances, const Endpoint& sender, std::size_t count);
 
 /**
+ * @brief Spends datagrams of @p sender in @p allowances at @p now until it is
+ * banned: its burst and TEST_DROPS_BEFORE_BAN more, at most.
+ */
+void banAt(RequestAllowances& allowances, const Endpoint& sender,
+           std::chrono::nanoseconds now);
+
+/**
+ * @brief Fills the row of the ROW_SENDER_ constants: each of its first four
+ * senders sends a request at START, in the order of their numbers, then they
+ * are banned one TIME_BETWEEN_BANS after another, ROW_SENDER_BANNED_FIRST
+ * first, which then sends once more while banned, so its ban ends first but
+ * its last request is the newest; then ROW_SENDER_ARRIVING_LAST sends a
+ * request.
+ * @returns When ROW_SENDER_ARRIVING_LAST sent its request.
+ */
+[[nodiscard]] std::chrono::nanoseconds fillARowWithStaggeredBans(
+    RequestAllowances& allowances);
+
+/**
  * @brief Spends one datagram of each of the first @p count forged senders in
  * @p allowances, at @p now.
  */
