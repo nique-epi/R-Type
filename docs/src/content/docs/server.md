@@ -22,6 +22,7 @@ The server runs on the threads below. Only the network thread and the simulation
 | Main | Starts the modules, waits on the `StopRequest`, then stops the modules | `src/server/main.cpp` |
 | Network | Started by `ServerNetworkModule::start()`. Owns the socket: sorts each datagram into a queue as it arrives, and sends the outgoing queue when asked | `src/server/Network/` |
 | Simulation | Started by `ServerApplication::run()`. Runs `SIMULATION_TICKS_PER_SECOND` (60) ticks per second, and in them every module and every game | `src/server/Network/` |
+| MasterLink | Started by `ServerMasterModule::start()` when `master-url` and `master-key` are set. Runs the `HeartbeatJob`: registers the server with the master and sends its heartbeats, reading only `LatestHostedGames` and `LatestMetrics`, never a game (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
 | Signals | Started by `StopSignals`, on Linux and macOS. Waits for Ctrl-C or SIGTERM and asks for the stop; on Windows, the system runs the handler on a thread of its own | `src/server/Platform/` |
 
 The path of a datagram through the network thread and the simulation thread:
@@ -252,7 +253,7 @@ module lobby off
 | `games` | declares the `seed`, `state-rate` and `input-delay` settings; the games (`GamesSettings::gameCount`, `DEFAULT_HOSTED_GAME_COUNT` = 8), an `EventBus` for each; reads the waves file when it starts and judges whether its games are vanilla; provides `Games` and `LatestHostedGames` | `src/server/Games/` |
 | `lobby` | one `ConnectionAcceptor` per game, built on the roster of that game | `src/server/Lobby/` |
 | `metrics` | measures the ticks and the systems of the games, and writes a report to the journal every `TICKS_PER_REPORT` ticks; writes the traffic of the socket; provides `LatestMetrics` | `src/server/Metrics/` |
-| `master` | declares the `master-url`, `master-key` and `server-name` settings; keeps the master told of the server on a thread of its own, when both a url and a key are set; uses `LatestMetrics` when the metrics module is on | `src/server/Master/` |
+| `master` | declares the `master-url`, `master-key` and `server-name` settings; keeps the master told of the server on a thread of its own, MasterLink, when both a url and a key are set; uses `LatestMetrics` when the metrics module is on | `src/server/Master/` |
 
 Each tick runs the stages of `SERVER_LOOP_STAGES` once, with `SIMULATION_TICK_DURATION`. In `simulation`, the games module runs `onTick()` on each game with the datagrams of its own players (`keepDatagramsOf()`) and makes the network forget the players whose session closed, then the lobby module answers the connection requests, so a request is placed and refused by the state the games just reached. In `outputs`, the bus of each game delivers its events, and the guaranteed messages among them leave at once (see [Guaranteed messages](#guaranteed-messages-messagedelivery)). Only the metrics module works in `inputs`, where it starts measuring the tick, since `onTick()` reads the datagrams and moves the game in one step; it ends its measure in `outputs`, after the games module.
 
@@ -980,7 +981,7 @@ set master-key "rtk_<64 hexadecimal digits>"
 set server-name "Paris 1"
 ```
 
-The module `master` (`src/server/Master/`) then starts a `HeartbeatJob`, a thread of its own, and the games never wait for it:
+The module `master` (`src/server/Master/`) then starts a `HeartbeatJob`, which runs on a thread of its own, MasterLink, the link of the server with the master; the games never wait for it:
 
 1. It registers the server with `MasterClient`: its name, its UDP port, `SERVER_GAME_VERSION` (the version of the CMake project), the protocol version, its games and `MAXIMUM_PLAYERS` per game. The journal says `registered with the master as Paris 1`.
 2. It sends a heartbeat, the state of every game with the nicknames of its players and the measures of `LatestMetrics` when the metrics module is on, each time the games change, at most once per `MINIMUM_NOTICE_GAP` (1 s), and every `HEARTBEAT_INTERVAL` (5 s) when nothing changes. A heartbeat always carries the whole state, so a lost one is corrected by the next.
@@ -988,7 +989,7 @@ The module `master` (`src/server/Master/`) then starts a `HeartbeatJob`, a threa
 
 The games module tells the job when the games change. Its `HostedGamesWatch` follows, on the bus of each game, `game::PlayerArrival`, `game::PlayerDeparture` and `GameStateChanged`, and at the end of a tick in which one was delivered it publishes the list of the games in `LatestHostedGames`, a `LatestValue` the job waits on. The job never reads a game itself.
 
-- Without `master-url` or `master-key` the server runs alone, as the journal says, and starts no thread. A url that is not `http://<host>[:<port>]`, an `https://` one included, is logged as an error and the server runs alone too: `MasterClient` speaks plain HTTP only, so the key crosses the network in clear and the master stays on a local network for now.
+- Without `master-url` or `master-key` the server runs alone, as the journal says, and MasterLink does not start. A url that is not `http://<host>[:<port>]`, an `https://` one included, is logged as an error and the server runs alone too: `MasterClient` speaks plain HTTP only, so the key crosses the network in clear and the master stays on a local network for now.
 - A port chosen by the system (`-p 0`) is not told to the master, since the module cannot know it.
 - `module master off` turns the link off. The admin orders, the global bans, the results and a last heartbeat when the server stops are not sent yet: the master does not take them.
 

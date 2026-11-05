@@ -46,7 +46,7 @@ HeartbeatJob::HeartbeatJob(HeartbeatJobParts parts)
       metrics_(parts.metrics),
       times_(parts.times),
       logger_(std::string{SERVER_LOGGER_NAME}),
-      thread_([this](const std::stop_token& stop) { run(stop); }) {}
+      masterLink_([this](const std::stop_token& stop) { run(stop); }) {}
 
 void HeartbeatJob::run(const std::stop_token& stop) {
   bool registered = false;

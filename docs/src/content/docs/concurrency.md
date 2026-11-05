@@ -22,7 +22,7 @@ This page tells you where to look when you need to change something.
 
 ## The newest value of a thread: `LatestValue`
 
-`LatestValue<Value>` (`src/concurrency/LatestValue/`) keeps the newest value one thread publishes for others to read, as a watch channel does: a reader gets the latest value, never a queue of them. The server keeps its newest metrics report in one (`LatestMetrics`), and the list of its games in another (`LatestHostedGames`), which the thread of the master link waits on.
+`LatestValue<Value>` (`src/concurrency/LatestValue/`) keeps the newest value one thread publishes for others to read, as a watch channel does: a reader gets the latest value, never a queue of them. The server keeps its newest metrics report in one (`LatestMetrics`), and the list of its games in another (`LatestHostedGames`), which MasterLink, the thread of the master module, waits on.
 
 - `publish(value)` replaces the value and wakes every reader that waits. `revision()` counts the values published, 0 before the first one.
 - `value()` gives a copy of the newest value, or nothing before the first one. Reading changes nothing, so readers at different rates all see the same value.

@@ -14,23 +14,23 @@
 namespace rtype::server {
 
 /**
- * @brief The thread that keeps the master told of this server: it registers
- * the server, then sends a heartbeat each time the games change, at most one
- * per noticeGap, and every interval when nothing changes: it sleeps on the list
- * of games until a newer one or the end of the interval, so an idle server
- * wakes once per interval.
+ * @brief The job that keeps the master told of this server, on the
+ * MasterLink thread, which it owns: it registers the server, then sends a
+ * heartbeat each time the games change, at most one per noticeGap, and every
+ * interval when nothing changes: it sleeps on the list of games until a newer
+ * one or the end of the interval, so an idle server wakes once per interval.
  *
  * It never touches a game: it reads the list the games module publishes. A
  * master that refuses or does not answer is written in the journal once, not
  * at each try; the job registers again after times.retry, then goes on, so
- * the games play whatever the master does. The thread starts with the job and
+ * the games play whatever the master does. MasterLink starts with the job and
  * stops, its call in progress ended within the timeouts of MasterClient, when
  * the job is destroyed.
  */
 class HeartbeatJob {
  public:
   /** @throws network::InvalidMasterUrlException when the url of @p parts is
-   * not `http://<host>[:<port>]`; no thread starts then. */
+   * not `http://<host>[:<port>]`; MasterLink does not start then. */
   explicit HeartbeatJob(HeartbeatJobParts parts);
 
   HeartbeatJob(const HeartbeatJob&) = delete;
@@ -57,7 +57,7 @@ class HeartbeatJob {
   HeartbeatTimes times_;
   logging::Logger logger_;
   std::string lastProblem_;
-  std::jthread thread_;
+  std::jthread masterLink_;
 };
 
 }  // namespace rtype::server

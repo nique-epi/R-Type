@@ -22,10 +22,11 @@ namespace rtype::server {
  * @brief The module master, optional: it keeps the master told of this server
  * through a HeartbeatJob, from master-url, master-key and server-name.
  *
- * Without master-url or master-key the server runs alone and no thread starts,
- * as it does when master-url is not `http://<host>[:<port>]` or the port the
- * players use is chosen by the system. The metrics module is optional too:
- * without it the heartbeats carry no measure.
+ * Without master-url or master-key the server runs alone and MasterLink, the
+ * thread of the job, does not start, as it does when master-url is not
+ * `http://<host>[:<port>]` or the port the players use is chosen by the
+ * system. The metrics module is optional too: without it the heartbeats carry
+ * no measure.
  */
 class ServerMasterModule final : public engine::IModule,
                                  public engine::IOptionalDependencies {
