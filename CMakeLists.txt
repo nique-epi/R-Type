@@ -310,6 +310,7 @@ rtype_forbid_links(rtype_identifiers "SFML::" "asio::" "rtype_engine" "rtype_gam
 rtype_forbid_links(rtype_storage "SFML::" "asio::" "rtype_engine" "rtype_game" "rtype_network" "rtype_client" "rtype_logging" "rtype_concurrency" "rtype_identifiers")
 rtype_forbid_links(r-type_server "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_server_network_module "SFML::" "asio::" "rtype_network_asio" "rtype_client")
+rtype_forbid_links(rtype_server_game_statistics_module "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_network_datagram_relay "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_network_compression "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_server_platform "SFML::" "asio::" "rtype_network_asio" "rtype_client")

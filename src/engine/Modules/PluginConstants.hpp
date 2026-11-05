@@ -8,7 +8,8 @@ namespace rtype::engine {
 /**
  * @brief The version of everything a plugin compiles against: IModule,
  * InstallContext, ServiceRegistry, LoopStages, EventBus, Logger, ILogJournal,
- * PluginEntry. Raised by every change to one of those headers. A plugin is also
+ * PluginEntry, and ConfigurationRegistry with the definitions of the settings
+ * it declares. Raised by every change to one of those headers. A plugin is also
  * built by the same compiler, from the same sources, as the program that loads
  * it: the C++ binary format changes from one compiler to another.
  */

@@ -8,22 +8,26 @@
 #include <vector>
 #include "Application.hpp"
 #include "DatagramCodec.hpp"
+#include "GameStatisticsFixtures.hpp"
 #include "IModule.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"
 #include "MessageType.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
+#include "ServerGameStatisticsModuleTestConstants.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "ServerModules.hpp"
 #include "ServerModulesFixture.hpp"
 #include "TrafficFileTestConstants.hpp"
+#include "TrafficFixtures.hpp"
 #include "UdpTestClient.hpp"
 
 using rtype::engine::DATABASE_OPTION;
 using rtype::engine::PORT_OPTION;
 using rtype::network::MessageType;
 using rtype::network::TRAFFIC_CSV_OPTION;
+using rtype::network::testing::textOf;
 using rtype::server::LaunchOptions;
 using rtype::server::serverModules;
 
@@ -82,6 +86,26 @@ TEST_F(ServerModulesFixture, OpensTheTrafficFileOfItsLaunchOption) {
   application->start();
 
   EXPECT_TRUE(std::filesystem::exists(TRAFFIC_FILE_NAME));
+  application->stop();
+}
+
+/**
+ * Given a server whose configuration file loads the game statistics plugin,
+ * writing to a file of the folder it starts in
+ * When the application starts
+ * Then the file holds the names of its columns: the modules of the server
+ * provide what the plugin needs
+ */
+TEST_F(ServerModulesFixture, LoadsTheGameStatisticsPluginOfItsConfiguration) {
+  std::vector<std::string> lines = gameStatisticsPluginLines();
+  lines.push_back(std::string{STATISTICS_FILE_LINE_START} +
+                  std::string{STATISTICS_FILE_NAME});
+  writeConfiguration(lines);
+  const auto application = serverApplication(launchOptions());
+
+  application->start();
+
+  EXPECT_EQ(textOf(STATISTICS_FILE_NAME), STATISTICS_HEADER_LINE);
   application->stop();
 }
 
