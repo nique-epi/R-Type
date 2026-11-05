@@ -14,8 +14,9 @@ This page tells you where to look when you need to change something. It describe
 | Database `r-type_master.db` | Available: servers, samples | `src/master/Storage/` |
 | Creation of a game server and its key, `POST /api/servers` | Available; the web site that calls it is not written | `src/master/Servers/` |
 | Registration and heartbeats of the game servers | Available; no server sends them yet | `src/master/Servers/`, `src/network/Master/` |
-| The client of the master for the game server, `MasterClient` | Available; the game server does not call it yet | `src/network/Master/Client/` |
-| The list of the servers and their games, for the client | Not yet written | |
+| The client of the master, `MasterClient` | Available; the game server does not call it yet | `src/network/Master/Client/` |
+| The games of a server, for the client, `GET /api/servers/{id}/games` | Available; no game server sends the games yet | `src/master/Servers/`, `src/network/Master/` |
+| The list of the servers, for the client | Not yet written | |
 | Administration, global leaderboard, accounts, web site | Not yet written | |
 
 ## Starting the master
@@ -102,13 +103,14 @@ The host then writes the key in the `server.cfg` of that server, as the setting 
 
 ## Routes of a game server: `ServersModule`
 
-A game server is named by its key, sent as `Authorization: Bearer <key>`, never by an id in the path: a key reaches its own server alone. Both routes answer 401, with `WWW-Authenticate: Bearer`, to a request without a key the master issued; the key is checked before the body is read.
+A game server is named by its key, sent as `Authorization: Bearer <key>`, never by an id in the path: a key reaches its own server alone. The routes that write answer 401, with `WWW-Authenticate: Bearer`, to a request without a key the master issued; the key is checked before the body is read. Reading the games of a server needs no key.
 
 | Route | Does | Answers |
 |---|---|---|
 | `POST /api/servers` | creates a server and its key (see [Creating a game server](#creating-a-game-server-post-apiservers)) | 201, `Location: /api/servers/<id>` and the server with its key; 429 over the quota |
 | `PUT /api/servers/me` | replaces what the server of the key registered; the same body twice gives the same server | 200 and the server, its `id` included |
 | `PUT /api/servers/me/heartbeat` | replaces the last state of the server, and keeps a sample of its measures | 200 and `{"commands":[]}`, the orders of the admins waiting for the server, none until administration exists; 409 before the server registered |
+| `GET /api/servers/{id}/games` | lists the games of the last heartbeat of the server `id`, to anyone (see [Listing the games of a server](#listing-the-games-of-a-server)) | 200 and the games; 404 for an id that names no server |
 
 A registration is the state of a server that starts: it forgets the last heartbeat, since the server hosts no game yet. A registration with no `address` takes the address of the TCP peer, since a server often does not know its public address. A sample is written once per second of the clock at most, whatever the rate of the heartbeats, and every sample older than `SAMPLE_RETENTION` (7 days) is erased when a new one is written, of every server.
 
@@ -120,30 +122,51 @@ The bodies are JSON, read and written by `rtype_network_master` (`src/network/Ma
 ```
 
 ```json
-{"games":[{"number":1,"state":"waiting","difficulty":"normal","players":["ACE"]}],
+{"games":[{"number":1,"name":"GAME 1","state":"waiting","difficulty":"normal","players":["ACE"]}],
  "measures":{"tickP50Milliseconds":1.5,"tickP95Milliseconds":4.25}}
 ```
 
 | Member | Bounds |
 |---|---|
-| `name`, `gameVersion` | 1 to 32 bytes of printable UTF-8 (`MAXIMUM_SERVER_NAME_SIZE`, `MAXIMUM_VERSION_SIZE`) |
+| `name`, `gameVersion` | 1 to 32 bytes of printable UTF-8 (`MAXIMUM_SERVER_NAME_SIZE`, `MAXIMUM_VERSION_SIZE`); the `name` of a game: 1 to 16 bytes (`MAXIMUM_GAME_NAME_SIZE`) |
 | `address` | optional, an IPv4 address |
 | `udpPort` | 1 to 65535 |
 | `maximumGames`, `maximumPlayersPerGame` | 1 to `MAXIMUM_HOSTED_GAMES` (64), 1 to `MAXIMUM_PLAYERS` (4) |
 | `games` | as many as the server registered at most; numbers from 1 to its `maximumGames`, none twice |
-| `state` | `waiting`, `starting`, `playing` or `finished` |
+| `state` | `waiting`, `starting`, `playing`, `finished` or `full`; `full` means the game waits for players and every seat is taken, so it holds as many players as the server registered per game, and `waiting` holds fewer; the other states hold any number |
 | `difficulty`, `players` | nicknames of the protocol, 1 to 16 bytes; as many players as the server registered per game at most |
 | `measures` | an object; each of `tickP50Milliseconds`, `tickP95Milliseconds`, `receivedBytesPerSecond`, `sentBytesPerSecond`, `lossPercent` (0 to 100) and `averagePingMilliseconds` is a number from 0, or left out when the server does not measure it, never sent as 0 |
 
-## The client of the game server: `MasterClient`
+## Listing the games of a server
 
-`MasterClient` (`rtype_network_master_client`, `src/network/Master/Client/`) is what a game server calls: one function per route, each sending the message of its route with the key of `MasterAccess` as Bearer.
+`GET /api/servers/{id}/games` answers, to anyone, the games of the last heartbeat of a server, so a player who picked a server can choose a game in it. The `id` is the one the creation answered. A server that registered and sent no heartbeat since lists no game: `{"games":[]}`, since a registration forgets the last heartbeat. An `id` that is no number, or that no server has, answers 404.
+
+```json
+{"games":[{"number":1,"name":"GAME 1","state":"waiting","playerCount":1},
+          {"number":2,"name":"GAME 2","state":"inGame","playerCount":2}]}
+```
+
+The answer never holds a nickname, a difficulty or a measure: those stay in the heartbeat. The state of a game is the one of its heartbeat, folded to the three a player picks from:
+
+| Heartbeat | Listed as |
+|---|---|
+| `waiting` | `waiting`: a seat is free |
+| `full` | `full`: every seat is taken |
+| `starting`, `playing`, `finished` | `inGame`; a game that is over keeps its number and its line |
+
+A read costs one SQL statement and the check of the heartbeat kept, and the route has no quota: the quota of creations is the only limit of the API today. The answer holds at most `MAXIMUM_HOSTED_GAMES` (64) games.
+
+## The client of the master: `MasterClient`
+
+`MasterClient` (`rtype_network_master_client`, `src/network/Master/Client/`) is what a game server and, to read the games of a server, the game client call: one function per route, each sending the message of its route with the key of `MasterAccess` as Bearer, when it has one.
 
 ```cpp
 rtype::network::MasterClient master{rtype::network::MasterAccess{
     .url = "http://master.example.org:8080", .key = masterKey}};
 master.registerServer(registration);
 master.sendHeartbeat(heartbeat);
+
+rtype::network::GameListing listing = master.listGames(serverId);  // no key needed
 ```
 
 - **Every call waits for its answer**, `MASTER_CONNECTION_TIMEOUT` (5 s) to connect, then `MASTER_TRANSFER_TIMEOUT` (5 s) for each read and write, so it is made away from the game loop. Two threads never call the same client together.
@@ -166,7 +189,7 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 }
 ```
 
-`ServersModule` adds its three routes the same way, from `MasterRouteConstants.hpp`, and is laid out like a web backend: `Controllers/` reads the request of each route and writes its answer, `Services/` applies the rules (`Services/Helpers/` for the key and its fingerprint), `Repositories/` holds the only SQL, one class per table, and `Models/` the plain structs the layers hand each other.
+`ServersModule` adds its four routes the same way, from `MasterRouteConstants.hpp`; a path may name a parameter, as `/servers/:id/games` names `id`, which the route reads in `ApiRequest::pathParameters`, and is laid out like a web backend: `Controllers/` reads the request of each route and writes its answer, `Services/` applies the rules (`Services/Helpers/` for the key and its fingerprint), `Repositories/` holds the only SQL, one class per table, and `Models/` the plain structs the layers hand each other.
 
 ## Where to intervene
 
@@ -179,6 +202,8 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change the quota of creations | `MAXIMUM_CREATIONS_PER_ADDRESS` and `CREATION_WINDOW` in `src/master/Servers/Services/ServersServiceConstants.hpp` |
 | Change how long samples are kept | `SAMPLE_RETENTION` in `src/master/Servers/Repositories/ServersRepositoryConstants.hpp` |
 | Call the master from the game server | `MasterClient` (`src/network/Master/Client/`) |
+| Change what the games of a server are listed as | `listedStateOf()` in `ServersService.cpp` (`src/master/Servers/Services/`) and `GameListing` (`src/network/Master/Messages/`) |
+| Change what a game server tells of its games | `hostedGamesOf()` (`src/server/Games/HostedGames.cpp`) |
 | Add a setting of the master | the `install()` of the module that reads it, `master.cfg.example` and the table above |
 | Change what an error answers | `problemDetailsText()` in `MasterHttpServer.cpp` |
 | Add a module | `src/master/<Name>/`, its line in `masterModules()` and its row in [the list of modules](/R-Type/project-layout/#the-list-of-modules) |
