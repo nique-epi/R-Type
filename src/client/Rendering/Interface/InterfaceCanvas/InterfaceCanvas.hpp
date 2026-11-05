@@ -7,18 +7,16 @@
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <functional>
-#include <map>
 #include <optional>
 #include <set>
 #include <string>
 #include <string_view>
-#include <vector>
 #include "AssetTextureSource.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
 #include "Logger.hpp"
 #include "PixelCanvas.hpp"
-#include "SmoothImage.hpp"
+#include "SmoothImageLayer.hpp"
 #include "TextStyle.hpp"
 #include "TextWriter.hpp"
 #include "TextureArea.hpp"
@@ -35,10 +33,8 @@ class AssetLibrary;
  * TEXT_CHARACTER_SIZE, on whole pixels, outlined in INK when asked, through
  * the crisp text shader (see TextWriter).
  *
- * A smooth image is not part of the pixel picture: display() keeps the list of
- * those drawn since clear(), and show() lays them over the picture, each
- * stretched over its area at the resolution of the window, from a copy of its
- * texture smoothed and given mipmaps, made the first time its id is drawn.
+ * A smooth image is not part of the pixel picture: a SmoothImageLayer keeps
+ * it, and show() lays it over the picture (see SmoothImageLayer).
  *
  * Fonts and textures come from an asset library, which must outlive the
  * canvas: the fonts must be loaded when the canvas is built, a texture when it
@@ -78,21 +74,6 @@ class InterfaceCanvas : public IInterfaceCanvas {
    * missing; a missing id is reported once. */
   [[nodiscard]] const sf::Texture* foundTexture(std::string_view assetId);
 
-  /** @returns The smoothed copy of the texture of an id, made the first time
-   * the id asks for it (see addSmoothCopy). */
-  [[nodiscard]] const sf::Texture& smoothCopyOf(std::string_view assetId,
-                                                const sf::Texture& texture);
-
-  /** @returns A new copy of a texture for an id, smoothed and given mipmaps,
-   * so drawing it smaller than its size stays smooth; without mipmaps, the
-   * copy is smoothed only and the log says so. */
-  [[nodiscard]] const sf::Texture& addSmoothCopy(std::string_view assetId,
-                                                 const sf::Texture& texture);
-
-  /** @brief Lays the textures of the last displayed picture over it, each
-   * smoothed over its area, in logical units of the playfield. */
-  void showSmoothImages(sf::RenderTarget& target) const;
-
   AssetTextureSource textures_;
   TextWriter writer_;
   PixelCanvas canvas_;
@@ -101,9 +82,7 @@ class InterfaceCanvas : public IInterfaceCanvas {
    * it did not compile. */
   std::optional<sf::Shader> shadeSwap_;
   std::set<std::string, std::less<>> reportedMissingIds_;
-  std::map<std::string, sf::Texture, std::less<>> smoothTextures_;
-  std::vector<SmoothImage> paintedSmoothImages_;
-  std::vector<SmoothImage> shownSmoothImages_;
+  SmoothImageLayer smoothImages_;
 };
 
 }  // namespace rtype::client

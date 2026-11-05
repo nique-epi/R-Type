@@ -16,14 +16,13 @@
 #include <string_view>
 #include <vector>
 #include "AssetLibrary.hpp"
-#include "BackgroundConstants.hpp"
 #include "FragmentShader.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
 #include "PlayerColors.hpp"
 #include "ShadeSwap.hpp"
 #include "ShadeSwapShaderConstants.hpp"
-#include "SmoothImage.hpp"
+#include "SmoothImageSpot.hpp"
 #include "TextLine.hpp"
 #include "TextStyle.hpp"
 #include "TextWriter.hpp"
@@ -99,7 +98,7 @@ InterfaceCanvas::InterfaceCanvas(const AssetLibrary& library)
 
 void InterfaceCanvas::clear() {
   canvas_.canvas().clear(sf::Color::Transparent);
-  paintedSmoothImages_.clear();
+  smoothImages_.clear();
 }
 
 void InterfaceCanvas::fill(sf::IntRect area, sf::Color color) {
@@ -145,9 +144,8 @@ void InterfaceCanvas::drawSmoothImage(std::string_view assetId,
   if (texture == nullptr) {
     return;
   }
-  paintedSmoothImages_.push_back({.texture = &smoothCopyOf(assetId, *texture),
-                                  .area = area,
-                                  .tint = tint});
+  smoothImages_.lay(assetId, *texture,
+                    SmoothImageSpot{.area = area, .tint = tint});
 }
 
 int InterfaceCanvas::textWidth(std::string_view text, TextFont font) const {
@@ -156,12 +154,12 @@ int InterfaceCanvas::textWidth(std::string_view text, TextFont font) const {
 
 void InterfaceCanvas::display() {
   canvas_.canvas().display();
-  shownSmoothImages_ = paintedSmoothImages_;
+  smoothImages_.display();
 }
 
 void InterfaceCanvas::show(sf::RenderTarget& target) const {
   canvas_.show(target);
-  showSmoothImages(target);
+  smoothImages_.show(target);
 }
 
 const sf::Texture* InterfaceCanvas::foundTexture(std::string_view assetId) {
@@ -171,38 +169,6 @@ const sf::Texture* InterfaceCanvas::foundTexture(std::string_view assetId) {
     logger_.warn("no texture for asset id ", assetId);
   }
   return texture;
-}
-
-const sf::Texture& InterfaceCanvas::smoothCopyOf(std::string_view assetId,
-                                                 const sf::Texture& texture) {
-  const auto known = smoothTextures_.find(assetId);
-  return known != smoothTextures_.end() ? known->second
-                                        : addSmoothCopy(assetId, texture);
-}
-
-const sf::Texture& InterfaceCanvas::addSmoothCopy(std::string_view assetId,
-                                                  const sf::Texture& texture) {
-  sf::Texture& copy =
-      smoothTextures_.emplace(std::string(assetId), texture).first->second;
-  copy.setSmooth(true);
-  if (!copy.generateMipmap()) {
-    logger_.warn("no mipmaps for asset id ", assetId, ", smoothed without");
-  }
-  return copy;
-}
-
-void InterfaceCanvas::showSmoothImages(sf::RenderTarget& target) const {
-  for (const SmoothImage& image : shownSmoothImages_) {
-    const sf::Vector2f textureSize(image.texture->getSize());
-    const sf::Vector2f areaSize =
-        sf::Vector2f(image.area.size) * BACKGROUND_PIXEL_SIZE;
-    sf::Sprite sprite(*image.texture);
-    sprite.setPosition(sf::Vector2f(image.area.position) *
-                       BACKGROUND_PIXEL_SIZE);
-    sprite.setScale({areaSize.x / textureSize.x, areaSize.y / textureSize.y});
-    sprite.setColor(image.tint);
-    target.draw(sprite);
-  }
 }
 
 }  // namespace rtype::client
