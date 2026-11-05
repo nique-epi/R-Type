@@ -75,8 +75,7 @@ void EnemyActionPlayer::apply(const network::EnemyAction& action) {
           return;
         }
         const ActionAnimation* const found = actionOf(*look.appearance, key);
-        SpriteAnimation* const playing =
-            components_->get<SpriteAnimation>(entity);
+        auto* const playing = components_->get<SpriteAnimation>(entity);
         if (found != nullptr && playing != nullptr) {
           *playing = playingOf(*look.appearance, *found);
         }

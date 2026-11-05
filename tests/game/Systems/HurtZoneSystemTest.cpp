@@ -1,7 +1,5 @@
 #include <gtest/gtest.h>
-#include <optional>
 #include <vector>
-#include "ActionKey.hpp"
 #include "CollisionScene.hpp"
 #include "CurrentAction.hpp"
 #include "Entity.hpp"
@@ -15,7 +13,6 @@
 
 using rtype::engine::Entity;
 using rtype::engine::SIMULATION_TICK_DURATION;
-using rtype::game::ActionKey;
 using rtype::game::CurrentAction;
 using rtype::game::EntityType;
 using rtype::game::HurtBox;
@@ -48,11 +45,11 @@ std::vector<ShipContact> contactsOf(CollisionScene& scene) {
   return received;
 }
 
-/** @returns An enemy at (@p x, 0) whose hurt zone holds @p boxes. */
-Entity enemyWith(CollisionScene& scene, float x,
+/** @returns An enemy at (@p centerX, 0) whose hurt zone holds @p boxes. */
+Entity enemyWith(CollisionScene& scene, float centerX,
                  const std::vector<HurtBox>& boxes) {
   const Entity enemy =
-      scene.spawnWithoutCollisionBox(EntityType::Enemy, x, 0.0F);
+      scene.spawnWithoutCollisionBox(EntityType::Enemy, centerX, 0.0F);
   scene.components.add(enemy, HurtZone{.boxes = boxes});
   return enemy;
 }

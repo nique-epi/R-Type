@@ -1,10 +1,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Color.hpp>
+#include <cstddef>
 #include <vector>
 #include "AllEntityTypes.hpp"
 #include "AppearanceReference.hpp"
 #include "EffectConstants.hpp"
+#include "Entity.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityIdConstants.hpp"
 #include "EntityReplicatorFixture.hpp"

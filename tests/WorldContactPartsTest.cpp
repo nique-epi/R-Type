@@ -9,7 +9,7 @@
 #include "ShippedEntitySheets.hpp"
 #include "SurvivesContact.hpp"
 #include "World.hpp"
-#include "WorldContactPartsTestConstants.hpp"
+#include "WorldContactPartsFixtures.hpp"
 #include "WorldFixtures.hpp"
 #include "WorldTestConstants.hpp"
 
@@ -23,9 +23,9 @@ using rtype::game::testing::componentOf;
 using rtype::game::testing::DRIFTER_SHEET;
 using rtype::game::testing::SHIP_SHEET;
 using rtype::game::testing::shippedEntitySheets;
-using rtype::game::testing::SOME_HURT_ZONE;
 using rtype::game::testing::SOME_X;
 using rtype::game::testing::SOME_Y;
+using rtype::game::testing::someHurtZone;
 
 namespace {
 
@@ -48,14 +48,14 @@ EntitySheet drifterWith(const std::optional<HurtZone>& zone, bool survives) {
 TEST(WorldContactParts, AnEnemyStartsIdle) {
   World world;
 
-  const std::uint32_t id =
+  const std::uint32_t entityId =
       world.spawn(shippedEntitySheets().named(DRIFTER_SHEET),
                   Position{.x = SOME_X, .y = SOME_Y});
 
   const std::optional<CurrentAction> action =
-      componentOf<CurrentAction>(world, id);
+      componentOf<CurrentAction>(world, entityId);
   ASSERT_TRUE(action.has_value());
-  EXPECT_FALSE(action->key.has_value());
+  EXPECT_FALSE(action.value_or(CurrentAction{}).key.has_value());
 }
 
 /**
@@ -66,10 +66,11 @@ TEST(WorldContactParts, AnEnemyStartsIdle) {
 TEST(WorldContactParts, AShipHasNoCurrentAction) {
   World world;
 
-  const std::uint32_t id = world.spawn(shippedEntitySheets().named(SHIP_SHEET),
-                                       Position{.x = SOME_X, .y = SOME_Y});
+  const std::uint32_t entityId =
+      world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+                  Position{.x = SOME_X, .y = SOME_Y});
 
-  EXPECT_FALSE(componentOf<CurrentAction>(world, id).has_value());
+  EXPECT_FALSE(componentOf<CurrentAction>(world, entityId).has_value());
 }
 
 /**
@@ -80,10 +81,10 @@ TEST(WorldContactParts, AShipHasNoCurrentAction) {
 TEST(WorldContactParts, TheHurtZoneOfTheSheetIsOnTheEntity) {
   World world;
 
-  const std::uint32_t id = world.spawn(drifterWith(SOME_HURT_ZONE, false),
-                                       Position{.x = SOME_X, .y = SOME_Y});
+  const std::uint32_t entityId = world.spawn(
+      drifterWith(someHurtZone(), false), Position{.x = SOME_X, .y = SOME_Y});
 
-  EXPECT_EQ(componentOf<HurtZone>(world, id), SOME_HURT_ZONE);
+  EXPECT_EQ(componentOf<HurtZone>(world, entityId), someHurtZone());
 }
 
 /**
@@ -94,10 +95,10 @@ TEST(WorldContactParts, TheHurtZoneOfTheSheetIsOnTheEntity) {
 TEST(WorldContactParts, TheMarkerOfTheSheetIsOnTheEntity) {
   World world;
 
-  const std::uint32_t id = world.spawn(drifterWith(std::nullopt, true),
-                                       Position{.x = SOME_X, .y = SOME_Y});
+  const std::uint32_t entityId = world.spawn(
+      drifterWith(std::nullopt, true), Position{.x = SOME_X, .y = SOME_Y});
 
-  EXPECT_TRUE(componentOf<SurvivesContact>(world, id).has_value());
+  EXPECT_TRUE(componentOf<SurvivesContact>(world, entityId).has_value());
 }
 
 /**
@@ -108,10 +109,10 @@ TEST(WorldContactParts, TheMarkerOfTheSheetIsOnTheEntity) {
 TEST(WorldContactParts, ASheetThatDeclaresNothingGivesNoContactPart) {
   World world;
 
-  const std::uint32_t id =
+  const std::uint32_t entityId =
       world.spawn(shippedEntitySheets().named(DRIFTER_SHEET),
                   Position{.x = SOME_X, .y = SOME_Y});
 
-  EXPECT_FALSE(componentOf<HurtZone>(world, id).has_value());
-  EXPECT_FALSE(componentOf<SurvivesContact>(world, id).has_value());
+  EXPECT_FALSE(componentOf<HurtZone>(world, entityId).has_value());
+  EXPECT_FALSE(componentOf<SurvivesContact>(world, entityId).has_value());
 }

@@ -2,13 +2,7 @@
 
 #include <chrono>
 #include <cstdint>
-#include <vector>
-#include "ActionAnimation.hpp"
-#include "ActionKey.hpp"
-#include "EnemyPhase.hpp"
-#include "EntityAppearance.hpp"
 #include "FrameAnchor.hpp"
-#include "Playback.hpp"
 #include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
 
@@ -29,25 +23,5 @@ constexpr game::SpriteFrame IDLE_FRAME{
     .left = 0, .top = 0, .width = 8, .height = 8};
 constexpr engine::Duration STRIKE_FRAME_TIME = std::chrono::milliseconds(100);
 constexpr FrameAnchor STRIKE_ANCHOR{.x = -4, .y = 1};
-
-/** @returns The appearance of the enemy: one idle frame, and the strike of
- * DESCRIBED_ATTACK in two frames, held, with an anchor, then back to idle. */
-inline EntityAppearance appearanceWithAStrike() {
-  return EntityAppearance{
-      .sheet = "sprites/enemy.png",
-      .idleFrames = {IDLE_FRAME},
-      .idleFrameDuration = std::chrono::milliseconds(200),
-      .actions = {ActionAnimation{
-          .key = game::ActionKey{.attack = DESCRIBED_ATTACK,
-                                 .phase = game::EnemyPhase::Strike},
-          .frames = {game::SpriteFrame{
-                         .left = 0, .top = 16, .width = 16, .height = 8},
-                     game::SpriteFrame{
-                         .left = 18, .top = 16, .width = 16, .height = 8}},
-          .frameDuration = STRIKE_FRAME_TIME,
-          .playback = Playback::Hold,
-          .returnsToIdle = true,
-          .anchor = STRIKE_ANCHOR}}};
-}
 
 }  // namespace rtype::client::testing

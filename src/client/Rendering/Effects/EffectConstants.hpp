@@ -4,7 +4,6 @@
 #include <array>
 #include <chrono>
 #include <cstddef>
-#include "Animation.hpp"
 #include "EffectAnimations.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "Playback.hpp"

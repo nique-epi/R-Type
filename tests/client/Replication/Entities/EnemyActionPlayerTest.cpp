@@ -1,19 +1,23 @@
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <optional>
+#include <cstdint>
+#include "Animation.hpp"
 #include "AnimationSystem.hpp"
 #include "AppearanceReference.hpp"
 #include "ComponentRegistry.hpp"
 #include "EnemyAction.hpp"
 #include "EnemyActionPlayer.hpp"
+#include "EnemyActionPlayerFixtures.hpp"
 #include "EnemyActionPlayerTestConstants.hpp"
 #include "Entity.hpp"
 #include "EntityAppearance.hpp"
 #include "EntityRegistry.hpp"
+#include "Layer.hpp"
 #include "NetworkIdentity.hpp"
 #include "Playback.hpp"
 #include "Sprite.hpp"
 #include "SpriteAnimation.hpp"
+#include "SpriteFrame.hpp"
+#include "TimeConstants.hpp"
 
 using rtype::client::AnimationSystem;
 using rtype::client::AppearanceReference;
@@ -82,7 +86,7 @@ class EnemyScene {
   EntityAppearance appearance_ = appearanceWithAStrike();
   EntityRegistry entities_;
   ComponentRegistry components_{entities_};
-  Entity enemy_;
+  Entity enemy_{};
   EnemyActionPlayer player_{components_};
   AnimationSystem system_;
 };

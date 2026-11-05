@@ -9,6 +9,7 @@
 #include "EntitySheetReaderFixture.hpp"
 #include "EntitySheetReaderTestConstants.hpp"
 #include "HurtBox.hpp"
+#include "HurtZone.hpp"
 
 using rtype::engine::DataFileTablesExpectedException;
 using rtype::engine::UnknownDataFileChoiceException;
@@ -16,6 +17,7 @@ using rtype::game::ActionKey;
 using rtype::game::EnemyPhase;
 using rtype::game::EntitySheet;
 using rtype::game::HurtBox;
+using rtype::game::HurtZone;
 using rtype::game::testing::ACTION_TOGETHER_RULE_TEXT;
 using rtype::game::testing::APPEARANCE;
 using rtype::game::testing::ATTACK_DOTTED_KEY;
@@ -58,6 +60,18 @@ using rtype::game::testing::SURVIVES_CONTACT_WITH_A_KEY;
 using rtype::game::testing::TWO_HURT_BOXES;
 using ::testing::HasSubstr;
 
+namespace {
+
+/** @returns The hurt zone of @p sheet, an empty one, and a failure, when it
+ * has none. */
+const HurtZone& zoneOf(const EntitySheet& sheet) {
+  static const HurtZone none{};
+  EXPECT_TRUE(sheet.hurtZone.has_value());
+  return sheet.hurtZone.has_value() ? *sheet.hurtZone : none;
+}
+
+}  // namespace
+
 /**
  * Given the sheet of an enemy with two boxes in its hurt zone
  * When its gameplay is read
@@ -70,13 +84,13 @@ TEST_F(EntitySheetReaderFixture, ReadsTheBoxesOfAHurtZoneInTheOrderOfTheFile) {
             TWO_HURT_BOXES, APPEARANCE});
 
   ASSERT_TRUE(sheet.hurtZone.has_value());
-  ASSERT_EQ(sheet.hurtZone->boxes.size(), HURT_BOXES_IN_TWO);
-  const HurtBox& first = sheet.hurtZone->boxes.front();
+  ASSERT_EQ(zoneOf(sheet).boxes.size(), HURT_BOXES_IN_TWO);
+  const HurtBox& first = zoneOf(sheet).boxes.front();
   EXPECT_FLOAT_EQ(first.offsetX, FIRST_BOX_OFFSET_X);
   EXPECT_FLOAT_EQ(first.offsetY, FIRST_BOX_OFFSET_Y);
   EXPECT_FLOAT_EQ(first.width, FIRST_BOX_WIDTH);
   EXPECT_FLOAT_EQ(first.height, FIRST_BOX_HEIGHT);
-  EXPECT_FLOAT_EQ(sheet.hurtZone->boxes.back().offsetY, SECOND_BOX_OFFSET_Y);
+  EXPECT_FLOAT_EQ(zoneOf(sheet).boxes.back().offsetY, SECOND_BOX_OFFSET_Y);
 }
 
 /**
@@ -90,7 +104,7 @@ TEST_F(EntitySheetReaderFixture, ABoxThatNamesNoActionHurtsAllTheTime) {
             TWO_HURT_BOXES, APPEARANCE});
 
   ASSERT_TRUE(sheet.hurtZone.has_value());
-  EXPECT_FALSE(sheet.hurtZone->boxes.front().activeIn.has_value());
+  EXPECT_FALSE(zoneOf(sheet).boxes.front().activeIn.has_value());
 }
 
 /**
@@ -105,7 +119,7 @@ TEST_F(EntitySheetReaderFixture, ABoxHurtsInTheAttackAndThePhaseItNames) {
 
   ASSERT_TRUE(sheet.hurtZone.has_value());
   EXPECT_EQ(
-      sheet.hurtZone->boxes.back().activeIn,
+      zoneOf(sheet).boxes.back().activeIn,
       (ActionKey{.attack = SECOND_BOX_ATTACK, .phase = EnemyPhase::Strike}));
 }
 
@@ -120,17 +134,17 @@ TEST_F(EntitySheetReaderFixture, ReadsEachPhaseByItsName) {
             EVERY_PHASE_OF_ATTACK_TWO, APPEARANCE});
 
   ASSERT_TRUE(sheet.hurtZone.has_value());
-  ASSERT_EQ(sheet.hurtZone->boxes.size(), HURT_BOXES_IN_EVERY_PHASE);
-  EXPECT_EQ(sheet.hurtZone->boxes.at(0).activeIn,
+  ASSERT_EQ(zoneOf(sheet).boxes.size(), HURT_BOXES_IN_EVERY_PHASE);
+  EXPECT_EQ(zoneOf(sheet).boxes.at(0).activeIn,
             (ActionKey{.attack = ATTACK_OF_EVERY_PHASE,
                        .phase = EnemyPhase::Signal}));
-  EXPECT_EQ(sheet.hurtZone->boxes.at(1).activeIn,
+  EXPECT_EQ(zoneOf(sheet).boxes.at(1).activeIn,
             (ActionKey{.attack = ATTACK_OF_EVERY_PHASE,
                        .phase = EnemyPhase::Strike}));
-  EXPECT_EQ(sheet.hurtZone->boxes.at(2).activeIn,
+  EXPECT_EQ(zoneOf(sheet).boxes.at(2).activeIn,
             (ActionKey{.attack = ATTACK_OF_EVERY_PHASE,
                        .phase = EnemyPhase::Recover}));
-  EXPECT_EQ(sheet.hurtZone->boxes.at(3).activeIn,
+  EXPECT_EQ(zoneOf(sheet).boxes.at(3).activeIn,
             (ActionKey{.attack = ATTACK_OF_EVERY_PHASE,
                        .phase = EnemyPhase::Enraged}));
 }

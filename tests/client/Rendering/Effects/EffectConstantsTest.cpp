@@ -13,7 +13,6 @@
 #include "SheetPixels.hpp"
 #include "SpriteFrame.hpp"
 
-using rtype::client::Animation;
 using rtype::client::BYDO_EXPLOSION;
 using rtype::client::BYDO_EXPLOSION_FLASH_AREA;
 using rtype::client::BYDO_FRAMES;

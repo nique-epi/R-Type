@@ -226,12 +226,13 @@ TEST_F(LifeKeeperFixture, KeepsTheBydoThatSurvivesContact) {
         }
       });
   ASSERT_TRUE(enemy.has_value());
-  world().components().add(*enemy, game::SurvivesContact{});
+  const engine::Entity survivor = enemy.value_or(engine::Entity{});
+  world().components().add(survivor, game::SurvivesContact{});
 
   publishContact(player.shipEntityId, bydo);
   deliver();
 
-  EXPECT_NE(world().components().get<game::NetworkIdentity>(*enemy), nullptr);
+  EXPECT_NE(world().components().get<game::NetworkIdentity>(survivor), nullptr);
   EXPECT_EQ(livesOf(world(), player), THREE_LIVES - 1);
   EXPECT_EQ(explosionsOf(ship), 1U);
   EXPECT_EQ(explosionsOf(bydo), 0U);

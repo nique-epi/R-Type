@@ -3,7 +3,6 @@
 #include "EnemyActionHistory.hpp"
 #include "GameEventHistoryTestConstants.hpp"
 #include "NetworkTestConstants.hpp"
-#include "ServerSessionTestConstants.hpp"
 #include "TimeTestConstants.hpp"
 
 using rtype::client::EnemyActionHistory;
@@ -50,7 +49,7 @@ TEST(EnemyActionHistory, EachEntityAttackAndPhaseIsItsOwnKey) {
   EnemyAction otherAttack = FIRST_STRIKE;
   otherAttack.attack = 2;
   EnemyAction otherEntity = FIRST_STRIKE;
-  otherEntity.entityId = 8;
+  otherEntity.entityId = FIRST_STRIKE.entityId + 1;
 
   EXPECT_TRUE(history.isFirstCopy(otherPhase));
   EXPECT_TRUE(history.isFirstCopy(otherAttack));

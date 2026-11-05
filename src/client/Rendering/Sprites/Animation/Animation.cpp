@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <optional>
+#include "Playback.hpp"
 #include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
 

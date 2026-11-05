@@ -77,9 +77,11 @@ TEST(EnemyAction, RefusesToReadAPhaseOutsideTheList) {
  * Then an InvalidFieldValueException is raised
  */
 TEST(EnemyAction, RefusesToWriteAPhaseOutsideTheList) {
+  // NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
   const EnemyAction message{.entityId = EXAMPLE_ENTITY_ID,
                             .attack = SOME_ATTACK_NUMBER,
                             .phase = static_cast<EnemyActionPhase>(0)};
+  // NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
 
   EXPECT_THROW((void)encodeMessage(message), InvalidFieldValueException);
 }
