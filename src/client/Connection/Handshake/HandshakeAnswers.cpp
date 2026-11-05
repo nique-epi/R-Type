@@ -4,31 +4,15 @@
 #include <vector>
 #include "ConnectionAccepted.hpp"
 #include "ConnectionChallenge.hpp"
-#include "ConnectionConstants.hpp"
 #include "ConnectionPhase.hpp"
 #include "ConnectionRefused.hpp"
+#include "ErrorText.hpp"
 #include "HandshakeAnswersParts.hpp"
 #include "LobbyState.hpp"
 #include "MessageDispatcher.hpp"
 #include "MessageOrigin.hpp"
 
 namespace rtype::client {
-
-namespace {
-
-/** @returns @p names joined by ENTITY_TYPE_NAME_SEPARATOR, for the journal. */
-std::string joinedNames(const std::vector<std::string>& names) {
-  std::string joined;
-  for (const std::string& name : names) {
-    if (!joined.empty()) {
-      joined += ENTITY_TYPE_NAME_SEPARATOR;
-    }
-    joined += name;
-  }
-  return joined;
-}
-
-}  // namespace
 
 HandshakeAnswers::HandshakeAnswers(HandshakeAnswersParts parts)
     : parts_(parts) {
@@ -104,7 +88,7 @@ void HandshakeAnswers::leaveForMissingSheets(
       .otherMissingSheets = static_cast<std::uint8_t>(undrawable.size() - 1)};
   parts_.logger.get().warn(
       "accepted, but this client has no sheet for the entity types ",
-      joinedNames(undrawable), ": it leaves the server");
+      engine::listText(undrawable), ": it leaves the server");
 }
 
 void HandshakeAnswers::onRefused(const network::MessageOrigin& origin,

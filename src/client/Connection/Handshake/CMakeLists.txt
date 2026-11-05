@@ -19,6 +19,7 @@ target_link_libraries(rtype_client_handshake
     rtype_network_protocol
     rtype_network_transport
   PRIVATE
+    rtype_engine_exceptions
     rtype_network_connection_request
     rtype_network_lobby_state
 )
