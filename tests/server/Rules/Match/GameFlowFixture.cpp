@@ -79,10 +79,6 @@ void GameFlowFixture::startGameWith(
   ASSERT_EQ(flow_.state(), GameState::InProgress);
 }
 
-void GameFlowFixture::startGameWithOnePlayer() {
-  startGameWith({FIRST_PLAYER});
-}
-
 void GameFlowFixture::tick() {
   flow_.onTick();
   events_.dispatch();

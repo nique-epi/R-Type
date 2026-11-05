@@ -42,10 +42,6 @@ class GameFlowFixture : public ::testing::Test {
    * tick that starts the game. */
   void startGameWith(std::initializer_list<std::size_t> indexes);
 
-  /** @brief Connects one player, who is ready, and runs the tick that starts
-   * the game. */
-  void startGameWithOnePlayer();
-
   /** @brief Takes every life of @p player, the ship in play included. */
   void takeEveryLifeOf(ConnectedPlayer& player);
 

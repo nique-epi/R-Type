@@ -118,7 +118,7 @@ TEST_F(GameFlowFixture, DoesNotCountTicksWhileWaiting) {
  * Then the tick is SOME_TICKS
  */
 TEST_F(GameFlowFixture, CountsTicksWhileInProgress) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
 
   runTicks(SOME_TICKS);
 
@@ -131,7 +131,7 @@ TEST_F(GameFlowFixture, CountsTicksWhileInProgress) {
  * Then its state is Finished
  */
 TEST_F(GameFlowFixture, FinishEndsTheGameInProgress) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
 
   flow().finish();
 
@@ -155,7 +155,7 @@ TEST_F(GameFlowFixture, FinishDoesNothingWhileWaiting) {
  * Then it is still finished
  */
 TEST_F(GameFlowFixture, StaysFinishedBeforeTheFinishedDurationElapsed) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   flow().finish();
 
   runTicks(FINISHED_STATE_TICKS - 1);
@@ -169,7 +169,7 @@ TEST_F(GameFlowFixture, StaysFinishedBeforeTheFinishedDurationElapsed) {
  * Then it waits for players again
  */
 TEST_F(GameFlowFixture, WaitsForPlayersAgainOnceTheFinishedDurationElapsed) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   flow().finish();
 
   runTicks(FINISHED_STATE_TICKS);
@@ -183,7 +183,7 @@ TEST_F(GameFlowFixture, WaitsForPlayersAgainOnceTheFinishedDurationElapsed) {
  * Then the game is finished in that tick
  */
 TEST_F(GameFlowFixture, FinishesTheGameInProgressNoPlayerIsLeftIn) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   ASSERT_TRUE(roster().remove(playerEndpoint(FIRST_PLAYER)).has_value());
 
   tick();
@@ -197,7 +197,7 @@ TEST_F(GameFlowFixture, FinishesTheGameInProgressNoPlayerIsLeftIn) {
  * Then the game is finished in that tick
  */
 TEST_F(GameFlowFixture, FinishesTheGameInProgressNoPlayerHasALife) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   takeEveryLifeOf(*roster().find(playerEndpoint(FIRST_PLAYER)));
 
   tick();
@@ -242,7 +242,7 @@ TEST_F(GameFlowFixture, ResetsTheWorldBetweenTwoGames) {
  * Then every player is connected, not ready, and has a ship
  */
 TEST_F(GameFlowFixture, KeepsThePlayersConnectedButNotReadyForTheNextGame) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   flow().finish();
 
   runTicks(FINISHED_STATE_TICKS);
@@ -261,7 +261,7 @@ TEST_F(GameFlowFixture, KeepsThePlayersConnectedButNotReadyForTheNextGame) {
  * Then the game keeps waiting
  */
 TEST_F(GameFlowFixture, NeedsEveryPlayerReadyAgainForTheNextGame) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   flow().finish();
   runTicks(FINISHED_STATE_TICKS);
 
@@ -289,7 +289,7 @@ TEST_F(GameFlowFixture, NoBydoAppearsWhileWaitingForPlayers) {
  * Then no Bydo is in the world, and then one is, next to the ship
  */
 TEST_F(GameFlowFixture, TheFirstBydoAppearsOnceTheFirstPauseIsOver) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
 
   runTicks(TICKS_TO_THE_FIRST_BYDO - 1);
   EXPECT_EQ(flow().world().entityCount(), 1U);
@@ -305,7 +305,7 @@ TEST_F(GameFlowFixture, TheFirstBydoAppearsOnceTheFirstPauseIsOver) {
  * Then no Bydo is in the new world: its waves start over with the first pause
  */
 TEST_F(GameFlowFixture, ANewGameStartsTheWavesOver) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   runTicks(TICKS_TO_THE_FIRST_BYDO / 2);
   flow().finish();
   runTicks(FINISHED_STATE_TICKS);
@@ -327,7 +327,7 @@ TEST_F(GameFlowFixture, ANewGameStartsTheWavesOver) {
  * Then no Bydo appears
  */
 TEST_F(GameFlowFixture, NoBydoAppearsWhileFinished) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   flow().finish();
   const std::size_t entitiesBefore = flow().world().entityCount();
 
@@ -430,7 +430,7 @@ TEST_F(GameFlowFixture, ForgetsAGameLoadedFromBeforeTheWait) {
  * Then the flow announced the wait ending, then the start
  */
 TEST_F(GameFlowFixture, AnnouncesEachStepOfTheStartOfAGame) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
 
   EXPECT_EQ(changes(), (std::vector<GameStateChanged>{
                            {.previous = GameState::WaitingForPlayers,
@@ -445,7 +445,7 @@ TEST_F(GameFlowFixture, AnnouncesEachStepOfTheStartOfAGame) {
  * Then the flow announced the end, then the return to the waiting room
  */
 TEST_F(GameFlowFixture, AnnouncesTheEndThenTheReturnToTheWaitingRoom) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
 
   flow().finish();
   runTicks(FINISHED_STATE_TICKS);
@@ -465,7 +465,7 @@ TEST_F(GameFlowFixture, AnnouncesTheEndThenTheReturnToTheWaitingRoom) {
  * Then the end was announced once, whatever the ticks in that state
  */
 TEST_F(GameFlowFixture, AnnouncesAStateOnceWhileTheGameStaysInIt) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   flow().finish();
 
   runTicks(FINISHED_STATE_TICKS - 1);
