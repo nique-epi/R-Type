@@ -23,6 +23,7 @@ This page tells you where to look when you need to change something. It describe
 | Rate limit per sender, with temporary bans | Available | `src/network/Handshake/RateLimit/` |
 | Traffic counters: datagrams and bytes by peer and by message type, journal and CSV file | Available | `src/network/Statistics/`: `Counting/` and `Recording/` |
 | Round trip and jitter of a session, measured from the heartbeats | Available | `src/network/Statistics/RoundTrip/` |
+| Compression of the datagrams the server sends: a static Huffman code | Available | `src/network/Compression/`: `Huffman/` and `Sockets/` |
 | Sessions: admission, session token, sequence, heartbeats, timeouts | Available, written in the server and the client | `src/server/Lobby/`, `src/server/Sessions/`, `src/client/Connection/` |
 | Replication: entities to messages, and back | Available, written in the server and the client | `src/server/Replication/`, `src/client/Replication/` |
 | Guaranteed messages: acknowledgements, sending again | Available | `src/network/Reliability/` |
@@ -195,6 +196,16 @@ clumsy.exe --filter "outbound and ip.DstAddr >= 127.0.0.1 and ip.DstAddr <= 127.
 
 The filter is the "loopback packets" filter of clumsy: a packet between two programs of the machine is seen once, as it leaves. Stop, in its window, ends the conditions.
 
+## Compression: `CompressingDatagramSocket`
+
+The server sends the body of a datagram of a session in Huffman code when that makes it shorter (the wire format is in [Compression](/R-Type/protocol/#compression)). `Compression/` (`rtype_network_compression`) holds the pieces, the code in `Huffman/` and the sockets in `Sockets/`:
+
+- `huffmanEncode(body)` and `huffmanDecode(coded, maximumSize)` (`HuffmanCodec.hpp`) code and decode a body with the table `serverToClientTable()`, built once from `SERVER_TO_CLIENT_CODE_LENGTHS`. The decoder never writes more than `maximumSize` bytes, keeps nothing between two calls and returns an empty `std::optional` for anything that is not exactly one coded body, so a datagram a stranger sent can be given to it.
+- `compressedForm()`, `isCompressed()` and `plainForm()` (`DatagramCompression.hpp`) apply it to a whole datagram: they leave a datagram with the token 0, a body that does not shrink and a datagram already coded as they are.
+- `CompressingDatagramSocket` wraps the socket of the server: it codes what it sends and drops what it receives with `COMPRESSED_FLAG` raised. `DecompressingDatagramSocket` wraps the socket of the client: it decodes what it receives and sends as it is.
+
+Both sit right over the network simulator, under `CountingDatagramSocket`, so the simulator loses and delays coded datagrams as a network would, and nothing above the socket sees the code. The table comes from real games: `tests/tools/compression/capture_corpus.py` records the datagrams of a running server and `train_table.py` prints the lengths (see [Compression study](/R-Type/compression-study/)). A change of the format of a message that moves the bytes of the states is a reason to train it again.
+
 ## Traffic counters: `TrafficCounters`
 
 Both programs count what crosses their socket, with the classes of `rtype_network_statistics` (`src/network/Statistics/`): `Counting/` counts and adds up, `Recording/` writes the journal line and the file. `CountingDatagramSocket` wraps the socket the way `SimulatedNetworkSocket` does and hands each datagram to `TrafficCounters`. It sits above the simulator, which plays the part of the network: a datagram lost on the way out was sent, and one lost on the way in was never received, so comparing what a sender counted with what its receiver counted shows what the network lost or copied.
@@ -213,7 +224,7 @@ Only `follow()` adds a row, so a flood costs no memory, whatever addresses it cl
 - `unreadable`: the datagrams among them whose messages are not counted, because they are not of this protocol and version or their sizes do not add up to their end. A malformed datagram never adds to a type.
 - `messages`: a table indexed by the type byte, `MESSAGE_SLOT_COUNT` (20) figures long. A message counts with its prefix and its payload; the `PACKET_HEADER_SIZE` (22) bytes of the header are in no slot, so they are what `datagrams` holds beyond the slots. `UNKNOWN_MESSAGE_SLOT` (0) holds every byte no message has, so a datagram holding the 256 values of a type byte fills 20 figures, and adds at most one line per figure to the file.
 
-Bytes are those of the UDP payload: over IPv4, the headers of IP and UDP add at least 28 bytes per datagram. A datagram over `MAX_DATAGRAM_SIZE` is dropped by the socket and never counted.
+Bytes are those of the UDP payload as the messages left it: the counting socket sits above the compressing socket of the server and the decompressing socket of the client, so a coded datagram counts with its original size, and the bytes on the wire are read with a capture. Over IPv4, the headers of IP and UDP add at least 28 bytes per datagram. A datagram over `MAX_DATAGRAM_SIZE` is dropped by the socket and never counted.
 
 To get a rate, compare two reports. `trafficTotalsOf()` adds up the rows, and its totals stay continuous when a player leaves, since its row only moves to `departed`.
 
@@ -297,7 +308,7 @@ const auto decodedName = reader.readString();
 - `forEachMessage(datagram, onMessage)` hands each message that follows the header to a function, and throws and allocates nothing. It returns whether the sizes add up exactly to the end of the datagram; when they do not, the function may already have seen the messages before the fault.
 - `splitMessages(datagram)` returns the `MessageFrame`s that follow the header: the type byte as it arrived, and a view of the payload into the datagram. Either the sizes add up exactly to the end of the datagram, or it throws `MalformedDatagramException` and returns nothing: a datagram without a message, with a size running past its end, or with bytes after its last message is refused whole. Calling it on a temporary buffer does not compile.
 
-Reading the header and splitting the messages are two calls because a receiver checks the version before it trusts the rest. `speaksThisProtocol(header)` is that check: `protocolId` and `version` are those of this code, and `flags` holds no bit outside `KNOWN_FLAGS` (`ACKNOWLEDGES_FLAG` and `GUARANTEED_FLAG`). The server's `ConnectionAcceptor` and `GameInstance` and the client's `SessionInbound` call it before splitting. Of the checks of [Receiving a datagram](/R-Type/protocol/#receiving-a-datagram) that follow, the server's `DatagramSorter` checks the session token of every datagram from the address of an admitted player (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)) and its `DatagramReader` the sequence of every datagram of a player (see [Server](/R-Type/server/#order-and-loss-arrivalledger)); the client's `SessionInbound`, once accepted, checks the session token and drops a datagram whose `sequence` is not newer than the newest one it accepted (`SessionAcknowledgements`, see [Guaranteed messages](#guaranteed-messages-srcnetworkreliability)).
+Reading the header and splitting the messages are two calls because a receiver checks the version before it trusts the rest. `speaksThisProtocol(header)` is that check: `protocolId` and `version` are those of this code, and `flags` holds no bit outside `KNOWN_FLAGS` (`ACKNOWLEDGES_FLAG` and `GUARANTEED_FLAG`; `COMPRESSED_FLAG` belongs to the transport, which clears it first, see [Compression](#compression-compressingdatagramsocket)). The server's `ConnectionAcceptor` and `GameInstance` and the client's `SessionInbound` call it before splitting. Of the checks of [Receiving a datagram](/R-Type/protocol/#receiving-a-datagram) that follow, the server's `DatagramSorter` checks the session token of every datagram from the address of an admitted player (see [Server](/R-Type/server/#sorting-the-datagrams-datagramsorter)) and its `DatagramReader` the sequence of every datagram of a player (see [Server](/R-Type/server/#order-and-loss-arrivalledger)); the client's `SessionInbound`, once accepted, checks the session token and drops a datagram whose `sequence` is not newer than the newest one it accepted (`SessionAcknowledgements`, see [Guaranteed messages](#guaranteed-messages-srcnetworkreliability)).
 
 ## Messages: `src/network/Protocol/Messages/`
 
@@ -482,6 +493,7 @@ Every run held the budget of a tick: the 95th percentile stayed under 0.8 ms, un
 | Change which ports or addresses a program accepts at launch | `portFromText()` and `ipv4AddressFromText()` in `src/network/Transport/EndpointText.cpp`, `LOWEST_PORT` in `NetworkConstants.hpp` |
 | Change how datagrams are received or sent | `src/network/Transport/UdpSocket/` |
 | Change how datagrams go between the socket and the queues | `src/network/Transport/DatagramRelay/` |
+| Change the code table, or what is compressed | `src/network/Compression/Huffman/`; retrain the table with `tests/tools/compression/train_table.py` |
 | Change what is counted, or the rows of a report | `TrafficCounters` in `src/network/Statistics/Counting/` |
 | Change how often the traffic is written, or the columns of the file | `TRAFFIC_LINE_PERIOD`, `TRAFFIC_CSV_PERIOD` and `TRAFFIC_CSV_HEADER` in `src/network/Statistics/Recording/TrafficRecordingConstants.hpp`, and `trafficCsvRowsOf()` |
 | Read the traffic from a part of a program | `context.require<network::TrafficCounters>()` in a module listed after the one that provides it |
