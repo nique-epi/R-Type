@@ -156,6 +156,14 @@ The answer never holds a nickname, a difficulty or a measure: those stay in the 
 
 A read costs one SQL statement and the check of the heartbeat kept, and the route has no quota: the quota of creations is the only limit of the API today. The answer holds at most `MAXIMUM_HOSTED_GAMES` (64) games.
 
+Three things the route does not do:
+
+- **It is not paginated.** The rule of the routes of the master asks `?limit&offset` for a list; this one answers the whole list instead, since no server holds more than `MAXIMUM_HOSTED_GAMES` (64) games, which is the answer's upper bound.
+- **It does not age the list.** The games are those of the last heartbeat kept, whatever its date: a server that stopped sending heartbeats keeps listing its games as it last described them, until it registers again.
+- **It does not hide a heartbeat it can no longer read.** A last heartbeat stored in a form the master no longer reads (for instance one stored before `name` became a member of a game) makes `ServersService::gameListingOf()` throw `InvalidMasterMessageException`. The controller does not catch it, so the exception handler of the HTTP server answers 500 and writes the reason in the journal. The next heartbeat of the server replaces the stored one.
+
+The master and the game servers are deployed together: a game of a heartbeat must carry its `name`, and a master that reads this version refuses with 400 the heartbeat of a server that does not write it.
+
 ## The client of the master: `MasterClient`
 
 `MasterClient` (`rtype_network_master_client`, `src/network/Master/Client/`) is what a game server and, to read the games of a server, the game client call: one function per route, each sending the message of its route with the key of `MasterAccess` as Bearer, when it has one.
