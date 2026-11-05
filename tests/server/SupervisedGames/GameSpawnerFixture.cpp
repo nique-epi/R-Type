@@ -1,10 +1,14 @@
 #include "GameSpawnerFixture.hpp"
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <utility>
+#include "GameRegistry.hpp"
 #include "GameSpawner.hpp"
 #include "GameSpawnerParts.hpp"
 #include "NetworkConstants.hpp"
+#include "RecordingPlayerAdmission.hpp"
+#include "RecordingProcessLauncher.hpp"
 #include "SupervisedGamesTestConstants.hpp"
 
 GameSpawnerFixture::GameSpawnerFixture()
@@ -13,13 +17,14 @@ GameSpawnerFixture::GameSpawnerFixture()
 }
 
 void GameSpawnerFixture::useFreePort(std::function<std::uint16_t()> freePort) {
-  spawner_.emplace(rtype::server::GameSpawnerParts{
-      .launcher = launcher_,
-      .registry = registry_,
-      .admission = admission_,
-      .supervisorPort = supervisorPort_,
-      .settings = {.program = PROGRAM_FOR_TESTS, .folder = FOLDER_FOR_TESTS},
-      .freePort = std::move(freePort)});
+  spawner_ = std::make_unique<rtype::server::GameSpawner>(
+      rtype::server::GameSpawnerParts{.launcher = launcher_,
+                                      .registry = registry_,
+                                      .admission = admission_,
+                                      .supervisorPort = supervisorPort_,
+                                      .settings = {.program = PROGRAM_FOR_TESTS,
+                                                   .folder = FOLDER_FOR_TESTS},
+                                      .freePort = std::move(freePort)});
 }
 
 rtype::server::GameSpawner& GameSpawnerFixture::spawner() { return *spawner_; }

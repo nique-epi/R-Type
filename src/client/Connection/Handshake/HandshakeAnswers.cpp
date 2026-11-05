@@ -13,6 +13,7 @@
 #include "LobbyState.hpp"
 #include "MessageDispatcher.hpp"
 #include "MessageOrigin.hpp"
+#include "SessionOutbox.hpp"
 
 namespace rtype::client {
 

@@ -5,7 +5,6 @@
 #include <filesystem>
 #include <string>
 #include "ChildBinding.hpp"
-#include "ServerException.hpp"
 
 namespace rtype::server {
 

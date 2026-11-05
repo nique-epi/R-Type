@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include "GameLifecycle.hpp"
 #include "GameRegistry.hpp"
 #include "GameStatus.hpp"
 #include "PlaceKind.hpp"
@@ -227,13 +228,13 @@ TEST(GameRegistry, CollectsAGameThatCrashed) {
   GameRegistry registry;
   auto state = std::make_shared<RecordingChildState>();
   registry.open(openingOf(0, state));
-  state->exit = ProcessExit{.code = 11};
+  state->exit = ProcessExit{.code = CRASH_EXIT_CODE};
 
   const auto exits = registry.collectExits();
 
   ASSERT_EQ(exits.size(), 1U);
   EXPECT_TRUE(exits.front().crashed);
-  EXPECT_EQ(exits.front().exitCode, 11);
+  EXPECT_EQ(exits.front().exitCode, CRASH_EXIT_CODE);
 }
 
 /**
@@ -261,7 +262,7 @@ TEST(GameRegistry, KeepsTheGamesThatStillRun) {
   auto second = std::make_shared<RecordingChildState>();
   registry.open(openingOf(0, first));
   registry.open(openingOf(1, second));
-  first->exit = ProcessExit{.code = 11};
+  first->exit = ProcessExit{.code = CRASH_EXIT_CODE};
 
   static_cast<void>(registry.collectExits());
 

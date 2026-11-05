@@ -1,5 +1,4 @@
 #include "ServerSupervisorLinkFixture.hpp"
-#include <chrono>
 #include <cstddef>
 #include <future>
 #include <memory>

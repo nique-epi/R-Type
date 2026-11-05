@@ -1,10 +1,12 @@
 #include "BoostProcessLauncher.hpp"
 #include <boost/process/v2/process.hpp>
-#include <boost/system/error_code.hpp>
+#include <boost/system/detail/error_code.hpp>
 #include <boost/system/system_error.hpp>
 #include <memory>
 #include <utility>
 #include "BoostChildProcess.hpp"
+#include "IChildProcess.hpp"
+#include "ProcessCommand.hpp"
 #include "ServerException.hpp"
 
 namespace rtype::server {

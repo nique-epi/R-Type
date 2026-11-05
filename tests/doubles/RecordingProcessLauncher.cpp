@@ -4,6 +4,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include "IChildProcess.hpp"
 #include "ProcessCommand.hpp"
 #include "ProcessExit.hpp"
 #include "RecordingChildProcess.hpp"

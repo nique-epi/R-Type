@@ -1,9 +1,8 @@
 #pragma once
-
 #include <gtest/gtest.h>
 #include <cstdint>
 #include <functional>
-#include <optional>
+#include <memory>
 #include "GameRegistry.hpp"
 #include "GameSpawner.hpp"
 #include "ListeningPortModule.hpp"
@@ -31,5 +30,5 @@ class GameSpawnerFixture : public ::testing::Test {
   rtype::server::GameRegistry registry_;
   RecordingPlayerAdmission admission_;
   ListeningPortModule supervisorPort_;
-  std::optional<rtype::server::GameSpawner> spawner_;
+  std::unique_ptr<rtype::server::GameSpawner> spawner_;
 };

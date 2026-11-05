@@ -10,6 +10,7 @@
 #include "GameCommand.hpp"
 #include "GameLaunch.hpp"
 #include "GameOpening.hpp"
+#include "GameSpawnerParts.hpp"
 #include "IChildProcess.hpp"
 #include "NetworkConstants.hpp"
 #include "SupervisedGamesConstants.hpp"

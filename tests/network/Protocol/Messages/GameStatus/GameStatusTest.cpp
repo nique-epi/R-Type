@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <cstddef>
-#include <cstdint>
 #include "ByteSequence.hpp"
 #include "GameStatus.hpp"
 #include "GameStatusTestConstants.hpp"

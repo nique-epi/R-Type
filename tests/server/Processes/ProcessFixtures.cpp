@@ -12,9 +12,8 @@
 #if defined(_WIN32)
 #include <windows.h>
 #else
-#include <sys/types.h>
+#include <signal.h>  // NOLINT(modernize-deprecated-headers,hicpp-deprecated-headers)
 #include <cerrno>
-#include <csignal>
 #endif
 
 std::optional<rtype::server::ProcessExit> waitForExit(
@@ -61,7 +60,7 @@ bool isZombie(std::int64_t processId) {
 
 bool processIsRunning(std::int64_t processId) {
   const bool exists =
-      ::kill(static_cast<pid_t>(processId), 0) == 0 || errno == EPERM;
+      ::kill(static_cast<int>(processId), 0) == 0 || errno == EPERM;
   return exists && !isZombie(processId);
 }
 

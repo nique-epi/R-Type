@@ -2,7 +2,6 @@
 #include <cstddef>
 #include <vector>
 #include "DatagramCodec.hpp"
-#include "Endpoint.hpp"
 #include "GameStatus.hpp"
 #include "GameStatusReading.hpp"
 #include "Heartbeat.hpp"
@@ -76,7 +75,7 @@ TEST(GameStatusReading, RefusesAStatusThatAnnouncesTooManyPlayers) {
   auto payload = rtype::network::DatagramCodec::encode(
       PacketHeader{.sessionToken = FIRST_LINK_TOKEN},
       GameStatus{.state = GameStatusState::InProgress, .playerCount = 1});
-  payload.back() = std::byte{5};
+  payload.back() = std::byte{FIVE_PLAYERS_BYTE};
   const IncomingDatagram datagram{.sender = {}, .payload = payload};
 
   EXPECT_FALSE(readGameStatus(datagram).has_value());

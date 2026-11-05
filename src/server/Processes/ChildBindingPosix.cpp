@@ -1,6 +1,5 @@
 #include <boost/process/v2/default_launcher.hpp>
-#include <boost/system/error_code.hpp>
-#include <boost/system/system_category.hpp>
+#include <boost/system/detail/error_code.hpp>
 #include <cerrno>
 #include <csignal>
 #include <filesystem>
@@ -15,6 +14,7 @@ ChildBinding::ChildBinding() = default;
 
 ChildBinding::~ChildBinding() = default;
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 boost::system::error_code ChildBinding::on_exec_setup(
     [[maybe_unused]] boost::process::v2::default_process_launcher& launcher,
     [[maybe_unused]] const std::filesystem::path& program,
@@ -27,6 +27,7 @@ boost::system::error_code ChildBinding::on_exec_setup(
   return {};
 }
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 bool ChildBinding::lastProcessWasBound() const { return true; }
 
 }  // namespace rtype::server

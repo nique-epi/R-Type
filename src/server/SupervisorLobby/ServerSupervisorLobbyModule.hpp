@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "CookieIssuer.hpp"
+#include "Endpoint.hpp"
 #include "GameRegistry.hpp"
 #include "GameSpawner.hpp"
 #include "IDatagramSender.hpp"

@@ -2,9 +2,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
-#include "Disconnection.hpp"
 #include "GameStatus.hpp"
 #include "MessageType.hpp"
+#include "NetworkConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerSupervisedGamesFixture.hpp"
 #include "SupervisedGamesFixtures.hpp"
@@ -86,7 +86,7 @@ TEST_F(ServerSupervisedGamesFixture, KeepsServingWhenAGameCrashes) {
       SEQUENCE_FIVE);
   askForAPlaceAs(1);
 
-  launcher().exitChild(0, 11);
+  launcher().exitChild(0, CRASH_EXIT_CODE);
   runTick({});
 
   EXPECT_FALSE(launcher().childWasTerminated(1));

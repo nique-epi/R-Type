@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <cstdint>
 #include <memory>
 #include "ChildrenStopper.hpp"
 #include "GameRegistry.hpp"

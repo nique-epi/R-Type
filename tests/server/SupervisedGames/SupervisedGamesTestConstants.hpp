@@ -30,6 +30,12 @@ constexpr std::uint16_t SEQUENCE_FOUR = 4;
 constexpr std::uint16_t LAST_SEQUENCE = 65535;
 constexpr std::uint16_t FIRST_SEQUENCE = 0;
 
+/** @brief The exit code of a game process that crashed. */
+constexpr int CRASH_EXIT_CODE = 11;
+
+/** @brief A player count above what a game holds, as a byte of a payload. */
+constexpr unsigned char FIVE_PLAYERS_BYTE = 5;
+
 /** @brief The program that runs a game in the tests, and the folder the games
  * write to: names, since no process starts. */
 constexpr std::string_view PROGRAM_FOR_TESTS = "some/r-type_server";

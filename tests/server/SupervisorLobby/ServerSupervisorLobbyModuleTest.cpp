@@ -1,13 +1,10 @@
 #include <gtest/gtest.h>
 #include <cstddef>
-#include <cstdint>
 #include <string>
-#include "ConnectionChallenge.hpp"
 #include "ConnectionRedirect.hpp"
 #include "ConnectionRefused.hpp"
 #include "GameStatus.hpp"
 #include "IncomingDatagram.hpp"
-#include "MessageType.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
 #include "SentDatagrams.hpp"

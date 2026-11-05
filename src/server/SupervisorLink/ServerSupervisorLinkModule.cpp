@@ -24,6 +24,7 @@
 #include "PacketHeader.hpp"
 #include "ServerConstants.hpp"
 #include "StopRequest.hpp"
+#include "SupervisorLink.hpp"
 #include "SupervisorLinkConstants.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
@@ -100,11 +101,12 @@ void ServerSupervisorLinkModule::stop() {
 
 void ServerSupervisorLinkModule::onTick(engine::Duration elapsed) {
   readSupervisorDatagrams();
-  watch_.tick(elapsed, playerCountOf(*games_));
+  const std::size_t playerCount = playerCountOf(*games_);
+  watch_.tick(elapsed, playerCount);
   if (const std::optional<std::string_view> reason = watch_.reasonToStop()) {
     askToStop(*reason);
   }
-  sendStatusWhenDue(elapsed);
+  sendStatusWhenDue(elapsed, playerCount);
 }
 
 void ServerSupervisorLinkModule::readSupervisorDatagrams() {
@@ -119,9 +121,10 @@ void ServerSupervisorLinkModule::readSupervisorDatagrams() {
   }
 }
 
-void ServerSupervisorLinkModule::sendStatusWhenDue(engine::Duration elapsed) {
+void ServerSupervisorLinkModule::sendStatusWhenDue(engine::Duration elapsed,
+                                                   std::size_t playerCount) {
   sinceStatus_ += elapsed;
-  const network::GameStatus status = currentStatus();
+  const network::GameStatus status = currentStatus(playerCount);
   if (sinceStatus_ < STATUS_INTERVAL && status == lastStatus_) {
     return;
   }
@@ -135,11 +138,12 @@ void ServerSupervisorLinkModule::sendStatusWhenDue(engine::Duration elapsed) {
           status)});
 }
 
-network::GameStatus ServerSupervisorLinkModule::currentStatus() const {
+network::GameStatus ServerSupervisorLinkModule::currentStatus(
+    std::size_t playerCount) const {
   const GameInstance& game = *games_->all().front();
   return network::GameStatus{
       .state = statusStateOf(game.state()),
-      .playerCount = static_cast<std::uint8_t>(playerCountOf(*games_))};
+      .playerCount = static_cast<std::uint8_t>(playerCount)};
 }
 
 void ServerSupervisorLinkModule::askToStop(std::string_view reason) {

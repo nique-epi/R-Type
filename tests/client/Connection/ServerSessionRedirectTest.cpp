@@ -82,7 +82,7 @@ TEST_F(ServerSessionFixture, IgnoresASecondRedirectOfTheSameAttempt) {
   deliver(network::ConnectionRedirect{.port = OTHER_GAME_PORT});
   update();
 
-  EXPECT_EQ(listenedTo()->port, GAME_PORT);
+  EXPECT_EQ(listenedTo().value_or(server()).port, GAME_PORT);
 }
 
 /**
@@ -128,7 +128,7 @@ TEST_F(ServerSessionFixture, FollowsARedirectOfTheNextAttempt) {
   deliver(network::ConnectionRedirect{.port = OTHER_GAME_PORT});
   update();
 
-  EXPECT_EQ(listenedTo()->port, OTHER_GAME_PORT);
+  EXPECT_EQ(listenedTo().value_or(server()).port, OTHER_GAME_PORT);
 }
 
 }  // namespace rtype::client

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -60,8 +61,9 @@ class ServerSupervisorLinkModule final : public engine::IModule {
  private:
   void onTick(engine::Duration elapsed);
   void readSupervisorDatagrams();
-  void sendStatusWhenDue(engine::Duration elapsed);
-  [[nodiscard]] network::GameStatus currentStatus() const;
+  void sendStatusWhenDue(engine::Duration elapsed, std::size_t playerCount);
+  [[nodiscard]] network::GameStatus currentStatus(
+      std::size_t playerCount) const;
   void askToStop(std::string_view reason);
 
   SupervisorLink link_;

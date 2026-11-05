@@ -59,11 +59,9 @@ GamePlace placeIn(const SupervisedGame& game) {
 void GameRegistry::open(GameOpening opening) {
   games_.push_back(SupervisedGame{.number = opening.number,
                                   .lifecycle = GameLifecycle::Starting,
-                                  .playerCount = 0,
                                   .port = opening.port,
                                   .linkToken = opening.linkToken,
                                   .newestSequence = std::nullopt,
-                                  .sinceLaunch = engine::Duration::zero(),
                                   .process = std::move(opening.process)});
 }
 
@@ -73,6 +71,7 @@ SupervisedGame* GameRegistry::findByToken(std::uint64_t linkToken) {
   return found == games_.end() ? nullptr : &*found;
 }
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 bool GameRegistry::record(SupervisedGame& game, std::uint16_t sequence,
                           const network::GameStatus& status) {
   if (game.newestSequence.has_value() &&

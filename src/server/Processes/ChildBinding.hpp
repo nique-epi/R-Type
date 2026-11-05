@@ -1,9 +1,11 @@
 #pragma once
 
 #include <boost/process/v2/default_launcher.hpp>
-#include <boost/system/error_code.hpp>
+#include <boost/system/detail/error_code.hpp>
 #include <filesystem>
+#if defined(_WIN32)
 #include <string>
+#endif
 
 namespace rtype::server {
 
@@ -29,6 +31,7 @@ class ChildBinding {
   /** @throws ChildBindingException when the system refuses the job object
    * (Windows only). */
   ChildBinding();
+  // NOLINTNEXTLINE(performance-trivially-destructible)
   ~ChildBinding();
 
   ChildBinding(const ChildBinding&) = delete;

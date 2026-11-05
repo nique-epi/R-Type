@@ -1,6 +1,6 @@
 #include "BoostChildProcess.hpp"
 #include <boost/process/v2/process.hpp>
-#include <boost/system/error_code.hpp>
+#include <boost/system/detail/error_code.hpp>
 #include <cstdint>
 #include <optional>
 #include <utility>
