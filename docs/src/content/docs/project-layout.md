@@ -167,7 +167,7 @@ src/server/
 ├── LaunchOptions/    port, name, limits, master address
 ├── Results/          the results module: what each game leaves, and the leaderboard requests
 ├── Processes/        starting child processes behind an interface (Boost.Process v2), and tying their life to the program that started them
-├── SupervisedGames/  the supervisor's games module: the registry of the game processes, starting and stopping them
+├── SupervisedGames/  the supervisor's games module: Registry/, what it knows of each game process; Launch/, starting one; Stopping/, ending them all; Status/, reading what a game reports
 ├── SupervisorLobby/  the supervisor's lobby module: challenge, redirect or refuse a player
 ├── SupervisorLink/   the link module of a game process: its status to the supervisor, and when to stop
 ├── Master/           the master module: registration and heartbeats, on the MasterLink thread

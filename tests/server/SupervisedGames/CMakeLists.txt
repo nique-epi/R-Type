@@ -1,3 +1,8 @@
-target_sources(server_module_tests PRIVATE GameRegistryTest.cpp GameCommandTest.cpp GameSpawnerFixture.cpp GameSpawnerTest.cpp ChildrenStopperTest.cpp GameStatusReadingTest.cpp FreeUdpPortTest.cpp SupervisedGamesFixtures.cpp ServerSupervisedGamesFixture.cpp ServerSupervisedGamesModuleTest.cpp)
+add_subdirectory(Registry)
+add_subdirectory(Launch)
+add_subdirectory(Stopping)
+add_subdirectory(Status)
+
+target_sources(server_module_tests PRIVATE SupervisedGamesFixtures.cpp ServerSupervisedGamesFixture.cpp ServerSupervisedGamesModuleTest.cpp)
 
 target_include_directories(server_module_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
