@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include "LogLevel.hpp"
 #include "Logger.hpp"
 
 namespace rtype::logging {
