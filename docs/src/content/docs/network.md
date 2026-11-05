@@ -23,7 +23,7 @@ This page tells you where to look when you need to change something. It describe
 | Rate limit per sender, with temporary bans | Available | `src/network/Handshake/RateLimit/` |
 | Traffic counters: datagrams and bytes by peer and by message type, journal and CSV file | Available | `src/network/Statistics/`: `Counting/` and `Recording/` |
 | Round trip and jitter of a session, measured from the heartbeats | Available | `src/network/Statistics/RoundTrip/` |
-| Compression of the datagrams the server sends: a static Huffman code | Available | `src/network/Compression/`: `Huffman/` and `Sockets/` |
+| Compression of the datagrams the server sends: a zstd frame with a trained dictionary | Available | `src/network/Compression/`: `Zstd/` and `Sockets/` |
 | Tick of the server in its heartbeats, to place it on the clock of the client | Available | `src/network/Protocol/Messages/Heartbeat/`, `src/engine/Time/ServerClock/` |
 | Sessions: admission, session token, sequence, heartbeats, timeouts | Available, written in the server and the client | `src/server/Lobby/`, `src/server/Sessions/`, `src/client/Connection/` |
 | Replication: entities to messages, and back | Available, written in the server and the client | `src/server/Replication/`, `src/client/Replication/` |
@@ -199,13 +199,13 @@ The filter is the "loopback packets" filter of clumsy: a packet between two prog
 
 ## Compression: `CompressingDatagramSocket`
 
-The server sends the body of a datagram of a session in Huffman code when that makes it shorter (the wire format is in [Compression](/R-Type/protocol/#compression)). `Compression/` (`rtype_network_compression`) holds the pieces, the code in `Huffman/` and the sockets in `Sockets/`:
+The server sends the body of a datagram of a session as a zstd frame when that makes it shorter (the wire format is in [Compression](/R-Type/protocol/#compression)). `Compression/` (`rtype_network_compression`) holds the pieces, the codec in `Zstd/` and the sockets in `Sockets/`:
 
-- `huffmanEncode(body)` and `huffmanDecode(coded, maximumSize)` (`HuffmanCodec.hpp`) code and decode a body with the table `serverToClientTable()`, built once from `SERVER_TO_CLIENT_CODE_LENGTHS`. The decoder never writes more than `maximumSize` bytes, keeps nothing between two calls and returns an empty `std::optional` for anything that is not exactly one coded body, so a datagram a stranger sent can be given to it.
+- `compressBody(body)` and `decompressBody(coded, maximumSize)` (`ZstdCodec.hpp`) code and decode a body with the dictionary `SERVER_TO_CLIENT_DICTIONARY` (2048 bytes, `ServerToClientDictionaryConstants.hpp`), at level `COMPRESSION_LEVEL` (1). They keep one zstd context per thread and nothing between two calls. The decoder writes into a buffer of `maximumSize` bytes, so it never produces more, and returns an empty `std::optional` for anything that is not exactly one frame, so a datagram a stranger sent can be given to it. zstd comes from vcpkg (`zstd::libzstd`); only its stable interface is used.
 - `compressedForm()`, `isCompressed()` and `plainForm()` (`DatagramCompression.hpp`) apply it to a whole datagram: they leave a datagram with the token 0, a body that does not shrink and a datagram already coded as they are.
 - `CompressingDatagramSocket` wraps the socket of the server: it codes what it sends and drops what it receives with `COMPRESSED_FLAG` raised. `DecompressingDatagramSocket` wraps the socket of the client: it decodes what it receives and sends as it is.
 
-Both sit right over the network simulator, under `CountingDatagramSocket`, so the simulator loses and delays coded datagrams as a network would, and nothing above the socket sees the code. The table comes from real games: `tests/tools/compression/capture_corpus.py` records the datagrams of a running server and `train_table.py` prints the lengths (see [Compression study](/R-Type/compression-study/)). A change of the format of a message that moves the bytes of the states is a reason to train it again.
+Both sit right over the network simulator, under `CountingDatagramSocket`, so the simulator loses and delays coded datagrams as a network would, and nothing above the socket sees the code. The dictionary comes from real games: `tests/tools/compression/capture_corpus.py` records the datagrams of a running server and `train_dictionary.py` trains the dictionary (see [Compression study](/R-Type/compression-study/)); both need the `zstd` command line on the `PATH`. A change of the format of a message that moves the bytes of the states is a reason to train it again, with a new protocol version.
 
 ## Traffic counters: `TrafficCounters`
 
@@ -496,7 +496,7 @@ Every run held the budget of a tick: the 95th percentile stayed under 0.8 ms, un
 | Change which ports or addresses a program accepts at launch | `portFromText()` and `ipv4AddressFromText()` in `src/network/Transport/EndpointText.cpp`, `LOWEST_PORT` in `NetworkConstants.hpp` |
 | Change how datagrams are received or sent | `src/network/Transport/UdpSocket/` |
 | Change how datagrams go between the socket and the queues | `src/network/Transport/DatagramRelay/` |
-| Change the code table, or what is compressed | `src/network/Compression/Huffman/`; retrain the table with `tests/tools/compression/train_table.py` |
+| Change the dictionary, the level, or what is compressed | `src/network/Compression/Zstd/`; train the dictionary again with `tests/tools/compression/train_dictionary.py` |
 | Change what is counted, or the rows of a report | `TrafficCounters` in `src/network/Statistics/Counting/` |
 | Change how often the traffic is written, or the columns of the file | `TRAFFIC_LINE_PERIOD`, `TRAFFIC_CSV_PERIOD` and `TRAFFIC_CSV_HEADER` in `src/network/Statistics/Recording/TrafficRecordingConstants.hpp`, and `trafficCsvRowsOf()` |
 | Read the traffic from a part of a program | `context.require<network::TrafficCounters>()` in a module listed after the one that provides it |
