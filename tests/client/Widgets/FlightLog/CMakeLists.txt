@@ -1,0 +1,2 @@
+rtype_add_test(NAME client_flight_log_tests SOURCES TauntsTest.cpp FlightLogTimelineTest.cpp BookMotionTest.cpp FlightLogFixtures.cpp TauntsFixtures.cpp LIBS rtype_client_taunts rtype_client_flight_log_timeline rtype_client_book_motion GTest::gmock)
+target_include_directories(client_flight_log_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} $<TARGET_PROPERTY:rtype_client_audio_contract,INTERFACE_INCLUDE_DIRECTORIES>)

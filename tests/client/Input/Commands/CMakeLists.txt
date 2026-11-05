@@ -1,0 +1,1 @@
+target_sources(client_input_tests PRIVATE ActionSetTest.cpp PlayerCommandsTest.cpp PlayerInputPacerTest.cpp)

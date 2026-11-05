@@ -1,0 +1,1 @@
+target_sources(network_tests PRIVATE AllowanceSpendingTest.cpp RequestAllowancesTest.cpp RateLimitFixtures.cpp RateLimitConstantsTest.cpp RateLimitConstantsFixtures.cpp)

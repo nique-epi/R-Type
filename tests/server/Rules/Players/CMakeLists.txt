@@ -1,0 +1,3 @@
+rtype_add_test(NAME server_player_controller_tests SOURCES PlayerControllerTest.cpp PlayerControllerFixture.cpp LIBS rtype_server_rules_players rtype_network_constants server_test_datagrams)
+target_include_directories(server_player_controller_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/server)
+target_sources(server_rules_tests PRIVATE ScoreKeeperTest.cpp ScoreKeeperFixture.cpp LifeKeeperTest.cpp LifeKeeperFixture.cpp)

@@ -1,0 +1,2 @@
+rtype_add_test(NAME network_conditions_tests SOURCES SimulatorLaunchOptionsTest.cpp SimulatorLaunchOptionsFixtures.cpp NetworkConditionsTextTest.cpp LIBS rtype_network_conditions)
+target_include_directories(network_conditions_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR})

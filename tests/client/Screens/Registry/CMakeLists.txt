@@ -1,0 +1,1 @@
+target_sources(client_module_tests PRIVATE ScreenRegistryTest.cpp ScreenRegistryFixture.cpp)

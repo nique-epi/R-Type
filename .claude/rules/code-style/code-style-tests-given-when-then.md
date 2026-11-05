@@ -16,7 +16,7 @@ A test name says *what*, not *under which conditions* nor *what is expected*. Gi
 - **One behavior per test.** Two independent `Then`s = two tests.
 - Suite and test names in `PascalCase`, describing the behavior: `TEST(PacketReader, RejectsPayloadShorterThanHeader)`. No ticket id.
 - The `Then` states what the product requires, never the observed output (see `fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md`).
-- Tests are declared through `rtype_add_test()` in `tests/CMakeLists.txt`.
+- Tests are declared through `rtype_add_test()` (defined in `tests/CMakeLists.txt`), in the `CMakeLists.txt` of the folder that holds the tests of the executable; a test file of a sub-folder is added by the `CMakeLists.txt` of its own folder, with `target_sources(<executable> PRIVATE …)`.
 
 ## Examples
 

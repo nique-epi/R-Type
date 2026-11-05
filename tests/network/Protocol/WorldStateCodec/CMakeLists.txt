@@ -1,0 +1,1 @@
+target_sources(network_tests PRIVATE DeltaWorldStateCodecTest.cpp DeltaWorldStateFixtures.cpp)
