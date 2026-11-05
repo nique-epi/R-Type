@@ -8,18 +8,16 @@
 namespace rtype::server {
 
 GameTally::GameTally(engine::EventBus& events, StatisticsSheet& sheet)
-    : events_(events), sheet_(sheet) {}
+    : events_(events),
+      sheet_(sheet),
+      stateSubscription_(events.subscribe<GameStateChanged>(
+          [this](const GameStateChanged& change) { onStateChanged(change); })),
+      killSubscription_(events.subscribe<game::EnemyKilled>(
+          [this](const game::EnemyKilled& kill) { onEnemyKilled(kill); })) {}
 
-void GameTally::follow() {
-  stateSubscription_ = events_.subscribe<GameStateChanged>(
-      [this](const GameStateChanged& change) { onStateChanged(change); });
-  killSubscription_ = events_.subscribe<game::EnemyKilled>(
-      [this](const game::EnemyKilled& kill) { onEnemyKilled(kill); });
-}
-
-void GameTally::forget() {
-  static_cast<void>(events_.unsubscribe(stateSubscription_));
-  static_cast<void>(events_.unsubscribe(killSubscription_));
+GameTally::~GameTally() {
+  events_.unsubscribe(stateSubscription_);
+  events_.unsubscribe(killSubscription_);
 }
 
 void GameTally::onStateChanged(const GameStateChanged& change) {

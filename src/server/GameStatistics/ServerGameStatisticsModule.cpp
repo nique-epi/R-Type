@@ -57,9 +57,6 @@ void ServerGameStatisticsModule::start() {
 }
 
 void ServerGameStatisticsModule::stop() {
-  for (const std::unique_ptr<GameTally>& tally : tallies_) {
-    tally->forget();
-  }
   tallies_.clear();
   writeRows();
   file_.reset();
@@ -78,7 +75,6 @@ std::filesystem::path ServerGameStatisticsModule::statisticsFile() const {
 void ServerGameStatisticsModule::followEveryGame() {
   for (const std::unique_ptr<engine::EventBus>& events : buses_->buses()) {
     tallies_.push_back(std::make_unique<GameTally>(*events, sheet_));
-    tallies_.back()->follow();
   }
 }
 

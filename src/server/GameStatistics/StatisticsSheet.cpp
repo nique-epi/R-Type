@@ -18,11 +18,7 @@ std::string gameColumnsOf(std::string_view event, std::uint32_t number) {
 
 }  // namespace
 
-std::uint32_t StatisticsSheet::openGame() {
-  ++lastGame_;
-  pointsOfOpenGames_[lastGame_] = 0;
-  return lastGame_;
-}
+std::uint32_t StatisticsSheet::openGame() { return ++lastGame_; }
 
 void StatisticsSheet::addKill(std::uint32_t number,
                               const game::EnemyKilled& kill) {

@@ -26,16 +26,16 @@ namespace rtype::server {
  *
  * It is built as a shared library of its own and loaded by
  * `plugin game-statistics`: no list of the server names it, and the server
- * behaves the same without it. It follows every game through IGameBuses, so it
- * links none of their code. install() declares the `game-statistics-file`
- * setting and adds its work to the outputs stage, after the work of the games
- * module, which delivers the events of the tick there. start() opens the file,
- * emptied, then subscribes to the bus of each game. The rows are kept in
- * memory and written once GAME_STATISTICS_WRITE_PERIOD of game time passed
- * since the last write; stop() writes the rows left and closes the file, so the
- * file is complete once the server stopped, after Ctrl-C too. A file that stops
- * accepting rows is told once in the journal and left, so a full disk never
- * stops a game.
+ * behaves the same without it. It follows every game through IGameBuses, so its
+ * library holds none of their code. install() declares the
+ * `game-statistics-file` setting and adds its work to the outputs stage, after
+ * the work of the games module, which delivers the events of the tick there.
+ * start() opens the file, emptied, then subscribes to the bus of each game. The
+ * rows are kept in memory and written once GAME_STATISTICS_WRITE_PERIOD of game
+ * time passed since the last write; stop() writes the rows left and closes the
+ * file, so the file is complete once the server stopped, after Ctrl-C too. A
+ * file that stops accepting rows is told once in the journal and left, so a
+ * full disk never stops a game.
  */
 class ServerGameStatisticsModule final : public engine::IModule {
  public:
@@ -69,7 +69,8 @@ class ServerGameStatisticsModule final : public engine::IModule {
    * next to the executable while it is empty. */
   [[nodiscard]] std::filesystem::path statisticsFile() const;
 
-  /** @brief Subscribes a GameTally to the bus of each game. */
+  /** @brief Builds a GameTally on the bus of each game, which follows it
+   * until stop() destroys it. */
   void followEveryGame();
 
   /** @brief Adds @p elapsed, and writes the rows kept once
