@@ -41,6 +41,10 @@ std::span<const std::unique_ptr<GameInstance>> Games::all() const {
   return games_;
 }
 
+std::span<const std::unique_ptr<engine::EventBus>> Games::buses() const {
+  return events_;
+}
+
 void Games::keepEntityTypes(const game::EntitySheets& types) {
   entityTypes_ = &types;
 }

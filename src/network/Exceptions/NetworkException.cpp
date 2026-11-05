@@ -157,8 +157,8 @@ SimulatedDelayOutOfRangeException::SimulatedDelayOutOfRangeException(
           std::to_string(lag.count()) + " ms and " +
           std::to_string(jitter.count()) + " ms") {}
 
-TrafficFileOpenException::TrafficFileOpenException(const std::string& path)
-    : NetworkException("Cannot open the traffic file " + path) {}
+CsvFileOpenException::CsvFileOpenException(const std::string& path)
+    : NetworkException("Cannot open the CSV file " + path) {}
 
 InvalidMasterMessageException::InvalidMasterMessageException(
     const std::string& pointer)

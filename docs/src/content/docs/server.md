@@ -112,7 +112,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | One header for every datagram to a player: session token and next sequence | Available | `src/server/Sessions/Roster/` |
 | Game events sent to the players | Available: the removal of a Bydo or a missile that leaves the playfield, the damage and destruction of a Bydo hit by missiles, and the loss of a ship and of a life when a ship touches a Bydo or a missile of a Bydo | `src/server/Replication/`, `src/game/Events/` |
 | Launch options | Available: the port, the seed, the state rate, the input delay, the database, `--set` and `--help` | `src/server/LaunchOptions/` |
-| Configuration file | Available: `server.cfg` (`module`, `set`) | `src/server/Modules/` |
+| Configuration file | Available: `server.cfg` (`module`, `set`, `plugin`, `plugin-folder`) | `src/server/Modules/` |
 | Information requests answered outside any session: name, versions, players, games, free seats, and the time the request was held | Available; nothing sends a request yet: the list of servers of the client and the probe of the master are not written | `src/server/Information/` |
 | Letting players in: challenge, acceptance or refusal | Available; a new player joins the first game waiting for players with a free seat, and is refused with `GameInProgress` or `GameFull` only when no game has one; the acceptance carries the entity types of the server | `src/server/Lobby/`, `src/server/Sessions/` |
 | A game: states, ready rule, new world between two games | Available: eight games side by side, each ending once no player is left in it, no player left has a life, or the last wave of its level is over | `src/server/Rules/Match/` |
@@ -123,6 +123,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | End of a game sent to the players (`GameEnded`) | Available: when the game is won or lost, with its outcome and the score of each, until the game waits for players again | `src/server/Replication/Announcements/Milestones/`, `src/server/Rules/Match/` |
 | Metrics in the journal every 10 s: duration of the ticks, time of each system, games, players, entities, round trip of each player and traffic | Available; losses are not measured yet | `src/server/Metrics/` |
 | Results of each game kept in a SQLite file, with statistics, and a leaderboard read with `LeaderboardRequest` | Available; the leaderboard of the client reads it, and nothing in the game shows the statistics | `src/server/Results/`, `src/server/Storage/`, `src/storage/` |
+| Game statistics: a CSV row per Bydo killed and the total of each game, written by a plugin | Available, loaded by `plugin game-statistics` | `src/server/GameStatistics/` |
 | Master mode: `--mode master` runs the master instead of the game server | Available (see [Master](/R-Type/master/)) | `src/server/LaunchOptions/`, `src/master/` |
 | Master link: registration and heartbeats | Available; admin orders, bans and results not yet written (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
 | Components (`Position`, `SteadyMotion`, `CollisionBox`, `Health`, `EntityType`, `EntityTypeNumber`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
@@ -259,7 +260,7 @@ The server reads `server.cfg`, in the folder it is started from, between the ins
 
 | Command | Effect |
 |---|---|
-| `module <name> on\|off` | Turns a module of the table below on or off. A module that is off is never installed, so it provides no service and its work never runs. Refused when a module that stays on depends on it (`storage` needs `network`, `games` needs `network` and `storage`, `lobby` and `metrics` need `games`, `information` needs `network` and `games`, `master` needs `network`, `games` and `information`, all need `logger`). |
+| `module <name> on\|off` | Turns a module of the table below on or off. A module that is off is never installed, so it provides no service and its work never runs. Refused when a module that stays on depends on it (`storage` needs `network`, `games` needs `network` and `storage`, `lobby` and `metrics` need `games`, `information` needs `network` and `games`, `master` needs `network`, `games` and `information`, the `game-statistics` plugin needs `network` and `games` once loaded, all need `logger`). |
 | `set port <port>` | The UDP port, from 1 to 65535. Default: 4242. |
 | `set seed <seed>` or `set seed none` | The seed of the first game, a whole number from 0 to 4294967295; `none` draws one. Default: `none`. |
 | `set state-rate <states>` | The world states sent to each player per second, from 2 to 60. Default: 20. |
@@ -268,6 +269,7 @@ The server reads `server.cfg`, in the folder it is started from, between the ins
 | `set master-url <url>` | The master this server is listed on, `http://<host>[:<port>]`. Default: empty, and the server runs alone (see [Link with the master](#link-with-the-master-servermastermodule)). |
 | `set master-key <key>` | The key the master gave when the host created this server on it. Default: empty, and the server runs alone. Never committed: only `server.cfg.example` is, with an empty key. |
 | `set server-name <name>` | The name players read in the list of servers and in the answer to an information request, 1 to 32 bytes of printable UTF-8. Declared by the information module. Default: `R-Type server`. |
+| `set game-statistics-file <file>` | Declared by the `game-statistics` plugin, so refused unless a `plugin game-statistics` line loads it: the CSV file of the statistics of the games. Default: empty, which writes `r-type_statistics_<port>.csv` next to the executable (see [Game statistics](#game-statistics-servergamestatisticsmodule)). |
 
 - A missing `server.cfg` is not an error: the defaults apply, and the journal says `server.cfg not found, the defaults apply`. A line that is refused (an unknown command, a value out of its bounds) does not stop the server: it is logged at the `warn` level, with its file and line number, and the next line runs.
 - The reading is logged once the journal is open, so the lines appear after the modules' own start lines. The `info` lines are hidden at the default level; start the server with `--log-level info` to see them.
@@ -290,11 +292,13 @@ module lobby off
 | `logger` | applies the logging options when it starts, logs "server starting" and "server stopped"; provides the journal of the server as an `ILogJournal`, so a plugin logs where the lines of the server go | `src/server/Logger/` |
 | `network` | declares the `port` setting; owns the `ServerApplication`: binds the socket and runs the server on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission`, `TickDatagrams` (the datagrams of the tick), `IListeningPort` (the port of the `port` setting) and `network::TrafficCounters` | `src/server/Network/` |
 | `storage` | declares the `database` setting; opens the SQLite file of the server and starts the thread that owns it when it starts, finishes what waits and closes the file when it stops; provides `IResultsArchive` | `src/server/Storage/` |
-| `games` | declares the `seed`, `state-rate` and `input-delay` settings; the games (`GamesSettings::gameCount`, `DEFAULT_HOSTED_GAME_COUNT` = 8), an `EventBus` for each; reads the waves file when it starts and judges whether its games are vanilla; provides `Games` and `LatestHostedGames` | `src/server/Games/` |
+| `games` | declares the `seed`, `state-rate` and `input-delay` settings; the games (`GamesSettings::gameCount`, `DEFAULT_HOSTED_GAME_COUNT` = 8), an `EventBus` for each; reads the waves file when it starts and judges whether its games are vanilla; provides `Games`, `IGameBuses` (the bus of each game, for a module listed after it or a plugin) and `LatestHostedGames` | `src/server/Games/` |
 | `lobby` | one `ConnectionAcceptor` per game, built on the roster of that game | `src/server/Lobby/` |
 | `information` | declares the `server-name` setting; answers the information requests of each tick with a `ServerInformationDesk`; provides `IServerName` | `src/server/Information/` |
 | `metrics` | measures the ticks and the systems of the games, and writes a report to the journal every `TICKS_PER_REPORT` ticks; writes the traffic of the socket; provides `LatestMetrics` | `src/server/Metrics/` |
 | `master` | declares the `master-url` and `master-key` settings, and registers the name `IServerName` gives; keeps the master told of the server on a thread of its own, MasterLink, when both a url and a key are set; uses `LatestMetrics` when the metrics module is on | `src/server/Master/` |
+
+A plugin joins the end of the list when a `plugin` line loads it, after `master`: the server has one, `game-statistics` (see [Game statistics](#game-statistics-servergamestatisticsmodule)).
 
 Each tick runs the stages of `SERVER_LOOP_STAGES` once, with `SIMULATION_TICK_DURATION`. In `simulation`, the games module runs `onTick()` on each game with the datagrams of its own players (`keepDatagramsOf()`) and makes the network forget the players whose session closed, then the lobby module answers the connection requests, so a request is placed and refused by the state the games just reached, and the information module the information requests, which count the players and the free seats of that state too. In `outputs`, the bus of each game delivers its events, and the guaranteed messages among them leave at once (see [Guaranteed messages](#guaranteed-messages-messagedelivery)). Only the metrics module works in `inputs`, where it starts measuring the tick, since `onTick()` reads the datagrams and moves the game in one step; it ends its measure in `outputs`, after the games module.
 
@@ -1045,6 +1049,24 @@ A read ranks the whole leaderboard. Measured on one Mac in a Release build, with
 
 The client sends the request from its leaderboard screen (see [Client](/R-Type/client/#leaderboard-leaderboardscreen-ileaderboardsource)).
 
+## Game statistics: `ServerGameStatisticsModule`
+
+The `game-statistics` plugin (`src/server/GameStatistics/`) writes the statistics of the games to a CSV file, so a host balances the waves from real games. It is a shared library, not a module of `serverModules()`: the server behaves the same without it, and a `plugin game-statistics` line of `server.cfg` loads it (see [Write a plugin](/R-Type/modules/#write-a-plugin)). It needs `logger`, `network` and `games`, and follows every game through `IGameBuses`, the bus of each game the `games` module provides, so it holds none of the code of the games.
+
+```
+event,game,player,points
+kill,1,1,100
+kill,1,2,300
+total,1,,400
+```
+
+- A `kill` row is a Bydo a player killed (`EnemyKilled`): the game, the number of the player, from 1 to 4, and the points of the Bydo. A `total` row is the sum of the points of a game that ended, when its `GameStateChanged` goes from `InProgress` to `Finished`, with no player.
+- The games are numbered from 1 in the order they start on the server, whatever game of `Games` they run in; a game played again takes the next number. A Bydo killed while no game is in progress belongs to no game and has no row. A game the server stops in the middle has no end, so it has no total.
+- The file is the `game-statistics-file` setting, or, while it is empty, `r-type_statistics_<port>.csv` next to the executable, with the port of `set port`. It is emptied at launch, as the traffic file: one file is one run. A file that cannot be opened stops the start of the server, naming the module; one that stops accepting rows is told once in the journal and left, so a full disk never stops a game.
+- The rows wait in memory. The plugin adds the time of each pass of the `outputs` stage, after the games delivered the events of the tick, and writes once it reaches `GAME_STATISTICS_WRITE_PERIOD` (1 s), then counts from zero again: 60 ticks last 999.99996 ms, so the rows go out every 61 ticks (1016.7 ms) while the server keeps its pace. When the server stops, Ctrl-C included, it writes the rows left before it closes the file, so the file is complete once the server stopped.
+
+`GameTally` follows the bus of one game: it numbers the game that starts on it and hands its kills and its end to `StatisticsSheet`, which keeps the rows not written yet and the points of each game in progress. The tests load the compiled plugin into an application with doubles of the logger, the network and the games (`tests/server/GameStatistics/`), and into the modules of the whole server through its configuration file.
+
 ## Link with the master: `ServerMasterModule`
 
 The master lists the game servers for the players (see [Master](/R-Type/master/)). A host creates its server on the master, which gives a key once, then writes in `server.cfg` the address of the master and that key:
@@ -1092,6 +1114,8 @@ The games module tells the job when the games change. Its `HostedGamesWatch` fol
 | Change when a game ends | `reasonToFinish` in `src/server/Rules/Match/GameFlow.cpp` |
 | Change how often the end of a game is sent again | `GAME_ENDED_INTERVAL` in `src/server/ServerConstants.hpp` |
 | Change what a game records when it ends | `GameResultKeeper` in `src/server/Results/` |
+| Change the rows of the game statistics, their file or how often they are written | `StatisticsSheet`, `GameTally` and `GameStatisticsConstants.hpp` in `src/server/GameStatistics/` |
+| Follow every game from a module of the program or a plugin | `IGameBuses` (`src/server/Games/IGameBuses.hpp`), required in `install()`, its buses subscribed to in `start()` |
 | Change what makes a game vanilla | `vanillaBreaches()` in `src/server/Games/VanillaBreaches.cpp`, the values it judges in `HostedRules`; its reasons, `OFFICIAL_WAVES_FINGERPRINT` and `OFFICIAL_ENTITY_SHEETS_FINGERPRINT` in `src/server/ServerConstants.hpp` |
 | Change the tables of the results, or a query | A new line of `RESULTS_MIGRATIONS` and `LEADERBOARD_QUERY` in `src/server/Storage/Database/ResultsDatabaseConstants.hpp` |
 | Change how often a player is answered | `LEADERBOARD_ANSWER_INTERVAL` in `src/server/Instances/Context/Setup/GameInstanceConstants.hpp` |
