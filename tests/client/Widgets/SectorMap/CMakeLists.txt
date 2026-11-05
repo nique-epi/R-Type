@@ -1,0 +1,2 @@
+rtype_add_test(NAME client_sector_map_tests SOURCES SectorLayoutTest.cpp LIBS rtype_client_sector_layout GTest::gmock)
+target_include_directories(client_sector_map_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
