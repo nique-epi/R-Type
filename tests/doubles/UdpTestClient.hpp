@@ -19,7 +19,9 @@ struct ReceivedAt {
 
 /** @brief A client of the server on the loopback: a real UDP socket that keeps
  * every datagram it receives, with the time it arrived, and lets a test wait
- * for them. It runs its own thread until it is destroyed. */
+ * for them. A datagram the server coded is decoded first, as the client does,
+ * so a test reads the messages as the server wrote them. It runs its own thread
+ * until it is destroyed. */
 class UdpTestClient {
  public:
   UdpTestClient();

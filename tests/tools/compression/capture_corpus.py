@@ -1,6 +1,7 @@
 """Records the datagrams of a real game, for the Huffman table of the server.
 
 Usage: python3 capture_corpus.py <port> <players> <seconds> <output file>
+                                 [<HuffmanTableConstants.hpp>]
 
 Start the real server first, on <port>, for instance:
   ./r-type_server -p 4301 --seed 1 --no-log-file --no-log-stderr
@@ -9,13 +10,88 @@ handshake, ready, inputs at 60 per second) and writes every datagram of both
 directions, as records of: seconds (f64), direction (u8, 0 client to server,
 1 server to client), pilot (u8), size (u16), then the datagram bytes. All
 numbers are big-endian.
+
+The server sends the body of its datagrams in Huffman code (COMPRESSED flag).
+The script decodes them with the table of <HuffmanTableConstants.hpp>, given or
+found in the repository, and records the plain datagram, so the captures train
+a new table on the bytes of the messages and not on their code. It also prints
+how many bytes the server saved on the wire. Without a table (before the first
+one exists) it records the datagrams as they arrive.
 """
-import asyncio, random, struct, sys, time
+import asyncio, os, random, re, struct, sys, time
+
+PROTOCOL_VERSION = 4
+COMPRESSED_FLAG = 0x04
+HEADER_SIZE = 22
+SYMBOL_COUNT = 257
+END_OF_BODY_SYMBOL = 256
+MAXIMUM_CODE_LENGTH = 15
+DEFAULT_TABLE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..",
+                             "src", "network", "Compression", "Huffman", "HuffmanTableConstants.hpp")
+
+
+def read_code_lengths(path):
+    if not os.path.exists(path):
+        return None
+    text = open(path, encoding="utf-8").read()
+    numbers = re.findall(r"\b\d+\b", text.split("SERVER_TO_CLIENT_CODE_LENGTHS{", 1)[1].split("}", 1)[0])
+    lengths = [int(number) for number in numbers]
+    assert len(lengths) == SYMBOL_COUNT
+    return lengths
+
+
+def build_decoder(lengths):
+    counts = [0] * (MAXIMUM_CODE_LENGTH + 1)
+    for length in lengths:
+        counts[length] += 1
+    symbols = sorted(range(SYMBOL_COUNT), key=lambda symbol: (lengths[symbol], symbol))
+    return counts, symbols
+
+
+def decode_body(coded, decoder):
+    counts, symbols = decoder
+    body = bytearray()
+    bits = "".join(format(byte, "08b") for byte in coded)
+    position = 0
+    while True:
+        code = first = index = 0
+        for length in range(1, MAXIMUM_CODE_LENGTH + 1):
+            if position >= len(bits):
+                return None
+            code |= int(bits[position])
+            position += 1
+            if code < first + counts[length]:
+                symbol = symbols[index + code - first]
+                break
+            index += counts[length]
+            first = (first + counts[length]) << 1
+            code <<= 1
+        else:
+            return None
+        if symbol == END_OF_BODY_SYMBOL:
+            break
+        body.append(symbol)
+    if len(bits) - position >= 8 or "1" in bits[position:]:
+        return None
+    return bytes(body)
+
+
+def plain_form(data, decoder):
+    if decoder is None or len(data) <= HEADER_SIZE or not data[5] & COMPRESSED_FLAG:
+        return data
+    body = decode_body(data[HEADER_SIZE:], decoder)
+    if body is None:
+        raise SystemExit("a datagram of the server does not decode")
+    return data[:5] + bytes([data[5] & ~COMPRESSED_FLAG]) + data[6:HEADER_SIZE] + body
 
 PORT = int(sys.argv[1])
 PLAYERS = int(sys.argv[2])
 DURATION = float(sys.argv[3])
 OUT = sys.argv[4]
+TABLE = sys.argv[5] if len(sys.argv) > 5 else DEFAULT_TABLE
+LENGTHS = read_code_lengths(TABLE)
+DECODER = build_decoder(LENGTHS) if LENGTHS else None
+wire_bytes = {"s2c": 0, "c2s": 0}
 random.seed(PORT)
 
 HDR = ">IBBQHHI"
@@ -48,7 +124,7 @@ class Client(asyncio.DatagramProtocol):
             ack = self.newest
         if guaranteed:
             flags |= 2
-        header = struct.pack(HDR, 0x52545950, 2, flags, self.token,
+        header = struct.pack(HDR, 0x52545950, PROTOCOL_VERSION, flags, self.token,
                              self.sequence, ack, self.bits)
         self.sequence = (self.sequence + 1) & 0xFFFF
         body = b"".join(struct.pack(">BH", t, len(p)) + p for t, p in messages)
@@ -60,6 +136,8 @@ class Client(asyncio.DatagramProtocol):
         self.transport.sendto(data)
 
     def datagram_received(self, data, addr):
+        wire_bytes["s2c"] += len(data)
+        data = plain_form(data, DECODER)
         records.append((time.monotonic(), "s2c", self.index, data))
         if len(data) < 22:
             return
@@ -143,4 +221,6 @@ t0 = records[0][0]
 with open(OUT, "wb") as f:
     for t, d, peer, data in records:
         f.write(struct.pack(">dBBH", t - t0, 0 if d == "c2s" else 1, peer, len(data)) + data)
-print(len(records), "datagrams", sum(len(r[3]) for r in records), "bytes")
+plain_s2c = sum(len(r[3]) for r in records if r[1] == "s2c")
+print(len(records), "datagrams", sum(len(r[3]) for r in records), "bytes;",
+      "server to client: %d bytes on the wire, %d once decoded" % (wire_bytes["s2c"], plain_s2c))

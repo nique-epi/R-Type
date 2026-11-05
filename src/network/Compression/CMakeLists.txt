@@ -9,11 +9,12 @@ target_link_libraries(rtype_network_compression_constants
 )
 
 add_subdirectory(Huffman)
+add_subdirectory(Sockets)
 
 add_library(rtype_network_compression INTERFACE)
 
 target_link_libraries(rtype_network_compression
   INTERFACE
     rtype_network_compression_constants
-    rtype_network_compression_huffman
+    rtype_network_compression_sockets
 )

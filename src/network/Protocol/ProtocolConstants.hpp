@@ -19,11 +19,12 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 3 adds the
- * outcome of a game to GameEnded, see the Version 3 section of the protocol
- * page.
+ * @brief The version of the protocol this code speaks. Version 4 lets the
+ * server send the body of a datagram in Huffman code, see the Compression
+ * section of the protocol page; version 3 adds the outcome of a game to
+ * GameEnded, see the Version 3 section of that page.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 3;
+constexpr std::uint8_t PROTOCOL_VERSION = 4;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -70,6 +71,20 @@ constexpr std::uint8_t ACKNOWLEDGES_FLAG = 0x01;
 constexpr std::uint8_t GUARANTEED_FLAG = 0x02;
 constexpr auto KNOWN_FLAGS =
     static_cast<std::uint8_t>(ACKNOWLEDGES_FLAG | GUARANTEED_FLAG);
+
+/**
+ * @brief The flag of a datagram whose body, the bytes after the header, is in
+ * Huffman code. Only the transport sees it: the socket that receives the
+ * datagram decodes the body and clears the flag before anything else reads it,
+ * so it is not one of KNOWN_FLAGS and a header that still holds it is refused.
+ */
+constexpr std::uint8_t COMPRESSED_FLAG = 0x04;
+
+/**
+ * @brief Where the flags byte sits in a datagram: after the protocol id and
+ * the version.
+ */
+constexpr std::size_t FLAGS_OFFSET = UINT32_WIRE_SIZE + UINT8_WIRE_SIZE;
 
 /**
  * @brief The datagrams before acknowledgedSequence that acknowledgementBits
