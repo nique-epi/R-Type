@@ -54,7 +54,7 @@ The default level is `info`.
 
 ## Repeated events: `ThrottledLog`
 
-Some events repeat as fast as someone on the network causes them, such as a datagram the server drops: one line each would let anyone flood the journal. `ThrottledLog` (`src/logging/ThrottledLog/`, in `rtype_logging`) writes such an event at the `debug` level at most once per interval.
+Some events repeat as fast as someone on the network causes them, such as a datagram the server drops: one line each would let anyone flood the journal. `ThrottledLog` (`src/logging/ThrottledLog/`, in `rtype_logging`) writes such an event at most once per interval: at the `debug` level with `debug()`, or at the `error` level with `error()` for an event that a fault of the program causes, such as a message handler that threw. Both count on the same interval.
 
 - The first event gets a line. The next line goes to the first event at least one interval after the previous line, so two lines are never closer than the interval, whatever the rate.
 - Every event is counted, and each line ends with how many happened since the previous line, this one included, so the events without a line still show.

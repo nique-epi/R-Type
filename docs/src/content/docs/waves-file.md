@@ -11,7 +11,7 @@ Only the server reads the file, once, when it starts, from `waves/waves.toml` in
 
 ## A difficulty, key by key
 
-A difficulty is a table `[difficulty.<name>]` holding seven keys:
+A difficulty is a table `[difficulty.<name>]` holding eight keys:
 
 ```toml
 [difficulty.normal]
@@ -22,6 +22,7 @@ first_spawn_interval_ms = 2000
 spawn_interval_cut_per_wave_ms = 250
 shortest_spawn_interval_ms = 1000
 wave_pause_ms = 4000
+level_waves = 8
 ```
 
 | Key | Unit | Accepted | What it changes |
@@ -33,6 +34,7 @@ wave_pause_ms = 4000
 | `spawn_interval_cut_per_wave_ms` | milliseconds | 0 to 60000 | how much closer together the Bydos of each next wave come |
 | `shortest_spawn_interval_ms` | milliseconds | 1 to `first_spawn_interval_ms` | the shortest time a wave may leave between two Bydos |
 | `wave_pause_ms` | milliseconds | 0 to 60000 | the empty sky before each wave, the first one included |
+| `level_waves` | waves | 1 to 100 | how many waves the level holds: the game is won once the last one is over (see [How the waves grow](#how-the-waves-grow)) |
 
 Every key is required, and any other key is refused, so a misspelt key stops the server instead of being ignored. Every number is a TOML integer: `2500`, never `2500.0` or `"2500"`. The keys, the ranges and the names live in `src/server/Spawning/WaveFileConstants.hpp`.
 
@@ -41,6 +43,7 @@ Every key is required, and any other key is refused, so a misspelt key stops the
 - Wave n, counted from 1, holds `first_wave_bydos + (n - 1) × bydos_added_per_wave` Bydos, one every `max(first_spawn_interval_ms - (n - 1) × spawn_interval_cut_per_wave_ms, shortest_spawn_interval_ms)` milliseconds. With `normal`, the waves hold 3, 4, 5… Bydos, and from the fifth wave on they come one every second.
 - A game starts with a pause of `wave_pause_ms`. The first Bydo of a wave appears at the end of its pause, the next ones an interval apart.
 - A wave ends once every one of its Bydos has appeared and none is left in the world, killed or gone off the left edge. The pause before the next wave starts on the tick that finds the sky clear, so a wave killed fast brings the next one sooner, and a Bydo that crosses unharmed makes the players wait for it. A Bydo killed before the last of its wave appeared does not end the wave.
+- The level holds `level_waves` waves. Once the last of them ends, no pause and no wave follow, and the game is won: the players are told with a `GameEnded` that carries the outcome `Victory` (see [End of a game](/R-Type/server/#end-of-a-game-gameendannouncer)). A game whose last life is lost on the same tick is lost, not won. With `normal` (8 waves), the last wave holds 10 Bydos.
 - A Bydo crosses the playfield in about 8.5 seconds: 2048 logical units at `BYDO_SPEED` (240 units per second), from `BYDO_SPAWN_MARGIN` (64) past the right edge to `BYDO_EXIT_MARGIN` (64) past the left one.
 - Time is counted in ticks of a sixtieth of a second, 16 666 666 ns each, so a duration ends on the tick that reaches it: a pause of 4000 ms ends on its 241st tick.
 
@@ -64,6 +67,7 @@ The Bydos take the names of the list in turn, and the turn carries on from one w
 | `spawn_interval_cut_per_wave_ms` | 250 | 250 | 250 |
 | `shortest_spawn_interval_ms` | 1500 | 1000 | 500 |
 | `wave_pause_ms` | 5000 | 4000 | 3000 |
+| `level_waves` | 5 | 8 | 10 |
 
 `easy` leans on the Drifter, which is easier to hit; `hard` leans on the Weaver and brings two more Bydos per wave. No test pins these values: tuning them needs no rebuild and breaks no test.
 
@@ -71,7 +75,7 @@ The Bydos take the names of the list in turn, and the turn carries on from one w
 
 - Start from `normal` and change one key at a time, so the effect of each change is plain.
 - If none is killed, up to 8.5 seconds divided by the interval Bydos are on screen at once, and never more than the wave holds: the three Bydos of the first wave of `normal` are all on screen together, and at one Bydo per second, eight or nine are, once the waves hold that many.
-- A world state datagram carries 122 entities with four players, 128 with one, ships and missiles included (`WorldStateCodec`). Past that, every world state takes one more datagram per player, `--state-rate` times per second (20 by default).
+- A world state datagram carries 122 changed entities with four players, 127 with one, ships and missiles included (`DeltaWorldStateCodec`). A state lists only the entities that moved since the state the player acknowledged, or all of them after a second without an acknowledgement. Past that, every world state takes one more datagram per player, `--state-rate` times per second (20 by default).
 - `bydos_added_per_wave = 0` keeps every wave the size of the first; `shortest_spawn_interval_ms` equal to `first_spawn_interval_ms` keeps their pace.
 - Try a change by editing the file and starting the server again; nothing is rebuilt and the client does not change:
 
@@ -79,7 +83,13 @@ The Bydos take the names of the list in turn, and the turn carries on from one w
 ./r-type_server --seed 42
 ```
 
-The server logs the file it read, by its absolute path (`waves file /…/assets/waves/waves.toml: 3 difficulties, games play normal`), then each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`). The seed fixes the heights of the Bydos, so the same file and the same seed replay the same game.
+The server logs the file it read, by its absolute path (`waves file /…/assets/waves/waves.toml: 3 difficulties`), the difficulty the games play and whether they are vanilla (`games play normal, not vanilla`, since a seed is set), then each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`). The seed fixes the heights of the Bydos, so the same file and the same seed replay the same game.
+
+## The shipped file and vanilla games
+
+A changed waves file makes the games of the server not vanilla: the server recognizes the shipped file by its fingerprint, SipHash-2-4 of its bytes, so a comment or a line ending counts as a change (see [Vanilla games](/R-Type/server/#vanilla-games-vanillabreaches)). Their scores stay on the leaderboard of that server. `.gitattributes` keeps the file in LF on every checkout, Windows included.
+
+When the shipped file itself changes, `OFFICIAL_WAVES_FINGERPRINT` in `src/server/ServerConstants.hpp` changes with it: `WaveCatalog.TheShippedFileHasTheOfficialFingerprint` fails until it does, and its failure prints, in decimal, the fingerprint the file now has.
 
 ## When the server refuses the file
 
@@ -98,8 +108,10 @@ The server reads the whole file, every difficulty included, before it listens. O
 | nothing: the file is missing | `cannot read the waves file /…/assets/waves/waves.toml` |
 | nothing: no `assets/` folder next to the executable or above it | `No assets folder found, searched: /…/bin/assets, /…/assets` |
 
+`level_waves` follows the same messages: a difficulty without it stops the server with `difficulty.normal.level_waves is missing`, and a value outside 1 to 100, or one that is not an integer, with `difficulty.normal.level_waves must be an integer from 1 to 100`. A file written before the key existed is refused the same way, so add `level_waves` to every difficulty of a file of your own.
+
 Neither of the last two depends on the folder the server is started from. No assets folder means the executable was copied away from the repository; a missing file means `assets/waves/waves.toml` was moved or renamed.
 
 ## Adding a kind of enemy
 
-A new kind takes a value of `BydoKind` with its pattern (`patternShapeOf`) and its points (`pointsOf`) in `src/game/Spawning/BydoKind/`, then a name in `ENEMY_NAMES` in `src/server/Spawning/WaveFileConstants.hpp`; the file can name it at once. Every Bydo goes over the network as a `Bydo` today, so the client draws every kind with the same sprite: a kind that must look different also needs a network entity type of its own and a sprite on the client.
+A new kind takes a value of `BydoKind` with its behaviour (`behaviourNameOf`) and its points (`pointsOf`) in `src/game/Spawning/BydoKind/`, then a name in `ENEMY_NAMES` in `src/server/Spawning/WaveFileConstants.hpp`; the file can name it at once. Every Bydo goes over the network as a `Bydo` today, so the client draws every kind with the same sprite: a kind that must look different also needs a network entity type of its own and a sprite on the client.

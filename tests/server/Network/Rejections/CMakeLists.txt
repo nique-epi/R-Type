@@ -1,0 +1,4 @@
+rtype_add_test(NAME server_rejection_tests SOURCES RejectionLedgerTest.cpp RejectionLinesTest.cpp RejectionReporterTest.cpp RejectionReporterFixture.cpp RejectionsFixtures.cpp LIBS rtype_server_network_rejections rtype_server_constants rtype_test_support)
+target_include_directories(server_rejection_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR})
+target_sources(server_tests PRIVATE RejectionsFixtures.cpp)
+target_include_directories(server_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

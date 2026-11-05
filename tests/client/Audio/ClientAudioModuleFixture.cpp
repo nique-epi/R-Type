@@ -7,9 +7,11 @@
 #include "ServiceRegistry.hpp"
 
 ClientAudioModuleFixture::ClientAudioModuleFixture()
-    : library_(folder_.path()), stages_(rtype::client::CLIENT_LOOP_STAGES) {
+    : library_(folder_.path()),
+      settingsService_(settings_, storage_),
+      stages_(rtype::client::CLIENT_LOOP_STAGES) {
   services_.provide(library_);
-  services_.provide(settings_);
+  services_.provide(settingsService_);
 }
 
 rtype::engine::InstallContext ClientAudioModuleFixture::context() {

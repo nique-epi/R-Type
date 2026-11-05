@@ -6,19 +6,6 @@
 namespace rtype::client {
 
 /**
- * @brief Time between two ConnectionRequest of an attempt while the server
- * has not answered. Provisional, see the protocol page.
- */
-constexpr std::chrono::milliseconds CONNECTION_REQUEST_INTERVAL{500};
-
-/**
- * @brief Time after the start of an attempt at which it gives up, when the
- * server has neither accepted nor refused it. Provisional, see the protocol
- * page.
- */
-constexpr std::chrono::seconds CONNECTION_ATTEMPT_TIMEOUT{5};
-
-/**
  * @brief Time between two ReadyState while the LobbyState of the server shows
  * another value than the one the player asked for. Provisional, see the
  * protocol page.

@@ -19,4 +19,10 @@ namespace rtype::server {
  */
 [[nodiscard]] std::string systemsLineOf(const MetricsReport& report);
 
+/**
+ * @returns The line of the journal that gives the round trip and the jitter of
+ * each player of @p report, in milliseconds, or says no player was measured.
+ */
+[[nodiscard]] std::string roundTripsLineOf(const MetricsReport& report);
+
 }  // namespace rtype::server

@@ -1,0 +1,2 @@
+rtype_add_test(NAME client_prediction_tests SOURCES ShipPredictionTest.cpp OwnShipTest.cpp OwnShipPredictorTest.cpp PredictionFixtures.cpp InterpolationClockTest.cpp RecentValuesTest.cpp PositionInterpolationTest.cpp PositionInterpolationFixture.cpp InterpolationSmoothnessTest.cpp InterpolationScenarioFixtures.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingPlayerInputLink.cpp LIBS rtype_client_prediction GTest::gmock)
+target_include_directories(client_prediction_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/client/Prediction ${RTYPE_TEST_SOURCE_DIR}/doubles)

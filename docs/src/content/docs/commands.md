@@ -44,6 +44,9 @@ Server settings:
 | `state-rate` | 2 to 60 | 20 | The world states sent to each player per second. |
 | `input-delay` | 0 to 30 | 3 | The ticks every player's input is held before it is applied. |
 | `database` | a path | empty | The SQLite file the leaderboard of the server is kept in; empty for `r-type_server_<port>.db` next to the executable. |
+| `master-url` | `http://<host>[:<port>]` | empty | The master the server is listed on; empty to run alone. |
+| `master-key` | a key | empty | The key the master gave when the host created the server; empty to run alone. |
+| `server-name` | 1 to 32 bytes | `R-Type server` | The name players read in the list of servers. |
 
 Client settings:
 
@@ -64,7 +67,7 @@ Master settings (see [Master](/R-Type/master/#configuration-mastercfg)):
 
 ### `module`
 
-`module` takes exactly two words: the name of a module and `on` or `off`. A module that is off is installed and never started, and the work it added to the loop in `install()` is taken out, so it opens nothing and runs nothing. Every module is on until a line turns it off.
+`module` takes exactly two words: the name of a module and `on` or `off`. A module that is off is never installed: the `module` lines run once before any install, so it provides no service, adds no work, opens nothing and runs nothing. The whole file then runs again once every module is installed, so a `set` line finds the settings the modules declared. Every module is on until a line turns it off.
 
 A module cannot be turned off while a module that stays on needs it, and cannot be turned on while a module it needs is off. The check uses the state at the time of the line, so turn off the dependents first and turn on the dependencies first.
 
@@ -78,6 +81,7 @@ Server modules:
 | `games` | `network`, `storage` | Hosts the games. |
 | `lobby` | `network`, `games` | Answers the connection requests of the players. |
 | `metrics` | `games`, `network` | Measures the ticks and writes a report to the journal. |
+| `master` | `network`, `games` | Keeps the master told of the server; uses `metrics` when it is on. |
 
 Client modules:
 
@@ -89,7 +93,7 @@ Client modules:
 | `settings` | `logger` |
 | `window` | `settings` |
 | `audio` | `assets`, `settings` |
-| `screens` | `assets`, `settings`, `audio`, `window`, `connection` |
+| `screens` | `assets`, `settings`, `window`, `connection`; it uses `audio` when it is on, and plays nothing otherwise |
 | `menus`, `lobby`, `game` | `screens` |
 
 Master modules:
@@ -99,6 +103,7 @@ Master modules:
 | `logger` | nothing | Applies the logging options when it starts. |
 | `storage` | `logger` | Opens the database of the master. |
 | `http` | `logger` | Opens the port of the HTTP API. |
+| `servers` | `logger`, `storage`, `http` | Creates the game servers with their keys, and takes their registration and their heartbeats. |
 
 Turning off a module the program cannot run without is accepted when nothing that stays on needs it, and the program then does less. For example, `module lobby off` on the server leaves a server that accepts nobody. On the client, `menus`, `lobby` and `game` need `screens`, and `screens` needs five modules, so turning one of those off is refused until the modules that need it are off first.
 

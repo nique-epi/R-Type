@@ -96,6 +96,13 @@ class ConnectionAcceptor {
   /**
    * @brief Answers the requests among @p datagrams, oldest first.
    *
+   * An exception answering one (any std::exception, from the roster, the
+   * admission, the report of a joined player or the drawing of a token) is a
+   * fault of the server, not of the datagram: it is logged at the error level
+   * with its sender at most once per REJECTION_LINE_INTERVAL, that datagram is
+   * dropped, and the next one is answered. What the answer changed before it
+   * threw is kept.
+   *
    * @param now Measured from any fixed origin, the same for every call: the
    * cookies depend on it.
    */
@@ -143,6 +150,8 @@ class ConnectionAcceptor {
   logging::Logger logger_;
   logging::ThrottledLog dropLog_{std::string{LOBBY_LOGGER_NAME},
                                  network::REJECTION_LINE_INTERVAL};
+  logging::ThrottledLog failureLog_{std::string{LOBBY_LOGGER_NAME},
+                                    network::REJECTION_LINE_INTERVAL};
 };
 
 }  // namespace rtype::server

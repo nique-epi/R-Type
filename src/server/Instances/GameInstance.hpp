@@ -115,7 +115,8 @@ class GameInstance {
   /**
    * @brief Tells the modules that @p player just took a place in roster(), as
    * the SessionHooks::joined functions receive it; with the rules of R-Type,
-   * the player gets a ship in the world, announced to the players.
+   * the player gets a ship in the world, announced to the players. A
+   * game::PlayerArrival is then published on the bus of the game.
    * @throws NetworkIdExhaustedException when every network id was given.
    */
   void onPlayerJoined(ConnectedPlayer& player) const;
@@ -125,8 +126,9 @@ class GameInstance {
    * and closes the session of each player who sent a Disconnection, among
    * @p datagrams, oldest first, closes the session of every player not heard
    * from for SESSION_TIMEOUT_TICKS ticks, then runs the work of the modules.
-   * Last, a player the game sent nothing for SILENCE_BEFORE_HEARTBEAT (see
-   * ConnectedPlayer::sinceSent) is sent a Heartbeat.
+   * Last, a player sent no Heartbeat for TIME_BETWEEN_HEARTBEATS (see
+   * ConnectedPlayer::sinceHeartbeat) is sent one, then the round trips of the
+   * players.
    * Nothing caused by the content of a datagram makes it throw.
    * @p datagrams must stay valid until the call returns.
    */

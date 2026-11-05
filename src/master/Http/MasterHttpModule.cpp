@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
 #include "ConfigurationRegistry.hpp"
 #include "Endpoint.hpp"
@@ -14,6 +15,7 @@
 #include "IntegerSettingDefinition.hpp"
 #include "MasterConstants.hpp"
 #include "MasterModuleConstants.hpp"
+#include "MasterRouteConstants.hpp"
 #include "NetworkConstants.hpp"
 
 namespace rtype::master {
@@ -25,7 +27,7 @@ namespace {
  * `{"version":"<MASTER_VERSION>"}`. It reads nothing else, so it answers as
  * long as the HTTP server runs.
  */
-ApiResponse healthResponse() {
+ApiResponse healthResponse([[maybe_unused]] const ApiRequest& request) {
   nlohmann::json health;
   health[VERSION_MEMBER] = MASTER_VERSION;
   return ApiResponse{.status = OK_STATUS, .body = health.dump()};
@@ -53,7 +55,7 @@ void MasterHttpModule::install(engine::InstallContext& context) {
               .lowest = network::LOWEST_PORT,
               .highest = network::HIGHEST_PORT,
               .help = "TCP port the HTTP API listens on"});
-  server_.addGet(HEALTH_PATH, healthResponse);
+  server_.add(network::HEALTH_ROUTE, healthResponse);
   context.provide(server_);
 }
 

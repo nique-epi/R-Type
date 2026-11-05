@@ -45,7 +45,7 @@ TEST_F(RtypeGameFixture, GameReplicationTellsTheRoomOnAWaitingTick) {
 TEST_F(RtypeGameFixture, GameReplicationTellsTheResultOnceTheGameEnded) {
   IGameReplication& replication = replicationOfTheWorld();
   join(0);
-  replication.onGameFinished();
+  replication.onGameFinished(GameOutcome::Defeat);
 
   replication.onFinishedTick();
 
@@ -74,7 +74,7 @@ TEST_F(RtypeGameFixture, GameReplicationTellsNoResultToAGameEndedWithoutOne) {
 TEST_F(RtypeGameFixture, GameReplicationForgetsTheEndOfThePreviousGame) {
   IGameReplication& replication = replicationOfTheWorld();
   join(0);
-  replication.onGameFinished();
+  replication.onGameFinished(GameOutcome::Defeat);
   replication.onWorldBuilt(world());
 
   replication.onFinishedTick();
@@ -93,7 +93,7 @@ TEST_F(RtypeGameFixture, GameReplicationSendsTheWorldOnAProgressTick) {
 
   replication.onProgressTick(0, world().components());
 
-  expectFirstMessageSentTo(0, network::MessageType::WorldState);
+  expectFirstMessageSentTo(0, network::MessageType::DeltaWorldState);
 }
 
 }  // namespace rtype::server::testing

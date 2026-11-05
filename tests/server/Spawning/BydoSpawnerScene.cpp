@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 #include "BydoSpawner.hpp"
@@ -10,8 +11,8 @@
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
-#include "MovementPattern.hpp"
 #include "OutgoingDatagram.hpp"
+#include "Pilot.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "WavePlan.hpp"
@@ -85,14 +86,13 @@ void BydoSpawnerScene::clearTheSky() {
       });
 }
 
-std::vector<game::PatternShape> BydoSpawnerScene::patternsOfTheBydos() {
-  std::vector<game::PatternShape> shapes;
-  world_.components().forEach<game::MovementPattern, game::MovementPattern>(
-      [&shapes](engine::Entity, const game::MovementPattern& pattern,
-                const game::MovementPattern&) {
-        shapes.push_back(pattern.shape);
+std::vector<std::string_view> BydoSpawnerScene::behavioursOfTheBydos() {
+  std::vector<std::string_view> names;
+  world_.components().forEach<game::Pilot, game::Pilot>(
+      [&names](engine::Entity, const game::Pilot& pilot, const game::Pilot&) {
+        names.push_back(pilot.behaviour.get().name());
       });
-  return shapes;
+  return names;
 }
 
 game::World& BydoSpawnerScene::world() { return world_; }

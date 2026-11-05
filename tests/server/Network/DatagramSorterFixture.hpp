@@ -24,7 +24,8 @@ class DatagramSorterFixture : public ::testing::Test {
 
   void sort(const rtype::network::Endpoint& sender,
             const std::vector<std::byte>& datagram);
-  /** @brief Sorts @p datagram, sent by @p sender, @p count times. */
+  /** @brief Sorts @p count copies of @p datagram from @p sender, all at
+   * once. */
   void sortRepeatedly(const rtype::network::Endpoint& sender,
                       const std::vector<std::byte>& datagram,
                       std::size_t count);

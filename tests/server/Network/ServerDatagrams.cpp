@@ -13,6 +13,16 @@
 #include "ReadyState.hpp"
 #include "ServerLobbyTestConstants.hpp"
 
+rtype::network::PacketHeader playerHeader(std::uint64_t sessionToken) {
+  rtype::network::PacketHeader header;
+  header.sessionToken = sessionToken;
+  return header;
+}
+
+std::vector<std::byte> playerReady(std::uint64_t sessionToken) {
+  return readyDatagram(playerHeader(sessionToken));
+}
+
 std::string senderText(const rtype::network::Endpoint& sender) {
   return "from " + sender.address + " port " + std::to_string(sender.port);
 }
@@ -49,6 +59,12 @@ std::vector<std::byte> heartbeatDatagram(
     const rtype::network::PacketHeader& header) {
   return rtype::network::DatagramCodec::encode(header,
                                                rtype::network::Heartbeat{});
+}
+
+std::vector<std::byte> heartbeatDatagram(
+    const rtype::network::PacketHeader& header,
+    const rtype::network::Heartbeat& heartbeat) {
+  return rtype::network::DatagramCodec::encode(header, heartbeat);
 }
 
 std::vector<std::byte> disconnectionDatagram(

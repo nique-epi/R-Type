@@ -47,6 +47,8 @@
 #include "SentDatagrams.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShipDirections.hpp"
+#include "ShipMotion.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
 #include "TimeConstants.hpp"
 #include "UnreliableNetwork.hpp"
@@ -54,6 +56,26 @@
 #include "WorldState.hpp"
 
 namespace rtype::server::testing {
+
+std::size_t heartbeatsIn(
+    const std::vector<network::OutgoingDatagram>& datagrams) {
+  return ofType(network::MessageType::Heartbeat, datagrams).size();
+}
+
+std::optional<network::Heartbeat> newestHeartbeatIn(
+    const std::vector<network::OutgoingDatagram>& datagrams) {
+  const std::vector<network::OutgoingDatagram> heartbeats =
+      ofType(network::MessageType::Heartbeat, datagrams);
+  if (heartbeats.empty()) {
+    return std::nullopt;
+  }
+  const std::vector<network::Heartbeat> messages =
+      messagesIn<network::Heartbeat>(heartbeats.back());
+  if (messages.empty()) {
+    return std::nullopt;
+  }
+  return messages.back();
+}
 
 std::vector<network::OutgoingDatagram> ofType(
     network::MessageType type,
@@ -253,6 +275,8 @@ std::uint32_t GameInstanceTest::shipOf(std::size_t index) {
   return player == nullptr ? identifiers::NO_ENTITY_ID : player->shipEntityId;
 }
 
+engine::Duration GameInstanceTest::clockNow() const { return clock_.now(); }
+
 std::vector<network::OutgoingDatagram> GameInstanceTest::sentTo(
     std::size_t index) const {
   return testing::sentTo(sent_, playerEndpoint(index));
@@ -351,17 +375,21 @@ std::optional<std::uint8_t> GameInstanceInputTest::heldActions(
     ADD_FAILURE() << "player " << player << " has no ship";
     return std::nullopt;
   }
+  const game::ShipMotion* const motion =
+      world().shipMotionOf(connected->shipEntityId);
+  const game::ShipDirections held =
+      motion != nullptr ? motion->heldAtLastInput : game::ShipDirections{};
   unsigned int actions = 0U;
-  if (intent->directions.up) {
+  if (held.up) {
     actions |= static_cast<unsigned int>(HOLDS_UP);
   }
-  if (intent->directions.down) {
+  if (held.down) {
     actions |= static_cast<unsigned int>(HOLDS_DOWN);
   }
-  if (intent->directions.left) {
+  if (held.left) {
     actions |= static_cast<unsigned int>(HOLDS_LEFT);
   }
-  if (intent->directions.right) {
+  if (held.right) {
     actions |= static_cast<unsigned int>(HOLDS_RIGHT);
   }
   if (intent->shooting) {

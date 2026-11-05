@@ -1,0 +1,6 @@
+rtype_add_test(NAME network_statistics_tests SOURCES TrafficFixtures.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingDatagramSocket.cpp LIBS rtype_network_statistics rtype_network_simulator rtype_test_support TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
+target_include_directories(network_statistics_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/doubles ${RTYPE_TEST_SOURCE_DIR}/network/Statistics $<TARGET_PROPERTY:rtype_network_datagram_codec,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:rtype_network_constants,INTERFACE_INCLUDE_DIRECTORIES>)
+
+add_subdirectory(Counting)
+add_subdirectory(Recording)
+add_subdirectory(RoundTrip)

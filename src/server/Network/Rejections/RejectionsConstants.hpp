@@ -16,9 +16,15 @@ constexpr std::size_t REJECTION_CAUSE_COUNT =
  * in the order the causes are declared.
  */
 constexpr std::array<std::string_view, REJECTION_CAUSE_COUNT>
-    REJECTION_CAUSE_NAMES{"shorter than the header", "foreign header",
-                          "message sizes",           "stranger",
-                          "wrong session token",     "player queue full",
+    REJECTION_CAUSE_NAMES{"shorter than the header",
+                          "foreign header",
+                          "message sizes",
+                          "stranger",
+                          "wrong session token",
+                          "over rate limit",
+                          "newly banned",
+                          "banned",
+                          "player queue full",
                           "request queue full"};
 
 /**

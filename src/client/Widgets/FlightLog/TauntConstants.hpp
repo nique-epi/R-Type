@@ -12,10 +12,15 @@ constexpr std::string_view BEST_PILOT_MARK = "{BEST}";
 constexpr std::string_view LAST_PILOT_MARK = "{LAST}";
 constexpr std::string_view ZERO_PILOT_MARK = "{ZERO}";
 
-/** @brief The taunts the cover picks from, one per game: the squadron lost,
- * and the book says so. The first ones were written for the game; the
- * others nod to French and English-speaking films and TV, to video games and
- * to R-Type, in French or in English. */
+/** @brief The words of the cover after a victory: every taunt below mocks a
+ * defeat, so a game won has this one instead. */
+constexpr Taunt VICTORY_TAUNT{.text = "THE BYDO ARE\nDEFEATED.\nWELL FLOWN!",
+                              .condition = TauntCondition::Always};
+
+/** @brief The taunts the cover picks from after a defeat, one per game: the
+ * squadron lost, and the book says so. The first ones were written for the
+ * game; the others nod to French and English-speaking films and TV, to video
+ * games and to R-Type, in French or in English. */
 constexpr std::array TAUNTS{
     Taunt{.text = "THE BYDO SEND\nTHEIR REGARDS",
           .condition = TauntCondition::Always},

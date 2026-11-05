@@ -4,6 +4,7 @@ add_library(rtype_client_session STATIC
   SessionInbound.cpp
   SessionObservers.cpp
   SessionOutbox.cpp
+  RoundTripWatch.cpp
 )
 
 target_include_directories(rtype_client_session PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -11,10 +12,14 @@ target_include_directories(rtype_client_session PUBLIC ${CMAKE_CURRENT_SOURCE_DI
 target_link_libraries(rtype_client_session
   PUBLIC
     rtype_client_transport
+    rtype_engine_server_clock
     rtype_engine_time
     rtype_logging
     rtype_network_lobby_state
+    rtype_network_message_dispatcher
     rtype_network_protocol
+    rtype_network_round_trips
+    rtype_network_statistics_round_trip
     rtype_network_reliability
     rtype_network_transport
   PRIVATE

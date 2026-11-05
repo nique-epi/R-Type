@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace rtype::game {
 
@@ -33,11 +34,29 @@ class InvalidRandomUnitException : public GameException {
 
 /**
  * @brief A wave curve would bring a wave without Bydos, Bydos with no time
- * between them, waves that slow down, or a negative pause (see isPlayable).
+ * between them, waves that slow down, a negative pause, or a level without
+ * a wave (see isPlayable).
  */
 class InvalidWaveCurveException : public GameException {
  public:
   InvalidWaveCurveException();
+};
+
+/**
+ * @brief Thrown when a body is given a behaviour no BehaviourRegistry holds.
+ */
+class UnknownBehaviourException : public GameException {
+ public:
+  explicit UnknownBehaviourException(std::string_view name);
+};
+
+/**
+ * @brief Thrown when a BehaviourRegistry is given a second behaviour under a
+ * name it already holds.
+ */
+class DuplicateBehaviourException : public GameException {
+ public:
+  explicit DuplicateBehaviourException(std::string_view name);
 };
 
 }  // namespace rtype::game

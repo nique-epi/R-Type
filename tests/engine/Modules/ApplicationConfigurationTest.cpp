@@ -21,9 +21,10 @@ using Lines = std::vector<std::string>;
 /**
  * Given an application of three modules and a configuration step
  * When it starts
- * Then the step runs after the three installs and before the three starts
+ * Then the step runs before the three installs, for the switches, then again
+ * between the installs and the starts
  */
-TEST(ApplicationConfiguration, StepRunsBetweenInstallsAndStarts) {
+TEST(ApplicationConfiguration, StepRunsBeforeTheInstallsAndBeforeTheStarts) {
   JournalModule journal;
   Lines refusals;
   Application application(withoutStages(), threeModules(journal),
@@ -32,16 +33,16 @@ TEST(ApplicationConfiguration, StepRunsBetweenInstallsAndStarts) {
   application.start();
 
   EXPECT_EQ(journal.calls,
-            (Lines{INSTALL_FIRST, INSTALL_SECOND, INSTALL_THIRD, CONFIGURE_STEP,
-                   START_FIRST, START_SECOND, START_THIRD}));
+            (Lines{CONFIGURE_STEP, INSTALL_FIRST, INSTALL_SECOND, INSTALL_THIRD,
+                   CONFIGURE_STEP, START_FIRST, START_SECOND, START_THIRD}));
 }
 
 /**
  * Given an application whose step turns the second module off
  * When it starts
- * Then the second module is installed and never started, the others start
+ * Then the second module is neither installed nor started, the others are
  */
-TEST(ApplicationConfiguration, ModuleTurnedOffIsInstalledAndNeverStarted) {
+TEST(ApplicationConfiguration, ModuleTurnedOffIsNeverInstalled) {
   JournalModule journal;
   Lines refusals;
   Application application(withoutStages(), threeModules(journal),
@@ -49,7 +50,7 @@ TEST(ApplicationConfiguration, ModuleTurnedOffIsInstalledAndNeverStarted) {
 
   application.start();
 
-  EXPECT_EQ(journal.calls, (Lines{INSTALL_FIRST, INSTALL_SECOND, INSTALL_THIRD,
+  EXPECT_EQ(journal.calls, (Lines{CONFIGURE_STEP, INSTALL_FIRST, INSTALL_THIRD,
                                   CONFIGURE_STEP, START_FIRST, START_THIRD}));
 }
 

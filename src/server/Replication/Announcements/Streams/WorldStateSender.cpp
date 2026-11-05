@@ -1,35 +1,43 @@
 #include "WorldStateSender.hpp"
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
+#include "DeltaWorldState.hpp"
+#include "DeltaWorldStateCodec.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "Intent.hpp"
 #include "Invulnerable.hpp"
 #include "Lives.hpp"
 #include "ManeuverKind.hpp"
+#include "NetworkException.hpp"
 #include "NetworkIdentity.hpp"
 #include "PlayerRoster.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
 #include "ReplicationConstants.hpp"
+#include "SentState.hpp"
 #include "ServerConstants.hpp"
 #include "ServerException.hpp"
 #include "SessionDatagram.hpp"
 #include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
+#include "StateDelta.hpp"
 #include "TimeConstants.hpp"
 #include "WireEntityTypeMapping.hpp"
 #include "WorldState.hpp"
-#include "WorldStateCodec.hpp"
+#include "WorldStateDelta.hpp"
 
 namespace rtype::server {
 
@@ -100,7 +108,9 @@ ShipReading readShip(engine::ComponentRegistry& components,
         reading.motion = maneuverBitOf(motion.maneuver);
         if (const game::Intent* const intent =
                 components.get<game::Intent>(ship)) {
-          reading.motion |= directionBitsOf(intent->directions);
+          reading.motion |=
+              directionBitsOf(intent->steered ? motion.heldAtLastInput
+                                              : game::ShipDirections{});
         }
         if (const game::Lives* const lives =
                 components.get<game::Lives>(ship)) {
@@ -112,6 +122,28 @@ ShipReading readShip(engine::ComponentRegistry& components,
         }
       });
   return reading;
+}
+
+/** @returns @p state written as the difference from @p reference, or in full
+ * when there is none. */
+network::DeltaWorldState deltaAgainst(const network::WorldState& state,
+                                      const SentState* reference) {
+  const std::span<const network::EntityState> base =
+      reference == nullptr
+          ? std::span<const network::EntityState>{}
+          : std::span<const network::EntityState>{*reference->entities};
+  network::StateDelta difference = network::diffStates(base, state.entities);
+  const auto baseDistance =
+      reference == nullptr
+          ? network::NO_REFERENCE_DISTANCE
+          : static_cast<std::uint8_t>(state.tick - reference->tick);
+  return network::DeltaWorldState{.tick = state.tick,
+                                  .baseDistance = baseDistance,
+                                  .partIndex = 0,
+                                  .partCount = 1,
+                                  .players = state.players,
+                                  .changed = std::move(difference.changed),
+                                  .removed = std::move(difference.removed)};
 }
 
 }  // namespace
@@ -148,12 +180,41 @@ void WorldStateSender::onTick(std::uint32_t tick,
   network::WorldState state = capture(tick, components, leftOutCount);
   state.players = playerStatesOf(players, components);
   reportLeftOut(leftOutCount);
-  const std::vector<std::vector<std::byte>> payloads =
-      network::WorldStateCodec::encode(state);
+  std::ranges::sort(state.entities, {}, &network::EntityState::entityId);
+  const auto entities =
+      std::make_shared<const std::vector<network::EntityState>>(state.entities);
   for (ConnectedPlayer* const player : players) {
-    for (const std::vector<std::byte>& payload : payloads) {
-      send_(sessionDatagram(*player, network::WorldState::TYPE, payload));
-    }
+    sendTo(*player, state, entities);
+  }
+}
+
+void WorldStateSender::sendTo(
+    ConnectedPlayer& player, const network::WorldState& state,
+    std::shared_ptr<const std::vector<network::EntityState>> entities) {
+  const network::DeltaWorldState delta =
+      deltaAgainst(state, player.sentStates.referenceFor(state.tick));
+  const auto payloads = encodedPartsOf(delta);
+  if (!payloads.has_value()) {
+    return;
+  }
+  std::vector<std::uint16_t> sequences;
+  sequences.reserve(payloads->size());
+  for (const std::vector<std::byte>& payload : *payloads) {
+    sequences.push_back(player.nextSequence);
+    send_(sessionDatagram(player, network::DeltaWorldState::TYPE, payload));
+  }
+  player.sentStates.remember(SentState{.tick = state.tick,
+                                       .sequences = std::move(sequences),
+                                       .entities = std::move(entities)});
+}
+
+std::optional<std::vector<std::vector<std::byte>>>
+WorldStateSender::encodedPartsOf(const network::DeltaWorldState& delta) {
+  try {
+    return network::DeltaWorldStateCodec::encode(delta);
+  } catch (const network::TooManyDeltaPartsException& tooMany) {
+    logger_.error(tooMany.what());
+    return std::nullopt;
   }
 }
 

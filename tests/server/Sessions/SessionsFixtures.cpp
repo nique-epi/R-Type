@@ -2,15 +2,24 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "Endpoint.hpp"
+#include "Heartbeat.hpp"
+#include "HeartbeatMoment.hpp"
+#include "Heartbeats.hpp"
 #include "MessageOrigin.hpp"
+#include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "SessionsTestConstants.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::server::testing {
 
@@ -30,6 +39,12 @@ ConnectedPlayer& addPlayer(PlayerRoster& roster, std::size_t index) {
                      SESSION_TOKEN);
 }
 
+void addPlayers(PlayerRoster& roster, std::size_t count) {
+  for (std::size_t index = 0; index < count; ++index) {
+    static_cast<void>(addPlayer(roster, index));
+  }
+}
+
 void ignoreInput(const ConnectedPlayer& /*player*/,
                  const network::PlayerInput& /*input*/) {}
 
@@ -40,6 +55,28 @@ recorderOf(std::vector<ShownInput>& shown) {
     shown.push_back(ShownInput{.input = input,
                                .numberKeptBefore = player.newestInputNumber});
   };
+}
+
+std::vector<network::OutgoingDatagram> heartbeatsSentAt(
+    PlayerRoster& roster, engine::Duration now,
+    std::optional<std::uint32_t> tick) {
+  std::vector<network::OutgoingDatagram> sent;
+  sendHeartbeats(roster, HeartbeatMoment{.now = now, .tick = tick},
+                 [&sent](network::OutgoingDatagram datagram) {
+                   sent.push_back(std::move(datagram));
+                 });
+  return sent;
+}
+
+void readEchoFrom(PlayerRoster& roster, const network::Endpoint& sender) {
+  readHeartbeat(
+      roster,
+      network::MessageOrigin{
+          .sender = sender, .header = {}, .receivedAt = ECHO_ARRIVAL},
+      network::Heartbeat{.sentAt = PLAYER_HEARTBEAT_SENT_AT,
+                         .echo = network::HeartbeatEcho{
+                             .sentAt = HEARTBEAT_SENDING_TIME_ON_THE_WIRE,
+                             .heldFor = HELD_BY_THE_CLIENT}});
 }
 
 }  // namespace rtype::server::testing

@@ -17,11 +17,11 @@ class SoundBuffer;
 
 namespace rtype::client {
 
-class AssetLibrary;
 class SettingsService;
+class SoundBank;
 
 /**
- * @brief Plays the sounds of the asset library on SOUND_VOICE_LIMIT voices at
+ * @brief Plays the sounds of a sound bank on SOUND_VOICE_LIMIT voices at
  * most, each at the EFFECTS volume of the player, nothing while MUTE ALL is
  * on. It keeps that volume, and the settings service tells it when it moves.
  *
@@ -35,15 +35,15 @@ class SettingsService;
 class SoundPlayer : public ISoundPlayer, public ISettingsListener {
  public:
   /**
-   * @param library Holds the sounds, loaded with the interface assets; it
+   * @param bank Holds the sounds, loaded when the sound module starts; it
    * must outlive the player.
    * @param settings Holds the volumes of the player; it must outlive the
    * player, and tell it through subscribe().
    */
-  SoundPlayer(const AssetLibrary& library, const SettingsService& settings);
+  SoundPlayer(const SoundBank& bank, const SettingsService& settings);
 
-  /** @throws AssetNotLoadedException for a sound not loaded: every id of
-   * ALL_SOUND_IDS is loaded at launch. */
+  /** @throws AssetNotLoadedException for a sound the bank does not hold:
+   * every id of ALL_SOUND_IDS is loaded when the sound module starts. */
   void play(std::string_view soundId) override;
 
   /** @brief Takes the volume of the sounds the settings now hold when
@@ -59,7 +59,7 @@ class SoundPlayer : public ISoundPlayer, public ISettingsListener {
    * @p buffer, created when it is new. */
   sf::Sound& voiceFor(const sf::SoundBuffer& buffer);
 
-  const AssetLibrary* library_;
+  const SoundBank* bank_;
   const SettingsService* settings_;
   float volume_;
   std::vector<sf::Sound> voices_;

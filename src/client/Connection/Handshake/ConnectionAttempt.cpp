@@ -3,9 +3,9 @@
 #include <string>
 #include <string_view>
 #include "AttemptProgress.hpp"
-#include "ConnectionConstants.hpp"
 #include "ConnectionRequest.hpp"
 #include "ISessionOutbox.hpp"
+#include "ProtocolConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -31,11 +31,11 @@ void ConnectionAttempt::answerChallenge(std::uint64_t cookie,
 AttemptProgress ConnectionAttempt::advance(engine::Duration elapsed,
                                            ISessionOutbox& outbox) {
   sinceBegin_ += elapsed;
-  if (sinceBegin_ >= CONNECTION_ATTEMPT_TIMEOUT) {
+  if (sinceBegin_ >= network::CONNECTION_ATTEMPT_TIMEOUT) {
     return AttemptProgress::TimedOut;
   }
   sinceRequest_ += elapsed;
-  if (sinceRequest_ >= CONNECTION_REQUEST_INTERVAL) {
+  if (sinceRequest_ >= network::CONNECTION_REQUEST_INTERVAL) {
     sendRequest(outbox);
   }
   return AttemptProgress::Waiting;

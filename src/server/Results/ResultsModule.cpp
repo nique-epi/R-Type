@@ -2,10 +2,11 @@
 #include <memory>
 #include <string>
 #include "ConnectedPlayer.hpp"
+#include "EventBus.hpp"
 #include "GameContext.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameResultKeeper.hpp"
-#include "IGameFlow.hpp"
+#include "GameStateChanged.hpp"
 #include "IResultsArchive.hpp"
 #include "InstallContext.hpp"
 #include "LeaderboardDesk.hpp"
@@ -23,19 +24,20 @@ std::string ResultsModule::name() const {
 void ResultsModule::install(GameContext& game,
                             engine::InstallContext& install) {
   game_ = &game;
-  flow_ = &install.require<IGameFlow>();
-  install.addWork(GAME_SIMULATION_STAGE,
-                  [this]([[maybe_unused]] engine::Duration elapsed) {
-                    keeper_->followState(flow_->state());
-                    desk_->onTick();
-                  });
+  install.addWork(
+      GAME_SIMULATION_STAGE,
+      [this]([[maybe_unused]] engine::Duration elapsed) { desk_->onTick(); });
 }
 
 void ResultsModule::start() {
   keeper_ = std::make_unique<GameResultKeeper>(game_->roster, archive_,
-                                               game_->settings.difficulty);
+                                               game_->settings);
   desk_ =
       std::make_unique<LeaderboardDesk>(game_->roster, archive_, game_->send);
+  stateSubscription_ = game_->events.get().subscribe<GameStateChanged>(
+      [this](const GameStateChanged& change) {
+        keeper_->onStateChanged(change);
+      });
   game_->hooks.get().closing.emplace_back(
       [this](const ConnectedPlayer& departed) {
         keeper_->onPlayerClosing(departed);
@@ -49,6 +51,7 @@ void ResultsModule::start() {
 }
 
 void ResultsModule::stop() {
+  static_cast<void>(game_->events.get().unsubscribe(stateSubscription_));
   desk_.reset();
   keeper_.reset();
 }

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
-#include <string_view>
 #include <vector>
 #include "ConfigurationRegistry.hpp"
 #include "EventBus.hpp"
@@ -10,17 +10,18 @@
 #include "GameSettings.hpp"
 #include "Games.hpp"
 #include "GamesSettings.hpp"
+#include "HostedGamesWatch.hpp"
 #include "IDatagramSender.hpp"
 #include "IModule.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IResultsArchive.hpp"
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
+#include "LatestHostedGames.hpp"
 #include "Logger.hpp"
 #include "SettingValue.hpp"
 #include "SystemClock.hpp"
 #include "TickDatagrams.hpp"
-#include "WavePlan.hpp"
 
 namespace rtype::server {
 
@@ -41,9 +42,13 @@ namespace rtype::server {
  * install() builds the empty list of games, declares the `seed`,
  * `state-rate` and `input-delay` settings and provides Games. start() reads the
  * waves file once, then creates the games with the values of the settings, each
- * subscribing its rules and its broadcaster to its own bus. A finished game
+ * subscribing its rules and its broadcaster to its own bus; the same values
+ * decide whether the games are vanilla (see vanillaBreaches()). A finished game
  * waits for players again, so the games are never replaced. stop() tells every
- * player the server shuts down (see FarewellSender).
+ * player the server shuts down (see FarewellSender). The module provides the
+ * list of its games as LatestHostedGames, published again at the end of each
+ * tick in which a player arrived or left or a game changed state (see
+ * HostedGamesWatch).
  */
 class ServerGamesModule final : public engine::IModule {
  public:
@@ -62,7 +67,9 @@ class ServerGamesModule final : public engine::IModule {
   /**
    * @brief Reads the waves file and creates the games. With a seed, game n
    * (from 0) starts from the seed plus n times GAME_SEED_STRIDE, so each game
-   * can be played again; without one, each game draws its own.
+   * can be played again; without one, each game draws its own. The journal
+   * says the difficulty the games play and whether they are vanilla, then one
+   * line per reason when they are not.
    * @throws ServerException (or a class derived from it) naming the file, the
    * line and the key when the file cannot be read, does not describe the
    * difficulties as the server expects them, or has no DEFAULT_DIFFICULTY.
@@ -73,8 +80,6 @@ class ServerGamesModule final : public engine::IModule {
   void stop() override;
 
  private:
-  /** @returns The waves of @p difficulty in the waves file. */
-  [[nodiscard]] WavePlan readWaves(std::string_view difficulty) const;
   [[nodiscard]] std::unique_ptr<GameInstance> createGame(
       engine::EventBus& events, GameSettings settings);
   void declareSettings(engine::ConfigurationRegistry& configuration);
@@ -87,6 +92,8 @@ class ServerGamesModule final : public engine::IModule {
   logging::Logger logger_;
   engine::SystemClock clock_;
   Games games_;
+  LatestHostedGames hostedGames_;
+  std::optional<HostedGamesWatch> watch_;
   IDatagramSender* sender_{nullptr};
   IPlayerAdmission* admission_{nullptr};
   IResultsArchive* results_{nullptr};

@@ -12,6 +12,7 @@ target_link_libraries(rtype_server_replication_announcements_milestones
     rtype_network_messages
     rtype_network_transport
     rtype_server_constants
+    rtype_server_instances_context_setup
     rtype_server_replication_wire
     rtype_server_sessions_roster
   PRIVATE

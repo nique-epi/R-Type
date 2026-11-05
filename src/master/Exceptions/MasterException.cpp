@@ -15,4 +15,7 @@ HttpPortUnavailableException::HttpPortUnavailableException(
                       ": another program holds the port, or the address is "
                       "not one of this machine") {}
 
+DatabaseClosedException::DatabaseClosedException()
+    : MasterException("the database of the master is not open") {}
+
 }  // namespace rtype::master

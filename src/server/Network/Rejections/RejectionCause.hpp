@@ -23,6 +23,16 @@ enum class RejectionCause : std::uint8_t {
   Stranger,
   /** @brief From the address of an admitted player, with another token. */
   WrongSessionToken,
+  /**
+   * @brief Over the rate limit of its sender, whether a player or an address
+   * and port among the connection requests.
+   */
+  OverRateLimit,
+  /** @brief The datagram that put its sender over the limit once too often,
+   * so that it is banned from now on. */
+  NewlyBanned,
+  /** @brief Sent during the ban of its sender. */
+  Banned,
   /** @brief Made the player queue discard its oldest datagram. */
   PlayerQueueFull,
   /** @brief Made the connection request queue discard its oldest datagram. */

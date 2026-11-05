@@ -1,0 +1,1 @@
+target_sources(server_replication_tests PRIVATE WorldStateSenderTest.cpp DeltaStateSenderTest.cpp DeltaConvergenceTest.cpp DeltaConvergenceFixture.cpp DeltaMeasurementTest.cpp DeltaStateSenderFixture.cpp WorldStateSenderFixture.cpp StateRateMeasurementTest.cpp StateRateMeasurementFixtures.cpp GameEventBroadcasterTest.cpp GameEventBroadcasterFixture.cpp)

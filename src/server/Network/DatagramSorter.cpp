@@ -1,5 +1,6 @@
 #include "DatagramSorter.hpp"
 #include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -8,6 +9,8 @@
 #include <string_view>
 #include <vector>
 #include "AdmittedPlayer.hpp"
+#include "AllowanceSpending.hpp"
+#include "AllowanceVerdict.hpp"
 #include "BoundedQueue.hpp"
 #include "DatagramCodec.hpp"
 #include "DatagramQueues.hpp"
@@ -18,11 +21,21 @@
 #include "NetworkConstants.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
+#include "RateLimitConstants.hpp"
 #include "RejectionCause.hpp"
 #include "RejectionLedger.hpp"
+#include "SenderAllowance.hpp"
 #include "ServerConstants.hpp"
+#include "SpokenDatagram.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::server {
+
+static_assert(
+    network::PLAYER_DATAGRAMS_PER_SECOND >
+        static_cast<std::int64_t>(engine::SIMULATION_TICKS_PER_SECOND),
+    "a player sends an input every simulation tick, and heartbeats "
+    "besides: its limit must be above the tick rate");
 
 namespace {
 
@@ -37,14 +50,49 @@ bool carriesSessionToken(const network::PacketHeader& header,
 }
 
 /**
- * @returns Whether @p queue discarded its oldest datagram to make room for the
- * copy of @p datagram.
+ * @returns A copy of @p datagram from @p sender, stamped with @p receivedAt,
+ * read on the clock of the sorter: the time it arrived, since the sorter runs
+ * in the handler of the socket.
  */
-bool pushCopy(concurrency::BoundedQueue<network::IncomingDatagram>& queue,
-              const network::Endpoint& sender,
-              std::span<const std::byte> datagram) {
-  return queue.push(network::IncomingDatagram{
-      .sender = sender, .payload = {datagram.begin(), datagram.end()}});
+network::IncomingDatagram copyOf(const network::Endpoint& sender,
+                                 std::span<const std::byte> datagram,
+                                 std::chrono::nanoseconds receivedAt) {
+  return network::IncomingDatagram{
+      .sender = sender,
+      .payload = {datagram.begin(), datagram.end()},
+      .receivedAt = receivedAt};
+}
+
+AdmittedPlayer freshPlayer(const network::Endpoint& player,
+                           std::uint64_t sessionToken) {
+  return AdmittedPlayer{.endpoint = player,
+                        .sessionToken = sessionToken,
+                        .allowance = network::SenderAllowance{}};
+}
+
+/** @brief Why a datagram is dropped for its allowance. */
+struct LimitDrop {
+  RejectionCause cause;
+  std::string_view reason;
+};
+
+/** @returns Why a datagram given @p verdict is dropped, or nothing when it
+ * goes through. */
+std::optional<LimitDrop> limitDropOf(network::AllowanceVerdict verdict) {
+  switch (verdict) {
+    case network::AllowanceVerdict::Allowed:
+      return std::nullopt;
+    case network::AllowanceVerdict::OverCap:
+      return LimitDrop{.cause = RejectionCause::OverRateLimit,
+                       .reason = OVER_RATE_LIMIT_DROP_REASON};
+    case network::AllowanceVerdict::NewlyBanned:
+      return LimitDrop{.cause = RejectionCause::NewlyBanned,
+                       .reason = NEWLY_BANNED_DROP_REASON};
+    case network::AllowanceVerdict::Banned:
+      return LimitDrop{.cause = RejectionCause::Banned,
+                       .reason = BANNED_DROP_REASON};
+  }
+  return std::nullopt;
 }
 
 }  // namespace
@@ -77,51 +125,91 @@ void DatagramSorter::sort(const network::Endpoint& sender,
     drop(sender, RejectionCause::MessageSizes, MESSAGE_SIZES_DROP_REASON);
     return;
   }
-  const bool holdsRequest = types->test(
-      static_cast<std::size_t>(network::MessageType::ConnectionRequest));
-  const AdmittedPlayer* const player = findAdmitted(sender);
+  sortSpoken(SpokenDatagram{
+      .sender = sender,
+      .header = header,
+      .holdsRequest = types->test(
+          static_cast<std::size_t>(network::MessageType::ConnectionRequest)),
+      .bytes = datagram});
+}
+
+void DatagramSorter::sortSpoken(const SpokenDatagram& datagram) {
+  const network::Endpoint& sender = datagram.sender.get();
+  AdmittedPlayer* const player = findAdmitted(sender);
   if (player != nullptr &&
-      !carriesSessionToken(header, player->sessionToken, holdsRequest)) {
+      !carriesSessionToken(datagram.header, player->sessionToken,
+                           datagram.holdsRequest)) {
     drop(sender, RejectionCause::WrongSessionToken, WRONG_TOKEN_DROP_REASON);
     return;
   }
-  if (holdsRequest) {
-    queueRequest(sender, datagram);
-  } else if (player != nullptr) {
-    queuePlayerDatagram(sender, datagram);
-  } else {
+  if (player == nullptr && !datagram.holdsRequest) {
     drop(sender, RejectionCause::Stranger, STRANGER_DROP_REASON);
+    return;
   }
+  const std::chrono::nanoseconds now = clock_->now();
+  if (!keptByLimit(spendAllowanceOf(datagram, player, now), sender)) {
+    return;
+  }
+  if (datagram.holdsRequest) {
+    queueRequest(sender, datagram.bytes, now);
+  } else {
+    queuePlayerDatagram(sender, datagram.bytes, now);
+  }
+}
+
+network::AllowanceVerdict DatagramSorter::spendAllowanceOf(
+    const SpokenDatagram& datagram, AdmittedPlayer* player,
+    std::chrono::nanoseconds now) {
+  if (player != nullptr && !datagram.holdsRequest) {
+    return network::spendAllowance(player->allowance,
+                                   network::PLAYER_RATE_LIMIT, now);
+  }
+  return requests_.spend(datagram.sender.get(), now);
 }
 
 void DatagramSorter::sortForeignHeader(const network::Endpoint& sender,
                                        const network::PacketHeader& header,
                                        std::span<const std::byte> datagram) {
-  if (isRefusedForItsVersion(sender, header, datagram.size())) {
-    queueRequest(sender, datagram);
+  if (!isRefusedForItsVersion(sender, header, datagram.size())) {
+    drop(sender, RejectionCause::ForeignHeader,
+         network::FOREIGN_HEADER_DROP_REASON);
     return;
   }
-  drop(sender, RejectionCause::ForeignHeader,
-       network::FOREIGN_HEADER_DROP_REASON);
+  const std::chrono::nanoseconds now = clock_->now();
+  if (keptByLimit(requests_.spend(sender, now), sender)) {
+    queueRequest(sender, datagram, now);
+  }
 }
 
 void DatagramSorter::queueRequest(const network::Endpoint& sender,
-                                  std::span<const std::byte> datagram) {
-  if (pushCopy(*destinations_.connectionRequests, sender, datagram)) {
+                                  std::span<const std::byte> datagram,
+                                  std::chrono::nanoseconds receivedAt) {
+  if (destinations_.connectionRequests->push(
+          copyOf(sender, datagram, receivedAt))) {
     rejections_->record(RejectionCause::RequestQueueFull, sender);
   }
 }
 
 void DatagramSorter::queuePlayerDatagram(const network::Endpoint& sender,
-                                         std::span<const std::byte> datagram) {
-  if (pushCopy(*destinations_.players, sender, datagram)) {
+                                         std::span<const std::byte> datagram,
+                                         std::chrono::nanoseconds receivedAt) {
+  if (destinations_.players->push(copyOf(sender, datagram, receivedAt))) {
     rejections_->record(RejectionCause::PlayerQueueFull, sender);
   }
 }
 
+bool DatagramSorter::keptByLimit(network::AllowanceVerdict verdict,
+                                 const network::Endpoint& sender) {
+  const std::optional<LimitDrop> limitDrop = limitDropOf(verdict);
+  if (limitDrop.has_value()) {
+    drop(sender, limitDrop->cause, limitDrop->reason);
+  }
+  return !limitDrop.has_value();
+}
+
 bool DatagramSorter::isRefusedForItsVersion(const network::Endpoint& sender,
                                             const network::PacketHeader& header,
-                                            std::size_t datagramSize) const {
+                                            std::size_t datagramSize) {
   return network::DatagramCodec::speaksAnotherVersion(header) &&
          findAdmitted(sender) == nullptr &&
          datagramSize >= network::CONNECTION_REFUSED_DATAGRAM_SIZE;
@@ -129,14 +217,14 @@ bool DatagramSorter::isRefusedForItsVersion(const network::Endpoint& sender,
 
 void DatagramSorter::admit(const network::Endpoint& player,
                            std::uint64_t sessionToken) {
-  const auto admitted =
-      std::ranges::find(admitted_, player, &AdmittedPlayer::endpoint);
-  if (admitted != admitted_.end()) {
-    admitted->sessionToken = sessionToken;
+  AdmittedPlayer* const admitted = findAdmitted(player);
+  if (admitted == nullptr) {
+    admitted_.push_back(freshPlayer(player, sessionToken));
     return;
   }
-  admitted_.push_back(
-      AdmittedPlayer{.endpoint = player, .sessionToken = sessionToken});
+  if (admitted->sessionToken != sessionToken) {
+    *admitted = freshPlayer(player, sessionToken);
+  }
 }
 
 bool DatagramSorter::forget(const network::Endpoint& player,
@@ -148,8 +236,7 @@ bool DatagramSorter::forget(const network::Endpoint& player,
                        }) > 0;
 }
 
-const AdmittedPlayer* DatagramSorter::findAdmitted(
-    const network::Endpoint& sender) const {
+AdmittedPlayer* DatagramSorter::findAdmitted(const network::Endpoint& sender) {
   const auto admitted =
       std::ranges::find(admitted_, sender, &AdmittedPlayer::endpoint);
   return admitted == admitted_.end() ? nullptr : &*admitted;

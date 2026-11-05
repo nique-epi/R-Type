@@ -10,8 +10,9 @@ namespace rtype::server {
  * first in each list; often nothing.
  */
 struct ReceivedDatagrams {
-  /** @brief The datagrams of the players admitted with admit(), each carrying
-   * the session token of its player. */
+  /** @brief The datagrams of the players admitted with
+   * ServerApplication::admit(), each carrying the session token of its
+   * player. */
   std::span<const network::IncomingDatagram> players;
   /** @brief The datagrams holding a ConnectionRequest, from strangers or from
    * players with their token or none: at most

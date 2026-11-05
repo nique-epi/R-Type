@@ -3,8 +3,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
+#include <optional>
 #include <vector>
 #include "ComponentRegistry.hpp"
+#include "DeltaWorldState.hpp"
 #include "Logger.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
@@ -12,6 +15,7 @@
 
 namespace rtype::server {
 
+struct ConnectedPlayer;
 class ConnectedPlayers;
 
 /**
@@ -21,11 +25,17 @@ class ConnectedPlayers;
  *
  * The state lists every connected player with the score the player earned,
  * then every entity that has a NetworkIdentity, a Position and an
- * EntityType, each under its network id. It is sent as several datagrams, with
- * the same tick, when the entities do not fit one. Each datagram starts with
- * the packet header of its player: its session token and its next sequence
- * (see nextSessionHeader), so each part of a state has a sequence of its own.
- * Nothing is built when no player is connected.
+ * EntityType, each under its network id. Each player gets it as a
+ * DeltaWorldState written against the newest state the player acknowledged
+ * (see SentStates), or in full, with no reference, when it acknowledged none
+ * within the last MAXIMUM_REFERENCE_DISTANCE ticks. It is sent as
+ * several datagrams, with the same tick, when it does not fit one. Each
+ * datagram starts with the packet header of its player: its session token and
+ * its next sequence (see nextSessionHeader), so each part of a state has a
+ * sequence of its own, which SentStates waits to see acknowledged. Nothing is
+ * built when no player is connected. A state that needs more than
+ * MAXIMUM_DELTA_PARTS datagrams is not sent to the player, and an error says
+ * so.
  *
  * An entity whose position is not a finite number, which only a game bug can
  * produce, is left out of the state instead of stopping the server; a warning
@@ -70,6 +80,15 @@ class WorldStateSender {
       std::uint32_t tick, engine::ComponentRegistry& components,
       std::size_t& leftOutCount);
   void reportLeftOut(std::size_t leftOutCount);
+  /** @brief Sends @p player the state as a delta against its acknowledged
+   * state, and keeps it, with @p entities, as the newest state sent to it. */
+  void sendTo(
+      ConnectedPlayer& player, const network::WorldState& state,
+      std::shared_ptr<const std::vector<network::EntityState>> entities);
+  /** @returns The payloads of @p delta; nothing, after logging an error, when
+   * it needs more datagrams than MAXIMUM_DELTA_PARTS. */
+  [[nodiscard]] std::optional<std::vector<std::vector<std::byte>>>
+  encodedPartsOf(const network::DeltaWorldState& delta);
   /** @returns Whether @p tick is one that carries a state: exactly
    * statesPerSecond_ of every SIMULATION_TICKS_PER_SECOND consecutive ticks
    * are, the first of them included. */

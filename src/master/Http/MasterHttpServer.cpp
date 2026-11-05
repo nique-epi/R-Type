@@ -1,22 +1,30 @@
 #include "MasterHttpServer.hpp"
 #include <httplib.h>
+#include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <exception>
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <thread>
 #include <utility>
 #include "ApiHandler.hpp"
+#include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
 #include "Endpoint.hpp"
 #include "FailureReport.hpp"
 #include "HttpConstants.hpp"
 #include "MasterConstants.hpp"
 #include "MasterException.hpp"
+#include "MasterHttpConstants.hpp"
+#include "MasterRoute.hpp"
+#include "MasterRoutePath.hpp"
 #include "NetworkConstants.hpp"
+#include "RouteMethod.hpp"
 
 // NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks,clang-analyzer-unix.BlockInCriticalSection)
 namespace rtype::master {
@@ -56,15 +64,18 @@ int boundPortOf(httplib::Server& server, const network::Endpoint& endpoint) {
 
 /**
  * @returns The problem document of RFC 9457 for an error of @p status:
- * `{"status":404,"title":"Not Found"}`. It names no type, so the type is
- * `about:blank`: the status says everything, and nothing tells the client why
- * a route failed.
+ * `{"status":404,"title":"Not Found"}`, with @p detail when the route gives
+ * one. It names no type, so the type is `about:blank`.
  */
-std::string problemDetailsText(int status) {
+std::string problemDetailsText(int status,
+                               const std::optional<std::string>& detail) {
   nlohmann::json problem;
-  problem[PROBLEM_STATUS_MEMBER] = status;
-  problem[PROBLEM_TITLE_MEMBER] = httplib::status_message(status);
-  return problem.dump();
+  problem[network::PROBLEM_STATUS_MEMBER] = status;
+  problem[network::PROBLEM_TITLE_MEMBER] = httplib::status_message(status);
+  if (detail.has_value()) {
+    problem[network::PROBLEM_DETAIL_MEMBER] = *detail;
+  }
+  return problem.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace);
 }
 
 /**
@@ -73,9 +84,63 @@ std::string problemDetailsText(int status) {
  */
 void writeProblemDocument(httplib::Response& response) {
   if (response.body.empty()) {
-    response.set_content(problemDetailsText(response.status),
-                         std::string{PROBLEM_CONTENT_TYPE});
+    response.set_content(problemDetailsText(response.status, std::nullopt),
+                         std::string{network::PROBLEM_CONTENT_TYPE});
   }
+}
+
+/**
+ * @returns The token after network::BEARER_SCHEME and its separator in @p
+ * authorization, the scheme read in any case, or nothing for another scheme or
+ * an empty token.
+ */
+std::optional<std::string> bearerTokenIn(std::string_view authorization) {
+  const std::string prefix = std::string{network::BEARER_SCHEME} +
+                             std::string{network::BEARER_SCHEME_SEPARATOR};
+  const bool hasPrefix =
+      authorization.size() > prefix.size() &&
+      std::ranges::equal(
+          authorization.substr(0, prefix.size()), prefix,
+          [](char letter, char expected) {
+            return std::tolower(static_cast<unsigned char>(letter)) ==
+                   std::tolower(static_cast<unsigned char>(expected));
+          });
+  if (!hasPrefix) {
+    return std::nullopt;
+  }
+  return std::string{authorization.substr(prefix.size())};
+}
+
+ApiRequest apiRequestOf(const httplib::Request& request) {
+  return ApiRequest{.body = request.body,
+                    .bearerToken = bearerTokenIn(request.get_header_value(
+                        std::string{network::AUTHORIZATION_HEADER})),
+                    .remoteAddress = request.remote_addr};
+}
+
+/**
+ * @brief Writes @p reply into @p response: its header, then its body, or the
+ * problem document of its status when it is an error with no body.
+ */
+void writeReply(ApiResponse reply, httplib::Response& response) {
+  response.status = reply.status;
+  if (reply.header.has_value()) {
+    response.set_header(reply.header->name, reply.header->value);
+  }
+  if (reply.status >= network::LOWEST_ERROR_STATUS && reply.body.empty()) {
+    response.set_content(problemDetailsText(reply.status, reply.detail),
+                         std::string{network::PROBLEM_CONTENT_TYPE});
+    return;
+  }
+  response.set_content(std::move(reply.body),
+                       std::string{network::JSON_CONTENT_TYPE});
+}
+
+httplib::Server::Handler handlerOf(ApiHandler route) {
+  return [answer = std::move(route)](const httplib::Request& request,
+                                     httplib::Response& response) {
+    writeReply(answer(apiRequestOf(request)), response);
+  };
 }
 
 /** @returns What @p error says, for the journal. */
@@ -110,16 +175,19 @@ MasterHttpServer::MasterHttpServer(FailureReport onFailure)
 
 MasterHttpServer::~MasterHttpServer() { server_->stop(); }
 
-void MasterHttpServer::addGet(std::string_view path, ApiHandler route) {
-  server_->Get(
-      std::string{API_PATH_PREFIX} + std::string{path},
-      [answer = std::move(route), contentType = std::string{JSON_CONTENT_TYPE}](
-          [[maybe_unused]] const httplib::Request& request,
-          httplib::Response& response) {
-        ApiResponse reply = answer();
-        response.status = reply.status;
-        response.set_content(std::move(reply.body), contentType);
-      });
+void MasterHttpServer::add(network::MasterRoute route, ApiHandler handler) {
+  const std::string path = network::apiPathOf(route);
+  switch (route.method) {
+    case network::RouteMethod::Get:
+      server_->Get(path, handlerOf(std::move(handler)));
+      return;
+    case network::RouteMethod::Post:
+      server_->Post(path, handlerOf(std::move(handler)));
+      return;
+    case network::RouteMethod::Put:
+      server_->Put(path, handlerOf(std::move(handler)));
+      return;
+  }
 }
 
 std::uint16_t MasterHttpServer::open(const network::Endpoint& endpoint) {

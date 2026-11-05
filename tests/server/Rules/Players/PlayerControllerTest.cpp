@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <array>
 #include "ConnectedPlayer.hpp"
+#include "DirectionConstants.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "Intent.hpp"
 #include "ManeuverKind.hpp"
@@ -13,7 +14,8 @@
 #include "ShipMotion.hpp"
 
 namespace rtype::server::testing {
-namespace {
+
+using game::FULL_STEERING;
 
 /**
  * Given a player with a ship that wants nothing
@@ -30,10 +32,8 @@ TEST_F(PlayerControllerFixture, TurnsAnInputIntoTheIntentOfTheShip) {
   const game::Intent* const intent =
       world().shipComponentOf<game::Intent>(player.shipEntityId);
   ASSERT_NE(intent, nullptr);
-  EXPECT_TRUE(intent->directions.up);
-  EXPECT_FALSE(intent->directions.down);
-  EXPECT_FALSE(intent->directions.left);
-  EXPECT_FALSE(intent->directions.right);
+  EXPECT_EQ(intent->direction.x, 0.0F);
+  EXPECT_EQ(intent->direction.y, -FULL_STEERING);
   EXPECT_TRUE(intent->shooting);
 }
 
@@ -54,7 +54,7 @@ TEST_F(PlayerControllerFixture, ReplacesTheIntentWithTheNewestInput) {
   const game::Intent* const intent =
       world().shipComponentOf<game::Intent>(player.shipEntityId);
   ASSERT_NE(intent, nullptr);
-  EXPECT_FALSE(intent->directions.up);
+  EXPECT_EQ(intent->direction.y, 0.0F);
 }
 
 /**
@@ -94,9 +94,9 @@ TEST_F(PlayerControllerFixture, SilencesTheShipOfAnAwayPlayerOnly) {
       world().shipComponentOf<game::Intent>(away.shipEntityId);
   ASSERT_NE(presentIntent, nullptr);
   ASSERT_NE(awayIntent, nullptr);
-  EXPECT_TRUE(presentIntent->directions.up);
+  EXPECT_EQ(presentIntent->direction.y, -FULL_STEERING);
   EXPECT_TRUE(presentIntent->shooting);
-  EXPECT_FALSE(awayIntent->directions.up);
+  EXPECT_EQ(awayIntent->direction.y, 0.0F);
   EXPECT_FALSE(awayIntent->shooting);
 }
 
@@ -113,6 +113,31 @@ TEST_F(PlayerControllerFixture, FirstInputOfANewShipStartsNoManeuver) {
       inputHolding(HOLDS_RIGHT, FIRST_PRESS_INPUT_NUMBER),
       inputHolding(HOLDS_NOTHING, RELEASE_INPUT_NUMBER),
       inputHolding(HOLDS_RIGHT, SECOND_PRESS_INPUT_NUMBER)};
+
+  for (const network::PlayerInput& input : inputs) {
+    noteTaps(world(), player, input);
+    steerShipByInput(world(), player, input);
+  }
+
+  const game::ShipMotion* const motion =
+      world().shipMotionOf(player.shipEntityId);
+  ASSERT_NE(motion, nullptr);
+  EXPECT_EQ(motion->maneuver, game::ManeuverKind::None);
+}
+
+/**
+ * Given a player who sent no input yet
+ * When two inputs within DOUBLE_TAP_INPUTS both hold left and right together
+ * Then no maneuver starts: a direction held through both inputs is pressed
+ * once
+ */
+TEST_F(PlayerControllerFixture,
+       HoldingBothSidesThroughTwoInputsStartsNoManeuver) {
+  const ConnectedPlayer& player =
+      addPlayerWithShip(FIRST_PLAYER, SESSION_TOKEN);
+  const std::array inputs = {
+      inputHolding(HOLDS_LEFT | HOLDS_RIGHT, FIRST_PRESS_INPUT_NUMBER),
+      inputHolding(HOLDS_LEFT | HOLDS_RIGHT, SECOND_PRESS_INPUT_NUMBER)};
 
   for (const network::PlayerInput& input : inputs) {
     noteTaps(world(), player, input);
@@ -176,5 +201,4 @@ TEST_F(PlayerControllerFixture, SecondPressOfASteeredShipStartsADash) {
   EXPECT_EQ(motion->maneuver, game::ManeuverKind::Dash);
 }
 
-}  // namespace
 }  // namespace rtype::server::testing

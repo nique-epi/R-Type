@@ -2,38 +2,33 @@
 
 #include <string>
 #include <vector>
-#include "DatagramRouter.hpp"
-#include "EntityMessageQueue.hpp"
-#include "GameLoadedReminder.hpp"
 #include "IModule.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
-#include "MessageDispatcher.hpp"
 #include "NetworkConditions.hpp"
-#include "NetworkThread.hpp"
-#include "ServerLeaderboard.hpp"
-#include "ServerSession.hpp"
-#include "WaitingRoom.hpp"
+#include "PlayerConnection.hpp"
 
 namespace rtype::client {
 
 /**
- * @brief The module of the connection to a server: the UDP socket on its
- * NetworkThread, a DatagramRouter in front of it, and the four parts the
- * screens and the game use, which it provides to the modules installed after
- * it: the ServerSession (the attempt and the session), the WaitingRoom, the
- * EntityMessageQueue and the ServerLeaderboard. It also provides the
- * network::TrafficCounters of the socket.
+ * @brief The module of the connection to a server: the PlayerConnection of the
+ * client, whose parts it provides to the modules installed after it: the
+ * ServerSession (the attempt and the session), the WaitingRoom, the
+ * EntityMessageQueue, the ServerLeaderboard, and IPlayerRoundTrips, the round
+ * trip of each player. It also provides the network::TrafficCounters of its
+ * socket.
  *
- * install() provides the four parts, over a socket still closed, and adds to
+ * install() provides those parts, over a socket still closed, and adds to
  * NETWORK_STAGE the work that reads what the server sent and sends what is
  * due. start() opens the socket on every IPv4 interface, on a port the
  * system picks, and starts the network thread. stop() leaves the session with
- * the server, if any: it returns once every copy of the Disconnection went
- * out, DISCONNECTION_COPY_INTERVAL apart, so the server frees the place of the
- * player at once; then it closes the socket. Over a simulated network, the
- * copies still in flight then never arrive (see NetworkThread::close()). A
- * failure while leaving is logged, never thrown.
+ * the server, if any (see PlayerConnection::leave()): it returns once every
+ * copy of the Disconnection went out, so the server frees the place of the
+ * player as soon as one copy reaches it; then it closes the socket. Over a
+ * simulated network, the copies still in flight then never arrive (see
+ * NetworkThread::close()), and the server frees the place once the player was
+ * silent for SESSION_SILENCE_LIMIT, counted in the ticks it runs, so longer
+ * when the server stalls. A failure while leaving is logged, never thrown.
  */
 class ClientConnectionModule final : public engine::IModule {
  public:
@@ -53,20 +48,7 @@ class ClientConnectionModule final : public engine::IModule {
   void stop() override;
 
  private:
-  /** @brief Leaves the session with the server, if any, and waits until the
-   * connection sent every copy of the Disconnection: after each wait of
-   * DISCONNECTION_COPY_INTERVAL, the connection moves by that interval and
-   * sends the next copy. */
-  void leaveServer();
-
-  NetworkThread network_;
-  DatagramRouter router_;
-  network::MessageDispatcher dispatcher_;
-  GameLoadedReminder gameLoaded_;
-  WaitingRoom waitingRoom_;
-  EntityMessageQueue entityMessages_;
-  ServerLeaderboard leaderboard_;
-  ServerSession session_;
+  PlayerConnection connection_;
   logging::Logger logger_;
 };
 

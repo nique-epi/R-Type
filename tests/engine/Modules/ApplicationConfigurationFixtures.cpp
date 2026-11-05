@@ -17,6 +17,7 @@ rtype::engine::ConfigurationStep runningLines(
   return [lines = std::move(lines), &journal,
           &refusals](rtype::engine::CommandInterpreter& interpreter) {
     journal.calls.emplace_back(CONFIGURE_STEP);
+    refusals.clear();
     for (const std::string& line : lines) {
       const rtype::engine::CommandResult result = interpreter.execute(line);
       if (!result.accepted) {

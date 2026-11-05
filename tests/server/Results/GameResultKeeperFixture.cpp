@@ -6,7 +6,9 @@
 #include "ConnectedPlayer.hpp"
 #include "GameResult.hpp"
 #include "GameResultKeeperTestConstants.hpp"
+#include "GameSettings.hpp"
 #include "GameState.hpp"
+#include "GameStateChanged.hpp"
 #include "RecordingResultsArchive.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -14,7 +16,10 @@
 namespace rtype::server::testing {
 
 GameResultKeeperFixture::GameResultKeeperFixture()
-    : keeper_(roster_, archive_, std::string{KEEPER_DIFFICULTY}) {}
+    : keeper_(roster_, archive_,
+              GameSettings{.waves = {},
+                           .difficulty = std::string{KEEPER_DIFFICULTY},
+                           .vanilla = true}) {}
 
 ConnectedPlayer& GameResultKeeperFixture::seat(std::size_t index) {
   return *roster_.add(playerEndpoint(index), std::string{NICKNAMES.at(index)},
@@ -29,16 +34,22 @@ void GameResultKeeperFixture::leave(std::size_t index) {
 }
 
 void GameResultKeeperFixture::startTheGame() {
-  keeper_.followState(GameState::Starting);
-  keeper_.followState(GameState::InProgress);
+  keeper_.onStateChanged(
+      GameStateChanged{.previous = GameState::WaitingForPlayers,
+                       .current = GameState::Starting});
+  keeper_.onStateChanged(GameStateChanged{.previous = GameState::Starting,
+                                          .current = GameState::InProgress});
 }
 
 void GameResultKeeperFixture::finishTheGame() {
-  keeper_.followState(GameState::Finished);
+  keeper_.onStateChanged(GameStateChanged{.previous = GameState::InProgress,
+                                          .current = GameState::Finished});
 }
 
 void GameResultKeeperFixture::waitForPlayersAgain() {
-  keeper_.followState(GameState::WaitingForPlayers);
+  keeper_.onStateChanged(
+      GameStateChanged{.previous = GameState::Finished,
+                       .current = GameState::WaitingForPlayers});
 }
 
 const RecordingResultsArchive& GameResultKeeperFixture::archive() const {

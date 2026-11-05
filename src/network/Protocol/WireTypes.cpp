@@ -68,13 +68,17 @@ bool readBool(ByteReader& reader) {
   return value == TRUE_WIRE_VALUE;
 }
 
-void writeCoordinate(ByteWriter& writer, float coordinate) {
+std::int16_t wireStepsOf(float coordinate) {
   if (std::isnan(coordinate)) {
     throw InvalidCoordinateException();
   }
   const float steps = std::round(coordinate * WIRE_COORDINATE_STEPS_PER_UNIT);
-  writer.writeInt16(static_cast<std::int16_t>(
-      std::clamp(steps, MINIMUM_WIRE_STEPS, MAXIMUM_WIRE_STEPS)));
+  return static_cast<std::int16_t>(
+      std::clamp(steps, MINIMUM_WIRE_STEPS, MAXIMUM_WIRE_STEPS));
+}
+
+void writeCoordinate(ByteWriter& writer, float coordinate) {
+  writer.writeInt16(wireStepsOf(coordinate));
 }
 
 float readCoordinate(ByteReader& reader) {
@@ -96,10 +100,13 @@ bool isValidUtf8(std::string_view text) {
   return true;
 }
 
+bool isPrintableUtf8(std::string_view text) {
+  return isValidUtf8(text) && std::ranges::none_of(text, isControlCharacter);
+}
+
 bool isValidNickname(std::string_view nickname) {
   return nickname.size() >= MINIMUM_NICKNAME_SIZE &&
-         nickname.size() <= MAXIMUM_NICKNAME_SIZE && isValidUtf8(nickname) &&
-         std::ranges::none_of(nickname, isControlCharacter);
+         nickname.size() <= MAXIMUM_NICKNAME_SIZE && isPrintableUtf8(nickname);
 }
 
 void requireValidNickname(std::string_view nickname) {

@@ -19,11 +19,11 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 2 guarantees
- * the messages no state message repeats, see the Guaranteed messages section
- * of the protocol page.
+ * @brief The version of the protocol this code speaks. Version 3 adds the
+ * outcome of a game to GameEnded, see the Version 3 section of the protocol
+ * page.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 2;
+constexpr std::uint8_t PROTOCOL_VERSION = 3;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -155,11 +155,33 @@ constexpr auto PLAYER_MOTION_BITS =
 constexpr std::uint32_t FIRST_INPUT_NUMBER = 1;
 
 /**
- * @brief The longest time either side of a session lets pass without sending
- * its peer anything: once it passed, a Heartbeat goes out, so the peer knows
- * the sender is still there. Provisional, see the protocol page.
+ * @brief PlayerInput a client sends per second during a game. The server
+ * derives the rate limit of a player from it. Provisional, see the protocol
+ * page.
  */
-constexpr std::chrono::seconds HEARTBEAT_INTERVAL{1};
+constexpr std::size_t PLAYER_INPUTS_PER_SECOND = 60;
+
+/**
+ * @brief Time between two ConnectionRequest of an attempt while the server
+ * has not answered. The server derives the rate limit of the requests from
+ * it. Provisional, see the protocol page.
+ */
+constexpr std::chrono::milliseconds CONNECTION_REQUEST_INTERVAL{500};
+
+/**
+ * @brief Time after the start of an attempt at which the client gives up,
+ * when the server has neither accepted nor refused it: it bounds the requests
+ * one attempt sends. Provisional, see the protocol page.
+ */
+constexpr std::chrono::seconds CONNECTION_ATTEMPT_TIMEOUT{5};
+
+/**
+ * @brief The time between two Heartbeats either side of a session sends its
+ * peer, whatever else it sends: every one tells the peer the sender is still
+ * there, and the peer echoes the newest one in its own, which measures the
+ * round trip (see RoundTripMeter). Provisional, see the protocol page.
+ */
+constexpr std::chrono::milliseconds HEARTBEAT_INTERVAL{500};
 
 /**
  * @brief The longest a side of a session waits for a datagram of its peer
@@ -325,11 +347,18 @@ constexpr std::string_view PLAYER_NUMBER_FIELD = "playerNumber";
 constexpr std::string_view ENTITY_ID_FIELD = "entityId";
 constexpr std::string_view ENTITY_TYPE_FIELD = "entityType";
 constexpr std::string_view REASON_FIELD = "reason";
+constexpr std::string_view OUTCOME_FIELD = "outcome";
 constexpr std::string_view KIND_FIELD = "kind";
 constexpr std::string_view ACTIONS_FIELD = "actions";
+constexpr std::string_view ECHO_SENT_AT_FIELD = "echo.sentAt";
+constexpr std::string_view ECHO_HELD_FOR_FIELD = "echo.heldFor";
+constexpr std::string_view TICK_FIELD = "tick";
 constexpr std::string_view MOTION_FIELD = "motion";
 constexpr std::string_view PLAYER_COUNT_FIELD = "playerCount";
 constexpr std::string_view RANK_FIELD = "rank";
+constexpr std::string_view PART_INDEX_FIELD = "partIndex";
+constexpr std::string_view PART_COUNT_FIELD = "partCount";
+constexpr std::string_view BASE_DISTANCE_FIELD = "baseDistance";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a
@@ -346,6 +375,47 @@ static_assert((WORLD_STATE_PAYLOAD_LIMIT - WORLD_STATE_FIXED_SIZE) /
                       ENTITY_STATE_WIRE_SIZE <=
                   std::numeric_limits<std::uint8_t>::max(),
               "entityCount is one byte: it must hold what a datagram fits");
+
+/**
+ * @brief The most ticks a DeltaWorldState reaches back to its reference: a
+ * server never builds a delta on a state older than this, and a receiver
+ * refuses a larger distance. 60 ticks are one second.
+ */
+constexpr std::uint8_t MAXIMUM_REFERENCE_DISTANCE = 60;
+
+/**
+ * @brief The baseDistance of a DeltaWorldState that has no reference: it lists
+ * every entity, and a receiver needs no earlier state to read it.
+ */
+constexpr std::uint8_t NO_REFERENCE_DISTANCE = 0;
+
+/**
+ * @brief The most datagrams one DeltaWorldState is split into. A receiver
+ * keeps the parts of a tick until the next tick comes, so this bounds what it
+ * holds.
+ */
+constexpr std::uint8_t MAXIMUM_DELTA_PARTS = 16;
+
+/**
+ * @brief Bytes of a removed entity in a DeltaWorldState: its id.
+ */
+constexpr std::size_t REMOVED_ENTITY_WIRE_SIZE = UINT32_WIRE_SIZE;
+
+/**
+ * @brief Bytes of a DeltaWorldState that do not depend on its players,
+ * changed and removed entities: tick, baseDistance, partIndex, partCount,
+ * playerCount, changedCount and removedCount.
+ */
+constexpr std::size_t DELTA_WORLD_STATE_FIXED_SIZE =
+    UINT32_WIRE_SIZE + UINT8_WIRE_SIZE + UINT8_WIRE_SIZE + UINT8_WIRE_SIZE +
+    UINT8_WIRE_SIZE + UINT8_WIRE_SIZE + UINT8_WIRE_SIZE;
+
+/**
+ * @brief The most changed or removed entities one DeltaWorldState holds: each
+ * count is one byte.
+ */
+constexpr std::size_t MAXIMUM_ENTITIES_PER_DELTA_LIST =
+    std::numeric_limits<std::uint8_t>::max();
 
 /**
  * @brief The smallest and the largest value of an entity type on the wire.

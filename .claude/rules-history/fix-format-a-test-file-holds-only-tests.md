@@ -24,3 +24,40 @@ See the rule file of the same name in `.claude/rules/code-style/`: a test `.cpp`
 
 - ❌ **Before (wrong)**: `CameraShakeTest.cpp` with eight constants, `struct ShakeOverASecond` and `shakeKeeping()` in an anonymous namespace.
 - ✅ **After (right)**: `CameraShakeTestConstants.hpp` and `CameraShakeFixtures.{hpp,cpp}` next to the test, `CameraShakeFixtures.cpp` listed in the sources of `client_effect_tests`, and the test file holding its tests only.
+
+## Update (2026-11-03) — A helper taken out of an anonymous namespace collides with a shared helper
+
+### Context
+
+The fixtures of `ConnectionAcceptorTest.cpp` were moved into files of their own under this rule, while the server was made to survive the exceptions of its handlers.
+
+### Mistake
+
+`playerEndpoint`, `messageTypeOf` and `messageOf`, local to the anonymous namespace of the test, went into `ConnectionAcceptorFixtures.{hpp,cpp}` in `rtype::server::testing`. `tests/server/SentDatagrams.{hpp,cpp}`, in the `server_test_datagrams` library the lobby tests link, already defined `playerEndpoint(std::size_t)` in that namespace, with the same body, and `onlyMessageTypeOf` and `onlyMessageIn` for the other two. The build and the 3002 tests passed: no lobby test used another function of `SentDatagrams.o`, so the linker never pulled in the second definition. A reuse review found it.
+
+### Root cause
+
+The rule said where helpers go, never that leaving the anonymous namespace changes their linkage, so nothing asked to search the namespace they land in.
+
+### Rule
+
+See the subsection "A helper taken out of an anonymous namespace is searched for in its new namespace".
+
+## Update (2026-11-05) — The fixtures of the tool tests in a `Fixtures/` folder
+
+### Context
+
+The load-test bots and the malformed datagram tool were split into one sub-folder per role (`LoadTestBots/Launch/`, `Play/`, `Squad/`; `MalformedDatagrams/Builder/`, `Flood/`, `Launch/`), each holding the classes of the tool, their tests, the test constants and the fixtures side by side.
+
+### Decision
+
+A review of that pull request asked for the fixtures to sit in a dedicated fixtures folder. I first kept them next to their tests, citing point 3 and the map. The user decided to move them: the fixtures of `Play/` and `Builder/` went into a `Fixtures/` folder of each. The scope is `tests/tools/` only; the rest of `tests/` keeps its fixtures next to their test.
+
+### Why no library
+
+A static library of fixtures in `Fixtures/` would link the library of its parent (`BotInputSenderFixture` holds a `BotInputSender`), while the module rule lets a parent link its sub-folder and never the other way round. `target_sources` from `Fixtures/CMakeLists.txt` gives the fixtures to the test target of the parent instead, so the parent lists none of their `.cpp`.
+
+### Rule
+
+See the subsection "In `tests/tools/`, the fixtures of a folder go in its `Fixtures/` sub-folder".
+

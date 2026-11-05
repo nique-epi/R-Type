@@ -1,0 +1,1 @@
+target_sources(client_null_audio_tests PRIVATE NullSoundPlayerTest.cpp)

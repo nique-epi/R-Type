@@ -19,8 +19,8 @@ namespace rtype::client {
  * datagram carries the token of the session, 0 before it, the next
  * sequence, which starts at 0 with each attempt and counts every datagram, and
  * the acknowledgement of the datagrams of the server accepted in the session
- * (see SessionAcknowledgements). Each one also starts the delay before the
- * next Heartbeat over, and ends the wait of an acknowledgement.
+ * (see SessionAcknowledgements). Each one also ends the wait of an
+ * acknowledgement.
  *
  * It can be copied: the copy goes on numbering from where the original stood,
  * which is how the copies of a Disconnection leave under the token and the
@@ -47,21 +47,17 @@ class SessionOutbox final : public ISessionOutbox {
   void sendToServer(network::MessageType type,
                     std::span<const std::byte> payload) override;
 
-  /** @brief Counts @p elapsed since the last datagram sent, and of the wait
-   * of an acknowledgement. */
+  /** @brief Counts @p elapsed of the wait of an acknowledgement. */
   void advance(engine::Duration elapsed);
 
-  /** @brief Sends a Heartbeat once HEARTBEAT_INTERVAL passed since the last
-   * datagram to the server, or once the acknowledgement of guaranteed messages
-   * waited ACKNOWLEDGEMENT_DELAY. */
-  void sendHeartbeatWhenSilent();
+  [[nodiscard]] bool isAcknowledgementDue() const override;
 
   [[nodiscard]] const network::Endpoint& server() const;
 
  private:
   /** @returns A header carrying the token of the session, the next
    * sequence, which it uses up, and the acknowledgement of the datagrams
-   * accepted; the delay before the next Heartbeat starts again from it. */
+   * accepted. */
   [[nodiscard]] network::PacketHeader nextHeader();
 
   IDatagramLink* link_;
@@ -69,7 +65,6 @@ class SessionOutbox final : public ISessionOutbox {
   network::Endpoint server_;
   std::uint64_t sessionToken_{network::NO_SESSION_TOKEN};
   std::uint16_t nextSequence_{0};
-  engine::Duration sinceSent_{};
 };
 
 }  // namespace rtype::client

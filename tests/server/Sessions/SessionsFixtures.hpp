@@ -6,9 +6,12 @@
 #include <optional>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "Endpoint.hpp"
 #include "MessageOrigin.hpp"
+#include "OutgoingDatagram.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::server::testing {
 
@@ -29,6 +32,10 @@ namespace rtype::server::testing {
  */
 ConnectedPlayer& addPlayer(PlayerRoster& roster, std::size_t index = 0);
 
+/** @brief Connects the players at indexes 0 to @p count - 1 to @p roster, as
+ * addPlayer() does. */
+void addPlayers(PlayerRoster& roster, std::size_t count);
+
 /** @brief What an InputKeeper showed the game: an input, and the input number
  * the player kept when it was shown. */
 struct ShownInput {
@@ -46,5 +53,20 @@ void ignoreInput(const ConnectedPlayer& player,
 [[nodiscard]] std::function<void(const ConnectedPlayer&,
                                  const network::PlayerInput&)>
 recorderOf(std::vector<ShownInput>& shown);
+
+/** @returns The datagrams sendHeartbeats() sends the players of @p roster at
+ * @p now, in order, with @p tick as the tick of the game: none by default, as
+ * while no game runs. */
+[[nodiscard]] std::vector<network::OutgoingDatagram> heartbeatsSentAt(
+    PlayerRoster& roster, engine::Duration now,
+    std::optional<std::uint32_t> tick = std::nullopt);
+
+/**
+ * @brief Hands @p roster a Heartbeat from @p sender that echoes the Heartbeat
+ * the server sent at HEARTBEAT_SENDING_TIME, held HELD_BY_THE_CLIENT, in a
+ * datagram that arrived at ECHO_ARRIVAL: a round trip of
+ * MEASURED_PLAYER_ROUND_TRIP.
+ */
+void readEchoFrom(PlayerRoster& roster, const network::Endpoint& sender);
 
 }  // namespace rtype::server::testing

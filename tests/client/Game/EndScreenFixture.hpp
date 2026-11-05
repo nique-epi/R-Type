@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 #include "EndScreen.hpp"
+#include "GameEnded.hpp"
 #include "GameResult.hpp"
 #include "MotionPreference.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -20,6 +21,9 @@
 class EndScreenFixture : public ::testing::Test {
  protected:
   EndScreenFixture();
+
+  /** @brief An end screen after a game that ended with @p outcome. */
+  explicit EndScreenFixture(rtype::network::WireGameOutcome outcome);
 
   /** @brief Builds the screen again, with this motion preference. */
   void rebuildWith(rtype::client::MotionPreference motion);
@@ -45,4 +49,10 @@ class EndScreenFixture : public ::testing::Test {
   rtype::client::GameResult result_;
   std::optional<std::size_t> previousTaunt_;
   std::unique_ptr<rtype::client::EndScreen> screen_;
+};
+
+/** @brief An end screen after a game the squadron won. */
+class EndScreenVictoryFixture : public EndScreenFixture {
+ protected:
+  EndScreenVictoryFixture();
 };

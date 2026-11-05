@@ -99,7 +99,6 @@ void ServerSession::update(engine::Duration elapsed) {
     }
     outbox_.advance(elapsed);
     observers_.held(elapsed);
-    outbox_.sendHeartbeatWhenSilent();
   } else if (status_.phase == ConnectionPhase::Connecting &&
              attempt_.advance(elapsed, outbox_) == AttemptProgress::TimedOut) {
     giveUp(ConnectionPhase::Unreachable);
@@ -124,9 +123,10 @@ void ServerSession::readReceived() {
   for (const network::IncomingDatagram& datagram : inbound_.drain()) {
     const Reception reception = inbound_.receive(datagram);
     if (reception.kind == ReceptionKind::Read) {
-      dispatcher_->dispatch(
-          {.sender = datagram.sender, .header = reception.header},
-          reception.messages);
+      dispatcher_->dispatch({.sender = datagram.sender,
+                             .header = reception.header,
+                             .receivedAt = datagram.receivedAt},
+                            reception.messages);
     } else if (reception.kind == ReceptionKind::AnotherVersion &&
                status_.phase == ConnectionPhase::Connecting) {
       status_ = refusedForVersion(logger_, reception.header.version);
@@ -142,9 +142,9 @@ void ServerSession::giveUp(ConnectionPhase ending) {
                  outbox_.server().port);
     return;
   }
-  const std::chrono::seconds silence = ending == ConnectionPhase::Lost
-                                           ? network::SESSION_SILENCE_LIMIT
-                                           : CONNECTION_ATTEMPT_TIMEOUT;
+  const std::chrono::seconds silence =
+      ending == ConnectionPhase::Lost ? network::SESSION_SILENCE_LIMIT
+                                      : network::CONNECTION_ATTEMPT_TIMEOUT;
   logger_.warn("no answer from ", outbox_.server().address, " port ",
                outbox_.server().port, " for ", silence.count(), " s");
 }

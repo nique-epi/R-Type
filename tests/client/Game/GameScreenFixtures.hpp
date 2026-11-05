@@ -18,4 +18,6 @@ rtype::network::WorldState stateScoringTheFirstPilot(std::uint32_t tick);
 
 /** @returns The end of a game of the three pilots of seatThreePilots(), with
  * the scores FIRST_PILOT_FINAL, SECOND_PILOT_FINAL and THIRD_PILOT_FINAL. */
-[[nodiscard]] rtype::network::GameEnded endOfThreePilots();
+[[nodiscard]] rtype::network::GameEnded endOfThreePilots(
+    rtype::network::WireGameOutcome outcome =
+        rtype::network::WireGameOutcome::Defeat);

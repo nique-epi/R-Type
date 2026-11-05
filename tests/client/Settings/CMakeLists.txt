@@ -1,0 +1,5 @@
+rtype_add_test(NAME client_settings_tests SOURCES SettingsServiceTest.cpp SettingsServiceFixture.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingSettingsStorage.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingSettingsListener.cpp LIBS rtype_client_settings_module rtype_test_support)
+target_include_directories(client_settings_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/doubles)
+target_sources(client_module_tests PRIVATE ClientSettingsModuleTest.cpp)
+
+add_subdirectory(Storage)

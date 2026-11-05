@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
+#include "GameOutcome.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
@@ -40,10 +41,10 @@ class IGameReplication {
   virtual void onWaitingTick() = 0;
 
   /**
-   * @brief Notes that the game ended by itself: the players are told the
-   * result from the next onFinishedTick().
+   * @brief Notes that the game ended by itself with @p outcome: the players
+   * are told the result from the next onFinishedTick().
    */
-  virtual void onGameFinished() = 0;
+  virtual void onGameFinished(GameOutcome outcome) = 0;
 
   /**
    * @brief Tells the players the result of the game, on a tick after its end.

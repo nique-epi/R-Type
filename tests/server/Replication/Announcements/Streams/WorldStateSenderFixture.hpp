@@ -89,8 +89,9 @@ class WorldStateSenderFixture : public ::testing::Test {
   void restartWithStatesPerSecond(std::size_t statesPerSecond);
 
   /**
-   * @returns The WorldState the datagram handed over at @p sentIndex holds
-   * after its header.
+   * @returns The part of a state the datagram handed over at @p sentIndex
+   * holds after its header, a DeltaWorldState without reference, as a
+   * WorldState; the test fails when it has a reference.
    */
   [[nodiscard]] network::WorldState decodedState(std::size_t sentIndex) const;
 

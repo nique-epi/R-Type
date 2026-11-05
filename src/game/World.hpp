@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include "BehaviourRegistry.hpp"
 #include "BydoKind.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
@@ -25,7 +26,7 @@ namespace rtype::game {
  */
 class World {
  public:
-  World() = default;
+  World();
   World(const World&) = delete;
   World& operator=(const World&) = delete;
   World(World&&) = delete;
@@ -60,8 +61,9 @@ class World {
    * a CollisionBox of BYDO_WIDTH by BYDO_HEIGHT, an Intent that wants nothing
    * until a controller writes it, and a Gun that fires a missile of an enemy
    * every ENEMY_SHOT_INTERVAL_TICKS ticks, the first one after a whole
-   * interval. It moves left at BYDO_SPEED, and follows the pattern of its kind
-   * around the row it appeared on: MovementSystem and PatternSystem move it.
+   * interval. Its Pilot holds the behaviour of its kind, which steers it from
+   * the place it appeared at, and its SteadyMotion moves it at BYDO_SPEED:
+   * PilotSystem and MovementSystem move it.
    * @returns The network id the Bydo was given, never NO_ENTITY_ID.
    * @throws NetworkIdExhaustedException when every network id was given.
    */
@@ -129,6 +131,7 @@ class World {
   engine::ComponentRegistry components_{registry_};
   engine::NetworkIdAllocator networkIds_;
   engine::NetworkEntityTable shipByNetworkId_;
+  BehaviourRegistry behaviours_;
 };
 
 }  // namespace rtype::game

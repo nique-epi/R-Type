@@ -1,0 +1,6 @@
+add_subdirectory(Handshake)
+add_subdirectory(Master)
+add_subdirectory(Protocol)
+add_subdirectory(Reliability)
+add_subdirectory(Statistics)
+add_subdirectory(Transport)

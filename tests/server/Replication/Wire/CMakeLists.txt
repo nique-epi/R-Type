@@ -1,0 +1,1 @@
+target_sources(server_replication_tests PRIVATE GameEventEncoderTest.cpp)
