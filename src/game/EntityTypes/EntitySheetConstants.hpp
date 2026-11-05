@@ -13,19 +13,6 @@ namespace rtype::game {
 /** @brief The folder of the assets that holds one sheet per entity type. */
 constexpr std::string_view ENTITY_SHEET_FOLDER_IN_ASSETS = "entities";
 
-/**
- * @brief The most sheets a program loads, and the longest name a type may
- * have, in bytes. The table of the types travels in one datagram, whose size
- * the protocol page bounds with these two numbers.
- */
-constexpr std::size_t MAXIMUM_ENTITY_TYPES = 32;
-constexpr std::size_t MAXIMUM_ENTITY_TYPE_NAME_LENGTH = 24;
-
-/** @brief The bytes a type name is made of: lowercase letters, digits and
- * underscores, so the name of a file is the same on every system. */
-constexpr std::string_view ENTITY_TYPE_NAME_CHARACTERS =
-    "abcdefghijklmnopqrstuvwxyz0123456789_";
-
 /** @brief The two tables of a sheet: the server reads the first, the client
  * the second. Nothing else may stand at the root. */
 constexpr std::string_view GAMEPLAY_KEY = "gameplay";

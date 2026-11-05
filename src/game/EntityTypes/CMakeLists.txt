@@ -11,6 +11,7 @@ target_link_libraries(rtype_game_entity_types
     rtype_game_exceptions
   PRIVATE
     rtype_engine_paths
+    rtype_identifiers
     rtype_game_ship_control_constants
 )
 

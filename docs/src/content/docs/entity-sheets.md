@@ -12,7 +12,7 @@ Both programs read the folder `entities` (`ENTITY_SHEET_FOLDER_IN_ASSETS`) of th
 ## The folder and the names
 
 - Every `.toml` file of the folder is a sheet; any other file, and every sub-folder, is left alone. The name of the file without `.toml` is the name of the type: `weaver.toml` is `weaver`.
-- A name is 1 to 24 bytes (`MAXIMUM_ENTITY_TYPE_NAME_LENGTH`) of lowercase letters `a` to `z`, digits and `_`, so a file has the same name on every system. A folder holds at most 32 sheets (`MAXIMUM_ENTITY_TYPES`) and at least one.
+- A name is 1 to 24 bytes (`MAXIMUM_ENTITY_TYPE_NAME_LENGTH`) of lowercase letters `a` to `z`, digits and `_`, so a file has the same name on every system. A folder holds at most 32 sheets (`MAXIMUM_ENTITY_TYPES`) and at least one. Both limits and the check of a name (`isEntityTypeName()`) live in `src/identifiers/`, so a name the game accepts is one the table of the types can carry.
 - The server numbers the sheets from 1 in the order of their names. The five sheets the game ships are `drifter` (1), `enemy_missile` (2), `player_missile` (3), `ship` (4) and `weaver` (5). These numbers name the types on the wire for as long as the server runs, and every player learns them when it is accepted (see [Protocol](/R-Type/protocol/#entity-types)), so a new sheet whose name sorts first renumbers the others without breaking anything.
 - The server makes the ship of every player from the sheet named `ship` (`SHIP_SHEET_NAME`, `src/server/ServerConstants.hpp`): without it, it stops before its first game.
 

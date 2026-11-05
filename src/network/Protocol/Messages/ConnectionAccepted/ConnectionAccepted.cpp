@@ -1,5 +1,4 @@
 #include "ConnectionAccepted.hpp"
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -8,7 +7,9 @@
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
 #include "EntitySide.hpp"
+#include "EntityTypeConstants.hpp"
 #include "EntityTypeEntry.hpp"
+#include "EntityTypeName.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
 #include "WireTypes.hpp"
@@ -17,19 +18,10 @@ namespace rtype::network {
 
 namespace {
 
-/** @returns Whether @p character may be part of the name of a type: a
- * lowercase letter of the ASCII alphabet, a digit or an underscore. */
-bool isTypeNameCharacter(char character) {
-  return (character >= 'a' && character <= 'z') ||
-         (character >= '0' && character <= '9') || character == '_';
-}
-
 /** @throws InvalidTypeNameException when @p name is not the name of a type,
  * see encodePayload(). */
 void requireValidTypeName(std::string_view name) {
-  if (name.size() < MINIMUM_ENTITY_TYPE_NAME_LENGTH ||
-      name.size() > MAXIMUM_ENTITY_TYPE_NAME_LENGTH ||
-      !std::ranges::all_of(name, isTypeNameCharacter)) {
+  if (!identifiers::isEntityTypeName(name)) {
     throw InvalidTypeNameException(name.size());
   }
 }
@@ -47,7 +39,7 @@ void requireValidSide(EntitySide side) {
 /** @throws InvalidFieldValueException naming typeCount when @p count is 0 or
  * above MAXIMUM_ENTITY_TYPES. */
 void requireValidTypeCount(std::size_t count) {
-  if (count == 0 || count > MAXIMUM_ENTITY_TYPES) {
+  if (count == 0 || count > identifiers::MAXIMUM_ENTITY_TYPES) {
     throw InvalidFieldValueException(TYPE_COUNT_FIELD, count);
   }
 }

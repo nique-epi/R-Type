@@ -6,6 +6,7 @@
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
 #include "EntityIdConstants.hpp"
+#include "EntityTypeConstants.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
 #include "WireTypes.hpp"
@@ -18,7 +19,7 @@ void validate(const EntitySpawned& message) {
   if (message.entityId == identifiers::NO_ENTITY_ID) {
     throw InvalidFieldValueException(ENTITY_ID_FIELD, message.entityId);
   }
-  if (message.entityType == NO_ENTITY_TYPE) {
+  if (message.entityType == identifiers::NO_ENTITY_TYPE) {
     throw InvalidFieldValueException(ENTITY_TYPE_FIELD, message.entityType);
   }
   if (std::isnan(message.x) || std::isnan(message.y)) {

@@ -2,17 +2,17 @@
 #include <gtest/gtest.h>
 #include <string>
 #include "EntitySide.hpp"
+#include "EntityTypeConstants.hpp"
 #include "EntityTypeEntry.hpp"
-#include "ProtocolConstants.hpp"
 #include "SessionEntityTypes.hpp"
 #include "SessionEntityTypesFixtures.hpp"
 #include "SessionEntityTypesTestConstants.hpp"
 
 namespace rtype::client {
 
+using identifiers::NO_ENTITY_TYPE;
 using network::EntitySide;
 using network::EntityTypeEntry;
-using network::NO_ENTITY_TYPE;
 using testing::DRAWN_SHIP_NAME;
 using testing::drawnTypes;
 using ::testing::ElementsAre;

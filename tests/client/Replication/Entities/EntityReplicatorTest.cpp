@@ -10,10 +10,10 @@
 #include "EntityReplicatorFixtures.hpp"
 #include "EntityReplicatorTestConstants.hpp"
 #include "EntityType.hpp"
+#include "EntityTypeConstants.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
 #include "LastListedTicksTestConstants.hpp"
 #include "PilotTestConstants.hpp"
-#include "ProtocolConstants.hpp"
 #include "SoundConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateFilterTestConstants.hpp"
@@ -88,7 +88,7 @@ using rtype::client::testing::UNANNOUNCED_ID;
 using rtype::client::testing::WEAVER_TYPE_NUMBER;
 using rtype::game::EntityType;
 using rtype::identifiers::NO_ENTITY_ID;
-using rtype::network::NO_ENTITY_TYPE;
+using rtype::identifiers::NO_ENTITY_TYPE;
 using rtype::network::WorldState;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;

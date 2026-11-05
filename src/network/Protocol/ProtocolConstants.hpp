@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <limits>
 #include <string_view>
+#include "EntityTypeConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "SerializationConstants.hpp"
 
@@ -154,22 +155,8 @@ constexpr auto PLAYER_MOTION_BITS =
  */
 constexpr std::uint32_t FIRST_INPUT_NUMBER = 1;
 
-/**
- * @brief The type number no entity type has: a type is numbered from 1 by its
- * place in the table of ConnectionAccepted, so 0 never names one.
- */
-constexpr std::uint8_t NO_ENTITY_TYPE = 0;
-
-/**
- * @brief The most entity types ConnectionAccepted lists, and the sizes the
- * name of one may have, in bytes of lowercase letters, digits and
- * underscores.
- */
-constexpr std::size_t MAXIMUM_ENTITY_TYPES = 32;
-constexpr std::size_t MINIMUM_ENTITY_TYPE_NAME_LENGTH = 1;
-constexpr std::size_t MAXIMUM_ENTITY_TYPE_NAME_LENGTH = 24;
-
-static_assert(MAXIMUM_ENTITY_TYPES <= std::numeric_limits<std::uint8_t>::max(),
+static_assert(identifiers::MAXIMUM_ENTITY_TYPES <=
+                  std::numeric_limits<std::uint8_t>::max(),
               "typeCount is one byte, and so is the number of a type");
 
 /**
@@ -317,8 +304,9 @@ static_assert(LARGEST_UNPROVEN_ANSWER_DATAGRAM_SIZE <=
 constexpr std::size_t LARGEST_CONNECTION_ACCEPTED_DATAGRAM_SIZE =
     PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT8_WIRE_SIZE +
     UINT8_WIRE_SIZE +
-    (MAXIMUM_ENTITY_TYPES * (UINT8_WIRE_SIZE + SHORT_STRING_PREFIX_SIZE +
-                             MAXIMUM_ENTITY_TYPE_NAME_LENGTH));
+    (identifiers::MAXIMUM_ENTITY_TYPES *
+     (UINT8_WIRE_SIZE + SHORT_STRING_PREFIX_SIZE +
+      identifiers::MAXIMUM_ENTITY_TYPE_NAME_LENGTH));
 
 static_assert(LARGEST_CONNECTION_ACCEPTED_DATAGRAM_SIZE <= MAX_DATAGRAM_SIZE,
               "a ConnectionAccepted always fits in one datagram");

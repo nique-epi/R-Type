@@ -15,6 +15,7 @@
 #include "EntitySheetConstants.hpp"
 #include "EntitySheetReader.hpp"
 #include "EntityType.hpp"
+#include "EntityTypeConstants.hpp"
 #include "GameException.hpp"
 #include "GunSheet.hpp"
 #include "SheetText.hpp"
@@ -137,7 +138,7 @@ const EntitySheet& EntitySheets::named(std::string_view name) const {
 }
 
 const EntitySheet* EntitySheets::numbered(std::uint8_t number) const {
-  if (number == 0 || number > sheets_.size()) {
+  if (number == identifiers::NO_ENTITY_TYPE || number > sheets_.size()) {
     return nullptr;
   }
   return &sheets_[static_cast<std::size_t>(number) - 1];

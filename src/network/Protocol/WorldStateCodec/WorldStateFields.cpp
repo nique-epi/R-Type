@@ -6,6 +6,7 @@
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
 #include "EntityIdConstants.hpp"
+#include "EntityTypeConstants.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
 #include "WireTypes.hpp"
@@ -34,7 +35,7 @@ std::optional<EntityState> readEntity(ByteReader& reader) {
   if (entityId == identifiers::NO_ENTITY_ID) {
     throw InvalidFieldValueException(ENTITY_ID_FIELD, entityId);
   }
-  if (type == NO_ENTITY_TYPE) {
+  if (type == identifiers::NO_ENTITY_TYPE) {
     return std::nullopt;
   }
   return EntityState{
