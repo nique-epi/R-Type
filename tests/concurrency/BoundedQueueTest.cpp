@@ -4,61 +4,16 @@
 #include <memory>
 #include <stop_token>
 #include <thread>
-#include <utility>
 #include <vector>
 #include "BoundedQueue.hpp"
+#include "BoundedQueueFixtures.hpp"
 #include "BoundedQueueTestConstants.hpp"
 #include "ConcurrencyException.hpp"
+#include "MessageWithThrowingMove.hpp"
 
 using rtype::concurrency::BoundedQueue;
 using rtype::concurrency::InvalidQueueCapacityException;
 using rtype::concurrency::QueueableMessage;
-
-namespace {
-
-std::vector<int> numbered(int first, std::size_t count) {
-  std::vector<int> messages;
-  messages.reserve(count);
-  for (std::size_t offset = 0; offset < count; ++offset) {
-    messages.push_back(first + static_cast<int>(offset));
-  }
-  return messages;
-}
-
-void pushAll(BoundedQueue<int>& queue, const std::vector<int>& messages) {
-  for (const int message : messages) {
-    queue.push(message);
-  }
-}
-
-/**
- * @brief A message whose move constructor and move assignment may throw.
- */
-struct MessageWithThrowingMove {
-  int value{0};
-
-  MessageWithThrowingMove() = default;
-  MessageWithThrowingMove(const MessageWithThrowingMove&) = default;
-  MessageWithThrowingMove& operator=(const MessageWithThrowingMove&) = default;
-  // NOLINTNEXTLINE(performance-noexcept-move-constructor)
-  MessageWithThrowingMove(MessageWithThrowingMove&& other) noexcept(false)
-      : value(std::move(other).value) {}
-  // NOLINTNEXTLINE(performance-noexcept-move-constructor)
-  MessageWithThrowingMove& operator=(MessageWithThrowingMove&& other) noexcept(
-      false) {
-    value = std::move(other).value;
-    return *this;
-  }
-  ~MessageWithThrowingMove() = default;
-};
-
-std::vector<int> drained(BoundedQueue<int>& queue) {
-  std::vector<int> messages;
-  queue.drainInto(messages);
-  return messages;
-}
-
-}  // namespace
 
 /**
  * Given a queue with room for three messages
@@ -151,6 +106,21 @@ TEST(BoundedQueue, CountsNothingWhileThereIsRoom) {
   pushAll(queue, numbered(1, SMALL_CAPACITY));
 
   EXPECT_EQ(queue.discardedCount(), 0U);
+}
+
+/**
+ * Given a queue with room for a single message, holding one
+ * When a second message is pushed
+ * Then the push says it discarded the oldest, where the first push did not
+ */
+TEST(BoundedQueue, PushTellsWhetherItDiscardedTheOldestMessage) {
+  BoundedQueue<int> queue{SINGLE_MESSAGE_CAPACITY};
+  const bool firstDiscarded = queue.push(1);
+
+  const bool secondDiscarded = queue.push(2);
+
+  EXPECT_FALSE(firstDiscarded);
+  EXPECT_TRUE(secondDiscarded);
 }
 
 /**
