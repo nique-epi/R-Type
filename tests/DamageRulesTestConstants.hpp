@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include "ActionKey.hpp"
+#include "EnemyPhase.hpp"
 #include "MissileOwner.hpp"
 
 namespace rtype::game::testing {
@@ -25,5 +27,12 @@ constexpr MissileOwner SECOND_PLAYER{.playerNumber = SECOND_PLAYER_NUMBER};
 
 /** @brief What destroying a Bydo of the tests is worth. */
 constexpr std::uint32_t BYDO_POINTS = 200;
+
+/** @brief A Bydo with four health points that is fragile in the recover of
+ * its attack 0, as the Drillback is while stunned. */
+constexpr int FOUR_HEALTH_POINTS = 4;
+constexpr int THREE_HEALTH_POINTS_LEFT = 3;
+constexpr ActionKey STUNNED{.attack = 0, .phase = EnemyPhase::Recover};
+constexpr ActionKey CHARGING{.attack = 0, .phase = EnemyPhase::Strike};
 
 }  // namespace rtype::game::testing

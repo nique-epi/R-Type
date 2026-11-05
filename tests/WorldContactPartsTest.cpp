@@ -4,17 +4,20 @@
 #include "CurrentAction.hpp"
 #include "EntitySheet.hpp"
 #include "EntityTypesTestConstants.hpp"
+#include "Fragile.hpp"
 #include "HurtZone.hpp"
 #include "Position.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "SurvivesContact.hpp"
 #include "World.hpp"
 #include "WorldContactPartsFixtures.hpp"
+#include "WorldContactPartsTestConstants.hpp"
 #include "WorldFixtures.hpp"
 #include "WorldTestConstants.hpp"
 
 using rtype::game::CurrentAction;
 using rtype::game::EntitySheet;
+using rtype::game::Fragile;
 using rtype::game::HurtZone;
 using rtype::game::Position;
 using rtype::game::SurvivesContact;
@@ -27,6 +30,7 @@ using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::SOME_X;
 using rtype::game::testing::SOME_Y;
 using rtype::game::testing::someHurtZone;
+using rtype::game::testing::STUNNED_IN_ATTACK_ZERO;
 
 /**
  * Given the sheet of a Drifter, of side enemy
@@ -103,4 +107,22 @@ TEST(WorldContactParts, ASheetThatDeclaresNothingGivesNoContactPart) {
 
   EXPECT_FALSE(componentOf<HurtZone>(world, entityId).has_value());
   EXPECT_FALSE(componentOf<SurvivesContact>(world, entityId).has_value());
+}
+
+/**
+ * Given a sheet whose enemy is fragile in the recover of its attack 0
+ * When an entity of that sheet is spawned
+ * Then it carries a Fragile naming that recover
+ */
+TEST(WorldContactParts, TheFragileActionOfTheSheetIsOnTheEntity) {
+  World world;
+  EntitySheet sheet = drifterWith(std::nullopt, false);
+  sheet.fragileIn = STUNNED_IN_ATTACK_ZERO;
+
+  const std::uint32_t entityId =
+      world.spawn(sheet, Position{.x = SOME_X, .y = SOME_Y});
+
+  const std::optional<Fragile> fragile = componentOf<Fragile>(world, entityId);
+  ASSERT_TRUE(fragile.has_value());
+  EXPECT_EQ(fragile.value_or(Fragile{}).in, STUNNED_IN_ATTACK_ZERO);
 }

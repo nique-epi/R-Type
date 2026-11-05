@@ -22,7 +22,8 @@ struct MissileHit;
  *
  * Subscribes to MissileHit on construction and unsubscribes on destruction.
  * The missile is always destroyed and announced with an EntityDestruction
- * Removed. A target with Health loses MISSILE_DAMAGE points: it is announced
+ * Removed. A target with Health loses MISSILE_DAMAGE points, or all of them
+ * while it is in the action its Fragile names: it is announced
  * with an EntityDamage while it has points left, and destroyed with an
  * EntityDestruction Killed when it has none. A target without Health is not
  * hurt. When the missile has a MissileOwner and the target that dies has a

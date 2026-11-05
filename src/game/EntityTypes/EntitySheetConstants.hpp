@@ -31,9 +31,11 @@ constexpr std::string_view SCORE_KEY = "score";
 constexpr std::string_view GUN_KEY = "gun";
 constexpr std::string_view HURT_ZONE_KEY = "hurt_zone";
 constexpr std::string_view SURVIVES_CONTACT_KEY = "survives_contact";
+constexpr std::string_view FRAGILE_KEY = "fragile";
 constexpr std::array GAMEPLAY_KEYS{
     SIDE_KEY,   PILOT_KEY, HITBOX_KEY, MOTION_KEY,    BEHAVIOUR_KEY,
-    HEALTH_KEY, SCORE_KEY, GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY};
+    HEALTH_KEY, SCORE_KEY, GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
+    FRAGILE_KEY};
 
 /** @brief The keys of `[gameplay.hitbox]`, in logical units. */
 constexpr std::string_view WIDTH_KEY = "width";
@@ -77,6 +79,10 @@ constexpr std::array HURT_BOX_KEYS{OFFSET_X_KEY, OFFSET_Y_KEY, WIDTH_KEY,
 
 /** @brief `[gameplay.survives_contact]` is a marker: it holds no key. */
 constexpr std::array<std::string_view, 0> SURVIVES_CONTACT_KEYS{};
+
+/** @brief The keys of `[gameplay.fragile]`: the action in which any hit
+ * destroys the enemy, both required. */
+constexpr std::array FRAGILE_KEYS{ATTACK_KEY, PHASE_KEY};
 
 /** @brief The phases a box may name, and the EnemyPhase of each, in the same
  * order. */
@@ -150,6 +156,8 @@ constexpr std::string_view HURT_ZONE_SIDE_RULE =
     "only a body of side enemy has a hurt zone";
 constexpr std::string_view SURVIVES_CONTACT_SIDE_RULE =
     "only a body of side enemy survives a contact";
+constexpr std::string_view FRAGILE_SIDE_RULE =
+    "only a body of side enemy is fragile in one of its actions";
 constexpr std::string_view HURT_ZONE_BOXES_RULE =
     "a hurt zone holds at least one box";
 constexpr std::string_view HURT_BOX_ACTION_RULE =

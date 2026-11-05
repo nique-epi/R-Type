@@ -2,12 +2,14 @@
 #include <cstdint>
 #include <optional>
 #include "ComponentRegistry.hpp"
+#include "CurrentAction.hpp"
 #include "DamageConstants.hpp"
 #include "EnemyKilled.hpp"
 #include "Entity.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestruction.hpp"
 #include "EventBus.hpp"
+#include "Fragile.hpp"
 #include "Health.hpp"
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
@@ -47,6 +49,19 @@ std::optional<std::uint8_t> shooterOf(engine::ComponentRegistry& components,
   return owner->playerNumber;
 }
 
+/** @returns What a hit takes from @p target, which has @p health:
+ * MISSILE_DAMAGE, or every point left while @p target is Fragile and in the
+ * action it is fragile in. */
+int damageOf(engine::ComponentRegistry& components, engine::Entity target,
+             const Health& health) {
+  const auto* const fragile = components.get<Fragile>(target);
+  const auto* const current = components.get<CurrentAction>(target);
+  if (fragile == nullptr || current == nullptr || current->key != fragile->in) {
+    return MISSILE_DAMAGE;
+  }
+  return health.points;
+}
+
 }  // namespace
 
 DamageRules::DamageRules(engine::EventBus& events,
@@ -70,7 +85,7 @@ void DamageRules::onMissileHit(const MissileHit& hit) {
   if (health == nullptr) {
     return;
   }
-  health->points -= MISSILE_DAMAGE;
+  health->points -= damageOf(components_, hit.target, *health);
   if (health->points > 0) {
     events_.publish(EntityDamage{.networkId = ids->target});
     return;

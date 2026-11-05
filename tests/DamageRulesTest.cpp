@@ -3,6 +3,7 @@
 #include <variant>
 #include <vector>
 #include "CollisionScene.hpp"
+#include "CurrentAction.hpp"
 #include "DamageRules.hpp"
 #include "DamageRulesFixtures.hpp"
 #include "DamageRulesTestConstants.hpp"
@@ -12,6 +13,7 @@
 #include "EntityDamage.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityType.hpp"
+#include "Fragile.hpp"
 #include "Health.hpp"
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
@@ -19,12 +21,14 @@
 #include "ScoreValue.hpp"
 
 using rtype::engine::Entity;
+using rtype::game::CurrentAction;
 using rtype::game::DamageRules;
 using rtype::game::DestructionCause;
 using rtype::game::EnemyKilled;
 using rtype::game::EntityDamage;
 using rtype::game::EntityDestruction;
 using rtype::game::EntityType;
+using rtype::game::Fragile;
 using rtype::game::Health;
 using rtype::game::MissileHit;
 using rtype::game::MissileOwner;
@@ -33,8 +37,10 @@ using rtype::game::ScoreValue;
 using rtype::game::testing::Announcement;
 using rtype::game::testing::BYDO_ID;
 using rtype::game::testing::BYDO_POINTS;
+using rtype::game::testing::CHARGING;
 using rtype::game::testing::DamageScene;
 using rtype::game::testing::FIRST_PLAYER;
+using rtype::game::testing::FOUR_HEALTH_POINTS;
 using rtype::game::testing::killed;
 using rtype::game::testing::MISSILE_ID;
 using rtype::game::testing::ONE_HEALTH_POINT;
@@ -44,7 +50,9 @@ using rtype::game::testing::removed;
 using rtype::game::testing::SECOND_PLAYER;
 using rtype::game::testing::SECOND_PLAYER_NUMBER;
 using rtype::game::testing::SHIP_ID;
+using rtype::game::testing::STUNNED;
 using rtype::game::testing::THREE_HEALTH_POINTS;
+using rtype::game::testing::THREE_HEALTH_POINTS_LEFT;
 
 /**
  * Given a Bydo with three health points and a missile
@@ -285,4 +293,46 @@ TEST(DamageRules, TwoMissilesOnTheSameBydoCreditOnlyTheFirst) {
   const std::vector<EnemyKilled> expected{EnemyKilled{
       .playerNumber = FIRST_PLAYER.playerNumber, .points = BYDO_POINTS}};
   EXPECT_EQ(damage.kills, expected);
+}
+
+/**
+ * Given a Bydo with four health points, fragile in the recover of attack 0
+ * and in that recover
+ * When a missile hits it
+ * Then it is killed by that one hit
+ */
+TEST(DamageRules, AHitKillsAFragileEnemyInTheActionItIsFragileIn) {
+  DamageScene damage;
+  const Entity missile = damage.missile(MISSILE_ID);
+  const Entity bydo =
+      damage.bydo(BYDO_ID, Health{.points = FOUR_HEALTH_POINTS});
+  damage.scene.components.add(bydo, Fragile{.in = STUNNED});
+  damage.scene.components.add(bydo, CurrentAction{.key = STUNNED});
+
+  damage.hit(missile, bydo);
+
+  const std::vector<Announcement> expected{removed(MISSILE_ID),
+                                           killed(BYDO_ID)};
+  EXPECT_EQ(damage.announced, expected);
+}
+
+/**
+ * Given a Bydo with four health points, fragile in the recover of attack 0
+ * but in the strike of that attack
+ * When a missile hits it
+ * Then it loses one point, as any enemy
+ */
+TEST(DamageRules, AFragileEnemyOutOfItsActionLosesOnePoint) {
+  DamageScene damage;
+  const Entity missile = damage.missile(MISSILE_ID);
+  const Entity bydo =
+      damage.bydo(BYDO_ID, Health{.points = FOUR_HEALTH_POINTS});
+  damage.scene.components.add(bydo, Fragile{.in = STUNNED});
+  damage.scene.components.add(bydo, CurrentAction{.key = CHARGING});
+
+  damage.hit(missile, bydo);
+
+  ASSERT_NE(damage.scene.components.get<Health>(bydo), nullptr);
+  EXPECT_EQ(damage.scene.components.get<Health>(bydo)->points,
+            THREE_HEALTH_POINTS_LEFT);
 }

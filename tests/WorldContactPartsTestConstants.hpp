@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include "ActionKey.hpp"
+#include "EnemyPhase.hpp"
 
 namespace rtype::game::testing {
 
@@ -14,5 +16,9 @@ constexpr float STRIKE_BOX_OFFSET_Y = 16.0F;
 constexpr float STRIKE_BOX_WIDTH = 40.0F;
 constexpr float STRIKE_BOX_HEIGHT = 24.0F;
 constexpr std::uint8_t STRIKE_BOX_ATTACK = 3;
+
+/** @brief The action a fragile sheet of the tests is fragile in. */
+constexpr ActionKey STUNNED_IN_ATTACK_ZERO{.attack = 0,
+                                           .phase = EnemyPhase::Recover};
 
 }  // namespace rtype::game::testing

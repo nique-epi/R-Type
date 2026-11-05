@@ -10,6 +10,7 @@
 #include "EntitySheet.hpp"
 #include "EntityType.hpp"
 #include "EntityTypeNumber.hpp"
+#include "Fragile.hpp"
 #include "Gun.hpp"
 #include "Health.hpp"
 #include "HurtZone.hpp"
@@ -96,7 +97,7 @@ void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
 
 /** @brief Gives @p start the parts that decide what its contact with a ship
  * does: the CurrentAction of an enemy, then the HurtZone and the
- * SurvivesContact its sheet declares. */
+ * SurvivesContact and the Fragile its sheet declares. */
 void addContactParts(engine::ComponentRegistry& components,
                      const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
@@ -108,6 +109,9 @@ void addContactParts(engine::ComponentRegistry& components,
   }
   if (sheet.survivesContact) {
     components.add(start.body, SurvivesContact{});
+  }
+  if (sheet.fragileIn.has_value()) {
+    components.add(start.body, Fragile{.in = *sheet.fragileIn});
   }
 }
 

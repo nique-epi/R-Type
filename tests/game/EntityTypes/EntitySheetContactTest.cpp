@@ -15,6 +15,7 @@
 #include "HurtZone.hpp"
 
 using rtype::engine::DataFileTablesExpectedException;
+using rtype::engine::MissingDataFileKeyException;
 using rtype::engine::UnknownDataFileChoiceException;
 using rtype::game::ActionKey;
 using rtype::game::EnemyPhase;
@@ -42,6 +43,10 @@ using rtype::game::testing::FIRST_BOX_HEIGHT;
 using rtype::game::testing::FIRST_BOX_OFFSET_X;
 using rtype::game::testing::FIRST_BOX_OFFSET_Y;
 using rtype::game::testing::FIRST_BOX_WIDTH;
+using rtype::game::testing::FRAGILE_DOTTED_KEY;
+using rtype::game::testing::FRAGILE_SIDE_RULE_TEXT;
+using rtype::game::testing::FRAGILE_WHILE_STUNNED;
+using rtype::game::testing::FRAGILE_WITHOUT_PHASE;
 using rtype::game::testing::HURT_BOXES_IN_EVERY_PHASE;
 using rtype::game::testing::HURT_BOXES_IN_TWO;
 using rtype::game::testing::HURT_ZONE_DOTTED_KEY;
@@ -391,4 +396,44 @@ TEST_F(EntitySheetReaderFixture, RefusesABoxThatEndsAsItStarts) {
 
   EXPECT_THAT(message, HasSubstr(UNTIL_DOTTED_KEY));
   EXPECT_THAT(message, HasSubstr(WINDOW_RULE_TEXT));
+}
+
+/**
+ * Given the sheet of an enemy fragile in the recover of its attack 0
+ * When its gameplay is read
+ * Then it is fragile in that recover
+ */
+TEST_F(EntitySheetReaderFixture, ReadsTheActionAnEnemyIsFragileIn) {
+  const EntitySheet sheet =
+      read({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION, LEFT_HEADING_TABLE,
+            FRAGILE_WHILE_STUNNED, APPEARANCE});
+
+  EXPECT_EQ(sheet.fragileIn,
+            (ActionKey{.attack = 0, .phase = EnemyPhase::Recover}));
+}
+
+/**
+ * Given a fragile table that names an attack and no phase
+ * When the gameplay is read
+ * Then a MissingDataFileKeyException is thrown
+ */
+TEST_F(EntitySheetReaderFixture, RefusesAFragileTableWithoutPhase) {
+  EXPECT_THROW(static_cast<void>(read({ENEMY_GAMEPLAY, BYDO_HITBOX,
+                                       STEADY_MOTION, LEFT_HEADING_TABLE,
+                                       FRAGILE_WITHOUT_PHASE, APPEARANCE})),
+               MissingDataFileKeyException);
+}
+
+/**
+ * Given the sheet of a missile that declares itself fragile
+ * When its gameplay is read
+ * Then the refusal names the fragile table and the rule
+ */
+TEST_F(EntitySheetReaderFixture, RefusesAFragileMissile) {
+  const std::string message =
+      refusalOf({ENEMY_MISSILE_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION,
+                 LEFT_HEADING_TABLE, FRAGILE_WHILE_STUNNED, APPEARANCE});
+
+  EXPECT_THAT(message, HasSubstr(FRAGILE_DOTTED_KEY));
+  EXPECT_THAT(message, HasSubstr(FRAGILE_SIDE_RULE_TEXT));
 }

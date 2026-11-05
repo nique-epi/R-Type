@@ -194,6 +194,15 @@ std::optional<GunSheet> gunFrom(const engine::DataFileTable& gameplay) {
       .projectilePlace = engine::placeOfKey(*gun, PROJECTILE_KEY)};
 }
 
+/** @returns The attack and the phase @p table names, both required.
+ * @throws What wholeNumberAt() and choiceAt() throw. */
+ActionKey actionKeyAt(const engine::DataFileTable& table) {
+  return ActionKey{
+      .attack = static_cast<std::uint8_t>(
+          engine::wholeNumberAt(table, ATTACK_KEY, ATTACK_NUMBER_RANGE)),
+      .phase = PHASES.at(engine::choiceAt(table, PHASE_KEY, PHASE_NAMES))};
+}
+
 /** @returns The attack and the phase the box @p box hurts in, nothing for a
  * box that hurts all the time.
  * @throws InconsistentEntitySheetException when it names only one of them. */
@@ -208,10 +217,7 @@ std::optional<ActionKey> activeInFrom(const engine::DataFileTable& box) {
   if (!namesAnAttack) {
     return std::nullopt;
   }
-  return ActionKey{
-      .attack = static_cast<std::uint8_t>(
-          engine::wholeNumberAt(box, ATTACK_KEY, ATTACK_NUMBER_RANGE)),
-      .phase = PHASES.at(engine::choiceAt(box, PHASE_KEY, PHASE_NAMES))};
+  return actionKeyAt(box);
 }
 
 /** @returns When @p box hurts within its phase: from `from_ms`, 0 without it,
@@ -291,8 +297,19 @@ bool survivesContactFrom(const engine::DataFileTable& gameplay) {
   return marker.has_value();
 }
 
-/** @throws InconsistentEntitySheetException when @p sheet has a hurt zone or
- * survives a contact and its side is not enemy. */
+/** @returns The action `[gameplay.fragile]` names; nothing without it. */
+std::optional<ActionKey> fragileFrom(const engine::DataFileTable& gameplay) {
+  const std::optional<engine::DataFileTable> fragile =
+      engine::optionalTableAt(gameplay, FRAGILE_KEY);
+  if (!fragile.has_value()) {
+    return std::nullopt;
+  }
+  engine::refuseUnknownKeys(*fragile, FRAGILE_KEYS);
+  return actionKeyAt(*fragile);
+}
+
+/** @throws InconsistentEntitySheetException when @p sheet has a hurt zone,
+ * survives a contact or is fragile and its side is not enemy. */
 void checkContactPartsBelongToAnEnemy(const EntitySheet& sheet,
                                       const engine::DataFileTable& gameplay) {
   if (sheet.side == EntityType::Enemy) {
@@ -306,6 +323,10 @@ void checkContactPartsBelongToAnEnemy(const EntitySheet& sheet,
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, SURVIVES_CONTACT_KEY),
         SURVIVES_CONTACT_SIDE_RULE);
+  }
+  if (sheet.fragileIn.has_value()) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, FRAGILE_KEY), FRAGILE_SIDE_RULE);
   }
 }
 
@@ -407,7 +428,8 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .points = pointsIn<std::uint32_t>(gameplay, SCORE_KEY, SCORE_RANGE),
       .gun = gunFrom(gameplay),
       .hurtZone = hurtZoneFrom(gameplay),
-      .survivesContact = survivesContactFrom(gameplay)};
+      .survivesContact = survivesContactFrom(gameplay),
+      .fragileIn = fragileFrom(gameplay)};
   checkPilotMatchesSide(read, gameplay);
   checkShipMotion(read, gameplay);
   checkMissileHasNoGun(read, gameplay);

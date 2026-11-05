@@ -67,6 +67,12 @@ constexpr std::string_view TIMED_BOX_WITHOUT_PHASE =
 constexpr std::string_view BOX_ENDING_AS_IT_STARTS =
     "[[gameplay.hurt_zone.box]]\noffset_x = 0\noffset_y = 0\nwidth = 8\n"
     "height = 8\nattack = 1\nphase = \"strike\"\nfrom_ms = 70\nuntil_ms = 70\n";
+/** @brief A Drillback is fragile in the recover of its attack 0; a fragile
+ * table that names no phase. */
+constexpr std::string_view FRAGILE_WHILE_STUNNED =
+    "[gameplay.fragile]\nattack = 0\nphase = \"recover\"\n";
+constexpr std::string_view FRAGILE_WITHOUT_PHASE =
+    "[gameplay.fragile]\nattack = 0\n";
 constexpr std::string_view SURVIVES_CONTACT_MARKER =
     "[gameplay.survives_contact]\n";
 constexpr std::string_view SURVIVES_CONTACT_WITH_A_KEY =
@@ -103,6 +109,9 @@ constexpr std::string_view TIMING_RULE_TEXT =
     "only a box that names its attack and its phase hurts from or until a time";
 constexpr std::string_view WINDOW_RULE_TEXT =
     "a box stops hurting after it starts: until_ms is above from_ms";
+constexpr std::string_view FRAGILE_SIDE_RULE_TEXT =
+    "only a body of side enemy is fragile in one of its actions";
+constexpr std::string_view FRAGILE_DOTTED_KEY = "gameplay.fragile";
 constexpr std::string_view UNTIL_DOTTED_KEY =
     "gameplay.hurt_zone.box[0].until_ms";
 constexpr std::string_view ATTACK_DOTTED_KEY =
