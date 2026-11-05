@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
@@ -138,5 +139,32 @@ constexpr std::string_view DEGRADED_TEXT = "degraded";
 constexpr std::string_view OFFLINE_TEXT = "offline";
 constexpr std::string_view MAINTENANCE_TEXT = "maintenance";
 constexpr std::string_view UNREACHABLE_TEXT = "unreachable";
+
+/**
+ * @brief The games and players of the heartbeat of "Paris 1", as a list of
+ * servers and a sample count them, and the date of a sample.
+ */
+constexpr std::uint16_t LISTED_GAME_COUNT = 2;
+constexpr std::uint16_t LISTED_PLAYER_COUNT = 3;
+constexpr std::chrono::sys_seconds SAMPLE_DATE{
+    std::chrono::seconds{1'800'000'000}};
+
+/** @brief "Paris 1" online in a list of servers, as the master writes it. */
+constexpr std::string_view PARIS_SERVER_LISTING_TEXT =
+    R"({"servers":[{"address":"203.0.113.7","gameCount":2,)"
+    R"("gameVersion":"0.4.0","id":7,"maximumGames":8,)"
+    R"("maximumPlayersPerGame":4,"name":"Paris 1","playerCount":3,)"
+    R"("protocolVersion":2,"status":"online","udpPort":4242}]})";
+
+/** @brief A sample with its tick p95 and its loss only, as the master writes
+ * it. */
+constexpr std::string_view PARIS_SAMPLE_LISTING_TEXT =
+    R"({"samples":[{"gameCount":2,)"
+    R"("measures":{"lossPercent":0.5,"tickP95Milliseconds":4.25},)"
+    R"("playerCount":3,"takenAt":1800000000}]})";
+
+/** @brief A change to degraded, as the master writes it. */
+constexpr std::string_view DEGRADED_CHANGE_LISTING_TEXT =
+    R"({"statusChanges":[{"changedAt":1800000000,"status":"degraded"}]})";
 
 }  // namespace rtype::network::testing

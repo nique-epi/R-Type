@@ -35,6 +35,13 @@ void ServersModule::install(engine::InstallContext& context) {
       std::bind_front(&ServersController::replaceOwnHeartbeat, &controller));
   server.add(network::LIST_SERVER_GAMES_ROUTE,
              std::bind_front(&ServersController::listGames, &controller));
+  server.add(network::LIST_SERVERS_ROUTE,
+             std::bind_front(&ServersController::listServers, &controller));
+  server.add(network::LIST_SERVER_SAMPLES_ROUTE,
+             std::bind_front(&ServersController::listSamples, &controller));
+  server.add(
+      network::LIST_SERVER_STATUS_CHANGES_ROUTE,
+      std::bind_front(&ServersController::listStatusChanges, &controller));
 }
 
 void ServersModule::start() {

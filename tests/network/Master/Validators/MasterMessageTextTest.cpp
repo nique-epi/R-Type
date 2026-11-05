@@ -13,6 +13,8 @@
 #include "ServerCreation.hpp"
 #include "ServerRegistration.hpp"
 #include "ServerStatus.hpp"
+#include "ServerStatusChange.hpp"
+#include "StatusChangeListing.hpp"
 
 using rtype::network::CreatedServer;
 using rtype::network::createdServerFromText;
@@ -25,17 +27,23 @@ using rtype::network::isWellFormedServerKey;
 using rtype::network::problemDetailOf;
 using rtype::network::registrationFromText;
 using rtype::network::registrationText;
+using rtype::network::sampleListingText;
 using rtype::network::ServerCreation;
 using rtype::network::serverCreationFromText;
 using rtype::network::serverCreationText;
+using rtype::network::serverListingText;
 using rtype::network::ServerRegistration;
 using rtype::network::ServerStatus;
+using rtype::network::ServerStatusChange;
 using rtype::network::serverStatusOf;
+using rtype::network::StatusChangeListing;
+using rtype::network::statusChangeListingText;
 using rtype::network::testing::ADDRESS_POINTER;
 using rtype::network::testing::AVERAGE_PING_POINTER;
 using rtype::network::testing::CONFLICT_DETAIL;
 using rtype::network::testing::CONFLICT_PROBLEM;
 using rtype::network::testing::createdServerRefusal;
+using rtype::network::testing::DEGRADED_CHANGE_LISTING_TEXT;
 using rtype::network::testing::DEGRADED_TEXT;
 using rtype::network::testing::EMPTY_GAME_NAME;
 using rtype::network::testing::FIFTH_PILOT;
@@ -79,9 +87,13 @@ using rtype::network::testing::PARIS_GAME_LISTING_TEXT;
 using rtype::network::testing::PARIS_ID;
 using rtype::network::testing::PARIS_KEY;
 using rtype::network::testing::PARIS_NAME;
+using rtype::network::testing::PARIS_SAMPLE_LISTING_TEXT;
+using rtype::network::testing::PARIS_SERVER_LISTING_TEXT;
 using rtype::network::testing::parisGameListing;
 using rtype::network::testing::parisHeartbeat;
 using rtype::network::testing::parisRegistration;
+using rtype::network::testing::parisSampleListing;
+using rtype::network::testing::parisServerListing;
 using rtype::network::testing::PAUSED_STATE;
 using rtype::network::testing::PLAIN_TEXT_ERROR;
 using rtype::network::testing::PLAYING_STATE;
@@ -93,6 +105,7 @@ using rtype::network::testing::QUOTED_WHOLE_MESSAGE;
 using rtype::network::testing::registrationRefusal;
 using rtype::network::testing::registrationTextWith;
 using rtype::network::testing::registrationTextWithout;
+using rtype::network::testing::SAMPLE_DATE;
 using rtype::network::testing::SECOND_GAME_NUMBER_POINTER;
 using rtype::network::testing::SECOND_PILOT;
 using rtype::network::testing::SEVENTEEN_BYTE_NICKNAME;
@@ -533,4 +546,39 @@ TEST(MasterMessageText, ReadsEveryStatusFromItsText) {
   EXPECT_EQ(serverStatusOf(OFFLINE_TEXT), ServerStatus::Offline);
   EXPECT_EQ(serverStatusOf(MAINTENANCE_TEXT), ServerStatus::Maintenance);
   EXPECT_EQ(serverStatusOf(UNREACHABLE_TEXT), std::nullopt);
+}
+
+/**
+ * Given "Paris 1", online, with the games of its heartbeat
+ * When the list of servers is written
+ * Then every member of the server is there, its status written "online"
+ */
+TEST(MasterMessageText, WritesAServerListingWithItsStatus) {
+  EXPECT_EQ(nlohmann::json::parse(serverListingText(parisServerListing())),
+            nlohmann::json::parse(PARIS_SERVER_LISTING_TEXT));
+}
+
+/**
+ * Given a sample with its tick p95 and its loss only
+ * When the list of samples is written
+ * Then its date is a number of seconds, and the measures not taken are left
+ * out
+ */
+TEST(MasterMessageText, WritesASampleWithItsDateInSeconds) {
+  EXPECT_EQ(nlohmann::json::parse(sampleListingText(parisSampleListing())),
+            nlohmann::json::parse(PARIS_SAMPLE_LISTING_TEXT));
+}
+
+/**
+ * Given a change to degraded
+ * When the list of changes is written
+ * Then it holds its date in seconds and "degraded"
+ */
+TEST(MasterMessageText, WritesAChangeOfStatus) {
+  const StatusChangeListing listing{
+      .statusChanges = {ServerStatusChange{.changedAt = SAMPLE_DATE,
+                                           .status = ServerStatus::Degraded}}};
+
+  EXPECT_EQ(nlohmann::json::parse(statusChangeListingText(listing)),
+            nlohmann::json::parse(DEGRADED_CHANGE_LISTING_TEXT));
 }

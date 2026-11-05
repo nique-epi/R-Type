@@ -80,6 +80,15 @@ ORDER BY id LIMIT :limit OFFSET :offset
 constexpr std::string_view SERVER_EXISTS_QUERY =
     "SELECT 1 FROM servers WHERE id = :server_id";
 
+/** @brief A page of the samples of a server, newest first. */
+constexpr std::string_view SAMPLES_OF_SERVER_QUERY = R"sql(
+SELECT taken_at, game_count, player_count, tick_p50_milliseconds,
+       tick_p95_milliseconds, received_bytes_per_second, sent_bytes_per_second,
+       loss_percent, average_ping_milliseconds
+FROM heartbeat_samples WHERE server_id = :server_id
+ORDER BY taken_at DESC LIMIT :limit OFFSET :offset
+)sql";
+
 /** @brief The statements of the table `status_changes`. */
 constexpr std::string_view INSERT_STATUS_CHANGE_STATEMENT = R"sql(
 INSERT OR REPLACE INTO status_changes (server_id, changed_at, status)
@@ -156,6 +165,17 @@ constexpr int LISTED_STATUS_COLUMN = 6;
 constexpr int LISTED_MAXIMUM_GAMES_COLUMN = 7;
 constexpr int LISTED_MAXIMUM_PLAYERS_COLUMN = 8;
 constexpr int LISTED_HEARTBEAT_COLUMN = 9;
+
+/** @brief The columns of SAMPLES_OF_SERVER_QUERY. */
+constexpr int SAMPLE_TAKEN_AT_COLUMN = 0;
+constexpr int SAMPLE_GAME_COUNT_COLUMN = 1;
+constexpr int SAMPLE_PLAYER_COUNT_COLUMN = 2;
+constexpr int SAMPLE_TICK_P50_COLUMN = 3;
+constexpr int SAMPLE_TICK_P95_COLUMN = 4;
+constexpr int SAMPLE_RECEIVED_BYTES_COLUMN = 5;
+constexpr int SAMPLE_SENT_BYTES_COLUMN = 6;
+constexpr int SAMPLE_LOSS_PERCENT_COLUMN = 7;
+constexpr int SAMPLE_AVERAGE_PING_COLUMN = 8;
 
 /** @brief The columns of STATUS_CHANGES_OF_SERVER_QUERY. */
 constexpr int CHANGED_AT_COLUMN = 0;

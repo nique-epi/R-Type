@@ -64,6 +64,21 @@ httplib::Result ServersRoutesFixture::readGames(
       .method = GET_METHOD_TEXT, .path = path, .key = {}, .body = {}});
 }
 
+httplib::Result ServersRoutesFixture::readServers(
+    std::string_view query) const {
+  const std::string path = std::string{SERVERS_URL} + std::string{query};
+  return send(RouteCall{
+      .method = GET_METHOD_TEXT, .path = path, .key = {}, .body = {}});
+}
+
+httplib::Result ServersRoutesFixture::readHistory(std::string_view serverId,
+                                                  std::string_view part) const {
+  const std::string path = std::string{SERVER_GAMES_PATH_PREFIX} +
+                           std::string{serverId} + std::string{part};
+  return send(RouteCall{
+      .method = GET_METHOD_TEXT, .path = path, .key = {}, .body = {}});
+}
+
 httplib::Result ServersRoutesFixture::registerParis() const {
   return send(RouteCall{.method = PUT_METHOD,
                         .path = OWN_SERVER_URL,

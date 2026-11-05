@@ -40,6 +40,15 @@ class ServersRoutesFixture : public ::testing::Test {
    */
   [[nodiscard]] httplib::Result readGames(std::string_view serverId) const;
 
+  /** @returns The answer to the list of servers, @p query after its path
+   * (empty, or "?limit=…"), no key sent. */
+  [[nodiscard]] httplib::Result readServers(std::string_view query) const;
+
+  /** @returns The answer to @p part ("/samples" or "/status-changes") of the
+   * server @p serverId, no key sent. */
+  [[nodiscard]] httplib::Result readHistory(std::string_view serverId,
+                                            std::string_view part) const;
+
  private:
   RunningMaster master_;
   std::int64_t createdId_{};

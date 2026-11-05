@@ -20,6 +20,7 @@ using rtype::network::heartbeatText;
 using rtype::network::HostedGameState;
 using rtype::network::isWellFormedServerKey;
 using rtype::network::registrationText;
+using rtype::network::serverStatusOf;
 using rtype::network::testing::ADDRESS_POINTER;
 using rtype::network::testing::FIRST_PILOT;
 using rtype::network::testing::FOURTH_PILOT;
@@ -381,4 +382,127 @@ TEST_F(ServersRoutesFixture, AnIdThatNamesNoServerIsNotFound) {
     ASSERT_TRUE(answer);
     EXPECT_EQ(answer->status, EXPECTED_NOT_FOUND) << serverId;
   }
+}
+
+/**
+ * Given a registered server that sent the heartbeat of "Paris 1"
+ * When anyone reads the list of servers, with no key
+ * Then it gets 200 and that server, with its address, its versions and the
+ * counts of its heartbeat, and a status (whose value the tests of the
+ * service check: here the refresh runs on its own clock)
+ */
+TEST_F(ServersRoutesFixture, TheRegisteredServersAreListedToAnyone) {
+  ASSERT_TRUE(registerParis());
+  ASSERT_TRUE(sendHeartbeat(parisHeartbeat()));
+
+  const httplib::Result answer = readServers(NO_QUERY);
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_OK);
+  nlohmann::json listed =
+      nlohmann::json::parse(answer->body).at(SERVERS_MEMBER_NAME).at(0);
+  EXPECT_TRUE(serverStatusOf(listed.at(STATUS_MEMBER_NAME).get<std::string>())
+                  .has_value());
+  listed.erase(std::string{STATUS_MEMBER_NAME});
+  nlohmann::json expected = nlohmann::json::parse(PARIS_LISTED_SERVER_BODY);
+  expected[std::string{ID_MEMBER_NAME}] = createdId();
+  EXPECT_EQ(listed, expected);
+}
+
+/**
+ * Given a server created and never registered
+ * When the list of servers is read
+ * Then it is empty
+ */
+TEST_F(ServersRoutesFixture, AServerThatNeverRegisteredIsNotListed) {
+  const httplib::Result answer = readServers(NO_QUERY);
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_OK);
+  EXPECT_EQ(nlohmann::json::parse(answer->body),
+            nlohmann::json::parse(NO_SERVERS_BODY));
+}
+
+/**
+ * Given the list of servers
+ * When it is read with a limit of 0, of 101 or of no number, or a negative
+ * offset
+ * Then each read gets 400, whose detail gives the bounds
+ */
+TEST_F(ServersRoutesFixture, APageOutOfItsBoundsIsRefused) {
+  for (const std::string_view query :
+       {LIMIT_ZERO_QUERY, LIMIT_OVER_HUNDRED_QUERY, LIMIT_NOT_A_NUMBER_QUERY,
+        NEGATIVE_OFFSET_QUERY}) {
+    SCOPED_TRACE(query);
+    const httplib::Result answer = readServers(query);
+
+    ASSERT_TRUE(answer);
+    EXPECT_EQ(answer->status, EXPECTED_BAD_REQUEST);
+    EXPECT_EQ(nlohmann::json::parse(answer->body)
+                  .at(PROBLEM_DETAIL_MEMBER_NAME)
+                  .get<std::string>(),
+              EXPECTED_INVALID_PAGE_DETAIL);
+  }
+}
+
+/**
+ * Given a registered server that sent the heartbeat of "Paris 1"
+ * When anyone reads its samples
+ * Then it gets one sample, with the counts and the measures of that
+ * heartbeat, and its date as a number of seconds
+ */
+TEST_F(ServersRoutesFixture, TheSamplesOfAServerAreListed) {
+  ASSERT_TRUE(registerParis());
+  ASSERT_TRUE(sendHeartbeat(parisHeartbeat()));
+
+  const httplib::Result answer =
+      readHistory(std::to_string(createdId()), SAMPLES_PATH_SUFFIX);
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_OK);
+  const nlohmann::json samples =
+      nlohmann::json::parse(answer->body).at(SAMPLES_MEMBER_NAME);
+  ASSERT_EQ(samples.size(), 1U);
+  EXPECT_EQ(samples.at(0).at(GAME_COUNT_MEMBER_NAME), PARIS_GAME_COUNT);
+  EXPECT_EQ(samples.at(0).at(PLAYER_COUNT_MEMBER_NAME), PARIS_PLAYER_COUNT);
+  EXPECT_EQ(samples.at(0).at(MEASURES_MEMBER_NAME),
+            nlohmann::json::parse(PARIS_MEASURES_BODY));
+  EXPECT_TRUE(samples.at(0).at(TAKEN_AT_MEMBER_NAME).is_number_integer());
+}
+
+/**
+ * Given no server of id 999, and an id that is no number
+ * When their samples or their changes of status are read
+ * Then each read gets 404
+ */
+TEST_F(ServersRoutesFixture, TheHistoryOfAnUnknownServerIsNotFound) {
+  for (const std::string_view part :
+       {SAMPLES_PATH_SUFFIX, STATUS_CHANGES_PATH_SUFFIX}) {
+    SCOPED_TRACE(part);
+    const httplib::Result unused = readHistory(UNUSED_SERVER_ID, part);
+    const httplib::Result notANumber = readHistory(NOT_A_SERVER_ID, part);
+
+    ASSERT_TRUE(unused);
+    ASSERT_TRUE(notANumber);
+    EXPECT_EQ(unused->status, EXPECTED_NOT_FOUND);
+    EXPECT_EQ(notANumber->status, EXPECTED_NOT_FOUND);
+  }
+}
+
+/**
+ * Given a registered server
+ * When anyone reads its changes of status
+ * Then it gets 200 and a list (whose items the tests of the service check)
+ */
+TEST_F(ServersRoutesFixture, TheChangesOfStatusOfAServerAreListed) {
+  ASSERT_TRUE(registerParis());
+
+  const httplib::Result answer =
+      readHistory(std::to_string(createdId()), STATUS_CHANGES_PATH_SUFFIX);
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_OK);
+  EXPECT_TRUE(nlohmann::json::parse(answer->body)
+                  .at(STATUS_CHANGES_MEMBER_NAME)
+                  .is_array());
 }

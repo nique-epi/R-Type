@@ -18,16 +18,22 @@
 #include "HostedGameState.hpp"
 #include "ListedGame.hpp"
 #include "ListedGameState.hpp"
+#include "ListedServer.hpp"
 #include "MasterHttpConstants.hpp"
 #include "MasterMessageConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
+#include "SampleListing.hpp"
 #include "ServerCreation.hpp"
 #include "ServerHeartbeat.hpp"
+#include "ServerListing.hpp"
 #include "ServerMeasures.hpp"
 #include "ServerRegistration.hpp"
+#include "ServerSample.hpp"
 #include "ServerStatus.hpp"
+#include "ServerStatusChange.hpp"
+#include "StatusChangeListing.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::network {
@@ -352,6 +358,54 @@ nlohmann::json measuresDocument(const ServerMeasures& measures) {
   return document;
 }
 
+/**
+ * @returns The text of an object whose one member, @p member, lists each of
+ * @p items as @p documentOf writes it: the shape of every list the master
+ * answers.
+ */
+template <typename Item, typename Document>
+std::string listingText(std::string_view member, const std::vector<Item>& items,
+                        Document documentOf) {
+  nlohmann::json document;
+  document[member] = nlohmann::json::array();
+  for (const Item& item : items) {
+    document[member].push_back(documentOf(item));
+  }
+  return textOf(document);
+}
+
+nlohmann::json listedServerDocument(const ListedServer& server) {
+  nlohmann::json document;
+  document[ID_MEMBER] = server.id;
+  document[NAME_MEMBER] = server.name;
+  document[ADDRESS_MEMBER] = server.address;
+  document[UDP_PORT_MEMBER] = server.udpPort;
+  document[GAME_VERSION_MEMBER] = server.gameVersion;
+  document[PROTOCOL_VERSION_MEMBER] = server.protocolVersion;
+  document[STATUS_MEMBER] = serverStatusText(server.status);
+  document[GAME_COUNT_MEMBER] = server.gameCount;
+  document[MAXIMUM_GAMES_MEMBER] = server.maximumGames;
+  document[PLAYER_COUNT_MEMBER] = server.playerCount;
+  document[MAXIMUM_PLAYERS_PER_GAME_MEMBER] = server.maximumPlayersPerGame;
+  return document;
+}
+
+nlohmann::json sampleDocument(const ServerSample& sample) {
+  nlohmann::json document;
+  document[TAKEN_AT_MEMBER] = sample.takenAt.time_since_epoch().count();
+  document[GAME_COUNT_MEMBER] = sample.gameCount;
+  document[PLAYER_COUNT_MEMBER] = sample.playerCount;
+  document[MEASURES_MEMBER] = measuresDocument(sample.measures);
+  return document;
+}
+
+nlohmann::json statusChangeDocument(const ServerStatusChange& change) {
+  nlohmann::json document;
+  document[CHANGED_AT_MEMBER] = change.changedAt.time_since_epoch().count();
+  document[STATUS_MEMBER] = serverStatusText(change.status);
+  return document;
+}
+
 std::string serverKeyOf(const JsonField& field) {
   std::string key = stringOf(field);
   if (!isWellFormedServerKey(key)) {
@@ -468,12 +522,7 @@ ServerHeartbeat heartbeatFromText(std::string_view text) {
 }
 
 std::string gameListingText(const GameListing& listing) {
-  nlohmann::json document;
-  document[GAMES_MEMBER] = nlohmann::json::array();
-  for (const ListedGame& game : listing.games) {
-    document[GAMES_MEMBER].push_back(listedGameDocument(game));
-  }
-  return textOf(document);
+  return listingText(GAMES_MEMBER, listing.games, listedGameDocument);
 }
 
 GameListing gameListingFromText(std::string_view text) {
@@ -500,6 +549,19 @@ std::optional<ServerStatus> serverStatusOf(std::string_view text) {
     }
   }
   return std::nullopt;
+}
+
+std::string serverListingText(const ServerListing& listing) {
+  return listingText(SERVERS_MEMBER, listing.servers, listedServerDocument);
+}
+
+std::string sampleListingText(const SampleListing& listing) {
+  return listingText(SAMPLES_MEMBER, listing.samples, sampleDocument);
+}
+
+std::string statusChangeListingText(const StatusChangeListing& listing) {
+  return listingText(STATUS_CHANGES_MEMBER, listing.statusChanges,
+                     statusChangeDocument);
 }
 
 std::string problemDetailOf(std::string_view text) {

@@ -1,7 +1,11 @@
 #pragma once
 
+#include <cstdint>
+#include <vector>
 #include "HeartbeatRecord.hpp"
 #include "MasterDatabase.hpp"
+#include "PageRequest.hpp"
+#include "ServerSample.hpp"
 
 namespace rtype::master {
 
@@ -19,6 +23,11 @@ class HeartbeatSampleRepository {
    * of every server.
    */
   void add(const HeartbeatRecord& record);
+
+  /** @returns The samples of the server @p serverId in @p page, newest
+   * first; a measure the server did not take is empty. */
+  [[nodiscard]] std::vector<network::ServerSample> samplesOf(
+      std::int64_t serverId, const PageRequest& page);
 
  private:
   MasterDatabase& database_;

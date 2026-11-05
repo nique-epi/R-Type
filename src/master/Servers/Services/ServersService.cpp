@@ -25,6 +25,7 @@
 #include "NetworkException.hpp"
 #include "NewServer.hpp"
 #include "PageRequest.hpp"
+#include "SampleListing.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerKey.hpp"
 #include "ServerLimits.hpp"
@@ -174,6 +175,14 @@ std::optional<network::GameListing> ServersService::gameListingOf(
 network::ServerListing ServersService::serverListingOf(
     const PageRequest& page) {
   return network::ServerListing{.servers = servers_.registeredServers(page)};
+}
+
+std::optional<network::SampleListing> ServersService::sampleListingOf(
+    std::int64_t serverId, const PageRequest& page) {
+  if (!servers_.hasServer(serverId)) {
+    return std::nullopt;
+  }
+  return network::SampleListing{.samples = samples_.samplesOf(serverId, page)};
 }
 
 std::optional<network::StatusChangeListing>

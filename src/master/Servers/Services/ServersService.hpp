@@ -11,6 +11,7 @@
 #include "KnownServer.hpp"
 #include "MasterDatabase.hpp"
 #include "PageRequest.hpp"
+#include "SampleListing.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerListing.hpp"
 #include "ServerRecord.hpp"
@@ -73,6 +74,11 @@ class ServersService {
    * the master computed last and the counts of its last heartbeat.
    */
   [[nodiscard]] network::ServerListing serverListingOf(const PageRequest& page);
+
+  /** @returns The samples of the server @p serverId in @p page, newest first,
+   * or nothing when no server has that id. */
+  [[nodiscard]] std::optional<network::SampleListing> sampleListingOf(
+      std::int64_t serverId, const PageRequest& page);
 
   /** @returns The changes of status of the server @p serverId in @p page,
    * newest first, or nothing when no server has that id. */
