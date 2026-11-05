@@ -94,17 +94,17 @@ constexpr std::uint16_t SOME_SEQUENCE = 0x0A0B;
  * the transport sees and bit 3 is unknown, so no header above the transport
  * holds either.
  */
-constexpr std::uint8_t SOME_OTHER_VERSION = 5;
+constexpr std::uint8_t SOME_OTHER_VERSION = 6;
 constexpr std::uint32_t SOME_OTHER_PROTOCOL_ID = 0x52545951;
 constexpr std::uint8_t SOME_FLAGS = 0x0C;
 constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
 constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;
 
 /**
- * @brief The 22 bytes of a default header: RTYP, version 4, then zeros.
+ * @brief The 22 bytes of a default header: RTYP, version 5, then zeros.
  */
 constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
-    {0x52, 0x54, 0x59, 0x50, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    {0x52, 0x54, 0x59, 0x50, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
 /**
@@ -115,6 +115,16 @@ constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
 constexpr std::size_t FILLING_PAYLOAD_SIZE = 586;
 constexpr std::size_t OVERFILLING_PAYLOAD_SIZE = 587;
 constexpr std::size_t ENCODED_FILLING_MESSAGE_SIZE = 589;
+
+/**
+ * @brief An OrderedMessage of the tests: number 0x1234, its sender keeping
+ * 0x1230 and later, carrying a GameEvent (type 13); the largest payload one
+ * carries is 1170 bytes, the 1175 of a datagram less its five bytes.
+ */
+constexpr std::uint16_t SOME_ORDERED_NUMBER = 0x1234;
+constexpr std::uint16_t SOME_FIRST_KEPT = 0x1230;
+constexpr std::uint8_t CARRIED_TYPE = 13;
+constexpr std::size_t CARRIED_PAYLOAD_LIMIT = 1170;
 
 /**
  * @brief The offset of the version byte in a datagram.

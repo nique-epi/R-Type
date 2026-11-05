@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
+#include <cstddef>
 #include <vector>
 #include "EncodedMessage.hpp"
 #include "NetworkException.hpp"
 #include "NetworkTestConstants.hpp"
+#include "OrderedMessage.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolFixtures.hpp"
 #include "ProtocolTestConstants.hpp"
@@ -188,7 +190,7 @@ TEST(UnacknowledgedMessages, TakesNothingWhenNothingIsDue) {
 TEST(UnacknowledgedMessages, KeepsTheLargestMessageADatagramHolds) {
   UnacknowledgedMessages messages;
 
-  messages.add(messageOfSize(DATAGRAM_PAYLOAD_LIMIT));
+  messages.add(messageOfSize(LARGEST_CARRIED_PAYLOAD_SIZE));
 
   EXPECT_EQ(messages.count(), 1U);
 }
@@ -204,6 +206,121 @@ TEST(UnacknowledgedMessages, RefusesAMessageTooLargeForADatagram) {
   EXPECT_THROW(messages.add(messageOfSize(PAYLOAD_ONE_BYTE_TOO_LARGE)),
                DatagramTooLargeException);
   EXPECT_EQ(messages.count(), 0U);
+}
+
+/**
+ * Given two messages given in turn
+ * When the due messages are taken
+ * Then they are two envelopes numbered 1 and 2 in order, each carrying its
+ * message and keeping from number 1
+ */
+TEST(UnacknowledgedMessages, NumbersTheMessagesFromOneInTheOrderTheyAreGiven) {
+  UnacknowledgedMessages messages;
+  messages.add(numberedMessage(FIRST_MESSAGE));
+  messages.add(numberedMessage(SECOND_MESSAGE));
+
+  const std::vector<EncodedMessage> due = messages.takeDue(FIRST_SEND);
+
+  ASSERT_EQ(due.size(), 2U);
+  const OrderedMessage first = decodedEnvelope(due.at(0));
+  const OrderedMessage second = decodedEnvelope(due.at(1));
+  EXPECT_EQ(first.number, FIRST_NUMBER);
+  EXPECT_EQ(second.number, SECOND_NUMBER);
+  EXPECT_EQ(first.firstKept, FIRST_NUMBER);
+  EXPECT_EQ(first.payload, numberedMessage(FIRST_MESSAGE).payload);
+}
+
+/**
+ * Given a message of number 1 that grew old and one of number 2 that did not
+ * When the due messages are taken
+ * Then only number 2 is sent, keeping from number 2
+ */
+TEST(UnacknowledgedMessages, KeepsFromTheMessageAfterTheOneGivenUp) {
+  UnacknowledgedMessages messages;
+  messages.add(numberedMessage(FIRST_MESSAGE));
+  messages.advance(MOST_OF_A_LIFETIME);
+  messages.add(numberedMessage(SECOND_MESSAGE));
+  messages.advance(MOST_OF_A_LIFETIME);
+
+  const std::vector<EncodedMessage> due = messages.takeDue(FIRST_SEND);
+
+  ASSERT_EQ(due.size(), 1U);
+  EXPECT_EQ(decodedEnvelope(due.front()).number, SECOND_NUMBER);
+  EXPECT_EQ(decodedEnvelope(due.front()).firstKept, SECOND_NUMBER);
+}
+
+/**
+ * Given a message of number 1 that was acknowledged and left
+ * When the message of number 2 is given and taken
+ * Then it keeps from number 1: nothing was given up
+ */
+TEST(UnacknowledgedMessages, KeepsFromTheStartWhenOnlyAnAcknowledgementLeft) {
+  UnacknowledgedMessages messages;
+  messages.add(numberedMessage(FIRST_MESSAGE));
+  ASSERT_EQ(messages.takeDue(FIRST_SEND).size(), 1U);
+  messages.acknowledge(acknowledgingHeader(FIRST_SEND, NO_BIT));
+  messages.add(numberedMessage(SECOND_MESSAGE));
+
+  const std::vector<EncodedMessage> due =
+      messages.takeDue(SEND_AFTER_THE_FIRST);
+
+  ASSERT_EQ(due.size(), 1U);
+  EXPECT_EQ(decodedEnvelope(due.front()).firstKept, FIRST_NUMBER);
+}
+
+/**
+ * Given messages 1 and 2 sent, then 1 given up while 2 is still kept
+ * When message 2 is due again
+ * Then it is sent keeping from number 2, not from number 1 as the first time
+ */
+TEST(UnacknowledgedMessages, SendsTheCurrentFirstKeptOnEachResend) {
+  UnacknowledgedMessages messages;
+  messages.add(numberedMessage(FIRST_MESSAGE));
+  messages.advance(MOST_OF_A_LIFETIME);
+  messages.add(numberedMessage(SECOND_MESSAGE));
+  ASSERT_EQ(messages.takeDue(FIRST_SEND).size(), 2U);
+  messages.advance(HALF_A_LIFETIME);
+
+  const std::vector<EncodedMessage> due =
+      messages.takeDue(SEND_AFTER_THE_FIRST);
+
+  ASSERT_EQ(due.size(), 1U);
+  EXPECT_EQ(decodedEnvelope(due.front()).number, SECOND_NUMBER);
+  EXPECT_EQ(decodedEnvelope(due.front()).firstKept, SECOND_NUMBER);
+}
+
+/**
+ * Given 256 messages given, none acknowledged
+ * When a 257th is given
+ * Then the first is given up: 256 are kept
+ */
+TEST(UnacknowledgedMessages, GivesUpTheMessageTheWindowLeftBehind) {
+  UnacknowledgedMessages messages;
+  for (std::size_t given = 0; given < MESSAGES_KEPT_BY_THE_WINDOW; ++given) {
+    messages.add(numberedMessage(FIRST_MESSAGE));
+  }
+  ASSERT_EQ(messages.count(), MESSAGES_KEPT_BY_THE_WINDOW);
+
+  messages.add(numberedMessage(FIRST_MESSAGE));
+
+  EXPECT_EQ(messages.count(), MESSAGES_KEPT_BY_THE_WINDOW);
+}
+
+/**
+ * Given 255 messages given, none acknowledged
+ * When a 256th is given
+ * Then none is given up: 256 are kept
+ */
+TEST(UnacknowledgedMessages, KeepsEveryMessageOfAFullWindow) {
+  UnacknowledgedMessages messages;
+  for (std::size_t given = 0; given + 1 < MESSAGES_KEPT_BY_THE_WINDOW;
+       ++given) {
+    messages.add(numberedMessage(FIRST_MESSAGE));
+  }
+
+  messages.add(numberedMessage(FIRST_MESSAGE));
+
+  EXPECT_EQ(messages.count(), MESSAGES_KEPT_BY_THE_WINDOW);
 }
 
 /**

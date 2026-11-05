@@ -6,6 +6,7 @@
 #include "MessageDispatcher.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkThread.hpp"
+#include "OrderedInbox.hpp"
 #include "RoundTripWatch.hpp"
 #include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
@@ -69,6 +70,7 @@ class PlayerConnection {
   NetworkThread network_;
   DatagramRouter router_;
   network::MessageDispatcher dispatcher_;
+  OrderedInbox orderedInbox_;
   GameLoadedReminder gameLoaded_;
   WaitingRoom waitingRoom_;
   EntityMessageQueue entityMessages_;

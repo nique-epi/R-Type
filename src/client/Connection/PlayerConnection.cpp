@@ -23,6 +23,7 @@ network::Endpoint anyInterfaceAnyPort() {
 PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions)
     : network_(anyInterfaceAnyPort(), conditions),
       router_(network_),
+      orderedInbox_(dispatcher_),
       waitingRoom_(dispatcher_, gameLoaded_),
       entityMessages_(dispatcher_, waitingRoom_, gameLoaded_),
       roundTrips_(dispatcher_, clock_),
@@ -32,7 +33,7 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions)
           .dispatcher = dispatcher_,
           .gameLoaded = gameLoaded_,
           .observers = {waitingRoom_, entityMessages_, gameLoaded_, roundTrips_,
-                        leaderboard_}}) {}
+                        leaderboard_, orderedInbox_}}) {}
 
 void PlayerConnection::update(engine::Duration elapsed) {
   entityMessages_.advance(elapsed);

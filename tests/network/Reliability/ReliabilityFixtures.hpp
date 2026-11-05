@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 #include "EncodedMessage.hpp"
+#include "OrderedMessage.hpp"
 #include "PacketHeader.hpp"
 
 namespace rtype::network::testing {
@@ -12,6 +14,18 @@ namespace rtype::network::testing {
 
 /** @returns The number numberedMessage() wrote in @p message. */
 [[nodiscard]] std::uint16_t numberOf(const EncodedMessage& message);
+
+/** @returns The envelope that carries numberedMessage(@p number) as message
+ * @p number of the ordered channel, its sender keeping @p firstKept. */
+[[nodiscard]] OrderedMessage envelopeOf(std::uint16_t number,
+                                        std::uint16_t firstKept);
+
+/** @returns The numbers numberedMessage() wrote in @p messages, in order. */
+[[nodiscard]] std::vector<std::uint16_t> carriedNumbers(
+    const std::vector<EncodedMessage>& messages);
+
+/** @returns The OrderedMessage that the envelope @p message holds. */
+[[nodiscard]] OrderedMessage decodedEnvelope(const EncodedMessage& message);
 
 /** @returns A header that acknowledges @p acknowledgedSequence, and the
  * datagrams before it whose bits @p bits sets. */

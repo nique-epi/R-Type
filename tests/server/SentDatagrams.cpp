@@ -7,11 +7,13 @@
 #include <span>
 #include <string>
 #include <vector>
+#include "CarriedMessage.hpp"
 #include "DatagramCodec.hpp"
 #include "DeltaWorldState.hpp"
 #include "Endpoint.hpp"
 #include "MessageFrame.hpp"
 #include "MessageType.hpp"
+#include "OrderedMessage.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
@@ -38,12 +40,32 @@ std::vector<network::OutgoingDatagram> sentTo(
   return datagrams;
 }
 
+std::vector<CarriedMessage> carriedMessagesOf(
+    const network::OutgoingDatagram& datagram) {
+  std::vector<CarriedMessage> carried;
+  for (const network::MessageFrame& frame :
+       network::DatagramCodec::splitMessages(datagram.payload)) {
+    if (frame.type ==
+        static_cast<std::uint8_t>(network::MessageType::OrderedMessage)) {
+      const auto envelope =
+          network::decodeMessage<network::OrderedMessage>(frame.payload);
+      carried.push_back(CarriedMessage{.type = envelope.innerType,
+                                       .payload = envelope.payload});
+    } else {
+      carried.push_back(
+          CarriedMessage{.type = frame.type,
+                         .payload = std::vector<std::byte>(
+                             frame.payload.begin(), frame.payload.end())});
+    }
+  }
+  return carried;
+}
+
 network::MessageType onlyMessageTypeOf(
     const network::OutgoingDatagram& datagram) {
-  const std::vector<network::MessageFrame> frames =
-      network::DatagramCodec::splitMessages(datagram.payload);
-  EXPECT_EQ(frames.size(), 1U);
-  return static_cast<network::MessageType>(frames.at(0).type);
+  const std::vector<CarriedMessage> carried = carriedMessagesOf(datagram);
+  EXPECT_EQ(carried.size(), 1U);
+  return static_cast<network::MessageType>(carried.at(0).type);
 }
 
 network::WorldState fullStateIn(const network::OutgoingDatagram& datagram) {
@@ -65,9 +87,8 @@ std::size_t messageCountIn(const network::OutgoingDatagram& datagram) {
 bool holdsMessageOfType(const network::OutgoingDatagram& datagram,
                         network::MessageType type) {
   return std::ranges::any_of(
-      network::DatagramCodec::splitMessages(datagram.payload),
-      [type](const network::MessageFrame& frame) {
-        return frame.type == static_cast<std::uint8_t>(type);
+      carriedMessagesOf(datagram), [type](const CarriedMessage& carried) {
+        return carried.type == static_cast<std::uint8_t>(type);
       });
 }
 
