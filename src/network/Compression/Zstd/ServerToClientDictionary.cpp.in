@@ -1,0 +1,19 @@
+#include <array>
+#include <cstdint>
+#include <span>
+#include "ServerToClientDictionary.hpp"
+
+namespace rtype::network {
+
+namespace {
+
+constexpr std::array<std::uint8_t, @RTYPE_DICTIONARY_SIZE@> DICTIONARY_BYTES{
+    @RTYPE_DICTIONARY_BYTES@};
+
+}  // namespace
+
+std::span<const std::uint8_t> serverToClientDictionary() {
+  return DICTIONARY_BYTES;
+}
+
+}  // namespace rtype::network

@@ -3,11 +3,13 @@
 #include <cstddef>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <span>
 #include <string>
 #include <thread>
 #include <utility>
 #include <vector>
+#include "DatagramCompression.hpp"
 #include "Endpoint.hpp"
 #include "NetworkConstants.hpp"
 
@@ -19,11 +21,20 @@ UdpTestClient::UdpTestClient()
   socket_.startReceiving(
       [this]([[maybe_unused]] const rtype::network::Endpoint& sender,
              std::span<const std::byte> bytes) {
+        std::vector<std::byte> payload(bytes.begin(), bytes.end());
+        if (rtype::network::isCompressed(bytes)) {
+          std::optional<std::vector<std::byte>> plain =
+              rtype::network::plainForm(bytes);
+          if (!plain.has_value()) {
+            return;
+          }
+          payload = std::move(*plain);
+        }
         {
           const std::scoped_lock lock{mutex_};
-          received_.push_back(ReceivedAt{
-              .payload = std::vector<std::byte>(bytes.begin(), bytes.end()),
-              .time = std::chrono::steady_clock::now()});
+          received_.push_back(
+              ReceivedAt{.payload = std::move(payload),
+                         .time = std::chrono::steady_clock::now()});
         }
         arrived_.notify_all();
       });

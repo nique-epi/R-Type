@@ -88,7 +88,7 @@ constexpr char CUT_NAME_MARK = '.';
  * @brief The characters a status line of the form holds: the width of the
  * form less its margin on both sides, 240 - 2 x 16 = 208 pixels, over the 8
  * pixels a character of the regular font takes, so 26. The longest status line
- * that fits today, REFUSED: YOU V4, SERVER V3, takes them all.
+ * that fits today, REFUSED: YOU V5, SERVER V4, takes them all.
  */
 constexpr std::size_t STATUS_LINE_CHARACTERS = static_cast<std::size_t>(
     (FORM_WIDTH - (SIDES_PER_AXIS * FORM_HEADING_OFFSET.x)) /

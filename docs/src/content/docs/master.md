@@ -115,7 +115,7 @@ A registration is the state of a server that starts: it forgets the last heartbe
 The bodies are JSON, read and written by `rtype_network_master` (`src/network/Master/`), which `MasterClient` links to send them. A member it does not know is ignored, so a newer server still registers; a member missing, of another type or out of its bounds answers 400, whose `detail` names it by its JSON Pointer (RFC 6901), such as `/games/0/players/1`:
 
 ```json
-{"name":"Paris 1","udpPort":4242,"gameVersion":"0.4.0","protocolVersion":4,
+{"name":"Paris 1","udpPort":4242,"gameVersion":"0.4.0","protocolVersion":5,
  "maximumGames":8,"maximumPlayersPerGame":4}
 ```
 
