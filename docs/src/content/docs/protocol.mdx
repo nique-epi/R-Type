@@ -153,6 +153,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 21 | `RoundTrips` | `playerCount` `u8`, then per player `playerNumber` `u8`, `roundTrip` `u32`, `jitter` `u32`, in microseconds | right after each `Heartbeat` of the server (see [Round trip](#round-trip)) |
 | 22 | `EnemyAction` | `entityId` `u32`, `attack` `u8`, `phase` `u8`: 1 `Signal`, 2 `Strike`, 3 `Recover`, 4 `Enraged` | when an enemy enters a step of one of its attacks, guaranteed and ordered (see [Ordered messages](#ordered-messages)) |
 | 23 | `OrderedMessage` | `number` `u16`, `firstKept` `u16`, `innerType` `u8`, then the payload of the carried message to the end | carries `EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` (see [Ordered messages](#ordered-messages)) |
+| 24 | `ConnectionRedirect` | `port` `u16` (1 to 65535) | from a supervisor only, in answer to a request with a valid cookie, once a game that has a place reported; the player asks again at that port of the same address (see [Supervisor](#supervisor)) |
 
 ### Payload rules
 
@@ -411,6 +412,18 @@ This section gathers what each side does when something goes wrong, from a datag
 | A payload of the wrong size, or a value out of range: a `bool` other than 0 or 1, an enumeration value not listed, a bit 5 to 7 set in `actions`, a bit 6 or 7 set in `motion`, a nickname that is empty, longer than 16 bytes, not UTF-8 or holding a control character (U+0000 to U+001F, U+007F) | drops that message; the other messages of the datagram are read | nothing, even to a `ConnectionRequest` dropped this way |
 | An entity of type 0 in a `WorldState` or a `DeltaWorldState` | skips that entity and reads the next one (see [World state](#world-state)) | nothing |
 | An `EntitySpawned` or an entity of a state whose type the table of the session does not hold | the client creates nothing for it (see [Entity types](#entity-types)) | nothing |
+
+### Supervisor
+
+A supervisor (`r-type_server --mode supervisor`) starts a game process per game and sends each player to one. Three messages carry it. The datagram of a `ConnectionRedirect` is 27 bytes, never more than the 35 bytes of the smallest `ConnectionRequest` it answers, so it adds no amplification.
+
+| Type | Message | Payload | Sent |
+|---|---|---|---|
+| 24 | `ConnectionRedirect` | `port` `u16` (1 to 65535) | supervisor to player, in answer to a request with a valid cookie |
+| 25 | `GameStatus` | `state` `u8`: 1 waiting for players, 2 in progress, 3 finished; `playerCount` `u8` (0 to 4) | game process to supervisor, every second and when either value changes |
+| 26 | `GameStatusAcknowledged` | none | supervisor to game process, in answer to each `GameStatus` |
+
+A client that receives a `ConnectionRedirect` while it connects, and only the first one of an attempt, to a port other than the one it uses, sends its next request to that port with the cookie back at 0: the game draws its own cookies. The 5 s of the attempt do not restart. In any other state it ignores the message. Between the supervisor and a game process, the header carries the link token as `sessionToken`, and `sequence` orders the statuses.
 
 ### A sender that sends too much
 

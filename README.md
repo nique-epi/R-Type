@@ -147,6 +147,12 @@ Without `master-url` or `master-key`, a game server runs alone and is listed now
 
 Both choices are told in full in [Architecture](https://nique-epi.github.io/R-Type/architecture/#master).
 
+`--mode supervisor` runs the same binary as a supervisor: it runs no game, listens on port 4242, and starts one `r-type_server` process per game, up to eight, sending each player to the game that has a place. A game that crashes stops only its own players, and Ctrl-C on the supervisor stops every game; see [the server page](https://nique-epi.github.io/R-Type/server/#supervisor-and-game-processes).
+
+```bash
+./r-type_server --mode supervisor
+```
+
 `--help` prints the options of either program, and `--mode master --help` those of the master. An invalid argument stops it with a message and exit code 1.
 
 ## Tests
