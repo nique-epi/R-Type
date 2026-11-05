@@ -85,7 +85,7 @@ The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, se
 |---|---|---|
 | 1 | `servers` | each created server: its name, the fingerprint of its key, the address and the date of its creation; once it registered, what it registered and the last heartbeat it sent, nicknames included |
 | 1 | `heartbeat_samples` | the measures of each heartbeat, at most one per server and per second, kept 7 days |
-| 2 | `servers` | the status computed last, whether an admin put the server in maintenance, and the games, players, tick p95 and loss of the last heartbeat, written with it so the list and the statuses parse no JSON |
+| 2 | `servers` | the status computed last, whether an admin put the server in maintenance, and the games, players, tick p95 and loss of the last heartbeat, written with it so the list and the statuses parse no JSON; the upgrade of a file of version 1 reads them once from the last heartbeat it kept, and leaves them empty for a text that is no heartbeat |
 | 2 | `status_changes` | each change of status of each server, at most one per server and per second, kept 7 days |
 
 ## Creating a game server: `POST /api/servers`

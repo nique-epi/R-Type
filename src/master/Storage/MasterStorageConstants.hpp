@@ -58,8 +58,11 @@ CREATE INDEX heartbeat_samples_by_date ON heartbeat_samples (taken_at);
  * server, whether an admin put it in maintenance, every change of status, and
  * what the list and the statuses read of the last heartbeat (its games, its
  * players, its tick p95 and its loss), written with it so a read parses no
- * JSON. Those four are null before the first heartbeat, after a registration,
- * and for a heartbeat a master of version 1 kept.
+ * JSON. Those four are null before the first heartbeat and after a
+ * registration. For a server a master of version 1 kept, they are read once
+ * from its last heartbeat, so the list and the statuses see it as it was
+ * before the upgrade; a text that is no JSON object with a list of games
+ * leaves them null, and never stops the upgrade.
  *
  * A server starts offline: its first change comes with the first refresh after
  * its registration. The status is text with no CHECK, so a later status (the
@@ -75,6 +78,24 @@ ALTER TABLE servers ADD COLUMN last_game_count INTEGER;
 ALTER TABLE servers ADD COLUMN last_player_count INTEGER;
 ALTER TABLE servers ADD COLUMN last_tick_p95_milliseconds REAL;
 ALTER TABLE servers ADD COLUMN last_loss_percent REAL;
+
+UPDATE servers SET
+  last_game_count = json_array_length(last_heartbeat, '$.games'),
+  last_player_count = (
+    SELECT COALESCE(SUM(json_array_length(game.value, '$.players')), 0)
+    FROM json_each(servers.last_heartbeat, '$.games') AS game
+    WHERE CASE WHEN game.type = 'object'
+      THEN json_type(game.value, '$.players') = 'array' ELSE 0 END),
+  last_tick_p95_milliseconds = CASE
+    WHEN json_type(last_heartbeat, '$.measures.tickP95Milliseconds')
+      IN ('integer', 'real')
+    THEN json_extract(last_heartbeat, '$.measures.tickP95Milliseconds') END,
+  last_loss_percent = CASE
+    WHEN json_type(last_heartbeat, '$.measures.lossPercent')
+      IN ('integer', 'real')
+    THEN json_extract(last_heartbeat, '$.measures.lossPercent') END
+WHERE CASE WHEN json_valid(last_heartbeat)
+  THEN json_type(last_heartbeat, '$.games') = 'array' ELSE 0 END;
 
 CREATE TABLE status_changes (
   server_id  INTEGER NOT NULL REFERENCES servers (id),
