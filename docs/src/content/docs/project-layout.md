@@ -258,11 +258,12 @@ src/master/
 ├── Logger/           the module logger
 ├── Storage/          the module storage: the database, on the connection and migrations of rtype_storage
 ├── Http/             the module http: the HTTP server, its errors, GET /api/health
-├── Servers/          the module servers: creation and key, registration, heartbeats, the games of a server; status being written
+├── Servers/          the module servers: creation and key, registration, heartbeats, statuses, the lists
 │   ├── Controllers/  ServersController: reads each route, writes its answer
-│   ├── Services/     ServersService: the rules; Helpers/, the key and its fingerprint
-│   ├── Repositories/ the only SQL: ServerRepository, HeartbeatSampleRepository
-│   └── Models/       the plain structs the layers hand each other
+│   ├── Services/     ServersService, ServerStatusService: the rules; Helpers/, the key and the status rule
+│   ├── Repositories/ the only SQL: ServerRepository, HeartbeatSampleRepository, StatusChangeRepository
+│   ├── Models/       the plain structs the layers hand each other
+│   └── Jobs/         ServerStatusJob: refreshes the statuses on a thread of its own
 ├── Modules/          masterModules(), the list of the modules
 ├── Administration/   bans, kicks, maintenance, audit log: being written
 ├── Matchmaking/      a server chosen to create a game: being written

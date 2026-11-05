@@ -11,12 +11,12 @@ This page tells you where to look when you need to change something. It describe
 |---|---|---|
 | Start and stop: `--mode master`, `master.cfg`, Ctrl-C and SIGTERM | Available | `src/server/main.cpp`, `src/master/LaunchOptions/` |
 | HTTP API under `/api`, every error in JSON | Available | `src/master/Http/` |
-| Database `r-type_master.db` | Available: servers, samples | `src/master/Storage/` |
+| Database `r-type_master.db` | Available: servers, samples, changes of status | `src/master/Storage/` |
 | Creation of a game server and its key, `POST /api/servers` | Available; the web site that calls it is not written | `src/master/Servers/` |
 | Registration and heartbeats of the game servers | Available; sent by the module `master` of the game server | `src/master/Servers/`, `src/network/Master/`, `src/server/Master/` |
 | The client of the master, `MasterClient` | Available | `src/network/Master/Client/` |
 | The games of a server, for the client, `GET /api/servers/{id}/games` | Available | `src/master/Servers/`, `src/network/Master/` |
-| The list of the servers, for the client | Not yet written | |
+| The statuses of the servers, their list and their history, `GET /api/servers` | Available; the status `unreachable`, which needs a probe over UDP, and the route that puts a server in maintenance are not written | `src/master/Servers/`, `src/network/Master/` |
 | Administration, global leaderboard, accounts, web site | Not yet written | |
 
 ## Starting the master
@@ -56,7 +56,7 @@ The master reads `master.cfg`, in the folder it is started from, between the ins
 | `logger` | `MasterLoggerModule` | nothing | the journal |
 | `storage` | `MasterStorageModule` | `logger` | the database, migrated |
 | `http` | `MasterHttpModule` | `logger` | the port, and the thread that listens on it |
-| `servers` | `ServersModule` | `logger`, `storage`, `http` | nothing: its routes run once `http` listens |
+| `servers` | `ServersModule` | `logger`, `storage`, `http` | `StatusWatch`, the thread of `ServerStatusJob`; its routes run once `http` listens |
 
 The storage starts before the HTTP API, so a database the master cannot open stops it before its port opens, and the API stops before the database closes.
 
@@ -85,6 +85,8 @@ The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, se
 |---|---|---|
 | 1 | `servers` | each created server: its name, the fingerprint of its key, the address and the date of its creation; once it registered, what it registered and the last heartbeat it sent, nicknames included |
 | 1 | `heartbeat_samples` | the measures of each heartbeat, at most one per server and per second, kept 7 days |
+| 2 | `servers` | the status computed last, whether an admin put the server in maintenance, and the games, players, tick p95 and loss of the last heartbeat, written with it so the list and the statuses parse no JSON |
+| 2 | `status_changes` | each change of status of each server, at most one per server and per second, kept 7 days |
 
 ## Creating a game server: `POST /api/servers`
 
@@ -103,7 +105,7 @@ The host then writes the key in the `server.cfg` of that server, as the setting 
 
 ## Routes of a game server: `ServersModule`
 
-A game server is named by its key, sent as `Authorization: Bearer <key>`, never by an id in the path: a key reaches its own server alone. The routes that write answer 401, with `WWW-Authenticate: Bearer`, to a request without a key the master issued; the key is checked before the body is read. Reading the games of a server needs no key.
+A game server is named by its key, sent as `Authorization: Bearer <key>`, never by an id in the path: a key reaches its own server alone. The routes that write answer 401, with `WWW-Authenticate: Bearer`, to a request without a key the master issued; the key is checked before the body is read. Reading the list of the servers, the games or the history of a server needs no key.
 
 | Route | Does | Answers |
 |---|---|---|
@@ -111,6 +113,9 @@ A game server is named by its key, sent as `Authorization: Bearer <key>`, never 
 | `PUT /api/servers/me` | replaces what the server of the key registered; the same body twice gives the same server | 200 and the server, its `id` included |
 | `PUT /api/servers/me/heartbeat` | replaces the last state of the server, and keeps a sample of its measures | 200 and `{"commands":[]}`, the orders of the admins waiting for the server, none until administration exists; 409 before the server registered |
 | `GET /api/servers/{id}/games` | lists the games of the last heartbeat of the server `id`, to anyone (see [Listing the games of a server](#listing-the-games-of-a-server)) | 200 and the games; 404 for an id that names no server |
+| `GET /api/servers` | lists the registered servers, a page at a time, to anyone (see [Listing the servers and their history](#listing-the-servers-and-their-history)) | 200 and the servers; 400 for a page out of its bounds |
+| `GET /api/servers/{id}/samples` | lists the samples of the server `id`, newest first | 200 and the samples; 404 for an id that names no server, 400 for a page out of its bounds |
+| `GET /api/servers/{id}/status-changes` | lists the changes of status of the server `id`, newest first | 200 and the changes; 404 and 400 as above |
 
 A registration is the state of a server that starts: it forgets the last heartbeat, since the server hosts no game yet. A registration with no `address` takes the address of the TCP peer, since a server often does not know its public address. A sample is written once per second of the clock at most, whatever the rate of the heartbeats, and every sample older than `SAMPLE_RETENTION` (7 days) is erased when a new one is written, of every server.
 
@@ -159,10 +164,49 @@ A read costs one SQL statement and the check of the heartbeat kept, and the rout
 Three things the route does not do:
 
 - **It is not paginated.** The rule of the routes of the master asks `?limit&offset` for a list; this one answers the whole list instead, since no server holds more than `MAXIMUM_HOSTED_GAMES` (64) games, which is the answer's upper bound.
-- **It does not age the list.** The games are those of the last heartbeat kept, whatever its date: a server that stopped sending heartbeats keeps listing its games as it last described them, until it registers again.
+- **It does not age the list.** The games are those of the last heartbeat kept, whatever its date: a server that stopped sending heartbeats keeps listing its games as it last described them, until it registers again. Its status in [the list of the servers](#listing-the-servers-and-their-history) says whether it still beats.
 - **It does not hide a heartbeat it can no longer read.** A last heartbeat stored in a form the master no longer reads (for instance one stored before `name` became a member of a game) makes `ServersService::gameListingOf()` throw `InvalidMasterMessageException`. The controller does not catch it, so the exception handler of the HTTP server answers 500 and writes the reason in the journal. The next heartbeat of the server replaces the stored one.
 
 The master and the game servers are deployed together: a game of a heartbeat must carry its `name`, and a master that reads this version refuses with 400 the heartbeat of a server that does not write it.
+
+## Statuses of the game servers: `ServerStatusJob`
+
+The master gives each registered server a status, refreshed by `ServerStatusJob` (`src/master/Servers/Jobs/`) on its own thread, `StatusWatch`, which `ServersModule` starts with the master and stops with it: once at the start, then every `STATUS_REFRESH_INTERVAL` (5 s), whether anyone reads the list or not. `statusOf()` (`src/master/Servers/Services/Helpers/ServerStatusRule.hpp`) gives the first status that applies:
+
+| Status | When |
+|---|---|
+| `maintenance` | an admin took the server out of service, whatever it sends |
+| `offline` | the master heard nothing of it for `OFFLINE_SILENCE` (15 s, `MISSED_HEARTBEATS_BEFORE_OFFLINE` (3) heartbeats of `MASTER_HEARTBEAT_INTERVAL` (5 s)): no heartbeat for that long, or, while it sent none since it registered, no registration |
+| `degraded` | heard in time, but the 95th percentile of its ticks reaches `DEGRADED_TICK_P95_MILLISECONDS` (one tick of the simulation, 16.67 ms) or its loss reaches `DEGRADED_LOSS_PERCENT` (5 %) |
+| `online` | heard in time and within both bounds; a measure the server does not take counts as within its bound |
+
+- **The bounds are provisional.** They are starting values, to set again once the bandwidth and lag measurements are done; code must read the constants. The game server sends no loss yet (see [Server](/R-Type/server/)), so it is judged on its ticks and its silence only.
+- **Timing.** Dates are kept to the second, so a server that stops beating is written offline 14 to 20 s after its last heartbeat. A server starts offline, the default of its column, and its first refresh after its registration writes it online. A server created on the web site and never registered is neither refreshed nor listed.
+- **History.** Each change is kept in `status_changes` with its second, then written as the status of its server: one transaction for all the changes of a refresh, then one for all the statuses, so a change is never missing from the history. A second change of a server in the same second replaces the first. Changes are kept `STATUS_CHANGE_RETENTION` (7 days, as long as the samples), and each one is written in the journal at the `info` level: `server 7 is now offline`. A refresh that fails is written at the `error` level and tried again at the next one.
+- **Not written yet.** The status `unreachable`, for a server that does not answer 3 probes over UDP in a row, will come with the probe. Putting a server in maintenance has no route: `ServerStatusService::setMaintenance()` exists, and the administration will call it. A server at the edge of a bound changes status each time a heartbeat crosses it: no delay keeps it in place.
+
+## Listing the servers and their history
+
+Three routes read what the master keeps, to anyone, a page at a time. `GET /api/servers` lists the registered servers by id, each with its registration, the status computed last and the games and players of its last heartbeat (0 and 0 before one):
+
+```json
+{"servers":[{"id":7,"name":"Paris 1","address":"203.0.113.7","udpPort":4242,"gameVersion":"0.4.0",
+             "protocolVersion":2,"maximumGames":8,"maximumPlayersPerGame":4,
+             "status":"online","gameCount":2,"playerCount":3}]}
+```
+
+`GET /api/servers/{id}/samples` and `GET /api/servers/{id}/status-changes` list the samples and the changes of status of one server, newest first; a date is in seconds since 1970 UTC, and a measure the server did not take is left out:
+
+```json
+{"samples":[{"takenAt":1800000000,"gameCount":2,"playerCount":3,
+             "measures":{"tickP95Milliseconds":4.25}}]}
+{"statusChanges":[{"changedAt":1800000000,"status":"offline"}]}
+```
+
+- **A page** is `?limit=<n>&offset=<m>`: `limit` from `MINIMUM_PAGE_SIZE` (1) to `MAXIMUM_PAGE_SIZE` (100), `DEFAULT_PAGE_SIZE` (50) when left out; `offset` from `FIRST_PAGE_OFFSET` (0), the items skipped. Each is a whole number with no sign; anything else answers 400, whose `detail` gives the bounds. A parameter given twice keeps its first value.
+- **An id** that is no number, or that no server has, answers 404. A server created and never registered has a history, empty.
+- **A read** is one SQL statement of plain columns: no heartbeat is parsed. SQLite steps through the rows an `offset` skips, so a page deep in 7 days of samples costs more than the first one.
+- `MasterClient` has no function for these routes yet: the list of servers of the game client will add it.
 
 ## The client of the master: `MasterClient`
 
@@ -197,7 +241,7 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 }
 ```
 
-`ServersModule` adds its four routes the same way, from `MasterRouteConstants.hpp`; a path may name a parameter, as `/servers/:id/games` names `id`, which the route reads in `ApiRequest::pathParameters`, and is laid out like a web backend: `Controllers/` reads the request of each route and writes its answer, `Services/` applies the rules (`Services/Helpers/` for the key and its fingerprint), `Repositories/` holds the only SQL, one class per table, and `Models/` the plain structs the layers hand each other.
+`ServersModule` adds its seven routes the same way, from `MasterRouteConstants.hpp`; a path may name a parameter, as `/servers/:id/games` names `id`, which the route reads in `ApiRequest::pathParameters`, and the query of a path, such as `?limit=20`, reaches the route in `ApiRequest::queryParameters`. The module is laid out like a web backend: `Controllers/` reads the request of each route and writes its answer, `Services/` applies the rules (`Services/Helpers/` for the pure ones: the key and its fingerprint, the rule of the statuses), `Repositories/` holds the only SQL, one class per table, `Models/` the plain structs the layers hand each other, and `Jobs/` the work the module does on its own thread at a fixed interval, `ServerStatusJob`.
 
 ## Where to intervene
 
@@ -208,7 +252,11 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change what a server sends, or its bounds | `src/network/Master/`: `MasterMessageText.cpp` and `MasterMessageConstants.hpp` |
 | Change what a creation, a registration or a heartbeat answers | `ServersController` (`src/master/Servers/Controllers/`) |
 | Change the quota of creations | `MAXIMUM_CREATIONS_PER_ADDRESS` and `CREATION_WINDOW` in `src/master/Servers/Services/ServersServiceConstants.hpp` |
-| Change how long samples are kept | `SAMPLE_RETENTION` in `src/master/Servers/Repositories/ServersRepositoryConstants.hpp` |
+| Change how long samples and changes of status are kept | `SAMPLE_RETENTION` in `src/master/Servers/Repositories/ServersRepositoryConstants.hpp`; `STATUS_CHANGE_RETENTION` follows it |
+| Change when a server is offline or degraded | `OFFLINE_SILENCE`, `DEGRADED_TICK_P95_MILLISECONDS` and `DEGRADED_LOSS_PERCENT` in `src/master/Servers/Services/Helpers/ServerStatusRuleConstants.hpp`, and `statusOf()` next to them |
+| Change how often the statuses are refreshed | `STATUS_REFRESH_INTERVAL` in `src/master/Servers/Jobs/ServerStatusJobConstants.hpp` |
+| Change how often a game server beats | `MASTER_HEARTBEAT_INTERVAL` in `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master also reads to tell a silent server |
+| Change the size of a page of a list | `MINIMUM_PAGE_SIZE`, `DEFAULT_PAGE_SIZE` and `MAXIMUM_PAGE_SIZE` in `src/network/Master/Routes/MasterRouteConstants.hpp` |
 | Call the master from the game server | `MasterClient` (`src/network/Master/Client/`) |
 | Change what the games of a server are listed as | `listedStateOf()` in `ServersService.cpp` (`src/master/Servers/Services/`) and `GameListing` (`src/network/Master/Messages/`) |
 | Change what a game server tells of its games | `hostedGamesOf()` (`src/server/Games/HostedGames.cpp`) |
