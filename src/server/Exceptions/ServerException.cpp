@@ -83,4 +83,11 @@ ChildBindingException::ChildBindingException(const std::string& step)
     : ServerException("cannot tie a game process to the supervisor: " + step +
                       " failed") {}
 
+IncompleteSupervisorLinkException::IncompleteSupervisorLinkException(
+    const std::string& missingOption)
+    : ServerException(
+          "a game process needs both --supervisor and "
+          "--link-token: " +
+          missingOption + " is missing") {}
+
 }  // namespace rtype::server

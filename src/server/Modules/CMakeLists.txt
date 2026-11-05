@@ -16,6 +16,7 @@ target_link_libraries(rtype_server_modules
     rtype_server_network_module
     rtype_server_platform
     rtype_server_storage_module
+    rtype_server_supervisor_link_module
   PRIVATE
     rtype_engine_system_clock
     rtype_game_entity_types

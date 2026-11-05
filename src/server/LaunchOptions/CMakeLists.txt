@@ -13,7 +13,9 @@ target_link_libraries(rtype_server_launch_options
   PRIVATE
     rtype_engine_paths
     rtype_network_constants
+    rtype_network_protocol
     rtype_server_constants
+    rtype_server_exceptions
 )
 
 rtype_enable_warnings(rtype_server_launch_options)

@@ -21,6 +21,7 @@ add_subdirectory(Games)
 add_subdirectory(Lobby)
 add_subdirectory(Metrics)
 add_subdirectory(Master)
+add_subdirectory(SupervisorLink)
 add_subdirectory(Modules)
 
 add_executable(r-type_server main.cpp)

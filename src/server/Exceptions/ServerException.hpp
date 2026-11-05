@@ -127,4 +127,14 @@ class ChildBindingException : public ServerException {
   explicit ChildBindingException(const std::string& step);
 };
 
+/**
+ * @brief Only one of the two options that make a server the child of a
+ * supervisor was given.
+ */
+class IncompleteSupervisorLinkException : public ServerException {
+ public:
+  /** @param missingOption The option that was not given. */
+  explicit IncompleteSupervisorLinkException(const std::string& missingOption);
+};
+
 }  // namespace rtype::server
