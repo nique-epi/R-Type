@@ -153,8 +153,7 @@ void DatagramSorter::sortSpoken(const SpokenDatagram& datagram) {
 network::AllowanceVerdict DatagramSorter::spendAllowanceOf(
     const SpokenDatagram& datagram, AdmittedPlayer* player,
     std::chrono::nanoseconds now) {
-  if (player != nullptr &&
-      datagram.header.sessionToken == player->sessionToken) {
+  if (player != nullptr && !datagram.holdsRequest) {
     return network::spendAllowance(player->allowance,
                                    network::PLAYER_RATE_LIMIT, now);
   }

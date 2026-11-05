@@ -584,6 +584,21 @@ TEST_F(DatagramSorterFixture, PlacesNoMoreThanElevenRequestsOfAStrangerAtOnce) {
 }
 
 /**
+ * Given an admitted player
+ * When it sends twelve connection requests carrying its own token at once
+ * Then eleven reach the request queue: a request spends the limit of the
+ * requests, whatever token it carries
+ */
+TEST_F(DatagramSorterFixture, LimitsTheRequestsOfAPlayerLikeThoseOfAStranger) {
+  admit(player());
+
+  sortRepeatedly(player(), requestDatagram(playerHeader()),
+                 REQUESTS_PLACED_AT_ONCE + 1);
+
+  EXPECT_EQ(drainRequests().size(), REQUESTS_PLACED_AT_ONCE);
+}
+
+/**
  * Given a stranger whose connection request waits in the request queue
  * When another stranger then floods the server with twice more requests than
  * the player queue holds
