@@ -18,6 +18,7 @@
 #include "DataFilePlace.hpp"
 #include "DataFileTable.hpp"
 #include "EngineException.hpp"
+#include "PathText.hpp"
 #include "TimeConstants.hpp"
 #include "WholeNumberRange.hpp"
 
@@ -63,7 +64,7 @@ std::string dataFileContent(const std::filesystem::path& file) {
 std::string shownPath(const std::filesystem::path& file) {
   std::error_code error;
   const std::filesystem::path absolute = std::filesystem::absolute(file, error);
-  return (error ? file : absolute).generic_string();
+  return logging::genericText(error ? file : absolute);
 }
 
 DataFileTable rootOf(const toml::table& root, std::string_view source) {

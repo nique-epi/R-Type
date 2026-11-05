@@ -14,7 +14,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <ctime>
-#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -26,6 +25,7 @@
 #include <utility>
 #include "LoggingConstants.hpp"
 #include "LoggingException.hpp"
+#include "PathText.hpp"
 
 namespace rtype::logging {
 
@@ -232,7 +232,7 @@ void Logger::setOutput(const LogOutput& output) {
   if (output.filePath.has_value()) {
     file.open(*output.filePath, std::ios::app);
     if (!file.is_open()) {
-      throw LogFileOpenException(output.filePath->string());
+      throw LogFileOpenException(genericText(*output.filePath));
     }
   }
   Sinks& destination = sinks();

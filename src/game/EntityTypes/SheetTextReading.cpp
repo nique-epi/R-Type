@@ -22,7 +22,7 @@ std::vector<SheetText> sheetTextsIn(const std::filesystem::path& folder) {
   std::vector<SheetText> texts;
   texts.reserve(files.size());
   for (const std::filesystem::path& file : files) {
-    texts.push_back(SheetText{.name = engine::genericText(file.stem()),
+    texts.push_back(SheetText{.name = logging::genericText(file.stem()),
                               .source = engine::shownPath(file),
                               .text = engine::dataFileContent(file)});
   }

@@ -68,7 +68,7 @@ void ClientSettingsModule::logFileLocation() const {
     logger_.warn("no settings folder, the settings last for this launch only");
     return;
   }
-  logger_.info("settings file: ", engine::genericText(*file_));
+  logger_.info("settings file: ", logging::genericText(*file_));
 }
 
 }  // namespace rtype::client

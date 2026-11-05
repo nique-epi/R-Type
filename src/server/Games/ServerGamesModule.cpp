@@ -65,7 +65,7 @@ std::optional<std::uint32_t> seedOf(const engine::SettingValue& setting) {
 void logEntitySheets(const logging::Logger& logger,
                      const std::filesystem::path& folder,
                      const game::EntitySheets& types) {
-  logger.info("entity sheets ", engine::genericText(folder), ": ",
+  logger.info("entity sheets ", logging::genericText(folder), ": ",
               types.all().size(), " types");
 }
 
@@ -76,7 +76,7 @@ void logEntitySheets(const logging::Logger& logger,
 void logWavesFile(const logging::Logger& logger,
                   const std::filesystem::path& file,
                   const WaveCatalog& catalog) {
-  logger.info("waves file ", engine::genericText(file), ": ",
+  logger.info("waves file ", logging::genericText(file), ": ",
               catalog.difficulties().size(), " difficulties");
 }
 

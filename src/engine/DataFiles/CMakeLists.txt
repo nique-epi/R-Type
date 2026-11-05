@@ -9,6 +9,8 @@ target_link_libraries(rtype_engine_data_files
     rtype_engine_exceptions
     rtype_engine_time
     tomlplusplus::tomlplusplus
+  PRIVATE
+    rtype_logging
 )
 
 rtype_enable_warnings(rtype_engine_data_files)

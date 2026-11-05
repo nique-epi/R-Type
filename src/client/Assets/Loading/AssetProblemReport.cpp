@@ -20,11 +20,11 @@ void AssetProblemReport::record(std::string_view assetId,
       return;
     case AssetLoadResult::MissingFile:
       problems_.missingFiles.push_back(
-          engine::genericText(library_->fileOf(assetId)));
+          logging::genericText(library_->fileOf(assetId)));
       return;
     case AssetLoadResult::UnreadableFile:
       problems_.unreadableFiles.push_back(
-          engine::genericText(library_->fileOf(assetId)));
+          logging::genericText(library_->fileOf(assetId)));
       return;
   }
 }
@@ -34,7 +34,7 @@ void AssetProblemReport::throwIfAny() const {
       problems_.unreadableFiles.empty()) {
     return;
   }
-  throw AssetLoadingException(engine::genericText(library_->folder()),
+  throw AssetLoadingException(logging::genericText(library_->folder()),
                               problems_);
 }
 

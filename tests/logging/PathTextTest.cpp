@@ -2,7 +2,7 @@
 #include <filesystem>
 #include "PathText.hpp"
 
-using rtype::engine::genericText;
+using rtype::logging::genericText;
 
 /**
  * Given a path of nested folders

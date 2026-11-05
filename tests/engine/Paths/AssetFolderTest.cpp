@@ -9,7 +9,7 @@
 
 using rtype::engine::AssetFolderNotFoundException;
 using rtype::engine::findAssetFolder;
-using rtype::engine::genericText;
+using rtype::logging::genericText;
 using ::testing::AllOf;
 using ::testing::HasSubstr;
 using ::testing::ThrowsMessage;
