@@ -18,7 +18,6 @@
 #include "WorldState.hpp"
 
 namespace rtype::server::testing {
-namespace {
 
 /**
  * Given a player with a ship who holds shoot
@@ -338,5 +337,4 @@ TEST_F(ShipWeaponFixture, ShipAndBydoFireAtTheirOwnCadence) {
   EXPECT_EQ(enemyMissilesInTheWorld().size(), 1U);
 }
 
-}  // namespace
 }  // namespace rtype::server::testing

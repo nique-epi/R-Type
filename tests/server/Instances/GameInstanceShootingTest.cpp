@@ -15,7 +15,6 @@
 #include "World.hpp"
 
 namespace rtype::server::testing {
-namespace {
 
 /**
  * Given a game in progress whose first player holds shoot
@@ -229,5 +228,4 @@ TEST_F(GameInstanceShootingFixture, BydosFireWhileInProgress) {
   }
 }
 
-}  // namespace
 }  // namespace rtype::server::testing
