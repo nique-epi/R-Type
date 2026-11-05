@@ -48,15 +48,21 @@ class RoundTripMeter {
    * Heartbeats in the order their datagrams were accepted: a session drops a
    * datagram that is not newer than the newest one it accepted, so the one
    * kept is the newest.
+   * @returns The round trip this Heartbeat gave, before it is smoothed: the
+   * one of the exchange @p heartbeat closes, which includes the trip of
+   * @p heartbeat itself. Nothing when it carries no echo or its echo is
+   * ignored (see the class).
    */
-  void receive(const Heartbeat& heartbeat, std::chrono::nanoseconds receivedAt);
+  std::optional<std::chrono::microseconds> receive(
+      const Heartbeat& heartbeat, std::chrono::nanoseconds receivedAt);
 
   /** @returns The figures of the round trips measured; nothing before the
    * first one. */
   [[nodiscard]] std::optional<RoundTripFigures> figures() const;
 
  private:
-  void measure(const HeartbeatEcho& echo, std::chrono::nanoseconds receivedAt);
+  std::optional<std::chrono::microseconds> measure(
+      const HeartbeatEcho& echo, std::chrono::nanoseconds receivedAt);
 
   std::optional<PeerStamp> newestReceived_;
   RoundTripEstimator estimator_;

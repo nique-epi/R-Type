@@ -3,8 +3,10 @@
 #include <chrono>
 #include <cstdint>
 #include <optional>
+#include "ClockSample.hpp"
 #include "Heartbeat.hpp"
 #include "IClock.hpp"
+#include "IServerClock.hpp"
 #include "ISessionOutbox.hpp"
 #include "LobbyState.hpp"
 #include "MessageDispatcher.hpp"
@@ -25,7 +27,7 @@ RoundTripWatch::RoundTripWatch(network::MessageDispatcher& dispatcher,
       [this](const network::MessageOrigin& origin,
              const network::Heartbeat& heartbeat) {
         if (outbox_ != nullptr) {
-          meter_.receive(heartbeat, origin.receivedAt);
+          follow(origin, heartbeat);
         }
       });
   dispatcher.registerHandler<network::RoundTrips>(
@@ -46,6 +48,7 @@ void RoundTripWatch::sessionOpened(const network::LobbyPlayer& ownPlayer,
 void RoundTripWatch::sessionClosed() {
   outbox_ = nullptr;
   meter_ = network::RoundTripMeter{};
+  serverClock_.reset();
   reported_.clear();
 }
 
@@ -57,6 +60,25 @@ void RoundTripWatch::sessionHeld(engine::Duration elapsed) {
   }
   sinceHeartbeat_ = engine::Duration::zero();
   sendMessage(*outbox_, meter_.nextHeartbeat(clock_->now()));
+}
+
+const engine::IServerClock& RoundTripWatch::serverClock() const {
+  return serverClock_;
+}
+
+std::optional<double> RoundTripWatch::serverTickNow() const {
+  return serverClock_.tickAt(clock_->now());
+}
+
+void RoundTripWatch::follow(const network::MessageOrigin& origin,
+                            const network::Heartbeat& heartbeat) {
+  const std::optional<std::chrono::microseconds> roundTrip =
+      meter_.receive(heartbeat, origin.receivedAt);
+  if (roundTrip.has_value() && heartbeat.tick.has_value()) {
+    serverClock_.add(engine::ClockSample{.receivedAt = origin.receivedAt,
+                                         .roundTrip = *roundTrip,
+                                         .tick = *heartbeat.tick});
+  }
 }
 
 std::optional<network::RoundTripFigures> RoundTripWatch::roundTripOf(

@@ -39,6 +39,44 @@ constexpr double SIX_TICKS_AFTER_THE_FIRST_STATE = 66.0;
  * expects. */
 constexpr double NO_SHOWN_TICK = -1.0e9;
 
+/** @brief The tick the server is at when the first state arrives, 10 ticks
+ * after the tick the state carries: it arrives 10 ticks late. */
+constexpr double SERVER_TICK_TEN_LATE = 70.0;
+/** @brief The tick the server is at when the second state, of tick 63,
+ * arrives 4 ticks late. */
+constexpr double SERVER_TICK_FOUR_LATE = 67.0;
+/** @brief Two assumed intervals of 3 ticks behind the tick of the server,
+ * less the worst lateness, 10 ticks: 67 - 10 - 6. */
+constexpr double BEHIND_THE_WORST_LATENESS = 51.0;
+/** @brief Two intervals of 3 ticks behind the tick of the server, 67, less the
+ * lateness of the second state, 4 ticks: 67 - 4 - 6. */
+constexpr double BEHIND_THE_USUAL_LATENESS = 57.0;
+/** @brief The tick the server is at when the state of tick 60 arrives, 2
+ * ticks before the tick the state carries. */
+constexpr double SERVER_TICK_BEFORE_THE_STATE = 58.0;
+/** @brief Two intervals of 3 ticks behind the tick of the server, 58, with a
+ * lateness of 0: 58 - 0 - 6. */
+constexpr double BEHIND_THE_CLOCK_ON_TIME = 52.0;
+/** @brief A tick of the server of an older game, far from any state. */
+constexpr double STALE_SERVER_TICK = 100000.0;
+/** @brief The lateness of the states that follow a late one. */
+constexpr std::uint32_t USUAL_LATENESS_TICKS = 4;
+/** @brief How many states follow the late one: the late one leaves the 32
+ * the clock keeps at the 32nd, and the tick shown, 6 ticks short at that
+ * moment, takes back a tenth of the gap at each of the 15 that follow, so it
+ * is 6 * 0.9^16 = 1.1 ticks short at the last. */
+constexpr std::size_t STATES_AFTER_THE_LATE_ONE = 47;
+/** @brief Two intervals of 3 ticks, the delay behind the clock of the server
+ * once the interval between the states is measured. */
+constexpr double TWO_INTERVALS_OF_THREE_TICKS = 6.0;
+/** @brief The lateness of the first state of that run. */
+constexpr std::uint32_t SPIKE_LATENESS_TICKS = 10;
+/** @brief How far from the tick behind the usual lateness the tick shown may
+ * be once the late state is forgotten: above the 1.1 ticks it is still short
+ * by, and under the 6 ticks it would stay short by if the late state was
+ * remembered. */
+constexpr double FORGOTTEN_SPIKE_TOLERANCE = 1.5;
+
 /** @brief SIMULATION_TICK_DURATION holds whole nanoseconds, so a frame of
  * "one tick" is 4e-8 of a tick short: the shown tick is checked to a
  * hundred-thousandth of a tick. */
