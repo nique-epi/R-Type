@@ -8,10 +8,10 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "BydoKind.hpp"
 #include "ConnectedPlayer.hpp"
 #include "Entity.hpp"
 #include "EntityDestruction.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "LifeKeeper.hpp"
 #include "LifeKeeperParts.hpp"
 #include "NetworkIdentity.hpp"
@@ -22,6 +22,8 @@
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "ShipContact.hpp"
+#include "ShipSpawnAnnouncerParts.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "World.hpp"
 
 namespace rtype::server::testing {
@@ -47,10 +49,15 @@ engine::Entity entityOf(game::World& world, std::uint32_t networkId) {
 }  // namespace
 
 LifeKeeperFixture::LifeKeeperFixture()
-    : announcer_(world_, roster_,
-                 [this](network::OutgoingDatagram datagram) {
-                   sent_.push_back(std::move(datagram));
-                 }),
+    : announcer_(ShipSpawnAnnouncerParts{
+          .world = world_,
+          .roster = roster_,
+          .send =
+              [this](network::OutgoingDatagram datagram) {
+                sent_.push_back(std::move(datagram));
+              },
+          .ship = game::testing::shippedEntitySheets().named(
+              game::testing::SHIP_SHEET)}),
       keeper_(std::make_unique<LifeKeeper>(
           LifeKeeperParts{.events = events_,
                           .world = world_,
@@ -83,7 +90,9 @@ std::uint32_t LifeKeeperFixture::bydoOn(const ConnectedPlayer& player) {
   const game::Position* const ship = world_.shipPositionOf(player.shipEntityId);
   EXPECT_NE(ship, nullptr);
   const game::Position position = ship == nullptr ? game::Position{} : *ship;
-  return world_.spawnBydo(position, game::BydoKind::Drifter);
+  return world_.spawn(
+      game::testing::shippedEntitySheets().named(game::testing::DRIFTER_SHEET),
+      position);
 }
 
 void LifeKeeperFixture::publishContact(std::uint32_t shipId,

@@ -15,7 +15,7 @@
 #include "DeltaWorldState.hpp"
 #include "DeltaWorldStateCodec.hpp"
 #include "Entity.hpp"
-#include "EntityType.hpp"
+#include "EntityTypeNumber.hpp"
 #include "Intent.hpp"
 #include "Invulnerable.hpp"
 #include "Lives.hpp"
@@ -35,7 +35,6 @@
 #include "ShipMotion.hpp"
 #include "StateDelta.hpp"
 #include "TimeConstants.hpp"
-#include "WireEntityTypeMapping.hpp"
 #include "WorldState.hpp"
 #include "WorldStateDelta.hpp"
 
@@ -244,7 +243,8 @@ network::WorldState WorldStateSender::capture(
       [&components, &state, &leftOutCount](
           engine::Entity entity, const game::NetworkIdentity& identity,
           const game::Position& position) {
-        const game::EntityType* type = components.get<game::EntityType>(entity);
+        const game::EntityTypeNumber* type =
+            components.get<game::EntityTypeNumber>(entity);
         if (type == nullptr) {
           return;
         }
@@ -254,7 +254,7 @@ network::WorldState WorldStateSender::capture(
         }
         state.entities.push_back(
             network::EntityState{.entityId = identity.networkId,
-                                 .entityType = toWireEntityType(*type),
+                                 .entityType = type->number,
                                  .x = position.x,
                                  .y = position.y});
       });

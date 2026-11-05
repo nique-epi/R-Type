@@ -3,6 +3,7 @@
 #include <functional>
 #include "GameResult.hpp"
 #include "IEntityMessageSource.hpp"
+#include "IEntityTypeSource.hpp"
 #include "IPlayerInputLink.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
@@ -50,6 +51,9 @@ struct GameScreenParts {
   /** @brief Plays the sounds of what the server announces, which must
    * outlive the screen. */
   std::reference_wrapper<ISoundPlayer> sounds;
+  /** @brief What the entity type numbers of the server mean, which must
+   * outlive the screen: the replicator creates each entity from it. */
+  std::reference_wrapper<const IEntityTypeSource> entityTypes;
   /** @brief Where the game writes how it ended, once the server ends it,
    * which must outlive the screen: the end screen reads it. */
   std::reference_wrapper<GameResult> result;

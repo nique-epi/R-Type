@@ -38,7 +38,7 @@ class DeltaWorldStateCodec {
    * MAXIMUM_REFERENCE_DISTANCE, partCount is 0 or above MAXIMUM_DELTA_PARTS,
    * partIndex is not below partCount, an entity or a removed id is 0, a
    * player is invalid (see WorldStateCodec::decode()), or bytes follow the
-   * last removed id. An entity of unknown type is left out of `changed`.
+   * last removed id. An entity of type NO_ENTITY_TYPE is left out of `changed`.
    */
   [[nodiscard]] static DeltaWorldState decode(
       std::span<const std::byte> payload);

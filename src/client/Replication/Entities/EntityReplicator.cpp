@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 #include "AnimatedSprite.hpp"
+#include "AppearanceReference.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
 #include "Entity.hpp"
@@ -13,12 +14,16 @@
 #include "EntityFeedback.hpp"
 #include "EntityIdConstants.hpp"
 #include "EntityRegistry.hpp"
+#include "EntityReplicatorParts.hpp"
 #include "EntitySpawned.hpp"
 #include "EntitySprites.hpp"
 #include "EntityType.hpp"
+#include "EntityTypeLook.hpp"
 #include "GameEvent.hpp"
+#include "IEntityTypeSource.hpp"
 #include "ISoundPlayer.hpp"
 #include "NetworkEntityTable.hpp"
+#include "NetworkIdentity.hpp"
 #include "PilotShip.hpp"
 #include "Position.hpp"
 #include "PositionHistory.hpp"
@@ -33,36 +38,16 @@ namespace rtype::client {
 namespace {
 
 /**
- * @returns The game type of an entity the protocol names @p wireType, as the
- * entity type table of the protocol page lists them, or nothing for a value
- * outside WireEntityType. It is the inverse of what the server sends: a type
- * added to the protocol needs its case here and on the server.
+ * @returns The look of the entity a message announces, or nothing when the
+ * client must not create it: the id NO_ENTITY_ID, or a type number @p types
+ * does not know.
  */
-std::optional<game::EntityType> entityTypeOf(network::WireEntityType wireType) {
-  switch (wireType) {
-    case network::WireEntityType::PlayerShip:
-      return game::EntityType::Player;
-    case network::WireEntityType::PlayerMissile:
-      return game::EntityType::PlayerMissile;
-    case network::WireEntityType::Bydo:
-      return game::EntityType::Enemy;
-    case network::WireEntityType::EnemyMissile:
-      return game::EntityType::EnemyMissile;
-  }
-  return std::nullopt;
-}
-
-/**
- * @returns The game type of the entity a message announces, or nothing when
- * the client must not create it: the id NO_ENTITY_ID, or a type outside
- * WireEntityType.
- */
-std::optional<game::EntityType> creatableTypeOf(
-    const network::EntityState& announced) {
+std::optional<EntityTypeLook> creatableLookOf(
+    const IEntityTypeSource& types, const network::EntityState& announced) {
   if (announced.entityId == identifiers::NO_ENTITY_ID) {
     return std::nullopt;
   }
-  return entityTypeOf(announced.entityType);
+  return types.lookOf(announced.entityType);
 }
 
 /** @returns The entity an EntitySpawned announces, as a WorldState lists
@@ -216,10 +201,11 @@ std::optional<engine::Entity> shipOf(
 
 }  // namespace
 
-EntityReplicator::EntityReplicator(engine::EntityRegistry& entities,
-                                   engine::ComponentRegistry& components,
-                                   EntityFeedback feedback)
-    : entities_(&entities), components_(&components), feedback_(feedback) {}
+EntityReplicator::EntityReplicator(EntityReplicatorParts parts)
+    : entities_(&parts.entities.get()),
+      components_(&parts.components.get()),
+      feedback_(parts.feedback),
+      types_(&parts.types.get()) {}
 
 void EntityReplicator::apply(const network::EntitySpawned& message) {
   if (entityByNetworkId_.find(message.entityId).has_value()) {
@@ -278,18 +264,16 @@ void EntityReplicator::apply(const network::GameEvent& event) {
 
 std::optional<engine::Entity> EntityReplicator::create(
     const network::EntityState& announced) {
-  const std::optional<game::EntityType> type = creatableTypeOf(announced);
-  if (!type.has_value()) {
-    return std::nullopt;
-  }
-  std::optional<AnimatedSprite> look =
-      animatedSpriteOf(*type, announced.entityId);
+  const std::optional<EntityTypeLook> look =
+      creatableLookOf(*types_, announced);
   if (!look.has_value()) {
     return std::nullopt;
   }
-  const engine::Entity entity =
-      addEntity(*type, game::Position{.x = announced.x, .y = announced.y},
-                std::move(*look));
+  const engine::Entity entity = addEntity(
+      look->side, game::Position{.x = announced.x, .y = announced.y},
+      animatedSpriteOf(look->appearance.get(), look->side, announced.entityId));
+  components_->add(entity, game::NetworkIdentity{announced.entityId});
+  components_->add(entity, AppearanceReference{&look->appearance.get()});
   entityByNetworkId_.bind(announced.entityId, entity);
   return entity;
 }

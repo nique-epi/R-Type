@@ -1,14 +1,17 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Image.hpp>
 #include <cstddef>
+#include <string_view>
 #include "BackgroundConstants.hpp"
-#include "EntitySizeConstants.hpp"
+#include "CollisionBox.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "EntitySprites.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "PlayerColors.hpp"
 #include "SheetPixels.hpp"
 #include "ShipControlConstants.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "SpriteFrame.hpp"
 
 using rtype::client::BACKGROUND_PIXEL_SIZE;
@@ -22,15 +25,15 @@ using rtype::client::PLAYER_COLORS;
 using rtype::client::PLAYER_MISSILE_FRAME;
 using rtype::client::PLAYER_SHIP_FRAME;
 using rtype::client::PlayerColors;
-using rtype::game::BYDO_HEIGHT;
-using rtype::game::BYDO_WIDTH;
-using rtype::game::ENEMY_MISSILE_HEIGHT;
-using rtype::game::ENEMY_MISSILE_WIDTH;
-using rtype::game::PLAYER_MISSILE_HEIGHT;
-using rtype::game::PLAYER_MISSILE_WIDTH;
+using rtype::game::CollisionBox;
 using rtype::game::SHIP_HEIGHT;
 using rtype::game::SHIP_WIDTH;
 using rtype::game::SpriteFrame;
+using rtype::game::testing::DRIFTER_SHEET;
+using rtype::game::testing::ENEMY_MISSILE_SHEET;
+using rtype::game::testing::PLAYER_MISSILE_SHEET;
+using rtype::game::testing::shippedEntitySheets;
+using rtype::game::testing::WEAVER_SHEET;
 
 /**
  * Given the first frame of the player ship on the entity sheet
@@ -48,46 +51,62 @@ TEST(EntitySpriteConstants, TheShipDrawnIsTheShipTheServerKeepsOnScreen) {
 }
 
 /**
- * Given the first frame of a missile of a player on the entity sheet
- * When its size is measured in logical units, each pixel of the sheet covering
- * BACKGROUND_PIXEL_SIZE
+ * Given the first frame of a missile of a player on the entity sheet, and the
+ * sheet of that missile
+ * When the frame is measured in logical units, each pixel of the sheet
+ * covering BACKGROUND_PIXEL_SIZE
  * Then it is the size of the box the server flies a missile with
  */
 TEST(EntitySpriteConstants, TheMissileDrawnIsTheMissileTheServerFlies) {
+  const CollisionBox box =
+      shippedEntitySheets().named(PLAYER_MISSILE_SHEET).hitbox;
+
   EXPECT_FLOAT_EQ(
       static_cast<float>(PLAYER_MISSILE_FRAME.width) * BACKGROUND_PIXEL_SIZE,
-      PLAYER_MISSILE_WIDTH);
+      box.width);
   EXPECT_FLOAT_EQ(
       static_cast<float>(PLAYER_MISSILE_FRAME.height) * BACKGROUND_PIXEL_SIZE,
-      PLAYER_MISSILE_HEIGHT);
+      box.height);
 }
 
 /**
- * Given the first frame of a Bydo on the entity sheet
- * When its size is measured in logical units, each pixel of the sheet covering
- * BACKGROUND_PIXEL_SIZE
- * Then it is the size of the box the server hits a Bydo with
+ * Given the first frame of a Bydo on the entity sheet, and the sheets of the
+ * Drifter and the Weaver
+ * When the frame is measured in logical units, each pixel of the sheet
+ * covering BACKGROUND_PIXEL_SIZE
+ * Then it is the size of the box the server hits each of them with
  */
 TEST(EntitySpriteConstants, TheBydoDrawnIsTheBydoTheServerHits) {
-  EXPECT_FLOAT_EQ(static_cast<float>(BYDO_FRAME.width) * BACKGROUND_PIXEL_SIZE,
-                  BYDO_WIDTH);
-  EXPECT_FLOAT_EQ(static_cast<float>(BYDO_FRAME.height) * BACKGROUND_PIXEL_SIZE,
-                  BYDO_HEIGHT);
+  for (const std::string_view enemy : {DRIFTER_SHEET, WEAVER_SHEET}) {
+    const CollisionBox box = shippedEntitySheets().named(enemy).hitbox;
+
+    EXPECT_FLOAT_EQ(
+        static_cast<float>(BYDO_FRAME.width) * BACKGROUND_PIXEL_SIZE, box.width)
+        << enemy;
+    EXPECT_FLOAT_EQ(
+        static_cast<float>(BYDO_FRAME.height) * BACKGROUND_PIXEL_SIZE,
+        box.height)
+        << enemy;
+  }
 }
 
 /**
- * Given the first frame of a missile of an enemy on the entity sheet
- * When its size is measured in logical units, each pixel of the sheet covering
- * BACKGROUND_PIXEL_SIZE
+ * Given the first frame of a missile of an enemy on the entity sheet, and the
+ * sheet of that missile
+ * When the frame is measured in logical units, each pixel of the sheet
+ * covering BACKGROUND_PIXEL_SIZE
  * Then it is the size of the box the server flies a missile of an enemy with
  */
 TEST(EntitySpriteConstants, TheEnemyMissileDrawnIsTheMissileTheServerFlies) {
+  const CollisionBox box =
+      shippedEntitySheets().named(ENEMY_MISSILE_SHEET).hitbox;
+
   EXPECT_FLOAT_EQ(
       static_cast<float>(ENEMY_MISSILE_FRAME.width) * BACKGROUND_PIXEL_SIZE,
-      ENEMY_MISSILE_WIDTH);
+      box.width);
   EXPECT_FLOAT_EQ(
       static_cast<float>(ENEMY_MISSILE_FRAME.height) * BACKGROUND_PIXEL_SIZE,
-      ENEMY_MISSILE_HEIGHT);
+      box.height);
 }
 
 /**

@@ -8,6 +8,7 @@
 #include "Reception.hpp"
 #include "ServerSessionFixtures.hpp"
 #include "ServerSessionTestConstants.hpp"
+#include "SessionEntityTypesFixtures.hpp"
 
 namespace rtype::client::testing {
 
@@ -36,8 +37,9 @@ Reception SessionInboundFixture::receive(const network::PacketHeader& header) {
   return inbound_.receive(network::IncomingDatagram{
       .sender = server(),
       .payload = network::DatagramCodec::encode(
-          header, network::ConnectionAccepted{.playerNumber =
-                                                  ACCEPTED_PLAYER_NUMBER})});
+          header,
+          network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                      .types = drawnTypes()})});
 }
 
 std::size_t SessionInboundFixture::wrongTokenCount() const {

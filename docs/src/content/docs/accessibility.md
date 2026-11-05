@@ -19,7 +19,7 @@ The player finds the settings in the [options](/R-Type/client/#options-optionssc
 | Need | Solution | Status |
 |---|---|---|
 | Play with a key layout that suits the hands | [Key remapping](/R-Type/client/#options-optionsscreen): the moves, SHOOT and READY each take another key. Two actions on one key are reported, and DEFAULT KEYS restores the layout | MVP |
-| Play without holding or tapping a key for a whole game | [AUTO-FIRE](/R-Type/client/#player-commands-playercommands): the ship fires with no key held. The server still fires at most `SHOTS_PER_SECOND` (3) missiles per second per ship, so the option gives no advantage | MVP |
+| Play without holding or tapping a key for a whole game | [AUTO-FIRE](/R-Type/client/#player-commands-playercommands): the ship fires with no key held. The server still fires at most one missile per 333 ms (the gun of the `ship` sheet, three per second) per ship, so the option gives no advantage | MVP |
 | Play without a keyboard | A gamepad for the moves, the shot and the menus, its buttons remappable like the keys | V1 |
 
 ## Audio and visual disabilities

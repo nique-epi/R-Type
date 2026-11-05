@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <cstddef>
 #include "WaveDirector.hpp"
 #include "WaveDirectorLevelFixture.hpp"
 #include "WaveDirectorLevelTestConstants.hpp"
@@ -8,6 +7,7 @@
 
 using rtype::game::testing::A_MINUTE_OF_TICKS;
 using rtype::game::testing::FIRST_WAVE_NUMBER_IN_THE_LOG;
+using rtype::game::testing::LevelTicks;
 using rtype::game::testing::NO_BYDO_IN_PLAY;
 using rtype::game::testing::ONE_BYDO_IN_PLAY;
 using rtype::game::testing::SECOND_WAVE_NUMBER_IN_THE_LOG;
@@ -30,11 +30,13 @@ TEST_F(WaveDirectorLevelFixture, TheLastWaveIsNotFinishedAtTheStart) {
  * Then the last wave is not finished: it ends once the sky is clear
  */
 TEST_F(WaveDirectorLevelFixture, TheLastWaveIsNotFinishedWhileABydoIsInPlay) {
-  static_cast<void>(runTicks(oneWaveLevel(), TICKS_TO_THE_WHOLE_FIRST_WAVE,
-                             ONE_BYDO_IN_PLAY));
+  static_cast<void>(runTicks(oneWaveLevel(),
+                             LevelTicks{.count = TICKS_TO_THE_WHOLE_FIRST_WAVE,
+                                        .enemiesInPlay = ONE_BYDO_IN_PLAY}));
 
   static_cast<void>(
-      runTicks(oneWaveLevel(), A_MINUTE_OF_TICKS, ONE_BYDO_IN_PLAY));
+      runTicks(oneWaveLevel(), LevelTicks{.count = A_MINUTE_OF_TICKS,
+                                          .enemiesInPlay = ONE_BYDO_IN_PLAY}));
 
   EXPECT_FALSE(oneWaveLevel().lastWaveFinished());
 }
@@ -47,8 +49,9 @@ TEST_F(WaveDirectorLevelFixture, TheLastWaveIsNotFinishedWhileABydoIsInPlay) {
  * came
  */
 TEST_F(WaveDirectorLevelFixture, TheLastWaveWaitsForItsLastBydoToAppear) {
-  static_cast<void>(runTicks(oneWaveLevel(), TICKS_TO_THE_WHOLE_FIRST_WAVE - 1,
-                             NO_BYDO_IN_PLAY));
+  static_cast<void>(runTicks(
+      oneWaveLevel(), LevelTicks{.count = TICKS_TO_THE_WHOLE_FIRST_WAVE - 1,
+                                 .enemiesInPlay = NO_BYDO_IN_PLAY}));
 
   EXPECT_FALSE(oneWaveLevel().lastWaveFinished());
 }
@@ -59,10 +62,13 @@ TEST_F(WaveDirectorLevelFixture, TheLastWaveWaitsForItsLastBydoToAppear) {
  * Then the last wave is finished, and the director still names the first wave
  */
 TEST_F(WaveDirectorLevelFixture, TheLastWaveIsFinishedOnceTheSkyIsClear) {
-  static_cast<void>(runTicks(oneWaveLevel(), TICKS_TO_THE_WHOLE_FIRST_WAVE,
-                             ONE_BYDO_IN_PLAY));
+  static_cast<void>(runTicks(oneWaveLevel(),
+                             LevelTicks{.count = TICKS_TO_THE_WHOLE_FIRST_WAVE,
+                                        .enemiesInPlay = ONE_BYDO_IN_PLAY}));
 
-  static_cast<void>(runTicks(oneWaveLevel(), 1, NO_BYDO_IN_PLAY));
+  static_cast<void>(
+      runTicks(oneWaveLevel(),
+               LevelTicks{.count = 1, .enemiesInPlay = NO_BYDO_IN_PLAY}));
 
   EXPECT_TRUE(oneWaveLevel().lastWaveFinished());
   EXPECT_EQ(oneWaveLevel().waveNumber(), FIRST_WAVE_NUMBER_IN_THE_LOG);
@@ -74,11 +80,17 @@ TEST_F(WaveDirectorLevelFixture, TheLastWaveIsFinishedOnceTheSkyIsClear) {
  * Then no Bydo is due and the last wave stays finished
  */
 TEST_F(WaveDirectorLevelFixture, NoBydoComesAfterTheLastWave) {
-  static_cast<void>(runTicks(oneWaveLevel(), TICKS_TO_THE_WHOLE_FIRST_WAVE,
-                             ONE_BYDO_IN_PLAY));
-  static_cast<void>(runTicks(oneWaveLevel(), 1, NO_BYDO_IN_PLAY));
+  static_cast<void>(runTicks(oneWaveLevel(),
+                             LevelTicks{.count = TICKS_TO_THE_WHOLE_FIRST_WAVE,
+                                        .enemiesInPlay = ONE_BYDO_IN_PLAY}));
+  static_cast<void>(
+      runTicks(oneWaveLevel(),
+               LevelTicks{.count = 1, .enemiesInPlay = NO_BYDO_IN_PLAY}));
 
-  EXPECT_EQ(runTicks(oneWaveLevel(), A_MINUTE_OF_TICKS, NO_BYDO_IN_PLAY), 0U);
+  EXPECT_EQ(
+      runTicks(oneWaveLevel(), LevelTicks{.count = A_MINUTE_OF_TICKS,
+                                          .enemiesInPlay = NO_BYDO_IN_PLAY}),
+      0U);
   EXPECT_TRUE(oneWaveLevel().lastWaveFinished());
   EXPECT_EQ(oneWaveLevel().waveNumber(), FIRST_WAVE_NUMBER_IN_THE_LOG);
 }
@@ -89,10 +101,13 @@ TEST_F(WaveDirectorLevelFixture, NoBydoComesAfterTheLastWave) {
  * Then the second wave is next and the last wave is not finished
  */
 TEST_F(WaveDirectorLevelFixture, AWaveBeforeTheLastDoesNotEndTheLevel) {
-  static_cast<void>(runTicks(twoWaveLevel(), TICKS_TO_THE_WHOLE_FIRST_WAVE,
-                             ONE_BYDO_IN_PLAY));
+  static_cast<void>(runTicks(twoWaveLevel(),
+                             LevelTicks{.count = TICKS_TO_THE_WHOLE_FIRST_WAVE,
+                                        .enemiesInPlay = ONE_BYDO_IN_PLAY}));
 
-  static_cast<void>(runTicks(twoWaveLevel(), 1, NO_BYDO_IN_PLAY));
+  static_cast<void>(
+      runTicks(twoWaveLevel(),
+               LevelTicks{.count = 1, .enemiesInPlay = NO_BYDO_IN_PLAY}));
 
   EXPECT_FALSE(twoWaveLevel().lastWaveFinished());
   EXPECT_EQ(twoWaveLevel().waveNumber(), SECOND_WAVE_NUMBER_IN_THE_LOG);
@@ -104,13 +119,19 @@ TEST_F(WaveDirectorLevelFixture, AWaveBeforeTheLastDoesNotEndTheLevel) {
  * Then the last wave is finished, and the director still names the second wave
  */
 TEST_F(WaveDirectorLevelFixture, TheSecondWaveIsTheLastOfALevelOfTwo) {
-  static_cast<void>(runTicks(twoWaveLevel(), TICKS_TO_THE_WHOLE_FIRST_WAVE,
-                             ONE_BYDO_IN_PLAY));
-  static_cast<void>(runTicks(twoWaveLevel(), 1, NO_BYDO_IN_PLAY));
-  static_cast<void>(runTicks(twoWaveLevel(), TICKS_TO_THE_WHOLE_SECOND_WAVE,
-                             ONE_BYDO_IN_PLAY));
+  static_cast<void>(runTicks(twoWaveLevel(),
+                             LevelTicks{.count = TICKS_TO_THE_WHOLE_FIRST_WAVE,
+                                        .enemiesInPlay = ONE_BYDO_IN_PLAY}));
+  static_cast<void>(
+      runTicks(twoWaveLevel(),
+               LevelTicks{.count = 1, .enemiesInPlay = NO_BYDO_IN_PLAY}));
+  static_cast<void>(runTicks(twoWaveLevel(),
+                             LevelTicks{.count = TICKS_TO_THE_WHOLE_SECOND_WAVE,
+                                        .enemiesInPlay = ONE_BYDO_IN_PLAY}));
 
-  static_cast<void>(runTicks(twoWaveLevel(), 1, NO_BYDO_IN_PLAY));
+  static_cast<void>(
+      runTicks(twoWaveLevel(),
+               LevelTicks{.count = 1, .enemiesInPlay = NO_BYDO_IN_PLAY}));
 
   EXPECT_TRUE(twoWaveLevel().lastWaveFinished());
   EXPECT_EQ(twoWaveLevel().waveNumber(), SECOND_WAVE_NUMBER_IN_THE_LOG);

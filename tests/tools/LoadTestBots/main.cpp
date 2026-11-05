@@ -44,6 +44,8 @@ std::string_view phaseText(ConnectionPhase phase) {
       return "lost";
     case ConnectionPhase::Closed:
       return "closed by the server";
+    case ConnectionPhase::MissingEntitySheet:
+      return "left: missing entity sheet";
   }
   return "unknown";
 }

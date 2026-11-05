@@ -12,12 +12,14 @@
 #include "RecordingResultsArchive.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShippedEntitySheets.hpp"
 
 namespace rtype::server::testing {
 
 GameResultKeeperFixture::GameResultKeeperFixture()
     : keeper_(roster_, archive_,
               GameSettings{.waves = {},
+                           .types = game::testing::shippedEntitySheets(),
                            .difficulty = std::string{KEEPER_DIFFICULTY},
                            .vanilla = true}) {}
 

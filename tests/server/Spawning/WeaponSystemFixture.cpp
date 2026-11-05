@@ -4,25 +4,33 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "BydoKind.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
+#include "EntityTypeNumber.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "NetworkIdentity.hpp"
 #include "OutgoingDatagram.hpp"
 #include "Position.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "TimeConstants.hpp"
-#include "WorldState.hpp"
+#include "WeaponSystemParts.hpp"
 
 namespace rtype::server::testing {
 
 WeaponSystemFixture::WeaponSystemFixture()
-    : weapons_(world_, roster_, [this](network::OutgoingDatagram datagram) {
-        sent_.push_back(std::move(datagram));
-      }) {}
+    : weapons_(
+          WeaponSystemParts{.world = world_,
+                            .roster = roster_,
+                            .send =
+                                [this](network::OutgoingDatagram datagram) {
+                                  sent_.push_back(std::move(datagram));
+                                },
+                            .types = game::testing::shippedEntitySheets()}),
+      pilots_(events_) {}
 
 void WeaponSystemFixture::connectWithoutShip(std::size_t index) {
   EXPECT_NE(roster_.add(playerEndpoint(index), std::string{PLAYER_NICKNAME},
@@ -31,7 +39,9 @@ void WeaponSystemFixture::connectWithoutShip(std::size_t index) {
 }
 
 void WeaponSystemFixture::bydoAt(game::Position position) {
-  world_.spawnBydo(position, game::BydoKind::Drifter);
+  world_.spawn(
+      game::testing::shippedEntitySheets().named(game::testing::DRIFTER_SHEET),
+      position);
 }
 
 void WeaponSystemFixture::runTicks(std::size_t count) {
@@ -51,14 +61,17 @@ WeaponSystemFixture::enemyMissilesInTheWorld() {
                                const game::NetworkIdentity& identity) {
         const game::Position* const position =
             components.get<game::Position>(entity);
-        if (type != game::EntityType::EnemyMissile || position == nullptr) {
+        const game::EntityTypeNumber* const number =
+            components.get<game::EntityTypeNumber>(entity);
+        if (type != game::EntityType::EnemyMissile || position == nullptr ||
+            number == nullptr) {
           return;
         }
-        missiles.push_back(network::EntitySpawned{
-            .entityId = identity.networkId,
-            .entityType = network::WireEntityType::EnemyMissile,
-            .x = position->x,
-            .y = position->y});
+        missiles.push_back(
+            network::EntitySpawned{.entityId = identity.networkId,
+                                   .entityType = number->number,
+                                   .x = position->x,
+                                   .y = position->y});
       });
   return missiles;
 }

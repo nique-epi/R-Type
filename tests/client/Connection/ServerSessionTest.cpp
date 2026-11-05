@@ -16,6 +16,7 @@
 #include "Disconnection.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityReplicatorTestConstants.hpp"
+#include "FixedEntityTypeSourceConstants.hpp"
 #include "GameLoaded.hpp"
 #include "GameStarted.hpp"
 #include "Heartbeat.hpp"
@@ -28,9 +29,9 @@
 #include "ServerSessionFixtures.hpp"
 #include "ServerSessionLogFixture.hpp"
 #include "ServerSessionTestConstants.hpp"
+#include "SessionEntityTypesFixtures.hpp"
 #include "TimeConstants.hpp"
 #include "TimeTestConstants.hpp"
-#include "WorldState.hpp"
 #include "WorldStateFilterTestConstants.hpp"
 
 namespace rtype::client {
@@ -42,6 +43,7 @@ using testing::ACCEPTED_PLAYER_NUMBER;
 using testing::APPLIED_TICK;
 using testing::BITS_OF_THE_FIRST_AND_THE_ACCEPTANCE;
 using testing::CHALLENGE_COOKIE;
+using testing::drawnTypes;
 using testing::FIRST_POSITION;
 using testing::FIRST_SEQUENCE;
 using testing::guaranteedSessionHeader;
@@ -70,6 +72,7 @@ using testing::ServerSessionLogFixture;
 using testing::SESSION_TOKEN;
 using testing::sessionHeader;
 using testing::SHIP_ID;
+using testing::SHIP_TYPE_NUMBER;
 using ::testing::SizeIs;
 using testing::stateListing;
 using testing::THIRD_SEQUENCE;
@@ -204,7 +207,8 @@ TEST_F(ServerSessionFixture, IsAcceptedWithThePlayerNumberOfTheServer) {
   connect();
   network::PacketHeader header;
   header.sessionToken = SESSION_TOKEN;
-  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                      .types = drawnTypes()},
           server(), header);
 
   update();
@@ -239,7 +243,8 @@ TEST_F(ServerSessionFixture, IsRefusedWithTheReasonOfTheServer) {
  */
 TEST_F(ServerSessionFixture, SendsNoRequestOnceAccepted) {
   connect();
-  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER});
+  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                      .types = drawnTypes()});
   update();
 
   update(2 * CONNECTION_REQUEST_INTERVAL);
@@ -313,7 +318,8 @@ TEST_F(ServerSessionFixture, IgnoresATruncatedDatagram) {
   connect();
   std::vector<std::byte> datagram = network::DatagramCodec::encode(
       network::PacketHeader{},
-      network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER});
+      network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                  .types = drawnTypes()});
   datagram.pop_back();
   deliverBytes(std::move(datagram));
 
@@ -332,7 +338,8 @@ TEST_F(ServerSessionFixture, IsRefusedByAnAnswerOfAnotherVersion) {
   connect();
   network::PacketHeader header;
   header.version = NEXT_PROTOCOL_VERSION;
-  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                      .types = drawnTypes()},
           server(), header);
 
   update();
@@ -404,7 +411,8 @@ TEST_F(ServerSessionFixture, SendsNothingOnceCancelled) {
 TEST_F(ServerSessionFixture, IgnoresALateAnswerOnceCancelled) {
   connect();
   session().cancel();
-  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER});
+  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                      .types = drawnTypes()});
 
   update();
 
@@ -422,7 +430,8 @@ TEST_F(ServerSessionFixture, StartsANewAttemptWithoutStaleAnswers) {
   deliver(
       network::ConnectionRefused{.reason = network::RefusalReason::GameFull});
   update();
-  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER});
+  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                      .types = drawnTypes()});
 
   connect();
   update();
@@ -926,8 +935,7 @@ TEST_F(ServerSessionFixture, AWorldStateRestartsTheTimeout) {
   update(PROTOCOL_SILENCE_LIMIT - ONE_NANOSECOND);
   deliverWorldStateInSession(
       stateListing(APPLIED_TICK,
-                   {listed(SHIP_ID, network::WireEntityType::PlayerShip,
-                           FIRST_POSITION)}),
+                   {listed(SHIP_ID, SHIP_TYPE_NUMBER, FIRST_POSITION)}),
       FIRST_SEQUENCE);
   update();
 
@@ -1023,7 +1031,8 @@ TEST_F(ServerSessionFixture, KeepsASessionOpenedAfterAnIdleWait) {
   connect();
   update(PROTOCOL_REQUEST_INTERVAL);
   deliverInSession(
-      network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+      network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                  .types = drawnTypes()},
       ACCEPTANCE_SEQUENCE);
   update();
 
@@ -1044,7 +1053,8 @@ TEST_F(ServerSessionFixture, KeepsASessionOpenedAfterALostOne) {
   connect();
   update(PROTOCOL_REQUEST_INTERVAL);
   deliverInSession(
-      network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+      network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                  .types = drawnTypes()},
       ACCEPTANCE_SEQUENCE);
   update();
 
@@ -1095,7 +1105,8 @@ TEST_F(ServerSessionFixture, StaysLostWhenALateAcceptanceArrives) {
   update(PROTOCOL_SILENCE_LIMIT);
 
   deliverInSession(
-      network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+      network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                  .types = drawnTypes()},
       FIRST_SEQUENCE);
   update();
 

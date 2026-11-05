@@ -7,6 +7,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "EntitySheets.hpp"
 #include "WavePlan.hpp"
 
 namespace rtype::server {
@@ -16,7 +17,8 @@ namespace rtype::server {
  * Only the server reads it: a client only sees the Bydos it is sent.
  *
  * The file is TOML: a table `difficulty` holding one table per difficulty,
- * named after it, each with its enemies, a list of enemy names, and the six
+ * named after it, each with its enemies, a list of the names of entity sheets
+ * of the side enemy, and the six
  * integers of a WaveCurve, durations in milliseconds (keys, names and ranges in
  * WaveFileConstants.hpp). Every key is required and any other key is refused.
  * Every error names the file, then the line and the column of what is wrong,
@@ -25,24 +27,29 @@ namespace rtype::server {
 class WaveCatalog {
  public:
   /**
-   * @brief Reads the difficulties from @p text, the content of a waves file.
+   * @brief Reads the difficulties from @p text, the content of a waves file,
+   * whose enemies name sheets of @p types of the side enemy.
    * @param source Names the file in the errors.
-   * @throws WaveFileSyntaxException when @p text is not TOML.
-   * @throws MissingWaveFileKeyException, UnknownWaveFileKeyException,
-   * WaveFileTableExpectedException, WaveFileValueOutOfRangeException,
-   * InvalidEnemyListException or UnknownEnemyException when it does not
-   * describe the difficulties as above.
+   * @throws engine::DataFileSyntaxException when @p text is not TOML.
+   * @throws engine::MissingDataFileKeyException,
+   * engine::UnknownDataFileKeyException,
+   * engine::DataFileTableExpectedException,
+   * engine::DataFileValueOutOfRangeException, InvalidEnemyListException or
+   * UnknownEnemyException when it does not describe the difficulties as
+   * above.
    */
   [[nodiscard]] static WaveCatalog fromText(std::string_view text,
-                                            std::string_view source);
+                                            std::string_view source,
+                                            const game::EntitySheets& types);
 
   /**
    * @brief Reads the difficulties from the waves file at @p file, which the
-   * errors name by its absolute path.
-   * @throws UnreadableWaveFileException when the file cannot be opened, and
-   * what fromText() throws.
+   * errors name by its absolute path, against the sheets @p types.
+   * @throws engine::UnreadableDataFileException when the file cannot be
+   * opened, and what fromText() throws.
    */
-  [[nodiscard]] static WaveCatalog fromFile(const std::filesystem::path& file);
+  [[nodiscard]] static WaveCatalog fromFile(const std::filesystem::path& file,
+                                            const game::EntitySheets& types);
 
   /**
    * @returns The waves of @p difficulty.

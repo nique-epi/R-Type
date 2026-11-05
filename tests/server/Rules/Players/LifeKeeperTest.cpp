@@ -1,15 +1,20 @@
 #include <gtest/gtest.h>
 #include <cstdint>
+#include <optional>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "Entity.hpp"
 #include "EntityIdConstants.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "LifeKeeperFixture.hpp"
 #include "LifeKeeperTestConstants.hpp"
 #include "Lives.hpp"
+#include "NetworkIdentity.hpp"
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
 #include "PlayerLives.hpp"
+#include "Position.hpp"
+#include "SurvivesContact.hpp"
 
 namespace rtype::server::testing {
 
@@ -200,6 +205,37 @@ TEST_F(LifeKeeperFixture, StopsListeningOnceDestroyed) {
   touchABydo(player);
 
   EXPECT_EQ(livesOf(world(), player), THREE_LIVES);
+}
+
+/**
+ * Given a Bydo that carries SurvivesContact on the ship of a player
+ * When the ship touches it
+ * Then the player loses a life and the Bydo stays in the world
+ */
+TEST_F(LifeKeeperFixture, KeepsTheBydoThatSurvivesContact) {
+  const ConnectedPlayer& player = join(FIRST_PLAYER);
+  const std::uint32_t ship = player.shipEntityId;
+  const std::uint32_t bydo = bydoOn(player);
+  std::optional<engine::Entity> enemy;
+  world().components().forEach<game::NetworkIdentity, game::Position>(
+      [&enemy, bydo](engine::Entity entity,
+                     const game::NetworkIdentity& identity,
+                     const game::Position& /*position*/) {
+        if (identity.networkId == bydo) {
+          enemy = entity;
+        }
+      });
+  ASSERT_TRUE(enemy.has_value());
+  const engine::Entity survivor = enemy.value_or(engine::Entity{});
+  world().components().add(survivor, game::SurvivesContact{});
+
+  publishContact(player.shipEntityId, bydo);
+  deliver();
+
+  EXPECT_NE(world().components().get<game::NetworkIdentity>(survivor), nullptr);
+  EXPECT_EQ(livesOf(world(), player), THREE_LIVES - 1);
+  EXPECT_EQ(explosionsOf(ship), 1U);
+  EXPECT_EQ(explosionsOf(bydo), 0U);
 }
 
 }  // namespace rtype::server::testing

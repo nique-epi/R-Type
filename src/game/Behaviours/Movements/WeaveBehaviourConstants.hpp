@@ -1,28 +1,40 @@
 #pragma once
 
+#include <array>
+#include <cstddef>
+#include <cstdint>
 #include <numbers>
+#include <string_view>
+#include "BehaviourSetting.hpp"
 #include "SpawningConstants.hpp"
+#include "WholeNumberRange.hpp"
 
 namespace rtype::game {
 
 /**
- * @brief How far a weave goes above and below its row, in logical units.
+ * @brief The settings of the weave: how far it goes above and below its row,
+ * in logical units, and how long it takes to go down, up and back to its row,
+ * in milliseconds.
  *
- * Provisional. It stays within BYDO_PATTERN_ROOM, the room every row keeps
- * above and below it, so a body on a weave stays in the area of play.
+ * The amplitude stays within ENEMY_PATTERN_ROOM, the room every row keeps above
+ * and below it, so a body on a weave stays in the area of play; the reader of
+ * the sheets refuses a wider one.
  */
-constexpr float WAVE_AMPLITUDE = 48.0F;
+constexpr std::string_view AMPLITUDE_SETTING_NAME = "amplitude";
+constexpr engine::WholeNumberRange AMPLITUDE_RANGE{
+    .lowest = 0, .highest = static_cast<std::int64_t>(ENEMY_PATTERN_ROOM)};
+constexpr std::string_view PERIOD_SETTING_NAME = "period_ms";
+constexpr engine::WholeNumberRange PERIOD_RANGE{.lowest = 1, .highest = 60000};
+constexpr std::array WEAVE_SETTINGS{
+    BehaviourSetting{.name = AMPLITUDE_SETTING_NAME, .range = AMPLITUDE_RANGE},
+    BehaviourSetting{.name = PERIOD_SETTING_NAME, .range = PERIOD_RANGE}};
 
-/**
- * @brief How long a weave takes to go down, up and back to its row, in
- * seconds.
+/** @brief Where each setting is among the values of BehaviourView::settings.
  */
-constexpr float WAVE_PERIOD_SECONDS = 2.0F;
+constexpr std::size_t AMPLITUDE_SETTING = 0;
+constexpr std::size_t PERIOD_SETTING = 1;
 
 /** @brief One whole turn of the sine a weave follows, in radians. */
 constexpr float FULL_TURN_RADIANS = 2.0F * std::numbers::pi_v<float>;
-
-static_assert(WAVE_AMPLITUDE <= BYDO_PATTERN_ROOM,
-              "a body on a weave stays within the room its row keeps");
 
 }  // namespace rtype::game

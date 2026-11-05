@@ -8,6 +8,8 @@
 #include "EntityFeedback.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityReplicator.hpp"
+#include "EntityReplicatorParts.hpp"
+#include "FixedEntityTypeSource.hpp"
 #include "RecordingSoundPlayer.hpp"
 
 namespace rtype::client::testing {
@@ -51,9 +53,12 @@ class EntityReplicatorFixture : public ::testing::Test {
   engine::ComponentRegistry components_{entities_};
   EffectSpawner effects_{entities_, components_, EFFECT_TEST_SEED};
   RecordingSoundPlayer sounds_;
-  EntityReplicator replicator_{
-      entities_, components_,
-      EntityFeedback{.effects = effects_, .sounds = sounds_}};
+  FixedEntityTypeSource types_;
+  EntityReplicator replicator_{EntityReplicatorParts{
+      .entities = entities_,
+      .components = components_,
+      .feedback = EntityFeedback{.effects = effects_, .sounds = sounds_},
+      .types = types_}};
 };
 
 }  // namespace rtype::client::testing

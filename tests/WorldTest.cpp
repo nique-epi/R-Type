@@ -1,47 +1,63 @@
 #include <gtest/gtest.h>
-#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string_view>
 #include <vector>
 #include "BehaviourConstants.hpp"
-#include "BydoKind.hpp"
-#include "BydoPointsConstants.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityIdConstants.hpp"
-#include "EntitySizeConstants.hpp"
 #include "EntityType.hpp"
+#include "EntityTypeNumber.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "Gun.hpp"
 #include "Health.hpp"
 #include "Intent.hpp"
+#include "Lives.hpp"
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
 #include "Pilot.hpp"
 #include "Position.hpp"
 #include "ScoreValue.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "SteadyMotion.hpp"
 #include "TimeConstants.hpp"
-#include "Velocity.hpp"
 #include "World.hpp"
 #include "WorldFixtures.hpp"
 #include "WorldTestConstants.hpp"
 
 using rtype::game::STRAIGHT_BEHAVIOUR_NAME;
 using rtype::game::WEAVE_BEHAVIOUR_NAME;
+using rtype::game::testing::behaviourNameOf;
 using rtype::game::testing::BYDO_SHOT_INTERVAL_TICKS;
 using rtype::game::testing::BYDO_UNITS_PER_SECOND;
 using rtype::game::testing::componentOf;
+using rtype::game::testing::DRIFTER_SHEET;
+using rtype::game::testing::ENEMY_MISSILE_SHEET;
 using rtype::game::testing::ENEMY_MISSILE_UNITS_PER_SECOND;
 using rtype::game::testing::MISSILE_UNITS_PER_SECOND;
 using rtype::game::testing::OTHER_X;
 using rtype::game::testing::OTHER_Y;
+using rtype::game::testing::pilotSettingsOf;
+using rtype::game::testing::PLAYER_MISSILE_SHEET;
+using rtype::game::testing::REQUIRED_BYDO_SIZE;
+using rtype::game::testing::REQUIRED_DRIFTER_POINTS;
+using rtype::game::testing::REQUIRED_ENEMY_MISSILE_SIZE;
+using rtype::game::testing::REQUIRED_LEFT_HEADING;
+using rtype::game::testing::REQUIRED_PLAYER_MISSILE_HEIGHT;
+using rtype::game::testing::REQUIRED_PLAYER_MISSILE_WIDTH;
+using rtype::game::testing::REQUIRED_RIGHT_HEADING;
+using rtype::game::testing::REQUIRED_WEAVER_POINTS;
 using rtype::game::testing::SECOND_PLAYER_NUMBER;
+using rtype::game::testing::SHIP_SHEET;
 using rtype::game::testing::SHIP_SHOT_INTERVAL_TICKS;
+using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::SOME_X;
 using rtype::game::testing::SOME_Y;
 using rtype::game::testing::THREE_HEALTH_POINTS;
+using rtype::game::testing::THREE_LIVES;
+using rtype::game::testing::WEAVER_SHEET;
 
 /**
  * Given an empty world
@@ -51,7 +67,8 @@ using rtype::game::testing::THREE_HEALTH_POINTS;
 TEST(World, SpawnedPlayerIsCounted) {
   rtype::game::World world;
 
-  world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+  world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+              rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   EXPECT_EQ(world.entityCount(), 1U);
 }
@@ -65,9 +82,11 @@ TEST(World, SpawnedPlayersGetDistinctNetworkIds) {
   rtype::game::World world;
 
   const std::uint32_t first =
-      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+      world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
   const std::uint32_t second =
-      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+      world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   EXPECT_NE(first, rtype::identifiers::NO_ENTITY_ID);
   EXPECT_NE(second, rtype::identifiers::NO_ENTITY_ID);
@@ -83,7 +102,8 @@ TEST(World, SpawnedPlayerIsANetworkedShipAtItsPosition) {
   rtype::game::World world;
 
   const std::uint32_t networkId =
-      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+      world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   bool found = false;
   world.components()
@@ -113,8 +133,8 @@ TEST(World, SpawnedBydoIsAnEnemyAtItsPosition) {
   rtype::game::World world;
 
   const std::uint32_t networkId =
-      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Drifter);
+      world.spawn(shippedEntitySheets().named(DRIFTER_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   EXPECT_EQ(world.entityCount(), 1U);
   EXPECT_NE(networkId, rtype::identifiers::NO_ENTITY_ID);
@@ -146,10 +166,11 @@ TEST(World, ABydoAndAPlayerGetDistinctNetworkIds) {
   rtype::game::World world;
 
   const std::uint32_t player =
-      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+      world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
   const std::uint32_t bydo =
-      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Drifter);
+      world.spawn(shippedEntitySheets().named(DRIFTER_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   EXPECT_NE(player, bydo);
 }
@@ -162,7 +183,8 @@ TEST(World, ABydoAndAPlayerGetDistinctNetworkIds) {
 TEST(World, RemovedShipLeavesTheWorld) {
   rtype::game::World world;
   const std::uint32_t ship =
-      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+      world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   const bool removed = world.removePlayer(ship);
 
@@ -178,18 +200,20 @@ TEST(World, RemovedShipLeavesTheWorld) {
 TEST(World, RemovesOnlyTheShipItIsGiven) {
   rtype::game::World world;
   const std::uint32_t first =
-      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+      world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
   const std::uint32_t second =
-      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+      world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   world.removePlayer(first);
 
   std::vector<std::uint32_t> networkIds;
   world.components()
       .forEach<rtype::game::NetworkIdentity, rtype::game::EntityType>(
-          [&networkIds](rtype::engine::Entity /*entity*/,
+          [&networkIds](rtype::engine::Entity,
                         const rtype::game::NetworkIdentity& identity,
-                        const rtype::game::EntityType& /*type*/) {
+                        const rtype::game::EntityType&) {
             networkIds.push_back(identity.networkId);
           });
   EXPECT_EQ(networkIds, std::vector<std::uint32_t>{second});
@@ -203,7 +227,8 @@ TEST(World, RemovesOnlyTheShipItIsGiven) {
 TEST(World, RemovesAShipOnlyOnce) {
   rtype::game::World world;
   const std::uint32_t ship =
-      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+      world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
   ASSERT_TRUE(world.removePlayer(ship));
 
   const bool removedAgain = world.removePlayer(ship);
@@ -218,7 +243,8 @@ TEST(World, RemovesAShipOnlyOnce) {
  */
 TEST(World, RemovesNothingForTheIdNoEntityHas) {
   rtype::game::World world;
-  world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+  world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+              rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   const bool removed = world.removePlayer(rtype::identifiers::NO_ENTITY_ID);
 
@@ -234,8 +260,8 @@ TEST(World, RemovesNothingForTheIdNoEntityHas) {
 TEST(World, RemovesNoBydoAsAShip) {
   rtype::game::World world;
   const std::uint32_t bydo =
-      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Drifter);
+      world.spawn(shippedEntitySheets().named(DRIFTER_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   const bool removed = world.removePlayer(bydo);
 
@@ -252,11 +278,11 @@ TEST(World, RemovesNoBydoAsAShip) {
 TEST(World, SpawnedBydosArePilotedByTheBehaviourOfTheirKind) {
   rtype::game::World world;
   static_cast<void>(
-      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Drifter));
+      world.spawn(shippedEntitySheets().named(DRIFTER_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y}));
   static_cast<void>(
-      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Weaver));
+      world.spawn(shippedEntitySheets().named(WEAVER_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y}));
 
   std::vector<std::string_view> behaviours;
   world.components().forEach<rtype::game::Pilot, rtype::game::Pilot>(
@@ -280,8 +306,8 @@ TEST(World, SpawnedBydoMovesSteadilyAtTheSpeedOfABydo) {
   rtype::game::World world;
 
   const std::uint32_t networkId =
-      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Drifter);
+      world.spawn(shippedEntitySheets().named(DRIFTER_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   const std::optional<rtype::game::SteadyMotion> motion =
       componentOf<rtype::game::SteadyMotion>(world, networkId);
@@ -299,12 +325,12 @@ TEST(World, SpawnedBydoHasThreeHealthPoints) {
   rtype::game::World world;
 
   static_cast<void>(
-      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Drifter));
+      world.spawn(shippedEntitySheets().named(DRIFTER_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y}));
 
   int bydosWithHealth = 0;
   world.components().forEach<rtype::game::EntityType, rtype::game::Health>(
-      [&bydosWithHealth](rtype::engine::Entity /*entity*/,
+      [&bydosWithHealth](rtype::engine::Entity,
                          const rtype::game::EntityType& type,
                          const rtype::game::Health& health) {
         ++bydosWithHealth;
@@ -322,15 +348,13 @@ TEST(World, SpawnedBydoHasThreeHealthPoints) {
 TEST(World, SpawnedShipHasNoHealth) {
   rtype::game::World world;
 
-  world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+  world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+              rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   int shipsWithHealth = 0;
   world.components().forEach<rtype::game::EntityType, rtype::game::Health>(
-      [&shipsWithHealth](rtype::engine::Entity /*entity*/,
-                         const rtype::game::EntityType& /*type*/,
-                         const rtype::game::Health& /*health*/) {
-        ++shipsWithHealth;
-      });
+      [&shipsWithHealth](rtype::engine::Entity, const rtype::game::EntityType&,
+                         const rtype::game::Health&) { ++shipsWithHealth; });
   EXPECT_EQ(shipsWithHealth, 0);
 }
 
@@ -344,9 +368,9 @@ TEST(World, SpawnedBydoIsWorthThePointsOfItsKind) {
   const rtype::game::Position position{.x = SOME_X, .y = SOME_Y};
 
   const std::uint32_t drifterId =
-      world.spawnBydo(position, rtype::game::BydoKind::Drifter);
+      world.spawn(shippedEntitySheets().named(DRIFTER_SHEET), position);
   const std::uint32_t weaverId =
-      world.spawnBydo(position, rtype::game::BydoKind::Weaver);
+      world.spawn(shippedEntitySheets().named(WEAVER_SHEET), position);
 
   std::uint32_t drifterPoints = 0;
   std::uint32_t weaverPoints = 0;
@@ -358,8 +382,8 @@ TEST(World, SpawnedBydoIsWorthThePointsOfItsKind) {
             (identity.networkId == drifterId ? drifterPoints : weaverPoints) =
                 score.points;
           });
-  EXPECT_EQ(drifterPoints, rtype::game::DRIFTER_POINTS);
-  EXPECT_EQ(weaverPoints, rtype::game::WEAVER_POINTS);
+  EXPECT_EQ(drifterPoints, REQUIRED_DRIFTER_POINTS);
+  EXPECT_EQ(weaverPoints, REQUIRED_WEAVER_POINTS);
   EXPECT_NE(drifterId, weaverId);
 }
 
@@ -372,16 +396,16 @@ TEST(World, SpawnedBydoHasTheBoxOfItsSprite) {
   rtype::game::World world;
 
   const std::uint32_t networkId =
-      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Drifter);
+      world.spawn(shippedEntitySheets().named(DRIFTER_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   const std::optional<rtype::game::CollisionBox> box =
       componentOf<rtype::game::CollisionBox>(world, networkId);
   ASSERT_TRUE(box.has_value());
   const rtype::game::CollisionBox found =
       box.value_or(rtype::game::CollisionBox{});
-  EXPECT_EQ(found.width, rtype::game::BYDO_WIDTH);
-  EXPECT_EQ(found.height, rtype::game::BYDO_HEIGHT);
+  EXPECT_EQ(found.width, REQUIRED_BYDO_SIZE);
+  EXPECT_EQ(found.height, REQUIRED_BYDO_SIZE);
 }
 
 /**
@@ -392,7 +416,8 @@ TEST(World, SpawnedBydoHasTheBoxOfItsSprite) {
 TEST(World, GivesThePositionOfAShipByItsNetworkId) {
   rtype::game::World world;
   const std::uint32_t ship =
-      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+      world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   const rtype::game::Position* const position = world.shipPositionOf(ship);
 
@@ -408,9 +433,11 @@ TEST(World, GivesThePositionOfAShipByItsNetworkId) {
  */
 TEST(World, GivesEachShipItsOwnPosition) {
   rtype::game::World world;
-  world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+  world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+              rtype::game::Position{.x = SOME_X, .y = SOME_Y});
   const std::uint32_t second =
-      world.spawnPlayer(rtype::game::Position{.x = OTHER_X, .y = OTHER_Y});
+      world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+                  rtype::game::Position{.x = OTHER_X, .y = OTHER_Y});
 
   const rtype::game::Position* const position = world.shipPositionOf(second);
 
@@ -427,8 +454,8 @@ TEST(World, GivesEachShipItsOwnPosition) {
 TEST(World, GivesNoShipPositionForTheIdOfABydo) {
   rtype::game::World world;
   const std::uint32_t bydo =
-      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Drifter);
+      world.spawn(shippedEntitySheets().named(DRIFTER_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   EXPECT_EQ(world.shipPositionOf(bydo), nullptr);
 }
@@ -441,7 +468,8 @@ TEST(World, GivesNoShipPositionForTheIdOfABydo) {
 TEST(World, GivesNoShipPositionForAnIdItNeverGave) {
   rtype::game::World world;
   const std::uint32_t ship =
-      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+      world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   EXPECT_EQ(world.shipPositionOf(ship + 1), nullptr);
 }
@@ -453,22 +481,24 @@ TEST(World, GivesNoShipPositionForAnIdItNeverGave) {
  */
 TEST(World, GivesNoShipPositionForNoEntityId) {
   rtype::game::World world;
-  world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+  world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+              rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   EXPECT_EQ(world.shipPositionOf(rtype::identifiers::NO_ENTITY_ID), nullptr);
 }
 
 /**
  * Given an empty world
- * When the second player fires a missile at a position
+ * When the sheet of a missile of a player is spawned at a position
  * Then the world holds a player missile at that position, under the network id
  * returned
  */
 TEST(World, SpawnedPlayerMissileIsANetworkedMissileAtItsPosition) {
   rtype::game::World world;
 
-  const std::uint32_t networkId = world.spawnPlayerMissile(
-      rtype::game::Position{.x = SOME_X, .y = SOME_Y}, SECOND_PLAYER_NUMBER);
+  const std::uint32_t networkId =
+      world.spawn(shippedEntitySheets().named(PLAYER_MISSILE_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   EXPECT_EQ(world.entityCount(), 1U);
   EXPECT_NE(networkId, rtype::identifiers::NO_ENTITY_ID);
@@ -485,13 +515,14 @@ TEST(World, SpawnedPlayerMissileIsANetworkedMissileAtItsPosition) {
 
 /**
  * Given an empty world
- * When the second player fires a missile
+ * When the second player fires a missile, spawned with that player as owner
  * Then the missile belongs to the second player
  */
-TEST(World, SpawnedPlayerMissileBelongsToThePlayerWhoFired) {
+TEST(World, SpawnedMissileBelongsToTheOwnerGiven) {
   rtype::game::World world;
 
-  const std::uint32_t networkId = world.spawnPlayerMissile(
+  const std::uint32_t networkId = world.spawn(
+      shippedEntitySheets().named(PLAYER_MISSILE_SHEET),
       rtype::game::Position{.x = SOME_X, .y = SOME_Y}, SECOND_PLAYER_NUMBER);
 
   const std::optional<rtype::game::MissileOwner> owner =
@@ -503,22 +534,43 @@ TEST(World, SpawnedPlayerMissileBelongsToThePlayerWhoFired) {
 
 /**
  * Given an empty world
- * When a player fires a missile
- * Then the missile flies right at 960 units per second, on its row
+ * When a missile of a player is spawned with no owner
+ * Then it has no MissileOwner: no kill can be credited by it
+ */
+TEST(World, SpawnedEntityWithoutOwnerHasNoMissileOwner) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId =
+      world.spawn(shippedEntitySheets().named(PLAYER_MISSILE_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_FALSE(
+      componentOf<rtype::game::MissileOwner>(world, networkId).has_value());
+}
+
+/**
+ * Given an empty world
+ * When a missile of a player is spawned
+ * Then it flies steadily at 960 units per second, piloted straight to the
+ * right
  */
 TEST(World, SpawnedPlayerMissileFliesRight) {
   rtype::game::World world;
 
-  const std::uint32_t networkId = world.spawnPlayerMissile(
-      rtype::game::Position{.x = SOME_X, .y = SOME_Y}, SECOND_PLAYER_NUMBER);
+  const std::uint32_t networkId =
+      world.spawn(shippedEntitySheets().named(PLAYER_MISSILE_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
-  const std::optional<rtype::game::Velocity> velocity =
-      componentOf<rtype::game::Velocity>(world, networkId);
-  ASSERT_TRUE(velocity.has_value());
-  const rtype::game::Velocity found =
-      velocity.value_or(rtype::game::Velocity{});
-  EXPECT_EQ(found.x, MISSILE_UNITS_PER_SECOND);
-  EXPECT_EQ(found.y, 0.0F);
+  const std::optional<rtype::game::SteadyMotion> motion =
+      componentOf<rtype::game::SteadyMotion>(world, networkId);
+  ASSERT_TRUE(motion.has_value());
+  EXPECT_EQ(motion.value_or(rtype::game::SteadyMotion{}).topSpeed,
+            MISSILE_UNITS_PER_SECOND);
+  EXPECT_EQ(behaviourNameOf(world, networkId),
+            std::optional{STRAIGHT_BEHAVIOUR_NAME});
+  EXPECT_EQ(pilotSettingsOf(world, networkId),
+            std::vector<std::int64_t>(REQUIRED_RIGHT_HEADING.begin(),
+                                      REQUIRED_RIGHT_HEADING.end()));
 }
 
 /**
@@ -529,30 +581,31 @@ TEST(World, SpawnedPlayerMissileFliesRight) {
 TEST(World, SpawnedPlayerMissileHasTheBoxOfItsSprite) {
   rtype::game::World world;
 
-  const std::uint32_t networkId = world.spawnPlayerMissile(
-      rtype::game::Position{.x = SOME_X, .y = SOME_Y}, SECOND_PLAYER_NUMBER);
+  const std::uint32_t networkId =
+      world.spawn(shippedEntitySheets().named(PLAYER_MISSILE_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   const std::optional<rtype::game::CollisionBox> box =
       componentOf<rtype::game::CollisionBox>(world, networkId);
   ASSERT_TRUE(box.has_value());
   const rtype::game::CollisionBox found =
       box.value_or(rtype::game::CollisionBox{});
-  EXPECT_EQ(found.width, rtype::game::PLAYER_MISSILE_WIDTH);
-  EXPECT_EQ(found.height, rtype::game::PLAYER_MISSILE_HEIGHT);
+  EXPECT_EQ(found.width, REQUIRED_PLAYER_MISSILE_WIDTH);
+  EXPECT_EQ(found.height, REQUIRED_PLAYER_MISSILE_HEIGHT);
 }
 
 /**
  * Given an empty world
- * When a Bydo is spawned
- * Then it carries a gun of enemy missiles that fires every 90 ticks, its first
- * missile waiting a whole interval
+ * When a Drifter is spawned
+ * Then it carries a gun of missiles of an enemy that fires every 90 ticks, its
+ * first missile waiting a whole interval
  */
 TEST(World, SpawnedBydoHasAGunThatWaitsAWholeIntervalFirst) {
   rtype::game::World world;
 
   const std::uint32_t networkId =
-      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
-                      rtype::game::BydoKind::Drifter);
+      world.spawn(shippedEntitySheets().named(DRIFTER_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   const std::optional<rtype::game::Gun> gun =
       componentOf<rtype::game::Gun>(world, networkId);
@@ -560,20 +613,22 @@ TEST(World, SpawnedBydoHasAGunThatWaitsAWholeIntervalFirst) {
   const rtype::game::Gun held = gun.value_or(rtype::game::Gun{});
   EXPECT_EQ(held.intervalTicks, BYDO_SHOT_INTERVAL_TICKS);
   EXPECT_EQ(held.ticksUntilReady, BYDO_SHOT_INTERVAL_TICKS);
-  EXPECT_EQ(held.projectile, rtype::game::EntityType::EnemyMissile);
+  EXPECT_EQ(held.projectileNumber,
+            shippedEntitySheets().named(ENEMY_MISSILE_SHEET).number);
 }
 
 /**
  * Given an empty world
- * When a ship is spawned for a player
- * Then it carries a gun of player missiles that fires every 20 ticks and is
- * ready at once
+ * When the ship of a player is spawned
+ * Then it carries a gun of missiles of a player that fires every 20 ticks and
+ * is ready at once
  */
 TEST(World, SpawnedShipHasAGunThatIsReadyAtOnce) {
   rtype::game::World world;
 
   const std::uint32_t networkId =
-      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+      world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   const std::optional<rtype::game::Gun> gun =
       componentOf<rtype::game::Gun>(world, networkId);
@@ -581,7 +636,8 @@ TEST(World, SpawnedShipHasAGunThatIsReadyAtOnce) {
   const rtype::game::Gun held = gun.value_or(rtype::game::Gun{});
   EXPECT_EQ(held.intervalTicks, SHIP_SHOT_INTERVAL_TICKS);
   EXPECT_EQ(held.ticksUntilReady, 0U);
-  EXPECT_EQ(held.projectile, rtype::game::EntityType::PlayerMissile);
+  EXPECT_EQ(held.projectileNumber,
+            shippedEntitySheets().named(PLAYER_MISSILE_SHEET).number);
 }
 
 /**
@@ -594,7 +650,8 @@ TEST(World, SpawnedEnemyMissileIsANetworkedMissileAtItsPosition) {
   rtype::game::World world;
 
   const std::uint32_t networkId =
-      world.spawnEnemyMissile(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+      world.spawn(shippedEntitySheets().named(ENEMY_MISSILE_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   EXPECT_EQ(world.entityCount(), 1U);
   EXPECT_NE(networkId, rtype::identifiers::NO_ENTITY_ID);
@@ -611,22 +668,26 @@ TEST(World, SpawnedEnemyMissileIsANetworkedMissileAtItsPosition) {
 
 /**
  * Given an empty world
- * When an enemy fires a missile
- * Then the missile flies left at 360 units per second, on its row
+ * When a missile of an enemy is spawned
+ * Then it flies steadily at 360 units per second, piloted straight to the left
  */
 TEST(World, SpawnedEnemyMissileFliesLeft) {
   rtype::game::World world;
 
   const std::uint32_t networkId =
-      world.spawnEnemyMissile(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+      world.spawn(shippedEntitySheets().named(ENEMY_MISSILE_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
-  const std::optional<rtype::game::Velocity> velocity =
-      componentOf<rtype::game::Velocity>(world, networkId);
-  ASSERT_TRUE(velocity.has_value());
-  const rtype::game::Velocity found =
-      velocity.value_or(rtype::game::Velocity{});
-  EXPECT_EQ(found.x, -ENEMY_MISSILE_UNITS_PER_SECOND);
-  EXPECT_EQ(found.y, 0.0F);
+  const std::optional<rtype::game::SteadyMotion> motion =
+      componentOf<rtype::game::SteadyMotion>(world, networkId);
+  ASSERT_TRUE(motion.has_value());
+  EXPECT_EQ(motion.value_or(rtype::game::SteadyMotion{}).topSpeed,
+            ENEMY_MISSILE_UNITS_PER_SECOND);
+  EXPECT_EQ(behaviourNameOf(world, networkId),
+            std::optional{STRAIGHT_BEHAVIOUR_NAME});
+  EXPECT_EQ(pilotSettingsOf(world, networkId),
+            std::vector<std::int64_t>(REQUIRED_LEFT_HEADING.begin(),
+                                      REQUIRED_LEFT_HEADING.end()));
 }
 
 /**
@@ -638,15 +699,16 @@ TEST(World, SpawnedEnemyMissileHasTheBoxOfItsSprite) {
   rtype::game::World world;
 
   const std::uint32_t networkId =
-      world.spawnEnemyMissile(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+      world.spawn(shippedEntitySheets().named(ENEMY_MISSILE_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   const std::optional<rtype::game::CollisionBox> box =
       componentOf<rtype::game::CollisionBox>(world, networkId);
   ASSERT_TRUE(box.has_value());
   const rtype::game::CollisionBox found =
       box.value_or(rtype::game::CollisionBox{});
-  EXPECT_EQ(found.width, rtype::game::ENEMY_MISSILE_WIDTH);
-  EXPECT_EQ(found.height, rtype::game::ENEMY_MISSILE_HEIGHT);
+  EXPECT_EQ(found.width, REQUIRED_ENEMY_MISSILE_SIZE);
+  EXPECT_EQ(found.height, REQUIRED_ENEMY_MISSILE_SIZE);
 }
 
 /**
@@ -657,7 +719,8 @@ TEST(World, SpawnedEnemyMissileHasTheBoxOfItsSprite) {
 TEST(World, ShipIsSpawnedWithAnIntentThatWantsNothing) {
   rtype::game::World world;
   const std::uint32_t shipId =
-      world.spawnPlayer(rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+      world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   const rtype::game::Intent* const intent =
       world.shipComponentOf<rtype::game::Intent>(shipId);
@@ -667,4 +730,57 @@ TEST(World, ShipIsSpawnedWithAnIntentThatWantsNothing) {
   EXPECT_EQ(intent->direction.y, 0.0F);
   EXPECT_FALSE(intent->shooting);
   EXPECT_EQ(world.shipComponentOf<rtype::game::Intent>(shipId + 1), nullptr);
+}
+
+/**
+ * Given an empty world
+ * When a Weaver is spawned
+ * Then it carries the number of the sheet of the Weaver
+ */
+TEST(World, SpawnedEntityCarriesTheNumberOfItsSheet) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId =
+      world.spawn(shippedEntitySheets().named(WEAVER_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  const std::optional<rtype::game::EntityTypeNumber> number =
+      componentOf<rtype::game::EntityTypeNumber>(world, networkId);
+  ASSERT_TRUE(number.has_value());
+  EXPECT_EQ(number.value_or(rtype::game::EntityTypeNumber{}).number,
+            shippedEntitySheets().named(WEAVER_SHEET).number);
+}
+
+/**
+ * Given an empty world
+ * When the ship of a player is spawned
+ * Then it has three lives and is listed as a ship, while no Pilot steers it
+ */
+TEST(World, SpawnedShipHasThreeLivesAndNoPilot) {
+  rtype::game::World world;
+
+  const std::uint32_t ship =
+      world.spawn(shippedEntitySheets().named(SHIP_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  const rtype::game::Lives* const lives =
+      world.shipComponentOf<rtype::game::Lives>(ship);
+  ASSERT_NE(lives, nullptr);
+  EXPECT_EQ(lives->count, THREE_LIVES);
+  EXPECT_EQ(world.shipComponentOf<rtype::game::Pilot>(ship), nullptr);
+}
+
+/**
+ * Given an empty world
+ * When a missile of an enemy is spawned
+ * Then it is no ship: the world does not list it as one
+ */
+TEST(World, SpawnedMissileIsNoShip) {
+  rtype::game::World world;
+
+  const std::uint32_t missile =
+      world.spawn(shippedEntitySheets().named(ENEMY_MISSILE_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_EQ(world.shipPositionOf(missile), nullptr);
 }

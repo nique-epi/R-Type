@@ -9,6 +9,7 @@
 #include "DeltaStateSenderTestConstants.hpp"
 #include "DeltaWorldState.hpp"
 #include "Entity.hpp"
+#include "EntityTypeNumberTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "Position.hpp"
@@ -35,11 +36,10 @@ std::vector<network::EntityState> worldAt(std::uint32_t tick) {
   for (std::uint32_t id = 1; id <= MEASURED_ENTITIES; ++id) {
     const float moved =
         id <= HALF_THE_ENTITIES ? static_cast<float>(tick - 1) : 0.0F;
-    enemies.push_back(
-        network::EntityState{.entityId = id,
-                             .entityType = network::WireEntityType::Bydo,
-                             .x = static_cast<float>(id) + moved,
-                             .y = 0.0F});
+    enemies.push_back(network::EntityState{.entityId = id,
+                                           .entityType = DRIFTER_TYPE_NUMBER,
+                                           .x = static_cast<float>(id) + moved,
+                                           .y = 0.0F});
   }
   return enemies;
 }

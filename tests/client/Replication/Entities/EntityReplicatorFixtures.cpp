@@ -11,6 +11,7 @@
 #include "Entity.hpp"
 #include "EntitySprites.hpp"
 #include "EntityType.hpp"
+#include "FixedEntityTypeSource.hpp"
 #include "HitFlash.hpp"
 #include "Invulnerability.hpp"
 #include "Layer.hpp"
@@ -70,10 +71,10 @@ void PrintTo(const DrawnEntity& entity, std::ostream* output) {
           << entity.frame.top;
 }
 
-DrawnEntity drawnAs(game::EntityType type, std::uint32_t networkId,
+DrawnEntity drawnAs(game::EntityType side, std::uint32_t networkId,
                     game::Position position) {
-  const std::optional<AnimatedSprite> look = animatedSpriteOf(type, networkId);
-  const game::Sprite sprite = look.has_value() ? look->sprite : game::Sprite{};
+  const game::Sprite sprite =
+      animatedSpriteOf(appearanceOfSide(side), side, networkId).sprite;
   return DrawnEntity{.x = position.x,
                      .y = position.y,
                      .assetId = sprite.assetId,

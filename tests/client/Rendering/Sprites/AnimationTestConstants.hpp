@@ -3,6 +3,7 @@
 #include <array>
 #include <chrono>
 #include "Animation.hpp"
+#include "Playback.hpp"
 #include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
 
@@ -25,12 +26,24 @@ constexpr rtype::engine::Duration THREE_FRAMES_LONG =
 constexpr rtype::client::Animation LOOP{
     .frames = THREE_FRAMES,
     .frameDuration = FRAME_TIME,
-    .playback = rtype::client::Animation::Playback::Loop};
+    .playback = rtype::client::Playback::Loop};
 constexpr rtype::client::Animation ONCE{
     .frames = THREE_FRAMES,
     .frameDuration = FRAME_TIME,
-    .playback = rtype::client::Animation::Playback::Once};
+    .playback = rtype::client::Playback::Once};
 constexpr rtype::client::Animation WITHOUT_FRAMES{
     .frames = {},
     .frameDuration = FRAME_TIME,
-    .playback = rtype::client::Animation::Playback::Loop};
+    .playback = rtype::client::Playback::Loop};
+
+/** @brief The three frames held, and an animation of the first frame alone,
+ * which an ended animation gives way to. */
+constexpr rtype::client::Animation HOLD{
+    .frames = THREE_FRAMES,
+    .frameDuration = FRAME_TIME,
+    .playback = rtype::client::Playback::Hold};
+constexpr std::array ONLY_FIRST{FIRST};
+constexpr rtype::client::Animation BACK_TO_FIRST{
+    .frames = ONLY_FIRST,
+    .frameDuration = FRAME_TIME,
+    .playback = rtype::client::Playback::Loop};

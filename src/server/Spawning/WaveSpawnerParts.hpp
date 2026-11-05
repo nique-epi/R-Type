@@ -1,0 +1,39 @@
+#pragma once
+
+#include <cstdint>
+#include <functional>
+#include "EntitySheets.hpp"
+#include "EntitySpawnSender.hpp"
+#include "WavePlan.hpp"
+
+namespace rtype::game {
+
+class World;
+
+}  // namespace rtype::game
+
+namespace rtype::server {
+
+class PlayerRoster;
+
+/** @brief What a WaveSpawner is built from. */
+struct WaveSpawnerParts {
+  /** @brief The world the enemies are created in; it must outlive the spawner.
+   */
+  std::reference_wrapper<game::World> world;
+  /** @brief The players told about each enemy; it must outlive the spawner. */
+  std::reference_wrapper<PlayerRoster> roster;
+  /** @brief What is called for each datagram to send. Must not be empty. */
+  SendDatagram send;
+  /** @brief Where the random draws of the heights start; logged at info level
+   * when the spawner is built. */
+  std::uint32_t seed{};
+  /** @brief The waves of enemies: their curve must be playable (see
+   * game::isPlayable) and their enemies must name at least one sheet. */
+  WavePlan waves;
+  /** @brief The sheets the enemies of the waves name; they must outlive the
+   * spawner. */
+  std::reference_wrapper<const game::EntitySheets> types;
+};
+
+}  // namespace rtype::server

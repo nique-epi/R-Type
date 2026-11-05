@@ -15,6 +15,9 @@ struct GamesSettings {
   std::optional<std::uint32_t> seed;
   /** @brief The waves file, read when the module starts. */
   std::filesystem::path wavesFile;
+  /** @brief The folder of the entity sheets, read when the module starts,
+   * before the waves file that names them. */
+  std::filesystem::path entitySheetsFolder;
   /** @brief How many games the module creates when it starts; at least 1. */
   std::size_t gameCount{DEFAULT_HOSTED_GAME_COUNT};
   /** @brief The world states each player of a game is sent per second, unless

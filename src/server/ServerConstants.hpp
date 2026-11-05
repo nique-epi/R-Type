@@ -103,6 +103,12 @@ constexpr std::string_view BANNED_DROP_REASON = "its sender is banned";
 constexpr std::string_view WAVE_FILE_IN_ASSETS = "waves/waves.toml";
 
 /**
+ * @brief The entity sheet every player's ship is made from: a server whose
+ * sheets have none refuses to start its games.
+ */
+constexpr std::string_view SHIP_SHEET_NAME = "ship";
+
+/**
  * @brief The difficulty every game is played at, until the rules of a game can
  * choose another one.
  */
@@ -114,7 +120,15 @@ constexpr std::string_view DEFAULT_DIFFICULTY = "normal";
  * are not vanilla. A test fails when the shipped file changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x74174ddcb239e461;
+constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0xad2b908a895cb73e;
+
+/**
+ * @brief The fingerprint of the entity sheets the game ships, as
+ * entitySheetsFingerprint() gives it: games made from sheets with another one
+ * are not vanilla. A test fails when a shipped sheet changes and this does
+ * not.
+ */
+constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0x4426e75b36575d34;
 
 /**
  * @brief Why the games of a server are not vanilla, as the lines of its journal
@@ -122,6 +136,8 @@ constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x74174ddcb239e461;
  */
 constexpr std::string_view MODIFIED_WAVES_BREACH =
     "the waves file is not the one the game ships";
+constexpr std::string_view MODIFIED_ENTITY_SHEETS_BREACH =
+    "the entity sheets are not the ones the game ships";
 constexpr std::string_view IMPOSED_SEED_BREACH =
     "a seed is set, so the waves can be known in advance";
 constexpr std::string_view CHANGED_INPUT_DELAY_BREACH =

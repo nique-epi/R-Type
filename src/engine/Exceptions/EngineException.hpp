@@ -1,9 +1,13 @@
 #pragma once
 
 #include <cstdint>
+#include <span>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
+#include "DataFilePlace.hpp"
+#include "WholeNumberRange.hpp"
 
 namespace rtype::engine {
 
@@ -205,6 +209,83 @@ class AssetFolderNotFoundException : public EngineException {
  public:
   explicit AssetFolderNotFoundException(
       const std::vector<std::string>& searchedFolders);
+};
+
+/**
+ * @brief A data file cannot be opened, or a folder of data files cannot be
+ * listed.
+ */
+class UnreadableDataFileException : public EngineException {
+ public:
+  /** @param file The path of the file or the folder, as the errors show it. */
+  explicit UnreadableDataFileException(const std::string& file);
+};
+
+/** @brief A data file is not TOML. */
+class DataFileSyntaxException : public EngineException {
+ public:
+  /** @param description What the TOML reader found wrong at @p place. */
+  DataFileSyntaxException(const DataFilePlace& place,
+                          const std::string& description);
+};
+
+/**
+ * @brief A key a data file must hold is missing; the place is the table it
+ * is missing from.
+ */
+class MissingDataFileKeyException : public EngineException {
+ public:
+  explicit MissingDataFileKeyException(const DataFilePlace& place);
+};
+
+/** @brief A data file holds a key it may not hold, often a misspelt one. */
+class UnknownDataFileKeyException : public EngineException {
+ public:
+  explicit UnknownDataFileKeyException(const DataFilePlace& place);
+};
+
+/** @brief A key of a data file that must hold a table holds a value. */
+class DataFileTableExpectedException : public EngineException {
+ public:
+  explicit DataFileTableExpectedException(const DataFilePlace& place);
+};
+
+/** @brief A key of a data file that must hold an array of tables holds
+ * something else, or an array with a value that is not a table. */
+class DataFileTablesExpectedException : public EngineException {
+ public:
+  explicit DataFileTablesExpectedException(const DataFilePlace& place);
+};
+
+/**
+ * @brief A value of a data file is not a TOML integer within the range of
+ * its key.
+ */
+class DataFileValueOutOfRangeException : public EngineException {
+ public:
+  DataFileValueOutOfRangeException(const DataFilePlace& place,
+                                   WholeNumberRange range);
+};
+
+/** @brief A key of a data file that must hold a text holds something else. */
+class DataFileTextExpectedException : public EngineException {
+ public:
+  explicit DataFileTextExpectedException(const DataFilePlace& place);
+};
+
+/**
+ * @brief A key of a data file holds a text that is none of the values it
+ * accepts.
+ */
+class UnknownDataFileChoiceException : public EngineException {
+ public:
+  /**
+   * @param value The text the key holds, in the message.
+   * @param choices The values the key accepts, in the message.
+   */
+  UnknownDataFileChoiceException(const DataFilePlace& place,
+                                 const std::string& value,
+                                 std::span<const std::string_view> choices);
 };
 
 /** @brief A shared library could not be opened. */
