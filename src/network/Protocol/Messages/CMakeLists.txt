@@ -12,6 +12,7 @@ add_subdirectory(GameEvent)
 add_subdirectory(GameLoaded)
 add_subdirectory(GameStarted)
 add_subdirectory(GameStatus)
+add_subdirectory(GameStatusAcknowledged)
 add_subdirectory(Heartbeat)
 add_subdirectory(LeaderboardAnswer)
 add_subdirectory(LeaderboardRequest)
@@ -40,6 +41,7 @@ target_link_libraries(rtype_network_messages
     rtype_network_game_loaded
     rtype_network_game_started
     rtype_network_game_status
+    rtype_network_game_status_acknowledged
     rtype_network_heartbeat
     rtype_network_leaderboard_answer
     rtype_network_leaderboard_request

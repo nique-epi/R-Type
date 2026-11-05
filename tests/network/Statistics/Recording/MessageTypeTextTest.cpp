@@ -55,6 +55,8 @@ TEST(MessageTypeText, EveryLaterMessageHasItsName) {
   EXPECT_EQ(textOf(MessageType::OrderedMessage), "OrderedMessage");
   EXPECT_EQ(textOf(MessageType::ConnectionRedirect), "ConnectionRedirect");
   EXPECT_EQ(textOf(MessageType::GameStatus), "GameStatus");
+  EXPECT_EQ(textOf(MessageType::GameStatusAcknowledged),
+            "GameStatusAcknowledged");
 }
 
 /**

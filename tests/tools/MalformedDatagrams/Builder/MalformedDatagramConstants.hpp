@@ -56,10 +56,10 @@ constexpr std::string_view SAMPLE_ENTITY_TYPE_NAME = "ship";
 
 /**
  * @brief The smallest type byte an UnknownType message carries: one above
- * GameStatus, the highest type on the protocol page.
+ * GameStatusAcknowledged, the highest type on the protocol page.
  */
 constexpr std::uint8_t FIRST_UNKNOWN_MESSAGE_TYPE =
-    static_cast<std::uint8_t>(network::MessageType::GameStatus) + 1;
+    static_cast<std::uint8_t>(network::MessageType::GameStatusAcknowledged) + 1;
 
 /**
  * @brief The most bytes the payload of an UnknownType message holds.
