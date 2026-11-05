@@ -57,11 +57,7 @@ httplib::Result ServersRoutesFixture::sendHeartbeat(
 
 httplib::Result ServersRoutesFixture::readGames(
     std::string_view serverId) const {
-  const std::string path = std::string{SERVER_GAMES_PATH_PREFIX} +
-                           std::string{serverId} +
-                           std::string{SERVER_GAMES_PATH_SUFFIX};
-  return send(RouteCall{
-      .method = GET_METHOD_TEXT, .path = path, .key = {}, .body = {}});
+  return readServerPart(serverId, SERVER_GAMES_PATH_SUFFIX);
 }
 
 httplib::Result ServersRoutesFixture::readServers(
@@ -71,8 +67,8 @@ httplib::Result ServersRoutesFixture::readServers(
       .method = GET_METHOD_TEXT, .path = path, .key = {}, .body = {}});
 }
 
-httplib::Result ServersRoutesFixture::readHistory(std::string_view serverId,
-                                                  std::string_view part) const {
+httplib::Result ServersRoutesFixture::readServerPart(
+    std::string_view serverId, std::string_view part) const {
   const std::string path = std::string{SERVER_GAMES_PATH_PREFIX} +
                            std::string{serverId} + std::string{part};
   return send(RouteCall{

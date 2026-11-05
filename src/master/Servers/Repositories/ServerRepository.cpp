@@ -83,26 +83,33 @@ void bindRegistration(SQLite::Statement& statement,
 }
 
 WatchedServer watchedServerIn(const SQLite::Statement& query) {
-  const std::optional<network::ServerHeartbeat> heartbeat =
-      readableHeartbeatIn(query.getColumn(WATCHED_HEARTBEAT_COLUMN));
   return WatchedServer{
       .serverId = query.getColumn(WATCHED_ID_COLUMN).getInt64(),
       .evidence =
           StatusEvidence{
-              .lastHeardAt = dateOfEpochSeconds(
-                  query.getColumn(WATCHED_HEARD_AT_COLUMN).getInt64()),
-              .measures = heartbeat.has_value() ? heartbeat->measures
-                                                : network::ServerMeasures{},
+              .registeredAt = dateOfEpochSeconds(
+                  query.getColumn(WATCHED_REGISTERED_AT_COLUMN).getInt64()),
+              .lastHeartbeatAt =
+                  optionalDateIn(query.getColumn(WATCHED_HEARTBEAT_AT_COLUMN)),
+              .measures =
+                  network::ServerMeasures{
+                      .tickP50Milliseconds = std::nullopt,
+                      .tickP95Milliseconds =
+                          measureIn(query.getColumn(WATCHED_TICK_P95_COLUMN)),
+                      .receivedBytesPerSecond = std::nullopt,
+                      .sentBytesPerSecond = std::nullopt,
+                      .lossPercent = measureIn(
+                          query.getColumn(WATCHED_LOSS_PERCENT_COLUMN)),
+                      .averagePingMilliseconds = std::nullopt},
               .maintenance =
                   query.getColumn(WATCHED_MAINTENANCE_COLUMN).getInt() != 0},
       .status = statusIn(query.getColumn(WATCHED_STATUS_COLUMN))};
 }
 
-network::ListedServer listedServerIn(const SQLite::Statement& query) {
-  const std::optional<network::ServerHeartbeat> heartbeat =
-      readableHeartbeatIn(query.getColumn(LISTED_HEARTBEAT_COLUMN));
-  return network::ListedServer{
-      .id = query.getColumn(LISTED_ID_COLUMN).getInt64(),
+/** @returns What the registered server of the row @p query stands on sent
+ * when it registered. */
+network::ServerRegistration registrationIn(const SQLite::Statement& query) {
+  return network::ServerRegistration{
       .name = query.getColumn(LISTED_NAME_COLUMN).getString(),
       .address = query.getColumn(LISTED_ADDRESS_COLUMN).getString(),
       .udpPort = static_cast<std::uint16_t>(
@@ -110,15 +117,34 @@ network::ListedServer listedServerIn(const SQLite::Statement& query) {
       .gameVersion = query.getColumn(LISTED_GAME_VERSION_COLUMN).getString(),
       .protocolVersion = static_cast<std::uint8_t>(
           query.getColumn(LISTED_PROTOCOL_VERSION_COLUMN).getUInt()),
-      .status = statusIn(query.getColumn(LISTED_STATUS_COLUMN)),
-      .gameCount = static_cast<std::uint16_t>(
-          heartbeat.has_value() ? heartbeat->games.size() : 0),
-      .playerCount = static_cast<std::uint16_t>(
-          heartbeat.has_value() ? playerCountOf(*heartbeat) : 0),
       .maximumGames = static_cast<std::uint16_t>(
           query.getColumn(LISTED_MAXIMUM_GAMES_COLUMN).getUInt()),
       .maximumPlayersPerGame = static_cast<std::uint8_t>(
           query.getColumn(LISTED_MAXIMUM_PLAYERS_COLUMN).getUInt())};
+}
+
+network::ListedServer listedServerIn(const SQLite::Statement& query) {
+  return network::ListedServer{
+      .id = query.getColumn(LISTED_ID_COLUMN).getInt64(),
+      .registration = registrationIn(query),
+      .status = statusIn(query.getColumn(LISTED_STATUS_COLUMN)),
+      .gameCount = static_cast<std::uint16_t>(
+          query.getColumn(LISTED_GAME_COUNT_COLUMN).getUInt()),
+      .playerCount = static_cast<std::uint16_t>(
+          query.getColumn(LISTED_PLAYER_COUNT_COLUMN).getUInt())};
+}
+
+/** @brief Binds what the list and the statuses read of @p heartbeat to
+ * @p statement. */
+void bindHeartbeatSummary(SQLite::Statement& statement,
+                          const network::ServerHeartbeat& heartbeat) {
+  statement.bind(std::string{GAME_COUNT_PARAMETER},
+                 static_cast<std::int64_t>(heartbeat.games.size()));
+  statement.bind(std::string{PLAYER_COUNT_PARAMETER}, playerCountOf(heartbeat));
+  bindMeasure(statement, TICK_P95_PARAMETER,
+              heartbeat.measures.tickP95Milliseconds);
+  bindMeasure(statement, LOSS_PERCENT_PARAMETER,
+              heartbeat.measures.lossPercent);
 }
 
 }  // namespace
@@ -177,6 +203,7 @@ void ServerRepository::saveLastHeartbeat(const HeartbeatRecord& record) {
     update.bind(std::string{HEARTBEAT_PARAMETER}, text);
     update.bind(std::string{TAKEN_AT_PARAMETER},
                 epochSecondsOf(record.receivedAt));
+    bindHeartbeatSummary(update, record.heartbeat);
     update.bind(std::string{SERVER_ID_PARAMETER}, record.serverId);
     update.exec();
   });
@@ -208,13 +235,20 @@ std::vector<WatchedServer> ServerRepository::watchedServers() {
   });
 }
 
-void ServerRepository::saveStatus(const StatusChangeRecord& change) {
-  database_.run([&change](SQLite::Database& connection) {
+void ServerRepository::saveStatuses(
+    const std::vector<StatusChangeRecord>& changes) {
+  database_.run([&changes](SQLite::Database& connection) {
+    SQLite::Transaction transaction{connection,
+                                    SQLite::TransactionBehavior::IMMEDIATE};
     SQLite::Statement update{connection, std::string{UPDATE_STATUS_STATEMENT}};
-    update.bind(std::string{STATUS_PARAMETER},
-                std::string{network::serverStatusText(change.change.status)});
-    update.bind(std::string{SERVER_ID_PARAMETER}, change.serverId);
-    update.exec();
+    for (const StatusChangeRecord& change : changes) {
+      update.bind(std::string{STATUS_PARAMETER},
+                  std::string{network::serverStatusText(change.change.status)});
+      update.bind(std::string{SERVER_ID_PARAMETER}, change.serverId);
+      update.exec();
+      update.reset();
+    }
+    transaction.commit();
   });
 }
 

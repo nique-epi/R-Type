@@ -89,18 +89,11 @@ GameListing parisGameListing() {
 
 ServerListing parisServerListing() {
   return ServerListing{
-      .servers = {ListedServer{
-          .id = PARIS_ID,
-          .name = std::string{PARIS_NAME},
-          .address = std::string{PARIS_ADDRESS},
-          .udpPort = PARIS_UDP_PORT,
-          .gameVersion = std::string{PARIS_GAME_VERSION},
-          .protocolVersion = PARIS_PROTOCOL_VERSION,
-          .status = ServerStatus::Online,
-          .gameCount = LISTED_GAME_COUNT,
-          .playerCount = LISTED_PLAYER_COUNT,
-          .maximumGames = PARIS_MAXIMUM_GAMES,
-          .maximumPlayersPerGame = PARIS_MAXIMUM_PLAYERS_PER_GAME}}};
+      .servers = {ListedServer{.id = PARIS_ID,
+                               .registration = parisRegistration(),
+                               .status = ServerStatus::Online,
+                               .gameCount = LISTED_GAME_COUNT,
+                               .playerCount = LISTED_PLAYER_COUNT}}};
 }
 
 SampleListing parisSampleListing() {

@@ -4,13 +4,9 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <optional>
-#include <string_view>
 #include <vector>
 #include "KnownServer.hpp"
 #include "MasterDatabaseFile.hpp"
-#include "ServerMeasures.hpp"
-#include "ServerStatus.hpp"
 #include "ServerStatusChange.hpp"
 #include "ServerStatusService.hpp"
 #include "ServersService.hpp"
@@ -27,23 +23,18 @@ class ServerStatusServiceFixture : public ::testing::Test {
   [[nodiscard]] rtype::master::KnownServer registeredAt(
       std::chrono::sys_seconds date);
 
-  /** @brief Records the heartbeat of "Paris 1" with @p measures for
+  /** @brief Records the heartbeat of "Paris 1", its tick p95 @p tickP95, for
    * @p server, received at @p date. */
-  void beat(const rtype::master::KnownServer& server,
-            const rtype::network::ServerMeasures& measures,
+  void beat(const rtype::master::KnownServer& server, double tickP95,
             std::chrono::sys_seconds date);
 
-  /** @returns The status the list gives the server @p serverId, nothing when
-   * the list leaves it out. */
-  [[nodiscard]] std::optional<rtype::network::ServerStatus> listedStatusOf(
-      std::int64_t serverId);
+  /** @brief Registers the server @p serverId again at @p date, as it does when
+   * it restarts. */
+  void registerAgain(std::int64_t serverId, std::chrono::sys_seconds date);
 
   /** @returns The changes of status of @p serverId, newest first. */
   [[nodiscard]] std::vector<rtype::network::ServerStatusChange> historyOf(
       std::int64_t serverId);
-
-  /** @brief Keeps @p text as the last heartbeat of @p serverId. */
-  void keepHeartbeatText(std::int64_t serverId, std::string_view text);
 
  private:
   MasterDatabaseFile databaseFile_;

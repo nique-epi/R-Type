@@ -1,5 +1,6 @@
 #include "MasterMessageText.hpp"
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -185,14 +186,28 @@ std::optional<std::string> addressOf(const JsonField& registration) {
   }
 }
 
-HostedGameState stateOf(const JsonField& field) {
-  const std::string text = stringOf(field);
-  for (std::size_t index = 0; index < HOSTED_GAME_STATE_TEXTS.size(); ++index) {
-    if (text == HOSTED_GAME_STATE_TEXTS.at(index)) {
-      return static_cast<HostedGameState>(index);
+/**
+ * @returns The value of Enum that @p texts, one text per value in the order of
+ * the enum, writes as @p text; nothing for any other text.
+ */
+template <typename Enum, std::size_t Count>
+std::optional<Enum> valueOfText(
+    const std::array<std::string_view, Count>& texts, std::string_view text) {
+  for (std::size_t index = 0; index < texts.size(); ++index) {
+    if (text == texts.at(index)) {
+      return static_cast<Enum>(index);
     }
   }
-  refuse(field);
+  return std::nullopt;
+}
+
+HostedGameState stateOf(const JsonField& field) {
+  const std::optional<HostedGameState> state =
+      valueOfText<HostedGameState>(HOSTED_GAME_STATE_TEXTS, stringOf(field));
+  if (!state.has_value()) {
+    refuse(field);
+  }
+  return *state;
 }
 
 std::vector<std::string> playersOf(const JsonField& game) {
@@ -247,13 +262,12 @@ void requireDistinctNumbers(const JsonField& games,
 }
 
 ListedGameState listedStateOf(const JsonField& field) {
-  const std::string text = stringOf(field);
-  for (std::size_t index = 0; index < LISTED_GAME_STATE_TEXTS.size(); ++index) {
-    if (text == LISTED_GAME_STATE_TEXTS.at(index)) {
-      return static_cast<ListedGameState>(index);
-    }
+  const std::optional<ListedGameState> state =
+      valueOfText<ListedGameState>(LISTED_GAME_STATE_TEXTS, stringOf(field));
+  if (!state.has_value()) {
+    refuse(field);
   }
-  refuse(field);
+  return *state;
 }
 
 ListedGame listedGameOf(const JsonField& game) {
@@ -374,19 +388,29 @@ std::string listingText(std::string_view member, const std::vector<Item>& items,
   return textOf(document);
 }
 
-nlohmann::json listedServerDocument(const ListedServer& server) {
+/** @returns The members of @p registration, its address left out when it is
+ * empty: what a registration and a listed server write alike. */
+nlohmann::json registrationDocument(const ServerRegistration& registration) {
   nlohmann::json document;
+  document[NAME_MEMBER] = registration.name;
+  if (registration.address.has_value()) {
+    document[ADDRESS_MEMBER] = *registration.address;
+  }
+  document[UDP_PORT_MEMBER] = registration.udpPort;
+  document[GAME_VERSION_MEMBER] = registration.gameVersion;
+  document[PROTOCOL_VERSION_MEMBER] = registration.protocolVersion;
+  document[MAXIMUM_GAMES_MEMBER] = registration.maximumGames;
+  document[MAXIMUM_PLAYERS_PER_GAME_MEMBER] =
+      registration.maximumPlayersPerGame;
+  return document;
+}
+
+nlohmann::json listedServerDocument(const ListedServer& server) {
+  nlohmann::json document = registrationDocument(server.registration);
   document[ID_MEMBER] = server.id;
-  document[NAME_MEMBER] = server.name;
-  document[ADDRESS_MEMBER] = server.address;
-  document[UDP_PORT_MEMBER] = server.udpPort;
-  document[GAME_VERSION_MEMBER] = server.gameVersion;
-  document[PROTOCOL_VERSION_MEMBER] = server.protocolVersion;
   document[STATUS_MEMBER] = serverStatusText(server.status);
   document[GAME_COUNT_MEMBER] = server.gameCount;
-  document[MAXIMUM_GAMES_MEMBER] = server.maximumGames;
   document[PLAYER_COUNT_MEMBER] = server.playerCount;
-  document[MAXIMUM_PLAYERS_PER_GAME_MEMBER] = server.maximumPlayersPerGame;
   return document;
 }
 
@@ -464,18 +488,7 @@ CreatedServer createdServerFromText(std::string_view text) {
 }
 
 std::string registrationText(const ServerRegistration& registration) {
-  nlohmann::json document;
-  document[NAME_MEMBER] = registration.name;
-  if (registration.address.has_value()) {
-    document[ADDRESS_MEMBER] = *registration.address;
-  }
-  document[UDP_PORT_MEMBER] = registration.udpPort;
-  document[GAME_VERSION_MEMBER] = registration.gameVersion;
-  document[PROTOCOL_VERSION_MEMBER] = registration.protocolVersion;
-  document[MAXIMUM_GAMES_MEMBER] = registration.maximumGames;
-  document[MAXIMUM_PLAYERS_PER_GAME_MEMBER] =
-      registration.maximumPlayersPerGame;
-  return textOf(document);
+  return textOf(registrationDocument(registration));
 }
 
 ServerRegistration registrationFromText(std::string_view text) {
@@ -543,12 +556,7 @@ std::string_view serverStatusText(ServerStatus status) {
 }
 
 std::optional<ServerStatus> serverStatusOf(std::string_view text) {
-  for (std::size_t index = 0; index < SERVER_STATUS_TEXTS.size(); ++index) {
-    if (text == SERVER_STATUS_TEXTS.at(index)) {
-      return static_cast<ServerStatus>(index);
-    }
-  }
-  return std::nullopt;
+  return valueOfText<ServerStatus>(SERVER_STATUS_TEXTS, text);
 }
 
 std::string serverListingText(const ServerListing& listing) {

@@ -1,14 +1,18 @@
 #include <gtest/gtest.h>
 #include <optional>
+#include "MasterMessageTextTestConstants.hpp"
 #include "ServerStatus.hpp"
 #include "ServerStatusRule.hpp"
 #include "ServerStatusRuleFixtures.hpp"
 #include "ServerStatusRuleTestConstants.hpp"
+#include "ServersServiceTestConstants.hpp"
 #include "StatusEvidence.hpp"
 
 using rtype::master::StatusEvidence;
 using rtype::master::statusOf;
 using rtype::network::ServerStatus;
+using rtype::network::testing::PARIS_LOSS_PERCENT;
+using rtype::network::testing::PARIS_TICK_P95;
 
 /**
  * Given a server heard just now, its ticks short and its losses low
@@ -17,7 +21,7 @@ using rtype::network::ServerStatus;
  */
 TEST(ServerStatusRule, AServerHeardJustNowIsOnline) {
   const StatusEvidence evidence =
-      heardWith(measuresWith(QUIET_TICK_P95, QUIET_LOSS));
+      heardWith(measuresWith(PARIS_TICK_P95, PARIS_LOSS_PERCENT));
 
   EXPECT_EQ(statusOf(evidence, HEARD_AT), ServerStatus::Online);
 }
@@ -29,7 +33,7 @@ TEST(ServerStatusRule, AServerHeardJustNowIsOnline) {
  */
 TEST(ServerStatusRule, AServerSilentForFourteenSecondsIsOnline) {
   const StatusEvidence evidence =
-      heardWith(measuresWith(QUIET_TICK_P95, QUIET_LOSS));
+      heardWith(measuresWith(PARIS_TICK_P95, PARIS_LOSS_PERCENT));
 
   EXPECT_EQ(
       statusOf(evidence, HEARD_AT + SILENCE_OF_THREE_HEARTBEATS - ONE_SECOND),
@@ -43,7 +47,7 @@ TEST(ServerStatusRule, AServerSilentForFourteenSecondsIsOnline) {
  */
 TEST(ServerStatusRule, AServerSilentForFifteenSecondsIsOffline) {
   const StatusEvidence evidence =
-      heardWith(measuresWith(QUIET_TICK_P95, QUIET_LOSS));
+      heardWith(measuresWith(PARIS_TICK_P95, PARIS_LOSS_PERCENT));
 
   EXPECT_EQ(statusOf(evidence, HEARD_AT + SILENCE_OF_THREE_HEARTBEATS),
             ServerStatus::Offline);
@@ -56,8 +60,8 @@ TEST(ServerStatusRule, AServerSilentForFifteenSecondsIsOffline) {
  * Then it is online
  */
 TEST(ServerStatusRule, ATickP95UnderOneTickIsOnline) {
-  const StatusEvidence evidence =
-      heardWith(measuresWith(ONE_TICK_MILLISECONDS - A_LITTLE, QUIET_LOSS));
+  const StatusEvidence evidence = heardWith(
+      measuresWith(ONE_TICK_MILLISECONDS - A_LITTLE, PARIS_LOSS_PERCENT));
 
   EXPECT_EQ(statusOf(evidence, HEARD_AT), ServerStatus::Online);
 }
@@ -69,7 +73,7 @@ TEST(ServerStatusRule, ATickP95UnderOneTickIsOnline) {
  */
 TEST(ServerStatusRule, ATickP95OfOneTickIsDegraded) {
   const StatusEvidence evidence =
-      heardWith(measuresWith(ONE_TICK_MILLISECONDS, QUIET_LOSS));
+      heardWith(measuresWith(ONE_TICK_MILLISECONDS, PARIS_LOSS_PERCENT));
 
   EXPECT_EQ(statusOf(evidence, HEARD_AT), ServerStatus::Degraded);
 }
@@ -81,7 +85,7 @@ TEST(ServerStatusRule, ATickP95OfOneTickIsDegraded) {
  */
 TEST(ServerStatusRule, ALossUnderFivePercentIsOnline) {
   const StatusEvidence evidence =
-      heardWith(measuresWith(QUIET_TICK_P95, FIVE_PERCENT - A_LITTLE));
+      heardWith(measuresWith(PARIS_TICK_P95, FIVE_PERCENT - A_LITTLE));
 
   EXPECT_EQ(statusOf(evidence, HEARD_AT), ServerStatus::Online);
 }
@@ -93,7 +97,7 @@ TEST(ServerStatusRule, ALossUnderFivePercentIsOnline) {
  */
 TEST(ServerStatusRule, ALossOfFivePercentIsDegraded) {
   const StatusEvidence evidence =
-      heardWith(measuresWith(QUIET_TICK_P95, FIVE_PERCENT));
+      heardWith(measuresWith(PARIS_TICK_P95, FIVE_PERCENT));
 
   EXPECT_EQ(statusOf(evidence, HEARD_AT), ServerStatus::Degraded);
 }
@@ -136,4 +140,34 @@ TEST(ServerStatusRule, SilenceComesBeforeTheMeasures) {
 
   EXPECT_EQ(statusOf(evidence, HEARD_AT + SILENCE_OF_THREE_HEARTBEATS),
             ServerStatus::Offline);
+}
+
+/**
+ * Given a server registered 14 s ago that sent no heartbeat since
+ * When its status is computed
+ * Then it is online: its registration is the last news of it
+ */
+TEST(ServerStatusRule, ARegistrationIsNewsOfTheServer) {
+  StatusEvidence evidence =
+      heardWith(measuresWith(PARIS_TICK_P95, PARIS_LOSS_PERCENT));
+  evidence.lastHeartbeatAt = std::nullopt;
+
+  EXPECT_EQ(
+      statusOf(evidence, HEARD_AT + SILENCE_OF_THREE_HEARTBEATS - ONE_SECOND),
+      ServerStatus::Online);
+}
+
+/**
+ * Given a server registered a minute ago, whose last heartbeat came 14 s ago
+ * When its status is computed
+ * Then it is online: the heartbeat, not the registration, is its last news
+ */
+TEST(ServerStatusRule, AHeartbeatAfterTheRegistrationIsTheLastNews) {
+  StatusEvidence evidence =
+      heardWith(measuresWith(PARIS_TICK_P95, PARIS_LOSS_PERCENT));
+  evidence.registeredAt = HEARD_AT - ONE_MINUTE;
+
+  EXPECT_EQ(
+      statusOf(evidence, HEARD_AT + SILENCE_OF_THREE_HEARTBEATS - ONE_SECOND),
+      ServerStatus::Online);
 }

@@ -1,5 +1,4 @@
 #include "HeartbeatSampleRepository.hpp"
-#include <SQLiteCpp/Column.h>
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Statement.h>
 #include <SQLiteCpp/Transaction.h>
@@ -7,7 +6,6 @@
 #include <cstdint>
 #include <optional>
 #include <string>
-#include <string_view>
 #include <vector>
 #include "EpochSeconds.hpp"
 #include "HeartbeatRecord.hpp"
@@ -23,15 +21,6 @@
 namespace rtype::master {
 
 namespace {
-
-void bindMeasure(SQLite::Statement& statement, std::string_view parameter,
-                 std::optional<double> measure) {
-  if (measure.has_value()) {
-    statement.bind(std::string{parameter}, *measure);
-  } else {
-    statement.bind(std::string{parameter});
-  }
-}
 
 void insertSample(SQLite::Database& connection, const HeartbeatRecord& record) {
   const network::ServerMeasures& measures = record.heartbeat.measures;
@@ -51,22 +40,6 @@ void insertSample(SQLite::Database& connection, const HeartbeatRecord& record) {
   bindMeasure(insert, LOSS_PERCENT_PARAMETER, measures.lossPercent);
   bindMeasure(insert, AVERAGE_PING_PARAMETER, measures.averagePingMilliseconds);
   insert.exec();
-}
-
-void eraseOldSamples(SQLite::Database& connection,
-                     std::chrono::sys_seconds now) {
-  SQLite::Statement erase{connection, std::string{ERASE_OLD_SAMPLES_STATEMENT}};
-  erase.bind(std::string{OLDEST_PARAMETER},
-             epochSecondsOf(now - SAMPLE_RETENTION));
-  erase.exec();
-}
-
-/** @returns The measure @p column holds, empty while it is null. */
-std::optional<double> measureIn(const SQLite::Column& column) {
-  if (column.isNull()) {
-    return std::nullopt;
-  }
-  return column.getDouble();
 }
 
 network::ServerSample sampleIn(const SQLite::Statement& query) {
@@ -101,7 +74,8 @@ void HeartbeatSampleRepository::add(const HeartbeatRecord& record) {
     SQLite::Transaction transaction{connection,
                                     SQLite::TransactionBehavior::IMMEDIATE};
     insertSample(connection, record);
-    eraseOldSamples(connection, record.receivedAt);
+    eraseOlderThan(connection, ERASE_OLD_SAMPLES_STATEMENT,
+                   record.receivedAt - SAMPLE_RETENTION);
     transaction.commit();
   });
 }

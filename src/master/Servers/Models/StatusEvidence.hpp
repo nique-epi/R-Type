@@ -1,19 +1,20 @@
 #pragma once
 
 #include <chrono>
+#include <optional>
 #include "ServerMeasures.hpp"
 
 namespace rtype::master {
 
 /** @brief What the status of a registered server is computed from. */
 struct StatusEvidence {
-  /**
-   * @brief The second the master last heard of it: its last heartbeat, or its
-   * registration while it sent none since.
-   */
-  std::chrono::sys_seconds lastHeardAt;
-  /** @brief The measures of its last heartbeat; none before the first one, or
-   * when the heartbeat kept no longer reads. */
+  /** @brief The second it registered last. */
+  std::chrono::sys_seconds registeredAt;
+  /** @brief The second of its last heartbeat; none while it sent none since
+   * it registered. */
+  std::optional<std::chrono::sys_seconds> lastHeartbeatAt = std::nullopt;
+  /** @brief The tick p95 and the loss of its last heartbeat, the other
+   * measures left empty; none before the first heartbeat. */
   network::ServerMeasures measures;
   /** @brief Whether an admin took it out of service. */
   bool maintenance{false};

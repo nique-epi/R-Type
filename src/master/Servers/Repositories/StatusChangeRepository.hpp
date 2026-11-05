@@ -18,11 +18,12 @@ class StatusChangeRepository {
   explicit StatusChangeRepository(MasterDatabase& database);
 
   /**
-   * @brief Adds @p change, in place of a change of its server in the same
-   * second, then erases every change older than STATUS_CHANGE_RETENTION, of
-   * every server; one transaction.
+   * @brief Adds each of @p changes, in place of a change of its server in the
+   * same second, then erases every change older than STATUS_CHANGE_RETENTION
+   * before the first of them, of every server; one transaction, none for no
+   * change.
    */
-  void add(const StatusChangeRecord& change);
+  void add(const std::vector<StatusChangeRecord>& changes);
 
   /** @returns The changes of the server @p serverId in @p page, newest
    * first. */

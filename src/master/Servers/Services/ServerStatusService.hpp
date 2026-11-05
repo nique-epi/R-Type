@@ -19,9 +19,10 @@ class ServerStatusService {
   /**
    * @brief Computes the status of every registered server at @p now
    * (statusOf()) and keeps each one that differs from the status the server
-   * holds: first as a change of its history, then as its status. A stop
-   * between the two leaves the change kept and the old status, which the next
-   * refresh writes again; never a status without its change.
+   * holds: first every change in the history, then every status, one
+   * transaction each. A stop between the two leaves the changes kept and the
+   * old statuses, which the next refresh writes again; never a status without
+   * its change.
    * @returns The changes kept, by server id.
    */
   std::vector<StatusChangeRecord> refreshStatuses(std::chrono::sys_seconds now);

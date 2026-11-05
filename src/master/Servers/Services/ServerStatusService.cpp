@@ -39,10 +39,8 @@ std::vector<StatusChangeRecord> ServerStatusService::refreshStatuses(
     std::chrono::sys_seconds now) {
   std::vector<StatusChangeRecord> changes =
       changesAt(servers_.watchedServers(), now);
-  for (const StatusChangeRecord& change : changes) {
-    changes_.add(change);
-    servers_.saveStatus(change);
-  }
+  changes_.add(changes);
+  servers_.saveStatuses(changes);
   return changes;
 }
 

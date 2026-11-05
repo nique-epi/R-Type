@@ -7,14 +7,16 @@
 #include "CreationAttempt.hpp"
 #include "KnownServer.hpp"
 #include "ListedServer.hpp"
+#include "MasterMessageTextTestConstants.hpp"
 #include "MasterTestConstants.hpp"
 #include "PageRequest.hpp"
 #include "ServerCreation.hpp"
 #include "ServerStatus.hpp"
 #include "ServerStatusChange.hpp"
 #include "ServerStatusServiceFixture.hpp"
-#include "ServerStatusServiceFixtures.hpp"
 #include "ServerStatusServiceTestConstants.hpp"
+#include "ServersFixtures.hpp"
+#include "ServersServiceTestConstants.hpp"
 #include "StatusChangeRecord.hpp"
 
 using rtype::master::CreationAttempt;
@@ -26,6 +28,7 @@ using rtype::network::ListedServer;
 using rtype::network::ServerCreation;
 using rtype::network::ServerStatus;
 using rtype::network::ServerStatusChange;
+using rtype::network::testing::PARIS_TICK_P95;
 
 /**
  * Given a server just registered, which the list gives offline until the
@@ -35,16 +38,16 @@ using rtype::network::ServerStatusChange;
  */
 TEST_F(ServerStatusServiceFixture,
        ARegisteredServerTurnsOnlineAtTheFirstRefresh) {
-  const KnownServer server = registeredAt(REGISTRATION_DATE);
-  ASSERT_EQ(listedStatusOf(server.id), ServerStatus::Offline);
+  const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
+  ASSERT_EQ(listedStatusOf(servers(), server.id), ServerStatus::Offline);
 
-  static_cast<void>(statuses().refreshStatuses(REGISTRATION_DATE));
+  static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
 
-  EXPECT_EQ(listedStatusOf(server.id), ServerStatus::Online);
+  EXPECT_EQ(listedStatusOf(servers(), server.id), ServerStatus::Online);
   EXPECT_EQ(
       historyOf(server.id),
       (std::vector<ServerStatusChange>{ServerStatusChange{
-          .changedAt = REGISTRATION_DATE, .status = ServerStatus::Online}}));
+          .changedAt = FIRST_HEARTBEAT_DATE, .status = ServerStatus::Online}}));
 }
 
 /**
@@ -53,14 +56,13 @@ TEST_F(ServerStatusServiceFixture,
  * Then nothing changes and nothing is kept
  */
 TEST_F(ServerStatusServiceFixture, ARefreshWithNothingNewKeepsNothing) {
-  const KnownServer server = registeredAt(REGISTRATION_DATE);
-  beat(server, parisMeasuresWith(QUIET_TICK_P95_OF_PARIS), REGISTRATION_DATE);
-  static_cast<void>(statuses().refreshStatuses(REGISTRATION_DATE));
-  beat(server, parisMeasuresWith(QUIET_TICK_P95_OF_PARIS),
-       REGISTRATION_DATE + FIVE_SECONDS);
+  const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
+  beat(server, PARIS_TICK_P95, FIRST_HEARTBEAT_DATE);
+  static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
+  beat(server, PARIS_TICK_P95, FIRST_HEARTBEAT_DATE + FIVE_SECONDS);
 
   const std::vector<StatusChangeRecord> changes =
-      statuses().refreshStatuses(REGISTRATION_DATE + FIVE_SECONDS);
+      statuses().refreshStatuses(FIRST_HEARTBEAT_DATE + FIVE_SECONDS);
 
   EXPECT_TRUE(changes.empty());
   EXPECT_EQ(historyOf(server.id).size(), 1U);
@@ -72,21 +74,21 @@ TEST_F(ServerStatusServiceFixture, ARefreshWithNothingNewKeepsNothing) {
  * Then it turns offline at that refresh, newest first in its history
  */
 TEST_F(ServerStatusServiceFixture, AServerSilentForFifteenSecondsTurnsOffline) {
-  const KnownServer server = registeredAt(REGISTRATION_DATE);
-  beat(server, parisMeasuresWith(QUIET_TICK_P95_OF_PARIS), REGISTRATION_DATE);
-  static_cast<void>(statuses().refreshStatuses(REGISTRATION_DATE));
+  const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
+  beat(server, PARIS_TICK_P95, FIRST_HEARTBEAT_DATE);
+  static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
 
   static_cast<void>(
-      statuses().refreshStatuses(REGISTRATION_DATE + FIFTEEN_SECONDS));
+      statuses().refreshStatuses(FIRST_HEARTBEAT_DATE + FIFTEEN_SECONDS));
 
-  EXPECT_EQ(listedStatusOf(server.id), ServerStatus::Offline);
-  EXPECT_EQ(
-      historyOf(server.id),
-      (std::vector<ServerStatusChange>{
-          ServerStatusChange{.changedAt = REGISTRATION_DATE + FIFTEEN_SECONDS,
-                             .status = ServerStatus::Offline},
-          ServerStatusChange{.changedAt = REGISTRATION_DATE,
-                             .status = ServerStatus::Online}}));
+  EXPECT_EQ(listedStatusOf(servers(), server.id), ServerStatus::Offline);
+  EXPECT_EQ(historyOf(server.id),
+            (std::vector<ServerStatusChange>{
+                ServerStatusChange{
+                    .changedAt = FIRST_HEARTBEAT_DATE + FIFTEEN_SECONDS,
+                    .status = ServerStatus::Offline},
+                ServerStatusChange{.changedAt = FIRST_HEARTBEAT_DATE,
+                                   .status = ServerStatus::Online}}));
 }
 
 /**
@@ -95,12 +97,12 @@ TEST_F(ServerStatusServiceFixture, AServerSilentForFifteenSecondsTurnsOffline) {
  * Then it is degraded
  */
 TEST_F(ServerStatusServiceFixture, AServerOverItsBoundsTurnsDegraded) {
-  const KnownServer server = registeredAt(REGISTRATION_DATE);
-  beat(server, parisMeasuresWith(SLOW_TICK_P95), REGISTRATION_DATE);
+  const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
+  beat(server, SLOW_TICK_P95, FIRST_HEARTBEAT_DATE);
 
-  static_cast<void>(statuses().refreshStatuses(REGISTRATION_DATE));
+  static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
 
-  EXPECT_EQ(listedStatusOf(server.id), ServerStatus::Degraded);
+  EXPECT_EQ(listedStatusOf(servers(), server.id), ServerStatus::Degraded);
 }
 
 /**
@@ -109,16 +111,16 @@ TEST_F(ServerStatusServiceFixture, AServerOverItsBoundsTurnsDegraded) {
  * Then it is in maintenance, then online again
  */
 TEST_F(ServerStatusServiceFixture, MaintenanceIsPutAndTakenOut) {
-  const KnownServer server = registeredAt(REGISTRATION_DATE);
+  const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
 
   ASSERT_TRUE(statuses().setMaintenance(server.id, true));
-  static_cast<void>(statuses().refreshStatuses(REGISTRATION_DATE));
-  EXPECT_EQ(listedStatusOf(server.id), ServerStatus::Maintenance);
+  static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
+  EXPECT_EQ(listedStatusOf(servers(), server.id), ServerStatus::Maintenance);
 
   ASSERT_TRUE(statuses().setMaintenance(server.id, false));
   static_cast<void>(
-      statuses().refreshStatuses(REGISTRATION_DATE + FIVE_SECONDS));
-  EXPECT_EQ(listedStatusOf(server.id), ServerStatus::Online);
+      statuses().refreshStatuses(FIRST_HEARTBEAT_DATE + FIVE_SECONDS));
+  EXPECT_EQ(listedStatusOf(servers(), server.id), ServerStatus::Online);
 }
 
 /**
@@ -141,14 +143,14 @@ TEST_F(ServerStatusServiceFixture, AServerThatNeverRegisteredIsNotWatched) {
           .createServer(CreationAttempt{
               .creation = ServerCreation{.name = std::string{TEST_SERVER_NAME}},
               .address = std::string{NEVER_REGISTERED_CREATOR},
-              .requestedAt = REGISTRATION_DATE})
+              .requestedAt = FIRST_HEARTBEAT_DATE})
           .value_or(CreatedServer{});
 
   const std::vector<StatusChangeRecord> changes =
-      statuses().refreshStatuses(REGISTRATION_DATE);
+      statuses().refreshStatuses(FIRST_HEARTBEAT_DATE);
 
   EXPECT_TRUE(changes.empty());
-  EXPECT_EQ(listedStatusOf(created.id), std::nullopt);
+  EXPECT_EQ(listedStatusOf(servers(), created.id), std::nullopt);
 }
 
 /**
@@ -158,15 +160,15 @@ TEST_F(ServerStatusServiceFixture, AServerThatNeverRegisteredIsNotWatched) {
  * Then its history keeps the later change only
  */
 TEST_F(ServerStatusServiceFixture, TwoChangesInOneSecondKeepTheLater) {
-  const KnownServer server = registeredAt(REGISTRATION_DATE);
-  static_cast<void>(statuses().refreshStatuses(REGISTRATION_DATE));
+  const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
+  static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
   ASSERT_TRUE(statuses().setMaintenance(server.id, true));
 
-  static_cast<void>(statuses().refreshStatuses(REGISTRATION_DATE));
+  static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
 
   EXPECT_EQ(historyOf(server.id),
             (std::vector<ServerStatusChange>{
-                ServerStatusChange{.changedAt = REGISTRATION_DATE,
+                ServerStatusChange{.changedAt = FIRST_HEARTBEAT_DATE,
                                    .status = ServerStatus::Maintenance}}));
 }
 
@@ -176,32 +178,34 @@ TEST_F(ServerStatusServiceFixture, TwoChangesInOneSecondKeepTheLater) {
  * Then it turns offline, and the change of 8 days ago is erased
  */
 TEST_F(ServerStatusServiceFixture, AChangeOlderThanSevenDaysIsErased) {
-  const KnownServer server = registeredAt(REGISTRATION_DATE);
-  static_cast<void>(statuses().refreshStatuses(REGISTRATION_DATE));
+  const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
+  static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
 
   static_cast<void>(
-      statuses().refreshStatuses(REGISTRATION_DATE + EIGHT_WHOLE_DAYS));
+      statuses().refreshStatuses(FIRST_HEARTBEAT_DATE + EIGHT_DAYS));
 
   EXPECT_EQ(historyOf(server.id),
             (std::vector<ServerStatusChange>{ServerStatusChange{
-                .changedAt = REGISTRATION_DATE + EIGHT_WHOLE_DAYS,
+                .changedAt = FIRST_HEARTBEAT_DATE + EIGHT_DAYS,
                 .status = ServerStatus::Offline}}));
 }
 
 /**
- * Given a server whose last heartbeat was slow, kept since in a form this
- * master no longer reads
+ * Given a server whose last heartbeat was slow, which then registers again, as
+ * it does when it restarts
  * When the statuses are refreshed
- * Then it is judged on its silence alone, online, and listed with no game
+ * Then it is online: a registration forgets the measures of the heartbeat
+ * before it
  */
-TEST_F(ServerStatusServiceFixture, AnUnreadableHeartbeatGivesNoMeasure) {
-  const KnownServer server = registeredAt(REGISTRATION_DATE);
-  beat(server, parisMeasuresWith(SLOW_TICK_P95), REGISTRATION_DATE);
-  keepHeartbeatText(server.id, UNREADABLE_HEARTBEAT_TEXT);
+TEST_F(ServerStatusServiceFixture, ARegistrationForgetsTheLastMeasures) {
+  const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
+  beat(server, SLOW_TICK_P95, FIRST_HEARTBEAT_DATE);
+  registerAgain(server.id, FIRST_HEARTBEAT_DATE + FIVE_SECONDS);
 
-  static_cast<void>(statuses().refreshStatuses(REGISTRATION_DATE));
+  static_cast<void>(
+      statuses().refreshStatuses(FIRST_HEARTBEAT_DATE + FIVE_SECONDS));
 
-  EXPECT_EQ(listedStatusOf(server.id), ServerStatus::Online);
+  EXPECT_EQ(listedStatusOf(servers(), server.id), ServerStatus::Online);
 }
 
 /**
@@ -211,8 +215,9 @@ TEST_F(ServerStatusServiceFixture, AnUnreadableHeartbeatGivesNoMeasure) {
  */
 TEST_F(ServerStatusServiceFixture, TheListIsReadAPageAtATime) {
   std::vector<std::int64_t> ids;
+  ids.reserve(THREE_SERVERS);
   for (int index = 0; index < THREE_SERVERS; ++index) {
-    ids.push_back(registeredAt(REGISTRATION_DATE).id);
+    ids.push_back(registeredAt(FIRST_HEARTBEAT_DATE).id);
   }
 
   const std::vector<ListedServer> page =

@@ -55,7 +55,11 @@ CREATE INDEX heartbeat_samples_by_date ON heartbeat_samples (taken_at);
 
 /**
  * @brief The second version: the status the master computed last for each
- * server, whether an admin put it in maintenance, and every change of status.
+ * server, whether an admin put it in maintenance, every change of status, and
+ * what the list and the statuses read of the last heartbeat (its games, its
+ * players, its tick p95 and its loss), written with it so a read parses no
+ * JSON. Those four are null before the first heartbeat, after a registration,
+ * and for a heartbeat a master of version 1 kept.
  *
  * A server starts offline: its first change comes with the first refresh after
  * its registration. The status is text with no CHECK, so a later status (the
@@ -67,6 +71,10 @@ CREATE INDEX heartbeat_samples_by_date ON heartbeat_samples (taken_at);
 constexpr std::string_view STATUSES_MIGRATION = R"sql(
 ALTER TABLE servers ADD COLUMN status TEXT NOT NULL DEFAULT 'offline';
 ALTER TABLE servers ADD COLUMN maintenance INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE servers ADD COLUMN last_game_count INTEGER;
+ALTER TABLE servers ADD COLUMN last_player_count INTEGER;
+ALTER TABLE servers ADD COLUMN last_tick_p95_milliseconds REAL;
+ALTER TABLE servers ADD COLUMN last_loss_percent REAL;
 
 CREATE TABLE status_changes (
   server_id  INTEGER NOT NULL REFERENCES servers (id),

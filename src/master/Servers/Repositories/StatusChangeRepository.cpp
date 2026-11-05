@@ -31,15 +31,6 @@ void insertChange(SQLite::Database& connection,
   insert.exec();
 }
 
-void eraseOldChanges(SQLite::Database& connection,
-                     std::chrono::sys_seconds now) {
-  SQLite::Statement erase{connection,
-                          std::string{ERASE_OLD_STATUS_CHANGES_STATEMENT}};
-  erase.bind(std::string{OLDEST_PARAMETER},
-             epochSecondsOf(now - STATUS_CHANGE_RETENTION));
-  erase.exec();
-}
-
 network::ServerStatusChange changeIn(const SQLite::Statement& query) {
   return network::ServerStatusChange{
       .changedAt =
@@ -52,12 +43,19 @@ network::ServerStatusChange changeIn(const SQLite::Statement& query) {
 StatusChangeRepository::StatusChangeRepository(MasterDatabase& database)
     : database_(database) {}
 
-void StatusChangeRepository::add(const StatusChangeRecord& change) {
-  database_.run([&change](SQLite::Database& connection) {
+void StatusChangeRepository::add(
+    const std::vector<StatusChangeRecord>& changes) {
+  if (changes.empty()) {
+    return;
+  }
+  database_.run([&changes](SQLite::Database& connection) {
     SQLite::Transaction transaction{connection,
                                     SQLite::TransactionBehavior::IMMEDIATE};
-    insertChange(connection, change);
-    eraseOldChanges(connection, change.change.changedAt);
+    for (const StatusChangeRecord& change : changes) {
+      insertChange(connection, change);
+    }
+    eraseOlderThan(connection, ERASE_OLD_STATUS_CHANGES_STATEMENT,
+                   changes.front().change.changedAt - STATUS_CHANGE_RETENTION);
     transaction.commit();
   });
 }

@@ -21,7 +21,9 @@ network::ServerStatus statusOf(const StatusEvidence& evidence,
   if (evidence.maintenance) {
     return network::ServerStatus::Maintenance;
   }
-  if (now - evidence.lastHeardAt >= OFFLINE_SILENCE) {
+  const std::chrono::sys_seconds lastHeardAt =
+      evidence.lastHeartbeatAt.value_or(evidence.registeredAt);
+  if (now - lastHeardAt >= OFFLINE_SILENCE) {
     return network::ServerStatus::Offline;
   }
   if (reaches(evidence.measures.tickP95Milliseconds,

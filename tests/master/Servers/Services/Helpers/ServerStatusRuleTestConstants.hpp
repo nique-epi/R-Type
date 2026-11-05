@@ -2,16 +2,15 @@
 
 #include <chrono>
 
-/** @brief When the master last heard of the server of a test. */
+/** @brief When the master last heard of the server of a test, and a minute
+ * before. */
 constexpr std::chrono::sys_seconds HEARD_AT{
     std::chrono::seconds{1'800'000'000}};
+constexpr std::chrono::seconds ONE_MINUTE{60};
 
-/**
- * @brief The silence the issue makes a server offline at, 3 heartbeats of
- * 5 s, and one second less.
- */
+/** @brief The silence the issue makes a server offline at, 3 heartbeats of
+ * 5 s. */
 constexpr std::chrono::seconds SILENCE_OF_THREE_HEARTBEATS{15};
-constexpr std::chrono::seconds ONE_SECOND{1};
 
 /** @brief One tick at 60 ticks a second, in milliseconds, and a little less. */
 constexpr double MILLISECONDS_PER_SECOND = 1000.0;
@@ -22,7 +21,3 @@ constexpr double A_LITTLE = 0.01;
 
 /** @brief The loss the issue makes a server degraded at. */
 constexpr double FIVE_PERCENT = 5.0;
-
-/** @brief Measures well within the bounds, those of "Paris 1". */
-constexpr double QUIET_TICK_P95 = 4.25;
-constexpr double QUIET_LOSS = 0.5;

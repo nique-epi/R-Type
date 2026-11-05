@@ -456,7 +456,7 @@ TEST_F(ServersRoutesFixture, TheSamplesOfAServerAreListed) {
   ASSERT_TRUE(sendHeartbeat(parisHeartbeat()));
 
   const httplib::Result answer =
-      readHistory(std::to_string(createdId()), SAMPLES_PATH_SUFFIX);
+      readServerPart(std::to_string(createdId()), SAMPLES_PATH_SUFFIX);
 
   ASSERT_TRUE(answer);
   EXPECT_EQ(answer->status, EXPECTED_OK);
@@ -479,8 +479,8 @@ TEST_F(ServersRoutesFixture, TheHistoryOfAnUnknownServerIsNotFound) {
   for (const std::string_view part :
        {SAMPLES_PATH_SUFFIX, STATUS_CHANGES_PATH_SUFFIX}) {
     SCOPED_TRACE(part);
-    const httplib::Result unused = readHistory(UNUSED_SERVER_ID, part);
-    const httplib::Result notANumber = readHistory(NOT_A_SERVER_ID, part);
+    const httplib::Result unused = readServerPart(UNUSED_SERVER_ID, part);
+    const httplib::Result notANumber = readServerPart(NOT_A_SERVER_ID, part);
 
     ASSERT_TRUE(unused);
     ASSERT_TRUE(notANumber);
@@ -498,7 +498,7 @@ TEST_F(ServersRoutesFixture, TheChangesOfStatusOfAServerAreListed) {
   ASSERT_TRUE(registerParis());
 
   const httplib::Result answer =
-      readHistory(std::to_string(createdId()), STATUS_CHANGES_PATH_SUFFIX);
+      readServerPart(std::to_string(createdId()), STATUS_CHANGES_PATH_SUFFIX);
 
   ASSERT_TRUE(answer);
   EXPECT_EQ(answer->status, EXPECTED_OK);

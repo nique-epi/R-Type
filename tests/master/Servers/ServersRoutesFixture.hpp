@@ -44,10 +44,10 @@ class ServersRoutesFixture : public ::testing::Test {
    * (empty, or "?limit=…"), no key sent. */
   [[nodiscard]] httplib::Result readServers(std::string_view query) const;
 
-  /** @returns The answer to @p part ("/samples" or "/status-changes") of the
-   * server @p serverId, no key sent. */
-  [[nodiscard]] httplib::Result readHistory(std::string_view serverId,
-                                            std::string_view part) const;
+  /** @returns The answer to @p part ("/games", "/samples" or
+   * "/status-changes") of the server @p serverId, no key sent. */
+  [[nodiscard]] httplib::Result readServerPart(std::string_view serverId,
+                                               std::string_view part) const;
 
  private:
   RunningMaster master_;

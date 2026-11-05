@@ -17,6 +17,8 @@ rtype::network::ServerMeasures measuresWith(std::optional<double> tickP95,
 
 rtype::master::StatusEvidence heardWith(
     const rtype::network::ServerMeasures& measures) {
-  return rtype::master::StatusEvidence{
-      .lastHeardAt = HEARD_AT, .measures = measures, .maintenance = false};
+  return rtype::master::StatusEvidence{.registeredAt = HEARD_AT,
+                                       .lastHeartbeatAt = HEARD_AT,
+                                       .measures = measures,
+                                       .maintenance = false};
 }

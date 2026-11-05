@@ -1,5 +1,4 @@
 #include "ServersController.hpp"
-#include <charconv>
 #include <chrono>
 #include <cstdint>
 #include <functional>
@@ -8,7 +7,6 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <system_error>
 #include <utility>
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
@@ -26,13 +24,11 @@
 #include "MasterRoutePath.hpp"
 #include "NetworkException.hpp"
 #include "PageRequest.hpp"
-#include "SampleListing.hpp"
-#include "ServerListing.hpp"
 #include "ServerRecord.hpp"
 #include "ServerRegistration.hpp"
 #include "ServersControllerConstants.hpp"
 #include "ServersService.hpp"
-#include "StatusChangeListing.hpp"
+#include "WholeNumberText.hpp"
 
 namespace rtype::master {
 
@@ -57,17 +53,6 @@ ApiResponse unauthorizedResponse() {
                            .value = std::string{network::BEARER_SCHEME}}};
 }
 
-/** @returns @p text as a whole number, nothing when it holds anything else. */
-std::optional<std::int64_t> wholeNumberOf(std::string_view text) {
-  std::int64_t number = 0;
-  const auto [end, error] =
-      std::from_chars(text.data(), text.data() + text.size(), number);
-  if (error != std::errc{} || end != text.data() + text.size()) {
-    return std::nullopt;
-  }
-  return number;
-}
-
 /** @returns The id the path of @p request names, nothing when it is no id. */
 std::optional<std::int64_t> serverIdOf(const ApiRequest& request) {
   const auto parameter = request.pathParameters.find(
@@ -75,12 +60,13 @@ std::optional<std::int64_t> serverIdOf(const ApiRequest& request) {
   if (parameter == request.pathParameters.end()) {
     return std::nullopt;
   }
-  const std::optional<std::int64_t> serverId = wholeNumberOf(parameter->second);
-  if (!serverId.has_value() ||
-      std::cmp_less(*serverId, network::FIRST_SERVER_ID)) {
+  const std::optional<std::uint64_t> serverId =
+      network::wholeNumberIn<std::uint64_t>(parameter->second);
+  if (!serverId.has_value() || *serverId < network::FIRST_SERVER_ID ||
+      *serverId > network::HIGHEST_SERVER_ID) {
     return std::nullopt;
   }
-  return serverId;
+  return static_cast<std::int64_t>(*serverId);
 }
 
 /** @brief The values a parameter of a query may take, and the one it takes
@@ -103,12 +89,13 @@ std::optional<std::int64_t> queryNumberOf(const ApiRequest& request,
   if (parameter == request.queryParameters.end()) {
     return bounds.absent;
   }
-  const std::optional<std::int64_t> number = wholeNumberOf(parameter->second);
-  if (!number.has_value() || *number < bounds.lowest ||
-      *number > bounds.highest) {
+  const std::optional<std::uint64_t> number =
+      network::wholeNumberIn<std::uint64_t>(parameter->second);
+  if (!number.has_value() || std::cmp_less(*number, bounds.lowest) ||
+      std::cmp_greater(*number, bounds.highest)) {
     return std::nullopt;
   }
-  return number;
+  return static_cast<std::int64_t>(*number);
 }
 
 /** @returns The page the query of @p request asks for, nothing when its limit
@@ -130,6 +117,18 @@ std::optional<PageRequest> pageOf(const ApiRequest& request) {
   return PageRequest{.limit = *limit, .offset = *offset};
 }
 
+/** @returns The answer of a page out of its bounds: 400, whose detail gives
+ * the bounds. */
+ApiResponse invalidPageRefusal() {
+  return refusal(BAD_REQUEST_STATUS,
+                 std::string{INVALID_LIMIT_DETAIL_START} +
+                     std::to_string(network::MINIMUM_PAGE_SIZE) +
+                     std::string{DETAIL_RANGE_JOIN} +
+                     std::to_string(network::MAXIMUM_PAGE_SIZE) +
+                     std::string{INVALID_OFFSET_DETAIL_START} +
+                     std::to_string(network::FIRST_PAGE_OFFSET));
+}
+
 /**
  * @returns The answer of a route that reads a page of the history of the
  * server its path names: 404 for an id that names no server, 400 for a page
@@ -145,7 +144,7 @@ ApiResponse answerOfServerPage(const ApiRequest& request, Read read,
   }
   const std::optional<PageRequest> page = pageOf(request);
   if (!page.has_value()) {
-    return refusal(BAD_REQUEST_STATUS, INVALID_PAGE_DETAIL);
+    return invalidPageRefusal();
   }
   const auto listing = read(*serverId, *page);
   if (!listing.has_value()) {
@@ -273,7 +272,7 @@ ApiResponse ServersController::listGames(const ApiRequest& request) {
 ApiResponse ServersController::listServers(const ApiRequest& request) {
   const std::optional<PageRequest> page = pageOf(request);
   if (!page.has_value()) {
-    return refusal(BAD_REQUEST_STATUS, INVALID_PAGE_DETAIL);
+    return invalidPageRefusal();
   }
   return ApiResponse{
       .status = OK_STATUS,

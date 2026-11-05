@@ -46,8 +46,8 @@ class ServerRepository {
    */
   void saveRegistration(const ServerRecord& record);
 
-  /** @brief Keeps the heartbeat of @p record as the last state of its server.
-   */
+  /** @brief Keeps the heartbeat of @p record as the last state of its server,
+   * with the counts and the measures the list and the statuses read of it. */
   void saveLastHeartbeat(const HeartbeatRecord& record);
 
   /**
@@ -61,13 +61,13 @@ class ServerRepository {
 
   /**
    * @returns Every registered server, by id, with what its status is computed
-   * from and the status it holds; a heartbeat kept that no longer reads gives
-   * no measure.
+   * from and the status it holds.
    */
   [[nodiscard]] std::vector<WatchedServer> watchedServers();
 
-  /** @brief Keeps the status of @p change as the status of its server. */
-  void saveStatus(const StatusChangeRecord& change);
+  /** @brief Keeps the status of each of @p changes as the status of its
+   * server, in one transaction. */
+  void saveStatuses(const std::vector<StatusChangeRecord>& changes);
 
   /**
    * @brief Puts the server @p serverId in maintenance, or takes it out of it.
@@ -77,8 +77,7 @@ class ServerRepository {
 
   /**
    * @returns The registered servers of @p page, by id, each with the counts of
-   * its last heartbeat: 0 and 0 before the first one, or when the heartbeat
-   * kept no longer reads.
+   * its last heartbeat: 0 and 0 before the first one.
    */
   [[nodiscard]] std::vector<network::ListedServer> registeredServers(
       const PageRequest& page);
