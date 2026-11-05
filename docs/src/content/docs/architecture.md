@@ -246,7 +246,7 @@ TCP delivers every byte, in order. After a loss it holds back everything that fo
 | Header on top of IP | 8 bytes | 20 bytes at least |
 | Connection | none: the protocol builds its own session | opened by the system |
 
-The cost is that the protocol does the work TCP does. It drops a duplicate or a late datagram (`sequence`), checks who sends (`sessionToken`, and a cookie before a seat is given), and from version 2 sends the messages that matter until they are acknowledged (see [Guaranteed messages](/R-Type/protocol/#guaranteed-messages)).
+The cost is that the protocol does the work TCP does. It drops a duplicate or a late datagram (`sequence`), checks who sends (`sessionToken`, and a cookie before a seat is given), and from version 2 sends the messages that matter until they are acknowledged (see [Ordered messages](/R-Type/protocol/#ordered-messages)).
 
 Alternative considered: TCP for the lobby and UDP for the game. The lobby needs no speed, but it would take a second port and a second connection to open, and the lobby messages already survive losses by being repeated over the one UDP socket.
 
@@ -275,11 +275,11 @@ Alternative considered: peer to peer, with every peer running the game. It needs
 
 ### Known limits of the proof of concept
 
-- **Losses.** State messages repeat what they say, so they correct themselves. `EntityDestroyed`, `GameEvent` and `PlayerLeft` are guaranteed: sent again every 116.7 ms until acknowledged, for 1 s at most. With 20 % of datagrams lost, about one in two million is still lost; a sound or an effect is then missed, and lives, scores and players stay right through the states (see [Guaranteed messages](/R-Type/protocol/#guaranteed-messages)).
+- **Losses.** State messages repeat what they say, so they correct themselves. `EntityDestroyed`, `GameEvent` and `PlayerLeft` are guaranteed and ordered: sent again every 116.7 ms until acknowledged, for 1 s at most, and handled by the client in the order the server gave them. With 20 % of datagrams lost, about one in two million is still lost; a sound or an effect is then missed, and lives, scores and players stay right through the states (see [Ordered messages](/R-Type/protocol/#ordered-messages)).
 - **Latency.** The client predicts its own ship (PREDICTION in the options, on by default), so a key shows at once, and shows the other entities in the past, between two states, so they move smoothly even when a state is lost: two state intervals behind the newest state, which is 100 ms at 20 states per second and 200 ms at 10, and more for a while after a state arrived late (see [Client](/R-Type/client/#other-entities-interpolation-interpolationclock-positionhistory)). The events a state does not carry (an explosion, a sound) are not delayed with them. With PREDICTION off, a key shows after a round trip plus up to one state interval.
 - **Measures.** The rates and delays are **provisional**. The only capture is a local game, with no loss and no latency. The network simulator now adds them on demand (see [Network simulator](/R-Type/network/#network-simulator-simulatednetworksocket)), and so can the system, with the scripts of `tests/tools/network-conditions/` (see [Network conditions from the system](/R-Type/network/#network-conditions-from-the-system-teststoolsnetwork-conditions)), but no measurement of the game has been taken with either yet.
 
-The second part answers each point (see [Version 2](/R-Type/protocol/#version-2)): guaranteed messages replaced the three copies in version 2; an input is to be repeated until the server confirms it, and states are to be sent as differences. The state already confirms the newest input of each player, which is what lets the client replay its newest inputs on top of a state and correct its ship. Prediction and interpolation themselves are client work, placed in `client/Prediction` (see [Project layout](/R-Type/project-layout/)).
+The second part answers each point (see [Version 2](/R-Type/protocol/#version-2)): guaranteed messages replaced the three copies in version 2, and version 5 delivers them in order; an input is to be repeated until the server confirms it, and states are to be sent as differences. The state already confirms the newest input of each player, which is what lets the client replay its newest inputs on top of a state and correct its ship. Prediction and interpolation themselves are client work, placed in `client/Prediction` (see [Project layout](/R-Type/project-layout/)).
 
 ## Master
 

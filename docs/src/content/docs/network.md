@@ -27,7 +27,7 @@ This page tells you where to look when you need to change something. It describe
 | Tick of the server in its heartbeats, to place it on the clock of the client | Available | `src/network/Protocol/Messages/Heartbeat/`, `src/engine/Time/ServerClock/` |
 | Sessions: admission, session token, sequence, heartbeats, timeouts | Available, written in the server and the client | `src/server/Lobby/`, `src/server/Sessions/`, `src/client/Connection/` |
 | Replication: entities to messages, and back | Available, written in the server and the client | `src/server/Replication/`, `src/client/Replication/` |
-| Guaranteed messages: acknowledgements, sending again | Available | `src/network/Reliability/` |
+| Guaranteed messages: acknowledgements, sending again, order | Available | `src/network/Reliability/` |
 | History of states | Not yet written | — |
 | Test tool that sends malformed datagrams | Available, never shipped | `tests/tools/MalformedDatagrams/` |
 | Load-test bots: players with no window that join a server and play | Available, never shipped | `tests/tools/LoadTestBots/` |
@@ -359,10 +359,11 @@ The server sends the body of its datagrams as a zstd frame when that is shorter;
 
 ## Guaranteed messages: `src/network/Reliability/`
 
-`rtype_network_reliability` (`src/network/Reliability/`) holds what both sides need to guarantee a message, as [Protocol](/R-Type/protocol/#guaranteed-messages) describes; the server and the client decide when to call it.
+`rtype_network_reliability` (`src/network/Reliability/`) holds what both sides need to guarantee a message and deliver it in order, as [Protocol](/R-Type/protocol/#ordered-messages) describes; the server and the client decide when to call it.
 
 - `ReceivedSequences` keeps the datagrams one side accepted from its peer. `accept(sequence)` is true for a sequence newer than the newest accepted, so a duplicate or a late datagram is refused and never acknowledged. `acknowledgeIn(header)` writes `ACKNOWLEDGES`, the newest sequence and the bits of the `ACKNOWLEDGEMENT_BIT_COUNT` (32) datagrams before it; before the first datagram it writes nothing. The server's `ArrivalLedger` and the client's `SessionAcknowledgements` each hold one.
-- `UnacknowledgedMessages` keeps the guaranteed messages one side sent its peer. `add()` makes a message due at once, `takeDue(sequence)` gives the due messages that fit one datagram, oldest first, and records the sequence that carries them, and `acknowledge(header)` drops every message one of whose datagrams the header acknowledges. `advance(elapsed)` ages them: a message is due again `GUARANTEED_RESEND_DELAY` (100 ms) after its last send and is dropped at `GUARANTEED_MESSAGE_LIFETIME` (1 s). A message too large for a datagram alone throws `DatagramTooLargeException` at `add()`, so `takeDue()` always has room for the first message due.
+- `UnacknowledgedMessages` keeps the guaranteed messages one side sent its peer, and numbers them: they are the ordered channel of the session. `add()` gives a message the next number and makes it due at once, `takeDue(sequence)` gives the `OrderedMessage` envelopes of the due messages that fit one datagram, oldest first, each with the `firstKept` of that moment, and records the sequence that carries them, and `acknowledge(header)` drops every message one of whose datagrams the header acknowledges. `advance(elapsed)` ages them: a message is due again `GUARANTEED_RESEND_DELAY` (100 ms) after its last send and is given up at `GUARANTEED_MESSAGE_LIFETIME` (1 s), or when `ORDERED_WINDOW` (256) numbers were given after it; giving up a message moves `firstKept` past it. A message too large for a datagram alone, once enveloped (`ORDERED_PAYLOAD_LIMIT`, 1170 bytes), throws `DatagramTooLargeException` at `add()`, so `takeDue()` always has room for the first message due.
+- `OrderedReceiver` is the receiving end. `receive(message)` takes in an `OrderedMessage` and returns the messages that can now be handled, oldest number first: those it held before `firstKept`, which the sender gave up waiting for, then the unbroken run from the next number expected. It holds at most `ORDERED_WINDOW` messages, ignores a number already handled or too far ahead, and `reset()` expects `FIRST_ORDERED_NUMBER` again for a new session. The client wraps it in `OrderedInbox`.
 - `acknowledges(header, sequence)`, `holdsGuaranteedMessages(header)` and `markGuaranteed(header)` (`GuaranteedDelivery.hpp`) read and write the two flags.
 
 A sender sends what is due until nothing is left, each datagram under a new header (`nextHeader` and `send` stand for the caller's own):
@@ -379,7 +380,7 @@ while (unacknowledged.hasDue()) {
 }
 ```
 
-The tests run it under losses: `UnacknowledgedMessagesFixture` links a sender and a receiver through two `SeededLoss` (`tests/doubles/`), one datagram in five lost each way from fixed seeds, and every one of 200 messages arrives. A datagram that would come late or twice is refused by `ReceivedSequences` as a lost one is, so the losses stand for the reordering and the duplicates of UDP too.
+The tests run it under losses: `UnacknowledgedMessagesFixture` links a sender and a receiver through two `SeededLoss` (`tests/doubles/`), one datagram in five lost each way from fixed seeds, and every one of 200 messages arrives. A datagram that would come late or twice is refused by `ReceivedSequences` as a lost one is, so the losses stand for the reordering and the duplicates of UDP too. `OrderedChannelFixture` adds a delay of three datagrams in ten on top, and every message is handed over once, in the order it was given.
 
 ## Connection cookies: `CookieIssuer`
 
@@ -518,8 +519,8 @@ Every run held the budget of a tick: the 95th percentile stayed under 0.8 ms, un
 | Change how a connection cookie is computed, or how long it lives | `CookieIssuer` in `src/network/Handshake/Cookies/`, `COOKIE_WINDOW_DURATION` in `src/network/Handshake/Cookies/HandshakeConstants.hpp` |
 | Change how a player is let in, challenged or refused | `ConnectionAcceptor` in `src/server/Lobby/` and `ServerSession` in `src/client/Connection/`, then the [Protocol](/R-Type/protocol/#connection) page |
 | Change what a session checks on a received datagram | `DatagramSorter` (`src/server/Network/`) for the token, `DatagramReader` and `ArrivalLedger` (`src/server/Sessions/Tracking/`, `src/server/Sessions/Roster/`) for the sequence; `SessionInbound` on the client |
-| Change how soon a guaranteed message is sent again, or how long it is kept | `GUARANTEED_RESEND_DELAY` and `GUARANTEED_MESSAGE_LIFETIME` in `src/network/Protocol/ProtocolConstants.hpp`, `UnacknowledgedMessages` in `src/network/Reliability/`, then the [Protocol](/R-Type/protocol/#guaranteed-messages) page |
-| Make another message guaranteed | its `EventMessage` in `GameEventEncoder` (`src/server/Replication/Wire/`), after checking that its receiver reads it twice the same way ([Protocol](/R-Type/protocol/#guaranteed-messages)) |
+| Change how soon a guaranteed message is sent again, or how long it is kept | `GUARANTEED_RESEND_DELAY` and `GUARANTEED_MESSAGE_LIFETIME` in `src/network/Protocol/ProtocolConstants.hpp`, `UnacknowledgedMessages` in `src/network/Reliability/`, then the [Protocol](/R-Type/protocol/#ordered-messages) page |
+| Make another message guaranteed and ordered | its `EventMessage` in `GameEventEncoder` (`src/server/Replication/Wire/`); the order and the copies are handled by the channel ([Protocol](/R-Type/protocol/#ordered-messages)) |
 | Change how long the client waits before a `Heartbeat` that acknowledges | `ACKNOWLEDGEMENT_DELAY` in `src/network/Protocol/ProtocolConstants.hpp`, read by `SessionAcknowledgements` |
 | Change the heartbeats or the session timeout | `HEARTBEAT_INTERVAL`, `SESSION_TIMEOUT` and `RECONNECTION_GRACE` in `src/network/Protocol/ProtocolConstants.hpp`, and their tick counts in `src/server/Sessions/Tracking/SessionConstants.hpp` |
 | Change how the round trip is smoothed, how many round trips the jitter covers, or the longest round trip accepted | `ROUND_TRIP_SMOOTHING_DIVISOR`, `JITTER_WINDOW_SIZE` and `LONGEST_ROUND_TRIP` in `src/network/Statistics/RoundTrip/RoundTripConstants.hpp` |
