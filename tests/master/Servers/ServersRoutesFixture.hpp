@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <httplib.h>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <string_view>
 #include "RouteCall.hpp"
@@ -31,6 +32,10 @@ class ServersRoutesFixture : public ::testing::Test {
 
   /** @returns The answer to the registration of "Paris 1" with key(). */
   [[nodiscard]] httplib::Result registerParis() const;
+
+  /** @returns The id of a second server, created and registered as "Paris 1"
+   * with a key of its own, or nothing when the master did not answer. */
+  [[nodiscard]] std::optional<std::int64_t> registerSecondServer() const;
 
   /** @returns The answer to the heartbeat @p heartbeat sent with key(). */
   [[nodiscard]] httplib::Result sendHeartbeat(

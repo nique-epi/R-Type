@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
+#include <optional>
 #include <string>
 #include <vector>
 #include "HostedGameState.hpp"
@@ -443,6 +444,43 @@ TEST_F(ServersRoutesFixture, APageOutOfItsBoundsIsRefused) {
                   .get<std::string>(),
               EXPECTED_INVALID_PAGE_DETAIL);
   }
+}
+
+/**
+ * Given two registered servers
+ * When the list of servers is read with a limit of 1
+ * Then it holds the first server by id, and only it
+ */
+TEST_F(ServersRoutesFixture, TheLimitOfTheQueryCutsTheList) {
+  ASSERT_TRUE(registerParis());
+  ASSERT_TRUE(registerSecondServer().has_value());
+
+  const httplib::Result answer = readServers(LIMIT_ONE_QUERY);
+
+  ASSERT_TRUE(answer);
+  const nlohmann::json servers =
+      nlohmann::json::parse(answer->body).at(SERVERS_MEMBER_NAME);
+  ASSERT_EQ(servers.size(), 1U);
+  EXPECT_EQ(servers.at(0).at(ID_MEMBER_NAME).get<std::int64_t>(), createdId());
+}
+
+/**
+ * Given two registered servers
+ * When the list of servers is read with an offset of 1
+ * Then it holds the second server by id, and only it
+ */
+TEST_F(ServersRoutesFixture, TheOffsetOfTheQuerySkipsTheFirstServer) {
+  ASSERT_TRUE(registerParis());
+  const std::optional<std::int64_t> secondId = registerSecondServer();
+  ASSERT_TRUE(secondId.has_value());
+
+  const httplib::Result answer = readServers(OFFSET_ONE_QUERY);
+
+  ASSERT_TRUE(answer);
+  const nlohmann::json servers =
+      nlohmann::json::parse(answer->body).at(SERVERS_MEMBER_NAME);
+  ASSERT_EQ(servers.size(), 1U);
+  EXPECT_EQ(servers.at(0).at(ID_MEMBER_NAME).get<std::int64_t>(), secondId);
 }
 
 /**

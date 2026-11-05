@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
+#include <optional>
 #include <string>
 #include <string_view>
 #include "HttpPortProbe.hpp"
@@ -12,6 +13,19 @@
 #include "RouteCall.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServersRoutesTestConstants.hpp"
+
+namespace {
+
+/** @returns The registration of "Paris 1", sent with @p key. */
+RouteCall parisRegistrationCall(std::string_view key) {
+  return RouteCall{.method = PUT_METHOD,
+                   .path = OWN_SERVER_URL,
+                   .key = key,
+                   .body = rtype::network::registrationText(
+                       rtype::network::testing::parisRegistration())};
+}
+
+}  // namespace
 
 ServersRoutesFixture::ServersRoutesFixture() {
   const httplib::Result created = createParis();
@@ -76,9 +90,18 @@ httplib::Result ServersRoutesFixture::readServerPart(
 }
 
 httplib::Result ServersRoutesFixture::registerParis() const {
-  return send(RouteCall{.method = PUT_METHOD,
-                        .path = OWN_SERVER_URL,
-                        .key = key_,
-                        .body = rtype::network::registrationText(
-                            rtype::network::testing::parisRegistration())});
+  return send(parisRegistrationCall(key_));
+}
+
+std::optional<std::int64_t> ServersRoutesFixture::registerSecondServer() const {
+  const httplib::Result created = createParis();
+  if (!created) {
+    return std::nullopt;
+  }
+  const nlohmann::json creation = nlohmann::json::parse(created->body);
+  const std::string secondKey = creation.at(KEY_MEMBER_NAME).get<std::string>();
+  if (!send(parisRegistrationCall(secondKey))) {
+    return std::nullopt;
+  }
+  return creation.at(ID_MEMBER_NAME).get<std::int64_t>();
 }

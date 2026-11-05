@@ -32,6 +32,8 @@ constexpr std::string_view STATUSES_PATH_SUFFIX = "/statuses";
 /** @brief The queries of a list: none, and four out of bounds. */
 constexpr std::string_view NO_QUERY;
 constexpr std::string_view LIMIT_ZERO_QUERY = "?limit=0";
+constexpr std::string_view LIMIT_ONE_QUERY = "?limit=1";
+constexpr std::string_view OFFSET_ONE_QUERY = "?offset=1";
 constexpr std::string_view LIMIT_OVER_HUNDRED_QUERY = "?limit=101";
 constexpr std::string_view LIMIT_NOT_A_NUMBER_QUERY = "?limit=abc";
 constexpr std::string_view NEGATIVE_OFFSET_QUERY = "?offset=-1";
