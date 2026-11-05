@@ -34,10 +34,10 @@ constexpr std::uint32_t PILOT_FINAL_SCORE = 1200;
  * not speak.
  */
 constexpr std::uint64_t SESSION_TOKEN = 0x0123456789abcdef;
-constexpr std::uint8_t NEXT_PROTOCOL_VERSION = 7;
+constexpr std::uint8_t NEXT_PROTOCOL_VERSION = 8;
 
 /** @brief The version a server of this protocol writes in its headers. */
-constexpr std::uint8_t SERVER_VERSION = 6;
+constexpr std::uint8_t SERVER_VERSION = 7;
 
 /**
  * @brief Another session token, as a datagram forging the address of the

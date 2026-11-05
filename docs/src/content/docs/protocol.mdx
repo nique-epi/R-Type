@@ -1,5 +1,5 @@
 ---
-title: 'Network protocol: version 6'
+title: 'Network protocol: version 7'
 description: The datagrams the client and the server exchange over UDP, byte by byte, and what each side does when one is lost or cannot be read.
 sidebar:
   label: Protocol
@@ -11,7 +11,7 @@ This page is the specification of the protocol the client and the server speak: 
 
 ## Status of this document
 
-- This is version 6 of the protocol. It is the only version the code speaks; [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5) and [Version 6](#version-6) say what each changed from the version before, and what the rest of the second part of the project will change.
+- This is version 7 of the protocol. It is the only version the code speaks; [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6) and [Version 7](#version-7) say what each changed from the version before, and what the rest of the second part of the project will change.
 - The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
 - Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
 - Numbers are decimal unless written `0x`. A size is in bytes.
@@ -48,7 +48,7 @@ A position is in logical units, in the frame described in [Architecture](/R-Type
 
 ## Datagram
 
-A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 6.
+A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 7.
 
 <ByteLayout
   label="The 22-byte header: protocolId on bytes 0 to 3, version on byte 4, flags on byte 5, sessionToken on bytes 6 to 13, sequence on bytes 14 and 15, acknowledgedSequence on bytes 16 and 17, acknowledgementBits on bytes 18 to 21."
@@ -71,7 +71,7 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
   ]}
 />
 
-| Offset | Size | Field | In version 6 |
+| Offset | Size | Field | In version 7 |
 |---|---|---|---|
 | 0 | 4 | `protocolId` | `0x52545950`, `RTYP` in ASCII |
 | 4 | 1 | `version` | 5 |
@@ -81,12 +81,12 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
 | 16 | 2 | `acknowledgedSequence` | the newest sequence accepted from the peer, when `ACKNOWLEDGES` is set |
 | 18 | 4 | `acknowledgementBits` | bit n set: the datagram n + 1 before `acknowledgedSequence` was accepted too |
 
-Each message is a type (`u8`), the size of its payload in bytes (`u16`, the 3 bytes of type and size excluded), then the payload. A receiver accepts several messages in one datagram and reads them in order; the server groups in one datagram the guaranteed messages it sends again (see [Guaranteed messages](#guaranteed-messages)).
+Each message is a type (`u8`), the size of its payload in bytes (`u16`, the 3 bytes of type and size excluded), then the payload. A receiver accepts several messages in one datagram and reads them in order; the server groups in one datagram the guaranteed messages it sends again (see [Guaranteed messages](#ordered-messages)).
 
 - `protocolId` and `version` stay at offsets 0 and 4 in every future version, so a receiver tells which version sent a datagram from its first 5 bytes.
 - `sessionToken` is drawn at random by the server when it accepts a connection, never 0. The server writes it in every datagram it sends to that client, and the client copies it into every datagram it sends afterward. Within a session, each side drops and counts a datagram that carries another token, so nobody can steer a ship, or feed a client false states, by forging an address. A `ConnectionRequest` carries 0, since the client has no token yet: it never keeps a session alive, and it only gets a player slot with a valid cookie (see [Connection](#connection)).
 - `sequence` counts the datagrams a side sends to the other: one counter per peer, starting at 0 with the first datagram to that peer, growing by 1 and wrapping from 65535 to 0. Within a session, a receiver drops a datagram that is not newer than the newest one it has accepted from that peer, so a late or duplicated datagram never undoes a newer one. Newer means ahead by 1 to 32767 modulo 65536 (serial number arithmetic, RFC 1982), so the comparison survives the wrap. Datagrams sent before a session exists (`ConnectionChallenge`, `ConnectionRefused`) carry 0 and are not compared.
-- `flags`: `ACKNOWLEDGES` (0x01) says that `acknowledgedSequence` and `acknowledgementBits` name the datagrams the sender accepted from its peer within the session; a side sets it from the first datagram it accepted. `GUARANTEED` (0x02) says that the datagram holds guaranteed messages (see [Guaranteed messages](#guaranteed-messages)). `COMPRESSED` (0x04) says that the body is a zstd frame (see [Compression](#compression)). The other five bits are 0.
+- `flags`: `ACKNOWLEDGES` (0x01) says that `acknowledgedSequence` and `acknowledgementBits` name the datagrams the sender accepted from its peer within the session; a side sets it from the first datagram it accepted. `GUARANTEED` (0x02) says that the datagram holds guaranteed messages (see [Guaranteed messages](#ordered-messages)). `COMPRESSED` (0x04) says that the body is a zstd frame (see [Compression](#compression)). The other five bits are 0.
 - `acknowledgedSequence` is the newest sequence the sender accepted from its peer, and bit n of `acknowledgementBits` (bit 0 the least significant) is set when the datagram n + 1 before it was accepted too, so a header names the 33 newest datagrams. A datagram dropped for its sequence, late or duplicated, is never acknowledged.
 
 Version 1 reserved these fields, so version 2 guarantees messages without moving a field of any datagram. The header costs 17 bytes per datagram more than a 5-byte header: about 11 kbit/s per client at 60 inputs and 20 states per second.
@@ -143,15 +143,16 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 8 | `GameStarted` | none | when every connected player is ready, then every 500 ms to the players that did not send `GameLoaded` yet |
 | 10 | `WorldState` | see [World state](#world-state) | not sent by the server since `DeltaWorldState`; a client still reads it |
 | 11 | `EntitySpawned` | `entityId` `u32`, `entityType` `u8` (a number of the [entity types](#entity-types)), `position` | when an entity appears; the ship of a player, when the player is accepted; the ship of a player again, when it comes back after a hit; a Bydo, every time one appears; a missile, every time one is fired |
-| 12 | `EntityDestroyed` | `entityId` `u32`, `reason` `u8`: 1 `Killed` (explosion), 2 `Removed` (no effect) | when an entity disappears, guaranteed (see [Guaranteed messages](#guaranteed-messages)) |
-| 13 | `GameEvent` | `eventNumber` `u16`, `kind` `u8`, `playerNumber` `u8`, `entityId` `u32` | see [Game events](#game-events), guaranteed |
-| 14 | `PlayerLeft` | `playerNumber` `u8`, `reason` `u8`: 1 `Left`, 2 `TimedOut` | to the other players, when one leaves or times out, guaranteed |
+| 12 | `EntityDestroyed` | `entityId` `u32`, `reason` `u8`: 1 `Killed` (explosion), 2 `Removed` (no effect) | when an entity disappears, guaranteed and ordered (see [Ordered messages](#ordered-messages)) |
+| 13 | `GameEvent` | `eventNumber` `u16`, `kind` `u8`, `playerNumber` `u8`, `entityId` `u32` | see [Game events](#game-events), guaranteed and ordered |
+| 14 | `PlayerLeft` | `playerNumber` `u8`, `reason` `u8`: 1 `Left`, 2 `TimedOut` | to the other players, when one leaves or times out, guaranteed and ordered |
 | 15 | `GameEnded` | `outcome` `u8`: 1 `Victory`, 2 `Defeat`, then `playerCount` `u8`, then per player `playerNumber` `u8`, `score` `u32` | when the game ends: `Victory` once the players beat the last wave of the level, `Defeat` when no player has a life left; then every 500 ms until the server waits for players again |
 | 16 | `ConnectionChallenge` | `cookie` `u64` | in answer to a request without a valid cookie |
 | 19 | `LeaderboardAnswer` | `playerCount` `u8`, `difficulty` `string`, `rowCount` `u8` (0 to 10), then per row `rank` `u32`, `score` `u32`, `playedAt` `i64` (seconds since 1970 UTC), `nickname` `string`; then `hasOwnRow` `bool`, followed by one row when true | in answer to a request, to the player who sent it, at most once per 500 ms per player |
 | 20 | `DeltaWorldState` | see [Delta world state](#delta-world-state) | during a game, as many times per second as the server was told to (20 by default, from 2 to 60) |
 | 21 | `RoundTrips` | `playerCount` `u8`, then per player `playerNumber` `u8`, `roundTrip` `u32`, `jitter` `u32`, in microseconds | right after each `Heartbeat` of the server (see [Round trip](#round-trip)) |
-| 22 | `EnemyAction` | `entityId` `u32`, `attack` `u8`, `phase` `u8`: 1 `Signal`, 2 `Strike`, 3 `Recover`, 4 `Enraged` | when an enemy enters a step of one of its attacks, guaranteed (see [Guaranteed messages](#guaranteed-messages)) |
+| 22 | `EnemyAction` | `entityId` `u32`, `attack` `u8`, `phase` `u8`: 1 `Signal`, 2 `Strike`, 3 `Recover`, 4 `Enraged` | when an enemy enters a step of one of its attacks, guaranteed and ordered (see [Ordered messages](#ordered-messages)) |
+| 23 | `OrderedMessage` | `number` `u16`, `firstKept` `u16`, `innerType` `u8`, then the payload of the carried message to the end | carries `EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` (see [Ordered messages](#ordered-messages)) |
 
 ### Payload rules
 
@@ -327,7 +328,7 @@ The gain comes only from the entities whose position did not change in the last 
 
 ### Game events
 
-A `GameEvent` drives sounds and effects on the client, never a game rule. `eventNumber` starts at 1 for each game and grows by 1 for each event, wrapping from 65535 to 0; a copy sent again carries the same number.
+A `GameEvent` drives sounds and effects on the client, never a game rule. `eventNumber` starts at 1 for each game and grows by 1 for each event, wrapping from 65535 to 0; a copy sent again carries the same number. The ordered channel hands each event over once, so a receiver does not need the number to tell a copy.
 
 | `kind` | Event | `playerNumber` | `entityId` |
 |---|---|---|---|
@@ -375,7 +376,7 @@ The end screen stays until the player chooses, whatever the server sends after `
 
 The server takes a `ReadyState` into account only in the first phase, from a connected player, with the same checks as every datagram: the session token, then the `sequence`. Once at least one player is connected and every connected player is ready, the server sends `GameStarted` and waits for the clients to show the game: the screen of a client that has the game assets to load is not ready on the tick the server sends it. A client that shows the game sends `GameLoaded` with its inputs, at most every 100 ms, until the first `WorldState` arrives. The game starts, and the first `WorldState` goes out, once every connected player that is not away has sent one, or after 10 s (`START_BARRIER_SECONDS`) without waiting any longer for the others. Until then the server sends no `WorldState`, and repeats `GameStarted` every 500 ms to the players not yet loaded. A `GameLoaded` outside this wait changes nothing. The message is new in version 1 and carries no field; a server that does not know it skips it as an unknown type.
 
-Each side sends a `Heartbeat` every 500 ms, whatever else it sends, and the client one more to acknowledge guaranteed messages (see [Guaranteed messages](#guaranteed-messages)); any datagram that passes the checks above proves its sender is alive. A player the server has heard nothing from for `SESSION_TIMEOUT` (5 s) may only have lost the network for a moment. The server then marks the player away and keeps its seat, its token, its ship, its score and its lives for `RECONNECTION_GRACE` (15 s) more. The ship stays in the world and can be hit, but the input of the player is cleared and the player does not count when the waiting room checks that everyone is ready. Any datagram carrying the token, from the same address and port, ends the absence: the player is back, nothing was lost, and a new `SESSION_TIMEOUT` starts. A player not heard from for `SESSION_TIMEOUT` plus `RECONNECTION_GRACE` (20 s) loses its seat: the server closes the session, removes the ship and sends `PlayerLeft` (`TimedOut`) to the others, only then. A client that comes back from another address or port is an unknown sender and starts again from the first request. The client keeps its session, and keeps sending its `Heartbeat`, for the same 20 s without a datagram from the server, then closes it and must tell the player that the connection is lost. A `Disconnection` frees the place at once, and the others get `PlayerLeft` (`Left`).
+Each side sends a `Heartbeat` every 500 ms, whatever else it sends, and the client one more to acknowledge guaranteed messages (see [Guaranteed messages](#ordered-messages)); any datagram that passes the checks above proves its sender is alive. A player the server has heard nothing from for `SESSION_TIMEOUT` (5 s) may only have lost the network for a moment. The server then marks the player away and keeps its seat, its token, its ship, its score and its lives for `RECONNECTION_GRACE` (15 s) more. The ship stays in the world and can be hit, but the input of the player is cleared and the player does not count when the waiting room checks that everyone is ready. Any datagram carrying the token, from the same address and port, ends the absence: the player is back, nothing was lost, and a new `SESSION_TIMEOUT` starts. A player not heard from for `SESSION_TIMEOUT` plus `RECONNECTION_GRACE` (20 s) loses its seat: the server closes the session, removes the ship and sends `PlayerLeft` (`TimedOut`) to the others, only then. A client that comes back from another address or port is an unknown sender and starts again from the first request. The client keeps its session, and keeps sending its `Heartbeat`, for the same 20 s without a datagram from the server, then closes it and must tell the player that the connection is lost. A `Disconnection` frees the place at once, and the others get `PlayerLeft` (`Left`).
 
 ## Round trip
 
@@ -435,7 +436,7 @@ A message that is valid but means nothing in the current state of its receiver c
 | A `LeaderboardRequest` less than 500 ms after the last one answered | the client asked again, or floods | ignores it (see [Leaderboard](#leaderboard)) |
 | `WorldState` with a `tick` lower than the last one applied | it arrived late | ignores it (see [World state](#world-state)) |
 | `EntitySpawned` naming an entity the client has; `EntityDestroyed` or `EntityDamaged` naming one it does not have | a copy, or a `WorldState` came first | changes nothing |
-| A second copy of a `GameEvent` (same `eventNumber`), of an `EntityDestroyed` or of a `PlayerLeft` | the acknowledgement of a datagram that held it was lost, so it was sent again (see [Guaranteed messages](#guaranteed-messages)) | changes nothing |
+| A second copy of an `OrderedMessage` (same `number`) | the acknowledgement of a datagram that held it was lost, so it was sent again (see [Ordered messages](#ordered-messages)) | ignored: the number was handled |
 
 ### Joining fails
 
@@ -464,22 +465,26 @@ A player that comes back after its session closed, 20 s after its last datagram,
 
 The programs handle every case above. In a game, a `PlayerLeft` marks its pilot on the status band and writes a line on the screen of the others (see [Client](/R-Type/client/#departures-and-a-silent-server-departurefeed-silencewarning)). The `Disconnection` the server sends three times when it shuts down on Ctrl-C or SIGTERM (see [Server](/R-Type/server/#stopping-ctrl-c-and-sigterm)), or 20 s without a datagram of the server, ends the session of the client, which goes back to its title and says so in a dialog (see [Client](/R-Type/client/#lost-connection-a-dialog-over-the-title)). While the client holds the session without hearing the server, a game says so (`WAITING FOR THE SERVER`); the waiting room and the end screen do not.
 
-## Guaranteed messages
+## Ordered messages
 
-`EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` change the screen once, and no state message repeats what they show, so they are guaranteed: their sender sends them again until they are acknowledged. In this version only the server sends guaranteed messages, and only the client acknowledges them.
+`EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` change the screen once, and no state message repeats what they show, so they are guaranteed and ordered: their sender sends them again until they are acknowledged, and their receiver handles them in the order they were given, so a player never dies on the screen before the hit that killed it. In this version only the server sends them, and only the client acknowledges them.
 
 - **Acknowledging.** Within a session, every datagram a side sends MUST acknowledge the datagrams it accepted from its peer, with `ACKNOWLEDGES`, `acknowledgedSequence` and `acknowledgementBits` (see [Datagram](#datagram)). A side that accepts a datagram with `GUARANTEED` set SHOULD send a `Heartbeat` to carry the acknowledgement when 40 ms (`ACKNOWLEDGEMENT_DELAY`) pass with nothing else sent; during a game the next `PlayerInput` carries it first.
-- **Sending again.** The server sends a guaranteed message at once, in a datagram with `GUARANTEED` set, and keeps it for each player until an acknowledgement names one of the datagrams it went in. While it is not acknowledged, the server sends it again once 100 ms (`GUARANTEED_RESEND_DELAY`) passed since its last send, in a new datagram with a new sequence and `GUARANTEED` set; the messages due to one player go together, as many as fit in 1200 bytes. A message only goes to the players of the game when it is given: a player who joins later never gets it.
-- **Giving up.** The server drops a guaranteed message 1 s (`GUARANTEED_MESSAGE_LIFETIME`) after it was given, acknowledged or not: by then the client removed an entity no state lists (900 ms), and a sound would come too late. The server counts that time in real time at the start of each tick and sends again at the end of a tick: at 60 ticks per second, every 7 ticks (116.7 ms), 9 times at most. With 20 % of datagrams lost independently, about one guaranteed message in two million (0.2 to the 9th) is lost for good.
-- **Reading twice.** A guaranteed message arrives twice when the acknowledgement of a datagram that held it is lost, so a receiver MUST read a second copy as changing nothing: an `EntityDestroyed` names an entity already gone; the client handles each `eventNumber` of `GameEvent` once, and remembering the numbers of the last 2 s is enough (1 s of lifetime, and 1 s for copies whose delays differ); a second `PlayerLeft` of a player leaves its pilot marked gone and its line shown once; the client keeps the first copy it sees of an `EnemyAction` for each (`entityId`, `attack`, `phase`) and remembers them for the same 2 s, so a sender never enters the same phase of the same attack of one enemy twice within 2 s, or the client takes the second for a copy of the first. A message made guaranteed later MUST be read twice the same way.
+- **Numbering.** The server sends each of these messages to each player inside an `OrderedMessage` (type 23): `number` (`u16`), `firstKept` (`u16`), `innerType` (`u8`), then the payload of the message it carries, to the end of the payload. The numbers of a player start at 1 (`FIRST_ORDERED_NUMBER`) and grow by 1 for each message given to that player, wrapping from 65535 to 0. A receiver MUST refuse an `OrderedMessage` that carries an `OrderedMessage`, whose `firstKept` is later than its `number`, or whose carried payload is over 1170 bytes (`ORDERED_PAYLOAD_LIMIT`). The envelope adds 5 bytes to a message.
+- **Sending again.** The server sends the message at once, in a datagram with `GUARANTEED` set, and keeps it for each player until an acknowledgement names one of the datagrams it went in. While it is not acknowledged, the server sends it again once 100 ms (`GUARANTEED_RESEND_DELAY`) passed since its last send, in a new datagram with a new sequence and `GUARANTEED` set; the messages due to one player go together, as many as fit in 1200 bytes. A message only goes to the players of the game when it is given: a player who joins later never gets it.
+- **Handing over in order.** A receiver handles the messages of the channel by number, once each. It keeps a message that arrives before the ones numbered under it, up to `ORDERED_WINDOW` (256) numbers ahead of the next one it expects, and ignores a number it already handled, or farther ahead. Only this channel waits: every other message of a datagram, the states included, is handled as it arrives.
+- **Giving up.** The server drops a message 1 s (`GUARANTEED_MESSAGE_LIFETIME`) after it was given, acknowledged or not, and also when 256 more numbers were given after it: by then the client removed an entity no state lists (900 ms), and a sound would come too late. `firstKept` is the number of the first message the server has not given up; every envelope carries it. A receiver that expects a number before `firstKept` stops waiting: it handles the messages it holds under `firstKept`, in order, and expects `firstKept` next. The server counts the time in real time at the start of each tick and sends again at the end of a tick: at 60 ticks per second, every 7 ticks (116.7 ms), 9 times at most. With 20 % of datagrams lost independently, about one message in two million (0.2 to the 9th) is given up, and the order holds until then.
+- **Reading once.** The number tells a copy the server sent again from the message: a receiver handles each number once, so the client no longer remembers the `eventNumber` of the events it saw.
 
-Alternative considered: a number in each guaranteed message, so the receiver drops a copy it already read. It works for any message, but adds bytes to each one, and the three messages guaranteed today already change nothing when read twice.
+Alternative considered: a number in each of the three messages. It adds the same bytes, but changes three layouts, and a message made ordered later would have to change its own. The envelope leaves the three messages as they were.
+
+Alternative considered: never giving up an ordered message. The order would hold whatever the losses, but a player silent for a few seconds would get every event it missed, in order, with sounds and explosions long late, and the server would have to keep them all. Giving up after 1 s keeps what the screen shows current, at the price of the order after 1 s of losses.
 
 Alternative considered: `Disconnection` guaranteed as well. Its sender closes at once and cannot wait for an acknowledgement, so it keeps its three copies, as netcode.io sends its disconnect packets without waiting for an answer.
 
 ## Losses
 
-Only the messages of [Guaranteed messages](#guaranteed-messages) are sent again until they are acknowledged. The state messages are repeated, so the other losses correct themselves.
+Only the messages of [Ordered messages](#ordered-messages) are sent again until they are acknowledged. The state messages are repeated, so the other losses correct themselves.
 
 `Disconnection` changes the screen once too, but its sender closes at once, so it is sent three times, 50 ms apart. A copy that arrives after the first comes from a session already closed, so from an unknown sender, and changes nothing. With 5 % of datagrams lost independently, one `Disconnection` in 8000 is lost for good.
 
@@ -520,7 +525,7 @@ On the games captured while the dictionary was trained, the datagram of the serv
 
 ## Version 2
 
-Version 2 guarantees `EntityDestroyed`, `GameEvent` and `PlayerLeft` with `flags`, `acknowledgedSequence` and `acknowledgementBits`, which version 1 wrote as 0 (see [Guaranteed messages](#guaranteed-messages)). The layout of the header is the same, its meaning is not, so `version` became 2. The server also groups the guaranteed messages it sends again in one datagram, which receivers of version 1 already accepted.
+Version 2 guarantees `EntityDestroyed`, `GameEvent` and `PlayerLeft` with `flags`, `acknowledgedSequence` and `acknowledgementBits`, which version 1 wrote as 0 (see [Ordered messages](#ordered-messages)). The layout of the header is the same, its meaning is not, so `version` became 2. The server also groups the guaranteed messages it sends again in one datagram, which receivers of version 1 already accepted.
 
 Version 2 also gives `Heartbeat` the time it is sent and the echo of the newest `Heartbeat` received, which measure the round trip (see [Round trip](#round-trip)), then the tick of the server while a game runs (see [Clock of the server](#clock-of-the-server)). A build of version 2 from before the echo sends an empty `Heartbeat`, and one from before the tick stops at the echo, 13 bytes instead of 18: a newer receiver skips either as a message, and an older receiver skips the longer one, since bytes follow what it reads. In every case the datagram still keeps the session alive, so the two play together without a round trip or a clock.
 
@@ -549,6 +554,10 @@ Version 6 names the entity types by a table instead of four values fixed in the 
 
 `EnemyAction` (type 22) did not change `version`: a receiver that does not know it skips it as an unknown type, and only the animation of an attack is lost, so a client of version 6 without it plays with a server that sends it.
 
+## Version 7
+
+Version 7 sends `EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` inside an `OrderedMessage` (type 23) and delivers them in the order they were given (see [Ordered messages](#ordered-messages)). The layout of the header and of every other message is the same. A client of version 6 would not read the envelope, so `version` became 7 and the server answers a client of version 6 with `ConnectionRefused` (`IncompatibleVersion`).
+
 ## Implementation status
 
 The code of this repository applies the rules above, with the exceptions listed at the end of this section.
@@ -557,7 +566,7 @@ The code of this repository applies the rules above, with the exceptions listed 
 - `src/network` holds the pieces: the socket in `Transport` drops a datagram over 1200 bytes (see [Network](/R-Type/network/)), `Serialization` encodes integers and strings, and `Protocol` holds the header and every message of this page, each checked as listed here. A `WorldState` without players is accepted while the game has none (see [Network](/R-Type/network/#world-state-worldstatecodec)).
 - Both programs drop a datagram whose header is not of this protocol and version, or whose message sizes do not add up. The server drops on its network thread every datagram that is neither a connection request nor from a player it admitted, answers the requests as [Connection](#connection) describes, and answers a datagram of another version from an unknown sender with `ConnectionRefused` (`IncompatibleVersion`). The client reads only the server it contacts.
 - Within a session, each side writes the session token and its next sequence into every datagram it sends: the server in its acceptances, the `EntitySpawned` of the ships, the Bydos and the missiles, `LobbyState`, `GameStarted`, `DeltaWorldState`, the game events, `GameEnded`, `LeaderboardAnswer`, `Heartbeat`, `RoundTrips` and `Disconnection`; the client in its inputs, `ReadyState`, `GameLoaded`, `LeaderboardRequest`, `Heartbeat` and `Disconnection`. Each also acknowledges there the datagrams it accepted, except the client in its `Disconnection`, sent once the session is closed.
-- The server guarantees `EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` as [Guaranteed messages](#guaranteed-messages) describes, and reads the acknowledgements of every datagram of a player it accepts. The client sends a `Heartbeat` 40 ms after a datagram that holds guaranteed messages when nothing else went out, and remembers the `eventNumber` of the last 2 s and the (`entityId`, `attack`, `phase`) of each `EnemyAction` of the last 2 s.
+- The server sends `EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` as [Ordered messages](#ordered-messages) describes, and reads the acknowledgements of every datagram of a player it accepts. The client hands them over in order, and sends a `Heartbeat` 40 ms after a datagram that holds guaranteed messages when nothing else went out.
 - The server checks the token of every datagram from the address of a player it admitted, on its network thread before any queue, and the sequence of every datagram it reads from a player, so a duplicate or a late one is dropped whatever its message. The client checks the token, then the sequence, of every datagram of the server.
 - Each side sends a `Heartbeat` every 500 ms and measures the round trip from its echo, and the server sends each player `RoundTrips` after each of its `Heartbeat`s, as [Round trip](#round-trip) describes; the `Heartbeat` of the server also carries its tick during a game, as [Clock of the server](#clock-of-the-server) describes. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
 
