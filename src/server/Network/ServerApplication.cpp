@@ -47,9 +47,11 @@ ServerApplication::ServerApplication(
       conditions_(conditions),
       incoming_(INCOMING_DATAGRAM_QUEUE_CAPACITY),
       connectionRequests_(CONNECTION_REQUEST_QUEUE_CAPACITY),
+      informationRequests_(INFORMATION_REQUEST_QUEUE_CAPACITY),
       outgoing_(OUTGOING_DATAGRAM_QUEUE_CAPACITY),
       destinations_{.players = &incoming_,
-                    .connectionRequests = &connectionRequests_},
+                    .connectionRequests = &connectionRequests_,
+                    .informationRequests = &informationRequests_},
       drops_(clock_),
       sorter_(destinations_, drops_, clock_),
       discardReport_(destinations_, drops_),
@@ -133,8 +135,12 @@ void ServerApplication::simulateTick() {
   incoming_.drainInto(received_);
   receivedRequests_.clear();
   connectionRequests_.drainInto(receivedRequests_);
-  handleTick_(ReceivedDatagrams{.players = received_,
-                                .connectionRequests = receivedRequests_});
+  receivedInformationRequests_.clear();
+  informationRequests_.drainInto(receivedInformationRequests_);
+  handleTick_(
+      ReceivedDatagrams{.players = received_,
+                        .connectionRequests = receivedRequests_,
+                        .informationRequests = receivedInformationRequests_});
   discardReport_.countTick();
   network_.post([this] {
     if (relay_.has_value()) {

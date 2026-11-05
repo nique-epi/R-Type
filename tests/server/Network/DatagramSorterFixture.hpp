@@ -14,7 +14,8 @@
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
 
-/** @brief A sorter in front of two queues of the server's sizes. */
+/** @brief A sorter in front of three queues of the server's sizes; the
+ * information requests are followed by DatagramSorterInformationFixture. */
 class DatagramSorterFixture : public ::testing::Test {
  protected:
   DatagramSorterFixture();
@@ -43,6 +44,8 @@ class DatagramSorterFixture : public ::testing::Test {
   rtype::concurrency::BoundedQueue<rtype::network::IncomingDatagram> players_;
   rtype::concurrency::BoundedQueue<rtype::network::IncomingDatagram>
       connectionRequests_;
+  rtype::concurrency::BoundedQueue<rtype::network::IncomingDatagram>
+      informationRequests_;
   SimulatedClock clock_;
   rtype::server::DatagramDrops drops_;
   rtype::server::DatagramSorter sorter_;

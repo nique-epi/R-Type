@@ -51,6 +51,11 @@ void DiscardReport::countTick() {
 }
 
 void DiscardReport::report() {
+  reportDiscards();
+  reportDrops();
+}
+
+void DiscardReport::reportDiscards() {
   if (const std::size_t fresh = countedSince(queues_.players->discardedCount(),
                                              reportedDiscardCount_)) {
     logger_.warn(fresh, " datagrams of players discarded in the last ",
@@ -66,6 +71,17 @@ void DiscardReport::report() {
                  CONNECTION_REQUEST_QUEUE_CAPACITY,
                  " arrived between two ticks");
   }
+  if (const std::size_t fresh =
+          countedSince(queues_.informationRequests->discardedCount(),
+                       reportedInformationDiscardCount_)) {
+    logger_.warn(fresh, " information requests discarded in the last ",
+                 REPORT_SECONDS, " s: more than ",
+                 INFORMATION_REQUEST_QUEUE_CAPACITY,
+                 " arrived between two ticks");
+  }
+}
+
+void DiscardReport::reportDrops() {
   if (const std::size_t fresh =
           countedSince(drops_->droppedCount(), reportedDroppedCount_)) {
     logger_.warn(fresh, " datagrams dropped before any queue in the last ",

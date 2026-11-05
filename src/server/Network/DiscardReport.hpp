@@ -24,6 +24,8 @@ class DiscardReport {
 
  private:
   void report();
+  void reportDiscards();
+  void reportDrops();
 
   logging::Logger logger_;
   DatagramQueues queues_;
@@ -31,6 +33,7 @@ class DiscardReport {
   std::size_t ticksSinceReport_{0};
   std::size_t reportedDiscardCount_{0};
   std::size_t reportedRequestDiscardCount_{0};
+  std::size_t reportedInformationDiscardCount_{0};
   std::size_t reportedDroppedCount_{0};
   std::size_t reportedWrongTokenCount_{0};
 };

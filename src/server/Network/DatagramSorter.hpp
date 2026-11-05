@@ -28,12 +28,14 @@ namespace rtype::server {
  * A datagram whose header is of this protocol and version, with no flag this
  * version does not know, and whose messages add up to its end, is kept only
  * if, coming from the address and port of an admitted player, it carries the
- * session token of that player, or NO_SESSION_TOKEN when it holds a
- * ConnectionRequest; any other token drops it, counted apart from the other
- * drops. Then it spends an allowance: when it holds a ConnectionRequest,
- * whatever token it carries, the one its address and port hold among the
- * requests, under REQUEST_RATE_LIMIT, so a player places no more requests in
- * their queue than a stranger; otherwise the one of its player, under
+ * session token of that player, or NO_SESSION_TOKEN when it holds a message
+ * sent outside any session, a ConnectionRequest or a ServerInformationRequest;
+ * any other token drops it, counted apart from the other drops. Then it spends
+ * an allowance: when it holds a message sent outside any session, whatever
+ * token it carries, the one its address and port hold among the requests,
+ * under REQUEST_RATE_LIMIT, so a player places no more requests in their
+ * queues than a stranger, and a sender shares one limit between its
+ * connection and information requests; otherwise the one of its player, under
  * PLAYER_RATE_LIMIT. The token is checked before any allowance is spent, so
  * whoever forges the address of a player never spends that player's
  * allowance. A datagram over
@@ -41,6 +43,9 @@ namespace rtype::server {
  *
  * - to the connection request queue when it holds a ConnectionRequest: a
  *   player whose acceptance was lost asks again;
+ * - to the information request queue when it holds a ServerInformationRequest
+ *   and no ConnectionRequest, so a flood of information requests never pushes
+ *   a connection request out of its queue;
  * - to the player queue when its sender was admitted;
  * - nowhere otherwise, without spending anything.
  *
@@ -121,8 +126,8 @@ class DatagramSorter {
 
   /** @returns The verdict of the allowance @p datagram spends at @p now: the
    * one of its address and port among the requests when it holds a
-   * ConnectionRequest or comes from no admitted player, the one of @p player
-   * otherwise. */
+   * message sent outside any session or comes from no admitted player, the one
+   * of @p player otherwise. */
   [[nodiscard]] network::AllowanceVerdict spendAllowanceOf(
       const SpokenDatagram& datagram, AdmittedPlayer* player,
       std::chrono::nanoseconds now);

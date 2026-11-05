@@ -17,7 +17,10 @@ namespace rtype::server {
 struct SpokenDatagram {
   std::reference_wrapper<const network::Endpoint> sender;
   network::PacketHeader header;
+  /** @brief Whether it holds a ConnectionRequest. */
   bool holdsRequest{};
+  /** @brief Whether it holds a ServerInformationRequest. */
+  bool asksInformation{};
   std::span<const std::byte> bytes;
 };
 

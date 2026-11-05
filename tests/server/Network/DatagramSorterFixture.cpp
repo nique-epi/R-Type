@@ -12,10 +12,13 @@
 DatagramSorterFixture::DatagramSorterFixture()
     : players_(rtype::server::INCOMING_DATAGRAM_QUEUE_CAPACITY),
       connectionRequests_(rtype::server::CONNECTION_REQUEST_QUEUE_CAPACITY),
+      informationRequests_(rtype::server::INFORMATION_REQUEST_QUEUE_CAPACITY),
       drops_(clock_),
       sorter_(
           rtype::server::DatagramQueues{
-              .players = &players_, .connectionRequests = &connectionRequests_},
+              .players = &players_,
+              .connectionRequests = &connectionRequests_,
+              .informationRequests = &informationRequests_},
           drops_, clock_) {}
 
 void DatagramSorterFixture::sort(const rtype::network::Endpoint& sender,

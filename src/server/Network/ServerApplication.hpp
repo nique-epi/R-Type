@@ -31,16 +31,17 @@ namespace rtype::server {
  * for a client.
  *
  * The network thread sorts each datagram as it arrives (see DatagramSorter):
- * the datagrams of admitted players go to one queue, connection requests to a
- * smaller one, and every other datagram is dropped there, as is a datagram from
+ * the datagrams of admitted players go to one queue, connection requests and
+ * information requests each to a smaller one, and every other datagram is
+ * dropped there, as is a datagram from
  * the address of a player that does not carry its session token, or from a
  * sender over its rate limit. So a flood of requests, of datagrams from
  * senders that were not admitted or that forge the address of a player, or of
  * a player with its own token, cannot push a player's datagram out of its
  * queue.
- * Each tick, the simulation thread drains both queues, hands what they held
- * to the tick handler, then asks the network thread to send what was queued.
- * The DatagramRelay only sends.
+ * Each tick, the simulation thread drains the three queues, hands what they
+ * held to the tick handler, then asks the network thread to send what was
+ * queued. The DatagramRelay only sends.
  *
  * Building the object binds nothing: the socket is bound by open(), so a part
  * of a program that builds it while it installs keeps no resource open until
@@ -139,6 +140,7 @@ class ServerApplication final : public IDatagramSender,
   std::unique_ptr<network::IDatagramSocket> socket_;
   concurrency::BoundedQueue<network::IncomingDatagram> incoming_;
   concurrency::BoundedQueue<network::IncomingDatagram> connectionRequests_;
+  concurrency::BoundedQueue<network::IncomingDatagram> informationRequests_;
   concurrency::BoundedQueue<network::OutgoingDatagram> outgoing_;
   DatagramQueues destinations_;
   DatagramDrops drops_;
@@ -148,6 +150,7 @@ class ServerApplication final : public IDatagramSender,
   TickHandler handleTick_;
   std::vector<network::IncomingDatagram> received_;
   std::vector<network::IncomingDatagram> receivedRequests_;
+  std::vector<network::IncomingDatagram> receivedInformationRequests_;
 };
 
 }  // namespace rtype::server

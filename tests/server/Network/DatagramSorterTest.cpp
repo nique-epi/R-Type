@@ -7,6 +7,7 @@
 #include <vector>
 #include "DatagramSorterFixture.hpp"
 #include "DatagramSorterFixtures.hpp"
+#include "DatagramSorterInformationFixture.hpp"
 #include "DatagramSorterLogFixture.hpp"
 #include "DatagramSorterTestConstants.hpp"
 #include "Endpoint.hpp"
@@ -728,4 +729,85 @@ TEST_F(DatagramSorterLogFixture, LogsWhyItDropsADatagramOverTheLimit) {
   ASSERT_EQ(lines.size(), 1U);
   EXPECT_NE(lines.front().find(rtype::server::OVER_RATE_LIMIT_DROP_REASON),
             std::string::npos);
+}
+
+/**
+ * Given a sorter that admitted nobody
+ * When a stranger asks for the information of the server
+ * Then the request goes to the information request queue, with its sender,
+ * and nothing to the other queues
+ */
+TEST_F(DatagramSorterInformationFixture,
+       SendsAStrangersInformationRequestToItsQueue) {
+  sort(stranger(), informationRequestDatagram());
+
+  EXPECT_EQ(
+      drainInformationRequests(),
+      (std::vector<IncomingDatagram>{
+          {.sender = stranger(), .payload = informationRequestDatagram()}}));
+  EXPECT_TRUE(drainRequests().empty());
+  EXPECT_TRUE(drainPlayers().empty());
+}
+
+/**
+ * Given an admitted player
+ * When it asks for the information of the server without a session token
+ * Then the request goes to the information request queue: it is sent outside
+ * any session, as a connection request is
+ */
+TEST_F(DatagramSorterInformationFixture,
+       SendsAPlayersInformationRequestWithoutTokenToItsQueue) {
+  admit(player());
+
+  sort(player(), informationRequestDatagram());
+
+  EXPECT_EQ(drainInformationRequests().size(), 1U);
+  EXPECT_TRUE(drainPlayers().empty());
+}
+
+/**
+ * Given an admitted player
+ * When its address asks for the information of the server with another token
+ * Then the request reaches no queue
+ */
+TEST_F(DatagramSorterInformationFixture,
+       DropsAPlayersInformationRequestWithAnotherToken) {
+  admit(player());
+
+  sort(player(), informationRequestDatagram(playerHeader(OTHER_SESSION_TOKEN)));
+
+  EXPECT_TRUE(drainInformationRequests().empty());
+  EXPECT_TRUE(drainPlayers().empty());
+}
+
+/**
+ * Given a sorter that admitted nobody
+ * When a stranger sends a datagram holding a connection request and an
+ * information request
+ * Then it goes to the connection request queue only, so it gets one answer
+ */
+TEST_F(DatagramSorterInformationFixture,
+       SendsADatagramHoldingBothRequestsToTheRequestQueue) {
+  sort(stranger(), requestAndInformationRequestDatagram());
+
+  EXPECT_EQ(drainRequests().size(), 1U);
+  EXPECT_TRUE(drainInformationRequests().empty());
+}
+
+/**
+ * Given a stranger that asked for the information of the server eleven times
+ * at once
+ * When it then sends a connection request
+ * Then the eleven requests are placed and the connection request is dropped:
+ * one limit counts both
+ */
+TEST_F(DatagramSorterInformationFixture,
+       SharesOneLimitBetweenInformationAndConnectionRequests) {
+  sortRepeatedly(stranger(), informationRequestDatagram(),
+                 REQUESTS_PLACED_AT_ONCE);
+
+  sort(stranger(), requestDatagram());
+
+  EXPECT_EQ(drainInformationRequests().size(), REQUESTS_PLACED_AT_ONCE);
+  EXPECT_TRUE(drainRequests().empty());
 }

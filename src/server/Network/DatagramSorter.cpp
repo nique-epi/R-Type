@@ -39,12 +39,34 @@ namespace {
 
 /**
  * @returns Whether @p header carries @p sessionToken, or NO_SESSION_TOKEN in a
- * datagram holding a ConnectionRequest.
+ * datagram that holds a message sent outside any session.
  */
 bool carriesSessionToken(const network::PacketHeader& header,
-                         std::uint64_t sessionToken, bool holdsRequest) {
+                         std::uint64_t sessionToken, bool outsideSession) {
   return header.sessionToken == sessionToken ||
-         (holdsRequest && header.sessionToken == network::NO_SESSION_TOKEN);
+         (outsideSession && header.sessionToken == network::NO_SESSION_TOKEN);
+}
+
+/**
+ * @returns Whether @p datagram holds a message sent outside any session: a
+ * ConnectionRequest or a ServerInformationRequest.
+ */
+bool isOutsideSession(const SpokenDatagram& datagram) {
+  return datagram.holdsRequest || datagram.asksInformation;
+}
+
+/**
+ * @returns The queue of @p destinations that @p datagram goes to: the
+ * connection requests when it holds a ConnectionRequest, whatever else it
+ * holds, then the information requests, then the players.
+ */
+concurrency::BoundedQueue<network::IncomingDatagram>& queueOf(
+    const DatagramQueues& destinations, const SpokenDatagram& datagram) {
+  if (datagram.holdsRequest) {
+    return *destinations.connectionRequests;
+  }
+  return datagram.asksInformation ? *destinations.informationRequests
+                                  : *destinations.players;
 }
 
 /**
@@ -126,34 +148,35 @@ void DatagramSorter::sort(const network::Endpoint& sender,
       .header = header,
       .holdsRequest = types->test(
           static_cast<std::size_t>(network::MessageType::ConnectionRequest)),
+      .asksInformation = types->test(static_cast<std::size_t>(
+          network::MessageType::ServerInformationRequest)),
       .bytes = datagram});
 }
 
 void DatagramSorter::sortSpoken(const SpokenDatagram& datagram) {
   const network::Endpoint& sender = datagram.sender.get();
   AdmittedPlayer* const player = findAdmitted(sender);
+  const bool outsideSession = isOutsideSession(datagram);
   if (player != nullptr &&
       !carriesSessionToken(datagram.header, player->sessionToken,
-                           datagram.holdsRequest)) {
+                           outsideSession)) {
     drops_->dropWrongToken(sender);
     return;
   }
-  if (player == nullptr && !datagram.holdsRequest) {
+  if (player == nullptr && !outsideSession) {
     drops_->drop(sender, STRANGER_DROP_REASON);
     return;
   }
   const std::chrono::nanoseconds now = clock_->now();
   if (keptByLimit(spendAllowanceOf(datagram, player, now), sender, *drops_)) {
-    (datagram.holdsRequest ? *destinations_.connectionRequests
-                           : *destinations_.players)
-        .push(copyOf(sender, datagram.bytes, now));
+    queueOf(destinations_, datagram).push(copyOf(sender, datagram.bytes, now));
   }
 }
 
 network::AllowanceVerdict DatagramSorter::spendAllowanceOf(
     const SpokenDatagram& datagram, AdmittedPlayer* player,
     std::chrono::nanoseconds now) {
-  if (player != nullptr && !datagram.holdsRequest) {
+  if (player != nullptr && !isOutsideSession(datagram)) {
     return network::spendAllowance(player->allowance,
                                    network::PLAYER_RATE_LIMIT, now);
   }
