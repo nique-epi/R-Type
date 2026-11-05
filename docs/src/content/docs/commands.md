@@ -46,7 +46,7 @@ Server settings:
 | `database` | a path | empty | The SQLite file the leaderboard of the server is kept in; empty for `r-type_server_<port>.db` next to the executable. |
 | `master-url` | `http://<host>[:<port>]` | empty | The master the server is listed on; empty to run alone. |
 | `master-key` | a key | empty | The key the master gave when the host created the server; empty to run alone. |
-| `server-name` | 1 to 32 bytes | `R-Type server` | The name players read in the list of servers. |
+| `server-name` | 1 to 32 bytes | `R-Type server` | The name players read in the list of servers and in the answer to an information request. |
 
 Client settings:
 

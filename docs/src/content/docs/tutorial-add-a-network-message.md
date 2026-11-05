@@ -562,7 +562,7 @@ A pull request that changes the wire says so in its title, with `!` after the ty
 | The players must all see | The server sends it once to each player of the game with `sendToEveryPlayer` (`src/server/Sessions/Tracking/`), or guarantees it with `guaranteeToEveryPlayer` when its loss would show: see [Guaranteed messages](/R-Type/protocol/#guaranteed-messages) |
 | Must never be lost, or must always reflect the current state | From the server, guarantee it with `guaranteeToEveryPlayer`, once its receiver reads it twice the same way (see [Guaranteed messages](/R-Type/protocol/#guaranteed-messages)); the client sends no guaranteed message yet. A state is repeated until the state message shows it, as `ReadyState` does with `LobbyState` |
 | Holds a list or a string | Check the count before anything is sized from it, as `LobbyState` does; a client must not make the server allocate in proportion to a value it controls |
-| An unknown sender may send | Read [Connection](/R-Type/protocol/#connection) first: `DatagramSorter` drops such a datagram before any queue, unless it holds a `ConnectionRequest`, and an answer must never hold more bytes than the datagram it answers |
+| An unknown sender may send | Read [Connection](/R-Type/protocol/#connection) first: `DatagramSorter` drops such a datagram before any queue, unless it holds a `ConnectionRequest` or a `ServerInformationRequest`, and an answer must never hold more bytes than the datagram it answers |
 
 ## If it does not work
 

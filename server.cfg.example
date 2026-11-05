@@ -28,11 +28,13 @@ set database ""
 set master-url ""
 set master-key ""
 
-# The name players read in the list of servers, 1 to 32 bytes.
+# The name players read in the list of servers and in the answer to an
+# information request, 1 to 32 bytes.
 set server-name "R-Type server"
 
 # Turn a module off (it is never installed, provides no service and runs no work). Refused when a module
 # that stays on depends on it: storage needs network, games needs network and
-# storage, lobby needs games, metrics needs games and network, master needs
-# network and games, all need logger.
+# storage, lobby needs games, information needs network and games, metrics
+# needs games and network, master needs network, games and information, all
+# need logger.
 # module lobby off
