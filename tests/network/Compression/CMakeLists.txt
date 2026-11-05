@@ -1,0 +1,4 @@
+rtype_add_test(NAME network_compression_tests SOURCES CompressionFixtures.cpp LIBS rtype_network_compression)
+target_include_directories(network_compression_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_subdirectory(Huffman)
