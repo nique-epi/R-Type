@@ -15,6 +15,7 @@
 #include "DeltaWorldState.hpp"
 #include "DeltaWorldStateCodec.hpp"
 #include "Entity.hpp"
+#include "EntitySpawnSender.hpp"
 #include "EntityType.hpp"
 #include "Intent.hpp"
 #include "Invulnerable.hpp"
@@ -148,7 +149,7 @@ network::DeltaWorldState deltaAgainst(const network::WorldState& state,
 
 }  // namespace
 
-WorldStateSender::WorldStateSender(PlayerRoster& roster, Send send,
+WorldStateSender::WorldStateSender(PlayerRoster& roster, SendDatagram send,
                                    std::size_t statesPerSecond)
     : roster_(&roster),
       send_(std::move(send)),

@@ -2,14 +2,13 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <vector>
 #include "ComponentRegistry.hpp"
 #include "DeltaWorldState.hpp"
+#include "EntitySpawnSender.hpp"
 #include "Logger.hpp"
-#include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "WorldState.hpp"
 
@@ -44,20 +43,15 @@ class ConnectedPlayers;
 class WorldStateSender {
  public:
   /**
-   * @brief What the sender calls for each datagram to send.
-   */
-  using Send = std::function<void(network::OutgoingDatagram)>;
-
-  /**
    * @param roster The players of the game, who receive the state; it must
    * outlive the sender.
-   * @param send Must not be empty.
+   * @param send Called for each datagram to send. Must not be empty.
    * @param statesPerSecond The states sent to each player per second, from
    * LOWEST_WORLD_STATES_PER_SECOND to HIGHEST_WORLD_STATES_PER_SECOND; it need
    * not divide the tick rate.
    * @throws InvalidStateRateException when it is outside that range.
    */
-  WorldStateSender(PlayerRoster& roster, Send send,
+  WorldStateSender(PlayerRoster& roster, SendDatagram send,
                    std::size_t statesPerSecond);
 
   /**
@@ -95,7 +89,7 @@ class WorldStateSender {
   [[nodiscard]] bool carriesState(std::uint32_t tick) const;
 
   PlayerRoster* roster_{nullptr};
-  Send send_;
+  SendDatagram send_;
   std::size_t statesPerSecond_;
   std::size_t reportedLeftOutCount_{0};
   logging::Logger logger_;
