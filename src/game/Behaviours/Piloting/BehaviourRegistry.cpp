@@ -16,14 +16,6 @@ void BehaviourRegistry::add(std::unique_ptr<IBehaviour> behaviour) {
   behaviours_.push_back(std::move(behaviour));
 }
 
-const IBehaviour& BehaviourRegistry::named(std::string_view name) const {
-  const IBehaviour* const behaviour = find(name);
-  if (behaviour == nullptr) {
-    throw UnknownBehaviourException(name);
-  }
-  return *behaviour;
-}
-
 const IBehaviour* BehaviourRegistry::find(std::string_view name) const {
   const auto found = std::ranges::find_if(
       behaviours_, [name](const std::unique_ptr<IBehaviour>& behaviour) {

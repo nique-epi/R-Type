@@ -7,7 +7,6 @@
 #include <vector>
 #include "BehaviourRegistry.hpp"
 #include "EntitySheet.hpp"
-#include "GunSheet.hpp"
 #include "SheetText.hpp"
 
 namespace rtype::game {
@@ -68,10 +67,6 @@ class EntitySheets {
   /** @returns Every sheet, in the order of their names, so of their numbers.
    */
   [[nodiscard]] std::span<const EntitySheet> all() const;
-
-  /** @returns The sheet @p gun fires, found by its projectileNumber, which
-   * names a sheet since the sheets were checked. */
-  [[nodiscard]] const EntitySheet& projectileOf(const GunSheet& gun) const;
 
   /** @returns The texts the sheets were read from, in the order of their
    * names: the server hashes them to tell whether its games are vanilla. */

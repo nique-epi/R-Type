@@ -25,9 +25,6 @@ InvalidWaveCurveException::InvalidWaveCurveException()
           "zero between two Bydos no longer than in its first wave, and no "
           "negative cut or pause, and a level of at least one wave") {}
 
-UnknownBehaviourException::UnknownBehaviourException(std::string_view name)
-    : GameException("No behaviour is named " + std::string(name)) {}
-
 DuplicateBehaviourException::DuplicateBehaviourException(std::string_view name)
     : GameException("A behaviour is already named " + std::string(name)) {}
 

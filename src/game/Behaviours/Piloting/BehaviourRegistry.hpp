@@ -24,12 +24,6 @@ class BehaviourRegistry {
    */
   void add(std::unique_ptr<IBehaviour> behaviour);
 
-  /**
-   * @returns The behaviour named @p name.
-   * @throws UnknownBehaviourException When none is.
-   */
-  [[nodiscard]] const IBehaviour& named(std::string_view name) const;
-
   /** @returns The behaviour named @p name, or nullptr when none is: the reader
    * of a sheet asks it, so its error names the file and the key. */
   [[nodiscard]] const IBehaviour* find(std::string_view name) const;

@@ -171,10 +171,10 @@ TEST(EntitySheets, RefusesANameNoSheetHas) {
 /**
  * Given the sheets of a Drifter, whose gun fires enemy_missile, and of that
  * missile
- * When what the gun of the Drifter fires is asked for
+ * When the sheet numbered as what the gun of the Drifter fires is looked up
  * Then it is the sheet of the missile of an enemy
  */
-TEST(EntitySheets, FindsWhatAGunFires) {
+TEST(EntitySheets, NumbersWhatAGunFires) {
   const std::vector<SheetText> texts{
       sheetText(DRIFTER_NAME_IN_TESTS, DRIFTER_SHEET_TEXT),
       sheetText(ENEMY_MISSILE_SHEET, ENEMY_MISSILE_SHEET_TEXT)};
@@ -182,10 +182,11 @@ TEST(EntitySheets, FindsWhatAGunFires) {
   const EntitySheet& drifter = sheets.named(DRIFTER_NAME_IN_TESTS);
   ASSERT_TRUE(drifter.gun.has_value());
 
-  const EntitySheet& projectile =
-      sheets.projectileOf(drifter.gun.value_or(rtype::game::GunSheet{}));
+  const EntitySheet* const projectile = sheets.numbered(
+      drifter.gun.value_or(rtype::game::GunSheet{}).projectileNumber);
 
-  EXPECT_EQ(projectile.name, ENEMY_MISSILE_SHEET);
+  ASSERT_NE(projectile, nullptr);
+  EXPECT_EQ(projectile->name, ENEMY_MISSILE_SHEET);
 }
 
 /**

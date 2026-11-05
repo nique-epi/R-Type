@@ -46,14 +46,6 @@ class InvalidWaveCurveException : public GameException {
 };
 
 /**
- * @brief Thrown when a body is given a behaviour no BehaviourRegistry holds.
- */
-class UnknownBehaviourException : public GameException {
- public:
-  explicit UnknownBehaviourException(std::string_view name);
-};
-
-/**
  * @brief Thrown when a BehaviourRegistry is given a second behaviour under a
  * name it already holds.
  */

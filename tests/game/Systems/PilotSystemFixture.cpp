@@ -23,7 +23,7 @@ engine::Entity PilotSystemFixture::addBody(
   components_.add(body, start);
   components_.add(body, Intent{});
   components_.add(body, SteadyMotion{.topSpeed = BODY_TOP_SPEED});
-  components_.add(body, Pilot{.behaviour = behaviours_.named(behaviour),
+  components_.add(body, Pilot{.behaviour = *behaviours_.find(behaviour),
                               .origin = start,
                               .age = engine::Duration::zero(),
                               .settings = settings});

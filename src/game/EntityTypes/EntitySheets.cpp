@@ -98,16 +98,13 @@ void checkProjectiles(std::span<const EntitySheet> sheets) {
 }
 
 /** @brief Writes in the gun of each sheet of @p sheets the number of the sheet
- * it fires, which checkProjectiles() found. */
+ * it fires. checkProjectiles() ran first, so every gun fires a sheet of
+ * @p sheets. */
 void numberProjectiles(std::vector<EntitySheet>& sheets) {
   for (EntitySheet& shooter : sheets) {
-    if (!shooter.gun.has_value()) {
-      continue;
-    }
-    if (const EntitySheet* const projectile =
-            findNamed(sheets, shooter.gun->projectile);
-        projectile != nullptr) {
-      shooter.gun->projectileNumber = projectile->number;
+    if (shooter.gun.has_value()) {
+      shooter.gun->projectileNumber =
+          findNamed(sheets, shooter.gun->projectile)->number;
     }
   }
 }
@@ -145,10 +142,6 @@ const EntitySheet* EntitySheets::numbered(std::uint8_t number) const {
 }
 
 std::span<const EntitySheet> EntitySheets::all() const { return sheets_; }
-
-const EntitySheet& EntitySheets::projectileOf(const GunSheet& gun) const {
-  return sheets_[static_cast<std::size_t>(gun.projectileNumber) - 1];
-}
 
 std::span<const SheetText> EntitySheets::texts() const { return texts_; }
 
