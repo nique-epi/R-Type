@@ -1,4 +1,5 @@
 #include "ServersService.hpp"
+#include <SQLiteCpp/Database.h>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -13,6 +14,7 @@
 #include "CreationQuota.hpp"
 #include "GameListing.hpp"
 #include "HeartbeatRecord.hpp"
+#include "HeartbeatSampleRepository.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
 #include "KnownServer.hpp"
@@ -31,6 +33,7 @@
 #include "ServerLimits.hpp"
 #include "ServerListing.hpp"
 #include "ServerRecord.hpp"
+#include "ServerRepository.hpp"
 #include "ServersServiceConstants.hpp"
 #include "StatusListing.hpp"
 
@@ -112,7 +115,10 @@ network::ListedGame listedGameOf(const network::HostedGame& game) {
 }  // namespace
 
 ServersService::ServersService(MasterDatabase& database)
-    : servers_(database), samples_(database), changes_(database) {}
+    : database_(database),
+      servers_(database),
+      samples_(database),
+      changes_(database) {}
 
 std::optional<network::CreatedServer> ServersService::createServer(
     const CreationAttempt& attempt) {
@@ -152,8 +158,10 @@ bool ServersService::replaceOwnHeartbeat(const KnownServer& server,
   const HeartbeatRecord record{.serverId = server.id,
                                .heartbeat = std::move(heartbeat),
                                .receivedAt = now};
-  servers_.saveLastHeartbeat(record);
-  samples_.add(record);
+  database_.transact([&record](SQLite::Database& connection) {
+    ServerRepository::saveLastHeartbeat(connection, record);
+    HeartbeatSampleRepository::add(connection, record);
+  });
   return true;
 }
 

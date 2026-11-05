@@ -50,8 +50,10 @@ class ServerRepository {
   void saveRegistration(const ServerRecord& record);
 
   /** @brief Keeps the heartbeat of @p record as the last state of its server,
-   * with the counts and the measures the list and the statuses read of it. */
-  void saveLastHeartbeat(const HeartbeatRecord& record);
+   * with the counts and the measures the list and the statuses read of it, on
+   * @p connection. */
+  static void saveLastHeartbeat(SQLite::Database& connection,
+                                const HeartbeatRecord& record);
 
   /**
    * @returns The last heartbeat of the server @p serverId, nothing in it while

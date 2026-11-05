@@ -1,7 +1,6 @@
 #include "HeartbeatSampleRepository.hpp"
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Statement.h>
-#include <SQLiteCpp/Transaction.h>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -67,15 +66,11 @@ network::ServerSample sampleIn(const SQLite::Statement& query) {
 HeartbeatSampleRepository::HeartbeatSampleRepository(MasterDatabase& database)
     : database_(database) {}
 
-void HeartbeatSampleRepository::add(const HeartbeatRecord& record) {
-  database_.run([&record](SQLite::Database& connection) {
-    SQLite::Transaction transaction{connection,
-                                    SQLite::TransactionBehavior::IMMEDIATE};
-    insertSample(connection, record);
-    eraseOlderThan(connection, ERASE_OLD_SAMPLES_STATEMENT,
-                   record.receivedAt - SAMPLE_RETENTION);
-    transaction.commit();
-  });
+void HeartbeatSampleRepository::add(SQLite::Database& connection,
+                                    const HeartbeatRecord& record) {
+  insertSample(connection, record);
+  eraseOlderThan(connection, ERASE_OLD_SAMPLES_STATEMENT,
+                 record.receivedAt - SAMPLE_RETENTION);
 }
 
 std::vector<network::ServerSample> HeartbeatSampleRepository::samplesOf(

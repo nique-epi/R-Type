@@ -33,6 +33,13 @@ constexpr std::uint8_t ONE_PLAYER_PER_GAME = 1;
 constexpr std::size_t PARALLEL_SERVERS = 8;
 constexpr std::size_t HEARTBEATS_PER_SERVER = 50;
 
+/** @brief Makes the database refuse every sample, as a full disk refuses a
+ * write. */
+constexpr std::string_view REFUSE_SAMPLES_TRIGGER = R"sql(
+CREATE TRIGGER refuse_samples BEFORE INSERT ON heartbeat_samples
+BEGIN SELECT RAISE(ABORT, 'refused'); END
+)sql";
+
 /** @brief What the tests read of the tables, to check what was written. */
 constexpr std::string_view SAMPLE_COUNT_QUERY =
     "SELECT COUNT(*) FROM heartbeat_samples";

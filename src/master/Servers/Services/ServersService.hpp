@@ -48,7 +48,8 @@ class ServersService {
 
   /**
    * @brief Records @p heartbeat, received at @p now, as the last state of
-   * @p server, and as a sample of that second.
+   * @p server, and as a sample of that second, in one transaction: a failure
+   * keeps neither, and the server's last state stays the heartbeat before.
    * @returns false when @p server has not registered: nothing is recorded.
    * @throws network::InvalidMasterMessageException naming the member of the
    * heartbeat beyond what the server registered: more games than its
@@ -86,6 +87,7 @@ class ServersService {
       std::int64_t serverId, const PageRequest& page);
 
  private:
+  MasterDatabase& database_;
   ServerRepository servers_;
   HeartbeatSampleRepository samples_;
   StatusChangeRepository changes_;

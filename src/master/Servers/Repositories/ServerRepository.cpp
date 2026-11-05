@@ -195,18 +195,17 @@ void ServerRepository::saveRegistration(const ServerRecord& record) {
   });
 }
 
-void ServerRepository::saveLastHeartbeat(const HeartbeatRecord& record) {
-  const std::string text = network::heartbeatText(record.heartbeat);
-  database_.run([&record, &text](SQLite::Database& connection) {
-    SQLite::Statement update{connection,
-                             std::string{UPDATE_LAST_HEARTBEAT_STATEMENT}};
-    update.bind(std::string{HEARTBEAT_PARAMETER}, text);
-    update.bind(std::string{TAKEN_AT_PARAMETER},
-                epochSecondsOf(record.receivedAt));
-    bindHeartbeatSummary(update, record.heartbeat);
-    update.bind(std::string{SERVER_ID_PARAMETER}, record.serverId);
-    update.exec();
-  });
+void ServerRepository::saveLastHeartbeat(SQLite::Database& connection,
+                                         const HeartbeatRecord& record) {
+  SQLite::Statement update{connection,
+                           std::string{UPDATE_LAST_HEARTBEAT_STATEMENT}};
+  update.bind(std::string{HEARTBEAT_PARAMETER},
+              network::heartbeatText(record.heartbeat));
+  update.bind(std::string{TAKEN_AT_PARAMETER},
+              epochSecondsOf(record.receivedAt));
+  bindHeartbeatSummary(update, record.heartbeat);
+  update.bind(std::string{SERVER_ID_PARAMETER}, record.serverId);
+  update.exec();
 }
 
 std::optional<LastHeartbeat> ServerRepository::lastHeartbeatOf(
