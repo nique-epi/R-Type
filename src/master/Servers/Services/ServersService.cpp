@@ -1,4 +1,5 @@
 #include "ServersService.hpp"
+#include <SQLiteCpp/Database.h>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -13,6 +14,7 @@
 #include "CreationQuota.hpp"
 #include "GameListing.hpp"
 #include "HeartbeatRecord.hpp"
+#include "HeartbeatSampleRepository.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
 #include "KnownServer.hpp"
@@ -24,11 +26,16 @@
 #include "MasterMessageText.hpp"
 #include "NetworkException.hpp"
 #include "NewServer.hpp"
+#include "PageRequest.hpp"
+#include "SampleListing.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerKey.hpp"
 #include "ServerLimits.hpp"
+#include "ServerListing.hpp"
 #include "ServerRecord.hpp"
+#include "ServerRepository.hpp"
 #include "ServersServiceConstants.hpp"
+#include "StatusListing.hpp"
 
 namespace rtype::master {
 
@@ -108,7 +115,10 @@ network::ListedGame listedGameOf(const network::HostedGame& game) {
 }  // namespace
 
 ServersService::ServersService(MasterDatabase& database)
-    : servers_(database), samples_(database) {}
+    : database_(database),
+      servers_(database),
+      samples_(database),
+      changes_(database) {}
 
 std::optional<network::CreatedServer> ServersService::createServer(
     const CreationAttempt& attempt) {
@@ -148,8 +158,10 @@ bool ServersService::replaceOwnHeartbeat(const KnownServer& server,
   const HeartbeatRecord record{.serverId = server.id,
                                .heartbeat = std::move(heartbeat),
                                .receivedAt = now};
-  servers_.saveLastHeartbeat(record);
-  samples_.add(record);
+  database_.transact([&record](SQLite::Database& connection) {
+    ServerRepository::saveLastHeartbeat(connection, record);
+    HeartbeatSampleRepository::add(connection, record);
+  });
   return true;
 }
 
@@ -166,6 +178,27 @@ std::optional<network::GameListing> ServersService::gameListingOf(
     }
   }
   return listing;
+}
+
+network::ServerListing ServersService::serverListingOf(
+    const PageRequest& page) {
+  return network::ServerListing{.servers = servers_.registeredServers(page)};
+}
+
+std::optional<network::SampleListing> ServersService::sampleListingOf(
+    std::int64_t serverId, const PageRequest& page) {
+  if (!servers_.hasServer(serverId)) {
+    return std::nullopt;
+  }
+  return network::SampleListing{.samples = samples_.samplesOf(serverId, page)};
+}
+
+std::optional<network::StatusListing> ServersService::statusListingOf(
+    std::int64_t serverId, const PageRequest& page) {
+  if (!servers_.hasServer(serverId)) {
+    return std::nullopt;
+  }
+  return network::StatusListing{.statuses = changes_.changesOf(serverId, page)};
 }
 
 }  // namespace rtype::master

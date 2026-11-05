@@ -48,7 +48,7 @@ Server settings:
 | `database` | a path | empty | The SQLite file the leaderboard of the server is kept in; empty for `r-type_server_<port>.db` next to the executable. |
 | `master-url` | `http://<host>[:<port>]` | empty | The master the server is listed on; empty to run alone. |
 | `master-key` | a key | empty | The key the master gave when the host created the server; empty to run alone. |
-| `server-name` | 1 to 32 bytes | `R-Type server` | The name players read in the list of servers. |
+| `server-name` | 1 to 32 bytes | `R-Type server` | The name players read in the list of servers and in the answer to an information request. |
 | `game-statistics-file` | a path | empty | Declared by the `game-statistics` plugin, only once a `plugin game-statistics` line loads it: the CSV file of the statistics of the games; empty for `r-type_statistics_<port>.csv` next to the executable. |
 
 Client settings:

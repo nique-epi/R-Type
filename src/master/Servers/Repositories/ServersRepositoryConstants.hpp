@@ -32,11 +32,16 @@ SET name = :name, address = :address, udp_port = :udp_port,
     maximum_games = :maximum_games,
     maximum_players_per_game = :maximum_players_per_game,
     registered_at = :registered_at,
-    last_heartbeat = NULL, last_heartbeat_at = NULL
+    last_heartbeat = NULL, last_heartbeat_at = NULL, last_game_count = NULL,
+    last_player_count = NULL, last_tick_p95_milliseconds = NULL,
+    last_loss_percent = NULL
 WHERE id = :server_id
 )sql";
 constexpr std::string_view UPDATE_LAST_HEARTBEAT_STATEMENT = R"sql(
-UPDATE servers SET last_heartbeat = :heartbeat, last_heartbeat_at = :taken_at
+UPDATE servers
+SET last_heartbeat = :heartbeat, last_heartbeat_at = :taken_at,
+    last_game_count = :game_count, last_player_count = :player_count,
+    last_tick_p95_milliseconds = :tick_p95, last_loss_percent = :loss_percent
 WHERE id = :server_id
 )sql";
 
@@ -52,6 +57,55 @@ VALUES
 )sql";
 constexpr std::string_view ERASE_OLD_SAMPLES_STATEMENT =
     "DELETE FROM heartbeat_samples WHERE taken_at < :oldest";
+
+/**
+ * @brief How long a change of status is kept: as long as a sample, so the
+ * history of a server holds both over the same days.
+ */
+constexpr std::chrono::seconds STATUS_CHANGE_RETENTION = SAMPLE_RETENTION;
+
+/** @brief What the refresh of the statuses reads of each registered server. */
+constexpr std::string_view WATCHED_SERVERS_QUERY = R"sql(
+SELECT id, status, maintenance, registered_at, last_heartbeat_at,
+       last_tick_p95_milliseconds, last_loss_percent
+FROM servers WHERE registered_at IS NOT NULL ORDER BY id
+)sql";
+constexpr std::string_view UPDATE_STATUS_STATEMENT =
+    "UPDATE servers SET status = :status WHERE id = :server_id";
+constexpr std::string_view UPDATE_MAINTENANCE_STATEMENT =
+    "UPDATE servers SET maintenance = :maintenance WHERE id = :server_id";
+
+/** @brief A page of the registered servers, by id. */
+constexpr std::string_view REGISTERED_SERVERS_QUERY = R"sql(
+SELECT id, name, address, udp_port, game_version, protocol_version, status,
+       maximum_games, maximum_players_per_game, COALESCE(last_game_count, 0),
+       COALESCE(last_player_count, 0)
+FROM servers WHERE registered_at IS NOT NULL
+ORDER BY id LIMIT :limit OFFSET :offset
+)sql";
+constexpr std::string_view SERVER_EXISTS_QUERY =
+    "SELECT 1 FROM servers WHERE id = :server_id";
+
+/** @brief A page of the samples of a server, newest first. */
+constexpr std::string_view SAMPLES_OF_SERVER_QUERY = R"sql(
+SELECT taken_at, game_count, player_count, tick_p50_milliseconds,
+       tick_p95_milliseconds, received_bytes_per_second, sent_bytes_per_second,
+       loss_percent, average_ping_milliseconds
+FROM heartbeat_samples WHERE server_id = :server_id
+ORDER BY taken_at DESC LIMIT :limit OFFSET :offset
+)sql";
+
+/** @brief The statements of the table `status_changes`. */
+constexpr std::string_view INSERT_STATUS_CHANGE_STATEMENT = R"sql(
+INSERT OR REPLACE INTO status_changes (server_id, changed_at, status)
+VALUES (:server_id, :changed_at, :status)
+)sql";
+constexpr std::string_view ERASE_OLD_STATUS_CHANGES_STATEMENT =
+    "DELETE FROM status_changes WHERE changed_at < :oldest";
+constexpr std::string_view STATUS_CHANGES_OF_SERVER_QUERY = R"sql(
+SELECT changed_at, status FROM status_changes WHERE server_id = :server_id
+ORDER BY changed_at DESC LIMIT :limit OFFSET :offset
+)sql";
 
 /** @brief The parameters of those statements. */
 constexpr std::string_view KEY_FINGERPRINT_PARAMETER = ":key_fingerprint";
@@ -79,6 +133,11 @@ constexpr std::string_view SENT_BYTES_PARAMETER = ":sent_bytes";
 constexpr std::string_view LOSS_PERCENT_PARAMETER = ":loss_percent";
 constexpr std::string_view AVERAGE_PING_PARAMETER = ":average_ping";
 constexpr std::string_view OLDEST_PARAMETER = ":oldest";
+constexpr std::string_view STATUS_PARAMETER = ":status";
+constexpr std::string_view MAINTENANCE_PARAMETER = ":maintenance";
+constexpr std::string_view CHANGED_AT_PARAMETER = ":changed_at";
+constexpr std::string_view LIMIT_PARAMETER = ":limit";
+constexpr std::string_view OFFSET_PARAMETER = ":offset";
 
 /** @brief The column of the count CREATIONS_SINCE_QUERY returns. */
 constexpr int CREATION_COUNT_COLUMN = 0;
@@ -93,5 +152,42 @@ constexpr int MAXIMUM_PLAYERS_COLUMN = 2;
 
 /** @brief The column of the text LAST_HEARTBEAT_OF_SERVER_QUERY returns. */
 constexpr int LAST_HEARTBEAT_COLUMN = 0;
+
+/** @brief The columns of WATCHED_SERVERS_QUERY. */
+constexpr int WATCHED_ID_COLUMN = 0;
+constexpr int WATCHED_STATUS_COLUMN = 1;
+constexpr int WATCHED_MAINTENANCE_COLUMN = 2;
+constexpr int WATCHED_REGISTERED_AT_COLUMN = 3;
+constexpr int WATCHED_HEARTBEAT_AT_COLUMN = 4;
+constexpr int WATCHED_TICK_P95_COLUMN = 5;
+constexpr int WATCHED_LOSS_PERCENT_COLUMN = 6;
+
+/** @brief The columns of REGISTERED_SERVERS_QUERY. */
+constexpr int LISTED_ID_COLUMN = 0;
+constexpr int LISTED_NAME_COLUMN = 1;
+constexpr int LISTED_ADDRESS_COLUMN = 2;
+constexpr int LISTED_UDP_PORT_COLUMN = 3;
+constexpr int LISTED_GAME_VERSION_COLUMN = 4;
+constexpr int LISTED_PROTOCOL_VERSION_COLUMN = 5;
+constexpr int LISTED_STATUS_COLUMN = 6;
+constexpr int LISTED_MAXIMUM_GAMES_COLUMN = 7;
+constexpr int LISTED_MAXIMUM_PLAYERS_COLUMN = 8;
+constexpr int LISTED_GAME_COUNT_COLUMN = 9;
+constexpr int LISTED_PLAYER_COUNT_COLUMN = 10;
+
+/** @brief The columns of SAMPLES_OF_SERVER_QUERY. */
+constexpr int SAMPLE_TAKEN_AT_COLUMN = 0;
+constexpr int SAMPLE_GAME_COUNT_COLUMN = 1;
+constexpr int SAMPLE_PLAYER_COUNT_COLUMN = 2;
+constexpr int SAMPLE_TICK_P50_COLUMN = 3;
+constexpr int SAMPLE_TICK_P95_COLUMN = 4;
+constexpr int SAMPLE_RECEIVED_BYTES_COLUMN = 5;
+constexpr int SAMPLE_SENT_BYTES_COLUMN = 6;
+constexpr int SAMPLE_LOSS_PERCENT_COLUMN = 7;
+constexpr int SAMPLE_AVERAGE_PING_COLUMN = 8;
+
+/** @brief The columns of STATUS_CHANGES_OF_SERVER_QUERY. */
+constexpr int CHANGED_AT_COLUMN = 0;
+constexpr int CHANGE_STATUS_COLUMN = 1;
 
 }  // namespace rtype::master

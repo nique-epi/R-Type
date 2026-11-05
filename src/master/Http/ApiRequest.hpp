@@ -26,6 +26,12 @@ struct ApiRequest {
    * without parameter.
    */
   std::unordered_map<std::string, std::string> pathParameters;
+  /**
+   * @brief The parameters of the query of the path, such as `limit` for
+   * `/servers?limit=20`, as the text the client wrote; a parameter given twice
+   * keeps its first value. None for a path without query.
+   */
+  std::unordered_map<std::string, std::string> queryParameters;
 };
 
 }  // namespace rtype::master

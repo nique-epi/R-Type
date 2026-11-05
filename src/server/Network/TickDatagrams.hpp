@@ -31,6 +31,11 @@ class TickDatagrams {
   [[nodiscard]] std::span<const network::IncomingDatagram> connectionRequests()
       const;
 
+  /** @returns The datagrams holding a server information request, oldest
+   * first. */
+  [[nodiscard]] std::span<const network::IncomingDatagram> informationRequests()
+      const;
+
  private:
   ReceivedDatagrams received_{};
 };

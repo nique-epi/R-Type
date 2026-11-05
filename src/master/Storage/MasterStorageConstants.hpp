@@ -54,10 +54,65 @@ CREATE INDEX heartbeat_samples_by_date ON heartbeat_samples (taken_at);
 )sql";
 
 /**
+ * @brief The second version: the status the master computed last for each
+ * server, whether an admin put it in maintenance, every change of status, and
+ * what the list and the statuses read of the last heartbeat (its games, its
+ * players, its tick p95 and its loss), written with it so a read parses no
+ * JSON. Those four are null before the first heartbeat and after a
+ * registration. For a server a master of version 1 kept, they are read once
+ * from its last heartbeat, so the list and the statuses see it as it was
+ * before the upgrade; a text that is no JSON object with a list of games
+ * leaves them null, and never stops the upgrade.
+ *
+ * A server starts offline: its first change comes with the first refresh after
+ * its registration. The status is text with no CHECK, so a later status (the
+ * unreachable one of the probe) needs no rebuild of the table; the master
+ * writes only SERVER_STATUS_TEXTS. A change is keyed by its server and its
+ * second, so a later change of the same second replaces it, and the table has
+ * no rowid, as heartbeat_samples.
+ */
+constexpr std::string_view STATUSES_MIGRATION = R"sql(
+ALTER TABLE servers ADD COLUMN status TEXT NOT NULL DEFAULT 'offline';
+ALTER TABLE servers ADD COLUMN maintenance INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE servers ADD COLUMN last_game_count INTEGER;
+ALTER TABLE servers ADD COLUMN last_player_count INTEGER;
+ALTER TABLE servers ADD COLUMN last_tick_p95_milliseconds REAL;
+ALTER TABLE servers ADD COLUMN last_loss_percent REAL;
+
+UPDATE servers SET
+  last_game_count = json_array_length(last_heartbeat, '$.games'),
+  last_player_count = (
+    SELECT COALESCE(SUM(json_array_length(game.value, '$.players')), 0)
+    FROM json_each(servers.last_heartbeat, '$.games') AS game
+    WHERE CASE WHEN game.type = 'object'
+      THEN json_type(game.value, '$.players') = 'array' ELSE 0 END),
+  last_tick_p95_milliseconds = CASE
+    WHEN json_type(last_heartbeat, '$.measures.tickP95Milliseconds')
+      IN ('integer', 'real')
+    THEN json_extract(last_heartbeat, '$.measures.tickP95Milliseconds') END,
+  last_loss_percent = CASE
+    WHEN json_type(last_heartbeat, '$.measures.lossPercent')
+      IN ('integer', 'real')
+    THEN json_extract(last_heartbeat, '$.measures.lossPercent') END
+WHERE CASE WHEN json_valid(last_heartbeat)
+  THEN json_type(last_heartbeat, '$.games') = 'array' ELSE 0 END;
+
+CREATE TABLE status_changes (
+  server_id  INTEGER NOT NULL REFERENCES servers (id),
+  changed_at INTEGER NOT NULL,
+  status     TEXT    NOT NULL,
+  PRIMARY KEY (server_id, changed_at)
+) STRICT, WITHOUT ROWID;
+
+CREATE INDEX status_changes_by_date ON status_changes (changed_at);
+)sql";
+
+/**
  * @brief The migrations of the database of the master, in order:
  * MASTER_MIGRATIONS[0] is version 1. A change adds a migration at the end and
  * never edits one a master already applied.
  */
-constexpr std::array<std::string_view, 1> MASTER_MIGRATIONS{SERVERS_MIGRATION};
+constexpr std::array<std::string_view, 2> MASTER_MIGRATIONS{SERVERS_MIGRATION,
+                                                            STATUSES_MIGRATION};
 
 }  // namespace rtype::master

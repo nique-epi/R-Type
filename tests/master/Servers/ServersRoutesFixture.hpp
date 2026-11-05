@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <httplib.h>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <string_view>
 #include "RouteCall.hpp"
@@ -32,6 +33,10 @@ class ServersRoutesFixture : public ::testing::Test {
   /** @returns The answer to the registration of "Paris 1" with key(). */
   [[nodiscard]] httplib::Result registerParis() const;
 
+  /** @returns The id of a second server, created and registered as "Paris 1"
+   * with a key of its own, or nothing when the master did not answer. */
+  [[nodiscard]] std::optional<std::int64_t> registerSecondServer() const;
+
   /** @returns The answer to the heartbeat @p heartbeat sent with key(). */
   [[nodiscard]] httplib::Result sendHeartbeat(
       const rtype::network::ServerHeartbeat& heartbeat) const;
@@ -39,6 +44,15 @@ class ServersRoutesFixture : public ::testing::Test {
   /** @returns The answer to the games of the server @p serverId, no key sent.
    */
   [[nodiscard]] httplib::Result readGames(std::string_view serverId) const;
+
+  /** @returns The answer to the list of servers, @p query after its path
+   * (empty, or "?limit=…"), no key sent. */
+  [[nodiscard]] httplib::Result readServers(std::string_view query) const;
+
+  /** @returns The answer to @p part ("/games", "/samples" or
+   * "/statuses") of the server @p serverId, no key sent. */
+  [[nodiscard]] httplib::Result readServerPart(std::string_view serverId,
+                                               std::string_view part) const;
 
  private:
   RunningMaster master_;

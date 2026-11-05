@@ -262,12 +262,12 @@ constexpr std::uint16_t SOME_SENDER_PORT = 50000;
 /**
  * @brief Message type bytes no message has: the byte before the first type,
  * the byte after the last, and the largest byte. The byte after the last is
- * read from the name of the last message, MessageType::EnemyAction: a message
- * added after it needs this line to follow.
+ * read from the name of the last message, MessageType::ServerInformation: a
+ * message added after it needs this line to follow.
  */
 constexpr std::uint8_t TYPE_BELOW_THE_FIRST = 0;
 constexpr std::uint8_t TYPE_ABOVE_THE_LAST =
-    static_cast<std::uint8_t>(MessageType::EnemyAction) + 1;
+    static_cast<std::uint8_t>(MessageType::ServerInformation) + 1;
 constexpr std::uint8_t LARGEST_TYPE_BYTE = 255;
 
 /**

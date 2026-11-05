@@ -9,7 +9,7 @@ namespace rtype::server {
 
 /** @brief How many causes RejectionCause names. */
 constexpr std::size_t REJECTION_CAUSE_COUNT =
-    static_cast<std::size_t>(RejectionCause::RequestQueueFull) + 1;
+    static_cast<std::size_t>(RejectionCause::InformationQueueFull) + 1;
 
 /**
  * @brief The name of each RejectionCause in the lines of the rejection report,
@@ -25,7 +25,8 @@ constexpr std::array<std::string_view, REJECTION_CAUSE_COUNT>
                           "newly banned",
                           "banned",
                           "player queue full",
-                          "request queue full"};
+                          "request queue full",
+                          "information queue full"};
 
 /**
  * @brief How many senders the RejectionLedger keeps between two reports; a new

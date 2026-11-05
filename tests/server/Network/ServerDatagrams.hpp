@@ -23,6 +23,15 @@
 [[nodiscard]] std::vector<std::byte> requestDatagramOf(
     const std::string& nickname, std::uint64_t cookie);
 
+/** @returns A datagram holding a ServerInformationRequest sent at
+ * @p sentAt. */
+[[nodiscard]] std::vector<std::byte> informationRequestDatagram(
+    const rtype::network::PacketHeader& header = {}, std::uint32_t sentAt = 0);
+
+/** @returns A datagram holding a ConnectionRequest without a cookie, then a
+ * ServerInformationRequest. */
+[[nodiscard]] std::vector<std::byte> requestAndInformationRequestDatagram();
+
 /** @returns A datagram holding a ReadyState, which only a player sends. */
 [[nodiscard]] std::vector<std::byte> readyDatagram(
     const rtype::network::PacketHeader& header = {});

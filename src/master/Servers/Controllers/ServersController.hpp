@@ -46,6 +46,27 @@ class ServersController {
    */
   [[nodiscard]] ApiResponse listGames(const ApiRequest& request);
 
+  /**
+   * @returns The answer of `GET /api/servers`: 200 and a page of the
+   * registered servers by id, open to everyone; 400 when limit or offset is no
+   * whole number within its bounds.
+   */
+  [[nodiscard]] ApiResponse listServers(const ApiRequest& request);
+
+  /**
+   * @returns The answer of `GET /api/servers/{id}/samples`: 200 and a page of
+   * the samples of the server, newest first, open to everyone; 404 for an id
+   * that names no server, 400 for a page out of its bounds.
+   */
+  [[nodiscard]] ApiResponse listSamples(const ApiRequest& request);
+
+  /**
+   * @returns The answer of `GET /api/servers/{id}/statuses`: 200 and a
+   * page of the statuses the server held, newest first, open to
+   * everyone; 404 and 400 as listSamples().
+   */
+  [[nodiscard]] ApiResponse listStatuses(const ApiRequest& request);
+
  private:
   ServersService service_;
 };

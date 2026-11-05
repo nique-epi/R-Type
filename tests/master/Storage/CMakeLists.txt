@@ -1,0 +1,1 @@
+target_sources(master_tests PRIVATE MasterDatabaseTest.cpp MasterDatabaseFixture.cpp)

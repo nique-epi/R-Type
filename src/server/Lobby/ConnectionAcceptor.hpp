@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <functional>
-#include <optional>
 #include <random>
 #include <span>
 #include <string>
@@ -21,6 +20,7 @@
 #include "NetworkConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
+#include "RequestReader.hpp"
 #include "ThrottledLog.hpp"
 #include "TimeConstants.hpp"
 
@@ -101,20 +101,11 @@ class ConnectionAcceptor {
   void setGameInProgress(bool inProgress);
 
  private:
-  /**
-   * @returns The first ConnectionRequest of @p datagram, or nothing when the
-   * datagram is dropped, which is then logged.
-   */
-  [[nodiscard]] std::optional<network::ConnectionRequest> readRequest(
-      const network::IncomingDatagram& datagram, engine::Duration now);
-
   /** @brief Refuses @p datagram, of another protocol version, as
    * IncompatibleVersion, or drops it when it is shorter than
    * CONNECTION_REFUSED_DATAGRAM_SIZE. */
   void refuseAnotherVersion(const network::IncomingDatagram& datagram,
                             engine::Duration now);
-  void drop(const network::Endpoint& sender, std::string_view reason,
-            engine::Duration now);
   void answer(const network::Endpoint& sender,
               const network::ConnectionRequest& request, engine::Duration now);
   /** @brief Sends @p player its ConnectionAccepted, with the entity types of
@@ -135,8 +126,8 @@ class ConnectionAcceptor {
   std::random_device random_;
   bool gameInProgress_{false};
   logging::Logger logger_;
-  logging::ThrottledLog dropLog_{std::string{LOBBY_LOGGER_NAME},
-                                 network::REJECTION_LINE_INTERVAL};
+  RequestReader<network::ConnectionRequest> requests_{
+      std::string{LOBBY_LOGGER_NAME}, NO_REQUEST_DROP_REASON};
   logging::ThrottledLog failureLog_{std::string{LOBBY_LOGGER_NAME},
                                     network::REJECTION_LINE_INTERVAL};
 };

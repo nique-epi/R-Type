@@ -19,13 +19,14 @@ enum class RejectionCause : std::uint8_t {
   ForeignHeader,
   /** @brief Message sizes that do not add up to the end of the datagram. */
   MessageSizes,
-  /** @brief From a sender that was not admitted, with no connection request. */
+  /** @brief From a sender that was not admitted, with no message sent outside
+   * any session. */
   Stranger,
   /** @brief From the address of an admitted player, with another token. */
   WrongSessionToken,
   /**
    * @brief Over the rate limit of its sender, whether a player or an address
-   * and port among the connection requests.
+   * and port among the requests sent outside any session.
    */
   OverRateLimit,
   /** @brief The datagram that put its sender over the limit once too often,
@@ -37,6 +38,8 @@ enum class RejectionCause : std::uint8_t {
   PlayerQueueFull,
   /** @brief Made the connection request queue discard its oldest datagram. */
   RequestQueueFull,
+  /** @brief Made the information request queue discard its oldest datagram. */
+  InformationQueueFull,
 };
 
 }  // namespace rtype::server
