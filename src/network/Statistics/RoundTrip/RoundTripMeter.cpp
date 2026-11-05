@@ -38,15 +38,10 @@ std::optional<RoundTripFigures> RoundTripMeter::figures() const {
 
 void RoundTripMeter::measure(const HeartbeatEcho& echo,
                              std::chrono::nanoseconds receivedAt) {
-  const std::uint32_t sinceSent = wireMicrosecondsOf(receivedAt) - echo.sentAt;
-  if (echo.heldFor > sinceSent) {
-    return;
+  if (const std::optional<std::chrono::microseconds> roundTrip =
+          echoedRoundTrip(echo, receivedAt)) {
+    estimator_.add(*roundTrip);
   }
-  const std::chrono::microseconds roundTrip{sinceSent - echo.heldFor};
-  if (roundTrip > LONGEST_ROUND_TRIP) {
-    return;
-  }
-  estimator_.add(roundTrip);
 }
 
 }  // namespace rtype::network

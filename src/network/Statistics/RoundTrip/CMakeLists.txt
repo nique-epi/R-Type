@@ -11,6 +11,8 @@ target_link_libraries(rtype_network_statistics_round_trip
     rtype_network_heartbeat
     rtype_network_protocol
     rtype_network_round_trips
+    rtype_network_server_information
+    rtype_network_server_information_request
 )
 
 rtype_enable_warnings(rtype_network_statistics_round_trip)
