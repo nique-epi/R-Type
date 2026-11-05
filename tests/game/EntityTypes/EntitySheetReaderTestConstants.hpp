@@ -19,6 +19,10 @@ constexpr std::string_view SHIP_GAMEPLAY =
     "[gameplay]\nside = \"player\"\npilot = \"player\"\n";
 constexpr std::string_view MISSILE_GAMEPLAY =
     "[gameplay]\nside = \"player_missile\"\npilot = \"straight\"\n";
+constexpr std::string_view ENEMY_MISSILE_GAMEPLAY =
+    "[gameplay]\nside = \"enemy_missile\"\npilot = \"straight\"\n";
+constexpr std::string_view WEAVING_MISSILE_GAMEPLAY =
+    "[gameplay]\nside = \"player_missile\"\npilot = \"weave\"\n";
 constexpr std::string_view GAMEPLAY_WITHOUT_SIDE =
     "[gameplay]\npilot = \"straight\"\n";
 constexpr std::string_view GAMEPLAY_WITHOUT_PILOT =
@@ -56,6 +60,10 @@ constexpr std::string_view UNKNOWN_MOTION =
     "[gameplay.motion]\nkind = \"drift\"\ntop_speed = 240\n";
 constexpr std::string_view LEFT_HEADING_TABLE =
     "[gameplay.behaviour]\nheading = -1\n";
+constexpr std::string_view RIGHT_HEADING_TABLE =
+    "[gameplay.behaviour]\nheading = 1\n";
+constexpr std::string_view STILL_HEADING_TABLE =
+    "[gameplay.behaviour]\nheading = 0\n";
 constexpr std::string_view TOO_FAR_HEADING_TABLE =
     "[gameplay.behaviour]\nheading = 2\n";
 constexpr std::string_view HEADING_TABLE_WITH_AN_UNKNOWN_SETTING =
@@ -87,5 +95,9 @@ constexpr std::string_view TEXT_THAT_IS_NOT_TOML = "[gameplay\n";
 constexpr std::string_view PILOT_DOTTED_KEY = "gameplay.pilot";
 constexpr std::string_view PLAYER_PILOT_RULE_TEXT =
     "a player pilots a body of side player";
+
+/** @brief The text a refused missile heading is told by. */
+constexpr std::string_view MISSILE_HEADING_RULE_TEXT =
+    "a missile flies towards the edge that removes it";
 
 }  // namespace rtype::game::testing

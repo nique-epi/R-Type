@@ -76,6 +76,7 @@ A sheet whose keys are each valid is refused when it does not hold together:
 - A `player` pilot steers a body of side `player`, and only such a body.
 - A body of side `player` moves as a `ship`, and only such a body. Its hitbox is 128 × 64 (`SHIP_WIDTH` × `SHIP_HEIGHT`, `src/game/ShipControl/ShipControlConstants.hpp`), the box `shipAfter()` keeps on screen.
 - A missile, of side `player_missile` or `enemy_missile`, has no gun.
+- A missile flies towards the edge that removes it (see [Piloted bodies](/R-Type/server/#piloted-bodies-pilotsystem-and-playfieldexitsystem)): on its first tick its pilot steers a missile of side `player_missile` to the right and one of side `enemy_missile` to the left. A `straight` heading of 1 for the first, of -1 for the second; the `weave` goes left, so it may pilot a missile of an enemy only. A missile flying the other way, or staying, would never be removed when it hits nothing.
 - `[gameplay.behaviour]` stands only when the behaviour of the pilot declares settings, and then holds exactly those settings.
 - A gun fires a sheet of the folder: of side `player_missile` for a shooter of side `player`, of side `enemy_missile` for any other shooter.
 - The waves file names enemies among the sheets of side `enemy` (see [Writing the waves file](/R-Type/waves-file/#enemies)).
@@ -135,6 +136,7 @@ Each program stops on the first error and exits with code 1. The server prints `
 | a weave too deep (`amplitude = 49`) | `…/entities/weaver.toml:24:13: gameplay.behaviour.amplitude must be an integer from 0 to 48` |
 | a behaviour table on the ship | `…/entities/ship.toml:39:1: gameplay.behaviour: only a behaviour that declares settings has a behaviour table` |
 | a gun on a missile | `…/entities/enemy_missile.toml:38:1: gameplay.gun: a missile has no gun` |
+| a missile flying away from its edge (`heading = -1` on `player_missile`) | `…/entities/player_missile.toml:14:9: gameplay.pilot: a missile flies towards the edge that removes it: the right one for a missile of a player, the left one for a missile of an enemy` |
 | a ship of another box | `…/entities/ship.toml:15:1: gameplay.hitbox: a ship collides with the box shipAfter() keeps on screen` |
 | a projectile no sheet has (`"bullet"`) | `…/entities/drifter.toml:35:14: gameplay.gun.projectile: unknown value "bullet"; known: drifter, enemy_missile, player_missile, ship, weaver` |
 | a projectile of the wrong side (`"player_missile"` on a Bydo) | `…/entities/drifter.toml:35:14: gameplay.gun.projectile: a player fires missiles of a player, an enemy missiles of an enemy` |

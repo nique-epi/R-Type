@@ -104,6 +104,9 @@ constexpr std::string_view SHIP_HITBOX_RULE =
 constexpr std::string_view MISSILE_GUN_RULE = "a missile has no gun";
 constexpr std::string_view BEHAVIOUR_TABLE_RULE =
     "only a behaviour that declares settings has a behaviour table";
+constexpr std::string_view MISSILE_HEADING_RULE =
+    "a missile flies towards the edge that removes it: the right one for a "
+    "missile of a player, the left one for a missile of an enemy";
 constexpr std::string_view PROJECTILE_SIDE_RULE =
     "a player fires missiles of a player, an enemy missiles of an enemy";
 

@@ -9,6 +9,7 @@
 #include <vector>
 #include "BehaviourRegistry.hpp"
 #include "BehaviourSetting.hpp"
+#include "BehaviourView.hpp"
 #include "CollisionBox.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
@@ -21,6 +22,7 @@
 #include "MotionKind.hpp"
 #include "MotionSheet.hpp"
 #include "PilotSheet.hpp"
+#include "Position.hpp"
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
 #include "ShipControlConstants.hpp"
@@ -216,14 +218,55 @@ void checkShipMotion(const EntitySheet& sheet,
   }
 }
 
+/** @returns Whether @p side is the side of a missile, of a player or of an
+ * enemy. */
+bool isAMissile(EntityType side) {
+  return side == EntityType::PlayerMissile || side == EntityType::EnemyMissile;
+}
+
 /** @throws InconsistentEntitySheetException when a missile has a gun. */
 void checkMissileHasNoGun(const EntitySheet& sheet,
                           const engine::DataFileTable& gameplay) {
-  const bool isAMissile = sheet.side == EntityType::PlayerMissile ||
-                          sheet.side == EntityType::EnemyMissile;
-  if (isAMissile && sheet.gun.has_value()) {
+  if (isAMissile(sheet.side) && sheet.gun.has_value()) {
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, GUN_KEY), MISSILE_GUN_RULE);
+  }
+}
+
+/** @returns The horizontal share of the Direction @p pilot asks of a body of
+ * @p motion on its first tick: below 0 to the left, above 0 to the right, 0
+ * for a body that stays. */
+float firstHorizontalSteeringOf(const PilotSheet& pilot,
+                                const MotionSheet& motion) {
+  const BehaviourView firstTick{.position = Position{},
+                                .origin = Position{},
+                                .age = engine::SIMULATION_TICK_DURATION,
+                                .elapsed = engine::SIMULATION_TICK_DURATION,
+                                .topSpeed = motion.topSpeed,
+                                .settings = pilot.settings};
+  return pilot.behaviour.get().steer(firstTick).direction.x;
+}
+
+/** @returns Whether a missile of @p side steered by @p horizontalSteering
+ * flies towards the edge PlayfieldExitSystem removes it at: the right one for
+ * a missile of a player, the left one for a missile of an enemy. */
+bool fliesTowardsItsEdge(EntityType side, float horizontalSteering) {
+  return side == EntityType::PlayerMissile ? horizontalSteering > 0.0F
+                                           : horizontalSteering < 0.0F;
+}
+
+/** @throws InconsistentEntitySheetException when the pilot of a missile does
+ * not steer it, on its first tick, towards the edge that removes it: such a
+ * missile that hits nothing would live for the rest of the game. */
+void checkMissileFliesTowardsItsEdge(const EntitySheet& sheet,
+                                     const engine::DataFileTable& gameplay) {
+  if (!isAMissile(sheet.side) || !sheet.pilot.has_value()) {
+    return;
+  }
+  if (!fliesTowardsItsEdge(
+          sheet.side, firstHorizontalSteeringOf(*sheet.pilot, sheet.motion))) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, PILOT_KEY), MISSILE_HEADING_RULE);
   }
 }
 
@@ -247,6 +290,7 @@ EntitySheet gameplayOf(const SheetText& sheet,
   checkPilotMatchesSide(read, gameplay);
   checkShipMotion(read, gameplay);
   checkMissileHasNoGun(read, gameplay);
+  checkMissileFliesTowardsItsEdge(read, gameplay);
   return read;
 }
 

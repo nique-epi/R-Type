@@ -20,9 +20,11 @@ namespace rtype::game {
  * nearest whole number of ticks, at least 1 for its interval: 333 ms are 20
  * ticks, 1500 ms are 90. Then the sheet must hold together: a player pilots a
  * body of side player and only it, such a body moves as a ship and collides
- * with the box of SHIP_WIDTH by SHIP_HEIGHT, only it moves as a ship, and a
- * missile has no gun. Every error names the file, the line, the column and the
- * dotted key.
+ * with the box of SHIP_WIDTH by SHIP_HEIGHT, only it moves as a ship, a
+ * missile has no gun, and its pilot steers it on its first tick towards the
+ * edge PlayfieldExitSystem removes it at: right for a missile of a player,
+ * left for one of an enemy. Every error names the file, the line, the column
+ * and the dotted key.
  *
  * @param behaviours The behaviours a pilot may name; the pilot of the sheet
  * refers to one of them, so they must outlive the sheet.

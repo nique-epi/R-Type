@@ -30,6 +30,7 @@ using rtype::game::testing::EMPTY_BEHAVIOUR_TABLE;
 using rtype::game::testing::EMPTY_HITBOX;
 using rtype::game::testing::ENEMY_GAMEPLAY;
 using rtype::game::testing::ENEMY_GUN;
+using rtype::game::testing::ENEMY_MISSILE_GAMEPLAY;
 using rtype::game::testing::ENEMY_MISSILE_SHEET;
 using rtype::game::testing::ENEMY_PILOTED_BY_A_PLAYER;
 using rtype::game::testing::EntitySheetReaderFixture;
@@ -46,6 +47,7 @@ using rtype::game::testing::HITBOX_WITHOUT_HEIGHT;
 using rtype::game::testing::intervalTicksOf;
 using rtype::game::testing::LEFT_HEADING_TABLE;
 using rtype::game::testing::MISSILE_GAMEPLAY;
+using rtype::game::testing::MISSILE_HEADING_RULE_TEXT;
 using rtype::game::testing::NARROW_SHIP_HITBOX;
 using rtype::game::testing::NO_HEALTH_TABLE;
 using rtype::game::testing::PILOT_DOTTED_KEY;
@@ -62,6 +64,7 @@ using rtype::game::testing::REQUIRED_DRIFTER_POINTS;
 using rtype::game::testing::REQUIRED_SHIP_FIRST_SHOT_TICKS;
 using rtype::game::testing::REQUIRED_SHIP_SHOT_TICKS;
 using rtype::game::testing::REQUIRED_WEAVE;
+using rtype::game::testing::RIGHT_HEADING_TABLE;
 using rtype::game::testing::SCORE_TABLE;
 using rtype::game::testing::settingsOf;
 using rtype::game::testing::SHIP_GAMEPLAY;
@@ -72,6 +75,7 @@ using rtype::game::testing::SHIP_MOTION_WITH_A_TOP_SPEED;
 using rtype::game::testing::STEADY_MOTION;
 using rtype::game::testing::STEADY_MOTION_IN_A_FLOAT;
 using rtype::game::testing::STEADY_MOTION_WITHOUT_TOP_SPEED;
+using rtype::game::testing::STILL_HEADING_TABLE;
 using rtype::game::testing::TEXT_THAT_IS_NOT_TOML;
 using rtype::game::testing::TOO_FAR_HEADING_TABLE;
 using rtype::game::testing::UNKNOWN_MOTION;
@@ -80,6 +84,7 @@ using rtype::game::testing::WEAVE_TABLE;
 using rtype::game::testing::WEAVE_TABLE_PERIOD_FIRST;
 using rtype::game::testing::WEAVE_TABLE_WITHOUT_PERIOD;
 using rtype::game::testing::WEAVER_GAMEPLAY;
+using rtype::game::testing::WEAVING_MISSILE_GAMEPLAY;
 using ::testing::ElementsAreArray;
 using ::testing::HasSubstr;
 
@@ -205,7 +210,7 @@ TEST_F(EntitySheetReaderFixture, ReadsThePointsOfItsScore) {
  */
 TEST_F(EntitySheetReaderFixture, TablesLeftOutGiveNothing) {
   const EntitySheet sheet = read({MISSILE_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION,
-                                  LEFT_HEADING_TABLE, APPEARANCE});
+                                  RIGHT_HEADING_TABLE, APPEARANCE});
 
   EXPECT_FALSE(sheet.health.has_value());
   EXPECT_FALSE(sheet.points.has_value());
@@ -642,6 +647,81 @@ TEST_F(EntitySheetReaderFixture, RefusesAShipOfAnotherBox) {
 TEST_F(EntitySheetReaderFixture, RefusesAMissileWithAGun) {
   EXPECT_THROW(
       static_cast<void>(read({MISSILE_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION,
-                              LEFT_HEADING_TABLE, ENEMY_GUN, APPEARANCE})),
+                              RIGHT_HEADING_TABLE, ENEMY_GUN, APPEARANCE})),
       InconsistentEntitySheetException);
+}
+
+/**
+ * Given a missile of a player whose straight heading is -1
+ * When its gameplay is read
+ * Then it is refused: it would fly left, and only the right edge removes it
+ */
+TEST_F(EntitySheetReaderFixture, RefusesAMissileOfAPlayerThatFliesLeft) {
+  EXPECT_THROW(
+      static_cast<void>(read({MISSILE_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION,
+                              LEFT_HEADING_TABLE, APPEARANCE})),
+      InconsistentEntitySheetException);
+}
+
+/**
+ * Given a missile of a player whose straight heading is 0
+ * When its gameplay is read
+ * Then it is refused: it would stay, and never reach the edge that removes it
+ */
+TEST_F(EntitySheetReaderFixture, RefusesAMissileOfAPlayerThatStays) {
+  EXPECT_THROW(
+      static_cast<void>(read({MISSILE_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION,
+                              STILL_HEADING_TABLE, APPEARANCE})),
+      InconsistentEntitySheetException);
+}
+
+/**
+ * Given a missile of a player piloted by the weave, which goes left
+ * When its gameplay is read
+ * Then it is refused: only the right edge removes it
+ */
+TEST_F(EntitySheetReaderFixture, RefusesAMissileOfAPlayerOnAWeave) {
+  EXPECT_THROW(
+      static_cast<void>(read({WEAVING_MISSILE_GAMEPLAY, BYDO_HITBOX,
+                              STEADY_MOTION, WEAVE_TABLE, APPEARANCE})),
+      InconsistentEntitySheetException);
+}
+
+/**
+ * Given a missile of an enemy whose straight heading is 1
+ * When its gameplay is read
+ * Then it is refused: it would fly right, and only the left edge removes it
+ */
+TEST_F(EntitySheetReaderFixture, RefusesAMissileOfAnEnemyThatFliesRight) {
+  EXPECT_THROW(
+      static_cast<void>(read({ENEMY_MISSILE_GAMEPLAY, BYDO_HITBOX,
+                              STEADY_MOTION, RIGHT_HEADING_TABLE, APPEARANCE})),
+      InconsistentEntitySheetException);
+}
+
+/**
+ * Given a missile of an enemy whose straight heading is -1
+ * When its gameplay is read
+ * Then it is read: it flies left, towards the edge that removes it
+ */
+TEST_F(EntitySheetReaderFixture, ReadsAMissileOfAnEnemyThatFliesLeft) {
+  const EntitySheet sheet =
+      read({ENEMY_MISSILE_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION,
+            LEFT_HEADING_TABLE, APPEARANCE});
+
+  EXPECT_EQ(sheet.side, EntityType::EnemyMissile);
+}
+
+/**
+ * Given a missile of a player whose straight heading is -1
+ * When its gameplay is read
+ * Then the refusal names the dotted key of the pilot and the rule
+ */
+TEST_F(EntitySheetReaderFixture, AMissileFlyingAwayNamesThePilotAndTheRule) {
+  const std::string message =
+      refusalOf({MISSILE_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION,
+                 LEFT_HEADING_TABLE, APPEARANCE});
+
+  EXPECT_THAT(message, HasSubstr(PILOT_DOTTED_KEY));
+  EXPECT_THAT(message, HasSubstr(MISSILE_HEADING_RULE_TEXT));
 }
