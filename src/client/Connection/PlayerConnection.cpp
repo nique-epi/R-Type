@@ -3,6 +3,8 @@
 #include <thread>
 #include "ConnectionConstants.hpp"
 #include "Endpoint.hpp"
+#include "IPlayerRoundTrips.hpp"
+#include "InstallContext.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerSessionParts.hpp"
@@ -47,6 +49,15 @@ void PlayerConnection::leave() {
   }
 }
 
+void PlayerConnection::provideParts(engine::InstallContext& context) {
+  context.provide(session_);
+  context.provide(waitingRoom_);
+  context.provide(entityMessages_);
+  context.provide(leaderboard_);
+  context.provide<IPlayerRoundTrips>(roundTrips_);
+  context.provide(network_.traffic());
+}
+
 NetworkThread& PlayerConnection::network() { return network_; }
 
 ServerSession& PlayerConnection::session() { return session_; }
@@ -62,9 +73,5 @@ const WaitingRoom& PlayerConnection::waitingRoom() const {
 EntityMessageQueue& PlayerConnection::entityMessages() {
   return entityMessages_;
 }
-
-ServerLeaderboard& PlayerConnection::leaderboard() { return leaderboard_; }
-
-RoundTripWatch& PlayerConnection::roundTrips() { return roundTrips_; }
 
 }  // namespace rtype::client

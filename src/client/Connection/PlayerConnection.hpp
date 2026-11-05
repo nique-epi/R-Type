@@ -3,6 +3,7 @@
 #include "DatagramRouter.hpp"
 #include "EntityMessageQueue.hpp"
 #include "GameLoadedReminder.hpp"
+#include "InstallContext.hpp"
 #include "MessageDispatcher.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkThread.hpp"
@@ -53,6 +54,15 @@ class PlayerConnection {
    */
   void leave();
 
+  /**
+   * @brief Provides to the modules installed after the one installing it the
+   * parts of this connection: the ServerSession, the WaitingRoom, the
+   * EntityMessageQueue, the ServerLeaderboard, the RoundTripWatch as
+   * IPlayerRoundTrips and the TrafficCounters of the socket. They must outlive
+   * every module that requires them.
+   */
+  void provideParts(engine::InstallContext& context);
+
   /** @returns The socket on its network thread: open() it before the first
    * update(), close() it after leave(), read its traffic(). */
   [[nodiscard]] NetworkThread& network();
@@ -62,8 +72,6 @@ class PlayerConnection {
   [[nodiscard]] WaitingRoom& waitingRoom();
   [[nodiscard]] const WaitingRoom& waitingRoom() const;
   [[nodiscard]] EntityMessageQueue& entityMessages();
-  [[nodiscard]] ServerLeaderboard& leaderboard();
-  [[nodiscard]] RoundTripWatch& roundTrips();
 
  private:
   NetworkThread network_;

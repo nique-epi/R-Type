@@ -4,7 +4,6 @@
 #include <vector>
 #include "ClientConstants.hpp"
 #include "ConnectionConstants.hpp"
-#include "IPlayerRoundTrips.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConditions.hpp"
@@ -25,12 +24,7 @@ std::vector<std::string> ClientConnectionModule::dependencies() const {
 }
 
 void ClientConnectionModule::install(engine::InstallContext& context) {
-  context.provide(connection_.session());
-  context.provide(connection_.waitingRoom());
-  context.provide(connection_.entityMessages());
-  context.provide(connection_.leaderboard());
-  context.provide<IPlayerRoundTrips>(connection_.roundTrips());
-  context.provide(connection_.network().traffic());
+  connection_.provideParts(context);
   context.addWork(NETWORK_STAGE, [this](engine::Duration elapsed) {
     connection_.update(elapsed);
   });
