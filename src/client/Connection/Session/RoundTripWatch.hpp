@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <optional>
 #include <vector>
+#include "Heartbeat.hpp"
 #include "IClock.hpp"
 #include "IPlayerRoundTrips.hpp"
 #include "IServerClock.hpp"
@@ -11,6 +12,7 @@
 #include "ISessionOutbox.hpp"
 #include "LobbyState.hpp"
 #include "MessageDispatcher.hpp"
+#include "MessageOrigin.hpp"
 #include "RoundTripFigures.hpp"
 #include "RoundTripMeter.hpp"
 #include "RoundTrips.hpp"
