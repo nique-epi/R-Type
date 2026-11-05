@@ -6,9 +6,11 @@
 #include "EntityIdConstants.hpp"
 #include "EntitySpawnSender.hpp"
 #include "EntitySpawned.hpp"
+#include "Lives.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
+#include "ShipSpawnAnnouncerParts.hpp"
 #include "ShipStartPosition.hpp"
 #include "World.hpp"
 #include "WorldState.hpp"
@@ -30,22 +32,32 @@ network::EntitySpawned shipSpawnAt(std::uint32_t shipId,
 
 }  // namespace
 
-ShipSpawnAnnouncer::ShipSpawnAnnouncer(game::World& world, PlayerRoster& roster,
-                                       Send send)
-    : world_(&world), roster_(&roster), send_(std::move(send)) {}
+ShipSpawnAnnouncer::ShipSpawnAnnouncer(ShipSpawnAnnouncerParts parts)
+    : world_(&parts.world.get()),
+      roster_(&parts.roster.get()),
+      send_(std::move(parts.send)),
+      ship_(parts.ship) {}
 
 void ShipSpawnAnnouncer::onPlayerJoined(ConnectedPlayer& player) {
   if (player.shipEntityId != identifiers::NO_ENTITY_ID) {
     return;
   }
-  player.shipEntityId = world_->spawnPlayer(
-      game::shipStartPosition(player.playerNumber, network::MAXIMUM_PLAYERS),
-      player.livesWithoutShip);
+  giveShipTo(player);
   for (ConnectedPlayer* const other : roster_->connected()) {
     announce(*other, player);
     if (other != &player && other->shipEntityId != identifiers::NO_ENTITY_ID) {
       announce(player, *other);
     }
+  }
+}
+
+void ShipSpawnAnnouncer::giveShipTo(ConnectedPlayer& player) {
+  player.shipEntityId = world_->spawn(
+      ship_.get(),
+      game::shipStartPosition(player.playerNumber, network::MAXIMUM_PLAYERS));
+  auto* const lives = world_->shipComponentOf<game::Lives>(player.shipEntityId);
+  if (lives != nullptr) {
+    lives->count = player.livesWithoutShip;
   }
 }
 

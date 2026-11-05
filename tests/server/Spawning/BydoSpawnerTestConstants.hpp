@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
-#include "BydoKind.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "TicksToReach.hpp"
 #include "TimeConstants.hpp"
 #include "game/Waves/WaveTestConstants.hpp"
@@ -27,13 +27,16 @@ constexpr std::size_t TICKS_TO_THE_SECOND_BYDO = engine::testing::ticksToReach(
     game::testing::TEST_WAVE_CURVE.firstWave.spawnInterval);
 
 /**
- * @brief The kinds the Bydos of the spawner tests take in turn: today's
+ * @brief The sheets the enemies of the spawner tests take in turn: today's
  * Drifter then Weaver, and a cycle that starts with the Weaver.
  */
-constexpr std::array TEST_ENEMY_CYCLE{game::BydoKind::Drifter,
-                                      game::BydoKind::Weaver};
-constexpr std::array WEAVER_FIRST_CYCLE{game::BydoKind::Weaver,
-                                        game::BydoKind::Drifter};
+constexpr std::array TEST_ENEMY_CYCLE{game::testing::DRIFTER_SHEET,
+                                      game::testing::WEAVER_SHEET};
+constexpr std::array WEAVER_FIRST_CYCLE{game::testing::WEAVER_SHEET,
+                                        game::testing::DRIFTER_SHEET};
+
+/** @brief A cycle naming a sheet the server does not have. */
+constexpr std::array NO_SHEET_CYCLE{std::string_view{"no_such_sheet"}};
 
 /**
  * @brief The seed the spawner tests start from, and another one, which gives

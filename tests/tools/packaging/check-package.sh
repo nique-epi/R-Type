@@ -19,8 +19,8 @@
 #
 #   3. Does the server find its files from any folder?
 #      It is started from an empty folder, far from the package. It stops at
-#      once when it does not find assets/waves next to its executable; so if
-#      it is still running after 3 seconds, it found it.
+#      once when it does not find assets/entities and assets/waves next to its
+#      executable; so if it is still running after 3 seconds, it found them.
 
 set -eu
 
@@ -94,6 +94,8 @@ check_each_package_holds_only_its_program() {
     fail "the client package has no assets/sprites"
   [ -d "$server_folder/assets/waves" ] ||
     fail "the server package has no assets/waves"
+  [ -d "$server_folder/assets/entities" ] ||
+    fail "the server package has no assets/entities"
   [ ! -e "$(dirname "$client_program")/r-type_server$exe" ] ||
     fail "the client package also holds the server"
   [ ! -e "$client_folder/assets/waves" ] ||
@@ -134,14 +136,15 @@ check_the_client_starts() {
 }
 
 # Question 3: does the server find its files from any folder? It stops at once
-# without assets/waves, so still running after 3 seconds means it found it.
+# without assets/entities or assets/waves, so still running after 3 seconds
+# means it found them.
 check_the_server_finds_its_files() {
   echo "3. The server finds its files from any folder"
   "$server_program" > /dev/null 2>&1 &
   server_process=$!
   sleep 3
   kill -0 "$server_process" 2> /dev/null ||
-    fail "the server stopped: it did not find assets/waves next to it"
+    fail "the server stopped: it did not find its assets next to it"
   kill "$server_process"
   passed "the server is still running after 3 seconds"
 }

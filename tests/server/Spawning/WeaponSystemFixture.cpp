@@ -4,25 +4,32 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "BydoKind.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "NetworkIdentity.hpp"
 #include "OutgoingDatagram.hpp"
 #include "Position.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "TimeConstants.hpp"
+#include "WeaponSystemParts.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::server::testing {
 
 WeaponSystemFixture::WeaponSystemFixture()
-    : weapons_(world_, roster_, [this](network::OutgoingDatagram datagram) {
-        sent_.push_back(std::move(datagram));
-      }) {}
+    : weapons_(
+          WeaponSystemParts{.world = world_,
+                            .roster = roster_,
+                            .send =
+                                [this](network::OutgoingDatagram datagram) {
+                                  sent_.push_back(std::move(datagram));
+                                },
+                            .types = game::testing::shippedEntitySheets()}) {}
 
 void WeaponSystemFixture::connectWithoutShip(std::size_t index) {
   EXPECT_NE(roster_.add(playerEndpoint(index), std::string{PLAYER_NICKNAME},
@@ -31,7 +38,9 @@ void WeaponSystemFixture::connectWithoutShip(std::size_t index) {
 }
 
 void WeaponSystemFixture::bydoAt(game::Position position) {
-  world_.spawnBydo(position, game::BydoKind::Drifter);
+  world_.spawn(
+      game::testing::shippedEntitySheets().named(game::testing::DRIFTER_SHEET),
+      position);
 }
 
 void WeaponSystemFixture::runTicks(std::size_t count) {

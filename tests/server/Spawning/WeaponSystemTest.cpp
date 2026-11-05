@@ -7,7 +7,6 @@
 #include "EntityIdConstants.hpp"
 #include "EntitySpawned.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
-#include "MissileStartPosition.hpp"
 #include "OutgoingDatagram.hpp"
 #include "Position.hpp"
 #include "SentDatagrams.hpp"
@@ -43,10 +42,10 @@ TEST_F(ShipWeaponFixture, AnnouncesTheMissileInFrontOfTheShip) {
 
   const std::vector<network::EntitySpawned> spawns = spawnsSentTo(FIRST_PLAYER);
   ASSERT_EQ(spawns.size(), 1U);
-  const game::Position start = game::missileStartPosition(shipOf(player));
   EXPECT_EQ(spawns.front().entityType, network::WireEntityType::PlayerMissile);
-  EXPECT_NEAR(spawns.front().x, start.x, WIRE_COORDINATE_TOLERANCE);
-  EXPECT_NEAR(spawns.front().y, start.y, WIRE_COORDINATE_TOLERANCE);
+  EXPECT_NEAR(spawns.front().x, FIRST_SHIP_MISSILE_X,
+              WIRE_COORDINATE_TOLERANCE);
+  EXPECT_NEAR(spawns.front().y, shipOf(player).y, WIRE_COORDINATE_TOLERANCE);
 }
 
 /**

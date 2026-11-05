@@ -32,8 +32,14 @@ constexpr float REQUIRED_PLAYER_MISSILE_HEIGHT = 24.0F;
 constexpr float REQUIRED_PLAYER_MISSILE_SPEED = 960.0F;
 constexpr float REQUIRED_ENEMY_MISSILE_SIZE = 32.0F;
 constexpr float REQUIRED_ENEMY_MISSILE_SPEED = 360.0F;
-constexpr std::string_view ENEMY_MISSILE_NAME_IN_TESTS = "enemy_missile";
 constexpr std::string_view REQUIRED_STRAIGHT_NAME = "straight";
 constexpr std::string_view REQUIRED_WEAVE_NAME = "weave";
+
+/** @brief The names of the sheets the game ships, as the tests ask for them. */
+constexpr std::string_view SHIP_SHEET = "ship";
+constexpr std::string_view DRIFTER_SHEET = "drifter";
+constexpr std::string_view WEAVER_SHEET = "weaver";
+constexpr std::string_view PLAYER_MISSILE_SHEET = "player_missile";
+constexpr std::string_view ENEMY_MISSILE_SHEET = "enemy_missile";
 
 }  // namespace rtype::game::testing

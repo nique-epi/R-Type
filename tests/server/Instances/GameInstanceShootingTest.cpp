@@ -1,15 +1,15 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
-#include "BydoKind.hpp"
-#include "BydoPointsConstants.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EntityDestruction.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameInstanceShootingFixture.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "GameState.hpp"
 #include "SentDatagrams.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "Spawning/BydoSpawnerTestConstants.hpp"
 #include "Spawning/WeaponSystemTestConstants.hpp"
 #include "World.hpp"
@@ -180,7 +180,7 @@ TEST_F(GameInstanceShootingFixture, CreditsTheBydoToThePlayerWhoFired) {
   const ConnectedPlayer* const player =
       game().roster().find(playerEndpoint(FIRST_PLAYER));
   ASSERT_NE(player, nullptr);
-  EXPECT_EQ(player->score, game::DRIFTER_POINTS);
+  EXPECT_EQ(player->score, game::testing::REQUIRED_DRIFTER_POINTS);
 }
 
 /**
@@ -219,7 +219,9 @@ TEST_F(GameInstanceShootingFixture, DestroysABydoInTheNextGameToo) {
  */
 TEST_F(GameInstanceShootingFixture, BydosFireWhileInProgress) {
   startGame();
-  world().spawnBydo(BYDO_FAR_AHEAD_OF_THE_SHIPS, game::BydoKind::Drifter);
+  world().spawn(
+      game::testing::shippedEntitySheets().named(game::testing::DRIFTER_SHEET),
+      BYDO_FAR_AHEAD_OF_THE_SHIPS);
 
   runTicksDispatching(ONE_AND_A_HALF_SECONDS_IN_TICKS);
 

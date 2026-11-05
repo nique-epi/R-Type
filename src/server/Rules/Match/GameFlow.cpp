@@ -26,6 +26,7 @@
 #include "PlayerRoster.hpp"
 #include "TimeConstants.hpp"
 #include "WeaponSystem.hpp"
+#include "WeaponSystemParts.hpp"
 #include "World.hpp"
 #include "WorldSlot.hpp"
 
@@ -189,9 +190,13 @@ void GameFlow::buildWorld() {
                        .roster = game_.roster.get(),
                        .send = game_.send,
                        .seed = game_.settings.seed + worldsBuilt_,
-                       .waves = game_.settings.waves});
-  weaponSystem_ =
-      std::make_unique<WeaponSystem>(world, game_.roster.get(), game_.send);
+                       .waves = game_.settings.waves,
+                       .types = game_.settings.types});
+  weaponSystem_ = std::make_unique<WeaponSystem>(
+      WeaponSystemParts{.world = world,
+                        .roster = game_.roster.get(),
+                        .send = game_.send,
+                        .types = game_.settings.types});
   lifeKeeper_ = std::make_unique<LifeKeeper>(
       LifeKeeperParts{.events = game_.events.get(),
                       .world = world,

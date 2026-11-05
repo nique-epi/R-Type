@@ -17,11 +17,12 @@ namespace rtype::game {
  * announces each one with an EntityDestruction Removed.
  *
  * An enemy is out when its Position is more than BYDO_EXIT_MARGIN beyond the
- * left edge, a missile of an enemy when its Position is more than half of
- * ENEMY_MISSILE_WIDTH beyond that edge, and a missile of a player when its
- * Position is more than half of PLAYER_MISSILE_WIDTH beyond the right edge:
- * exactly the margin beyond is still in. The enemies and their missiles fly
- * left, so neither is out past the right edge, where the Bydos appear. Only
+ * left edge, a missile of an enemy when its Position is more than half the
+ * width of its CollisionBox beyond that edge, and a missile of a player when
+ * its Position is more than half that width beyond the right edge: exactly
+ * the margin beyond is still in. A missile without a CollisionBox is out as
+ * soon as its Position passes the edge. The enemies and their missiles fly
+ * left, so neither is out past the right edge, where the enemies appear. Only
  * entities that have a NetworkIdentity are removed. A ship is never removed by
  * leaving. The bus must outlive this object.
  */

@@ -33,8 +33,8 @@ using rtype::game::testing::DRIFTER_NAME_IN_TESTS;
 using rtype::game::testing::DRIFTER_NUMBER_AMONG_THREE;
 using rtype::game::testing::DRIFTER_SHEET_TEXT;
 using rtype::game::testing::EMPTY_NAME;
-using rtype::game::testing::ENEMY_MISSILE_NAME_IN_TESTS;
 using rtype::game::testing::ENEMY_MISSILE_NUMBER_AMONG_THREE;
+using rtype::game::testing::ENEMY_MISSILE_SHEET;
 using rtype::game::testing::ENEMY_MISSILE_SHEET_TEXT;
 using rtype::game::testing::enemyMissileSheets;
 using rtype::game::testing::firstShotTicksOf;
@@ -93,13 +93,13 @@ TEST(EntitySheets, NumbersTheSheetsInTheOrderOfTheirNames) {
   const std::vector<SheetText> texts{
       sheetText(WEAVER_NAME_IN_TESTS, WEAVER_SHEET_TEXT),
       sheetText(DRIFTER_NAME_IN_TESTS, DRIFTER_SHEET_TEXT),
-      sheetText(ENEMY_MISSILE_NAME_IN_TESTS, ENEMY_MISSILE_SHEET_TEXT)};
+      sheetText(ENEMY_MISSILE_SHEET, ENEMY_MISSILE_SHEET_TEXT)};
 
   const EntitySheets sheets = EntitySheets::fromTexts(texts);
 
   EXPECT_EQ(sheets.named(DRIFTER_NAME_IN_TESTS).number,
             DRIFTER_NUMBER_AMONG_THREE);
-  EXPECT_EQ(sheets.named(ENEMY_MISSILE_NAME_IN_TESTS).number,
+  EXPECT_EQ(sheets.named(ENEMY_MISSILE_SHEET).number,
             ENEMY_MISSILE_NUMBER_AMONG_THREE);
   EXPECT_EQ(sheets.named(WEAVER_NAME_IN_TESTS).number,
             WEAVER_NUMBER_AMONG_THREE);
@@ -114,7 +114,7 @@ TEST(EntitySheets, FindsASheetByItsNumber) {
   const std::vector<SheetText> texts{
       sheetText(WEAVER_NAME_IN_TESTS, WEAVER_SHEET_TEXT),
       sheetText(DRIFTER_NAME_IN_TESTS, DRIFTER_SHEET_TEXT),
-      sheetText(ENEMY_MISSILE_NAME_IN_TESTS, ENEMY_MISSILE_SHEET_TEXT)};
+      sheetText(ENEMY_MISSILE_SHEET, ENEMY_MISSILE_SHEET_TEXT)};
   const EntitySheets sheets = EntitySheets::fromTexts(texts);
 
   const EntitySheet* const third = sheets.numbered(WEAVER_NUMBER_AMONG_THREE);
@@ -132,7 +132,7 @@ TEST(EntitySheets, NumberZeroNamesNoSheet) {
   const std::vector<SheetText> texts{
       sheetText(WEAVER_NAME_IN_TESTS, WEAVER_SHEET_TEXT),
       sheetText(DRIFTER_NAME_IN_TESTS, DRIFTER_SHEET_TEXT),
-      sheetText(ENEMY_MISSILE_NAME_IN_TESTS, ENEMY_MISSILE_SHEET_TEXT)};
+      sheetText(ENEMY_MISSILE_SHEET, ENEMY_MISSILE_SHEET_TEXT)};
   const EntitySheets sheets = EntitySheets::fromTexts(texts);
 
   EXPECT_EQ(sheets.numbered(NO_SHEET_NUMBER), nullptr);
@@ -147,7 +147,7 @@ TEST(EntitySheets, ANumberPastTheLastNamesNoSheet) {
   const std::vector<SheetText> texts{
       sheetText(WEAVER_NAME_IN_TESTS, WEAVER_SHEET_TEXT),
       sheetText(DRIFTER_NAME_IN_TESTS, DRIFTER_SHEET_TEXT),
-      sheetText(ENEMY_MISSILE_NAME_IN_TESTS, ENEMY_MISSILE_SHEET_TEXT)};
+      sheetText(ENEMY_MISSILE_SHEET, ENEMY_MISSILE_SHEET_TEXT)};
   const EntitySheets sheets = EntitySheets::fromTexts(texts);
 
   EXPECT_EQ(sheets.numbered(NUMBER_PAST_THE_THREE), nullptr);
@@ -161,7 +161,7 @@ TEST(EntitySheets, ANumberPastTheLastNamesNoSheet) {
 TEST(EntitySheets, RefusesANameNoSheetHas) {
   const std::vector<SheetText> texts{
       sheetText(DRIFTER_NAME_IN_TESTS, DRIFTER_SHEET_TEXT),
-      sheetText(ENEMY_MISSILE_NAME_IN_TESTS, ENEMY_MISSILE_SHEET_TEXT)};
+      sheetText(ENEMY_MISSILE_SHEET, ENEMY_MISSILE_SHEET_TEXT)};
   const EntitySheets sheets = EntitySheets::fromTexts(texts);
 
   EXPECT_THROW(static_cast<void>(sheets.named(NAME_OF_NO_SHEET)),
@@ -177,7 +177,7 @@ TEST(EntitySheets, RefusesANameNoSheetHas) {
 TEST(EntitySheets, FindsWhatAGunFires) {
   const std::vector<SheetText> texts{
       sheetText(DRIFTER_NAME_IN_TESTS, DRIFTER_SHEET_TEXT),
-      sheetText(ENEMY_MISSILE_NAME_IN_TESTS, ENEMY_MISSILE_SHEET_TEXT)};
+      sheetText(ENEMY_MISSILE_SHEET, ENEMY_MISSILE_SHEET_TEXT)};
   const EntitySheets sheets = EntitySheets::fromTexts(texts);
   const EntitySheet& drifter = sheets.named(DRIFTER_NAME_IN_TESTS);
   ASSERT_TRUE(drifter.gun.has_value());
@@ -185,7 +185,7 @@ TEST(EntitySheets, FindsWhatAGunFires) {
   const EntitySheet& projectile =
       sheets.projectileOf(drifter.gun.value_or(rtype::game::GunSheet{}));
 
-  EXPECT_EQ(projectile.name, ENEMY_MISSILE_NAME_IN_TESTS);
+  EXPECT_EQ(projectile.name, ENEMY_MISSILE_SHEET);
 }
 
 /**
@@ -318,7 +318,7 @@ TEST(EntitySheets, RefusesTwoSheetsOfTheSameName) {
 TEST(EntitySheets, KeepsTheTextsInTheOrderOfTheNames) {
   const std::vector<SheetText> texts{
       sheetText(WEAVER_NAME_IN_TESTS, WEAVER_SHEET_TEXT),
-      sheetText(ENEMY_MISSILE_NAME_IN_TESTS, ENEMY_MISSILE_SHEET_TEXT)};
+      sheetText(ENEMY_MISSILE_SHEET, ENEMY_MISSILE_SHEET_TEXT)};
 
   const EntitySheets sheets = EntitySheets::fromTexts(texts);
 
@@ -337,7 +337,7 @@ TEST(EntitySheets, KeepsTheTextsInTheOrderOfTheNames) {
 TEST(EntitySheets, APilotStillHoldsAfterTheSheetsAreMoved) {
   const std::vector<SheetText> texts{
       sheetText(WEAVER_NAME_IN_TESTS, WEAVER_SHEET_TEXT),
-      sheetText(ENEMY_MISSILE_NAME_IN_TESTS, ENEMY_MISSILE_SHEET_TEXT)};
+      sheetText(ENEMY_MISSILE_SHEET, ENEMY_MISSILE_SHEET_TEXT)};
   EntitySheets read = EntitySheets::fromTexts(texts);
 
   const EntitySheets moved{std::move(read)};
@@ -382,7 +382,7 @@ TEST(EntitySheets, TheShippedDrifterIsTodaysDrifter) {
   EXPECT_EQ(drifter.points.value_or(0U), REQUIRED_DRIFTER_POINTS);
   EXPECT_EQ(intervalTicksOf(drifter), REQUIRED_BYDO_SHOT_TICKS);
   EXPECT_EQ(firstShotTicksOf(drifter), REQUIRED_BYDO_SHOT_TICKS);
-  EXPECT_EQ(projectileNameOf(drifter), ENEMY_MISSILE_NAME_IN_TESTS);
+  EXPECT_EQ(projectileNameOf(drifter), ENEMY_MISSILE_SHEET);
 }
 
 /**
@@ -405,7 +405,7 @@ TEST(EntitySheets, TheShippedWeaverIsTodaysWeaver) {
   EXPECT_EQ(weaver.health.value_or(0), REQUIRED_BYDO_HEALTH);
   EXPECT_EQ(weaver.points.value_or(0U), REQUIRED_WEAVER_POINTS);
   EXPECT_EQ(intervalTicksOf(weaver), REQUIRED_BYDO_SHOT_TICKS);
-  EXPECT_EQ(projectileNameOf(weaver), ENEMY_MISSILE_NAME_IN_TESTS);
+  EXPECT_EQ(projectileNameOf(weaver), ENEMY_MISSILE_SHEET);
 }
 
 /**
@@ -457,7 +457,7 @@ TEST(EntitySheets, TheShippedMissileOfAPlayerIsTodaysMissile) {
 TEST(EntitySheets, TheShippedMissileOfAnEnemyIsTodaysMissile) {
   const EntitySheets& sheets = shippedEntitySheets();
 
-  const EntitySheet& missile = sheets.named(ENEMY_MISSILE_NAME_IN_TESTS);
+  const EntitySheet& missile = sheets.named(ENEMY_MISSILE_SHEET);
 
   EXPECT_EQ(missile.side, EntityType::EnemyMissile);
   EXPECT_FLOAT_EQ(missile.hitbox.width, REQUIRED_ENEMY_MISSILE_SIZE);

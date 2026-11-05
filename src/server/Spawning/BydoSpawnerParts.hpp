@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <functional>
+#include "EntitySheets.hpp"
 #include "EntitySpawnSender.hpp"
 #include "WavePlan.hpp"
 
@@ -26,9 +27,12 @@ struct BydoSpawnerParts {
   /** @brief Where the random draws of the heights start; logged at info level
    * when the spawner is built. */
   std::uint32_t seed{};
-  /** @brief The waves of Bydos: their curve must be playable (see
-   * game::isPlayable) and their enemies must name at least one kind. */
+  /** @brief The waves of enemies: their curve must be playable (see
+   * game::isPlayable) and their enemies must name at least one sheet. */
   WavePlan waves;
+  /** @brief The sheets the enemies of the waves name; they must outlive the
+   * spawner. */
+  std::reference_wrapper<const game::EntitySheets> types;
 };
 
 }  // namespace rtype::server

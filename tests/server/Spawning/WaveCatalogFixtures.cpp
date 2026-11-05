@@ -5,6 +5,7 @@
 #include <string>
 #include <string_view>
 #include "ServerConstants.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "WaveCatalog.hpp"
 #include "WaveCatalogTestConstants.hpp"
 
@@ -47,7 +48,8 @@ std::string calmFileWithout(std::string_view key) {
 
 std::string errorReading(std::string_view text) {
   try {
-    static_cast<void>(WaveCatalog::fromText(text, TEST_FILE_NAME));
+    static_cast<void>(WaveCatalog::fromText(
+        text, TEST_FILE_NAME, game::testing::shippedEntitySheets()));
   } catch (const std::runtime_error& error) {
     return error.what();
   }
@@ -57,7 +59,8 @@ std::string errorReading(std::string_view text) {
 
 WaveCatalog shippedCatalog() {
   return WaveCatalog::fromFile(
-      std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} / WAVE_FILE_IN_ASSETS);
+      std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} / WAVE_FILE_IN_ASSETS,
+      game::testing::shippedEntitySheets());
 }
 
 std::string withCrlfLineEndings(std::string_view text) {

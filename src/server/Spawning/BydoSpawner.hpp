@@ -2,11 +2,12 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <random>
 #include <vector>
-#include "BydoKind.hpp"
 #include "BydoSpawnerParts.hpp"
+#include "EntitySheet.hpp"
 #include "EntitySpawnSender.hpp"
 #include "Logger.hpp"
 #include "PlayerRoster.hpp"
@@ -30,16 +31,17 @@ namespace rtype::server {
  * them at info level (`wave 2: 4 Bydos, one every 1750 ms`). The level holds
  * the waves of the curve: once the last of them is over, no wave follows.
  *
- * The Bydos take the kinds the enemies of the plan list, in turn, the cycle
+ * The Bydos take the sheets the enemies of the plan name, in turn, the cycle
  * carrying on from one wave to the next: with `drifter, weaver`, a Drifter,
- * which goes straight, then a Weaver, which weaves up and down, and so on. A
- * Bydo appears off screen past the right edge, at a height drawn from a random
- * generator (see game::bydoSpawnPosition); the kind uses no random draw, so a
- * seed still gives the same heights. The generator starts from the seed of the
- * parts, which is logged, so the same seed gives the same heights in the same
- * order. Every connected player is sent an EntitySpawned for the Bydo, as the
- * Entities section of the protocol page describes. When every network id was
- * given, the Bydo is skipped and a warning is logged.
+ * which goes straight, then a Weaver, which weaves up and down, and so on (see
+ * game::World::spawn). A Bydo appears off screen past the right edge, at a
+ * height drawn from a random generator (see game::bydoSpawnPosition); the
+ * sheet uses no random draw, so a seed still gives the same heights. The
+ * generator starts from the seed of the parts, which is logged, so the same
+ * seed gives the same heights in the same order. Every connected player is sent
+ * an EntitySpawned for the Bydo, as the Entities section of the protocol page
+ * describes. When every network id was given, the Bydo is skipped and a warning
+ * is logged.
  *
  * Not thread-safe: use it from the simulation thread only.
  */
@@ -47,9 +49,11 @@ class BydoSpawner {
  public:
   /**
    * @param parts The world, the players, how to send, the seed, which is
-   * logged at info level, and the wave plan.
+   * logged at info level, the wave plan, and the sheets its enemies name.
    * @throws game::InvalidWaveCurveException when the curve of the plan is not
-   * playable, and EmptyEnemyCycleException when the plan names no enemy.
+   * playable, EmptyEnemyCycleException when the plan names no enemy, and
+   * game::UnknownEntityTypeException when it names a sheet @p parts does not
+   * have.
    */
   explicit BydoSpawner(BydoSpawnerParts parts);
 
@@ -70,10 +74,11 @@ class BydoSpawner {
  private:
   void spawnOne();
   [[nodiscard]] game::Position nextPosition();
-  [[nodiscard]] game::BydoKind nextKind() const;
-  [[nodiscard]] std::optional<std::uint32_t> createBydo(game::Position position,
-                                                        game::BydoKind kind);
-  void announce(std::uint32_t networkId, game::Position position);
+  [[nodiscard]] const game::EntitySheet& nextEnemy() const;
+  [[nodiscard]] std::optional<std::uint32_t> createBydo(
+      const game::EntitySheet& sheet, game::Position position);
+  void announce(const game::EntitySheet& sheet, std::uint32_t networkId,
+                game::Position position);
   [[nodiscard]] std::size_t bydosInPlay();
   void logCurrentWave();
 
@@ -82,7 +87,7 @@ class BydoSpawner {
   SendDatagram send_;
   logging::Logger logger_;
   std::mt19937 random_;
-  std::vector<game::BydoKind> enemies_;
+  std::vector<std::reference_wrapper<const game::EntitySheet>> enemies_;
   std::size_t spawnedCount_{0};
   game::WaveDirector waveDirector_;
   std::size_t loggedWaveNumber_{0};

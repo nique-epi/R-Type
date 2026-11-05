@@ -15,6 +15,7 @@
 #include "Pilot.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "WavePlan.hpp"
 #include "WavePlanFixtures.hpp"
 #include "World.hpp"
@@ -41,7 +42,8 @@ BydoSpawner BydoSpawnerScene::makeSpawnerWith(std::uint32_t seed,
                              sent_.push_back(std::move(datagram));
                            },
                        .seed = seed,
-                       .waves = std::move(waves)}};
+                       .waves = std::move(waves),
+                       .types = game::testing::shippedEntitySheets()}};
 }
 
 void BydoSpawnerScene::runTicks(BydoSpawner& spawner, std::size_t count) {

@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <vector>
+#include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityDestruction.hpp"
@@ -21,8 +22,13 @@ class PlayfieldExitSystemFixture : public ::testing::Test {
   PlayfieldExitSystemFixture();
 
   /** @returns A new networked entity of @p type at @p positionX, on the row
-   * the tests use. */
+   * the tests use; a missile gets the box of the sheet of its side. */
   engine::Entity add(EntityType type, float positionX);
+
+  /** @returns A new networked missile of @p type at @p positionX, on the row
+   * the tests use, that collides with @p box. */
+  engine::Entity addMissileWithBox(EntityType type, float positionX,
+                                   CollisionBox box);
 
   /** @brief Runs the system for one tick, then delivers what it published. */
   void updateAndDispatch();
@@ -31,6 +37,10 @@ class PlayfieldExitSystemFixture : public ::testing::Test {
   [[nodiscard]] const std::vector<EntityDestruction>& received() const;
 
  private:
+  /** @returns A new networked entity of @p type at @p positionX, on the row
+   * the tests use, with no box. */
+  engine::Entity addWithoutBox(EntityType type, float positionX);
+
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
   engine::EventBus events_;

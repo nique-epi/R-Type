@@ -133,8 +133,8 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets
   DESTINATION ${RTYPE_CLIENT_ASSETS_PARENT} COMPONENT client
   PATTERN waves EXCLUDE
 )
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/waves DESTINATION assets
-  COMPONENT server
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/waves ${CMAKE_SOURCE_DIR}/assets/entities
+  DESTINATION assets COMPONENT server
 )
 
 # Once the bundle is complete, it is signed without an identity, so macOS

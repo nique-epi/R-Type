@@ -25,8 +25,8 @@
 #include "Sprite.hpp"
 #include "SpriteFrame.hpp"
 #include "SpriteTone.hpp"
+#include "SteadyMotion.hpp"
 #include "TimeConstants.hpp"
-#include "Velocity.hpp"
 
 using rtype::client::Caption;
 using rtype::client::HALF;
@@ -42,7 +42,7 @@ using rtype::game::Layer;
 using rtype::game::Position;
 using rtype::game::Sprite;
 using rtype::game::SpriteFrame;
-using rtype::game::Velocity;
+using rtype::game::SteadyMotion;
 
 /**
  * Given one entity in each of the seven layers, created from the front layer
@@ -129,7 +129,7 @@ TEST(RenderSystem, SkipsEntitiesMissingPositionOrSprite) {
 TEST(RenderSystem, GameplayComponentsDoNotChangeWhatIsDrawn) {
   Scene scene;
   const Entity armed = scene.spawn("armed", Layer::Enemies);
-  scene.components().add(armed, Velocity{.x = SPEED, .y = SPEED});
+  scene.components().add(armed, SteadyMotion{.topSpeed = SPEED});
   scene.components().add(armed,
                          CollisionBox{.width = BOX_SIZE, .height = BOX_SIZE});
   scene.spawn("plain", Layer::Enemies);

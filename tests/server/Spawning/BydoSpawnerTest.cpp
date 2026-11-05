@@ -8,6 +8,7 @@
 #include "BydoSpawnerScene.hpp"
 #include "BydoSpawnerTestConstants.hpp"
 #include "EntitySpawned.hpp"
+#include "GameException.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "JournalFile.hpp"
 #include "Logger.hpp"
@@ -22,6 +23,7 @@ using rtype::game::BYDO_ROW_MARGIN;
 using rtype::game::PLAY_AREA_HEIGHT;
 using rtype::game::PLAYFIELD_WIDTH;
 using rtype::game::STRAIGHT_BEHAVIOUR_NAME;
+using rtype::game::UnknownEntityTypeException;
 using rtype::game::WEAVE_BEHAVIOUR_NAME;
 using rtype::game::testing::TEST_WAVE_CURVE;
 using rtype::game::testing::TICKS_OF_A_PAUSE;
@@ -35,6 +37,7 @@ using rtype::server::EmptyEnemyCycleException;
 using rtype::server::testing::BydoSpawnerScene;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::FIRST_WAVE_LINE_TEXT;
+using rtype::server::testing::NO_SHEET_CYCLE;
 using rtype::server::testing::oneWaveLevelWavePlan;
 using rtype::server::testing::OTHER_SPAWNER_SEED;
 using rtype::server::testing::SECOND_PLAYER;
@@ -303,4 +306,17 @@ TEST(BydoSpawner, RefusesAPlanWithoutEnemies) {
   EXPECT_THROW(
       static_cast<void>(scene.makeSpawnerWith(SPAWNER_SEED, wavePlanOf({}))),
       EmptyEnemyCycleException);
+}
+
+/**
+ * Given a wave plan naming a sheet the server does not have
+ * When a spawner is built with it
+ * Then it is refused with an UnknownEntityTypeException
+ */
+TEST(BydoSpawner, RefusesAPlanNamingNoSheet) {
+  BydoSpawnerScene scene;
+
+  EXPECT_THROW(static_cast<void>(scene.makeSpawnerWith(
+                   SPAWNER_SEED, wavePlanOf(NO_SHEET_CYCLE))),
+               UnknownEntityTypeException);
 }

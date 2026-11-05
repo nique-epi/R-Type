@@ -49,6 +49,7 @@
 #include "ServerLobbyTestConstants.hpp"
 #include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
 #include "TimeConstants.hpp"
 #include "UnreliableNetwork.hpp"
@@ -126,17 +127,20 @@ std::vector<std::unique_ptr<IGameModule>> modulesWithRulesAt(
 GameInstanceTest::GameInstanceTest() : GameInstanceTest(NO_INPUT_DELAY_TICKS) {}
 
 GameInstanceTest::GameInstanceTest(std::size_t inputDelayTicks)
-    : game_(GameInstanceParts{.send =
-                                  [this](network::OutgoingDatagram datagram) {
-                                    sent_.push_back(std::move(datagram));
-                                  },
-                              .settings = GameSettings{.seed = SOME_SEED,
-                                                       .waves = testWavePlan(),
-                                                       .inputDelayTicks =
-                                                           inputDelayTicks},
-                              .events = events_,
-                              .clock = clock_},
-            modulesWithRulesAt(rules_, results_)) {}
+    : game_(
+          GameInstanceParts{
+              .send =
+                  [this](network::OutgoingDatagram datagram) {
+                    sent_.push_back(std::move(datagram));
+                  },
+              .settings =
+                  GameSettings{.seed = SOME_SEED,
+                               .waves = testWavePlan(),
+                               .types = game::testing::shippedEntitySheets(),
+                               .inputDelayTicks = inputDelayTicks},
+              .events = events_,
+              .clock = clock_},
+          modulesWithRulesAt(rules_, results_)) {}
 
 game::World& GameInstanceTest::world() { return rules_->world(); }
 
@@ -194,11 +198,11 @@ void GameInstanceTest::sendReady(const SentReadyState& sent) {
           header, network::ReadyState{.ready = sent.ready})});
 }
 
-void GameInstanceTest::sendLoaded(std::size_t player, std::uint16_t sequence) {
+void GameInstanceTest::sendLoaded(const SentGameLoaded& sent) {
   network::PacketHeader header;
   header.sessionToken = SESSION_TOKEN;
-  header.sequence = sequence;
-  queue(network::IncomingDatagram{.sender = playerEndpoint(player),
+  header.sequence = sent.sequence;
+  queue(network::IncomingDatagram{.sender = playerEndpoint(sent.player),
                                   .payload = network::DatagramCodec::encode(
                                       header, network::GameLoaded{})});
 }

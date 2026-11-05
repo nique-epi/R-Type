@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "CollisionBox.hpp"
 
 namespace rtype::game::testing {
 
@@ -27,6 +28,13 @@ constexpr float ENEMY_MISSILE_EXACTLY_AT_THE_MARGIN_X = -16.0F;
 constexpr float ENEMY_MISSILE_JUST_PAST_THE_MARGIN_X = -17.0F;
 /** @brief Where a new enemy appears, 64 units past the right edge. */
 constexpr float WHERE_ENEMIES_APPEAR_X = 1984.0F;
+/** @brief The box of a missile of a player and of an enemy, as their sprites
+ * have it: 16 by 6 and 8 by 8 pixels, each covering 4 logical units. */
+constexpr CollisionBox PLAYER_MISSILE_EXIT_BOX{.width = 64.0F, .height = 24.0F};
+constexpr CollisionBox ENEMY_MISSILE_EXIT_BOX{.width = 32.0F, .height = 32.0F};
+/** @brief A box of a missile wider than the one of a missile of an enemy: 40
+ * units instead of 32, so half of it is 20 units instead of 16. */
+constexpr CollisionBox WIDER_MISSILE_BOX{.width = 40.0F, .height = 32.0F};
 /** @brief The network id of every entity the exit tests place. */
 constexpr std::uint32_t EXITING_NETWORK_ID = 7;
 

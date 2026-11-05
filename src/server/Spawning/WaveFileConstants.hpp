@@ -3,8 +3,6 @@
 #include <array>
 #include <cstdint>
 #include <string_view>
-#include <utility>
-#include "BydoKind.hpp"
 #include "SipHash.hpp"
 #include "WholeNumberRange.hpp"
 
@@ -14,7 +12,8 @@ namespace rtype::server {
 constexpr std::string_view DIFFICULTY_TABLE_KEY = "difficulty";
 
 /**
- * @brief The keys of a difficulty: the enemies its Bydos are in turn, then one
+ * @brief The keys of a difficulty: the names of the entity sheets its enemies
+ * are in turn, then one
  * key per value of its WaveCurve, the durations in whole milliseconds, the
  * last being the number of waves of its level.
  */
@@ -43,16 +42,6 @@ constexpr std::array WAVE_PLAN_KEYS{ENEMIES_KEY,
                                     SHORTEST_SPAWN_INTERVAL_KEY,
                                     WAVE_PAUSE_KEY,
                                     LEVEL_WAVES_KEY};
-
-/**
- * @brief The name a waves file gives each kind of Bydo. A new kind, a boss for
- * one, gets its name here, and its waves can bring it at once.
- */
-constexpr std::string_view DRIFTER_NAME = "drifter";
-constexpr std::string_view WEAVER_NAME = "weaver";
-constexpr std::array ENEMY_NAMES{
-    std::pair{DRIFTER_NAME, game::BydoKind::Drifter},
-    std::pair{WEAVER_NAME, game::BydoKind::Weaver}};
 
 /**
  * @brief The most Bydos a first wave may hold or a wave may add, and the most

@@ -71,8 +71,8 @@ class GameFlowFixture : public ::testing::Test {
   PlayerRoster roster_;
   ReadyKeeper readyKeeper_;
   std::vector<network::OutgoingDatagram> sent_;
-  GameReplication replication_;
   GameContext context_;
+  GameReplication replication_;
   GameFlow flow_;
 };
 

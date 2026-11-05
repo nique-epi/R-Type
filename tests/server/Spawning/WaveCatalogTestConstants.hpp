@@ -4,8 +4,8 @@
 #include <chrono>
 #include <string_view>
 #include <utility>
-#include "BydoKind.hpp"
 #include "BydoWave.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "WaveCurve.hpp"
 
 namespace rtype::server::testing {
@@ -46,8 +46,8 @@ constexpr game::WaveCurve CALM_CURVE{
     .shortestSpawnInterval = std::chrono::milliseconds(1500),
     .wavePause = std::chrono::milliseconds(5000),
     .levelWaves = 5};
-constexpr std::array CALM_ENEMIES{game::BydoKind::Drifter,
-                                  game::BydoKind::Weaver};
+constexpr std::array CALM_ENEMIES{game::testing::DRIFTER_SHEET,
+                                  game::testing::WEAVER_SHEET};
 
 /** @brief A difficulty storm, written before calm in a file, and its waves. */
 constexpr std::string_view STORM_TABLE = R"([difficulty.storm]
@@ -69,8 +69,9 @@ constexpr game::WaveCurve STORM_CURVE{
     .shortestSpawnInterval = std::chrono::milliseconds(500),
     .wavePause = std::chrono::milliseconds(3000),
     .levelWaves = 6};
-constexpr std::array STORM_ENEMIES{
-    game::BydoKind::Weaver, game::BydoKind::Drifter, game::BydoKind::Weaver};
+constexpr std::array STORM_ENEMIES{game::testing::WEAVER_SHEET,
+                                   game::testing::DRIFTER_SHEET,
+                                   game::testing::WEAVER_SHEET};
 
 /**
  * @brief Files that do not describe difficulties: an empty one, and one whose
@@ -119,6 +120,10 @@ constexpr std::string_view SHORTEST_LONGER_THAN_THE_FIRST = "2501";
 constexpr std::string_view UNKNOWN_ENEMY = R"(["drifter", "bos"])";
 constexpr std::string_view NO_ENEMY = "[]";
 constexpr std::string_view ENEMY_OUTSIDE_A_LIST = R"("drifter")";
+/** @brief A list of enemies naming the sheet of a missile of a player, a sheet
+ * the server has but of another side than enemy. */
+constexpr std::string_view A_MISSILE_AS_AN_ENEMY =
+    R"(["drifter", "player_missile"])";
 constexpr std::string_view NUMBER_AS_AN_ENEMY = "[1]";
 
 /** @brief A waves file no test writes. */

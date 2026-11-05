@@ -2070,7 +2070,7 @@ TEST_F(GameInstanceTest, StartsOnceTheGameLoadedOfThePlayerIsRead) {
       {.player = FIRST_PLAYER, .ready = true, .sequence = FIRST_SEQUENCE});
   tick();
   ASSERT_EQ(game().state(), GameState::Starting);
-  sendLoaded(FIRST_PLAYER, SECOND_SEQUENCE);
+  sendLoaded({.player = FIRST_PLAYER, .sequence = SECOND_SEQUENCE});
 
   tick();
 

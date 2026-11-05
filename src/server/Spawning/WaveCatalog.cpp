@@ -1,4 +1,5 @@
 #include "WaveCatalog.hpp"
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -13,10 +14,12 @@
 #include <toml++/toml.hpp>
 #include <utility>
 #include <vector>
-#include "BydoKind.hpp"
 #include "BydoWave.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
+#include "EntitySheet.hpp"
+#include "EntitySheets.hpp"
+#include "EntityType.hpp"
 #include "ServerException.hpp"
 #include "SipHash.hpp"
 #include "WaveCurve.hpp"
@@ -44,55 +47,73 @@ std::size_t countAt(const DataFileTable& table, std::string_view key,
   return static_cast<std::size_t>(engine::wholeNumberAt(table, key, range));
 }
 
-/** @returns The names of ENEMY_NAMES, for the errors. */
-std::vector<std::string> enemyNames() {
+/** @returns The names of the sheets of @p types of the side enemy, in the
+ * order of their names, for the errors. */
+std::vector<std::string> enemyNamesOf(const game::EntitySheets& types) {
   std::vector<std::string> names;
-  names.reserve(ENEMY_NAMES.size());
-  for (const auto& entry : ENEMY_NAMES) {
-    names.emplace_back(entry.first);
+  for (const game::EntitySheet& sheet : types.all()) {
+    if (sheet.side == game::EntityType::Enemy) {
+      names.push_back(sheet.name);
+    }
   }
   return names;
 }
 
+/** @returns Whether @p types has a sheet named @p name of the side enemy. */
+bool namesAnEnemy(const game::EntitySheets& types, std::string_view name) {
+  return std::ranges::any_of(
+      types.all(), [name](const game::EntitySheet& sheet) {
+        return sheet.name == name && sheet.side == game::EntityType::Enemy;
+      });
+}
+
+/** @brief The list of enemies of a table, and the sheets its names are checked
+ * against. */
+struct EnemyList {
+  std::reference_wrapper<const DataFileTable> table;
+  std::reference_wrapper<const game::EntitySheets> types;
+};
+
 /**
- * @returns The kind @p name, an element of the enemies of @p table, names.
+ * @returns The name @p name, an element of the enemies of the list, holds.
  * @throws InvalidEnemyListException when it is not a string, and
- * UnknownEnemyException when it is no name of ENEMY_NAMES.
+ * UnknownEnemyException when it names no sheet of the side enemy.
  */
-game::BydoKind kindNamed(const toml::node& name, const DataFileTable& table) {
+std::string enemyNamed(const toml::node& name, const EnemyList& list) {
+  const DataFileTable& table = list.table.get();
   const std::optional<std::string> text = name.value_exact<std::string>();
   if (!text.has_value()) {
     throw InvalidEnemyListException(
         engine::placeOf(name.source(), table, ENEMIES_KEY), ENEMY_LIST_LENGTH);
   }
-  for (const auto& [enemyName, kind] : ENEMY_NAMES) {
-    if (enemyName == *text) {
-      return kind;
-    }
+  if (!namesAnEnemy(list.types.get(), *text)) {
+    throw UnknownEnemyException(
+        engine::placeOf(name.source(), table, ENEMIES_KEY), *text,
+        enemyNamesOf(list.types.get()));
   }
-  throw UnknownEnemyException(
-      engine::placeOf(name.source(), table, ENEMIES_KEY), *text, enemyNames());
+  return *text;
 }
 
 /**
- * @returns The kinds the enemies of @p table name, in their order.
- * @throws MissingDataFileKeyException when it has none,
+ * @returns The names the enemies of the list hold, in their order.
+ * @throws MissingDataFileKeyException when the table has none,
  * InvalidEnemyListException when they are not a list of ENEMY_LIST_LENGTH
- * names, and UnknownEnemyException for a name of no kind.
+ * names, and UnknownEnemyException for a name of no enemy sheet.
  */
-std::vector<game::BydoKind> enemiesFrom(const DataFileTable& table) {
+std::vector<std::string> enemiesFrom(const EnemyList& list) {
+  const DataFileTable& table = list.table.get();
   const toml::node& node = engine::nodeAt(table, ENEMIES_KEY);
   const toml::array* const names = node.as_array();
   if (names == nullptr || !countFits(names->size(), ENEMY_LIST_LENGTH)) {
     throw InvalidEnemyListException(
         engine::placeOf(node.source(), table, ENEMIES_KEY), ENEMY_LIST_LENGTH);
   }
-  std::vector<game::BydoKind> kinds;
-  kinds.reserve(names->size());
+  std::vector<std::string> enemies;
+  enemies.reserve(names->size());
   for (const toml::node& name : *names) {
-    kinds.push_back(kindNamed(name, table));
+    enemies.push_back(enemyNamed(name, list));
   }
-  return kinds;
+  return enemies;
 }
 
 /**
@@ -123,20 +144,26 @@ game::WaveCurve curveFrom(const DataFileTable& table) {
       .levelWaves = countAt(table, LEVEL_WAVES_KEY, LEVEL_WAVES_RANGE)};
 }
 
-/** @returns The waves the table of one difficulty describes. */
-WavePlan planFrom(const DataFileTable& table) {
+/** @returns The waves the table of one difficulty describes, its enemies
+ * checked against @p types. */
+WavePlan planFrom(const DataFileTable& table, const game::EntitySheets& types) {
   engine::refuseUnknownKeys(table, WAVE_PLAN_KEYS);
-  return WavePlan{.curve = curveFrom(table), .enemies = enemiesFrom(table)};
+  return WavePlan{
+      .curve = curveFrom(table),
+      .enemies = enemiesFrom(EnemyList{.table = table, .types = types})};
 }
 
-/** @returns The waves of every difficulty of the file whose root is @p root. */
-PlansByDifficulty plansFrom(const DataFileTable& root) {
+/** @returns The waves of every difficulty of the file whose root is @p root,
+ * their enemies checked against @p types. */
+PlansByDifficulty plansFrom(const DataFileTable& root,
+                            const game::EntitySheets& types) {
   engine::refuseUnknownKeys(root, ROOT_KEYS);
   const DataFileTable levels = engine::tableAt(root, DIFFICULTY_TABLE_KEY);
   PlansByDifficulty plans;
   for (auto&& entry : levels.table.get()) {
     const std::string_view name = entry.first.str();
-    plans.emplace(std::string{name}, planFrom(engine::tableAt(levels, name)));
+    plans.emplace(std::string{name},
+                  planFrom(engine::tableAt(levels, name), types));
   }
   return plans;
 }
@@ -144,15 +171,18 @@ PlansByDifficulty plansFrom(const DataFileTable& root) {
 }  // namespace
 
 WaveCatalog WaveCatalog::fromText(std::string_view text,
-                                  std::string_view source) {
+                                  std::string_view source,
+                                  const game::EntitySheets& types) {
   const toml::table root = engine::parseDataFile(text, source);
   return WaveCatalog{
-      plansFrom(engine::rootOf(root, source)),
+      plansFrom(engine::rootOf(root, source), types),
       network::sipHash(WAVES_FINGERPRINT_KEY, std::as_bytes(std::span{text}))};
 }
 
-WaveCatalog WaveCatalog::fromFile(const std::filesystem::path& file) {
-  return fromText(engine::dataFileContent(file), engine::shownPath(file));
+WaveCatalog WaveCatalog::fromFile(const std::filesystem::path& file,
+                                  const game::EntitySheets& types) {
+  return fromText(engine::dataFileContent(file), engine::shownPath(file),
+                  types);
 }
 
 const WavePlan& WaveCatalog::planOf(std::string_view difficulty) const {

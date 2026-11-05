@@ -3,9 +3,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
-#include "BydoKind.hpp"
 #include "EntityDestruction.hpp"
 #include "EntitySpawned.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "GameInstanceFixtures.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "IncomingDatagram.hpp"
@@ -13,6 +13,7 @@
 #include "OutgoingDatagram.hpp"
 #include "Position.hpp"
 #include "SentDatagrams.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "World.hpp"
 #include "WorldState.hpp"
 
@@ -81,9 +82,9 @@ bool GameInstanceShootingFixture::wasDestroyed(
 
 std::uint32_t GameInstanceShootingFixture::aimAtADrifter() {
   const game::Position ship = shipPositionOf(FIRST_PLAYER);
-  const std::uint32_t drifter = world().spawnBydo(
-      game::Position{.x = ship.x + BYDO_DISTANCE_AHEAD, .y = ship.y},
-      game::BydoKind::Drifter);
+  const std::uint32_t drifter = world().spawn(
+      game::testing::shippedEntitySheets().named(game::testing::DRIFTER_SHEET),
+      game::Position{.x = ship.x + BYDO_DISTANCE_AHEAD, .y = ship.y});
   holdForNextTick(FIRST_PLAYER, HOLDS_SHOOT);
   return drifter;
 }

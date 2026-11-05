@@ -3,11 +3,11 @@
 namespace rtype::game {
 
 /**
- * @brief How fast a Bydo moves, in logical units per second: its top speed.
- *
- * Provisional: crossing the 1920 units of the playfield takes 8 seconds.
+ * @brief The way a body faces, as a sign on the horizontal axis: a ship of a
+ * player faces right, towards the enemies; an enemy faces left.
  */
-constexpr float BYDO_SPEED = 240.0F;
+constexpr float FACING_RIGHT = 1.0F;
+constexpr float FACING_LEFT = -1.0F;
 
 /**
  * @brief Where the ships of the players appear, across the playfield: the

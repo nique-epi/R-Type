@@ -43,6 +43,12 @@ struct SentReadyState {
   std::uint64_t sessionToken{SESSION_TOKEN};
 };
 
+/** @brief A GameLoaded sent by a player, with the sequence of its header. */
+struct SentGameLoaded {
+  std::size_t player{};
+  std::uint16_t sequence{};
+};
+
 /** @returns Those of @p datagrams that hold a message of type @p type, in
  * order: a resend may group several guaranteed messages in one datagram. */
 [[nodiscard]] std::vector<network::OutgoingDatagram> ofType(
@@ -118,9 +124,9 @@ class GameInstanceTest : public ::testing::Test {
   /** @brief Queues the ReadyState described by @p sent for the next tick. */
   void sendReady(const SentReadyState& sent);
 
-  /** @brief Queues a GameLoaded from the player at @p player for the next
-   * tick, under its session token and @p sequence. */
-  void sendLoaded(std::size_t player, std::uint16_t sequence);
+  /** @brief Queues the GameLoaded described by @p sent for the next tick,
+   * under the session token of its player. */
+  void sendLoaded(const SentGameLoaded& sent);
 
   /** @brief Queues @p datagram for the next tick. */
   void queue(network::IncomingDatagram datagram);

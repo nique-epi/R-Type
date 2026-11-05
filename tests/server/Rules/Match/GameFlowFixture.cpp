@@ -4,6 +4,7 @@
 #include <initializer_list>
 #include <string>
 #include <utility>
+#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
@@ -13,13 +14,15 @@
 #include "GameState.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "Lives.hpp"
+#include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "RtypeSystems.hpp"
 #include "SentDatagrams.hpp"
-#include "ServerConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
+#include "WavePlan.hpp"
 
 namespace rtype::server::testing {
 
@@ -27,21 +30,21 @@ GameFlowFixture::GameFlowFixture() : GameFlowFixture(testWavePlan()) {}
 
 GameFlowFixture::GameFlowFixture(WavePlan waves)
     : readyKeeper_(roster_, [] { return true; }),
-      replication_(
-          roster_,
-          [this](network::OutgoingDatagram datagram) {
-            sent_.push_back(std::move(datagram));
-          },
-          DEFAULT_WORLD_STATES_PER_SECOND),
       context_{.events = events_,
                .systems = systems_,
                .roster = roster_,
                .hooks = hooks_,
                .settings =
-                   GameSettings{.seed = SOME_SEED, .waves = std::move(waves)},
-               .send = [](const network::OutgoingDatagram&) {},
+                   GameSettings{.seed = SOME_SEED,
+                                .waves = std::move(waves),
+                                .types = game::testing::shippedEntitySheets()},
+               .send =
+                   [this](network::OutgoingDatagram datagram) {
+                     sent_.push_back(std::move(datagram));
+                   },
                .everyPlayerIsReady =
                    [this] { return readyKeeper_.everyPlayerIsReady(); }},
+      replication_(context_),
       flow_(context_, world_, replication_) {
   flow_.begin();
   addRtypeSystems(systems_, events_);

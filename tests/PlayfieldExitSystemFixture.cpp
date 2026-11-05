@@ -1,5 +1,6 @@
 #include "PlayfieldExitSystemFixture.hpp"
 #include <vector>
+#include "CollisionBox.hpp"
 #include "Entity.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityRegistry.hpp"
@@ -18,6 +19,25 @@ PlayfieldExitSystemFixture::PlayfieldExitSystemFixture() {
 
 engine::Entity PlayfieldExitSystemFixture::add(EntityType type,
                                                float positionX) {
+  if (type == EntityType::PlayerMissile) {
+    return addMissileWithBox(type, positionX, PLAYER_MISSILE_EXIT_BOX);
+  }
+  if (type == EntityType::EnemyMissile) {
+    return addMissileWithBox(type, positionX, ENEMY_MISSILE_EXIT_BOX);
+  }
+  return addWithoutBox(type, positionX);
+}
+
+engine::Entity PlayfieldExitSystemFixture::addMissileWithBox(EntityType type,
+                                                             float positionX,
+                                                             CollisionBox box) {
+  const engine::Entity missile = addWithoutBox(type, positionX);
+  components_.add(missile, box);
+  return missile;
+}
+
+engine::Entity PlayfieldExitSystemFixture::addWithoutBox(EntityType type,
+                                                         float positionX) {
   const engine::Entity entity = entities_.create();
   components_.add(entity, Position{.x = positionX, .y = EXIT_ROW_Y});
   components_.add(entity, type);

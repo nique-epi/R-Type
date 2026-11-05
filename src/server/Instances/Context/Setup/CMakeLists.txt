@@ -6,7 +6,7 @@ target_link_libraries(rtype_server_instances_context_setup
   INTERFACE
     rtype_engine
     rtype_game
-    rtype_game_bydo_kind
+    rtype_game_entity_types
     rtype_game_waves
     rtype_network_player_input
     rtype_network_transport

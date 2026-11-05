@@ -4,11 +4,12 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <random>
 #include <string>
 #include <utility>
-#include "BydoKind.hpp"
+#include <vector>
 #include "BydoSpawnPosition.hpp"
 #include "BydoSpawnerConstants.hpp"
 #include "BydoSpawnerParts.hpp"
@@ -17,6 +18,8 @@
 #include "ConnectedPlayer.hpp"
 #include "EngineException.hpp"
 #include "Entity.hpp"
+#include "EntitySheet.hpp"
+#include "EntitySheets.hpp"
 #include "EntitySpawnSender.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
@@ -24,10 +27,33 @@
 #include "Position.hpp"
 #include "ServerException.hpp"
 #include "TimeConstants.hpp"
+#include "WavePlan.hpp"
+#include "WireEntityTypeMapping.hpp"
 #include "World.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::server {
+
+namespace {
+
+/**
+ * @returns The sheets of @p types the names of @p waves name, in their order.
+ * @throws EmptyEnemyCycleException when @p waves names none, and
+ * game::UnknownEntityTypeException for a name of no sheet.
+ */
+std::vector<std::reference_wrapper<const game::EntitySheet>> enemySheetsOf(
+    const WavePlan& waves, const game::EntitySheets& types) {
+  if (waves.enemies.empty()) {
+    throw EmptyEnemyCycleException();
+  }
+  std::vector<std::reference_wrapper<const game::EntitySheet>> sheets;
+  sheets.reserve(waves.enemies.size());
+  for (const std::string& name : waves.enemies) {
+    sheets.emplace_back(types.named(name));
+  }
+  return sheets;
+}
+
+}  // namespace
 
 BydoSpawner::BydoSpawner(BydoSpawnerParts parts)
     : world_(&parts.world.get()),
@@ -35,11 +61,8 @@ BydoSpawner::BydoSpawner(BydoSpawnerParts parts)
       send_(std::move(parts.send)),
       logger_(std::string{BYDO_SPAWNER_LOGGER_NAME}),
       random_(parts.seed),
-      enemies_(std::move(parts.waves.enemies)),
+      enemies_(enemySheetsOf(parts.waves, parts.types.get())),
       waveDirector_(parts.waves.curve) {
-  if (enemies_.empty()) {
-    throw EmptyEnemyCycleException();
-  }
   logger_.info("Bydo spawning starts from the seed ", parts.seed);
 }
 
@@ -60,13 +83,13 @@ bool BydoSpawner::lastWaveFinished() const {
 
 void BydoSpawner::spawnOne() {
   const game::Position position = nextPosition();
-  const std::optional<std::uint32_t> networkId =
-      createBydo(position, nextKind());
+  const game::EntitySheet& sheet = nextEnemy();
+  const std::optional<std::uint32_t> networkId = createBydo(sheet, position);
   if (!networkId.has_value()) {
     return;
   }
   ++spawnedCount_;
-  announce(*networkId, position);
+  announce(sheet, *networkId, position);
 }
 
 game::Position BydoSpawner::nextPosition() {
@@ -75,26 +98,27 @@ game::Position BydoSpawner::nextPosition() {
   return game::bydoSpawnPosition(std::min(unitDraw(random_), highestDraw));
 }
 
-game::BydoKind BydoSpawner::nextKind() const {
+const game::EntitySheet& BydoSpawner::nextEnemy() const {
   return enemies_[spawnedCount_ % enemies_.size()];
 }
 
-std::optional<std::uint32_t> BydoSpawner::createBydo(game::Position position,
-                                                     game::BydoKind kind) {
+std::optional<std::uint32_t> BydoSpawner::createBydo(
+    const game::EntitySheet& sheet, game::Position position) {
   try {
-    return world_->spawnBydo(position, kind);
+    return world_->spawn(sheet, position);
   } catch (const engine::NetworkIdExhaustedException&) {
     logger_.warn("no Bydo appears: every network id was given");
     return std::nullopt;
   }
 }
 
-void BydoSpawner::announce(std::uint32_t networkId, game::Position position) {
+void BydoSpawner::announce(const game::EntitySheet& sheet,
+                           std::uint32_t networkId, game::Position position) {
   for (ConnectedPlayer* const player : roster_->connected()) {
     sendEntitySpawned(
         send_, *player,
         network::EntitySpawned{.entityId = networkId,
-                               .entityType = network::WireEntityType::Bydo,
+                               .entityType = toWireEntityType(sheet.side),
                                .x = position.x,
                                .y = position.y});
   }

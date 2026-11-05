@@ -19,6 +19,7 @@ using rtype::game::testing::MISSILE_EXACTLY_AT_THE_MARGIN_X;
 using rtype::game::testing::MISSILE_JUST_PAST_THE_MARGIN_X;
 using rtype::game::testing::PlayfieldExitSystemFixture;
 using rtype::game::testing::WHERE_ENEMIES_APPEAR_X;
+using rtype::game::testing::WIDER_MISSILE_BOX;
 
 /**
  * Given an enemy 65 units past the left edge
@@ -166,6 +167,24 @@ TEST_F(PlayfieldExitSystemFixture, KeepsAnEnemyMissileExactlyAtTheMargin) {
  */
 TEST_F(PlayfieldExitSystemFixture, KeepsAnEnemyMissileThatHasNotComeInYet) {
   const Entity missile = add(EntityType::EnemyMissile, WHERE_ENEMIES_APPEAR_X);
+
+  updateAndDispatch();
+
+  EXPECT_TRUE(entities().isAlive(missile));
+  EXPECT_TRUE(received().empty());
+}
+
+/**
+ * Given a missile of an enemy 17 units past the left edge, whose box is 40
+ * units wide instead of 32
+ * When the system runs
+ * Then it is still in the world: it leaves only once half its own width, 20
+ * units, is past the edge
+ */
+TEST_F(PlayfieldExitSystemFixture, AMissileLeavesByHalfItsOwnWidth) {
+  const Entity missile = addMissileWithBox(EntityType::EnemyMissile,
+                                           ENEMY_MISSILE_JUST_PAST_THE_MARGIN_X,
+                                           WIDER_MISSILE_BOX);
 
   updateAndDispatch();
 

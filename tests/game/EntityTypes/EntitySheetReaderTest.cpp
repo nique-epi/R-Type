@@ -30,7 +30,7 @@ using rtype::game::testing::EMPTY_BEHAVIOUR_TABLE;
 using rtype::game::testing::EMPTY_HITBOX;
 using rtype::game::testing::ENEMY_GAMEPLAY;
 using rtype::game::testing::ENEMY_GUN;
-using rtype::game::testing::ENEMY_MISSILE_NAME_IN_TESTS;
+using rtype::game::testing::ENEMY_MISSILE_SHEET;
 using rtype::game::testing::ENEMY_PILOTED_BY_A_PLAYER;
 using rtype::game::testing::EntitySheetReaderFixture;
 using rtype::game::testing::firstShotTicksOf;
@@ -270,7 +270,7 @@ TEST_F(EntitySheetReaderFixture, KeepsTheNameOfTheProjectile) {
   const EntitySheet sheet = read({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION,
                                   LEFT_HEADING_TABLE, ENEMY_GUN, APPEARANCE});
 
-  EXPECT_EQ(projectileNameOf(sheet), ENEMY_MISSILE_NAME_IN_TESTS);
+  EXPECT_EQ(projectileNameOf(sheet), ENEMY_MISSILE_SHEET);
 }
 
 /**
