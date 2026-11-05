@@ -2,9 +2,7 @@
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Statement.h>
 #include <SQLiteCpp/Transaction.h>
-#include <chrono>
 #include <cstdint>
-#include <optional>
 #include <string>
 #include <vector>
 #include "EpochSeconds.hpp"

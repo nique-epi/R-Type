@@ -2,7 +2,6 @@
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Statement.h>
 #include <SQLiteCpp/Transaction.h>
-#include <chrono>
 #include <cstdint>
 #include <string>
 #include <vector>
