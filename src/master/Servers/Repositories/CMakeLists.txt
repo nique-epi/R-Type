@@ -1,7 +1,10 @@
 add_library(rtype_master_servers_repositories STATIC
   EpochSeconds.cpp
   HeartbeatSampleRepository.cpp
+  PlayerCount.cpp
   ServerRepository.cpp
+  StatementParts.cpp
+  StatusChangeRepository.cpp
 )
 
 target_include_directories(rtype_master_servers_repositories PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

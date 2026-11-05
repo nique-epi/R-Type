@@ -67,6 +67,7 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
     | `Services/` | the rules; `Services/Helpers/` for pure functions with no I/O | `Repositories/` |
     | `Repositories/` | the only code with the SQL of the tables of the feature, one class per table | `Models/` |
     | `Models/` | the plain structs the layers hand each other | nothing of the feature |
+    | `Jobs/` | one class per work the feature does on its own, on a thread it owns, at a fixed interval (`ServerStatusJob`); the module class builds it in `start()` and destroys it in `stop()` | `Services/` |
 
     A sub-folder exists only when the feature has a class of that role. Points 7 to 9 do not apply to these folders: the role, not the count, makes the sub-folder.
 20. **What the master and the game server both read** (`src/network/Master/`) is laid out like the `common/` of a cRPC: `Routes/` (the method and path of each route, declared once), `Messages/` (one plain struct per message), `Validators/` (reading, checking and writing each message), `Client/` (the class the game server calls). The master and the client use the same declarations, so they cannot disagree on a route or a member.

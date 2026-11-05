@@ -254,7 +254,7 @@ Every folder of this tree exists today; some of what the comments name is not wr
 
 ### Master
 
-`src/master` holds the master, the program `r-type_server --mode master` runs: it will list the game servers and their games, record their heartbeats, run the administration and serve the web frontend. Its folders are libraries, and only the server binary links them, so the master never links SFML, Asio, `rtype_game` or the code of the server. Today it creates the game servers with their keys, takes their registration and their heartbeats, lists the games of a server, and answers `GET /api/health` (see [Master](/R-Type/master/)).
+`src/master` holds the master, the program `r-type_server --mode master` runs: it lists the game servers and their games, records their heartbeats, and will run the administration and serve the web frontend. Its folders are libraries, and only the server binary links them, so the master never links SFML, Asio, `rtype_game` or the code of the server. Today it creates the game servers with their keys, takes their registration and their heartbeats, keeps the status of each, lists the registered servers, and the games, the samples and the statuses of a server, and answers `GET /api/health` (see [Master](/R-Type/master/)).
 
 ```
 src/master/
@@ -262,11 +262,12 @@ src/master/
 ├── Logger/           the module logger
 ├── Storage/          the module storage: the database, on the connection and migrations of rtype_storage
 ├── Http/             the module http: the HTTP server, its errors, GET /api/health
-├── Servers/          the module servers: creation and key, registration, heartbeats, the games of a server; status being written
+├── Servers/          the module servers: creation and key, registration, heartbeats, statuses, the lists
 │   ├── Controllers/  ServersController: reads each route, writes its answer
-│   ├── Services/     ServersService: the rules; Helpers/, the key and its fingerprint
-│   ├── Repositories/ the only SQL: ServerRepository, HeartbeatSampleRepository
-│   └── Models/       the plain structs the layers hand each other
+│   ├── Services/     ServersService, ServerStatusService: the rules; Helpers/, the key and the status rule
+│   ├── Repositories/ the only SQL: ServerRepository, HeartbeatSampleRepository, StatusChangeRepository
+│   ├── Models/       the plain structs the layers hand each other
+│   └── Jobs/         ServerStatusJob: refreshes the statuses on a thread of its own
 ├── Modules/          masterModules(), the list of the modules
 ├── Administration/   bans, kicks, maintenance, audit log: being written
 ├── Matchmaking/      a server chosen to create a game: being written

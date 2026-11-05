@@ -13,6 +13,7 @@ target_link_libraries(rtype_server_master_module
     rtype_logging
     rtype_network_master_client
     rtype_network_master_messages
+    rtype_network_master_validators
     rtype_server_games_module
     rtype_server_information_module
     rtype_server_metrics_report

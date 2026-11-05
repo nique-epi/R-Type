@@ -1,12 +1,17 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <string_view>
 #include "CreatedServer.hpp"
 #include "GameListing.hpp"
+#include "SampleListing.hpp"
 #include "ServerCreation.hpp"
 #include "ServerHeartbeat.hpp"
+#include "ServerListing.hpp"
 #include "ServerRegistration.hpp"
+#include "ServerStatus.hpp"
+#include "StatusListing.hpp"
 
 namespace rtype::network {
 
@@ -90,6 +95,25 @@ namespace rtype::network {
  * MAXIMUM_PLAYERS players.
  */
 [[nodiscard]] GameListing gameListingFromText(std::string_view text);
+
+/** @returns How @p status is written: one of SERVER_STATUS_TEXTS. */
+[[nodiscard]] std::string_view serverStatusText(ServerStatus status);
+
+/** @returns The status @p text writes, or nothing when it is none of
+ * SERVER_STATUS_TEXTS. */
+[[nodiscard]] std::optional<ServerStatus> serverStatusOf(std::string_view text);
+
+/** @returns @p listing as the JSON answer of `GET /api/servers`, written as
+ * registrationText() writes. */
+[[nodiscard]] std::string serverListingText(const ServerListing& listing);
+
+/** @returns @p listing as the JSON answer of `GET /api/servers/{id}/samples`,
+ * every measure not taken left out, as heartbeatText() leaves it out. */
+[[nodiscard]] std::string sampleListingText(const SampleListing& listing);
+
+/** @returns @p listing as the JSON answer of
+ * `GET /api/servers/{id}/statuses`. */
+[[nodiscard]] std::string statusListingText(const StatusListing& listing);
 
 /**
  * @returns The `detail` of the problem document (RFC 9457) @p text holds, or

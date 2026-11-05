@@ -5,7 +5,9 @@
 #include <string>
 #include <string_view>
 #include "GameListing.hpp"
+#include "SampleListing.hpp"
 #include "ServerHeartbeat.hpp"
+#include "ServerListing.hpp"
 #include "ServerRegistration.hpp"
 
 namespace rtype::network::testing {
@@ -24,6 +26,14 @@ namespace rtype::network::testing {
  * one player, and the game of two players in progress.
  */
 [[nodiscard]] GameListing parisGameListing();
+
+/** @returns "Paris 1" as the master lists it: id PARIS_ID, online, with the
+ * games and players of parisHeartbeat(). */
+[[nodiscard]] ServerListing parisServerListing();
+
+/** @returns One sample taken at SAMPLE_DATE of the games and players of
+ * parisHeartbeat(), with its tick p95 and its loss only. */
+[[nodiscard]] SampleListing parisSampleListing();
 
 /** @returns The listing of "Paris 1" with @p value at @p pointer. */
 [[nodiscard]] std::string gameListingTextWith(std::string_view pointer,

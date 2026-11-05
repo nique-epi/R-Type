@@ -25,7 +25,8 @@ class MasterHttpServerFixture : public ::testing::Test {
 
   /**
    * @brief Adds TEST_PUT_ROUTE, which answers what it read of the request: its
-   * body, its token and its address, under the members ECHO_*_MEMBER.
+   * body, its token, its address and its query, under the members
+   * ECHO_*_MEMBER.
    */
   void addEchoRoute();
 

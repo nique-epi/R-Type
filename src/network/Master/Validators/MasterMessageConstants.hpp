@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -73,6 +74,30 @@ constexpr std::string_view IN_GAME_STATE_TEXT = "inGame";
 constexpr auto LISTED_GAME_STATE_TEXTS = std::to_array<std::string_view>(
     {WAITING_STATE_TEXT, IN_GAME_STATE_TEXT, FULL_STATE_TEXT});
 
+/** @brief How each ServerStatus is written, in the order of the enum. */
+constexpr std::string_view ONLINE_STATUS_TEXT = "online";
+constexpr std::string_view DEGRADED_STATUS_TEXT = "degraded";
+constexpr std::string_view OFFLINE_STATUS_TEXT = "offline";
+constexpr std::string_view MAINTENANCE_STATUS_TEXT = "maintenance";
+constexpr auto SERVER_STATUS_TEXTS = std::to_array<std::string_view>(
+    {ONLINE_STATUS_TEXT, DEGRADED_STATUS_TEXT, OFFLINE_STATUS_TEXT,
+     MAINTENANCE_STATUS_TEXT});
+
+/**
+ * @brief The members of a listed server beside those of a registration, of a
+ * sample, and of a dated status; a date is written in seconds since 1970
+ * UTC.
+ */
+constexpr std::string_view STATUS_MEMBER = "status";
+constexpr std::string_view GAME_COUNT_MEMBER = "gameCount";
+constexpr std::string_view TAKEN_AT_MEMBER = "takenAt";
+constexpr std::string_view SINCE_MEMBER = "since";
+
+/** @brief The member that holds the items of each list. */
+constexpr std::string_view SERVERS_MEMBER = "servers";
+constexpr std::string_view SAMPLES_MEMBER = "samples";
+constexpr std::string_view STATUSES_MEMBER = "statuses";
+
 /** @brief The member of a listed game that counts its players. */
 constexpr std::string_view PLAYER_COUNT_MEMBER = "playerCount";
 
@@ -103,5 +128,11 @@ constexpr std::uint8_t HIGHEST_PROTOCOL_VERSION =
 /** @brief The highest value of a measure, and of a share of lost datagrams. */
 constexpr double MAXIMUM_MEASURE = std::numeric_limits<double>::max();
 constexpr double MAXIMUM_LOSS_PERCENT = 100.0;
+
+/**
+ * @brief How often a game server tells the master its state when nothing
+ * changes; the master counts the heartbeats a server missed in this interval.
+ */
+constexpr std::chrono::milliseconds MASTER_HEARTBEAT_INTERVAL{5'000};
 
 }  // namespace rtype::network

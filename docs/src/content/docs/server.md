@@ -1059,7 +1059,7 @@ set server-name "Paris 1"
 The module `master` (`src/server/Master/`), which reads the name of the server from the information module (`IServerName`), then starts a `HeartbeatJob`, which runs on a thread of its own, MasterLink, the link of the server with the master; the games never wait for it:
 
 1. It registers the server with `MasterClient`: its name, its UDP port, `SERVER_GAME_VERSION` (the version of the CMake project), the protocol version, its games and `MAXIMUM_PLAYERS` per game. The journal says `registered with the master as Paris 1`.
-2. It sends a heartbeat, the state of every game with the nicknames of its players and the measures of `LatestMetrics` when the metrics module is on, each time the games change, at most once per `MINIMUM_NOTICE_GAP` (1 s), and every `HEARTBEAT_INTERVAL` (5 s) when nothing changes. A heartbeat always carries the whole state, so a lost one is corrected by the next.
+2. It sends a heartbeat, the state of every game with the nicknames of its players and the measures of `LatestMetrics` when the metrics module is on, each time the games change, at most once per `MINIMUM_NOTICE_GAP` (1 s), and every `MASTER_HEARTBEAT_INTERVAL` (5 s, `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master reads to tell a silent server) when nothing changes. A heartbeat always carries the whole state, so a lost one is corrected by the next.
 3. A master that refuses the key, does not know the registration or does not answer is written in the journal once, not at each try. The job registers again every `REGISTRATION_RETRY` (5 s) until the master answers, then goes on.
 
 The games module tells the job when the games change. Its `HostedGamesWatch` follows, on the bus of each game, `game::PlayerArrival`, `game::PlayerDeparture` and `GameStateChanged`, and at the end of a tick in which one was delivered it publishes the list of the games in `LatestHostedGames`, a `LatestValue` the job waits on. The job never reads a game itself.
@@ -1072,7 +1072,7 @@ The games module tells the job when the games change. Its `HostedGamesWatch` fol
 
 | You want to… | Look at |
 |---|---|
-| Change what the master is told, or how often | `MasterMessages.cpp` and `ServerMasterConstants.hpp` in `src/server/Master/`; what changes a game in the list, `HostedGamesWatch` in `src/server/Games/` |
+| Change what the master is told, or how often | `MasterMessages.cpp` and `ServerMasterConstants.hpp` in `src/server/Master/`; how often a server tells it when nothing changes, `MASTER_HEARTBEAT_INTERVAL` in `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master reads to tell a silent server; what changes a game in the list, `HostedGamesWatch` in `src/server/Games/` |
 | Change what a tick does | The work a module adds to a stage: `playGames()` in `src/server/Games/ServerGamesModule.cpp`, `answerConnectionRequests()` in `src/server/Lobby/ServerLobbyModule.cpp` |
 | Add a module to the server | A class implementing `IModule` in a folder of its own, `src/server/<Name>/`, listed in `serverModules()` after the modules it depends on: see the [tutorial](/R-Type/tutorial-write-a-module/) |
 | Change what the server does when it stops | `ServerGamesModule::stop()` and `FarewellSender`, in `src/server/Games/` |
