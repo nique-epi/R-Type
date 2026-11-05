@@ -41,6 +41,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include "ILogJournal.hpp"
 #include "LogLevel.hpp"
 
 namespace rtype::logging {
@@ -61,6 +62,14 @@ class Logger {
    *        reused for every subsequent call.
    */
   explicit Logger(std::string name);
+
+  /**
+   * @brief Builds a logger that writes through @p journal, which must outlive
+   *        it, instead of the sinks of this copy of the library: what a plugin
+   *        uses, with the journal it required at install. The static
+   *        functions and scope() still use the state of this copy.
+   */
+  Logger(std::string name, const ILogJournal& journal);
 
   static LogLevel level();
   static void setLevel(LogLevel newLevel);
@@ -145,7 +154,8 @@ class Logger {
  private:
   template <class... Args>
   void emit(LogLevel candidate, Args&&... args) const {
-    if (!shouldLog(candidate)) {
+    if (journal_ == nullptr ? !shouldLog(candidate)
+                            : !journal_->accepts(candidate)) {
       return;
     }
     std::ostringstream stream;
@@ -156,6 +166,7 @@ class Logger {
   void writeLine(LogLevel candidate, std::string_view body) const;
 
   std::string name_;
+  const ILogJournal* journal_{nullptr};
 };
 
 }  // namespace rtype::logging

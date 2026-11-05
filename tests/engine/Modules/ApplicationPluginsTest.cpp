@@ -7,8 +7,10 @@
 #include "ApplicationPluginsFixture.hpp"
 #include "ApplicationPluginsTestConstants.hpp"
 #include "EngineException.hpp"
+#include "LogLevel.hpp"
 #include "PluginConstants.hpp"
 #include "PluginFiles.hpp"
+#include "RecordedLine.hpp"
 #include "TestPluginConstants.hpp"
 
 using rtype::engine::DuplicateModuleNameException;
@@ -227,4 +229,23 @@ TEST_F(ApplicationPluginsFixture,
 
   EXPECT_TRUE(refusals.empty());
   EXPECT_EQ(state.delivered.count, ONE_EVENT);
+}
+
+/**
+ * Given a host named like the logger module, which provides a journal, and the
+ * greeter plugin, which writes a line when it starts
+ * When the application starts
+ * Then the journal of the host holds that line, written by the plugin
+ */
+TEST_F(ApplicationPluginsFixture, TheProgramJournalHoldsTheLineAPluginWrote) {
+  const auto application =
+      applicationOf(hostNamed(LOGGER_MODULE_NAME_IN_TESTS),
+                    {std::string{PLUGIN_LINE_START} + GREETER_PLUGIN_NAME});
+
+  application->start();
+
+  EXPECT_EQ(state.journal.lines(), (std::vector<RecordedLine>{RecordedLine{
+                                       .level = rtype::logging::LogLevel::Info,
+                                       .loggerName = GREETER_LOGGER,
+                                       .body = GREETER_START_LINE}}));
 }

@@ -4,6 +4,7 @@
 constexpr const char* PROBE_PLUGIN_NAME = "probe";
 constexpr const char* ENTRYLESS_PLUGIN_NAME = "entryless";
 constexpr const char* FUTURE_PLUGIN_NAME = "future";
+constexpr const char* GREETER_PLUGIN_NAME = "greeter";
 
 /** @brief A plugin no file is called after. */
 constexpr const char* GHOST_PLUGIN_NAME = "ghost";
@@ -28,3 +29,8 @@ constexpr int NO_EVENT = 0;
 /** @brief What the refusal of a plugin-folder line after a plugin line says. */
 constexpr const char* FOLDER_AFTER_PLUGIN_REFUSAL =
     "plugin-folder comes before every plugin line";
+
+/** @brief The line the greeter plugin must write when it starts: the name of
+ * its logger, then its text. */
+constexpr const char* GREETER_LOGGER = "Greeter";
+constexpr const char* GREETER_START_LINE = "greeter started";

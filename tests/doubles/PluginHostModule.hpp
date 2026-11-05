@@ -7,8 +7,8 @@
 #include "PluginHostState.hpp"
 
 /** @brief Module double that provides, during its install(), the services a
- * test plugin requires: an EventBus, a DeliveredEvents and a PluginLifetime,
- * all three kept by the test. It opens nothing. */
+ * test plugin requires: an EventBus, a DeliveredEvents, a PluginLifetime and an
+ * ILogJournal, all four kept by the test. It opens nothing. */
 class PluginHostModule : public rtype::engine::IModule {
  public:
   /** @param name The name the plugins depend on.

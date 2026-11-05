@@ -2,6 +2,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "ILogJournal.hpp"
 #include "InstallContext.hpp"
 #include "PluginHostState.hpp"
 
@@ -16,6 +17,7 @@ void PluginHostModule::install(rtype::engine::InstallContext& context) {
   context.provide(state_->bus);
   context.provide(state_->delivered);
   context.provide(state_->lifetime);
+  context.provide<rtype::logging::ILogJournal>(state_->journal);
 }
 
 void PluginHostModule::start() {}

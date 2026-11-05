@@ -24,7 +24,9 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include "ILogJournal.hpp"
 #include "LogLevel.hpp"
+#include "LogRecord.hpp"
 #include "LoggingConstants.hpp"
 #include "LoggingException.hpp"
 
@@ -205,6 +207,9 @@ void emitLine(LogLevel level, std::string_view name, std::string_view body) {
 
 Logger::Logger(std::string name) : name_(std::move(name)) {}
 
+Logger::Logger(std::string name, const ILogJournal& journal)
+    : name_(std::move(name)), journal_(&journal) {}
+
 std::optional<LogLevel> Logger::parseLevel(std::string_view text) {
   const std::string lower = toLower(text);
   for (const LevelName& levelName : levelNames) {
@@ -244,6 +249,11 @@ void Logger::setOutput(const LogOutput& output) {
 }
 
 void Logger::writeLine(LogLevel candidate, std::string_view body) const {
+  if (journal_ != nullptr) {
+    journal_->write(
+        LogRecord{.level = candidate, .loggerName = name_, .body = body});
+    return;
+  }
   emitLine(candidate, name_, body);
 }
 

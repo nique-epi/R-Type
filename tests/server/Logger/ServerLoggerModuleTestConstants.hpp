@@ -5,5 +5,8 @@
 /** @brief What the journal says when the server starts. */
 constexpr std::string_view SERVER_STARTING_LINE_TEXT = "server starting";
 
+/** @brief The name of the module that looks up the journal service. */
+constexpr std::string_view JOURNAL_PROBE_NAME = "journal-probe";
+
 /** @brief What the journal says when the server stops. */
 constexpr std::string_view SERVER_STOPPED_LINE_TEXT = "server stopped";
