@@ -338,7 +338,7 @@ Build the game with its binaries at the repository root, start the server, then 
 
 ```bash
 cmake --workflow --preset build
-./r-type_server --seed 42
+./r-type_server --mode server --seed 42
 ```
 
 ```bash

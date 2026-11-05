@@ -221,10 +221,10 @@ std::string modeOptionEntry() {
       std::string(MODE_OPTION) + " <" + std::string(SERVER_MODE_NAME) + "|" +
           std::string(SUPERVISOR_MODE_NAME) + "|" +
           std::string(MASTER_MODE_NAME) + ">",
-      "Runs the game server (" + std::string(SERVER_MODE_NAME) +
-          ", the default), the supervisor that starts a game server per game "
-          "(" +
+      "Runs the supervisor that starts a game server per game (" +
           std::string(SUPERVISOR_MODE_NAME) +
+          ", the default), one game server alone (" +
+          std::string(SERVER_MODE_NAME) +
           ") or the master that lists the game servers (" +
           std::string(MASTER_MODE_NAME) +
           "). It comes before every other option: `" +

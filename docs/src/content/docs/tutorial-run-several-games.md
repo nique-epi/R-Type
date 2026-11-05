@@ -24,7 +24,7 @@ The server has **no dashboard yet**: the journal is the only way to see its game
 From the repository root, where the build writes `r-type_server`:
 
 ```bash
-./r-type_server -p 4242 --seed 42
+./r-type_server --mode server -p 4242 --seed 42
 ```
 
 There is nothing to ask for: a server always hosts `DEFAULT_HOSTED_GAME_COUNT` (8) games, created when it starts and kept until it stops. `--seed` is optional and makes the Bydos come out the same way at each launch. Each line goes both to the terminal and to the journal `r-type_server.log`, next to the executable (each line starts with a time, left out here):
@@ -107,11 +107,11 @@ More games cost more per tick, and the journal gives that cost every 10 s (see [
 Several servers can run on one machine, each on its own port, with nothing shared between them. Each keeps its leaderboard in a file named after its port, `r-type_server_4251.db` and `r-type_server_4252.db`, next to the executable. Give each its own journal, or their lines mix in one file:
 
 ```bash
-./r-type_server -p 4251 --log-file first.log
+./r-type_server --mode server -p 4251 --log-file first.log
 ```
 
 ```bash
-./r-type_server -p 4252 --log-file second.log
+./r-type_server --mode server -p 4252 --log-file second.log
 ```
 
 Each client names the server it joins:

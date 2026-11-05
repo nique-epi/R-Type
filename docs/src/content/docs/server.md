@@ -147,7 +147,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 
 | Option | Effect |
 |---|---|
-| `--mode <server\|supervisor\|master>` | The program the binary runs: the game server (`server`, the default), the supervisor that starts one game server per game (`supervisor`, see [Supervisor and game processes](#supervisor-and-game-processes)) or the master (`master`, see [Master](/R-Type/master/)). It comes before every other option; further on, it is an unknown argument. |
+| `--mode <server\|supervisor\|master>` | The program the binary runs: the supervisor that starts one game server per game (`supervisor`, the default, see [Supervisor and game processes](#supervisor-and-game-processes)), one game server alone (`server`) or the master (`master`, see [Master](/R-Type/master/)). It comes before every other option; further on, it is an unknown argument. |
 | `-p <port>` | The UDP port to listen on, from 1 to 65535 (see [Network](/R-Type/network/#ports-and-addresses-written-as-text-portfromtext-ipv4addressfromtext)). Default: `DEFAULT_SERVER_PORT` (4242). |
 | `--seed <seed>` | The number the random draws of the games start from, a whole number from 0 to 4294967295. Default: drawn at random. See [Waves](#waves-wavespawner). A seed makes the games not vanilla (see [Vanilla games](#vanilla-games-vanillabreaches)). |
 | `--state-rate <states>` | The world states sent to each player per second, a whole number from 2 to 60. Default: `DEFAULT_WORLD_STATES_PER_SECOND` (20). More states move the other ships more smoothly and use more bandwidth; see [World state](#world-state-worldstatesender). |
@@ -164,7 +164,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 - An unknown argument, a `-p`, `--seed`, `--state-rate`, `--input-delay`, `--database` or `--traffic-csv` without a value, an invalid port, a seed that is not a whole number from 0 to 4294967295, a state rate that is not a whole number from 2 to 60, an input delay that is not a whole number from 0 to 30, a `--set` value that is not `name=value`, a simulator option without a value or with one out of its range, or a logging option that does not exist or has no value, stops the server before anything starts: it prints `r-type_server:`, the reason and how to see the usage on standard error, then exits with code 1. When several arguments are wrong, the first one from the left is reported.
 
 ```bash
-./r-type_server -p 4243
+./r-type_server --mode server -p 4243
 ```
 
 ## Threads: `ServerApplication`
@@ -324,7 +324,7 @@ The waves file is read when the games module starts, after the logger module sta
 
 ### Supervisor and game processes
 
-`r-type_server --mode supervisor` runs no game. It listens on `DEFAULT_SERVER_PORT` (4242), answers the connection requests, starts one process per game and sends each player to the game that has a place. A game process is the same binary started with `--supervisor <port> --link-token <number>`: it hosts one game (`GAME_PROCESS_GAME_COUNT`), on a port the supervisor picked, with a journal of its own (`r-type_game_<n>.log`). An exception in a game stops that process only; the supervisor and the other games go on.
+`r-type_server`, which runs the supervisor unless `--mode` says otherwise, runs no game. It listens on `DEFAULT_SERVER_PORT` (4242), answers the connection requests, starts one process per game and sends each player to the game that has a place. A game process is the same binary started with `--mode server --supervisor <port> --link-token <number>`: it hosts one game (`GAME_PROCESS_GAME_COUNT`), on a port the supervisor picked, with a journal of its own (`r-type_game_<n>.log`). An exception in a game stops that process only; the supervisor and the other games go on.
 
 | Step | Who | What |
 |---|---|---|
@@ -370,7 +370,7 @@ The limit is a choice for this game: during a longer stall the game freezes, the
 Every `TICKS_PER_REPORT` ticks, the loop logs at the `debug` level how late its ticks started, each compared with the moment it was due; a dropped stall shows in full. The lines go to the terminal and to the journal, `r-type_server.log` (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)):
 
 ```bash
-./r-type_server --log-level debug
+./r-type_server --mode server --log-level debug
 ```
 
 After the time stamp, the line reads:
@@ -791,7 +791,7 @@ events.dispatch();
 - The generator is a `std::mt19937` started from a seed. The spawner logs it at the `info` level under `WaveSpawner` when it is built (`wave spawning starts from the seed 42`), so the same seed gives the same heights in the same order. `GameFlow` gives each world the seed of the game plus the number of worlds built before it, so one seed replays every game of a session; without `--seed`, the server draws it from `std::random_device`. The spawner also logs each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`).
 
 ```bash
-./r-type_server --seed 42
+./r-type_server --mode server --seed 42
 ```
 
 ## Piloted bodies: `PilotSystem` and `PlayfieldExitSystem`

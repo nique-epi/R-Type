@@ -45,6 +45,7 @@ std::string databaseFileOf(const std::filesystem::path& folder,
 ProcessCommand gameCommand(const GameLaunchSettings& settings,
                            const GameLaunch& launch) {
   ProcessCommand command{.program = settings.program, .arguments = {}};
+  addOption(command, MODE_OPTION, std::string{SERVER_MODE_NAME});
   addOption(command, engine::PORT_OPTION, std::to_string(launch.port));
   addOption(command, SUPERVISOR_OPTION, std::to_string(launch.supervisorPort));
   addOption(command, LINK_TOKEN_OPTION, std::to_string(launch.linkToken));

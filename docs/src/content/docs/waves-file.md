@@ -82,7 +82,7 @@ The Bydos take the names of the list in turn, and the turn carries on from one w
 - Try a change by editing the file and starting the server again; nothing is rebuilt and the client does not change:
 
 ```bash
-./r-type_server --seed 42
+./r-type_server --mode server --seed 42
 ```
 
 The server logs the folder of the entity sheets and their count (`entity sheets /…/assets/entities: 5 types`), then the file it read, by its absolute path (`waves file /…/assets/waves/waves.toml: 3 difficulties`), the difficulty the games play and whether they are vanilla (`games play normal, not vanilla`, since a seed is set), then each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`). The seed fixes the heights of the Bydos, so the same file and the same seed replay the same game.

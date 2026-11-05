@@ -19,14 +19,14 @@ using Arguments = std::vector<std::string_view>;
 /**
  * Given arguments that do not start with `--mode`
  * When the mode is chosen
- * Then the binary runs the game server with every argument, as before
+ * Then the binary runs the supervisor with every argument
  */
-TEST(ServerModeOption, WithoutTheModeTheServerRunsWithEveryArgument) {
+TEST(ServerModeOption, WithoutTheModeTheSupervisorRunsWithEveryArgument) {
   const Arguments arguments{PORT, SOME_PORT};
 
   const ServerModeChoice choice = chooseServerMode(arguments);
 
-  EXPECT_EQ(choice.mode, ServerMode::Server);
+  EXPECT_EQ(choice.mode, ServerMode::Supervisor);
   EXPECT_EQ(Arguments(choice.options.begin(), choice.options.end()), arguments);
 }
 
@@ -101,14 +101,14 @@ TEST(ServerModeOption, AModeWithoutItsValueIsRefused) {
 /**
  * Given `--mode master` after another option
  * When the mode is chosen
- * Then the binary runs the game server with every argument, whose options
+ * Then the binary runs the supervisor with every argument, whose options
  * refuse the mode: it must come first
  */
-TEST(ServerModeOption, AModeAfterAnotherOptionIsLeftToTheServer) {
+TEST(ServerModeOption, AModeAfterAnotherOptionIsLeftToTheSupervisor) {
   const Arguments arguments{PORT, SOME_PORT, MODE, MASTER_MODE};
 
   const ServerModeChoice choice = chooseServerMode(arguments);
 
-  EXPECT_EQ(choice.mode, ServerMode::Server);
+  EXPECT_EQ(choice.mode, ServerMode::Supervisor);
   EXPECT_EQ(choice.options.size(), arguments.size());
 }

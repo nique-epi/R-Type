@@ -452,7 +452,7 @@ Three tests pass.
 Start the server on a free port from the repository root, where the build writes `r-type_server`:
 
 ```bash
-./r-type_server -p 4242
+./r-type_server --mode server -p 4242
 ```
 
 After ten seconds, stop it with Ctrl-C. The journal `r-type_server.log`, next to the executable, holds the three lines of your module among the server's (each line starts with a time, left out here):
