@@ -39,6 +39,10 @@ class MasterModulesFixture : public ::testing::Test {
   /** @returns The answer of the master to GET @p path. */
   [[nodiscard]] httplib::Result get(std::string_view path) const;
 
+  /** @brief Writes @p content in @p file, below folder(). */
+  void writeFile(const std::filesystem::path& file,
+                 std::string_view content) const;
+
   /** @returns The folder the database of the master lies in. */
   [[nodiscard]] const std::filesystem::path& folder() const;
 

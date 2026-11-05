@@ -56,6 +56,11 @@ httplib::Result MasterModulesFixture::get(std::string_view path) const {
   return httpGet(port_, path);
 }
 
+void MasterModulesFixture::writeFile(const std::filesystem::path& file,
+                                     std::string_view content) const {
+  folder_.write(file, content);
+}
+
 const std::filesystem::path& MasterModulesFixture::folder() const {
   return folder_.path();
 }

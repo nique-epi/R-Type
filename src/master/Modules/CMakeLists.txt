@@ -12,6 +12,7 @@ target_link_libraries(rtype_master_modules
     rtype_master_logger_module
     rtype_master_servers_module
     rtype_master_storage_module
+    rtype_master_web_module
 )
 
 rtype_enable_warnings(rtype_master_modules)

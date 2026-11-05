@@ -1,1 +1,1 @@
-target_sources(master_tests PRIVATE MasterHttpServerTest.cpp MasterHttpServerFixture.cpp)
+target_sources(master_tests PRIVATE MasterHttpServerTest.cpp MasterHttpServerFixture.cpp MasterHttpSiteFixture.cpp)

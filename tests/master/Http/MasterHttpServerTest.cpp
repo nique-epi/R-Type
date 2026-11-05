@@ -15,6 +15,7 @@
 #include "MasterHttpServer.hpp"
 #include "MasterHttpServerFixture.hpp"
 #include "MasterHttpServerTestConstants.hpp"
+#include "MasterHttpSiteFixture.hpp"
 #include "MasterTestConstants.hpp"
 #include "NetworkConstants.hpp"
 
@@ -310,4 +311,148 @@ TEST_F(MasterHttpServerFixture, ARouteSetsTheHeaderOfItsAnswer) {
   EXPECT_EQ(answer->status, EXPECTED_CREATED);
   EXPECT_EQ(answer->get_header_value(std::string{LOCATION_HEADER_NAME}),
             CREATED_LOCATION);
+}
+
+/**
+ * Given a site whose folder holds an index page
+ * When a client asks for the root of the site
+ * Then it gets that page, as HTML
+ */
+TEST_F(MasterHttpSiteFixture, TheRootOfTheSiteAnswersItsIndexPage) {
+  writeSiteFile(SITE_INDEX_FILE, SITE_INDEX_TEXT);
+  serveSite(SITE_FOLDER);
+  openServer();
+
+  const httplib::Result answer = get(SITE_ROOT_URL);
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_OK);
+  EXPECT_EQ(answer->body, SITE_INDEX_TEXT);
+  EXPECT_EQ(answer->get_header_value(std::string{CONTENT_TYPE_HEADER}),
+            EXPECTED_HTML_TYPE);
+}
+
+/**
+ * Given a site with a page in a folder of its own
+ * When a client asks for that folder without its last slash
+ * Then it is sent to the folder with its slash, where the page lies
+ */
+TEST_F(MasterHttpSiteFixture, AFolderAskedWithoutItsSlashIsSentToItsSlash) {
+  writeSiteFile(SITE_SERVERS_INDEX_FILE, SITE_INDEX_TEXT);
+  serveSite(SITE_FOLDER);
+  openServer();
+
+  const httplib::Result answer = get(SITE_SERVERS_URL);
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_MOVED_PERMANENTLY);
+  EXPECT_EQ(answer->get_header_value(std::string{LOCATION_HEADER_NAME}),
+            SITE_SERVERS_FOLDER_URL);
+}
+
+/**
+ * Given a site with a page of 404
+ * When a client asks for a page the site does not have
+ * Then it gets Not Found with that page, as HTML
+ */
+TEST_F(MasterHttpSiteFixture, AnUnknownPageGetsTheNotFoundPageOfTheSite) {
+  writeSiteFile(SITE_NOT_FOUND_FILE, SITE_NOT_FOUND_TEXT);
+  serveSite(SITE_FOLDER);
+  openServer();
+
+  const httplib::Result answer = get(UNKNOWN_PAGE_URL);
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_NOT_FOUND);
+  EXPECT_EQ(answer->body, SITE_NOT_FOUND_TEXT);
+  EXPECT_EQ(answer->get_header_value(std::string{CONTENT_TYPE_HEADER}),
+            EXPECTED_HTML_TYPE);
+}
+
+/**
+ * Given a site with a page of 404
+ * When a client calls a path of the API no route answers
+ * Then it still gets the problem document of Not Found, not the page
+ */
+TEST_F(MasterHttpSiteFixture, AnUnknownApiPathKeepsItsProblemDocument) {
+  writeSiteFile(SITE_NOT_FOUND_FILE, SITE_NOT_FOUND_TEXT);
+  serveSite(SITE_FOLDER);
+  openServer();
+
+  const httplib::Result answer = get(UNKNOWN_URL);
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_NOT_FOUND);
+  EXPECT_EQ(answer->get_header_value(std::string{CONTENT_TYPE_HEADER}),
+            EXPECTED_PROBLEM_TYPE);
+}
+
+/**
+ * Given a site without a page of 404
+ * When a client asks for a page the site does not have
+ * Then it gets the problem document of Not Found
+ */
+TEST_F(MasterHttpSiteFixture, ASiteWithoutNotFoundPageAnswersTheProblem) {
+  writeSiteFile(SITE_INDEX_FILE, SITE_INDEX_TEXT);
+  serveSite(SITE_FOLDER);
+  openServer();
+
+  const httplib::Result answer = get(UNKNOWN_PAGE_URL);
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_NOT_FOUND);
+  EXPECT_EQ(answer->get_header_value(std::string{CONTENT_TYPE_HEADER}),
+            EXPECTED_PROBLEM_TYPE);
+}
+
+/**
+ * Given a site served beside a route of the API
+ * When a client calls the route
+ * Then the route answers, as JSON
+ */
+TEST_F(MasterHttpSiteFixture, ARouteOfTheApiAnswersBesideTheSite) {
+  writeSiteFile(SITE_INDEX_FILE, SITE_INDEX_TEXT);
+  addTestRoute();
+  serveSite(SITE_FOLDER);
+  openServer();
+
+  const httplib::Result answer = get(TEST_ROUTE_URL);
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_OK);
+  EXPECT_EQ(answer->body, TEST_ROUTE_BODY);
+}
+
+/**
+ * Given a file beside the folder of the site
+ * When a client asks for it through a path that climbs out of the site
+ * Then the file is never sent
+ */
+TEST_F(MasterHttpSiteFixture, APathThatClimbsOutOfTheSiteIsNotServed) {
+  writeSiteFile(SITE_INDEX_FILE, SITE_INDEX_TEXT);
+  writeOutsideFile(OUTSIDE_SITE_FILE, OUTSIDE_SITE_TEXT);
+  serveSite(SITE_FOLDER);
+  openServer();
+
+  const httplib::Result answer = get(CLIMBING_URL);
+
+  ASSERT_TRUE(answer);
+  EXPECT_NE(answer->status, EXPECTED_OK);
+  EXPECT_NE(answer->body, OUTSIDE_SITE_TEXT);
+}
+
+/**
+ * Given a site whose folder does not exist
+ * When a client calls a route of the API
+ * Then the route answers: the master serves its API without a site
+ */
+TEST_F(MasterHttpSiteFixture, AMissingSiteFolderLeavesTheApiAnswering) {
+  addTestRoute();
+  serveSite(MISSING_SITE_FOLDER);
+  openServer();
+
+  const httplib::Result answer = get(TEST_ROUTE_URL);
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_OK);
 }
