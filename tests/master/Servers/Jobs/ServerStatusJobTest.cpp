@@ -21,26 +21,30 @@ TEST_F(ServerStatusJobFixture, TheJobTurnsABeatingServerOnline) {
 }
 
 /**
- * Given a job started before any server
- * When a server registers and beats afterwards
- * Then a later refresh gives it online: the job refreshes again, not only
+ * Given a job whose first refresh turned a first server online
+ * When a second server registers and beats afterwards
+ * Then a later refresh turns it online too: the job refreshes again, not only
  * when it starts
  */
 TEST_F(ServerStatusJobFixture, TheJobRefreshesEveryInterval) {
+  const std::int64_t firstServer = serverBeatingNow();
   startJob(SHORT_REFRESH_INTERVAL);
+  ASSERT_TRUE(statusSoonIs(firstServer, ServerStatus::Online));
 
-  const std::int64_t serverId = serverBeatingNow();
+  const std::int64_t secondServer = serverBeatingNow();
 
-  EXPECT_TRUE(statusSoonIs(serverId, ServerStatus::Online));
+  EXPECT_TRUE(statusSoonIs(secondServer, ServerStatus::Online));
 }
 
 /**
- * Given a job that sleeps an hour between two refreshes
+ * Given a job that refreshed once, then sleeps an hour before the next refresh
  * When it stops
  * Then it stops within a second, without waiting for the hour
  */
 TEST_F(ServerStatusJobFixture, StoppingTheJobDoesNotWaitForItsInterval) {
+  const std::int64_t serverId = serverBeatingNow();
   startJob(ONE_HOUR_INTERVAL);
+  ASSERT_TRUE(statusSoonIs(serverId, ServerStatus::Online));
   const auto stopAskedAt = std::chrono::steady_clock::now();
 
   stopJob();
