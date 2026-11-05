@@ -18,6 +18,15 @@ std::string memberPathOf(MasterRoute route, std::int64_t memberId) {
          std::to_string(memberId);
 }
 
+std::string serverPathOf(MasterRoute route, std::int64_t serverId) {
+  std::string path = apiPathOf(route);
+  const std::string parameter = std::string{PATH_PARAMETER_PREFIX} +
+                                std::string{SERVER_ID_PATH_PARAMETER};
+  path.replace(path.find(parameter), parameter.size(),
+               std::to_string(serverId));
+  return path;
+}
+
 std::string_view methodNameOf(RouteMethod method) {
   switch (method) {
     case RouteMethod::Get:

@@ -75,6 +75,8 @@ class ServerGamesModule final : public engine::IModule {
    * the difficulty the games play and whether they are vanilla, then one line
    * per reason when they are not. The sheets are kept until the module is
    * destroyed, after its games.
+   * @throws NoJoinableGameException when there is no game to create, and
+   * TooManyGamesException when there are more than a heartbeat lists.
    * @throws ServerException, game::GameException or engine::EngineException
    * (or a class derived from one) naming the file, the line and the key when a
    * sheet or the waves file cannot be read or does not describe what the

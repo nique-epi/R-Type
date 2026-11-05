@@ -18,10 +18,10 @@ target_link_libraries(rtype_server_games_module
     rtype_concurrency_latest_value
     rtype_engine_application
     rtype_game_events
-    rtype_network_master_messages
     rtype_engine_event_bus
     rtype_engine_time
     rtype_game_entity_types
+    rtype_network_master_messages
     rtype_logging
     rtype_server_exceptions
     rtype_server_constants

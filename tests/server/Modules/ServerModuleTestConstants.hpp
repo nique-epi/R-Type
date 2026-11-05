@@ -62,6 +62,9 @@ constexpr std::size_t SECOND_GAME = 1;
 constexpr std::size_t ONE_GAME = 1;
 constexpr std::size_t THREE_GAMES = 3;
 
+/** @brief The most games a heartbeat to the master lists. */
+constexpr std::size_t MOST_GAMES_A_HEARTBEAT_LISTS = 64;
+
 /**
  * @brief A line that gives the state rate setting a rate above the highest one.
  */

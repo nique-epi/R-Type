@@ -13,6 +13,7 @@ constexpr std::uint16_t LINKED_PORT = 4242;
 constexpr std::uint16_t LINKED_GAMES = 1;
 constexpr std::string_view LINKED_DIFFICULTY = "normal";
 constexpr std::uint16_t LINKED_GAME_NUMBER = 1;
+constexpr std::string_view LINKED_GAME_NAME = "GAME 1";
 
 /** @brief Two pilots of the game, the second one arriving later. */
 constexpr std::string_view FIRST_PILOT_NAME = "ACE";

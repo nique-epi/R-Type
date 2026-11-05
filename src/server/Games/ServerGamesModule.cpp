@@ -30,6 +30,7 @@
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
 #include "Logger.hpp"
+#include "MasterMessageConstants.hpp"
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
 #include "PlayerDatagrams.hpp"
@@ -92,6 +93,20 @@ void logHowGamesPlay(const logging::Logger& logger, std::string_view difficulty,
   }
 }
 
+/**
+ * @throws NoJoinableGameException when @p gameCount is 0.
+ * @throws TooManyGamesException when it is above MAXIMUM_HOSTED_GAMES, the most
+ * games a heartbeat lists.
+ */
+void requireGameCount(std::size_t gameCount) {
+  if (gameCount == 0) {
+    throw NoJoinableGameException();
+  }
+  if (gameCount > network::MAXIMUM_HOSTED_GAMES) {
+    throw TooManyGamesException(gameCount, network::MAXIMUM_HOSTED_GAMES);
+  }
+}
+
 }  // namespace
 
 ServerGamesModule::ServerGamesModule(GamesSettings settings)
@@ -150,9 +165,7 @@ void ServerGamesModule::declareSettings(
 }
 
 void ServerGamesModule::start() {
-  if (settings_.gameCount == 0) {
-    throw NoJoinableGameException();
-  }
+  requireGameCount(settings_.gameCount);
   const game::EntitySheets& types = types_.emplace(
       game::EntitySheets::fromFolder(settings_.entitySheetsFolder));
   logEntitySheets(logger_, settings_.entitySheetsFolder, types);

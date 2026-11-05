@@ -39,6 +39,13 @@ class ServersController {
    */
   [[nodiscard]] ApiResponse replaceOwnHeartbeat(const ApiRequest& request);
 
+  /**
+   * @returns The answer of `GET /api/servers/{id}/games`: 200 and the games of
+   * the server, open to everyone; 404 for an id that names no server, or that
+   * is no number.
+   */
+  [[nodiscard]] ApiResponse listGames(const ApiRequest& request);
+
  private:
   ServersService service_;
 };

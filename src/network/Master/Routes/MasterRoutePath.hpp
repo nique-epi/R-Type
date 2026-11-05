@@ -19,6 +19,13 @@ namespace rtype::network {
 [[nodiscard]] std::string memberPathOf(MasterRoute route,
                                        std::int64_t memberId);
 
+/**
+ * @returns The path a client calls @p route by when its path names the server
+ * @p serverId: `/api/servers/7/games` for LIST_SERVER_GAMES_ROUTE and 7.
+ */
+[[nodiscard]] std::string serverPathOf(MasterRoute route,
+                                       std::int64_t serverId);
+
 /** @returns How HTTP names @p method: GET_METHOD, POST_METHOD or PUT_METHOD. */
 [[nodiscard]] std::string_view methodNameOf(RouteMethod method);
 

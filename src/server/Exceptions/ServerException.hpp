@@ -53,6 +53,12 @@ class NoJoinableGameException : public ServerException {
   NoJoinableGameException();
 };
 
+/** @brief The server was asked to host more games than a heartbeat lists. */
+class TooManyGamesException : public ServerException {
+ public:
+  TooManyGamesException(std::size_t requested, std::size_t maximum);
+};
+
 /** @brief ServerApplication::open() was called on a server already open. */
 class ServerAlreadyOpenException : public ServerException {
  public:

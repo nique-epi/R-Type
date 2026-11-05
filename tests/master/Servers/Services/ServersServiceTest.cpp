@@ -8,9 +8,11 @@
 #include <thread>
 #include <vector>
 #include "CreatedServer.hpp"
+#include "HostedGameState.hpp"
 #include "KnownServer.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterMessageTextFixtures.hpp"
+#include "MasterMessageTextTestConstants.hpp"
 #include "MasterTestConstants.hpp"
 #include "NetworkException.hpp"
 #include "ServerHeartbeat.hpp"
@@ -27,12 +29,17 @@ using rtype::master::ServerLimits;
 using rtype::master::ServerRecord;
 using rtype::network::CreatedServer;
 using rtype::network::heartbeatText;
+using rtype::network::HostedGameState;
 using rtype::network::InvalidMasterMessageException;
 using rtype::network::isWellFormedServerKey;
 using rtype::network::ServerHeartbeat;
 using rtype::network::ServerRegistration;
+using rtype::network::testing::FIRST_PILOT;
+using rtype::network::testing::FOURTH_PILOT;
 using rtype::network::testing::parisHeartbeat;
 using rtype::network::testing::parisRegistration;
+using rtype::network::testing::SECOND_PILOT;
+using rtype::network::testing::THIRD_PILOT;
 
 /**
  * Given a master with no server
@@ -382,4 +389,77 @@ TEST_F(ServersServiceFixture, AServerIsKnownAcrossARestart) {
 
   EXPECT_EQ(service().serverOfKey(created.key).value_or(KnownServer{}).id,
             created.id);
+}
+
+/**
+ * Given a server registered for games of four players
+ * When its heartbeat says a game is full while it holds one player
+ * Then it is refused and nothing is kept
+ */
+TEST_F(ServersServiceFixture, AFullGameWithFreeSeatsIsRefused) {
+  const KnownServer server = registeredServer(parisRegistration());
+  ServerHeartbeat heartbeat = parisHeartbeat();
+  heartbeat.games.front().state = HostedGameState::Full;
+
+  EXPECT_THROW(static_cast<void>(service().replaceOwnHeartbeat(
+                   server, heartbeat, FIRST_HEARTBEAT_DATE)),
+               InvalidMasterMessageException);
+  EXPECT_EQ(sampleCount(), 0);
+}
+
+/**
+ * Given a server registered for games of four players
+ * When its heartbeat says a game waits for players while it holds four
+ * Then it is refused and nothing is kept
+ */
+TEST_F(ServersServiceFixture, AWaitingGameWithEverySeatTakenIsRefused) {
+  const KnownServer server = registeredServer(parisRegistration());
+  ServerHeartbeat heartbeat = parisHeartbeat();
+  heartbeat.games.front().players = {
+      std::string{FIRST_PILOT}, std::string{SECOND_PILOT},
+      std::string{THIRD_PILOT}, std::string{FOURTH_PILOT}};
+
+  EXPECT_THROW(static_cast<void>(service().replaceOwnHeartbeat(
+                   server, heartbeat, FIRST_HEARTBEAT_DATE)),
+               InvalidMasterMessageException);
+  EXPECT_EQ(sampleCount(), 0);
+}
+
+/**
+ * Given a server registered for games of four players
+ * When its heartbeat says a game is full while it holds four
+ * Then it is accepted and kept
+ */
+TEST_F(ServersServiceFixture, AFullGameWithEverySeatTakenIsKept) {
+  const KnownServer server = registeredServer(parisRegistration());
+  ServerHeartbeat heartbeat = parisHeartbeat();
+  heartbeat.games.front().state = HostedGameState::Full;
+  heartbeat.games.front().players = {
+      std::string{FIRST_PILOT}, std::string{SECOND_PILOT},
+      std::string{THIRD_PILOT}, std::string{FOURTH_PILOT}};
+
+  ASSERT_TRUE(
+      service().replaceOwnHeartbeat(server, heartbeat, FIRST_HEARTBEAT_DATE));
+
+  EXPECT_EQ(lastHeartbeatOf(server.id), heartbeatText(heartbeat));
+}
+
+/**
+ * Given a server registered for games of four players
+ * When its heartbeat says one game plays with four players and one is over
+ * with none
+ * Then it is accepted, since only a game that waits is tied to its seats
+ */
+TEST_F(ServersServiceFixture, AGameThatDoesNotWaitMayHoldAnyPlayers) {
+  const KnownServer server = registeredServer(parisRegistration());
+  ServerHeartbeat heartbeat = parisHeartbeat();
+  heartbeat.games.front().state = HostedGameState::Playing;
+  heartbeat.games.front().players = {
+      std::string{FIRST_PILOT}, std::string{SECOND_PILOT},
+      std::string{THIRD_PILOT}, std::string{FOURTH_PILOT}};
+  heartbeat.games.back().state = HostedGameState::Finished;
+  heartbeat.games.back().players.clear();
+
+  EXPECT_TRUE(
+      service().replaceOwnHeartbeat(server, heartbeat, FIRST_HEARTBEAT_DATE));
 }
