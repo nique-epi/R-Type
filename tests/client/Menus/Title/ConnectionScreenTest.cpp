@@ -403,8 +403,8 @@ INSTANTIATE_TEST_SUITE_P(
                                  std::string_view(NICKNAME_TAKEN_STATUS))));
 
 /**
- * Given an attempt a server of protocol version 4 refused as
- * IncompatibleVersion, the client speaking version 3
+ * Given an attempt a server of protocol version 5 refused as
+ * IncompatibleVersion, the client speaking version 4
  * When a frame goes by
  * Then the status line names both versions, the client's first
  */
@@ -413,7 +413,7 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
-  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V3, SERVER V4"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V4, SERVER V5"), nullptr);
 }
 
 /**

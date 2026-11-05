@@ -11,9 +11,14 @@
 #include "CreatedServer.hpp"
 #include "CreationAttempt.hpp"
 #include "CreationQuota.hpp"
+#include "GameListing.hpp"
 #include "HeartbeatRecord.hpp"
 #include "HostedGame.hpp"
+#include "HostedGameState.hpp"
 #include "KnownServer.hpp"
+#include "LastHeartbeat.hpp"
+#include "ListedGame.hpp"
+#include "ListedGameState.hpp"
 #include "MasterDatabase.hpp"
 #include "MasterMessageConstants.hpp"
 #include "MasterMessageText.hpp"
@@ -33,6 +38,24 @@ std::string pointerOfGame(std::size_t index, std::string_view member) {
   return (nlohmann::json::json_pointer{} / std::string{network::GAMES_MEMBER} /
           index / std::string{member})
       .to_string();
+}
+
+/**
+ * @throws network::InvalidMasterMessageException naming the state of the game
+ * @p game, the one at @p index, when it says the game waits for players but the
+ * seats do not agree: Full without every seat taken, or Waiting with every seat
+ * taken.
+ */
+void requireStateToFitPlayers(const network::HostedGame& game,
+                              const ServerLimits& limits, std::size_t index) {
+  const bool seatsTaken = game.players.size() == limits.maximumPlayersPerGame;
+  const bool refused =
+      (game.state == network::HostedGameState::Full && !seatsTaken) ||
+      (game.state == network::HostedGameState::Waiting && seatsTaken);
+  if (refused) {
+    throw network::InvalidMasterMessageException(
+        pointerOfGame(index, network::STATE_MEMBER));
+  }
 }
 
 /**
@@ -56,7 +79,30 @@ void requireWithinLimits(const network::ServerHeartbeat& heartbeat,
       throw network::InvalidMasterMessageException(
           pointerOfGame(index, network::PLAYERS_MEMBER));
     }
+    requireStateToFitPlayers(game, limits, index);
   }
+}
+
+network::ListedGameState listedStateOf(network::HostedGameState state) {
+  switch (state) {
+    case network::HostedGameState::Waiting:
+      return network::ListedGameState::Waiting;
+    case network::HostedGameState::Full:
+      return network::ListedGameState::Full;
+    case network::HostedGameState::Starting:
+    case network::HostedGameState::Playing:
+    case network::HostedGameState::Finished:
+      return network::ListedGameState::InGame;
+  }
+  return network::ListedGameState::InGame;
+}
+
+network::ListedGame listedGameOf(const network::HostedGame& game) {
+  return network::ListedGame{
+      .number = game.number,
+      .name = game.name,
+      .state = listedStateOf(game.state),
+      .playerCount = static_cast<std::uint8_t>(game.players.size())};
 }
 
 }  // namespace
@@ -105,6 +151,21 @@ bool ServersService::replaceOwnHeartbeat(const KnownServer& server,
   servers_.saveLastHeartbeat(record);
   samples_.add(record);
   return true;
+}
+
+std::optional<network::GameListing> ServersService::gameListingOf(
+    std::int64_t serverId) {
+  const std::optional<LastHeartbeat> last = servers_.lastHeartbeatOf(serverId);
+  if (!last.has_value()) {
+    return std::nullopt;
+  }
+  network::GameListing listing;
+  if (last->heartbeat.has_value()) {
+    for (const network::HostedGame& game : last->heartbeat->games) {
+      listing.games.push_back(listedGameOf(game));
+    }
+  }
+  return listing;
 }
 
 }  // namespace rtype::master

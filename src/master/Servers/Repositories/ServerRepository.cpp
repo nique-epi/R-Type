@@ -1,4 +1,5 @@
 #include "ServerRepository.hpp"
+#include <SQLiteCpp/Column.h>
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Statement.h>
 #include <SQLiteCpp/Transaction.h>
@@ -10,6 +11,7 @@
 #include "EpochSeconds.hpp"
 #include "HeartbeatRecord.hpp"
 #include "KnownServer.hpp"
+#include "LastHeartbeat.hpp"
 #include "MasterDatabase.hpp"
 #include "MasterMessageText.hpp"
 #include "NewServer.hpp"
@@ -129,6 +131,25 @@ void ServerRepository::saveLastHeartbeat(const HeartbeatRecord& record) {
     update.bind(std::string{SERVER_ID_PARAMETER}, record.serverId);
     update.exec();
   });
+}
+
+std::optional<LastHeartbeat> ServerRepository::lastHeartbeatOf(
+    std::int64_t serverId) {
+  return database_.run(
+      [serverId](SQLite::Database& connection) -> std::optional<LastHeartbeat> {
+        SQLite::Statement query{connection,
+                                std::string{LAST_HEARTBEAT_OF_SERVER_QUERY}};
+        query.bind(std::string{SERVER_ID_PARAMETER}, serverId);
+        if (!query.executeStep()) {
+          return std::nullopt;
+        }
+        const SQLite::Column text = query.getColumn(LAST_HEARTBEAT_COLUMN);
+        if (text.isNull()) {
+          return LastHeartbeat{};
+        }
+        return LastHeartbeat{.heartbeat =
+                                 network::heartbeatFromText(text.getString())};
+      });
 }
 
 }  // namespace rtype::master
