@@ -222,7 +222,7 @@ rtype::engine::readLaunchArguments(
 
 - `executableFolder()` is the folder of the running executable, built on `executablePath()`. Each system has its own source file, `ExecutablePathLinux.cpp`, `ExecutablePathMacOs.cpp` and `ExecutablePathWindows.cpp`, and CMake builds only the one that matches. When the system does not tell, it throws `UnknownExecutablePathException`.
 - `locateAssetFolder()` returns the `assets/` folder (`ASSETS_FOLDER_NAME`) next to the executable, or in the folder above it, where the Visual Studio generator writes `Release/` and `Debug/`, and where every package puts it (see [Packages](https://github.com/nique-epi/R-Type#packages) in the README). When neither exists, it throws `AssetFolderNotFoundException`, which names both folders.
-- `genericText()` writes a path in UTF-8 with `/` between folders on every system, for logs and errors.
+- `genericText()` writes a path in UTF-8 with `/` between folders on every system, for logs and errors. It lives in `rtype_logging` (`src/logging/PathText/`), so the logger, the network and the engine all use it. Never `path::string()` or `generic_string()`: on Windows they convert to the code page of the system and throw on a folder name that page lacks (Cyrillic on a French Windows), which would stop the program at launch on a log line.
 
 The client loads its assets from that folder and the server reads its waves file there (`WAVE_FILE_IN_ASSETS`, see [Server and game](/R-Type/server/#waves-file-wavecatalog)); both write their default journal in `executableFolder()` (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)).
 

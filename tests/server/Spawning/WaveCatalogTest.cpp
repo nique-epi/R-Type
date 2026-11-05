@@ -3,8 +3,10 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+#include "NonAnsiFolderTestConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerException.hpp"
+#include "TemporaryFolder.hpp"
 #include "WaveCatalog.hpp"
 #include "WaveCatalogFixtures.hpp"
 #include "WaveCatalogTestConstants.hpp"
@@ -412,6 +414,27 @@ TEST(WaveCatalog, AMissingFileIsNamedByItsAbsolutePath) {
     ADD_FAILURE() << "the missing file was read";
   } catch (const UnreadableWaveFileException& error) {
     EXPECT_EQ(std::string{error.what()}, expected);
+  }
+}
+
+/**
+ * Given a missing waves file in a folder whose name is outside the code page
+ * When it is read
+ * Then the UnreadableWaveFileException names it in UTF-8
+ */
+TEST(WaveCatalog, AMissingFileInANonAnsiFolderIsNamedInUtf8) {
+  const TemporaryFolder folder;
+  const std::filesystem::path file =
+      folder.path() / rtype::testing::NON_ANSI_FOLDER_NAME / "waves.toml";
+
+  try {
+    static_cast<void>(WaveCatalog::fromFile(file));
+    ADD_FAILURE() << "the missing file was read";
+  } catch (const UnreadableWaveFileException& error) {
+    EXPECT_NE(
+        std::string{error.what()}.find(
+            std::string{rtype::testing::NON_ANSI_FOLDER_BYTES} + "/waves.toml"),
+        std::string::npos);
   }
 }
 

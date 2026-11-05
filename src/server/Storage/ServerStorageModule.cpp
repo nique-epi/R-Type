@@ -44,7 +44,7 @@ void ServerStorageModule::install(engine::InstallContext& context) {
 void ServerStorageModule::start() {
   const std::filesystem::path file = databaseFile();
   archive_.open(file);
-  logger_.info("results database ", engine::genericText(file));
+  logger_.info("results database ", logging::genericText(file));
 }
 
 void ServerStorageModule::stop() { archive_.close(); }

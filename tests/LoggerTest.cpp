@@ -22,11 +22,14 @@
 #include "JournalFile.hpp"
 #include "Logger.hpp"
 #include "LoggingException.hpp"
+#include "NonAnsiFolderTestConstants.hpp"
 
 using rtype::logging::LogFileOpenException;
 using rtype::logging::Logger;
 using rtype::logging::LogLevel;
 using rtype::logging::LogOutput;
+using rtype::testing::NON_ANSI_FOLDER_BYTES;
+using rtype::testing::NON_ANSI_FOLDER_NAME;
 
 namespace {
 
@@ -573,6 +576,25 @@ TEST_F(LoggerTest, UnopenableFileKeepsThePreviousOutput) {
 
   logger.info("still written");
   EXPECT_EQ(journal.lines().size(), 1U);
+}
+
+/**
+ * Given a file in a missing folder whose name is outside the code page
+ * When the output is set to that file
+ * Then the LogFileOpenException names it in UTF-8
+ */
+TEST(Logger, AJournalInAMissingNonAnsiFolderIsNamedInUtf8) {
+  const std::filesystem::path missing = std::filesystem::temp_directory_path() /
+                                        NON_ANSI_FOLDER_NAME / "journal.log";
+
+  try {
+    Logger::setOutput({.toStderr = false, .filePath = missing});
+    ADD_FAILURE() << "the journal was opened";
+  } catch (const LogFileOpenException& error) {
+    EXPECT_NE(std::string{error.what()}.find(
+                  std::string{NON_ANSI_FOLDER_BYTES} + "/journal.log"),
+              std::string::npos);
+  }
 }
 
 /**

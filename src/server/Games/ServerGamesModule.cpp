@@ -63,7 +63,7 @@ std::optional<std::uint32_t> seedOf(const engine::SettingValue& setting) {
 void logWavesFile(const logging::Logger& logger,
                   const std::filesystem::path& file,
                   const WaveCatalog& catalog) {
-  logger.info("waves file ", engine::genericText(file), ": ",
+  logger.info("waves file ", logging::genericText(file), ": ",
               catalog.difficulties().size(), " difficulties");
 }
 

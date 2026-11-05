@@ -25,13 +25,13 @@ PlayerSettings SettingsFile::load(const PlayerSettings& defaults) const {
   std::error_code error;
   const std::uintmax_t size = std::filesystem::file_size(*path_, error);
   if (error) {
-    logger_.info("no settings file at ", engine::genericText(*path_),
+    logger_.info("no settings file at ", logging::genericText(*path_),
                  ", first launch settings used");
     return defaults;
   }
   if (size > MAXIMUM_SETTINGS_FILE_SIZE) {
     logger_.warn("settings file too large, ignored: ",
-                 engine::genericText(*path_));
+                 logging::genericText(*path_));
     return defaults;
   }
   std::ifstream file(*path_, std::ios::binary);
@@ -39,12 +39,12 @@ PlayerSettings SettingsFile::load(const PlayerSettings& defaults) const {
                          std::istreambuf_iterator<char>());
   if (!file.good() && !file.eof()) {
     logger_.warn("settings file unreadable, ignored: ",
-                 engine::genericText(*path_));
+                 logging::genericText(*path_));
     return defaults;
   }
   const SettingsReading reading = readSettingsText(text, defaults);
   for (const std::string& line : reading.ignoredLines) {
-    logger_.warn("settings file ", engine::genericText(*path_), ", ", line);
+    logger_.warn("settings file ", logging::genericText(*path_), ", ", line);
   }
   return reading.settings;
 }
@@ -61,19 +61,19 @@ bool SettingsFile::save(const PlayerSettings& settings) {
   }
   if (error) {
     logger_.warn("cannot create the settings folder ",
-                 engine::genericText(folder), ": ", error.message());
+                 logging::genericText(folder), ": ", error.message());
     return false;
   }
   std::filesystem::path temporary = *path_;
   temporary += TEMPORARY_SETTINGS_SUFFIX;
   if (!write(temporary, settings)) {
-    logger_.warn("cannot write ", engine::genericText(temporary));
+    logger_.warn("cannot write ", logging::genericText(temporary));
     std::filesystem::remove(temporary, error);
     return false;
   }
   std::filesystem::rename(temporary, *path_, error);
   if (error) {
-    logger_.warn("cannot replace ", engine::genericText(*path_), ": ",
+    logger_.warn("cannot replace ", logging::genericText(*path_), ": ",
                  error.message());
     std::filesystem::remove(temporary, error);
     return false;
