@@ -109,14 +109,19 @@ std::optional<std::uint8_t> attackNumberOf(std::string_view key) {
   return number;
 }
 
+/** @brief A key of `[appearance]` that names an attack, and its number. */
+struct AttackKey {
+  std::string_view key;
+  std::uint8_t number{};
+};
+
 /** @returns The keys of `[appearance]` that name an attack, in the order the
  * table lists them; they view the keys of @p appearance. */
-std::vector<std::string_view> attackKeysOf(
-    const engine::DataFileTable& appearance) {
-  std::vector<std::string_view> keys;
+std::vector<AttackKey> attackKeysOf(const engine::DataFileTable& appearance) {
+  std::vector<AttackKey> keys;
   for (const auto& [key, node] : appearance.table.get()) {
-    if (attackNumberOf(key.str()).has_value()) {
-      keys.push_back(key.str());
+    if (const std::optional<std::uint8_t> number = attackNumberOf(key.str())) {
+      keys.push_back(AttackKey{.key = key.str(), .number = *number});
     }
   }
   return keys;
@@ -142,15 +147,17 @@ void addAttackPhases(const engine::DataFileTable& attack, std::uint8_t number,
  * @p appearance, whose keys are checked. */
 std::vector<ActionAnimation> actionsOf(
     const engine::DataFileTable& appearance) {
-  const std::vector<std::string_view> attackKeys = attackKeysOf(appearance);
+  const std::vector<AttackKey> attacks = attackKeysOf(appearance);
   std::vector<std::string_view> known{APPEARANCE_KEYS.begin(),
                                       APPEARANCE_KEYS.end()};
-  known.insert(known.end(), attackKeys.begin(), attackKeys.end());
+  for (const AttackKey& attack : attacks) {
+    known.push_back(attack.key);
+  }
   engine::refuseUnknownKeys(appearance, known);
   std::vector<ActionAnimation> actions;
-  for (const std::string_view key : attackKeys) {
-    addAttackPhases(engine::tableAt(appearance, key),
-                    attackNumberOf(key).value_or(0), actions);
+  for (const AttackKey& attack : attacks) {
+    addAttackPhases(engine::tableAt(appearance, attack.key), attack.number,
+                    actions);
   }
   return actions;
 }

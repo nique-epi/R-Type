@@ -28,7 +28,7 @@ bool isActive(const HurtBox& box, const CurrentAction* current) {
 }
 
 /** @returns @p box laid on the enemy standing at @p position. */
-engine::Bounds boundsOf(const HurtBox& box, const Position& position) {
+engine::Bounds hurtBoxBounds(const HurtBox& box, const Position& position) {
   return engine::Bounds{.centerX = position.x + box.offsetX,
                         .centerY = position.y + box.offsetY,
                         .width = box.width,
@@ -36,7 +36,7 @@ engine::Bounds boundsOf(const HurtBox& box, const Position& position) {
 }
 
 /** @returns The rectangle of a ship at @p position with the box @p box. */
-engine::Bounds boundsOf(const Position& position, const CollisionBox& box) {
+engine::Bounds shipBoundsAt(const Position& position, const CollisionBox& box) {
   return engine::Bounds{.centerX = position.x,
                         .centerY = position.y,
                         .width = box.width,
@@ -49,7 +49,7 @@ bool isHurt(const HurtZone& zone, const Position& position,
             const CurrentAction* current, const ShipBounds& ship) {
   return std::ranges::any_of(zone.boxes, [&](const HurtBox& box) {
     return isActive(box, current) &&
-           engine::overlaps(boundsOf(box, position), ship.bounds);
+           engine::overlaps(hurtBoxBounds(box, position), ship.bounds);
   });
 }
 
@@ -64,8 +64,8 @@ void HurtZoneSystem::collectShips(engine::ComponentRegistry& components) {
                           const CollisionBox& box) {
         const Position* const position = components.get<Position>(entity);
         if (type == EntityType::Player && position != nullptr) {
-          ships_.push_back(
-              ShipBounds{.entity = entity, .bounds = boundsOf(*position, box)});
+          ships_.push_back(ShipBounds{.entity = entity,
+                                      .bounds = shipBoundsAt(*position, box)});
         }
       });
 }
@@ -87,7 +87,9 @@ void HurtZoneSystem::publishContacts(engine::ComponentRegistry& components) {
 void HurtZoneSystem::update(engine::ComponentRegistry& components,
                             [[maybe_unused]] engine::Duration elapsed) {
   collectShips(components);
-  publishContacts(components);
+  if (!ships_.empty()) {
+    publishContacts(components);
+  }
 }
 
 }  // namespace rtype::game
