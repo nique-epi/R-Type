@@ -85,6 +85,9 @@ class PlayerConnection {
   [[nodiscard]] const WaitingRoom& waitingRoom() const;
   [[nodiscard]] EntityMessageQueue& entityMessages();
 
+  /** @returns The probe of the list of servers, on its own route. */
+  [[nodiscard]] IServerPingProbe& pings();
+
  private:
   NetworkThread network_;
   DatagramRouter router_;

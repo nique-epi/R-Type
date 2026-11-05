@@ -86,4 +86,6 @@ EntityMessageQueue& PlayerConnection::entityMessages() {
   return entityMessages_;
 }
 
+IServerPingProbe& PlayerConnection::pings() { return pings_; }
+
 }  // namespace rtype::client
