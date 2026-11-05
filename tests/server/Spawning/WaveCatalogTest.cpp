@@ -266,7 +266,7 @@ TEST(WaveCatalog, AcceptsTheFewestBydos) {
       WaveCatalog::fromText(calmFileWith("first_wave_bydos", FEWEST_BYDOS),
                             TEST_FILE_NAME, shippedEntitySheets());
 
-  EXPECT_EQ(catalog.planOf("calm").curve.firstWave.bydoCount, 1U);
+  EXPECT_EQ(catalog.planOf("calm").curve.firstWave.entityCount, 1U);
 }
 
 /**
@@ -294,7 +294,7 @@ TEST(WaveCatalog, AcceptsTheMostBydos) {
       WaveCatalog::fromText(calmFileWith("first_wave_bydos", MOST_BYDOS),
                             TEST_FILE_NAME, shippedEntitySheets());
 
-  EXPECT_EQ(catalog.planOf("calm").curve.firstWave.bydoCount, 100U);
+  EXPECT_EQ(catalog.planOf("calm").curve.firstWave.entityCount, 100U);
 }
 
 /**

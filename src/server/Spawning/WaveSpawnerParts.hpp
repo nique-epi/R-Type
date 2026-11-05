@@ -16,11 +16,12 @@ namespace rtype::server {
 
 class PlayerRoster;
 
-/** @brief What a BydoSpawner is built from. */
-struct BydoSpawnerParts {
-  /** @brief The world the Bydos are created in; it must outlive the spawner. */
+/** @brief What a WaveSpawner is built from. */
+struct WaveSpawnerParts {
+  /** @brief The world the enemies are created in; it must outlive the spawner.
+   */
   std::reference_wrapper<game::World> world;
-  /** @brief The players told about each Bydo; it must outlive the spawner. */
+  /** @brief The players told about each enemy; it must outlive the spawner. */
   std::reference_wrapper<PlayerRoster> roster;
   /** @brief What is called for each datagram to send. Must not be empty. */
   SendDatagram send;

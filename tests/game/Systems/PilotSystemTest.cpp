@@ -3,7 +3,6 @@
 #include <cstddef>
 #include "BehaviourConstants.hpp"
 #include "BehaviourTestConstants.hpp"
-#include "BydoSpawnPosition.hpp"
 #include "Entity.hpp"
 #include "Intent.hpp"
 #include "Pilot.hpp"
@@ -11,14 +10,15 @@
 #include "PilotSystemTestConstants.hpp"
 #include "Position.hpp"
 #include "TimeConstants.hpp"
+#include "WaveEntryPosition.hpp"
 
 using rtype::engine::Entity;
 using rtype::engine::SIMULATION_TICK_DURATION;
-using rtype::game::bydoSpawnPosition;
 using rtype::game::Intent;
 using rtype::game::Pilot;
 using rtype::game::Position;
 using rtype::game::STRAIGHT_BEHAVIOUR_NAME;
+using rtype::game::waveEntryPosition;
 using rtype::game::WEAVE_BEHAVIOUR_NAME;
 using rtype::game::testing::BODY_START_X;
 using rtype::game::testing::DRIFTER_X_AFTER_A_SECOND;
@@ -122,7 +122,7 @@ TEST_F(PilotSystemFixture, TheWeaveDoesNotDependOnTheStep) {
  * Then its center is at 920, so its whole height stays above the status band
  */
 TEST_F(PilotSystemFixture, AWeaveOnTheLowestRowStaysAboveTheStatusBand) {
-  const Position lowestRow = bydoSpawnPosition(std::nextafter(1.0F, 0.0F));
+  const Position lowestRow = waveEntryPosition(std::nextafter(1.0F, 0.0F));
   const Entity body = addBody(WEAVE_BEHAVIOUR_NAME, WEAVER_SETTINGS, lowestRow);
 
   run(QUARTER_PERIOD);

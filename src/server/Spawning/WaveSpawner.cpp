@@ -1,4 +1,4 @@
-#include "BydoSpawner.hpp"
+#include "WaveSpawner.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -10,10 +10,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "BydoSpawnPosition.hpp"
-#include "BydoSpawnerConstants.hpp"
-#include "BydoSpawnerParts.hpp"
-#include "BydoWave.hpp"
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EngineException.hpp"
@@ -27,7 +23,11 @@
 #include "Position.hpp"
 #include "ServerException.hpp"
 #include "TimeConstants.hpp"
+#include "Wave.hpp"
+#include "WaveEntryPosition.hpp"
 #include "WavePlan.hpp"
+#include "WaveSpawnerConstants.hpp"
+#include "WaveSpawnerParts.hpp"
 #include "WireEntityTypeMapping.hpp"
 #include "World.hpp"
 
@@ -55,36 +55,36 @@ std::vector<std::reference_wrapper<const game::EntitySheet>> enemySheetsOf(
 
 }  // namespace
 
-BydoSpawner::BydoSpawner(BydoSpawnerParts parts)
+WaveSpawner::WaveSpawner(WaveSpawnerParts parts)
     : world_(&parts.world.get()),
       roster_(&parts.roster.get()),
       send_(std::move(parts.send)),
-      logger_(std::string{BYDO_SPAWNER_LOGGER_NAME}),
+      logger_(std::string{WAVE_SPAWNER_LOGGER_NAME}),
       random_(parts.seed),
       enemies_(enemySheetsOf(parts.waves, parts.types.get())),
       waveDirector_(parts.waves.curve) {
-  logger_.info("Bydo spawning starts from the seed ", parts.seed);
+  logger_.info("wave spawning starts from the seed ", parts.seed);
 }
 
-void BydoSpawner::onTick() {
-  const std::size_t bydosDue =
-      waveDirector_.advance(engine::SIMULATION_TICK_DURATION, bydosInPlay());
+void WaveSpawner::onTick() {
+  const std::size_t enemiesDue =
+      waveDirector_.advance(engine::SIMULATION_TICK_DURATION, enemiesInPlay());
   if (waveDirector_.waveNumber() != loggedWaveNumber_) {
     logCurrentWave();
   }
-  for (std::size_t bydo = 0; bydo < bydosDue; ++bydo) {
+  for (std::size_t enemy = 0; enemy < enemiesDue; ++enemy) {
     spawnOne();
   }
 }
 
-bool BydoSpawner::lastWaveFinished() const {
+bool WaveSpawner::lastWaveFinished() const {
   return waveDirector_.lastWaveFinished();
 }
 
-void BydoSpawner::spawnOne() {
+void WaveSpawner::spawnOne() {
   const game::Position position = nextPosition();
   const game::EntitySheet& sheet = nextEnemy();
-  const std::optional<std::uint32_t> networkId = createBydo(sheet, position);
+  const std::optional<std::uint32_t> networkId = createEnemy(sheet, position);
   if (!networkId.has_value()) {
     return;
   }
@@ -92,27 +92,27 @@ void BydoSpawner::spawnOne() {
   announce(sheet, *networkId, position);
 }
 
-game::Position BydoSpawner::nextPosition() {
+game::Position WaveSpawner::nextPosition() {
   std::uniform_real_distribution<float> unitDraw{0.0F, 1.0F};
   const float highestDraw = std::nextafter(1.0F, 0.0F);
-  return game::bydoSpawnPosition(std::min(unitDraw(random_), highestDraw));
+  return game::waveEntryPosition(std::min(unitDraw(random_), highestDraw));
 }
 
-const game::EntitySheet& BydoSpawner::nextEnemy() const {
+const game::EntitySheet& WaveSpawner::nextEnemy() const {
   return enemies_[spawnedCount_ % enemies_.size()];
 }
 
-std::optional<std::uint32_t> BydoSpawner::createBydo(
+std::optional<std::uint32_t> WaveSpawner::createEnemy(
     const game::EntitySheet& sheet, game::Position position) {
   try {
     return world_->spawn(sheet, position);
   } catch (const engine::NetworkIdExhaustedException&) {
-    logger_.warn("no Bydo appears: every network id was given");
+    logger_.warn("no enemy appears: every network id was given");
     return std::nullopt;
   }
 }
 
-void BydoSpawner::announce(const game::EntitySheet& sheet,
+void WaveSpawner::announce(const game::EntitySheet& sheet,
                            std::uint32_t networkId, game::Position position) {
   for (ConnectedPlayer* const player : roster_->connected()) {
     sendEntitySpawned(
@@ -124,23 +124,23 @@ void BydoSpawner::announce(const game::EntitySheet& sheet,
   }
 }
 
-std::size_t BydoSpawner::bydosInPlay() {
-  std::size_t bydos = 0;
+std::size_t WaveSpawner::enemiesInPlay() {
+  std::size_t enemies = 0;
   world_->components().forEach<game::EntityType, game::EntityType>(
-      [&bydos](engine::Entity, const game::EntityType& type,
-               const game::EntityType&) {
+      [&enemies](engine::Entity, const game::EntityType& type,
+                 const game::EntityType&) {
         if (type == game::EntityType::Enemy) {
-          ++bydos;
+          ++enemies;
         }
       });
-  return bydos;
+  return enemies;
 }
 
-void BydoSpawner::logCurrentWave() {
+void WaveSpawner::logCurrentWave() {
   loggedWaveNumber_ = waveDirector_.waveNumber();
-  const game::BydoWave wave = waveDirector_.currentWave();
+  const game::Wave wave = waveDirector_.currentWave();
   logger_.info(
-      "wave ", loggedWaveNumber_, ": ", wave.bydoCount, " Bydos, one every ",
+      "wave ", loggedWaveNumber_, ": ", wave.entityCount, " Bydos, one every ",
       std::chrono::duration_cast<std::chrono::milliseconds>(wave.spawnInterval)
           .count(),
       " ms");

@@ -6,46 +6,46 @@
 #include <optional>
 #include <random>
 #include <vector>
-#include "BydoSpawnerParts.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySpawnSender.hpp"
 #include "Logger.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "WaveDirector.hpp"
+#include "WaveSpawnerParts.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
 
 /**
- * @brief Makes Bydos appear in a world, in waves, and tells the players about
+ * @brief Makes enemies appear in a world, in waves, and tells the players about
  * each one.
  *
  * A game::WaveDirector says when, on the curve of the wave plan: after a first
- * pause, the Bydos of the first wave appear one by one; the next wave, larger
- * and faster, comes a pause after a tick that finds no Bydo left in the world,
+ * pause, the enemies of the first wave appear one by one; the next wave, larger
+ * and faster, comes a pause after a tick that finds no enemy left in the world,
  * killed or gone on the left. Each tick, the spawner counts the entities of
  * type Enemy in the world and hands that count to the director. When the
  * director moves on to a wave, at the start of the pause before it, the
- * spawner logs the number of the wave, its Bydos and the time between two of
+ * spawner logs the number of the wave, its enemies and the time between two of
  * them at info level (`wave 2: 4 Bydos, one every 1750 ms`). The level holds
  * the waves of the curve: once the last of them is over, no wave follows.
  *
- * The Bydos take the sheets the enemies of the plan name, in turn, the cycle
+ * The enemies take in turn the sheets the enemies of the plan name, the cycle
  * carrying on from one wave to the next: with `drifter, weaver`, a Drifter,
  * which goes straight, then a Weaver, which weaves up and down, and so on (see
- * game::World::spawn). A Bydo appears off screen past the right edge, at a
- * height drawn from a random generator (see game::bydoSpawnPosition); the
+ * game::World::spawn). An enemy appears off screen past the right edge, at a
+ * height drawn from a random generator (see game::waveEntryPosition); the
  * sheet uses no random draw, so a seed still gives the same heights. The
  * generator starts from the seed of the parts, which is logged, so the same
  * seed gives the same heights in the same order. Every connected player is sent
- * an EntitySpawned for the Bydo, as the Entities section of the protocol page
- * describes. When every network id was given, the Bydo is skipped and a warning
- * is logged.
+ * an EntitySpawned for the enemy, as the Entities section of the protocol page
+ * describes. When every network id was given, the enemy is skipped and a
+ * warning is logged.
  *
  * Not thread-safe: use it from the simulation thread only.
  */
-class BydoSpawner {
+class WaveSpawner {
  public:
   /**
    * @param parts The world, the players, how to send, the seed, which is
@@ -55,18 +55,18 @@ class BydoSpawner {
    * game::UnknownEntityTypeException when it names a sheet @p parts does not
    * have.
    */
-  explicit BydoSpawner(BydoSpawnerParts parts);
+  explicit WaveSpawner(WaveSpawnerParts parts);
 
   /**
-   * @brief Lets one simulation tick of time pass: the Bydos the wave director
+   * @brief Lets one simulation tick of time pass: the enemies the wave director
    * says are due appear.
    */
   void onTick();
 
   /**
    * @returns Whether the last wave of the level is over: every one of its
-   * Bydos appeared and a tick found none in the world. It stays true and no
-   * Bydo appears any more. The game ends the level on it, or on more than it
+   * enemies appeared and a tick found none in the world. It stays true and no
+   * enemy appears any more. The game ends the level on it, or on more than it
    * once a boss comes after the last wave.
    */
   [[nodiscard]] bool lastWaveFinished() const;
@@ -75,11 +75,11 @@ class BydoSpawner {
   void spawnOne();
   [[nodiscard]] game::Position nextPosition();
   [[nodiscard]] const game::EntitySheet& nextEnemy() const;
-  [[nodiscard]] std::optional<std::uint32_t> createBydo(
+  [[nodiscard]] std::optional<std::uint32_t> createEnemy(
       const game::EntitySheet& sheet, game::Position position);
   void announce(const game::EntitySheet& sheet, std::uint32_t networkId,
                 game::Position position);
-  [[nodiscard]] std::size_t bydosInPlay();
+  [[nodiscard]] std::size_t enemiesInPlay();
   void logCurrentWave();
 
   game::World* world_;

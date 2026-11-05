@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 #include <limits>
 #include <tuple>
-#include "BydoSpawnPosition.hpp"
 #include "GameException.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
 #include "SpawningConstants.hpp"
+#include "WaveEntryPosition.hpp"
 
 namespace {
 
@@ -33,9 +33,9 @@ constexpr float ROW_TOLERANCE = 0.01F;
  * When the spawn position is asked
  * Then the Bydo is past the right edge of the playfield, so off screen
  */
-TEST(BydoSpawnPosition, AlwaysAppearsPastTheRightEdge) {
+TEST(WaveEntryPosition, AlwaysAppearsPastTheRightEdge) {
   for (const float draw : {0.0F, MIDDLE_DRAW, JUST_UNDER_ONE}) {
-    EXPECT_GT(rtype::game::bydoSpawnPosition(draw).x,
+    EXPECT_GT(rtype::game::waveEntryPosition(draw).x,
               rtype::game::PLAYFIELD_WIDTH);
   }
 }
@@ -46,10 +46,10 @@ TEST(BydoSpawnPosition, AlwaysAppearsPastTheRightEdge) {
  * Then the height is the highest row, one margin under the top edge, and the
  * middle of the area of play; the lowest row has its own test
  */
-TEST(BydoSpawnPosition, TheDrawPicksTheHeightFromTopToBottom) {
-  EXPECT_FLOAT_EQ(rtype::game::bydoSpawnPosition(0.0F).y,
-                  rtype::game::BYDO_ROW_MARGIN);
-  EXPECT_FLOAT_EQ(rtype::game::bydoSpawnPosition(MIDDLE_DRAW).y,
+TEST(WaveEntryPosition, TheDrawPicksTheHeightFromTopToBottom) {
+  EXPECT_FLOAT_EQ(rtype::game::waveEntryPosition(0.0F).y,
+                  rtype::game::ENEMY_ROW_MARGIN);
+  EXPECT_FLOAT_EQ(rtype::game::waveEntryPosition(MIDDLE_DRAW).y,
                   rtype::game::PLAY_AREA_HEIGHT / 2.0F);
 }
 
@@ -59,8 +59,8 @@ TEST(BydoSpawnPosition, TheDrawPicksTheHeightFromTopToBottom) {
  * Then the Bydo appears on row 872, far enough above the status band of the
  * clients that even the bottom of a wave keeps it above the band
  */
-TEST(BydoSpawnPosition, TheLowestRowStaysAboveTheStatusBand) {
-  EXPECT_NEAR(rtype::game::bydoSpawnPosition(JUST_UNDER_ONE).y,
+TEST(WaveEntryPosition, TheLowestRowStaysAboveTheStatusBand) {
+  EXPECT_NEAR(rtype::game::waveEntryPosition(JUST_UNDER_ONE).y,
               LOWEST_ROW_ABOVE_THE_STATUS_BAND, ROW_TOLERANCE);
 }
 
@@ -69,10 +69,10 @@ TEST(BydoSpawnPosition, TheLowestRowStaysAboveTheStatusBand) {
  * When the spawn position is asked
  * Then it is refused, one step outside each bound
  */
-TEST(BydoSpawnPosition, RefusesADrawOutsideZeroToJustUnderOne) {
+TEST(WaveEntryPosition, RefusesADrawOutsideZeroToJustUnderOne) {
   for (const float draw :
        {ONE, BELOW_ZERO, std::numeric_limits<float>::quiet_NaN()}) {
-    EXPECT_THROW(std::ignore = rtype::game::bydoSpawnPosition(draw),
+    EXPECT_THROW(std::ignore = rtype::game::waveEntryPosition(draw),
                  rtype::game::InvalidRandomUnitException);
   }
 }
@@ -83,7 +83,7 @@ TEST(BydoSpawnPosition, RefusesADrawOutsideZeroToJustUnderOne) {
  * Then the Bydo appears on row 112, so even the top of a wave keeps it on
  * screen
  */
-TEST(BydoSpawnPosition, TheHighestRowLeavesRoomForAWave) {
-  EXPECT_FLOAT_EQ(rtype::game::bydoSpawnPosition(0.0F).y,
+TEST(WaveEntryPosition, TheHighestRowLeavesRoomForAWave) {
+  EXPECT_FLOAT_EQ(rtype::game::waveEntryPosition(0.0F).y,
                   HIGHEST_ROW_UNDER_THE_TOP_EDGE);
 }

@@ -4,9 +4,6 @@
 #include <string_view>
 #include <vector>
 #include "BehaviourConstants.hpp"
-#include "BydoSpawner.hpp"
-#include "BydoSpawnerScene.hpp"
-#include "BydoSpawnerTestConstants.hpp"
 #include "EntitySpawned.hpp"
 #include "GameException.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
@@ -16,10 +13,13 @@
 #include "ServerException.hpp"
 #include "SpawningConstants.hpp"
 #include "WavePlanFixtures.hpp"
+#include "WaveSpawner.hpp"
+#include "WaveSpawnerScene.hpp"
+#include "WaveSpawnerTestConstants.hpp"
 #include "WorldState.hpp"
 #include "game/Waves/WaveTestConstants.hpp"
 
-using rtype::game::BYDO_ROW_MARGIN;
+using rtype::game::ENEMY_ROW_MARGIN;
 using rtype::game::PLAY_AREA_HEIGHT;
 using rtype::game::PLAYFIELD_WIDTH;
 using rtype::game::STRAIGHT_BEHAVIOUR_NAME;
@@ -32,9 +32,8 @@ using rtype::logging::Logger;
 using rtype::logging::LogLevel;
 using rtype::network::EntitySpawned;
 using rtype::network::WireEntityType;
-using rtype::server::BydoSpawner;
 using rtype::server::EmptyEnemyCycleException;
-using rtype::server::testing::BydoSpawnerScene;
+using rtype::server::WaveSpawner;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::FIRST_WAVE_LINE_TEXT;
 using rtype::server::testing::NO_SHEET_CYCLE;
@@ -46,6 +45,7 @@ using rtype::server::testing::TICKS_TO_THE_FIRST_BYDO;
 using rtype::server::testing::TICKS_TO_THE_SECOND_BYDO;
 using rtype::server::testing::TWENTY_SECONDS_OF_TICKS;
 using rtype::server::testing::wavePlanOf;
+using rtype::server::testing::WaveSpawnerScene;
 using rtype::server::testing::WEAVER_FIRST_CYCLE;
 
 /**
@@ -53,12 +53,12 @@ using rtype::server::testing::WEAVER_FIRST_CYCLE;
  * When one tick less than the first pause has passed
  * Then no Bydo has appeared and nothing was sent
  */
-TEST(BydoSpawner, NothingAppearsBeforeTheFirstPauseEnds) {
-  BydoSpawnerScene scene;
+TEST(WaveSpawner, NothingAppearsBeforeTheFirstPauseEnds) {
+  WaveSpawnerScene scene;
   scene.connect(FIRST_PLAYER);
-  BydoSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
+  WaveSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
 
-  BydoSpawnerScene::runTicks(spawner, TICKS_TO_THE_FIRST_BYDO - 1);
+  WaveSpawnerScene::runTicks(spawner, TICKS_TO_THE_FIRST_BYDO - 1);
 
   EXPECT_EQ(scene.world().entityCount(), 0U);
   EXPECT_TRUE(scene.spawnsSent().empty());
@@ -70,20 +70,20 @@ TEST(BydoSpawner, NothingAppearsBeforeTheFirstPauseEnds) {
  * Then one Bydo is in the world and the player is sent one EntitySpawned for
  * it, past the right edge
  */
-TEST(BydoSpawner, ABydoAppearsOffScreenWhenTheFirstPauseEnds) {
-  BydoSpawnerScene scene;
+TEST(WaveSpawner, ABydoAppearsOffScreenWhenTheFirstPauseEnds) {
+  WaveSpawnerScene scene;
   scene.connect(FIRST_PLAYER);
-  BydoSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
+  WaveSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
 
-  BydoSpawnerScene::runTicks(spawner, TICKS_TO_THE_FIRST_BYDO);
+  WaveSpawnerScene::runTicks(spawner, TICKS_TO_THE_FIRST_BYDO);
 
   EXPECT_EQ(scene.world().entityCount(), 1U);
   const std::vector<EntitySpawned> spawns = scene.spawnsSent();
   ASSERT_EQ(spawns.size(), 1U);
   EXPECT_EQ(spawns.front().entityType, WireEntityType::Bydo);
   EXPECT_GT(spawns.front().x, PLAYFIELD_WIDTH);
-  EXPECT_GE(spawns.front().y, BYDO_ROW_MARGIN);
-  EXPECT_LE(spawns.front().y, PLAY_AREA_HEIGHT - BYDO_ROW_MARGIN);
+  EXPECT_GE(spawns.front().y, ENEMY_ROW_MARGIN);
+  EXPECT_LE(spawns.front().y, PLAY_AREA_HEIGHT - ENEMY_ROW_MARGIN);
 }
 
 /**
@@ -92,13 +92,13 @@ TEST(BydoSpawner, ABydoAppearsOffScreenWhenTheFirstPauseEnds) {
  * Then two Bydos are in the world and each player was sent both, at the same
  * heights
  */
-TEST(BydoSpawner, EveryPlayerIsToldAboutEveryBydo) {
-  BydoSpawnerScene scene;
+TEST(WaveSpawner, EveryPlayerIsToldAboutEveryBydo) {
+  WaveSpawnerScene scene;
   scene.connect(FIRST_PLAYER);
   scene.connect(SECOND_PLAYER);
-  BydoSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
+  WaveSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
 
-  BydoSpawnerScene::runTicks(spawner, TICKS_TO_THE_SECOND_BYDO);
+  WaveSpawnerScene::runTicks(spawner, TICKS_TO_THE_SECOND_BYDO);
 
   EXPECT_EQ(scene.world().entityCount(), 2U);
   const std::vector<float> first = scene.heightsSentTo(FIRST_PLAYER);
@@ -112,13 +112,13 @@ TEST(BydoSpawner, EveryPlayerIsToldAboutEveryBydo) {
  * Then they announce the same heights in the same order, and a spawner started
  * from another seed announces other heights
  */
-TEST(BydoSpawner, TheSeedDecidesTheHeights) {
+TEST(WaveSpawner, TheSeedDecidesTheHeights) {
   const std::vector<float> reference =
-      BydoSpawnerScene::heightsOfTheFirstWave(SPAWNER_SEED);
-  ASSERT_EQ(reference.size(), TEST_WAVE_CURVE.firstWave.bydoCount);
+      WaveSpawnerScene::heightsOfTheFirstWave(SPAWNER_SEED);
+  ASSERT_EQ(reference.size(), TEST_WAVE_CURVE.firstWave.entityCount);
 
-  EXPECT_EQ(BydoSpawnerScene::heightsOfTheFirstWave(SPAWNER_SEED), reference);
-  EXPECT_NE(BydoSpawnerScene::heightsOfTheFirstWave(OTHER_SPAWNER_SEED),
+  EXPECT_EQ(WaveSpawnerScene::heightsOfTheFirstWave(SPAWNER_SEED), reference);
+  EXPECT_NE(WaveSpawnerScene::heightsOfTheFirstWave(OTHER_SPAWNER_SEED),
             reference);
 }
 
@@ -127,9 +127,9 @@ TEST(BydoSpawner, TheSeedDecidesTheHeights) {
  * When their heights are compared
  * Then they are not all the same, so the height is not a fixed row
  */
-TEST(BydoSpawner, HeightsVaryFromOneBydoToTheNext) {
+TEST(WaveSpawner, HeightsVaryFromOneBydoToTheNext) {
   const std::vector<float> heights =
-      BydoSpawnerScene::heightsOfTheFirstWave(SPAWNER_SEED);
+      WaveSpawnerScene::heightsOfTheFirstWave(SPAWNER_SEED);
 
   EXPECT_GT(std::ranges::count_if(
                 heights,
@@ -142,11 +142,11 @@ TEST(BydoSpawner, HeightsVaryFromOneBydoToTheNext) {
  * When the first pause passes
  * Then the Bydo is in the world and nothing is sent
  */
-TEST(BydoSpawner, ABydoAppearsEvenWithNobodyToTell) {
-  BydoSpawnerScene scene;
-  BydoSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
+TEST(WaveSpawner, ABydoAppearsEvenWithNobodyToTell) {
+  WaveSpawnerScene scene;
+  WaveSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
 
-  BydoSpawnerScene::runTicks(spawner, TICKS_TO_THE_FIRST_BYDO);
+  WaveSpawnerScene::runTicks(spawner, TICKS_TO_THE_FIRST_BYDO);
 
   EXPECT_EQ(scene.world().entityCount(), 1U);
   EXPECT_TRUE(scene.spawnsSent().empty());
@@ -157,13 +157,13 @@ TEST(BydoSpawner, ABydoAppearsEvenWithNobodyToTell) {
  * When a spawner is started from a seed
  * Then the log holds a line with that seed, so the case can be replayed
  */
-TEST(BydoSpawner, TheSeedIsLogged) {
+TEST(WaveSpawner, TheSeedIsLogged) {
   Logger::setLevel(LogLevel::Info);
   const JournalFile journal;
   Logger::setOutput({.toStderr = false, .filePath = journal.path()});
-  BydoSpawnerScene scene;
+  WaveSpawnerScene scene;
 
-  const BydoSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
+  const WaveSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
 
   const std::vector<std::string> lines = journal.lines();
   ASSERT_EQ(lines.size(), 1U);
@@ -177,14 +177,14 @@ TEST(BydoSpawner, TheSeedIsLogged) {
  * Then the log holds a line naming the first wave, its 3 Bydos and the 2
  * seconds between two of them
  */
-TEST(BydoSpawner, TheStartOfAWaveIsLogged) {
+TEST(WaveSpawner, TheStartOfAWaveIsLogged) {
   Logger::setLevel(LogLevel::Info);
   const JournalFile journal;
   Logger::setOutput({.toStderr = false, .filePath = journal.path()});
-  BydoSpawnerScene scene;
-  BydoSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
+  WaveSpawnerScene scene;
+  WaveSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
 
-  BydoSpawnerScene::runTicks(spawner, 1);
+  WaveSpawnerScene::runTicks(spawner, 1);
 
   const std::vector<std::string> lines = journal.lines();
   ASSERT_EQ(lines.size(), 2U);
@@ -197,11 +197,11 @@ TEST(BydoSpawner, TheStartOfAWaveIsLogged) {
  * Then two Bydos go straight and one weaves: the first, the third and the
  * second
  */
-TEST(BydoSpawner, TheBydosTakeTheKindsOfTheirPlanInTurn) {
-  BydoSpawnerScene scene;
-  BydoSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
+TEST(WaveSpawner, TheBydosTakeTheKindsOfTheirPlanInTurn) {
+  WaveSpawnerScene scene;
+  WaveSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
 
-  BydoSpawnerScene::runTicks(spawner, TICKS_TO_THE_WHOLE_FIRST_WAVE);
+  WaveSpawnerScene::runTicks(spawner, TICKS_TO_THE_WHOLE_FIRST_WAVE);
 
   const std::vector<std::string_view> behaviours = scene.behavioursOfTheBydos();
   EXPECT_EQ(std::ranges::count(behaviours, STRAIGHT_BEHAVIOUR_NAME), 2);
@@ -213,12 +213,12 @@ TEST(BydoSpawner, TheBydosTakeTheKindsOfTheirPlanInTurn) {
  * When the first Bydo appears
  * Then it weaves: the cycle starts with the first kind the plan names
  */
-TEST(BydoSpawner, TheCycleStartsWithTheFirstKindItNames) {
-  BydoSpawnerScene scene;
-  BydoSpawner spawner =
+TEST(WaveSpawner, TheCycleStartsWithTheFirstKindItNames) {
+  WaveSpawnerScene scene;
+  WaveSpawner spawner =
       scene.makeSpawnerWith(SPAWNER_SEED, wavePlanOf(WEAVER_FIRST_CYCLE));
 
-  BydoSpawnerScene::runTicks(spawner, TICKS_TO_THE_FIRST_BYDO);
+  WaveSpawnerScene::runTicks(spawner, TICKS_TO_THE_FIRST_BYDO);
 
   EXPECT_EQ(scene.behavioursOfTheBydos(), std::vector{WEAVE_BEHAVIOUR_NAME});
 }
@@ -230,13 +230,13 @@ TEST(BydoSpawner, TheCycleStartsWithTheFirstKindItNames) {
  * Then it weaves: it is the fourth of the cycle, which carries on from one
  * wave to the next
  */
-TEST(BydoSpawner, TheCycleCarriesOnIntoTheNextWave) {
-  BydoSpawnerScene scene;
-  BydoSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
-  BydoSpawnerScene::runTicks(spawner, TICKS_TO_THE_WHOLE_FIRST_WAVE);
+TEST(WaveSpawner, TheCycleCarriesOnIntoTheNextWave) {
+  WaveSpawnerScene scene;
+  WaveSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
+  WaveSpawnerScene::runTicks(spawner, TICKS_TO_THE_WHOLE_FIRST_WAVE);
   scene.clearTheSky();
 
-  BydoSpawnerScene::runTicks(spawner, TICKS_OF_A_PAUSE);
+  WaveSpawnerScene::runTicks(spawner, TICKS_OF_A_PAUSE);
 
   EXPECT_EQ(scene.behavioursOfTheBydos(), std::vector{WEAVE_BEHAVIOUR_NAME});
 }
@@ -247,15 +247,15 @@ TEST(BydoSpawner, TheCycleCarriesOnIntoTheNextWave) {
  * Then no other Bydo appears: the next wave waits for the world to hold no
  * Bydo
  */
-TEST(BydoSpawner, TheNextWaveWaitsForTheBydosLeftInTheWorld) {
-  BydoSpawnerScene scene;
-  BydoSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
-  BydoSpawnerScene::runTicks(spawner, TICKS_TO_THE_WHOLE_FIRST_WAVE);
-  ASSERT_EQ(scene.world().entityCount(), TEST_WAVE_CURVE.firstWave.bydoCount);
+TEST(WaveSpawner, TheNextWaveWaitsForTheBydosLeftInTheWorld) {
+  WaveSpawnerScene scene;
+  WaveSpawner spawner = scene.makeSpawner(SPAWNER_SEED);
+  WaveSpawnerScene::runTicks(spawner, TICKS_TO_THE_WHOLE_FIRST_WAVE);
+  ASSERT_EQ(scene.world().entityCount(), TEST_WAVE_CURVE.firstWave.entityCount);
 
-  BydoSpawnerScene::runTicks(spawner, TWENTY_SECONDS_OF_TICKS);
+  WaveSpawnerScene::runTicks(spawner, TWENTY_SECONDS_OF_TICKS);
 
-  EXPECT_EQ(scene.world().entityCount(), TEST_WAVE_CURVE.firstWave.bydoCount);
+  EXPECT_EQ(scene.world().entityCount(), TEST_WAVE_CURVE.firstWave.entityCount);
 }
 
 /**
@@ -264,18 +264,18 @@ TEST(BydoSpawner, TheNextWaveWaitsForTheBydosLeftInTheWorld) {
  * Then the last wave is finished, and it stays so while a minute passes with
  * no Bydo appearing
  */
-TEST(BydoSpawner, TheLastWaveIsFinishedOnceItsBydosAreGone) {
-  BydoSpawnerScene scene;
-  BydoSpawner spawner =
+TEST(WaveSpawner, TheLastWaveIsFinishedOnceItsBydosAreGone) {
+  WaveSpawnerScene scene;
+  WaveSpawner spawner =
       scene.makeSpawnerWith(SPAWNER_SEED, oneWaveLevelWavePlan());
-  BydoSpawnerScene::runTicks(spawner, TICKS_TO_THE_WHOLE_FIRST_WAVE);
+  WaveSpawnerScene::runTicks(spawner, TICKS_TO_THE_WHOLE_FIRST_WAVE);
   ASSERT_FALSE(spawner.lastWaveFinished());
   scene.clearTheSky();
 
-  BydoSpawnerScene::runTicks(spawner, 1);
+  WaveSpawnerScene::runTicks(spawner, 1);
 
   EXPECT_TRUE(spawner.lastWaveFinished());
-  BydoSpawnerScene::runTicks(spawner, TWENTY_SECONDS_OF_TICKS);
+  WaveSpawnerScene::runTicks(spawner, TWENTY_SECONDS_OF_TICKS);
   EXPECT_EQ(scene.world().entityCount(), 0U);
 }
 
@@ -284,13 +284,13 @@ TEST(BydoSpawner, TheLastWaveIsFinishedOnceItsBydosAreGone) {
  * When twenty seconds pass with its Bydos still in the world
  * Then the last wave is not finished
  */
-TEST(BydoSpawner, TheLastWaveIsNotFinishedWhileABydoIsInTheWorld) {
-  BydoSpawnerScene scene;
-  BydoSpawner spawner =
+TEST(WaveSpawner, TheLastWaveIsNotFinishedWhileABydoIsInTheWorld) {
+  WaveSpawnerScene scene;
+  WaveSpawner spawner =
       scene.makeSpawnerWith(SPAWNER_SEED, oneWaveLevelWavePlan());
 
-  BydoSpawnerScene::runTicks(spawner, TICKS_TO_THE_WHOLE_FIRST_WAVE);
-  BydoSpawnerScene::runTicks(spawner, TWENTY_SECONDS_OF_TICKS);
+  WaveSpawnerScene::runTicks(spawner, TICKS_TO_THE_WHOLE_FIRST_WAVE);
+  WaveSpawnerScene::runTicks(spawner, TWENTY_SECONDS_OF_TICKS);
 
   EXPECT_FALSE(spawner.lastWaveFinished());
 }
@@ -300,8 +300,8 @@ TEST(BydoSpawner, TheLastWaveIsNotFinishedWhileABydoIsInTheWorld) {
  * When a spawner is built on it
  * Then an EmptyEnemyCycleException is thrown
  */
-TEST(BydoSpawner, RefusesAPlanWithoutEnemies) {
-  BydoSpawnerScene scene;
+TEST(WaveSpawner, RefusesAPlanWithoutEnemies) {
+  WaveSpawnerScene scene;
 
   EXPECT_THROW(
       static_cast<void>(scene.makeSpawnerWith(SPAWNER_SEED, wavePlanOf({}))),
@@ -313,8 +313,8 @@ TEST(BydoSpawner, RefusesAPlanWithoutEnemies) {
  * When a spawner is built with it
  * Then it is refused with an UnknownEntityTypeException
  */
-TEST(BydoSpawner, RefusesAPlanNamingNoSheet) {
-  BydoSpawnerScene scene;
+TEST(WaveSpawner, RefusesAPlanNamingNoSheet) {
+  WaveSpawnerScene scene;
 
   EXPECT_THROW(static_cast<void>(scene.makeSpawnerWith(
                    SPAWNER_SEED, wavePlanOf(NO_SHEET_CYCLE))),

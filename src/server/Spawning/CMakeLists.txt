@@ -1,6 +1,6 @@
 find_package(tomlplusplus CONFIG REQUIRED)
 
-add_library(rtype_server_spawning STATIC BydoSpawner.cpp WaveCatalog.cpp WeaponSystem.cpp)
+add_library(rtype_server_spawning STATIC WaveSpawner.cpp WaveCatalog.cpp WeaponSystem.cpp)
 
 target_include_directories(rtype_server_spawning PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

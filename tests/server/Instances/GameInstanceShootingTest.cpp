@@ -10,7 +10,7 @@
 #include "GameState.hpp"
 #include "SentDatagrams.hpp"
 #include "ShippedEntitySheets.hpp"
-#include "Spawning/BydoSpawnerTestConstants.hpp"
+#include "Spawning/WaveSpawnerTestConstants.hpp"
 #include "Spawning/WeaponSystemTestConstants.hpp"
 #include "World.hpp"
 

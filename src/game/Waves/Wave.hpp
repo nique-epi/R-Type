@@ -6,14 +6,14 @@
 namespace rtype::game {
 
 /**
- * @brief The Bydos of one wave: how many appear, and the time between two of
+ * @brief The enemies of one wave: how many appear, and the time between two of
  * them appearing, in simulation time.
  */
-struct BydoWave {
-  std::size_t bydoCount{};
+struct Wave {
+  std::size_t entityCount{};
   engine::Duration spawnInterval{};
 
-  bool operator==(const BydoWave&) const = default;
+  bool operator==(const Wave&) const = default;
 };
 
 }  // namespace rtype::game

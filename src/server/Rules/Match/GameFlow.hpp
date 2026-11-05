@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include "BydoSpawner.hpp"
 #include "CollisionRules.hpp"
 #include "DamageRules.hpp"
 #include "GameContext.hpp"
@@ -13,6 +12,7 @@
 #include "LifeKeeper.hpp"
 #include "Logger.hpp"
 #include "StartBarrier.hpp"
+#include "WaveSpawner.hpp"
 #include "WeaponSystem.hpp"
 #include "World.hpp"
 #include "WorldSlot.hpp"
@@ -59,7 +59,7 @@ namespace rtype::server {
  * bus, then CollisionSystem), then fires the Gun of every ship and Bydo whose
  * Intent wants to shoot, each at the interval of the gun its sheet gives (see
  * WeaponSystem), then lets the Bydos of the current wave appear (see
- * BydoSpawner), then counts the waits and the protections of the lives (see
+ * WaveSpawner), then counts the waits and the protections of the lives (see
  * LifeKeeper). The ships and the Bydos move and fire in no other state. Each
  * world starts its random draws from a seed of its own, the seed of the game
  * plus the number of worlds built before it, so the seed of the game is enough
@@ -168,7 +168,7 @@ class GameFlow final : public IGameFlow {
   GameContext& game_;
   WorldSlot& worldSlot_;
   IGameReplication& replication_;
-  std::unique_ptr<BydoSpawner> bydoSpawner_;
+  std::unique_ptr<WaveSpawner> waveSpawner_;
   std::unique_ptr<WeaponSystem> weaponSystem_;
   std::unique_ptr<game::CollisionRules> collisionRules_;
   std::unique_ptr<game::DamageRules> damageRules_;

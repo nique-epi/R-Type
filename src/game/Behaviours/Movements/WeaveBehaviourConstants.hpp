@@ -16,13 +16,13 @@ namespace rtype::game {
  * in logical units, and how long it takes to go down, up and back to its row,
  * in milliseconds.
  *
- * The amplitude stays within BYDO_PATTERN_ROOM, the room every row keeps above
+ * The amplitude stays within ENEMY_PATTERN_ROOM, the room every row keeps above
  * and below it, so a body on a weave stays in the area of play; the reader of
  * the sheets refuses a wider one.
  */
 constexpr std::string_view AMPLITUDE_SETTING_NAME = "amplitude";
 constexpr engine::WholeNumberRange AMPLITUDE_RANGE{
-    .lowest = 0, .highest = static_cast<std::int64_t>(BYDO_PATTERN_ROOM)};
+    .lowest = 0, .highest = static_cast<std::int64_t>(ENEMY_PATTERN_ROOM)};
 constexpr std::string_view PERIOD_SETTING_NAME = "period_ms";
 constexpr engine::WholeNumberRange PERIOD_RANGE{.lowest = 1, .highest = 60000};
 constexpr std::array WEAVE_SETTINGS{

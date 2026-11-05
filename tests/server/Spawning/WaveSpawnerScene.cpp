@@ -1,12 +1,10 @@
-#include "BydoSpawnerScene.hpp"
+#include "WaveSpawnerScene.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
-#include "BydoSpawner.hpp"
-#include "BydoSpawnerParts.hpp"
 #include "Entity.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
@@ -18,24 +16,26 @@
 #include "ShippedEntitySheets.hpp"
 #include "WavePlan.hpp"
 #include "WavePlanFixtures.hpp"
+#include "WaveSpawner.hpp"
+#include "WaveSpawnerParts.hpp"
 #include "World.hpp"
 #include "game/Waves/WaveTestConstants.hpp"
 
 namespace rtype::server::testing {
 
-void BydoSpawnerScene::connect(std::size_t index) {
+void WaveSpawnerScene::connect(std::size_t index) {
   roster_.add(playerEndpoint(index), std::string{PLAYER_NICKNAME},
               SESSION_TOKEN);
 }
 
-BydoSpawner BydoSpawnerScene::makeSpawner(std::uint32_t seed) {
+WaveSpawner WaveSpawnerScene::makeSpawner(std::uint32_t seed) {
   return makeSpawnerWith(seed, testWavePlan());
 }
 
-BydoSpawner BydoSpawnerScene::makeSpawnerWith(std::uint32_t seed,
+WaveSpawner WaveSpawnerScene::makeSpawnerWith(std::uint32_t seed,
                                               WavePlan waves) {
-  return BydoSpawner{
-      BydoSpawnerParts{.world = world_,
+  return WaveSpawner{
+      WaveSpawnerParts{.world = world_,
                        .roster = roster_,
                        .send =
                            [this](network::OutgoingDatagram datagram) {
@@ -46,13 +46,13 @@ BydoSpawner BydoSpawnerScene::makeSpawnerWith(std::uint32_t seed,
                        .types = game::testing::shippedEntitySheets()}};
 }
 
-void BydoSpawnerScene::runTicks(BydoSpawner& spawner, std::size_t count) {
+void WaveSpawnerScene::runTicks(WaveSpawner& spawner, std::size_t count) {
   for (std::size_t tick = 0; tick < count; ++tick) {
     spawner.onTick();
   }
 }
 
-std::vector<float> BydoSpawnerScene::heightsSentTo(std::size_t index) const {
+std::vector<float> WaveSpawnerScene::heightsSentTo(std::size_t index) const {
   std::vector<float> heights;
   for (const network::OutgoingDatagram& datagram :
        sentTo(sent_, playerEndpoint(index))) {
@@ -61,7 +61,7 @@ std::vector<float> BydoSpawnerScene::heightsSentTo(std::size_t index) const {
   return heights;
 }
 
-std::vector<network::EntitySpawned> BydoSpawnerScene::spawnsSent() const {
+std::vector<network::EntitySpawned> WaveSpawnerScene::spawnsSent() const {
   std::vector<network::EntitySpawned> spawns;
   spawns.reserve(sent_.size());
   for (const network::OutgoingDatagram& datagram : sent_) {
@@ -70,15 +70,15 @@ std::vector<network::EntitySpawned> BydoSpawnerScene::spawnsSent() const {
   return spawns;
 }
 
-std::vector<float> BydoSpawnerScene::heightsOfTheFirstWave(std::uint32_t seed) {
-  BydoSpawnerScene scene;
+std::vector<float> WaveSpawnerScene::heightsOfTheFirstWave(std::uint32_t seed) {
+  WaveSpawnerScene scene;
   scene.connect(FIRST_PLAYER);
-  BydoSpawner spawner = scene.makeSpawner(seed);
+  WaveSpawner spawner = scene.makeSpawner(seed);
   runTicks(spawner, game::testing::TICKS_TO_THE_WHOLE_FIRST_WAVE);
   return scene.heightsSentTo(FIRST_PLAYER);
 }
 
-void BydoSpawnerScene::clearTheSky() {
+void WaveSpawnerScene::clearTheSky() {
   world_.components().forEach<game::EntityType, game::EntityType>(
       [this](engine::Entity entity, const game::EntityType& type,
              const game::EntityType&) {
@@ -88,7 +88,7 @@ void BydoSpawnerScene::clearTheSky() {
       });
 }
 
-std::vector<std::string_view> BydoSpawnerScene::behavioursOfTheBydos() {
+std::vector<std::string_view> WaveSpawnerScene::behavioursOfTheBydos() {
   std::vector<std::string_view> names;
   world_.components().forEach<game::Pilot, game::Pilot>(
       [&names](engine::Entity, const game::Pilot& pilot, const game::Pilot&) {
@@ -97,6 +97,6 @@ std::vector<std::string_view> BydoSpawnerScene::behavioursOfTheBydos() {
   return names;
 }
 
-game::World& BydoSpawnerScene::world() { return world_; }
+game::World& WaveSpawnerScene::world() { return world_; }
 
 }  // namespace rtype::server::testing

@@ -16,7 +16,7 @@ namespace rtype::game {
  * @brief Destroys every entity that went out of the playfield for good, and
  * announces each one with an EntityDestruction Removed.
  *
- * An enemy is out when its Position is more than BYDO_EXIT_MARGIN beyond the
+ * An enemy is out when its Position is more than ENEMY_EXIT_MARGIN beyond the
  * left edge, a missile of an enemy when its Position is more than half the
  * width of its CollisionBox beyond that edge, and a missile of a player when
  * its Position is more than half that width beyond the right edge: exactly

@@ -14,7 +14,6 @@
 #include <toml++/toml.hpp>
 #include <utility>
 #include <vector>
-#include "BydoWave.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "EntitySheet.hpp"
@@ -22,6 +21,7 @@
 #include "EntityType.hpp"
 #include "ServerException.hpp"
 #include "SipHash.hpp"
+#include "Wave.hpp"
 #include "WaveCurve.hpp"
 #include "WaveFileConstants.hpp"
 #include "WavePlan.hpp"
@@ -128,12 +128,11 @@ game::WaveCurve curveFrom(const DataFileTable& table) {
       .highest = firstIntervalMilliseconds};
   return game::WaveCurve{
       .firstWave =
-          game::BydoWave{
-              .bydoCount =
-                  countAt(table, FIRST_WAVE_BYDOS_KEY, FIRST_WAVE_BYDOS_RANGE),
-              .spawnInterval =
-                  std::chrono::milliseconds{firstIntervalMilliseconds}},
-      .bydosAddedPerWave =
+          game::Wave{.entityCount = countAt(table, FIRST_WAVE_BYDOS_KEY,
+                                            FIRST_WAVE_BYDOS_RANGE),
+                     .spawnInterval =
+                         std::chrono::milliseconds{firstIntervalMilliseconds}},
+      .entitiesAddedPerWave =
           countAt(table, BYDOS_ADDED_PER_WAVE_KEY, BYDOS_ADDED_PER_WAVE_RANGE),
       .spawnIntervalCutPerWave = engine::millisecondsAt(
           table, SPAWN_INTERVAL_CUT_KEY, SPAWN_INTERVAL_CUT_RANGE),

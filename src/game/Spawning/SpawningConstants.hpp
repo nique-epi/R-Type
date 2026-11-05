@@ -16,47 +16,48 @@ constexpr float FACING_LEFT = -1.0F;
 constexpr float SHIP_START_X_RATIO = 0.1F;
 
 /**
- * @brief How far past the right edge of the playfield the center of a new Bydo
- * appears, in logical units, so the whole Bydo is off screen.
+ * @brief How far past the right edge of the playfield the center of a new enemy
+ * appears, in logical units, so the whole enemy is off screen.
  *
- * Provisional: it is half a Bydo width, 64 units, until the size of a Bydo is
- * fixed.
+ * Provisional: it is half an enemy width, 64 units, until the size of an enemy
+ * is fixed.
  */
-constexpr float BYDO_SPAWN_MARGIN = 64.0F;
+constexpr float ENEMY_SPAWN_MARGIN = 64.0F;
 
 /**
- * @brief How far past the left edge of the playfield the center of a Bydo must
- * be before it is removed, in logical units, so the whole Bydo is off screen.
+ * @brief How far past the left edge of the playfield the center of an enemy
+ * must be before it is removed, in logical units, so the whole enemy is off
+ * screen.
  *
- * Provisional, like BYDO_SPAWN_MARGIN: it is half a Bydo width, 64 units, until
- * the size of a Bydo is fixed.
+ * Provisional, like ENEMY_SPAWN_MARGIN: it is half an enemy width, 64 units,
+ * until the size of an enemy is fixed.
  */
-constexpr float BYDO_EXIT_MARGIN = 64.0F;
+constexpr float ENEMY_EXIT_MARGIN = 64.0F;
 
 /**
- * @brief Half the height of a Bydo, in logical units: how far its center stays
- * from an edge of the area of play for its whole height to be in it.
+ * @brief Half the height of an enemy, in logical units: how far its center
+ * stays from an edge of the area of play for its whole height to be in it.
  *
- * Provisional: 64 units, until the size of a Bydo is fixed.
+ * Provisional: 64 units, until the size of an enemy is fixed.
  */
-constexpr float BYDO_SPAWN_VERTICAL_MARGIN = 64.0F;
+constexpr float ENEMY_SPAWN_VERTICAL_MARGIN = 64.0F;
 
 /**
- * @brief How far above and below its row a Bydo may move on its pattern, in
+ * @brief How far above and below its row an enemy may move on its pattern, in
  * logical units; every behaviour stays within it, which
  * WeaveBehaviourConstants.hpp checks.
  *
  * Provisional, like the margins.
  */
-constexpr float BYDO_PATTERN_ROOM = 48.0F;
+constexpr float ENEMY_PATTERN_ROOM = 48.0F;
 
 /**
  * @brief How far from the top of the playfield and from the status band along
- * its bottom the rows of new Bydos stay, in logical units: half a Bydo and the
- * room of its pattern, so a Bydo stays in the area of play even at the top
- * and the bottom of a wave.
+ * its bottom the rows of new enemies stay, in logical units: half an enemy and
+ * the room of its pattern, so an enemy stays in the area of play even at the
+ * top and the bottom of a wave.
  */
-constexpr float BYDO_ROW_MARGIN =
-    BYDO_SPAWN_VERTICAL_MARGIN + BYDO_PATTERN_ROOM;
+constexpr float ENEMY_ROW_MARGIN =
+    ENEMY_SPAWN_VERTICAL_MARGIN + ENEMY_PATTERN_ROOM;
 
 }  // namespace rtype::game

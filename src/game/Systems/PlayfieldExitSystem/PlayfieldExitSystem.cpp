@@ -19,7 +19,7 @@ namespace {
 /**
  * @returns Whether an entity of @p type at @p position, half of whose box is
  * @p halfWidth wide, went out of the playfield for good: an enemy more than
- * BYDO_EXIT_MARGIN beyond the left edge, a missile more than @p halfWidth
+ * ENEMY_EXIT_MARGIN beyond the left edge, a missile more than @p halfWidth
  * beyond the edge it flies to, the left one for a missile of an enemy and the
  * right one for a missile of a player, so the whole missile is off screen. A
  * ship never is.
@@ -28,7 +28,7 @@ bool hasLeftThePlayfield(EntityType type, const Position& position,
                          float halfWidth) {
   switch (type) {
     case EntityType::Enemy:
-      return position.x < -BYDO_EXIT_MARGIN;
+      return position.x < -ENEMY_EXIT_MARGIN;
     case EntityType::PlayerMissile:
       return position.x > PLAYFIELD_WIDTH + halfWidth;
     case EntityType::EnemyMissile:

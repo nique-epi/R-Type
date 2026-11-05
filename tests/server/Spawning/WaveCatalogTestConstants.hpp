@@ -4,8 +4,8 @@
 #include <chrono>
 #include <string_view>
 #include <utility>
-#include "BydoWave.hpp"
 #include "EntityTypesTestConstants.hpp"
+#include "Wave.hpp"
 #include "WaveCurve.hpp"
 
 namespace rtype::server::testing {
@@ -38,10 +38,9 @@ constexpr std::array<std::pair<std::string_view, std::string_view>, 8>
  * @brief How the waves of calm grow, and its enemies, as the lines give them.
  */
 constexpr game::WaveCurve CALM_CURVE{
-    .firstWave =
-        game::BydoWave{.bydoCount = 2,
-                       .spawnInterval = std::chrono::milliseconds(2500)},
-    .bydosAddedPerWave = 1,
+    .firstWave = game::Wave{.entityCount = 2,
+                            .spawnInterval = std::chrono::milliseconds(2500)},
+    .entitiesAddedPerWave = 1,
     .spawnIntervalCutPerWave = std::chrono::milliseconds(250),
     .shortestSpawnInterval = std::chrono::milliseconds(1500),
     .wavePause = std::chrono::milliseconds(5000),
@@ -61,10 +60,9 @@ enemies = ["weaver", "drifter", "weaver"]
 level_waves = 6
 )";
 constexpr game::WaveCurve STORM_CURVE{
-    .firstWave =
-        game::BydoWave{.bydoCount = 4,
-                       .spawnInterval = std::chrono::milliseconds(1500)},
-    .bydosAddedPerWave = 2,
+    .firstWave = game::Wave{.entityCount = 4,
+                            .spawnInterval = std::chrono::milliseconds(1500)},
+    .entitiesAddedPerWave = 2,
     .spawnIntervalCutPerWave = std::chrono::milliseconds(250),
     .shortestSpawnInterval = std::chrono::milliseconds(500),
     .wavePause = std::chrono::milliseconds(3000),

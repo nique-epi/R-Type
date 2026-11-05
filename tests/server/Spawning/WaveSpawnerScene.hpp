@@ -4,11 +4,11 @@
 #include <cstdint>
 #include <string_view>
 #include <vector>
-#include "BydoSpawner.hpp"
 #include "EntitySpawned.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "WavePlan.hpp"
+#include "WaveSpawner.hpp"
 #include "World.hpp"
 
 namespace rtype::server::testing {
@@ -17,7 +17,7 @@ namespace rtype::server::testing {
  * @brief A world and a roster a Bydo spawner works on, the datagrams it sends
  * recorded.
  */
-class BydoSpawnerScene {
+class WaveSpawnerScene {
  public:
   /** @brief Connects the player at @p index, who joins as player index + 1. */
   void connect(std::size_t index);
@@ -26,13 +26,13 @@ class BydoSpawnerScene {
    * @returns A spawner on this world and roster, started from @p seed, on
    * testWavePlan(), whose datagrams this scene records.
    */
-  [[nodiscard]] BydoSpawner makeSpawner(std::uint32_t seed);
+  [[nodiscard]] WaveSpawner makeSpawner(std::uint32_t seed);
 
   /** @returns The same, on @p waves. */
-  [[nodiscard]] BydoSpawner makeSpawnerWith(std::uint32_t seed, WavePlan waves);
+  [[nodiscard]] WaveSpawner makeSpawnerWith(std::uint32_t seed, WavePlan waves);
 
   /** @brief Runs @p count ticks of @p spawner. */
-  static void runTicks(BydoSpawner& spawner, std::size_t count);
+  static void runTicks(WaveSpawner& spawner, std::size_t count);
 
   /**
    * @returns The heights of the Bydos announced to the player at @p index,

@@ -3,8 +3,8 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include "BydoSpawnerTestConstants.hpp"
 #include "WavePlan.hpp"
+#include "WaveSpawnerTestConstants.hpp"
 #include "game/Waves/WaveTestConstants.hpp"
 
 namespace rtype::server::testing {
