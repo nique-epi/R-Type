@@ -87,14 +87,14 @@ The test of an optional module is to remove it: take out its folder, except `Con
 
 ## Turning a module on or off
 
-A module is switched on or off at one of four moments. Only the first three exist.
+A module is switched on or off at one of four moments.
 
 | How | Exists | How it works |
 |---|---|---|
 | At compile time | Yes | The module is in the list of `serverModules()` or `clientModules()`, and its library is linked by the `CMakeLists.txt` beside that list (`src/server/Modules/`, `src/client/Modules/`). Remove the three lines the [tutorial](/R-Type/tutorial-write-a-module/#step-4-put-it-in-the-servers-list) adds: the `#include` and the `push_back` in `ServerModules.cpp` or `ClientModules.cpp`, and the library in that `CMakeLists.txt`. On the server, the list of names that `tests/server/Modules/ServerModulesTest.cpp` expects changes too |
 | At launch, by configuration | Yes | The module stays in the list; a launch option chooses what it does. `--no-sound` gives `ClientAudioModule` an `AudioMode::Disabled`: it still provides an `IAudioService`, one that plays nothing |
 | At launch, by the configuration file | Yes | The module stays in the list; the line `module <name> off` of `server.cfg` or `client.cfg` makes `Application` skip its `install()`, its `start()` and its `stop()`, so it provides no service and adds no work. The line is refused when a module that stays on needs it, so the program is never left with a missing service (see [Configuration commands](/R-Type/commands/#module)) |
-| At run time, by plugin | No | No module is loaded from a file while the program runs. A module is compiled into its program |
+| At launch, by plugin | Yes | The module is not in the program at all: it is a shared library in the plugin folder, and the line `plugin <name>` of the configuration file loads it before the modules install. Its modules join the end of the list, and `module <name> off` turns it off like any other. See [Write a plugin](#write-a-plugin) |
 
 Two rules decide which one fits:
 
@@ -104,11 +104,45 @@ Two rules decide which one fits:
 
 `--no-sound` is the complete example of a launch option that turns a module off: the constant of its name (`NO_SOUND_OPTION`, `src/client/ClientConstants.hpp`), the option in `LaunchOptions::read()` and `usage()` (see [Server](/R-Type/server/#where-to-intervene) and [Client](/R-Type/client/#where-to-intervene)), an accessor (`LaunchOptions::audioMode()`) whose value `clientModules()` hands to `ClientAudioModule`, and the constructor of the module taking it.
 
+## Write a plugin
+
+A plugin is a module built as a shared library of its own: the host of a server adds a feature without recompiling the server. The library exports one function, `rtypePluginEntry`, and a `plugin <name>` line of the configuration file loads it (see [Configuration commands](/R-Type/commands/#plugin)). A plugin is a module like any other once loaded, so `module <name> off` turns it off.
+
+```cpp
+#include <cstdint>
+#include <memory>
+#include "PluginConstants.hpp"
+#include "PluginEntry.hpp"
+
+std::uint32_t rtypePluginEntry(
+    std::unique_ptr<rtype::engine::IModule>* module) {
+  if (module != nullptr) {
+    *module = std::make_unique<StatsModule>();
+  }
+  return rtype::engine::PLUGIN_API_VERSION;
+}
+```
+
+```cmake
+rtype_add_plugin(TARGET stats_plugin NAME stats
+  SOURCES StatsPlugin.cpp StatsModule.cpp
+  LIBS rtype_engine_event_bus)
+```
+
+`rtype_add_plugin` (root `CMakeLists.txt`) builds `plugins/stats.so` (`stats.dll` on Windows) next to the programs, and exports `rtypePluginEntry` only. The plugin links the static libraries of the engine it uses: all the libraries are compiled as position-independent code for it.
+
+- **Same compiler, same sources.** `PLUGIN_API_VERSION` covers the headers a plugin compiles against (`IModule`, `InstallContext`, `ServiceRegistry`, `LoopStages`, `EventBus`, `Logger`, `ILogJournal`, `PluginEntry`) and is raised by every change to one of them. The C++ binary format also changes from one compiler to another, and no number tells it: build the plugins with the compiler and from the sources of the program that loads them.
+- **A type crosses the boundary, a static does not.** The plugin holds its own copy of the code and of the static variables of the libraries it links. A service, an event and an exception thrown in the plugin are still the same types for the program: `ApplicationPlugins` (`tests/engine/Modules/`) loads a real plugin and checks that a service, an event and a `MissingServiceException` thrown in the plugin cross the boundary. A static variable is another matter: share state through a service and virtual calls, never through a global.
+- **The journal is a service.** A `Logger` built from a name alone writes through the copy of the logger inside the plugin, which the program never configured: its lines miss the log file and the level of the server. A plugin that logs names `logger` in its `dependencies()` and builds `Logger(name, context.require<logging::ILogJournal>())`, as `GreeterPluginModule` does (`tests/doubles/Plugins/`). Only the logger module of the server provides the journal today: a plugin that requires it in the client or in the master stops the start with a `MissingServiceException`.
+- **Position in the list.** The modules of the plugins join the end of the list, in the order of the `plugin` lines, so a plugin may depend on a module of the program or on a plugin whose line comes first.
+- **No unloading before the exit.** A plugin stays loaded until the program stops, and there is no hot reload.
+
 ## Where to intervene
 
 | You want to… | Look at |
 |---|---|
 | Add a module to the server | A new folder `src/server/<Name>/`, a line in `serverModules()` and a row in [the list of modules](/R-Type/project-layout/#the-list-of-modules): the [tutorial](/R-Type/tutorial-write-a-module/) does it step by step |
+| Add a module without recompiling the program | [Write a plugin](#write-a-plugin) |
 | Add a module to the client | A new folder `src/client/<Name>/`, a line in `clientModules()` and a row in the list of modules |
 | Place code of a module that another folder needs | [The code of a module used elsewhere](/R-Type/project-layout/#the-code-of-a-module-used-elsewhere) |
 | Change the order modules start in | The order of the lines of `serverModules()` or `clientModules()`: a module comes after every module it depends on |

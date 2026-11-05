@@ -1,9 +1,16 @@
 #include <gtest/gtest.h>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 #include "Application.hpp"
+#include "LogJournalProbeModule.hpp"
+#include "ModuleConstants.hpp"
 #include "ServerLoggerModuleFixture.hpp"
 #include "ServerLoggerModuleTestConstants.hpp"
 
 using rtype::engine::Application;
+using rtype::server::LOGGER_MODULE_NAME;
 
 /**
  * Given an application made of the logger module only
@@ -41,4 +48,22 @@ TEST_F(ServerLoggerModuleFixture, WritesThatTheServerStoppedWhenStopped) {
   application.stop();
 
   EXPECT_FALSE(journal().linesHolding(SERVER_STOPPED_LINE_TEXT).empty());
+}
+
+/**
+ * Given the logger module followed by a module that depends on it and looks up
+ * the journal service
+ * When the application starts
+ * Then that module found the journal of the server
+ */
+TEST_F(ServerLoggerModuleFixture, TheLoggerModuleProvidesTheJournal) {
+  auto probe = std::make_unique<LogJournalProbeModule>(
+      std::string{JOURNAL_PROBE_NAME},
+      std::vector<std::string>{std::string{LOGGER_MODULE_NAME}});
+  const LogJournalProbeModule* const watching = probe.get();
+  Application application = applicationWithTheLoggerThen(std::move(probe));
+
+  application.start();
+
+  EXPECT_NE(watching->journal(), nullptr);
 }
