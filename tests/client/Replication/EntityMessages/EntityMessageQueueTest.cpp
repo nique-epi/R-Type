@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 #include "DeltaWorldState.hpp"
+#include "EnemyAction.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityMessage.hpp"
@@ -22,6 +23,7 @@
 namespace rtype::client {
 
 using testing::APPLIED_TICK;
+using testing::BYDO_ID;
 using testing::damaged;
 using ::testing::ElementsAre;
 using testing::endOfOnePilot;
@@ -177,6 +179,69 @@ TEST_F(EntityMessageQueueFixture, KeepsTheFirstCopyOfAGameEventOnly) {
   update();
 
   EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{event}));
+}
+
+/**
+ * Given a game started in the session
+ * When the three copies of an EnemyAction arrive, each in its own datagram
+ * Then the connection hands over one EnemyAction
+ */
+TEST_F(EntityMessageQueueFixture, KeepsTheFirstCopyOfAnEnemyActionOnly) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  const network::EnemyAction action{.entityId = BYDO_ID,
+                                    .attack = 1,
+                                    .phase = network::EnemyActionPhase::Strike};
+  deliverInSession(action, SECOND_SEQUENCE);
+  deliverInSession(action, THIRD_SEQUENCE);
+  deliverInSession(action, FOURTH_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{action}));
+}
+
+/**
+ * Given a session whose game has not started
+ * When an EnemyAction arrives
+ * Then the connection hands over nothing
+ */
+TEST_F(EntityMessageQueueFixture, IgnoresAnEnemyActionBeforeTheGame) {
+  accept();
+  deliverInSession(
+      network::EnemyAction{.entityId = BYDO_ID,
+                           .attack = 1,
+                           .phase = network::EnemyActionPhase::Signal},
+      FIRST_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(), IsEmpty());
+}
+
+/**
+ * Given a session that handed over an action, then was left, and a new
+ * session whose game started
+ * When the same action arrives
+ * Then it is handed over: a new session forgets the actions seen
+ */
+TEST_F(EntityMessageQueueFixture, ANewSessionForgetsTheEnemyActionsSeen) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  const network::EnemyAction action{.entityId = BYDO_ID,
+                                    .attack = 1,
+                                    .phase = network::EnemyActionPhase::Strike};
+  deliverInSession(action, SECOND_SEQUENCE);
+  update();
+  ASSERT_THAT(drainedEntityMessages(), SizeIs(1));
+  session().cancel();
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  deliverInSession(action, SECOND_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{action}));
 }
 
 /**

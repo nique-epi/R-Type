@@ -17,14 +17,13 @@
 
 namespace rtype::client {
 
-namespace {
-
-/** @returns The idle animation of @p appearance, in a loop. */
 Animation idleAnimationOf(const EntityAppearance& appearance) {
   return Animation{.frames = appearance.idleFrames,
                    .frameDuration = appearance.idleFrameDuration,
                    .playback = Playback::Loop};
 }
+
+namespace {
 
 /** @returns The animation with its elapsed time set to the offset of a network
  * id: the fractional part of networkId times LOOP_START_SPREAD, as a share of
