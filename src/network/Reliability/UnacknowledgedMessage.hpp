@@ -15,6 +15,7 @@ namespace rtype::network {
  */
 struct UnacknowledgedMessage {
   EncodedMessage message;
+  std::uint16_t number{};
   std::chrono::nanoseconds age{};
   std::chrono::nanoseconds sinceSent{};
   std::vector<std::uint16_t> sentIn;

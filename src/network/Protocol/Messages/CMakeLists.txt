@@ -14,6 +14,7 @@ add_subdirectory(Heartbeat)
 add_subdirectory(LeaderboardAnswer)
 add_subdirectory(LeaderboardRequest)
 add_subdirectory(LobbyState)
+add_subdirectory(OrderedMessage)
 add_subdirectory(PlayerInput)
 add_subdirectory(PlayerLeft)
 add_subdirectory(ReadyState)
@@ -41,6 +42,7 @@ target_link_libraries(rtype_network_messages
     rtype_network_leaderboard_answer
     rtype_network_leaderboard_request
     rtype_network_lobby_state
+    rtype_network_ordered_message
     rtype_network_player_input
     rtype_network_player_left
     rtype_network_ready_state

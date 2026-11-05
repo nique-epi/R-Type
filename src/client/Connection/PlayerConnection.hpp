@@ -8,6 +8,7 @@
 #include "MessageDispatcher.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkThread.hpp"
+#include "OrderedInbox.hpp"
 #include "RoundTripWatch.hpp"
 #include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
@@ -45,8 +46,7 @@ class PlayerConnection {
                    DrawableTypeCheck drawable);
 
   /**
-   * @brief Counts @p elapsed against the memory of the game events, then
-   * reads what the server sent and sends what is due (see
+   * @brief Reads what the server sent and sends what is due (see
    * ServerSession::update()).
    */
   void update(engine::Duration elapsed);
@@ -87,6 +87,7 @@ class PlayerConnection {
   NetworkThread network_;
   DatagramRouter router_;
   network::MessageDispatcher dispatcher_;
+  OrderedInbox orderedInbox_;
   GameLoadedReminder gameLoaded_;
   WaitingRoom waitingRoom_;
   EntityMessageQueue entityMessages_;

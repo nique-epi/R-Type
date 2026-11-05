@@ -9,7 +9,6 @@
 #include "Application.hpp"
 #include "ConfigurationStep.hpp"
 #include "ConnectedPlayer.hpp"
-#include "DatagramCodec.hpp"
 #include "GamePlayers.hpp"
 #include "GamesSettings.hpp"
 #include "IModule.hpp"
@@ -95,9 +94,9 @@ std::size_t ServerGamesFixture::datagramsTo(std::size_t index,
   std::size_t count = 0;
   for (const auto& datagram : rtype::server::testing::sentTo(
            network().sender().sent(), playerEndpoint(index))) {
-    for (const auto& frame :
-         rtype::network::DatagramCodec::splitMessages(datagram.payload)) {
-      if (frame.type == static_cast<std::uint8_t>(type)) {
+    for (const auto& carried :
+         rtype::server::testing::carriedMessagesOf(datagram)) {
+      if (carried.type == static_cast<std::uint8_t>(type)) {
         ++count;
       }
     }
