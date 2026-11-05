@@ -31,6 +31,7 @@ using testing::FIRST_PLAYER_JITTER;
 using testing::FIRST_PLAYER_ROUND_TRIP;
 using testing::FOUR_ROCKETS;
 using testing::HEARTBEAT_SENT_AT;
+using testing::HEARTBEAT_TICK;
 using testing::LAST_PLAYER_NUMBER;
 using testing::NICKNAME_WITH_LINE_FEED;
 using testing::ONE_BYTE_NICKNAME;
@@ -479,57 +480,93 @@ TEST(Disconnection, RefusesAnyByteInThePayload) {
 
 /**
  * Given a heartbeat sent at 7 µs that echoes a heartbeat sent at 5 µs, held
- * 3000 µs
+ * 3000 µs, and carries no tick
  * When it is encoded
  * Then the payload is its time on four bytes, then 1, then the echoed time
- * and the time held, four bytes each
+ * and the time held, four bytes each, then 0 and four bytes of 0
  */
 TEST(Heartbeat, EncodesItsTimeThenItsEcho) {
-  const auto expected = byteSequence({0x00, 0x00, 0x00, 0x07, 0x01, 0x00, 0x00,
-                                      0x00, 0x05, 0x00, 0x00, 0x0B, 0xB8});
+  const auto expected =
+      byteSequence({0x00, 0x00, 0x00, 0x07, 0x01, 0x00, 0x00, 0x00, 0x05, 0x00,
+                    0x00, 0x0B, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_EQ(
       encodeMessage(Heartbeat{.sentAt = HEARTBEAT_SENT_AT,
                               .echo = HeartbeatEcho{.sentAt = ECHOED_SENT_AT,
-                                                    .heldFor = ECHO_HELD_FOR}}),
+                                                    .heldFor = ECHO_HELD_FOR},
+                              .tick = std::nullopt}),
       expected);
 }
 
 /**
- * Given a heartbeat sent at 7 µs that echoes nothing
+ * Given a heartbeat sent at 7 µs that echoes nothing and carries no tick
  * When it is encoded
- * Then the payload is its time, then 0, then eight bytes of 0, so it has the
- * size of a heartbeat with an echo
+ * Then the payload is its time, then 0, then eight bytes of 0, then 0 and
+ * four bytes of 0, so it has the size of a heartbeat with an echo and a tick
  */
 TEST(Heartbeat, EncodesAMissingEchoAsZeros) {
-  const auto expected = byteSequence({0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00,
-                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+  const auto expected =
+      byteSequence({0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
-  EXPECT_EQ(encodeMessage(
-                Heartbeat{.sentAt = HEARTBEAT_SENT_AT, .echo = std::nullopt}),
+  EXPECT_EQ(encodeMessage(Heartbeat{.sentAt = HEARTBEAT_SENT_AT,
+                                    .echo = std::nullopt,
+                                    .tick = std::nullopt}),
             expected);
 }
 
 /**
- * Given a heartbeat with an echo
+ * Given a heartbeat sent at 7 µs that echoes nothing and carries tick 600
+ * When it is encoded
+ * Then the payload is its time, then 0 and eight bytes of 0 for the echo, then
+ * 1 and the tick on four bytes
+ */
+TEST(Heartbeat, EncodesTheTickItCarriesAfterTheEcho) {
+  const auto expected =
+      byteSequence({0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x02, 0x58});
+
+  EXPECT_EQ(encodeMessage(Heartbeat{.sentAt = HEARTBEAT_SENT_AT,
+                                    .echo = std::nullopt,
+                                    .tick = HEARTBEAT_TICK}),
+            expected);
+}
+
+/**
+ * Given a heartbeat with an echo and a tick
  * When it is encoded then decoded
  * Then the same heartbeat comes back
  */
 TEST(Heartbeat, ReadsAHeartbeatWithAnEchoAsItWasWritten) {
-  const Heartbeat heartbeat{.sentAt = HEARTBEAT_SENT_AT,
-                            .echo = HeartbeatEcho{.sentAt = ECHOED_SENT_AT,
-                                                  .heldFor = ECHO_HELD_FOR}};
+  const Heartbeat heartbeat{
+      .sentAt = HEARTBEAT_SENT_AT,
+      .echo = HeartbeatEcho{.sentAt = ECHOED_SENT_AT, .heldFor = ECHO_HELD_FOR},
+      .tick = HEARTBEAT_TICK};
 
   EXPECT_EQ(decodeMessage<Heartbeat>(encodeMessage(heartbeat)), heartbeat);
 }
 
 /**
- * Given a heartbeat without an echo
+ * Given a heartbeat without an echo and without a tick
  * When it is encoded then decoded
- * Then the same heartbeat comes back, still without an echo
+ * Then the same heartbeat comes back, still without either
  */
 TEST(Heartbeat, ReadsAHeartbeatWithoutAnEchoAsItWasWritten) {
-  const Heartbeat heartbeat{.sentAt = HEARTBEAT_SENT_AT, .echo = std::nullopt};
+  const Heartbeat heartbeat{
+      .sentAt = HEARTBEAT_SENT_AT, .echo = std::nullopt, .tick = std::nullopt};
+
+  EXPECT_EQ(decodeMessage<Heartbeat>(encodeMessage(heartbeat)), heartbeat);
+}
+
+/**
+ * Given a heartbeat that carries tick 0, the tick of a game that has just
+ * started
+ * When it is encoded then decoded
+ * Then it comes back with tick 0, not without a tick
+ */
+TEST(Heartbeat, ReadsATickOfZeroAsATick) {
+  const Heartbeat heartbeat{
+      .sentAt = HEARTBEAT_SENT_AT, .echo = std::nullopt, .tick = 0};
 
   EXPECT_EQ(decodeMessage<Heartbeat>(encodeMessage(heartbeat)), heartbeat);
 }
@@ -540,8 +577,9 @@ TEST(Heartbeat, ReadsAHeartbeatWithoutAnEchoAsItWasWritten) {
  * Then an InvalidFieldValueException is raised: a heartbeat has one encoding
  */
 TEST(Heartbeat, RefusesAnEchoedTimeBehindAMissingEcho) {
-  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00,
-                                   0x00, 0x01, 0x00, 0x00, 0x00, 0x00});
+  const auto bytes =
+      byteSequence({0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes),
                InvalidFieldValueException);
@@ -553,8 +591,23 @@ TEST(Heartbeat, RefusesAnEchoedTimeBehindAMissingEcho) {
  * Then an InvalidFieldValueException is raised
  */
 TEST(Heartbeat, RefusesATimeHeldBehindAMissingEcho) {
-  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00,
-                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x01});
+  const auto bytes =
+      byteSequence({0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00});
+
+  EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a payload that says no tick follows, then a tick of 1
+ * When it is decoded as a heartbeat
+ * Then an InvalidFieldValueException is raised: a heartbeat has one encoding
+ */
+TEST(Heartbeat, RefusesATickBehindAMissingTick) {
+  const auto bytes =
+      byteSequence({0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01});
 
   EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes),
                InvalidFieldValueException);
@@ -566,20 +619,47 @@ TEST(Heartbeat, RefusesATimeHeldBehindAMissingEcho) {
  * Then an InvalidBoolException is raised
  */
 TEST(Heartbeat, RefusesAnEchoFlagThatIsNeitherTrueNorFalse) {
-  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x07, 0x02, 0x00, 0x00,
-                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+  const auto bytes =
+      byteSequence({0x00, 0x00, 0x00, 0x07, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes), InvalidBoolException);
 }
 
 /**
- * Given a payload of 12 bytes, one fewer than a heartbeat
+ * Given a payload whose byte that says whether a tick follows is 2
+ * When it is decoded as a heartbeat
+ * Then an InvalidBoolException is raised
+ */
+TEST(Heartbeat, RefusesATickFlagThatIsNeitherTrueNorFalse) {
+  const auto bytes =
+      byteSequence({0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00});
+
+  EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes), InvalidBoolException);
+}
+
+/**
+ * Given a payload of 17 bytes, one fewer than a heartbeat
  * When it is decoded as a heartbeat
  * Then a BufferUnderflowException is raised
  */
 TEST(Heartbeat, RefusesAPayloadCutShort) {
-  const auto bytes = byteSequence(
-      {0x00, 0x00, 0x00, 0x07, 0x01, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x0B});
+  const auto bytes =
+      byteSequence({0x00, 0x00, 0x00, 0x07, 0x01, 0x00, 0x00, 0x00, 0x05, 0x00,
+                    0x00, 0x0B, 0xB8, 0x01, 0x00, 0x00, 0x02});
+
+  EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes), BufferUnderflowException);
+}
+
+/**
+ * Given the 13 bytes a build that sends the echo but no tick writes
+ * When it is decoded as a heartbeat
+ * Then a BufferUnderflowException is raised, so the dispatcher skips it
+ */
+TEST(Heartbeat, RefusesThePayloadOfABuildBeforeTheTick) {
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x07, 0x01, 0x00, 0x00,
+                                   0x00, 0x05, 0x00, 0x00, 0x0B, 0xB8});
 
   EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes), BufferUnderflowException);
 }
@@ -600,9 +680,10 @@ TEST(Heartbeat, RefusesTheEmptyPayloadOfAnOlderBuild) {
  * When it is decoded as a heartbeat
  * Then a TrailingBytesException is raised
  */
-TEST(Heartbeat, RefusesAByteAfterTheEcho) {
-  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x07, 0x01, 0x00, 0x00,
-                                   0x00, 0x05, 0x00, 0x00, 0x0B, 0xB8, 0x00});
+TEST(Heartbeat, RefusesAByteAfterTheTick) {
+  const auto bytes =
+      byteSequence({0x00, 0x00, 0x00, 0x07, 0x01, 0x00, 0x00, 0x00, 0x05, 0x00,
+                    0x00, 0x0B, 0xB8, 0x01, 0x00, 0x00, 0x02, 0x58, 0x00});
 
   EXPECT_THROW((void)decodeMessage<Heartbeat>(bytes), TrailingBytesException);
 }

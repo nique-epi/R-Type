@@ -22,25 +22,28 @@ Heartbeat RoundTripMeter::nextHeartbeat(std::chrono::nanoseconds now) const {
   return heartbeat;
 }
 
-void RoundTripMeter::receive(const Heartbeat& heartbeat,
-                             std::chrono::nanoseconds receivedAt) {
+std::optional<std::chrono::microseconds> RoundTripMeter::receive(
+    const Heartbeat& heartbeat, std::chrono::nanoseconds receivedAt) {
   newestReceived_ =
       PeerStamp{.sentAt = heartbeat.sentAt, .receivedAt = receivedAt};
-  if (heartbeat.echo.has_value()) {
-    measure(*heartbeat.echo, receivedAt);
+  if (!heartbeat.echo.has_value()) {
+    return std::nullopt;
   }
+  return measure(*heartbeat.echo, receivedAt);
 }
 
 std::optional<RoundTripFigures> RoundTripMeter::figures() const {
   return estimator_.figures();
 }
 
-void RoundTripMeter::measure(const HeartbeatEcho& echo,
-                             std::chrono::nanoseconds receivedAt) {
-  if (const std::optional<std::chrono::microseconds> roundTrip =
-          echoedRoundTrip(echo, receivedAt)) {
+std::optional<std::chrono::microseconds> RoundTripMeter::measure(
+    const HeartbeatEcho& echo, std::chrono::nanoseconds receivedAt) {
+  const std::optional<std::chrono::microseconds> roundTrip =
+      echoedRoundTrip(echo, receivedAt);
+  if (roundTrip.has_value()) {
     estimator_.add(*roundTrip);
   }
+  return roundTrip;
 }
 
 }  // namespace rtype::network

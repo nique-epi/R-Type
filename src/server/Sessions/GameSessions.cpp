@@ -1,4 +1,5 @@
 #include "GameSessions.hpp"
+#include <cstdint>
 #include <optional>
 #include <span>
 #include <utility>
@@ -9,6 +10,7 @@
 #include "GameLoaded.hpp"
 #include "GameSessionsParts.hpp"
 #include "Heartbeat.hpp"
+#include "HeartbeatMoment.hpp"
 #include "Heartbeats.hpp"
 #include "IClock.hpp"
 #include "IncomingDatagram.hpp"
@@ -97,9 +99,10 @@ void GameSessions::startTick() {
   ageGuaranteedMessages(roster_, elapsed);
 }
 
-void GameSessions::endTick() {
+void GameSessions::endTick(std::optional<std::uint32_t> gameTick) {
   resendGuaranteedMessages(roster_, send_);
-  sendHeartbeats(roster_, clock_->now(), send_);
+  sendHeartbeats(
+      roster_, HeartbeatMoment{.now = clock_->now(), .tick = gameTick}, send_);
   reader_.countTick();
 }
 

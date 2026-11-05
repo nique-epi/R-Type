@@ -1,1 +1,3 @@
 target_sources(engine_tests PRIVATE FixedTimestepTest.cpp TimeConstantsTest.cpp DurationConversionTest.cpp)
+
+add_subdirectory(ServerClock)

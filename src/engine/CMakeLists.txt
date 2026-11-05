@@ -21,6 +21,7 @@ target_link_libraries(rtype_engine
     rtype_engine_time
     rtype_engine_system_clock
     rtype_engine_fixed_timestep
+    rtype_engine_server_clock
     rtype_engine_timer_scheduler
     rtype_engine_entity_registry
     rtype_engine_components

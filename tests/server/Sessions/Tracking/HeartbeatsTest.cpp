@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <chrono>
+#include <cstdint>
 #include <optional>
 #include <vector>
 #include "ConnectedPlayer.hpp"
@@ -21,6 +22,7 @@
 namespace rtype::server {
 
 using testing::addPlayer;
+using testing::GAME_TICK_TOLD;
 using testing::HEARTBEAT_SENDING_TIME;
 using testing::HEARTBEAT_SENDING_TIME_ON_THE_WIRE;
 using testing::heartbeatsSentAt;
@@ -154,6 +156,41 @@ TEST(Heartbeats, TheHeartbeatCarriesTheTimeItIsSent) {
   EXPECT_EQ(onlyMessageIn<network::Heartbeat>(sent.front()),
             (network::Heartbeat{.sentAt = HEARTBEAT_SENDING_TIME_ON_THE_WIRE,
                                 .echo = std::nullopt}));
+}
+
+/**
+ * Given a player due a Heartbeat and a game at tick 600
+ * When the heartbeats are sent
+ * Then the Heartbeat to the player carries tick 600
+ */
+TEST(Heartbeats, TheHeartbeatCarriesTheTickOfTheGame) {
+  PlayerRoster roster;
+  ConnectedPlayer& player = addPlayer(roster);
+  player.sinceHeartbeat = PROTOCOL_TIME_BETWEEN_HEARTBEATS;
+
+  const std::vector<network::OutgoingDatagram> sent =
+      heartbeatsSentAt(roster, HEARTBEAT_SENDING_TIME, GAME_TICK_TOLD);
+
+  ASSERT_FALSE(sent.empty());
+  EXPECT_EQ(onlyMessageIn<network::Heartbeat>(sent.front()).tick,
+            std::optional<std::uint32_t>{GAME_TICK_TOLD});
+}
+
+/**
+ * Given a player due a Heartbeat and no game in progress
+ * When the heartbeats are sent
+ * Then the Heartbeat to the player carries no tick
+ */
+TEST(Heartbeats, TheHeartbeatCarriesNoTickWhenNoGameRuns) {
+  PlayerRoster roster;
+  ConnectedPlayer& player = addPlayer(roster);
+  player.sinceHeartbeat = PROTOCOL_TIME_BETWEEN_HEARTBEATS;
+
+  const std::vector<network::OutgoingDatagram> sent =
+      heartbeatsSentAt(roster, HEARTBEAT_SENDING_TIME);
+
+  ASSERT_FALSE(sent.empty());
+  EXPECT_EQ(onlyMessageIn<network::Heartbeat>(sent.front()).tick, std::nullopt);
 }
 
 /**

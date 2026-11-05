@@ -68,7 +68,7 @@ src/engine/
 ├── Systems/          runs systems in a fixed order
 ├── Events/           typed event bus
 ├── Collision/        rectangle overlap test and the collision event
-├── Time/             fixed timestep, clocks, timers
+├── Time/             fixed timestep, clocks, timers, the clock of the server seen from the client
 ├── NetworkIds/       entity to network id, and back
 ├── LaunchArguments/  options read at launch, usage and errors
 ├── Commands/         named commands, declared settings, the configuration file
@@ -411,7 +411,7 @@ sequenceDiagram
 | tick | Ship control, then the systems | `game/ShipControl`, `game/Systems` |
 | snapshot | The world is sent to every player, 20 times per second by default, as the difference from the last state it acknowledged | `server/Replication`, `network/Protocol` |
 | corrects its ship | A restarts from the server position and replays its newer inputs | `client/Prediction` |
-| draws A's ship | B shows A's ship two state intervals in the past (100 ms at the default rate), between two states | `client/Replication`, `client/Prediction` |
+| draws A's ship | B shows A's ship two state intervals in the past (100 ms at the default rate, more after a late state), between two states | `client/Replication`, `client/Prediction` |
 
 ## Moves from today's code
 
