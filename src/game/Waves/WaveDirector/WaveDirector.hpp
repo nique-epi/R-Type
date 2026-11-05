@@ -18,7 +18,8 @@ namespace rtype::game {
  * the wave apart. Once every Bydo of a wave is due, the next wave waits for a
  * step that finds no Bydo in the world, then pauses, counted from the start of
  * that step. A Bydo gone before the last of its wave is due does not end the
- * wave early.
+ * wave early. The level holds levelWaves waves of the curve: once the last
+ * of them is over, no wave follows and lastWaveFinished() says so.
  *
  * The director creates nothing: advance() says how many Bydos are due, its
  * caller creates them and tells it, at the next step, how many the world
@@ -62,9 +63,18 @@ class WaveDirector {
   /** @returns The Bydos of that wave. */
   [[nodiscard]] BydoWave currentWave() const;
 
+  /**
+   * @returns Whether the last wave of the level is over: every one of its
+   * Bydos appeared and a step found none in the world. It stays true, and
+   * no Bydo is due any more. Whoever ends the level asks it, and may wait
+   * for more than this, such as a boss, before it does.
+   */
+  [[nodiscard]] bool lastWaveFinished() const;
+
  private:
   void startPause();
   void startNextWave();
+  void endTheWave();
   void letABydoAppear();
 
   WaveCurve curve_;
@@ -72,6 +82,7 @@ class WaveDirector {
   std::size_t waveNumber_{FIRST_WAVE_NUMBER};
   std::size_t bydosLeftToAppear_{0};
   std::size_t bydosDue_{0};
+  bool lastWaveFinished_{false};
   engine::TimerScheduler timers_;
 };
 

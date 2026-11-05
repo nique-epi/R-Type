@@ -14,7 +14,7 @@ namespace rtype::server::testing {
 
 /**
  * @returns calmFile() with @p value for @p key; when calm has no such key, the
- * line `key = value` comes last, on line 9.
+ * line `key = value` comes last, on line 10.
  */
 [[nodiscard]] std::string calmFileWith(std::string_view key,
                                        std::string_view value);

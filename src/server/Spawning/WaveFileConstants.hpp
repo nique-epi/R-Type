@@ -21,7 +21,8 @@ constexpr char WAVE_FILE_KEY_SEPARATOR = '.';
 
 /**
  * @brief The keys of a difficulty: the enemies its Bydos are in turn, then one
- * key per value of its WaveCurve, the durations in whole milliseconds.
+ * key per value of its WaveCurve, the durations in whole milliseconds, the
+ * last being the number of waves of its level.
  */
 constexpr std::string_view ENEMIES_KEY = "enemies";
 constexpr std::string_view FIRST_WAVE_BYDOS_KEY = "first_wave_bydos";
@@ -32,6 +33,7 @@ constexpr std::string_view SPAWN_INTERVAL_CUT_KEY =
 constexpr std::string_view SHORTEST_SPAWN_INTERVAL_KEY =
     "shortest_spawn_interval_ms";
 constexpr std::string_view WAVE_PAUSE_KEY = "wave_pause_ms";
+constexpr std::string_view LEVEL_WAVES_KEY = "level_waves";
 
 /**
  * @brief Every key the root of a waves file may hold, and every key a
@@ -45,7 +47,8 @@ constexpr std::array WAVE_PLAN_KEYS{ENEMIES_KEY,
                                     FIRST_SPAWN_INTERVAL_KEY,
                                     SPAWN_INTERVAL_CUT_KEY,
                                     SHORTEST_SPAWN_INTERVAL_KEY,
-                                    WAVE_PAUSE_KEY};
+                                    WAVE_PAUSE_KEY,
+                                    LEVEL_WAVES_KEY};
 
 /**
  * @brief The name a waves file gives each kind of Bydo. A new kind, a boss for
@@ -63,6 +66,12 @@ constexpr std::array ENEMY_NAMES{
  * playfield shows at once.
  */
 constexpr std::int64_t MOST_BYDOS_IN_A_WAVE_FILE = 100;
+
+/**
+ * @brief The most waves a level may hold: a hundred, far more than a game
+ * plays.
+ */
+constexpr std::int64_t MOST_WAVES_IN_A_LEVEL = 100;
 
 /**
  * @brief The longest duration a waves file may give, in milliseconds: a
@@ -87,6 +96,8 @@ constexpr WholeNumberRange SPAWN_INTERVAL_CUT_RANGE{
     .lowest = 0, .highest = LONGEST_WAVE_FILE_MILLISECONDS};
 constexpr WholeNumberRange WAVE_PAUSE_RANGE{
     .lowest = 0, .highest = LONGEST_WAVE_FILE_MILLISECONDS};
+constexpr WholeNumberRange LEVEL_WAVES_RANGE{.lowest = 1,
+                                             .highest = MOST_WAVES_IN_A_LEVEL};
 
 /**
  * @brief The key WaveCatalog::fingerprint() hashes a waves file under. Anyone
