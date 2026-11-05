@@ -423,7 +423,7 @@ TEST(EntityAppearances, AFrameHoldsTheBoxesThatAlwaysHurt) {
 
     EXPECT_TRUE(holds(frame, sheet.hitbox));
     for (const HurtBox& box : sheet.hurtZone.value_or(HurtZone{}).boxes) {
-      EXPECT_TRUE(!box.activeIn.has_value() || holds(frame, box));
+      EXPECT_TRUE(box.activeIn.has_value() || holds(frame, box));
     }
   }
 }
