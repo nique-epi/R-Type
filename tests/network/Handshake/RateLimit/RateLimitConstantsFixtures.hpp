@@ -38,6 +38,13 @@ namespace rtype::network::testing {
 [[nodiscard]] std::vector<AllowanceVerdict> verdictsAt(
     const RateLimit& limit, const std::vector<std::chrono::nanoseconds>& times);
 
+/**
+ * @returns The times of a sender that spends the whole burst of @p limit at
+ * once at the start, then sends one more datagram at @p last.
+ */
+[[nodiscard]] std::vector<std::chrono::nanoseconds> burstThenOneAt(
+    const RateLimit& limit, std::chrono::nanoseconds last);
+
 /** @returns How many of @p verdicts are Allowed. */
 [[nodiscard]] std::size_t allowedCount(
     const std::vector<AllowanceVerdict>& verdicts);

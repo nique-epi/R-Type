@@ -8,6 +8,7 @@
 #include "RateLimitConstantsFixtures.hpp"
 #include "RateLimitConstantsTestConstants.hpp"
 #include "RateLimitTestConstants.hpp"
+#include "TimeTestConstants.hpp"
 
 using rtype::network::AllowanceVerdict;
 using rtype::network::CONNECTION_ATTEMPT_TIMEOUT;
@@ -15,11 +16,14 @@ using rtype::network::PLAYER_INPUTS_PER_SECOND;
 using rtype::network::PLAYER_RATE_LIMIT;
 using rtype::network::REQUEST_RATE_LIMIT;
 using rtype::network::testing::allowedCount;
+using rtype::network::testing::burstThenOneAt;
 using rtype::network::testing::FLOOD_DATAGRAM_COUNT;
 using rtype::network::testing::joiningClientTimes;
 using rtype::network::testing::LONG_RUN_DURATION;
 using rtype::network::testing::playerTimes;
 using rtype::network::testing::PROTOCOL_BAN_DURATION;
+using rtype::network::testing::PROTOCOL_PLAYER_REFILL;
+using rtype::network::testing::PROTOCOL_REQUEST_REFILL;
 using rtype::network::testing::stalledClientTimes;
 using rtype::network::testing::verdictsAt;
 
@@ -99,6 +103,36 @@ TEST(RateLimitConstants, LetsASecondOfInputsThroughAtOnce) {
 
   EXPECT_EQ(allowedCount(verdictsAt(PLAYER_RATE_LIMIT, times)),
             PLAYER_INPUTS_PER_SECOND);
+}
+
+/**
+ * Given a sender that spent the whole burst of the requests at once
+ * When it sends one more request a nanosecond before 250 ms passed
+ * Then that request is dropped: the limit gives back no more than four
+ * requests a second
+ */
+TEST(RateLimitConstants, GivesBackNoMoreThanFourRequestsASecond) {
+  const std::vector<AllowanceVerdict> verdicts =
+      verdictsAt(REQUEST_RATE_LIMIT,
+                 burstThenOneAt(REQUEST_RATE_LIMIT,
+                                PROTOCOL_REQUEST_REFILL - ONE_NANOSECOND));
+
+  EXPECT_EQ(verdicts.back(), AllowanceVerdict::OverCap);
+}
+
+/**
+ * Given a player that spent its whole burst at once
+ * When it sends one more datagram a nanosecond before 1/120 s passed
+ * Then that datagram is dropped: the limit gives back no more than 120
+ * datagrams of a player a second
+ */
+TEST(RateLimitConstants, GivesBackNoMoreThanAHundredAndTwentyDatagramsASecond) {
+  const std::vector<AllowanceVerdict> verdicts =
+      verdictsAt(PLAYER_RATE_LIMIT,
+                 burstThenOneAt(PLAYER_RATE_LIMIT,
+                                PROTOCOL_PLAYER_REFILL - ONE_NANOSECOND));
+
+  EXPECT_EQ(verdicts.back(), AllowanceVerdict::OverCap);
 }
 
 /**

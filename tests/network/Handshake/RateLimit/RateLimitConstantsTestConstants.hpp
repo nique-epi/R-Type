@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 
 namespace rtype::network::testing {
 
@@ -17,6 +18,17 @@ constexpr std::chrono::milliseconds CHALLENGE_ROUND_TRIP{1};
  * its burst.
  */
 constexpr std::chrono::minutes LONG_RUN_DURATION{10};
+
+/**
+ * @brief How often each limit gives a datagram back, from the table of limits
+ * of the protocol page: four requests a second, and 120 datagrams of a player
+ * a second.
+ */
+constexpr std::chrono::milliseconds PROTOCOL_REQUEST_REFILL{250};
+constexpr std::int64_t PROTOCOL_PLAYER_DATAGRAMS_PER_SECOND = 120;
+constexpr std::chrono::nanoseconds PROTOCOL_PLAYER_REFILL =
+    std::chrono::nanoseconds{std::chrono::seconds{1}} /
+    PROTOCOL_PLAYER_DATAGRAMS_PER_SECOND;
 
 /** @brief The ban of the protocol page. */
 constexpr std::chrono::seconds PROTOCOL_BAN_DURATION{10};

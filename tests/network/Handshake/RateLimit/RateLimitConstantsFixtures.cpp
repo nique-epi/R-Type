@@ -83,6 +83,13 @@ std::vector<AllowanceVerdict> verdictsAt(
   return verdicts;
 }
 
+std::vector<std::chrono::nanoseconds> burstThenOneAt(
+    const RateLimit& limit, std::chrono::nanoseconds last) {
+  std::vector<std::chrono::nanoseconds> times(limit.burst);
+  times.push_back(last);
+  return times;
+}
+
 std::size_t allowedCount(const std::vector<AllowanceVerdict>& verdicts) {
   return static_cast<std::size_t>(
       std::ranges::count(verdicts, AllowanceVerdict::Allowed));
