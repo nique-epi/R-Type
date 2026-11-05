@@ -1,0 +1,2 @@
+target_sources(server_module_tests PRIVATE GamesMeasuresTest.cpp)
+target_sources(server_metrics_tests PRIVATE TickDurationsTest.cpp)

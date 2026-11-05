@@ -1,0 +1,1 @@
+target_sources(master_tests PRIVATE MasterClientTest.cpp MasterClientFixture.cpp)

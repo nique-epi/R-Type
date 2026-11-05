@@ -1,0 +1,6 @@
+target_sources(client_module_tests PRIVATE KeyPress.cpp AudioServiceChoiceTest.cpp AudioServiceChoiceFixture.cpp ScreenModulesTest.cpp ScreenModulesFixture.cpp)
+target_sources(client_screen_tests PRIVATE PlayerPreferencesTest.cpp PlayerPreferencesFixtures.cpp ScreenAssetsTest.cpp ScreenAssetsFixtures.cpp KeyPress.cpp ScreenInputs.cpp)
+target_sources(client_interface_tests PRIVATE KeyPress.cpp)
+
+add_subdirectory(Common)
+add_subdirectory(Registry)

@@ -1,0 +1,1 @@
+target_sources(client_rendering_tests PRIVATE RenderSystemTest.cpp Scene.cpp RenderSystemFixtures.cpp)

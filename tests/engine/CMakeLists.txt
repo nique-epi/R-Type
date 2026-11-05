@@ -1,0 +1,6 @@
+add_subdirectory(Commands)
+add_subdirectory(LaunchArguments)
+add_subdirectory(Modules)
+add_subdirectory(Paths)
+add_subdirectory(Systems)
+add_subdirectory(Time)

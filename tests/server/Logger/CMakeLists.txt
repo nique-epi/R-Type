@@ -1,0 +1,1 @@
+target_sources(server_module_tests PRIVATE ServerLoggerModuleTest.cpp ServerLoggerModuleFixture.cpp)
