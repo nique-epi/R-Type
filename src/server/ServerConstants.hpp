@@ -163,11 +163,12 @@ constexpr std::string_view CHANGED_INPUT_DELAY_BREACH =
 
 /**
  * @brief Launch option followed by the program the binary runs:
- * SERVER_MODE_NAME, the default, or MASTER_MODE_NAME. It comes first, before
- * every other option.
+ * SERVER_MODE_NAME, the default, SUPERVISOR_MODE_NAME or MASTER_MODE_NAME. It
+ * comes first, before every other option.
  */
 constexpr std::string_view MODE_OPTION = "--mode";
 constexpr std::string_view SERVER_MODE_NAME = "server";
+constexpr std::string_view SUPERVISOR_MODE_NAME = "supervisor";
 constexpr std::string_view MASTER_MODE_NAME = "master";
 
 /** @brief How many arguments MODE_OPTION takes, its value included. */

@@ -121,19 +121,25 @@ void ServerSupervisorLinkModule::readSupervisorDatagrams() {
 
 void ServerSupervisorLinkModule::sendStatusWhenDue(engine::Duration elapsed) {
   sinceStatus_ += elapsed;
-  if (sinceStatus_ < STATUS_INTERVAL) {
+  const network::GameStatus status = currentStatus();
+  if (sinceStatus_ < STATUS_INTERVAL && status == lastStatus_) {
     return;
   }
   sinceStatus_ = engine::Duration::zero();
-  const GameInstance& game = *games_->all().front();
+  lastStatus_ = status;
   sender_->queueDatagram(network::OutgoingDatagram{
       .destination = supervisor_,
       .payload = network::DatagramCodec::encode(
           network::PacketHeader{.sessionToken = link_.token,
                                 .sequence = nextSequence_++},
-          network::GameStatus{.state = statusStateOf(game.state()),
-                              .playerCount = static_cast<std::uint8_t>(
-                                  playerCountOf(*games_))})});
+          status)});
+}
+
+network::GameStatus ServerSupervisorLinkModule::currentStatus() const {
+  const GameInstance& game = *games_->all().front();
+  return network::GameStatus{
+      .state = statusStateOf(game.state()),
+      .playerCount = static_cast<std::uint8_t>(playerCountOf(*games_))};
 }
 
 void ServerSupervisorLinkModule::askToStop(std::string_view reason) {

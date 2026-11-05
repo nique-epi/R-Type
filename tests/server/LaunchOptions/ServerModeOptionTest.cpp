@@ -46,6 +46,21 @@ TEST(ServerModeOption, ModeMasterRunsTheMasterWithTheArgumentsAfterIt) {
 }
 
 /**
+ * Given `--mode supervisor` followed by an option
+ * When the mode is chosen
+ * Then the binary runs the supervisor with the arguments after the mode
+ */
+TEST(ServerModeOption, ModeSupervisorRunsTheSupervisorWithTheArgumentsAfterIt) {
+  const Arguments arguments{MODE, SUPERVISOR_MODE, PORT, SOME_PORT};
+
+  const ServerModeChoice choice = chooseServerMode(arguments);
+
+  EXPECT_EQ(choice.mode, ServerMode::Supervisor);
+  EXPECT_EQ(Arguments(choice.options.begin(), choice.options.end()),
+            (Arguments{PORT, SOME_PORT}));
+}
+
+/**
  * Given `--mode server` alone
  * When the mode is chosen
  * Then the binary runs the game server with no option

@@ -219,9 +219,13 @@ std::string databaseOptionEntry() {
 std::string modeOptionEntry() {
   return engine::usageEntry(
       std::string(MODE_OPTION) + " <" + std::string(SERVER_MODE_NAME) + "|" +
+          std::string(SUPERVISOR_MODE_NAME) + "|" +
           std::string(MASTER_MODE_NAME) + ">",
       "Runs the game server (" + std::string(SERVER_MODE_NAME) +
-          ", the default) or the master that lists the game servers (" +
+          ", the default), the supervisor that starts a game server per game "
+          "(" +
+          std::string(SUPERVISOR_MODE_NAME) +
+          ") or the master that lists the game servers (" +
           std::string(MASTER_MODE_NAME) +
           "). It comes before every other option: `" +
           std::string(MODE_OPTION) + " " + std::string(MASTER_MODE_NAME) + " " +

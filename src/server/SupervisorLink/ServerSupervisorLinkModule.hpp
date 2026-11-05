@@ -6,6 +6,7 @@
 #include <vector>
 #include "Endpoint.hpp"
 #include "GameProcessWatch.hpp"
+#include "GameStatus.hpp"
 #include "Games.hpp"
 #include "IDatagramSender.hpp"
 #include "IModule.hpp"
@@ -60,6 +61,7 @@ class ServerSupervisorLinkModule final : public engine::IModule {
   void onTick(engine::Duration elapsed);
   void readSupervisorDatagrams();
   void sendStatusWhenDue(engine::Duration elapsed);
+  [[nodiscard]] network::GameStatus currentStatus() const;
   void askToStop(std::string_view reason);
 
   SupervisorLink link_;
@@ -68,6 +70,7 @@ class ServerSupervisorLinkModule final : public engine::IModule {
   logging::Logger logger_;
   GameProcessWatch watch_;
   engine::Duration sinceStatus_;
+  network::GameStatus lastStatus_;
   std::uint16_t nextSequence_{0};
   bool stopAsked_{false};
   Games* games_{nullptr};

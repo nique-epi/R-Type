@@ -1,0 +1,3 @@
+target_sources(server_module_tests PRIVATE ServerSupervisorLobbyModuleTest.cpp)
+
+target_include_directories(server_module_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/server/SupervisedGames)

@@ -22,6 +22,9 @@ ServerMode modeNamed(std::string_view name) {
   if (name == MASTER_MODE_NAME) {
     return ServerMode::Master;
   }
+  if (name == SUPERVISOR_MODE_NAME) {
+    return ServerMode::Supervisor;
+  }
   throw engine::InvalidLaunchOptionValueException(std::string{MODE_OPTION},
                                                   std::string{name});
 }

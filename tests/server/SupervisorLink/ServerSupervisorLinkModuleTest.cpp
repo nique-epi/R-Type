@@ -62,6 +62,23 @@ TEST_F(ServerSupervisorLinkFixture, SendsAStatusEverySecond) {
 }
 
 /**
+ * Given a game process whose first status went out with no player
+ * When a player joins, well before the next second
+ * Then a second status goes out at once, announcing the player
+ */
+TEST_F(ServerSupervisorLinkFixture, SendsAStatusAtOnceWhenAPlayerJoins) {
+  startWith(shippedWaves());
+  runTick({});
+  join(0);
+
+  runTick({});
+
+  const auto sent = statuses();
+  ASSERT_EQ(sent.size(), 2U);
+  EXPECT_EQ(onlyMessageIn<GameStatus>(sent.back()).playerCount, 1);
+}
+
+/**
  * Given a game with two players
  * When the next status goes out
  * Then it announces 2 players
