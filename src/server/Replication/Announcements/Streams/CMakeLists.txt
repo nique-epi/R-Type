@@ -16,12 +16,12 @@ target_link_libraries(rtype_server_replication_announcements_streams
     rtype_network_transport
     rtype_network_world_state_codec
     rtype_network_world_state_delta
+    rtype_server_constants
     rtype_server_exceptions
     rtype_server_replication_wire
     rtype_server_sessions_roster
   PRIVATE
     rtype_network_datagram_codec
-    rtype_server_constants
 )
 
 rtype_enable_warnings(rtype_server_replication_announcements_streams)

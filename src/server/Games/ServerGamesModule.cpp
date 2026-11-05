@@ -13,6 +13,7 @@
 #include <vector>
 #include "ConfigurationRegistry.hpp"
 #include "ConnectedPlayer.hpp"
+#include "EngineException.hpp"
 #include "EventBus.hpp"
 #include "FarewellSender.hpp"
 #include "GameInstance.hpp"
@@ -35,6 +36,8 @@
 #include "ServerConstants.hpp"
 #include "ServerException.hpp"
 #include "SettingValue.hpp"
+#include "StateEncoding.hpp"
+#include "TextSettingDefinition.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
 #include "VanillaBreaches.hpp"
@@ -54,6 +57,40 @@ std::optional<std::uint32_t> seedOf(const engine::SettingValue& setting) {
     return std::nullopt;
   }
   return static_cast<std::uint32_t>(*value);
+}
+
+/** @returns The value of the `state-encoding` setting that names @p encoding.
+ */
+std::string_view textOf(StateEncoding encoding) {
+  switch (encoding) {
+    case StateEncoding::Delta:
+      return DELTA_STATE_ENCODING_TEXT;
+    case StateEncoding::Full:
+      return FULL_STATE_ENCODING_TEXT;
+  }
+  return DELTA_STATE_ENCODING_TEXT;
+}
+
+/**
+ * @brief Refuses a value of the `state-encoding` setting that names no
+ * encoding.
+ * @throws engine::CommandRefusedException for any text but
+ * DELTA_STATE_ENCODING_TEXT and FULL_STATE_ENCODING_TEXT.
+ */
+void requireStateEncoding(std::string_view text) {
+  if (text != DELTA_STATE_ENCODING_TEXT && text != FULL_STATE_ENCODING_TEXT) {
+    throw engine::CommandRefusedException(
+        std::string{INVALID_STATE_ENCODING_TEXT});
+  }
+}
+
+/**
+ * @returns The encoding @p setting names, which requireStateEncoding()
+ * checked.
+ */
+StateEncoding stateEncodingOf(const engine::SettingValue& setting) {
+  return setting.text() == FULL_STATE_ENCODING_TEXT ? StateEncoding::Full
+                                                    : StateEncoding::Delta;
 }
 
 /**
@@ -142,6 +179,12 @@ void ServerGamesModule::declareSettings(
           .lowest = LOWEST_WORLD_STATES_PER_SECOND,
           .highest = HIGHEST_WORLD_STATES_PER_SECOND,
           .help = "World states sent to each player per second"});
+  stateEncodingSetting_ =
+      &configuration.declareText(engine::TextSettingDefinition{
+          .name = std::string{STATE_ENCODING_SETTING_NAME},
+          .defaultValue = std::string{textOf(DEFAULT_STATE_ENCODING)},
+          .help = "How world states are written: delta or full",
+          .validate = requireStateEncoding});
   inputDelaySetting_ =
       &configuration.declareInteger(engine::IntegerSettingDefinition{
           .name = std::string{INPUT_DELAY_SETTING_NAME},
@@ -161,6 +204,7 @@ void ServerGamesModule::start() {
   const auto statesPerSecond =
       static_cast<std::size_t>(stateRateSetting_->integer().value_or(
           static_cast<std::int64_t>(settings_.statesPerSecond)));
+  const StateEncoding encoding = stateEncodingOf(*stateEncodingSetting_);
   const auto inputDelayTicks =
       static_cast<std::size_t>(inputDelaySetting_->integer().value_or(
           static_cast<std::int64_t>(settings_.inputDelayTicks)));
@@ -177,6 +221,7 @@ void ServerGamesModule::start() {
                                   : std::random_device{}(),
                      .waves = waves,
                      .statesPerSecond = statesPerSecond,
+                     .stateEncoding = encoding,
                      .inputDelayTicks = inputDelayTicks,
                      .difficulty = std::string{difficulty},
                      .vanilla = breaches.empty()});

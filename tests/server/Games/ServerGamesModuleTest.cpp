@@ -216,6 +216,39 @@ TEST_F(ServerGamesFixture, DeclaresTheSeedSettingAndLetsItBeCleared) {
 }
 
 /**
+ * Given the games module installed
+ * When the configuration gives the state encoding a value that names no
+ * encoding
+ * Then the line is refused, so the module declared the setting with its values
+ */
+TEST_F(ServerGamesFixture, RefusesAStateEncodingThatNamesNoEncoding) {
+  rtype::engine::CommandResult result;
+
+  startWith(shippedWaves(),
+            [&result](rtype::engine::CommandInterpreter& commands) {
+              result = commands.execute(UNKNOWN_STATE_ENCODING_LINE);
+            });
+
+  EXPECT_FALSE(result.accepted);
+}
+
+/**
+ * Given the games module installed
+ * When the configuration asks for every state in full
+ * Then the line is accepted, so the module declared the setting
+ */
+TEST_F(ServerGamesFixture, AcceptsFullAsTheStateEncoding) {
+  rtype::engine::CommandResult result;
+
+  startWith(shippedWaves(),
+            [&result](rtype::engine::CommandInterpreter& commands) {
+              result = commands.execute(FULL_STATE_ENCODING_LINE);
+            });
+
+  EXPECT_TRUE(result.accepted);
+}
+
+/**
  * Given settings that ask for the most games a heartbeat lists
  * When the application starts
  * Then every game is created

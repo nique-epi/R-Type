@@ -73,5 +73,13 @@ constexpr std::string_view STATE_RATE_ABOVE_THE_HIGHEST_LINE =
  */
 constexpr std::string_view CLEAR_THE_SEED_LINE = "set seed none";
 
+/**
+ * @brief A line that gives the state encoding a value that names no encoding,
+ * and one that asks for every state in full.
+ */
+constexpr std::string_view UNKNOWN_STATE_ENCODING_LINE =
+    "set state-encoding fast";
+constexpr std::string_view FULL_STATE_ENCODING_LINE = "set state-encoding full";
+
 /** @brief The only byte of the datagram a test queues for its client. */
 constexpr std::byte QUEUED_BYTE{0x2A};

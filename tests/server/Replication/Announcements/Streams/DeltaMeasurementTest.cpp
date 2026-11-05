@@ -3,6 +3,7 @@
 #include <iostream>
 #include "DeltaStateSenderFixture.hpp"
 #include "DeltaStateSenderTestConstants.hpp"
+#include "StateEncoding.hpp"
 
 namespace rtype::server::testing {
 
@@ -55,6 +56,20 @@ TEST_F(DeltaStateSenderFixture, CostsAsMuchAsFullStatesWhenEveryEntityMoves) {
             << " bytes/s to one player, "
             << (MEASURED_STATES * FULL_STATE_BYTES) / MEASURED_SECONDS
             << " in full\n";
+  EXPECT_EQ(bytes, MEASURED_STATES * FULL_STATE_BYTES);
+}
+
+/**
+ * Given a sender that writes every state in full, and ten seconds of a game of
+ * 30 enemies that all stand still
+ * When the bytes sent to the player are counted
+ * Then each of the 200 states lists every entity, as a state in full does
+ */
+TEST_F(DeltaStateSenderFixture, ListsEveryEntityInEveryStateWhenWritingInFull) {
+  encodeStatesAs(StateEncoding::Full);
+
+  const std::size_t bytes = bytesOfAMeasuredRun(0);
+
   EXPECT_EQ(bytes, MEASURED_STATES * FULL_STATE_BYTES);
 }
 

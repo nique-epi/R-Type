@@ -15,13 +15,15 @@
 #include "GameStateChanged.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "Lives.hpp"
+#include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "RtypeSystems.hpp"
 #include "SentDatagrams.hpp"
-#include "ServerConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
+#include "StateSending.hpp"
+#include "WavePlan.hpp"
 
 namespace rtype::server::testing {
 
@@ -34,7 +36,7 @@ GameFlowFixture::GameFlowFixture(WavePlan waves)
           [this](network::OutgoingDatagram datagram) {
             sent_.push_back(std::move(datagram));
           },
-          DEFAULT_WORLD_STATES_PER_SECOND),
+          StateSending{}),
       context_{.events = events_,
                .systems = systems_,
                .roster = roster_,

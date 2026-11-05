@@ -18,19 +18,27 @@
 #include "SentDatagrams.hpp"
 #include "ServerConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "StateEncoding.hpp"
 #include "StateRateMeasurementFixtures.hpp"
+#include "StateSending.hpp"
 #include "WorldStateSender.hpp"
 #include "WorldStateSenderFixture.hpp"
 
 namespace rtype::server::testing {
 
-DeltaStateSenderFixture::DeltaStateSenderFixture()
-    : sender_(std::make_unique<WorldStateSender>(
-          roster_,
-          [this](network::OutgoingDatagram datagram) {
-            sent_.push_back(std::move(datagram));
-          },
-          DEFAULT_WORLD_STATES_PER_SECOND)) {}
+DeltaStateSenderFixture::DeltaStateSenderFixture() {
+  encodeStatesAs(StateEncoding::Delta);
+}
+
+void DeltaStateSenderFixture::encodeStatesAs(StateEncoding encoding) {
+  sender_ = std::make_unique<WorldStateSender>(
+      roster_,
+      [this](network::OutgoingDatagram datagram) {
+        sent_.push_back(std::move(datagram));
+      },
+      StateSending{.statesPerSecond = DEFAULT_WORLD_STATES_PER_SECOND,
+                   .encoding = encoding});
+}
 
 ConnectedPlayer& DeltaStateSenderFixture::connect(std::uint16_t port) {
   return *roster_.add(client(port), std::string{PLAYER_NICKNAME}, port);
