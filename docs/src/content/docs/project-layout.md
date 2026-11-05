@@ -106,7 +106,7 @@ src/engine/
 src/game/
 ├── World/            the state of one match
 ├── ShipControl/      applies a player's input to their ship
-├── Behaviours/       the named behaviours that pilot the Bydos
+├── Behaviours/       the named behaviours that pilot the Bydos (Piloting/, Rtype/)
 ├── Components/       Position, Velocity, CollisionBox, Health...
 ├── Systems/          movement, collisions, damage, shooting, score
 ├── Spawning/         creates ships, enemies, missiles, bonuses

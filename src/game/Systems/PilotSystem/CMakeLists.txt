@@ -6,7 +6,7 @@ target_link_libraries(rtype_game_pilot_system
   PUBLIC
     rtype_engine_systems
     rtype_engine_component_registry
-    rtype_game_behaviours
+    rtype_game_behaviours_piloting
     rtype_game_components
 )
 

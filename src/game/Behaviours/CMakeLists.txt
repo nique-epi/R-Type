@@ -1,20 +1,10 @@
-add_library(rtype_game_behaviours STATIC
-  BehaviourRegistry.cpp
-  BehaviourSteering.cpp
-  RtypeBehaviours.cpp
-  StraightBehaviour.cpp
-  WeaveBehaviour.cpp
-)
+add_subdirectory(Piloting)
+add_subdirectory(Rtype)
 
-target_include_directories(rtype_game_behaviours PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(rtype_game_behaviours INTERFACE)
 
 target_link_libraries(rtype_game_behaviours
-  PUBLIC
-    rtype_engine_time
-    rtype_game_components
-  PRIVATE
-    rtype_game_exceptions
-    rtype_game_spawning_constants
+  INTERFACE
+    rtype_game_behaviours_piloting
+    rtype_game_behaviours_rtype
 )
-
-rtype_enable_warnings(rtype_game_behaviours)

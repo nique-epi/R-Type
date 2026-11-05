@@ -25,7 +25,7 @@ The server owns the game. It creates the Bydos, moves them and tells each client
 
 | Step | What you add | Where |
 |---|---|---|
-| 1 | A new behaviour for the Bydo | `src/game/Behaviours/` |
+| 1 | A new behaviour for the Bydo | `src/game/Behaviours/Rtype/` |
 | 2 | The kind of enemy and its points | `src/game/Spawning/BydoKind/` |
 | 3 | The name the waves file gives it | `src/server/Spawning/WaveFileConstants.hpp` |
 | 4 | Tests | `tests/` |
@@ -37,13 +37,13 @@ How a kind reaches the world: `BydoKind` is read by `World::spawnBydo`, which gi
 
 ## Step 1: a new behaviour
 
-A behaviour reads the Bydo it pilots (where it is, where it appeared, how old it is, the length of the tick) and returns what the Bydo wants at the end of the tick: a direction, a share of its top speed from -1 to 1 on each axis, and whether it fires (see [Architecture](/R-Type/architecture/#pilot-and-body)). Give yours a name, in `src/game/Behaviours/BehaviourConstants.hpp`:
+A behaviour reads the Bydo it pilots (where it is, where it appeared, how old it is, the length of the tick) and returns what the Bydo wants at the end of the tick: a direction, a share of its top speed from -1 to 1 on each axis, and whether it fires (see [Architecture](/R-Type/architecture/#pilot-and-body)). Give yours a name, in `src/game/Behaviours/Rtype/BehaviourConstants.hpp`:
 
 ```cpp
 constexpr std::string_view ZIGZAG_BEHAVIOUR_NAME = "zigzag";
 ```
 
-Its numbers go in `src/game/Behaviours/ZigzagBehaviourConstants.hpp`, named and documented, with a `static_assert` as the guard: a Bydo must stay inside the room its row keeps above and below it (`BYDO_PATTERN_ROOM`), or it leaves the area of play.
+Its numbers go in `src/game/Behaviours/Rtype/ZigzagBehaviourConstants.hpp`, named and documented, with a `static_assert` as the guard: a Bydo must stay inside the room its row keeps above and below it (`BYDO_PATTERN_ROOM`), or it leaves the area of play.
 
 ```cpp
 #pragma once
@@ -76,7 +76,7 @@ static_assert(ZIGZAG_AMPLITUDE <= BYDO_PATTERN_ROOM,
 }  // namespace rtype::game
 ```
 
-The behaviour is a class of `src/game/Behaviours/`, next to `WeaveBehaviour`. Its header, `ZigzagBehaviour.hpp`:
+The behaviour is a class of `src/game/Behaviours/Rtype/`, next to `WeaveBehaviour`; the contract it implements, `IBehaviour`, sits in `src/game/Behaviours/Piloting/`. Its header, `ZigzagBehaviour.hpp`:
 
 ```cpp
 /**
@@ -133,7 +133,7 @@ Intent ZigzagBehaviour::steer(const BehaviourView& view) const {
 
 The height grows downwards on screen, so at a quarter of the period the Zigzagger is 48 units below its row, as a Weaver is at a quarter of its own. A behaviour cannot move its Bydo faster than its top speed, 240 logical units per second (`BYDO_SPEED`): the zigzag climbs 4 × 48 = 192 units per second, so it keeps its path.
 
-Register it with the others in `rtypeBehaviours()` (`src/game/Behaviours/RtypeBehaviours.cpp`), and add `ZigzagBehaviour.cpp` to the sources of `src/game/Behaviours/CMakeLists.txt`:
+Register it with the others in `rtypeBehaviours()` (`src/game/Behaviours/Rtype/RtypeBehaviours.cpp`), and add `ZigzagBehaviour.cpp` to the sources of `src/game/Behaviours/Rtype/CMakeLists.txt`:
 
 ```cpp
   behaviours.add(std::make_unique<ZigzagBehaviour>());
