@@ -33,7 +33,8 @@ class CompressingDatagramSocket final : public IDatagramSocket {
 
   /** @brief Sends @p payload with its body coded when that makes it shorter,
    * as it is otherwise.
-   * @throws What the wrapped socket throws. */
+   * @throws What the wrapped socket throws, and
+   * CompressionUnavailableException when zstd cannot allocate what it needs. */
   void send(const Endpoint& destination,
             std::span<const std::byte> payload) override;
 

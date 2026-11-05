@@ -1,7 +1,7 @@
-"""Records the datagrams of a real game, for the Huffman table of the server.
+"""Records the datagrams of a real game, for the zstd dictionary of the server.
 
 Usage: python3 capture_corpus.py <port> <players> <seconds> <output file>
-                                 [<HuffmanTableConstants.hpp>]
+                                 [<ServerToClientDictionaryConstants.hpp>]
 
 Start the real server first, on <port>, for instance:
   ./r-type_server -p 4301 --seed 1 --no-log-file --no-log-stderr
@@ -11,86 +11,54 @@ directions, as records of: seconds (f64), direction (u8, 0 client to server,
 1 server to client), pilot (u8), size (u16), then the datagram bytes. All
 numbers are big-endian.
 
-The server sends the body of its datagrams in Huffman code (COMPRESSED flag).
-The script decodes them with the table of <HuffmanTableConstants.hpp>, given or
-found in the repository, and records the plain datagram, so the captures train
-a new table on the bytes of the messages and not on their code. It also prints
-how many bytes the server saved on the wire. Without a table (before the first
-one exists) it records the datagrams as they arrive.
+The server sends the body of its datagrams as a zstd frame (COMPRESSED flag).
+The script decodes them with the dictionary of <ServerToClientDictionaryConstants.hpp>,
+given or found in the repository, through the zstd command line (which must be
+on the PATH), and records the plain datagram, so the captures train a new
+dictionary on the bytes of the messages and not on their code. It also prints
+how many bytes the server saved on the wire. Without a dictionary (before the
+first one exists) it records the datagrams as they arrive.
 """
-import asyncio, os, random, re, struct, sys, time
+import asyncio, atexit, os, random, re, struct, subprocess, sys, tempfile, time
 
 PROTOCOL_VERSION = 4
 COMPRESSED_FLAG = 0x04
 HEADER_SIZE = 22
-SYMBOL_COUNT = 257
-END_OF_BODY_SYMBOL = 256
-MAXIMUM_CODE_LENGTH = 15
-DEFAULT_TABLE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..",
-                             "src", "network", "Compression", "Huffman", "HuffmanTableConstants.hpp")
+FLAGS_OFFSET = 5
+DEFAULT_DICTIONARY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..",
+                                  "src", "network", "Compression", "Zstd",
+                                  "ServerToClientDictionaryConstants.hpp")
 
 
-def read_code_lengths(path):
+def write_dictionary_file(path):
+    """Writes the dictionary of the header to a temporary file; None when there is none yet."""
     if not os.path.exists(path):
         return None
     text = open(path, encoding="utf-8").read()
-    numbers = re.findall(r"\b\d+\b", text.split("SERVER_TO_CLIENT_CODE_LENGTHS{", 1)[1].split("}", 1)[0])
-    lengths = [int(number) for number in numbers]
-    assert len(lengths) == SYMBOL_COUNT
-    return lengths
+    numbers = re.findall(r"0x[0-9A-Fa-f]{2}", text.split("SERVER_TO_CLIENT_DICTIONARY{", 1)[1])
+    handle, name = tempfile.mkstemp(suffix=".dict")
+    with os.fdopen(handle, "wb") as dictionary:
+        dictionary.write(bytes(int(number, 16) for number in numbers))
+    atexit.register(os.remove, name)
+    return name
 
 
-def build_decoder(lengths):
-    counts = [0] * (MAXIMUM_CODE_LENGTH + 1)
-    for length in lengths:
-        counts[length] += 1
-    symbols = sorted(range(SYMBOL_COUNT), key=lambda symbol: (lengths[symbol], symbol))
-    return counts, symbols
-
-
-def decode_body(coded, decoder):
-    counts, symbols = decoder
-    body = bytearray()
-    bits = "".join(format(byte, "08b") for byte in coded)
-    position = 0
-    while True:
-        code = first = index = 0
-        for length in range(1, MAXIMUM_CODE_LENGTH + 1):
-            if position >= len(bits):
-                return None
-            code |= int(bits[position])
-            position += 1
-            if code < first + counts[length]:
-                symbol = symbols[index + code - first]
-                break
-            index += counts[length]
-            first = (first + counts[length]) << 1
-            code <<= 1
-        else:
-            return None
-        if symbol == END_OF_BODY_SYMBOL:
-            break
-        body.append(symbol)
-    if len(bits) - position >= 8 or "1" in bits[position:]:
-        return None
-    return bytes(body)
-
-
-def plain_form(data, decoder):
-    if decoder is None or len(data) <= HEADER_SIZE or not data[5] & COMPRESSED_FLAG:
+def plain_form(data, dictionary_file):
+    if dictionary_file is None or len(data) <= HEADER_SIZE or not data[FLAGS_OFFSET] & COMPRESSED_FLAG:
         return data
-    body = decode_body(data[HEADER_SIZE:], decoder)
-    if body is None:
+    result = subprocess.run(["zstd", "-d", "-q", "-c", "-D", dictionary_file],
+                            input=data[HEADER_SIZE:], capture_output=True)
+    if result.returncode != 0:
         raise SystemExit("a datagram of the server does not decode")
-    return data[:5] + bytes([data[5] & ~COMPRESSED_FLAG]) + data[6:HEADER_SIZE] + body
+    flags = data[FLAGS_OFFSET] & ~COMPRESSED_FLAG
+    return data[:FLAGS_OFFSET] + bytes([flags]) + data[FLAGS_OFFSET + 1:HEADER_SIZE] + result.stdout
+
 
 PORT = int(sys.argv[1])
 PLAYERS = int(sys.argv[2])
 DURATION = float(sys.argv[3])
 OUT = sys.argv[4]
-TABLE = sys.argv[5] if len(sys.argv) > 5 else DEFAULT_TABLE
-LENGTHS = read_code_lengths(TABLE)
-DECODER = build_decoder(LENGTHS) if LENGTHS else None
+DICTIONARY_FILE = write_dictionary_file(sys.argv[5] if len(sys.argv) > 5 else DEFAULT_DICTIONARY)
 wire_bytes = {"s2c": 0, "c2s": 0}
 random.seed(PORT)
 
@@ -137,7 +105,7 @@ class Client(asyncio.DatagramProtocol):
 
     def datagram_received(self, data, addr):
         wire_bytes["s2c"] += len(data)
-        data = plain_form(data, DECODER)
+        data = plain_form(data, DICTIONARY_FILE)
         records.append((time.monotonic(), "s2c", self.index, data))
         if len(data) < 22:
             return

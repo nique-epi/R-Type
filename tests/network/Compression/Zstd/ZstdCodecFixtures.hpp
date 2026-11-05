@@ -11,9 +11,9 @@ namespace rtype::network::testing {
 std::vector<std::byte> everyByteValue();
 
 /**
- * @returns A body of zero bytes whose code does not fill its last byte, so the
- * coded body ends in padding bits.
+ * @returns The magic number of a zstd frame followed by random bytes, so it
+ * looks like a frame at its start and is none.
  */
-std::vector<std::byte> bodyCodedWithPadding();
+std::vector<std::byte> frameOfGarbage();
 
 }  // namespace rtype::network::testing

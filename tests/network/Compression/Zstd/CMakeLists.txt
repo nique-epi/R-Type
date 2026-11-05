@@ -1,0 +1,2 @@
+target_sources(network_compression_tests PRIVATE ZstdCodecTest.cpp ZstdCodecFixtures.cpp ZstdDictionaryTest.cpp)
+target_include_directories(network_compression_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

@@ -9,7 +9,7 @@ target_include_directories(rtype_network_compression_sockets PUBLIC ${CMAKE_CURR
 target_link_libraries(rtype_network_compression_sockets
   PUBLIC
     rtype_network_compression_constants
-    rtype_network_compression_huffman
+    rtype_network_compression_zstd
     rtype_network_transport
   PRIVATE
     rtype_network_datagram_codec

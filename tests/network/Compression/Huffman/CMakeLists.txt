@@ -1,2 +1,0 @@
-target_sources(network_compression_tests PRIVATE HuffmanCodecTest.cpp HuffmanCodecFixtures.cpp HuffmanTableTest.cpp)
-target_include_directories(network_compression_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

@@ -20,7 +20,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
  * @brief The version of the protocol this code speaks. Version 4 lets the
- * server send the body of a datagram in Huffman code, see the Compression
+ * server send the body of a datagram as a zstd frame, see the Compression
  * section of the protocol page; version 3 adds the outcome of a game to
  * GameEnded, see the Version 3 section of that page.
  */
@@ -73,8 +73,8 @@ constexpr auto KNOWN_FLAGS =
     static_cast<std::uint8_t>(ACKNOWLEDGES_FLAG | GUARANTEED_FLAG);
 
 /**
- * @brief The flag of a datagram whose body, the bytes after the header, is in
- * Huffman code. Only the transport sees it: the socket that receives the
+ * @brief The flag of a datagram whose body, the bytes after the header, is a
+ * zstd frame. Only the transport sees it: the socket that receives the
  * datagram decodes the body and clears the flag before anything else reads it,
  * so it is not one of KNOWN_FLAGS and a header that still holds it is refused.
  */

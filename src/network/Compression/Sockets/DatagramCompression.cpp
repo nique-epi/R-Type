@@ -5,9 +5,9 @@
 #include <vector>
 #include "CompressionConstants.hpp"
 #include "DatagramCodec.hpp"
-#include "HuffmanCodec.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
+#include "ZstdCodec.hpp"
 
 namespace rtype::network {
 
@@ -47,12 +47,12 @@ std::optional<std::vector<std::byte>> compressedForm(
     return std::nullopt;
   }
   const std::span<const std::byte> body = datagram.subspan(PACKET_HEADER_SIZE);
-  const std::vector<std::byte> coded = huffmanEncode(body);
-  if (coded.size() >= body.size()) {
+  const std::optional<std::vector<std::byte>> coded = compressBody(body);
+  if (!coded.has_value() || coded->size() >= body.size()) {
     return std::nullopt;
   }
   return rebuilt(datagram, datagram[FLAGS_OFFSET] | std::byte{COMPRESSED_FLAG},
-                 coded);
+                 *coded);
 }
 
 bool isCompressed(std::span<const std::byte> datagram) {
@@ -72,7 +72,7 @@ std::optional<std::vector<std::byte>> plainForm(
     return std::nullopt;
   }
   const std::optional<std::vector<std::byte>> body =
-      huffmanDecode(datagram.subspan(PACKET_HEADER_SIZE), MAXIMUM_BODY_SIZE);
+      decompressBody(datagram.subspan(PACKET_HEADER_SIZE), MAXIMUM_BODY_SIZE);
   if (!body.has_value()) {
     return std::nullopt;
   }

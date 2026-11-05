@@ -1,5 +1,5 @@
 rtype_add_test(NAME network_compression_tests SOURCES CompressionFixtures.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingDatagramSocket.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/ReceivedDatagrams.cpp LIBS rtype_network_compression rtype_network_datagram_codec rtype_network_messages)
 target_include_directories(network_compression_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/doubles)
 
-add_subdirectory(Huffman)
 add_subdirectory(Sockets)
+add_subdirectory(Zstd)

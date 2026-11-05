@@ -8,7 +8,7 @@ target_link_libraries(rtype_network_compression_constants
     rtype_network_protocol
 )
 
-add_subdirectory(Huffman)
+add_subdirectory(Zstd)
 add_subdirectory(Sockets)
 
 add_library(rtype_network_compression INTERFACE)

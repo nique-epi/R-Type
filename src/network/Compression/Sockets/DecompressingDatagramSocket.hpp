@@ -26,7 +26,10 @@ class DecompressingDatagramSocket final : public IDatagramSocket {
   explicit DecompressingDatagramSocket(std::unique_ptr<IDatagramSocket> socket);
 
   /** @brief Hands each datagram received to @p handler, decoded when it was
-   * coded.
+   * coded. When zstd cannot allocate what it needs, decoding raises
+   * CompressionUnavailableException inside the handler of the wrapped socket,
+   * which ends the run of its NetworkContext as any exception of a handler
+   * does.
    * @throws What the wrapped socket throws. */
   void startReceiving(DatagramHandler handler) override;
 
