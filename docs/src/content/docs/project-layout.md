@@ -106,6 +106,7 @@ src/engine/
 src/game/
 ├── World/            the state of one match
 ├── ShipControl/      applies a player's input to their ship
+├── Behaviours/       the named behaviours that pilot the Bydos
 ├── Components/       Position, Velocity, CollisionBox, Health...
 ├── Systems/          movement, collisions, damage, shooting, score
 ├── Spawning/         creates ships, enemies, missiles, bonuses
@@ -113,7 +114,7 @@ src/game/
 └── Events/           entity destroyed, player left...
 ```
 
-`World`, `Components`, `Events`, `Spawning` (the start position of a player's ship and of its missiles, the position of a new Bydo and the kinds of Bydo), the systems for movement (`Systems/MovementSystem/`, which moves a body by its `Velocity` or by its `Intent`), the artificial intelligence of the Bydos (`Systems/BydoControlSystem/`), movement patterns (`Systems/PatternSystem/`) and leaving the playfield (`Systems/PlayfieldExitSystem/`), the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`), the damage rules (`Systems/DamageRules/`), `Waves` (how the waves of Bydos grow and when their Bydos are due) and `ShipControl`, which the server runs and the client does not run yet, exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
+`World`, `Components`, `Events`, `Spawning` (the start position of a player's ship and of its missiles, the position of a new Bydo and the kinds of Bydo), the systems for movement (`Systems/MovementSystem/`, which moves a body by its `Velocity` or by its `Intent`), the pilots of the Bydos (`Systems/PilotSystem/`, which lets a named behaviour of `Behaviours/` write the `Intent` of each Bydo) and leaving the playfield (`Systems/PlayfieldExitSystem/`), the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`), the damage rules (`Systems/DamageRules/`), `Waves` (how the waves of Bydos grow and when their Bydos are due) and `ShipControl`, which the server runs and the client does not run yet, exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
 
 ### Network
 

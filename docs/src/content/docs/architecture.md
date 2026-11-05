@@ -94,7 +94,7 @@ Alternative considered: a numeric priority on each system, sorted by the schedul
 
 An entity type (a Drifter, the ship of a player, a missile) is a sheet of data, not a piece of C++: a name, the components an entity of that type starts with and their values, the pilot that steers it, and how it looks. The engine and the systems only know components, so a new enemy is a new sheet, plus a new behaviour when none fits, and never a change to a system or to the protocol. The subject of the Advanced Architecture track asks for an engine with proper abstractions and notes that entity behaviours are usually deferred to scripts; a named behaviour is the place where a script will plug in.
 
-This is a contract: none of it exists yet. Today the types are written in C++ (`World::spawnPlayer`, `World::spawnBydo`, `BydoKind`) and fixed on the wire (`WireEntityType`). The code must follow the rules below as it moves to sheets.
+The pilot and the body exist: `PilotSystem` and the behaviours of `src/game/Behaviours/` steer the Bydos, and `MovementSystem` moves them by their `Intent`, as it moves the ships. The type sheet and the type table are a contract: the types are still written in C++ (`World::spawnPlayer`, `World::spawnBydo`, `BydoKind`) and fixed on the wire (`WireEntityType`), and the code must follow the rules below as it moves to sheets.
 
 ### Pilot and body
 
@@ -105,11 +105,11 @@ The direction of an `Intent` becomes two numbers, x and y, each from -1 to 1, in
 | Motion | Moves the body | Used by |
 |---|---|---|
 | `ship` | drift, roll and dash of `shipAfter()`, which reads the sign of each axis | the ships; the client runs the same `shipAfter()` to predict its own ship |
-| `steady` | at its top speed times the direction, on each axis | the Bydos and the missiles |
+| `steady` | at its top speed times the direction, on each axis | the Bydos; the missiles still fly by their `Velocity` until they get a sheet |
 
-A Weaver is a `steady` body with a top speed of 240 logical units per second (`BYDO_SPEED`): its behaviour writes x = -1 and picks y so the body ends the tick 48 logical units times sin(2π × age / 2 s) away from its row, the path `PatternSystem` draws today. A path faster than the top speed on an axis is clamped to it. The pilots run before every system that reads the `Intent`, as `BydoControlSystem` runs before `PatternSystem` and `MovementSystem` now; `PatternSystem` and `MovementPattern` go away.
+A Weaver is a `steady` body with a top speed of 240 logical units per second (`BYDO_SPEED`): its behaviour writes x = -1 and picks y so the body ends the tick 48 logical units times sin(2π × age / 2 s) away from its row, the path the Weaver followed before the pilots. A path faster than the top speed on an axis is clamped to it. `PilotSystem` runs before every system that reads the `Intent`.
 
-Alternative considered: keep paths that write the position, as `PatternSystem` does. It is exact and shorter, but a body then has two movers that ignore each other, the ships and the Bydos move by different rules, and a script could only replace a path, never steer.
+Alternative considered: keep paths that write the position, as the former `PatternSystem` did. It is exact and shorter, but a body then has two movers that ignore each other, the ships and the Bydos move by different rules, and a script could only replace a path, never steer.
 
 Alternative considered: one system per kind of path. It needs no registry, but every new enemy would add a system and a line to the list of systems.
 

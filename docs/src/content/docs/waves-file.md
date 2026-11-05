@@ -102,4 +102,4 @@ Neither of the last two depends on the folder the server is started from. No ass
 
 ## Adding a kind of enemy
 
-A new kind takes a value of `BydoKind` with its pattern (`patternShapeOf`) and its points (`pointsOf`) in `src/game/Spawning/BydoKind/`, then a name in `ENEMY_NAMES` in `src/server/Spawning/WaveFileConstants.hpp`; the file can name it at once. Every Bydo goes over the network as a `Bydo` today, so the client draws every kind with the same sprite: a kind that must look different also needs a network entity type of its own and a sprite on the client.
+A new kind takes a value of `BydoKind` with its behaviour (`behaviourNameOf`) and its points (`pointsOf`) in `src/game/Spawning/BydoKind/`, then a name in `ENEMY_NAMES` in `src/server/Spawning/WaveFileConstants.hpp`; the file can name it at once. Every Bydo goes over the network as a `Bydo` today, so the client draws every kind with the same sprite: a kind that must look different also needs a network entity type of its own and a sprite on the client.
