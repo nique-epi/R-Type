@@ -12,6 +12,7 @@
 #include "ConnectionAcceptor.hpp"
 #include "ConnectionAcceptorFixture.hpp"
 #include "ConnectionAcceptorFixtures.hpp"
+#include "ConnectionAcceptorParts.hpp"
 #include "ConnectionChallenge.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
@@ -619,13 +620,17 @@ TEST_F(ConnectionAcceptorFixture, WritesTheNextLineOnceTheIntervalIsOver) {
 TEST(ConnectionAcceptor, AnswersTheNextRequestAfterOneWhoseAnswerThrew) {
   PlayerRoster roster;
   std::vector<network::OutgoingDatagram> answers;
-  ConnectionAcceptor acceptor{
-      roster,
-      [&answers](network::OutgoingDatagram datagram) {
-        answers.push_back(std::move(datagram));
-      },
-      [](const network::Endpoint&, std::uint64_t) {},
-      [](ConnectedPlayer&) { throw network::InvalidCoordinateException(); }};
+  ConnectionAcceptor acceptor{ConnectionAcceptorParts{
+      .roster = roster,
+      .send =
+          [&answers](network::OutgoingDatagram datagram) {
+            answers.push_back(std::move(datagram));
+          },
+      .admit = [](const network::Endpoint&, std::uint64_t) {},
+      .onPlayerJoined =
+          [](ConnectedPlayer&) {
+            throw network::InvalidCoordinateException();
+          }}};
   const network::IncomingDatagram firstRequest{.sender = playerEndpoint(0),
                                                .payload = requestDatagram(0)};
   acceptor.receive(std::span{&firstRequest, 1}, REQUEST_TIME);

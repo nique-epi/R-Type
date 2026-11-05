@@ -8,6 +8,7 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "ConnectionAcceptor.hpp"
+#include "ConnectionAcceptorParts.hpp"
 #include "Endpoint.hpp"
 #include "GameInstance.hpp"
 #include "GameState.hpp"
@@ -46,16 +47,19 @@ void ServerLobbyModule::start() {
   IPlayerAdmission* const admission = admission_;
   for (const std::unique_ptr<GameInstance>& game : games_->all()) {
     GameInstance* const seating = game.get();
-    acceptors_.push_back(std::make_unique<ConnectionAcceptor>(
-        seating->roster(),
-        std::bind_front(&IDatagramSender::queueDatagram, sender_),
-        [admission](const network::Endpoint& player,
-                    std::uint64_t sessionToken) {
-          admission->admit(player, sessionToken);
-        },
-        [seating](ConnectedPlayer& player) {
-          seating->onPlayerJoined(player);
-        }));
+    acceptors_.push_back(
+        std::make_unique<ConnectionAcceptor>(ConnectionAcceptorParts{
+            .roster = seating->roster(),
+            .send = std::bind_front(&IDatagramSender::queueDatagram, sender_),
+            .admit =
+                [admission](const network::Endpoint& player,
+                            std::uint64_t sessionToken) {
+                  admission->admit(player, sessionToken);
+                },
+            .onPlayerJoined =
+                [seating](ConnectedPlayer& player) {
+                  seating->onPlayerJoined(player);
+                }}));
   }
 }
 

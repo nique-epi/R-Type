@@ -8,6 +8,7 @@
 #include <string>
 #include <string_view>
 #include "ConnectedPlayer.hpp"
+#include "ConnectionAcceptorParts.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
 #include "CookieIssuer.hpp"
@@ -64,34 +65,9 @@ namespace rtype::server {
  */
 class ConnectionAcceptor {
  public:
-  /**
-   * @brief What the acceptor calls for each answer to send.
-   */
-  using Send = std::function<void(network::OutgoingDatagram)>;
-
-  /**
-   * @brief What the acceptor calls once for each sender it gives a place, with
-   * the session token it drew, so the datagrams of that player carrying that
-   * token reach the game from then on.
-   */
-  using Admit = std::function<void(const network::Endpoint& player,
-                                   std::uint64_t sessionToken)>;
-
-  /**
-   * @brief What the acceptor calls once for each player it lets in, after it
-   * sent the acceptance.
-   */
-  using OnPlayerJoined = std::function<void(ConnectedPlayer&)>;
-
-  /**
-   * @param roster The players of the game; it must outlive the acceptor.
-   * @param send Must not be empty.
-   * @param admit Must not be empty.
-   * @param onPlayerJoined Called when a player takes a place in the roster,
-   * not when an acceptance is repeated; empty to call nothing.
-   */
-  ConnectionAcceptor(PlayerRoster& roster, Send send, Admit admit,
-                     OnPlayerJoined onPlayerJoined = {});
+  /** @param parts The roster, how to send, how to admit an address, and whom
+   * to tell of a player who joined. */
+  explicit ConnectionAcceptor(ConnectionAcceptorParts parts);
 
   /**
    * @brief Answers the requests among @p datagrams, oldest first.
@@ -141,9 +117,9 @@ class ConnectionAcceptor {
   [[nodiscard]] std::uint64_t drawSessionToken();
 
   PlayerRoster* roster_;
-  Send send_;
-  Admit admit_;
-  OnPlayerJoined onPlayerJoined_;
+  std::function<void(network::OutgoingDatagram)> send_;
+  std::function<void(const network::Endpoint&, std::uint64_t)> admit_;
+  std::function<void(ConnectedPlayer&)> onPlayerJoined_;
   network::CookieIssuer cookies_;
   std::random_device random_;
   bool gameInProgress_{false};

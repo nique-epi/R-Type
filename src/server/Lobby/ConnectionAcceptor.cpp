@@ -11,6 +11,7 @@
 #include <utility>
 #include "ConnectedPlayer.hpp"
 #include "ConnectionAccepted.hpp"
+#include "ConnectionAcceptorParts.hpp"
 #include "ConnectionChallenge.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
@@ -84,13 +85,11 @@ std::optional<network::RefusalReason> refusalOf(
 
 }  // namespace
 
-ConnectionAcceptor::ConnectionAcceptor(PlayerRoster& roster, Send send,
-                                       Admit admit,
-                                       OnPlayerJoined onPlayerJoined)
-    : roster_(&roster),
-      send_(std::move(send)),
-      admit_(std::move(admit)),
-      onPlayerJoined_(std::move(onPlayerJoined)),
+ConnectionAcceptor::ConnectionAcceptor(ConnectionAcceptorParts parts)
+    : roster_(&parts.roster.get()),
+      send_(std::move(parts.send)),
+      admit_(std::move(parts.admit)),
+      onPlayerJoined_(std::move(parts.onPlayerJoined)),
       logger_(std::string{LOBBY_LOGGER_NAME}) {}
 
 void ConnectionAcceptor::receive(
