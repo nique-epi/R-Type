@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <optional>
 #include "EntityTypeEntry.hpp"
 
 namespace rtype::client {
@@ -17,10 +16,11 @@ class IEntityTypeTable {
 
   /**
    * @returns The entry of the type numbered @p number, the first entry being
-   * number 1; nothing outside a session, for NO_ENTITY_TYPE, or for a number
-   * past the last entry.
+   * number 1; nullptr outside a session, for NO_ENTITY_TYPE, or for a number
+   * past the last entry. The entry lives in the table until the table changes:
+   * read it at once, never keep the pointer.
    */
-  [[nodiscard]] virtual std::optional<network::EntityTypeEntry> entryNumbered(
+  [[nodiscard]] virtual const network::EntityTypeEntry* entryNumbered(
       std::uint8_t number) const = 0;
 };
 

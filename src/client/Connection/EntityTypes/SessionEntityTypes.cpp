@@ -1,7 +1,6 @@
 #include "SessionEntityTypes.hpp"
 #include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <span>
 #include <string>
 #include <utility>
@@ -32,13 +31,13 @@ void SessionEntityTypes::keep(std::vector<network::EntityTypeEntry> types) {
 
 void SessionEntityTypes::forget() { types_.clear(); }
 
-std::optional<network::EntityTypeEntry> SessionEntityTypes::entryNumbered(
+const network::EntityTypeEntry* SessionEntityTypes::entryNumbered(
     std::uint8_t number) const {
   if (number == identifiers::NO_ENTITY_TYPE ||
       static_cast<std::size_t>(number) > types_.size()) {
-    return std::nullopt;
+    return nullptr;
   }
-  return types_[static_cast<std::size_t>(number) - 1];
+  return &types_[static_cast<std::size_t>(number) - 1];
 }
 
 }  // namespace rtype::client

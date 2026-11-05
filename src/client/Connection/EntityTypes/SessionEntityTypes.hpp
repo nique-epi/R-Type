@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <optional>
 #include <span>
 #include <string>
 #include <vector>
@@ -38,7 +37,7 @@ class SessionEntityTypes final : public IEntityTypeTable {
   /** @brief Forgets the table: the session closed. */
   void forget();
 
-  [[nodiscard]] std::optional<network::EntityTypeEntry> entryNumbered(
+  [[nodiscard]] const network::EntityTypeEntry* entryNumbered(
       std::uint8_t number) const override;
 
  private:

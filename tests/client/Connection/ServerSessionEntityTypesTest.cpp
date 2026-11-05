@@ -56,11 +56,12 @@ TEST_F(ServerSessionEntityTypesFixture,
        TheSessionKeepsTheTableOfItsAcceptance) {
   connectAndGetAcceptedWith(drawnTypes());
 
-  EXPECT_EQ(entityTypes()
-                .entryNumbered(SECOND_TYPE_NUMBER)
-                .value_or(EntityTypeEntry{}),
-            (EntityTypeEntry{.side = EntitySide::Player,
-                             .name = std::string{DRAWN_SHIP_NAME}}));
+  const EntityTypeEntry* const entry =
+      entityTypes().entryNumbered(SECOND_TYPE_NUMBER);
+
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(*entry, (EntityTypeEntry{.side = EntitySide::Player,
+                                     .name = std::string{DRAWN_SHIP_NAME}}));
 }
 
 /**
@@ -71,7 +72,7 @@ TEST_F(ServerSessionEntityTypesFixture,
 TEST_F(ServerSessionEntityTypesFixture, ANumberPastTheTableNamesNoType) {
   connectAndGetAcceptedWith(drawnTypes());
 
-  EXPECT_FALSE(entityTypes().entryNumbered(THIRD_TYPE_NUMBER).has_value());
+  EXPECT_EQ(entityTypes().entryNumbered(THIRD_TYPE_NUMBER), nullptr);
 }
 
 /**
@@ -152,7 +153,7 @@ TEST_F(ServerSessionEntityTypesFixture, SendsEveryCopyOfItsDisconnection) {
 TEST_F(ServerSessionEntityTypesFixture, KeepsNoTableWhenASheetIsMissing) {
   connectAndGetAcceptedWith(oneUndrawnType());
 
-  EXPECT_FALSE(entityTypes().entryNumbered(FIRST_TYPE_NUMBER).has_value());
+  EXPECT_EQ(entityTypes().entryNumbered(FIRST_TYPE_NUMBER), nullptr);
 }
 
 /**
@@ -166,11 +167,12 @@ TEST_F(ServerSessionEntityTypesFixture, ARepeatedAcceptanceChangesNothing) {
 
   getAcceptedAgainWith(otherDrawnTypes());
 
-  EXPECT_EQ(entityTypes()
-                .entryNumbered(FIRST_TYPE_NUMBER)
-                .value_or(EntityTypeEntry{}),
-            (EntityTypeEntry{.side = EntitySide::Enemy,
-                             .name = std::string{DRAWN_ENEMY_NAME}}));
+  const EntityTypeEntry* const entry =
+      entityTypes().entryNumbered(FIRST_TYPE_NUMBER);
+
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(*entry, (EntityTypeEntry{.side = EntitySide::Enemy,
+                                     .name = std::string{DRAWN_ENEMY_NAME}}));
 }
 
 /**
@@ -183,7 +185,7 @@ TEST_F(ServerSessionEntityTypesFixture, ForgetsTheTableWhenTheSessionCloses) {
 
   session().cancel();
 
-  EXPECT_FALSE(entityTypes().entryNumbered(FIRST_TYPE_NUMBER).has_value());
+  EXPECT_EQ(entityTypes().entryNumbered(FIRST_TYPE_NUMBER), nullptr);
 }
 
 /**
@@ -198,9 +200,11 @@ TEST_F(ServerSessionEntityTypesFixture,
 
   connectAndGetAcceptedWith(otherDrawnTypes());
 
-  EXPECT_EQ(entityTypes()
-                .entryNumbered(FIRST_TYPE_NUMBER)
-                .value_or(EntityTypeEntry{}),
+  const EntityTypeEntry* const entry =
+      entityTypes().entryNumbered(FIRST_TYPE_NUMBER);
+
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(*entry,
             (EntityTypeEntry{.side = EntitySide::Enemy,
                              .name = std::string{OTHER_DRAWN_ENEMY_NAME}}));
 }

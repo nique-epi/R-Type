@@ -36,9 +36,11 @@ TEST(SessionEntityTypes, NumbersTheTypesInTheOrderOfTheTable) {
   SessionEntityTypes table{isDrawnInTheTests};
   table.keep(drawnTypes());
 
-  EXPECT_EQ(table.entryNumbered(SECOND_TYPE_NUMBER).value_or(EntityTypeEntry{}),
-            (EntityTypeEntry{.side = EntitySide::Player,
-                             .name = std::string{DRAWN_SHIP_NAME}}));
+  const EntityTypeEntry* const entry = table.entryNumbered(SECOND_TYPE_NUMBER);
+
+  ASSERT_NE(entry, nullptr);
+  EXPECT_EQ(*entry, (EntityTypeEntry{.side = EntitySide::Player,
+                                     .name = std::string{DRAWN_SHIP_NAME}}));
 }
 
 /**
@@ -50,7 +52,7 @@ TEST(SessionEntityTypes, KnowsNoNumberPastTheTable) {
   SessionEntityTypes table{isDrawnInTheTests};
   table.keep(drawnTypes());
 
-  EXPECT_FALSE(table.entryNumbered(THIRD_TYPE_NUMBER).has_value());
+  EXPECT_EQ(table.entryNumbered(THIRD_TYPE_NUMBER), nullptr);
 }
 
 /**
@@ -62,7 +64,7 @@ TEST(SessionEntityTypes, TheNumberOfNoTypeNamesNone) {
   SessionEntityTypes table{isDrawnInTheTests};
   table.keep(drawnTypes());
 
-  EXPECT_FALSE(table.entryNumbered(NO_ENTITY_TYPE).has_value());
+  EXPECT_EQ(table.entryNumbered(NO_ENTITY_TYPE), nullptr);
 }
 
 /**
@@ -76,7 +78,7 @@ TEST(SessionEntityTypes, KnowsNoNumberOnceForgotten) {
 
   table.forget();
 
-  EXPECT_FALSE(table.entryNumbered(FIRST_TYPE_NUMBER).has_value());
+  EXPECT_EQ(table.entryNumbered(FIRST_TYPE_NUMBER), nullptr);
 }
 
 /**

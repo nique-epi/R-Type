@@ -40,9 +40,8 @@ EntityTypeLooks::EntityTypeLooks(const IEntityTypeTable& table,
 
 std::optional<EntityTypeLook> EntityTypeLooks::lookOf(
     std::uint8_t number) const {
-  const std::optional<network::EntityTypeEntry> entry =
-      table_->entryNumbered(number);
-  if (!entry.has_value()) {
+  const network::EntityTypeEntry* const entry = table_->entryNumbered(number);
+  if (entry == nullptr) {
     return std::nullopt;
   }
   const EntityAppearance* const appearance = appearances_->named(entry->name);
