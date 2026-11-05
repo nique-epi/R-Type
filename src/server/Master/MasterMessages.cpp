@@ -6,6 +6,7 @@
 #include <vector>
 #include "DurationConversion.hpp"
 #include "HostedGame.hpp"
+#include "InformationConstants.hpp"
 #include "MetricsReport.hpp"
 #include "PlayerRoundTripMeasure.hpp"
 #include "ProtocolConstants.hpp"

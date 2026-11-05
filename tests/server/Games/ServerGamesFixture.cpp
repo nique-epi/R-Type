@@ -78,11 +78,12 @@ ConnectedPlayer& ServerGamesFixture::join(std::size_t index) {
 
 void ServerGamesFixture::runTick(
     const std::vector<IncomingDatagram>& players,
-    const std::vector<IncomingDatagram>& requests) {
-  network().tickDatagrams().begin(
-      rtype::server::ReceivedDatagrams{.players = players,
-                                       .connectionRequests = requests,
-                                       .informationRequests = {}});
+    const std::vector<IncomingDatagram>& requests,
+    const std::vector<IncomingDatagram>& informationRequests) {
+  network().tickDatagrams().begin(rtype::server::ReceivedDatagrams{
+      .players = players,
+      .connectionRequests = requests,
+      .informationRequests = informationRequests});
   application().runStages(rtype::engine::SIMULATION_TICK_DURATION);
   network().tickDatagrams().end();
 }

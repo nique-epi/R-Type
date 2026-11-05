@@ -1,0 +1,3 @@
+rtype_add_test(NAME server_information_tests SOURCES ServerInformationDeskTest.cpp ServerInformationDeskFixture.cpp ServerInformationDeskFixtures.cpp LIBS rtype_server_information_module server_test_datagrams rtype_test_support)
+target_include_directories(server_information_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/server)
+target_sources(server_module_tests PRIVATE ServerInformationFixture.cpp ServerInformationModuleTest.cpp)
