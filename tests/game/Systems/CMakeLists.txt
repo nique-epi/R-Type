@@ -1,1 +1,1 @@
-target_sources(game_tests PRIVATE PilotSystemTest.cpp PilotSystemFixture.cpp)
+target_sources(game_tests PRIVATE PilotSystemTest.cpp PilotSystemActionTest.cpp PilotSystemFixture.cpp)

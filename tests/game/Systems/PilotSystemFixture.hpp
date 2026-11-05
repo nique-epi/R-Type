@@ -2,12 +2,18 @@
 
 #include <gtest/gtest.h>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string_view>
+#include <vector>
+#include "ActionKey.hpp"
 #include "BehaviourRegistry.hpp"
 #include "ComponentRegistry.hpp"
+#include "EnemyActionStarted.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
+#include "EventBus.hpp"
+#include "IBehaviour.hpp"
 #include "MovementSystem.hpp"
 #include "PilotSystem.hpp"
 #include "Position.hpp"
@@ -30,6 +36,18 @@ class PilotSystemFixture : public ::testing::Test {
                          std::span<const std::int64_t> settings,
                          Position start);
 
+  /** @returns An enemy piloted by @p behaviour, which must outlive it, with
+   * the network id @p networkId and an idle CurrentAction. */
+  engine::Entity addEnemy(const IBehaviour& behaviour, std::uint32_t networkId);
+
+  /** @returns The EnemyActionStarted events published since the last call,
+   * once the bus delivered them. */
+  [[nodiscard]] std::vector<EnemyActionStarted> takeStartedActions();
+
+  /** @returns The action @p enemy is in, nothing while it is idle or has no
+   * CurrentAction. */
+  [[nodiscard]] std::optional<ActionKey> actionOf(engine::Entity enemy);
+
   /** @brief Runs the pilots, then the movement, once over @p elapsed. */
   void run(engine::Duration elapsed);
 
@@ -41,6 +59,8 @@ class PilotSystemFixture : public ::testing::Test {
  private:
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
+  engine::EventBus events_;
+  std::vector<EnemyActionStarted> startedActions_;
   BehaviourRegistry behaviours_;
   PilotSystem pilots_;
   MovementSystem movement_;

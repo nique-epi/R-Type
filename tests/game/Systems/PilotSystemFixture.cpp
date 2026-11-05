@@ -1,12 +1,19 @@
 #include "PilotSystemFixture.hpp"
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string_view>
+#include <vector>
+#include "ActionKey.hpp"
 #include "BehaviourTestConstants.hpp"
 #include "BuiltInBehaviours.hpp"
 #include "ComponentRegistry.hpp"
+#include "CurrentAction.hpp"
+#include "EnemyActionStarted.hpp"
 #include "Entity.hpp"
+#include "IBehaviour.hpp"
 #include "Intent.hpp"
+#include "NetworkIdentity.hpp"
 #include "Pilot.hpp"
 #include "Position.hpp"
 #include "SteadyMotion.hpp"
@@ -14,7 +21,13 @@
 
 namespace rtype::game::testing {
 
-PilotSystemFixture::PilotSystemFixture() : behaviours_(builtInBehaviours()) {}
+PilotSystemFixture::PilotSystemFixture()
+    : behaviours_(builtInBehaviours()), pilots_(events_) {
+  events_.subscribe<EnemyActionStarted>(
+      [this](const EnemyActionStarted& started) {
+        startedActions_.push_back(started);
+      });
+}
 
 engine::Entity PilotSystemFixture::addBody(
     std::string_view behaviour, std::span<const std::int64_t> settings,
@@ -28,6 +41,32 @@ engine::Entity PilotSystemFixture::addBody(
                               .age = engine::Duration::zero(),
                               .settings = settings});
   return body;
+}
+
+engine::Entity PilotSystemFixture::addEnemy(const IBehaviour& behaviour,
+                                            std::uint32_t networkId) {
+  const engine::Entity enemy = entities_.create();
+  components_.add(enemy, Position{.x = 0.0F, .y = 0.0F});
+  components_.add(enemy, Intent{});
+  components_.add(enemy, CurrentAction{});
+  components_.add(enemy, NetworkIdentity{.networkId = networkId});
+  components_.add(enemy, Pilot{.behaviour = behaviour,
+                               .origin = Position{.x = 0.0F, .y = 0.0F},
+                               .age = engine::Duration::zero(),
+                               .settings = {}});
+  return enemy;
+}
+
+std::optional<ActionKey> PilotSystemFixture::actionOf(engine::Entity enemy) {
+  const CurrentAction* const current = components_.get<CurrentAction>(enemy);
+  return current == nullptr ? std::nullopt : current->key;
+}
+
+std::vector<EnemyActionStarted> PilotSystemFixture::takeStartedActions() {
+  events_.dispatch();
+  std::vector<EnemyActionStarted> taken;
+  taken.swap(startedActions_);
+  return taken;
 }
 
 void PilotSystemFixture::run(engine::Duration elapsed) {
