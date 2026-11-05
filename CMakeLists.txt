@@ -26,9 +26,11 @@ function(rtype_enable_warnings target)
   )
 endfunction()
 
-# Declares a plugin: a MODULE library named <NAME>.so or <NAME>.dll, which exports
-# rtypePluginEntry only, in the plugins/ folder next to the programs. On Windows
-# the library is a runtime artifact, so both output directories are set.
+# Declares a plugin: a MODULE library named <NAME>.so or <NAME>.dll, in the
+# plugins/ folder next to the programs. On Windows it exports rtypePluginEntry
+# only; on Linux and macOS it keeps the default visibility, and the program
+# looks up rtypePluginEntry alone. On Windows the library is a runtime artifact,
+# so both output directories are set.
 # WITHOUT_ENTRY is for a test library that defines no rtypePluginEntry: the
 # Windows export list would name a symbol it does not have.
 function(rtype_add_plugin)
