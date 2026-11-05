@@ -19,7 +19,9 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 6 names the
+ * @brief The version of the protocol this code speaks. Version 7 numbers the
+ * guaranteed messages and delivers them in order, see the Ordered messages
+ * section; version 6 names the
  * entity types by a table ConnectionAccepted carries, so the type of
  * EntitySpawned, WorldState and DeltaWorldState is a number of that table,
  * see the Version 6 section of the protocol page; version 5 makes a
@@ -28,7 +30,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * frame, see the Compression section; version 3 adds the outcome of a game to
  * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 6;
+constexpr std::uint8_t PROTOCOL_VERSION = 7;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -256,6 +258,39 @@ constexpr std::chrono::milliseconds GUARANTEED_RESEND_DELAY{100};
 constexpr std::chrono::seconds GUARANTEED_MESSAGE_LIFETIME{1};
 
 /**
+ * @brief The number of the first message of the ordered channel of a session;
+ * each next one is one more, wrapping from 65535 to 0.
+ */
+constexpr std::uint16_t FIRST_ORDERED_NUMBER = 1;
+
+/**
+ * @brief How many numbers the ordered channel spans at most: a sender gives up
+ * a message whose number is this far behind the newest, so a receiver holds at
+ * most this many messages.
+ */
+constexpr std::size_t ORDERED_WINDOW = 256;
+
+static_assert(std::numeric_limits<std::uint16_t>::max() % ORDERED_WINDOW ==
+                  ORDERED_WINDOW - 1,
+              "a number maps to a slot by its remainder, across the wrap");
+static_assert(ORDERED_WINDOW < std::numeric_limits<std::uint16_t>::max() / 2,
+              "numbers are compared with serial number arithmetic");
+
+/**
+ * @brief Bytes the envelope of an ordered message adds to the message it
+ * carries: its number, firstKept and the type of the carried message.
+ */
+constexpr std::size_t ORDERED_PREFIX_SIZE =
+    UINT16_WIRE_SIZE + UINT16_WIRE_SIZE + UINT8_WIRE_SIZE;
+
+/**
+ * @brief The most bytes the payload of a message carried by the ordered
+ * channel holds.
+ */
+constexpr std::size_t ORDERED_PAYLOAD_LIMIT =
+    MESSAGE_PAYLOAD_LIMIT - ORDERED_PREFIX_SIZE;
+
+/**
  * @brief The longest a receiver keeps the acknowledgement of a datagram that
  * holds guaranteed messages before it sends a Heartbeat to carry it, when no
  * other datagram went out meanwhile. It is longer than the time between two
@@ -304,6 +339,18 @@ constexpr std::size_t WORLD_STATE_FIXED_SIZE =
  */
 constexpr std::size_t MINIMUM_NICKNAME_SIZE = 1;
 constexpr std::size_t MAXIMUM_NICKNAME_SIZE = 16;
+
+/**
+ * @brief The longest name of a server, in bytes of UTF-8, the master and the
+ * ServerInformation of the server alike.
+ */
+constexpr std::size_t MAXIMUM_SERVER_NAME_SIZE = 32;
+
+/**
+ * @brief The longest version of the game, in bytes: "1.12.0-rc.2" fits. The
+ * master and the ServerInformation of the server alike.
+ */
+constexpr std::size_t MAXIMUM_GAME_VERSION_SIZE = 32;
 
 /**
  * @brief The control characters a nickname may not hold are the bytes below
@@ -389,6 +436,41 @@ static_assert(LARGEST_LEADERBOARD_ANSWER_SIZE <= MESSAGE_PAYLOAD_LIMIT,
               "a LeaderboardAnswer always fits in one datagram");
 
 /**
+ * @brief The size of the largest datagram holding a ServerInformation: the
+ * echo of the request (sentAt, heldFor), the protocol version, the longest
+ * game version and server name, then the counts of players, games and free
+ * seats. 106 bytes.
+ */
+constexpr std::size_t LARGEST_SERVER_INFORMATION_DATAGRAM_SIZE =
+    PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT32_WIRE_SIZE +
+    UINT32_WIRE_SIZE + UINT8_WIRE_SIZE + SHORT_STRING_PREFIX_SIZE +
+    MAXIMUM_GAME_VERSION_SIZE + SHORT_STRING_PREFIX_SIZE +
+    MAXIMUM_SERVER_NAME_SIZE + UINT16_WIRE_SIZE + UINT16_WIRE_SIZE +
+    UINT16_WIRE_SIZE;
+
+/**
+ * @brief The size of every datagram holding a ServerInformationRequest: the
+ * size of the largest answer, by definition, so the server never sends a
+ * sender it does not know more bytes than it received, as QUIC pads its first
+ * datagram (RFC 9000, section 8.1).
+ */
+constexpr std::size_t SERVER_INFORMATION_REQUEST_DATAGRAM_SIZE =
+    LARGEST_SERVER_INFORMATION_DATAGRAM_SIZE;
+
+/**
+ * @brief The zero bytes a ServerInformationRequest carries after its sentAt,
+ * so its datagram is SERVER_INFORMATION_REQUEST_DATAGRAM_SIZE long. 77 bytes.
+ */
+constexpr std::size_t SERVER_INFORMATION_REQUEST_PADDING_SIZE =
+    SERVER_INFORMATION_REQUEST_DATAGRAM_SIZE - PACKET_HEADER_SIZE -
+    MESSAGE_PREFIX_SIZE - UINT32_WIRE_SIZE;
+
+/**
+ * @brief The value of every byte of the padding of a ServerInformationRequest.
+ */
+constexpr std::uint8_t PADDING_BYTE = 0;
+
+/**
  * @brief The names of the fields a refused message is reported by, as the
  * protocol page writes them.
  */
@@ -411,7 +493,15 @@ constexpr std::string_view PART_COUNT_FIELD = "partCount";
 constexpr std::string_view BASE_DISTANCE_FIELD = "baseDistance";
 constexpr std::string_view TYPE_COUNT_FIELD = "typeCount";
 constexpr std::string_view SIDE_FIELD = "side";
+constexpr std::string_view NUMBER_FIELD = "number";
+constexpr std::string_view FIRST_KEPT_FIELD = "firstKept";
+constexpr std::string_view INNER_TYPE_FIELD = "innerType";
+constexpr std::string_view CARRIED_PAYLOAD_SIZE_FIELD = "carriedPayloadSize";
 constexpr std::string_view PHASE_FIELD = "phase";
+constexpr std::string_view PADDING_FIELD = "padding";
+constexpr std::string_view FREE_SEAT_COUNT_FIELD = "freeSeatCount";
+constexpr std::string_view GAME_VERSION_FIELD = "gameVersion";
+constexpr std::string_view SERVER_NAME_FIELD = "name";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a

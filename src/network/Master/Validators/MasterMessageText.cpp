@@ -1,5 +1,6 @@
 #include "MasterMessageText.hpp"
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -12,21 +13,28 @@
 #include <utility>
 #include <vector>
 #include "CreatedServer.hpp"
+#include "DatedStatus.hpp"
 #include "EndpointText.hpp"
 #include "GameListing.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
 #include "ListedGame.hpp"
 #include "ListedGameState.hpp"
+#include "ListedServer.hpp"
 #include "MasterHttpConstants.hpp"
 #include "MasterMessageConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
+#include "SampleListing.hpp"
 #include "ServerCreation.hpp"
 #include "ServerHeartbeat.hpp"
+#include "ServerListing.hpp"
 #include "ServerMeasures.hpp"
 #include "ServerRegistration.hpp"
+#include "ServerSample.hpp"
+#include "ServerStatus.hpp"
+#include "StatusListing.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::network {
@@ -143,10 +151,6 @@ std::string stringOf(const JsonField& field) {
   return value.get<std::string>();
 }
 
-bool isValidBoundedText(std::string_view text, std::size_t maximumSize) {
-  return !text.empty() && text.size() <= maximumSize && isPrintableUtf8(text);
-}
-
 /** @returns The text @p field holds: 1 to @p maximumSize printable bytes. */
 std::string boundedTextOf(const JsonField& field, std::size_t maximumSize) {
   std::string text = stringOf(field);
@@ -178,14 +182,28 @@ std::optional<std::string> addressOf(const JsonField& registration) {
   }
 }
 
-HostedGameState stateOf(const JsonField& field) {
-  const std::string text = stringOf(field);
-  for (std::size_t index = 0; index < HOSTED_GAME_STATE_TEXTS.size(); ++index) {
-    if (text == HOSTED_GAME_STATE_TEXTS.at(index)) {
-      return static_cast<HostedGameState>(index);
+/**
+ * @returns The value of Enum that @p texts, one text per value in the order of
+ * the enum, writes as @p text; nothing for any other text.
+ */
+template <typename Enum, std::size_t Count>
+std::optional<Enum> valueOfText(
+    const std::array<std::string_view, Count>& texts, std::string_view text) {
+  for (std::size_t index = 0; index < texts.size(); ++index) {
+    if (text == texts.at(index)) {
+      return static_cast<Enum>(index);
     }
   }
-  refuse(field);
+  return std::nullopt;
+}
+
+HostedGameState stateOf(const JsonField& field) {
+  const std::optional<HostedGameState> state =
+      valueOfText<HostedGameState>(HOSTED_GAME_STATE_TEXTS, stringOf(field));
+  if (!state.has_value()) {
+    refuse(field);
+  }
+  return *state;
 }
 
 std::vector<std::string> playersOf(const JsonField& game) {
@@ -240,13 +258,12 @@ void requireDistinctNumbers(const JsonField& games,
 }
 
 ListedGameState listedStateOf(const JsonField& field) {
-  const std::string text = stringOf(field);
-  for (std::size_t index = 0; index < LISTED_GAME_STATE_TEXTS.size(); ++index) {
-    if (text == LISTED_GAME_STATE_TEXTS.at(index)) {
-      return static_cast<ListedGameState>(index);
-    }
+  const std::optional<ListedGameState> state =
+      valueOfText<ListedGameState>(LISTED_GAME_STATE_TEXTS, stringOf(field));
+  if (!state.has_value()) {
+    refuse(field);
   }
-  refuse(field);
+  return *state;
 }
 
 ListedGame listedGameOf(const JsonField& game) {
@@ -351,6 +368,64 @@ nlohmann::json measuresDocument(const ServerMeasures& measures) {
   return document;
 }
 
+/**
+ * @returns The text of an object whose one member, @p member, lists each of
+ * @p items as @p documentOf writes it: the shape of every list the master
+ * answers.
+ */
+template <typename Item, typename Document>
+std::string listingText(std::string_view member, const std::vector<Item>& items,
+                        Document documentOf) {
+  nlohmann::json document;
+  document[member] = nlohmann::json::array();
+  for (const Item& item : items) {
+    document[member].push_back(documentOf(item));
+  }
+  return textOf(document);
+}
+
+/** @returns The members of @p registration, its address left out when it is
+ * empty: what a registration and a listed server write alike. */
+nlohmann::json registrationDocument(const ServerRegistration& registration) {
+  nlohmann::json document;
+  document[NAME_MEMBER] = registration.name;
+  if (registration.address.has_value()) {
+    document[ADDRESS_MEMBER] = *registration.address;
+  }
+  document[UDP_PORT_MEMBER] = registration.udpPort;
+  document[GAME_VERSION_MEMBER] = registration.gameVersion;
+  document[PROTOCOL_VERSION_MEMBER] = registration.protocolVersion;
+  document[MAXIMUM_GAMES_MEMBER] = registration.maximumGames;
+  document[MAXIMUM_PLAYERS_PER_GAME_MEMBER] =
+      registration.maximumPlayersPerGame;
+  return document;
+}
+
+nlohmann::json listedServerDocument(const ListedServer& server) {
+  nlohmann::json document = registrationDocument(server.registration);
+  document[ID_MEMBER] = server.id;
+  document[STATUS_MEMBER] = serverStatusText(server.status);
+  document[GAME_COUNT_MEMBER] = server.gameCount;
+  document[PLAYER_COUNT_MEMBER] = server.playerCount;
+  return document;
+}
+
+nlohmann::json sampleDocument(const ServerSample& sample) {
+  nlohmann::json document;
+  document[TAKEN_AT_MEMBER] = sample.takenAt.time_since_epoch().count();
+  document[GAME_COUNT_MEMBER] = sample.gameCount;
+  document[PLAYER_COUNT_MEMBER] = sample.playerCount;
+  document[MEASURES_MEMBER] = measuresDocument(sample.measures);
+  return document;
+}
+
+nlohmann::json statusChangeDocument(const DatedStatus& change) {
+  nlohmann::json document;
+  document[SINCE_MEMBER] = change.since.time_since_epoch().count();
+  document[STATUS_MEMBER] = serverStatusText(change.status);
+  return document;
+}
+
 std::string serverKeyOf(const JsonField& field) {
   std::string key = stringOf(field);
   if (!isWellFormedServerKey(key)) {
@@ -360,10 +435,6 @@ std::string serverKeyOf(const JsonField& field) {
 }
 
 }  // namespace
-
-bool isValidServerName(std::string_view name) {
-  return isValidBoundedText(name, MAXIMUM_SERVER_NAME_SIZE);
-}
 
 bool isWellFormedServerKey(std::string_view text) {
   return text.size() == SERVER_KEY_SIZE &&
@@ -409,18 +480,7 @@ CreatedServer createdServerFromText(std::string_view text) {
 }
 
 std::string registrationText(const ServerRegistration& registration) {
-  nlohmann::json document;
-  document[NAME_MEMBER] = registration.name;
-  if (registration.address.has_value()) {
-    document[ADDRESS_MEMBER] = *registration.address;
-  }
-  document[UDP_PORT_MEMBER] = registration.udpPort;
-  document[GAME_VERSION_MEMBER] = registration.gameVersion;
-  document[PROTOCOL_VERSION_MEMBER] = registration.protocolVersion;
-  document[MAXIMUM_GAMES_MEMBER] = registration.maximumGames;
-  document[MAXIMUM_PLAYERS_PER_GAME_MEMBER] =
-      registration.maximumPlayersPerGame;
-  return textOf(document);
+  return textOf(registrationDocument(registration));
 }
 
 ServerRegistration registrationFromText(std::string_view text) {
@@ -434,7 +494,7 @@ ServerRegistration registrationFromText(std::string_view text) {
           memberOf(registration, UDP_PORT_MEMBER),
           IntegerBounds{.lowest = LOWEST_PORT, .highest = HIGHEST_PORT})),
       .gameVersion = boundedTextOf(memberOf(registration, GAME_VERSION_MEMBER),
-                                   MAXIMUM_VERSION_SIZE),
+                                   MAXIMUM_GAME_VERSION_SIZE),
       .protocolVersion = static_cast<std::uint8_t>(
           integerOf(memberOf(registration, PROTOCOL_VERSION_MEMBER),
                     IntegerBounds{.lowest = LOWEST_PROTOCOL_VERSION,
@@ -467,12 +527,7 @@ ServerHeartbeat heartbeatFromText(std::string_view text) {
 }
 
 std::string gameListingText(const GameListing& listing) {
-  nlohmann::json document;
-  document[GAMES_MEMBER] = nlohmann::json::array();
-  for (const ListedGame& game : listing.games) {
-    document[GAMES_MEMBER].push_back(listedGameDocument(game));
-  }
-  return textOf(document);
+  return listingText(GAMES_MEMBER, listing.games, listedGameDocument);
 }
 
 GameListing gameListingFromText(std::string_view text) {
@@ -486,6 +541,26 @@ GameListing gameListingFromText(std::string_view text) {
   }
   requireDistinctNumbers(games, listing.games);
   return listing;
+}
+
+std::string_view serverStatusText(ServerStatus status) {
+  return SERVER_STATUS_TEXTS.at(static_cast<std::size_t>(status));
+}
+
+std::optional<ServerStatus> serverStatusOf(std::string_view text) {
+  return valueOfText<ServerStatus>(SERVER_STATUS_TEXTS, text);
+}
+
+std::string serverListingText(const ServerListing& listing) {
+  return listingText(SERVERS_MEMBER, listing.servers, listedServerDocument);
+}
+
+std::string sampleListingText(const SampleListing& listing) {
+  return listingText(SAMPLES_MEMBER, listing.samples, sampleDocument);
+}
+
+std::string statusListingText(const StatusListing& listing) {
+  return listingText(STATUSES_MEMBER, listing.statuses, statusChangeDocument);
 }
 
 std::string problemDetailOf(std::string_view text) {

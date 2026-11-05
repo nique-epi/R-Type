@@ -20,4 +20,9 @@ std::span<const network::IncomingDatagram> TickDatagrams::connectionRequests()
   return received_.connectionRequests;
 }
 
+std::span<const network::IncomingDatagram> TickDatagrams::informationRequests()
+    const {
+  return received_.informationRequests;
+}
+
 }  // namespace rtype::server

@@ -6,11 +6,14 @@
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
 #include "Disconnection.hpp"
+#include "EncodedMessage.hpp"
 #include "Endpoint.hpp"
 #include "Heartbeat.hpp"
+#include "MessagePayload.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
 #include "ReadyState.hpp"
+#include "ServerInformationRequest.hpp"
 #include "ServerLobbyTestConstants.hpp"
 
 rtype::network::PacketHeader playerHeader(std::uint64_t sessionToken) {
@@ -47,6 +50,23 @@ std::vector<std::byte> requestDatagramOf(const std::string& nickname,
       rtype::network::PacketHeader{},
       rtype::network::ConnectionRequest{.cookie = cookie,
                                         .nickname = nickname});
+}
+
+std::vector<std::byte> informationRequestDatagram(
+    const rtype::network::PacketHeader& header, std::uint32_t sentAt) {
+  return rtype::network::DatagramCodec::encode(
+      header, rtype::network::ServerInformationRequest{.sentAt = sentAt});
+}
+
+std::vector<std::byte> requestAndInformationRequestDatagram() {
+  const std::vector<rtype::network::EncodedMessage> messages{
+      rtype::network::encodedMessage(rtype::network::ConnectionRequest{
+          .cookie = 0,
+          .nickname = std::string{rtype::server::testing::PLAYER_NICKNAME}}),
+      rtype::network::encodedMessage(
+          rtype::network::ServerInformationRequest{.sentAt = 0})};
+  return rtype::network::DatagramCodec::encode(rtype::network::PacketHeader{},
+                                               messages);
 }
 
 std::vector<std::byte> readyDatagram(

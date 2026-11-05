@@ -10,9 +10,14 @@
 #include "HeartbeatSampleRepository.hpp"
 #include "KnownServer.hpp"
 #include "MasterDatabase.hpp"
+#include "PageRequest.hpp"
+#include "SampleListing.hpp"
 #include "ServerHeartbeat.hpp"
+#include "ServerListing.hpp"
 #include "ServerRecord.hpp"
 #include "ServerRepository.hpp"
+#include "StatusChangeRepository.hpp"
+#include "StatusListing.hpp"
 
 namespace rtype::master {
 
@@ -43,7 +48,8 @@ class ServersService {
 
   /**
    * @brief Records @p heartbeat, received at @p now, as the last state of
-   * @p server, and as a sample of that second.
+   * @p server, and as a sample of that second, in one transaction: a failure
+   * keeps neither, and the server's last state stays the heartbeat before.
    * @returns false when @p server has not registered: nothing is recorded.
    * @throws network::InvalidMasterMessageException naming the member of the
    * heartbeat beyond what the server registered: more games than its
@@ -64,9 +70,27 @@ class ServersService {
   [[nodiscard]] std::optional<network::GameListing> gameListingOf(
       std::int64_t serverId);
 
+  /**
+   * @returns The registered servers of @p page, by id, each with the status
+   * the master computed last and the counts of its last heartbeat.
+   */
+  [[nodiscard]] network::ServerListing serverListingOf(const PageRequest& page);
+
+  /** @returns The samples of the server @p serverId in @p page, newest first,
+   * or nothing when no server has that id. */
+  [[nodiscard]] std::optional<network::SampleListing> sampleListingOf(
+      std::int64_t serverId, const PageRequest& page);
+
+  /** @returns The statuses the server @p serverId held in @p page,
+   * newest first, or nothing when no server has that id. */
+  [[nodiscard]] std::optional<network::StatusListing> statusListingOf(
+      std::int64_t serverId, const PageRequest& page);
+
  private:
+  MasterDatabase& database_;
   ServerRepository servers_;
   HeartbeatSampleRepository samples_;
+  StatusChangeRepository changes_;
 };
 
 }  // namespace rtype::master

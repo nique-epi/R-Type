@@ -7,6 +7,7 @@
 #include "MasterHttpServer.hpp"
 #include "MasterModuleConstants.hpp"
 #include "MasterRouteConstants.hpp"
+#include "ServerStatusJobConstants.hpp"
 #include "ServersController.hpp"
 
 namespace rtype::master {
@@ -21,8 +22,8 @@ std::vector<std::string> ServersModule::dependencies() const {
 }
 
 void ServersModule::install(engine::InstallContext& context) {
-  ServersController& controller =
-      controller_.emplace(context.require<MasterDatabase>());
+  database_ = &context.require<MasterDatabase>();
+  ServersController& controller = controller_.emplace(*database_);
   auto& server = context.require<MasterHttpServer>();
   server.add(network::CREATE_SERVER_ROUTE,
              std::bind_front(&ServersController::createServer, &controller));
@@ -34,10 +35,18 @@ void ServersModule::install(engine::InstallContext& context) {
       std::bind_front(&ServersController::replaceOwnHeartbeat, &controller));
   server.add(network::LIST_SERVER_GAMES_ROUTE,
              std::bind_front(&ServersController::listGames, &controller));
+  server.add(network::LIST_SERVERS_ROUTE,
+             std::bind_front(&ServersController::listServers, &controller));
+  server.add(network::LIST_SERVER_SAMPLES_ROUTE,
+             std::bind_front(&ServersController::listSamples, &controller));
+  server.add(network::LIST_SERVER_STATUSES_ROUTE,
+             std::bind_front(&ServersController::listStatuses, &controller));
 }
 
-void ServersModule::start() {}
+void ServersModule::start() {
+  statusJob_.emplace(*database_, STATUS_REFRESH_INTERVAL);
+}
 
-void ServersModule::stop() {}
+void ServersModule::stop() { statusJob_.reset(); }
 
 }  // namespace rtype::master

@@ -197,6 +197,21 @@ constexpr std::size_t INCOMING_DATAGRAM_QUEUE_CAPACITY = 256;
 constexpr std::size_t CONNECTION_REQUEST_QUEUE_CAPACITY = 16;
 
 /**
+ * @brief Room of the queue of information requests waiting for the simulation
+ * thread, so the most ServerInformation a tick sends.
+ *
+ * Provisional: a client asks only the servers the player looks at, the one
+ * selected or those of the page shown, never every server of the list, and
+ * the master asks each server every 30 s, so 16 a tick, 960 a second, is far
+ * above what a server is asked. Above the room, the oldest are discarded,
+ * each counted as InformationQueueFull, and the askers ask again; a queue of
+ * its own keeps them from pushing connection requests out. One address and port
+ * places at most REQUEST_BURST (11) of them between two ticks, its connection
+ * requests included (see REQUEST_RATE_LIMIT).
+ */
+constexpr std::size_t INFORMATION_REQUEST_QUEUE_CAPACITY = 16;
+
+/**
  * @brief Room of the queue of datagrams the simulation thread leaves for the
  * network thread to send. Provisional, like the incoming one.
  */

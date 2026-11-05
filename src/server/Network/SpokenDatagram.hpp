@@ -5,6 +5,7 @@
 #include <span>
 #include "Endpoint.hpp"
 #include "PacketHeader.hpp"
+#include "SortedQueue.hpp"
 
 namespace rtype::server {
 
@@ -17,7 +18,10 @@ namespace rtype::server {
 struct SpokenDatagram {
   std::reference_wrapper<const network::Endpoint> sender;
   network::PacketHeader header;
-  bool holdsRequest{};
+  /** @brief The queue it goes to: ConnectionRequests when it holds a
+   * ConnectionRequest, whatever else it holds, InformationRequests when it
+   * holds a ServerInformationRequest, Players otherwise. */
+  SortedQueue queue{SortedQueue::Players};
   std::span<const std::byte> bytes;
 };
 

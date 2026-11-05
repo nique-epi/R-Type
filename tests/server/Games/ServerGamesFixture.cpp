@@ -9,7 +9,6 @@
 #include "Application.hpp"
 #include "ConfigurationStep.hpp"
 #include "ConnectedPlayer.hpp"
-#include "DatagramCodec.hpp"
 #include "GamePlayers.hpp"
 #include "GamesSettings.hpp"
 #include "IModule.hpp"
@@ -80,9 +79,12 @@ ConnectedPlayer& ServerGamesFixture::join(std::size_t index) {
 
 void ServerGamesFixture::runTick(
     const std::vector<IncomingDatagram>& players,
-    const std::vector<IncomingDatagram>& requests) {
+    const std::vector<IncomingDatagram>& requests,
+    const std::vector<IncomingDatagram>& informationRequests) {
   network().tickDatagrams().begin(rtype::server::ReceivedDatagrams{
-      .players = players, .connectionRequests = requests});
+      .players = players,
+      .connectionRequests = requests,
+      .informationRequests = informationRequests});
   application().runStages(rtype::engine::SIMULATION_TICK_DURATION);
   network().tickDatagrams().end();
 }
@@ -92,9 +94,9 @@ std::size_t ServerGamesFixture::datagramsTo(std::size_t index,
   std::size_t count = 0;
   for (const auto& datagram : rtype::server::testing::sentTo(
            network().sender().sent(), playerEndpoint(index))) {
-    for (const auto& frame :
-         rtype::network::DatagramCodec::splitMessages(datagram.payload)) {
-      if (frame.type == static_cast<std::uint8_t>(type)) {
+    for (const auto& carried :
+         rtype::server::testing::carriedMessagesOf(datagram)) {
+      if (carried.type == static_cast<std::uint8_t>(type)) {
         ++count;
       }
     }

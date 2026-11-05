@@ -11,12 +11,17 @@
 #include "HostedGameState.hpp"
 #include "ListedGame.hpp"
 #include "ListedGameState.hpp"
+#include "ListedServer.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterMessageTextTestConstants.hpp"
 #include "NetworkException.hpp"
+#include "SampleListing.hpp"
 #include "ServerHeartbeat.hpp"
+#include "ServerListing.hpp"
 #include "ServerMeasures.hpp"
 #include "ServerRegistration.hpp"
+#include "ServerSample.hpp"
+#include "ServerStatus.hpp"
 
 namespace rtype::network::testing {
 
@@ -80,6 +85,29 @@ GameListing parisGameListing() {
                            .name = std::string{PLAYING_GAME_NAME},
                            .state = ListedGameState::InGame,
                            .playerCount = PLAYING_GAME_PLAYER_COUNT}}};
+}
+
+ServerListing parisServerListing() {
+  return ServerListing{
+      .servers = {ListedServer{.id = PARIS_ID,
+                               .registration = parisRegistration(),
+                               .status = ServerStatus::Online,
+                               .gameCount = LISTED_GAME_COUNT,
+                               .playerCount = LISTED_PLAYER_COUNT}}};
+}
+
+SampleListing parisSampleListing() {
+  return SampleListing{
+      .samples = {ServerSample{.takenAt = SAMPLE_DATE,
+                               .gameCount = LISTED_GAME_COUNT,
+                               .playerCount = LISTED_PLAYER_COUNT,
+                               .measures = ServerMeasures{
+                                   .tickP50Milliseconds = std::nullopt,
+                                   .tickP95Milliseconds = PARIS_TICK_P95,
+                                   .receivedBytesPerSecond = std::nullopt,
+                                   .sentBytesPerSecond = std::nullopt,
+                                   .lossPercent = PARIS_LOSS_PERCENT,
+                                   .averagePingMilliseconds = std::nullopt}}}};
 }
 
 std::string gameListingTextWith(std::string_view pointer,

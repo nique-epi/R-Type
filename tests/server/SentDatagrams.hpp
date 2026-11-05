@@ -6,9 +6,8 @@
 #include <optional>
 #include <span>
 #include <vector>
-#include "DatagramCodec.hpp"
+#include "CarriedMessage.hpp"
 #include "Endpoint.hpp"
-#include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
@@ -31,8 +30,16 @@ namespace rtype::server::testing {
     const network::Endpoint& destination);
 
 /**
- * @returns The type of the only message of @p datagram. The test fails when
- * the datagram holds another number of messages.
+ * @returns The messages @p datagram carries, in order, as a client reads
+ * them: a message sent on the ordered channel is read out of its
+ * OrderedMessage, the others as they are.
+ */
+[[nodiscard]] std::vector<CarriedMessage> carriedMessagesOf(
+    const network::OutgoingDatagram& datagram);
+
+/**
+ * @returns The type of the only message @p datagram carries. The test fails
+ * when the datagram carries another number of messages.
  */
 [[nodiscard]] network::MessageType onlyMessageTypeOf(
     const network::OutgoingDatagram& datagram);
@@ -51,11 +58,12 @@ namespace rtype::server::testing {
 [[nodiscard]] network::PacketHeader headerOf(
     const network::OutgoingDatagram& datagram);
 
-/** @returns How many messages @p datagram holds. */
+/** @returns How many messages @p datagram holds, an OrderedMessage counting
+ * for one. */
 [[nodiscard]] std::size_t messageCountIn(
     const network::OutgoingDatagram& datagram);
 
-/** @returns Whether @p datagram holds a message of type @p type. */
+/** @returns Whether @p datagram carries a message of type @p type. */
 [[nodiscard]] bool holdsMessageOfType(const network::OutgoingDatagram& datagram,
                                       network::MessageType type);
 
@@ -73,11 +81,10 @@ namespace rtype::server::testing {
  */
 template <network::DecodableMessage Message>
 [[nodiscard]] Message onlyMessageIn(const network::OutgoingDatagram& datagram) {
-  const std::vector<network::MessageFrame> frames =
-      network::DatagramCodec::splitMessages(datagram.payload);
-  EXPECT_EQ(frames.size(), 1U);
-  EXPECT_EQ(frames.at(0).type, static_cast<std::uint8_t>(Message::TYPE));
-  return network::decodeMessage<Message>(frames.at(0).payload);
+  const std::vector<CarriedMessage> carried = carriedMessagesOf(datagram);
+  EXPECT_EQ(carried.size(), 1U);
+  EXPECT_EQ(carried.at(0).type, static_cast<std::uint8_t>(Message::TYPE));
+  return network::decodeMessage<Message>(carried.at(0).payload);
 }
 
 /** @returns Every message of type Message that @p datagram holds, in order. */
@@ -85,10 +92,9 @@ template <network::DecodableMessage Message>
 [[nodiscard]] std::vector<Message> messagesIn(
     const network::OutgoingDatagram& datagram) {
   std::vector<Message> messages;
-  for (const network::MessageFrame& frame :
-       network::DatagramCodec::splitMessages(datagram.payload)) {
-    if (frame.type == static_cast<std::uint8_t>(Message::TYPE)) {
-      messages.push_back(network::decodeMessage<Message>(frame.payload));
+  for (const CarriedMessage& carried : carriedMessagesOf(datagram)) {
+    if (carried.type == static_cast<std::uint8_t>(Message::TYPE)) {
+      messages.push_back(network::decodeMessage<Message>(carried.payload));
     }
   }
   return messages;

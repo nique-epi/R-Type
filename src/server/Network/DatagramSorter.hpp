@@ -11,11 +11,13 @@
 #include "DatagramQueues.hpp"
 #include "Endpoint.hpp"
 #include "IClock.hpp"
+#include "IncomingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "RateLimitConstants.hpp"
 #include "RejectionCause.hpp"
 #include "RejectionLedger.hpp"
 #include "RequestAllowances.hpp"
+#include "SortedQueue.hpp"
 #include "SpokenDatagram.hpp"
 #include "ThrottledLog.hpp"
 
@@ -31,12 +33,14 @@ namespace rtype::server {
  * A datagram whose header is of this protocol and version, with no flag this
  * version does not know, and whose messages add up to its end, is kept only
  * if, coming from the address and port of an admitted player, it carries the
- * session token of that player, or NO_SESSION_TOKEN when it holds a
- * ConnectionRequest; any other token drops it, counted apart from the other
- * drops. Then it spends an allowance: when it holds a ConnectionRequest,
- * whatever token it carries, the one its address and port hold among the
- * requests, under REQUEST_RATE_LIMIT, so a player places no more requests in
- * their queue than a stranger; otherwise the one of its player, under
+ * session token of that player, or NO_SESSION_TOKEN when it holds a message
+ * sent outside any session, a ConnectionRequest or a ServerInformationRequest;
+ * any other token drops it, counted apart from the other drops. Then it spends
+ * an allowance: when it holds a message sent outside any session, whatever
+ * token it carries, the one its address and port hold among the requests,
+ * under REQUEST_RATE_LIMIT, so a player places no more requests in their
+ * queues than a stranger, and a sender shares one limit between its
+ * connection and information requests; otherwise the one of its player, under
  * PLAYER_RATE_LIMIT. The token is checked before any allowance is spent, so
  * whoever forges the address of a player never spends that player's
  * allowance. A datagram over
@@ -44,6 +48,9 @@ namespace rtype::server {
  *
  * - to the connection request queue when it holds a ConnectionRequest: a
  *   player whose acceptance was lost asks again;
+ * - to the information request queue when it holds a ServerInformationRequest
+ *   and no ConnectionRequest, so a flood of information requests never pushes
+ *   a connection request out of its queue;
  * - to the player queue when its sender was admitted;
  * - nowhere otherwise, without spending anything.
  *
@@ -68,7 +75,7 @@ namespace rtype::server {
 class DatagramSorter {
  public:
   /**
-   * @param destinations Neither queue may be null.
+   * @param destinations None of the three queues may be null.
    * @param rejections Where each datagram rejected is counted; it must outlive
    * the sorter.
    * @param clock The time the allowances are spent at, which stamps each
@@ -110,37 +117,24 @@ class DatagramSorter {
   [[nodiscard]] AdmittedPlayer* findAdmitted(const network::Endpoint& sender);
 
   /** @brief Sends @p datagram, whose header this code does not speak, to the
-   * connection request queue when isRefusedForItsVersion() and within the
-   * allowance of its sender, and drops it otherwise. */
+   * connection request queue when it is of another version of this protocol,
+   * its sender was not admitted, it holds at least
+   * CONNECTION_REFUSED_DATAGRAM_SIZE bytes, and it is within the allowance of
+   * its sender, and drops it otherwise. */
   void sortForeignHeader(const network::Endpoint& sender,
                          const network::PacketHeader& header,
                          std::span<const std::byte> datagram);
-
-  /** @returns Whether the ConnectionAcceptor must refuse a datagram of
-   * @p datagramSize bytes as IncompatibleVersion: its header is of another
-   * version, @p sender was not admitted, and it holds at least
-   * CONNECTION_REFUSED_DATAGRAM_SIZE bytes, so the refusal is never larger. */
-  [[nodiscard]] bool isRefusedForItsVersion(const network::Endpoint& sender,
-                                            const network::PacketHeader& header,
-                                            std::size_t datagramSize);
 
   /** @brief Checks the token of @p datagram, spends its allowance, then puts
    * a copy of it in its queue or drops it. */
   void sortSpoken(const SpokenDatagram& datagram);
 
-  /** @brief Puts a copy of @p datagram, kept at @p receivedAt, in the
-   * connection request queue, and counts it as RequestQueueFull when the queue
-   * discarded its oldest. */
-  void queueRequest(const network::Endpoint& sender,
-                    std::span<const std::byte> datagram,
-                    std::chrono::nanoseconds receivedAt);
-
-  /** @brief Puts a copy of @p datagram, kept at @p receivedAt, in the player
-   * queue, and counts it as PlayerQueueFull when the queue discarded its
+  /** @brief Puts @p copy, the datagram of @p sender, in @p queue, and counts
+   * it against @p sender as the overflow of that queue (PlayerQueueFull,
+   * RequestQueueFull or InformationQueueFull) when the queue discarded its
    * oldest. */
-  void queuePlayerDatagram(const network::Endpoint& sender,
-                           std::span<const std::byte> datagram,
-                           std::chrono::nanoseconds receivedAt);
+  void enqueue(SortedQueue queue, const network::Endpoint& sender,
+               network::IncomingDatagram copy);
 
   /** @returns Whether @p verdict lets the datagram of @p sender through; drops
    * it, with the cause and the reason of the verdict, otherwise. */
@@ -154,8 +148,8 @@ class DatagramSorter {
 
   /** @returns The verdict of the allowance @p datagram spends at @p now: the
    * one of its address and port among the requests when it holds a
-   * ConnectionRequest or comes from no admitted player, the one of @p player
-   * otherwise. */
+   * message sent outside any session or comes from no admitted player, the one
+   * of @p player otherwise. */
   [[nodiscard]] network::AllowanceVerdict spendAllowanceOf(
       const SpokenDatagram& datagram, AdmittedPlayer* player,
       std::chrono::nanoseconds now);

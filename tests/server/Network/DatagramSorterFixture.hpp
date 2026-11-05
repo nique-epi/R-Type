@@ -15,8 +15,9 @@
 #include "TimeConstants.hpp"
 
 /**
- * @brief A sorter in front of two queues of the server's sizes, counting its
- * rejections in a ledger the test reads.
+ * @brief A sorter in front of three queues of the server's sizes, counting its
+ * rejections in a ledger the test reads; the information requests are followed
+ * by DatagramSorterInformationFixture.
  */
 class DatagramSorterFixture : public ::testing::Test {
  protected:
@@ -44,6 +45,8 @@ class DatagramSorterFixture : public ::testing::Test {
   rtype::concurrency::BoundedQueue<rtype::network::IncomingDatagram> players_;
   rtype::concurrency::BoundedQueue<rtype::network::IncomingDatagram>
       connectionRequests_;
+  rtype::concurrency::BoundedQueue<rtype::network::IncomingDatagram>
+      informationRequests_;
   SimulatedClock clock_;
   rtype::server::RejectionLedger rejections_;
   rtype::server::DatagramSorter sorter_;

@@ -18,6 +18,10 @@ struct ReceivedDatagrams {
    * players with their token or none: at most
    * CONNECTION_REQUEST_QUEUE_CAPACITY. */
   std::span<const network::IncomingDatagram> connectionRequests;
+  /** @brief The datagrams holding a ServerInformationRequest and no
+   * ConnectionRequest, from anyone: at most
+   * INFORMATION_REQUEST_QUEUE_CAPACITY. */
+  std::span<const network::IncomingDatagram> informationRequests;
 };
 
 }  // namespace rtype::server

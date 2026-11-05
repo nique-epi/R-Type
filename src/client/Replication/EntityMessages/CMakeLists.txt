@@ -1,7 +1,5 @@
 add_library(rtype_client_entity_messages STATIC
-  EnemyActionHistory.cpp
   EntityMessageQueue.cpp
-  GameEventHistory.cpp
   WorldStateAssembler.cpp
 )
 

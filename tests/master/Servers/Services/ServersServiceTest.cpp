@@ -1,3 +1,4 @@
+#include <SQLiteCpp/Exception.h>
 #include <gtest/gtest.h>
 #include <atomic>
 #include <cstddef>
@@ -8,8 +9,10 @@
 #include <thread>
 #include <vector>
 #include "CreatedServer.hpp"
+#include "GameListing.hpp"
 #include "HostedGameState.hpp"
 #include "KnownServer.hpp"
+#include "MasterDatabaseFile.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterMessageTextFixtures.hpp"
 #include "MasterMessageTextTestConstants.hpp"
@@ -20,6 +23,8 @@
 #include "ServerLimits.hpp"
 #include "ServerRecord.hpp"
 #include "ServerRegistration.hpp"
+#include "ServersFixtures.hpp"
+#include "ServersService.hpp"
 #include "ServersServiceFixture.hpp"
 #include "ServersServiceTestConstants.hpp"
 
@@ -27,7 +32,9 @@ using rtype::master::fingerprintOf;
 using rtype::master::KnownServer;
 using rtype::master::ServerLimits;
 using rtype::master::ServerRecord;
+using rtype::master::ServersService;
 using rtype::network::CreatedServer;
+using rtype::network::GameListing;
 using rtype::network::heartbeatText;
 using rtype::network::HostedGameState;
 using rtype::network::InvalidMasterMessageException;
@@ -233,6 +240,31 @@ TEST_F(ServersServiceFixture, AHeartbeatIsTheLastStateOfItsServer) {
                                             FIRST_HEARTBEAT_DATE));
 
   EXPECT_EQ(lastHeartbeatOf(server.id), heartbeatText(parisHeartbeat()));
+}
+
+/**
+ * Given a server that sent a first heartbeat, and a database that refuses to
+ * keep a sample
+ * When the server sends a second heartbeat, of no game, a second later
+ * Then the call fails, and the first heartbeat is still its last state
+ */
+TEST(ServersService, AHeartbeatWhoseSampleFailsIsNotKept) {
+  MasterDatabaseFile databaseFile;
+  ServersService service{databaseFile.database()};
+  const KnownServer server =
+      registeredParis(service, CREATOR_ADDRESS, FIRST_HEARTBEAT_DATE);
+  ASSERT_TRUE(service.replaceOwnHeartbeat(server, parisHeartbeat(),
+                                          FIRST_HEARTBEAT_DATE));
+  executeStatement(databaseFile.database(), REFUSE_SAMPLES_TRIGGER);
+
+  EXPECT_THROW(
+      static_cast<void>(service.replaceOwnHeartbeat(
+          server, ServerHeartbeat{}, FIRST_HEARTBEAT_DATE + ONE_SECOND)),
+      SQLite::Exception);
+
+  EXPECT_EQ(
+      service.gameListingOf(server.id).value_or(GameListing{}).games.size(),
+      parisHeartbeat().games.size());
 }
 
 /**

@@ -101,6 +101,13 @@ InvalidDifficultyException::InvalidDifficultyException(std::size_t size)
                                 " byte(s) is empty, too long, not UTF-8 or "
                                 "holds a control character") {}
 
+InvalidServerTextException::InvalidServerTextException(std::string_view field,
+                                                       std::size_t size)
+    : MalformedMessageException(std::string{field} + " of " +
+                                std::to_string(size) +
+                                " byte(s) is empty, too long, not UTF-8 or "
+                                "holds a control character") {}
+
 InvalidTypeNameException::InvalidTypeNameException(std::size_t size)
     : MalformedMessageException("a type name of " + std::to_string(size) +
                                 " byte(s) is empty, too long, or holds "

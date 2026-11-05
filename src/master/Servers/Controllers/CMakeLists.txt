@@ -15,6 +15,7 @@ target_link_libraries(rtype_master_servers_controllers
     rtype_network_exceptions
     rtype_network_master_routes
     rtype_network_master_validators
+    rtype_network_transport
 )
 
 rtype_enable_warnings(rtype_master_servers_controllers)

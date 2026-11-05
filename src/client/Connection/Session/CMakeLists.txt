@@ -1,4 +1,5 @@
 add_library(rtype_client_session STATIC
+  OrderedInbox.cpp
   SessionAcknowledgements.cpp
   SessionDeparture.cpp
   SessionInbound.cpp
@@ -17,6 +18,7 @@ target_link_libraries(rtype_client_session
     rtype_logging
     rtype_network_lobby_state
     rtype_network_message_dispatcher
+    rtype_network_ordered_message
     rtype_network_protocol
     rtype_network_round_trips
     rtype_network_statistics_round_trip

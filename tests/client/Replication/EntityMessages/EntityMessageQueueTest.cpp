@@ -165,36 +165,16 @@ TEST_F(EntityMessageQueueFixture, LeavingDropsTheEntityMessagesNotHandedOver) {
 
 /**
  * Given a game started in the session
- * When the three copies of a GameEvent arrive, each in its own datagram
- * Then the connection hands over one GameEvent
+ * When an EnemyAction arrives
+ * Then the connection hands it over
  */
-TEST_F(EntityMessageQueueFixture, KeepsTheFirstCopyOfAGameEventOnly) {
-  accept();
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  const network::GameEvent event = damaged(EVENT_NUMBER, SHIP_ID);
-  deliverInSession(event, SECOND_SEQUENCE);
-  deliverInSession(event, THIRD_SEQUENCE);
-  deliverInSession(event, FOURTH_SEQUENCE);
-
-  update();
-
-  EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{event}));
-}
-
-/**
- * Given a game started in the session
- * When the three copies of an EnemyAction arrive, each in its own datagram
- * Then the connection hands over one EnemyAction
- */
-TEST_F(EntityMessageQueueFixture, KeepsTheFirstCopyOfAnEnemyActionOnly) {
+TEST_F(EntityMessageQueueFixture, KeepsAnEnemyActionOfAStartedGame) {
   accept();
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
   const network::EnemyAction action{.entityId = BYDO_ID,
                                     .attack = 1,
                                     .phase = network::EnemyActionPhase::Strike};
   deliverInSession(action, SECOND_SEQUENCE);
-  deliverInSession(action, THIRD_SEQUENCE);
-  deliverInSession(action, FOURTH_SEQUENCE);
 
   update();
 
@@ -217,31 +197,6 @@ TEST_F(EntityMessageQueueFixture, IgnoresAnEnemyActionBeforeTheGame) {
   update();
 
   EXPECT_THAT(drainedEntityMessages(), IsEmpty());
-}
-
-/**
- * Given a session that handed over an action, then was left, and a new
- * session whose game started
- * When the same action arrives
- * Then it is handed over: a new session forgets the actions seen
- */
-TEST_F(EntityMessageQueueFixture, ANewSessionForgetsTheEnemyActionsSeen) {
-  accept();
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  const network::EnemyAction action{.entityId = BYDO_ID,
-                                    .attack = 1,
-                                    .phase = network::EnemyActionPhase::Strike};
-  deliverInSession(action, SECOND_SEQUENCE);
-  update();
-  ASSERT_THAT(drainedEntityMessages(), SizeIs(1));
-  session().cancel();
-  accept();
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  deliverInSession(action, SECOND_SEQUENCE);
-
-  update();
-
-  EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{action}));
 }
 
 /**

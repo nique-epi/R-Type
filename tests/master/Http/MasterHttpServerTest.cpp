@@ -247,6 +247,22 @@ TEST_F(MasterHttpServerFixture,
 }
 
 /**
+ * Given the echo route, which answers what it read of the request
+ * When a client calls it with a query that gives limit twice and offset once
+ * Then the route reads the first limit, and the offset
+ */
+TEST_F(MasterHttpServerFixture, ARouteReadsTheQueryOfItsPath) {
+  addEchoRoute();
+  openServer();
+
+  const httplib::Result answer = put(QUERIED_ROUTE_URL, {});
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(nlohmann::json::parse(answer->body).at(ECHO_QUERY_MEMBER),
+            nlohmann::json::parse(EXPECTED_QUERY_ECHO));
+}
+
+/**
  * Given a route that refuses a request with a detail
  * When a client calls it
  * Then it gets a problem document of Bad Request that carries the detail

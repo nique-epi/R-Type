@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string_view>
@@ -62,11 +63,31 @@ float readCoordinate(ByteReader& reader);
 [[nodiscard]] bool isPrintableUtf8(std::string_view text);
 
 /**
+ * @returns Whether @p text is 1 to @p maximumSize bytes of printable UTF-8
+ * (isPrintableUtf8()), the rule of every short text the protocol and the
+ * master carry.
+ */
+[[nodiscard]] bool isValidBoundedText(std::string_view text,
+                                      std::size_t maximumSize);
+
+/**
  * @returns Whether @p nickname is a nickname the protocol accepts:
  * MINIMUM_NICKNAME_SIZE to MAXIMUM_NICKNAME_SIZE bytes of printable UTF-8
  * (isPrintableUtf8()).
  */
 [[nodiscard]] bool isValidNickname(std::string_view nickname);
+
+/**
+ * @returns Whether @p name is a name a game server may have: 1 to
+ * MAXIMUM_SERVER_NAME_SIZE bytes of printable UTF-8 (isPrintableUtf8()).
+ */
+[[nodiscard]] bool isValidServerName(std::string_view name);
+
+/**
+ * @returns Whether @p version is a version of the game a server may announce:
+ * 1 to MAXIMUM_GAME_VERSION_SIZE bytes of printable UTF-8 (isPrintableUtf8()).
+ */
+[[nodiscard]] bool isValidGameVersion(std::string_view version);
 
 /**
  * @brief Checks that @p nickname is one the protocol accepts, see

@@ -1,1 +1,1 @@
-target_sources(client_connection_tests PRIVATE EntityMessageQueueTest.cpp EntityMessageQueueFixture.cpp WorldStateAssemblerTest.cpp WorldStateAssemblerFixtures.cpp GameEventHistoryTest.cpp EnemyActionHistoryTest.cpp)
+target_sources(client_connection_tests PRIVATE EntityMessageQueueTest.cpp EntityMessageQueueFixture.cpp WorldStateAssemblerTest.cpp WorldStateAssemblerFixtures.cpp)

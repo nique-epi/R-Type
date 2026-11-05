@@ -19,6 +19,16 @@ constexpr std::string_view TEST_ROUTE_BODY = R"({"answer":42})";
 constexpr std::string_view ECHO_BODY_MEMBER = "body";
 constexpr std::string_view ECHO_TOKEN_MEMBER = "token";
 constexpr std::string_view ECHO_ADDRESS_MEMBER = "address";
+constexpr std::string_view ECHO_QUERY_MEMBER = "query";
+
+/**
+ * @brief A path of the echo route whose query gives limit twice and offset
+ * once, and the parameters the route must read of it: the first limit.
+ */
+constexpr std::string_view QUERIED_ROUTE_URL =
+    "/api/thing?limit=20&offset=40&limit=30";
+constexpr std::string_view EXPECTED_QUERY_ECHO =
+    R"({"limit":"20","offset":"40"})";
 
 /** @brief The body a test sends the echo route. */
 constexpr std::string_view ECHOED_BODY = R"({"name":"Paris 1"})";

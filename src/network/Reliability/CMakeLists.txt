@@ -1,5 +1,6 @@
 add_library(rtype_network_reliability STATIC
   GuaranteedDelivery.cpp
+  OrderedReceiver.cpp
   ReceivedSequences.cpp
   UnacknowledgedMessages.cpp
 )
@@ -8,6 +9,7 @@ target_include_directories(rtype_network_reliability PUBLIC ${CMAKE_CURRENT_SOUR
 
 target_link_libraries(rtype_network_reliability
   PUBLIC
+    rtype_network_ordered_message
     rtype_network_protocol
   PRIVATE
     rtype_network_exceptions
