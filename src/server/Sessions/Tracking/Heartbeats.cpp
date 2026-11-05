@@ -7,6 +7,7 @@
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
 #include "Heartbeat.hpp"
+#include "HeartbeatMoment.hpp"
 #include "MessageOrigin.hpp"
 #include "MessagePayload.hpp"
 #include "OutgoingDatagram.hpp"
@@ -47,7 +48,7 @@ void addTimeSinceHeartbeat(PlayerRoster& roster, engine::Duration elapsed) {
 }
 
 void sendHeartbeats(
-    PlayerRoster& roster, engine::Duration now,
+    PlayerRoster& roster, const HeartbeatMoment& moment,
     const std::function<void(network::OutgoingDatagram)>& send) {
   const ConnectedPlayers players = roster.connected();
   std::optional<std::vector<std::byte>> report;
@@ -59,7 +60,9 @@ void sendHeartbeats(
       report = network::encodeMessage(roundTripsOf(players));
     }
     player->sinceHeartbeat = engine::Duration::zero();
-    send(sessionDatagram(*player, player->roundTrip.nextHeartbeat(now)));
+    network::Heartbeat heartbeat = player->roundTrip.nextHeartbeat(moment.now);
+    heartbeat.tick = moment.tick;
+    send(sessionDatagram(*player, heartbeat));
     send(sessionDatagram(*player, network::RoundTrips::TYPE, *report));
   }
 }

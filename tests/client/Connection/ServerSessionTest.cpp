@@ -36,6 +36,7 @@
 
 namespace rtype::client {
 
+using network::CONNECTION_ATTEMPT_TIMEOUT;
 using network::CONNECTION_REQUEST_INTERVAL;
 using testing::ACCEPTANCE_SEQUENCE;
 using testing::ACCEPTED_PLAYER_NUMBER;

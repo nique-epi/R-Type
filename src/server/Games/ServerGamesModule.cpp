@@ -22,6 +22,7 @@
 #include "GameSettings.hpp"
 #include "Games.hpp"
 #include "GamesSettings.hpp"
+#include "HostedGamesWatch.hpp"
 #include "HostedRules.hpp"
 #include "IDatagramSender.hpp"
 #include "IPlayerAdmission.hpp"
@@ -112,12 +113,14 @@ void ServerGamesModule::install(engine::InstallContext& context) {
   tickDatagrams_ = &context.require<TickDatagrams>();
   declareSettings(context.require<engine::ConfigurationRegistry>());
   context.provide(games_);
+  context.provide(hostedGames_);
   context.addWork(
       SIMULATION_STAGE,
       [this]([[maybe_unused]] engine::Duration elapsed) { playGames(); });
   context.addWork(OUTPUT_STAGE,
                   [this]([[maybe_unused]] engine::Duration elapsed) {
                     games_.dispatchEvents();
+                    watch_->publishIfChanged(games_);
                   });
 }
 
@@ -187,6 +190,7 @@ GameSettings ServerGamesModule::sharedSettingsOf(
 
 void ServerGamesModule::createGames(const GameSettings& shared,
                                     std::optional<std::uint32_t> seed) {
+  auto& watch = watch_.emplace(hostedGames_, shared.difficulty);
   for (std::size_t game = 0; game < settings_.gameCount; ++game) {
     auto events = std::make_unique<engine::EventBus>();
     GameSettings settings = shared;
@@ -195,6 +199,7 @@ void ServerGamesModule::createGames(const GameSettings& shared,
              : std::random_device{}();
     std::unique_ptr<GameInstance> created =
         createGame(*events, std::move(settings));
+    watch.watch(*events);
     games_.add(std::move(events), std::move(created));
   }
 }
@@ -204,6 +209,9 @@ void ServerGamesModule::stop() {
                             std::this_thread::sleep_for(pause);
                           }};
   farewell.sayGoodbyeTo(games_);
+  if (watch_.has_value()) {
+    watch_->forget();
+  }
 }
 
 std::unique_ptr<GameInstance> ServerGamesModule::createGame(

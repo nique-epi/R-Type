@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
+#include <optional>
 #include <span>
 #include <vector>
 #include "ConnectedPlayer.hpp"
@@ -94,8 +96,10 @@ class GameSessions {
    * @brief Ends the tick: sends each player its guaranteed messages due again
    * (see resendGuaranteedMessages()), then a Heartbeat and RoundTrips to
    * every player due one (see sendHeartbeats()), then counts the tick.
+   * @param gameTick The tick the game is at, which the Heartbeats carry; empty
+   * while no game is in progress.
    */
-  void endTick();
+  void endTick(std::optional<std::uint32_t> gameTick);
 
   /**
    * @returns The header of the next datagram to the player who sends from

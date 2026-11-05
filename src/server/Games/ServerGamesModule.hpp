@@ -12,12 +12,14 @@
 #include "GameSettings.hpp"
 #include "Games.hpp"
 #include "GamesSettings.hpp"
+#include "HostedGamesWatch.hpp"
 #include "IDatagramSender.hpp"
 #include "IModule.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IResultsArchive.hpp"
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
+#include "LatestHostedGames.hpp"
 #include "Logger.hpp"
 #include "SettingValue.hpp"
 #include "SystemClock.hpp"
@@ -47,7 +49,9 @@ namespace rtype::server {
  * bus; the same values decide whether the games are vanilla (see
  * vanillaBreaches()). A finished game waits for players again, so the games are
  * never replaced. stop() tells every player the server shuts down (see
- * FarewellSender).
+ * FarewellSender). The module provides the list of its games as
+ * LatestHostedGames, published again at the end of each tick in which a player
+ * arrived or left or a game changed state (see HostedGamesWatch).
  */
 class ServerGamesModule final : public engine::IModule {
  public:
@@ -105,6 +109,8 @@ class ServerGamesModule final : public engine::IModule {
   engine::SystemClock clock_;
   std::optional<game::EntitySheets> types_;
   Games games_;
+  LatestHostedGames hostedGames_;
+  std::optional<HostedGamesWatch> watch_;
   IDatagramSender* sender_{nullptr};
   IPlayerAdmission* admission_{nullptr};
   IResultsArchive* results_{nullptr};

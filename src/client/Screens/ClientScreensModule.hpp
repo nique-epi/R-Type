@@ -16,6 +16,7 @@
 #include "IAudioService.hpp"
 #include "IModule.hpp"
 #include "IOptionalDependencies.hpp"
+#include "IServerTicks.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
 #include "PlayerSettings.hpp"
@@ -114,6 +115,7 @@ class ClientScreensModule final : public engine::IModule,
   EntityMessageQueue* entityMessages_{nullptr};
   ServerLeaderboard* leaderboard_{nullptr};
   std::unique_ptr<EntityTypeLooks> entityTypes_;
+  const IServerTicks* serverTicks_{nullptr};
   FrameLoop* loop_{nullptr};
   EventListeners* listeners_{nullptr};
   /** @brief Declared before screens_, which keep a reference to it. */

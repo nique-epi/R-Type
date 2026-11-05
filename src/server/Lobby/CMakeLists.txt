@@ -12,7 +12,7 @@ target_link_libraries(rtype_server_lobby_module
     rtype_network_connection_refused
     rtype_network_connection_request
     rtype_network_constants
-    rtype_network_cookie_issuer
+    rtype_network_handshake_cookies
     rtype_network_protocol
     rtype_network_transport
     rtype_server_games_module

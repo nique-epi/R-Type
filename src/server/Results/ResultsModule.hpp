@@ -3,11 +3,11 @@
 #include <memory>
 #include <string>
 #include "GameResultKeeper.hpp"
-#include "IGameFlow.hpp"
 #include "IGameModule.hpp"
 #include "IResultsArchive.hpp"
 #include "InstallContext.hpp"
 #include "LeaderboardDesk.hpp"
+#include "SubscriptionHandle.hpp"
 
 namespace rtype::server {
 
@@ -35,7 +35,7 @@ class ResultsModule final : public IGameModule {
  private:
   IResultsArchive& archive_;
   GameContext* game_{nullptr};
-  IGameFlow* flow_{nullptr};
+  engine::SubscriptionHandle stateSubscription_{};
   std::unique_ptr<GameResultKeeper> keeper_;
   std::unique_ptr<LeaderboardDesk> desk_;
 };

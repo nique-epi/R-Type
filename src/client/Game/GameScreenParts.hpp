@@ -7,6 +7,7 @@
 #include "IPlayerInputLink.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
+#include "IServerTicks.hpp"
 #include "ISky.hpp"
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
@@ -34,6 +35,9 @@ struct GameScreenParts {
   /** @brief Where the entity messages of the server come from, which must
    * outlive the screen. */
   std::reference_wrapper<IEntityMessageSource> entityMessages;
+  /** @brief The tick the server is at, which must outlive the screen: the
+   * interpolation counts its delay from it, read at each update. */
+  std::reference_wrapper<const IServerTicks> serverTicks;
   /** @brief The session the game started in: the number of this client,
    * read when the screen is built. */
   std::reference_wrapper<const IServerConnection> connection;

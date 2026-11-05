@@ -219,6 +219,7 @@ constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
 constexpr std::uint32_t HEARTBEAT_SENT_AT = 7;
 constexpr std::uint32_t ECHOED_SENT_AT = 5;
 constexpr std::uint32_t ECHO_HELD_FOR = 3000;
+constexpr std::uint32_t HEARTBEAT_TICK = 600;
 
 /**
  * @brief The round trips of two players in a test, in microseconds, with

@@ -2,6 +2,7 @@
 
 #include <functional>
 #include "Heartbeat.hpp"
+#include "HeartbeatMoment.hpp"
 #include "MessageOrigin.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
@@ -18,15 +19,17 @@ void addTimeSinceHeartbeat(PlayerRoster& roster, engine::Duration elapsed);
 
 /**
  * @brief Sends each player of @p roster whose sinceHeartbeat reached
- * TIME_BETWEEN_HEARTBEATS a Heartbeat its RoundTripMeter builds at @p now,
- * then RoundTrips, the round trip of every player of @p roster measured; its
- * sinceHeartbeat then starts over. Two datagrams, since sessionDatagram()
- * puts one message in each.
- * @param now The time on the clock of the sessions: the steady clock the
- * network thread stamps each datagram with (see IncomingDatagram::receivedAt).
+ * TIME_BETWEEN_HEARTBEATS a Heartbeat its RoundTripMeter builds at
+ * @p moment.now, carrying @p moment.tick, then RoundTrips, the round trip of
+ * every player of @p roster measured; its sinceHeartbeat then starts over.
+ * Two datagrams, since sessionDatagram() puts one message in each.
+ *
+ * The tick is the one being simulated when the Heartbeat leaves, which is the
+ * tick of the WorldState sent in the same tick: the client takes it as the
+ * tick the server was at when it sent the message.
  * @param send Called for each datagram to send; must not be empty.
  */
-void sendHeartbeats(PlayerRoster& roster, engine::Duration now,
+void sendHeartbeats(PlayerRoster& roster, const HeartbeatMoment& moment,
                     const std::function<void(network::OutgoingDatagram)>& send);
 
 /**

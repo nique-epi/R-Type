@@ -2,10 +2,10 @@
 
 #include <cstdint>
 #include "Endpoint.hpp"
-#include "ServerApplication.hpp"
+#include "TickHandler.hpp"
 
 /** @returns A tick handler that ignores the datagrams it is handed. */
-rtype::server::ServerApplication::TickHandler ignoringTicks();
+rtype::server::TickHandler ignoringTicks();
 
 /** @returns The loopback address on @p port. */
 rtype::network::Endpoint loopbackEndpoint(std::uint16_t port);

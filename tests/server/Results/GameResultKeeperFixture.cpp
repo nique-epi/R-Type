@@ -8,6 +8,7 @@
 #include "GameResultKeeperTestConstants.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
+#include "GameStateChanged.hpp"
 #include "RecordingResultsArchive.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -35,16 +36,22 @@ void GameResultKeeperFixture::leave(std::size_t index) {
 }
 
 void GameResultKeeperFixture::startTheGame() {
-  keeper_.followState(GameState::Starting);
-  keeper_.followState(GameState::InProgress);
+  keeper_.onStateChanged(
+      GameStateChanged{.previous = GameState::WaitingForPlayers,
+                       .current = GameState::Starting});
+  keeper_.onStateChanged(GameStateChanged{.previous = GameState::Starting,
+                                          .current = GameState::InProgress});
 }
 
 void GameResultKeeperFixture::finishTheGame() {
-  keeper_.followState(GameState::Finished);
+  keeper_.onStateChanged(GameStateChanged{.previous = GameState::InProgress,
+                                          .current = GameState::Finished});
 }
 
 void GameResultKeeperFixture::waitForPlayersAgain() {
-  keeper_.followState(GameState::WaitingForPlayers);
+  keeper_.onStateChanged(
+      GameStateChanged{.previous = GameState::Finished,
+                       .current = GameState::WaitingForPlayers});
 }
 
 const RecordingResultsArchive& GameResultKeeperFixture::archive() const {

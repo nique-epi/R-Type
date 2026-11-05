@@ -1,6 +1,7 @@
 #include "GameScreen.hpp"
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <random>
@@ -28,6 +29,7 @@
 #include "IPlayerInputLink.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISky.hpp"
+#include "Logger.hpp"
 #include "MissionBanner.hpp"
 #include "MissionStart.hpp"
 #include "OwnShipPredictor.hpp"
@@ -65,6 +67,17 @@ void moveSky(ISky& sky, const EffectSpawner& effects,
   sky.setOffset(effects.cameraOffset());
 }
 
+/** @brief Writes the actions @p held at the trace level when they are not the
+ * ones written last, kept in @p traced. */
+void traceHeldActions(const logging::Logger& logger, const ActionSet& held,
+                      std::uint8_t& traced) {
+  if (held.bits() == traced) {
+    return;
+  }
+  logger.trace("actions held: ", static_cast<unsigned int>(held.bits()));
+  traced = held.bits();
+}
+
 }  // namespace
 
 GameScreen::GameScreen(GameScreenParts parts,
@@ -84,6 +97,7 @@ GameScreen::GameScreen(GameScreenParts parts,
       playerCommands_(true, parts.settings.get().keys),
       inputs_(&parts.inputs.get()),
       entityMessageSource_(&parts.entityMessages.get()),
+      serverTicks_(&parts.serverTicks.get()),
       scoreBoard_(parts.waitingRoom.get().lobbyPlayers(),
                   parts.connection.get().status().playerNumber),
       result_(&parts.result.get()),
@@ -131,11 +145,9 @@ void GameScreen::update(engine::Duration elapsed) {
       std::ignore = inputs_->sendPlayerInput(held);
     }
   }
-  if (held.bits() != loggedActions_) {
-    logger_.trace("actions held: ", static_cast<unsigned int>(held.bits()));
-    loggedActions_ = held.bits();
-  }
+  traceHeldActions(logger_, held, loggedActions_);
   systems_.run(components_, elapsed);
+  interpolationClock_.follow(serverTicks_->serverTickNow());
   interpolationClock_.advance(elapsed);
   const FlashPreference preference = flashPreferenceOf(*settings_);
   const engine::Duration sinceTheWorld =

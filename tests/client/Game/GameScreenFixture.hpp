@@ -4,6 +4,7 @@
 #include <vector>
 #include "DrawJournal.hpp"
 #include "FakeEntityMessageSource.hpp"
+#include "FakeServerTicks.hpp"
 #include "FixedEntityTypeSource.hpp"
 #include "GameResult.hpp"
 #include "PlayerSettings.hpp"
@@ -54,6 +55,7 @@ class GameScreenFixture : public ::testing::Test {
   rtype::client::PlayerSettings settings_;
   RecordingPlayerInputLink inputs_;
   FakeEntityMessageSource entityMessages_;
+  FakeServerTicks serverTicks_;
   RecordingServerConnection connection_;
   RecordingWaitingRoom waitingRoom_;
   InterfaceCanvasRecord statusCanvas_;

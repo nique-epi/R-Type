@@ -29,11 +29,15 @@ constexpr std::string_view SEED_SETTING_NAME = "seed";
 constexpr std::string_view STATE_RATE_SETTING_NAME = "state-rate";
 constexpr std::string_view INPUT_DELAY_SETTING_NAME = "input-delay";
 constexpr std::string_view DATABASE_SETTING_NAME = "database";
+constexpr std::string_view MASTER_URL_SETTING_NAME = "master-url";
+constexpr std::string_view MASTER_KEY_SETTING_NAME = "master-key";
+constexpr std::string_view SERVER_NAME_SETTING_NAME = "server-name";
 
 /** @brief Every setting of the server, in the order its usage lists them. */
 constexpr std::array SERVER_SETTING_NAMES{
-    PORT_SETTING_NAME, SEED_SETTING_NAME, STATE_RATE_SETTING_NAME,
-    INPUT_DELAY_SETTING_NAME, DATABASE_SETTING_NAME};
+    PORT_SETTING_NAME,        SEED_SETTING_NAME,       STATE_RATE_SETTING_NAME,
+    INPUT_DELAY_SETTING_NAME, DATABASE_SETTING_NAME,   MASTER_URL_SETTING_NAME,
+    MASTER_KEY_SETTING_NAME,  SERVER_NAME_SETTING_NAME};
 
 /**
  * @brief The highest seed: the seed of a game is 32 bits.
@@ -79,6 +83,11 @@ constexpr std::string_view STRANGER_DROP_REASON =
     "its sender was not admitted, and it holds no connection request";
 constexpr std::string_view WRONG_TOKEN_DROP_REASON =
     "it carries another session token than the player of that address";
+constexpr std::string_view OVER_RATE_LIMIT_DROP_REASON =
+    "its sender sent more than its rate limit";
+constexpr std::string_view NEWLY_BANNED_DROP_REASON =
+    "its sender kept sending over its rate limit, and is now banned";
+constexpr std::string_view BANNED_DROP_REASON = "its sender is banned";
 
 /**
  * @brief Where the server reads the waves of each difficulty, inside the
@@ -170,9 +179,10 @@ constexpr std::size_t INCOMING_DATAGRAM_QUEUE_CAPACITY = 256;
  * requests in one tick (the one sent again every 500 ms and the answer to a
  * challenge), so 16 is eight clients joining at once, about 9 microseconds of
  * answers per tick. After a stall, a client answers every challenge sent for
- * its waiting requests, up to 10 in one tick before it gives up at 5 s. Above
- * the room, the oldest are discarded and the clients send again; a limit per
- * address does not exist yet.
+ * its waiting requests, up to 10 in one tick before it gives up at 5 s
+ * (REQUESTS_BEFORE_GIVING_UP). Above the room, the oldest are discarded and
+ * the clients send again. One address and port places at most REQUEST_BURST
+ * (11) of them between two ticks (see REQUEST_RATE_LIMIT).
  */
 constexpr std::size_t CONNECTION_REQUEST_QUEUE_CAPACITY = 16;
 

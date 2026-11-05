@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include "CollisionRules.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
@@ -14,6 +15,7 @@
 #include "GameInstanceConstants.hpp"
 #include "GameOutcome.hpp"
 #include "GameState.hpp"
+#include "GameStateChanged.hpp"
 #include "IGameReplication.hpp"
 #include "LifeKeeper.hpp"
 #include "LifeKeeperParts.hpp"
@@ -125,7 +127,9 @@ void GameFlow::advanceState() {
   switch (state_) {
     case GameState::WaitingForPlayers:
       if (game_.everyPlayerIsReady()) {
-        state_ = GameState::Starting;
+        game_.events.get().publish(GameStateChanged{
+            .previous = std::exchange(state_, GameState::Starting),
+            .current = GameState::Starting});
         startBarrier_.open();
       } else {
         replication_.onWaitingTick();
@@ -133,7 +137,9 @@ void GameFlow::advanceState() {
       break;
     case GameState::Starting:
       if (startBarrier_.advance()) {
-        state_ = GameState::InProgress;
+        game_.events.get().publish(GameStateChanged{
+            .previous = std::exchange(state_, GameState::InProgress),
+            .current = GameState::InProgress});
         logger_.info("game started, players connected: ",
                      game_.roster.get().connected().size());
       }
@@ -149,7 +155,9 @@ void GameFlow::advanceState() {
       ++finishedTicks_;
       if (finishedTicks_ >= FINISHED_STATE_TICKS) {
         startNewWorld();
-        state_ = GameState::WaitingForPlayers;
+        game_.events.get().publish(GameStateChanged{
+            .previous = std::exchange(state_, GameState::WaitingForPlayers),
+            .current = GameState::WaitingForPlayers});
       } else {
         replication_.onFinishedTick();
       }
@@ -159,7 +167,9 @@ void GameFlow::advanceState() {
 
 void GameFlow::finish() {
   if (state_ == GameState::InProgress) {
-    state_ = GameState::Finished;
+    game_.events.get().publish(
+        GameStateChanged{.previous = std::exchange(state_, GameState::Finished),
+                         .current = GameState::Finished});
     finishedTicks_ = 0;
   }
 }

@@ -160,11 +160,26 @@ static_assert(identifiers::MAXIMUM_ENTITY_TYPES <=
               "typeCount is one byte, and so is the number of a type");
 
 /**
- * @brief Time between two ConnectionRequest of the client while the server has
- * not answered. Provisional, see the protocol page. The server reads it too:
- * the acceptance it repeats is paced on it.
+ * @brief PlayerInput a client sends per second during a game. The server
+ * derives the rate limit of a player from it. Provisional, see the protocol
+ * page.
+ */
+constexpr std::size_t PLAYER_INPUTS_PER_SECOND = 60;
+
+/**
+ * @brief Time between two ConnectionRequest of an attempt while the server
+ * has not answered. The server derives the rate limit of the requests from
+ * it, and paces the acceptance it repeats on it. Provisional, see the
+ * protocol page.
  */
 constexpr std::chrono::milliseconds CONNECTION_REQUEST_INTERVAL{500};
+
+/**
+ * @brief Time after the start of an attempt at which the client gives up,
+ * when the server has neither accepted nor refused it: it bounds the requests
+ * one attempt sends. Provisional, see the protocol page.
+ */
+constexpr std::chrono::seconds CONNECTION_ATTEMPT_TIMEOUT{5};
 
 /**
  * @brief The time between two Heartbeats either side of a session sends its
@@ -360,6 +375,7 @@ constexpr std::string_view KIND_FIELD = "kind";
 constexpr std::string_view ACTIONS_FIELD = "actions";
 constexpr std::string_view ECHO_SENT_AT_FIELD = "echo.sentAt";
 constexpr std::string_view ECHO_HELD_FOR_FIELD = "echo.heldFor";
+constexpr std::string_view TICK_FIELD = "tick";
 constexpr std::string_view MOTION_FIELD = "motion";
 constexpr std::string_view PLAYER_COUNT_FIELD = "playerCount";
 constexpr std::string_view RANK_FIELD = "rank";

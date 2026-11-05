@@ -9,6 +9,7 @@
 #include "GameWindow.hpp"
 #include "IAudioService.hpp"
 #include "IEntityTypeSource.hpp"
+#include "IServerTicks.hpp"
 #include "PlayerSettings.hpp"
 #include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
@@ -45,6 +46,7 @@ struct ScreenServices {
   /** @brief What the entity type numbers of the server mean, for the
    * replicator of a game. */
   std::reference_wrapper<const IEntityTypeSource> entityTypes;
+  std::reference_wrapper<const IServerTicks> serverTicks;
   network::Endpoint server;
   std::string nickname;
 };

@@ -2,6 +2,7 @@
 
 #include <memory>
 #include "FakeEntityMessageSource.hpp"
+#include "FakeServerTicks.hpp"
 #include "FixedEntityTypeSource.hpp"
 #include "GameResult.hpp"
 #include "GameScreenParts.hpp"
@@ -23,6 +24,7 @@ struct LoneGameParts {
   rtype::client::PlayerSettings settings;
   RecordingPlayerInputLink inputs;
   FakeEntityMessageSource entityMessages;
+  FakeServerTicks serverTicks;
   RecordingServerConnection connection;
   RecordingWaitingRoom waitingRoom;
   InterfaceCanvasRecord statusCanvas;

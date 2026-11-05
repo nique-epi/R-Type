@@ -33,6 +33,7 @@ GameScreenFixture::GameScreenFixture()
                               .settings = settings_,
                               .inputs = inputs_,
                               .entityMessages = entityMessages_,
+                              .serverTicks = serverTicks_,
                               .connection = connection_,
                               .waitingRoom = waitingRoom_,
                               .sky = sky_,

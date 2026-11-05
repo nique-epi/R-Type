@@ -87,6 +87,7 @@ using testing::INPUT_DELAY_TICKS;
 using testing::inputPayload;
 using testing::LARGEST_INPUT_NUMBER;
 using testing::messageTypesOf;
+using testing::newestHeartbeatIn;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::ofType;
 using testing::onlyMessageIn;
@@ -1124,6 +1125,48 @@ TEST_F(GameInstanceTest, SendsTheHeartbeatUnderTheSessionOfThePlayer) {
   EXPECT_EQ(network::DatagramCodec::decodeHeader(heartbeats.back().payload)
                 .sessionToken,
             testing::SESSION_TOKEN);
+}
+
+/**
+ * Given a game in progress whose player was just sent a Heartbeat
+ * When the ticks run until the next Heartbeat is sent
+ * Then that Heartbeat carries the tick of the game at the end of the tick that
+ * sent it, the one the WorldState of that tick carries
+ */
+TEST_F(GameInstanceTest, TellsThePlayerTheTickOfTheGameInItsHeartbeat) {
+  startGameWithOnePlayer();
+  const std::size_t before = heartbeatsIn(sentTo(FIRST_PLAYER));
+  for (std::size_t ticks = 0; ticks <= PROTOCOL_HEARTBEAT_TICKS &&
+                              heartbeatsIn(sentTo(FIRST_PLAYER)) == before;
+       ++ticks) {
+    tick();
+  }
+  ASSERT_EQ(heartbeatsIn(sentTo(FIRST_PLAYER)), before + 1);
+
+  const std::optional<network::Heartbeat> heartbeat =
+      newestHeartbeatIn(sentTo(FIRST_PLAYER));
+
+  ASSERT_TRUE(heartbeat.has_value());
+  EXPECT_EQ(heartbeat.value_or(network::Heartbeat{}).tick,
+            std::optional<std::uint32_t>{game().tick()});
+}
+
+/**
+ * Given a game that one player started, then finished
+ * When the ticks of one interval run
+ * Then the Heartbeat the player is sent carries no tick: the tick of a
+ * finished game stands still, so it would place no instant
+ */
+TEST_F(GameInstanceTest, TellsThePlayerNoTickOnceTheGameIsFinished) {
+  startGameWithOnePlayer();
+  game().finish();
+
+  runTicks(PROTOCOL_HEARTBEAT_TICKS);
+
+  const std::optional<network::Heartbeat> heartbeat =
+      newestHeartbeatIn(sentTo(FIRST_PLAYER));
+  ASSERT_TRUE(heartbeat.has_value());
+  EXPECT_EQ(heartbeat.value_or(network::Heartbeat{}).tick, std::nullopt);
 }
 
 /**

@@ -53,6 +53,7 @@ TEST_F(GameInstanceLivesFixture, CountsTheHitsOfAPlayerWhoLeft) {
   tick();
   leave(SECOND_PLAYER);
   tick();
+  events().dispatch();
 
   ASSERT_EQ(game().state(), GameState::Finished);
   ASSERT_EQ(results().results().size(), 1U);
@@ -72,6 +73,7 @@ TEST_F(GameInstanceTest, RecordsAGameEndedWithoutAResultForThePlayers) {
 
   game().finish();
   tick();
+  events().dispatch();
 
   EXPECT_EQ(results().results().size(), 1U);
 }

@@ -16,6 +16,7 @@
 #include "EventBus.hpp"
 #include "GameInstance.hpp"
 #include "GameInstanceTestConstants.hpp"
+#include "Heartbeat.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyState.hpp"
 #include "MessageType.hpp"
@@ -57,6 +58,11 @@ struct SentGameLoaded {
 
 /** @returns How many of @p datagrams hold a Heartbeat. */
 [[nodiscard]] std::size_t heartbeatsIn(
+    const std::vector<network::OutgoingDatagram>& datagrams);
+
+/** @returns The newest Heartbeat among @p datagrams; none when they hold no
+ * Heartbeat. */
+[[nodiscard]] std::optional<network::Heartbeat> newestHeartbeatIn(
     const std::vector<network::OutgoingDatagram>& datagrams);
 
 /** @returns A header carrying the session token of @p player. */
