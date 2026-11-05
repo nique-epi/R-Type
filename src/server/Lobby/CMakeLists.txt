@@ -1,4 +1,4 @@
-add_library(rtype_server_lobby_module STATIC ConnectionAcceptor.cpp ServerLobbyModule.cpp)
+add_library(rtype_server_lobby_module STATIC ConnectionAcceptor.cpp RequestReading.cpp ServerLobbyModule.cpp)
 
 target_include_directories(rtype_server_lobby_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
