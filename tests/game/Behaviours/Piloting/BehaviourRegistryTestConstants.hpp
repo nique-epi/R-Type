@@ -12,6 +12,7 @@ constexpr std::string_view UNKNOWN_BEHAVIOUR_NAME = "zigzag";
  * builtInBehaviours() adds them: the names the architecture page gives. */
 constexpr std::array BUILT_IN_BEHAVIOUR_NAMES{
     std::string_view{"straight"}, std::string_view{"weave"},
-    std::string_view{"scatter"}, std::string_view{"reaper"}};
+    std::string_view{"scatter"}, std::string_view{"reaper"},
+    std::string_view{"drillback"}};
 
 }  // namespace rtype::game::testing

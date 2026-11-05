@@ -41,6 +41,7 @@ The client and the server look for `assets/` next to their executable, then in t
 | `sprites/entities.png` | The sprite sheet of a match: four player ships, the Bydo, the bonus Bydo, the player missile and the enemy missile | Drawn for this project (proposal 3a); not taken from the sprite set shipped with the subject |
 | `sprites/mobs/voltjelly.png` | The Voltjelly: a Bydo jellyfish inside an electric aura that turns, one row of 4 frames | Drawn for this project (design system "R-Type — new mobs"), exported by the code of the design; not taken from the sprite set shipped with the subject |
 | `sprites/mobs/reaper.png` | The Reaper: a Bydo skeleton with a scythe, idle, raising its scythe, swinging it, open; and its bone, which no sheet uses yet | Drawn for this project (design system "R-Type — new mobs"), exported by the code of the design, the white of the blade turned to its light tint; not taken from the sprite set shipped with the subject |
+| `sprites/mobs/drillback.png` | The Drillback: an armoured Bydo beetle with a drill for a horn, idle, shaking, charging, stunned | Drawn for this project (design system "R-Type — new mobs"), exported by the code of the design, the white of the drill and of the flame turned to their light tint, the two stunned frames drawn twice; not taken from the sprite set shipped with the subject |
 | `sprites/effects.png` | The effects of a match: the explosions of the Bydo and of the ship, the impact of a missile and the muzzle flashes of both missiles, each with its version without flash | Drawn for this project (animation proposal, options C), generated from the drafts of the proposal; not taken from the sprite set shipped with the subject |
 | `sprites/hud.png` | The sheet of the status band of a game: the lives of the four player colors, a life lost, the marker of each player, and the icons of the notices of a game: the door of a departure and the bars of a weak signal | Drawn for this project (HUD design system, proposal B; the two icons from the disconnect notices design system); not taken from the sprite set shipped with the subject |
 | `sprites/professor.png` | Professor Bydo, the guide of the help of the waiting room: the Bydo under a mortarboard, round glasses over its eye, two frames facing left, then the same two mirrored | Drawn for this project (help design system, version 2), from the Bydo of `sprites/entities.png`; not taken from the sprite set shipped with the subject |
@@ -87,6 +88,7 @@ Each mob of `sprites/mobs/` has a sheet of its own, laid out like the entity she
 
 | Sheet | Size | Rows: frames × frame size, frame time |
 |---|---|---|
+| `drillback.png` | 102 × 102 | idle: 2 × 24 × 24, 200 ms; shaking: 2 × 24 × 24, 60 ms; charge: 2 × 40 × 24, 60 ms, the body in the 24 pixels on the left; stunned: 4 × 24 × 24, 225 ms |
 | `reaper.png` | 82 × 117 | idle: 2 × 24 × 24, 250 ms; scythe raised: 2 × 24 × 24, 200 ms; swing: 2 × 40 × 24, 70 ms, the body in the 24 pixels on the right; open: 1 × 24 × 24, 600 ms; bone: 4 × 13 × 13, 80 ms |
 | `voltjelly.png` | 166 × 40 | aura: 4 × 40 × 40, 120 ms; the bell, 24 × 24, at the center of each frame |
 

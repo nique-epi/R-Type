@@ -16,3 +16,5 @@ constexpr rtype::engine::Duration VOLTJELLY_FRAME_TIME_LISTED =
     std::chrono::milliseconds(120);
 constexpr rtype::engine::Duration REAPER_FRAME_TIME_LISTED =
     std::chrono::milliseconds(250);
+constexpr rtype::engine::Duration DRILLBACK_FRAME_TIME_LISTED =
+    std::chrono::milliseconds(200);

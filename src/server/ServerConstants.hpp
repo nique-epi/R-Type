@@ -120,7 +120,7 @@ constexpr std::string_view DEFAULT_DIFFICULTY = "normal";
  * are not vanilla. A test fails when the shipped file changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0xc8d376e5a99e5e49;
+constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0xd0f180bd74386abf;
 
 /**
  * @brief The fingerprint of the entity sheets the game ships, as
@@ -128,7 +128,7 @@ constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0xc8d376e5a99e5e49;
  * are not vanilla. A test fails when a shipped sheet changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0x32289465f6941cb1;
+constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0xc80ab6fb10ef530b;
 
 /**
  * @brief Why the games of a server are not vanilla, as the lines of its journal

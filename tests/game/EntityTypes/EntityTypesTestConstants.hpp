@@ -43,11 +43,12 @@ constexpr std::string_view PLAYER_MISSILE_SHEET = "player_missile";
 constexpr std::string_view ENEMY_MISSILE_SHEET = "enemy_missile";
 constexpr std::string_view VOLTJELLY_SHEET = "voltjelly";
 constexpr std::string_view REAPER_SHEET = "reaper";
+constexpr std::string_view DRILLBACK_SHEET = "drillback";
 
 /** @brief The names of every sheet the game ships, in the order of their
  * names, so of their numbers. */
 constexpr std::array SHIPPED_SHEET_NAMES{
-    DRIFTER_SHEET, ENEMY_MISSILE_SHEET, PLAYER_MISSILE_SHEET, REAPER_SHEET,
-    SHIP_SHEET,    VOLTJELLY_SHEET,     WEAVER_SHEET};
+    DRIFTER_SHEET, DRILLBACK_SHEET, ENEMY_MISSILE_SHEET, PLAYER_MISSILE_SHEET,
+    REAPER_SHEET,  SHIP_SHEET,      VOLTJELLY_SHEET,     WEAVER_SHEET};
 
 }  // namespace rtype::game::testing

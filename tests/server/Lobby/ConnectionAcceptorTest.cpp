@@ -685,6 +685,7 @@ TEST_F(ConnectionAcceptorFixture, AcceptsWithTheEntityTypesOfTheGame) {
       onlyMessageIn<network::ConnectionAccepted>(lastAnswer()).types,
       (std::vector<network::EntityTypeEntry>{
           {.side = network::EntitySide::Enemy, .name = "drifter"},
+          {.side = network::EntitySide::Enemy, .name = "drillback"},
           {.side = network::EntitySide::EnemyMissile, .name = "enemy_missile"},
           {.side = network::EntitySide::PlayerMissile,
            .name = "player_missile"},

@@ -35,6 +35,7 @@ using rtype::engine::UnknownDataFileKeyException;
 using rtype::game::EntitySheet;
 using rtype::game::SpriteFrame;
 using rtype::game::testing::DRIFTER_SHEET;
+using rtype::game::testing::DRILLBACK_SHEET;
 using rtype::game::testing::ENEMY_MISSILE_SHEET;
 using rtype::game::testing::PLAYER_MISSILE_SHEET;
 using rtype::game::testing::REAPER_SHEET;
@@ -302,10 +303,11 @@ TEST(EntityAppearances, EveryShippedAttackFrameShowsOneWholeSprite) {
  * When the frame time of each is read
  * Then it is the one assets/README.md lists for its sprite: 80 ms for the
  * ship, 250 ms for a Bydo, 60 ms for a missile of a player, 120 ms for a
- * missile of an enemy and for the Voltjelly, 250 ms for the Reaper
+ * missile of an enemy and for the Voltjelly, 250 ms for the Reaper, 200 ms
+ * for the Drillback
  */
 TEST(EntityAppearances, ShippedFramesLastWhatTheSheetReadmeLists) {
-  const std::array<std::pair<std::string_view, Duration>, 7> listed{{
+  const std::array<std::pair<std::string_view, Duration>, 8> listed{{
       {SHIP_SHEET, SHIP_FRAME_TIME_LISTED},
       {DRIFTER_SHEET, BYDO_FRAME_TIME_LISTED},
       {WEAVER_SHEET, BYDO_FRAME_TIME_LISTED},
@@ -313,6 +315,7 @@ TEST(EntityAppearances, ShippedFramesLastWhatTheSheetReadmeLists) {
       {ENEMY_MISSILE_SHEET, ENEMY_MISSILE_FRAME_TIME_LISTED},
       {VOLTJELLY_SHEET, VOLTJELLY_FRAME_TIME_LISTED},
       {REAPER_SHEET, REAPER_FRAME_TIME_LISTED},
+      {DRILLBACK_SHEET, DRILLBACK_FRAME_TIME_LISTED},
   }};
   const EntityAppearances appearances = shippedAppearances();
   for (const auto& [name, frameTime] : listed) {
