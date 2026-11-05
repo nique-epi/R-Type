@@ -17,7 +17,7 @@ This page tells you where to look when you need to change something.
 
 `BoundedQueue<Message>` (`src/concurrency/BoundedQueue/`) hands messages from one thread to another, for example the datagrams the network thread receives to the thread that runs the game. Every method may be called from any thread. None of them waits for a message to arrive; a call only waits while another thread holds the queue's lock for one push or one drain.
 
-- `push(message)` adds the message after the others. The room, given to the constructor, is reserved once; when the queue is full, its oldest message is discarded to make room, and `discardedCount()` counts it. A room of 0 throws `InvalidQueueCapacityException`.
+- `push(message)` adds the message after the others. The room, given to the constructor, is reserved once; when the queue is full, its oldest message is discarded to make room, `discardedCount()` counts it, and `push()` returns `true`, so the caller knows that its message made the queue overflow. A room of 0 throws `InvalidQueueCapacityException`.
 - `drainInto(destination)` moves every waiting message, oldest first, to the end of a `std::vector`, and leaves the queue empty. It makes room in the vector before moving anything, so when memory runs out the queue is left as it was. With nothing waiting it returns at once, so a game loop drains once per tick and carries on whatever arrived. Clearing and reusing the same vector every tick avoids allocating it again.
 - A message must satisfy `QueueableMessage`: it is default-constructible, and moving it never throws. A queue of another type does not compile. The queue moves messages in and out and never copies them, so a message can own its bytes.
 

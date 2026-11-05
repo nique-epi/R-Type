@@ -184,8 +184,7 @@ constexpr std::size_t OUTGOING_DATAGRAM_QUEUE_CAPACITY = 256;
 
 /**
  * @brief Seconds between two reports on the simulation: how late its ticks
- * started, how many received datagrams were discarded, and the metrics of the
- * server.
+ * started, the datagrams rejected, and the metrics of the server.
  */
 constexpr std::size_t REPORT_SECONDS = 10;
 
