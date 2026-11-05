@@ -17,6 +17,8 @@ readonly DEFAULT_RUNS=3
 readonly DEFAULT_SECONDS=60
 readonly IP_AND_UDP_HEADER_BYTES=28
 
+server_pid=
+
 usage() {
   echo 'usage: sh campaign.sh <r-type_server> <load_test_bots> [<runs> [<seconds>]]' >&2
   exit 2
@@ -51,8 +53,20 @@ start_server() {
 # Stops the server and fails unless it stopped cleanly.
 stop_server() {
   kill "$server_pid"
-  if ! wait "$server_pid"; then
+  stopped=0
+  wait "$server_pid" || stopped=$?
+  server_pid=
+  if [ "$stopped" -ne 0 ]; then
     fail 'the server did not stop cleanly'
+  fi
+}
+
+# Stops the server the script leaves running when it ends early, so its port
+# is free for the next campaign.
+stop_leftover_server() {
+  if [ -n "$server_pid" ]; then
+    kill "$server_pid" 2> /dev/null || true
+    wait "$server_pid" 2> /dev/null || true
   fi
 }
 
@@ -66,7 +80,6 @@ run_once() {
   report="$work/$name-$run.txt"
   if ! "$bots" -p "$PORT" --bots "$BOT_COUNT" --seconds "$seconds" \
     --seed "$SEED" > "$report" 2>&1; then
-    kill "$server_pid" || true
     fail "the bots failed; their report is $report"
   fi
   stop_server
@@ -107,6 +120,11 @@ scenario() {
   done
   echo
 }
+
+trap stop_leftover_server EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 if [ "$#" -lt 2 ] || [ "$#" -gt 4 ]; then
   usage
