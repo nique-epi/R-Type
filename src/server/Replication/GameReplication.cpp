@@ -3,7 +3,6 @@
 #include <memory>
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
-#include "EntitySheets.hpp"
 #include "GameContext.hpp"
 #include "GameEndAnnouncer.hpp"
 #include "GameOutcome.hpp"
