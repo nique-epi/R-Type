@@ -10,6 +10,7 @@
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
+#include "Health.hpp"
 #include "Intent.hpp"
 #include "Pilot.hpp"
 #include "Position.hpp"
@@ -54,6 +55,19 @@ std::optional<Position> nearestOf(std::span<const Position> ships,
   return *nearest;
 }
 
+/** @returns Whether @p health has fewer points than it appeared with. */
+bool isWounded(const Health* health) {
+  return health != nullptr && health->points < health->full;
+}
+
+/** @brief Moves @p position where @p intent asks the body to jump, if it
+ * asks. */
+void jumpAsAsked(Position& position, const Intent& intent) {
+  if (intent.jumpsTo.has_value()) {
+    position = *intent.jumpsTo;
+  }
+}
+
 }  // namespace
 
 PilotSystem::PilotSystem(engine::EventBus& events) : events_(events) {}
@@ -86,7 +100,7 @@ void PilotSystem::update(engine::ComponentRegistry& components,
   components.forEach<Pilot, Intent>(
       [this, &components, elapsed](engine::Entity body, Pilot& pilot,
                                    Intent& intent) {
-        const Position* const position = components.get<Position>(body);
+        Position* const position = components.get<Position>(body);
         if (position == nullptr) {
           return;
         }
@@ -103,8 +117,10 @@ void PilotSystem::update(engine::ComponentRegistry& components,
             .action = current == nullptr ? std::nullopt : current->key,
             .actionAge =
                 current == nullptr ? engine::Duration::zero() : current->since,
-            .nearestShip = nearestOf(ships_, *position)});
+            .nearestShip = nearestOf(ships_, *position),
+            .wounded = isWounded(components.get<Health>(body))});
         passOnActionOf(components, body, intent);
+        jumpAsAsked(*position, intent);
       });
 }
 

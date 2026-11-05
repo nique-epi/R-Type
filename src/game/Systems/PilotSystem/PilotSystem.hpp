@@ -28,6 +28,7 @@ struct Intent;
  * inputs. Run it before every system that reads the Intent: MovementSystem and
  * the weapon system.
  *
+ * When the Intent a behaviour wrote asks the body to jump, it moves it there.
  * When the Intent a behaviour wrote ends an action or starts one, it hands
  * that to endEnemyAction() and startEnemyAction(), which publish on the event
  * bus it was given.

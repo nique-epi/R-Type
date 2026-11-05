@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include "Health.hpp"
 #include "Position.hpp"
 
 namespace rtype::game::testing {
@@ -31,5 +32,13 @@ constexpr Position FAR_SHIP{.x = 0.0F, .y = 500.0F};
 
 /** @brief The network id of the enemy the view tests pilot. */
 constexpr std::uint32_t WATCHING_ENEMY_NETWORK_ID = 21;
+
+/** @brief An enemy that appeared with three points and has two left, and
+ * one that still has its three. */
+constexpr Health HIT_ONCE{.points = 2, .full = 3};
+constexpr Health UNTOUCHED{.points = 3, .full = 3};
+
+/** @brief Where a behaviour of the tests makes its body jump. */
+constexpr Position JUMP_TARGET{.x = 640.0F, .y = 700.0F};
 
 }  // namespace rtype::game::testing

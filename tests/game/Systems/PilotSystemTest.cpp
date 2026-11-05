@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstddef>
 #include <optional>
+#include "ActionRequestingBehaviour.hpp"
 #include "BehaviourConstants.hpp"
 #include "BehaviourTestConstants.hpp"
 #include "BehaviourView.hpp"
@@ -24,11 +25,14 @@ using rtype::game::Position;
 using rtype::game::STRAIGHT_BEHAVIOUR_NAME;
 using rtype::game::waveEntryPosition;
 using rtype::game::WEAVE_BEHAVIOUR_NAME;
+using rtype::game::testing::ActionRequestingBehaviour;
 using rtype::game::testing::BODY_START_X;
 using rtype::game::testing::DRIFTER_X_AFTER_A_SECOND;
 using rtype::game::testing::FAR_SHIP;
 using rtype::game::testing::HALF_PERIOD;
 using rtype::game::testing::HEIGHT_TOLERANCE_UNITS;
+using rtype::game::testing::HIT_ONCE;
+using rtype::game::testing::JUMP_TARGET;
 using rtype::game::testing::LEFT_HEADING_SETTINGS;
 using rtype::game::testing::LOWEST_WAVE_CENTER_Y;
 using rtype::game::testing::NEAR_SHIP;
@@ -39,6 +43,7 @@ using rtype::game::testing::RIGHTWARD_X_AFTER_A_SECOND;
 using rtype::game::testing::ROW_START;
 using rtype::game::testing::ROW_Y;
 using rtype::game::testing::TICKS_IN_QUARTER_PERIOD;
+using rtype::game::testing::UNTOUCHED;
 using rtype::game::testing::ViewRecordingBehaviour;
 using rtype::game::testing::WATCHING_ENEMY_NETWORK_ID;
 using rtype::game::testing::WAVE_BOTTOM_Y;
@@ -194,4 +199,54 @@ TEST_F(PilotSystemFixture, ABehaviourSeesNoShipWhileNoneIsInPlay) {
 
   ASSERT_TRUE(seen.has_value());
   EXPECT_FALSE(seen.value_or(BehaviourView{}).nearestShip.has_value());
+}
+
+/**
+ * Given an enemy that appeared with three points and has two left
+ * When the pilots run once
+ * Then its behaviour sees it wounded
+ */
+TEST_F(PilotSystemFixture, ABehaviourSeesItsBodyWounded) {
+  std::optional<BehaviourView> seen;
+  const ViewRecordingBehaviour behaviour{seen};
+  const Entity enemy = addEnemy(behaviour, WATCHING_ENEMY_NETWORK_ID);
+  components().add(enemy, HIT_ONCE);
+
+  run(SIMULATION_TICK_DURATION);
+
+  ASSERT_TRUE(seen.has_value());
+  EXPECT_TRUE(seen.value_or(BehaviourView{}).wounded);
+}
+
+/**
+ * Given an enemy that still has the three points it appeared with
+ * When the pilots run once
+ * Then its behaviour does not see it wounded
+ */
+TEST_F(PilotSystemFixture, ABehaviourSeesAnUntouchedBodyUnwounded) {
+  std::optional<BehaviourView> seen;
+  const ViewRecordingBehaviour behaviour{seen};
+  const Entity enemy = addEnemy(behaviour, WATCHING_ENEMY_NETWORK_ID);
+  components().add(enemy, UNTOUCHED);
+
+  run(SIMULATION_TICK_DURATION);
+
+  ASSERT_TRUE(seen.has_value());
+  EXPECT_FALSE(seen.value_or(BehaviourView{}).wounded);
+}
+
+/**
+ * Given an enemy whose behaviour asks it to jump to (640, 700)
+ * When the pilots run once
+ * Then the enemy is at (640, 700)
+ */
+TEST_F(PilotSystemFixture, ABodyJumpsWhereItsBehaviourAsks) {
+  const ActionRequestingBehaviour behaviour{
+      Intent{.steered = true, .jumpsTo = JUMP_TARGET}};
+  const Entity enemy = addEnemy(behaviour, WATCHING_ENEMY_NETWORK_ID);
+
+  run(SIMULATION_TICK_DURATION);
+
+  EXPECT_EQ(positionOf(enemy).x, JUMP_TARGET.x);
+  EXPECT_EQ(positionOf(enemy).y, JUMP_TARGET.y);
 }

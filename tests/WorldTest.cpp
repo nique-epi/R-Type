@@ -784,3 +784,21 @@ TEST(World, SpawnedMissileIsNoShip) {
 
   EXPECT_EQ(world.shipPositionOf(missile), nullptr);
 }
+
+/**
+ * Given an empty world
+ * When a Bydo of three health points is spawned
+ * Then its Health remembers the three points it appeared with
+ */
+TEST(World, ASpawnedBodyRemembersTheHealthItAppearedWith) {
+  rtype::game::World world;
+
+  const std::uint32_t bydo =
+      world.spawn(shippedEntitySheets().named(DRIFTER_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  const std::optional<rtype::game::Health> health =
+      componentOf<rtype::game::Health>(world, bydo);
+  ASSERT_TRUE(health.has_value());
+  EXPECT_EQ(health.value_or(rtype::game::Health{}).full, THREE_HEALTH_POINTS);
+}

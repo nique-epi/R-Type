@@ -38,6 +38,9 @@ struct BehaviourView {
   /** @brief The center of the ship of a player nearest to the body; nothing
    * while no ship is in play. */
   std::optional<Position> nearestShip{std::nullopt};
+  /** @brief Whether the body has lost health points since it appeared;
+   * false for a body without Health. */
+  bool wounded{false};
 };
 
 }  // namespace rtype::game

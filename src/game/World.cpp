@@ -82,7 +82,8 @@ void addPilot(engine::ComponentRegistry& components, const BodyStart& start) {
 void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
   if (sheet.health.has_value()) {
-    components.add(start.body, Health{.points = *sheet.health});
+    components.add(start.body,
+                   Health{.points = *sheet.health, .full = *sheet.health});
   }
   if (sheet.points.has_value()) {
     components.add(start.body, ScoreValue{.points = *sheet.points});
