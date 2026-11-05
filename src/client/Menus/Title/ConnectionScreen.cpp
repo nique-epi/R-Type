@@ -1,6 +1,8 @@
 #include "ConnectionScreen.hpp"
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
+#include <cctype>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -57,6 +59,39 @@ std::string refusalLine(const ConnectionStatus& status) {
       break;
   }
   return versionRefusalLine(status.serverVersion);
+}
+
+/**
+ * @returns @p name in capitals, cut to @p room characters, its last one
+ * CUT_NAME_MARK, when it is longer; @p room is at least 2.
+ */
+std::string shownSheetName(std::string_view name, std::size_t room) {
+  std::string shown;
+  for (const char character : name) {
+    shown.push_back(
+        static_cast<char>(std::toupper(static_cast<unsigned char>(character))));
+  }
+  if (shown.size() > room) {
+    shown.resize(room - 1);
+    shown.push_back(CUT_NAME_MARK);
+  }
+  return shown;
+}
+
+/** @returns The status line of an acceptance whose table names sheets this
+ * client lacks, as @p status reports it, within STATUS_LINE_CHARACTERS. */
+std::string missingSheetLine(const ConnectionStatus& status) {
+  const std::string others = status.otherMissingSheets == 0
+                                 ? std::string{}
+                                 : OTHER_MISSING_SHEETS_STATUS +
+                                       std::to_string(static_cast<unsigned int>(
+                                           status.otherMissingSheets));
+  const std::size_t room = STATUS_LINE_CHARACTERS -
+                           std::string_view{MISSING_SHEET_STATUS}.size() -
+                           others.size();
+  return MISSING_SHEET_STATUS +
+         shownSheetName(status.missingSheet.value_or(std::string{}), room) +
+         others;
 }
 
 }  // namespace
@@ -173,6 +208,8 @@ std::string ConnectionScreen::statusLine(const ConnectionStatus& status) const {
       return refusalLine(status);
     case ConnectionPhase::Unreachable:
       return UNREACHABLE_STATUS;
+    case ConnectionPhase::MissingEntitySheet:
+      return missingSheetLine(status);
     case ConnectionPhase::Idle:
     case ConnectionPhase::Lost:
     case ConnectionPhase::Closed:

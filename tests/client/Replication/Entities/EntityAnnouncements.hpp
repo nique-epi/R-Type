@@ -13,15 +13,13 @@ namespace rtype::client::testing {
 /**
  * @returns An EntitySpawned announcing the entity.
  */
-network::EntitySpawned spawned(std::uint32_t entityId,
-                               network::WireEntityType type,
+network::EntitySpawned spawned(std::uint32_t entityId, std::uint8_t typeNumber,
                                game::Position position);
 
 /**
  * @returns The entity a WorldState lists.
  */
-network::EntityState listed(std::uint32_t entityId,
-                            network::WireEntityType type,
+network::EntityState listed(std::uint32_t entityId, std::uint8_t typeNumber,
                             game::Position position);
 
 /**

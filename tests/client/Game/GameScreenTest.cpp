@@ -16,6 +16,7 @@
 #include "EntityAnnouncements.hpp"
 #include "EntityReplicatorTestConstants.hpp"
 #include "FakeEntityMessageSource.hpp"
+#include "FixedEntityTypeSourceConstants.hpp"
 #include "GameEnded.hpp"
 #include "GameResult.hpp"
 #include "GameScreen.hpp"
@@ -60,20 +61,22 @@ using rtype::client::PLAYER_SHOT_SOUND_ID;
 using rtype::client::testing::APPLIED_TICK;
 using rtype::client::testing::BYDO_ID;
 using rtype::client::testing::BYDO_POSITION;
+using rtype::client::testing::DRIFTER_TYPE_NUMBER;
 using rtype::client::testing::FIRST_POSITION;
 using rtype::client::testing::killed;
 using rtype::client::testing::LIGHT_BLUISH_GREEN;
 using rtype::client::testing::listed;
 using rtype::client::testing::PLAYER_MISSILE_ID;
 using rtype::client::testing::PLAYER_MISSILE_POSITION;
+using rtype::client::testing::PLAYER_MISSILE_TYPE_NUMBER;
 using rtype::client::testing::removed;
 using rtype::client::testing::SHIP_ID;
 using rtype::client::testing::SHIP_POSITION;
+using rtype::client::testing::SHIP_TYPE_NUMBER;
 using rtype::client::testing::spawned;
 using rtype::client::testing::stateListing;
 using rtype::engine::Duration;
 using rtype::engine::testing::ONE_SECOND;
-using rtype::network::WireEntityType;
 using rtype::network::WireGameOutcome;
 using ::testing::Contains;
 using ::testing::ElementsAre;
@@ -177,8 +180,8 @@ TEST_F(GameScreenFixture, DrawingLaysTheEntityLayerOnTheTarget) {
  */
 TEST_F(GameScreenFixture, TheEntitiesAWorldStateListsArePainted) {
   entityMessages().queue(stateListing(
-      APPLIED_TICK, {listed(SHIP_ID, WireEntityType::PlayerShip, SHIP_POSITION),
-                     listed(BYDO_ID, WireEntityType::Bydo, BYDO_POSITION)}));
+      APPLIED_TICK, {listed(SHIP_ID, SHIP_TYPE_NUMBER, SHIP_POSITION),
+                     listed(BYDO_ID, DRIFTER_TYPE_NUMBER, BYDO_POSITION)}));
 
   screens().update(ONE_FRAME);
 
@@ -191,9 +194,8 @@ TEST_F(GameScreenFixture, TheEntitiesAWorldStateListsArePainted) {
  * Then only the ship is painted
  */
 TEST_F(GameScreenFixture, AnEntityTheServerRemovesIsNoLongerPainted) {
-  entityMessages().queue(
-      spawned(SHIP_ID, WireEntityType::PlayerShip, SHIP_POSITION));
-  entityMessages().queue(spawned(BYDO_ID, WireEntityType::Bydo, BYDO_POSITION));
+  entityMessages().queue(spawned(SHIP_ID, SHIP_TYPE_NUMBER, SHIP_POSITION));
+  entityMessages().queue(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, BYDO_POSITION));
   screens().update(ONE_FRAME);
 
   entityMessages().queue(removed(BYDO_ID));
@@ -209,7 +211,7 @@ TEST_F(GameScreenFixture, AnEntityTheServerRemovesIsNoLongerPainted) {
  * Then the Bydo is gone and its explosion is painted
  */
 TEST_F(GameScreenFixture, AKilledEntityLeavesItsExplosion) {
-  entityMessages().queue(spawned(BYDO_ID, WireEntityType::Bydo, BYDO_POSITION));
+  entityMessages().queue(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, BYDO_POSITION));
   entityMessages().queue(killed(BYDO_ID));
 
   screens().update(ONE_FRAME);
@@ -224,7 +226,7 @@ TEST_F(GameScreenFixture, AKilledEntityLeavesItsExplosion) {
  * Then the explosion has ended and nothing is painted
  */
 TEST_F(GameScreenFixture, AnExplosionEndsAfterItsLength) {
-  entityMessages().queue(spawned(BYDO_ID, WireEntityType::Bydo, BYDO_POSITION));
+  entityMessages().queue(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, BYDO_POSITION));
   entityMessages().queue(killed(BYDO_ID));
   screens().update(ONE_FRAME);
 
@@ -243,8 +245,8 @@ TEST_F(GameScreenFixture, AnExplosionEndsAfterItsLength) {
  * Then the muzzle flash born in that frame is painted, though it lasts 100 ms
  */
 TEST_F(GameScreenFixture, AnEffectBornInALongFrameIsPaintedOnce) {
-  entityMessages().queue(spawned(
-      PLAYER_MISSILE_ID, WireEntityType::PlayerMissile, FIRST_POSITION));
+  entityMessages().queue(
+      spawned(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER, FIRST_POSITION));
 
   screens().update(LONG_FRAME);
 
@@ -260,8 +262,8 @@ TEST_F(GameScreenFixture, AnEffectBornInALongFrameIsPaintedOnce) {
  */
 TEST_F(GameScreenFixture, ReducingFlashesDuringTheGameAppliesToTheNextEffect) {
   settings().reduceFlashes = true;
-  entityMessages().queue(spawned(
-      PLAYER_MISSILE_ID, WireEntityType::PlayerMissile, FIRST_POSITION));
+  entityMessages().queue(
+      spawned(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER, FIRST_POSITION));
 
   screens().update(ONE_FRAME);
 
@@ -810,8 +812,7 @@ TEST_F(GameScreenFixture, TheEntitiesArePaintedInPlaceAtRest) {
  * Then the shot of a player plays through the sounds of its parts
  */
 TEST_F(GameScreenFixture, TheGamePlaysTheSoundsOfWhatTheServerAnnounces) {
-  entityMessages().queue(spawned(PLAYER_MISSILE_ID,
-                                 WireEntityType::PlayerMissile,
+  entityMessages().queue(spawned(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER,
                                  PLAYER_MISSILE_POSITION));
 
   screens().update(ONE_FRAME);

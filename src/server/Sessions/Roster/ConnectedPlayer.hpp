@@ -105,6 +105,11 @@ struct ConnectedPlayer {
    * datagram of the player; the world state sender writes each state against
    * the acknowledged one. */
   SentStates sentStates;
+  /** @brief When the acceptor last sent this player its ConnectionAccepted,
+   * on the clock of its cookies; empty before the first one. It paces the
+   * acceptance repeated to a player who asks again (see
+   * CONNECTION_ACCEPTANCE_REPEAT_INTERVAL), and leaves with the player. */
+  std::optional<engine::Duration> lastAcceptedAt;
 };
 
 }  // namespace rtype::server

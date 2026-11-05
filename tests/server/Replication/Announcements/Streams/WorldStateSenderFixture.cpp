@@ -11,7 +11,7 @@
 #include "DeltaWorldState.hpp"
 #include "Endpoint.hpp"
 #include "Entity.hpp"
-#include "EntityType.hpp"
+#include "EntityTypeNumber.hpp"
 #include "Intent.hpp"
 #include "Invulnerable.hpp"
 #include "Lives.hpp"
@@ -37,10 +37,10 @@ network::Endpoint client(std::uint16_t port) {
 }
 
 network::EntityState expectedEntity(std::uint32_t networkId,
-                                    network::WireEntityType type,
+                                    std::uint8_t typeNumber,
                                     game::Position position) {
   return network::EntityState{.entityId = networkId,
-                              .entityType = type,
+                              .entityType = typeNumber,
                               .x = position.x,
                               .y = position.y};
 }
@@ -66,13 +66,13 @@ ConnectedPlayer& WorldStateSenderFixture::connect(std::uint16_t port,
   return *roster_.add(client(port), std::string{PLAYER_NICKNAME}, sessionToken);
 }
 
-void WorldStateSenderFixture::addNetworkedEntity(game::EntityType type,
+void WorldStateSenderFixture::addNetworkedEntity(std::uint8_t typeNumber,
                                                  game::Position position,
                                                  std::uint32_t networkId) {
   const engine::Entity entity = entities_.create();
   components_.add(entity, game::NetworkIdentity{.networkId = networkId});
   components_.add(entity, position);
-  components_.add(entity, type);
+  components_.add(entity, game::EntityTypeNumber{.number = typeNumber});
 }
 
 void WorldStateSenderFixture::addShip(std::uint32_t networkId,
@@ -87,10 +87,10 @@ void WorldStateSenderFixture::addShip(std::uint32_t networkId,
 }
 
 void WorldStateSenderFixture::addEntityWithoutNetworkId(
-    game::EntityType type, game::Position position) {
+    std::uint8_t typeNumber, game::Position position) {
   const engine::Entity entity = entities_.create();
   components_.add(entity, position);
-  components_.add(entity, type);
+  components_.add(entity, game::EntityTypeNumber{.number = typeNumber});
 }
 
 void WorldStateSenderFixture::addEntityWithoutType(game::Position position,

@@ -2,10 +2,13 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Image.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <algorithm>
 #include <filesystem>
+#include <string>
 #include "AssetLibrary.hpp"
 #include "AssetLoadingStep.hpp"
 #include "EffectConstants.hpp"
+#include "EntityAppearances.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "FlightLogSheetConstants.hpp"
 #include "HudSpriteConstants.hpp"
@@ -14,12 +17,14 @@
 #include "ProfessorSpriteConstants.hpp"
 #include "ScreenAssets.hpp"
 #include "ScreenAssetsFixtures.hpp"
+#include "ScreenAssetsTestConstants.hpp"
 #include "ScreenConstants.hpp"
 
 using rtype::client::AssetLibrary;
 using rtype::client::AssetLoadingStep;
 using rtype::client::EFFECT_SHEET_ID;
 using rtype::client::ENTITY_SHEET_ID;
+using rtype::client::EntityAppearances;
 using rtype::client::FLIGHT_LOG_SHEET_ID;
 using rtype::client::gameAssets;
 using rtype::client::HUD_SHEET_ID;
@@ -33,6 +38,7 @@ using rtype::client::PROFESSOR_SHEET_ID;
 using rtype::client::REGULAR_FONT_ID;
 using rtype::client::SMALL_FONT_ID;
 using rtype::client::titleAssets;
+using rtype::client::withEntitySheets;
 using ::testing::Contains;
 using ::testing::IsSupersetOf;
 using ::testing::UnorderedElementsAre;
@@ -186,4 +192,31 @@ TEST(ScreenAssets, TheLogoFileHasTheSizeTheTitleLaysOut) {
   ASSERT_TRUE(logo.loadFromFile(repositoryAssets() / LOGO_ID));
 
   EXPECT_EQ(sf::Vector2i(logo.getSize()), LOGO_SIZE);
+}
+
+/**
+ * Given the entity sheets shipped in assets/, all drawn from the entity sheet
+ * When the sheets of their appearances are added to the assets of a game
+ * Then the entity sheet is listed once: a sheet already listed is not added
+ * again
+ */
+TEST(ScreenAssets, AnEntitySheetAlreadyListedIsListedOnce) {
+  const EntityAppearances shipped = EntityAppearances::fromFolder(
+      repositoryAssets() / SHIPPED_ENTITY_SHEET_FOLDER);
+
+  EXPECT_EQ(std::ranges::count(withEntitySheets(gameAssets(), shipped).textures,
+                               ENTITY_SHEET_ID),
+            1);
+}
+
+/**
+ * Given an appearance drawn from a sprite sheet the game does not list
+ * When the sheets of the appearances are added to the assets of a game
+ * Then that sprite sheet is listed, so the game screen loads it
+ */
+TEST(ScreenAssets, TheSheetOfANewAppearanceIsLoadedWithTheGame) {
+  const EntityAppearances added = appearanceDrawnFrom(NEW_ENTITY_SHEET_ID);
+
+  EXPECT_THAT(withEntitySheets(gameAssets(), added).textures,
+              Contains(std::string{NEW_ENTITY_SHEET_ID}));
 }

@@ -9,6 +9,7 @@
 #include "RoundTripFigures.hpp"
 #include "ServerSessionFixtures.hpp"
 #include "ServerSessionTestConstants.hpp"
+#include "SessionEntityTypesFixtures.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
@@ -20,8 +21,9 @@ void ServerSessionArrivalFixture::openSession() {
   link_.deliver(network::IncomingDatagram{
       .sender = server(),
       .payload = network::DatagramCodec::encode(
-          header, network::ConnectionAccepted{.playerNumber =
-                                                  ACCEPTED_PLAYER_NUMBER})});
+          header,
+          network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                      .types = drawnTypes()})});
   update(engine::Duration::zero());
 }
 

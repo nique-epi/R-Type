@@ -27,10 +27,12 @@ using testing::EXAMPLE_ENTITY_ID;
 using testing::exampleBydo;
 using testing::FIRST_BIT_ABOVE_THE_ACTIONS;
 using testing::FIRST_SESSION_INPUT;
+using testing::LARGEST_TYPE_NUMBER;
 using testing::LARGEST_U16;
 using testing::LARGEST_U32;
 using testing::LARGEST_WIRE_COORDINATE;
 using testing::LAST_PLAYER_NUMBER;
+using testing::NO_TYPE_NUMBER;
 using testing::ONE_REPEATED_INPUT_TOO_MANY;
 using testing::oneShipState;
 using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
@@ -276,18 +278,43 @@ TEST(EntitySpawned, EncodesTheIdTheTypeThenThePosition) {
 }
 
 /**
- * Given an enemy missile of the largest u32 id, at the smallest x and the
- * largest y of the wire range
+ * Given an entity of the largest u32 id and of the largest type number, at the
+ * smallest x and the largest y of the wire range
  * When its spawn is encoded then decoded
  * Then the decoded spawn equals the original
  */
-TEST(EntitySpawned, KeepsTheLargestIdAndTheEndsOfTheWireRange) {
+TEST(EntitySpawned, KeepsTheLargestIdTheLargestTypeAndTheEndsOfTheWireRange) {
   const EntitySpawned spawned{.entityId = LARGEST_U32,
-                              .entityType = WireEntityType::EnemyMissile,
+                              .entityType = LARGEST_TYPE_NUMBER,
                               .x = SMALLEST_WIRE_COORDINATE,
                               .y = LARGEST_WIRE_COORDINATE};
 
   EXPECT_EQ(decodeMessage<EntitySpawned>(encodeMessage(spawned)), spawned);
+}
+
+/**
+ * Given a spawn of type 0, which no entry of the table has
+ * When it is encoded
+ * Then it is refused
+ */
+TEST(EntitySpawned, RefusesToWriteTypeZero) {
+  EntitySpawned spawned = exampleBydo();
+  spawned.entityType = NO_TYPE_NUMBER;
+
+  EXPECT_THROW((void)encodeMessage(spawned), InvalidFieldValueException);
+}
+
+/**
+ * Given the payload of Bydo 9 whose type byte is 0
+ * When it is decoded
+ * Then it is refused
+ */
+TEST(EntitySpawned, RefusesToReadTypeZero) {
+  const auto bytes =
+      byteSequence({0x00, 0x00, 0x00, 0x09, 0x00, 0x03, 0x20, 0x01, 0x94});
+
+  EXPECT_THROW((void)decodeMessage<EntitySpawned>(bytes),
+               InvalidFieldValueException);
 }
 
 /**
@@ -310,23 +337,6 @@ TEST(EntitySpawned, RefusesToReadTheEntityIdZero) {
       byteSequence({0x00, 0x00, 0x00, 0x00, 0x03, 0x03, 0x20, 0x01, 0x94});
 
   EXPECT_THROW((void)decodeMessage<EntitySpawned>(bytes),
-               InvalidFieldValueException);
-}
-
-/**
- * Given the entity types 0 and 5, just outside the types 1 to 4
- * When each payload is decoded
- * Then each is refused
- */
-TEST(EntitySpawned, RefusesToReadAnUnknownEntityType) {
-  const auto belowTheFirst =
-      byteSequence({0x00, 0x00, 0x00, 0x09, 0x00, 0x03, 0x20, 0x01, 0x94});
-  const auto aboveTheLast =
-      byteSequence({0x00, 0x00, 0x00, 0x09, 0x05, 0x03, 0x20, 0x01, 0x94});
-
-  EXPECT_THROW((void)decodeMessage<EntitySpawned>(belowTheFirst),
-               InvalidFieldValueException);
-  EXPECT_THROW((void)decodeMessage<EntitySpawned>(aboveTheLast),
                InvalidFieldValueException);
 }
 

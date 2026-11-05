@@ -9,6 +9,7 @@ target_include_directories(rtype_server_replication_announcements_milestones PUB
 target_link_libraries(rtype_server_replication_announcements_milestones
   PUBLIC
     rtype_game
+    rtype_game_entity_types
     rtype_network_messages
     rtype_network_transport
     rtype_server_constants

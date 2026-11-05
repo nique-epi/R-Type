@@ -7,7 +7,7 @@ sidebar:
 
 The waves file, `assets/waves/waves.toml`, describes the waves of Bydos of each difficulty. This page is for whoever tunes them: it gives the keys, what each one does to a game, how to check a design and how to read the error the server prints, without opening the C++.
 
-Only the server reads the file, once, when it starts, from `waves/waves.toml` in the `assets/` folder next to its executable, or one level above it, where the Visual Studio generator writes `Release/`. The folder the server is started from plays no part. A client never reads it; it only draws the Bydos the server announces. An invalid file stops the server before it listens. Every game plays the difficulty `normal` (`DEFAULT_DIFFICULTY` in `src/server/ServerConstants.hpp`): the other difficulties are read and checked at startup, but nothing lets the players choose one yet. The file cannot describe a scripted list of waves, a background per wave or a boss: none of these exists yet. How the server runs the waves is in [Server and game](/R-Type/server/#waves-of-bydos-wavedirector).
+Only the server reads the file, once, when it starts, from `waves/waves.toml` in the `assets/` folder next to its executable, or one level above it, where the Visual Studio generator writes `Release/`. The folder the server is started from plays no part. A client never reads it; it only draws the Bydos the server announces. The server reads the [entity sheets](/R-Type/entity-sheets/) first, since the file names its enemies among them. An invalid file stops the server when it starts, before any game exists. Every game plays the difficulty `normal` (`DEFAULT_DIFFICULTY` in `src/server/ServerConstants.hpp`): the other difficulties are read and checked at startup, but nothing lets the players choose one yet. The file cannot describe a scripted list of waves, a background per wave or a boss: none of these exists yet. How the server runs the waves is in [Server and game](/R-Type/server/#waves-of-bydos-wavedirector).
 
 ## A difficulty, key by key
 
@@ -27,7 +27,7 @@ level_waves = 8
 
 | Key | Unit | Accepted | What it changes |
 |---|---|---|---|
-| `enemies` | names | a list of 1 to 100 names | the kinds the Bydos take, in turn (see [Enemies](#enemies)) |
+| `enemies` | names | a list of 1 to 100 names | the entity sheets the Bydos are made from, in turn (see [Enemies](#enemies)) |
 | `first_wave_bydos` | Bydos | 1 to 100 | how many Bydos the first wave holds |
 | `bydos_added_per_wave` | Bydos | 0 to 100 | how many more each next wave holds |
 | `first_spawn_interval_ms` | milliseconds | 1 to 60000 | the time between two Bydos of the first wave |
@@ -36,7 +36,7 @@ level_waves = 8
 | `wave_pause_ms` | milliseconds | 0 to 60000 | the empty sky before each wave, the first one included |
 | `level_waves` | waves | 1 to 100 | how many waves the level holds: the game is won once the last one is over (see [How the waves grow](#how-the-waves-grow)) |
 
-Every key is required, and any other key is refused, so a misspelt key stops the server instead of being ignored. Every number is a TOML integer: `2500`, never `2500.0` or `"2500"`. The keys, the ranges and the names live in `src/server/Spawning/WaveFileConstants.hpp`.
+Every key is required, and any other key is refused, so a misspelt key stops the server instead of being ignored. Every number is a TOML integer: `2500`, never `2500.0` or `"2500"`. The keys and the ranges live in `src/server/Spawning/WaveFileConstants.hpp`; the names are those of the entity sheets.
 
 ## How the waves grow
 
@@ -44,15 +44,17 @@ Every key is required, and any other key is refused, so a misspelt key stops the
 - A game starts with a pause of `wave_pause_ms`. The first Bydo of a wave appears at the end of its pause, the next ones an interval apart.
 - A wave ends once every one of its Bydos has appeared and none is left in the world, killed or gone off the left edge. The pause before the next wave starts on the tick that finds the sky clear, so a wave killed fast brings the next one sooner, and a Bydo that crosses unharmed makes the players wait for it. A Bydo killed before the last of its wave appeared does not end the wave.
 - The level holds `level_waves` waves. Once the last of them ends, no pause and no wave follow, and the game is won: the players are told with a `GameEnded` that carries the outcome `Victory` (see [End of a game](/R-Type/server/#end-of-a-game-gameendannouncer)). A game whose last life is lost on the same tick is lost, not won. With `normal` (8 waves), the last wave holds 10 Bydos.
-- A Bydo crosses the playfield in about 8.5 seconds: 2048 logical units at `BYDO_SPEED` (240 units per second), from `BYDO_SPAWN_MARGIN` (64) past the right edge to `BYDO_EXIT_MARGIN` (64) past the left one.
+- A Bydo crosses the playfield in about 8.5 seconds: 2048 logical units at the `top_speed` of the Drifter and the Weaver (240 units per second), from `ENEMY_SPAWN_MARGIN` (64) past the right edge to `ENEMY_EXIT_MARGIN` (64) past the left one.
 - Time is counted in ticks of a sixtieth of a second, 16 666 666 ns each, so a duration ends on the tick that reaches it: a pause of 4000 ms ends on its 241st tick.
 
 ## Enemies
 
-| Name | Kind | On screen | Points |
+A name of the list is the name of an entity sheet of side `enemy` in `assets/entities/` (see [Writing an entity sheet](/R-Type/entity-sheets/)). The shipped ones:
+
+| Name | Sheet | On screen | Points |
 |---|---|---|---|
-| `drifter` | `BydoKind::Drifter` | goes straight | 100 |
-| `weaver` | `BydoKind::Weaver` | weaves up and down, 48 logical units each way, every 2 seconds | 200 |
+| `drifter` | `assets/entities/drifter.toml` | goes straight | 100 |
+| `weaver` | `assets/entities/weaver.toml` | weaves up and down, 48 logical units each way, every 2 seconds | 200 |
 
 The Bydos take the names of the list in turn, and the turn carries on from one wave to the next. With `["drifter", "weaver"]` and three Bydos in the first wave, wave 1 brings a Drifter, a Weaver and a Drifter, and wave 2 starts with a Weaver. A name may appear several times to weight a kind: `["drifter", "drifter", "weaver"]` brings two Drifters for each Weaver.
 
@@ -83,7 +85,7 @@ The Bydos take the names of the list in turn, and the turn carries on from one w
 ./r-type_server --seed 42
 ```
 
-The server logs the file it read, by its absolute path (`waves file /…/assets/waves/waves.toml: 3 difficulties`), the difficulty the games play and whether they are vanilla (`games play normal, not vanilla`, since a seed is set), then each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`). The seed fixes the heights of the Bydos, so the same file and the same seed replay the same game.
+The server logs the folder of the entity sheets and their count (`entity sheets /…/assets/entities: 5 types`), then the file it read, by its absolute path (`waves file /…/assets/waves/waves.toml: 3 difficulties`), the difficulty the games play and whether they are vanilla (`games play normal, not vanilla`, since a seed is set), then each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`). The seed fixes the heights of the Bydos, so the same file and the same seed replay the same game.
 
 ## The shipped file and vanilla games
 
@@ -93,7 +95,7 @@ When the shipped file itself changes, `OFFICIAL_WAVES_FINGERPRINT` in `src/serve
 
 ## When the server refuses the file
 
-The server reads the whole file, every difficulty included, before it listens. On the first error it prints `server stopped:`, the absolute path of the file, the line and the column of what is wrong, the dotted name of the key and the rule it breaks, then exits with code 1. The messages below come from runs of the server; the path is shortened to `…/waves.toml`.
+The server reads the whole file, every difficulty included, when it starts, before any game exists. On the first error it prints `server stopped: The module "games" failed to start:`, the absolute path of the file, the line and the column of what is wrong, the dotted name of the key and the rule it breaks, then exits with code 1. The messages below come from runs of the server; the path is shortened to `…/waves.toml`.
 
 | The file holds… | The server prints |
 |---|---|
@@ -103,9 +105,10 @@ The server reads the whole file, every difficulty included, before it listens. O
 | a value out of its range (`first_wave_bydos = 0`) | `…/waves.toml:38:20: difficulty.normal.first_wave_bydos must be an integer from 1 to 100` |
 | a number that is not an integer (`2000.0`) | `…/waves.toml:40:27: difficulty.normal.first_spawn_interval_ms must be an integer from 1 to 60000` |
 | an empty list of enemies | `…/waves.toml:37:11: difficulty.normal.enemies must be a list of 1 to 100 enemy names` |
-| an enemy the server does not know (`"bos"`) | `…/waves.toml:37:23: difficulty.normal.enemies: unknown enemy "bos"; known: drifter, weaver` |
+| an enemy the server has no sheet for (`"bos"`) | `…/waves.toml:37:23: difficulty.normal.enemies: unknown enemy "bos"; known: drifter, weaver` |
+| a sheet that is not of side `enemy` (`"ship"` in `easy`) | `…/waves.toml:30:12: difficulty.easy.enemies: unknown enemy "ship"; known: drifter, weaver` |
 | no `normal` difficulty | `no difficulty normal in the waves file, which describes: easy, hard, medium` |
-| nothing: the file is missing | `cannot read the waves file /…/assets/waves/waves.toml` |
+| nothing: the file is missing | `cannot read the file /…/assets/waves/waves.toml` |
 | nothing: no `assets/` folder next to the executable or above it | `No assets folder found, searched: /…/bin/assets, /…/assets` |
 
 `level_waves` follows the same messages: a difficulty without it stops the server with `difficulty.normal.level_waves is missing`, and a value outside 1 to 100, or one that is not an integer, with `difficulty.normal.level_waves must be an integer from 1 to 100`. A file written before the key existed is refused the same way, so add `level_waves` to every difficulty of a file of your own.
@@ -114,4 +117,4 @@ Neither of the last two depends on the folder the server is started from. No ass
 
 ## Adding a kind of enemy
 
-A new kind takes a value of `BydoKind` with its behaviour (`behaviourNameOf`) and its points (`pointsOf`) in `src/game/Spawning/BydoKind/`, then a name in `ENEMY_NAMES` in `src/server/Spawning/WaveFileConstants.hpp`; the file can name it at once. Every Bydo goes over the network as a `Bydo` today, so the client draws every kind with the same sprite: a kind that must look different also needs a network entity type of its own and a sprite on the client.
+A new enemy is a new sheet of side `enemy` in `assets/entities/`, with its behaviour, its points and its look (see [Writing an entity sheet](/R-Type/entity-sheets/)); the file can name it at once, and nothing is rebuilt unless it needs a new behaviour. The server tells each player the name of every sheet, and the client draws each enemy with the `[appearance]` of its own sheet of that name, so a kind may look different without a change of the protocol. The [tutorial](/R-Type/tutorial-add-an-enemy-type/) adds one step by step.

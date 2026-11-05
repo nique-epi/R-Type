@@ -5,6 +5,8 @@
 #include "ConnectionStatus.hpp"
 #include "Logger.hpp"
 #include "MessageDispatcher.hpp"
+#include "SessionDeparture.hpp"
+#include "SessionEntityTypes.hpp"
 #include "SessionInbound.hpp"
 #include "SessionObservers.hpp"
 #include "SessionOutbox.hpp"
@@ -29,6 +31,12 @@ struct HandshakeAnswersParts {
   std::reference_wrapper<SessionOutbox> outbox;
   std::reference_wrapper<SessionInbound> inbound;
   std::reference_wrapper<SessionObservers> observers;
+  /** @brief Sends the Disconnection of a session left at once, for a table
+   * this client cannot draw. */
+  std::reference_wrapper<SessionDeparture> departure;
+  /** @brief Judges the table of an acceptance, and keeps it for the session
+   * it opens. */
+  std::reference_wrapper<SessionEntityTypes> entityTypes;
   std::reference_wrapper<logging::Logger> logger;
 };
 

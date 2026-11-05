@@ -10,6 +10,10 @@ namespace rtype::server::testing {
 constexpr std::uint64_t ANOTHER_WAVES_FINGERPRINT =
     OFFICIAL_WAVES_FINGERPRINT + 1;
 
+/** @brief A fingerprint other than the one of the shipped entity sheets. */
+constexpr std::uint64_t ANOTHER_SHEETS_FINGERPRINT =
+    OFFICIAL_ENTITY_SHEETS_FINGERPRINT + 1;
+
 /** @brief A seed of 0, which is a seed all the same. */
 constexpr std::uint32_t ZERO_SEED = 0;
 

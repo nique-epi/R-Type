@@ -22,6 +22,7 @@ This page tells you where to look when you need to change something. It describe
 | Modules and application | Available; the server and the client are built from modules | `src/engine/Modules/` |
 | Plugins | Available: a module built as a shared library, loaded by a `plugin` line of the configuration file | `src/engine/SharedLibrary/`, `src/engine/Modules/PluginShelf/` |
 | Files next to the executable | Available; used by the server and the client | `src/engine/Paths/` |
+| Data files: strict reading of a TOML file | Available; used by the waves file and the entity sheets | `src/engine/DataFiles/` |
 
 ## How the parts fit together
 
@@ -41,7 +42,7 @@ The engine provides the building blocks and no loop of its own. The server runs 
 
 ## ECS: entities and components
 
-An **entity** is only a handle, `Entity { index, generation }` (`Entity.hpp`). It carries no data. A **component** is a plain struct or enum attached to an entity by type, for example `Position`, `Velocity`, `CollisionBox` and `EntityType` in `src/game/Components/`. `EntityType` says what an entity is: `Player`, `Enemy`, `PlayerMissile` or `EnemyMissile`. A missile records the side that fired it, because the rules must tell a player missile, which may only hit enemies, from an enemy missile, which may only hit players.
+An **entity** is only a handle, `Entity { index, generation }` (`Entity.hpp`). It carries no data. A **component** is a plain struct or enum attached to an entity by type, for example `Position`, `SteadyMotion`, `CollisionBox` and `EntityType` in `src/game/Components/`. `EntityType` says what an entity is: `Player`, `Enemy`, `PlayerMissile` or `EnemyMissile`. A missile records the side that fired it, because the rules must tell a player missile, which may only hit enemies, from an enemy missile, which may only hit players.
 
 ### Entities: `EntityRegistry`
 
@@ -108,17 +109,17 @@ if (const auto entity = table.find(networkId)) {
 
 A **system** is one behavior of the game: a class that implements `ISystem` (`src/engine/Systems/ISystem.hpp`) and reads or updates components in `update(components, elapsed)`.
 
-`MovementSystem` (`rtype_game`, `src/game/Systems/MovementSystem/`) is the first system of the game. It moves every entity that has a `Position` and a `Velocity` by the velocity, in units per second, multiplied by `elapsed`, so the distance depends on simulation time and never on the frame rate. It leaves an entity without a `Velocity` where it is, and keeps no entity inside the playfield. A second pass moves every entity that has a `Position`, a `ShipMotion` and an `Intent`, the ships, by the direction the `Intent` holds, with `shipAfter` of `ShipControl`, which keeps them above the status band (see [Moving the ships](/R-Type/server/#moving-the-ships-shipcontrol)). A third pass moves every entity that has a `Position`, a `SteadyMotion` and an `Intent`, the Bydos, at its top speed times the direction, and keeps none inside the playfield. The `Intent` is written by a pilot, a player or a behaviour, so the system never knows who steers the body. The server runs it on every tick of a game in progress (see [Bydo movement](/R-Type/server/#bydo-movement-pilotsystem-and-playfieldexitsystem)).
+`MovementSystem` (`rtype_game`, `src/game/Systems/MovementSystem/`) is the first system of the game. It moves every entity that has a `Position`, a `ShipMotion` and an `Intent`, the ships, by the direction the `Intent` holds, with `shipAfter` of `ShipControl`, which keeps them above the status band (see [Moving the ships](/R-Type/server/#moving-the-ships-shipcontrol)). A second pass moves every entity that has a `Position`, a `SteadyMotion` and an `Intent`, the Bydos and the missiles, at its top speed in units per second times the direction, multiplied by `elapsed`, so the distance depends on simulation time and never on the frame rate, and keeps none inside the playfield. An entity with neither motion stays where it is. The `Intent` is written by a pilot, a player or a behaviour, so the system never knows who steers the body. The server runs it on every tick of a game in progress (see [Piloted bodies](/R-Type/server/#piloted-bodies-pilotsystem-and-playfieldexitsystem)).
 
 ### Queries: `ComponentRegistry::forEach`
 
 `forEach<First, Second>(callback)` calls `callback(entity, first, second)` for every alive entity that has both a `First` and a `Second` component. It walks the storage of `First` and looks up `Second` for each entity. Entities are visited in no particular order, each at most once. The references given to the callback are only valid during that call. A query takes exactly two component types; to walk a single type, ask for it twice.
 
 ```cpp
-components.forEach<rtype::game::Position, rtype::game::Velocity>(
+components.forEach<rtype::game::Position, rtype::game::SteadyMotion>(
     [](rtype::engine::Entity, rtype::game::Position& position,
-       rtype::game::Velocity& velocity) {
-      position.x += velocity.x;
+       const rtype::game::SteadyMotion& motion) {
+      position.x -= motion.topSpeed;
     });
 ```
 
@@ -225,7 +226,16 @@ rtype::engine::readLaunchArguments(
 - `locateAssetFolder()` returns the `assets/` folder (`ASSETS_FOLDER_NAME`) next to the executable, or in the folder above it, where the Visual Studio generator writes `Release/` and `Debug/`, and where every package puts it (see [Packages](https://github.com/nique-epi/R-Type#packages) in the README). When neither exists, it throws `AssetFolderNotFoundException`, which names both folders.
 - `genericText()` writes a path in UTF-8 with `/` between folders on every system, for logs and errors. It lives in `rtype_logging` (`src/logging/PathText/`), so the logger, the network and the engine all use it. Never `path::string()` or `generic_string()`: on Windows they convert to the code page of the system and throw on a folder name that page lacks (Cyrillic on a French Windows), which would stop the program at launch on a log line.
 
-The client loads its assets from that folder and the server reads its waves file there (`WAVE_FILE_IN_ASSETS`, see [Server and game](/R-Type/server/#waves-file-wavecatalog)); both write their default journal in `executableFolder()` (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)).
+The client loads its assets from that folder, the server reads its waves file there (`WAVE_FILE_IN_ASSETS`, see [Server and game](/R-Type/server/#waves-file-wavecatalog)), and both read the entity sheets of its `entities/` folder (see [Writing an entity sheet](/R-Type/entity-sheets/)); both write their default journal in `executableFolder()` (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)).
+
+## Data files: `DataFileReading`
+
+`src/engine/DataFiles/` (`rtype_engine_data_files`) reads a data file, a TOML text, strictly: a reader asks each key it knows and refuses every other, so a misspelt key stops the program instead of being ignored, and every error names the file, the line, the column and the dotted name of the key (`DataFilePlace`). It is the library of the engine that links toml++. The server reads its waves file with it (see [Server and game](/R-Type/server/#waves-file-wavecatalog)), and both programs read the entity sheets with it, each its own half (see [Writing an entity sheet](/R-Type/entity-sheets/)).
+
+- `parseDataFile(text, source)` parses a text, `source` naming the file in the errors, and `rootOf(root, source)` gives its root as a `DataFileTable`: the table, the file and its dotted name. A `DataFileTable` refers to the parsed root, so keep that root in a variable first.
+- `tableAt()` and `optionalTableAt()` give a table, `wholeNumberAt(table, key, range)` an integer within a `WholeNumberRange` (a float such as `2500.0` is refused), `millisecondsAt()` a `Duration` from a key in milliseconds, `textAt()` a text, and `choiceAt()` the position of a text among the values a key accepts. `refuseUnknownKeys()` refuses every key a table may not hold.
+- `dataFilesIn(folder)` lists the `.toml` files of a folder (`DATA_FILE_EXTENSION`), sorted by name so the order is the same on every system, without its sub-folders; `dataFileContent()` reads one, and `shownPath()` gives the absolute path the errors show.
+- Each error is an engine exception (`src/engine/Exceptions/`) whose message starts with `file:line:column`: `DataFileSyntaxException`, `MissingDataFileKeyException`, `UnknownDataFileKeyException`, `DataFileTableExpectedException`, `DataFileValueOutOfRangeException`, `DataFileTextExpectedException` and `UnknownDataFileChoiceException`, which lists the values it accepts; `UnreadableDataFileException` for a file or a folder that cannot be read.
 
 ## Modules: `Application` and `IModule`
 
@@ -329,6 +339,7 @@ The same language is meant for the administration console and the orders of the 
 | Hand an object to the modules installed after | `InstallContext::provide()`; the other modules call `require<>()` or `find<>()` |
 | Change the stages of a program | `SERVER_LOOP_STAGES` or `CLIENT_LOOP_STAGES` |
 | Change where the programs look for `assets/`, or how the executable is found | `findAssetFolder()` in `src/engine/Paths/AssetFolder.cpp`, `src/engine/Paths/ExecutablePath.cpp` |
+| Read a data file, or change how strictly it is read | `src/engine/DataFiles/DataFileReading.hpp`; the errors in `src/engine/Exceptions/EngineException.hpp` |
 | Add an engine error | `src/engine/Exceptions/EngineException.hpp` |
 | Place a tick of the server on the clock of the client | `ServerClock` in `src/engine/Time/ServerClock/`, tests in `tests/engine/Time/ServerClock/` |
 | Write a test that depends on time | `tests/SimulatedClock.hpp`, `tests/engine/Time/FixedTimestepTest.cpp` |

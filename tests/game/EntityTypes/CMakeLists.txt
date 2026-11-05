@@ -1,0 +1,8 @@
+add_library(rtype_test_shipped_entity_sheets STATIC ShippedEntitySheets.cpp SheetTextFixtures.cpp)
+target_include_directories(rtype_test_shipped_entity_sheets PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(rtype_test_shipped_entity_sheets PUBLIC rtype_game_entity_types)
+target_compile_definitions(rtype_test_shipped_entity_sheets PRIVATE RTYPE_SOURCE_ASSETS_FOLDER="${PROJECT_SOURCE_DIR}/assets")
+rtype_enable_warnings(rtype_test_shipped_entity_sheets)
+
+rtype_add_test(NAME game_entity_types_tests SOURCES EntitySheetReaderTest.cpp EntitySheetReaderFixture.cpp EntitySheetFixtures.cpp EntitySheetsTest.cpp EntitySheetsFixtures.cpp SheetTextReadingTest.cpp LIBS rtype_test_shipped_entity_sheets rtype_test_support GTest::gmock)
+target_include_directories(game_entity_types_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR})

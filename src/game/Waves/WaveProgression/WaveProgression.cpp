@@ -1,29 +1,29 @@
 #include "WaveProgression.hpp"
 #include <algorithm>
-#include "BydoWave.hpp"
 #include "TimeConstants.hpp"
+#include "Wave.hpp"
 #include "WaveCurve.hpp"
 
 namespace rtype::game {
 
-BydoWave bydoWaveAfter(BydoWave previous, const WaveCurve& curve) {
+Wave waveAfter(Wave previous, const WaveCurve& curve) {
   const engine::Duration shorterInterval =
       previous.spawnInterval - curve.spawnIntervalCutPerWave;
-  return BydoWave{
-      .bydoCount = previous.bydoCount + curve.bydosAddedPerWave,
+  return Wave{
+      .entityCount = previous.entityCount + curve.entitiesAddedPerWave,
       .spawnInterval = std::max(shorterInterval, curve.shortestSpawnInterval)};
 }
 
 bool isPlayable(const WaveCurve& curve) {
-  const bool holdsBydos = curve.firstWave.bydoCount > 0;
-  const bool leavesTimeBetweenBydos =
+  const bool holdsEnemies = curve.firstWave.entityCount > 0;
+  const bool leavesTimeBetweenEnemies =
       curve.shortestSpawnInterval > engine::Duration::zero() &&
       curve.shortestSpawnInterval <= curve.firstWave.spawnInterval;
   const bool hasNoNegativeDuration =
       curve.spawnIntervalCutPerWave >= engine::Duration::zero() &&
       curve.wavePause >= engine::Duration::zero();
   const bool holdsWaves = curve.levelWaves > 0;
-  return holdsBydos && leavesTimeBetweenBydos && hasNoNegativeDuration &&
+  return holdsEnemies && leavesTimeBetweenEnemies && hasNoNegativeDuration &&
          holdsWaves;
 }
 

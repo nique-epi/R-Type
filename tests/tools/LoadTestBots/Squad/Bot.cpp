@@ -10,8 +10,16 @@
 
 namespace rtype::tools {
 
+namespace {
+
+/** @returns true: a bot draws nothing, so it plays every entity type a
+ * server sends. */
+bool drawsEveryType([[maybe_unused]] std::string_view name) { return true; }
+
+}  // namespace
+
 Bot::Bot(std::uint32_t seed)
-    : connection_(network::PERFECT_NETWORK),
+    : connection_(network::PERFECT_NETWORK, drawsEveryType),
       inputs_(seed, connection_.waitingRoom(), connection_.session()) {}
 
 void Bot::join(const network::Endpoint& server, std::string_view nickname) {

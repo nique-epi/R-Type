@@ -9,7 +9,6 @@
 #include "ConnectedPlayer.hpp"
 #include "Endpoint.hpp"
 #include "EntityRegistry.hpp"
-#include "EntityType.hpp"
 #include "Invulnerable.hpp"
 #include "Lives.hpp"
 #include "OutgoingDatagram.hpp"
@@ -30,7 +29,7 @@ network::Endpoint client(std::uint16_t port);
  * @returns The entity the sender must list for the given parts.
  */
 network::EntityState expectedEntity(std::uint32_t networkId,
-                                    network::WireEntityType type,
+                                    std::uint8_t typeNumber,
                                     game::Position position);
 
 /**
@@ -50,9 +49,10 @@ class WorldStateSenderFixture : public ::testing::Test {
   ConnectedPlayer& connect(std::uint16_t port, std::uint64_t sessionToken);
 
   /**
-   * @brief Adds an entity with a NetworkIdentity, a Position and an EntityType.
+   * @brief Adds an entity with a NetworkIdentity, a Position and the
+   * EntityTypeNumber @p typeNumber.
    */
-  void addNetworkedEntity(game::EntityType type, game::Position position,
+  void addNetworkedEntity(std::uint8_t typeNumber, game::Position position,
                           std::uint32_t networkId);
 
   /**
@@ -63,15 +63,16 @@ class WorldStateSenderFixture : public ::testing::Test {
                game::Invulnerable protection);
 
   /**
-   * @brief Adds an entity with a Position and an EntityType, and no
+   * @brief Adds an entity with a Position and the EntityTypeNumber
+   * @p typeNumber, and no
    * NetworkIdentity.
    */
-  void addEntityWithoutNetworkId(game::EntityType type,
+  void addEntityWithoutNetworkId(std::uint8_t typeNumber,
                                  game::Position position);
 
   /**
    * @brief Adds an entity with a NetworkIdentity and a Position, and no
-   * EntityType.
+   * EntityTypeNumber.
    */
   void addEntityWithoutType(game::Position position, std::uint32_t networkId);
 

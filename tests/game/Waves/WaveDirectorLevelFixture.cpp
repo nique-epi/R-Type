@@ -15,13 +15,13 @@ WaveDirector& WaveDirectorLevelFixture::oneWaveLevel() { return oneWaveLevel_; }
 WaveDirector& WaveDirectorLevelFixture::twoWaveLevel() { return twoWaveLevel_; }
 
 std::size_t WaveDirectorLevelFixture::runTicks(WaveDirector& director,
-                                               std::size_t count,
-                                               std::size_t bydosInPlay) {
-  std::size_t bydosDue = 0;
-  for (std::size_t tick = 0; tick < count; ++tick) {
-    bydosDue += director.advance(engine::SIMULATION_TICK_DURATION, bydosInPlay);
+                                               LevelTicks ticks) {
+  std::size_t enemiesDue = 0;
+  for (std::size_t tick = 0; tick < ticks.count; ++tick) {
+    enemiesDue +=
+        director.advance(engine::SIMULATION_TICK_DURATION, ticks.enemiesInPlay);
   }
-  return bydosDue;
+  return enemiesDue;
 }
 
 }  // namespace rtype::game::testing

@@ -1,6 +1,10 @@
 #pragma once
 
+#include <array>
 #include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
 #include "Position.hpp"
 #include "TimeConstants.hpp"
 
@@ -30,5 +34,40 @@ constexpr float WAVE_BOTTOM_Y = 348.0F;
 constexpr float QUARTER_PERIOD_VERTICAL_SHARE = 0.4F;
 
 constexpr float SHARE_TOLERANCE = 1e-4F;
+
+/** @brief The values a sheet gives the settings of a behaviour, as the
+ * requirements set them: a Drifter heads left, a missile of a player right, a
+ * Weaver weaves 48 units every 2000 ms; a weave half as deep for the tests
+ * that change a setting. */
+constexpr std::int64_t LEFTWARD_HEADING = -1;
+constexpr std::int64_t RIGHTWARD_HEADING = 1;
+constexpr std::int64_t WEAVER_AMPLITUDE_UNITS = 48;
+constexpr std::int64_t HALF_WEAVER_AMPLITUDE_UNITS = 24;
+constexpr std::int64_t WEAVER_PERIOD_MS = 2000;
+constexpr std::array LEFT_HEADING_SETTINGS{LEFTWARD_HEADING};
+constexpr std::array RIGHT_HEADING_SETTINGS{RIGHTWARD_HEADING};
+constexpr std::array WEAVER_SETTINGS{WEAVER_AMPLITUDE_UNITS, WEAVER_PERIOD_MS};
+constexpr std::array HALF_DEPTH_WEAVE_SETTINGS{HALF_WEAVER_AMPLITUDE_UNITS,
+                                               WEAVER_PERIOD_MS};
+
+/** @brief The vertical share that takes a body at 240 units per second to the
+ * bottom of a weave 24 units deep in half a second: 24 / (240 * 0.5). */
+constexpr float HALF_DEPTH_QUARTER_PERIOD_VERTICAL_SHARE = 0.2F;
+
+/** @brief What a sheet calls the settings, and what each accepts, as the
+ * Entity types section of the architecture page sets them. */
+constexpr std::string_view HEADING_KEY_IN_A_SHEET = "heading";
+constexpr std::int64_t LOWEST_HEADING = -1;
+constexpr std::int64_t HIGHEST_HEADING = 1;
+constexpr std::string_view AMPLITUDE_KEY_IN_A_SHEET = "amplitude";
+constexpr std::string_view PERIOD_KEY_IN_A_SHEET = "period_ms";
+constexpr std::int64_t LOWEST_AMPLITUDE = 0;
+constexpr std::int64_t HIGHEST_AMPLITUDE = 48;
+constexpr std::int64_t LOWEST_PERIOD_MS = 1;
+constexpr std::int64_t HIGHEST_PERIOD_MS = 60000;
+
+/** @brief Where the second setting of a body is, and a place past it. */
+constexpr std::size_t SECOND_SETTING = 1;
+constexpr std::size_t THIRD_SETTING = 2;
 
 }  // namespace rtype::game::testing

@@ -26,6 +26,7 @@
 #include "ServerModuleTestConstants.hpp"
 #include "ServerStorageModule.hpp"
 #include "ServiceProbeModule.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "TimeConstants.hpp"
 
 using rtype::network::IncomingDatagram;
@@ -69,7 +70,8 @@ rtype::server::GamesSettings ServerGamesFixture::shippedWaves() {
   return rtype::server::GamesSettings{
       .seed = SOME_SEED,
       .wavesFile = std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} / "waves" /
-                   "waves.toml"};
+                   "waves.toml",
+      .entitySheetsFolder = rtype::game::testing::shippedSheetFolder()};
 }
 
 ConnectedPlayer& ServerGamesFixture::join(std::size_t index) {

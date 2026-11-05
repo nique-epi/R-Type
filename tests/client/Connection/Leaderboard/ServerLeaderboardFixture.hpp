@@ -14,6 +14,8 @@
 #include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
 #include "ServerSessionParts.hpp"
+#include "SessionEntityTypes.hpp"
+#include "SessionEntityTypesFixtures.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
@@ -56,10 +58,12 @@ class ServerLeaderboardFixture : public ::testing::Test {
   network::MessageDispatcher dispatcher_;
   GameLoadedReminder gameLoaded_;
   ServerLeaderboard leaderboard_{dispatcher_};
+  SessionEntityTypes entityTypes_{isDrawnInTheTests};
   ServerSession session_{
       ServerSessionParts{.link = link_,
                          .dispatcher = dispatcher_,
                          .gameLoaded = gameLoaded_,
+                         .entityTypes = entityTypes_,
                          .observers = {gameLoaded_, leaderboard_}}};
 };
 

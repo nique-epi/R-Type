@@ -49,6 +49,28 @@ constexpr std::chrono::nanoseconds COOKIE_EXPIRED_TIME =
     REQUEST_TIME + (2 * network::COOKIE_WINDOW_DURATION);
 
 /**
+ * @brief Times of the requests a connected player sends again, from
+ * REQUEST_TIME, its first acceptance: 250 ms is half the 500 ms between two
+ * requests of the protocol page, the least time between two acceptances to
+ * one player; the steps before it, and the next repeat 250 ms later.
+ */
+constexpr std::chrono::nanoseconds A_TENTH_OF_A_SECOND_LATER =
+    REQUEST_TIME + std::chrono::milliseconds{100};
+constexpr std::chrono::nanoseconds A_FIFTH_OF_A_SECOND_LATER =
+    REQUEST_TIME + std::chrono::milliseconds{200};
+constexpr std::chrono::nanoseconds JUST_BEFORE_THE_REPEAT =
+    REQUEST_TIME + std::chrono::milliseconds{249};
+constexpr std::chrono::nanoseconds ACCEPTANCE_REPEAT_TIME =
+    REQUEST_TIME + std::chrono::milliseconds{250};
+constexpr std::chrono::nanoseconds JUST_AFTER_THE_REPEAT =
+    REQUEST_TIME + std::chrono::milliseconds{300};
+constexpr std::chrono::nanoseconds NEXT_ACCEPTANCE_REPEAT_TIME =
+    REQUEST_TIME + std::chrono::milliseconds{500};
+
+/** @brief The name of the entity type of the sample acceptances: the ship. */
+constexpr std::string_view SAMPLE_ENTITY_TYPE_NAME = "ship";
+
+/**
  * @brief A protocol id and a version this server does not speak.
  */
 constexpr std::uint32_t OTHER_PROTOCOL_ID = network::PROTOCOL_ID + 1;
@@ -61,7 +83,7 @@ constexpr std::uint8_t NEXT_PROTOCOL_VERSION = network::PROTOCOL_VERSION + 1;
 constexpr std::size_t REFUSAL_DATAGRAM_SIZE = 26;
 
 /**
- * @brief A flags byte with a flag version 5 of the protocol does not know: it
+ * @brief A flags byte with a flag version 6 of the protocol does not know: it
  * knows only 0x01 and 0x02.
  */
 constexpr std::uint8_t UNKNOWN_FLAG = 0x08;

@@ -2,10 +2,13 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 #include <vector>
-#include "BydoKind.hpp"
 #include "EntityDestruction.hpp"
+#include "EntitySheet.hpp"
+#include "EntitySheets.hpp"
 #include "EntitySpawned.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "GameInstanceFixtures.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "IncomingDatagram.hpp"
@@ -13,18 +16,21 @@
 #include "OutgoingDatagram.hpp"
 #include "Position.hpp"
 #include "SentDatagrams.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "World.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::server::testing {
 
 namespace {
 
-/** @returns The EntitySpawned of the entities of @p type that @p datagrams
- * announce, oldest first; each of @p datagrams holds one EntitySpawned. */
+/** @returns The EntitySpawned of the entities of the sheet named @p sheet
+ * that @p datagrams announce, oldest first; each of @p datagrams holds one
+ * EntitySpawned. */
 std::vector<network::EntitySpawned> spawnsOfType(
     const std::vector<network::OutgoingDatagram>& datagrams,
-    network::WireEntityType type) {
+    std::string_view sheet) {
+  const std::uint8_t type =
+      game::testing::shippedEntitySheets().named(sheet).number;
   std::vector<network::EntitySpawned> spawns;
   for (const network::OutgoingDatagram& datagram : datagrams) {
     const auto spawned = onlyMessageIn<network::EntitySpawned>(datagram);
@@ -55,14 +61,14 @@ std::vector<network::EntitySpawned> GameInstanceShootingFixture::missilesSentTo(
     std::size_t player) {
   return spawnsOfType(
       ofType(network::MessageType::EntitySpawned, sentTo(player)),
-      network::WireEntityType::PlayerMissile);
+      game::testing::PLAYER_MISSILE_SHEET);
 }
 
 std::vector<network::EntitySpawned>
 GameInstanceShootingFixture::enemyMissilesSentTo(std::size_t player) {
   return spawnsOfType(
       ofType(network::MessageType::EntitySpawned, sentTo(player)),
-      network::WireEntityType::EnemyMissile);
+      game::testing::ENEMY_MISSILE_SHEET);
 }
 
 void GameInstanceShootingFixture::recordDestructions() {
@@ -81,9 +87,9 @@ bool GameInstanceShootingFixture::wasDestroyed(
 
 std::uint32_t GameInstanceShootingFixture::aimAtADrifter() {
   const game::Position ship = shipPositionOf(FIRST_PLAYER);
-  const std::uint32_t drifter = world().spawnBydo(
-      game::Position{.x = ship.x + BYDO_DISTANCE_AHEAD, .y = ship.y},
-      game::BydoKind::Drifter);
+  const std::uint32_t drifter = world().spawn(
+      game::testing::shippedEntitySheets().named(game::testing::DRIFTER_SHEET),
+      game::Position{.x = ship.x + BYDO_DISTANCE_AHEAD, .y = ship.y});
   holdForNextTick(FIRST_PLAYER, HOLDS_SHOOT);
   return drifter;
 }

@@ -3,6 +3,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include "AssetList.hpp"
 #include "EndScreen.hpp"
 #include "EndScreenParts.hpp"
 #include "EntityLayer.hpp"
@@ -24,12 +25,18 @@ namespace rtype::client {
 
 namespace {
 
-/** @returns The loading screen of gameAssets() while some are not loaded, the
- * game screen once they all are. */
+/** @returns The assets of a game, with the sprite sheet of every entity
+ * appearance of the client (see withEntitySheets()). */
+AssetList gameAssetsOf(const ScreenContext& context) {
+  return withEntitySheets(gameAssets(), context.services.appearances.get());
+}
+
+/** @returns The loading screen of gameAssetsOf() while some are not loaded,
+ * the game screen once they all are. */
 std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context) {
   context.services.audio.get().playGameMusic();
   std::unique_ptr<IScreen> loading =
-      loadingScreenUnlessLoaded(context, gameAssets(), GAME_SCREEN);
+      loadingScreenUnlessLoaded(context, gameAssetsOf(context), GAME_SCREEN);
   if (loading != nullptr) {
     return loading;
   }
@@ -44,16 +51,17 @@ std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context) {
                       .waitingRoom = context.services.waitingRoom.get(),
                       .sky = context.sky.get(),
                       .sounds = soundsOf(context),
+                      .entityTypes = context.services.entityTypes.get(),
                       .result = context.gameResult.get()},
       std::make_unique<EntityLayer>(context.services.assets.get()),
       interfaceCanvasOf(context));
 }
 
-/** @returns The loading screen of gameAssets() while some are not loaded, the
- * end screen once they all are. */
+/** @returns The loading screen of gameAssetsOf() while some are not loaded,
+ * the end screen once they all are. */
 std::unique_ptr<IScreen> buildEndScreen(const ScreenContext& context) {
   std::unique_ptr<IScreen> loading =
-      loadingScreenUnlessLoaded(context, gameAssets(), END_SCREEN);
+      loadingScreenUnlessLoaded(context, gameAssetsOf(context), END_SCREEN);
   if (loading != nullptr) {
     return loading;
   }

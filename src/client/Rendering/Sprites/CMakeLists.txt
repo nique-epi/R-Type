@@ -6,10 +6,12 @@ target_link_libraries(rtype_client_sprites
   INTERFACE
     rtype_client_animation
     rtype_client_rendering_interfaces
+    rtype_engine_exceptions
 )
 
 add_subdirectory(Animation)
 add_subdirectory(EntitySprites)
+add_subdirectory(EntityAppearances)
 add_subdirectory(AnimationSystem)
 add_subdirectory(AssetTextureSource)
 add_subdirectory(PilotColor)

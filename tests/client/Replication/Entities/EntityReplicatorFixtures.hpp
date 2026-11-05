@@ -38,10 +38,11 @@ struct DrawnEntity {
 void PrintTo(const DrawnEntity& entity, std::ostream* output);
 
 /**
- * @returns How an entity of @p type with the network id @p networkId, at
- * @p position, must be drawn: with the sprite animatedSpriteOf() gives it.
+ * @returns How an entity of side @p side with the network id @p networkId, at
+ * @p position, must be drawn: with the sprite animatedSpriteOf() gives the
+ * appearance appearanceOfSide() gives its side.
  */
-DrawnEntity drawnAs(game::EntityType type, std::uint32_t networkId,
+DrawnEntity drawnAs(game::EntityType side, std::uint32_t networkId,
                     game::Position position);
 
 /**

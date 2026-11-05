@@ -17,7 +17,6 @@ using rtype::network::InvalidFieldValueException;
 using rtype::network::MalformedMessageException;
 using rtype::network::PlayerState;
 using rtype::network::TooManyPlayersException;
-using rtype::network::WireEntityType;
 using rtype::network::WorldState;
 using rtype::network::WorldStateCodec;
 using rtype::network::testing::BEYOND_RANGE_X;
@@ -25,8 +24,6 @@ using rtype::network::testing::BEYOND_RANGE_Y;
 using rtype::network::testing::byteSequence;
 using rtype::network::testing::DATAGRAM_PAYLOAD_LIMIT;
 using rtype::network::testing::ENTITIES_FITTING_WITH_FOUR_PLAYERS;
-using rtype::network::testing::ENTITY_TYPE_ABOVE_THE_LAST;
-using rtype::network::testing::ENTITY_TYPE_BELOW_THE_FIRST;
 using rtype::network::testing::EXAMPLE_ENTITY_ID;
 using rtype::network::testing::EXAMPLE_PLAYER_NUMBER;
 using rtype::network::testing::EXAMPLE_PLAYER_SHIP_ID;
@@ -35,10 +32,11 @@ using rtype::network::testing::fourPlayers;
 using rtype::network::testing::invulnerablePlayer;
 using rtype::network::testing::LARGEST_MOTION;
 using rtype::network::testing::LARGEST_STATE_PAYLOAD;
+using rtype::network::testing::LARGEST_TYPE_NUMBER;
+using rtype::network::testing::LARGEST_TYPE_NUMBER_BYTE;
 using rtype::network::testing::LARGEST_U32;
 using rtype::network::testing::LARGEST_U8;
 using rtype::network::testing::LARGEST_WIRE_COORDINATE;
-using rtype::network::testing::LAST_ENTITY_TYPE;
 using rtype::network::testing::LAST_PLAYER_NUMBER;
 using rtype::network::testing::LATE_TICK;
 using rtype::network::testing::MOTION_HIGHEST_BIT;
@@ -46,6 +44,7 @@ using rtype::network::testing::MOTION_PAST_THE_DASH;
 using rtype::network::testing::NEAREST_EIGHTH_OF_UNROUNDED_X;
 using rtype::network::testing::NEAREST_EIGHTH_OF_UNROUNDED_Y;
 using rtype::network::testing::NO_ENTITY_ID_BYTE;
+using rtype::network::testing::NO_TYPE_NUMBER_BYTE;
 using rtype::network::testing::NOT_A_BOOLEAN;
 using rtype::network::testing::NUMBER_OF_A_FIFTH_PLAYER;
 using rtype::network::testing::oneShipState;
@@ -98,7 +97,7 @@ TEST(WorldStateCodec, KeepsTheLargestValueOfEachField) {
                               .motion = LARGEST_MOTION,
                               .acknowledgedInput = LARGEST_U32}},
       .entities = {EntityState{.entityId = LARGEST_U32,
-                               .entityType = WireEntityType::EnemyMissile,
+                               .entityType = LARGEST_TYPE_NUMBER,
                                .x = SMALLEST_WIRE_COORDINATE,
                                .y = LARGEST_WIRE_COORDINATE}}};
 
@@ -281,40 +280,36 @@ TEST(WorldStateCodec, RefusesAnnouncedEntitiesBeyondThePayload) {
 }
 
 /**
- * Given a payload with an entity of a type the wire does not know, between two
- * known entities
+ * Given a payload with an entity of type 0, which no entry of the table has,
+ * between two entities of type 3
  * When it is decoded
- * Then the two known entities are in the state and the unknown one is left out
+ * Then the two entities of type 3 are in the state and the other is left out
  */
-TEST(WorldStateCodec, SkipsAnEntityOfUnknownType) {
-  const auto withType = [](unsigned int type) {
-    return byteSequence({0, 0, 0,    1, 0, 3, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0,
-                         0, 2, type, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0});
-  };
+TEST(WorldStateCodec, SkipsAnEntityOfTypeZero) {
+  const WorldState decoded = WorldStateCodec::decode(
+      byteSequence({0, 0, 0, 1, 0, 3, 0, 0, 0, 1,
+                    3, 0, 0, 0, 0, 0, 0, 0, 2, NO_TYPE_NUMBER_BYTE,
+                    0, 0, 0, 0, 0, 0, 0, 3, 3, 0,
+                    0, 0, 0}));
 
-  for (const unsigned int unknown :
-       {ENTITY_TYPE_BELOW_THE_FIRST, ENTITY_TYPE_ABOVE_THE_LAST}) {
-    const WorldState decoded = WorldStateCodec::decode(withType(unknown));
-
-    ASSERT_EQ(decoded.entities.size(), 2U) << "type " << unknown;
-    EXPECT_EQ(decoded.entities.front().entityId, 1U);
-    EXPECT_EQ(decoded.entities.back().entityId, 3U);
-  }
+  ASSERT_EQ(decoded.entities.size(), 2U);
+  EXPECT_EQ(decoded.entities.front().entityId, 1U);
+  EXPECT_EQ(decoded.entities.back().entityId, 3U);
 }
 
 /**
- * Given a payload with an entity of the last type the wire knows, the enemy
- * missile
+ * Given a payload with an entity of type 255, the largest byte
  * When it is decoded
- * Then the entity is in the state, with that type
+ * Then the entity is in the state, with that type: a state reads any number,
+ * the client looks it up in its table
  */
-TEST(WorldStateCodec, DecodesAnEnemyMissile) {
+TEST(WorldStateCodec, ReadsTheLargestTypeNumber) {
   const WorldState decoded = WorldStateCodec::decode(
       byteSequence({0, 0, 0, 1, 0, 1, 0, 0, 0, EXAMPLE_ENTITY_ID,
-                    LAST_ENTITY_TYPE, 0, 0, 0, 0}));
+                    LARGEST_TYPE_NUMBER_BYTE, 0, 0, 0, 0}));
 
   ASSERT_EQ(decoded.entities.size(), 1U);
-  EXPECT_EQ(decoded.entities.front().entityType, WireEntityType::EnemyMissile);
+  EXPECT_EQ(decoded.entities.front().entityType, LARGEST_TYPE_NUMBER);
 }
 
 /**

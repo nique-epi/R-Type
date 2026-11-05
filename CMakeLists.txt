@@ -159,8 +159,8 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets
   PATTERN waves EXCLUDE
   PATTERN compression EXCLUDE
 )
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/waves DESTINATION assets
-  COMPONENT server
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/waves ${CMAKE_SOURCE_DIR}/assets/entities
+  DESTINATION assets COMPONENT server
 )
 
 # Once the bundle is complete, it is signed without an identity, so macOS

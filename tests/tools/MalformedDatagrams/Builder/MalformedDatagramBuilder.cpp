@@ -16,7 +16,9 @@
 #include "DatagramCodec.hpp"
 #include "Disconnection.hpp"
 #include "EntityDestroyed.hpp"
+#include "EntitySide.hpp"
 #include "EntitySpawned.hpp"
+#include "EntityTypeEntry.hpp"
 #include "GameEnded.hpp"
 #include "GameEvent.hpp"
 #include "GameStarted.hpp"
@@ -64,13 +66,21 @@ SampleMessage worldStateSample() {
       .payload = network::WorldStateCodec::encode(state).front()};
 }
 
+/** @returns A ConnectionAccepted of the first player, with one entity type. */
+SampleMessage acceptanceSample() {
+  return sampleOf(network::ConnectionAccepted{
+      .playerNumber = network::FIRST_PLAYER_NUMBER,
+      .types = {network::EntityTypeEntry{
+          .side = network::EntitySide::Player,
+          .name = std::string{SAMPLE_ENTITY_TYPE_NAME}}}});
+}
+
 /** @returns One valid message of every type of version 0. */
 std::vector<SampleMessage> sampleMessages() {
   return {
       sampleOf(network::ConnectionRequest{
           .cookie = NO_COOKIE, .nickname = std::string{TOOL_NICKNAME}}),
-      sampleOf(network::ConnectionAccepted{.playerNumber =
-                                               network::FIRST_PLAYER_NUMBER}),
+      acceptanceSample(),
       sampleOf(network::ConnectionRefused{
           .reason = network::RefusalReason::GameFull}),
       sampleOf(network::Disconnection{}),
@@ -82,11 +92,10 @@ std::vector<SampleMessage> sampleMessages() {
                                     .actions = 0,
                                     .earlierActions = {}}),
       worldStateSample(),
-      sampleOf(
-          network::EntitySpawned{.entityId = SAMPLE_ENTITY_ID,
-                                 .entityType = network::WireEntityType::Bydo,
-                                 .x = 0.0F,
-                                 .y = 0.0F}),
+      sampleOf(network::EntitySpawned{.entityId = SAMPLE_ENTITY_ID,
+                                      .entityType = SAMPLE_ENTITY_TYPE,
+                                      .x = 0.0F,
+                                      .y = 0.0F}),
       sampleOf(network::EntityDestroyed{
           .entityId = SAMPLE_ENTITY_ID,
           .reason = network::DestructionReason::Killed}),

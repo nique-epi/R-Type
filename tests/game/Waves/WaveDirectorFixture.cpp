@@ -24,9 +24,10 @@ void WaveDirectorFixture::runATickWithTheSkyClear() {
       director_.advance(engine::SIMULATION_TICK_DURATION, NO_BYDO_IN_PLAY));
 }
 
-std::size_t WaveDirectorFixture::ticksToTheNextBydo(std::size_t bydosInPlay) {
+std::size_t WaveDirectorFixture::ticksToTheNextBydo(std::size_t enemiesInPlay) {
   for (std::size_t tick = 1; tick <= A_MINUTE_OF_TICKS; ++tick) {
-    if (director_.advance(engine::SIMULATION_TICK_DURATION, bydosInPlay) > 0) {
+    if (director_.advance(engine::SIMULATION_TICK_DURATION, enemiesInPlay) >
+        0) {
       return tick;
     }
   }

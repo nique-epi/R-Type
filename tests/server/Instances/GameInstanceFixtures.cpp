@@ -19,6 +19,8 @@
 #include "DebugJournal.hpp"
 #include "Entity.hpp"
 #include "EntityIdConstants.hpp"
+#include "EntitySheet.hpp"
+#include "EntitySheets.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
@@ -50,6 +52,7 @@
 #include "ServerLobbyTestConstants.hpp"
 #include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
 #include "TimeConstants.hpp"
 #include "UnreliableNetwork.hpp"
@@ -96,6 +99,18 @@ network::PacketHeader sessionHeader(std::size_t player) {
   return header;
 }
 
+namespace {
+
+/** @returns Whether @p spawned announces an enemy: a type the sheets the game
+ * ships with give the side Enemy. */
+bool announcesAnEnemy(const network::EntitySpawned& spawned) {
+  const game::EntitySheet* const sheet =
+      game::testing::shippedEntitySheets().numbered(spawned.entityType);
+  return sheet != nullptr && sheet->side == game::EntityType::Enemy;
+}
+
+}  // namespace
+
 std::size_t bydosAmong(
     const std::vector<std::uint32_t>& removed,
     const std::vector<network::OutgoingDatagram>& datagrams) {
@@ -103,7 +118,7 @@ std::size_t bydosAmong(
   for (const network::OutgoingDatagram& datagram :
        ofType(network::MessageType::EntitySpawned, datagrams)) {
     const auto spawned = onlyMessageIn<network::EntitySpawned>(datagram);
-    if (spawned.entityType == network::WireEntityType::Bydo &&
+    if (announcesAnEnemy(spawned) &&
         std::ranges::count(removed, spawned.entityId) == 1) {
       ++bydos;
     }
@@ -142,17 +157,20 @@ std::vector<std::unique_ptr<IGameModule>> modulesWithRulesAt(
 GameInstanceTest::GameInstanceTest() : GameInstanceTest(NO_INPUT_DELAY_TICKS) {}
 
 GameInstanceTest::GameInstanceTest(std::size_t inputDelayTicks)
-    : game_(GameInstanceParts{.send =
-                                  [this](network::OutgoingDatagram datagram) {
-                                    sent_.push_back(std::move(datagram));
-                                  },
-                              .settings = GameSettings{.seed = SOME_SEED,
-                                                       .waves = testWavePlan(),
-                                                       .inputDelayTicks =
-                                                           inputDelayTicks},
-                              .events = events_,
-                              .clock = clock_},
-            modulesWithRulesAt(rules_, results_)) {}
+    : game_(
+          GameInstanceParts{
+              .send =
+                  [this](network::OutgoingDatagram datagram) {
+                    sent_.push_back(std::move(datagram));
+                  },
+              .settings =
+                  GameSettings{.seed = SOME_SEED,
+                               .waves = testWavePlan(),
+                               .types = game::testing::shippedEntitySheets(),
+                               .inputDelayTicks = inputDelayTicks},
+              .events = events_,
+              .clock = clock_},
+          modulesWithRulesAt(rules_, results_)) {}
 
 game::World& GameInstanceTest::world() { return rules_->world(); }
 
@@ -210,11 +228,11 @@ void GameInstanceTest::sendReady(const SentReadyState& sent) {
           header, network::ReadyState{.ready = sent.ready})});
 }
 
-void GameInstanceTest::sendLoaded(std::size_t player, std::uint16_t sequence) {
+void GameInstanceTest::sendLoaded(const SentGameLoaded& sent) {
   network::PacketHeader header;
   header.sessionToken = SESSION_TOKEN;
-  header.sequence = sequence;
-  queue(network::IncomingDatagram{.sender = playerEndpoint(player),
+  header.sequence = sent.sequence;
+  queue(network::IncomingDatagram{.sender = playerEndpoint(sent.player),
                                   .payload = network::DatagramCodec::encode(
                                       header, network::GameLoaded{})});
 }

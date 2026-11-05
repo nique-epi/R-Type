@@ -10,17 +10,6 @@
 namespace rtype::network {
 
 /**
- * @brief What an entity is, as the wire names it. The values are the ones of
- * the protocol page and never change.
- */
-enum class WireEntityType : std::uint8_t {
-  PlayerShip = 1,
-  PlayerMissile = 2,
-  Bydo = 3,
-  EnemyMissile = 4,
-};
-
-/**
  * @brief One player of a game, as a WorldState lists it.
  */
 struct PlayerState {
@@ -41,14 +30,15 @@ struct PlayerState {
 };
 
 /**
- * @brief One entity of a game: its network id, what it is, and where its
- * center is, in logical units.
+ * @brief One entity of a game: its network id, the number of its type in the
+ * table of the ConnectionAccepted of the session, and where its center is, in
+ * logical units.
  */
 struct EntityState {
-  std::uint32_t entityId;
-  WireEntityType entityType;
-  float x;
-  float y;
+  std::uint32_t entityId{};
+  std::uint8_t entityType{};
+  float x{};
+  float y{};
 
   bool operator==(const EntityState&) const = default;
 };

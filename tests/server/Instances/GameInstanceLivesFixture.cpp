@@ -5,8 +5,8 @@
 #include <cstdint>
 #include <initializer_list>
 #include <vector>
-#include "BydoKind.hpp"
 #include "ConnectedPlayer.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "GameInstanceFixtures.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "Lives.hpp"
@@ -16,19 +16,24 @@
 #include "Replication/Announcements/Milestones/GameEndAnnouncerTestConstants.hpp"
 #include "Rules/Players/LifeKeeperTestConstants.hpp"
 #include "SentDatagrams.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "World.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::server::testing {
 
 void GameInstanceLivesFixture::hitTheShipOf(std::size_t player) {
-  world().spawnBydo(shipPositionOf(player), game::BydoKind::Drifter);
+  world().spawn(
+      game::testing::shippedEntitySheets().named(game::testing::DRIFTER_SHEET),
+      shipPositionOf(player));
   runTicksDispatching(1);
 }
 
 std::uint32_t GameInstanceLivesFixture::shootTheShipOf(std::size_t player) {
   const std::uint32_t missile =
-      world().spawnEnemyMissile(shipPositionOf(player));
+      world().spawn(game::testing::shippedEntitySheets().named(
+                        game::testing::ENEMY_MISSILE_SHEET),
+                    shipPositionOf(player));
   runTicksDispatching(1);
   return missile;
 }

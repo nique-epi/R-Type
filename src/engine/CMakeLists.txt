@@ -10,6 +10,7 @@ add_subdirectory(LaunchArguments)
 add_subdirectory(Commands)
 add_subdirectory(Modules)
 add_subdirectory(Paths)
+add_subdirectory(DataFiles)
 add_subdirectory(SharedLibrary)
 
 add_library(rtype_engine INTERFACE)
@@ -46,5 +47,6 @@ target_link_libraries(rtype_engine
     rtype_engine_plugin_shelf
     rtype_engine_application
     rtype_engine_paths
+    rtype_engine_data_files
     rtype_engine_shared_library
 )

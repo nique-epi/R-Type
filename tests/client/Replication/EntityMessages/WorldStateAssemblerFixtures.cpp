@@ -3,6 +3,7 @@
 #include <utility>
 #include <vector>
 #include "DeltaWorldState.hpp"
+#include "FixedEntityTypeSourceConstants.hpp"
 #include "ProtocolConstants.hpp"
 #include "StateDelta.hpp"
 #include "WorldState.hpp"
@@ -25,7 +26,7 @@ network::PlayerState onlyPlayer() {
 
 network::EntityState bydoAt(std::uint32_t entityId, float abscissa) {
   return network::EntityState{.entityId = entityId,
-                              .entityType = network::WireEntityType::Bydo,
+                              .entityType = DRIFTER_TYPE_NUMBER,
                               .x = abscissa,
                               .y = 0.0F};
 }

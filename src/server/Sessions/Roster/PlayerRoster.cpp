@@ -115,7 +115,8 @@ ConnectedPlayer* PlayerRoster::add(const network::Endpoint& endpoint,
                           .appliedInputNumber = std::nullopt,
                           .roundTrip = network::RoundTripMeter{},
                           .unacknowledged = network::UnacknowledgedMessages{},
-                          .sentStates = SentStates{}});
+                          .sentStates = SentStates{},
+                          .lastAcceptedAt = std::nullopt});
     }
   }
   return nullptr;
