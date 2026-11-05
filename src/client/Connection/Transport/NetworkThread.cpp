@@ -9,6 +9,7 @@
 #include "CountingDatagramSocket.hpp"
 #include "DatagramRelay.hpp"
 #include "DatagramSocketOpening.hpp"
+#include "DecompressingDatagramSocket.hpp"
 #include "Endpoint.hpp"
 #include "IDatagramSocket.hpp"
 #include "IncomingDatagram.hpp"
@@ -34,7 +35,9 @@ void NetworkThread::open() {
     return;
   }
   socket_ = std::make_unique<network::CountingDatagramSocket>(
-      network::openDatagramSocket(network_, listeningEndpoint_, conditions_),
+      std::make_unique<network::DecompressingDatagramSocket>(
+          network::openDatagramSocket(network_, listeningEndpoint_,
+                                      conditions_)),
       traffic_);
   try {
     startNetwork(*socket_);

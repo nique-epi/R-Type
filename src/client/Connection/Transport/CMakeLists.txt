@@ -9,6 +9,7 @@ target_include_directories(rtype_client_transport PUBLIC ${CMAKE_CURRENT_SOURCE_
 target_link_libraries(rtype_client_transport
   PUBLIC
     rtype_concurrency_bounded_queue
+    rtype_network_compression
     rtype_network_context
     rtype_network_datagram_relay
     rtype_network_simulator
