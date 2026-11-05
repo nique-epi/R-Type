@@ -115,7 +115,8 @@ ApiRequest apiRequestOf(const httplib::Request& request) {
   return ApiRequest{.body = request.body,
                     .bearerToken = bearerTokenIn(request.get_header_value(
                         std::string{network::AUTHORIZATION_HEADER})),
-                    .remoteAddress = request.remote_addr};
+                    .remoteAddress = request.remote_addr,
+                    .pathParameters = request.path_params};
 }
 
 /**

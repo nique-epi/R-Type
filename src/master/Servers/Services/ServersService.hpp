@@ -1,10 +1,12 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include <optional>
 #include <string_view>
 #include "CreatedServer.hpp"
 #include "CreationAttempt.hpp"
+#include "GameListing.hpp"
 #include "HeartbeatSampleRepository.hpp"
 #include "KnownServer.hpp"
 #include "MasterDatabase.hpp"
@@ -51,6 +53,16 @@ class ServersService {
   bool replaceOwnHeartbeat(const KnownServer& server,
                            network::ServerHeartbeat heartbeat,
                            std::chrono::sys_seconds now);
+
+  /**
+   * @returns The games the server @p serverId hosts, as the last heartbeat
+   * lists them, or nothing when no server has that id. A server that sent no
+   * heartbeat since it registered lists none.
+   * @throws network::InvalidMasterMessageException when the heartbeat kept no
+   * longer reads (see ServerRepository::lastHeartbeatOf()).
+   */
+  [[nodiscard]] std::optional<network::GameListing> gameListingOf(
+      std::int64_t serverId);
 
  private:
   ServerRepository servers_;

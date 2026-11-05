@@ -32,6 +32,8 @@ void ServersModule::install(engine::InstallContext& context) {
   server.add(
       network::REPLACE_OWN_HEARTBEAT_ROUTE,
       std::bind_front(&ServersController::replaceOwnHeartbeat, &controller));
+  server.add(network::LIST_SERVER_GAMES_ROUTE,
+             std::bind_front(&ServersController::listGames, &controller));
 }
 
 void ServersModule::start() {}

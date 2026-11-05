@@ -10,6 +10,7 @@ constexpr std::string_view UNKNOWN_KEY_DETAIL =
     "no valid server key in an Authorization: Bearer header";
 constexpr std::string_view UNREGISTERED_SERVER_DETAIL =
     "this server has not registered: PUT /api/servers/me first";
+constexpr std::string_view UNKNOWN_SERVER_DETAIL = "no game server has this id";
 constexpr std::string_view CREATION_QUOTA_DETAIL =
     "this address created too many servers in the last hour";
 

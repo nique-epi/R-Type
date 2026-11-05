@@ -13,8 +13,11 @@
 #include <vector>
 #include "CreatedServer.hpp"
 #include "EndpointText.hpp"
+#include "GameListing.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
+#include "ListedGame.hpp"
+#include "ListedGameState.hpp"
 #include "MasterHttpConstants.hpp"
 #include "MasterMessageConstants.hpp"
 #include "NetworkConstants.hpp"
@@ -192,12 +195,25 @@ std::vector<std::string> playersOf(const JsonField& game) {
   return nicknames;
 }
 
+/** @returns The number of the game @p game, which a heartbeat and a listing
+ * write alike. */
+std::uint16_t gameNumberOf(const JsonField& game) {
+  return static_cast<std::uint16_t>(
+      integerOf(memberOf(game, NUMBER_MEMBER),
+                IntegerBounds{.lowest = FIRST_HOSTED_GAME_NUMBER,
+                              .highest = MAXIMUM_HOSTED_GAMES}));
+}
+
+/** @returns The name of the game @p game, which a heartbeat and a listing
+ * write alike. */
+std::string gameNameOf(const JsonField& game) {
+  return boundedTextOf(memberOf(game, NAME_MEMBER), MAXIMUM_GAME_NAME_SIZE);
+}
+
 HostedGame gameOf(const JsonField& game) {
   requireObject(game);
-  return HostedGame{.number = static_cast<std::uint16_t>(integerOf(
-                        memberOf(game, NUMBER_MEMBER),
-                        IntegerBounds{.lowest = FIRST_HOSTED_GAME_NUMBER,
-                                      .highest = MAXIMUM_HOSTED_GAMES})),
+  return HostedGame{.number = gameNumberOf(game),
+                    .name = gameNameOf(game),
                     .state = stateOf(memberOf(game, STATE_MEMBER)),
                     .difficulty = nicknameOf(memberOf(game, DIFFICULTY_MEMBER)),
                     .players = playersOf(game)};
@@ -207,8 +223,9 @@ HostedGame gameOf(const JsonField& game) {
  * @throws InvalidMasterMessageException naming the number of the first game
  * of @p hosted whose number an earlier game already has.
  */
+template <typename Game>
 void requireDistinctNumbers(const JsonField& games,
-                            const std::vector<HostedGame>& hosted) {
+                            const std::vector<Game>& hosted) {
   for (std::size_t later = 0; later < hosted.size(); ++later) {
     for (std::size_t earlier = 0; earlier < later; ++earlier) {
       if (hosted.at(earlier).number == hosted.at(later).number) {
@@ -216,6 +233,37 @@ void requireDistinctNumbers(const JsonField& games,
       }
     }
   }
+}
+
+ListedGameState listedStateOf(const JsonField& field) {
+  const std::string text = stringOf(field);
+  for (std::size_t index = 0; index < LISTED_GAME_STATE_TEXTS.size(); ++index) {
+    if (text == LISTED_GAME_STATE_TEXTS.at(index)) {
+      return static_cast<ListedGameState>(index);
+    }
+  }
+  refuse(field);
+}
+
+ListedGame listedGameOf(const JsonField& game) {
+  requireObject(game);
+  return ListedGame{.number = gameNumberOf(game),
+                    .name = gameNameOf(game),
+                    .state = listedStateOf(memberOf(game, STATE_MEMBER)),
+                    .playerCount = static_cast<std::uint8_t>(integerOf(
+                        memberOf(game, PLAYER_COUNT_MEMBER),
+                        IntegerBounds{.lowest = MINIMUM_LISTED_PLAYERS,
+                                      .highest = MAXIMUM_PLAYERS}))};
+}
+
+nlohmann::json listedGameDocument(const ListedGame& game) {
+  nlohmann::json document;
+  document[NUMBER_MEMBER] = game.number;
+  document[NAME_MEMBER] = game.name;
+  document[STATE_MEMBER] =
+      LISTED_GAME_STATE_TEXTS.at(static_cast<std::size_t>(game.state));
+  document[PLAYER_COUNT_MEMBER] = game.playerCount;
+  return document;
 }
 
 std::vector<HostedGame> gamesOf(const JsonField& heartbeat) {
@@ -273,6 +321,7 @@ ServerMeasures measuresOf(const JsonField& heartbeat) {
 nlohmann::json gameDocument(const HostedGame& game) {
   nlohmann::json document;
   document[NUMBER_MEMBER] = game.number;
+  document[NAME_MEMBER] = game.name;
   document[STATE_MEMBER] =
       HOSTED_GAME_STATE_TEXTS.at(static_cast<std::size_t>(game.state));
   document[DIFFICULTY_MEMBER] = game.difficulty;
@@ -407,6 +456,28 @@ ServerHeartbeat heartbeatFromText(std::string_view text) {
   const JsonField heartbeat = wholeMessage(document);
   return ServerHeartbeat{.games = gamesOf(heartbeat),
                          .measures = measuresOf(heartbeat)};
+}
+
+std::string gameListingText(const GameListing& listing) {
+  nlohmann::json document;
+  document[GAMES_MEMBER] = nlohmann::json::array();
+  for (const ListedGame& game : listing.games) {
+    document[GAMES_MEMBER].push_back(listedGameDocument(game));
+  }
+  return textOf(document);
+}
+
+GameListing gameListingFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  const JsonField games = memberOf(wholeMessage(document), GAMES_MEMBER);
+  const std::size_t count = arraySizeOf(games, MAXIMUM_HOSTED_GAMES);
+  GameListing listing;
+  listing.games.reserve(count);
+  for (std::size_t index = 0; index < count; ++index) {
+    listing.games.push_back(listedGameOf(elementOf(games, index)));
+  }
+  requireDistinctNumbers(games, listing.games);
+  return listing;
 }
 
 std::string problemDetailOf(std::string_view text) {

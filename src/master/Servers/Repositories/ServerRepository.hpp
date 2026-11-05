@@ -6,6 +6,7 @@
 #include "CreationQuota.hpp"
 #include "HeartbeatRecord.hpp"
 #include "KnownServer.hpp"
+#include "LastHeartbeat.hpp"
 #include "MasterDatabase.hpp"
 #include "NewServer.hpp"
 #include "ServerRecord.hpp"
@@ -43,6 +44,15 @@ class ServerRepository {
   /** @brief Keeps the heartbeat of @p record as the last state of its server.
    */
   void saveLastHeartbeat(const HeartbeatRecord& record);
+
+  /**
+   * @returns The last heartbeat of the server @p serverId, nothing in it while
+   * the server has sent none, or nothing at all when no server has that id.
+   * @throws network::InvalidMasterMessageException when the text kept no longer
+   * reads as a heartbeat.
+   */
+  [[nodiscard]] std::optional<LastHeartbeat> lastHeartbeatOf(
+      std::int64_t serverId);
 
  private:
   MasterDatabase& database_;
