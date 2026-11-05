@@ -6,7 +6,8 @@
 namespace rtype::server::testing {
 
 /** @brief The systems of an R-Type game, in the order they run. */
-constexpr std::array<std::string_view, 4> NAMES_OF_THE_SYSTEMS{
-    "PilotSystem", "MovementSystem", "PlayfieldExitSystem", "CollisionSystem"};
+constexpr std::array<std::string_view, 5> NAMES_OF_THE_SYSTEMS{
+    "PilotSystem", "MovementSystem", "PlayfieldExitSystem", "CollisionSystem",
+    "HurtZoneSystem"};
 
 }  // namespace rtype::server::testing

@@ -30,8 +30,9 @@ enum class MessageType : std::uint8_t {
   LeaderboardAnswer = 19,
   DeltaWorldState = 20,
   RoundTrips = 21,
-  ServerInformationRequest = 22,
-  ServerInformation = 23,
+  EnemyAction = 22,
+  ServerInformationRequest = 23,
+  ServerInformation = 24,
 };
 
 }  // namespace rtype::network

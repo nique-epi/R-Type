@@ -35,39 +35,17 @@
 #pragma once
 
 #include <chrono>
-#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
-
-// Compile-time minimum log level. CMake passes `LOG_LEVEL=name` and
-// translates it to a 0..5 integer here. Methods of lower severity expand
-// to nothing thanks to `if constexpr` below.
-//   0=Trace 1=Debug 2=Info 3=Warn 4=Error 5=Silent
-#ifndef RT_LOG_BUILD_LEVEL
-#define RT_LOG_BUILD_LEVEL 0
-#endif
+#include "ILogJournal.hpp"
+#include "LogLevel.hpp"
+#include "LogRecord.hpp"
 
 namespace rtype::logging {
-
-enum class LogLevel : std::uint8_t {
-  Trace = 0,
-  Debug = 1,
-  Info = 2,
-  Warn = 3,
-  Error = 4,
-  Silent = 5,
-};
-
-constexpr LogLevel buildMinLevel = static_cast<LogLevel>(RT_LOG_BUILD_LEVEL);
-
-constexpr bool isCompiledIn(LogLevel candidate) {
-  return static_cast<std::uint8_t>(candidate) >=
-         static_cast<std::uint8_t>(buildMinLevel);
-}
 
 /**
  * @brief Where lines are written. Standard error is on by default so that a
@@ -85,6 +63,14 @@ class Logger {
    *        reused for every subsequent call.
    */
   explicit Logger(std::string name);
+
+  /**
+   * @brief Builds a logger that writes through @p journal, which must outlive
+   *        it, instead of the sinks of this copy of the library: what a plugin
+   *        uses, with the journal it required at install. The static
+   *        functions and scope() still use the state of this copy.
+   */
+  Logger(std::string name, const ILogJournal& journal);
 
   static LogLevel level();
   static void setLevel(LogLevel newLevel);
@@ -169,7 +155,8 @@ class Logger {
  private:
   template <class... Args>
   void emit(LogLevel candidate, Args&&... args) const {
-    if (!shouldLog(candidate)) {
+    if (journal_ == nullptr ? !shouldLog(candidate)
+                            : !journal_->accepts(candidate)) {
       return;
     }
     std::ostringstream stream;
@@ -180,6 +167,14 @@ class Logger {
   void writeLine(LogLevel candidate, std::string_view body) const;
 
   std::string name_;
+  const ILogJournal* journal_{nullptr};
 };
+
+/**
+ * @brief Writes @p record as a line, to the sinks of this copy of the library,
+ * without a level check: the caller already asked a journal or a logger which
+ * levels are written.
+ */
+void writeLogLine(const LogRecord& record);
 
 }  // namespace rtype::logging

@@ -1,11 +1,14 @@
 #include <gtest/gtest.h>
 #include <vector>
+#include "EnemyAction.hpp"
+#include "EnemyActionStarted.hpp"
+#include "EnemyPhase.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityDestruction.hpp"
 #include "EntitySpawn.hpp"
 #include "EntitySpawned.hpp"
-#include "EntityType.hpp"
+#include "EntityTypeNumberTestConstants.hpp"
 #include "GameEvent.hpp"
 #include "GameEventBroadcasterFixture.hpp"
 #include "GameEventConstants.hpp"
@@ -14,7 +17,6 @@
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
 #include "PlayerLeft.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::server::testing {
 
@@ -26,17 +28,36 @@ namespace rtype::server::testing {
  */
 TEST_F(GameEventBroadcasterFixture, SendsASpawnOnce) {
   publishAndDispatch(game::EntitySpawn{.networkId = MONSTER_NETWORK_ID,
-                                       .type = game::EntityType::Enemy,
+                                       .typeNumber = DRIFTER_TYPE_NUMBER,
                                        .x = MONSTER_X,
                                        .y = MONSTER_Y});
 
   const std::vector<network::EntitySpawned> expected{
       {.entityId = MONSTER_NETWORK_ID,
-       .entityType = network::WireEntityType::Bydo,
+       .entityType = DRIFTER_TYPE_NUMBER,
        .x = MONSTER_X,
        .y = MONSTER_Y}};
   EXPECT_EQ(sentOnce<network::EntitySpawned>(), expected);
   EXPECT_TRUE(guaranteed<network::EntitySpawned>().empty());
+}
+
+/**
+ * Given a broadcaster
+ * When an enemy entering the signal of attack 3 is published
+ * Then one EnemyAction is guaranteed to every player, and none is sent once
+ */
+TEST_F(GameEventBroadcasterFixture, GuaranteesAnEnemyAction) {
+  publishAndDispatch(
+      game::EnemyActionStarted{.networkId = MONSTER_NETWORK_ID,
+                               .attack = SOME_ATTACK_NUMBER,
+                               .phase = game::EnemyPhase::Signal});
+
+  const std::vector<network::EnemyAction> expected{
+      {.entityId = MONSTER_NETWORK_ID,
+       .attack = SOME_ATTACK_NUMBER,
+       .phase = network::EnemyActionPhase::Signal}};
+  EXPECT_EQ(guaranteed<network::EnemyAction>(), expected);
+  EXPECT_TRUE(sentOnce<network::EnemyAction>().empty());
 }
 
 /**
@@ -99,13 +120,13 @@ TEST_F(GameEventBroadcasterFixture, GuaranteesADeparture) {
 TEST_F(GameEventBroadcasterFixture, SkipsASpawnWhoseCoordinateIsNotANumber) {
   EXPECT_NO_THROW(
       publishAndDispatch(game::EntitySpawn{.networkId = MONSTER_NETWORK_ID,
-                                           .type = game::EntityType::Enemy,
+                                           .typeNumber = DRIFTER_TYPE_NUMBER,
                                            .x = NOT_A_NUMBER,
                                            .y = MONSTER_Y}));
   EXPECT_EQ(messageCount(), 0U);
 
   publishAndDispatch(game::EntitySpawn{.networkId = MONSTER_NETWORK_ID,
-                                       .type = game::EntityType::Enemy,
+                                       .typeNumber = DRIFTER_TYPE_NUMBER,
                                        .x = MONSTER_X,
                                        .y = MONSTER_Y});
 

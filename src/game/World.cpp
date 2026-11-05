@@ -1,56 +1,142 @@
 #include "World.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <optional>
-#include "BehaviourRegistry.hpp"
-#include "BuiltInBehaviours.hpp"
-#include "BydoKind.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
+#include "CurrentAction.hpp"
 #include "Entity.hpp"
-#include "EntitySizeConstants.hpp"
+#include "EntitySheet.hpp"
 #include "EntityType.hpp"
+#include "EntityTypeNumber.hpp"
 #include "Gun.hpp"
-#include "GunConstants.hpp"
 #include "Health.hpp"
-#include "HealthConstants.hpp"
+#include "HurtZone.hpp"
 #include "Intent.hpp"
 #include "Invulnerable.hpp"
 #include "Lives.hpp"
-#include "MissileConstants.hpp"
+#include "LivesConstants.hpp"
 #include "MissileOwner.hpp"
+#include "MotionKind.hpp"
+#include "MotionSheet.hpp"
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdentity.hpp"
 #include "Pilot.hpp"
+#include "PilotSheet.hpp"
 #include "Position.hpp"
 #include "ScoreValue.hpp"
-#include "ShipControlConstants.hpp"
 #include "ShipMotion.hpp"
-#include "SpawningConstants.hpp"
 #include "SteadyMotion.hpp"
+#include "SurvivesContact.hpp"
 #include "TimeConstants.hpp"
-#include "Velocity.hpp"
 
 namespace rtype::game {
 
-World::World() : behaviours_(builtInBehaviours()) {}
+namespace {
 
-std::uint32_t World::spawnPlayer(Position position, std::uint8_t lives) {
+/** @brief A body being made: the entity, the sheet of its type, and where it
+ * appears. */
+struct BodyStart {
+  engine::Entity body;
+  std::reference_wrapper<const EntitySheet> sheet;
+  Position position;
+};
+
+/** @brief Gives @p start what every entity of a sheet has: where it is, its
+ * side, its box, the number of its sheet, and an Intent that wants nothing. */
+void addPlace(engine::ComponentRegistry& components, const BodyStart& start) {
+  const EntitySheet& sheet = start.sheet.get();
+  components.add(start.body, start.position);
+  components.add(start.body, sheet.side);
+  components.add(start.body, sheet.hitbox);
+  components.add(start.body, EntityTypeNumber{.number = sheet.number});
+  components.add(start.body, Intent{});
+}
+
+/** @brief Gives @p start the motion its sheet names. */
+void addMotion(engine::ComponentRegistry& components, const BodyStart& start) {
+  const MotionSheet& motion = start.sheet.get().motion;
+  if (motion.kind == MotionKind::Ship) {
+    components.add(start.body, ShipMotion{});
+    return;
+  }
+  components.add(start.body, SteadyMotion{.topSpeed = motion.topSpeed});
+}
+
+/** @brief Gives @p start the Pilot of its behaviour, when one pilots it. */
+void addPilot(engine::ComponentRegistry& components, const BodyStart& start) {
+  const std::optional<PilotSheet>& pilot = start.sheet.get().pilot;
+  if (!pilot.has_value()) {
+    return;
+  }
+  components.add(start.body, Pilot{.behaviour = pilot->behaviour,
+                                   .origin = start.position,
+                                   .age = engine::Duration::zero(),
+                                   .settings = pilot->settings});
+}
+
+/** @brief Gives @p start the Health, the ScoreValue and the Gun its sheet
+ * gives. */
+void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
+  const EntitySheet& sheet = start.sheet.get();
+  if (sheet.health.has_value()) {
+    components.add(start.body, Health{.points = *sheet.health});
+  }
+  if (sheet.points.has_value()) {
+    components.add(start.body, ScoreValue{.points = *sheet.points});
+  }
+  if (sheet.gun.has_value()) {
+    components.add(start.body,
+                   Gun{.intervalTicks = sheet.gun->intervalTicks,
+                       .ticksUntilReady = sheet.gun->firstShotTicks,
+                       .projectileNumber = sheet.gun->projectileNumber});
+  }
+}
+
+/** @brief Gives @p start the parts that decide what its contact with a ship
+ * does: the CurrentAction of an enemy, then the HurtZone and the
+ * SurvivesContact its sheet declares. */
+void addContactParts(engine::ComponentRegistry& components,
+                     const BodyStart& start) {
+  const EntitySheet& sheet = start.sheet.get();
+  if (sheet.side == EntityType::Enemy) {
+    components.add(start.body, CurrentAction{});
+  }
+  if (sheet.hurtZone.has_value()) {
+    components.add(start.body, *sheet.hurtZone);
+  }
+  if (sheet.survivesContact) {
+    components.add(start.body, SurvivesContact{});
+  }
+}
+
+/** @brief Gives the ship of a player its lives and no protection yet. */
+void addShipParts(engine::ComponentRegistry& components, engine::Entity ship) {
+  components.add(ship, Lives{.count = STARTING_LIVES});
+  components.add(ship, Invulnerable{});
+}
+
+}  // namespace
+
+std::uint32_t World::spawn(const EntitySheet& sheet, Position position,
+                           std::optional<std::uint8_t> owner) {
   const std::uint32_t networkId = networkIds_.allocate();
-  const engine::Entity ship = registry_.create();
-  components_.add(ship, position);
-  components_.add(ship, ShipMotion{});
-  components_.add(ship, Intent{});
-  components_.add(ship, Lives{.count = lives});
-  components_.add(ship, Invulnerable{});
-  components_.add(ship, Gun{.intervalTicks = SHOT_INTERVAL_TICKS,
-                            .ticksUntilReady = 0,
-                            .projectile = EntityType::PlayerMissile});
-  components_.add(ship,
-                  CollisionBox{.width = SHIP_WIDTH, .height = SHIP_HEIGHT});
-  components_.add(ship, EntityType::Player);
-  components_.add(ship, NetworkIdentity{.networkId = networkId});
-  shipByNetworkId_.bind(networkId, ship);
+  const BodyStart start{
+      .body = registry_.create(), .sheet = sheet, .position = position};
+  addPlace(components_, start);
+  addMotion(components_, start);
+  addPilot(components_, start);
+  addCombat(components_, start);
+  addContactParts(components_, start);
+  components_.add(start.body, NetworkIdentity{.networkId = networkId});
+  if (owner.has_value()) {
+    components_.add(start.body, MissileOwner{.playerNumber = *owner});
+  }
+  if (!sheet.pilot.has_value()) {
+    addShipParts(components_, start.body);
+    shipByNetworkId_.bind(networkId, start.body);
+  }
   return networkId;
 }
 
@@ -63,54 +149,6 @@ bool World::removePlayer(std::uint32_t shipNetworkId) {
   shipByNetworkId_.unbind(shipNetworkId);
   components_.destroy(*ship);
   return true;
-}
-
-std::uint32_t World::spawnBydo(Position position, BydoKind kind) {
-  const std::uint32_t networkId = networkIds_.allocate();
-  const engine::Entity bydo = registry_.create();
-  components_.add(bydo, position);
-  components_.add(bydo, SteadyMotion{.topSpeed = BYDO_SPEED});
-  components_.add(bydo,
-                  Pilot{.behaviour = behaviours_.named(behaviourNameOf(kind)),
-                        .origin = position,
-                        .age = engine::Duration::zero()});
-  components_.add(bydo,
-                  CollisionBox{.width = BYDO_WIDTH, .height = BYDO_HEIGHT});
-  components_.add(bydo, EntityType::Enemy);
-  components_.add(bydo, Health{.points = BYDO_HEALTH});
-  components_.add(bydo, ScoreValue{.points = pointsOf(kind)});
-  components_.add(bydo, Intent{});
-  components_.add(bydo, Gun{.intervalTicks = ENEMY_SHOT_INTERVAL_TICKS,
-                            .ticksUntilReady = ENEMY_SHOT_INTERVAL_TICKS,
-                            .projectile = EntityType::EnemyMissile});
-  components_.add(bydo, NetworkIdentity{.networkId = networkId});
-  return networkId;
-}
-
-std::uint32_t World::spawnPlayerMissile(Position position,
-                                        std::uint8_t playerNumber) {
-  const std::uint32_t networkId = networkIds_.allocate();
-  const engine::Entity missile = registry_.create();
-  components_.add(missile, position);
-  components_.add(missile, Velocity{.x = PLAYER_MISSILE_SPEED, .y = 0.0F});
-  components_.add(missile, CollisionBox{.width = PLAYER_MISSILE_WIDTH,
-                                        .height = PLAYER_MISSILE_HEIGHT});
-  components_.add(missile, EntityType::PlayerMissile);
-  components_.add(missile, MissileOwner{.playerNumber = playerNumber});
-  components_.add(missile, NetworkIdentity{.networkId = networkId});
-  return networkId;
-}
-
-std::uint32_t World::spawnEnemyMissile(Position position) {
-  const std::uint32_t networkId = networkIds_.allocate();
-  const engine::Entity missile = registry_.create();
-  components_.add(missile, position);
-  components_.add(missile, Velocity{.x = -ENEMY_MISSILE_SPEED, .y = 0.0F});
-  components_.add(missile, CollisionBox{.width = ENEMY_MISSILE_WIDTH,
-                                        .height = ENEMY_MISSILE_HEIGHT});
-  components_.add(missile, EntityType::EnemyMissile);
-  components_.add(missile, NetworkIdentity{.networkId = networkId});
-  return networkId;
 }
 
 std::size_t World::entityCount() const { return registry_.size(); }

@@ -1,0 +1,14 @@
+#include <cstdint>
+#include <memory>
+#include "GreeterPluginModule.hpp"
+#include "IModule.hpp"
+#include "PluginConstants.hpp"
+#include "PluginEntry.hpp"
+
+std::uint32_t rtypePluginEntry(
+    std::unique_ptr<rtype::engine::IModule>* module) {
+  if (module != nullptr) {
+    *module = std::make_unique<GreeterPluginModule>();
+  }
+  return rtype::engine::PLUGIN_API_VERSION;
+}

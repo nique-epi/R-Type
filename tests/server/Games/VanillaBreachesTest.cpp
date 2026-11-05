@@ -2,6 +2,7 @@
 #include <optional>
 #include <string_view>
 #include <vector>
+#include "HostedRules.hpp"
 #include "ServerConstants.hpp"
 #include "VanillaBreaches.hpp"
 #include "VanillaBreachesTestConstants.hpp"
@@ -9,14 +10,19 @@
 namespace rtype::server::testing {
 
 /**
- * Given the shipped waves file, no seed and the default input delay
+ * Given the shipped waves file and entity sheets, no seed and the default
+ * input delay
  * When the games are judged
  * Then they are vanilla: no reason is given
  */
 TEST(VanillaBreaches, TheShippedRulesAreVanilla) {
-  EXPECT_TRUE(vanillaBreaches(OFFICIAL_WAVES_FINGERPRINT, std::nullopt,
-                              DEFAULT_INPUT_DELAY_TICKS)
-                  .empty());
+  EXPECT_TRUE(
+      vanillaBreaches(
+          HostedRules{.wavesFingerprint = OFFICIAL_WAVES_FINGERPRINT,
+                      .sheetsFingerprint = OFFICIAL_ENTITY_SHEETS_FINGERPRINT,
+                      .seed = std::nullopt,
+                      .inputDelayTicks = DEFAULT_INPUT_DELAY_TICKS})
+          .empty());
 }
 
 /**
@@ -25,9 +31,26 @@ TEST(VanillaBreaches, TheShippedRulesAreVanilla) {
  * Then the waves file is the only reason they are not vanilla
  */
 TEST(VanillaBreaches, AnotherWavesFileIsNotVanilla) {
-  EXPECT_EQ(vanillaBreaches(ANOTHER_WAVES_FINGERPRINT, std::nullopt,
-                            DEFAULT_INPUT_DELAY_TICKS),
+  EXPECT_EQ(vanillaBreaches(HostedRules{
+                .wavesFingerprint = ANOTHER_WAVES_FINGERPRINT,
+                .sheetsFingerprint = OFFICIAL_ENTITY_SHEETS_FINGERPRINT,
+                .seed = std::nullopt,
+                .inputDelayTicks = DEFAULT_INPUT_DELAY_TICKS}),
             std::vector<std::string_view>{MODIFIED_WAVES_BREACH});
+}
+
+/**
+ * Given other entity sheets
+ * When the games are judged
+ * Then the sheets are the only reason they are not vanilla
+ */
+TEST(VanillaBreaches, OtherEntitySheetsAreNotVanilla) {
+  EXPECT_EQ(vanillaBreaches(
+                HostedRules{.wavesFingerprint = OFFICIAL_WAVES_FINGERPRINT,
+                            .sheetsFingerprint = ANOTHER_SHEETS_FINGERPRINT,
+                            .seed = std::nullopt,
+                            .inputDelayTicks = DEFAULT_INPUT_DELAY_TICKS}),
+            std::vector<std::string_view>{MODIFIED_ENTITY_SHEETS_BREACH});
 }
 
 /**
@@ -36,8 +59,11 @@ TEST(VanillaBreaches, AnotherWavesFileIsNotVanilla) {
  * Then the seed is the only reason they are not vanilla: 0 is a seed too
  */
 TEST(VanillaBreaches, ASeedOfZeroIsNotVanilla) {
-  EXPECT_EQ(vanillaBreaches(OFFICIAL_WAVES_FINGERPRINT, ZERO_SEED,
-                            DEFAULT_INPUT_DELAY_TICKS),
+  EXPECT_EQ(vanillaBreaches(HostedRules{
+                .wavesFingerprint = OFFICIAL_WAVES_FINGERPRINT,
+                .sheetsFingerprint = OFFICIAL_ENTITY_SHEETS_FINGERPRINT,
+                .seed = ZERO_SEED,
+                .inputDelayTicks = DEFAULT_INPUT_DELAY_TICKS}),
             std::vector<std::string_view>{IMPOSED_SEED_BREACH});
 }
 
@@ -47,8 +73,11 @@ TEST(VanillaBreaches, ASeedOfZeroIsNotVanilla) {
  * Then the delay is the only reason they are not vanilla
  */
 TEST(VanillaBreaches, AShorterInputDelayIsNotVanilla) {
-  EXPECT_EQ(vanillaBreaches(OFFICIAL_WAVES_FINGERPRINT, std::nullopt,
-                            ONE_TICK_SHORTER_DELAY),
+  EXPECT_EQ(vanillaBreaches(HostedRules{
+                .wavesFingerprint = OFFICIAL_WAVES_FINGERPRINT,
+                .sheetsFingerprint = OFFICIAL_ENTITY_SHEETS_FINGERPRINT,
+                .seed = std::nullopt,
+                .inputDelayTicks = ONE_TICK_SHORTER_DELAY}),
             std::vector<std::string_view>{CHANGED_INPUT_DELAY_BREACH});
 }
 
@@ -58,22 +87,29 @@ TEST(VanillaBreaches, AShorterInputDelayIsNotVanilla) {
  * Then the delay is the only reason they are not vanilla
  */
 TEST(VanillaBreaches, ALongerInputDelayIsNotVanilla) {
-  EXPECT_EQ(vanillaBreaches(OFFICIAL_WAVES_FINGERPRINT, std::nullopt,
-                            ONE_TICK_LONGER_DELAY),
+  EXPECT_EQ(vanillaBreaches(HostedRules{
+                .wavesFingerprint = OFFICIAL_WAVES_FINGERPRINT,
+                .sheetsFingerprint = OFFICIAL_ENTITY_SHEETS_FINGERPRINT,
+                .seed = std::nullopt,
+                .inputDelayTicks = ONE_TICK_LONGER_DELAY}),
             std::vector<std::string_view>{CHANGED_INPUT_DELAY_BREACH});
 }
 
 /**
- * Given another waves file, a seed and another input delay
+ * Given another waves file, other entity sheets, a seed and another input
+ * delay
  * When the games are judged
  * Then every reason is given, in the order of the rules
  */
 TEST(VanillaBreaches, GivesEveryReasonInOrder) {
-  EXPECT_EQ(
-      vanillaBreaches(ANOTHER_WAVES_FINGERPRINT, ZERO_SEED,
-                      ONE_TICK_LONGER_DELAY),
-      (std::vector<std::string_view>{MODIFIED_WAVES_BREACH, IMPOSED_SEED_BREACH,
-                                     CHANGED_INPUT_DELAY_BREACH}));
+  EXPECT_EQ(vanillaBreaches(
+                HostedRules{.wavesFingerprint = ANOTHER_WAVES_FINGERPRINT,
+                            .sheetsFingerprint = ANOTHER_SHEETS_FINGERPRINT,
+                            .seed = ZERO_SEED,
+                            .inputDelayTicks = ONE_TICK_LONGER_DELAY}),
+            (std::vector<std::string_view>{
+                MODIFIED_WAVES_BREACH, MODIFIED_ENTITY_SHEETS_BREACH,
+                IMPOSED_SEED_BREACH, CHANGED_INPUT_DELAY_BREACH}));
 }
 
 }  // namespace rtype::server::testing

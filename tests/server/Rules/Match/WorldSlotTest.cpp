@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstdint>
+#include "EntityTypesTestConstants.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "WorldSlot.hpp"
 #include "WorldSlotTestConstants.hpp"
 
@@ -12,7 +14,9 @@ namespace rtype::server {
  */
 TEST(WorldSlot, RenewedWorldHoldsNothingOfThePreviousOne) {
   WorldSlot slot;
-  const std::uint32_t shipId = slot.current().spawnPlayer(testing::SHIP_START);
+  const std::uint32_t shipId = slot.current().spawn(
+      game::testing::shippedEntitySheets().named(game::testing::SHIP_SHEET),
+      testing::SHIP_START);
   ASSERT_NE(slot.current().shipPositionOf(shipId), nullptr);
 
   slot.renew();
@@ -51,7 +55,9 @@ TEST(WorldSlot, ANewSlotHoldsNoEntity) {
  */
 TEST(WorldSlot, CountsTheEntitiesOfItsWorld) {
   WorldSlot slot;
-  slot.current().spawnPlayer(testing::SHIP_START);
+  slot.current().spawn(
+      game::testing::shippedEntitySheets().named(game::testing::SHIP_SHEET),
+      testing::SHIP_START);
 
   EXPECT_EQ(slot.entityCount(), 1U);
 }
@@ -63,7 +69,9 @@ TEST(WorldSlot, CountsTheEntitiesOfItsWorld) {
  */
 TEST(WorldSlot, CountsTheEntitiesOfTheNewWorldOnceRenewed) {
   WorldSlot slot;
-  slot.current().spawnPlayer(testing::SHIP_START);
+  slot.current().spawn(
+      game::testing::shippedEntitySheets().named(game::testing::SHIP_SHEET),
+      testing::SHIP_START);
 
   slot.renew();
 

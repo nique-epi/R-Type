@@ -24,12 +24,12 @@ class WaveDirectorFixture : public ::testing::Test {
   void runATickWithTheSkyClear();
 
   /**
-   * @brief Runs ticks, with @p bydosInPlay Bydos in the world at each, until a
-   * Bydo is due, at most A_MINUTE_OF_TICKS.
+   * @brief Runs ticks, with @p enemiesInPlay Bydos in the world at each, until
+   * a Bydo is due, at most A_MINUTE_OF_TICKS.
    * @returns How many ticks ran, the one the Bydo is due on included; 0, after
    * a failure, when none was due.
    */
-  std::size_t ticksToTheNextBydo(std::size_t bydosInPlay);
+  std::size_t ticksToTheNextBydo(std::size_t enemiesInPlay);
 
   /**
    * @brief Runs ticks until every Bydo of the first wave is due, one Bydo in

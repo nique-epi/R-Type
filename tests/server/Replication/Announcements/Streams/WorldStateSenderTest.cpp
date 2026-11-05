@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include "ConnectedPlayer.hpp"
-#include "EntityType.hpp"
+#include "EntityTypeNumberTestConstants.hpp"
 #include "Invulnerable.hpp"
 #include "Lives.hpp"
 #include "NetworkConstants.hpp"
@@ -18,15 +18,15 @@
 #include "WorldStateSenderFixture.hpp"
 #include "WorldStateSenderTestConstants.hpp"
 
-using rtype::game::EntityType;
 using rtype::game::Invulnerable;
 using rtype::game::Lives;
 using rtype::network::EntityState;
 using rtype::network::PlayerState;
-using rtype::network::WireEntityType;
 using rtype::server::testing::client;
+using rtype::server::testing::DRIFTER_TYPE_NUMBER;
 using rtype::server::testing::ENEMY_MISSILE_NETWORK_ID;
 using rtype::server::testing::ENEMY_MISSILE_POSITION;
+using rtype::server::testing::ENEMY_MISSILE_TYPE_NUMBER;
 using rtype::server::testing::ENEMY_NETWORK_ID;
 using rtype::server::testing::ENEMY_POSITION;
 using rtype::server::testing::expectedEntity;
@@ -42,6 +42,7 @@ using rtype::server::testing::ONE_TICK_OF_PROTECTION;
 using rtype::server::testing::OTHER_SESSION_TOKEN;
 using rtype::server::testing::PLAYER_MISSILE_NETWORK_ID;
 using rtype::server::testing::PLAYER_MISSILE_POSITION;
+using rtype::server::testing::PLAYER_MISSILE_TYPE_NUMBER;
 using rtype::server::testing::PLAYER_NETWORK_ID;
 using rtype::server::testing::PLAYER_POSITION;
 using rtype::server::testing::RECEIVED_INPUT_NUMBER;
@@ -53,6 +54,7 @@ using rtype::server::testing::SECOND_SHIP_ID;
 using rtype::server::testing::SESSION_TOKEN;
 using rtype::server::testing::SHIP_NETWORK_ID;
 using rtype::server::testing::SHIP_POSITION;
+using rtype::server::testing::SHIP_TYPE_NUMBER;
 using rtype::server::testing::STATE_RATES_UNDER_TEST;
 using rtype::server::testing::ticksSentTo;
 using rtype::server::testing::UNTYPED_NETWORK_ID;
@@ -65,7 +67,7 @@ using rtype::server::testing::WorldStateSenderFixture;
  * DEFAULT_TICKS_PER_WORLD_STATE, 2 times that, and so on
  */
 TEST_F(WorldStateSenderFixture, SendsTheStatesPerSecondOfTheConstant) {
-  addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
+  addNetworkedEntity(SHIP_TYPE_NUMBER, SHIP_POSITION, SHIP_NETWORK_ID);
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
 
   runTicks(rtype::engine::SIMULATION_TICKS_PER_SECOND);
@@ -84,7 +86,7 @@ TEST_F(WorldStateSenderFixture, SendsTheStatesPerSecondOfTheConstant) {
  * Then nothing is sent
  */
 TEST_F(WorldStateSenderFixture, SendsNothingBeforeTheFirstStateIsDue) {
-  addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
+  addNetworkedEntity(SHIP_TYPE_NUMBER, SHIP_POSITION, SHIP_NETWORK_ID);
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
 
   runTicks(DEFAULT_TICKS_PER_WORLD_STATE - 1);
@@ -98,7 +100,7 @@ TEST_F(WorldStateSenderFixture, SendsNothingBeforeTheFirstStateIsDue) {
  * Then nothing is sent
  */
 TEST_F(WorldStateSenderFixture, SendsNothingWithoutPlayers) {
-  addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
+  addNetworkedEntity(SHIP_TYPE_NUMBER, SHIP_POSITION, SHIP_NETWORK_ID);
 
   runTicks(rtype::engine::SIMULATION_TICKS_PER_SECOND);
 
@@ -111,7 +113,7 @@ TEST_F(WorldStateSenderFixture, SendsNothingWithoutPlayers) {
  * Then each gets one datagram, holding the same state
  */
 TEST_F(WorldStateSenderFixture, SendsTheStateToEveryPlayer) {
-  addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
+  addNetworkedEntity(SHIP_TYPE_NUMBER, SHIP_POSITION, SHIP_NETWORK_ID);
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
   connect(SECOND_CLIENT_PORT, OTHER_SESSION_TOKEN);
 
@@ -130,7 +132,7 @@ TEST_F(WorldStateSenderFixture, SendsTheStateToEveryPlayer) {
  * its session
  */
 TEST_F(WorldStateSenderFixture, StartsEachDatagramWithTheHeaderOfItsPlayer) {
-  addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
+  addNetworkedEntity(SHIP_TYPE_NUMBER, SHIP_POSITION, SHIP_NETWORK_ID);
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
   connect(SECOND_CLIENT_PORT, OTHER_SESSION_TOKEN);
 
@@ -146,14 +148,15 @@ TEST_F(WorldStateSenderFixture, StartsEachDatagramWithTheHeaderOfItsPlayer) {
 /**
  * Given entities of the four types
  * When the first state is due
- * Then it lists each under its network id, its wire type and its position
+ * Then it lists each under its network id, the number of its type and its
+ * position
  */
-TEST_F(WorldStateSenderFixture, ListsEachEntityUnderItsWireType) {
-  addNetworkedEntity(EntityType::Player, PLAYER_POSITION, PLAYER_NETWORK_ID);
-  addNetworkedEntity(EntityType::Enemy, ENEMY_POSITION, ENEMY_NETWORK_ID);
-  addNetworkedEntity(EntityType::PlayerMissile, PLAYER_MISSILE_POSITION,
+TEST_F(WorldStateSenderFixture, ListsEachEntityUnderItsTypeNumber) {
+  addNetworkedEntity(SHIP_TYPE_NUMBER, PLAYER_POSITION, PLAYER_NETWORK_ID);
+  addNetworkedEntity(DRIFTER_TYPE_NUMBER, ENEMY_POSITION, ENEMY_NETWORK_ID);
+  addNetworkedEntity(PLAYER_MISSILE_TYPE_NUMBER, PLAYER_MISSILE_POSITION,
                      PLAYER_MISSILE_NETWORK_ID);
-  addNetworkedEntity(EntityType::EnemyMissile, ENEMY_MISSILE_POSITION,
+  addNetworkedEntity(ENEMY_MISSILE_TYPE_NUMBER, ENEMY_MISSILE_POSITION,
                      ENEMY_MISSILE_NETWORK_ID);
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
 
@@ -163,12 +166,11 @@ TEST_F(WorldStateSenderFixture, ListsEachEntityUnderItsWireType) {
   std::vector<EntityState> listed = decodedState(0).entities;
   std::ranges::sort(listed, {}, &EntityState::entityId);
   const std::vector<EntityState> expected{
-      expectedEntity(PLAYER_NETWORK_ID, WireEntityType::PlayerShip,
-                     PLAYER_POSITION),
-      expectedEntity(ENEMY_NETWORK_ID, WireEntityType::Bydo, ENEMY_POSITION),
-      expectedEntity(PLAYER_MISSILE_NETWORK_ID, WireEntityType::PlayerMissile,
+      expectedEntity(PLAYER_NETWORK_ID, SHIP_TYPE_NUMBER, PLAYER_POSITION),
+      expectedEntity(ENEMY_NETWORK_ID, DRIFTER_TYPE_NUMBER, ENEMY_POSITION),
+      expectedEntity(PLAYER_MISSILE_NETWORK_ID, PLAYER_MISSILE_TYPE_NUMBER,
                      PLAYER_MISSILE_POSITION),
-      expectedEntity(ENEMY_MISSILE_NETWORK_ID, WireEntityType::EnemyMissile,
+      expectedEntity(ENEMY_MISSILE_NETWORK_ID, ENEMY_MISSILE_TYPE_NUMBER,
                      ENEMY_MISSILE_POSITION)};
   EXPECT_EQ(listed, expected);
 }
@@ -179,8 +181,8 @@ TEST_F(WorldStateSenderFixture, ListsEachEntityUnderItsWireType) {
  * Then only the ship is listed, because the others cannot be named or typed
  */
 TEST_F(WorldStateSenderFixture, ListsOnlyEntitiesThatCanBeNamedAndTyped) {
-  addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
-  addEntityWithoutNetworkId(EntityType::Player, PLAYER_POSITION);
+  addNetworkedEntity(SHIP_TYPE_NUMBER, SHIP_POSITION, SHIP_NETWORK_ID);
+  addEntityWithoutNetworkId(SHIP_TYPE_NUMBER, PLAYER_POSITION);
   addEntityWithoutType(ENEMY_POSITION, UNTYPED_NETWORK_ID);
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
 
@@ -189,7 +191,7 @@ TEST_F(WorldStateSenderFixture, ListsOnlyEntitiesThatCanBeNamedAndTyped) {
   ASSERT_EQ(sentDatagrams().size(), 1U);
   EXPECT_EQ(decodedState(0).entities,
             (std::vector<EntityState>{expectedEntity(
-                SHIP_NETWORK_ID, WireEntityType::PlayerShip, SHIP_POSITION)}));
+                SHIP_NETWORK_ID, SHIP_TYPE_NUMBER, SHIP_POSITION)}));
 }
 
 /**
@@ -201,7 +203,7 @@ TEST_F(WorldStateSenderFixture, ListsOnlyEntitiesThatCanBeNamedAndTyped) {
  */
 TEST_F(WorldStateSenderFixture, SplitsABigStateIntoDatagramsOfTheSameTick) {
   for (std::size_t index = 0; index < MANY_ENTITIES; ++index) {
-    addNetworkedEntity(EntityType::Enemy, SHIP_POSITION,
+    addNetworkedEntity(DRIFTER_TYPE_NUMBER, SHIP_POSITION,
                        static_cast<std::uint32_t>(index + 1));
   }
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
@@ -228,7 +230,7 @@ TEST_F(WorldStateSenderFixture, SplitsABigStateIntoDatagramsOfTheSameTick) {
  */
 TEST_F(WorldStateSenderFixture, GivesEachPartOfAStateTheNextSequence) {
   for (std::size_t index = 0; index < MANY_ENTITIES; ++index) {
-    addNetworkedEntity(EntityType::Enemy, SHIP_POSITION,
+    addNetworkedEntity(DRIFTER_TYPE_NUMBER, SHIP_POSITION,
                        static_cast<std::uint32_t>(index + 1));
   }
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
@@ -247,8 +249,8 @@ TEST_F(WorldStateSenderFixture, GivesEachPartOfAStateTheNextSequence) {
  * Then the state is sent and lists the ship only: the server keeps running
  */
 TEST_F(WorldStateSenderFixture, LeavesOutAnEntityWhosePositionIsNotANumber) {
-  addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
-  addNetworkedEntity(EntityType::Enemy, NOT_A_NUMBER_POSITION,
+  addNetworkedEntity(SHIP_TYPE_NUMBER, SHIP_POSITION, SHIP_NETWORK_ID);
+  addNetworkedEntity(DRIFTER_TYPE_NUMBER, NOT_A_NUMBER_POSITION,
                      ENEMY_NETWORK_ID);
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
 
@@ -256,8 +258,8 @@ TEST_F(WorldStateSenderFixture, LeavesOutAnEntityWhosePositionIsNotANumber) {
 
   ASSERT_EQ(sentDatagrams().size(), 1U);
   EXPECT_EQ(decodedState(0).entities,
-            std::vector{expectedEntity(
-                SHIP_NETWORK_ID, WireEntityType::PlayerShip, SHIP_POSITION)});
+            std::vector{expectedEntity(SHIP_NETWORK_ID, SHIP_TYPE_NUMBER,
+                                       SHIP_POSITION)});
 }
 
 /**
@@ -266,16 +268,16 @@ TEST_F(WorldStateSenderFixture, LeavesOutAnEntityWhosePositionIsNotANumber) {
  * Then the state is sent and lists the ship only
  */
 TEST_F(WorldStateSenderFixture, LeavesOutAnEntityWhosePositionIsInfinite) {
-  addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
-  addNetworkedEntity(EntityType::Enemy, INFINITE_POSITION, ENEMY_NETWORK_ID);
+  addNetworkedEntity(SHIP_TYPE_NUMBER, SHIP_POSITION, SHIP_NETWORK_ID);
+  addNetworkedEntity(DRIFTER_TYPE_NUMBER, INFINITE_POSITION, ENEMY_NETWORK_ID);
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
 
   runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 
   ASSERT_EQ(sentDatagrams().size(), 1U);
   EXPECT_EQ(decodedState(0).entities,
-            std::vector{expectedEntity(
-                SHIP_NETWORK_ID, WireEntityType::PlayerShip, SHIP_POSITION)});
+            std::vector{expectedEntity(SHIP_NETWORK_ID, SHIP_TYPE_NUMBER,
+                                       SHIP_POSITION)});
 }
 
 /**
@@ -396,7 +398,7 @@ TEST_F(WorldStateSenderFixture, ListsAPlayerWhoHasNotScoredWithZero) {
  * Then exactly that many states are sent
  */
 TEST_F(WorldStateSenderFixture, SendsExactlyTheConfiguredStatesPerSecond) {
-  addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
+  addNetworkedEntity(SHIP_TYPE_NUMBER, SHIP_POSITION, SHIP_NETWORK_ID);
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
 
   for (const std::size_t rate : STATE_RATES_UNDER_TEST) {
@@ -416,7 +418,7 @@ TEST_F(WorldStateSenderFixture, SendsExactlyTheConfiguredStatesPerSecond) {
  * to whole ticks
  */
 TEST_F(WorldStateSenderFixture, SpreadsTheStatesOverTheSecond) {
-  addNetworkedEntity(EntityType::Player, SHIP_POSITION, SHIP_NETWORK_ID);
+  addNetworkedEntity(SHIP_TYPE_NUMBER, SHIP_POSITION, SHIP_NETWORK_ID);
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
 
   for (const std::size_t rate : STATE_RATES_UNDER_TEST) {

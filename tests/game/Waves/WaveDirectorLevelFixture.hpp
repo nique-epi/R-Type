@@ -6,6 +6,13 @@
 
 namespace rtype::game::testing {
 
+/** @brief Ticks a test runs on a level: how many, and how many enemies the
+ * world holds at each of them. */
+struct LevelTicks {
+  std::size_t count{};
+  std::size_t enemiesInPlay{};
+};
+
 /**
  * @brief Two wave directors on the test curve, one whose level holds a single
  * wave and one whose level holds two, run tick by tick, told by the test how
@@ -22,12 +29,11 @@ class WaveDirectorLevelFixture : public ::testing::Test {
   [[nodiscard]] WaveDirector& twoWaveLevel();
 
   /**
-   * @brief Runs @p count ticks of @p director, with @p bydosInPlay Bydos in
+   * @brief Runs @p ticks of @p director, with the same number of enemies in
    * the world at each.
-   * @returns How many Bydos were due in them.
+   * @returns How many enemies were due in them.
    */
-  static std::size_t runTicks(WaveDirector& director, std::size_t count,
-                              std::size_t bydosInPlay);
+  static std::size_t runTicks(WaveDirector& director, LevelTicks ticks);
 
  private:
   WaveDirector oneWaveLevel_;

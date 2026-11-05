@@ -12,12 +12,16 @@ add_library(rtype_engine_paths STATIC
   AssetFolder.cpp
   ExecutablePath.cpp
   ${RTYPE_EXECUTABLE_PATH_SOURCE}
-  PathText.cpp
 )
 
 target_include_directories(rtype_engine_paths PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_engine_paths PUBLIC rtype_engine_exceptions)
+target_link_libraries(rtype_engine_paths
+  PUBLIC
+    rtype_engine_exceptions
+  PRIVATE
+    rtype_logging
+)
 
 target_compile_definitions(rtype_engine_paths
   PRIVATE

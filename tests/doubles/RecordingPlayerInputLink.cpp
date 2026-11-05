@@ -13,6 +13,15 @@ std::optional<std::uint32_t> RecordingPlayerInputLink::sendPlayerInput(
   return number;
 }
 
+void RecordingPlayerInputLink::confirmInputsUpTo(std::uint32_t acknowledged) {
+  confirmations_.push_back(acknowledged);
+}
+
 const std::vector<std::uint8_t>& RecordingPlayerInputLink::sentActions() const {
   return sentActions_;
+}
+
+const std::vector<std::uint32_t>& RecordingPlayerInputLink::confirmations()
+    const {
+  return confirmations_;
 }

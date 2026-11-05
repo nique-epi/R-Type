@@ -78,13 +78,15 @@ The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on po
 ./r-type_server --seed 42
 ```
 
-The Bydos appear at heights drawn from the seed; without `--seed` the server draws one, and the journal records it (`Bydo spawning starts from the seed ...`) so the same game can be replayed. A seed makes the games not vanilla: their scores stay on the leaderboard of the server.
+The Bydos appear at heights drawn from the seed; without `--seed` the server draws one, and the journal records it (`wave spawning starts from the seed ...`) so the same game can be replayed. A seed makes the games not vanilla: their scores stay on the leaderboard of the server.
 
 ```bash
 ./r-type_server --set state-rate=30
 ```
 
 `--set <name>=<value>` forces any setting of the server and wins over `server.cfg`, a file of commands the server reads from the folder it is started from. A missing file is fine; the defaults apply. `server.cfg.example`, at the root of the repository, lists every setting with its default and its bounds: copy it to `server.cfg`. Every command and setting is described in [Configuration commands](https://nique-epi.github.io/R-Type/commands/).
+
+A `plugin <name>` line of `server.cfg` loads the module of a shared library, `plugins/<name>.so` next to the executable (`.dll` on Windows), so a feature is added without recompiling the server. A plugin that cannot be loaded stops the server with an error that names it, and `module <name> off` turns a loaded plugin off. The plugin must be built by the same compiler, from the same sources, as the server: see [Write a plugin](https://nique-epi.github.io/R-Type/modules/#write-a-plugin).
 
 ```
 # server.cfg
@@ -104,7 +106,7 @@ Every player's input is held for the same few ticks before it moves the ship (3 
 
 The server sends each player 30 world states per second instead of 20, from 2 to 60: more states move the other ships more smoothly and use more bandwidth (about 350 bytes per state with four players and thirty entities, see [the server page](https://nique-epi.github.io/R-Type/server/)).
 
-The server reads the waves of Bydos from `assets/waves/waves.toml`, in the `assets/` folder it finds next to its executable or in the folder above it. A missing or invalid file stops it with exit code 1, naming the file, the line and the key at fault; the format is described in [Writing the waves file](https://nique-epi.github.io/R-Type/waves-file/).
+The server reads the waves of Bydos from `assets/waves/waves.toml`, in the `assets/` folder it finds next to its executable or in the folder above it. A missing or invalid file stops it with exit code 1, naming the file, the line and the key at fault; the format is described in [Writing the waves file](https://nique-epi.github.io/R-Type/waves-file/). Both programs also read `assets/entities/`, one sheet per type of entity (the ship, the Bydos, the missiles), when they start, and stop the same way on an invalid sheet; the keys are described in [Writing an entity sheet](https://nique-epi.github.io/R-Type/entity-sheets/).
 
 ```bash
 ./r-type_client -h 192.168.1.20 -p 4243 -n ACE

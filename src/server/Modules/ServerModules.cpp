@@ -4,6 +4,7 @@
 #include <optional>
 #include <vector>
 #include "AssetFolder.hpp"
+#include "EntitySheetConstants.hpp"
 #include "ExecutablePath.hpp"
 #include "GamesSettings.hpp"
 #include "IModule.hpp"
@@ -36,7 +37,9 @@ std::vector<std::unique_ptr<engine::IModule>> serverModules(
       std::make_unique<ServerStorageModule>(engine::executableFolder()));
   modules.push_back(std::make_unique<ServerGamesModule>(GamesSettings{
       .seed = std::nullopt,
-      .wavesFile = engine::locateAssetFolder() / WAVE_FILE_IN_ASSETS}));
+      .wavesFile = engine::locateAssetFolder() / WAVE_FILE_IN_ASSETS,
+      .entitySheetsFolder =
+          engine::locateAssetFolder() / game::ENTITY_SHEET_FOLDER_IN_ASSETS}));
   modules.push_back(std::make_unique<ServerLobbyModule>());
   modules.push_back(std::make_unique<ServerInformationModule>());
   modules.push_back(std::make_unique<ServerMetricsModule>(

@@ -10,7 +10,7 @@
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "PlayerRoster.hpp"
 #include "SentDatagrams.hpp"
-#include "Spawning/BydoSpawnerTestConstants.hpp"
+#include "Spawning/WaveSpawnerTestConstants.hpp"
 
 using rtype::identifiers::NO_ENTITY_ID;
 using rtype::server::ConnectedPlayer;

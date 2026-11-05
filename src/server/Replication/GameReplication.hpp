@@ -1,11 +1,13 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
+#include "EntitySheet.hpp"
 #include "EntitySpawnSender.hpp"
+#include "GameContext.hpp"
 #include "GameEndAnnouncer.hpp"
 #include "GameOutcome.hpp"
 #include "IGameReplication.hpp"
@@ -32,14 +34,15 @@ namespace rtype::server {
 class GameReplication final : public IGameReplication {
  public:
   /**
-   * @param roster The players the announcements go to; it must outlive this.
-   * @param send Called for each datagram to send. Must not be empty.
-   * @param statesPerSecond The world states each player is sent per second,
-   * from LOWEST_WORLD_STATES_PER_SECOND to HIGHEST_WORLD_STATES_PER_SECOND.
-   * @throws InvalidStateRateException when it is outside that range.
+   * @param game The players the announcements go to, how to send, the world
+   * states each player is sent per second (LOWEST_WORLD_STATES_PER_SECOND to
+   * HIGHEST_WORLD_STATES_PER_SECOND) and the sheets, whose SHIP_SHEET_NAME is
+   * the ship of every player; it must outlive this.
+   * @throws InvalidStateRateException when the rate is outside that range.
+   * @throws game::UnknownEntityTypeException when no sheet is named
+   * SHIP_SHEET_NAME.
    */
-  GameReplication(PlayerRoster& roster, SendDatagram send,
-                  std::size_t statesPerSecond);
+  explicit GameReplication(GameContext& game);
 
   GameReplication(const GameReplication&) = delete;
   GameReplication& operator=(const GameReplication&) = delete;
@@ -58,6 +61,7 @@ class GameReplication final : public IGameReplication {
  private:
   PlayerRoster& roster_;
   SendDatagram send_;
+  std::reference_wrapper<const game::EntitySheet> ship_;
   WorldStateSender worldStateSender_;
   std::unique_ptr<ShipSpawnAnnouncer> shipSpawnAnnouncer_;
   std::unique_ptr<LobbyStateAnnouncer> lobbyStateAnnouncer_;

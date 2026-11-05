@@ -9,6 +9,7 @@ target_link_libraries(rtype_client_render_system
   PRIVATE
     rtype_client_easing
     rtype_client_sprite_look
+    rtype_client_sprites
 )
 
 rtype_enable_warnings(rtype_client_render_system)

@@ -11,6 +11,8 @@
 #include "RoundTripWatch.hpp"
 #include "ServerSession.hpp"
 #include "ServerSessionParts.hpp"
+#include "SessionEntityTypes.hpp"
+#include "SessionEntityTypesFixtures.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
 
@@ -45,9 +47,11 @@ class ServerSessionArrivalFixture : public ::testing::Test {
   GameLoadedReminder gameLoaded_;
   SimulatedClock clock_;
   RoundTripWatch roundTrips_{dispatcher_, clock_};
+  SessionEntityTypes entityTypes_{isDrawnInTheTests};
   ServerSession session_{ServerSessionParts{.link = link_,
                                             .dispatcher = dispatcher_,
                                             .gameLoaded = gameLoaded_,
+                                            .entityTypes = entityTypes_,
                                             .observers = {roundTrips_}}};
 };
 

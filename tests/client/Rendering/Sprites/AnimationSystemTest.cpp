@@ -107,3 +107,60 @@ TEST(AnimationSystem, AnAnimationWithoutFramesLeavesTheSpriteAsItIs) {
 
   EXPECT_EQ(scene.shownFrame(), FIRST);
 }
+
+/**
+ * Given an animation played once that has an animation after it
+ * When the system plays 300 ms, the whole of the first one
+ * Then the entity is alive and shows the first frame of the animation after
+ */
+TEST(AnimationSystem, AnEndedAnimationGivesWayToTheOneAfterIt) {
+  AnimatedScene scene(
+      SpriteAnimation{.animation = ONCE, .afterwards = BACK_TO_FIRST});
+
+  scene.play(THREE_FRAMES_LONG);
+
+  EXPECT_TRUE(scene.isAlive());
+  EXPECT_EQ(scene.shownFrame(), FIRST);
+}
+
+/**
+ * Given a held animation that has an animation after it
+ * When the system plays 300 ms, the whole of the held one
+ * Then the entity shows the first frame of the animation after
+ */
+TEST(AnimationSystem, AnEndedHeldAnimationGivesWayToTheOneAfterIt) {
+  AnimatedScene scene(
+      SpriteAnimation{.animation = HOLD, .afterwards = BACK_TO_FIRST});
+
+  scene.play(THREE_FRAMES_LONG);
+
+  EXPECT_EQ(scene.shownFrame(), FIRST);
+}
+
+/**
+ * Given a held animation with nothing after it
+ * When the system plays ten cycles
+ * Then the entity is alive and shows the last frame
+ */
+TEST(AnimationSystem, AHeldAnimationWithNothingAfterItKeepsItsLastFrame) {
+  AnimatedScene scene(SpriteAnimation{.animation = HOLD});
+
+  scene.play(THREE_FRAMES_LONG * MANY_CYCLES);
+
+  EXPECT_TRUE(scene.isAlive());
+  EXPECT_EQ(scene.shownFrame(), THIRD);
+}
+
+/**
+ * Given an animation played once that has an animation after it
+ * When the system plays one nanosecond less than 300 ms
+ * Then the first animation is still shown
+ */
+TEST(AnimationSystem, AnAnimationGivesWayOnlyOnceItHasEnded) {
+  AnimatedScene scene(
+      SpriteAnimation{.animation = ONCE, .afterwards = BACK_TO_FIRST});
+
+  scene.play(THREE_FRAMES_LONG - ONE_TICK);
+
+  EXPECT_EQ(scene.shownFrame(), THIRD);
+}

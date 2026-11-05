@@ -94,17 +94,17 @@ constexpr std::uint16_t SOME_SEQUENCE = 0x0A0B;
  * the transport sees and bit 3 is unknown, so no header above the transport
  * holds either.
  */
-constexpr std::uint8_t SOME_OTHER_VERSION = 5;
+constexpr std::uint8_t SOME_OTHER_VERSION = 7;
 constexpr std::uint32_t SOME_OTHER_PROTOCOL_ID = 0x52545951;
 constexpr std::uint8_t SOME_FLAGS = 0x0C;
 constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
 constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;
 
 /**
- * @brief The 22 bytes of a default header: RTYP, version 4, then zeros.
+ * @brief The 22 bytes of a default header: RTYP, version 6, then zeros.
  */
 constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
-    {0x52, 0x54, 0x59, 0x50, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    {0x52, 0x54, 0x59, 0x50, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
 /**
@@ -146,6 +146,18 @@ constexpr std::uint8_t PLAYER_NUMBER_BELOW_THE_FIRST = 0;
 constexpr std::uint8_t PLAYER_NUMBER_ABOVE_THE_LAST = 5;
 
 /**
+ * @brief Type numbers of the examples of the tests, as their byte layouts
+ * write them: 3 for the example entity, 1 for the example ship, 4 for an
+ * entity of another type; 0, which no entry of the table has; and 255, the
+ * largest a message may carry.
+ */
+constexpr std::uint8_t EXAMPLE_ENTITY_TYPE = 3;
+constexpr std::uint8_t EXAMPLE_SHIP_TYPE = 1;
+constexpr std::uint8_t OTHER_ENTITY_TYPE = 4;
+constexpr std::uint8_t NO_TYPE_NUMBER = 0;
+constexpr std::uint8_t LARGEST_TYPE_NUMBER = 255;
+
+/**
  * @brief Refusal reasons just outside the values 1 to 3 of the protocol page.
  */
 constexpr std::uint8_t REFUSAL_REASON_BELOW_THE_FIRST = 0;
@@ -176,11 +188,24 @@ constexpr std::uint32_t SOME_INPUT_NUMBER = 0x01020304;
 constexpr std::uint16_t SOME_EVENT_NUMBER = 0x0102;
 
 /**
+ * @brief An attack number of an EnemyAction.
+ */
+constexpr std::uint8_t SOME_ATTACK_NUMBER = 3;
+
+/**
  * @brief Actions of a PlayerInput: up and shoot (bits 0 and 4), and all five
  * actions at once.
  */
 constexpr std::uint8_t UP_AND_SHOOT = 0x11;
 constexpr std::uint8_t EVERY_ACTION = 0x1F;
+
+/**
+ * @brief The most inputs before the newest that a PlayerInput repeats, one
+ * more than that, and the number of the first input of a session.
+ */
+constexpr std::size_t REPEATED_INPUT_LIMIT = 15;
+constexpr std::size_t ONE_REPEATED_INPUT_TOO_MANY = REPEATED_INPUT_LIMIT + 1;
+constexpr std::uint32_t FIRST_SESSION_INPUT = 1;
 
 /**
  * @brief The first bit above the five actions, which must stay 0.
@@ -228,8 +253,7 @@ constexpr std::uint16_t SOME_SENDER_PORT = 50000;
  * @brief Message type bytes no message has: the byte before the first type,
  * the byte after the last, and the largest byte. The byte after the last is
  * read from the name of the last message, MessageType::ServerInformation: a
- * message
- * added after it needs this line to follow.
+ * message added after it needs this line to follow.
  */
 constexpr std::uint8_t TYPE_BELOW_THE_FIRST = 0;
 constexpr std::uint8_t TYPE_ABOVE_THE_LAST =

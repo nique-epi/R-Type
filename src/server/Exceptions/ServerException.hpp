@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "WaveFilePlace.hpp"
+#include "DataFilePlace.hpp"
 #include "WholeNumberRange.hpp"
 
 namespace rtype::server {
@@ -18,60 +18,14 @@ class ServerException : public std::runtime_error {
   explicit ServerException(const std::string& message);
 };
 
-/** @brief The waves file cannot be opened. */
-class UnreadableWaveFileException : public ServerException {
- public:
-  /** @param file The path of the file, as the errors show it. */
-  explicit UnreadableWaveFileException(const std::string& file);
-};
-
-/** @brief The waves file is not TOML. */
-class WaveFileSyntaxException : public ServerException {
- public:
-  /** @param description What the TOML reader found wrong at @p place. */
-  WaveFileSyntaxException(const WaveFilePlace& place,
-                          const std::string& description);
-};
-
-/**
- * @brief A key the waves file must hold is missing; the place is the table it
- * is missing from.
- */
-class MissingWaveFileKeyException : public ServerException {
- public:
-  explicit MissingWaveFileKeyException(const WaveFilePlace& place);
-};
-
-/** @brief The waves file holds a key it may not hold, often a misspelt one. */
-class UnknownWaveFileKeyException : public ServerException {
- public:
-  explicit UnknownWaveFileKeyException(const WaveFilePlace& place);
-};
-
-/** @brief A key of the waves file that must hold a table holds a value. */
-class WaveFileTableExpectedException : public ServerException {
- public:
-  explicit WaveFileTableExpectedException(const WaveFilePlace& place);
-};
-
-/**
- * @brief A value of the waves file is not a TOML integer within the range of
- * its key.
- */
-class WaveFileValueOutOfRangeException : public ServerException {
- public:
-  WaveFileValueOutOfRangeException(const WaveFilePlace& place,
-                                   WholeNumberRange range);
-};
-
 /**
  * @brief The enemies of a difficulty are not a list of names, or hold fewer
  * or more names than @p length allows.
  */
 class InvalidEnemyListException : public ServerException {
  public:
-  InvalidEnemyListException(const WaveFilePlace& place,
-                            WholeNumberRange length);
+  InvalidEnemyListException(const engine::DataFilePlace& place,
+                            engine::WholeNumberRange length);
 };
 
 /**
@@ -80,7 +34,8 @@ class InvalidEnemyListException : public ServerException {
 class UnknownEnemyException : public ServerException {
  public:
   /** @param known The names of the enemies the server knows, in the message. */
-  UnknownEnemyException(const WaveFilePlace& place, const std::string& enemy,
+  UnknownEnemyException(const engine::DataFilePlace& place,
+                        const std::string& enemy,
                         const std::vector<std::string>& known);
 };
 

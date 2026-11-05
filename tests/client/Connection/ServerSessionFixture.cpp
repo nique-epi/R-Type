@@ -19,6 +19,7 @@
 #include "ServerSession.hpp"
 #include "ServerSessionFixtures.hpp"
 #include "ServerSessionTestConstants.hpp"
+#include "SessionEntityTypesFixtures.hpp"
 #include "TimeConstants.hpp"
 #include "WaitingRoom.hpp"
 #include "WorldState.hpp"
@@ -43,7 +44,8 @@ void ServerSessionFixture::connectAndGetAccepted() {
   connect();
   network::PacketHeader header;
   header.sessionToken = SESSION_TOKEN;
-  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+  deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                      .types = drawnTypes()},
           server(), header);
   update();
 }
@@ -68,7 +70,8 @@ network::ConnectionRequest ServerSessionFixture::lastRequest() const {
 void ServerSessionFixture::accept() {
   connect();
   deliverInSession(
-      network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER},
+      network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                  .types = drawnTypes()},
       ACCEPTANCE_SEQUENCE);
   update();
 }

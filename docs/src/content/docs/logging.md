@@ -39,6 +39,10 @@ auto timer = logger_.scope("load assets");
 
 The arguments of a call are written one after the other; any type that can be written to a `std::ostream` works. `scope("label")` returns a `ScopedTimer` that writes `label took 1.234 ms` when it is destroyed, at the `info` level unless another one is given as the second argument.
 
+### From a plugin: `ILogJournal`
+
+A plugin is a shared library with its own copy of the logger, and the sinks and the level of that copy are never configured by the program. `ILogJournal` (`src/logging/Logger/`) is the way back: the sinks and the level of the program, reached through virtual calls. `Logger(name, journal)` writes through a journal, which must outlive it, instead of through the sinks of its own copy, and asks it which levels it accepts; `scope()` and the static functions keep using the state of the copy. The logger module of the server provides a `ProcessJournal`, which writes through the `Logger` of the program, so a plugin that requires the service logs to the same file, in the same format, at the same level. The master and the client provide no journal today. Writing a plugin is on the [Modules](/R-Type/modules/#write-a-plugin) page.
+
 ## Levels
 
 | Level | Use it for |

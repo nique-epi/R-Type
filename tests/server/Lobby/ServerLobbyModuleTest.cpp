@@ -1,22 +1,29 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <utility>
 #include <vector>
+#include "ConnectionAccepted.hpp"
 #include "ConnectionRefused.hpp"
 #include "Endpoint.hpp"
+#include "EntityTypeEntry.hpp"
 #include "GameState.hpp"
 #include "GamesSettings.hpp"
 #include "MessageType.hpp"
+#include "OutgoingDatagram.hpp"
 #include "ProtocolConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyFixture.hpp"
 #include "ServerModuleTestConstants.hpp"
 
+using rtype::network::ConnectionAccepted;
 using rtype::network::ConnectionRefused;
 using rtype::network::MessageType;
 using rtype::network::RefusalReason;
 using rtype::server::GameState;
+using rtype::server::testing::holdsMessageOfType;
 using rtype::server::testing::onlyMessageIn;
 using rtype::server::testing::playerEndpoint;
 using rtype::server::testing::sentTo;
@@ -100,7 +107,7 @@ TEST_F(ServerLobbyFixture, SeatsAPlayerWhoArrivesDuringAGameInTheNextGame) {
  * Given a player seated in the first game through its challenge, then that
  * game filled up, so new players now join the second one
  * When the player asks again with the same cookie
- * Then its own game answers with the same acceptance again
+ * Then its own game answers it, not the second: no seat is taken there
  */
 TEST_F(ServerLobbyFixture, AcceptsAgainAPlayerInItsOwnGame) {
   startWith(shippedWaves());
@@ -114,6 +121,36 @@ TEST_F(ServerLobbyFixture, AcceptsAgainAPlayerInItsOwnGame) {
 
   runTick({}, {requestFrom(0, cookie)});
 
-  EXPECT_EQ(datagramsTo(0, MessageType::ConnectionAccepted), 2U);
+  EXPECT_TRUE(probe().games()->all()[1]->roster().endpoints().empty());
   EXPECT_EQ(datagramsTo(0, MessageType::ConnectionChallenge), 1U);
+}
+
+/**
+ * Given a server whose games play the sheets the game ships with
+ * When a player answers its challenge
+ * Then its acceptance carries the five sheets the games are made from, in the
+ * order of their names: the lobby hands each acceptor the table of the games
+ */
+TEST_F(ServerLobbyFixture, AcceptsWithTheEntityTypesOfTheGame) {
+  startWith(shippedWaves());
+  runTick({}, {requestFrom(0)});
+  const std::uint64_t cookie = challengeCookieOf(0);
+
+  runTick({}, {requestFrom(0, cookie)});
+
+  const std::vector<rtype::network::OutgoingDatagram> sent =
+      sentTo(network().sender().sent(), playerEndpoint(0));
+  const auto acceptance = std::ranges::find_if(
+      sent, [](const rtype::network::OutgoingDatagram& datagram) {
+        return holdsMessageOfType(datagram, MessageType::ConnectionAccepted);
+      });
+  ASSERT_NE(acceptance, sent.end());
+  std::vector<std::string> names;
+  for (const rtype::network::EntityTypeEntry& entry :
+       onlyMessageIn<ConnectionAccepted>(*acceptance).types) {
+    names.push_back(entry.name);
+  }
+  EXPECT_EQ(names,
+            (std::vector<std::string>{"drifter", "enemy_missile",
+                                      "player_missile", "ship", "weaver"}));
 }

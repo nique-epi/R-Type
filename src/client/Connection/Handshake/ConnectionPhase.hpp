@@ -31,6 +31,13 @@ enum class ConnectionPhase : std::uint8_t {
    * closed the session without answering.
    */
   Closed,
+  /**
+   * @brief The server accepted the player, but the table of entity types of
+   * its acceptance names a type this client has no sheet for: the client left
+   * the session at once, telling the server as when the player leaves, so its
+   * seat is free again. missingSheet holds the first such name.
+   */
+  MissingEntitySheet,
 };
 
 }  // namespace rtype::client

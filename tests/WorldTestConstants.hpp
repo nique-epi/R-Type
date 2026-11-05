@@ -45,4 +45,7 @@ constexpr std::size_t BYDO_SHOT_INTERVAL_TICKS = 90;
  * a third of a second at 60 ticks per second. */
 constexpr std::size_t SHIP_SHOT_INTERVAL_TICKS = 20;
 
+/** @brief The lives the ship of a new player has. */
+constexpr std::uint8_t THREE_LIVES = 3;
+
 }  // namespace rtype::game::testing

@@ -26,7 +26,7 @@ using rtype::client::testing::ONE_ASSET;
 using rtype::client::testing::PLAYER_SHIP_ID;
 using rtype::client::testing::STAGE_MUSIC_ID;
 using rtype::client::testing::TWO_ASSETS;
-using rtype::engine::genericText;
+using rtype::logging::genericText;
 using ::testing::AllOf;
 using ::testing::HasSubstr;
 using ::testing::ThrowsMessage;

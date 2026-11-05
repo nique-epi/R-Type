@@ -13,6 +13,7 @@
 #include "CommandResult.hpp"
 #include "ConfigurationReport.hpp"
 #include "ConfigurationStep.hpp"
+#include "PathText.hpp"
 
 namespace rtype::engine {
 
@@ -64,8 +65,8 @@ void runFile(std::ifstream& stream, const std::filesystem::path& file,
   while (std::getline(stream, line)) {
     ++lineNumber;
     if (const std::optional<std::string> refusal = runner.run(line)) {
-      runner.refuse(file.string() + ":" + std::to_string(lineNumber) + ": " +
-                    *refusal);
+      runner.refuse(logging::genericText(file) + ":" +
+                    std::to_string(lineNumber) + ": " + *refusal);
     }
   }
 }

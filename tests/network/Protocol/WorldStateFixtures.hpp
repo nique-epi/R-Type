@@ -69,19 +69,6 @@ constexpr float LARGEST_WIRE_COORDINATE = 4095.875F;
 constexpr float SMALLEST_WIRE_COORDINATE = -4096.0F;
 
 /**
- * @brief Entity type values that no entity has: one below and one above the
- * values 1 to 4 of the wire.
- */
-constexpr unsigned int ENTITY_TYPE_BELOW_THE_FIRST = 0;
-constexpr unsigned int ENTITY_TYPE_ABOVE_THE_LAST = 5;
-
-/**
- * @brief The value of the last entity type, EnemyMissile, the upper bound of
- * the types the wire knows.
- */
-constexpr unsigned int LAST_ENTITY_TYPE = 4;
-
-/**
  * @brief A byte that is neither 0 nor 1, where a boolean is expected, and the
  * id no entity has.
  */

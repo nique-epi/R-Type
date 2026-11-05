@@ -1,14 +1,17 @@
 #pragma once
 
 #include "DatagramRouter.hpp"
+#include "DrawableTypeCheck.hpp"
 #include "EntityMessageQueue.hpp"
 #include "GameLoadedReminder.hpp"
+#include "InstallContext.hpp"
 #include "MessageDispatcher.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkThread.hpp"
 #include "RoundTripWatch.hpp"
 #include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
+#include "SessionEntityTypes.hpp"
 #include "SystemClock.hpp"
 #include "TimeConstants.hpp"
 #include "WaitingRoom.hpp"
@@ -19,10 +22,11 @@ namespace rtype::client {
  * @brief The connection of one player to a server: the UDP socket on its
  * NetworkThread, a DatagramRouter in front of it, and the parts the screens
  * and the game use, the ServerSession (the attempt and the session), the
- * WaitingRoom, the EntityMessageQueue, the ServerLeaderboard and the
- * RoundTripWatch, which sends the heartbeats and measures the round trips.
- * ClientConnectionModule holds the one of the client; each load-test bot holds
- * its own.
+ * WaitingRoom, the EntityMessageQueue, the ServerLeaderboard, the
+ * RoundTripWatch, which sends the heartbeats and measures the round trips,
+ * and the SessionEntityTypes, the entity types of the server the acceptance of
+ * the session carried. ClientConnectionModule holds the one of the client; each
+ * load-test bot holds its own.
  *
  * Building it opens nothing: network().open() binds the socket on every IPv4
  * interface, on a port the system picks, and starts the network thread.
@@ -31,8 +35,14 @@ namespace rtype::client {
  */
 class PlayerConnection {
  public:
-  /** @param conditions The network the datagrams of the player cross. */
-  explicit PlayerConnection(const network::NetworkConditions& conditions);
+  /**
+   * @param conditions The network the datagrams of the player cross.
+   * @param drawable Tells which entity types the player can draw: an
+   * acceptance whose table names another one opens no session (see
+   * HandshakeAnswers). Must not be empty.
+   */
+  PlayerConnection(const network::NetworkConditions& conditions,
+                   DrawableTypeCheck drawable);
 
   /**
    * @brief Counts @p elapsed against the memory of the game events, then
@@ -53,6 +63,16 @@ class PlayerConnection {
    */
   void leave();
 
+  /**
+   * @brief Provides to the modules installed after the one installing it the
+   * parts of this connection: the ServerSession, the WaitingRoom, the
+   * EntityMessageQueue, the ServerLeaderboard, the RoundTripWatch as
+   * IPlayerRoundTrips and as IServerTicks, the IEntityTypeTable and the
+   * TrafficCounters of the socket. They must outlive every module that
+   * requires them.
+   */
+  void provideParts(engine::InstallContext& context);
+
   /** @returns The socket on its network thread: open() it before the first
    * update(), close() it after leave(), read its traffic(). */
   [[nodiscard]] NetworkThread& network();
@@ -62,8 +82,6 @@ class PlayerConnection {
   [[nodiscard]] WaitingRoom& waitingRoom();
   [[nodiscard]] const WaitingRoom& waitingRoom() const;
   [[nodiscard]] EntityMessageQueue& entityMessages();
-  [[nodiscard]] ServerLeaderboard& leaderboard();
-  [[nodiscard]] RoundTripWatch& roundTrips();
 
  private:
   NetworkThread network_;
@@ -75,6 +93,7 @@ class PlayerConnection {
   engine::SystemClock clock_;
   RoundTripWatch roundTrips_;
   ServerLeaderboard leaderboard_;
+  SessionEntityTypes entityTypes_;
   ServerSession session_;
 };
 

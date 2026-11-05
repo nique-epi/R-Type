@@ -2,6 +2,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "ILogJournal.hpp"
 #include "InstallContext.hpp"
 #include "LogLaunchOptions.hpp"
 #include "ModuleConstants.hpp"
@@ -18,8 +19,9 @@ std::string ServerLoggerModule::name() const {
 
 std::vector<std::string> ServerLoggerModule::dependencies() const { return {}; }
 
-void ServerLoggerModule::install(
-    [[maybe_unused]] engine::InstallContext& context) {}
+void ServerLoggerModule::install(engine::InstallContext& context) {
+  context.provide<logging::ILogJournal>(journal_);
+}
 
 void ServerLoggerModule::start() {
   options_.apply();

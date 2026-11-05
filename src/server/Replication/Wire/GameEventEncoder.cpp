@@ -2,6 +2,9 @@
 #include <cstdint>
 #include <utility>
 #include "EncodedMessage.hpp"
+#include "EnemyAction.hpp"
+#include "EnemyActionStarted.hpp"
+#include "EnemyPhase.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityDestruction.hpp"
@@ -16,7 +19,6 @@
 #include "PlayerHit.hpp"
 #include "PlayerLeft.hpp"
 #include "ProtocolConstants.hpp"
-#include "WireEntityTypeMapping.hpp"
 
 namespace rtype::server {
 
@@ -42,14 +44,27 @@ network::DepartureReason toWireReason(game::DepartureCause cause) {
   return network::DepartureReason::TimedOut;
 }
 
+network::EnemyActionPhase toWirePhase(game::EnemyPhase phase) {
+  switch (phase) {
+    case game::EnemyPhase::Signal:
+      return network::EnemyActionPhase::Signal;
+    case game::EnemyPhase::Strike:
+      return network::EnemyActionPhase::Strike;
+    case game::EnemyPhase::Recover:
+      return network::EnemyActionPhase::Recover;
+    case game::EnemyPhase::Enraged:
+      return network::EnemyActionPhase::Enraged;
+  }
+  return network::EnemyActionPhase::Signal;
+}
+
 }  // namespace
 
 EventMessage GameEventEncoder::encode(const game::EntitySpawn& event) {
-  const network::EntitySpawned message{
-      .entityId = event.networkId,
-      .entityType = toWireEntityType(event.type),
-      .x = event.x,
-      .y = event.y};
+  const network::EntitySpawned message{.entityId = event.networkId,
+                                       .entityType = event.typeNumber,
+                                       .x = event.x,
+                                       .y = event.y};
   return EventMessage{.message = network::encodedMessage(message),
                       .guaranteed = false};
 }
@@ -57,6 +72,14 @@ EventMessage GameEventEncoder::encode(const game::EntitySpawn& event) {
 EventMessage GameEventEncoder::encode(const game::EntityDestruction& event) {
   const network::EntityDestroyed message{.entityId = event.networkId,
                                          .reason = toWireReason(event.cause)};
+  return EventMessage{.message = network::encodedMessage(message),
+                      .guaranteed = true};
+}
+
+EventMessage GameEventEncoder::encode(const game::EnemyActionStarted& event) {
+  const network::EnemyAction message{.entityId = event.networkId,
+                                     .attack = event.attack,
+                                     .phase = toWirePhase(event.phase)};
   return EventMessage{.message = network::encodedMessage(message),
                       .guaranteed = true};
 }

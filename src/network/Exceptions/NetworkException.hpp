@@ -171,6 +171,17 @@ class InvalidServerTextException : public MalformedMessageException {
 };
 
 /**
+ * @brief The name of an entity type is not one the protocol allows: empty,
+ * longer than MAXIMUM_ENTITY_TYPE_NAME_LENGTH, or holding a byte other than a
+ * lowercase letter, a digit or an underscore, read from a payload or about to
+ * be written into one.
+ */
+class InvalidTypeNameException : public MalformedMessageException {
+ public:
+  explicit InvalidTypeNameException(std::size_t size);
+};
+
+/**
  * @brief A LeaderboardAnswer lists more rows than the protocol allows.
  */
 class TooManyLeaderboardRowsException : public MalformedMessageException {
@@ -190,7 +201,8 @@ class InvalidFieldValueException : public MalformedMessageException {
 };
 
 /**
- * @brief A coordinate to send is not a number, so it has no place on the wire.
+ * @brief A coordinate to send is not a number, so it has no place on the
+ * wire.
  */
 class InvalidCoordinateException : public NetworkException {
  public:
@@ -263,9 +275,9 @@ class MissingSimulatorOptionValueException : public NetworkException {
 /**
  * @brief The conditions of a simulated network have a lag or a jitter below
  * zero or over the longest the simulator takes: no network makes a datagram
- * wait less than nothing, no wait can be drawn from a negative jitter, and the
- * longest keeps every wait far below one that would overflow the clock the
- * waits are counted on.
+ * wait less than nothing, no wait can be drawn from a negative jitter, and
+ * the longest keeps every wait far below one that would overflow the clock
+ * the waits are counted on.
  */
 class SimulatedDelayOutOfRangeException : public NetworkException {
  public:
@@ -321,8 +333,8 @@ class InvalidMasterUrlException : public NetworkException {
 
 /**
  * @brief No answer came from the master: no connection, a timeout, or a
- * connection cut before the answer; @p reason says which, as cpp-httplib names
- * it.
+ * connection cut before the answer; @p reason says which, as cpp-httplib
+ * names it.
  */
 class MasterUnreachableException : public NetworkException {
  public:

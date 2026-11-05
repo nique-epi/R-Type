@@ -7,6 +7,8 @@
 #include "AssetLibrary.hpp"
 #include "AssetLoad.hpp"
 #include "ClientConstants.hpp"
+#include "EntityAppearances.hpp"
+#include "EntitySheetConstants.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
@@ -27,11 +29,15 @@ std::vector<std::string> ClientAssetsModule::dependencies() const {
 
 void ClientAssetsModule::install(engine::InstallContext& context) {
   library_ = std::make_unique<AssetLibrary>(engine::locateAssetFolder());
+  appearances_ =
+      std::make_unique<EntityAppearances>(EntityAppearances::fromFolder(
+          library_->folder() / game::ENTITY_SHEET_FOLDER_IN_ASSETS));
   context.provide(*library_);
+  context.provide(*appearances_);
 }
 
 void ClientAssetsModule::start() {
-  logger_.info("assets folder: ", engine::genericText(library_->folder()));
+  logger_.info("assets folder: ", logging::genericText(library_->folder()));
   for (const AssetLoad& load : startupLoads_) {
     load(*library_);
   }

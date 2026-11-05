@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <numbers>
 #include "Animation.hpp"
+#include "Playback.hpp"
 #include "SheetRow.hpp"
 #include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
@@ -71,18 +72,18 @@ constexpr std::array ENEMY_MISSILE_FRAMES =
 constexpr Animation PLAYER_SHIP_ANIMATION{
     .frames = PLAYER_SHIP_FRAMES,
     .frameDuration = PLAYER_SHIP_FRAME_TIME,
-    .playback = Animation::Playback::Loop};
+    .playback = Playback::Loop};
 constexpr Animation BYDO_ANIMATION{.frames = BYDO_FRAMES,
                                    .frameDuration = BYDO_FRAME_TIME,
-                                   .playback = Animation::Playback::Loop};
+                                   .playback = Playback::Loop};
 constexpr Animation PLAYER_MISSILE_ANIMATION{
     .frames = PLAYER_MISSILE_FRAMES,
     .frameDuration = PLAYER_MISSILE_FRAME_TIME,
-    .playback = Animation::Playback::Loop};
+    .playback = Playback::Loop};
 constexpr Animation ENEMY_MISSILE_ANIMATION{
     .frames = ENEMY_MISSILE_FRAMES,
     .frameDuration = ENEMY_MISSILE_FRAME_TIME,
-    .playback = Animation::Playback::Loop};
+    .playback = Playback::Loop};
 
 /**
  * @brief The bonus Bydo, right under the Bydo on the entity sheet, its two
@@ -97,7 +98,7 @@ constexpr std::array BONUS_BYDO_FRAMES =
     framesInRow<SPRITE_FRAME_COUNT>(BONUS_BYDO_FRAME, SPRITE_SPACING);
 constexpr Animation BONUS_BYDO_ANIMATION{.frames = BONUS_BYDO_FRAMES,
                                          .frameDuration = BONUS_BYDO_FRAME_TIME,
-                                         .playback = Animation::Playback::Loop};
+                                         .playback = Playback::Loop};
 
 /**
  * @brief Share of a cycle between the loop starts of two entities whose

@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 #include "DeltaWorldState.hpp"
+#include "EnemyAction.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityMessage.hpp"
 #include "EntitySpawned.hpp"
@@ -50,6 +51,13 @@ EntityMessageQueue::EntityMessageQueue(network::MessageDispatcher& dispatcher,
           keep(event);
         }
       });
+  dispatcher.registerHandler<network::EnemyAction>(
+      [this](const network::MessageOrigin&,
+             const network::EnemyAction& action) {
+        if (enemyActions_.isFirstCopy(action)) {
+          keep(action);
+        }
+      });
   dispatcher.registerHandler<network::GameEnded>(
       [this](const network::MessageOrigin&, const network::GameEnded& ended) {
         if (room_->gameStarted()) {
@@ -80,6 +88,7 @@ void EntityMessageQueue::registerStateHandlers(
 
 void EntityMessageQueue::advance(engine::Duration elapsed) {
   gameEvents_.advance(elapsed);
+  enemyActions_.advance(elapsed);
 }
 
 void EntityMessageQueue::drainEntityMessages(
@@ -96,6 +105,7 @@ void EntityMessageQueue::sessionClosed() {
   messages_.clear();
   assembler_.clear();
   gameEvents_.forget();
+  enemyActions_.forget();
 }
 
 void EntityMessageQueue::sessionHeld(

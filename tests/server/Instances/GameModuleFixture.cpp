@@ -12,6 +12,7 @@
 #include "OutgoingDatagram.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
 #include "TimeConstants.hpp"
 #include "World.hpp"
@@ -19,17 +20,19 @@
 namespace rtype::server::testing {
 
 GameModuleFixture::GameModuleFixture()
-    : context_{
-          .events = events_,
-          .systems = systems_,
-          .roster = roster_,
-          .hooks = hooks_,
-          .settings = GameSettings{.seed = SOME_SEED, .waves = testWavePlan()},
-          .send =
-              [this](network::OutgoingDatagram datagram) {
-                sent_.push_back(std::move(datagram));
-              },
-          .everyPlayerIsReady = [] { return false; }} {}
+    : context_{.events = events_,
+               .systems = systems_,
+               .roster = roster_,
+               .hooks = hooks_,
+               .settings =
+                   GameSettings{.seed = SOME_SEED,
+                                .waves = testWavePlan(),
+                                .types = game::testing::shippedEntitySheets()},
+               .send =
+                   [this](network::OutgoingDatagram datagram) {
+                     sent_.push_back(std::move(datagram));
+                   },
+               .everyPlayerIsReady = [] { return false; }} {}
 
 void GameModuleFixture::install(IGameModule& module) {
   engine::InstallContext installation(module.name(), services_, stages_);

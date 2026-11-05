@@ -7,6 +7,8 @@
 #include "ConnectedPlayer.hpp"
 #include "ConnectionAccepted.hpp"
 #include "DatagramCodec.hpp"
+#include "EntitySide.hpp"
+#include "EntityTypeEntry.hpp"
 #include "GuaranteedMessageTestConstants.hpp"
 #include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
@@ -31,6 +33,7 @@ using testing::OTHER_SESSION_TOKEN;
 using testing::PLAYER_NICKNAME;
 using testing::PLAYER_SEQUENCE;
 using testing::playerEndpoint;
+using testing::SAMPLE_ENTITY_TYPE_NAME;
 using testing::SESSION_TOKEN;
 using testing::SessionDatagramFixture;
 using testing::SOME_NEXT_SEQUENCE;
@@ -122,8 +125,11 @@ TEST_F(SessionDatagramFixture, GivesNoSessionToAnAddressWithoutPlayer) {
  * first sequence of its session, and holds that one message
  */
 TEST_F(SessionDatagramFixture, AddressesTheMessageToThePlayerUnderItsHeader) {
-  const network::ConnectionAccepted accepted{.playerNumber =
-                                                 network::FIRST_PLAYER_NUMBER};
+  const network::ConnectionAccepted accepted{
+      .playerNumber = network::FIRST_PLAYER_NUMBER,
+      .types = {network::EntityTypeEntry{
+          .side = network::EntitySide::Player,
+          .name = std::string{SAMPLE_ENTITY_TYPE_NAME}}}};
 
   const network::OutgoingDatagram datagram =
       sessionDatagram(firstPlayer(), accepted);
@@ -153,7 +159,10 @@ TEST_F(SessionDatagramFixture, AddressesTheMessageToThePlayerUnderItsHeader) {
 TEST_F(SessionDatagramFixture, NumbersEveryKindOfMessageFromOneCounter) {
   const network::OutgoingDatagram accepted = sessionDatagram(
       firstPlayer(), network::ConnectionAccepted{
-                         .playerNumber = network::FIRST_PLAYER_NUMBER});
+                         .playerNumber = network::FIRST_PLAYER_NUMBER,
+                         .types = {network::EntityTypeEntry{
+                             .side = network::EntitySide::Player,
+                             .name = std::string{SAMPLE_ENTITY_TYPE_NAME}}}});
   const network::OutgoingDatagram started =
       sessionDatagram(firstPlayer(), network::MessageType::GameStarted,
                       std::span<const std::byte>{});

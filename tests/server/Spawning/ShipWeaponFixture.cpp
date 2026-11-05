@@ -7,6 +7,7 @@
 #include "ConnectedPlayer.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "Intent.hpp"
 #include "MissileOwner.hpp"
 #include "Position.hpp"
@@ -14,13 +15,15 @@
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "ShipStartPosition.hpp"
+#include "ShippedEntitySheets.hpp"
 
 namespace rtype::server::testing {
 
 ConnectedPlayer& ShipWeaponFixture::connect(std::size_t index) {
   ConnectedPlayer* const player = roster().add(
       playerEndpoint(index), std::string{PLAYER_NICKNAME}, SESSION_TOKEN);
-  player->shipEntityId = world().spawnPlayer(
+  player->shipEntityId = world().spawn(
+      game::testing::shippedEntitySheets().named(game::testing::SHIP_SHEET),
       game::shipStartPosition(player->playerNumber, network::MAXIMUM_PLAYERS));
   return *player;
 }

@@ -1,13 +1,13 @@
 #include <gtest/gtest.h>
 #include <cstddef>
-#include "BydoWave.hpp"
+#include "Wave.hpp"
 #include "WaveProgression.hpp"
 #include "WaveProgressionTestConstants.hpp"
 #include "WaveTestConstants.hpp"
 
-using rtype::game::BydoWave;
-using rtype::game::bydoWaveAfter;
 using rtype::game::isPlayable;
+using rtype::game::Wave;
+using rtype::game::waveAfter;
 using rtype::game::testing::CURVE_THAT_SLOWS_DOWN;
 using rtype::game::testing::CURVE_WITH_A_NEGATIVE_CUT;
 using rtype::game::testing::CURVE_WITH_A_NEGATIVE_PAUSE;
@@ -30,7 +30,7 @@ using rtype::game::testing::WAVE_JUST_ABOVE_THE_SHORTEST;
  * Then it holds 4 Bydos, one every 1.75 seconds
  */
 TEST(WaveProgression, EachWaveHoldsMoreBydosCloserTogether) {
-  EXPECT_EQ(bydoWaveAfter(TEST_WAVE_CURVE.firstWave, TEST_WAVE_CURVE),
+  EXPECT_EQ(waveAfter(TEST_WAVE_CURVE.firstWave, TEST_WAVE_CURVE),
             TEST_SECOND_WAVE);
 }
 
@@ -40,7 +40,7 @@ TEST(WaveProgression, EachWaveHoldsMoreBydosCloserTogether) {
  * Then its Bydos come one every second, the shortest time of the curve
  */
 TEST(WaveProgression, TheFifthWaveReachesTheShortestTime) {
-  EXPECT_EQ(bydoWaveAfter(TEST_FOURTH_WAVE, TEST_WAVE_CURVE), TEST_FIFTH_WAVE);
+  EXPECT_EQ(waveAfter(TEST_FOURTH_WAVE, TEST_WAVE_CURVE), TEST_FIFTH_WAVE);
 }
 
 /**
@@ -49,7 +49,7 @@ TEST(WaveProgression, TheFifthWaveReachesTheShortestTime) {
  * Then it holds one more Bydo, still one every second
  */
 TEST(WaveProgression, TheWavesAfterTheFifthKeepTheShortestTime) {
-  EXPECT_EQ(bydoWaveAfter(TEST_FIFTH_WAVE, TEST_WAVE_CURVE), TEST_SIXTH_WAVE);
+  EXPECT_EQ(waveAfter(TEST_FIFTH_WAVE, TEST_WAVE_CURVE), TEST_SIXTH_WAVE);
 }
 
 /**
@@ -59,7 +59,7 @@ TEST(WaveProgression, TheWavesAfterTheFifthKeepTheShortestTime) {
  * Then its Bydos come one every second, not 0.85 seconds apart
  */
 TEST(WaveProgression, TheBydosNeverComeCloserThanTheShortestTime) {
-  EXPECT_EQ(bydoWaveAfter(WAVE_JUST_ABOVE_THE_SHORTEST, TEST_WAVE_CURVE),
+  EXPECT_EQ(waveAfter(WAVE_JUST_ABOVE_THE_SHORTEST, TEST_WAVE_CURVE),
             WAVE_AFTER_THE_ONE_JUST_ABOVE);
 }
 
@@ -69,7 +69,7 @@ TEST(WaveProgression, TheBydosNeverComeCloserThanTheShortestTime) {
  * Then it is the first wave again
  */
 TEST(WaveProgression, ACurveThatAddsNothingRepeatsItsFirstWave) {
-  EXPECT_EQ(bydoWaveAfter(STEADY_CURVE.firstWave, STEADY_CURVE),
+  EXPECT_EQ(waveAfter(STEADY_CURVE.firstWave, STEADY_CURVE),
             STEADY_CURVE.firstWave);
 }
 
@@ -79,11 +79,11 @@ TEST(WaveProgression, ACurveThatAddsNothingRepeatsItsFirstWave) {
  * Then each holds more Bydos than the one before it
  */
 TEST(WaveProgression, EveryWaveHoldsMoreBydosThanTheOneBefore) {
-  BydoWave wave = TEST_WAVE_CURVE.firstWave;
+  Wave wave = TEST_WAVE_CURVE.firstWave;
   for (std::size_t wavesFollowed = 1; wavesFollowed < MANY_WAVES;
        ++wavesFollowed) {
-    const BydoWave next = bydoWaveAfter(wave, TEST_WAVE_CURVE);
-    EXPECT_GT(next.bydoCount, wave.bydoCount);
+    const Wave next = waveAfter(wave, TEST_WAVE_CURVE);
+    EXPECT_GT(next.entityCount, wave.entityCount);
     wave = next;
   }
 }
@@ -94,10 +94,10 @@ TEST(WaveProgression, EveryWaveHoldsMoreBydosThanTheOneBefore) {
  * Then none brings its Bydos closer together than the shortest time
  */
 TEST(WaveProgression, NoWaveBringsTheBydosCloserThanTheShortestTime) {
-  BydoWave wave = TEST_WAVE_CURVE.firstWave;
+  Wave wave = TEST_WAVE_CURVE.firstWave;
   for (std::size_t wavesFollowed = 1; wavesFollowed < MANY_WAVES;
        ++wavesFollowed) {
-    wave = bydoWaveAfter(wave, TEST_WAVE_CURVE);
+    wave = waveAfter(wave, TEST_WAVE_CURVE);
     EXPECT_GE(wave.spawnInterval, TEST_WAVE_CURVE.shortestSpawnInterval);
   }
 }

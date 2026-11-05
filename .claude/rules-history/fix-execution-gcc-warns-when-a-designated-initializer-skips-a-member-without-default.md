@@ -23,3 +23,7 @@ See the core file of the same name in `.claude/rules/fix/execution/`.
 ## Update (3 November 2026) — A NOLINT over the same braces
 
 `LeaderboardPage::rows` and `ItemCell::tag` wrote `{}` with a `NOLINT` for `readability-redundant-member-init`, the way out point 2 forbids, copied from `Button.hpp`. The page now names `.rows = {}` where it is built, and the tag is an optional.
+
+## Update (5 November 2026) — The search was not the pattern of the rule
+
+`EntityAppearance` gained `actions`. The search used was `git grep 'EntityAppearance{'`, which found the double of the tests; `static const EntityAppearance appearance{` of `EntitySpritesFixtures.cpp` has a name between the type and the brace, so the Linux job failed on it with `-Werror=missing-field-initializers`, while the Apple clang build, the tests and clang-tidy were green. The rule already said to search `Type name{`. Homebrew GCC 16 turned out to be installed and, with the macOS sysroot and `-Wall -Wextra -Wpedantic`, reproduces the warning: it is now the local check.

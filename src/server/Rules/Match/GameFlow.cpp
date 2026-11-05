@@ -6,8 +6,6 @@
 #include <string>
 #include <string_view>
 #include <utility>
-#include "BydoSpawner.hpp"
-#include "BydoSpawnerParts.hpp"
 #include "CollisionRules.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
@@ -27,7 +25,10 @@
 #include "PlayerLives.hpp"
 #include "PlayerRoster.hpp"
 #include "TimeConstants.hpp"
+#include "WaveSpawner.hpp"
+#include "WaveSpawnerParts.hpp"
 #include "WeaponSystem.hpp"
+#include "WeaponSystemParts.hpp"
 #include "World.hpp"
 #include "WorldSlot.hpp"
 
@@ -75,7 +76,7 @@ std::optional<std::string_view> reasonToLose(PlayerRoster& roster,
  * lost. Nothing when it goes on.
  */
 std::optional<GameEnding> endingOf(PlayerRoster& roster, game::World& world,
-                                   const BydoSpawner& spawner) {
+                                   const WaveSpawner& spawner) {
   const std::optional<std::string_view> loss = reasonToLose(roster, world);
   if (loss.has_value()) {
     return GameEnding{.reason = *loss, .outcome = GameOutcome::Defeat};
@@ -147,7 +148,7 @@ void GameFlow::advanceState() {
       ++tick_;
       runWorldSystems(game_, world());
       weaponSystem_->onTick();
-      bydoSpawner_->onTick();
+      waveSpawner_->onTick();
       lifeKeeper_->onTick();
       break;
     case GameState::Finished:
@@ -178,7 +179,7 @@ void GameFlow::finishIfOver() {
     return;
   }
   const std::optional<GameEnding> ending =
-      endingOf(game_.roster.get(), world(), *bydoSpawner_);
+      endingOf(game_.roster.get(), world(), *waveSpawner_);
   if (!ending.has_value()) {
     return;
   }
@@ -194,14 +195,18 @@ void GameFlow::buildWorld() {
                                                            world.components());
   damageRules_ = std::make_unique<game::DamageRules>(game_.events.get(),
                                                      world.components());
-  bydoSpawner_ = std::make_unique<BydoSpawner>(
-      BydoSpawnerParts{.world = world,
+  waveSpawner_ = std::make_unique<WaveSpawner>(
+      WaveSpawnerParts{.world = world,
                        .roster = game_.roster.get(),
                        .send = game_.send,
                        .seed = game_.settings.seed + worldsBuilt_,
-                       .waves = game_.settings.waves});
-  weaponSystem_ =
-      std::make_unique<WeaponSystem>(world, game_.roster.get(), game_.send);
+                       .waves = game_.settings.waves,
+                       .types = game_.settings.types});
+  weaponSystem_ = std::make_unique<WeaponSystem>(
+      WeaponSystemParts{.world = world,
+                        .roster = game_.roster.get(),
+                        .send = game_.send,
+                        .types = game_.settings.types});
   lifeKeeper_ = std::make_unique<LifeKeeper>(
       LifeKeeperParts{.events = game_.events.get(),
                       .world = world,

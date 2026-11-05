@@ -4,6 +4,7 @@
 #include <set>
 #include <span>
 #include <string>
+#include <vector>
 #include "CommandInterpreter.hpp"
 #include "IModule.hpp"
 
@@ -22,9 +23,10 @@ class ModuleSwitches {
  public:
   /**
    * @param modules The modules of the program; the list and the modules must
-   * outlive the switches.
+   * outlive the switches. The list is read at each call, so a module added to
+   * it after the construction is known to the command.
    */
-  explicit ModuleSwitches(std::span<const std::unique_ptr<IModule>> modules);
+  explicit ModuleSwitches(const std::vector<std::unique_ptr<IModule>>& modules);
 
   ModuleSwitches(const ModuleSwitches&) = delete;
   ModuleSwitches& operator=(const ModuleSwitches&) = delete;
@@ -50,7 +52,7 @@ class ModuleSwitches {
   [[nodiscard]] const IModule& listed(const std::string& name) const;
   [[nodiscard]] std::string listedNames() const;
 
-  std::span<const std::unique_ptr<IModule>> modules_;
+  const std::vector<std::unique_ptr<IModule>>* modules_;
   std::set<std::string> off_;
 };
 

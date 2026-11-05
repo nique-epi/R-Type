@@ -3,8 +3,6 @@
 #include <array>
 #include <cstdint>
 #include <string_view>
-#include <utility>
-#include "BydoKind.hpp"
 #include "SipHash.hpp"
 #include "WholeNumberRange.hpp"
 
@@ -14,13 +12,8 @@ namespace rtype::server {
 constexpr std::string_view DIFFICULTY_TABLE_KEY = "difficulty";
 
 /**
- * @brief Joins the name of a table of a waves file and one of its keys in the
- * errors: `difficulty.normal.wave_pause_ms`.
- */
-constexpr char WAVE_FILE_KEY_SEPARATOR = '.';
-
-/**
- * @brief The keys of a difficulty: the enemies its Bydos are in turn, then one
+ * @brief The keys of a difficulty: the names of the entity sheets its enemies
+ * are in turn, then one
  * key per value of its WaveCurve, the durations in whole milliseconds, the
  * last being the number of waves of its level.
  */
@@ -51,16 +44,6 @@ constexpr std::array WAVE_PLAN_KEYS{ENEMIES_KEY,
                                     LEVEL_WAVES_KEY};
 
 /**
- * @brief The name a waves file gives each kind of Bydo. A new kind, a boss for
- * one, gets its name here, and its waves can bring it at once.
- */
-constexpr std::string_view DRIFTER_NAME = "drifter";
-constexpr std::string_view WEAVER_NAME = "weaver";
-constexpr std::array ENEMY_NAMES{
-    std::pair{DRIFTER_NAME, game::BydoKind::Drifter},
-    std::pair{WEAVER_NAME, game::BydoKind::Weaver}};
-
-/**
  * @brief The most Bydos a first wave may hold or a wave may add, and the most
  * names the enemies of a difficulty may list: a hundred, far more than the
  * playfield shows at once.
@@ -84,20 +67,20 @@ constexpr std::int64_t LONGEST_WAVE_FILE_MILLISECONDS = 60000;
  * the range of the first interval, but no more than the first interval of
  * that difficulty.
  */
-constexpr WholeNumberRange ENEMY_LIST_LENGTH{
+constexpr engine::WholeNumberRange ENEMY_LIST_LENGTH{
     .lowest = 1, .highest = MOST_BYDOS_IN_A_WAVE_FILE};
-constexpr WholeNumberRange FIRST_WAVE_BYDOS_RANGE{
+constexpr engine::WholeNumberRange FIRST_WAVE_BYDOS_RANGE{
     .lowest = 1, .highest = MOST_BYDOS_IN_A_WAVE_FILE};
-constexpr WholeNumberRange BYDOS_ADDED_PER_WAVE_RANGE{
+constexpr engine::WholeNumberRange BYDOS_ADDED_PER_WAVE_RANGE{
     .lowest = 0, .highest = MOST_BYDOS_IN_A_WAVE_FILE};
-constexpr WholeNumberRange SPAWN_INTERVAL_RANGE{
+constexpr engine::WholeNumberRange SPAWN_INTERVAL_RANGE{
     .lowest = 1, .highest = LONGEST_WAVE_FILE_MILLISECONDS};
-constexpr WholeNumberRange SPAWN_INTERVAL_CUT_RANGE{
+constexpr engine::WholeNumberRange SPAWN_INTERVAL_CUT_RANGE{
     .lowest = 0, .highest = LONGEST_WAVE_FILE_MILLISECONDS};
-constexpr WholeNumberRange WAVE_PAUSE_RANGE{
+constexpr engine::WholeNumberRange WAVE_PAUSE_RANGE{
     .lowest = 0, .highest = LONGEST_WAVE_FILE_MILLISECONDS};
-constexpr WholeNumberRange LEVEL_WAVES_RANGE{.lowest = 1,
-                                             .highest = MOST_WAVES_IN_A_LEVEL};
+constexpr engine::WholeNumberRange LEVEL_WAVES_RANGE{
+    .lowest = 1, .highest = MOST_WAVES_IN_A_LEVEL};
 
 /**
  * @brief The key WaveCatalog::fingerprint() hashes a waves file under. Anyone

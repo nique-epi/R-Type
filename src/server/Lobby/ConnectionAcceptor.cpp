@@ -11,6 +11,7 @@
 #include <utility>
 #include "ConnectedPlayer.hpp"
 #include "ConnectionAccepted.hpp"
+#include "ConnectionAcceptorParts.hpp"
 #include "ConnectionChallenge.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
@@ -57,15 +58,24 @@ std::optional<network::RefusalReason> refusalOf(
   return std::nullopt;
 }
 
+/**
+ * @returns Whether @p player, connected, may get its acceptance again at
+ * @p now: it never got one, or CONNECTION_ACCEPTANCE_REPEAT_INTERVAL passed
+ * since the previous one.
+ */
+bool isAcceptanceDue(const ConnectedPlayer& player, engine::Duration now) {
+  return !player.lastAcceptedAt.has_value() ||
+         now - *player.lastAcceptedAt >= CONNECTION_ACCEPTANCE_REPEAT_INTERVAL;
+}
+
 }  // namespace
 
-ConnectionAcceptor::ConnectionAcceptor(PlayerRoster& roster, Send send,
-                                       Admit admit,
-                                       OnPlayerJoined onPlayerJoined)
-    : roster_(&roster),
-      send_(std::move(send)),
-      admit_(std::move(admit)),
-      onPlayerJoined_(std::move(onPlayerJoined)),
+ConnectionAcceptor::ConnectionAcceptor(ConnectionAcceptorParts parts)
+    : roster_(&parts.roster.get()),
+      send_(std::move(parts.send)),
+      admit_(std::move(parts.admit)),
+      onPlayerJoined_(std::move(parts.onPlayerJoined)),
+      entityTypes_(std::move(parts.entityTypes)),
       logger_(std::string{LOBBY_LOGGER_NAME}) {}
 
 void ConnectionAcceptor::receive(
@@ -105,10 +115,10 @@ void ConnectionAcceptor::answer(const network::Endpoint& sender,
                                 engine::Duration now) {
   const bool hasValidCookie = cookies_.isValid(request.cookie, sender, now);
   if (ConnectedPlayer* const connected = roster_->find(sender)) {
-    if (hasValidCookie) {
-      accept(*connected);
-    } else {
+    if (!hasValidCookie) {
       challenge(sender, now);
+    } else if (isAcceptanceDue(*connected, now)) {
+      accept(*connected, now);
     }
     return;
   }
@@ -126,15 +136,17 @@ void ConnectionAcceptor::answer(const network::Endpoint& sender,
   logger_.info("player ", static_cast<unsigned int>(joined->playerNumber),
                " joined from ", sender.address, " port ", sender.port);
   admit_(joined->endpoint, joined->sessionToken);
-  accept(*joined);
+  accept(*joined, now);
   if (onPlayerJoined_) {
     onPlayerJoined_(*joined);
   }
 }
 
-void ConnectionAcceptor::accept(ConnectedPlayer& player) {
-  send_(sessionDatagram(player, network::ConnectionAccepted{
-                                    .playerNumber = player.playerNumber}));
+void ConnectionAcceptor::accept(ConnectedPlayer& player, engine::Duration now) {
+  player.lastAcceptedAt = now;
+  send_(sessionDatagram(
+      player, network::ConnectionAccepted{.playerNumber = player.playerNumber,
+                                          .types = entityTypes_}));
 }
 
 void ConnectionAcceptor::challenge(const network::Endpoint& sender,

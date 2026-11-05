@@ -38,3 +38,12 @@ set server-name "R-Type server"
 # needs games and network, master needs network, games and information, all
 # need logger.
 # module lobby off
+
+# Load a plugin: <name>.so (Linux, macOS) or <name>.dll (Windows), built by the
+# same compiler from the same sources as this server. A plugin that cannot be
+# loaded stops the server. The folder is plugins/ next to the executable; a
+# relative plugin-folder is read from the folder the server starts in, and comes
+# before every plugin line. A plugin is a module: `module <name> off` turns it
+# off.
+# plugin-folder plugins
+# plugin stats
