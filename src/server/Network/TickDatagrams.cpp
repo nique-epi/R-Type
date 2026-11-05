@@ -1,18 +1,15 @@
 #include "TickDatagrams.hpp"
 #include <span>
 #include "IncomingDatagram.hpp"
-#include "ServerApplication.hpp"
+#include "ReceivedDatagrams.hpp"
 
 namespace rtype::server {
 
-void TickDatagrams::begin(
-    const ServerApplication::ReceivedDatagrams& received) {
+void TickDatagrams::begin(const ReceivedDatagrams& received) {
   received_ = received;
 }
 
-void TickDatagrams::end() {
-  received_ = ServerApplication::ReceivedDatagrams{};
-}
+void TickDatagrams::end() { received_ = ReceivedDatagrams{}; }
 
 std::span<const network::IncomingDatagram> TickDatagrams::players() const {
   return received_.players;

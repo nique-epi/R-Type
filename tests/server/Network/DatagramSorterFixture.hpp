@@ -6,6 +6,7 @@
 #include <optional>
 #include <vector>
 #include "BoundedQueue.hpp"
+#include "DatagramDrops.hpp"
 #include "DatagramSorter.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
@@ -26,6 +27,11 @@ class DatagramSorterFixture : public ::testing::Test {
   void forget(
       const rtype::network::Endpoint& endpoint,
       std::uint64_t sessionToken = rtype::server::testing::SESSION_TOKEN);
+  /** @brief Sorts @p count copies of @p datagram from @p sender, all at
+   * once. */
+  void sortRepeatedly(const rtype::network::Endpoint& sender,
+                      const std::vector<std::byte>& datagram,
+                      std::size_t count);
   void advanceClock(rtype::engine::Duration elapsed);
   [[nodiscard]] std::size_t droppedCount() const;
   [[nodiscard]] std::size_t wrongTokenCount() const;
@@ -38,5 +44,6 @@ class DatagramSorterFixture : public ::testing::Test {
   rtype::concurrency::BoundedQueue<rtype::network::IncomingDatagram>
       connectionRequests_;
   SimulatedClock clock_;
+  rtype::server::DatagramDrops drops_;
   rtype::server::DatagramSorter sorter_;
 };

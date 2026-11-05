@@ -144,9 +144,9 @@ void ServerSession::giveUp(ConnectionPhase ending) {
                  outbox_.server().port);
     return;
   }
-  const std::chrono::seconds silence = ending == ConnectionPhase::Lost
-                                           ? network::SESSION_SILENCE_LIMIT
-                                           : CONNECTION_ATTEMPT_TIMEOUT;
+  const std::chrono::seconds silence =
+      ending == ConnectionPhase::Lost ? network::SESSION_SILENCE_LIMIT
+                                      : network::CONNECTION_ATTEMPT_TIMEOUT;
   logger_.warn("no answer from ", outbox_.server().address, " port ",
                outbox_.server().port, " for ", silence.count(), " s");
 }

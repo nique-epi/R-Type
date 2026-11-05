@@ -1,30 +1,15 @@
 #include "CookieIssuer.hpp"
-#include <algorithm>
 #include <chrono>
-#include <cstddef>
 #include <cstdint>
-#include <random>
-#include <span>
 #include "ByteWriter.hpp"
 #include "Endpoint.hpp"
+#include "EndpointBytes.hpp"
 #include "HandshakeConstants.hpp"
-#include "SerializationConstants.hpp"
 #include "SipHash.hpp"
 
 namespace rtype::network {
 
 namespace {
-
-SipHashKey randomKey() {
-  std::random_device random;
-  std::uniform_int_distribution<unsigned int> byteDistribution{
-      0, static_cast<unsigned int>(BYTE_MASK)};
-  SipHashKey key{};
-  std::ranges::generate(key, [&random, &byteDistribution] {
-    return static_cast<std::byte>(byteDistribution(random));
-  });
-  return key;
-}
 
 std::uint64_t windowOf(std::chrono::nanoseconds now) {
   return static_cast<std::uint64_t>(now / COOKIE_WINDOW_DURATION);
@@ -32,7 +17,7 @@ std::uint64_t windowOf(std::chrono::nanoseconds now) {
 
 }  // namespace
 
-CookieIssuer::CookieIssuer() : CookieIssuer(randomKey()) {}
+CookieIssuer::CookieIssuer() : CookieIssuer(randomSipHashKey()) {}
 
 CookieIssuer::CookieIssuer(const SipHashKey& secret) : secret_(secret) {}
 
@@ -51,8 +36,7 @@ bool CookieIssuer::isValid(std::uint64_t cookie, const Endpoint& sender,
 std::uint64_t CookieIssuer::cookieOf(const Endpoint& sender,
                                      std::uint64_t window) const {
   ByteWriter message;
-  message.writeBytes(std::as_bytes(std::span{sender.address}));
-  message.writeUint16(sender.port);
+  writeEndpoint(message, sender);
   message.writeUint64(window);
   return sipHash(secret_, message.bytes());
 }

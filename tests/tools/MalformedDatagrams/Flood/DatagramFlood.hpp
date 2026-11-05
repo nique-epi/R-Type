@@ -12,14 +12,17 @@
 namespace rtype::tools {
 
 /**
- * @brief Sends a recipient FLOOD_DATAGRAMS_PER_SECOND malformed datagrams per
- * second for FLOOD_DURATION, the kinds of MALFORMED_DATAGRAM_KINDS in turn.
+ * @brief Sends a recipient as many malformed datagrams per second as its
+ * datagramsPerSecond says, for FLOOD_DURATION, the kinds of
+ * MALFORMED_DATAGRAM_KINDS in turn.
  *
  * Each datagram carries the session token of the recipient and the next
  * sequence, so a server that admitted the tool, or a client that took it for
  * its server, reads it as far as the fault. The datagrams that can be split
  * into messages keep the session open: the recipient never times the tool
- * out during a flood.
+ * out during a flood. After a stall of the tool, it sends at most
+ * FLOOD_CATCH_UP_LIMIT datagrams at once and skips the rest of the slots it
+ * missed.
  */
 class DatagramFlood {
  public:
@@ -37,12 +40,18 @@ class DatagramFlood {
   [[nodiscard]] FloodReport run(LoopbackPeer& peer);
 
  private:
+  /**
+   * @brief Sends the datagrams due until @p dueCount, the count a flood at its
+   * rate reached since its start, at most FLOOD_CATCH_UP_LIMIT of them.
+   */
+  void sendDue(LoopbackPeer& peer, std::size_t dueCount);
   void sendNext(LoopbackPeer& peer);
   [[nodiscard]] network::PacketHeader nextHeader();
 
   FloodRecipient recipient_;
   MalformedDatagramBuilder builder_;
   FloodReport report_;
+  std::size_t scheduledCount_{0};
   std::size_t sentCount_{0};
   std::uint16_t sequence_{SEQUENCE_BEFORE_THE_FLOOD};
 };
