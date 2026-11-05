@@ -10,6 +10,6 @@ std::filesystem::path pluginFile(const std::string& name) {
 }
 
 std::string pluginFolderText() {
-  return rtype::engine::genericText(
+  return rtype::logging::genericText(
       std::filesystem::path{RTYPE_TEST_PLUGIN_FOLDER});
 }

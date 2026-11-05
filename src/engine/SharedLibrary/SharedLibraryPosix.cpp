@@ -29,7 +29,7 @@ std::string lastError() {
 SharedLibrary::SharedLibrary(const std::filesystem::path& file)
     : handle_(dlopen(file.c_str(), RTLD_NOW | RTLD_LOCAL)) {
   if (handle_ == nullptr) {
-    throw SharedLibraryOpenException(genericText(file), lastError());
+    throw SharedLibraryOpenException(logging::genericText(file), lastError());
   }
 }
 

@@ -42,7 +42,7 @@ SharedLibrary::SharedLibrary(const std::filesystem::path& file)
                              LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR |
                                  LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)) {
   if (handle_ == nullptr) {
-    throw SharedLibraryOpenException(genericText(file), lastError());
+    throw SharedLibraryOpenException(logging::genericText(file), lastError());
   }
 }
 

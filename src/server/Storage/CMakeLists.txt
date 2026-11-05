@@ -13,7 +13,6 @@ target_link_libraries(rtype_server_storage_module
     rtype_server_network_module
     rtype_server_storage_archive
   PRIVATE
-    rtype_engine_paths
     rtype_network_constants
     rtype_server_constants
 )

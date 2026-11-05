@@ -11,7 +11,7 @@ target_include_directories(rtype_engine_shared_library PUBLIC ${CMAKE_CURRENT_SO
 target_link_libraries(rtype_engine_shared_library
   PUBLIC
     rtype_engine_exceptions
-    rtype_engine_paths
+    rtype_logging_path_text
     ${CMAKE_DL_LIBS}
 )
 

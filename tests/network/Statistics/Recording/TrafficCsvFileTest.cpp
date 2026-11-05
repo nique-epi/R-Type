@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <string>
 #include "NetworkException.hpp"
+#include "NonAnsiFolderTestConstants.hpp"
 #include "TemporaryFolder.hpp"
 #include "TrafficCsvFile.hpp"
 #include "TrafficFileTestConstants.hpp"
@@ -40,6 +41,27 @@ TEST(TrafficCsvFile, ARowAppendedReachesTheFileAtOnce) {
   EXPECT_TRUE(opened.append("a row\n"));
 
   EXPECT_EQ(textOf(file), std::string{HEADER_LINE} + "a row\n");
+}
+
+/**
+ * Given a path that is a folder whose name is outside the code page
+ * When a traffic file opens it
+ * Then it refuses, and the message names the folder in UTF-8
+ */
+TEST(TrafficCsvFile, NamesAFolderOutsideTheCodePageInUtf8) {
+  const TemporaryFolder folder;
+  const std::filesystem::path nonAnsiFolder =
+      folder.path() / rtype::testing::NON_ANSI_FOLDER_NAME;
+  std::filesystem::create_directories(nonAnsiFolder);
+
+  try {
+    const TrafficCsvFile opened{nonAnsiFolder};
+    ADD_FAILURE() << "a folder was opened as a traffic file";
+  } catch (const TrafficFileOpenException& error) {
+    EXPECT_NE(std::string{error.what()}.find(
+                  std::string{rtype::testing::NON_ANSI_FOLDER_BYTES}),
+              std::string::npos);
+  }
 }
 
 /**

@@ -1,6 +1,6 @@
 rtype_add_test(NAME server_bydo_spawner_tests SOURCES BydoSpawnerTest.cpp BydoSpawnerScene.cpp WavePlanFixtures.cpp LIBS rtype_server_spawning rtype_game_spawning_constants rtype_network_constants server_test_datagrams rtype_test_support)
 target_include_directories(server_bydo_spawner_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/server)
-rtype_add_test(NAME server_wave_catalog_tests SOURCES WaveCatalogTest.cpp WaveCatalogFixtures.cpp LIBS rtype_server_spawning rtype_server_constants)
+rtype_add_test(NAME server_wave_catalog_tests SOURCES WaveCatalogTest.cpp WaveCatalogFixtures.cpp LIBS rtype_server_spawning rtype_server_constants rtype_test_support)
 target_include_directories(server_wave_catalog_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/server)
 target_compile_definitions(server_wave_catalog_tests PRIVATE RTYPE_SOURCE_ASSETS_FOLDER="${PROJECT_SOURCE_DIR}/assets")
 rtype_add_test(NAME server_weapon_system_tests SOURCES WeaponSystemTest.cpp WeaponSystemFixture.cpp ShipWeaponFixture.cpp LIBS rtype_server_spawning rtype_network_constants server_test_datagrams)

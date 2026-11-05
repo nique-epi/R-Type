@@ -121,7 +121,7 @@ void PluginShelf::load(std::span<const std::string> arguments) {
   requireValidName(name);
   const std::filesystem::path file = fileOf(name);
   if (!std::filesystem::exists(file)) {
-    throw PluginNotFoundException(name, genericText(file));
+    throw PluginNotFoundException(name, logging::genericText(file));
   }
   libraries_.push_back(std::make_unique<SharedLibrary>(file));
   pending_.push_back(createModule(name, *libraries_.back()));

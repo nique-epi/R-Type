@@ -7,7 +7,7 @@ target_link_libraries(rtype_engine_plugin_shelf
     rtype_engine_modules
     rtype_engine_commands
     rtype_engine_shared_library
-    rtype_engine_paths
+    rtype_logging_path_text
     rtype_engine_exceptions
 )
 

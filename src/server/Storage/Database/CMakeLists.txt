@@ -8,7 +8,7 @@ target_link_libraries(rtype_server_storage_database
     rtype_network_leaderboard_request
     rtype_storage
   PRIVATE
-    rtype_engine_paths
+    rtype_logging
     rtype_network_protocol
 )
 
