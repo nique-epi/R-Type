@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 #include "AnimatedSprite.hpp"
+#include "AppearanceReference.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
 #include "Entity.hpp"
@@ -22,6 +23,7 @@
 #include "IEntityTypeSource.hpp"
 #include "ISoundPlayer.hpp"
 #include "NetworkEntityTable.hpp"
+#include "NetworkIdentity.hpp"
 #include "PilotShip.hpp"
 #include "Position.hpp"
 #include "PositionHistory.hpp"
@@ -270,6 +272,8 @@ std::optional<engine::Entity> EntityReplicator::create(
   const engine::Entity entity = addEntity(
       look->side, game::Position{.x = announced.x, .y = announced.y},
       animatedSpriteOf(look->appearance.get(), look->side, announced.entityId));
+  components_->add(entity, game::NetworkIdentity{announced.entityId});
+  components_->add(entity, AppearanceReference{&look->appearance.get()});
   entityByNetworkId_.bind(announced.entityId, entity);
   return entity;
 }

@@ -6,6 +6,7 @@
 #include "CollisionBox.hpp"
 #include "EntityType.hpp"
 #include "GunSheet.hpp"
+#include "HurtZone.hpp"
 #include "MotionSheet.hpp"
 #include "PilotSheet.hpp"
 
@@ -41,6 +42,11 @@ struct EntitySheet {
   std::optional<std::uint32_t> points;
   /** @brief Its gun; nothing for a body that fires nothing. */
   std::optional<GunSheet> gun;
+  /** @brief The boxes that hurt a ship on contact; nothing for a body without
+   * HurtZone. */
+  std::optional<HurtZone> hurtZone;
+  /** @brief Whether a ship that touches it leaves it standing. */
+  bool survivesContact{false};
 };
 
 }  // namespace rtype::game

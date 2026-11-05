@@ -17,6 +17,7 @@ using rtype::engine::dataFilesIn;
 using rtype::engine::DataFileSyntaxException;
 using rtype::engine::DataFileTable;
 using rtype::engine::DataFileTableExpectedException;
+using rtype::engine::DataFileTablesExpectedException;
 using rtype::engine::DataFileTextExpectedException;
 using rtype::engine::DataFileValueOutOfRangeException;
 using rtype::engine::keyName;
@@ -28,6 +29,7 @@ using rtype::engine::parseDataFile;
 using rtype::engine::refuseUnknownKeys;
 using rtype::engine::rootOf;
 using rtype::engine::tableAt;
+using rtype::engine::tablesAt;
 using rtype::engine::textAt;
 using rtype::engine::UnknownDataFileChoiceException;
 using rtype::engine::UnknownDataFileKeyException;
@@ -180,6 +182,107 @@ TEST(DataFileReading, AnOptionalTableHoldingAValueIsRefused) {
 
   EXPECT_THROW(static_cast<void>(optionalTableAt(gameplay, GUN_TABLE)),
                DataFileTableExpectedException);
+}
+
+/**
+ * Given a table gameplay with two tables in the array box
+ * When the boxes are read
+ * Then there are two, in the order of the file, named after their index
+ */
+TEST(DataFileReading, AnArrayOfTablesIsReadInTheOrderOfTheFile) {
+  const toml::table root =
+      parseDataFile(GAMEPLAY_WITH_TWO_BOXES, SHEET_FILE_NAME);
+  const DataFileTable gameplay =
+      tableAt(rootOf(root, SHEET_FILE_NAME), GAMEPLAY_TABLE);
+
+  const std::vector<DataFileTable> boxes = tablesAt(gameplay, BOX_KEY);
+
+  ASSERT_EQ(boxes.size(), TWO_BOXES);
+  EXPECT_EQ(boxes.front().name, NAME_OF_THE_FIRST_BOX);
+  EXPECT_EQ(boxes.back().name, NAME_OF_THE_SECOND_BOX);
+  EXPECT_EQ(wholeNumberAt(boxes.front(), WIDTH_KEY, BOX_WIDTH_RANGE),
+            WIDTH_OF_THE_FIRST_BOX_VALUE);
+  EXPECT_EQ(wholeNumberAt(boxes.back(), WIDTH_KEY, BOX_WIDTH_RANGE),
+            WIDTH_OF_THE_SECOND_BOX_VALUE);
+}
+
+/**
+ * Given a table gameplay whose second box has a key out of its range
+ * When the width of the second box is read
+ * Then the error names gameplay.box[1].width
+ */
+TEST(DataFileReading, AnErrorInAnArrayElementNamesItsIndex) {
+  const toml::table root =
+      parseDataFile(GAMEPLAY_WITH_TWO_BOXES, SHEET_FILE_NAME);
+  const DataFileTable gameplay =
+      tableAt(rootOf(root, SHEET_FILE_NAME), GAMEPLAY_TABLE);
+  const std::vector<DataFileTable> boxes = tablesAt(gameplay, BOX_KEY);
+
+  EXPECT_THAT(
+      [&boxes] {
+        static_cast<void>(
+            wholeNumberAt(boxes.back(), WIDTH_KEY, NARROW_BOX_WIDTH_RANGE));
+      },
+      ThrowsMessage<DataFileValueOutOfRangeException>(
+          HasSubstr(std::string{WIDTH_OF_THE_SECOND_BOX})));
+}
+
+/**
+ * Given a table gameplay whose array box is empty
+ * When the boxes are read
+ * Then there is none
+ */
+TEST(DataFileReading, AnEmptyArrayHoldsNoTable) {
+  const toml::table root = parseDataFile(GAMEPLAY_WITH_NO_BOX, SHEET_FILE_NAME);
+  const DataFileTable gameplay =
+      tableAt(rootOf(root, SHEET_FILE_NAME), GAMEPLAY_TABLE);
+
+  EXPECT_TRUE(tablesAt(gameplay, BOX_KEY).empty());
+}
+
+/**
+ * Given a table gameplay with one table box, not an array
+ * When the boxes are read
+ * Then a DataFileTablesExpectedException names gameplay.box
+ */
+TEST(DataFileReading, ASingleTableIsNotAnArrayOfTables) {
+  const toml::table root =
+      parseDataFile(GAMEPLAY_WITH_ONE_TABLE_BOX, SHEET_FILE_NAME);
+  const DataFileTable gameplay =
+      tableAt(rootOf(root, SHEET_FILE_NAME), GAMEPLAY_TABLE);
+
+  EXPECT_THAT([&gameplay] { static_cast<void>(tablesAt(gameplay, BOX_KEY)); },
+              ThrowsMessage<DataFileTablesExpectedException>(
+                  HasSubstr(std::string{BOXES_NOT_TABLES_TEXT})));
+}
+
+/**
+ * Given a table gameplay whose array box holds a table and a number
+ * When the boxes are read
+ * Then a DataFileTablesExpectedException is thrown
+ */
+TEST(DataFileReading, ANumberAmongTheTablesIsRefused) {
+  const toml::table root =
+      parseDataFile(GAMEPLAY_WITH_A_NUMBER_AMONG_BOXES, SHEET_FILE_NAME);
+  const DataFileTable gameplay =
+      tableAt(rootOf(root, SHEET_FILE_NAME), GAMEPLAY_TABLE);
+
+  EXPECT_THROW(static_cast<void>(tablesAt(gameplay, BOX_KEY)),
+               DataFileTablesExpectedException);
+}
+
+/**
+ * Given a table gameplay with no box
+ * When the boxes are read
+ * Then a MissingDataFileKeyException is thrown
+ */
+TEST(DataFileReading, AnAbsentArrayOfTablesIsMissing) {
+  const toml::table root = parseDataFile(GAMEPLAY_WITH_A_SIDE, SHEET_FILE_NAME);
+  const DataFileTable gameplay =
+      tableAt(rootOf(root, SHEET_FILE_NAME), GAMEPLAY_TABLE);
+
+  EXPECT_THROW(static_cast<void>(tablesAt(gameplay, BOX_KEY)),
+               MissingDataFileKeyException);
 }
 
 /**

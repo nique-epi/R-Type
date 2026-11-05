@@ -26,7 +26,8 @@ struct Caption;
  *
  * Besides these, it reads how the effects change the drawing of an entity:
  * its HitFlash for its tone, its Invulnerability for a dithered picture and,
- * with a PilotShip, an outline, its Nudge for a few pixels of offset, its
+ * with a PilotShip, an outline, its Nudge for a few pixels of offset, the
+ * anchor of its SpriteAnimation for the pixels its frame hangs away, its
  * Reveal for the rows a ship arriving shows. Whatever else an entity carries
  * (health, damage) is invisible to it. Inside a layer, entities are drawn by
  * ascending entity index, so the same registry always gives the same

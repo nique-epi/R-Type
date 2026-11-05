@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <vector>
 #include "EntitySpawned.hpp"
+#include "EventBus.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PilotSystem.hpp"
 #include "PlayerRoster.hpp"
@@ -53,6 +54,7 @@ class WeaponSystemFixture : public ::testing::Test {
   PlayerRoster roster_;
   std::vector<network::OutgoingDatagram> sent_;
   WeaponSystem weapons_;
+  engine::EventBus events_;
   game::PilotSystem pilots_;
 };
 

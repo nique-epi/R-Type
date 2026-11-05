@@ -63,8 +63,13 @@ projectile = "enemy_missile"
 | `gun.interval_ms` | milliseconds | 1 to 60000 | the time between two shots of its `Gun` |
 | `gun.first_shot_ms` | milliseconds | 0 to 60000 | the time before its first shot: 0 for a gun ready at once |
 | `gun.projectile` | | the name of a sheet | what its gun fires |
+| `hurt_zone.box` | | an array of tables, `[[gameplay.hurt_zone.box]]`, at least one; enemies only | its `HurtZone`: rectangles that hurt a ship that touches them, besides its hitbox |
+| `hurt_zone.box.offset_x`, `offset_y` | logical units | -1024 to 1024 | where the center of the box lies from the position of the body |
+| `hurt_zone.box.width`, `height` | logical units | 1 to 1024 | the size of the box |
+| `hurt_zone.box.attack`, `phase` | | `attack`: 0 to 255; `phase`: `signal`, `strike`, `recover`, `enraged` | the attack and the phase the box hurts in: given together, or not at all for a box that always hurts |
+| `[gameplay.survives_contact]` | | an empty table; enemies only | the `SurvivesContact` marker: a ship that touches the body loses a life, and the body stays |
 
-- `side`, `pilot`, `hitbox` and `motion` are required; the tables `behaviour`, `health`, `score` and `gun` may be left out. A body without `health` takes no damage: a missile that hits it still disappears, and a ship pays a hit with a life instead (see [Lives](/R-Type/server/#lives-lifekeeper)). A body without `score` earns nothing, without `gun` fires nothing.
+- `side`, `pilot`, `hitbox` and `motion` are required; the tables `behaviour`, `health`, `score`, `gun`, `hurt_zone` and `survives_contact` may be left out. A body without `health` takes no damage: a missile that hits it still disappears, and a ship pays a hit with a life instead (see [Lives](/R-Type/server/#lives-lifekeeper)). A body without `score` earns nothing, without `gun` fires nothing.
 - Any other key is refused, so a misspelt key stops the program instead of being ignored. Every number is a TOML integer: `240`, never `240.0` or `"240"`.
 - A duration of the gun becomes the nearest whole number of ticks of a sixtieth of a second: 333 ms are 20 ticks, 1500 ms are 90. The interval is at least 1 tick (`MINIMUM_GUN_INTERVAL_TICKS`).
 - The keys, the choices and the ranges live in `src/game/EntityTypes/EntitySheetConstants.hpp`.
@@ -79,6 +84,8 @@ A sheet whose keys are each valid is refused when it does not hold together:
 - A missile flies towards the edge that removes it (see [Piloted bodies](/R-Type/server/#piloted-bodies-pilotsystem-and-playfieldexitsystem)): on its first tick its pilot steers a missile of side `player_missile` to the right and one of side `enemy_missile` to the left. A `straight` heading of 1 for the first, of -1 for the second; the `weave` goes left, so it may pilot a missile of an enemy only. A missile flying the other way, or staying, would never be removed when it hits nothing.
 - `[gameplay.behaviour]` stands only when the behaviour of the pilot declares settings, and then holds exactly those settings.
 - A gun fires a sheet of the folder: of side `player_missile` for a shooter of side `player`, of side `enemy_missile` for any other shooter.
+- Only a body of side `enemy` has a `hurt_zone` or `survives_contact`, and a `hurt_zone` holds at least one box.
+- A box names its `attack` and its `phase` together, or neither. An `attack` is a number the sheet gives its own attacks: the code knows no attack by name.
 - The waves file names enemies among the sheets of side `enemy` (see [Writing the waves file](/R-Type/waves-file/#enemies)).
 
 ## Behaviours and their settings
@@ -120,6 +127,35 @@ frame_ms = 250
 | `idle.frame_ms` | milliseconds | 1 to 60000 | how long each frame shows, in a loop |
 
 Every key is required and any other is refused. The keys and ranges live in `src/client/Rendering/Sprites/EntityAppearanceConstants.hpp`. A pixel of a sheet covers 4 × 4 logical units of the playfield, so a frame should be the hitbox divided by 4: 24 × 24 pixels for a box of 96 × 96. `EntityAppearances.EveryShippedSheetDrawsTheBoxTheServerHits` checks it for every shipped sheet. The side of the sheet, never its appearance, picks the layer the entity is drawn in (see [Client](/R-Type/client/#drawing-order-layer)). Whether the sprite sheet exists is checked when the game screen loads it, like any other asset.
+
+### Attack animations
+
+An enemy that attacks gives each phase of each attack an animation of its own, in a table `[appearance.attack_<n>.<phase>]`, `n` being the attack number (0 to 255) and `<phase>` one of `signal`, `strike`, `recover`, `enraged`, the phases of the `EnemyAction` message:
+
+```toml
+[appearance.attack_1.strike]
+left = 0
+top = 96
+width = 48
+height = 24
+frames = 4
+spacing = 2
+frame_ms = 80
+playback = "hold"
+afterwards = "idle"
+anchor_x = -12
+anchor_y = 0
+```
+
+The frame keys are those of `idle`. The others:
+
+| Key | Unit | Accepted | What it gives the animation |
+|---|---|---|---|
+| `playback` | | `loop`, `once`, `hold`; required | what follows the last frame: it starts again, or it stays on the last frame; `once` and `hold` both end once the last frame has shown |
+| `afterwards` | | `idle`, `stay`; `idle` when left out | `idle` gives the body its idle animation back when the animation has ended; `stay` keeps the last frame |
+| `anchor_x`, `anchor_y` | pixels of the canvas | -256 to 256; 0 when left out | how far the frames are drawn from the center of the body, so a frame wider than the body hangs from the side it grows on |
+
+A phase the sheet leaves out has no animation: the enemy keeps what it plays when the server announces it. An attack table of another name, a phase of another name or any other key is refused.
 
 ## When a program refuses a sheet
 

@@ -29,7 +29,8 @@ WeaponSystemFixture::WeaponSystemFixture()
                                 [this](network::OutgoingDatagram datagram) {
                                   sent_.push_back(std::move(datagram));
                                 },
-                            .types = game::testing::shippedEntitySheets()}) {}
+                            .types = game::testing::shippedEntitySheets()}),
+      pilots_(events_) {}
 
 void WeaponSystemFixture::connectWithoutShip(std::size_t index) {
   EXPECT_NE(roster_.add(playerEndpoint(index), std::string{PLAYER_NICKNAME},

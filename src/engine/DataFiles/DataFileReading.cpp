@@ -34,6 +34,14 @@ bool isDataFile(const std::filesystem::directory_entry& entry) {
          entry.path().extension() == std::filesystem::path{DATA_FILE_EXTENSION};
 }
 
+/** @returns The name of the table at @p index of the array @p key of
+ * @p parent: `gameplay.hurt_zone.box[0]`. */
+std::string elementName(const DataFileTable& parent, std::string_view key,
+                        std::size_t index) {
+  return keyName(parent, key) + DATA_FILE_INDEX_OPENING +
+         std::to_string(index) + DATA_FILE_INDEX_CLOSING;
+}
+
 }  // namespace
 
 toml::table parseDataFile(std::string_view text, std::string_view source) {
@@ -126,6 +134,27 @@ std::optional<DataFileTable> optionalTableAt(const DataFileTable& parent,
     return std::nullopt;
   }
   return tableAt(parent, key);
+}
+
+std::vector<DataFileTable> tablesAt(const DataFileTable& parent,
+                                    std::string_view key) {
+  const toml::node& node = nodeAt(parent, key);
+  const toml::array* const array = node.as_array();
+  if (array == nullptr) {
+    throw DataFileTablesExpectedException(placeOf(node.source(), parent, key));
+  }
+  std::vector<DataFileTable> tables;
+  for (std::size_t index = 0; index < array->size(); ++index) {
+    const toml::table* const element = array->get(index)->as_table();
+    if (element == nullptr) {
+      throw DataFileTablesExpectedException(
+          placeOf(array->get(index)->source(), parent, key));
+    }
+    tables.push_back(DataFileTable{.table = *element,
+                                   .source = parent.source,
+                                   .name = elementName(parent, key, index)});
+  }
+  return tables;
 }
 
 std::int64_t wholeNumberAt(const DataFileTable& table, std::string_view key,

@@ -250,6 +250,13 @@ class DataFileTableExpectedException : public EngineException {
   explicit DataFileTableExpectedException(const DataFilePlace& place);
 };
 
+/** @brief A key of a data file that must hold an array of tables holds
+ * something else, or an array with a value that is not a table. */
+class DataFileTablesExpectedException : public EngineException {
+ public:
+  explicit DataFileTablesExpectedException(const DataFilePlace& place);
+};
+
 /**
  * @brief A value of a data file is not a TOML integer within the range of
  * its key.

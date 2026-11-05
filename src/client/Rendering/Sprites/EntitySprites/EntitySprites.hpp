@@ -3,6 +3,7 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <cstdint>
 #include "AnimatedSprite.hpp"
+#include "Animation.hpp"
 #include "EntityAppearance.hpp"
 #include "EntityType.hpp"
 #include "Layer.hpp"
@@ -18,6 +19,9 @@ namespace rtype::client {
  * for every type a sheet adds.
  */
 [[nodiscard]] game::Layer layerOf(game::EntityType side);
+
+/** @returns The idle animation of @p appearance, in a loop. */
+[[nodiscard]] Animation idleAnimationOf(const EntityAppearance& appearance);
 
 /**
  * @brief What code that creates an entity gives it: the idle animation of

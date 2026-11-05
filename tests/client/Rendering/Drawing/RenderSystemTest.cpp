@@ -4,17 +4,20 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "Animation.hpp"
 #include "Caption.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "Effects/EffectTestConstants.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
+#include "FrameAnchor.hpp"
 #include "HitFlash.hpp"
 #include "Invulnerability.hpp"
 #include "Layer.hpp"
 #include "Nudge.hpp"
 #include "PilotTestConstants.hpp"
+#include "Playback.hpp"
 #include "Position.hpp"
 #include "RecordingDrawSurface.hpp"
 #include "RenderSystemFixtures.hpp"
@@ -23,17 +26,22 @@
 #include "Reveal.hpp"
 #include "Scene.hpp"
 #include "Sprite.hpp"
+#include "SpriteAnimation.hpp"
 #include "SpriteFrame.hpp"
 #include "SpriteTone.hpp"
 #include "SteadyMotion.hpp"
 #include "TimeConstants.hpp"
 
+using rtype::client::Animation;
 using rtype::client::Caption;
+using rtype::client::FrameAnchor;
 using rtype::client::HALF;
 using rtype::client::HitFlash;
 using rtype::client::Invulnerability;
 using rtype::client::Nudge;
+using rtype::client::Playback;
 using rtype::client::Reveal;
+using rtype::client::SpriteAnimation;
 using rtype::client::SpriteTone;
 using rtype::engine::Duration;
 using rtype::engine::Entity;
@@ -356,6 +364,30 @@ TEST(RenderSystem, ANudgedEntityIsDrawnAPixelAway) {
   EXPECT_EQ(scene.surface().drawn().front().center.x,
             SPAWN_X + UNITS_PER_PIXEL);
   EXPECT_EQ(scene.surface().drawn().front().center.y, SPAWN_Y);
+}
+
+/**
+ * Given a Bydo whose animation hangs its frame 3 pixels left and 2 pixels down
+ * When a frame is rendered
+ * Then it is drawn 3 pixels of the canvas left and 2 down of its position
+ */
+TEST(RenderSystem, AnAnimationAnchorMovesTheFrameItDraws) {
+  Scene scene;
+  const Entity bydo = scene.spawn("bydo", Layer::Enemies);
+  scene.components().add(
+      bydo, SpriteAnimation{.animation = Animation{
+                                .frames = {},
+                                .frameDuration = Duration::zero(),
+                                .playback = Playback::Hold,
+                                .anchor = FrameAnchor{.x = -3, .y = 2}}});
+
+  scene.render();
+
+  ASSERT_EQ(scene.surface().drawn().size(), 1U);
+  EXPECT_EQ(scene.surface().drawn().front().center.x,
+            SPAWN_X - (3 * UNITS_PER_PIXEL));
+  EXPECT_EQ(scene.surface().drawn().front().center.y,
+            SPAWN_Y + (2 * UNITS_PER_PIXEL));
 }
 
 /**

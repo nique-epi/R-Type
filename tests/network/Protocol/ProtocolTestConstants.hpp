@@ -188,6 +188,11 @@ constexpr std::uint32_t SOME_INPUT_NUMBER = 0x01020304;
 constexpr std::uint16_t SOME_EVENT_NUMBER = 0x0102;
 
 /**
+ * @brief An attack number of an EnemyAction.
+ */
+constexpr std::uint8_t SOME_ATTACK_NUMBER = 3;
+
+/**
  * @brief Actions of a PlayerInput: up and shoot (bits 0 and 4), and all five
  * actions at once.
  */
@@ -247,12 +252,12 @@ constexpr std::uint16_t SOME_SENDER_PORT = 50000;
 /**
  * @brief Message type bytes no message has: the byte before the first type,
  * the byte after the last, and the largest byte. The byte after the last is
- * read from the name of the last message, MessageType::RoundTrips: a message
+ * read from the name of the last message, MessageType::EnemyAction: a message
  * added after it needs this line to follow.
  */
 constexpr std::uint8_t TYPE_BELOW_THE_FIRST = 0;
 constexpr std::uint8_t TYPE_ABOVE_THE_LAST =
-    static_cast<std::uint8_t>(MessageType::RoundTrips) + 1;
+    static_cast<std::uint8_t>(MessageType::EnemyAction) + 1;
 constexpr std::uint8_t LARGEST_TYPE_BYTE = 255;
 
 /**
