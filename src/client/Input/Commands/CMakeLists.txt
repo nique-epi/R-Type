@@ -11,6 +11,7 @@ target_link_libraries(rtype_client_input_commands
     SFML::Window
     rtype_client_input_keys
     rtype_engine_time
+    rtype_network_protocol
 )
 
 rtype_enable_warnings(rtype_client_input_commands)

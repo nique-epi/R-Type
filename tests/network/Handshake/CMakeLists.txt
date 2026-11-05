@@ -1,1 +1,2 @@
-target_sources(network_tests PRIVATE SipHashTest.cpp CookieIssuerTest.cpp)
+add_subdirectory(Cookies)
+add_subdirectory(RateLimit)
