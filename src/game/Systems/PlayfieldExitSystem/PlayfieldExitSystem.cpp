@@ -39,9 +39,16 @@ bool hasLeftThePlayfield(EntityType type, const Position& position,
   return false;
 }
 
-/** @returns Half the width of the CollisionBox of @p entity, 0 without one. */
-float halfWidthOf(engine::ComponentRegistry& components,
-                  engine::Entity entity) {
+/**
+ * @returns Half the width of the CollisionBox of @p entity, 0 without one, when
+ * @p type is a missile, the only type whose exit hasLeftThePlayfield() measures
+ * with it; 0 for any other type, whose box is not looked up.
+ */
+float missileHalfWidthOf(engine::ComponentRegistry& components,
+                         engine::Entity entity, EntityType type) {
+  if (type != EntityType::PlayerMissile && type != EntityType::EnemyMissile) {
+    return 0.0F;
+  }
   const CollisionBox* const box = components.get<CollisionBox>(entity);
   return box == nullptr ? 0.0F : box->width * engine::HALF;
 }
@@ -53,21 +60,22 @@ PlayfieldExitSystem::PlayfieldExitSystem(engine::EventBus& events)
 
 void PlayfieldExitSystem::update(engine::ComponentRegistry& components,
                                  [[maybe_unused]] engine::Duration elapsed) {
-  components.forEach<Position, EntityType>([this, &components](
-                                               engine::Entity entity,
-                                               const Position& position,
-                                               const EntityType& type) {
-    if (!hasLeftThePlayfield(type, position, halfWidthOf(components, entity))) {
-      return;
-    }
-    const NetworkIdentity* identity = components.get<NetworkIdentity>(entity);
-    if (identity == nullptr) {
-      return;
-    }
-    events_.publish(EntityDestruction{.networkId = identity->networkId,
-                                      .cause = DestructionCause::Removed});
-    components.destroy(entity);
-  });
+  components.forEach<Position, EntityType>(
+      [this, &components](engine::Entity entity, const Position& position,
+                          const EntityType& type) {
+        if (!hasLeftThePlayfield(
+                type, position, missileHalfWidthOf(components, entity, type))) {
+          return;
+        }
+        const NetworkIdentity* identity =
+            components.get<NetworkIdentity>(entity);
+        if (identity == nullptr) {
+          return;
+        }
+        events_.publish(EntityDestruction{.networkId = identity->networkId,
+                                          .cause = DestructionCause::Removed});
+        components.destroy(entity);
+      });
 }
 
 }  // namespace rtype::game
