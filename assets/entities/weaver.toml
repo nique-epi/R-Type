@@ -1,0 +1,48 @@
+# The entity type weaver: a Bydo that weaves up and down around its row.
+# [gameplay] is what the server gives an entity of this type, [appearance] how
+# the client draws it. The server reads this file when it starts, from
+# assets/entities/weaver.toml in the folder it is started in: the name of the
+# file is the name of the type. It stops with an error naming the file, the
+# line and the key when a key is missing, misspelt, out of its range, or does
+# not hold together with another key or another sheet. Every number is an
+# integer: 240, never 240.0. The keys are described on the page "Add an enemy
+# type" of the docs.
+
+[gameplay]
+side = "enemy"
+pilot = "weave"
+
+[gameplay.hitbox]
+width = 96
+height = 96
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 240
+
+[gameplay.behaviour]
+amplitude = 48
+period_ms = 2000
+
+[gameplay.health]
+points = 3
+
+[gameplay.score]
+points = 200
+
+[gameplay.gun]
+interval_ms = 1500
+first_shot_ms = 1500
+projectile = "enemy_missile"
+
+[appearance]
+sheet = "sprites/entities.png"
+
+[appearance.idle]
+left = 0
+top = 72
+width = 24
+height = 24
+frames = 2
+spacing = 2
+frame_ms = 250

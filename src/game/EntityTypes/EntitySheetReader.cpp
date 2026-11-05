@@ -1,0 +1,285 @@
+#include "EntitySheetReader.hpp"
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <optional>
+#include <span>
+#include <string>
+#include <string_view>
+#include <toml++/toml.hpp>
+#include <vector>
+#include "BehaviourRegistry.hpp"
+#include "BehaviourSetting.hpp"
+#include "CollisionBox.hpp"
+#include "DataFilePlace.hpp"
+#include "DataFileReading.hpp"
+#include "DataFileTable.hpp"
+#include "EngineException.hpp"
+#include "EntitySheet.hpp"
+#include "EntitySheetConstants.hpp"
+#include "EntityType.hpp"
+#include "GameException.hpp"
+#include "GunSheet.hpp"
+#include "IBehaviour.hpp"
+#include "MotionKind.hpp"
+#include "MotionSheet.hpp"
+#include "PilotSheet.hpp"
+#include "SheetText.hpp"
+#include "ShipControlConstants.hpp"
+#include "TimeConstants.hpp"
+#include "WholeNumberRange.hpp"
+
+namespace rtype::game {
+
+namespace {
+
+/** @returns Where @p table names @p key, for an error about its value. */
+engine::DataFilePlace placeOfKey(const engine::DataFileTable& table,
+                                 std::string_view key) {
+  return engine::placeOf(engine::nodeAt(table, key).source(), table, key);
+}
+
+/** @returns The whole simulation ticks nearest to @p duration: 333 ms are 20
+ * ticks at 60 per second, 1500 ms are 90, 0 ms are 0. */
+std::size_t nearestTicksIn(engine::Duration duration) {
+  return static_cast<std::size_t>((duration + HALF_A_TICK) /
+                                  engine::SIMULATION_TICK_DURATION);
+}
+
+/** @returns The table `[gameplay]` of @p root, once the root holds exactly
+ * `gameplay` and `appearance`, both tables, and `[gameplay]` no unknown key. */
+engine::DataFileTable gameplayTableOf(const engine::DataFileTable& root) {
+  engine::refuseUnknownKeys(root, SHEET_ROOT_KEYS);
+  static_cast<void>(engine::tableAt(root, APPEARANCE_KEY));
+  engine::DataFileTable gameplay = engine::tableAt(root, GAMEPLAY_KEY);
+  engine::refuseUnknownKeys(gameplay, GAMEPLAY_KEYS);
+  return gameplay;
+}
+
+/** @returns The side `[gameplay]` names. */
+EntityType sideFrom(const engine::DataFileTable& gameplay) {
+  return SIDES.at(engine::choiceAt(gameplay, SIDE_KEY, SIDE_NAMES));
+}
+
+/** @returns The box `[gameplay.hitbox]` describes. */
+CollisionBox hitboxFrom(const engine::DataFileTable& gameplay) {
+  const engine::DataFileTable hitbox = engine::tableAt(gameplay, HITBOX_KEY);
+  engine::refuseUnknownKeys(hitbox, HITBOX_KEYS);
+  return CollisionBox{.width = static_cast<float>(engine::wholeNumberAt(
+                          hitbox, WIDTH_KEY, HITBOX_SIDE_RANGE)),
+                      .height = static_cast<float>(engine::wholeNumberAt(
+                          hitbox, HEIGHT_KEY, HITBOX_SIDE_RANGE))};
+}
+
+/** @returns The motion `[gameplay.motion]` describes: a ship with its kind
+ * only, a steady body with its top speed too. */
+MotionSheet motionFrom(const engine::DataFileTable& gameplay) {
+  const engine::DataFileTable motion = engine::tableAt(gameplay, MOTION_KEY);
+  const MotionKind kind =
+      MOTION_KINDS.at(engine::choiceAt(motion, KIND_KEY, MOTION_KIND_NAMES));
+  if (kind == MotionKind::Ship) {
+    engine::refuseUnknownKeys(motion, SHIP_MOTION_KEYS);
+    return MotionSheet{.kind = kind, .topSpeed = 0.0F};
+  }
+  engine::refuseUnknownKeys(motion, STEADY_MOTION_KEYS);
+  return MotionSheet{.kind = kind,
+                     .topSpeed = static_cast<float>(engine::wholeNumberAt(
+                         motion, TOP_SPEED_KEY, TOP_SPEED_RANGE))};
+}
+
+/** @returns What a pilot may be: a player, then every behaviour of
+ * @p behaviours, for the error that names an unknown one. */
+std::vector<std::string_view> pilotNames(const BehaviourRegistry& behaviours) {
+  std::vector<std::string_view> names{PLAYER_PILOT_NAME};
+  for (const std::string_view name : behaviours.names()) {
+    names.push_back(name);
+  }
+  return names;
+}
+
+/** @returns The behaviour the pilot of @p gameplay names, nullptr for a
+ * player. @throws engine::UnknownDataFileChoiceException when it names none of
+ * @p behaviours. */
+const IBehaviour* behaviourOf(const engine::DataFileTable& gameplay,
+                              const BehaviourRegistry& behaviours) {
+  const std::string pilot = engine::textAt(gameplay, PILOT_KEY);
+  if (pilot == PLAYER_PILOT_NAME) {
+    return nullptr;
+  }
+  const IBehaviour* const behaviour = behaviours.find(pilot);
+  if (behaviour == nullptr) {
+    throw engine::UnknownDataFileChoiceException(
+        placeOfKey(gameplay, PILOT_KEY), pilot, pilotNames(behaviours));
+  }
+  return behaviour;
+}
+
+/** @throws InconsistentEntitySheetException when @p gameplay holds a table
+ * `[gameplay.behaviour]`. */
+void refuseBehaviourTable(const engine::DataFileTable& gameplay) {
+  if (engine::optionalTableAt(gameplay, BEHAVIOUR_KEY).has_value()) {
+    throw InconsistentEntitySheetException(placeOfKey(gameplay, BEHAVIOUR_KEY),
+                                           BEHAVIOUR_TABLE_RULE);
+  }
+}
+
+/** @returns The names of @p settings, in their order. */
+std::vector<std::string_view> settingNames(
+    std::span<const BehaviourSetting> settings) {
+  std::vector<std::string_view> names;
+  names.reserve(settings.size());
+  for (const BehaviourSetting& setting : settings) {
+    names.push_back(setting.name);
+  }
+  return names;
+}
+
+/** @returns The values `[gameplay.behaviour]` gives the settings @p behaviour
+ * declares, in their order; none, and no table, for a behaviour without
+ * settings. */
+std::vector<std::int64_t> settingsFrom(const engine::DataFileTable& gameplay,
+                                       const IBehaviour& behaviour) {
+  const std::span<const BehaviourSetting> declared = behaviour.settings();
+  if (declared.empty()) {
+    refuseBehaviourTable(gameplay);
+    return {};
+  }
+  const engine::DataFileTable table = engine::tableAt(gameplay, BEHAVIOUR_KEY);
+  engine::refuseUnknownKeys(table, settingNames(declared));
+  std::vector<std::int64_t> values;
+  values.reserve(declared.size());
+  for (const BehaviourSetting& setting : declared) {
+    values.push_back(engine::wholeNumberAt(table, setting.name, setting.range));
+  }
+  return values;
+}
+
+/** @returns The behaviour that pilots the body of @p gameplay with its
+ * settings; nothing, and no behaviour table, for a body a player pilots. */
+std::optional<PilotSheet> pilotFrom(const engine::DataFileTable& gameplay,
+                                    const BehaviourRegistry& behaviours) {
+  const IBehaviour* const behaviour = behaviourOf(gameplay, behaviours);
+  if (behaviour == nullptr) {
+    refuseBehaviourTable(gameplay);
+    return std::nullopt;
+  }
+  return PilotSheet{.behaviour = *behaviour,
+                    .settings = settingsFrom(gameplay, *behaviour)};
+}
+
+/** @returns The points of the optional table @p key of @p gameplay, in
+ * @p range; nothing when the sheet has no such table. */
+std::optional<std::int64_t> pointsIn(const engine::DataFileTable& gameplay,
+                                     std::string_view key,
+                                     engine::WholeNumberRange range) {
+  const std::optional<engine::DataFileTable> table =
+      engine::optionalTableAt(gameplay, key);
+  if (!table.has_value()) {
+    return std::nullopt;
+  }
+  engine::refuseUnknownKeys(*table, POINTS_KEYS);
+  return engine::wholeNumberAt(*table, POINTS_KEY, range);
+}
+
+/** @returns The health points of `[gameplay.health]`, nothing without it. */
+std::optional<int> healthFrom(const engine::DataFileTable& gameplay) {
+  const std::optional<std::int64_t> points =
+      pointsIn(gameplay, HEALTH_KEY, HEALTH_RANGE);
+  if (!points.has_value()) {
+    return std::nullopt;
+  }
+  return static_cast<int>(*points);
+}
+
+/** @returns The points of `[gameplay.score]`, nothing without it. */
+std::optional<std::uint32_t> scoreFrom(const engine::DataFileTable& gameplay) {
+  const std::optional<std::int64_t> points =
+      pointsIn(gameplay, SCORE_KEY, SCORE_RANGE);
+  if (!points.has_value()) {
+    return std::nullopt;
+  }
+  return static_cast<std::uint32_t>(*points);
+}
+
+/** @returns The gun of `[gameplay.gun]`, its durations in the nearest whole
+ * ticks, at least MINIMUM_GUN_INTERVAL_TICKS between two shots; nothing
+ * without it. */
+std::optional<GunSheet> gunFrom(const engine::DataFileTable& gameplay) {
+  const std::optional<engine::DataFileTable> gun =
+      engine::optionalTableAt(gameplay, GUN_KEY);
+  if (!gun.has_value()) {
+    return std::nullopt;
+  }
+  engine::refuseUnknownKeys(*gun, GUN_KEYS);
+  return GunSheet{
+      .intervalTicks = std::max(MINIMUM_GUN_INTERVAL_TICKS,
+                                nearestTicksIn(engine::millisecondsAt(
+                                    *gun, INTERVAL_KEY, GUN_INTERVAL_RANGE))),
+      .firstShotTicks = nearestTicksIn(
+          engine::millisecondsAt(*gun, FIRST_SHOT_KEY, FIRST_SHOT_RANGE)),
+      .projectile = engine::textAt(*gun, PROJECTILE_KEY),
+      .projectilePlace = placeOfKey(*gun, PROJECTILE_KEY)};
+}
+
+/** @throws InconsistentEntitySheetException when a player pilots @p sheet and
+ * its side is not player, or its side is player and a behaviour pilots it. */
+void checkPilotMatchesSide(const EntitySheet& sheet,
+                           const engine::DataFileTable& gameplay) {
+  const bool pilotedByAPlayer = !sheet.pilot.has_value();
+  if (pilotedByAPlayer != (sheet.side == EntityType::Player)) {
+    throw InconsistentEntitySheetException(placeOfKey(gameplay, PILOT_KEY),
+                                           PLAYER_PILOT_RULE);
+  }
+}
+
+/** @throws InconsistentEntitySheetException when a body of side player does
+ * not move as a ship or another body does, or a ship has another box than the
+ * one shipAfter() keeps on screen. */
+void checkShipMotion(const EntitySheet& sheet,
+                     const engine::DataFileTable& gameplay) {
+  const bool movesAsAShip = sheet.motion.kind == MotionKind::Ship;
+  if (movesAsAShip != (sheet.side == EntityType::Player)) {
+    throw InconsistentEntitySheetException(placeOfKey(gameplay, MOTION_KEY),
+                                           SHIP_MOTION_RULE);
+  }
+  if (movesAsAShip && (sheet.hitbox.width != SHIP_WIDTH ||
+                       sheet.hitbox.height != SHIP_HEIGHT)) {
+    throw InconsistentEntitySheetException(placeOfKey(gameplay, HITBOX_KEY),
+                                           SHIP_HITBOX_RULE);
+  }
+}
+
+/** @throws InconsistentEntitySheetException when a missile has a gun. */
+void checkMissileHasNoGun(const EntitySheet& sheet,
+                          const engine::DataFileTable& gameplay) {
+  const bool isAMissile = sheet.side == EntityType::PlayerMissile ||
+                          sheet.side == EntityType::EnemyMissile;
+  if (isAMissile && sheet.gun.has_value()) {
+    throw InconsistentEntitySheetException(placeOfKey(gameplay, GUN_KEY),
+                                           MISSILE_GUN_RULE);
+  }
+}
+
+}  // namespace
+
+EntitySheet gameplayOf(const SheetText& sheet,
+                       const BehaviourRegistry& behaviours) {
+  const toml::table root = engine::parseDataFile(sheet.text, sheet.source);
+  const engine::DataFileTable gameplay =
+      gameplayTableOf(engine::rootOf(root, sheet.source));
+  EntitySheet read{.name = sheet.name,
+                   .number = 0,
+                   .side = sideFrom(gameplay),
+                   .hitbox = hitboxFrom(gameplay),
+                   .motion = motionFrom(gameplay),
+                   .pilot = pilotFrom(gameplay, behaviours),
+                   .health = healthFrom(gameplay),
+                   .points = scoreFrom(gameplay),
+                   .gun = gunFrom(gameplay)};
+  checkPilotMatchesSide(read, gameplay);
+  checkShipMotion(read, gameplay);
+  checkMissileHasNoGun(read, gameplay);
+  return read;
+}
+
+}  // namespace rtype::game

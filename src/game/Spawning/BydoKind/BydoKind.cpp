@@ -1,8 +1,10 @@
 #include "BydoKind.hpp"
 #include <cstdint>
+#include <span>
 #include <string_view>
 #include "BehaviourConstants.hpp"
 #include "BydoPointsConstants.hpp"
+#include "BydoSettingsConstants.hpp"
 
 namespace rtype::game {
 
@@ -24,6 +26,16 @@ std::uint32_t pointsOf(BydoKind kind) {
       return WEAVER_POINTS;
   }
   return 0;
+}
+
+std::span<const std::int64_t> behaviourSettingsOf(BydoKind kind) {
+  switch (kind) {
+    case BydoKind::Drifter:
+      return DRIFTER_BEHAVIOUR_SETTINGS;
+    case BydoKind::Weaver:
+      return WEAVER_BEHAVIOUR_SETTINGS;
+  }
+  return DRIFTER_BEHAVIOUR_SETTINGS;
 }
 
 }  // namespace rtype::game

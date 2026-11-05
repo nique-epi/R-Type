@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <span>
 #include <string_view>
 
 namespace rtype::game {
@@ -23,5 +24,12 @@ enum class BydoKind : std::uint8_t {
  * @returns The points the player who destroys a Bydo of @p kind earns.
  */
 [[nodiscard]] std::uint32_t pointsOf(BydoKind kind);
+
+/**
+ * @returns The values the behaviour of the Bydos of @p kind is given for its
+ * settings, in the order it declares them: heading -1 for a Drifter, amplitude
+ * 48 and period 2000 ms for a Weaver. The array outlives every Bydo.
+ */
+[[nodiscard]] std::span<const std::int64_t> behaviourSettingsOf(BydoKind kind);
 
 }  // namespace rtype::game

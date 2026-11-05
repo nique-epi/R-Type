@@ -1,8 +1,11 @@
 #pragma once
 
+#include <cstddef>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include "DataFilePlace.hpp"
 
 namespace rtype::game {
 
@@ -57,6 +60,65 @@ class UnknownBehaviourException : public GameException {
 class DuplicateBehaviourException : public GameException {
  public:
   explicit DuplicateBehaviourException(std::string_view name);
+};
+
+/**
+ * @brief Thrown when a behaviour reads a setting its body was not given: a
+ * Pilot made without the values of its sheet.
+ */
+class MissingBehaviourSettingException : public GameException {
+ public:
+  explicit MissingBehaviourSettingException(std::size_t index);
+};
+
+/**
+ * @brief Thrown when no entity sheet has the name asked for; the message lists
+ * the sheets.
+ */
+class UnknownEntityTypeException : public GameException {
+ public:
+  UnknownEntityTypeException(std::string_view name,
+                             std::span<const std::string_view> known);
+};
+
+/**
+ * @brief Thrown when the file of a sheet is not named with 1 to
+ * @p longestName lowercase letters, digits and underscores.
+ */
+class InvalidEntityTypeNameException : public GameException {
+ public:
+  InvalidEntityTypeNameException(const std::string& file,
+                                 std::size_t longestName);
+};
+
+/** @brief Thrown when more sheets are given than a program loads. */
+class TooManyEntityTypesException : public GameException {
+ public:
+  TooManyEntityTypesException(std::size_t count, std::size_t maximum);
+};
+
+/** @brief Thrown when the folder of the sheets holds none: a program that
+ * knows no type could create or draw nothing. */
+class NoEntitySheetException : public GameException {
+ public:
+  explicit NoEntitySheetException(const std::string& folder);
+};
+
+/** @brief Thrown when two sheets are given the same name. */
+class DuplicateEntityTypeException : public GameException {
+ public:
+  explicit DuplicateEntityTypeException(std::string_view name);
+};
+
+/**
+ * @brief Thrown when a sheet breaks a rule that ties two of its values, or a
+ * value to another sheet; the message names the file, the line, the column,
+ * the key and the rule.
+ */
+class InconsistentEntitySheetException : public GameException {
+ public:
+  InconsistentEntitySheetException(const engine::DataFilePlace& place,
+                                   std::string_view rule);
 };
 
 }  // namespace rtype::game

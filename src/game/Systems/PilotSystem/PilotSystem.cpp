@@ -36,7 +36,8 @@ void PilotSystem::update(engine::ComponentRegistry& components,
                       .origin = pilot.origin,
                       .age = pilot.age,
                       .elapsed = elapsed,
-                      .topSpeed = topSpeedOf(components, body)});
+                      .topSpeed = topSpeedOf(components, body),
+                      .settings = pilot.settings});
   });
 }
 

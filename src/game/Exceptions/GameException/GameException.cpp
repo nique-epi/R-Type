@@ -1,7 +1,11 @@
 #include "GameException.hpp"
+#include <cstddef>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include "DataFilePlace.hpp"
+#include "ErrorText.hpp"
 
 namespace rtype::game {
 
@@ -26,5 +30,38 @@ UnknownBehaviourException::UnknownBehaviourException(std::string_view name)
 
 DuplicateBehaviourException::DuplicateBehaviourException(std::string_view name)
     : GameException("A behaviour is already named " + std::string(name)) {}
+
+MissingBehaviourSettingException::MissingBehaviourSettingException(
+    std::size_t index)
+    : GameException("The behaviour reads setting " + std::to_string(index) +
+                    ", which its body was not given") {}
+
+UnknownEntityTypeException::UnknownEntityTypeException(
+    std::string_view name, std::span<const std::string_view> known)
+    : GameException("No entity sheet is named " + std::string(name) +
+                    "; the sheets are: " + engine::listText(known)) {}
+
+InvalidEntityTypeNameException::InvalidEntityTypeNameException(
+    const std::string& file, std::size_t longestName)
+    : GameException("The entity sheet " + file + " must be named with 1 to " +
+                    std::to_string(longestName) +
+                    " lowercase letters, digits or underscores") {}
+
+TooManyEntityTypesException::TooManyEntityTypesException(std::size_t count,
+                                                         std::size_t maximum)
+    : GameException(std::to_string(count) + " entity sheets, more than the " +
+                    std::to_string(maximum) + " a program loads") {}
+
+NoEntitySheetException::NoEntitySheetException(const std::string& folder)
+    : GameException("The folder " + folder + " holds no entity sheet") {}
+
+DuplicateEntityTypeException::DuplicateEntityTypeException(
+    std::string_view name)
+    : GameException("Two entity sheets are named " + std::string(name)) {}
+
+InconsistentEntitySheetException::InconsistentEntitySheetException(
+    const engine::DataFilePlace& place, std::string_view rule)
+    : GameException(engine::placeText(place) + ": " + place.key + ": " +
+                    std::string(rule)) {}
 
 }  // namespace rtype::game

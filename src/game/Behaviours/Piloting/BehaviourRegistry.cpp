@@ -3,6 +3,7 @@
 #include <memory>
 #include <string_view>
 #include <utility>
+#include <vector>
 #include "GameException.hpp"
 #include "IBehaviour.hpp"
 
@@ -29,6 +30,15 @@ const IBehaviour* BehaviourRegistry::find(std::string_view name) const {
         return behaviour->name() == name;
       });
   return found == behaviours_.end() ? nullptr : found->get();
+}
+
+std::vector<std::string_view> BehaviourRegistry::names() const {
+  std::vector<std::string_view> names;
+  names.reserve(behaviours_.size());
+  for (const std::unique_ptr<IBehaviour>& behaviour : behaviours_) {
+    names.push_back(behaviour->name());
+  }
+  return names;
 }
 
 }  // namespace rtype::game

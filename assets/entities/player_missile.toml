@@ -1,0 +1,36 @@
+# The entity type player_missile: the missile a ship fires.
+# [gameplay] is what the server gives an entity of this type, [appearance] how
+# the client draws it. The server reads this file when it starts, from
+# assets/entities/player_missile.toml in the folder it is started in: the name
+# of the file is the name of the type. It stops with an error naming the file,
+# the line and the key when a key is missing, misspelt, out of its range, or
+# does not hold together with another key or another sheet. Every number is an
+# integer: 240, never 240.0. The keys are described on the page "Add an enemy
+# type" of the docs.
+
+[gameplay]
+side = "player_missile"
+pilot = "straight"
+
+[gameplay.hitbox]
+width = 64
+height = 24
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 960
+
+[gameplay.behaviour]
+heading = 1
+
+[appearance]
+sheet = "sprites/entities.png"
+
+[appearance.idle]
+left = 0
+top = 124
+width = 16
+height = 6
+frames = 2
+spacing = 2
+frame_ms = 60

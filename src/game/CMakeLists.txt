@@ -1,5 +1,6 @@
 add_subdirectory(Behaviours)
 add_subdirectory(Components)
+add_subdirectory(EntityTypes)
 add_subdirectory(Events)
 add_subdirectory(Exceptions)
 add_subdirectory(ShipControl)
@@ -15,6 +16,7 @@ target_link_libraries(rtype_game
   PUBLIC
     rtype_engine
     rtype_game_components
+    rtype_game_entity_types
     rtype_game_events
     rtype_game_behaviours
     rtype_game_movement_system

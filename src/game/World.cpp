@@ -73,7 +73,8 @@ std::uint32_t World::spawnBydo(Position position, BydoKind kind) {
   components_.add(bydo,
                   Pilot{.behaviour = behaviours_.named(behaviourNameOf(kind)),
                         .origin = position,
-                        .age = engine::Duration::zero()});
+                        .age = engine::Duration::zero(),
+                        .settings = behaviourSettingsOf(kind)});
   components_.add(bydo,
                   CollisionBox{.width = BYDO_WIDTH, .height = BYDO_HEIGHT});
   components_.add(bydo, EntityType::Enemy);

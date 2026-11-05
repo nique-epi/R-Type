@@ -1,4 +1,6 @@
 #include "PilotSystemFixture.hpp"
+#include <cstdint>
+#include <span>
 #include <string_view>
 #include "BehaviourTestConstants.hpp"
 #include "BuiltInBehaviours.hpp"
@@ -14,15 +16,17 @@ namespace rtype::game::testing {
 
 PilotSystemFixture::PilotSystemFixture() : behaviours_(builtInBehaviours()) {}
 
-engine::Entity PilotSystemFixture::addBody(std::string_view behaviour,
-                                           Position start) {
+engine::Entity PilotSystemFixture::addBody(
+    std::string_view behaviour, std::span<const std::int64_t> settings,
+    Position start) {
   const engine::Entity body = entities_.create();
   components_.add(body, start);
   components_.add(body, Intent{});
   components_.add(body, SteadyMotion{.topSpeed = BODY_TOP_SPEED});
   components_.add(body, Pilot{.behaviour = behaviours_.named(behaviour),
                               .origin = start,
-                              .age = engine::Duration::zero()});
+                              .age = engine::Duration::zero(),
+                              .settings = settings});
   return body;
 }
 

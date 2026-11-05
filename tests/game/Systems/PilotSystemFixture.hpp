@@ -1,6 +1,8 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include <cstdint>
+#include <span>
 #include <string_view>
 #include "BehaviourRegistry.hpp"
 #include "ComponentRegistry.hpp"
@@ -22,8 +24,11 @@ class PilotSystemFixture : public ::testing::Test {
   PilotSystemFixture();
 
   /** @returns A body at @p start, at BODY_TOP_SPEED, piloted by the behaviour
-   * named @p behaviour. */
-  engine::Entity addBody(std::string_view behaviour, Position start);
+   * named @p behaviour with the values @p settings, which must outlive the
+   * body (a constant array of the tests). */
+  engine::Entity addBody(std::string_view behaviour,
+                         std::span<const std::int64_t> settings,
+                         Position start);
 
   /** @brief Runs the pilots, then the movement, once over @p elapsed. */
   void run(engine::Duration elapsed);
