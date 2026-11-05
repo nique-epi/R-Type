@@ -19,6 +19,7 @@ target_link_libraries(rtype_server_master_module
     rtype_server_metrics_report
     rtype_server_network_module
   PRIVATE
+    rtype_concurrency_interruptible_sleep
     rtype_engine_time
     rtype_network_constants
     rtype_network_exceptions

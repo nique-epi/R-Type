@@ -1,0 +1,9 @@
+find_package(Threads REQUIRED)
+
+add_library(rtype_concurrency_interruptible_sleep STATIC InterruptibleSleep.cpp)
+
+target_include_directories(rtype_concurrency_interruptible_sleep PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_concurrency_interruptible_sleep PUBLIC Threads::Threads)
+
+rtype_enable_warnings(rtype_concurrency_interruptible_sleep)

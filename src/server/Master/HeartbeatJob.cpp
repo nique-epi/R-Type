@@ -1,9 +1,7 @@
 #include "HeartbeatJob.hpp"
 #include <algorithm>
 #include <chrono>
-#include <condition_variable>
 #include <cstdint>
-#include <mutex>
 #include <optional>
 #include <stop_token>
 #include <string>
@@ -11,6 +9,7 @@
 #include <vector>
 #include "HeartbeatJobParts.hpp"
 #include "HostedGame.hpp"
+#include "InterruptibleSleep.hpp"
 #include "MasterMessages.hpp"
 #include "NetworkException.hpp"
 #include "ServerConstants.hpp"
@@ -19,14 +18,6 @@
 namespace rtype::server {
 
 namespace {
-
-/** @brief Sleeps @p duration, or less when @p stop is requested. */
-void pause(const std::stop_token& stop, std::chrono::milliseconds duration) {
-  std::mutex mutex;
-  std::condition_variable_any never;
-  std::unique_lock lock{mutex};
-  static_cast<void>(never.wait_for(lock, stop, duration, [] { return false; }));
-}
 
 /** @returns What is left of @p gap since @p sentAt, zero once it passed. */
 std::chrono::milliseconds untilTheGapEnds(
@@ -55,7 +46,7 @@ void HeartbeatJob::run(const std::stop_token& stop) {
     if (!registered) {
       registered = registerServer();
       if (!registered) {
-        pause(stop, times_.retry);
+        concurrency::sleepUnlessStopped(stop, times_.retry);
         continue;
       }
     }
@@ -63,7 +54,8 @@ void HeartbeatJob::run(const std::stop_token& stop) {
     registered = sendHeartbeat();
     const auto sentAt = std::chrono::steady_clock::now();
     if (games_.waitForNewer(seen, times_.interval, stop) > seen) {
-      pause(stop, untilTheGapEnds(sentAt, times_.noticeGap));
+      concurrency::sleepUnlessStopped(
+          stop, untilTheGapEnds(sentAt, times_.noticeGap));
     }
   }
 }
