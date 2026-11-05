@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "ManeuverKind.hpp"
 #include "Position.hpp"
+#include "ShipDirections.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game {
@@ -33,6 +34,9 @@ struct ShipMotion {
   std::uint32_t lastDownPress{};
   std::uint32_t lastLeftPress{};
   std::uint32_t lastRightPress{};
+  /** @brief The directions the last input motionAfterInput() recorded held,
+   * opposite directions included: what a press is told apart from. */
+  ShipDirections heldAtLastInput{};
 };
 
 }  // namespace rtype::game

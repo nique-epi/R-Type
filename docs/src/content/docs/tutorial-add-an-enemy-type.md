@@ -19,13 +19,13 @@ cmake --workflow --preset test
 
 ### What an enemy is here
 
-A Bydo is an **entity** (a number) that carries **components** (small structs of data): where it is, how fast it goes, what path it follows, how many points it is worth. **Systems** (classes with an `update`) read and write components; they never know which enemy they act on. So a new enemy is rarely new code for the systems: it is a new combination of components, and sometimes a new path for the system that moves it.
+A Bydo is an **entity** (a number) that carries **components** (small structs of data): where it is, how fast it goes, which behaviour pilots it, how many points it is worth. **Systems** (classes with an `update`) read and write components; they never know which enemy they act on. So a new enemy is never new code for the systems: it is a new combination of components, and sometimes a new **behaviour**, the named piece of code that decides where the Bydo goes.
 
 The server owns the game. It creates the Bydos, moves them and tells each client about them; the client only draws what it is told (see [Architecture](/R-Type/architecture/) and [Server and game](/R-Type/server/)).
 
 | Step | What you add | Where |
 |---|---|---|
-| 1 | A new path for the Bydo to follow | `src/game/Components/MovementPattern.hpp`, `src/game/Systems/PatternSystem/` |
+| 1 | A new behaviour for the Bydo | `src/game/Behaviours/Movements/` |
 | 2 | The kind of enemy and its points | `src/game/Spawning/BydoKind/` |
 | 3 | The name the waves file gives it | `src/server/Spawning/WaveFileConstants.hpp` |
 | 4 | Tests | `tests/` |
@@ -33,46 +33,68 @@ The server owns the game. It creates the Bydos, moves them and tells each client
 | 6 | See it on screen | the client, unchanged |
 | 7 | Document it | `docs/src/content/docs/` |
 
-How a kind reaches the world: `BydoKind` is read by `World::spawnBydo`, which gives the new entity its `MovementPattern` (the path, from `patternShapeOf(kind)`) and its `ScoreValue` (from `pointsOf(kind)`). `BydoSpawner` picks the kinds in turn from the waves file. `BydoControlSystem` makes every Bydo shoot, and the weapon system fires it, exactly as it fires a player: a new kind shoots without a line of yours.
+How a kind reaches the world: `BydoKind` is read by `World::spawnBydo`, which gives the new entity its `Pilot` (the behaviour named by `behaviourNameOf(kind)`) and its `ScoreValue` (from `pointsOf(kind)`). `BydoSpawner` picks the kinds in turn from the waves file. Each tick, `PilotSystem` lets the behaviour write the `Intent` of its Bydo, `MovementSystem` moves it by that `Intent`, and the weapon system fires it, exactly as it moves and fires a player: a behaviour that wants to shoot needs no other line of yours.
 
-## Step 1: a new path
+## Step 1: a new behaviour
 
-The path of a Bydo is a `PatternShape`. Add yours to the enum, in `src/game/Components/MovementPattern.hpp`:
+A behaviour reads the Bydo it pilots (where it is, where it appeared, how old it is, the length of the tick) and returns what the Bydo wants at the end of the tick: a direction, a share of its top speed from -1 to 1 on each axis, and whether it fires (see [Architecture](/R-Type/architecture/#pilot-and-body)). Give yours a name, in `src/game/Behaviours/Movements/BehaviourConstants.hpp`:
 
 ```cpp
-enum class PatternShape : std::uint8_t {
-  Straight,
-  Wave,
-  Zigzag,
-};
+constexpr std::string_view ZIGZAG_BEHAVIOUR_NAME = "zigzag";
 ```
 
-Its numbers go in `src/game/Systems/PatternSystem/PatternConstants.hpp`, named and documented, above the `static_assert` of the wave. The `static_assert` is the guard: a Bydo must stay inside the room its row keeps above and below it (`BYDO_PATTERN_ROOM`), or it leaves the area of play.
+Its numbers go in `src/game/Behaviours/Movements/ZigzagBehaviourConstants.hpp`, named and documented, with a `static_assert` as the guard: a Bydo must stay inside the room its row keeps above and below it (`BYDO_PATTERN_ROOM`), or it leaves the area of play.
 
 ```cpp
+#pragma once
+
+#include "SpawningConstants.hpp"
+
+namespace rtype::game {
+
 /**
- * @brief How far a Zigzag goes above and below its row, in logical units.
+ * @brief How far a zigzag goes above and below its row, in logical units.
  *
  * Provisional. It stays within BYDO_PATTERN_ROOM, like WAVE_AMPLITUDE.
  */
 constexpr float ZIGZAG_AMPLITUDE = 48.0F;
 
 /**
- * @brief How long a Zigzag takes to go down, up and back to its row, in
+ * @brief How long a zigzag takes to go down, up and back to its row, in
  * seconds.
  */
 constexpr float ZIGZAG_PERIOD_SECONDS = 1.0F;
 
-static_assert(ZIGZAG_AMPLITUDE <= BYDO_PATTERN_ROOM,
-              "a Bydo on a zigzag stays within the room its row keeps");
-```
-
-`PatternSystem` turns the shape into a height. In `src/game/Systems/PatternSystem/PatternSystem.cpp`, add the triangle wave next to `heightOffset`, and a case for your shape inside it (the `switch` has no `default`, so the compiler warns about the shape you forgot, and warnings are errors here):
-
-```cpp
+/** @brief The shares of the period where a zigzag turns, and its slope. */
 constexpr float QUARTER_CYCLE = 0.25F;
 constexpr float THREE_QUARTERS_CYCLE = 0.75F;
 constexpr float SLOPE_PER_CYCLE = 4.0F;
+
+static_assert(ZIGZAG_AMPLITUDE <= BYDO_PATTERN_ROOM,
+              "a Bydo on a zigzag stays within the room its row keeps");
+
+}  // namespace rtype::game
+```
+
+The behaviour is a class of `src/game/Behaviours/Movements/`, next to `WeaveBehaviour`; the contract it implements, `IBehaviour`, sits in `src/game/Behaviours/Piloting/`. Its header, `ZigzagBehaviour.hpp`:
+
+```cpp
+/**
+ * @brief Crosses the playfield towards the ships at its full speed, zigzagging
+ * down and up around the row the body appeared on, and fires as often as its
+ * Gun allows.
+ */
+class ZigzagBehaviour final : public IBehaviour {
+ public:
+  [[nodiscard]] std::string_view name() const override;
+  [[nodiscard]] Intent steer(const BehaviourView& view) const override;
+};
+```
+
+Its source, `ZigzagBehaviour.cpp`, computes the height the zigzag reaches at the end of the tick from the age of the Bydo, and asks `verticalShareTowards` (`BehaviourSteering.hpp`) for the share that lands there, as the weave does. The height is computed from the age, never added up tick by tick, so the path does not depend on how the time is cut into steps:
+
+```cpp
+namespace {
 
 /** @returns The height of a triangle wave at @p cycle, the share of the period
  * past, from -1 to 1: 0 at the start, 1 at a quarter, -1 at three quarters. */
@@ -81,22 +103,43 @@ float triangleWave(float cycle) {
     return SLOPE_PER_CYCLE * cycle;
   }
   if (cycle < THREE_QUARTERS_CYCLE) {
-    return 2.0F - SLOPE_PER_CYCLE * cycle;
+    return 2.0F - (SLOPE_PER_CYCLE * cycle);
   }
-  return SLOPE_PER_CYCLE * cycle - SLOPE_PER_CYCLE;
+  return (SLOPE_PER_CYCLE * cycle) - SLOPE_PER_CYCLE;
+}
+
+/** @returns Where the zigzag puts the center of the body of @p view at the end
+ * of this tick, vertically. */
+float zigzagHeight(const BehaviourView& view) {
+  const float ageSeconds = std::chrono::duration<float>(view.age).count();
+  float wholeCycles = 0.0F;
+  const float cycle =
+      std::modf(ageSeconds / ZIGZAG_PERIOD_SECONDS, &wholeCycles);
+  return view.origin.y + (ZIGZAG_AMPLITUDE * triangleWave(cycle));
+}
+
+}  // namespace
+
+std::string_view ZigzagBehaviour::name() const { return ZIGZAG_BEHAVIOUR_NAME; }
+
+Intent ZigzagBehaviour::steer(const BehaviourView& view) const {
+  return Intent{.direction = Direction{.x = LEFTWARD_STEERING,
+                                       .y = verticalShareTowards(
+                                           zigzagHeight(view), view)},
+                .shooting = true,
+                .steered = true};
 }
 ```
 
+The height grows downwards on screen, so at a quarter of the period the Zigzagger is 48 units below its row, as a Weaver is at a quarter of its own. A behaviour cannot move its Bydo faster than its top speed, 240 logical units per second (`BYDO_SPEED`): the zigzag climbs 4 × 48 = 192 units per second, so it keeps its path.
+
+Register it with the others in `builtInBehaviours()` (`src/game/Behaviours/Movements/BuiltInBehaviours.cpp`), and add `ZigzagBehaviour.cpp` to the sources of `src/game/Behaviours/Movements/CMakeLists.txt`:
+
 ```cpp
-    case PatternShape::Zigzag: {
-      double wholeCycles = 0.0;
-      const float cycle = static_cast<float>(
-          std::modf(ageSeconds / ZIGZAG_PERIOD_SECONDS, &wholeCycles));
-      return ZIGZAG_AMPLITUDE * triangleWave(cycle);
-    }
+  behaviours.add(std::make_unique<ZigzagBehaviour>());
 ```
 
-The height grows downwards on screen, so at a quarter of the period the Zigzagger is 48 units below its row, as a Weaver is at a quarter of its own. Build to check that it compiles with no warning:
+Build to check that it compiles with no warning:
 
 ```bash
 cmake --build build --parallel
@@ -104,7 +147,7 @@ cmake --build build --parallel
 
 ## Step 2: the kind and its points
 
-A `BydoKind` is the name of an enemy in the code. In `src/game/Spawning/BydoKind/BydoKind.hpp`, add the enumerator (and say what it does in the doc comment of `patternShapeOf`):
+A `BydoKind` is the name of an enemy in the code. In `src/game/Spawning/BydoKind/BydoKind.hpp`, add the enumerator (and say what it does in the doc comment of `behaviourNameOf`):
 
 ```cpp
 enum class BydoKind : std::uint8_t {
@@ -126,11 +169,11 @@ Its points are a named constant in `src/game/Spawning/BydoKind/BydoPointsConstan
 constexpr std::uint32_t ZIGZAGGER_POINTS = 300;
 ```
 
-And the two functions of `src/game/Spawning/BydoKind/BydoKind.cpp` each get a case, which is the whole link between your kind, its path and its score:
+And the two functions of `src/game/Spawning/BydoKind/BydoKind.cpp` each get a case, which is the whole link between your kind, its behaviour and its score:
 
 ```cpp
     case BydoKind::Zigzagger:
-      return PatternShape::Zigzag;
+      return ZIGZAG_BEHAVIOUR_NAME;
 ```
 
 ```cpp
@@ -158,50 +201,45 @@ A file that names an enemy missing from this list stops the server with an error
 
 Every test of this project is written as *Given / When / Then* in the comment above it, and must fail when the code is wrong. Add three, each next to the tests of the same part, and run them before and after to see them go from red to green.
 
-The path, at the end of `tests/PatternSystemTest.cpp` (the constants go in its anonymous namespace, with the others):
+The path, at the end of `tests/game/Systems/PilotSystemTest.cpp`, which pilots and moves a body as a game does (the constants go in `PilotSystemTestConstants.hpp`, next to it):
 
 ```cpp
 constexpr Duration QUARTER_ZIGZAG_PERIOD = std::chrono::milliseconds(250);
 constexpr Duration HALF_ZIGZAG_PERIOD = std::chrono::milliseconds(500);
-constexpr float ZIGZAG_AMPLITUDE = 48.0F;
+constexpr float ZIGZAG_HEIGHT = 48.0F;
 ```
 
 ```cpp
 /**
- * Given an entity on a Zigzag pattern, on the row at height 300
+ * Given a zigzagging body on the row at height 300
  * When a quarter, then three quarters, then a whole 1 second period has passed
  * Then it is 48 units below its row, then 48 units above it, then back on it
  */
-TEST(PatternSystem, ZigzagGoesDownThenUpThenBackToItsRow) {
-  EntityRegistry entities;
-  ComponentRegistry components(entities);
-  const Entity entity =
-      addPatterned(entities, components, PatternShape::Zigzag);
-  PatternSystem pattern;
+TEST_F(PilotSystemFixture, AZigzagGoesDownThenUpThenBackToItsRow) {
+  const Entity body = addBody(ZIGZAG_BEHAVIOUR_NAME, ROW_START);
 
-  pattern.update(components, QUARTER_ZIGZAG_PERIOD);
-  EXPECT_NEAR(components.get<Position>(entity)->y, ROW_Y + ZIGZAG_AMPLITUDE,
+  run(QUARTER_ZIGZAG_PERIOD);
+  EXPECT_NEAR(positionOf(body).y, ROW_Y + ZIGZAG_HEIGHT,
               HEIGHT_TOLERANCE_UNITS);
 
-  pattern.update(components, HALF_ZIGZAG_PERIOD);
-  EXPECT_NEAR(components.get<Position>(entity)->y, ROW_Y - ZIGZAG_AMPLITUDE,
+  run(HALF_ZIGZAG_PERIOD);
+  EXPECT_NEAR(positionOf(body).y, ROW_Y - ZIGZAG_HEIGHT,
               HEIGHT_TOLERANCE_UNITS);
 
-  pattern.update(components, QUARTER_ZIGZAG_PERIOD);
-  EXPECT_NEAR(components.get<Position>(entity)->y, ROW_Y,
-              HEIGHT_TOLERANCE_UNITS);
+  run(QUARTER_ZIGZAG_PERIOD);
+  EXPECT_NEAR(positionOf(body).y, ROW_Y, HEIGHT_TOLERANCE_UNITS);
 }
 ```
 
-The kind, its path and its points, at the end of `tests/WorldTest.cpp`:
+The kind, its behaviour and its points, at the end of `tests/WorldTest.cpp`:
 
 ```cpp
 /**
  * Given a world
  * When a Zigzagger is spawned
- * Then it follows a zigzag and is worth the points of a Zigzagger
+ * Then it is piloted by the zigzag and is worth the points of a Zigzagger
  */
-TEST(World, ASpawnedZigzaggerFollowsAZigzagAndIsWorthItsPoints) {
+TEST(World, ASpawnedZigzaggerZigzagsAndIsWorthItsPoints) {
   rtype::game::World world;
 
   static_cast<void>(
@@ -209,16 +247,14 @@ TEST(World, ASpawnedZigzaggerFollowsAZigzagAndIsWorthItsPoints) {
                       rtype::game::BydoKind::Zigzagger));
 
   std::size_t zigzags = 0;
-  world.components()
-      .forEach<rtype::game::MovementPattern, rtype::game::ScoreValue>(
-          [&zigzags](rtype::engine::Entity,
-                     const rtype::game::MovementPattern& pattern,
-                     const rtype::game::ScoreValue& score) {
-            if (pattern.shape == rtype::game::PatternShape::Zigzag &&
-                score.points == rtype::game::ZIGZAGGER_POINTS) {
-              ++zigzags;
-            }
-          });
+  world.components().forEach<rtype::game::Pilot, rtype::game::ScoreValue>(
+      [&zigzags](rtype::engine::Entity, const rtype::game::Pilot& pilot,
+                 const rtype::game::ScoreValue& score) {
+        if (pilot.behaviour.get().name() == ZIGZAG_BEHAVIOUR_NAME &&
+            score.points == rtype::game::ZIGZAGGER_POINTS) {
+          ++zigzags;
+        }
+      });
   EXPECT_EQ(zigzags, 1U);
 }
 ```
@@ -279,7 +315,7 @@ cmake --workflow --preset build
 
 On the connection screen of the client, press CONNECT (the server is at `127.0.0.1`, port 4242, by default), press ready in the waiting room, and wait for the first wave. Each Bydo goes left while it dips and rises every second, 48 units each way, and shooting one adds 300 points to your score. The server prints the wave as it starts (`wave 1: 3 Bydos, one every 2000 ms`).
 
-What to look at, and why: **the Zigzagger is drawn as every other Bydo**. The server tells the client "a Bydo appeared", then sends the position of each Bydo twenty times a second; the kind never leaves the server, which is why the client needed no change to show the new path. The client chooses a sprite from the type of the entity (`entityAnimationOf` in `src/client/Rendering/Sprites/EntitySprites/EntitySprites.cpp`), and every Bydo is an `EntityType::Enemy`.
+What to look at, and why: **the Zigzagger is drawn as every other Bydo**. The server tells the client "a Bydo appeared", then sends the position of each Bydo twenty times a second; the kind and its behaviour never leave the server, which is why the client needed no change to show the new path. The client chooses a sprite from the type of the entity (`entityAnimationOf` in `src/client/Rendering/Sprites/EntitySprites/EntitySprites.cpp`), and every Bydo is an `EntityType::Enemy`.
 
 ### Giving the enemy its own look
 
@@ -312,7 +348,8 @@ cd docs && npm ci && npm run build
 
 | What you see | What it means |
 |---|---|
-| `enumeration value 'Zigzag' not handled in switch` | a `switch` over `PatternShape` or `BydoKind` has no case for yours; add it where the compiler points |
+| `enumeration value 'Zigzagger' not handled in switch` | a `switch` over `BydoKind` has no case for yours; add it where the compiler points |
+| `No behaviour is named zigzag` when the server starts a game | the behaviour is not added in `builtInBehaviours()` |
 | The server stops with `unknown enemy "..."; known: ...` | the name in `waves.toml` is not in `ENEMY_NAMES` (step 3), or is misspelt |
 | The server stops at start with an error naming a line of `waves.toml` | the file is invalid; the message names the line and the key |
 | The Bydos move but do not zigzag | the enemy is not in the `enemies` list of the difficulty you play (`normal`) |

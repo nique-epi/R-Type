@@ -4,7 +4,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "BydoControlSystem.hpp"
 #include "BydoKind.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
@@ -37,7 +36,7 @@ void WeaponSystemFixture::bydoAt(game::Position position) {
 
 void WeaponSystemFixture::runTicks(std::size_t count) {
   for (std::size_t tick = 0; tick < count; ++tick) {
-    bydoControl_.update(world_.components(), engine::SIMULATION_TICK_DURATION);
+    pilots_.update(world_.components(), engine::SIMULATION_TICK_DURATION);
     weapons_.onTick();
   }
 }

@@ -3,6 +3,13 @@
 namespace rtype::game {
 
 /**
+ * @brief How fast a Bydo moves, in logical units per second: its top speed.
+ *
+ * Provisional: crossing the 1920 units of the playfield takes 8 seconds.
+ */
+constexpr float BYDO_SPEED = 240.0F;
+
+/**
  * @brief Where the ships of the players appear, across the playfield: the
  * share of its width between its left edge and the center of a new ship.
  */
@@ -36,8 +43,8 @@ constexpr float BYDO_SPAWN_VERTICAL_MARGIN = 64.0F;
 
 /**
  * @brief How far above and below its row a Bydo may move on its pattern, in
- * logical units; every pattern stays within it, which PatternConstants.hpp
- * checks.
+ * logical units; every behaviour stays within it, which
+ * WeaveBehaviourConstants.hpp checks.
  *
  * Provisional, like the margins.
  */

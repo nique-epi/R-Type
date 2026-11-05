@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "Direction.hpp"
 #include "Position.hpp"
 #include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
@@ -55,5 +56,18 @@ struct HeldChange {
  * first press of the next one.
  */
 [[nodiscard]] ShipMotion motionAfterInput(ShipMotion motion, HeldChange change);
+
+/**
+ * @returns The Direction a player asks for by holding @p held: -1, 0 or 1 on
+ * each axis, 0 on an axis whose two directions are held together.
+ */
+[[nodiscard]] Direction directionOf(ShipDirections held);
+
+/**
+ * @returns The directions a ship moves by for @p direction: the side of each
+ * axis whose share is not 0. shipAfter() reads the sign of each axis only, so a
+ * ship moves the same for any share on a side.
+ */
+[[nodiscard]] ShipDirections heldDirectionsOf(Direction direction);
 
 }  // namespace rtype::game
