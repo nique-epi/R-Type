@@ -16,9 +16,16 @@ class RecordingPlayerInputLink : public rtype::client::IPlayerInputLink {
   std::optional<std::uint32_t> sendPlayerInput(
       rtype::client::ActionSet held) override;
 
+  /** @brief Writes down @p acknowledged. */
+  void confirmInputsUpTo(std::uint32_t acknowledged) override;
+
   /** @returns The actions byte of every input sent, oldest first. */
   [[nodiscard]] const std::vector<std::uint8_t>& sentActions() const;
 
+  /** @returns Every number the game confirmed, in order. */
+  [[nodiscard]] const std::vector<std::uint32_t>& confirmations() const;
+
  private:
   std::vector<std::uint8_t> sentActions_;
+  std::vector<std::uint32_t> confirmations_;
 };

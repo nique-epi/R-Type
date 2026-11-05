@@ -8,6 +8,7 @@ add_library(rtype_client_connection_module STATIC
   ClientConnectionModule.cpp
   PlayerConnection.cpp
   ServerSession.cpp
+  UnconfirmedInputs.cpp
 )
 
 target_include_directories(rtype_client_connection_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -28,6 +29,7 @@ target_link_libraries(rtype_client_connection_module
     rtype_logging
     rtype_network_conditions
     rtype_network_message_dispatcher
+    rtype_network_player_input
     rtype_network_protocol
     rtype_network_transport
   PRIVATE
@@ -35,7 +37,6 @@ target_link_libraries(rtype_client_connection_module
     rtype_network_connection_refused
     rtype_network_constants
     rtype_network_disconnection
-    rtype_network_player_input
 )
 
 rtype_enable_warnings(rtype_client_connection_module)

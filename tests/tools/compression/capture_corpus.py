@@ -21,7 +21,7 @@ first one exists) it records the datagrams as they arrive.
 """
 import asyncio, os, random, struct, subprocess, sys, time
 
-PROTOCOL_VERSION = 4
+PROTOCOL_VERSION = 5
 COMPRESSED_FLAG = 0x04
 HEADER_SIZE = 22
 FLAGS_OFFSET = 5
@@ -151,7 +151,7 @@ class Client(asyncio.DatagramProtocol):
                 if random.random() < 0.08:
                     self.actions = random.choice([0, 1, 2, 4, 8, 16, 16 | 8, 16 | 1, 16 | 2, 8 | 1, 2 | 4])
                 self.input_number += 1
-                messages = [(9, struct.pack(">IB", self.input_number, self.actions))]
+                messages = [(9, struct.pack(">IBB", self.input_number, self.actions, 0))]
                 if not self.got_state:
                     messages.append((17, b""))
                 self.send(messages)

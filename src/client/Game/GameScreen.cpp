@@ -31,6 +31,7 @@
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
 #include "MissionStart.hpp"
+#include "OwnShip.hpp"
 #include "OwnShipPredictor.hpp"
 #include "PlayerAction.hpp"
 #include "PlayerInputPacer.hpp"
@@ -96,7 +97,8 @@ GameScreen::GameScreen(GameScreenParts parts,
       scoreBoard_(parts.waitingRoom.get().lobbyPlayers(),
                   parts.connection.get().status().playerNumber),
       result_(&parts.result.get()),
-      prediction_(parts.connection.get().status().playerNumber),
+      playerNumber_(parts.connection.get().status().playerNumber),
+      prediction_(playerNumber_),
       sky_(&parts.sky.get()) {
   systems_.add(std::make_unique<AnimationSystem>());
   systems_.add(std::make_unique<HitFlashSystem>());
@@ -187,6 +189,9 @@ void GameScreen::applyEntityMessages() {
       worldSeen_ = true;
       scoreBoard_.apply(*state);
       interpolationClock_.observe(state->tick);
+      if (const auto own = ownShipOf(*state, playerNumber_)) {
+        inputs_->confirmInputsUpTo(own->acknowledgedInput);
+      }
       if (settings_->clientPrediction) {
         prediction_.apply(*state);
       }

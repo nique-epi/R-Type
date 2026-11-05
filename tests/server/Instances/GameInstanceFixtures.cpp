@@ -28,6 +28,7 @@
 #include "GameLoaded.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
+#include "Heartbeat.hpp"
 #include "IGameModule.hpp"
 #include "IResultsArchive.hpp"
 #include "IncomingDatagram.hpp"
@@ -308,7 +309,8 @@ std::vector<std::byte> GameInstanceInputTest::nextInputDatagram(
       static_cast<std::uint16_t>(LAST_READY_SEQUENCE + inputsSent_.at(player));
   return inputDatagram(
       network::PlayerInput{.inputNumber = inputsSent_.at(player),
-                           .actions = actions},
+                           .actions = actions,
+                           .earlierActions = {}},
       numbered);
 }
 
@@ -444,7 +446,8 @@ void GameInstanceLogTest::queueStrangersInput() {
       .sender = playerEndpoint(STRANGER),
       .payload = inputDatagram(
           network::PlayerInput{.inputNumber = network::FIRST_INPUT_NUMBER,
-                               .actions = HOLDS_UP},
+                               .actions = HOLDS_UP,
+                               .earlierActions = {}},
           sessionHeader(FIRST_PLAYER))});
 }
 

@@ -79,7 +79,8 @@ std::vector<SampleMessage> sampleMessages() {
       sampleOf(network::LobbyState{}),
       sampleOf(network::GameStarted{}),
       sampleOf(network::PlayerInput{.inputNumber = network::FIRST_INPUT_NUMBER,
-                                    .actions = 0}),
+                                    .actions = 0,
+                                    .earlierActions = {}}),
       worldStateSample(),
       sampleOf(
           network::EntitySpawned{.entityId = SAMPLE_ENTITY_ID,

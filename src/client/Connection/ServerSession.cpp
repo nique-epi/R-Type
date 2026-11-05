@@ -72,7 +72,7 @@ void ServerSession::connect(const network::Endpoint& server,
   inbound_.listenTo(server);
   outbox_.aim(server);
   attempt_.begin(nickname);
-  nextInputNumber_ = network::FIRST_INPUT_NUMBER;
+  unconfirmedInputs_.clear();
   attempt_.sendRequest(outbox_);
   status_ = {.phase = ConnectionPhase::Connecting};
   logger_.info("connecting to ", server.address, " port ", server.port);
@@ -110,11 +110,13 @@ std::optional<std::uint32_t> ServerSession::sendPlayerInput(ActionSet held) {
     return std::nullopt;
   }
   gameLoaded_->sendWhenDue(outbox_);
-  const std::uint32_t number = nextInputNumber_;
-  sendMessage(outbox_, network::PlayerInput{.inputNumber = number,
-                                            .actions = held.bits()});
-  ++nextInputNumber_;
-  return number;
+  const network::PlayerInput input = unconfirmedInputs_.add(held.bits());
+  sendMessage(outbox_, input);
+  return input.inputNumber;
+}
+
+void ServerSession::confirmInputsUpTo(std::uint32_t acknowledged) {
+  unconfirmedInputs_.confirmUpTo(acknowledged);
 }
 
 bool ServerSession::isLeaving() const { return departure_.isLeaving(); }

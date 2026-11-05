@@ -61,7 +61,7 @@ constexpr std::uint8_t NEXT_PROTOCOL_VERSION = network::PROTOCOL_VERSION + 1;
 constexpr std::size_t REFUSAL_DATAGRAM_SIZE = 26;
 
 /**
- * @brief A flags byte with a flag version 4 of the protocol does not know: it
+ * @brief A flags byte with a flag version 5 of the protocol does not know: it
  * knows only 0x01 and 0x02.
  */
 constexpr std::uint8_t UNKNOWN_FLAG = 0x08;

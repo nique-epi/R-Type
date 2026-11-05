@@ -1,4 +1,6 @@
 #include <gtest/gtest.h>
+#include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <vector>
 #include "ByteSequence.hpp"
@@ -24,12 +26,15 @@ using testing::EVERY_ACTION;
 using testing::EXAMPLE_ENTITY_ID;
 using testing::exampleBydo;
 using testing::FIRST_BIT_ABOVE_THE_ACTIONS;
+using testing::FIRST_SESSION_INPUT;
 using testing::LARGEST_U16;
 using testing::LARGEST_U32;
 using testing::LARGEST_WIRE_COORDINATE;
 using testing::LAST_PLAYER_NUMBER;
+using testing::ONE_REPEATED_INPUT_TOO_MANY;
 using testing::oneShipState;
 using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
+using testing::REPEATED_INPUT_LIMIT;
 using testing::SECOND_PLAYER_NUMBER;
 using testing::SMALLEST_WIRE_COORDINATE;
 using testing::SOME_EVENT_NUMBER;
@@ -39,13 +44,15 @@ using testing::UP_AND_SHOOT;
 /**
  * Given input number 0x01020304 with up and shoot held
  * When the PlayerInput is encoded
- * Then the payload is the number on four bytes, then the byte 11
+ * Then the payload is the number on four bytes, the byte 11, then 0 earlier
+ * actions
  */
 TEST(PlayerInput, EncodesTheInputNumberThenTheActions) {
-  const auto expected = byteSequence({0x01, 0x02, 0x03, 0x04, 0x11});
+  const auto expected = byteSequence({0x01, 0x02, 0x03, 0x04, 0x11, 0x00});
 
   EXPECT_EQ(encodeMessage(PlayerInput{.inputNumber = SOME_INPUT_NUMBER,
-                                      .actions = UP_AND_SHOOT}),
+                                      .actions = UP_AND_SHOOT,
+                                      .earlierActions = {}}),
             expected);
 }
 
@@ -55,7 +62,9 @@ TEST(PlayerInput, EncodesTheInputNumberThenTheActions) {
  * Then the decoded input equals the original
  */
 TEST(PlayerInput, KeepsTheLargestInputNumber) {
-  const PlayerInput input{.inputNumber = LARGEST_U32, .actions = EVERY_ACTION};
+  const PlayerInput input{.inputNumber = LARGEST_U32,
+                          .actions = EVERY_ACTION,
+                          .earlierActions = {}};
 
   EXPECT_EQ(decodeMessage<PlayerInput>(encodeMessage(input)), input);
 }
@@ -67,7 +76,8 @@ TEST(PlayerInput, KeepsTheLargestInputNumber) {
  */
 TEST(PlayerInput, DecodesWhatItEncoded) {
   const PlayerInput input{.inputNumber = SOME_INPUT_NUMBER,
-                          .actions = EVERY_ACTION};
+                          .actions = EVERY_ACTION,
+                          .earlierActions = {}};
 
   EXPECT_EQ(decodeMessage<PlayerInput>(encodeMessage(input)), input);
 }
@@ -78,7 +88,7 @@ TEST(PlayerInput, DecodesWhatItEncoded) {
  * Then it is accepted with no action
  */
 TEST(PlayerInput, AcceptsAnInputWithNoKeyHeld) {
-  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x01, 0x00});
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x01, 0x00, 0x00});
 
   EXPECT_EQ(decodeMessage<PlayerInput>(bytes).actions, 0);
 }
@@ -90,8 +100,8 @@ TEST(PlayerInput, AcceptsAnInputWithNoKeyHeld) {
  * Then each is refused
  */
 TEST(PlayerInput, RefusesToReadABitAboveTheActions) {
-  const auto firstBitAbove = byteSequence({0x00, 0x00, 0x00, 0x01, 0x20});
-  const auto lastBit = byteSequence({0x00, 0x00, 0x00, 0x01, 0x80});
+  const auto firstBitAbove = byteSequence({0x00, 0x00, 0x00, 0x01, 0x20, 0x00});
+  const auto lastBit = byteSequence({0x00, 0x00, 0x00, 0x01, 0x80, 0x00});
 
   EXPECT_THROW((void)decodeMessage<PlayerInput>(firstBitAbove),
                InvalidFieldValueException);
@@ -107,7 +117,8 @@ TEST(PlayerInput, RefusesToReadABitAboveTheActions) {
 TEST(PlayerInput, RefusesToWriteABitAboveTheActions) {
   EXPECT_THROW(
       (void)encodeMessage(PlayerInput{.inputNumber = SOME_INPUT_NUMBER,
-                                      .actions = FIRST_BIT_ABOVE_THE_ACTIONS}),
+                                      .actions = FIRST_BIT_ABOVE_THE_ACTIONS,
+                                      .earlierActions = {}}),
       InvalidFieldValueException);
 }
 
@@ -124,14 +135,132 @@ TEST(PlayerInput, RefusesAnInputCutShort) {
 }
 
 /**
- * Given a whole input followed by one more byte
+ * Given a whole input, with no earlier action, followed by one more byte
  * When it is decoded
  * Then a TrailingBytesException is raised
  */
-TEST(PlayerInput, RefusesBytesAfterTheActions) {
-  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x01, 0x00, 0x00});
+TEST(PlayerInput, RefusesBytesAfterTheEarlierActions) {
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<PlayerInput>(bytes), TrailingBytesException);
+}
+
+/**
+ * Given input 0x01020304 holding 0x11 after two earlier inputs, 0x01 then 0x04
+ * When the PlayerInput is encoded
+ * Then the count 2 and the earlier actions follow, the one just before first
+ */
+TEST(PlayerInput, EncodesTheEarlierActionsAfterTheirCount) {
+  const auto expected =
+      byteSequence({0x01, 0x02, 0x03, 0x04, 0x11, 0x02, 0x01, 0x04});
+
+  EXPECT_EQ(encodeMessage(PlayerInput{.inputNumber = SOME_INPUT_NUMBER,
+                                      .actions = UP_AND_SHOOT,
+                                      .earlierActions = {0x01, 0x04}}),
+            expected);
+}
+
+/**
+ * Given an input that repeats exactly the most earlier inputs a message may
+ * When it is encoded then decoded
+ * Then the decoded input equals the original
+ */
+TEST(PlayerInput, KeepsTheMostEarlierActionsAMessageMayHold) {
+  const PlayerInput input{
+      .inputNumber = SOME_INPUT_NUMBER,
+      .actions = EVERY_ACTION,
+      .earlierActions = std::vector<std::uint8_t>(REPEATED_INPUT_LIMIT, 0x04)};
+
+  EXPECT_EQ(decodeMessage<PlayerInput>(encodeMessage(input)), input);
+}
+
+/**
+ * Given an input with one earlier input more than a message may repeat
+ * When it is encoded
+ * Then an InvalidFieldValueException is raised
+ */
+TEST(PlayerInput, RefusesToWriteMoreEarlierActionsThanTheLimit) {
+  const PlayerInput input{.inputNumber = SOME_INPUT_NUMBER,
+                          .actions = 0,
+                          .earlierActions = std::vector<std::uint8_t>(
+                              ONE_REPEATED_INPUT_TOO_MANY, 0)};
+
+  EXPECT_THROW((void)encodeMessage(input), InvalidFieldValueException);
+}
+
+/**
+ * Given a payload announcing 16 earlier actions, one more than the limit, and
+ * holding them
+ * When it is decoded
+ * Then an InvalidFieldValueException is raised
+ */
+TEST(PlayerInput, RefusesToReadMoreEarlierActionsThanTheLimit) {
+  std::vector<std::byte> bytes = byteSequence({0x01, 0x02, 0x03, 0x04, 0x00});
+  bytes.push_back(static_cast<std::byte>(ONE_REPEATED_INPUT_TOO_MANY));
+  bytes.insert(bytes.end(), ONE_REPEATED_INPUT_TOO_MANY, std::byte{0});
+
+  EXPECT_THROW((void)decodeMessage<PlayerInput>(bytes),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given the first input of a session announcing one earlier action, which
+ * would be numbered 0
+ * When it is decoded or encoded
+ * Then an InvalidFieldValueException is raised
+ */
+TEST(PlayerInput, RefusesEarlierActionsBelowTheFirstInput) {
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00});
+
+  EXPECT_THROW((void)decodeMessage<PlayerInput>(bytes),
+               InvalidFieldValueException);
+  EXPECT_THROW(
+      (void)encodeMessage(PlayerInput{.inputNumber = FIRST_SESSION_INPUT,
+                                      .actions = 0,
+                                      .earlierActions = {0}}),
+      InvalidFieldValueException);
+}
+
+/**
+ * Given the second input of a session announcing one earlier action, numbered
+ * 1, the first input
+ * When it is decoded
+ * Then it is accepted with that action
+ */
+TEST(PlayerInput, AcceptsEarlierActionsDownToTheFirstInput) {
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x02, 0x00, 0x01, 0x04});
+
+  EXPECT_EQ(decodeMessage<PlayerInput>(bytes).earlierActions,
+            std::vector<std::uint8_t>{0x04});
+}
+
+/**
+ * Given a payload announcing two earlier actions but holding one
+ * When it is decoded
+ * Then a BufferUnderflowException is raised
+ */
+TEST(PlayerInput, RefusesEarlierActionsCutShort) {
+  const auto bytes = byteSequence({0x01, 0x02, 0x03, 0x04, 0x00, 0x02, 0x01});
+
+  EXPECT_THROW((void)decodeMessage<PlayerInput>(bytes),
+               BufferUnderflowException);
+}
+
+/**
+ * Given an earlier action with the first bit above the five actions
+ * When it is decoded or encoded
+ * Then an InvalidFieldValueException is raised
+ */
+TEST(PlayerInput, RefusesABitAboveTheActionsInAnEarlierAction) {
+  const auto bytes = byteSequence({0x01, 0x02, 0x03, 0x04, 0x00, 0x01, 0x20});
+
+  EXPECT_THROW((void)decodeMessage<PlayerInput>(bytes),
+               InvalidFieldValueException);
+  EXPECT_THROW((void)encodeMessage(PlayerInput{
+                   .inputNumber = SOME_INPUT_NUMBER,
+                   .actions = 0,
+                   .earlierActions = {FIRST_BIT_ABOVE_THE_ACTIONS}}),
+               InvalidFieldValueException);
 }
 
 /**
