@@ -10,7 +10,7 @@ namespace rtype::server {
  * @brief The bus of each game the server hosts, for a module of the program
  * that follows what happens in every game: a module listed after the games
  * module, or a plugin, which reaches the games through this interface and
- * links none of their code.
+ * holds none of their code.
  *
  * The games module provides it in its install(). The list is empty until the
  * games module started, and it does not change after: the games are never

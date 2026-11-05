@@ -1035,7 +1035,7 @@ The client sends the request from its leaderboard screen (see [Client](/R-Type/c
 
 ## Game statistics: `ServerGameStatisticsModule`
 
-The `game-statistics` plugin (`src/server/GameStatistics/`) writes the statistics of the games to a CSV file, so a host balances the waves from real games. It is a shared library, not a module of `serverModules()`: the server behaves the same without it, and a `plugin game-statistics` line of `server.cfg` loads it (see [Write a plugin](/R-Type/modules/#write-a-plugin)). It needs `logger`, `network` and `games`, and follows every game through `IGameBuses`, the bus of each game the `games` module provides, so it links none of the code of the games.
+The `game-statistics` plugin (`src/server/GameStatistics/`) writes the statistics of the games to a CSV file, so a host balances the waves from real games. It is a shared library, not a module of `serverModules()`: the server behaves the same without it, and a `plugin game-statistics` line of `server.cfg` loads it (see [Write a plugin](/R-Type/modules/#write-a-plugin)). It needs `logger`, `network` and `games`, and follows every game through `IGameBuses`, the bus of each game the `games` module provides, so it holds none of the code of the games.
 
 ```
 event,game,player,points
