@@ -3,10 +3,16 @@
 #include <cstddef>
 #include <initializer_list>
 #include <string>
+#include <utility>
+#include <vector>
 #include "ConnectedPlayer.hpp"
+#include "Entity.hpp"
+#include "EntityType.hpp"
+#include "GameEnded.hpp"
 #include "GameFlow.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
+#include "GameStateChanged.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "Lives.hpp"
 #include "OutgoingDatagram.hpp"
@@ -19,21 +25,28 @@
 
 namespace rtype::server::testing {
 
-GameFlowFixture::GameFlowFixture()
+GameFlowFixture::GameFlowFixture() : GameFlowFixture(testWavePlan()) {}
+
+GameFlowFixture::GameFlowFixture(WavePlan waves)
     : readyKeeper_(roster_, [] { return true; }),
       replication_(
-          roster_, [](const network::OutgoingDatagram&) {},
+          roster_,
+          [this](network::OutgoingDatagram datagram) {
+            sent_.push_back(std::move(datagram));
+          },
           DEFAULT_WORLD_STATES_PER_SECOND),
-      context_{
-          .events = events_,
-          .systems = systems_,
-          .roster = roster_,
-          .hooks = hooks_,
-          .settings = GameSettings{.seed = SOME_SEED, .waves = testWavePlan()},
-          .send = [](const network::OutgoingDatagram&) {},
-          .everyPlayerIsReady =
-              [this] { return readyKeeper_.everyPlayerIsReady(); }},
+      context_{.events = events_,
+               .systems = systems_,
+               .roster = roster_,
+               .hooks = hooks_,
+               .settings =
+                   GameSettings{.seed = SOME_SEED, .waves = std::move(waves)},
+               .send = [](const network::OutgoingDatagram&) {},
+               .everyPlayerIsReady =
+                   [this] { return readyKeeper_.everyPlayerIsReady(); }},
       flow_(context_, world_, replication_) {
+  static_cast<void>(events_.subscribe<GameStateChanged>(
+      [this](const GameStateChanged& change) { changes_.push_back(change); }));
   flow_.begin();
   addRtypeSystems(systems_, events_);
 }
@@ -66,10 +79,6 @@ void GameFlowFixture::startGameWith(
   ASSERT_EQ(flow_.state(), GameState::InProgress);
 }
 
-void GameFlowFixture::startGameWithOnePlayer() {
-  startGameWith({FIRST_PLAYER});
-}
-
 void GameFlowFixture::tick() {
   flow_.onTick();
   events_.dispatch();
@@ -81,8 +90,37 @@ void GameFlowFixture::runTicks(std::size_t count) {
   }
 }
 
+void GameFlowFixture::clearTheBydos() {
+  world_.current().components().forEach<game::EntityType, game::EntityType>(
+      [this](engine::Entity entity, const game::EntityType& type,
+             const game::EntityType&) {
+        if (type == game::EntityType::Enemy) {
+          world_.current().components().destroy(entity);
+        }
+      });
+}
+
+std::vector<network::GameEnded> GameFlowFixture::endsSentTo(
+    std::size_t index) const {
+  std::vector<network::GameEnded> ends;
+  for (const network::OutgoingDatagram& datagram :
+       testing::sentTo(sent_, playerEndpoint(index))) {
+    if (onlyMessageTypeOf(datagram) == network::MessageType::GameEnded) {
+      ends.push_back(onlyMessageIn<network::GameEnded>(datagram));
+    }
+  }
+  return ends;
+}
+
 GameFlow& GameFlowFixture::flow() { return flow_; }
 
 PlayerRoster& GameFlowFixture::roster() { return roster_; }
+
+const std::vector<GameStateChanged>& GameFlowFixture::changes() const {
+  return changes_;
+}
+
+GameFlowOneWaveLevelFixture::GameFlowOneWaveLevelFixture()
+    : GameFlowFixture(oneWaveLevelWavePlan()) {}
 
 }  // namespace rtype::server::testing

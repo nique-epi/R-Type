@@ -1,5 +1,5 @@
 ---
-title: 'Network protocol: version 2'
+title: 'Network protocol: version 3'
 description: The datagrams the client and the server exchange over UDP, byte by byte, and what each side does when one is lost or cannot be read.
 sidebar:
   label: Protocol
@@ -11,7 +11,7 @@ This page is the specification of the protocol the client and the server speak: 
 
 ## Status of this document
 
-- This is version 2 of the protocol. It is the only version the code speaks; [Version 2](#version-2) says what it changed from version 1, and what the rest of the second part of the project will change.
+- This is version 3 of the protocol. It is the only version the code speaks; [Version 3](#version-3) says what it changed from version 2, and what the rest of the second part of the project will change.
 - The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
 - Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
 - Numbers are decimal unless written `0x`. A size is in bytes.
@@ -48,7 +48,7 @@ A position is in logical units, in the frame described in [Architecture](/R-Type
 
 ## Datagram
 
-A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 2.
+A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 3.
 
 <ByteLayout
   label="The 22-byte header: protocolId on bytes 0 to 3, version on byte 4, flags on byte 5, sessionToken on bytes 6 to 13, sequence on bytes 14 and 15, acknowledgedSequence on bytes 16 and 17, acknowledgementBits on bytes 18 to 21."
@@ -71,10 +71,10 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
   ]}
 />
 
-| Offset | Size | Field | In version 2 |
+| Offset | Size | Field | In version 3 |
 |---|---|---|---|
 | 0 | 4 | `protocolId` | `0x52545950`, `RTYP` in ASCII |
-| 4 | 1 | `version` | 2 |
+| 4 | 1 | `version` | 3 |
 | 5 | 1 | `flags` | `ACKNOWLEDGES` 0x01, `GUARANTEED` 0x02, every other bit 0 |
 | 6 | 8 | `sessionToken` | 0 until the connection is accepted, then the token given by the server |
 | 14 | 2 | `sequence` | number of the datagram for its sender |
@@ -145,7 +145,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 12 | `EntityDestroyed` | `entityId` `u32`, `reason` `u8`: 1 `Killed` (explosion), 2 `Removed` (no effect) | when an entity disappears, guaranteed (see [Guaranteed messages](#guaranteed-messages)) |
 | 13 | `GameEvent` | `eventNumber` `u16`, `kind` `u8`, `playerNumber` `u8`, `entityId` `u32` | see [Game events](#game-events), guaranteed |
 | 14 | `PlayerLeft` | `playerNumber` `u8`, `reason` `u8`: 1 `Left`, 2 `TimedOut` | to the other players, when one leaves or times out, guaranteed |
-| 15 | `GameEnded` | `playerCount` `u8`, then per player `playerNumber` `u8`, `score` `u32` | when no player has a life left, then every 500 ms until the server waits for players again |
+| 15 | `GameEnded` | `outcome` `u8`: 1 `Victory`, 2 `Defeat`, then `playerCount` `u8`, then per player `playerNumber` `u8`, `score` `u32` | when the game ends: `Victory` once the players beat the last wave of the level, `Defeat` when no player has a life left; then every 500 ms until the server waits for players again |
 | 16 | `ConnectionChallenge` | `cookie` `u64` | in answer to a request without a valid cookie |
 | 19 | `LeaderboardAnswer` | `playerCount` `u8`, `difficulty` `string`, `rowCount` `u8` (0 to 10), then per row `rank` `u32`, `score` `u32`, `playedAt` `i64` (seconds since 1970 UTC), `nickname` `string`; then `hasOwnRow` `bool`, followed by one row when true | in answer to a request, to the player who sent it, at most once per 500 ms per player |
 | 20 | `DeltaWorldState` | see [Delta world state](#delta-world-state) | during a game, as many times per second as the server was told to (20 by default, from 2 to 60) |
@@ -160,7 +160,7 @@ A message is accepted only when its payload has exactly the size its fields add 
 | `ConnectionRequest` | the nickname follows the rules of [Connection](#connection): 1 to 16 bytes of valid UTF-8, no control character |
 | `ConnectionAccepted` | `playerNumber` is 1 to 4 |
 | `LobbyState` | at most 4 players, each `playerNumber` 1 to 4 and listed once, each nickname valid as above |
-| `GameEnded` | at most 4 players, each `playerNumber` 1 to 4 and listed once |
+| `GameEnded` | `outcome` is 1 or 2; at most 4 players, each `playerNumber` 1 to 4 and listed once |
 | `WorldState` | at most 4 players, each `playerNumber` 1 to 4 and listed once; `motion` follows [World state](#world-state) |
 | `EntitySpawned` | `entityId` is not 0, `entityType` is in the table of [World state](#world-state) |
 | `EntityDestroyed`, `PlayerLeft`, `ConnectionRefused` | `reason` is in the table of its message; `PlayerLeft` names a `playerNumber` of 1 to 4 |
@@ -315,7 +315,7 @@ The messages of one session, from the connection to the end of a game:
 ```mermaid
 sequenceDiagram
   accTitle: Messages of one session
-  accDescr: The client asks to connect, receives a challenge, asks again with the cookie and is accepted. The server repeats the lobby state until every player is ready, then starts the game. During the game the client sends its inputs and the server sends world states and events. When no player has a life left the server repeats the end of the game, then the lobby state again.
+  accDescr: The client asks to connect, receives a challenge, asks again with the cookie and is accepted. The server repeats the lobby state until every player is ready, then starts the game. During the game the client sends its inputs and the server sends world states and events. When the game ends, by a victory or because no player has a life left, the server repeats the end of the game, then the lobby state again.
   participant C as Client
   participant S as Server
   C->>S: ConnectionRequest (cookie 0)
@@ -364,7 +364,7 @@ This section gathers what each side does when something goes wrong, from a datag
 
 - Nothing in a datagram stops a program or closes a session: an error ends with a datagram or a message dropped, never with a crash.
 - A dropped datagram or message gets no answer, with one exception: the server answers a datagram of another version from an unknown sender with `ConnectionRefused` (`IncompatibleVersion`), under the size condition of [Receiving a datagram](#receiving-a-datagram).
-- A dropped datagram or message changes nothing in the session or the game: at most, the receiver logs it and counts it.
+- A dropped datagram or message changes nothing in the session or the game: at most, the receiver logs it and counts it, and the server counts one dropped for its rate limit against its sender (see [A sender that sends too much](#a-sender-that-sends-too-much)).
 
 ### A datagram or a message that cannot be read
 
@@ -378,6 +378,17 @@ This section gathers what each side does when something goes wrong, from a datag
 | A message of a type that only the other side receives, such as `ConnectionAccepted` reaching the server or `PlayerInput` reaching a client | skips that message, as if its type were unknown | nothing |
 | A payload of the wrong size, or a value out of range: a `bool` other than 0 or 1, an enumeration value not listed, a bit 5 to 7 set in `actions`, a bit 6 or 7 set in `motion`, a nickname that is empty, longer than 16 bytes, not UTF-8 or holding a control character (U+0000 to U+001F, U+007F) | drops that message; the other messages of the datagram are read | nothing, even to a `ConnectionRequest` dropped this way |
 | An entity of an unknown type in a `WorldState` | skips that entity and reads the next one (see [World state](#world-state)) | nothing |
+
+### A sender that sends too much
+
+The server limits what each sender may send, so that one sender cannot crowd out the others. After a silence, a sender may send a burst at once, then at a steady rate:
+
+| Datagrams | At once | Then | Banned after |
+|---|---|---|---|
+| holding a `ConnectionRequest`, whatever its token, or of another `version`, from one address and port | 11 | 4 a second | 20 dropped within a second |
+| carrying the session token of a player, without a `ConnectionRequest` | 60 | 120 a second | 60 dropped within a second |
+
+A datagram past its limit is dropped without an answer. A ban lasts 10 s: every datagram of that kind from that sender is dropped until then, and sending more does not lengthen it. A client that keeps to this page stays below these limits: it sends a request every 500 ms and the answer to each challenge, after a stall of the server the answers to the ten requests of its attempt at once, and 60 inputs a second during a game. The datagrams of a banned player never reach its session, so the server marks the player away after `SESSION_TIMEOUT` (5 s) and keeps its seat, since the ban ends before the 20 s that free it. Whoever uses the address of a player without its token never spends the limit of the player: a `ConnectionRequest` spends the limit of that address, and any other datagram is dropped before any limit. These values are **provisional**, and follow from the rates of this page: the server derives them from the interval between two requests, the 5 s of an attempt and the 60 inputs a second (`src/network/Handshake/RateLimit/RateLimitConstants.hpp`). Code must read them.
 
 ### A message at the wrong moment
 
@@ -466,6 +477,10 @@ Version 2 guarantees `EntityDestroyed`, `GameEvent` and `PlayerLeft` with `flags
 
 Version 2 also gives `Heartbeat` the time it is sent and the echo of the newest `Heartbeat` received, which measure the round trip (see [Round trip](#round-trip)), then the tick of the server while a game runs (see [Clock of the server](#clock-of-the-server)). A build of version 2 from before the echo sends an empty `Heartbeat`, and one from before the tick stops at the echo, 13 bytes instead of 18: a newer receiver skips either as a message, and an older receiver skips the longer one, since bytes follow what it reads. In every case the datagram still keeps the session alive, so the two play together without a round trip or a clock.
 
+## Version 3
+
+Version 3 gives `GameEnded` the outcome of the game: `outcome`, one byte, comes first, before `playerCount` (see [Messages](#messages)). A game now has an end other than the loss of every life: it is won once the players beat the last wave of the level, so a client needs the outcome to tell a victory from a defeat. The layout of the other messages and of the header is the same; a payload of version 2 has no `outcome`, so its first byte would be read as one, which is why `version` became 3.
+
 The rest of the second part of the project changes the protocol again:
 
 - The client measures the loss rate of the server from the gaps in `sequence`, as the server does for each player: nothing changes on the wire.
@@ -486,6 +501,7 @@ The code of this repository applies the rules above, with the exceptions listed 
 - Each side sends a `Heartbeat` every 500 ms and measures the round trip from its echo, and the server sends each player `RoundTrips` after each of its `Heartbeat`s, as [Round trip](#round-trip) describes; the `Heartbeat` of the server also carries its tick during a game, as [Clock of the server](#clock-of-the-server) describes. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
 
 - The client sends `LeaderboardRequest` from its leaderboard screen, and the server answers it.
+- The server limits the datagrams of each address and port, and of each player, on its network thread, as [A sender that sends too much](#a-sender-that-sends-too-much) says.
 
 What the programs do not do yet is listed at the end of [A peer disappears](#a-peer-disappears).
 

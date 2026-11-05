@@ -274,6 +274,7 @@ TEST_F(GameInstanceLivesFixture, SendsEveryPlayerTheScoresAtTheEnd) {
   loseEveryLife();
 
   const network::GameEnded expected{
+      .outcome = network::WireGameOutcome::Defeat,
       .players = {network::PlayerScore{.playerNumber = FIRST_JOINED_NUMBER,
                                        .score = FIRST_PLAYER_FINAL_SCORE},
                   network::PlayerScore{.playerNumber = SECOND_JOINED_NUMBER,

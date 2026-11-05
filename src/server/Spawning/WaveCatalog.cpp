@@ -217,7 +217,8 @@ game::WaveCurve curveFrom(const FileTable& table) {
                                                 SPAWN_INTERVAL_CUT_RANGE),
       .shortestSpawnInterval = millisecondsAt(
           table, SHORTEST_SPAWN_INTERVAL_KEY, shortestIntervalRange),
-      .wavePause = millisecondsAt(table, WAVE_PAUSE_KEY, WAVE_PAUSE_RANGE)};
+      .wavePause = millisecondsAt(table, WAVE_PAUSE_KEY, WAVE_PAUSE_RANGE),
+      .levelWaves = countAt(table, LEVEL_WAVES_KEY, LEVEL_WAVES_RANGE)};
 }
 
 /** @returns The waves the table of one difficulty describes. */

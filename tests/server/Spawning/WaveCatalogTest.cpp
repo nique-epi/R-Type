@@ -30,23 +30,29 @@ using rtype::server::testing::EMPTY_FILE;
 using rtype::server::testing::ENEMY_OUTSIDE_A_LIST;
 using rtype::server::testing::errorReading;
 using rtype::server::testing::FEWEST_BYDOS;
+using rtype::server::testing::FEWEST_WAVES;
 using rtype::server::testing::FRACTION;
 using rtype::server::testing::INVALID_ENEMY_LIST_TEXT;
 using rtype::server::testing::LEVEL_THAT_IS_NOT_A_TABLE;
 using rtype::server::testing::LONGER_THAN_THE_FIRST_TEXT;
 using rtype::server::testing::MISSING_DIFFICULTIES_TEXT;
 using rtype::server::testing::MISSING_FILE;
+using rtype::server::testing::MISSING_LEVEL_WAVES_TEXT;
 using rtype::server::testing::MISSING_PAUSE_TEXT;
 using rtype::server::testing::MISSPELT_KEY;
 using rtype::server::testing::MISSPELT_KEY_MESSAGE;
 using rtype::server::testing::MOST_BYDOS;
+using rtype::server::testing::MOST_WAVES;
 using rtype::server::testing::NO_BYDO;
 using rtype::server::testing::NO_BYDO_MESSAGE;
 using rtype::server::testing::NO_ENEMY;
+using rtype::server::testing::NO_WAVE;
+using rtype::server::testing::NO_WAVE_MESSAGE;
 using rtype::server::testing::NOT_A_TABLE_TEXT;
 using rtype::server::testing::NOT_A_TOML_VALUE;
 using rtype::server::testing::NUMBER_AS_AN_ENEMY;
 using rtype::server::testing::ONE_BYDO_TOO_MANY;
+using rtype::server::testing::ONE_WAVE_TOO_MANY;
 using rtype::server::testing::shippedCatalog;
 using rtype::server::testing::SHORTEST_EQUAL_TO_THE_FIRST;
 using rtype::server::testing::SHORTEST_LONGER_THAN_THE_FIRST;
@@ -147,9 +153,56 @@ TEST(WaveCatalog, AMissingValueIsNamed) {
 }
 
 /**
- * Given a waves file whose difficulty calm also holds a misspelt key, on line 9
+ * Given a waves file whose difficulty calm has no level_waves
  * When it is read
- * Then an UnknownWaveFileKeyException names the key, its line and its column
+ * Then a MissingWaveFileKeyException names the missing key
+ */
+TEST(WaveCatalog, AMissingLevelLengthIsNamed) {
+  const std::string text = calmFileWithout("level_waves");
+
+  EXPECT_THROW(static_cast<void>(WaveCatalog::fromText(text, TEST_FILE_NAME)),
+               MissingWaveFileKeyException);
+  EXPECT_NE(errorReading(text).find(MISSING_LEVEL_WAVES_TEXT),
+            std::string::npos);
+}
+
+/**
+ * Given a waves file whose difficulty calm has level_waves 1, then 100
+ * When it is read
+ * Then each level holds that many waves
+ */
+TEST(WaveCatalog, AcceptsTheFewestAndTheMostWavesInALevel) {
+  const WaveCatalog shortest = WaveCatalog::fromText(
+      calmFileWith("level_waves", FEWEST_WAVES), TEST_FILE_NAME);
+  const WaveCatalog longest = WaveCatalog::fromText(
+      calmFileWith("level_waves", MOST_WAVES), TEST_FILE_NAME);
+
+  EXPECT_EQ(shortest.planOf("calm").curve.levelWaves, 1U);
+  EXPECT_EQ(longest.planOf("calm").curve.levelWaves, 100U);
+}
+
+/**
+ * Given a waves file whose difficulty calm has level_waves 0, then 101
+ * When it is read
+ * Then a WaveFileValueOutOfRangeException names the key, its line and its
+ * column
+ */
+TEST(WaveCatalog, RefusesALevelWithoutWavesOrWithOneTooMany) {
+  const std::string noWave = calmFileWith("level_waves", NO_WAVE);
+  const std::string oneTooMany = calmFileWith("level_waves", ONE_WAVE_TOO_MANY);
+
+  EXPECT_THROW(static_cast<void>(WaveCatalog::fromText(noWave, TEST_FILE_NAME)),
+               WaveFileValueOutOfRangeException);
+  EXPECT_THROW(
+      static_cast<void>(WaveCatalog::fromText(oneTooMany, TEST_FILE_NAME)),
+      WaveFileValueOutOfRangeException);
+  EXPECT_EQ(errorReading(noWave), NO_WAVE_MESSAGE);
+}
+
+/**
+ * Given a waves file whose difficulty calm also holds a misspelt key, on line
+ * 10 When it is read Then an UnknownWaveFileKeyException names the key, its
+ * line and its column
  */
 TEST(WaveCatalog, AMisspeltKeyIsRefused) {
   const std::string text = calmFileWith(MISSPELT_KEY, FEWEST_BYDOS);

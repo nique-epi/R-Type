@@ -26,6 +26,10 @@ constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
  */
 constexpr float MISSILE_UNITS_PER_SECOND = 960.0F;
 
+/** @brief The top speed of a Bydo, which the requirements set at 240 logical
+ * units per second. */
+constexpr float BYDO_UNITS_PER_SECOND = 240.0F;
+
 /**
  * @brief How fast a missile of an enemy flies to the left, as the world tests
  * expect it: 360 logical units per second, three quarters of the speed of a

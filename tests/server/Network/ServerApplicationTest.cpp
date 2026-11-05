@@ -13,6 +13,7 @@
 #include "NetworkConstants.hpp"
 #include "NetworkContext.hpp"
 #include "NetworkException.hpp"
+#include "ReceivedDatagrams.hpp"
 #include "ServerApplication.hpp"
 #include "ServerApplicationFixtures.hpp"
 #include "ServerDatagrams.hpp"
@@ -25,6 +26,7 @@
 using rtype::network::ANY_PORT;
 using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
+using rtype::server::ReceivedDatagrams;
 using rtype::server::ServerApplication;
 using rtype::server::testing::SESSION_TOKEN;
 
@@ -96,8 +98,7 @@ TEST(ServerApplication, HandsAConnectionRequestToTheTick) {
   std::atomic<bool> delivered{false};
   ServerApplication server{
       loopbackEndpoint(ANY_PORT),
-      [&firstRequest,
-       &delivered](const ServerApplication::ReceivedDatagrams& datagrams) {
+      [&firstRequest, &delivered](const ReceivedDatagrams& datagrams) {
         if (!datagrams.connectionRequests.empty() &&
             !delivered.exchange(true)) {
           firstRequest.set_value(datagrams.connectionRequests.front());
@@ -130,8 +131,7 @@ TEST(ServerApplication, HandsAnAdmittedPlayersDatagramToTheTick) {
   std::atomic<bool> delivered{false};
   ServerApplication server{
       loopbackEndpoint(ANY_PORT),
-      [&firstDatagram,
-       &delivered](const ServerApplication::ReceivedDatagrams& datagrams) {
+      [&firstDatagram, &delivered](const ReceivedDatagrams& datagrams) {
         if (!datagrams.players.empty() && !delivered.exchange(true)) {
           firstDatagram.set_value(datagrams.players.front());
         }
@@ -233,8 +233,9 @@ TEST(ServerApplication, DropsTheDatagramOfAForgottenPlayerBeforeTheTick) {
 TEST(ServerApplication, RethrowsWhatTheTickThrew) {
   ServerApplication server{
       loopbackEndpoint(ANY_PORT),
-      []([[maybe_unused]] const ServerApplication::ReceivedDatagrams&
-             received) { throw TickFailure{}; }};
+      []([[maybe_unused]] const ReceivedDatagrams& received) {
+        throw TickFailure{};
+      }};
   server.open();
 
   EXPECT_THROW(server.run(), TickFailure);
@@ -319,4 +320,16 @@ TEST(ServerApplication, GivesItsPortBackWhenClosed) {
   EXPECT_NO_THROW(
       rtype::network::UdpSocket(otherContext, loopbackEndpoint(port)));
   EXPECT_NO_THROW(server.open());
+}
+
+/**
+ * Given a running server, and a client that floods it with connection
+ * requests from one socket
+ * When a second client sends one request in the middle of that flood, all
+ * through real sockets on the loopback address
+ * Then a tick hands the request of the second client: the flood placed no
+ * more than its limit in the request queue
+ */
+TEST(ServerApplication, HandsTheRequestOfAClientThroughTheFloodOfAnother) {
+  EXPECT_TRUE(requestOfAClientReachesATickThroughAFlood());
 }

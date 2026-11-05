@@ -14,6 +14,7 @@
 #include "FlashPreference.hpp"
 #include "FlightLogLook.hpp"
 #include "FlightLogSchedule.hpp"
+#include "GameEnded.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
@@ -31,10 +32,11 @@ namespace rtype::client {
  * the game wrote, then PRESS ENTER TO REPLAY and QUIT.
  *
  * The book drops, a taunt is typed on its label, the cover turns, the left
- * page tells the defeat and the right page ranks the pilots, then the call to
- * play again blinks under the book and QUIT waits under its corner (see
- * paintFlightLog()). The taunt is drawn from the seed of the parts among
- * those that fit the pilots, never the previous one.
+ * page tells the defeat or the victory and the right page ranks the pilots,
+ * then the call to play again blinks under the book and QUIT waits under its
+ * corner (see paintFlightLog()). After a defeat the taunt is drawn from the
+ * seed of the parts among those that fit the pilots, never the previous one;
+ * after a victory it is VICTORY_TAUNT.
  *
  * Until the choices show, MENU_CONFIRM_KEY, MENU_CANCEL_KEY or a click skip
  * to the last picture; no other key does, so a key of the game still held
@@ -99,6 +101,7 @@ class EndScreen : public IScreen {
   FlashPreference flashes_{};
   std::reference_wrapper<const PlayerPalette> palette_;
   std::vector<FinalPilot> pilots_;
+  network::WireGameOutcome outcome_;
   std::vector<std::string> taunt_;
   FlightLogSchedule schedule_;
   engine::Duration sinceStart_{};

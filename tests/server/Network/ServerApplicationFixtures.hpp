@@ -11,6 +11,7 @@
 #include "IncomingDatagram.hpp"
 #include "OutgoingDatagram.hpp"
 #include "ServerApplication.hpp"
+#include "TickHandler.hpp"
 
 /**
  * @brief What a test tick handler throws to make the server stop.
@@ -37,8 +38,8 @@ struct AdmissionWatch {
  * hands @p watch the first datagram of a player it is handed. @p watch must
  * outlive the handler.
  */
-[[nodiscard]] rtype::server::ServerApplication::TickHandler
-admittingFirstRequester(AdmissionWatch& watch);
+[[nodiscard]] rtype::server::TickHandler admittingFirstRequester(
+    AdmissionWatch& watch);
 
 /** @brief The datagram a tick handler of queueingOnce() queues, and whether
  * it did. */
@@ -51,8 +52,7 @@ struct QueuedOnce {
 
 /** @returns A tick handler that queues the datagram of @p once on its server
  * at the first tick only. @p once must outlive the handler. */
-[[nodiscard]] rtype::server::ServerApplication::TickHandler queueingOnce(
-    QueuedOnce& once);
+[[nodiscard]] rtype::server::TickHandler queueingOnce(QueuedOnce& once);
 
 /** @brief What the ticks of a server were handed in
  * sortReadyStateThenRequest().
@@ -74,3 +74,13 @@ struct SortedReadyState {
     const std::function<void(rtype::server::ServerApplication&,
                              const rtype::network::Endpoint&)>& prepare,
     const std::vector<std::byte>& readyState);
+
+/**
+ * @brief Runs a server on the loopback address. One client sends it
+ * FLOOD_REQUESTS_AROUND_A_CLIENT connection requests, a second client one
+ * request, then the first client FLOOD_REQUESTS_AROUND_A_CLIENT more, all at
+ * once.
+ * @returns Whether a tick was handed the request of the second client within
+ * THREAD_TIMEOUT.
+ */
+[[nodiscard]] bool requestOfAClientReachesATickThroughAFlood();

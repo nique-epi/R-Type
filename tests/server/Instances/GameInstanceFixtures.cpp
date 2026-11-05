@@ -47,6 +47,8 @@
 #include "SentDatagrams.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShipDirections.hpp"
+#include "ShipMotion.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
 #include "TimeConstants.hpp"
 #include "UnreliableNetwork.hpp"
@@ -373,17 +375,21 @@ std::optional<std::uint8_t> GameInstanceInputTest::heldActions(
     ADD_FAILURE() << "player " << player << " has no ship";
     return std::nullopt;
   }
+  const game::ShipMotion* const motion =
+      world().shipMotionOf(connected->shipEntityId);
+  const game::ShipDirections held =
+      motion != nullptr ? motion->heldAtLastInput : game::ShipDirections{};
   unsigned int actions = 0U;
-  if (intent->directions.up) {
+  if (held.up) {
     actions |= static_cast<unsigned int>(HOLDS_UP);
   }
-  if (intent->directions.down) {
+  if (held.down) {
     actions |= static_cast<unsigned int>(HOLDS_DOWN);
   }
-  if (intent->directions.left) {
+  if (held.left) {
     actions |= static_cast<unsigned int>(HOLDS_LEFT);
   }
-  if (intent->directions.right) {
+  if (held.right) {
     actions |= static_cast<unsigned int>(HOLDS_RIGHT);
   }
   if (intent->shooting) {

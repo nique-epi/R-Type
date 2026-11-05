@@ -19,11 +19,11 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 2 guarantees
- * the messages no state message repeats, see the Guaranteed messages section
- * of the protocol page.
+ * @brief The version of the protocol this code speaks. Version 3 adds the
+ * outcome of a game to GameEnded, see the Version 3 section of the protocol
+ * page.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 2;
+constexpr std::uint8_t PROTOCOL_VERSION = 3;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -153,6 +153,27 @@ constexpr auto PLAYER_MOTION_BITS =
  * is one more.
  */
 constexpr std::uint32_t FIRST_INPUT_NUMBER = 1;
+
+/**
+ * @brief PlayerInput a client sends per second during a game. The server
+ * derives the rate limit of a player from it. Provisional, see the protocol
+ * page.
+ */
+constexpr std::size_t PLAYER_INPUTS_PER_SECOND = 60;
+
+/**
+ * @brief Time between two ConnectionRequest of an attempt while the server
+ * has not answered. The server derives the rate limit of the requests from
+ * it. Provisional, see the protocol page.
+ */
+constexpr std::chrono::milliseconds CONNECTION_REQUEST_INTERVAL{500};
+
+/**
+ * @brief Time after the start of an attempt at which the client gives up,
+ * when the server has neither accepted nor refused it: it bounds the requests
+ * one attempt sends. Provisional, see the protocol page.
+ */
+constexpr std::chrono::seconds CONNECTION_ATTEMPT_TIMEOUT{5};
 
 /**
  * @brief The time between two Heartbeats either side of a session sends its
@@ -326,6 +347,7 @@ constexpr std::string_view PLAYER_NUMBER_FIELD = "playerNumber";
 constexpr std::string_view ENTITY_ID_FIELD = "entityId";
 constexpr std::string_view ENTITY_TYPE_FIELD = "entityType";
 constexpr std::string_view REASON_FIELD = "reason";
+constexpr std::string_view OUTCOME_FIELD = "outcome";
 constexpr std::string_view KIND_FIELD = "kind";
 constexpr std::string_view ACTIONS_FIELD = "actions";
 constexpr std::string_view ECHO_SENT_AT_FIELD = "echo.sentAt";

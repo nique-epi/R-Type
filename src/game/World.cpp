@@ -2,6 +2,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include "BehaviourRegistry.hpp"
+#include "BuiltInBehaviours.hpp"
 #include "BydoKind.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
@@ -17,17 +19,21 @@
 #include "Lives.hpp"
 #include "MissileConstants.hpp"
 #include "MissileOwner.hpp"
-#include "MovementPattern.hpp"
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdentity.hpp"
-#include "PatternConstants.hpp"
+#include "Pilot.hpp"
 #include "Position.hpp"
 #include "ScoreValue.hpp"
 #include "ShipControlConstants.hpp"
 #include "ShipMotion.hpp"
+#include "SpawningConstants.hpp"
+#include "SteadyMotion.hpp"
+#include "TimeConstants.hpp"
 #include "Velocity.hpp"
 
 namespace rtype::game {
+
+World::World() : behaviours_(builtInBehaviours()) {}
 
 std::uint32_t World::spawnPlayer(Position position, std::uint8_t lives) {
   const std::uint32_t networkId = networkIds_.allocate();
@@ -63,10 +69,11 @@ std::uint32_t World::spawnBydo(Position position, BydoKind kind) {
   const std::uint32_t networkId = networkIds_.allocate();
   const engine::Entity bydo = registry_.create();
   components_.add(bydo, position);
-  components_.add(bydo, Velocity{.x = -BYDO_SPEED, .y = 0.0F});
-  components_.add(bydo, MovementPattern{.shape = patternShapeOf(kind),
-                                        .originY = position.y,
-                                        .ageSeconds = 0.0F});
+  components_.add(bydo, SteadyMotion{.topSpeed = BYDO_SPEED});
+  components_.add(bydo,
+                  Pilot{.behaviour = behaviours_.named(behaviourNameOf(kind)),
+                        .origin = position,
+                        .age = engine::Duration::zero()});
   components_.add(bydo,
                   CollisionBox{.width = BYDO_WIDTH, .height = BYDO_HEIGHT});
   components_.add(bydo, EntityType::Enemy);

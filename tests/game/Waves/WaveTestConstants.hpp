@@ -10,6 +10,12 @@
 namespace rtype::game::testing {
 
 /**
+ * @brief The waves of the level of TEST_WAVE_CURVE: more than any test plays,
+ * so the level never ends in a test that does not ask for it.
+ */
+constexpr std::size_t LONG_LEVEL_WAVES = 100;
+
+/**
  * @brief The waves the tests play: 3 Bydos one every 2 seconds, then one more
  * Bydo and a quarter of a second closer per wave, down to one every second,
  * with a pause of 4 seconds before each wave. They are the normal difficulty
@@ -22,7 +28,26 @@ constexpr WaveCurve TEST_WAVE_CURVE{
     .bydosAddedPerWave = 1,
     .spawnIntervalCutPerWave = std::chrono::milliseconds(250),
     .shortestSpawnInterval = std::chrono::seconds(1),
-    .wavePause = std::chrono::seconds(4)};
+    .wavePause = std::chrono::seconds(4),
+    .levelWaves = LONG_LEVEL_WAVES};
+
+/**
+ * @brief TEST_WAVE_CURVE with a level of one wave, and of two.
+ */
+constexpr WaveCurve ONE_WAVE_LEVEL_CURVE{
+    .firstWave = TEST_WAVE_CURVE.firstWave,
+    .bydosAddedPerWave = TEST_WAVE_CURVE.bydosAddedPerWave,
+    .spawnIntervalCutPerWave = TEST_WAVE_CURVE.spawnIntervalCutPerWave,
+    .shortestSpawnInterval = TEST_WAVE_CURVE.shortestSpawnInterval,
+    .wavePause = TEST_WAVE_CURVE.wavePause,
+    .levelWaves = 1};
+constexpr WaveCurve TWO_WAVE_LEVEL_CURVE{
+    .firstWave = TEST_WAVE_CURVE.firstWave,
+    .bydosAddedPerWave = TEST_WAVE_CURVE.bydosAddedPerWave,
+    .spawnIntervalCutPerWave = TEST_WAVE_CURVE.spawnIntervalCutPerWave,
+    .shortestSpawnInterval = TEST_WAVE_CURVE.shortestSpawnInterval,
+    .wavePause = TEST_WAVE_CURVE.wavePause,
+    .levelWaves = 2};
 
 /**
  * @brief The waves TEST_WAVE_CURVE brings after its first, worked out by hand:

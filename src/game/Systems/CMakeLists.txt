@@ -1,6 +1,5 @@
 add_subdirectory(MovementSystem)
-add_subdirectory(BydoControlSystem)
-add_subdirectory(PatternSystem)
+add_subdirectory(PilotSystem)
 add_subdirectory(PlayfieldExitSystem)
 add_subdirectory(CollisionSystem)
 add_subdirectory(CollisionRules)

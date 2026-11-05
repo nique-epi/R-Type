@@ -23,6 +23,7 @@
 #include "IncomingDatagram.hpp"
 #include "LeaderboardRequest.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerArrival.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "SessionHooks.hpp"
@@ -150,6 +151,8 @@ network::PacketHeader GameInstance::nextSessionHeaderFor(
 
 void GameInstance::onPlayerJoined(ConnectedPlayer& player) const {
   callAll(hooks_.joined, player);
+  context_.events.get().publish(
+      game::PlayerArrival{.playerNumber = player.playerNumber});
 }
 
 std::vector<ConnectedPlayer> GameInstance::takeDepartedPlayers() {

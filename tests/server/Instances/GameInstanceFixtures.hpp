@@ -244,8 +244,9 @@ class GameInstanceInputTest : public GameInstanceTest {
   [[nodiscard]] std::optional<std::uint32_t> newestInputNumberOf(
       std::size_t player);
 
-  /** @returns The actions the Intent of the ship of @p player holds, as the
-   * bits of an input; nothing while the game kept no input for @p player. */
+  /** @returns The actions the ship of @p player holds, as the bits of an
+   * input: the directions of its last input and the shot its Intent wants;
+   * nothing while the game kept no input for @p player. */
   [[nodiscard]] std::optional<std::uint8_t> heldActions(std::size_t player);
 
   [[nodiscard]] const UnreliableNetwork& network() const;
