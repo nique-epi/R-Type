@@ -1,8 +1,11 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <vector>
+#include "BodyPlacement.hpp"
+#include "EntitySheet.hpp"
 #include "EntitySheets.hpp"
 #include "EntitySpawnSender.hpp"
 #include "EntitySpawned.hpp"
@@ -82,6 +85,15 @@ class WeaponSystem {
    */
   [[nodiscard]] std::optional<network::EntitySpawned> spawnProjectile(
       const WeaponShot& shot);
+
+  /**
+   * @returns The EntitySpawned of a body of @p sheet made at @p placement,
+   * belonging to @p owner when it is a missile of a player; nothing when
+   * every network id was given, which is logged.
+   */
+  [[nodiscard]] std::optional<network::EntitySpawned> spawnAt(
+      const game::EntitySheet& sheet, game::BodyPlacement placement,
+      std::optional<std::uint8_t> owner);
 
   /** @brief Sends @p projectile to every connected player. */
   void announce(const network::EntitySpawned& projectile);

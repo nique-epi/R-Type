@@ -17,15 +17,6 @@ namespace rtype::game {
 
 namespace {
 
-/** @returns The swing of the scythe, timed by the settings of @p view. */
-ActionTimings scytheOf(const BehaviourView& view) {
-  return ActionTimings{
-      .attack = SCYTHE_ATTACK,
-      .signal = millisecondsSettingAt(view, REAPER_SIGNAL_SETTING),
-      .strike = millisecondsSettingAt(view, REAPER_STRIKE_SETTING),
-      .recover = millisecondsSettingAt(view, REAPER_RECOVER_SETTING)};
-}
-
 /** @returns Where the reaper of @p view swings from at @p ship: `reach` to its
  * right, at its height. */
 Position strikingPointAt(const BehaviourView& view, const Position& ship) {
@@ -51,13 +42,13 @@ std::span<const BehaviourSetting> ReaperBehaviour::settings() const {
 }
 
 Intent ReaperBehaviour::steer(const BehaviourView& view) const {
-  const ActionTimings scythe = scytheOf(view);
+  const ActionTimings scythe =
+      timingsAt(view, SCYTHE_ATTACK, REAPER_SIGNAL_SETTING);
   if (view.action.has_value()) {
     return withNextPhase(Intent{.steered = true}, view, scythe);
   }
   if (!view.nearestShip.has_value()) {
-    return Intent{.direction = Direction{.x = LEFTWARD_STEERING, .y = 0.0F},
-                  .steered = true};
+    return Intent{.direction = LEFTWARD, .steered = true};
   }
   const Position point = strikingPointAt(view, *view.nearestShip);
   if (isAt(view, point) &&

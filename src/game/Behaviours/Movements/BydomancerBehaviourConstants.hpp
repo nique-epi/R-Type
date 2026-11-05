@@ -5,9 +5,10 @@
 #include <cstdint>
 #include <string_view>
 #include "ActionSettingConstants.hpp"
+#include "BehaviourConstants.hpp"
 #include "BehaviourSetting.hpp"
 #include "PlayfieldConstants.hpp"
-#include "SpawningConstants.hpp"
+#include "WeaveBehaviourConstants.hpp"
 #include "WholeNumberRange.hpp"
 
 namespace rtype::game {
@@ -27,40 +28,31 @@ constexpr std::string_view BOB_SETTING_NAME = "bob";
 constexpr std::string_view BOB_PERIOD_SETTING_NAME = "bob_period_ms";
 constexpr std::string_view NOVA_REACH_SETTING_NAME = "nova_reach";
 constexpr std::string_view NOVA_SETTING_NAME = "nova_ms";
-constexpr engine::WholeNumberRange STAND_X_RANGE{
-    .lowest = 0, .highest = static_cast<std::int64_t>(PLAYFIELD_WIDTH)};
 constexpr engine::WholeNumberRange JUMP_RANGE{
     .lowest = 1, .highest = static_cast<std::int64_t>(PLAY_AREA_HEIGHT / 2.0F)};
-constexpr engine::WholeNumberRange BOB_RANGE{
-    .lowest = 0, .highest = static_cast<std::int64_t>(ENEMY_PATTERN_ROOM)};
-constexpr engine::WholeNumberRange BOB_PERIOD_RANGE{.lowest = 1,
-                                                    .highest = 60000};
-constexpr engine::WholeNumberRange NOVA_REACH_RANGE{
-    .lowest = 0, .highest = static_cast<std::int64_t>(PLAYFIELD_WIDTH)};
 constexpr std::array BYDOMANCER_SETTINGS{
-    BehaviourSetting{.name = STAND_X_SETTING_NAME, .range = STAND_X_RANGE},
+    BehaviourSetting{.name = STAND_X_SETTING_NAME,
+                     .range = PLAYFIELD_SPAN_RANGE},
     BehaviourSetting{.name = JUMP_SETTING_NAME, .range = JUMP_RANGE},
-    BehaviourSetting{.name = BOB_SETTING_NAME, .range = BOB_RANGE},
-    BehaviourSetting{.name = BOB_PERIOD_SETTING_NAME,
-                     .range = BOB_PERIOD_RANGE},
+    BehaviourSetting{.name = BOB_SETTING_NAME, .range = AMPLITUDE_RANGE},
+    BehaviourSetting{.name = BOB_PERIOD_SETTING_NAME, .range = PERIOD_RANGE},
     BehaviourSetting{.name = REST_SETTING_NAME, .range = REST_RANGE},
     BehaviourSetting{.name = SIGNAL_SETTING_NAME, .range = PHASE_RANGE},
     BehaviourSetting{.name = STRIKE_SETTING_NAME, .range = PHASE_RANGE},
     BehaviourSetting{.name = RECOVER_SETTING_NAME, .range = RECOVER_RANGE},
     BehaviourSetting{.name = NOVA_REACH_SETTING_NAME,
-                     .range = NOVA_REACH_RANGE},
+                     .range = PLAYFIELD_SPAN_RANGE},
     BehaviourSetting{.name = NOVA_SETTING_NAME, .range = PHASE_RANGE}};
 
 /** @brief Where each setting is among the values of BehaviourView::settings.
- */
+ * The strike and the recover of the orb follow its signal (see
+ * timingsAt()). */
 constexpr std::size_t STAND_X_SETTING = 0;
 constexpr std::size_t JUMP_SETTING = 1;
 constexpr std::size_t BOB_SETTING = 2;
 constexpr std::size_t BOB_PERIOD_SETTING = 3;
 constexpr std::size_t BYDOMANCER_REST_SETTING = 4;
 constexpr std::size_t BYDOMANCER_SIGNAL_SETTING = 5;
-constexpr std::size_t BYDOMANCER_STRIKE_SETTING = 6;
-constexpr std::size_t BYDOMANCER_RECOVER_SETTING = 7;
 constexpr std::size_t NOVA_REACH_SETTING = 8;
 constexpr std::size_t NOVA_SETTING = 9;
 

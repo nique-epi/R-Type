@@ -31,7 +31,6 @@ constexpr std::uint32_t BYDO_POINTS = 200;
 /** @brief A Bydo with four health points that is fragile in the recover of
  * its attack 0, as the Drillback is while stunned. */
 constexpr int FOUR_HEALTH_POINTS = 4;
-constexpr int THREE_HEALTH_POINTS_LEFT = 3;
 constexpr ActionKey STUNNED{.attack = 0, .phase = EnemyPhase::Recover};
 constexpr ActionKey CHARGING{.attack = 0, .phase = EnemyPhase::Strike};
 

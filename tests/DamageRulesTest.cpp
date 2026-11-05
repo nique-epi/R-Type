@@ -52,7 +52,6 @@ using rtype::game::testing::SECOND_PLAYER_NUMBER;
 using rtype::game::testing::SHIP_ID;
 using rtype::game::testing::STUNNED;
 using rtype::game::testing::THREE_HEALTH_POINTS;
-using rtype::game::testing::THREE_HEALTH_POINTS_LEFT;
 
 /**
  * Given a Bydo with three health points and a missile
@@ -334,5 +333,5 @@ TEST(DamageRules, AFragileEnemyOutOfItsActionLosesOnePoint) {
 
   ASSERT_NE(damage.scene.components.get<Health>(bydo), nullptr);
   EXPECT_EQ(damage.scene.components.get<Health>(bydo)->points,
-            THREE_HEALTH_POINTS_LEFT);
+            THREE_HEALTH_POINTS);
 }

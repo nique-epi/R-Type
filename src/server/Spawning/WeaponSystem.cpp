@@ -6,6 +6,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include "BehaviourConstants.hpp"
 #include "BodyPlacement.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
@@ -106,25 +107,14 @@ std::optional<ProjectileLaunch> launchOf(const WeaponShot& shot,
       .owner = owner};
 }
 
-/**
- * @returns The EntitySpawned of the projectile made from @p launch, which was
- * given @p networkId.
- */
-network::EntitySpawned spawnOf(std::uint32_t networkId,
-                               const ProjectileLaunch& launch) {
-  return entitySpawnedOf(
-      networkId, game::EntityTypeNumber{.number = launch.sheet.get().number},
-      launch.start);
-}
-
 /** @returns Where the shard @p index of @p pending appears and steers from:
  * SHARD_START_DISTANCE from the center of the projectile, along the direction
  * of that shard, y growing downwards. */
 game::BodyPlacement shardPlacementOf(const PendingBurst& pending,
                                      std::size_t index) {
   const float angle = FIRST_SHARD_ANGLE_RADIANS +
-                      (SHARD_SPREAD_RADIANS * static_cast<float>(index) /
-                       static_cast<float>(pending.count));
+                      (game::FULL_TURN_RADIANS * static_cast<float>(index) /
+                       static_cast<float>(pending.burst.count));
   const game::Position start{
       .x = pending.center.x + (SHARD_START_DISTANCE * std::cos(angle)),
       .y = pending.center.y - (SHARD_START_DISTANCE * std::sin(angle))};
@@ -185,10 +175,19 @@ std::optional<network::EntitySpawned> WeaponSystem::spawnProjectile(
   if (!launch.has_value()) {
     return std::nullopt;
   }
+  return spawnAt(
+      launch->sheet.get(),
+      game::BodyPlacement{.position = launch->start, .origin = launch->start},
+      launch->owner);
+}
+
+std::optional<network::EntitySpawned> WeaponSystem::spawnAt(
+    const game::EntitySheet& sheet, game::BodyPlacement placement,
+    std::optional<std::uint8_t> owner) {
   try {
-    return spawnOf(
-        world_->spawn(launch->sheet.get(), launch->start, launch->owner),
-        *launch);
+    return entitySpawnedOf(world_->spawnFrom(sheet, placement, owner),
+                           game::EntityTypeNumber{.number = sheet.number},
+                           placement.position);
   } catch (const engine::NetworkIdExhaustedException&) {
     logger_.warn("no projectile fired: every network id was given");
     return std::nullopt;
@@ -210,16 +209,18 @@ void WeaponSystem::collectBursts() {
         if (burst.ticksLeft > 0) {
           --burst.ticksLeft;
         }
+        if (burst.ticksLeft > 0) {
+          return;
+        }
         const auto* const identity =
             components.get<game::NetworkIdentity>(projectile);
-        if (burst.ticksLeft > 0 || identity == nullptr) {
+        if (identity == nullptr) {
           return;
         }
         bursts_.push_back(PendingBurst{.projectile = projectile,
                                        .networkId = identity->networkId,
                                        .center = position,
-                                       .shardNumber = burst.shardNumber,
-                                       .count = burst.count});
+                                       .burst = burst});
       });
 }
 
@@ -228,7 +229,7 @@ void WeaponSystem::burst(const PendingBurst& pending) {
   events_->publish(
       game::EntityDestruction{.networkId = pending.networkId,
                               .cause = game::DestructionCause::Removed});
-  for (std::size_t index = 0; index < pending.count; ++index) {
+  for (std::size_t index = 0; index < pending.burst.count; ++index) {
     const std::optional<network::EntitySpawned> shard =
         spawnShard(pending, index);
     if (!shard.has_value()) {
@@ -240,19 +241,12 @@ void WeaponSystem::burst(const PendingBurst& pending) {
 
 std::optional<network::EntitySpawned> WeaponSystem::spawnShard(
     const PendingBurst& pending, std::size_t index) {
-  const game::EntitySheet* const sheet = types_->numbered(pending.shardNumber);
+  const game::EntitySheet* const sheet =
+      types_->numbered(pending.burst.shardNumber);
   if (sheet == nullptr) {
     return std::nullopt;
   }
-  const game::BodyPlacement placement = shardPlacementOf(pending, index);
-  try {
-    return entitySpawnedOf(world_->spawnFrom(*sheet, placement),
-                           game::EntityTypeNumber{.number = sheet->number},
-                           placement.position);
-  } catch (const engine::NetworkIdExhaustedException&) {
-    logger_.warn("no shard appeared: every network id was given");
-    return std::nullopt;
-  }
+  return spawnAt(*sheet, shardPlacementOf(pending, index), std::nullopt);
 }
 
 }  // namespace rtype::server

@@ -5,6 +5,7 @@ add_library(rtype_game_behaviours_movements STATIC
   DrillbackBehaviour.cpp
   ReaperBehaviour.cpp
   ScatterBehaviour.cpp
+  SineOffset.cpp
   StraightBehaviour.cpp
   WeaveBehaviour.cpp
 )

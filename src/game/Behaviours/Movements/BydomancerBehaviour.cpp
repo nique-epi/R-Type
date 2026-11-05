@@ -16,6 +16,7 @@
 #include "Intent.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
+#include "SineOffset.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game {
@@ -24,11 +25,7 @@ namespace {
 
 /** @returns The orb, timed by the settings of @p view. */
 ActionTimings orbOf(const BehaviourView& view) {
-  return ActionTimings{
-      .attack = ORB_ATTACK,
-      .signal = millisecondsSettingAt(view, BYDOMANCER_SIGNAL_SETTING),
-      .strike = millisecondsSettingAt(view, BYDOMANCER_STRIKE_SETTING),
-      .recover = millisecondsSettingAt(view, BYDOMANCER_RECOVER_SETTING)};
+  return timingsAt(view, ORB_ATTACK, BYDOMANCER_SIGNAL_SETTING);
 }
 
 /** @returns The nova, a strike of `nova_ms` only. */
@@ -56,10 +53,9 @@ float rowOf(const BehaviourView& view) {
 Direction floatingOf(const BehaviourView& view, float row) {
   const auto standX = static_cast<float>(settingAt(view, STAND_X_SETTING));
   const auto bob = static_cast<float>(settingAt(view, BOB_SETTING));
-  const float turns = std::chrono::duration<float>(view.age) /
-                      std::chrono::duration<float>(
-                          millisecondsSettingAt(view, BOB_PERIOD_SETTING));
-  const float height = row + (bob * std::sin(FULL_TURN_RADIANS * turns));
+  const float height =
+      row + sineOffset(view.age, bob,
+                       millisecondsSettingAt(view, BOB_PERIOD_SETTING));
   return Direction{.x = view.position.x > standX
                             ? horizontalShareTowards(standX, view)
                             : 0.0F,

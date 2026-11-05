@@ -1,8 +1,11 @@
 #include "ActionCycle.hpp"
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <optional>
 #include "ActionKey.hpp"
 #include "ActionTimings.hpp"
+#include "BehaviourSteering.hpp"
 #include "BehaviourView.hpp"
 #include "EnemyActionConstants.hpp"
 #include "EnemyPhase.hpp"
@@ -47,6 +50,15 @@ std::optional<EnemyPhase> phaseAfter(const ActionTimings& timings,
 }
 
 }  // namespace
+
+ActionTimings timingsAt(const BehaviourView& view, std::uint8_t attack,
+                        std::size_t signalSetting) {
+  return ActionTimings{
+      .attack = attack,
+      .signal = millisecondsSettingAt(view, signalSetting),
+      .strike = millisecondsSettingAt(view, signalSetting + 1),
+      .recover = millisecondsSettingAt(view, signalSetting + 2)};
+}
 
 Intent withStart(Intent intent, const ActionTimings& timings) {
   EnemyPhase first = EnemyPhase::Recover;

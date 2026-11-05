@@ -23,8 +23,7 @@ Intent ScatterBehaviour::steer(const BehaviourView& view) const {
   const float down = view.position.y - view.origin.y;
   const float length = std::hypot(across, down);
   if (length == 0.0F) {
-    return Intent{.direction = Direction{.x = LEFTWARD_STEERING, .y = 0.0F},
-                  .steered = true};
+    return Intent{.direction = LEFTWARD, .steered = true};
   }
   return Intent{
       .direction = Direction{.x = across / length, .y = down / length},

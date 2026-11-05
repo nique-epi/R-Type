@@ -18,7 +18,6 @@ constexpr std::array<std::int64_t, 6> REAPER_SETTINGS_OF_THE_SHEET{
 /** @brief The top speed of the Reaper, 300 units per second: 5 units in a
  * tick of a sixtieth of a second. */
 constexpr float REAPER_TOP_SPEED = 300.0F;
-constexpr float REAPER_UNITS_PER_TICK = 5.0F;
 
 /** @brief A ship, the point 160 units to its right where the Reaper strikes
  * from, and a Reaper 240 units further right on the same row. */

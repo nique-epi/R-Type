@@ -45,9 +45,8 @@ class World {
    * with the settings of the sheet; its Health, its ScoreValue and its Gun
    * when the sheet gives them, the gun waiting the first shot of the sheet;
    * its ShardBurst, its HurtZone, its SurvivesContact and its Fragile when
-   * the sheet
-   * declares them, and a
-   * CurrentAction, idle, for every body of side enemy.
+   * the sheet declares them, and a CurrentAction, idle, for every body of
+   * side enemy.
    * A body no behaviour pilots is the ship of a player: it also gets
    * STARTING_LIVES Lives and no protection in its Invulnerable, and is listed
    * as a ship. With @p owner, the entity gets a MissileOwner naming that

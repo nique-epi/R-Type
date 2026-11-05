@@ -16,15 +16,6 @@ namespace rtype::game {
 
 namespace {
 
-/** @returns The charge, timed by the settings of @p view. */
-ActionTimings chargeOf(const BehaviourView& view) {
-  return ActionTimings{
-      .attack = CHARGE_ATTACK,
-      .signal = millisecondsSettingAt(view, DRILLBACK_SIGNAL_SETTING),
-      .strike = millisecondsSettingAt(view, DRILLBACK_STRIKE_SETTING),
-      .recover = millisecondsSettingAt(view, DRILLBACK_RECOVER_SETTING)};
-}
-
 /** @returns The way the body of @p view drifts with the sky: to the left at
  * `drift_speed`, as a share of its top speed; nowhere without a top speed. */
 Direction driftOf(const BehaviourView& view) {
@@ -51,10 +42,9 @@ std::span<const BehaviourSetting> DrillbackBehaviour::settings() const {
 }
 
 Intent DrillbackBehaviour::steer(const BehaviourView& view) const {
-  const ActionTimings charge = chargeOf(view);
-  const Direction way = isCharging(view)
-                            ? Direction{.x = LEFTWARD_STEERING, .y = 0.0F}
-                            : driftOf(view);
+  const ActionTimings charge =
+      timingsAt(view, CHARGE_ATTACK, DRILLBACK_SIGNAL_SETTING);
+  const Direction way = isCharging(view) ? LEFTWARD : driftOf(view);
   const Intent moving{.direction = way, .steered = true};
   if (view.action.has_value()) {
     return withNextPhase(moving, view, charge);

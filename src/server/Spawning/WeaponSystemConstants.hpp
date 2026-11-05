@@ -12,9 +12,8 @@ constexpr std::string_view WEAPON_SYSTEM_LOGGER_NAME = "WeaponSystem";
 
 /** @brief The direction of the first shard of a burst, up and to the right,
  * in radians from the right; the others follow it, spread evenly over the
- * whole turn: four shards fly along the four diagonals. */
+ * whole turn (FULL_TURN_RADIANS): four shards fly along the four diagonals. */
 constexpr float FIRST_SHARD_ANGLE_RADIANS = std::numbers::pi_v<float> / 4.0F;
-constexpr float SHARD_SPREAD_RADIANS = 2.0F * std::numbers::pi_v<float>;
 
 /** @brief How far from the center of its projectile a shard appears, in
  * logical units: far enough for the scatter behaviour to know its way, near

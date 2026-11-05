@@ -5,8 +5,8 @@
 #include <cstdint>
 #include <string_view>
 #include "ActionSettingConstants.hpp"
+#include "BehaviourConstants.hpp"
 #include "BehaviourSetting.hpp"
-#include "PlayfieldConstants.hpp"
 #include "WholeNumberRange.hpp"
 
 namespace rtype::game {
@@ -19,11 +19,9 @@ namespace rtype::game {
  */
 constexpr std::string_view REACH_SETTING_NAME = "reach";
 constexpr std::string_view ALIGN_SETTING_NAME = "align";
-constexpr engine::WholeNumberRange REACH_RANGE{
-    .lowest = 0, .highest = static_cast<std::int64_t>(PLAYFIELD_WIDTH)};
 constexpr engine::WholeNumberRange ALIGN_RANGE{.lowest = 1, .highest = 512};
 constexpr std::array REAPER_SETTINGS{
-    BehaviourSetting{.name = REACH_SETTING_NAME, .range = REACH_RANGE},
+    BehaviourSetting{.name = REACH_SETTING_NAME, .range = PLAYFIELD_SPAN_RANGE},
     BehaviourSetting{.name = ALIGN_SETTING_NAME, .range = ALIGN_RANGE},
     BehaviourSetting{.name = REST_SETTING_NAME, .range = REST_RANGE},
     BehaviourSetting{.name = SIGNAL_SETTING_NAME, .range = PHASE_RANGE},
@@ -31,13 +29,11 @@ constexpr std::array REAPER_SETTINGS{
     BehaviourSetting{.name = RECOVER_SETTING_NAME, .range = RECOVER_RANGE}};
 
 /** @brief Where each setting is among the values of BehaviourView::settings.
- */
+ * The strike and the recover follow the signal (see timingsAt()). */
 constexpr std::size_t REACH_SETTING = 0;
 constexpr std::size_t ALIGN_SETTING = 1;
 constexpr std::size_t REAPER_REST_SETTING = 2;
 constexpr std::size_t REAPER_SIGNAL_SETTING = 3;
-constexpr std::size_t REAPER_STRIKE_SETTING = 4;
-constexpr std::size_t REAPER_RECOVER_SETTING = 5;
 
 /** @brief The attack number of the swing of the scythe, which the sheet of the
  * reaper animates and times its hurt boxes with. */

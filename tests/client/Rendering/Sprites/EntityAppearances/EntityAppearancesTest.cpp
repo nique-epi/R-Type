@@ -17,6 +17,8 @@
 #include "EntitySpriteConstants.hpp"
 #include "EntitySpriteTestConstants.hpp"
 #include "EntityTypesTestConstants.hpp"
+#include "HurtBox.hpp"
+#include "HurtZone.hpp"
 #include "SheetPixels.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "SpriteFrame.hpp"
@@ -33,6 +35,8 @@ using rtype::engine::Duration;
 using rtype::engine::MissingDataFileKeyException;
 using rtype::engine::UnknownDataFileKeyException;
 using rtype::game::EntitySheet;
+using rtype::game::HurtBox;
+using rtype::game::HurtZone;
 using rtype::game::SpriteFrame;
 using rtype::game::testing::BYDOMANCER_SHEET;
 using rtype::game::testing::DRIFTER_SHEET;
@@ -375,17 +379,16 @@ TEST(EntityAppearances, TheShippedShipStartsOnTheFirstPilotColorRow) {
 }
 
 /**
- * Given the shipped sheets, read by the client for their look and by the
- * server for their hitbox
+ * Given the shipped sheets whose every hurt box needs an action, read by the
+ * client for their look and by the server for their hitbox
  * When the idle frame of each is measured in logical units, each pixel of the
  * sheet covering BACKGROUND_PIXEL_SIZE
- * Then it is the box the server hits that type with, for every sheet but the
- * Voltjelly, whose frame also holds its aura
+ * Then it is the box the server hits that type with
  */
 TEST(EntityAppearances, EveryShippedSheetDrawsTheBoxTheServerHits) {
   const EntityAppearances appearances = shippedAppearances();
   for (const EntitySheet& sheet : shippedEntitySheets().all()) {
-    if (sheet.name == VOLTJELLY_SHEET) {
+    if (hurtsAllTheTime(sheet)) {
       continue;
     }
     SCOPED_TRACE(sheet.name);
@@ -401,23 +404,26 @@ TEST(EntityAppearances, EveryShippedSheetDrawsTheBoxTheServerHits) {
 }
 
 /**
- * Given the shipped sheet of the Voltjelly, whose aura hurts but lets a shot
- * through to its bell
- * When its idle frame and its hitbox are measured, each pixel of the sheet
- * covering BACKGROUND_PIXEL_SIZE
- * Then the frame is 40 by 40 pixels and the hitbox is the bell of 24 by 24
- * pixels at its center
+ * Given the shipped sheets with a hurt box that hurts all the time, as the aura
+ * of the Voltjelly
+ * When their idle frame is measured in logical units
+ * Then it holds the hitbox and every such box, all centered on the body: what
+ * hurts, or is hit, is drawn
  */
-TEST(EntityAppearances, TheVoltjellyDrawsItsAuraAroundTheBoxTheServerHits) {
+TEST(EntityAppearances, AFrameHoldsTheBoxesThatAlwaysHurt) {
   const EntityAppearances appearances = shippedAppearances();
-  const EntityAppearance* const look = appearances.named(VOLTJELLY_SHEET);
-  ASSERT_NE(look, nullptr);
-  const EntitySheet& sheet = shippedEntitySheets().named(VOLTJELLY_SHEET);
+  for (const EntitySheet& sheet : shippedEntitySheets().all()) {
+    if (!hurtsAllTheTime(sheet)) {
+      continue;
+    }
+    SCOPED_TRACE(sheet.name);
+    const EntityAppearance* const look = appearances.named(sheet.name);
+    ASSERT_NE(look, nullptr);
+    const SpriteFrame frame = look->idleFrames.front();
 
-  EXPECT_EQ(look->idleFrames.front().width, VOLTJELLY_FRAME_SIDE);
-  EXPECT_EQ(look->idleFrames.front().height, VOLTJELLY_FRAME_SIDE);
-  EXPECT_FLOAT_EQ(sheet.hitbox.width, static_cast<float>(VOLTJELLY_BELL_SIDE) *
-                                          BACKGROUND_PIXEL_SIZE);
-  EXPECT_FLOAT_EQ(sheet.hitbox.height, static_cast<float>(VOLTJELLY_BELL_SIDE) *
-                                           BACKGROUND_PIXEL_SIZE);
+    EXPECT_TRUE(holds(frame, sheet.hitbox));
+    for (const HurtBox& box : sheet.hurtZone.value_or(HurtZone{}).boxes) {
+      EXPECT_TRUE(!box.activeIn.has_value() || holds(frame, box));
+    }
+  }
 }

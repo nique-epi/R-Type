@@ -9,6 +9,7 @@
 #include "BehaviourView.hpp"
 #include "Direction.hpp"
 #include "Intent.hpp"
+#include "SineOffset.hpp"
 #include "WeaveBehaviourConstants.hpp"
 
 namespace rtype::game {
@@ -19,14 +20,10 @@ namespace {
  * of this tick, vertically, from the amplitude and the period of its
  * settings. */
 float weaveHeight(const BehaviourView& view) {
-  const float ageSeconds = std::chrono::duration<float>(view.age).count();
   const auto amplitude = static_cast<float>(settingAt(view, AMPLITUDE_SETTING));
-  const float periodSeconds =
-      std::chrono::duration<float>(
-          std::chrono::milliseconds{settingAt(view, PERIOD_SETTING)})
-          .count();
   return view.origin.y +
-         (amplitude * std::sin(FULL_TURN_RADIANS * ageSeconds / periodSeconds));
+         sineOffset(view.age, amplitude,
+                    millisecondsSettingAt(view, PERIOD_SETTING));
 }
 
 }  // namespace

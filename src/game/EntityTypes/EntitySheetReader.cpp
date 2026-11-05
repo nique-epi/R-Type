@@ -210,7 +210,6 @@ std::optional<BurstSheet> burstFrom(const engine::DataFileTable& gameplay) {
       .count = static_cast<std::uint8_t>(
           engine::wholeNumberAt(*burst, COUNT_KEY, SHARD_COUNT_RANGE)),
       .shard = engine::textAt(*burst, SHARD_KEY),
-      .shardNumber = 0,
       .shardPlace = engine::placeOfKey(*burst, SHARD_KEY)};
 }
 

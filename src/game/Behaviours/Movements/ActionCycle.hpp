@@ -1,11 +1,23 @@
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include "ActionTimings.hpp"
 #include "BehaviourView.hpp"
 #include "Intent.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game {
+
+/**
+ * @returns The attack @p attack, timed by three settings of the behaviour of
+ * @p view in a row, numbers of milliseconds: its signal at @p signalSetting,
+ * then its strike, then its recover.
+ * @throws MissingBehaviourSettingException as settingAt() does.
+ */
+[[nodiscard]] ActionTimings timingsAt(const BehaviourView& view,
+                                      std::uint8_t attack,
+                                      std::size_t signalSetting);
 
 /**
  * @returns @p intent asking to start the first phase of @p timings that lasts:
