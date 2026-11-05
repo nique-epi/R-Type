@@ -1,6 +1,7 @@
 #include "GameException.hpp"
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace rtype::game {
 
@@ -19,5 +20,11 @@ InvalidWaveCurveException::InvalidWaveCurveException()
           "A wave curve must bring at least one Bydo per wave, a time above "
           "zero between two Bydos no longer than in its first wave, and no "
           "negative cut or pause") {}
+
+UnknownBehaviourException::UnknownBehaviourException(std::string_view name)
+    : GameException("No behaviour is named " + std::string(name)) {}
+
+DuplicateBehaviourException::DuplicateBehaviourException(std::string_view name)
+    : GameException("A behaviour is already named " + std::string(name)) {}
 
 }  // namespace rtype::game

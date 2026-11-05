@@ -1,18 +1,19 @@
 #include "BydoKind.hpp"
 #include <cstdint>
+#include <string_view>
+#include "BehaviourConstants.hpp"
 #include "BydoPointsConstants.hpp"
-#include "MovementPattern.hpp"
 
 namespace rtype::game {
 
-PatternShape patternShapeOf(BydoKind kind) {
+std::string_view behaviourNameOf(BydoKind kind) {
   switch (kind) {
     case BydoKind::Drifter:
-      return PatternShape::Straight;
+      return STRAIGHT_BEHAVIOUR_NAME;
     case BydoKind::Weaver:
-      return PatternShape::Wave;
+      return WEAVE_BEHAVIOUR_NAME;
   }
-  return PatternShape::Straight;
+  return STRAIGHT_BEHAVIOUR_NAME;
 }
 
 std::uint32_t pointsOf(BydoKind kind) {

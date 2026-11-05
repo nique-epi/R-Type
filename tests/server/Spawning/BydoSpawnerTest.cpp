@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <string>
+#include <string_view>
 #include <vector>
+#include "BehaviourConstants.hpp"
 #include "BydoSpawner.hpp"
 #include "BydoSpawnerScene.hpp"
 #include "BydoSpawnerTestConstants.hpp"
@@ -9,7 +11,6 @@
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "JournalFile.hpp"
 #include "Logger.hpp"
-#include "MovementPattern.hpp"
 #include "PlayfieldConstants.hpp"
 #include "ServerException.hpp"
 #include "SpawningConstants.hpp"
@@ -18,9 +19,10 @@
 #include "game/Waves/WaveTestConstants.hpp"
 
 using rtype::game::BYDO_ROW_MARGIN;
-using rtype::game::PatternShape;
 using rtype::game::PLAY_AREA_HEIGHT;
 using rtype::game::PLAYFIELD_WIDTH;
+using rtype::game::STRAIGHT_BEHAVIOUR_NAME;
+using rtype::game::WEAVE_BEHAVIOUR_NAME;
 using rtype::game::testing::TEST_WAVE_CURVE;
 using rtype::game::testing::TICKS_OF_A_PAUSE;
 using rtype::game::testing::TICKS_TO_THE_WHOLE_FIRST_WAVE;
@@ -197,9 +199,9 @@ TEST(BydoSpawner, TheBydosTakeTheKindsOfTheirPlanInTurn) {
 
   BydoSpawnerScene::runTicks(spawner, TICKS_TO_THE_WHOLE_FIRST_WAVE);
 
-  const std::vector<PatternShape> shapes = scene.patternsOfTheBydos();
-  EXPECT_EQ(std::ranges::count(shapes, PatternShape::Straight), 2);
-  EXPECT_EQ(std::ranges::count(shapes, PatternShape::Wave), 1);
+  const std::vector<std::string_view> behaviours = scene.behavioursOfTheBydos();
+  EXPECT_EQ(std::ranges::count(behaviours, STRAIGHT_BEHAVIOUR_NAME), 2);
+  EXPECT_EQ(std::ranges::count(behaviours, WEAVE_BEHAVIOUR_NAME), 1);
 }
 
 /**
@@ -214,7 +216,7 @@ TEST(BydoSpawner, TheCycleStartsWithTheFirstKindItNames) {
 
   BydoSpawnerScene::runTicks(spawner, TICKS_TO_THE_FIRST_BYDO);
 
-  EXPECT_EQ(scene.patternsOfTheBydos(), std::vector{PatternShape::Wave});
+  EXPECT_EQ(scene.behavioursOfTheBydos(), std::vector{WEAVE_BEHAVIOUR_NAME});
 }
 
 /**
@@ -232,7 +234,7 @@ TEST(BydoSpawner, TheCycleCarriesOnIntoTheNextWave) {
 
   BydoSpawnerScene::runTicks(spawner, TICKS_OF_A_PAUSE);
 
-  EXPECT_EQ(scene.patternsOfTheBydos(), std::vector{PatternShape::Wave});
+  EXPECT_EQ(scene.behavioursOfTheBydos(), std::vector{WEAVE_BEHAVIOUR_NAME});
 }
 
 /**

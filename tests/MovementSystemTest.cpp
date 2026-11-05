@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <chrono>
 #include <cstdint>
 #include "ComponentRegistry.hpp"
 #include "Direction.hpp"
@@ -13,6 +12,7 @@
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
 #include "ShipMotion.hpp"
+#include "SteadyMotion.hpp"
 #include "TimeConstants.hpp"
 #include "TimeTestConstants.hpp"
 #include "Velocity.hpp"
@@ -30,16 +30,22 @@ using rtype::game::MovementSystem;
 using rtype::game::PLAYFIELD_WIDTH;
 using rtype::game::Position;
 using rtype::game::ShipMotion;
+using rtype::game::SteadyMotion;
 using rtype::game::Velocity;
 using rtype::game::testing::HALF_SECOND;
 using rtype::game::testing::HALF_SECOND_ARRIVAL_X;
 using rtype::game::testing::HALF_SECOND_ARRIVAL_Y;
+using rtype::game::testing::HALF_STEERING;
 using rtype::game::testing::POSITION_TOLERANCE_UNITS;
 using rtype::game::testing::runOneSecondAt;
 using rtype::game::testing::SPEED_X;
 using rtype::game::testing::SPEED_Y;
 using rtype::game::testing::START_X;
 using rtype::game::testing::START_Y;
+using rtype::game::testing::STEADY_ARRIVAL_X;
+using rtype::game::testing::STEADY_ARRIVAL_Y;
+using rtype::game::testing::STEADY_TOP_SPEED;
+using rtype::game::testing::TWICE_THE_FULL_STEERING;
 
 /**
  * Given an entity at (100, 200) moving at (120, -60) units per second
@@ -212,4 +218,51 @@ TEST(MovementSystem, BodyWithoutIntentIsNotMovedByIt) {
   const Position* position = components.get<Position>(body);
   ASSERT_NE(position, nullptr);
   EXPECT_FLOAT_EQ(position->x, START_X);
+}
+
+/**
+ * Given a steady body at (100, 200), at 240 units per second, whose Intent asks
+ * for the full speed left and half of it down
+ * When half a second of movement is applied
+ * Then it moved 120 units left and 60 down, to (-20, 260)
+ */
+TEST(MovementSystem, SteadyBodyMovesByItsTopSpeedTimesItsDirection) {
+  EntityRegistry entities;
+  ComponentRegistry components(entities);
+  const Entity body = entities.create();
+  components.add(body, Position{.x = START_X, .y = START_Y});
+  components.add(body, SteadyMotion{.topSpeed = STEADY_TOP_SPEED});
+  components.add(body, Intent{.direction = Direction{.x = -FULL_STEERING,
+                                                     .y = HALF_STEERING}});
+  MovementSystem movement;
+
+  movement.update(components, HALF_SECOND);
+
+  const Position* position = components.get<Position>(body);
+  ASSERT_NE(position, nullptr);
+  EXPECT_FLOAT_EQ(position->x, STEADY_ARRIVAL_X);
+  EXPECT_FLOAT_EQ(position->y, STEADY_ARRIVAL_Y);
+}
+
+/**
+ * Given a steady body at 240 units per second whose Intent asks for twice the
+ * full speed left
+ * When half a second of movement is applied
+ * Then it moved 120 units left: a body never goes faster than its top speed
+ */
+TEST(MovementSystem, SteadyBodyNeverGoesFasterThanItsTopSpeed) {
+  EntityRegistry entities;
+  ComponentRegistry components(entities);
+  const Entity body = entities.create();
+  components.add(body, Position{.x = START_X, .y = START_Y});
+  components.add(body, SteadyMotion{.topSpeed = STEADY_TOP_SPEED});
+  components.add(body,
+                 Intent{.direction = Direction{.x = -TWICE_THE_FULL_STEERING}});
+  MovementSystem movement;
+
+  movement.update(components, HALF_SECOND);
+
+  const Position* position = components.get<Position>(body);
+  ASSERT_NE(position, nullptr);
+  EXPECT_FLOAT_EQ(position->x, STEADY_ARRIVAL_X);
 }

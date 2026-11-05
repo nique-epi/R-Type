@@ -28,4 +28,18 @@ constexpr std::int64_t NANOSECONDS_PER_SECOND = 1'000'000'000;
  * in logical units. */
 constexpr float POSITION_TOLERANCE_UNITS = 1e-4F;
 
+/** @brief The top speed of a steady body of the movement tests, in logical
+ * units per second. */
+constexpr float STEADY_TOP_SPEED = 240.0F;
+
+/** @brief A share of half the top speed, and one beyond the full speed. */
+constexpr float HALF_STEERING = 0.5F;
+constexpr float TWICE_THE_FULL_STEERING = 2.0F;
+
+/** @brief Where a steady body from (START_X, START_Y) at 240 units per second
+ * arrives after HALF_SECOND: full speed left is 120 units, half speed down 60.
+ */
+constexpr float STEADY_ARRIVAL_X = -20.0F;
+constexpr float STEADY_ARRIVAL_Y = 260.0F;
+
 }  // namespace rtype::game::testing

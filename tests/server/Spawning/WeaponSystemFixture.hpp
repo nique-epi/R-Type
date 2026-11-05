@@ -3,9 +3,9 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <vector>
-#include "BydoControlSystem.hpp"
 #include "EntitySpawned.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PilotSystem.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "WeaponSystem.hpp"
@@ -53,7 +53,7 @@ class WeaponSystemFixture : public ::testing::Test {
   PlayerRoster roster_;
   std::vector<network::OutgoingDatagram> sent_;
   WeaponSystem weapons_;
-  game::BydoControlSystem bydoControl_;
+  game::PilotSystem pilots_;
 };
 
 }  // namespace rtype::server::testing

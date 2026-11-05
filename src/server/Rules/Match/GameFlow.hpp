@@ -48,11 +48,10 @@ namespace rtype::server {
  * WorldState goes out meanwhile.
  *
  * While the game is in progress, each tick first makes the ship of every away
- * player want nothing (see silenceAwayShips) and writes the Intent of every
- * Bydo (see BydoControlSystem, one of the systems of the world), while the
- * Intent of the ship of a player is its last
- * input (see steerShipByInput), then runs
- * the systems of the world (PatternSystem, MovementSystem, PlayfieldExitSystem,
+ * player want nothing (see silenceAwayShips), while the Intent of the ship of
+ * a player is its last input (see steerShipByInput), then runs the systems of
+ * the world (PilotSystem, which lets the behaviour of every Bydo write its
+ * Intent, MovementSystem, PlayfieldExitSystem,
  * which removes a Bydo or a missile of a Bydo that left on the left, or a
  * missile of a player that left on the right, and announces it on the event
  * bus, then CollisionSystem), then fires the Gun of every ship and Bydo whose

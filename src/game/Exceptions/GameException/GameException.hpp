@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace rtype::game {
 
@@ -38,6 +39,23 @@ class InvalidRandomUnitException : public GameException {
 class InvalidWaveCurveException : public GameException {
  public:
   InvalidWaveCurveException();
+};
+
+/**
+ * @brief Thrown when a body is given a behaviour no BehaviourRegistry holds.
+ */
+class UnknownBehaviourException : public GameException {
+ public:
+  explicit UnknownBehaviourException(std::string_view name);
+};
+
+/**
+ * @brief Thrown when a BehaviourRegistry is given a second behaviour under a
+ * name it already holds.
+ */
+class DuplicateBehaviourException : public GameException {
+ public:
+  explicit DuplicateBehaviourException(std::string_view name);
 };
 
 }  // namespace rtype::game

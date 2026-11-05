@@ -9,6 +9,7 @@
 #include "ShipControlConstants.hpp"
 #include "ShipControlFixtures.hpp"
 #include "ShipControlTestConstants.hpp"
+#include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
 #include "TimeConstants.hpp"
 
