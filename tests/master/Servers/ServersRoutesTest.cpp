@@ -287,8 +287,10 @@ TEST_F(ServersRoutesFixture, AFullGameIsFullAndAFinishedGameIsInGame) {
   ASSERT_TRUE(answer);
   const nlohmann::json games =
       nlohmann::json::parse(answer->body).at(GAMES_MEMBER_NAME);
-  EXPECT_EQ(games.at(0).at(STATE_MEMBER_NAME), FULL_STATE_NAME);
-  EXPECT_EQ(games.at(1).at(STATE_MEMBER_NAME), IN_GAME_STATE_NAME);
+  EXPECT_EQ(games.at(0).at(STATE_MEMBER_NAME).get<std::string>(),
+            std::string{FULL_STATE_NAME});
+  EXPECT_EQ(games.at(1).at(STATE_MEMBER_NAME).get<std::string>(),
+            std::string{IN_GAME_STATE_NAME});
 }
 
 /**
@@ -308,8 +310,9 @@ TEST_F(ServersRoutesFixture, AStartingGameIsInGame) {
   EXPECT_EQ(nlohmann::json::parse(answer->body)
                 .at(GAMES_MEMBER_NAME)
                 .at(0)
-                .at(STATE_MEMBER_NAME),
-            IN_GAME_STATE_NAME);
+                .at(STATE_MEMBER_NAME)
+                .get<std::string>(),
+            std::string{IN_GAME_STATE_NAME});
 }
 
 /**
