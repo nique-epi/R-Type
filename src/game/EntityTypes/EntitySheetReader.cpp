@@ -25,6 +25,7 @@
 #include "MotionSheet.hpp"
 #include "PilotSheet.hpp"
 #include "SheetText.hpp"
+#include "SheetTextReading.hpp"
 #include "ShipControlConstants.hpp"
 #include "TimeConstants.hpp"
 #include "WholeNumberRange.hpp"
@@ -46,12 +47,10 @@ std::size_t nearestTicksIn(engine::Duration duration) {
                                   engine::SIMULATION_TICK_DURATION);
 }
 
-/** @returns The table `[gameplay]` of @p root, once the root holds exactly
- * `gameplay` and `appearance`, both tables, and `[gameplay]` no unknown key. */
+/** @returns The table `[gameplay]` of @p root, as sheetTableOf() reads it,
+ * once it holds no unknown key. */
 engine::DataFileTable gameplayTableOf(const engine::DataFileTable& root) {
-  engine::refuseUnknownKeys(root, SHEET_ROOT_KEYS);
-  static_cast<void>(engine::tableAt(root, APPEARANCE_KEY));
-  engine::DataFileTable gameplay = engine::tableAt(root, GAMEPLAY_KEY);
+  engine::DataFileTable gameplay = sheetTableOf(root, GAMEPLAY_KEY);
   engine::refuseUnknownKeys(gameplay, GAMEPLAY_KEYS);
   return gameplay;
 }

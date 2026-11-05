@@ -8,14 +8,6 @@
 namespace rtype::client {
 
 /**
- * @brief The two tables the root of an entity sheet holds: the server reads
- * the first, the client the second. Any other key of the root is refused.
- */
-constexpr std::string_view GAMEPLAY_TABLE_KEY = "gameplay";
-constexpr std::string_view APPEARANCE_TABLE_KEY = "appearance";
-constexpr std::array SHEET_ROOT_KEYS{GAMEPLAY_TABLE_KEY, APPEARANCE_TABLE_KEY};
-
-/**
  * @brief The keys of `[appearance]`: the asset id of its sprite sheet, and
  * the table of its idle animation. Each is required, any other is refused.
  */

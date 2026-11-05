@@ -2,7 +2,9 @@
 
 #include <filesystem>
 #include <span>
+#include <string_view>
 #include <vector>
+#include "DataFileTable.hpp"
 #include "SheetText.hpp"
 
 namespace rtype::game {
@@ -28,5 +30,20 @@ namespace rtype::game {
  * ENTITY_TYPE_NAME_CHARACTERS.
  */
 void checkSheetNames(std::span<const SheetText> texts);
+
+/**
+ * @brief Reads the root of a sheet for one of the two programs: the server
+ * asks for GAMEPLAY_KEY, the client for APPEARANCE_KEY, and neither reads the
+ * table of the other, only checks it is there.
+ * @param root The root of the sheet, as engine::rootOf() returns it.
+ * @param key One of SHEET_ROOT_KEYS.
+ * @returns The table @p key of @p root, once the root holds no other key than
+ * SHEET_ROOT_KEYS and the other table of SHEET_ROOT_KEYS is a table.
+ * @throws engine::UnknownDataFileKeyException for another key of the root;
+ * engine::MissingDataFileKeyException or engine::DataFileTableExpectedException
+ * when the other table, then the table @p key, is missing or is not a table.
+ */
+[[nodiscard]] engine::DataFileTable sheetTableOf(
+    const engine::DataFileTable& root, std::string_view key);
 
 }  // namespace rtype::game

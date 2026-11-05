@@ -15,6 +15,7 @@
 #include "DataFileTable.hpp"
 #include "EntityAppearance.hpp"
 #include "EntityAppearanceConstants.hpp"
+#include "EntitySheetConstants.hpp"
 #include "SheetRow.hpp"
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
@@ -75,10 +76,8 @@ EntityAppearance appearanceFrom(const engine::DataFileTable& appearance) {
  * @p source; `[gameplay]` must be there, and is not read. */
 EntityAppearance appearanceIn(std::string_view text, std::string_view source) {
   const toml::table root = engine::parseDataFile(text, source);
-  const engine::DataFileTable sheet = engine::rootOf(root, source);
-  engine::refuseUnknownKeys(sheet, SHEET_ROOT_KEYS);
-  static_cast<void>(engine::tableAt(sheet, GAMEPLAY_TABLE_KEY));
-  return appearanceFrom(engine::tableAt(sheet, APPEARANCE_TABLE_KEY));
+  return appearanceFrom(
+      game::sheetTableOf(engine::rootOf(root, source), game::APPEARANCE_KEY));
 }
 
 }  // namespace
