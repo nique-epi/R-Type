@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "BydoSpawner.hpp"
 #include "BydoSpawnerParts.hpp"
 #include "CollisionRules.hpp"
 #include "ConnectedPlayer.hpp"
@@ -40,17 +41,18 @@ bool hasALifeLeft(game::World& world, const ConnectedPlayer* player) {
   return livesOf(world, *player) > 0;
 }
 
+/** @brief Why a game finished, and how it ended. */
+struct GameEnding {
+  std::string_view reason;
+  GameOutcome outcome{GameOutcome::Defeat};
+};
+
 /**
- * @returns Why a game in @p state, played by @p roster in @p world, must
- * finish now: it is in progress with no player left in it, or with no player
- * left who has a life. Nothing otherwise.
+ * @returns Why a game played by @p roster in @p world is lost: no player is
+ * left in it, or no player left has a life. Nothing otherwise.
  */
-std::optional<std::string_view> reasonToFinish(GameState state,
-                                               PlayerRoster& roster,
-                                               game::World& world) {
-  if (state != GameState::InProgress) {
-    return std::nullopt;
-  }
+std::optional<std::string_view> reasonToLose(PlayerRoster& roster,
+                                             game::World& world) {
   const ConnectedPlayers players = roster.connected();
   if (players.empty()) {
     return NO_PLAYER_LEFT_FINISH_REASON;
@@ -59,6 +61,26 @@ std::optional<std::string_view> reasonToFinish(GameState state,
         return hasALifeLeft(world, player);
       })) {
     return NO_LIFE_LEFT_FINISH_REASON;
+  }
+  return std::nullopt;
+}
+
+/**
+ * @returns How the game in progress played by @p roster in @p world, whose
+ * Bydos come from @p spawner, ends now: lost when no player is left or none
+ * of them has a life, otherwise won when the last wave of the level is over.
+ * The loss comes first, so a game lost on the tick its last wave ends is
+ * lost. Nothing when it goes on.
+ */
+std::optional<GameEnding> endingOf(PlayerRoster& roster, game::World& world,
+                                   const BydoSpawner& spawner) {
+  const std::optional<std::string_view> loss = reasonToLose(roster, world);
+  if (loss.has_value()) {
+    return GameEnding{.reason = *loss, .outcome = GameOutcome::Defeat};
+  }
+  if (spawner.lastWaveFinished()) {
+    return GameEnding{.reason = LAST_WAVE_OVER_FINISH_REASON,
+                      .outcome = GameOutcome::Victory};
   }
   return std::nullopt;
 }
@@ -142,14 +164,17 @@ void GameFlow::finish() {
 }
 
 void GameFlow::finishIfOver() {
-  const std::optional<std::string_view> reason =
-      reasonToFinish(state_, game_.roster.get(), world());
-  if (!reason.has_value()) {
+  if (state_ != GameState::InProgress) {
     return;
   }
-  logger_.info("game finished: ", *reason);
+  const std::optional<GameEnding> ending =
+      endingOf(game_.roster.get(), world(), *bydoSpawner_);
+  if (!ending.has_value()) {
+    return;
+  }
+  logger_.info("game finished: ", ending->reason);
   finish();
-  replication_.onGameFinished(GameOutcome::Defeat);
+  replication_.onGameFinished(ending->outcome);
 }
 
 void GameFlow::buildWorld() {

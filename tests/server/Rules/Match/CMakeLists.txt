@@ -1,3 +1,3 @@
-rtype_add_test(NAME server_game_flow_tests SOURCES GameFlowTest.cpp GameFlowFixture.cpp ${RTYPE_TEST_SOURCE_DIR}/server/Spawning/WavePlanFixtures.cpp LIBS rtype_server_rules_match rtype_server_replication_module rtype_server_sessions_tracking rtype_game_spawning_constants server_test_datagrams)
+rtype_add_test(NAME server_game_flow_tests SOURCES GameFlowTest.cpp GameFlowVictoryTest.cpp GameFlowFixture.cpp ${RTYPE_TEST_SOURCE_DIR}/server/Spawning/WavePlanFixtures.cpp LIBS rtype_server_rules_match rtype_server_replication_module rtype_server_sessions_tracking rtype_game_spawning_constants server_test_datagrams)
 target_include_directories(server_game_flow_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/server)
 target_sources(server_rules_tests PRIVATE WorldSlotTest.cpp)

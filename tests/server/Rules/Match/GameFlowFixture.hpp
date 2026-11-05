@@ -3,15 +3,19 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <initializer_list>
+#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "EventBus.hpp"
 #include "GameContext.hpp"
+#include "GameEnded.hpp"
 #include "GameFlow.hpp"
 #include "GameReplication.hpp"
+#include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyKeeper.hpp"
 #include "SessionHooks.hpp"
 #include "SystemScheduler.hpp"
+#include "WavePlan.hpp"
 #include "WorldSlot.hpp"
 
 namespace rtype::server::testing {
@@ -25,6 +29,9 @@ namespace rtype::server::testing {
 class GameFlowFixture : public ::testing::Test {
  public:
   GameFlowFixture();
+
+  /** @brief A game flow whose Bydos come in @p waves. */
+  explicit GameFlowFixture(WavePlan waves);
 
  protected:
   /** @brief Connects the player at @p index and gives it a ship. */
@@ -46,6 +53,13 @@ class GameFlowFixture : public ::testing::Test {
 
   void runTicks(std::size_t count);
 
+  /** @brief Destroys every Bydo of the world, as if they were all killed. */
+  void clearTheBydos();
+
+  /** @returns The GameEnded sent to the player at @p index, oldest first. */
+  [[nodiscard]] std::vector<network::GameEnded> endsSentTo(
+      std::size_t index) const;
+
   [[nodiscard]] GameFlow& flow();
   [[nodiscard]] PlayerRoster& roster();
 
@@ -56,9 +70,19 @@ class GameFlowFixture : public ::testing::Test {
   WorldSlot world_;
   PlayerRoster roster_;
   ReadyKeeper readyKeeper_;
+  std::vector<network::OutgoingDatagram> sent_;
   GameReplication replication_;
   GameContext context_;
   GameFlow flow_;
+};
+
+/**
+ * @brief A game flow whose level holds one wave: the game is won once the
+ * first wave is over.
+ */
+class GameFlowOneWaveLevelFixture : public GameFlowFixture {
+ public:
+  GameFlowOneWaveLevelFixture();
 };
 
 }  // namespace rtype::server::testing
