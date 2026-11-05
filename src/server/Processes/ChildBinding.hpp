@@ -41,11 +41,13 @@ class ChildBinding {
 
 #if defined(_WIN32)
   /** @brief Called by Boost.Process after CreateProcess: assigns the new
-   * process to the job. */
+   * process to the job. It always returns an empty error: Boost.Process
+   * ignores the result, but only a hook that returns an error_code is taken
+   * for an initializer on Windows; lastProcessWasBound() tells the outcome. */
   // NOLINTNEXTLINE(readability-identifier-naming)
-  void on_success(boost::process::v2::default_process_launcher& launcher,
-                  const std::filesystem::path& program,
-                  std::wstring& commandLine);
+  boost::system::error_code on_success(
+      boost::process::v2::default_process_launcher& launcher,
+      const std::filesystem::path& program, std::wstring& commandLine);
 #else
   /** @brief Called by Boost.Process in the child, between fork and exec: asks
    * for SIGTERM when the parent dies (Linux). A returned error stops the exec

@@ -29,12 +29,13 @@ ChildBinding::~ChildBinding() {
   }
 }
 
-void ChildBinding::on_success(
+boost::system::error_code ChildBinding::on_success(
     boost::process::v2::default_process_launcher& launcher,
     [[maybe_unused]] const std::filesystem::path& program,
     [[maybe_unused]] std::wstring& commandLine) {
   lastProcessBound_ = ::AssignProcessToJobObject(
                           job_, launcher.process_information.hProcess) != 0;
+  return {};
 }
 
 bool ChildBinding::lastProcessWasBound() const { return lastProcessBound_; }

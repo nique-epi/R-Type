@@ -17,6 +17,7 @@ target_include_directories(rtype_server_processes PUBLIC ${CMAKE_CURRENT_SOURCE_
 target_compile_definitions(rtype_server_processes
   PUBLIC
     BOOST_PROCESS_USE_STD_FS
+    $<$<PLATFORM_ID:Windows>:WIN32_LEAN_AND_MEAN>
   PRIVATE
     $<$<PLATFORM_ID:Windows>:NOMINMAX>
 )
