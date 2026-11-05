@@ -60,8 +60,10 @@ void ServerSupervisedGamesFixture::stopSupervisor() { application_->stop(); }
 void ServerSupervisedGamesFixture::runTick(
     const std::vector<IncomingDatagram>& players,
     const std::vector<IncomingDatagram>& requests) {
-  network().tickDatagrams().begin(rtype::server::ReceivedDatagrams{
-      .players = players, .connectionRequests = requests});
+  network().tickDatagrams().begin(
+      rtype::server::ReceivedDatagrams{.players = players,
+                                       .connectionRequests = requests,
+                                       .informationRequests = {}});
   application_->runStages(rtype::engine::SIMULATION_TICK_DURATION);
   network().tickDatagrams().end();
 }
