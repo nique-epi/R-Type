@@ -1,5 +1,4 @@
 #include "BydomancerBehaviour.hpp"
-#include <chrono>
 #include <cmath>
 #include <span>
 #include <string_view>
@@ -14,7 +13,6 @@
 #include "Direction.hpp"
 #include "EnemyPhase.hpp"
 #include "Intent.hpp"
-#include "PlayfieldConstants.hpp"
 #include "Position.hpp"
 #include "SineOffset.hpp"
 #include "TimeConstants.hpp"
@@ -44,7 +42,7 @@ float rowOf(const BehaviourView& view) {
     return view.origin.y;
   }
   const auto jump = static_cast<float>(settingAt(view, JUMP_SETTING));
-  return view.origin.y < PLAY_AREA_HEIGHT / 2.0F ? view.origin.y + jump
+  return view.origin.y < MIDDLE_OF_THE_PLAY_AREA ? view.origin.y + jump
                                                  : view.origin.y - jump;
 }
 
@@ -113,7 +111,8 @@ std::span<const BehaviourSetting> BydomancerBehaviour::settings() const {
 Intent BydomancerBehaviour::steer(const BehaviourView& view) const {
   const float row = rowOf(view);
   const auto jump = static_cast<float>(settingAt(view, JUMP_SETTING));
-  if (view.wounded && std::abs(view.position.y - row) > jump / 2.0F) {
+  if (view.wounded &&
+      std::abs(view.position.y - row) > jump * LEAP_TOLERANCE_SHARE) {
     return Intent{.steered = true,
                   .jumpsTo = Position{.x = view.position.x, .y = row}};
   }

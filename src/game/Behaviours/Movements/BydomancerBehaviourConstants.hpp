@@ -28,8 +28,14 @@ constexpr std::string_view BOB_SETTING_NAME = "bob";
 constexpr std::string_view BOB_PERIOD_SETTING_NAME = "bob_period_ms";
 constexpr std::string_view NOVA_REACH_SETTING_NAME = "nova_reach";
 constexpr std::string_view NOVA_SETTING_NAME = "nova_ms";
+/** @brief The middle of the area of play, in logical units: a bydomancer
+ * above it leaps down, one below it leaps up. */
+constexpr float MIDDLE_OF_THE_PLAY_AREA = PLAY_AREA_HEIGHT / 2.0F;
 constexpr engine::WholeNumberRange JUMP_RANGE{
-    .lowest = 1, .highest = static_cast<std::int64_t>(PLAY_AREA_HEIGHT / 2.0F)};
+    .lowest = 1, .highest = static_cast<std::int64_t>(MIDDLE_OF_THE_PLAY_AREA)};
+/** @brief The share of `jump` a wounded bydomancer may be away from its
+ * row before it leaps there: past half the way, it has not leapt yet. */
+constexpr float LEAP_TOLERANCE_SHARE = 0.5F;
 constexpr std::array BYDOMANCER_SETTINGS{
     BehaviourSetting{.name = STAND_X_SETTING_NAME,
                      .range = PLAYFIELD_SPAN_RANGE},

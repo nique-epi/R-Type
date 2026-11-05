@@ -54,7 +54,7 @@ engine::Bounds shipBoundsAt(const Position& position, const CollisionBox& box) {
  * is in @p current, overlaps @p ship. */
 bool isHurt(const HurtZone& zone, const Position& position,
             const CurrentAction* current, const ShipBounds& ship) {
-  return std::ranges::any_of(zone.boxes, [&](const HurtBox& box) {
+  return std::ranges::any_of(zone.boxes, [&](const HurtBox& box) noexcept {
     return isActive(box, current) &&
            engine::overlaps(hurtBoxBounds(box, position), ship.bounds);
   });

@@ -174,7 +174,7 @@ TEST_F(PilotSystemFixture, AStartedActionStartsItsClockAtZero) {
 TEST_F(PilotSystemFixture, AnEndedActionStartsTheIdleClockAtZero) {
   const ActionRequestingBehaviour behaviour{Intent{.endsAction = true}};
   const Entity enemy = addEnemy(behaviour, SOME_ENEMY_NETWORK_ID);
-  CurrentAction* const current = components().get<CurrentAction>(enemy);
+  auto* const current = components().get<CurrentAction>(enemy);
   current->key = STRIKE_OF_ATTACK_THREE;
   current->since = A_SECOND_IN_ITS_PHASE;
 

@@ -1,5 +1,4 @@
 #include "WorldContactPartsFixtures.hpp"
-#include <cstdint>
 #include <optional>
 #include "ActionKey.hpp"
 #include "EnemyPhase.hpp"

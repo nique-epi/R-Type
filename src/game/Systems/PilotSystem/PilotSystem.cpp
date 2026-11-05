@@ -32,7 +32,7 @@ float topSpeedOf(engine::ComponentRegistry& components, engine::Entity body) {
  * on by @p elapsed; nullptr for a body without one. */
 CurrentAction* tickedActionOf(engine::ComponentRegistry& components,
                               engine::Entity body, engine::Duration elapsed) {
-  CurrentAction* const current = components.get<CurrentAction>(body);
+  auto* const current = components.get<CurrentAction>(body);
   if (current != nullptr) {
     current->since += elapsed;
   }
@@ -43,7 +43,7 @@ CurrentAction* tickedActionOf(engine::ComponentRegistry& components,
  * @p ships is empty. */
 std::optional<Position> nearestOf(std::span<const Position> ships,
                                   Position from) {
-  const auto squaredDistance = [from](const Position& ship) {
+  const auto squaredDistance = [from](const Position& ship) noexcept {
     const float across = ship.x - from.x;
     const float down = ship.y - from.y;
     return (across * across) + (down * down);
@@ -100,7 +100,7 @@ void PilotSystem::update(engine::ComponentRegistry& components,
   components.forEach<Pilot, Intent>(
       [this, &components, elapsed](engine::Entity body, Pilot& pilot,
                                    Intent& intent) {
-        Position* const position = components.get<Position>(body);
+        auto* const position = components.get<Position>(body);
         if (position == nullptr) {
           return;
         }

@@ -4,8 +4,6 @@
 #include "CurrentAction.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
-#include "HurtBox.hpp"
-#include "HurtZone.hpp"
 #include "HurtZoneSystem.hpp"
 #include "HurtZoneSystemFixtures.hpp"
 #include "HurtZoneSystemTestConstants.hpp"
@@ -14,9 +12,6 @@
 using rtype::engine::Entity;
 using rtype::game::CurrentAction;
 using rtype::game::EntityType;
-using rtype::game::HurtBox;
-using rtype::game::HurtZone;
-using rtype::game::HurtZoneSystem;
 using rtype::game::ShipContact;
 using rtype::game::testing::A_SECOND_INTO_THE_PHASE;
 using rtype::game::testing::ALWAYS_HURTING_BOX;

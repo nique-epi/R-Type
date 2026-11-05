@@ -22,7 +22,6 @@ using rtype::game::EnemyPhase;
 using rtype::game::EntitySheet;
 using rtype::game::HurtBox;
 using rtype::game::HurtWindow;
-using rtype::game::HurtZone;
 using rtype::game::testing::ACTION_TOGETHER_RULE_TEXT;
 using rtype::game::testing::APPEARANCE;
 using rtype::game::testing::ATTACK_DOTTED_KEY;

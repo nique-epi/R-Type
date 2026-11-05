@@ -1,6 +1,4 @@
 #include <gtest/gtest.h>
-#include <cstdint>
-#include <variant>
 #include <vector>
 #include "CollisionScene.hpp"
 #include "CurrentAction.hpp"
@@ -11,29 +9,23 @@
 #include "EnemyKilled.hpp"
 #include "Entity.hpp"
 #include "EntityDamage.hpp"
-#include "EntityDestruction.hpp"
 #include "EntityType.hpp"
 #include "Fragile.hpp"
 #include "Health.hpp"
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
-#include "ScoreValue.hpp"
+#include "WorldTestConstants.hpp"
 
 using rtype::engine::Entity;
 using rtype::game::CurrentAction;
-using rtype::game::DamageRules;
-using rtype::game::DestructionCause;
 using rtype::game::EnemyKilled;
 using rtype::game::EntityDamage;
-using rtype::game::EntityDestruction;
 using rtype::game::EntityType;
 using rtype::game::Fragile;
 using rtype::game::Health;
 using rtype::game::MissileHit;
-using rtype::game::MissileOwner;
 using rtype::game::NetworkIdentity;
-using rtype::game::ScoreValue;
 using rtype::game::testing::Announcement;
 using rtype::game::testing::BYDO_ID;
 using rtype::game::testing::BYDO_POINTS;

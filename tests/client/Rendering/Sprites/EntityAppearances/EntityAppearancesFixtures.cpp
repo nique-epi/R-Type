@@ -41,7 +41,7 @@ bool hurtsAllTheTime(const rtype::game::EntitySheet& sheet) {
     return false;
   }
   return std::ranges::any_of(sheet.hurtZone->boxes,
-                             [](const rtype::game::HurtBox& box) {
+                             [](const rtype::game::HurtBox& box) noexcept {
                                return !box.activeIn.has_value();
                              });
 }
