@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -211,6 +212,43 @@ class SharedLibraryOpenException : public EngineException {
  public:
   SharedLibraryOpenException(const std::string& file,
                              const std::string& reason);
+};
+
+/** @brief A plugin line names a plugin whose file is not in the plugin folder.
+ */
+class PluginNotFoundException : public EngineException {
+ public:
+  PluginNotFoundException(const std::string& name, const std::string& file);
+};
+
+/** @brief A plugin library does not export the function that creates its
+ * module. */
+class PluginEntryNotFoundException : public EngineException {
+ public:
+  PluginEntryNotFoundException(const std::string& name,
+                               const std::string& entryName);
+};
+
+/** @brief A plugin was built for a plugin API version other than the one the
+ * program loads. */
+class PluginApiVersionException : public EngineException {
+ public:
+  PluginApiVersionException(const std::string& name,
+                            std::uint32_t pluginVersion,
+                            std::uint32_t programVersion);
+};
+
+/** @brief A plugin line names something that is not a plugin name. */
+class InvalidPluginNameException : public EngineException {
+ public:
+  explicit InvalidPluginNameException(const std::string& name);
+};
+
+/** @brief A module that is added to an application has the name of a module
+ * already listed. */
+class DuplicateModuleNameException : public EngineException {
+ public:
+  explicit DuplicateModuleNameException(const std::string& name);
 };
 
 }  // namespace rtype::engine

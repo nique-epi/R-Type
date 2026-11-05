@@ -12,4 +12,5 @@ target_link_libraries(rtype_engine_modules INTERFACE rtype_engine_exceptions rty
 set(RTYPE_PLUGIN_ENTRY_DEFINITION ${CMAKE_CURRENT_SOURCE_DIR}/PluginEntry.def CACHE INTERNAL "The module-definition file that exports rtypePluginEntry")
 
 add_subdirectory(ModuleSwitches)
+add_subdirectory(PluginShelf)
 add_subdirectory(Application)

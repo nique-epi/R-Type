@@ -1,4 +1,5 @@
 #include "EngineException.hpp"
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -123,5 +124,30 @@ SharedLibraryOpenException::SharedLibraryOpenException(
     const std::string& file, const std::string& reason)
     : EngineException("The library \"" + file +
                       "\" could not be opened: " + reason) {}
+
+PluginNotFoundException::PluginNotFoundException(const std::string& name,
+                                                 const std::string& file)
+    : EngineException("The plugin \"" + name + "\" is not in " + file) {}
+
+PluginEntryNotFoundException::PluginEntryNotFoundException(
+    const std::string& name, const std::string& entryName)
+    : EngineException("The plugin \"" + name + "\" exports no " + entryName) {}
+
+PluginApiVersionException::PluginApiVersionException(
+    const std::string& name, std::uint32_t pluginVersion,
+    std::uint32_t programVersion)
+    : EngineException("The plugin \"" + name + "\" was built for plugin API " +
+                      std::to_string(pluginVersion) +
+                      "; this program loads plugin API " +
+                      std::to_string(programVersion)) {}
+
+InvalidPluginNameException::InvalidPluginNameException(const std::string& name)
+    : EngineException("\"" + name +
+                      "\" is not a plugin name: letters, digits, '-' and '_' "
+                      "only") {}
+
+DuplicateModuleNameException::DuplicateModuleNameException(
+    const std::string& name)
+    : EngineException("Two modules are named \"" + name + "\"") {}
 
 }  // namespace rtype::engine

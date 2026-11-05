@@ -21,8 +21,8 @@ using Lines = std::vector<std::string>;
 /**
  * Given an application of three modules and a configuration step
  * When it starts
- * Then the step runs before the three installs, for the switches, then again
- * between the installs and the starts
+ * Then the step runs first for the plugins, then for the switches, both before
+ * the three installs, then again between the installs and the starts
  */
 TEST(ApplicationConfiguration, StepRunsBeforeTheInstallsAndBeforeTheStarts) {
   JournalModule journal;
@@ -32,9 +32,9 @@ TEST(ApplicationConfiguration, StepRunsBeforeTheInstallsAndBeforeTheStarts) {
 
   application.start();
 
-  EXPECT_EQ(journal.calls,
-            (Lines{CONFIGURE_STEP, INSTALL_FIRST, INSTALL_SECOND, INSTALL_THIRD,
-                   CONFIGURE_STEP, START_FIRST, START_SECOND, START_THIRD}));
+  EXPECT_EQ(journal.calls, (Lines{CONFIGURE_STEP, CONFIGURE_STEP, INSTALL_FIRST,
+                                  INSTALL_SECOND, INSTALL_THIRD, CONFIGURE_STEP,
+                                  START_FIRST, START_SECOND, START_THIRD}));
 }
 
 /**
@@ -50,8 +50,9 @@ TEST(ApplicationConfiguration, ModuleTurnedOffIsNeverInstalled) {
 
   application.start();
 
-  EXPECT_EQ(journal.calls, (Lines{CONFIGURE_STEP, INSTALL_FIRST, INSTALL_THIRD,
-                                  CONFIGURE_STEP, START_FIRST, START_THIRD}));
+  EXPECT_EQ(journal.calls,
+            (Lines{CONFIGURE_STEP, CONFIGURE_STEP, INSTALL_FIRST, INSTALL_THIRD,
+                   CONFIGURE_STEP, START_FIRST, START_THIRD}));
 }
 
 /**
@@ -169,9 +170,10 @@ TEST(ApplicationConfiguration, WordThatIsNeitherOnNorOffIsRefused) {
 /**
  * Given an application
  * When its configuration step receives the interpreter
- * Then the interpreter holds the `module` and `set` commands
+ * Then the interpreter holds the `module`, `plugin`, `plugin-folder` and `set`
+ * commands
  */
-TEST(ApplicationConfiguration, InterpreterHoldsModuleAndSetCommands) {
+TEST(ApplicationConfiguration, InterpreterHoldsModulePluginAndSetCommands) {
   JournalModule journal;
   Lines help;
   Application application(
@@ -180,9 +182,11 @@ TEST(ApplicationConfiguration, InterpreterHoldsModuleAndSetCommands) {
 
   application.start();
 
-  ASSERT_EQ(help.size(), 2U);
+  ASSERT_EQ(help.size(), 4U);
   EXPECT_EQ(help[0].rfind(MODULE_HELP_START, 0), 0U);
-  EXPECT_EQ(help[1].rfind(SET_HELP_START, 0), 0U);
+  EXPECT_EQ(help[1].rfind(PLUGIN_HELP_START, 0), 0U);
+  EXPECT_EQ(help[2].rfind(PLUGIN_FOLDER_HELP_START, 0), 0U);
+  EXPECT_EQ(help[3].rfind(SET_HELP_START, 0), 0U);
 }
 
 /**
