@@ -42,14 +42,8 @@ EntityMessageQueue::EntityMessageQueue(network::MessageDispatcher& dispatcher,
     : room_(&room), reminder_(&reminder) {
   registerStateHandlers(dispatcher);
   keepEachOf<network::EntitySpawned, network::EntityDestroyed,
-             network::PlayerLeft>(
+             network::PlayerLeft, network::GameEvent>(
       dispatcher, [this](EntityMessage message) { keep(std::move(message)); });
-  dispatcher.registerHandler<network::GameEvent>(
-      [this](const network::MessageOrigin&, const network::GameEvent& event) {
-        if (gameEvents_.isFirstCopy(event.eventNumber)) {
-          keep(event);
-        }
-      });
   dispatcher.registerHandler<network::GameEnded>(
       [this](const network::MessageOrigin&, const network::GameEnded& ended) {
         if (room_->gameStarted()) {
@@ -78,10 +72,6 @@ void EntityMessageQueue::registerStateHandlers(
       });
 }
 
-void EntityMessageQueue::advance(engine::Duration elapsed) {
-  gameEvents_.advance(elapsed);
-}
-
 void EntityMessageQueue::drainEntityMessages(
     std::vector<EntityMessage>& destination) {
   std::ranges::move(messages_, std::back_inserter(destination));
@@ -95,7 +85,6 @@ void EntityMessageQueue::sessionOpened(
 void EntityMessageQueue::sessionClosed() {
   messages_.clear();
   assembler_.clear();
-  gameEvents_.forget();
 }
 
 void EntityMessageQueue::sessionHeld(

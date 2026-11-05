@@ -2,14 +2,12 @@
 
 #include <vector>
 #include "EntityMessage.hpp"
-#include "GameEventHistory.hpp"
 #include "GameLoadedReminder.hpp"
 #include "IEntityMessageSource.hpp"
 #include "ISessionObserver.hpp"
 #include "ISessionOutbox.hpp"
 #include "LobbyState.hpp"
 #include "MessageDispatcher.hpp"
-#include "TimeConstants.hpp"
 #include "WaitingRoom.hpp"
 #include "WorldStateAssembler.hpp"
 
@@ -17,10 +15,10 @@ namespace rtype::client {
 
 /**
  * @brief The entity messages of the game: from the start of the game, it keeps
- * the EntitySpawned, WorldState, EntityDestroyed and every copy of PlayerLeft
- * of the server, with each state of the server rebuilt in full from its
- * DeltaWorldState parts by the WorldStateAssembler, and the first copy of each
- * GameEvent (see GameEventHistory), in the order they arrived, until
+ * the EntitySpawned, WorldState, EntityDestroyed and PlayerLeft of the
+ * server, with each state of the server rebuilt in full from its
+ * DeltaWorldState parts by the WorldStateAssembler, and every GameEvent, in
+ * the order they arrived, until
  * drainEntityMessages() hands them over; leaving the session drops those not
  * handed over and forgets the events seen. The game screen drains them every
  * frame, behind the options too, so they never pile up for longer than the
@@ -46,16 +44,12 @@ class EntityMessageQueue final : public IEntityMessageSource,
   EntityMessageQueue(network::MessageDispatcher& dispatcher, WaitingRoom& room,
                      GameLoadedReminder& reminder);
 
-  /** @brief Counts @p elapsed against the memory of the game events. */
-  void advance(engine::Duration elapsed);
-
   void drainEntityMessages(std::vector<EntityMessage>& destination) override;
 
   void sessionOpened(const network::LobbyPlayer& ownPlayer,
                      ISessionOutbox& outbox) override;
 
-  /** @brief Drops the messages not handed over and forgets the events
-   * seen. */
+  /** @brief Drops the messages not handed over. */
   void sessionClosed() override;
 
   void sessionHeld(engine::Duration elapsed) override;
@@ -71,7 +65,6 @@ class EntityMessageQueue final : public IEntityMessageSource,
   WaitingRoom* room_;
   GameLoadedReminder* reminder_;
   std::vector<EntityMessage> messages_;
-  GameEventHistory gameEvents_;
   WorldStateAssembler assembler_;
 };
 

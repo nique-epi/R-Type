@@ -56,7 +56,7 @@ struct AnimatedSprite;
  * entity an EntityDamaged names, and the hit of a player a PlayerHit names.
  * Each plays once per entity: a later copy of an EntityDestroyed names an
  * entity the client no longer has, a later copy of an EntitySpawned names one
- * it has, and the connection hands over the first copy of a GameEvent only.
+ * it has.
  *
  * It follows the client rules of the protocol page. A WorldState older than
  * the newest one applied is ignored (see WorldStateFilter); an equal tick is

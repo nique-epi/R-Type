@@ -36,7 +36,6 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions)
                         leaderboard_, orderedInbox_}}) {}
 
 void PlayerConnection::update(engine::Duration elapsed) {
-  entityMessages_.advance(elapsed);
   session_.update(elapsed);
 }
 

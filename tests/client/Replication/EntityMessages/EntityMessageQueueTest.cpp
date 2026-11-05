@@ -166,24 +166,6 @@ TEST_F(EntityMessageQueueFixture, LeavingDropsTheEntityMessagesNotHandedOver) {
 }
 
 /**
- * Given a game started in the session
- * When the three copies of a GameEvent arrive, each in its own datagram
- * Then the connection hands over one GameEvent
- */
-TEST_F(EntityMessageQueueFixture, KeepsTheFirstCopyOfAGameEventOnly) {
-  accept();
-  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  const network::GameEvent event = damaged(EVENT_NUMBER, SHIP_ID);
-  deliverInSession(event, SECOND_SEQUENCE);
-  deliverInSession(event, THIRD_SEQUENCE);
-  deliverInSession(event, FOURTH_SEQUENCE);
-
-  update();
-
-  EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{event}));
-}
-
-/**
  * Given a session whose game has not started
  * When a GameEvent arrives
  * Then the connection hands over nothing

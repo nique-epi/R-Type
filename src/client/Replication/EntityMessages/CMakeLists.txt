@@ -1,6 +1,5 @@
 add_library(rtype_client_entity_messages STATIC
   EntityMessageQueue.cpp
-  GameEventHistory.cpp
   WorldStateAssembler.cpp
 )
 

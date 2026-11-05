@@ -36,8 +36,7 @@ class PlayerConnection {
   explicit PlayerConnection(const network::NetworkConditions& conditions);
 
   /**
-   * @brief Counts @p elapsed against the memory of the game events, then
-   * reads what the server sent and sends what is due (see
+   * @brief Reads what the server sent and sends what is due (see
    * ServerSession::update()).
    */
   void update(engine::Duration elapsed);
