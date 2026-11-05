@@ -21,24 +21,12 @@ using rtype::game::SurvivesContact;
 using rtype::game::World;
 using rtype::game::testing::componentOf;
 using rtype::game::testing::DRIFTER_SHEET;
+using rtype::game::testing::drifterWith;
 using rtype::game::testing::SHIP_SHEET;
 using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::SOME_X;
 using rtype::game::testing::SOME_Y;
 using rtype::game::testing::someHurtZone;
-
-namespace {
-
-/** @returns The Drifter of the shipped sheets with the hurt zone and the
- * marker the test asks for. */
-EntitySheet drifterWith(const std::optional<HurtZone>& zone, bool survives) {
-  EntitySheet sheet = shippedEntitySheets().named(DRIFTER_SHEET);
-  sheet.hurtZone = zone;
-  sheet.survivesContact = survives;
-  return sheet;
-}
-
-}  // namespace
 
 /**
  * Given the sheet of a Drifter, of side enemy

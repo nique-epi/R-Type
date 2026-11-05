@@ -3,22 +3,14 @@
 #include <optional>
 #include "ActionKey.hpp"
 #include "EnemyPhase.hpp"
+#include "EntitySheet.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "HurtBox.hpp"
 #include "HurtZone.hpp"
+#include "ShippedEntitySheets.hpp"
+#include "WorldContactPartsTestConstants.hpp"
 
 namespace rtype::game::testing {
-
-namespace {
-
-constexpr float ALWAYS_BOX_OFFSET_X = 48.0F;
-constexpr float ALWAYS_BOX_WIDTH = 64.0F;
-constexpr float ALWAYS_BOX_HEIGHT = 32.0F;
-constexpr float STRIKE_BOX_OFFSET_Y = 16.0F;
-constexpr float STRIKE_BOX_WIDTH = 40.0F;
-constexpr float STRIKE_BOX_HEIGHT = 24.0F;
-constexpr std::uint8_t STRIKE_BOX_ATTACK = 3;
-
-}  // namespace
 
 HurtZone someHurtZone() {
   return HurtZone{
@@ -33,6 +25,13 @@ HurtZone someHurtZone() {
                         .height = STRIKE_BOX_HEIGHT,
                         .activeIn = ActionKey{.attack = STRIKE_BOX_ATTACK,
                                               .phase = EnemyPhase::Strike}}}};
+}
+
+EntitySheet drifterWith(const std::optional<HurtZone>& zone, bool survives) {
+  EntitySheet sheet = shippedEntitySheets().named(DRIFTER_SHEET);
+  sheet.hurtZone = zone;
+  sheet.survivesContact = survives;
+  return sheet;
 }
 
 }  // namespace rtype::game::testing
