@@ -31,14 +31,8 @@ constexpr ActionKey LONE_STRIKE{.attack = 1, .phase = EnemyPhase::Strike};
 /** @brief One tick less than a phase, the last age at which it goes on. */
 constexpr engine::Duration ONE_TICK = engine::SIMULATION_TICK_DURATION;
 
-/** @brief A rest shorter than what the repeat window asks of FULL_ATTACK
- * (2000 - 720 = 1280 ms), and one longer than it. */
+/** @brief Two rests, of 500 ms and 1500 ms. */
 constexpr engine::Duration SHORT_REST = std::chrono::milliseconds(500);
 constexpr engine::Duration LONG_REST = std::chrono::milliseconds(1500);
-
-/** @brief The idle time the repeat window asks after FULL_ATTACK: two seconds
- * from its signal, minus its 720 ms. */
-constexpr engine::Duration WINDOW_REST_AFTER_FULL_ATTACK =
-    std::chrono::milliseconds(1280);
 
 }  // namespace rtype::game::testing

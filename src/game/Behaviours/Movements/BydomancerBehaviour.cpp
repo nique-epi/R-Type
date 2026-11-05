@@ -85,14 +85,14 @@ Intent inAction(const BehaviourView& view, ActionKey action, Intent floating) {
  * any: its nova when a ship is close, its orb once rested at its column. */
 Intent whenIdle(const BehaviourView& view, Intent floating) {
   const ActionTimings nova = novaOf(view);
-  if (isAShipClose(view) && hasRested(view, nova, engine::Duration::zero())) {
+  if (isAShipClose(view) &&
+      hasRested(view, millisecondsSettingAt(view, NOVA_REST_SETTING))) {
     return withStart(floating, nova);
   }
   const ActionTimings orb = orbOf(view);
   const auto standX = static_cast<float>(settingAt(view, STAND_X_SETTING));
   if (view.position.x <= standX &&
-      hasRested(view, orb,
-                millisecondsSettingAt(view, BYDOMANCER_REST_SETTING))) {
+      hasRested(view, millisecondsSettingAt(view, BYDOMANCER_REST_SETTING))) {
     return withStart(floating, orb);
   }
   return floating;

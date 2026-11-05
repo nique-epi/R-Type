@@ -51,8 +51,7 @@ Intent DrillbackBehaviour::steer(const BehaviourView& view) const {
   }
   const auto enterX = static_cast<float>(settingAt(view, ENTER_X_SETTING));
   if (view.position.x <= enterX &&
-      hasRested(view, charge,
-                millisecondsSettingAt(view, DRILLBACK_REST_SETTING))) {
+      hasRested(view, millisecondsSettingAt(view, DRILLBACK_REST_SETTING))) {
     return withStart(moving, charge);
   }
   return moving;

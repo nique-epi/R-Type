@@ -13,9 +13,9 @@ namespace rtype::game::testing {
 /** @brief The settings of the shipped Bydomancer: it stops at 1600, leaps
  * 400 units, bobs 4 units every 1000 ms, rests 1500 ms, raises its staff
  * 300 ms, casts 120 ms, rests its staff 300 ms, casts its nova at a ship
- * within 192 units, for 240 ms; and its top speed. */
-constexpr std::array<std::int64_t, 10> BYDOMANCER_SETTINGS_OF_THE_SHEET{
-    1600, 400, 4, 1000, 1500, 300, 120, 300, 192, 240};
+ * within 192 units, for 240 ms, after resting 1500 ms; and its top speed. */
+constexpr std::array<std::int64_t, 11> BYDOMANCER_SETTINGS_OF_THE_SHEET{
+    1600, 400, 4, 1000, 1500, 300, 120, 300, 192, 240, 1500};
 constexpr float BYDOMANCER_TOP_SPEED = 240.0F;
 
 /** @brief A Bydomancer still coming in, one at its column on a row of the
@@ -32,6 +32,10 @@ constexpr Position FAR_SHIP{.x = 200.0F, .y = 300.0F};
 
 /** @brief How long it has been idle: long enough for its orb. */
 constexpr engine::Duration BYDOMANCER_RESTED = std::chrono::seconds(2);
+
+/** @brief An idle time shorter than its 1500 ms nova rest. */
+constexpr engine::Duration SHORT_OF_ITS_NOVA_REST =
+    std::chrono::milliseconds(1000);
 
 /** @brief The phases of its orb and its nova. */
 constexpr ActionKey ORB_SIGNAL{.attack = 0, .phase = EnemyPhase::Signal};

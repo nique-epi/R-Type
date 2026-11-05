@@ -52,8 +52,7 @@ Intent ReaperBehaviour::steer(const BehaviourView& view) const {
   }
   const Position point = strikingPointAt(view, *view.nearestShip);
   if (isAt(view, point) &&
-      hasRested(view, scythe,
-                millisecondsSettingAt(view, REAPER_REST_SETTING))) {
+      hasRested(view, millisecondsSettingAt(view, REAPER_REST_SETTING))) {
     return withStart(Intent{.steered = true}, scythe);
   }
   return Intent{

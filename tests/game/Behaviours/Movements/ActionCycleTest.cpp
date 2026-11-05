@@ -21,7 +21,6 @@ using rtype::game::testing::ONE_TICK;
 using rtype::game::testing::SHORT_REST;
 using rtype::game::testing::STRIKE_ONLY_ATTACK;
 using rtype::game::testing::viewIn;
-using rtype::game::testing::WINDOW_REST_AFTER_FULL_ATTACK;
 
 /**
  * Given an attack with a signal
@@ -131,36 +130,22 @@ TEST(ActionCycle, AnIdleBodyIsLeftAlone) {
 }
 
 /**
- * Given a body idle one tick short of what the repeat window asks after the
- * full attack, a rest shorter than that being asked
+ * Given a body idle exactly as long as its rest
  * When it asks whether it has rested
- * Then it has not: the client would take its next signal for a copy
- */
-TEST(ActionCycle, TheRepeatWindowLengthensAShortRest) {
-  EXPECT_FALSE(
-      hasRested(viewIn(std::nullopt, WINDOW_REST_AFTER_FULL_ATTACK - ONE_TICK),
-                FULL_ATTACK, SHORT_REST));
-}
-
-/**
- * Given a body idle exactly as long as the repeat window asks after the full
- * attack
- * When it asks whether it has rested, with a shorter rest
  * Then it has
  */
-TEST(ActionCycle, ABodyHasRestedOnceTheRepeatWindowIsBehind) {
-  EXPECT_TRUE(hasRested(viewIn(std::nullopt, WINDOW_REST_AFTER_FULL_ATTACK),
-                        FULL_ATTACK, SHORT_REST));
+TEST(ActionCycle, ABodyHasRestedOnceItsRestIsBehind) {
+  EXPECT_TRUE(hasRested(viewIn(std::nullopt, LONG_REST), LONG_REST));
 }
 
 /**
- * Given a body idle past the repeat window but one tick short of its rest
+ * Given a body idle one tick short of its rest
  * When it asks whether it has rested
  * Then it has not
  */
-TEST(ActionCycle, ALongRestIsKept) {
-  EXPECT_FALSE(hasRested(viewIn(std::nullopt, LONG_REST - ONE_TICK),
-                         FULL_ATTACK, LONG_REST));
+TEST(ActionCycle, ABodyRestsItsWholeRest) {
+  EXPECT_FALSE(
+      hasRested(viewIn(std::nullopt, LONG_REST - ONE_TICK), LONG_REST));
 }
 
 /**
@@ -169,6 +154,5 @@ TEST(ActionCycle, ALongRestIsKept) {
  * Then it has not: only an idle body rests
  */
 TEST(ActionCycle, ABodyInActionHasNotRested) {
-  EXPECT_FALSE(
-      hasRested(viewIn(FULL_RECOVER, LONG_REST), FULL_ATTACK, SHORT_REST));
+  EXPECT_FALSE(hasRested(viewIn(FULL_RECOVER, LONG_REST), SHORT_REST));
 }

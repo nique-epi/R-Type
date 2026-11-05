@@ -1,5 +1,4 @@
 #include "ActionCycle.hpp"
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -7,7 +6,6 @@
 #include "ActionTimings.hpp"
 #include "BehaviourSteering.hpp"
 #include "BehaviourView.hpp"
-#include "EnemyActionConstants.hpp"
 #include "EnemyPhase.hpp"
 #include "Intent.hpp"
 #include "TimeConstants.hpp"
@@ -91,12 +89,8 @@ Intent withNextPhase(Intent intent, const BehaviourView& view,
   return intent;
 }
 
-bool hasRested(const BehaviourView& view, const ActionTimings& timings,
-               engine::Duration rest) {
-  const engine::Duration cycle =
-      timings.signal + timings.strike + timings.recover;
-  return !view.action.has_value() &&
-         view.actionAge >= std::max(rest, ENEMY_ACTION_REPEAT_WINDOW - cycle);
+bool hasRested(const BehaviourView& view, engine::Duration rest) {
+  return !view.action.has_value() && view.actionAge >= rest;
 }
 
 }  // namespace rtype::game

@@ -28,7 +28,8 @@ top_speed = 240
 # Rested 1500 ms, it raises its staff 300 ms, casts 120 ms (one orb), then
 # rests its empty staff 300 ms. A ship whose center comes within 192 units of
 # its own (its half, 20 sheet pixels and the half height of a ship: 48 + 80 +
-# 32, rounded up to whole pixels) makes it cast its nova, 240 ms.
+# 32, rounded up to whole pixels) makes it cast its nova, 240 ms, once it
+# has been idle 1500 ms.
 [gameplay.behaviour]
 stand_x = 1600
 jump = 400
@@ -40,6 +41,7 @@ strike_ms = 120
 recover_ms = 300
 nova_reach = 192
 nova_ms = 240
+nova_rest_ms = 1500
 
 [gameplay.health]
 points = 3

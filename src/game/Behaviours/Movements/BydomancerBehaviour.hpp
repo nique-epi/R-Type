@@ -21,7 +21,8 @@ namespace rtype::game {
  * of `signal_ms`, a strike of `strike_ms` during which it wants to fire its
  * Gun, then a recover of `recover_ms`. A ship closer than `nova_reach`, while
  * it is idle, makes it cast its nova instead: attack NOVA_ATTACK, a strike of
- * `nova_ms` only, whose hurt boxes its sheet times frame by frame. Its
+ * `nova_ms` only, whose hurt boxes its sheet times frame by frame, once it has
+ * been idle `nova_rest_ms`. Its
  * settings are BYDOMANCER_SETTINGS.
  */
 class BydomancerBehaviour final : public IBehaviour {

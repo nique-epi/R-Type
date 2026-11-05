@@ -20,7 +20,8 @@ namespace rtype::game {
  * (`bob`) and how long a bob takes (`bob_period_ms`), the rest and the phases
  * of its orb (see ActionSettingConstants.hpp), how near a ship makes it cast
  * its nova (`nova_reach`, between the centers) and how long the nova lasts
- * (`nova_ms`).
+ * (`nova_ms`), and how long it rests before it casts its nova
+ * (`nova_rest_ms`).
  */
 constexpr std::string_view STAND_X_SETTING_NAME = "stand_x";
 constexpr std::string_view JUMP_SETTING_NAME = "jump";
@@ -28,6 +29,7 @@ constexpr std::string_view BOB_SETTING_NAME = "bob";
 constexpr std::string_view BOB_PERIOD_SETTING_NAME = "bob_period_ms";
 constexpr std::string_view NOVA_REACH_SETTING_NAME = "nova_reach";
 constexpr std::string_view NOVA_SETTING_NAME = "nova_ms";
+constexpr std::string_view NOVA_REST_SETTING_NAME = "nova_rest_ms";
 /** @brief The middle of the area of play, in logical units: a bydomancer
  * above it leaps down, one below it leaps up. */
 constexpr float MIDDLE_OF_THE_PLAY_AREA = PLAY_AREA_HEIGHT / 2.0F;
@@ -48,7 +50,8 @@ constexpr std::array BYDOMANCER_SETTINGS{
     BehaviourSetting{.name = RECOVER_SETTING_NAME, .range = RECOVER_RANGE},
     BehaviourSetting{.name = NOVA_REACH_SETTING_NAME,
                      .range = PLAYFIELD_SPAN_RANGE},
-    BehaviourSetting{.name = NOVA_SETTING_NAME, .range = PHASE_RANGE}};
+    BehaviourSetting{.name = NOVA_SETTING_NAME, .range = PHASE_RANGE},
+    BehaviourSetting{.name = NOVA_REST_SETTING_NAME, .range = REST_RANGE}};
 
 /** @brief Where each setting is among the values of BehaviourView::settings.
  * The strike and the recover of the orb follow its signal (see
@@ -61,6 +64,7 @@ constexpr std::size_t BYDOMANCER_REST_SETTING = 4;
 constexpr std::size_t BYDOMANCER_SIGNAL_SETTING = 5;
 constexpr std::size_t NOVA_REACH_SETTING = 8;
 constexpr std::size_t NOVA_SETTING = 9;
+constexpr std::size_t NOVA_REST_SETTING = 10;
 
 /** @brief The attack numbers of the orb and of the nova, which the sheet of
  * the bydomancer animates and times its hurt boxes with. */

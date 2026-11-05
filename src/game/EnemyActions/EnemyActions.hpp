@@ -18,10 +18,10 @@ namespace rtype::game {
  * sends to the players as a guaranteed EnemyAction.
  *
  * Does nothing for an entity with no CurrentAction or no NetworkIdentity. Safe
- * inside a forEach of @p components. A behaviour must not enter the same
- * (attack, phase) of one enemy twice within two seconds: the client takes the
- * second for a copy of the first and ignores it (see the Guaranteed messages
- * section of the protocol page).
+ * inside a forEach of @p components. The client handles each EnemyAction once,
+ * by its number on the ordered channel, so an enemy may enter the same
+ * (attack, phase) again at any time (see the Ordered messages section of the
+ * protocol page).
  */
 void startEnemyAction(engine::EventBus& events,
                       engine::ComponentRegistry& components,

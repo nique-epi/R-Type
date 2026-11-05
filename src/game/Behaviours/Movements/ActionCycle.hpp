@@ -36,13 +36,9 @@ namespace rtype::game {
                                    const ActionTimings& timings);
 
 /**
- * @returns Whether the body of @p view, idle, may start @p timings again: it
- * has been idle for @p rest at least, and long enough that its last start of
- * the same attack is ENEMY_ACTION_REPEAT_WINDOW behind, which the client
- * needs to tell a new action from a copy.
+ * @returns Whether the body of @p view is idle and has been for @p rest at
+ * least, so it may start an attack again.
  */
-[[nodiscard]] bool hasRested(const BehaviourView& view,
-                             const ActionTimings& timings,
-                             engine::Duration rest);
+[[nodiscard]] bool hasRested(const BehaviourView& view, engine::Duration rest);
 
 }  // namespace rtype::game

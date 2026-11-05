@@ -21,6 +21,7 @@ using rtype::game::testing::NOVA;
 using rtype::game::testing::ORB_SIGNAL;
 using rtype::game::testing::ORB_STRIKE;
 using rtype::game::testing::ROW_AFTER_THE_LEAP;
+using rtype::game::testing::SHORT_OF_ITS_NOVA_REST;
 
 /**
  * Given a rested Bydomancer still right of its column
@@ -114,4 +115,16 @@ TEST(BydomancerBehaviour, ItLeapsOnlyOnce) {
   view.wounded = true;
 
   EXPECT_FALSE(BydomancerBehaviour{}.steer(view).jumpsTo.has_value());
+}
+
+/**
+ * Given a Bydomancer idle for 1000 ms only, a ship 100 units away
+ * When it steers
+ * Then it casts no nova: it rests 1500 ms between two
+ */
+TEST(BydomancerBehaviour, ItRestsBeforeItCastsItsNovaAgain) {
+  BehaviourView view = bydomancerView(AT_ITS_COLUMN, CLOSE_SHIP);
+  view.actionAge = SHORT_OF_ITS_NOVA_REST;
+
+  EXPECT_FALSE(BydomancerBehaviour{}.steer(view).startsAction.has_value());
 }
