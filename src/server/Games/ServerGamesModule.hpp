@@ -43,7 +43,8 @@ namespace rtype::server {
  * clock of the module for its Heartbeats.
  *
  * install() builds the empty list of games, declares the `seed`,
- * `state-rate` and `input-delay` settings and provides Games. start() reads the
+ * `state-rate` and `input-delay` settings and provides Games, and the bus of
+ * each game as IGameBuses. start() reads the
  * entity sheets and the waves file once, then creates the games with the values
  * of the settings, each subscribing its rules and its broadcaster to its own
  * bus; the same values decide whether the games are vanilla (see
