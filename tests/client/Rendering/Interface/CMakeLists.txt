@@ -1,0 +1,4 @@
+rtype_add_test(NAME client_interface_pixel_tests SOURCES InterfacePixelTest.cpp LIBS rtype_client_interface_pixel)
+target_sources(client_rendering_tests PRIVATE LeaderboardSpriteConstantsTest.cpp HudSpriteConstantsTest.cpp ProfessorSpriteConstantsTest.cpp PlayerShadingTest.cpp HudSpriteConstantsFixtures.cpp FlightLogSheetConstantsTest.cpp)
+target_sources(client_interface_tests PRIVATE SquadronTest.cpp SquadronFixtures.cpp)
+target_sources(client_widget_piece_tests PRIVATE BoxCornersTest.cpp)

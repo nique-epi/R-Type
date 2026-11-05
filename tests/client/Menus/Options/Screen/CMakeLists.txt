@@ -1,0 +1,1 @@
+target_sources(client_screen_tests PRIVATE OptionsScreenTest.cpp OptionsScreenFixture.cpp GameOptionsScreenFixture.cpp OptionsScreenFixtures.cpp)

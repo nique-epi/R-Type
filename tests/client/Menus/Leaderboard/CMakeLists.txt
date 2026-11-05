@@ -1,0 +1,1 @@
+target_sources(client_screen_tests PRIVATE LeaderboardScreenFixture.cpp LeaderboardScreenTest.cpp LeaderboardFilterDialogFixture.cpp LeaderboardFilterDialogTest.cpp LeaderboardPresentationFixtures.cpp LeaderboardPresentationTest.cpp)

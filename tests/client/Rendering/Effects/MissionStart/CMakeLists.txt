@@ -1,0 +1,1 @@
+target_sources(client_effect_tests PRIVATE MissionStartTest.cpp)

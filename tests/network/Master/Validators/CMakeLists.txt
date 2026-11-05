@@ -1,0 +1,3 @@
+rtype_add_test(NAME network_master_tests SOURCES MasterMessageTextTest.cpp MasterMessageTextFixtures.cpp LIBS rtype_network_master nlohmann_json::nlohmann_json GTest::gmock)
+target_include_directories(network_master_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/network/Master/Validators ${RTYPE_TEST_SOURCE_DIR}/network/Protocol $<TARGET_PROPERTY:rtype_network_protocol,INTERFACE_INCLUDE_DIRECTORIES>)
+target_sources(master_tests PRIVATE MasterMessageTextFixtures.cpp)

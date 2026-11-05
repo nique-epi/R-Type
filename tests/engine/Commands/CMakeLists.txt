@@ -1,0 +1,3 @@
+add_subdirectory(Configuration)
+add_subdirectory(Interpreter)
+add_subdirectory(Settings)

@@ -1,0 +1,1 @@
+target_sources(client_input_tests PRIVATE KeyBindingsTest.cpp KeyNamesTest.cpp)

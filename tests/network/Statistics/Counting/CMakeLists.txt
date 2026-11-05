@@ -1,0 +1,1 @@
+target_sources(network_statistics_tests PRIVATE TrafficCountersTest.cpp CountingDatagramSocketTest.cpp TrafficTotalsTest.cpp)
