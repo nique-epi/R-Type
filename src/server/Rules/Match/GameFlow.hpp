@@ -71,7 +71,9 @@ namespace rtype::server {
  * the health of the Bydo and destroys the Bydo once it has none left, an
  * EnemyKilled crediting its points to the player who fired. CollisionRules also
  * turns a ship that touches a Bydo into a ShipContact, which LifeKeeper turns
- * into the loss of the ship, the Bydo and a life, and a missile of a Bydo that
+ * into the loss of the ship, the Bydo (unless it carries SurvivesContact) and a
+ * life, HurtZoneSystem publishing the same ShipContact for a ship that touches
+ * an active box of the HurtZone of a Bydo, and a missile of a Bydo that
  * touches a ship into a MissileHit, which DamageRules turns into the removal of
  * the missile and LifeKeeper into the loss of the ship and a life: the ship
  * comes back RESPAWN_DELAY later, invulnerable for INVULNERABILITY_DURATION,
