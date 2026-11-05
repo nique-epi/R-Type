@@ -152,37 +152,20 @@ std::optional<PilotSheet> pilotFrom(const engine::DataFileTable& gameplay,
 }
 
 /** @returns The points of the optional table @p key of @p gameplay, in
- * @p range; nothing when the sheet has no such table. */
-std::optional<std::int64_t> pointsIn(const engine::DataFileTable& gameplay,
-                                     std::string_view key,
-                                     engine::WholeNumberRange range) {
+ * @p range, as a @p Points, which @p range fits in: the health points of
+ * `[gameplay.health]` as an int, those of `[gameplay.score]` as a
+ * std::uint32_t; nothing when the sheet has no such table. */
+template <typename Points>
+std::optional<Points> pointsIn(const engine::DataFileTable& gameplay,
+                               std::string_view key,
+                               engine::WholeNumberRange range) {
   const std::optional<engine::DataFileTable> table =
       engine::optionalTableAt(gameplay, key);
   if (!table.has_value()) {
     return std::nullopt;
   }
   engine::refuseUnknownKeys(*table, POINTS_KEYS);
-  return engine::wholeNumberAt(*table, POINTS_KEY, range);
-}
-
-/** @returns The health points of `[gameplay.health]`, nothing without it. */
-std::optional<int> healthFrom(const engine::DataFileTable& gameplay) {
-  const std::optional<std::int64_t> points =
-      pointsIn(gameplay, HEALTH_KEY, HEALTH_RANGE);
-  if (!points.has_value()) {
-    return std::nullopt;
-  }
-  return static_cast<int>(*points);
-}
-
-/** @returns The points of `[gameplay.score]`, nothing without it. */
-std::optional<std::uint32_t> scoreFrom(const engine::DataFileTable& gameplay) {
-  const std::optional<std::int64_t> points =
-      pointsIn(gameplay, SCORE_KEY, SCORE_RANGE);
-  if (!points.has_value()) {
-    return std::nullopt;
-  }
-  return static_cast<std::uint32_t>(*points);
+  return static_cast<Points>(engine::wholeNumberAt(*table, POINTS_KEY, range));
 }
 
 /** @returns The gun of `[gameplay.gun]`, its durations in the nearest whole
@@ -251,15 +234,16 @@ EntitySheet gameplayOf(const SheetText& sheet,
   const toml::table root = engine::parseDataFile(sheet.text, sheet.source);
   const engine::DataFileTable gameplay =
       gameplayTableOf(engine::rootOf(root, sheet.source));
-  EntitySheet read{.name = sheet.name,
-                   .number = 0,
-                   .side = sideFrom(gameplay),
-                   .hitbox = hitboxFrom(gameplay),
-                   .motion = motionFrom(gameplay),
-                   .pilot = pilotFrom(gameplay, behaviours),
-                   .health = healthFrom(gameplay),
-                   .points = scoreFrom(gameplay),
-                   .gun = gunFrom(gameplay)};
+  EntitySheet read{
+      .name = sheet.name,
+      .number = 0,
+      .side = sideFrom(gameplay),
+      .hitbox = hitboxFrom(gameplay),
+      .motion = motionFrom(gameplay),
+      .pilot = pilotFrom(gameplay, behaviours),
+      .health = pointsIn<int>(gameplay, HEALTH_KEY, HEALTH_RANGE),
+      .points = pointsIn<std::uint32_t>(gameplay, SCORE_KEY, SCORE_RANGE),
+      .gun = gunFrom(gameplay)};
   checkPilotMatchesSide(read, gameplay);
   checkShipMotion(read, gameplay);
   checkMissileHasNoGun(read, gameplay);
