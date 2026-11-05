@@ -248,6 +248,10 @@ void Logger::setOutput(const LogOutput& output) {
   destination.toStderr = output.toStderr;
 }
 
+void writeLogLine(const LogRecord& record) {
+  emitLine(record.level, record.loggerName, record.body);
+}
+
 void Logger::writeLine(LogLevel candidate, std::string_view body) const {
   if (journal_ != nullptr) {
     journal_->write(

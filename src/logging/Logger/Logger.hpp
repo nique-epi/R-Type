@@ -43,6 +43,7 @@
 #include <utility>
 #include "ILogJournal.hpp"
 #include "LogLevel.hpp"
+#include "LogRecord.hpp"
 
 namespace rtype::logging {
 
@@ -168,5 +169,12 @@ class Logger {
   std::string name_;
   const ILogJournal* journal_{nullptr};
 };
+
+/**
+ * @brief Writes @p record as a line, to the sinks of this copy of the library,
+ * without a level check: the caller already asked a journal or a logger which
+ * levels are written.
+ */
+void writeLogLine(const LogRecord& record);
 
 }  // namespace rtype::logging
