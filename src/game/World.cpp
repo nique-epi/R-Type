@@ -34,9 +34,9 @@ namespace {
 /** @brief A body being made: the entity, the sheet of its type, and where it
  * appears. */
 struct BodyStart {
-  engine::Entity body{};
+  engine::Entity body;
   std::reference_wrapper<const EntitySheet> sheet;
-  Position position{};
+  Position position;
 };
 
 /** @brief Gives @p start what every entity of a sheet has: where it is, its
