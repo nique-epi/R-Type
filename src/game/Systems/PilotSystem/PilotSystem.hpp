@@ -1,8 +1,10 @@
 #pragma once
 
 #include <functional>
+#include <vector>
 #include "Entity.hpp"
 #include "ISystem.hpp"
+#include "Position.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::engine {
@@ -38,11 +40,18 @@ class PilotSystem final : public engine::ISystem {
               engine::Duration elapsed) override;
 
  private:
+  /** @brief Lists in ships_ the center of every ship of a player, for the
+   * behaviours to see the nearest one. */
+  void collectShips(engine::ComponentRegistry& components);
+
   /** @brief Records the action @p intent of @p body ends or starts. */
   void passOnActionOf(engine::ComponentRegistry& components,
                       engine::Entity body, const Intent& intent);
 
   std::reference_wrapper<engine::EventBus> events_;
+  /** @brief The ships of this tick; kept between ticks so collecting them
+   * allocates nothing once it holds four. */
+  std::vector<Position> ships_;
 };
 
 }  // namespace rtype::game

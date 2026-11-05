@@ -35,6 +35,9 @@ struct BehaviourView {
    * action ended, this tick included; zero for a body without
    * CurrentAction. */
   engine::Duration actionAge{};
+  /** @brief The center of the ship of a player nearest to the body; nothing
+   * while no ship is in play. */
+  std::optional<Position> nearestShip{std::nullopt};
 };
 
 }  // namespace rtype::game

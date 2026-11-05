@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include "Position.hpp"
 
 namespace rtype::game::testing {
 
@@ -21,5 +23,13 @@ constexpr float HEIGHT_TOLERANCE_UNITS = 1e-3F;
 
 /** @brief The simulation ticks of a quarter period of half a second. */
 constexpr std::size_t TICKS_IN_QUARTER_PERIOD = 30;
+
+/** @brief Two ships around an enemy that stands at the origin: one 100 units
+ * to its right, one 500 units below it, farther. */
+constexpr Position NEAR_SHIP{.x = 100.0F, .y = 0.0F};
+constexpr Position FAR_SHIP{.x = 0.0F, .y = 500.0F};
+
+/** @brief The network id of the enemy the view tests pilot. */
+constexpr std::uint32_t WATCHING_ENEMY_NETWORK_ID = 21;
 
 }  // namespace rtype::game::testing

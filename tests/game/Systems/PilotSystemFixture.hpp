@@ -40,6 +40,10 @@ class PilotSystemFixture : public ::testing::Test {
    * the network id @p networkId and an idle CurrentAction. */
   engine::Entity addEnemy(const IBehaviour& behaviour, std::uint32_t networkId);
 
+  /** @brief Adds the ship of a player at @p position, which no behaviour
+   * pilots. */
+  void addShip(Position position);
+
   /** @returns The EnemyActionStarted events published since the last call,
    * once the bus delivered them. */
   [[nodiscard]] std::vector<EnemyActionStarted> takeStartedActions();

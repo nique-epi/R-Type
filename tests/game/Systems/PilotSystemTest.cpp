@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
 #include <cmath>
 #include <cstddef>
+#include <optional>
 #include "BehaviourConstants.hpp"
 #include "BehaviourTestConstants.hpp"
+#include "BehaviourView.hpp"
 #include "Entity.hpp"
 #include "Intent.hpp"
 #include "Pilot.hpp"
@@ -10,10 +12,12 @@
 #include "PilotSystemTestConstants.hpp"
 #include "Position.hpp"
 #include "TimeConstants.hpp"
+#include "ViewRecordingBehaviour.hpp"
 #include "WaveEntryPosition.hpp"
 
 using rtype::engine::Entity;
 using rtype::engine::SIMULATION_TICK_DURATION;
+using rtype::game::BehaviourView;
 using rtype::game::Intent;
 using rtype::game::Pilot;
 using rtype::game::Position;
@@ -22,10 +26,12 @@ using rtype::game::waveEntryPosition;
 using rtype::game::WEAVE_BEHAVIOUR_NAME;
 using rtype::game::testing::BODY_START_X;
 using rtype::game::testing::DRIFTER_X_AFTER_A_SECOND;
+using rtype::game::testing::FAR_SHIP;
 using rtype::game::testing::HALF_PERIOD;
 using rtype::game::testing::HEIGHT_TOLERANCE_UNITS;
 using rtype::game::testing::LEFT_HEADING_SETTINGS;
 using rtype::game::testing::LOWEST_WAVE_CENTER_Y;
+using rtype::game::testing::NEAR_SHIP;
 using rtype::game::testing::PilotSystemFixture;
 using rtype::game::testing::QUARTER_PERIOD;
 using rtype::game::testing::RIGHT_HEADING_SETTINGS;
@@ -33,6 +39,8 @@ using rtype::game::testing::RIGHTWARD_X_AFTER_A_SECOND;
 using rtype::game::testing::ROW_START;
 using rtype::game::testing::ROW_Y;
 using rtype::game::testing::TICKS_IN_QUARTER_PERIOD;
+using rtype::game::testing::ViewRecordingBehaviour;
+using rtype::game::testing::WATCHING_ENEMY_NETWORK_ID;
 using rtype::game::testing::WAVE_BOTTOM_Y;
 using rtype::game::testing::WEAVER_SETTINGS;
 
@@ -146,4 +154,44 @@ TEST_F(PilotSystemFixture, LeavesTheIntentOfABodyWithoutPilotAlone) {
   ASSERT_NE(intent, nullptr);
   EXPECT_FALSE(intent->shooting);
   EXPECT_FLOAT_EQ(positionOf(ship).x, BODY_START_X);
+}
+
+/**
+ * Given an enemy at the origin, a ship 100 units to its right and another 500
+ * units below it
+ * When the pilots run once
+ * Then its behaviour sees the ship 100 units away
+ */
+TEST_F(PilotSystemFixture, ABehaviourSeesTheNearestShip) {
+  std::optional<BehaviourView> seen;
+  const ViewRecordingBehaviour behaviour{seen};
+  static_cast<void>(addEnemy(behaviour, WATCHING_ENEMY_NETWORK_ID));
+  addShip(FAR_SHIP);
+  addShip(NEAR_SHIP);
+
+  run(SIMULATION_TICK_DURATION);
+
+  ASSERT_TRUE(seen.has_value());
+  const std::optional<Position> nearest =
+      seen.value_or(BehaviourView{}).nearestShip;
+  ASSERT_TRUE(nearest.has_value());
+  const Position found = nearest.value_or(Position{});
+  EXPECT_EQ(found.x, NEAR_SHIP.x);
+  EXPECT_EQ(found.y, NEAR_SHIP.y);
+}
+
+/**
+ * Given an enemy and no ship in play
+ * When the pilots run once
+ * Then its behaviour sees no ship
+ */
+TEST_F(PilotSystemFixture, ABehaviourSeesNoShipWhileNoneIsInPlay) {
+  std::optional<BehaviourView> seen;
+  const ViewRecordingBehaviour behaviour{seen};
+  static_cast<void>(addEnemy(behaviour, WATCHING_ENEMY_NETWORK_ID));
+
+  run(SIMULATION_TICK_DURATION);
+
+  ASSERT_TRUE(seen.has_value());
+  EXPECT_FALSE(seen.value_or(BehaviourView{}).nearestShip.has_value());
 }
