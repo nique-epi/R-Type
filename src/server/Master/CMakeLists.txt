@@ -15,6 +15,7 @@ target_link_libraries(rtype_server_master_module
     rtype_logging
     rtype_network_master_client
     rtype_network_master_messages
+    rtype_network_master_validators
     rtype_server_games_module
     rtype_server_metrics_report
     rtype_server_network_module
@@ -23,7 +24,6 @@ target_link_libraries(rtype_server_master_module
     rtype_engine_time
     rtype_network_constants
     rtype_network_exceptions
-    rtype_network_master_validators
     rtype_server_constants
 )
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -109,5 +110,11 @@ constexpr std::uint8_t HIGHEST_PROTOCOL_VERSION =
 /** @brief The highest value of a measure, and of a share of lost datagrams. */
 constexpr double MAXIMUM_MEASURE = std::numeric_limits<double>::max();
 constexpr double MAXIMUM_LOSS_PERCENT = 100.0;
+
+/**
+ * @brief How often a game server tells the master its state when nothing
+ * changes; the master counts the heartbeats a server missed in this interval.
+ */
+constexpr std::chrono::milliseconds MASTER_HEARTBEAT_INTERVAL{5'000};
 
 }  // namespace rtype::network
