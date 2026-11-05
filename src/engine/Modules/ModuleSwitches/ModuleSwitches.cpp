@@ -26,8 +26,8 @@ bool dependsOn(const IModule& module, const std::string& name) {
 }  // namespace
 
 ModuleSwitches::ModuleSwitches(
-    std::span<const std::unique_ptr<IModule>> modules)
-    : modules_(modules) {}
+    const std::vector<std::unique_ptr<IModule>>& modules)
+    : modules_(&modules) {}
 
 void ModuleSwitches::registerCommand(CommandInterpreter& interpreter) {
   interpreter.add(
@@ -70,7 +70,7 @@ void ModuleSwitches::turnOn(const IModule& module) {
 }
 
 void ModuleSwitches::turnOff(const IModule& module) {
-  for (const std::unique_ptr<IModule>& listedModule : modules_) {
+  for (const std::unique_ptr<IModule>& listedModule : *modules_) {
     if (isOn(listedModule->name()) && dependsOn(*listedModule, module.name())) {
       throw CommandRefusedException("module '" + listedModule->name() +
                                     "' needs module '" + module.name() +
@@ -82,10 +82,10 @@ void ModuleSwitches::turnOff(const IModule& module) {
 
 const IModule& ModuleSwitches::listed(const std::string& name) const {
   const auto found = std::ranges::find_if(
-      modules_, [&name](const std::unique_ptr<IModule>& listedModule) {
+      *modules_, [&name](const std::unique_ptr<IModule>& listedModule) {
         return listedModule->name() == name;
       });
-  if (found == modules_.end()) {
+  if (found == modules_->end()) {
     throw CommandRefusedException("no module named '" + name +
                                   "'; modules: " + listedNames());
   }
@@ -94,8 +94,8 @@ const IModule& ModuleSwitches::listed(const std::string& name) const {
 
 std::string ModuleSwitches::listedNames() const {
   std::vector<std::string> names;
-  names.reserve(modules_.size());
-  for (const std::unique_ptr<IModule>& listedModule : modules_) {
+  names.reserve(modules_->size());
+  for (const std::unique_ptr<IModule>& listedModule : *modules_) {
     names.push_back(listedModule->name());
   }
   return joinedNames(names);
