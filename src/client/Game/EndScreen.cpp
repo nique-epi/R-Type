@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 #include <random>
+#include <span>
 #include <string_view>
 #include <utility>
 #include "BarState.hpp"
@@ -14,10 +15,12 @@
 #include "EndChoice.hpp"
 #include "EndChoices.hpp"
 #include "EndScreenParts.hpp"
+#include "FinalPilot.hpp"
 #include "FlightLogLook.hpp"
 #include "FlightLogPainting.hpp"
 #include "FlightLogTimeline.hpp"
 #include "FlightLogTimingConstants.hpp"
+#include "GameEnded.hpp"
 #include "HeldKey.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfacePixel.hpp"
@@ -26,6 +29,7 @@
 #include "MotionPreference.hpp"
 #include "ScreenId.hpp"
 #include "SoundConstants.hpp"
+#include "Taunt.hpp"
 #include "TauntConstants.hpp"
 #include "Taunts.hpp"
 #include "TimeConstants.hpp"
@@ -57,6 +61,22 @@ std::optional<EndChoice> choiceOfKey(sf::Keyboard::Key key) {
   return std::nullopt;
 }
 
+/** @returns The taunt of the cover for the game in @p parts, whose pilots are
+ * @p pilots, best first: VICTORY_TAUNT after a victory, otherwise one drawn
+ * from the seed among those that fit the pilots, never the previous one,
+ * which it records as the new previous one. */
+const Taunt& coverTauntOf(const EndScreenParts& parts,
+                          std::span<const FinalPilot> pilots) {
+  if (parts.result.get().outcome == network::WireGameOutcome::Victory) {
+    return VICTORY_TAUNT;
+  }
+  std::mt19937 random(parts.seed);
+  std::optional<std::size_t>& previousTaunt = parts.previousTaunt.get();
+  const std::size_t taunt = pickTaunt(pilots, random, previousTaunt);
+  previousTaunt = taunt;
+  return TAUNTS.at(taunt);
+}
+
 }  // namespace
 
 EndScreen::EndScreen(EndScreenParts parts,
@@ -69,12 +89,9 @@ EndScreen::EndScreen(EndScreenParts parts,
       motion_(parts.motion),
       flashes_(parts.flashes),
       palette_(parts.palette),
-      pilots_(parts.result.get().pilots) {
-  std::mt19937 random(parts.seed);
-  std::optional<std::size_t>& previousTaunt = parts.previousTaunt.get();
-  const std::size_t taunt = pickTaunt(pilots_, random, previousTaunt);
-  previousTaunt = taunt;
-  taunt_ = tauntLinesOf(TAUNTS.at(taunt), pilots_);
+      pilots_(parts.result.get().pilots),
+      outcome_(parts.result.get().outcome) {
+  taunt_ = tauntLinesOf(coverTauntOf(parts, pilots_), pilots_);
   schedule_ = flightLogScheduleOf(pilots_, taunt_);
   if (motion_ == MotionPreference::Reduced) {
     sinceStart_ = schedule_.ready;
@@ -169,7 +186,8 @@ FlightLogLook EndScreen::lookNow() const {
                        .quit = stateOf(EndChoice::Quit, pressed_, hovered_),
                        .motion = motion_,
                        .flashes = flashes_,
-                       .palette = palette_};
+                       .palette = palette_,
+                       .outcome = outcome_};
 }
 
 void EndScreen::repaint() {

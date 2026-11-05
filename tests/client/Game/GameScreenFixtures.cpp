@@ -43,8 +43,9 @@ WorldState stateScoringTheFirstPilot(std::uint32_t tick) {
                                                 .invulnerable = false}});
 }
 
-GameEnded endOfThreePilots() {
+GameEnded endOfThreePilots(rtype::network::WireGameOutcome outcome) {
   return GameEnded{
+      .outcome = outcome,
       .players = {{.playerNumber = FIRST_PILOT, .score = FIRST_PILOT_FINAL},
                   {.playerNumber = SECOND_PILOT, .score = SECOND_PILOT_FINAL},
                   {.playerNumber = THIRD_PILOT, .score = THIRD_PILOT_FINAL}}};

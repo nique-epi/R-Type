@@ -74,6 +74,7 @@ using rtype::client::testing::stateListing;
 using rtype::engine::Duration;
 using rtype::engine::testing::ONE_SECOND;
 using rtype::network::WireEntityType;
+using rtype::network::WireGameOutcome;
 using ::testing::Contains;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
@@ -836,6 +837,27 @@ TEST(GameScreenEndTest, TheEndOfTheGameRanksThePilotsOfTheBoard) {
   EXPECT_EQ(doubles.result.pilots.front().nickname, SECOND_PILOT_NICKNAME);
   EXPECT_TRUE(doubles.result.pilots.front().isLocalPlayer);
   EXPECT_EQ(doubles.result.pilots.back().nickname, FIRST_PILOT_NICKNAME);
+}
+
+/**
+ * Given the game of three pilots
+ * When the server ends it in victory, then another in defeat
+ * Then the result of the first says Victory and the result of the second says
+ * Defeat
+ */
+TEST(GameScreenEndTest, TheEndOfTheGameRecordsHowItEnded) {
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  doubles.entityMessages.queue(endOfThreePilots(WireGameOutcome::Victory));
+  game.update(ONE_FRAME);
+  const WireGameOutcome afterTheWin = doubles.result.outcome;
+  doubles.entityMessages.queue(endOfThreePilots(WireGameOutcome::Defeat));
+
+  game.update(ONE_FRAME);
+
+  EXPECT_EQ(afterTheWin, WireGameOutcome::Victory);
+  EXPECT_EQ(doubles.result.outcome, WireGameOutcome::Defeat);
 }
 
 /**

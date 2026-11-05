@@ -8,6 +8,7 @@
 #include <random>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 #include "BarRowWidth.hpp"
@@ -21,6 +22,7 @@
 #include "FlightLogLook.hpp"
 #include "FlightLogTextConstants.hpp"
 #include "FlightLogTimingConstants.hpp"
+#include "GameEnded.hpp"
 #include "HudSpriteConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
@@ -68,9 +70,34 @@ std::vector<sf::Vector2i> stampHolesOf(std::uint32_t seed) {
   return holes;
 }
 
-/** @brief Writes GAME OVER at @p scale, centered in the box of the stamp. */
-void writeStamp(IInterfaceCanvas& canvas, sf::IntRect box, int scale) {
-  canvas.write(STAMP_TEXT,
+/** @returns The word of the stamp: VICTORY once the squadron won, GAME OVER
+ * once it lost. */
+std::string_view stampTextOf(network::WireGameOutcome outcome) {
+  switch (outcome) {
+    case network::WireGameOutcome::Victory:
+      return VICTORY_STAMP_TEXT;
+    case network::WireGameOutcome::Defeat:
+      break;
+  }
+  return DEFEAT_STAMP_TEXT;
+}
+
+/** @returns The line under the stamp: MISSION CLEARED once the squadron
+ * won, ALL PILOTS DOWN once it lost. */
+std::string_view summaryTextOf(network::WireGameOutcome outcome) {
+  switch (outcome) {
+    case network::WireGameOutcome::Victory:
+      return CLEARED_TEXT;
+    case network::WireGameOutcome::Defeat:
+      break;
+  }
+  return DOWN_TEXT;
+}
+
+/** @brief Writes @p text at @p scale, centered in the box of the stamp. */
+void writeStamp(IInterfaceCanvas& canvas, sf::IntRect box, int scale,
+                std::string_view text) {
+  canvas.write(text,
                {box.position.x + (box.size.x / SIDES_PER_AXIS),
                 box.position.y + ((box.size.y - (TEXT_LINE_HEIGHT * scale)) /
                                   SIDES_PER_AXIS)},
@@ -96,7 +123,7 @@ void paintStampFrame(IInterfaceCanvas& canvas, sf::IntRect box) {
   }
 }
 
-/** @brief The stamp once it landed: GAME OVER slamming in at a larger scale,
+/** @brief The stamp once it landed: its word slamming in at a larger scale,
  * then at TITLE_SCALE with its frame. */
 void paintStamp(IInterfaceCanvas& canvas, const FlightLogLook& look,
                 sf::Vector2i page) {
@@ -106,7 +133,7 @@ void paintStamp(IInterfaceCanvas& canvas, const FlightLogLook& look,
   }
   const int scale = stampScaleAt(age, look.motion);
   const sf::IntRect box(page + STAMP_BOX.position, STAMP_BOX.size);
-  writeStamp(canvas, box, scale);
+  writeStamp(canvas, box, scale, stampTextOf(look.outcome));
   if (scale == TITLE_SCALE) {
     paintStampFrame(canvas, box);
   }
@@ -121,12 +148,13 @@ void paintLines(IInterfaceCanvas& canvas, const FlightLogLook& look,
                                           MISSION_LOG_TEXT.size())),
                page + MISSION_LOG_TOP_LEFT,
                {.font = TextFont::Small, .color = PAPER_LABEL_COLOR});
-  canvas.write(typedPrefix(DOWN_TEXT,
-                           lettersTypedAt(sinceOpen - DOWN_DELAY,
-                                          DOWN_LETTER_TIME, DOWN_TEXT.size())),
-               {centeredTextLeft(sf::IntRect(page, PAGE_SIZE), DOWN_TEXT),
-                page.y + DOWN_LINE_TOP},
-               {.font = TextFont::Regular, .color = PAPER_INK});
+  const std::string_view summary = summaryTextOf(look.outcome);
+  canvas.write(
+      typedPrefix(summary, lettersTypedAt(sinceOpen - DOWN_DELAY,
+                                          DOWN_LETTER_TIME, summary.size())),
+      {centeredTextLeft(sf::IntRect(page, PAGE_SIZE), summary),
+       page.y + DOWN_LINE_TOP},
+      {.font = TextFont::Regular, .color = PAPER_INK});
 }
 
 void paintTeamScore(IInterfaceCanvas& canvas, const FlightLogLook& look,
