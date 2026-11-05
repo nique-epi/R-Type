@@ -39,11 +39,13 @@ class ServerGamesFixture : public ServerModuleFixture {
    * of its own. */
   rtype::server::ConnectedPlayer& join(std::size_t index);
 
-  /** @brief Runs one tick of the loop with @p players and @p requests among the
-   * datagrams. */
+  /** @brief Runs one tick of the loop with @p players, @p requests and
+   * @p informationRequests among the datagrams. */
   void runTick(
       const std::vector<rtype::network::IncomingDatagram>& players,
-      const std::vector<rtype::network::IncomingDatagram>& requests = {});
+      const std::vector<rtype::network::IncomingDatagram>& requests = {},
+      const std::vector<rtype::network::IncomingDatagram>& informationRequests =
+          {});
 
   /** @returns How many datagrams of the type @p type went to the player at
    * @p index. */

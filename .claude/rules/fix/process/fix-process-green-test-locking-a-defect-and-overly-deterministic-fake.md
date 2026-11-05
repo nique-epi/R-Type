@@ -40,6 +40,12 @@ Why: an assertion copied from the output turns the current behavior into the spe
 1. **Before asserting a look through a color, compare it with the colors of the other states of the widget** (`WidgetColors.hpp`): two constants can hold one color. `BAR_BORDER_COLOR` and `SELECTED_BAR_INSIDE_COLOR` are both `EDGE_BLUE`.
 2. **Write the opposite test too**: the state without that look must not contain the color. If it does, the first test could not fail.
 
+### A test of a thread waits until the thread reached the state it tests
+
+1. **A thread starts later than the call that builds it.** A test that stops a job, or adds what its next pass must see, right after building it can act before the first pass: the stop is seen before the loop, the new item before the first pass, and the test passes whatever the loop does.
+2. **Before acting, wait for an observable sign that the thread reached the state under test**: its first pass written (a first server online), then the stop or the second item.
+3. **The red proof breaks the loop** (one pass only, a sleep that ignores the stop): the test must turn red on each, run several times. A variant left green means the test raced.
+
 ## Example
 
 - ❌ **Before (wrong)**:

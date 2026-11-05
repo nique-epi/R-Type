@@ -13,6 +13,7 @@
 #include "NetworkConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerGamesModule.hpp"
+#include "ServerInformationModule.hpp"
 #include "ServerLobbyModule.hpp"
 #include "ServerLoggerModule.hpp"
 #include "ServerMasterModule.hpp"
@@ -45,6 +46,7 @@ std::vector<std::unique_ptr<engine::IModule>> serverModules(
       .gameCount = link.has_value() ? GAME_PROCESS_GAME_COUNT
                                     : DEFAULT_HOSTED_GAME_COUNT}));
   modules.push_back(std::make_unique<ServerLobbyModule>());
+  modules.push_back(std::make_unique<ServerInformationModule>());
   modules.push_back(std::make_unique<ServerMetricsModule>(
       std::make_shared<engine::SystemClock>(), launchOptions.trafficCsvFile()));
   modules.push_back(std::make_unique<ServerMasterModule>());

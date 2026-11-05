@@ -6,12 +6,12 @@
 #include <vector>
 #include "DurationConversion.hpp"
 #include "HostedGame.hpp"
+#include "InformationConstants.hpp"
 #include "MetricsReport.hpp"
 #include "PlayerRoundTripMeasure.hpp"
 #include "ProtocolConstants.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerIdentity.hpp"
-#include "ServerMasterConstants.hpp"
 #include "ServerMeasures.hpp"
 #include "ServerRegistration.hpp"
 #include "TimeConstants.hpp"

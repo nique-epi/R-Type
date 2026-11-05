@@ -1,3 +1,3 @@
-target_sources(master_tests PRIVATE ServersServiceTest.cpp ServersServiceFixture.cpp)
+target_sources(master_tests PRIVATE ServersServiceTest.cpp ServersServiceFixture.cpp ServerStatusServiceTest.cpp ServerStatusServiceFixture.cpp)
 
 add_subdirectory(Helpers)

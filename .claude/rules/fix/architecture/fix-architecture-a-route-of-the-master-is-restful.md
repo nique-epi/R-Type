@@ -26,6 +26,11 @@ Why: routes named after an action (`/register`, `/heartbeat` as a POST) and an a
 6. **A member enters a representation only if it spares a heavier request**; a sub-resource with an access rule of its own stays a route of its own (Yuno: the shape of a payload follows the access rule, never a screen).
 7. **Before writing a route, write its line**: method, path, who calls it, answer and errors, and check it against points 1 to 6. A plan that adds a route shows that table.
 
+### The history of an attribute is the plural of the attribute, never its changes
+
+1. **A route that lists the past values of an attribute names them by the attribute, in the plural**: `GET /api/servers/{id}/statuses`, each item the value and the second it began (`{"status":"offline","since":…}`). A path built on "change" (`/status-changes`) reads as an action (point 1) and makes the changes of an attribute a resource of their own (point 2).
+2. **The table that keeps them may keep its own name** (`status_changes`): the path names what a client reads, not how the master stores it.
+
 ## Example
 
 - ❌ **Before (wrong)**: `POST /api/game-servers/register`, `POST /api/game-servers/{id}/heartbeat` with the id compared to the key, then `POST /api/server-keys` to get a key.

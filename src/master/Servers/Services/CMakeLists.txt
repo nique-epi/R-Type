@@ -3,6 +3,7 @@ find_package(nlohmann_json CONFIG REQUIRED)
 add_subdirectory(Helpers)
 
 add_library(rtype_master_servers_services STATIC
+  ServerStatusService.cpp
   ServersService.cpp
 )
 

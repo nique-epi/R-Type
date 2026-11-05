@@ -13,6 +13,7 @@
 #include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
+#include "NetworkException.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
 
@@ -144,6 +145,39 @@ class DatagramCodec {
           MessageFrame{.type = type, .payload = reader.readBytes(payloadSize)});
     }
     return true;
+  }
+
+  /**
+   * @returns The first message of type Message that @p datagram holds, read by
+   * its decodePayload(); nothing when the header is not of this protocol and
+   * version (speaksThisProtocol()) or no message has that type. The messages
+   * of other types are skipped unread.
+   * @throws MalformedDatagramException when @p datagram is shorter than a
+   * header, or its sizes do not add up, as splitMessages() throws.
+   * @throws What decodePayload() throws for the first message of that type,
+   * when it refuses it.
+   */
+  template <DecodableMessage Message>
+  [[nodiscard]] static std::optional<Message> firstMessage(
+      std::span<const std::byte> datagram) {
+    if (!speaksThisProtocol(decodeHeader(datagram))) {
+      return std::nullopt;
+    }
+    std::optional<MessageFrame> first;
+    const bool whole =
+        forEachMessage(datagram, [&first](const MessageFrame& frame) {
+          if (!first.has_value() &&
+              frame.type == static_cast<std::uint8_t>(Message::TYPE)) {
+            first = frame;
+          }
+        });
+    if (!whole) {
+      throw MalformedDatagramException(datagram.size());
+    }
+    if (!first.has_value()) {
+      return std::nullopt;
+    }
+    return decodeMessage<Message>(first->payload);
   }
 
   /**

@@ -25,7 +25,8 @@ constexpr auto MESSAGE_TYPE_NAMES = std::to_array<std::string_view>(
      "GameLoaded",        "LeaderboardRequest",
      "LeaderboardAnswer", "DeltaWorldState",
      "RoundTrips",        "EnemyAction",
-     "OrderedMessage",    "ConnectionRedirect",
+     "OrderedMessage",    "ServerInformationRequest",
+     "ServerInformation", "ConnectionRedirect",
      "GameStatus",        "GameStatusAcknowledged"});
 
 static_assert(FIRST_NAMED_MESSAGE_TYPE + MESSAGE_TYPE_NAMES.size() - 1 ==

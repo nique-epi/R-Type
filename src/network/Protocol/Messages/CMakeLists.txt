@@ -22,6 +22,8 @@ add_subdirectory(PlayerInput)
 add_subdirectory(PlayerLeft)
 add_subdirectory(ReadyState)
 add_subdirectory(RoundTrips)
+add_subdirectory(ServerInformation)
+add_subdirectory(ServerInformationRequest)
 
 add_library(rtype_network_messages INTERFACE)
 
@@ -51,4 +53,6 @@ target_link_libraries(rtype_network_messages
     rtype_network_player_left
     rtype_network_ready_state
     rtype_network_round_trips
+    rtype_network_server_information
+    rtype_network_server_information_request
 )

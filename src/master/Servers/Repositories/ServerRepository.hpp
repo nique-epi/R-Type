@@ -1,21 +1,29 @@
 #pragma once
 
+#include <SQLiteCpp/Database.h>
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 #include "CreationQuota.hpp"
 #include "HeartbeatRecord.hpp"
 #include "KnownServer.hpp"
 #include "LastHeartbeat.hpp"
+#include "ListedServer.hpp"
 #include "MasterDatabase.hpp"
 #include "NewServer.hpp"
+#include "PageRequest.hpp"
 #include "ServerRecord.hpp"
+#include "StatusChangeRecord.hpp"
+#include "WatchedServer.hpp"
 
 namespace rtype::master {
 
 /**
  * @brief The table `servers`: the only code that writes its SQL. Each call runs
- * behind the lock of the MasterDatabase, so two requests never interleave.
+ * behind the lock of the MasterDatabase, so two requests never interleave; a
+ * static one runs on the connection its caller holds inside
+ * MasterDatabase::transact(), so its writes join those of other tables.
  */
 class ServerRepository {
  public:
@@ -41,9 +49,11 @@ class ServerRepository {
    */
   void saveRegistration(const ServerRecord& record);
 
-  /** @brief Keeps the heartbeat of @p record as the last state of its server.
-   */
-  void saveLastHeartbeat(const HeartbeatRecord& record);
+  /** @brief Keeps the heartbeat of @p record as the last state of its server,
+   * with the counts and the measures the list and the statuses read of it, on
+   * @p connection. */
+  static void saveLastHeartbeat(SQLite::Database& connection,
+                                const HeartbeatRecord& record);
 
   /**
    * @returns The last heartbeat of the server @p serverId, nothing in it while
@@ -53,6 +63,34 @@ class ServerRepository {
    */
   [[nodiscard]] std::optional<LastHeartbeat> lastHeartbeatOf(
       std::int64_t serverId);
+
+  /**
+   * @returns Every registered server, by id, with what its status is computed
+   * from and the status it holds, read on @p connection.
+   */
+  [[nodiscard]] static std::vector<WatchedServer> watchedServers(
+      SQLite::Database& connection);
+
+  /** @brief Keeps the status of each of @p changes as the status of its
+   * server, on @p connection. */
+  static void saveStatuses(SQLite::Database& connection,
+                           const std::vector<StatusChangeRecord>& changes);
+
+  /**
+   * @brief Puts the server @p serverId in maintenance, or takes it out of it.
+   * @returns Whether a server has that id.
+   */
+  bool setMaintenance(std::int64_t serverId, bool maintenance);
+
+  /**
+   * @returns The registered servers of @p page, by id, each with the counts of
+   * its last heartbeat: 0 and 0 before the first one.
+   */
+  [[nodiscard]] std::vector<network::ListedServer> registeredServers(
+      const PageRequest& page);
+
+  /** @returns Whether a server, registered or not, has the id @p serverId. */
+  [[nodiscard]] bool hasServer(std::int64_t serverId);
 
  private:
   MasterDatabase& database_;

@@ -40,6 +40,7 @@ void MasterHttpServerFixture::addEchoRoute() {
                                   ? nlohmann::json(*request.bearerToken)
                                   : nlohmann::json(nullptr);
     echo[ECHO_ADDRESS_MEMBER] = request.remoteAddress;
+    echo[ECHO_QUERY_MEMBER] = request.queryParameters;
     return rtype::master::ApiResponse{.status = EXPECTED_OK,
                                       .body = echo.dump()};
   });

@@ -13,6 +13,7 @@ constexpr std::string_view NETWORK_MODULE_NAME = "network";
 constexpr std::string_view STORAGE_MODULE_NAME = "storage";
 constexpr std::string_view GAMES_MODULE_NAME = "games";
 constexpr std::string_view LOBBY_MODULE_NAME = "lobby";
+constexpr std::string_view INFORMATION_MODULE_NAME = "information";
 constexpr std::string_view METRICS_MODULE_NAME = "metrics";
 constexpr std::string_view MASTER_MODULE_NAME = "master";
 constexpr std::string_view SUPERVISOR_LINK_MODULE_NAME = "supervisor link";

@@ -3,17 +3,22 @@
 #include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
 #include "Application.hpp"
 #include "DatagramCodec.hpp"
+#include "Endpoint.hpp"
 #include "IModule.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"
 #include "MessageType.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
+#include "PacketHeader.hpp"
+#include "RoundTripWire.hpp"
+#include "ServerInformation.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "ServerModules.hpp"
 #include "ServerModulesFixture.hpp"
@@ -31,7 +36,7 @@ using rtype::server::serverModules;
  * Given the modules of the server
  * When they are listed
  * Then they are the journal, the network, the storage, the games, the lobby,
- * the metrics and the master, in the order they start
+ * the information, the metrics and the master, in the order they start
  */
 TEST_F(ServerModulesFixture, ListsTheServerModulesWithTheMasterLast) {
   const auto modules =
@@ -48,6 +53,7 @@ TEST_F(ServerModulesFixture, ListsTheServerModulesWithTheMasterLast) {
                        std::string{rtype::server::STORAGE_MODULE_NAME},
                        std::string{rtype::server::GAMES_MODULE_NAME},
                        std::string{rtype::server::LOBBY_MODULE_NAME},
+                       std::string{rtype::server::INFORMATION_MODULE_NAME},
                        std::string{rtype::server::METRICS_MODULE_NAME},
                        std::string{rtype::server::MASTER_MODULE_NAME}}));
 }
@@ -113,4 +119,40 @@ TEST_F(ServerModulesFixture, SaysGoodbyeToAJoinedPlayerWhenItStops) {
   EXPECT_GE(goodbyes[2].time - goodbyes[1].time, MINIMUM_COPY_SPACING);
   EXPECT_TRUE(portIsFree(port()));
   EXPECT_EQ(client().failedSendCount(), 0U);
+}
+
+/**
+ * Given a server whose modules started
+ * When a client asks it for its information over the loopback
+ * Then it gets one ServerInformation, from which it measures a round trip
+ * shorter than its wait
+ */
+TEST_F(ServerModulesFixture, AnswersAnInformationRequestWhoseRoundTripIsRead) {
+  const auto application = serverApplication(launchOptions());
+  application->start();
+  const rtype::network::Endpoint server{
+      .address = std::string{rtype::network::LOOPBACK_IPV4_ADDRESS},
+      .port = port()};
+
+  client().send(server,
+                rtype::network::DatagramCodec::encode(
+                    rtype::network::PacketHeader{},
+                    rtype::network::informationRequestAt(
+                        std::chrono::steady_clock::now().time_since_epoch())));
+  const std::vector<ReceivedAt> received =
+      client().waitForDatagrams(1, WAIT_FOR_ANSWER);
+  application->stop();
+
+  ASSERT_EQ(received.size(), 1U);
+  const std::optional<rtype::network::ServerInformation> answer =
+      rtype::network::DatagramCodec::firstMessage<
+          rtype::network::ServerInformation>(received.front().payload);
+  ASSERT_TRUE(answer.has_value());
+  const std::optional<std::chrono::microseconds> roundTrip =
+      rtype::network::informationRoundTripOf(
+          answer.value_or(rtype::network::ServerInformation{}),
+          received.front().time.time_since_epoch());
+  ASSERT_TRUE(roundTrip.has_value());
+  EXPECT_LT(roundTrip.value_or(std::chrono::microseconds::max()),
+            WAIT_FOR_ANSWER);
 }

@@ -32,9 +32,11 @@ enum class MessageType : std::uint8_t {
   RoundTrips = 21,
   EnemyAction = 22,
   OrderedMessage = 23,
-  ConnectionRedirect = 24,
-  GameStatus = 25,
-  GameStatusAcknowledged = 26,
+  ServerInformationRequest = 24,
+  ServerInformation = 25,
+  ConnectionRedirect = 26,
+  GameStatus = 27,
+  GameStatusAcknowledged = 28,
 };
 
 }  // namespace rtype::network

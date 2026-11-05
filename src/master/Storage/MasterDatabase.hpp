@@ -1,9 +1,11 @@
 #pragma once
 
 #include <SQLiteCpp/Database.h>
+#include <SQLiteCpp/Transaction.h>
 #include <mutex>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include "MasterException.hpp"
 
@@ -42,6 +44,32 @@ class MasterDatabase {
       throw DatabaseClosedException();
     }
     return std::forward<Work>(work)(*connection_);
+  }
+
+  /**
+   * @returns What @p work returns, called with the connection inside one
+   * immediate transaction while this holds the lock: the writes of @p work
+   * commit together when it returns, and none of them when it throws, since
+   * the transaction rolls back as the exception leaves. @p work calls the
+   * functions of the repositories that take the connection, never one that
+   * takes the lock again, which would wait for itself.
+   * @throws DatabaseClosedException when the connection is not open.
+   */
+  template <typename Work>
+  auto transact(Work&& work) {
+    return run([&work](SQLite::Database& connection) {
+      SQLite::Transaction transaction{connection,
+                                      SQLite::TransactionBehavior::IMMEDIATE};
+      if constexpr (std::is_void_v<
+                        std::invoke_result_t<Work, SQLite::Database&>>) {
+        std::forward<Work>(work)(connection);
+        transaction.commit();
+      } else {
+        auto result = std::forward<Work>(work)(connection);
+        transaction.commit();
+        return result;
+      }
+    });
   }
 
  private:
