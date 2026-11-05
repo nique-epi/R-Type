@@ -59,6 +59,14 @@ namespace rtype::engine {
                                     std::string_view key);
 
 /**
+ * @returns Where the value of @p key of @p table starts, for an error about
+ * that value.
+ * @throws MissingDataFileKeyException, at the table, when it holds nothing.
+ */
+[[nodiscard]] DataFilePlace placeOfKey(const DataFileTable& table,
+                                       std::string_view key);
+
+/**
  * @throws UnknownDataFileKeyException for the first key of @p table that is
  * not one of @p knownKeys, at that key.
  */

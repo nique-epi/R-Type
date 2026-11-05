@@ -85,6 +85,10 @@ DataFilePlace placeOf(const toml::source_region& region,
                        .key = keyName(table, key)};
 }
 
+DataFilePlace placeOfKey(const DataFileTable& table, std::string_view key) {
+  return placeOf(nodeAt(table, key).source(), table, key);
+}
+
 void refuseUnknownKeys(const DataFileTable& table,
                        std::span<const std::string_view> knownKeys) {
   for (auto&& entry : table.table.get()) {
@@ -154,8 +158,7 @@ std::size_t choiceAt(const DataFileTable& table, std::string_view key,
   const std::string text = textAt(table, key);
   const auto found = std::ranges::find(choices, text);
   if (found == choices.end()) {
-    throw UnknownDataFileChoiceException(
-        placeOf(nodeAt(table, key).source(), table, key), text, choices);
+    throw UnknownDataFileChoiceException(placeOfKey(table, key), text, choices);
   }
   return static_cast<std::size_t>(found - choices.begin());
 }

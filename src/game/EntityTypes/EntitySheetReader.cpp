@@ -4,17 +4,14 @@
 #include <cstdint>
 #include <optional>
 #include <span>
-#include <string>
 #include <string_view>
 #include <toml++/toml.hpp>
 #include <vector>
 #include "BehaviourRegistry.hpp"
 #include "BehaviourSetting.hpp"
 #include "CollisionBox.hpp"
-#include "DataFilePlace.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
-#include "EngineException.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheetConstants.hpp"
 #include "EntityType.hpp"
@@ -33,12 +30,6 @@
 namespace rtype::game {
 
 namespace {
-
-/** @returns Where @p table names @p key, for an error about its value. */
-engine::DataFilePlace placeOfKey(const engine::DataFileTable& table,
-                                 std::string_view key) {
-  return engine::placeOf(engine::nodeAt(table, key).source(), table, key);
-}
 
 /** @returns The whole simulation ticks nearest to @p duration: 333 ms are 20
  * ticks at 60 per second, 1500 ms are 90, 0 ms are 0. */
@@ -98,27 +89,21 @@ std::vector<std::string_view> pilotNames(const BehaviourRegistry& behaviours) {
 
 /** @returns The behaviour the pilot of @p gameplay names, nullptr for a
  * player. @throws engine::UnknownDataFileChoiceException when it names none of
- * @p behaviours. */
+ * pilotNames(). */
 const IBehaviour* behaviourOf(const engine::DataFileTable& gameplay,
                               const BehaviourRegistry& behaviours) {
-  const std::string pilot = engine::textAt(gameplay, PILOT_KEY);
-  if (pilot == PLAYER_PILOT_NAME) {
-    return nullptr;
-  }
-  const IBehaviour* const behaviour = behaviours.find(pilot);
-  if (behaviour == nullptr) {
-    throw engine::UnknownDataFileChoiceException(
-        placeOfKey(gameplay, PILOT_KEY), pilot, pilotNames(behaviours));
-  }
-  return behaviour;
+  const std::vector<std::string_view> names = pilotNames(behaviours);
+  const std::string_view pilot =
+      names.at(engine::choiceAt(gameplay, PILOT_KEY, names));
+  return pilot == PLAYER_PILOT_NAME ? nullptr : behaviours.find(pilot);
 }
 
 /** @throws InconsistentEntitySheetException when @p gameplay holds a table
  * `[gameplay.behaviour]`. */
 void refuseBehaviourTable(const engine::DataFileTable& gameplay) {
   if (engine::optionalTableAt(gameplay, BEHAVIOUR_KEY).has_value()) {
-    throw InconsistentEntitySheetException(placeOfKey(gameplay, BEHAVIOUR_KEY),
-                                           BEHAVIOUR_TABLE_RULE);
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, BEHAVIOUR_KEY), BEHAVIOUR_TABLE_RULE);
   }
 }
 
@@ -217,7 +202,7 @@ std::optional<GunSheet> gunFrom(const engine::DataFileTable& gameplay) {
       .firstShotTicks = nearestTicksIn(
           engine::millisecondsAt(*gun, FIRST_SHOT_KEY, FIRST_SHOT_RANGE)),
       .projectile = engine::textAt(*gun, PROJECTILE_KEY),
-      .projectilePlace = placeOfKey(*gun, PROJECTILE_KEY)};
+      .projectilePlace = engine::placeOfKey(*gun, PROJECTILE_KEY)};
 }
 
 /** @throws InconsistentEntitySheetException when a player pilots @p sheet and
@@ -226,8 +211,8 @@ void checkPilotMatchesSide(const EntitySheet& sheet,
                            const engine::DataFileTable& gameplay) {
   const bool pilotedByAPlayer = !sheet.pilot.has_value();
   if (pilotedByAPlayer != (sheet.side == EntityType::Player)) {
-    throw InconsistentEntitySheetException(placeOfKey(gameplay, PILOT_KEY),
-                                           PLAYER_PILOT_RULE);
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, PILOT_KEY), PLAYER_PILOT_RULE);
   }
 }
 
@@ -238,13 +223,13 @@ void checkShipMotion(const EntitySheet& sheet,
                      const engine::DataFileTable& gameplay) {
   const bool movesAsAShip = sheet.motion.kind == MotionKind::Ship;
   if (movesAsAShip != (sheet.side == EntityType::Player)) {
-    throw InconsistentEntitySheetException(placeOfKey(gameplay, MOTION_KEY),
-                                           SHIP_MOTION_RULE);
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, MOTION_KEY), SHIP_MOTION_RULE);
   }
   if (movesAsAShip && (sheet.hitbox.width != SHIP_WIDTH ||
                        sheet.hitbox.height != SHIP_HEIGHT)) {
-    throw InconsistentEntitySheetException(placeOfKey(gameplay, HITBOX_KEY),
-                                           SHIP_HITBOX_RULE);
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, HITBOX_KEY), SHIP_HITBOX_RULE);
   }
 }
 
@@ -254,8 +239,8 @@ void checkMissileHasNoGun(const EntitySheet& sheet,
   const bool isAMissile = sheet.side == EntityType::PlayerMissile ||
                           sheet.side == EntityType::EnemyMissile;
   if (isAMissile && sheet.gun.has_value()) {
-    throw InconsistentEntitySheetException(placeOfKey(gameplay, GUN_KEY),
-                                           MISSILE_GUN_RULE);
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, GUN_KEY), MISSILE_GUN_RULE);
   }
 }
 
