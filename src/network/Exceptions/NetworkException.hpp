@@ -275,12 +275,12 @@ class SimulatedDelayOutOfRangeException : public NetworkException {
 };
 
 /**
- * @brief A file the traffic of a program should go to, and that the system
- * refuses to open.
+ * @brief A CSV file a program should write to (its traffic, the game
+ * statistics), and that the system refuses to open.
  */
-class TrafficFileOpenException : public NetworkException {
+class CsvFileOpenException : public NetworkException {
  public:
-  explicit TrafficFileOpenException(const std::string& path);
+  explicit CsvFileOpenException(const std::string& path);
 };
 
 /**

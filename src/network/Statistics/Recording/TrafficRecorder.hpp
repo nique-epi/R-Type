@@ -3,9 +3,9 @@
 #include <chrono>
 #include <filesystem>
 #include <optional>
+#include "CsvFile.hpp"
 #include "Logger.hpp"
 #include "TrafficCounters.hpp"
-#include "TrafficCsvFile.hpp"
 #include "TrafficTotals.hpp"
 
 namespace rtype::network {
@@ -25,7 +25,7 @@ class TrafficRecorder {
    * @param counters What is read; it must outlive the recorder.
    * @param csvFile Where the rows go; nothing writes no rows.
    * @param now The start, on the clock advance() is given.
-   * @throws TrafficFileOpenException when @p csvFile cannot be opened.
+   * @throws CsvFileOpenException when @p csvFile cannot be opened.
    */
   TrafficRecorder(const TrafficCounters& counters,
                   const std::optional<std::filesystem::path>& csvFile,
@@ -44,7 +44,7 @@ class TrafficRecorder {
 
   const TrafficCounters* counters_;
   logging::Logger logger_;
-  std::optional<TrafficCsvFile> file_;
+  std::optional<CsvFile> file_;
   std::chrono::nanoseconds start_;
   std::chrono::nanoseconds lastRows_;
   std::chrono::nanoseconds lastLine_;

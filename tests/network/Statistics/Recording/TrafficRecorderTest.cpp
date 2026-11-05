@@ -14,9 +14,9 @@
 #include "TrafficTestConstants.hpp"
 
 using rtype::engine::testing::ONE_SECOND;
+using rtype::network::CsvFileOpenException;
 using rtype::network::MessageType;
 using rtype::network::TrafficCounters;
-using rtype::network::TrafficFileOpenException;
 using rtype::network::TrafficRecorder;
 using rtype::network::testing::datagramHolding;
 using rtype::network::testing::loopbackOnPort;
@@ -155,7 +155,7 @@ TEST(TrafficRecorder, RefusesAFileItCannotOpen) {
 
   EXPECT_THROW(
       const TrafficRecorder recorder(counters, folder.path(), RECORDER_START),
-      TrafficFileOpenException);
+      CsvFileOpenException);
 }
 
 /**
