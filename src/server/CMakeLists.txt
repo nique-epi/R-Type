@@ -5,6 +5,7 @@ target_include_directories(rtype_server_constants INTERFACE ${CMAKE_CURRENT_SOUR
 target_link_libraries(rtype_server_constants INTERFACE rtype_engine_time)
 
 add_subdirectory(Exceptions)
+add_subdirectory(Processes)
 add_subdirectory(Platform)
 add_subdirectory(Network)
 add_subdirectory(Logger)

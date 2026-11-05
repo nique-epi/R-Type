@@ -1,0 +1,15 @@
+add_executable(rtype_test_child ChildProgram/main.cpp)
+target_include_directories(rtype_test_child PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ChildProgram)
+set_target_properties(rtype_test_child PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${RTYPE_TEST_BINARY_DIR})
+rtype_enable_warnings(rtype_test_child)
+
+add_executable(rtype_test_parent ParentProgram/main.cpp)
+target_include_directories(rtype_test_parent PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ChildProgram)
+target_link_libraries(rtype_test_parent PRIVATE rtype_server_processes)
+set_target_properties(rtype_test_parent PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${RTYPE_TEST_BINARY_DIR})
+rtype_enable_warnings(rtype_test_parent)
+
+rtype_add_test(NAME server_process_tests SOURCES BoostProcessLauncherTest.cpp ChildBindingTest.cpp ProcessFixtures.cpp LIBS rtype_server_processes rtype_server_exceptions rtype_test_support TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
+add_dependencies(server_process_tests rtype_test_child rtype_test_parent)
+target_include_directories(server_process_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/ChildProgram)
+target_compile_definitions(server_process_tests PRIVATE RTYPE_TEST_CHILD="$<TARGET_FILE:rtype_test_child>" RTYPE_TEST_PARENT="$<TARGET_FILE:rtype_test_parent>")
