@@ -20,7 +20,8 @@
       ]
     },
     "sqlitecpp",
-    "tomlplusplus"
+    "tomlplusplus",
+    "zstd"
   ],
   "features": {
     "tests": {

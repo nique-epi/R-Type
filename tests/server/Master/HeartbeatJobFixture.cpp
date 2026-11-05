@@ -39,6 +39,7 @@ void HeartbeatJobFixture::startJob(HeartbeatTimes times) {
 void HeartbeatJobFixture::publishGameOf(std::string_view pilot) {
   games_.publish(std::vector<network::HostedGame>{
       network::HostedGame{.number = LINKED_GAME_NUMBER,
+                          .name = std::string{LINKED_GAME_NAME},
                           .state = network::HostedGameState::Waiting,
                           .difficulty = std::string{LINKED_DIFFICULTY},
                           .players = {std::string{pilot}}}});

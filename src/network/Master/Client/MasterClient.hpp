@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include "CreatedServer.hpp"
+#include "GameListing.hpp"
 #include "MasterAccess.hpp"
 #include "MasterRoute.hpp"
 #include "ServerCreation.hpp"
@@ -11,6 +13,7 @@
 
 namespace httplib {
 class Client;
+struct Request;
 }  // namespace httplib
 
 namespace rtype::network {
@@ -65,10 +68,22 @@ class MasterClient {
    */
   void sendHeartbeat(const ServerHeartbeat& heartbeat);
 
+  /**
+   * @brief Reads the games the server @p serverId hosts,
+   * `GET /api/servers/{id}/games`; it needs no key.
+   * @throws MasterRefusedException with status 404 when no server has that id.
+   * @throws InvalidMasterMessageException when the answer is no game listing.
+   */
+  [[nodiscard]] GameListing listGames(std::int64_t serverId);
+
  private:
   /** @returns The body the master answered to @p body sent on @p route. */
   [[nodiscard]] std::string answerOf(MasterRoute route,
                                      const std::string& body);
+
+  /** @returns The body the master answered to @p request, which gets the key
+   * of this client. */
+  [[nodiscard]] std::string send(httplib::Request request);
 
   std::string key_;
   std::unique_ptr<httplib::Client> client_;

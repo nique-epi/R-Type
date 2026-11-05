@@ -200,7 +200,7 @@ TEST_F(DatagramSorterFixture, DropsAStrangersRequestOfAnotherProtocol) {
 
 /**
  * Given a sorter that admitted nobody
- * When a stranger sends a connection request with a flag version 3 does not
+ * When a stranger sends a connection request with a flag version 4 does not
  * know
  * Then the request reaches no queue
  */

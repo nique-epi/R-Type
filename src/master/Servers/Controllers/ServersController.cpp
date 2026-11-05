@@ -1,4 +1,5 @@
 #include "ServersController.hpp"
+#include <charconv>
 #include <chrono>
 #include <cstdint>
 #include <nlohmann/json.hpp>
@@ -6,10 +7,13 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <system_error>
+#include <utility>
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
 #include "CreatedServer.hpp"
 #include "CreationAttempt.hpp"
+#include "GameListing.hpp"
 #include "HttpConstants.hpp"
 #include "HttpHeader.hpp"
 #include "KnownServer.hpp"
@@ -46,6 +50,24 @@ ApiResponse unauthorizedResponse() {
       .detail = std::string{UNKNOWN_KEY_DETAIL},
       .header = HttpHeader{.name = std::string{WWW_AUTHENTICATE_HEADER},
                            .value = std::string{network::BEARER_SCHEME}}};
+}
+
+/** @returns The id the path of @p request names, nothing when it is no id. */
+std::optional<std::int64_t> serverIdOf(const ApiRequest& request) {
+  const auto parameter = request.pathParameters.find(
+      std::string{network::SERVER_ID_PATH_PARAMETER});
+  if (parameter == request.pathParameters.end()) {
+    return std::nullopt;
+  }
+  const std::string& text = parameter->second;
+  std::int64_t serverId = 0;
+  const auto [end, error] =
+      std::from_chars(text.data(), text.data() + text.size(), serverId);
+  if (error != std::errc{} || end != text.data() + text.size() ||
+      std::cmp_less(serverId, network::FIRST_SERVER_ID)) {
+    return std::nullopt;
+  }
+  return serverId;
 }
 
 /** @returns What @p answer gives, or 400 naming the member it refused. */
@@ -148,6 +170,20 @@ ApiResponse ServersController::replaceOwnHeartbeat(const ApiRequest& request) {
         }
         return heartbeatAnswer();
       });
+}
+
+ApiResponse ServersController::listGames(const ApiRequest& request) {
+  const std::optional<std::int64_t> serverId = serverIdOf(request);
+  if (!serverId.has_value()) {
+    return refusal(NOT_FOUND_STATUS, UNKNOWN_SERVER_DETAIL);
+  }
+  const std::optional<network::GameListing> listing =
+      service_.gameListingOf(*serverId);
+  if (!listing.has_value()) {
+    return refusal(NOT_FOUND_STATUS, UNKNOWN_SERVER_DETAIL);
+  }
+  return ApiResponse{.status = OK_STATUS,
+                     .body = network::gameListingText(*listing)};
 }
 
 }  // namespace rtype::master

@@ -23,6 +23,8 @@ constexpr std::string_view SERVER_OF_KEY_QUERY = R"sql(
 SELECT id, maximum_games, maximum_players_per_game
 FROM servers WHERE key_fingerprint = :key_fingerprint
 )sql";
+constexpr std::string_view LAST_HEARTBEAT_OF_SERVER_QUERY =
+    "SELECT last_heartbeat FROM servers WHERE id = :server_id";
 constexpr std::string_view UPDATE_REGISTRATION_STATEMENT = R"sql(
 UPDATE servers
 SET name = :name, address = :address, udp_port = :udp_port,
@@ -88,5 +90,8 @@ constexpr int CREATION_COUNT_COLUMN = 0;
 constexpr int SERVER_ID_COLUMN = 0;
 constexpr int MAXIMUM_GAMES_COLUMN = 1;
 constexpr int MAXIMUM_PLAYERS_COLUMN = 2;
+
+/** @brief The column of the text LAST_HEARTBEAT_OF_SERVER_QUERY returns. */
+constexpr int LAST_HEARTBEAT_COLUMN = 0;
 
 }  // namespace rtype::master

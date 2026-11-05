@@ -1,0 +1,2 @@
+target_sources(network_master_tests PRIVATE MasterRoutePathTest.cpp)
+target_include_directories(network_master_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/network/Master/Routes)
