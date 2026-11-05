@@ -6,7 +6,9 @@
 #include <vector>
 #include "Entity.hpp"
 #include "EntityFeedback.hpp"
+#include "EntityReplicatorParts.hpp"
 #include "EntityType.hpp"
+#include "IEntityTypeSource.hpp"
 #include "LastListedTicks.hpp"
 #include "NetworkEntityTable.hpp"
 #include "Position.hpp"
@@ -39,10 +41,13 @@ struct AnimatedSprite;
  * client: creates an entity from its type, moves it, destroys it, so that
  * rendering only draws what the registries hold.
  *
- * A created entity gets a Position, in logical units as the message gives it,
- * its EntityType, and the Sprite and SpriteAnimation animatedSpriteOf() gives
- * its type and its network id: what RenderSystem and AnimationSystem read, the
- * sprite already showing the frame the animation starts on. No rule of the
+ * The type of an entity is the number the table of the server gives it, which
+ * the IEntityTypeSource of the parts reads: a created entity gets a Position,
+ * in logical units as the message gives it, the side of its type as its
+ * EntityType, and the Sprite and SpriteAnimation animatedSpriteOf() gives the
+ * appearance of its type, its side and its network id: what RenderSystem and
+ * AnimationSystem read, the sprite already showing the frame the animation
+ * starts on. No rule of the
  * game runs here: where an entity is and when it disappears come from the
  * server only.
  *
@@ -63,8 +68,9 @@ struct AnimatedSprite;
  * another part of the same state and is applied. An entity a WorldState lists
  * and the client does not have is created. An EntitySpawned naming an entity
  * the client has, and an EntityDestroyed naming one it does not have, change
- * nothing; so does a message naming NO_ENTITY_ID or a type outside
- * WireEntityType. An entity no WorldState listed for UNLISTED_ENTITY_TICKS up
+ * nothing; so does a message naming NO_ENTITY_ID or a type number the source
+ * does not know: NO_ENTITY_TYPE, or a number past the table of the session.
+ * An entity no WorldState listed for UNLISTED_ENTITY_TICKS up
  * to a closed tick is removed, without an effect, once a part of a newer state
  * closes that tick (see LastListedTicks): the server destroyed it and every
  * copy of its EntityDestroyed was lost.
@@ -89,15 +95,9 @@ struct AnimatedSprite;
  */
 class EntityReplicator {
  public:
-  /**
-   * @param entities Registry the entities are created in; must outlive this.
-   * @param components Components of the entities; must outlive this.
-   * @param feedback Plays the effects in the same registries, and the
-   * sounds; both must outlive this.
-   */
-  EntityReplicator(engine::EntityRegistry& entities,
-                   engine::ComponentRegistry& components,
-                   EntityFeedback feedback);
+  /** @param parts The registries, the effects and the sounds, and the source
+   * of the entity types; all must outlive this. */
+  explicit EntityReplicator(EntityReplicatorParts parts);
 
   /**
    * @brief Creates the entity the message announces, unless the client
@@ -136,10 +136,10 @@ class EntityReplicator {
 
  private:
   /**
-   * @returns The entity created for an entity announced, with the sprite and
-   * the animation of its type, its id bound; nothing for the id NO_ENTITY_ID
-   * or a type outside WireEntityType, every check running before anything is
-   * created. Plays no effect.
+   * @returns The entity created for an entity announced, with the side and
+   * the look of its type, its id bound; nothing for the id NO_ENTITY_ID or a
+   * type number the source does not know, every check running before anything
+   * is created. Plays no effect.
    */
   std::optional<engine::Entity> create(const network::EntityState& announced);
 
@@ -172,6 +172,7 @@ class EntityReplicator {
   engine::EntityRegistry* entities_{};
   engine::ComponentRegistry* components_{};
   EntityFeedback feedback_;
+  const IEntityTypeSource* types_{};
   engine::NetworkEntityTable entityByNetworkId_;
   WorldStateFilter worldStateFilter_;
   LastListedTicks lastListedTicks_;

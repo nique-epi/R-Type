@@ -6,7 +6,6 @@
 #include <vector>
 #include "ByteSequence.hpp"
 #include "ByteWriter.hpp"
-#include "ConnectionAccepted.hpp"
 #include "ConnectionChallenge.hpp"
 #include "ConnectionMessagesFixtures.hpp"
 #include "ConnectionRefused.hpp"
@@ -32,10 +31,8 @@ using testing::FIRST_PLAYER_ROUND_TRIP;
 using testing::FOUR_ROCKETS;
 using testing::HEARTBEAT_SENT_AT;
 using testing::HEARTBEAT_TICK;
-using testing::LAST_PLAYER_NUMBER;
 using testing::NICKNAME_WITH_LINE_FEED;
 using testing::ONE_BYTE_NICKNAME;
-using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
 using testing::REFUSAL_REASON_ABOVE_THE_LAST;
 using testing::SECOND_PLAYER_JITTER;
 using testing::SECOND_PLAYER_NUMBER;
@@ -269,12 +266,13 @@ TEST(ConnectionChallenge, ChallengeDatagramHoldsThirtyThreeBytes) {
 
 /**
  * Given the smallest request a sender can send, and every answer the server
- * gives a sender it does not know yet
+ * gives a sender that did not prove its address, that is a request without a
+ * valid cookie
  * When their datagrams are encoded
  * Then no answer is larger than the request, so the server cannot be used to
  * send a victim more bytes than the forger sent
  */
-TEST(ConnectionChallenge, NoAnswerIsLargerThanTheSmallestRequest) {
+TEST(ConnectionChallenge, NoUnprovenAnswerIsLargerThanTheSmallestRequest) {
   const std::size_t requestSize =
       DatagramCodec::encode(PacketHeader{}, smallestRequest()).size();
 
@@ -287,86 +285,6 @@ TEST(ConnectionChallenge, NoAnswerIsLargerThanTheSmallestRequest) {
           PacketHeader{}, ConnectionRefused{.reason = RefusalReason::GameFull})
           .size(),
       requestSize);
-  EXPECT_LE(DatagramCodec::encode(
-                PacketHeader{},
-                ConnectionAccepted{.playerNumber = LAST_PLAYER_NUMBER})
-                .size(),
-            requestSize);
-}
-
-/**
- * Given the acceptance of player 1
- * When it is encoded
- * Then the payload is the byte 01
- */
-TEST(ConnectionAccepted, EncodesThePlayerNumber) {
-  const auto expected = byteSequence({0x01});
-
-  EXPECT_EQ(encodeMessage(ConnectionAccepted{.playerNumber = 1}), expected);
-}
-
-/**
- * Given the payloads 01 and 04, the first and the last player of a game
- * When each is decoded
- * Then each gives its player number
- */
-TEST(ConnectionAccepted, AcceptsTheFirstAndTheLastPlayerNumbers) {
-  const auto first = byteSequence({0x01});
-  const auto last = byteSequence({0x04});
-
-  EXPECT_EQ(decodeMessage<ConnectionAccepted>(first).playerNumber, 1);
-  EXPECT_EQ(decodeMessage<ConnectionAccepted>(last).playerNumber,
-            LAST_PLAYER_NUMBER);
-}
-
-/**
- * Given the payloads 00 and 05, just outside the players of a game
- * When each is decoded
- * Then each is refused
- */
-TEST(ConnectionAccepted, RefusesToReadAPlayerNumberOutsideOneToFour) {
-  const auto belowTheFirst = byteSequence({0x00});
-  const auto aboveTheLast = byteSequence({0x05});
-
-  EXPECT_THROW((void)decodeMessage<ConnectionAccepted>(belowTheFirst),
-               InvalidFieldValueException);
-  EXPECT_THROW((void)decodeMessage<ConnectionAccepted>(aboveTheLast),
-               InvalidFieldValueException);
-}
-
-/**
- * Given the acceptance of a fifth player
- * When it is encoded
- * Then an InvalidFieldValueException is raised
- */
-TEST(ConnectionAccepted, RefusesToWriteAPlayerNumberOutsideOneToFour) {
-  EXPECT_THROW((void)encodeMessage(ConnectionAccepted{
-                   .playerNumber = PLAYER_NUMBER_ABOVE_THE_LAST}),
-               InvalidFieldValueException);
-}
-
-/**
- * Given an empty payload
- * When it is decoded as an acceptance
- * Then a BufferUnderflowException is raised
- */
-TEST(ConnectionAccepted, RefusesAnEmptyPayload) {
-  const std::vector<std::byte> empty;
-
-  EXPECT_THROW((void)decodeMessage<ConnectionAccepted>(empty),
-               BufferUnderflowException);
-}
-
-/**
- * Given a player number followed by one more byte
- * When it is decoded as an acceptance
- * Then a TrailingBytesException is raised
- */
-TEST(ConnectionAccepted, RefusesBytesAfterThePlayerNumber) {
-  const auto bytes = byteSequence({0x01, 0x00});
-
-  EXPECT_THROW((void)decodeMessage<ConnectionAccepted>(bytes),
-               TrailingBytesException);
 }
 
 /**

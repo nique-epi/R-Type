@@ -1,16 +1,16 @@
 #pragma once
 
 #include <span>
-#include "BydoKind.hpp"
+#include <string_view>
 #include "WavePlan.hpp"
 
 namespace rtype::server::testing {
 
 /**
- * @returns The waves of game::testing::TEST_WAVE_CURVE, their Bydos taking the
- * kinds of @p enemies in turn.
+ * @returns The waves of game::testing::TEST_WAVE_CURVE, their enemies taking
+ * the sheets @p enemies names in turn.
  */
-[[nodiscard]] WavePlan wavePlanOf(std::span<const game::BydoKind> enemies);
+[[nodiscard]] WavePlan wavePlanOf(std::span<const std::string_view> enemies);
 
 /** @returns The waves the server tests play: wavePlanOf(TEST_ENEMY_CYCLE). */
 [[nodiscard]] WavePlan testWavePlan();

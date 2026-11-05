@@ -42,18 +42,22 @@ class BoundedQueue {
     }
   }
 
-  /** @brief Adds the message after the others, discarding the oldest one when
-   * the queue is full. */
-  void push(Message message) {
+  /**
+   * @brief Adds the message after the others, discarding the oldest one when
+   * the queue is full.
+   * @returns Whether the oldest message was discarded to make room.
+   */
+  bool push(Message message) {
     const std::scoped_lock lock{mutex_};
     if (size_ == slots_.size()) {
       slots_[head_] = std::move(message);
       head_ = (head_ + 1) % slots_.size();
       ++discardedCount_;
-      return;
+      return true;
     }
     slots_[(head_ + size_) % slots_.size()] = std::move(message);
     ++size_;
+    return false;
   }
 
   /**

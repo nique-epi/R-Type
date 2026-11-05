@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include "InterfaceConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "ProtocolConstants.hpp"
 #include "TimeConstants.hpp"
@@ -71,6 +72,27 @@ constexpr const char* UNREACHABLE_STATUS = "SERVER UNREACHABLE";
 constexpr const char* INVALID_ADDRESS_STATUS = "INVALID ADDRESS";
 constexpr const char* INVALID_PORT_STATUS = "INVALID PORT";
 constexpr const char* MISSING_NICKNAME_STATUS = "ENTER A CALLSIGN";
+
+/**
+ * @brief The status line of an acceptance whose table of entity types names
+ * a type this client has no sheet for: MISSING_SHEET_STATUS, the first such
+ * name in capitals, then, when there are more, OTHER_MISSING_SHEETS_STATUS
+ * and how many more. A name too long for the line is cut, its last character
+ * shown as CUT_NAME_MARK.
+ */
+constexpr const char* MISSING_SHEET_STATUS = "NO SHEET: ";
+constexpr const char* OTHER_MISSING_SHEETS_STATUS = " +";
+constexpr char CUT_NAME_MARK = '.';
+
+/**
+ * @brief The characters a status line of the form holds: the width of the
+ * form less its margin on both sides, 240 - 2 x 16 = 208 pixels, over the 8
+ * pixels a character of the regular font takes, so 26. The longest status line
+ * that fits today, REFUSED: YOU V6, SERVER V5, takes them all.
+ */
+constexpr std::size_t STATUS_LINE_CHARACTERS = static_cast<std::size_t>(
+    (FORM_WIDTH - (SIDES_PER_AXIS * FORM_HEADING_OFFSET.x)) /
+    REGULAR_FONT_ADVANCE);
 
 /**
  * @brief How long the connection screen shows that the server accepted the

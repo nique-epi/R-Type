@@ -29,7 +29,7 @@ using rtype::client::testing::SHORT_SOUND_SAMPLES;
 using rtype::client::testing::SHOT_SOUND_ID;
 using rtype::client::testing::THE_SHOT_AND_THE_EXPLOSION;
 using rtype::client::testing::THREE_UNREADABLE_SOUNDS_AND_THE_SHOT;
-using rtype::engine::genericText;
+using rtype::logging::genericText;
 using ::testing::AllOf;
 using ::testing::HasSubstr;
 using ::testing::ThrowsMessage;

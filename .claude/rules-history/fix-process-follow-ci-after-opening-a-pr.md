@@ -29,3 +29,21 @@ The checks before the push ran on the branch only; the base that had moved was n
 ### Rule
 
 Compare the merge base with the current base before every push to a PR; when the base moved, merge it in a detached worktree, search the merged tree for every name the branch renamed, build and test the merge, and push only once it is green.
+
+## Update (5 November 2026) — A conflict resolved toward the side that moved the code
+
+### Context
+
+Pull request #227 (entity type sheets) merged `main` after #219, which made the connection module of the client provide `IServerTicks`, the clock of the server, with one more `context.provide` line in `ClientConnectionModule::install()`. The branch had moved every `provide` of that function into `PlayerConnection::provideParts()`.
+
+### Mistake
+
+The hunk of `ClientConnectionModule.cpp` opposed the branch's call to `provideParts()` and main's list of `provide` lines; it was resolved by keeping the branch side. The merge built, 3991 tests passed, and nothing provided `IServerTicks` any more, while the screens require it when they are installed: the client would have stopped at its start. The loss was only seen because clang-tidy reported the include of `IServerTicks.hpp` as unused.
+
+### Root cause
+
+The resolution compared the two sides as a choice between them, and never listed what the base had added inside the code the branch moved. No test installs the whole client, so no test could miss the service.
+
+### Rule
+
+Before resolving a hunk toward the side that moved the code, list every `provide`, `require`, `find` or registration the base added there, check each one is in the merged tree, and give a line no test would miss a test of its own.

@@ -1,3 +1,5 @@
-# The fingerprint of the waves file is taken on its bytes: a checkout that
-# turned its line endings into CRLF would not read as the shipped file.
+# The fingerprints of the waves file and of the entity sheets are taken on
+# their bytes: a checkout that turned their line endings into CRLF would not
+# read as the shipped files.
 assets/waves/waves.toml text eol=lf
+assets/entities/*.toml text eol=lf

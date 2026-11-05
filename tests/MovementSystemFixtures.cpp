@@ -3,10 +3,17 @@
 #include <cstdint>
 #include <memory>
 #include "ComponentRegistry.hpp"
+#include "Direction.hpp"
+#include "DirectionConstants.hpp"
+#include "Entity.hpp"
+#include "EntityRegistry.hpp"
 #include "FixedTimestep.hpp"
+#include "Intent.hpp"
 #include "MovementSystem.hpp"
 #include "MovementSystemTestConstants.hpp"
+#include "Position.hpp"
 #include "SimulatedClock.hpp"
+#include "SteadyMotion.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
 
@@ -29,6 +36,16 @@ void runOneSecondAt(std::int64_t framesPerSecond,
       systems.run(components, engine::SIMULATION_TICK_DURATION);
     }
   }
+}
+
+engine::Entity steadyBodyAtSpeed(engine::EntityRegistry& entities,
+                                 engine::ComponentRegistry& components) {
+  const engine::Entity body = entities.create();
+  components.add(body, Position{.x = START_X, .y = START_Y});
+  components.add(body, SteadyMotion{.topSpeed = SPEED_X});
+  components.add(body, Intent{.direction = Direction{.x = FULL_STEERING,
+                                                     .y = SPEED_Y / SPEED_X}});
+  return body;
 }
 
 }  // namespace rtype::game::testing

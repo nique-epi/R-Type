@@ -4,6 +4,7 @@
 #include <limits>
 #include <vector>
 #include "NetworkException.hpp"
+#include "ProtocolTestConstants.hpp"
 #include "StateDelta.hpp"
 #include "WorldState.hpp"
 #include "WorldStateDelta.hpp"
@@ -15,17 +16,18 @@ using rtype::network::diffStates;
 using rtype::network::EntityState;
 using rtype::network::InvalidCoordinateException;
 using rtype::network::StateDelta;
-using rtype::network::WireEntityType;
 using rtype::network::testing::ADDED_X;
 using rtype::network::testing::ADDED_Y;
 using rtype::network::testing::APPLIED_X;
 using rtype::network::testing::APPLIED_Y;
 using rtype::network::testing::ENTITIES_IN_A_LIST;
+using rtype::network::testing::EXAMPLE_ENTITY_TYPE;
 using rtype::network::testing::FAR_BELOW_AN_EIGHTH;
 using rtype::network::testing::FIRST_DUPLICATE_X;
 using rtype::network::testing::MOVED_ENTITY_ID;
 using rtype::network::testing::NEW_ENTITY_ID;
 using rtype::network::testing::ONE_EIGHTH;
+using rtype::network::testing::OTHER_ENTITY_TYPE;
 using rtype::network::testing::SECOND_DUPLICATE_X;
 using rtype::network::testing::someEntities;
 using rtype::network::testing::VANISHED_ENTITY_ID;
@@ -81,7 +83,7 @@ TEST(WorldStateDelta, IgnoresAMoveThatRoundsToTheSameWirePosition) {
 TEST(WorldStateDelta, ListsAnEntityOfAnotherTypeAsChanged) {
   const std::vector<EntityState> base = someEntities(ENTITIES_IN_A_LIST);
   std::vector<EntityState> current = base;
-  current.at(MOVED_ENTITY_ID - 1).entityType = WireEntityType::EnemyMissile;
+  current.at(MOVED_ENTITY_ID - 1).entityType = OTHER_ENTITY_TYPE;
 
   EXPECT_EQ(diffStates(base, current).changed,
             std::vector<EntityState>{current.at(MOVED_ENTITY_ID - 1)});
@@ -97,7 +99,7 @@ TEST(WorldStateDelta, ListsANewEntityAsChangedAndAMissingOneAsRemoved) {
   std::vector<EntityState> current = base;
   current.erase(current.begin() + (VANISHED_ENTITY_ID - 1));
   const EntityState added{.entityId = NEW_ENTITY_ID,
-                          .entityType = WireEntityType::PlayerMissile,
+                          .entityType = OTHER_ENTITY_TYPE,
                           .x = ADDED_X,
                           .y = ADDED_Y};
   current.push_back(added);
@@ -162,7 +164,7 @@ TEST(WorldStateDelta, ApplyingTheDiffGivesTheLaterList) {
   current.at(MOVED_ENTITY_ID - 1).y += ONE_EIGHTH;
   current.erase(current.begin() + (VANISHED_ENTITY_ID - 1));
   current.push_back(EntityState{.entityId = NEW_ENTITY_ID,
-                                .entityType = WireEntityType::Bydo,
+                                .entityType = EXAMPLE_ENTITY_TYPE,
                                 .x = APPLIED_X,
                                 .y = APPLIED_Y});
 
@@ -181,7 +183,7 @@ TEST(WorldStateDelta, ApplyingAnUnsortedDeltaGivesTheSameList) {
   current.erase(current.begin() + (VANISHED_ENTITY_ID - 1));
   StateDelta delta = diffStates(base, current);
   delta.changed.push_back(EntityState{.entityId = NEW_ENTITY_ID,
-                                      .entityType = WireEntityType::Bydo,
+                                      .entityType = EXAMPLE_ENTITY_TYPE,
                                       .x = 0.0F,
                                       .y = 0.0F});
   const std::vector<EntityState> fromSorted = applyDelta(base, delta);
@@ -211,7 +213,7 @@ TEST(WorldStateDelta, ApplyingToNothingGivesTheChangedEntities) {
  */
 TEST(WorldStateDelta, AnIdListedTwiceKeepsItsFirstEntry) {
   const EntityState first{.entityId = NEW_ENTITY_ID,
-                          .entityType = WireEntityType::Bydo,
+                          .entityType = EXAMPLE_ENTITY_TYPE,
                           .x = FIRST_DUPLICATE_X,
                           .y = FIRST_DUPLICATE_X};
   EntityState second = first;

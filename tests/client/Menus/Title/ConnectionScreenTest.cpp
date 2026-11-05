@@ -46,10 +46,16 @@ using rtype::client::testing::LAUNCH_ADDRESS;
 using rtype::client::testing::LAUNCH_NICKNAME;
 using rtype::client::testing::LAUNCH_PORT;
 using rtype::client::testing::LAUNCH_PORT_TEXT;
+using rtype::client::testing::LONGEST_MISSING_SHEET;
+using rtype::client::testing::LONGEST_SHIPPED_MISSING_SHEET;
+using rtype::client::testing::MOST_OTHER_MISSING_SHEETS;
 using rtype::client::testing::NEXT_PROTOCOL_VERSION;
 using rtype::client::testing::NO_NICKNAME_TEXT;
 using rtype::client::testing::PORT_ZERO_TEXT;
+using rtype::client::testing::SHORT_MISSING_SHEET;
+using rtype::client::testing::SHORTER_MISSING_SHEET;
 using rtype::client::testing::THIRD_PLAYER;
+using rtype::client::testing::TWO_OTHER_MISSING_SHEETS;
 using rtype::client::testing::TYPED_NICKNAME;
 using rtype::client::testing::TYPED_NICKNAME_TEXT;
 using rtype::client::testing::TYPED_PORT;
@@ -403,8 +409,8 @@ INSTANTIATE_TEST_SUITE_P(
                                  std::string_view(NICKNAME_TAKEN_STATUS))));
 
 /**
- * Given an attempt a server of protocol version 6 refused as
- * IncompatibleVersion, the client speaking version 5
+ * Given an attempt a server of protocol version 8 refused as
+ * IncompatibleVersion, the client speaking version 7
  * When a frame goes by
  * Then the status line names both versions, the client's first
  */
@@ -413,7 +419,7 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
-  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V5, SERVER V6"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V7, SERVER V8"), nullptr);
 }
 
 /**
@@ -449,4 +455,102 @@ TEST_F(ConnectionScreenChoiceFixture, AnAttemptTheFieldsRefuseKeepsTheChoice) {
   chooseEnter();
 
   EXPECT_EQ(connectAttemptsOf(connection()).back().nickname, LAUNCH_NICKNAME);
+}
+
+/**
+ * Given an attempt whose acceptance named a sheet this client lacks
+ * When the connection screen shows it
+ * Then the status line names the sheet, in capitals
+ */
+TEST_F(ConnectionScreenFixture, AMissingSheetIsNamedOnTheStatusLine) {
+  show({.phase = ConnectionPhase::MissingEntitySheet,
+        .missingSheet = std::string{SHORT_MISSING_SHEET}});
+
+  EXPECT_NE(writingOf(canvas(), "NO SHEET: VOLTJELLY"), nullptr);
+}
+
+/**
+ * Given an acceptance that named three sheets this client lacks
+ * When the connection screen shows it
+ * Then the status line names the first one and counts the two others
+ */
+TEST_F(ConnectionScreenFixture, TheOtherMissingSheetsAreCounted) {
+  show({.phase = ConnectionPhase::MissingEntitySheet,
+        .missingSheet = std::string{SHORTER_MISSING_SHEET},
+        .otherMissingSheets = TWO_OTHER_MISSING_SHEETS});
+
+  EXPECT_NE(writingOf(canvas(), "NO SHEET: REAPER +2"), nullptr);
+}
+
+/**
+ * Given a missing sheet named player_missile, the longest name of a shipped
+ * sheet, 14 characters, where the 26 of a status line leave 16 after
+ * NO SHEET:
+ * When the connection screen shows it
+ * Then the whole name is on the line
+ */
+TEST_F(ConnectionScreenFixture, TheLongestShippedSheetNameIsShownWhole) {
+  show({.phase = ConnectionPhase::MissingEntitySheet,
+        .missingSheet = std::string{LONGEST_SHIPPED_MISSING_SHEET}});
+
+  EXPECT_NE(writingOf(canvas(), "NO SHEET: PLAYER_MISSILE"), nullptr);
+}
+
+/**
+ * Given a missing sheet of 24 bytes, the longest name, where the 26
+ * characters of a status line leave 16 after NO SHEET:
+ * When the connection screen shows it
+ * Then the name is cut to 15 characters and a dot, 26 in all
+ */
+TEST_F(ConnectionScreenFixture, ANameTooLongForTheLineIsCut) {
+  show({.phase = ConnectionPhase::MissingEntitySheet,
+        .missingSheet = std::string{LONGEST_MISSING_SHEET}});
+
+  EXPECT_NE(writingOf(canvas(), "NO SHEET: ABCDEFGHIJKLMNO."), nullptr);
+}
+
+/**
+ * Given a missing sheet of 24 bytes, the longest name, and 31 others, the most
+ * a table names
+ * When the connection screen shows it
+ * Then the line still holds 26 characters: 10 for NO SHEET:, 4 for +31, and
+ * 12 for the name, cut to 11 and a dot
+ */
+TEST_F(ConnectionScreenFixture, TheLongestMissingSheetLineFitsTheForm) {
+  show({.phase = ConnectionPhase::MissingEntitySheet,
+        .missingSheet = std::string{LONGEST_MISSING_SHEET},
+        .otherMissingSheets = MOST_OTHER_MISSING_SHEETS});
+
+  EXPECT_NE(writingOf(canvas(), "NO SHEET: ABCDEFGHIJK. +31"), nullptr);
+}
+
+/**
+ * Given an attempt from the title whose acceptance named a sheet this client
+ * lacks
+ * When frames go by past the time an acceptance shows
+ * Then no waiting room opens: the player reads the line and leaves
+ */
+TEST_F(ConnectionScreenFixture, AMissingSheetOpensNoWaitingRoom) {
+  show({.phase = ConnectionPhase::MissingEntitySheet,
+        .missingSheet = std::string{SHORT_MISSING_SHEET}});
+
+  screen().update(ACCEPTED_STATUS_DURATION);
+
+  EXPECT_THAT(navigator().calls(), IsEmpty());
+}
+
+/**
+ * Given an attempt from the leaderboard whose acceptance named a sheet this
+ * client lacks
+ * When frames go by past the time an acceptance shows
+ * Then the screen stays: the leaderboard below gets no session to read
+ */
+TEST_F(ConnectionForTheScreenBelowFixture,
+       AMissingSheetKeepsTheScreenOfTheLeaderboardOpen) {
+  show({.phase = ConnectionPhase::MissingEntitySheet,
+        .missingSheet = std::string{SHORT_MISSING_SHEET}});
+
+  screen().update(ACCEPTED_STATUS_DURATION);
+
+  EXPECT_THAT(navigator().calls(), IsEmpty());
 }

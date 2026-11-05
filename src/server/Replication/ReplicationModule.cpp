@@ -20,8 +20,7 @@ std::string ReplicationModule::name() const {
 void ReplicationModule::install(GameContext& game,
                                 engine::InstallContext& install) {
   game_ = &game;
-  replication_ = std::make_unique<GameReplication>(
-      game.roster.get(), game.send, game.settings.statesPerSecond);
+  replication_ = std::make_unique<GameReplication>(game);
   install.provide<IGameReplication>(*replication_);
 }
 

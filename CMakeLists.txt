@@ -26,6 +26,26 @@ function(rtype_enable_warnings target)
   )
 endfunction()
 
+# Declares a plugin: a MODULE library named <NAME>.so or <NAME>.dll, which exports
+# rtypePluginEntry only, in the plugins/ folder next to the programs. On Windows
+# the library is a runtime artifact, so both output directories are set.
+# WITHOUT_ENTRY is for a test library that defines no rtypePluginEntry: the
+# Windows export list would name a symbol it does not have.
+function(rtype_add_plugin)
+  cmake_parse_arguments(ARG "WITHOUT_ENTRY" "TARGET;NAME" "SOURCES;LIBS" ${ARGN})
+  add_library(${ARG_TARGET} MODULE ${ARG_SOURCES})
+  target_link_libraries(${ARG_TARGET} PRIVATE rtype_engine_modules ${ARG_LIBS})
+  set_target_properties(${ARG_TARGET} PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME ${ARG_NAME}
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/plugins
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/plugins)
+  if(WIN32 AND NOT ARG_WITHOUT_ENTRY)
+    target_sources(${ARG_TARGET} PRIVATE ${RTYPE_PLUGIN_ENTRY_DEFINITION})
+  endif()
+  rtype_enable_warnings(${ARG_TARGET})
+endfunction()
+
 # LOG_LEVEL is the lowest log level compiled into the binaries. It is
 # translated into RT_LOG_BUILD_LEVEL (0..5) and injected as a compile
 # definition: Logger.hpp wraps each logging method in `if constexpr`, so calls
@@ -76,6 +96,11 @@ if(ENABLE_SANITIZERS)
     -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
   add_link_options(-fsanitize=address,undefined)
 endif()
+
+# A plugin is a MODULE library that links the static libraries of the engine it
+# uses: on Linux, a static library linked into a shared one must be
+# position-independent.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_subdirectory(src)
 
@@ -134,8 +159,8 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets
   PATTERN waves EXCLUDE
   PATTERN compression EXCLUDE
 )
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/waves DESTINATION assets
-  COMPONENT server
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/waves ${CMAKE_SOURCE_DIR}/assets/entities
+  DESTINATION assets COMPONENT server
 )
 
 # Once the bundle is complete, it is signed without an identity, so macOS

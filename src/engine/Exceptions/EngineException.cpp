@@ -1,7 +1,13 @@
 #include "EngineException.hpp"
+#include <cstdint>
+#include <span>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
+#include "DataFilePlace.hpp"
+#include "ErrorText.hpp"
+#include "WholeNumberRange.hpp"
 
 namespace rtype::engine {
 
@@ -118,5 +124,73 @@ AssetFolderNotFoundException::AssetFolderNotFoundException(
     const std::vector<std::string>& searchedFolders)
     : EngineException("No assets folder found, searched: " +
                       joinedFolders(searchedFolders)) {}
+
+UnreadableDataFileException::UnreadableDataFileException(
+    const std::string& file)
+    : EngineException("cannot read the file " + file) {}
+
+DataFileSyntaxException::DataFileSyntaxException(const DataFilePlace& place,
+                                                 const std::string& description)
+    : EngineException(placeText(place) + ": " + description) {}
+
+MissingDataFileKeyException::MissingDataFileKeyException(
+    const DataFilePlace& place)
+    : EngineException(placeText(place) + ": " + place.key + " is missing") {}
+
+UnknownDataFileKeyException::UnknownDataFileKeyException(
+    const DataFilePlace& place)
+    : EngineException(placeText(place) + ": unknown key " + place.key) {}
+
+DataFileTableExpectedException::DataFileTableExpectedException(
+    const DataFilePlace& place)
+    : EngineException(placeText(place) + ": " + place.key +
+                      " must be a table") {}
+
+DataFileValueOutOfRangeException::DataFileValueOutOfRangeException(
+    const DataFilePlace& place, WholeNumberRange range)
+    : EngineException(placeText(place) + ": " + place.key +
+                      " must be an integer from " + rangeText(range)) {}
+
+DataFileTextExpectedException::DataFileTextExpectedException(
+    const DataFilePlace& place)
+    : EngineException(placeText(place) + ": " + place.key + " must be a text") {
+}
+
+UnknownDataFileChoiceException::UnknownDataFileChoiceException(
+    const DataFilePlace& place, const std::string& value,
+    std::span<const std::string_view> choices)
+    : EngineException(placeText(place) + ": " + place.key +
+                      ": unknown value \"" + value +
+                      "\"; known: " + listText(choices)) {}
+
+SharedLibraryOpenException::SharedLibraryOpenException(
+    const std::string& file, const std::string& reason)
+    : EngineException("The library \"" + file +
+                      "\" could not be opened: " + reason) {}
+
+PluginNotFoundException::PluginNotFoundException(const std::string& name,
+                                                 const std::string& file)
+    : EngineException("The plugin \"" + name + "\" is not in " + file) {}
+
+PluginEntryNotFoundException::PluginEntryNotFoundException(
+    const std::string& name, const std::string& entryName)
+    : EngineException("The plugin \"" + name + "\" exports no " + entryName) {}
+
+PluginApiVersionException::PluginApiVersionException(
+    const std::string& name, std::uint32_t pluginVersion,
+    std::uint32_t programVersion)
+    : EngineException("The plugin \"" + name + "\" was built for plugin API " +
+                      std::to_string(pluginVersion) +
+                      "; this program loads plugin API " +
+                      std::to_string(programVersion)) {}
+
+InvalidPluginNameException::InvalidPluginNameException(const std::string& name)
+    : EngineException("\"" + name +
+                      "\" is not a plugin name: letters, digits, '-' and '_' "
+                      "only") {}
+
+DuplicateModuleNameException::DuplicateModuleNameException(
+    const std::string& name)
+    : EngineException("Two modules are named \"" + name + "\"") {}
 
 }  // namespace rtype::engine

@@ -25,12 +25,16 @@ constexpr std::uint16_t FIRST_SEQUENCE = 0;
 constexpr std::uint32_t SOME_INPUT_NUMBER = 100;
 constexpr std::uint32_t OLDER_INPUT_NUMBER = SOME_INPUT_NUMBER - 1;
 constexpr std::uint32_t NEWER_INPUT_NUMBER = SOME_INPUT_NUMBER + 1;
+constexpr std::uint32_t SECOND_NEWER_INPUT_NUMBER = SOME_INPUT_NUMBER + 2;
+constexpr std::uint32_t THIRD_NEWER_INPUT_NUMBER = SOME_INPUT_NUMBER + 3;
 
 /**
  * @brief Two sets of actions that differ.
  */
 constexpr std::uint8_t SOME_ACTIONS = 0x01;
 constexpr std::uint8_t OTHER_ACTIONS = 0x04;
+constexpr std::uint8_t THIRD_ACTIONS = 0x08;
+constexpr std::uint8_t FOURTH_ACTIONS = 0x10;
 
 /**
  * @brief How many players the keepers are given.

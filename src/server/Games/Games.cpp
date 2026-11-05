@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 #include "Endpoint.hpp"
+#include "EntitySheets.hpp"
 #include "EventBus.hpp"
 #include "GameInstance.hpp"
 #include "GamePlacement.hpp"
@@ -39,6 +40,12 @@ void Games::dispatchEvents() {
 std::span<const std::unique_ptr<GameInstance>> Games::all() const {
   return games_;
 }
+
+void Games::keepEntityTypes(const game::EntitySheets& types) {
+  entityTypes_ = &types;
+}
+
+const game::EntitySheets* Games::entityTypes() const { return entityTypes_; }
 
 std::size_t Games::joinableIndex() const {
   if (games_.empty()) {

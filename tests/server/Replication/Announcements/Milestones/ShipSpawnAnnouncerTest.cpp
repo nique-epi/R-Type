@@ -6,7 +6,10 @@
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "EntityIdConstants.hpp"
+#include "EntitySheet.hpp"
+#include "EntitySheets.hpp"
 #include "EntitySpawned.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "Position.hpp"
@@ -15,8 +18,8 @@
 #include "ServerLobbyTestConstants.hpp"
 #include "ShipSpawnAnnouncerFixture.hpp"
 #include "ShipStartPosition.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "World.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::server::testing {
 
@@ -32,12 +35,13 @@ TEST_F(ShipSpawnAnnouncerFixture, TheFirstPlayerIsToldAboutItsOwnShip) {
   EXPECT_EQ(world().entityCount(), 1U);
   EXPECT_NE(player.shipEntityId, identifiers::NO_ENTITY_ID);
   ASSERT_EQ(sent().size(), 1U);
-  const network::EntitySpawned spawned =
-      onlyMessageIn<network::EntitySpawned>(sent().front());
+  const auto spawned = onlyMessageIn<network::EntitySpawned>(sent().front());
   const game::Position expected =
       game::shipStartPosition(1, network::MAXIMUM_PLAYERS);
   EXPECT_EQ(spawned.entityId, player.shipEntityId);
-  EXPECT_EQ(spawned.entityType, network::WireEntityType::PlayerShip);
+  EXPECT_EQ(spawned.entityType, game::testing::shippedEntitySheets()
+                                    .named(game::testing::SHIP_SHEET)
+                                    .number);
   EXPECT_EQ(spawned.x, expected.x);
   EXPECT_EQ(spawned.y, expected.y);
 }
@@ -55,8 +59,7 @@ TEST_F(ShipSpawnAnnouncerFixture,
 
   const std::vector<network::OutgoingDatagram> toFirst = sentTo(0);
   ASSERT_EQ(toFirst.size(), 2U);
-  const network::EntitySpawned secondShip =
-      onlyMessageIn<network::EntitySpawned>(toFirst.back());
+  const auto secondShip = onlyMessageIn<network::EntitySpawned>(toFirst.back());
   const game::Position expected =
       game::shipStartPosition(2, network::MAXIMUM_PLAYERS);
   EXPECT_EQ(secondShip.entityId, second.shipEntityId);

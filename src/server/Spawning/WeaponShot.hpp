@@ -1,18 +1,17 @@
 #pragma once
 
 #include <cstdint>
-#include "EntityType.hpp"
-#include "Position.hpp"
+#include "Muzzle.hpp"
 
 namespace rtype::server {
 
 /**
- * @brief A Gun that fires at this tick: where its body is, what it fires, and
- * the network id of the body.
+ * @brief A Gun that fires at this tick: the body that fires, the number of the
+ * sheet of what it fires, and the network id of the body.
  */
 struct WeaponShot {
-  game::Position muzzle{};
-  game::EntityType projectile{game::EntityType::PlayerMissile};
+  game::Muzzle muzzle{};
+  std::uint8_t projectileNumber{0};
   std::uint32_t shooterId{0};
 };
 

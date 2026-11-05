@@ -3,6 +3,7 @@
 #include <ostream>
 #include <string_view>
 #include "NetworkException.hpp"
+#include "PathText.hpp"
 #include "TrafficRecordingConstants.hpp"
 
 namespace rtype::network {
@@ -10,7 +11,7 @@ namespace rtype::network {
 TrafficCsvFile::TrafficCsvFile(const std::filesystem::path& path)
     : file_(path) {
   if (!file_.is_open()) {
-    throw TrafficFileOpenException(path.string());
+    throw TrafficFileOpenException(logging::genericText(path));
   }
   file_ << TRAFFIC_CSV_HEADER << '\n' << std::flush;
 }

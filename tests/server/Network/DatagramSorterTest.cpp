@@ -1,9 +1,7 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <cstddef>
-#include <optional>
 #include <string>
-#include <utility>
 #include <vector>
 #include "DatagramSorterFixture.hpp"
 #include "DatagramSorterFixtures.hpp"
@@ -15,6 +13,10 @@
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
 #include "RateLimitConstantsTestConstants.hpp"
+#include "RejectionCause.hpp"
+#include "RejectionCounts.hpp"
+#include "RejectionReport.hpp"
+#include "RejectionsFixtures.hpp"
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -24,6 +26,9 @@ using rtype::network::Endpoint;
 using rtype::network::IncomingDatagram;
 using rtype::network::NO_SESSION_TOKEN;
 using rtype::network::testing::PROTOCOL_BAN_DURATION;
+using rtype::server::RejectionCause;
+using rtype::server::RejectionReport;
+using rtype::server::totalOf;
 using rtype::server::testing::DROPPED_TOGETHER_COUNT;
 using rtype::server::testing::NEXT_PROTOCOL_VERSION;
 using rtype::server::testing::OTHER_PROTOCOL_ID;
@@ -195,7 +200,7 @@ TEST_F(DatagramSorterFixture, DropsAStrangersRequestOfAnotherProtocol) {
 
 /**
  * Given a sorter that admitted nobody
- * When a stranger sends a connection request with a flag version 4 does not
+ * When a stranger sends a connection request with a flag version 6 does not
  * know
  * Then the request reaches no queue
  */
@@ -238,31 +243,69 @@ TEST_F(DatagramSorterFixture, DropsBytesShorterThanAHeader) {
 
 /**
  * Given an admitted player
- * When a stranger's ReadyState, then a truncated datagram, bytes shorter than
- * a header and a datagram of another version from the player arrive, then a
- * request and a datagram of the player
- * Then the sorter counts the four datagrams it dropped, and only those
+ * When a stranger's ReadyState, a truncated datagram of the player, bytes
+ * shorter than a header and a datagram of another version arrive one by one
+ * Then each is counted under its own cause; a request and a datagram of the
+ * player after them count nothing
  */
-TEST_F(DatagramSorterFixture, CountsEveryDatagramItDrops) {
+TEST_F(DatagramSorterFixture, CountsEachDatagramItDropsUnderItsCause) {
   admit(player());
   std::vector<std::byte> truncated = playerReady();
   truncated.pop_back();
   rtype::network::PacketHeader otherVersion = playerHeader();
   otherVersion.version = NEXT_PROTOCOL_VERSION;
-  const std::vector<std::pair<Endpoint, std::vector<std::byte>>> dropped{
-      {stranger(), readyDatagram()},
-      {player(), truncated},
-      {player(),
-       std::vector<std::byte>(CLIENT_PAYLOAD_SIZE, CLIENT_PAYLOAD_BYTE)},
-      {player(), readyDatagram(otherVersion)}};
 
-  for (const auto& [sender, datagram] : dropped) {
-    sort(sender, datagram);
-  }
+  sort(stranger(), readyDatagram());
+  EXPECT_EQ(takeReport().sincePreviousReport,
+            countsOf({RejectionCause::Stranger}));
+  sort(player(), truncated);
+  EXPECT_EQ(takeReport().sincePreviousReport,
+            countsOf({RejectionCause::MessageSizes}));
+  sort(player(),
+       std::vector<std::byte>(CLIENT_PAYLOAD_SIZE, CLIENT_PAYLOAD_BYTE));
+  EXPECT_EQ(takeReport().sincePreviousReport,
+            countsOf({RejectionCause::ShorterThanHeader}));
+  sort(player(), readyDatagram(otherVersion));
+  EXPECT_EQ(takeReport().sincePreviousReport,
+            countsOf({RejectionCause::ForeignHeader}));
   sort(stranger(), requestDatagram());
   sort(player(), playerReady());
+  EXPECT_EQ(totalOf(takeReport().sincePreviousReport), 0U);
+}
 
-  EXPECT_EQ(droppedCount(), dropped.size());
+/**
+ * Given a sorter that admitted nobody
+ * When a stranger sends one connection request more than its limit
+ * Then one datagram is counted as over the rate limit, and the requests
+ * placed before it count nothing
+ */
+TEST_F(DatagramSorterFixture, CountsADatagramOverTheLimitUnderItsCause) {
+  sortRepeatedly(stranger(), requestDatagram(), REQUESTS_PLACED_AT_ONCE + 1);
+
+  EXPECT_EQ(takeReport().sincePreviousReport,
+            countsOf({RejectionCause::OverRateLimit}));
+}
+
+/**
+ * Given an admitted player
+ * When it floods with its own token until it is banned
+ * Then the drops that banned it are counted as over the rate limit but one,
+ * which is counted as the start of the ban, and the next datagram, sent during
+ * the ban, is counted as banned
+ */
+TEST_F(DatagramSorterFixture, CountsTheDatagramsOfABanUnderTheirCauses) {
+  admit(player());
+
+  sortRepeatedly(player(), heartbeatDatagram(playerHeader()),
+                 PLAYER_FLOOD_TO_A_BAN);
+  const RejectionReport flood = takeReport();
+  sort(player(), heartbeatDatagram(playerHeader()));
+  const RejectionReport duringBan = takeReport();
+
+  EXPECT_EQ(countOf(flood.sincePreviousReport, RejectionCause::NewlyBanned),
+            1U);
+  EXPECT_EQ(totalOf(flood.sincePreviousReport), DROPS_THAT_BAN_A_PLAYER);
+  EXPECT_EQ(duringBan.sincePreviousReport, countsOf({RejectionCause::Banned}));
 }
 
 /**
@@ -312,8 +355,8 @@ TEST_F(DatagramSorterFixture, DropsAPlayersDatagramWithAnotherToken) {
   sort(player(), playerReady(OTHER_SESSION_TOKEN));
 
   EXPECT_TRUE(drainPlayers().empty());
-  EXPECT_EQ(wrongTokenCount(), 1);
-  EXPECT_EQ(droppedCount(), 0);
+  EXPECT_EQ(takeReport().sincePreviousReport,
+            countsOf({RejectionCause::WrongSessionToken}));
 }
 
 /**
@@ -327,7 +370,8 @@ TEST_F(DatagramSorterFixture, DropsAPlayersDatagramWithoutToken) {
   sort(player(), playerReady(NO_SESSION_TOKEN));
 
   EXPECT_TRUE(drainPlayers().empty());
-  EXPECT_EQ(wrongTokenCount(), 1);
+  EXPECT_EQ(takeReport().sincePreviousReport,
+            countsOf({RejectionCause::WrongSessionToken}));
 }
 
 /**
@@ -355,7 +399,8 @@ TEST_F(DatagramSorterFixture, DropsAPlayersRequestWithAnotherToken) {
   sort(player(), requestDatagram(playerHeader(OTHER_SESSION_TOKEN)));
 
   EXPECT_TRUE(drainRequests().empty());
-  EXPECT_EQ(wrongTokenCount(), 1);
+  EXPECT_EQ(takeReport().sincePreviousReport,
+            countsOf({RejectionCause::WrongSessionToken}));
 }
 
 /**
@@ -374,7 +419,8 @@ TEST_F(DatagramSorterFixture, KeepsOnlyTheNewerTokenOfAPlayerAdmittedAgain) {
       drainPlayers(),
       (std::vector<IncomingDatagram>{
           {.sender = player(), .payload = playerReady(OTHER_SESSION_TOKEN)}}));
-  EXPECT_EQ(wrongTokenCount(), 1);
+  EXPECT_EQ(takeReport().sincePreviousReport,
+            countsOf({RejectionCause::WrongSessionToken}));
 }
 
 /**
@@ -389,8 +435,8 @@ TEST_F(DatagramSorterFixture, DropsAForgottenPlayersDatagramLikeAStrangers) {
   sort(player(), playerReady());
 
   EXPECT_TRUE(drainPlayers().empty());
-  EXPECT_EQ(droppedCount(), 1);
-  EXPECT_EQ(wrongTokenCount(), 0);
+  EXPECT_EQ(takeReport().sincePreviousReport,
+            countsOf({RejectionCause::Stranger}));
 }
 
 /**
@@ -453,49 +499,80 @@ TEST_F(DatagramSorterFixture, AdmitsAForgottenPlayerAgain) {
 }
 
 /**
- * Given two admitted players
- * When a datagram with another session token comes from the address of each,
- * the first player's first
- * Then the sorter names the first player as the sender
+ * Given an admitted player and a sorter that admitted nobody else
+ * When a datagram with another token comes from the player, then a stranger's
+ * Then each is counted against the address and port it came from
  */
-TEST_F(DatagramSorterFixture, NamesTheFirstSenderWithAnotherToken) {
+TEST_F(DatagramSorterFixture, CountsADropAgainstTheSenderItCameFrom) {
   admit(player());
-  admit(secondPlayer());
 
   sort(player(), playerReady(OTHER_SESSION_TOKEN));
-  sort(secondPlayer(), playerReady(OTHER_SESSION_TOKEN));
+  sort(stranger(), playerReady());
 
-  EXPECT_EQ(takeWrongTokenSender(), player());
+  const RejectionReport report = takeReport();
+  ASSERT_EQ(report.mostRejected.size(), 2U);
+  EXPECT_EQ(report.mostRejected[0].endpoint, stranger());
+  EXPECT_EQ(report.mostRejected[0].counts,
+            countsOf({RejectionCause::Stranger}));
+  EXPECT_EQ(report.mostRejected[1].endpoint, player());
+  EXPECT_EQ(report.mostRejected[1].counts,
+            countsOf({RejectionCause::WrongSessionToken}));
 }
 
 /**
- * Given two admitted players, and the sender of a datagram with another token
- * from the first already taken
- * When a datagram with another token comes from the second
- * Then the sorter names the second: each take starts afresh
+ * Given a sorter that admitted nobody
+ * When twice more strangers than the player queue holds each send one request
+ * Then each request beyond the room of the request queue is counted as
+ * RequestQueueFull, and the report names first the stranger that sent the last
  */
-TEST_F(DatagramSorterFixture, NamesTheFirstSenderSinceThePreviousTake) {
-  admit(player());
-  admit(secondPlayer());
-  sort(player(), playerReady(OTHER_SESSION_TOKEN));
-  ASSERT_EQ(takeWrongTokenSender(), player());
+TEST_F(DatagramSorterFixture, CountsTheRequestsThatOverflowTheirQueue) {
+  for (std::size_t request = 0; request < FLOODING_REQUEST_COUNT; ++request) {
+    sort(floodingStranger(request), requestDatagram());
+  }
 
-  sort(secondPlayer(), playerReady(OTHER_SESSION_TOKEN));
-
-  EXPECT_EQ(takeWrongTokenSender(), secondPlayer());
+  const RejectionReport report = takeReport();
+  EXPECT_EQ(
+      countOf(report.sincePreviousReport, RejectionCause::RequestQueueFull),
+      FLOODING_REQUEST_COUNT -
+          rtype::server::CONNECTION_REQUEST_QUEUE_CAPACITY);
+  ASSERT_FALSE(report.mostRejected.empty());
+  EXPECT_EQ(report.mostRejected[0].endpoint,
+            floodingStranger(FLOODING_REQUEST_COUNT - 1));
 }
 
 /**
- * Given an admitted player
- * When a stranger sends a datagram, which is dropped
- * Then the sorter names no sender: only a wrong session token is named
+ * Given as many admitted players as the player queue holds
+ * When each sends one datagram
+ * Then nothing is counted
  */
-TEST_F(DatagramSorterFixture, NamesNoSenderForAnotherDrop) {
-  admit(player());
+TEST_F(DatagramSorterFixture, FillsThePlayerQueueWithoutARejection) {
+  for (std::size_t sender = 0;
+       sender < rtype::server::INCOMING_DATAGRAM_QUEUE_CAPACITY; ++sender) {
+    admit(floodingStranger(sender));
+    sort(floodingStranger(sender), playerReady());
+  }
 
-  sort(stranger(), playerReady(OTHER_SESSION_TOKEN));
+  EXPECT_EQ(totalOf(takeReport().sincePreviousReport), 0U);
+}
 
-  EXPECT_EQ(takeWrongTokenSender(), std::nullopt);
+/**
+ * Given as many admitted players as the player queue holds, and one more
+ * When each sends one datagram
+ * Then the datagram of the last is counted against it as PlayerQueueFull
+ */
+TEST_F(DatagramSorterFixture, CountsTheDatagramThatOverflowsThePlayerQueue) {
+  const std::size_t players =
+      rtype::server::INCOMING_DATAGRAM_QUEUE_CAPACITY + 1;
+  for (std::size_t sender = 0; sender < players; ++sender) {
+    admit(floodingStranger(sender));
+    sort(floodingStranger(sender), playerReady());
+  }
+
+  const RejectionReport report = takeReport();
+  EXPECT_EQ(report.sincePreviousReport,
+            countsOf({RejectionCause::PlayerQueueFull}));
+  ASSERT_EQ(report.mostRejected.size(), 1U);
+  EXPECT_EQ(report.mostRejected[0].endpoint, floodingStranger(players - 1));
 }
 
 /**

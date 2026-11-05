@@ -13,6 +13,8 @@
 #include <vector>
 #include "ConfigurationRegistry.hpp"
 #include "ConnectedPlayer.hpp"
+#include "EntitySheets.hpp"
+#include "EntitySheetsFingerprint.hpp"
 #include "EventBus.hpp"
 #include "FarewellSender.hpp"
 #include "GameInstance.hpp"
@@ -21,6 +23,7 @@
 #include "Games.hpp"
 #include "GamesSettings.hpp"
 #include "HostedGamesWatch.hpp"
+#include "HostedRules.hpp"
 #include "IDatagramSender.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IResultsArchive.hpp"
@@ -39,7 +42,6 @@
 #include "TimeConstants.hpp"
 #include "VanillaBreaches.hpp"
 #include "WaveCatalog.hpp"
-#include "WavePlan.hpp"
 
 namespace rtype::server {
 
@@ -57,13 +59,24 @@ std::optional<std::uint32_t> seedOf(const engine::SettingValue& setting) {
 }
 
 /**
+ * @brief Writes in the journal the entity sheets read from @p folder, with the
+ * count of their types.
+ */
+void logEntitySheets(const logging::Logger& logger,
+                     const std::filesystem::path& folder,
+                     const game::EntitySheets& types) {
+  logger.info("entity sheets ", logging::genericText(folder), ": ",
+              types.all().size(), " types");
+}
+
+/**
  * @brief Writes in the journal the waves file at @p file, read as @p catalog,
  * with the count of the difficulties it describes.
  */
 void logWavesFile(const logging::Logger& logger,
                   const std::filesystem::path& file,
                   const WaveCatalog& catalog) {
-  logger.info("waves file ", engine::genericText(file), ": ",
+  logger.info("waves file ", logging::genericText(file), ": ",
               catalog.difficulties().size(), " difficulties");
 }
 
@@ -153,33 +166,52 @@ void ServerGamesModule::declareSettings(
 
 void ServerGamesModule::start() {
   requireGameCount(settings_.gameCount);
-  const std::string_view difficulty = DEFAULT_DIFFICULTY;
-  const WaveCatalog catalog = WaveCatalog::fromFile(settings_.wavesFile);
+  const game::EntitySheets& types = types_.emplace(
+      game::EntitySheets::fromFolder(settings_.entitySheetsFolder));
+  logEntitySheets(logger_, settings_.entitySheetsFolder, types);
+  games_.keepEntityTypes(types);
+  const WaveCatalog catalog = WaveCatalog::fromFile(settings_.wavesFile, types);
   logWavesFile(logger_, settings_.wavesFile, catalog);
-  const WavePlan& waves = catalog.planOf(difficulty);
   const std::optional<std::uint32_t> seed = seedOf(*seedSetting_);
+  createGames(sharedSettingsOf(catalog, types, seed), seed);
+}
+
+GameSettings ServerGamesModule::sharedSettingsOf(
+    const WaveCatalog& catalog, const game::EntitySheets& types,
+    std::optional<std::uint32_t> seed) {
+  const std::string_view difficulty = DEFAULT_DIFFICULTY;
   const auto statesPerSecond =
       static_cast<std::size_t>(stateRateSetting_->integer().value_or(
           static_cast<std::int64_t>(settings_.statesPerSecond)));
   const auto inputDelayTicks =
       static_cast<std::size_t>(inputDelaySetting_->integer().value_or(
           static_cast<std::int64_t>(settings_.inputDelayTicks)));
-  const std::vector<std::string_view> breaches =
-      vanillaBreaches(catalog.fingerprint(), seed, inputDelayTicks);
+  const std::vector<std::string_view> breaches = vanillaBreaches(
+      HostedRules{.wavesFingerprint = catalog.fingerprint(),
+                  .sheetsFingerprint = entitySheetsFingerprint(types),
+                  .seed = seed,
+                  .inputDelayTicks = inputDelayTicks});
   logHowGamesPlay(logger_, difficulty, breaches);
-  auto& watch = watch_.emplace(hostedGames_, std::string{difficulty});
+  return GameSettings{.seed = 0,
+                      .waves = catalog.planOf(difficulty),
+                      .types = types,
+                      .statesPerSecond = statesPerSecond,
+                      .inputDelayTicks = inputDelayTicks,
+                      .difficulty = std::string{difficulty},
+                      .vanilla = breaches.empty()};
+}
+
+void ServerGamesModule::createGames(const GameSettings& shared,
+                                    std::optional<std::uint32_t> seed) {
+  auto& watch = watch_.emplace(hostedGames_, shared.difficulty);
   for (std::size_t game = 0; game < settings_.gameCount; ++game) {
     auto events = std::make_unique<engine::EventBus>();
-    std::unique_ptr<GameInstance> created = createGame(
-        *events,
-        GameSettings{.seed = seed ? *seed + (static_cast<std::uint32_t>(game) *
-                                             GAME_SEED_STRIDE)
-                                  : std::random_device{}(),
-                     .waves = waves,
-                     .statesPerSecond = statesPerSecond,
-                     .inputDelayTicks = inputDelayTicks,
-                     .difficulty = std::string{difficulty},
-                     .vanilla = breaches.empty()});
+    GameSettings settings = shared;
+    settings.seed =
+        seed ? *seed + (static_cast<std::uint32_t>(game) * GAME_SEED_STRIDE)
+             : std::random_device{}();
+    std::unique_ptr<GameInstance> created =
+        createGame(*events, std::move(settings));
     watch.watch(*events);
     games_.add(std::move(events), std::move(created));
   }

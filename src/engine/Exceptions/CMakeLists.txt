@@ -1,4 +1,4 @@
-add_library(rtype_engine_exceptions STATIC EngineException.cpp)
+add_library(rtype_engine_exceptions STATIC EngineException.cpp ErrorText.cpp)
 
 target_include_directories(rtype_engine_exceptions PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

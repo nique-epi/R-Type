@@ -14,7 +14,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <ctime>
-#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -24,8 +23,12 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include "ILogJournal.hpp"
+#include "LogLevel.hpp"
+#include "LogRecord.hpp"
 #include "LoggingConstants.hpp"
 #include "LoggingException.hpp"
+#include "PathText.hpp"
 
 namespace rtype::logging {
 
@@ -204,6 +207,9 @@ void emitLine(LogLevel level, std::string_view name, std::string_view body) {
 
 Logger::Logger(std::string name) : name_(std::move(name)) {}
 
+Logger::Logger(std::string name, const ILogJournal& journal)
+    : name_(std::move(name)), journal_(&journal) {}
+
 std::optional<LogLevel> Logger::parseLevel(std::string_view text) {
   const std::string lower = toLower(text);
   for (const LevelName& levelName : levelNames) {
@@ -232,7 +238,7 @@ void Logger::setOutput(const LogOutput& output) {
   if (output.filePath.has_value()) {
     file.open(*output.filePath, std::ios::app);
     if (!file.is_open()) {
-      throw LogFileOpenException(output.filePath->string());
+      throw LogFileOpenException(genericText(*output.filePath));
     }
   }
   Sinks& destination = sinks();
@@ -242,7 +248,16 @@ void Logger::setOutput(const LogOutput& output) {
   destination.toStderr = output.toStderr;
 }
 
+void writeLogLine(const LogRecord& record) {
+  emitLine(record.level, record.loggerName, record.body);
+}
+
 void Logger::writeLine(LogLevel candidate, std::string_view body) const {
+  if (journal_ != nullptr) {
+    journal_->write(
+        LogRecord{.level = candidate, .loggerName = name_, .body = body});
+    return;
+  }
   emitLine(candidate, name_, body);
 }
 

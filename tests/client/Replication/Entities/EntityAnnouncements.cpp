@@ -13,20 +13,18 @@
 
 namespace rtype::client::testing {
 
-network::EntitySpawned spawned(std::uint32_t entityId,
-                               network::WireEntityType type,
+network::EntitySpawned spawned(std::uint32_t entityId, std::uint8_t typeNumber,
                                game::Position position) {
   return network::EntitySpawned{.entityId = entityId,
-                                .entityType = type,
+                                .entityType = typeNumber,
                                 .x = position.x,
                                 .y = position.y};
 }
 
-network::EntityState listed(std::uint32_t entityId,
-                            network::WireEntityType type,
+network::EntityState listed(std::uint32_t entityId, std::uint8_t typeNumber,
                             game::Position position) {
   return network::EntityState{.entityId = entityId,
-                              .entityType = type,
+                              .entityType = typeNumber,
                               .x = position.x,
                               .y = position.y};
 }

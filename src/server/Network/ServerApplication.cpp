@@ -51,9 +51,8 @@ ServerApplication::ServerApplication(
       outgoing_(OUTGOING_DATAGRAM_QUEUE_CAPACITY),
       destinations_{.players = &incoming_,
                     .connectionRequests = &connectionRequests_},
-      drops_(clock_),
-      sorter_(destinations_, drops_, clock_),
-      discardReport_(destinations_, drops_),
+      sorter_(destinations_, rejections_, clock_),
+      rejectionReporter_(rejections_),
       handleTick_(std::move(handleTick)) {}
 
 void ServerApplication::listenOn(network::Endpoint localEndpoint) {
@@ -138,7 +137,7 @@ void ServerApplication::simulateTick() {
   connectionRequests_.drainInto(receivedRequests_);
   handleTick_(ReceivedDatagrams{.players = received_,
                                 .connectionRequests = receivedRequests_});
-  discardReport_.countTick();
+  rejectionReporter_.countTick();
   network_.post([this] {
     if (relay_.has_value()) {
       relay_->sendWaiting();

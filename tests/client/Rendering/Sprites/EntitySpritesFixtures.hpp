@@ -1,16 +1,13 @@
 #pragma once
 
-#include <vector>
-#include "EntityType.hpp"
+#include "EntityAppearance.hpp"
 #include "SpriteAnimation.hpp"
 #include "SpriteFrame.hpp"
 
-/** @returns The frame of the sprite of @p type, or NO_FRAME when it has no
- * sprite. */
-rtype::game::SpriteFrame frameOf(rtype::game::EntityType type);
-
-/** @returns Every frame of the animations of every entity type. */
-std::vector<rtype::game::SpriteFrame> everyAnimationFrame();
+/** @returns The appearance the tests draw, built from TEST_SHEET_ID,
+ * TEST_IDLE_FRAMES and TEST_FRAME_TIME; it lives for the whole run, so the
+ * animations that view its frames never dangle. */
+[[nodiscard]] const rtype::client::EntityAppearance& testAppearance();
 
 /** @returns The frame an animation shows where it starts. */
 rtype::game::SpriteFrame startFrameOf(

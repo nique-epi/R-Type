@@ -23,8 +23,9 @@ namespace rtype::server::testing {
 [[nodiscard]] std::string calmFileWithout(std::string_view key);
 
 /**
- * @returns The message of the ServerException reading @p text throws; an empty
- * text, after a failure, when it throws none.
+ * @returns The message of the error reading @p text throws, an exception of
+ * the server or of the engine; an empty text, after a failure, when it throws
+ * none.
  */
 [[nodiscard]] std::string errorReading(std::string_view text);
 

@@ -1,3 +1,3 @@
-target_sources(client_replication_tests PRIVATE WorldStateFilterTest.cpp PositionHistoryTest.cpp EntityReplicatorTest.cpp EntityReplicatorFixture.cpp EntityReplicatorFixtures.cpp EntityAnnouncements.cpp LastListedTicksTest.cpp)
+target_sources(client_replication_tests PRIVATE WorldStateFilterTest.cpp PositionHistoryTest.cpp EntityReplicatorTest.cpp EntityReplicatorFixture.cpp EntityReplicatorFixtures.cpp EntityAnnouncements.cpp LastListedTicksTest.cpp EntityTypeLooksTest.cpp EntityTypeLooksFixture.cpp)
 target_sources(client_connection_tests PRIVATE EntityAnnouncements.cpp)
 target_sources(client_screen_tests PRIVATE EntityAnnouncements.cpp)

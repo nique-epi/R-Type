@@ -2,49 +2,37 @@
 
 #include <SFML/Graphics/Rect.hpp>
 #include <cstdint>
-#include <optional>
 #include "AnimatedSprite.hpp"
+#include "EntityAppearance.hpp"
 #include "EntityType.hpp"
-#include "Sprite.hpp"
-#include "SpriteAnimation.hpp"
+#include "Layer.hpp"
 #include "SpriteFrame.hpp"
 
 namespace rtype::client {
 
 /**
- * @brief The single table that gives each entity type its look on screen.
- *
- * Every type is drawn from the entity sheet, in the layer of its type:
- * Enemies for a Bydo, Players for a ship and its missiles, EnemyMissiles for a
- * missile of an enemy. All four players get the first ship color.
- *
- * @returns The sprite of the type, or nothing for a value outside EntityType.
+ * @returns The layer an entity of side @p side is drawn in: a ship and the
+ * missile of a player in front of the effects, the missile of an enemy in
+ * front of everything of the playfield, an enemy behind the effects. The side
+ * decides it, never the sheet, so the order that keeps danger in sight holds
+ * for every type a sheet adds.
  */
-[[nodiscard]] std::optional<game::Sprite> spriteOf(game::EntityType type);
+[[nodiscard]] game::Layer layerOf(game::EntityType side);
 
 /**
- * @brief The animation of each entity type, from the same table: the frames of
- * its row in a loop, started at an offset taken from the network id of the
- * entity, so entities created in the same tick do not show the same frame.
+ * @brief What code that creates an entity gives it: the idle animation of
+ * @p appearance in a loop, started at an offset taken from @p networkId, so
+ * entities created in the same tick do not show the same frame, and a sprite
+ * of the sheet of @p appearance, in the layer of @p side, already showing the
+ * frame that animation starts on, so the first draw of the entity is right.
  *
  * The offset is the fractional part of networkId times LOOP_START_SPREAD, as a
  * share of one cycle of the animation: 0 for id 0, always less than one cycle.
- *
- * @returns The animation, its elapsed time set to the offset, or nothing for a
- * value outside EntityType.
+ * The animation views the frames of @p appearance, which must outlive it.
  */
-[[nodiscard]] std::optional<SpriteAnimation> animationOf(
-    game::EntityType type, std::uint32_t networkId);
-
-/**
- * @brief What code that creates an entity gives it: the animation of
- * animationOf(), and the sprite of spriteOf() showing the frame that animation
- * starts on, so the first draw of the entity is already right.
- *
- * @returns Both, or nothing for a value outside EntityType.
- */
-[[nodiscard]] std::optional<AnimatedSprite> animatedSpriteOf(
-    game::EntityType type, std::uint32_t networkId);
+[[nodiscard]] AnimatedSprite animatedSpriteOf(
+    const EntityAppearance& appearance, game::EntityType side,
+    std::uint32_t networkId);
 
 /** @returns The rectangle of a frame of a sheet, as SFML takes it. */
 [[nodiscard]] sf::IntRect rectangleOf(game::SpriteFrame frame);

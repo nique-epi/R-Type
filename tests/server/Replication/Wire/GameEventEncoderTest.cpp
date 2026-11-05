@@ -7,7 +7,7 @@
 #include "EntityDestruction.hpp"
 #include "EntitySpawn.hpp"
 #include "EntitySpawned.hpp"
-#include "EntityType.hpp"
+#include "EntityTypeNumberTestConstants.hpp"
 #include "EventMessage.hpp"
 #include "GameEvent.hpp"
 #include "GameEventConstants.hpp"
@@ -20,7 +20,6 @@
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
 #include "PlayerLeft.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::server::testing {
 
@@ -33,7 +32,7 @@ namespace rtype::server::testing {
 TEST(GameEventEncoderTest, EncodesASpawnSentOnce) {
   const EventMessage message = GameEventEncoder::encode(
       game::EntitySpawn{.networkId = MONSTER_NETWORK_ID,
-                        .type = game::EntityType::Enemy,
+                        .typeNumber = DRIFTER_TYPE_NUMBER,
                         .x = MONSTER_X,
                         .y = MONSTER_Y});
 
@@ -42,7 +41,7 @@ TEST(GameEventEncoderTest, EncodesASpawnSentOnce) {
   EXPECT_EQ(
       network::decodeMessage<network::EntitySpawned>(message.message.payload),
       (network::EntitySpawned{.entityId = MONSTER_NETWORK_ID,
-                              .entityType = network::WireEntityType::Bydo,
+                              .entityType = DRIFTER_TYPE_NUMBER,
                               .x = MONSTER_X,
                               .y = MONSTER_Y}));
 }

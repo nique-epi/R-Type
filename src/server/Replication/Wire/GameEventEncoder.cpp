@@ -16,7 +16,6 @@
 #include "PlayerHit.hpp"
 #include "PlayerLeft.hpp"
 #include "ProtocolConstants.hpp"
-#include "WireEntityTypeMapping.hpp"
 
 namespace rtype::server {
 
@@ -45,11 +44,10 @@ network::DepartureReason toWireReason(game::DepartureCause cause) {
 }  // namespace
 
 EventMessage GameEventEncoder::encode(const game::EntitySpawn& event) {
-  const network::EntitySpawned message{
-      .entityId = event.networkId,
-      .entityType = toWireEntityType(event.type),
-      .x = event.x,
-      .y = event.y};
+  const network::EntitySpawned message{.entityId = event.networkId,
+                                       .entityType = event.typeNumber,
+                                       .x = event.x,
+                                       .y = event.y};
   return EventMessage{.message = network::encodedMessage(message),
                       .guaranteed = false};
 }

@@ -2,9 +2,9 @@
 
 #include <chrono>
 #include <cstddef>
-#include "BydoWave.hpp"
 #include "TicksToReach.hpp"
 #include "TimeConstants.hpp"
+#include "Wave.hpp"
 #include "WaveCurve.hpp"
 
 namespace rtype::game::testing {
@@ -24,8 +24,8 @@ constexpr std::size_t LONG_LEVEL_WAVES = 100;
  */
 constexpr WaveCurve TEST_WAVE_CURVE{
     .firstWave =
-        BydoWave{.bydoCount = 3, .spawnInterval = std::chrono::seconds(2)},
-    .bydosAddedPerWave = 1,
+        Wave{.entityCount = 3, .spawnInterval = std::chrono::seconds(2)},
+    .entitiesAddedPerWave = 1,
     .spawnIntervalCutPerWave = std::chrono::milliseconds(250),
     .shortestSpawnInterval = std::chrono::seconds(1),
     .wavePause = std::chrono::seconds(4),
@@ -36,14 +36,14 @@ constexpr WaveCurve TEST_WAVE_CURVE{
  */
 constexpr WaveCurve ONE_WAVE_LEVEL_CURVE{
     .firstWave = TEST_WAVE_CURVE.firstWave,
-    .bydosAddedPerWave = TEST_WAVE_CURVE.bydosAddedPerWave,
+    .entitiesAddedPerWave = TEST_WAVE_CURVE.entitiesAddedPerWave,
     .spawnIntervalCutPerWave = TEST_WAVE_CURVE.spawnIntervalCutPerWave,
     .shortestSpawnInterval = TEST_WAVE_CURVE.shortestSpawnInterval,
     .wavePause = TEST_WAVE_CURVE.wavePause,
     .levelWaves = 1};
 constexpr WaveCurve TWO_WAVE_LEVEL_CURVE{
     .firstWave = TEST_WAVE_CURVE.firstWave,
-    .bydosAddedPerWave = TEST_WAVE_CURVE.bydosAddedPerWave,
+    .entitiesAddedPerWave = TEST_WAVE_CURVE.entitiesAddedPerWave,
     .spawnIntervalCutPerWave = TEST_WAVE_CURVE.spawnIntervalCutPerWave,
     .shortestSpawnInterval = TEST_WAVE_CURVE.shortestSpawnInterval,
     .wavePause = TEST_WAVE_CURVE.wavePause,
@@ -54,14 +54,14 @@ constexpr WaveCurve TWO_WAVE_LEVEL_CURVE{
  * 4 Bydos 1.75 seconds apart, then 6 at 1.25 seconds for the fourth wave, then
  * 7 and 8 one every second, the shortest time.
  */
-constexpr BydoWave TEST_SECOND_WAVE{
-    .bydoCount = 4, .spawnInterval = std::chrono::milliseconds(1750)};
-constexpr BydoWave TEST_FOURTH_WAVE{
-    .bydoCount = 6, .spawnInterval = std::chrono::milliseconds(1250)};
-constexpr BydoWave TEST_FIFTH_WAVE{.bydoCount = 7,
-                                   .spawnInterval = std::chrono::seconds(1)};
-constexpr BydoWave TEST_SIXTH_WAVE{.bydoCount = 8,
-                                   .spawnInterval = std::chrono::seconds(1)};
+constexpr Wave TEST_SECOND_WAVE{
+    .entityCount = 4, .spawnInterval = std::chrono::milliseconds(1750)};
+constexpr Wave TEST_FOURTH_WAVE{
+    .entityCount = 6, .spawnInterval = std::chrono::milliseconds(1250)};
+constexpr Wave TEST_FIFTH_WAVE{.entityCount = 7,
+                               .spawnInterval = std::chrono::seconds(1)};
+constexpr Wave TEST_SIXTH_WAVE{.entityCount = 8,
+                               .spawnInterval = std::chrono::seconds(1)};
 
 /**
  * @brief When the last Bydo of the first wave of TEST_WAVE_CURVE comes: its

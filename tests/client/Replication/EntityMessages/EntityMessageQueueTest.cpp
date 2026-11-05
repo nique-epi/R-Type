@@ -1,6 +1,5 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <cstddef>
 #include <vector>
 #include "DeltaWorldState.hpp"
 #include "EntityAnnouncements.hpp"
@@ -9,6 +8,7 @@
 #include "EntityMessageQueueFixture.hpp"
 #include "EntityReplicatorTestConstants.hpp"
 #include "EntitySpawned.hpp"
+#include "FixedEntityTypeSourceConstants.hpp"
 #include "GameEvent.hpp"
 #include "GameStarted.hpp"
 #include "PlayerLeft.hpp"
@@ -38,6 +38,7 @@ using testing::PROTOCOL_SILENCE_LIMIT;
 using testing::SECOND_POSITION;
 using testing::SECOND_SEQUENCE;
 using testing::SHIP_ID;
+using testing::SHIP_TYPE_NUMBER;
 using ::testing::SizeIs;
 using testing::spawned;
 using testing::stateListing;
@@ -53,10 +54,9 @@ TEST_F(EntityMessageQueueFixture, HandsOverTheEntityMessagesOfTheGameInOrder) {
   accept();
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
   const network::EntitySpawned spawn =
-      spawned(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION);
+      spawned(SHIP_ID, SHIP_TYPE_NUMBER, FIRST_POSITION);
   const network::WorldState state = stateListing(
-      APPLIED_TICK,
-      {listed(SHIP_ID, network::WireEntityType::PlayerShip, SECOND_POSITION)});
+      APPLIED_TICK, {listed(SHIP_ID, SHIP_TYPE_NUMBER, SECOND_POSITION)});
   const network::EntityDestroyed kill = killed(SHIP_ID);
   deliverInSession(spawn, SECOND_SEQUENCE);
   deliverWorldStateInSession(state, THIRD_SEQUENCE);
@@ -77,9 +77,8 @@ TEST_F(EntityMessageQueueFixture, HandsOverTheEntityMessagesOfTheGameInOrder) {
  */
 TEST_F(EntityMessageQueueFixture, KeepsNoEntityMessageBeforeTheGameStarts) {
   accept();
-  deliverInSession(
-      spawned(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION),
-      FIRST_SEQUENCE);
+  deliverInSession(spawned(SHIP_ID, SHIP_TYPE_NUMBER, FIRST_POSITION),
+                   FIRST_SEQUENCE);
 
   update();
 
@@ -95,8 +94,7 @@ TEST_F(EntityMessageQueueFixture, KeepsNoEntityMessageBeforeTheGameStarts) {
 TEST_F(EntityMessageQueueFixture, HandsOverTheWorldStateThatStartsTheGame) {
   accept();
   const network::WorldState state = stateListing(
-      APPLIED_TICK,
-      {listed(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION)});
+      APPLIED_TICK, {listed(SHIP_ID, SHIP_TYPE_NUMBER, FIRST_POSITION)});
   deliverWorldStateInSession(state, FIRST_SEQUENCE);
 
   update();
@@ -113,7 +111,7 @@ TEST_F(EntityMessageQueueFixture, HandsOverTheWorldStateThatStartsTheGame) {
 TEST_F(EntityMessageQueueFixture, HandsOverTheStateRebuiltFromADelta) {
   accept();
   const network::EntityState ship =
-      listed(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION);
+      listed(SHIP_ID, SHIP_TYPE_NUMBER, FIRST_POSITION);
   deliverDeltaInSession(
       network::DeltaWorldState{.tick = APPLIED_TICK,
                                .baseDistance = network::NO_REFERENCE_DISTANCE,
@@ -138,9 +136,8 @@ TEST_F(EntityMessageQueueFixture, HandsOverTheStateRebuiltFromADelta) {
 TEST_F(EntityMessageQueueFixture, HandsOverEachEntityMessageOnce) {
   accept();
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  deliverInSession(
-      spawned(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION),
-      SECOND_SEQUENCE);
+  deliverInSession(spawned(SHIP_ID, SHIP_TYPE_NUMBER, FIRST_POSITION),
+                   SECOND_SEQUENCE);
   update();
   ASSERT_THAT(drainedEntityMessages(), SizeIs(1));
 
@@ -155,9 +152,8 @@ TEST_F(EntityMessageQueueFixture, HandsOverEachEntityMessageOnce) {
 TEST_F(EntityMessageQueueFixture, LeavingDropsTheEntityMessagesNotHandedOver) {
   accept();
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  deliverInSession(
-      spawned(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION),
-      SECOND_SEQUENCE);
+  deliverInSession(spawned(SHIP_ID, SHIP_TYPE_NUMBER, FIRST_POSITION),
+                   SECOND_SEQUENCE);
   update();
 
   session().cancel();
@@ -216,8 +212,7 @@ TEST_F(EntityMessageQueueFixture, KeepsNothingFromAServerThatComesBack) {
 
   deliverWorldStateInSession(
       stateListing(APPLIED_TICK,
-                   {listed(SHIP_ID, network::WireEntityType::PlayerShip,
-                           FIRST_POSITION)}),
+                   {listed(SHIP_ID, SHIP_TYPE_NUMBER, FIRST_POSITION)}),
       SECOND_SEQUENCE);
   update();
 

@@ -1,8 +1,8 @@
 #include "WaveDirector.hpp"
 #include <cstddef>
-#include "BydoWave.hpp"
 #include "GameException.hpp"
 #include "TimeConstants.hpp"
+#include "Wave.hpp"
 #include "WaveCurve.hpp"
 #include "WaveProgression.hpp"
 
@@ -17,25 +17,25 @@ WaveDirector::WaveDirector(WaveCurve curve)
 }
 
 std::size_t WaveDirector::advance(engine::Duration elapsed,
-                                  std::size_t bydosInPlay) {
-  bydosDue_ = 0;
-  const bool waveCleared = bydosLeftToAppear_ == 0 && bydosInPlay == 0;
+                                  std::size_t enemiesInPlay) {
+  enemiesDue_ = 0;
+  const bool waveCleared = enemiesLeftToAppear_ == 0 && enemiesInPlay == 0;
   if (waveCleared) {
     endTheWave();
   }
   timers_.advance(elapsed);
-  return bydosDue_;
+  return enemiesDue_;
 }
 
 std::size_t WaveDirector::waveNumber() const { return waveNumber_; }
 
-BydoWave WaveDirector::currentWave() const { return wave_; }
+Wave WaveDirector::currentWave() const { return wave_; }
 
 bool WaveDirector::lastWaveFinished() const { return lastWaveFinished_; }
 
 void WaveDirector::startPause() {
-  bydosLeftToAppear_ = wave_.bydoCount;
-  timers_.scheduleOnce(curve_.wavePause, [this] { letABydoAppear(); });
+  enemiesLeftToAppear_ = wave_.entityCount;
+  timers_.scheduleOnce(curve_.wavePause, [this] { letAnEnemyAppear(); });
 }
 
 void WaveDirector::endTheWave() {
@@ -48,15 +48,15 @@ void WaveDirector::endTheWave() {
 
 void WaveDirector::startNextWave() {
   ++waveNumber_;
-  wave_ = bydoWaveAfter(wave_, curve_);
+  wave_ = waveAfter(wave_, curve_);
   startPause();
 }
 
-void WaveDirector::letABydoAppear() {
-  ++bydosDue_;
-  --bydosLeftToAppear_;
-  if (bydosLeftToAppear_ > 0) {
-    timers_.scheduleOnce(wave_.spawnInterval, [this] { letABydoAppear(); });
+void WaveDirector::letAnEnemyAppear() {
+  ++enemiesDue_;
+  --enemiesLeftToAppear_;
+  if (enemiesLeftToAppear_ > 0) {
+    timers_.scheduleOnce(wave_.spawnInterval, [this] { letAnEnemyAppear(); });
   }
 }
 
