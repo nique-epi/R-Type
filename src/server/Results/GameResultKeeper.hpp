@@ -7,6 +7,7 @@
 #include "GameResult.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
+#include "GameStateChanged.hpp"
 #include "IResultsArchive.hpp"
 #include "PlayerRoster.hpp"
 
@@ -36,13 +37,15 @@ class GameResultKeeper {
                    const GameSettings& settings);
 
   /** @brief Keeps what @p departed leaves when the game is in progress, as the
-   * state given to the latest followState() says. Outside a game it keeps
+   * latest onStateChanged() says. Outside a game it keeps
    * nothing, so players coming and going in the waiting room cost no memory. */
   void onPlayerClosing(const ConnectedPlayer& departed);
 
-  /** @brief Tells the keeper the state the game reached in this tick; called
-   * once per tick, after the rules ran. */
-  void followState(GameState state);
+  /**
+   * @brief Follows the game from one state to the next: it counts the players
+   * when the game starts, and records the game when it finishes.
+   */
+  void onStateChanged(const GameStateChanged& change);
 
  private:
   void startCounting();

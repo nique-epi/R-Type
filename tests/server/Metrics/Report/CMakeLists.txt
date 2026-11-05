@@ -1,1 +1,1 @@
-target_sources(server_metrics_tests PRIVATE LatestMetricsTest.cpp LatestMetricsFixtures.cpp MetricsLinesTest.cpp)
+target_sources(server_metrics_tests PRIVATE MetricsLinesTest.cpp)

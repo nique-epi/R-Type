@@ -15,6 +15,7 @@ target_link_libraries(rtype_server_instances
     rtype_server_sessions
     rtype_server_sessions_roster
   PRIVATE
+    rtype_game_events
     rtype_server_exceptions
 )
 

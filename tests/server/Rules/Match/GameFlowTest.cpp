@@ -1,10 +1,12 @@
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "EntityIdConstants.hpp"
 #include "GameFlowFixture.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameState.hpp"
+#include "GameStateChanged.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "PlayerRoster.hpp"
 #include "SentDatagrams.hpp"
@@ -14,6 +16,7 @@ using rtype::identifiers::NO_ENTITY_ID;
 using rtype::server::ConnectedPlayer;
 using rtype::server::FINISHED_STATE_TICKS;
 using rtype::server::GameState;
+using rtype::server::GameStateChanged;
 using rtype::server::START_BARRIER_TICKS;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::FOURTH_PLAYER;
@@ -115,7 +118,7 @@ TEST_F(GameFlowFixture, DoesNotCountTicksWhileWaiting) {
  * Then the tick is SOME_TICKS
  */
 TEST_F(GameFlowFixture, CountsTicksWhileInProgress) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
 
   runTicks(SOME_TICKS);
 
@@ -128,7 +131,7 @@ TEST_F(GameFlowFixture, CountsTicksWhileInProgress) {
  * Then its state is Finished
  */
 TEST_F(GameFlowFixture, FinishEndsTheGameInProgress) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
 
   flow().finish();
 
@@ -152,7 +155,7 @@ TEST_F(GameFlowFixture, FinishDoesNothingWhileWaiting) {
  * Then it is still finished
  */
 TEST_F(GameFlowFixture, StaysFinishedBeforeTheFinishedDurationElapsed) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   flow().finish();
 
   runTicks(FINISHED_STATE_TICKS - 1);
@@ -166,7 +169,7 @@ TEST_F(GameFlowFixture, StaysFinishedBeforeTheFinishedDurationElapsed) {
  * Then it waits for players again
  */
 TEST_F(GameFlowFixture, WaitsForPlayersAgainOnceTheFinishedDurationElapsed) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   flow().finish();
 
   runTicks(FINISHED_STATE_TICKS);
@@ -180,7 +183,7 @@ TEST_F(GameFlowFixture, WaitsForPlayersAgainOnceTheFinishedDurationElapsed) {
  * Then the game is finished in that tick
  */
 TEST_F(GameFlowFixture, FinishesTheGameInProgressNoPlayerIsLeftIn) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   ASSERT_TRUE(roster().remove(playerEndpoint(FIRST_PLAYER)).has_value());
 
   tick();
@@ -194,7 +197,7 @@ TEST_F(GameFlowFixture, FinishesTheGameInProgressNoPlayerIsLeftIn) {
  * Then the game is finished in that tick
  */
 TEST_F(GameFlowFixture, FinishesTheGameInProgressNoPlayerHasALife) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   takeEveryLifeOf(*roster().find(playerEndpoint(FIRST_PLAYER)));
 
   tick();
@@ -239,7 +242,7 @@ TEST_F(GameFlowFixture, ResetsTheWorldBetweenTwoGames) {
  * Then every player is connected, not ready, and has a ship
  */
 TEST_F(GameFlowFixture, KeepsThePlayersConnectedButNotReadyForTheNextGame) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   flow().finish();
 
   runTicks(FINISHED_STATE_TICKS);
@@ -258,7 +261,7 @@ TEST_F(GameFlowFixture, KeepsThePlayersConnectedButNotReadyForTheNextGame) {
  * Then the game keeps waiting
  */
 TEST_F(GameFlowFixture, NeedsEveryPlayerReadyAgainForTheNextGame) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   flow().finish();
   runTicks(FINISHED_STATE_TICKS);
 
@@ -286,7 +289,7 @@ TEST_F(GameFlowFixture, NoBydoAppearsWhileWaitingForPlayers) {
  * Then no Bydo is in the world, and then one is, next to the ship
  */
 TEST_F(GameFlowFixture, TheFirstBydoAppearsOnceTheFirstPauseIsOver) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
 
   runTicks(TICKS_TO_THE_FIRST_BYDO - 1);
   EXPECT_EQ(flow().world().entityCount(), 1U);
@@ -302,7 +305,7 @@ TEST_F(GameFlowFixture, TheFirstBydoAppearsOnceTheFirstPauseIsOver) {
  * Then no Bydo is in the new world: its waves start over with the first pause
  */
 TEST_F(GameFlowFixture, ANewGameStartsTheWavesOver) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   runTicks(TICKS_TO_THE_FIRST_BYDO / 2);
   flow().finish();
   runTicks(FINISHED_STATE_TICKS);
@@ -324,7 +327,7 @@ TEST_F(GameFlowFixture, ANewGameStartsTheWavesOver) {
  * Then no Bydo appears
  */
 TEST_F(GameFlowFixture, NoBydoAppearsWhileFinished) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   flow().finish();
   const std::size_t entitiesBefore = flow().world().entityCount();
 
@@ -419,4 +422,53 @@ TEST_F(GameFlowFixture, ForgetsAGameLoadedFromBeforeTheWait) {
   tick();
 
   EXPECT_EQ(flow().state(), GameState::Starting);
+}
+
+/**
+ * Given a game whose only player is ready
+ * When the game starts
+ * Then the flow announced the wait ending, then the start
+ */
+TEST_F(GameFlowFixture, AnnouncesEachStepOfTheStartOfAGame) {
+  startGameWith({FIRST_PLAYER});
+
+  EXPECT_EQ(changes(), (std::vector<GameStateChanged>{
+                           {.previous = GameState::WaitingForPlayers,
+                            .current = GameState::Starting},
+                           {.previous = GameState::Starting,
+                            .current = GameState::InProgress}}));
+}
+
+/**
+ * Given a game in progress
+ * When it finishes and FINISHED_STATE_TICKS ticks run
+ * Then the flow announced the end, then the return to the waiting room
+ */
+TEST_F(GameFlowFixture, AnnouncesTheEndThenTheReturnToTheWaitingRoom) {
+  startGameWith({FIRST_PLAYER});
+
+  flow().finish();
+  runTicks(FINISHED_STATE_TICKS);
+
+  ASSERT_EQ(changes().size(), 4U);
+  EXPECT_EQ(changes().at(2),
+            (GameStateChanged{.previous = GameState::InProgress,
+                              .current = GameState::Finished}));
+  EXPECT_EQ(changes().at(3),
+            (GameStateChanged{.previous = GameState::Finished,
+                              .current = GameState::WaitingForPlayers}));
+}
+
+/**
+ * Given a finished game
+ * When one tick less than FINISHED_STATE_TICKS runs
+ * Then the end was announced once, whatever the ticks in that state
+ */
+TEST_F(GameFlowFixture, AnnouncesAStateOnceWhileTheGameStaysInIt) {
+  startGameWith({FIRST_PLAYER});
+  flow().finish();
+
+  runTicks(FINISHED_STATE_TICKS - 1);
+
+  EXPECT_EQ(changes().size(), 3U);
 }

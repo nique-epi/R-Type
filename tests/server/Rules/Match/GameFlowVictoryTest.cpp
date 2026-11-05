@@ -39,7 +39,7 @@ constexpr std::size_t A_SECOND_OF_TICKS =
  * Then the game goes on: the level ends once the sky is clear
  */
 TEST_F(GameFlowOneWaveLevelFixture, PlaysOnWhileABydoOfTheLastWaveIsInPlay) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
 
   runTicks(TICKS_TO_THE_WHOLE_FIRST_WAVE + A_SECOND_OF_TICKS);
 
@@ -52,7 +52,7 @@ TEST_F(GameFlowOneWaveLevelFixture, PlaysOnWhileABydoOfTheLastWaveIsInPlay) {
  * Then the game goes on: a wave does not end before all its Bydos came
  */
 TEST_F(GameFlowOneWaveLevelFixture, PlaysOnUntilTheLastBydoOfTheLastWaveCame) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
 
   for (std::size_t index = 0; index < TICKS_TO_THE_WHOLE_FIRST_WAVE - 1;
        ++index) {
@@ -69,7 +69,7 @@ TEST_F(GameFlowOneWaveLevelFixture, PlaysOnUntilTheLastBydoOfTheLastWaveCame) {
  * Then the game finishes: the last wave is over
  */
 TEST_F(GameFlowOneWaveLevelFixture, FinishesOnceTheLastWaveIsOver) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   runTicks(TICKS_TO_THE_WHOLE_FIRST_WAVE);
   clearTheBydos();
 
@@ -84,7 +84,7 @@ TEST_F(GameFlowOneWaveLevelFixture, FinishesOnceTheLastWaveIsOver) {
  * Then the player is sent a GameEnded that says Victory
  */
 TEST_F(GameFlowOneWaveLevelFixture, TellsThePlayersTheGameWasWon) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   runTicks(TICKS_TO_THE_WHOLE_FIRST_WAVE);
   clearTheBydos();
   runTicks(TICKS_TO_FIND_THE_SKY_CLEAR + 1);
@@ -102,7 +102,7 @@ TEST_F(GameFlowOneWaveLevelFixture, TellsThePlayersTheGameWasWon) {
  * Then the player is sent a GameEnded that says Defeat
  */
 TEST_F(GameFlowOneWaveLevelFixture, TellsThePlayersTheGameWasLost) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   takeEveryLifeOf(*roster().find(playerEndpoint(FIRST_PLAYER)));
   runTicks(1);
   ASSERT_EQ(flow().state(), GameState::Finished);
@@ -121,7 +121,7 @@ TEST_F(GameFlowOneWaveLevelFixture, TellsThePlayersTheGameWasLost) {
  */
 TEST_F(GameFlowOneWaveLevelFixture,
        LosesAGameWhoseLastLifeGoesWithItsLastWave) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   runTicks(TICKS_TO_THE_WHOLE_FIRST_WAVE);
   clearTheBydos();
   runTicks(TICKS_TO_FIND_THE_SKY_CLEAR);
@@ -140,7 +140,7 @@ TEST_F(GameFlowOneWaveLevelFixture,
  * Then the game goes on: the next wave is coming
  */
 TEST_F(GameFlowFixture, PlaysOnAfterAWaveBeforeTheLast) {
-  startGameWithOnePlayer();
+  startGameWith({FIRST_PLAYER});
   runTicks(TICKS_TO_THE_WHOLE_FIRST_WAVE);
   clearTheBydos();
 

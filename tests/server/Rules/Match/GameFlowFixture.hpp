@@ -10,6 +10,7 @@
 #include "GameEnded.hpp"
 #include "GameFlow.hpp"
 #include "GameReplication.hpp"
+#include "GameStateChanged.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyKeeper.hpp"
@@ -41,10 +42,6 @@ class GameFlowFixture : public ::testing::Test {
    * tick that starts the game. */
   void startGameWith(std::initializer_list<std::size_t> indexes);
 
-  /** @brief Connects one player, who is ready, and runs the tick that starts
-   * the game. */
-  void startGameWithOnePlayer();
-
   /** @brief Takes every life of @p player, the ship in play included. */
   void takeEveryLifeOf(ConnectedPlayer& player);
 
@@ -63,6 +60,9 @@ class GameFlowFixture : public ::testing::Test {
   [[nodiscard]] GameFlow& flow();
   [[nodiscard]] PlayerRoster& roster();
 
+  /** @returns Every GameStateChanged the flow published, in order. */
+  [[nodiscard]] const std::vector<GameStateChanged>& changes() const;
+
  private:
   engine::EventBus events_;
   engine::SystemScheduler systems_;
@@ -74,6 +74,7 @@ class GameFlowFixture : public ::testing::Test {
   GameReplication replication_;
   GameContext context_;
   GameFlow flow_;
+  std::vector<GameStateChanged> changes_;
 };
 
 /**

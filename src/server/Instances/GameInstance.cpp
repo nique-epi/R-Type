@@ -4,7 +4,6 @@
 #include <functional>
 #include <memory>
 #include <span>
-#include <string>
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
@@ -23,6 +22,7 @@
 #include "IncomingDatagram.hpp"
 #include "LeaderboardRequest.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerArrival.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "SessionHooks.hpp"
@@ -124,10 +124,6 @@ GameInstance::GameInstance(GameInstanceParts parts,
   world_ = &modules_.require<IGameWorld>();
 }
 
-const std::string& GameInstance::difficulty() const {
-  return context_.settings.difficulty;
-}
-
 GameState GameInstance::state() const { return flow_->state(); }
 
 std::uint32_t GameInstance::tick() const { return flow_->tick(); }
@@ -145,6 +141,8 @@ network::PacketHeader GameInstance::nextSessionHeaderFor(
 
 void GameInstance::onPlayerJoined(ConnectedPlayer& player) const {
   callAll(hooks_.joined, player);
+  context_.events.get().publish(
+      game::PlayerArrival{.playerNumber = player.playerNumber});
 }
 
 std::vector<ConnectedPlayer> GameInstance::takeDepartedPlayers() {

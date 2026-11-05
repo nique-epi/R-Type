@@ -1,4 +1,5 @@
 add_library(rtype_server_network_module STATIC
+  DatagramDrops.cpp
   DatagramSorter.cpp
   DiscardReport.cpp
   ServerApplication.cpp
@@ -19,6 +20,7 @@ target_link_libraries(rtype_server_network_module
     rtype_logging
     rtype_network_context
     rtype_network_datagram_relay
+    rtype_network_handshake_rate_limit
     rtype_network_protocol
     rtype_network_simulator
     rtype_network_statistics

@@ -16,6 +16,7 @@
 #include "ModuleConstants.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
+#include "ReceivedDatagrams.hpp"
 #include "ServerApplication.hpp"
 #include "ServerConstants.hpp"
 #include "StopRequest.hpp"
@@ -56,8 +57,7 @@ void ServerNetworkModule::install(engine::InstallContext& context) {
   auto& application = context.require<engine::Application>();
   server_ = std::make_unique<ServerApplication>(
       listeningEndpoint(port_),
-      [this,
-       &application](const ServerApplication::ReceivedDatagrams& received) {
+      [this, &application](const ReceivedDatagrams& received) {
         tickDatagrams_.begin(received);
         application.runStages(engine::SIMULATION_TICK_DURATION);
         tickDatagrams_.end();

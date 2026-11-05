@@ -9,8 +9,6 @@
 #include "GameInstance.hpp"
 #include "GamePlacement.hpp"
 #include "GameVacancy.hpp"
-#include "HostedGame.hpp"
-#include "HostedGames.hpp"
 #include "ServerException.hpp"
 
 namespace rtype::server {
@@ -40,10 +38,6 @@ void Games::dispatchEvents() {
 
 std::span<const std::unique_ptr<GameInstance>> Games::all() const {
   return games_;
-}
-
-std::vector<network::HostedGame> Games::hostedGames() const {
-  return hostedGamesOf(games_);
 }
 
 std::size_t Games::joinableIndex() const {

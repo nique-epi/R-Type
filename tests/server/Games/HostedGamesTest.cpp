@@ -2,7 +2,6 @@
 #include <cstddef>
 #include <string>
 #include <vector>
-#include "GameState.hpp"
 #include "Games.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
@@ -16,8 +15,7 @@
 using rtype::network::HostedGame;
 using rtype::network::HostedGameState;
 using rtype::network::ServerHeartbeat;
-using rtype::server::GameState;
-using rtype::server::hostedStateOf;
+using rtype::server::hostedGamesOf;
 
 /**
  * Given three games of the server, none with a player
@@ -30,7 +28,8 @@ TEST_F(HostedGamesFixture, NamesAndNumbersTheGamesFromOne) {
     addGame();
   }
 
-  const std::vector<HostedGame> hosted = games().hostedGames();
+  const std::vector<HostedGame> hosted =
+      hostedGamesOf(games(), HOSTED_DIFFICULTY);
 
   ASSERT_EQ(hosted.size(), THREE_GAMES);
   EXPECT_EQ(hosted.at(0).name, FIRST_HOSTED_NAME);
@@ -55,7 +54,8 @@ TEST_F(HostedGamesFixture, ListsThePlayersOfEachGameInSeatOrder) {
   seat(*games().all().front(), 1, std::string{SECOND_HOSTED_PILOT});
   seat(*games().all().front(), 2, std::string{THIRD_HOSTED_PILOT});
 
-  const std::vector<HostedGame> hosted = games().hostedGames();
+  const std::vector<HostedGame> hosted =
+      hostedGamesOf(games(), HOSTED_DIFFICULTY);
 
   EXPECT_EQ(hosted.at(0).players,
             (std::vector<std::string>{std::string{FIRST_HOSTED_PILOT},
@@ -73,7 +73,8 @@ TEST_F(HostedGamesFixture, ALobbyWithEverySeatTakenIsFull) {
   addGame();
   fill(*games().all().front());
 
-  EXPECT_EQ(games().hostedGames().front().state, HostedGameState::Full);
+  EXPECT_EQ(hostedGamesOf(games(), HOSTED_DIFFICULTY).front().state,
+            HostedGameState::Full);
 }
 
 /**
@@ -87,7 +88,8 @@ TEST_F(HostedGamesFixture, ALobbyWithASeatFreeIsWaiting) {
   seat(*games().all().front(), 1, std::string{SECOND_HOSTED_PILOT});
   seat(*games().all().front(), 2, std::string{THIRD_HOSTED_PILOT});
 
-  EXPECT_EQ(games().hostedGames().front().state, HostedGameState::Waiting);
+  EXPECT_EQ(hostedGamesOf(games(), HOSTED_DIFFICULTY).front().state,
+            HostedGameState::Waiting);
 }
 
 /**
@@ -97,12 +99,13 @@ TEST_F(HostedGamesFixture, ALobbyWithASeatFreeIsWaiting) {
  */
 TEST_F(HostedGamesFixture, AJoiningPlayerChangesTheList) {
   addGame();
-  const std::vector<HostedGame> before = games().hostedGames();
+  const std::vector<HostedGame> before =
+      hostedGamesOf(games(), HOSTED_DIFFICULTY);
 
-  EXPECT_EQ(games().hostedGames(), before);
+  EXPECT_EQ(hostedGamesOf(games(), HOSTED_DIFFICULTY), before);
   seat(*games().all().front(), 0, std::string{FIRST_HOSTED_PILOT});
 
-  EXPECT_NE(games().hostedGames(), before);
+  EXPECT_NE(hostedGamesOf(games(), HOSTED_DIFFICULTY), before);
 }
 
 /**
@@ -115,33 +118,11 @@ TEST_F(HostedGamesFixture, TheMasterReadsWhatTheServerWrites) {
   addGame();
   seat(*games().all().front(), 0, std::string{FIRST_HOSTED_PILOT});
   fill(*games().all().back());
-  const ServerHeartbeat heartbeat{.games = games().hostedGames(),
-                                  .measures = {}};
+  const ServerHeartbeat heartbeat{
+      .games = hostedGamesOf(games(), HOSTED_DIFFICULTY), .measures = {}};
 
   EXPECT_EQ(rtype::network::heartbeatFromText(
                 rtype::network::heartbeatText(heartbeat))
                 .games,
             heartbeat.games);
-}
-
-/**
- * Given a game that waits, starts, plays or is over
- * When the master is told its state with four players, then with none
- * Then only a game that waits is full, and the other states keep their name
- */
-TEST(HostedStates, OnlyAWaitingGameIsEverFull) {
-  EXPECT_EQ(hostedStateOf(GameState::WaitingForPlayers, FOUR_PLAYERS),
-            HostedGameState::Full);
-  EXPECT_EQ(hostedStateOf(GameState::WaitingForPlayers, THREE_PLAYERS),
-            HostedGameState::Waiting);
-  EXPECT_EQ(hostedStateOf(GameState::WaitingForPlayers, NO_PLAYER),
-            HostedGameState::Waiting);
-  EXPECT_EQ(hostedStateOf(GameState::Starting, FOUR_PLAYERS),
-            HostedGameState::Starting);
-  EXPECT_EQ(hostedStateOf(GameState::InProgress, FOUR_PLAYERS),
-            HostedGameState::Playing);
-  EXPECT_EQ(hostedStateOf(GameState::Finished, FOUR_PLAYERS),
-            HostedGameState::Finished);
-  EXPECT_EQ(hostedStateOf(GameState::Finished, NO_PLAYER),
-            HostedGameState::Finished);
 }

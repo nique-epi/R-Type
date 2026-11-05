@@ -20,6 +20,7 @@
 #include "GameSettings.hpp"
 #include "Games.hpp"
 #include "GamesSettings.hpp"
+#include "HostedGamesWatch.hpp"
 #include "IDatagramSender.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IResultsArchive.hpp"
@@ -114,12 +115,14 @@ void ServerGamesModule::install(engine::InstallContext& context) {
   tickDatagrams_ = &context.require<TickDatagrams>();
   declareSettings(context.require<engine::ConfigurationRegistry>());
   context.provide(games_);
+  context.provide(hostedGames_);
   context.addWork(
       SIMULATION_STAGE,
       [this]([[maybe_unused]] engine::Duration elapsed) { playGames(); });
   context.addWork(OUTPUT_STAGE,
                   [this]([[maybe_unused]] engine::Duration elapsed) {
                     games_.dispatchEvents();
+                    watch_->publishIfChanged(games_);
                   });
 }
 
@@ -164,6 +167,7 @@ void ServerGamesModule::start() {
   const std::vector<std::string_view> breaches =
       vanillaBreaches(catalog.fingerprint(), seed, inputDelayTicks);
   logHowGamesPlay(logger_, difficulty, breaches);
+  auto& watch = watch_.emplace(hostedGames_, std::string{difficulty});
   for (std::size_t game = 0; game < settings_.gameCount; ++game) {
     auto events = std::make_unique<engine::EventBus>();
     std::unique_ptr<GameInstance> created = createGame(
@@ -176,6 +180,7 @@ void ServerGamesModule::start() {
                      .inputDelayTicks = inputDelayTicks,
                      .difficulty = std::string{difficulty},
                      .vanilla = breaches.empty()});
+    watch.watch(*events);
     games_.add(std::move(events), std::move(created));
   }
 }
@@ -185,6 +190,9 @@ void ServerGamesModule::stop() {
                             std::this_thread::sleep_for(pause);
                           }};
   farewell.sayGoodbyeTo(games_);
+  if (watch_.has_value()) {
+    watch_->forget();
+  }
 }
 
 std::unique_ptr<GameInstance> ServerGamesModule::createGame(

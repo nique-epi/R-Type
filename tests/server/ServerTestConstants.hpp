@@ -93,13 +93,16 @@ constexpr std::chrono::seconds THREAD_TIMEOUT{5};
 constexpr int SERVER_RUN_TICKS = 3;
 
 /**
- * @brief Senders of the sorting tests: an admitted player, a stranger, and a
- * second player for the tests that need two.
+ * @brief Senders of the sorting tests: an admitted player, a stranger, a
+ * second player and a second stranger for the tests that need two, and the
+ * first port of a flood from as many strangers as it holds requests.
  */
 constexpr std::string_view SORTED_SENDER_ADDRESS = "192.0.2.40";
 constexpr std::uint16_t PLAYER_PORT = 41000;
 constexpr std::uint16_t STRANGER_PORT = 41001;
 constexpr std::uint16_t SECOND_PLAYER_PORT = 41002;
+constexpr std::uint16_t OTHER_STRANGER_PORT = 41003;
+constexpr std::uint16_t FIRST_FLOODING_STRANGER_PORT = 42000;
 
 /**
  * @brief A flood of connection requests: twice what the player queue holds,
@@ -108,3 +111,13 @@ constexpr std::uint16_t SECOND_PLAYER_PORT = 41002;
  */
 constexpr std::size_t FLOODING_REQUEST_COUNT =
     2 * rtype::server::INCOMING_DATAGRAM_QUEUE_CAPACITY;
+
+/**
+ * @brief The connection requests a client floods with on each side of the
+ * request of another client, in the test through real sockets: four times the
+ * room of the request queue, so that without a limit the request of the other
+ * client is pushed out of the queue of its tick, and few enough for the
+ * receive buffer of the system.
+ */
+constexpr std::size_t FLOOD_REQUESTS_AROUND_A_CLIENT =
+    4 * rtype::server::CONNECTION_REQUEST_QUEUE_CAPACITY;

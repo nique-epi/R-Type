@@ -7,7 +7,6 @@
 #include "Endpoint.hpp"
 #include "EventBus.hpp"
 #include "GameInstance.hpp"
-#include "HostedGame.hpp"
 
 namespace rtype::server {
 
@@ -51,9 +50,6 @@ class Games {
 
   /** @returns Every game, in the order they were added. */
   [[nodiscard]] std::span<const std::unique_ptr<GameInstance>> all() const;
-
-  /** @returns Every game, as the master lists them (see hostedGamesOf()). */
-  [[nodiscard]] std::vector<network::HostedGame> hostedGames() const;
 
  private:
   [[nodiscard]] std::size_t joinableIndex() const;

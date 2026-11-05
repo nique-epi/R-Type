@@ -1,12 +1,11 @@
 #pragma once
 
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include <optional>
-#include <span>
 #include <vector>
 #include "BoundedQueue.hpp"
+#include "DatagramDrops.hpp"
 #include "DatagramQueues.hpp"
 #include "DatagramRelay.hpp"
 #include "DatagramSorter.hpp"
@@ -20,6 +19,7 @@
 #include "NetworkContext.hpp"
 #include "OutgoingDatagram.hpp"
 #include "SystemClock.hpp"
+#include "TickHandler.hpp"
 #include "TrafficCounters.hpp"
 
 namespace rtype::server {
@@ -33,10 +33,11 @@ namespace rtype::server {
  * The network thread sorts each datagram as it arrives (see DatagramSorter):
  * the datagrams of admitted players go to one queue, connection requests to a
  * smaller one, and every other datagram is dropped there, as is a datagram from
- * the address of a player that does not carry its session token. So a flood
- * of requests, or of datagrams from senders that were not admitted or that
- * forge the address of a player, cannot push a player's datagram out of its
- * queue; a player flooding with its own token still can.
+ * the address of a player that does not carry its session token, or from a
+ * sender over its rate limit. So a flood of requests, of datagrams from
+ * senders that were not admitted or that forge the address of a player, or of
+ * a player with its own token, cannot push a player's datagram out of its
+ * queue.
  * Each tick, the simulation thread drains both queues, hands what they held
  * to the tick handler, then asks the network thread to send what was queued.
  * The DatagramRelay only sends.
@@ -48,32 +49,6 @@ namespace rtype::server {
 class ServerApplication final : public IDatagramSender,
                                 public IPlayerAdmission {
  public:
-  /**
-   * @brief What arrived since the previous tick, oldest first in each list;
-   * often nothing.
-   */
-  struct ReceivedDatagrams {
-    /** @brief The datagrams of the players admitted with admit(), each
-     * carrying the session token of its player. */
-    std::span<const network::IncomingDatagram> players;
-    /** @brief The datagrams holding a ConnectionRequest, from strangers or
-     * from players with their token or none: at most
-     * CONNECTION_REQUEST_QUEUE_CAPACITY. */
-    std::span<const network::IncomingDatagram> connectionRequests;
-  };
-
-  /**
-   * @brief Called once per tick, on the simulation thread, with the datagrams
-   * received since the previous tick. An exception it throws stops the server
-   * and leaves run().
-   *
-   * Anyone can send a datagram, so the handler must drop and count a datagram
-   * it cannot decode, and never let an exception caused by a datagram's
-   * content escape: one truncated datagram would otherwise stop the server
-   * for every player.
-   */
-  using TickHandler = std::function<void(const ReceivedDatagrams&)>;
-
   /**
    * @brief Prepares a server that will listen on @p localEndpoint once open()
    * is called; port 0 lets the system pick a free port. Binds nothing.
@@ -166,6 +141,7 @@ class ServerApplication final : public IDatagramSender,
   concurrency::BoundedQueue<network::IncomingDatagram> connectionRequests_;
   concurrency::BoundedQueue<network::OutgoingDatagram> outgoing_;
   DatagramQueues destinations_;
+  DatagramDrops drops_;
   DatagramSorter sorter_;
   DiscardReport discardReport_;
   std::optional<network::DatagramRelay> relay_;

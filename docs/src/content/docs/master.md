@@ -13,9 +13,9 @@ This page tells you where to look when you need to change something. It describe
 | HTTP API under `/api`, every error in JSON | Available | `src/master/Http/` |
 | Database `r-type_master.db` | Available: servers, samples | `src/master/Storage/` |
 | Creation of a game server and its key, `POST /api/servers` | Available; the web site that calls it is not written | `src/master/Servers/` |
-| Registration and heartbeats of the game servers | Available; no server sends them yet | `src/master/Servers/`, `src/network/Master/` |
-| The client of the master, `MasterClient` | Available; the game server does not call it yet | `src/network/Master/Client/` |
-| The games of a server, for the client, `GET /api/servers/{id}/games` | Available; no game server sends the games yet | `src/master/Servers/`, `src/network/Master/` |
+| Registration and heartbeats of the game servers | Available; sent by the module `master` of the game server | `src/master/Servers/`, `src/network/Master/`, `src/server/Master/` |
+| The client of the master, `MasterClient` | Available | `src/network/Master/Client/` |
+| The games of a server, for the client, `GET /api/servers/{id}/games` | Available | `src/master/Servers/`, `src/network/Master/` |
 | The list of the servers, for the client | Not yet written | |
 | Administration, global leaderboard, accounts, web site | Not yet written | |
 
@@ -99,7 +99,7 @@ A host creates its server on the web site, which calls `POST /api/servers` with 
 - **One address creates `MAXIMUM_CREATIONS_PER_ADDRESS` (5) servers per `CREATION_WINDOW` (1 hour) at most**; the next one answers 429. The count and the insert are one transaction, so requests sent at once cannot pass the quota together. The address is the one of the TCP peer: behind a reverse proxy, every host shares the quota of the proxy.
 - **Anyone who reaches the master may create a server** until accounts exist: the web site will then ask for a signed-in host. Revoking a key, and giving it an expiry, are not written yet.
 
-The host then writes the key in the `server.cfg` of that server, as the setting `master_key`, next to `master_url`; `server.cfg` is never committed, only `server.cfg.example`, with an empty key. The game server does not read them yet: that is the link with the master, still to be written.
+The host then writes the key in the `server.cfg` of that server, as the setting `master-key`, next to `master-url`; `server.cfg` is never committed, only `server.cfg.example`, with an empty key. The game server registers and sends its heartbeats from then on (see [Server](/R-Type/server/#link-with-the-master-servermastermodule)).
 
 ## Routes of a game server: `ServersModule`
 

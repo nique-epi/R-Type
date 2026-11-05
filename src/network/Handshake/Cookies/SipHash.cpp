@@ -1,7 +1,9 @@
 #include "SipHash.hpp"
+#include <algorithm>
 #include <bit>
 #include <cstddef>
 #include <cstdint>
+#include <random>
 #include <span>
 #include "HandshakeConstants.hpp"
 #include "SerializationConstants.hpp"
@@ -84,6 +86,17 @@ std::uint64_t sipHash(const SipHashKey& key,
   state.v2 ^= SIPHASH_FINALIZATION_MARK;
   runRounds(state, SIPHASH_FINALIZATION_ROUNDS);
   return state.v0 ^ state.v1 ^ state.v2 ^ state.v3;
+}
+
+SipHashKey randomSipHashKey() {
+  std::random_device random;
+  std::uniform_int_distribution<unsigned int> byteDistribution{
+      0, static_cast<unsigned int>(BYTE_MASK)};
+  SipHashKey key{};
+  std::ranges::generate(key, [&random, &byteDistribution] {
+    return static_cast<std::byte>(byteDistribution(random));
+  });
+  return key;
 }
 
 }  // namespace rtype::network

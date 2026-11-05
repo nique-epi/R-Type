@@ -26,4 +26,10 @@ using SipHashKey = std::array<std::byte, SIPHASH_KEY_SIZE>;
 [[nodiscard]] std::uint64_t sipHash(const SipHashKey& key,
                                     std::span<const std::byte> message);
 
+/**
+ * @returns A key drawn from std::random_device, for a hash whose outputs
+ * nobody may predict: the cookies, the rows of the rate limit.
+ */
+[[nodiscard]] SipHashKey randomSipHashKey();
+
 }  // namespace rtype::network
