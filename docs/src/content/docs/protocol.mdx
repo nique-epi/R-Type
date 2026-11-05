@@ -186,7 +186,7 @@ The server reads a request only from a player with a session, in any state of th
 
 ### Server information
 
-Anyone may ask a server what it is, without a session: a client that lists the servers measures its ping this way, and the master that a server stopped answering. A `ServerInformationRequest` carries `sentAt`, the time it leaves on the clock of its sender, in microseconds modulo 2^32, as a `Heartbeat` does (see [Round trip](#round-trip)), with a session token and a `sequence` of 0. The server keeps nothing and answers with one `ServerInformation`, to the address and port the request came from:
+Anyone may ask a server what it is, without a session: a client measures its ping to the servers the player looks at this way, the one selected or those of the page shown, never every server of the list, whose information comes from the master; and the master checks that a server still answers. A `ServerInformationRequest` carries `sentAt`, the time it leaves on the clock of its sender, in microseconds modulo 2^32, as a `Heartbeat` does (see [Round trip](#round-trip)), with a session token and a `sequence` of 0. The server keeps nothing and answers with one `ServerInformation`, to the address and port the request came from:
 
 | Field | Holds |
 |---|---|

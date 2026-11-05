@@ -6,6 +6,7 @@
 #include "DatagramQueues.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
+#include "RejectionReport.hpp"
 #include "ServerConstants.hpp"
 
 namespace {
@@ -23,13 +24,12 @@ DatagramSorterInformationFixture::DatagramSorterInformationFixture()
     : players_(rtype::server::INCOMING_DATAGRAM_QUEUE_CAPACITY),
       connectionRequests_(rtype::server::CONNECTION_REQUEST_QUEUE_CAPACITY),
       informationRequests_(rtype::server::INFORMATION_REQUEST_QUEUE_CAPACITY),
-      drops_(clock_),
       sorter_(
           rtype::server::DatagramQueues{
               .players = &players_,
               .connectionRequests = &connectionRequests_,
               .informationRequests = &informationRequests_},
-          drops_, clock_) {}
+          rejections_, clock_) {}
 
 void DatagramSorterInformationFixture::sort(
     const rtype::network::Endpoint& sender,
@@ -63,4 +63,8 @@ DatagramSorterInformationFixture::drainRequests() {
 std::vector<rtype::network::IncomingDatagram>
 DatagramSorterInformationFixture::drainInformationRequests() {
   return drained(informationRequests_);
+}
+
+rtype::server::RejectionReport DatagramSorterInformationFixture::takeReport() {
+  return rejections_.takeReport();
 }

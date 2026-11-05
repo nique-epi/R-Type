@@ -5,10 +5,11 @@
 #include <cstdint>
 #include <vector>
 #include "BoundedQueue.hpp"
-#include "DatagramDrops.hpp"
 #include "DatagramSorter.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
+#include "RejectionLedger.hpp"
+#include "RejectionReport.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "SimulatedClock.hpp"
 
@@ -32,6 +33,7 @@ class DatagramSorterInformationFixture : public ::testing::Test {
   [[nodiscard]] std::vector<rtype::network::IncomingDatagram> drainRequests();
   [[nodiscard]] std::vector<rtype::network::IncomingDatagram>
   drainInformationRequests();
+  [[nodiscard]] rtype::server::RejectionReport takeReport();
 
  private:
   rtype::concurrency::BoundedQueue<rtype::network::IncomingDatagram> players_;
@@ -40,6 +42,6 @@ class DatagramSorterInformationFixture : public ::testing::Test {
   rtype::concurrency::BoundedQueue<rtype::network::IncomingDatagram>
       informationRequests_;
   SimulatedClock clock_;
-  rtype::server::DatagramDrops drops_;
+  rtype::server::RejectionLedger rejections_;
   rtype::server::DatagramSorter sorter_;
 };

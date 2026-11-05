@@ -5,14 +5,15 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 #include "AdmittedPlayer.hpp"
 #include "AllowanceSpending.hpp"
 #include "AllowanceVerdict.hpp"
 #include "BoundedQueue.hpp"
 #include "DatagramCodec.hpp"
-#include "DatagramDrops.hpp"
 #include "DatagramQueues.hpp"
 #include "Endpoint.hpp"
 #include "IClock.hpp"
@@ -22,6 +23,8 @@
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
 #include "RateLimitConstants.hpp"
+#include "RejectionCause.hpp"
+#include "RejectionLedger.hpp"
 #include "SenderAllowance.hpp"
 #include "ServerConstants.hpp"
 #include "SortedQueue.hpp"
@@ -70,18 +73,29 @@ bool isOutsideSession(const SpokenDatagram& datagram) {
   return datagram.queue != SortedQueue::Players;
 }
 
-/** @returns The queue of @p destinations that @p datagram goes to. */
-concurrency::BoundedQueue<network::IncomingDatagram>& queueOf(
-    const DatagramQueues& destinations, const SpokenDatagram& datagram) {
-  switch (datagram.queue) {
+/** @brief A queue of the sorter, and the cause a datagram is counted for when
+ * it makes that queue discard its oldest. */
+struct Destination {
+  concurrency::BoundedQueue<network::IncomingDatagram>* queue{};
+  RejectionCause overflow{RejectionCause::PlayerQueueFull};
+};
+
+/** @returns The queue of @p destinations that @p queue names, with its
+ * cause. */
+Destination destinationOf(const DatagramQueues& destinations,
+                          SortedQueue queue) {
+  switch (queue) {
     case SortedQueue::ConnectionRequests:
-      return *destinations.connectionRequests;
+      return Destination{.queue = destinations.connectionRequests,
+                         .overflow = RejectionCause::RequestQueueFull};
     case SortedQueue::InformationRequests:
-      return *destinations.informationRequests;
+      return Destination{.queue = destinations.informationRequests,
+                         .overflow = RejectionCause::InformationQueueFull};
     case SortedQueue::Players:
       break;
   }
-  return *destinations.players;
+  return Destination{.queue = destinations.players,
+                     .overflow = RejectionCause::PlayerQueueFull};
 }
 
 /**
@@ -105,45 +119,47 @@ AdmittedPlayer freshPlayer(const network::Endpoint& player,
                         .allowance = network::SenderAllowance{}};
 }
 
+/** @brief Why a datagram is dropped for its allowance. */
+struct LimitDrop {
+  RejectionCause cause;
+  std::string_view reason;
+};
+
 /** @returns Why a datagram given @p verdict is dropped, or nothing when it
  * goes through. */
-std::optional<std::string_view> dropReasonOf(
-    network::AllowanceVerdict verdict) {
+std::optional<LimitDrop> limitDropOf(network::AllowanceVerdict verdict) {
   switch (verdict) {
     case network::AllowanceVerdict::Allowed:
       return std::nullopt;
     case network::AllowanceVerdict::OverCap:
-      return OVER_RATE_LIMIT_DROP_REASON;
+      return LimitDrop{.cause = RejectionCause::OverRateLimit,
+                       .reason = OVER_RATE_LIMIT_DROP_REASON};
     case network::AllowanceVerdict::NewlyBanned:
-      return NEWLY_BANNED_DROP_REASON;
+      return LimitDrop{.cause = RejectionCause::NewlyBanned,
+                       .reason = NEWLY_BANNED_DROP_REASON};
     case network::AllowanceVerdict::Banned:
-      return BANNED_DROP_REASON;
+      return LimitDrop{.cause = RejectionCause::Banned,
+                       .reason = BANNED_DROP_REASON};
   }
   return std::nullopt;
-}
-
-/** @returns Whether @p verdict lets the datagram of @p sender through; drops
- * it in @p drops, with the reason, otherwise. */
-bool keptByLimit(network::AllowanceVerdict verdict,
-                 const network::Endpoint& sender, DatagramDrops& drops) {
-  const std::optional<std::string_view> reason = dropReasonOf(verdict);
-  if (reason.has_value()) {
-    drops.drop(sender, *reason);
-  }
-  return !reason.has_value();
 }
 
 }  // namespace
 
 DatagramSorter::DatagramSorter(DatagramQueues destinations,
-                               DatagramDrops& drops,
+                               RejectionLedger& rejections,
                                const engine::IClock& clock)
-    : destinations_(destinations), drops_(&drops), clock_(&clock) {}
+    : destinations_(destinations),
+      rejections_(&rejections),
+      clock_(&clock),
+      dropLog_(std::string{SERVER_LOGGER_NAME},
+               network::REJECTION_LINE_INTERVAL) {}
 
 void DatagramSorter::sort(const network::Endpoint& sender,
                           std::span<const std::byte> datagram) {
   if (datagram.size() < network::PACKET_HEADER_SIZE) {
-    drops_->drop(sender, SHORTER_THAN_HEADER_DROP_REASON);
+    drop(sender, RejectionCause::ShorterThanHeader,
+         SHORTER_THAN_HEADER_DROP_REASON);
     return;
   }
   const network::PacketHeader header =
@@ -155,7 +171,7 @@ void DatagramSorter::sort(const network::Endpoint& sender,
   const std::optional<network::DatagramCodec::MessageTypes> types =
       network::DatagramCodec::messageTypes(datagram);
   if (!types.has_value()) {
-    drops_->drop(sender, MESSAGE_SIZES_DROP_REASON);
+    drop(sender, RejectionCause::MessageSizes, MESSAGE_SIZES_DROP_REASON);
     return;
   }
   sortSpoken(SpokenDatagram{.sender = sender,
@@ -171,16 +187,16 @@ void DatagramSorter::sortSpoken(const SpokenDatagram& datagram) {
   if (player != nullptr &&
       !carriesSessionToken(datagram.header, player->sessionToken,
                            outsideSession)) {
-    drops_->dropWrongToken(sender);
+    drop(sender, RejectionCause::WrongSessionToken, WRONG_TOKEN_DROP_REASON);
     return;
   }
   if (player == nullptr && !outsideSession) {
-    drops_->drop(sender, STRANGER_DROP_REASON);
+    drop(sender, RejectionCause::Stranger, STRANGER_DROP_REASON);
     return;
   }
   const std::chrono::nanoseconds now = clock_->now();
-  if (keptByLimit(spendAllowanceOf(datagram, player, now), sender, *drops_)) {
-    queueOf(destinations_, datagram).push(copyOf(sender, datagram.bytes, now));
+  if (keptByLimit(spendAllowanceOf(datagram, player, now), sender)) {
+    enqueue(datagram.queue, sender, copyOf(sender, datagram.bytes, now));
   }
 }
 
@@ -198,13 +214,32 @@ void DatagramSorter::sortForeignHeader(const network::Endpoint& sender,
                                        const network::PacketHeader& header,
                                        std::span<const std::byte> datagram) {
   if (!isRefusedForItsVersion(sender, header, datagram.size())) {
-    drops_->drop(sender, network::FOREIGN_HEADER_DROP_REASON);
+    drop(sender, RejectionCause::ForeignHeader,
+         network::FOREIGN_HEADER_DROP_REASON);
     return;
   }
   const std::chrono::nanoseconds now = clock_->now();
-  if (keptByLimit(requests_.spend(sender, now), sender, *drops_)) {
-    destinations_.connectionRequests->push(copyOf(sender, datagram, now));
+  if (keptByLimit(requests_.spend(sender, now), sender)) {
+    enqueue(SortedQueue::ConnectionRequests, sender,
+            copyOf(sender, datagram, now));
   }
+}
+
+void DatagramSorter::enqueue(SortedQueue queue, const network::Endpoint& sender,
+                             network::IncomingDatagram copy) {
+  const Destination destination = destinationOf(destinations_, queue);
+  if (destination.queue->push(std::move(copy))) {
+    rejections_->record(destination.overflow, sender);
+  }
+}
+
+bool DatagramSorter::keptByLimit(network::AllowanceVerdict verdict,
+                                 const network::Endpoint& sender) {
+  const std::optional<LimitDrop> limitDrop = limitDropOf(verdict);
+  if (limitDrop.has_value()) {
+    drop(sender, limitDrop->cause, limitDrop->reason);
+  }
+  return !limitDrop.has_value();
 }
 
 bool DatagramSorter::isRefusedForItsVersion(const network::Endpoint& sender,
@@ -240,6 +275,13 @@ AdmittedPlayer* DatagramSorter::findAdmitted(const network::Endpoint& sender) {
   const auto admitted =
       std::ranges::find(admitted_, sender, &AdmittedPlayer::endpoint);
   return admitted == admitted_.end() ? nullptr : &*admitted;
+}
+
+void DatagramSorter::drop(const network::Endpoint& sender, RejectionCause cause,
+                          std::string_view reason) {
+  rejections_->record(cause, sender);
+  dropLog_.debug(clock_->now(), "dropped a datagram from ", sender.address,
+                 " port ", sender.port, ": ", reason);
 }
 
 }  // namespace rtype::server

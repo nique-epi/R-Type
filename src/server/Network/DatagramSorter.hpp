@@ -4,17 +4,22 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string_view>
 #include <vector>
 #include "AdmittedPlayer.hpp"
 #include "AllowanceVerdict.hpp"
-#include "DatagramDrops.hpp"
 #include "DatagramQueues.hpp"
 #include "Endpoint.hpp"
 #include "IClock.hpp"
+#include "IncomingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "RateLimitConstants.hpp"
+#include "RejectionCause.hpp"
+#include "RejectionLedger.hpp"
 #include "RequestAllowances.hpp"
+#include "SortedQueue.hpp"
 #include "SpokenDatagram.hpp"
+#include "ThrottledLog.hpp"
 
 namespace rtype::server {
 
@@ -54,24 +59,30 @@ namespace rtype::server {
  * its sender was not admitted, it holds at least
  * CONNECTION_REFUSED_DATAGRAM_SIZE bytes, so the refusal is never larger than
  * what it answers, and it is within the allowance of its address and port
- * among the requests. Every other datagram is dropped, counted and logged by
- * the DatagramDrops the sorter is given. A copy kept is stamped with the time
- * its datagram arrived. The sorter reads the header and the type of each
- * message, never a payload, throws nothing on a malformed datagram, and reads
- * the clock once for a datagram that passed the token, both to spend its
- * allowance and to stamp it, so its cost per datagram stays close to that of
- * the copy into a queue, whatever the datagram holds. Not thread-safe: call it
- * on the network thread only.
+ * among the requests. Every other datagram is dropped.
+ *
+ * Each datagram dropped, and each datagram kept that made its queue discard the
+ * oldest one, is counted in the RejectionLedger with its cause and its sender.
+ * Each drop is also logged at the debug level with its sender and why, at most
+ * once per REJECTION_LINE_INTERVAL (see ThrottledLog). A copy kept is stamped
+ * with the time its datagram arrived. The sorter reads the header and the type
+ * of each message, never a payload, throws nothing on a malformed datagram, and
+ * reads the clock once for a datagram that passed the token, both to spend its
+ * allowance and to stamp it, and once more to log a drop, so its cost per
+ * datagram stays close to that of the copy into a queue, whatever the datagram
+ * holds. Not thread-safe: call it on the network thread only.
  */
 class DatagramSorter {
  public:
   /**
-   * @param destinations Neither queue may be null.
-   * @param drops, clock Where the datagrams dropped are counted and logged,
-   * and the time the allowances are spent at, which stamps each datagram kept
-   * as the time it arrived; both must outlive the sorter.
+   * @param destinations None of the three queues may be null.
+   * @param rejections Where each datagram rejected is counted; it must outlive
+   * the sorter.
+   * @param clock The time the allowances are spent at, which stamps each
+   * datagram kept as the time it arrived, and the time of the lines about the
+   * datagrams dropped; it must outlive the sorter.
    */
-  DatagramSorter(DatagramQueues destinations, DatagramDrops& drops,
+  DatagramSorter(DatagramQueues destinations, RejectionLedger& rejections,
                  const engine::IClock& clock);
 
   /**
@@ -124,6 +135,23 @@ class DatagramSorter {
    * a copy of it in its queue or drops it. */
   void sortSpoken(const SpokenDatagram& datagram);
 
+  /** @brief Puts @p copy, the datagram of @p sender, in @p queue, and counts
+   * it against @p sender as the overflow of that queue (PlayerQueueFull,
+   * RequestQueueFull or InformationQueueFull) when the queue discarded its
+   * oldest. */
+  void enqueue(SortedQueue queue, const network::Endpoint& sender,
+               network::IncomingDatagram copy);
+
+  /** @returns Whether @p verdict lets the datagram of @p sender through; drops
+   * it, with the cause and the reason of the verdict, otherwise. */
+  [[nodiscard]] bool keptByLimit(network::AllowanceVerdict verdict,
+                                 const network::Endpoint& sender);
+
+  /** @brief Counts the datagram of @p sender as rejected for @p cause, and
+   * logs @p reason. */
+  void drop(const network::Endpoint& sender, RejectionCause cause,
+            std::string_view reason);
+
   /** @returns The verdict of the allowance @p datagram spends at @p now: the
    * one of its address and port among the requests when it holds a
    * message sent outside any session or comes from no admitted player, the one
@@ -133,10 +161,11 @@ class DatagramSorter {
       std::chrono::nanoseconds now);
 
   DatagramQueues destinations_;
-  DatagramDrops* drops_;
+  RejectionLedger* rejections_;
   const engine::IClock* clock_;
   std::vector<AdmittedPlayer> admitted_;
   network::RequestAllowances requests_{network::REQUEST_RATE_LIMIT};
+  logging::ThrottledLog dropLog_;
 };
 
 }  // namespace rtype::server
