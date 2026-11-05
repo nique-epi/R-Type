@@ -96,7 +96,7 @@ A sheet whose keys are each valid is refused when it does not hold together:
 
 ## Behaviours and their settings
 
-A behaviour is a named piece of C++ in `src/game/Behaviours/Movements/` that writes the `Intent` of its body once per tick (see [Architecture](/R-Type/architecture/#pilot-and-body)). It declares the settings it reads, and the reader of the sheets checks them, so a misspelt setting or a value out of its range stops the program instead of running with a default.
+A behaviour is a named piece of C++ in `src/game/Behaviours/Movements/` (those that only move in `Paths/`, those that attack in `Attacks/`) that writes the `Intent` of its body once per tick (see [Architecture](/R-Type/architecture/#pilot-and-body)). It declares the settings it reads, and the reader of the sheets checks them, so a misspelt setting or a value out of its range stops the program instead of running with a default.
 
 | Behaviour | Moves its body | Settings |
 |---|---|---|

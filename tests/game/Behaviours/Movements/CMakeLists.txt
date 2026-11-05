@@ -1,2 +1,2 @@
-target_sources(game_tests PRIVATE ActionCycleTest.cpp ActionCycleFixtures.cpp BydomancerBehaviourTest.cpp BydomancerBehaviourFixtures.cpp DrillbackBehaviourTest.cpp DrillbackBehaviourFixtures.cpp ReaperBehaviourTest.cpp ReaperBehaviourFixtures.cpp ScatterBehaviourTest.cpp StraightBehaviourTest.cpp WeaveBehaviourTest.cpp)
-target_include_directories(game_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+add_subdirectory(Paths)
+add_subdirectory(Attacks)
