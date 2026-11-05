@@ -7,6 +7,7 @@
 #include "Endpoint.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IPlayerRoundTrips.hpp"
+#include "IServerPingProbe.hpp"
 #include "IServerTicks.hpp"
 #include "InstallContext.hpp"
 #include "NetworkConditions.hpp"
@@ -42,7 +43,8 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions,
           .gameLoaded = gameLoaded_,
           .entityTypes = entityTypes_,
           .observers = {waitingRoom_, entityMessages_, gameLoaded_, roundTrips_,
-                        leaderboard_, orderedInbox_}}) {}
+                        leaderboard_, orderedInbox_}}),
+      pings_(router_.addRoute(), clock_) {}
 
 void PlayerConnection::update(engine::Duration elapsed) {
   session_.update(elapsed);
@@ -64,6 +66,7 @@ void PlayerConnection::provideParts(engine::InstallContext& context) {
   context.provide<IPlayerRoundTrips>(roundTrips_);
   context.provide<IServerTicks>(roundTrips_);
   context.provide<IEntityTypeTable>(entityTypes_);
+  context.provide<IServerPingProbe>(pings_);
   context.provide(network_.traffic());
 }
 

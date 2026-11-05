@@ -11,6 +11,7 @@
 #include "OrderedInbox.hpp"
 #include "RoundTripWatch.hpp"
 #include "ServerLeaderboard.hpp"
+#include "ServerPingProbe.hpp"
 #include "ServerSession.hpp"
 #include "SessionEntityTypes.hpp"
 #include "SystemClock.hpp"
@@ -25,8 +26,9 @@ namespace rtype::client {
  * and the game use, the ServerSession (the attempt and the session), the
  * WaitingRoom, the EntityMessageQueue, the ServerLeaderboard, the
  * RoundTripWatch, which sends the heartbeats and measures the round trips,
- * and the SessionEntityTypes, the entity types of the server the acceptance of
- * the session carried. ClientConnectionModule holds the one of the client; each
+ * the SessionEntityTypes, the entity types of the server the acceptance of
+ * the session carried, and the ServerPingProbe of the list of servers, on a
+ * route of its own. ClientConnectionModule holds the one of the client; each
  * load-test bot holds its own.
  *
  * Building it opens nothing: network().open() binds the socket on every IPv4
@@ -67,9 +69,9 @@ class PlayerConnection {
    * @brief Provides to the modules installed after the one installing it the
    * parts of this connection: the ServerSession, the WaitingRoom, the
    * EntityMessageQueue, the ServerLeaderboard, the RoundTripWatch as
-   * IPlayerRoundTrips and as IServerTicks, the IEntityTypeTable and the
-   * TrafficCounters of the socket. They must outlive every module that
-   * requires them.
+   * IPlayerRoundTrips and as IServerTicks, the IEntityTypeTable, the
+   * ServerPingProbe as IServerPingProbe and the TrafficCounters of the
+   * socket. They must outlive every module that requires them.
    */
   void provideParts(engine::InstallContext& context);
 
@@ -96,6 +98,7 @@ class PlayerConnection {
   ServerLeaderboard leaderboard_;
   SessionEntityTypes entityTypes_;
   ServerSession session_;
+  ServerPingProbe pings_;
 };
 
 }  // namespace rtype::client

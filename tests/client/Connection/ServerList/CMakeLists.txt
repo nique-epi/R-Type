@@ -1,0 +1,2 @@
+target_sources(client_connection_tests PRIVATE ServerPingProbeFixture.cpp ServerPingProbeTest.cpp)
+target_include_directories(client_connection_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
