@@ -3,17 +3,20 @@
 #include <cstddef>
 #include "EntitySpawnSender.hpp"
 #include "GameEnded.hpp"
+#include "GameOutcome.hpp"
 #include "PlayerRoster.hpp"
 #include "ServerConstants.hpp"
 
 namespace rtype::server {
 
 /**
- * @brief Tells the players of a game that it is over, with the score of each
- * of them, as a GameEnded (see the A session section of the protocol page).
+ * @brief Tells the players of a game that it is over, with how it ended and
+ * the score of each of them, as a GameEnded (see the A session section of the
+ * protocol page).
  *
- * The game builds one when it ends, and the result is read from the roster
- * then: every connected player, in order of number, with its score. It never
+ * The game builds one when it ends, with its outcome, and the result is read
+ * from the roster then: every connected player, in order of number, with its
+ * score. It never
  * changes after, so every copy says the same, whoever leaves or scores
  * meanwhile. The game calls onFinishedTick() once per tick while it stays
  * finished: the first call sends the result to every connected player, then
@@ -30,8 +33,10 @@ class GameEndAnnouncer {
    * @param roster The players of the game, whose result is read now; it must
    * outlive the announcer.
    * @param send Must not be empty.
+   * @param outcome How the game ended.
    */
-  GameEndAnnouncer(PlayerRoster& roster, SendDatagram send);
+  GameEndAnnouncer(PlayerRoster& roster, SendDatagram send,
+                   GameOutcome outcome);
 
   /**
    * @brief Lets one tick of the finished game pass: sends the result at the

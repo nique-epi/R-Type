@@ -22,6 +22,9 @@
 #include "SoundConstants.hpp"
 #include "WidgetConstants.hpp"
 
+using rtype::client::CLEARED_TEXT;
+using rtype::client::DEFEAT_STAMP_TEXT;
+using rtype::client::DOWN_TEXT;
 using rtype::client::EXIT_TIME;
 using rtype::client::HEAVY_IMPACT_SOUND_ID;
 using rtype::client::HOVERED_QUIT_INK;
@@ -31,6 +34,7 @@ using rtype::client::PRESS_DURATION;
 using rtype::client::PROMPT_TEXT;
 using rtype::client::QUIT_TEXT;
 using rtype::client::TITLE_SCREEN;
+using rtype::client::VICTORY_STAMP_TEXT;
 using rtype::client::testing::ACE_NICKNAME;
 using rtype::client::testing::DESIGN_LANDING;
 using rtype::client::testing::NOVA_NICKNAME;
@@ -38,6 +42,8 @@ using rtype::client::testing::NOWHERE_PIXEL;
 using rtype::client::testing::PROMPT_MIDDLE_PIXEL;
 using rtype::client::testing::QUIT_MIDDLE_PIXEL;
 using rtype::client::testing::STARDUST_NICKNAME;
+using rtype::client::testing::VICTORY_TAUNT_FIRST_LINE;
+using rtype::client::testing::WHEN_THE_TAUNT_IS_TYPED;
 using ::testing::Contains;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
@@ -247,4 +253,45 @@ TEST_F(EndScreenFixture, ReducedMotionOpensOnTheChoicesAndLeavesAtOnce) {
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
                                         .screen = LOBBY_AFTER_GAME_SCREEN}));
+}
+
+/**
+ * Given a game the squadron lost
+ * When the end screen opens with reduced motion
+ * Then the stamp says GAME OVER and the line under it ALL PILOTS DOWN
+ */
+TEST_F(EndScreenFixture, StampsAGameLostAsGameOver) {
+  rebuildWith(MotionPreference::Reduced);
+
+  EXPECT_NE(writingOf(canvas(), DEFEAT_STAMP_TEXT), nullptr);
+  EXPECT_NE(writingOf(canvas(), DOWN_TEXT), nullptr);
+  EXPECT_EQ(writingOf(canvas(), VICTORY_STAMP_TEXT), nullptr);
+}
+
+/**
+ * Given a game the squadron won
+ * When the end screen opens with reduced motion
+ * Then the stamp says VICTORY and the line under it MISSION CLEARED, and
+ * neither GAME OVER nor ALL PILOTS DOWN is written
+ */
+TEST_F(EndScreenVictoryFixture, StampsAGameWonAsAVictory) {
+  rebuildWith(MotionPreference::Reduced);
+
+  EXPECT_NE(writingOf(canvas(), VICTORY_STAMP_TEXT), nullptr);
+  EXPECT_NE(writingOf(canvas(), CLEARED_TEXT), nullptr);
+  EXPECT_EQ(writingOf(canvas(), DEFEAT_STAMP_TEXT), nullptr);
+  EXPECT_EQ(writingOf(canvas(), DOWN_TEXT), nullptr);
+}
+
+/**
+ * Given a game the squadron won
+ * When the end screen opens and the taunt of the cover is typed
+ * Then the cover holds the victory taunt, and no taunt is remembered as the
+ * previous one
+ */
+TEST_F(EndScreenVictoryFixture, CoversAGameWonWithTheVictoryTaunt) {
+  advance(WHEN_THE_TAUNT_IS_TYPED);
+
+  EXPECT_NE(writingOf(canvas(), VICTORY_TAUNT_FIRST_LINE), nullptr);
+  EXPECT_FALSE(previousTaunt().has_value());
 }

@@ -35,6 +35,7 @@ using rtype::server::EmptyEnemyCycleException;
 using rtype::server::testing::BydoSpawnerScene;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::FIRST_WAVE_LINE_TEXT;
+using rtype::server::testing::oneWaveLevelWavePlan;
 using rtype::server::testing::OTHER_SPAWNER_SEED;
 using rtype::server::testing::SECOND_PLAYER;
 using rtype::server::testing::SPAWNER_SEED;
@@ -252,6 +253,43 @@ TEST(BydoSpawner, TheNextWaveWaitsForTheBydosLeftInTheWorld) {
   BydoSpawnerScene::runTicks(spawner, TWENTY_SECONDS_OF_TICKS);
 
   EXPECT_EQ(scene.world().entityCount(), TEST_WAVE_CURVE.firstWave.bydoCount);
+}
+
+/**
+ * Given a spawner on a level of one wave, whose first wave appeared
+ * When the Bydos are killed, then a tick passes
+ * Then the last wave is finished, and it stays so while a minute passes with
+ * no Bydo appearing
+ */
+TEST(BydoSpawner, TheLastWaveIsFinishedOnceItsBydosAreGone) {
+  BydoSpawnerScene scene;
+  BydoSpawner spawner =
+      scene.makeSpawnerWith(SPAWNER_SEED, oneWaveLevelWavePlan());
+  BydoSpawnerScene::runTicks(spawner, TICKS_TO_THE_WHOLE_FIRST_WAVE);
+  ASSERT_FALSE(spawner.lastWaveFinished());
+  scene.clearTheSky();
+
+  BydoSpawnerScene::runTicks(spawner, 1);
+
+  EXPECT_TRUE(spawner.lastWaveFinished());
+  BydoSpawnerScene::runTicks(spawner, TWENTY_SECONDS_OF_TICKS);
+  EXPECT_EQ(scene.world().entityCount(), 0U);
+}
+
+/**
+ * Given a spawner on a level of one wave, whose first wave appeared
+ * When twenty seconds pass with its Bydos still in the world
+ * Then the last wave is not finished
+ */
+TEST(BydoSpawner, TheLastWaveIsNotFinishedWhileABydoIsInTheWorld) {
+  BydoSpawnerScene scene;
+  BydoSpawner spawner =
+      scene.makeSpawnerWith(SPAWNER_SEED, oneWaveLevelWavePlan());
+
+  BydoSpawnerScene::runTicks(spawner, TICKS_TO_THE_WHOLE_FIRST_WAVE);
+  BydoSpawnerScene::runTicks(spawner, TWENTY_SECONDS_OF_TICKS);
+
+  EXPECT_FALSE(spawner.lastWaveFinished());
 }
 
 /**

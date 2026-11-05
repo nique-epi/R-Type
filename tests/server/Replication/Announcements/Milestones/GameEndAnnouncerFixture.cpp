@@ -9,6 +9,7 @@
 #include "GameEndAnnouncer.hpp"
 #include "GameEndAnnouncerTestConstants.hpp"
 #include "GameEnded.hpp"
+#include "GameOutcome.hpp"
 #include "OutgoingDatagram.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -20,11 +21,13 @@ ConnectedPlayer& GameEndAnnouncerFixture::join(std::size_t index) {
                       SESSION_TOKEN);
 }
 
-void GameEndAnnouncerFixture::endTheGame() {
+void GameEndAnnouncerFixture::endTheGame(GameOutcome outcome) {
   announcer_ = std::make_unique<GameEndAnnouncer>(
-      roster_, [this](network::OutgoingDatagram datagram) {
+      roster_,
+      [this](network::OutgoingDatagram datagram) {
         sent_.push_back(std::move(datagram));
-      });
+      },
+      outcome);
 }
 
 void GameEndAnnouncerFixture::runFinishedTicks(std::size_t count) {
@@ -39,8 +42,10 @@ std::vector<network::OutgoingDatagram> GameEndAnnouncerFixture::sentTo(
   return testing::sentTo(sent_, playerEndpoint(index));
 }
 
-network::GameEnded GameEndAnnouncerFixture::resultOfBothPlayers() {
+network::GameEnded GameEndAnnouncerFixture::resultOfBothPlayers(
+    network::WireGameOutcome outcome) {
   return network::GameEnded{
+      .outcome = outcome,
       .players = {network::PlayerScore{.playerNumber = FIRST_JOINED_NUMBER,
                                        .score = FIRST_PLAYER_FINAL_SCORE},
                   network::PlayerScore{.playerNumber = SECOND_JOINED_NUMBER,

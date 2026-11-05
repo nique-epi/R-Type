@@ -34,7 +34,8 @@ class InvalidRandomUnitException : public GameException {
 
 /**
  * @brief A wave curve would bring a wave without Bydos, Bydos with no time
- * between them, waves that slow down, or a negative pause (see isPlayable).
+ * between them, waves that slow down, a negative pause, or a level without
+ * a wave (see isPlayable).
  */
 class InvalidWaveCurveException : public GameException {
  public:

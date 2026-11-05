@@ -16,4 +16,10 @@ WavePlan wavePlanOf(std::span<const game::BydoKind> enemies) {
 
 WavePlan testWavePlan() { return wavePlanOf(TEST_ENEMY_CYCLE); }
 
+WavePlan oneWaveLevelWavePlan() {
+  return WavePlan{.curve = game::testing::ONE_WAVE_LEVEL_CURVE,
+                  .enemies = std::vector<game::BydoKind>(
+                      TEST_ENEMY_CYCLE.begin(), TEST_ENEMY_CYCLE.end())};
+}
+
 }  // namespace rtype::server::testing

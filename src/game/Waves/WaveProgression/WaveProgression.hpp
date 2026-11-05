@@ -17,7 +17,7 @@ namespace rtype::game {
  * above zero between two of them that never grows: true when its first wave
  * holds at least one Bydo, its shortest interval is above zero and no longer
  * than the interval of its first wave, and neither its cut nor its pause is
- * negative; false otherwise.
+ * negative, and its level holds at least one wave; false otherwise.
  */
 [[nodiscard]] bool isPlayable(const WaveCurve& curve);
 

@@ -69,12 +69,12 @@ A game is created when the server starts and never replaced: it goes round these
 ```mermaid
 stateDiagram-v2
   accTitle: The states of a game
-  accDescr: A game starts in WaitingForPlayers. It goes to Starting when every connected player is ready, to InProgress when the players have loaded the game or after 10 seconds, to Finished when no player is left or no player has a life left, and back to WaitingForPlayers with a new world after 5 seconds.
+  accDescr: A game starts in WaitingForPlayers. It goes to Starting when every connected player is ready, to InProgress when the players have loaded the game or after 10 seconds, to Finished when no player is left, no player has a life left or the last wave is over, and back to WaitingForPlayers with a new world after 5 seconds.
   direction LR
   [*] --> WaitingForPlayers
   WaitingForPlayers --> Starting: all ready
   Starting --> InProgress: all loaded, or 10 s
-  InProgress --> Finished: no player or no life left
+  InProgress --> Finished: no player, no life left or last wave over
   Finished --> WaitingForPlayers: 5 s, new world
 ```
 
@@ -88,12 +88,12 @@ The rules play while a game is `InProgress`. What needs only entities lives in `
 |---|---|---|
 | [Moving](#moving-the-ships-shipcontrol) | A ship follows the arrows of the newest input of its player, at `SHIP_SPEED` (480 logical units per second), and stays in the play area | `src/game/ShipControl/`, `src/game/Systems/MovementSystem/` |
 | [Shooting](#shooting-weaponsystem) | A ship fires `SHOTS_PER_SECOND` (3) missiles per second while shoot is held; a Bydo fires every `ENEMY_SHOT_INTERVAL` (1.5 s) | `src/server/Spawning/` |
-| [Bydos](#waves-of-bydos-wavedirector) | They come in waves read from `assets/waves/waves.toml`; the next wave waits until none is left | `src/game/Waves/`, `src/server/Spawning/` |
+| [Bydos](#waves-of-bydos-wavedirector) | They come in waves read from `assets/waves/waves.toml`; the next wave waits until none is left, and the last wave of the level ends the game in a victory | `src/game/Waves/`, `src/server/Spawning/` |
 | [Contacts](#rules-collisionrules) | Only three pairs count: a missile of a player and a Bydo, a missile of a Bydo and a ship, a ship and a Bydo | `src/game/Systems/CollisionRules/` |
 | [Damage](#damage-damagerules) | A missile takes `MISSILE_DAMAGE` (1) from a Bydo, which has `BYDO_HEALTH` (3) | `src/game/Systems/DamageRules/` |
 | [Score](#damage-damagerules) | The player whose missile destroys a Bydo earns its points: `DRIFTER_POINTS` (100) or `WEAVER_POINTS` (200) | `src/game/Spawning/BydoKind/`, `src/server/Rules/Players/` |
 | [Lives](#lives-lifekeeper) | A player has `STARTING_LIVES` (3); a hit on its ship costs one, and a new ship comes after `RESPAWN_DELAY` (1 s) and cannot be hit for `INVULNERABILITY_DURATION` (2 s) | `src/server/Rules/Players/` |
-| [End](#end-of-a-game-gameendannouncer) | The game ends once no player left in it has a life, and each player is told the scores | `GameFlow` in `src/server/Rules/Match/`, `GameEndAnnouncer` in `src/server/Replication/Announcements/Milestones/` |
+| [End](#end-of-a-game-gameendannouncer) | The game ends in a defeat once no player left in it has a life, or in a victory once the last wave of the level is over, and each player is told the outcome and the scores | `GameFlow` in `src/server/Rules/Match/`, `GameEndAnnouncer` in `src/server/Replication/Announcements/Milestones/` |
 
 To change one of them, see [Where to intervene](#where-to-intervene).
 
@@ -112,12 +112,12 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Launch options | Available: the port, the seed, the state rate, the input delay, the database, `--set` and `--help` | `src/server/LaunchOptions/` |
 | Configuration file | Available: `server.cfg` (`module`, `set`) | `src/server/Modules/` |
 | Letting players in: challenge, acceptance or refusal | Available; a new player joins the first game waiting for players with a free seat, and is refused with `GameInProgress` or `GameFull` only when no game has one | `src/server/Lobby/`, `src/server/Sessions/` |
-| A game: states, ready rule, new world between two games | Available: eight games side by side, each ending once no player is left in it or no player left has a life | `src/server/Rules/Match/` |
+| A game: states, ready rule, new world between two games | Available: eight games side by side, each ending once no player is left in it, no player left has a life, or the last wave of its level is over | `src/server/Rules/Match/` |
 | Newest input of each player, held by the `Intent` of its ship and acted on at each tick of a game in progress | Available: the arrows move the ship, shoot fires its missiles | `src/server/Sessions/Tracking/`, `src/server/Rules/Players/`, `src/game/Components/Intent.hpp` |
 | Heartbeats every 500 ms, and the round trip and jitter of each player measured from their echoes; a player silent for 5 seconds is away and keeps its seat 15 seconds, then its session closes | Available, and a `Disconnection` closes the session at once | `src/server/Sessions/Tracking/` |
 | A nickname unique on the server, held with the seat | Available: a second request for the same nickname gets `NicknameTaken` | `src/server/Sessions/Roster/`, `src/server/Lobby/` |
 | Waiting room and start of the game sent to the players (`LobbyState`, `GameStarted`) | Available | `src/server/Replication/Announcements/Milestones/`, `src/server/Rules/Match/` |
-| End of a game sent to the players (`GameEnded`) | Available: once no player has a life left, with the score of each, until the game waits for players again | `src/server/Replication/Announcements/Milestones/`, `src/server/Rules/Match/` |
+| End of a game sent to the players (`GameEnded`) | Available: when the game is won or lost, with its outcome and the score of each, until the game waits for players again | `src/server/Replication/Announcements/Milestones/`, `src/server/Rules/Match/` |
 | Metrics in the journal every 10 s: duration of the ticks, time of each system, games, players, entities, round trip of each player and traffic | Available; losses are not measured yet | `src/server/Metrics/` |
 | Results of each game kept in a SQLite file, with statistics, and a leaderboard read with `LeaderboardRequest` | Available; the leaderboard of the client reads it, and nothing in the game shows the statistics | `src/server/Results/`, `src/server/Storage/`, `src/storage/` |
 | Master mode: `--mode master` runs the master instead of the game server | Available: `GET /api/health` only (see [Master](/R-Type/master/)) | `src/server/LaunchOptions/`, `src/master/` |
@@ -133,7 +133,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Missiles of the players: fired in front of the ship while shoot is held, three per second at most, removed past the right edge | Available | `src/server/Spawning/`, `src/game/Spawning/MissileStartPosition.*`, `src/game/Systems/PlayfieldExitSystem/` |
 | Missiles of the Bydos: every Bydo fires to the left 1.5 s after it appears, then every 1.5 s; removed past the left edge | Available | `src/server/Spawning/`, `src/game/Spawning/EnemyMissileStartPosition/`, `src/game/Systems/PlayfieldExitSystem/` |
 | Score: points per Bydo kind, credited to the player who fired the missile, sent in the world state | Available | `src/game/Spawning/BydoKind/`, `src/game/Systems/DamageRules/`, `src/server/Rules/Players/` |
-| Waves of Bydos that grow, read from the waves file at launch | Available: every game plays the `normal` difficulty | `src/game/Waves/`, `src/server/Spawning/`, `assets/waves/waves.toml` |
+| Waves of Bydos that grow, read from the waves file at launch, up to the last wave of the level | Available: every game plays the `normal` difficulty, 8 waves; a boss after the last wave is not written yet | `src/game/Waves/`, `src/server/Spawning/`, `assets/waves/waves.toml` |
 | Lives: a life lost when a ship touches a Bydo or a missile of a Bydo, a new ship 1 s later that cannot be hit for 2 s, a player with no life left watching | Available | `src/server/Rules/Players/` |
 
 ## Launch options: `LaunchOptions`
@@ -709,8 +709,9 @@ Each tick of a game in progress, `GameFlow` makes the ships of away players want
 
 `WaveDirector` (`src/game/Waves/WaveDirector/`, `rtype_game_wave_director`) decides when the Bydos of a game appear. It knows no world, no file and no network: each tick, `BydoSpawner` tells it how many entities of type `Enemy` the world holds, and it answers how many Bydos must appear now.
 
-- The waves grow along a `WaveCurve` (`src/game/Waves/WaveCurve.hpp`): its first `BydoWave` (how many Bydos, and the time between two), the Bydos added and the time cut per wave, the shortest time between two Bydos and the pause before each wave. `bydoWaveAfter` (`src/game/Waves/WaveProgression/`) gives the wave after a wave. `isPlayable` is false for a curve with no Bydo, no time between two Bydos, waves that slow down or a negative duration, and the director throws `InvalidWaveCurveException` on such a curve.
+- The waves grow along a `WaveCurve` (`src/game/Waves/WaveCurve.hpp`): its first `BydoWave` (how many Bydos, and the time between two), the Bydos added and the time cut per wave, the shortest time between two Bydos, the pause before each wave and `levelWaves`, how many waves the level holds. `bydoWaveAfter` (`src/game/Waves/WaveProgression/`) gives the wave after a wave. `isPlayable` is false for a curve with no Bydo, no time between two Bydos, waves that slow down, a negative duration or a level without a wave, and the director throws `InvalidWaveCurveException` on such a curve.
 - A game starts with a pause. The Bydos of a wave are due one by one, the first at the end of the pause, the next ones an interval apart, on the timers of a `TimerScheduler`, so a wave never drifts. Once every Bydo of a wave is due, the next wave waits for a tick that finds no `Enemy` in the world, killed or removed past the left edge, and its pause starts on that tick. A Bydo gone before the last of its wave is due does not end the wave.
+- The level holds `levelWaves` waves. When the sky clears after the last of them, the director starts no pause and no wave, owes no more Bydo, and `lastWaveFinished()` stays true (`BydoSpawner::lastWaveFinished()` passes it on). It is the hook the end of the level reads: `GameFlow` wins the game on it (see [End of a game](#end-of-a-game-gameendannouncer)), and a boss that comes after the last wave is to be combined with it, so the game is won once both are over.
 - The spawner counts the enemies before it creates the Bydos due, so the tick on which the last Bydo of a wave appears never ends that wave. A Bydo `PlayfieldExitSystem` removes stops counting on the tick it leaves; a Bydo missiles destroy stops counting on the tick after the bus delivers its destruction.
 - A duration ends on the tick that reaches it: a tick lasts 16 666 666 ns, so a pause of 4 seconds ends on its 241st tick.
 
@@ -824,7 +825,7 @@ rtype::game::DamageRules damageRules{events, world.components()};
 3. A player with a life left has no ship for `RESPAWN_DELAY` (1 s, 60 ticks), then gets a new one at its start position through `IGameReplication::onPlayerJoined`, which announces it again.
 4. That ship cannot be hit for `INVULNERABILITY_DURATION` (2 s, 120 ticks), the tick it comes back included: a Bydo it touches meanwhile costs nothing and stays, and a missile that hits it meanwhile disappears and costs nothing.
 
-- A player with no life left has no ship and only watches: its input moves and fires nothing. Once no player left in the game has a life, the game ends (see [End of a game](#end-of-a-game-gameendannouncer)).
+- A player with no life left has no ship and only watches: its input moves and fires nothing. Once no player left in the game has a life, the game is lost (see [End of a game](#end-of-a-game-gameendannouncer)).
 - A contact naming an entity already gone is ignored, so two Bydos touching one ship in the same `dispatch()` cost one life.
 - While a player has a ship, its lives are the `Lives` of the ship and its protection the `Invulnerable` of the ship. When the ship is destroyed, the player keeps the lives it had, one less, in `ConnectedPlayer::livesWithoutShip`, with the wait in `ticksUntilRespawn`, and the next ship is created with them. `livesOf(world, player)` (`src/server/Rules/Players/`) says how many a player has, whichever holds them. `onTick()` counts the protections and the waits down at each tick of a game in progress, and the world state sends `lives` and `invulnerable`.
 - The three values are **provisional** until gameplay tunes them. Code must read the constants (`STARTING_LIVES` in `src/game/Components/LivesConstants.hpp`, the other two in `src/server/Rules/Players/LifeKeeperConstants.hpp`) and never repeat 3, 1 s or 2 s.
@@ -845,12 +846,17 @@ lifeKeeper_ = std::make_unique<LifeKeeper>(
 
 ## End of a game: `GameEndAnnouncer`
 
-A game in progress ends once no player left in it has a life. `LifeKeeper` takes the last one while the bus is dispatched, at the end of a tick; at the start of the next tick, after the sessions close, `GameFlow` finds no connected player with a life, logs `game finished: no player has a life left` at the `info` level under `Instances` and moves to `Finished`. A player who waits for its next ship still has a life, so the game goes on.
+A game in progress ends in one of two ways, and `GameFlow` decides which at the start of each tick, after the sessions close.
 
-`GameEndAnnouncer` (`src/server/Replication/Announcements/Milestones/`) then tells every player the result, as a `GameEnded` (see [Protocol](/R-Type/protocol/#a-session)):
+- **Defeat**: no player left in it has a life. `LifeKeeper` takes the last one while the bus is dispatched, at the end of a tick; the next tick, `GameFlow` finds no connected player with a life, logs `game finished: no player has a life left` at the `info` level under `Instances` and moves to `Finished`. A player who waits for its next ship still has a life, so the game goes on.
+- **Victory**: `BydoSpawner::lastWaveFinished()` is true, that is the last wave of the level is over (see [Waves of Bydos](#waves-of-bydos-wavedirector)). `GameFlow` logs `game finished: the last wave is over` and moves to `Finished` the same way. It is the only thing the victory waits for today; a boss will be asked here as well, so the game is won once the last wave and the boss are over.
 
-- The result is read once, when the game ends: every connected player, in order of number, with its score. Every copy says the same, whoever leaves meanwhile.
-- It goes to every connected player at the first tick of the end, one tick after the last life was lost, so after the first copy of the last explosion and of its game events. It goes again to the players still connected every `TICKS_PER_GAME_ENDED` (30) ticks, until the game waits for players again `FINISHED_STATE_TICKS` (300) ticks after the end.
+The defeat is checked first, so a game that loses its last life on the tick its last wave ends is lost.
+
+`GameEndAnnouncer` (`src/server/Replication/Announcements/Milestones/`) then tells every player the result, as a `GameEnded` that carries the outcome, `Victory` or `Defeat` (see [Protocol](/R-Type/protocol/#a-session)):
+
+- The result is read once, when the game ends: the outcome, then every connected player, in order of number, with its score. Every copy says the same, whoever leaves meanwhile.
+- It goes to every connected player at the first tick of the end, one tick after the end was reached (the last life lost, or the last Bydo of the last wave gone), so after the first copy of the last explosion and of its game events. It goes again to the players still connected every `TICKS_PER_GAME_ENDED` (30) ticks, until the game waits for players again `FINISHED_STATE_TICKS` (300) ticks after the end.
 - No world state goes out meanwhile. The new world then gives every player its `STARTING_LIVES` and a score of 0; the players stay connected and say ready to play again.
 - `GAME_ENDED_INTERVAL` (500 ms) is **provisional**, like the protocol rate it follows; `TICKS_PER_GAME_ENDED` is that interval in whole ticks, rounded down. Code must read the constants (`src/server/ServerConstants.hpp`) and never repeat 500 or 30.
 

@@ -185,7 +185,8 @@ void GameScreen::applyEntityMessages() {
 
 void GameScreen::recordEnd(const network::GameEnded& ended) {
   *result_ = GameResult{
-      .pilots = rankedPilots(finalPilotsOf(scoreBoard_.pilots(), ended))};
+      .pilots = rankedPilots(finalPilotsOf(scoreBoard_.pilots(), ended)),
+      .outcome = ended.outcome};
   worldSeen_ = true;
   endedAt_ = effects_.sinceStart();
   silence_.stop();

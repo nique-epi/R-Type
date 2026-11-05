@@ -13,6 +13,7 @@ using rtype::game::testing::CURVE_WITH_A_NEGATIVE_CUT;
 using rtype::game::testing::CURVE_WITH_A_NEGATIVE_PAUSE;
 using rtype::game::testing::CURVE_WITHOUT_BYDOS;
 using rtype::game::testing::CURVE_WITHOUT_TIME_BETWEEN_BYDOS;
+using rtype::game::testing::CURVE_WITHOUT_WAVES;
 using rtype::game::testing::MANY_WAVES;
 using rtype::game::testing::STEADY_CURVE;
 using rtype::game::testing::TEST_FIFTH_WAVE;
@@ -118,6 +119,15 @@ TEST(WaveProgression, ACurveWithBydosAndTimeBetweenThemIsPlayable) {
  */
 TEST(WaveProgression, ACurveWithoutBydosIsNotPlayable) {
   EXPECT_FALSE(isPlayable(CURVE_WITHOUT_BYDOS));
+}
+
+/**
+ * Given the test curve with a level of no wave
+ * When it is checked
+ * Then it is not playable: a level must hold a wave to be won
+ */
+TEST(WaveProgression, ACurveWithoutWavesIsNotPlayable) {
+  EXPECT_FALSE(isPlayable(CURVE_WITHOUT_WAVES));
 }
 
 /**

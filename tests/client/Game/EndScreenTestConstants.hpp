@@ -25,6 +25,14 @@ constexpr int ACE_RANK = 2;
 constexpr int NOVA_RANK = 3;
 constexpr std::uint32_t END_SEED = 7;
 
+/** @brief The first line of the taunt of the cover after a victory. */
+constexpr std::string_view VICTORY_TAUNT_FIRST_LINE = "THE BYDO ARE";
+
+/** @brief A moment when the taunt of the cover is typed whole and the cover
+ * still lies shut: 2 seconds after the screen opened. */
+constexpr rtype::engine::Duration WHEN_THE_TAUNT_IS_TYPED =
+    std::chrono::seconds(2);
+
 /** @brief Middles of the choices, in pixels of the window as the fixture
  * maps them (one pixel of the picture is INTERFACE_PIXEL of the window): the
  * call under the book, QUIT under its right corner, and a point on neither. */

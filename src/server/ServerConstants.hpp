@@ -99,7 +99,7 @@ constexpr std::string_view DEFAULT_DIFFICULTY = "normal";
  * are not vanilla. A test fails when the shipped file changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x53c3e852239fa5f0;
+constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x74174ddcb239e461;
 
 /**
  * @brief Why the games of a server are not vanilla, as the lines of its journal

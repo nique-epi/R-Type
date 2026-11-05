@@ -19,7 +19,7 @@ InvalidWaveCurveException::InvalidWaveCurveException()
     : GameException(
           "A wave curve must bring at least one Bydo per wave, a time above "
           "zero between two Bydos no longer than in its first wave, and no "
-          "negative cut or pause") {}
+          "negative cut or pause, and a level of at least one wave") {}
 
 UnknownBehaviourException::UnknownBehaviourException(std::string_view name)
     : GameException("No behaviour is named " + std::string(name)) {}
