@@ -34,7 +34,8 @@ set server-name "R-Type server"
 # Turn a module off (it is never installed, provides no service and runs no work). Refused when a module
 # that stays on depends on it: storage needs network, games needs network and
 # storage, lobby needs games, metrics needs games and network, master needs
-# network and games, all need logger.
+# network and games, the game-statistics plugin needs network and games once
+# loaded, all need logger.
 # module lobby off
 
 # Load a plugin: <name>.so (Linux, macOS) or <name>.dll (Windows), built by the
@@ -44,4 +45,9 @@ set server-name "R-Type server"
 # before every plugin line. A plugin is a module: `module <name> off` turns it
 # off.
 # plugin-folder plugins
-# plugin stats
+# plugin game-statistics
+
+# The CSV file the game-statistics plugin writes a row per Bydo killed to, then
+# the total of each game. Refused unless the plugin is loaded. Empty:
+# r-type_statistics_<port>.csv next to the executable, with the port above.
+# set game-statistics-file ""
