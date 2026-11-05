@@ -214,3 +214,29 @@ TEST_F(ServerGamesFixture, DeclaresTheSeedSettingAndLetsItBeCleared) {
 
   EXPECT_TRUE(result.accepted);
 }
+
+/**
+ * Given settings that ask for the most games a heartbeat lists
+ * When the application starts
+ * Then every game is created
+ */
+TEST_F(ServerGamesFixture, StartsTheMostGamesAHeartbeatLists) {
+  rtype::server::GamesSettings settings = shippedWaves();
+  settings.gameCount = MOST_GAMES_A_HEARTBEAT_LISTS;
+
+  startWith(std::move(settings));
+
+  EXPECT_EQ(probe().games()->all().size(), MOST_GAMES_A_HEARTBEAT_LISTS);
+}
+
+/**
+ * Given settings that ask for one game more than a heartbeat lists
+ * When the application starts
+ * Then start() fails, since the master would refuse that heartbeat
+ */
+TEST_F(ServerGamesFixture, FailsToStartWhenTheSettingsAskForTooManyGames) {
+  rtype::server::GamesSettings settings = shippedWaves();
+  settings.gameCount = MOST_GAMES_A_HEARTBEAT_LISTS + 1;
+
+  EXPECT_THROW(startWith(std::move(settings)), ModuleStartFailedException);
+}

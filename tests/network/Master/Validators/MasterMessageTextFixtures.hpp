@@ -4,6 +4,7 @@
 #include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <string_view>
+#include "GameListing.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerRegistration.hpp"
 
@@ -17,6 +18,28 @@ namespace rtype::network::testing {
  * two players in progress, and every measure but the ping.
  */
 [[nodiscard]] ServerHeartbeat parisHeartbeat();
+
+/**
+ * @returns The games of "Paris 1" as a player lists them: the waiting game of
+ * one player, and the game of two players in progress.
+ */
+[[nodiscard]] GameListing parisGameListing();
+
+/** @returns The listing of "Paris 1" with @p value at @p pointer. */
+[[nodiscard]] std::string gameListingTextWith(std::string_view pointer,
+                                              const nlohmann::json& value);
+
+/**
+ * @returns A listing of @p gameCount waiting games of no player, numbered from
+ * 1, as JSON.
+ */
+[[nodiscard]] std::string gameListingTextOfGames(std::size_t gameCount);
+
+/**
+ * @returns What gameListingFromText() says when it refuses @p text, or an empty
+ * text when it accepts it.
+ */
+[[nodiscard]] std::string gameListingRefusal(std::string_view text);
 
 /**
  * @returns The registration of "Paris 1" as JSON, with @p value at @p pointer,
