@@ -13,9 +13,10 @@ constexpr std::string_view DOWN_TEXT = "ALL PILOTS DOWN";
 constexpr std::string_view CLEARED_TEXT = "MISSION CLEARED";
 
 /** @brief The line under the stamp of a victory is as long as the one of a
- * defeat, since the schedule of the book counts the letters of DOWN_TEXT. */
+ * defeat: RANKING_DELAY waits until the line is written whole, and the test
+ * of the timeline checks that wait for DOWN_TEXT. */
 static_assert(CLEARED_TEXT.size() == DOWN_TEXT.size(),
-              "the schedule of the book counts the same letters either way");
+              "the right page waits for the line under the stamp either way");
 constexpr std::string_view TEAM_SCORE_TEXT = "TEAM SCORE";
 constexpr std::string_view RANKING_TEXT = "FINAL RANKING";
 constexpr std::string_view PROMPT_TEXT = "PRESS ENTER TO REPLAY";

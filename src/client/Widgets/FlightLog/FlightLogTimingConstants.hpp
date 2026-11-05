@@ -41,7 +41,8 @@ constexpr engine::Duration PHOTO_DROP_TIME = std::chrono::milliseconds(150);
 constexpr engine::Duration TEAM_DELAY = std::chrono::milliseconds(1450);
 constexpr engine::Duration TEAM_COUNT_TIME = std::chrono::milliseconds(1000);
 
-/** @brief The right page, once ALL PILOTS DOWN is written: its heading, then
+/** @brief The right page, once the line under the stamp (ALL PILOTS DOWN or
+ * MISSION CLEARED) is written: its heading, then
  * a row per pilot, ROW_STEP apart, each written over ROW_TIME. */
 constexpr engine::Duration RANKING_DELAY = std::chrono::milliseconds(1500);
 constexpr engine::Duration RANKING_LETTER_TIME = std::chrono::milliseconds(40);
