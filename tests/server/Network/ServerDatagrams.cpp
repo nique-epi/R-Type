@@ -61,6 +61,12 @@ std::vector<std::byte> heartbeatDatagram(
                                                rtype::network::Heartbeat{});
 }
 
+std::vector<std::byte> heartbeatDatagram(
+    const rtype::network::PacketHeader& header,
+    const rtype::network::Heartbeat& heartbeat) {
+  return rtype::network::DatagramCodec::encode(header, heartbeat);
+}
+
 std::vector<std::byte> disconnectionDatagram(
     const rtype::network::PacketHeader& header) {
   return rtype::network::DatagramCodec::encode(header,

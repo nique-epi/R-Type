@@ -1,0 +1,1 @@
+target_sources(client_audio_tests PRIVATE SoundtrackTest.cpp)

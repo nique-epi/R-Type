@@ -1,12 +1,12 @@
 #pragma once
 
 #include <cstdint>
-#include "MovementPattern.hpp"
+#include <string_view>
 
 namespace rtype::game {
 
 /**
- * @brief The kinds of Bydo; each one moves along its own pattern.
+ * @brief The kinds of Bydo; each one is piloted by its own behaviour.
  */
 enum class BydoKind : std::uint8_t {
   Drifter,
@@ -14,10 +14,10 @@ enum class BydoKind : std::uint8_t {
 };
 
 /**
- * @returns The pattern shape the Bydos of @p kind follow: Drifter goes
- * straight, Weaver goes in a wave.
+ * @returns The name of the behaviour that pilots the Bydos of @p kind: Drifter
+ * goes straight, Weaver weaves.
  */
-[[nodiscard]] PatternShape patternShapeOf(BydoKind kind);
+[[nodiscard]] std::string_view behaviourNameOf(BydoKind kind);
 
 /**
  * @returns The points the player who destroys a Bydo of @p kind earns.

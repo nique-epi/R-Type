@@ -18,7 +18,7 @@
 #include "LoopStages.hpp"
 #include "MasterConstants.hpp"
 #include "MasterModules.hpp"
-#include "MasterModulesTestConstants.hpp"
+#include "MasterTestConstants.hpp"
 #include "SettingLine.hpp"
 
 MasterModulesFixture::MasterModulesFixture() : port_(freeHttpPort()) {}

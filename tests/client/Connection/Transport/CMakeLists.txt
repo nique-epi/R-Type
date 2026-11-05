@@ -1,0 +1,1 @@
+target_sources(client_connection_tests PRIVATE NetworkThreadTest.cpp NetworkThreadFixtures.cpp DatagramRouterTest.cpp DatagramRouterFixture.cpp DatagramRouterFixtures.cpp DatagramRouteTest.cpp DatagramRouteFixture.cpp)

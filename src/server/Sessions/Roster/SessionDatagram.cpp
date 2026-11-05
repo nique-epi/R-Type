@@ -8,7 +8,6 @@
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
-#include "TimeConstants.hpp"
 
 namespace rtype::server {
 
@@ -18,7 +17,6 @@ network::PacketHeader nextSessionHeader(ConnectedPlayer& recipient) {
   header.sequence = recipient.nextSequence;
   recipient.arrivals.acknowledgeIn(header);
   ++recipient.nextSequence;
-  recipient.sinceSent = engine::Duration::zero();
   return header;
 }
 

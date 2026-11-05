@@ -6,6 +6,7 @@
 #include <numbers>
 #include <optional>
 #include "CollisionConstants.hpp"
+#include "Direction.hpp"
 #include "ManeuverKind.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
@@ -233,7 +234,20 @@ MovingShip shipAfter(MovingShip from, ShipDirections held,
   return stoppedAtTheEdges(MovingShip{.position = wanted, .motion = motion});
 }
 
+Direction directionOf(ShipDirections held) {
+  return Direction{.x = static_cast<float>(horizontalOf(held)),
+                   .y = static_cast<float>(verticalOf(held))};
+}
+
+ShipDirections heldDirectionsOf(Direction direction) {
+  return ShipDirections{.up = direction.y < 0.0F,
+                        .down = direction.y > 0.0F,
+                        .left = direction.x < 0.0F,
+                        .right = direction.x > 0.0F};
+}
+
 ShipMotion motionAfterInput(ShipMotion motion, HeldChange change) {
+  motion.heldAtLastInput = change.now;
   const std::optional<ManeuverOrder> order =
       orderOf(pressedTwice(motion, change));
   if (!order.has_value() || !mayStart(motion, order->kind)) {

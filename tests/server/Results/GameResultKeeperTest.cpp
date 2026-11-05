@@ -4,8 +4,16 @@
 #include "ConnectedPlayer.hpp"
 #include "GameInstanceTestConstants.hpp"
 #include "GameResult.hpp"
+#include "GameResultKeeper.hpp"
 #include "GameResultKeeperFixture.hpp"
 #include "GameResultKeeperTestConstants.hpp"
+#include "GameSettings.hpp"
+#include "GameState.hpp"
+#include "GameStateChanged.hpp"
+#include "PlayerRoster.hpp"
+#include "RecordingResultsArchive.hpp"
+#include "SentDatagrams.hpp"
+#include "ServerLobbyTestConstants.hpp"
 
 namespace rtype::server::testing {
 
@@ -42,6 +50,46 @@ TEST_F(GameResultKeeperFixture, CountsNoDeathForAPlayerWhoLostNoLife) {
   finishTheGame();
 
   EXPECT_EQ(onlyResult().players.at(0).deaths, 0U);
+}
+
+/**
+ * Given a keeper of a vanilla game
+ * When the game finishes
+ * Then its result says the game was vanilla
+ */
+TEST_F(GameResultKeeperFixture, SaysTheResultOfAVanillaGameIsVanilla) {
+  seat(FIRST_PLAYER);
+  startTheGame();
+
+  finishTheGame();
+
+  EXPECT_TRUE(onlyResult().vanilla);
+}
+
+/**
+ * Given a keeper of a game that is not vanilla
+ * When the game finishes
+ * Then its result says the game was not vanilla
+ */
+TEST(GameResultKeeper, SaysTheResultOfAGameThatIsNotVanillaIsNot) {
+  PlayerRoster roster;
+  RecordingResultsArchive archive;
+  GameResultKeeper keeper{roster, archive,
+                          GameSettings{.waves = {}, .vanilla = false}};
+  ASSERT_NE(roster.add(playerEndpoint(FIRST_PLAYER),
+                       std::string{NICKNAMES.at(FIRST_PLAYER)}, SESSION_TOKEN),
+            nullptr);
+  keeper.onStateChanged(
+      GameStateChanged{.previous = GameState::WaitingForPlayers,
+                       .current = GameState::Starting});
+  keeper.onStateChanged(GameStateChanged{.previous = GameState::Starting,
+                                         .current = GameState::InProgress});
+
+  keeper.onStateChanged(GameStateChanged{.previous = GameState::InProgress,
+                                         .current = GameState::Finished});
+
+  ASSERT_EQ(archive.results().size(), 1U);
+  EXPECT_FALSE(archive.results().front().vanilla);
 }
 
 /**
@@ -115,22 +163,6 @@ TEST_F(GameResultKeeperFixture, IgnoresADepartureAfterTheEnd) {
 
   ASSERT_EQ(archive().results().size(), 2U);
   EXPECT_EQ(archive().results().at(1).players.size(), 1U);
-}
-
-/**
- * Given a finished game
- * When more ticks run in that state
- * Then it is recorded once
- */
-TEST_F(GameResultKeeperFixture, RecordsAGameOnce) {
-  seat(FIRST_PLAYER);
-  startTheGame();
-
-  finishTheGame();
-  finishTheGame();
-  finishTheGame();
-
-  EXPECT_EQ(archive().results().size(), 1U);
 }
 
 /**

@@ -6,19 +6,18 @@
 #include <cstddef>
 #include <span>
 #include <string_view>
-#include "AssetLibrary.hpp"
 #include "AudioConstants.hpp"
 #include "AudioVolume.hpp"
 #include "SettingId.hpp"
 #include "SettingsService.hpp"
+#include "SoundBank.hpp"
 #include "VoiceChoice.hpp"
 #include "VoiceState.hpp"
 
 namespace rtype::client {
 
-SoundPlayer::SoundPlayer(const AssetLibrary& library,
-                         const SettingsService& settings)
-    : library_(&library),
+SoundPlayer::SoundPlayer(const SoundBank& bank, const SettingsService& settings)
+    : bank_(&bank),
       settings_(&settings),
       volume_(effectsVolumeOf(settings.settings())) {
   voices_.reserve(SOUND_VOICE_LIMIT);
@@ -29,7 +28,7 @@ void SoundPlayer::play(std::string_view soundId) {
   if (volume_ <= 0.0F) {
     return;
   }
-  sf::Sound& voice = voiceFor(library_->sound(soundId));
+  sf::Sound& voice = voiceFor(bank_->sound(soundId));
   voice.setVolume(volume_);
   voice.play();
 }

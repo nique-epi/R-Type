@@ -39,6 +39,12 @@ using rtype::client::testing::STARDUST_RANK;
 using rtype::client::testing::STARDUST_SCORE;
 
 EndScreenFixture::EndScreenFixture()
+    : EndScreenFixture(rtype::network::WireGameOutcome::Defeat) {}
+
+EndScreenVictoryFixture::EndScreenVictoryFixture()
+    : EndScreenFixture(rtype::network::WireGameOutcome::Victory) {}
+
+EndScreenFixture::EndScreenFixture(rtype::network::WireGameOutcome outcome)
     : result_{.pilots = {FinalPilot{.playerNumber = STARDUST_NUMBER,
                                     .nickname = std::string{STARDUST_NICKNAME},
                                     .score = STARDUST_SCORE,
@@ -53,7 +59,8 @@ EndScreenFixture::EndScreenFixture()
                                     .nickname = std::string{NOVA_NICKNAME},
                                     .score = NOVA_SCORE,
                                     .isLocalPlayer = false,
-                                    .rank = NOVA_RANK}}} {
+                                    .rank = NOVA_RANK}},
+              .outcome = outcome} {
   rebuildWith(MotionPreference::Full);
 }
 

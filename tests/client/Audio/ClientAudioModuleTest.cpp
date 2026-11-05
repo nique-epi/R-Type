@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include "AudioMode.hpp"
+#include "AudioService.hpp"
 #include "AudioTestConstants.hpp"
 #include "ClientAudioModule.hpp"
 #include "ClientAudioModuleFixture.hpp"
@@ -13,6 +14,7 @@
 
 using rtype::client::ASSETS_MODULE_NAME;
 using rtype::client::AudioMode;
+using rtype::client::AudioService;
 using rtype::client::ClientAudioModule;
 using rtype::client::IAudioService;
 using rtype::client::SETTINGS_MODULE_NAME;
@@ -88,4 +90,19 @@ TEST_F(ClientAudioModuleFixture, ModuleDependsOnTheAssetsAndTheSettings) {
   EXPECT_EQ(dependencies,
             (std::vector<std::string>{std::string{ASSETS_MODULE_NAME},
                                       std::string{SETTINGS_MODULE_NAME}}));
+}
+
+/**
+ * Given the sound module of a client with sound
+ * When it is installed
+ * Then the modules after it find the service that plays
+ */
+TEST_F(ClientAudioModuleFixture, EnabledModuleProvidesTheServiceThatPlays) {
+  ClientAudioModule module(AudioMode::Enabled);
+  InstallContext installing = context();
+
+  module.install(installing);
+
+  EXPECT_NE(dynamic_cast<AudioService*>(services().find<IAudioService>()),
+            nullptr);
 }

@@ -27,7 +27,8 @@ namespace rtype::server {
  * type Enemy in the world and hands that count to the director. When the
  * director moves on to a wave, at the start of the pause before it, the
  * spawner logs the number of the wave, its Bydos and the time between two of
- * them at info level (`wave 2: 4 Bydos, one every 1750 ms`).
+ * them at info level (`wave 2: 4 Bydos, one every 1750 ms`). The level holds
+ * the waves of the curve: once the last of them is over, no wave follows.
  *
  * The Bydos take the kinds the enemies of the plan list, in turn, the cycle
  * carrying on from one wave to the next: with `drifter, weaver`, a Drifter,
@@ -57,6 +58,14 @@ class BydoSpawner {
    * says are due appear.
    */
   void onTick();
+
+  /**
+   * @returns Whether the last wave of the level is over: every one of its
+   * Bydos appeared and a tick found none in the world. It stays true and no
+   * Bydo appears any more. The game ends the level on it, or on more than it
+   * once a boss comes after the last wave.
+   */
+  [[nodiscard]] bool lastWaveFinished() const;
 
  private:
   void spawnOne();

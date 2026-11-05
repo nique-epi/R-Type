@@ -4,7 +4,6 @@
 #include "ConnectionPhase.hpp"
 #include "ConnectionRefused.hpp"
 #include "HandshakeAnswersParts.hpp"
-#include "Heartbeat.hpp"
 #include "LobbyState.hpp"
 #include "MessageDispatcher.hpp"
 #include "MessageOrigin.hpp"
@@ -29,8 +28,6 @@ HandshakeAnswers::HandshakeAnswers(HandshakeAnswersParts parts)
              const network::ConnectionRefused& refused) {
         onRefused(origin, refused);
       });
-  dispatcher.registerHandler<network::Heartbeat>(
-      [](const network::MessageOrigin&, const network::Heartbeat&) {});
 }
 
 bool HandshakeAnswers::isConnecting() const {

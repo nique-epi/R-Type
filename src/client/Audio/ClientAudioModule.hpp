@@ -20,9 +20,9 @@ namespace rtype::client {
  * the one that plays nothing for AudioMode::Disabled, provides it, and adds
  * its work to UPDATE_STAGE, before the screens: the silence before the music
  * of a game moves on. The volumes follow the settings service. start()
- * opens the music files, or writes in the journal that the client runs
- * without sound. Nothing stays open after stop(): the music stops when the
- * module is destroyed, after every screen.
+ * reads the sounds and opens the music files, or writes in the journal that
+ * the client runs without sound. Nothing stays open after stop(): the music
+ * stops when the module is destroyed, after every screen.
  */
 class ClientAudioModule final : public engine::IModule {
  public:

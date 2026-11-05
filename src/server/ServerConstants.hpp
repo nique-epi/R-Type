@@ -29,11 +29,15 @@ constexpr std::string_view SEED_SETTING_NAME = "seed";
 constexpr std::string_view STATE_RATE_SETTING_NAME = "state-rate";
 constexpr std::string_view INPUT_DELAY_SETTING_NAME = "input-delay";
 constexpr std::string_view DATABASE_SETTING_NAME = "database";
+constexpr std::string_view MASTER_URL_SETTING_NAME = "master-url";
+constexpr std::string_view MASTER_KEY_SETTING_NAME = "master-key";
+constexpr std::string_view SERVER_NAME_SETTING_NAME = "server-name";
 
 /** @brief Every setting of the server, in the order its usage lists them. */
 constexpr std::array SERVER_SETTING_NAMES{
-    PORT_SETTING_NAME, SEED_SETTING_NAME, STATE_RATE_SETTING_NAME,
-    INPUT_DELAY_SETTING_NAME, DATABASE_SETTING_NAME};
+    PORT_SETTING_NAME,        SEED_SETTING_NAME,       STATE_RATE_SETTING_NAME,
+    INPUT_DELAY_SETTING_NAME, DATABASE_SETTING_NAME,   MASTER_URL_SETTING_NAME,
+    MASTER_KEY_SETTING_NAME,  SERVER_NAME_SETTING_NAME};
 
 /**
  * @brief The highest seed: the seed of a game is 32 bits.
@@ -92,6 +96,25 @@ constexpr std::string_view WAVE_FILE_IN_ASSETS = "waves/waves.toml";
  * choose another one.
  */
 constexpr std::string_view DEFAULT_DIFFICULTY = "normal";
+
+/**
+ * @brief The fingerprint of the waves file the game ships, as
+ * WaveCatalog::fingerprint() gives it: games read from a file with another one
+ * are not vanilla. A test fails when the shipped file changes and this does
+ * not.
+ */
+constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x74174ddcb239e461;
+
+/**
+ * @brief Why the games of a server are not vanilla, as the lines of its journal
+ * say: one per rule of a vanilla game they break (see vanillaBreaches()).
+ */
+constexpr std::string_view MODIFIED_WAVES_BREACH =
+    "the waves file is not the one the game ships";
+constexpr std::string_view IMPOSED_SEED_BREACH =
+    "a seed is set, so the waves can be known in advance";
+constexpr std::string_view CHANGED_INPUT_DELAY_BREACH =
+    "the input delay is not the default one";
 
 /**
  * @brief Launch option followed by the program the binary runs:

@@ -1,0 +1,13 @@
+add_library(rtype_tools_malformed_datagrams_builder STATIC MalformedDatagramBuilder.cpp)
+
+target_include_directories(rtype_tools_malformed_datagrams_builder PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_tools_malformed_datagrams_builder PUBLIC rtype_network)
+
+rtype_enable_warnings(rtype_tools_malformed_datagrams_builder)
+
+rtype_add_test(NAME malformed_datagram_tests SOURCES MalformedDatagramBuilderTest.cpp LIBS rtype_tools_malformed_datagrams_builder)
+
+target_include_directories(malformed_datagram_tests PRIVATE ${CMAKE_SOURCE_DIR}/tests/network/Protocol)
+
+add_subdirectory(Fixtures)

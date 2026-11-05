@@ -7,6 +7,7 @@
 #include "ConnectedPlayer.hpp"
 #include "EntitySpawnSender.hpp"
 #include "GameEndAnnouncer.hpp"
+#include "GameOutcome.hpp"
 #include "IGameReplication.hpp"
 #include "LobbyStateAnnouncer.hpp"
 #include "PlayerRoster.hpp"
@@ -49,7 +50,7 @@ class GameReplication final : public IGameReplication {
   void onWorldBuilt(game::World& world) override;
   void onPlayerJoined(ConnectedPlayer& player) override;
   void onWaitingTick() override;
-  void onGameFinished() override;
+  void onGameFinished(GameOutcome outcome) override;
   void onFinishedTick() override;
   void onProgressTick(std::uint32_t tick,
                       engine::ComponentRegistry& components) override;

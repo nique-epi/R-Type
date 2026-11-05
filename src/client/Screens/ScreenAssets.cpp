@@ -1,6 +1,4 @@
 #include "ScreenAssets.hpp"
-#include <string>
-#include <vector>
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
@@ -12,7 +10,6 @@
 #include "LeaderboardSpriteConstants.hpp"
 #include "ProfessorSpriteConstants.hpp"
 #include "ScreenConstants.hpp"
-#include "SoundConstants.hpp"
 
 namespace rtype::client {
 
@@ -30,9 +27,7 @@ void loadAtOnce(AssetLibrary& library, const AssetList& assets) {
 }  // namespace
 
 AssetList interfaceAssets() {
-  return AssetList{.sounds = std::vector<std::string>(ALL_SOUND_IDS.begin(),
-                                                      ALL_SOUND_IDS.end()),
-                   .fonts = {REGULAR_FONT_ID, SMALL_FONT_ID}};
+  return AssetList{.fonts = {REGULAR_FONT_ID, SMALL_FONT_ID}};
 }
 
 AssetList titleAssets() {

@@ -38,10 +38,10 @@ Then play the forger: someone who forges an address, sends the message as often 
 
 `docs/src/content/docs/protocol.mdx` is the specification: a developer who follows it can write a client without reading the code. Write the message there first, using the words of the page (MUST, SHOULD, MAY as in RFC 2119), so the review of the pull request can compare the code with it.
 
-The next free number is 20 (`LeaderboardAnswer` holds 19), and a number never changes once given. Add a row to the table of [Client to server](/R-Type/protocol/#client-to-server):
+The next free number is 22 (`RoundTrips` holds 21), and a number never changes once given. Add a row to the table of [Client to server](/R-Type/protocol/#client-to-server):
 
 ```md
-| 20 | `Emote` | `kind` `u8`: 1 `Salute`, 2 `Taunt` | when the player asks for one, once |
+| 22 | `Emote` | `kind` `u8`: 1 `Salute`, 2 `Taunt` | when the player asks for one, once |
 ```
 
 To [Payload rules](/R-Type/protocol/#payload-rules), what a receiver must refuse. The page already says that an enumeration value not listed is invalid, so this row only names the field:
@@ -67,8 +67,8 @@ Finally, [Implementation status](/R-Type/protocol/#implementation-status) must n
 Add the value to `src/network/Protocol/MessageType.hpp`:
 
 ```cpp
-  LeaderboardAnswer = 19,
-  Emote = 20,
+  RoundTrips = 21,
+  Emote = 22,
 ```
 
 Add its name at the end of `MESSAGE_TYPE_NAMES` in `src/network/Statistics/Counting/MessageSlotConstants.hpp`, and name your value in the `static_assert` under it. Nothing fails if you forget the name alone: the traffic counters then count your message as `unknown`.
@@ -78,10 +78,11 @@ Two test constants name the first type byte no message holds, and both now point
 In `tests/network/Protocol/ProtocolTestConstants.hpp`:
 
 ```cpp
-constexpr std::uint8_t TYPE_ABOVE_THE_LAST = 21;
+constexpr std::uint8_t TYPE_ABOVE_THE_LAST =
+    static_cast<std::uint8_t>(MessageType::Emote) + 1;
 ```
 
-In `tests/tools/MalformedDatagramConstants.hpp`, where the tool that sends malformed datagrams draws its unknown types, and in the comment above it:
+In `tests/tools/MalformedDatagrams/Builder/MalformedDatagramConstants.hpp`, where the tool that sends malformed datagrams draws its unknown types, and in the comment above it:
 
 ```cpp
 constexpr std::uint8_t FIRST_UNKNOWN_MESSAGE_TYPE =
@@ -517,7 +518,7 @@ TEST_F(GameInstanceTest, KeepsTheEmoteAPlayerSends) {
 
 Check that it can fail: remove the `registerHandler<network::Emote>` call, build, and this test turns red; put it back.
 
-Register the files in `tests/CMakeLists.txt`: add `network/Protocol/EmoteTest.cpp` to the `SOURCES` of `network_tests`; add `server/Sessions/Tracking/EmoteKeeperTest.cpp` to those of `server_sessions_tests`, which links `rtype_server_sessions` already. `GameInstanceTest.cpp` is already listed.
+Register the files in the `CMakeLists.txt` of their folders: add `EmoteTest.cpp` to the `target_sources(network_tests …)` line of `tests/network/Protocol/CMakeLists.txt`; add `EmoteKeeperTest.cpp` to the `target_sources(server_sessions_tests …)` line of `tests/server/Sessions/Tracking/CMakeLists.txt`, since `server_sessions_tests` links `rtype_server_sessions` already. `GameInstanceTest.cpp` is already listed.
 
 Run them:
 

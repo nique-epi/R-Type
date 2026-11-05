@@ -1,0 +1,1 @@
+target_sources(engine_tests PRIVATE CommandLineTest.cpp CommandInterpreterTest.cpp CommandInterpreterFixtures.cpp NameListTest.cpp)

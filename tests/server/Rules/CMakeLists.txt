@@ -1,0 +1,6 @@
+rtype_add_test(NAME server_rules_tests LIBS rtype_server_rules_match rtype_server_replication_announcements_milestones server_test_datagrams)
+target_include_directories(server_rules_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/server)
+target_sources(server_game_module_tests PRIVATE RtypeRulesModuleTest.cpp)
+
+add_subdirectory(Match)
+add_subdirectory(Players)

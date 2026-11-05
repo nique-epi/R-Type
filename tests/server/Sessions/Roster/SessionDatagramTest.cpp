@@ -34,19 +34,20 @@ using testing::playerEndpoint;
 using testing::SESSION_TOKEN;
 using testing::SessionDatagramFixture;
 using testing::SOME_NEXT_SEQUENCE;
-using testing::SOME_TIME_SINCE_SENT;
+using testing::SOME_TIME_SINCE_A_HEARTBEAT;
 
 /**
- * Given a player the server sent nothing for some time
+ * Given a player the server sent no Heartbeat for some time
  * When the header of its next datagram is asked for
- * Then the time since a datagram was sent to it starts again from zero
+ * Then the time since its last Heartbeat is left as it was: only a Heartbeat
+ * starts it over, so other datagrams never delay one
  */
-TEST_F(SessionDatagramFixture, StartsTheTimeSinceSentOverForEachHeader) {
-  firstPlayer().sinceSent = SOME_TIME_SINCE_SENT;
+TEST_F(SessionDatagramFixture, LeavesTheTimeSinceTheHeartbeatAsItIs) {
+  firstPlayer().sinceHeartbeat = SOME_TIME_SINCE_A_HEARTBEAT;
 
   static_cast<void>(nextSessionHeader(firstPlayer()));
 
-  EXPECT_EQ(firstPlayer().sinceSent, engine::Duration::zero());
+  EXPECT_EQ(firstPlayer().sinceHeartbeat, SOME_TIME_SINCE_A_HEARTBEAT);
 }
 
 /**

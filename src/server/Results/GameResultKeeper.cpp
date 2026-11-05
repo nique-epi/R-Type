@@ -6,7 +6,9 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "GameResult.hpp"
+#include "GameSettings.hpp"
 #include "GameState.hpp"
+#include "GameStateChanged.hpp"
 #include "IResultsArchive.hpp"
 #include "LivesConstants.hpp"
 #include "PlayerRoster.hpp"
@@ -32,8 +34,11 @@ PlayerResult resultOf(const ConnectedPlayer& player) {
 
 GameResultKeeper::GameResultKeeper(PlayerRoster& roster,
                                    IResultsArchive& archive,
-                                   std::string difficulty)
-    : roster_(roster), archive_(archive), difficulty_(std::move(difficulty)) {}
+                                   const GameSettings& settings)
+    : roster_(roster),
+      archive_(archive),
+      difficulty_(settings.difficulty),
+      vanilla_(settings.vanilla) {}
 
 void GameResultKeeper::onPlayerClosing(const ConnectedPlayer& departed) {
   if (state_ == GameState::InProgress) {
@@ -41,12 +46,12 @@ void GameResultKeeper::onPlayerClosing(const ConnectedPlayer& departed) {
   }
 }
 
-void GameResultKeeper::followState(GameState state) {
-  const GameState previous = std::exchange(state_, state);
-  if (previous != GameState::InProgress && state == GameState::InProgress) {
+void GameResultKeeper::onStateChanged(const GameStateChanged& change) {
+  state_ = change.current;
+  if (change.current == GameState::InProgress) {
     startCounting();
-  } else if (previous == GameState::InProgress &&
-             state == GameState::Finished) {
+  } else if (change.previous == GameState::InProgress &&
+             change.current == GameState::Finished) {
     recordTheGame();
   }
 }
@@ -68,7 +73,8 @@ void GameResultKeeper::recordTheGame() {
                  .playerCount = playersAtStart_,
                  .endedAt = std::chrono::floor<std::chrono::seconds>(
                      std::chrono::system_clock::now()),
-                 .players = std::move(players)});
+                 .players = std::move(players),
+                 .vanilla = vanilla_});
 }
 
 }  // namespace rtype::server

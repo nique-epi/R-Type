@@ -1,0 +1,1 @@
+rtype_add_test(NAME concurrency_tests SOURCES BoundedQueueTest.cpp InterruptibleSleepTest.cpp LatestValueTest.cpp LatestValueFixtures.cpp LIBS rtype_concurrency TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})

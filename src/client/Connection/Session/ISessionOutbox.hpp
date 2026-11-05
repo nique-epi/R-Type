@@ -22,6 +22,13 @@ class ISessionOutbox {
    */
   virtual void sendToServer(network::MessageType type,
                             std::span<const std::byte> payload) = 0;
+
+  /**
+   * @returns Whether the acknowledgement of a datagram that holds guaranteed
+   * messages waited ACKNOWLEDGEMENT_DELAY with nothing sent to the server, so
+   * a Heartbeat must carry it now.
+   */
+  [[nodiscard]] virtual bool isAcknowledgementDue() const = 0;
 };
 
 /**

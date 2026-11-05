@@ -7,6 +7,7 @@
 #include "DatagramSorterFixture.hpp"
 #include "DatagramSorterFixtures.hpp"
 #include "DatagramSorterLogFixture.hpp"
+#include "DatagramSorterTestConstants.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
 #include "NetworkConstants.hpp"
@@ -68,6 +69,24 @@ TEST_F(DatagramSorterFixture, SendsAPlayersDatagramToThePlayerQueue) {
   EXPECT_EQ(drainPlayers(),
             (std::vector<IncomingDatagram>{
                 {.sender = player(), .payload = playerReady()}}));
+}
+
+/**
+ * Given an admitted player, and the clock of the sorter at
+ * SORTED_ARRIVAL_TIME
+ * When the player sends a datagram
+ * Then the datagram queued for the players carries that time, the time it
+ * arrived
+ */
+TEST_F(DatagramSorterFixture, StampsEachKeptDatagramWithItsClock) {
+  admit(player());
+  advanceClock(SORTED_ARRIVAL_TIME);
+
+  sort(player(), playerReady());
+
+  const std::vector<IncomingDatagram> players = drainPlayers();
+  ASSERT_EQ(players.size(), 1U);
+  EXPECT_EQ(players.front().receivedAt, SORTED_ARRIVAL_TIME);
 }
 
 /**
@@ -147,7 +166,7 @@ TEST_F(DatagramSorterFixture,
        DropsADatagramOfAnotherVersionShorterThanTheRefusal) {
   rtype::network::PacketHeader header;
   header.version = NEXT_PROTOCOL_VERSION;
-  const std::vector<std::byte> datagram = heartbeatDatagram(header);
+  const std::vector<std::byte> datagram = disconnectionDatagram(header);
   ASSERT_EQ(datagram.size(), REFUSAL_DATAGRAM_SIZE - 1);
 
   sort(stranger(), datagram);
@@ -173,7 +192,7 @@ TEST_F(DatagramSorterFixture, DropsAStrangersRequestOfAnotherProtocol) {
 
 /**
  * Given a sorter that admitted nobody
- * When a stranger sends a connection request with a flag version 2 does not
+ * When a stranger sends a connection request with a flag version 3 does not
  * know
  * Then the request reaches no queue
  */

@@ -13,6 +13,7 @@ target_link_libraries(rtype_master_http_module
     rtype_engine_commands
     rtype_engine_modules
     rtype_logging
+    rtype_network_master_routes
     rtype_network_transport
   PRIVATE
     httplib::httplib

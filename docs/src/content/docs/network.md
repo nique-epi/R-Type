@@ -21,11 +21,13 @@ This page tells you where to look when you need to change something. It describe
 | Protocol messages, datagram header, dispatch by type | Available | `src/network/Protocol/` |
 | Connection cookies | Available | `src/network/Handshake/` |
 | Traffic counters: datagrams and bytes by peer and by message type, journal and CSV file | Available | `src/network/Statistics/`: `Counting/` and `Recording/` |
+| Round trip and jitter of a session, measured from the heartbeats | Available | `src/network/Statistics/RoundTrip/` |
 | Sessions: admission, session token, sequence, heartbeats, timeouts | Available, written in the server and the client | `src/server/Lobby/`, `src/server/Sessions/`, `src/client/Connection/` |
 | Replication: entities to messages, and back | Available, written in the server and the client | `src/server/Replication/`, `src/client/Replication/` |
 | Guaranteed messages: acknowledgements, sending again | Available | `src/network/Reliability/` |
 | Rate limit of the requests, history of states | Not yet written | — |
-| Test tool that sends malformed datagrams | Available, never shipped | `tests/tools/` |
+| Test tool that sends malformed datagrams | Available, never shipped | `tests/tools/MalformedDatagrams/` |
+| Load-test bots: players with no window that join a server and play | Available, never shipped | `tests/tools/LoadTestBots/` |
 
 ## Transport, sessions and replication
 
@@ -55,9 +57,10 @@ Transport carries datagrams and knows nothing of players. Each program runs its 
 
 A session starts when the server accepts a player and ends when the player leaves or stays silent too long. Every datagram of a session carries the session token of the player, the next sequence of its sender and the acknowledgement of the datagrams its sender accepted, so each side drops a forged datagram, which lacks the token, and a late copy, which is not newer than the newest datagram it read (see [Protocol](/R-Type/protocol/#a-session)), and the server knows which guaranteed messages arrived.
 
-- On the server, `ConnectionAcceptor` (`src/server/Lobby/`) answers the connection requests and gives a place only to a sender that sends back its cookie (`CookieIssuer`, below). `DatagramSorter` checks the token on the network thread, before any queue. The `GameSessions` of each game (`src/server/Sessions/`) checks the sequence, drops the guaranteed messages a datagram acknowledges and sends again the others, keeps the ready state and the newest input of each player, sends the heartbeats and closes the session of a player it hears nothing from (see [Server](/R-Type/server/#sessions-of-a-game-gamesessions)); `SessionDatagram` gives every datagram to a player its header.
-- On the client, `ServerSession` (`src/client/Connection/`) holds the one session with the server it joined: it sends the request, answers the challenge, checks the token and the sequence, acknowledges what it accepted, sends the heartbeats, and takes the server for lost after `SESSION_SILENCE_LIMIT` (20 s) without a datagram (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)).
-- Both programs read the same delays, `HEARTBEAT_INTERVAL` (1 s), `SESSION_TIMEOUT` (5 s) and `RECONNECTION_GRACE` (15 s), in `src/network/Protocol/ProtocolConstants.hpp`. They are **provisional**, like every delay of the protocol: code must read them.
+- On the server, `ConnectionAcceptor` (`src/server/Lobby/`) answers the connection requests and gives a place only to a sender that sends back its cookie (`CookieIssuer`, below). `DatagramSorter` checks the token on the network thread, before any queue. The `GameSessions` of each game (`src/server/Sessions/`) checks the sequence, drops the guaranteed messages a datagram acknowledges and sends again the others, keeps the ready state and the newest input of each player, sends the heartbeats, measures the round trip of each player from their echoes and closes the session of a player it hears nothing from (see [Server](/R-Type/server/#sessions-of-a-game-gamesessions)); `SessionDatagram` gives every datagram to a player its header.
+- On the client, `ServerSession` (`src/client/Connection/`) holds the one session with the server it joined: it sends the request, answers the challenge, checks the token and the sequence, acknowledges what it accepted, and takes the server for lost after `SESSION_SILENCE_LIMIT` (20 s) without a datagram (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)).
+- On the client, `RoundTripWatch` (`src/client/Connection/Session/`), an observer of the session, sends the heartbeats and measures the round trip (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)).
+- Both programs read the same delays, `HEARTBEAT_INTERVAL` (500 ms), `SESSION_TIMEOUT` (5 s) and `RECONNECTION_GRACE` (15 s), in `src/network/Protocol/ProtocolConstants.hpp`. They are **provisional**, like every delay of the protocol: code must read them.
 
 ### Replication
 
@@ -244,6 +247,14 @@ Measured on an Apple M3 Pro with Apple clang 21.0.0 at `-O2`, median of 7 runs o
 
 These numbers say nothing about a disk, GCC, MSVC, Linux or Windows. A row weighs 736 bytes. The line adds about 1.2 MB per day to the journal, which the logger never rotates; with nine figures per player, the file of a game of 4 grows by about 1.7 KB per second, 6 MB per hour.
 
+## Round trip and jitter: `RoundTripMeter`
+
+Both programs measure the round trip of each session with the classes of `rtype_network_statistics_round_trip` (`src/network/Statistics/RoundTrip/`), which `rtype_network_statistics` links. `RoundTripMeter` builds each `Heartbeat` to send with `nextHeartbeat(now)` and reads each one received with `receive(heartbeat, receivedAt)`; the fields and the rule of the echo are in [Protocol](/R-Type/protocol/#round-trip). Every time it takes is the time since the epoch of `std::chrono::steady_clock`, the clock `engine::SystemClock` reads: `DatagramRelay` and the server's `DatagramSorter` stamp each datagram on the network thread (`IncomingDatagram::receivedAt`), and the readers carry that time into `MessageOrigin::receivedAt`, so the wait for the next frame or tick is left out of the round trip.
+
+`RoundTripEstimator` turns the round trips into `RoundTripFigures`: the smoothed round trip, each round trip moving it by 1/`ROUND_TRIP_SMOOTHING_DIVISOR` (8) of its gap to it, as RFC 6298 smooths, and the jitter, the mean gap between two round trips in a row over the `JITTER_WINDOW_SIZE` (16) newest. `figures()` is empty before the first round trip, and the jitter is 0 after a single one. An echo that gives no round trip from 0 to `LONGEST_ROUND_TRIP` (20 s, `SESSION_SILENCE_LIMIT`) is ignored. `RoundTripWire` turns the figures to and from what `RoundTrips` carries, in whole microseconds. The constants are in `RoundTripConstants.hpp`, and they are **provisional**, like the delays of the protocol: code must read them.
+
+The server keeps one meter per player (see [Server](/R-Type/server/#silent-players-heartbeats-and-timeouts)), and the client keeps its own in `RoundTripWatch` (see [Client](/R-Type/client/#joining-a-server-serversession-waitingroom-entitymessagequeue)).
+
 ## Serialization: `ByteWriter` and `ByteReader`
 
 `ByteWriter` appends values to a `std::vector<std::byte>` and `ByteReader` reads them back from a buffer. Every value is written field by field, never copied from a struct in memory, so neither padding nor the byte order of the machine reaches the wire.
@@ -279,7 +290,7 @@ const auto decodedName = reader.readString();
 
 `DatagramCodec` (`src/network/Protocol/DatagramCodec/`) turns a header and one or more messages into the bytes of a datagram, and a received datagram back into its header and its messages; the layout is in [Protocol](/R-Type/protocol/#datagram).
 
-- `encode(header, message)` writes the `PACKET_HEADER_SIZE` (22) bytes of the `PacketHeader`, the type of the message, the size of its payload on two bytes, then the payload. A payload over `MESSAGE_PAYLOAD_LIMIT` (1175 bytes) throws `DatagramTooLargeException`. A default `PacketHeader` is version 3 without a session, a flag or an acknowledgement; the sender sets `sessionToken` and `sequence`, and `ReceivedSequences::acknowledgeIn()` the acknowledgement.
+- `encode(header, message)` writes the `PACKET_HEADER_SIZE` (22) bytes of the `PacketHeader`, the type of the message, the size of its payload on two bytes, then the payload. A payload over `MESSAGE_PAYLOAD_LIMIT` (1175 bytes) throws `DatagramTooLargeException`. A default `PacketHeader` is version 4 without a session, a flag or an acknowledgement; the sender sets `sessionToken` and `sequence`, and `ReceivedSequences::acknowledgeIn()` the acknowledgement.
 - `encode(header, messages)` writes the header, then each `EncodedMessage` of the span in order. An empty span throws `EmptyDatagramException`, and more than `MAX_DATAGRAM_SIZE` (1200) bytes in all throws `DatagramTooLargeException`; nothing is encoded then.
 - `decodeHeader(datagram)` reads the header without judging it, so a datagram of another version still gives its version. Fewer than 22 bytes throws `MalformedDatagramException`.
 - `forEachMessage(datagram, onMessage)` hands each message that follows the header to a function, and throws and allocates nothing. It returns whether the sizes add up exactly to the end of the datagram; when they do not, the function may already have seen the messages before the fault.
@@ -312,7 +323,7 @@ const std::vector<std::byte> datagram = rtype::network::DatagramCodec::encode(
 
 - `registerHandler<ReadyState>(handler)` registers the one handler of a type; a second one throws `DuplicateMessageHandlerException`.
 - `dispatch(origin, messages)` reads each payload, then calls its handler, in order. A message whose type has no handler, which includes the type bytes no message has, is skipped; a message whose payload is refused is dropped. Both are counted (`skippedMessageCount()`, `malformedMessageCount()`) and logged at the `debug` level with the sender and why, at most once per `REJECTION_LINE_INTERVAL` (10 s), with how many since the previous line (see [Logging](/R-Type/logging/#repeated-events-throttledlog)); the next message is handled.
-- No exception caused by the content of a message leaves `dispatch()`, so one forged message cannot stop the server. An exception thrown by a handler does: it is a fault of the program.
+- No exception caused by the content of a message leaves `dispatch()`, so one forged message cannot stop the server. An exception a handler throws (any `std::exception`) is a fault of the program, not of the message: it is caught too, counted (`failedMessageCount()`) and logged at the `error` level with the sender, at most once per `REJECTION_LINE_INTERVAL`, and that message is dropped; the next message is handled. What the handler changed before it threw is kept, so a handler must still leave its state whole when it throws.
 - A sender it does not know yet must be answered at most once per datagram: ninety 13-byte `ConnectionRequest` fit in one datagram, and an answer to each would send more bytes than were received. A handler cannot tell which messages shared a datagram, so the code that receives must enforce it before dispatching.
 - It is not thread-safe. The client's `ServerSession` hands it the datagrams of the server it contacts, and each server `GameInstance` the datagrams of its players; the server's `ConnectionAcceptor` does not use it, since it reads the first `ConnectionRequest` of each datagram itself, which keeps it to one answer per datagram.
 
@@ -393,7 +404,7 @@ const rtype::network::WorldState received =
 
 ## Malformed datagrams: `malformed_datagrams`
 
-Anyone can send a datagram to the server, and a client reads whatever comes from the address of its server, so both must survive bytes that are not a valid message. The unit tests check each reader on its own; `malformed_datagrams` checks the programs as they run. It is a test tool in `tests/tools/`, built with the `test` preset into `build/tests/` and never shipped, and it only talks to the loopback address, 127.0.0.1.
+Anyone can send a datagram to the server, and a client reads whatever comes from the address of its server, so both must survive bytes that are not a valid message. The unit tests check each reader on its own; `malformed_datagrams` checks the programs as they run. It is a test tool in `tests/tools/MalformedDatagrams/`, built with the `test` preset into `build/tests/` and never shipped, and it only talks to the loopback address, 127.0.0.1. Its folder has one sub-folder per role: `Builder/` writes the malformed datagrams, `Flood/` opens a session and sends them, and `Launch/` reads the options; `FloodConstants.hpp`, which all three read, stays at its root next to `main.cpp`.
 
 For `FLOOD_DURATION` (60 s) it sends `FLOOD_DATAGRAMS_PER_SECOND` (1000) datagrams per second, seven kinds in turn, written by `MalformedDatagramBuilder` from a fixed seed (`FLOOD_SEED`), so a run can be replayed. Every kind but oversized and random bytes starts from a valid message of the protocol and breaks it in one way:
 
@@ -416,6 +427,31 @@ The tests of the tool (`malformed_datagram_tests`) check that each kind is stopp
 This joins the server listening on port 4242 as a player, so the datagrams carry a session token and reach the readers of the game instead of stopping at the sorting of the network thread. After the flood, it checks that the server still answers a connection request: the exit code is 0 if it does, 1 otherwise. `--client 4243` waits on port 4243 for a client launched with `-h 127.0.0.1 -p 4243`, accepts it as player 1, floods it, then checks that the client still sends a datagram in its session: the exit code is 0 if it does, 1 otherwise. At 1000 per second the flood stays below what the player queue of the server takes (256 datagrams per tick, 60 ticks per second), so it tests the readers, not the queue. A player flooding with its own token can still push the datagrams of the others out of that shared queue (see [Flood protection](/R-Type/server/#flood-protection)).
 
 Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server built in Release: the tool sent 59,999 datagrams in the minute, none refused by the system, and received 121 datagrams from the server meanwhile; the server only sends to the players of its game, so the session of the tool stayed open. The resident memory of the server was 2,576 KiB before the flood. It rose to 3,264 KiB during the first 25 seconds, then stayed at 3,264 KiB until 10 seconds after the flood. The server still answered a connection request, and its log held 48 lines, at most one per kind of rejection every 10 seconds. The client, built in Release and accepted by `--client` on the same machine, stayed connected for the whole minute and kept sending the tool about one datagram per second (59). Its resident memory rose from 101,120 KiB to 103,552 KiB in the first 15 seconds of the flood, then by about 16 KiB every 5 seconds. Without the flood, in the waiting room of a real server, it rises at the same pace (102,688 to 103,136 KiB over 65 seconds), so the flood adds no growth of its own after its first seconds.
+
+## Load-test bots: `load_test_bots`
+
+`load_test_bots` measures how the server holds several full games. It is a test tool in `tests/tools/LoadTestBots/`, built with the `test` preset into `build/tests/` and never shipped. Each bot is a player with no window: a `Bot` drives the `PlayerConnection` of the client (`src/client/Connection/`), as the game screen does without prediction, so it sends what a client sends: the request and its cookie, the heartbeats, the `GameLoaded`, a `PlayerInput` every `PLAYER_INPUT_INTERVAL` (60 per second) and its ready state as a value. Its `BotInputSender` sends the inputs once the game started, and its `BotTally` counts what the report prints; both are tested without a server, through the waiting room and the input link the game screen uses. The folder has one sub-folder per role: `Launch/` reads the options, `Play/` holds what a bot does in a game, in `Pilot/` (`BotPilot`, `BotInputSender`) and `Tally/` (`BotTally` and the `BotReport` it fills), and `Squad/` the bots and when they ask to be ready (`Bot`, `BotSquad`, `asksReady()`). One process runs every bot, each with its own socket and network thread, so the server sees as many players. The frames keep a fixed deadline, one `BOT_FRAME_DURATION` (a tick, 1/60 s) after the other, so a late wake-up delays the input of its own frame and none after it. A frame sends one input at most, so updates that keep lasting longer than a frame lower the rate below 60 per second; the report gives the rate each bot kept.
+
+- **Ready.** The server starts a game once every player connected to it is ready, from one player on, and puts a new player in the first game waiting with a free seat. No bot asks to be ready before every bot has the answer to its connection (`asksReady()`), so each game fills before it starts. When a game ends, its players stay connected and none is ready: each bot asks again, and the game starts full again.
+- **Play.** A `BotPilot` holds one action at a time, up, down, left, right or shoot, for a time drawn from `SHORTEST_HOLD` (200 ms) to `LONGEST_HOLD` (1 s). Bot n, from 0, draws from the seed plus n, so two launches with the same seed on the same machine draw the same actions in the same order, each for the same time. Each hold is counted down by the time each frame really lasted, so an action may change a frame earlier or later from one launch to the next.
+
+```bash
+./build/tests/load_test_bots --bots 32 --seconds 60
+```
+
+`-h` and `-p` name the server, as for the client (127.0.0.1, port 4242 by default). `--bots` takes 1 to `MAXIMUM_BOT_COUNT` (36: the 32 seats of a server of `DEFAULT_HOSTED_GAME_COUNT` games, plus one game the full server refuses), 16 by default, four full games. `--seconds` is 60 and `--seed` 1 by default. The bots are named `BOT1` to `BOT<count>` (bot n, from 0, is `BOT<n + 1>`), and a game refuses a nickname it already holds, so run one launch per server. The server keeps at most `CONNECTION_REQUEST_QUEUE_CAPACITY` (16) connection requests between two ticks, discards the oldest beyond and logs how many; a bot whose request was discarded sends it again `CONNECTION_REQUEST_INTERVAL` (500 ms) later. Once the time is up, the tool prints a line per bot: where its connection stands, the games it saw end, and the world states it received and the inputs it sent, each per second of game. Then every bot leaves its session, a bot that fails to leave keeping none of the others from it. The exit code is 0 when every bot was still in session when the time was up, 1 otherwise or when a bot could not leave.
+
+The server writes how it holds in its journal every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)). A run holds when the 95th percentile of every line stays under the budget of a tick, 16.67 ms, and when every bot receives the world states the server sends, `DEFAULT_WORLD_STATES_PER_SECOND` (20) unless `--state-rate` says otherwise. A bot that sent fewer than `PLAYER_INPUTS_PER_SECOND` (60) inputs per second loaded the server less than a client would. On one machine, the bots share the processors of the server: read the time of the server process, not the load of the machine.
+
+Measured on 3 November 2026 on an Apple M4 Pro (12 cores) under macOS 27.0, the server and the bots built in Release on the same machine, each line of the journal covering 10 s:
+
+| Bots | Games | Ticks: median, 95th percentile, worst | World states per bot | Server CPU |
+|---|---|---|---|---|
+| 16, 60 s | 4 of 8 in progress; one ended and started full again | 0.14 to 0.19 ms, 0.25 to 0.41 ms, 0.99 to 1.52 ms | 20.0 per second | 2.3 s |
+| 32, 60 s, three runs | 8 of 8; one or two games ended and started full again in each run | 0.14 to 0.30 ms, 0.29 to 0.75 ms, 0.62 to 2.94 ms, plus one tick of 34.2 ms in one run and one of 24.3 ms in another | 20.0 per second | 3.9 s, 3.6 s and 3.5 s |
+| 36, 30 s | 8 of 8; 4 bots refused with `GameFull`, exit code 1 | 0.16 to 0.28 ms, 0.48 to 0.64 ms, 1.68 to 2.08 ms | 20.0 per second for the 32 in session | not taken |
+
+Every run held the budget of a tick: the 95th percentile stayed under 0.8 ms, under 5 % of the budget. The runs of 16 and 32 bots held in full; in the run of 36, the 32 bots in session received every world state, and the 4 others were the refusals of a full server the run is there to show, hence its exit code 1. Two of the three runs of 32 bots each had one tick over the budget, 34.2 ms and 24.3 ms, in a single line of 10 s, with no warning in the journal; their cause is not known. With 32 or 36 bots the server discarded 16 to 24 connection requests in the first 10 s, and the bots got in on their next request. The 32 bots used about 13 % of one core (1.4 s of user and 6.6 s of system time in 64 s), most of it in their 32 network threads.
 
 ## Where to intervene
 
@@ -451,12 +487,15 @@ Measured on 27 October 2026 on an Apple M4 Pro under macOS 27.0, with the server
 | Make another message guaranteed | its `EventMessage` in `GameEventEncoder` (`src/server/Replication/Wire/`), after checking that its receiver reads it twice the same way ([Protocol](/R-Type/protocol/#guaranteed-messages)) |
 | Change how long the client waits before a `Heartbeat` that acknowledges | `ACKNOWLEDGEMENT_DELAY` in `src/network/Protocol/ProtocolConstants.hpp`, read by `SessionAcknowledgements` |
 | Change the heartbeats or the session timeout | `HEARTBEAT_INTERVAL`, `SESSION_TIMEOUT` and `RECONNECTION_GRACE` in `src/network/Protocol/ProtocolConstants.hpp`, and their tick counts in `src/server/Sessions/Tracking/SessionConstants.hpp` |
+| Change how the round trip is smoothed, how many round trips the jitter covers, or the longest round trip accepted | `ROUND_TRIP_SMOOTHING_DIVISOR`, `JITTER_WINDOW_SIZE` and `LONGEST_ROUND_TRIP` in `src/network/Statistics/RoundTrip/RoundTripConstants.hpp` |
+| Read the round trip of a player | `ConnectedPlayer::roundTrip` on the server; on the client, `context.find<IPlayerRoundTrips>()` in a module listed after the connection module |
 | Send the clients something new about an entity | the sender in `src/server/Replication/`, `EntityReplicator` in `src/client/Replication/Entities/`, and the message in `src/network/Protocol/` |
 | Add a network error | `src/network/Exceptions/NetworkException.hpp` |
 | Test code against a real socket | `tests/UdpSocketTest.cpp`: a plain Asio client on the loopback address |
 | Test code that uses a socket without the network | `tests/doubles/RecordingDatagramSocket.hpp`, as `tests/network/Transport/DatagramRelayTest.cpp` does |
 | Test code under losses drawn from a seed | `tests/doubles/SeededLoss.hpp`, as `tests/network/Reliability/UnacknowledgedMessagesFixture.cpp` does |
 | Build the bytes of a datagram in a test | `datagramOf()` and `defaultHeaderBytes()` in `tests/network/Protocol/ProtocolFixtures.hpp` |
-| Check that a change survives malformed datagrams | `malformed_datagrams` (`tests/tools/`), see [Malformed datagrams](#malformed-datagrams-malformed_datagrams) |
+| Check that a change survives malformed datagrams | `malformed_datagrams` (`tests/tools/MalformedDatagrams/`), see [Malformed datagrams](#malformed-datagrams-malformed_datagrams) |
+| Measure how the server holds several full games | `load_test_bots` (`tests/tools/LoadTestBots/`), see [Load-test bots](#load-test-bots-load_test_bots) |
 
 Each folder has its own `CMakeLists.txt` declaring one library, linked into `rtype_network` by `src/network/CMakeLists.txt`.

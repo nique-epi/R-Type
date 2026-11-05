@@ -33,7 +33,9 @@ There is nothing to ask for: a server always hosts `DEFAULT_HOSTED_GAME_COUNT` (
 [INFO ] [Server] - server starting
 [INFO ] [Server] - listening on UDP port 4242
 [INFO ] [Storage] - results database /path/to/r-type_server_4242.db
-[INFO ] [Server] - waves file assets/waves/waves.toml: 3 difficulties, games play normal
+[INFO ] [Server] - waves file assets/waves/waves.toml: 3 difficulties
+[INFO ] [Server] - games play normal, not vanilla
+[INFO ] [Server] - not vanilla: a seed is set, so the waves can be known in advance
 [INFO ] [BydoSpawner] - Bydo spawning starts from the seed 42
 [INFO ] [BydoSpawner] - Bydo spawning starts from the seed 65578
 ```
@@ -97,7 +99,7 @@ cmake --workflow --preset build
 
 The server now creates two games, so the `BydoSpawner` line appears twice, and the ninth player is refused. Put the value back before you commit. A test that needs another number sets `GamesSettings::gameCount` itself, so no test depends on this constant.
 
-More games cost more per tick, and the journal gives that cost every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)). Every game runs on the simulation thread, one after the other, so a slow game slows the others, and an exception in one stops the server. The tick loop writes a line at the `warn` level when ticks stall; if you see `stalls since the previous report` in the journal, the server is holding more than the machine can run.
+More games cost more per tick, and the journal gives that cost every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)). Every game runs on the simulation thread, one after the other, so a slow game slows the others, and an exception a system of one game throws stops the server. The tick loop writes a line at the `warn` level when ticks stall; if you see `stalls since the previous report` in the journal, the server is holding more than the machine can run.
 
 ## Step 5: run two servers side by side
 

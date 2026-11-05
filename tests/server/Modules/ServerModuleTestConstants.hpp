@@ -28,6 +28,9 @@ constexpr std::uint64_t PLAYER_TOKEN_BASE = 0x1000;
 /** @brief A waves file that is not there. */
 constexpr const char* MISSING_WAVES_FILE = "no/such/folder/waves.toml";
 
+/** @brief The line of the journal that says the games are vanilla. */
+constexpr const char* VANILLA_GAMES_LINE = "games play normal, vanilla";
+
 /** @brief How long the client of a test waits for the answer of the server to a
  * request, and for the farewell that follows the stop. */
 constexpr std::chrono::milliseconds WAIT_FOR_ANSWER{5000};

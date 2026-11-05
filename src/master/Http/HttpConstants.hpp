@@ -5,30 +5,21 @@
 
 namespace rtype::master {
 
-/** @brief The path every route of the API of the master starts with. */
-constexpr std::string_view API_PATH_PREFIX = "/api";
-
-/** @brief The route that says the master answers, and in which version. */
-constexpr std::string_view HEALTH_PATH = "/health";
-
-/** @brief The media type of every answer of a route. */
-constexpr std::string_view JSON_CONTENT_TYPE = "application/json";
-
-/**
- * @brief The media type of an error, a problem document of RFC 9457, whose
- * `title` is the phrase of its status.
- */
-constexpr std::string_view PROBLEM_CONTENT_TYPE = "application/problem+json";
-
-/** @brief The members of a problem document of RFC 9457 the master writes. */
-constexpr std::string_view PROBLEM_TITLE_MEMBER = "title";
-constexpr std::string_view PROBLEM_STATUS_MEMBER = "status";
-
-/** @brief The member of the answer of HEALTH_PATH that holds the version. */
+/** @brief The member of the answer of network::HEALTH_ROUTE that holds the
+ * version. */
 constexpr std::string_view VERSION_MEMBER = "version";
 
-/** @brief The status of an answer that succeeded. */
+/** @brief The statuses the routes of the master answer. */
 constexpr int OK_STATUS = 200;
+constexpr int CREATED_STATUS = 201;
+constexpr int BAD_REQUEST_STATUS = 400;
+constexpr int UNAUTHORIZED_STATUS = 401;
+constexpr int CONFLICT_STATUS = 409;
+constexpr int TOO_MANY_REQUESTS_STATUS = 429;
+
+/** @brief The headers only the master writes (see MasterHttpConstants.hpp). */
+constexpr std::string_view LOCATION_HEADER = "Location";
+constexpr std::string_view WWW_AUTHENTICATE_HEADER = "WWW-Authenticate";
 
 /** @brief What cpp-httplib gives in place of a port it could not bind. */
 constexpr int NO_PORT_BOUND = -1;

@@ -4,9 +4,7 @@
 #include <span>
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
-#include "Heartbeat.hpp"
 #include "IDatagramLink.hpp"
-#include "ISessionOutbox.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
@@ -39,22 +37,16 @@ void SessionOutbox::sendToServer(network::MessageType type,
 }
 
 void SessionOutbox::advance(engine::Duration elapsed) {
-  sinceSent_ += elapsed;
   acknowledgements_->advance(elapsed);
 }
 
-void SessionOutbox::sendHeartbeatWhenSilent() {
-  if (sinceSent_ < network::HEARTBEAT_INTERVAL &&
-      !acknowledgements_->isAcknowledgementDue()) {
-    return;
-  }
-  sendMessage(*this, network::Heartbeat{});
+bool SessionOutbox::isAcknowledgementDue() const {
+  return acknowledgements_->isAcknowledgementDue();
 }
 
 const network::Endpoint& SessionOutbox::server() const { return server_; }
 
 network::PacketHeader SessionOutbox::nextHeader() {
-  sinceSent_ = engine::Duration::zero();
   network::PacketHeader header;
   header.sessionToken = sessionToken_;
   header.sequence = nextSequence_;

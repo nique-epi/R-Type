@@ -13,9 +13,9 @@
 namespace rtype::master {
 
 /**
- * @brief The module of the HTTP API of the master: it answers HEALTH_PATH,
- * and provides its MasterHttpServer so the modules listed after it add their
- * routes while they install.
+ * @brief The module of the HTTP API of the master: it answers
+ * network::HEALTH_ROUTE, and provides its MasterHttpServer so the modules
+ * listed after it add their routes while they install.
  *
  * install() declares the `port` setting. start() listens on every IPv4
  * interface (network::ANY_IPV4_ADDRESS), as the server does, and on that port,
@@ -30,7 +30,7 @@ class MasterHttpModule final : public engine::IModule {
   [[nodiscard]] std::vector<std::string> dependencies() const override;
 
   /**
-   * @brief Declares the `port` setting, adds the route of HEALTH_PATH and
+   * @brief Declares the `port` setting, adds network::HEALTH_ROUTE and
    * provides the MasterHttpServer; opens nothing.
    */
   void install(engine::InstallContext& context) override;

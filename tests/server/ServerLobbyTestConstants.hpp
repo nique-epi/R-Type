@@ -29,6 +29,12 @@ constexpr std::string_view PLAYER_NICKNAME = "Nolan";
 constexpr std::string_view SHORTEST_NICKNAME = "A";
 
 /**
+ * @brief The start of the nickname nicknameOf() gives each player, followed by
+ * the number of the player: Pilot0, Pilot1…
+ */
+constexpr std::string_view NICKNAME_PREFIX = "Pilot";
+
+/**
  * @brief Two session tokens a roster may be given.
  */
 constexpr std::uint64_t SESSION_TOKEN = 0x0123456789abcdef;
@@ -55,7 +61,7 @@ constexpr std::uint8_t NEXT_PROTOCOL_VERSION = network::PROTOCOL_VERSION + 1;
 constexpr std::size_t REFUSAL_DATAGRAM_SIZE = 26;
 
 /**
- * @brief A flags byte with a flag version 2 of the protocol does not know: it
+ * @brief A flags byte with a flag version 3 of the protocol does not know: it
  * knows only 0x01 and 0x02.
  */
 constexpr std::uint8_t UNKNOWN_FLAG = 0x04;

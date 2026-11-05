@@ -22,7 +22,9 @@ bool isPlayable(const WaveCurve& curve) {
   const bool hasNoNegativeDuration =
       curve.spawnIntervalCutPerWave >= engine::Duration::zero() &&
       curve.wavePause >= engine::Duration::zero();
-  return holdsBydos && leavesTimeBetweenBydos && hasNoNegativeDuration;
+  const bool holdsWaves = curve.levelWaves > 0;
+  return holdsBydos && leavesTimeBetweenBydos && hasNoNegativeDuration &&
+         holdsWaves;
 }
 
 }  // namespace rtype::game

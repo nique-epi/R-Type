@@ -1,0 +1,7 @@
+target_sources(client_connection_tests PRIVATE ServerSessionTest.cpp UnconfirmedInputsTest.cpp ServerSessionArrivalTest.cpp ServerSessionArrivalFixture.cpp ServerSessionFixture.cpp ServerSessionFixtures.cpp ServerSessionLogFixture.cpp)
+
+add_subdirectory(Handshake)
+add_subdirectory(Leaderboard)
+add_subdirectory(Session)
+add_subdirectory(Transport)
+add_subdirectory(WaitingRoom)

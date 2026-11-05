@@ -43,8 +43,10 @@ Paths below are relative to `.claude/rules/`.
 | Situation | Apply |
 |---|---|
 | Writing C++ | `architecture/architecture-a-module-is-one-folder-and-one-target.md`, then the rest of `architecture/` and `code-style/` |
-| Writing a test | `code-style/code-style-tests-given-when-then.md`, `code-style/fix-format-a-test-file-holds-only-tests.md`, `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md` |
+| Writing a test | `code-style/code-style-tests-given-when-then.md`, `code-style/fix-format-a-test-file-holds-only-tests.md`, `fix/process/fix-process-green-test-locking-a-defect-and-overly-deterministic-fake.md`, the `folder-layout` skill for where a new test, its constants and its fixtures go |
+| Adding a file or a folder, tidying a folder into sub-folders | the `folder-layout` skill (`.claude/skills/folder-layout/SKILL.md`); not for a change inside a file that already exists |
 | Writing a module (`IModule`, `IGameModule`) | `architecture/architecture-a-module-is-one-folder-and-one-target.md`, `architecture/fix-architecture-a-module-declares-the-modules-it-reads.md`, `architecture/fix-architecture-a-module-install-keeps-nothing-open.md`, `architecture/fix-architecture-a-module-start-that-throws-closes-what-it-opened.md` |
+| Adding or changing a route of the master | `fix/architecture/fix-architecture-a-route-of-the-master-is-restful.md` |
 | Touching the network | security section of `core/code-review.md`, `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`, `fix/reasoning/fix-reasoning-last-received-is-not-newest-over-udp.md` |
 | Creating a branch | `fix/process/fix-process-branch-before-first-commit.md`, `fix/execution/fix-execution-checkout-b-starts-from-head-not-main.md`, `fix/process/fix-process-reread-rules-after-switching-branch.md` |
 | Finishing the application of a plan | `core/simplify-after-plan.md` — `/simplify` before the final gates |
@@ -89,6 +91,7 @@ Paths below are relative to `.claude/rules/`.
 **Build architecture — `fix/architecture/` (loaded every session)**
 - `fix/architecture/fix-architecture-a-link-never-points-back-at-a-folder-that-links-it.md`
 - `fix/architecture/fix-architecture-a-new-header-takes-a-name-no-header-has.md`
+- `fix/architecture/fix-architecture-a-route-of-the-master-is-restful.md`
 - `fix/architecture/fix-architecture-one-cmakelists-per-folder.md`
 
 **Code style — `code-style/` (loaded when a C++ file is read)**
@@ -212,6 +215,7 @@ Paths below are relative to `.claude/rules/`.
 Skills live in `.claude/skills/<name>/SKILL.md`, relative to the repository root. Each one is a procedure loaded on demand, not a rule.
 
 - `document-feature`: writes or updates the documentation site (`docs/src/content/docs/`) and the README for a finished feature, in the house style of the existing pages.
+- `folder-layout`: splits a folder into one sub-folder per category and places what a change adds (a class, a test, its constants, its fixtures, a double) with its CMake wiring; only for a tidying refactor or new files, never for a change inside an existing file.
 
 ## Definition of done
 

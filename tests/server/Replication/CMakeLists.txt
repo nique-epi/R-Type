@@ -1,0 +1,6 @@
+rtype_add_test(NAME server_replication_tests LIBS rtype_client_entity_messages rtype_server_replication_announcements server_test_datagrams rtype_server_constants rtype_network_constants)
+target_include_directories(server_replication_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/server ${RTYPE_TEST_SOURCE_DIR}/server/Replication)
+target_sources(server_game_module_tests PRIVATE ReplicationModuleTest.cpp GameReplicationTest.cpp)
+
+add_subdirectory(Announcements)
+add_subdirectory(Wire)

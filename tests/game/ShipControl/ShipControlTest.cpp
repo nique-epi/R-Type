@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 #include <cmath>
+#include "Direction.hpp"
+#include "DirectionConstants.hpp"
 #include "ManeuverKind.hpp"
 #include "PlayfieldConstants.hpp"
 #include "Position.hpp"
@@ -7,10 +9,15 @@
 #include "ShipControlConstants.hpp"
 #include "ShipControlFixtures.hpp"
 #include "ShipControlTestConstants.hpp"
+#include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
 #include "TimeConstants.hpp"
 
+using rtype::game::Direction;
+using rtype::game::directionOf;
+using rtype::game::FULL_STEERING;
 using rtype::game::HeldChange;
+using rtype::game::heldDirectionsOf;
 using rtype::game::ManeuverKind;
 using rtype::game::motionAfterInput;
 using rtype::game::MovingShip;
@@ -35,6 +42,7 @@ using rtype::game::testing::LEFT_EDGE_STOP_X;
 using rtype::game::testing::motionAfterTwoPresses;
 using rtype::game::testing::NEAR_AN_EDGE;
 using rtype::game::testing::OppositeDirections;
+using rtype::game::testing::PARTIAL_STEERING;
 using rtype::game::testing::PAST_FULL_SPEED_TICKS;
 using rtype::game::testing::PLAY_AREA_CENTER;
 using rtype::game::testing::POSITION_TOLERANCE;
@@ -48,6 +56,7 @@ using rtype::game::testing::shipAfterTicks;
 using rtype::game::testing::ShipControlEdgeTest;
 using rtype::game::testing::ShipControlOppositesTest;
 using rtype::game::testing::ShipControlTapTest;
+using rtype::game::testing::SOME_INPUT_NUMBER;
 using rtype::game::testing::STOP_TICK;
 using rtype::game::testing::TappedDirection;
 using rtype::game::testing::TOP_EDGE_STOP_Y;
@@ -489,4 +498,61 @@ TEST(ShipControl, StartsADashOnceTheCooldownIsOver) {
       dashed.motion, ShipDirections{.right = true}, QUICK_SECOND_PRESS);
 
   EXPECT_EQ(motion.maneuver, ManeuverKind::Dash);
+}
+
+/**
+ * Given a player holding up and right
+ * When its directions become a Direction
+ * Then it asks for the full speed up and right
+ */
+TEST(ShipControl, DirectionOfHeldDirectionsAsksForTheFullSpeed) {
+  const Direction direction =
+      directionOf(ShipDirections{.up = true, .right = true});
+
+  EXPECT_EQ(direction.x, FULL_STEERING);
+  EXPECT_EQ(direction.y, -FULL_STEERING);
+}
+
+/**
+ * Given a player holding left and right together
+ * When its directions become a Direction
+ * Then it asks for nothing on that axis
+ */
+TEST(ShipControl, DirectionOfOppositeDirectionsAsksForNothing) {
+  const Direction direction =
+      directionOf(ShipDirections{.left = true, .right = true});
+
+  EXPECT_EQ(direction.x, 0.0F);
+}
+
+/**
+ * Given a Direction asking for a quarter of the full speed down and left
+ * When a ship reads its held directions from it
+ * Then the ship holds down and left, and neither up nor right
+ */
+TEST(ShipControl, HeldDirectionsOfADirectionAreTheSidesItAsksFor) {
+  const ShipDirections held = heldDirectionsOf(
+      Direction{.x = -PARTIAL_STEERING, .y = PARTIAL_STEERING});
+
+  EXPECT_TRUE(held.left);
+  EXPECT_TRUE(held.down);
+  EXPECT_FALSE(held.right);
+  EXPECT_FALSE(held.up);
+}
+
+/**
+ * Given a ship at rest
+ * When an input holding left and right together is recorded
+ * Then the ship keeps left and right as the directions of its last input
+ */
+TEST(ShipControl, MotionAfterInputKeepsTheDirectionsItWasGiven) {
+  const ShipDirections held{.left = true, .right = true};
+
+  const ShipMotion motion = motionAfterInput(
+      ShipMotion{}, HeldChange{.before = ShipDirections{},
+                               .now = held,
+                               .inputNumber = SOME_INPUT_NUMBER});
+
+  EXPECT_TRUE(motion.heldAtLastInput.left);
+  EXPECT_TRUE(motion.heldAtLastInput.right);
 }

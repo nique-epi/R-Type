@@ -1,0 +1,7 @@
+find_package(Threads REQUIRED)
+
+add_library(rtype_concurrency_interruptible_sleep INTERFACE)
+
+target_include_directories(rtype_concurrency_interruptible_sleep INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_concurrency_interruptible_sleep INTERFACE Threads::Threads)

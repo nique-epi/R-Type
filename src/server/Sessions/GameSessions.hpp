@@ -38,14 +38,15 @@ namespace rtype::server {
  * Disconnection closes the session of its sender at once, with a
  * PlayerDeparture (Left): the copies of that Disconnection the client sends
  * after it come from an address the roster no longer holds, so they change
- * nothing.
+ * nothing. A Heartbeat measures the round trip of its sender (see
+ * readHeartbeat()).
  *
  * The silence of a player is counted in the ticks the game runs, and the time
- * since the server last sent a player a datagram in real time, read on the
+ * since the server last sent a player a Heartbeat in real time, read on the
  * clock at the start of each tick: during a stall of the server, the datagrams
  * of the players wait in their queue and are read at the next tick, while their
  * clients go on waiting, so the first tick after a stall of HEARTBEAT_INTERVAL
- * or more sends a Heartbeat to each player it sent nothing else.
+ * or more sends a Heartbeat to every player.
  *
  * Not thread-safe: use it from the simulation thread only.
  */
@@ -68,7 +69,7 @@ class GameSessions {
   /**
    * @brief Starts the tick, before anything is sent in it: adds the time on the
    * clock since the start of the previous tick, or since the sessions were
-   * built, to ConnectedPlayer::sinceSent of each player, and makes its
+   * built, to ConnectedPlayer::sinceHeartbeat of each player, and makes its
    * guaranteed messages that much older (see ageGuaranteedMessages()).
    */
   void startTick();
@@ -91,8 +92,8 @@ class GameSessions {
 
   /**
    * @brief Ends the tick: sends each player its guaranteed messages due again
-   * (see resendGuaranteedMessages()), then a Heartbeat to every player sent
-   * nothing for SILENCE_BEFORE_HEARTBEAT, then counts the tick.
+   * (see resendGuaranteedMessages()), then a Heartbeat and RoundTrips to
+   * every player due one (see sendHeartbeats()), then counts the tick.
    */
   void endTick();
 

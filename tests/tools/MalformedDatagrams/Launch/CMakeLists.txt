@@ -1,0 +1,11 @@
+add_library(rtype_tools_malformed_datagrams_launch STATIC FloodLaunchOptions.cpp)
+
+target_include_directories(rtype_tools_malformed_datagrams_launch PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_tools_malformed_datagrams_launch
+  PUBLIC
+    rtype_engine_launch_arguments
+    rtype_tools_malformed_datagrams_constants
+)
+
+rtype_enable_warnings(rtype_tools_malformed_datagrams_launch)
