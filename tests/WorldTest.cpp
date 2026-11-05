@@ -2,7 +2,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <string_view>
 #include <vector>
+#include "BehaviourConstants.hpp"
 #include "BydoKind.hpp"
 #include "BydoPointsConstants.hpp"
 #include "CollisionBox.hpp"
@@ -15,15 +17,22 @@
 #include "Health.hpp"
 #include "Intent.hpp"
 #include "MissileOwner.hpp"
-#include "MovementPattern.hpp"
 #include "NetworkIdentity.hpp"
+#include "Pilot.hpp"
 #include "Position.hpp"
 #include "ScoreValue.hpp"
+#include "SteadyMotion.hpp"
+#include "TimeConstants.hpp"
 #include "Velocity.hpp"
 #include "World.hpp"
+#include "WorldFixtures.hpp"
 #include "WorldTestConstants.hpp"
 
+using rtype::game::STRAIGHT_BEHAVIOUR_NAME;
+using rtype::game::WEAVE_BEHAVIOUR_NAME;
 using rtype::game::testing::BYDO_SHOT_INTERVAL_TICKS;
+using rtype::game::testing::BYDO_UNITS_PER_SECOND;
+using rtype::game::testing::componentOf;
 using rtype::game::testing::ENEMY_MISSILE_UNITS_PER_SECOND;
 using rtype::game::testing::MISSILE_UNITS_PER_SECOND;
 using rtype::game::testing::OTHER_X;
@@ -33,29 +42,6 @@ using rtype::game::testing::SHIP_SHOT_INTERVAL_TICKS;
 using rtype::game::testing::SOME_X;
 using rtype::game::testing::SOME_Y;
 using rtype::game::testing::THREE_HEALTH_POINTS;
-
-namespace {
-
-/**
- * @returns The Component of the entity of @p world that carries @p networkId,
- * or nothing when no such entity has one.
- */
-template <typename Component>
-std::optional<Component> componentOf(rtype::game::World& world,
-                                     std::uint32_t networkId) {
-  std::optional<Component> found;
-  world.components().forEach<rtype::game::NetworkIdentity, Component>(
-      [&found, networkId](rtype::engine::Entity /*entity*/,
-                          const rtype::game::NetworkIdentity& identity,
-                          const Component& component) {
-        if (identity.networkId == networkId) {
-          found = component;
-        }
-      });
-  return found;
-}
-
-}  // namespace
 
 /**
  * Given an empty world
@@ -259,11 +245,11 @@ TEST(World, RemovesNoBydoAsAShip) {
 
 /**
  * Given an empty world
- * When a Drifter and a Weaver are spawned on the row at height SOME_Y
- * Then both move left at 240 units per second, the Drifter goes straight, the
- * Weaver follows a wave, and both start from that row
+ * When a Drifter and a Weaver are spawned at (SOME_X, SOME_Y)
+ * Then the Drifter is piloted by the straight behaviour and the Weaver by the
+ * weave, both from that place and from age zero
  */
-TEST(World, SpawnedBydosMoveLeftAlongThePatternOfTheirKind) {
+TEST(World, SpawnedBydosArePilotedByTheBehaviourOfTheirKind) {
   rtype::game::World world;
   static_cast<void>(
       world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
@@ -272,22 +258,36 @@ TEST(World, SpawnedBydosMoveLeftAlongThePatternOfTheirKind) {
       world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
                       rtype::game::BydoKind::Weaver));
 
-  std::size_t straight = 0;
-  std::size_t waves = 0;
-  world.components()
-      .forEach<rtype::game::MovementPattern, rtype::game::Velocity>(
-          [&straight, &waves](rtype::engine::Entity,
-                              const rtype::game::MovementPattern& pattern,
-                              const rtype::game::Velocity& velocity) {
-            EXPECT_EQ(velocity.x, -240.0F);
-            EXPECT_EQ(velocity.y, 0.0F);
-            EXPECT_EQ(pattern.originY, SOME_Y);
-            EXPECT_EQ(pattern.ageSeconds, 0.0F);
-            straight += pattern.shape == rtype::game::PatternShape::Straight;
-            waves += pattern.shape == rtype::game::PatternShape::Wave;
-          });
-  EXPECT_EQ(straight, 1U);
-  EXPECT_EQ(waves, 1U);
+  std::vector<std::string_view> behaviours;
+  world.components().forEach<rtype::game::Pilot, rtype::game::Pilot>(
+      [&behaviours](rtype::engine::Entity, const rtype::game::Pilot& pilot,
+                    const rtype::game::Pilot&) {
+        EXPECT_EQ(pilot.origin.x, SOME_X);
+        EXPECT_EQ(pilot.origin.y, SOME_Y);
+        EXPECT_EQ(pilot.age, rtype::engine::Duration::zero());
+        behaviours.push_back(pilot.behaviour.get().name());
+      });
+  EXPECT_EQ(behaviours,
+            (std::vector{STRAIGHT_BEHAVIOUR_NAME, WEAVE_BEHAVIOUR_NAME}));
+}
+
+/**
+ * Given an empty world
+ * When a Bydo is spawned
+ * Then it moves steadily at 240 units per second, its top speed
+ */
+TEST(World, SpawnedBydoMovesSteadilyAtTheSpeedOfABydo) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId =
+      world.spawnBydo(rtype::game::Position{.x = SOME_X, .y = SOME_Y},
+                      rtype::game::BydoKind::Drifter);
+
+  const std::optional<rtype::game::SteadyMotion> motion =
+      componentOf<rtype::game::SteadyMotion>(world, networkId);
+  ASSERT_TRUE(motion.has_value());
+  EXPECT_EQ(motion.value_or(rtype::game::SteadyMotion{}).topSpeed,
+            BYDO_UNITS_PER_SECOND);
 }
 
 /**
@@ -663,10 +663,8 @@ TEST(World, ShipIsSpawnedWithAnIntentThatWantsNothing) {
       world.shipComponentOf<rtype::game::Intent>(shipId);
 
   ASSERT_NE(intent, nullptr);
-  EXPECT_FALSE(intent->directions.up);
-  EXPECT_FALSE(intent->directions.down);
-  EXPECT_FALSE(intent->directions.left);
-  EXPECT_FALSE(intent->directions.right);
+  EXPECT_EQ(intent->direction.x, 0.0F);
+  EXPECT_EQ(intent->direction.y, 0.0F);
   EXPECT_FALSE(intent->shooting);
   EXPECT_EQ(world.shipComponentOf<rtype::game::Intent>(shipId + 1), nullptr);
 }

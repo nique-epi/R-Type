@@ -7,6 +7,7 @@
 #include "ConnectedPlayer.hpp"
 #include "EntitySpawnSender.hpp"
 #include "GameEndAnnouncer.hpp"
+#include "GameOutcome.hpp"
 #include "LobbyStateAnnouncer.hpp"
 #include "PlayerRoster.hpp"
 #include "ShipSpawnAnnouncer.hpp"
@@ -33,8 +34,9 @@ void GameReplication::onPlayerJoined(ConnectedPlayer& player) {
 
 void GameReplication::onWaitingTick() { lobbyStateAnnouncer_->onWaitingTick(); }
 
-void GameReplication::onGameFinished() {
-  gameEndAnnouncer_ = std::make_unique<GameEndAnnouncer>(roster_, send_);
+void GameReplication::onGameFinished(GameOutcome outcome) {
+  gameEndAnnouncer_ =
+      std::make_unique<GameEndAnnouncer>(roster_, send_, outcome);
 }
 
 void GameReplication::onFinishedTick() {

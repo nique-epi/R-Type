@@ -2,10 +2,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 #include <vector>
 #include "BydoSpawner.hpp"
 #include "EntitySpawned.hpp"
-#include "MovementPattern.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "WavePlan.hpp"
@@ -57,8 +57,9 @@ class BydoSpawnerScene {
    */
   void clearTheSky();
 
-  /** @returns The shapes of the patterns of the Bydos in the world. */
-  [[nodiscard]] std::vector<game::PatternShape> patternsOfTheBydos();
+  /** @returns The names of the behaviours that pilot the Bydos in the world.
+   */
+  [[nodiscard]] std::vector<std::string_view> behavioursOfTheBydos();
 
   [[nodiscard]] game::World& world();
 

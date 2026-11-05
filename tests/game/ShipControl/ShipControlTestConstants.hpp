@@ -120,4 +120,10 @@ constexpr std::uint32_t LATE_SECOND_PRESS = 15;
 constexpr float HELD_SECOND_DISTANCE = 417.29F;
 constexpr float FIRST_TICK_DISTANCE = 0.7613F;
 
+/** @brief A share of the full speed on one axis, between none and full. */
+constexpr float PARTIAL_STEERING = 0.25F;
+
+/** @brief The input number of an input recorded by motionAfterInput(). */
+constexpr std::uint32_t SOME_INPUT_NUMBER = 3;
+
 }  // namespace rtype::game::testing

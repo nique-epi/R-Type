@@ -54,6 +54,10 @@ void BydoSpawner::onTick() {
   }
 }
 
+bool BydoSpawner::lastWaveFinished() const {
+  return waveDirector_.lastWaveFinished();
+}
+
 void BydoSpawner::spawnOne() {
   const game::Position position = nextPosition();
   const std::optional<std::uint32_t> networkId =

@@ -45,7 +45,7 @@ TEST_F(RtypeGameFixture, GameReplicationTellsTheRoomOnAWaitingTick) {
 TEST_F(RtypeGameFixture, GameReplicationTellsTheResultOnceTheGameEnded) {
   IGameReplication& replication = replicationOfTheWorld();
   join(0);
-  replication.onGameFinished();
+  replication.onGameFinished(GameOutcome::Defeat);
 
   replication.onFinishedTick();
 
@@ -74,7 +74,7 @@ TEST_F(RtypeGameFixture, GameReplicationTellsNoResultToAGameEndedWithoutOne) {
 TEST_F(RtypeGameFixture, GameReplicationForgetsTheEndOfThePreviousGame) {
   IGameReplication& replication = replicationOfTheWorld();
   join(0);
-  replication.onGameFinished();
+  replication.onGameFinished(GameOutcome::Defeat);
   replication.onWorldBuilt(world());
 
   replication.onFinishedTick();

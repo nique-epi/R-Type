@@ -1,1 +1,1 @@
-target_sources(game_tests PRIVATE WaveProgressionTest.cpp WaveDirectorTest.cpp WaveDirectorFixture.cpp)
+target_sources(game_tests PRIVATE WaveProgressionTest.cpp WaveDirectorTest.cpp WaveDirectorFixture.cpp WaveDirectorLevelTest.cpp WaveDirectorLevelFixture.cpp)

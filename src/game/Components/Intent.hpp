@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ShipDirections.hpp"
+#include "Direction.hpp"
 
 namespace rtype::game {
 
@@ -13,8 +13,9 @@ namespace rtype::game {
  * wrote it. Nothing is wanted by default.
  */
 struct Intent {
-  /** @brief The directions the controller wants the body to go in. */
-  ShipDirections directions{};
+  /** @brief Where the controller wants the body to go: its share of the
+   * full speed of the body on each axis. */
+  Direction direction{};
   /** @brief Whether the controller wants the body to fire its Gun. */
   bool shooting{false};
   /** @brief Whether a controller wrote this Intent since the body appeared: a

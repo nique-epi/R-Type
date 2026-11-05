@@ -1,3 +1,5 @@
+add_subdirectory(Behaviours)
 add_subdirectory(ShipControl)
 add_subdirectory(Spawning)
+add_subdirectory(Systems)
 add_subdirectory(Waves)

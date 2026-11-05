@@ -27,8 +27,9 @@ namespace rtype::server {
  * once every connected player told it the game screen is shown or
  * START_BARRIER_TICKS ticks went by (see StartBarrier), from InProgress to
  * Finished
- * when finish() is called, once no player is left in it, or once no player
- * left in it has a life, and from Finished back to WaitingForPlayers after
+ * when finish() is called, once no player is left in it, once no player left
+ * in it has a life (the game is lost), or once the last wave of the level is
+ * over (the game is won), and from Finished back to WaitingForPlayers after
  * FINISHED_STATE_TICKS ticks. Coming back to WaitingForPlayers builds a new
  * world: every player gets a new ship and its STARTING_LIVES back, is no longer
  * ready, and the tick is 0. The players stay connected.
@@ -42,17 +43,17 @@ namespace rtype::server {
  * not loaded while the game is Starting; on the tick that puts the game in
  * progress and every tick of the game, the replication sends them the world,
  * from tick 0: GameStarted always leaves before the first WorldState. A game
- * that ends by itself tells the replication, which reads the score of every
- * player then and sends them that result at the first tick of the end, then
+ * that ends by itself tells the replication how it ended, which reads the
+ * score of every player then and sends them that result at the first tick of
+ * the end, then
  * every GAME_ENDED_INTERVAL until the game waits for players again; no
  * WorldState goes out meanwhile.
  *
  * While the game is in progress, each tick first makes the ship of every away
- * player want nothing (see silenceAwayShips) and writes the Intent of every
- * Bydo (see BydoControlSystem, one of the systems of the world), while the
- * Intent of the ship of a player is its last
- * input (see steerShipByInput), then runs
- * the systems of the world (PatternSystem, MovementSystem, PlayfieldExitSystem,
+ * player want nothing (see silenceAwayShips), while the Intent of the ship of
+ * a player is its last input (see steerShipByInput), then runs the systems of
+ * the world (PilotSystem, which lets the behaviour of every Bydo write its
+ * Intent, MovementSystem, PlayfieldExitSystem,
  * which removes a Bydo or a missile of a Bydo that left on the left, or a
  * missile of a player that left on the right, and announces it on the event
  * bus, then CollisionSystem), then fires the Gun of every ship and Bydo whose
@@ -125,8 +126,9 @@ class GameFlow final : public IGameFlow {
   [[nodiscard]] game::World& world();
 
   /**
-   * @brief Runs one tick: ends a game in progress that no player is left in, or
-   * that no player left in has a life, then moves the game along its states.
+   * @brief Runs one tick: ends a game in progress that no player is left in,
+   * that no player left in has a life, or whose last wave is over, then moves
+   * the game along its states.
    * While it waits, the players are told the room; while it is in progress, the
    * tick is counted, the systems run (they move the ships and the Bydos by
    * their Intent), every Gun whose Intent wants to shoot fires, the Bydos
@@ -150,8 +152,9 @@ class GameFlow final : public IGameFlow {
   void advanceState();
 
   /** @brief Logs why and ends the game, as finish() ends it, when it is in
-   * progress with no player left in it, or with no player left who has a
-   * life, then tells the replication, which tells the players the result.
+   * progress with no player left in it, with no player left who has a life, or
+   * with its last wave over, then tells the replication how it ended, which
+   * tells the players the result.
    */
   void finishIfOver();
 
