@@ -6,12 +6,13 @@
 #include "EnemyKilled.hpp"
 #include "GameState.hpp"
 #include "GameStateChanged.hpp"
+#include "TicksToReach.hpp"
+#include "TimeTestConstants.hpp"
 
-/** @brief The name the plugin is loaded by, the start of the line that names
- * its file, and the file the tests have it write. */
+/** @brief The name the plugin is loaded by, the setting that names its file,
+ * and the file the tests have it write. */
 constexpr std::string_view GAME_STATISTICS_PLUGIN_NAME = "game-statistics";
-constexpr std::string_view STATISTICS_FILE_LINE_START =
-    "set game-statistics-file ";
+constexpr std::string_view STATISTICS_FILE_SETTING = "game-statistics-file";
 constexpr std::string_view STATISTICS_FILE_NAME = "statistics.csv";
 
 /** @brief The games the tests drive, and the port the network double gives. */
@@ -48,7 +49,9 @@ constexpr std::string_view FIRST_PILOT_KILL_IN_GAME_TWO = "kill,2,1,100\n";
 constexpr std::string_view TOTAL_OF_GAME_ONE = "total,1,,400\n";
 constexpr std::string_view EMPTY_TOTAL_OF_GAME_ONE = "total,1,,0\n";
 
-/** @brief The ticks of 16 666 666 ns that stay short of the second the rows
- * wait: 60 ticks last 999 999 960 ns, and the 61st reaches the second. */
-constexpr std::size_t TICKS_SHORT_OF_A_WRITE = 60;
-constexpr std::size_t TICKS_TO_A_WRITE = 61;
+/** @brief The tick that reaches the second the rows wait, and the ticks short
+ * of it: a tick lasts a little under a sixtieth of a second, so the second is
+ * reached on the 61st. */
+constexpr std::size_t TICKS_TO_A_WRITE =
+    rtype::engine::testing::ticksToReach(rtype::engine::testing::ONE_SECOND);
+constexpr std::size_t TICKS_SHORT_OF_A_WRITE = TICKS_TO_A_WRITE - 1;

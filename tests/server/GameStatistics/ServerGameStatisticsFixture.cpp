@@ -1,4 +1,5 @@
 #include "ServerGameStatisticsFixture.hpp"
+#include <gtest/gtest.h>
 #include <cstddef>
 #include <filesystem>
 #include <memory>
@@ -6,8 +7,7 @@
 #include <utility>
 #include <vector>
 #include "Application.hpp"
-#include "CommandInterpreter.hpp"
-#include "ConfigurationStep.hpp"
+#include "ConfigurationReader.hpp"
 #include "GameBusesModule.hpp"
 #include "GameStatisticsFixtures.hpp"
 #include "IModule.hpp"
@@ -19,27 +19,9 @@
 #include "RecordingJournal.hpp"
 #include "ServerConstants.hpp"
 #include "ServerGameStatisticsModuleTestConstants.hpp"
+#include "SettingLine.hpp"
 #include "TimeConstants.hpp"
 #include "TrafficFixtures.hpp"
-
-namespace {
-
-/** @returns A configuration step that runs the lines loading the plugin, then
- * @p lines. What each line answers is not read: the step runs three times, and
- * its first two passes refuse the lines they do not know; a wrong line shows
- * in the assertions on the file. */
-rtype::engine::ConfigurationStep runningPluginLines(
-    const std::vector<std::string>& lines) {
-  std::vector<std::string> configuration = gameStatisticsPluginLines();
-  configuration.insert(configuration.end(), lines.begin(), lines.end());
-  return [configuration](rtype::engine::CommandInterpreter& interpreter) {
-    for (const std::string& line : configuration) {
-      static_cast<void>(interpreter.execute(line));
-    }
-  };
-}
-
-}  // namespace
 
 void ServerGameStatisticsFixture::start() {
   startWritingTo(folder_.path() / STATISTICS_FILE_NAME);
@@ -47,8 +29,8 @@ void ServerGameStatisticsFixture::start() {
 
 void ServerGameStatisticsFixture::startWritingTo(
     const std::filesystem::path& file) {
-  startWith({std::string{STATISTICS_FILE_LINE_START} +
-             rtype::logging::genericText(file)});
+  startWith({rtype::engine::settingLine(STATISTICS_FILE_SETTING,
+                                        rtype::logging::genericText(file))});
 }
 
 void ServerGameStatisticsFixture::startWithTheDefaultFile() { startWith({}); }
@@ -75,6 +57,8 @@ const std::filesystem::path& ServerGameStatisticsFixture::folder() const {
 
 void ServerGameStatisticsFixture::startWith(
     const std::vector<std::string>& lines) {
+  std::vector<std::string> configuration = gameStatisticsPluginLines();
+  configuration.insert(configuration.end(), lines.begin(), lines.end());
   std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
   modules.push_back(std::make_unique<PluginHostModule>(
       std::string{rtype::server::LOGGER_MODULE_NAME}, host_));
@@ -85,6 +69,10 @@ void ServerGameStatisticsFixture::startWith(
   modules.push_back(std::move(games));
   application_ = std::make_unique<rtype::engine::Application>(
       rtype::engine::LoopStages(rtype::server::SERVER_LOOP_STAGES),
-      std::move(modules), runningPluginLines(lines));
+      std::move(modules),
+      rtype::engine::configurationStep(
+          folder_.path() / rtype::server::SERVER_CONFIGURATION_FILE_NAME,
+          std::move(configuration), report_));
   application_->start();
+  EXPECT_EQ(report_.refusals, std::vector<std::string>{});
 }

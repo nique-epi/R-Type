@@ -19,6 +19,7 @@
 #include "ServerModuleTestConstants.hpp"
 #include "ServerModules.hpp"
 #include "ServerModulesFixture.hpp"
+#include "SettingLine.hpp"
 #include "TrafficFileTestConstants.hpp"
 #include "TrafficFixtures.hpp"
 #include "UdpTestClient.hpp"
@@ -98,8 +99,8 @@ TEST_F(ServerModulesFixture, OpensTheTrafficFileOfItsLaunchOption) {
  */
 TEST_F(ServerModulesFixture, LoadsTheGameStatisticsPluginOfItsConfiguration) {
   std::vector<std::string> lines = gameStatisticsPluginLines();
-  lines.push_back(std::string{STATISTICS_FILE_LINE_START} +
-                  std::string{STATISTICS_FILE_NAME});
+  lines.push_back(rtype::engine::settingLine(STATISTICS_FILE_SETTING,
+                                             STATISTICS_FILE_NAME));
   writeConfiguration(lines);
   const auto application = serverApplication(launchOptions());
 

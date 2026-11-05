@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include "Application.hpp"
+#include "ConfigurationReport.hpp"
 #include "EventBus.hpp"
 #include "GameBusesModule.hpp"
 #include "PluginHostState.hpp"
@@ -54,12 +55,14 @@ class ServerGameStatisticsFixture : public ::testing::Test {
   [[nodiscard]] const std::filesystem::path& folder() const;
 
  private:
-  /** @brief Builds and starts the application, its configuration running the
-   * plugin lines, then @p lines. */
+  /** @brief Builds and starts the application, its configuration step running
+   * the plugin lines, then @p lines, from a folder with no server.cfg; then
+   * checks that the last pass of the step refused no line. */
   void startWith(const std::vector<std::string>& lines);
 
   TemporaryFolder folder_;
   PluginHostState host_;
+  rtype::engine::ConfigurationReport report_;
   GameBusesModule* games_{nullptr};
   std::unique_ptr<rtype::engine::Application> application_;
 };
