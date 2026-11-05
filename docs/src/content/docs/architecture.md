@@ -143,6 +143,22 @@ Alternative considered: calling any folder with a CMake library a module. Nothin
 
 What a module does at each moment, and how to write one, is on the [Modules](/R-Type/modules/) page.
 
+### Plugins
+
+A plugin is a module that is not in the program at all: it is built as a shared library, put in a folder, and a line of the configuration file loads it, so a host adds a feature without recompiling the server. The engine does it in three decisions.
+
+- `Application` loads the plugins, not `main()`. The lines that name them are commands, and the module commands (`module <plugin> off`) must see them, so the application runs the `plugin` lines first and adds the modules to the end of the list, before it checks the order and the dependencies of the whole list. Each program that builds an `Application` gets plugins with no line of its own.
+- The plugin links the static libraries of the engine it uses, and holds its own copy of their code and of their static variables. The state the program and a plugin share goes through services and virtual calls: the journal is an `ILogJournal` the logger module provides, not a global. A type still crosses the boundary: services, events and exceptions are found by their type, and a test loads a real plugin and checks that each one does.
+- The plugin exports one C function, `rtypePluginEntry`. It answers its plugin API version when it is called with nothing, and creates its module when it is called with a slot. The program reads the version first and creates the module only when it is the one it loads, so a plugin built for another layout of `IModule` is refused before it runs any code. A plugin must also be built by the same compiler, from the same sources: the C++ binary format changes from one compiler to another.
+
+Alternative considered: loading the plugins in `main()`. It keeps `Application` unchanged, but the list handed to the constructor would have to be complete before the configuration file is read, and `module <plugin> off` could not see the plugins.
+
+Alternative considered: an executable that exports its symbols, with plugins linked to a shared engine. A plugin would then share the code and the statics of the program, and the journal would need no service. It splits the engine into a shared library for every program, on three systems with three ways of exporting symbols (a Windows executable exports nothing by default), for a feature the server alone uses today.
+
+Alternative considered: one exported function that returns a table of function pointers with a version field, as the game libraries of Quake 2 do (`GetGameAPI`). It needs a C-compatible description of a module and of its services, where the plugin here is the `IModule` class of the program. The single function keeps the idea of reading the version before anything else, with the module the engine already has.
+
+How to write a plugin is on the [Modules](/R-Type/modules/#write-a-plugin) page.
+
 ## Events
 
 A system tells the rest of the game what happened through `EventBus` rather than by calling it: it publishes a typed event, and every callback subscribed to that type is called. A generic collision system in `rtype_engine` can therefore report a hit to the rules in `rtype_game`, which the engine may not link.
