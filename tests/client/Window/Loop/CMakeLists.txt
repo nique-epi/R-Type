@@ -1,0 +1,1 @@
+target_sources(client_module_tests PRIVATE EventListenersTest.cpp EventListenersFixtures.cpp FrameLoopTest.cpp FrameLoopFixture.cpp)

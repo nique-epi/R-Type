@@ -13,6 +13,9 @@ namespace rtype::server::testing {
 /** @brief The name the tests give the waves file, which the errors show. */
 constexpr std::string_view TEST_FILE_NAME = "test.toml";
 
+/** @brief A line that only holds a comment, so it changes no difficulty. */
+constexpr std::string_view A_COMMENT_LINE = "# a comment\n";
+
 /**
  * @brief The difficulty calm, written by the fixtures as its header on line 1
  * and these seven lines, in this order, on lines 2 to 8. The keys and the

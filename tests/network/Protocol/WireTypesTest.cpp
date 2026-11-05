@@ -237,6 +237,33 @@ TEST(WireTypes, RejectsIllFormedUtf8) {
 TEST(WireTypes, AcceptsAnEmptyTextAsUtf8) { EXPECT_TRUE(isValidUtf8({})); }
 
 /**
+ * Given a text of 17 bytes, longer than any nickname, with no control character
+ * When it is checked
+ * Then it is printable UTF-8, since that check sets no size
+ */
+TEST(WireTypes, AcceptsAPrintableTextOfAnySize) {
+  EXPECT_TRUE(isPrintableUtf8(SEVENTEEN_BYTE_NICKNAME));
+}
+
+/**
+ * Given a text holding a line feed, U+000A
+ * When it is checked
+ * Then it is not printable
+ */
+TEST(WireTypes, RejectsATextHoldingALineFeedAsPrintable) {
+  EXPECT_FALSE(isPrintableUtf8(NICKNAME_WITH_LINE_FEED));
+}
+
+/**
+ * Given a text that is not UTF-8 and holds no control character
+ * When it is checked
+ * Then it is not printable
+ */
+TEST(WireTypes, RejectsIllFormedUtf8AsPrintable) {
+  EXPECT_FALSE(isPrintableUtf8(ILL_FORMED_UTF8.front()));
+}
+
+/**
  * Given nicknames of 1 and 16 bytes
  * When each is checked
  * Then each is accepted

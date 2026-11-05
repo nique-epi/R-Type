@@ -155,11 +155,12 @@ constexpr auto PLAYER_MOTION_BITS =
 constexpr std::uint32_t FIRST_INPUT_NUMBER = 1;
 
 /**
- * @brief The longest time either side of a session lets pass without sending
- * its peer anything: once it passed, a Heartbeat goes out, so the peer knows
- * the sender is still there. Provisional, see the protocol page.
+ * @brief The time between two Heartbeats either side of a session sends its
+ * peer, whatever else it sends: every one tells the peer the sender is still
+ * there, and the peer echoes the newest one in its own, which measures the
+ * round trip (see RoundTripMeter). Provisional, see the protocol page.
  */
-constexpr std::chrono::seconds HEARTBEAT_INTERVAL{1};
+constexpr std::chrono::milliseconds HEARTBEAT_INTERVAL{500};
 
 /**
  * @brief The longest a side of a session waits for a datagram of its peer
@@ -327,6 +328,8 @@ constexpr std::string_view ENTITY_TYPE_FIELD = "entityType";
 constexpr std::string_view REASON_FIELD = "reason";
 constexpr std::string_view KIND_FIELD = "kind";
 constexpr std::string_view ACTIONS_FIELD = "actions";
+constexpr std::string_view ECHO_SENT_AT_FIELD = "echo.sentAt";
+constexpr std::string_view ECHO_HELD_FOR_FIELD = "echo.heldFor";
 constexpr std::string_view MOTION_FIELD = "motion";
 constexpr std::string_view PLAYER_COUNT_FIELD = "playerCount";
 constexpr std::string_view RANK_FIELD = "rank";

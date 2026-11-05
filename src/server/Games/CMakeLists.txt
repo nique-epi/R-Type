@@ -5,6 +5,7 @@ add_library(rtype_server_games_module STATIC
   PlayerDatagrams.cpp
   RtypeGameModules.cpp
   ServerGamesModule.cpp
+  VanillaBreaches.cpp
 )
 
 target_include_directories(rtype_server_games_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

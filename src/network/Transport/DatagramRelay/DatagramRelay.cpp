@@ -1,4 +1,5 @@
 #include "DatagramRelay.hpp"
+#include <chrono>
 #include <cstddef>
 #include <span>
 #include "BoundedQueue.hpp"
@@ -20,7 +21,10 @@ void DatagramRelay::startReceiving() {
       [incoming = incoming_](const Endpoint& sender,
                              std::span<const std::byte> payload) {
         incoming->push(IncomingDatagram{
-            .sender = sender, .payload = {payload.begin(), payload.end()}});
+            .sender = sender,
+            .payload = {payload.begin(), payload.end()},
+            .receivedAt = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::steady_clock::now().time_since_epoch())});
       });
 }
 

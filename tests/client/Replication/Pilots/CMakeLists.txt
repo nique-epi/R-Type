@@ -1,0 +1,1 @@
+target_sources(client_replication_tests PRIVATE ScoreBoardTest.cpp FinalRankingTest.cpp FinalRankingFixtures.cpp)

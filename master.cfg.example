@@ -11,5 +11,6 @@ set port 8080
 set database ""
 
 # Turn a module off (it is never installed). Refused when a module
-# that stays on depends on it: storage and http need logger.
+# that stays on depends on it: storage and http need logger, servers needs
+# storage and http.
 # module http off

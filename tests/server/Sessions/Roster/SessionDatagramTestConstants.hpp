@@ -18,9 +18,10 @@ constexpr std::uint16_t SOME_NEXT_SEQUENCE = 7;
 constexpr std::uint16_t PLAYER_SEQUENCE = 40;
 
 /**
- * @brief A time the server sent a player nothing for, short of a Heartbeat.
+ * @brief A time the server sent a player no Heartbeat for, short of the next
+ * one.
  */
-constexpr std::chrono::milliseconds SOME_TIME_SINCE_SENT{700};
+constexpr std::chrono::milliseconds SOME_TIME_SINCE_A_HEARTBEAT{300};
 
 /**
  * @brief The last sequence before the counter of a session wraps to 0.

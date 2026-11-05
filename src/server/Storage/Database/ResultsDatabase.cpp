@@ -27,6 +27,7 @@ void bindGame(SQLite::Statement& insert, const GameResult& result,
       static_cast<std::int64_t>(result.endedAt.time_since_epoch().count()));
   insert.bind(DIFFICULTY_PARAMETER, result.difficulty);
   insert.bind(PLAYER_COUNT_PARAMETER, result.playerCount);
+  insert.bind(VANILLA_PARAMETER, static_cast<std::int32_t>(result.vanilla));
 }
 
 void bindPlayer(SQLite::Statement& insert, const PlayerResult& player) {

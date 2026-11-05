@@ -66,8 +66,9 @@ std::optional<PlayerDatagram> DatagramReader::read(
   }
   return PlayerDatagram{
       .player = player,
-      .origin =
-          network::MessageOrigin{.sender = datagram.sender, .header = header},
+      .origin = network::MessageOrigin{.sender = datagram.sender,
+                                       .header = header,
+                                       .receivedAt = datagram.receivedAt},
       .messages = std::move(messages)};
 }
 

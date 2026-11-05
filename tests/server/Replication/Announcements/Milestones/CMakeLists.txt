@@ -1,0 +1,3 @@
+rtype_add_test(NAME server_spawning_tests SOURCES ShipSpawnAnnouncerTest.cpp ShipSpawnAnnouncerFixture.cpp LIBS rtype_server_replication_announcements_milestones server_test_datagrams)
+target_include_directories(server_spawning_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/server $<TARGET_PROPERTY:rtype_game_spawning,INTERFACE_INCLUDE_DIRECTORIES>)
+target_sources(server_replication_tests PRIVATE LobbyStateAnnouncerTest.cpp LobbyStateAnnouncerFixture.cpp LobbyStateAnnouncerFixtures.cpp GameEndAnnouncerTest.cpp GameEndAnnouncerFixture.cpp)

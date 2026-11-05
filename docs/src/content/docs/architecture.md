@@ -305,6 +305,14 @@ The cost is that the server binary holds the code of the master, cpp-httplib and
 
 Alternative considered: a third binary, `r-type_master`. It keeps the server smaller and the master deployable alone, but it is a binary the subject does not list, one more to build, package and ship, and it would have needed the stop and the launch of the server moved into the engine first.
 
+### Keys and cryptography: libhydrogen
+
+A game server proves who it is with the key the master gave when its host created it (`POST /api/servers`), as a FiveM server is known by its license key, sent as `Authorization: Bearer <key>` (RFC 6750) and never named by an id in the path, so a key reaches its own server alone. Each server has a key of its own, so no host can act as another one. The key is 256 bits from the random source of the system, shown once, and the master keeps only its hash, so a copy of its database registers nobody. Both come from libhydrogen, which the accounts and the signed tickets will use too.
+
+The subject asks that dependencies go through the package manager and that the project build without altering the system. libhydrogen, by the author of libsodium, builds with CMake through vcpkg and needs nothing installed. Its password hash is not Argon2id: it costs computation and no memory, and a master key, outside the database, encrypts every stored hash, so a stolen database cannot be used to test passwords.
+
+Alternative considered: libsodium. It is the reference, with Argon2id for passwords, but its vcpkg port builds with autotools on macOS and Linux, which every developer and the CI would have to install on the machine, against the subject.
+
 ## Consequences
 
 - `EntityRegistry`, `ComponentRegistry`, `ISystem`, `SystemScheduler`, `EventBus` and `BoundedQueue` exist today. The game screen of the client calls a scheduler once per frame to play its animations; the tick of the server runs the stages of its `Application`: the games move on and run their systems and their timers, the connection requests are answered, and the events of the bus are delivered.

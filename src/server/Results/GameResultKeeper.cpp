@@ -6,6 +6,7 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "GameResult.hpp"
+#include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "IResultsArchive.hpp"
 #include "LivesConstants.hpp"
@@ -32,8 +33,11 @@ PlayerResult resultOf(const ConnectedPlayer& player) {
 
 GameResultKeeper::GameResultKeeper(PlayerRoster& roster,
                                    IResultsArchive& archive,
-                                   std::string difficulty)
-    : roster_(roster), archive_(archive), difficulty_(std::move(difficulty)) {}
+                                   const GameSettings& settings)
+    : roster_(roster),
+      archive_(archive),
+      difficulty_(settings.difficulty),
+      vanilla_(settings.vanilla) {}
 
 void GameResultKeeper::onPlayerClosing(const ConnectedPlayer& departed) {
   if (state_ == GameState::InProgress) {
@@ -68,7 +72,8 @@ void GameResultKeeper::recordTheGame() {
                  .playerCount = playersAtStart_,
                  .endedAt = std::chrono::floor<std::chrono::seconds>(
                      std::chrono::system_clock::now()),
-                 .players = std::move(players)});
+                 .players = std::move(players),
+                 .vanilla = vanilla_});
 }
 
 }  // namespace rtype::server

@@ -1,0 +1,1 @@
+target_sources(server_sessions_tests PRIVATE DatagramReaderTest.cpp DatagramReaderFixtures.cpp ReadyKeeperTest.cpp InputKeeperTest.cpp DeparturesTest.cpp DeparturesFixture.cpp HeartbeatsTest.cpp MessageDeliveryTest.cpp MessageDeliveryFixture.cpp MessageDeliveryFixtures.cpp)

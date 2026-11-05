@@ -1,0 +1,1 @@
+target_sources(engine_tests PRIVATE ConfigurationRegistryTest.cpp ConfigurationRegistryFixture.cpp SettingLineTest.cpp)

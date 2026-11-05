@@ -57,6 +57,11 @@
 
 namespace rtype::server::testing {
 
+std::size_t heartbeatsIn(
+    const std::vector<network::OutgoingDatagram>& datagrams) {
+  return ofType(network::MessageType::Heartbeat, datagrams).size();
+}
+
 std::vector<network::OutgoingDatagram> ofType(
     network::MessageType type,
     const std::vector<network::OutgoingDatagram>& datagrams) {
@@ -254,6 +259,8 @@ std::uint32_t GameInstanceTest::shipOf(std::size_t index) {
       game().roster().find(playerEndpoint(index));
   return player == nullptr ? identifiers::NO_ENTITY_ID : player->shipEntityId;
 }
+
+engine::Duration GameInstanceTest::clockNow() const { return clock_.now(); }
 
 std::vector<network::OutgoingDatagram> GameInstanceTest::sentTo(
     std::size_t index) const {

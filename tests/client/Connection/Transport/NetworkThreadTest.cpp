@@ -49,9 +49,9 @@ TEST(NetworkThread, HandsEachReceivedDatagramToTheDrainingThread) {
   const std::vector<IncomingDatagram> received =
       drainUntilReceived(networkThread);
 
-  EXPECT_EQ(received, (std::vector<IncomingDatagram>{IncomingDatagram{
-                          .sender = loopbackOnPort(peer.localEndpoint().port),
-                          .payload = exchangedBytes()}}));
+  ASSERT_EQ(received.size(), 1U);
+  EXPECT_EQ(received.front().sender, loopbackOnPort(peer.localEndpoint().port));
+  EXPECT_EQ(received.front().payload, exchangedBytes());
 }
 
 /**

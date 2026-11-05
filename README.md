@@ -78,7 +78,7 @@ The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on po
 ./r-type_server --seed 42
 ```
 
-The Bydos appear at heights drawn from the seed; without `--seed` the server draws one, and the journal records it (`Bydo spawning starts from the seed ...`) so the same game can be replayed.
+The Bydos appear at heights drawn from the seed; without `--seed` the server draws one, and the journal records it (`Bydo spawning starts from the seed ...`) so the same game can be replayed. A seed makes the games not vanilla: their scores stay on the leaderboard of the server.
 
 ```bash
 ./r-type_server --set state-rate=30
@@ -96,7 +96,7 @@ module lobby off
 ./r-type_server --state-rate 30
 ```
 
-Every player's input is held for the same few ticks before it moves the ship (3 ticks, 50 ms, by default); `--input-delay` changes it, from 0 to 30 ticks.
+Every player's input is held for the same few ticks before it moves the ship (3 ticks, 50 ms, by default); `--input-delay` changes it, from 0 to 30 ticks; any other delay than 3 makes the games not vanilla.
 
 ```bash
 ./r-type_server --input-delay 5
@@ -132,7 +132,13 @@ Both programs write what crosses their socket to the journal every 10 s; with `-
 ./r-type_server --mode master -p 8080
 ```
 
-The same binary runs the master in this mode: the program that will list the game servers for the players and take the orders of an admin. `--mode` comes before every other option. Today it answers an HTTP API under `/api` on TCP port 8080 of every IPv4 interface (`curl http://127.0.0.1:8080/api/health` answers `{"version":"0.1.0"}`), keeps its data in `r-type_master.db` next to the executable, and reads `master.cfg`, modelled by `master.cfg.example` (see [the master page](https://nique-epi.github.io/R-Type/master/)).
+The same binary runs the master in this mode: the program that will list the game servers for the players and take the orders of an admin. `--mode` comes before every other option. Today it answers an HTTP API under `/api` on TCP port 8080 of every IPv4 interface (`curl http://127.0.0.1:8080/api/health` answers `{"version":"0.1.0"}`), keeps its data in `r-type_master.db` next to the executable, and reads `master.cfg`, modelled by `master.cfg.example` (see [the master page](https://nique-epi.github.io/R-Type/master/)). A host creates its game server with `POST /api/servers`, which answers the key of that server once; the master keeps only a hash of it. The host writes the key in the `server.cfg` of the game server, as `master_key`, and the server then registers with `PUT /api/servers/me` and sends its heartbeat with `PUT /api/servers/me/heartbeat`, through `MasterClient`:
+
+```bash
+curl -X POST http://127.0.0.1:8080/api/servers -d '{"name":"Paris 1"}'
+```
+
+No game server reads its key or sends its registration yet.
 
 - **Why HTTP:** the subject requires UDP for every message of a game and accepts TCP for other needs when it is justified. The master carries no message of a game, and the web administration the subject accepts needs HTTP in a browser, so one protocol serves the programs and the web site, readable with `curl`. A player still joins a server over UDP when the master is stopped.
 - **Why a mode and not a third binary:** the subject lists two binaries, `r-type_server` and `r-type_client`. The master ships inside the first and reuses its stop on Ctrl-C, its configuration file and its journal; it still runs as a process of its own, so a master that stops stops no game.
@@ -158,6 +164,12 @@ This builds everything in `build-sanitize/` with AddressSanitizer and UndefinedB
 ```
 
 Once the test preset is built, this sends the server running on port 4242 of the same machine malformed datagrams for one minute, then checks that it still answers a connection request. `--client <port>` does the same to a client; see [Network](https://nique-epi.github.io/R-Type/network/#malformed-datagrams-malformed_datagrams).
+
+```bash
+./build/tests/load_test_bots --bots 32 --seconds 60
+```
+
+This has 32 players with no window join the server on port 4242 of the same machine, fill its eight games and play them for one minute, then prints the world states each one received per second; the server's journal gives the duration of its ticks every 10 s. See [Network](https://nique-epi.github.io/R-Type/network/#load-test-bots-load_test_bots).
 
 ## Logging
 

@@ -49,6 +49,10 @@ struct SentReadyState {
     network::MessageType type,
     const std::vector<network::OutgoingDatagram>& datagrams);
 
+/** @returns How many of @p datagrams hold a Heartbeat. */
+[[nodiscard]] std::size_t heartbeatsIn(
+    const std::vector<network::OutgoingDatagram>& datagrams);
+
 /** @returns A header carrying the session token of @p player. */
 [[nodiscard]] network::PacketHeader sessionHeader(std::size_t player);
 
@@ -158,6 +162,9 @@ class GameInstanceTest : public ::testing::Test {
       std::size_t index) const;
 
   [[nodiscard]] GameInstance& game();
+
+  /** @returns The time on the clock the game reads real time on. */
+  [[nodiscard]] engine::Duration clockNow() const;
 
   /** @returns The world of the game, which the rules of R-Type own. A new
    * one replaces it when the game waits for players again. */

@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
+#include <optional>
 #include "DatagramReader.hpp"
 #include "DatagramReaderFixtures.hpp"
 #include "IncomingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "PlayerDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerDatagrams.hpp"
@@ -18,6 +20,7 @@ using testing::LAST_SEQUENCE;
 using testing::NEWER_SEQUENCE;
 using testing::OLDER_SEQUENCE;
 using testing::playerEndpoint;
+using testing::SOME_ARRIVAL_TIME;
 using testing::SOME_SEQUENCE;
 
 /**
@@ -31,6 +34,25 @@ TEST(DatagramReader, ReadsTheFirstDatagramOfAPlayer) {
   DatagramReader reader(roster);
 
   EXPECT_TRUE(reader.read(heartbeatOfSequence(SOME_SEQUENCE)).has_value());
+}
+
+/**
+ * Given a reader and a player
+ * When a datagram of the player that arrived at SOME_ARRIVAL_TIME is read
+ * Then its messages come with an origin that carries that time
+ */
+TEST(DatagramReader, CarriesTheArrivalOfTheDatagramToItsMessages) {
+  PlayerRoster roster;
+  static_cast<void>(addPlayer(roster, 0));
+  DatagramReader reader(roster);
+  network::IncomingDatagram datagram = heartbeatOfSequence(SOME_SEQUENCE);
+  datagram.receivedAt = SOME_ARRIVAL_TIME;
+
+  const std::optional<PlayerDatagram> readable = reader.read(datagram);
+
+  ASSERT_TRUE(readable.has_value());
+  EXPECT_EQ(readable.value_or(PlayerDatagram{}).origin.receivedAt,
+            SOME_ARRIVAL_TIME);
 }
 
 /**

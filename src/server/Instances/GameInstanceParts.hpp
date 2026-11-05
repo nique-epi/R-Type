@@ -18,9 +18,9 @@ struct GameInstanceParts {
   /** @brief Where the game publishes what happens in it; it must outlive the
    * game, and its owner dispatches it after each onTick(). */
   std::reference_wrapper<engine::EventBus> events;
-  /** @brief Read at the start of each tick for the Heartbeats and the
-   * guaranteed messages (see ConnectedPlayer::sinceSent); it must outlive the
-   * game. */
+  /** @brief Read at the start and the end of each tick for the Heartbeats,
+   * and at the start for the guaranteed messages (see
+   * ConnectedPlayer::sinceHeartbeat); it must outlive the game. */
   std::reference_wrapper<const engine::IClock> clock;
 };
 

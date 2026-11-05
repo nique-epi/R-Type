@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "GamesCensus.hpp"
+#include "PlayerRoundTripMeasure.hpp"
 #include "SystemTime.hpp"
 #include "TickDurationSummary.hpp"
 #include "TrafficReport.hpp"
@@ -18,6 +19,9 @@ struct MetricsReport {
   /** @brief What crossed the socket since the server started, by player and by
    * type of message. */
   network::TrafficReport traffic;
+  /** @brief The round trip of each player measured, at the end of those
+   * ticks. */
+  std::vector<PlayerRoundTripMeasure> roundTrips;
 };
 
 }  // namespace rtype::server

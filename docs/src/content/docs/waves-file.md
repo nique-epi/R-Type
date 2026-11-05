@@ -79,7 +79,13 @@ The Bydos take the names of the list in turn, and the turn carries on from one w
 ./r-type_server --seed 42
 ```
 
-The server logs the file it read, by its absolute path (`waves file /…/assets/waves/waves.toml: 3 difficulties, games play normal`), then each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`). The seed fixes the heights of the Bydos, so the same file and the same seed replay the same game.
+The server logs the file it read, by its absolute path (`waves file /…/assets/waves/waves.toml: 3 difficulties`), the difficulty the games play and whether they are vanilla (`games play normal, not vanilla`, since a seed is set), then each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`). The seed fixes the heights of the Bydos, so the same file and the same seed replay the same game.
+
+## The shipped file and vanilla games
+
+A changed waves file makes the games of the server not vanilla: the server recognizes the shipped file by its fingerprint, SipHash-2-4 of its bytes, so a comment or a line ending counts as a change (see [Vanilla games](/R-Type/server/#vanilla-games-vanillabreaches)). Their scores stay on the leaderboard of that server. `.gitattributes` keeps the file in LF on every checkout, Windows included.
+
+When the shipped file itself changes, `OFFICIAL_WAVES_FINGERPRINT` in `src/server/ServerConstants.hpp` changes with it: `WaveCatalog.TheShippedFileHasTheOfficialFingerprint` fails until it does, and its failure prints, in decimal, the fingerprint the file now has.
 
 ## When the server refuses the file
 

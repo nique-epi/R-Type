@@ -1,0 +1,1 @@
+target_sources(network_statistics_tests PRIVATE TrafficLineTest.cpp MessageTypeTextTest.cpp TrafficCsvRowsTest.cpp TrafficCsvFileTest.cpp TrafficRecorderTest.cpp)
