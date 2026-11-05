@@ -29,6 +29,8 @@ using testing::RoundTripWatchFixture;
 using testing::SENT_AT_A_FRAME_AFTER_THE_OPENING;
 using testing::SERVER_HEARTBEAT_ARRIVAL;
 using testing::SERVER_HEARTBEAT_SENT_AT;
+using testing::SERVER_HEARTBEAT_TICK;
+using testing::SERVER_HEARTBEAT_TICK_PLACED_AT;
 using testing::UNREPORTED_PLAYER_NUMBER;
 
 /**
@@ -150,6 +152,115 @@ TEST_F(RoundTripWatchFixture, MeasuresItsOwnRoundTripFromTheEcho) {
   ASSERT_TRUE(figures.has_value());
   EXPECT_EQ(figures.value_or(network::RoundTripFigures{}).roundTrip,
             OWN_ROUND_TRIP);
+}
+
+/**
+ * Given a session that sent its first Heartbeat at 4 s
+ * When the echo of it, held 2 ms, arrives at 4.05 s in a Heartbeat of the
+ * server at tick 600
+ * Then the clock places tick 600 half of the round trip of 48 ms before the
+ * datagram arrived, at 4.026 s
+ */
+TEST_F(RoundTripWatchFixture,
+       PlacesTheTickOfTheServerHalfARoundTripBeforeItsArrival) {
+  advanceClock(CLOCK_WHEN_THE_SESSION_OPENS);
+  openSession();
+  hold(ONE_HEARTBEAT_INTERVAL);
+
+  deliver(
+      network::Heartbeat{
+          .sentAt = SERVER_HEARTBEAT_SENT_AT,
+          .echo = network::HeartbeatEcho{.sentAt = FIRST_HEARTBEAT_SENT_AT,
+                                         .heldFor = HELD_BY_THE_SERVER},
+          .tick = SERVER_HEARTBEAT_TICK},
+      ECHO_ARRIVAL);
+
+  EXPECT_EQ(watch().serverClock().localInstantOf(SERVER_HEARTBEAT_TICK),
+            std::optional<engine::Duration>{
+                engine::Duration{SERVER_HEARTBEAT_TICK_PLACED_AT}});
+}
+
+/**
+ * Given a session in the waiting room
+ * When a Heartbeat of the server that echoes ours but carries no tick arrives
+ * Then the clock stays empty: no game runs, so no tick places any instant
+ */
+TEST_F(RoundTripWatchFixture, LeavesTheClockEmptyForAHeartbeatWithoutATick) {
+  advanceClock(CLOCK_WHEN_THE_SESSION_OPENS);
+  openSession();
+  hold(ONE_HEARTBEAT_INTERVAL);
+
+  deliver(
+      network::Heartbeat{
+          .sentAt = SERVER_HEARTBEAT_SENT_AT,
+          .echo = network::HeartbeatEcho{.sentAt = FIRST_HEARTBEAT_SENT_AT,
+                                         .heldFor = HELD_BY_THE_SERVER},
+          .tick = std::nullopt},
+      ECHO_ARRIVAL);
+
+  EXPECT_FALSE(
+      watch().serverClock().localInstantOf(SERVER_HEARTBEAT_TICK).has_value());
+}
+
+/**
+ * Given a session that sent a Heartbeat
+ * When a Heartbeat of the server at tick 600 arrives with no echo, so no
+ * round trip to halve
+ * Then the clock stays empty: without it the trip of the datagram is unknown
+ */
+TEST_F(RoundTripWatchFixture, LeavesTheClockEmptyForAHeartbeatWithoutAnEcho) {
+  advanceClock(CLOCK_WHEN_THE_SESSION_OPENS);
+  openSession();
+  hold(ONE_HEARTBEAT_INTERVAL);
+
+  deliver(network::Heartbeat{.sentAt = SERVER_HEARTBEAT_SENT_AT,
+                             .echo = std::nullopt,
+                             .tick = SERVER_HEARTBEAT_TICK},
+          ECHO_ARRIVAL);
+
+  EXPECT_FALSE(
+      watch().serverClock().localInstantOf(SERVER_HEARTBEAT_TICK).has_value());
+}
+
+/**
+ * Given a session whose clock placed a tick of the server
+ * When the session closes
+ * Then the clock is empty again
+ */
+TEST_F(RoundTripWatchFixture, ForgetsTheClockWhenTheSessionCloses) {
+  advanceClock(CLOCK_WHEN_THE_SESSION_OPENS);
+  openSession();
+  hold(ONE_HEARTBEAT_INTERVAL);
+  deliver(
+      network::Heartbeat{
+          .sentAt = SERVER_HEARTBEAT_SENT_AT,
+          .echo = network::HeartbeatEcho{.sentAt = FIRST_HEARTBEAT_SENT_AT,
+                                         .heldFor = HELD_BY_THE_SERVER},
+          .tick = SERVER_HEARTBEAT_TICK},
+      ECHO_ARRIVAL);
+
+  watch().sessionClosed();
+
+  EXPECT_FALSE(
+      watch().serverClock().localInstantOf(SERVER_HEARTBEAT_TICK).has_value());
+}
+
+/**
+ * Given no session open
+ * When a Heartbeat of the server at tick 600 that closes a round trip arrives
+ * Then the clock stays empty: what arrives without a session is ignored
+ */
+TEST_F(RoundTripWatchFixture, IgnoresTheTickOfAHeartbeatWithoutASession) {
+  deliver(
+      network::Heartbeat{
+          .sentAt = SERVER_HEARTBEAT_SENT_AT,
+          .echo = network::HeartbeatEcho{.sentAt = FIRST_HEARTBEAT_SENT_AT,
+                                         .heldFor = HELD_BY_THE_SERVER},
+          .tick = SERVER_HEARTBEAT_TICK},
+      ECHO_ARRIVAL);
+
+  EXPECT_FALSE(
+      watch().serverClock().localInstantOf(SERVER_HEARTBEAT_TICK).has_value());
 }
 
 /**
