@@ -36,6 +36,8 @@ How a sheet reaches the world: the server reads every sheet of `assets/entities/
 
 An enemy that an existing behaviour already moves needs no C++ at all: a Weaver twice as fast is a sheet with `pilot = "weave"` and `period_ms = 1000`. Skip step 1 then. The Zigzagger follows a path no behaviour draws yet, so it needs one.
 
+An enemy that attacks, announcing a blow before it lands it, steps through the phases of its attack with `ActionCycle` (`src/game/Behaviours/Movements/ActionCycle.hpp`), timed by settings of its sheet, and its sheet animates each phase and times the boxes that hurt (see [Writing an entity sheet](/R-Type/entity-sheets/#attack-animations)). `ReaperBehaviour.cpp` is the shortest example: a file of 74 lines for an enemy that hunts the nearest ship, raises its scythe, swings and stays open.
+
 ## Step 1: a new behaviour
 
 A behaviour reads the Bydo it pilots (where it is, where it appeared, how old it is, the length of the tick, and the values its sheet gives the settings it declares) and returns what the Bydo wants at the end of the tick: a direction, a share of its top speed from -1 to 1 on each axis, and whether it fires (see [Architecture](/R-Type/architecture/#pilot-and-body)). Give yours a name, in `src/game/Behaviours/Movements/BehaviourConstants.hpp`:

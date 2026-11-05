@@ -199,7 +199,7 @@ A nickname is unique on the server: a request whose nickname a player already ho
 
 A type is named by the sheet it is read from (`assets/entities/drifter.toml` is `drifter`, see [Writing an entity sheet](/R-Type/entity-sheets/)), never by a number fixed in the code. The server numbers the sheets it loaded in the order of their names, from 1, and keeps those numbers while it runs; `ConnectionAccepted` lists them, and `EntitySpawned`, `WorldState` and `DeltaWorldState` carry them. The number of a type is its place in that list: the first entry is type 1, and 0 names no type. The side says what an entity of that type is, so a receiver knows who it hits and how to draw it without the gameplay of the sheet.
 
-The payload of the `ConnectionAccepted` of player 1 on a server of the five sheets the game ships, byte by byte:
+The payload of the `ConnectionAccepted` of player 1 on a server of five sheets, `drifter`, `enemy_missile`, `player_missile`, `ship` and `weaver`, the sheets the game shipped before its mobs, byte by byte:
 
 | Bytes | Field | Value |
 |---|---|---|
