@@ -109,6 +109,16 @@ bool isValidNickname(std::string_view nickname) {
          nickname.size() <= MAXIMUM_NICKNAME_SIZE && isPrintableUtf8(nickname);
 }
 
+bool isValidServerName(std::string_view name) {
+  return !name.empty() && name.size() <= MAXIMUM_SERVER_NAME_SIZE &&
+         isPrintableUtf8(name);
+}
+
+bool isValidGameVersion(std::string_view version) {
+  return !version.empty() && version.size() <= MAXIMUM_GAME_VERSION_SIZE &&
+         isPrintableUtf8(version);
+}
+
 void requireValidNickname(std::string_view nickname) {
   if (!isValidNickname(nickname)) {
     throw InvalidNicknameException(nickname.size());

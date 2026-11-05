@@ -274,6 +274,18 @@ constexpr std::size_t MINIMUM_NICKNAME_SIZE = 1;
 constexpr std::size_t MAXIMUM_NICKNAME_SIZE = 16;
 
 /**
+ * @brief The longest name of a server, in bytes of UTF-8, the master and the
+ * ServerInformation of the server alike.
+ */
+constexpr std::size_t MAXIMUM_SERVER_NAME_SIZE = 32;
+
+/**
+ * @brief The longest version of the game, in bytes: "1.12.0-rc.2" fits. The
+ * master and the ServerInformation of the server alike.
+ */
+constexpr std::size_t MAXIMUM_GAME_VERSION_SIZE = 32;
+
+/**
  * @brief The control characters a nickname may not hold are the bytes below
  * SPACE_BYTE, U+0000 to U+001F, and DELETE_BYTE, U+007F. In UTF-8 each of them
  * is one byte of its own value, and every byte of a longer sequence is 0x80 or

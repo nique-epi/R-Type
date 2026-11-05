@@ -23,7 +23,7 @@ target_link_libraries(rtype_server_master_module
     rtype_engine_time
     rtype_network_constants
     rtype_network_exceptions
-    rtype_network_master_validators
+    rtype_network_wire_types
     rtype_server_constants
 )
 

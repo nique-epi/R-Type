@@ -126,7 +126,7 @@ The bodies are JSON, read and written by `rtype_network_master` (`src/network/Ma
 
 | Member | Bounds |
 |---|---|
-| `name`, `gameVersion` | 1 to 32 bytes of printable UTF-8 (`MAXIMUM_SERVER_NAME_SIZE`, `MAXIMUM_VERSION_SIZE`) |
+| `name`, `gameVersion` | 1 to 32 bytes of printable UTF-8 (`MAXIMUM_SERVER_NAME_SIZE`, `MAXIMUM_GAME_VERSION_SIZE`) |
 | `address` | optional, an IPv4 address |
 | `udpPort` | 1 to 65535 |
 | `maximumGames`, `maximumPlayersPerGame` | 1 to `MAXIMUM_HOSTED_GAMES` (64), 1 to `MAXIMUM_PLAYERS` (4) |

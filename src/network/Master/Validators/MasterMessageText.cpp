@@ -312,10 +312,6 @@ std::string serverKeyOf(const JsonField& field) {
 
 }  // namespace
 
-bool isValidServerName(std::string_view name) {
-  return isValidBoundedText(name, MAXIMUM_SERVER_NAME_SIZE);
-}
-
 bool isWellFormedServerKey(std::string_view text) {
   return text.size() == SERVER_KEY_SIZE &&
          text.starts_with(SERVER_KEY_PREFIX) &&
@@ -385,7 +381,7 @@ ServerRegistration registrationFromText(std::string_view text) {
           memberOf(registration, UDP_PORT_MEMBER),
           IntegerBounds{.lowest = LOWEST_PORT, .highest = HIGHEST_PORT})),
       .gameVersion = boundedTextOf(memberOf(registration, GAME_VERSION_MEMBER),
-                                   MAXIMUM_VERSION_SIZE),
+                                   MAXIMUM_GAME_VERSION_SIZE),
       .protocolVersion = static_cast<std::uint8_t>(
           integerOf(memberOf(registration, PROTOCOL_VERSION_MEMBER),
                     IntegerBounds{.lowest = LOWEST_PROTOCOL_VERSION,

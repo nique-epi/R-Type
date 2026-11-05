@@ -69,6 +69,18 @@ float readCoordinate(ByteReader& reader);
 [[nodiscard]] bool isValidNickname(std::string_view nickname);
 
 /**
+ * @returns Whether @p name is a name a game server may have: 1 to
+ * MAXIMUM_SERVER_NAME_SIZE bytes of printable UTF-8 (isPrintableUtf8()).
+ */
+[[nodiscard]] bool isValidServerName(std::string_view name);
+
+/**
+ * @returns Whether @p version is a version of the game a server may announce:
+ * 1 to MAXIMUM_GAME_VERSION_SIZE bytes of printable UTF-8 (isPrintableUtf8()).
+ */
+[[nodiscard]] bool isValidGameVersion(std::string_view version);
+
+/**
  * @brief Checks that @p nickname is one the protocol accepts, see
  * isValidNickname().
  * @throws InvalidNicknameException when it is not.

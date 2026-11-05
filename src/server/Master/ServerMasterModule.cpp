@@ -14,7 +14,6 @@
 #include "LatestHostedGames.hpp"
 #include "LatestMetrics.hpp"
 #include "MasterAccess.hpp"
-#include "MasterMessageText.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
@@ -22,6 +21,7 @@
 #include "ServerIdentity.hpp"
 #include "ServerMasterConstants.hpp"
 #include "TextSettingDefinition.hpp"
+#include "WireTypes.hpp"
 
 namespace rtype::server {
 
