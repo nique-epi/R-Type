@@ -7,6 +7,7 @@
 #include <string_view>
 #include <toml++/toml.hpp>
 #include <vector>
+#include "ActionKey.hpp"
 #include "BehaviourRegistry.hpp"
 #include "BehaviourSetting.hpp"
 #include "BehaviourView.hpp"
@@ -18,6 +19,8 @@
 #include "EntityType.hpp"
 #include "GameException.hpp"
 #include "GunSheet.hpp"
+#include "HurtBox.hpp"
+#include "HurtZone.hpp"
 #include "IBehaviour.hpp"
 #include "MotionKind.hpp"
 #include "MotionSheet.hpp"
@@ -190,6 +193,92 @@ std::optional<GunSheet> gunFrom(const engine::DataFileTable& gameplay) {
       .projectilePlace = engine::placeOfKey(*gun, PROJECTILE_KEY)};
 }
 
+/** @returns The attack and the phase the box @p box hurts in, nothing for a
+ * box that hurts all the time.
+ * @throws InconsistentEntitySheetException when it names only one of them. */
+std::optional<ActionKey> activeInFrom(const engine::DataFileTable& box) {
+  const bool namesAnAttack = box.table.get().contains(ATTACK_KEY);
+  const bool namesAPhase = box.table.get().contains(PHASE_KEY);
+  if (namesAnAttack != namesAPhase) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(box, namesAnAttack ? ATTACK_KEY : PHASE_KEY),
+        HURT_BOX_ACTION_RULE);
+  }
+  if (!namesAnAttack) {
+    return std::nullopt;
+  }
+  return ActionKey{
+      .attack = static_cast<std::uint8_t>(
+          engine::wholeNumberAt(box, ATTACK_KEY, ATTACK_NUMBER_RANGE)),
+      .phase = PHASES.at(engine::choiceAt(box, PHASE_KEY, PHASE_NAMES))};
+}
+
+/** @returns The value of @p key of @p box as a number of logical units. */
+float unitsAt(const engine::DataFileTable& box, std::string_view key,
+              engine::WholeNumberRange range) {
+  return static_cast<float>(engine::wholeNumberAt(box, key, range));
+}
+
+/** @returns The box one table of `[[gameplay.hurt_zone.box]]` describes. */
+HurtBox hurtBoxFrom(const engine::DataFileTable& box) {
+  engine::refuseUnknownKeys(box, HURT_BOX_KEYS);
+  return HurtBox{.offsetX = unitsAt(box, OFFSET_X_KEY, HURT_BOX_OFFSET_RANGE),
+                 .offsetY = unitsAt(box, OFFSET_Y_KEY, HURT_BOX_OFFSET_RANGE),
+                 .width = unitsAt(box, WIDTH_KEY, HITBOX_SIDE_RANGE),
+                 .height = unitsAt(box, HEIGHT_KEY, HITBOX_SIDE_RANGE),
+                 .activeIn = activeInFrom(box)};
+}
+
+/** @returns The zone of `[gameplay.hurt_zone]`, its boxes in the order of the
+ * file; nothing without it.
+ * @throws InconsistentEntitySheetException when the zone holds no box. */
+std::optional<HurtZone> hurtZoneFrom(const engine::DataFileTable& gameplay) {
+  const std::optional<engine::DataFileTable> zone =
+      engine::optionalTableAt(gameplay, HURT_ZONE_KEY);
+  if (!zone.has_value()) {
+    return std::nullopt;
+  }
+  engine::refuseUnknownKeys(*zone, HURT_ZONE_KEYS);
+  HurtZone read;
+  for (const engine::DataFileTable& box : engine::tablesAt(*zone, BOX_KEY)) {
+    read.boxes.push_back(hurtBoxFrom(box));
+  }
+  if (read.boxes.empty()) {
+    throw InconsistentEntitySheetException(engine::placeOfKey(*zone, BOX_KEY),
+                                           HURT_ZONE_BOXES_RULE);
+  }
+  return read;
+}
+
+/** @returns Whether the sheet holds the marker table
+ * `[gameplay.survives_contact]`. */
+bool survivesContactFrom(const engine::DataFileTable& gameplay) {
+  const std::optional<engine::DataFileTable> marker =
+      engine::optionalTableAt(gameplay, SURVIVES_CONTACT_KEY);
+  if (marker.has_value()) {
+    engine::refuseUnknownKeys(*marker, SURVIVES_CONTACT_KEYS);
+  }
+  return marker.has_value();
+}
+
+/** @throws InconsistentEntitySheetException when @p sheet has a hurt zone or
+ * survives a contact and its side is not enemy. */
+void checkContactPartsBelongToAnEnemy(const EntitySheet& sheet,
+                                      const engine::DataFileTable& gameplay) {
+  if (sheet.side == EntityType::Enemy) {
+    return;
+  }
+  if (sheet.hurtZone.has_value()) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, HURT_ZONE_KEY), HURT_ZONE_SIDE_RULE);
+  }
+  if (sheet.survivesContact) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, SURVIVES_CONTACT_KEY),
+        SURVIVES_CONTACT_SIDE_RULE);
+  }
+}
+
 /** @throws InconsistentEntitySheetException when a player pilots @p sheet and
  * its side is not player, or its side is player and a behaviour pilots it. */
 void checkPilotMatchesSide(const EntitySheet& sheet,
@@ -286,11 +375,14 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .pilot = pilotFrom(gameplay, behaviours),
       .health = pointsIn<int>(gameplay, HEALTH_KEY, HEALTH_RANGE),
       .points = pointsIn<std::uint32_t>(gameplay, SCORE_KEY, SCORE_RANGE),
-      .gun = gunFrom(gameplay)};
+      .gun = gunFrom(gameplay),
+      .hurtZone = hurtZoneFrom(gameplay),
+      .survivesContact = survivesContactFrom(gameplay)};
   checkPilotMatchesSide(read, gameplay);
   checkShipMotion(read, gameplay);
   checkMissileHasNoGun(read, gameplay);
   checkMissileFliesTowardsItsEdge(read, gameplay);
+  checkContactPartsBelongToAnEnemy(read, gameplay);
   return read;
 }
 

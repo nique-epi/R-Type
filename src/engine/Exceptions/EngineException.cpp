@@ -146,6 +146,11 @@ DataFileTableExpectedException::DataFileTableExpectedException(
     : EngineException(placeText(place) + ": " + place.key +
                       " must be a table") {}
 
+DataFileTablesExpectedException::DataFileTablesExpectedException(
+    const DataFilePlace& place)
+    : EngineException(placeText(place) + ": " + place.key +
+                      " must be an array of tables") {}
+
 DataFileValueOutOfRangeException::DataFileValueOutOfRangeException(
     const DataFilePlace& place, WholeNumberRange range)
     : EngineException(placeText(place) + ": " + place.key +

@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <string_view>
+#include "EnemyPhase.hpp"
 #include "EntityType.hpp"
 #include "MotionKind.hpp"
 #include "TimeConstants.hpp"
@@ -28,9 +29,11 @@ constexpr std::string_view BEHAVIOUR_KEY = "behaviour";
 constexpr std::string_view HEALTH_KEY = "health";
 constexpr std::string_view SCORE_KEY = "score";
 constexpr std::string_view GUN_KEY = "gun";
-constexpr std::array GAMEPLAY_KEYS{SIDE_KEY,   PILOT_KEY,     HITBOX_KEY,
-                                   MOTION_KEY, BEHAVIOUR_KEY, HEALTH_KEY,
-                                   SCORE_KEY,  GUN_KEY};
+constexpr std::string_view HURT_ZONE_KEY = "hurt_zone";
+constexpr std::string_view SURVIVES_CONTACT_KEY = "survives_contact";
+constexpr std::array GAMEPLAY_KEYS{
+    SIDE_KEY,   PILOT_KEY, HITBOX_KEY, MOTION_KEY,    BEHAVIOUR_KEY,
+    HEALTH_KEY, SCORE_KEY, GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY};
 
 /** @brief The keys of `[gameplay.hitbox]`, in logical units. */
 constexpr std::string_view WIDTH_KEY = "width";
@@ -53,6 +56,32 @@ constexpr std::string_view INTERVAL_KEY = "interval_ms";
 constexpr std::string_view FIRST_SHOT_KEY = "first_shot_ms";
 constexpr std::string_view PROJECTILE_KEY = "projectile";
 constexpr std::array GUN_KEYS{INTERVAL_KEY, FIRST_SHOT_KEY, PROJECTILE_KEY};
+
+/** @brief The key of `[gameplay.hurt_zone]`: its boxes, an array of tables
+ * `[[gameplay.hurt_zone.box]]`. */
+constexpr std::string_view BOX_KEY = "box";
+constexpr std::array HURT_ZONE_KEYS{BOX_KEY};
+
+/** @brief The keys of a box of a hurt zone, in logical units; a box names the
+ * attack and the phase it hurts in together, or neither. */
+constexpr std::string_view OFFSET_X_KEY = "offset_x";
+constexpr std::string_view OFFSET_Y_KEY = "offset_y";
+constexpr std::string_view ATTACK_KEY = "attack";
+constexpr std::string_view PHASE_KEY = "phase";
+constexpr std::array HURT_BOX_KEYS{OFFSET_X_KEY, OFFSET_Y_KEY, WIDTH_KEY,
+                                   HEIGHT_KEY,   ATTACK_KEY,   PHASE_KEY};
+
+/** @brief `[gameplay.survives_contact]` is a marker: it holds no key. */
+constexpr std::array<std::string_view, 0> SURVIVES_CONTACT_KEYS{};
+
+/** @brief The phases a box may name, and the EnemyPhase of each, in the same
+ * order. */
+constexpr std::array PHASE_NAMES{
+    std::string_view{"signal"}, std::string_view{"strike"},
+    std::string_view{"recover"}, std::string_view{"enraged"}};
+constexpr std::array PHASES{EnemyPhase::Signal, EnemyPhase::Strike,
+                            EnemyPhase::Recover, EnemyPhase::Enraged};
+static_assert(PHASE_NAMES.size() == PHASES.size(), "one name per phase");
 
 /** @brief The pilot of a body its player steers; any other pilot names a
  * behaviour. */
@@ -85,6 +114,10 @@ constexpr engine::WholeNumberRange GUN_INTERVAL_RANGE{.lowest = 1,
                                                       .highest = 60000};
 constexpr engine::WholeNumberRange FIRST_SHOT_RANGE{.lowest = 0,
                                                     .highest = 60000};
+constexpr engine::WholeNumberRange HURT_BOX_OFFSET_RANGE{.lowest = -1024,
+                                                         .highest = 1024};
+constexpr engine::WholeNumberRange ATTACK_NUMBER_RANGE{.lowest = 0,
+                                                       .highest = 255};
 
 /** @brief Half a simulation tick: added before a duration is cut into whole
  * ticks, so the count is the nearest one. */
@@ -107,6 +140,14 @@ constexpr std::string_view BEHAVIOUR_TABLE_RULE =
 constexpr std::string_view MISSILE_HEADING_RULE =
     "a missile flies towards the edge that removes it: the right one for a "
     "missile of a player, the left one for a missile of an enemy";
+constexpr std::string_view HURT_ZONE_SIDE_RULE =
+    "only a body of side enemy has a hurt zone";
+constexpr std::string_view SURVIVES_CONTACT_SIDE_RULE =
+    "only a body of side enemy survives a contact";
+constexpr std::string_view HURT_ZONE_BOXES_RULE =
+    "a hurt zone holds at least one box";
+constexpr std::string_view HURT_BOX_ACTION_RULE =
+    "a box names the attack and the phase it hurts in together, or neither";
 constexpr std::string_view PROJECTILE_SIDE_RULE =
     "a player fires missiles of a player, an enemy missiles of an enemy";
 

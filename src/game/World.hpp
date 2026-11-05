@@ -42,7 +42,9 @@ class World {
    * ShipMotion or a SteadyMotion of its top speed, as its motion says; a Pilot
    * when a behaviour pilots it, steering it from @p position, at age zero,
    * with the settings of the sheet; its Health, its ScoreValue and its Gun
-   * when the sheet gives them, the gun waiting the first shot of the sheet.
+   * when the sheet gives them, the gun waiting the first shot of the sheet;
+   * its HurtZone and its SurvivesContact when the sheet declares them, and a
+   * CurrentAction, idle, for every body of side enemy.
    * A body no behaviour pilots is the ship of a player: it also gets
    * STARTING_LIVES Lives and no protection in its Invulnerable, and is listed
    * as a ship. With @p owner, the entity gets a MissileOwner naming that

@@ -60,6 +60,31 @@ constexpr std::string_view HEALTH_AS_A_FLOAT = "[gameplay]\nhealth = 3.0\n";
 constexpr std::string_view SIDE_AS_A_NUMBER = "[gameplay]\nside = 2\n";
 constexpr std::string_view MISSPELT_SIDE = "[gameplay]\nside = \"enmy\"\n";
 
+/** @brief Files that hold boxes, as an array of tables, as one table, as an
+ * empty array and as an array with a number. The second box of the first file
+ * starts on line 7. */
+constexpr std::string_view GAMEPLAY_WITH_TWO_BOXES =
+    "[gameplay]\n[[gameplay.box]]\nwidth = 10\n\n[[gameplay.box]]\nwidth = "
+    "20\n";
+constexpr std::string_view GAMEPLAY_WITH_ONE_TABLE_BOX =
+    "[gameplay.box]\nwidth = 10\n";
+constexpr std::string_view GAMEPLAY_WITH_NO_BOX = "[gameplay]\nbox = []\n";
+constexpr std::string_view GAMEPLAY_WITH_A_NUMBER_AMONG_BOXES =
+    "[gameplay]\nbox = [{ width = 10 }, 3]\n";
+constexpr std::string_view BOX_KEY = "box";
+constexpr std::size_t TWO_BOXES = 2;
+constexpr std::string_view NAME_OF_THE_FIRST_BOX = "gameplay.box[0]";
+constexpr std::string_view NAME_OF_THE_SECOND_BOX = "gameplay.box[1]";
+constexpr std::string_view WIDTH_OF_THE_SECOND_BOX = "gameplay.box[1].width";
+constexpr std::int64_t WIDTH_OF_THE_FIRST_BOX_VALUE = 10;
+constexpr std::int64_t WIDTH_OF_THE_SECOND_BOX_VALUE = 20;
+constexpr rtype::engine::WholeNumberRange BOX_WIDTH_RANGE{.lowest = 1,
+                                                          .highest = 1024};
+constexpr rtype::engine::WholeNumberRange NARROW_BOX_WIDTH_RANGE{.lowest = 1,
+                                                                 .highest = 15};
+constexpr std::string_view BOXES_NOT_TABLES_TEXT =
+    "gameplay.box must be an array of tables";
+
 /** @brief An interval of 1500 ms, read as a duration, and the range it is
  * read in: 1 to 60000 ms. */
 constexpr std::string_view AN_INTERVAL = "[gameplay]\ninterval_ms = 1500\n";
