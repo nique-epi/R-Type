@@ -24,6 +24,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include "LogLevel.hpp"
 #include "LoggingConstants.hpp"
 #include "LoggingException.hpp"
 
