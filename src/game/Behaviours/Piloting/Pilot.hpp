@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
+#include <span>
 #include "IBehaviour.hpp"
 #include "Position.hpp"
 #include "TimeConstants.hpp"
@@ -8,11 +10,12 @@
 namespace rtype::game {
 
 /**
- * @brief Component of a body a behaviour pilots: which behaviour, and what the
- * body remembers for it.
+ * @brief Component of a body a behaviour pilots: which behaviour, the values
+ * of its settings, and what the body remembers for it.
  *
- * The behaviour belongs to a BehaviourRegistry that outlives the body: the
- * World holds both.
+ * The behaviour and the values belong to whoever made the body (the
+ * EntitySheets of the server), which outlives it: no body owns a copy, so
+ * piloting allocates nothing.
  */
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
 struct Pilot {
@@ -21,6 +24,9 @@ struct Pilot {
   Position origin{};
   /** @brief How long the body has existed; PilotSystem adds each tick. */
   engine::Duration age{};
+  /** @brief The values of the settings of the behaviour, in the order it
+   * declares them; PilotSystem hands them to it in BehaviourView. */
+  std::span<const std::int64_t> settings;
 };
 
 }  // namespace rtype::game

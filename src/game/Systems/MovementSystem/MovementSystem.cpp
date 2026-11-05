@@ -10,26 +10,10 @@
 #include "ShipMotion.hpp"
 #include "SteadyMotion.hpp"
 #include "TimeConstants.hpp"
-#include "Velocity.hpp"
 
 namespace rtype::game {
 
 namespace {
-
-/**
- * @brief Moves every entity with a Position and a Velocity by its velocity
- * over @p elapsed.
- */
-void moveByVelocity(engine::ComponentRegistry& components,
-                    engine::Duration elapsed) {
-  const float elapsedSeconds = std::chrono::duration<float>(elapsed).count();
-  components.forEach<Position, Velocity>(
-      [elapsedSeconds](engine::Entity, Position& position,
-                       const Velocity& velocity) {
-        position.x += velocity.x * elapsedSeconds;
-        position.y += velocity.y * elapsedSeconds;
-      });
-}
 
 /**
  * @brief Moves every entity with a Position, a ShipMotion and an Intent over
@@ -83,7 +67,6 @@ void moveSteadily(engine::ComponentRegistry& components,
 
 void MovementSystem::update(engine::ComponentRegistry& components,
                             engine::Duration elapsed) {
-  moveByVelocity(components, elapsed);
   moveByIntent(components, elapsed);
   moveSteadily(components, elapsed);
 }

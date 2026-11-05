@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include "BehaviourView.hpp"
 
 namespace rtype::game {
@@ -13,5 +15,15 @@ namespace rtype::game {
  */
 [[nodiscard]] float verticalShareTowards(float height,
                                          const BehaviourView& view);
+
+/**
+ * @returns The value of the setting at @p index of the settings the behaviour
+ * of @p view declares.
+ * @throws MissingBehaviourSettingException when @p view holds no value there:
+ * a body made without the settings of its sheet, which the reader of the
+ * sheets never gives.
+ */
+[[nodiscard]] std::int64_t settingAt(const BehaviourView& view,
+                                     std::size_t index);
 
 }  // namespace rtype::game

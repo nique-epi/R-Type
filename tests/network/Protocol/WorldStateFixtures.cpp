@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include "ProtocolTestConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateCodec.hpp"
 #include "WorldStateCodecTestConstants.hpp"
@@ -26,7 +27,7 @@ std::vector<EntityState> someEntities(std::size_t count) {
   for (std::size_t index = 0; index < count; ++index) {
     entities.push_back(
         EntityState{.entityId = static_cast<std::uint32_t>(index + 1),
-                    .entityType = WireEntityType::Bydo,
+                    .entityType = EXAMPLE_ENTITY_TYPE,
                     .x = static_cast<float>(index),
                     .y = SOME_ENTITY_Y});
   }
@@ -50,7 +51,7 @@ WorldState oneShipState() {
                               .score = SOME_SCORE,
                               .invulnerable = false}},
       .entities = {EntityState{.entityId = EXAMPLE_ENTITY_ID,
-                               .entityType = WireEntityType::PlayerShip,
+                               .entityType = EXAMPLE_SHIP_TYPE,
                                .x = EXAMPLE_X,
                                .y = EXAMPLE_Y}}};
 }

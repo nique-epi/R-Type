@@ -21,8 +21,8 @@
 #include "RtypeSystems.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
-#include "StateSending.hpp"
 #include "WavePlan.hpp"
 
 namespace rtype::server::testing {
@@ -31,21 +31,21 @@ GameFlowFixture::GameFlowFixture() : GameFlowFixture(testWavePlan()) {}
 
 GameFlowFixture::GameFlowFixture(WavePlan waves)
     : readyKeeper_(roster_, [] { return true; }),
-      replication_(
-          roster_,
-          [this](network::OutgoingDatagram datagram) {
-            sent_.push_back(std::move(datagram));
-          },
-          StateSending{}),
       context_{.events = events_,
                .systems = systems_,
                .roster = roster_,
                .hooks = hooks_,
                .settings =
-                   GameSettings{.seed = SOME_SEED, .waves = std::move(waves)},
-               .send = [](const network::OutgoingDatagram&) {},
+                   GameSettings{.seed = SOME_SEED,
+                                .waves = std::move(waves),
+                                .types = game::testing::shippedEntitySheets()},
+               .send =
+                   [this](network::OutgoingDatagram datagram) {
+                     sent_.push_back(std::move(datagram));
+                   },
                .everyPlayerIsReady =
                    [this] { return readyKeeper_.everyPlayerIsReady(); }},
+      replication_(context_),
       flow_(context_, world_, replication_) {
   static_cast<void>(events_.subscribe<GameStateChanged>(
       [this](const GameStateChanged& change) { changes_.push_back(change); }));

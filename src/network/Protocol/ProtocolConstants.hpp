@@ -5,9 +5,9 @@
 #include <cstdint>
 #include <limits>
 #include <string_view>
+#include "EntityTypeConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "SerializationConstants.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::network {
 
@@ -19,12 +19,16 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 4 lets the
- * server send the body of a datagram as a zstd frame, see the Compression
- * section of the protocol page; version 3 adds the outcome of a game to
- * GameEnded, see the Version 3 section of that page.
+ * @brief The version of the protocol this code speaks. Version 6 names the
+ * entity types by a table ConnectionAccepted carries, so the type of
+ * EntitySpawned, WorldState and DeltaWorldState is a number of that table,
+ * see the Version 6 section of the protocol page; version 5 makes a
+ * PlayerInput repeat the inputs the server has not confirmed, see the Inputs
+ * section; version 4 lets the server send the body of a datagram as a zstd
+ * frame, see the Compression section; version 3 adds the outcome of a game to
+ * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 4;
+constexpr std::uint8_t PROTOCOL_VERSION = 6;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -169,6 +173,18 @@ constexpr auto PLAYER_MOTION_BITS =
  */
 constexpr std::uint32_t FIRST_INPUT_NUMBER = 1;
 
+static_assert(identifiers::MAXIMUM_ENTITY_TYPES <=
+                  std::numeric_limits<std::uint8_t>::max(),
+              "typeCount is one byte, and so is the number of a type");
+
+/**
+ * @brief The most inputs before the newest that one PlayerInput repeats. At
+ * 60 inputs per second it covers 250 ms: the wait of the 50 ms between two
+ * WorldState that confirm inputs, plus a round trip. Provisional, see the
+ * protocol page.
+ */
+constexpr std::size_t MAXIMUM_REPEATED_INPUTS = 15;
+
 /**
  * @brief PlayerInput a client sends per second during a game. The server
  * derives the rate limit of a player from it. Provisional, see the protocol
@@ -179,7 +195,8 @@ constexpr std::size_t PLAYER_INPUTS_PER_SECOND = 60;
 /**
  * @brief Time between two ConnectionRequest of an attempt while the server
  * has not answered. The server derives the rate limit of the requests from
- * it. Provisional, see the protocol page.
+ * it, and paces the acceptance it repeats on it. Provisional, see the
+ * protocol page.
  */
 constexpr std::chrono::milliseconds CONNECTION_REQUEST_INTERVAL{500};
 
@@ -306,17 +323,34 @@ constexpr std::size_t SMALLEST_CONNECTION_REQUEST_DATAGRAM_SIZE =
     SHORT_STRING_PREFIX_SIZE + MINIMUM_NICKNAME_SIZE;
 
 /**
- * @brief The size of the largest datagram the server sends a sender it does
- * not know yet: a ConnectionChallenge and its cookie. ConnectionRefused and
- * ConnectionAccepted carry one byte.
+ * @brief The size of the largest datagram the server sends a sender that did
+ * not prove its address, that is a request without a valid cookie: a
+ * ConnectionChallenge and its cookie. ConnectionRefused carries one byte.
+ * ConnectionAccepted answers only a request with a valid cookie, which only
+ * the owner of the address could send back.
  */
-constexpr std::size_t LARGEST_CONNECTION_ANSWER_DATAGRAM_SIZE =
+constexpr std::size_t LARGEST_UNPROVEN_ANSWER_DATAGRAM_SIZE =
     PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT64_WIRE_SIZE;
 
-static_assert(LARGEST_CONNECTION_ANSWER_DATAGRAM_SIZE <=
+static_assert(LARGEST_UNPROVEN_ANSWER_DATAGRAM_SIZE <=
                   SMALLEST_CONNECTION_REQUEST_DATAGRAM_SIZE,
-              "the server never sends a sender it does not know more bytes "
-              "than the request it answers");
+              "the server never sends a sender that did not prove its "
+              "address more bytes than the request it answers");
+
+/**
+ * @brief The size of the largest datagram holding a ConnectionAccepted: the
+ * player number, the count, then MAXIMUM_ENTITY_TYPES types of a side and a
+ * name of the longest length.
+ */
+constexpr std::size_t LARGEST_CONNECTION_ACCEPTED_DATAGRAM_SIZE =
+    PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT8_WIRE_SIZE +
+    UINT8_WIRE_SIZE +
+    (identifiers::MAXIMUM_ENTITY_TYPES *
+     (UINT8_WIRE_SIZE + SHORT_STRING_PREFIX_SIZE +
+      identifiers::MAXIMUM_ENTITY_TYPE_NAME_LENGTH));
+
+static_assert(LARGEST_CONNECTION_ACCEPTED_DATAGRAM_SIZE <= MAX_DATAGRAM_SIZE,
+              "a ConnectionAccepted always fits in one datagram");
 
 /**
  * @brief The size of a datagram holding a ConnectionRefused and its reason:
@@ -365,6 +399,7 @@ constexpr std::string_view REASON_FIELD = "reason";
 constexpr std::string_view OUTCOME_FIELD = "outcome";
 constexpr std::string_view KIND_FIELD = "kind";
 constexpr std::string_view ACTIONS_FIELD = "actions";
+constexpr std::string_view EARLIER_COUNT_FIELD = "earlierCount";
 constexpr std::string_view ECHO_SENT_AT_FIELD = "echo.sentAt";
 constexpr std::string_view ECHO_HELD_FOR_FIELD = "echo.heldFor";
 constexpr std::string_view TICK_FIELD = "tick";
@@ -374,6 +409,9 @@ constexpr std::string_view RANK_FIELD = "rank";
 constexpr std::string_view PART_INDEX_FIELD = "partIndex";
 constexpr std::string_view PART_COUNT_FIELD = "partCount";
 constexpr std::string_view BASE_DISTANCE_FIELD = "baseDistance";
+constexpr std::string_view TYPE_COUNT_FIELD = "typeCount";
+constexpr std::string_view SIDE_FIELD = "side";
+constexpr std::string_view PHASE_FIELD = "phase";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a
@@ -431,14 +469,6 @@ constexpr std::size_t DELTA_WORLD_STATE_FIXED_SIZE =
  */
 constexpr std::size_t MAXIMUM_ENTITIES_PER_DELTA_LIST =
     std::numeric_limits<std::uint8_t>::max();
-
-/**
- * @brief The smallest and the largest value of an entity type on the wire.
- */
-constexpr std::uint8_t FIRST_WIRE_ENTITY_TYPE =
-    static_cast<std::uint8_t>(WireEntityType::PlayerShip);
-constexpr std::uint8_t LAST_WIRE_ENTITY_TYPE =
-    static_cast<std::uint8_t>(WireEntityType::EnemyMissile);
 
 /**
  * @brief The smallest and the largest count of eighths of a unit a wire

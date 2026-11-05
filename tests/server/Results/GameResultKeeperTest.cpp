@@ -14,6 +14,7 @@
 #include "RecordingResultsArchive.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShippedEntitySheets.hpp"
 
 namespace rtype::server::testing {
 
@@ -74,8 +75,11 @@ TEST_F(GameResultKeeperFixture, SaysTheResultOfAVanillaGameIsVanilla) {
 TEST(GameResultKeeper, SaysTheResultOfAGameThatIsNotVanillaIsNot) {
   PlayerRoster roster;
   RecordingResultsArchive archive;
-  GameResultKeeper keeper{roster, archive,
-                          GameSettings{.waves = {}, .vanilla = false}};
+  GameResultKeeper keeper{
+      roster, archive,
+      GameSettings{.waves = {},
+                   .types = game::testing::shippedEntitySheets(),
+                   .vanilla = false}};
   ASSERT_NE(roster.add(playerEndpoint(FIRST_PLAYER),
                        std::string{NICKNAMES.at(FIRST_PLAYER)}, SESSION_TOKEN),
             nullptr);

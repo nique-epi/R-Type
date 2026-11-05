@@ -3,10 +3,12 @@
 #include <cstdint>
 #include <string>
 #include "ConnectedPlayer.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "PlayerControllerTestConstants.hpp"
 #include "PlayerInput.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShippedEntitySheets.hpp"
 
 namespace rtype::server::testing {
 
@@ -19,13 +21,16 @@ ConnectedPlayer& PlayerControllerFixture::addPlayer(
 ConnectedPlayer& PlayerControllerFixture::addPlayerWithShip(
     std::size_t index, std::uint64_t sessionToken) {
   ConnectedPlayer& player = addPlayer(index, sessionToken);
-  player.shipEntityId = world_.spawnPlayer(CONTROLLED_SHIP);
+  player.shipEntityId = world_.spawn(
+      game::testing::shippedEntitySheets().named(game::testing::SHIP_SHEET),
+      CONTROLLED_SHIP);
   return player;
 }
 
 network::PlayerInput PlayerControllerFixture::inputHolding(
     std::uint8_t actions, std::uint32_t number) {
-  return network::PlayerInput{.inputNumber = number, .actions = actions};
+  return network::PlayerInput{
+      .inputNumber = number, .actions = actions, .earlierActions = {}};
 }
 
 game::World& PlayerControllerFixture::world() { return world_; }

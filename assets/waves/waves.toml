@@ -1,7 +1,8 @@
 # The waves of Bydos of each difficulty. Only the server reads this file: it
-# reads it when it starts, from assets/waves/waves.toml in the folder it is
-# started in, and stops with an error naming the file, the line and the key
-# when a key is missing, misspelt or out of its range, or an enemy is unknown.
+# reads it when it starts, from waves/waves.toml in the assets folder next to
+# its executable, or one level above it, and stops with an error naming the
+# file, the line and the key when a key is missing, misspelt or out of its
+# range, or an enemy is unknown.
 # Every game plays the difficulty "normal" until the rules of a game can
 # choose another one.
 #

@@ -1,29 +1,33 @@
 #include "GameReplication.hpp"
 #include <cstdint>
 #include <memory>
-#include <utility>
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
-#include "EntitySpawnSender.hpp"
+#include "GameContext.hpp"
 #include "GameEndAnnouncer.hpp"
 #include "GameOutcome.hpp"
 #include "LobbyStateAnnouncer.hpp"
-#include "PlayerRoster.hpp"
+#include "ServerConstants.hpp"
 #include "ShipSpawnAnnouncer.hpp"
+#include "ShipSpawnAnnouncerParts.hpp"
 #include "StateSending.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
 
-GameReplication::GameReplication(PlayerRoster& roster, SendDatagram send,
-                                 StateSending sending)
-    : roster_(roster),
-      send_(std::move(send)),
-      worldStateSender_(roster_, send_, sending) {}
+GameReplication::GameReplication(GameContext& game)
+    : roster_(game.roster.get()),
+      send_(game.send),
+      ship_(game.settings.types.get().named(SHIP_SHEET_NAME)),
+      worldStateSender_(
+          roster_, send_,
+          StateSending{.statesPerSecond = game.settings.statesPerSecond,
+                       .encoding = game.settings.stateEncoding}) {}
 
 void GameReplication::onWorldBuilt(game::World& world) {
   shipSpawnAnnouncer_ =
-      std::make_unique<ShipSpawnAnnouncer>(world, roster_, send_);
+      std::make_unique<ShipSpawnAnnouncer>(ShipSpawnAnnouncerParts{
+          .world = world, .roster = roster_, .send = send_, .ship = ship_});
   lobbyStateAnnouncer_ = std::make_unique<LobbyStateAnnouncer>(roster_, send_);
   gameEndAnnouncer_.reset();
 }

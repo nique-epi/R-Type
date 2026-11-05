@@ -1,14 +1,15 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <cstddef>
 #include <vector>
 #include "DeltaWorldState.hpp"
+#include "EnemyAction.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityMessage.hpp"
 #include "EntityMessageQueueFixture.hpp"
 #include "EntityReplicatorTestConstants.hpp"
 #include "EntitySpawned.hpp"
+#include "FixedEntityTypeSourceConstants.hpp"
 #include "GameEvent.hpp"
 #include "GameStarted.hpp"
 #include "PlayerLeft.hpp"
@@ -22,6 +23,7 @@
 namespace rtype::client {
 
 using testing::APPLIED_TICK;
+using testing::BYDO_ID;
 using testing::damaged;
 using ::testing::ElementsAre;
 using testing::endOfOnePilot;
@@ -38,6 +40,7 @@ using testing::PROTOCOL_SILENCE_LIMIT;
 using testing::SECOND_POSITION;
 using testing::SECOND_SEQUENCE;
 using testing::SHIP_ID;
+using testing::SHIP_TYPE_NUMBER;
 using ::testing::SizeIs;
 using testing::spawned;
 using testing::stateListing;
@@ -53,10 +56,9 @@ TEST_F(EntityMessageQueueFixture, HandsOverTheEntityMessagesOfTheGameInOrder) {
   accept();
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
   const network::EntitySpawned spawn =
-      spawned(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION);
+      spawned(SHIP_ID, SHIP_TYPE_NUMBER, FIRST_POSITION);
   const network::WorldState state = stateListing(
-      APPLIED_TICK,
-      {listed(SHIP_ID, network::WireEntityType::PlayerShip, SECOND_POSITION)});
+      APPLIED_TICK, {listed(SHIP_ID, SHIP_TYPE_NUMBER, SECOND_POSITION)});
   const network::EntityDestroyed kill = killed(SHIP_ID);
   deliverInSession(spawn, SECOND_SEQUENCE);
   deliverWorldStateInSession(state, THIRD_SEQUENCE);
@@ -77,9 +79,8 @@ TEST_F(EntityMessageQueueFixture, HandsOverTheEntityMessagesOfTheGameInOrder) {
  */
 TEST_F(EntityMessageQueueFixture, KeepsNoEntityMessageBeforeTheGameStarts) {
   accept();
-  deliverInSession(
-      spawned(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION),
-      FIRST_SEQUENCE);
+  deliverInSession(spawned(SHIP_ID, SHIP_TYPE_NUMBER, FIRST_POSITION),
+                   FIRST_SEQUENCE);
 
   update();
 
@@ -95,8 +96,7 @@ TEST_F(EntityMessageQueueFixture, KeepsNoEntityMessageBeforeTheGameStarts) {
 TEST_F(EntityMessageQueueFixture, HandsOverTheWorldStateThatStartsTheGame) {
   accept();
   const network::WorldState state = stateListing(
-      APPLIED_TICK,
-      {listed(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION)});
+      APPLIED_TICK, {listed(SHIP_ID, SHIP_TYPE_NUMBER, FIRST_POSITION)});
   deliverWorldStateInSession(state, FIRST_SEQUENCE);
 
   update();
@@ -113,7 +113,7 @@ TEST_F(EntityMessageQueueFixture, HandsOverTheWorldStateThatStartsTheGame) {
 TEST_F(EntityMessageQueueFixture, HandsOverTheStateRebuiltFromADelta) {
   accept();
   const network::EntityState ship =
-      listed(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION);
+      listed(SHIP_ID, SHIP_TYPE_NUMBER, FIRST_POSITION);
   deliverDeltaInSession(
       network::DeltaWorldState{.tick = APPLIED_TICK,
                                .baseDistance = network::NO_REFERENCE_DISTANCE,
@@ -138,9 +138,8 @@ TEST_F(EntityMessageQueueFixture, HandsOverTheStateRebuiltFromADelta) {
 TEST_F(EntityMessageQueueFixture, HandsOverEachEntityMessageOnce) {
   accept();
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  deliverInSession(
-      spawned(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION),
-      SECOND_SEQUENCE);
+  deliverInSession(spawned(SHIP_ID, SHIP_TYPE_NUMBER, FIRST_POSITION),
+                   SECOND_SEQUENCE);
   update();
   ASSERT_THAT(drainedEntityMessages(), SizeIs(1));
 
@@ -155,9 +154,8 @@ TEST_F(EntityMessageQueueFixture, HandsOverEachEntityMessageOnce) {
 TEST_F(EntityMessageQueueFixture, LeavingDropsTheEntityMessagesNotHandedOver) {
   accept();
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
-  deliverInSession(
-      spawned(SHIP_ID, network::WireEntityType::PlayerShip, FIRST_POSITION),
-      SECOND_SEQUENCE);
+  deliverInSession(spawned(SHIP_ID, SHIP_TYPE_NUMBER, FIRST_POSITION),
+                   SECOND_SEQUENCE);
   update();
 
   session().cancel();
@@ -181,6 +179,69 @@ TEST_F(EntityMessageQueueFixture, KeepsTheFirstCopyOfAGameEventOnly) {
   update();
 
   EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{event}));
+}
+
+/**
+ * Given a game started in the session
+ * When the three copies of an EnemyAction arrive, each in its own datagram
+ * Then the connection hands over one EnemyAction
+ */
+TEST_F(EntityMessageQueueFixture, KeepsTheFirstCopyOfAnEnemyActionOnly) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  const network::EnemyAction action{.entityId = BYDO_ID,
+                                    .attack = 1,
+                                    .phase = network::EnemyActionPhase::Strike};
+  deliverInSession(action, SECOND_SEQUENCE);
+  deliverInSession(action, THIRD_SEQUENCE);
+  deliverInSession(action, FOURTH_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{action}));
+}
+
+/**
+ * Given a session whose game has not started
+ * When an EnemyAction arrives
+ * Then the connection hands over nothing
+ */
+TEST_F(EntityMessageQueueFixture, IgnoresAnEnemyActionBeforeTheGame) {
+  accept();
+  deliverInSession(
+      network::EnemyAction{.entityId = BYDO_ID,
+                           .attack = 1,
+                           .phase = network::EnemyActionPhase::Signal},
+      FIRST_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(), IsEmpty());
+}
+
+/**
+ * Given a session that handed over an action, then was left, and a new
+ * session whose game started
+ * When the same action arrives
+ * Then it is handed over: a new session forgets the actions seen
+ */
+TEST_F(EntityMessageQueueFixture, ANewSessionForgetsTheEnemyActionsSeen) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  const network::EnemyAction action{.entityId = BYDO_ID,
+                                    .attack = 1,
+                                    .phase = network::EnemyActionPhase::Strike};
+  deliverInSession(action, SECOND_SEQUENCE);
+  update();
+  ASSERT_THAT(drainedEntityMessages(), SizeIs(1));
+  session().cancel();
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  deliverInSession(action, SECOND_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{action}));
 }
 
 /**
@@ -234,8 +295,7 @@ TEST_F(EntityMessageQueueFixture, KeepsNothingFromAServerThatComesBack) {
 
   deliverWorldStateInSession(
       stateListing(APPLIED_TICK,
-                   {listed(SHIP_ID, network::WireEntityType::PlayerShip,
-                           FIRST_POSITION)}),
+                   {listed(SHIP_ID, SHIP_TYPE_NUMBER, FIRST_POSITION)}),
       SECOND_SEQUENCE);
   update();
 

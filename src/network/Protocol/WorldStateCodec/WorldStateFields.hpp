@@ -30,8 +30,8 @@ void writeEntity(ByteWriter& writer, const EntityState& entity);
 [[nodiscard]] std::vector<PlayerState> readPlayers(ByteReader& reader);
 
 /**
- * @brief Reads the number of entities, then each of them. An entity of unknown
- * type is left out: the others are read.
+ * @brief Reads the number of entities, then each of them. An entity of type
+ * NO_ENTITY_TYPE is left out: the others are read.
  * @throws BufferUnderflowException when the buffer is cut short.
  * @throws InvalidFieldValueException when an entity has the id 0.
  */

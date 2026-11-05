@@ -10,7 +10,7 @@ target_link_libraries(rtype_client_asset_loading
     rtype_client_asset_library
     rtype_client_exceptions
   PRIVATE
-    rtype_engine_paths
+    rtype_logging
 )
 
 rtype_enable_warnings(rtype_client_asset_loading)

@@ -1,8 +1,11 @@
 #include "ScreenAssets.hpp"
+#include <algorithm>
+#include <string>
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
 #include "EffectConstants.hpp"
+#include "EntityAppearances.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "FlightLogSheetConstants.hpp"
 #include "HudSpriteConstants.hpp"
@@ -40,6 +43,16 @@ AssetList gameAssets() {
   assets.textures.emplace_back(EFFECT_SHEET_ID);
   assets.textures.emplace_back(PLUG_ICON_ID);
   assets.textures.emplace_back(FLIGHT_LOG_SHEET_ID);
+  return assets;
+}
+
+AssetList withEntitySheets(AssetList assets,
+                           const EntityAppearances& appearances) {
+  for (const std::string& sheet : appearances.sheets()) {
+    if (std::ranges::find(assets.textures, sheet) == assets.textures.end()) {
+      assets.textures.push_back(sheet);
+    }
+  }
   return assets;
 }
 

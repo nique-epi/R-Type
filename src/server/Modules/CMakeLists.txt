@@ -18,6 +18,7 @@ target_link_libraries(rtype_server_modules
     rtype_server_storage_module
   PRIVATE
     rtype_engine_system_clock
+    rtype_game_entity_types
     rtype_server_constants
 )
 

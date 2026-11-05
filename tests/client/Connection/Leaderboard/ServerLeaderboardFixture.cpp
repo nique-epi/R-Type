@@ -18,6 +18,7 @@
 #include "ServerSession.hpp"
 #include "ServerSessionFixtures.hpp"
 #include "ServerSessionTestConstants.hpp"
+#include "SessionEntityTypesFixtures.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
@@ -47,8 +48,9 @@ void ServerLeaderboardFixture::connectAndGetAccepted() {
   link_.deliver(network::IncomingDatagram{
       .sender = server(),
       .payload = network::DatagramCodec::encode(
-          header, network::ConnectionAccepted{.playerNumber =
-                                                  ACCEPTED_PLAYER_NUMBER})});
+          header,
+          network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
+                                      .types = drawnTypes()})});
   update();
 }
 

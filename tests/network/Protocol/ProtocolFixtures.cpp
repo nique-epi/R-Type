@@ -9,7 +9,6 @@
 #include "MessageType.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolTestConstants.hpp"
-#include "WorldState.hpp"
 #include "WorldStateFixtures.hpp"
 
 namespace rtype::network::testing {
@@ -40,7 +39,7 @@ std::vector<std::byte> datagramOf(
 
 EntitySpawned exampleBydo() {
   return EntitySpawned{.entityId = EXAMPLE_ENTITY_ID,
-                       .entityType = WireEntityType::Bydo,
+                       .entityType = EXAMPLE_ENTITY_TYPE,
                        .x = EXAMPLE_X,
                        .y = EXAMPLE_Y};
 }

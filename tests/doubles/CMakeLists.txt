@@ -1,3 +1,5 @@
-target_sources(engine_tests PRIVATE ClockAdvancingSystem.cpp OptionallyDependentModule.cpp RecordingModule.cpp StageModule.cpp ServiceUsingModule.cpp ProvidingModule.cpp ApplicationFindingModule.cpp WorkAddingModule.cpp DestructionRecordingModule.cpp SubscribingModule.cpp StartRefusedException.cpp)
+target_sources(engine_tests PRIVATE ClockAdvancingSystem.cpp OptionallyDependentModule.cpp RecordingModule.cpp StageModule.cpp ServiceUsingModule.cpp ProvidingModule.cpp ApplicationFindingModule.cpp WorkAddingModule.cpp DestructionRecordingModule.cpp SubscribingModule.cpp StartRefusedException.cpp PluginHostModule.cpp RecordingJournal.cpp)
+add_subdirectory(Plugins)
 target_sources(network_tests PRIVATE SeededLoss.cpp RecordingDatagramSocket.cpp)
+target_sources(game_tests PRIVATE ActionRequestingBehaviour.cpp)
 target_sources(master_tests PRIVATE HttpPortProbe.cpp RouteAddingModule.cpp)

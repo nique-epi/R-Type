@@ -14,14 +14,15 @@
 #include "IServerConnection.hpp"
 #include "Logger.hpp"
 #include "MessageDispatcher.hpp"
-#include "ProtocolConstants.hpp"
 #include "ServerSessionParts.hpp"
 #include "SessionAcknowledgements.hpp"
 #include "SessionDeparture.hpp"
+#include "SessionEntityTypes.hpp"
 #include "SessionInbound.hpp"
 #include "SessionObservers.hpp"
 #include "SessionOutbox.hpp"
 #include "TimeConstants.hpp"
+#include "UnconfirmedInputs.hpp"
 
 namespace rtype::client {
 
@@ -36,14 +37,19 @@ namespace rtype::client {
  * ISessionObserver and fed through the dispatcher.
  *
  * connect() sends a ConnectionRequest at once; a ConnectionAccepted or a
- * ConnectionRefused ends the attempt, and no request is sent any more. An
- * attempt that got neither within CONNECTION_ATTEMPT_TIMEOUT gives up as
- * Unreachable.
+ * ConnectionRefused ends the attempt, and no request is sent any more. The
+ * acceptance carries the table of the entity types of the server: the session
+ * keeps it until it closes (see SessionEntityTypes), and an acceptance whose
+ * table names a type this client cannot draw opens no session, sends its
+ * Disconnection and ends the attempt as MissingEntitySheet (see
+ * HandshakeAnswers). An attempt that got none of these within
+ * CONNECTION_ATTEMPT_TIMEOUT gives up as Unreachable.
  *
  * Once accepted, the session keeps the token of the acceptance and writes it
  * into every datagram it sends. While the attempt is Accepted,
  * sendPlayerInput() sends the inputs of the game, numbered from
- * FIRST_INPUT_NUMBER; otherwise it sends nothing. A Heartbeat goes out every
+ * FIRST_INPUT_NUMBER, each repeating the ones confirmInputsUpTo() did not
+ * confirm yet; otherwise it sends nothing. A Heartbeat goes out every
  * HEARTBEAT_INTERVAL, and once the acknowledgement of a datagram that holds
  * guaranteed messages waited ACKNOWLEDGEMENT_DELAY for one, sent by an
  * observer (see RoundTripWatch). A session
@@ -97,6 +103,7 @@ class ServerSession final : public IServerConnection, public IPlayerInputLink {
   void update(engine::Duration elapsed);
 
   std::optional<std::uint32_t> sendPlayerInput(ActionSet held) override;
+  void confirmInputsUpTo(std::uint32_t acknowledged) override;
 
   /**
    * @returns Whether copies of a Disconnection are still due to a server the
@@ -130,10 +137,11 @@ class ServerSession final : public IServerConnection, public IPlayerInputLink {
   SessionObservers observers_;
   network::MessageDispatcher* dispatcher_;
   GameLoadedReminder* gameLoaded_;
+  SessionEntityTypes* entityTypes_;
   logging::Logger logger_;
   ConnectionStatus status_;
   HandshakeAnswers answers_;
-  std::uint32_t nextInputNumber_{network::FIRST_INPUT_NUMBER};
+  UnconfirmedInputs unconfirmedInputs_;
 };
 
 }  // namespace rtype::client

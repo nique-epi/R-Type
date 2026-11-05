@@ -12,6 +12,7 @@
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
 #include "LoggingException.hpp"
+#include "PathText.hpp"
 
 namespace rtype::logging {
 
@@ -140,7 +141,7 @@ void announceJournal(const LogOutput& output) {
     logger.info("no journal file");
     return;
   }
-  logger.info("journal: ", absoluteJournalPath(*output.filePath).string());
+  logger.info("journal: ", genericText(absoluteJournalPath(*output.filePath)));
 }
 
 /**
@@ -170,8 +171,8 @@ LogOutput applyOutput(const LogLaunchSettings& settings) {
  * not be opened, so the player knows why no file holds the lines. */
 void announceUnopenedJournal(const std::filesystem::path& journal) {
   const Logger logger{std::string{LOGGING_LOGGER_NAME}};
-  logger.warn("cannot open the journal ", absoluteJournalPath(journal).string(),
-              ", writing none");
+  logger.warn("cannot open the journal ",
+              genericText(absoluteJournalPath(journal)), ", writing none");
 }
 
 }  // namespace

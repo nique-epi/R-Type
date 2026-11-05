@@ -1,5 +1,6 @@
 #include "PredictionFixtures.hpp"
 #include <cstdint>
+#include "FixedEntityTypeSourceConstants.hpp"
 #include "Position.hpp"
 #include "PredictionTestConstants.hpp"
 #include "ShipControl.hpp"
@@ -35,11 +36,10 @@ network::WorldState stateWithShip(std::uint8_t playerNumber,
       .players = {network::PlayerState{.playerNumber = playerNumber,
                                        .shipEntityId = shipId,
                                        .acknowledgedInput = acknowledgedInput}},
-      .entities = {network::EntityState{
-          .entityId = shipId,
-          .entityType = network::WireEntityType::PlayerShip,
-          .x = position.x,
-          .y = position.y}}};
+      .entities = {network::EntityState{.entityId = shipId,
+                                        .entityType = SHIP_TYPE_NUMBER,
+                                        .x = position.x,
+                                        .y = position.y}}};
 }
 
 network::WorldState stateWithoutEntities(std::uint8_t playerNumber,

@@ -1,0 +1,1 @@
+target_sources(client_rendering_tests PRIVATE EntityAppearancesTest.cpp EntityAppearanceActionsTest.cpp EntityAppearancesFixtures.cpp)

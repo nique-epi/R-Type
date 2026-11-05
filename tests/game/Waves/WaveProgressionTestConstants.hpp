@@ -2,7 +2,7 @@
 
 #include <chrono>
 #include <cstddef>
-#include "BydoWave.hpp"
+#include "Wave.hpp"
 #include "WaveCurve.hpp"
 #include "WaveTestConstants.hpp"
 
@@ -13,18 +13,18 @@ namespace rtype::game::testing {
  * than a quarter of a second above its shortest time, and the wave after it,
  * one every second: a whole cut would bring them 0.85 seconds apart.
  */
-constexpr BydoWave WAVE_JUST_ABOVE_THE_SHORTEST{
-    .bydoCount = 5, .spawnInterval = std::chrono::milliseconds(1100)};
-constexpr BydoWave WAVE_AFTER_THE_ONE_JUST_ABOVE{
-    .bydoCount = 6, .spawnInterval = std::chrono::seconds(1)};
+constexpr Wave WAVE_JUST_ABOVE_THE_SHORTEST{
+    .entityCount = 5, .spawnInterval = std::chrono::milliseconds(1100)};
+constexpr Wave WAVE_AFTER_THE_ONE_JUST_ABOVE{
+    .entityCount = 6, .spawnInterval = std::chrono::seconds(1)};
 
 /**
  * @brief A curve that adds no Bydo and cuts nothing: every wave is its first.
  */
 constexpr WaveCurve STEADY_CURVE{
     .firstWave =
-        BydoWave{.bydoCount = 3, .spawnInterval = std::chrono::seconds(2)},
-    .bydosAddedPerWave = 0,
+        Wave{.entityCount = 3, .spawnInterval = std::chrono::seconds(2)},
+    .entitiesAddedPerWave = 0,
     .spawnIntervalCutPerWave = std::chrono::milliseconds(0),
     .shortestSpawnInterval = std::chrono::seconds(2),
     .wavePause = std::chrono::seconds(4),
@@ -38,48 +38,48 @@ constexpr WaveCurve STEADY_CURVE{
  */
 constexpr WaveCurve CURVE_WITHOUT_BYDOS{
     .firstWave =
-        BydoWave{.bydoCount = 0, .spawnInterval = std::chrono::seconds(2)},
-    .bydosAddedPerWave = 1,
+        Wave{.entityCount = 0, .spawnInterval = std::chrono::seconds(2)},
+    .entitiesAddedPerWave = 1,
     .spawnIntervalCutPerWave = std::chrono::milliseconds(250),
     .shortestSpawnInterval = std::chrono::seconds(1),
     .wavePause = std::chrono::seconds(4),
     .levelWaves = LONG_LEVEL_WAVES};
 constexpr WaveCurve CURVE_WITHOUT_WAVES{
     .firstWave =
-        BydoWave{.bydoCount = 3, .spawnInterval = std::chrono::seconds(2)},
-    .bydosAddedPerWave = 1,
+        Wave{.entityCount = 3, .spawnInterval = std::chrono::seconds(2)},
+    .entitiesAddedPerWave = 1,
     .spawnIntervalCutPerWave = std::chrono::milliseconds(250),
     .shortestSpawnInterval = std::chrono::seconds(1),
     .wavePause = std::chrono::seconds(4),
     .levelWaves = 0};
 constexpr WaveCurve CURVE_WITHOUT_TIME_BETWEEN_BYDOS{
     .firstWave =
-        BydoWave{.bydoCount = 3, .spawnInterval = std::chrono::seconds(2)},
-    .bydosAddedPerWave = 1,
+        Wave{.entityCount = 3, .spawnInterval = std::chrono::seconds(2)},
+    .entitiesAddedPerWave = 1,
     .spawnIntervalCutPerWave = std::chrono::milliseconds(250),
     .shortestSpawnInterval = std::chrono::seconds(0),
     .wavePause = std::chrono::seconds(4),
     .levelWaves = LONG_LEVEL_WAVES};
 constexpr WaveCurve CURVE_THAT_SLOWS_DOWN{
     .firstWave =
-        BydoWave{.bydoCount = 3, .spawnInterval = std::chrono::seconds(2)},
-    .bydosAddedPerWave = 1,
+        Wave{.entityCount = 3, .spawnInterval = std::chrono::seconds(2)},
+    .entitiesAddedPerWave = 1,
     .spawnIntervalCutPerWave = std::chrono::milliseconds(250),
     .shortestSpawnInterval = std::chrono::milliseconds(2500),
     .wavePause = std::chrono::seconds(4),
     .levelWaves = LONG_LEVEL_WAVES};
 constexpr WaveCurve CURVE_WITH_A_NEGATIVE_CUT{
     .firstWave =
-        BydoWave{.bydoCount = 3, .spawnInterval = std::chrono::seconds(2)},
-    .bydosAddedPerWave = 1,
+        Wave{.entityCount = 3, .spawnInterval = std::chrono::seconds(2)},
+    .entitiesAddedPerWave = 1,
     .spawnIntervalCutPerWave = std::chrono::milliseconds(-250),
     .shortestSpawnInterval = std::chrono::seconds(1),
     .wavePause = std::chrono::seconds(4),
     .levelWaves = LONG_LEVEL_WAVES};
 constexpr WaveCurve CURVE_WITH_A_NEGATIVE_PAUSE{
     .firstWave =
-        BydoWave{.bydoCount = 3, .spawnInterval = std::chrono::seconds(2)},
-    .bydosAddedPerWave = 1,
+        Wave{.entityCount = 3, .spawnInterval = std::chrono::seconds(2)},
+    .entitiesAddedPerWave = 1,
     .spawnIntervalCutPerWave = std::chrono::milliseconds(250),
     .shortestSpawnInterval = std::chrono::seconds(1),
     .wavePause = std::chrono::seconds(-4),

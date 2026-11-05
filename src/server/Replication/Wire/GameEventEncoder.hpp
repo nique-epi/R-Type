@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "EnemyActionStarted.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestruction.hpp"
 #include "EntitySpawn.hpp"
@@ -30,6 +31,10 @@ class GameEventEncoder {
   /** @returns An EntityDestroyed, guaranteed. */
   [[nodiscard]] static EventMessage encode(
       const game::EntityDestruction& event);
+
+  /** @returns An EnemyAction, guaranteed. */
+  [[nodiscard]] static EventMessage encode(
+      const game::EnemyActionStarted& event);
 
   /** @returns A GameEvent of kind EntityDamaged with the next event number,
    * guaranteed. */

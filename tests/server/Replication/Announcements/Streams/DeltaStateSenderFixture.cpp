@@ -9,7 +9,8 @@
 #include "DeltaStateSenderTestConstants.hpp"
 #include "DeltaWorldState.hpp"
 #include "Entity.hpp"
-#include "EntityType.hpp"
+#include "EntityTypeNumber.hpp"
+#include "EntityTypeNumberTestConstants.hpp"
 #include "NetworkIdentity.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
@@ -49,7 +50,8 @@ engine::Entity DeltaStateSenderFixture::addEnemy(std::uint32_t networkId,
   const engine::Entity entity = entities_.create();
   components_.add(entity, game::NetworkIdentity{.networkId = networkId});
   components_.add(entity, position);
-  components_.add(entity, game::EntityType::Enemy);
+  components_.add(entity,
+                  game::EntityTypeNumber{.number = DRIFTER_TYPE_NUMBER});
   return entity;
 }
 

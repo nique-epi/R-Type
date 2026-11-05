@@ -10,7 +10,6 @@
 #include "IGameReplication.hpp"
 #include "InstallContext.hpp"
 #include "MessageDelivery.hpp"
-#include "StateSending.hpp"
 
 namespace rtype::server {
 
@@ -21,10 +20,7 @@ std::string ReplicationModule::name() const {
 void ReplicationModule::install(GameContext& game,
                                 engine::InstallContext& install) {
   game_ = &game;
-  replication_ = std::make_unique<GameReplication>(
-      game.roster.get(), game.send,
-      StateSending{.statesPerSecond = game.settings.statesPerSecond,
-                   .encoding = game.settings.stateEncoding});
+  replication_ = std::make_unique<GameReplication>(game);
   install.provide<IGameReplication>(*replication_);
 }
 

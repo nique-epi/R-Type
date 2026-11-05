@@ -1,1 +1,1 @@
-target_sources(game_tests PRIVATE MissileStartPositionTest.cpp EnemyMissileStartPositionTest.cpp)
+target_sources(game_tests PRIVATE ProjectileStartPositionTest.cpp)

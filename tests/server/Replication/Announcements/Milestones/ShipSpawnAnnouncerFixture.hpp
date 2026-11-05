@@ -5,9 +5,12 @@
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "ShipSpawnAnnouncer.hpp"
+#include "ShipSpawnAnnouncerParts.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "World.hpp"
 
 namespace rtype::server::testing {
@@ -30,10 +33,15 @@ class ShipSpawnAnnouncerFixture : public ::testing::Test {
   game::World world_;
   PlayerRoster roster_;
   std::vector<network::OutgoingDatagram> sent_;
-  ShipSpawnAnnouncer announcer_{world_, roster_,
-                                [this](network::OutgoingDatagram datagram) {
-                                  sent_.push_back(std::move(datagram));
-                                }};
+  ShipSpawnAnnouncer announcer_{ShipSpawnAnnouncerParts{
+      .world = world_,
+      .roster = roster_,
+      .send =
+          [this](network::OutgoingDatagram datagram) {
+            sent_.push_back(std::move(datagram));
+          },
+      .ship = game::testing::shippedEntitySheets().named(
+          game::testing::SHIP_SHEET)}};
 };
 
 }  // namespace rtype::server::testing

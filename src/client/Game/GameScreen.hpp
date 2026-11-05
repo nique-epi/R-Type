@@ -9,6 +9,7 @@
 #include "ComponentRegistry.hpp"
 #include "DepartureFeed.hpp"
 #include "EffectSpawner.hpp"
+#include "EnemyActionPlayer.hpp"
 #include "EntityMessage.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityReplicator.hpp"
@@ -166,6 +167,7 @@ class GameScreen : public IScreen {
   engine::ComponentRegistry components_{entities_};
   EffectSpawner effects_;
   EntityReplicator replicator_;
+  EnemyActionPlayer enemyActions_;
   engine::SystemScheduler systems_;
   PlayerCommands playerCommands_;
   IPlayerInputLink* inputs_;
@@ -174,6 +176,7 @@ class GameScreen : public IScreen {
   std::vector<EntityMessage> receivedEntityMessages_;
   ScoreBoard scoreBoard_;
   GameResult* result_;
+  std::uint8_t playerNumber_;
   OwnShipPredictor prediction_;
   InterpolationClock interpolationClock_;
   std::optional<engine::Duration> endedAt_;

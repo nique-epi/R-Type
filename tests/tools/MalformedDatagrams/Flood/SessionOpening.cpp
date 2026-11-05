@@ -9,6 +9,8 @@
 #include "ConnectionChallenge.hpp"
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
+#include "EntitySide.hpp"
+#include "EntityTypeEntry.hpp"
 #include "FloodConstants.hpp"
 #include "IncomingDatagram.hpp"
 #include "LoopbackPeer.hpp"
@@ -35,8 +37,11 @@ std::vector<std::byte> acceptanceDatagram() {
   return network::DatagramCodec::encode(
       network::PacketHeader{.sessionToken = TOOL_SESSION_TOKEN,
                             .sequence = SEQUENCE_BEFORE_THE_FLOOD},
-      network::ConnectionAccepted{.playerNumber =
-                                      network::FIRST_PLAYER_NUMBER});
+      network::ConnectionAccepted{
+          .playerNumber = network::FIRST_PLAYER_NUMBER,
+          .types = {network::EntityTypeEntry{
+              .side = network::EntitySide::Player,
+              .name = std::string{SAMPLE_ENTITY_TYPE_NAME}}}});
 }
 
 /**

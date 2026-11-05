@@ -22,14 +22,16 @@ set port 4300
 - Names and words are compared exactly, upper and lower case included: `set Port 4300` is refused, `module lobby OFF` too.
 - There are no variables, no conditions, no loops and no command that reads another file. A line is run once, in the order of the file.
 
-## The two commands
+## The commands
 
 | Command | Program | Effect |
 |---|---|---|
 | `set <setting> <value>` | server, client and master | Gives a setting a value, after checking it. |
 | `module <name> on\|off` | server, client and master | Turns a module of the program on or off before the modules start. |
+| `plugin <name>` | server, client and master | Loads a plugin, a module built as a shared library, before the modules install. |
+| `plugin-folder <folder>` | server, client and master | Sets the folder the `plugin` lines read. |
 
-No other command exists today. The interpreter keeps a help text for each command, but nothing prints it yet. A module that registers a command in its `install()` makes it usable in the file with no other change.
+No other command exists. The interpreter keeps a help text for each command, but nothing prints it yet. A module that registers a command in its `install()` makes it usable in the file with no other change.
 
 ### `set`
 
@@ -68,15 +70,25 @@ Master settings (see [Master](/R-Type/master/#configuration-mastercfg)):
 
 ### `module`
 
-`module` takes exactly two words: the name of a module and `on` or `off`. A module that is off is never installed: the `module` lines run once before any install, so it provides no service, adds no work, opens nothing and runs nothing. The whole file then runs again once every module is installed, so a `set` line finds the settings the modules declared. Every module is on until a line turns it off.
+`module` takes exactly two words: the name of a module and `on` or `off`. A module that is off is never installed: the `module` lines run once before any install, so it provides no service, adds no work, opens nothing and runs nothing. The file is read three times: first for the `plugin` and `plugin-folder` lines alone, then for the `module` lines alone, both before any install, and a last time with every command once every module is installed, so a `set` line finds the settings the modules declared. The `module` lines come after the `plugin` ones, so a plugin can be turned off like any module. Every module is on until a line turns it off.
 
 A module cannot be turned off while a module that stays on needs it, and cannot be turned on while a module it needs is off. The check uses the state at the time of the line, so turn off the dependents first and turn on the dependencies first.
+
+### `plugin`
+
+`plugin` takes exactly one word: the name of a plugin, made of letters, digits, `-` and `_`. It opens `<folder>/<name>.so` on Linux and macOS, `<folder>/<name>.dll` on Windows, and adds the module the library creates to the end of the list of modules, in the order of the lines. The folder is `plugins/` next to the executable until `plugin-folder` changes it. The same line run again does nothing: the file is read three times, and a plugin is loaded once.
+
+A plugin that cannot be loaded does not refuse the line: it stops the program before any module installs, and the program prints `server stopped: <message>` (`client stopped`, `master stopped`) and exits with code 1. The message names the plugin: a file that is not in the folder, a library that exports no `rtypePluginEntry`, a plugin built for another plugin API version (the message gives both numbers), a name with another character than the allowed ones, or a name a module already has. A plugin must be built by the same compiler, from the same sources, as the program (see [Write a plugin](/R-Type/modules/#write-a-plugin)).
+
+### `plugin-folder`
+
+`plugin-folder` takes exactly one word: a folder, read from the folder the program is started from when it is relative, like the file itself. It sets where the `plugin` lines look, and it comes before every `plugin` line: after one, a line that names another folder is refused, and a line that names the same folder again does nothing.
 
 Server modules:
 
 | Module | Needs | Does |
 |---|---|---|
-| `logger` | nothing | Applies the logging options when it starts. |
+| `logger` | nothing | Applies the logging options when it starts; provides the journal a plugin writes to. |
 | `network` | `logger` | Owns the UDP socket and the network thread. |
 | `storage` | `logger`, `network` | Opens the database of the leaderboard. |
 | `games` | `network`, `storage` | Hosts the games. |
@@ -110,7 +122,7 @@ Turning off a module the program cannot run without is accepted when nothing tha
 
 ## What happens to a bad line
 
-A refused line never stops the program. The reading goes on with the next line, and the program logs the refusal at the `warn` level once its journal is open, with the file and the line number. A line that comes from a launch option names the launch option instead of a file.
+A refused line never stops the program, with one exception: a `plugin` line that names a plugin that cannot be loaded (see [`plugin`](#plugin)). The reading goes on with the next line, and the program logs the refusal at the `warn` level once its journal is open, with the file and the line number. A line that comes from a launch option names the launch option instead of a file.
 
 | Cause | Message |
 |---|---|
@@ -130,6 +142,10 @@ The reasons:
 | `module` | `no module named '<name>'; modules: <list>` |
 | `module` | `expected 'on' or 'off', got '<word>'` |
 | `module` | `module '<a>' needs module '<b>', which is off` (turning on) or `which would be off` (turning off) |
+| `plugin` | `expected: plugin <name>` when the number of words is not one |
+| `plugin` | `plugins load before the modules install` for a plugin not loaded yet, once the modules are listed |
+| `plugin-folder` | `expected: plugin-folder <folder>` when the number of words is not one |
+| `plugin-folder` | `plugin-folder comes before every plugin line` for another folder, after a `plugin` line |
 
 ## Where the settings come from
 

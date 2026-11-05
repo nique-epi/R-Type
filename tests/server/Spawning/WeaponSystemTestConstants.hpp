@@ -33,6 +33,14 @@ constexpr game::Position OTHER_BYDO{.x = 1400.0F, .y = 600.0F};
  */
 constexpr float SOME_BYDO_MISSILE_X = 936.0F;
 
+/**
+ * @brief Where the missile of the first player starts: its ship stands at a
+ * tenth of the 1920 units of the playfield, x 192, its nose half of its 128
+ * units further, and the center of the missile half of its 64 units further
+ * still, at 288.
+ */
+constexpr float FIRST_SHIP_MISSILE_X = 288.0F;
+
 /** @brief Half a second at 60 ticks per second: how long after SOME_BYDO the
  * test of two Bydos makes OTHER_BYDO appear. */
 constexpr std::size_t HALF_A_SECOND_IN_TICKS = 30;

@@ -1,17 +1,19 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
+#include "EntitySheet.hpp"
 #include "EntitySpawnSender.hpp"
+#include "GameContext.hpp"
 #include "GameEndAnnouncer.hpp"
 #include "GameOutcome.hpp"
 #include "IGameReplication.hpp"
 #include "LobbyStateAnnouncer.hpp"
 #include "PlayerRoster.hpp"
 #include "ShipSpawnAnnouncer.hpp"
-#include "StateSending.hpp"
 #include "World.hpp"
 #include "WorldStateSender.hpp"
 
@@ -32,15 +34,15 @@ namespace rtype::server {
 class GameReplication final : public IGameReplication {
  public:
   /**
-   * @param roster The players the announcements go to; it must outlive this.
-   * @param send Called for each datagram to send. Must not be empty.
-   * @param sending How many world states each player is sent per second, from
-   * LOWEST_WORLD_STATES_PER_SECOND to HIGHEST_WORLD_STATES_PER_SECOND, and how
-   * they are written.
+   * @param game The players the announcements go to, how to send, the world
+   * states each player is sent per second (LOWEST_WORLD_STATES_PER_SECOND to
+   * HIGHEST_WORLD_STATES_PER_SECOND) and how they are written, and the sheets,
+   * whose SHIP_SHEET_NAME is the ship of every player; it must outlive this.
    * @throws InvalidStateRateException when the rate is outside that range.
+   * @throws game::UnknownEntityTypeException when no sheet is named
+   * SHIP_SHEET_NAME.
    */
-  GameReplication(PlayerRoster& roster, SendDatagram send,
-                  StateSending sending);
+  explicit GameReplication(GameContext& game);
 
   GameReplication(const GameReplication&) = delete;
   GameReplication& operator=(const GameReplication&) = delete;
@@ -59,6 +61,7 @@ class GameReplication final : public IGameReplication {
  private:
   PlayerRoster& roster_;
   SendDatagram send_;
+  std::reference_wrapper<const game::EntitySheet> ship_;
   WorldStateSender worldStateSender_;
   std::unique_ptr<ShipSpawnAnnouncer> shipSpawnAnnouncer_;
   std::unique_ptr<LobbyStateAnnouncer> lobbyStateAnnouncer_;

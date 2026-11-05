@@ -34,10 +34,11 @@ class ConnectionAcceptorFixture : public ::testing::Test {
                                 const std::string& nickname = std::string{
                                     PLAYER_NICKNAME});
 
-  /** @brief Goes through the challenge and sends the request with its
-   * cookie, for a player who asks for @p nickname. */
+  /** @brief Goes through the challenge at REQUEST_TIME and sends the request
+   * with its cookie at @p now, for a player who asks for @p nickname. */
   void connect(const network::Endpoint& sender,
-               const std::string& nickname = std::string{PLAYER_NICKNAME});
+               const std::string& nickname = std::string{PLAYER_NICKNAME},
+               engine::Duration now = REQUEST_TIME);
 
   [[nodiscard]] const std::vector<network::OutgoingDatagram>& answers() const;
 

@@ -5,20 +5,21 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "EntityIdConstants.hpp"
+#include "EntitySheet.hpp"
+#include "EntitySheets.hpp"
 #include "EntitySpawned.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
-#include "MissileStartPosition.hpp"
 #include "OutgoingDatagram.hpp"
 #include "Position.hpp"
 #include "SentDatagrams.hpp"
 #include "ShipWeaponFixture.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "TimeConstants.hpp"
 #include "WeaponSystemFixture.hpp"
 #include "WeaponSystemTestConstants.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::server::testing {
-namespace {
 
 /**
  * Given a player with a ship who holds shoot
@@ -44,10 +45,13 @@ TEST_F(ShipWeaponFixture, AnnouncesTheMissileInFrontOfTheShip) {
 
   const std::vector<network::EntitySpawned> spawns = spawnsSentTo(FIRST_PLAYER);
   ASSERT_EQ(spawns.size(), 1U);
-  const game::Position start = game::missileStartPosition(shipOf(player));
-  EXPECT_EQ(spawns.front().entityType, network::WireEntityType::PlayerMissile);
-  EXPECT_NEAR(spawns.front().x, start.x, WIRE_COORDINATE_TOLERANCE);
-  EXPECT_NEAR(spawns.front().y, start.y, WIRE_COORDINATE_TOLERANCE);
+  EXPECT_EQ(spawns.front().entityType,
+            game::testing::shippedEntitySheets()
+                .named(game::testing::PLAYER_MISSILE_SHEET)
+                .number);
+  EXPECT_NEAR(spawns.front().x, FIRST_SHIP_MISSILE_X,
+              WIRE_COORDINATE_TOLERANCE);
+  EXPECT_NEAR(spawns.front().y, shipOf(player).y, WIRE_COORDINATE_TOLERANCE);
 }
 
 /**
@@ -338,5 +342,4 @@ TEST_F(ShipWeaponFixture, ShipAndBydoFireAtTheirOwnCadence) {
   EXPECT_EQ(enemyMissilesInTheWorld().size(), 1U);
 }
 
-}  // namespace
 }  // namespace rtype::server::testing

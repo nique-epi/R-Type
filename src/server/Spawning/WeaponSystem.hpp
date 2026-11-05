@@ -2,26 +2,27 @@
 
 #include <optional>
 #include <vector>
+#include "EntitySheets.hpp"
 #include "EntitySpawnSender.hpp"
 #include "EntitySpawned.hpp"
 #include "Logger.hpp"
 #include "PlayerRoster.hpp"
 #include "WeaponShot.hpp"
+#include "WeaponSystemParts.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
 
 /**
  * @brief Fires the Gun of every body whose Intent wants to shoot, ships and
- * Bydos alike, and tells the players about each projectile.
+ * enemies alike, and tells the players about each projectile.
  *
  * At each onTick(), every Gun of a body that also has an Intent and is not
- * ready yet counts one tick down. Every such body that has a Position and a
- * NetworkIdentity too, whose Intent wants to shoot and whose Gun is ready,
- * fires one projectile of the type of its Gun (see
- * game::World::spawnPlayerMissile and game::World::spawnEnemyMissile), just in
- * front of the body (see game::missileStartPosition and
- * game::enemyMissileStartPosition), and its Gun starts counting its interval
+ * ready yet counts one tick down. Every such body that has a Position, a
+ * CollisionBox, an EntityType and a NetworkIdentity too, whose Intent wants to
+ * shoot and whose Gun is ready, fires one projectile of the sheet its Gun
+ * names (see game::World::spawn), just in front of the body (see
+ * game::projectileStartPosition), and its Gun starts counting its interval
  * again. The wait is counted in the ticks onTick() runs, whether the Intent
  * wants to shoot meanwhile or not, so releasing shoot and pressing it again
  * fires no sooner. Which controller wrote the Intent changes nothing: the
@@ -43,13 +44,10 @@ namespace rtype::server {
 class WeaponSystem {
  public:
   /**
-   * @param world The world the projectiles are created in; it must outlive
-   * the system.
-   * @param roster The players told about each projectile; it must outlive the
-   * system.
-   * @param send Must not be empty.
+   * @param parts The world, the players, how to send, and the sheets the guns
+   * name.
    */
-  WeaponSystem(game::World& world, PlayerRoster& roster, SendDatagram send);
+  explicit WeaponSystem(WeaponSystemParts parts);
 
   /**
    * @brief Counts the tick on every Gun, then fires each Gun that is ready
@@ -69,7 +67,8 @@ class WeaponSystem {
   /**
    * @returns The EntitySpawned of the projectile created for @p shot, or
    * nothing when every network id was given, which is logged, or when the
-   * shooter belongs to no connected player.
+   * projectile is a missile of a player whose shooter belongs to no connected
+   * player.
    */
   [[nodiscard]] std::optional<network::EntitySpawned> spawnProjectile(
       const WeaponShot& shot);
@@ -80,6 +79,7 @@ class WeaponSystem {
   game::World* world_;
   PlayerRoster* roster_;
   SendDatagram send_;
+  const game::EntitySheets* types_;
   logging::Logger logger_;
   std::vector<WeaponShot> shots_;
 };

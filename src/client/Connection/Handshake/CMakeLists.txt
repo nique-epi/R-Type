@@ -8,6 +8,7 @@ target_include_directories(rtype_client_handshake PUBLIC ${CMAKE_CURRENT_SOURCE_
 
 target_link_libraries(rtype_client_handshake
   PUBLIC
+    rtype_client_connection_entity_types
     rtype_client_session
     rtype_engine_time
     rtype_logging
@@ -18,6 +19,7 @@ target_link_libraries(rtype_client_handshake
     rtype_network_protocol
     rtype_network_transport
   PRIVATE
+    rtype_engine_exceptions
     rtype_network_connection_request
     rtype_network_lobby_state
 )

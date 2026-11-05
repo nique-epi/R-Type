@@ -12,9 +12,9 @@ namespace rtype::client {
 /**
  * @brief The request of the client to join a server, as the Connection
  * section of the protocol page describes: a ConnectionRequest without a
- * cookie, sent again every CONNECTION_REQUEST_INTERVAL while the server does
- * not answer, and with the cookie of its ConnectionChallenge once it sent one.
- * An attempt that got neither an acceptance nor a refusal within
+ * cookie, sent again every network::CONNECTION_REQUEST_INTERVAL while the
+ * server does not answer, and with the cookie of its ConnectionChallenge once
+ * it sent one. An attempt that got neither an acceptance nor a refusal within
  * CONNECTION_ATTEMPT_TIMEOUT of begin() is timed out: a challenge does not
  * restart that delay.
  */
@@ -36,7 +36,7 @@ class ConnectionAttempt {
   void answerChallenge(std::uint64_t cookie, ISessionOutbox& outbox);
 
   /** @brief Counts @p elapsed, and sends the request again once
-   * CONNECTION_REQUEST_INTERVAL passed since the previous one.
+   * network::CONNECTION_REQUEST_INTERVAL passed since the previous one.
    * @returns TimedOut once CONNECTION_ATTEMPT_TIMEOUT passed since begin(),
    * and then sends nothing. */
   [[nodiscard]] AttemptProgress advance(engine::Duration elapsed,

@@ -1,10 +1,13 @@
 #pragma once
 
+#include <functional>
 #include <optional>
 #include "ConnectedPlayer.hpp"
+#include "EntitySheet.hpp"
 #include "EntitySpawnSender.hpp"
 #include "EntitySpawned.hpp"
 #include "PlayerRoster.hpp"
+#include "ShipSpawnAnnouncerParts.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
@@ -13,8 +16,9 @@ namespace rtype::server {
  * @brief Gives a player who joins a ship in the world and tells the players
  * about it, as the Entities section of the protocol page describes.
  *
- * The ship appears at the start position of the player number (see
- * shipStartPosition). Every connected player, the new one included, is sent an
+ * The ship is made from the sheet of a ship (see game::World::spawn), at the
+ * start position of the player number (see shipStartPosition), with the lives
+ * the player has left. Every connected player, the new one included, is sent an
  * EntitySpawned for it, and the new player is sent one for each ship already
  * in the game, so it sees the others. A player who already has a ship gets no
  * second one and nobody is sent anything, so a call repeated for the same
@@ -22,18 +26,9 @@ namespace rtype::server {
  */
 class ShipSpawnAnnouncer {
  public:
-  /**
-   * @brief What the announcer calls for each datagram to send.
-   */
-  using Send = SendDatagram;
-
-  /**
-   * @param world The world the ships are created in; it must outlive the
-   * announcer.
-   * @param roster The players of the game; it must outlive the announcer.
-   * @param send Must not be empty.
-   */
-  ShipSpawnAnnouncer(game::World& world, PlayerRoster& roster, Send send);
+  /** @param parts The world, the players, how to send, and the sheet of a
+   * ship. */
+  explicit ShipSpawnAnnouncer(ShipSpawnAnnouncerParts parts);
 
   /**
    * @brief Creates the ship of @p player, unless it has one, and announces it.
@@ -43,6 +38,10 @@ class ShipSpawnAnnouncer {
   void onPlayerJoined(ConnectedPlayer& player);
 
  private:
+  /** @brief Makes the ship of @p player from the sheet of a ship at the start
+   * of its player number, with the lives the player has left. */
+  void giveShipTo(ConnectedPlayer& player);
+
   /**
    * @returns The EntitySpawned of the ship of @p owner, at the position it has
    * in the world, or nothing when @p owner has no ship there.
@@ -56,7 +55,8 @@ class ShipSpawnAnnouncer {
 
   game::World* world_;
   PlayerRoster* roster_;
-  Send send_;
+  SendDatagram send_;
+  std::reference_wrapper<const game::EntitySheet> ship_;
 };
 
 }  // namespace rtype::server

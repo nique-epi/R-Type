@@ -12,10 +12,12 @@
 #include "CommandInterpreter.hpp"
 #include "ConfigurationStep.hpp"
 #include "EngineException.hpp"
+#include "ExecutablePath.hpp"
 #include "IModule.hpp"
 #include "IOptionalDependencies.hpp"
 #include "InstallContext.hpp"
 #include "LoopStages.hpp"
+#include "PluginConstants.hpp"
 #include "RequireNoNullModule.hpp"
 #include "TimeConstants.hpp"
 
@@ -76,7 +78,8 @@ Application::Application(std::vector<std::unique_ptr<IModule>> modules)
 Application::Application(LoopStages stages,
                          std::vector<std::unique_ptr<IModule>> modules,
                          ConfigurationStep configure)
-    : stages_(std::move(stages)),
+    : plugins_(executableFolder() / DEFAULT_PLUGIN_FOLDER_NAME),
+      stages_(std::move(stages)),
       modules_(std::move(modules)),
       configure_(std::move(configure)) {
   requireNoNullModule<IModule>(modules_);
@@ -85,6 +88,7 @@ Application::Application(LoopStages stages,
   services_.provide(commands_);
   services_.provide(configuration_);
   switches_.registerCommand(commands_);
+  plugins_.registerCommands(commands_);
 }
 
 Application::~Application() {
@@ -99,6 +103,7 @@ void Application::start() {
     return;
   }
   startCalled_ = true;
+  loadPlugins();
   settleSwitches();
   installModules();
   if (configure_) {
@@ -124,6 +129,26 @@ void Application::runStages(Duration elapsed) const {
   if (running_) {
     stages_.run(elapsed);
   }
+}
+
+void Application::loadPlugins() {
+  if (!configure_) {
+    return;
+  }
+  CommandInterpreter pluginsOnly;
+  plugins_.registerCommands(pluginsOnly);
+  configure_(pluginsOnly);
+  addModules(plugins_.takeModules());
+}
+
+void Application::addModules(std::vector<std::unique_ptr<IModule>> added) {
+  for (std::unique_ptr<IModule>& addedModule : added) {
+    if (listsModule(modules_, addedModule->name())) {
+      throw DuplicateModuleNameException(addedModule->name());
+    }
+    modules_.push_back(std::move(addedModule));
+  }
+  requireDependenciesListedBefore(modules_);
 }
 
 void Application::settleSwitches() {

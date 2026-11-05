@@ -22,7 +22,6 @@ target_link_libraries(rtype_client_settings_module
   PRIVATE
     rtype_client_constants
     rtype_client_platform
-    rtype_engine_paths
 )
 
 rtype_enable_warnings(rtype_client_settings_module)

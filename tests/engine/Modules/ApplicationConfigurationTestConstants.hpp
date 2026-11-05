@@ -13,6 +13,8 @@ constexpr const char* TURN_SECOND_MAYBE = "module second maybe";
 
 /** @brief The commands the application registers by itself. */
 constexpr const char* MODULE_HELP_START = "module ";
+constexpr const char* PLUGIN_HELP_START = "plugin ";
+constexpr const char* PLUGIN_FOLDER_HELP_START = "plugin-folder ";
 constexpr const char* SET_HELP_START = "set ";
 
 /** @brief What the refusals of the tests must name. */

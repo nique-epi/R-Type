@@ -16,6 +16,7 @@
 #include "RtypeGameModules.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerModuleTestConstants.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
 #include "TimeConstants.hpp"
 
@@ -28,7 +29,8 @@ void GamesFixture::addGame() {
           .settings =
               rtype::server::GameSettings{
                   .seed = SOME_SEED,
-                  .waves = rtype::server::testing::testWavePlan()},
+                  .waves = rtype::server::testing::testWavePlan(),
+                  .types = rtype::game::testing::shippedEntitySheets()},
           .events = *events,
           .clock = clock_},
       rtype::server::rtypeGameModules(results_));

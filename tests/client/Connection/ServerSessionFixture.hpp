@@ -23,6 +23,8 @@
 #include "ServerSession.hpp"
 #include "ServerSessionFixtures.hpp"
 #include "ServerSessionParts.hpp"
+#include "SessionEntityTypes.hpp"
+#include "SessionEntityTypesFixtures.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
 #include "WaitingRoom.hpp"
@@ -110,10 +112,12 @@ class ServerSessionFixture : public ::testing::Test {
   EntityMessageQueue entityMessages_{dispatcher_, waitingRoom_, gameLoaded_};
   SimulatedClock clock_;
   RoundTripWatch roundTrips_{dispatcher_, clock_};
+  SessionEntityTypes entityTypes_{isDrawnInTheTests};
   ServerSession session_{ServerSessionParts{
       .link = link_,
       .dispatcher = dispatcher_,
       .gameLoaded = gameLoaded_,
+      .entityTypes = entityTypes_,
       .observers = {waitingRoom_, entityMessages_, gameLoaded_, roundTrips_}}};
 };
 

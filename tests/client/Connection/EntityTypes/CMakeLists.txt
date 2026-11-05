@@ -1,0 +1,2 @@
+target_sources(client_connection_tests PRIVATE SessionEntityTypesTest.cpp SessionEntityTypesFixtures.cpp)
+target_include_directories(client_connection_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

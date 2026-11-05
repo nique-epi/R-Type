@@ -19,3 +19,4 @@ B-CPP-500_rtype.pdf
 node_modules/
 /docs/dist/
 /docs/.astro/
+/plugins/

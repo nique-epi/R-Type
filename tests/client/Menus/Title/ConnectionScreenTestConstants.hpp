@@ -46,4 +46,18 @@ const ServerConnectionCall CANCEL{
     .server = {},
     .nickname = {}};
 
+/** @brief Names of sheets a server plays and this client lacks: two short
+ * ones, the longest name of a shipped sheet, which the status line holds whole
+ * after MISSING_SHEET_STATUS, and one of the 24 bytes the protocol allows at
+ * most, which it does not. */
+constexpr std::string_view SHORT_MISSING_SHEET = "voltjelly";
+constexpr std::string_view SHORTER_MISSING_SHEET = "reaper";
+constexpr std::string_view LONGEST_SHIPPED_MISSING_SHEET = "player_missile";
+constexpr std::string_view LONGEST_MISSING_SHEET = "abcdefghijklmnopqrstuvwx";
+
+/** @brief How many other sheets are missing: two, and the 31 a table of the
+ * 32 types the protocol allows can name besides the first. */
+constexpr std::uint8_t TWO_OTHER_MISSING_SHEETS = 2;
+constexpr std::uint8_t MOST_OTHER_MISSING_SHEETS = 31;
+
 }  // namespace rtype::client::testing

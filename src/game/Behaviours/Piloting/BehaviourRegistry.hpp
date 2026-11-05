@@ -10,9 +10,10 @@ namespace rtype::game {
 /**
  * @brief The behaviours a body may be given, found by their name.
  *
- * It owns them, so a Pilot may keep a reference to one for as long as the
- * registry lives. A behaviour is looked up when a body appears, never during a
- * tick.
+ * It owns them, each behind its own pointer, so a Pilot may keep a reference
+ * to one for as long as the registry lives, wherever the registry is moved. A
+ * behaviour is looked up when a body appears or a sheet is read, never during
+ * a tick.
  */
 class BehaviourRegistry {
  public:
@@ -23,16 +24,14 @@ class BehaviourRegistry {
    */
   void add(std::unique_ptr<IBehaviour> behaviour);
 
-  /**
-   * @returns The behaviour named @p name.
-   * @throws UnknownBehaviourException When none is.
-   */
-  [[nodiscard]] const IBehaviour& named(std::string_view name) const;
-
- private:
-  /** @returns The behaviour named @p name, or nullptr when none is. */
+  /** @returns The behaviour named @p name, or nullptr when none is: the reader
+   * of a sheet asks it, so its error names the file and the key. */
   [[nodiscard]] const IBehaviour* find(std::string_view name) const;
 
+  /** @returns The names of the behaviours, in the order they were added. */
+  [[nodiscard]] std::vector<std::string_view> names() const;
+
+ private:
   std::vector<std::unique_ptr<IBehaviour>> behaviours_;
 };
 
