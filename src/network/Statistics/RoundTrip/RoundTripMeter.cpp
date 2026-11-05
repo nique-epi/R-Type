@@ -1,6 +1,5 @@
 #include "RoundTripMeter.hpp"
 #include <chrono>
-#include <cstdint>
 #include <optional>
 #include "Heartbeat.hpp"
 #include "PeerStamp.hpp"

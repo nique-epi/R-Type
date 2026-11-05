@@ -6,6 +6,7 @@
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
 #include "Disconnection.hpp"
+#include "EncodedMessage.hpp"
 #include "Endpoint.hpp"
 #include "Heartbeat.hpp"
 #include "MessagePayload.hpp"

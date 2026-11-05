@@ -365,10 +365,10 @@ constexpr std::size_t LARGEST_SERVER_INFORMATION_DATAGRAM_SIZE =
     UINT16_WIRE_SIZE;
 
 /**
- * @brief The size of every datagram holding a ServerInformationRequest: as
- * large as the largest answer, so the server never sends a sender it does not
- * know more bytes than it received, as QUIC pads its first datagram (RFC 9000,
- * section 8.1).
+ * @brief The size of every datagram holding a ServerInformationRequest: the
+ * size of the largest answer, by definition, so the server never sends a
+ * sender it does not know more bytes than it received, as QUIC pads its first
+ * datagram (RFC 9000, section 8.1).
  */
 constexpr std::size_t SERVER_INFORMATION_REQUEST_DATAGRAM_SIZE =
     LARGEST_SERVER_INFORMATION_DATAGRAM_SIZE;
@@ -380,11 +380,6 @@ constexpr std::size_t SERVER_INFORMATION_REQUEST_DATAGRAM_SIZE =
 constexpr std::size_t SERVER_INFORMATION_REQUEST_PADDING_SIZE =
     SERVER_INFORMATION_REQUEST_DATAGRAM_SIZE - PACKET_HEADER_SIZE -
     MESSAGE_PREFIX_SIZE - UINT32_WIRE_SIZE;
-
-static_assert(LARGEST_SERVER_INFORMATION_DATAGRAM_SIZE <=
-                  SERVER_INFORMATION_REQUEST_DATAGRAM_SIZE,
-              "a ServerInformation is never larger than the request it "
-              "answers");
 
 /**
  * @brief The value of every byte of the padding of a ServerInformationRequest.

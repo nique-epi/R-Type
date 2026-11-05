@@ -12,8 +12,6 @@ struct ServerOccupancy {
   std::uint16_t gameCount{};
   /** @brief The empty seats of the games that wait for players. */
   std::uint16_t freeSeatCount{};
-
-  bool operator==(const ServerOccupancy&) const = default;
 };
 
 }  // namespace rtype::server

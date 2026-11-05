@@ -1,12 +1,10 @@
 #include <gtest/gtest.h>
 #include <cstddef>
-#include <cstdint>
 #include <vector>
 #include "DatagramCodec.hpp"
 #include "MessagePayload.hpp"
 #include "NetworkException.hpp"
 #include "PacketHeader.hpp"
-#include "ProtocolConstants.hpp"
 #include "ServerInformationRequest.hpp"
 #include "ServerInformationRequestTestConstants.hpp"
 

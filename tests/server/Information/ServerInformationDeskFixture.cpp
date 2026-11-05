@@ -17,17 +17,17 @@ void ServerInformationDeskFixture::answerAs(std::string_view name) {
   desk_.emplace(rtype::server::ServerInformationDeskParts{
       .name = std::string{name},
       .gameVersion = std::string{rtype::server::testing::DESK_GAME_VERSION},
-      .send =
-          [this](rtype::network::OutgoingDatagram datagram) {
-            sent_.push_back(std::move(datagram));
-          },
-      .occupancy = [] { return rtype::server::testing::DESK_OCCUPANCY; }});
+      .send = [this](rtype::network::OutgoingDatagram datagram) {
+        sent_.push_back(std::move(datagram));
+      }});
 }
 
 void ServerInformationDeskFixture::answer(
     const std::vector<rtype::network::IncomingDatagram>& datagrams,
     std::chrono::nanoseconds now) {
-  desk_->answer(datagrams, now);
+  if (desk_.has_value()) {
+    desk_->answer(datagrams, rtype::server::testing::DESK_OCCUPANCY, now);
+  }
 }
 
 const std::vector<rtype::network::OutgoingDatagram>&

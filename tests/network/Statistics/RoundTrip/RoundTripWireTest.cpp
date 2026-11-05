@@ -2,6 +2,7 @@
 #include <chrono>
 #include <optional>
 #include "RoundTripFigures.hpp"
+#include "RoundTripMeterTestConstants.hpp"
 #include "RoundTripWire.hpp"
 #include "RoundTripWireTestConstants.hpp"
 #include "RoundTrips.hpp"
@@ -10,15 +11,15 @@
 
 namespace rtype::network {
 
-using testing::A_MILLISECOND_BEFORE_THE_WRAP;
 using testing::ANSWERED_AT_FIFTY_MILLISECONDS;
 using testing::ASKED_AT_FORTY_NINE_MILLISECONDS;
 using testing::ASKED_AT_TEN_MILLISECONDS;
-using testing::HELD_THREE_MILLISECONDS;
+using testing::ONE_MILLISECOND_BEFORE_THE_WRAP;
 using testing::PAST_THE_WRAP;
 using testing::PAST_THE_WRAP_ON_THE_WIRE;
 using testing::THIRTY_SEVEN_MILLISECONDS;
 using testing::THREE_MILLISECONDS;
+using testing::THREE_MILLISECONDS_HELD;
 using testing::TWENTY_ONE_SECONDS_LATER;
 using testing::TWO_MILLISECONDS_AFTER_THE_WRAP;
 using testing::WIRE_JITTER;
@@ -71,7 +72,7 @@ TEST(RoundTripWire, ReadsTheFiguresOfAPlayerBack) {
 TEST(RoundTripWire, MeasuresTheRoundTripOfAnInformationRequest) {
   ServerInformation answer;
   answer.sentAt = informationRequestAt(ASKED_AT_TEN_MILLISECONDS).sentAt;
-  answer.heldFor = HELD_THREE_MILLISECONDS;
+  answer.heldFor = THREE_MILLISECONDS_HELD;
 
   EXPECT_EQ(informationRoundTripOf(answer, ANSWERED_AT_FIFTY_MILLISECONDS),
             THIRTY_SEVEN_MILLISECONDS);
@@ -84,7 +85,7 @@ TEST(RoundTripWire, MeasuresTheRoundTripOfAnInformationRequest) {
  */
 TEST(RoundTripWire, MeasuresARoundTripAcrossTheWrap) {
   ServerInformation answer;
-  answer.sentAt = informationRequestAt(A_MILLISECOND_BEFORE_THE_WRAP).sentAt;
+  answer.sentAt = informationRequestAt(ONE_MILLISECOND_BEFORE_THE_WRAP).sentAt;
 
   EXPECT_EQ(informationRoundTripOf(answer, TWO_MILLISECONDS_AFTER_THE_WRAP),
             THREE_MILLISECONDS);
@@ -99,7 +100,7 @@ TEST(RoundTripWire, MeasuresARoundTripAcrossTheWrap) {
 TEST(RoundTripWire, MeasuresNothingHeldLongerThanSinceItWasSent) {
   ServerInformation answer;
   answer.sentAt = informationRequestAt(ASKED_AT_FORTY_NINE_MILLISECONDS).sentAt;
-  answer.heldFor = HELD_THREE_MILLISECONDS;
+  answer.heldFor = THREE_MILLISECONDS_HELD;
 
   EXPECT_EQ(informationRoundTripOf(answer, ANSWERED_AT_FIFTY_MILLISECONDS),
             std::nullopt);

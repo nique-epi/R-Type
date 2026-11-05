@@ -24,6 +24,7 @@
 #include "RateLimitConstants.hpp"
 #include "SenderAllowance.hpp"
 #include "ServerConstants.hpp"
+#include "SortedQueue.hpp"
 #include "SpokenDatagram.hpp"
 #include "TimeConstants.hpp"
 
@@ -48,25 +49,39 @@ bool carriesSessionToken(const network::PacketHeader& header,
 }
 
 /**
- * @returns Whether @p datagram holds a message sent outside any session: a
- * ConnectionRequest or a ServerInformationRequest.
+ * @returns The queue a datagram holding @p types goes to: the connection
+ * requests when it holds a ConnectionRequest, whatever else it holds, then the
+ * information requests, then the players.
  */
-bool isOutsideSession(const SpokenDatagram& datagram) {
-  return datagram.holdsRequest || datagram.asksInformation;
+SortedQueue queueFor(const network::DatagramCodec::MessageTypes& types) {
+  if (types.test(
+          static_cast<std::size_t>(network::MessageType::ConnectionRequest))) {
+    return SortedQueue::ConnectionRequests;
+  }
+  if (types.test(static_cast<std::size_t>(
+          network::MessageType::ServerInformationRequest))) {
+    return SortedQueue::InformationRequests;
+  }
+  return SortedQueue::Players;
 }
 
-/**
- * @returns The queue of @p destinations that @p datagram goes to: the
- * connection requests when it holds a ConnectionRequest, whatever else it
- * holds, then the information requests, then the players.
- */
+/** @returns Whether @p datagram holds a message sent outside any session. */
+bool isOutsideSession(const SpokenDatagram& datagram) {
+  return datagram.queue != SortedQueue::Players;
+}
+
+/** @returns The queue of @p destinations that @p datagram goes to. */
 concurrency::BoundedQueue<network::IncomingDatagram>& queueOf(
     const DatagramQueues& destinations, const SpokenDatagram& datagram) {
-  if (datagram.holdsRequest) {
-    return *destinations.connectionRequests;
+  switch (datagram.queue) {
+    case SortedQueue::ConnectionRequests:
+      return *destinations.connectionRequests;
+    case SortedQueue::InformationRequests:
+      return *destinations.informationRequests;
+    case SortedQueue::Players:
+      break;
   }
-  return datagram.asksInformation ? *destinations.informationRequests
-                                  : *destinations.players;
+  return *destinations.players;
 }
 
 /**
@@ -143,14 +158,10 @@ void DatagramSorter::sort(const network::Endpoint& sender,
     drops_->drop(sender, MESSAGE_SIZES_DROP_REASON);
     return;
   }
-  sortSpoken(SpokenDatagram{
-      .sender = sender,
-      .header = header,
-      .holdsRequest = types->test(
-          static_cast<std::size_t>(network::MessageType::ConnectionRequest)),
-      .asksInformation = types->test(static_cast<std::size_t>(
-          network::MessageType::ServerInformationRequest)),
-      .bytes = datagram});
+  sortSpoken(SpokenDatagram{.sender = sender,
+                            .header = header,
+                            .queue = queueFor(*types),
+                            .bytes = datagram});
 }
 
 void DatagramSorter::sortSpoken(const SpokenDatagram& datagram) {

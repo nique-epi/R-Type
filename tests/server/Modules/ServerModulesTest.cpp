@@ -9,6 +9,7 @@
 #include <vector>
 #include "Application.hpp"
 #include "DatagramCodec.hpp"
+#include "Endpoint.hpp"
 #include "IModule.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"

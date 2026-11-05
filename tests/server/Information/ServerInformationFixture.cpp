@@ -1,4 +1,5 @@
 #include "ServerInformationFixture.hpp"
+#include <gtest/gtest.h>
 #include <cstddef>
 #include <memory>
 #include <vector>
@@ -8,7 +9,7 @@
 #include "ServerDatagrams.hpp"
 #include "ServerInformation.hpp"
 #include "ServerInformationModule.hpp"
-#include "ServerLobbyModule.hpp"
+#include "ServerLobbyFixture.hpp"
 
 using rtype::server::testing::onlyMessageIn;
 using rtype::server::testing::playerEndpoint;
@@ -16,8 +17,8 @@ using rtype::server::testing::sentTo;
 
 std::vector<std::unique_ptr<rtype::engine::IModule>>
 ServerInformationFixture::modulesAfterTheGames() const {
-  std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
-  modules.push_back(std::make_unique<rtype::server::ServerLobbyModule>());
+  std::vector<std::unique_ptr<rtype::engine::IModule>> modules =
+      ServerLobbyFixture::modulesAfterTheGames();
   modules.push_back(std::make_unique<rtype::server::ServerInformationModule>());
   return modules;
 }

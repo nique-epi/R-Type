@@ -4,6 +4,7 @@
 #include "DatagramCodec.hpp"
 #include "EncodedMessage.hpp"
 #include "IncomingDatagram.hpp"
+#include "MasterMessageTextTestConstants.hpp"
 #include "MessagePayload.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
@@ -17,12 +18,12 @@
 
 using rtype::network::IncomingDatagram;
 using rtype::network::ServerInformation;
+using rtype::network::testing::NAME_OF_32_BYTES;
 using rtype::server::testing::ANSWERED_THREE_MILLISECONDS_LATER;
 using rtype::server::testing::ASKED_AT;
 using rtype::server::testing::DESK_GAME_VERSION;
 using rtype::server::testing::DESK_OCCUPANCY;
 using rtype::server::testing::DESK_SERVER_NAME;
-using rtype::server::testing::LONGEST_SERVER_NAME;
 using rtype::server::testing::onlyMessageIn;
 using rtype::server::testing::playerEndpoint;
 using rtype::server::testing::REQUEST_ARRIVAL;
@@ -74,7 +75,7 @@ TEST_F(ServerInformationDeskFixture, SaysHowLongItHeldTheRequest) {
  * more bytes than its forger sent
  */
 TEST_F(ServerInformationDeskFixture, NeverAnswersMoreBytesThanItReceived) {
-  answerAs(LONGEST_SERVER_NAME);
+  answerAs(NAME_OF_32_BYTES);
   const IncomingDatagram request = informationRequestArriving(ASKED_AT);
 
   answer({request}, REQUEST_ARRIVAL);

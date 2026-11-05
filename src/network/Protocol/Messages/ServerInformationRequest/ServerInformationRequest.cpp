@@ -1,9 +1,9 @@
 #include "ServerInformationRequest.hpp"
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <type_traits>
-#include <vector>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
 #include "NetworkException.hpp"
@@ -32,9 +32,11 @@ void requireZeroPadding(std::span<const std::byte> padding) {
 
 void encodePayload(ByteWriter& writer,
                    const ServerInformationRequest& message) {
+  static constexpr std::array<std::byte,
+                              SERVER_INFORMATION_REQUEST_PADDING_SIZE>
+      padding{};
+  static_assert(PADDING_BYTE == 0, "an array of zeros is the padding");
   writer.writeUint32(message.sentAt);
-  const std::vector<std::byte> padding(SERVER_INFORMATION_REQUEST_PADDING_SIZE,
-                                       std::byte{PADDING_BYTE});
   writer.writeBytes(padding);
 }
 

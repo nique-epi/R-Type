@@ -4,14 +4,9 @@
 #include <exception>
 #include <optional>
 #include <span>
-#include <string>
-#include <string_view>
 #include <utility>
 #include "DatagramCodec.hpp"
-#include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
-#include "InformationConstants.hpp"
-#include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
@@ -28,16 +23,17 @@ ServerInformationDesk::ServerInformationDesk(ServerInformationDeskParts parts)
 
 void ServerInformationDesk::answer(
     std::span<const network::IncomingDatagram> datagrams,
-    std::chrono::nanoseconds now) {
+    const ServerOccupancy& occupancy, std::chrono::nanoseconds now) {
   for (const network::IncomingDatagram& datagram : datagrams) {
     try {
       if (const std::optional<network::ServerInformationRequest> request =
-              readRequest(datagram, now)) {
+              requests_.read(datagram, now)) {
         parts_.send(network::OutgoingDatagram{
             .destination = datagram.sender,
             .payload = network::DatagramCodec::encode(
                 network::PacketHeader{},
-                informationFor(*request, datagram.receivedAt, now))});
+                informationFor(*request, now - datagram.receivedAt,
+                               occupancy))});
       }
     } catch (const std::exception& error) {
       failureLog_.error(now, "dropped a datagram from ",
@@ -47,46 +43,19 @@ void ServerInformationDesk::answer(
   }
 }
 
-std::optional<network::ServerInformationRequest>
-ServerInformationDesk::readRequest(const network::IncomingDatagram& datagram,
-                                   std::chrono::nanoseconds now) {
-  std::optional<network::ServerInformationRequest> request;
-  try {
-    request =
-        network::DatagramCodec::firstMessage<network::ServerInformationRequest>(
-            datagram.payload);
-  } catch (const network::NetworkException& error) {
-    drop(datagram.sender, error.what(), now);
-    return std::nullopt;
-  }
-  if (!request.has_value()) {
-    drop(datagram.sender, NO_INFORMATION_REQUEST_DROP_REASON, now);
-  }
-  return request;
-}
-
 network::ServerInformation ServerInformationDesk::informationFor(
     const network::ServerInformationRequest& request,
-    std::chrono::nanoseconds receivedAt, std::chrono::nanoseconds now) const {
-  const ServerOccupancy occupancy = parts_.occupancy();
-  const std::chrono::nanoseconds held =
-      std::max(now - receivedAt, std::chrono::nanoseconds::zero());
+    std::chrono::nanoseconds held, const ServerOccupancy& occupancy) const {
   return network::ServerInformation{
       .sentAt = request.sentAt,
-      .heldFor = network::wireMicrosecondsOf(held),
+      .heldFor = network::wireMicrosecondsOf(
+          std::max(held, std::chrono::nanoseconds::zero())),
       .protocolVersion = network::PROTOCOL_VERSION,
       .gameVersion = parts_.gameVersion,
       .name = parts_.name,
       .playerCount = occupancy.playerCount,
       .gameCount = occupancy.gameCount,
       .freeSeatCount = occupancy.freeSeatCount};
-}
-
-void ServerInformationDesk::drop(const network::Endpoint& sender,
-                                 std::string_view reason,
-                                 std::chrono::nanoseconds now) {
-  dropLog_.debug(now, "dropped a datagram from ", sender.address, " port ",
-                 sender.port, ": ", reason);
 }
 
 }  // namespace rtype::server

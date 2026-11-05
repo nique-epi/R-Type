@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string_view>
@@ -60,6 +61,14 @@ float readCoordinate(ByteReader& reader);
  * in a log line cannot start a line of its own. An empty text is printable.
  */
 [[nodiscard]] bool isPrintableUtf8(std::string_view text);
+
+/**
+ * @returns Whether @p text is 1 to @p maximumSize bytes of printable UTF-8
+ * (isPrintableUtf8()), the rule of every short text the protocol and the
+ * master carry.
+ */
+[[nodiscard]] bool isValidBoundedText(std::string_view text,
+                                      std::size_t maximumSize);
 
 /**
  * @returns Whether @p nickname is a nickname the protocol accepts:

@@ -140,10 +140,6 @@ std::string stringOf(const JsonField& field) {
   return value.get<std::string>();
 }
 
-bool isValidBoundedText(std::string_view text, std::size_t maximumSize) {
-  return !text.empty() && text.size() <= maximumSize && isPrintableUtf8(text);
-}
-
 /** @returns The text @p field holds: 1 to @p maximumSize printable bytes. */
 std::string boundedTextOf(const JsonField& field, std::size_t maximumSize) {
   std::string text = stringOf(field);

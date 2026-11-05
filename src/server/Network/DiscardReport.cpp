@@ -2,10 +2,12 @@
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <string_view>
 #include "BoundedQueue.hpp"
 #include "DatagramDrops.hpp"
 #include "DatagramQueues.hpp"
 #include "Endpoint.hpp"
+#include "Logger.hpp"
 #include "ServerConstants.hpp"
 
 namespace rtype::server {
@@ -34,6 +36,23 @@ std::size_t countedSince(std::size_t current, std::size_t& reported) {
   return fresh;
 }
 
+/** @brief What a queue holds, as its line names it, and its room. */
+struct DiscardedQueue {
+  std::string_view held;
+  std::size_t capacity{};
+};
+
+/** @brief Warns of the @p fresh datagrams @p queue discarded since the
+ * previous report, when there are any. */
+void warnDiscards(const logging::Logger& logger, std::size_t fresh,
+                  const DiscardedQueue& queue) {
+  if (fresh > 0) {
+    logger.warn(fresh, " ", queue.held, " discarded in the last ",
+                REPORT_SECONDS, " s: more than ", queue.capacity,
+                " arrived between two ticks");
+  }
+}
+
 }  // namespace
 
 DiscardReport::DiscardReport(DatagramQueues queues, DatagramDrops& drops)
@@ -51,34 +70,22 @@ void DiscardReport::countTick() {
 }
 
 void DiscardReport::report() {
-  reportDiscards();
+  warnDiscards(
+      logger_,
+      countedSince(queues_.players->discardedCount(), reportedDiscardCount_),
+      DiscardedQueue{.held = "datagrams of players",
+                     .capacity = INCOMING_DATAGRAM_QUEUE_CAPACITY});
+  warnDiscards(logger_,
+               countedSince(queues_.connectionRequests->discardedCount(),
+                            reportedRequestDiscardCount_),
+               DiscardedQueue{.held = "connection requests",
+                              .capacity = CONNECTION_REQUEST_QUEUE_CAPACITY});
+  warnDiscards(logger_,
+               countedSince(queues_.informationRequests->discardedCount(),
+                            reportedInformationDiscardCount_),
+               DiscardedQueue{.held = "information requests",
+                              .capacity = INFORMATION_REQUEST_QUEUE_CAPACITY});
   reportDrops();
-}
-
-void DiscardReport::reportDiscards() {
-  if (const std::size_t fresh = countedSince(queues_.players->discardedCount(),
-                                             reportedDiscardCount_)) {
-    logger_.warn(fresh, " datagrams of players discarded in the last ",
-                 REPORT_SECONDS, " s: more than ",
-                 INCOMING_DATAGRAM_QUEUE_CAPACITY,
-                 " arrived between two ticks");
-  }
-  if (const std::size_t fresh =
-          countedSince(queues_.connectionRequests->discardedCount(),
-                       reportedRequestDiscardCount_)) {
-    logger_.warn(fresh, " connection requests discarded in the last ",
-                 REPORT_SECONDS, " s: more than ",
-                 CONNECTION_REQUEST_QUEUE_CAPACITY,
-                 " arrived between two ticks");
-  }
-  if (const std::size_t fresh =
-          countedSince(queues_.informationRequests->discardedCount(),
-                       reportedInformationDiscardCount_)) {
-    logger_.warn(fresh, " information requests discarded in the last ",
-                 REPORT_SECONDS, " s: more than ",
-                 INFORMATION_REQUEST_QUEUE_CAPACITY,
-                 " arrived between two ticks");
-  }
 }
 
 void DiscardReport::reportDrops() {

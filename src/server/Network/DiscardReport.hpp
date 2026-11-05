@@ -24,7 +24,6 @@ class DiscardReport {
 
  private:
   void report();
-  void reportDiscards();
   void reportDrops();
 
   logging::Logger logger_;

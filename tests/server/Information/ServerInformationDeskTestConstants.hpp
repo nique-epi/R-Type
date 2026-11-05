@@ -26,8 +26,4 @@ constexpr std::chrono::nanoseconds ANSWERED_THREE_MILLISECONDS_LATER =
     REQUEST_ARRIVAL + std::chrono::milliseconds{3};
 constexpr std::uint32_t THREE_MILLISECONDS_IN_MICROSECONDS = 3000;
 
-/** @brief A name of 32 bytes, the longest the protocol accepts. */
-constexpr std::string_view LONGEST_SERVER_NAME =
-    "abcdefghijklmnopqrstuvwxyz012345";
-
 }  // namespace rtype::server::testing

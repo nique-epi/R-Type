@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
 #include "IncomingDatagram.hpp"
 
 /** @returns A datagram from the player at index 0 of the server tests,

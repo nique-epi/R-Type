@@ -18,7 +18,6 @@
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyConstants.hpp"
-#include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
@@ -77,7 +76,7 @@ void ConnectionAcceptor::receive(
       if (isOfAnotherVersion(datagram.payload)) {
         refuseAnotherVersion(datagram, now);
       } else if (const std::optional<network::ConnectionRequest> request =
-                     readRequest(datagram, now)) {
+                     requests_.read(datagram, now)) {
         answer(datagram.sender, *request, now);
       }
     } catch (const std::exception& error) {
@@ -91,7 +90,7 @@ void ConnectionAcceptor::receive(
 void ConnectionAcceptor::refuseAnotherVersion(
     const network::IncomingDatagram& datagram, engine::Duration now) {
   if (datagram.payload.size() < network::CONNECTION_REFUSED_DATAGRAM_SIZE) {
-    drop(datagram.sender, SHORT_OTHER_VERSION_DROP_REASON, now);
+    requests_.drop(datagram.sender, SHORT_OTHER_VERSION_DROP_REASON, now);
     return;
   }
   refuse(datagram.sender, network::RefusalReason::IncompatibleVersion);
@@ -99,28 +98,6 @@ void ConnectionAcceptor::refuseAnotherVersion(
 
 void ConnectionAcceptor::setGameInProgress(bool inProgress) {
   gameInProgress_ = inProgress;
-}
-
-std::optional<network::ConnectionRequest> ConnectionAcceptor::readRequest(
-    const network::IncomingDatagram& datagram, engine::Duration now) {
-  std::optional<network::ConnectionRequest> request;
-  try {
-    request = network::DatagramCodec::firstMessage<network::ConnectionRequest>(
-        datagram.payload);
-  } catch (const network::NetworkException& error) {
-    drop(datagram.sender, error.what(), now);
-    return std::nullopt;
-  }
-  if (!request.has_value()) {
-    drop(datagram.sender, NO_REQUEST_DROP_REASON, now);
-  }
-  return request;
-}
-
-void ConnectionAcceptor::drop(const network::Endpoint& sender,
-                              std::string_view reason, engine::Duration now) {
-  dropLog_.debug(now, "dropped a datagram from ", sender.address, " port ",
-                 sender.port, ": ", reason);
 }
 
 void ConnectionAcceptor::answer(const network::Endpoint& sender,

@@ -18,7 +18,6 @@
 #include "NetworkException.hpp"
 #include "ServerConstants.hpp"
 #include "ServerIdentity.hpp"
-#include "ServerMasterConstants.hpp"
 #include "TextSettingDefinition.hpp"
 
 namespace rtype::server {

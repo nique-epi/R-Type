@@ -1,14 +1,13 @@
 #include <gtest/gtest.h>
 #include <cstddef>
-#include <cstdint>
 #include <string>
 #include <vector>
 #include "ByteSequence.hpp"
 #include "DatagramCodec.hpp"
+#include "MasterMessageTextTestConstants.hpp"
 #include "MessagePayload.hpp"
 #include "NetworkException.hpp"
 #include "PacketHeader.hpp"
-#include "ProtocolConstants.hpp"
 #include "ServerInformation.hpp"
 #include "ServerInformationFixtures.hpp"
 #include "ServerInformationRequestTestConstants.hpp"
@@ -49,8 +48,8 @@ TEST(ServerInformation, ComesBackTheSame) {
  */
 TEST(ServerInformation, TheLargestAnswerIsNoLargerThanARequest) {
   ServerInformation answer = someServerInformation();
-  answer.gameVersion = std::string{THIRTY_TWO_BYTE_TEXT};
-  answer.name = std::string{THIRTY_TWO_BYTE_TEXT};
+  answer.gameVersion = std::string{NAME_OF_32_BYTES};
+  answer.name = std::string{NAME_OF_32_BYTES};
 
   const std::vector<std::byte> datagram =
       DatagramCodec::encode(PacketHeader{}, answer);
@@ -68,9 +67,9 @@ TEST(ServerInformation, BoundsTheSizeOfTheName) {
   ServerInformation answer = someServerInformation();
   answer.name = "";
   EXPECT_THROW((void)encodeMessage(answer), InvalidServerTextException);
-  answer.name = std::string{THIRTY_TWO_BYTE_TEXT};
+  answer.name = std::string{NAME_OF_32_BYTES};
   EXPECT_NO_THROW((void)encodeMessage(answer));
-  answer.name = std::string{THIRTY_THREE_BYTE_TEXT};
+  answer.name = std::string{NAME_OF_33_BYTES};
   EXPECT_THROW((void)encodeMessage(answer), InvalidServerTextException);
 }
 
@@ -83,9 +82,9 @@ TEST(ServerInformation, BoundsTheSizeOfTheGameVersion) {
   ServerInformation answer = someServerInformation();
   answer.gameVersion = "";
   EXPECT_THROW((void)encodeMessage(answer), InvalidServerTextException);
-  answer.gameVersion = std::string{THIRTY_TWO_BYTE_TEXT};
+  answer.gameVersion = std::string{NAME_OF_32_BYTES};
   EXPECT_NO_THROW((void)encodeMessage(answer));
-  answer.gameVersion = std::string{THIRTY_THREE_BYTE_TEXT};
+  answer.gameVersion = std::string{NAME_OF_33_BYTES};
   EXPECT_THROW((void)encodeMessage(answer), InvalidServerTextException);
 }
 

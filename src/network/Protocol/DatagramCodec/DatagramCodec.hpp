@@ -13,6 +13,7 @@
 #include "MessageFrame.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
+#include "NetworkException.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
 
@@ -162,12 +163,21 @@ class DatagramCodec {
     if (!speaksThisProtocol(decodeHeader(datagram))) {
       return std::nullopt;
     }
-    for (const MessageFrame& frame : splitMessages(datagram)) {
-      if (frame.type == static_cast<std::uint8_t>(Message::TYPE)) {
-        return decodeMessage<Message>(frame.payload);
-      }
+    std::optional<MessageFrame> first;
+    const bool whole =
+        forEachMessage(datagram, [&first](const MessageFrame& frame) {
+          if (!first.has_value() &&
+              frame.type == static_cast<std::uint8_t>(Message::TYPE)) {
+            first = frame;
+          }
+        });
+    if (!whole) {
+      throw MalformedDatagramException(datagram.size());
     }
-    return std::nullopt;
+    if (!first.has_value()) {
+      return std::nullopt;
+    }
+    return decodeMessage<Message>(first->payload);
   }
 
   /**

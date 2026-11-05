@@ -1,18 +1,19 @@
 #include "ServerInformationModule.hpp"
+#include <functional>
+#include <span>
 #include <string>
 #include <string_view>
-#include <utility>
 #include <vector>
 #include "ConfigurationRegistry.hpp"
 #include "EngineException.hpp"
 #include "Games.hpp"
 #include "IDatagramSender.hpp"
 #include "IServerName.hpp"
+#include "IncomingDatagram.hpp"
 #include "InformationConstants.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
 #include "OccupancyCount.hpp"
-#include "OutgoingDatagram.hpp"
 #include "ServerConstants.hpp"
 #include "ServerInformationDeskParts.hpp"
 #include "TextSettingDefinition.hpp"
@@ -63,16 +64,10 @@ void ServerInformationModule::declareSettings(
 }
 
 void ServerInformationModule::start() {
-  IDatagramSender* const sender = sender_;
-  const Games* const games = games_;
   desk_.emplace(ServerInformationDeskParts{
       .name = serverName(),
       .gameVersion = std::string{SERVER_GAME_VERSION},
-      .send =
-          [sender](network::OutgoingDatagram datagram) {
-            sender->queueDatagram(std::move(datagram));
-          },
-      .occupancy = [games] { return occupancyOf(*games); }});
+      .send = std::bind_front(&IDatagramSender::queueDatagram, sender_)});
 }
 
 void ServerInformationModule::stop() { desk_.reset(); }
@@ -82,8 +77,10 @@ std::string ServerInformationModule::serverName() const {
 }
 
 void ServerInformationModule::answerInformationRequests() {
-  if (desk_.has_value()) {
-    desk_->answer(tickDatagrams_->informationRequests(), clock_.now());
+  const std::span<const network::IncomingDatagram> requests =
+      tickDatagrams_->informationRequests();
+  if (desk_.has_value() && !requests.empty()) {
+    desk_->answer(requests, occupancyOf(*games_), clock_.now());
   }
 }
 

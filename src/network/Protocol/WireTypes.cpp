@@ -1,6 +1,7 @@
 #include "WireTypes.hpp"
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string_view>
@@ -109,14 +110,16 @@ bool isValidNickname(std::string_view nickname) {
          nickname.size() <= MAXIMUM_NICKNAME_SIZE && isPrintableUtf8(nickname);
 }
 
+bool isValidBoundedText(std::string_view text, std::size_t maximumSize) {
+  return !text.empty() && text.size() <= maximumSize && isPrintableUtf8(text);
+}
+
 bool isValidServerName(std::string_view name) {
-  return !name.empty() && name.size() <= MAXIMUM_SERVER_NAME_SIZE &&
-         isPrintableUtf8(name);
+  return isValidBoundedText(name, MAXIMUM_SERVER_NAME_SIZE);
 }
 
 bool isValidGameVersion(std::string_view version) {
-  return !version.empty() && version.size() <= MAXIMUM_GAME_VERSION_SIZE &&
-         isPrintableUtf8(version);
+  return isValidBoundedText(version, MAXIMUM_GAME_VERSION_SIZE);
 }
 
 void requireValidNickname(std::string_view nickname) {

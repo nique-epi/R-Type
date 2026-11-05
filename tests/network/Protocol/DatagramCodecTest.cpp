@@ -13,6 +13,7 @@
 #include "EncodedMessage.hpp"
 #include "Heartbeat.hpp"
 #include "MessageFrame.hpp"
+#include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "NetworkException.hpp"
 #include "NetworkTestConstants.hpp"

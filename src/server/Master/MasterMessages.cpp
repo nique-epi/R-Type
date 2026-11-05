@@ -12,7 +12,6 @@
 #include "ProtocolConstants.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerIdentity.hpp"
-#include "ServerMasterConstants.hpp"
 #include "ServerMeasures.hpp"
 #include "ServerRegistration.hpp"
 #include "TimeConstants.hpp"
