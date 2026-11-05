@@ -29,11 +29,15 @@ constexpr std::string_view SEED_SETTING_NAME = "seed";
 constexpr std::string_view STATE_RATE_SETTING_NAME = "state-rate";
 constexpr std::string_view INPUT_DELAY_SETTING_NAME = "input-delay";
 constexpr std::string_view DATABASE_SETTING_NAME = "database";
+constexpr std::string_view MASTER_URL_SETTING_NAME = "master-url";
+constexpr std::string_view MASTER_KEY_SETTING_NAME = "master-key";
+constexpr std::string_view SERVER_NAME_SETTING_NAME = "server-name";
 
 /** @brief Every setting of the server, in the order its usage lists them. */
 constexpr std::array SERVER_SETTING_NAMES{
-    PORT_SETTING_NAME, SEED_SETTING_NAME, STATE_RATE_SETTING_NAME,
-    INPUT_DELAY_SETTING_NAME, DATABASE_SETTING_NAME};
+    PORT_SETTING_NAME,        SEED_SETTING_NAME,       STATE_RATE_SETTING_NAME,
+    INPUT_DELAY_SETTING_NAME, DATABASE_SETTING_NAME,   MASTER_URL_SETTING_NAME,
+    MASTER_KEY_SETTING_NAME,  SERVER_NAME_SETTING_NAME};
 
 /**
  * @brief The highest seed: the seed of a game is 32 bits.
