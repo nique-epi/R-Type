@@ -1,18 +1,17 @@
 #pragma once
 
 #include <boost/process/v2/default_launcher.hpp>
+#include <boost/process/v2/process.hpp>
 #include <boost/system/detail/error_code.hpp>
 #include <filesystem>
-#if defined(_WIN32)
-#include <string>
-#endif
 
 namespace rtype::server {
 
 /**
  * @brief Ties the life of the processes a launcher starts to the life of the
  * program that started them: when that program ends, however it ends, they end
- * with it. Pass it to Boost.Process v2 as an initializer, after the arguments.
+ * with it. Pass it to Boost.Process v2 as an initializer, after the arguments
+ * (Linux and macOS), then call bind() on the process that was started.
  *
  * Windows: the constructor creates a job object with
  * JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE; every process started is assigned to it,
@@ -23,8 +22,11 @@ namespace rtype::server {
  * that lives as long as the program. macOS: nothing here (the system has no
  * such call); a game process stops by itself when its supervisor goes silent.
  *
- * The hook names (on_success, on_exec_setup) are the ones Boost.Process v2
- * looks for; they cannot follow the naming rules of the repository.
+ * The hook name on_exec_setup is the one Boost.Process v2 looks for; it cannot
+ * follow the naming rules of the repository. On Windows the job is not an
+ * initializer: Boost.Process v2 only recognizes an on_success hook that returns
+ * an error_code, and then leaves its function without returning a value, which
+ * MSVC rejects; bind() assigns the process to the job after it started.
  */
 class ChildBinding {
  public:
@@ -39,16 +41,7 @@ class ChildBinding {
   ChildBinding(ChildBinding&&) = delete;
   ChildBinding& operator=(ChildBinding&&) = delete;
 
-#if defined(_WIN32)
-  /** @brief Called by Boost.Process after CreateProcess: assigns the new
-   * process to the job. It always returns an empty error: Boost.Process
-   * ignores the result, but only a hook that returns an error_code is taken
-   * for an initializer on Windows; lastProcessWasBound() tells the outcome. */
-  // NOLINTNEXTLINE(readability-identifier-naming)
-  boost::system::error_code on_success(
-      boost::process::v2::default_process_launcher& launcher,
-      const std::filesystem::path& program, std::wstring& commandLine);
-#else
+#if !defined(_WIN32)
   /** @brief Called by Boost.Process in the child, between fork and exec: asks
    * for SIGTERM when the parent dies (Linux). A returned error stops the exec
    * and makes the launch fail. */
@@ -58,14 +51,18 @@ class ChildBinding {
       const std::filesystem::path& program, const char* const* arguments);
 #endif
 
-  /** @returns Whether the process started last was tied to the parent; always
-   * true outside Windows. */
-  [[nodiscard]] bool lastProcessWasBound() const;
+  /**
+   * @brief Ties @p process, which just started, to the program: it joins the
+   * job object on Windows; nothing to do on Linux and macOS, where the
+   * initializer did it in the child.
+   * @throws ChildBindingException when the system refuses the job; the process
+   * is terminated first.
+   */
+  void bind(boost::process::v2::process& process);
 
  private:
 #if defined(_WIN32)
   void* job_{nullptr};
-  bool lastProcessBound_{true};
 #endif
 };
 

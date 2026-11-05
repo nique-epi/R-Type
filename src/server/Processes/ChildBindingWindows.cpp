@@ -2,9 +2,10 @@
 #include <boost/process/v2/default_launcher.hpp>
 #include <windows.h>
 // clang-format on
-#include <filesystem>
-#include <string>
+#include <boost/process/v2/process.hpp>
+#include <boost/system/detail/error_code.hpp>
 #include "ChildBinding.hpp"
+#include "ServerException.hpp"
 
 namespace rtype::server {
 
@@ -29,15 +30,12 @@ ChildBinding::~ChildBinding() {
   }
 }
 
-boost::system::error_code ChildBinding::on_success(
-    boost::process::v2::default_process_launcher& launcher,
-    [[maybe_unused]] const std::filesystem::path& program,
-    [[maybe_unused]] std::wstring& commandLine) {
-  lastProcessBound_ = ::AssignProcessToJobObject(
-                          job_, launcher.process_information.hProcess) != 0;
-  return {};
+void ChildBinding::bind(boost::process::v2::process& process) {
+  if (::AssignProcessToJobObject(job_, process.native_handle()) == 0) {
+    boost::system::error_code ignored;
+    process.terminate(ignored);
+    throw ChildBindingException("AssignProcessToJobObject");
+  }
 }
-
-bool ChildBinding::lastProcessWasBound() const { return lastProcessBound_; }
 
 }  // namespace rtype::server

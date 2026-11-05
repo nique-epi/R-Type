@@ -1,4 +1,5 @@
 #include <boost/process/v2/default_launcher.hpp>
+#include <boost/process/v2/process.hpp>
 #include <boost/system/detail/error_code.hpp>
 #include <cerrno>
 #include <csignal>
@@ -7,7 +8,7 @@
 #if defined(__linux__)
 #include <linux/prctl.h>
 #include <sys/prctl.h>
-#include <boost/system/system_category.hpp>
+#include <boost/system/detail/system_category.hpp>
 #endif
 
 namespace rtype::server {
@@ -31,6 +32,7 @@ boost::system::error_code ChildBinding::on_exec_setup(
 }
 
 // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-bool ChildBinding::lastProcessWasBound() const { return true; }
+void ChildBinding::bind([[maybe_unused]] boost::process::v2::process& process) {
+}
 
 }  // namespace rtype::server
