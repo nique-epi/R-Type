@@ -199,14 +199,25 @@ std::vector<std::string> playersOf(const JsonField& game) {
   return nicknames;
 }
 
+/** @returns The number of the game @p game, which a heartbeat and a listing
+ * write alike. */
+std::uint16_t gameNumberOf(const JsonField& game) {
+  return static_cast<std::uint16_t>(
+      integerOf(memberOf(game, NUMBER_MEMBER),
+                IntegerBounds{.lowest = FIRST_HOSTED_GAME_NUMBER,
+                              .highest = MAXIMUM_HOSTED_GAMES}));
+}
+
+/** @returns The name of the game @p game, which a heartbeat and a listing
+ * write alike. */
+std::string gameNameOf(const JsonField& game) {
+  return boundedTextOf(memberOf(game, NAME_MEMBER), MAXIMUM_GAME_NAME_SIZE);
+}
+
 HostedGame gameOf(const JsonField& game) {
   requireObject(game);
-  return HostedGame{.number = static_cast<std::uint16_t>(integerOf(
-                        memberOf(game, NUMBER_MEMBER),
-                        IntegerBounds{.lowest = FIRST_HOSTED_GAME_NUMBER,
-                                      .highest = MAXIMUM_HOSTED_GAMES})),
-                    .name = boundedTextOf(memberOf(game, NAME_MEMBER),
-                                          MAXIMUM_GAME_NAME_SIZE),
+  return HostedGame{.number = gameNumberOf(game),
+                    .name = gameNameOf(game),
                     .state = stateOf(memberOf(game, STATE_MEMBER)),
                     .difficulty = nicknameOf(memberOf(game, DIFFICULTY_MEMBER)),
                     .players = playersOf(game)};
@@ -240,12 +251,8 @@ ListedGameState listedStateOf(const JsonField& field) {
 
 ListedGame listedGameOf(const JsonField& game) {
   requireObject(game);
-  return ListedGame{.number = static_cast<std::uint16_t>(integerOf(
-                        memberOf(game, NUMBER_MEMBER),
-                        IntegerBounds{.lowest = FIRST_HOSTED_GAME_NUMBER,
-                                      .highest = MAXIMUM_HOSTED_GAMES})),
-                    .name = boundedTextOf(memberOf(game, NAME_MEMBER),
-                                          MAXIMUM_GAME_NAME_SIZE),
+  return ListedGame{.number = gameNumberOf(game),
+                    .name = gameNameOf(game),
                     .state = listedStateOf(memberOf(game, STATE_MEMBER)),
                     .playerCount = static_cast<std::uint8_t>(integerOf(
                         memberOf(game, PLAYER_COUNT_MEMBER),
