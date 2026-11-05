@@ -1,6 +1,10 @@
 #include "HandshakeAnswers.hpp"
+#include <cstdint>
+#include <string>
+#include <vector>
 #include "ConnectionAccepted.hpp"
 #include "ConnectionChallenge.hpp"
+#include "ConnectionConstants.hpp"
 #include "ConnectionPhase.hpp"
 #include "ConnectionRefused.hpp"
 #include "HandshakeAnswersParts.hpp"
@@ -9,6 +13,22 @@
 #include "MessageOrigin.hpp"
 
 namespace rtype::client {
+
+namespace {
+
+/** @returns @p names joined by ENTITY_TYPE_NAME_SEPARATOR, for the journal. */
+std::string joinedNames(const std::vector<std::string>& names) {
+  std::string joined;
+  for (const std::string& name : names) {
+    if (!joined.empty()) {
+      joined += ENTITY_TYPE_NAME_SEPARATOR;
+    }
+    joined += name;
+  }
+  return joined;
+}
+
+}  // namespace
 
 HandshakeAnswers::HandshakeAnswers(HandshakeAnswersParts parts)
     : parts_(parts) {
@@ -46,8 +66,21 @@ void HandshakeAnswers::onAccepted(const network::MessageOrigin& origin,
   if (!isConnecting()) {
     return;
   }
+  const std::vector<std::string> undrawable =
+      parts_.entityTypes.get().undrawableNamesOf(accepted.types);
+  if (undrawable.empty()) {
+    openSession(origin, accepted);
+  } else {
+    leaveForMissingSheets(origin, undrawable);
+  }
+}
+
+void HandshakeAnswers::openSession(
+    const network::MessageOrigin& origin,
+    const network::ConnectionAccepted& accepted) const {
   parts_.status.get() = {.phase = ConnectionPhase::Accepted,
                          .playerNumber = accepted.playerNumber};
+  parts_.entityTypes.get().keep(accepted.types);
   parts_.outbox.get().openSession(origin.header.sessionToken);
   parts_.inbound.get().open(origin.header);
   parts_.observers.get().opened(
@@ -57,6 +90,21 @@ void HandshakeAnswers::onAccepted(const network::MessageOrigin& origin,
       parts_.outbox.get());
   parts_.logger.get().info("accepted as player ",
                            static_cast<unsigned int>(accepted.playerNumber));
+}
+
+void HandshakeAnswers::leaveForMissingSheets(
+    const network::MessageOrigin& origin,
+    const std::vector<std::string>& undrawable) const {
+  parts_.outbox.get().openSession(origin.header.sessionToken);
+  parts_.departure.get().leave(parts_.outbox.get());
+  parts_.outbox.get().closeSession();
+  parts_.status.get() = {
+      .phase = ConnectionPhase::MissingEntitySheet,
+      .missingSheet = undrawable.front(),
+      .otherMissingSheets = static_cast<std::uint8_t>(undrawable.size() - 1)};
+  parts_.logger.get().warn(
+      "accepted, but this client has no sheet for the entity types ",
+      joinedNames(undrawable), ": it leaves the server");
 }
 
 void HandshakeAnswers::onRefused(const network::MessageOrigin& origin,

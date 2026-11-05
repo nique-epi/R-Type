@@ -18,6 +18,7 @@
 #include "ServerSessionParts.hpp"
 #include "SessionAcknowledgements.hpp"
 #include "SessionDeparture.hpp"
+#include "SessionEntityTypes.hpp"
 #include "SessionInbound.hpp"
 #include "SessionObservers.hpp"
 #include "SessionOutbox.hpp"
@@ -36,9 +37,13 @@ namespace rtype::client {
  * ISessionObserver and fed through the dispatcher.
  *
  * connect() sends a ConnectionRequest at once; a ConnectionAccepted or a
- * ConnectionRefused ends the attempt, and no request is sent any more. An
- * attempt that got neither within CONNECTION_ATTEMPT_TIMEOUT gives up as
- * Unreachable.
+ * ConnectionRefused ends the attempt, and no request is sent any more. The
+ * acceptance carries the table of the entity types of the server: the session
+ * keeps it until it closes (see SessionEntityTypes), and an acceptance whose
+ * table names a type this client cannot draw opens no session, sends its
+ * Disconnection and ends the attempt as MissingEntitySheet (see
+ * HandshakeAnswers). An attempt that got none of these within
+ * CONNECTION_ATTEMPT_TIMEOUT gives up as Unreachable.
  *
  * Once accepted, the session keeps the token of the acceptance and writes it
  * into every datagram it sends. While the attempt is Accepted,
@@ -130,6 +135,7 @@ class ServerSession final : public IServerConnection, public IPlayerInputLink {
   SessionObservers observers_;
   network::MessageDispatcher* dispatcher_;
   GameLoadedReminder* gameLoaded_;
+  SessionEntityTypes* entityTypes_;
   logging::Logger logger_;
   ConnectionStatus status_;
   HandshakeAnswers answers_;

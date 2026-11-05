@@ -8,6 +8,7 @@
 #include "Entity.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
+#include "EntityTypeNumber.hpp"
 #include "EntityTypesTestConstants.hpp"
 #include "NetworkIdentity.hpp"
 #include "OutgoingDatagram.hpp"
@@ -17,7 +18,6 @@
 #include "ShippedEntitySheets.hpp"
 #include "TimeConstants.hpp"
 #include "WeaponSystemParts.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::server::testing {
 
@@ -60,14 +60,17 @@ WeaponSystemFixture::enemyMissilesInTheWorld() {
                                const game::NetworkIdentity& identity) {
         const game::Position* const position =
             components.get<game::Position>(entity);
-        if (type != game::EntityType::EnemyMissile || position == nullptr) {
+        const game::EntityTypeNumber* const number =
+            components.get<game::EntityTypeNumber>(entity);
+        if (type != game::EntityType::EnemyMissile || position == nullptr ||
+            number == nullptr) {
           return;
         }
-        missiles.push_back(network::EntitySpawned{
-            .entityId = identity.networkId,
-            .entityType = network::WireEntityType::EnemyMissile,
-            .x = position->x,
-            .y = position->y});
+        missiles.push_back(
+            network::EntitySpawned{.entityId = identity.networkId,
+                                   .entityType = number->number,
+                                   .x = position->x,
+                                   .y = position->y});
       });
   return missiles;
 }

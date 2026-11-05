@@ -24,9 +24,22 @@ constexpr game::SpriteFrame frameUnder(game::SpriteFrame above, int spacing) {
 }
 
 /**
+ * @returns The frame `index` places to the right of `first` in a row of a
+ * sheet: same size, each `spacing` pixels to the right of the previous one,
+ * as the entity and effect sheets lay them out; `first` itself for index 0.
+ */
+constexpr game::SpriteFrame frameInRow(game::SpriteFrame first,
+                                       std::size_t index, int spacing) {
+  return game::SpriteFrame{
+      .left = first.left + (static_cast<int>(index) * (first.width + spacing)),
+      .top = first.top,
+      .width = first.width,
+      .height = first.height};
+}
+
+/**
  * @returns The Count frames of a row of a sheet: the first one given, then
- * frames of the same size, each `spacing` pixels to the right of the previous
- * one, as the entity and effect sheets lay them out.
+ * the frames frameInRow() places after it.
  */
 template <std::size_t Count>
 constexpr std::array<game::SpriteFrame, Count> framesInRow(
@@ -34,11 +47,7 @@ constexpr std::array<game::SpriteFrame, Count> framesInRow(
   static_assert(Count > 0, "a row of a sheet holds at least one frame");
   std::array<game::SpriteFrame, Count> frames{};
   for (std::size_t i = 0; i < Count; ++i) {
-    frames[i] = game::SpriteFrame{
-        .left = first.left + (static_cast<int>(i) * (first.width + spacing)),
-        .top = first.top,
-        .width = first.width,
-        .height = first.height};
+    frames[i] = frameInRow(first, i, spacing);
   }
   return frames;
 }

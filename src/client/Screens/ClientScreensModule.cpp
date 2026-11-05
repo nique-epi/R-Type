@@ -14,11 +14,14 @@
 #include "Endpoint.hpp"
 #include "EndpointText.hpp"
 #include "EngineException.hpp"
+#include "EntityAppearances.hpp"
 #include "EntityMessageQueue.hpp"
+#include "EntityTypeLooks.hpp"
 #include "EventListeners.hpp"
 #include "EventUse.hpp"
 #include "FrameLoop.hpp"
 #include "GameWindow.hpp"
+#include "IEntityTypeTable.hpp"
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
 #include "ModuleConstants.hpp"
@@ -90,12 +93,15 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   settings_ = &context.require<PlayerSettings>();
   settingsService_ = &context.require<SettingsService>();
   assets_ = &context.require<AssetLibrary>();
+  appearances_ = &context.require<EntityAppearances>();
   audio_ = &chooseAudioService(context, silence_);
   window_ = &context.require<GameWindow>();
   connection_ = &context.require<ServerSession>();
   waitingRoom_ = &context.require<WaitingRoom>();
   entityMessages_ = &context.require<EntityMessageQueue>();
   leaderboard_ = &context.require<ServerLeaderboard>();
+  entityTypes_ = std::make_unique<EntityTypeLooks>(
+      context.require<IEntityTypeTable>(), *appearances_);
   loop_ = &context.require<FrameLoop>();
   listeners_ = &context.require<EventListeners>();
   declareSettings(context.require<engine::ConfigurationRegistry>());
@@ -143,12 +149,14 @@ void ClientScreensModule::start() {
       ScreenServices{.settings = *settings_,
                      .settingsService = *settingsService_,
                      .assets = *assets_,
+                     .appearances = *appearances_,
                      .audio = *audio_,
                      .window = *window_,
                      .connection = *connection_,
                      .waitingRoom = *waitingRoom_,
                      .entityMessages = *entityMessages_,
                      .leaderboard = *leaderboard_,
+                     .entityTypes = *entityTypes_,
                      .server = server,
                      .nickname = nicknameSetting_->text()},
       registry_);

@@ -14,6 +14,7 @@
 #include "EffectSpawner.hpp"
 #include "EntityFeedback.hpp"
 #include "EntityMessage.hpp"
+#include "EntityReplicatorParts.hpp"
 #include "FinalRanking.hpp"
 #include "FlashPreference.hpp"
 #include "GameEnded.hpp"
@@ -74,8 +75,12 @@ GameScreen::GameScreen(GameScreenParts parts,
       statusCanvas_(std::move(statusCanvas)),
       settings_(&parts.settings.get()),
       effects_(entities_, components_, std::random_device{}()),
-      replicator_(entities_, components_,
-                  EntityFeedback{.effects = effects_, .sounds = parts.sounds}),
+      replicator_(EntityReplicatorParts{
+          .entities = entities_,
+          .components = components_,
+          .feedback =
+              EntityFeedback{.effects = effects_, .sounds = parts.sounds},
+          .types = parts.entityTypes}),
       playerCommands_(true, parts.settings.get().keys),
       inputs_(&parts.inputs.get()),
       entityMessageSource_(&parts.entityMessages.get()),

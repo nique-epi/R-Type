@@ -10,6 +10,9 @@
 #include "ConnectionAcceptor.hpp"
 #include "ConnectionAcceptorParts.hpp"
 #include "Endpoint.hpp"
+#include "EntitySheets.hpp"
+#include "EntityTypeEntry.hpp"
+#include "EntityTypeTable.hpp"
 #include "GameInstance.hpp"
 #include "GameState.hpp"
 #include "Games.hpp"
@@ -23,6 +26,21 @@
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
+
+namespace {
+
+/** @returns The table of the entity types @p types holds, or an empty one
+ * when the games module kept none, which only happens before it added any
+ * game, so no acceptor reads it. */
+std::vector<network::EntityTypeEntry> entityTypeTableOrNone(
+    const game::EntitySheets* types) {
+  if (types == nullptr) {
+    return {};
+  }
+  return entityTypeTableOf(*types);
+}
+
+}  // namespace
 
 std::string ServerLobbyModule::name() const {
   return std::string{LOBBY_MODULE_NAME};
@@ -45,6 +63,8 @@ void ServerLobbyModule::install(engine::InstallContext& context) {
 
 void ServerLobbyModule::start() {
   IPlayerAdmission* const admission = admission_;
+  const std::vector<network::EntityTypeEntry> entityTypes =
+      entityTypeTableOrNone(games_->entityTypes());
   for (const std::unique_ptr<GameInstance>& game : games_->all()) {
     GameInstance* const seating = game.get();
     acceptors_.push_back(
@@ -59,7 +79,8 @@ void ServerLobbyModule::start() {
             .onPlayerJoined =
                 [seating](ConnectedPlayer& player) {
                   seating->onPlayerJoined(player);
-                }}));
+                },
+            .entityTypes = entityTypes}));
   }
 }
 

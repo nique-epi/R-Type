@@ -10,11 +10,13 @@
 #include "ConnectionAcceptorParts.hpp"
 #include "ConnectionChallenge.hpp"
 #include "Endpoint.hpp"
+#include "EntityTypeTable.hpp"
 #include "IncomingDatagram.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerDatagrams.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server::testing {
@@ -34,7 +36,9 @@ ConnectionAcceptorFixture::ConnectionAcceptorFixture()
           .onPlayerJoined =
               [this](ConnectedPlayer& player) {
                 joinedPlayers_.push_back(player.playerNumber);
-              }}) {}
+              },
+          .entityTypes =
+              entityTypeTableOf(game::testing::shippedEntitySheets())}) {}
 
 void ConnectionAcceptorFixture::receive(const network::Endpoint& sender,
                                         std::vector<std::byte> datagram,
@@ -51,9 +55,10 @@ std::uint64_t ConnectionAcceptorFixture::challengeCookie(
 }
 
 void ConnectionAcceptorFixture::connect(const network::Endpoint& sender,
-                                        const std::string& nickname) {
-  receive(sender,
-          requestDatagramOf(nickname, challengeCookie(sender, nickname)));
+                                        const std::string& nickname,
+                                        engine::Duration now) {
+  const std::uint64_t cookie = challengeCookie(sender, nickname);
+  receive(sender, requestDatagramOf(nickname, cookie), now);
 }
 
 const std::vector<network::OutgoingDatagram>&

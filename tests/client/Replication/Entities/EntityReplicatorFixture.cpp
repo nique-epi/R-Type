@@ -4,8 +4,8 @@
 #include "EntityAnnouncements.hpp"
 #include "EntityReplicator.hpp"
 #include "EntityReplicatorTestConstants.hpp"
+#include "FixedEntityTypeSourceConstants.hpp"
 #include "RecordingSoundPlayer.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::client::testing {
 
@@ -16,15 +16,11 @@ engine::ComponentRegistry& EntityReplicatorFixture::components() {
 }
 
 void EntityReplicatorFixture::announceOneOfEachType() {
-  replicator_.apply(
-      spawned(SHIP_ID, network::WireEntityType::PlayerShip, SHIP_POSITION));
-  replicator_.apply(spawned(PLAYER_MISSILE_ID,
-                            network::WireEntityType::PlayerMissile,
+  replicator_.apply(spawned(SHIP_ID, SHIP_TYPE_NUMBER, SHIP_POSITION));
+  replicator_.apply(spawned(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER,
                             PLAYER_MISSILE_POSITION));
-  replicator_.apply(
-      spawned(BYDO_ID, network::WireEntityType::Bydo, BYDO_POSITION));
-  replicator_.apply(spawned(ENEMY_MISSILE_ID,
-                            network::WireEntityType::EnemyMissile,
+  replicator_.apply(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, BYDO_POSITION));
+  replicator_.apply(spawned(ENEMY_MISSILE_ID, ENEMY_MISSILE_TYPE_NUMBER,
                             ENEMY_MISSILE_POSITION));
 }
 

@@ -4,9 +4,11 @@
 #include <string>
 #include "AssetLibrary.hpp"
 #include "Endpoint.hpp"
+#include "EntityAppearances.hpp"
 #include "EntityMessageQueue.hpp"
 #include "GameWindow.hpp"
 #include "IAudioService.hpp"
+#include "IEntityTypeSource.hpp"
 #include "PlayerSettings.hpp"
 #include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
@@ -31,12 +33,18 @@ struct ScreenServices {
   std::reference_wrapper<PlayerSettings> settings;
   std::reference_wrapper<SettingsService> settingsService;
   std::reference_wrapper<AssetLibrary> assets;
+  /** @brief The appearance of every entity sheet of the client: a game loads
+   * their sprite sheets. */
+  std::reference_wrapper<const EntityAppearances> appearances;
   std::reference_wrapper<IAudioService> audio;
   std::reference_wrapper<GameWindow> window;
   std::reference_wrapper<ServerSession> connection;
   std::reference_wrapper<WaitingRoom> waitingRoom;
   std::reference_wrapper<EntityMessageQueue> entityMessages;
   std::reference_wrapper<ServerLeaderboard> leaderboard;
+  /** @brief What the entity type numbers of the server mean, for the
+   * replicator of a game. */
+  std::reference_wrapper<const IEntityTypeSource> entityTypes;
   network::Endpoint server;
   std::string nickname;
 };

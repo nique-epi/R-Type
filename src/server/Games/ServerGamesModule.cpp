@@ -153,6 +153,7 @@ void ServerGamesModule::start() {
   const game::EntitySheets& types = types_.emplace(
       game::EntitySheets::fromFolder(settings_.entitySheetsFolder));
   logEntitySheets(logger_, settings_.entitySheetsFolder, types);
+  games_.keepEntityTypes(types);
   const WaveCatalog catalog = WaveCatalog::fromFile(settings_.wavesFile, types);
   logWavesFile(logger_, settings_.wavesFile, catalog);
   const std::optional<std::uint32_t> seed = seedOf(*seedSetting_);

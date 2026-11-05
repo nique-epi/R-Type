@@ -29,4 +29,11 @@ constexpr std::size_t FIRST_MOTION_OFFSET = 16;
  * * 9. The 7 bytes left before 1175 hold no whole entity. */
 constexpr std::size_t LARGEST_STATE_PAYLOAD = 1168;
 
+/**
+ * @brief Entity type bytes at the ends of a byte: 0, which no entry of the
+ * table of ConnectionAccepted has, and 255, the largest a state may carry.
+ */
+constexpr unsigned int NO_TYPE_NUMBER_BYTE = 0;
+constexpr unsigned int LARGEST_TYPE_NUMBER_BYTE = 255;
+
 }  // namespace rtype::network::testing

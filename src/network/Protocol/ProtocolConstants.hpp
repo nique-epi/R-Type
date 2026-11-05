@@ -7,7 +7,6 @@
 #include <string_view>
 #include "NetworkConstants.hpp"
 #include "SerializationConstants.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::network {
 
@@ -19,11 +18,12 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 3 adds the
- * outcome of a game to GameEnded, see the Version 3 section of the protocol
- * page.
+ * @brief The version of the protocol this code speaks. Version 4 names the
+ * entity types by a table ConnectionAccepted carries, so the type of
+ * EntitySpawned, WorldState and DeltaWorldState is a number of that table,
+ * see the Version 4 section of the protocol page.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 3;
+constexpr std::uint8_t PROTOCOL_VERSION = 4;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -155,6 +155,31 @@ constexpr auto PLAYER_MOTION_BITS =
 constexpr std::uint32_t FIRST_INPUT_NUMBER = 1;
 
 /**
+ * @brief The type number no entity type has: a type is numbered from 1 by its
+ * place in the table of ConnectionAccepted, so 0 never names one.
+ */
+constexpr std::uint8_t NO_ENTITY_TYPE = 0;
+
+/**
+ * @brief The most entity types ConnectionAccepted lists, and the sizes the
+ * name of one may have, in bytes of lowercase letters, digits and
+ * underscores.
+ */
+constexpr std::size_t MAXIMUM_ENTITY_TYPES = 32;
+constexpr std::size_t MINIMUM_ENTITY_TYPE_NAME_LENGTH = 1;
+constexpr std::size_t MAXIMUM_ENTITY_TYPE_NAME_LENGTH = 24;
+
+static_assert(MAXIMUM_ENTITY_TYPES <= std::numeric_limits<std::uint8_t>::max(),
+              "typeCount is one byte, and so is the number of a type");
+
+/**
+ * @brief Time between two ConnectionRequest of the client while the server has
+ * not answered. Provisional, see the protocol page. The server reads it too:
+ * the acceptance it repeats is paced on it.
+ */
+constexpr std::chrono::milliseconds CONNECTION_REQUEST_INTERVAL{500};
+
+/**
  * @brief The time between two Heartbeats either side of a session sends its
  * peer, whatever else it sends: every one tells the peer the sender is still
  * there, and the peer echoes the newest one in its own, which measures the
@@ -270,17 +295,33 @@ constexpr std::size_t SMALLEST_CONNECTION_REQUEST_DATAGRAM_SIZE =
     SHORT_STRING_PREFIX_SIZE + MINIMUM_NICKNAME_SIZE;
 
 /**
- * @brief The size of the largest datagram the server sends a sender it does
- * not know yet: a ConnectionChallenge and its cookie. ConnectionRefused and
- * ConnectionAccepted carry one byte.
+ * @brief The size of the largest datagram the server sends a sender that did
+ * not prove its address, that is a request without a valid cookie: a
+ * ConnectionChallenge and its cookie. ConnectionRefused carries one byte.
+ * ConnectionAccepted answers only a request with a valid cookie, which only
+ * the owner of the address could send back.
  */
-constexpr std::size_t LARGEST_CONNECTION_ANSWER_DATAGRAM_SIZE =
+constexpr std::size_t LARGEST_UNPROVEN_ANSWER_DATAGRAM_SIZE =
     PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT64_WIRE_SIZE;
 
-static_assert(LARGEST_CONNECTION_ANSWER_DATAGRAM_SIZE <=
+static_assert(LARGEST_UNPROVEN_ANSWER_DATAGRAM_SIZE <=
                   SMALLEST_CONNECTION_REQUEST_DATAGRAM_SIZE,
-              "the server never sends a sender it does not know more bytes "
-              "than the request it answers");
+              "the server never sends a sender that did not prove its "
+              "address more bytes than the request it answers");
+
+/**
+ * @brief The size of the largest datagram holding a ConnectionAccepted: the
+ * player number, the count, then MAXIMUM_ENTITY_TYPES types of a side and a
+ * name of the longest length.
+ */
+constexpr std::size_t LARGEST_CONNECTION_ACCEPTED_DATAGRAM_SIZE =
+    PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT8_WIRE_SIZE +
+    UINT8_WIRE_SIZE +
+    (MAXIMUM_ENTITY_TYPES * (UINT8_WIRE_SIZE + SHORT_STRING_PREFIX_SIZE +
+                             MAXIMUM_ENTITY_TYPE_NAME_LENGTH));
+
+static_assert(LARGEST_CONNECTION_ACCEPTED_DATAGRAM_SIZE <= MAX_DATAGRAM_SIZE,
+              "a ConnectionAccepted always fits in one datagram");
 
 /**
  * @brief The size of a datagram holding a ConnectionRefused and its reason:
@@ -337,6 +378,8 @@ constexpr std::string_view RANK_FIELD = "rank";
 constexpr std::string_view PART_INDEX_FIELD = "partIndex";
 constexpr std::string_view PART_COUNT_FIELD = "partCount";
 constexpr std::string_view BASE_DISTANCE_FIELD = "baseDistance";
+constexpr std::string_view TYPE_COUNT_FIELD = "typeCount";
+constexpr std::string_view SIDE_FIELD = "side";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a
@@ -394,14 +437,6 @@ constexpr std::size_t DELTA_WORLD_STATE_FIXED_SIZE =
  */
 constexpr std::size_t MAXIMUM_ENTITIES_PER_DELTA_LIST =
     std::numeric_limits<std::uint8_t>::max();
-
-/**
- * @brief The smallest and the largest value of an entity type on the wire.
- */
-constexpr std::uint8_t FIRST_WIRE_ENTITY_TYPE =
-    static_cast<std::uint8_t>(WireEntityType::PlayerShip);
-constexpr std::uint8_t LAST_WIRE_ENTITY_TYPE =
-    static_cast<std::uint8_t>(WireEntityType::EnemyMissile);
 
 /**
  * @brief The smallest and the largest count of eighths of a unit a wire

@@ -24,7 +24,6 @@
 #include "WeaponShot.hpp"
 #include "WeaponSystemConstants.hpp"
 #include "WeaponSystemParts.hpp"
-#include "WireEntityTypeMapping.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
@@ -105,11 +104,10 @@ std::optional<ProjectileLaunch> launchOf(const WeaponShot& shot,
  */
 network::EntitySpawned spawnOf(std::uint32_t networkId,
                                const ProjectileLaunch& launch) {
-  return network::EntitySpawned{
-      .entityId = networkId,
-      .entityType = toWireEntityType(launch.sheet.get().side),
-      .x = launch.start.x,
-      .y = launch.start.y};
+  return network::EntitySpawned{.entityId = networkId,
+                                .entityType = launch.sheet.get().number,
+                                .x = launch.start.x,
+                                .y = launch.start.y};
 }
 
 }  // namespace

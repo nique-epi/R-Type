@@ -1,8 +1,11 @@
 #include "PlayerConnection.hpp"
 #include <string>
 #include <thread>
+#include <utility>
 #include "ConnectionConstants.hpp"
+#include "DrawableTypeCheck.hpp"
 #include "Endpoint.hpp"
+#include "IEntityTypeTable.hpp"
 #include "IPlayerRoundTrips.hpp"
 #include "InstallContext.hpp"
 #include "NetworkConditions.hpp"
@@ -22,17 +25,20 @@ network::Endpoint anyInterfaceAnyPort() {
 
 }  // namespace
 
-PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions)
+PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions,
+                                   DrawableTypeCheck drawable)
     : network_(anyInterfaceAnyPort(), conditions),
       router_(network_),
       waitingRoom_(dispatcher_, gameLoaded_),
       entityMessages_(dispatcher_, waitingRoom_, gameLoaded_),
       roundTrips_(dispatcher_, clock_),
       leaderboard_(dispatcher_),
+      entityTypes_(std::move(drawable)),
       session_(ServerSessionParts{
           .link = router_.addRoute(),
           .dispatcher = dispatcher_,
           .gameLoaded = gameLoaded_,
+          .entityTypes = entityTypes_,
           .observers = {waitingRoom_, entityMessages_, gameLoaded_, roundTrips_,
                         leaderboard_}}) {}
 
@@ -55,6 +61,7 @@ void PlayerConnection::provideParts(engine::InstallContext& context) {
   context.provide(entityMessages_);
   context.provide(leaderboard_);
   context.provide<IPlayerRoundTrips>(roundTrips_);
+  context.provide<IEntityTypeTable>(entityTypes_);
   context.provide(network_.traffic());
 }
 

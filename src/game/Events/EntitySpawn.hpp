@@ -1,19 +1,19 @@
 #pragma once
 
 #include <cstdint>
-#include "EntityType.hpp"
 
 namespace rtype::game {
 
 /**
- * @brief Event published when an entity appears in the match. The network id
- * is the one of its NetworkIdentity, read when the event is published.
+ * @brief An entity appeared: its network id, the number of its sheet (see
+ * EntityTypeNumber) and where its center is. The network id is the one of its
+ * NetworkIdentity, read when the event is published.
  */
 struct EntitySpawn {
-  std::uint32_t networkId;
-  EntityType type;
-  float x;
-  float y;
+  std::uint32_t networkId{};
+  std::uint8_t typeNumber{};
+  float x{};
+  float y{};
 
   bool operator==(const EntitySpawn&) const = default;
 };

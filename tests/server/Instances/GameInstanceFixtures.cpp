@@ -19,6 +19,8 @@
 #include "DebugJournal.hpp"
 #include "Entity.hpp"
 #include "EntityIdConstants.hpp"
+#include "EntitySheet.hpp"
+#include "EntitySheets.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
@@ -81,6 +83,18 @@ network::PacketHeader sessionHeader(std::size_t player) {
   return header;
 }
 
+namespace {
+
+/** @returns Whether @p spawned announces an enemy: a type the sheets the game
+ * ships with give the side Enemy. */
+bool announcesAnEnemy(const network::EntitySpawned& spawned) {
+  const game::EntitySheet* const sheet =
+      game::testing::shippedEntitySheets().numbered(spawned.entityType);
+  return sheet != nullptr && sheet->side == game::EntityType::Enemy;
+}
+
+}  // namespace
+
 std::size_t bydosAmong(
     const std::vector<std::uint32_t>& removed,
     const std::vector<network::OutgoingDatagram>& datagrams) {
@@ -88,7 +102,7 @@ std::size_t bydosAmong(
   for (const network::OutgoingDatagram& datagram :
        ofType(network::MessageType::EntitySpawned, datagrams)) {
     const auto spawned = onlyMessageIn<network::EntitySpawned>(datagram);
-    if (spawned.entityType == network::WireEntityType::Bydo &&
+    if (announcesAnEnemy(spawned) &&
         std::ranges::count(removed, spawned.entityId) == 1) {
       ++bydos;
     }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AssetList.hpp"
+#include "EntityAppearances.hpp"
 
 namespace rtype::client {
 
@@ -24,6 +25,14 @@ class AssetLibrary;
  * and the sheet of the flight log, so the end screen opens without loading; the
  * end screen keeps them all, so the next game opens without loading too. */
 [[nodiscard]] AssetList gameAssets();
+
+/**
+ * @returns @p assets, with the sprite sheet of every appearance of
+ * @p appearances it does not list yet, after its own textures: a game screen
+ * loads them, so it draws every entity type a server may send.
+ */
+[[nodiscard]] AssetList withEntitySheets(AssetList assets,
+                                         const EntityAppearances& appearances);
 
 /**
  * @brief Loads the interface assets, then makes them permanent.

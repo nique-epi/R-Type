@@ -2,3 +2,4 @@ target_sources(network_tests PRIVATE LeaderboardMessagesTest.cpp WorldStateCodec
 
 add_subdirectory(WorldStateCodec)
 add_subdirectory(WorldStateDelta)
+add_subdirectory(Messages)

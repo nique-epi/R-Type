@@ -2,8 +2,11 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 #include <vector>
 #include "EntityDestruction.hpp"
+#include "EntitySheet.hpp"
+#include "EntitySheets.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityTypesTestConstants.hpp"
 #include "GameInstanceFixtures.hpp"
@@ -15,17 +18,19 @@
 #include "SentDatagrams.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "World.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::server::testing {
 
 namespace {
 
-/** @returns The EntitySpawned of the entities of @p type that @p datagrams
- * announce, oldest first; each of @p datagrams holds one EntitySpawned. */
+/** @returns The EntitySpawned of the entities of the sheet named @p sheet
+ * that @p datagrams announce, oldest first; each of @p datagrams holds one
+ * EntitySpawned. */
 std::vector<network::EntitySpawned> spawnsOfType(
     const std::vector<network::OutgoingDatagram>& datagrams,
-    network::WireEntityType type) {
+    std::string_view sheet) {
+  const std::uint8_t type =
+      game::testing::shippedEntitySheets().named(sheet).number;
   std::vector<network::EntitySpawned> spawns;
   for (const network::OutgoingDatagram& datagram : datagrams) {
     const auto spawned = onlyMessageIn<network::EntitySpawned>(datagram);
@@ -56,14 +61,14 @@ std::vector<network::EntitySpawned> GameInstanceShootingFixture::missilesSentTo(
     std::size_t player) {
   return spawnsOfType(
       ofType(network::MessageType::EntitySpawned, sentTo(player)),
-      network::WireEntityType::PlayerMissile);
+      game::testing::PLAYER_MISSILE_SHEET);
 }
 
 std::vector<network::EntitySpawned>
 GameInstanceShootingFixture::enemyMissilesSentTo(std::size_t player) {
   return spawnsOfType(
       ofType(network::MessageType::EntitySpawned, sentTo(player)),
-      network::WireEntityType::EnemyMissile);
+      game::testing::ENEMY_MISSILE_SHEET);
 }
 
 void GameInstanceShootingFixture::recordDestructions() {

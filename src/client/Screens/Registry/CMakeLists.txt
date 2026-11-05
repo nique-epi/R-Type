@@ -12,6 +12,8 @@ target_link_libraries(rtype_client_screen_registry
     rtype_client_audio_contract_sounds
     rtype_client_connection_leaderboard
     rtype_client_connection_module
+    rtype_client_entities
+    rtype_client_entity_appearances
     rtype_client_entity_messages
     rtype_client_exceptions
     rtype_client_interface

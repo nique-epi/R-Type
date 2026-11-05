@@ -7,6 +7,7 @@
 #include "DeltaStateSenderTestConstants.hpp"
 #include "DeltaWorldState.hpp"
 #include "Entity.hpp"
+#include "EntityTypeNumberTestConstants.hpp"
 #include "ProtocolConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateSenderFixture.hpp"
@@ -16,7 +17,6 @@ namespace rtype::server::testing {
 using network::DeltaWorldState;
 using network::EntityState;
 using network::NO_REFERENCE_DISTANCE;
-using network::WireEntityType;
 
 /**
  * Given a player who acknowledged the first state, and an enemy that moved
@@ -39,7 +39,7 @@ TEST_F(DeltaStateSenderFixture, SendsOnlyWhatChangedSinceTheAcknowledgedState) {
   EXPECT_EQ(delta.baseDistance, TICKS_PER_STATE);
   EXPECT_EQ(delta.changed,
             std::vector<EntityState>{expectedEntity(
-                MOVING_ENEMY_ID, WireEntityType::Bydo, MOVED_PLACE)});
+                MOVING_ENEMY_ID, DRIFTER_TYPE_NUMBER, MOVED_PLACE)});
   EXPECT_TRUE(delta.removed.empty());
 }
 

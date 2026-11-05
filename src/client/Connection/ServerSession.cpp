@@ -50,6 +50,7 @@ ServerSession::ServerSession(ServerSessionParts parts)
       observers_(std::move(parts.observers)),
       dispatcher_(&parts.dispatcher.get()),
       gameLoaded_(&parts.gameLoaded.get()),
+      entityTypes_(&parts.entityTypes.get()),
       logger_(std::string{CONNECTION_LOGGER_NAME}),
       answers_(HandshakeAnswersParts{.dispatcher = parts.dispatcher,
                                      .status = status_,
@@ -57,6 +58,8 @@ ServerSession::ServerSession(ServerSessionParts parts)
                                      .outbox = outbox_,
                                      .inbound = inbound_,
                                      .observers = observers_,
+                                     .departure = departure_,
+                                     .entityTypes = parts.entityTypes,
                                      .logger = logger_}) {
   dispatcher_->registerHandler<network::Disconnection>(
       [this](const network::MessageOrigin&, const network::Disconnection&) {
@@ -152,6 +155,7 @@ void ServerSession::giveUp(ConnectionPhase ending) {
 void ServerSession::forgetSession() {
   outbox_.closeSession();
   inbound_.close();
+  entityTypes_->forget();
   observers_.closed();
 }
 

@@ -28,7 +28,6 @@
 #include "WavePlan.hpp"
 #include "WaveSpawnerConstants.hpp"
 #include "WaveSpawnerParts.hpp"
-#include "WireEntityTypeMapping.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
@@ -115,12 +114,11 @@ std::optional<std::uint32_t> WaveSpawner::createEnemy(
 void WaveSpawner::announce(const game::EntitySheet& sheet,
                            std::uint32_t networkId, game::Position position) {
   for (ConnectedPlayer* const player : roster_->connected()) {
-    sendEntitySpawned(
-        send_, *player,
-        network::EntitySpawned{.entityId = networkId,
-                               .entityType = toWireEntityType(sheet.side),
-                               .x = position.x,
-                               .y = position.y});
+    sendEntitySpawned(send_, *player,
+                      network::EntitySpawned{.entityId = networkId,
+                                             .entityType = sheet.number,
+                                             .x = position.x,
+                                             .y = position.y});
   }
 }
 

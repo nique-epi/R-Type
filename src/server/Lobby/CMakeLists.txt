@@ -8,16 +8,18 @@ target_link_libraries(rtype_server_lobby_module
     rtype_engine_system_clock
     rtype_engine_time
     rtype_logging
+    rtype_network_connection_accepted
     rtype_network_connection_refused
     rtype_network_connection_request
     rtype_network_constants
     rtype_network_cookie_issuer
+    rtype_network_protocol
     rtype_network_transport
     rtype_server_games_module
     rtype_server_network_module
+    rtype_server_replication_wire
     rtype_server_sessions_roster
   PRIVATE
-    rtype_network_connection_accepted
     rtype_network_connection_challenge
     rtype_network_datagram_codec
     rtype_network_exceptions

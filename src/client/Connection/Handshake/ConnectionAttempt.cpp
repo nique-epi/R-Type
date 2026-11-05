@@ -6,6 +6,7 @@
 #include "ConnectionConstants.hpp"
 #include "ConnectionRequest.hpp"
 #include "ISessionOutbox.hpp"
+#include "ProtocolConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -35,7 +36,7 @@ AttemptProgress ConnectionAttempt::advance(engine::Duration elapsed,
     return AttemptProgress::TimedOut;
   }
   sinceRequest_ += elapsed;
-  if (sinceRequest_ >= CONNECTION_REQUEST_INTERVAL) {
+  if (sinceRequest_ >= network::CONNECTION_REQUEST_INTERVAL) {
     sendRequest(outbox);
   }
   return AttemptProgress::Waiting;

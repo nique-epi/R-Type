@@ -7,7 +7,9 @@
 #include "ClientScreens.hpp"
 #include "ConfigurationRegistry.hpp"
 #include "Endpoint.hpp"
+#include "EntityAppearances.hpp"
 #include "EntityMessageQueue.hpp"
+#include "EntityTypeLooks.hpp"
 #include "EventListeners.hpp"
 #include "FrameLoop.hpp"
 #include "GameWindow.hpp"
@@ -35,7 +37,8 @@ namespace rtype::client {
  * their screens to.
  *
  * install() provides the registry, still empty, requires the services of every
- * module listed before it and adds two works. The sound is the one service it
+ * module listed before it, builds the EntityTypeLooks the game reads the entity
+ * types of the server from, and adds two works. The sound is the one service it
  * works without: with no sound module before it, the screens get a
  * SilentAudioService the module holds, and start() writes in the journal that
  * the client runs without sound. In UPDATE_STAGE, the sky and
@@ -102,6 +105,7 @@ class ClientScreensModule final : public engine::IModule,
   PlayerSettings* settings_{nullptr};
   SettingsService* settingsService_{nullptr};
   AssetLibrary* assets_{nullptr};
+  const EntityAppearances* appearances_{nullptr};
   SilentAudioService silence_;
   IAudioService* audio_{nullptr};
   GameWindow* window_{nullptr};
@@ -109,6 +113,7 @@ class ClientScreensModule final : public engine::IModule,
   WaitingRoom* waitingRoom_{nullptr};
   EntityMessageQueue* entityMessages_{nullptr};
   ServerLeaderboard* leaderboard_{nullptr};
+  std::unique_ptr<EntityTypeLooks> entityTypes_;
   FrameLoop* loop_{nullptr};
   EventListeners* listeners_{nullptr};
   /** @brief Declared before screens_, which keep a reference to it. */

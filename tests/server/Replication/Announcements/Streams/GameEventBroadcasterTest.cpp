@@ -5,7 +5,7 @@
 #include "EntityDestruction.hpp"
 #include "EntitySpawn.hpp"
 #include "EntitySpawned.hpp"
-#include "EntityType.hpp"
+#include "EntityTypeNumberTestConstants.hpp"
 #include "GameEvent.hpp"
 #include "GameEventBroadcasterFixture.hpp"
 #include "GameEventConstants.hpp"
@@ -14,7 +14,6 @@
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
 #include "PlayerLeft.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::server::testing {
 
@@ -26,13 +25,13 @@ namespace rtype::server::testing {
  */
 TEST_F(GameEventBroadcasterFixture, SendsASpawnOnce) {
   publishAndDispatch(game::EntitySpawn{.networkId = MONSTER_NETWORK_ID,
-                                       .type = game::EntityType::Enemy,
+                                       .typeNumber = DRIFTER_TYPE_NUMBER,
                                        .x = MONSTER_X,
                                        .y = MONSTER_Y});
 
   const std::vector<network::EntitySpawned> expected{
       {.entityId = MONSTER_NETWORK_ID,
-       .entityType = network::WireEntityType::Bydo,
+       .entityType = DRIFTER_TYPE_NUMBER,
        .x = MONSTER_X,
        .y = MONSTER_Y}};
   EXPECT_EQ(sentOnce<network::EntitySpawned>(), expected);
@@ -99,13 +98,13 @@ TEST_F(GameEventBroadcasterFixture, GuaranteesADeparture) {
 TEST_F(GameEventBroadcasterFixture, SkipsASpawnWhoseCoordinateIsNotANumber) {
   EXPECT_NO_THROW(
       publishAndDispatch(game::EntitySpawn{.networkId = MONSTER_NETWORK_ID,
-                                           .type = game::EntityType::Enemy,
+                                           .typeNumber = DRIFTER_TYPE_NUMBER,
                                            .x = NOT_A_NUMBER,
                                            .y = MONSTER_Y}));
   EXPECT_EQ(messageCount(), 0U);
 
   publishAndDispatch(game::EntitySpawn{.networkId = MONSTER_NETWORK_ID,
-                                       .type = game::EntityType::Enemy,
+                                       .typeNumber = DRIFTER_TYPE_NUMBER,
                                        .x = MONSTER_X,
                                        .y = MONSTER_Y});
 

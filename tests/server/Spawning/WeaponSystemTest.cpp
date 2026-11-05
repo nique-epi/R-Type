@@ -5,16 +5,19 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "EntityIdConstants.hpp"
+#include "EntitySheet.hpp"
+#include "EntitySheets.hpp"
 #include "EntitySpawned.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "Position.hpp"
 #include "SentDatagrams.hpp"
 #include "ShipWeaponFixture.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "TimeConstants.hpp"
 #include "WeaponSystemFixture.hpp"
 #include "WeaponSystemTestConstants.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::server::testing {
 
@@ -42,7 +45,10 @@ TEST_F(ShipWeaponFixture, AnnouncesTheMissileInFrontOfTheShip) {
 
   const std::vector<network::EntitySpawned> spawns = spawnsSentTo(FIRST_PLAYER);
   ASSERT_EQ(spawns.size(), 1U);
-  EXPECT_EQ(spawns.front().entityType, network::WireEntityType::PlayerMissile);
+  EXPECT_EQ(spawns.front().entityType,
+            game::testing::shippedEntitySheets()
+                .named(game::testing::PLAYER_MISSILE_SHEET)
+                .number);
   EXPECT_NEAR(spawns.front().x, FIRST_SHIP_MISSILE_X,
               WIRE_COORDINATE_TOLERANCE);
   EXPECT_NEAR(spawns.front().y, shipOf(player).y, WIRE_COORDINATE_TOLERANCE);

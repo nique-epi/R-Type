@@ -6,6 +6,7 @@
 #include "EntityIdConstants.hpp"
 #include "EntitySpawnSender.hpp"
 #include "EntitySpawned.hpp"
+#include "EntityTypeNumber.hpp"
 #include "Lives.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
@@ -13,21 +14,20 @@
 #include "ShipSpawnAnnouncerParts.hpp"
 #include "ShipStartPosition.hpp"
 #include "World.hpp"
-#include "WorldState.hpp"
 
 namespace rtype::server {
 
 namespace {
 
-/** @returns The EntitySpawned that announces the ship @p shipId at
- * @p position. */
+/** @returns The EntitySpawned that announces the ship @p shipId, of the type
+ * numbered @p typeNumber, at @p position. */
 network::EntitySpawned shipSpawnAt(std::uint32_t shipId,
+                                   const game::EntityTypeNumber& typeNumber,
                                    const game::Position& position) {
-  return network::EntitySpawned{
-      .entityId = shipId,
-      .entityType = network::WireEntityType::PlayerShip,
-      .x = position.x,
-      .y = position.y};
+  return network::EntitySpawned{.entityId = shipId,
+                                .entityType = typeNumber.number,
+                                .x = position.x,
+                                .y = position.y};
 }
 
 }  // namespace
@@ -65,10 +65,12 @@ std::optional<network::EntitySpawned> ShipSpawnAnnouncer::shipSpawnOf(
     const ConnectedPlayer& owner) const {
   const game::Position* const position =
       world_->shipPositionOf(owner.shipEntityId);
-  if (position == nullptr) {
+  const game::EntityTypeNumber* const typeNumber =
+      world_->shipComponentOf<game::EntityTypeNumber>(owner.shipEntityId);
+  if (position == nullptr || typeNumber == nullptr) {
     return std::nullopt;
   }
-  return shipSpawnAt(owner.shipEntityId, *position);
+  return shipSpawnAt(owner.shipEntityId, *typeNumber, *position);
 }
 
 void ShipSpawnAnnouncer::announce(ConnectedPlayer& recipient,

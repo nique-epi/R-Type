@@ -26,29 +26,19 @@ std::uint8_t readMotion(ByteReader& reader) {
   return motion;
 }
 
-std::optional<WireEntityType> toKnownEntityType(std::uint8_t type) {
-  if (type < FIRST_WIRE_ENTITY_TYPE || type > LAST_WIRE_ENTITY_TYPE) {
-    return std::nullopt;
-  }
-  return static_cast<WireEntityType>(type);
-}
-
 std::optional<EntityState> readEntity(ByteReader& reader) {
   const std::uint32_t entityId = reader.readUint32();
-  const std::optional<WireEntityType> type =
-      toKnownEntityType(reader.readUint8());
+  const std::uint8_t type = reader.readUint8();
   const float horizontal = readCoordinate(reader);
   const float vertical = readCoordinate(reader);
   if (entityId == identifiers::NO_ENTITY_ID) {
     throw InvalidFieldValueException(ENTITY_ID_FIELD, entityId);
   }
-  if (!type.has_value()) {
+  if (type == NO_ENTITY_TYPE) {
     return std::nullopt;
   }
-  return EntityState{.entityId = entityId,
-                     .entityType = *type,
-                     .x = horizontal,
-                     .y = vertical};
+  return EntityState{
+      .entityId = entityId, .entityType = type, .x = horizontal, .y = vertical};
 }
 
 }  // namespace
@@ -68,7 +58,7 @@ void writePlayers(ByteWriter& writer, std::span<const PlayerState> players) {
 
 void writeEntity(ByteWriter& writer, const EntityState& entity) {
   writer.writeUint32(entity.entityId);
-  writer.writeUint8(static_cast<std::uint8_t>(entity.entityType));
+  writer.writeUint8(entity.entityType);
   writeCoordinate(writer, entity.x);
   writeCoordinate(writer, entity.y);
 }

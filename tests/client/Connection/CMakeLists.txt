@@ -1,5 +1,6 @@
-target_sources(client_connection_tests PRIVATE ServerSessionTest.cpp ServerSessionArrivalTest.cpp ServerSessionArrivalFixture.cpp ServerSessionFixture.cpp ServerSessionFixtures.cpp ServerSessionLogFixture.cpp)
+target_sources(client_connection_tests PRIVATE ServerSessionTest.cpp ServerSessionArrivalTest.cpp ServerSessionArrivalFixture.cpp ServerSessionFixture.cpp ServerSessionFixtures.cpp ServerSessionLogFixture.cpp ServerSessionEntityTypesTest.cpp ServerSessionEntityTypesFixture.cpp)
 
+add_subdirectory(EntityTypes)
 add_subdirectory(Handshake)
 add_subdirectory(Leaderboard)
 add_subdirectory(Session)

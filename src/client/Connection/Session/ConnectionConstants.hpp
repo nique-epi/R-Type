@@ -6,12 +6,6 @@
 namespace rtype::client {
 
 /**
- * @brief Time between two ConnectionRequest of an attempt while the server
- * has not answered. Provisional, see the protocol page.
- */
-constexpr std::chrono::milliseconds CONNECTION_REQUEST_INTERVAL{500};
-
-/**
  * @brief Time after the start of an attempt at which it gives up, when the
  * server has neither accepted nor refused it. Provisional, see the protocol
  * page.
@@ -49,5 +43,11 @@ constexpr std::chrono::milliseconds DISCONNECTION_COPY_INTERVAL{50};
 
 /** @brief Logger name the connection to a server writes its log lines under. */
 constexpr std::string_view CONNECTION_LOGGER_NAME = "Connection";
+
+/**
+ * @brief Joins the names of the entity types this client cannot draw in the
+ * line of the journal that says why it leaves a server.
+ */
+constexpr std::string_view ENTITY_TYPE_NAME_SEPARATOR = ", ";
 
 }  // namespace rtype::client

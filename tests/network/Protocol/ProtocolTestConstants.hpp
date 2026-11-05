@@ -90,20 +90,20 @@ constexpr std::uint16_t SOME_SEQUENCE = 0x0A0B;
 
 /**
  * @brief Values for the header fields, all different, so a round trip shows
- * each one at its place. SOME_FLAGS sets bits 2 and 3, which version 3 does
+ * each one at its place. SOME_FLAGS sets bits 2 and 3, which version 4 does
  * not know.
  */
-constexpr std::uint8_t SOME_OTHER_VERSION = 4;
+constexpr std::uint8_t SOME_OTHER_VERSION = 5;
 constexpr std::uint32_t SOME_OTHER_PROTOCOL_ID = 0x52545951;
 constexpr std::uint8_t SOME_FLAGS = 0x0C;
 constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
 constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;
 
 /**
- * @brief The 22 bytes of a default header: RTYP, version 3, then zeros.
+ * @brief The 22 bytes of a default header: RTYP, version 4, then zeros.
  */
 constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
-    {0x52, 0x54, 0x59, 0x50, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    {0x52, 0x54, 0x59, 0x50, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
 /**
@@ -143,6 +143,18 @@ constexpr std::uint64_t SOME_COOKIE = 0x0102030405060708;
 constexpr std::uint8_t LAST_PLAYER_NUMBER = 4;
 constexpr std::uint8_t PLAYER_NUMBER_BELOW_THE_FIRST = 0;
 constexpr std::uint8_t PLAYER_NUMBER_ABOVE_THE_LAST = 5;
+
+/**
+ * @brief Type numbers of the examples of the tests, as their byte layouts
+ * write them: 3 for the example entity, 1 for the example ship, 4 for an
+ * entity of another type; 0, which no entry of the table has; and 255, the
+ * largest a message may carry.
+ */
+constexpr std::uint8_t EXAMPLE_ENTITY_TYPE = 3;
+constexpr std::uint8_t EXAMPLE_SHIP_TYPE = 1;
+constexpr std::uint8_t OTHER_ENTITY_TYPE = 4;
+constexpr std::uint8_t NO_TYPE_NUMBER = 0;
+constexpr std::uint8_t LARGEST_TYPE_NUMBER = 255;
 
 /**
  * @brief Refusal reasons just outside the values 1 to 3 of the protocol page.

@@ -4,19 +4,22 @@
 #include <string_view>
 #include <vector>
 #include "BehaviourConstants.hpp"
+#include "EntitySheet.hpp"
+#include "EntitySheets.hpp"
 #include "EntitySpawned.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "GameException.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "JournalFile.hpp"
 #include "Logger.hpp"
 #include "PlayfieldConstants.hpp"
 #include "ServerException.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "SpawningConstants.hpp"
 #include "WavePlanFixtures.hpp"
 #include "WaveSpawner.hpp"
 #include "WaveSpawnerScene.hpp"
 #include "WaveSpawnerTestConstants.hpp"
-#include "WorldState.hpp"
 #include "game/Waves/WaveTestConstants.hpp"
 
 using rtype::game::ENEMY_ROW_MARGIN;
@@ -25,13 +28,14 @@ using rtype::game::PLAYFIELD_WIDTH;
 using rtype::game::STRAIGHT_BEHAVIOUR_NAME;
 using rtype::game::UnknownEntityTypeException;
 using rtype::game::WEAVE_BEHAVIOUR_NAME;
+using rtype::game::testing::DRIFTER_SHEET;
+using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::TEST_WAVE_CURVE;
 using rtype::game::testing::TICKS_OF_A_PAUSE;
 using rtype::game::testing::TICKS_TO_THE_WHOLE_FIRST_WAVE;
 using rtype::logging::Logger;
 using rtype::logging::LogLevel;
 using rtype::network::EntitySpawned;
-using rtype::network::WireEntityType;
 using rtype::server::EmptyEnemyCycleException;
 using rtype::server::WaveSpawner;
 using rtype::server::testing::FIRST_PLAYER;
@@ -80,7 +84,8 @@ TEST(WaveSpawner, ABydoAppearsOffScreenWhenTheFirstPauseEnds) {
   EXPECT_EQ(scene.world().entityCount(), 1U);
   const std::vector<EntitySpawned> spawns = scene.spawnsSent();
   ASSERT_EQ(spawns.size(), 1U);
-  EXPECT_EQ(spawns.front().entityType, WireEntityType::Bydo);
+  EXPECT_EQ(spawns.front().entityType,
+            shippedEntitySheets().named(DRIFTER_SHEET).number);
   EXPECT_GT(spawns.front().x, PLAYFIELD_WIDTH);
   EXPECT_GE(spawns.front().y, ENEMY_ROW_MARGIN);
   EXPECT_LE(spawns.front().y, PLAY_AREA_HEIGHT - ENEMY_ROW_MARGIN);
