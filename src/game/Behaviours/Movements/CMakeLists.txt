@@ -1,6 +1,7 @@
 add_library(rtype_game_behaviours_movements STATIC
   ActionCycle.cpp
   BuiltInBehaviours.cpp
+  ReaperBehaviour.cpp
   ScatterBehaviour.cpp
   StraightBehaviour.cpp
   WeaveBehaviour.cpp

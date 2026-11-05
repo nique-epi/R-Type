@@ -151,6 +151,6 @@ TEST_F(ServerLobbyFixture, AcceptsWithTheEntityTypesOfTheGame) {
     names.push_back(entry.name);
   }
   EXPECT_EQ(names, (std::vector<std::string>{"drifter", "enemy_missile",
-                                             "player_missile", "ship",
+                                             "player_missile", "reaper", "ship",
                                              "voltjelly", "weaver"}));
 }

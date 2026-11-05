@@ -61,7 +61,8 @@ TEST(BehaviourRegistry, FindsNothingForANameNoBehaviourHas) {
 /**
  * Given the built-in behaviours
  * When their names are asked for
- * Then they are straight, weave, then scatter, the order they were added in
+ * Then they are straight, weave, scatter, then reaper, the order they were
+ * added in
  */
 TEST(BehaviourRegistry, NamesEveryBehaviourInTheOrderTheyWereAdded) {
   const BehaviourRegistry behaviours = builtInBehaviours();

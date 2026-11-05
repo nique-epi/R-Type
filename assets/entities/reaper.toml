@@ -1,0 +1,117 @@
+# The entity type reaper: a Bydo skeleton that hunts the nearest ship, raises
+# its scythe, swings it, then stays open long enough to be shot.
+# [gameplay] is what the server gives an entity of this type, [appearance] how
+# the client draws it. Both programs read this file when they start, from
+# entities/reaper.toml in the assets folder next to their executable, or one
+# level above it: the name of the file is the name of the type. Each one reads
+# only its own table, and stops with an error naming the file, the line and the
+# key when a key is missing, misspelt, out of its range, or does not hold
+# together with another key or another sheet. Every number is an integer: 240,
+# never 240.0. The keys are described on the page "Writing an entity sheet" of
+# the docs.
+
+[gameplay]
+side = "enemy"
+pilot = "reaper"
+
+[gameplay.hitbox]
+width = 96
+height = 96
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 300
+
+# It stops with its center 160 units to the right of the center of the ship:
+# its half (48), 12 sheet pixels (48) and the half of a ship (64), so its nose
+# is 12 pixels from the nose of the ship. Within 16 units of that point it
+# swings: a 400 ms signal, a 140 ms strike (two frames of 70 ms), a 600 ms
+# recover; then it rests 900 ms, and at least until two seconds have passed
+# since its last signal.
+[gameplay.behaviour]
+reach = 160
+align = 16
+rest_ms = 900
+signal_ms = 400
+strike_ms = 140
+recover_ms = 600
+
+[gameplay.health]
+points = 2
+
+[gameplay.score]
+points = 200
+
+# The light trail of the scythe, frame by frame, from the center of the body
+# (frame x 28, y 12 of the 40 by 24 strike frames), 4 units a sheet pixel:
+# first frame, the trail at x 3 to 11, y 0 to 21; second frame, x 3 to 5,
+# y 6 to 22.
+[[gameplay.hurt_zone.box]]
+offset_x = -82
+offset_y = -4
+width = 36
+height = 88
+attack = 0
+phase = "strike"
+from_ms = 0
+until_ms = 70
+
+[[gameplay.hurt_zone.box]]
+offset_x = -94
+offset_y = 10
+width = 12
+height = 68
+attack = 0
+phase = "strike"
+from_ms = 70
+
+[appearance]
+sheet = "sprites/mobs/reaper.png"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 24
+height = 24
+frames = 2
+spacing = 2
+frame_ms = 250
+
+# The scythe raised behind the head, held until the strike.
+[appearance.attack_0.signal]
+left = 0
+top = 26
+width = 24
+height = 24
+frames = 2
+spacing = 2
+frame_ms = 200
+playback = "hold"
+afterwards = "stay"
+
+# The swing, 40 pixels wide: the body in the 24 on the right, so the frame
+# hangs 8 pixels to the left of the center of the body.
+[appearance.attack_0.strike]
+left = 0
+top = 52
+width = 40
+height = 24
+frames = 2
+spacing = 2
+frame_ms = 70
+playback = "hold"
+afterwards = "stay"
+anchor_x = -8
+anchor_y = 0
+
+# Open, the scythe down, then back to the idle frames.
+[appearance.attack_0.recover]
+left = 0
+top = 78
+width = 24
+height = 24
+frames = 1
+spacing = 2
+frame_ms = 600
+playback = "once"
+afterwards = "idle"

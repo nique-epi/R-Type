@@ -18,6 +18,13 @@ namespace rtype::game {
                                          const BehaviourView& view);
 
 /**
+ * @returns The horizontal share that moves the body of @p view to the column
+ * @p column during this tick, as verticalShareTowards() does for a height.
+ */
+[[nodiscard]] float horizontalShareTowards(float column,
+                                           const BehaviourView& view);
+
+/**
  * @returns The value of the setting at @p index of the settings the behaviour
  * of @p view declares.
  * @throws MissingBehaviourSettingException when @p view holds no value there:

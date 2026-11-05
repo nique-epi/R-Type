@@ -6,6 +6,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "ActionAnimation.hpp"
 #include "BackgroundConstants.hpp"
 #include "EngineException.hpp"
 #include "EntityAppearance.hpp"
@@ -21,6 +22,7 @@
 #include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
 
+using rtype::client::ActionAnimation;
 using rtype::client::BACKGROUND_PIXEL_SIZE;
 using rtype::client::EntityAppearance;
 using rtype::client::EntityAppearances;
@@ -35,6 +37,7 @@ using rtype::game::SpriteFrame;
 using rtype::game::testing::DRIFTER_SHEET;
 using rtype::game::testing::ENEMY_MISSILE_SHEET;
 using rtype::game::testing::PLAYER_MISSILE_SHEET;
+using rtype::game::testing::REAPER_SHEET;
 using rtype::game::testing::SHIP_SHEET;
 using rtype::game::testing::SHIPPED_SHEET_NAMES;
 using rtype::game::testing::shippedEntitySheets;
@@ -270,19 +273,46 @@ TEST(EntityAppearances, EveryShippedFrameShowsOneWholeSprite) {
 
 /**
  * Given the sheets shipped in assets/
+ * When each frame of each attack is laid on the sprite sheet it names
+ * Then it lies inside that sheet and shows at least one visible pixel, and
+ * the pixels just around it are all transparent, as an idle frame
+ */
+TEST(EntityAppearances, EveryShippedAttackFrameShowsOneWholeSprite) {
+  const EntityAppearances appearances = shippedAppearances();
+  for (const std::string_view name : SHIPPED_SHEET_NAMES) {
+    const EntityAppearance* const shipped = appearances.named(name);
+    ASSERT_NE(shipped, nullptr);
+    const sf::Image sheet = shippedSheet(shipped->sheet);
+    for (const ActionAnimation& action : shipped->actions) {
+      for (const SpriteFrame& frame : action.frames) {
+        SCOPED_TRACE(name);
+        SCOPED_TRACE(frame.top);
+        SCOPED_TRACE(frame.left);
+
+        ASSERT_TRUE(liesInside(frame, sheet.getSize()));
+        EXPECT_TRUE(showsAVisiblePixel(sheet, frame));
+        EXPECT_FALSE(hasAVisiblePixelAround(sheet, frame));
+      }
+    }
+  }
+}
+
+/**
+ * Given the sheets shipped in assets/
  * When the frame time of each is read
  * Then it is the one assets/README.md lists for its sprite: 80 ms for the
  * ship, 250 ms for a Bydo, 60 ms for a missile of a player, 120 ms for a
- * missile of an enemy and for the Voltjelly
+ * missile of an enemy and for the Voltjelly, 250 ms for the Reaper
  */
 TEST(EntityAppearances, ShippedFramesLastWhatTheSheetReadmeLists) {
-  const std::array<std::pair<std::string_view, Duration>, 6> listed{{
+  const std::array<std::pair<std::string_view, Duration>, 7> listed{{
       {SHIP_SHEET, SHIP_FRAME_TIME_LISTED},
       {DRIFTER_SHEET, BYDO_FRAME_TIME_LISTED},
       {WEAVER_SHEET, BYDO_FRAME_TIME_LISTED},
       {PLAYER_MISSILE_SHEET, PLAYER_MISSILE_FRAME_TIME_LISTED},
       {ENEMY_MISSILE_SHEET, ENEMY_MISSILE_FRAME_TIME_LISTED},
       {VOLTJELLY_SHEET, VOLTJELLY_FRAME_TIME_LISTED},
+      {REAPER_SHEET, REAPER_FRAME_TIME_LISTED},
   }};
   const EntityAppearances appearances = shippedAppearances();
   for (const auto& [name, frameTime] : listed) {

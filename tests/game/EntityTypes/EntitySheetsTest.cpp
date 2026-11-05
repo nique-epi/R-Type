@@ -364,7 +364,7 @@ TEST(EntitySheets, APilotStillHoldsAfterTheSheetsAreMoved) {
  * Given the folder of the sheets the game ships with
  * When its sheets are read
  * Then they are the types of today, in the order of their names:
- * drifter, enemy_missile, player_missile, ship, voltjelly and weaver
+ * drifter, enemy_missile, player_missile, reaper, ship, voltjelly and weaver
  */
 TEST(EntitySheets, TheShippedSheetsAreTheTypesOfToday) {
   const EntitySheets& sheets = shippedEntitySheets();
