@@ -13,6 +13,7 @@
 #include "EntityIdConstants.hpp"
 #include "GameContext.hpp"
 #include "GameInstanceConstants.hpp"
+#include "GameOutcome.hpp"
 #include "GameState.hpp"
 #include "IGameReplication.hpp"
 #include "LifeKeeper.hpp"
@@ -148,7 +149,7 @@ void GameFlow::finishIfOver() {
   }
   logger_.info("game finished: ", *reason);
   finish();
-  replication_.onGameFinished();
+  replication_.onGameFinished(GameOutcome::Defeat);
 }
 
 void GameFlow::buildWorld() {

@@ -12,7 +12,7 @@ namespace rtype::network::testing {
  * the flags and the other delays are in NetworkTestConstants.hpp. */
 constexpr std::size_t PROTOCOL_ACKNOWLEDGEMENT_BIT_COUNT = 32;
 constexpr std::chrono::seconds PROTOCOL_MESSAGE_LIFETIME{1};
-constexpr std::uint8_t PROTOCOL_VERSION_TWO = 2;
+constexpr std::uint8_t PROTOCOL_VERSION_THREE = 3;
 
 /** @brief A first sequence of a session, any one. */
 constexpr std::uint16_t FIRST_RECEIVED = 500;

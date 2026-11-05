@@ -34,6 +34,36 @@ TEST_F(GameEndAnnouncerFixture, SendsTheResultAtTheFirstFinishedTick) {
 }
 
 /**
+ * Given a player whose game ended in victory
+ * When the first tick of the finished game passes
+ * Then the result says Victory
+ */
+TEST_F(GameEndAnnouncerFixture, TellsHowTheGameEnded) {
+  join(FIRST_PLAYER);
+  endTheGame(GameOutcome::Victory);
+  runFinishedTicks(1);
+
+  EXPECT_EQ(
+      onlyMessageIn<network::GameEnded>(sentTo(FIRST_PLAYER).front()).outcome,
+      network::WireGameOutcome::Victory);
+}
+
+/**
+ * Given a player whose game ended in defeat
+ * When the first tick of the finished game passes
+ * Then the result says Defeat
+ */
+TEST_F(GameEndAnnouncerFixture, TellsADefeat) {
+  join(FIRST_PLAYER);
+  endTheGame(GameOutcome::Defeat);
+  runFinishedTicks(1);
+
+  EXPECT_EQ(
+      onlyMessageIn<network::GameEnded>(sentTo(FIRST_PLAYER).front()).outcome,
+      network::WireGameOutcome::Defeat);
+}
+
+/**
  * Given a player whose game ended, sent the result at the first finished tick
  * When the next tick passes
  * Then nothing more is sent: the result is not sent every tick

@@ -340,14 +340,32 @@ TEST(GameLoaded, RefusesAnyByteInThePayload) {
 }
 
 /**
- * Given the end of a game where player 1 scored 0x01020304
+ * Given the lost game where player 1 scored 0x01020304
  * When it is encoded
- * Then the payload is the count 1, the number 1, then the score on four bytes
+ * Then the payload is the outcome 2, the count 1, the number 1, then the score
+ * on four bytes
  */
-TEST(GameEnded, EncodesTheScores) {
+TEST(GameEnded, EncodesTheOutcomeAndTheScores) {
   const GameEnded ended{
+      .outcome = WireGameOutcome::Defeat,
       .players = {{.playerNumber = 1, .score = SOME_SCORE_OF_DISTINCT_BYTES}}};
-  const auto expected = byteSequence({0x01, 0x01, 0x01, 0x02, 0x03, 0x04});
+  const auto expected =
+      byteSequence({0x02, 0x01, 0x01, 0x01, 0x02, 0x03, 0x04});
+
+  EXPECT_EQ(encodeMessage(ended), expected);
+}
+
+/**
+ * Given the won game where player 1 scored 0x01020304
+ * When it is encoded
+ * Then the payload starts with the outcome 1
+ */
+TEST(GameEnded, EncodesAVictoryAsOne) {
+  const GameEnded ended{
+      .outcome = WireGameOutcome::Victory,
+      .players = {{.playerNumber = 1, .score = SOME_SCORE_OF_DISTINCT_BYTES}}};
+  const auto expected =
+      byteSequence({0x01, 0x01, 0x01, 0x01, 0x02, 0x03, 0x04});
 
   EXPECT_EQ(encodeMessage(ended), expected);
 }
@@ -359,6 +377,7 @@ TEST(GameEnded, EncodesTheScores) {
  */
 TEST(GameEnded, DecodesWhatItEncoded) {
   const GameEnded ended{
+      .outcome = WireGameOutcome::Victory,
       .players = {{.playerNumber = 4, .score = SOME_SCORE_OF_DISTINCT_BYTES},
                   {.playerNumber = 3, .score = 0},
                   {.playerNumber = 2, .score = 1},
@@ -373,7 +392,7 @@ TEST(GameEnded, DecodesWhatItEncoded) {
  * Then a TooManyPlayersException is raised before any player is read
  */
 TEST(GameEnded, RefusesToReadFivePlayersBeforeReadingThem) {
-  const auto bytes = byteSequence({0x05});
+  const auto bytes = byteSequence({0x01, 0x05});
 
   EXPECT_THROW((void)decodeMessage<GameEnded>(bytes), TooManyPlayersException);
 }
@@ -385,7 +404,7 @@ TEST(GameEnded, RefusesToReadFivePlayersBeforeReadingThem) {
  */
 TEST(GameEnded, RefusesToReadTheSamePlayerTwice) {
   const auto bytes = byteSequence(
-      {0x02, 0x03, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00});
+      {0x01, 0x02, 0x03, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<GameEnded>(bytes),
                DuplicatePlayerNumberException);
@@ -398,6 +417,7 @@ TEST(GameEnded, RefusesToReadTheSamePlayerTwice) {
  */
 TEST(GameEnded, RefusesToWriteAPlayerNumberOutsideOneToFour) {
   const GameEnded ended{
+      .outcome = WireGameOutcome::Defeat,
       .players = {{.playerNumber = PLAYER_NUMBER_ABOVE_THE_LAST, .score = 0}}};
 
   EXPECT_THROW((void)encodeMessage(ended), InvalidFieldValueException);
@@ -410,7 +430,7 @@ TEST(GameEnded, RefusesToWriteAPlayerNumberOutsideOneToFour) {
  * Then a BufferUnderflowException is raised
  */
 TEST(GameEnded, RefusesAScoreCutShort) {
-  const auto bytes = byteSequence({0x01, 0x01, 0x00, 0x00, 0x00});
+  const auto bytes = byteSequence({0x02, 0x01, 0x01, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<GameEnded>(bytes), BufferUnderflowException);
 }
@@ -421,9 +441,34 @@ TEST(GameEnded, RefusesAScoreCutShort) {
  * Then a TrailingBytesException is raised
  */
 TEST(GameEnded, RefusesBytesAfterTheLastPlayer) {
-  const auto bytes = byteSequence({0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00});
+  const auto bytes =
+      byteSequence({0x02, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<GameEnded>(bytes), TrailingBytesException);
+}
+
+/**
+ * Given a payload of no player whose outcome is 0, then 3
+ * When it is decoded
+ * Then an InvalidFieldValueException is raised for each
+ */
+TEST(GameEnded, RefusesAnOutcomeOutsideOneAndTwo) {
+  EXPECT_THROW((void)decodeMessage<GameEnded>(byteSequence({0x00, 0x00})),
+               InvalidFieldValueException);
+  EXPECT_THROW((void)decodeMessage<GameEnded>(byteSequence({0x03, 0x00})),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given the end of a game whose outcome is not one of the two
+ * When it is encoded
+ * Then an InvalidFieldValueException is raised and nothing is written
+ */
+TEST(GameEnded, RefusesToWriteAnUnknownOutcome) {
+  const GameEnded ended{.outcome = static_cast<WireGameOutcome>(0),
+                        .players = {}};
+
+  EXPECT_THROW((void)encodeMessage(ended), InvalidFieldValueException);
 }
 
 }  // namespace

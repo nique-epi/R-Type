@@ -19,11 +19,11 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 2 guarantees
- * the messages no state message repeats, see the Guaranteed messages section
- * of the protocol page.
+ * @brief The version of the protocol this code speaks. Version 3 adds the
+ * outcome of a game to GameEnded, see the Version 3 section of the protocol
+ * page.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 2;
+constexpr std::uint8_t PROTOCOL_VERSION = 3;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -326,6 +326,7 @@ constexpr std::string_view PLAYER_NUMBER_FIELD = "playerNumber";
 constexpr std::string_view ENTITY_ID_FIELD = "entityId";
 constexpr std::string_view ENTITY_TYPE_FIELD = "entityType";
 constexpr std::string_view REASON_FIELD = "reason";
+constexpr std::string_view OUTCOME_FIELD = "outcome";
 constexpr std::string_view KIND_FIELD = "kind";
 constexpr std::string_view ACTIONS_FIELD = "actions";
 constexpr std::string_view ECHO_SENT_AT_FIELD = "echo.sentAt";
