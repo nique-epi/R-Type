@@ -7,6 +7,7 @@
 #include "Animation.hpp"
 #include "EffectAnimations.hpp"
 #include "EntitySpriteConstants.hpp"
+#include "Playback.hpp"
 #include "SheetRow.hpp"
 #include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
@@ -127,38 +128,38 @@ constexpr std::array ENEMY_MUZZLE_FLASH_WITHOUT_FLASH_FRAMES =
 constexpr EffectAnimations BYDO_EXPLOSION{
     .standard = {.frames = BYDO_EXPLOSION_FRAMES,
                  .frameDuration = BYDO_EXPLOSION_FRAME_TIME,
-                 .playback = Animation::Playback::Once},
+                 .playback = Playback::Once},
     .withoutFlash = {.frames = BYDO_EXPLOSION_WITHOUT_FLASH_FRAMES,
                      .frameDuration = BYDO_EXPLOSION_FRAME_TIME,
-                     .playback = Animation::Playback::Once}};
+                     .playback = Playback::Once}};
 constexpr EffectAnimations SHIP_EXPLOSION{
     .standard = {.frames = SHIP_EXPLOSION_FRAMES,
                  .frameDuration = SHIP_EXPLOSION_FRAME_TIME,
-                 .playback = Animation::Playback::Once},
+                 .playback = Playback::Once},
     .withoutFlash = {.frames = SHIP_EXPLOSION_WITHOUT_FLASH_FRAMES,
                      .frameDuration = SHIP_EXPLOSION_FRAME_TIME,
-                     .playback = Animation::Playback::Once}};
+                     .playback = Playback::Once}};
 constexpr EffectAnimations IMPACT{
     .standard = {.frames = IMPACT_FRAMES,
                  .frameDuration = IMPACT_FRAME_TIME,
-                 .playback = Animation::Playback::Once},
+                 .playback = Playback::Once},
     .withoutFlash = {.frames = IMPACT_WITHOUT_FLASH_FRAMES,
                      .frameDuration = IMPACT_FRAME_TIME,
-                     .playback = Animation::Playback::Once}};
+                     .playback = Playback::Once}};
 constexpr EffectAnimations PLAYER_MUZZLE_FLASH{
     .standard = {.frames = PLAYER_MUZZLE_FLASH_FRAMES,
                  .frameDuration = MUZZLE_FLASH_FRAME_TIME,
-                 .playback = Animation::Playback::Once},
+                 .playback = Playback::Once},
     .withoutFlash = {.frames = PLAYER_MUZZLE_FLASH_WITHOUT_FLASH_FRAMES,
                      .frameDuration = MUZZLE_FLASH_FRAME_TIME,
-                     .playback = Animation::Playback::Once}};
+                     .playback = Playback::Once}};
 constexpr EffectAnimations ENEMY_MUZZLE_FLASH{
     .standard = {.frames = ENEMY_MUZZLE_FLASH_FRAMES,
                  .frameDuration = MUZZLE_FLASH_FRAME_TIME,
-                 .playback = Animation::Playback::Once},
+                 .playback = Playback::Once},
     .withoutFlash = {.frames = ENEMY_MUZZLE_FLASH_WITHOUT_FLASH_FRAMES,
                      .frameDuration = MUZZLE_FLASH_FRAME_TIME,
-                     .playback = Animation::Playback::Once}};
+                     .playback = Playback::Once}};
 
 /**
  * @brief How much longer the first frame of an explosion stays, which freezes

@@ -1,8 +1,9 @@
 #pragma once
 
-#include <cstdint>
 #include <optional>
 #include <span>
+#include "FrameAnchor.hpp"
+#include "Playback.hpp"
 #include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
 
@@ -20,19 +21,13 @@ namespace rtype::client {
  * outlive the animation, which a constant array does.
  */
 struct Animation {
-  /** @brief What happens after the last frame. */
-  enum class Playback : std::uint8_t {
-    /** @brief Starts again from the first frame. */
-    Loop,
-    /** @brief Stays on the last frame, then ends once it has shown for
-     * frameDuration; AnimationSystem then destroys the entity showing it, so
-     * only effects play once. */
-    Once,
-  };
-
   std::span<const game::SpriteFrame> frames;
   engine::Duration frameDuration{};
   Playback playback{};
+  /** @brief How many pixels of the canvas each frame is drawn away from the
+   * center of the entity: a frame wider than the body hangs from the side it
+   * grows on. */
+  FrameAnchor anchor{};
 
   /**
    * @param elapsed Time since the animation started. A negative time shows
@@ -40,15 +35,16 @@ struct Animation {
    * that much longer.
    * @returns Frame floor(elapsed / frameDuration), taken modulo the number of
    * frames for a loop and capped between the first and the last frame for an
-   * animation played once; nothing when there is no frame or frameDuration is
-   * not positive.
+   * animation played once or held; nothing when there is no frame or
+   * frameDuration is not positive.
    */
   [[nodiscard]] std::optional<game::SpriteFrame> frameAt(
       engine::Duration elapsed) const;
 
   /**
-   * @returns true for an animation played once whose last frame has shown for
-   * frameDuration, that is once elapsed reaches cycle(); a loop never ends.
+   * @returns true for an animation played once or held whose last frame has
+   * shown for frameDuration, that is once elapsed reaches cycle(); a loop never
+   * ends.
    */
   [[nodiscard]] bool hasEnded(engine::Duration elapsed) const;
 

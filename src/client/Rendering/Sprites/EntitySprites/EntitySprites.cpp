@@ -9,6 +9,7 @@
 #include "EntitySpriteConstants.hpp"
 #include "EntityType.hpp"
 #include "Layer.hpp"
+#include "Playback.hpp"
 #include "Sprite.hpp"
 #include "SpriteAnimation.hpp"
 #include "SpriteFrame.hpp"
@@ -22,7 +23,7 @@ namespace {
 Animation idleAnimationOf(const EntityAppearance& appearance) {
   return Animation{.frames = appearance.idleFrames,
                    .frameDuration = appearance.idleFrameDuration,
-                   .playback = Animation::Playback::Loop};
+                   .playback = Playback::Loop};
 }
 
 /** @returns The animation with its elapsed time set to the offset of a network

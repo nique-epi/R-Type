@@ -23,7 +23,7 @@ std::optional<game::SpriteFrame> Animation::frameAt(
 }
 
 bool Animation::hasEnded(engine::Duration elapsed) const {
-  return playback == Playback::Once && elapsed >= cycle();
+  return playback != Playback::Loop && elapsed >= cycle();
 }
 
 engine::Duration Animation::cycle() const {

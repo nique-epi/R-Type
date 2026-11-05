@@ -3,6 +3,7 @@
 #include <array>
 #include "Animation.hpp"
 #include "EntitySpriteConstants.hpp"
+#include "Playback.hpp"
 #include "SheetRow.hpp"
 #include "SpriteFrame.hpp"
 
@@ -33,10 +34,10 @@ constexpr std::array PROFESSOR_FACING_RIGHT_FRAMES =
 constexpr Animation PROFESSOR_FACING_LEFT_ANIMATION{
     .frames = PROFESSOR_FACING_LEFT_FRAMES,
     .frameDuration = BYDO_FRAME_TIME,
-    .playback = Animation::Playback::Loop};
+    .playback = Playback::Loop};
 constexpr Animation PROFESSOR_FACING_RIGHT_ANIMATION{
     .frames = PROFESSOR_FACING_RIGHT_FRAMES,
     .frameDuration = BYDO_FRAME_TIME,
-    .playback = Animation::Playback::Loop};
+    .playback = Playback::Loop};
 
 }  // namespace rtype::client

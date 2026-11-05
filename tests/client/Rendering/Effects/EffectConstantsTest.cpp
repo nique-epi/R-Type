@@ -9,6 +9,7 @@
 #include "EffectConstantsTestConstants.hpp"
 #include "EffectTestConstants.hpp"
 #include "EntitySpriteConstants.hpp"
+#include "Playback.hpp"
 #include "SheetPixels.hpp"
 #include "SpriteFrame.hpp"
 
@@ -26,6 +27,7 @@ using rtype::client::IMPACT;
 using rtype::client::IMPACT_FLASH_AREA;
 using rtype::client::IMPACT_FLASH_FRAMES;
 using rtype::client::MUZZLE_FLASH_AREA;
+using rtype::client::Playback;
 using rtype::client::PLAYER_MUZZLE_FLASH;
 using rtype::client::PLAYER_SHIP_FRAMES;
 using rtype::client::SHIP_EXPLOSION;
@@ -114,8 +116,8 @@ TEST(EffectConstants, BothVersionsOfAnEffectLastAsLong) {
  */
 TEST(EffectConstants, EveryEffectPlaysOnce) {
   for (const EffectAnimations& effect : ALL_EFFECTS) {
-    EXPECT_EQ(effect.standard.playback, Animation::Playback::Once);
-    EXPECT_EQ(effect.withoutFlash.playback, Animation::Playback::Once);
+    EXPECT_EQ(effect.standard.playback, Playback::Once);
+    EXPECT_EQ(effect.withoutFlash.playback, Playback::Once);
   }
 }
 

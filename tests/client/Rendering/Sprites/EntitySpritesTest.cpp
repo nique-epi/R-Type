@@ -8,6 +8,7 @@
 #include "EntitySpritesTestConstants.hpp"
 #include "EntityType.hpp"
 #include "Layer.hpp"
+#include "Playback.hpp"
 #include "SpriteAnimation.hpp"
 #include "TimeConstants.hpp"
 
@@ -15,6 +16,7 @@ using rtype::client::AnimatedSprite;
 using rtype::client::animatedSpriteOf;
 using rtype::client::Animation;
 using rtype::client::layerOf;
+using rtype::client::Playback;
 using rtype::client::SpriteAnimation;
 using rtype::engine::Duration;
 using rtype::game::EntityType;
@@ -73,7 +75,7 @@ TEST(EntitySprites, ANewEntityLoopsTheIdleFramesOfItsAppearance) {
   EXPECT_EQ(played.frames.data(), testAppearance().idleFrames.data());
   EXPECT_EQ(played.frames.size(), TEST_IDLE_FRAMES.size());
   EXPECT_EQ(played.frameDuration, TEST_FRAME_TIME);
-  EXPECT_EQ(played.playback, Animation::Playback::Loop);
+  EXPECT_EQ(played.playback, Playback::Loop);
 }
 
 /**

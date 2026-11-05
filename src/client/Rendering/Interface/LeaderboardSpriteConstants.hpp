@@ -5,6 +5,7 @@
 #include <cstddef>
 #include "Animation.hpp"
 #include "EntitySpriteConstants.hpp"
+#include "Playback.hpp"
 #include "SheetRow.hpp"
 #include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
@@ -30,7 +31,7 @@ constexpr std::array FLAG_FRAMES =
 constexpr engine::Duration FLAG_FRAME_TIME = std::chrono::milliseconds(50);
 constexpr Animation FLAG_ANIMATION{.frames = FLAG_FRAMES,
                                    .frameDuration = FLAG_FRAME_TIME,
-                                   .playback = Animation::Playback::Loop};
+                                   .playback = Playback::Loop};
 
 constexpr game::SpriteFrame GUARD_FRAME{
     .left = 0,
@@ -48,10 +49,10 @@ constexpr std::array GUARD_FACING_RIGHT_FRAMES =
 constexpr Animation GUARD_FACING_LEFT_ANIMATION{
     .frames = GUARD_FACING_LEFT_FRAMES,
     .frameDuration = BYDO_FRAME_TIME,
-    .playback = Animation::Playback::Loop};
+    .playback = Playback::Loop};
 constexpr Animation GUARD_FACING_RIGHT_ANIMATION{
     .frames = GUARD_FACING_RIGHT_FRAMES,
     .frameDuration = BYDO_FRAME_TIME,
-    .playback = Animation::Playback::Loop};
+    .playback = Playback::Loop};
 
 }  // namespace rtype::client
