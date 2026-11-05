@@ -293,3 +293,27 @@ TEST(NetworkThread, TheWireCountersCountADatagramAsTheNetworkCarriedIt) {
       networkThread.wireTraffic().report().others.received.datagrams.bytes,
       compressed.size());
 }
+
+/**
+ * Given a network thread and a peer that sends it a datagram of a session the
+ * server compressed
+ * When the datagram arrives
+ * Then the wire counters count it as unreadable, since no message of a
+ * compressed body can be read before it is decoded
+ */
+TEST(NetworkThread, TheWireCountersCountACompressedDatagramAsUnreadable) {
+  NetworkThread networkThread{loopbackOnPort(ANY_PORT), NetworkConditions{}};
+  networkThread.open();
+  NetworkContext peerContext;
+  UdpSocket peer{peerContext, loopbackOnPort(ANY_PORT)};
+  const std::vector<std::byte> compressed = codedSessionDatagram();
+  ASSERT_TRUE(rtype::network::isCompressed(compressed));
+  peer.send(networkThread.localEndpoint(), compressed);
+  peerContext.run();
+
+  drainUntilReceived(networkThread);
+
+  EXPECT_EQ(
+      networkThread.wireTraffic().report().others.received.unreadable.count,
+      1U);
+}
