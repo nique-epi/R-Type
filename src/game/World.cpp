@@ -5,11 +5,14 @@
 #include <optional>
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
+#include "CurrentAction.hpp"
 #include "Entity.hpp"
 #include "EntitySheet.hpp"
+#include "EntityType.hpp"
 #include "EntityTypeNumber.hpp"
 #include "Gun.hpp"
 #include "Health.hpp"
+#include "HurtZone.hpp"
 #include "Intent.hpp"
 #include "Invulnerable.hpp"
 #include "Lives.hpp"
@@ -25,6 +28,7 @@
 #include "ScoreValue.hpp"
 #include "ShipMotion.hpp"
 #include "SteadyMotion.hpp"
+#include "SurvivesContact.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game {
@@ -90,6 +94,23 @@ void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
   }
 }
 
+/** @brief Gives @p start the parts that decide what its contact with a ship
+ * does: the CurrentAction of an enemy, then the HurtZone and the
+ * SurvivesContact its sheet declares. */
+void addContactParts(engine::ComponentRegistry& components,
+                     const BodyStart& start) {
+  const EntitySheet& sheet = start.sheet.get();
+  if (sheet.side == EntityType::Enemy) {
+    components.add(start.body, CurrentAction{});
+  }
+  if (sheet.hurtZone.has_value()) {
+    components.add(start.body, *sheet.hurtZone);
+  }
+  if (sheet.survivesContact) {
+    components.add(start.body, SurvivesContact{});
+  }
+}
+
 /** @brief Gives the ship of a player its lives and no protection yet. */
 void addShipParts(engine::ComponentRegistry& components, engine::Entity ship) {
   components.add(ship, Lives{.count = STARTING_LIVES});
@@ -107,6 +128,7 @@ std::uint32_t World::spawn(const EntitySheet& sheet, Position position,
   addMotion(components_, start);
   addPilot(components_, start);
   addCombat(components_, start);
+  addContactParts(components_, start);
   components_.add(start.body, NetworkIdentity{.networkId = networkId});
   if (owner.has_value()) {
     components_.add(start.body, MissileOwner{.playerNumber = *owner});

@@ -18,12 +18,12 @@ namespace rtype::client {
  * @brief The entity messages of the game: from the start of the game, it keeps
  * the EntitySpawned, WorldState, EntityDestroyed and PlayerLeft of the
  * server, with each state of the server rebuilt in full from its
- * DeltaWorldState parts by the WorldStateAssembler, and every GameEvent, in
- * the order they arrived, until
+ * DeltaWorldState parts by the WorldStateAssembler, and every GameEvent and
+ * EnemyAction, in the order they arrived, until
  * drainEntityMessages() hands them over; leaving the session drops those not
- * handed over and forgets the events seen. The game screen drains them every
- * frame, behind the options too, so they never pile up for longer than the
- * loading of the game.
+ * handed over and forgets the events and the actions seen. The game screen
+ * drains them every frame, behind the options too, so they never pile up for
+ * longer than the loading of the game.
  *
  * The game starts with a GameStarted, or with a WorldState or a
  * DeltaWorldState when the GameStarted was lost: it tells the waiting room. The

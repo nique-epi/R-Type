@@ -1,4 +1,5 @@
 add_library(rtype_client_entities STATIC
+  EnemyActionPlayer.cpp
   EntityReplicator.cpp
   EntityTypeLooks.cpp
   LastListedTicks.cpp
@@ -17,6 +18,7 @@ target_link_libraries(rtype_client_entities
     rtype_engine
     rtype_engine_time
     rtype_game_components
+    rtype_network_enemy_action
     rtype_network_entity_destroyed
     rtype_network_entity_spawned
     rtype_network_game_event

@@ -11,6 +11,7 @@ target_link_libraries(rtype_client_entity_messages
     rtype_client_waiting_room
     rtype_engine_time
     rtype_logging
+    rtype_network_enemy_action
     rtype_network_entity_destroyed
     rtype_network_entity_spawned
     rtype_network_game_ended

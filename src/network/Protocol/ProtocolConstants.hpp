@@ -450,6 +450,7 @@ constexpr std::string_view NUMBER_FIELD = "number";
 constexpr std::string_view FIRST_KEPT_FIELD = "firstKept";
 constexpr std::string_view INNER_TYPE_FIELD = "innerType";
 constexpr std::string_view CARRIED_PAYLOAD_SIZE_FIELD = "carriedPayloadSize";
+constexpr std::string_view PHASE_FIELD = "phase";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a

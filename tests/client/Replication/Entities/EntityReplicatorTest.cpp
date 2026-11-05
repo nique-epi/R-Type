@@ -1,9 +1,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Color.hpp>
+#include <cstddef>
 #include <vector>
 #include "AllEntityTypes.hpp"
+#include "AppearanceReference.hpp"
 #include "EffectConstants.hpp"
+#include "Entity.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityIdConstants.hpp"
 #include "EntityReplicatorFixture.hpp"
@@ -13,11 +16,13 @@
 #include "EntityTypeConstants.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
 #include "LastListedTicksTestConstants.hpp"
+#include "NetworkIdentity.hpp"
 #include "PilotTestConstants.hpp"
 #include "SoundConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateFilterTestConstants.hpp"
 
+using rtype::client::AppearanceReference;
 using rtype::client::BIG_EXPLOSION_SOUND_ID;
 using rtype::client::BYDO_EXPLOSION_FRAME;
 using rtype::client::ENEMY_MUZZLE_FLASH_FRAME;
@@ -86,7 +91,9 @@ using rtype::client::testing::stateListingPlayers;
 using rtype::client::testing::TICK_BETWEEN_THE_LISTINGS;
 using rtype::client::testing::UNANNOUNCED_ID;
 using rtype::client::testing::WEAVER_TYPE_NUMBER;
+using rtype::engine::Entity;
 using rtype::game::EntityType;
+using rtype::game::NetworkIdentity;
 using rtype::identifiers::NO_ENTITY_ID;
 using rtype::identifiers::NO_ENTITY_TYPE;
 using rtype::network::WorldState;
@@ -105,6 +112,27 @@ TEST_F(EntityReplicatorFixture, DrawsASpawnedEntityWhereTheServerPutsIt) {
 
   EXPECT_THAT(drawnEntities(components()),
               ElementsAre(drawnAs(EntityType::Enemy, BYDO_ID, FIRST_POSITION)));
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When an EntitySpawned announces a Bydo
+ * Then the entity carries the network id of the server and the appearance of
+ * its type, which EnemyActionPlayer finds it by
+ */
+TEST_F(EntityReplicatorFixture,
+       KeepsTheIdAndTheAppearanceOfTheEntityItCreates) {
+  replicator().apply(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, FIRST_POSITION));
+
+  std::size_t found = 0;
+  components().forEach<NetworkIdentity, AppearanceReference>(
+      [&found](Entity /*entity*/, const NetworkIdentity& identity,
+               const AppearanceReference& look) {
+        found += (identity.networkId == BYDO_ID && look.appearance != nullptr)
+                     ? 1U
+                     : 0U;
+      });
+  EXPECT_EQ(found, 1U);
 }
 
 /**

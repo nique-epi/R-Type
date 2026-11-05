@@ -20,10 +20,13 @@ namespace rtype::client {
  * The reading is as strict as the server's: the root of a sheet holds exactly
  * `[gameplay]` and `[appearance]`, `[appearance]` holds `sheet` and the table
  * `idle`, and `idle` holds every key of IDLE_KEYS, each an integer in its
- * range; a missing key, an unknown key or a value out of range throws, naming
- * the file, the line, the column and the dotted key. `[gameplay]` belongs to
- * the server: only its presence is checked, never its keys. Whether the sprite
- * sheet an appearance names exists is checked when the game loads it.
+ * range; `[appearance]` may also hold `attack_<n>` tables, each with a table
+ * per phase named like the phases of the server (`signal`, `strike`,
+ * `recover`, `enraged`), whose keys are ACTION_KEYS; a missing key, an unknown
+ * key or a value out of range throws, naming the file, the line, the column and
+ * the dotted key. `[gameplay]` belongs to the server: only its presence is
+ * checked, never its keys. Whether the sprite sheet an appearance names exists
+ * is checked when the game loads it.
  *
  * The appearances never move once read, so an Animation may view their
  * frames for as long as this object lives.

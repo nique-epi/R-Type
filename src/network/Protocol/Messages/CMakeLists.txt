@@ -3,6 +3,7 @@ add_subdirectory(ConnectionChallenge)
 add_subdirectory(ConnectionRefused)
 add_subdirectory(ConnectionRequest)
 add_subdirectory(Disconnection)
+add_subdirectory(EnemyAction)
 add_subdirectory(EntityDestroyed)
 add_subdirectory(EntitySpawned)
 add_subdirectory(GameEnded)
@@ -28,6 +29,7 @@ target_link_libraries(rtype_network_messages
     rtype_network_connection_refused
     rtype_network_connection_request
     rtype_network_disconnection
+    rtype_network_enemy_action
     rtype_network_entity_destroyed
     rtype_network_entity_spawned
     rtype_network_game_ended

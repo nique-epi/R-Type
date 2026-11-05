@@ -3,6 +3,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include "EnemyActionStarted.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestruction.hpp"
 #include "EntitySpawn.hpp"
@@ -49,6 +50,7 @@ GameEventBroadcaster::GameEventBroadcaster(GameEventBroadcasterParts parts)
   subscribeTo<game::EntitySpawn>(ENTITY_SPAWN_EVENT_NAME);
   subscribeTo<game::EntityDestruction>(ENTITY_DESTRUCTION_EVENT_NAME);
   subscribeTo<game::EntityDamage>(ENTITY_DAMAGE_EVENT_NAME);
+  subscribeTo<game::EnemyActionStarted>(ENEMY_ACTION_STARTED_EVENT_NAME);
   subscribeTo<game::PlayerHit>(PLAYER_HIT_EVENT_NAME);
   subscribeTo<game::PlayerElimination>(PLAYER_ELIMINATION_EVENT_NAME);
   subscribeTo<game::PlayerDeparture>(PLAYER_DEPARTURE_EVENT_NAME);

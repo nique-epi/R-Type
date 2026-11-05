@@ -1,5 +1,8 @@
 #include <gtest/gtest.h>
 #include <vector>
+#include "EnemyAction.hpp"
+#include "EnemyActionStarted.hpp"
+#include "EnemyPhase.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityDestruction.hpp"
@@ -36,6 +39,25 @@ TEST_F(GameEventBroadcasterFixture, SendsASpawnOnce) {
        .y = MONSTER_Y}};
   EXPECT_EQ(sentOnce<network::EntitySpawned>(), expected);
   EXPECT_TRUE(guaranteed<network::EntitySpawned>().empty());
+}
+
+/**
+ * Given a broadcaster
+ * When an enemy entering the signal of attack 3 is published
+ * Then one EnemyAction is guaranteed to every player, and none is sent once
+ */
+TEST_F(GameEventBroadcasterFixture, GuaranteesAnEnemyAction) {
+  publishAndDispatch(
+      game::EnemyActionStarted{.networkId = MONSTER_NETWORK_ID,
+                               .attack = SOME_ATTACK_NUMBER,
+                               .phase = game::EnemyPhase::Signal});
+
+  const std::vector<network::EnemyAction> expected{
+      {.entityId = MONSTER_NETWORK_ID,
+       .attack = SOME_ATTACK_NUMBER,
+       .phase = network::EnemyActionPhase::Signal}};
+  EXPECT_EQ(guaranteed<network::EnemyAction>(), expected);
+  EXPECT_TRUE(sentOnce<network::EnemyAction>().empty());
 }
 
 /**

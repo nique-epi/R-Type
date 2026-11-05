@@ -12,5 +12,6 @@ constexpr std::string_view PILOT_SYSTEM_NAME = "PilotSystem";
 constexpr std::string_view MOVEMENT_SYSTEM_NAME = "MovementSystem";
 constexpr std::string_view PLAYFIELD_EXIT_SYSTEM_NAME = "PlayfieldExitSystem";
 constexpr std::string_view COLLISION_SYSTEM_NAME = "CollisionSystem";
+constexpr std::string_view HURT_ZONE_SYSTEM_NAME = "HurtZoneSystem";
 
 }  // namespace rtype::server

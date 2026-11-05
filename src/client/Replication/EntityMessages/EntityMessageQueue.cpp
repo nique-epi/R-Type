@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 #include "DeltaWorldState.hpp"
+#include "EnemyAction.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityMessage.hpp"
 #include "EntitySpawned.hpp"
@@ -42,7 +43,7 @@ EntityMessageQueue::EntityMessageQueue(network::MessageDispatcher& dispatcher,
     : room_(&room), reminder_(&reminder) {
   registerStateHandlers(dispatcher);
   keepEachOf<network::EntitySpawned, network::EntityDestroyed,
-             network::PlayerLeft, network::GameEvent>(
+             network::PlayerLeft, network::GameEvent, network::EnemyAction>(
       dispatcher, [this](EntityMessage message) { keep(std::move(message)); });
   dispatcher.registerHandler<network::GameEnded>(
       [this](const network::MessageOrigin&, const network::GameEnded& ended) {

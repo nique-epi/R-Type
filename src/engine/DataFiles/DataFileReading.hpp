@@ -98,6 +98,17 @@ void refuseUnknownKeys(const DataFileTable& table,
     const DataFileTable& parent, std::string_view key);
 
 /**
+ * @returns The tables of the array @p key of @p parent holds, in the order of
+ * the file (`[[gameplay.hurt_zone.box]]`), each named after its index:
+ * `gameplay.hurt_zone.box[0]`. An empty array gives no table.
+ * @throws MissingDataFileKeyException when it holds nothing, and
+ * DataFileTablesExpectedException when it holds anything but an array of
+ * tables.
+ */
+[[nodiscard]] std::vector<DataFileTable> tablesAt(const DataFileTable& parent,
+                                                  std::string_view key);
+
+/**
  * @returns The integer @p key of @p table holds.
  * @throws MissingDataFileKeyException when it holds nothing, and
  * DataFileValueOutOfRangeException, at the value, when it holds anything but

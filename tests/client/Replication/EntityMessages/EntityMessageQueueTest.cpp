@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 #include "DeltaWorldState.hpp"
+#include "EnemyAction.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityMessage.hpp"
@@ -22,6 +23,7 @@
 namespace rtype::client {
 
 using testing::APPLIED_TICK;
+using testing::BYDO_ID;
 using testing::damaged;
 using ::testing::ElementsAre;
 using testing::endOfOnePilot;
@@ -157,6 +159,42 @@ TEST_F(EntityMessageQueueFixture, LeavingDropsTheEntityMessagesNotHandedOver) {
   update();
 
   session().cancel();
+
+  EXPECT_THAT(drainedEntityMessages(), IsEmpty());
+}
+
+/**
+ * Given a game started in the session
+ * When an EnemyAction arrives
+ * Then the connection hands it over
+ */
+TEST_F(EntityMessageQueueFixture, KeepsAnEnemyActionOfAStartedGame) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  const network::EnemyAction action{.entityId = BYDO_ID,
+                                    .attack = 1,
+                                    .phase = network::EnemyActionPhase::Strike};
+  deliverInSession(action, SECOND_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(), ElementsAre(EntityMessage{action}));
+}
+
+/**
+ * Given a session whose game has not started
+ * When an EnemyAction arrives
+ * Then the connection hands over nothing
+ */
+TEST_F(EntityMessageQueueFixture, IgnoresAnEnemyActionBeforeTheGame) {
+  accept();
+  deliverInSession(
+      network::EnemyAction{.entityId = BYDO_ID,
+                           .attack = 1,
+                           .phase = network::EnemyActionPhase::Signal},
+      FIRST_SEQUENCE);
+
+  update();
 
   EXPECT_THAT(drainedEntityMessages(), IsEmpty());
 }

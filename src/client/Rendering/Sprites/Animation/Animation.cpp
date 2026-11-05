@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <optional>
+#include "Playback.hpp"
 #include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
 
@@ -23,7 +24,7 @@ std::optional<game::SpriteFrame> Animation::frameAt(
 }
 
 bool Animation::hasEnded(engine::Duration elapsed) const {
-  return playback == Playback::Once && elapsed >= cycle();
+  return playback != Playback::Loop && elapsed >= cycle();
 }
 
 engine::Duration Animation::cycle() const {

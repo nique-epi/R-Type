@@ -13,6 +13,7 @@
 #include "AnimationSystem.hpp"
 #include "EffectPreferences.hpp"
 #include "EffectSpawner.hpp"
+#include "EnemyAction.hpp"
 #include "EntityFeedback.hpp"
 #include "EntityMessage.hpp"
 #include "EntityReplicatorParts.hpp"
@@ -95,6 +96,7 @@ GameScreen::GameScreen(GameScreenParts parts,
           .feedback =
               EntityFeedback{.effects = effects_, .sounds = parts.sounds},
           .types = parts.entityTypes}),
+      enemyActions_(components_),
       playerCommands_(true, parts.settings.get().keys),
       inputs_(&parts.inputs.get()),
       entityMessageSource_(&parts.entityMessages.get()),
@@ -185,6 +187,9 @@ void GameScreen::applyEntityMessages() {
           } else if constexpr (std::is_same_v<Announced, network::PlayerLeft>) {
             scoreBoard_.apply(announced);
             departures_.follow(scoreBoard_.pilots());
+          } else if constexpr (std::is_same_v<Announced,
+                                              network::EnemyAction>) {
+            enemyActions_.apply(announced);
           } else {
             replicator_.apply(announced);
           }

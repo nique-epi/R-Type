@@ -1,5 +1,6 @@
 add_subdirectory(Behaviours)
 add_subdirectory(Components)
+add_subdirectory(EnemyActions)
 add_subdirectory(EntityTypes)
 add_subdirectory(Events)
 add_subdirectory(Exceptions)
@@ -24,6 +25,7 @@ target_link_libraries(rtype_game
     rtype_game_playfield_exit_system
     rtype_game_collision_system
     rtype_game_collision_rules
+    rtype_game_hurt_zone_system
     rtype_game_damage_rules
 )
 

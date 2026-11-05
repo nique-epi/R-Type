@@ -1,4 +1,4 @@
-target_sources(network_tests PRIVATE LeaderboardMessagesTest.cpp WorldStateCodecTest.cpp WorldStateFixtures.cpp WireTypesTest.cpp DatagramCodecTest.cpp EncodedMessageTest.cpp DatagramCodecFixtures.cpp ConnectionMessagesTest.cpp ConnectionMessagesFixtures.cpp LobbyMessagesTest.cpp GameMessagesTest.cpp MessageDispatcherTest.cpp MessageDispatcherFixture.cpp MessageDispatcherFixtures.cpp SequenceOrderTest.cpp OrderedMessageTest.cpp ProtocolFixtures.cpp)
+target_sources(network_tests PRIVATE LeaderboardMessagesTest.cpp WorldStateCodecTest.cpp WorldStateFixtures.cpp WireTypesTest.cpp DatagramCodecTest.cpp EncodedMessageTest.cpp DatagramCodecFixtures.cpp ConnectionMessagesTest.cpp ConnectionMessagesFixtures.cpp LobbyMessagesTest.cpp GameMessagesTest.cpp EnemyActionTest.cpp MessageDispatcherTest.cpp MessageDispatcherFixture.cpp MessageDispatcherFixtures.cpp SequenceOrderTest.cpp OrderedMessageTest.cpp ProtocolFixtures.cpp)
 
 add_subdirectory(WorldStateCodec)
 add_subdirectory(WorldStateDelta)

@@ -2,6 +2,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include "EnemyAction.hpp"
+#include "EnemyActionStarted.hpp"
+#include "EnemyPhase.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityDestruction.hpp"
@@ -44,6 +47,64 @@ TEST(GameEventEncoderTest, EncodesASpawnSentOnce) {
                               .entityType = DRIFTER_TYPE_NUMBER,
                               .x = MONSTER_X,
                               .y = MONSTER_Y}));
+}
+
+/**
+ * Given an encoder
+ * When an enemy entering the strike of attack 3 is encoded
+ * Then the message is a guaranteed EnemyAction with its id, attack and phase
+ */
+TEST(GameEventEncoderTest, EncodesAnEnemyActionGuaranteed) {
+  const EventMessage message = GameEventEncoder::encode(
+      game::EnemyActionStarted{.networkId = MONSTER_NETWORK_ID,
+                               .attack = SOME_ATTACK_NUMBER,
+                               .phase = game::EnemyPhase::Strike});
+
+  EXPECT_EQ(message.message.type, network::MessageType::EnemyAction);
+  EXPECT_TRUE(message.guaranteed);
+  EXPECT_EQ(
+      network::decodeMessage<network::EnemyAction>(message.message.payload),
+      (network::EnemyAction{.entityId = MONSTER_NETWORK_ID,
+                            .attack = SOME_ATTACK_NUMBER,
+                            .phase = network::EnemyActionPhase::Strike}));
+}
+
+/**
+ * Given an encoder
+ * When an enemy enters each of the four phases
+ * Then the messages carry Signal, Strike, Recover and Enraged, in that order
+ */
+TEST(GameEventEncoderTest, EncodesEachPhaseAsTheProtocolNamesIt) {
+  const auto phaseOf = [](game::EnemyPhase phase) {
+    const EventMessage message = GameEventEncoder::encode(
+        game::EnemyActionStarted{.networkId = MONSTER_NETWORK_ID,
+                                 .attack = SOME_ATTACK_NUMBER,
+                                 .phase = phase});
+    return network::decodeMessage<network::EnemyAction>(message.message.payload)
+        .phase;
+  };
+
+  EXPECT_EQ(phaseOf(game::EnemyPhase::Signal),
+            network::EnemyActionPhase::Signal);
+  EXPECT_EQ(phaseOf(game::EnemyPhase::Strike),
+            network::EnemyActionPhase::Strike);
+  EXPECT_EQ(phaseOf(game::EnemyPhase::Recover),
+            network::EnemyActionPhase::Recover);
+  EXPECT_EQ(phaseOf(game::EnemyPhase::Enraged),
+            network::EnemyActionPhase::Enraged);
+}
+
+/**
+ * Given an encoder
+ * When an enemy action names the entity 0
+ * Then encoding is refused with an InvalidFieldValueException
+ */
+TEST(GameEventEncoderTest, RefusesAnEnemyActionOfNoEntity) {
+  EXPECT_THROW((void)GameEventEncoder::encode(
+                   game::EnemyActionStarted{.networkId = UNASSIGNED_NETWORK_ID,
+                                            .attack = SOME_ATTACK_NUMBER,
+                                            .phase = game::EnemyPhase::Signal}),
+               network::InvalidFieldValueException);
 }
 
 /**

@@ -11,6 +11,9 @@ constexpr float MONSTER_X = 100.0F;
 constexpr float MONSTER_Y = 50.0F;
 constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
 
+/** @brief The attack of an enemy the enemy action tests announce. */
+constexpr std::uint8_t SOME_ATTACK_NUMBER = 3;
+
 /**
  * @brief The largest event number: the next one wraps to 0.
  */

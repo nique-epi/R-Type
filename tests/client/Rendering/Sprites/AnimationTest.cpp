@@ -2,11 +2,13 @@
 #include <chrono>
 #include "Animation.hpp"
 #include "AnimationTestConstants.hpp"
+#include "Playback.hpp"
 #include "ScreenTestConstants.hpp"
 #include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
 
 using rtype::client::Animation;
+using rtype::client::Playback;
 using rtype::engine::Duration;
 using rtype::game::SpriteFrame;
 
@@ -17,7 +19,7 @@ constexpr int MANY_CYCLES = 1000;
 
 constexpr Animation WITHOUT_DURATION{.frames = THREE_FRAMES,
                                      .frameDuration = Duration::zero(),
-                                     .playback = Animation::Playback::Loop};
+                                     .playback = Playback::Loop};
 
 }  // namespace
 
@@ -128,4 +130,23 @@ TEST(Animation, AnAnimationWithoutFramesShowsNothing) {
  */
 TEST(Animation, AnAnimationWithoutDurationShowsNothing) {
   EXPECT_FALSE(WITHOUT_DURATION.frameAt(FRAME_TIME).has_value());
+}
+
+/**
+ * Given a held animation of three frames of 100 ms
+ * When a thousand cycles have passed
+ * Then it still shows its last frame
+ */
+TEST(Animation, AHeldAnimationKeepsItsLastFrame) {
+  EXPECT_EQ(HOLD.frameAt(THREE_FRAMES_LONG * MANY_CYCLES), THIRD);
+}
+
+/**
+ * Given a held animation of three frames of 100 ms
+ * When one nanosecond less than 300 ms has passed, then 300 ms
+ * Then it has not ended, then it has
+ */
+TEST(Animation, AHeldAnimationEndsOnceItsLastFrameHasShown) {
+  EXPECT_FALSE(HOLD.hasEnded(THREE_FRAMES_LONG - ONE_TICK));
+  EXPECT_TRUE(HOLD.hasEnded(THREE_FRAMES_LONG));
 }

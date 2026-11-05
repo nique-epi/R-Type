@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+#include "ActionKey.hpp"
 #include "Direction.hpp"
 
 namespace rtype::game {
@@ -21,6 +23,14 @@ struct Intent {
   /** @brief Whether a controller wrote this Intent since the body appeared: a
    * new body has been told nothing yet, so what it holds is not a decision. */
   bool steered{false};
+  /** @brief The attack and the phase an enemy enters at this tick, for
+   * PilotSystem to record and announce with startEnemyAction(); nothing for a
+   * tick that enters none. */
+  std::optional<ActionKey> startsAction{std::nullopt};
+  /** @brief Whether the enemy leaves its action at this tick, for PilotSystem
+   * to record with endEnemyAction(). When it also starts one, it leaves the
+   * old one first. */
+  bool endsAction{false};
 };
 
 }  // namespace rtype::game

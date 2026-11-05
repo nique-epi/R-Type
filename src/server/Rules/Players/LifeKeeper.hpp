@@ -37,10 +37,12 @@ struct ConnectedPlayer;
  * player loses a life and its ship, and the bus is told, in this order, an
  * EntityDestruction (Killed) for the ship, one for the enemy, a PlayerHit, and
  * a PlayerElimination when no life is left. Nobody earns the points of the
- * enemy. Any other contact changes nothing: a contact naming an entity already
- * gone is ignored, so two enemies touching one ship in the same dispatch cost
- * one life, and an enemy touching two ships destroys the one the bus delivers
- * first; an invulnerable ship and the enemy it touches are both left alone.
+ * enemy. An enemy that carries SurvivesContact is not destroyed: the bus is
+ * told no EntityDestruction for it, and it stays in the world. Any other
+ * contact changes nothing: a contact naming an entity already gone is ignored,
+ * so two enemies touching one ship in the same dispatch cost one life, and an
+ * enemy touching two ships destroys the one the bus delivers first; an
+ * invulnerable ship and the enemy it touches are both left alone.
  *
  * A hit costs a life when its target is, in the same way, the ship of a
  * connected player who has a life and is not invulnerable. Then the ship is
