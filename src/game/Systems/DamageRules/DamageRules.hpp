@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <optional>
+#include "Entity.hpp"
 #include "SubscriptionHandle.hpp"
 
 namespace rtype::engine {
@@ -40,6 +43,12 @@ class DamageRules {
 
  private:
   void onMissileHit(const MissileHit& hit);
+  /** @brief Destroys @p missile and announces it Removed. */
+  void removeMissile(engine::Entity missile, std::uint32_t networkId);
+  /** @brief Destroys @p target, announces it Killed, and credits its points
+   * to @p shooter, when a player shot it and it is worth any. */
+  void killTarget(engine::Entity target, std::uint32_t networkId,
+                  std::optional<std::uint8_t> shooter);
 
   engine::EventBus& events_;
   engine::ComponentRegistry& components_;
