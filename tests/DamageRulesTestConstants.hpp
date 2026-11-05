@@ -4,6 +4,7 @@
 #include "ActionKey.hpp"
 #include "EnemyPhase.hpp"
 #include "MissileOwner.hpp"
+#include "WorldTestConstants.hpp"
 
 namespace rtype::game::testing {
 
@@ -15,13 +16,12 @@ constexpr std::uint32_t BYDO_ID = 21;
 constexpr std::uint32_t OTHER_BYDO_ID = 22;
 constexpr std::uint32_t SHIP_ID = 31;
 
-/** @brief The health of a Bydo that takes three missiles, and of one that
- * takes one. */
-constexpr int THREE_HEALTH_POINTS = 3;
+/** @brief The health of a Bydo that takes one missile; one that takes three
+ * has THREE_HEALTH_POINTS of the world tests. */
 constexpr int ONE_HEALTH_POINT = 1;
 
-/** @brief The players whose missiles hit. */
-constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
+/** @brief The players whose missiles hit, the second one numbered
+ * SECOND_PLAYER_NUMBER of the world tests. */
 constexpr MissileOwner FIRST_PLAYER{.playerNumber = 1};
 constexpr MissileOwner SECOND_PLAYER{.playerNumber = SECOND_PLAYER_NUMBER};
 

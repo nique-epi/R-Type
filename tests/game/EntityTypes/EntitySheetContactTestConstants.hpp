@@ -93,8 +93,8 @@ constexpr std::uint8_t ATTACK_OF_EVERY_PHASE = 2;
 
 /** @brief The window of TIMED_BOX and OPEN_ENDED_BOX: from 70 ms, until
  * 140 ms for the first. */
-constexpr engine::Duration WINDOW_START = std::chrono::milliseconds(70);
-constexpr engine::Duration WINDOW_END = std::chrono::milliseconds(140);
+constexpr engine::Duration TIMED_BOX_FROM = std::chrono::milliseconds(70);
+constexpr engine::Duration TIMED_BOX_UNTIL = std::chrono::milliseconds(140);
 
 /** @brief What the refusals say. */
 constexpr std::string_view EMPTY_ZONE_RULE_TEXT =

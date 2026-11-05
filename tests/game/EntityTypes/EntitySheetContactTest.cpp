@@ -69,13 +69,13 @@ using rtype::game::testing::SURVIVES_CONTACT_MARKER;
 using rtype::game::testing::SURVIVES_CONTACT_SIDE_RULE_TEXT;
 using rtype::game::testing::SURVIVES_CONTACT_WITH_A_KEY;
 using rtype::game::testing::TIMED_BOX;
+using rtype::game::testing::TIMED_BOX_FROM;
+using rtype::game::testing::TIMED_BOX_UNTIL;
 using rtype::game::testing::TIMED_BOX_WITHOUT_PHASE;
 using rtype::game::testing::TIMING_RULE_TEXT;
 using rtype::game::testing::TWO_HURT_BOXES;
 using rtype::game::testing::UNTIL_DOTTED_KEY;
-using rtype::game::testing::WINDOW_END;
 using rtype::game::testing::WINDOW_RULE_TEXT;
-using rtype::game::testing::WINDOW_START;
 using rtype::game::testing::zoneOf;
 using ::testing::HasSubstr;
 
@@ -352,7 +352,7 @@ TEST_F(EntitySheetReaderFixture, ReadsTheWindowOfATimedBox) {
 
   ASSERT_TRUE(sheet.hurtZone.has_value());
   EXPECT_EQ(zoneOf(sheet).boxes.front().window,
-            (HurtWindow{.from = WINDOW_START, .until = WINDOW_END}));
+            (HurtWindow{.from = TIMED_BOX_FROM, .until = TIMED_BOX_UNTIL}));
 }
 
 /**
@@ -367,7 +367,7 @@ TEST_F(EntitySheetReaderFixture, ABoxWithoutUntilHurtsToTheEndOfItsPhase) {
 
   ASSERT_TRUE(sheet.hurtZone.has_value());
   EXPECT_EQ(zoneOf(sheet).boxes.front().window,
-            (HurtWindow{.from = WINDOW_START, .until = std::nullopt}));
+            (HurtWindow{.from = TIMED_BOX_FROM, .until = std::nullopt}));
 }
 
 /**
