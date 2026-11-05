@@ -205,7 +205,7 @@ Three routes read what the master keeps, to anyone, a page at a time. `GET /api/
 
 - **A page** is `?limit=<n>&offset=<m>`: `limit` from `MINIMUM_PAGE_SIZE` (1) to `MAXIMUM_PAGE_SIZE` (100), `DEFAULT_PAGE_SIZE` (50) when left out; `offset` from `FIRST_PAGE_OFFSET` (0), the items skipped. Each is a whole number with no sign; anything else answers 400, whose `detail` gives the bounds. A parameter given twice keeps its first value.
 - **An id** that is no number, or that no server has, answers 404. A server created and never registered has a history, empty.
-- **A read** is one SQL statement of plain columns: no heartbeat is parsed. SQLite steps through the rows an `offset` skips, so a page deep in 7 days of samples costs more than the first one.
+- **A read** of the list is one SQL statement, and a read of a history two: one checks that the server exists, then one reads the page. Both read plain columns, so no heartbeat is parsed. SQLite steps through the rows an `offset` skips, so a page deep in 7 days of samples costs more than the first one.
 - `MasterClient` has no function for these routes yet: the list of servers of the game client will add it.
 
 ## The client of the master: `MasterClient`
