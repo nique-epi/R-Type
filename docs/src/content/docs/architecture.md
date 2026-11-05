@@ -90,6 +90,45 @@ Destroying an entity inside a `forEach` is postponed until the outermost `forEac
 
 Alternative considered: a numeric priority on each system, sorted by the scheduler. It lets a system be placed without touching the others, but the order then lives in numbers scattered across classes and two systems can tie. A single list of `add()` calls is the one place that says what runs after what.
 
+## Entity types
+
+An entity type (a Drifter, the ship of a player, a missile) is a sheet of data, not a piece of C++: a name, the components an entity of that type starts with and their values, the pilot that steers it, and how it looks. The engine and the systems only know components, so a new enemy is a new sheet, plus a new behaviour when none fits, and never a change to a system or to the protocol. The subject of the Advanced Architecture track asks for an engine with proper abstractions and notes that entity behaviours are usually deferred to scripts; a named behaviour is the place where a script will plug in.
+
+The pilot and the body exist: `PilotSystem` and the behaviours of `src/game/Behaviours/` steer the Bydos, and `MovementSystem` moves them by their `Intent`, as it moves the ships. The type sheet and the type table are a contract: the types are still written in C++ (`World::spawnPlayer`, `World::spawnBydo`, `BydoKind`) and fixed on the wire (`WireEntityType`), and the code must follow the rules below as it moves to sheets.
+
+### Pilot and body
+
+A body is an entity with an `Intent`, what it wants at this tick: a direction and whether it fires. A pilot writes the `Intent`; the systems that move and arm a body read the `Intent` only and never ask who wrote it. A pilot is either a player, whose input sets the `Intent` of its ship (`steerShipByInput()`, as today), or a behaviour: a named piece of code the server registers when it starts, which reads its own body and writes its `Intent` once per tick. A behaviour may read the `Position` of its body, how long the body has existed, the length of the tick and its own settings from the sheet; it writes nothing but that `Intent`. A sheet naming an unknown behaviour stops the server before it listens.
+
+The direction of an `Intent` becomes two numbers, x and y, each from -1 to 1, instead of the four held directions of `ShipDirections`: a wave cannot be steered with four switches. A player writes -1, 0 or 1 on each axis, so a ship moves exactly as today. How a direction becomes movement is the motion of the body, declared by its sheet:
+
+| Motion | Moves the body | Used by |
+|---|---|---|
+| `ship` | drift, roll and dash of `shipAfter()`, which reads the sign of each axis | the ships; the client runs the same `shipAfter()` to predict its own ship |
+| `steady` | at its top speed times the direction, on each axis | the Bydos; the missiles still fly by their `Velocity` until they get a sheet |
+
+A Weaver is a `steady` body with a top speed of 240 logical units per second (`BYDO_SPEED`): its behaviour writes x = -1 and picks y so the body ends the tick 48 logical units times sin(2π × age / 2 s) away from its row, the path the Weaver followed before the pilots. A path faster than the top speed on an axis is clamped to it. `PilotSystem` runs before every system that reads the `Intent`.
+
+Alternative considered: keep paths that write the position, as the former `PatternSystem` did. It is exact and shorter, but a body then has two movers that ignore each other, the ships and the Bydos move by different rules, and a script could only replace a path, never steer.
+
+Alternative considered: one system per kind of path. It needs no registry, but every new enemy would add a system and a line to the list of systems.
+
+### The type sheet
+
+Each type is a TOML file in `assets/entities/`, named after the type: lowercase letters, digits and underscores, `weaver.toml` for `weaver`. The table `[gameplay]` is read by the server only, `[appearance]` by the client only. The file is as strict as the [waves file](/R-Type/waves-file/): a missing or unknown key stops the program when it starts, a number is an integer, and a key with a unit says it in its name (`_ms`). The waves file names sheets, and a name with no sheet stops the server.
+
+The keys are **provisional**: they are fixed when the loader is written, and code must read them through the loader's constants, never by spelling them again. `[gameplay]` holds the side of the body (`player`, `enemy`, `player_missile`, `enemy_missile`, which becomes its `EntityType`), its hitbox in logical units, its health or its lives, its points, its pilot (`player` or the name of a behaviour), its motion and top speed, and its gun if it has one: the interval between two shots in milliseconds and the type of its projectile. The settings of a behaviour sit in `[gameplay.behaviour]`; each behaviour declares the keys it reads, and they are checked when the server starts, so a misspelt setting stops the server instead of running with a default. `[appearance]` holds the sprite sheet, the idle animation and one animation per action.
+
+Alternative considered: JSON. It is just as easy to read, but the project has no JSON library, it allows no comment to explain a value, and the waves file already sets the TOML rules.
+
+Alternative considered: sheets written in Lua. A sheet could compute its values, but the server would need an interpreter before any behaviour needs one, and a sheet that runs code can no longer be checked before a game starts.
+
+### Types on the network
+
+A type is named by its sheet, never by a number in the code. The server numbers the types it loaded, from 1 to 255, and sends the table of names and numbers to a player once admitted, before any `EntitySpawned`; `EntitySpawned` then carries that number, still one byte. A number belongs to a session, so two changes that add a type never compete for a value, and a client that has no sheet for a name knows it on admission rather than in the middle of a game. The table is sent to an admitted session only, never in answer to a datagram from an unknown sender. Its wire layout, how its delivery is guaranteed and its size bounds are written on the [Protocol](/R-Type/protocol/) page with the message; the change needs a new protocol version.
+
+Alternative considered: a hash of the name instead of a table. It saves the message, but two names can give the same hash, and the collision shows only the day it happens.
+
 ## Modules
 
 A module is a feature a program can switch on, switch off or replace. The subject expects an engine to take no more space than needed, on disk and in memory, and gives modularization as a good way to get there: choosing what is compiled, linked or loaded at run time. So code with no life cycle, a system or a service is not a module; the [Modules](/R-Type/modules/) page gives the definition.
@@ -157,7 +196,8 @@ Everything else comes from a library: the hash tables and the sort from the stan
 | Ring buffer that discards the oldest | `BoundedQueue` | constant per `push()` | see [Queues between threads](#queues-between-threads) | a lock-free queue, a writer that waits |
 | Test of every pair of boxes | `CollisionSystem`, `overlaps()` | quadratic in the boxes | see below | a grid or a sweep along one axis |
 | Serial number comparison ([RFC 1982](https://www.rfc-editor.org/rfc/rfc1982)) | `isNewerSequence()` | constant | a 16-bit counter wraps during a game: newer means ahead by 1 to 32767, and 32768 is never newer | a plain `>`, wrong after the wrap; a wider counter, larger in every datagram |
-| SipHash-2-4 and cookies kept by nobody | `sipHash()`, `CookieIssuer` | linear in the short message hashed | the server stores nothing before the sender proves its address, and whoever lacks the key cannot compute a cookie; checked against the vectors of the reference implementation | a table of pending requests, which a forger fills; a cryptography library, a new dependency for one function |
+| SipHash-2-4 and cookies kept by nobody | `sipHash()`, `CookieIssuer` | linear in the short message hashed | the cookies keep nothing before the sender proves its address, and whoever lacks the key cannot compute a cookie (the rate limit keeps one slot per address and port, in a table of fixed size); checked against the vectors of the reference implementation | a table of pending requests, which a forger fills; a cryptography library, a new dependency for one function |
+| Generic cell rate algorithm, in a table of fixed size | `spendAllowance()`, `RequestAllowances` | constant per datagram, plus the SipHash of the address for a request | one time per sender, and a silence never gives back more than a burst; the table never grows, and a row picked by a keyed hash keeps forged senders from pushing a banned one out while that row holds a sender that is not banned; a row of banned senders gives up the ban that ends first | a window that counts the datagrams of each second: twice the rate can pass across the edge of two windows; a table that refuses new senders once full, as ioquake3 does: forged addresses then lock every new player out |
 | Coordinates in eighths of a unit, states split across datagrams, states written as differences | `WorldStateCodec`, `DeltaWorldStateCodec` | linear in the entities | 16 bits instead of a 32-bit `float`, and every datagram stays within `MAX_DATAGRAM_SIZE` (1200 bytes) | see [Binary rather than text](#binary-rather-than-text) |
 | Gaussian blur in two passes | `GaussianBlur` | 2 × (2r + 1) samples per pixel for a radius r | a Gaussian separates into one horizontal and one vertical pass, against (2r + 1)² samples in one pass | a single two-dimensional pass |
 
@@ -265,6 +305,14 @@ The master is `r-type_server --mode master`. The subject lists two binaries, `r-
 The cost is that the server binary holds the code of the master, cpp-httplib and nlohmann-json included, even where it only hosts games. `rtype_forbid_reachable_links` keeps the master away from SFML, Asio, the game and the code of the server, through every link it reaches.
 
 Alternative considered: a third binary, `r-type_master`. It keeps the server smaller and the master deployable alone, but it is a binary the subject does not list, one more to build, package and ship, and it would have needed the stop and the launch of the server moved into the engine first.
+
+### Keys and cryptography: libhydrogen
+
+A game server proves who it is with the key the master gave when its host created it (`POST /api/servers`), as a FiveM server is known by its license key, sent as `Authorization: Bearer <key>` (RFC 6750) and never named by an id in the path, so a key reaches its own server alone. Each server has a key of its own, so no host can act as another one. The key is 256 bits from the random source of the system, shown once, and the master keeps only its hash, so a copy of its database registers nobody. Both come from libhydrogen, which the accounts and the signed tickets will use too.
+
+The subject asks that dependencies go through the package manager and that the project build without altering the system. libhydrogen, by the author of libsodium, builds with CMake through vcpkg and needs nothing installed. Its password hash is not Argon2id: it costs computation and no memory, and a master key, outside the database, encrypts every stored hash, so a stolen database cannot be used to test passwords.
+
+Alternative considered: libsodium. It is the reference, with Argon2id for passwords, but its vcpkg port builds with autotools on macOS and Linux, which every developer and the CI would have to install on the machine, against the subject.
 
 ## Consequences
 

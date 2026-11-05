@@ -4,6 +4,7 @@
 #include <cstddef>
 #include "BydoWave.hpp"
 #include "WaveCurve.hpp"
+#include "WaveTestConstants.hpp"
 
 namespace rtype::game::testing {
 
@@ -26,13 +27,14 @@ constexpr WaveCurve STEADY_CURVE{
     .bydosAddedPerWave = 0,
     .spawnIntervalCutPerWave = std::chrono::milliseconds(0),
     .shortestSpawnInterval = std::chrono::seconds(2),
-    .wavePause = std::chrono::seconds(4)};
+    .wavePause = std::chrono::seconds(4),
+    .levelWaves = LONG_LEVEL_WAVES};
 
 /**
  * @brief Curves that are TEST_WAVE_CURVE but for one value, each breaking one
- * condition of isPlayable: a first wave without Bydos, no time between two
- * Bydos, a shortest time longer than the first one, a negative cut, a
- * negative pause.
+ * condition of isPlayable: a first wave without Bydos, a level without a
+ * wave, no time between two Bydos, a shortest time longer than the first one, a
+ * negative cut, a negative pause.
  */
 constexpr WaveCurve CURVE_WITHOUT_BYDOS{
     .firstWave =
@@ -40,35 +42,48 @@ constexpr WaveCurve CURVE_WITHOUT_BYDOS{
     .bydosAddedPerWave = 1,
     .spawnIntervalCutPerWave = std::chrono::milliseconds(250),
     .shortestSpawnInterval = std::chrono::seconds(1),
-    .wavePause = std::chrono::seconds(4)};
+    .wavePause = std::chrono::seconds(4),
+    .levelWaves = LONG_LEVEL_WAVES};
+constexpr WaveCurve CURVE_WITHOUT_WAVES{
+    .firstWave =
+        BydoWave{.bydoCount = 3, .spawnInterval = std::chrono::seconds(2)},
+    .bydosAddedPerWave = 1,
+    .spawnIntervalCutPerWave = std::chrono::milliseconds(250),
+    .shortestSpawnInterval = std::chrono::seconds(1),
+    .wavePause = std::chrono::seconds(4),
+    .levelWaves = 0};
 constexpr WaveCurve CURVE_WITHOUT_TIME_BETWEEN_BYDOS{
     .firstWave =
         BydoWave{.bydoCount = 3, .spawnInterval = std::chrono::seconds(2)},
     .bydosAddedPerWave = 1,
     .spawnIntervalCutPerWave = std::chrono::milliseconds(250),
     .shortestSpawnInterval = std::chrono::seconds(0),
-    .wavePause = std::chrono::seconds(4)};
+    .wavePause = std::chrono::seconds(4),
+    .levelWaves = LONG_LEVEL_WAVES};
 constexpr WaveCurve CURVE_THAT_SLOWS_DOWN{
     .firstWave =
         BydoWave{.bydoCount = 3, .spawnInterval = std::chrono::seconds(2)},
     .bydosAddedPerWave = 1,
     .spawnIntervalCutPerWave = std::chrono::milliseconds(250),
     .shortestSpawnInterval = std::chrono::milliseconds(2500),
-    .wavePause = std::chrono::seconds(4)};
+    .wavePause = std::chrono::seconds(4),
+    .levelWaves = LONG_LEVEL_WAVES};
 constexpr WaveCurve CURVE_WITH_A_NEGATIVE_CUT{
     .firstWave =
         BydoWave{.bydoCount = 3, .spawnInterval = std::chrono::seconds(2)},
     .bydosAddedPerWave = 1,
     .spawnIntervalCutPerWave = std::chrono::milliseconds(-250),
     .shortestSpawnInterval = std::chrono::seconds(1),
-    .wavePause = std::chrono::seconds(4)};
+    .wavePause = std::chrono::seconds(4),
+    .levelWaves = LONG_LEVEL_WAVES};
 constexpr WaveCurve CURVE_WITH_A_NEGATIVE_PAUSE{
     .firstWave =
         BydoWave{.bydoCount = 3, .spawnInterval = std::chrono::seconds(2)},
     .bydosAddedPerWave = 1,
     .spawnIntervalCutPerWave = std::chrono::milliseconds(250),
     .shortestSpawnInterval = std::chrono::seconds(1),
-    .wavePause = std::chrono::seconds(-4)};
+    .wavePause = std::chrono::seconds(-4),
+    .levelWaves = LONG_LEVEL_WAVES};
 
 /**
  * @brief How many waves the tests of a long game follow: far past the fifth,

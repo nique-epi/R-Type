@@ -21,7 +21,7 @@ std::size_t WaveDirector::advance(engine::Duration elapsed,
   bydosDue_ = 0;
   const bool waveCleared = bydosLeftToAppear_ == 0 && bydosInPlay == 0;
   if (waveCleared) {
-    startNextWave();
+    endTheWave();
   }
   timers_.advance(elapsed);
   return bydosDue_;
@@ -31,9 +31,19 @@ std::size_t WaveDirector::waveNumber() const { return waveNumber_; }
 
 BydoWave WaveDirector::currentWave() const { return wave_; }
 
+bool WaveDirector::lastWaveFinished() const { return lastWaveFinished_; }
+
 void WaveDirector::startPause() {
   bydosLeftToAppear_ = wave_.bydoCount;
   timers_.scheduleOnce(curve_.wavePause, [this] { letABydoAppear(); });
+}
+
+void WaveDirector::endTheWave() {
+  if (waveNumber_ >= curve_.levelWaves) {
+    lastWaveFinished_ = true;
+    return;
+  }
+  startNextWave();
 }
 
 void WaveDirector::startNextWave() {

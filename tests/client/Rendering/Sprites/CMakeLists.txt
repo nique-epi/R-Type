@@ -1,0 +1,2 @@
+target_sources(client_rendering_tests PRIVATE EntitySpritesFixtures.cpp EntitySpritesTest.cpp EntitySpriteConstantsTest.cpp PilotColorTest.cpp)
+target_sources(client_animation_tests PRIVATE AnimationTest.cpp AnimationSystemTest.cpp AnimatedScene.cpp)

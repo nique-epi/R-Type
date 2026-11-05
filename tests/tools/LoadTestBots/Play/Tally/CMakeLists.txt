@@ -1,0 +1,11 @@
+add_library(rtype_tools_load_test_bots_play_tally STATIC BotTally.cpp)
+
+target_include_directories(rtype_tools_load_test_bots_play_tally PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_tools_load_test_bots_play_tally PUBLIC rtype_client_connection_module)
+
+rtype_enable_warnings(rtype_tools_load_test_bots_play_tally)
+
+rtype_add_test(NAME load_test_bots_play_tally_tests SOURCES BotTallyTest.cpp LIBS rtype_tools_load_test_bots_play_tally)
+
+add_subdirectory(Fixtures)

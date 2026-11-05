@@ -1,0 +1,2 @@
+rtype_add_test(NAME storage_tests SOURCES DatabaseFileTest.cpp DatabaseFileFixture.cpp LIBS rtype_storage rtype_test_support)
+target_include_directories(storage_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR})

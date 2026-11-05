@@ -1,6 +1,7 @@
 #include "ServerGamesModule.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -19,11 +20,13 @@
 #include "GameSettings.hpp"
 #include "Games.hpp"
 #include "GamesSettings.hpp"
+#include "HostedGamesWatch.hpp"
 #include "IDatagramSender.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IResultsArchive.hpp"
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
+#include "Logger.hpp"
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
 #include "PlayerDatagrams.hpp"
@@ -33,6 +36,7 @@
 #include "SettingValue.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
+#include "VanillaBreaches.hpp"
 #include "WaveCatalog.hpp"
 #include "WavePlan.hpp"
 
@@ -49,6 +53,30 @@ std::optional<std::uint32_t> seedOf(const engine::SettingValue& setting) {
     return std::nullopt;
   }
   return static_cast<std::uint32_t>(*value);
+}
+
+/**
+ * @brief Writes in the journal the waves file at @p file, read as @p catalog,
+ * with the count of the difficulties it describes.
+ */
+void logWavesFile(const logging::Logger& logger,
+                  const std::filesystem::path& file,
+                  const WaveCatalog& catalog) {
+  logger.info("waves file ", logging::genericText(file), ": ",
+              catalog.difficulties().size(), " difficulties");
+}
+
+/**
+ * @brief Writes in the journal the difficulty the games play and whether they
+ * are vanilla, then one line per reason when they are not.
+ */
+void logHowGamesPlay(const logging::Logger& logger, std::string_view difficulty,
+                     const std::vector<std::string_view>& breaches) {
+  logger.info("games play ", difficulty,
+              breaches.empty() ? ", vanilla" : ", not vanilla");
+  for (const std::string_view breach : breaches) {
+    logger.info("not vanilla: ", breach);
+  }
 }
 
 }  // namespace
@@ -72,12 +100,14 @@ void ServerGamesModule::install(engine::InstallContext& context) {
   tickDatagrams_ = &context.require<TickDatagrams>();
   declareSettings(context.require<engine::ConfigurationRegistry>());
   context.provide(games_);
+  context.provide(hostedGames_);
   context.addWork(
       SIMULATION_STAGE,
       [this]([[maybe_unused]] engine::Duration elapsed) { playGames(); });
   context.addWork(OUTPUT_STAGE,
                   [this]([[maybe_unused]] engine::Duration elapsed) {
                     games_.dispatchEvents();
+                    watch_->publishIfChanged(games_);
                   });
 }
 
@@ -111,7 +141,9 @@ void ServerGamesModule::start() {
     throw NoJoinableGameException();
   }
   const std::string_view difficulty = DEFAULT_DIFFICULTY;
-  const WavePlan waves = readWaves(difficulty);
+  const WaveCatalog catalog = WaveCatalog::fromFile(settings_.wavesFile);
+  logWavesFile(logger_, settings_.wavesFile, catalog);
+  const WavePlan& waves = catalog.planOf(difficulty);
   const std::optional<std::uint32_t> seed = seedOf(*seedSetting_);
   const auto statesPerSecond =
       static_cast<std::size_t>(stateRateSetting_->integer().value_or(
@@ -119,6 +151,10 @@ void ServerGamesModule::start() {
   const auto inputDelayTicks =
       static_cast<std::size_t>(inputDelaySetting_->integer().value_or(
           static_cast<std::int64_t>(settings_.inputDelayTicks)));
+  const std::vector<std::string_view> breaches =
+      vanillaBreaches(catalog.fingerprint(), seed, inputDelayTicks);
+  logHowGamesPlay(logger_, difficulty, breaches);
+  auto& watch = watch_.emplace(hostedGames_, std::string{difficulty});
   for (std::size_t game = 0; game < settings_.gameCount; ++game) {
     auto events = std::make_unique<engine::EventBus>();
     std::unique_ptr<GameInstance> created = createGame(
@@ -129,7 +165,9 @@ void ServerGamesModule::start() {
                      .waves = waves,
                      .statesPerSecond = statesPerSecond,
                      .inputDelayTicks = inputDelayTicks,
-                     .difficulty = std::string{difficulty}});
+                     .difficulty = std::string{difficulty},
+                     .vanilla = breaches.empty()});
+    watch.watch(*events);
     games_.add(std::move(events), std::move(created));
   }
 }
@@ -139,15 +177,9 @@ void ServerGamesModule::stop() {
                             std::this_thread::sleep_for(pause);
                           }};
   farewell.sayGoodbyeTo(games_);
-}
-
-WavePlan ServerGamesModule::readWaves(std::string_view difficulty) const {
-  const WaveCatalog catalog = WaveCatalog::fromFile(settings_.wavesFile);
-  WavePlan waves = catalog.planOf(difficulty);
-  logger_.info("waves file ", logging::genericText(settings_.wavesFile), ": ",
-               catalog.difficulties().size(), " difficulties, games play ",
-               difficulty);
-  return waves;
+  if (watch_.has_value()) {
+    watch_->forget();
+  }
 }
 
 std::unique_ptr<GameInstance> ServerGamesModule::createGame(

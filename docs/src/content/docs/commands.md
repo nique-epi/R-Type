@@ -44,6 +44,9 @@ Server settings:
 | `state-rate` | 2 to 60 | 20 | The world states sent to each player per second. |
 | `input-delay` | 0 to 30 | 3 | The ticks every player's input is held before it is applied. |
 | `database` | a path | empty | The SQLite file the leaderboard of the server is kept in; empty for `r-type_server_<port>.db` next to the executable. |
+| `master-url` | `http://<host>[:<port>]` | empty | The master the server is listed on; empty to run alone. |
+| `master-key` | a key | empty | The key the master gave when the host created the server; empty to run alone. |
+| `server-name` | 1 to 32 bytes | `R-Type server` | The name players read in the list of servers. |
 
 Client settings:
 
@@ -78,6 +81,7 @@ Server modules:
 | `games` | `network`, `storage` | Hosts the games. |
 | `lobby` | `network`, `games` | Answers the connection requests of the players. |
 | `metrics` | `games`, `network` | Measures the ticks and writes a report to the journal. |
+| `master` | `network`, `games` | Keeps the master told of the server; uses `metrics` when it is on. |
 
 Client modules:
 
@@ -99,6 +103,7 @@ Master modules:
 | `logger` | nothing | Applies the logging options when it starts. |
 | `storage` | `logger` | Opens the database of the master. |
 | `http` | `logger` | Opens the port of the HTTP API. |
+| `servers` | `logger`, `storage`, `http` | Creates the game servers with their keys, and takes their registration and their heartbeats. |
 
 Turning off a module the program cannot run without is accepted when nothing that stays on needs it, and the program then does less. For example, `module lobby off` on the server leaves a server that accepts nobody. On the client, `menus`, `lobby` and `game` need `screens`, and `screens` needs five modules, so turning one of those off is refused until the modules that need it are off first.
 

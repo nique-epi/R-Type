@@ -10,10 +10,10 @@ namespace rtype::server {
  *
  * A nickname compares with NOCASE, which folds ASCII letters only, as
  * PlayerRoster::hasNickname() does: ACE and ace are one player. account_id and
- * sent_at stay empty and vanilla stays 0 until accounts, the link with the
- * master and the definition of a vanilla game exist. Statistics are computed
- * from the rows, so they cannot disagree with them; COALESCE gives no collation
- * of its own, hence the explicit one.
+ * sent_at stay empty until accounts and the link with the master exist;
+ * vanilla is 1 for a vanilla game (GameResult::vanilla). Statistics are
+ * computed from the rows, so they cannot disagree with them; COALESCE gives no
+ * collation of its own, hence the explicit one.
  */
 constexpr std::string_view RESULTS_TABLE_MIGRATION = R"sql(
 CREATE TABLE game_results (
@@ -57,9 +57,11 @@ constexpr std::string_view NEW_GAME_ID_QUERY =
 
 constexpr std::string_view INSERT_RESULT_STATEMENT = R"sql(
 INSERT INTO game_results
-  (game_id, nickname, score, deaths, played_at, difficulty, player_count)
+  (game_id, nickname, score, deaths, played_at, difficulty, player_count,
+   vanilla)
 VALUES
-  (:game_id, :nickname, :score, :deaths, :played_at, :difficulty, :player_count)
+  (:game_id, :nickname, :score, :deaths, :played_at, :difficulty, :player_count,
+   :vanilla)
 )sql";
 
 /**
@@ -100,6 +102,7 @@ constexpr const char* DEATHS_PARAMETER = ":deaths";
 constexpr const char* PLAYED_AT_PARAMETER = ":played_at";
 constexpr const char* DIFFICULTY_PARAMETER = ":difficulty";
 constexpr const char* PLAYER_COUNT_PARAMETER = ":player_count";
+constexpr const char* VANILLA_PARAMETER = ":vanilla";
 constexpr const char* ASKER_PARAMETER = ":asker";
 constexpr const char* TOP_ROWS_PARAMETER = ":top_rows";
 

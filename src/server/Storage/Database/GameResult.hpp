@@ -28,6 +28,8 @@ struct GameResult {
   /** @brief When the game ended, to the second. */
   std::chrono::sys_seconds endedAt;
   std::vector<PlayerResult> players;
+  /** @brief Whether the game was vanilla (see GameSettings::vanilla). */
+  bool vanilla{false};
 };
 
 }  // namespace rtype::server

@@ -6,9 +6,12 @@
 #include <optional>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "Endpoint.hpp"
 #include "MessageOrigin.hpp"
+#include "OutgoingDatagram.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::server::testing {
 
@@ -50,5 +53,18 @@ void ignoreInput(const ConnectedPlayer& player,
 [[nodiscard]] std::function<void(const ConnectedPlayer&,
                                  const network::PlayerInput&)>
 recorderOf(std::vector<ShownInput>& shown);
+
+/** @returns The datagrams sendHeartbeats() sends the players of @p roster at
+ * @p now, in order. */
+[[nodiscard]] std::vector<network::OutgoingDatagram> heartbeatsSentAt(
+    PlayerRoster& roster, engine::Duration now);
+
+/**
+ * @brief Hands @p roster a Heartbeat from @p sender that echoes the Heartbeat
+ * the server sent at HEARTBEAT_SENDING_TIME, held HELD_BY_THE_CLIENT, in a
+ * datagram that arrived at ECHO_ARRIVAL: a round trip of
+ * MEASURED_PLAYER_ROUND_TRIP.
+ */
+void readEchoFrom(PlayerRoster& roster, const network::Endpoint& sender);
 
 }  // namespace rtype::server::testing

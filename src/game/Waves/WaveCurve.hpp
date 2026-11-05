@@ -9,7 +9,8 @@ namespace rtype::game {
 /**
  * @brief How the waves of one difficulty grow: the first wave, then what each
  * next wave adds and takes off, the shortest time it may leave between two
- * Bydos, and the pause before each wave, in simulation time.
+ * Bydos, the pause before each wave, in simulation time, and how many
+ * waves the level of the difficulty holds.
  */
 struct WaveCurve {
   BydoWave firstWave;
@@ -17,6 +18,7 @@ struct WaveCurve {
   engine::Duration spawnIntervalCutPerWave{};
   engine::Duration shortestSpawnInterval{};
   engine::Duration wavePause{};
+  std::size_t levelWaves{};
 
   bool operator==(const WaveCurve&) const = default;
 };

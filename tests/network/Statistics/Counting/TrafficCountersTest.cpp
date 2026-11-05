@@ -167,10 +167,10 @@ TEST(TrafficCounters, TheLastMessageOfTheProtocolHasItsOwnSlot) {
 
   counters.countReceived(
       loopbackOnPort(PEER_PORT),
-      datagramHolding(MessageType::LeaderboardAnswer, SMALL_PAYLOAD));
+      datagramHolding(MessageType::RoundTrips, SMALL_PAYLOAD));
 
   const DirectionTraffic received = counters.report().others.received;
-  EXPECT_EQ(figuresOf(received, MessageType::LeaderboardAnswer).count, 1U);
+  EXPECT_EQ(figuresOf(received, MessageType::RoundTrips).count, 1U);
   EXPECT_EQ(received.messages[UNKNOWN_MESSAGE_SLOT], TrafficFigures{});
 }
 

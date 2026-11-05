@@ -17,9 +17,9 @@
 #include "LoopStages.hpp"
 #include "MessageType.hpp"
 #include "ModuleConstants.hpp"
+#include "ReceivedDatagrams.hpp"
 #include "RecordingNetworkModule.hpp"
 #include "SentDatagrams.hpp"
-#include "ServerApplication.hpp"
 #include "ServerConstants.hpp"
 #include "ServerGamesModule.hpp"
 #include "ServerLoggerModule.hpp"
@@ -79,9 +79,8 @@ ConnectedPlayer& ServerGamesFixture::join(std::size_t index) {
 void ServerGamesFixture::runTick(
     const std::vector<IncomingDatagram>& players,
     const std::vector<IncomingDatagram>& requests) {
-  network().tickDatagrams().begin(
-      rtype::server::ServerApplication::ReceivedDatagrams{
-          .players = players, .connectionRequests = requests});
+  network().tickDatagrams().begin(rtype::server::ReceivedDatagrams{
+      .players = players, .connectionRequests = requests});
   application().runStages(rtype::engine::SIMULATION_TICK_DURATION);
   network().tickDatagrams().end();
 }

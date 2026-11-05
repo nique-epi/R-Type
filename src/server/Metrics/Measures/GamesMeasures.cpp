@@ -1,7 +1,10 @@
 #include "GamesMeasures.hpp"
 #include <algorithm>
+#include <cstddef>
 #include <memory>
+#include <optional>
 #include <vector>
+#include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
 #include "GameInstance.hpp"
 #include "GameState.hpp"
@@ -9,6 +12,8 @@
 #include "GamesCensus.hpp"
 #include "IClock.hpp"
 #include "PlayerRoster.hpp"
+#include "PlayerRoundTripMeasure.hpp"
+#include "RoundTripFigures.hpp"
 #include "SystemScheduler.hpp"
 #include "SystemTime.hpp"
 
@@ -57,6 +62,26 @@ std::vector<engine::SystemTime> takeSystemTimesOf(const Games& games) {
     }
   }
   return totals;
+}
+
+std::vector<PlayerRoundTripMeasure> roundTripsOf(const Games& games) {
+  std::vector<PlayerRoundTripMeasure> measures;
+  std::size_t gameNumber = 0;
+  for (const std::unique_ptr<GameInstance>& game : games.all()) {
+    ++gameNumber;
+    for (const ConnectedPlayer* const player : game->roster().connected()) {
+      const std::optional<network::RoundTripFigures> figures =
+          player->roundTrip.figures();
+      if (figures.has_value()) {
+        measures.push_back(
+            PlayerRoundTripMeasure{.gameNumber = gameNumber,
+                                   .playerNumber = player->playerNumber,
+                                   .nickname = player->nickname,
+                                   .figures = *figures});
+      }
+    }
+  }
+  return measures;
 }
 
 }  // namespace rtype::server

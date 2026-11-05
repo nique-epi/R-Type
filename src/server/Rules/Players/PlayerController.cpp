@@ -4,6 +4,7 @@
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
+#include "ShipControl.hpp"
 #include "ShipInput.hpp"
 #include "World.hpp"
 
@@ -16,7 +17,7 @@ void steerShipByInput(game::World& world, const ConnectedPlayer& player,
     return;
   }
   *intent = game::Intent{
-      .directions = directionsOf(input),
+      .direction = game::directionOf(directionsOf(input)),
       .shooting = holdsActionAt(input, network::SHOOT_ACTION_BIT_POSITION),
       .steered = true};
 }

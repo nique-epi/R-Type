@@ -1,4 +1,4 @@
-add_library(rtype_master_storage_module STATIC MasterStorageModule.cpp)
+add_library(rtype_master_storage_module STATIC MasterDatabase.cpp MasterStorageModule.cpp)
 
 target_include_directories(rtype_master_storage_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -7,6 +7,7 @@ target_link_libraries(rtype_master_storage_module
     rtype_engine_commands
     rtype_engine_modules
     rtype_logging
+    rtype_master_exceptions
     rtype_storage
   PRIVATE
     rtype_master_constants

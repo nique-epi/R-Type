@@ -1,0 +1,3 @@
+rtype_add_test(NAME server_lobby_tests SOURCES ConnectionAcceptorTest.cpp ConnectionAcceptorFixture.cpp ConnectionAcceptorFixtures.cpp LIBS rtype_server_lobby_module server_test_datagrams rtype_test_support)
+target_include_directories(server_lobby_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/server ${RTYPE_TEST_SOURCE_DIR}/network/Protocol $<TARGET_PROPERTY:rtype_network_connection_accepted,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:rtype_network_connection_challenge,INTERFACE_INCLUDE_DIRECTORIES>)
+target_sources(server_module_tests PRIVATE ServerLobbyFixture.cpp ServerLobbyModuleTest.cpp)

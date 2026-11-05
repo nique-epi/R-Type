@@ -87,3 +87,13 @@ Reading the tidied client, the user asked why `Connection/Session/` does not gro
 ### Decision
 
 The user allowed a third level on 3 November 2026. A sub-folder splits again only when it meets point 8 itself, at least two categories of three classes, and the parent links its sub-folders at every level. A folder of the third level never splits.
+
+## Update (5 November 2026) — a category of two classes
+
+### Context
+
+After the load-test bots were split into `Launch/`, `Play/` and `Squad/`, the user wanted `Play/` split again into `Pilot/` (`BotPilot`, `BotPilotConstants`, `BotInputSender`) and `Tally/` (`BotTally` and the `BotReport` it fills). `Tally/` holds two types, below the three classes point 8 asked, and the rule `fix-architecture-the-table-of-categories-is-rerun-on-every-header.md` added "never a sub-folder of two classes".
+
+### Decision
+
+The user removed that rule and lowered the threshold to two classes, everywhere: a role of two classes a reader names is a category, and a folder with two such roles splits. Points 8, 9, 14 and 16 say two. The `Fixtures/` of a folder of `tests/tools/` stays outside the count of levels, so `Play/Pilot/Fixtures/` is allowed. Folders left flat under the older threshold are not reworked by this change.

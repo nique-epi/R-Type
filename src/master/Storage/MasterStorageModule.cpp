@@ -4,11 +4,9 @@
 #include <utility>
 #include <vector>
 #include "ConfigurationRegistry.hpp"
-#include "DatabaseFile.hpp"
 #include "InstallContext.hpp"
 #include "MasterConstants.hpp"
 #include "MasterModuleConstants.hpp"
-#include "MasterStorageConstants.hpp"
 #include "PathText.hpp"
 #include "TextSettingDefinition.hpp"
 
@@ -37,16 +35,16 @@ void MasterStorageModule::install(engine::InstallContext& context) {
                       std::string{DATABASE_FILE_NAME} +
                       " next to the executable",
               .validate = {}});
+  context.provide(database_);
 }
 
 void MasterStorageModule::start() {
   const std::filesystem::path file = databaseFile();
-  database_.emplace(
-      storage::openDatabaseFile(logging::genericText(file), MASTER_MIGRATIONS));
+  database_.open(logging::genericText(file));
   logger_.info("database ", logging::genericText(file));
 }
 
-void MasterStorageModule::stop() { database_.reset(); }
+void MasterStorageModule::stop() { database_.close(); }
 
 std::filesystem::path MasterStorageModule::databaseFile() const {
   if (!databaseSetting_->text().empty()) {

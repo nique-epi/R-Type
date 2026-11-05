@@ -19,8 +19,15 @@ class MasterHttpServerFixture : public ::testing::Test {
   /** @returns The server, to add its routes before openServer(). */
   [[nodiscard]] rtype::master::MasterHttpServer& server();
 
-  /** @brief Adds TEST_ROUTE, which answers EXPECTED_OK and TEST_ROUTE_BODY. */
+  /** @brief Adds TEST_GET_ROUTE, which answers EXPECTED_OK and TEST_ROUTE_BODY.
+   */
   void addTestRoute();
+
+  /**
+   * @brief Adds TEST_PUT_ROUTE, which answers what it read of the request: its
+   * body, its token and its address, under the members ECHO_*_MEMBER.
+   */
+  void addEchoRoute();
 
   /** @brief Opens the server on a port the system chooses. */
   void openServer();
@@ -31,6 +38,10 @@ class MasterHttpServerFixture : public ::testing::Test {
   /** @returns The answer of the server to GET @p path with @p body. */
   [[nodiscard]] httplib::Result getWithBody(std::string_view path,
                                             const std::string& body) const;
+
+  /** @returns The answer of the server to PUT @p path with @p headers. */
+  [[nodiscard]] httplib::Result put(std::string_view path,
+                                    const httplib::Headers& headers) const;
 
   /** @returns The port the server listens on, once openServer() ran. */
   [[nodiscard]] std::uint16_t port() const;

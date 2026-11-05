@@ -1,0 +1,2 @@
+rtype_add_test(NAME server_launch_options_tests SOURCES LaunchOptionsTest.cpp ServerModeOptionTest.cpp ${RTYPE_TEST_SOURCE_DIR}/logging/LogLaunchOptionsFixture.cpp LIBS rtype_server_launch_options rtype_server_constants rtype_network_constants rtype_logging)
+target_include_directories(server_launch_options_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/logging)

@@ -1,0 +1,2 @@
+rtype_add_test(NAME client_module_list_tests SOURCES ClientModulesTest.cpp ClientModulesFixture.cpp LIBS rtype_client_modules)
+target_include_directories(client_module_list_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} $<TARGET_PROPERTY:rtype_client_constants,INTERFACE_INCLUDE_DIRECTORIES>)

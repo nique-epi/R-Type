@@ -1,0 +1,3 @@
+# The fingerprint of the waves file is taken on its bytes: a checkout that
+# turned its line endings into CRLF would not read as the shipped file.
+assets/waves/waves.toml text eol=lf

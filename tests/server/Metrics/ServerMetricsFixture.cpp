@@ -67,7 +67,7 @@ void ServerMetricsFixture::writeTrafficTo(std::filesystem::path file) {
 
 std::optional<rtype::server::MetricsReport>
 ServerMetricsFixture::latestReport() {
-  return probe().latestMetrics()->report();
+  return probe().latestMetrics()->value();
 }
 
 void ServerMetricsFixture::startTheGameOfPlayer(std::size_t index) {

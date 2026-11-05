@@ -21,7 +21,18 @@ set input-delay 3
 # the executable, with the port above.
 set database ""
 
+# The master this server is listed on (r-type_server --mode master), as
+# http://<host>[:<port>], and the key the master gave when the host created the
+# server on it. Either one empty: the server runs alone and is listed nowhere.
+# Never commit a real key.
+set master-url ""
+set master-key ""
+
+# The name players read in the list of servers, 1 to 32 bytes.
+set server-name "R-Type server"
+
 # Turn a module off (it is never installed, provides no service and runs no work). Refused when a module
 # that stays on depends on it: storage needs network, games needs network and
-# storage, lobby needs games, metrics needs games and network, all need logger.
+# storage, lobby needs games, metrics needs games and network, master needs
+# network and games, all need logger.
 # module lobby off

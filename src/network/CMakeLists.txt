@@ -22,6 +22,7 @@ add_subdirectory(Reliability)
 add_subdirectory(Transport)
 add_subdirectory(Handshake)
 add_subdirectory(Statistics)
+add_subdirectory(Master)
 
 add_library(rtype_network INTERFACE)
 
@@ -45,6 +46,6 @@ target_link_libraries(rtype_network
     rtype_network_udp_socket
     rtype_network_datagram_relay
     rtype_network_handshake
-    rtype_network_cookie_issuer
     rtype_network_statistics
+    rtype_network_master
 )

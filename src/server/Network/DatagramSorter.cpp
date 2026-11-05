@@ -1,18 +1,18 @@
 #include "DatagramSorter.hpp"
 #include <algorithm>
-#include <atomic>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <mutex>
 #include <optional>
 #include <span>
-#include <string>
 #include <string_view>
-#include <utility>
 #include <vector>
 #include "AdmittedPlayer.hpp"
+#include "AllowanceSpending.hpp"
+#include "AllowanceVerdict.hpp"
 #include "BoundedQueue.hpp"
 #include "DatagramCodec.hpp"
+#include "DatagramDrops.hpp"
 #include "DatagramQueues.hpp"
 #include "Endpoint.hpp"
 #include "IClock.hpp"
@@ -21,9 +21,19 @@
 #include "NetworkConstants.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
+#include "RateLimitConstants.hpp"
+#include "SenderAllowance.hpp"
 #include "ServerConstants.hpp"
+#include "SpokenDatagram.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::server {
+
+static_assert(
+    network::PLAYER_DATAGRAMS_PER_SECOND >
+        static_cast<std::int64_t>(engine::SIMULATION_TICKS_PER_SECOND),
+    "a player sends an input every simulation tick, and heartbeats "
+    "besides: its limit must be above the tick rate");
 
 namespace {
 
@@ -37,26 +47,66 @@ bool carriesSessionToken(const network::PacketHeader& header,
          (holdsRequest && header.sessionToken == network::NO_SESSION_TOKEN);
 }
 
-void pushCopy(concurrency::BoundedQueue<network::IncomingDatagram>& queue,
-              const network::Endpoint& sender,
-              std::span<const std::byte> datagram) {
-  queue.push(network::IncomingDatagram{
-      .sender = sender, .payload = {datagram.begin(), datagram.end()}});
+/**
+ * @returns A copy of @p datagram from @p sender, stamped with @p receivedAt,
+ * read on the clock of the sorter: the time it arrived, since the sorter runs
+ * in the handler of the socket.
+ */
+network::IncomingDatagram copyOf(const network::Endpoint& sender,
+                                 std::span<const std::byte> datagram,
+                                 std::chrono::nanoseconds receivedAt) {
+  return network::IncomingDatagram{
+      .sender = sender,
+      .payload = {datagram.begin(), datagram.end()},
+      .receivedAt = receivedAt};
+}
+
+AdmittedPlayer freshPlayer(const network::Endpoint& player,
+                           std::uint64_t sessionToken) {
+  return AdmittedPlayer{.endpoint = player,
+                        .sessionToken = sessionToken,
+                        .allowance = network::SenderAllowance{}};
+}
+
+/** @returns Why a datagram given @p verdict is dropped, or nothing when it
+ * goes through. */
+std::optional<std::string_view> dropReasonOf(
+    network::AllowanceVerdict verdict) {
+  switch (verdict) {
+    case network::AllowanceVerdict::Allowed:
+      return std::nullopt;
+    case network::AllowanceVerdict::OverCap:
+      return OVER_RATE_LIMIT_DROP_REASON;
+    case network::AllowanceVerdict::NewlyBanned:
+      return NEWLY_BANNED_DROP_REASON;
+    case network::AllowanceVerdict::Banned:
+      return BANNED_DROP_REASON;
+  }
+  return std::nullopt;
+}
+
+/** @returns Whether @p verdict lets the datagram of @p sender through; drops
+ * it in @p drops, with the reason, otherwise. */
+bool keptByLimit(network::AllowanceVerdict verdict,
+                 const network::Endpoint& sender, DatagramDrops& drops) {
+  const std::optional<std::string_view> reason = dropReasonOf(verdict);
+  if (reason.has_value()) {
+    drops.drop(sender, *reason);
+  }
+  return !reason.has_value();
 }
 
 }  // namespace
 
 DatagramSorter::DatagramSorter(DatagramQueues destinations,
+                               DatagramDrops& drops,
                                const engine::IClock& clock)
-    : destinations_(destinations),
-      clock_(&clock),
-      dropLog_(std::string{SERVER_LOGGER_NAME},
-               network::REJECTION_LINE_INTERVAL) {}
+    : destinations_(destinations), drops_(&drops), clock_(&clock) {}
 
 void DatagramSorter::sort(const network::Endpoint& sender,
                           std::span<const std::byte> datagram) {
   if (datagram.size() < network::PACKET_HEADER_SIZE) {
-    drop(sender, SHORTER_THAN_HEADER_DROP_REASON);
+    drops_->drop(sender, SHORTER_THAN_HEADER_DROP_REASON);
     return;
   }
   const network::PacketHeader header =
@@ -68,39 +118,64 @@ void DatagramSorter::sort(const network::Endpoint& sender,
   const std::optional<network::DatagramCodec::MessageTypes> types =
       network::DatagramCodec::messageTypes(datagram);
   if (!types.has_value()) {
-    drop(sender, MESSAGE_SIZES_DROP_REASON);
+    drops_->drop(sender, MESSAGE_SIZES_DROP_REASON);
     return;
   }
-  const bool holdsRequest = types->test(
-      static_cast<std::size_t>(network::MessageType::ConnectionRequest));
-  const AdmittedPlayer* const player = findAdmitted(sender);
+  sortSpoken(SpokenDatagram{
+      .sender = sender,
+      .header = header,
+      .holdsRequest = types->test(
+          static_cast<std::size_t>(network::MessageType::ConnectionRequest)),
+      .bytes = datagram});
+}
+
+void DatagramSorter::sortSpoken(const SpokenDatagram& datagram) {
+  const network::Endpoint& sender = datagram.sender.get();
+  AdmittedPlayer* const player = findAdmitted(sender);
   if (player != nullptr &&
-      !carriesSessionToken(header, player->sessionToken, holdsRequest)) {
-    dropWrongToken(sender);
+      !carriesSessionToken(datagram.header, player->sessionToken,
+                           datagram.holdsRequest)) {
+    drops_->dropWrongToken(sender);
     return;
   }
-  if (holdsRequest) {
-    pushCopy(*destinations_.connectionRequests, sender, datagram);
-  } else if (player != nullptr) {
-    pushCopy(*destinations_.players, sender, datagram);
-  } else {
-    drop(sender, STRANGER_DROP_REASON);
+  if (player == nullptr && !datagram.holdsRequest) {
+    drops_->drop(sender, STRANGER_DROP_REASON);
+    return;
   }
+  const std::chrono::nanoseconds now = clock_->now();
+  if (keptByLimit(spendAllowanceOf(datagram, player, now), sender, *drops_)) {
+    (datagram.holdsRequest ? *destinations_.connectionRequests
+                           : *destinations_.players)
+        .push(copyOf(sender, datagram.bytes, now));
+  }
+}
+
+network::AllowanceVerdict DatagramSorter::spendAllowanceOf(
+    const SpokenDatagram& datagram, AdmittedPlayer* player,
+    std::chrono::nanoseconds now) {
+  if (player != nullptr && !datagram.holdsRequest) {
+    return network::spendAllowance(player->allowance,
+                                   network::PLAYER_RATE_LIMIT, now);
+  }
+  return requests_.spend(datagram.sender.get(), now);
 }
 
 void DatagramSorter::sortForeignHeader(const network::Endpoint& sender,
                                        const network::PacketHeader& header,
                                        std::span<const std::byte> datagram) {
-  if (isRefusedForItsVersion(sender, header, datagram.size())) {
-    pushCopy(*destinations_.connectionRequests, sender, datagram);
+  if (!isRefusedForItsVersion(sender, header, datagram.size())) {
+    drops_->drop(sender, network::FOREIGN_HEADER_DROP_REASON);
     return;
   }
-  drop(sender, network::FOREIGN_HEADER_DROP_REASON);
+  const std::chrono::nanoseconds now = clock_->now();
+  if (keptByLimit(requests_.spend(sender, now), sender, *drops_)) {
+    destinations_.connectionRequests->push(copyOf(sender, datagram, now));
+  }
 }
 
 bool DatagramSorter::isRefusedForItsVersion(const network::Endpoint& sender,
                                             const network::PacketHeader& header,
-                                            std::size_t datagramSize) const {
+                                            std::size_t datagramSize) {
   return network::DatagramCodec::speaksAnotherVersion(header) &&
          findAdmitted(sender) == nullptr &&
          datagramSize >= network::CONNECTION_REFUSED_DATAGRAM_SIZE;
@@ -108,14 +183,14 @@ bool DatagramSorter::isRefusedForItsVersion(const network::Endpoint& sender,
 
 void DatagramSorter::admit(const network::Endpoint& player,
                            std::uint64_t sessionToken) {
-  const auto admitted =
-      std::ranges::find(admitted_, player, &AdmittedPlayer::endpoint);
-  if (admitted != admitted_.end()) {
-    admitted->sessionToken = sessionToken;
+  AdmittedPlayer* const admitted = findAdmitted(player);
+  if (admitted == nullptr) {
+    admitted_.push_back(freshPlayer(player, sessionToken));
     return;
   }
-  admitted_.push_back(
-      AdmittedPlayer{.endpoint = player, .sessionToken = sessionToken});
+  if (admitted->sessionToken != sessionToken) {
+    *admitted = freshPlayer(player, sessionToken);
+  }
 }
 
 bool DatagramSorter::forget(const network::Endpoint& player,
@@ -127,41 +202,10 @@ bool DatagramSorter::forget(const network::Endpoint& player,
                        }) > 0;
 }
 
-std::size_t DatagramSorter::droppedCount() const {
-  return droppedCount_.load(std::memory_order_relaxed);
-}
-
-std::size_t DatagramSorter::wrongTokenCount() const {
-  return wrongTokenCount_.load(std::memory_order_relaxed);
-}
-
-std::optional<network::Endpoint> DatagramSorter::takeWrongTokenSender() {
-  const std::scoped_lock lock{wrongTokenSenderMutex_};
-  return std::exchange(wrongTokenSender_, std::nullopt);
-}
-
-const AdmittedPlayer* DatagramSorter::findAdmitted(
-    const network::Endpoint& sender) const {
+AdmittedPlayer* DatagramSorter::findAdmitted(const network::Endpoint& sender) {
   const auto admitted =
       std::ranges::find(admitted_, sender, &AdmittedPlayer::endpoint);
   return admitted == admitted_.end() ? nullptr : &*admitted;
-}
-
-void DatagramSorter::drop(const network::Endpoint& sender,
-                          std::string_view reason) {
-  droppedCount_.fetch_add(1, std::memory_order_relaxed);
-  dropLog_.debug(clock_->now(), "dropped a datagram from ", sender.address,
-                 " port ", sender.port, ": ", reason);
-}
-
-void DatagramSorter::dropWrongToken(const network::Endpoint& sender) {
-  dropLog_.debug(clock_->now(), "dropped a datagram from ", sender.address,
-                 " port ", sender.port, ": ", WRONG_TOKEN_DROP_REASON);
-  const std::scoped_lock lock{wrongTokenSenderMutex_};
-  if (!wrongTokenSender_.has_value()) {
-    wrongTokenSender_ = sender;
-  }
-  wrongTokenCount_.fetch_add(1, std::memory_order_relaxed);
 }
 
 }  // namespace rtype::server

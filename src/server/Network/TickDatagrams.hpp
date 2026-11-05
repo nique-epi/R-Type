@@ -2,7 +2,7 @@
 
 #include <span>
 #include "IncomingDatagram.hpp"
-#include "ServerApplication.hpp"
+#include "ReceivedDatagrams.hpp"
 
 namespace rtype::server {
 
@@ -19,7 +19,7 @@ class TickDatagrams {
  public:
   /** @brief Keeps @p received for the tick that starts. The datagrams must
    * outlive the tick. */
-  void begin(const ServerApplication::ReceivedDatagrams& received);
+  void begin(const ReceivedDatagrams& received);
 
   /** @brief Forgets the datagrams of the tick that ended. */
   void end();
@@ -32,7 +32,7 @@ class TickDatagrams {
       const;
 
  private:
-  ServerApplication::ReceivedDatagrams received_{};
+  ReceivedDatagrams received_{};
 };
 
 }  // namespace rtype::server

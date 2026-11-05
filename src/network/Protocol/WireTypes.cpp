@@ -100,10 +100,13 @@ bool isValidUtf8(std::string_view text) {
   return true;
 }
 
+bool isPrintableUtf8(std::string_view text) {
+  return isValidUtf8(text) && std::ranges::none_of(text, isControlCharacter);
+}
+
 bool isValidNickname(std::string_view nickname) {
   return nickname.size() >= MINIMUM_NICKNAME_SIZE &&
-         nickname.size() <= MAXIMUM_NICKNAME_SIZE && isValidUtf8(nickname) &&
-         std::ranges::none_of(nickname, isControlCharacter);
+         nickname.size() <= MAXIMUM_NICKNAME_SIZE && isPrintableUtf8(nickname);
 }
 
 void requireValidNickname(std::string_view nickname) {

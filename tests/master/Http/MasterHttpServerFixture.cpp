@@ -1,8 +1,11 @@
 #include "MasterHttpServerFixture.hpp"
 #include <httplib.h>
 #include <cstdint>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <string_view>
+#include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
 #include "Endpoint.hpp"
 #include "HttpPortProbe.hpp"
@@ -21,9 +24,24 @@ rtype::master::MasterHttpServer& MasterHttpServerFixture::server() {
 }
 
 void MasterHttpServerFixture::addTestRoute() {
-  server_.addGet(TEST_ROUTE, [] {
+  server_.add(TEST_GET_ROUTE,
+              []([[maybe_unused]] const rtype::master::ApiRequest& request) {
+                return rtype::master::ApiResponse{
+                    .status = EXPECTED_OK,
+                    .body = std::string{TEST_ROUTE_BODY}};
+              });
+}
+
+void MasterHttpServerFixture::addEchoRoute() {
+  server_.add(TEST_PUT_ROUTE, [](const rtype::master::ApiRequest& request) {
+    nlohmann::json echo;
+    echo[ECHO_BODY_MEMBER] = request.body;
+    echo[ECHO_TOKEN_MEMBER] = request.bearerToken.has_value()
+                                  ? nlohmann::json(*request.bearerToken)
+                                  : nlohmann::json(nullptr);
+    echo[ECHO_ADDRESS_MEMBER] = request.remoteAddress;
     return rtype::master::ApiResponse{.status = EXPECTED_OK,
-                                      .body = std::string{TEST_ROUTE_BODY}};
+                                      .body = echo.dump()};
   });
 }
 
@@ -45,6 +63,18 @@ httplib::Result MasterHttpServerFixture::getWithBody(
   request.body = body;
   request.set_header(std::string{CONTENT_TYPE_HEADER},
                      std::string{TEXT_CONTENT_TYPE});
+  return httpSend(port_, request);
+}
+
+httplib::Result MasterHttpServerFixture::put(
+    std::string_view path, const httplib::Headers& headers) const {
+  httplib::Request request;
+  request.method = std::string{PUT_METHOD};
+  request.path = std::string{path};
+  request.headers = headers;
+  request.body = std::string{ECHOED_BODY};
+  request.set_header(std::string{CONTENT_TYPE_HEADER},
+                     std::string{EXPECTED_JSON_TYPE});
   return httpSend(port_, request);
 }
 

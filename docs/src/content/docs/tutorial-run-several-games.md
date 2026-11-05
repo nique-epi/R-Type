@@ -33,7 +33,9 @@ There is nothing to ask for: a server always hosts `DEFAULT_HOSTED_GAME_COUNT` (
 [INFO ] [Server] - server starting
 [INFO ] [Server] - listening on UDP port 4242
 [INFO ] [Storage] - results database /path/to/r-type_server_4242.db
-[INFO ] [Server] - waves file assets/waves/waves.toml: 3 difficulties, games play normal
+[INFO ] [Server] - waves file assets/waves/waves.toml: 3 difficulties
+[INFO ] [Server] - games play normal, not vanilla
+[INFO ] [Server] - not vanilla: a seed is set, so the waves can be known in advance
 [INFO ] [BydoSpawner] - Bydo spawning starts from the seed 42
 [INFO ] [BydoSpawner] - Bydo spawning starts from the seed 65578
 ```

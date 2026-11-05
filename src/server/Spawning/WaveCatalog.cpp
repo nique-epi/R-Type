@@ -22,6 +22,7 @@
 #include "BydoWave.hpp"
 #include "PathText.hpp"
 #include "ServerException.hpp"
+#include "SipHash.hpp"
 #include "TimeConstants.hpp"
 #include "WaveCurve.hpp"
 #include "WaveFileConstants.hpp"
@@ -217,7 +218,8 @@ game::WaveCurve curveFrom(const FileTable& table) {
                                                 SPAWN_INTERVAL_CUT_RANGE),
       .shortestSpawnInterval = millisecondsAt(
           table, SHORTEST_SPAWN_INTERVAL_KEY, shortestIntervalRange),
-      .wavePause = millisecondsAt(table, WAVE_PAUSE_KEY, WAVE_PAUSE_RANGE)};
+      .wavePause = millisecondsAt(table, WAVE_PAUSE_KEY, WAVE_PAUSE_RANGE),
+      .levelWaves = countAt(table, LEVEL_WAVES_KEY, LEVEL_WAVES_RANGE)};
 }
 
 /** @returns The waves the table of one difficulty describes. */
@@ -284,7 +286,8 @@ WaveCatalog WaveCatalog::fromText(std::string_view text,
                                   std::string{error.description()});
   }
   return WaveCatalog{
-      plansFrom(FileTable{.table = root, .source = source, .name = {}})};
+      plansFrom(FileTable{.table = root, .source = source, .name = {}}),
+      network::sipHash(WAVES_FINGERPRINT_KEY, std::as_bytes(std::span{text}))};
 }
 
 WaveCatalog WaveCatalog::fromFile(const std::filesystem::path& file) {
@@ -308,6 +311,9 @@ std::vector<std::string> WaveCatalog::difficulties() const {
   return names;
 }
 
-WaveCatalog::WaveCatalog(PlansByDifficulty plans) : plans_(std::move(plans)) {}
+std::uint64_t WaveCatalog::fingerprint() const { return fingerprint_; }
+
+WaveCatalog::WaveCatalog(PlansByDifficulty plans, std::uint64_t fingerprint)
+    : plans_(std::move(plans)), fingerprint_(fingerprint) {}
 
 }  // namespace rtype::server

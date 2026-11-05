@@ -50,6 +50,24 @@ TEST_F(ResultsDatabaseFixture, SavesARowWithEveryFieldOfTheResult) {
 }
 
 /**
+ * Given a finished vanilla game
+ * When it is saved
+ * Then its row says it is vanilla
+ */
+TEST_F(ResultsDatabaseFixture, SavesThatAGameIsVanilla) {
+  ResultsDatabase database{file()};
+  GameResult vanilla = normalGame({playerNamed(ACE, HIGH_SCORE)}, SOME_DATE);
+  vanilla.vanilla = true;
+
+  database.save(vanilla);
+
+  const SQLite::Database reader{file().string()};
+  SQLite::Statement row{reader, std::string{SELECT_ROW_OF_ACE}};
+  ASSERT_TRUE(row.executeStep());
+  EXPECT_EQ(row.getColumn("vanilla").getInt(), 1);
+}
+
+/**
  * Given two finished games, of two players each
  * When they are saved
  * Then there are two game identifiers: the players of one game share theirs

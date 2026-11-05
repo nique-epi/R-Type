@@ -1,0 +1,2 @@
+rtype_add_test(NAME network_simulator_tests SOURCES DatagramsInFlightTest.cpp DatagramsInFlightFixtures.cpp SimulatedNetworkSocketTest.cpp SimulatedNetworkSocketFixture.cpp DatagramSocketOpeningTest.cpp SimulatorFixtures.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingDatagramSocket.cpp LIBS rtype_network_simulator rtype_network_asio rtype_test_support TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
+target_include_directories(network_simulator_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/doubles $<TARGET_PROPERTY:rtype_logging,INTERFACE_INCLUDE_DIRECTORIES>)
