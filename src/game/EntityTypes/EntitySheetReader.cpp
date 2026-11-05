@@ -11,6 +11,7 @@
 #include "BehaviourRegistry.hpp"
 #include "BehaviourSetting.hpp"
 #include "BehaviourView.hpp"
+#include "BurstSheet.hpp"
 #include "CollisionBox.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
@@ -20,6 +21,7 @@
 #include "GameException.hpp"
 #include "GunSheet.hpp"
 #include "HurtBox.hpp"
+#include "HurtWindow.hpp"
 #include "HurtZone.hpp"
 #include "IBehaviour.hpp"
 #include "MotionKind.hpp"
@@ -193,6 +195,33 @@ std::optional<GunSheet> gunFrom(const engine::DataFileTable& gameplay) {
       .projectilePlace = engine::placeOfKey(*gun, PROJECTILE_KEY)};
 }
 
+/** @returns How `[gameplay.burst]` bursts a missile; nothing without it. */
+std::optional<BurstSheet> burstFrom(const engine::DataFileTable& gameplay) {
+  const std::optional<engine::DataFileTable> burst =
+      engine::optionalTableAt(gameplay, BURST_KEY);
+  if (!burst.has_value()) {
+    return std::nullopt;
+  }
+  engine::refuseUnknownKeys(*burst, BURST_KEYS);
+  return BurstSheet{
+      .afterTicks = std::max(MINIMUM_BURST_TICKS,
+                             nearestTicksIn(engine::millisecondsAt(
+                                 *burst, AFTER_KEY, BURST_AFTER_RANGE))),
+      .count = static_cast<std::uint8_t>(
+          engine::wholeNumberAt(*burst, COUNT_KEY, SHARD_COUNT_RANGE)),
+      .shard = engine::textAt(*burst, SHARD_KEY),
+      .shardPlace = engine::placeOfKey(*burst, SHARD_KEY)};
+}
+
+/** @returns The attack and the phase @p table names, both required.
+ * @throws What wholeNumberAt() and choiceAt() throw. */
+ActionKey actionKeyAt(const engine::DataFileTable& table) {
+  return ActionKey{
+      .attack = static_cast<std::uint8_t>(
+          engine::wholeNumberAt(table, ATTACK_KEY, ATTACK_NUMBER_RANGE)),
+      .phase = PHASES.at(engine::choiceAt(table, PHASE_KEY, PHASE_NAMES))};
+}
+
 /** @returns The attack and the phase the box @p box hurts in, nothing for a
  * box that hurts all the time.
  * @throws InconsistentEntitySheetException when it names only one of them. */
@@ -207,10 +236,34 @@ std::optional<ActionKey> activeInFrom(const engine::DataFileTable& box) {
   if (!namesAnAttack) {
     return std::nullopt;
   }
-  return ActionKey{
-      .attack = static_cast<std::uint8_t>(
-          engine::wholeNumberAt(box, ATTACK_KEY, ATTACK_NUMBER_RANGE)),
-      .phase = PHASES.at(engine::choiceAt(box, PHASE_KEY, PHASE_NAMES))};
+  return actionKeyAt(box);
+}
+
+/** @returns When @p box hurts within its phase: from `from_ms`, 0 without it,
+ * until `until_ms`, the end of the phase without it.
+ * @throws InconsistentEntitySheetException when @p box names a time and no
+ * phase (@p activeIn empty), or stops hurting no later than it starts. */
+HurtWindow windowFrom(const engine::DataFileTable& box,
+                      const std::optional<ActionKey>& activeIn) {
+  const toml::table& keys = box.table.get();
+  if (!activeIn.has_value() &&
+      (keys.contains(FROM_KEY) || keys.contains(UNTIL_KEY))) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(box, keys.contains(FROM_KEY) ? FROM_KEY : UNTIL_KEY),
+        HURT_BOX_TIMING_RULE);
+  }
+  HurtWindow window;
+  if (keys.contains(FROM_KEY)) {
+    window.from = engine::millisecondsAt(box, FROM_KEY, HURT_BOX_TIME_RANGE);
+  }
+  if (keys.contains(UNTIL_KEY)) {
+    window.until = engine::millisecondsAt(box, UNTIL_KEY, HURT_BOX_TIME_RANGE);
+  }
+  if (window.until.has_value() && *window.until <= window.from) {
+    throw InconsistentEntitySheetException(engine::placeOfKey(box, UNTIL_KEY),
+                                           HURT_BOX_WINDOW_RULE);
+  }
+  return window;
 }
 
 /** @returns The value of @p key of @p box as a number of logical units. */
@@ -222,11 +275,13 @@ float unitsAt(const engine::DataFileTable& box, std::string_view key,
 /** @returns The box one table of `[[gameplay.hurt_zone.box]]` describes. */
 HurtBox hurtBoxFrom(const engine::DataFileTable& box) {
   engine::refuseUnknownKeys(box, HURT_BOX_KEYS);
+  const std::optional<ActionKey> activeIn = activeInFrom(box);
   return HurtBox{.offsetX = unitsAt(box, OFFSET_X_KEY, HURT_BOX_OFFSET_RANGE),
                  .offsetY = unitsAt(box, OFFSET_Y_KEY, HURT_BOX_OFFSET_RANGE),
                  .width = unitsAt(box, WIDTH_KEY, HITBOX_SIDE_RANGE),
                  .height = unitsAt(box, HEIGHT_KEY, HITBOX_SIDE_RANGE),
-                 .activeIn = activeInFrom(box)};
+                 .activeIn = activeIn,
+                 .window = windowFrom(box, activeIn)};
 }
 
 /** @returns The zone of `[gameplay.hurt_zone]`, its boxes in the order of the
@@ -261,8 +316,19 @@ bool survivesContactFrom(const engine::DataFileTable& gameplay) {
   return marker.has_value();
 }
 
-/** @throws InconsistentEntitySheetException when @p sheet has a hurt zone or
- * survives a contact and its side is not enemy. */
+/** @returns The action `[gameplay.fragile]` names; nothing without it. */
+std::optional<ActionKey> fragileFrom(const engine::DataFileTable& gameplay) {
+  const std::optional<engine::DataFileTable> fragile =
+      engine::optionalTableAt(gameplay, FRAGILE_KEY);
+  if (!fragile.has_value()) {
+    return std::nullopt;
+  }
+  engine::refuseUnknownKeys(*fragile, FRAGILE_KEYS);
+  return actionKeyAt(*fragile);
+}
+
+/** @throws InconsistentEntitySheetException when @p sheet has a hurt zone,
+ * survives a contact or is fragile and its side is not enemy. */
 void checkContactPartsBelongToAnEnemy(const EntitySheet& sheet,
                                       const engine::DataFileTable& gameplay) {
   if (sheet.side == EntityType::Enemy) {
@@ -276,6 +342,10 @@ void checkContactPartsBelongToAnEnemy(const EntitySheet& sheet,
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, SURVIVES_CONTACT_KEY),
         SURVIVES_CONTACT_SIDE_RULE);
+  }
+  if (sheet.fragileIn.has_value()) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, FRAGILE_KEY), FRAGILE_SIDE_RULE);
   }
 }
 
@@ -313,12 +383,17 @@ bool isAMissile(EntityType side) {
   return side == EntityType::PlayerMissile || side == EntityType::EnemyMissile;
 }
 
-/** @throws InconsistentEntitySheetException when a missile has a gun. */
-void checkMissileHasNoGun(const EntitySheet& sheet,
-                          const engine::DataFileTable& gameplay) {
+/** @throws InconsistentEntitySheetException when a missile has a gun, or
+ * another body bursts. */
+void checkWhatItFires(const EntitySheet& sheet,
+                      const engine::DataFileTable& gameplay) {
   if (isAMissile(sheet.side) && sheet.gun.has_value()) {
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, GUN_KEY), MISSILE_GUN_RULE);
+  }
+  if (!isAMissile(sheet.side) && sheet.burst.has_value()) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, BURST_KEY), BURST_SIDE_RULE);
   }
 }
 
@@ -377,10 +452,12 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .points = pointsIn<std::uint32_t>(gameplay, SCORE_KEY, SCORE_RANGE),
       .gun = gunFrom(gameplay),
       .hurtZone = hurtZoneFrom(gameplay),
-      .survivesContact = survivesContactFrom(gameplay)};
+      .survivesContact = survivesContactFrom(gameplay),
+      .fragileIn = fragileFrom(gameplay),
+      .burst = burstFrom(gameplay)};
   checkPilotMatchesSide(read, gameplay);
   checkShipMotion(read, gameplay);
-  checkMissileHasNoGun(read, gameplay);
+  checkWhatItFires(read, gameplay);
   checkMissileFliesTowardsItsEdge(read, gameplay);
   checkContactPartsBelongToAnEnemy(read, gameplay);
   return read;

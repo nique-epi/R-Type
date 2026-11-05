@@ -12,3 +12,15 @@ constexpr rtype::engine::Duration PLAYER_MISSILE_FRAME_TIME_LISTED =
     std::chrono::milliseconds(60);
 constexpr rtype::engine::Duration ENEMY_MISSILE_FRAME_TIME_LISTED =
     std::chrono::milliseconds(120);
+constexpr rtype::engine::Duration VOLTJELLY_FRAME_TIME_LISTED =
+    std::chrono::milliseconds(120);
+constexpr rtype::engine::Duration REAPER_FRAME_TIME_LISTED =
+    std::chrono::milliseconds(250);
+constexpr rtype::engine::Duration DRILLBACK_FRAME_TIME_LISTED =
+    std::chrono::milliseconds(200);
+constexpr rtype::engine::Duration BYDOMANCER_FRAME_TIME_LISTED =
+    std::chrono::milliseconds(250);
+constexpr rtype::engine::Duration RUNE_ORB_FRAME_TIME_LISTED =
+    std::chrono::milliseconds(120);
+constexpr rtype::engine::Duration ORB_SHARD_FRAME_TIME_LISTED =
+    std::chrono::milliseconds(100);

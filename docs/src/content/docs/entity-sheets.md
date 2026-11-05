@@ -13,7 +13,7 @@ Both programs read the folder `entities` (`ENTITY_SHEET_FOLDER_IN_ASSETS`) of th
 
 - Every `.toml` file of the folder is a sheet; any other file, and every sub-folder, is left alone. The name of the file without `.toml` is the name of the type: `weaver.toml` is `weaver`.
 - A name is 1 to 24 bytes (`MAXIMUM_ENTITY_TYPE_NAME_LENGTH`) of lowercase letters `a` to `z`, digits and `_`, so a file has the same name on every system. A folder holds at most 32 sheets (`MAXIMUM_ENTITY_TYPES`) and at least one. Both limits and the check of a name (`isEntityTypeName()`) live in `src/identifiers/`, so a name the game accepts is one the table of the types can carry.
-- The server numbers the sheets from 1 in the order of their names. The five sheets the game ships are `drifter` (1), `enemy_missile` (2), `player_missile` (3), `ship` (4) and `weaver` (5). These numbers name the types on the wire for as long as the server runs, and every player learns them when it is accepted (see [Protocol](/R-Type/protocol/#entity-types)), so a new sheet whose name sorts first renumbers the others without breaking anything.
+- The server numbers the sheets from 1 in the order of their names. The eleven sheets the game ships are `bydomancer` (1), `drifter` (2), `drillback` (3), `enemy_missile` (4), `orb_shard` (5), `player_missile` (6), `reaper` (7), `rune_orb` (8), `ship` (9), `voltjelly` (10) and `weaver` (11). These numbers name the types on the wire for as long as the server runs, and every player learns them when it is accepted (see [Protocol](/R-Type/protocol/#entity-types)), so a new sheet whose name sorts first renumbers the others without breaking anything.
 - The server makes the ship of every player from the sheet named `ship` (`SHIP_SHEET_NAME`, `src/server/ServerConstants.hpp`): without it, it stops before its first game.
 
 ## `[gameplay]`, key by key
@@ -53,7 +53,7 @@ projectile = "enemy_missile"
 | Key | Unit | Accepted | What it gives the entity |
 |---|---|---|---|
 | `side` | | `player`, `enemy`, `player_missile`, `enemy_missile` | its `EntityType`: what it hits and what hits it (see [Collisions](/R-Type/server/#rules-collisionrules)), and the layer the client draws it in |
-| `pilot` | | `player`, or the name of a behaviour: `straight`, `weave` | what writes its `Intent`: the input of its player, or that behaviour (see [Behaviours](#behaviours-and-their-settings)) |
+| `pilot` | | `player`, or the name of a behaviour: `straight`, `weave`, `scatter`, `reaper`, `drillback`, `bydomancer` | what writes its `Intent`: the input of its player, or that behaviour (see [Behaviours](#behaviours-and-their-settings)) |
 | `hitbox.width`, `hitbox.height` | logical units | 1 to 1024 | its `CollisionBox`, centered on its position |
 | `motion.kind` | | `ship`, `steady` | how a direction moves it: the drift, roll and dash of a ship (`ShipMotion`), or its top speed times the direction (`SteadyMotion`) |
 | `motion.top_speed` | logical units per second | 1 to 4096; for `steady` only | its speed on each axis at a full direction |
@@ -67,11 +67,16 @@ projectile = "enemy_missile"
 | `hurt_zone.box.offset_x`, `offset_y` | logical units | -1024 to 1024 | where the center of the box lies from the position of the body |
 | `hurt_zone.box.width`, `height` | logical units | 1 to 1024 | the size of the box |
 | `hurt_zone.box.attack`, `phase` | | `attack`: 0 to 255; `phase`: `signal`, `strike`, `recover`, `enraged` | the attack and the phase the box hurts in: given together, or not at all for a box that always hurts |
+| `hurt_zone.box.from_ms`, `until_ms` | milliseconds | 0 to 60000; only with `attack` and `phase` | when the box hurts within its phase: from `from_ms` into it (0 when left out) until `until_ms`, excluded (the end of the phase when left out), so a sheet gives each frame of a strike its own box |
 | `[gameplay.survives_contact]` | | an empty table; enemies only | the `SurvivesContact` marker: a ship that touches the body loses a life, and the body stays |
+| `fragile.attack`, `fragile.phase` | | as for a box, both required; enemies only | its `Fragile`: any hit while it is in that phase of that attack takes every point it has left, as the Drillback stunned |
+| `burst.after_ms` | milliseconds | 1 to 60000; missiles only | its `ShardBurst`: how long it lives before it bursts |
+| `burst.count` | shards | 1 to 8 | how many shards it bursts into, spread evenly around it from the diagonal up and to the right: 4 fly along the four diagonals |
+| `burst.shard` | | the name of a sheet of the same side | what it bursts into |
 
-- `side`, `pilot`, `hitbox` and `motion` are required; the tables `behaviour`, `health`, `score`, `gun`, `hurt_zone` and `survives_contact` may be left out. A body without `health` takes no damage: a missile that hits it still disappears, and a ship pays a hit with a life instead (see [Lives](/R-Type/server/#lives-lifekeeper)). A body without `score` earns nothing, without `gun` fires nothing.
+- `side`, `pilot`, `hitbox` and `motion` are required; the tables `behaviour`, `health`, `score`, `gun`, `hurt_zone`, `survives_contact`, `fragile` and `burst` may be left out. A body without `health` takes no damage: a missile that hits it still disappears, and a ship pays a hit with a life instead (see [Lives](/R-Type/server/#lives-lifekeeper)). A body without `score` earns nothing, without `gun` fires nothing.
 - Any other key is refused, so a misspelt key stops the program instead of being ignored. Every number is a TOML integer: `240`, never `240.0` or `"240"`.
-- A duration of the gun becomes the nearest whole number of ticks of a sixtieth of a second: 333 ms are 20 ticks, 1500 ms are 90. The interval is at least 1 tick (`MINIMUM_GUN_INTERVAL_TICKS`).
+- A duration of the gun becomes the nearest whole number of ticks of a sixtieth of a second: 333 ms are 20 ticks, 1500 ms are 90. The interval is at least 1 tick (`MINIMUM_GUN_INTERVAL_TICKS`), and so is the time before a burst (`MINIMUM_BURST_TICKS`).
 - The keys, the choices and the ranges live in `src/game/EntityTypes/EntitySheetConstants.hpp`.
 
 ## Rules between keys and between sheets
@@ -81,23 +86,28 @@ A sheet whose keys are each valid is refused when it does not hold together:
 - A `player` pilot steers a body of side `player`, and only such a body.
 - A body of side `player` moves as a `ship`, and only such a body. Its hitbox is 128 × 64 (`SHIP_WIDTH` × `SHIP_HEIGHT`, `src/game/ShipControl/ShipControlConstants.hpp`), the box `shipAfter()` keeps on screen.
 - A missile, of side `player_missile` or `enemy_missile`, has no gun.
-- A missile flies towards the edge that removes it (see [Piloted bodies](/R-Type/server/#piloted-bodies-pilotsystem-and-playfieldexitsystem)): on its first tick its pilot steers a missile of side `player_missile` to the right and one of side `enemy_missile` to the left. A `straight` heading of 1 for the first, of -1 for the second; the `weave` goes left, so it may pilot a missile of an enemy only. A missile flying the other way, or staying, would never be removed when it hits nothing.
+- A missile flies towards the edge that removes it (see [Piloted bodies](/R-Type/server/#piloted-bodies-pilotsystem-and-playfieldexitsystem)): on its first tick its pilot steers a missile of side `player_missile` to the right and one of side `enemy_missile` to the left. A `straight` heading of 1 for the first, of -1 for the second; the `weave` goes left, and so does `scatter` on its first tick, still on the point it steers from, so both may pilot a missile of an enemy only. A missile flying the other way, or staying, would never be removed when it hits nothing. The check looks at the first tick only: a missile that turns later, as a shard of a burst, leaves by any edge it flies towards.
 - `[gameplay.behaviour]` stands only when the behaviour of the pilot declares settings, and then holds exactly those settings.
 - A gun fires a sheet of the folder: of side `player_missile` for a shooter of side `player`, of side `enemy_missile` for any other shooter.
-- Only a body of side `enemy` has a `hurt_zone` or `survives_contact`, and a `hurt_zone` holds at least one box.
-- A box names its `attack` and its `phase` together, or neither. An `attack` is a number the sheet gives its own attacks: the code knows no attack by name.
+- Only a body of side `enemy` has a `hurt_zone`, `survives_contact` or `fragile`, and a `hurt_zone` holds at least one box.
+- Only a missile has a `burst`, and it bursts into missiles of its own side, of a sheet of the folder.
+- A box names its `attack` and its `phase` together, or neither; a box that names neither has no `from_ms` or `until_ms`, and `until_ms` is above `from_ms`. An `attack` is a number the sheet gives its own attacks: the code knows no attack by name.
 - The waves file names enemies among the sheets of side `enemy` (see [Writing the waves file](/R-Type/waves-file/#enemies)).
 
 ## Behaviours and their settings
 
-A behaviour is a named piece of C++ in `src/game/Behaviours/Movements/` that writes the `Intent` of its body once per tick (see [Architecture](/R-Type/architecture/#pilot-and-body)). It declares the settings it reads, and the reader of the sheets checks them, so a misspelt setting or a value out of its range stops the program instead of running with a default.
+A behaviour is a named piece of C++ in `src/game/Behaviours/Movements/` (those that only move in `Paths/`, those that attack in `Attacks/`) that writes the `Intent` of its body once per tick (see [Architecture](/R-Type/architecture/#pilot-and-body)). It declares the settings it reads, and the reader of the sheets checks them, so a misspelt setting or a value out of its range stops the program instead of running with a default.
 
 | Behaviour | Moves its body | Settings |
 |---|---|---|
 | `straight` | along its row, at its top speed, the way its heading says | `heading`: -1 to the left, 1 to the right, 0 to stay |
 | `weave` | to the left at its top speed, `amplitude` × sin(2π × age ÷ `period_ms`) below its row at the end of each tick | `amplitude`: 0 to 48 logical units (`ENEMY_PATTERN_ROOM`, the room every row of the waves keeps above and below it); `period_ms`: 1 to 60000 milliseconds |
+| `scatter` | straight away from the point it steers from, at its top speed; to the left while still on that point | none |
+| `reaper` | to the point `reach` logical units to the right of the nearest ship, at its height; to the left without a ship. Within `align` units of that point on each axis and rested, it stops and swings attack 0 | `reach`, `align`, `rest_ms`, `signal_ms`, `strike_ms`, `recover_ms` |
+| `drillback` | to the left at `drift_speed`; left of `enter_x` and rested, it shakes (attack 0, signal), charges left at its top speed (strike), then is stunned (recover) | `drift_speed`, `enter_x`, `rest_ms`, `signal_ms`, `strike_ms`, `recover_ms` |
+| `bydomancer` | to the left until `stand_x`, then bobbing `bob` units around its row every `bob_period_ms`; once wounded it leaps `jump` units towards the middle of the area of play, once. Rested at its column it casts its orb (attack 0), and a ship within `nova_reach` makes it cast its nova (attack 1, a strike of `nova_ms`), once idle `nova_rest_ms` | `stand_x`, `jump`, `bob`, `bob_period_ms`, `rest_ms`, `signal_ms`, `strike_ms`, `recover_ms`, `nova_reach`, `nova_ms`, `nova_rest_ms` |
 
-Both want to fire at every tick, so a body fires as often as its gun allows; a body without a gun fires nothing. A weave needs a top speed of at least 2π × `amplitude` ÷ `period_ms`, 151 logical units per second for the Weaver: a slower body falls behind its weave. A new behaviour is a class implementing `IBehaviour`, added to `builtInBehaviours()`, as the [tutorial](/R-Type/tutorial-add-an-enemy-type/) shows.
+`straight` and `weave` want to fire at every tick, so a body fires as often as its gun allows; a body without a gun fires nothing. `scatter`, `reaper` and `drillback` never fire; `bydomancer` wants to fire during the strike of its orb only, so its gun, ready at once and waiting longer than a strike, fires one orb a cast. The settings of an attack are milliseconds (`rest_ms` 0 to 60000, `signal_ms` and `strike_ms` 1 to 60000, `recover_ms` 0 to 60000, 0 skipping the recover); the others are logical units. A behaviour that attacks steps through its phases with `ActionCycle` and starts an attack again once it has been idle `rest_ms` (see [Piloted bodies](/R-Type/server/#piloted-bodies-pilotsystem-and-playfieldexitsystem)). A weave needs a top speed of at least 2π × `amplitude` ÷ `period_ms`, 151 logical units per second for the Weaver: a slower body falls behind its weave. A new behaviour is a class implementing `IBehaviour`, added to `builtInBehaviours()`, as the [tutorial](/R-Type/tutorial-add-an-enemy-type/) shows.
 
 ## `[appearance]`, key by key
 
@@ -155,7 +165,7 @@ The frame keys are those of `idle`. The others:
 | `afterwards` | | `idle`, `stay`; `idle` when left out | `idle` gives the body its idle animation back when the animation has ended; `stay` keeps the last frame |
 | `anchor_x`, `anchor_y` | pixels of the canvas | -256 to 256; 0 when left out | how far the frames are drawn from the center of the body, so a frame wider than the body hangs from the side it grows on |
 
-A phase the sheet leaves out has no animation: the enemy keeps what it plays when the server announces it. An attack table of another name, a phase of another name or any other key is refused.
+A phase the sheet leaves out has no animation: the enemy keeps what it plays when the server announces it. An attack table of another name, a phase of another name or any other key is refused. The end of an action is never announced, so the last phase of an attack plays `once` with `afterwards = "idle"` and lasts as long as the server keeps the enemy in that phase: the four 225 ms frames of the stunned Drillback last its 900 ms stun.
 
 ## When a program refuses a sheet
 
@@ -198,7 +208,22 @@ Each program stops on the first error and exits with code 1. The server prints `
 | `gun` | 1500 ms, first after 1500 ms, `enemy_missile` | 1500 ms, first after 1500 ms, `enemy_missile` | 333 ms, first at once, `player_missile` | none | none |
 | `idle` on `sprites/entities.png` | 24 × 24, 2 frames of 250 ms | 24 × 24, 2 frames of 250 ms | 32 × 16, 2 frames of 80 ms | 16 × 6, 2 frames of 60 ms | 8 × 8, 2 frames of 120 ms |
 
-The values are **provisional** until gameplay tunes them; tuning them needs no rebuild. The Drifter and the Weaver share their frames, so the client draws both as the same Bydo.
+The mobs and their projectiles draw from a sheet of their own in `sprites/mobs/`:
+
+| Key | `voltjelly` | `reaper` | `drillback` | `bydomancer` | `rune_orb` | `orb_shard` |
+|---|---|---|---|---|---|---|
+| `side` | `enemy` | `enemy` | `enemy` | `enemy` | `enemy_missile` | `enemy_missile` |
+| `pilot` | `straight` | `reaper` | `drillback` | `bydomancer` | `weave` | `scatter` |
+| `hitbox` | 96 × 96 | 96 × 96 | 96 × 96 | 96 × 96 | 36 × 36 | 20 × 20 |
+| `motion` | `steady`, 120 | `steady`, 300 | `steady`, 1120 | `steady`, 240 | `steady`, 360 | `steady`, 300 |
+| `health` | 2 | 2 | 4, 1 while stunned (`fragile`) | 3 | none | none |
+| `score` | 100 | 200 | 300 | 300 | none | none |
+| `gun` | none | none | none | 1000 ms, first at once, `rune_orb` | none | none |
+| contact | its aura hurts, 8 boxes; it survives | its scythe hurts, one box a frame | it survives | its nova hurts, two boxes a frame | | |
+| `burst` | none | none | none | none | after 1500 ms, 4 `orb_shard` | none |
+| `idle` | 40 × 40 (the bell 24 × 24), 4 frames of 120 ms | 24 × 24, 2 of 250 ms | 24 × 24, 2 of 200 ms | 24 × 24, 2 of 250 ms | 9 × 9, 2 of 120 ms | 5 × 5, 1 of 100 ms |
+
+The values are **provisional** until gameplay tunes them; tuning them needs no rebuild. The Drifter and the Weaver share their frames, so the client draws both as the same Bydo. The settings of the behaviours are commented in each sheet.
 
 ## The shipped sheets and vanilla games
 

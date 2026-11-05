@@ -53,8 +53,8 @@ class WeaponSystemFixture : public ::testing::Test {
   game::World world_;
   PlayerRoster roster_;
   std::vector<network::OutgoingDatagram> sent_;
-  WeaponSystem weapons_;
   engine::EventBus events_;
+  WeaponSystem weapons_;
   game::PilotSystem pilots_;
 };
 

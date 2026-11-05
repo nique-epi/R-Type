@@ -8,6 +8,7 @@
 #include "EntityType.hpp"
 #include "EventBus.hpp"
 #include "HurtBox.hpp"
+#include "HurtWindow.hpp"
 #include "HurtZone.hpp"
 #include "Overlaps.hpp"
 #include "Position.hpp"
@@ -19,12 +20,18 @@ namespace rtype::game {
 
 namespace {
 
-/** @returns Whether @p box hurts now, the enemy being in @p current. */
+/** @returns Whether @p box hurts now, the enemy being in @p current: in the
+ * phase it names, inside its window. */
 bool isActive(const HurtBox& box, const CurrentAction* current) {
   if (!box.activeIn.has_value()) {
     return true;
   }
-  return current != nullptr && current->key == box.activeIn;
+  if (current == nullptr || current->key != box.activeIn) {
+    return false;
+  }
+  const HurtWindow& window = box.window;
+  return current->since >= window.from &&
+         (!window.until.has_value() || current->since < *window.until);
 }
 
 /** @returns @p box laid on the enemy standing at @p position. */
@@ -47,7 +54,7 @@ engine::Bounds shipBoundsAt(const Position& position, const CollisionBox& box) {
  * is in @p current, overlaps @p ship. */
 bool isHurt(const HurtZone& zone, const Position& position,
             const CurrentAction* current, const ShipBounds& ship) {
-  return std::ranges::any_of(zone.boxes, [&](const HurtBox& box) {
+  return std::ranges::any_of(zone.boxes, [&](const HurtBox& box) noexcept {
     return isActive(box, current) &&
            engine::overlaps(hurtBoxBounds(box, position), ship.bounds);
   });

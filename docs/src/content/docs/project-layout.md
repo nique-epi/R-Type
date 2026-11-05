@@ -109,7 +109,7 @@ src/engine/
 src/game/
 ├── World/            the state of one match
 ├── ShipControl/      applies a player's input to their ship
-├── Behaviours/       the named behaviours that pilot the Bydos and the missiles (Piloting/, Movements/)
+├── Behaviours/       the named behaviours that pilot the Bydos and the missiles (Piloting/, Movements/Paths/, Movements/Attacks/)
 ├── Components/       Position, SteadyMotion, CollisionBox, Health...
 ├── EntityTypes/      the gameplay of the entity sheets, read and numbered
 ├── Systems/          movement, collisions, damage, shooting, score

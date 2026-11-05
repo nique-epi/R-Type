@@ -25,7 +25,7 @@ The server owns the game. It creates the Bydos, moves them and tells each client
 
 | Step | What you add | Where |
 |---|---|---|
-| 1 | A new behaviour for the Bydo | `src/game/Behaviours/Movements/` |
+| 1 | A new behaviour for the Bydo | `src/game/Behaviours/Movements/Paths/` |
 | 2 | The sheet of the enemy | `assets/entities/zigzagger.toml` |
 | 3 | Tests | `tests/` |
 | 4 | The enemy in the waves | `assets/waves/waves.toml` |
@@ -36,15 +36,17 @@ How a sheet reaches the world: the server reads every sheet of `assets/entities/
 
 An enemy that an existing behaviour already moves needs no C++ at all: a Weaver twice as fast is a sheet with `pilot = "weave"` and `period_ms = 1000`. Skip step 1 then. The Zigzagger follows a path no behaviour draws yet, so it needs one.
 
+An enemy that attacks, announcing a blow before it lands it, steps through the phases of its attack with `ActionCycle` (`src/game/Behaviours/Movements/Attacks/ActionCycle.hpp`), timed by settings of its sheet, and its sheet animates each phase and times the boxes that hurt (see [Writing an entity sheet](/R-Type/entity-sheets/#attack-animations)). `ReaperBehaviour.cpp` is the shortest example: a file of 74 lines for an enemy that hunts the nearest ship, raises its scythe, swings and stays open.
+
 ## Step 1: a new behaviour
 
-A behaviour reads the Bydo it pilots (where it is, where it appeared, how old it is, the length of the tick, and the values its sheet gives the settings it declares) and returns what the Bydo wants at the end of the tick: a direction, a share of its top speed from -1 to 1 on each axis, and whether it fires (see [Architecture](/R-Type/architecture/#pilot-and-body)). Give yours a name, in `src/game/Behaviours/Movements/BehaviourConstants.hpp`:
+A behaviour reads the Bydo it pilots (where it is, where it appeared, how old it is, the length of the tick, and the values its sheet gives the settings it declares) and returns what the Bydo wants at the end of the tick: a direction, a share of its top speed from -1 to 1 on each axis, and whether it fires (see [Architecture](/R-Type/architecture/#pilot-and-body)). Give yours a name, in `src/game/Behaviours/Movements/Paths/BehaviourConstants.hpp`:
 
 ```cpp
 constexpr std::string_view ZIGZAG_BEHAVIOUR_NAME = "zigzag";
 ```
 
-The zigzag reads the same two settings as the weave: `amplitude`, how far it goes above and below its row, in logical units, and `period_ms`, how long it takes to go down, up and back. So it declares the settings of the weave, `WEAVE_SETTINGS` in `WeaveBehaviourConstants.hpp`, and the reader of the sheets checks them the same way: an amplitude above `ENEMY_PATTERN_ROOM` (48), which would take the Bydo out of the area of play, stops the server when it reads the sheet. Its own numbers go in `src/game/Behaviours/Movements/ZigzagBehaviourConstants.hpp`, named and documented:
+The zigzag reads the same two settings as the weave: `amplitude`, how far it goes above and below its row, in logical units, and `period_ms`, how long it takes to go down, up and back. So it declares the settings of the weave, `WEAVE_SETTINGS` in `WeaveBehaviourConstants.hpp`, and the reader of the sheets checks them the same way: an amplitude above `ENEMY_PATTERN_ROOM` (48), which would take the Bydo out of the area of play, stops the server when it reads the sheet. Its own numbers go in `src/game/Behaviours/Movements/Paths/ZigzagBehaviourConstants.hpp`, named and documented:
 
 ```cpp
 #pragma once
@@ -59,7 +61,7 @@ constexpr float SLOPE_PER_CYCLE = 4.0F;
 }  // namespace rtype::game
 ```
 
-The behaviour is a class of `src/game/Behaviours/Movements/`, next to `WeaveBehaviour`; the contract it implements, `IBehaviour`, sits in `src/game/Behaviours/Piloting/`. Its header, `ZigzagBehaviour.hpp`:
+The behaviour is a class of `src/game/Behaviours/Movements/Paths/`, next to `WeaveBehaviour`; the contract it implements, `IBehaviour`, sits in `src/game/Behaviours/Piloting/`. Its header, `ZigzagBehaviour.hpp`:
 
 ```cpp
 #pragma once
@@ -158,7 +160,7 @@ Intent ZigzagBehaviour::steer(const BehaviourView& view) const {
 
 The height grows downwards on screen, so at a quarter of the period the Zigzagger is `amplitude` units below its row, as a Weaver is at a quarter of its own. A behaviour cannot move its Bydo faster than its top speed: with an amplitude of 48 and a period of 1000 ms, the zigzag climbs 4 × 48 = 192 units per second, under the 240 its sheet gives it in step 2, so it keeps its path.
 
-Register it with the others in `builtInBehaviours()` (`src/game/Behaviours/Movements/BuiltInBehaviours.cpp`), and add `ZigzagBehaviour.cpp` to the sources of `src/game/Behaviours/Movements/CMakeLists.txt`:
+Register it with the others in `builtInBehaviours()` (`src/game/Behaviours/Movements/BuiltInBehaviours.cpp`), and add `ZigzagBehaviour.cpp` to the sources of `src/game/Behaviours/Movements/Paths/CMakeLists.txt`:
 
 ```cpp
   behaviours.add(std::make_unique<ZigzagBehaviour>());

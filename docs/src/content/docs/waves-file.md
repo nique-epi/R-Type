@@ -55,6 +55,10 @@ A name of the list is the name of an entity sheet of side `enemy` in `assets/ent
 |---|---|---|---|
 | `drifter` | `assets/entities/drifter.toml` | goes straight | 100 |
 | `weaver` | `assets/entities/weaver.toml` | weaves up and down, 48 logical units each way, every 2 seconds | 200 |
+| `voltjelly` | `assets/entities/voltjelly.toml` | drifts with the sky, half as fast as a Bydo, inside an aura that kills a ship that touches it; it fires nothing | 100 |
+| `reaper` | `assets/entities/reaper.toml` | comes to the height of the nearest ship and swings a scythe at it | 200 |
+| `drillback` | `assets/entities/drillback.toml` | drifts, shakes, then charges straight ahead; one shot kills it while it is stunned | 300 |
+| `bydomancer` | `assets/entities/bydomancer.toml` | stands at the back and casts rune orbs that weave and burst, and a nova at a ship that comes close | 300 |
 
 The Bydos take the names of the list in turn, and the turn carries on from one wave to the next. With `["drifter", "weaver"]` and three Bydos in the first wave, wave 1 brings a Drifter, a Weaver and a Drifter, and wave 2 starts with a Weaver. A name may appear several times to weight a kind: `["drifter", "drifter", "weaver"]` brings two Drifters for each Weaver.
 
@@ -62,7 +66,7 @@ The Bydos take the names of the list in turn, and the turn carries on from one w
 
 | Key | `easy` | `normal` | `hard` |
 |---|---|---|---|
-| `enemies` | `drifter`, `drifter`, `weaver` | `drifter`, `weaver` | `weaver`, `weaver`, `drifter` |
+| `enemies` | `drifter`, `drifter`, `weaver` | `drifter`, `weaver`, `drifter`, `voltjelly`, `weaver`, `reaper` | `weaver`, `drifter`, `reaper`, `weaver`, `drillback`, `voltjelly`, `weaver`, `bydomancer` |
 | `first_wave_bydos` | 2 | 3 | 4 |
 | `bydos_added_per_wave` | 1 | 1 | 2 |
 | `first_spawn_interval_ms` | 2500 | 2000 | 1500 |
@@ -71,7 +75,7 @@ The Bydos take the names of the list in turn, and the turn carries on from one w
 | `wave_pause_ms` | 5000 | 4000 | 3000 |
 | `level_waves` | 5 | 8 | 10 |
 
-`easy` leans on the Drifter, which is easier to hit; `hard` leans on the Weaver and brings two more Bydos per wave. No test pins these values: tuning them needs no rebuild and breaks no test.
+`easy` leans on the Drifter, which is easier to hit; `normal` adds one Voltjelly and one Reaper in six Bydos; `hard` leans on the Weaver, sends each of the four mobs once in eight Bydos and brings two more Bydos per wave. A wave ends only once its Bydos are gone, so the Voltjelly, twice as slow, makes its wave last longer, and the Reaper and the Bydomancer, which never leave by themselves, hold their wave until they are killed. No test pins these values: tuning them needs no rebuild and breaks no test.
 
 ## Designing a difficulty
 

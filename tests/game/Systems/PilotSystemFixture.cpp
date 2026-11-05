@@ -11,6 +11,7 @@
 #include "CurrentAction.hpp"
 #include "EnemyActionStarted.hpp"
 #include "Entity.hpp"
+#include "EntityType.hpp"
 #include "IBehaviour.hpp"
 #include "Intent.hpp"
 #include "NetworkIdentity.hpp"
@@ -55,6 +56,12 @@ engine::Entity PilotSystemFixture::addEnemy(const IBehaviour& behaviour,
                                .age = engine::Duration::zero(),
                                .settings = {}});
   return enemy;
+}
+
+void PilotSystemFixture::addShip(Position position) {
+  const engine::Entity ship = entities_.create();
+  components_.add(ship, position);
+  components_.add(ship, EntityType::Player);
 }
 
 std::optional<ActionKey> PilotSystemFixture::actionOf(engine::Entity enemy) {

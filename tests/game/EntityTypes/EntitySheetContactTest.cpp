@@ -1,27 +1,32 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <optional>
 #include <string>
 #include "ActionKey.hpp"
 #include "EnemyPhase.hpp"
 #include "EngineException.hpp"
 #include "EntitySheet.hpp"
+#include "EntitySheetContactFixtures.hpp"
 #include "EntitySheetContactTestConstants.hpp"
 #include "EntitySheetReaderFixture.hpp"
 #include "EntitySheetReaderTestConstants.hpp"
 #include "HurtBox.hpp"
+#include "HurtWindow.hpp"
 #include "HurtZone.hpp"
 
 using rtype::engine::DataFileTablesExpectedException;
+using rtype::engine::MissingDataFileKeyException;
 using rtype::engine::UnknownDataFileChoiceException;
 using rtype::game::ActionKey;
 using rtype::game::EnemyPhase;
 using rtype::game::EntitySheet;
 using rtype::game::HurtBox;
-using rtype::game::HurtZone;
+using rtype::game::HurtWindow;
 using rtype::game::testing::ACTION_TOGETHER_RULE_TEXT;
 using rtype::game::testing::APPEARANCE;
 using rtype::game::testing::ATTACK_DOTTED_KEY;
 using rtype::game::testing::ATTACK_OF_EVERY_PHASE;
+using rtype::game::testing::BOX_ENDING_AS_IT_STARTS;
 using rtype::game::testing::BOX_OF_AN_UNKNOWN_PHASE;
 using rtype::game::testing::BOX_WITH_A_PHASE_ONLY;
 using rtype::game::testing::BOX_WITH_AN_ATTACK_ONLY;
@@ -37,6 +42,10 @@ using rtype::game::testing::FIRST_BOX_HEIGHT;
 using rtype::game::testing::FIRST_BOX_OFFSET_X;
 using rtype::game::testing::FIRST_BOX_OFFSET_Y;
 using rtype::game::testing::FIRST_BOX_WIDTH;
+using rtype::game::testing::FRAGILE_DOTTED_KEY;
+using rtype::game::testing::FRAGILE_SIDE_RULE_TEXT;
+using rtype::game::testing::FRAGILE_WHILE_STUNNED;
+using rtype::game::testing::FRAGILE_WITHOUT_PHASE;
 using rtype::game::testing::HURT_BOXES_IN_EVERY_PHASE;
 using rtype::game::testing::HURT_BOXES_IN_TWO;
 using rtype::game::testing::HURT_ZONE_DOTTED_KEY;
@@ -45,6 +54,7 @@ using rtype::game::testing::HURT_ZONE_WITH_A_LONE_TABLE;
 using rtype::game::testing::HURT_ZONE_WITH_AN_EMPTY_ARRAY;
 using rtype::game::testing::HURT_ZONE_WITHOUT_BOX;
 using rtype::game::testing::LEFT_HEADING_TABLE;
+using rtype::game::testing::OPEN_ENDED_BOX;
 using rtype::game::testing::PHASE_DOTTED_KEY;
 using rtype::game::testing::SECOND_BOX_ATTACK;
 using rtype::game::testing::SECOND_BOX_OFFSET_Y;
@@ -57,20 +67,16 @@ using rtype::game::testing::STEADY_MOTION;
 using rtype::game::testing::SURVIVES_CONTACT_MARKER;
 using rtype::game::testing::SURVIVES_CONTACT_SIDE_RULE_TEXT;
 using rtype::game::testing::SURVIVES_CONTACT_WITH_A_KEY;
+using rtype::game::testing::TIMED_BOX;
+using rtype::game::testing::TIMED_BOX_FROM;
+using rtype::game::testing::TIMED_BOX_UNTIL;
+using rtype::game::testing::TIMED_BOX_WITHOUT_PHASE;
+using rtype::game::testing::TIMING_RULE_TEXT;
 using rtype::game::testing::TWO_HURT_BOXES;
+using rtype::game::testing::UNTIL_DOTTED_KEY;
+using rtype::game::testing::WINDOW_RULE_TEXT;
+using rtype::game::testing::zoneOf;
 using ::testing::HasSubstr;
-
-namespace {
-
-/** @returns The hurt zone of @p sheet, an empty one, and a failure, when it
- * has none. */
-const HurtZone& zoneOf(const EntitySheet& sheet) {
-  static const HurtZone none{};
-  EXPECT_TRUE(sheet.hurtZone.has_value());
-  return sheet.hurtZone.has_value() ? *sheet.hurtZone : none;
-}
-
-}  // namespace
 
 /**
  * Given the sheet of an enemy with two boxes in its hurt zone
@@ -332,4 +338,101 @@ TEST_F(EntitySheetReaderFixture, RefusesAKeyInTheMarker) {
                  SURVIVES_CONTACT_WITH_A_KEY, APPEARANCE});
 
   EXPECT_THAT(message, HasSubstr("gameplay.survives_contact.survives"));
+}
+
+/**
+ * Given a box of the strike of attack 1 with from_ms 70 and until_ms 140
+ * When the gameplay is read
+ * Then the box hurts from 70 ms into the strike until 140 ms
+ */
+TEST_F(EntitySheetReaderFixture, ReadsTheWindowOfATimedBox) {
+  const EntitySheet sheet = read({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION,
+                                  LEFT_HEADING_TABLE, TIMED_BOX, APPEARANCE});
+
+  ASSERT_TRUE(sheet.hurtZone.has_value());
+  EXPECT_EQ(zoneOf(sheet).boxes.front().window,
+            (HurtWindow{.from = TIMED_BOX_FROM, .until = TIMED_BOX_UNTIL}));
+}
+
+/**
+ * Given a box with from_ms and no until_ms
+ * When the gameplay is read
+ * Then the box hurts from that time to the end of its phase
+ */
+TEST_F(EntitySheetReaderFixture, ABoxWithoutUntilHurtsToTheEndOfItsPhase) {
+  const EntitySheet sheet =
+      read({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION, LEFT_HEADING_TABLE,
+            OPEN_ENDED_BOX, APPEARANCE});
+
+  ASSERT_TRUE(sheet.hurtZone.has_value());
+  EXPECT_EQ(zoneOf(sheet).boxes.front().window,
+            (HurtWindow{.from = TIMED_BOX_FROM, .until = std::nullopt}));
+}
+
+/**
+ * Given a box that hurts until a time and names no attack nor phase
+ * When its gameplay is read
+ * Then the refusal names until_ms and the rule
+ */
+TEST_F(EntitySheetReaderFixture, RefusesATimedBoxThatNamesNoPhase) {
+  const std::string message =
+      refusalOf({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION, LEFT_HEADING_TABLE,
+                 TIMED_BOX_WITHOUT_PHASE, APPEARANCE});
+
+  EXPECT_THAT(message, HasSubstr(UNTIL_DOTTED_KEY));
+  EXPECT_THAT(message, HasSubstr(TIMING_RULE_TEXT));
+}
+
+/**
+ * Given a box that stops hurting at 70 ms, the time it starts
+ * When its gameplay is read
+ * Then the refusal names until_ms and the rule
+ */
+TEST_F(EntitySheetReaderFixture, RefusesABoxThatEndsAsItStarts) {
+  const std::string message =
+      refusalOf({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION, LEFT_HEADING_TABLE,
+                 BOX_ENDING_AS_IT_STARTS, APPEARANCE});
+
+  EXPECT_THAT(message, HasSubstr(UNTIL_DOTTED_KEY));
+  EXPECT_THAT(message, HasSubstr(WINDOW_RULE_TEXT));
+}
+
+/**
+ * Given the sheet of an enemy fragile in the recover of its attack 0
+ * When its gameplay is read
+ * Then it is fragile in that recover
+ */
+TEST_F(EntitySheetReaderFixture, ReadsTheActionAnEnemyIsFragileIn) {
+  const EntitySheet sheet =
+      read({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION, LEFT_HEADING_TABLE,
+            FRAGILE_WHILE_STUNNED, APPEARANCE});
+
+  EXPECT_EQ(sheet.fragileIn,
+            (ActionKey{.attack = 0, .phase = EnemyPhase::Recover}));
+}
+
+/**
+ * Given a fragile table that names an attack and no phase
+ * When the gameplay is read
+ * Then a MissingDataFileKeyException is thrown
+ */
+TEST_F(EntitySheetReaderFixture, RefusesAFragileTableWithoutPhase) {
+  EXPECT_THROW(static_cast<void>(read({ENEMY_GAMEPLAY, BYDO_HITBOX,
+                                       STEADY_MOTION, LEFT_HEADING_TABLE,
+                                       FRAGILE_WITHOUT_PHASE, APPEARANCE})),
+               MissingDataFileKeyException);
+}
+
+/**
+ * Given the sheet of a missile that declares itself fragile
+ * When its gameplay is read
+ * Then the refusal names the fragile table and the rule
+ */
+TEST_F(EntitySheetReaderFixture, RefusesAFragileMissile) {
+  const std::string message =
+      refusalOf({ENEMY_MISSILE_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION,
+                 LEFT_HEADING_TABLE, FRAGILE_WHILE_STUNNED, APPEARANCE});
+
+  EXPECT_THAT(message, HasSubstr(FRAGILE_DOTTED_KEY));
+  EXPECT_THAT(message, HasSubstr(FRAGILE_SIDE_RULE_TEXT));
 }

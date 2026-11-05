@@ -3,6 +3,7 @@
 #include <functional>
 #include "EntitySheets.hpp"
 #include "EntitySpawnSender.hpp"
+#include "EventBus.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
@@ -22,6 +23,9 @@ struct WeaponSystemParts {
   /** @brief The sheets the guns name their projectiles in; they must outlive
    * the system. */
   std::reference_wrapper<const game::EntitySheets> types;
+  /** @brief Where the removal of a projectile that bursts is announced; it
+   * must outlive the system. */
+  std::reference_wrapper<engine::EventBus> events;
 };
 
 }  // namespace rtype::server

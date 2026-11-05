@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include "BehaviourView.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::game {
 
@@ -17,6 +18,13 @@ namespace rtype::game {
                                          const BehaviourView& view);
 
 /**
+ * @returns The horizontal share that moves the body of @p view to the column
+ * @p column during this tick, as verticalShareTowards() does for a height.
+ */
+[[nodiscard]] float horizontalShareTowards(float column,
+                                           const BehaviourView& view);
+
+/**
  * @returns The value of the setting at @p index of the settings the behaviour
  * of @p view declares.
  * @throws MissingBehaviourSettingException when @p view holds no value there:
@@ -25,5 +33,13 @@ namespace rtype::game {
  */
 [[nodiscard]] std::int64_t settingAt(const BehaviourView& view,
                                      std::size_t index);
+
+/**
+ * @returns The setting at @p index of the behaviour of @p view, a number of
+ * milliseconds, as a duration.
+ * @throws MissingBehaviourSettingException as settingAt() does.
+ */
+[[nodiscard]] engine::Duration millisecondsSettingAt(const BehaviourView& view,
+                                                     std::size_t index);
 
 }  // namespace rtype::game

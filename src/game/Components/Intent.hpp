@@ -3,6 +3,7 @@
 #include <optional>
 #include "ActionKey.hpp"
 #include "Direction.hpp"
+#include "Position.hpp"
 
 namespace rtype::game {
 
@@ -31,6 +32,10 @@ struct Intent {
    * to record with endEnemyAction(). When it also starts one, it leaves the
    * old one first. */
   bool endsAction{false};
+  /** @brief Where the body appears at this tick, without travelling there:
+   * PilotSystem moves it after the behaviour steered; nothing for a body
+   * that only moves by its direction. */
+  std::optional<Position> jumpsTo{std::nullopt};
 };
 
 }  // namespace rtype::game

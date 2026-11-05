@@ -68,6 +68,79 @@ top_speed = 960
 heading = 1
 [appearance]
 )";
+/** @brief An orb, a missile of an enemy that bursts after 100 ms into four
+ * shards of the sheet `shard`, and that shard, which scatters. */
+constexpr std::string_view ORB_NAME_IN_TESTS = "orb";
+constexpr std::string_view SHARD_NAME_IN_TESTS = "shard";
+constexpr std::string_view ORB_SHEET_TEXT = R"([gameplay]
+side = "enemy_missile"
+pilot = "straight"
+[gameplay.hitbox]
+width = 36
+height = 36
+[gameplay.motion]
+kind = "steady"
+top_speed = 360
+[gameplay.behaviour]
+heading = -1
+[gameplay.burst]
+after_ms = 100
+count = 4
+shard = "shard"
+[appearance]
+)";
+constexpr std::string_view SHARD_SHEET_TEXT = R"([gameplay]
+side = "enemy_missile"
+pilot = "scatter"
+[gameplay.hitbox]
+width = 20
+height = 20
+[gameplay.motion]
+kind = "steady"
+top_speed = 300
+[appearance]
+)";
+constexpr std::string_view ORB_BURSTING_INTO_PLAYER_MISSILES_TEXT =
+    R"([gameplay]
+side = "enemy_missile"
+pilot = "straight"
+[gameplay.hitbox]
+width = 36
+height = 36
+[gameplay.motion]
+kind = "steady"
+top_speed = 360
+[gameplay.behaviour]
+heading = -1
+[gameplay.burst]
+after_ms = 100
+count = 4
+shard = "player_missile"
+[appearance]
+)";
+constexpr std::string_view DRIFTER_THAT_BURSTS_TEXT = R"([gameplay]
+side = "enemy"
+pilot = "straight"
+[gameplay.hitbox]
+width = 96
+height = 96
+[gameplay.motion]
+kind = "steady"
+top_speed = 240
+[gameplay.behaviour]
+heading = -1
+[gameplay.burst]
+after_ms = 100
+count = 4
+shard = "shard"
+[appearance]
+)";
+
+/** @brief When the orb bursts, in ticks: 100 ms is 6 ticks of 16.7 ms, the
+ * nearest whole count; and how many shards it bursts into. */
+constexpr std::size_t ORB_BURST_TICKS = 6;
+constexpr std::uint8_t SHARDS_PER_ORB = 4;
+
 constexpr std::string_view DRIFTER_FIRING_PLAYER_MISSILES_TEXT = R"([gameplay]
 side = "enemy"
 pilot = "straight"

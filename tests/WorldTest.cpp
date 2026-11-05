@@ -4,6 +4,7 @@
 #include <string_view>
 #include <vector>
 #include "BehaviourConstants.hpp"
+#include "BodyPlacement.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
@@ -29,6 +30,7 @@
 
 using rtype::game::STRAIGHT_BEHAVIOUR_NAME;
 using rtype::game::WEAVE_BEHAVIOUR_NAME;
+using rtype::game::testing::AWAY_FROM_THE_ORIGIN;
 using rtype::game::testing::behaviourNameOf;
 using rtype::game::testing::BYDO_SHOT_INTERVAL_TICKS;
 using rtype::game::testing::BYDO_UNITS_PER_SECOND;
@@ -55,6 +57,7 @@ using rtype::game::testing::SHIP_SHOT_INTERVAL_TICKS;
 using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::SOME_X;
 using rtype::game::testing::SOME_Y;
+using rtype::game::testing::STEERING_ORIGIN;
 using rtype::game::testing::THREE_HEALTH_POINTS;
 using rtype::game::testing::THREE_LIVES;
 using rtype::game::testing::WEAVER_SHEET;
@@ -783,4 +786,51 @@ TEST(World, SpawnedMissileIsNoShip) {
                   rtype::game::Position{.x = SOME_X, .y = SOME_Y});
 
   EXPECT_EQ(world.shipPositionOf(missile), nullptr);
+}
+
+/**
+ * Given an empty world
+ * When a Bydo of three health points is spawned
+ * Then its Health remembers the three points it appeared with
+ */
+TEST(World, ASpawnedBodyRemembersTheHealthItAppearedWith) {
+  rtype::game::World world;
+
+  const std::uint32_t bydo =
+      world.spawn(shippedEntitySheets().named(DRIFTER_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  const std::optional<rtype::game::Health> health =
+      componentOf<rtype::game::Health>(world, bydo);
+  ASSERT_TRUE(health.has_value());
+  EXPECT_EQ(health.value_or(rtype::game::Health{}).full, THREE_HEALTH_POINTS);
+}
+
+/**
+ * Given an empty world
+ * When a Drifter is spawned at (108, 92), steering from (100, 100)
+ * Then it stands at (108, 92) and its Pilot steers from (100, 100)
+ */
+TEST(World, ABodySpawnedFromAnOriginSteersFromIt) {
+  rtype::game::World world;
+
+  const std::uint32_t body = world.spawnFrom(
+      shippedEntitySheets().named(DRIFTER_SHEET),
+      rtype::game::BodyPlacement{.position = AWAY_FROM_THE_ORIGIN,
+                                 .origin = STEERING_ORIGIN});
+
+  const std::optional<rtype::game::Pilot> pilot =
+      componentOf<rtype::game::Pilot>(world, body);
+  const std::optional<rtype::game::Position> position =
+      componentOf<rtype::game::Position>(world, body);
+  ASSERT_TRUE(pilot.has_value());
+  ASSERT_TRUE(position.has_value());
+  const rtype::game::Position origin =
+      pilot.has_value() ? pilot->origin : rtype::game::Position{};
+  EXPECT_EQ(origin.x, STEERING_ORIGIN.x);
+  EXPECT_EQ(origin.y, STEERING_ORIGIN.y);
+  EXPECT_EQ(position.value_or(rtype::game::Position{}).x,
+            AWAY_FROM_THE_ORIGIN.x);
+  EXPECT_EQ(position.value_or(rtype::game::Position{}).y,
+            AWAY_FROM_THE_ORIGIN.y);
 }

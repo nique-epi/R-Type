@@ -5,11 +5,14 @@
 #include <filesystem>
 #include <functional>
 #include <span>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 #include "BehaviourRegistry.hpp"
 #include "BuiltInBehaviours.hpp"
+#include "BurstSheet.hpp"
+#include "DataFilePlace.hpp"
 #include "EngineException.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheetConstants.hpp"
@@ -76,35 +79,57 @@ EntityType projectileSideOf(EntityType shooter) {
                                        : EntityType::EnemyMissile;
 }
 
+/** @returns The sheet of @p sheets named @p name, which a sheet names at
+ * @p place.
+ * @throws engine::UnknownDataFileChoiceException when no sheet has that
+ * name. */
+const EntitySheet& referencedSheet(std::span<const EntitySheet> sheets,
+                                   const std::string& name,
+                                   const engine::DataFilePlace& place) {
+  const EntitySheet* const found = findNamed(sheets, name);
+  if (found == nullptr) {
+    throw engine::UnknownDataFileChoiceException(place, name, namesOf(sheets));
+  }
+  return *found;
+}
+
 /** @throws engine::UnknownDataFileChoiceException when the gun of a sheet of
- * @p sheets fires no sheet, and InconsistentEntitySheetException when it fires
- * a sheet of another side than projectileSideOf() its shooter. */
+ * @p sheets fires no sheet, or a missile bursts into no sheet, and
+ * InconsistentEntitySheetException when a gun fires a sheet of another side
+ * than projectileSideOf() its shooter, or a missile bursts into missiles of
+ * another side than its own. */
 void checkProjectiles(std::span<const EntitySheet> sheets) {
-  for (const EntitySheet& shooter : sheets) {
-    if (!shooter.gun.has_value()) {
-      continue;
+  for (const EntitySheet& sheet : sheets) {
+    if (sheet.gun.has_value()) {
+      const GunSheet& gun = *sheet.gun;
+      if (referencedSheet(sheets, gun.projectile, gun.projectilePlace).side !=
+          projectileSideOf(sheet.side)) {
+        throw InconsistentEntitySheetException(gun.projectilePlace,
+                                               PROJECTILE_SIDE_RULE);
+      }
     }
-    const GunSheet& gun = *shooter.gun;
-    const EntitySheet* const projectile = findNamed(sheets, gun.projectile);
-    if (projectile == nullptr) {
-      throw engine::UnknownDataFileChoiceException(
-          gun.projectilePlace, gun.projectile, namesOf(sheets));
-    }
-    if (projectile->side != projectileSideOf(shooter.side)) {
-      throw InconsistentEntitySheetException(gun.projectilePlace,
-                                             PROJECTILE_SIDE_RULE);
+    if (sheet.burst.has_value()) {
+      const BurstSheet& burst = *sheet.burst;
+      if (referencedSheet(sheets, burst.shard, burst.shardPlace).side !=
+          sheet.side) {
+        throw InconsistentEntitySheetException(burst.shardPlace,
+                                               SHARD_SIDE_RULE);
+      }
     }
   }
 }
 
 /** @brief Writes in the gun of each sheet of @p sheets the number of the sheet
- * it fires. checkProjectiles() ran first, so every gun fires a sheet of
- * @p sheets. */
+ * it fires, and in its burst the number of the sheet of its shards.
+ * checkProjectiles() ran first, so every name is a sheet of @p sheets. */
 void numberProjectiles(std::vector<EntitySheet>& sheets) {
-  for (EntitySheet& shooter : sheets) {
-    if (shooter.gun.has_value()) {
-      shooter.gun->projectileNumber =
-          findNamed(sheets, shooter.gun->projectile)->number;
+  for (EntitySheet& sheet : sheets) {
+    if (sheet.gun.has_value()) {
+      sheet.gun->projectileNumber =
+          findNamed(sheets, sheet.gun->projectile)->number;
+    }
+    if (sheet.burst.has_value()) {
+      sheet.burst->shardNumber = findNamed(sheets, sheet.burst->shard)->number;
     }
   }
 }

@@ -54,16 +54,17 @@ namespace rtype::server {
  * a player is its last input (see steerShipByInput), then runs the systems of
  * the world (PilotSystem, which lets the behaviour of every Bydo write its
  * Intent, MovementSystem, PlayfieldExitSystem,
- * which removes a Bydo or a missile of a Bydo that left on the left, or a
- * missile of a player that left on the right, and announces it on the event
- * bus, then CollisionSystem), then fires the Gun of every ship and Bydo whose
- * Intent wants to shoot, each at the interval of the gun its sheet gives (see
- * WeaponSystem), then lets the Bydos of the current wave appear (see
- * WaveSpawner), then counts the waits and the protections of the lives (see
- * LifeKeeper). The ships and the Bydos move and fire in no other state. Each
- * world starts its random draws from a seed of its own, the seed of the game
- * plus the number of worlds built before it, so the seed of the game is enough
- * to replay every world of a session.
+ * which removes a Bydo that left on the left, or a missile wholly past an
+ * edge it flies towards, and announces it on the event bus, then
+ * CollisionSystem), then fires the Gun of every ship and Bydo whose
+ * Intent wants to shoot, each at the interval of the gun its sheet gives, and
+ * bursts every projectile whose time came into its shards (see WeaponSystem),
+ * then lets the Bydos of the current wave appear (see WaveSpawner), then counts
+ * the waits and the protections of the lives (see LifeKeeper). The ships and
+ * the Bydos move and fire in no other state. Each world starts its random draws
+ * from a seed of its own, the seed of the game plus the number of worlds built
+ * before it, so the seed of the game is enough to replay every world of a
+ * session.
  *
  * The collisions CollisionSystem finds are judged when the event bus delivers
  * them: CollisionRules turns a missile of a player that touches a Bydo into a
