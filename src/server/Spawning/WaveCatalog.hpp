@@ -27,11 +27,13 @@ class WaveCatalog {
   /**
    * @brief Reads the difficulties from @p text, the content of a waves file.
    * @param source Names the file in the errors.
-   * @throws WaveFileSyntaxException when @p text is not TOML.
-   * @throws MissingWaveFileKeyException, UnknownWaveFileKeyException,
-   * WaveFileTableExpectedException, WaveFileValueOutOfRangeException,
-   * InvalidEnemyListException or UnknownEnemyException when it does not
-   * describe the difficulties as above.
+   * @throws engine::DataFileSyntaxException when @p text is not TOML.
+   * @throws engine::MissingDataFileKeyException,
+   * engine::UnknownDataFileKeyException,
+   * engine::DataFileTableExpectedException,
+   * engine::DataFileValueOutOfRangeException, InvalidEnemyListException or
+   * UnknownEnemyException when it does not describe the difficulties as
+   * above.
    */
   [[nodiscard]] static WaveCatalog fromText(std::string_view text,
                                             std::string_view source);
@@ -39,8 +41,8 @@ class WaveCatalog {
   /**
    * @brief Reads the difficulties from the waves file at @p file, which the
    * errors name by its absolute path.
-   * @throws UnreadableWaveFileException when the file cannot be opened, and
-   * what fromText() throws.
+   * @throws engine::UnreadableDataFileException when the file cannot be
+   * opened, and what fromText() throws.
    */
   [[nodiscard]] static WaveCatalog fromFile(const std::filesystem::path& file);
 

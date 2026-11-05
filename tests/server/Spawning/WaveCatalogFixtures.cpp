@@ -1,10 +1,10 @@
 #include "WaveCatalogFixtures.hpp"
 #include <gtest/gtest.h>
 #include <filesystem>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include "ServerConstants.hpp"
-#include "ServerException.hpp"
 #include "WaveCatalog.hpp"
 #include "WaveCatalogTestConstants.hpp"
 
@@ -48,7 +48,7 @@ std::string calmFileWithout(std::string_view key) {
 std::string errorReading(std::string_view text) {
   try {
     static_cast<void>(WaveCatalog::fromText(text, TEST_FILE_NAME));
-  } catch (const ServerException& error) {
+  } catch (const std::runtime_error& error) {
     return error.what();
   }
   ADD_FAILURE() << "reading the file threw nothing";

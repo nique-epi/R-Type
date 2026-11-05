@@ -64,9 +64,10 @@ class ServerGamesModule final : public engine::IModule {
    * can be played again; without one, each game draws its own. The journal
    * says the difficulty the games play and whether they are vanilla, then one
    * line per reason when they are not.
-   * @throws ServerException (or a class derived from it) naming the file, the
-   * line and the key when the file cannot be read, does not describe the
-   * difficulties as the server expects them, or has no DEFAULT_DIFFICULTY.
+   * @throws engine::EngineException or ServerException (or a class derived
+   * from either) naming the file, the line and the key when the file cannot
+   * be read, does not describe the difficulties as the server expects them, or
+   * has no DEFAULT_DIFFICULTY.
    */
   void start() override;
 

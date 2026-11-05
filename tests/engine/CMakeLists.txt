@@ -1,4 +1,6 @@
 add_subdirectory(Commands)
+add_subdirectory(DataFiles)
+add_subdirectory(Exceptions)
 add_subdirectory(LaunchArguments)
 add_subdirectory(Modules)
 add_subdirectory(Paths)

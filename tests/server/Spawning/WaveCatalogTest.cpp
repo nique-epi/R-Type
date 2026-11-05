@@ -3,23 +3,24 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+#include "EngineException.hpp"
 #include "ServerConstants.hpp"
 #include "ServerException.hpp"
 #include "WaveCatalog.hpp"
 #include "WaveCatalogFixtures.hpp"
 #include "WaveCatalogTestConstants.hpp"
 
+using rtype::engine::DataFileSyntaxException;
+using rtype::engine::DataFileTableExpectedException;
+using rtype::engine::DataFileValueOutOfRangeException;
+using rtype::engine::MissingDataFileKeyException;
+using rtype::engine::UnknownDataFileKeyException;
+using rtype::engine::UnreadableDataFileException;
 using rtype::server::InvalidEnemyListException;
-using rtype::server::MissingWaveFileKeyException;
 using rtype::server::OFFICIAL_WAVES_FINGERPRINT;
 using rtype::server::UnknownDifficultyException;
 using rtype::server::UnknownEnemyException;
-using rtype::server::UnknownWaveFileKeyException;
-using rtype::server::UnreadableWaveFileException;
 using rtype::server::WaveCatalog;
-using rtype::server::WaveFileSyntaxException;
-using rtype::server::WaveFileTableExpectedException;
-using rtype::server::WaveFileValueOutOfRangeException;
 using rtype::server::testing::A_COMMENT_LINE;
 using rtype::server::testing::CALM_CURVE;
 using rtype::server::testing::CALM_ENEMIES;
@@ -128,40 +129,40 @@ TEST(WaveCatalog, AnUnknownDifficultyNamesTheOnesDescribed) {
 /**
  * Given a waves file whose line 4 is not TOML
  * When it is read
- * Then a WaveFileSyntaxException names the file and line 4
+ * Then a DataFileSyntaxException names the file and line 4
  */
 TEST(WaveCatalog, TextThatIsNotTomlIsRefusedAtItsLine) {
   const std::string text =
       calmFileWith("first_spawn_interval_ms", NOT_A_TOML_VALUE);
 
   EXPECT_THROW(static_cast<void>(WaveCatalog::fromText(text, TEST_FILE_NAME)),
-               WaveFileSyntaxException);
+               DataFileSyntaxException);
   EXPECT_TRUE(errorReading(text).starts_with(SYNTAX_ERROR_START));
 }
 
 /**
  * Given a waves file whose difficulty calm has no pause
  * When it is read
- * Then a MissingWaveFileKeyException names the missing key
+ * Then a MissingDataFileKeyException names the missing key
  */
 TEST(WaveCatalog, AMissingValueIsNamed) {
   const std::string text = calmFileWithout("wave_pause_ms");
 
   EXPECT_THROW(static_cast<void>(WaveCatalog::fromText(text, TEST_FILE_NAME)),
-               MissingWaveFileKeyException);
+               MissingDataFileKeyException);
   EXPECT_NE(errorReading(text).find(MISSING_PAUSE_TEXT), std::string::npos);
 }
 
 /**
  * Given a waves file whose difficulty calm has no level_waves
  * When it is read
- * Then a MissingWaveFileKeyException names the missing key
+ * Then a MissingDataFileKeyException names the missing key
  */
 TEST(WaveCatalog, AMissingLevelLengthIsNamed) {
   const std::string text = calmFileWithout("level_waves");
 
   EXPECT_THROW(static_cast<void>(WaveCatalog::fromText(text, TEST_FILE_NAME)),
-               MissingWaveFileKeyException);
+               MissingDataFileKeyException);
   EXPECT_NE(errorReading(text).find(MISSING_LEVEL_WAVES_TEXT),
             std::string::npos);
 }
@@ -184,7 +185,7 @@ TEST(WaveCatalog, AcceptsTheFewestAndTheMostWavesInALevel) {
 /**
  * Given a waves file whose difficulty calm has level_waves 0, then 101
  * When it is read
- * Then a WaveFileValueOutOfRangeException names the key, its line and its
+ * Then a DataFileValueOutOfRangeException names the key, its line and its
  * column
  */
 TEST(WaveCatalog, RefusesALevelWithoutWavesOrWithOneTooMany) {
@@ -192,36 +193,37 @@ TEST(WaveCatalog, RefusesALevelWithoutWavesOrWithOneTooMany) {
   const std::string oneTooMany = calmFileWith("level_waves", ONE_WAVE_TOO_MANY);
 
   EXPECT_THROW(static_cast<void>(WaveCatalog::fromText(noWave, TEST_FILE_NAME)),
-               WaveFileValueOutOfRangeException);
+               DataFileValueOutOfRangeException);
   EXPECT_THROW(
       static_cast<void>(WaveCatalog::fromText(oneTooMany, TEST_FILE_NAME)),
-      WaveFileValueOutOfRangeException);
+      DataFileValueOutOfRangeException);
   EXPECT_EQ(errorReading(noWave), NO_WAVE_MESSAGE);
 }
 
 /**
  * Given a waves file whose difficulty calm also holds a misspelt key, on line
- * 10 When it is read Then an UnknownWaveFileKeyException names the key, its
- * line and its column
+ * 10
+ * When it is read
+ * Then an UnknownDataFileKeyException names the key, its line and its column
  */
 TEST(WaveCatalog, AMisspeltKeyIsRefused) {
   const std::string text = calmFileWith(MISSPELT_KEY, FEWEST_BYDOS);
 
   EXPECT_THROW(static_cast<void>(WaveCatalog::fromText(text, TEST_FILE_NAME)),
-               UnknownWaveFileKeyException);
+               UnknownDataFileKeyException);
   EXPECT_EQ(errorReading(text), MISSPELT_KEY_MESSAGE);
 }
 
 /**
  * Given an empty waves file
  * When it is read
- * Then a MissingWaveFileKeyException says the table of the difficulties is
+ * Then a MissingDataFileKeyException says the table of the difficulties is
  * missing
  */
 TEST(WaveCatalog, AFileWithoutDifficultiesIsRefused) {
   EXPECT_THROW(
       static_cast<void>(WaveCatalog::fromText(EMPTY_FILE, TEST_FILE_NAME)),
-      MissingWaveFileKeyException);
+      MissingDataFileKeyException);
   EXPECT_NE(errorReading(EMPTY_FILE).find(MISSING_DIFFICULTIES_TEXT),
             std::string::npos);
 }
@@ -229,12 +231,12 @@ TEST(WaveCatalog, AFileWithoutDifficultiesIsRefused) {
 /**
  * Given a waves file whose difficulty calm is a number
  * When it is read
- * Then a WaveFileTableExpectedException names it
+ * Then a DataFileTableExpectedException names it
  */
 TEST(WaveCatalog, ADifficultyThatIsNotATableIsRefused) {
   EXPECT_THROW(static_cast<void>(WaveCatalog::fromText(
                    LEVEL_THAT_IS_NOT_A_TABLE, TEST_FILE_NAME)),
-               WaveFileTableExpectedException);
+               DataFileTableExpectedException);
   EXPECT_NE(errorReading(LEVEL_THAT_IS_NOT_A_TABLE).find(NOT_A_TABLE_TEXT),
             std::string::npos);
 }
@@ -254,14 +256,14 @@ TEST(WaveCatalog, AcceptsTheFewestBydos) {
 /**
  * Given a first wave of 0 Bydos, one under the fewest
  * When the file is read
- * Then a WaveFileValueOutOfRangeException names the file, line 2, the column
+ * Then a DataFileValueOutOfRangeException names the file, line 2, the column
  * of the value, the key and its range
  */
 TEST(WaveCatalog, RefusesAFirstWaveWithoutBydos) {
   const std::string text = calmFileWith("first_wave_bydos", NO_BYDO);
 
   EXPECT_THROW(static_cast<void>(WaveCatalog::fromText(text, TEST_FILE_NAME)),
-               WaveFileValueOutOfRangeException);
+               DataFileValueOutOfRangeException);
   EXPECT_EQ(errorReading(text), NO_BYDO_MESSAGE);
 }
 
@@ -280,39 +282,39 @@ TEST(WaveCatalog, AcceptsTheMostBydos) {
 /**
  * Given a first wave of 101 Bydos, one over the most
  * When the file is read
- * Then a WaveFileValueOutOfRangeException is thrown
+ * Then a DataFileValueOutOfRangeException is thrown
  */
 TEST(WaveCatalog, RefusesOneBydoTooMany) {
   EXPECT_THROW(
       static_cast<void>(WaveCatalog::fromText(
           calmFileWith("first_wave_bydos", ONE_BYDO_TOO_MANY), TEST_FILE_NAME)),
-      WaveFileValueOutOfRangeException);
+      DataFileValueOutOfRangeException);
 }
 
 /**
  * Given a first interval of 2500.5 milliseconds
  * When the file is read
- * Then a WaveFileValueOutOfRangeException is thrown: durations are whole
+ * Then a DataFileValueOutOfRangeException is thrown: durations are whole
  * milliseconds
  */
 TEST(WaveCatalog, RefusesAFraction) {
   EXPECT_THROW(
       static_cast<void>(WaveCatalog::fromText(
           calmFileWith("first_spawn_interval_ms", FRACTION), TEST_FILE_NAME)),
-      WaveFileValueOutOfRangeException);
+      DataFileValueOutOfRangeException);
 }
 
 /**
  * Given a first interval of 2500.0 milliseconds, a float that is whole
  * When the file is read
- * Then a WaveFileValueOutOfRangeException is thrown: the keys take TOML
+ * Then a DataFileValueOutOfRangeException is thrown: the keys take TOML
  * integers, as the file says
  */
 TEST(WaveCatalog, RefusesAFloatEvenWhenWhole) {
   EXPECT_THROW(static_cast<void>(WaveCatalog::fromText(
                    calmFileWith("first_spawn_interval_ms", WHOLE_FLOAT),
                    TEST_FILE_NAME)),
-               WaveFileValueOutOfRangeException);
+               DataFileValueOutOfRangeException);
 }
 
 /**
@@ -332,7 +334,7 @@ TEST(WaveCatalog, AcceptsAShortestIntervalEqualToTheFirst) {
 /**
  * Given a shortest interval of 2501 milliseconds, one longer than the first
  * When the file is read
- * Then a WaveFileValueOutOfRangeException gives the range up to the first
+ * Then a DataFileValueOutOfRangeException gives the range up to the first
  * interval: the waves would slow down
  */
 TEST(WaveCatalog, RefusesAShortestIntervalLongerThanTheFirst) {
@@ -340,7 +342,7 @@ TEST(WaveCatalog, RefusesAShortestIntervalLongerThanTheFirst) {
                                         SHORTEST_LONGER_THAN_THE_FIRST);
 
   EXPECT_THROW(static_cast<void>(WaveCatalog::fromText(text, TEST_FILE_NAME)),
-               WaveFileValueOutOfRangeException);
+               DataFileValueOutOfRangeException);
   EXPECT_NE(errorReading(text).find(LONGER_THAN_THE_FIRST_TEXT),
             std::string::npos);
 }
@@ -400,7 +402,7 @@ TEST(WaveCatalog, AnEnemyThatIsNotANameIsRefused) {
 /**
  * Given a waves file that does not exist
  * When it is read
- * Then an UnreadableWaveFileException names it by its absolute path
+ * Then an UnreadableDataFileException names it by its absolute path
  */
 TEST(WaveCatalog, AMissingFileIsNamedByItsAbsolutePath) {
   const std::filesystem::path file{MISSING_FILE};
@@ -410,7 +412,7 @@ TEST(WaveCatalog, AMissingFileIsNamedByItsAbsolutePath) {
   try {
     static_cast<void>(WaveCatalog::fromFile(file));
     ADD_FAILURE() << "the missing file was read";
-  } catch (const UnreadableWaveFileException& error) {
+  } catch (const UnreadableDataFileException& error) {
     EXPECT_EQ(std::string{error.what()}, expected);
   }
 }

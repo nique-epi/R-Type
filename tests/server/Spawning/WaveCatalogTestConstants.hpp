@@ -153,7 +153,6 @@ constexpr std::string_view LONGER_THAN_THE_FIRST_TEXT =
 constexpr std::string_view INVALID_ENEMY_LIST_TEXT =
     "difficulty.calm.enemies must be a list of 1 to 100 enemy names";
 constexpr std::string_view SYNTAX_ERROR_START = "test.toml:4:";
-constexpr std::string_view UNREADABLE_FILE_START =
-    "cannot read the waves file ";
+constexpr std::string_view UNREADABLE_FILE_START = "cannot read the file ";
 
 }  // namespace rtype::server::testing
