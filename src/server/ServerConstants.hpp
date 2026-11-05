@@ -105,7 +105,7 @@ constexpr std::string_view DEFAULT_DIFFICULTY = "normal";
  * are not vanilla. A test fails when the shipped file changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x74174ddcb239e461;
+constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0xad2b908a895cb73e;
 
 /**
  * @brief The fingerprint of the entity sheets the game ships, as
