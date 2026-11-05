@@ -151,6 +151,17 @@ class InvalidDifficultyException : public MalformedMessageException {
 };
 
 /**
+ * @brief A server name or a game version that is empty, longer than the
+ * protocol allows, not UTF-8, or holding a control character, read from a
+ * ServerInformation or about to be written into one. The field is named as on
+ * the protocol page.
+ */
+class InvalidServerTextException : public MalformedMessageException {
+ public:
+  InvalidServerTextException(std::string_view field, std::size_t size);
+};
+
+/**
  * @brief A LeaderboardAnswer lists more rows than the protocol allows.
  */
 class TooManyLeaderboardRowsException : public MalformedMessageException {

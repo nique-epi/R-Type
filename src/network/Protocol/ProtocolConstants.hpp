@@ -352,6 +352,46 @@ static_assert(LARGEST_LEADERBOARD_ANSWER_SIZE <= MESSAGE_PAYLOAD_LIMIT,
               "a LeaderboardAnswer always fits in one datagram");
 
 /**
+ * @brief The size of the largest datagram holding a ServerInformation: the
+ * echo of the request (sentAt, heldFor), the protocol version, the longest
+ * game version and server name, then the counts of players, games and free
+ * seats. 106 bytes.
+ */
+constexpr std::size_t LARGEST_SERVER_INFORMATION_DATAGRAM_SIZE =
+    PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT32_WIRE_SIZE +
+    UINT32_WIRE_SIZE + UINT8_WIRE_SIZE + SHORT_STRING_PREFIX_SIZE +
+    MAXIMUM_GAME_VERSION_SIZE + SHORT_STRING_PREFIX_SIZE +
+    MAXIMUM_SERVER_NAME_SIZE + UINT16_WIRE_SIZE + UINT16_WIRE_SIZE +
+    UINT16_WIRE_SIZE;
+
+/**
+ * @brief The size of every datagram holding a ServerInformationRequest: as
+ * large as the largest answer, so the server never sends a sender it does not
+ * know more bytes than it received, as QUIC pads its first datagram (RFC 9000,
+ * section 8.1).
+ */
+constexpr std::size_t SERVER_INFORMATION_REQUEST_DATAGRAM_SIZE =
+    LARGEST_SERVER_INFORMATION_DATAGRAM_SIZE;
+
+/**
+ * @brief The zero bytes a ServerInformationRequest carries after its sentAt,
+ * so its datagram is SERVER_INFORMATION_REQUEST_DATAGRAM_SIZE long. 77 bytes.
+ */
+constexpr std::size_t SERVER_INFORMATION_REQUEST_PADDING_SIZE =
+    SERVER_INFORMATION_REQUEST_DATAGRAM_SIZE - PACKET_HEADER_SIZE -
+    MESSAGE_PREFIX_SIZE - UINT32_WIRE_SIZE;
+
+static_assert(LARGEST_SERVER_INFORMATION_DATAGRAM_SIZE <=
+                  SERVER_INFORMATION_REQUEST_DATAGRAM_SIZE,
+              "a ServerInformation is never larger than the request it "
+              "answers");
+
+/**
+ * @brief The value of every byte of the padding of a ServerInformationRequest.
+ */
+constexpr std::uint8_t PADDING_BYTE = 0;
+
+/**
  * @brief The names of the fields a refused message is reported by, as the
  * protocol page writes them.
  */
@@ -370,6 +410,10 @@ constexpr std::string_view RANK_FIELD = "rank";
 constexpr std::string_view PART_INDEX_FIELD = "partIndex";
 constexpr std::string_view PART_COUNT_FIELD = "partCount";
 constexpr std::string_view BASE_DISTANCE_FIELD = "baseDistance";
+constexpr std::string_view PADDING_FIELD = "padding";
+constexpr std::string_view FREE_SEAT_COUNT_FIELD = "freeSeatCount";
+constexpr std::string_view GAME_VERSION_FIELD = "gameVersion";
+constexpr std::string_view SERVER_NAME_FIELD = "name";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a

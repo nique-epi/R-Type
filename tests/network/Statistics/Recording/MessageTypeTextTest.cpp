@@ -39,6 +39,9 @@ TEST(MessageTypeText, EveryMessageHasItsName) {
   EXPECT_EQ(textOf(MessageType::LeaderboardAnswer), "LeaderboardAnswer");
   EXPECT_EQ(textOf(MessageType::DeltaWorldState), "DeltaWorldState");
   EXPECT_EQ(textOf(MessageType::RoundTrips), "RoundTrips");
+  EXPECT_EQ(textOf(MessageType::ServerInformationRequest),
+            "ServerInformationRequest");
+  EXPECT_EQ(textOf(MessageType::ServerInformation), "ServerInformation");
 }
 
 /**
