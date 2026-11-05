@@ -40,11 +40,11 @@ Why: a review asked, for eleven places of one pull request, to move the constant
 
 ### In `tests/tools/`, the fixtures of a folder go in its `Fixtures/` sub-folder
 
-1. **In a folder of `tests/tools/`, the fixture and helper files of point 3 go in a `Fixtures/` sub-folder of the folder that holds their tests**: `tests/tools/LoadTestBots/Play/Fixtures/BotPilotFixtures.{hpp,cpp}` for `tests/tools/LoadTestBots/Play/BotPilotTest.cpp`. The `…TestConstants.hpp` stay next to the tests (point 2). The rest of `tests/` keeps its fixtures next to their test.
+1. **In a folder of `tests/tools/`, the fixture and helper files of point 3 go in a `Fixtures/` sub-folder of the folder that holds their tests**: `tests/tools/LoadTestBots/Play/Pilot/Fixtures/BotPilotFixtures.{hpp,cpp}` for `tests/tools/LoadTestBots/Play/Pilot/BotPilotTest.cpp`. The `…TestConstants.hpp` stay next to the tests (point 2). The rest of `tests/` keeps its fixtures next to their test.
 2. **`Fixtures/` has a `CMakeLists.txt` of its own, which gives its `.cpp` to the test target of its parent and declares no library**:
    ```cmake
-   target_sources(load_test_bots_play_tests PRIVATE BotPilotFixtures.cpp)
-   target_include_directories(load_test_bots_play_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+   target_sources(load_test_bots_play_tally_tests PRIVATE BotTallyFixtures.cpp)
+   target_include_directories(load_test_bots_play_tally_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
    ```
    The parent calls `add_subdirectory(Fixtures)` after its `rtype_add_test`, and never lists a `.cpp` of `Fixtures/` itself. A library of fixtures would have to link the library of its parent, the reverse of the direction `architecture-a-module-is-one-folder-and-one-target.md` (point 9) allows.
 
@@ -55,4 +55,4 @@ Why: a review asked, for eleven places of one pull request, to move the constant
 - ❌ **Before (wrong)**: `playerEndpoint`, `messageTypeOf` and `messageOf` moved from the anonymous namespace of `ConnectionAcceptorTest.cpp` into `ConnectionAcceptorFixtures.{hpp,cpp}`, in `rtype::server::testing`, where `SentDatagrams.hpp` already declares `playerEndpoint(std::size_t)` and offers `onlyMessageTypeOf` and `onlyMessageIn`.
 - ✅ **After (right)**: the search of the subsection prints `SentDatagrams.hpp:21`; the copies are deleted, the tests call `playerEndpoint`, `onlyMessageTypeOf` and `onlyMessageIn` from `SentDatagrams.hpp`.
 - ❌ **Before (wrong)**: `BotPilotFixtures.{hpp,cpp}` next to `BotPilotTest.cpp` in `tests/tools/LoadTestBots/Play/`, among the classes of the tool, listed in the `SOURCES` of `load_test_bots_play_tests` by `Play/CMakeLists.txt`.
-- ✅ **After (right)**: in `Play/Fixtures/`, with `BotInputSenderFixture` and `BotTallyFixtures`, whose `CMakeLists.txt` adds the three `.cpp` to `load_test_bots_play_tests` with `target_sources`.
+- ✅ **After (right)**: in a `Fixtures/` folder beside their tests: `Play/Pilot/Fixtures/` holds `BotPilotFixtures` and `BotInputSenderFixture`, `Play/Tally/Fixtures/` holds `BotTallyFixtures`, and each `CMakeLists.txt` adds its `.cpp` to the test target of its parent with `target_sources`.
