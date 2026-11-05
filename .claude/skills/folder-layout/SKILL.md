@@ -118,7 +118,11 @@ target_link_libraries(rtype_tools_load_test_bots_play
 )
 ```
 
-**The tests of a folder of `src/`** are registered in `tests/CMakeLists.txt`: the test file and its fixtures go in the `SOURCES` of the executable that covers that library, and the test folder in its `target_include_directories` when a fixture header sits there.
+**The tests of a folder of `src/`** are registered by the `CMakeLists.txt` of their own folder of `tests/`, which its parent adds with `add_subdirectory()`. That file declares the executable with `rtype_add_test()` when all its tests sit in that folder or below it; otherwise it hands its test files and fixtures to the executable a parent declares, as `tests/client/Rendering/Effects/Camera/CMakeLists.txt` does:
+
+```cmake
+target_sources(client_effect_tests PRIVATE CameraShakeTest.cpp CameraShakeFixtures.cpp)
+```
 
 Links go from a parent to its sub-folders, and one way between two siblings; never a link back at a folder that already links yours. A double goes in the `SOURCES` of the executable whose tests use it, and nowhere else.
 
