@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <span>
+#include "ActionKey.hpp"
 #include "Position.hpp"
 #include "TimeConstants.hpp"
 
@@ -26,6 +28,13 @@ struct BehaviourView {
    * behaviour, in the order IBehaviour::settings() declares them (see
    * settingAt()). */
   std::span<const std::int64_t> settings;
+  /** @brief The attack and phase the body is in (its CurrentAction); nothing
+   * while it is idle, and for a body without CurrentAction. */
+  std::optional<ActionKey> action{std::nullopt};
+  /** @brief How long the body has been in action, or idle since its last
+   * action ended, this tick included; zero for a body without
+   * CurrentAction. */
+  engine::Duration actionAge{};
 };
 
 }  // namespace rtype::game

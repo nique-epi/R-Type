@@ -2,6 +2,7 @@
 #include <optional>
 #include <vector>
 #include "ActionRequestingBehaviour.hpp"
+#include "BehaviourView.hpp"
 #include "CurrentAction.hpp"
 #include "EnemyActionStarted.hpp"
 #include "Entity.hpp"
@@ -9,17 +10,23 @@
 #include "PilotSystemActionTestConstants.hpp"
 #include "PilotSystemFixture.hpp"
 #include "TimeConstants.hpp"
+#include "ViewRecordingBehaviour.hpp"
 
+using rtype::engine::Duration;
 using rtype::engine::Entity;
 using rtype::engine::SIMULATION_TICK_DURATION;
+using rtype::game::BehaviourView;
 using rtype::game::CurrentAction;
 using rtype::game::EnemyActionStarted;
 using rtype::game::Intent;
+using rtype::game::testing::A_SECOND_IN_ITS_PHASE;
 using rtype::game::testing::ActionRequestingBehaviour;
+using rtype::game::testing::CLOCK_TICKS;
 using rtype::game::testing::PilotSystemFixture;
 using rtype::game::testing::SIGNAL_OF_ATTACK_FOUR;
 using rtype::game::testing::SOME_ENEMY_NETWORK_ID;
 using rtype::game::testing::STRIKE_OF_ATTACK_THREE;
+using rtype::game::testing::ViewRecordingBehaviour;
 
 /**
  * Given an enemy whose behaviour starts the strike of attack 3
@@ -119,4 +126,59 @@ TEST_F(PilotSystemFixture, ABodyWithoutACurrentActionAnnouncesNothing) {
   run(SIMULATION_TICK_DURATION);
 
   EXPECT_TRUE(takeStartedActions().empty());
+}
+
+/**
+ * Given an enemy that just entered the strike of attack 3
+ * When the pilots run three ticks
+ * Then its behaviour sees the strike of attack 3, three ticks old
+ */
+TEST_F(PilotSystemFixture, ABehaviourSeesItsActionAndHowLongItHasLasted) {
+  std::optional<BehaviourView> seen;
+  const ViewRecordingBehaviour behaviour{seen};
+  const Entity enemy = addEnemy(behaviour, SOME_ENEMY_NETWORK_ID);
+  components().get<CurrentAction>(enemy)->key = STRIKE_OF_ATTACK_THREE;
+
+  for (int tick = 0; tick < CLOCK_TICKS; ++tick) {
+    run(SIMULATION_TICK_DURATION);
+  }
+
+  ASSERT_TRUE(seen.has_value());
+  const BehaviourView view = seen.value_or(BehaviourView{});
+  EXPECT_EQ(view.action, STRIKE_OF_ATTACK_THREE);
+  EXPECT_EQ(view.actionAge, CLOCK_TICKS * SIMULATION_TICK_DURATION);
+}
+
+/**
+ * Given an enemy idle for a second whose behaviour starts the signal of
+ * attack 4
+ * When the pilots run once
+ * Then the clock of its action is back at zero
+ */
+TEST_F(PilotSystemFixture, AStartedActionStartsItsClockAtZero) {
+  const ActionRequestingBehaviour behaviour{
+      Intent{.startsAction = SIGNAL_OF_ATTACK_FOUR}};
+  const Entity enemy = addEnemy(behaviour, SOME_ENEMY_NETWORK_ID);
+  components().get<CurrentAction>(enemy)->since = A_SECOND_IN_ITS_PHASE;
+
+  run(SIMULATION_TICK_DURATION);
+
+  EXPECT_EQ(components().get<CurrentAction>(enemy)->since, Duration::zero());
+}
+
+/**
+ * Given an enemy a second into the strike of attack 3 whose behaviour ends it
+ * When the pilots run once
+ * Then the clock of its idle time starts at zero
+ */
+TEST_F(PilotSystemFixture, AnEndedActionStartsTheIdleClockAtZero) {
+  const ActionRequestingBehaviour behaviour{Intent{.endsAction = true}};
+  const Entity enemy = addEnemy(behaviour, SOME_ENEMY_NETWORK_ID);
+  CurrentAction* const current = components().get<CurrentAction>(enemy);
+  current->key = STRIKE_OF_ATTACK_THREE;
+  current->since = A_SECOND_IN_ITS_PHASE;
+
+  run(SIMULATION_TICK_DURATION);
+
+  EXPECT_EQ(components().get<CurrentAction>(enemy)->since, Duration::zero());
 }

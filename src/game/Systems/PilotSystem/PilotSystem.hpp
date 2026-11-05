@@ -20,10 +20,11 @@ struct Intent;
  * @brief Lets the behaviour of every body that has a Pilot, an Intent and a
  * Position write that Intent.
  *
- * It adds the elapsed time to the age of the Pilot first, so a behaviour
- * steers for the end of the tick. A body without a Pilot keeps its Intent:
- * the ship of a player is steered by its inputs. Run it before every system
- * that reads the Intent: MovementSystem and the weapon system.
+ * It adds the elapsed time to the age of the Pilot and to the clock of the
+ * CurrentAction first, so a behaviour steers for the end of the tick. A body
+ * without a Pilot keeps its Intent: the ship of a player is steered by its
+ * inputs. Run it before every system that reads the Intent: MovementSystem and
+ * the weapon system.
  *
  * When the Intent a behaviour wrote ends an action or starts one, it hands
  * that to endEnemyAction() and startEnemyAction(), which publish on the event

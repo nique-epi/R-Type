@@ -4,6 +4,7 @@
 #include <cstdint>
 #include "BehaviourView.hpp"
 #include "GameException.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::game {
 
@@ -21,6 +22,11 @@ std::int64_t settingAt(const BehaviourView& view, std::size_t index) {
     throw MissingBehaviourSettingException(index);
   }
   return view.settings[index];
+}
+
+engine::Duration millisecondsSettingAt(const BehaviourView& view,
+                                       std::size_t index) {
+  return std::chrono::milliseconds{settingAt(view, index)};
 }
 
 }  // namespace rtype::game

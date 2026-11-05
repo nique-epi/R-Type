@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include "BehaviourView.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::game {
 
@@ -25,5 +26,13 @@ namespace rtype::game {
  */
 [[nodiscard]] std::int64_t settingAt(const BehaviourView& view,
                                      std::size_t index);
+
+/**
+ * @returns The setting at @p index of the behaviour of @p view, a number of
+ * milliseconds, as a duration.
+ * @throws MissingBehaviourSettingException as settingAt() does.
+ */
+[[nodiscard]] engine::Duration millisecondsSettingAt(const BehaviourView& view,
+                                                     std::size_t index);
 
 }  // namespace rtype::game

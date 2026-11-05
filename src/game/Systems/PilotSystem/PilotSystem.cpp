@@ -1,6 +1,8 @@
 #include "PilotSystem.hpp"
+#include <optional>
 #include "BehaviourView.hpp"
 #include "ComponentRegistry.hpp"
+#include "CurrentAction.hpp"
 #include "EnemyActionStart.hpp"
 #include "EnemyActions.hpp"
 #include "Entity.hpp"
@@ -20,6 +22,17 @@ namespace {
 float topSpeedOf(engine::ComponentRegistry& components, engine::Entity body) {
   const SteadyMotion* const motion = components.get<SteadyMotion>(body);
   return motion == nullptr ? 0.0F : motion->topSpeed;
+}
+
+/** @returns The CurrentAction of @p body in @p components, its clock moved
+ * on by @p elapsed; nullptr for a body without one. */
+CurrentAction* tickedActionOf(engine::ComponentRegistry& components,
+                              engine::Entity body, engine::Duration elapsed) {
+  CurrentAction* const current = components.get<CurrentAction>(body);
+  if (current != nullptr) {
+    current->since += elapsed;
+  }
+  return current;
 }
 
 }  // namespace
@@ -48,13 +61,18 @@ void PilotSystem::update(engine::ComponentRegistry& components,
           return;
         }
         pilot.age += elapsed;
-        intent = pilot.behaviour.get().steer(
-            BehaviourView{.position = *position,
-                          .origin = pilot.origin,
-                          .age = pilot.age,
-                          .elapsed = elapsed,
-                          .topSpeed = topSpeedOf(components, body),
-                          .settings = pilot.settings});
+        const CurrentAction* const current =
+            tickedActionOf(components, body, elapsed);
+        intent = pilot.behaviour.get().steer(BehaviourView{
+            .position = *position,
+            .origin = pilot.origin,
+            .age = pilot.age,
+            .elapsed = elapsed,
+            .topSpeed = topSpeedOf(components, body),
+            .settings = pilot.settings,
+            .action = current == nullptr ? std::nullopt : current->key,
+            .actionAge = current == nullptr ? engine::Duration::zero()
+                                            : current->since});
         passOnActionOf(components, body, intent);
       });
 }
