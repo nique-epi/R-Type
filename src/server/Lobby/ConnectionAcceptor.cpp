@@ -18,8 +18,6 @@
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyConstants.hpp"
-#include "MessageFrame.hpp"
-#include "MessagePayload.hpp"
 #include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
@@ -31,28 +29,6 @@
 namespace rtype::server {
 
 namespace {
-
-/**
- * @returns The first ConnectionRequest of @p datagram, or nothing when the
- * datagram is not of this protocol or holds no request.
- * @throws A NetworkException when the datagram is shorter than a header, its
- * messages do not split, or its first request is refused by its reader.
- */
-std::optional<network::ConnectionRequest> firstConnectionRequest(
-    std::span<const std::byte> datagram) {
-  if (!network::DatagramCodec::speaksThisProtocol(
-          network::DatagramCodec::decodeHeader(datagram))) {
-    return std::nullopt;
-  }
-  for (const network::MessageFrame& frame :
-       network::DatagramCodec::splitMessages(datagram)) {
-    if (frame.type ==
-        static_cast<std::uint8_t>(network::ConnectionRequest::TYPE)) {
-      return network::decodeMessage<network::ConnectionRequest>(frame.payload);
-    }
-  }
-  return std::nullopt;
-}
 
 /** @returns Whether @p datagram starts with a header of this protocol and
  * another version. */
@@ -129,7 +105,8 @@ std::optional<network::ConnectionRequest> ConnectionAcceptor::readRequest(
     const network::IncomingDatagram& datagram, engine::Duration now) {
   std::optional<network::ConnectionRequest> request;
   try {
-    request = firstConnectionRequest(datagram.payload);
+    request = network::DatagramCodec::firstMessage<network::ConnectionRequest>(
+        datagram.payload);
   } catch (const network::NetworkException& error) {
     drop(datagram.sender, error.what(), now);
     return std::nullopt;

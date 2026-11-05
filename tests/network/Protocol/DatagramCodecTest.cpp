@@ -11,6 +11,7 @@
 #include "DatagramCodecFixture.hpp"
 #include "DatagramCodecFixtures.hpp"
 #include "EncodedMessage.hpp"
+#include "Heartbeat.hpp"
 #include "MessageFrame.hpp"
 #include "MessageType.hpp"
 #include "NetworkException.hpp"
@@ -19,6 +20,8 @@
 #include "ProtocolConstants.hpp"
 #include "ProtocolFixtures.hpp"
 #include "ProtocolTestConstants.hpp"
+#include "ServerInformationRequest.hpp"
+#include "ServerInformationRequestTestConstants.hpp"
 
 namespace rtype::network {
 
@@ -564,5 +567,50 @@ TEST_P(DatagramCodecFixture, HasNoMessageTypes) {
 INSTANTIATE_TEST_SUITE_P(EveryFaultOfSplitMessages, DatagramCodecFixture,
                          ::testing::ValuesIn(malformedDatagrams()),
                          nameOfFault);
+
+/**
+ * Given a datagram holding a Heartbeat, then two information requests
+ * When its first information request is asked for
+ * Then the first one is read and the Heartbeat is skipped
+ */
+TEST(DatagramCodecFirstMessage, ReadsTheFirstMessageOfItsType) {
+  const std::vector<EncodedMessage> messages{
+      encodedMessage(Heartbeat{}),
+      encodedMessage(ServerInformationRequest{.sentAt = testing::SOME_SENT_AT}),
+      encodedMessage(ServerInformationRequest{.sentAt = 0})};
+  const std::vector<std::byte> datagram =
+      DatagramCodec::encode(PacketHeader{}, messages);
+
+  EXPECT_EQ(DatagramCodec::firstMessage<ServerInformationRequest>(datagram),
+            ServerInformationRequest{.sentAt = testing::SOME_SENT_AT});
+}
+
+/**
+ * Given a datagram holding only a Heartbeat
+ * When its first information request is asked for
+ * Then there is none
+ */
+TEST(DatagramCodecFirstMessage, FindsNothingWithoutAMessageOfItsType) {
+  const std::vector<std::byte> datagram =
+      DatagramCodec::encode(PacketHeader{}, Heartbeat{});
+
+  EXPECT_EQ(DatagramCodec::firstMessage<ServerInformationRequest>(datagram),
+            std::nullopt);
+}
+
+/**
+ * Given an information request in a datagram of another version
+ * When its first information request is asked for
+ * Then there is none: the payload of another version is never read
+ */
+TEST(DatagramCodecFirstMessage, ReadsNothingOfAnotherVersion) {
+  PacketHeader header;
+  header.version = SOME_OTHER_VERSION;
+  const std::vector<std::byte> datagram = DatagramCodec::encode(
+      header, ServerInformationRequest{.sentAt = testing::SOME_SENT_AT});
+
+  EXPECT_EQ(DatagramCodec::firstMessage<ServerInformationRequest>(datagram),
+            std::nullopt);
+}
 
 }  // namespace rtype::network

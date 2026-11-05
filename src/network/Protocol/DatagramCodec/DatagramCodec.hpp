@@ -147,6 +147,30 @@ class DatagramCodec {
   }
 
   /**
+   * @returns The first message of type Message that @p datagram holds, read by
+   * its decodePayload(); nothing when the header is not of this protocol and
+   * version (speaksThisProtocol()) or no message has that type. The messages
+   * of other types are skipped unread.
+   * @throws MalformedDatagramException when @p datagram is shorter than a
+   * header, or its sizes do not add up, as splitMessages() throws.
+   * @throws What decodePayload() throws for the first message of that type,
+   * when it refuses it.
+   */
+  template <DecodableMessage Message>
+  [[nodiscard]] static std::optional<Message> firstMessage(
+      std::span<const std::byte> datagram) {
+    if (!speaksThisProtocol(decodeHeader(datagram))) {
+      return std::nullopt;
+    }
+    for (const MessageFrame& frame : splitMessages(datagram)) {
+      if (frame.type == static_cast<std::uint8_t>(Message::TYPE)) {
+        return decodeMessage<Message>(frame.payload);
+      }
+    }
+    return std::nullopt;
+  }
+
+  /**
    * @brief Refused at compile time for a buffer destroyed at the end of the
    * call, such as a temporary std::vector or std::array: the payloads would
    * point into it.
