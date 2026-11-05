@@ -74,3 +74,7 @@ Read every call between the input and the assertion for one that resets the stat
 ## Update (3 November 2026) — A timer walked in one step, and a color two states share
 
 The tests of `ServerLeaderboard` jumped five seconds in one `update()`: removing either timer reset of the class left them green, while the client would have sent a request each frame. `ThePointerOverItLooksSelected` looked for `SELECTED_BAR_INSIDE_COLOR`, which is `EDGE_BLUE`, the border of a chip at rest too, so it could not fail; writing the opposite test, with the focus lost, showed it.
+
+## Update (5 November 2026) — A job stopped before its thread reached its loop
+
+`ServerStatusJobFixture.StoppingTheJobDoesNotWaitForItsInterval` built the job with an interval of an hour and stopped it at once. The thread had not started its loop yet: it saw the stop and left, so the variant that slept with `std::this_thread::sleep_for`, deaf to the stop, passed in 0.02 s. `TheJobRefreshesEveryInterval` registered its server right after building the job, so the first pass often saw it, and the variant that refreshed only once stayed green. Both tests now wait until a first server is online, the sign the first pass ran, before they stop the job or register the second server; each variant then turns its test red.
