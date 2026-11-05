@@ -32,6 +32,12 @@ constexpr std::string_view PORT_SEPARATOR = ":";
 /** @brief The database file the tests give the master, in their folder. */
 constexpr std::string_view TEST_DATABASE_FILE = "master.db";
 
+/** @brief How a test reads the last heartbeat the master kept of a server. */
+constexpr std::string_view LAST_HEARTBEAT_OF_SERVER_QUERY =
+    "SELECT last_heartbeat FROM servers WHERE id = :id";
+constexpr std::string_view SERVER_ID_PARAMETER_NAME = ":id";
+constexpr int LAST_HEARTBEAT_COLUMN = 0;
+
 /** @brief The servers one address may create in an hour. */
 constexpr std::size_t CREATIONS_PER_HOUR = 5;
 

@@ -81,7 +81,9 @@ namespace rtype::server {
  * next onTick(), before the game moves along its states. The rules work on the
  * world they were built with, and new ones come with each new world, so the
  * events of a tick must be delivered before the world is replaced: the server
- * dispatches the bus at the end of every tick.
+ * dispatches the bus at the end of every tick. Each move from one state to
+ * another is published on that bus as a GameStateChanged, once per move, so a
+ * reader learns of it in the same tick without asking state() at every tick.
  *
  * Not thread-safe: use it from the simulation thread only.
  */

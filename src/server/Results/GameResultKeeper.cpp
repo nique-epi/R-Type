@@ -8,6 +8,7 @@
 #include "GameResult.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
+#include "GameStateChanged.hpp"
 #include "IResultsArchive.hpp"
 #include "LivesConstants.hpp"
 #include "PlayerRoster.hpp"
@@ -45,12 +46,12 @@ void GameResultKeeper::onPlayerClosing(const ConnectedPlayer& departed) {
   }
 }
 
-void GameResultKeeper::followState(GameState state) {
-  const GameState previous = std::exchange(state_, state);
-  if (previous != GameState::InProgress && state == GameState::InProgress) {
+void GameResultKeeper::onStateChanged(const GameStateChanged& change) {
+  state_ = change.current;
+  if (change.current == GameState::InProgress) {
     startCounting();
-  } else if (previous == GameState::InProgress &&
-             state == GameState::Finished) {
+  } else if (change.previous == GameState::InProgress &&
+             change.current == GameState::Finished) {
     recordTheGame();
   }
 }

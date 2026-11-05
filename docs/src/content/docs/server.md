@@ -22,6 +22,7 @@ The server runs on the threads below. Only the network thread and the simulation
 | Main | Starts the modules, waits on the `StopRequest`, then stops the modules | `src/server/main.cpp` |
 | Network | Started by `ServerNetworkModule::start()`. Owns the socket: sorts each datagram into a queue as it arrives, and sends the outgoing queue when asked | `src/server/Network/` |
 | Simulation | Started by `ServerApplication::run()`. Runs `SIMULATION_TICKS_PER_SECOND` (60) ticks per second, and in them every module and every game | `src/server/Network/` |
+| MasterLink | Started by `ServerMasterModule::start()` when `master-url` and `master-key` are set. Runs the `HeartbeatJob`: registers the server with the master and sends its heartbeats, reading only `LatestHostedGames` and `LatestMetrics`, never a game (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
 | Signals | Started by `StopSignals`, on Linux and macOS. Waits for Ctrl-C or SIGTERM and asks for the stop; on Windows, the system runs the handler on a thread of its own | `src/server/Platform/` |
 
 The path of a datagram through the network thread and the simulation thread:
@@ -120,8 +121,8 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | End of a game sent to the players (`GameEnded`) | Available: when the game is won or lost, with its outcome and the score of each, until the game waits for players again | `src/server/Replication/Announcements/Milestones/`, `src/server/Rules/Match/` |
 | Metrics in the journal every 10 s: duration of the ticks, time of each system, games, players, entities, round trip of each player and traffic | Available; losses are not measured yet | `src/server/Metrics/` |
 | Results of each game kept in a SQLite file, with statistics, and a leaderboard read with `LeaderboardRequest` | Available; the leaderboard of the client reads it, and nothing in the game shows the statistics | `src/server/Results/`, `src/server/Storage/`, `src/storage/` |
-| Master mode: `--mode master` runs the master instead of the game server | Available: `GET /api/health` only (see [Master](/R-Type/master/)) | `src/server/LaunchOptions/`, `src/master/` |
-| Master link | Not yet written | — |
+| Master mode: `--mode master` runs the master instead of the game server | Available (see [Master](/R-Type/master/)) | `src/server/LaunchOptions/`, `src/master/` |
+| Master link: registration and heartbeats | Available; admin orders, bans and results not yet written (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
 | Components (`Position`, `Velocity`, `CollisionBox`, `Health`, `EntityType`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Movement, run by each game tick: Bydos and missiles by `Velocity`, ships by `Intent` | Available | `src/game/Systems/MovementSystem/`, `src/server/Rules/Match/` |
 | Behaviours of the Bydos, and removal of what leaves the playfield | Available: the `straight` and `weave` behaviours; a Bydo and its missiles leave on the left, a missile of a player on the right | `src/game/Behaviours/`, `src/game/Systems/PilotSystem/`, `src/game/Systems/PlayfieldExitSystem/` |
@@ -218,12 +219,15 @@ The server reads `server.cfg`, in the folder it is started from, between the ins
 
 | Command | Effect |
 |---|---|
-| `module <name> on\|off` | Turns a module of the table below on or off. A module that is off is never installed, so it provides no service and its work never runs. Refused when a module that stays on depends on it (`storage` needs `network`, `games` needs `network` and `storage`, `lobby` and `metrics` need `games`, all need `logger`). |
+| `module <name> on\|off` | Turns a module of the table below on or off. A module that is off is never installed, so it provides no service and its work never runs. Refused when a module that stays on depends on it (`storage` needs `network`, `games` needs `network` and `storage`, `lobby` and `metrics` need `games`, `master` needs `network` and `games`, all need `logger`). |
 | `set port <port>` | The UDP port, from 1 to 65535. Default: 4242. |
 | `set seed <seed>` or `set seed none` | The seed of the first game, a whole number from 0 to 4294967295; `none` draws one. Default: `none`. |
 | `set state-rate <states>` | The world states sent to each player per second, from 2 to 60. Default: 20. |
 | `set input-delay <ticks>` | The ticks every player's input is held before it is applied, from 0 to 30. Default: 3. |
 | `set database <file>` | The SQLite file the leaderboard of this server is kept in, on a local disk; a name with a space goes in quotes. Default: empty, which keeps it in `r-type_server_<port>.db` next to the executable, with the port of `set port`. |
+| `set master-url <url>` | The master this server is listed on, `http://<host>[:<port>]`. Default: empty, and the server runs alone (see [Link with the master](#link-with-the-master-servermastermodule)). |
+| `set master-key <key>` | The key the master gave when the host created this server on it. Default: empty, and the server runs alone. Never committed: only `server.cfg.example` is, with an empty key. |
+| `set server-name <name>` | The name players read in the list of servers, 1 to 32 bytes of printable UTF-8. Default: `R-Type server`. |
 
 - A missing `server.cfg` is not an error: the defaults apply, and the journal says `server.cfg not found, the defaults apply`. A line that is refused (an unknown command, a value out of its bounds) does not stop the server: it is logged at the `warn` level, with its file and line number, and the next line runs.
 - The reading is logged once the journal is open, so the lines appear after the modules' own start lines. The `info` lines are hidden at the default level; start the server with `--log-level info` to see them.
@@ -246,9 +250,10 @@ module lobby off
 | `logger` | applies the logging options when it starts, logs "server starting" and "server stopped" | `src/server/Logger/` |
 | `network` | declares the `port` setting; owns the `ServerApplication`: binds the socket and runs the server on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission`, `TickDatagrams` (the datagrams of the tick), `IListeningPort` (the port of the `port` setting) and `network::TrafficCounters` | `src/server/Network/` |
 | `storage` | declares the `database` setting; opens the SQLite file of the server and starts the thread that owns it when it starts, finishes what waits and closes the file when it stops; provides `IResultsArchive` | `src/server/Storage/` |
-| `games` | declares the `seed`, `state-rate` and `input-delay` settings; the games (`GamesSettings::gameCount`, `DEFAULT_HOSTED_GAME_COUNT` = 8), an `EventBus` for each; reads the waves file when it starts and judges whether its games are vanilla; provides `Games` | `src/server/Games/` |
+| `games` | declares the `seed`, `state-rate` and `input-delay` settings; the games (`GamesSettings::gameCount`, `DEFAULT_HOSTED_GAME_COUNT` = 8), an `EventBus` for each; reads the waves file when it starts and judges whether its games are vanilla; provides `Games` and `LatestHostedGames` | `src/server/Games/` |
 | `lobby` | one `ConnectionAcceptor` per game, built on the roster of that game | `src/server/Lobby/` |
 | `metrics` | measures the ticks and the systems of the games, and writes a report to the journal every `TICKS_PER_REPORT` ticks; writes the traffic of the socket; provides `LatestMetrics` | `src/server/Metrics/` |
+| `master` | declares the `master-url`, `master-key` and `server-name` settings; keeps the master told of the server on a thread of its own, MasterLink, when both a url and a key are set; uses `LatestMetrics` when the metrics module is on | `src/server/Master/` |
 
 Each tick runs the stages of `SERVER_LOOP_STAGES` once, with `SIMULATION_TICK_DURATION`. In `simulation`, the games module runs `onTick()` on each game with the datagrams of its own players (`keepDatagramsOf()`) and makes the network forget the players whose session closed, then the lobby module answers the connection requests, so a request is placed and refused by the state the games just reached. In `outputs`, the bus of each game delivers its events, and the guaranteed messages among them leave at once (see [Guaranteed messages](#guaranteed-messages-messagedelivery)). Only the metrics module works in `inputs`, where it starts measuring the tick, since `onTick()` reads the datagrams and moves the game in one step; it ends its measure in `outputs`, after the games module.
 
@@ -339,7 +344,7 @@ Once players are measured, the third line gives each of them, game by game in th
 
 The measure leaves out what `ServerApplication` does around the stages, emptying the queues of datagrams and handing over what to send, and the report itself, which runs after the measure of its tick. Whether the ticks fall behind as a whole is told by the lines of the tick loop (see [Tick loop](#tick-loop-tickloop)).
 
-The newest report stays in memory as a `MetricsReport` in the service `LatestMetrics` (`src/server/Metrics/Report/`). A module finds it with `context.find<LatestMetrics>()`, which gives `nullptr` when the metrics module is not listed. Any thread may call `report()`, which gives a copy and changes nothing, so readers at different rates all see the same report; it holds the round trips as `roundTrips`; nothing in the server reads it yet. Losses are not measured yet.
+The newest report stays in memory as a `MetricsReport` in the service `LatestMetrics` (`src/server/Metrics/Report/`), a `concurrency::LatestValue<MetricsReport>` (see [Concurrency](/R-Type/concurrency/#the-newest-value-of-a-thread-latestvalue)). A module finds it with `context.find<LatestMetrics>()`, which gives `nullptr` when the metrics module is not listed. Any thread may call `value()`, which gives a copy and changes nothing, so readers at different rates all see the same report; it holds the round trips as `roundTrips`. The master module reads it for each heartbeat. Losses are not measured yet.
 
 The module also writes the traffic of the socket, which the network module provides as `network::TrafficCounters`: a line every 10 s and, with `--traffic-csv`, a file (see [Network](/R-Type/network/#traffic-counters-trafficcounters)). Each report holds it as `traffic`, totals since the server started. A player has a row of its own from the moment `ServerApplication::admit()` takes effect until the session closes:
 
@@ -480,6 +485,7 @@ The ledger also counts the loss. An accepted datagram counts as received, and th
 - `finish()` ends the game in progress and does nothing in another state; it tells the players no result. The game ends itself the same way once no player is left in it (see [Silent players](#silent-players-heartbeats-and-timeouts)) or once no player left in it has a life (see [End of a game](#end-of-a-game-gameendannouncer)), and only then tells them the result.
 - The tick that puts the game in `Starting` sends every connected player `GameStarted`; the tick that puts it in `InProgress` sends the world state of tick 0, so `GameStarted` always leaves first and a lost one is corrected by the repeat or by that world state. The game logs `game started, players connected: <n>` at the `info` level under `Instances`.
 - The end of a game goes out as a `GameEnded` (see [End of a game](#end-of-a-game-gameendannouncer)).
+- Each move from one state to another is published on the bus of the game as a `GameStateChanged`, with the state left and the state reached, once per move: the results follow it, and so does the list of games the master is told of. A player taking a place is published as a `game::PlayerArrival`, the counterpart of `game::PlayerDeparture`.
 
 ```cpp
 for (const std::unique_ptr<GameInstance>& game : games_.all()) {
@@ -868,10 +874,10 @@ Every game that ends leaves a row per player in the SQLite file of its server, a
 
 ### What a game leaves: `GameResultKeeper`
 
-`GameResultKeeper` (`src/server/Results/`) reads `IGameFlow::state()` once per tick, right after the rules ran. When the game enters `InProgress`, it counts the connected players. When it goes from `InProgress` to `Finished`, it hands a `GameResult` to the archive.
+`GameResultKeeper` (`src/server/Results/`) follows the `GameStateChanged` the bus of its game delivers. When the game enters `InProgress`, it counts the connected players. When it goes from `InProgress` to `Finished`, it hands a `GameResult` to the archive.
 
 - A row goes to each player connected when the game started. A player who leaves keeps a row, with the score and the deaths it had when it left, so leaving does not erase a bad game. A player who leaves during `Starting` was never counted.
-- The score is read in the tick of the end, before the bus delivers anything more, so it is the score `GameEnded` tells the players.
+- The score is read when the bus delivers the end, in the tick of the end, so it is the score `GameEnded` tells the players.
 - Deaths are `STARTING_LIVES` minus `ConnectedPlayer::livesWithoutShip`, which holds the lives left even while the player has a ship.
 - A game ended by `finish()` or left by all its players is recorded like the others. A game with no row to write leaves nothing. A game the server stops in the middle has no end, so it leaves nothing either.
 
@@ -964,10 +970,34 @@ A read ranks the whole leaderboard. Measured on one Mac in a Release build, with
 
 The client sends the request from its leaderboard screen (see [Client](/R-Type/client/#leaderboard-leaderboardscreen-ileaderboardsource)).
 
+## Link with the master: `ServerMasterModule`
+
+The master lists the game servers for the players (see [Master](/R-Type/master/)). A host creates its server on the master, which gives a key once, then writes in `server.cfg` the address of the master and that key:
+
+```
+# server.cfg
+set master-url "http://master.example.org:8080"
+set master-key "rtk_<64 hexadecimal digits>"
+set server-name "Paris 1"
+```
+
+The module `master` (`src/server/Master/`) then starts a `HeartbeatJob`, which runs on a thread of its own, MasterLink, the link of the server with the master; the games never wait for it:
+
+1. It registers the server with `MasterClient`: its name, its UDP port, `SERVER_GAME_VERSION` (the version of the CMake project), the protocol version, its games and `MAXIMUM_PLAYERS` per game. The journal says `registered with the master as Paris 1`.
+2. It sends a heartbeat, the state of every game with the nicknames of its players and the measures of `LatestMetrics` when the metrics module is on, each time the games change, at most once per `MINIMUM_NOTICE_GAP` (1 s), and every `HEARTBEAT_INTERVAL` (5 s) when nothing changes. A heartbeat always carries the whole state, so a lost one is corrected by the next.
+3. A master that refuses the key, does not know the registration or does not answer is written in the journal once, not at each try. The job registers again every `REGISTRATION_RETRY` (5 s) until the master answers, then goes on.
+
+The games module tells the job when the games change. Its `HostedGamesWatch` follows, on the bus of each game, `game::PlayerArrival`, `game::PlayerDeparture` and `GameStateChanged`, and at the end of a tick in which one was delivered it publishes the list of the games in `LatestHostedGames`, a `LatestValue` the job waits on. The job never reads a game itself.
+
+- Without `master-url` or `master-key` the server runs alone, as the journal says, and MasterLink does not start. A url that is not `http://<host>[:<port>]`, an `https://` one included, is logged as an error and the server runs alone too: `MasterClient` speaks plain HTTP only, so the key crosses the network in clear and the master stays on a local network for now.
+- A port chosen by the system (`-p 0`) is not told to the master, since the module cannot know it.
+- `module master off` turns the link off. The admin orders, the global bans, the results and a last heartbeat when the server stops are not sent yet: the master does not take them.
+
 ## Where to intervene
 
 | You want to… | Look at |
 |---|---|
+| Change what the master is told, or how often | `MasterMessages.cpp` and `ServerMasterConstants.hpp` in `src/server/Master/`; what changes a game in the list, `HostedGamesWatch` in `src/server/Games/` |
 | Change what a tick does | The work a module adds to a stage: `playGames()` in `src/server/Games/ServerGamesModule.cpp`, `answerConnectionRequests()` in `src/server/Lobby/ServerLobbyModule.cpp` |
 | Add a module to the server | A class implementing `IModule` in a folder of its own, `src/server/<Name>/`, listed in `serverModules()` after the modules it depends on: see the [tutorial](/R-Type/tutorial-write-a-module/) |
 | Change what the server does when it stops | `ServerGamesModule::stop()` and `FarewellSender`, in `src/server/Games/` |

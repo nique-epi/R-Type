@@ -115,7 +115,8 @@ class GameInstance {
   /**
    * @brief Tells the modules that @p player just took a place in roster(), as
    * the SessionHooks::joined functions receive it; with the rules of R-Type,
-   * the player gets a ship in the world, announced to the players.
+   * the player gets a ship in the world, announced to the players. A
+   * game::PlayerArrival is then published on the bus of the game.
    * @throws NetworkIdExhaustedException when every network id was given.
    */
   void onPlayerJoined(ConnectedPlayer& player) const;

@@ -4,6 +4,7 @@
 #include <initializer_list>
 #include <string>
 #include <utility>
+#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
@@ -11,6 +12,7 @@
 #include "GameFlow.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
+#include "GameStateChanged.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "Lives.hpp"
 #include "OutgoingDatagram.hpp"
@@ -43,6 +45,8 @@ GameFlowFixture::GameFlowFixture(WavePlan waves)
                .everyPlayerIsReady =
                    [this] { return readyKeeper_.everyPlayerIsReady(); }},
       flow_(context_, world_, replication_) {
+  static_cast<void>(events_.subscribe<GameStateChanged>(
+      [this](const GameStateChanged& change) { changes_.push_back(change); }));
   flow_.begin();
   addRtypeSystems(systems_, events_);
 }
@@ -73,10 +77,6 @@ void GameFlowFixture::startGameWith(
   }
   tick();
   ASSERT_EQ(flow_.state(), GameState::InProgress);
-}
-
-void GameFlowFixture::startGameWithOnePlayer() {
-  startGameWith({FIRST_PLAYER});
 }
 
 void GameFlowFixture::tick() {
@@ -115,6 +115,10 @@ std::vector<network::GameEnded> GameFlowFixture::endsSentTo(
 GameFlow& GameFlowFixture::flow() { return flow_; }
 
 PlayerRoster& GameFlowFixture::roster() { return roster_; }
+
+const std::vector<GameStateChanged>& GameFlowFixture::changes() const {
+  return changes_;
+}
 
 GameFlowOneWaveLevelFixture::GameFlowOneWaveLevelFixture()
     : GameFlowFixture(oneWaveLevelWavePlan()) {}

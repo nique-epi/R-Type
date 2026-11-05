@@ -9,6 +9,7 @@
 #include "GameResultKeeperTestConstants.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
+#include "GameStateChanged.hpp"
 #include "PlayerRoster.hpp"
 #include "RecordingResultsArchive.hpp"
 #include "SentDatagrams.hpp"
@@ -78,10 +79,14 @@ TEST(GameResultKeeper, SaysTheResultOfAGameThatIsNotVanillaIsNot) {
   ASSERT_NE(roster.add(playerEndpoint(FIRST_PLAYER),
                        std::string{NICKNAMES.at(FIRST_PLAYER)}, SESSION_TOKEN),
             nullptr);
-  keeper.followState(GameState::Starting);
-  keeper.followState(GameState::InProgress);
+  keeper.onStateChanged(
+      GameStateChanged{.previous = GameState::WaitingForPlayers,
+                       .current = GameState::Starting});
+  keeper.onStateChanged(GameStateChanged{.previous = GameState::Starting,
+                                         .current = GameState::InProgress});
 
-  keeper.followState(GameState::Finished);
+  keeper.onStateChanged(GameStateChanged{.previous = GameState::InProgress,
+                                         .current = GameState::Finished});
 
   ASSERT_EQ(archive.results().size(), 1U);
   EXPECT_FALSE(archive.results().front().vanilla);
@@ -158,22 +163,6 @@ TEST_F(GameResultKeeperFixture, IgnoresADepartureAfterTheEnd) {
 
   ASSERT_EQ(archive().results().size(), 2U);
   EXPECT_EQ(archive().results().at(1).players.size(), 1U);
-}
-
-/**
- * Given a finished game
- * When more ticks run in that state
- * Then it is recorded once
- */
-TEST_F(GameResultKeeperFixture, RecordsAGameOnce) {
-  seat(FIRST_PLAYER);
-  startTheGame();
-
-  finishTheGame();
-  finishTheGame();
-  finishTheGame();
-
-  EXPECT_EQ(archive().results().size(), 1U);
 }
 
 /**
