@@ -34,13 +34,20 @@ FloodReport DatagramFlood::run(LoopbackPeer& peer) {
   for (auto elapsed = std::chrono::steady_clock::duration::zero();
        elapsed < FLOOD_DURATION;
        elapsed = std::chrono::steady_clock::now() - start) {
-    while (sentCount_ < dueCountAfter(elapsed, recipient_.datagramsPerSecond)) {
-      sendNext(peer);
-    }
+    sendDue(peer, dueCountAfter(elapsed, recipient_.datagramsPerSecond));
     report_.receivedCount += peer.drainFrom(recipient_.port);
     std::this_thread::sleep_for(PAUSE_BETWEEN_SENDS);
   }
   return report_;
+}
+
+void DatagramFlood::sendDue(LoopbackPeer& peer, std::size_t dueCount) {
+  if (dueCount > scheduledCount_ + FLOOD_CATCH_UP_LIMIT) {
+    scheduledCount_ = dueCount - FLOOD_CATCH_UP_LIMIT;
+  }
+  for (; scheduledCount_ < dueCount; ++scheduledCount_) {
+    sendNext(peer);
+  }
 }
 
 void DatagramFlood::sendNext(LoopbackPeer& peer) {

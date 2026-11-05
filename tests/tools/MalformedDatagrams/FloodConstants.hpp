@@ -54,6 +54,14 @@ constexpr std::size_t CLIENT_FLOOD_DATAGRAMS_PER_SECOND = 1000;
 constexpr std::uint32_t FLOOD_SEED = 1;
 
 /**
+ * @brief The most datagrams a flood sends at once to catch up after a stall
+ * of the tool, the slots it missed beyond them skipped: the burst of a player,
+ * so a server never bans the tool for a stall, whatever kinds pass its
+ * sorting.
+ */
+constexpr std::size_t FLOOD_CATCH_UP_LIMIT = network::PLAYER_BURST;
+
+/**
  * @brief The pause of a flood once the datagrams due so far are sent.
  */
 constexpr std::chrono::milliseconds PAUSE_BETWEEN_SENDS{1};
