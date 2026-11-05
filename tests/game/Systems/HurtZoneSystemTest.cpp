@@ -7,12 +7,11 @@
 #include "HurtBox.hpp"
 #include "HurtZone.hpp"
 #include "HurtZoneSystem.hpp"
+#include "HurtZoneSystemFixtures.hpp"
 #include "HurtZoneSystemTestConstants.hpp"
 #include "ShipContact.hpp"
-#include "TimeConstants.hpp"
 
 using rtype::engine::Entity;
-using rtype::engine::SIMULATION_TICK_DURATION;
 using rtype::game::CurrentAction;
 using rtype::game::EntityType;
 using rtype::game::HurtBox;
@@ -20,6 +19,8 @@ using rtype::game::HurtZone;
 using rtype::game::HurtZoneSystem;
 using rtype::game::ShipContact;
 using rtype::game::testing::ALWAYS_HURTING_BOX;
+using rtype::game::testing::contactsOf;
+using rtype::game::testing::enemyWith;
 using rtype::game::testing::MOVED_ENEMY_X;
 using rtype::game::testing::SHIP_APART_FROM_THE_BOX_X;
 using rtype::game::testing::SHIP_IN_THE_MOVED_BOX_X;
@@ -29,32 +30,6 @@ using rtype::game::testing::SIGNAL_OF_ATTACK_ONE;
 using rtype::game::testing::STRIKE_BOX;
 using rtype::game::testing::STRIKE_OF_ATTACK_ONE;
 using rtype::game::testing::STRIKE_OF_ATTACK_TWO;
-
-namespace {
-
-/** @returns Every ShipContact the system publishes for @p scene in one
- * update. */
-std::vector<ShipContact> contactsOf(CollisionScene& scene) {
-  HurtZoneSystem system(scene.events);
-  std::vector<ShipContact> received;
-  const auto handle = scene.events.subscribe<ShipContact>(
-      [&received](const ShipContact& contact) { received.push_back(contact); });
-  system.update(scene.components, SIMULATION_TICK_DURATION);
-  scene.events.dispatch();
-  scene.events.unsubscribe(handle);
-  return received;
-}
-
-/** @returns An enemy at (@p centerX, 0) whose hurt zone holds @p boxes. */
-Entity enemyWith(CollisionScene& scene, float centerX,
-                 const std::vector<HurtBox>& boxes) {
-  const Entity enemy =
-      scene.spawnWithoutCollisionBox(EntityType::Enemy, centerX, 0.0F);
-  scene.components.add(enemy, HurtZone{.boxes = boxes});
-  return enemy;
-}
-
-}  // namespace
 
 /**
  * Given an enemy with a box that hurts all the time and a ship inside it

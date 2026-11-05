@@ -1,0 +1,29 @@
+#pragma once
+
+#include <cstdint>
+#include "MissileOwner.hpp"
+
+namespace rtype::game::testing {
+
+/** @brief The network ids of the missiles, the Bydos and the ship of the
+ * damage tests. */
+constexpr std::uint32_t MISSILE_ID = 7;
+constexpr std::uint32_t OTHER_MISSILE_ID = 8;
+constexpr std::uint32_t BYDO_ID = 21;
+constexpr std::uint32_t OTHER_BYDO_ID = 22;
+constexpr std::uint32_t SHIP_ID = 31;
+
+/** @brief The health of a Bydo that takes three missiles, and of one that
+ * takes one. */
+constexpr int THREE_HEALTH_POINTS = 3;
+constexpr int ONE_HEALTH_POINT = 1;
+
+/** @brief The players whose missiles hit. */
+constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
+constexpr MissileOwner FIRST_PLAYER{.playerNumber = 1};
+constexpr MissileOwner SECOND_PLAYER{.playerNumber = SECOND_PLAYER_NUMBER};
+
+/** @brief What destroying a Bydo of the tests is worth. */
+constexpr std::uint32_t BYDO_POINTS = 200;
+
+}  // namespace rtype::game::testing

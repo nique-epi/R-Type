@@ -5,6 +5,7 @@
 #include "EnemyPhase.hpp"
 #include "EngineException.hpp"
 #include "EntitySheet.hpp"
+#include "EntitySheetContactFixtures.hpp"
 #include "EntitySheetContactTestConstants.hpp"
 #include "EntitySheetReaderFixture.hpp"
 #include "EntitySheetReaderTestConstants.hpp"
@@ -58,19 +59,8 @@ using rtype::game::testing::SURVIVES_CONTACT_MARKER;
 using rtype::game::testing::SURVIVES_CONTACT_SIDE_RULE_TEXT;
 using rtype::game::testing::SURVIVES_CONTACT_WITH_A_KEY;
 using rtype::game::testing::TWO_HURT_BOXES;
+using rtype::game::testing::zoneOf;
 using ::testing::HasSubstr;
-
-namespace {
-
-/** @returns The hurt zone of @p sheet, an empty one, and a failure, when it
- * has none. */
-const HurtZone& zoneOf(const EntitySheet& sheet) {
-  static const HurtZone none{};
-  EXPECT_TRUE(sheet.hurtZone.has_value());
-  return sheet.hurtZone.has_value() ? *sheet.hurtZone : none;
-}
-
-}  // namespace
 
 /**
  * Given the sheet of an enemy with two boxes in its hurt zone
