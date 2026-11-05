@@ -12,12 +12,13 @@ This page tells you where to look when you need to change something. It describe
 | Start and stop: `--mode master`, `master.cfg`, Ctrl-C and SIGTERM | Available | `src/server/main.cpp`, `src/master/LaunchOptions/` |
 | HTTP API under `/api`, every error in JSON | Available | `src/master/Http/` |
 | Database `r-type_master.db` | Available: servers, samples, changes of status | `src/master/Storage/` |
-| Creation of a game server and its key, `POST /api/servers` | Available; the web site that calls it is not written | `src/master/Servers/` |
+| Creation of a game server and its key, `POST /api/servers` | Available; no page of the web site calls it yet | `src/master/Servers/` |
 | Registration and heartbeats of the game servers | Available; sent by the module `master` of the game server | `src/master/Servers/`, `src/network/Master/`, `src/server/Master/` |
 | The client of the master, `MasterClient` | Available | `src/network/Master/Client/` |
 | The games of a server, for the client, `GET /api/servers/{id}/games` | Available | `src/master/Servers/`, `src/network/Master/` |
 | The statuses of the servers, their list and their history, `GET /api/servers` | Available; the status `unreachable`, which needs a probe over UDP, and the route that puts a server in maintenance are not written | `src/master/Servers/`, `src/network/Master/` |
-| Administration, global leaderboard, accounts, web site | Not yet written | |
+| The web site, served under `/` | Available: the skeleton, one page that shows whether the master answers | `web/`, `src/master/Web/` |
+| Administration, global leaderboard, accounts | Not yet written | |
 
 ## Starting the master
 
@@ -40,12 +41,13 @@ This page tells you where to look when you need to change something. It describe
 
 ## Configuration: `master.cfg`
 
-The master reads `master.cfg`, in the folder it is started from, between the install and the start of its modules, in the language of `server.cfg` (see [Configuration commands](/R-Type/commands/)). A missing file is not an error. `master.cfg.example`, at the root of the repository, lists both settings with their default.
+The master reads `master.cfg`, in the folder it is started from, between the install and the start of its modules, in the language of `server.cfg` (see [Configuration commands](/R-Type/commands/)). A missing file is not an error. `master.cfg.example`, at the root of the repository, lists every setting with its default.
 
 | Setting | Value | Default | Effect |
 |---|---|---|---|
 | `port` | 1 to 65535 | 8080 | The TCP port the HTTP API listens on, on every interface. |
 | `database` | a path | empty | The SQLite file of the master; empty for `r-type_master.db` next to the executable. |
+| `web` | a path | empty | The folder of the web site the master serves under `/`; empty for `web/out` in the folder the master is started from. |
 
 ## Modules
 
@@ -57,6 +59,7 @@ The master reads `master.cfg`, in the folder it is started from, between the ins
 | `storage` | `MasterStorageModule` | `logger` | the database, migrated |
 | `http` | `MasterHttpModule` | `logger` | the port, and the thread that listens on it |
 | `servers` | `ServersModule` | `logger`, `storage`, `http` | `StatusWatch`, the thread of `ServerStatusJob`; its routes run once `http` listens |
+| `web` | `MasterWebModule` | `http` | nothing: `http` mounts the folder of the site when it opens its port |
 
 The storage starts before the HTTP API, so a database the master cannot open stops it before its port opens, and the API stops before the database closes.
 
@@ -77,6 +80,20 @@ The storage starts before the HTTP API, so a database the master cannot open sto
 - **One master per port:** by default cpp-httplib sets `SO_REUSEPORT`, which lets a second program bind the port of the first with no error. The master sets `SO_REUSEADDR` instead (`SO_EXCLUSIVEADDRUSE` on Windows), so a second master on the same port stops at its start, with an error naming the port.
 - **No encryption:** the master listens in plain HTTP on every IPv4 interface (`ANY_IPV4_ADDRESS`), for a local network. On the Internet, a reverse proxy such as Caddy or nginx in front of it must add HTTPS.
 
+## The web site: `MasterWebModule`
+
+The web site lives in `web/` (see [Web site](/R-Type/technology-choices/#web-site-nextjs) for its tools): `bun run build` writes it as static files to `web/out/`, and the master serves them under `/`, beside the API, from the same port. No other program runs for the site, and the browser calls `/api` on the origin of the page, so there is no CORS.
+
+The module `web` (`src/master/Web/`) declares the setting `web` and hands its folder to `MasterHttpServer::serveSite()`; the HTTP server reads it once, when it opens its port, after `master.cfg` is applied. An empty `web` means `DEFAULT_WEB_FOLDER` (`web/out`), in the folder the master is started from, so a master started from the root of the repository serves the last build of the site.
+
+- **A file of the folder** answers 200 with the type of its extension (`text/html`, `text/javascript`, `text/css`…).
+- **A folder asked without its last `/`** answers 301 to the same path with it: `/servers` goes to `/servers/`, where Next.js writes `servers/index.html`.
+- **A path outside `/api` that no file answers** gets 404 with the `404.html` of the site, in HTML. A path under `/api` keeps its problem document, site or not.
+- **A path that climbs out of the folder** (`/../secret.txt`) is never served; cpp-httplib refuses it, and refuses a symbolic link that leaves the folder.
+- **A folder that does not exist** is written in the journal, and the master serves its API only. `module web off` serves no site at all.
+
+In development, `bun run dev` in `web/` serves the site on port 3000 and passes every `/api` request to the master of `MASTER_URL` (`http://localhost:8080` by default), so the page talks to a running master with nothing to rebuild.
+
 ## The database: `MasterStorageModule`
 
 The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, see [Project layout](/R-Type/project-layout/#storage)): write-ahead log, foreign keys on, and the migrations of `MASTER_MIGRATIONS` (`src/master/Storage/MasterStorageConstants.hpp`) the file does not hold yet. A file it cannot open, or one written by a newer master, stops the start with an error naming the file. It provides the connection as a `MasterDatabase`, which the threads of the HTTP server share behind one lock: a request holds it for a few statements of one row each.
@@ -90,7 +107,7 @@ The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, se
 
 ## Creating a game server: `POST /api/servers`
 
-A host creates its server on the web site, which calls `POST /api/servers` with the name players will read; the web site is not written yet, so today the call is made by hand or by `MasterClient::createServer()`. The master answers 201, `Location: /api/servers/<id>`, and the server with its key:
+A host creates its server on the web site, which calls `POST /api/servers` with the name players will read; no page of the web site makes it yet, so today the call is made by hand or by `MasterClient::createServer()`. The master answers 201, `Location: /api/servers/<id>`, and the server with its key:
 
 ```json
 {"id":7,"name":"Paris 1","key":"rtk_<64 hexadecimal digits>"}
@@ -258,6 +275,8 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change how often a game server beats | `MASTER_HEARTBEAT_INTERVAL` in `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master also reads to tell a silent server |
 | Change the size of a page of a list | `MINIMUM_PAGE_SIZE`, `DEFAULT_PAGE_SIZE` and `MAXIMUM_PAGE_SIZE` in `src/network/Master/Routes/MasterRouteConstants.hpp` |
 | Call the master from the game server | `MasterClient` (`src/network/Master/Client/`) |
+| Add a page to the web site | `web/src/app/`, its calls to the API in `web/src/lib/api/` |
+| Change how the master serves the site | `MasterHttpServer::serveSite()` (`src/master/Http/`) and the module `web` (`src/master/Web/`) |
 | Change what the games of a server are listed as | `listedStateOf()` in `ServersService.cpp` (`src/master/Servers/Services/`) and `GameListing` (`src/network/Master/Messages/`) |
 | Change what a game server tells of its games | `hostedGamesOf()` (`src/server/Games/HostedGames.cpp`) |
 | Add a setting of the master | the `install()` of the module that reads it, `master.cfg.example` and the table above |

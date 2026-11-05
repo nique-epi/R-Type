@@ -1,9 +1,9 @@
 ---
 title: Technology choices
-description: Why the project uses SFML, Asio, vcpkg and CMake, and what each was compared with.
+description: Why the project uses SFML, Asio, vcpkg, CMake and, for its web site, Next.js, and what each was compared with.
 ---
 
-The project rests on four tools: SFML draws the client, Asio carries the datagrams, vcpkg installs both and CMake builds everything. This page states the criteria the team used, compares each tool with its main alternatives, and says what each choice costs. The decisions about the code itself (libraries, ECS, network model) are in [Architecture](/R-Type/architecture/).
+The project rests on four tools: SFML draws the client, Asio carries the datagrams, vcpkg installs both and CMake builds everything. The web site the master serves has tools of its own, Next.js and bun, which CMake never builds (see [Web site](#web-site-nextjs)). This page states the criteria the team used, compares each tool with its main alternatives, and says what each choice costs. The decisions about the code itself (libraries, ECS, network model) are in [Architecture](/R-Type/architecture/).
 
 ## Criteria
 
@@ -93,6 +93,21 @@ The cost is the language. A mistake in a `CMakeLists.txt` often shows up as a mi
 
 Alternative considered: Meson. Its language is easier to read and it configures faster. It loses because the team would give up the CMake integration of vcpkg and learn a second tool in the middle of the project.
 
+## Web site: Next.js
+
+The master serves a web site: today a page that says whether it answers, then the list of the servers, the leaderboard and the administration. It needs pages that read the API of the master in a browser, and no program beside the master to serve them. The site uses the tools of the other web projects of the team: Next.js with the App Router and TypeScript, bun to install and run, Biome to lint and format, Tailwind and shadcn for the look.
+
+| | Next.js, static export | React with Vite | Astro |
+|---|---|---|---|
+| Cross-platform | builds anywhere bun and Node.js run | the same | the same |
+| Scope | pages and routing, React components, a build to static files | a bundler: routing and the layout of pages are left to the project | static pages first, React only in islands |
+| License | MIT | MIT | MIT |
+| Learning curve | known by the team, who use it on other projects | known, with a router to choose and wire | known from `docs/`, less for an interactive page |
+
+Next.js builds with `output: 'export'`, so `web/out/` holds only HTML, JavaScript and CSS, which cpp-httplib serves from the master; no Node.js process runs in production. The cost is every feature that needs a server at request time: no Server Actions, no proxy, no rendering per request, and a page with a parameter in its path needs every value at build time. The pages call the API from the browser instead.
+
+Alternative considered: React with Vite. It builds the same kind of static site with fewer rules, but leaves routing and the layout of pages to the project, and the team already writes Next.js elsewhere.
+
 ## Where each choice is visible
 
 | Tool | Where | Version |
@@ -101,5 +116,7 @@ Alternative considered: Meson. Its language is easier to read and it configures 
 | Asio | `src/network/` only | 1.32.0 (standalone) |
 | vcpkg | `vcpkg.json`, the `vcpkg/` submodule, the toolchain file of `CMakePresets.json` | registry baseline `9e593bb` |
 | CMake | the `CMakeLists.txt` of each folder, `CMakePresets.json` | 4.2 or newer |
+| Next.js | `web/`, with `web/next.config.ts` | 16.4.5 |
+| bun | `web/package.json` (`packageManager`), `web/bun.lock` | 1.3.14 |
 
-A change of one of these four is a decision that touches every team. It starts as a proposal in [Architecture](/R-Type/architecture/), with the same four criteria.
+A change of one of these tools is a decision that touches every team. It starts as a proposal in [Architecture](/R-Type/architecture/), with the same four criteria.

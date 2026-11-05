@@ -255,7 +255,7 @@ Every folder of this tree exists today; some of what the comments name is not wr
 
 ### Master
 
-`src/master` holds the master, the program `r-type_server --mode master` runs: it lists the game servers and their games, records their heartbeats, and will run the administration and serve the web frontend. Its folders are libraries, and only the server binary links them, so the master never links SFML, Asio, `rtype_game` or the code of the server. Today it creates the game servers with their keys, takes their registration and their heartbeats, keeps the status of each, lists the registered servers, and the games, the samples and the statuses of a server, and answers `GET /api/health` (see [Master](/R-Type/master/)).
+`src/master` holds the master, the program `r-type_server --mode master` runs: it lists the game servers and their games, records their heartbeats, serves the web site, and will run the administration. Its folders are libraries, and only the server binary links them, so the master never links SFML, Asio, `rtype_game` or the code of the server. Today it creates the game servers with their keys, takes their registration and their heartbeats, keeps the status of each, lists the registered servers, and the games, the samples and the statuses of a server, answers `GET /api/health`, and serves the web site of `web/` under `/` (see [Master](/R-Type/master/)).
 
 ```
 src/master/
@@ -269,18 +269,19 @@ src/master/
 │   ├── Repositories/ the only SQL: ServerRepository, HeartbeatSampleRepository, StatusChangeRepository
 │   ├── Models/       the plain structs the layers hand each other
 │   └── Jobs/         ServerStatusJob: refreshes the statuses on a thread of its own
+├── Web/              the module web: the folder of the web site the HTTP server serves under /
 ├── Modules/          masterModules(), the list of the modules
 ├── Administration/   bans, kicks, maintenance, audit log: being written
 ├── Matchmaking/      a server chosen to create a game: being written
 └── Accounts/         optional, with Tickets/: being written
 ```
 
-`LaunchOptions/`, `Logger/`, `Storage/`, `Http/`, `Servers/` and `Modules/` exist; the others are being written. A folder of a feature is laid out like a module of a web backend: its module class at the root, then one sub-folder per role, as `Servers/` shows.
+`LaunchOptions/`, `Logger/`, `Storage/`, `Http/`, `Servers/`, `Web/` and `Modules/` exist; the others are being written. A folder of a feature is laid out like a module of a web backend: its module class at the root, then one sub-folder per role, as `Servers/` shows.
 
-### Tests, web frontend, assets
+### Tests, web site, assets
 
 - **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; test tools in `tests/tools/`, never shipped: today, in `tests/tools/MalformedDatagrams/`, the tool that sends malformed datagrams (see [Network](/R-Type/network/#malformed-datagrams-malformed_datagrams)), in `tests/tools/network-conditions/`, the scripts that apply the network scenarios to the loopback interface from the system (see [Network](/R-Type/network/#network-conditions-from-the-system-teststoolsnetwork-conditions)), in `tests/tools/packaging/`, the script the CI runs to check the packages from another folder (see [Packages](https://github.com/nique-epi/R-Type#packages) in the README), and, in `tests/tools/LoadTestBots/`, the load-test bots (see [Network](/R-Type/network/#load-test-bots-load_test_bots)). Today the older tests sit at the root of `tests/`; `tests/client/`, `tests/concurrency/`, `tests/engine/`, `tests/network/` and `tests/server/` already follow this layout, and `tests/doubles/` holds a socket that records instead of sending, a datagram link that records what is sent and hands over what a test delivers, a connection to a server that records what a screen asks, a settings storage that records each save, a settings listener that records each change it is told, a window on a desktop of a given size, a draw surface that records each rectangle it is asked to draw, an entity layer that records what it paints, a sound player that records the ids it plays, a music clock whose position the test sets, a module that writes down when it is installed, started and stopped, the plugins the engine tests load (`tests/doubles/Plugins/`, shared libraries built next to the test executable), a journal that records the lines it is asked to write, a loss drawn from a seed for each datagram, and a network that delivers the datagrams a test sends late, twice or never, in an order the test gives or draws from a seed. Each folder of `tests/` has its `CMakeLists.txt`: it declares, with `rtype_add_test()`, the executables whose tests all sit in it or below it, and adds its own files to those its parents declare, with `target_sources()`; `rtype_test_support` holds the journal and temporary-folder helpers every executable shares. A test file holds only its tests: its constants are in `<Subject>TestConstants.hpp`, its fixture in `<Subject>Fixture.{hpp,cpp}` and its helpers in `<Subject>Fixtures.{hpp,cpp}`, next to it. In a folder of `tests/tools/`, the fixture and helper files sit in a `Fixtures/` folder beside the tests, as in `tests/tools/LoadTestBots/Play/Pilot/Fixtures/`, and its `CMakeLists.txt` gives them to the test executable of that folder.
-- **`web/`** is the React frontend served by the master: `src/api/` (one function per route), `src/pages/`, `src/components/`.
+- **`web/`** is the web site the master serves, in Next.js, built by bun into `web/out/` (see [Master](/R-Type/master/#the-web-site-masterwebmodule)): `src/app/` (one folder per page), `src/lib/api/` (the client of the master, one function per route in `routes/`, the schemas of the answers in `schemas/`), `src/hooks/` and `src/components/` (`primitives/` for the shadcn pieces).
 - **`packaging/`** holds what CPack needs beyond the install rules, which sit with the CPack settings in the root `CMakeLists.txt`: the CPack config of each program (`CPackPartConfig.cmake.in`), the settings that differ per generator (`CPackGeneratorConfig.cmake`), the script that builds the AppImage, the `Info.plist` of the app, the `.desktop` file and the icon.
 - **`assets/`** holds the files read at run time: `sprites/`, `sounds/`, `music/`, `fonts/` and `icons/` for the client, `waves/` for the server (`waves.toml`, see [Writing the waves file](/R-Type/waves-file/)), and `entities/` for both, one sheet per entity type, whose gameplay the server reads and whose appearance the client reads (see [Writing an entity sheet](/R-Type/entity-sheets/)).
 
@@ -318,6 +319,7 @@ This list describes the code as it is today. A pull request that adds, removes o
 | `storage` | `MasterStorageModule` | `src/master/Storage/` | required |
 | `http` | `MasterHttpModule` | `src/master/Http/` | required |
 | `servers` | `ServersModule` | `src/master/Servers/` | required |
+| `web` | `MasterWebModule` | `src/master/Web/` | optional |
 
 | Module of the client | Class | Folder | Kind |
 |---|---|---|---|

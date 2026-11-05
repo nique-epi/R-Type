@@ -10,6 +10,12 @@ set port 8080
 # space goes in quotes. Empty: r-type_master.db next to the executable.
 set database ""
 
+# The folder of the web site the master serves under /, built by
+# `bun run build` in web/; a name with a space goes in quotes. Empty: web/out
+# in the folder the master is started from. A folder that does not exist
+# leaves the master serving its API only.
+set web ""
+
 # Turn a module off (it is never installed). Refused when a module
 # that stays on depends on it: storage and http need logger, servers needs
 # storage and http.

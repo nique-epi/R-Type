@@ -11,6 +11,7 @@ The code is split into engine, game and network libraries; see [the architecture
 - CMake 4.2 or newer
 - A C++20 compiler: GCC or Clang on Linux, MSVC (Visual Studio 2022) on Windows
 - Git
+- For the web site only: bun 1.3 and Node.js 22.12 or newer
 
 Third-party libraries (SFML, Asio, toml++, SQLiteCpp, GoogleTest) are built by [vcpkg](https://vcpkg.io), pinned as a Git submodule and bootstrapped automatically on the first configure.
 
@@ -148,6 +149,25 @@ Without `master-url` or `master-key`, a game server runs alone and is listed now
 Both choices are told in full in [Architecture](https://nique-epi.github.io/R-Type/architecture/#master).
 
 `--help` prints the options of either program, and `--mode master --help` those of the master. An invalid argument stops it with a message and exit code 1.
+
+### Web site
+
+The web site lives in `web/` and is built with [bun](https://bun.sh) 1.3 and Node.js 22.12 or newer:
+
+```bash
+cd web
+bun install
+bun run build
+```
+
+This writes the site to `web/out/`; a master started from the root of the repository serves it under `/`, beside its API (`set web "<folder>"` in `master.cfg` names another folder). To work on a page with a master running on port 8080:
+
+```bash
+cd web
+bun run dev
+```
+
+The site is then on <http://localhost:3000>, and `next dev` passes every `/api` request to the master of `MASTER_URL` (`http://localhost:8080` by default). `bun run lint`, `bun run typecheck` and `bun run test` are the checks of the `web` CI workflow.
 
 ## Tests
 
