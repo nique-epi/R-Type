@@ -1,4 +1,4 @@
-#include "ReceivedDatagrams.hpp"
+#include "HandledDatagrams.hpp"
 #include <cstddef>
 #include <span>
 #include <vector>
@@ -7,14 +7,14 @@
 
 namespace rtype::network::testing {
 
-DatagramHandler ReceivedDatagrams::handler() {
+DatagramHandler HandledDatagrams::handler() {
   return
       [this](const Endpoint& /*sender*/, std::span<const std::byte> payload) {
         datagrams_.emplace_back(payload.begin(), payload.end());
       };
 }
 
-const std::vector<std::vector<std::byte>>& ReceivedDatagrams::all() const {
+const std::vector<std::vector<std::byte>>& HandledDatagrams::all() const {
   return datagrams_;
 }
 
