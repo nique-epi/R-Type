@@ -4,6 +4,7 @@ add_subdirectory(EntityTypes)
 add_subdirectory(Handshake)
 add_subdirectory(WaitingRoom)
 add_subdirectory(Leaderboard)
+add_subdirectory(ServerList)
 
 add_library(rtype_client_connection_module STATIC
   ClientConnectionModule.cpp
@@ -22,6 +23,7 @@ target_link_libraries(rtype_client_connection_module
     rtype_client_entity_messages
     rtype_client_handshake
     rtype_client_input_commands
+    rtype_client_server_list
     rtype_client_session
     rtype_client_transport
     rtype_client_waiting_room

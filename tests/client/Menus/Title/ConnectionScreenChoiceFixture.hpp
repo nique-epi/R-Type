@@ -23,6 +23,9 @@ class ConnectionScreenChoiceFixture : public ::testing::Test {
   /** @brief Builds a new screen from the same choice, in place of the one
    * shown, as the client does after a lost game. */
   void reopen();
+  /** @brief Opens a new screen that starts its attempt as soon as it is
+   * built, as the server map opens it. */
+  void reopenConnectingAtOnce();
 
   /** @brief Presses and releases Enter on the screen shown, then lets the
    * press last. */

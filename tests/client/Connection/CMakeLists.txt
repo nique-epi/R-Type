@@ -3,6 +3,7 @@ target_sources(client_connection_tests PRIVATE ServerSessionTest.cpp ServerSessi
 add_subdirectory(EntityTypes)
 add_subdirectory(Handshake)
 add_subdirectory(Leaderboard)
+add_subdirectory(ServerList)
 add_subdirectory(Session)
 add_subdirectory(Transport)
 add_subdirectory(WaitingRoom)
