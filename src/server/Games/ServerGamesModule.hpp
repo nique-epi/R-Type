@@ -40,9 +40,10 @@ namespace rtype::server {
  * `input-delay` settings and provides RunningGame, and its bus as IGameEvents.
  * start() reads the entity sheets and the waves file, then creates the game
  * with the values of the settings, subscribing its rules and its broadcaster
- * to the bus; the same values decide whether the game is vanilla (see
- * vanillaBreaches()), the state encoding aside, which changes how the states
- * travel, not the game. A finished game waits for players again, so the game
+ * to the bus. vanillaBreaches() judges whether the game is vanilla from the
+ * fingerprints of the waves and of the entity sheets, the seed and the input
+ * delay; the state rate and the state encoding change how the states travel,
+ * not the game. A finished game waits for players again, so the game
  * is never replaced. stop() tells every player the server shuts down (see
  * FarewellSender).
  */
