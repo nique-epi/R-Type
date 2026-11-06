@@ -27,7 +27,9 @@
 
 namespace rtype::client::testing {
 
-void ServerSessionFixture::connect() { session_.connect(server(), NICKNAME); }
+void ServerSessionFixture::connect(const network::GameChoice& game) {
+  session_.connect(server(), NICKNAME, game);
+}
 
 void ServerSessionFixture::deliverBytes(std::vector<std::byte> datagram) {
   link_.deliver(network::IncomingDatagram{.sender = server(),

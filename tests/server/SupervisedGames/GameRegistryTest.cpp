@@ -4,7 +4,10 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "ConnectionRefused.hpp"
+#include "ConnectionRequest.hpp"
 #include "GameLifecycle.hpp"
+#include "GamePlace.hpp"
 #include "GameRegistry.hpp"
 #include "GameStatus.hpp"
 #include "PlaceKind.hpp"
@@ -17,8 +20,13 @@
 #include "SupervisedGamesReportTestConstants.hpp"
 #include "SupervisedGamesTestConstants.hpp"
 
+using rtype::network::ANY_GAME_CHOICE;
+using rtype::network::GameStatus;
 using rtype::network::GameStatusState;
+using rtype::network::NEW_GAME_CHOICE;
+using rtype::network::RefusalReason;
 using rtype::server::GameLifecycle;
+using rtype::server::GamePlace;
 using rtype::server::GameRegistry;
 using rtype::server::NoFreeGameSlotException;
 using rtype::server::PlaceKind;
@@ -34,7 +42,8 @@ using rtype::server::SupervisedGame;
 TEST(GameRegistry, OpensAGameWhenThereIsNone) {
   GameRegistry registry;
 
-  EXPECT_EQ(registry.placeForNewPlayer(seatRequestOf(0)).kind, PlaceKind::Open);
+  EXPECT_EQ(registry.placeFor(seatRequestOf(0), ANY_GAME_CHOICE).kind,
+            PlaceKind::Open);
 }
 
 /**
@@ -47,7 +56,7 @@ TEST(GameRegistry, MakesAPlayerWaitForAGameThatStarts) {
   auto state = std::make_shared<RecordingChildState>();
   registry.open(openingOf(0, state));
 
-  const auto place = registry.placeForNewPlayer(seatRequestOf(0));
+  const auto place = registry.placeFor(seatRequestOf(0), ANY_GAME_CHOICE);
 
   EXPECT_EQ(place.kind, PlaceKind::Wait);
   EXPECT_EQ(place.port, portOfGame(0));
@@ -65,7 +74,7 @@ TEST(GameRegistry, SendsAPlayerToAGameThatWaitsForPlayers) {
   registry.record(*registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
                   statusWithPlayers(GameStatusState::WaitingForPlayers, 2));
 
-  const auto place = registry.placeForNewPlayer(seatRequestOf(0));
+  const auto place = registry.placeFor(seatRequestOf(0), ANY_GAME_CHOICE);
 
   EXPECT_EQ(place.kind, PlaceKind::Redirect);
   EXPECT_EQ(place.port, portOfGame(0));
@@ -87,7 +96,8 @@ TEST(GameRegistry, SkipsAGameInProgress) {
   registry.record(*registry.findByToken(tokenOfGame(1)), SEQUENCE_FIVE,
                   statusWithPlayers(GameStatusState::WaitingForPlayers, 1));
 
-  EXPECT_EQ(registry.placeForNewPlayer(seatRequestOf(0)).port, portOfGame(1));
+  EXPECT_EQ(registry.placeFor(seatRequestOf(0), ANY_GAME_CHOICE).port,
+            portOfGame(1));
 }
 
 /**
@@ -102,13 +112,14 @@ TEST(GameRegistry, SkipsAFullGame) {
   registry.record(*registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
                   statusWithPlayers(GameStatusState::WaitingForPlayers, 4));
 
-  EXPECT_EQ(registry.placeForNewPlayer(seatRequestOf(0)).kind, PlaceKind::Open);
+  EXPECT_EQ(registry.placeFor(seatRequestOf(0), ANY_GAME_CHOICE).kind,
+            PlaceKind::Open);
 }
 
 /**
  * Given eight games, all in progress
- * When a place is asked for a new player
- * Then it is full
+ * When a place is asked for a new player who takes any game
+ * Then it is refused: the server is full
  */
 TEST(GameRegistry, IsFullWhenEightGamesRunAndNoneHasAPlace) {
   GameRegistry registry;
@@ -120,7 +131,10 @@ TEST(GameRegistry, IsFullWhenEightGamesRunAndNoneHasAPlace) {
                     statusWithPlayers(GameStatusState::InProgress, 4));
   }
 
-  EXPECT_EQ(registry.placeForNewPlayer(seatRequestOf(0)).kind, PlaceKind::Full);
+  const GamePlace place = registry.placeFor(seatRequestOf(0), ANY_GAME_CHOICE);
+
+  EXPECT_EQ(place.kind, PlaceKind::Refuse);
+  EXPECT_EQ(place.refusal, RefusalReason::ServerFull);
 }
 
 /**
@@ -138,7 +152,8 @@ TEST(GameRegistry, StillOpensAGameWhenSevenRun) {
                     statusWithPlayers(GameStatusState::InProgress, 4));
   }
 
-  EXPECT_EQ(registry.placeForNewPlayer(seatRequestOf(0)).kind, PlaceKind::Open);
+  EXPECT_EQ(registry.placeFor(seatRequestOf(0), ANY_GAME_CHOICE).kind,
+            PlaceKind::Open);
 }
 
 /**
@@ -404,12 +419,13 @@ TEST(GameRegistry, CountsTheSeatsItGaveBeforeTheGameReportsThem) {
   registry.record(*registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
                   statusWithPlayers(GameStatusState::WaitingForPlayers, 0));
   for (std::size_t player = 0; player < FOUR_PLAYERS; ++player) {
-    ASSERT_EQ(registry.placeForNewPlayer(seatRequestOf(player)).kind,
+    ASSERT_EQ(registry.placeFor(seatRequestOf(player), ANY_GAME_CHOICE).kind,
               PlaceKind::Redirect);
   }
 
-  EXPECT_EQ(registry.placeForNewPlayer(seatRequestOf(FIFTH_PLAYER)).kind,
-            PlaceKind::Open);
+  EXPECT_EQ(
+      registry.placeFor(seatRequestOf(FIFTH_PLAYER), ANY_GAME_CHOICE).kind,
+      PlaceKind::Open);
 }
 
 /**
@@ -423,12 +439,13 @@ TEST(GameRegistry, CountsThePlayersToldToWaitForAGameThatStarts) {
   auto state = std::make_shared<RecordingChildState>();
   registry.open(openingOf(0, state));
   for (std::size_t player = 0; player < FOUR_PLAYERS; ++player) {
-    ASSERT_EQ(registry.placeForNewPlayer(seatRequestOf(player)).kind,
+    ASSERT_EQ(registry.placeFor(seatRequestOf(player), ANY_GAME_CHOICE).kind,
               PlaceKind::Wait);
   }
 
-  EXPECT_EQ(registry.placeForNewPlayer(seatRequestOf(FIFTH_PLAYER)).kind,
-            PlaceKind::Open);
+  EXPECT_EQ(
+      registry.placeFor(seatRequestOf(FIFTH_PLAYER), ANY_GAME_CHOICE).kind,
+      PlaceKind::Open);
 }
 
 /**
@@ -443,12 +460,12 @@ TEST(GameRegistry, GivesASenderThatAsksAgainNoSecondSeat) {
   registry.open(openingOf(0, state));
   registry.record(*registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
                   statusWithPlayers(GameStatusState::WaitingForPlayers, 0));
-  static_cast<void>(registry.placeForNewPlayer(seatRequestOf(0)));
-  static_cast<void>(registry.placeForNewPlayer(seatRequestOf(0)));
-  static_cast<void>(registry.placeForNewPlayer(seatRequestOf(1)));
-  static_cast<void>(registry.placeForNewPlayer(seatRequestOf(2)));
+  static_cast<void>(registry.placeFor(seatRequestOf(0), ANY_GAME_CHOICE));
+  static_cast<void>(registry.placeFor(seatRequestOf(0), ANY_GAME_CHOICE));
+  static_cast<void>(registry.placeFor(seatRequestOf(1), ANY_GAME_CHOICE));
+  static_cast<void>(registry.placeFor(seatRequestOf(2), ANY_GAME_CHOICE));
 
-  const auto place = registry.placeForNewPlayer(seatRequestOf(3));
+  const auto place = registry.placeFor(seatRequestOf(3), ANY_GAME_CHOICE);
 
   EXPECT_EQ(place.kind, PlaceKind::Redirect);
   EXPECT_EQ(place.port, portOfGame(0));
@@ -468,11 +485,13 @@ TEST(GameRegistry, SendsASenderThatAsksAgainToTheGameOfItsSeat) {
   registry.record(*registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
                   statusWithPlayers(GameStatusState::WaitingForPlayers, 0));
   for (std::size_t player = 0; player < FOUR_PLAYERS; ++player) {
-    static_cast<void>(registry.placeForNewPlayer(seatRequestOf(player)));
+    static_cast<void>(
+        registry.placeFor(seatRequestOf(player), ANY_GAME_CHOICE));
   }
   registry.open(openingOf(1, second));
 
-  EXPECT_EQ(registry.placeForNewPlayer(seatRequestOf(0)).port, portOfGame(0));
+  EXPECT_EQ(registry.placeFor(seatRequestOf(0), ANY_GAME_CHOICE).port,
+            portOfGame(0));
 }
 
 /**
@@ -487,13 +506,13 @@ TEST(GameRegistry, EndsTheSeatsOfThePlayersTheGameReports) {
   SupervisedGame& game = *registry.findByToken(tokenOfGame(0));
   registry.record(game, SEQUENCE_FOUR,
                   statusWithPlayers(GameStatusState::WaitingForPlayers, 0));
-  static_cast<void>(registry.placeForNewPlayer(seatRequestOf(0)));
-  static_cast<void>(registry.placeForNewPlayer(seatRequestOf(1)));
+  static_cast<void>(registry.placeFor(seatRequestOf(0), ANY_GAME_CHOICE));
+  static_cast<void>(registry.placeFor(seatRequestOf(1), ANY_GAME_CHOICE));
   registry.record(game, SEQUENCE_FIVE,
                   statusWithPlayers(GameStatusState::WaitingForPlayers, 2));
-  static_cast<void>(registry.placeForNewPlayer(seatRequestOf(2)));
+  static_cast<void>(registry.placeFor(seatRequestOf(2), ANY_GAME_CHOICE));
 
-  EXPECT_EQ(registry.placeForNewPlayer(seatRequestOf(3)).kind,
+  EXPECT_EQ(registry.placeFor(seatRequestOf(3), ANY_GAME_CHOICE).kind,
             PlaceKind::Redirect);
 }
 
@@ -511,14 +530,16 @@ TEST(GameRegistry, KeepsTheSeatsAStatusDoesNotNameThePlayersOf) {
   registry.record(game, SEQUENCE_FOUR,
                   statusWithPlayers(GameStatusState::WaitingForPlayers, 0));
   for (std::size_t player = 0; player < FOUR_PLAYERS; ++player) {
-    static_cast<void>(registry.placeForNewPlayer(seatRequestOf(player)));
+    static_cast<void>(
+        registry.placeFor(seatRequestOf(player), ANY_GAME_CHOICE));
   }
 
   registry.record(game, SEQUENCE_FIVE,
                   statusWithPlayers(GameStatusState::WaitingForPlayers, 0));
 
-  EXPECT_EQ(registry.placeForNewPlayer(seatRequestOf(FIFTH_PLAYER)).kind,
-            PlaceKind::Open);
+  EXPECT_EQ(
+      registry.placeFor(seatRequestOf(FIFTH_PLAYER), ANY_GAME_CHOICE).kind,
+      PlaceKind::Open);
 }
 
 /**
@@ -535,15 +556,17 @@ TEST(GameRegistry, ALateStatusEndsNoSeat) {
   registry.record(game, SEQUENCE_FIVE,
                   statusWithPlayers(GameStatusState::WaitingForPlayers, 0));
   for (std::size_t player = 0; player < FOUR_PLAYERS; ++player) {
-    static_cast<void>(registry.placeForNewPlayer(seatRequestOf(player)));
+    static_cast<void>(
+        registry.placeFor(seatRequestOf(player), ANY_GAME_CHOICE));
   }
 
   static_cast<void>(registry.record(
       game, SEQUENCE_FOUR,
       statusWithPlayers(GameStatusState::WaitingForPlayers, FOUR_PLAYERS)));
 
-  EXPECT_EQ(registry.placeForNewPlayer(seatRequestOf(FIFTH_PLAYER)).kind,
-            PlaceKind::Open);
+  EXPECT_EQ(
+      registry.placeFor(seatRequestOf(FIFTH_PLAYER), ANY_GAME_CHOICE).kind,
+      PlaceKind::Open);
 }
 
 /**
@@ -558,13 +581,15 @@ TEST(GameRegistry, FreesTheSeatsOfPlayersThatNeverCameAfterThreeSeconds) {
   registry.record(*registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
                   statusWithPlayers(GameStatusState::WaitingForPlayers, 0));
   for (std::size_t player = 0; player < FOUR_PLAYERS; ++player) {
-    static_cast<void>(registry.placeForNewPlayer(seatRequestOf(player)));
+    static_cast<void>(
+        registry.placeFor(seatRequestOf(player), ANY_GAME_CHOICE));
   }
 
   registry.terminateStale(THREE_SECONDS_TO_SIT);
 
-  EXPECT_EQ(registry.placeForNewPlayer(seatRequestOf(FIFTH_PLAYER)).kind,
-            PlaceKind::Redirect);
+  EXPECT_EQ(
+      registry.placeFor(seatRequestOf(FIFTH_PLAYER), ANY_GAME_CHOICE).kind,
+      PlaceKind::Redirect);
 }
 
 /**
@@ -579,13 +604,15 @@ TEST(GameRegistry, KeepsTheSeatsJustUnderThreeSeconds) {
   registry.record(*registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
                   statusWithPlayers(GameStatusState::WaitingForPlayers, 0));
   for (std::size_t player = 0; player < FOUR_PLAYERS; ++player) {
-    static_cast<void>(registry.placeForNewPlayer(seatRequestOf(player)));
+    static_cast<void>(
+        registry.placeFor(seatRequestOf(player), ANY_GAME_CHOICE));
   }
 
   registry.terminateStale(JUST_UNDER_THREE_SECONDS_TO_SIT);
 
-  EXPECT_EQ(registry.placeForNewPlayer(seatRequestOf(FIFTH_PLAYER)).kind,
-            PlaceKind::Open);
+  EXPECT_EQ(
+      registry.placeFor(seatRequestOf(FIFTH_PLAYER), ANY_GAME_CHOICE).kind,
+      PlaceKind::Open);
 }
 
 /**
@@ -601,14 +628,281 @@ TEST(GameRegistry, KeepsTheSeatOfANamesakeOfAPlayerSeated) {
   SupervisedGame& game = *registry.findByToken(tokenOfGame(0));
   registry.record(game, SEQUENCE_FOUR,
                   statusWithPlayers(GameStatusState::WaitingForPlayers, 1));
-  static_cast<void>(registry.placeForNewPlayer(
+  static_cast<void>(registry.placeFor(
       SeatRequest{.sender = supervisedPlayer(FIFTH_PLAYER),
-                  .nickname = std::string{SUPERVISED_NICKNAMES.front()}}));
-  static_cast<void>(registry.placeForNewPlayer(seatRequestOf(1)));
-  static_cast<void>(registry.placeForNewPlayer(seatRequestOf(2)));
+                  .nickname = std::string{SUPERVISED_NICKNAMES.front()}},
+      ANY_GAME_CHOICE));
+  static_cast<void>(registry.placeFor(seatRequestOf(1), ANY_GAME_CHOICE));
+  static_cast<void>(registry.placeFor(seatRequestOf(2), ANY_GAME_CHOICE));
 
   registry.record(game, SEQUENCE_FIVE,
                   statusWithPlayers(GameStatusState::WaitingForPlayers, 1));
 
-  EXPECT_EQ(registry.placeForNewPlayer(seatRequestOf(3)).kind, PlaceKind::Open);
+  EXPECT_EQ(registry.placeFor(seatRequestOf(3), ANY_GAME_CHOICE).kind,
+            PlaceKind::Open);
+}
+
+/**
+ * Given two games that wait for players, each with a free seat
+ * When a player asks for the game in the second place
+ * Then it is sent to that game, though the first one has a seat
+ */
+TEST(GameRegistry, SendsAPlayerToTheGameItNames) {
+  GameRegistry registry;
+  openReporting(registry, 0,
+                statusWithPlayers(GameStatusState::WaitingForPlayers, 1));
+  openReporting(registry, 1,
+                statusWithPlayers(GameStatusState::WaitingForPlayers, 1));
+
+  const GamePlace place =
+      registry.placeFor(seatRequestOf(0), choiceOfGame(SECOND_PLACE));
+
+  EXPECT_EQ(place.kind, PlaceKind::Redirect);
+  EXPECT_EQ(place.port, portOfGame(1));
+}
+
+/**
+ * Given a game that was just opened, nothing heard from it
+ * When a player asks for the game in its place
+ * Then the player waits for it
+ */
+TEST(GameRegistry, MakesAPlayerWaitForTheGameItNamesWhileItStarts) {
+  GameRegistry registry;
+  registry.open(openingOf(0, std::make_shared<RecordingChildState>()));
+
+  const GamePlace place =
+      registry.placeFor(seatRequestOf(0), choiceOfGame(FIRST_PLACE));
+
+  EXPECT_EQ(place.kind, PlaceKind::Wait);
+  EXPECT_EQ(place.port, portOfGame(0));
+}
+
+/**
+ * Given one game, in the first place
+ * When a player asks for the game in the second place
+ * Then it is refused: no such game
+ */
+TEST(GameRegistry, RefusesAGameNoGameHolds) {
+  GameRegistry registry;
+  openReporting(registry, 0,
+                statusWithPlayers(GameStatusState::WaitingForPlayers, 1));
+
+  const GamePlace place =
+      registry.placeFor(seatRequestOf(0), choiceOfGame(SECOND_PLACE));
+
+  EXPECT_EQ(place.kind, PlaceKind::Refuse);
+  EXPECT_EQ(place.refusal, RefusalReason::GameNotFound);
+}
+
+/**
+ * Given a game in progress with four players
+ * When a player asks for it
+ * Then it is refused because the game is in progress, not because it is
+ * full: its state is read before its seats
+ */
+TEST(GameRegistry, RefusesAGameInProgressBeforeCountingItsSeats) {
+  GameRegistry registry;
+  openReporting(registry, 0,
+                statusWithPlayers(GameStatusState::InProgress, FOUR_PLAYERS));
+
+  const GamePlace place =
+      registry.placeFor(seatRequestOf(0), choiceOfGame(FIRST_PLACE));
+
+  EXPECT_EQ(place.kind, PlaceKind::Refuse);
+  EXPECT_EQ(place.refusal, RefusalReason::GameInProgress);
+}
+
+/**
+ * Given a game that finished
+ * When a player asks for it
+ * Then it is refused because the game no longer waits for players
+ */
+TEST(GameRegistry, RefusesAGameThatFinished) {
+  GameRegistry registry;
+  openReporting(registry, 0, statusWithPlayers(GameStatusState::Finished, 1));
+
+  EXPECT_EQ(
+      registry.placeFor(seatRequestOf(0), choiceOfGame(FIRST_PLACE)).refusal,
+      RefusalReason::GameInProgress);
+}
+
+/**
+ * Given a game that waits with three players and a seat given to a fourth
+ * When a fifth player asks for that game
+ * Then it is refused as full: the seat held counts
+ */
+TEST(GameRegistry, RefusesAFullGameCountingTheSeatsItHolds) {
+  GameRegistry registry;
+  openReporting(registry, 0,
+                statusWithPlayers(GameStatusState::WaitingForPlayers, 3));
+  ASSERT_EQ(registry.placeFor(seatRequestOf(3), ANY_GAME_CHOICE).kind,
+            PlaceKind::Redirect);
+
+  const GamePlace place =
+      registry.placeFor(seatRequestOf(FIFTH_PLAYER), choiceOfGame(FIRST_PLACE));
+
+  EXPECT_EQ(place.kind, PlaceKind::Refuse);
+  EXPECT_EQ(place.refusal, RefusalReason::GameFull);
+}
+
+/**
+ * Given a game that waits with three players
+ * When a fourth player asks for it, then asks again
+ * Then both requests send it to that game: it holds the last seat
+ */
+TEST(GameRegistry, GivesTheLastSeatOfTheGameItNames) {
+  GameRegistry registry;
+  openReporting(registry, 0,
+                statusWithPlayers(GameStatusState::WaitingForPlayers, 3));
+
+  const GamePlace first =
+      registry.placeFor(seatRequestOf(3), choiceOfGame(FIRST_PLACE));
+  const GamePlace again =
+      registry.placeFor(seatRequestOf(3), choiceOfGame(FIRST_PLACE));
+
+  EXPECT_EQ(first.kind, PlaceKind::Redirect);
+  EXPECT_EQ(again.kind, PlaceKind::Redirect);
+}
+
+/**
+ * Given a game that waits for players and has free seats
+ * When a player asks for a new game
+ * Then a game must be opened for it
+ */
+TEST(GameRegistry, OpensANewGameEvenWhenAGameHasASeat) {
+  GameRegistry registry;
+  openReporting(registry, 0,
+                statusWithPlayers(GameStatusState::WaitingForPlayers, 1));
+
+  EXPECT_EQ(registry.placeFor(seatRequestOf(0), NEW_GAME_CHOICE).kind,
+            PlaceKind::Open);
+}
+
+/**
+ * Given a game opened for the new game of a player, nothing heard from it
+ * When the player asks for a new game again, twice
+ * Then it waits for that game each time: its requests open one game
+ */
+TEST(GameRegistry, SendsARepeatedNewGameToTheGameItOpened) {
+  GameRegistry registry;
+  registry.open(openingOf(0, std::make_shared<RecordingChildState>(),
+                          supervisedPlayer(0)));
+
+  const GamePlace first = registry.placeFor(seatRequestOf(0), NEW_GAME_CHOICE);
+  const GamePlace again = registry.placeFor(seatRequestOf(0), NEW_GAME_CHOICE);
+
+  EXPECT_EQ(first.kind, PlaceKind::Wait);
+  EXPECT_EQ(again.kind, PlaceKind::Wait);
+  EXPECT_EQ(again.port, portOfGame(0));
+}
+
+/**
+ * Given a game opened for the new game of a player, who holds a seat in it,
+ * and another player sent there for any game
+ * When the first player asks for a new game again
+ * Then it waits for the same game: the game it opened still holds its seat
+ */
+TEST(GameRegistry, KeepsTheCreatorInItsGameWhileItHoldsASeat) {
+  GameRegistry registry;
+  registry.open(openingOf(0, std::make_shared<RecordingChildState>(),
+                          supervisedPlayer(0)));
+  ASSERT_EQ(registry.placeFor(seatRequestOf(0), NEW_GAME_CHOICE).kind,
+            PlaceKind::Wait);
+  ASSERT_EQ(registry.placeFor(seatRequestOf(1), ANY_GAME_CHOICE).kind,
+            PlaceKind::Wait);
+
+  const GamePlace again = registry.placeFor(seatRequestOf(0), NEW_GAME_CHOICE);
+
+  EXPECT_EQ(again.kind, PlaceKind::Wait);
+  EXPECT_EQ(again.port, portOfGame(0));
+}
+
+/**
+ * Given a game opened for the new game of a player, in which another player
+ * sat down, the first one holding no seat
+ * When the first player asks for a new game again
+ * Then another game must be opened: somebody joined the one it opened
+ */
+TEST(GameRegistry, OpensAnotherGameOnceSomebodyJoined) {
+  GameRegistry registry;
+  registry.open(openingOf(0, std::make_shared<RecordingChildState>(),
+                          supervisedPlayer(0)));
+  registry.record(
+      *registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
+      GameStatus{.state = GameStatusState::WaitingForPlayers,
+                 .nicknames = {std::string{SUPERVISED_NICKNAMES[1]}},
+                 .measures = {}});
+
+  EXPECT_EQ(registry.placeFor(seatRequestOf(0), NEW_GAME_CHOICE).kind,
+            PlaceKind::Open);
+}
+
+/**
+ * Given a game opened for the new game of a player, who then sat down in it
+ * When the player asks for a new game again
+ * Then another game must be opened: the first one has its creator seated
+ */
+TEST(GameRegistry, OpensAnotherGameOnceTheCreatorSatDown) {
+  GameRegistry registry;
+  registry.open(openingOf(0, std::make_shared<RecordingChildState>(),
+                          supervisedPlayer(0)));
+  ASSERT_EQ(registry.placeFor(seatRequestOf(0), NEW_GAME_CHOICE).kind,
+            PlaceKind::Wait);
+  registry.record(*registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
+                  statusWithPlayers(GameStatusState::WaitingForPlayers, 1));
+
+  EXPECT_EQ(registry.placeFor(seatRequestOf(0), NEW_GAME_CHOICE).kind,
+            PlaceKind::Open);
+}
+
+/**
+ * Given a game opened for the new game of a player, that waits for players
+ * When another player asks for any game
+ * Then it is sent to that game: a game opened for a new game is open to all
+ */
+TEST(GameRegistry, SendsAnyGameToAGameOpenedForANewGame) {
+  GameRegistry registry;
+  registry.open(openingOf(0, std::make_shared<RecordingChildState>(),
+                          supervisedPlayer(0)));
+  registry.record(*registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
+                  statusWithPlayers(GameStatusState::WaitingForPlayers, 1));
+
+  const GamePlace place = registry.placeFor(seatRequestOf(1), ANY_GAME_CHOICE);
+
+  EXPECT_EQ(place.kind, PlaceKind::Redirect);
+  EXPECT_EQ(place.port, portOfGame(0));
+}
+
+/**
+ * Given eight games that wait for players, each with a free seat
+ * When a player asks for a new game
+ * Then it is refused: the server runs as many games as it may
+ */
+TEST(GameRegistry, RefusesANewGameWhenEightGamesRun) {
+  GameRegistry registry;
+  for (std::uint32_t number = 0; number < EIGHT_GAMES; ++number) {
+    openReporting(registry, number,
+                  statusWithPlayers(GameStatusState::WaitingForPlayers, 1));
+  }
+
+  const GamePlace place = registry.placeFor(seatRequestOf(0), NEW_GAME_CHOICE);
+
+  EXPECT_EQ(place.kind, PlaceKind::Refuse);
+  EXPECT_EQ(place.refusal, RefusalReason::ServerFull);
+}
+
+/**
+ * Given seven games that wait for players, each with a free seat
+ * When a player asks for a new game
+ * Then an eighth game may be opened for it
+ */
+TEST(GameRegistry, OpensANewGameWhenSevenGamesRun) {
+  GameRegistry registry;
+  for (std::uint32_t number = 0; number + 1 < EIGHT_GAMES; ++number) {
+    openReporting(registry, number,
+                  statusWithPlayers(GameStatusState::WaitingForPlayers, 1));
+  }
+
+  EXPECT_EQ(registry.placeFor(seatRequestOf(0), NEW_GAME_CHOICE).kind,
+            PlaceKind::Open);
 }

@@ -1,5 +1,5 @@
 ---
-title: 'Network protocol: version 8'
+title: 'Network protocol: version 9'
 description: The datagrams the client and the server exchange over UDP, byte by byte, and what each side does when one is lost or cannot be read.
 sidebar:
   label: Protocol
@@ -11,7 +11,7 @@ This page is the specification of the protocol the client and the server speak: 
 
 ## Status of this document
 
-- This is version 8 of the protocol. It is the only version the code speaks; [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7) and [Version 8](#version-8) say what each changed from the version before, and what the rest of the second part of the project will change.
+- This is version 9 of the protocol. It is the only version the code speaks; [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8) and [Version 9](#version-9) say what each changed from the version before, and what the rest of the second part of the project will change.
 - The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
 - Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
 - Numbers are decimal unless written `0x`. A size is in bytes.
@@ -48,7 +48,7 @@ A position is in logical units, in the frame described in [Architecture](/R-Type
 
 ## Datagram
 
-A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 8.
+A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 9.
 
 <ByteLayout
   label="The 22-byte header: protocolId on bytes 0 to 3, version on byte 4, flags on byte 5, sessionToken on bytes 6 to 13, sequence on bytes 14 and 15, acknowledgedSequence on bytes 16 and 17, acknowledgementBits on bytes 18 to 21."
@@ -71,7 +71,7 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
   ]}
 />
 
-| Offset | Size | Field | In version 8 |
+| Offset | Size | Field | In version 9 |
 |---|---|---|---|
 | 0 | 4 | `protocolId` | `0x52545950`, `RTYP` in ASCII |
 | 4 | 1 | `version` | 5 |
@@ -101,7 +101,7 @@ A received datagram goes through these checks in order. No buffer is sized from 
 |---|---|
 | The datagram holds 25 to 1200 bytes | dropped |
 | `protocolId` is `RTYP` | dropped |
-| `version` is 8 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
+| `version` is 9 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
 | `COMPRESSED` is set | the server drops the datagram; the client decodes the body and clears the flag, or drops the datagram when it cannot (see [Compression](#compression)) |
 | `flags` has no bit but `ACKNOWLEDGES` and `GUARANTEED`, once `COMPRESSED` is cleared | dropped |
 | The message sizes add up exactly to the end of the datagram | dropped |
@@ -113,7 +113,7 @@ A received datagram goes through these checks in order. No buffer is sized from 
 
 The token is checked before the sequence, so a forged datagram never moves the counter. The server reads the acknowledgements of a datagram only once it passed every check above, so a forged or replayed datagram acknowledges nothing. A datagram dropped for its sequence is not heard from the peer: it does not restart the silence count of [A session](#a-session).
 
-The server measures the loss rate of each player from the gaps in `sequence`. Each datagram it accepts counts as received, and the sequences it skips over count as lost; every 100 datagrams counted, received or lost, it takes the share lost as the loss rate of that player and starts counting again. A datagram that arrives late and is dropped stays counted as lost. Nothing is added to the wire. The server never sends a sender that did not prove its address more bytes than the datagram it answers, so a forged source address cannot turn it into an amplifier: a `ConnectionRequest` holds at least 35 bytes, and every answer to a request without a valid cookie at most 33 (`ConnectionChallenge`). Only a request with a valid cookie gets a `ConnectionAccepted`, which may be larger (see [Connection](#connection)). A `ServerInformationRequest` is padded to 106 bytes, and its answer holds at most 106 (see [Server information](#server-information)); a `MasterProbe` gets no answer (see [Probe of the master](#probe-of-the-master)). A client that receives a datagram of another version decodes nothing in it. While it connects to the server that sent it, it ends the attempt and reports both version numbers to the player: its own, and the one at offset 4; within a session it drops it, so a datagram forged with the address of the server cannot end the session.
+The server measures the loss rate of each player from the gaps in `sequence`. Each datagram it accepts counts as received, and the sequences it skips over count as lost; every 100 datagrams counted, received or lost, it takes the share lost as the loss rate of that player and starts counting again. A datagram that arrives late and is dropped stays counted as lost. Nothing is added to the wire. The server never sends a sender that did not prove its address more bytes than the datagram it answers, so a forged source address cannot turn it into an amplifier: a `ConnectionRequest` holds at least 38 bytes, and every answer to a request without a valid cookie at most 33 (`ConnectionChallenge`). Only a request with a valid cookie gets a `ConnectionAccepted`, which may be larger (see [Connection](#connection)). A `ServerInformationRequest` is padded to 106 bytes, and its answer holds at most 106 (see [Server information](#server-information)); a `MasterProbe` gets no answer (see [Probe of the master](#probe-of-the-master)). A client that receives a datagram of another version decodes nothing in it. While it connects to the server that sent it, it ends the attempt and reports both version numbers to the player: its own, and the one at offset 4; within a session it drops it, so a datagram forged with the address of the server cannot end the session.
 
 ## Messages
 
@@ -123,7 +123,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 
 | Type | Message | Payload | Sent |
 |---|---|---|---|
-| 1 | `ConnectionRequest` | `cookie` `u64` (0 until the server gives one), `nickname` `string` (1 to 16 bytes) | every 500 ms until an answer; the client gives up after 5 s |
+| 1 | `ConnectionRequest` | `cookie` `u64` (0 until the server gives one), `nickname` `string` (1 to 16 bytes), `kind` `u8`: 1 `AnyGame`, 2 `ExistingGame`, 3 `NewGame`, then `number` `u16`, the game asked for (see [Supervisor](#supervisor)) | every 500 ms until an answer; the client gives up after 5 s |
 | 4 | `Disconnection` | none | when the player closes the client, three times 50 ms apart |
 | 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32`, `ticks` `bool` (always 0), `tick` `u32` (always 0) (see [Round trip](#round-trip) and [Clock of the server](#clock-of-the-server)) | every 500 ms, whatever else it sends; the client also 40 ms after accepting a datagram that holds guaranteed messages when nothing else was sent |
 | 6 | `ReadyState` | `ready` `bool` | when the player changes it, and again while `LobbyState` shows another value |
@@ -138,7 +138,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | Type | Message | Payload | Sent |
 |---|---|---|---|
 | 2 | `ConnectionAccepted` | `playerNumber` `u8` (1 to 4), `typeCount` `u8` (1 to 32), then per type `side` `u8`: 1 `Player`, 2 `Enemy`, 3 `PlayerMissile`, 4 `EnemyMissile`, and `name` `string` (1 to 24 bytes); see [Entity types](#entity-types) | in answer to a request with a valid cookie; its header carries the session token; to a connected player, again at most once per 250 ms |
-| 3 | `ConnectionRefused` | `reason` `u8`: 1 `GameFull`, 2 `GameInProgress`, 3 `IncompatibleVersion`, 4 `NicknameTaken` | in answer to a request |
+| 3 | `ConnectionRefused` | `reason` `u8`: 1 `GameFull`, 2 `GameInProgress`, 3 `IncompatibleVersion`, 4 `NicknameTaken`, 5 `GameNotFound`, 6 `ServerFull` | in answer to a request |
 | 4 | `Disconnection` | none | when the server shuts down, three times 50 ms apart |
 | 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32`, `ticks` `bool`, `tick` `u32` (see [Round trip](#round-trip) and [Clock of the server](#clock-of-the-server)) | every 500 ms, whatever else it sends; `ticks` is 1 only while a game is in progress |
 | 7 | `LobbyState` | `playerCount` `u8`, then per player `playerNumber` `u8`, `ready` `bool`, `nickname` `string` | on every change, and at least every 500 ms while no game runs |
@@ -164,7 +164,7 @@ A message is accepted only when its payload has exactly the size its fields add 
 
 | Message | Rule |
 |---|---|
-| `ConnectionRequest` | the nickname follows the rules of [Connection](#connection): 1 to 16 bytes of valid UTF-8, no control character |
+| `ConnectionRequest` | the nickname follows the rules of [Connection](#connection): 1 to 16 bytes of valid UTF-8, no control character; `kind` is 1 to 3; `number` is 1 to 65535 with `ExistingGame`, and 0 with `AnyGame` and `NewGame` |
 | `ConnectionAccepted` | `playerNumber` is 1 to 4; `typeCount` is 1 to 32, checked before any type is read; each `side` is 1 to 4; each `name` is 1 to 24 bytes of lowercase ASCII letters, digits and underscores |
 | `LobbyState` | at most 4 players, each `playerNumber` 1 to 4 and listed once, each nickname valid as above |
 | `GameEnded` | `outcome` is 1 or 2; at most 4 players, each `playerNumber` 1 to 4 and listed once |
@@ -230,13 +230,13 @@ The server answers nothing over UDP. It keeps the token of a probe whose `secret
 
 ### Connection
 
-A connection takes two round trips, so that a forged address never gets a player slot. The client sends `ConnectionRequest` with `cookie` 0; the server answers `ConnectionChallenge` with a cookie and keeps nothing. The client sends its request again with that cookie, and only then does the server give a slot, a token and the [entity types](#entity-types) of the server. The cookie only reaches the real owner of the address, so whoever forges the address cannot send it back. A request with a wrong or expired cookie gets a new challenge; a refusal (`GameFull`, `GameInProgress`, `NicknameTaken`, `IncompatibleVersion`) may be sent at once, since it reserves nothing.
+A connection takes two round trips, so that a forged address never gets a player slot. The client sends `ConnectionRequest` with `cookie` 0; the server answers `ConnectionChallenge` with a cookie and keeps nothing. The client sends its request again with that cookie, and only then does the server give a slot, a token and the [entity types](#entity-types) of the server. The cookie only reaches the real owner of the address, so whoever forges the address cannot send it back. A request with a wrong or expired cookie gets a new challenge; a refusal (`GameFull`, `GameInProgress`, `NicknameTaken`, `IncompatibleVersion`, `GameNotFound`, `ServerFull`) may be sent at once, since it reserves nothing.
 
 How the server computes the cookie is its own business, as long as it keeps nothing per request and nobody can guess it: a keyed hash of the address, the port and the current 10-second window, with a secret drawn when the server starts, accepted during its window and the next one, does both.
 
 A player keeps the number given by `ConnectionAccepted` until it leaves; the number also picks the color of the player, so no color travels. The nickname travels only in `ConnectionRequest` and `LobbyState`, never during a game. Its limit is 16 bytes, not 16 characters: a letter without accent takes 1 byte, an accented letter 2 and some symbols up to 4, so each accent leaves room for one letter less. The text field of the client counts bytes and refuses a character that would not fit whole; the server drops a request whose nickname is empty, longer than 16 bytes, not valid UTF-8 or holds a control character, U+0000 to U+001F or U+007F, so a nickname can never start a line of its own in a log. The server answers a `ConnectionRequest` with a valid cookie from a sender it already accepted with the same `ConnectionAccepted` again, same number, same token and same table, at most once per 250 ms per player (half the 500 ms between two requests, so a request whose acceptance was lost is not held back because it crossed the network faster than the one before); the requests in between get nothing.
 
-A sender that did not prove its address, that is whose request carries no valid cookie, never gets more bytes than it sent: a challenge (33 bytes) is smaller than the smallest request (35), and so is a refusal (26). Only a request with a valid cookie gets a `ConnectionAccepted`, which carries the table of the entity types and may reach 859 bytes: the cookie went to the address the request came from, so the acceptance goes to an address that proved it receives the datagrams of the server. QUIC lifts its own limit on what it sends an address once it has validated that address the same way (RFC 9000, section 8). Whoever sees the traffic of a player and replays its cookie gets at most four acceptances per second sent to that player, for the 20 s at most that the cookie stays valid.
+A sender that did not prove its address, that is whose request carries no valid cookie, never gets more bytes than it sent: a challenge (33 bytes) is smaller than the smallest request (38), and so is a refusal (26). Only a request with a valid cookie gets a `ConnectionAccepted`, which carries the table of the entity types and may reach 859 bytes: the cookie went to the address the request came from, so the acceptance goes to an address that proved it receives the datagrams of the server. QUIC lifts its own limit on what it sends an address once it has validated that address the same way (RFC 9000, section 8). Whoever sees the traffic of a player and replays its cookie gets at most four acceptances per second sent to that player, for the 20 s at most that the cookie stays valid.
 
 A nickname is unique on the server: a request whose nickname a player already holds is refused with `NicknameTaken`, before the cookie is checked. Letters of the ASCII alphabet compare without regard to case (`Ace` and `ACE` are the same nickname), every other byte compares as it is, so `É` and `é` are two nicknames. A player whose seat is held (see [A session](#a-session)) still holds its nickname; it is free again once the seat is. A sender already accepted is not refused as a duplicate of itself.
 
@@ -459,13 +459,25 @@ This section gathers what each side does when something goes wrong, from a datag
 
 ### Supervisor
 
-A supervisor (`r-type_server`, or `--mode supervisor`) starts a game process (`--mode game`) per game and sends each player to one. Three messages carry it. The datagram of a `ConnectionRedirect` is 27 bytes, never more than the 35 bytes of the smallest `ConnectionRequest` it answers, so it adds no amplification.
+A supervisor (`r-type_server`, or `--mode supervisor`) starts a game process (`--mode game`) per game and sends each player to one. Three messages carry it. The datagram of a `ConnectionRedirect` is 27 bytes, never more than the 38 bytes of the smallest `ConnectionRequest` it answers, so it adds no amplification.
 
 | Type | Message | Payload | Sent |
 |---|---|---|---|
 | 26 | `ConnectionRedirect` | `port` `u16` (1 to 65535) | supervisor to player, in answer to a request with a valid cookie |
 | 27 | `GameStatus` | `state` `u8`: 1 waiting for players, 2 in progress, 3 finished; `nicknameCount` `u8` (0 to 4), then each `nickname` `string`, in the order of the player numbers; `measures` `u8`, one bit per measure that follows; then each measure the bits announce, a `u32` in microseconds, in the order of the bits: bit 0 the median duration of a tick, bit 1 its 95th percentile, bit 2 the mean round trip to the players | game process to supervisor, every second and when any field changes |
 | 28 | `GameStatusAcknowledged` | none | supervisor to game process, in answer to each `GameStatus` |
+
+#### Creating, joining and leaving a game
+
+A player says which game it wants in every `ConnectionRequest` it sends, the ones after a redirect included: `AnyGame` (number 0), whatever game has a free seat; `ExistingGame` with the number of a game, as the master lists them (`GAME 1` is number 1); or `NewGame` (number 0), a game of its own. Only a request with a valid cookie is placed, so a forged address opens nothing. The supervisor counts the seats of a game as its players plus the seats it already gave to players it sent there (see [Server](/R-Type/server/#supervisor-and-game-processes)), and a game still starting counts as one that waits for players: the player then gets no answer until the game reported, and asks again 500 ms later.
+
+| The request asks for | The supervisor |
+|---|---|
+| `AnyGame` | sends the player to the game that already holds its seat, else to the first game that waits for players and has a free seat, a game opened for a `NewGame` included; else starts a game while fewer than 8 run; else refuses with `ServerFull` |
+| `NewGame` | sends the player to the game its own `NewGame` opened, while that game waits for players and the player still holds its seat there or nobody else came, so a request repeated every 500 ms opens one game; else starts a game while fewer than 8 run; else refuses with `ServerFull` |
+| `ExistingGame` | refuses with `GameNotFound` when no game has that number, with `GameInProgress` when it is in progress or finished, then with `GameFull` when it has no free seat and none held for the player; else sends the player to it |
+
+A game opened for a `NewGame` belongs to nobody: any player may join it, and it starts as every game does, when all its connected players are ready (see [A session](#a-session)). Leaving a game is the `Disconnection` the player sends three times (see [A peer disappears](#a-peer-disappears)): nothing else is needed, and a game nobody joined ends on its own. The supervisor does no matchmaking: it never weighs players, pings or levels, it only fills seats in order. A game process reads the choice of a request and ignores it, since the supervisor already chose its game.
 
 A client that receives a `ConnectionRedirect` while it connects, and only the first one of an attempt, to a port other than the one it uses, sends its next request to that port with the cookie back at 0: the game draws its own cookies. The 5 s of the attempt do not restart. In any other state it ignores the message. Between the supervisor and a game process, the header carries the link token as `sessionToken`, and `sequence` orders the statuses.
 
@@ -505,6 +517,8 @@ A message that is valid but means nothing in the current state of its receiver c
 | `ConnectionRefused` (`GameFull`) | stops sending requests | that the game is full |
 | `ConnectionRefused` (`GameInProgress`) | stops sending requests | that a game is in progress |
 | `ConnectionRefused` (`NicknameTaken`) | stops sending requests | that the callsign is taken |
+| `ConnectionRefused` (`GameNotFound`), from a supervisor: the request named a game it does not run | stops sending requests | that no such game exists |
+| `ConnectionRefused` (`ServerFull`), from a supervisor: 8 games run, and none has a seat for an `AnyGame`, or a `NewGame` needs a ninth | stops sending requests | that the server is full |
 | `ConnectionRefused` (`IncompatibleVersion`) | stops sending requests | both version numbers |
 | `ConnectionAccepted` whose table names a type the client has no sheet for | opens no session, sends its `Disconnection` three times with the token of the acceptance, and stops sending requests | the first such name, and how many more |
 | A request the server drops, such as one with an invalid nickname | gets no answer, so it ends as unreachable after 5 s | that the server is unreachable |
@@ -625,7 +639,11 @@ Version 7 sends `EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` i
 
 Version 8 makes a `GameStatus` say who plays the game and what its process measured: the nicknames of its players and up to three measures replace `playerCount` (see [Supervisor](#supervisor)). The supervisor reads from them the list of games it gives the master and the measures of the server, and counts the players and the free seats it answers an information request with, so a game process never talks to the master. A measure the process has not taken, before its first metrics report or without its metrics module, is left out, never sent as 0. A supervisor of version 7 would refuse every status of a game of version 8, whose bytes go on past `playerCount`, so `version` became 8, and the server answers a client of version 7 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same.
 
-`MasterProbe` (type 29) did not change `version` either: a server of version 8 that does not know it drops it the same way, sends no token back, and the master lists it as unreachable.
+## Version 9
+
+Version 9 lets a player create or join a game: `ConnectionRequest` carries `kind` and `number` after the nickname, and `ConnectionRefused` gains `GameNotFound` (5) and `ServerFull` (6) (see [Supervisor](#supervisor)). A supervisor now refuses an `AnyGame` with `ServerFull` where it answered `GameFull` when its 8 games ran full. The smallest request grows from 35 to 38 bytes, which keeps every answer to a sender that did not prove its address smaller than it. A server of version 8 would refuse every request of version 9 as having bytes after its nickname, so `version` became 9, and the server answers a client of version 8 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same.
+
+`MasterProbe` (type 29) did not change `version`: a server of version 9 that does not know it drops it as a datagram from a sender that was not admitted and holds no connection request, sends no token back, and the master lists it as unreachable.
 
 ## Implementation status
 

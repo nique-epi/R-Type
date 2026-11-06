@@ -30,6 +30,10 @@ constexpr rtype::engine::Duration THREE_SECONDS_TO_STOP =
 constexpr std::uint16_t FIRST_PLACE = 1;
 constexpr std::uint16_t SECOND_PLACE = 2;
 
+/** @brief How many times a client repeats its request in the tests of a new
+ * game: once every 500 ms, for a game that starts. */
+constexpr std::size_t REPEATED_REQUESTS = 3;
+
 /** @brief Three games, so the number the fourth one opened gets. */
 constexpr std::uint32_t THREE_GAMES = 3;
 

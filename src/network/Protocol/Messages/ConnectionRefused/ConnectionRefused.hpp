@@ -18,6 +18,10 @@ enum class RefusalReason : std::uint8_t {
   GameInProgress = 2,
   IncompatibleVersion = 3,
   NicknameTaken = 4,
+  /** @brief The request named a game the server does not run. */
+  GameNotFound = 5,
+  /** @brief The server runs as many games as it may, and none has a seat. */
+  ServerFull = 6,
 };
 
 /**

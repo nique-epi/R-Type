@@ -17,6 +17,7 @@ target_link_libraries(rtype_client_screen_registry
     rtype_client_entity_messages
     rtype_client_exceptions
     rtype_client_interface
+    rtype_client_launch_options
     rtype_client_menu
     rtype_client_pilots
     rtype_client_scrolling_background

@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 #include "AttemptProgress.hpp"
+#include "ConnectionRequest.hpp"
 #include "ISessionOutbox.hpp"
 #include "TimeConstants.hpp"
 
@@ -20,9 +21,10 @@ namespace rtype::client {
  */
 class ConnectionAttempt {
  public:
-  /** @brief Starts a new attempt as @p nickname: no cookie yet, no time
+  /** @brief Starts a new attempt as @p nickname, asking for @p game in every
+   * request, the ones after a redirect included: no cookie yet, no time
    * elapsed. Sends nothing. */
-  void begin(std::string_view nickname);
+  void begin(std::string_view nickname, const network::GameChoice& game);
 
   /**
    * @brief Sends the request, with the cookie if there is one, and starts the
@@ -59,6 +61,7 @@ class ConnectionAttempt {
 
  private:
   std::string nickname_;
+  network::GameChoice game_{network::ANY_GAME_CHOICE};
   std::uint64_t cookie_{0};
   bool redirected_{false};
   engine::Duration sinceRequest_{};

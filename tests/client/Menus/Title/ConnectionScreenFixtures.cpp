@@ -8,6 +8,7 @@
 
 using rtype::client::ServerChoice;
 using rtype::client::testing::LAUNCH_ADDRESS;
+using rtype::client::testing::LAUNCH_GAME;
 using rtype::client::testing::LAUNCH_NICKNAME;
 using rtype::client::testing::LAUNCH_PORT;
 using rtype::network::Endpoint;
@@ -26,5 +27,6 @@ std::vector<ServerConnectionCall> connectAttemptsOf(
 ServerChoice launchChoice() {
   return ServerChoice{.server = Endpoint{.address = std::string(LAUNCH_ADDRESS),
                                          .port = LAUNCH_PORT},
-                      .nickname = std::string(LAUNCH_NICKNAME)};
+                      .nickname = std::string(LAUNCH_NICKNAME),
+                      .game = LAUNCH_GAME};
 }

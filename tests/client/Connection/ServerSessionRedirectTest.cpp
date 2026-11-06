@@ -16,6 +16,7 @@ using testing::AFTER_THE_REDIRECT;
 using testing::BEFORE_THE_REDIRECT;
 using testing::CHALLENGE_COOKIE;
 using testing::GAME_PORT;
+using testing::NAMED_GAME_NUMBER;
 using testing::OTHER_GAME_PORT;
 using testing::server;
 using testing::ServerSessionFixture;
@@ -129,6 +130,35 @@ TEST_F(ServerSessionFixture, FollowsARedirectOfTheNextAttempt) {
   update();
 
   EXPECT_EQ(listenedTo().value_or(server()).port, OTHER_GAME_PORT);
+}
+
+/**
+ * Given a connection with no attempt
+ * When it connects to a server asking for game 3
+ * Then the request it sends at once asks for game 3
+ */
+TEST_F(ServerSessionFixture, SendsTheGameItAsksFor) {
+  const network::GameChoice game{.kind = network::GameChoiceKind::ExistingGame,
+                                 .number = NAMED_GAME_NUMBER};
+
+  connect(game);
+
+  EXPECT_EQ(lastRequest().game, game);
+}
+
+/**
+ * Given an attempt that asks for a new game
+ * When the supervisor redirects it to a game port
+ * Then the request it sends there still asks for a new game
+ */
+TEST_F(ServerSessionFixture, KeepsTheGameItAsksForAfterARedirect) {
+  connect(network::NEW_GAME_CHOICE);
+
+  deliver(network::ConnectionRedirect{.port = GAME_PORT});
+  update();
+
+  EXPECT_EQ(sent().back().destination.port, GAME_PORT);
+  EXPECT_EQ(lastRequest().game, network::NEW_GAME_CHOICE);
 }
 
 }  // namespace rtype::client

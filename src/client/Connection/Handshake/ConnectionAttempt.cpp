@@ -10,16 +10,19 @@
 
 namespace rtype::client {
 
-void ConnectionAttempt::begin(std::string_view nickname) {
+void ConnectionAttempt::begin(std::string_view nickname,
+                              const network::GameChoice& game) {
   nickname_ = nickname;
+  game_ = game;
   cookie_ = 0;
   redirected_ = false;
   sinceBegin_ = engine::Duration::zero();
 }
 
 void ConnectionAttempt::sendRequest(ISessionOutbox& outbox) {
-  sendMessage(outbox, network::ConnectionRequest{.cookie = cookie_,
-                                                 .nickname = nickname_});
+  sendMessage(outbox,
+              network::ConnectionRequest{
+                  .cookie = cookie_, .nickname = nickname_, .game = game_});
   sinceRequest_ = engine::Duration::zero();
 }
 

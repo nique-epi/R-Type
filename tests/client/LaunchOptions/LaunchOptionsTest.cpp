@@ -6,12 +6,14 @@
 #include "AudioMode.hpp"
 #include "ClientConstants.hpp"
 #include "ClientException.hpp"
+#include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
 #include "EngineException.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"
 #include "LaunchOptionsTestConstants.hpp"
 #include "LogLaunchOptionsFixture.hpp"
+#include "LogLevel.hpp"
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
 #include "LoggingOptionTestConstants.hpp"
@@ -25,6 +27,8 @@
 using rtype::client::ADDRESS_OPTION;
 using rtype::client::AudioMode;
 using rtype::client::DEFAULT_SERVER_ADDRESS;
+using rtype::client::GAME_OPTION;
+using rtype::client::InvalidGameOptionException;
 using rtype::client::InvalidNicknameOptionException;
 using rtype::client::LaunchOptions;
 using rtype::client::NICKNAME_OPTION;
@@ -57,7 +61,7 @@ using Lines = std::vector<std::string>;
 TEST(ClientLaunchOptions, NoArgumentGivesTheDefaultServer) {
   const LaunchOptions options = LaunchOptions::read(Arguments{});
 
-  EXPECT_EQ(options.serverEndpoint(),
+  EXPECT_EQ(options.serverChoice().server,
             (Endpoint{.address = std::string(DEFAULT_SERVER_ADDRESS),
                       .port = DEFAULT_SERVER_PORT}));
 }
@@ -82,7 +86,7 @@ TEST(ClientLaunchOptions, AddressOptionSetsTheAddress) {
   const LaunchOptions options =
       LaunchOptions::read(Arguments{ADDRESS_OPTION, ADDRESS_ARGUMENT});
 
-  EXPECT_EQ(options.serverEndpoint(),
+  EXPECT_EQ(options.serverChoice().server,
             (Endpoint{.address = std::string(ADDRESS_ARGUMENT),
                       .port = DEFAULT_SERVER_PORT}));
 }
@@ -96,7 +100,7 @@ TEST(ClientLaunchOptions, PortOptionSetsThePort) {
   const LaunchOptions options =
       LaunchOptions::read(Arguments{PORT_OPTION, PORT_ARGUMENT});
 
-  EXPECT_EQ(options.serverEndpoint(),
+  EXPECT_EQ(options.serverChoice().server,
             (Endpoint{.address = std::string(DEFAULT_SERVER_ADDRESS),
                       .port = PORT_OF_PORT_ARGUMENT}));
 }
@@ -110,7 +114,7 @@ TEST(ClientLaunchOptions, AddressAndPortCanComeInAnyOrder) {
   const LaunchOptions options = LaunchOptions::read(
       Arguments{PORT_OPTION, PORT_ARGUMENT, ADDRESS_OPTION, ADDRESS_ARGUMENT});
 
-  EXPECT_EQ(options.serverEndpoint(),
+  EXPECT_EQ(options.serverChoice().server,
             (Endpoint{.address = std::string(ADDRESS_ARGUMENT),
                       .port = PORT_OF_PORT_ARGUMENT}));
 }
@@ -125,7 +129,7 @@ TEST(ClientLaunchOptions, LastAddressOptionWins) {
       LaunchOptions::read(Arguments{ADDRESS_OPTION, ADDRESS_ARGUMENT,
                                     ADDRESS_OPTION, OTHER_ADDRESS_ARGUMENT});
 
-  EXPECT_EQ(options.serverEndpoint().address,
+  EXPECT_EQ(options.serverChoice().server.address,
             std::string(OTHER_ADDRESS_ARGUMENT));
 }
 
@@ -138,7 +142,7 @@ TEST(ClientLaunchOptions, LastPortOptionWins) {
   const LaunchOptions options = LaunchOptions::read(
       Arguments{PORT_OPTION, PORT_ARGUMENT, PORT_OPTION, OTHER_PORT_ARGUMENT});
 
-  EXPECT_EQ(options.serverEndpoint().port, PORT_OF_OTHER_PORT_ARGUMENT);
+  EXPECT_EQ(options.serverChoice().server.port, PORT_OF_OTHER_PORT_ARGUMENT);
 }
 
 /**
@@ -248,7 +252,8 @@ TEST(ClientLaunchOptions, NoSoundOptionLeavesTheOtherOptionsAlone) {
   const LaunchOptions options = LaunchOptions::read(
       Arguments{NO_SOUND_OPTION, ADDRESS_OPTION, ADDRESS_ARGUMENT});
 
-  EXPECT_EQ(options.serverEndpoint().address, std::string(ADDRESS_ARGUMENT));
+  EXPECT_EQ(options.serverChoice().server.address,
+            std::string(ADDRESS_ARGUMENT));
 }
 
 /**
@@ -260,10 +265,10 @@ TEST(ClientLaunchOptions, UsageNamesEveryOption) {
   const std::string usage = LaunchOptions::usage();
 
   for (const std::string_view option :
-       {ADDRESS_OPTION, PORT_OPTION, NICKNAME_OPTION, NO_SOUND_OPTION,
-        HELP_OPTION, rtype::logging::LEVEL_OPTION, rtype::logging::FILE_OPTION,
-        rtype::logging::NO_FILE_OPTION, rtype::logging::STDERR_OPTION,
-        rtype::logging::NO_STDERR_OPTION}) {
+       {ADDRESS_OPTION, PORT_OPTION, NICKNAME_OPTION, GAME_OPTION,
+        NO_SOUND_OPTION, HELP_OPTION, rtype::logging::LEVEL_OPTION,
+        rtype::logging::FILE_OPTION, rtype::logging::NO_FILE_OPTION,
+        rtype::logging::STDERR_OPTION, rtype::logging::NO_STDERR_OPTION}) {
     SCOPED_TRACE(option);
     EXPECT_NE(usage.find("\n  " + std::string(option)), std::string::npos);
   }
@@ -296,7 +301,7 @@ TEST(ClientLaunchOptions, UsageGivesTheDefaultPort) {
 TEST(ClientLaunchOptions, NoArgumentGivesTheDefaultNickname) {
   const LaunchOptions options = LaunchOptions::read(Arguments{});
 
-  EXPECT_EQ(options.nickname(), NICKNAME_WHEN_NONE_IS_GIVEN);
+  EXPECT_EQ(options.serverChoice().nickname, NICKNAME_WHEN_NONE_IS_GIVEN);
 }
 
 /**
@@ -308,7 +313,7 @@ TEST(ClientLaunchOptions, NicknameOptionSetsTheNickname) {
   const LaunchOptions options =
       LaunchOptions::read(Arguments{NICKNAME_OPTION, NICKNAME_ARGUMENT});
 
-  EXPECT_EQ(options.nickname(), NICKNAME_ARGUMENT);
+  EXPECT_EQ(options.serverChoice().nickname, NICKNAME_ARGUMENT);
 }
 
 /**
@@ -321,7 +326,7 @@ TEST(ClientLaunchOptions, LastNicknameOptionWins) {
       LaunchOptions::read(Arguments{NICKNAME_OPTION, NICKNAME_ARGUMENT,
                                     NICKNAME_OPTION, OTHER_NICKNAME_ARGUMENT});
 
-  EXPECT_EQ(options.nickname(), OTHER_NICKNAME_ARGUMENT);
+  EXPECT_EQ(options.serverChoice().nickname, OTHER_NICKNAME_ARGUMENT);
 }
 
 /**
@@ -450,7 +455,7 @@ TEST(ClientLaunchOptions, ReadsTheNetworkSimulatorOptionsBesideItsOwn) {
   const LaunchOptions options = LaunchOptions::read(Arguments{
       ADDRESS_OPTION, ADDRESS_ARGUMENT, LAG_OPTION_TEXT, LAG_ARGUMENT});
 
-  EXPECT_EQ(options.serverEndpoint().address, ADDRESS_ARGUMENT);
+  EXPECT_EQ(options.serverChoice().server.address, ADDRESS_ARGUMENT);
   EXPECT_EQ(options.networkConditions(), LAG_OF_LAG_ARGUMENT);
 }
 
@@ -544,7 +549,7 @@ TEST(ClientLaunchOptions, NicknameOptionTakesALoggingFlagAsTheNickname) {
   const LaunchOptions options =
       LaunchOptions::read(Arguments{NICKNAME_OPTION, NO_FILE_OPTION});
 
-  EXPECT_EQ(options.nickname(), NO_FILE_OPTION);
+  EXPECT_EQ(options.serverChoice().nickname, NO_FILE_OPTION);
 }
 
 /**
@@ -560,7 +565,7 @@ TEST_F(LogLaunchOptionsFixture, ClientReadsTheLoggingOptionsBesideItsOwn) {
 
   options.logOptions().apply();
 
-  EXPECT_EQ(options.serverEndpoint().port, PORT_OF_PORT_ARGUMENT);
+  EXPECT_EQ(options.serverChoice().server.port, PORT_OF_PORT_ARGUMENT);
   EXPECT_EQ(Logger::level(), LogLevel::Debug);
 }
 
@@ -604,4 +609,75 @@ TEST(ClientLaunchOptions, TrafficOptionGivesTheFile) {
  */
 TEST(ClientLaunchOptions, UsageListsTheTrafficOption) {
   EXPECT_NE(LaunchOptions::usage().find(TRAFFIC_CSV_OPTION), std::string::npos);
+}
+
+/**
+ * Given no argument
+ * When the launch options are read
+ * Then the client asks for any game
+ */
+TEST(ClientLaunchOptions, NoArgumentAsksForAnyGame) {
+  const LaunchOptions options = LaunchOptions::read(Arguments{});
+
+  EXPECT_EQ(options.serverChoice().game, rtype::network::ANY_GAME_CHOICE);
+}
+
+/**
+ * Given the game option and the value new
+ * When the launch options are read
+ * Then the client asks for a new game
+ */
+TEST(ClientLaunchOptions, GameOptionNewAsksForANewGame) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{GAME_OPTION, NEW_GAME_ARGUMENT});
+
+  EXPECT_EQ(options.serverChoice().game, rtype::network::NEW_GAME_CHOICE);
+}
+
+/**
+ * Given the game option and the number 3
+ * When the launch options are read
+ * Then the client asks for game 3
+ */
+TEST(ClientLaunchOptions, GameOptionNumberAsksForThatGame) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{GAME_OPTION, GAME_THREE_ARGUMENT});
+
+  EXPECT_EQ(options.serverChoice().game,
+            (rtype::network::GameChoice{
+                .kind = rtype::network::GameChoiceKind::ExistingGame,
+                .number = GAME_THREE_NUMBER}));
+}
+
+/**
+ * Given the game option and the number 0, below the first game
+ * When the launch options are read
+ * Then the game is rejected
+ */
+TEST(ClientLaunchOptions, GameZeroIsRejected) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(
+                   Arguments{GAME_OPTION, GAME_ZERO_ARGUMENT})),
+               InvalidGameOptionException);
+}
+
+/**
+ * Given the game option and the number 65536, past the last number
+ * When the launch options are read
+ * Then the game is rejected
+ */
+TEST(ClientLaunchOptions, GamePastTheLastNumberIsRejected) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(
+                   Arguments{GAME_OPTION, GAME_PAST_THE_LAST_ARGUMENT})),
+               InvalidGameOptionException);
+}
+
+/**
+ * Given the game option and a word other than new
+ * When the launch options are read
+ * Then the game is rejected
+ */
+TEST(ClientLaunchOptions, GameWordIsRejected) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(
+                   Arguments{GAME_OPTION, WORD_GAME_ARGUMENT})),
+               InvalidGameOptionException);
 }

@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
 #include "Heartbeat.hpp"
 #include "PacketHeader.hpp"
@@ -17,6 +18,11 @@
 /** @returns A datagram holding a ConnectionRequest that carries @p cookie. */
 [[nodiscard]] std::vector<std::byte> requestDatagram(
     std::uint64_t cookie, const rtype::network::PacketHeader& header = {});
+
+/** @returns A datagram holding a ConnectionRequest that carries @p cookie and
+ * asks for @p game, as PLAYER_NICKNAME. */
+[[nodiscard]] std::vector<std::byte> requestDatagramFor(
+    const rtype::network::GameChoice& game, std::uint64_t cookie);
 
 /** @returns A datagram holding a ConnectionRequest that carries @p cookie and
  * asks for @p nickname. */

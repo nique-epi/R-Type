@@ -125,14 +125,14 @@ constexpr std::uint64_t MINIMUM_LISTED_PLAYERS = 0;
 constexpr std::size_t MAXIMUM_GAME_NAME_SIZE = 16;
 
 /**
- * @brief The fewest and the most games a server may host, and the number of
- * its first game. A supervisor runs 8 at most today (MAXIMUM_RUNNING_GAMES
- * of the server); a heartbeat of 64 games of four players, every nickname and
- * difficulty of 16 bytes and every measure taken, is 9.8 KiB of JSON.
+ * @brief The fewest and the most games a server may host; the first is
+ * numbered FIRST_HOSTED_GAME_NUMBER (ProtocolConstants.hpp). A supervisor runs
+ * 8 at most today (MAXIMUM_RUNNING_GAMES of the server); a heartbeat of 64
+ * games of four players, every nickname and difficulty of 16 bytes and every
+ * measure taken, is 9.8 KiB of JSON.
  */
 constexpr std::uint16_t MINIMUM_HOSTED_GAMES = 1;
 constexpr std::uint16_t MAXIMUM_HOSTED_GAMES = 64;
-constexpr std::uint16_t FIRST_HOSTED_GAME_NUMBER = 1;
 
 /** @brief The fewest players a game of a server may take. */
 constexpr std::uint8_t MINIMUM_PLAYERS_PER_GAME = 1;
