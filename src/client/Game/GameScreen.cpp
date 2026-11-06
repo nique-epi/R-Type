@@ -196,18 +196,22 @@ void GameScreen::applyEntityMessages() {
         },
         message);
     if (const auto* state = std::get_if<network::WorldState>(&message)) {
-      worldSeen_ = true;
-      scoreBoard_.apply(*state);
-      interpolationClock_.observe(state->tick);
-      if (const auto own = ownShipOf(*state, playerNumber_)) {
-        inputs_->confirmInputsUpTo(own->acknowledgedInput);
-      }
-      if (settings_->clientPrediction) {
-        prediction_.apply(*state);
-      }
+      applyWorldState(*state);
     }
   }
   receivedEntityMessages_.clear();
+}
+
+void GameScreen::applyWorldState(const network::WorldState& state) {
+  worldSeen_ = true;
+  scoreBoard_.apply(state);
+  interpolationClock_.observe(state.tick);
+  if (const auto own = ownShipOf(state, playerNumber_)) {
+    inputs_->confirmInputsUpTo(own->acknowledgedInput);
+  }
+  if (settings_->clientPrediction) {
+    prediction_.apply(state);
+  }
 }
 
 void GameScreen::recordEnd(const network::GameEnded& ended) {

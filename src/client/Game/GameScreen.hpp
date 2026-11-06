@@ -36,6 +36,7 @@
 #include "SilenceWarning.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
+#include "WorldState.hpp"
 
 namespace rtype::client {
 
@@ -142,6 +143,11 @@ class GameScreen : public IScreen {
    * the previous update, in the order they arrived, and the score board every
    * world state among them. */
   void applyEntityMessages();
+
+  /** @brief Hands @p state, applied by the replicator already, to the score
+   * board, the interpolation clock, the inputs awaiting confirmation and the
+   * prediction of the own ship. */
+  void applyWorldState(const network::WorldState& state);
 
   /** @brief Repaints the status band when a pilot, the banner or the palette
    * the player chose changed since it was last painted. */
