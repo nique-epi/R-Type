@@ -116,6 +116,16 @@ check_each_package_holds_only_its_program() {
       fail "the AppImage has no usr/assets/sprites"
     passed "the AppImage holds the files of the client"
   fi
+
+  if [ "$system" = "Darwin" ]; then
+    [ -f "$disk_image/.background/background.tiff" ] ||
+      fail "the disk image has no background"
+    [ -f "$disk_image/.DS_Store" ] ||
+      fail "the disk image has no .DS_Store to lay out its window"
+    [ -L "$disk_image/Applications" ] ||
+      fail "the disk image has no link to Applications"
+    passed "the disk image holds its background, its layout and Applications"
+  fi
 }
 
 # Question 2: does the client start? On Linux the AppImage too; on macOS the
