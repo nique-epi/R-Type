@@ -8,6 +8,7 @@
 #include "CommandInterpreter.hpp"
 #include "ConfigurationRegistry.hpp"
 #include "ConfigurationReport.hpp"
+#include "ConfigurationSource.hpp"
 #include "SettingValue.hpp"
 #include "TemporaryFolder.hpp"
 
@@ -41,6 +42,11 @@ class ConfigurationReaderFixture : public ::testing::Test {
   [[nodiscard]] rtype::engine::ConfigurationReport read(
       const std::filesystem::path& path,
       const std::vector<std::string>& forcedLines);
+
+  /** @returns The report of reading @p source with the interpreter of the
+   * tests. */
+  [[nodiscard]] rtype::engine::ConfigurationReport read(
+      const rtype::engine::ConfigurationSource& source);
 
  private:
   TemporaryFolder folder_;

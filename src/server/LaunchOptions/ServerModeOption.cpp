@@ -16,8 +16,8 @@ namespace {
  * @throws engine::InvalidLaunchOptionValueException when it names none.
  */
 ServerMode modeNamed(std::string_view name) {
-  if (name == SERVER_MODE_NAME) {
-    return ServerMode::Server;
+  if (name == GAME_MODE_NAME) {
+    return ServerMode::Game;
   }
   if (name == MASTER_MODE_NAME) {
     return ServerMode::Master;

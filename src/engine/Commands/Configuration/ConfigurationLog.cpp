@@ -12,7 +12,7 @@ void logConfigurationReport(const ConfigurationReport& report,
   if (report.fileFound) {
     logger.info("configuration read from ", fileName, ": ",
                 report.executedLines, " commands run");
-  } else {
+  } else if (!fileName.empty()) {
     logger.info(fileName, " not found, the defaults apply");
   }
   for (const std::string& refusal : report.refusals) {

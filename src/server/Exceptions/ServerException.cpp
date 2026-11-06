@@ -83,11 +83,20 @@ ChildBindingException::ChildBindingException(const std::string& step)
     : ServerException("cannot tie a game process to the supervisor: " + step +
                       " failed") {}
 
-IncompleteSupervisorLinkException::IncompleteSupervisorLinkException(
+MissingSupervisorLinkException::MissingSupervisorLinkException(
     const std::string& missingOption)
     : ServerException(
           "a game process needs both --supervisor and "
           "--link-token: " +
           missingOption + " is missing") {}
+
+GameConfigurationWriteException::GameConfigurationWriteException(
+    const std::string& file)
+    : ServerException("cannot write the configuration of the games to " +
+                      file) {}
+
+NoFreeGameSlotException::NoFreeGameSlotException(std::size_t slotCount)
+    : ServerException("no free place for a game: all " +
+                      std::to_string(slotCount) + " places hold one") {}
 
 }  // namespace rtype::server

@@ -11,6 +11,7 @@
 #include "PathText.hpp"
 #include "ResultsArchiveConstants.hpp"
 #include "ServerConstants.hpp"
+#include "ServerDatabaseFile.hpp"
 #include "TextSettingDefinition.hpp"
 
 namespace rtype::server {
@@ -50,12 +51,8 @@ void ServerStorageModule::start() {
 void ServerStorageModule::stop() { archive_.close(); }
 
 std::filesystem::path ServerStorageModule::databaseFile() const {
-  if (!databaseSetting_->text().empty()) {
-    return std::filesystem::path{databaseSetting_->text()};
-  }
-  return defaultFolder_ / (std::string{DATABASE_FILE_PREFIX} +
-                           std::to_string(listeningPort_->listeningPort()) +
-                           std::string{DATABASE_FILE_SUFFIX});
+  return databaseFileOf(databaseSetting_->text(), defaultFolder_,
+                        listeningPort_->listeningPort());
 }
 
 }  // namespace rtype::server

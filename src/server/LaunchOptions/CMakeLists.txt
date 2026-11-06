@@ -1,4 +1,4 @@
-add_library(rtype_server_launch_options STATIC LaunchOptions.cpp ServerModeOption.cpp)
+add_library(rtype_server_launch_options STATIC GameLaunchOptions.cpp LaunchOptions.cpp ServerLaunchOptionParts.cpp ServerModeOption.cpp)
 
 target_include_directories(rtype_server_launch_options PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
