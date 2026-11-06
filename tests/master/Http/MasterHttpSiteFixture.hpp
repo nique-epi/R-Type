@@ -38,6 +38,7 @@ class MasterHttpSiteFixture : public ::testing::Test {
 
  private:
   TemporaryFolder folder_;
+  std::filesystem::path site_;
   rtype::master::MasterHttpServer server_;
   std::uint16_t port_{};
 };

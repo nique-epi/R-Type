@@ -20,18 +20,18 @@ using rtype::master::WEB_SETTING_NAME;
  * Then the master answers the index page of that folder
  */
 TEST_F(MasterModulesFixture, TheMasterServesTheSiteTheWebSettingNames) {
-  writeFile(std::filesystem::path{CHOSEN_WEB_FOLDER} / WEB_INDEX_FILE,
-            WEB_INDEX_TEXT);
+  writeFile(std::filesystem::path{CHOSEN_WEB_FOLDER} / SITE_INDEX_FILE,
+            SITE_INDEX_TEXT);
   const auto application = masterApplication(
       {},
       {settingLine(WEB_SETTING_NAME, (folder() / CHOSEN_WEB_FOLDER).string())});
 
   application->start();
-  const httplib::Result answer = get(WEB_ROOT_URL);
+  const httplib::Result answer = get(SITE_ROOT_URL);
 
   ASSERT_TRUE(answer);
   EXPECT_EQ(answer->status, EXPECTED_OK);
-  EXPECT_EQ(answer->body, WEB_INDEX_TEXT);
+  EXPECT_EQ(answer->body, SITE_INDEX_TEXT);
 }
 
 /**
@@ -41,17 +41,17 @@ TEST_F(MasterModulesFixture, TheMasterServesTheSiteTheWebSettingNames) {
  * Then the master answers the index page of that folder
  */
 TEST_F(MasterModulesFixture, WithoutTheSettingTheMasterServesTheDefaultFolder) {
-  writeFile(std::filesystem::path{DEFAULT_WEB_FOLDER} / WEB_INDEX_FILE,
-            WEB_INDEX_TEXT);
+  writeFile(std::filesystem::path{DEFAULT_WEB_FOLDER} / SITE_INDEX_FILE,
+            SITE_INDEX_TEXT);
   const CurrentDirectoryChange startedFrom{folder()};
   const auto application = masterApplication({}, {});
 
   application->start();
-  const httplib::Result answer = get(WEB_ROOT_URL);
+  const httplib::Result answer = get(SITE_ROOT_URL);
 
   ASSERT_TRUE(answer);
   EXPECT_EQ(answer->status, EXPECTED_OK);
-  EXPECT_EQ(answer->body, WEB_INDEX_TEXT);
+  EXPECT_EQ(answer->body, SITE_INDEX_TEXT);
 }
 
 /**
@@ -61,17 +61,17 @@ TEST_F(MasterModulesFixture, WithoutTheSettingTheMasterServesTheDefaultFolder) {
  * Then the master answers Not Found with a problem document: it serves no site
  */
 TEST_F(MasterModulesFixture, TurnedOffTheWebModuleServesNoSite) {
-  writeFile(std::filesystem::path{DEFAULT_WEB_FOLDER} / WEB_INDEX_FILE,
-            WEB_INDEX_TEXT);
+  writeFile(std::filesystem::path{DEFAULT_WEB_FOLDER} / SITE_INDEX_FILE,
+            SITE_INDEX_TEXT);
   const CurrentDirectoryChange startedFrom{folder()};
   const auto application =
       masterApplication({}, {std::string{WEB_MODULE_OFF_LINE}});
 
   application->start();
-  const httplib::Result answer = get(WEB_ROOT_URL);
+  const httplib::Result answer = get(SITE_ROOT_URL);
 
   ASSERT_TRUE(answer);
   EXPECT_EQ(answer->status, EXPECTED_NOT_FOUND);
   EXPECT_EQ(answer->get_header_value(std::string{CONTENT_TYPE_HEADER}),
-            WEB_PROBLEM_TYPE);
+            EXPECTED_PROBLEM_TYPE);
 }

@@ -90,8 +90,9 @@ std::string problemDetailsText(int status,
  */
 bool isApiPath(std::string_view path) {
   const std::string_view prefix = network::MASTER_API_PREFIX;
-  return path.starts_with(prefix) && (path.size() == prefix.size() ||
-                                      path[prefix.size()] == PATH_SEPARATOR);
+  return path.starts_with(prefix) &&
+         (path.size() == prefix.size() ||
+          path.substr(prefix.size()).starts_with(network::PATH_SEPARATOR));
 }
 
 /** @returns The bytes of @p file, or nothing when it cannot be read. */

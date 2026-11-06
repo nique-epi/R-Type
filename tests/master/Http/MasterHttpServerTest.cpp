@@ -434,7 +434,8 @@ TEST_F(MasterHttpSiteFixture, APathThatClimbsOutOfTheSiteIsNotServed) {
   serveSite(SITE_FOLDER);
   openServer();
 
-  const httplib::Result answer = get(CLIMBING_URL);
+  const httplib::Result answer =
+      get(std::string{CLIMB_OUT_OF_SITE} + std::string{OUTSIDE_SITE_FILE});
 
   ASSERT_TRUE(answer);
   EXPECT_NE(answer->status, EXPECTED_OK);

@@ -25,9 +25,6 @@ constexpr std::string_view WWW_AUTHENTICATE_HEADER = "WWW-Authenticate";
 /** @brief The path the web site is served under, outside the API. */
 constexpr std::string_view SITE_MOUNT_POINT = "/";
 
-/** @brief The separator of the segments of a path. */
-constexpr char PATH_SEPARATOR = '/';
-
 /**
  * @brief The page of the web site a path outside the API that no file answers
  * gets, in the folder of the site, as Next.js writes it.

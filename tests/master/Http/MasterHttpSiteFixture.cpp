@@ -11,8 +11,7 @@
 #include "MasterTestConstants.hpp"
 #include "NetworkConstants.hpp"
 
-MasterHttpSiteFixture::MasterHttpSiteFixture()
-    : server_([]([[maybe_unused]] const std::string& reason) {}) {}
+MasterHttpSiteFixture::MasterHttpSiteFixture() : server_(quietHttpServer()) {}
 
 void MasterHttpSiteFixture::writeSiteFile(std::string_view file,
                                           std::string_view content) const {
@@ -34,8 +33,8 @@ void MasterHttpSiteFixture::addTestRoute() {
 }
 
 void MasterHttpSiteFixture::serveSite(std::string_view folder) {
-  const std::filesystem::path site = folder_.path() / folder;
-  server_.serveSite([site] { return std::filesystem::path{site}; });
+  site_ = folder_.path() / folder;
+  server_.serveSite([this] { return site_; });
 }
 
 void MasterHttpSiteFixture::openServer() {

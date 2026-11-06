@@ -38,10 +38,9 @@ void MasterWebModule::start() {}
 void MasterWebModule::stop() {}
 
 std::filesystem::path MasterWebModule::siteFolder() const {
-  if (!webSetting_->text().empty()) {
-    return std::filesystem::path{webSetting_->text()};
-  }
-  return std::filesystem::path{DEFAULT_WEB_FOLDER};
+  const std::string& folder = webSetting_->text();
+  return folder.empty() ? std::filesystem::path{DEFAULT_WEB_FOLDER}
+                        : std::filesystem::path{folder};
 }
 
 }  // namespace rtype::master
