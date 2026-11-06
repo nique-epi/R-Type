@@ -191,7 +191,7 @@ The server reads a request only from a player with a session, in any state of th
 
 ### Server information
 
-Anyone may ask a server what it is, without a session, on the port of its supervisor; a game process answers none: a client measures its ping to the servers the player looks at this way, the one selected or those of the page shown, never every server of the list, whose information comes from the master; and the master checks that a server still answers. A `ServerInformationRequest` carries `sentAt`, the time it leaves on the clock of its sender, in microseconds modulo 2^32, as a `Heartbeat` does (see [Round trip](#round-trip)), with a session token and a `sequence` of 0. The server keeps nothing and answers with one `ServerInformation`, to the address and port the request came from:
+Anyone may ask a server what it is, without a session, on the port of its supervisor; a game process answers none: a client measures its ping to the servers of the master this way, since the server map places every server by its ping: one request to each server of this version the master lists, at each reading of the list (every 15 s and on R), while the rest of their information comes from the master; and the master checks that a server still answers. A `ServerInformationRequest` carries `sentAt`, the time it leaves on the clock of its sender, in microseconds modulo 2^32, as a `Heartbeat` does (see [Round trip](#round-trip)), with a session token and a `sequence` of 0. The server keeps nothing and answers with one `ServerInformation`, to the address and port the request came from:
 
 | Field | Holds |
 |---|---|
@@ -622,7 +622,7 @@ The code of this repository applies the rules above, with the exceptions listed 
 - The client sends `LeaderboardRequest` from its leaderboard screen, and the server answers it.
 - The server answers a request with a valid cookie with the `ConnectionAccepted` of the player and the table of its entity types, at most once per 250 ms per player once accepted; the client keeps the table of its first acceptance, and leaves a server whose table names a type it has no sheet for.
 - The server limits the datagrams of each address and port, and of each player, on its network thread, as [A sender that sends too much](#a-sender-that-sends-too-much) says.
-- The supervisor answers `ServerInformationRequest` as [Server information](#server-information) describes, and a game process does not. No program sends one yet: `src/network` holds what the asker needs, the request to send and the round trip read from its answer (see [Network](/R-Type/network/#round-trip-and-jitter-roundtripmeter)), and the list of servers of the client and the probe of the master that will call it are not written.
+- The supervisor answers `ServerInformationRequest` as [Server information](#server-information) describes, and a game process does not. The server map of the client sends one to each server of this version the master lists, once per reading of the list (see [Client](/R-Type/client/#server-map-servermapscreen-iservercatalog-igamecatalog)); the probe of the master is not written.
 
 What the programs do not do yet is listed at the end of [A peer disappears](#a-peer-disappears).
 

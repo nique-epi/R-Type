@@ -33,6 +33,25 @@ TEST_F(DatagramRouterFixture, HandsEachRouteTheDatagramsOfItsSender) {
 }
 
 /**
+ * Given a route listening to each of the game server and the master server
+ * When a datagram of each and one of a stranger arrive
+ * Then the route hands over the two of its senders, in the order they arrived
+ */
+TEST_F(DatagramRouterFixture, ARouteListeningToEachReadsEveryOneOfItsSenders) {
+  DatagramRoute& probe = router().addRoute();
+  probe.listenToEach({gameServer(), masterServer()});
+  arrive(datagramFrom(masterServer(), FIRST_TAG));
+  arrive(datagramFrom(stranger(), SECOND_TAG));
+  arrive(datagramFrom(gameServer(), THIRD_TAG));
+
+  const std::vector<network::IncomingDatagram> read = readBy(probe);
+
+  ASSERT_EQ(read.size(), 2U);
+  EXPECT_EQ(read.at(0), datagramFrom(masterServer(), FIRST_TAG));
+  EXPECT_EQ(read.at(1), datagramFrom(gameServer(), THIRD_TAG));
+}
+
+/**
  * Given two routes, the first of which empties the socket on its read
  * When the second route is read afterwards
  * Then it still hands over the datagram of its sender

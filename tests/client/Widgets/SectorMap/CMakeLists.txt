@@ -1,0 +1,2 @@
+rtype_add_test(NAME client_sector_map_tests SOURCES SectorLayoutTest.cpp RingedPlanetTest.cpp RingedPlanetFixtures.cpp LabelPlacementTest.cpp StarNavigationTest.cpp SectorMapPaintingTest.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingInterfaceCanvas.cpp LIBS rtype_client_sector_layout rtype_client_ringed_planet rtype_client_label_placement rtype_client_star_navigation rtype_client_sector_map_painting GTest::gmock)
+target_include_directories(client_sector_map_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/doubles)

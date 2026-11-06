@@ -26,7 +26,8 @@ namespace rtype::client {
  *
  * Building it drops any earlier attempt, so it always starts from no attempt,
  * and its fields start with the values of the last attempt the player started,
- * those given at launch before any. MENU_CONFIRM_KEY on a
+ * those given at launch before any; with ConnectionStart::AtOnce it then
+ * starts an attempt with them, as CONNECT would. MENU_CONFIRM_KEY on a
  * field, or CONNECT, checks the fields: an address that is not IPv4, a port
  * outside LOWEST_PORT to HIGHEST_PORT or an empty nickname is named on the
  * status line, and the attempt in progress is dropped without a new one.

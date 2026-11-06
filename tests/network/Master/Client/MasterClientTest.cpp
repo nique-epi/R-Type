@@ -13,6 +13,7 @@
 #include "NetworkException.hpp"
 #include "RunningMaster.hpp"
 #include "ServerCreation.hpp"
+#include "ServerListing.hpp"
 
 using rtype::network::CreatedServer;
 using rtype::network::GameListing;
@@ -23,6 +24,7 @@ using rtype::network::MasterClient;
 using rtype::network::MasterRefusedException;
 using rtype::network::MasterUnreachableException;
 using rtype::network::ServerCreation;
+using rtype::network::ServerListing;
 using rtype::network::testing::parisGameListing;
 using rtype::network::testing::parisHeartbeat;
 using rtype::network::testing::parisRegistration;
@@ -122,6 +124,34 @@ TEST_F(MasterClientFixture, AClientWithNoKeyListsTheGamesOfAServer) {
   const GameListing listing = player.listGames(created.id);
 
   EXPECT_EQ(listing, parisGameListing());
+}
+
+/**
+ * Given a running master where no server was created
+ * When a client with no key lists the servers
+ * Then the list is empty
+ */
+TEST_F(MasterClientFixture, AMasterWithNoServerListsNone) {
+  MasterClient player = clientWith(std::string{});
+
+  EXPECT_TRUE(player.listServers().servers.empty());
+}
+
+/**
+ * Given "Paris 1", created then registered
+ * When a client with no key lists the servers
+ * Then it reads that server alone, by the id its creation gave
+ */
+TEST_F(MasterClientFixture, AClientWithNoKeyListsTheRegisteredServer) {
+  const CreatedServer created = createdParis();
+  MasterClient server = clientWith(created.key);
+  server.registerServer(parisRegistration());
+  MasterClient player = clientWith(std::string{});
+
+  const ServerListing listing = player.listServers();
+
+  ASSERT_EQ(listing.servers.size(), 1U);
+  EXPECT_EQ(listing.servers.front().id, created.id);
 }
 
 /**

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <optional>
 #include <vector>
 #include "Endpoint.hpp"
 #include "IDatagramLink.hpp"
@@ -13,7 +12,8 @@ namespace rtype::client {
 
 /**
  * @brief The share of a socket that one recipient reads: the datagrams of the
- * sender it listens to, and nothing before listenTo() names one. What it
+ * senders it listens to, and nothing before listenTo() or listenToEach() names
+ * one. What it
  * sends goes straight to the socket.
  *
  * A DatagramRouter makes it and fills it; its recipient only reads. Not
@@ -40,6 +40,8 @@ class DatagramRoute final : public IRoutedLink {
 
   void listenTo(const network::Endpoint& sender) override;
 
+  void listenToEach(std::vector<network::Endpoint> senders) override;
+
   /** @returns Whether the datagrams of @p sender are for this route. */
   [[nodiscard]] bool listensTo(const network::Endpoint& sender) const;
 
@@ -49,7 +51,7 @@ class DatagramRoute final : public IRoutedLink {
  private:
   IDatagramLink* socket_;
   IDatagramPump* pump_;
-  std::optional<network::Endpoint> listened_;
+  std::vector<network::Endpoint> listened_;
   std::vector<network::IncomingDatagram> received_;
 };
 

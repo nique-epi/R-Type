@@ -6,10 +6,12 @@
 #include <algorithm>
 #include <optional>
 #include <set>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "ColoredPixel.hpp"
 #include "DrawJournal.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
@@ -30,6 +32,14 @@ void RecordingInterfaceCanvas::clear() {
 
 void RecordingInterfaceCanvas::fill(sf::IntRect area, sf::Color color) {
   record_->fills.push_back({.area = area, .color = color});
+}
+
+void RecordingInterfaceCanvas::plot(
+    std::span<const rtype::client::ColoredPixel> pixels) {
+  for (const rtype::client::ColoredPixel& pixel : pixels) {
+    record_->fills.push_back(
+        {.area = sf::IntRect{pixel.position, {1, 1}}, .color = pixel.color});
+  }
 }
 
 void RecordingInterfaceCanvas::write(std::string_view text, sf::Vector2i anchor,
