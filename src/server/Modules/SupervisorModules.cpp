@@ -27,11 +27,14 @@ namespace {
 
 /**
  * @returns What every game process is started with: this executable, the
- * folder next to it, and @p gameLines, the lines of its file of commands.
+ * folder next to it, @p gameLines, the lines of its file of commands, and what
+ * @p launchOptions hand the games: their logging options, the network
+ * simulated and the traffic file.
  * @throws engine::UnknownExecutablePathException when the system does not tell
  * where the executable is.
  */
 GameLaunchSettings gameLaunchSettings(
+    const LaunchOptions& launchOptions,
     const std::vector<std::string>& gameLines) {
   const std::optional<std::filesystem::path> program = engine::executablePath();
   if (!program.has_value()) {
@@ -39,7 +42,10 @@ GameLaunchSettings gameLaunchSettings(
   }
   return GameLaunchSettings{.program = *program,
                             .folder = engine::executableFolder(),
-                            .gameLines = &gameLines};
+                            .gameLines = &gameLines,
+                            .database = nullptr,
+                            .forwardedArguments = launchOptions.gameArguments(),
+                            .trafficCsvFile = launchOptions.trafficCsvFile()};
 }
 
 }  // namespace
@@ -54,7 +60,8 @@ std::vector<std::unique_ptr<engine::IModule>> supervisorModules(
       network::DEFAULT_SERVER_PORT, stopRequest,
       launchOptions.networkConditions()));
   modules.push_back(std::make_unique<ServerSupervisedGamesModule>(
-      gameLaunchSettings(gameLines), std::make_unique<BoostProcessLauncher>(),
+      gameLaunchSettings(launchOptions, gameLines),
+      std::make_unique<BoostProcessLauncher>(),
       [](engine::Duration pause) { std::this_thread::sleep_for(pause); }));
   modules.push_back(std::make_unique<ServerSupervisorLobbyModule>());
   modules.push_back(std::make_unique<ServerInformationModule>());

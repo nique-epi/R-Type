@@ -37,8 +37,9 @@ void ServerGameStatisticsModule::install(engine::InstallContext& context) {
       engine::TextSettingDefinition{
           .name = std::string{GAME_STATISTICS_FILE_SETTING_NAME},
           .defaultValue = {},
-          .help = "CSV file the statistics of the games are written to; "
-                  "empty for the file of the port next to the executable",
+          .help = "CSV file the statistics of the games are named after: "
+                  "each game writes <name>_<its port><extension>; empty for "
+                  "r-type_statistics_<its port>.csv next to the executable",
           .validate = {}});
   port_ = &context.require<IListeningPort>();
   buses_ = &context.require<IGameBuses>();
@@ -63,13 +64,18 @@ void ServerGameStatisticsModule::stop() {
 }
 
 std::filesystem::path ServerGameStatisticsModule::statisticsFile() const {
-  if (!fileSetting_->text().empty()) {
-    return std::filesystem::path{fileSetting_->text()};
+  const std::string port = std::to_string(port_->listeningPort());
+  if (fileSetting_->text().empty()) {
+    return engine::executableFolder() /
+           (std::string{GAME_STATISTICS_FILE_PREFIX} + port +
+            std::string{GAME_STATISTICS_FILE_SUFFIX});
   }
-  return engine::executableFolder() /
-         (std::string{GAME_STATISTICS_FILE_PREFIX} +
-          std::to_string(port_->listeningPort()) +
-          std::string{GAME_STATISTICS_FILE_SUFFIX});
+  const std::filesystem::path configured{fileSetting_->text()};
+  std::filesystem::path name = configured.stem();
+  name += GAME_STATISTICS_PORT_SEPARATOR;
+  name += port;
+  name += configured.extension();
+  return configured.parent_path() / name;
 }
 
 void ServerGameStatisticsModule::followEveryGame() {

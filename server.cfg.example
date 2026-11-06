@@ -61,6 +61,7 @@ set server-name "R-Type server"
 # plugin game-statistics
 
 # [games] The CSV file the game-statistics plugin writes a row per Bydo killed to, then
-# the total of each game. Refused unless the plugin is loaded. Empty:
-# r-type_statistics_<port>.csv next to the executable, with the port above.
+# the total of each game, named after it: each game writes <name>_<its port><extension>,
+# so stats.csv gives stats_50123.csv to the game on port 50123. Refused unless the
+# plugin is loaded. Empty: r-type_statistics_<its port>.csv next to the executable.
 # set game-statistics-file ""

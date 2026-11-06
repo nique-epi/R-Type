@@ -74,6 +74,14 @@ constexpr std::string_view LINK_TOKEN_OPTION = "--link-token";
  */
 constexpr std::string_view CONFIGURATION_OPTION = "--configuration";
 
+/**
+ * @brief The traffic file of game n, for a `--traffic-csv <stem><ext>` given
+ * to the supervisor, is <stem>, GAME_TRAFFIC_FILE_INFIX, n, then <ext>, in the
+ * same folder: traffic.csv gives traffic_game_0.csv to game 0. Each game
+ * writes its own file, so two games never write the same one.
+ */
+constexpr std::string_view GAME_TRAFFIC_FILE_INFIX = "_game_";
+
 /** @brief How many games a game process hosts. */
 constexpr std::size_t GAME_PROCESS_GAME_COUNT = 1;
 

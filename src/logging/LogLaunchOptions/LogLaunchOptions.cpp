@@ -8,7 +8,9 @@
 #include <string_view>
 #include <system_error>
 #include <utility>
+#include <vector>
 #include "LogLaunchSettings.hpp"
+#include "LogLevel.hpp"
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
 #include "LoggingException.hpp"
@@ -175,6 +177,25 @@ void announceUnopenedJournal(const std::filesystem::path& journal) {
               genericText(absoluteJournalPath(journal)), ", writing none");
 }
 
+/** @returns The name `--log-level` reads as @p level. */
+std::string_view nameOf(LogLevel level) {
+  switch (level) {
+    case LogLevel::Trace:
+      return TRACE_NAME;
+    case LogLevel::Debug:
+      return DEBUG_NAME;
+    case LogLevel::Info:
+      return INFO_NAME;
+    case LogLevel::Warn:
+      return WARN_NAME;
+    case LogLevel::Error:
+      return ERROR_NAME;
+    case LogLevel::Silent:
+      return SILENT_NAME;
+  }
+  return INFO_NAME;
+}
+
 }  // namespace
 
 LogLaunchOptions::LogLaunchOptions(const std::filesystem::path& defaultJournal)
@@ -206,6 +227,21 @@ void LogLaunchOptions::apply() const {
     announceUnopenedJournal(*settings_.output.filePath);
   }
   announceJournal(applied);
+}
+
+std::vector<std::string> LogLaunchOptions::forwardedArguments() const {
+  std::vector<std::string> arguments;
+  if (settings_.level.has_value()) {
+    arguments.emplace_back(LEVEL_OPTION);
+    arguments.emplace_back(nameOf(*settings_.level));
+  }
+  if (!settings_.output.filePath.has_value()) {
+    arguments.emplace_back(NO_FILE_OPTION);
+  }
+  if (!settings_.output.toStderr) {
+    arguments.emplace_back(NO_STDERR_OPTION);
+  }
+  return arguments;
 }
 
 std::string LogLaunchOptions::usage(std::string_view defaultJournalName) {

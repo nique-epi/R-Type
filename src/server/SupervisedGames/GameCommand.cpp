@@ -8,6 +8,7 @@
 #include "GameLaunchSettings.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LoggingConstants.hpp"
+#include "NetworkConstants.hpp"
 #include "ProcessCommand.hpp"
 #include "ServerConstants.hpp"
 #include "SettingValue.hpp"
@@ -46,6 +47,18 @@ std::string databaseFileOf(const GameLaunchSettings& settings,
       .string();
 }
 
+/** @returns The traffic file of the game @p number, from @p given, the file
+ * given to the supervisor: its name, GAME_TRAFFIC_FILE_INFIX and the number,
+ * then its extension, in its folder. */
+std::string trafficFileOf(const std::filesystem::path& given,
+                          std::uint32_t number) {
+  std::filesystem::path name = given.stem();
+  name += GAME_TRAFFIC_FILE_INFIX;
+  name += std::to_string(number);
+  name += given.extension();
+  return (given.parent_path() / name).string();
+}
+
 }  // namespace
 
 ProcessCommand gameCommand(const GameLaunchSettings& settings,
@@ -62,6 +75,13 @@ ProcessCommand gameCommand(const GameLaunchSettings& settings,
   addOption(
       command, CONFIGURATION_OPTION,
       gameConfigurationFileOf(settings.folder, launch.supervisorPort).string());
+  command.arguments.insert(command.arguments.end(),
+                           settings.forwardedArguments.begin(),
+                           settings.forwardedArguments.end());
+  if (settings.trafficCsvFile.has_value()) {
+    addOption(command, network::TRAFFIC_CSV_OPTION,
+              trafficFileOf(*settings.trafficCsvFile, launch.number));
+  }
   return command;
 }
 

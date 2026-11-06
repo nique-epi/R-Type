@@ -1,9 +1,11 @@
 #include "LaunchOptions.hpp"
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <iterator>
 #include <optional>
 #include <span>
 #include <string>
@@ -162,8 +164,12 @@ std::string modeOptionEntry() {
 std::string generalOptionEntries() {
   std::string text = engine::setOptionEntry(SERVER_CONFIGURATION_FILE_NAME,
                                             SERVER_SETTING_NAMES);
-  text += engine::usageEntry(network::TRAFFIC_CSV_OPTION_WITH_VALUE,
-                             network::TRAFFIC_CSV_USAGE);
+  text += engine::usageEntry(
+      network::TRAFFIC_CSV_OPTION_WITH_VALUE,
+      "File the traffic of each game goes to every second, by player and by "
+      "message type: game n writes <name>" +
+          std::string(GAME_TRAFFIC_FILE_INFIX) +
+          "n<extension> next to it, the supervisor none. Default: no file.");
   text += helpOptionEntry();
   return text;
 }
@@ -218,6 +224,13 @@ const network::NetworkConditions& LaunchOptions::networkConditions() const {
 
 const logging::LogLaunchOptions& LaunchOptions::logOptions() const {
   return logOptions_;
+}
+
+std::vector<std::string> LaunchOptions::gameArguments() const {
+  std::vector<std::string> arguments = logOptions_.forwardedArguments();
+  std::ranges::move(simulatorOptions_.forwardedArguments(),
+                    std::back_inserter(arguments));
+  return arguments;
 }
 
 const std::optional<std::filesystem::path>& LaunchOptions::trafficCsvFile()

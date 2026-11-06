@@ -44,7 +44,8 @@ void ServerGameStatisticsFixture::runTicks(std::size_t ticks) const {
 void ServerGameStatisticsFixture::stop() { application_->stop(); }
 
 std::string ServerGameStatisticsFixture::fileText() const {
-  return rtype::network::testing::textOf(folder_.path() / STATISTICS_FILE_NAME);
+  return rtype::network::testing::textOf(folder_.path() /
+                                         WRITTEN_STATISTICS_FILE_NAME);
 }
 
 const RecordingJournal& ServerGameStatisticsFixture::journal() const {

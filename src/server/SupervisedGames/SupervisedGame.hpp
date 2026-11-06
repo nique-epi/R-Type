@@ -8,6 +8,7 @@
 #include "GameLifecycle.hpp"
 #include "GameStatusMeasures.hpp"
 #include "IChildProcess.hpp"
+#include "SeatReservations.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
@@ -24,7 +25,8 @@ struct SupervisedGame {
   std::uint16_t slot{};
   GameLifecycle lifecycle{GameLifecycle::Starting};
   /** @brief The nicknames of its connected players, as its newest status
-   * said; none before the first one. */
+   * said; none before the first one. The seats it has for a new player are
+   * network::MAXIMUM_PLAYERS less these and the reservations. */
   std::vector<std::string> nicknames;
   /** @brief The measures of its newest status; none before the first one. */
   network::GameStatusMeasures measures;
@@ -37,6 +39,9 @@ struct SupervisedGame {
   std::optional<std::uint16_t> newestSequence;
   /** @brief The time since the launch, counted while the game is Starting. */
   engine::Duration sinceLaunch{};
+  /** @brief The seats it holds for players the supervisor sent it, which its
+   * newest status does not count yet. */
+  SeatReservations reservations;
   std::unique_ptr<IChildProcess> process;
 };
 

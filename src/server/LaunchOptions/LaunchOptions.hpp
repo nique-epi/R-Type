@@ -24,7 +24,9 @@ namespace rtype::server {
  * server.cfg, so a launch option wins over the file. The lines of a setting of
  * the games (`--seed`, `--state-rate`, `--input-delay`, or `--set` on one of
  * them) are not run by the supervisor: it hands them to its games after the
- * lines of the file, as gameLineRule() says.
+ * lines of the file, as gameLineRule() says. The logging level, the choice of
+ * standard error and of a journal, the network simulated and `--traffic-csv`
+ * go to every game too (see gameArguments() and trafficCsvFile()).
  */
 class LaunchOptions {
  public:
@@ -96,8 +98,21 @@ class LaunchOptions {
    */
   [[nodiscard]] const logging::LogLaunchOptions& logOptions() const;
 
+  /**
+   * @returns The options every game the supervisor starts is given as they
+   * are, after its own: the logging options it shares (see
+   * logging::LogLaunchOptions::forwardedArguments()), then the network
+   * simulated (see network::SimulatorLaunchOptions::forwardedArguments()), so
+   * the players, who talk to the games, cross the network the operator asked
+   * for, and the journal of each game keeps its level. The supervisor keeps
+   * both for itself too: its socket carries the requests of the players.
+   */
+  [[nodiscard]] std::vector<std::string> gameArguments() const;
+
   /** @returns The file given after `--traffic-csv`, nothing when it was not
-   * given. */
+   * given. The supervisor writes no traffic of its own: each game it starts
+   * writes its traffic to a file of its own named after it (see
+   * gameCommand()). */
   [[nodiscard]] const std::optional<std::filesystem::path>& trafficCsvFile()
       const;
 

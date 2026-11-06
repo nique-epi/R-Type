@@ -5,15 +5,21 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 #include "Endpoint.hpp"
+#include "GameLaunch.hpp"
+#include "GameLaunchOptions.hpp"
+#include "GameLaunchSettings.hpp"
 #include "GameLifecycle.hpp"
 #include "GameOpening.hpp"
 #include "GameStatus.hpp"
+#include "LaunchOptions.hpp"
 #include "NetworkConstants.hpp"
 #include "ProcessCommand.hpp"
 #include "RecordingChildProcess.hpp"
 #include "RecordingChildState.hpp"
 #include "RecordingProcessLauncherConstants.hpp"
+#include "SeatRequest.hpp"
 #include "SupervisedGame.hpp"
 #include "SupervisedGamesTestConstants.hpp"
 
@@ -60,6 +66,7 @@ rtype::server::SupervisedGame supervisedGameIn(
       .port = portOfGame(slot),
       .linkToken = tokenOfGame(slot),
       .newestSequence = std::nullopt,
+      .reservations = {},
       .process = nullptr};
   return game;
 }
@@ -80,8 +87,42 @@ rtype::network::Endpoint supervisedPlayer(std::size_t index) {
       .port = static_cast<std::uint16_t>(FIRST_SUPERVISED_PLAYER_PORT + index)};
 }
 
+rtype::server::SeatRequest seatRequestOf(std::size_t index) {
+  return rtype::server::SeatRequest{
+      .sender = supervisedPlayer(index),
+      .nickname =
+          std::string{SUPERVISED_NICKNAME_PREFIX} + std::to_string(index + 1)};
+}
+
 rtype::network::Endpoint loopbackOn(std::uint16_t port) {
   return rtype::network::Endpoint{
       .address = std::string{rtype::network::LOOPBACK_IPV4_ADDRESS},
       .port = port};
+}
+
+rtype::server::GameLaunchSettings settingsOf(
+    const rtype::server::LaunchOptions& supervisor) {
+  return rtype::server::GameLaunchSettings{
+      .program = PROGRAM_FOR_TESTS,
+      .folder = FOLDER_FOR_TESTS,
+      .gameLines = nullptr,
+      .database = nullptr,
+      .forwardedArguments = supervisor.gameArguments(),
+      .trafficCsvFile = supervisor.trafficCsvFile()};
+}
+
+rtype::server::GameLaunch launchOfGameThree() {
+  return rtype::server::GameLaunch{
+      .number = GAME_THREE,
+      .port = FIRST_GAME_PORT,
+      .supervisorPort = FIRST_SUPERVISED_PLAYER_PORT,
+      .linkToken = FIRST_LINK_TOKEN};
+}
+
+rtype::server::GameLaunchOptions gameOptionsOf(
+    const rtype::server::ProcessCommand& command) {
+  const std::vector<std::string_view> arguments{
+      command.arguments.begin() + GAME_MODE_ARGUMENT_COUNT,
+      command.arguments.end()};
+  return rtype::server::GameLaunchOptions::read(arguments);
 }

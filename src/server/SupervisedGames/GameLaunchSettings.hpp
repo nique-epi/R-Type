@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <vector>
 #include "SettingValue.hpp"
@@ -25,6 +26,13 @@ struct GameLaunchSettings {
    * the leaderboard every game writes to when it is not empty. Nothing, or an
    * empty text: the file of the port in folder. It must outlive the module. */
   const engine::SettingValue* database{nullptr};
+  /** @brief The options of the launch of the supervisor every game is given
+   * as they are (see LaunchOptions::gameArguments()): the logging options it
+   * shares and the network simulated. */
+  std::vector<std::string> forwardedArguments;
+  /** @brief The file given to the supervisor after `--traffic-csv`, which
+   * names the traffic file of each game; nothing: the games write none. */
+  std::optional<std::filesystem::path> trafficCsvFile = std::nullopt;
 };
 
 }  // namespace rtype::server

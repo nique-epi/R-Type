@@ -25,6 +25,13 @@ constexpr std::string_view GAME_STATISTICS_FILE_PREFIX = "r-type_statistics_";
 constexpr std::string_view GAME_STATISTICS_FILE_SUFFIX = ".csv";
 
 /**
+ * @brief What goes between the name of the file
+ * GAME_STATISTICS_FILE_SETTING_NAME gives and the port of the game, before the
+ * extension: stats.csv gives stats_4242.csv to the game on port 4242.
+ */
+constexpr std::string_view GAME_STATISTICS_PORT_SEPARATOR = "_";
+
+/**
  * @brief The first line of the file, and the first column of each row: a
  * Bydo killed in a game, by a player, worth its points; or the total of the
  * points of a game that ended, with no player.

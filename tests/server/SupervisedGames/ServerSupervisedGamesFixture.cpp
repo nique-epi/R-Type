@@ -51,7 +51,9 @@ void ServerSupervisedGamesFixture::startSupervisor(
       std::make_unique<rtype::server::ServerSupervisedGamesModule>(
           rtype::server::GameLaunchSettings{.program = PROGRAM_FOR_TESTS,
                                             .folder = folder_.path(),
-                                            .gameLines = &gameLines_},
+                                            .gameLines = &gameLines_,
+                                            .database = nullptr,
+                                            .forwardedArguments = {}},
           std::move(launcher), [](rtype::engine::Duration) {}));
   modules.push_back(
       std::make_unique<rtype::server::ServerSupervisorLobbyModule>());

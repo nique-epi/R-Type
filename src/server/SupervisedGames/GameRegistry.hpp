@@ -7,6 +7,7 @@
 #include "GameOpening.hpp"
 #include "GamePlace.hpp"
 #include "GameStatus.hpp"
+#include "SeatRequest.hpp"
 #include "SupervisedGame.hpp"
 #include "TimeConstants.hpp"
 
@@ -36,19 +37,25 @@ class GameRegistry {
    * @p game when @p sequence is newer
    * than the newest status taken so far (16-bit serial number arithmetic),
    * and ignores it otherwise: a status that arrives late must not undo a newer
-   * one.
+   * one. A status taken ends the seats of the players it now names (see
+   * SeatReservations::settle()); one ignored ends none.
    * @returns Whether it was taken.
    */
   bool record(SupervisedGame& game, std::uint16_t sequence,
               const network::GameStatus& status);
 
   /**
-   * @returns Where a new player goes: the first game that waits for players
-   * and has a free seat, a game still Starting counting as one that waits
+   * @returns Where the player of @p request goes: the game that holds a seat
+   * for its sender while that game still waits for players; else the first
+   * game that waits for players and has a free seat, its players and its
+   * seats held counted, a game still Starting counting as one that waits
    * (Wait, or Redirect once it reported); else Open while fewer than
-   * MAXIMUM_RUNNING_GAMES run, else Full.
+   * MAXIMUM_RUNNING_GAMES run, else Full. On Wait and Redirect, the sender
+   * holds a seat of that game (see SeatReservations), so the players sent in
+   * one burst never get more seats than the game has; a sender that asks
+   * again takes no second seat.
    */
-  [[nodiscard]] GamePlace placeForNewPlayer() const;
+  [[nodiscard]] GamePlace placeForNewPlayer(const SeatRequest& request);
 
   /**
    * @brief Removes the games whose process ended.
@@ -56,8 +63,9 @@ class GameRegistry {
    */
   [[nodiscard]] std::vector<ExitedGame> collectExits();
 
-  /** @brief Lets @p elapsed pass for the games still Starting, and kills those
-   * that waited GAME_START_TIMEOUT: they leave the registry at the next
+  /** @brief Lets @p elapsed pass: ends the seats held SEAT_RESERVATION_TIMEOUT
+   * (see SeatReservations::age()), and kills the games still Starting that
+   * waited GAME_START_TIMEOUT: they leave the registry at the next
    * collectExits(). */
   void terminateStale(engine::Duration elapsed);
 

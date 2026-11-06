@@ -129,7 +129,7 @@ Without these options, `tests/tools/network-conditions/` applies the same scenar
 ./r-type_client --traffic-csv traffic.csv
 ```
 
-The client and every game process write what crosses their socket to the journal every 10 s; with `--traffic-csv` the client also writes it to a file every second, by player and by message type, for a measurement campaign (see [the network page](https://nique-epi.github.io/R-Type/network/#traffic-counters-trafficcounters)). A game process takes `--traffic-csv` too, but the supervisor starts its games without it, and the supervisor itself has no traffic file.
+The client and every game process write what crosses their socket to the journal every 10 s; with `--traffic-csv` the client also writes it to a file every second, by player and by message type, for a measurement campaign (see [the network page](https://nique-epi.github.io/R-Type/network/#traffic-counters-trafficcounters)). Given to the supervisor, `--traffic-csv traffic.csv` makes each game write its own `traffic_game_<n>.csv` in the same folder; the supervisor itself has no traffic file.
 
 ```bash
 ./r-type_server --mode master -p 8080
@@ -191,7 +191,7 @@ This has 32 players with no window join the server on port 4242 of the same mach
 
 ## Logging
 
-The client, the server and the master write a timestamped journal, `r-type_client.log`, `r-type_server.log` or `r-type_master.log` next to their executable, and show the same lines in the terminal; each game of the server writes its own, `r-type_game_<n>.log`, which `--log-level` given to the supervisor does not reach; the first line gives the absolute path of the journal. Installed in a folder they cannot write to, they write no journal and say so in the terminal. The level and the output are chosen at launch:
+The client, the server and the master write a timestamped journal, `r-type_client.log`, `r-type_server.log` or `r-type_master.log` next to their executable, and show the same lines in the terminal; each game of the server writes its own, `r-type_game_<n>.log`, at the level given to the supervisor; the first line gives the absolute path of the journal. Installed in a folder they cannot write to, they write no journal and say so in the terminal. The level and the output are chosen at launch:
 
 ```bash
 ./r-type_server --log-level debug

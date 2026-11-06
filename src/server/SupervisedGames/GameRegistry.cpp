@@ -6,6 +6,7 @@
 #include <span>
 #include <utility>
 #include <vector>
+#include "Endpoint.hpp"
 #include "ExitedGame.hpp"
 #include "GameLifecycle.hpp"
 #include "GameOpening.hpp"
@@ -18,6 +19,7 @@
 #include "PlaceKind.hpp"
 #include "ProcessExit.hpp"
 #include "ProtocolConstants.hpp"
+#include "SeatRequest.hpp"
 #include "SequenceOrder.hpp"
 #include "ServerException.hpp"
 #include "SupervisedGame.hpp"
@@ -43,9 +45,42 @@ GameState stateOf(GameLifecycle lifecycle) {
   return GameState::Finished;
 }
 
+/** @returns The state and the seats of @p game: its players and the seats it
+ * holds for players sent to it are taken. */
 GameVacancy vacancyOf(const SupervisedGame& game) {
-  return GameVacancy{.state = stateOf(game.lifecycle),
-                     .full = game.nicknames.size() >= network::MAXIMUM_PLAYERS};
+  return GameVacancy{
+      .state = stateOf(game.lifecycle),
+      .full = game.nicknames.size() + game.reservations.count() >=
+              network::MAXIMUM_PLAYERS};
+}
+
+/** @returns The index of the game of @p games that waits for players and
+ * holds a seat for @p sender; nothing when none does. */
+std::optional<std::size_t> gameHolding(const std::vector<SupervisedGame>& games,
+                                       const network::Endpoint& sender) {
+  for (std::size_t index = 0; index < games.size(); ++index) {
+    if (stateOf(games[index].lifecycle) == GameState::WaitingForPlayers &&
+        games[index].reservations.holds(sender)) {
+      return index;
+    }
+  }
+  return std::nullopt;
+}
+
+/** @returns The index of the game of @p games the player of @p sender goes
+ * to: the one that holds its seat, else the first with a free seat; nothing
+ * when none fits. */
+std::optional<std::size_t> gameFor(const std::vector<SupervisedGame>& games,
+                                   const network::Endpoint& sender) {
+  if (const std::optional<std::size_t> held = gameHolding(games, sender)) {
+    return held;
+  }
+  std::vector<GameVacancy> vacancies;
+  vacancies.reserve(games.size());
+  for (const SupervisedGame& game : games) {
+    vacancies.push_back(vacancyOf(game));
+  }
+  return firstJoinableGame(vacancies);
 }
 
 /** @returns The lowest place none of @p games holds.
@@ -81,6 +116,7 @@ void GameRegistry::open(GameOpening opening) {
                                   .port = opening.port,
                                   .linkToken = opening.linkToken,
                                   .newestSequence = std::nullopt,
+                                  .reservations = {},
                                   .process = std::move(opening.process)});
 }
 
@@ -101,18 +137,16 @@ bool GameRegistry::record(SupervisedGame& game, std::uint16_t sequence,
   game.lifecycle = lifecycleOf(status.state);
   game.nicknames = status.nicknames;
   game.measures = status.measures;
+  game.reservations.settle(game.nicknames);
   return true;
 }
 
-GamePlace GameRegistry::placeForNewPlayer() const {
-  std::vector<GameVacancy> vacancies;
-  vacancies.reserve(games_.size());
-  for (const SupervisedGame& game : games_) {
-    vacancies.push_back(vacancyOf(game));
-  }
+GamePlace GameRegistry::placeForNewPlayer(const SeatRequest& request) {
   if (const std::optional<std::size_t> joinable =
-          firstJoinableGame(vacancies)) {
-    return placeIn(games_[*joinable]);
+          gameFor(games_, request.sender)) {
+    SupervisedGame& game = games_[*joinable];
+    game.reservations.reserve(request, game.nicknames);
+    return placeIn(game);
   }
   return GamePlace{.kind = games_.size() < MAXIMUM_RUNNING_GAMES
                                ? PlaceKind::Open
@@ -142,6 +176,7 @@ std::vector<ExitedGame> GameRegistry::collectExits() {
 
 void GameRegistry::terminateStale(engine::Duration elapsed) {
   for (SupervisedGame& game : games_) {
+    game.reservations.age(elapsed);
     if (game.lifecycle != GameLifecycle::Starting) {
       continue;
     }

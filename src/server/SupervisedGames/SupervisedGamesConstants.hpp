@@ -14,6 +14,16 @@ constexpr std::size_t MAXIMUM_RUNNING_GAMES = 8;
  * supervisor kills it. */
 constexpr engine::Duration GAME_START_TIMEOUT = std::chrono::seconds(10);
 
+/**
+ * @brief How long a seat the supervisor gave a player stays held while the
+ * game does not report that player: the handshake of a redirected player with
+ * the game takes two round trips, a lost request costs it
+ * network::CONNECTION_REQUEST_INTERVAL (500 ms), and the game reports a new
+ * player at once. Three seconds leave room for four lost requests; a player
+ * still absent then is not coming, and its seat is free again.
+ */
+constexpr engine::Duration SEAT_RESERVATION_TIMEOUT = std::chrono::seconds(3);
+
 /** @brief How long the supervisor waits, after telling the games to stop, for
  * them to end before it kills the ones that remain. */
 constexpr engine::Duration STOP_GRACE_WAIT = std::chrono::seconds(3);

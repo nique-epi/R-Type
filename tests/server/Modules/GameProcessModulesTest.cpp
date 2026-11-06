@@ -91,8 +91,8 @@ TEST_F(GameProcessModulesFixture, OpensTheTrafficFileOfItsLaunchOption) {
  * Given a game process given a file of commands that loads the game statistics
  * plugin, writing to a file of the folder it starts in
  * When the application starts
- * Then the file holds the names of its columns: the game read the file it was
- * given, and its modules provide what the plugin needs
+ * Then the file of its port holds the names of its columns: the game read the
+ * file it was given, and its modules provide what the plugin needs
  */
 TEST_F(GameProcessModulesFixture,
        LoadsTheGameStatisticsPluginOfTheFileItIsGiven) {
@@ -105,7 +105,7 @@ TEST_F(GameProcessModulesFixture,
 
   application->start();
 
-  EXPECT_EQ(textOf(STATISTICS_FILE_NAME), STATISTICS_HEADER_LINE);
+  EXPECT_EQ(textOf(statisticsFileOfPort(port())), STATISTICS_HEADER_LINE);
   application->stop();
 }
 
@@ -125,7 +125,7 @@ TEST_F(GameProcessModulesFixture, ReadsNoServerConfigurationOfItsFolder) {
 
   application->start();
 
-  EXPECT_FALSE(std::filesystem::exists(STATISTICS_FILE_NAME));
+  EXPECT_FALSE(std::filesystem::exists(statisticsFileOfPort(port())));
   application->stop();
 }
 

@@ -7,6 +7,7 @@ add_library(rtype_server_supervised_games_module STATIC
   GameRegistry.cpp
   GameSpawner.cpp
   GameStatusReading.cpp
+  SeatReservations.cpp
   ServerSupervisedGamesModule.cpp
   SupervisedGamesReport.cpp
   SupervisedGamesWatch.cpp

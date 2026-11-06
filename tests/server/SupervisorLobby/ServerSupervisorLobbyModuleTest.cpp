@@ -11,6 +11,7 @@
 #include "ServerDatagrams.hpp"
 #include "ServerSupervisedGamesFixture.hpp"
 #include "SupervisedGamesFixtures.hpp"
+#include "SupervisedGamesReportTestConstants.hpp"
 #include "SupervisedGamesTestConstants.hpp"
 
 using rtype::network::ConnectionRedirect;
@@ -142,4 +143,37 @@ TEST_F(ServerSupervisedGamesFixture, RefusesARequestOfAnotherVersion) {
   ASSERT_EQ(answers.size(), 1U);
   EXPECT_EQ(onlyMessageIn<ConnectionRefused>(answers.front()).reason,
             RefusalReason::IncompatibleVersion);
+}
+
+/**
+ * Given a supervisor with no game
+ * When five players ask for a place one after the other, before any status
+ * Then a second game starts for the fifth: a game has four seats, and the
+ * player whose request opened a game holds one of them
+ */
+TEST_F(ServerSupervisedGamesFixture, OpensASecondGameForTheFifthOfABurst) {
+  startSupervisor();
+
+  for (std::size_t player = 0; player <= FIFTH_PLAYER; ++player) {
+    askForAPlaceAs(player);
+  }
+
+  EXPECT_EQ(launcher().commands().size(), 2U);
+}
+
+/**
+ * Given a supervisor with no game
+ * When a first player asks twice, then three other players ask
+ * Then a single game starts: the player that asked twice holds one seat
+ */
+TEST_F(ServerSupervisedGamesFixture, APlayerThatAsksTwiceHoldsOneSeat) {
+  startSupervisor();
+  askForAPlaceAs(0);
+  askForAPlaceAs(0);
+
+  for (std::size_t player = 1; player < FOUR_PLAYERS; ++player) {
+    askForAPlaceAs(player);
+  }
+
+  EXPECT_EQ(launcher().commands().size(), 1U);
 }

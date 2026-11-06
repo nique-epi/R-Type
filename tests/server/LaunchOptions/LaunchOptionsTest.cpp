@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <filesystem>
 #include <string>
 #include <string_view>
@@ -8,6 +9,7 @@
 #include "LaunchOptions.hpp"
 #include "LaunchOptionsTestConstants.hpp"
 #include "LogLaunchOptionsFixture.hpp"
+#include "LogLevel.hpp"
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
 #include "LoggingException.hpp"
@@ -665,4 +667,40 @@ TEST(ServerLaunchOptions, DatabaseOptionWithoutValueIsRejected) {
   EXPECT_THROW(
       static_cast<void>(LaunchOptions::read(Arguments{DATABASE_OPTION})),
       MissingLaunchOptionValueException);
+}
+
+/**
+ * Given no argument
+ * When the launch options are read
+ * Then the games are handed no option: they log and see the network as a
+ * launch without options does
+ */
+TEST(ServerLaunchOptions, NoArgumentHandsTheGamesNoOption) {
+  EXPECT_TRUE(LaunchOptions::read(Arguments{}).gameArguments().empty());
+}
+
+/**
+ * Given the level debug and the simulated network "bad"
+ * When the launch options are read
+ * Then the games are handed the level, then the five values of that network
+ */
+TEST(ServerLaunchOptions, HandsTheGamesTheLevelAndTheNetworkItWasGiven) {
+  const LaunchOptions options = LaunchOptions::read(Arguments{
+      LEVEL_OPTION, DEBUG_LEVEL_ARGUMENT, NETWORK_OPTION_TEXT, BAD_NAME_TEXT});
+
+  EXPECT_TRUE(std::ranges::equal(options.gameArguments(),
+                                 GAME_ARGUMENTS_OF_DEBUG_ON_A_BAD_NETWORK));
+}
+
+/**
+ * Given the options that write no journal and nothing to standard error
+ * When the launch options are read
+ * Then the games are handed both
+ */
+TEST(ServerLaunchOptions, HandsTheGamesNoJournalAndNoStandardError) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{NO_FILE_OPTION, NO_STDERR_OPTION});
+
+  EXPECT_TRUE(std::ranges::equal(options.gameArguments(),
+                                 Arguments{NO_FILE_OPTION, NO_STDERR_OPTION}));
 }
