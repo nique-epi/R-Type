@@ -1,0 +1,47 @@
+#pragma once
+
+#include <gtest/gtest.h>
+#include <SFML/Window/Keyboard.hpp>
+#include <memory>
+#include "RecordingGameCatalog.hpp"
+#include "RecordingInterfaceCanvas.hpp"
+#include "RecordingNavigator.hpp"
+#include "RecordingServerCatalog.hpp"
+#include "RecordingSoundPlayer.hpp"
+#include "ServerChoice.hpp"
+#include "ServerListSnapshot.hpp"
+#include "ServerMapScreen.hpp"
+#include "TimeConstants.hpp"
+
+namespace rtype::client::testing {
+
+/** @brief A server map over catalogs, a navigator and a canvas that record:
+ * the tests set the lists, press keys and read what the map asked. */
+class ServerMapScreenFixture : public ::testing::Test {
+ protected:
+  /** @brief Builds the map over @p list, as the catalog shows it, and runs a
+   * frame. */
+  void openOn(const ServerListSnapshot& list);
+  /** @brief Presses and releases @p key, then runs a frame. */
+  void press(sf::Keyboard::Key key);
+  /** @brief Presses @p key without releasing it. */
+  void hold(sf::Keyboard::Key key);
+  void update(engine::Duration elapsed);
+
+  [[nodiscard]] RecordingServerCatalog& servers();
+  [[nodiscard]] RecordingGameCatalog& games();
+  [[nodiscard]] const RecordingNavigator& navigator() const;
+  [[nodiscard]] const ServerChoice& choice() const;
+  [[nodiscard]] const InterfaceCanvasRecord& painting() const;
+
+ private:
+  RecordingNavigator navigator_;
+  RecordingSoundPlayer sounds_;
+  RecordingServerCatalog servers_;
+  RecordingGameCatalog games_;
+  ServerChoice choice_;
+  InterfaceCanvasRecord painting_;
+  std::unique_ptr<ServerMapScreen> screen_;
+};
+
+}  // namespace rtype::client::testing
