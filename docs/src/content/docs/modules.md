@@ -39,7 +39,7 @@ A module lives at one of two scopes.
 | Interface | `IModule` (`src/engine/Modules/IModule.hpp`) | `IGameModule` (`src/server/Instances/Context/Interfaces/IGameModule.hpp`) |
 | Owner | `Application`, one per program run | `GameInstance`, one per game hosted by the server |
 | Lives | from the start of the program to its end | from the creation of the game to its destruction |
-| Listed in | `serverModules()` (`src/server/Modules/`), `clientModules()` (`src/client/Modules/`) | `rtypeGameModules()` (`src/server/Games/RtypeGameModules.cpp`) |
+| Listed in | `supervisorModules()` and `gameProcessModules()` (`src/server/Modules/`), `clientModules()` (`src/client/Modules/`) | `rtypeGameModules()` (`src/server/Games/RtypeGameModules.cpp`) |
 | Stages | `SERVER_LOOP_STAGES`, `CLIENT_LOOP_STAGES` | `GAME_STAGES` |
 | Example | the lobby, the sound | the rules of R-Type, the replication of the world |
 
@@ -53,7 +53,7 @@ The server therefore has modules inside a module: the games module of the progra
 
 ## How modules talk
 
-Modules never call each other directly, and only the list of a program (`serverModules()`, `clientModules()`, `rtypeGameModules()`) includes the class of a module. A module includes the header of each service it requires, as the next section allows. They meet through three channels.
+Modules never call each other directly, and only the list of a program (`supervisorModules()`, `gameProcessModules()`, `clientModules()`, `rtypeGameModules()`) includes the class of a module. A module includes the header of each service it requires, as the next section allows. They meet through three channels.
 
 | Channel | What it carries | Where it is set up |
 |---|---|---|
@@ -91,10 +91,10 @@ A module is switched on or off at one of four moments.
 
 | How | Exists | How it works |
 |---|---|---|
-| At compile time | Yes | The module is in the list of `serverModules()` or `clientModules()`, and its library is linked by the `CMakeLists.txt` beside that list (`src/server/Modules/`, `src/client/Modules/`). Remove the three lines the [tutorial](/R-Type/tutorial-write-a-module/#step-4-put-it-in-the-servers-list) adds: the `#include` and the `push_back` in `ServerModules.cpp` or `ClientModules.cpp`, and the library in that `CMakeLists.txt`. On the server, the list of names that `tests/server/Modules/ServerModulesTest.cpp` expects changes too |
+| At compile time | Yes | The module is in the list of `gameProcessModules()`, `supervisorModules()` or `clientModules()`, and its library is linked by the `CMakeLists.txt` beside that list (`src/server/Modules/`, `src/client/Modules/`). Remove the three lines the [tutorial](/R-Type/tutorial-write-a-module/#step-4-put-it-in-the-list-of-a-game-process) adds: the `#include` and the `push_back` in `GameProcessModules.cpp`, `SupervisorModules.cpp` or `ClientModules.cpp`, and the library in that `CMakeLists.txt`. On the server, the list of names that `tests/server/Modules/GameProcessModulesTest.cpp` or `SupervisorModulesTest.cpp` expects changes too |
 | At launch, by configuration | Yes | The module stays in the list; a launch option chooses what it does. `--no-sound` gives `ClientAudioModule` an `AudioMode::Disabled`: it still provides an `IAudioService`, one that plays nothing |
-| At launch, by the configuration file | Yes | The module stays in the list; the line `module <name> off` of `server.cfg` or `client.cfg` makes `Application` skip its `install()`, its `start()` and its `stop()`, so it provides no service and adds no work. The line is refused when a module that stays on needs it, so the program is never left with a missing service (see [Configuration commands](/R-Type/commands/#module)) |
-| At launch, by plugin | Yes | The module is not in the program at all: it is a shared library in the plugin folder, and the line `plugin <name>` of the configuration file loads it before the modules install. Its modules join the end of the list, and `module <name> off` turns it off like any other. See [Write a plugin](#write-a-plugin) |
+| At launch, by the configuration file | Yes | The module stays in the list; the line `module <name> off` of `server.cfg` or `client.cfg` makes `Application` skip its `install()`, its `start()` and its `stop()`, so it provides no service and adds no work. On the server, the supervisor runs the line when it has that module and hands it to its games otherwise (see [Server](/R-Type/server/#configuration-servercfg)). The line is refused when a module that stays on needs it, so the program is never left with a missing service (see [Configuration commands](/R-Type/commands/#module)) |
+| At launch, by plugin | Yes | The module is not in the program at all: it is a shared library in the plugin folder, and the line `plugin <name>` of the configuration file loads it before the modules install. On the server it is loaded by every game process, never by the supervisor. Its modules join the end of the list, and `module <name> off` turns it off like any other. See [Write a plugin](#write-a-plugin) |
 
 Two rules decide which one fits:
 
@@ -138,11 +138,11 @@ rtype_add_plugin(TARGET rtype_server_game_statistics_module NAME game-statistics
 
 | You want to… | Look at |
 |---|---|
-| Add a module to the server | A new folder `src/server/<Name>/`, a line in `serverModules()` and a row in [the list of modules](/R-Type/project-layout/#the-list-of-modules): the [tutorial](/R-Type/tutorial-write-a-module/) does it step by step |
+| Add a module to the server | A new folder `src/server/<Name>/`, a line in `gameProcessModules()` or `supervisorModules()` and a row in [the list of modules](/R-Type/project-layout/#the-list-of-modules): the [tutorial](/R-Type/tutorial-write-a-module/) does it step by step |
 | Add a module without recompiling the program | [Write a plugin](#write-a-plugin) |
 | Add a module to the client | A new folder `src/client/<Name>/`, a line in `clientModules()` and a row in the list of modules |
 | Place code of a module that another folder needs | [The code of a module used elsewhere](/R-Type/project-layout/#the-code-of-a-module-used-elsewhere) |
-| Change the order modules start in | The order of the lines of `serverModules()` or `clientModules()`: a module comes after every module it depends on |
+| Change the order modules start in | The order of the lines of `gameProcessModules()`, `supervisorModules()` or `clientModules()`: a module comes after every module it depends on |
 | Add a stage to a loop | `SERVER_LOOP_STAGES` (`src/server/ServerConstants.hpp`) or `CLIENT_LOOP_STAGES` (`src/client/ClientConstants.hpp`) |
 | Add a rule to a game | An `IGameModule` listed in `rtypeGameModules()` |
 | Give a module a name others can depend on | `src/server/ModuleConstants.hpp` or `src/client/ModuleConstants.hpp` |

@@ -46,7 +46,7 @@ set server-name "R-Type server"
 # network, supervisor lobby needs network and supervised games, information
 # needs network and supervised games, master needs network, supervised games
 # and information; in a game, storage needs network, games needs network and
-# storage, lobby needs games, metrics needs games and network, the
+# storage, lobby needs network and games, metrics needs games and network, the
 # game-statistics plugin needs network and games once loaded; all need
 # logger.
 # module lobby off

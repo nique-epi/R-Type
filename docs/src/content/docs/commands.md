@@ -37,19 +37,19 @@ No other command exists. The interpreter keeps a help text for each command, but
 
 `set` takes exactly two words: the name of a setting and its value. A whole number is digits only, with no sign and no space. The value is written only once it has been checked, so a refused line leaves the previous value.
 
-Server settings:
+Server settings. Only the supervisor reads `server.cfg`: it runs the lines of its own settings, and hands the lines of the settings of the games to every game it starts, through `r-type_games_<port>.cfg` (see [Server](/R-Type/server/#configuration-servercfg)). The column Read by says which:
 
-| Setting | Value | Default | Effect |
-|---|---|---|---|
-| `port` | 1 to 65535 | 4242 | The UDP port the server listens on. |
-| `seed` | 0 to 4294967295, or `none` | `none` | The seed of the first game; `none` draws one at random. |
-| `state-rate` | 2 to 60 | 20 | The world states sent to each player per second. |
-| `input-delay` | 0 to 30 | 3 | The ticks every player's input is held before it is applied. |
-| `database` | a path | empty | The SQLite file the leaderboard of the server is kept in; empty for `r-type_server_<port>.db` next to the executable. |
-| `master-url` | `http://<host>[:<port>]` | empty | The master the server is listed on; empty to run alone. |
-| `master-key` | a key | empty | The key the master gave when the host created the server; empty to run alone. |
-| `server-name` | 1 to 32 bytes | `R-Type server` | The name players read in the list of servers and in the answer to an information request. |
-| `game-statistics-file` | a path | empty | Declared by the `game-statistics` plugin, only once a `plugin game-statistics` line loads it: the CSV file of the statistics of the games; empty for `r-type_statistics_<port>.csv` next to the executable. |
+| Setting | Read by | Value | Default | Effect |
+|---|---|---|---|---|
+| `port` | the supervisor | 1 to 65535 | 4242 | The UDP port the server listens on. |
+| `seed` | the games | 0 to 4294967295, or `none` | `none` | The seed of each game; `none` draws one at random. |
+| `state-rate` | the games | 2 to 60 | 20 | The world states sent to each player per second. |
+| `input-delay` | the games | 0 to 30 | 3 | The ticks every player's input is held before it is applied. |
+| `database` | the supervisor | a path | empty | The SQLite file the leaderboard of the server is kept in, given to every game; empty for `r-type_server_<port>.db` next to the executable, with the port of the supervisor. |
+| `master-url` | the supervisor | `http://<host>[:<port>]` | empty | The master the server is listed on; empty to run alone. |
+| `master-key` | the supervisor | a key | empty | The key the master gave when the host created the server; empty to run alone. |
+| `server-name` | the supervisor | 1 to 32 bytes | `R-Type server` | The name players read in the list of servers and in the answer to an information request. |
+| `game-statistics-file` | the games | a path | empty | Declared by the `game-statistics` plugin, only once a `plugin game-statistics` line loads it: the CSV file of the statistics of the game; empty for `r-type_statistics_<port>.csv` next to the executable, with the port of the game. |
 
 Client settings:
 
@@ -72,29 +72,42 @@ Master settings (see [Master](/R-Type/master/#configuration-mastercfg)):
 
 `module` takes exactly two words: the name of a module and `on` or `off`. A module that is off is never installed: the `module` lines run once before any install, so it provides no service, adds no work, opens nothing and runs nothing. The file is read three times: first for the `plugin` and `plugin-folder` lines alone, then for the `module` lines alone, both before any install, and a last time with every command once every module is installed, so a `set` line finds the settings the modules declared. The `module` lines come after the `plugin` ones, so a plugin can be turned off like any module. Every module is on until a line turns it off.
 
+In `server.cfg`, a `module` line on a module of the supervisor runs in the supervisor, and a line on any other name goes to the games, which run it.
+
 A module cannot be turned off while a module that stays on needs it, and cannot be turned on while a module it needs is off. The check uses the state at the time of the line, so turn off the dependents first and turn on the dependencies first.
 
 ### `plugin`
 
 `plugin` takes exactly one word: the name of a plugin, made of letters, digits, `-` and `_`. It opens `<folder>/<name>.so` on Linux and macOS, `<folder>/<name>.dll` on Windows, and adds the module the library creates to the end of the list of modules, in the order of the lines. The folder is `plugins/` next to the executable until `plugin-folder` changes it. The same line run again does nothing: the file is read three times, and a plugin is loaded once.
 
-A plugin that cannot be loaded does not refuse the line: it stops the program before any module installs, and the program prints `server stopped: <message>` (`client stopped`, `master stopped`) and exits with code 1. The message names the plugin: a file that is not in the folder, a library that exports no `rtypePluginEntry`, a plugin built for another plugin API version (the message gives both numbers), a name with another character than the allowed ones, or a name a module already has. A plugin must be built by the same compiler, from the same sources, as the program (see [Write a plugin](/R-Type/modules/#write-a-plugin)).
+A plugin that cannot be loaded does not refuse the line: it stops the program before any module installs, and the program prints `game stopped: <message>` (`client stopped`, `master stopped`) and exits with code 1. On the server only a game process loads plugins, so a plugin that cannot be loaded stops each game as it starts, and the supervisor writes in its journal that the game crashed. The message names the plugin: a file that is not in the folder, a library that exports no `rtypePluginEntry`, a plugin built for another plugin API version (the message gives both numbers), a name with another character than the allowed ones, or a name a module already has. A plugin must be built by the same compiler, from the same sources, as the program (see [Write a plugin](/R-Type/modules/#write-a-plugin)).
 
 ### `plugin-folder`
 
 `plugin-folder` takes exactly one word: a folder, read from the folder the program is started from when it is relative, like the file itself. It sets where the `plugin` lines look, and it comes before every `plugin` line: after one, a line that names another folder is refused, and a line that names the same folder again does nothing.
 
-Server modules:
+Modules of the supervisor:
+
+| Module | Needs | Does |
+|---|---|---|
+| `logger` | nothing | Applies the logging options when it starts. |
+| `network` | `logger` | Owns the UDP socket and the network thread. |
+| `supervised games` | `network` | Starts, follows and stops the game processes. |
+| `supervisor lobby` | `network`, `supervised games` | Sends each player to a game, or starts one. |
+| `information` | `network`, `supervised games` | Answers the information requests. |
+| `master` | `network`, `supervised games`, `information` | Keeps the master told of the games. |
+
+Modules of a game process, which every `module` line on another name reaches:
 
 | Module | Needs | Does |
 |---|---|---|
 | `logger` | nothing | Applies the logging options when it starts; provides the journal a plugin writes to. |
 | `network` | `logger` | Owns the UDP socket and the network thread. |
 | `storage` | `logger`, `network` | Opens the database of the leaderboard. |
-| `games` | `network`, `storage` | Hosts the games. |
+| `games` | `network`, `storage` | Hosts the game. |
 | `lobby` | `network`, `games` | Answers the connection requests of the players. |
 | `metrics` | `games`, `network` | Measures the ticks and writes a report to the journal. |
-| `master` | `network`, `games` | Keeps the master told of the server; uses `metrics` when it is on. |
+| `supervisor link` | `network`, `games` | Reports the game to the supervisor; uses `metrics` when it is on. |
 | `game-statistics` | `logger`, `network`, `games` | A plugin, loaded by `plugin game-statistics`: writes a row per Bydo killed and the total of each game to a CSV file (see [Server](/R-Type/server/#game-statistics-servergamestatisticsmodule)). |
 
 Client modules:
@@ -154,14 +167,14 @@ From the lowest priority to the highest:
 
 1. The default of the setting, written in the module that declares it.
 2. The file: `server.cfg`, `client.cfg` or `master.cfg`, in the folder the program is started from.
-3. The launch options. `-p`, `--seed`, `--state-rate`, `--input-delay` and `--database` on the server, `-h`, `-p` and `-n` on the client, `-p` and `--database` on the master, and `--set <name>=<value>` on all three, are turned into `set` lines that run after the file. The last value given wins, so a launch option always wins over the file.
+3. The launch options. `-p`, `--seed`, `--state-rate`, `--input-delay` and `--database` on the supervisor, which hands the lines of the settings of the games to its games after the lines of the file, `-h`, `-p` and `-n` on the client, `-p` and `--database` on the master, and `--set <name>=<value>` on all three, are turned into `set` lines that run after the file. The last value given wins, so a launch option always wins over the file.
 
 A missing file is not an error: the defaults apply and the journal says `server.cfg not found, the defaults apply` (or `client.cfg`, `master.cfg`). The `info` lines are hidden at the default log level; start the program with `--log-level info` to see them.
 
 A module reads its settings when it starts, never when it installs, because the file is read between the two. A change to the file therefore takes effect at the next launch.
 
 ```bash
-./r-type_server --mode server --set state-rate=30 --seed 7
+./r-type_server --set state-rate=30 --seed 7
 ```
 
 The same two lines in `server.cfg` would be `set state-rate 30` and `set seed 7`.

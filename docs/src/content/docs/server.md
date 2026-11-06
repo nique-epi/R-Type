@@ -3,7 +3,17 @@ title: Server and game
 description: What the server program and the game library do, how their parts fit together and where to find them in the code.
 ---
 
-The server, `r-type_server`, runs the game for the players connected to it: it lets them in, plays `DEFAULT_HOSTED_GAME_COUNT` (8) games side by side, up to four players in each, and tells each player what happens in its game. It decides everything: a client only sends its inputs and shows what it is told. It never links SFML or Asio: it reaches the network through `rtype_network`, and its own libraries are checked for it at configure time (see [Project layout](/R-Type/project-layout/#who-may-link-what)).
+The server, `r-type_server`, runs the game for the players connected to it: it lets them in, plays up to `MAXIMUM_RUNNING_GAMES` (8) games, up to four players in each, and tells each player what happens in its game. It decides everything: a client only sends its inputs and shows what it is told.
+
+The binary has three roles, chosen by `--mode` (see [The three roles](#the-three-roles-supervisor-game-and-master)):
+
+| Role | Started by | Does |
+|---|---|---|
+| `supervisor`, the default | the host | reads `server.cfg`, listens on port 4242, starts one game process per game and sends each player to it, answers the information requests and tells the master |
+| `game` | the supervisor, never the host | hosts one game on a port of its own, reads only the file of commands its supervisor gave it, and reports to its supervisor |
+| `master` | the host | lists the servers for the players (see [Master](/R-Type/master/)) |
+
+Most of this page describes a game process: the threads, the tick, the game and its rules run there. It never links SFML or Asio: it reaches the network through `rtype_network`, and its own libraries are checked for it at configure time (see [Project layout](/R-Type/project-layout/#who-may-link-what)).
 
 The game library, `rtype_game`, holds the rules of a match: what moves, what touches what and what that means. It is built on the engine (see [Engine](/R-Type/engine/)), and it knows nothing about sockets, SFML or the messages sent between the programs (see [Project layout](/R-Type/project-layout/#game)). The server runs all of it; the client runs only the part that predicts its own ship (see [Client](/R-Type/client/#own-ship-prediction-ownshippredictor-shipprediction)).
 
@@ -15,14 +25,14 @@ This section is the map of the page: the threads, one tick, the life of a game a
 
 ### Threads
 
-The server runs on the threads below. Only the network thread and the simulation thread work during a game, and they share no game state: a datagram crosses from one to the other through a queue, and a request to act through `NetworkContext::post()`. Every game runs on the simulation thread, so nothing in a game needs a lock.
+A game process and the supervisor each run on the threads below. Only the network thread and the simulation thread work during a game, and they share no game state: a datagram crosses from one to the other through a queue, and a request to act through `NetworkContext::post()`. Every game runs on the simulation thread, so nothing in a game needs a lock.
 
 | Thread | Does | Where |
 |---|---|---|
 | Main | Starts the modules, waits on the `StopRequest`, then stops the modules | `src/server/main.cpp` |
 | Network | Started by `ServerNetworkModule::start()`. Owns the socket: sorts each datagram into a queue as it arrives, and sends the outgoing queue when asked | `src/server/Network/` |
 | Simulation | Started by `ServerApplication::run()`. Runs `SIMULATION_TICKS_PER_SECOND` (60) ticks per second, and in them every module and every game | `src/server/Network/` |
-| MasterLink | Started by `ServerMasterModule::start()` when `master-url` and `master-key` are set. Runs the `HeartbeatJob`: registers the server with the master and sends its heartbeats, reading only `LatestHostedGames` and `LatestMetrics`, never a game (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
+| MasterLink | In the supervisor only. Started by `ServerMasterModule::start()` when `master-url` and `master-key` are set. Runs the `HeartbeatJob`: registers the supervisor with the master and sends its heartbeats, reading only `LatestHostedGames` and `LatestServerMeasures`, which the supervised games module publishes (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
 | Signals | Started by `StopSignals`, on Linux and macOS. Waits for Ctrl-C or SIGTERM and asks for the stop; on Windows, the system runs the handler on a thread of its own | `src/server/Platform/` |
 
 The path of a datagram through the network thread and the simulation thread:
@@ -65,7 +75,7 @@ The tick of one game, `GameInstance::onTick()`, runs the stages of `GAME_STAGES`
 
 ### The life of a game
 
-A game is created when the server starts and never replaced: it goes round these four states of `GameState` as long as the server runs, each round with a new `World`.
+A game is created when its game process starts and never replaced: it goes round these four states of `GameState` as long as the process runs, each round with a new `World`. The process ends by itself once its players are gone (see [Supervisor and game processes](#supervisor-and-game-processes)).
 
 ```mermaid
 stateDiagram-v2
@@ -111,12 +121,12 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Every player's input applied after the same delay, set at launch (`--input-delay`) | Available | `src/server/Instances/` |
 | One header for every datagram to a player: session token and next sequence | Available | `src/server/Sessions/Roster/` |
 | Game events sent to the players | Available: the removal of a Bydo or a missile that leaves the playfield, the damage and destruction of a Bydo hit by missiles, and the loss of a ship and of a life when a ship touches a Bydo or a missile of a Bydo | `src/server/Replication/`, `src/game/Events/` |
-| Launch options | Available: the port, the seed, the state rate, the input delay, the database, `--set` and `--help` | `src/server/LaunchOptions/` |
-| Configuration file | Available: `server.cfg` (`module`, `set`, `plugin`, `plugin-folder`) | `src/server/Modules/` |
-| Information requests answered outside any session: name, versions, players, games, free seats, and the time the request was held | Available; nothing sends a request yet: the list of servers of the client and the probe of the master are not written | `src/server/Information/` |
-| Letting players in: challenge, acceptance or refusal | Available; a new player joins the first game waiting for players with a free seat, and is refused with `GameInProgress` or `GameFull` only when no game has one; the acceptance carries the entity types of the server | `src/server/Lobby/`, `src/server/Sessions/` |
-| One process per game, started by a supervisor (`--mode supervisor`) | Available: up to 8 game processes, each reporting its state every second and ending by itself or when told to | `src/server/Processes/`, `src/server/SupervisedGames/`, `src/server/SupervisorLink/`, `src/server/SupervisorLobby/` |
-| A game: states, ready rule, new world between two games | Available: eight games side by side, each ending once no player is left in it, no player left has a life, or the last wave of its level is over | `src/server/Rules/Match/` |
+| Launch options | Available: of the supervisor (the port, the seed, the state rate, the input delay, the database, `--set` and `--help`) and of a game process (`GameLaunchOptions`) | `src/server/LaunchOptions/` |
+| Configuration file | Available: `server.cfg` (`module`, `set`, `plugin`, `plugin-folder`), read by the supervisor alone, which writes the lines of its games to `r-type_games_<port>.cfg` | `src/server/Modules/`, `src/engine/Commands/Configuration/`, `src/server/SupervisedGames/` |
+| Information requests answered outside any session: name, versions, players, games, free seats, and the time the request was held | Available, by the supervisor; nothing sends a request yet: the list of servers of the client and the probe of the master are not written | `src/server/Information/`, `src/server/SupervisedGames/` |
+| Letting players in: challenge, acceptance or refusal | Available: the supervisor sends a new player to a game waiting with a free seat, or starts one, and refuses it with `GameFull` when every place is taken; the game process accepts it, and the acceptance carries the entity types of the server | `src/server/SupervisorLobby/`, `src/server/Lobby/`, `src/server/Sessions/` |
+| One process per game, started by the supervisor | Available: up to 8 game processes, numbered by place from 1 to 8, each reporting its state, its players and its measures every second and ending by itself or when told to | `src/server/Processes/`, `src/server/SupervisedGames/`, `src/server/SupervisorLink/`, `src/server/SupervisorLobby/` |
+| A game: states, ready rule, new world between two games | Available: one game per game process, ending once no player is left in it, no player left has a life, or the last wave of its level is over | `src/server/Rules/Match/` |
 | Newest input of each player, held by the `Intent` of its ship and acted on at each tick of a game in progress | Available: the arrows move the ship, shoot fires its missiles | `src/server/Sessions/Tracking/`, `src/server/Rules/Players/`, `src/game/Components/Intent.hpp` |
 | Heartbeats every 500 ms, and the round trip and jitter of each player measured from their echoes; a player silent for 5 seconds is away and keeps its seat 15 seconds, then its session closes | Available, and a `Disconnection` closes the session at once | `src/server/Sessions/Tracking/` |
 | A nickname unique on the server, held with the seat | Available: a second request for the same nickname gets `NicknameTaken` | `src/server/Sessions/Roster/`, `src/server/Lobby/` |
@@ -125,8 +135,8 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Metrics in the journal every 10 s: duration of the ticks, time of each system, games, players, entities, round trip of each player and traffic | Available; losses are not measured yet | `src/server/Metrics/` |
 | Results of each game kept in a SQLite file, with statistics, and a leaderboard read with `LeaderboardRequest` | Available; the leaderboard of the client reads it, and nothing in the game shows the statistics | `src/server/Results/`, `src/server/Storage/`, `src/storage/` |
 | Game statistics: a CSV row per Bydo killed and the total of each game, written by a plugin | Available, loaded by `plugin game-statistics` | `src/server/GameStatistics/` |
-| Master mode: `--mode master` runs the master instead of the game server | Available (see [Master](/R-Type/master/)) | `src/server/LaunchOptions/`, `src/master/` |
-| Master link: registration and heartbeats | Available; admin orders, bans and results not yet written (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
+| Master mode: `--mode master` runs the master instead of the supervisor | Available (see [Master](/R-Type/master/)) | `src/server/LaunchOptions/`, `src/master/` |
+| Master link: registration and heartbeats | Available, from the supervisor, one registration for all its games; admin orders, bans and results not yet written (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
 | Components (`Position`, `SteadyMotion`, `CollisionBox`, `Health`, `EntityType`, `EntityTypeNumber`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Entity sheets: every entity made from the sheet of its type, the sheets read at launch | Available: the ship, the Drifter, the Weaver and the two missiles (see [Writing an entity sheet](/R-Type/entity-sheets/)) | `assets/entities/`, `src/game/EntityTypes/`, `src/game/World.cpp` |
 | Movement, run by each game tick: every body by its `Intent`, a ship as a ship, the Bydos and the missiles at the top speed of their sheet | Available | `src/game/Systems/MovementSystem/`, `src/server/Rules/Match/` |
@@ -142,31 +152,64 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Waves of Bydos that grow, read from the waves file at launch, up to the last wave of the level | Available: every game plays the `normal` difficulty, 8 waves; a boss after the last wave is not written yet | `src/game/Waves/`, `src/server/Spawning/`, `assets/waves/waves.toml` |
 | Lives: a life lost when a ship touches a Bydo or a missile of a Bydo, a new ship 1 s later that cannot be hit for 2 s, a player with no life left watching | Available | `src/server/Rules/Players/` |
 
+## The three roles: supervisor, game and master
+
+`main()` (`src/server/main.cpp`) reads `--mode`, the first argument, and runs one of three programs. Each reads its own launch options, its own file of commands and its own list of modules, so a role holds only what it needs:
+
+| | `supervisor`, the default | `game` | `master` |
+|---|---|---|---|
+| Launch options | `LaunchOptions` | `GameLaunchOptions` | `MasterLaunchOptions` (see [Master](/R-Type/master/)) |
+| Reads | `server.cfg`, whole; runs its own lines and keeps the lines of its games | only the file given after `--configuration`; none without it | `master.cfg` |
+| Modules | `supervisorModules()`: logger, network, supervised games, supervisor lobby, information, master | `gameProcessModules()`: logger, network, storage, games (one game), lobby, metrics, supervisor link, and the plugins its file loads | `masterModules()` |
+| Settings it owns | `port`, `database`, `server-name`, `master-url`, `master-key` | `seed`, `state-rate`, `input-delay`, and those of its plugins; its `port` and `database` come from its command line | those of `master.cfg` |
+| Talks to the master | yes, one registration for all its games | never | |
+| Answers information requests | yes | never | |
+| Journal | `r-type_server.log` | `r-type_game_<n>.log`, n its number in the journal of the supervisor | `r-type_master.log` |
+| An error prints | `supervisor stopped: <reason>` | `game stopped: <reason>` | `master stopped: <reason>` |
+
+The host only starts the supervisor and the master. `--mode game` is the command line the supervisor gives each game process (see [Supervisor and game processes](#supervisor-and-game-processes)); started by hand without `--supervisor` and `--link-token`, it stops at once. There is no mode that hosts games in the process that reads `server.cfg`: `--mode server` is an unknown mode.
+
+`tests/server/Modules/ServerRolesTest.cpp` keeps the roles apart: it installs the modules of each role and checks that every `set` line of `server.cfg.example` is declared by the role that runs it, and that a game process holds neither the information nor the master.
+
 ## Launch options: `LaunchOptions`
 
-`LaunchOptions` (`src/server/LaunchOptions/`) reads what the server is told at launch. `main()` hands it the arguments of the process, and `LaunchOptions::read()` reads them in one pass with the engine's `readLaunchArguments` (see [Engine](/R-Type/engine/#launch-arguments-readlauncharguments)): the options below, those of the network simulator (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)) and the logging options (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)), which it keeps for the logger module (`logOptions()`). The argument after an option that takes a value is always its value, so `--seed --log-level debug 123` is refused: `--log-level` is no seed.
+`LaunchOptions` (`src/server/LaunchOptions/`) reads what the supervisor is told at launch. `main()` hands it the arguments of the process, and `LaunchOptions::read()` reads them in one pass with the engine's `readLaunchArguments` (see [Engine](/R-Type/engine/#launch-arguments-readlauncharguments)): the options below, those of the network simulator (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)) and the logging options (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)), which it keeps for the logger module (`logOptions()`). The argument after an option that takes a value is always its value, so `--seed --log-level debug 123` is refused: `--log-level` is no seed.
 
 | Option | Effect |
 |---|---|
-| `--mode <server\|supervisor\|master>` | The program the binary runs: the supervisor that starts one game server per game (`supervisor`, the default, see [Supervisor and game processes](#supervisor-and-game-processes)), one game server alone (`server`) or the master (`master`, see [Master](/R-Type/master/)). It comes before every other option; further on, it is an unknown argument. |
-| `-p <port>` | The UDP port to listen on, from 1 to 65535 (see [Network](/R-Type/network/#ports-and-addresses-written-as-text-portfromtext-ipv4addressfromtext)). Default: `DEFAULT_SERVER_PORT` (4242). |
-| `--seed <seed>` | The number the random draws of the games start from, a whole number from 0 to 4294967295. Default: drawn at random. See [Waves](#waves-wavespawner). A seed makes the games not vanilla (see [Vanilla games](#vanilla-games-vanillabreaches)). |
-| `--state-rate <states>` | The world states sent to each player per second, a whole number from 2 to 60. Default: `DEFAULT_WORLD_STATES_PER_SECOND` (20). More states move the other ships more smoothly and use more bandwidth; see [World state](#world-state-worldstatesender). |
-| `--input-delay <ticks>` | The ticks every player's input is held before it is applied to its ship, a whole number from 0 to 30. Default: `DEFAULT_INPUT_DELAY_TICKS` (3, 50 ms). The same delay holds for every player; see [Player inputs](#player-inputs). Any other delay makes the games not vanilla. |
-| `--database <file>` | The SQLite file the leaderboard of this server is kept in, on a local disk, as the setting `database`. Default: empty, which keeps it in `r-type_server_<port>.db` next to the executable, so two servers on one machine never merge their leaderboards. See [Results and leaderboard](#results-and-leaderboard-resultsmodule-resultsarchive). |
-| `--set <name>=<value>` | Gives a setting a value, as the line `set <name> <value>` of `server.cfg` does (see [Configuration](#configuration-servercfg)). Can be given several times. |
-| `--network <name>`, `--lag <ms>`, `--jitter <ms>`, `--loss <percent>`, `--duplicates <percent>`, `--reorder <percent>` | The simulated network every datagram of the server crosses, for all its players (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)). Default: none, the network is not simulated. |
-| `--traffic-csv <file>` | The file the traffic of the server goes to every second (see [Network](/R-Type/network/#traffic-counters-trafficcounters)). Default: no file. |
-| `--supervisor <port>`, `--link-token <number>` | Only for a game process, which its supervisor starts with them: the UDP port of the supervisor, on the loopback, and the whole number from 1 to 18446744073709551615 they share (see [Supervisor and game processes](#supervisor-and-game-processes)). Given together; one without the other stops the start. Default: none, the server is on its own and hosts the games of `DEFAULT_HOSTED_GAME_COUNT`. |
+| `--mode <supervisor\|game\|master>` | The program the binary runs: the supervisor (`supervisor`, the default), a game process (`game`, started by the supervisor only, see [A game process](#a-game-process-gamelaunchoptions)) or the master (`master`, see [Master](/R-Type/master/)). It comes before every other option; further on, it is an unknown argument. |
+| `-p <port>` | The UDP port to listen on, from 1 to 65535 (see [Network](/R-Type/network/#ports-and-addresses-written-as-text-portfromtext-ipv4addressfromtext)). Default: `DEFAULT_SERVER_PORT` (4242). The games listen on ports the system picks. |
+| `--seed <seed>` | The number the random draws of the games start from, a whole number from 0 to 4294967295. Default: drawn at random. Handed to the games. See [Waves](#waves-wavespawner). A seed makes the games not vanilla (see [Vanilla games](#vanilla-games-vanillabreaches)). |
+| `--state-rate <states>` | The world states sent to each player per second, a whole number from 2 to 60. Default: `DEFAULT_WORLD_STATES_PER_SECOND` (20). Handed to the games. More states move the other ships more smoothly and use more bandwidth; see [World state](#world-state-worldstatesender). |
+| `--input-delay <ticks>` | The ticks every player's input is held before it is applied to its ship, a whole number from 0 to 30. Default: `DEFAULT_INPUT_DELAY_TICKS` (3, 50 ms). Handed to the games. The same delay holds for every player; see [Player inputs](#player-inputs). Any other delay makes the games not vanilla. |
+| `--database <file>` | The SQLite file the leaderboard of this server is kept in, on a local disk, as the setting `database`. Default: empty, which keeps it in `r-type_server_<port>.db` next to the executable, with the port of the supervisor, so two servers on one machine never merge their leaderboards. Every game of the supervisor is started with this file. See [Results and leaderboard](#results-and-leaderboard-resultsmodule-resultsarchive). |
+| `--set <name>=<value>` | Gives a setting a value, as the line `set <name> <value>` of `server.cfg` does (see [Configuration](#configuration-servercfg)). Can be given several times. A setting of the games is handed to them. |
+| `--network <name>`, `--lag <ms>`, `--jitter <ms>`, `--loss <percent>`, `--duplicates <percent>`, `--reorder <percent>` | The simulated network every datagram of the supervisor's socket crosses (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)). The games are started without it. Default: none, the network is not simulated. |
+| `--traffic-csv <file>` | Read, and used by nothing: the supervisor has no metrics module, and it does not start its games with it. A game process takes it (below). |
 | `--help` | Prints the usage, the simulator and logging options included, on standard output, then exits with code 0 without starting anything or opening the journal. |
 
-- `-p`, `--seed`, `--state-rate`, `--input-delay` and `--database` are shortcuts: each forces the setting `port`, `seed`, `state-rate`, `input-delay` or `database` with the line `set <name> <value>`, the first four once their value is checked. The forced lines run after `server.cfg`, so a launch option wins over the file. `--traffic-csv` is no setting: it names the file of this run only.
-- The server listens on every IPv4 interface (`ANY_IPV4_ADDRESS`) and takes no address: `-h`, the client's address option, is an unknown argument here. The last `-p` wins, and so do the last `--seed`, the last `--state-rate`, the last `--input-delay`, the last `--database` and the last `--traffic-csv`.
-- An unknown argument, a `-p`, `--seed`, `--state-rate`, `--input-delay`, `--database` or `--traffic-csv` without a value, an invalid port, a seed that is not a whole number from 0 to 4294967295, a state rate that is not a whole number from 2 to 60, an input delay that is not a whole number from 0 to 30, a `--set` value that is not `name=value`, a simulator option without a value or with one out of its range, or a logging option that does not exist or has no value, stops the server before anything starts: it prints `r-type_server:`, the reason and how to see the usage on standard error, then exits with code 1. When several arguments are wrong, the first one from the left is reported.
+- `-p`, `--seed`, `--state-rate`, `--input-delay` and `--database` are shortcuts: each forces the setting `port`, `seed`, `state-rate`, `input-delay` or `database` with the line `set <name> <value>`, the first four once their value is checked. The forced lines run after `server.cfg`, so a launch option wins over the file. The lines of `seed`, `state-rate` and `input-delay` are not run by the supervisor: it hands them to its games, after the lines of the file (see [Configuration](#configuration-servercfg)).
+- The supervisor listens on every IPv4 interface (`ANY_IPV4_ADDRESS`) and takes no address: `-h`, the client's address option, is an unknown argument here. The last `-p` wins, and so do the last `--seed`, the last `--state-rate`, the last `--input-delay`, the last `--database` and the last `--traffic-csv`.
+- An unknown argument, a `-p`, `--seed`, `--state-rate`, `--input-delay`, `--database` or `--traffic-csv` without a value, an invalid port, a seed that is not a whole number from 0 to 4294967295, a state rate that is not a whole number from 2 to 60, an input delay that is not a whole number from 0 to 30, a `--set` value that is not `name=value`, a simulator option without a value or with one out of its range, or a logging option that does not exist or has no value, stops the program before anything starts: it prints `r-type_server:`, the reason and how to see the usage on standard error, then exits with code 1. When several arguments are wrong, the first one from the left is reported.
 
 ```bash
-./r-type_server --mode server -p 4243
+./r-type_server -p 4243
 ```
+
+### A game process: `GameLaunchOptions`
+
+`GameLaunchOptions` (`src/server/LaunchOptions/`) reads the arguments after `--mode game`, the ones `gameCommand()` (`src/server/SupervisedGames/`) writes for each game:
+
+| Option | Effect |
+|---|---|
+| `-p <port>` | The UDP port of the game, which the supervisor picked. |
+| `--supervisor <port>`, `--link-token <number>` | The UDP port of the supervisor, on the loopback, and the whole number from 1 to 18446744073709551615 they share. Required, together: without either, the program stops before anything starts (`MissingSupervisorLinkException`). |
+| `--database <file>` | The leaderboard file of the supervisor. |
+| `--log-file <file>` | `r-type_game_<n>.log` next to the executable. |
+| `--configuration <file>` | The file of commands the game reads, `r-type_games_<port>.cfg` next to the executable with the port of the supervisor; no file without it. |
+| `--traffic-csv <file>`, the simulator and logging options | As for the supervisor; the supervisor gives none of them. |
+
+`-p` and `--database` force the settings `port` and `database`, after the file of `--configuration`.
 
 ## Threads: `ServerApplication`
 
@@ -258,22 +301,33 @@ The player queue stays as the last safety net. It discards its oldest datagram, 
 
 ## Configuration: `server.cfg`
 
-The server reads `server.cfg`, in the folder it is started from, between the install and the start of its modules (see [Engine](/R-Type/engine/#commands-and-configuration-commandinterpreter)). The file is a list of commands, one per line; `#` starts a comment (every command and setting is listed in [Configuration commands](/R-Type/commands/)). `main()` builds the step with `engine::configurationStep()`: it reads `server.cfg`, then runs the lines the launch options force (`LaunchOptions::forcedLines()`).
+The supervisor reads `server.cfg`, in the folder it is started from, between the install and the start of its modules (see [Engine](/R-Type/engine/#commands-and-configuration-commandinterpreter)). It is the only program that reads it. The file is a list of commands, one per line; `#` starts a comment (every command and setting is listed in [Configuration commands](/R-Type/commands/)). `main()` builds the step with `engine::configurationStep()`: it reads `server.cfg`, then runs the lines the launch options force (`LaunchOptions::forcedLines()`).
+
+Each line belongs to the supervisor or to its games. `gameLineRule()` (`src/server/Modules/GameLineRule.cpp`) decides, from the catalogue of `src/server/Modules/ServerRoleConstants.hpp`:
+
+| The line… | Belongs to |
+|---|---|
+| sets a setting of `GAME_SETTING_NAMES`: `seed`, `state-rate`, `input-delay`, `game-statistics-file` | the games |
+| runs a command of `GAME_COMMAND_NAMES`: `plugin`, `plugin-folder` | the games |
+| is `module <name> on\|off` on a module the supervisor does not have | the games |
+| anything else | the supervisor, which runs it, or refuses it when it does not know it |
+
+A line of the games is not run by the supervisor, in none of the three passes of the step, so the supervisor never loads a plugin. It is kept as written, the lines of the file first, then the forced ones, in `ConfigurationReport::handedOverLines`. When it starts, the supervised games module writes them, one per line, to `r-type_games_<port>.cfg` next to the executable, with the port of the supervisor, and starts every game with `--configuration` and that file (`GameConfigurationFile`, `src/server/SupervisedGames/`). The supervisor does not check the lines of its games: a wrong one is refused by each game, in its own journal.
 
 | Command | Effect |
 |---|---|
-| `module <name> on\|off` | Turns a module of the table below on or off. A module that is off is never installed, so it provides no service and its work never runs. Refused when a module that stays on depends on it (`storage` needs `network`, `games` needs `network` and `storage`, `lobby` and `metrics` need `games`, `information` needs `network` and `games`, `master` needs `network`, `games` and `information`, the `game-statistics` plugin needs `network` and `games` once loaded, all need `logger`). |
-| `set port <port>` | The UDP port, from 1 to 65535. Default: 4242. |
-| `set seed <seed>` or `set seed none` | The seed of the first game, a whole number from 0 to 4294967295; `none` draws one. Default: `none`. |
-| `set state-rate <states>` | The world states sent to each player per second, from 2 to 60. Default: 20. |
-| `set input-delay <ticks>` | The ticks every player's input is held before it is applied, from 0 to 30. Default: 3. |
-| `set database <file>` | The SQLite file the leaderboard of this server is kept in, on a local disk; a name with a space goes in quotes. Default: empty, which keeps it in `r-type_server_<port>.db` next to the executable, with the port of `set port`. |
-| `set master-url <url>` | The master this server is listed on, `http://<host>[:<port>]`. Default: empty, and the server runs alone (see [Link with the master](#link-with-the-master-servermastermodule)). |
+| `module <name> on\|off` | Turns a module on or off, in the supervisor when it is one of its modules, in each game otherwise (see [Modules](#modules-and-stopping-the-server)). A module that is off is never installed, so it provides no service and its work never runs. Refused when a module that stays on depends on it: in the supervisor, `supervised games` needs `network`, `supervisor lobby` needs `network` and `supervised games`, `information` needs `network` and `supervised games`, `master` needs `network`, `supervised games` and `information`; in a game, `storage` needs `network`, `games` needs `network` and `storage`, `lobby` needs `network` and `games`, `metrics` needs `games` and `network`, `supervisor link` needs `network` and `games`, the `game-statistics` plugin needs `network` and `games` once loaded; all need `logger`. |
+| `set port <port>` | The UDP port of the supervisor, from 1 to 65535. Default: 4242. |
+| `set seed <seed>` or `set seed none` | For the games: the seed of the game, a whole number from 0 to 4294967295; `none` draws one. Default: `none`. |
+| `set state-rate <states>` | For the games: the world states sent to each player per second, from 2 to 60. Default: 20. |
+| `set input-delay <ticks>` | For the games: the ticks every player's input is held before it is applied, from 0 to 30. Default: 3. |
+| `set database <file>` | The SQLite file the leaderboard of this server is kept in, on a local disk; a name with a space goes in quotes. Default: empty, which keeps it in `r-type_server_<port>.db` next to the executable, with the port of `set port`. Declared by the supervised games module, which starts every game with this file. |
+| `set master-url <url>` | The master the supervisor lists this server on, `http://<host>[:<port>]`. Default: empty, and the server runs alone (see [Link with the master](#link-with-the-master-servermastermodule)). |
 | `set master-key <key>` | The key the master gave when the host created this server on it. Default: empty, and the server runs alone. Never committed: only `server.cfg.example` is, with an empty key. |
 | `set server-name <name>` | The name players read in the list of servers and in the answer to an information request, 1 to 32 bytes of printable UTF-8. Declared by the information module. Default: `R-Type server`. |
-| `set game-statistics-file <file>` | Declared by the `game-statistics` plugin, so refused unless a `plugin game-statistics` line loads it: the CSV file of the statistics of the games. Default: empty, which writes `r-type_statistics_<port>.csv` next to the executable (see [Game statistics](#game-statistics-servergamestatisticsmodule)). |
+| `set game-statistics-file <file>` | For the games. Declared by the `game-statistics` plugin, so refused by each game unless a `plugin game-statistics` line loads it: the CSV file of the statistics of the game. Default: empty, which writes `r-type_statistics_<port>.csv` next to the executable, with the port of the game (see [Game statistics](#game-statistics-servergamestatisticsmodule)). |
 
-- A missing `server.cfg` is not an error: the defaults apply, and the journal says `server.cfg not found, the defaults apply`. A line that is refused (an unknown command, a value out of its bounds) does not stop the server: it is logged at the `warn` level, with its file and line number, and the next line runs.
+- A missing `server.cfg` is not an error: the defaults apply, and the journal says `server.cfg not found, the defaults apply`. A line that is refused (an unknown command, a value out of its bounds) does not stop the program: it is logged at the `warn` level, with its file and line number, and the next line runs. A line of the games refused by a game is in the journal of that game, once per game started.
 - The reading is logged once the journal is open, so the lines appear after the modules' own start lines. The `info` lines are hidden at the default level; start the server with `--log-level info` to see them.
 
 ```
@@ -287,28 +341,42 @@ module lobby off
 
 ## Modules and stopping the server
 
-`src/server/main.cpp` reads the options and hands a list of modules to an `engine::Application` (see [Modules](/R-Type/modules/)). `serverModules()` (`src/server/Modules/ServerModules.cpp`) is the one place that lists them; they start in this order and stop in the reverse one.
+`src/server/main.cpp` reads the options and hands a list of modules to an `engine::Application` (see [Modules](/R-Type/modules/)). Each role has its list, the one place that names its modules, in `src/server/Modules/`; they start in this order and stop in the reverse one.
+
+`gameProcessModules()` (`GameProcessModules.cpp`) lists the modules of a game process:
 
 | Module | Does | Where |
 |---|---|---|
-| `logger` | applies the logging options when it starts, logs "server starting" and "server stopped"; provides the journal of the server as an `ILogJournal`, so a plugin logs where the lines of the server go | `src/server/Logger/` |
-| `network` | declares the `port` setting; owns the `ServerApplication`: binds the socket and runs the server on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission`, `TickDatagrams` (the datagrams of the tick), `IListeningPort` (the port of the `port` setting) and `network::TrafficCounters` | `src/server/Network/` |
-| `storage` | declares the `database` setting; opens the SQLite file of the server and starts the thread that owns it when it starts, finishes what waits and closes the file when it stops; provides `IResultsArchive` | `src/server/Storage/` |
-| `games` | declares the `seed`, `state-rate` and `input-delay` settings; the games (`GamesSettings::gameCount`, `DEFAULT_HOSTED_GAME_COUNT` = 8), an `EventBus` for each; reads the waves file when it starts and judges whether its games are vanilla; provides `Games`, `IGameBuses` (the bus of each game, for a module listed after it or a plugin) and `LatestHostedGames` | `src/server/Games/` |
+| `logger` | applies the logging options when it starts, logs "server starting" and "server stopped"; provides the journal as an `ILogJournal`, so a plugin logs where the lines of the game go | `src/server/Logger/` |
+| `network` | declares the `port` setting; owns the `ServerApplication`: binds the socket and runs it on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission`, `TickDatagrams` (the datagrams of the tick), `IListeningPort` (the port of the `port` setting) and `network::TrafficCounters` | `src/server/Network/` |
+| `storage` | declares the `database` setting; opens the SQLite file and starts the thread that owns it when it starts, finishes what waits and closes the file when it stops; provides `IResultsArchive` | `src/server/Storage/` |
+| `games` | declares the `seed`, `state-rate` and `input-delay` settings; one game (`GAME_PROCESS_GAME_COUNT` = 1) and its `EventBus`; reads the waves file when it starts and judges whether its game is vanilla; provides `Games` and `IGameBuses` (the bus of each game, for a module listed after it or a plugin) | `src/server/Games/` |
 | `lobby` | one `ConnectionAcceptor` per game, built on the roster of that game | `src/server/Lobby/` |
-| `information` | declares the `server-name` setting; answers the information requests of each tick with a `ServerInformationDesk`; provides `IServerName` | `src/server/Information/` |
-| `metrics` | measures the ticks and the systems of the games, and writes a report to the journal every `TICKS_PER_REPORT` ticks; writes the traffic of the socket; provides `LatestMetrics` | `src/server/Metrics/` |
-| `master` | declares the `master-url` and `master-key` settings, and registers the name `IServerName` gives; keeps the master told of the server on a thread of its own, MasterLink, when both a url and a key are set; uses `LatestMetrics` when the metrics module is on | `src/server/Master/` |
+| `metrics` | measures the ticks and the systems of the game, and writes a report to the journal every `TICKS_PER_REPORT` ticks; writes the traffic of the socket; provides `LatestMetrics` | `src/server/Metrics/` |
+| `supervisor link` | sends the supervisor a `GameStatus` every second and when it changes, with the measures of `LatestMetrics` when the metrics module is on; asks the process to stop when the supervisor does or is gone | `src/server/SupervisorLink/` |
 
-A plugin joins the end of the list when a `plugin` line loads it, after `master`: the server has one, `game-statistics` (see [Game statistics](#game-statistics-servergamestatisticsmodule)).
+A plugin joins the end of that list when a `plugin` line of its file loads it, after `supervisor link`: the server has one, `game-statistics` (see [Game statistics](#game-statistics-servergamestatisticsmodule)).
 
-Each tick runs the stages of `SERVER_LOOP_STAGES` once, with `SIMULATION_TICK_DURATION`. In `simulation`, the games module runs `onTick()` on each game with the datagrams of its own players (`keepDatagramsOf()`) and makes the network forget the players whose session closed, then the lobby module answers the connection requests, so a request is placed and refused by the state the games just reached, and the information module the information requests, which count the players and the free seats of that state too. In `outputs`, the bus of each game delivers its events, and the guaranteed messages among them leave at once (see [Guaranteed messages](#guaranteed-messages-messagedelivery)). Only the metrics module works in `inputs`, where it starts measuring the tick, since `onTick()` reads the datagrams and moves the game in one step; it ends its measure in `outputs`, after the games module.
+`supervisorModules()` (`SupervisorModules.cpp`) lists the modules of the supervisor:
+
+| Module | Does | Where |
+|---|---|---|
+| `logger` | as in a game, for `r-type_server.log` | `src/server/Logger/` |
+| `network` | as in a game, on the port of the supervisor | `src/server/Network/` |
+| `supervised games` | declares the `database` setting, which it gives every game; writes the file of commands of the games when it starts; starts, follows and stops the game processes (`GameRegistry`); provides `IServerOccupancy`, `LatestHostedGames` and `LatestServerMeasures` | `src/server/SupervisedGames/` |
+| `supervisor lobby` | answers the connection requests: sends each player to a game, or starts one | `src/server/SupervisorLobby/` |
+| `information` | declares the `server-name` setting; answers the information requests with what `IServerOccupancy` counts; provides `IServerName` | `src/server/Information/` |
+| `master` | declares the `master-url` and `master-key` settings, and registers the name `IServerName` gives; keeps the master told of the games on a thread of its own, MasterLink, when both a url and a key are set | `src/server/Master/` |
+
+The supervisor loads no plugin: a `plugin` line goes to its games (see [Configuration](#configuration-servercfg)).
+
+Each tick runs the stages of `SERVER_LOOP_STAGES` once, with `SIMULATION_TICK_DURATION`. In a game process, in `simulation`, the games module runs `onTick()` on its game with the datagrams of its own players (`keepDatagramsOf()`) and makes the network forget the players whose session closed, then the lobby module answers the connection requests, so a request is placed and refused by the state the game just reached, then the supervisor link reads the datagrams of the supervisor and sends its status. In `outputs`, the bus of the game delivers its events, and the guaranteed messages among them leave at once (see [Guaranteed messages](#guaranteed-messages-messagedelivery)). Only the metrics module works in `inputs`, where it starts measuring the tick, since `onTick()` reads the datagrams and moves the game in one step; it ends its measure in `outputs`, after the games module. In the supervisor, every module works in `simulation`: the supervised games read the statuses and the exits of the games, then the lobby answers the connection requests and the information module the information requests, by the state the games just reported.
 
 ### Several games at once
 
-The [tutorial](/R-Type/tutorial-run-several-games/) runs a server, fills its games and reads them in the journal.
+The [tutorial](/R-Type/tutorial-run-several-games/) runs a supervisor, fills its games and reads them in the journals.
 
-The server creates its games when it starts and keeps them: a finished game waits for players again with a new world, so no game is ever replaced. `Games` decides where a connection request goes, the same way for the lobby and for the tests:
+A game process hosts one game, but `Games` (`src/server/Games/`) still holds a list of them, which it creates when the process starts and keeps: a finished game waits for players again with a new world, so no game is ever replaced. `Games` decides where a connection request goes, the same way for the lobby and for the tests:
 
 | The sender | The request goes to |
 |---|---|
@@ -316,29 +384,31 @@ The server creates its games when it starts and keeps them: a finished game wait
 | has no seat | the first game waiting for players with a free seat (`Games::joinable()`) |
 | has no seat, and no game waits with a free seat | the first game, which refuses it with `GameInProgress` or `GameFull` |
 
-The rule itself is `firstJoinableGame()` (`src/server/Games/`), which reads a `GameVacancy` per game (its state, and whether it is full) rather than the games, so a process that does not own the games could place players with it. Each game has its own acceptor, which draws its own cookies: a player challenged by one game and placed in another, because the first one filled up meanwhile, is challenged once more.
+The rule itself is `firstJoinableGame()` (`src/server/Games/`), which reads a `GameVacancy` per game (its state, and whether it is full) rather than the games, so the supervisor, which does not own its games, places players with it too. Each game has its own `EventBus`, since its rules and its broadcaster subscribe to it. The seed of game n of `Games`, from 0, is the seed given plus n times `GAME_SEED_STRIDE` (65536); a game process has only game 0, so its seed is the seed given, and without one it draws its own.
 
-`hostedGamesOf()` (`src/server/Games/HostedGames.cpp`) describes the games as the master lists them: game n, from 1, is named `GAME n`, with its difficulty and the nicknames of its players in the order of their numbers. A game that waits for players is `full` with `MAXIMUM_PLAYERS` (4) of them and `waiting` with fewer; the other states keep their name. The games module refuses to start more than `MAXIMUM_HOSTED_GAMES` (64) games, since the master refuses a longer heartbeat. The `master` module sends this list in its heartbeats, and the master lists it to players (see [Master](/R-Type/master/#listing-the-games-of-a-server)).
+The game runs on the simulation thread of its process, and the network thread is the only other one that handles datagrams during a game, so nothing needs a lock. An exception a system of the game throws stops its process only (one a message handler throws only drops that message, see [Threads](#threads-serverapplication)); the supervisor and the other games go on.
 
-Each game has its own `EventBus`, since its rules and its broadcaster subscribe to it: with one bus, a game would apply the collisions of another to its own entities and send its events to the wrong players. The seed of game n, from 0, is the seed given plus n times `GAME_SEED_STRIDE` (65536), so a game can be played again; without a seed, each game draws its own.
-
-Every game runs on the simulation thread, one after the other in each tick, and the network thread is the only other one that handles datagrams during a game. No state is shared between games, so nothing needs a lock, and the queues between the two threads do not change. The cost of a tick grows with the number of games: the journal gives it every 10 s (see [Metrics](#metrics-servermetricsmodule)), and the tick loop reports its late ticks at the same rate. An exception a system of one game throws stops the server (one a message handler throws only drops that message, see [Threads](#threads-serverapplication)), and a slow game slows the others. Running each game in a process of its own isolates them: see [Supervisor and game processes](#supervisor-and-game-processes).
-
-The waves file is read when the games module starts, after the logger module started, so a missing or wrong file stops the start with an error that names the games module, the file, the line and the key, and the line "waves file …" reaches the journal.
+The waves file is read when the games module starts, after the logger module started, so a missing or wrong file stops the start of the game process with an error that names the games module, the file, the line and the key, and the line "waves file …" reaches the journal of that game. The supervisor reads no waves file: the error shows when a game starts, with the first player.
 
 ### Supervisor and game processes
 
-`r-type_server`, which runs the supervisor unless `--mode` says otherwise, runs no game. It listens on `DEFAULT_SERVER_PORT` (4242), answers the connection requests, starts one process per game and sends each player to the game that has a place. A game process is the same binary started with `--mode server --supervisor <port> --link-token <number>`: it hosts one game (`GAME_PROCESS_GAME_COUNT`), on a port the supervisor picked, with a journal of its own (`r-type_game_<n>.log`). An exception in a game stops that process only; the supervisor and the other games go on.
+`r-type_server`, which runs the supervisor unless `--mode` says otherwise, runs no game. It listens on `DEFAULT_SERVER_PORT` (4242), answers the connection requests, starts one process per game and sends each player to the game that has a place. A game process is the same binary started with `--mode game -p <port> --supervisor <port> --link-token <number> --database <file> --log-file r-type_game_<n>.log --configuration r-type_games_<port>.cfg` (see [A game process](#a-game-process-gamelaunchoptions)): it hosts one game, on a port the system picked for it. An exception in a game stops that process only; the supervisor and the other games go on.
 
 | Step | Who | What |
 |---|---|---|
 | 1 | player to supervisor | a `ConnectionRequest` without a cookie gets a `ConnectionChallenge`; nothing is kept or started |
-| 2 | player to supervisor | the request with the cookie: if no game waits with a free seat and fewer than `MAXIMUM_RUNNING_GAMES` (8) run, the supervisor starts a game process; if 8 run and none has a place, it answers `ConnectionRefused` (`GameFull`) |
-| 3 | game process to supervisor | once it runs, a `GameStatus` (its state and its number of players) every `STATUS_INTERVAL` (1 s), and at once when either changes; the supervisor answers each with a `GameStatusAcknowledged` |
+| 2 | player to supervisor | the request with the cookie: if no game waits with a free seat and a place is free, the supervisor starts a game process on the smallest free place; if the `MAXIMUM_RUNNING_GAMES` (8) places are taken and no game has a seat, it answers `ConnectionRefused` (`GameFull`) |
+| 3 | game process to supervisor | once it runs, a `GameStatus` (its state, the nicknames of its players and its measures) every `STATUS_INTERVAL` (1 s), and at once when it changes; the supervisor answers each with a `GameStatusAcknowledged` |
 | 4 | supervisor to player | once the game reported, the player's next request (they repeat every 500 ms) gets a `ConnectionRedirect` to the port of the game; while the game starts, the supervisor answers nothing |
 | 5 | player to game | a new handshake with the game process, which places the player as a server does |
 
-The supervisor does not see inside a game: `GameRegistry` (`src/server/SupervisedGames/`) holds, per game, the number, the port, the link token, the state its process reported (`Starting` until the first status), its number of players and the handle of the process. A game that has not reported counts as waiting for players, so a burst of requests starts one process. `firstJoinableGame()` places the player, as it does for the games of one server. A status is taken only if it is newer than the newest one of that game (serial number arithmetic on `sequence`), so a late one never undoes a newer one. A process that ended leaves the registry: with code 0 after it reported, the journal says the game ended; with any other code, or code 0 before any status, it says it crashed. A game that sends no status within `GAME_START_TIMEOUT` (10 s) is killed. A process that cannot be started (no free port, program refused) is logged and nothing else happens.
+The supervisor does not see inside a game: `GameRegistry` (`src/server/SupervisedGames/`) holds, per game, its number, its place, its port, its link token, the state its process reported (`Starting` until the first status), the nicknames of its players, its measures and the handle of the process. The number grows from 0 with each game started and names the journal of the game; the place, from 1 to `MAXIMUM_RUNNING_GAMES`, is the smallest free one when the game starts (`GameRegistry::open()`, `NoFreeGameSlotException` when none is) and is the number the master and the players read, `GAME 1` to `GAME 8`. A game that has not reported counts as waiting for players, so a burst of requests starts one process. `firstJoinableGame()` places the player. A status is taken only if it is newer than the newest one of that game (serial number arithmetic on `sequence`), so a late one never undoes a newer one. A process that ended leaves the registry and frees its place: with code 0 after it reported, the journal says the game ended; with any other code, or code 0 before any status, it says it crashed. A game that sends no status within `GAME_START_TIMEOUT` (10 s) is killed. A process that cannot be started (no free port, program refused) is logged and nothing else happens.
+
+`SupervisedGamesReport` (`src/server/SupervisedGames/`) turns the registry into what the supervisor tells others, and `SupervisedGamesWatch` publishes the first two only when they change:
+
+- `supervisedHostedGames()`: the games as the master lists them, by place; a game still starting is `waiting`, a game waiting with four players `full`.
+- `supervisedMeasures()`: the median and the 95th percentile of the ticks of the slowest game, and the mean round trip of every player, each game counting as many times as it has players.
+- `supervisedOccupancy()`: the players of the games, `MAXIMUM_RUNNING_GAMES` (8) games, and as free seats the empty seats of the games waiting for players or starting, plus four for each place no game holds.
 
 The supervisor and a game process know each other by the link token, a random 64-bit number the supervisor draws for each game and passes on the command line: each side admits the other's address and token before the first datagram, so the network lets it through. The token is visible in the process list of the machine; it only gives the right to stop that game.
 
@@ -361,9 +431,9 @@ On Linux the "parent" is the thread that started the child, so the supervisor st
 - Linux and macOS: `SIGINT` (Ctrl-C) and `SIGTERM`. `StopSignals` blocks them in the main thread before any other thread exists, so every thread inherits the mask, and one thread takes them with `sigwait()`: nothing runs inside a signal handler. A signal that arrives before it is built, while the program starts, has its default action.
 - Windows: `SetConsoleCtrlHandler`. The system runs the handler on a new thread. Ctrl-C and Ctrl-Break have no time limit; closing the console window gives the process 5 seconds, so that handler waits for the program to finish stopping, at most `CONSOLE_CLOSE_WAIT` (4 s), before it returns. Logoff and shutdown only reach services, and are handled the same way. This file is checked by the Windows job of the CI only.
 
-On a request, `main()` calls `Application::stop()`. It first stops the stages: it waits for the tick in progress, and no work runs after it. Then the modules stop in the reverse order. The games module tells every player that the server shuts down, with `FAREWELL_COPIES` (3) copies of a `Disconnection`, `FAREWELL_COPY_INTERVAL` (50 ms) apart (`src/server/ModuleConstants.hpp`), each under the next session header of its player (see `FarewellSender`), then waits `FAREWELL_FLUSH_WAIT` (two ticks) so the last copy leaves; the whole stop takes about 130 ms with a player connected (two intervals and two ticks). The storage module then saves what waits and closes its file. The network module then stops the server and closes the socket, and the journal logs "server stopped". Over a simulated network, a copy still in flight when the socket closes never arrives (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)): each copy waits half the lag, and the socket closes about 130 ms after the first, so with a lag over about 270 ms (the `bad` scenario's 300 ms included) a player gets none. The client closes its session as soon as it reads one, and shows the player that the server shut down (see [Client](/R-Type/client/#lost-connection-a-dialog-over-the-title) and [Protocol](/R-Type/protocol/#a-peer-disappears)).
+On a request, `main()` calls `Application::stop()`. It first stops the stages: it waits for the tick in progress, and no work runs after it. Then the modules stop in the reverse order. In a game process, which the supervisor asks to stop with a `Disconnection`, the games module tells every player that the server shuts down, with `FAREWELL_COPIES` (3) copies of a `Disconnection`, `FAREWELL_COPY_INTERVAL` (50 ms) apart (`src/server/ModuleConstants.hpp`), each under the next session header of its player (see `FarewellSender`), then waits `FAREWELL_FLUSH_WAIT` (two ticks) so the last copy leaves; the whole stop takes about 130 ms with a player connected (two intervals and two ticks). The storage module then saves what waits and closes its file. The network module then stops the server and closes the socket, and the journal logs "server stopped". Over a simulated network, a copy still in flight when the socket closes never arrives (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)): each copy waits half the lag, and the socket closes about 130 ms after the first, so with a lag over about 270 ms (the `bad` scenario's 300 ms included) a player gets none. The client closes its session as soon as it reads one, and shows the player that the server shut down (see [Client](/R-Type/client/#lost-connection-a-dialog-over-the-title) and [Protocol](/R-Type/protocol/#a-peer-disappears)).
 
-The Linux job of the CI checks this stop under the sanitizers: it starts the `r-type_server` the `sanitize` preset builds, with no player connected, sends it SIGINT after 5 s and requires exit code 0, which a leak (LeakSanitizer) or a memory error (AddressSanitizer) would change. The same job runs every test under them (see the README).
+The Linux job of the CI checks the stop of the supervisor under the sanitizers: it starts the `r-type_server` the `sanitize` preset builds with `--mode supervisor`, with no player connected and so no game running, sends it SIGINT after 5 s and requires exit code 0, which a leak (LeakSanitizer) or a memory error (AddressSanitizer) would change. The same job runs every test under them (see the README).
 
 ## Tick loop: `TickLoop`
 
@@ -371,11 +441,13 @@ The Linux job of the CI checks this stop under the sanitizers: it starts the `r-
 
 The limit is a choice for this game: during a longer stall the game freezes, then resumes where it stopped, unless it lasts long enough for every client to take the server for lost (see [A long stall and the clients](#a-long-stall-and-the-clients)). Catching the whole stall up would play it in an instant, a second of enemy fire that nobody saw coming. Engines differ on it: a Quake 3 dedicated server catches up to 5 seconds, so that the clients' view of the server's clock stays right; Unity lets each game set its `maximumDeltaTime`.
 
-Every `TICKS_PER_REPORT` ticks, the loop logs at the `debug` level how late its ticks started, each compared with the moment it was due; a dropped stall shows in full. The lines go to the terminal and to the journal, `r-type_server.log` (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)):
+Every `TICKS_PER_REPORT` ticks, the loop logs at the `debug` level how late its ticks started, each compared with the moment it was due; a dropped stall shows in full. The lines of the supervisor go to the terminal and to its journal, `r-type_server.log` (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)):
 
 ```bash
-./r-type_server --mode server --log-level debug
+./r-type_server --log-level debug
 ```
+
+The supervisor starts its games with `--log-file` alone, so `--log-level` does not reach the journal of a game, `r-type_game_<n>.log`: it keeps the default level, `info`, and holds none of these lines, unless `RT_LOG_LEVEL` in the environment, which the games inherit, sets another (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)).
 
 After the time stamp, the line reads:
 
@@ -421,7 +493,7 @@ Once players are measured, the third line gives each of them, game by game in th
 
 The measure leaves out what `ServerApplication` does around the stages, emptying the queues of datagrams and handing over what to send, and the report itself, which runs after the measure of its tick. Whether the ticks fall behind as a whole is told by the lines of the tick loop (see [Tick loop](#tick-loop-tickloop)).
 
-The newest report stays in memory as a `MetricsReport` in the service `LatestMetrics` (`src/server/Metrics/Report/`), a `concurrency::LatestValue<MetricsReport>` (see [Concurrency](/R-Type/concurrency/#the-newest-value-of-a-thread-latestvalue)). A module finds it with `context.find<LatestMetrics>()`, which gives `nullptr` when the metrics module is not listed. Any thread may call `value()`, which gives a copy and changes nothing, so readers at different rates all see the same report; it holds the round trips as `roundTrips`. The master module reads it for each heartbeat. Losses are not measured yet.
+The newest report stays in memory as a `MetricsReport` in the service `LatestMetrics` (`src/server/Metrics/Report/`), a `concurrency::LatestValue<MetricsReport>` (see [Concurrency](/R-Type/concurrency/#the-newest-value-of-a-thread-latestvalue)). A module finds it with `context.find<LatestMetrics>()`, which gives `nullptr` when the metrics module is not listed. Any thread may call `value()`, which gives a copy and changes nothing, so readers at different rates all see the same report; it holds the round trips as `roundTrips`. The supervisor link reads it for each `GameStatus`, through `measuresOf()` (`src/server/Metrics/Report/MetricsMeasures`), which keeps the median and the 95th percentile of the ticks and the mean round trip of the players, in microseconds. Losses are not measured yet.
 
 The module also writes the traffic of the socket, which the network module provides as `network::TrafficCounters`: a line every 10 s and, with `--traffic-csv`, a file (see [Network](/R-Type/network/#traffic-counters-trafficcounters)). Each report holds it as `traffic`, totals since the server started. A player has a row of its own from the moment `ServerApplication::admit()` takes effect until the session closes:
 
@@ -429,9 +501,9 @@ The module also writes the traffic of the socket, which the network module provi
 - what a player sends after its session closed counts with the others again;
 - a session replaced on the same address keeps the row: closing the old one forgets nothing, as the sorter says (`forget()` returns whether it did).
 
-No module requires this one, and it reads no clock when it is not listed, so removing its line from `serverModules()` changes nothing else. It is listed last: a module listed after it would not be counted, and neither would work another module adds to `inputs`. `--log-level warn` hides the three lines and leaves the measure running.
+No module requires this one, and it reads no clock when it is not listed, so removing its line from `gameProcessModules()` changes nothing else: the supervisor link then sends statuses without measures. It is listed after the modules whose work it measures and before the supervisor link, which only reads datagrams and sends one status a second: a module listed after it would not be counted, and neither would work another module adds to `inputs`. `--log-level warn` hides the three lines and leaves the measure running.
 
-Measured on an Apple M3 Pro with Apple clang 21.0.0 at `-O2`, median of 7 runs of a throwaway program that is not part of the repository:
+Measured on an Apple M3 Pro with Apple clang 21.0.0 at `-O2`, median of 7 runs of a throwaway program that is not part of the repository, when a server still ran eight games in one process; a game process now runs one:
 
 | Work | When | Cost |
 |---|---|---|
@@ -507,12 +579,12 @@ A datagram of this protocol with another version is answered with `ConnectionRef
 
 ## Server information: `ServerInformationModule`, `ServerInformationDesk`
 
-The module `information` (`src/server/Information/`) answers the `ServerInformationRequest` of anyone, without a session, as the [Protocol](/R-Type/protocol/#server-information) describes: a client reads from the answer its ping to a server the player looks at, never to every server of the list, and the master that the server still answers. It declares `server-name` and hands it to the master module as the `IServerName` it provides, so the name a player reads in the list and the one a ping returns are one setting.
+The module `information` (`src/server/Information/`), a module of the supervisor, answers the `ServerInformationRequest` of anyone on the port of the supervisor, without a session, as the [Protocol](/R-Type/protocol/#server-information) describes: a client reads from the answer its ping to a server the player looks at, never to every server of the list, and the master that the server still answers. A game process has no such module, so it answers no information request. It declares `server-name` and hands it to the master module as the `IServerName` it provides, so the name a player reads in the list and the one a ping returns are one setting.
 
-Each tick, after the games module and the lobby, `ServerInformationDesk` answers the requests the sorter set aside, at most `INFORMATION_REQUEST_QUEUE_CAPACITY` (16), with one `ServerInformation` each, to the address and port the request came from, with session token 0 and sequence 0:
+Each tick, after the supervised games module and the supervisor lobby, `ServerInformationDesk` answers the requests the sorter set aside, at most `INFORMATION_REQUEST_QUEUE_CAPACITY` (16), with one `ServerInformation` each, to the address and port the request came from, with session token 0 and sequence 0:
 
 - the name, `SERVER_GAME_VERSION` (the version of the CMake project, `InformationConstants.hpp`) and `PROTOCOL_VERSION`;
-- `occupancyOf(games)`: the players the rosters of the games hold, away ones included, the number of games, and the empty seats of the games waiting for players, the only seats a `ConnectionAcceptor` gives;
+- what `IServerOccupancy` counts, which the supervised games module provides from `supervisedOccupancy()`: the players the games reported in their newest `GameStatus`, `MAXIMUM_RUNNING_GAMES` (8) as the number of games, and as free seats the empty seats of the games waiting for players or starting, plus four for each place no game holds (see [Supervisor and game processes](#supervisor-and-game-processes));
 - the `sentAt` of the request, and as `heldFor` the time from its arrival, stamped by the sorter, to the tick that answers it, so the asker leaves the wait for the tick out of its ping.
 
 The request is padded to 106 bytes and the answer holds at most 106, so a forged address never gets more than its forger sent. Only the first request of a datagram is answered. A datagram whose header is not of this protocol and version, or whose request is refused (a padding of the wrong size or not made of zeros), gets nothing and is logged at the `debug` level under `Information`, at most once per `REJECTION_LINE_INTERVAL` (10 s). An exception while answering is logged at the `error` level and the next datagram is answered.
@@ -792,11 +864,13 @@ events.dispatch();
 - `waveEntryPosition(randomUnit)` (`src/game/Spawning/`) says where: `ENEMY_SPAWN_MARGIN` (64 logical units) past the right edge of the playfield, so the Bydo is off screen, and at a height from `ENEMY_ROW_MARGIN` (112) to `PLAY_AREA_HEIGHT` (984) minus that margin, 872. The margin is `ENEMY_SPAWN_VERTICAL_MARGIN` (64), more than half of the height of a Bydo, and the room a Bydo may move on its pattern, `ENEMY_PATTERN_ROOM` (48), so even at the bottom of a wave a Bydo stays above the status band every client draws along the bottom of the playfield (see [Architecture](/R-Type/architecture/#coordinate-system)). A draw of 0 gives the highest row; a draw from 0 up to, but not including, 1 is accepted, anything else (1 included, or not a number) throws `InvalidRandomUnitException`. The margins are **provisional**: chosen before a Bydo had a size, they are wider than half of its 96 units, so a Bydo still appears and leaves off screen.
 - `World::spawn(sheet, position)` makes the Bydo from the sheet the wave plan names (see [Writing an entity sheet](/R-Type/entity-sheets/)): with the shipped sheets, a `Position`, a `SteadyMotion` of 240 units per second, a `Pilot` holding the behaviour of its sheet and its settings, `EntityType::Enemy`, its `Health`, its `ScoreValue`, its `Gun`, its `EntityTypeNumber`, a `NetworkIdentity` and a `CollisionBox` of 96 × 96 logical units, its 24 × 24 pixels of the entity sheet (a client test compares the two). The spawner gives the Bydos the sheets the wave plan lists, in turn, the turn carrying on from one wave to the next (`drifter` then `weaver` with `normal`), and draws nothing for it, so a seed still gives the same heights. A plan without enemies throws `EmptyEnemyCycleException`, and one that names a sheet the server does not have `UnknownEntityTypeException`. See [Piloted bodies](#piloted-bodies-pilotsystem-and-playfieldexitsystem).
 - Every connected player is sent an `EntitySpawned` (the number of the sheet of the Bydo, the position), in its own datagram, like the ship of a player. Both use `sendEntitySpawned` (`src/server/Replication/Wire/EntitySpawnSender.hpp`). With no player connected, the Bydo appears and nothing is sent. When every network id was given, the spawn is skipped and a warning is logged.
-- The generator is a `std::mt19937` started from a seed. The spawner logs it at the `info` level under `WaveSpawner` when it is built (`wave spawning starts from the seed 42`), so the same seed gives the same heights in the same order. `GameFlow` gives each world the seed of the game plus the number of worlds built before it, so one seed replays every game of a session; without `--seed`, the server draws it from `std::random_device`. The spawner also logs each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`).
+- The generator is a `std::mt19937` started from a seed. The spawner logs it at the `info` level under `WaveSpawner` when it is built (`wave spawning starts from the seed 42`), so the same seed gives the same heights in the same order. `GameFlow` gives each world the seed of the game plus the number of worlds built before it, so one seed replays every game of a session; without `--seed`, the game draws it from `std::random_device`. The line goes to the journal of the game, `r-type_game_<n>.log`. The spawner also logs each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`).
 
 ```bash
-./r-type_server --mode server --seed 42
+./r-type_server --seed 42
 ```
+
+The supervisor hands the seed to every game it starts, so every game of the supervisor starts from the same seed.
 
 ## Piloted bodies: `PilotSystem` and `PlayfieldExitSystem`
 
@@ -824,9 +898,9 @@ Each tick of a game in progress, `GameFlow` makes the ships of away players want
 
 ## Waves file: `WaveCatalog`
 
-`WaveCatalog` (`src/server/Spawning/`, built into `rtype_server_spawning`) reads the waves of each difficulty from a TOML file, with the strict reading of `src/engine/DataFiles/` (see [Engine](/R-Type/engine/#data-files-datafilereading)), which the client also uses for the appearance of the entity sheets. Only the server links `rtype_server_spawning`, so no client target can read the levels. `serverModules()` hands the games module `WAVE_FILE_IN_ASSETS` (`waves/waves.toml`) in the `assets/` folder that `locateAssetFolder()` finds next to the executable or one level above it, whatever folder the server was started in (see [Engine](/R-Type/engine/#files-next-to-the-executable-locateassetfolder)). When the games module starts, it reads the entity sheets first, then that file, takes the `WavePlan` of `DEFAULT_DIFFICULTY` (`normal`) and gives it to the game in its `GameSettings`, with the seed and the sheets. A `WavePlan` holds a `WaveCurve` and the names of the enemy sheets its Bydos take in turn.
+`WaveCatalog` (`src/server/Spawning/`, built into `rtype_server_spawning`) reads the waves of each difficulty from a TOML file, with the strict reading of `src/engine/DataFiles/` (see [Engine](/R-Type/engine/#data-files-datafilereading)), which the client also uses for the appearance of the entity sheets. Only the server links `rtype_server_spawning`, so no client target can read the levels. `gameProcessModules()` hands the games module `WAVE_FILE_IN_ASSETS` (`waves/waves.toml`) in the `assets/` folder that `locateAssetFolder()` finds next to the executable or one level above it, whatever folder the server was started in (see [Engine](/R-Type/engine/#files-next-to-the-executable-locateassetfolder)). When the games module starts, it reads the entity sheets first, then that file, takes the `WavePlan` of `DEFAULT_DIFFICULTY` (`normal`) and gives it to the game in its `GameSettings`, with the seed and the sheets. A `WavePlan` holds a `WaveCurve` and the names of the enemy sheets its Bydos take in turn.
 
-Every key, value and enemy name of every difficulty is checked: an enemy names a sheet of side `enemy`. The first error throws an `engine::EngineException` (`src/engine/Exceptions/`) for a key, a value or the syntax, or a `ServerException` (`src/server/Exceptions/`) for the list of enemies or a missing difficulty, naming the file, the line and the column, and the dotted name of the key; `runServer` prints it and returns 1. The format, the ranges, the shipped difficulties and every error are in [Writing the waves file](/R-Type/waves-file/).
+Every key, value and enemy name of every difficulty is checked: an enemy names a sheet of side `enemy`. The first error throws an `engine::EngineException` (`src/engine/Exceptions/`) for a key, a value or the syntax, or a `ServerException` (`src/server/Exceptions/`) for the list of enemies or a missing difficulty, naming the file, the line and the column, and the dotted name of the key; the game process prints it after `game stopped:` and exits with code 1, and the supervisor writes in its journal that the game crashed. The format, the ranges, the shipped difficulties and every error are in [Writing the waves file](/R-Type/waves-file/).
 
 ```cpp
 const rtype::game::EntitySheets sheets =
@@ -1085,7 +1159,7 @@ The client sends the request from its leaderboard screen (see [Client](/R-Type/c
 
 ## Game statistics: `ServerGameStatisticsModule`
 
-The `game-statistics` plugin (`src/server/GameStatistics/`) writes the statistics of the games to a CSV file, so a host balances the waves from real games. It is a shared library, not a module of `serverModules()`: the server behaves the same without it, and a `plugin game-statistics` line of `server.cfg` loads it (see [Write a plugin](/R-Type/modules/#write-a-plugin)). It needs `logger`, `network` and `games`, and follows every game through `IGameBuses`, the bus of each game the `games` module provides, so it holds none of the code of the games.
+The `game-statistics` plugin (`src/server/GameStatistics/`) writes the statistics of the games to a CSV file, so a host balances the waves from real games. It is a shared library, not a module of `gameProcessModules()`: a game behaves the same without it, and a `plugin game-statistics` line of `server.cfg` loads it in every game process, never in the supervisor (see [Write a plugin](/R-Type/modules/#write-a-plugin)). It needs `logger`, `network` and `games`, and follows every game through `IGameBuses`, the bus of each game the `games` module provides, so it holds none of the code of the games.
 
 ```
 event,game,player,points
@@ -1095,8 +1169,8 @@ total,1,,400
 ```
 
 - A `kill` row is a Bydo a player killed (`EnemyKilled`): the game, the number of the player, from 1 to 4, and the points of the Bydo. A `total` row is the sum of the points of a game that ended, when its `GameStateChanged` goes from `InProgress` to `Finished`, with no player.
-- The games are numbered from 1 in the order they start on the server, whatever game of `Games` they run in; a game played again takes the next number. A Bydo killed while no game is in progress belongs to no game and has no row. A game the server stops in the middle has no end, so it has no total.
-- The file is the `game-statistics-file` setting, or, while it is empty, `r-type_statistics_<port>.csv` next to the executable, with the port of `set port`. It is emptied at launch, as the traffic file: one file is one run. A file that cannot be opened stops the start of the server, naming the module; one that stops accepting rows is told once in the journal and left, so a full disk never stops a game.
+- The games are numbered from 1 in the order they start in the game process, whatever game of `Games` they run in; a game played again takes the next number. Each game process numbers its own games. A Bydo killed while no game is in progress belongs to no game and has no row. A game the server stops in the middle has no end, so it has no total.
+- The file is the `game-statistics-file` setting, or, while it is empty, `r-type_statistics_<port>.csv` next to the executable, with the port of the game process, so each game process writes a file of its own. It is emptied at launch, as the traffic file: one file is one run of a game process. A `game-statistics-file` given in `server.cfg` reaches every game, which would all empty and write that one file: leave it empty while more than one game runs. A file that cannot be opened stops the start of the game process, naming the module; one that stops accepting rows is told once in the journal and left, so a full disk never stops a game.
 - The rows wait in memory. The plugin adds the time of each pass of the `outputs` stage, after the games delivered the events of the tick, and writes once it reaches `GAME_STATISTICS_WRITE_PERIOD` (1 s), then counts from zero again: 60 ticks last 999.99996 ms, so the rows go out every 61 ticks (1016.7 ms) while the server keeps its pace. When the server stops, Ctrl-C included, it writes the rows left before it closes the file, so the file is complete once the server stopped.
 
 `GameTally` follows the bus of one game: it numbers the game that starts on it and hands its kills and its end to `StatisticsSheet`, which keeps the rows not written yet and the points of each game in progress. The tests load the compiled plugin into an application with doubles of the logger, the network and the games (`tests/server/GameStatistics/`), and into the modules of the whole server through its configuration file.
@@ -1112,13 +1186,13 @@ set master-key "rtk_<64 hexadecimal digits>"
 set server-name "Paris 1"
 ```
 
-The module `master` (`src/server/Master/`), which reads the name of the server from the information module (`IServerName`), then starts a `HeartbeatJob`, which runs on a thread of its own, MasterLink, the link of the server with the master; the games never wait for it:
+The module `master` (`src/server/Master/`), a module of the supervisor, reads the name of the server from the information module (`IServerName`), then starts a `HeartbeatJob`, which runs on a thread of its own, MasterLink, the link of the server with the master; the games never wait for it:
 
-1. It registers the server with `MasterClient`: its name, its UDP port, `SERVER_GAME_VERSION` (the version of the CMake project), the protocol version, its games and `MAXIMUM_PLAYERS` per game. The journal says `registered with the master as Paris 1`.
-2. It sends a heartbeat, the state of every game with the nicknames of its players and the measures of `LatestMetrics` when the metrics module is on, each time the games change, at most once per `MINIMUM_NOTICE_GAP` (1 s), and every `MASTER_HEARTBEAT_INTERVAL` (5 s, `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master reads to tell a silent server) when nothing changes. A heartbeat always carries the whole state, so a lost one is corrected by the next.
+1. It registers the server with `MasterClient`: its name, the UDP port of the supervisor, `SERVER_GAME_VERSION` (the version of the CMake project), the protocol version, `MAXIMUM_RUNNING_GAMES` (8) as the most games it hosts and `MAXIMUM_PLAYERS` per game. One supervisor is one registration, whatever its games; a game process never talks to the master. The journal says `registered with the master as Paris 1`.
+2. It sends a heartbeat, the state of every game with the nicknames of its players and the measures of `LatestServerMeasures`, each time the games change, at most once per `MINIMUM_NOTICE_GAP` (1 s), and every `MASTER_HEARTBEAT_INTERVAL` (5 s, `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master reads to tell a silent server) when nothing changes. A heartbeat always carries the whole state, so a lost one is corrected by the next.
 3. A master that refuses the key, does not know the registration or does not answer is written in the journal once, not at each try. The job registers again every `REGISTRATION_RETRY` (5 s) until the master answers, then goes on.
 
-The games module tells the job when the games change. Its `HostedGamesWatch` follows, on the bus of each game, `game::PlayerArrival`, `game::PlayerDeparture` and `GameStateChanged`, and at the end of a tick in which one was delivered it publishes the list of the games in `LatestHostedGames`, a `LatestValue` the job waits on. The job never reads a game itself.
+The supervised games module tells the job when the games change. At each tick, once it read the statuses and the exits of the games, its `SupervisedGamesWatch` builds the list of the games from the newest `GameStatus` of each, numbered by place (`supervisedHostedGames()`), and the measures (`supervisedMeasures()`), and publishes each in `LatestHostedGames` and `LatestServerMeasures`, `LatestValue`s the job waits on, only when it changed. The job never reads a game itself.
 
 - Without `master-url` or `master-key` the server runs alone, as the journal says, and MasterLink does not start. A url that is not `http://<host>[:<port>]`, an `https://` one included, is logged as an error and the server runs alone too: `MasterClient` speaks plain HTTP only, so the key crosses the network in clear and the master stays on a local network for now.
 - A port chosen by the system (`-p 0`) is not told to the master, since the module cannot know it.
@@ -1128,16 +1202,16 @@ The games module tells the job when the games change. Its `HostedGamesWatch` fol
 
 | You want to… | Look at |
 |---|---|
-| Change what the master is told, or how often | `MasterMessages.cpp` and `ServerMasterConstants.hpp` in `src/server/Master/`; how often a server tells it when nothing changes, `MASTER_HEARTBEAT_INTERVAL` in `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master reads to tell a silent server; what changes a game in the list, `HostedGamesWatch` in `src/server/Games/` |
+| Change what the master is told, or how often | `MasterMessages.cpp` and `ServerMasterConstants.hpp` in `src/server/Master/`; how often a server tells it when nothing changes, `MASTER_HEARTBEAT_INTERVAL` in `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master reads to tell a silent server; what the list and the measures say, `SupervisedGamesReport` and `SupervisedGamesWatch` in `src/server/SupervisedGames/` |
 | Change what a tick does | The work a module adds to a stage: `playGames()` in `src/server/Games/ServerGamesModule.cpp`, `answerConnectionRequests()` in `src/server/Lobby/ServerLobbyModule.cpp` |
-| Add a module to the server | A class implementing `IModule` in a folder of its own, `src/server/<Name>/`, listed in `serverModules()` after the modules it depends on: see the [tutorial](/R-Type/tutorial-write-a-module/) |
-| Change what the server does when it stops | `ServerGamesModule::stop()` and `FarewellSender`, in `src/server/Games/` |
+| Add a module to the server | A class implementing `IModule` in a folder of its own, `src/server/<Name>/`, listed in `gameProcessModules()` or `supervisorModules()` after the modules it depends on; a setting it declares in a game process goes in `GAME_SETTING_NAMES` (`src/server/Modules/ServerRoleConstants.hpp`), so the supervisor hands its line over: see the [tutorial](/R-Type/tutorial-write-a-module/) |
+| Change what the server does when it stops | For a game process, `ServerGamesModule::stop()` and `FarewellSender`, in `src/server/Games/`; for the supervisor, `ChildrenStopper` in `src/server/SupervisedGames/` |
 | Change which datagrams reach the tick | `DatagramSorter::sort` in `src/server/Network/DatagramSorter.cpp` |
 | Count a new cause of rejection | A value of `RejectionCause` and its name in `REJECTION_CAUSE_NAMES` (`src/server/Network/Rejections/`), then `RejectionLedger::record()` where the datagram is rejected |
 | Change how many senders the rejection report keeps or names | `REJECTED_SENDER_CAPACITY` and `REPORTED_SENDER_COUNT` in `src/server/Network/Rejections/RejectionsConstants.hpp` |
 | Change how many datagrams a sender may send, or how long a ban lasts | `RateLimitConstants.hpp` (`src/network/Handshake/RateLimit/`), spent by `DatagramSorter::spendAllowanceOf` |
 | Change how many connection requests a tick answers | `CONNECTION_REQUEST_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
-| Change what an information request is told, or how many a tick answers | `ServerInformationDesk` and `occupancyOf()` in `src/server/Information/`; `INFORMATION_REQUEST_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
+| Change what an information request is told, or how many a tick answers | `ServerInformationDesk` in `src/server/Information/` and `supervisedOccupancy()` in `src/server/SupervisedGames/SupervisedGamesReport.cpp`; `INFORMATION_REQUEST_QUEUE_CAPACITY` in `src/server/ServerConstants.hpp` |
 | Add a setting the host can set | `declareInteger()` or `declareText()` in the `install()` of the module that uses it, read in its `start()`; name it in `src/server/ServerConstants.hpp` |
 | Add a launch option | A function that returns its `LaunchOption` and its entry in the list of `LaunchOptions::read()`, and `usage()`, in `src/server/LaunchOptions/LaunchOptions.cpp`; a name the client uses too goes in `src/engine/LaunchArguments/LaunchArgumentsConstants.hpp`. An option of the network simulator goes in `SimulatorLaunchOptions` instead, which the server and the client both read among their own (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)) |
 | Change the port the server listens on by default | `DEFAULT_SERVER_PORT` in `src/network/NetworkConstants.hpp`, shared with the client |

@@ -87,7 +87,7 @@ The client and the server read the same options:
 | Option | Effect |
 |---|---|
 | `--log-level <name>` | The level: `trace`, `debug`, `info`, `warn`, `error` or `silent`, in any case. |
-| `--log-file <path>` | The journal. The default is `r-type_server.log` or `r-type_client.log` next to the executable, whatever folder the program was started in, or none when that file cannot be opened. A relative path given after `--log-file` is read from the folder the program was started in. |
+| `--log-file <path>` | The journal. The default is `r-type_server.log` or `r-type_client.log` next to the executable, whatever folder the program was started in, or none when that file cannot be opened. The supervisor gives each game process `--log-file r-type_game_<n>.log`, next to the executable, and no other logging option, so the launch options of the supervisor never set the level of a game. A game process is started with the environment of the supervisor, since the launcher sets none of its own, so `RT_LOG_LEVEL` given to the supervisor should reach its games too; no run checked it. A relative path given after `--log-file` is read from the folder the program was started in. |
 | `--no-log-file` | No journal. |
 | `--log-stderr` | Write to standard error too. This is the default. |
 | `--no-log-stderr` | Nothing on standard error. |
@@ -114,7 +114,7 @@ launchOptions.logOptions().apply();
 The journal is opened in append mode, so a second launch keeps the lines of the first, and it is flushed after every line, so it is complete even if the program crashes. `NO_COLOR` or `RT_LOG_NO_COLOR` turns the color of standard error off.
 
 ```bash
-./r-type_server --mode server --log-level debug
+./r-type_server --log-level debug
 RT_LOG_LEVEL=warn ./r-type_client --log-file /tmp/client.log
 ```
 
