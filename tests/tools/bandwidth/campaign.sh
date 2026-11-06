@@ -42,10 +42,11 @@ whole_count() {
   fi
 }
 
-# Starts the server from the work folder, so no server.cfg of the caller
-# applies, with the options given, and keeps its process id in server_pid.
+# Starts one game server, with no supervisor, so the options given reach the
+# games themselves; from the work folder, so no server.cfg of the caller
+# applies; and keeps its process id in server_pid.
 start_server() {
-  (cd "$work" && exec "$server" -p "$PORT" --seed "$SEED" \
+  (cd "$work" && exec "$server" --mode server -p "$PORT" --seed "$SEED" \
     --database "$work/results.db" --no-log-file --no-log-stderr "$@") &
   server_pid=$!
 }
