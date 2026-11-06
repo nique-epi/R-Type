@@ -1,8 +1,11 @@
 #include "ClientException.hpp"
+#include <cstdint>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
+#include "ClientConstants.hpp"
 #include "ProtocolConstants.hpp"
 
 namespace rtype::client {
@@ -60,5 +63,12 @@ InvalidNicknameOptionException::InvalidNicknameOptionException(
           "Invalid nickname \"" + std::string(nickname) + "\": expected " +
           std::to_string(network::MINIMUM_NICKNAME_SIZE) + " to " +
           std::to_string(network::MAXIMUM_NICKNAME_SIZE) + " bytes of UTF-8") {}
+
+InvalidGameOptionException::InvalidGameOptionException(std::string_view game)
+    : ClientException(
+          "Invalid game \"" + std::string(game) + "\": expected " +
+          std::string(NEW_GAME_VALUE) + " or a game number from " +
+          std::to_string(network::FIRST_HOSTED_GAME_NUMBER) + " to " +
+          std::to_string(std::numeric_limits<std::uint16_t>::max())) {}
 
 }  // namespace rtype::client

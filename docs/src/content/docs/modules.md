@@ -45,11 +45,11 @@ A module lives at one of two scopes.
 
 The two follow the same five moments, the same order and the same rules. They differ in three ways:
 
-- A game module has no `dependencies()`: it is listed after the modules whose services it requires, and a missing service throws `MissingServiceException` when the game is built. The games module builds the games in its `start()`, so at program level the error reaches you as a `ModuleStartFailedException` naming `games` and carrying the message of the `MissingServiceException`.
-- Its `install()` also receives a `GameContext` (the game's event bus, players and settings), because several games run at once and each has its own.
+- A game module has no `dependencies()`: it is listed after the modules whose services it requires, and a missing service throws `MissingServiceException` when the game is built. The games module builds the game in its `start()`, so at program level the error reaches you as a `ModuleStartFailedException` naming `games` and carrying the message of the `MissingServiceException`.
+- Its `install()` also receives a `GameContext` (the game's event bus, players and settings), which belong to the game rather than to the program.
 - The program-scope `Application` runs the stages of the program; a game runs its own, three per tick, inside the work the games module adds to the simulation stage.
 
-The server therefore has modules inside a module: the games module of the program creates the games, and each game installs its own modules. The client has the program scope only. The game scope is described in [Server](/R-Type/server/#modules-of-a-game-igamemodule).
+The server therefore has modules inside a module: the games module of the program creates the game, which installs its own modules. The client has the program scope only. The game scope is described in [Server](/R-Type/server/#modules-of-a-game-igamemodule).
 
 ## How modules talk
 
@@ -68,7 +68,7 @@ Two lists say the same thing in two places, and both are checked:
 - `dependencies()` names the modules that must be listed before. It is checked when the `Application` is built.
 - `require<>()` names the services that must exist. It is checked while installing.
 
-A module that requires a service lists the module that provides it in `dependencies()`. The server's lobby requires `Games`, `IDatagramSender`, `IPlayerAdmission` and `TickDatagrams`, so it depends on `games` and `network`.
+A module that requires a service lists the module that provides it in `dependencies()`. The server's lobby requires `RunningGame`, `IDatagramSender`, `IPlayerAdmission` and `TickDatagrams`, so it depends on `games` and `network`.
 
 An example of each channel, in the server today:
 
@@ -80,7 +80,7 @@ An example of each channel, in the server today:
 
 Every module is one or the other, and [the list of modules](/R-Type/project-layout/#the-list-of-modules) says which.
 
-- A required module may be included by the code that needs it: the lobby and the metrics include `Games.hpp`, from the module `games`.
+- A required module may be included by the code that needs it: the lobby and the metrics include `RunningGame.hpp`, from the module `games`.
 - An optional module is reached only through its `Contract/` sub-folder, which stays compiled when the module is removed.
 
 The test of an optional module is to remove it: take out its folder, except `Contract/`, and its line in the list; the program compiles, starts, and its binary is smaller. **No module passes this test yet**, and the sound has the only `Contract/` so far (`src/client/Audio/Contract/`): [Project layout](/R-Type/project-layout/#modules-and-libraries) says what stops the sound and the metrics. The sound already passes the smaller test below: the client starts without it, and plays nothing. Taking a module out of the list, below, is a smaller thing: its library is no longer linked, but its folder stays in the build.
@@ -129,7 +129,7 @@ rtype_add_plugin(TARGET rtype_server_game_statistics_module NAME game-statistics
 
 - **Same compiler, same sources.** `PLUGIN_API_VERSION` covers the headers a plugin compiles against (`IModule`, `InstallContext`, `ServiceRegistry`, `LoopStages`, `EventBus`, `Logger`, `ILogJournal`, `PluginEntry`, and `ConfigurationRegistry` with the definitions of the settings it declares) and is raised by every change to one of them. The C++ binary format also changes from one compiler to another, and no number tells it: build the plugins with the compiler and from the sources of the program that loads them.
 - **A type crosses the boundary, a static does not.** The plugin holds its own copy of the code and of the static variables of the libraries it links. A service, an event and an exception thrown in the plugin are still the same types for the program: `ApplicationPlugins` (`tests/engine/Modules/`) loads a real plugin and checks that a service, an event and a `MissingServiceException` thrown in the plugin cross the boundary. A static variable is another matter: share state through a service and virtual calls, never through a global.
-- **The program is reached through its services.** A function of a class the plugin links, such as `EventBus::unsubscribe()` or `ConfigurationRegistry::declareText()`, runs the copy inside the plugin on the object of the program, which holds because both are built from the same sources. Code of the program a plugin must not copy is reached through an interface: `game-statistics` follows every game through `IGameBuses`, the bus of each game the `games` module provides (`src/server/Games/IGameBuses.hpp`), and declares its `game-statistics-file` setting in its `install()`, as any module does.
+- **The program is reached through its services.** A function of a class the plugin links, such as `EventBus::unsubscribe()` or `ConfigurationRegistry::declareText()`, runs the copy inside the plugin on the object of the program, which holds because both are built from the same sources. Code of the program a plugin must not copy is reached through an interface: `game-statistics` follows the game through `IGameEvents`, the bus of the game the `games` module provides (`src/server/Games/IGameEvents.hpp`), and declares its `game-statistics-file` setting in its `install()`, as any module does.
 - **The journal is a service.** A `Logger` built from a name alone writes through the copy of the logger inside the plugin, which the program never configured: its lines miss the log file and the level of the server. A plugin that logs names `logger` in its `dependencies()` and builds `Logger(name, context.require<logging::ILogJournal>())`, as `GreeterPluginModule` does (`tests/doubles/Plugins/`). Only the logger module of the server provides the journal today: a plugin that requires it in the client or in the master stops the start with a `MissingServiceException`.
 - **Position in the list.** The modules of the plugins join the end of the list, in the order of the `plugin` lines, so a plugin may depend on a module of the program or on a plugin whose line comes first.
 - **No unloading before the exit.** A plugin stays loaded until the program stops, and there is no hot reload.

@@ -17,8 +17,7 @@ ClientScreens::ClientScreens(const ScreenServices& parts,
                              const ScreenRegistry& registry)
     : connection_(&parts.connection.get()),
       background_(std::random_device{}()),
-      serverChoice_(
-          ServerChoice{.server = parts.server, .nickname = parts.nickname}),
+      serverChoice_(parts.choice),
       screens_([this, &registry](ScreenId screen) {
         return registry.create(screen, context_);
       }),

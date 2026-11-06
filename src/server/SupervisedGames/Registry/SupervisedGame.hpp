@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "Endpoint.hpp"
 #include "GameLifecycle.hpp"
 #include "GameStatusMeasures.hpp"
 #include "IChildProcess.hpp"
@@ -42,6 +43,10 @@ struct SupervisedGame {
   /** @brief The seats it holds for players the supervisor sent it, which its
    * newest status does not count yet. */
   SeatReservations reservations;
+  /** @brief Who asked for a new game and got this one; nothing when it opened
+   * for a player who took any game. A new game asked for again by its creator
+   * goes to it while nobody else joined it (see GameRegistry::placeFor()). */
+  std::optional<network::Endpoint> creator;
   std::unique_ptr<IChildProcess> process;
 };
 

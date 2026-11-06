@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 #include "AudioMode.hpp"
-#include "Endpoint.hpp"
+#include "ServerChoice.hpp"
 
 namespace rtype::client {
 
@@ -14,10 +14,9 @@ namespace rtype::client {
  * read: each option writes its own part.
  */
 struct LaunchValues {
-  /** @brief The server to join. */
-  network::Endpoint serverEndpoint;
-  /** @brief The nickname of the player, UTF-8. */
-  std::string nickname;
+  /** @brief The server to join, the nickname of the player, UTF-8, and the
+   * game it asks for. */
+  ServerChoice choice;
   /** @brief Whether the client makes sound. */
   AudioMode audioMode{AudioMode::Enabled};
   /** @brief The file the traffic of the program goes to, given after

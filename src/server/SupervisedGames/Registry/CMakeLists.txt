@@ -9,6 +9,8 @@ target_include_directories(rtype_server_supervised_games_registry PUBLIC ${CMAKE
 target_link_libraries(rtype_server_supervised_games_registry
   PUBLIC
     rtype_engine_time
+    rtype_network_connection_refused
+    rtype_network_connection_request
     rtype_network_game_status
     rtype_server_processes
   PRIVATE

@@ -85,11 +85,11 @@ Close the clients: each game finishes once its last player leaves, then its proc
 
 ## Step 3: join while a game runs
 
-A new player never joins a game in progress, even one with free seats. Connect one client and mark it ready, so its game starts with one player, then connect a second client: the supervisor finds no game waiting for players, so it starts another process for it. Two friends who connect while nothing else happens land together, and two who connect around the start of a game may not. There is no way yet to choose a game.
+A new player never joins a game in progress, even one with free seats. Connect one client and mark it ready, so its game starts with one player, then connect a second client: the supervisor finds no game waiting for players, so it starts another process for it. Two friends who connect while nothing else happens land together, and two who connect around the start of a game may not, unless they choose their game: a client started with `--game new` opens a game of its own, and one started with `--game <n>` joins the game the master lists as `GAME n`, or is refused with `REFUSED: NO SUCH GAME`, `REFUSED: GAME IN PROGRESS` or `REFUSED: GAME FULL` (see [Supervisor](/R-Type/protocol/#supervisor) on the protocol page).
 
 ## Step 4: fill every place
 
-The supervisor refuses a player only when no game waits with a free seat and its eight places are taken: the player gets `ConnectionRefused` (`GameFull`), which the client shows on its connection screen. `MAXIMUM_RUNNING_GAMES` is a constant (`src/server/SupervisedGames/SupervisedGamesConstants.hpp`), so changing it takes a build; no launch option or line of `server.cfg` changes it.
+A client that takes any game is refused only when no game waits with a free seat and its eight places are taken: the player gets `ConnectionRefused` (`ServerFull`), which the client shows on its connection screen as `REFUSED: SERVER FULL`. `MAXIMUM_RUNNING_GAMES` is a constant (`src/server/SupervisedGames/SupervisedGamesConstants.hpp`), so changing it takes a build; no launch option or line of `server.cfg` changes it.
 
 Each game runs in a process of its own, on its own simulation thread, so a slow game does not slow the others, and an exception a system of one game throws stops only that process: the supervisor writes `game <n> crashed` in its journal, at the `error` level. The journal of each game gives the cost of its ticks every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)).
 

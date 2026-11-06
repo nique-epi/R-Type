@@ -24,6 +24,8 @@ target_link_libraries(rtype_server_supervised_games_module
     rtype_engine_modules
     rtype_engine_time
     rtype_logging
+    rtype_network_connection_refused
+    rtype_network_connection_request
     rtype_network_game_status
     rtype_network_master_messages
     rtype_network_transport
@@ -44,7 +46,6 @@ target_link_libraries(rtype_server_supervised_games_module
     rtype_network_disconnection
     rtype_network_exceptions
     rtype_network_game_status_acknowledged
-    rtype_network_master_validators
     rtype_network_sequence_order
     rtype_network_udp_socket
     rtype_server_constants
