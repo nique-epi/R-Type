@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "CookieWindows.hpp"
 #include "HandshakeConstants.hpp"
 #include "SerializationConstants.hpp"
 
@@ -72,5 +73,22 @@ constexpr std::chrono::nanoseconds TWO_WINDOWS_LATER =
  * @brief A byte that differs between the two keys of a test.
  */
 constexpr std::byte OTHER_KEY_BYTE{0xff};
+
+/**
+ * @brief The windows of the token of the probe of the master: 5 s each, three
+ * accepted.
+ */
+constexpr std::chrono::seconds FIVE_SECOND_WINDOW{5};
+constexpr std::uint64_t THREE_WINDOWS = 3;
+constexpr CookieWindows PROBE_LIKE_WINDOWS{.duration = FIVE_SECOND_WINDOW,
+                                           .accepted = THREE_WINDOWS};
+
+/**
+ * @brief When a token is issued, at the start of a window of 5 s, then the
+ * last second of its third window and the first second of the fourth.
+ */
+constexpr std::chrono::seconds TOKEN_ISSUED_AT{1'800'000'000};
+constexpr std::chrono::seconds LAST_SECOND_OF_THE_THIRD_WINDOW{1'800'000'014};
+constexpr std::chrono::seconds FIRST_SECOND_OF_THE_FOURTH_WINDOW{1'800'000'015};
 
 }  // namespace rtype::network::testing
