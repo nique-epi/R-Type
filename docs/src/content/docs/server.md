@@ -198,7 +198,7 @@ The host only starts the supervisor and the master. `--mode game` is the command
 
 ### A game process: `GameLaunchOptions`
 
-`GameLaunchOptions` (`src/server/LaunchOptions/`) reads the arguments after `--mode game`, the ones `gameCommand()` (`src/server/SupervisedGames/`) writes for each game:
+`GameLaunchOptions` (`src/server/LaunchOptions/`) reads the arguments after `--mode game`, the ones `gameCommand()` (`src/server/SupervisedGames/Launch/`) writes for each game:
 
 | Option | Effect |
 |---|---|
@@ -403,7 +403,7 @@ The waves file is read when the games module starts, after the logger module sta
 | 4 | supervisor to player | once the game reported, the player's next request (they repeat every 500 ms) gets a `ConnectionRedirect` to the port of the game; while the game starts, the supervisor answers nothing. Either way the player holds a seat of that game from then on (below) |
 | 5 | player to game | a new handshake with the game process, which places the player as a server does |
 
-The supervisor does not see inside a game: `GameRegistry` (`src/server/SupervisedGames/`) holds, per game, its number, its place, its port, its link token, the state its process reported (`Starting` until the first status), the nicknames of its players, its measures and the handle of the process. The number grows from 0 with each game started and names the journal of the game; the place, from 1 to `MAXIMUM_RUNNING_GAMES`, is the smallest free one when the game starts (`GameRegistry::open()`, `NoFreeGameSlotException` when none is) and is the number the master and the players read, `GAME 1` to `GAME 8`. A game that has not reported counts as waiting for players, so a burst of requests starts one process.
+The supervisor does not see inside a game: `GameRegistry` (`src/server/SupervisedGames/Registry/`) holds, per game, its number, its place, its port, its link token, the state its process reported (`Starting` until the first status), the nicknames of its players, its measures and the handle of the process. The number grows from 0 with each game started and names the journal of the game; the place, from 1 to `MAXIMUM_RUNNING_GAMES`, is the smallest free one when the game starts (`GameRegistry::open()`, `NoFreeGameSlotException` when none is) and is the number the master and the players read, `GAME 1` to `GAME 8`. A game that has not reported counts as waiting for players, so a burst of requests starts one process.
 
 `GameRegistry::placeFor()` places a player by the `GameChoice` of its request (see [Supervisor](/R-Type/protocol/#supervisor) on the protocol page), and returns a `GamePlace`: `Redirect` or `Wait` with the port of the game, `Open`, or `Refuse` with its `RefusalReason`.
 
