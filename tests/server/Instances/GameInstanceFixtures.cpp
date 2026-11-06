@@ -99,6 +99,12 @@ network::PacketHeader sessionHeader(std::size_t player) {
   return header;
 }
 
+network::PacketHeader firstSessionHeader(std::size_t player) {
+  network::PacketHeader header = sessionHeader(player);
+  header.sequence = FIRST_SEQUENCE;
+  return header;
+}
+
 namespace {
 
 /** @returns Whether @p spawned announces an enemy: a type the sheets the game

@@ -1,6 +1,7 @@
 #include "RtypeGameModules.hpp"
 #include <memory>
 #include <vector>
+#include "ChatModule.hpp"
 #include "IGameModule.hpp"
 #include "IResultsArchive.hpp"
 #include "ReplicationModule.hpp"
@@ -15,6 +16,7 @@ std::vector<std::unique_ptr<IGameModule>> rtypeGameModules(
   modules.push_back(std::make_unique<ReplicationModule>());
   modules.push_back(std::make_unique<RtypeRulesModule>());
   modules.push_back(std::make_unique<ResultsModule>(results));
+  modules.push_back(std::make_unique<ChatModule>());
   return modules;
 }
 

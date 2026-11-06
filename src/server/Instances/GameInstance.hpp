@@ -46,7 +46,8 @@ namespace rtype::server {
  * modules before it replaces it, once it was held for
  * GameSettings::inputDelayTicks ticks, the same for every player; each
  * LeaderboardRequest goes to their SessionHooks::leaderboardRequested
- * functions; and a player whose session closes goes to their
+ * functions; each ChatLine to their SessionHooks::chatLineSent functions; and a
+ * player whose session closes goes to their
  * SessionHooks::closing functions. A player who joins goes to their
  * SessionHooks::joined functions (see onPlayerJoined()). takeDepartedPlayers()
  * hands the players whose session closed over to whoever must forget them

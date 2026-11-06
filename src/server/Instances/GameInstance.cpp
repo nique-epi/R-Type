@@ -7,6 +7,7 @@
 #include <span>
 #include <utility>
 #include <vector>
+#include "ChatLine.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DelayedInputs.hpp"
 #include "Endpoint.hpp"
@@ -72,6 +73,10 @@ GameSessionsParts sessionPartsOf(const GameInstanceParts& parts,
           [own](const ConnectedPlayer& player,
                 const network::LeaderboardRequest& request) {
             callAll(own.hooks.get().leaderboardRequested, player, request);
+          },
+      .onChatLine =
+          [own](const ConnectedPlayer& player, const network::ChatLine& line) {
+            callAll(own.hooks.get().chatLineSent, player, line);
           }};
 }
 

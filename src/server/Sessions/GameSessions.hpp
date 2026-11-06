@@ -5,6 +5,7 @@
 #include <optional>
 #include <span>
 #include <vector>
+#include "ChatLine.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DatagramReader.hpp"
 #include "Departures.hpp"
@@ -36,7 +37,8 @@ namespace rtype::server {
  * the silence of its sender, whatever it holds, and drops the guaranteed
  * messages its header acknowledges. Its ReadyState is kept by a ReadyKeeper,
  * its PlayerInput by an InputKeeper, its LeaderboardRequest goes to
- * GameSessionsParts::onLeaderboardRequest with the player who sent it, and a
+ * GameSessionsParts::onLeaderboardRequest and its ChatLine to
+ * GameSessionsParts::onChatLine with the player who sent it, and a
  * Disconnection closes the session of its sender at once, with a
  * PlayerDeparture (Left): the copies of that Disconnection the client sends
  * after it come from an address the roster no longer holds, so they change
@@ -123,10 +125,11 @@ class GameSessions {
    * Disconnection. */
   void registerSessionHandlers();
 
-  /** @brief Tells the dispatcher what handles each request of a player, which
-   * goes to its part with the player who sent it. A datagram may hold a
-   * Disconnection before a request, which frees the seat: the request of an
-   * address with no seat any more goes nowhere. */
+  /** @brief Tells the dispatcher what handles each request of a player, a
+   * LeaderboardRequest or a ChatLine, which goes to its part with the player
+   * who sent it. A datagram may hold a Disconnection before a request, which
+   * frees the seat: the request of an address with no seat any more goes
+   * nowhere. */
   void registerRequestHandlers();
 
   std::function<void(network::OutgoingDatagram)> send_;
@@ -140,6 +143,8 @@ class GameSessions {
   std::function<void(const ConnectedPlayer&,
                      const network::LeaderboardRequest&)>
       onLeaderboardRequest_;
+  std::function<void(const ConnectedPlayer&, const network::ChatLine&)>
+      onChatLine_;
   network::MessageDispatcher dispatcher_;
 };
 

@@ -68,6 +68,10 @@ struct SentGameLoaded {
 /** @returns A header carrying the session token of @p player. */
 [[nodiscard]] network::PacketHeader sessionHeader(std::size_t player);
 
+/** @returns sessionHeader() of @p player at FIRST_SEQUENCE: the header of the
+ * first datagram a test sends from that player. */
+[[nodiscard]] network::PacketHeader firstSessionHeader(std::size_t player);
+
 /** @returns How many of the network ids in @p removed belong to Bydos, as the
  * EntitySpawned among @p datagrams announced them; the missiles the Bydos fire
  * are not counted. */

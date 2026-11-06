@@ -4,6 +4,7 @@
 #include <span>
 #include <utility>
 #include <vector>
+#include "ChatLine.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DatagramReader.hpp"
 #include "Disconnection.hpp"
@@ -62,7 +63,8 @@ GameSessions::GameSessions(GameSessionsParts parts)
       readyKeeper_(roster_, std::move(parts.readyAccepted)),
       inputKeeper_(roster_, std::move(parts.onNewerInput)),
       departures_(roster_, parts.events, std::move(parts.onClosing)),
-      onLeaderboardRequest_(std::move(parts.onLeaderboardRequest)) {
+      onLeaderboardRequest_(std::move(parts.onLeaderboardRequest)),
+      onChatLine_(std::move(parts.onChatLine)) {
   registerSessionHandlers();
   registerRequestHandlers();
 }
@@ -102,6 +104,14 @@ void GameSessions::registerRequestHandlers() {
         const ConnectedPlayer* const player = roster_.find(origin.sender);
         if (player != nullptr) {
           onLeaderboardRequest_(*player, request);
+        }
+      });
+  dispatcher_.registerHandler<network::ChatLine>(
+      [this](const network::MessageOrigin& origin,
+             const network::ChatLine& line) {
+        const ConnectedPlayer* const player = roster_.find(origin.sender);
+        if (player != nullptr) {
+          onChatLine_(*player, line);
         }
       });
 }

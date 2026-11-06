@@ -8,6 +8,7 @@ target_include_directories(rtype_server_sessions PUBLIC ${CMAKE_CURRENT_SOURCE_D
 target_link_libraries(rtype_server_sessions
   PUBLIC
     rtype_engine_event_bus
+    rtype_network_chat_line
     rtype_network_leaderboard_request
     rtype_network_message_dispatcher
     rtype_network_transport
