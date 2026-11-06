@@ -9,6 +9,10 @@
 #include "ApplicationLoopTestConstants.hpp"
 #include "ApplicationTestConstants.hpp"
 #include "CommandInterpreter.hpp"
+#include "ConfigurationReader.hpp"
+#include "ConfigurationReport.hpp"
+#include "ConfigurationSource.hpp"
+#include "HandOverRuleFixtures.hpp"
 #include "JournalModule.hpp"
 #include "LoopStages.hpp"
 #include "StageTestConstants.hpp"
@@ -208,4 +212,29 @@ TEST(ApplicationConfiguration, ModuleTurnedOffRunsNoWork) {
   application.runStages(ELAPSED_TIME);
 
   EXPECT_EQ(journal.calls, (Lines{SIMULATION_OF_FIRST, SIMULATION_OF_THIRD}));
+}
+
+/**
+ * Given an application of three modules whose configuration turns the second
+ * off, a line its rule hands over to another program
+ * When it starts
+ * Then the line runs in none of the three passes: the three modules are
+ * installed and started, and the line is kept as it was written
+ */
+TEST(ApplicationConfiguration, AHandedOverModuleLineRunsInNoPass) {
+  JournalModule journal;
+  rtype::engine::ConfigurationReport report;
+  Application application(withoutStages(), threeModules(journal),
+                          rtype::engine::configurationStep(
+                              rtype::engine::ConfigurationSource{
+                                  .file = {},
+                                  .forcedLines = {TURN_SECOND_OFF},
+                                  .handOver = handingOver({MODULE_COMMAND})},
+                              report));
+
+  application.start();
+
+  EXPECT_EQ(journal.calls, (Lines{INSTALL_FIRST, INSTALL_SECOND, INSTALL_THIRD,
+                                  START_FIRST, START_SECOND, START_THIRD}));
+  EXPECT_EQ(report.handedOverLines, (Lines{TURN_SECOND_OFF}));
 }

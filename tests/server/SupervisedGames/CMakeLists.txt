@@ -3,6 +3,6 @@ add_subdirectory(Launch)
 add_subdirectory(Stopping)
 add_subdirectory(Status)
 
-target_sources(server_module_tests PRIVATE SupervisedGamesFixtures.cpp ServerSupervisedGamesFixture.cpp ServerSupervisedGamesModuleTest.cpp)
+target_sources(server_module_tests PRIVATE SupervisedGamesFixtures.cpp ServerSupervisedGamesFixture.cpp ServerSupervisedGamesModuleTest.cpp SupervisedGamesReportTest.cpp SupervisedGamesWatchTest.cpp)
 
 target_include_directories(server_module_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

@@ -109,8 +109,8 @@ constexpr std::size_t MAXIMUM_GAME_NAME_SIZE = 16;
 
 /**
  * @brief The fewest and the most games a server may host, and the number of
- * its first game. A server hosts 8 today (DEFAULT_HOSTED_GAME_COUNT of the
- * server); a heartbeat of 64 games of four players, every nickname and
+ * its first game. A supervisor runs 8 at most today (MAXIMUM_RUNNING_GAMES
+ * of the server); a heartbeat of 64 games of four players, every nickname and
  * difficulty of 16 bytes and every measure taken, is 9.8 KiB of JSON.
  */
 constexpr std::uint16_t MINIMUM_HOSTED_GAMES = 1;

@@ -7,7 +7,7 @@
 namespace rtype::server {
 
 /**
- * @brief Reads `--mode <server|supervisor|master>` when it is the first of
+ * @brief Reads `--mode <supervisor|game|master>` when it is the first of
  * @p arguments, the arguments the binary was launched with, without its name.
  * @returns ServerMode::Supervisor and every argument when the first is not
  * `--mode`; otherwise the mode named and the arguments after it. A `--mode`
@@ -15,7 +15,7 @@ namespace rtype::server {
  * @throws engine::MissingLaunchOptionValueException when `--mode` is the
  * last argument.
  * @throws engine::InvalidLaunchOptionValueException when its value is neither
- * SERVER_MODE_NAME, SUPERVISOR_MODE_NAME nor MASTER_MODE_NAME.
+ * SUPERVISOR_MODE_NAME, GAME_MODE_NAME nor MASTER_MODE_NAME.
  */
 [[nodiscard]] ServerModeChoice chooseServerMode(
     std::span<const std::string_view> arguments);

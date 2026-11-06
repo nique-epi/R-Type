@@ -8,6 +8,7 @@
 #include "ConfigurationReaderTestConstants.hpp"
 #include "ConfigurationRegistryTestConstants.hpp"
 #include "ConfigurationReport.hpp"
+#include "ConfigurationSource.hpp"
 #include "IntegerSettingDefinition.hpp"
 #include "SettingValue.hpp"
 #include "TextSettingDefinition.hpp"
@@ -54,4 +55,9 @@ rtype::engine::ConfigurationReport ConfigurationReaderFixture::read(
     const std::filesystem::path& path,
     const std::vector<std::string>& forcedLines) {
   return rtype::engine::readConfiguration(path, forcedLines, interpreter_);
+}
+
+rtype::engine::ConfigurationReport ConfigurationReaderFixture::read(
+    const rtype::engine::ConfigurationSource& source) {
+  return rtype::engine::readConfiguration(source, interpreter_);
 }

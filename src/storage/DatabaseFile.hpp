@@ -7,6 +7,10 @@
 
 namespace rtype::storage {
 
+/** @returns The flags that open a file for writing and create it when it does
+ * not exist; SQLiteCpp declares each as a signed value. */
+[[nodiscard]] int readWriteOrCreate();
+
 /**
  * @brief Opens @p file, a path written in UTF-8, creating it when it does not
  * exist, then applies those of @p migrations it does not hold yet;
@@ -21,6 +25,10 @@ namespace rtype::storage {
  *
  * Each migration commits together with its number, so a crash between two of
  * them leaves a file the next start carries on from.
+ *
+ * Several programs may open the same file at once, as the games of one
+ * supervisor do: each waits up to DATABASE_BUSY_TIMEOUT_MILLISECONDS for the
+ * others, and a migration one of them applied is never applied again.
  *
  * Use the connection from one thread at a time.
  *

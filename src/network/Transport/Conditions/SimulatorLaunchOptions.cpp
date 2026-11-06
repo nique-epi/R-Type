@@ -7,6 +7,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 #include "NetworkConditions.hpp"
 #include "NetworkConditionsConstants.hpp"
 #include "NetworkConditionsText.hpp"
@@ -214,6 +215,22 @@ std::size_t SimulatorLaunchOptions::readOption(
 
 const NetworkConditions& SimulatorLaunchOptions::conditions() const {
   return conditions_;
+}
+
+std::vector<std::string> SimulatorLaunchOptions::forwardedArguments() const {
+  if (conditions_ == PERFECT_NETWORK) {
+    return {};
+  }
+  return {std::string{LAG_OPTION},
+          std::to_string(conditions_.lag.count()),
+          std::string{JITTER_OPTION},
+          std::to_string(conditions_.jitter.count()),
+          std::string{LOSS_OPTION},
+          std::to_string(conditions_.lossPercent),
+          std::string{DUPLICATES_OPTION},
+          std::to_string(conditions_.duplicatePercent),
+          std::string{REORDER_OPTION},
+          std::to_string(conditions_.reorderPercent)};
 }
 
 std::string SimulatorLaunchOptions::usage() {

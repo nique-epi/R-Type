@@ -15,6 +15,16 @@ constexpr std::string_view GAME_STATISTICS_PLUGIN_NAME = "game-statistics";
 constexpr std::string_view STATISTICS_FILE_SETTING = "game-statistics-file";
 constexpr std::string_view STATISTICS_FILE_NAME = "statistics.csv";
 
+/** @brief STATISTICS_FILE_NAME cut where a game puts its port: its name,
+ * what goes before the port, and its extension. */
+constexpr std::string_view STATISTICS_FILE_STEM = "statistics";
+constexpr std::string_view STATISTICS_PORT_SEPARATOR = "_";
+constexpr std::string_view STATISTICS_FILE_EXTENSION = ".csv";
+
+/** @brief The file the plugin writes for STATISTICS_FILE_NAME on
+ * STATISTICS_TEST_PORT: the name, the port, then the extension. */
+constexpr std::string_view WRITTEN_STATISTICS_FILE_NAME = "statistics_4307.csv";
+
 /** @brief The games the tests drive, and the port the network double gives. */
 constexpr std::size_t GAMES_IN_THE_TESTS = 2;
 constexpr std::uint16_t STATISTICS_TEST_PORT = 4307;

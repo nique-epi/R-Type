@@ -13,6 +13,14 @@ constexpr const char* PORT_PROBE_MODULE = "port probe";
 /** @brief The database of a server a test starts, in a folder of the test. */
 constexpr std::string_view TEST_DATABASE_FILE = "results.db";
 
+/** @brief The file of commands a test gives a game process after
+ * `--configuration`, in the folder it starts in. */
+constexpr std::string_view GAME_CONFIGURATION_FILE = "games.cfg";
+
+/** @brief The token the game process a test starts shares with its
+ * supervisor, as its command line writes it. */
+constexpr std::string_view GAME_PROCESS_LINK_TOKEN = "4660";
+
 /** @brief The text the failing stage work of the tests throws. */
 constexpr const char* STAGE_FAILURE_TEXT = "a stage failed";
 

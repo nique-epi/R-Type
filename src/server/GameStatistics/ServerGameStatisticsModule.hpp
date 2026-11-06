@@ -65,8 +65,11 @@ class ServerGameStatisticsModule final : public engine::IModule {
   void stop() override;
 
  private:
-  /** @returns The file the setting names, or r-type_statistics_<port>.csv
-   * next to the executable while it is empty. */
+  /** @returns The file the setting names with the port of the game before
+   * its extension (stats.csv gives stats_<port>.csv), or
+   * r-type_statistics_<port>.csv next to the executable while it is empty: a
+   * supervisor runs several games, which listen on several ports, so two
+   * games never write the same file. */
   [[nodiscard]] std::filesystem::path statisticsFile() const;
 
   /** @brief Builds a GameTally on the bus of each game, which follows it

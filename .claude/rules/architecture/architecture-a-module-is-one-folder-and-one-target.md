@@ -17,7 +17,7 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
 
 ### Required or optional
 
-3. **Every module is required or optional, and the list of modules in `docs/src/content/docs/project-layout.md` says which.** A required module may be included by the code that needs it. An optional module is reached only through its `Contract/` sub-folder, which stays compiled when the module is removed. In `src/`, the class of a module is included by the list that names it (`serverModules()`, `clientModules()`, `rtypeGameModules()`) and nothing else.
+3. **Every module is required or optional, and the list of modules in `docs/src/content/docs/project-layout.md` says which.** A required module may be included by the code that needs it. An optional module is reached only through its `Contract/` sub-folder, which stays compiled when the module is removed. In `src/`, the class of a module is included by the list that names it (`gameProcessModules()`, `supervisorModules()`, `clientModules()`, `rtypeGameModules()`) and nothing else.
 4. **The removal test, for an optional module**: remove its folder, except `Contract/`, and its line in the list; the program compiles, starts, and its binary is smaller. **No module passes it yet**; `project-layout.md` says what stops the sound and the metrics.
 
 ### The code of a module used elsewhere
@@ -79,7 +79,7 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
 - ❌ **Before (wrong)**: the tidying of the server counts the lives (`LifeKeeper`, `PlayerLives`), the score (`ScoreKeeper`) and the steering of a ship (`PlayerController`, `ShipInput`) of `src/server/Rules/` as three reasons to change, finds a single category of four classes, and keeps the ten classes flat.
 - ✅ **After (right)**: `Rules/Match/` (`GameFlow`, `StartBarrier`, `WorldSlot`, `RtypeSystems`) and `Rules/Players/` (the lives, the score and the ship of each player), with `RtypeRulesModule` at the root; `GameFlow` includes `LifeKeeper` and `PlayerController`, so `Match/` includes `Players/`, and `Players/` includes nothing of `Match/`.
 - ❌ **Before (wrong)**: `src/game/Waves/` called a module because it has a target, and a new tick report written in `src/server/Modules/TickReport/`.
-- ✅ **After (right)**: `src/game/Waves/` is a library, since no class of it implements `IModule`; the tick report is written in `src/server/TickReport/`, with a line in `serverModules()` and a row in the list of modules.
+- ✅ **After (right)**: `src/game/Waves/` is a library, since no class of it implements `IModule`; the tick report is written in `src/server/TickReport/`, with a line in `gameProcessModules()` and a row in the list of modules.
 - ❌ **Before (wrong)**: the class `ClientAudioModule` in `src/client/Modules/Audio/`, its code in `src/client/Audio/`, and `ISoundPlayer.hpp` next to the classes only the module needs, so nothing tells what stays when the sound is removed.
 - ✅ **After (right)**: the shape the sound has since the client is tidied:
   ```

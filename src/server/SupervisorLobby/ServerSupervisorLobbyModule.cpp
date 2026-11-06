@@ -22,6 +22,7 @@
 #include "PlaceKind.hpp"
 #include "ProtocolConstants.hpp"
 #include "RequestReading.hpp"
+#include "SeatRequest.hpp"
 #include "ServerConstants.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
@@ -95,7 +96,8 @@ void ServerSupervisorLobbyModule::answer(
                              .cookie = cookies_.issue(datagram.sender, now)}));
     return;
   }
-  answerValidRequest(datagram.sender);
+  answerValidRequest(
+      SeatRequest{.sender = datagram.sender, .nickname = request->nickname});
 }
 
 void ServerSupervisorLobbyModule::refuseAnotherVersion(
@@ -110,22 +112,24 @@ void ServerSupervisorLobbyModule::refuseAnotherVersion(
 }
 
 void ServerSupervisorLobbyModule::answerValidRequest(
-    const network::Endpoint& sender) {
-  const GamePlace place = registry_->placeForNewPlayer();
+    const SeatRequest& request) {
+  const GamePlace place = registry_->placeForNewPlayer(request);
   switch (place.kind) {
     case PlaceKind::Redirect:
-      sender_->queueDatagram(
-          datagramTo(sender, network::ConnectionRedirect{.port = place.port}));
+      sender_->queueDatagram(datagramTo(
+          request.sender, network::ConnectionRedirect{.port = place.port}));
       break;
     case PlaceKind::Wait:
       break;
     case PlaceKind::Open:
-      static_cast<void>(spawner_->openGame());
+      if (spawner_->openGame()) {
+        static_cast<void>(registry_->placeForNewPlayer(request));
+      }
       break;
     case PlaceKind::Full:
-      sender_->queueDatagram(
-          datagramTo(sender, network::ConnectionRefused{
-                                 .reason = network::RefusalReason::GameFull}));
+      sender_->queueDatagram(datagramTo(
+          request.sender, network::ConnectionRefused{
+                              .reason = network::RefusalReason::GameFull}));
       break;
   }
 }

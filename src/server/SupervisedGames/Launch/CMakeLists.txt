@@ -1,6 +1,7 @@
 add_library(rtype_server_supervised_games_launch STATIC
   FreeUdpPort.cpp
   GameCommand.cpp
+  GameConfigurationFile.cpp
   GameSpawner.cpp
 )
 
@@ -14,11 +15,14 @@ target_link_libraries(rtype_server_supervised_games_launch
     rtype_server_supervised_games_registry
   PRIVATE
     rtype_engine_launch_arguments
+    rtype_engine_paths
     rtype_network_constants
     rtype_network_context
     rtype_network_transport
     rtype_network_udp_socket
     rtype_server_constants
+    rtype_server_exceptions
+    rtype_server_storage_module
     rtype_server_supervised_games_constants
 )
 

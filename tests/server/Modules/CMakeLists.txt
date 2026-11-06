@@ -1,1 +1,2 @@
-target_sources(server_module_tests PRIVATE ServerModuleFixture.cpp ServerModulesFixture.cpp ServerModulesTest.cpp)
+target_sources(server_module_tests PRIVATE ServerModuleFixture.cpp GameProcessModulesFixture.cpp GameProcessModulesTest.cpp SupervisorModulesFixture.cpp SupervisorModulesTest.cpp GameLineRuleTest.cpp ServerRolesFixture.cpp ServerRolesTest.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/StartRefusedException.cpp)
+target_compile_definitions(server_module_tests PRIVATE RTYPE_SOURCE_SERVER_CONFIGURATION_EXAMPLE="${PROJECT_SOURCE_DIR}/server.cfg.example")

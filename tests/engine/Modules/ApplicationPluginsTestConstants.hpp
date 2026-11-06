@@ -34,3 +34,8 @@ constexpr const char* FOLDER_AFTER_PLUGIN_REFUSAL =
  * its logger, then its text. */
 constexpr const char* GREETER_LOGGER = "Greeter";
 constexpr const char* GREETER_START_LINE = "greeter started";
+
+/** @brief The commands of the plugin lines, which a rule of the tests hands
+ * over to another program. */
+constexpr const char* PLUGIN_FOLDER_COMMAND = "plugin-folder";
+constexpr const char* PLUGIN_COMMAND = "plugin";
