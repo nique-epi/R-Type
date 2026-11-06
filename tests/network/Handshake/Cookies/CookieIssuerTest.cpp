@@ -2,29 +2,28 @@
 #include <cstdint>
 #include <string>
 #include "CookieIssuer.hpp"
+#include "CookieIssuerFixtures.hpp"
 #include "Endpoint.hpp"
 #include "HandshakeConstants.hpp"
 #include "HandshakeTestConstants.hpp"
 #include "SipHash.hpp"
 
-namespace rtype::network {
-namespace {
-
-using testing::END_OF_THAT_WINDOW;
-using testing::END_OF_THE_NEXT_WINDOW;
-using testing::OTHER_KEY_BYTE;
-using testing::OTHER_SENDER_ADDRESS;
-using testing::OTHER_SENDER_PORT;
-using testing::PROTOCOL_COOKIE_WINDOW;
-using testing::SENDER_ADDRESS;
-using testing::SENDER_PORT;
-using testing::START_OF_A_WINDOW;
-using testing::START_OF_THE_NEXT_WINDOW;
-using testing::TWO_WINDOWS_LATER;
-
-Endpoint sender() {
-  return Endpoint{.address = std::string{SENDER_ADDRESS}, .port = SENDER_PORT};
-}
+using rtype::network::COOKIE_WINDOW_DURATION;
+using rtype::network::CookieIssuer;
+using rtype::network::Endpoint;
+using rtype::network::SipHashKey;
+using rtype::network::testing::END_OF_THAT_WINDOW;
+using rtype::network::testing::END_OF_THE_NEXT_WINDOW;
+using rtype::network::testing::OTHER_KEY_BYTE;
+using rtype::network::testing::OTHER_SENDER_ADDRESS;
+using rtype::network::testing::OTHER_SENDER_PORT;
+using rtype::network::testing::PROTOCOL_COOKIE_WINDOW;
+using rtype::network::testing::sender;
+using rtype::network::testing::SENDER_ADDRESS;
+using rtype::network::testing::SENDER_PORT;
+using rtype::network::testing::START_OF_A_WINDOW;
+using rtype::network::testing::START_OF_THE_NEXT_WINDOW;
+using rtype::network::testing::TWO_WINDOWS_LATER;
 
 /**
  * Given the cookie window of the protocol page
@@ -136,6 +135,3 @@ TEST(CookieIssuer, RefusesTheMissingCookie) {
 
   EXPECT_FALSE(issuer.isValid(0, sender(), START_OF_A_WINDOW));
 }
-
-}  // namespace
-}  // namespace rtype::network
