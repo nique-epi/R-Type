@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include "CreationQuota.hpp"
+#include "Endpoint.hpp"
 #include "EpochSeconds.hpp"
 #include "HeartbeatRecord.hpp"
 #include "KnownServer.hpp"
@@ -19,6 +20,7 @@
 #include "NewServer.hpp"
 #include "PageRequest.hpp"
 #include "PlayerCount.hpp"
+#include "ProbeTarget.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerLimits.hpp"
 #include "ServerMeasures.hpp"
@@ -67,6 +69,22 @@ std::optional<ServerLimits> limitsIn(const SQLite::Statement& query) {
                           query.getColumn(MAXIMUM_PLAYERS_COLUMN).getUInt())};
 }
 
+/** @returns Where the probes of the server of the row @p query stands on go;
+ * none while it has no secret. */
+std::optional<ProbeTarget> probeTargetIn(const SQLite::Statement& query) {
+  if (query.getColumn(SERVER_PROBE_SECRET_COLUMN).isNull()) {
+    return std::nullopt;
+  }
+  return ProbeTarget{
+      .endpoint =
+          network::Endpoint{
+              .address = query.getColumn(SERVER_ADDRESS_COLUMN).getString(),
+              .port = static_cast<std::uint16_t>(
+                  query.getColumn(SERVER_UDP_PORT_COLUMN).getUInt())},
+      .secret = static_cast<std::uint64_t>(
+          query.getColumn(SERVER_PROBE_SECRET_COLUMN).getInt64())};
+}
+
 void bindRegistration(SQLite::Statement& statement,
                       const network::ServerRegistration& registration) {
   statement.bind(std::string{SERVER_NAME_PARAMETER}, registration.name);
@@ -80,6 +98,8 @@ void bindRegistration(SQLite::Statement& statement,
                  registration.maximumGames);
   statement.bind(std::string{MAXIMUM_PLAYERS_PARAMETER},
                  registration.maximumPlayersPerGame);
+  statement.bind(std::string{PROBE_SECRET_PARAMETER},
+                 static_cast<std::int64_t>(registration.probeSecret));
 }
 
 WatchedServer watchedServerIn(const SQLite::Statement& query) {
@@ -102,7 +122,9 @@ WatchedServer watchedServerIn(const SQLite::Statement& query) {
                           query.getColumn(WATCHED_LOSS_PERCENT_COLUMN)),
                       .averagePingMilliseconds = std::nullopt},
               .maintenance =
-                  query.getColumn(WATCHED_MAINTENANCE_COLUMN).getInt() != 0},
+                  query.getColumn(WATCHED_MAINTENANCE_COLUMN).getInt() != 0,
+              .lastProbeAnswerAt = optionalDateIn(
+                  query.getColumn(WATCHED_PROBE_ANSWER_AT_COLUMN))},
       .status = statusIn(query.getColumn(WATCHED_STATUS_COLUMN))};
 }
 
@@ -179,7 +201,8 @@ std::optional<KnownServer> ServerRepository::serverOfKey(
       return std::nullopt;
     }
     return KnownServer{.id = query.getColumn(SERVER_ID_COLUMN).getInt64(),
-                       .limits = limitsIn(query)};
+                       .limits = limitsIn(query),
+                       .probe = probeTargetIn(query)};
   });
 }
 
@@ -203,6 +226,8 @@ void ServerRepository::saveLastHeartbeat(SQLite::Database& connection,
               network::heartbeatText(record.heartbeat));
   update.bind(std::string{TAKEN_AT_PARAMETER},
               epochSecondsOf(record.receivedAt));
+  update.bind(std::string{PROBE_ANSWERED_PARAMETER},
+              static_cast<int>(record.probeAnswered));
   bindHeartbeatSummary(update, record.heartbeat);
   update.bind(std::string{SERVER_ID_PARAMETER}, record.serverId);
   update.exec();

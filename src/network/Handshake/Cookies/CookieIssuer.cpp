@@ -2,24 +2,18 @@
 #include <chrono>
 #include <cstdint>
 #include "ByteWriter.hpp"
+#include "CookieWindows.hpp"
 #include "Endpoint.hpp"
 #include "EndpointBytes.hpp"
-#include "HandshakeConstants.hpp"
 #include "SipHash.hpp"
 
 namespace rtype::network {
 
-namespace {
+CookieIssuer::CookieIssuer(CookieWindows windows)
+    : CookieIssuer(randomSipHashKey(), windows) {}
 
-std::uint64_t windowOf(std::chrono::nanoseconds now) {
-  return static_cast<std::uint64_t>(now / COOKIE_WINDOW_DURATION);
-}
-
-}  // namespace
-
-CookieIssuer::CookieIssuer() : CookieIssuer(randomSipHashKey()) {}
-
-CookieIssuer::CookieIssuer(const SipHashKey& secret) : secret_(secret) {}
+CookieIssuer::CookieIssuer(const SipHashKey& secret, CookieWindows windows)
+    : secret_(secret), windows_(windows) {}
 
 std::uint64_t CookieIssuer::issue(const Endpoint& sender,
                                   std::chrono::nanoseconds now) const {
@@ -28,9 +22,20 @@ std::uint64_t CookieIssuer::issue(const Endpoint& sender,
 
 bool CookieIssuer::isValid(std::uint64_t cookie, const Endpoint& sender,
                            std::chrono::nanoseconds now) const {
+  if (cookie == 0) {
+    return false;
+  }
   const std::uint64_t window = windowOf(now);
-  return cookie != 0 && (cookie == cookieOf(sender, window) ||
-                         cookie == cookieOf(sender, window - 1));
+  for (std::uint64_t age = 0; age < windows_.accepted && age <= window; ++age) {
+    if (cookie == cookieOf(sender, window - age)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::uint64_t CookieIssuer::windowOf(std::chrono::nanoseconds now) const {
+  return static_cast<std::uint64_t>(now / windows_.duration);
 }
 
 std::uint64_t CookieIssuer::cookieOf(const Endpoint& sender,

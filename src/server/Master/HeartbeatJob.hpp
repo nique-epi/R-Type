@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+#include <optional>
 #include <stop_token>
 #include <string>
 #include <thread>
@@ -7,6 +9,7 @@
 #include "HeartbeatTimes.hpp"
 #include "LatestHostedGames.hpp"
 #include "LatestServerMeasures.hpp"
+#include "LatestValue.hpp"
 #include "Logger.hpp"
 #include "MasterClient.hpp"
 #include "ServerIdentity.hpp"
@@ -50,10 +53,21 @@ class HeartbeatJob {
   [[nodiscard]] bool sendHeartbeat();
   /** @brief Writes @p problem in the journal unless it was the last one. */
   void tell(const std::string& problem);
+  /**
+   * @returns The newest token of a probe when @p revision, read before it, is
+   * above the revision of the last heartbeat sent; nothing otherwise. A token
+   * goes out once, except one published between the read of @p revision and
+   * that of the token: it goes out in this heartbeat and in the next, never in
+   * none.
+   */
+  [[nodiscard]] std::optional<std::uint64_t> unsentProbeToken(
+      std::uint64_t revision) const;
 
   network::MasterClient client_;
   ServerIdentity identity_;
   const LatestHostedGames& games_;
+  const concurrency::LatestValue<std::uint64_t>& probeTokens_;
+  std::uint64_t sentTokenRevision_{0};
   const LatestServerMeasures* measures_;
   HeartbeatTimes times_;
   logging::Logger logger_;

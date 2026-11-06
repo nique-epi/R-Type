@@ -22,6 +22,9 @@ struct ReceivedDatagrams {
    * ConnectionRequest, from anyone: at most
    * INFORMATION_REQUEST_QUEUE_CAPACITY. */
   std::span<const network::IncomingDatagram> informationRequests;
+  /** @brief The datagrams holding a MasterProbe and no request, from anyone:
+   * at most PROBE_QUEUE_CAPACITY. */
+  std::span<const network::IncomingDatagram> probes;
 };
 
 }  // namespace rtype::server

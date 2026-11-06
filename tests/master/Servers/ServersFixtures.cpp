@@ -7,21 +7,25 @@
 #include <string_view>
 #include "CreatedServer.hpp"
 #include "CreationAttempt.hpp"
+#include "DatagramCodec.hpp"
 #include "KnownServer.hpp"
 #include "ListedServer.hpp"
 #include "MasterDatabase.hpp"
 #include "MasterMessageTextFixtures.hpp"
+#include "MasterProbe.hpp"
 #include "MasterRouteConstants.hpp"
 #include "MasterTestConstants.hpp"
+#include "OutgoingDatagram.hpp"
 #include "PageRequest.hpp"
 #include "ServerCreation.hpp"
+#include "ServerHeartbeat.hpp"
 #include "ServerRecord.hpp"
 #include "ServerStatus.hpp"
 #include "ServersService.hpp"
 
-rtype::master::KnownServer registeredParis(
-    rtype::master::ServersService& servers, std::string_view address,
-    std::chrono::sys_seconds date) {
+std::string keyOfRegisteredParis(rtype::master::ServersService& servers,
+                                 std::string_view address,
+                                 std::chrono::sys_seconds date) {
   const rtype::network::CreatedServer created =
       servers
           .createServer(rtype::master::CreationAttempt{
@@ -35,7 +39,13 @@ rtype::master::KnownServer registeredParis(
       .serverId = created.id,
       .registration = rtype::network::testing::parisRegistration(),
       .registeredAt = date});
-  return servers.serverOfKey(created.key)
+  return created.key;
+}
+
+rtype::master::KnownServer registeredParis(
+    rtype::master::ServersService& servers, std::string_view address,
+    std::chrono::sys_seconds date) {
+  return servers.serverOfKey(keyOfRegisteredParis(servers, address, date))
       .value_or(rtype::master::KnownServer{});
 }
 
@@ -59,4 +69,20 @@ std::optional<rtype::network::ServerStatus> listedStatusOf(
     }
   }
   return std::nullopt;
+}
+
+rtype::network::ServerHeartbeat answeringHeartbeat(
+    const rtype::master::ServersService& servers,
+    const rtype::master::KnownServer& server, std::chrono::sys_seconds date) {
+  rtype::network::ServerHeartbeat heartbeat =
+      rtype::network::testing::parisHeartbeat();
+  const std::optional<rtype::network::OutgoingDatagram> probe =
+      servers.probeFor(server, date);
+  if (probe.has_value()) {
+    heartbeat.probeToken = rtype::network::DatagramCodec::firstMessage<
+                               rtype::network::MasterProbe>(probe->payload)
+                               .value_or(rtype::network::MasterProbe{})
+                               .token;
+  }
+  return heartbeat;
 }

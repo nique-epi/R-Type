@@ -28,7 +28,8 @@ constexpr auto MESSAGE_TYPE_NAMES = std::to_array<std::string_view>(
      "OrderedMessage",    "ServerInformationRequest",
      "ServerInformation", "ConnectionRedirect",
      "GameStatus",        "GameStatusAcknowledged",
-     "ChatLine",          "PlayerChatLine"});
+     "MasterProbe",       "ChatLine",
+     "PlayerChatLine"});
 
 static_assert(FIRST_NAMED_MESSAGE_TYPE + MESSAGE_TYPE_NAMES.size() - 1 ==
                   static_cast<std::size_t>(MessageType::PlayerChatLine),

@@ -13,6 +13,7 @@
 #include "MasterTestConstants.hpp"
 #include "PageRequest.hpp"
 #include "ServerCreation.hpp"
+#include "ServerHeartbeat.hpp"
 #include "ServerStatus.hpp"
 #include "ServerStatusServiceFixture.hpp"
 #include "ServerStatusServiceTestConstants.hpp"
@@ -28,27 +29,43 @@ using rtype::network::CreatedServer;
 using rtype::network::DatedStatus;
 using rtype::network::ListedServer;
 using rtype::network::ServerCreation;
+using rtype::network::ServerHeartbeat;
 using rtype::network::ServerStatus;
 using rtype::network::testing::PARIS_TICK_P95;
 
 /**
  * Given a server just registered, which the list gives offline until the
  * first refresh
- * When the statuses are refreshed at its registration
- * Then it is online, and its history holds that one change
+ * When the statuses are refreshed at its registration, before it answered a
+ * probe
+ * Then it is unreachable, and its history holds that one change
  */
 TEST_F(ServerStatusServiceFixture,
-       ARegisteredServerTurnsOnlineAtTheFirstRefresh) {
+       ARegisteredServerIsUnreachableUntilItAnswers) {
   const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
   ASSERT_EQ(listedStatusOf(servers(), server.id), ServerStatus::Offline);
 
   static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
 
+  EXPECT_EQ(listedStatusOf(servers(), server.id), ServerStatus::Unreachable);
+  EXPECT_EQ(historyOf(server.id), (std::vector<DatedStatus>{DatedStatus{
+                                      .since = FIRST_HEARTBEAT_DATE,
+                                      .status = ServerStatus::Unreachable}}));
+}
+
+/**
+ * Given a server just registered
+ * When it sends a heartbeat that answers its probe, then the statuses are
+ * refreshed
+ * Then it is online
+ */
+TEST_F(ServerStatusServiceFixture, AServerTurnsOnlineOnceItAnswersItsProbe) {
+  const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
+  beat(server, PARIS_TICK_P95, FIRST_HEARTBEAT_DATE);
+
+  static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
+
   EXPECT_EQ(listedStatusOf(servers(), server.id), ServerStatus::Online);
-  EXPECT_EQ(
-      historyOf(server.id),
-      (std::vector<DatedStatus>{DatedStatus{.since = FIRST_HEARTBEAT_DATE,
-                                            .status = ServerStatus::Online}}));
 }
 
 /**
@@ -106,7 +123,8 @@ TEST_F(ServerStatusServiceFixture, AServerOverItsBoundsTurnsDegraded) {
 }
 
 /**
- * Given an online server an admin puts in maintenance, then takes out of it
+ * Given a server an admin puts in maintenance, then takes out of it, which
+ * beats meanwhile
  * When the statuses are refreshed after each
  * Then it is in maintenance, then online again
  */
@@ -117,6 +135,7 @@ TEST_F(ServerStatusServiceFixture, MaintenanceIsPutAndTakenOut) {
   static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
   EXPECT_EQ(listedStatusOf(servers(), server.id), ServerStatus::Maintenance);
 
+  beat(server, PARIS_TICK_P95, FIRST_HEARTBEAT_DATE + FIVE_SECONDS);
   ASSERT_TRUE(statuses().setMaintenance(server.id, false));
   static_cast<void>(
       statuses().refreshStatuses(FIRST_HEARTBEAT_DATE + FIVE_SECONDS));
@@ -161,6 +180,7 @@ TEST_F(ServerStatusServiceFixture, AServerThatNeverRegisteredIsNotWatched) {
  */
 TEST_F(ServerStatusServiceFixture, TwoChangesInOneSecondKeepTheLater) {
   const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
+  beat(server, PARIS_TICK_P95, FIRST_HEARTBEAT_DATE);
   static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
   ASSERT_TRUE(statuses().setMaintenance(server.id, true));
 
@@ -178,6 +198,7 @@ TEST_F(ServerStatusServiceFixture, TwoChangesInOneSecondKeepTheLater) {
  */
 TEST_F(ServerStatusServiceFixture, AChangeOlderThanSevenDaysIsErased) {
   const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
+  beat(server, PARIS_TICK_P95, FIRST_HEARTBEAT_DATE);
   static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
 
   static_cast<void>(
@@ -191,7 +212,7 @@ TEST_F(ServerStatusServiceFixture, AChangeOlderThanSevenDaysIsErased) {
 
 /**
  * Given a server whose last heartbeat was slow, which then registers again, as
- * it does when it restarts
+ * it does when it restarts, and an answer to a probe at that registration
  * When the statuses are refreshed
  * Then it is online: a registration forgets the measures of the heartbeat
  * before it
@@ -200,6 +221,7 @@ TEST_F(ServerStatusServiceFixture, ARegistrationForgetsTheLastMeasures) {
   const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
   beat(server, SLOW_TICK_P95, FIRST_HEARTBEAT_DATE);
   registerAgain(server.id, FIRST_HEARTBEAT_DATE + FIVE_SECONDS);
+  execute(ANSWER_AT_THE_REGISTRATION_STATEMENT);
 
   static_cast<void>(
       statuses().refreshStatuses(FIRST_HEARTBEAT_DATE + FIVE_SECONDS));
@@ -236,6 +258,7 @@ TEST_F(ServerStatusServiceFixture, TheListIsReadAPageAtATime) {
  */
 TEST_F(ServerStatusServiceFixture, AnOldChangeIsErasedWhenNothingChanges) {
   const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
+  beat(server, PARIS_TICK_P95, FIRST_HEARTBEAT_DATE);
   static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
   beat(server, PARIS_TICK_P95, FIRST_HEARTBEAT_DATE + EIGHT_DAYS);
 
@@ -261,4 +284,76 @@ TEST_F(ServerStatusServiceFixture, ARefreshThatFailsKeepsNoChange) {
       SQLite::Exception);
 
   EXPECT_TRUE(historyOf(server.id).empty());
+}
+
+/**
+ * Given an online server whose port closed: it keeps beating, without token
+ * When the statuses are refreshed 15 s after its last answer
+ * Then it is unreachable
+ */
+TEST_F(ServerStatusServiceFixture, AServerThatStopsAnsweringTurnsUnreachable) {
+  const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
+  beat(server, PARIS_TICK_P95, FIRST_HEARTBEAT_DATE);
+  static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
+  beatWithoutAnswer(server, FIRST_HEARTBEAT_DATE + FIFTEEN_SECONDS);
+
+  static_cast<void>(
+      statuses().refreshStatuses(FIRST_HEARTBEAT_DATE + FIFTEEN_SECONDS));
+
+  EXPECT_EQ(listedStatusOf(servers(), server.id), ServerStatus::Unreachable);
+}
+
+/**
+ * Given a server that got a probe, and keeps its token for 15 s
+ * When it sends that token back, then the statuses are refreshed
+ * Then it is still unreachable: the token expired after three windows of 5 s
+ */
+TEST_F(ServerStatusServiceFixture, AnExpiredTokenIsNoAnswer) {
+  const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
+  const ServerHeartbeat late =
+      answeringHeartbeat(servers(), server, FIRST_HEARTBEAT_DATE);
+
+  ASSERT_TRUE(servers().replaceOwnHeartbeat(
+      server, late, FIRST_HEARTBEAT_DATE + FIFTEEN_SECONDS));
+  static_cast<void>(
+      statuses().refreshStatuses(FIRST_HEARTBEAT_DATE + FIFTEEN_SECONDS));
+
+  EXPECT_EQ(listedStatusOf(servers(), server.id), ServerStatus::Unreachable);
+}
+
+/**
+ * Given two servers at two ports of one address, and the token of the probe
+ * of the second one
+ * When the first one sends that token, then the statuses are refreshed
+ * Then the first one is still unreachable: a token answers its own address
+ * and port only
+ */
+TEST_F(ServerStatusServiceFixture, TheTokenOfAnotherServerIsNoAnswer) {
+  const KnownServer first = registeredAt(FIRST_HEARTBEAT_DATE);
+  const KnownServer second = registeredElsewhereAt(FIRST_HEARTBEAT_DATE);
+  const ServerHeartbeat borrowed =
+      answeringHeartbeat(servers(), second, FIRST_HEARTBEAT_DATE);
+
+  ASSERT_TRUE(
+      servers().replaceOwnHeartbeat(first, borrowed, FIRST_HEARTBEAT_DATE));
+  static_cast<void>(statuses().refreshStatuses(FIRST_HEARTBEAT_DATE));
+
+  EXPECT_EQ(listedStatusOf(servers(), first.id), ServerStatus::Unreachable);
+}
+
+/**
+ * Given an online server
+ * When it registers again, as it does when it restarts, then the statuses are
+ * refreshed
+ * Then it is unreachable until it answers a probe again
+ */
+TEST_F(ServerStatusServiceFixture, ARegistrationForgetsTheLastAnswer) {
+  const KnownServer server = registeredAt(FIRST_HEARTBEAT_DATE);
+  beat(server, PARIS_TICK_P95, FIRST_HEARTBEAT_DATE);
+  registerAgain(server.id, FIRST_HEARTBEAT_DATE + FIVE_SECONDS);
+
+  static_cast<void>(
+      statuses().refreshStatuses(FIRST_HEARTBEAT_DATE + FIVE_SECONDS));
+
+  EXPECT_EQ(listedStatusOf(servers(), server.id), ServerStatus::Unreachable);
 }

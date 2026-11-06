@@ -2,11 +2,13 @@
 #include <asio/executor_work_guard.hpp>
 #include <asio/io_context.hpp>
 #include <asio/steady_timer.hpp>
+#include <future>
 #include <memory>
 #include <optional>
 #include <system_error>
 #include <thread>
 #include "NetworkContext.hpp"
+#include "NetworkContextTestConstants.hpp"
 #include "NetworkTestConstants.hpp"
 
 /**
@@ -59,4 +61,26 @@ TEST(NetworkContext, TaskStillQueuedAtDestructionIsDestroyedWithoutRunning) {
 
   EXPECT_EQ(*runCount, 0);
   EXPECT_EQ(runCount.use_count(), 1);
+}
+
+/**
+ * Given a context run until stopped on a thread of its own, which ran its only
+ * task and has had no work for a moment
+ * When another task is posted
+ * Then that task runs too: the loop kept running without work
+ */
+TEST(NetworkContext, RunUntilStoppedKeepsTheLoopWithoutWork) {
+  rtype::network::NetworkContext context;
+  std::promise<void> firstRan;
+  std::promise<void> secondRan;
+  context.post([&firstRan] { firstRan.set_value(); });
+  const std::jthread runner{[&context] { context.runUntilStopped(); }};
+  firstRan.get_future().wait();
+  std::this_thread::sleep_for(IDLE_LOOP_PAUSE);
+
+  context.post([&secondRan] { secondRan.set_value(); });
+
+  EXPECT_EQ(secondRan.get_future().wait_for(DATAGRAM_TIMEOUT),
+            std::future_status::ready);
+  context.stop();
 }

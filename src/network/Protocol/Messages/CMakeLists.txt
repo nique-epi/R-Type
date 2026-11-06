@@ -18,6 +18,7 @@ add_subdirectory(Heartbeat)
 add_subdirectory(LeaderboardAnswer)
 add_subdirectory(LeaderboardRequest)
 add_subdirectory(LobbyState)
+add_subdirectory(MasterProbe)
 add_subdirectory(OrderedMessage)
 add_subdirectory(PlayerChatLine)
 add_subdirectory(PlayerInput)
@@ -51,6 +52,7 @@ target_link_libraries(rtype_network_messages
     rtype_network_leaderboard_answer
     rtype_network_leaderboard_request
     rtype_network_lobby_state
+    rtype_network_master_probe
     rtype_network_ordered_message
     rtype_network_player_chat_line
     rtype_network_player_input

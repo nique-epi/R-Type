@@ -183,6 +183,17 @@ std::optional<std::string> addressOf(const JsonField& registration) {
   }
 }
 
+/** @returns The probeToken of @p heartbeat, nothing when it has none. */
+std::optional<std::uint64_t> probeTokenOf(const JsonField& heartbeat) {
+  const std::optional<JsonField> token =
+      optionalMemberOf(heartbeat, PROBE_TOKEN_MEMBER);
+  if (!token.has_value()) {
+    return std::nullopt;
+  }
+  return integerOf(*token, IntegerBounds{.lowest = LOWEST_PROBE_TOKEN,
+                                         .highest = HIGHEST_PROBE_TOKEN});
+}
+
 /**
  * @returns The value of Enum that @p texts, one text per value in the order of
  * the enum, writes as @p text; nothing for any other text.
@@ -538,12 +549,19 @@ CreatedServer createdServerFromText(std::string_view text) {
 }
 
 std::string registrationText(const ServerRegistration& registration) {
-  return textOf(registrationDocument(registration));
+  nlohmann::json document = registrationDocument(registration);
+  document[PROBE_SECRET_MEMBER] = registration.probeSecret;
+  return textOf(document);
 }
 
 ServerRegistration registrationFromText(std::string_view text) {
   const nlohmann::json document = parsedObject(text);
-  return registrationOf(wholeMessage(document));
+  const JsonField registration = wholeMessage(document);
+  ServerRegistration read = registrationOf(registration);
+  read.probeSecret = integerOf(memberOf(registration, PROBE_SECRET_MEMBER),
+                               IntegerBounds{.lowest = LOWEST_PROBE_SECRET,
+                                             .highest = HIGHEST_PROBE_SECRET});
+  return read;
 }
 
 std::string heartbeatText(const ServerHeartbeat& heartbeat) {
@@ -553,6 +571,9 @@ std::string heartbeatText(const ServerHeartbeat& heartbeat) {
     document[GAMES_MEMBER].push_back(gameDocument(game));
   }
   document[MEASURES_MEMBER] = measuresDocument(heartbeat.measures);
+  if (heartbeat.probeToken.has_value()) {
+    document[PROBE_TOKEN_MEMBER] = *heartbeat.probeToken;
+  }
   return textOf(document);
 }
 
@@ -560,7 +581,8 @@ ServerHeartbeat heartbeatFromText(std::string_view text) {
   const nlohmann::json document = parsedObject(text);
   const JsonField heartbeat = wholeMessage(document);
   return ServerHeartbeat{.games = gamesOf(heartbeat),
-                         .measures = measuresOf(heartbeat)};
+                         .measures = measuresOf(heartbeat),
+                         .probeToken = probeTokenOf(heartbeat)};
 }
 
 std::string gameListingText(const GameListing& listing) {

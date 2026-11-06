@@ -42,6 +42,22 @@ constexpr std::string_view COMMANDS_MEMBER = "commands";
 constexpr std::string_view ID_MEMBER = "id";
 constexpr std::string_view KEY_MEMBER = "key";
 
+/** @brief The member of a registration that holds its probe secret, and of a
+ * heartbeat that holds the token of a probe. */
+constexpr std::string_view PROBE_SECRET_MEMBER = "probeSecret";
+constexpr std::string_view PROBE_TOKEN_MEMBER = "probeToken";
+
+/**
+ * @brief The bounds of a probe secret, which a column INTEGER of SQLite holds
+ * as it is, and of a token, which CookieIssuer never makes 0.
+ */
+constexpr std::uint64_t LOWEST_PROBE_SECRET = 1;
+constexpr std::uint64_t HIGHEST_PROBE_SECRET =
+    std::numeric_limits<std::int64_t>::max();
+constexpr std::uint64_t LOWEST_PROBE_TOKEN = 1;
+constexpr std::uint64_t HIGHEST_PROBE_TOKEN =
+    std::numeric_limits<std::uint64_t>::max();
+
 /** @brief The lowest and the highest id of a game server. */
 constexpr std::uint64_t FIRST_SERVER_ID = 1;
 constexpr std::uint64_t HIGHEST_SERVER_ID =
@@ -79,9 +95,10 @@ constexpr std::string_view ONLINE_STATUS_TEXT = "online";
 constexpr std::string_view DEGRADED_STATUS_TEXT = "degraded";
 constexpr std::string_view OFFLINE_STATUS_TEXT = "offline";
 constexpr std::string_view MAINTENANCE_STATUS_TEXT = "maintenance";
+constexpr std::string_view UNREACHABLE_STATUS_TEXT = "unreachable";
 constexpr auto SERVER_STATUS_TEXTS = std::to_array<std::string_view>(
     {ONLINE_STATUS_TEXT, DEGRADED_STATUS_TEXT, OFFLINE_STATUS_TEXT,
-     MAINTENANCE_STATUS_TEXT});
+     MAINTENANCE_STATUS_TEXT, UNREACHABLE_STATUS_TEXT});
 
 /**
  * @brief The members of a listed server beside those of a registration, of a
@@ -134,5 +151,11 @@ constexpr double MAXIMUM_LOSS_PERCENT = 100.0;
  * changes; the master counts the heartbeats a server missed in this interval.
  */
 constexpr std::chrono::milliseconds MASTER_HEARTBEAT_INTERVAL{5'000};
+
+/**
+ * @brief The least time between two heartbeats of a game server when its games
+ * change; the master probes one address and port at most this often.
+ */
+constexpr std::chrono::milliseconds MINIMUM_NOTICE_GAP{1'000};
 
 }  // namespace rtype::network

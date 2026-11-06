@@ -5,8 +5,12 @@
 
 using rtype::server::testing::FAST_TIMES;
 using rtype::server::testing::FIRST_PILOT_NAME;
+using rtype::server::testing::GAMES_MEMBER_TEXT;
 using rtype::server::testing::HeartbeatJobFixture;
+using rtype::server::testing::LINKED_PROBE_TOKEN;
+using rtype::server::testing::LINKED_PROBE_TOKEN_TEXT;
 using rtype::server::testing::MASTER_DOWN_TIME;
+using rtype::server::testing::PROBE_TOKEN_MEMBER_TEXT;
 using rtype::server::testing::SECOND_PILOT_NAME;
 using rtype::server::testing::SLOW_INTERVAL_TIMES;
 
@@ -54,4 +58,21 @@ TEST_F(HeartbeatJobFixture, TellsTheMasterAgainOnceItComesBack) {
   master().restart();
 
   EXPECT_TRUE(heartbeatSoonNames(SECOND_PILOT_NAME));
+}
+
+/**
+ * Given a job whose first heartbeat reached the master, and a token of a
+ * probe published after it
+ * When the next heartbeats go out
+ * Then one of them carries the token, and the heartbeats after it carry none:
+ * a token goes out once
+ */
+TEST_F(HeartbeatJobFixture, SendsATokenOnce) {
+  startJob(FAST_TIMES);
+  ASSERT_TRUE(heartbeatSoonNames(GAMES_MEMBER_TEXT));
+
+  publishProbeToken(LINKED_PROBE_TOKEN);
+
+  EXPECT_TRUE(heartbeatSoonNames(LINKED_PROBE_TOKEN_TEXT));
+  EXPECT_TRUE(heartbeatSoonLacks(PROBE_TOKEN_MEMBER_TEXT));
 }

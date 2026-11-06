@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 #include "ListedServer.hpp"
+#include "MasterDatabase.hpp"
 #include "MasterDatabaseFixture.hpp"
 #include "MasterDatabaseTestConstants.hpp"
 #include "MasterMessageText.hpp"
@@ -9,10 +10,12 @@
 #include "ServerStatus.hpp"
 #include "ServerStatusService.hpp"
 #include "ServerStatusServiceTestConstants.hpp"
+#include "ServersFixtures.hpp"
 #include "ServersRoutesTestConstants.hpp"
 #include "ServersService.hpp"
 #include "StatusChangeRecord.hpp"
 
+using rtype::master::MasterDatabase;
 using rtype::master::ServersService;
 using rtype::master::ServerStatusService;
 using rtype::master::StatusChangeRecord;
@@ -42,7 +45,7 @@ TEST_F(MasterDatabaseFixture, AnUpgradeCountsTheGamesOfTheLastHeartbeat) {
 
 /**
  * Given a file at version 1 holding a server whose last heartbeat had a slow
- * tick p95
+ * tick p95, and that answered its last probe once upgraded
  * When a master of this version opens it and refreshes the statuses
  * Then the server is degraded, judged on that heartbeat
  */
@@ -50,8 +53,10 @@ TEST_F(MasterDatabaseFixture, AnUpgradeKeepsTheMeasuresOfTheLastHeartbeat) {
   ServerHeartbeat slow = parisHeartbeat();
   slow.measures.tickP95Milliseconds = SLOW_TICK_P95;
   keepVersionOneServer(heartbeatText(slow));
+  MasterDatabase& database = upgradedDatabase();
+  executeStatement(database, MARK_PROBE_ANSWERED_STATEMENT);
 
-  ServerStatusService statuses{upgradedDatabase()};
+  ServerStatusService statuses{database};
   const std::vector<StatusChangeRecord> changes =
       statuses.refreshStatuses(VERSION_ONE_DATE);
 

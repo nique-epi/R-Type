@@ -4,13 +4,16 @@
 #include <cstdint>
 #include <optional>
 #include <string_view>
+#include "CookieIssuer.hpp"
 #include "CreatedServer.hpp"
 #include "CreationAttempt.hpp"
 #include "GameListing.hpp"
 #include "HeartbeatSampleRepository.hpp"
 #include "KnownServer.hpp"
 #include "MasterDatabase.hpp"
+#include "OutgoingDatagram.hpp"
 #include "PageRequest.hpp"
+#include "ProbeTarget.hpp"
 #include "SampleListing.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerListing.hpp"
@@ -24,6 +27,8 @@ namespace rtype::master {
 /** @brief The rules of the creation, registration and heartbeats of servers. */
 class ServersService {
  public:
+  /** @brief Draws the key of the tokens of its probes from
+   * std::random_device: the tokens of a master that restarted are refused. */
   explicit ServersService(MasterDatabase& database);
 
   /**
@@ -50,7 +55,11 @@ class ServersService {
    * @brief Records @p heartbeat, received at @p now, as the last state of
    * @p server, and as a sample of that second, in one transaction: a failure
    * keeps neither, and the server's last state stays the heartbeat before.
-   * @returns false when @p server has not registered: nothing is recorded.
+   * When it carries a valid token of a probe (answersProbe()), @p now becomes
+   * the last answer of the server.
+   * @returns false when @p server has not registered, or registered before the
+   * probes and has no secret: nothing is recorded, and the server must
+   * register again.
    * @throws network::InvalidMasterMessageException naming the member of the
    * heartbeat beyond what the server registered: more games than its
    * maximumGames, a game numbered above it, or more players in a game than its
@@ -59,6 +68,14 @@ class ServersService {
   bool replaceOwnHeartbeat(const KnownServer& server,
                            network::ServerHeartbeat heartbeat,
                            std::chrono::sys_seconds now);
+
+  /**
+   * @returns The probe to send @p server at @p now: its secret, and the token
+   * of its address and port in the window of @p now; nothing when it has no
+   * probe target.
+   */
+  [[nodiscard]] std::optional<network::OutgoingDatagram> probeFor(
+      const KnownServer& server, std::chrono::sys_seconds now) const;
 
   /**
    * @returns The games the server @p serverId hosts, as the last heartbeat
@@ -87,7 +104,14 @@ class ServersService {
       std::int64_t serverId, const PageRequest& page);
 
  private:
+  /** @returns Whether @p token is a token of a probe to @p target still
+   * valid at @p now (PROBE_TOKEN_WINDOWS); false for no token. */
+  [[nodiscard]] bool answersProbe(std::optional<std::uint64_t> token,
+                                  const ProbeTarget& target,
+                                  std::chrono::sys_seconds now) const;
+
   MasterDatabase& database_;
+  network::CookieIssuer probeTokens_;
   ServerRepository servers_;
   HeartbeatSampleRepository samples_;
   StatusChangeRepository changes_;

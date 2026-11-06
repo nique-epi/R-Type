@@ -28,7 +28,8 @@ namespace rtype::network::testing {
 [[nodiscard]] GameListing parisGameListing();
 
 /** @returns "Paris 1" as the master lists it: id PARIS_ID, online, with the
- * games and players of parisHeartbeat(). */
+ * games and players of parisHeartbeat(); its registration holds no
+ * probeSecret, which a list never holds. */
 [[nodiscard]] ServerListing parisServerListing();
 
 /** @returns One sample taken at SAMPLE_DATE of the games and players of

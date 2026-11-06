@@ -338,7 +338,7 @@ Alternative considered: UDP with messages of our own. It keeps one transport for
 
 The master is `r-type_server --mode master`. The subject lists two binaries, `r-type_server` and `r-type_client`: the master ships inside the first, with nothing more to build or deliver. It reuses what the server already has, the stop on Ctrl-C and SIGTERM, the configuration file and the journal, so `main()` runs either program through one function. A failure stays apart all the same, since the master and a server are two processes: the master that crashes stops no game.
 
-The cost is that the server binary holds the code of the master, cpp-httplib and nlohmann-json included, even where it only hosts games. `rtype_forbid_reachable_links` keeps the master away from SFML, Asio, the game and the code of the server, through every link it reaches.
+The cost is that the server binary holds the code of the master, cpp-httplib and nlohmann-json included, even where it only hosts games. `rtype_forbid_reachable_links` keeps the master away from SFML, Asio, the game and the code of the server, through every link it reaches, except the two network targets that hide Asio behind their headers, `rtype_network_context` and `rtype_network_udp_socket`, through which it sends its probes over UDP.
 
 Alternative considered: a third binary, `r-type_master`. It keeps the server smaller and the master deployable alone, but it is a binary the subject does not list, one more to build, package and ship, and it would have needed the stop and the launch of the server moved into the engine first.
 

@@ -9,9 +9,11 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include "CookieIssuer.hpp"
 #include "CreatedServer.hpp"
 #include "CreationAttempt.hpp"
 #include "CreationQuota.hpp"
+#include "DatagramCodec.hpp"
 #include "GameListing.hpp"
 #include "HeartbeatRecord.hpp"
 #include "HeartbeatSampleRepository.hpp"
@@ -24,9 +26,13 @@
 #include "MasterDatabase.hpp"
 #include "MasterMessageConstants.hpp"
 #include "MasterMessageText.hpp"
+#include "MasterProbe.hpp"
 #include "NetworkException.hpp"
 #include "NewServer.hpp"
+#include "OutgoingDatagram.hpp"
+#include "PacketHeader.hpp"
 #include "PageRequest.hpp"
+#include "ProbeTarget.hpp"
 #include "SampleListing.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerKey.hpp"
@@ -116,6 +122,7 @@ network::ListedGame listedGameOf(const network::HostedGame& game) {
 
 ServersService::ServersService(MasterDatabase& database)
     : database_(database),
+      probeTokens_(PROBE_TOKEN_WINDOWS),
       servers_(database),
       samples_(database),
       changes_(database) {}
@@ -151,18 +158,43 @@ void ServersService::replaceOwnServer(const ServerRecord& record) {
 bool ServersService::replaceOwnHeartbeat(const KnownServer& server,
                                          network::ServerHeartbeat heartbeat,
                                          std::chrono::sys_seconds now) {
-  if (!server.limits.has_value()) {
+  if (!server.limits.has_value() || !server.probe.has_value()) {
     return false;
   }
   requireWithinLimits(heartbeat, *server.limits);
+  const bool probeAnswered =
+      answersProbe(heartbeat.probeToken, *server.probe, now);
   const HeartbeatRecord record{.serverId = server.id,
                                .heartbeat = std::move(heartbeat),
-                               .receivedAt = now};
+                               .receivedAt = now,
+                               .probeAnswered = probeAnswered};
   database_.transact([&record](SQLite::Database& connection) {
     ServerRepository::saveLastHeartbeat(connection, record);
     HeartbeatSampleRepository::add(connection, record);
   });
   return true;
+}
+
+std::optional<network::OutgoingDatagram> ServersService::probeFor(
+    const KnownServer& server, std::chrono::sys_seconds now) const {
+  if (!server.probe.has_value()) {
+    return std::nullopt;
+  }
+  return network::OutgoingDatagram{
+      .destination = server.probe->endpoint,
+      .payload = network::DatagramCodec::encode(
+          network::PacketHeader{},
+          network::MasterProbe{
+              .secret = server.probe->secret,
+              .token = probeTokens_.issue(server.probe->endpoint,
+                                          now.time_since_epoch())})};
+}
+
+bool ServersService::answersProbe(std::optional<std::uint64_t> token,
+                                  const ProbeTarget& target,
+                                  std::chrono::sys_seconds now) const {
+  return token.has_value() &&
+         probeTokens_.isValid(*token, target.endpoint, now.time_since_epoch());
 }
 
 std::optional<network::GameListing> ServersService::gameListingOf(

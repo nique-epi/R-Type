@@ -38,7 +38,8 @@ network::CreatedServer MasterLinkFixture::registeredServer() const {
       .gameVersion = std::string{LINKED_SERVER_GAME_VERSION},
       .protocolVersion = network::PROTOCOL_VERSION,
       .maximumGames = LINKED_SERVER_MAXIMUM_GAMES,
-      .maximumPlayersPerGame = LINKED_SERVER_PLAYERS_PER_GAME});
+      .maximumPlayersPerGame = LINKED_SERVER_PLAYERS_PER_GAME,
+      .probeSecret = LINKED_SERVER_PROBE_SECRET});
   return created;
 }
 

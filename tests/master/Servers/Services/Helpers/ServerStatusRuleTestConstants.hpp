@@ -12,6 +12,10 @@ constexpr std::chrono::seconds ONE_MINUTE{60};
  * 5 s. */
 constexpr std::chrono::seconds SILENCE_OF_THREE_HEARTBEATS{15};
 
+/** @brief The time without a valid token of a probe the issue makes a server
+ * unreachable at. */
+constexpr std::chrono::seconds UNANSWERED_FOR_FIFTEEN_SECONDS{15};
+
 /** @brief One tick at 60 ticks a second, in milliseconds, and a little less. */
 constexpr double MILLISECONDS_PER_SECOND = 1000.0;
 constexpr double TICKS_PER_SECOND = 60.0;
