@@ -30,7 +30,7 @@ cmake --workflow --preset build
 
 The first configure builds every dependency and takes a few minutes. The `r-type_server` and `r-type_client` binaries are written at the repository root, or in `Release/` with the Visual Studio generator.
 
-The client and the server read their files from `assets/`, next to their executable or in the folder above it, wherever they are launched from. Each stops with exit code 1, naming both folders, when it finds neither.
+The client and the server read their files from `assets/`, next to their executable, in the folder above it, or in `Resources/` beside it for the macOS app, wherever they are launched from. Each stops with exit code 1, naming the three folders, when it finds none.
 
 If the repository was cloned without its submodules, run `git submodule update --init` first.
 
