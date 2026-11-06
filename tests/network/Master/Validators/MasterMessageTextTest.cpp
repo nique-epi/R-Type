@@ -12,6 +12,7 @@
 #include "MasterMessageTextTestConstants.hpp"
 #include "ProtocolTestConstants.hpp"
 #include "ServerCreation.hpp"
+#include "ServerHeartbeat.hpp"
 #include "ServerRegistration.hpp"
 #include "ServerStatus.hpp"
 #include "StatusListing.hpp"
@@ -32,6 +33,7 @@ using rtype::network::sampleListingText;
 using rtype::network::ServerCreation;
 using rtype::network::serverCreationFromText;
 using rtype::network::serverCreationText;
+using rtype::network::ServerHeartbeat;
 using rtype::network::serverListingText;
 using rtype::network::ServerRegistration;
 using rtype::network::ServerStatus;
@@ -66,11 +68,14 @@ using rtype::network::testing::heartbeatRefusal;
 using rtype::network::testing::heartbeatTextOfGames;
 using rtype::network::testing::heartbeatTextWith;
 using rtype::network::testing::heartbeatTextWithout;
+using rtype::network::testing::HIGHEST_KEPT_PROBE_SECRET;
 using rtype::network::testing::HOST_NAME_ADDRESS;
 using rtype::network::testing::KEY_POINTER;
 using rtype::network::testing::KEY_WITHOUT_PREFIX;
+using rtype::network::testing::LARGEST_PROBE_TOKEN;
 using rtype::network::testing::LOSS_ABOVE_ALL;
 using rtype::network::testing::LOSS_PERCENT_POINTER;
+using rtype::network::testing::LOWEST_KEPT_PROBE_SECRET;
 using rtype::network::testing::MAINTENANCE_TEXT;
 using rtype::network::testing::MAXIMUM_GAMES_POINTER;
 using rtype::network::testing::MAXIMUM_PLAYERS_PER_GAME_POINTER;
@@ -100,6 +105,11 @@ using rtype::network::testing::PLAYING_STATE;
 using rtype::network::testing::PORT_ABOVE_THE_RANGE;
 using rtype::network::testing::PORT_AS_TEXT;
 using rtype::network::testing::PORT_BELOW_THE_RANGE;
+using rtype::network::testing::PROBE_SECRET_ABOVE_ITS_RANGE;
+using rtype::network::testing::PROBE_SECRET_BELOW_ITS_RANGE;
+using rtype::network::testing::PROBE_SECRET_POINTER;
+using rtype::network::testing::PROBE_TOKEN_OF_ZERO;
+using rtype::network::testing::PROBE_TOKEN_POINTER;
 using rtype::network::testing::quoted;
 using rtype::network::testing::QUOTED_WHOLE_MESSAGE;
 using rtype::network::testing::registrationRefusal;
@@ -167,6 +177,41 @@ TEST(MasterMessageText, LeavesOutAMeasureNotTaken) {
 }
 
 /**
+ * Given a heartbeat carrying the largest token of a probe
+ * When it is written as JSON and read back
+ * Then the token comes back whole: none of its 64 bits is lost
+ */
+TEST(MasterMessageText, ReadsBackAHeartbeatWithAToken) {
+  ServerHeartbeat heartbeat = parisHeartbeat();
+  heartbeat.probeToken = LARGEST_PROBE_TOKEN;
+
+  EXPECT_EQ(heartbeatFromText(heartbeatText(heartbeat)), heartbeat);
+}
+
+/**
+ * Given a heartbeat that carries no token, as before the first probe
+ * When it is written as JSON
+ * Then the token is left out, never sent as 0
+ */
+TEST(MasterMessageText, LeavesOutAMissingToken) {
+  EXPECT_EQ(nlohmann::json::parse(heartbeatText(parisHeartbeat()))
+                .contains(nlohmann::json::json_pointer(
+                    std::string{PROBE_TOKEN_POINTER})),
+            false);
+}
+
+/**
+ * Given a heartbeat whose token is 0, which the master never issues
+ * When it is read
+ * Then the refusal names the token
+ */
+TEST(MasterMessageText, RefusesAProbeTokenOfZero) {
+  EXPECT_THAT(heartbeatRefusal(
+                  heartbeatTextWith(PROBE_TOKEN_POINTER, PROBE_TOKEN_OF_ZERO)),
+              HasSubstr(quoted(PROBE_TOKEN_POINTER)));
+}
+
+/**
  * Given a registration carrying a member no message defines
  * When it is read
  * Then it is accepted, so a newer server still registers
@@ -219,6 +264,48 @@ TEST(MasterMessageText, RefusesAPortOutsideTheUdpRange) {
   EXPECT_THAT(registrationRefusal(
                   registrationTextWith(UDP_PORT_POINTER, PORT_ABOVE_THE_RANGE)),
               HasSubstr(quoted(UDP_PORT_POINTER)));
+}
+
+/**
+ * Given a registration without its probe secret
+ * When it is read
+ * Then the refusal names the secret: a server no probe can confirm never
+ * registers
+ */
+TEST(MasterMessageText, RefusesARegistrationWithoutAProbeSecret) {
+  EXPECT_THAT(
+      registrationRefusal(registrationTextWithout(PROBE_SECRET_POINTER)),
+      HasSubstr(quoted(PROBE_SECRET_POINTER)));
+}
+
+/**
+ * Given registrations of probe secret 0 and of 2^63, one past what a column
+ * INTEGER of SQLite holds
+ * When each is read
+ * Then each refusal names the secret
+ */
+TEST(MasterMessageText, RefusesAProbeSecretOutsideItsRange) {
+  EXPECT_THAT(registrationRefusal(registrationTextWith(
+                  PROBE_SECRET_POINTER, PROBE_SECRET_BELOW_ITS_RANGE)),
+              HasSubstr(quoted(PROBE_SECRET_POINTER)));
+  EXPECT_THAT(registrationRefusal(registrationTextWith(
+                  PROBE_SECRET_POINTER, PROBE_SECRET_ABOVE_ITS_RANGE)),
+              HasSubstr(quoted(PROBE_SECRET_POINTER)));
+}
+
+/**
+ * Given registrations of probe secret 1 and of 2^63 - 1, the two ends of its
+ * range
+ * When each is read
+ * Then each is accepted
+ */
+TEST(MasterMessageText, AcceptsAProbeSecretAtEachEndOfItsRange) {
+  EXPECT_THAT(registrationRefusal(registrationTextWith(
+                  PROBE_SECRET_POINTER, LOWEST_KEPT_PROBE_SECRET)),
+              IsEmpty());
+  EXPECT_THAT(registrationRefusal(registrationTextWith(
+                  PROBE_SECRET_POINTER, HIGHEST_KEPT_PROBE_SECRET)),
+              IsEmpty());
 }
 
 /**
@@ -549,9 +636,11 @@ TEST(MasterMessageText, ReadsEveryStatusFromItsText) {
 }
 
 /**
- * Given "Paris 1", online, with the games of its heartbeat
+ * Given "Paris 1", online, with the games of its heartbeat, registered with a
+ * probe secret
  * When the list of servers is written
- * Then every member of the server is there, its status written "online"
+ * Then every member of the server is there, its status written "online", and
+ * never its probe secret
  */
 TEST(MasterMessageText, WritesAServerListingWithItsStatus) {
   EXPECT_EQ(nlohmann::json::parse(serverListingText(parisServerListing())),

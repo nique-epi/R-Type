@@ -1,6 +1,7 @@
 #include "ServerMasterModule.hpp"
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -9,21 +10,27 @@
 #include "HeartbeatJobParts.hpp"
 #include "IListeningPort.hpp"
 #include "IServerName.hpp"
+#include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
 #include "LatestHostedGames.hpp"
 #include "LatestMetrics.hpp"
 #include "MasterAccess.hpp"
+#include "MasterMessages.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "ServerConstants.hpp"
 #include "ServerIdentity.hpp"
 #include "TextSettingDefinition.hpp"
+#include "TickDatagrams.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::server {
 
 ServerMasterModule::ServerMasterModule()
-    : logger_(std::string{SERVER_LOGGER_NAME}) {}
+    : probeSecret_(randomProbeSecret()),
+      probeDesk_(probeSecret_, probeTokens_),
+      logger_(std::string{SERVER_LOGGER_NAME}) {}
 
 std::string ServerMasterModule::name() const {
   return std::string{MASTER_MODULE_NAME};
@@ -45,6 +52,10 @@ void ServerMasterModule::install(engine::InstallContext& context) {
   hostedGames_ = &context.require<LatestHostedGames>();
   serverName_ = &context.require<IServerName>();
   metrics_ = context.find<LatestMetrics>();
+  tickDatagrams_ = &context.require<TickDatagrams>();
+  context.addWork(
+      SIMULATION_STAGE,
+      [this]([[maybe_unused]] engine::Duration elapsed) { keepProbeTokens(); });
 }
 
 void ServerMasterModule::declareSettings(
@@ -77,8 +88,10 @@ std::optional<HeartbeatJobParts> ServerMasterModule::jobParts() const {
       .identity = ServerIdentity{.name = serverName_->serverName(),
                                  .udpPort = udpPort,
                                  .maximumGames = static_cast<std::uint16_t>(
-                                     games_->all().size())},
+                                     games_->all().size()),
+                                 .probeSecret = probeSecret_},
       .games = *hostedGames_,
+      .probeTokens = probeTokens_,
       .metrics = metrics_,
       .times = {}};
 }
@@ -96,5 +109,13 @@ void ServerMasterModule::start() {
 }
 
 void ServerMasterModule::stop() { job_.reset(); }
+
+void ServerMasterModule::keepProbeTokens() {
+  const std::span<const network::IncomingDatagram> probes =
+      tickDatagrams_->probes();
+  if (!probes.empty()) {
+    probeDesk_.keep(probes, clock_.now());
+  }
+}
 
 }  // namespace rtype::server

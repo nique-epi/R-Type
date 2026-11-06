@@ -51,7 +51,8 @@ ServerRegistration parisRegistration() {
       .gameVersion = std::string{PARIS_GAME_VERSION},
       .protocolVersion = PARIS_PROTOCOL_VERSION,
       .maximumGames = PARIS_MAXIMUM_GAMES,
-      .maximumPlayersPerGame = PARIS_MAXIMUM_PLAYERS_PER_GAME};
+      .maximumPlayersPerGame = PARIS_MAXIMUM_PLAYERS_PER_GAME,
+      .probeSecret = PARIS_PROBE_SECRET};
 }
 
 ServerHeartbeat parisHeartbeat() {

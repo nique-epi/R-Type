@@ -40,6 +40,8 @@ enum class RejectionCause : std::uint8_t {
   RequestQueueFull,
   /** @brief Made the information request queue discard its oldest datagram. */
   InformationQueueFull,
+  /** @brief Made the probe queue discard its oldest datagram. */
+  ProbeQueueFull,
 };
 
 }  // namespace rtype::server

@@ -227,6 +227,16 @@ constexpr std::size_t CONNECTION_REQUEST_QUEUE_CAPACITY = 16;
 constexpr std::size_t INFORMATION_REQUEST_QUEUE_CAPACITY = 16;
 
 /**
+ * @brief Room of the queue of probes of the master waiting for the simulation
+ * thread. The master sends a server one probe a second at most, so 16 a tick,
+ * 960 a second, leaves room for forged ones; above the room the oldest are
+ * discarded, each counted as ProbeQueueFull. One address and port places at
+ * most REQUEST_BURST (11) datagrams between two ticks, its requests included
+ * (see REQUEST_RATE_LIMIT).
+ */
+constexpr std::size_t PROBE_QUEUE_CAPACITY = 16;
+
+/**
  * @brief Room of the queue of datagrams the simulation thread leaves for the
  * network thread to send. Provisional, like the incoming one.
  */

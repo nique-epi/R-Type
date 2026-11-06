@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+#include <optional>
 #include <vector>
 #include "HostedGame.hpp"
 #include "ServerMeasures.hpp"
@@ -14,6 +16,9 @@ struct ServerHeartbeat {
   /** @brief The games it hosts, MAXIMUM_HOSTED_GAMES at most. */
   std::vector<HostedGame> games;
   ServerMeasures measures;
+  /** @brief The token of the last probe of the master, once; none before the
+   * first probe, or when no probe came since the last heartbeat. */
+  std::optional<std::uint64_t> probeToken = std::nullopt;
 
   bool operator==(const ServerHeartbeat&) const = default;
 };

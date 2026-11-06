@@ -54,7 +54,7 @@ bool carriesSessionToken(const network::PacketHeader& header,
 /**
  * @returns The queue a datagram holding @p types goes to: the connection
  * requests when it holds a ConnectionRequest, whatever else it holds, then the
- * information requests, then the players.
+ * information requests, then the probes, then the players.
  */
 SortedQueue queueFor(const network::DatagramCodec::MessageTypes& types) {
   if (types.test(
@@ -64,6 +64,9 @@ SortedQueue queueFor(const network::DatagramCodec::MessageTypes& types) {
   if (types.test(static_cast<std::size_t>(
           network::MessageType::ServerInformationRequest))) {
     return SortedQueue::InformationRequests;
+  }
+  if (types.test(static_cast<std::size_t>(network::MessageType::MasterProbe))) {
+    return SortedQueue::Probes;
   }
   return SortedQueue::Players;
 }
@@ -91,6 +94,9 @@ Destination destinationOf(const DatagramQueues& destinations,
     case SortedQueue::InformationRequests:
       return Destination{.queue = destinations.informationRequests,
                          .overflow = RejectionCause::InformationQueueFull};
+    case SortedQueue::Probes:
+      return Destination{.queue = destinations.probes,
+                         .overflow = RejectionCause::ProbeQueueFull};
     case SortedQueue::Players:
       break;
   }

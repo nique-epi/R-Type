@@ -11,6 +11,16 @@ namespace rtype::server::testing {
 constexpr std::string_view LINKED_NAME = "Paris 1";
 constexpr std::uint16_t LINKED_PORT = 4242;
 constexpr std::uint16_t LINKED_GAMES = 1;
+constexpr std::uint64_t LINKED_PROBE_SECRET = 0x0123'4567'89AB'CDEF;
+
+/** @brief A token of a probe, how the master keeps it in the text of the
+ * last heartbeat, and the member whose absence says a heartbeat has none. */
+constexpr std::uint64_t LINKED_PROBE_TOKEN = 4'242'424'242;
+constexpr std::string_view LINKED_PROBE_TOKEN_TEXT =
+    "\"probeToken\":4242424242";
+constexpr std::string_view PROBE_TOKEN_MEMBER_TEXT = "probeToken";
+/** @brief What every heartbeat the master keeps holds. */
+constexpr std::string_view GAMES_MEMBER_TEXT = "\"games\"";
 constexpr std::string_view LINKED_DIFFICULTY = "normal";
 constexpr std::uint16_t LINKED_GAME_NUMBER = 1;
 constexpr std::string_view LINKED_GAME_NAME = "GAME 1";

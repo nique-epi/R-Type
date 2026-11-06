@@ -909,3 +909,51 @@ TEST_F(DatagramSorterInformationFixture,
   ASSERT_EQ(report.mostRejected.size(), 1U);
   EXPECT_EQ(report.mostRejected[0].endpoint, floodingStranger(strangers - 1));
 }
+
+/**
+ * Given a stranger, as the master is to the server
+ * When it sends a probe of the master without session token
+ * Then the probe goes to the queue of probes, and no other queue
+ */
+TEST_F(DatagramSorterInformationFixture, SendsAProbeToItsQueue) {
+  sort(stranger(), probeDatagram());
+
+  EXPECT_EQ(drainProbes(),
+            (std::vector<IncomingDatagram>{
+                {.sender = stranger(), .payload = probeDatagram()}}));
+  EXPECT_TRUE(drainInformationRequests().empty());
+  EXPECT_TRUE(drainRequests().empty());
+  EXPECT_TRUE(drainPlayers().empty());
+}
+
+/**
+ * Given a stranger
+ * When it sends a datagram holding an information request and a probe
+ * Then it goes to the queue of information requests only
+ */
+TEST_F(DatagramSorterInformationFixture,
+       SendsARequestWithAProbeToTheInformationQueue) {
+  sort(stranger(), informationRequestAndProbeDatagram());
+
+  EXPECT_EQ(drainInformationRequests().size(), 1U);
+  EXPECT_TRUE(drainProbes().empty());
+}
+
+/**
+ * Given as many strangers as the probe queue holds, and one more
+ * When each sends a probe once
+ * Then the probe of the last is counted against it as ProbeQueueFull, and as
+ * nothing else
+ */
+TEST_F(DatagramSorterInformationFixture, CountsTheProbeThatOverflowsItsQueue) {
+  const std::size_t strangers = rtype::server::PROBE_QUEUE_CAPACITY + 1;
+  for (std::size_t sender = 0; sender < strangers; ++sender) {
+    sort(floodingStranger(sender), probeDatagram());
+  }
+
+  const RejectionReport report = takeReport();
+  EXPECT_EQ(report.sincePreviousReport,
+            countsOf({RejectionCause::ProbeQueueFull}));
+  ASSERT_EQ(report.mostRejected.size(), 1U);
+  EXPECT_EQ(report.mostRejected[0].endpoint, floodingStranger(strangers - 1));
+}

@@ -1,12 +1,14 @@
 #include "MasterMessages.hpp"
 #include <cstdint>
 #include <optional>
+#include <random>
 #include <string>
 #include <utility>
 #include <vector>
 #include "DurationConversion.hpp"
 #include "HostedGame.hpp"
 #include "InformationConstants.hpp"
+#include "MasterMessageConstants.hpp"
 #include "MetricsReport.hpp"
 #include "PlayerRoundTripMeasure.hpp"
 #include "ProtocolConstants.hpp"
@@ -34,6 +36,13 @@ std::optional<double> averagePingOf(const MetricsReport& report) {
 
 }  // namespace
 
+std::uint64_t randomProbeSecret() {
+  std::random_device device;
+  std::uniform_int_distribution<std::uint64_t> secrets{
+      network::LOWEST_PROBE_SECRET, network::HIGHEST_PROBE_SECRET};
+  return secrets(device);
+}
+
 network::ServerRegistration registrationOf(const ServerIdentity& identity) {
   return network::ServerRegistration{
       .name = identity.name,
@@ -43,7 +52,8 @@ network::ServerRegistration registrationOf(const ServerIdentity& identity) {
       .protocolVersion = network::PROTOCOL_VERSION,
       .maximumGames = identity.maximumGames,
       .maximumPlayersPerGame =
-          static_cast<std::uint8_t>(network::MAXIMUM_PLAYERS)};
+          static_cast<std::uint8_t>(network::MAXIMUM_PLAYERS),
+      .probeSecret = identity.probeSecret};
 }
 
 network::ServerMeasures measuresOf(const MetricsReport& report) {
@@ -57,13 +67,14 @@ network::ServerMeasures measuresOf(const MetricsReport& report) {
   return measures;
 }
 
-network::ServerHeartbeat heartbeatOf(
-    std::vector<network::HostedGame> games,
-    const std::optional<MetricsReport>& report) {
+network::ServerHeartbeat heartbeatOf(std::vector<network::HostedGame> games,
+                                     const std::optional<MetricsReport>& report,
+                                     std::optional<std::uint64_t> probeToken) {
   return network::ServerHeartbeat{.games = std::move(games),
                                   .measures = report.has_value()
                                                   ? measuresOf(*report)
-                                                  : network::ServerMeasures{}};
+                                                  : network::ServerMeasures{},
+                                  .probeToken = probeToken};
 }
 
 }  // namespace rtype::server

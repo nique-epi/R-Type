@@ -63,7 +63,8 @@ void ServerSupervisedGamesFixture::runTick(
   network().tickDatagrams().begin(
       rtype::server::ReceivedDatagrams{.players = players,
                                        .connectionRequests = requests,
-                                       .informationRequests = {}});
+                                       .informationRequests = {},
+                                       .probes = {}});
   application_->runStages(rtype::engine::SIMULATION_TICK_DURATION);
   network().tickDatagrams().end();
 }

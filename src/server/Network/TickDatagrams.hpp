@@ -36,6 +36,9 @@ class TickDatagrams {
   [[nodiscard]] std::span<const network::IncomingDatagram> informationRequests()
       const;
 
+  /** @returns The datagrams holding a probe of the master, oldest first. */
+  [[nodiscard]] std::span<const network::IncomingDatagram> probes() const;
+
  private:
   ReceivedDatagrams received_{};
 };

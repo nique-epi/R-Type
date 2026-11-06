@@ -42,6 +42,22 @@ constexpr std::string_view COMMANDS_MEMBER = "commands";
 constexpr std::string_view ID_MEMBER = "id";
 constexpr std::string_view KEY_MEMBER = "key";
 
+/** @brief The member of a registration that holds its probe secret, and of a
+ * heartbeat that holds the token of a probe. */
+constexpr std::string_view PROBE_SECRET_MEMBER = "probeSecret";
+constexpr std::string_view PROBE_TOKEN_MEMBER = "probeToken";
+
+/**
+ * @brief The bounds of a probe secret, which a column INTEGER of SQLite holds
+ * as it is, and of a token, which CookieIssuer never makes 0.
+ */
+constexpr std::uint64_t LOWEST_PROBE_SECRET = 1;
+constexpr std::uint64_t HIGHEST_PROBE_SECRET =
+    std::numeric_limits<std::int64_t>::max();
+constexpr std::uint64_t LOWEST_PROBE_TOKEN = 1;
+constexpr std::uint64_t HIGHEST_PROBE_TOKEN =
+    std::numeric_limits<std::uint64_t>::max();
+
 /** @brief The lowest and the highest id of a game server. */
 constexpr std::uint64_t FIRST_SERVER_ID = 1;
 constexpr std::uint64_t HIGHEST_SERVER_ID =

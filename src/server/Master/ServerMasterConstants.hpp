@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <string_view>
 
 namespace rtype::server {
 
@@ -19,5 +20,12 @@ constexpr std::chrono::milliseconds REGISTRATION_RETRY{5'000};
  */
 constexpr int UNKNOWN_KEY_STATUS = 401;
 constexpr int UNREGISTERED_SERVER_STATUS = 409;
+
+/** @brief Why a datagram of the queue of probes is dropped, as its lines say.
+ */
+constexpr std::string_view NO_MASTER_PROBE_DROP_REASON =
+    "it holds no probe of the master";
+constexpr std::string_view WRONG_PROBE_SECRET_DROP_REASON =
+    "its probe carries another secret than the one this server registered with";
 
 }  // namespace rtype::server

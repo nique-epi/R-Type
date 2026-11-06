@@ -1,5 +1,6 @@
 #include "HeartbeatJobFixture.hpp"
 #include <chrono>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -18,6 +19,24 @@
 
 namespace rtype::server::testing {
 
+namespace {
+
+/** @returns Whether @p condition holds within NOTICE_DEADLINE, asked every
+ * POLL_STEP. */
+template <typename Condition>
+bool holdsSoon(Condition condition) {
+  const auto deadline = std::chrono::steady_clock::now() + NOTICE_DEADLINE;
+  while (std::chrono::steady_clock::now() < deadline) {
+    if (condition()) {
+      return true;
+    }
+    std::this_thread::sleep_for(POLL_STEP);
+  }
+  return false;
+}
+
+}  // namespace
+
 HeartbeatJobFixture::HeartbeatJobFixture()
     : created_(network::MasterClient{
           network::MasterAccess{.url = master_.url(), .key = {}}}
@@ -30,8 +49,10 @@ void HeartbeatJobFixture::startJob(HeartbeatTimes times) {
           network::MasterAccess{.url = master_.url(), .key = created_.key},
       .identity = ServerIdentity{.name = std::string{LINKED_NAME},
                                  .udpPort = LINKED_PORT,
-                                 .maximumGames = LINKED_GAMES},
+                                 .maximumGames = LINKED_GAMES,
+                                 .probeSecret = LINKED_PROBE_SECRET},
       .games = games_,
+      .probeTokens = probeTokens_,
       .metrics = nullptr,
       .times = times});
 }
@@ -45,19 +66,26 @@ void HeartbeatJobFixture::publishGameOf(std::string_view pilot) {
                           .players = {std::string{pilot}}}});
 }
 
-bool HeartbeatJobFixture::heartbeatSoonNames(std::string_view pilot) const {
-  const auto deadline = std::chrono::steady_clock::now() + NOTICE_DEADLINE;
-  while (std::chrono::steady_clock::now() < deadline) {
-    const std::optional<std::string> heartbeat =
-        master_.lastHeartbeatOf(created_.id);
-    if (heartbeat.value_or(std::string{}).find(pilot) != std::string::npos) {
-      return true;
-    }
-    std::this_thread::sleep_for(POLL_STEP);
-  }
-  return false;
+bool HeartbeatJobFixture::heartbeatSoonNames(std::string_view text) const {
+  return holdsSoon([this, text] {
+    return master_.lastHeartbeatOf(created_.id)
+               .value_or(std::string{})
+               .find(text) != std::string::npos;
+  });
 }
 
 RunningMaster& HeartbeatJobFixture::master() { return master_; }
+
+void HeartbeatJobFixture::publishProbeToken(std::uint64_t token) {
+  probeTokens_.publish(token);
+}
+
+bool HeartbeatJobFixture::heartbeatSoonLacks(std::string_view text) const {
+  return holdsSoon([this, text] {
+    const std::optional<std::string> heartbeat =
+        master_.lastHeartbeatOf(created_.id);
+    return heartbeat.has_value() && heartbeat->find(text) == std::string::npos;
+  });
+}
 
 }  // namespace rtype::server::testing
