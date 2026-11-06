@@ -16,13 +16,13 @@ on:
       MACOS_CERTIFICATE_PASSWORD:
         description: Password of the .p12
         required: false
-      APPLE_NOTARY_KEY:
+      APPLE_API_KEY_P8:
         description: App Store Connect API key, the text of its .p8 file
         required: false
-      APPLE_NOTARY_KEY_ID:
+      APPLE_API_KEY_ID:
         description: Identifier of the App Store Connect API key
         required: false
-      APPLE_NOTARY_ISSUER_ID:
+      APPLE_API_ISSUER_ID:
         description: Issuer of the App Store Connect API key
         required: false
 
@@ -155,9 +155,9 @@ jobs:
         env:
           CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE_P12 }}
           CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-          NOTARY_KEY: ${{ secrets.APPLE_NOTARY_KEY }}
-          NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
-          NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+          NOTARY_KEY: ${{ secrets.APPLE_API_KEY_P8 }}
+          NOTARY_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
         run: |
           if [ -z "$CERTIFICATE" ]; then
             echo "No Developer ID certificate: the client is signed without an identity."
