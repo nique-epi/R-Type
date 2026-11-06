@@ -21,8 +21,8 @@ WINDOW_LEFT = 200
 WINDOW_TOP = 120
 ICON_SIZE = 112
 TEXT_SIZE = 12
-APP_CENTER = (160, 220)
-APPLICATIONS_CENTER = (440, 220)
+APP_CENTER = (160, 196)
+APPLICATIONS_CENTER = (440, 196)
 RETINA_SCALE = 2
 STAR_COUNT = 90
 STAR_SEED = 1987
@@ -31,13 +31,15 @@ LOGO_TOP = 40
 CAPTION_TOP = 340
 CAPTION = "DRAG R-TYPE INTO APPLICATIONS"
 CAPTION_FONT_SIZE = 8
-ARROW_LEFT = 238
-ARROW_RIGHT = 362
 ARROW_HEAD = 10
+ARROW_GAP = 12
+ICON_DRAWN_TOP_OFFSET = -45
+LABEL_BOTTOM_OFFSET = 81
+BOX_MARGIN = 12
 BOX_HALF = 64
 BOX_CORNER = 6
-BOX_TOP_OFFSET = -66
-BOX_BOTTOM_OFFSET = 50
+BOX_TOP_OFFSET = ICON_DRAWN_TOP_OFFSET - BOX_MARGIN
+BOX_BOTTOM_OFFSET = LABEL_BOTTOM_OFFSET + BOX_MARGIN
 
 SKY_COLOR = (11, 13, 31)
 DEEP_BLUE = (38, 48, 94)
@@ -97,10 +99,12 @@ def paint_box(draw, center):
 
 def paint_arrow(draw):
     """Draws the arrow from the app to the Applications folder."""
-    y = APP_CENTER[1]
-    draw.rectangle((ARROW_LEFT, y - 1, ARROW_RIGHT - ARROW_HEAD, y + 1), fill=HUD_CYAN)
+    y = APP_CENTER[1] + (BOX_TOP_OFFSET + BOX_BOTTOM_OFFSET) // 2
+    arrow_left = APP_CENTER[0] + BOX_HALF + ARROW_GAP
+    arrow_right = APPLICATIONS_CENTER[0] - BOX_HALF - ARROW_GAP
+    draw.rectangle((arrow_left, y - 1, arrow_right - ARROW_HEAD, y + 1), fill=HUD_CYAN)
     for step in range(ARROW_HEAD + 1):
-        x = ARROW_RIGHT - ARROW_HEAD + step
+        x = arrow_right - ARROW_HEAD + step
         reach = ARROW_HEAD - step
         draw.line([(x, y - reach), (x, y + reach)], fill=HUD_CYAN)
 
@@ -237,7 +241,7 @@ def main():
     if sys.platform != "darwin":
         sys.exit("make_layout.py needs macOS: it mounts a disk image")
     with tempfile.TemporaryDirectory() as folder:
-        work = Path(folder)
+        work = Path(folder).resolve()
         write_background(work)
         mount_point = mount_scratch_volume(work)
         try:
