@@ -351,8 +351,8 @@ module lobby off
 | `logger` | applies the logging options when it starts, logs "server starting" and "server stopped"; provides the journal as an `ILogJournal`, so a plugin logs where the lines of the game go | `src/server/Logger/` |
 | `network` | declares the `port` setting; owns the `ServerApplication`: binds the socket and runs it on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission`, `TickDatagrams` (the datagrams of the tick), `IListeningPort` (the port of the `port` setting) and `network::TrafficCounters` | `src/server/Network/` |
 | `storage` | declares the `database` setting; opens the SQLite file and starts the thread that owns it when it starts, finishes what waits and closes the file when it stops; provides `IResultsArchive` | `src/server/Storage/` |
-| `games` | declares the `seed`, `state-rate`, `state-encoding` and `input-delay` settings; one game (`GAME_PROCESS_GAME_COUNT` = 1) and its `EventBus`; reads the waves file when it starts and judges whether its game is vanilla; provides `Games` and `IGameBuses` (the bus of each game, for a module listed after it or a plugin) | `src/server/Games/` |
-| `lobby` | one `ConnectionAcceptor` per game, built on the roster of that game | `src/server/Lobby/` |
+| `games` | declares the `seed`, `state-rate`, `state-encoding` and `input-delay` settings; the one game of the process and its `EventBus`; reads the waves file when it starts and judges whether its game is vanilla; provides `RunningGame` and `IGameEvents` (the bus of the game, for a module listed after it or a plugin) | `src/server/Games/` |
+| `lobby` | one `ConnectionAcceptor`, built on the roster of the game | `src/server/Lobby/` |
 | `metrics` | measures the ticks and the systems of the game, and writes a report to the journal every `TICKS_PER_REPORT` ticks; writes the traffic of the socket; provides `LatestMetrics` | `src/server/Metrics/` |
 | `supervisor link` | sends the supervisor a `GameStatus` every second and when it changes, with the measures of `LatestMetrics` when the metrics module is on; asks the process to stop when the supervisor does or is gone | `src/server/SupervisorLink/` |
 
@@ -371,21 +371,21 @@ A plugin joins the end of that list when a `plugin` line of its file loads it, a
 
 The supervisor loads no plugin: a `plugin` line goes to its games (see [Configuration](#configuration-servercfg)).
 
-Each tick runs the stages of `SERVER_LOOP_STAGES` once, with `SIMULATION_TICK_DURATION`. In a game process, in `simulation`, the games module runs `onTick()` on its game with the datagrams of its own players (`keepDatagramsOf()`) and makes the network forget the players whose session closed, then the lobby module answers the connection requests, so a request is placed and refused by the state the game just reached, then the supervisor link reads the datagrams of the supervisor and sends its status. In `outputs`, the bus of the game delivers its events, and the guaranteed messages among them leave at once (see [Guaranteed messages](#guaranteed-messages-messagedelivery)). Only the metrics module works in `inputs`, where it starts measuring the tick, since `onTick()` reads the datagrams and moves the game in one step; it ends its measure in `outputs`, after the games module. In the supervisor, every module works in `simulation`: the supervised games read the statuses and the exits of the games, then the lobby answers the connection requests and the information module the information requests, by the state the games just reported.
+Each tick runs the stages of `SERVER_LOOP_STAGES` once, with `SIMULATION_TICK_DURATION`. In a game process, in `simulation`, the games module runs `onTick()` on its game with the datagrams of its own players (`keepDatagramsOf()`) and makes the network forget the players whose session closed, then the lobby module answers the connection requests, so a request is refused by the state the game just reached, then the supervisor link reads the datagrams of the supervisor and sends its status. In `outputs`, the bus of the game delivers its events, and the guaranteed messages among them leave at once (see [Guaranteed messages](#guaranteed-messages-messagedelivery)). Only the metrics module works in `inputs`, where it starts measuring the tick, since `onTick()` reads the datagrams and moves the game in one step; it ends its measure in `outputs`, after the games module. In the supervisor, every module works in `simulation`: the supervised games read the statuses and the exits of the games, then the lobby answers the connection requests and the information module the information requests, by the state the games just reported.
 
 ### Several games at once
 
 The [tutorial](/R-Type/tutorial-run-several-games/) runs a supervisor, fills its games and reads them in the journals.
 
-A game process hosts one game, but `Games` (`src/server/Games/`) still holds a list of them, which it creates when the process starts and keeps: a finished game waits for players again with a new world, so no game is ever replaced. `Games` decides where a connection request goes, the same way for the lobby and for the tests:
+A game process hosts one game. `RunningGame` (`src/server/Games/`) holds it with its `EventBus`, which its rules and its broadcaster subscribe to: the games module creates the game when the process starts and keeps it, since a finished game waits for players again with a new world. Every connection request of the process goes to the acceptor of that game:
 
-| The sender | The request goes to |
+| The sender | The answer |
 |---|---|
-| has a seat in a game | that game, so a repeated request that carries a valid cookie gets the same acceptance again; without a cookie it gets a challenge, as any request does |
-| has no seat | the first game waiting for players with a free seat (`Games::joinable()`) |
-| has no seat, and no game waits with a free seat | the first game, which refuses it with `GameInProgress` or `GameFull` |
+| has a seat in the game | the same acceptance again when the request carries a valid cookie; without a cookie, a challenge, as any request gets |
+| has no seat, and the game waits with a free seat | a challenge, then a seat once it answers with the cookie |
+| has no seat, and the game left the waiting room or is full | `ConnectionRefused` with `GameInProgress` or `GameFull` |
 
-The rule itself is `firstJoinableGame()` (`src/server/Games/`), which reads a `GameVacancy` per game (its state, and whether it is full) rather than the games, so the supervisor, which does not own its games, places players with it too. Each game has its own `EventBus`, since its rules and its broadcaster subscribe to it. The seed of game n of `Games`, from 0, is the seed given plus n times `GAME_SEED_STRIDE` (65536); a game process has only game 0, so its seed is the seed given, and without one it draws its own.
+Sending a player to a game that has a place is the work of the supervisor: `firstJoinableGame()` (`src/server/Games/`) reads a `GameVacancy` per game (its state, and whether it is full) rather than the games, so the supervisor, which does not own its games, places players with it (see [Supervisor and game processes](#supervisor-and-game-processes)). The game starts from the seed given, and without one it draws its own.
 
 The game runs on the simulation thread of its process, and the network thread is the only other one that handles datagrams during a game, so nothing needs a lock. An exception a system of the game throws stops its process only (one a message handler throws only drops that message, see [Threads](#threads-serverapplication)); the supervisor and the other games go on.
 
@@ -483,24 +483,24 @@ How late a tick starts depends on how precisely the system wakes a sleeping thre
 
 ## Metrics: `ServerMetricsModule`
 
-The `metrics` module (`src/server/Metrics/`) tells an administrator whether the server keeps up. Every `TICKS_PER_REPORT` ticks (600, so 10 s while the server keeps its pace; a stall makes it longer, since it counts ticks), it writes three lines at the `info` level, shown with no option, to the terminal and to the journal. Measured on a server with no player:
+The `metrics` module (`src/server/Metrics/`) tells an administrator whether the server keeps up. Every `TICKS_PER_REPORT` ticks (600, so 10 s while the server keeps its pace; a stall makes it longer, since it counts ticks), it writes three lines at the `info` level, shown with no option, to the terminal and to the journal. Measured on a game process whose two players had just left, on 6 November 2026, in the journal of that game:
 
 ```
-[INFO ] [Metrics] - 600 ticks lasted 0.0269 ms on average, 0.0215 ms at the median, 0.046458 ms at the 95th percentile and 0.244708 ms at most, for a budget of 16.6667 ms; games in progress: 0 of 8; players connected: 0; entities: 0
-[INFO ] [Metrics] - average time per tick: PilotSystem 0 ms, MovementSystem 0 ms, PlayfieldExitSystem 0 ms, CollisionSystem 0 ms
+[INFO ] [Metrics] - 600 ticks lasted 0.047839 ms on average, 0.044958 ms at the median, 0.104917 ms at the 95th percentile and 0.679333 ms at most, for a budget of 16.6667 ms; games in progress: 0 of 1; players connected: 0; entities: 6
+[INFO ] [Metrics] - average time per tick: PilotSystem 0.004829 ms, MovementSystem 0.002854 ms, PlayfieldExitSystem 0.001956 ms, CollisionSystem 0.001956 ms, HurtZoneSystem 0.002437 ms
 [INFO ] [Metrics] - round trips: no player measured
 ```
 
-Once players are measured, the third line gives each of them, game by game in the order `Games::all()` lists them, numbered from 1, as in `round trips: game 1 player 1 "ACE" 42.1 ms, jitter 3.2 ms; game 2 player 1 "BOB" 80 ms, jitter 12.5 ms`. The nickname is chosen by the client, so it is written between double quotes, with the quote and the backslash escaped and every byte outside the printable ASCII as `\xNN`: it can neither end the line nor pass for another field (see [Silent players](#silent-players-heartbeats-and-timeouts)).
+Once players are measured, the third line gives each of them, in order of number, under the number of the game of the process, always 1 (`NUMBER_OF_THE_GAME`), as in `round trips: game 1 player 1 "ACE" 42.1 ms, jitter 3.2 ms; game 1 player 2 "BOB" 80 ms, jitter 12.5 ms`. The nickname is chosen by the client, so it is written between double quotes, with the quote and the backslash escaped and every byte outside the printable ASCII as `\xNN`: it can neither end the line nor pass for another field (see [Silent players](#silent-players-heartbeats-and-timeouts)).
 
 | Figure | What it says |
 |---|---|
 | Ticks | How long the stages of each tick lasted, from the `inputs` stage to the end of the `outputs` stage. A percentile is the duration of a real tick, at the nearest rank |
 | Budget | `SIMULATION_TICK_DURATION`: a tick that lasts longer leaves the next one late |
-| Games in progress | The games in `GameState::InProgress`, out of the games the server hosts |
-| Players connected | The players seated in a game, in progress or not |
-| Entities | The entities of the worlds of every game |
-| Average time per tick | The time of each system in all the games, shared between the ticks of the report. A system runs only in a game in progress |
+| Games in progress | 1 when the game of the process is in `GameState::InProgress`, 0 otherwise, out of the one game it hosts (`GAMES_OF_A_GAME_PROCESS`) |
+| Players connected | The players seated in the game, in progress or not |
+| Entities | The entities of the world of the game |
+| Average time per tick | The time of each system of the game, shared between the ticks of the report. A system runs only while the game is in progress |
 | Round trips | The smoothed round trip and the jitter of each player measured, in milliseconds, at the end of the report; a player not measured yet is left out |
 
 The measure leaves out what `ServerApplication` does around the stages, emptying the queues of datagrams and handing over what to send, and the report itself, which runs after the measure of its tick. Whether the ticks fall behind as a whole is told by the lines of the tick loop (see [Tick loop](#tick-loop-tickloop)).
@@ -587,7 +587,7 @@ A datagram of this protocol with another version is answered with `ConnectionRef
 - A refusal reserves nothing, so it goes before the cookie is checked. The cookies come from a `CookieIssuer` whose key is drawn when the acceptor is built (see [Network](/R-Type/network/#connection-cookies-cookieissuer)).
 - An acceptance carries the session token and the next sequence of that player, 0 for the first (see [Session headers](#session-headers-sessiondatagram)). Challenges and refusals carry token 0 and sequence 0, as every datagram sent before a session.
 - An acceptance carries the table of the entity types: the side and the name of every sheet the server loaded, in the order of their numbers (see [Protocol](/R-Type/protocol/#entity-types)). It may reach 859 bytes, more than the request it answers, so it only answers a request whose cookie is valid: a sender that did not prove its address never gets more than `LARGEST_UNPROVEN_ANSWER_DATAGRAM_SIZE` (33) bytes, a challenge, and a request holds at least 35. `ConnectedPlayer::lastAcceptedAt` keeps the time of the last acceptance of each player, on the clock of the cookies, and `isAcceptanceDue()` lets the next one through only once `CONNECTION_ACCEPTANCE_REPEAT_INTERVAL` (250 ms, `src/server/Lobby/LobbyConstants.hpp`) passed: half the `CONNECTION_REQUEST_INTERVAL` of the client, so a request whose acceptance was lost is not held back because it crossed the network faster than the one before, and a player who floods valid requests gets at most four acceptances per second. The time leaves with the player.
-- The acceptor is built from a `ConnectionAcceptorParts` (`src/server/Lobby/ConnectionAcceptorParts.hpp`): the roster, the function that sends, the function that admits a sender, the table of the entity types, and an optional function it calls once for each player it lets in, after it sent the acceptance, and not again when an acceptance is repeated. The lobby module gives the acceptor of each game that `GameInstance`, which gives the player a ship. It builds the table once when it starts, with `entityTypeTableOf()` (`src/server/Replication/Wire/EntityTypeTable.hpp`), from the sheets the games module keeps in `Games` (`keepEntityTypes()`, `entityTypes()`), and gives every acceptor the same one: every game of a server makes its entities from the same sheets.
+- The acceptor is built from a `ConnectionAcceptorParts` (`src/server/Lobby/ConnectionAcceptorParts.hpp`): the roster, the function that sends, the function that admits a sender, the table of the entity types, and an optional function it calls once for each player it lets in, after it sent the acceptance, and not again when an acceptance is repeated. The lobby module gives the acceptor the `GameInstance` of the process, which gives the player a ship. It builds the table once when it starts, with `entityTypeTableOf()` (`src/server/Replication/Wire/EntityTypeTable.hpp`), from the sheets the games module keeps in `RunningGame` (`keepEntityTypes()`, `entityTypes()`), the sheets the game makes its entities from.
 - Nothing caused by the content of a datagram makes it throw. An exception while answering a datagram (any `std::exception`: from the roster, the admission, the function called for a new player or the drawing of a token) is logged at the `error` level with its sender, at most once per `REJECTION_LINE_INTERVAL`, and that datagram is dropped; the next one is answered. What the answer did before it threw is kept: a player the function for a new player throws on stays in the roster, admitted and accepted, without what that function gives it, a ship.
 - Each new player is logged at the `info` level under `Lobby`, as `player <n> joined from <address> port <port>`; challenges and refusals at the `debug` level. A datagram it cannot read, or whose request its reader refuses (a nickname empty, longer than 16 bytes, not UTF-8 or holding a control character, a cookie cut short), gets no answer and is logged at the `debug` level with its sender and why, at most once per `REJECTION_LINE_INTERVAL` (10 s) of the time the tick hands it.
 - Each new player is announced once to the function given to the acceptor, which the lobby module hands to `IPlayerAdmission::admit()` (implemented by `ServerApplication`), so the datagrams of that player reach the tick from then on.
@@ -648,7 +648,7 @@ The ledger also counts the loss. An accepted datagram counts as received, and th
 
 ## A game: `GameInstance` and `GameFlow`
 
-`GameInstance` (`src/server/Instances/`) is the context of one game: its `PlayerRoster` (players 1 to 4, whose numbers also pick their colors), the sessions of its players (see [Sessions of a game](#sessions-of-a-game-gamesessions)), its `SystemScheduler`, the event bus it is given, and its modules (see [Modules of a game](#modules-of-a-game-igamemodule)). It knows nothing of the rules it plays: the `RtypeRulesModule` carries them out and owns the world of the game, in a `WorldSlot` (the current `World`, which a new one replaces between two games), with a `GameFlow` (`src/server/Rules/Match/`) that is how the game runs: its state, its tick and every part that works on one world. The game has no network of its own, so a rule changes there without touching how players connect or what they send. The server keeps a list of games (`Games`, see [Several games at once](#several-games-at-once)). The tick handler calls `onTick(datagrams)` on each game with the datagrams of its own players, on the simulation thread, and `onPlayerJoined(player)` gives a new player its ship.
+`GameInstance` (`src/server/Instances/`) is the context of one game: its `PlayerRoster` (players 1 to 4, whose numbers also pick their colors), the sessions of its players (see [Sessions of a game](#sessions-of-a-game-gamesessions)), its `SystemScheduler`, the event bus it is given, and its modules (see [Modules of a game](#modules-of-a-game-igamemodule)). It knows nothing of the rules it plays: the `RtypeRulesModule` carries them out and owns the world of the game, in a `WorldSlot` (the current `World`, which a new one replaces between two games), with a `GameFlow` (`src/server/Rules/Match/`) that is how the game runs: its state, its tick and every part that works on one world. The game has no network of its own, so a rule changes there without touching how players connect or what they send. A game process keeps one game (`RunningGame`, see [Several games at once](#several-games-at-once)). The tick handler calls `onTick(datagrams)` on it with the datagrams of its own players, on the simulation thread, and `onPlayerJoined(player)` gives a new player its ship.
 
 | State (`GameState`) | The game… | It goes to… |
 |---|---|---|
@@ -666,15 +666,15 @@ The ledger also counts the loss. An accepted datagram counts as received, and th
 - Each move from one state to another is published on the bus of the game as a `GameStateChanged`, with the state left and the state reached, once per move: the results follow it, and so does the list of games the master is told of. A player taking a place is published as a `game::PlayerArrival`, the counterpart of `game::PlayerDeparture`.
 
 ```cpp
-for (const std::unique_ptr<GameInstance>& game : games_.all()) {
-  game->onTick(tickDatagrams_->players());
-  for (const ConnectedPlayer& departed : game->takeDepartedPlayers()) {
-    admission_->forget(departed.endpoint, departed.sessionToken);
-  }
+GameInstance& game = runningGame_.game();
+keepDatagramsOf(game.roster(), tickDatagrams_->players(), datagramsOfGame_);
+game.onTick(datagramsOfGame_);
+for (const ConnectedPlayer& departed : game.takeDepartedPlayers()) {
+  admission_->forget(departed.endpoint, departed.sessionToken);
 }
 ```
 
-The simulation stage runs these steps (see [Modules](#modules-and-stopping-the-server)); `ServerLobbyModule` hands each request to the acceptor of the game it is placed in, after telling that acceptor whether its game is in progress.
+The simulation stage runs these steps (see [Modules](#modules-and-stopping-the-server)); `ServerLobbyModule` then hands the requests of the tick to the acceptor of the game, after telling it whether the game is in progress.
 
 ## Modules of a game: `IGameModule`
 
@@ -1087,7 +1087,7 @@ Every game that ends leaves a row per player in the SQLite file of its server, a
 
 A game is vanilla when it is played by the rules the game ships with, so that its scores compare with those of any other server. Only vanilla games are meant for a leaderboard that gathers every server; nothing sends results there yet, and a game that is not vanilla stays on the leaderboard of its own server like any other.
 
-The games module judges its games once, when it starts, since the values it reads are fixed from then on. `vanillaBreaches()` (`src/server/Games/`) gives one reason per rule broken, and an empty list for vanilla games:
+The games module judges its game once, when it starts, since the values it reads are fixed from then on. `vanillaBreaches()` (`src/server/Games/`) gives one reason per rule broken, and an empty list for vanilla games:
 
 | Rule | Broken when |
 |---|---|
@@ -1176,7 +1176,7 @@ The client sends the request from its leaderboard screen (see [Client](/R-Type/c
 
 ## Game statistics: `ServerGameStatisticsModule`
 
-The `game-statistics` plugin (`src/server/GameStatistics/`) writes the statistics of the games to a CSV file, so a host balances the waves from real games. It is a shared library, not a module of `gameProcessModules()`: a game behaves the same without it, and a `plugin game-statistics` line of `server.cfg` loads it in every game process, never in the supervisor (see [Write a plugin](/R-Type/modules/#write-a-plugin)). It needs `logger`, `network` and `games`, and follows every game through `IGameBuses`, the bus of each game the `games` module provides, so it holds none of the code of the games.
+The `game-statistics` plugin (`src/server/GameStatistics/`) writes the statistics of the games to a CSV file, so a host balances the waves from real games. It is a shared library, not a module of `gameProcessModules()`: a game behaves the same without it, and a `plugin game-statistics` line of `server.cfg` loads it in every game process, never in the supervisor (see [Write a plugin](/R-Type/modules/#write-a-plugin)). It needs `logger`, `network` and `games`, and follows the game through `IGameEvents`, the bus of the game the `games` module provides, so it holds none of the code of the game.
 
 ```
 event,game,player,points
@@ -1186,7 +1186,7 @@ total,1,,400
 ```
 
 - A `kill` row is a Bydo a player killed (`EnemyKilled`): the game, the number of the player, from 1 to 4, and the points of the Bydo. A `total` row is the sum of the points of a game that ended, when its `GameStateChanged` goes from `InProgress` to `Finished`, with no player.
-- The games are numbered from 1 in the order they start in the game process, whatever game of `Games` they run in; a game played again takes the next number. Each game process numbers its own games. A Bydo killed while no game is in progress belongs to no game and has no row. A game the server stops in the middle has no end, so it has no total.
+- The games are numbered from 1 in the order they start in the game process; a game played again takes the next number. Each game process numbers its own games. A Bydo killed while no game is in progress belongs to no game and has no row. A game the server stops in the middle has no end, so it has no total.
 - The file is named after the port of the game process, so each game of a supervisor writes a file of its own: the `game-statistics-file` setting with `_<port>` before its extension (`stats.csv` gives `stats_50123.csv` to the game on port 50123, in the folder of `stats.csv`), or, while it is empty, `r-type_statistics_<port>.csv` next to the executable. It is emptied at launch, as the traffic file: one file is one run of a game process. The supervisor picks a free port for each game, so a game started after another one ended may get its port, and then empties its file. A file that cannot be opened stops the start of the game process, naming the module; one that stops accepting rows is told once in the journal and left, so a full disk never stops a game.
 - The rows wait in memory. The plugin adds the time of each pass of the `outputs` stage, after the games delivered the events of the tick, and writes once it reaches `GAME_STATISTICS_WRITE_PERIOD` (1 s), then counts from zero again: 60 ticks last 999.99996 ms, so the rows go out every 61 ticks (1016.7 ms) while the server keeps its pace. When the server stops, Ctrl-C included, it writes the rows left before it closes the file, so the file is complete once the server stopped.
 
@@ -1241,7 +1241,7 @@ The supervised games module tells the job when the games change. At each tick, o
 | Change how often the end of a game is sent again | `GAME_ENDED_INTERVAL` in `src/server/ServerConstants.hpp` |
 | Change what a game records when it ends | `GameResultKeeper` in `src/server/Results/` |
 | Change the rows of the game statistics, their file or how often they are written | `StatisticsSheet`, `GameTally` and `GameStatisticsConstants.hpp` in `src/server/GameStatistics/` |
-| Follow every game from a module of the program or a plugin | `IGameBuses` (`src/server/Games/IGameBuses.hpp`), required in `install()`, its buses subscribed to in `start()` |
+| Follow the game from a module of the program or a plugin | `IGameEvents` (`src/server/Games/IGameEvents.hpp`), required in `install()`, its bus subscribed to in `start()` |
 | Change what makes a game vanilla | `vanillaBreaches()` in `src/server/Games/VanillaBreaches.cpp`, the values it judges in `HostedRules`; its reasons, `OFFICIAL_WAVES_FINGERPRINT` and `OFFICIAL_ENTITY_SHEETS_FINGERPRINT` in `src/server/ServerConstants.hpp` |
 | Change the tables of the results, or a query | A new line of `RESULTS_MIGRATIONS` and `LEADERBOARD_QUERY` in `src/server/Storage/Database/ResultsDatabaseConstants.hpp` |
 | Change how often a player is answered | `LEADERBOARD_ANSWER_INTERVAL` in `src/server/Instances/Context/Setup/GameInstanceConstants.hpp` |

@@ -47,16 +47,11 @@ class UnknownDifficultyException : public ServerException {
                              const std::vector<std::string>& known);
 };
 
-/** @brief A new player has no game to join: no game was added yet. */
-class NoJoinableGameException : public ServerException {
+/** @brief The game of the process was asked for before the games module
+ * created it. */
+class GameNotCreatedException : public ServerException {
  public:
-  NoJoinableGameException();
-};
-
-/** @brief The server was asked to host more games than a heartbeat lists. */
-class TooManyGamesException : public ServerException {
- public:
-  TooManyGamesException(std::size_t requested, std::size_t maximum);
+  GameNotCreatedException();
 };
 
 /** @brief ServerApplication::open() was called on a server already open. */

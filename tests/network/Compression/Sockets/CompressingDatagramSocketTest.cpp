@@ -3,18 +3,18 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include "CapturedDatagrams.hpp"
 #include "CompressingDatagramSocket.hpp"
 #include "DatagramCompression.hpp"
 #include "DatagramCompressionFixtures.hpp"
-#include "ReceivedDatagrams.hpp"
 #include "RecordingDatagramSocket.hpp"
 
 using rtype::network::CompressingDatagramSocket;
 using rtype::network::isCompressed;
+using rtype::network::testing::CapturedDatagrams;
 using rtype::network::testing::codedSessionDatagram;
 using rtype::network::testing::handshakeHeader;
 using rtype::network::testing::peer;
-using rtype::network::testing::ReceivedDatagrams;
 using rtype::network::testing::sessionHeader;
 using rtype::network::testing::worldStateDatagram;
 
@@ -63,7 +63,7 @@ TEST(CompressingDatagramSocket, DropsADatagramReceivedWithTheFlag) {
   auto recording = std::make_unique<RecordingDatagramSocket>();
   RecordingDatagramSocket& real = *recording;
   CompressingDatagramSocket socket{std::move(recording)};
-  ReceivedDatagrams received;
+  CapturedDatagrams received;
   socket.startReceiving(received.handler());
 
   real.receive(peer(), codedSessionDatagram());
@@ -80,7 +80,7 @@ TEST(CompressingDatagramSocket, HandsOnAPlainDatagramReceived) {
   auto recording = std::make_unique<RecordingDatagramSocket>();
   RecordingDatagramSocket& real = *recording;
   CompressingDatagramSocket socket{std::move(recording)};
-  ReceivedDatagrams received;
+  CapturedDatagrams received;
   socket.startReceiving(received.handler());
   const std::vector<std::byte> plain = worldStateDatagram(sessionHeader());
 

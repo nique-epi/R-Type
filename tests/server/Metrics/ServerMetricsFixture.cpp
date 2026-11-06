@@ -9,8 +9,6 @@
 #include "ClockAdvancingSystem.hpp"
 #include "ConnectedPlayer.hpp"
 #include "GameInstance.hpp"
-#include "Games.hpp"
-#include "GamesSettings.hpp"
 #include "IModule.hpp"
 #include "JournalFile.hpp"
 #include "LatestMetrics.hpp"
@@ -41,12 +39,6 @@ ServerMetricsFixture::modulesAfterTheGames() const {
   return modules;
 }
 
-void ServerMetricsFixture::startWithGames(std::size_t gameCount) {
-  rtype::server::GamesSettings settings = shippedWaves();
-  settings.gameCount = gameCount;
-  startWith(std::move(settings));
-}
-
 void ServerMetricsFixture::runTicks(std::size_t count) {
   for (std::size_t tick = 0; tick < count; ++tick) {
     runTick({});
@@ -72,12 +64,11 @@ ServerMetricsFixture::latestReport() {
 
 void ServerMetricsFixture::startTheGameOfPlayer(std::size_t index) {
   sayReady(index);
-  for (const auto& game : probe().games()->all()) {
-    rtype::server::ConnectedPlayer* const seated =
-        game->roster().find(rtype::server::testing::playerEndpoint(index));
-    if (seated != nullptr) {
-      seated->loaded = true;
-    }
+  rtype::server::ConnectedPlayer* const seated =
+      probe().runningGame()->game().roster().find(
+          rtype::server::testing::playerEndpoint(index));
+  if (seated != nullptr) {
+    seated->loaded = true;
   }
   runTick({});
 }
