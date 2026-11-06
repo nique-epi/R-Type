@@ -206,7 +206,7 @@ Three routes read what the master keeps, to anyone, a page at a time. `GET /api/
 - **A page** is `?limit=<n>&offset=<m>`: `limit` from `MINIMUM_PAGE_SIZE` (1) to `MAXIMUM_PAGE_SIZE` (100), `DEFAULT_PAGE_SIZE` (50) when left out; `offset` from `FIRST_PAGE_OFFSET` (0), the items skipped. Each is a whole number with no sign; anything else answers 400, whose `detail` gives the bounds. A parameter given twice keeps its first value.
 - **An id** that is no number, or that no server has, answers 404. A server created and never registered has a history, empty.
 - **A read** of the list is one SQL statement, and a read of a history two: one checks that the server exists, then one reads the page. Both read plain columns, so no heartbeat is parsed. SQLite steps through the rows an `offset` skips, so a page deep in 7 days of samples costs more than the first one.
-- `MasterClient` has no function for these routes yet: the list of servers of the game client will add it.
+- `MasterClient::listServers()` reads the list for the server map of the game client (see [The client of the master](#the-client-of-the-master-masterclient)); the histories have no function yet.
 
 ## The client of the master: `MasterClient`
 
@@ -218,8 +218,11 @@ rtype::network::MasterClient master{rtype::network::MasterAccess{
 master.registerServer(registration);
 master.sendHeartbeat(heartbeat);
 
-rtype::network::GameListing listing = master.listGames(serverId);  // no key needed
+rtype::network::ServerListing servers = master.listServers();  // no key needed
+rtype::network::GameListing listing = master.listGames(serverId);
 ```
+
+`listServers()` reads every page of `GET /api/servers`, `MAXIMUM_PAGE_SIZE` (100) servers each, up to `MAXIMUM_LISTED_SERVER_PAGES` (10) pages, and returns them in one listing.
 
 - **Every call waits for its answer**, `MASTER_CONNECTION_TIMEOUT` (5 s) to connect, then `MASTER_TRANSFER_TIMEOUT` (5 s) for each read and write, so it is made away from the game loop. Two threads never call the same client together.
 - **An error status** throws `MasterRefusedException`: `status()` and the `detail` of the problem document. **No answer** throws `MasterUnreachableException`.
