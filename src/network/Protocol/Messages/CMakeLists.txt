@@ -1,3 +1,4 @@
+add_subdirectory(ChatLine)
 add_subdirectory(ConnectionAccepted)
 add_subdirectory(ConnectionChallenge)
 add_subdirectory(ConnectionRedirect)
@@ -19,6 +20,7 @@ add_subdirectory(LeaderboardRequest)
 add_subdirectory(LobbyState)
 add_subdirectory(MasterProbe)
 add_subdirectory(OrderedMessage)
+add_subdirectory(PlayerChatLine)
 add_subdirectory(PlayerInput)
 add_subdirectory(PlayerLeft)
 add_subdirectory(ReadyState)
@@ -30,6 +32,7 @@ add_library(rtype_network_messages INTERFACE)
 
 target_link_libraries(rtype_network_messages
   INTERFACE
+    rtype_network_chat_line
     rtype_network_connection_accepted
     rtype_network_connection_challenge
     rtype_network_connection_redirect
@@ -51,6 +54,7 @@ target_link_libraries(rtype_network_messages
     rtype_network_lobby_state
     rtype_network_master_probe
     rtype_network_ordered_message
+    rtype_network_player_chat_line
     rtype_network_player_input
     rtype_network_player_left
     rtype_network_ready_state

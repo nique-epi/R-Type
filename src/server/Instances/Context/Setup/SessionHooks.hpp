@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <vector>
+#include "ChatLine.hpp"
 #include "ConnectedPlayer.hpp"
 #include "LeaderboardRequest.hpp"
 #include "PlayerInput.hpp"
@@ -36,6 +37,11 @@ struct SessionHooks {
   std::vector<std::function<void(const ConnectedPlayer&,
                                  const network::LeaderboardRequest&)>>
       leaderboardRequested;
+  /** @brief Called with a player and each ChatLine it sends, copies included,
+   * for a module to relay it. */
+  std::vector<
+      std::function<void(const ConnectedPlayer&, const network::ChatLine&)>>
+      chatLineSent;
 };
 
 }  // namespace rtype::server

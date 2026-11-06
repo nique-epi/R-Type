@@ -365,6 +365,15 @@ constexpr std::size_t MAXIMUM_NICKNAME_SIZE = 16;
 constexpr std::size_t MAXIMUM_SERVER_NAME_SIZE = 32;
 
 /**
+ * @brief The longest text of a chat line, in bytes of UTF-8: Source cuts a line
+ * of chat at 127 characters. Provisional, see the protocol page.
+ */
+constexpr std::size_t MAXIMUM_CHAT_TEXT_SIZE = 127;
+
+static_assert(MAXIMUM_CHAT_TEXT_SIZE <= MAX_SHORT_STRING_LENGTH,
+              "a chat text fits a short string");
+
+/**
  * @brief The longest version of the game, in bytes: "1.12.0-rc.2" fits. The
  * master and the ServerInformation of the server alike.
  */
@@ -478,6 +487,17 @@ constexpr std::size_t LARGEST_LEADERBOARD_ANSWER_SIZE =
 
 static_assert(LARGEST_LEADERBOARD_ANSWER_SIZE <= MESSAGE_PAYLOAD_LIMIT,
               "a LeaderboardAnswer always fits in one datagram");
+
+/**
+ * @brief The largest PlayerChatLine payload: lineNumber, the longest text after
+ * its length, then playerNumber.
+ */
+constexpr std::size_t LARGEST_PLAYER_CHAT_LINE_SIZE =
+    UINT16_WIRE_SIZE + SHORT_STRING_PREFIX_SIZE + MAXIMUM_CHAT_TEXT_SIZE +
+    UINT8_WIRE_SIZE;
+
+static_assert(LARGEST_PLAYER_CHAT_LINE_SIZE <= ORDERED_PAYLOAD_LIMIT,
+              "a PlayerChatLine always fits in an OrderedMessage");
 
 /**
  * @brief The size of the largest datagram holding a ServerInformation: the

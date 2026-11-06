@@ -134,6 +134,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | End of a game sent to the players (`GameEnded`) | Available: when the game is won or lost, with its outcome and the score of each, until the game waits for players again | `src/server/Replication/Announcements/Milestones/`, `src/server/Rules/Match/` |
 | Metrics in the journal every 10 s: duration of the ticks, time of each system, games, players, entities, round trip of each player and traffic | Available; losses are not measured yet | `src/server/Metrics/` |
 | Results of each game kept in a SQLite file, with statistics, and a leaderboard read with `LeaderboardRequest` | Available; the leaderboard of the client reads it, and nothing in the game shows the statistics | `src/server/Results/`, `src/server/Storage/`, `src/storage/` |
+| Text chat in the waiting room and during a match (`ChatLine`, `PlayerChatLine`), one line a second per player, 127 bytes at most | Available on the server; the client sends and shows none yet | `src/server/Chat/` |
 | Game statistics: a CSV row per Bydo killed and the total of each game, written by a plugin | Available, loaded by `plugin game-statistics` | `src/server/GameStatistics/` |
 | Master mode: `--mode master` runs the master instead of the supervisor | Available (see [Master](/R-Type/master/)) | `src/server/LaunchOptions/`, `src/master/` |
 | Master link: registration and heartbeats | Available, from the supervisor, one registration for all its games; admin orders, bans and results not yet written (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
@@ -697,13 +698,14 @@ A game installs modules instead of building the rules of R-Type itself, so a rul
 - A tick runs three stages, in order: `GAME_INPUT_STAGE` counts the time since the previous tick for the heartbeats and the guaranteed messages, reads the datagrams and closes the silent sessions, `GAME_SIMULATION_STAGE` runs what the modules added, `GAME_OUTPUT_STAGE` sends the guaranteed messages due again, then the heartbeats.
 - One module must provide `IGameFlow` (`state()`, `tick()`, `finish()`); the game answers its own functions through it.
 - `RtypeRulesModule` builds its `GameFlow` in `install()`, which opens nothing, and `start()` calls `GameFlow::begin()`, which builds the first world and subscribes the rules to the bus. Until then the flow answers as a game that waits for players at tick 0. `stop()` destroys the flow, then the `ScoreKeeper`, which give their subscriptions back to the bus.
-- What happens to a player goes through `SessionHooks` (`src/server/Instances/Context/Setup/SessionHooks.hpp`), in the `GameContext`: four lists of functions, `joined`, `closing`, `newerInput` and `leaderboardRequested`. A module adds its functions in `start()`, and the game calls them in the order of the modules, so any module can follow a player joining, a session closing or an input being kept, without a change to `GameInstance`. The lists are not emptied by `stop()`: the game is destroyed right after its modules stop and calls no hook in between.
+- What happens to a player goes through `SessionHooks` (`src/server/Instances/Context/Setup/SessionHooks.hpp`), in the `GameContext`: five lists of functions, `joined`, `closing`, `newerInput`, `leaderboardRequested` and `chatLineSent`. A module adds its functions in `start()`, and the game calls them in the order of the modules, so any module can follow a player joining, a session closing or an input being kept, without a change to `GameInstance`. The lists are not emptied by `stop()`: the game is destroyed right after its modules stop and calls no hook in between.
 
 | Module (`rtypeGameModules()`, in this order) | Provides | Holds |
 |---|---|---|
 | `ReplicationModule` (`src/server/Replication/`) | `IGameReplication` | `GameReplication` (the world state sender and the announcers of the room, the ships and the end of a game) and the `GameEventBroadcaster`, subscribed when the module starts |
 | `RtypeRulesModule` (`src/server/Rules/`) | `IGameFlow` | the world of the game (its `WorldSlot`), the systems of the world, the `GameFlow` with its rules, and the `ScoreKeeper` |
 | `ResultsModule` (`src/server/Results/`) | nothing | `GameResultKeeper` and `LeaderboardDesk` (see [Results and leaderboard](#results-and-leaderboard-resultsmodule-resultsarchive)) |
+| `ChatModule` (`src/server/Chat/`), optional | nothing | `ChatRelay` (see [Chat](#chat-chatmodule-chatrelay)) |
 
 `GameFlow` tells the players what happens through `IGameReplication`, never through the announcers: each call sends what it has to before it returns, so the order of the datagrams to a player is the order of the calls. The bus cannot carry these calls, because it delivers an event at the end of the tick, while creating a ship must set `ConnectedPlayer::shipEntityId` at once.
 
@@ -1186,6 +1188,18 @@ A read ranks the whole leaderboard. Measured on one Mac in a Release build, with
 
 The client sends the request from its leaderboard screen (see [Client](/R-Type/client/#leaderboard-leaderboardscreen-ileaderboardsource)).
 
+## Chat: `ChatModule`, `ChatRelay`
+
+`ChatModule` (`src/server/Chat/`) relays the chat lines of the players of a game to all of them, in the waiting room, during a match and on the end screen (see [Protocol](/R-Type/protocol/#chat)). `GameSessions` reads each `ChatLine` like every message of a player, after the same checks, and hands it with its sender to `SessionHooks::chatLineSent`, where the module listens, as a `LeaderboardRequest` reaches `leaderboardRequested`. The module is optional: nothing includes it but `rtypeGameModules()`, and a game without it drops the lines.
+
+- `ChatRelay` sends each new line to every player of the roster, its writer included, as a guaranteed `PlayerChatLine` (`guaranteeToEveryPlayer`), so a lost datagram is sent again and the lines arrive in order. The relay names the writer by its `playerNumber`, never by what the client wrote.
+- A line whose `lineNumber` is not newer than the last one relayed for its player is a copy its client sent again, and is ignored.
+- A player gets at most one line relayed per `TICKS_BETWEEN_CHAT_LINES` ticks (60, `CHAT_LINE_INTERVAL` 1 s), counted by the relay, since the tick of the game stays 0 while it waits for players. A line sooner is ignored without being kept, so its next copy goes through: a flood costs its writer a delay, and the server a lookup.
+- The number and the wait of a seat are cleared when its session closes (`seatIndexOf()`, `src/server/Sessions/Roster/SeatIndex.hpp`), so the next player on the seat starts afresh.
+- A text is 1 to `MAXIMUM_CHAT_TEXT_SIZE` (127) bytes of printable UTF-8: a longer, empty or unreadable one is dropped when the message is read, before it reaches the module.
+
+The client neither sends nor shows a line yet.
+
 ## Game statistics: `ServerGameStatisticsModule`
 
 The `game-statistics` plugin (`src/server/GameStatistics/`) writes the statistics of the games to a CSV file, so a host balances the waves from real games. It is a shared library, not a module of `gameProcessModules()`: a game behaves the same without it, and a `plugin game-statistics` line of `server.cfg` loads it in every game process, never in the supervisor (see [Write a plugin](/R-Type/modules/#write-a-plugin)). It needs `logger`, `network` and `games`, and follows the game through `IGameEvents`, the bus of the game the `games` module provides, so it holds none of the code of the game.
@@ -1259,6 +1273,7 @@ The supervised games module tells the job when the games change. At each tick, o
 | Follow the game from a module of the program or a plugin | `IGameEvents` (`src/server/Games/IGameEvents.hpp`), required in `install()`, its bus subscribed to in `start()` |
 | Change what makes a game vanilla | `vanillaBreaches()` in `src/server/Games/VanillaBreaches.cpp`, the values it judges in `HostedRules`; its reasons, `OFFICIAL_WAVES_FINGERPRINT` and `OFFICIAL_ENTITY_SHEETS_FINGERPRINT` in `src/server/ServerConstants.hpp` |
 | Change the tables of the results, or a query | A new line of `RESULTS_MIGRATIONS` and `LEADERBOARD_QUERY` in `src/server/Storage/Database/ResultsDatabaseConstants.hpp` |
+| Change how often a player may chat, or how long a line is | `CHAT_LINE_INTERVAL` in `src/server/Chat/ChatConstants.hpp`, `MAXIMUM_CHAT_TEXT_SIZE` in `src/network/Protocol/ProtocolConstants.hpp` |
 | Change how often a player is answered | `LEADERBOARD_ANSWER_INTERVAL` in `src/server/Instances/Context/Setup/GameInstanceConstants.hpp` |
 | Change how every SQLite connection is opened | `openDatabaseFile()` in `src/storage/DatabaseFile.cpp` |
 | Send a datagram to a player during a session | `sessionDatagram` in `src/server/Sessions/Roster/SessionDatagram.hpp`, then the send function of the game |

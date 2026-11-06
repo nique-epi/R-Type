@@ -10,6 +10,7 @@ target_compile_definitions(server_module_tests PRIVATE RTYPE_SOURCE_ASSETS_FOLDE
 
 target_sources(server_module_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingChildProcess.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingProcessLauncher.cpp)
 
+add_subdirectory(Chat)
 add_subdirectory(Games)
 add_subdirectory(GameStatistics)
 add_subdirectory(Information)

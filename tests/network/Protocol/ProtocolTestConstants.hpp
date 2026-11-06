@@ -283,7 +283,7 @@ constexpr std::uint16_t SOME_SENDER_PORT = 50000;
  */
 constexpr std::uint8_t TYPE_BELOW_THE_FIRST = 0;
 constexpr std::uint8_t TYPE_ABOVE_THE_LAST =
-    static_cast<std::uint8_t>(MessageType::MasterProbe) + 1;
+    static_cast<std::uint8_t>(MessageType::PlayerChatLine) + 1;
 constexpr std::uint8_t LARGEST_TYPE_BYTE = 255;
 
 /**
