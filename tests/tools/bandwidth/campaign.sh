@@ -84,6 +84,9 @@ run_once() {
     fail "the bots failed; their report is $report"
   fi
   stop_server
+  if grep -q -E '^bot [0-9]+: .* games ended, 0 world states and ' "$report"; then
+    fail "a bot saw no world state, so it measured no game; its report is $report"
+  fi
   sed -n 's/^bot .* \([0-9.]*\) entities per state; received \([0-9.]*\) B\/s decoded and \([0-9.]*\) B\/s on the network in \([0-9.]*\) datagrams\/s, sent \([0-9.]*\) B\/s in \([0-9.]*\) datagrams\/s$/\1 \2 \3 \4 \5 \6/p' "$report" |
     awk -v headers="$IP_AND_UDP_HEADER_BYTES" \
       '{ printf "%s %s %s %s %.1f %s %s\n", $1, $2, $3, $4, $3 + (headers * $4), $5, $6 }' \
