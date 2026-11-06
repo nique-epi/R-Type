@@ -279,7 +279,12 @@ function(rtype_forbid_links target)
   endforeach()
 endfunction()
 
-# Fails the configure when a target reaches a forbidden library through any of its links, PRIVATE ones included.
+# The network targets that link Asio privately and hide it behind their headers: rtype_forbid_reachable_links
+# does not follow their private link to rtype_network_asio, so the master may reach them without reaching Asio.
+set(RTYPE_ASIO_HIDING_TARGETS rtype_network_context rtype_network_udp_socket)
+
+# Fails the configure when a target reaches a forbidden library through any of its links, PRIVATE ones included,
+# except the private link of RTYPE_ASIO_HIDING_TARGETS to rtype_network_asio.
 function(rtype_forbid_reachable_links target)
   set(pending ${target})
   set(reached "")
@@ -293,6 +298,10 @@ function(rtype_forbid_reachable_links target)
     list(APPEND reached ${current})
     get_target_property(linked ${current} LINK_LIBRARIES)
     get_target_property(interface_linked ${current} INTERFACE_LINK_LIBRARIES)
+    if(current IN_LIST RTYPE_ASIO_HIDING_TARGETS AND NOT rtype_network_asio IN_LIST interface_linked)
+      list(REMOVE_ITEM linked rtype_network_asio)
+      list(REMOVE_ITEM interface_linked "$<LINK_ONLY:rtype_network_asio>")
+    endif()
     foreach(library IN LISTS linked interface_linked)
       string(REGEX REPLACE "^\\$<LINK_ONLY:(.+)>$" "\\1" library "${library}")
       foreach(forbidden IN LISTS ARGN)
