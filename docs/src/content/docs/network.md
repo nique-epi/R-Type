@@ -76,11 +76,11 @@ Replication turns the entities of a game into messages on the server, and the me
 
 ## Event loop: `NetworkContext`
 
-`NetworkContext` owns the Asio event loop. `run()` blocks and runs every network operation, and every socket handler, on the thread that called it. It returns when the loop has no work left or `stop()` is called; a socket that is receiving always has work, so a server returns only on `stop()`.
+`NetworkContext` owns the Asio event loop. `run()` blocks and runs every network operation, and every socket handler, on the thread that called it. It returns when the loop has no work left or `stop()` is called; a socket that is receiving always has work, so a server returns only on `stop()`. `runUntilStopped()` returns only on `stop()`, even while the loop has no work: a socket that only sends, as the one of the probes of the master, leaves none between two sends.
 
 `stop()` and `post(task)` may be called from any thread. `post()` queues a function to run on the thread that runs `run()`: this is how another thread gets a datagram sent, since a socket may only be used on that thread. A task still queued when the context is destroyed is destroyed without running.
 
-Asio is linked privately to the network targets, so the headers other folders include never include it, and `r-type_server` fails to build if it tries. A class that needs Asio lives in `src/network` and links `rtype_network_asio`, which also defines `ASIO_NO_DEPRECATED` and, on Windows, `_WIN32_WINNT`.
+Asio is linked privately to the network targets, so the headers other folders include never include it, and `r-type_server` fails to build if it tries. The master reaches it only that way, through `rtype_network_context` and `rtype_network_udp_socket`, to send its probes. A class that needs Asio lives in `src/network` and links `rtype_network_asio`, which also defines `ASIO_NO_DEPRECATED` and, on Windows, `_WIN32_WINNT`.
 
 ## Sockets: `UdpSocket`
 
@@ -263,7 +263,7 @@ The server keeps one meter per player (see [Server](/R-Type/server/#silent-playe
 
 The `Heartbeat` of the server also carries its tick while a game runs: `sendHeartbeats()` (`src/server/Sessions/Tracking/`) takes it in a `HeartbeatMoment` with the time, and `GameInstance` tells it in the output stage, after the simulation stage that counts the tick, only while the game is in progress. What the client does with it is in [Engine](/R-Type/engine/#game-loop-time) (`ServerClock`) and [Protocol](/R-Type/protocol/#clock-of-the-server).
 
-A client that lists servers, or the master that checks one, measures the round trip of a server it has no session with through a `ServerInformationRequest` (see [Protocol](/R-Type/protocol/#server-information)). `informationRequestAt(now)` builds the request to send, and `informationRoundTripOf(answer, receivedAt)` reads the round trip from the `ServerInformation` that answers it, as `echoedRoundTrip()` reads an echo: both times on the clock of the asker, the time the server held the request left out, nothing for an answer held longer than its trip or back after `LONGEST_ROUND_TRIP`. The server map of the client calls them through `ServerPingProbe` (see [Client](/R-Type/client/#server-map-servermapscreen-iservercatalog-igamecatalog)); the probe of the master is not written.
+A client that lists servers measures the round trip of a server it has no session with through a `ServerInformationRequest` (see [Protocol](/R-Type/protocol/#server-information)). `informationRequestAt(now)` builds the request to send, and `informationRoundTripOf(answer, receivedAt)` reads the round trip from the `ServerInformation` that answers it, as `echoedRoundTrip()` reads an echo: both times on the clock of the asker, the time the server held the request left out, nothing for an answer held longer than its trip or back after `LONGEST_ROUND_TRIP`. The server map of the client calls them through `ServerPingProbe` (see [Client](/R-Type/client/#server-map-servermapscreen-iservercatalog-igamecatalog)). The master checks a server with a `MasterProbe` instead, which measures no round trip (see [Protocol](/R-Type/protocol/#probe-of-the-master)).
 
 ## Serialization: `ByteWriter` and `ByteReader`
 
@@ -390,11 +390,12 @@ The tests run it under losses: `UnacknowledgedMessagesFixture` links a sender an
 
 ## Connection cookies: `CookieIssuer`
 
-`CookieIssuer` (`rtype_network_handshake_cookies`, `src/network/Handshake/Cookies/`) issues the cookie of a `ConnectionChallenge` and recognizes it when the sender sends it back, so the server gives a place only to the owner of an address and keeps nothing per request (see [Protocol](/R-Type/protocol/#connection)).
+`CookieIssuer` (`rtype_network_handshake_cookies`, `src/network/Handshake/Cookies/`) issues the cookie of a `ConnectionChallenge` and recognizes it when the sender sends it back, so the server gives a place only to the owner of an address and keeps nothing per request (see [Protocol](/R-Type/protocol/#connection)). The master computes the token of its probes with one too (see [Master](/R-Type/master/#probing-the-game-servers-masterprobemodule)).
 
-- `issue(sender, now)` is the SipHash-2-4 (`sipHash()`, `src/network/Handshake/Cookies/SipHash.hpp`), under a secret key, of the sender's address, its port and the number of the cookie window: the time divided by `COOKIE_WINDOW_DURATION` (10 s). Without the key, nobody can compute it.
-- `isValid(cookie, sender, now)` accepts the cookie of that sender in the window of `now` and in the one before it, so a cookie stays valid at least 10 s and less than 20 s after it was issued, depending on when in its window that was, and a challenge answered just before a window ends still works. 0, the cookie of a request that has none yet, is never valid.
-- The default constructor draws the key from `std::random_device`; another constructor takes the key, for tests. `now` is any monotonic time, the same origin for every call.
+- Its windows are a `CookieWindows`: how long one lasts and how many it accepts. Those of the handshake, `CONNECTION_COOKIE_WINDOWS`, are `COOKIE_WINDOW_DURATION` (10 s) and `CONNECTION_COOKIE_ACCEPTED_WINDOWS` (2), and a constructor without windows takes them.
+- `issue(sender, now)` is the SipHash-2-4 (`sipHash()`, `src/network/Handshake/Cookies/SipHash.hpp`), under a secret key, of the sender's address, its port and the number of the window: the time divided by its duration. Without the key, nobody can compute it.
+- `isValid(cookie, sender, now)` accepts the cookie of that sender in the window of `now` and in the ones before it, as many as the windows accepted in all. With those of the handshake, a cookie stays valid at least 10 s and less than 20 s after it was issued, depending on when in its window that was, and a challenge answered just before a window ends still works. 0, the cookie of a request that has none yet, is never valid.
+- A constructor without key draws it from `std::random_device`; another takes the key, for tests. `now` is any time measured from one origin, the same for every call.
 
 `sipHash()` follows the reference implementation of Aumasson and Bernstein, and its tests check the reference vectors. The window duration is **provisional**, like every delay of the protocol page: code must read `COOKIE_WINDOW_DURATION` (`HandshakeConstants.hpp`).
 
@@ -523,7 +524,7 @@ Every run held the budget of a tick: the 95th percentile stayed under 0.8 ms, un
 | Change how often a rejected datagram or message is logged | `REJECTION_LINE_INTERVAL` in `src/network/NetworkConstants.hpp`, read by the network and the server (see [Logging](/R-Type/logging/#repeated-events-throttledlog)) |
 | Handle a received message | `registerHandler<Message>()` on a `MessageDispatcher` |
 | Change how many datagrams a sender may send, or how long a ban lasts | `RateLimitConstants.hpp` in `src/network/Handshake/RateLimit/`, which follows the pace of a client in `src/network/Protocol/ProtocolConstants.hpp`; the table of the requests in `RequestAllowances` |
-| Change how a connection cookie is computed, or how long it lives | `CookieIssuer` in `src/network/Handshake/Cookies/`, `COOKIE_WINDOW_DURATION` in `src/network/Handshake/Cookies/HandshakeConstants.hpp` |
+| Change how a connection cookie is computed, or how long it lives | `CookieIssuer` in `src/network/Handshake/Cookies/`, `COOKIE_WINDOW_DURATION` and `CONNECTION_COOKIE_ACCEPTED_WINDOWS` in `src/network/Handshake/Cookies/HandshakeConstants.hpp` |
 | Change how a player is let in, challenged or refused | `ConnectionAcceptor` in `src/server/Lobby/` and `ServerSession` in `src/client/Connection/`, then the [Protocol](/R-Type/protocol/#connection) page |
 | Change the table of the entity types, its bounds or its checks | `ConnectionAccepted` and `EntityTypeEntry` in `src/network/Protocol/Messages/ConnectionAccepted/`, `EntitySide.hpp`, `MAXIMUM_ENTITY_TYPES`, the name lengths and `isEntityTypeName()` in `src/identifiers/`, which the sheets of the game read too, then the [Protocol](/R-Type/protocol/#entity-types) page |
 | Change what a session checks on a received datagram | `DatagramSorter` (`src/server/Network/`) for the token, `DatagramReader` and `ArrivalLedger` (`src/server/Sessions/Tracking/`, `src/server/Sessions/Roster/`) for the sequence; `SessionInbound` on the client |

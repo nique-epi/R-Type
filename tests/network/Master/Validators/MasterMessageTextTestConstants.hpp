@@ -15,6 +15,7 @@ constexpr std::string_view PARIS_GAME_VERSION = "0.4.0";
 constexpr std::uint8_t PARIS_PROTOCOL_VERSION = 2;
 constexpr std::uint16_t PARIS_MAXIMUM_GAMES = 8;
 constexpr std::uint8_t PARIS_MAXIMUM_PLAYERS_PER_GAME = 4;
+constexpr std::uint64_t PARIS_PROBE_SECRET = 0x5A5A'5A5A'5A5A'5A5A;
 
 /** @brief Names of 32 bytes, the longest a server may have, and of 33. */
 constexpr std::string_view NAME_OF_32_BYTES =
@@ -34,6 +35,23 @@ constexpr std::string_view PORT_AS_TEXT = "4242";
 /** @brief Ports just outside the range of UDP ports: 0 and 65536. */
 constexpr std::uint64_t PORT_BELOW_THE_RANGE = 0;
 constexpr std::uint64_t PORT_ABOVE_THE_RANGE = 65536;
+
+/**
+ * @brief Probe secrets just outside what the master keeps in a column INTEGER
+ * of SQLite, 0 and 2^63, and the two ends it keeps, 1 and 2^63 - 1.
+ */
+constexpr std::uint64_t PROBE_SECRET_BELOW_ITS_RANGE = 0;
+constexpr std::uint64_t PROBE_SECRET_ABOVE_ITS_RANGE =
+    9'223'372'036'854'775'808U;
+constexpr std::uint64_t LOWEST_KEPT_PROBE_SECRET = 1;
+constexpr std::uint64_t HIGHEST_KEPT_PROBE_SECRET = 9'223'372'036'854'775'807;
+
+/**
+ * @brief A token of a probe of 0, which the master never issues, and the
+ * largest token a heartbeat can carry, 2^64 - 1.
+ */
+constexpr std::uint64_t PROBE_TOKEN_OF_ZERO = 0;
+constexpr std::uint64_t LARGEST_PROBE_TOKEN = 18'446'744'073'709'551'615U;
 
 /** @brief A server of no game, and games of five players: neither exists. */
 constexpr std::uint64_t NO_GAME = 0;
@@ -83,6 +101,8 @@ constexpr std::string_view UNKNOWN_MEMBER_VALUE = "eu-west";
 constexpr std::string_view NAME_POINTER = "/name";
 constexpr std::string_view ADDRESS_POINTER = "/address";
 constexpr std::string_view UDP_PORT_POINTER = "/udpPort";
+constexpr std::string_view PROBE_SECRET_POINTER = "/probeSecret";
+constexpr std::string_view PROBE_TOKEN_POINTER = "/probeToken";
 constexpr std::string_view MAXIMUM_GAMES_POINTER = "/maximumGames";
 constexpr std::string_view MAXIMUM_PLAYERS_PER_GAME_POINTER =
     "/maximumPlayersPerGame";
@@ -131,14 +151,15 @@ constexpr std::string_view POINTER_QUOTE = "\"";
 constexpr std::string_view QUOTED_WHOLE_MESSAGE = "\"\"";
 
 /**
- * @brief How the statuses of a server are written, and the text of the status
- * the probe will add, which no status reads yet.
+ * @brief How the statuses of a server are written, and a text no status
+ * has.
  */
 constexpr std::string_view ONLINE_TEXT = "online";
 constexpr std::string_view DEGRADED_TEXT = "degraded";
 constexpr std::string_view OFFLINE_TEXT = "offline";
 constexpr std::string_view MAINTENANCE_TEXT = "maintenance";
 constexpr std::string_view UNREACHABLE_TEXT = "unreachable";
+constexpr std::string_view UNKNOWN_STATUS_TEXT = "lost";
 
 /**
  * @brief The games and players of the heartbeat of "Paris 1", as a list of
@@ -160,6 +181,8 @@ constexpr std::string_view PARIS_SERVER_LISTING_TEXT =
  * holds at most, and one more. */
 constexpr std::string_view FIRST_SERVER_STATUS_POINTER = "/servers/0/status";
 constexpr std::string_view FIRST_SERVER_ID_POINTER = "/servers/0/id";
+constexpr std::string_view FIRST_SERVER_PROBE_SECRET_POINTER =
+    "/servers/0/probeSecret";
 constexpr std::string_view SERVERS_POINTER = "/servers";
 constexpr std::size_t SERVERS_OF_A_FULL_PAGE = 100;
 constexpr std::size_t SERVERS_ABOVE_A_PAGE = 101;

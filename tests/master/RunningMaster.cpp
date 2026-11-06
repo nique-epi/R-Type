@@ -10,13 +10,17 @@
 #include <vector>
 #include "Application.hpp"
 #include "ConfigurationReader.hpp"
+#include "CreatedServer.hpp"
 #include "HttpPortProbe.hpp"
 #include "LogLaunchOptionsFixtures.hpp"
 #include "LoggingConstants.hpp"
 #include "LoopStages.hpp"
+#include "MasterAccess.hpp"
+#include "MasterClient.hpp"
 #include "MasterConstants.hpp"
 #include "MasterModules.hpp"
 #include "MasterTestConstants.hpp"
+#include "ServerCreation.hpp"
 #include "SettingLine.hpp"
 
 RunningMaster::RunningMaster() : port_(freeHttpPort()) {
@@ -69,4 +73,11 @@ std::optional<std::string> RunningMaster::lastHeartbeatOf(
     return std::nullopt;
   }
   return query.getColumn(LAST_HEARTBEAT_COLUMN).getString();
+}
+
+rtype::network::CreatedServer RunningMaster::createServer(
+    std::string_view name) const {
+  return rtype::network::MasterClient{
+      rtype::network::MasterAccess{.url = url(), .key = {}}}
+      .createServer(rtype::network::ServerCreation{.name = std::string{name}});
 }

@@ -9,6 +9,6 @@
     std::optional<double> tickP95, std::optional<double> loss);
 
 /** @returns What the master knows of a server registered at HEARD_AT that
- * beat then with @p measures, not in maintenance. */
+ * beat then with @p measures, answering its probe, not in maintenance. */
 [[nodiscard]] rtype::master::StatusEvidence heardWith(
     const rtype::network::ServerMeasures& measures);

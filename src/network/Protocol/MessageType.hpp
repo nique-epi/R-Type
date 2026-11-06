@@ -37,6 +37,7 @@ enum class MessageType : std::uint8_t {
   ConnectionRedirect = 26,
   GameStatus = 27,
   GameStatusAcknowledged = 28,
+  MasterProbe = 29,
 };
 
 }  // namespace rtype::network

@@ -85,7 +85,7 @@ Each message is a type (`u8`), the size of its payload in bytes (`u16`, the 3 by
 
 - `protocolId` and `version` stay at offsets 0 and 4 in every future version, so a receiver tells which version sent a datagram from its first 5 bytes.
 - `sessionToken` is drawn at random by the server when it accepts a connection, never 0. The server writes it in every datagram it sends to that client, and the client copies it into every datagram it sends afterward. Within a session, each side drops and counts a datagram that carries another token, so nobody can steer a ship, or feed a client false states, by forging an address. A `ConnectionRequest` carries 0, since the client has no token yet: it never keeps a session alive, and it only gets a player slot with a valid cookie (see [Connection](#connection)).
-- `sequence` counts the datagrams a side sends to the other: one counter per peer, starting at 0 with the first datagram to that peer, growing by 1 and wrapping from 65535 to 0. Within a session, a receiver drops a datagram that is not newer than the newest one it has accepted from that peer, so a late or duplicated datagram never undoes a newer one. Newer means ahead by 1 to 32767 modulo 65536 (serial number arithmetic, RFC 1982), so the comparison survives the wrap. Datagrams sent outside a session (`ConnectionChallenge`, `ConnectionRefused`, `ServerInformationRequest`, `ServerInformation`) carry 0 and are not compared.
+- `sequence` counts the datagrams a side sends to the other: one counter per peer, starting at 0 with the first datagram to that peer, growing by 1 and wrapping from 65535 to 0. Within a session, a receiver drops a datagram that is not newer than the newest one it has accepted from that peer, so a late or duplicated datagram never undoes a newer one. Newer means ahead by 1 to 32767 modulo 65536 (serial number arithmetic, RFC 1982), so the comparison survives the wrap. Datagrams sent outside a session (`ConnectionChallenge`, `ConnectionRefused`, `ServerInformationRequest`, `ServerInformation`, `MasterProbe`) carry 0 and are not compared.
 - `flags`: `ACKNOWLEDGES` (0x01) says that `acknowledgedSequence` and `acknowledgementBits` name the datagrams the sender accepted from its peer within the session; a side sets it from the first datagram it accepted. `GUARANTEED` (0x02) says that the datagram holds guaranteed messages (see [Guaranteed messages](#ordered-messages)). `COMPRESSED` (0x04) says that the body is a zstd frame (see [Compression](#compression)). The other five bits are 0.
 - `acknowledgedSequence` is the newest sequence the sender accepted from its peer, and bit n of `acknowledgementBits` (bit 0 the least significant) is set when the datagram n + 1 before it was accepted too, so a header names the 33 newest datagrams. A datagram dropped for its sequence, late or duplicated, is never acknowledged.
 
@@ -101,19 +101,19 @@ A received datagram goes through these checks in order. No buffer is sized from 
 |---|---|
 | The datagram holds 25 to 1200 bytes | dropped |
 | `protocolId` is `RTYP` | dropped |
-| `version` is 6 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
+| `version` is 9 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
 | `COMPRESSED` is set | the server drops the datagram; the client decodes the body and clears the flag, or drops the datagram when it cannot (see [Compression](#compression)) |
 | `flags` has no bit but `ACKNOWLEDGES` and `GUARANTEED`, once `COMPRESSED` is cleared | dropped |
 | The message sizes add up exactly to the end of the datagram | dropped |
-| The sender is known, or the datagram holds a `ConnectionRequest` or a `ServerInformationRequest` | dropped |
-| Within a session, `sessionToken` is the token of the session (a `ConnectionRequest` or a `ServerInformationRequest` may carry 0) | dropped and counted |
+| The sender is known, or the datagram holds a `ConnectionRequest`, a `ServerInformationRequest` or a `MasterProbe` | dropped |
+| Within a session, `sessionToken` is the token of the session (a `ConnectionRequest`, a `ServerInformationRequest` or a `MasterProbe` may carry 0) | dropped and counted |
 | Within a session, `sequence` is newer than the newest one accepted from that peer | dropped |
 | The message type is listed below | that message is skipped, the next one is read |
 | The payload has the size its type requires and every value is in range | that message is dropped |
 
 The token is checked before the sequence, so a forged datagram never moves the counter. The server reads the acknowledgements of a datagram only once it passed every check above, so a forged or replayed datagram acknowledges nothing. A datagram dropped for its sequence is not heard from the peer: it does not restart the silence count of [A session](#a-session).
 
-The server measures the loss rate of each player from the gaps in `sequence`. Each datagram it accepts counts as received, and the sequences it skips over count as lost; every 100 datagrams counted, received or lost, it takes the share lost as the loss rate of that player and starts counting again. A datagram that arrives late and is dropped stays counted as lost. Nothing is added to the wire. The server never sends a sender that did not prove its address more bytes than the datagram it answers, so a forged source address cannot turn it into an amplifier: a `ConnectionRequest` holds at least 38 bytes, and every answer to a request without a valid cookie at most 33 (`ConnectionChallenge`). Only a request with a valid cookie gets a `ConnectionAccepted`, which may be larger (see [Connection](#connection)). A `ServerInformationRequest` is padded to 106 bytes, and its answer holds at most 106 (see [Server information](#server-information)). A client that receives a datagram of another version decodes nothing in it. While it connects to the server that sent it, it ends the attempt and reports both version numbers to the player: its own, and the one at offset 4; within a session it drops it, so a datagram forged with the address of the server cannot end the session.
+The server measures the loss rate of each player from the gaps in `sequence`. Each datagram it accepts counts as received, and the sequences it skips over count as lost; every 100 datagrams counted, received or lost, it takes the share lost as the loss rate of that player and starts counting again. A datagram that arrives late and is dropped stays counted as lost. Nothing is added to the wire. The server never sends a sender that did not prove its address more bytes than the datagram it answers, so a forged source address cannot turn it into an amplifier: a `ConnectionRequest` holds at least 38 bytes, and every answer to a request without a valid cookie at most 33 (`ConnectionChallenge`). Only a request with a valid cookie gets a `ConnectionAccepted`, which may be larger (see [Connection](#connection)). A `ServerInformationRequest` is padded to 106 bytes, and its answer holds at most 106 (see [Server information](#server-information)); a `MasterProbe` gets no answer (see [Probe of the master](#probe-of-the-master)). A client that receives a datagram of another version decodes nothing in it. While it connects to the server that sent it, it ends the attempt and reports both version numbers to the player: its own, and the one at offset 4; within a session it drops it, so a datagram forged with the address of the server cannot end the session.
 
 ## Messages
 
@@ -130,7 +130,8 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 9 | `PlayerInput` | `inputNumber` `u32`, `actions` `u8`, `earlierCount` `u8`, then `earlierCount` times `actions` `u8` | 60 times per second during a game |
 | 17 | `GameLoaded` | none | with a `PlayerInput`, at most every 100 ms, from the first one after `GameStarted` until the first state (`WorldState` or `DeltaWorldState`) arrives |
 | 18 | `LeaderboardRequest` | `playerCount` `u8` (1 to 4), `difficulty` `string` | when the player opens or changes a leaderboard, then every 500 ms until an answer; the client gives up after 5 s |
-| 24 | `ServerInformationRequest` | `sentAt` `u32`, then `padding`, 77 bytes of 0 (see [Server information](#server-information)) | by anyone, outside any session, to learn what a server is and its round trip: a client that lists the servers, the master that checks a server answers |
+| 24 | `ServerInformationRequest` | `sentAt` `u32`, then `padding`, 77 bytes of 0 (see [Server information](#server-information)) | by anyone, outside any session, to learn what a server is and its round trip: a client that lists the servers |
+| 29 | `MasterProbe` | `secret` `u64`, `token` `u64` (see [Probe of the master](#probe-of-the-master)) | by the master, outside any session, to the registered address and UDP port of a game server, after each heartbeat it accepts, at most once a second |
 
 ### Server to client
 
@@ -180,6 +181,7 @@ A message is accepted only when its payload has exactly the size its fields add 
 | `ServerInformationRequest` | the payload is 81 bytes: `sentAt`, then 77 bytes of 0; a shorter or longer one, or a byte of `padding` other than 0, is invalid |
 | `ServerInformation` | `gameVersion` and `name` are 1 to 32 bytes of valid UTF-8, no control character; `playerCount` is at most 4 times `gameCount`, and `playerCount` plus `freeSeatCount` too |
 | `GameStatus` | `state` is in the table of its message; at most 4 nicknames, each following the rules of a nickname; the measures byte sets no bit above bit 2, and the payload ends after the last measure it announces |
+| `MasterProbe` | the payload is 16 bytes: `secret`, then `token`; a shorter or longer one is invalid |
 
 A `LobbyState` or a `GameEnded` with no player is well formed; a `WorldState` too, while the game has none. A `LeaderboardAnswer` with no row is well formed.
 
@@ -191,7 +193,7 @@ The server reads a request only from a player with a session, in any state of th
 
 ### Server information
 
-Anyone may ask a server what it is, without a session, on the port of its supervisor; a game process answers none: a client measures its ping to the servers of the master this way, since the server map places every server by its ping: one request to each server of this version the master lists, at each reading of the list (every 15 s and on R), while the rest of their information comes from the master; and the master checks that a server still answers. A `ServerInformationRequest` carries `sentAt`, the time it leaves on the clock of its sender, in microseconds modulo 2^32, as a `Heartbeat` does (see [Round trip](#round-trip)), with a session token and a `sequence` of 0. The server keeps nothing and answers with one `ServerInformation`, to the address and port the request came from:
+Anyone may ask a server what it is, without a session, on the port of its supervisor; a game process answers none: a client measures its ping to the servers of the master this way, since the server map places every server by its ping: one request to each server of this version the master lists, at each reading of the list (every 15 s and on R), while the rest of their information comes from the master. A `ServerInformationRequest` carries `sentAt`, the time it leaves on the clock of its sender, in microseconds modulo 2^32, as a `Heartbeat` does (see [Round trip](#round-trip)), with a session token and a `sequence` of 0. The server keeps nothing and answers with one `ServerInformation`, to the address and port the request came from:
 
 | Field | Holds |
 |---|---|
@@ -210,6 +212,21 @@ The asker reads the round trip as the time since the request left, less `heldFor
 - A datagram gets one answer, to its first `ServerInformationRequest`; one that also holds a `ConnectionRequest` is answered as a connection request only.
 - The requests spend the limit of the connection requests of their address and port: one sender places 11 requests of either kind at once, then 4 a second (see [A sender that sends too much](#a-sender-that-sends-too-much)).
 - Nothing on this page sends a request again: an asker that gets no answer asks again when it chooses.
+
+### Probe of the master
+
+The master checks that the UDP port of a game server can be reached from outside, without a session and without listening on UDP itself. After each heartbeat it accepts over HTTP, it sends the address and UDP port the server registered with one `MasterProbe`, with a session token and a `sequence` of 0:
+
+| Field | Holds |
+|---|---|
+| `secret` | the `probeSecret` the server registered with (see [Master](/R-Type/master/#probing-the-game-servers-masterprobemodule)) |
+| `token` | a keyed hash of the address, the port and the current 5-second window, which the master recomputes instead of keeping it |
+
+The server answers nothing over UDP. It keeps the token of a probe whose `secret` is its own, and sends it back once, as `probeToken`, in its next heartbeat over HTTP; the master accepts a token in its window and the two after it. A probe whose `secret` is another is dropped, so a forged probe never replaces the token of the master.
+
+- The datagram of a probe is 41 bytes: the header, the prefix of the message and 16 bytes of payload. The master sends it to an address that just sent it a heartbeat over HTTP, a larger message, and never more than one per second to one address and port.
+- A probe spends the limit of the requests of its address and port, as a `ConnectionRequest` does (see [A sender that sends too much](#a-sender-that-sends-too-much)); the server reads at most 16 per tick.
+- A datagram that also holds a `ConnectionRequest` or a `ServerInformationRequest` is read as that request only, and its probe is ignored.
 
 ### Connection
 
@@ -432,7 +449,7 @@ This section gathers what each side does when something goes wrong, from a datag
 |---|---|---|
 | A datagram that fails one of the first checks of [Receiving a datagram](#receiving-a-datagram): size, `protocolId`, `flags`, message sizes | drops the datagram | nothing |
 | A datagram of another `version` | drops the datagram; a client connecting to the server that sent it ends the attempt and tells the player both version numbers, its own and the one at offset 4 | from the server to an unknown sender, `ConnectionRefused` (`IncompatibleVersion`), under the size condition of [Receiving a datagram](#receiving-a-datagram); otherwise nothing |
-| A datagram from an unknown sender that holds neither a `ConnectionRequest` nor a `ServerInformationRequest` | drops the datagram | nothing |
+| A datagram from an unknown sender that holds neither a `ConnectionRequest`, a `ServerInformationRequest` nor a `MasterProbe` | drops the datagram | nothing |
 | Within a session, another `sessionToken`, or a `sequence` that is not newer | drops the datagram; a wrong token is counted | nothing |
 | A message of an unknown type | skips that message and reads the next one | nothing |
 | A message of a type that only the other side receives, such as `ConnectionAccepted` reaching the server or `PlayerInput` reaching a client | skips that message, as if its type were unknown | nothing |
@@ -470,7 +487,7 @@ The server limits what each sender may send, so that one sender cannot crowd out
 
 | Datagrams | At once | Then | Banned after |
 |---|---|---|---|
-| holding a `ConnectionRequest` or a `ServerInformationRequest`, whatever its token, or of another `version`, from one address and port | 11 | 4 a second | 20 dropped within a second |
+| holding a `ConnectionRequest`, a `ServerInformationRequest` or a `MasterProbe`, whatever its token, or of another `version`, from one address and port | 11 | 4 a second | 20 dropped within a second |
 | carrying the session token of a player, without a `ConnectionRequest` | 60 | 120 a second | 60 dropped within a second |
 
 A datagram past its limit is dropped without an answer. A ban lasts 10 s: every datagram of that kind from that sender is dropped until then, and sending more does not lengthen it. A client that keeps to this page stays below these limits: it sends a request every 500 ms and the answer to each challenge, after a stall of the server the answers to the ten requests of its attempt at once, and 60 inputs a second during a game. The datagrams of a banned player never reach its session, so the server marks the player away after `SESSION_TIMEOUT` (5 s) and keeps its seat, since the ban ends before the 20 s that free it. Whoever uses the address of a player without its token never spends the limit of the player: a `ConnectionRequest` spends the limit of that address, and any other datagram is dropped before any limit. These values are **provisional**, and follow from the rates of this page: the server derives them from the interval between two requests, the 5 s of an attempt and the 60 inputs a second (`src/network/Handshake/RateLimit/RateLimitConstants.hpp`). Code must read them.
@@ -556,6 +573,7 @@ Only the messages of [Ordered messages](#ordered-messages) are sent again until 
 | `Heartbeat` | the next one, whose echo measures the round trip again | 500 ms |
 | `RoundTrips` | the next one | 500 ms |
 | `ServerInformationRequest`, or its answer | not corrected by the protocol: the asker asks again when it chooses, and one ping is missing until then | — |
+| `MasterProbe` | not corrected: the next heartbeat carries no token, and the master sends another probe after it | two lost in a row may list the server unreachable until a probe gets through |
 | `EntitySpawned` | the next `WorldState` creates the entity, with its appearance effect | 50 ms at 20 per second |
 | `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft` | the next send | 116.7 ms |
 | `Disconnection` | the next copy | 50 ms |
@@ -625,6 +643,8 @@ Version 8 makes a `GameStatus` say who plays the game and what its process measu
 
 Version 9 lets a player create or join a game: `ConnectionRequest` carries `kind` and `number` after the nickname, and `ConnectionRefused` gains `GameNotFound` (5) and `ServerFull` (6) (see [Supervisor](#supervisor)). A supervisor now refuses an `AnyGame` with `ServerFull` where it answered `GameFull` when its 8 games ran full. The smallest request grows from 35 to 38 bytes, which keeps every answer to a sender that did not prove its address smaller than it. A server of version 8 would refuse every request of version 9 as having bytes after its nickname, so `version` became 9, and the server answers a client of version 8 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same.
 
+`MasterProbe` (type 29) did not change `version`: a server of version 9 that does not know it drops it as a datagram from a sender that was not admitted and holds no connection request, sends no token back, and the master lists it as unreachable.
+
 ## Implementation status
 
 The code of this repository applies the rules above, with the exceptions listed at the end of this section.
@@ -640,7 +660,8 @@ The code of this repository applies the rules above, with the exceptions listed 
 - The client sends `LeaderboardRequest` from its leaderboard screen, and the server answers it.
 - The server answers a request with a valid cookie with the `ConnectionAccepted` of the player and the table of its entity types, at most once per 250 ms per player once accepted; the client keeps the table of its first acceptance, and leaves a server whose table names a type it has no sheet for.
 - The server limits the datagrams of each address and port, and of each player, on its network thread, as [A sender that sends too much](#a-sender-that-sends-too-much) says.
-- The supervisor answers `ServerInformationRequest` as [Server information](#server-information) describes, and a game process does not. The server map of the client sends one to each server of this version the master lists, once per reading of the list (see [Client](/R-Type/client/#server-map-servermapscreen-iservercatalog-igamecatalog)); the probe of the master is not written.
+- The supervisor answers `ServerInformationRequest` as [Server information](#server-information) describes, and a game process does not. The server map of the client sends one to each server of this version the master lists, once per reading of the list (see [Client](/R-Type/client/#server-map-servermapscreen-iservercatalog-igamecatalog)).
+- The master sends `MasterProbe`, and the server keeps its token and sends it back in its heartbeat, as [Probe of the master](#probe-of-the-master) describes.
 
 What the programs do not do yet is listed at the end of [A peer disappears](#a-peer-disappears).
 

@@ -165,6 +165,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-verify-the-premise-before-fixing-downstream.md`
 
 **Execution (shell, git, build) — `fix/execution/`**
+- `fix/execution/fix-execution-a-cmake-loop-tests-the-length-of-its-list.md`
 - `fix/execution/fix-execution-a-script-reading-repository-text-names-its-encoding.md`
 - `fix/execution/fix-execution-a-split-commit-carries-its-own-links.md`
 - `fix/execution/fix-execution-a-dll-exports-what-its-own-standard-compiled.md`

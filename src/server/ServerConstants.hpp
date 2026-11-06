@@ -226,16 +226,26 @@ constexpr std::size_t CONNECTION_REQUEST_QUEUE_CAPACITY = 16;
  * @brief Room of the queue of information requests waiting for the simulation
  * thread, so the most ServerInformation a tick sends.
  *
- * Provisional: a client asks only the servers the player looks at, the one
- * selected or those of the page shown, never every server of the list, and
- * the master asks each server every 30 s, so 16 a tick, 960 a second, is far
- * above what a server is asked. Above the room, the oldest are discarded,
+ * Provisional: the server map of a client asks each server the master lists
+ * once per reading of the list, every 15 s or when the player asks, and the
+ * master asks none, so 16 a tick, 960 a second, is far above what a server is
+ * asked. Above the room, the oldest are discarded,
  * each counted as InformationQueueFull, and the askers ask again; a queue of
  * its own keeps them from pushing connection requests out. One address and port
  * places at most REQUEST_BURST (11) of them between two ticks, its connection
  * requests included (see REQUEST_RATE_LIMIT).
  */
 constexpr std::size_t INFORMATION_REQUEST_QUEUE_CAPACITY = 16;
+
+/**
+ * @brief Room of the queue of probes of the master waiting for the simulation
+ * thread. The master sends a server one probe a second at most, so 16 a tick,
+ * 960 a second, leaves room for forged ones; above the room the oldest are
+ * discarded, each counted as ProbeQueueFull. One address and port places at
+ * most REQUEST_BURST (11) datagrams between two ticks, its requests included
+ * (see REQUEST_RATE_LIMIT).
+ */
+constexpr std::size_t PROBE_QUEUE_CAPACITY = 16;
 
 /**
  * @brief Room of the queue of datagrams the simulation thread leaves for the

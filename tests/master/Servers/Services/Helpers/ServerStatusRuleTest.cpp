@@ -115,8 +115,8 @@ TEST(ServerStatusRule, AServerThatMeasuresNothingIsOnline) {
 }
 
 /**
- * Given a server an admin put in maintenance, silent for 15 s and over both
- * bounds
+ * Given a server an admin put in maintenance, silent for 15 s, over both
+ * bounds, and that never answered a probe
  * When its status is computed
  * Then it is in maintenance
  */
@@ -124,6 +124,7 @@ TEST(ServerStatusRule, MaintenanceComesBeforeEverything) {
   StatusEvidence evidence =
       heardWith(measuresWith(ONE_TICK_MILLISECONDS, FIVE_PERCENT));
   evidence.maintenance = true;
+  evidence.lastProbeAnswerAt = std::nullopt;
 
   EXPECT_EQ(statusOf(evidence, HEARD_AT + SILENCE_OF_THREE_HEARTBEATS),
             ServerStatus::Maintenance);
@@ -143,18 +144,21 @@ TEST(ServerStatusRule, SilenceComesBeforeTheMeasures) {
 }
 
 /**
- * Given a server registered 14 s ago that sent no heartbeat since
+ * Given a server registered 14 s ago that sent no heartbeat since, so
+ * answered no probe
  * When its status is computed
- * Then it is online: its registration is the last news of it
+ * Then it is unreachable, not offline: its registration is the last news of
+ * it
  */
 TEST(ServerStatusRule, ARegistrationIsNewsOfTheServer) {
   StatusEvidence evidence =
       heardWith(measuresWith(PARIS_TICK_P95, PARIS_LOSS_PERCENT));
   evidence.lastHeartbeatAt = std::nullopt;
+  evidence.lastProbeAnswerAt = std::nullopt;
 
   EXPECT_EQ(
       statusOf(evidence, HEARD_AT + SILENCE_OF_THREE_HEARTBEATS - ONE_SECOND),
-      ServerStatus::Online);
+      ServerStatus::Unreachable);
 }
 
 /**
@@ -170,4 +174,72 @@ TEST(ServerStatusRule, AHeartbeatAfterTheRegistrationIsTheLastNews) {
   EXPECT_EQ(
       statusOf(evidence, HEARD_AT + SILENCE_OF_THREE_HEARTBEATS - ONE_SECOND),
       ServerStatus::Online);
+}
+
+/**
+ * Given a server heard just now that answered its last probe 14 s ago
+ * When its status is computed
+ * Then it is online: the issue waits for 15 s without a valid token
+ */
+TEST(ServerStatusRule, AnAnswerOfFourteenSecondsAgoIsOnline) {
+  StatusEvidence evidence =
+      heardWith(measuresWith(PARIS_TICK_P95, PARIS_LOSS_PERCENT));
+  evidence.lastProbeAnswerAt =
+      HEARD_AT - UNANSWERED_FOR_FIFTEEN_SECONDS + ONE_SECOND;
+
+  EXPECT_EQ(statusOf(evidence, HEARD_AT), ServerStatus::Online);
+}
+
+/**
+ * Given a server heard just now that answered its last probe 15 s ago
+ * When its status is computed
+ * Then it is unreachable
+ */
+TEST(ServerStatusRule, AnAnswerOfFifteenSecondsAgoIsUnreachable) {
+  StatusEvidence evidence =
+      heardWith(measuresWith(PARIS_TICK_P95, PARIS_LOSS_PERCENT));
+  evidence.lastProbeAnswerAt = HEARD_AT - UNANSWERED_FOR_FIFTEEN_SECONDS;
+
+  EXPECT_EQ(statusOf(evidence, HEARD_AT), ServerStatus::Unreachable);
+}
+
+/**
+ * Given a server heard just now that never answered a probe since it
+ * registered
+ * When its status is computed
+ * Then it is unreachable: no player joins it before the confirmation
+ */
+TEST(ServerStatusRule, AServerThatNeverAnsweredIsUnreachable) {
+  StatusEvidence evidence =
+      heardWith(measuresWith(PARIS_TICK_P95, PARIS_LOSS_PERCENT));
+  evidence.lastProbeAnswerAt = std::nullopt;
+
+  EXPECT_EQ(statusOf(evidence, HEARD_AT), ServerStatus::Unreachable);
+}
+
+/**
+ * Given a server over both bounds that never answered a probe
+ * When its status is computed
+ * Then it is unreachable: players cannot join it, slow or not
+ */
+TEST(ServerStatusRule, UnreachableComesBeforeDegraded) {
+  StatusEvidence evidence =
+      heardWith(measuresWith(ONE_TICK_MILLISECONDS, FIVE_PERCENT));
+  evidence.lastProbeAnswerAt = std::nullopt;
+
+  EXPECT_EQ(statusOf(evidence, HEARD_AT), ServerStatus::Unreachable);
+}
+
+/**
+ * Given a server silent for 15 s that never answered a probe
+ * When its status is computed
+ * Then it is offline: a silent server is not judged on its probes
+ */
+TEST(ServerStatusRule, OfflineComesBeforeUnreachable) {
+  StatusEvidence evidence =
+      heardWith(measuresWith(PARIS_TICK_P95, PARIS_LOSS_PERCENT));
+  evidence.lastProbeAnswerAt = std::nullopt;
+
+  EXPECT_EQ(statusOf(evidence, HEARD_AT + SILENCE_OF_THREE_HEARTBEATS),
+            ServerStatus::Offline);
 }

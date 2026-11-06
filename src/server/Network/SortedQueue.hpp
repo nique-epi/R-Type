@@ -14,6 +14,7 @@ enum class SortedQueue : std::uint8_t {
   Players,
   ConnectionRequests,
   InformationRequests,
+  Probes,
 };
 
 }  // namespace rtype::server

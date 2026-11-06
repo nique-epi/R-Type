@@ -44,8 +44,8 @@ namespace rtype::network {
  * @returns The round trip to the server that sent @p answer, which arrived at
  * @p receivedAt on the clock of the request it echoes (see
  * informationRequestAt()), as echoedRoundTrip() reads it: the time the server
- * held the request is left out, so it is the ping of the list of servers and
- * of the probe of the master. Nothing in the cases of echoedRoundTrip().
+ * held the request is left out, so it is the ping of the list of servers.
+ * Nothing in the cases of echoedRoundTrip().
  */
 [[nodiscard]] std::optional<std::chrono::microseconds> informationRoundTripOf(
     const ServerInformation& answer, std::chrono::nanoseconds receivedAt);

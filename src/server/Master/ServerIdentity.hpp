@@ -13,6 +13,9 @@ struct ServerIdentity {
   std::uint16_t udpPort{};
   /** @brief How many games it hosts. */
   std::uint16_t maximumGames{};
+  /** @brief The secret it registers with, which the probes of the master must
+   * carry: drawn once by randomProbeSecret(). */
+  std::uint64_t probeSecret{};
 };
 
 }  // namespace rtype::server

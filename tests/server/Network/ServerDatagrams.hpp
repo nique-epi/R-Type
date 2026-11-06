@@ -38,6 +38,15 @@
  * ServerInformationRequest. */
 [[nodiscard]] std::vector<std::byte> requestAndInformationRequestDatagram();
 
+/** @returns A datagram holding a probe of the master with @p header; the
+ * sorter reads no payload, so its secret and token are 0. */
+[[nodiscard]] std::vector<std::byte> probeDatagram(
+    const rtype::network::PacketHeader& header = {});
+
+/** @returns A datagram holding a ServerInformationRequest, then a probe of the
+ * master. */
+[[nodiscard]] std::vector<std::byte> informationRequestAndProbeDatagram();
+
 /** @returns A datagram holding a ReadyState, which only a player sends. */
 [[nodiscard]] std::vector<std::byte> readyDatagram(
     const rtype::network::PacketHeader& header = {});

@@ -2,29 +2,33 @@
 #include <cstdint>
 #include <string>
 #include "CookieIssuer.hpp"
+#include "CookieIssuerFixtures.hpp"
+#include "CookieWindows.hpp"
 #include "Endpoint.hpp"
 #include "HandshakeConstants.hpp"
 #include "HandshakeTestConstants.hpp"
 #include "SipHash.hpp"
 
-namespace rtype::network {
-namespace {
-
-using testing::END_OF_THAT_WINDOW;
-using testing::END_OF_THE_NEXT_WINDOW;
-using testing::OTHER_KEY_BYTE;
-using testing::OTHER_SENDER_ADDRESS;
-using testing::OTHER_SENDER_PORT;
-using testing::PROTOCOL_COOKIE_WINDOW;
-using testing::SENDER_ADDRESS;
-using testing::SENDER_PORT;
-using testing::START_OF_A_WINDOW;
-using testing::START_OF_THE_NEXT_WINDOW;
-using testing::TWO_WINDOWS_LATER;
-
-Endpoint sender() {
-  return Endpoint{.address = std::string{SENDER_ADDRESS}, .port = SENDER_PORT};
-}
+using rtype::network::COOKIE_WINDOW_DURATION;
+using rtype::network::CookieIssuer;
+using rtype::network::Endpoint;
+using rtype::network::SipHashKey;
+using rtype::network::testing::END_OF_THAT_WINDOW;
+using rtype::network::testing::END_OF_THE_NEXT_WINDOW;
+using rtype::network::testing::FIRST_SECOND_OF_THE_FOURTH_WINDOW;
+using rtype::network::testing::LAST_SECOND_OF_THE_THIRD_WINDOW;
+using rtype::network::testing::OTHER_KEY_BYTE;
+using rtype::network::testing::OTHER_SENDER_ADDRESS;
+using rtype::network::testing::OTHER_SENDER_PORT;
+using rtype::network::testing::PROBE_LIKE_WINDOWS;
+using rtype::network::testing::PROTOCOL_COOKIE_WINDOW;
+using rtype::network::testing::sender;
+using rtype::network::testing::SENDER_ADDRESS;
+using rtype::network::testing::SENDER_PORT;
+using rtype::network::testing::START_OF_A_WINDOW;
+using rtype::network::testing::START_OF_THE_NEXT_WINDOW;
+using rtype::network::testing::TOKEN_ISSUED_AT;
+using rtype::network::testing::TWO_WINDOWS_LATER;
 
 /**
  * Given the cookie window of the protocol page
@@ -137,5 +141,28 @@ TEST(CookieIssuer, RefusesTheMissingCookie) {
   EXPECT_FALSE(issuer.isValid(0, sender(), START_OF_A_WINDOW));
 }
 
-}  // namespace
-}  // namespace rtype::network
+/**
+ * Given an issuer of windows of 5 s that accepts three, and a token issued at
+ * the start of a window
+ * When the token comes back at the last second of the third window
+ * Then it is valid
+ */
+TEST(CookieIssuer, AcceptsATokenUpToItsLastWindow) {
+  const CookieIssuer issuer{PROBE_LIKE_WINDOWS};
+  const std::uint64_t token = issuer.issue(sender(), TOKEN_ISSUED_AT);
+
+  EXPECT_TRUE(issuer.isValid(token, sender(), LAST_SECOND_OF_THE_THIRD_WINDOW));
+}
+
+/**
+ * Given the same issuer and token
+ * When the token comes back at the first second of the fourth window
+ * Then it is refused
+ */
+TEST(CookieIssuer, RefusesATokenPastItsLastWindow) {
+  const CookieIssuer issuer{PROBE_LIKE_WINDOWS};
+  const std::uint64_t token = issuer.issue(sender(), TOKEN_ISSUED_AT);
+
+  EXPECT_FALSE(
+      issuer.isValid(token, sender(), FIRST_SECOND_OF_THE_FOURTH_WINDOW));
+}
