@@ -10,6 +10,7 @@
 #include "DepartureFeed.hpp"
 #include "EffectSpawner.hpp"
 #include "EnemyActionPlayer.hpp"
+#include "EntityFeedback.hpp"
 #include "EntityMessage.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityReplicator.hpp"
@@ -172,6 +173,7 @@ class GameScreen : public IScreen {
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
   EffectSpawner effects_;
+  EntityFeedback feedback_;
   EntityReplicator replicator_;
   EnemyActionPlayer enemyActions_;
   engine::SystemScheduler systems_;

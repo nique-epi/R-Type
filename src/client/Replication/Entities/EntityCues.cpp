@@ -1,6 +1,7 @@
 #include "EntityCues.hpp"
 #include <optional>
 #include <string_view>
+#include "AwaitedArrival.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
 #include "Entity.hpp"
@@ -73,7 +74,8 @@ void explode(const EntityFeedback& feedback,
              engine::ComponentRegistry& components, engine::Entity entity) {
   const game::EntityType* type = components.get<game::EntityType>(entity);
   const game::Position* position = components.get<game::Position>(entity);
-  if (type == nullptr || position == nullptr) {
+  if (type == nullptr || position == nullptr ||
+      components.has<AwaitedArrival>(entity)) {
     return;
   }
   playSound(feedback.sounds, explosionSoundOf(*type));

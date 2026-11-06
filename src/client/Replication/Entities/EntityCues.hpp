@@ -17,7 +17,7 @@ void announce(const EntityFeedback& feedback,
 /**
  * @brief Plays the explosion of @p entity, centered where it stands, and its
  * sound: T4 for a ship. Does nothing for an entity without an EntityType or a
- * Position.
+ * Position, and for one still awaiting its arrival, which was never shown.
  */
 void explode(const EntityFeedback& feedback,
              engine::ComponentRegistry& components, engine::Entity entity);

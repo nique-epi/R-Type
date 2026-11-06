@@ -6,6 +6,7 @@
 #include <vector>
 #include "AnimatedSprite.hpp"
 #include "AppearanceReference.hpp"
+#include "AwaitedArrival.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
 #include "Entity.hpp"
@@ -110,6 +111,25 @@ void moveEntity(engine::ComponentRegistry& components, engine::Entity entity,
   }
 }
 
+/** @returns Whether an entity of @p type appears only once the tick the client
+ * shows reaches its first state: a missile, which the server creates at the
+ * muzzle of a shooter the client shows a little in the past. A ship and a
+ * Bydo appear as soon as they are announced. */
+bool awaitsTheShownTick(game::EntityType type) {
+  return type == game::EntityType::PlayerMissile ||
+         type == game::EntityType::EnemyMissile;
+}
+
+/** @brief Plays the appearance of @p entity now, unless it awaits the tick
+ * shown: revealArrivedEntities() plays it then. */
+void announceUnlessAwaited(const EntityFeedback& feedback,
+                           engine::ComponentRegistry& components,
+                           engine::Entity entity) {
+  if (!components.has<AwaitedArrival>(entity)) {
+    announce(feedback, components, entity);
+  }
+}
+
 /** @returns The ship a network id names, or nothing when the client has no
  * entity of that id or it is no ship. */
 std::optional<engine::Entity> shipOf(
@@ -142,7 +162,7 @@ void EntityReplicator::apply(const network::EntitySpawned& message) {
           create(announcedBy(message));
       created.has_value()) {
     lastListedTicks_.appeared(message.entityId);
-    announce(feedback_, *components_, *created);
+    announceUnlessAwaited(feedback_, *components_, *created);
   }
 }
 
@@ -155,7 +175,7 @@ void EntityReplicator::apply(const network::WorldState& state) {
   removeUnlistedAt(state.tick);
   applyPlayers(state.players);
   for (const engine::Entity entity : created) {
-    announce(feedback_, *components_, entity);
+    announceUnlessAwaited(feedback_, *components_, entity);
   }
 }
 
@@ -213,7 +233,11 @@ engine::Entity EntityReplicator::addEntity(game::EntityType type,
   components_->add(entity, position);
   components_->add(entity, PositionHistory{});
   components_->add(entity, type);
-  components_->add(entity, std::move(look.sprite));
+  if (awaitsTheShownTick(type)) {
+    components_->add(entity, AwaitedArrival{.sprite = std::move(look.sprite)});
+  } else {
+    components_->add(entity, std::move(look.sprite));
+  }
   components_->add(entity, look.animation);
   return entity;
 }

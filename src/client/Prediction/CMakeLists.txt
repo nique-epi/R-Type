@@ -1,4 +1,5 @@
 add_library(rtype_client_prediction STATIC
+  ArrivalReveal.cpp
   InterpolationClock.cpp
   OwnShip.cpp
   OwnShipPredictor.cpp
