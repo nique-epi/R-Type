@@ -2,7 +2,6 @@
 
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
-#include <string_view>
 #include <vector>
 #include "ColoredPixel.hpp"
 #include "IInterfaceCanvas.hpp"

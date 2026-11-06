@@ -86,7 +86,7 @@ ServerTooltip tooltipOf(const ServerRow& server, sf::Vector2i star,
                                                               : OPEN_GAMES_HINT,
                    .color = HUD_CYAN});
   const bool onTheLeft = star.x > BUBBLE_FLIP_X;
-  ServerTooltip bubble{
+  const ServerTooltip bubble{
       .topLeft = {onTheLeft ? star.x - BUBBLE_OFFSET.x - BUBBLE_WIDTH
                             : star.x + BUBBLE_OFFSET.x,
                   star.y + BUBBLE_OFFSET.y},
