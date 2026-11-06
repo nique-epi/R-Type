@@ -239,6 +239,11 @@ set(CPACK_STRIP_FILES ON)
 # One archive per component; each package config lists a single one.
 set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
 set(CPACK_DMG_VOLUME_NAME "R-Type")
+# The window the disk image opens on: the sky of the game, the app on the left,
+# Applications on the right and an arrow between them. make_layout.py writes
+# both files; the .DS_Store finds the background by the volume name above.
+set(CPACK_DMG_BACKGROUND_IMAGE ${CMAKE_SOURCE_DIR}/packaging/disk-image/background.tiff)
+set(CPACK_DMG_DS_STORE ${CMAKE_SOURCE_DIR}/packaging/disk-image/DS_Store)
 set(CPACK_PROJECT_CONFIG_FILE ${CMAKE_SOURCE_DIR}/packaging/CPackGeneratorConfig.cmake)
 include(CPack)
 
