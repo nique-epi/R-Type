@@ -3,8 +3,6 @@
 #include <filesystem>
 #include <string>
 #include <vector>
-#include "CommandInterpreter.hpp"
-#include "ConfigurationRegistry.hpp"
 #include "GameCommand.hpp"
 #include "GameLaunch.hpp"
 #include "GameLaunchOptions.hpp"
@@ -12,11 +10,8 @@
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"
 #include "NetworkConstants.hpp"
-#include "ServerConstants.hpp"
-#include "SettingValue.hpp"
 #include "SupervisedGamesFixtures.hpp"
 #include "SupervisedGamesTestConstants.hpp"
-#include "TextSettingDefinition.hpp"
 
 using rtype::server::gameCommand;
 using rtype::server::GameLaunch;
@@ -36,9 +31,11 @@ TEST(GameCommand, GivesTheGameItsPortItsSupervisorItsTokenAndItsFiles) {
   const auto command = gameCommand(
       GameLaunchSettings{.program = PROGRAM_FOR_TESTS,
                          .folder = FOLDER_FOR_TESTS,
+                         .gameLines = {},
                          .forwardedArguments = {}},
       GameLaunch{
-          .number = 3, .port = 50123, .supervisorPort = 4242, .linkToken = 99});
+          .number = 3, .port = 50123, .supervisorPort = 4242, .linkToken = 99},
+      NO_DATABASE_SETTING);
 
   const std::filesystem::path folder{FOLDER_FOR_TESTS};
   EXPECT_EQ(command.program, std::filesystem::path{PROGRAM_FOR_TESTS});
@@ -58,26 +55,16 @@ TEST(GameCommand, GivesTheGameItsPortItsSupervisorItsTokenAndItsFiles) {
  * Then the game is told that file, not the file of the port
  */
 TEST(GameCommand, GivesTheGameTheDatabaseOfTheSupervisor) {
-  rtype::engine::CommandInterpreter commands;
-  rtype::engine::ConfigurationRegistry configuration{commands};
-  const rtype::engine::SettingValue& database =
-      configuration.declareText(rtype::engine::TextSettingDefinition{
-          .name = std::string{rtype::server::DATABASE_SETTING_NAME},
-          .defaultValue = {},
-          .help = {},
-          .validate = {}});
-  static_cast<void>(commands.execute(SET_DATABASE_LINE));
-
   const auto command =
       gameCommand(GameLaunchSettings{.program = PROGRAM_FOR_TESTS,
                                      .folder = FOLDER_FOR_TESTS,
-                                     .gameLines = nullptr,
-                                     .database = &database,
+                                     .gameLines = {},
                                      .forwardedArguments = {}},
                   GameLaunch{.number = 0,
                              .port = FIRST_GAME_PORT,
                              .supervisorPort = FIRST_SUPERVISED_PLAYER_PORT,
-                             .linkToken = FIRST_LINK_TOKEN});
+                             .linkToken = FIRST_LINK_TOKEN},
+                  DATABASE_OF_THE_SUPERVISOR);
 
   EXPECT_EQ(argumentAfter(command, rtype::engine::DATABASE_OPTION),
             DATABASE_OF_THE_SUPERVISOR);
@@ -94,13 +81,15 @@ TEST(GameCommand, GivesEachGameATrafficFileOfItsOwn) {
       GameLaunchSettings{
           .program = PROGRAM_FOR_TESTS,
           .folder = FOLDER_FOR_TESTS,
+          .gameLines = {},
           .forwardedArguments = {},
           .trafficCsvFile =
               std::filesystem::path{TRAFFIC_FILE_OF_THE_SUPERVISOR}},
       GameLaunch{.number = GAME_THREE,
                  .port = FIRST_GAME_PORT,
                  .supervisorPort = FIRST_SUPERVISED_PLAYER_PORT,
-                 .linkToken = FIRST_LINK_TOKEN});
+                 .linkToken = FIRST_LINK_TOKEN},
+      NO_DATABASE_SETTING);
 
   EXPECT_EQ(
       argumentAfter(command, rtype::network::TRAFFIC_CSV_OPTION),
@@ -120,8 +109,8 @@ TEST(GameCommand,
   const LaunchOptions supervisor =
       LaunchOptions::read(SUPERVISOR_LEVEL_NETWORK_AND_TRAFFIC);
 
-  const GameLaunchOptions game =
-      gameOptionsOf(gameCommand(settingsOf(supervisor), launchOfGameThree()));
+  const GameLaunchOptions game = gameOptionsOf(gameCommand(
+      settingsOf(supervisor), launchOfGameThree(), NO_DATABASE_SETTING));
 
   EXPECT_EQ(game.networkConditions(), supervisor.networkConditions());
   EXPECT_TRUE(std::ranges::equal(game.logOptions().forwardedArguments(),
@@ -140,8 +129,8 @@ TEST(GameCommand, TheGameWritesNoJournalWhenItsSupervisorWritesNone) {
   const LaunchOptions supervisor =
       LaunchOptions::read(SUPERVISOR_WITHOUT_JOURNAL);
 
-  const GameLaunchOptions game =
-      gameOptionsOf(gameCommand(settingsOf(supervisor), launchOfGameThree()));
+  const GameLaunchOptions game = gameOptionsOf(gameCommand(
+      settingsOf(supervisor), launchOfGameThree(), NO_DATABASE_SETTING));
 
   EXPECT_TRUE(std::ranges::equal(game.logOptions().forwardedArguments(),
                                  SUPERVISOR_WITHOUT_JOURNAL));

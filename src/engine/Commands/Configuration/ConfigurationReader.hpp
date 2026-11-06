@@ -43,6 +43,14 @@ namespace rtype::engine {
     const CommandInterpreter& interpreter);
 
 /**
+ * @returns The lines of @p source its rule hands over, as they were written,
+ * in the order readConfiguration() reads them: a program reads them before it
+ * builds what they are for. No line runs.
+ */
+[[nodiscard]] std::vector<std::string> handedOverLines(
+    const ConfigurationSource& source);
+
+/**
  * @brief The configuration step of a program: it reads @p source, as
  * readConfiguration() does, and keeps what happened in @p report.
  *

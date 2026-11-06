@@ -7,9 +7,6 @@
 
 namespace rtype::server {
 
-/** @brief How many game processes the supervisor runs at once. */
-constexpr std::size_t MAXIMUM_RUNNING_GAMES = 8;
-
 /** @brief How long a game process may take to send its first status before the
  * supervisor kills it. */
 constexpr engine::Duration GAME_START_TIMEOUT = std::chrono::seconds(10);

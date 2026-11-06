@@ -85,6 +85,9 @@ constexpr std::string_view GAME_TRAFFIC_FILE_INFIX = "_game_";
 /** @brief How many games a game process hosts. */
 constexpr std::size_t GAME_PROCESS_GAME_COUNT = 1;
 
+/** @brief How many game processes the supervisor runs at once. */
+constexpr std::size_t MAXIMUM_RUNNING_GAMES = 8;
+
 /**
  * @brief Launch option followed by the seed the random draws of the games start
  * from, a whole number from 0 to 4294967295.

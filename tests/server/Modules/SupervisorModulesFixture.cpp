@@ -27,6 +27,7 @@
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerInformation.hpp"
+#include "ServerRoleConstants.hpp"
 #include "SupervisorModules.hpp"
 #include "SupervisorModulesTestConstants.hpp"
 #include "TimeConstants.hpp"
@@ -44,11 +45,7 @@ SupervisorModulesFixture::~SupervisorModulesFixture() {
 
 void SupervisorModulesFixture::writeConfiguration(
     const std::vector<std::string>& lines) const {
-  std::string text;
-  for (const std::string& line : lines) {
-    text += line + '\n';
-  }
-  folder_.write(rtype::server::SERVER_CONFIGURATION_FILE_NAME, text);
+  folder_.writeLines(rtype::server::SERVER_CONFIGURATION_FILE_NAME, lines);
 }
 
 std::unique_ptr<rtype::engine::Application>
@@ -60,15 +57,15 @@ SupervisorModulesFixture::supervisor(
   arguments.insert(arguments.end(), options.begin(), options.end());
   const rtype::server::LaunchOptions launchOptions =
       rtype::server::LaunchOptions::read(arguments);
-  auto modules = rtype::server::supervisorModules(launchOptions, stopRequest_,
-                                                  report_.handedOverLines);
-  auto step = rtype::engine::configurationStep(
-      rtype::engine::ConfigurationSource{
-          .file =
-              folder_.path() / rtype::server::SERVER_CONFIGURATION_FILE_NAME,
-          .forcedLines = launchOptions.forcedLines(),
-          .handOver = rtype::server::gameLineRule(modules)},
-      report_);
+  const rtype::engine::ConfigurationSource configuration{
+      .file = folder_.path() / rtype::server::SERVER_CONFIGURATION_FILE_NAME,
+      .forcedLines = launchOptions.forcedLines(),
+      .handOver =
+          rtype::server::gameLineRule(rtype::server::SUPERVISOR_MODULE_NAMES)};
+  auto modules = rtype::server::supervisorModules(
+      launchOptions, stopRequest_,
+      rtype::engine::handedOverLines(configuration));
+  auto step = rtype::engine::configurationStep(configuration, report_);
   return std::make_unique<rtype::engine::Application>(
       rtype::engine::LoopStages(rtype::server::SERVER_LOOP_STAGES),
       std::move(modules), std::move(step));

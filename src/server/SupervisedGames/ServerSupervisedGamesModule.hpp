@@ -15,6 +15,7 @@
 #include "IProcessLauncher.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
+#include "SettingValue.hpp"
 #include "StopPause.hpp"
 #include "SupervisedGame.hpp"
 #include "SupervisedGamesWatch.hpp"
@@ -69,7 +70,7 @@ class ServerSupervisedGamesModule final : public engine::IModule {
   void install(engine::InstallContext& context) override;
 
   /**
-   * @brief Writes the lines of GameLaunchSettings::gameLines to the file of
+   * @brief Writes GameLaunchSettings::gameLines to the file of
    * commands of the games, replacing it.
    * @throws GameConfigurationWriteException when the file cannot be written:
    * the supervisor then stops, as it does when its journal or a database
@@ -93,6 +94,7 @@ class ServerSupervisedGamesModule final : public engine::IModule {
   SupervisedGamesWatch watch_{registry_};
   std::optional<GameSpawner> spawner_;
   logging::Logger logger_;
+  const engine::SettingValue* database_{nullptr};
   IDatagramSender* sender_{nullptr};
   IPlayerAdmission* admission_{nullptr};
   const IListeningPort* listeningPort_{nullptr};

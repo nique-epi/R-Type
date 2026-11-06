@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 #include "BoostProcessLauncher.hpp"
 #include "EngineException.hpp"
@@ -33,17 +34,15 @@ namespace {
  * @throws engine::UnknownExecutablePathException when the system does not tell
  * where the executable is.
  */
-GameLaunchSettings gameLaunchSettings(
-    const LaunchOptions& launchOptions,
-    const std::vector<std::string>& gameLines) {
+GameLaunchSettings gameLaunchSettings(const LaunchOptions& launchOptions,
+                                      std::vector<std::string> gameLines) {
   const std::optional<std::filesystem::path> program = engine::executablePath();
   if (!program.has_value()) {
     throw engine::UnknownExecutablePathException();
   }
   return GameLaunchSettings{.program = *program,
                             .folder = engine::executableFolder(),
-                            .gameLines = &gameLines,
-                            .database = nullptr,
+                            .gameLines = std::move(gameLines),
                             .forwardedArguments = launchOptions.gameArguments(),
                             .trafficCsvFile = launchOptions.trafficCsvFile()};
 }
@@ -52,7 +51,7 @@ GameLaunchSettings gameLaunchSettings(
 
 std::vector<std::unique_ptr<engine::IModule>> supervisorModules(
     const LaunchOptions& launchOptions, StopRequest& stopRequest,
-    const std::vector<std::string>& gameLines) {
+    std::vector<std::string> gameLines) {
   std::vector<std::unique_ptr<engine::IModule>> modules;
   modules.push_back(
       std::make_unique<ServerLoggerModule>(launchOptions.logOptions()));
@@ -60,7 +59,7 @@ std::vector<std::unique_ptr<engine::IModule>> supervisorModules(
       network::DEFAULT_SERVER_PORT, stopRequest,
       launchOptions.networkConditions()));
   modules.push_back(std::make_unique<ServerSupervisedGamesModule>(
-      gameLaunchSettings(launchOptions, gameLines),
+      gameLaunchSettings(launchOptions, std::move(gameLines)),
       std::make_unique<BoostProcessLauncher>(),
       [](engine::Duration pause) { std::this_thread::sleep_for(pause); }));
   modules.push_back(std::make_unique<ServerSupervisorLobbyModule>());

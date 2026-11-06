@@ -38,7 +38,6 @@ using rtype::server::testing::sentTo;
 
 void ServerSupervisedGamesFixture::startSupervisor(
     std::vector<std::string> gameLines) {
-  gameLines_ = std::move(gameLines);
   std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
   modules.push_back(
       std::make_unique<rtype::server::ServerLoggerModule>(journalOptions()));
@@ -51,8 +50,7 @@ void ServerSupervisedGamesFixture::startSupervisor(
       std::make_unique<rtype::server::ServerSupervisedGamesModule>(
           rtype::server::GameLaunchSettings{.program = PROGRAM_FOR_TESTS,
                                             .folder = folder_.path(),
-                                            .gameLines = &gameLines_,
-                                            .database = nullptr,
+                                            .gameLines = std::move(gameLines),
                                             .forwardedArguments = {}},
           std::move(launcher), [](rtype::engine::Duration) {}));
   modules.push_back(

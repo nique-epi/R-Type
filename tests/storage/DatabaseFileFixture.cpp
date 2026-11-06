@@ -10,17 +10,6 @@
 #include "DatabaseFileTestConstants.hpp"
 #include "TemporaryFolder.hpp"
 
-namespace {
-
-/** @returns The flags that open a file for writing and create it when it does
- * not exist; SQLiteCpp declares each as a signed value. */
-int readWriteOrCreate() {
-  return static_cast<int>(static_cast<unsigned int>(SQLite::OPEN_READWRITE) |
-                          static_cast<unsigned int>(SQLite::OPEN_CREATE));
-}
-
-}  // namespace
-
 std::string DatabaseFileFixture::file() const {
   return (folder_.path() / rtype::storage::testing::DATABASE_FILE_NAME)
       .string();
@@ -39,7 +28,7 @@ int DatabaseFileFixture::numberFrom(SQLite::Database& database,
 SQLite::Database DatabaseFileFixture::openWhileAnotherConnectionWrites(
     std::span<const std::string_view> migrations,
     std::string_view write) const {
-  SQLite::Database other{file(), readWriteOrCreate()};
+  SQLite::Database other{file(), rtype::storage::readWriteOrCreate()};
   other.exec(std::string{rtype::storage::testing::BEGIN_IMMEDIATE});
   other.exec(std::string{write});
   std::future<SQLite::Database> opening =

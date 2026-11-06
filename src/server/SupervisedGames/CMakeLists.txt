@@ -31,6 +31,7 @@ target_link_libraries(rtype_server_supervised_games_module
     rtype_server_processes
   PRIVATE
     rtype_engine_launch_arguments
+    rtype_engine_paths
     rtype_network_constants
     rtype_network_context
     rtype_network_datagram_codec
@@ -42,6 +43,7 @@ target_link_libraries(rtype_server_supervised_games_module
     rtype_network_udp_socket
     rtype_server_constants
     rtype_server_exceptions
+    rtype_server_storage_module
 )
 
 rtype_enable_warnings(rtype_server_supervised_games_module)

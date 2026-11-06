@@ -74,8 +74,15 @@ class GameRegistry {
 
   [[nodiscard]] std::span<const SupervisedGame> all() const;
 
+  /** @returns A number that changes whenever what the master and the
+   * information requests are told may have changed: a game opened, a game
+   * that left, a status taken. The seats held and the time a game waited do
+   * not change it. */
+  [[nodiscard]] std::uint64_t revision() const;
+
  private:
   std::vector<SupervisedGame> games_;
+  std::uint64_t revision_{0};
 };
 
 }  // namespace rtype::server

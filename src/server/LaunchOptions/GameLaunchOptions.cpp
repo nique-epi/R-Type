@@ -39,7 +39,7 @@ engine::LaunchOption supervisorOption(GameLaunchValues& values) {
   return engine::LaunchOption{.name = SUPERVISOR_OPTION,
                               .takesValue = true,
                               .record = [&values](std::string_view port) {
-                                values.supervisorPort =
+                                values.supervisorLink.port =
                                     network::portFromText(port);
                               }};
 }
@@ -61,7 +61,7 @@ engine::LaunchOption linkTokenOption(GameLaunchValues& values) {
           throw engine::InvalidLaunchOptionValueException(
               std::string(LINK_TOKEN_OPTION), std::string(text));
         }
-        values.linkToken = token;
+        values.supervisorLink.token = token;
       }};
 }
 
@@ -74,10 +74,10 @@ void requireSupervisorLink(const GameLaunchValues& values) {
   if (values.helpRequested) {
     return;
   }
-  if (!values.supervisorPort.has_value()) {
+  if (values.supervisorLink.port == 0) {
     throw MissingSupervisorLinkException(std::string{SUPERVISOR_OPTION});
   }
-  if (!values.linkToken.has_value()) {
+  if (values.supervisorLink.token == network::NO_SESSION_TOKEN) {
     throw MissingSupervisorLinkException(std::string{LINK_TOKEN_OPTION});
   }
 }
@@ -111,8 +111,7 @@ GameLaunchOptions GameLaunchOptions::read(
   GameLaunchOptions options{GameLaunchValues{.forcedLines = {},
                                              .trafficCsvFile = std::nullopt,
                                              .configurationFile = std::nullopt,
-                                             .supervisorPort = std::nullopt,
-                                             .linkToken = std::nullopt,
+                                             .supervisorLink = {},
                                              .helpRequested = false}};
   const std::array launchOptions{
       portOption(options.values_.forcedLines),
@@ -155,9 +154,7 @@ const std::vector<std::string>& GameLaunchOptions::forcedLines() const {
 }
 
 SupervisorLink GameLaunchOptions::supervisorLink() const {
-  return SupervisorLink{
-      .port = values_.supervisorPort.value_or(0),
-      .token = values_.linkToken.value_or(network::NO_SESSION_TOKEN)};
+  return values_.supervisorLink;
 }
 
 bool GameLaunchOptions::helpRequested() const { return values_.helpRequested; }

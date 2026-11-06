@@ -25,7 +25,7 @@ std::size_t countOf(std::span<const std::string> names,
  * names beyond those the game had when the seat was given. */
 std::size_t arrivalsFor(const SeatReservation& reservation,
                         std::span<const std::string> seated) {
-  const std::size_t now = countOf(seated, reservation.nickname);
+  const std::size_t now = countOf(seated, reservation.request.nickname);
   return now > reservation.namesakesBefore ? now - reservation.namesakesBefore
                                            : 0;
 }
@@ -33,8 +33,10 @@ std::size_t arrivalsFor(const SeatReservation& reservation,
 }  // namespace
 
 bool SeatReservations::holds(const network::Endpoint& sender) const {
-  return std::ranges::find(reservations_, sender, &SeatReservation::sender) !=
-         reservations_.end();
+  return std::ranges::any_of(reservations_,
+                             [&sender](const SeatReservation& reservation) {
+                               return reservation.request.sender == sender;
+                             });
 }
 
 void SeatReservations::reserve(const SeatRequest& request,
@@ -43,8 +45,7 @@ void SeatReservations::reserve(const SeatRequest& request,
     return;
   }
   reservations_.push_back(
-      SeatReservation{.sender = request.sender,
-                      .nickname = request.nickname,
+      SeatReservation{.request = request,
                       .namesakesBefore = countOf(seated, request.nickname),
                       .age = engine::Duration::zero()});
 }
@@ -52,17 +53,24 @@ void SeatReservations::reserve(const SeatRequest& request,
 std::size_t SeatReservations::count() const { return reservations_.size(); }
 
 void SeatReservations::settle(std::span<const std::string> seated) {
-  std::vector<SeatReservation> kept;
+  if (reservations_.empty()) {
+    return;
+  }
   std::vector<std::string> ended;
-  for (SeatReservation& reservation : reservations_) {
-    if (arrivalsFor(reservation, seated) >
-        countOf(ended, reservation.nickname)) {
-      ended.push_back(reservation.nickname);
+  std::size_t kept = 0;
+  for (std::size_t index = 0; index < reservations_.size(); ++index) {
+    const std::string& nickname = reservations_[index].request.nickname;
+    if (arrivalsFor(reservations_[index], seated) > countOf(ended, nickname)) {
+      ended.push_back(nickname);
       continue;
     }
-    kept.push_back(std::move(reservation));
+    if (kept != index) {
+      reservations_[kept] = std::move(reservations_[index]);
+    }
+    ++kept;
   }
-  reservations_ = std::move(kept);
+  reservations_.erase(reservations_.begin() + static_cast<std::ptrdiff_t>(kept),
+                      reservations_.end());
 }
 
 void SeatReservations::age(engine::Duration elapsed) {

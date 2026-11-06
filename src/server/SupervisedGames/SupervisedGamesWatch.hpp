@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <vector>
@@ -29,7 +30,8 @@ class SupervisedGamesWatch final : public IServerOccupancy {
   explicit SupervisedGamesWatch(const GameRegistry& registry);
 
   /** @brief Publishes the list and the measures of the games when they
-   * changed since they were published last, and both the first time. */
+   * changed since they were published last, and both the first time; while
+   * the revision of the registry stays the same, nothing is worked out. */
   void publishIfChanged();
 
   [[nodiscard]] ServerOccupancy occupancy() const override;
@@ -46,6 +48,7 @@ class SupervisedGamesWatch final : public IServerOccupancy {
   LatestServerMeasures measures_;
   std::optional<std::vector<network::HostedGame>> publishedGames_;
   std::optional<network::ServerMeasures> publishedMeasures_;
+  std::optional<std::uint64_t> readRevision_;
 };
 
 }  // namespace rtype::server

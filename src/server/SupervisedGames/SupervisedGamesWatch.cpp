@@ -15,6 +15,10 @@ SupervisedGamesWatch::SupervisedGamesWatch(const GameRegistry& registry)
     : registry_(registry) {}
 
 void SupervisedGamesWatch::publishIfChanged() {
+  if (readRevision_ == registry_.get().revision()) {
+    return;
+  }
+  readRevision_ = registry_.get().revision();
   std::vector<network::HostedGame> games =
       supervisedHostedGames(registry_.get().all());
   if (games != publishedGames_) {

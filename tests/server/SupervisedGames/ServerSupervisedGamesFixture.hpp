@@ -59,7 +59,6 @@ class ServerSupervisedGamesFixture : public ServerModuleFixture {
 
  private:
   TemporaryFolder folder_;
-  std::vector<std::string> gameLines_;
   std::unique_ptr<rtype::engine::Application> application_;
   RecordingNetworkModule* network_{nullptr};
   RecordingProcessLauncher* launcher_{nullptr};

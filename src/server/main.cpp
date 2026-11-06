@@ -18,7 +18,6 @@
 #include "GameLaunchOptions.hpp"
 #include "GameLineRule.hpp"
 #include "GameProcessModules.hpp"
-#include "HandOverRule.hpp"
 #include "IModule.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
@@ -32,6 +31,7 @@
 #include "ServerMode.hpp"
 #include "ServerModeChoice.hpp"
 #include "ServerModeOption.hpp"
+#include "ServerRoleConstants.hpp"
 #include "StopReason.hpp"
 #include "StopRequest.hpp"
 #include "StopSignals.hpp"
@@ -52,22 +52,14 @@ struct ProgramRun {
   std::string_view label;
   /** @brief The logger the program writes its errors with. */
   std::string_view loggerName;
-  /** @brief The file of commands the program reads; empty to read none. */
-  std::filesystem::path configurationFile;
+  /** @brief The file of commands the program reads (empty to read none), the
+   * lines of `set` its launch options force, and the rule of the lines that
+   * belong to another program (empty to hand none over). */
+  rtype::engine::ConfigurationSource configuration;
   /** @brief The stages of the loop of the program. */
   std::span<const std::string_view> stages;
-  /** @brief The lines of `set` the launch options force. */
-  std::vector<std::string> forcedLines;
-  /** @brief Builds the modules, which tell the StopRequest when they fail; the
-   * report is filled by the configuration step, before the modules start. */
-  std::function<ProgramModules(rtype::server::StopRequest&,
-                               const rtype::engine::ConfigurationReport&)>
-      modules;
-  /** @brief Gives, from the modules built, the rule of the lines that belong
-   * to another program; empty for a program that hands no line over. */
-  std::function<rtype::engine::HandOverRule(
-      std::span<const std::unique_ptr<rtype::engine::IModule>>)>
-      handOver;
+  /** @brief Builds the modules, which tell the StopRequest when they fail. */
+  std::function<ProgramModules(rtype::server::StopRequest&)> modules;
 };
 
 /**
@@ -78,24 +70,6 @@ void reportFailure(const ProgramRun& program, const std::string& text) {
   const rtype::logging::Logger logger{std::string{program.loggerName}};
   logger.error(program.label, " stopped: ", text);
   std::cerr << program.label << " stopped: " << text << '\n';
-}
-
-/**
- * @returns The configuration step of @p program, which reads its file and its
- * forced lines into @p report and hands over the lines its rule gives to
- * another program, @p modules being the modules it was built with.
- */
-rtype::engine::ConfigurationStep configurationStepOf(
-    const ProgramRun& program,
-    std::span<const std::unique_ptr<rtype::engine::IModule>> modules,
-    rtype::engine::ConfigurationReport& report) {
-  return rtype::engine::configurationStep(
-      rtype::engine::ConfigurationSource{
-          .file = program.configurationFile,
-          .forcedLines = program.forcedLines,
-          .handOver = program.handOver ? program.handOver(modules)
-                                       : rtype::engine::HandOverRule{}},
-      report);
 }
 
 /**
@@ -110,16 +84,16 @@ int runUntilStopped(const ProgramRun& program) {
   int exitCode = 0;
   try {
     rtype::engine::ConfigurationReport configurationReport;
-    ProgramModules modules = program.modules(stopRequest, configurationReport);
-    rtype::engine::ConfigurationStep step =
-        configurationStepOf(program, modules, configurationReport);
+    ProgramModules modules = program.modules(stopRequest);
+    rtype::engine::ConfigurationStep step = rtype::engine::configurationStep(
+        program.configuration, configurationReport);
     rtype::engine::Application application{
         rtype::engine::LoopStages{program.stages}, std::move(modules),
         std::move(step)};
     application.start();
     rtype::engine::logConfigurationReport(
         configurationReport,
-        rtype::logging::genericText(program.configurationFile),
+        rtype::logging::genericText(program.configuration.file),
         rtype::logging::Logger{std::string{program.loggerName}});
     const rtype::server::StopReason reason = stopRequest.wait();
     application.stop();
@@ -165,23 +139,23 @@ int runGame(std::span<const std::string_view> options) {
   return runUntilStopped(ProgramRun{
       .label = rtype::server::GAME_MODE_NAME,
       .loggerName = rtype::server::SERVER_LOGGER_NAME,
-      .configurationFile =
-          launchOptions->configurationFile().value_or(std::filesystem::path{}),
+      .configuration =
+          rtype::engine::ConfigurationSource{
+              .file = launchOptions->configurationFile().value_or(
+                  std::filesystem::path{}),
+              .forcedLines = launchOptions->forcedLines(),
+              .handOver = {}},
       .stages = rtype::server::SERVER_LOOP_STAGES,
-      .forcedLines = launchOptions->forcedLines(),
-      .modules =
-          [&launchOptions](rtype::server::StopRequest& stopRequest,
-                           const rtype::engine::ConfigurationReport&) {
-            return rtype::server::gameProcessModules(*launchOptions,
-                                                     stopRequest);
-          },
-      .handOver = {}});
+      .modules = [&launchOptions](rtype::server::StopRequest& stopRequest) {
+        return rtype::server::gameProcessModules(*launchOptions, stopRequest);
+      }});
 }
 
 /**
- * @brief Runs the supervisor with @p options, or prints its usage. It reads
- * server.cfg, runs its own lines and hands the lines of the games to its
- * supervised games module, which writes them for every game.
+ * @brief Runs the supervisor with @p options, or prints its usage. It first
+ * reads the lines of server.cfg and of its launch options that belong to its
+ * games (see gameLineRule()), builds its modules with them, the supervised
+ * games module writing them for every game, then runs its own lines.
  * @returns the exit code of the supervisor.
  */
 int runSupervisor(std::span<const std::string_view> options) {
@@ -190,20 +164,23 @@ int runSupervisor(std::span<const std::string_view> options) {
   if (!launchOptions.has_value()) {
     return 0;
   }
+  const rtype::engine::ConfigurationSource configuration{
+      .file =
+          std::filesystem::path{rtype::server::SERVER_CONFIGURATION_FILE_NAME},
+      .forcedLines = launchOptions->forcedLines(),
+      .handOver =
+          rtype::server::gameLineRule(rtype::server::SUPERVISOR_MODULE_NAMES)};
   return runUntilStopped(ProgramRun{
       .label = rtype::server::SUPERVISOR_MODE_NAME,
       .loggerName = rtype::server::SERVER_LOGGER_NAME,
-      .configurationFile =
-          std::filesystem::path{rtype::server::SERVER_CONFIGURATION_FILE_NAME},
+      .configuration = configuration,
       .stages = rtype::server::SERVER_LOOP_STAGES,
-      .forcedLines = launchOptions->forcedLines(),
-      .modules =
-          [&launchOptions](rtype::server::StopRequest& stopRequest,
-                           const rtype::engine::ConfigurationReport& report) {
-            return rtype::server::supervisorModules(*launchOptions, stopRequest,
-                                                    report.handedOverLines);
-          },
-      .handOver = rtype::server::gameLineRule});
+      .modules = [&launchOptions,
+                  &configuration](rtype::server::StopRequest& stopRequest) {
+        return rtype::server::supervisorModules(
+            *launchOptions, stopRequest,
+            rtype::engine::handedOverLines(configuration));
+      }});
 }
 
 /**
@@ -219,20 +196,21 @@ int runMaster(std::span<const std::string_view> options) {
   return runUntilStopped(ProgramRun{
       .label = rtype::server::MASTER_MODE_NAME,
       .loggerName = rtype::master::MASTER_LOGGER_NAME,
-      .configurationFile =
-          std::filesystem::path{rtype::master::MASTER_CONFIGURATION_FILE_NAME},
+      .configuration =
+          rtype::engine::ConfigurationSource{
+              .file =
+                  std::filesystem::path{
+                      rtype::master::MASTER_CONFIGURATION_FILE_NAME},
+              .forcedLines = launchOptions->forcedLines(),
+              .handOver = {}},
       .stages = rtype::master::MASTER_LOOP_STAGES,
-      .forcedLines = launchOptions->forcedLines(),
-      .modules =
-          [&launchOptions](rtype::server::StopRequest& stopRequest,
-                           const rtype::engine::ConfigurationReport&) {
-            return rtype::master::masterModules(
-                launchOptions->logOptions(),
-                [&stopRequest](const std::string& reason) {
-                  stopRequest.fail(reason);
-                });
-          },
-      .handOver = {}});
+      .modules = [&launchOptions](rtype::server::StopRequest& stopRequest) {
+        return rtype::master::masterModules(
+            launchOptions->logOptions(),
+            [&stopRequest](const std::string& reason) {
+              stopRequest.fail(reason);
+            });
+      }});
 }
 
 }  // namespace

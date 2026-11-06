@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include "ModuleConstants.hpp"
 #include "PluginConstants.hpp"
 #include "ServerConstants.hpp"
 
@@ -21,5 +22,15 @@ constexpr std::array GAME_SETTING_NAMES{
  */
 constexpr std::array GAME_COMMAND_NAMES{engine::PLUGIN_COMMAND_NAME,
                                         engine::PLUGIN_FOLDER_COMMAND_NAME};
+
+/**
+ * @brief The names of the modules supervisorModules() lists, in its order,
+ * known before they are built: the rule of the lines of the games needs them
+ * to read the configuration the games module is built with.
+ */
+constexpr std::array SUPERVISOR_MODULE_NAMES{
+    LOGGER_MODULE_NAME,           NETWORK_MODULE_NAME,
+    SUPERVISED_GAMES_MODULE_NAME, SUPERVISOR_LOBBY_MODULE_NAME,
+    INFORMATION_MODULE_NAME,      MASTER_MODULE_NAME};
 
 }  // namespace rtype::server

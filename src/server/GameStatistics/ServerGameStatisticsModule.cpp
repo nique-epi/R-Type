@@ -16,6 +16,7 @@
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
 #include "ServerConstants.hpp"
+#include "TextBeforeExtension.hpp"
 #include "TextSettingDefinition.hpp"
 #include "TimeConstants.hpp"
 
@@ -70,12 +71,9 @@ std::filesystem::path ServerGameStatisticsModule::statisticsFile() const {
            (std::string{GAME_STATISTICS_FILE_PREFIX} + port +
             std::string{GAME_STATISTICS_FILE_SUFFIX});
   }
-  const std::filesystem::path configured{fileSetting_->text()};
-  std::filesystem::path name = configured.stem();
-  name += GAME_STATISTICS_PORT_SEPARATOR;
-  name += port;
-  name += configured.extension();
-  return configured.parent_path() / name;
+  return engine::withTextBeforeExtension(
+      std::filesystem::path{fileSetting_->text()},
+      std::string{GAME_STATISTICS_PORT_SEPARATOR} + port);
 }
 
 void ServerGameStatisticsModule::followEveryGame() {

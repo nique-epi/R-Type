@@ -189,3 +189,25 @@ TEST_F(ConfigurationReaderFixture, AnEmptyPathReadsNoFile) {
   EXPECT_FALSE(report.fileFound);
   EXPECT_EQ(report.executedLines, 0U);
 }
+
+/**
+ * Given the file with lines its rule hands over, and a forced line of that
+ * command
+ * When only its handed-over lines are read
+ * Then they come as written, the lines of the file first, and no line runs
+ */
+TEST_F(ConfigurationReaderFixture, HandedOverLinesAreReadWithoutRunningAny) {
+  writeFile(FILE_WITH_HANDED_OVER_LINES);
+
+  const std::vector<std::string> lines =
+      rtype::engine::handedOverLines(rtype::engine::ConfigurationSource{
+          .file = file(),
+          .forcedLines = {std::string(FORCED_HANDED_OVER_LINE)},
+          .handOver = handingOver({std::string(HANDED_OVER_COMMAND)})});
+
+  EXPECT_EQ(lines,
+            (std::vector<std::string>{std::string(FIRST_HANDED_OVER_LINE),
+                                      std::string(SECOND_HANDED_OVER_LINE),
+                                      std::string(FORCED_HANDED_OVER_LINE)}));
+  EXPECT_EQ(port().integer(), DEFAULT_PORT_VALUE);
+}

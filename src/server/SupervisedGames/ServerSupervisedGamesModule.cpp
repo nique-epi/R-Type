@@ -3,7 +3,6 @@
 #include <filesystem>
 #include <memory>
 #include <optional>
-#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -81,7 +80,7 @@ std::vector<std::string> ServerSupervisedGamesModule::dependencies() const {
 }
 
 void ServerSupervisedGamesModule::install(engine::InstallContext& context) {
-  settings_.database =
+  database_ =
       &declareDatabase(context.require<engine::ConfigurationRegistry>());
   sender_ = &context.require<IDatagramSender>();
   admission_ = &context.require<IPlayerAdmission>();
@@ -92,6 +91,7 @@ void ServerSupervisedGamesModule::install(engine::InstallContext& context) {
                                     .admission = *admission_,
                                     .supervisorPort = *listeningPort_,
                                     .settings = settings_,
+                                    .database = *database_,
                                     .freePort = freeUdpPort});
   context.provide(registry_);
   context.provide(*spawner_);
@@ -106,12 +106,10 @@ void ServerSupervisedGamesModule::install(engine::InstallContext& context) {
 void ServerSupervisedGamesModule::start() {
   const std::filesystem::path file = gameConfigurationFileOf(
       settings_.folder, listeningPort_->listeningPort());
-  const std::span<const std::string> lines =
-      settings_.gameLines == nullptr ? std::span<const std::string>{}
-                                     : std::span{*settings_.gameLines};
-  writeGameConfiguration(file, lines);
+  writeGameConfiguration(file, settings_.gameLines);
   logger_.info("configuration of the games written to ",
-               logging::genericText(file), ": ", lines.size(), " lines");
+               logging::genericText(file), ": ", settings_.gameLines.size(),
+               " lines");
 }
 
 void ServerSupervisedGamesModule::stop() {

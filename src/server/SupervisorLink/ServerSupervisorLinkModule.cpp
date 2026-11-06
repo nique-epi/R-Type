@@ -1,15 +1,11 @@
 #include "ServerSupervisorLinkModule.hpp"
 #include <algorithm>
-#include <chrono>
-#include <cmath>
 #include <cstddef>
-#include <cstdint>
-#include <limits>
 #include <optional>
-#include <ratio>
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
@@ -18,22 +14,19 @@
 #include "GameInstance.hpp"
 #include "GameState.hpp"
 #include "GameStatus.hpp"
-#include "GameStatusMeasures.hpp"
 #include "Games.hpp"
 #include "IDatagramSender.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
 #include "LatestMetrics.hpp"
+#include "LatestStatusMeasures.hpp"
 #include "MessageType.hpp"
-#include "MetricsMeasures.hpp"
-#include "MetricsReport.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "ServerConstants.hpp"
-#include "ServerMeasures.hpp"
 #include "StopRequest.hpp"
 #include "SupervisorLink.hpp"
 #include "SupervisorLinkConstants.hpp"
@@ -59,48 +52,30 @@ network::GameStatusState statusStateOf(GameState state) {
   return network::GameStatusState::WaitingForPlayers;
 }
 
-/** @returns @p milliseconds in whole microseconds, rounded to the nearest
- * and kept within the 32 bits of the wire; nothing for nothing. */
-std::optional<std::uint32_t> microsecondsOf(
-    std::optional<double> milliseconds) {
-  if (!milliseconds.has_value()) {
-    return std::nullopt;
-  }
-  const double microseconds =
-      std::chrono::duration<double, std::micro>(
-          std::chrono::duration<double, std::milli>(*milliseconds))
-          .count();
-  return static_cast<std::uint32_t>(std::clamp(
-      std::round(microseconds), 0.0,
-      static_cast<double>(std::numeric_limits<std::uint32_t>::max())));
+/** @returns Whether @p players are named @p nicknames, in that order. */
+bool namedAs(const ConnectedPlayers& players,
+             const std::vector<std::string>& nicknames) {
+  return std::ranges::equal(
+      players, nicknames, {},
+      [](const ConnectedPlayer* player) -> const std::string& {
+        return player->nickname;
+      });
 }
 
-/** @returns The measures of the newest report of @p metrics; none without the
- * metrics module, or before its first report. */
-network::GameStatusMeasures measuresOf(const LatestMetrics* metrics) {
-  if (metrics == nullptr) {
-    return {};
-  }
-  const std::optional<MetricsReport> report = metrics->value();
-  if (!report.has_value()) {
-    return {};
-  }
-  const network::ServerMeasures measures = measuresOf(*report);
-  return network::GameStatusMeasures{
-      .tickMedianMicroseconds = microsecondsOf(measures.tickP50Milliseconds),
-      .tickNinetyFifthPercentileMicroseconds =
-          microsecondsOf(measures.tickP95Milliseconds),
-      .averageRoundTripMicroseconds =
-          microsecondsOf(measures.averagePingMilliseconds)};
+/** @returns Whether @p last, the status sent last, still tells the game: the
+ * state and the measures of @p now, and the nicknames of @p players. */
+bool stillTells(const network::GameStatus& last, const network::GameStatus& now,
+                const ConnectedPlayers& players) {
+  return last.state == now.state && last.measures == now.measures &&
+         namedAs(players, last.nicknames);
 }
 
-/** @returns The status of @p game: its state, the nicknames of its connected
- * players, and the measures of @p metrics. */
-network::GameStatus statusOf(GameInstance& game, const LatestMetrics* metrics) {
-  network::GameStatus status{.state = statusStateOf(game.state()),
-                             .nicknames = {},
-                             .measures = measuresOf(metrics)};
-  for (const ConnectedPlayer* const player : game.roster().connected()) {
+/** @returns The status @p status, which holds the state and the measures,
+ * with the nicknames of @p players. */
+network::GameStatus namingPlayers(network::GameStatus status,
+                                  const ConnectedPlayers& players) {
+  status.nicknames.reserve(players.size());
+  for (const ConnectedPlayer* const player : players) {
     status.nicknames.push_back(player->nickname);
   }
   return status;
@@ -144,7 +119,7 @@ void ServerSupervisorLinkModule::install(engine::InstallContext& context) {
   sender_ = &context.require<IDatagramSender>();
   admission_ = &context.require<IPlayerAdmission>();
   tickDatagrams_ = &context.require<TickDatagrams>();
-  metrics_ = context.find<LatestMetrics>();
+  measures_ = LatestStatusMeasures{context.find<LatestMetrics>()};
   context.addWork(SIMULATION_STAGE,
                   [this](engine::Duration elapsed) { onTick(elapsed); });
 }
@@ -159,12 +134,17 @@ void ServerSupervisorLinkModule::stop() {
 
 void ServerSupervisorLinkModule::onTick(engine::Duration elapsed) {
   readSupervisorDatagrams();
-  const network::GameStatus status = statusOf(*games_->all().front(), metrics_);
-  watch_.tick(elapsed, status.nicknames.size());
+  GameInstance& game = *games_->all().front();
+  const ConnectedPlayers players = game.roster().connected();
+  watch_.tick(elapsed, players.size());
   if (const std::optional<std::string_view> reason = watch_.reasonToStop()) {
     askToStop(*reason);
   }
-  sendStatusWhenDue(elapsed, status);
+  sendStatusWhenDue(elapsed,
+                    network::GameStatus{.state = statusStateOf(game.state()),
+                                        .nicknames = {},
+                                        .measures = measures_.current()},
+                    players);
 }
 
 void ServerSupervisorLinkModule::readSupervisorDatagrams() {
@@ -180,19 +160,21 @@ void ServerSupervisorLinkModule::readSupervisorDatagrams() {
 }
 
 void ServerSupervisorLinkModule::sendStatusWhenDue(
-    engine::Duration elapsed, const network::GameStatus& status) {
+    engine::Duration elapsed, network::GameStatus status,
+    const ConnectedPlayers& players) {
   sinceStatus_ += elapsed;
-  if (sinceStatus_ < STATUS_INTERVAL && status == lastStatus_) {
+  if (sinceStatus_ < STATUS_INTERVAL &&
+      stillTells(lastStatus_, status, players)) {
     return;
   }
   sinceStatus_ = engine::Duration::zero();
-  lastStatus_ = status;
+  lastStatus_ = namingPlayers(std::move(status), players);
   sender_->queueDatagram(network::OutgoingDatagram{
       .destination = supervisor_,
       .payload = network::DatagramCodec::encode(
           network::PacketHeader{.sessionToken = link_.token,
                                 .sequence = nextSequence_++},
-          status)});
+          lastStatus_)});
 }
 
 void ServerSupervisorLinkModule::askToStop(std::string_view reason) {

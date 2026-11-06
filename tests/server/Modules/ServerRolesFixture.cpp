@@ -35,10 +35,10 @@ std::set<std::string> ServerRolesFixture::supervisorSettings() {
   const std::vector<std::string_view> arguments{
       rtype::logging::FILE_OPTION, journalText_,
       rtype::logging::NO_STDERR_OPTION};
-  return declaredSettingsOf(rtype::server::supervisorModules(
-                                rtype::server::LaunchOptions::read(arguments),
-                                stopRequest_, gameLines_),
-                            {});
+  return declaredSettingsOf(
+      rtype::server::supervisorModules(
+          rtype::server::LaunchOptions::read(arguments), stopRequest_, {}),
+      {});
 }
 
 std::set<std::string> ServerRolesFixture::gameSettings() {

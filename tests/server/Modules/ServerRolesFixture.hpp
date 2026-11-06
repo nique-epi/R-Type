@@ -56,5 +56,4 @@ class ServerRolesFixture : public ServerModuleFixture {
 
   std::string journalText_;
   rtype::server::StopRequest stopRequest_;
-  std::vector<std::string> gameLines_;
 };

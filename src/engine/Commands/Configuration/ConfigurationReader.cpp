@@ -122,6 +122,11 @@ ConfigurationReport readConfiguration(const std::filesystem::path& file,
       interpreter);
 }
 
+std::vector<std::string> handedOverLines(const ConfigurationSource& source) {
+  const CommandInterpreter runsNothing;
+  return readConfiguration(source, runsNothing).handedOverLines;
+}
+
 ConfigurationStep configurationStep(ConfigurationSource source,
                                     ConfigurationReport& report) {
   return

@@ -208,7 +208,7 @@ add_subdirectory(Modules)
 
 ## Step 4: put it in the list of a game process
 
-`gameProcessModules()` in `src/server/Modules/GameProcessModules.cpp` is the one place that lists the modules of a game process; `supervisorModules()`, next to it, lists those of the supervisor. Add the include, and the line before the metrics module, so that its measure of a tick covers your work:
+`gameProcessModules()` in `src/server/Modules/GameProcessModules.cpp` is the one place that lists the modules of a game process; `supervisorModules()`, next to it, lists those of the supervisor, and a module added there is also named in `SUPERVISOR_MODULE_NAMES` (`ServerRoleConstants.hpp`). Add the include, and the line before the metrics module, so that its measure of a tick covers your work:
 
 ```cpp
 #include "ServerNetworkModule.hpp"

@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <cstddef>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -7,6 +8,7 @@
 #include "ModuleConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerInformation.hpp"
+#include "ServerRoleConstants.hpp"
 #include "StopRequest.hpp"
 #include "SupervisorModules.hpp"
 #include "SupervisorModulesFixture.hpp"
@@ -15,6 +17,7 @@
 using rtype::server::LaunchOptions;
 using rtype::server::STATE_RATE_OPTION;
 using rtype::server::StopRequest;
+using rtype::server::SUPERVISOR_MODULE_NAMES;
 using rtype::server::supervisorModules;
 
 /**
@@ -29,8 +32,7 @@ TEST(SupervisorModules, ListsTheModulesOfTheSupervisor) {
   const LaunchOptions options =
       LaunchOptions::read(std::vector<std::string_view>{});
 
-  const std::vector<std::string> gameLines;
-  const auto modules = supervisorModules(options, stopRequest, gameLines);
+  const auto modules = supervisorModules(options, stopRequest, {});
 
   std::vector<std::string> names;
   names.reserve(modules.size());
@@ -44,6 +46,24 @@ TEST(SupervisorModules, ListsTheModulesOfTheSupervisor) {
                        std::string{rtype::server::SUPERVISOR_LOBBY_MODULE_NAME},
                        std::string{rtype::server::INFORMATION_MODULE_NAME},
                        std::string{rtype::server::MASTER_MODULE_NAME}}));
+}
+
+/**
+ * Given the modules of a supervisor
+ * When their names are compared with the names the rule of the lines of the
+ * games is built from, before the modules exist
+ * Then they are the same, in the same order: a line on a module of the
+ * supervisor is never handed to the games
+ */
+TEST(SupervisorModules, TheRuleKnowsEveryModuleOfTheSupervisor) {
+  StopRequest stopRequest;
+  const auto modules = supervisorModules(
+      LaunchOptions::read(std::vector<std::string_view>{}), stopRequest, {});
+
+  ASSERT_EQ(modules.size(), SUPERVISOR_MODULE_NAMES.size());
+  for (std::size_t index = 0; index < modules.size(); ++index) {
+    EXPECT_EQ(modules[index]->name(), SUPERVISOR_MODULE_NAMES.at(index));
+  }
 }
 
 /**

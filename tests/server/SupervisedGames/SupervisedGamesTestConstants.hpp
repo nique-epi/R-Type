@@ -112,8 +112,7 @@ constexpr std::string_view GAME_PLUGIN_LINE = "plugin game-statistics";
 constexpr std::string_view GAME_LINES_TEXT =
     "set seed 7\nplugin game-statistics\n";
 
-/** @brief A line of the supervisor that sets its database, and the file it
- * names. */
-constexpr std::string_view SET_DATABASE_LINE =
-    "set database some/leaderboard.db";
+/** @brief The database setting of a supervisor that names a file, and of one
+ * that names none. */
 constexpr std::string_view DATABASE_OF_THE_SUPERVISOR = "some/leaderboard.db";
+constexpr std::string_view NO_DATABASE_SETTING{};

@@ -4,10 +4,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include <ratio>
 #include <span>
 #include <string>
 #include <vector>
+#include "DurationConversion.hpp"
 #include "GameLifecycle.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
@@ -16,11 +16,19 @@
 #include "ServerMeasures.hpp"
 #include "ServerOccupancy.hpp"
 #include "SupervisedGame.hpp"
-#include "SupervisedGamesConstants.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::server {
 
 namespace {
+
+/** @returns The seats of @p game its players, as its newest status names
+ * them, leave empty. */
+std::size_t seatsLeftOf(const SupervisedGame& game) {
+  return game.nicknames.size() >= network::MAXIMUM_PLAYERS
+             ? 0
+             : network::MAXIMUM_PLAYERS - game.nicknames.size();
+}
 
 /** @returns How the master names the state of @p game: a game that starts
  * waits for players, and is Full once they take every seat. */
@@ -28,9 +36,8 @@ network::HostedGameState hostedStateOf(const SupervisedGame& game) {
   switch (game.lifecycle) {
     case GameLifecycle::Starting:
     case GameLifecycle::WaitingForPlayers:
-      return game.nicknames.size() >= network::MAXIMUM_PLAYERS
-                 ? network::HostedGameState::Full
-                 : network::HostedGameState::Waiting;
+      return seatsLeftOf(game) == 0 ? network::HostedGameState::Full
+                                    : network::HostedGameState::Waiting;
     case GameLifecycle::InProgress:
       return network::HostedGameState::Playing;
     case GameLifecycle::Finished:
@@ -61,39 +68,34 @@ std::optional<std::uint32_t> higherOf(std::optional<std::uint32_t> highest,
   return std::max(*highest, *measure);
 }
 
-/** @returns @p microseconds in milliseconds, with their fraction. */
-double millisecondsOf(double microseconds) {
-  return std::chrono::duration<double, std::milli>(
-             std::chrono::duration<double, std::micro>(microseconds))
-      .count();
-}
-
+/** @returns @p measure, in microseconds, in milliseconds with their
+ * fraction; nothing for nothing. */
 std::optional<double> millisecondsOf(std::optional<std::uint32_t> measure) {
   if (!measure.has_value()) {
     return std::nullopt;
   }
-  return millisecondsOf(static_cast<double>(*measure));
+  return engine::inMilliseconds(std::chrono::microseconds{*measure});
 }
 
 /** @returns The mean round trip of the players of @p games, each game weighed
  * by its players; nothing when no game with players reports one. */
 std::optional<double> weightedRoundTripOf(
     std::span<const SupervisedGame> games) {
-  double totalMicroseconds = 0.0;
+  engine::Duration total{0};
   std::size_t players = 0;
   for (const SupervisedGame& game : games) {
     const std::optional<std::uint32_t> roundTrip =
         game.measures.averageRoundTripMicroseconds;
     if (roundTrip.has_value() && !game.nicknames.empty()) {
-      totalMicroseconds += static_cast<double>(*roundTrip) *
-                           static_cast<double>(game.nicknames.size());
+      total += std::chrono::microseconds{*roundTrip} *
+               static_cast<engine::Duration::rep>(game.nicknames.size());
       players += game.nicknames.size();
     }
   }
   if (players == 0) {
     return std::nullopt;
   }
-  return millisecondsOf(totalMicroseconds / static_cast<double>(players));
+  return engine::inMilliseconds(engine::averageOf(total, players));
 }
 
 /** @returns The seats of @p game a new player may take: none once it is in
@@ -101,10 +103,7 @@ std::optional<double> weightedRoundTripOf(
 std::size_t freeSeatsOf(const SupervisedGame& game) {
   const bool takesPlayers = game.lifecycle == GameLifecycle::Starting ||
                             game.lifecycle == GameLifecycle::WaitingForPlayers;
-  if (!takesPlayers || game.nicknames.size() >= network::MAXIMUM_PLAYERS) {
-    return 0;
-  }
-  return network::MAXIMUM_PLAYERS - game.nicknames.size();
+  return takesPlayers ? seatsLeftOf(game) : 0;
 }
 
 }  // namespace

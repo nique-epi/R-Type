@@ -1,10 +1,10 @@
 #pragma once
 
-#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
 #include <vector>
+#include "SupervisorLink.hpp"
 
 namespace rtype::server {
 
@@ -21,11 +21,10 @@ struct GameLaunchValues {
   /** @brief The file of commands given after `--configuration`; nothing when
    * the game reads no file. */
   std::optional<std::filesystem::path> configurationFile;
-  /** @brief The port given after `--supervisor`; nothing until it is read. */
-  std::optional<std::uint16_t> supervisorPort;
-  /** @brief The number given after `--link-token`; nothing until it is
-   * read. */
-  std::optional<std::uint64_t> linkToken;
+  /** @brief The port given after `--supervisor` and the number given after
+   * `--link-token`. Each stays 0 until it is read: neither option accepts 0,
+   * so 0 means the option was not given. */
+  SupervisorLink supervisorLink;
   /** @brief Whether `--help` was given. */
   bool helpRequested{false};
 };

@@ -4,7 +4,6 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include "SettingValue.hpp"
 
 namespace rtype::server {
 
@@ -19,13 +18,9 @@ struct GameLaunchSettings {
    * port of the supervisor, then DATABASE_FILE_SUFFIX. */
   std::filesystem::path folder;
   /** @brief The lines of the configuration of the supervisor that belong to
-   * its games, which its configuration step fills before the modules start;
-   * they must outlive the module. Nothing: the games get an empty file. */
-  const std::vector<std::string>* gameLines{nullptr};
-  /** @brief The database setting of the supervisor, which its module declares:
-   * the leaderboard every game writes to when it is not empty. Nothing, or an
-   * empty text: the file of the port in folder. It must outlive the module. */
-  const engine::SettingValue* database{nullptr};
+   * its games, read before its modules are built; none gives the games an
+   * empty file. */
+  std::vector<std::string> gameLines;
   /** @brief The options of the launch of the supervisor every game is given
    * as they are (see LaunchOptions::gameArguments()): the logging options it
    * shares and the network simulated. */

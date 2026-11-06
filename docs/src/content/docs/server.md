@@ -301,7 +301,7 @@ The player queue stays as the last safety net. It discards its oldest datagram, 
 
 ## Configuration: `server.cfg`
 
-The supervisor reads `server.cfg`, in the folder it is started from, between the install and the start of its modules (see [Engine](/R-Type/engine/#commands-and-configuration-commandinterpreter)). It is the only program that reads it. The file is a list of commands, one per line; `#` starts a comment (every command and setting is listed in [Configuration commands](/R-Type/commands/)). `main()` builds the step with `engine::configurationStep()`: it reads `server.cfg`, then runs the lines the launch options force (`LaunchOptions::forcedLines()`).
+The supervisor reads `server.cfg`, in the folder it is started from, between the install and the start of its modules (see [Engine](/R-Type/engine/#commands-and-configuration-commandinterpreter)). It is the only program that reads it. The file is a list of commands, one per line; `#` starts a comment (every command and setting is listed in [Configuration commands](/R-Type/commands/)). `main()` builds the step with `engine::configurationStep()`: it reads `server.cfg`, then runs the lines the launch options force (`LaunchOptions::forcedLines()`). Before that, and before it builds the modules, it reads the lines that belong to the games with `engine::handedOverLines()`, which applies the same rule and runs nothing, and builds the supervised games module with them.
 
 Each line belongs to the supervisor or to its games. `gameLineRule()` (`src/server/Modules/GameLineRule.cpp`) decides, from the catalogue of `src/server/Modules/ServerRoleConstants.hpp`:
 
@@ -309,10 +309,10 @@ Each line belongs to the supervisor or to its games. `gameLineRule()` (`src/serv
 |---|---|
 | sets a setting of `GAME_SETTING_NAMES`: `seed`, `state-rate`, `input-delay`, `game-statistics-file` | the games |
 | runs a command of `GAME_COMMAND_NAMES`: `plugin`, `plugin-folder` | the games |
-| is `module <name> on\|off` on a module the supervisor does not have | the games |
+| is `module <name> on\|off` on a module the supervisor does not have, one `SUPERVISOR_MODULE_NAMES` does not name | the games |
 | anything else | the supervisor, which runs it, or refuses it when it does not know it |
 
-A line of the games is not run by the supervisor, in none of the three passes of the step, so the supervisor never loads a plugin. It is kept as written, the lines of the file first, then the forced ones, in `ConfigurationReport::handedOverLines`. When it starts, the supervised games module writes them, one per line, to `r-type_games_<port>.cfg` next to the executable, with the port of the supervisor, and starts every game with `--configuration` and that file (`GameConfigurationFile`, `src/server/SupervisedGames/`). The supervisor does not check the lines of its games: a wrong one is refused by each game, in its own journal.
+A line of the games is not run by the supervisor, in none of the three passes of the step, so the supervisor never loads a plugin. It is kept as written, the lines of the file first, then the forced ones, in `GameLaunchSettings::gameLines`. When it starts, the supervised games module writes them, one per line, to `r-type_games_<port>.cfg` next to the executable, with the port of the supervisor, and starts every game with `--configuration` and that file (`GameConfigurationFile`, `src/server/SupervisedGames/`). The supervisor does not check the lines of its games: a wrong one is refused by each game, in its own journal.
 
 | Command | Effect |
 |---|---|
@@ -357,7 +357,7 @@ module lobby off
 
 A plugin joins the end of that list when a `plugin` line of its file loads it, after `supervisor link`: the server has one, `game-statistics` (see [Game statistics](#game-statistics-servergamestatisticsmodule)).
 
-`supervisorModules()` (`SupervisorModules.cpp`) lists the modules of the supervisor:
+`supervisorModules()` (`SupervisorModules.cpp`) lists the modules of the supervisor, whose names `SUPERVISOR_MODULE_NAMES` repeats in the same order, so the configuration of the games can be read before they are built (`SupervisorModules.TheRuleKnowsEveryModuleOfTheSupervisor` checks both agree):
 
 | Module | Does | Where |
 |---|---|---|
@@ -504,7 +504,7 @@ Once players are measured, the third line gives each of them, game by game in th
 
 The measure leaves out what `ServerApplication` does around the stages, emptying the queues of datagrams and handing over what to send, and the report itself, which runs after the measure of its tick. Whether the ticks fall behind as a whole is told by the lines of the tick loop (see [Tick loop](#tick-loop-tickloop)).
 
-The newest report stays in memory as a `MetricsReport` in the service `LatestMetrics` (`src/server/Metrics/Report/`), a `concurrency::LatestValue<MetricsReport>` (see [Concurrency](/R-Type/concurrency/#the-newest-value-of-a-thread-latestvalue)). A module finds it with `context.find<LatestMetrics>()`, which gives `nullptr` when the metrics module is not listed. Any thread may call `value()`, which gives a copy and changes nothing, so readers at different rates all see the same report; it holds the round trips as `roundTrips`. The supervisor link reads it for each `GameStatus`, through `measuresOf()` (`src/server/Metrics/Report/MetricsMeasures`), which keeps the median and the 95th percentile of the ticks and the mean round trip of the players, in microseconds. Losses are not measured yet.
+The newest report stays in memory as a `MetricsReport` in the service `LatestMetrics` (`src/server/Metrics/Report/`), a `concurrency::LatestValue<MetricsReport>` (see [Concurrency](/R-Type/concurrency/#the-newest-value-of-a-thread-latestvalue)). A module finds it with `context.find<LatestMetrics>()`, which gives `nullptr` when the metrics module is not listed. Any thread may call `value()`, which gives a copy and changes nothing, so readers at different rates all see the same report; it holds the round trips as `roundTrips`. The supervisor link reads it for each `GameStatus`, through `LatestStatusMeasures` (`src/server/SupervisorLink/`), which keeps the median and the 95th percentile of the ticks and the mean round trip of the players, in microseconds, and works them out again only when a newer report was published. Losses are not measured yet.
 
 The module also writes the traffic of the socket, which the network module provides as `network::TrafficCounters`: a line every 10 s and, with `--traffic-csv`, a file (see [Network](/R-Type/network/#traffic-counters-trafficcounters)). Each report holds it as `traffic`, totals since the server started. A player has a row of its own from the moment `ServerApplication::admit()` takes effect until the session closes:
 
@@ -1216,7 +1216,7 @@ The supervised games module tells the job when the games change. At each tick, o
 |---|---|
 | Change what the master is told, or how often | `MasterMessages.cpp` and `ServerMasterConstants.hpp` in `src/server/Master/`; how often a server tells it when nothing changes, `MASTER_HEARTBEAT_INTERVAL` in `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master reads to tell a silent server; what the list and the measures say, `SupervisedGamesReport` and `SupervisedGamesWatch` in `src/server/SupervisedGames/` |
 | Change what a tick does | The work a module adds to a stage: `playGames()` in `src/server/Games/ServerGamesModule.cpp`, `answerConnectionRequests()` in `src/server/Lobby/ServerLobbyModule.cpp` |
-| Add a module to the server | A class implementing `IModule` in a folder of its own, `src/server/<Name>/`, listed in `gameProcessModules()` or `supervisorModules()` after the modules it depends on; a setting it declares in a game process goes in `GAME_SETTING_NAMES` (`src/server/Modules/ServerRoleConstants.hpp`), so the supervisor hands its line over: see the [tutorial](/R-Type/tutorial-write-a-module/) |
+| Add a module to the server | A class implementing `IModule` in a folder of its own, `src/server/<Name>/`, listed in `gameProcessModules()` or `supervisorModules()` after the modules it depends on, a module of the supervisor also named in `SUPERVISOR_MODULE_NAMES`; a setting it declares in a game process goes in `GAME_SETTING_NAMES` (`src/server/Modules/ServerRoleConstants.hpp`), so the supervisor hands its line over: see the [tutorial](/R-Type/tutorial-write-a-module/) |
 | Change what the server does when it stops | For a game process, `ServerGamesModule::stop()` and `FarewellSender`, in `src/server/Games/`; for the supervisor, `ChildrenStopper` in `src/server/SupervisedGames/` |
 | Change which datagrams reach the tick | `DatagramSorter::sort` in `src/server/Network/DatagramSorter.cpp` |
 | Count a new cause of rejection | A value of `RejectionCause` and its name in `REJECTION_CAUSE_NAMES` (`src/server/Network/Rejections/`), then `RejectionLedger::record()` where the datagram is rejected |

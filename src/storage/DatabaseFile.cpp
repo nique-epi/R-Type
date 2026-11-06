@@ -16,14 +16,12 @@
 
 namespace rtype::storage {
 
-namespace {
-
-/** @returns The flags that open a file for writing and create it when it does
- * not exist; SQLiteCpp declares each as a signed value. */
 int readWriteOrCreate() {
   return static_cast<int>(static_cast<unsigned int>(SQLite::OPEN_READWRITE) |
                           static_cast<unsigned int>(SQLite::OPEN_CREATE));
 }
+
+namespace {
 
 /**
  * @brief Sets what every connection runs with. SQLite answers the mode in force

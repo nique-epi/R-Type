@@ -17,7 +17,6 @@
 #include "NetworkException.hpp"
 #include "ServerConstants.hpp"
 #include "ServerIdentity.hpp"
-#include "SupervisedGamesConstants.hpp"
 #include "TextSettingDefinition.hpp"
 
 namespace rtype::server {

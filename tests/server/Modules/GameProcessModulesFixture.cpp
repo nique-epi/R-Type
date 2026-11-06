@@ -108,9 +108,5 @@ GameProcessModulesFixture::gameApplication(
 
 void GameProcessModulesFixture::writeConfiguration(
     std::string_view file, const std::vector<std::string>& lines) const {
-  std::string text;
-  for (const std::string& line : lines) {
-    text += line + '\n';
-  }
-  workingFolder_.write(file, text);
+  workingFolder_.writeLines(file, lines);
 }

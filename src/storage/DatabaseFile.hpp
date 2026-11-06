@@ -7,6 +7,10 @@
 
 namespace rtype::storage {
 
+/** @returns The flags that open a file for writing and create it when it does
+ * not exist; SQLiteCpp declares each as a signed value. */
+[[nodiscard]] int readWriteOrCreate();
+
 /**
  * @brief Opens @p file, a path written in UTF-8, creating it when it does not
  * exist, then applies those of @p migrations it does not hold yet;

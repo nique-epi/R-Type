@@ -1,13 +1,12 @@
 #include "GameLineRule.hpp"
 #include <algorithm>
 #include <cstddef>
-#include <memory>
 #include <set>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include "HandOverRule.hpp"
-#include "IModule.hpp"
 #include "ModuleSwitchesConstants.hpp"
 #include "ServerRoleConstants.hpp"
 #include "SettingCommandConstants.hpp"
@@ -46,11 +45,9 @@ bool switchesAGameModule(std::span<const std::string> words,
 }  // namespace
 
 engine::HandOverRule gameLineRule(
-    std::span<const std::unique_ptr<engine::IModule>> supervisorModules) {
-  std::set<std::string> supervisorNames;
-  for (const std::unique_ptr<engine::IModule>& module : supervisorModules) {
-    supervisorNames.insert(module->name());
-  }
+    std::span<const std::string_view> supervisorModuleNames) {
+  std::set<std::string> supervisorNames{supervisorModuleNames.begin(),
+                                        supervisorModuleNames.end()};
   return [supervisorNames =
               std::move(supervisorNames)](std::span<const std::string> words) {
     return !words.empty() &&

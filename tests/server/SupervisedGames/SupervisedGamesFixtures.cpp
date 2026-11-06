@@ -105,8 +105,7 @@ rtype::server::GameLaunchSettings settingsOf(
   return rtype::server::GameLaunchSettings{
       .program = PROGRAM_FOR_TESTS,
       .folder = FOLDER_FOR_TESTS,
-      .gameLines = nullptr,
-      .database = nullptr,
+      .gameLines = {},
       .forwardedArguments = supervisor.gameArguments(),
       .trafficCsvFile = supervisor.trafficCsvFile()};
 }

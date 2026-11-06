@@ -21,6 +21,7 @@
 #include "ProtocolConstants.hpp"
 #include "SeatRequest.hpp"
 #include "SequenceOrder.hpp"
+#include "ServerConstants.hpp"
 #include "ServerException.hpp"
 #include "SupervisedGame.hpp"
 #include "SupervisedGamesConstants.hpp"
@@ -118,6 +119,7 @@ void GameRegistry::open(GameOpening opening) {
                                   .newestSequence = std::nullopt,
                                   .reservations = {},
                                   .process = std::move(opening.process)});
+  ++revision_;
 }
 
 SupervisedGame* GameRegistry::findByToken(std::uint64_t linkToken) {
@@ -126,7 +128,6 @@ SupervisedGame* GameRegistry::findByToken(std::uint64_t linkToken) {
   return found == games_.end() ? nullptr : &*found;
 }
 
-// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 bool GameRegistry::record(SupervisedGame& game, std::uint16_t sequence,
                           const network::GameStatus& status) {
   if (game.newestSequence.has_value() &&
@@ -135,9 +136,12 @@ bool GameRegistry::record(SupervisedGame& game, std::uint16_t sequence,
   }
   game.newestSequence = sequence;
   game.lifecycle = lifecycleOf(status.state);
-  game.nicknames = status.nicknames;
+  if (game.nicknames != status.nicknames) {
+    game.nicknames = status.nicknames;
+  }
   game.measures = status.measures;
   game.reservations.settle(game.nicknames);
+  ++revision_;
   return true;
 }
 
@@ -171,6 +175,9 @@ std::vector<ExitedGame> GameRegistry::collectExits() {
                               game.lifecycle == GameLifecycle::Starting});
     return true;
   });
+  if (!exited.empty()) {
+    ++revision_;
+  }
   return exited;
 }
 
@@ -194,5 +201,7 @@ void GameRegistry::terminateAll() {
 }
 
 std::span<const SupervisedGame> GameRegistry::all() const { return games_; }
+
+std::uint64_t GameRegistry::revision() const { return revision_; }
 
 }  // namespace rtype::server
