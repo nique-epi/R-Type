@@ -30,13 +30,24 @@ CAPTION_TOP = 340
 CAPTION = "DRAG R-TYPE INTO APPLICATIONS"
 CAPTION_FONT_SIZE = 8
 ARROW_HEAD = 10
-ARROW_HALF_LENGTH = 64
+ARROW_GAP = 12
+ICON_DRAWN_TOP_OFFSET = -45
+LABEL_PLATE_TOP_OFFSET = 64
+LABEL_BOTTOM_OFFSET = 83
+LABEL_PLATE_HALF = 46
+LABEL_PLATE_CORNER = 2
+BOX_MARGIN = 12
+BOX_HALF = 64
+BOX_CORNER = 6
+BOX_TOP_OFFSET = ICON_DRAWN_TOP_OFFSET - BOX_MARGIN
+BOX_BOTTOM_OFFSET = LABEL_BOTTOM_OFFSET + BOX_MARGIN
 
 SKY_COLOR = (11, 13, 31)
 DEEP_BLUE = (38, 48, 94)
 PALE_BLUE = (143, 162, 230)
 STAR_WHITE = (238, 241, 255)
 STAR_GOLD = (255, 211, 138)
+EDGE_BLUE = (31, 163, 201)
 HUD_CYAN = (127, 230, 255)
 
 STAR_COLORS = (DEEP_BLUE, DEEP_BLUE, PALE_BLUE, STAR_WHITE, STAR_GOLD)
@@ -53,12 +64,47 @@ def paint_stars(draw):
         draw.point((x, y), fill=stars.choice(STAR_COLORS))
 
 
+def paint_label_plate(draw, center):
+    """Fills a light plate where Finder writes the name of an icon, in black."""
+    left = center[0] - LABEL_PLATE_HALF
+    right = center[0] + LABEL_PLATE_HALF
+    top = center[1] + LABEL_PLATE_TOP_OFFSET
+    bottom = center[1] + LABEL_BOTTOM_OFFSET
+    cut = LABEL_PLATE_CORNER
+    draw.rectangle((left + cut, top, right - cut, bottom), fill=PALE_BLUE)
+    draw.rectangle((left, top + cut, right, bottom - cut), fill=PALE_BLUE)
+
+
+def paint_box(draw, center):
+    """Draws a box with cut corners around the place of one icon."""
+    left = center[0] - BOX_HALF
+    right = center[0] + BOX_HALF
+    top = center[1] + BOX_TOP_OFFSET
+    bottom = center[1] + BOX_BOTTOM_OFFSET
+    cut = BOX_CORNER
+    draw.rectangle((left + cut, top, right - cut, bottom), fill=SKY_COLOR)
+    draw.rectangle((left, top + cut, right, bottom - cut), fill=SKY_COLOR)
+    draw.line(
+        [
+            (left + cut, top),
+            (right - cut, top),
+            (right, top + cut),
+            (right, bottom - cut),
+            (right - cut, bottom),
+            (left + cut, bottom),
+            (left, bottom - cut),
+            (left, top + cut),
+            (left + cut, top),
+        ],
+        fill=EDGE_BLUE,
+    )
+
+
 def paint_arrow(draw):
     """Draws the arrow from the app to the Applications folder."""
     y = APP_CENTER[1]
-    middle = (APP_CENTER[0] + APPLICATIONS_CENTER[0]) // 2
-    arrow_left = middle - ARROW_HALF_LENGTH
-    arrow_right = middle + ARROW_HALF_LENGTH
+    arrow_left = APP_CENTER[0] + BOX_HALF + ARROW_GAP
+    arrow_right = APPLICATIONS_CENTER[0] - BOX_HALF - ARROW_GAP
     draw.rectangle((arrow_left, y - 1, arrow_right - ARROW_HEAD, y + 1), fill=HUD_CYAN)
     for step in range(ARROW_HEAD + 1):
         x = arrow_right - ARROW_HEAD + step
@@ -67,7 +113,7 @@ def paint_arrow(draw):
 
 
 def paint_caption(draw):
-    """Writes what to do, centred under the icons."""
+    """Writes what to do, centred under the boxes."""
     font = ImageFont.truetype(
         str(REPOSITORY / "assets" / "fonts" / "press_start_2p" / "press_start_2p.ttf"),
         CAPTION_FONT_SIZE,
@@ -87,6 +133,10 @@ def paint_background():
     draw = ImageDraw.Draw(canvas)
     draw.fontmode = "1"
     paint_stars(draw)
+    paint_box(draw, APP_CENTER)
+    paint_box(draw, APPLICATIONS_CENTER)
+    paint_label_plate(draw, APP_CENTER)
+    paint_label_plate(draw, APPLICATIONS_CENTER)
     paint_arrow(draw)
     paint_caption(draw)
     return canvas.convert("RGB")
