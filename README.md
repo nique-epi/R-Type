@@ -140,6 +140,8 @@ The same binary runs the master in this mode: the program that lists the game se
 curl -X POST http://127.0.0.1:8080/api/servers -d '{"name":"Paris 1"}'
 ```
 
+After each heartbeat, the master sends a probe over UDP to the port the game server registered, and lists as unreachable a server whose port it cannot reach: that port must be open to the master, as it is to the players.
+
 Without `master-url` or `master-key`, a game server runs alone and is listed nowhere.
 
 - **Why HTTP:** the subject requires UDP for every message of a game and accepts TCP for other needs when it is justified. The master carries no message of a game, and the web administration the subject accepts needs HTTP in a browser, so one protocol serves the programs and the web site, readable with `curl`. A player still joins a server over UDP when the master is stopped.

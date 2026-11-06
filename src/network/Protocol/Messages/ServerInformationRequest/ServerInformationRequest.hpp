@@ -12,8 +12,8 @@ namespace rtype::network {
 /**
  * @brief Anyone asks a server what it is and how full it is, outside any
  * session: a client measuring its ping to a server the player looks at, never
- * to every server of the list, or the master that checks a server answers. The
- * server answers with a ServerInformation and keeps nothing.
+ * to every server of the list. The server answers with a ServerInformation and
+ * keeps nothing.
  *
  * The request is padded with SERVER_INFORMATION_REQUEST_PADDING_SIZE zero
  * bytes, so its datagram is as large as the largest answer: a forged source
