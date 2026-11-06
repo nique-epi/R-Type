@@ -3,6 +3,8 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
 #include <optional>
+#include <vector>
+#include "ColoredPixel.hpp"
 #include "GamePanel.hpp"
 #include "IGameCatalog.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -11,6 +13,7 @@
 #include "IServerCatalog.hpp"
 #include "KeyChip.hpp"
 #include "MotionPreference.hpp"
+#include "PlanetPose.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ServerChoice.hpp"
 #include "ServerMapChoice.hpp"
@@ -90,6 +93,11 @@ class ServerMapScreen : public IScreen {
   engine::Duration elapsed_{};
   engine::Duration sinceRefresh_{};
   std::optional<sf::Keyboard::Key> heldKey_;
+  /** @brief The planet last painted and its pixels: the planet turns at
+   * PLANET_FRAMES_PER_SECOND, slower than the frames, and not at all under
+   * reduced motion, so its pixels are computed again only when it moved. */
+  std::optional<PlanetPose> planetPose_;
+  std::vector<ColoredPixel> planetPixels_;
 };
 
 }  // namespace rtype::client

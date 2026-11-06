@@ -117,10 +117,58 @@ std::optional<sf::Color> loupeColorOf(char symbol, std::size_t column,
   return std::nullopt;
 }
 
+/** @returns @p length of the map, in pixels of @p map. */
+int scaledToMiniMap(const MiniMap& map, int length) {
+  return static_cast<int>(std::lround(
+      static_cast<float>(length) * static_cast<float>(map.area.size.x) /
+      static_cast<float>(SECTOR_MAP_AREA.size.x)));
+}
+
+/** @returns Where @p point of the map lands on @p map. */
+sf::Vector2i onMiniMap(const MiniMap& map, sf::Vector2i point) {
+  const sf::Vector2i fromCorner = point - SECTOR_MAP_AREA.position;
+  return map.area.position + sf::Vector2i{scaledToMiniMap(map, fromCorner.x),
+                                          scaledToMiniMap(map, fromCorner.y)};
+}
+
+/** @returns The disc of the planet and a point per server of @p map, inside
+ * its frame only. */
+std::vector<ColoredPixel> miniMapPixels(const MiniMap& map) {
+  const int radius =
+      std::max(MINIMAP_SMALLEST_PLANET, scaledToMiniMap(map, map.planetRadius));
+  const sf::Vector2i planet = onMiniMap(map, map.planetCenter);
+  std::vector<ColoredPixel> pixels;
+  for (int row = -radius; row <= radius; ++row) {
+    for (int column = -radius; column <= radius; ++column) {
+      if ((row * row) + (column * column) <= radius * radius) {
+        pixels.push_back(ColoredPixel{
+            .position = planet + sf::Vector2i{column, row}, .color = BLUE});
+      }
+    }
+  }
+  for (const sf::Vector2i star : map.stars) {
+    pixels.push_back(
+        ColoredPixel{.position = onMiniMap(map, star), .color = PALE_BLUE});
+  }
+  const sf::IntRect inside{map.area.position + sf::Vector2i{1, 1},
+                           map.area.size - sf::Vector2i{2, 2}};
+  std::erase_if(pixels, [inside](const ColoredPixel& pixel) {
+    return !inside.contains(pixel.position);
+  });
+  return pixels;
+}
+
 }  // namespace
 
-void paintSectorPlanet(IInterfaceCanvas& canvas, PlanetPose pose) {
-  canvas.plot(ringedPlanetPixels(pose, innerMap()));
+std::vector<ColoredPixel> sectorPlanetPixels(PlanetPose pose) {
+  return ringedPlanetPixels(pose, innerMap());
+}
+
+sf::IntRect tooltipAreaOf(const ServerTooltip& tooltip) {
+  const int lineCount = static_cast<int>(tooltip.lines.size());
+  return sf::IntRect{
+      tooltip.topLeft,
+      {tooltip.width, TOOLTIP_BOTTOM + (lineCount * TOOLTIP_LINE_PITCH)}};
 }
 
 void paintPingRings(IInterfaceCanvas& canvas, const MapView& view) {
@@ -201,9 +249,7 @@ void paintStarName(IInterfaceCanvas& canvas, const StarName& name) {
 void paintServerTooltip(IInterfaceCanvas& canvas,
                         const ServerTooltip& tooltip) {
   const int lineCount = static_cast<int>(tooltip.lines.size());
-  const int height = TOOLTIP_BOTTOM + (lineCount * TOOLTIP_LINE_PITCH);
-  CutCornerBox({tooltip.topLeft, {tooltip.width, height}},
-               {.border = EDGE_BLUE, .inside = INK})
+  CutCornerBox(tooltipAreaOf(tooltip), {.border = EDGE_BLUE, .inside = INK})
       .paint(canvas);
   canvas.write(
       tooltip.title,
@@ -244,46 +290,12 @@ void paintZoomLoupe(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
 }
 
 void paintMiniMap(IInterfaceCanvas& canvas, const MiniMap& map) {
-  const float scale = static_cast<float>(map.area.size.x) /
-                      static_cast<float>(SECTOR_MAP_AREA.size.x);
-  const auto onMiniMap = [&map, scale](sf::Vector2i point) {
-    const sf::Vector2f fromCorner(point - SECTOR_MAP_AREA.position);
-    return map.area.position +
-           sf::Vector2i{static_cast<int>(std::lround(fromCorner.x * scale)),
-                        static_cast<int>(std::lround(fromCorner.y * scale))};
-  };
   CutCornerBox(map.area, {.border = DEEP_BLUE, .inside = INK}).paint(canvas);
-  const sf::IntRect inside{map.area.position + sf::Vector2i{1, 1},
-                           map.area.size - sf::Vector2i{2, 2}};
-  const int radius =
-      std::max(MINIMAP_SMALLEST_PLANET,
-               static_cast<int>(
-                   std::lround(static_cast<float>(map.planetRadius) * scale)));
-  const sf::Vector2i planet = onMiniMap(map.planetCenter);
-  std::vector<ColoredPixel> pixels;
-  for (int row = -radius; row <= radius; ++row) {
-    for (int column = -radius; column <= radius; ++column) {
-      if ((row * row) + (column * column) <= radius * radius) {
-        pixels.push_back(ColoredPixel{
-            .position = planet + sf::Vector2i{column, row}, .color = BLUE});
-      }
-    }
-  }
-  for (const sf::Vector2i star : map.stars) {
-    pixels.push_back(
-        ColoredPixel{.position = onMiniMap(star), .color = PALE_BLUE});
-  }
-  std::erase_if(pixels, [inside](const ColoredPixel& pixel) {
-    return !inside.contains(pixel.position);
-  });
-  canvas.plot(pixels);
-  const sf::Vector2i shownCorner = onMiniMap(map.shown.position);
+  canvas.plot(miniMapPixels(map));
   const sf::Vector2i shownSize{
-      std::max(MINIMAP_SMALLEST_FRAME,
-               static_cast<int>(std::lround(map.shown.size.x * scale))),
-      std::max(MINIMAP_SMALLEST_FRAME,
-               static_cast<int>(std::lround(map.shown.size.y * scale)))};
-  Outline({shownCorner, shownSize}, Outline::Line::Solid)
+      std::max(MINIMAP_SMALLEST_FRAME, scaledToMiniMap(map, map.shown.size.x)),
+      std::max(MINIMAP_SMALLEST_FRAME, scaledToMiniMap(map, map.shown.size.y))};
+  Outline({onMiniMap(map, map.shown.position), shownSize}, Outline::Line::Solid)
       .paint(canvas, HUD_CYAN);
 }
 

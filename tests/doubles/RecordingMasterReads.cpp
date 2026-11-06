@@ -37,10 +37,6 @@ void RecordingMasterReads::answerGames(
       rtype::client::GameListReading{.ask = ask, .listing = std::move(listing)};
 }
 
-std::uint64_t RecordingMasterReads::serverAskCount() const {
-  return serverAsk_;
-}
-
 const std::vector<std::int64_t>& RecordingMasterReads::gameAsks() const {
   return gameAsks_;
 }

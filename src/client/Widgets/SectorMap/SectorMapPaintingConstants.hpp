@@ -44,7 +44,7 @@ inline constexpr int LABEL_TEXT_RISE = 4;
 
 /** @brief The bubble of a server: its title TOOLTIP_PADDING in, its first line
  * TOOLTIP_FIRST_LINE below its top, then a line every TOOLTIP_LINE_PITCH, and
- * TOOLTIP_BOTTOM below the last one; its corners cut TOOLTIP_CUT. */
+ * TOOLTIP_BOTTOM below the last one. */
 inline constexpr int TOOLTIP_PADDING = 6;
 inline constexpr int TOOLTIP_TITLE_TOP = 5;
 inline constexpr int TOOLTIP_FIRST_LINE = 17;
@@ -70,7 +70,7 @@ inline constexpr int LOUPE_GLASS_LAST_ROW = 7;
 inline constexpr int LOUPE_TEXT_SHIFT = 6;
 inline constexpr int LOUPE_TEXT_DROP = 16;
 
-/** @brief The minimap: corners cut MINIMAP_CUT, its planet at least
+/** @brief The minimap: its planet at least
  * MINIMAP_SMALLEST_PLANET pixels in radius, its frame of the part shown at
  * least MINIMAP_SMALLEST_FRAME wide. */
 inline constexpr int MINIMAP_SMALLEST_PLANET = 2;

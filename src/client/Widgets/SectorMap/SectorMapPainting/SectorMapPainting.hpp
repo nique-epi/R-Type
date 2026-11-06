@@ -1,7 +1,10 @@
 #pragma once
 
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <string_view>
+#include <vector>
+#include "ColoredPixel.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "MapView.hpp"
 #include "MiniMap.hpp"
@@ -12,9 +15,12 @@
 
 namespace rtype::client {
 
-/** @brief Paints the planet and its ring in @p pose, inside the map only, in
- * one draw. */
-void paintSectorPlanet(IInterfaceCanvas& canvas, PlanetPose pose);
+/** @returns The pixels of the planet and its ring in @p pose, inside the map
+ * only, for IInterfaceCanvas::plot(). */
+[[nodiscard]] std::vector<ColoredPixel> sectorPlanetPixels(PlanetPose pose);
+
+/** @returns The area the bubble @p tooltip covers when painted. */
+[[nodiscard]] sf::IntRect tooltipAreaOf(const ServerTooltip& tooltip);
 
 /** @brief Paints the dashed rings of PING_RINGS_MILLISECONDS around the
  * planet in @p view, inside the map, each labelled under the map when there

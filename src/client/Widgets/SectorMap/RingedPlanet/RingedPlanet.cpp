@@ -65,9 +65,11 @@ EquatorFrame equatorFrame() {
       .axis = axis, .first = first, .second = cross(axis, first)};
 }
 
-SpacePoint sunDirection() {
-  return unit(
-      SpacePoint{.x = SUN_ACROSS, .y = SUN_DOWN, .z = SUN_TOWARDS_VIEWER});
+/** @returns The direction of the sun, made a unit vector once. */
+const SpacePoint& sunDirection() {
+  static const SpacePoint sun =
+      unit(SpacePoint{.x = SUN_ACROSS, .y = SUN_DOWN, .z = SUN_TOWARDS_VIEWER});
+  return sun;
 }
 
 /** @returns A value from 0 to 1 that is the same for the same cell at every
@@ -333,6 +335,15 @@ double turnAfter(std::int64_t frame, std::chrono::milliseconds period) {
          static_cast<double>(framesPerTurn);
 }
 
+/** @returns Whether a dot whose corner is @p corner may paint inside @p clip:
+ * a dot is at most HALFTONE_PITCH - 1 pixels wide, so a cell whose square
+ * misses the clip is never shaded. */
+bool reachesTheClip(sf::Vector2i corner, sf::IntRect clip) {
+  const int widest = HALFTONE_PITCH - 1;
+  return clip.findIntersection(sf::IntRect{corner, {widest, widest}})
+      .has_value();
+}
+
 }  // namespace
 
 std::vector<ColoredPixel> ringedPlanetPixels(PlanetPose pose,
@@ -344,9 +355,13 @@ std::vector<ColoredPixel> ringedPlanetPixels(PlanetPose pose,
   std::vector<ColoredPixel> pixels;
   for (int row = 0; row < size; row += HALFTONE_PITCH) {
     for (int column = 0; column < size; column += HALFTONE_PITCH) {
+      const sf::Vector2i corner = origin + sf::Vector2i{column, row};
+      if (!reachesTheClip(corner, clip)) {
+        continue;
+      }
       const HalftoneCell cell = cellAt({column, row}, half, pose.radius);
       if (const std::optional<HalftoneDot> found = dotAt(cell, pose, frame)) {
-        plotDot(pixels, origin + sf::Vector2i{column, row}, *found, cell);
+        plotDot(pixels, corner, *found, cell);
       }
     }
   }

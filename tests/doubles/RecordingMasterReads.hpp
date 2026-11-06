@@ -31,7 +31,6 @@ class RecordingMasterReads final : public rtype::client::IMasterReads {
   void answerGames(std::uint64_t ask,
                    std::optional<rtype::network::GameListing> listing);
 
-  [[nodiscard]] std::uint64_t serverAskCount() const;
   /** @returns The server of each ask for games, in order. */
   [[nodiscard]] const std::vector<std::int64_t>& gameAsks() const;
 

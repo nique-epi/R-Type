@@ -10,6 +10,7 @@
 #include "MapView.hpp"
 #include "SectorLayout.hpp"
 #include "SectorMapConstants.hpp"
+#include "ServerCompatibility.hpp"
 #include "ServerMapScreenConstants.hpp"
 #include "ServerMapStage.hpp"
 #include "ServerRow.hpp"
@@ -20,9 +21,11 @@ namespace rtype::client {
 
 StarBearing bearingOf(const ServerRow& server) {
   const double ping =
-      server.ping.has_value()
-          ? std::chrono::duration<double, std::milli>(*server.ping).count()
-          : PING_OF_A_SERVER_OF_ANOTHER_VERSION;
+      server.compatibility == ServerCompatibility::UpdateNeeded
+          ? PING_OF_A_SERVER_OF_ANOTHER_VERSION
+          : std::chrono::duration<double, std::milli>(
+                server.ping.value_or(std::chrono::microseconds::zero()))
+                .count();
   return StarBearing{.pingMilliseconds = ping,
                      .angleDegrees = angleOf(server.id, ping)};
 }

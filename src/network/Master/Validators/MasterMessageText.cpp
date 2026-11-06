@@ -439,8 +439,7 @@ ServerRegistration registrationOf(const JsonField& registration) {
 
 /** @returns The status @p field writes, one of SERVER_STATUS_TEXTS. */
 ServerStatus listedStatusOf(const JsonField& field) {
-  const std::optional<ServerStatus> status =
-      valueOfText<ServerStatus>(SERVER_STATUS_TEXTS, stringOf(field));
+  const std::optional<ServerStatus> status = serverStatusOf(stringOf(field));
   if (!status.has_value()) {
     refuse(field);
   }

@@ -69,9 +69,9 @@ class PlayerConnection {
    * @brief Provides to the modules installed after the one installing it the
    * parts of this connection: the ServerSession, the WaitingRoom, the
    * EntityMessageQueue, the ServerLeaderboard, the RoundTripWatch as
-   * IPlayerRoundTrips and as IServerTicks, the IEntityTypeTable, the
-   * ServerPingProbe as IServerPingProbe and the TrafficCounters of the
-   * socket. They must outlive every module that requires them.
+   * IPlayerRoundTrips and as IServerTicks, the IEntityTypeTable and the
+   * TrafficCounters of the socket. They must outlive every module that
+   * requires them. The ServerPingProbe is reached through pings().
    */
   void provideParts(engine::InstallContext& context);
 

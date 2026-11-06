@@ -11,6 +11,8 @@ struct PlanetPose {
   int radius{};
   double spin{};
   double drift{};
+
+  bool operator==(const PlanetPose&) const = default;
 };
 
 }  // namespace rtype::client

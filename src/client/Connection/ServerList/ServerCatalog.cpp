@@ -137,9 +137,8 @@ void ServerCatalog::takeListing(const ServerListReading& reading) {
 
 void ServerCatalog::takeAnswers() {
   for (const PingAnswer& answer : pings_->answers()) {
-    const auto row = std::ranges::find(
-        waiting_, answer.server,
-        [](const ServerRow& waiting) { return waiting.endpoint; });
+    const auto row =
+        std::ranges::find(waiting_, answer.server, &ServerRow::endpoint);
     if (row != waiting_.end()) {
       row->ping = answer.roundTrip;
       measured_.push_back(std::move(*row));

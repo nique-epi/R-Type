@@ -7,7 +7,6 @@
 #include "Endpoint.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IPlayerRoundTrips.hpp"
-#include "IServerPingProbe.hpp"
 #include "IServerTicks.hpp"
 #include "InstallContext.hpp"
 #include "NetworkConditions.hpp"
@@ -66,7 +65,6 @@ void PlayerConnection::provideParts(engine::InstallContext& context) {
   context.provide<IPlayerRoundTrips>(roundTrips_);
   context.provide<IServerTicks>(roundTrips_);
   context.provide<IEntityTypeTable>(entityTypes_);
-  context.provide<IServerPingProbe>(pings_);
   context.provide(network_.traffic());
 }
 

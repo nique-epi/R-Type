@@ -4,6 +4,7 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -11,6 +12,7 @@
 #include "BarState.hpp"
 #include "Button.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "ISoundPlayer.hpp"
 #include "KeyChip.hpp"
 #include "KeyChipParts.hpp"
 #include "MapDirection.hpp"
@@ -18,6 +20,7 @@
 #include "MenuScreenIdConstants.hpp"
 #include "PlanetPose.hpp"
 #include "RingedPlanet.hpp"
+#include "SectorMapPainting.hpp"
 #include "ServerCompatibility.hpp"
 #include "ServerListPhase.hpp"
 #include "ServerMapPainting.hpp"
@@ -109,6 +112,49 @@ std::optional<ServerRow> quickPlayServerOf(
   return *found;
 }
 
+/** @returns Whether a server of @p servers is of this version. */
+bool holdsAServerOfThisVersion(const std::vector<ServerRow>& servers) {
+  return std::ranges::any_of(servers, [](const ServerRow& server) {
+    return server.compatibility == ServerCompatibility::Compatible;
+  });
+}
+
+KeyChipParts quickPlayChipParts(std::function<void()> action,
+                                ISoundPlayer& sounds) {
+  return KeyChipParts{.text = quickPlayText(),
+                      .area = quickPlayChipArea(),
+                      .key = QUICK_PLAY_KEY,
+                      .action = std::move(action),
+                      .sounds = sounds,
+                      .restState = BarState::Selected};
+}
+
+KeyChipParts rankingChipParts(std::function<void()> action,
+                              ISoundPlayer& sounds) {
+  return KeyChipParts{.text = rankingText(),
+                      .area = rankingChipArea(),
+                      .key = RANKING_KEY,
+                      .action = std::move(action),
+                      .sounds = sounds};
+}
+
+KeyChipParts addressChipParts(std::function<void()> action,
+                              ISoundPlayer& sounds) {
+  return KeyChipParts{.text = addressText(),
+                      .area = addressChipArea(),
+                      .key = ADDRESS_KEY,
+                      .action = std::move(action),
+                      .sounds = sounds};
+}
+
+KeyChipParts backChipParts(std::function<void()> action, ISoundPlayer& sounds) {
+  return KeyChipParts{.text = backText(),
+                      .area = backChipArea(),
+                      .key = MENU_CANCEL_KEY,
+                      .action = std::move(action),
+                      .sounds = sounds};
+}
+
 }  // namespace
 
 ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
@@ -120,36 +166,19 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       motion_(parts.motion),
-      quickPlayChip_(
-          KeyChipParts{.text = quickPlayText(),
-                       .area = quickPlayChipArea(),
-                       .key = QUICK_PLAY_KEY,
-                       .action =
-                           [this] {
-                             if (const std::optional<ServerRow> server =
-                                     quickPlayServerOf(map_.servers())) {
-                               join(*server);
-                             }
-                           },
-                       .sounds = parts.sounds,
-                       .restState = BarState::Selected}),
-      rankingChip_(KeyChipParts{
-          .text = rankingText(),
-          .area = rankingChipArea(),
-          .key = RANKING_KEY,
-          .action = [this] { navigator_->push(LEADERBOARD_SCREEN); },
-          .sounds = parts.sounds}),
-      addressChip_(KeyChipParts{
-          .text = addressText(),
-          .area = addressChipArea(),
-          .key = ADDRESS_KEY,
-          .action = [this] { navigator_->push(CONNECTION_SCREEN); },
-          .sounds = parts.sounds}),
-      backChip_(KeyChipParts{.text = backText(),
-                             .area = backChipArea(),
-                             .key = MENU_CANCEL_KEY,
-                             .action = [this] { stepBack(); },
-                             .sounds = parts.sounds}) {
+      quickPlayChip_(quickPlayChipParts(
+          [this] {
+            if (const std::optional<ServerRow> server =
+                    quickPlayServerOf(map_.servers())) {
+              join(*server);
+            }
+          },
+          parts.sounds)),
+      rankingChip_(rankingChipParts(
+          [this] { navigator_->push(LEADERBOARD_SCREEN); }, parts.sounds)),
+      addressChip_(addressChipParts(
+          [this] { navigator_->push(CONNECTION_SCREEN); }, parts.sounds)),
+      backChip_(backChipParts([this] { stepBack(); }, parts.sounds)) {
   servers_->refresh();
   repaint();
 }
@@ -180,11 +209,14 @@ void ServerMapScreen::update(engine::Duration elapsed) {
   if (sinceRefresh_ >= SERVER_LIST_REFRESH_INTERVAL) {
     refresh();
   }
-  map_.showServers(servers_->snapshot().servers);
-  if (const std::optional<ServerRow> chosen = map_.chosen()) {
+  if (servers_->snapshot().servers != map_.servers()) {
+    map_.showServers(servers_->snapshot().servers);
+  }
+  if (const std::optional<ServerRow> chosen = map_.chosen();
+      chosen.has_value() && map_.stage() == ServerMapStage::Games) {
     panel_.show(games_->snapshot(), chosen->name);
   }
-  quickPlayChip_.setEnabled(quickPlayServerOf(map_.servers()).has_value());
+  quickPlayChip_.setEnabled(holdsAServerOfThisVersion(map_.servers()));
   repaint();
 }
 
@@ -269,8 +301,13 @@ void ServerMapScreen::repaint() {
   const ServerListPhase phase = servers_->snapshot().phase;
   paintServerMapHeader(*canvas_, map_.servers().size());
   if (phase == ServerListPhase::Ready) {
-    paintServerMap(*canvas_, map_,
-                   turnedPlanet(PlanetPose{}, elapsed_, motion_));
+    const PlanetPose pose = planetPoseIn(
+        map_.view(), turnedPlanet(PlanetPose{}, elapsed_, motion_));
+    if (pose != planetPose_) {
+      planetPixels_ = sectorPlanetPixels(pose);
+      planetPose_ = pose;
+    }
+    paintServerMap(*canvas_, map_, planetPixels_);
     if (map_.stage() == ServerMapStage::Games) {
       panel_.paint(*canvas_);
     }

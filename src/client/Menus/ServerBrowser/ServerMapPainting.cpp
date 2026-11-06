@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstddef>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -54,13 +55,15 @@ std::string pingTextOf(const ServerRow& server) {
           .count());
 }
 
-/** @returns The bubble of @p server standing at @p star: its counts, its ping
+/** @returns The bubble of @p server standing at @p star: its pilots of the
+ * most it takes and its games, its ping
  * and version, a warning when it is slow or of another version, and what
  * ENTER does at @p stage. */
 ServerTooltip tooltipOf(const ServerRow& server, sf::Vector2i star,
                         ServerMapStage stage) {
   std::vector<TooltipLine> lines{
-      {.text = std::to_string(server.playerCount) + PILOTS_AND_GAMES_JOIN +
+      {.text = std::to_string(server.playerCount) + PILOTS_SEPARATOR +
+               std::to_string(server.maximumPlayers) + PILOTS_AND_GAMES_JOIN +
                std::to_string(server.gameCount) + GAMES_WORD,
        .color = PALE_BLUE},
       {.text = pingTextOf(server) + PING_AND_VERSION_JOIN + server.gameVersion,
@@ -81,14 +84,6 @@ ServerTooltip tooltipOf(const ServerRow& server, sf::Vector2i star,
       .width = BUBBLE_WIDTH,
       .title = server.name,
       .lines = std::move(lines)};
-}
-
-/** @returns The box the bubble @p tooltip covers, which no name may enter. */
-sf::IntRect boxOf(const ServerTooltip& tooltip) {
-  return sf::IntRect{
-      tooltip.topLeft,
-      {tooltip.width, TOOLTIP_BOTTOM + (static_cast<int>(tooltip.lines.size()) *
-                                        TOOLTIP_LINE_PITCH)}};
 }
 
 /** @brief Writes the name of every server that finds a free side, the chosen
@@ -146,7 +141,7 @@ void paintNamesAndBubble(IInterfaceCanvas& canvas,
   if (chosen.has_value()) {
     const sf::Vector2i star = placeOf(bearingOf(*chosen), choice.view());
     bubble = tooltipOf(*chosen, star, choice.stage());
-    keepOut.push_back(boxOf(*bubble));
+    keepOut.push_back(tooltipAreaOf(*bubble));
     paintChosenStar(canvas, star);
   }
   paintNames(canvas, choice, keepOut);
@@ -226,13 +221,17 @@ void paintServerMapMessage(IInterfaceCanvas& canvas, ServerListPhase phase) {
                          .alignment = TextAlignment::Center});
 }
 
-void paintServerMap(IInterfaceCanvas& canvas, const ServerMapChoice& choice,
-                    PlanetPose planet) {
-  const MapView view = choice.view();
-  planet.center = {static_cast<int>(view.centerX),
+PlanetPose planetPoseIn(const MapView& view, PlanetPose turned) {
+  turned.center = {static_cast<int>(view.centerX),
                    static_cast<int>(view.centerY)};
-  planet.radius = static_cast<int>(SECTOR_PLANET_RADIUS * view.zoom);
-  paintSectorPlanet(canvas, planet);
+  turned.radius = static_cast<int>(SECTOR_PLANET_RADIUS * view.zoom);
+  return turned;
+}
+
+void paintServerMap(IInterfaceCanvas& canvas, const ServerMapChoice& choice,
+                    std::span<const ColoredPixel> planet) {
+  const MapView view = choice.view();
+  canvas.plot(planet);
   paintPingRings(canvas, view);
   paintStars(canvas, choice);
   const bool zoomedIn = choice.stage() != ServerMapStage::ZoomedOut;

@@ -51,7 +51,8 @@ class ServerMapChoice {
 };
 
 /** @returns Where @p server stands from the planet: its ping, or the farthest
- * ring when it gives none, and the direction its id takes. */
+ * ring for a server of another version, which gives none, and the direction
+ * its id takes. */
 [[nodiscard]] StarBearing bearingOf(const ServerRow& server);
 
 }  // namespace rtype::client
