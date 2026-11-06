@@ -104,7 +104,7 @@ def paint_box(draw, center):
 
 def paint_arrow(draw):
     """Draws the arrow from the app to the Applications folder."""
-    y = APP_CENTER[1]
+    y = APP_CENTER[1] + (BOX_TOP_OFFSET + BOX_BOTTOM_OFFSET) // 2
     arrow_left = APP_CENTER[0] + BOX_HALF + ARROW_GAP
     arrow_right = APPLICATIONS_CENTER[0] - BOX_HALF - ARROW_GAP
     draw.rectangle((arrow_left, y - 1, arrow_right - ARROW_HEAD, y + 1), fill=HUD_CYAN)
