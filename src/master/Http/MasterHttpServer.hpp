@@ -2,15 +2,12 @@
 
 #include <cstdint>
 #include <memory>
-#include <optional>
-#include <string>
 #include <thread>
 #include "ApiHandler.hpp"
 #include "Endpoint.hpp"
 #include "FailureReport.hpp"
 #include "Logger.hpp"
 #include "MasterRoute.hpp"
-#include "SiteFolder.hpp"
 
 namespace httplib {
 class Server;
@@ -31,12 +28,6 @@ namespace rtype::master {
  * MAX_REQUEST_BODY_BYTES sent to a route gets 413. A route that throws gets
  * 500, and only the journal reads why. No other socket may listen on the port
  * while the server holds it.
- *
- * Outside the API, it may serve the files of a web site (serveSite()): a file
- * of the folder is answered with the type of its extension, a folder asked
- * without its last `/` is sent there with 301, and a path no file answers gets
- * the NOT_FOUND_PAGE_FILE_NAME of the site, in HTML, instead of the problem
- * document. Paths under network::MASTER_API_PREFIX keep their JSON errors.
  */
 class MasterHttpServer {
  public:
@@ -62,17 +53,9 @@ class MasterHttpServer {
   void add(network::MasterRoute route, ApiHandler handler);
 
   /**
-   * @brief Serves the web site of the folder @p folder names under
-   * SITE_MOUNT_POINT. Call it before open(), which asks @p folder once; a
-   * folder that does not exist then is written in the journal and the server
-   * answers the API only.
-   */
-  void serveSite(SiteFolder folder);
-
-  /**
-   * @brief Mounts the site of serveSite(), then binds @p endpoint, an IPv4
-   * address of the machine or network::ANY_IPV4_ADDRESS and a TCP port, then
-   * listens on a thread of its own until close().
+   * @brief Binds @p endpoint, an IPv4 address of the machine or
+   * network::ANY_IPV4_ADDRESS and a TCP port, then listens on a thread of its
+   * own until close().
    * @returns The port bound: the port of @p endpoint, or the one the system
    * chose for network::ANY_PORT. It returns once the server accepts
    * connections.
@@ -94,17 +77,9 @@ class MasterHttpServer {
    */
   void listen();
 
-  /**
-   * @brief Mounts the folder of the site and keeps its page of 404, when a
-   * site is served and its folder exists; tells the journal either way.
-   */
-  void mountSite();
-
   std::unique_ptr<httplib::Server> server_;
   FailureReport onFailure_;
   logging::Logger logger_;
-  SiteFolder siteFolder_;
-  std::optional<std::string> notFoundPage_;
   std::jthread listener_;
 };
 

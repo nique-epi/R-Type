@@ -8,7 +8,6 @@
 #include "MasterHttpModule.hpp"
 #include "MasterLoggerModule.hpp"
 #include "MasterStorageModule.hpp"
-#include "MasterWebModule.hpp"
 #include "ServersModule.hpp"
 
 namespace rtype::master {
@@ -22,7 +21,6 @@ std::vector<std::unique_ptr<engine::IModule>> masterModules(
       std::make_unique<MasterStorageModule>(engine::executableFolder()));
   modules.push_back(std::make_unique<MasterHttpModule>(onFailure));
   modules.push_back(std::make_unique<ServersModule>());
-  modules.push_back(std::make_unique<MasterWebModule>());
   return modules;
 }
 

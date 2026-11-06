@@ -55,6 +55,9 @@ constexpr std::string_view CREATED_LOCATION = "/api/thing/7";
 /** @brief A path under /api that no test adds. */
 constexpr std::string_view UNKNOWN_URL = "/api/nothing";
 
+/** @brief The media type every error must carry. */
+constexpr std::string_view EXPECTED_PROBLEM_TYPE = "application/problem+json";
+
 /** @brief The members of a problem document of RFC 9457 the tests read. */
 constexpr std::string_view PROBLEM_STATUS_MEMBER_NAME = "status";
 constexpr std::string_view PROBLEM_TITLE_MEMBER_NAME = "title";
@@ -76,32 +79,3 @@ constexpr std::size_t OVERSIZED_BODY_BYTES = (std::size_t{64} * 1024) + 1;
  * sends to its route. */
 constexpr std::string_view GET_METHOD = "GET";
 constexpr std::string_view TEXT_CONTENT_TYPE = "text/plain";
-
-/** @brief The other files of the web site the tests write, and what they
- * hold. */
-constexpr std::string_view SITE_SERVERS_INDEX_FILE = "servers/index.html";
-constexpr std::string_view SITE_NOT_FOUND_FILE = "404.html";
-constexpr std::string_view SITE_NOT_FOUND_TEXT = "<h1>Lost in space</h1>";
-
-/** @brief The folder of the site, in the folder of the test. */
-constexpr std::string_view SITE_FOLDER = "site";
-
-/** @brief A file beside the folder of the site, which no client may read. */
-constexpr std::string_view OUTSIDE_SITE_FILE = "secret.txt";
-constexpr std::string_view OUTSIDE_SITE_TEXT = "the admin key";
-
-/** @brief The paths a client asks the site for. */
-constexpr std::string_view SITE_SERVERS_URL = "/servers";
-constexpr std::string_view SITE_SERVERS_FOLDER_URL = "/servers/";
-constexpr std::string_view UNKNOWN_PAGE_URL = "/nowhere";
-
-/** @brief What a path puts before OUTSIDE_SITE_FILE to climb out of the
- * site. */
-constexpr std::string_view CLIMB_OUT_OF_SITE = "/../";
-
-/** @brief A folder of the site no test creates. */
-constexpr std::string_view MISSING_SITE_FOLDER = "no-site";
-
-/** @brief The status and the type of what the site answers. */
-constexpr int EXPECTED_MOVED_PERMANENTLY = 301;
-constexpr std::string_view EXPECTED_HTML_TYPE = "text/html";

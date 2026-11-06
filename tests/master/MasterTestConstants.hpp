@@ -17,7 +17,6 @@ constexpr std::string_view AUTHORIZATION_HEADER_NAME = "Authorization";
 constexpr std::string_view LOCATION_HEADER_NAME = "Location";
 constexpr std::string_view CONTENT_TYPE_HEADER = "Content-Type";
 constexpr std::string_view EXPECTED_JSON_TYPE = "application/json";
-constexpr std::string_view EXPECTED_PROBLEM_TYPE = "application/problem+json";
 constexpr std::string_view PUT_METHOD = "PUT";
 
 /** @brief The member of a problem document that says what was refused. */
@@ -48,9 +47,3 @@ constexpr std::string_view TEST_SERVER_NAME = "Paris 1";
 /** @brief A key shaped like those the master issues, which it never issued. */
 constexpr std::string_view UNKNOWN_SERVER_KEY =
     "rtk_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-
-/** @brief The index page of a web site the tests write, what it holds, and
- * the root a client asks it by. */
-constexpr std::string_view SITE_INDEX_FILE = "index.html";
-constexpr std::string_view SITE_INDEX_TEXT = "<h1>R-Type</h1>";
-constexpr std::string_view SITE_ROOT_URL = "/";

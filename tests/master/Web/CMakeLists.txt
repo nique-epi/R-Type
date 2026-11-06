@@ -1,1 +1,0 @@
-target_sources(master_tests PRIVATE MasterWebModuleTest.cpp)

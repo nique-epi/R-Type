@@ -4,10 +4,6 @@
 #include <cctype>
 #include <cstdint>
 #include <exception>
-#include <filesystem>
-#include <fstream>
-#include <ios>
-#include <iterator>
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
@@ -27,12 +23,9 @@
 #include "MasterException.hpp"
 #include "MasterHttpConstants.hpp"
 #include "MasterRoute.hpp"
-#include "MasterRouteConstants.hpp"
 #include "MasterRoutePath.hpp"
 #include "NetworkConstants.hpp"
-#include "PathText.hpp"
 #include "RouteMethod.hpp"
-#include "SiteFolder.hpp"
 
 // NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks,clang-analyzer-unix.BlockInCriticalSection)
 namespace rtype::master {
@@ -86,43 +79,15 @@ std::string problemDetailsText(int status,
   return problem.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace);
 }
 
-/** @returns Whether @p path is network::MASTER_API_PREFIX or a path below it.
- */
-bool isApiPath(std::string_view path) {
-  const std::string_view prefix = network::MASTER_API_PREFIX;
-  return path.starts_with(prefix) &&
-         (path.size() == prefix.size() ||
-          path.substr(prefix.size()).starts_with(network::PATH_SEPARATOR));
-}
-
-/** @returns The bytes of @p file, or nothing when it cannot be read. */
-std::optional<std::string> fileText(const std::filesystem::path& file) {
-  std::ifstream stream{file, std::ios::binary};
-  if (!stream) {
-    return std::nullopt;
-  }
-  return std::string{std::istreambuf_iterator<char>{stream},
-                     std::istreambuf_iterator<char>{}};
-}
-
 /**
- * @brief Gives an error answer that has no body a body: @p notFoundPage, in
- * HTML, for a 404 outside the API when the site has one, or else the problem
- * document of its status, so a client of the API always reads JSON.
+ * @brief Gives an error answer that has no body the problem document of its
+ * status, so a client always reads JSON.
  */
-void writeErrorBody(const httplib::Request& request,
-                    httplib::Response& response,
-                    const std::optional<std::string>& notFoundPage) {
-  if (!response.body.empty()) {
-    return;
+void writeProblemDocument(httplib::Response& response) {
+  if (response.body.empty()) {
+    response.set_content(problemDetailsText(response.status, std::nullopt),
+                         std::string{network::PROBLEM_CONTENT_TYPE});
   }
-  if (response.status == NOT_FOUND_STATUS && notFoundPage.has_value() &&
-      !isApiPath(request.path)) {
-    response.set_content(*notFoundPage, std::string{HTML_CONTENT_TYPE});
-    return;
-  }
-  response.set_content(problemDetailsText(response.status, std::nullopt),
-                       std::string{network::PROBLEM_CONTENT_TYPE});
 }
 
 /**
@@ -215,9 +180,8 @@ MasterHttpServer::MasterHttpServer(FailureReport onFailure)
   server_->set_socket_options(claimPortAlone);
   server_->set_payload_max_length(MAX_REQUEST_BODY_BYTES);
   server_->set_error_handler(
-      [this](const httplib::Request& request, httplib::Response& response) {
-        writeErrorBody(request, response, notFoundPage_);
-      });
+      []([[maybe_unused]] const httplib::Request& request,
+         httplib::Response& response) { writeProblemDocument(response); });
   server_->set_exception_handler(
       [this]([[maybe_unused]] const httplib::Request& request,
              httplib::Response& response, const std::exception_ptr& error) {
@@ -243,12 +207,7 @@ void MasterHttpServer::add(network::MasterRoute route, ApiHandler handler) {
   }
 }
 
-void MasterHttpServer::serveSite(SiteFolder folder) {
-  siteFolder_ = std::move(folder);
-}
-
 std::uint16_t MasterHttpServer::open(const network::Endpoint& endpoint) {
-  mountSite();
   const int port = boundPortOf(*server_, endpoint);
   if (port == NO_PORT_BOUND) {
     throw HttpPortUnavailableException(endpoint.address, endpoint.port);
@@ -274,21 +233,6 @@ void MasterHttpServer::listen() {
   } catch (const std::exception& error) {
     onFailure_(error.what());
   }
-}
-
-void MasterHttpServer::mountSite() {
-  if (!siteFolder_) {
-    return;
-  }
-  const std::filesystem::path folder = siteFolder_();
-  if (!server_->set_mount_point(std::string{SITE_MOUNT_POINT},
-                                folder.string())) {
-    logger_.warn("no web site served: ", logging::genericText(folder),
-                 " is not a folder");
-    return;
-  }
-  notFoundPage_ = fileText(folder / NOT_FOUND_PAGE_FILE_NAME);
-  logger_.info("web site served from ", logging::genericText(folder));
 }
 
 }  // namespace rtype::master

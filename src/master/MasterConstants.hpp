@@ -35,23 +35,15 @@ constexpr std::string_view MASTER_CONFIGURATION_FILE_NAME = "master.cfg";
  */
 constexpr std::string_view PORT_SETTING_NAME = "port";
 constexpr std::string_view DATABASE_SETTING_NAME = "database";
-constexpr std::string_view WEB_SETTING_NAME = "web";
 
 /** @brief Every setting of the master, in the order its usage lists them. */
-constexpr std::array MASTER_SETTING_NAMES{
-    PORT_SETTING_NAME, DATABASE_SETTING_NAME, WEB_SETTING_NAME};
+constexpr std::array MASTER_SETTING_NAMES{PORT_SETTING_NAME,
+                                          DATABASE_SETTING_NAME};
 
 /**
  * @brief The database of the master while DATABASE_SETTING_NAME is empty, in
  * the folder of the executable.
  */
 constexpr std::string_view DATABASE_FILE_NAME = "r-type_master.db";
-
-/**
- * @brief The folder of the web site while WEB_SETTING_NAME is empty, in the
- * folder the master is started from: where `bun run build` writes the site
- * of `web/` in the repository.
- */
-constexpr std::string_view DEFAULT_WEB_FOLDER = "web/out";
 
 }  // namespace rtype::master
