@@ -38,7 +38,7 @@ Then play the forger: someone who forges an address, sends the message as often 
 
 `docs/src/content/docs/protocol.mdx` is the specification: a developer who follows it can write a client without reading the code. Write the message there first, using the words of the page (MUST, SHOULD, MAY as in RFC 2119), so the review of the pull request can compare the code with it.
 
-The next free number is 26 (`ServerInformation` holds 25), and a number never changes once given. Add a row to the table of [Client to server](/R-Type/protocol/#client-to-server):
+The next free number follows the last value of `MessageType` (`src/network/Protocol/MessageType.hpp`); this page uses 26, the number it had when it was written. A number never changes once given. Add a row to the table of [Client to server](/R-Type/protocol/#client-to-server):
 
 ```md
 | 26 | `Emote` | `kind` `u8`: 1 `Salute`, 2 `Taunt` | when the player asks for one, once |

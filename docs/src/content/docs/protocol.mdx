@@ -74,7 +74,7 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
 | Offset | Size | Field | In version 7 |
 |---|---|---|---|
 | 0 | 4 | `protocolId` | `0x52545950`, `RTYP` in ASCII |
-| 4 | 1 | `version` | 5 |
+| 4 | 1 | `version` | 7 |
 | 5 | 1 | `flags` | `ACKNOWLEDGES` 0x01, `GUARANTEED` 0x02, `COMPRESSED` 0x04, every other bit 0 |
 | 6 | 8 | `sessionToken` | 0 until the connection is accepted, then the token given by the server |
 | 14 | 2 | `sequence` | number of the datagram for its sender |
@@ -101,7 +101,7 @@ A received datagram goes through these checks in order. No buffer is sized from 
 |---|---|
 | The datagram holds 25 to 1200 bytes | dropped |
 | `protocolId` is `RTYP` | dropped |
-| `version` is 6 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
+| `version` is 7 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
 | `COMPRESSED` is set | the server drops the datagram; the client decodes the body and clears the flag, or drops the datagram when it cannot (see [Compression](#compression)) |
 | `flags` has no bit but `ACKNOWLEDGES` and `GUARANTEED`, once `COMPRESSED` is cleared | dropped |
 | The message sizes add up exactly to the end of the datagram | dropped |
@@ -131,6 +131,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 17 | `GameLoaded` | none | with a `PlayerInput`, at most every 100 ms, from the first one after `GameStarted` until the first state (`WorldState` or `DeltaWorldState`) arrives |
 | 18 | `LeaderboardRequest` | `playerCount` `u8` (1 to 4), `difficulty` `string` | when the player opens or changes a leaderboard, then every 500 ms until an answer; the client gives up after 5 s |
 | 24 | `ServerInformationRequest` | `sentAt` `u32`, then `padding`, 77 bytes of 0 (see [Server information](#server-information)) | by anyone, outside any session, to learn what a server is and its round trip: a client that lists the servers, the master that checks a server answers |
+| 29 | `ChatLine` | `lineNumber` `u16`, `text` `string` (1 to 127 bytes) | when the player sends a line, then every 500 ms until the `PlayerChatLine` of that number comes back; one line at a time; the client gives up after 5 s (see [Chat](#chat)) |
 
 ### Server to client
 
@@ -153,9 +154,10 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 20 | `DeltaWorldState` | see [Delta world state](#delta-world-state) | during a game, as many times per second as the server was told to (20 by default, from 2 to 60) |
 | 21 | `RoundTrips` | `playerCount` `u8`, then per player `playerNumber` `u8`, `roundTrip` `u32`, `jitter` `u32`, in microseconds | right after each `Heartbeat` of the server (see [Round trip](#round-trip)) |
 | 22 | `EnemyAction` | `entityId` `u32`, `attack` `u8`, `phase` `u8`: 1 `Signal`, 2 `Strike`, 3 `Recover`, 4 `Enraged` | when an enemy enters a step of one of its attacks, guaranteed and ordered (see [Ordered messages](#ordered-messages)) |
-| 23 | `OrderedMessage` | `number` `u16`, `firstKept` `u16`, `innerType` `u8`, then the payload of the carried message to the end | carries `EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` (see [Ordered messages](#ordered-messages)) |
+| 23 | `OrderedMessage` | `number` `u16`, `firstKept` `u16`, `innerType` `u8`, then the payload of the carried message to the end | carries `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft` and `PlayerChatLine` (see [Ordered messages](#ordered-messages)) |
 | 25 | `ServerInformation` | `sentAt` `u32`, `heldFor` `u32`, `protocolVersion` `u8`, `gameVersion` `string`, `name` `string`, `playerCount` `u16`, `gameCount` `u16`, `freeSeatCount` `u16` | in answer to a `ServerInformationRequest`, to its sender, outside any session (see [Server information](#server-information)) |
 | 26 | `ConnectionRedirect` | `port` `u16` (1 to 65535) | from a supervisor only, in answer to a request with a valid cookie, once a game that has a place reported; the player asks again at that port of the same address (see [Supervisor](#supervisor)) |
+| 30 | `PlayerChatLine` | `lineNumber` `u16`, `text` `string` (1 to 127 bytes), `playerNumber` `u8` (1 to 4) | to every player of the game, its writer included, once for each new line the server takes, guaranteed and ordered (see [Chat](#chat)) |
 
 ### Payload rules
 
@@ -178,6 +180,7 @@ A message is accepted only when its payload has exactly the size its fields add 
 | `LeaderboardRequest` | `playerCount` is 1 to 4; `difficulty` follows the rules of a nickname: 1 to 16 bytes of valid UTF-8, no control character |
 | `LeaderboardAnswer` | as `LeaderboardRequest` for its first two fields; at most 10 rows; each `rank` is at least 1 and each nickname is valid |
 | `ServerInformationRequest` | the payload is 81 bytes: `sentAt`, then 77 bytes of 0; a shorter or longer one, or a byte of `padding` other than 0, is invalid |
+| `ChatLine`, `PlayerChatLine` | `text` is 1 to 127 bytes of valid UTF-8, no control character; `PlayerChatLine` names a `playerNumber` of 1 to 4 |
 | `ServerInformation` | `gameVersion` and `name` are 1 to 32 bytes of valid UTF-8, no control character; `playerCount` is at most 4 times `gameCount`, and `playerCount` plus `freeSeatCount` too |
 
 A `LobbyState` or a `GameEnded` with no player is well formed; a `WorldState` too, while the game has none. A `LeaderboardAnswer` with no row is well formed.
@@ -187,6 +190,21 @@ A `LobbyState` or a `GameEnded` with no player is well formed; a `WorldState` to
 A leaderboard belongs to one server, one difficulty and one number of players at the start of a game: two difficulties never mix. Each player appears once, with their best score. Equal scores share a rank and the next rank skips (1, 1, 3); among them, the earliest game comes first. The player who asks gets their own row whether or not it is among the 10 listed, so it may appear twice. A guest is recognized by nickname, with no proof that it is the same person.
 
 The server reads a request only from a player with a session, in any state of the game: it drops one from any other sender before reading it, so an answer larger than its request never goes to an unverified address. It answers a player at most once per 500 ms and ignores the other requests.
+
+### Chat
+
+A player chats in any state of the game: in the waiting room, during a match and on its end screen. The server reads a `ChatLine` only from a player with a session, and relays each new line to every player of the game at that moment, its writer included, as a `PlayerChatLine` on the ordered channel (see [Ordered messages](#ordered-messages)). The server writes `playerNumber`: a client never names who wrote a line. A player who joins later never gets the lines relayed before.
+
+- **Numbering.** The lines of a player are numbered from 1 within its session, one more for each new line, wrapping from 65535 to 0. A copy keeps the number of its line.
+- **Sending again.** The client to server direction has no guaranteed channel, so a client MUST send a line again every 500 ms until it receives the `PlayerChatLine` with its own `playerNumber` and that `lineNumber`, and SHOULD give up after 5 s. It sends one line at a time: the next one waits until the previous came back or was given up.
+- **Copies.** The server keeps, for each player, the `lineNumber` of the newest line it relayed. A line whose number is not newer, compared as the `sequence` of a datagram is (RFC 1982: newer means ahead by 1 to 32767), is a copy: the server ignores it.
+- **Rate.** The server relays at most one line per player per second. A new line sooner is ignored without being kept, so a later copy of it goes through once the second is over: a fast writer is slowed down, it loses no line. Quake III takes one command a second from each client the same way.
+- **Length.** A text holds 1 to 127 bytes, the length at which Source cuts a line of chat; a longer one is refused as [Payload rules](#payload-rules) say.
+- **Departure.** What the server keeps of the lines of a player is forgotten when its session closes, so the next player on that seat starts afresh.
+
+Alternative considered: a guaranteed channel from the client to the server. It would spare the number and the copies, but the server would have to acknowledge, which it never does, so it changes both programs for one message; the number of a line costs 2 bytes.
+
+Alternative considered: a bucket of lines, as Source keeps (4 lines at once, then one every 3 s). It lets a player send a burst, but it is a second mechanism next to the interval the leaderboard already uses.
 
 ### Server information
 
@@ -476,6 +494,7 @@ A message that is valid but means nothing in the current state of its receiver c
 | A `ServerInformation` a client did not ask for | it came late, or was forged | skips it, as a message only the server receives would be |
 | `WorldState` with a `tick` lower than the last one applied | it arrived late | ignores it (see [World state](#world-state)) |
 | `EntitySpawned` naming an entity the client has; `EntityDestroyed` or `EntityDamaged` naming one it does not have | a copy, or a `WorldState` came first | changes nothing |
+| A `ChatLine` whose number is not newer than the last line relayed for that player, or less than 1 s after it | a copy, or a flood | ignores it (see [Chat](#chat)) |
 | A second copy of an `OrderedMessage` (same `number`) | the acknowledgement of a datagram that held it was lost, so it was sent again (see [Ordered messages](#ordered-messages)) | ignored: the number was handled |
 
 ### Joining fails
@@ -507,7 +526,7 @@ The programs handle every case above. In a game, a `PlayerLeft` marks its pilot 
 
 ## Ordered messages
 
-`EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` change the screen once, and no state message repeats what they show, so they are guaranteed and ordered: their sender sends them again until they are acknowledged, and their receiver handles them in the order they were given, so a player never dies on the screen before the hit that killed it. In this version only the server sends them, and only the client acknowledges them.
+`EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft` and `PlayerChatLine` change the screen once, and no state message repeats what they show, so they are guaranteed and ordered: their sender sends them again until they are acknowledged, and their receiver handles them in the order they were given, so a player never dies on the screen before the hit that killed it. In this version only the server sends them, and only the client acknowledges them.
 
 - **Acknowledging.** Within a session, every datagram a side sends MUST acknowledge the datagrams it accepted from its peer, with `ACKNOWLEDGES`, `acknowledgedSequence` and `acknowledgementBits` (see [Datagram](#datagram)). A side that accepts a datagram with `GUARANTEED` set SHOULD send a `Heartbeat` to carry the acknowledgement when 40 ms (`ACKNOWLEDGEMENT_DELAY`) pass with nothing else sent; during a game the next `PlayerInput` carries it first.
 - **Numbering.** The server sends each of these messages to each player inside an `OrderedMessage` (type 23): `number` (`u16`), `firstKept` (`u16`), `innerType` (`u8`), then the payload of the message it carries, to the end of the payload. The numbers of a player start at 1 (`FIRST_ORDERED_NUMBER`) and grow by 1 for each message given to that player, wrapping from 65535 to 0. A receiver MUST refuse an `OrderedMessage` that carries an `OrderedMessage`, whose `firstKept` is later than its `number`, or whose carried payload is over 1170 bytes (`ORDERED_PAYLOAD_LIMIT`). The envelope adds 5 bytes to a message.
@@ -539,15 +558,17 @@ Only the messages of [Ordered messages](#ordered-messages) are sent again until 
 | `LeaderboardRequest`, or its answer | the client sends the request again, the server answers it again | 500 ms |
 | `PlayerInput` | the next input, which repeats it until the server confirms it | 17 ms |
 | `Heartbeat` | the next one, whose echo measures the round trip again | 500 ms |
+| `ChatLine` | the next copy | 500 ms |
 | `RoundTrips` | the next one | 500 ms |
 | `ServerInformationRequest`, or its answer | not corrected by the protocol: the asker asks again when it chooses, and one ping is missing until then | — |
 | `EntitySpawned` | the next `WorldState` creates the entity, with its appearance effect | 50 ms at 20 per second |
-| `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft` | the next send | 116.7 ms |
+| `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine` | the next send | 116.7 ms |
 | `Disconnection` | the next copy | 50 ms |
 | all three copies of `Disconnection` | the session times out: the others get `PlayerLeft` (`TimedOut`) instead of (`Left`) | 20 s |
 | every send of an `EntityDestroyed`, 9 in 1 s | the entity is removed once no `WorldState` has listed it for 900 ms up to a closed tick, without explosion | 950 ms at 20 per second |
 | every send of an `EnemyAction` | not corrected: the enemy keeps its idle animation for that step; its position and health stay right through the state messages | — |
 | every send of a `GameEvent` or a `PlayerLeft` | not corrected: the sound, effect or message on screen is missed; lives, scores and players stay right through the state messages | — |
+| every send of a `PlayerChatLine` | not corrected: that player misses the line; when it is the writer, it sends the line again until it gives up after 5 s, and the server ignores those copies | — |
 
 The rates and delays on this page (60 inputs and 20 states per second by default, 40 ms, 100 ms, 250 ms, 500 ms, 900 ms, 1 s, 5 s, 15 s, 20 s, the 10-second cookie window, and the eighth and the 16 round trips of [Round trip](#round-trip)) are **provisional**: they will be revised once measured on a real network. Code must name each of them as a constant and never repeat the number.
 
@@ -600,6 +621,8 @@ Version 6 names the entity types by a table instead of four values fixed in the 
 
 Version 7 sends `EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` inside an `OrderedMessage` (type 23) and delivers them in the order they were given (see [Ordered messages](#ordered-messages)). The layout of the header and of every other message is the same. A client of version 6 would not read the envelope, so `version` became 7 and the server answers a client of version 6 with `ConnectionRefused` (`IncompatibleVersion`).
 
+`ChatLine` and `PlayerChatLine` (types 29 and 30) did not change `version`: a peer that does not know them skips them, and the ordered channel hands a `PlayerChatLine` over to a client without the chat, which skips it, so the order of the channel holds.
+
 `ServerInformationRequest` and `ServerInformation` (types 24 and 25) did not change `version` either: a server of version 7 that does not know them drops the request as a datagram from a sender that was not admitted and holds no connection request, and the asker gets no answer, as from a server that does not answer.
 
 ## Implementation status
@@ -610,13 +633,14 @@ The code of this repository applies the rules above, with the exceptions listed 
 - `src/network` holds the pieces: the socket in `Transport` drops a datagram over 1200 bytes (see [Network](/R-Type/network/)), `Serialization` encodes integers and strings, and `Protocol` holds the header and every message of this page, each checked as listed here. A `WorldState` without players is accepted while the game has none (see [Network](/R-Type/network/#world-state-worldstatecodec)).
 - Both programs drop a datagram whose header is not of this protocol and version, or whose message sizes do not add up. The server drops on its network thread every datagram that is neither a connection request, an information request nor from a player it admitted, answers the requests as [Connection](#connection) and [Server information](#server-information) describe, and answers a datagram of another version from an unknown sender with `ConnectionRefused` (`IncompatibleVersion`). The client reads only the server it contacts.
 - Within a session, each side writes the session token and its next sequence into every datagram it sends: the server in its acceptances, the `EntitySpawned` of the ships, the Bydos and the missiles, `LobbyState`, `GameStarted`, `DeltaWorldState`, the game events, `GameEnded`, `LeaderboardAnswer`, `Heartbeat`, `RoundTrips` and `Disconnection`; the client in its inputs, `ReadyState`, `GameLoaded`, `LeaderboardRequest`, `Heartbeat` and `Disconnection`. Each also acknowledges there the datagrams it accepted, except the client in its `Disconnection`, sent once the session is closed.
-- The server sends `EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` as [Ordered messages](#ordered-messages) describes, and reads the acknowledgements of every datagram of a player it accepts. The client hands them over in order, and sends a `Heartbeat` 40 ms after a datagram that holds guaranteed messages when nothing else went out.
+- The server sends `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft` and `PlayerChatLine` as [Ordered messages](#ordered-messages) describes, and reads the acknowledgements of every datagram of a player it accepts. The client hands them over in order, and sends a `Heartbeat` 40 ms after a datagram that holds guaranteed messages when nothing else went out.
 - The server checks the token of every datagram from the address of a player it admitted, on its network thread before any queue, and the sequence of every datagram it reads from a player, so a duplicate or a late one is dropped whatever its message. The client checks the token, then the sequence, of every datagram of the server.
 - Each side sends a `Heartbeat` every 500 ms and measures the round trip from its echo, and the server sends each player `RoundTrips` after each of its `Heartbeat`s, as [Round trip](#round-trip) describes; the `Heartbeat` of the server also carries its tick during a game, as [Clock of the server](#clock-of-the-server) describes. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
 
 - The client sends `LeaderboardRequest` from its leaderboard screen, and the server answers it.
 - The server answers a request with a valid cookie with the `ConnectionAccepted` of the player and the table of its entity types, at most once per 250 ms per player once accepted; the client keeps the table of its first acceptance, and leaves a server whose table names a type it has no sheet for.
 - The server limits the datagrams of each address and port, and of each player, on its network thread, as [A sender that sends too much](#a-sender-that-sends-too-much) says.
+- The server relays the chat lines as [Chat](#chat) describes; the client sends none yet.
 - The server answers `ServerInformationRequest` as [Server information](#server-information) describes. The server map of the client sends one to each server of this version the master lists, once per reading of the list (see [Client](/R-Type/client/#server-map-servermapscreen-iservercatalog-igamecatalog)); the probe of the master is not written.
 
 What the programs do not do yet is listed at the end of [A peer disappears](#a-peer-disappears).
