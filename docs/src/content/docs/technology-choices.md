@@ -1,9 +1,9 @@
 ---
 title: Technology choices
-description: Why the project uses SFML, Asio, vcpkg and CMake, and what each was compared with.
+description: Why the project uses SFML, Asio, vcpkg, CMake and, for its web site, Next.js, and what each was compared with.
 ---
 
-The project rests on four tools: SFML draws the client, Asio carries the datagrams, vcpkg installs both and CMake builds everything. This page states the criteria the team used, compares each tool with its main alternatives, and says what each choice costs. The decisions about the code itself (libraries, ECS, network model) are in [Architecture](/R-Type/architecture/).
+The project rests on four tools: SFML draws the client, Asio carries the datagrams, vcpkg installs both and CMake builds everything. The web site, a program of its own that calls the master, has tools of its own, Next.js and bun, which CMake never builds (see [Web site](#web-site-nextjs)). This page states the criteria the team used, compares each tool with its main alternatives, and says what each choice costs. The decisions about the code itself (libraries, ECS, network model) are in [Architecture](/R-Type/architecture/).
 
 ## Criteria
 
@@ -93,6 +93,21 @@ The cost is the language. A mistake in a `CMakeLists.txt` often shows up as a mi
 
 Alternative considered: Meson. Its language is easier to read and it configures faster. It loses because the team would give up the CMake integration of vcpkg and learn a second tool in the middle of the project.
 
+## Web site: Next.js
+
+The web site shows the game servers to the team and the players: today a page that says whether the master answers, then the list of the servers, the leaderboard and the administration. It is a program of its own beside the master, which serves its API only. The site uses the tools of the other web projects of the team: Next.js with the App Router and TypeScript, bun to install and run, Biome to lint and format, Tailwind and shadcn for the look.
+
+| | Next.js server | React with Vite | Astro |
+|---|---|---|---|
+| Cross-platform | runs anywhere bun and Node.js run | the same | the same |
+| Scope | pages and routing, React components rendered on the server, server-only calls to the API | a bundler: routing, the layout of pages and any server are left to the project | static pages first, React only in islands |
+| License | MIT | MIT | MIT |
+| Learning curve | known by the team, who use it on other projects | known, with a router to choose and wire | known from `docs/`, less for an interactive page |
+
+The Next.js server renders the pages and calls the master itself, so the browser talks to one origin and the master needs no CORS, and what the administration will need (a secret kept on the server, a session in a cookie) is available. The cost is a second program to run in production, with Node.js.
+
+Alternative considered: a static export served by the master. It leaves one program to run, but forbids rendering on the server, Server Actions and cookies, so the secret of the administration would have to live in the browser.
+
 ## Where each choice is visible
 
 | Tool | Where | Version |
@@ -101,5 +116,7 @@ Alternative considered: Meson. Its language is easier to read and it configures 
 | Asio | `src/network/` only | 1.32.0 (standalone) |
 | vcpkg | `vcpkg.json`, the `vcpkg/` submodule, the toolchain file of `CMakePresets.json` | registry baseline `9e593bb` |
 | CMake | the `CMakeLists.txt` of each folder, `CMakePresets.json` | 4.2 or newer |
+| Next.js | `web/`, with `web/next.config.ts` | 16.4.5 |
+| bun | `web/package.json` (`packageManager`), `web/bun.lock` | 1.3.14 |
 
-A change of one of these four is a decision that touches every team. It starts as a proposal in [Architecture](/R-Type/architecture/), with the same four criteria.
+A change of one of these tools is a decision that touches every team. It starts as a proposal in [Architecture](/R-Type/architecture/), with the same four criteria.
