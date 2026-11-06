@@ -48,7 +48,7 @@ void HeartbeatJobFixture::startJob(HeartbeatTimes times) {
                                  .probeSecret = LINKED_PROBE_SECRET},
       .games = games_,
       .probeTokens = probeTokens_,
-      .metrics = nullptr,
+      .measures = nullptr,
       .times = times});
 }
 

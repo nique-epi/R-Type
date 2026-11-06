@@ -6,14 +6,13 @@
 #include <utility>
 #include <vector>
 #include "ConfigurationRegistry.hpp"
-#include "Games.hpp"
 #include "HeartbeatJobParts.hpp"
 #include "IListeningPort.hpp"
 #include "IServerName.hpp"
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
 #include "LatestHostedGames.hpp"
-#include "LatestMetrics.hpp"
+#include "LatestServerMeasures.hpp"
 #include "MasterAccess.hpp"
 #include "MasterMessages.hpp"
 #include "ModuleConstants.hpp"
@@ -38,20 +37,16 @@ std::string ServerMasterModule::name() const {
 
 std::vector<std::string> ServerMasterModule::dependencies() const {
   return {std::string{LOGGER_MODULE_NAME}, std::string{NETWORK_MODULE_NAME},
-          std::string{GAMES_MODULE_NAME}, std::string{INFORMATION_MODULE_NAME}};
-}
-
-std::vector<std::string> ServerMasterModule::optionalDependencies() const {
-  return {std::string{METRICS_MODULE_NAME}};
+          std::string{SUPERVISED_GAMES_MODULE_NAME},
+          std::string{INFORMATION_MODULE_NAME}};
 }
 
 void ServerMasterModule::install(engine::InstallContext& context) {
   declareSettings(context.require<engine::ConfigurationRegistry>());
   port_ = &context.require<IListeningPort>();
-  games_ = &context.require<Games>();
   hostedGames_ = &context.require<LatestHostedGames>();
+  measures_ = &context.require<LatestServerMeasures>();
   serverName_ = &context.require<IServerName>();
-  metrics_ = context.find<LatestMetrics>();
   tickDatagrams_ = &context.require<TickDatagrams>();
   context.addWork(
       SIMULATION_STAGE,
@@ -88,11 +83,11 @@ std::optional<HeartbeatJobParts> ServerMasterModule::jobParts() const {
       .identity = ServerIdentity{.name = serverName_->serverName(),
                                  .udpPort = udpPort,
                                  .maximumGames = static_cast<std::uint16_t>(
-                                     games_->all().size()),
+                                     MAXIMUM_RUNNING_GAMES),
                                  .probeSecret = probeSecret_},
       .games = *hostedGames_,
       .probeTokens = probeTokens_,
-      .metrics = metrics_,
+      .measures = measures_,
       .times = {}};
 }
 

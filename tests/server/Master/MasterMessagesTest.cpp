@@ -5,47 +5,33 @@
 #include <vector>
 #include "MasterMessages.hpp"
 #include "MasterMessagesTestConstants.hpp"
-#include "MetricsReport.hpp"
-#include "PlayerRoundTripMeasure.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerIdentity.hpp"
 #include "ServerMeasures.hpp"
 #include "ServerRegistration.hpp"
-#include "TickDurationSummary.hpp"
 
 using rtype::network::ServerHeartbeat;
 using rtype::network::ServerMeasures;
 using rtype::network::ServerRegistration;
 using rtype::server::heartbeatOf;
-using rtype::server::measuresOf;
-using rtype::server::MetricsReport;
-using rtype::server::PlayerRoundTripMeasure;
 using rtype::server::randomProbeSecret;
 using rtype::server::registrationOf;
 using rtype::server::ServerIdentity;
-using rtype::server::TickDurationSummary;
 using rtype::server::testing::ANNOUNCED_PLAYERS_PER_GAME;
 using rtype::server::testing::ANNOUNCED_PROTOCOL_VERSION;
-using rtype::server::testing::AVERAGE_PING_MILLISECONDS;
-using rtype::server::testing::FAR_PLAYER_ROUND_TRIP;
+using rtype::server::testing::CARRIED_MEDIAN_TICK_MILLISECONDS;
 using rtype::server::testing::LINKED_SERVER_GAMES;
 using rtype::server::testing::LINKED_SERVER_NAME;
 using rtype::server::testing::LINKED_SERVER_PORT;
 using rtype::server::testing::LINKED_SERVER_PROBE_SECRET;
-using rtype::server::testing::MEASURED_TICKS;
-using rtype::server::testing::MEDIAN_TICK;
-using rtype::server::testing::MEDIAN_TICK_MILLISECONDS;
-using rtype::server::testing::NEAR_PLAYER_ROUND_TRIP;
 using rtype::server::testing::PROBE_SECRET_CEILING;
 using rtype::server::testing::PROBE_SECRET_FLOOR;
 using rtype::server::testing::PROBE_TOKEN_OF_A_HEARTBEAT;
-using rtype::server::testing::SLOW_TICK;
-using rtype::server::testing::SLOW_TICK_MILLISECONDS;
 
 /**
  * Given a server named, on a port, hosting eight games
  * When its registration is written
- * Then it carries them, protocol 5, four players a game and no address
+ * Then it carries them, protocol 8, four players a game and no address
  */
 TEST(MasterMessages, TheRegistrationTellsWhatTheServerIs) {
   const ServerRegistration registration =
@@ -62,49 +48,28 @@ TEST(MasterMessages, TheRegistrationTellsWhatTheServerIs) {
 }
 
 /**
- * Given a report of ticks of 2 ms at the median and 5 ms at the 95th
- * percentile, and players 20 ms and 40 ms away
- * When its measures are written
- * Then they are 2 ms, 5 ms and a mean round trip of 30 ms
+ * Given measures with a median tick of 2.5 ms
+ * When a heartbeat is written with them
+ * Then it carries them as they are
  */
-TEST(MasterMessages, TheMeasuresComeFromTheReport) {
-  MetricsReport report{};
-  report.ticks = TickDurationSummary{.count = MEASURED_TICKS,
-                                     .average = MEDIAN_TICK,
-                                     .median = MEDIAN_TICK,
-                                     .ninetyFifthPercentile = SLOW_TICK,
-                                     .worst = SLOW_TICK};
-  report.roundTrips = {
-      PlayerRoundTripMeasure{.nickname = {},
-                             .figures = {.roundTrip = NEAR_PLAYER_ROUND_TRIP}},
-      PlayerRoundTripMeasure{.nickname = {},
-                             .figures = {.roundTrip = FAR_PLAYER_ROUND_TRIP}}};
+TEST(MasterMessages, AHeartbeatCarriesTheMeasuresItIsGiven) {
+  const ServerMeasures measures{
+      .tickP50Milliseconds = CARRIED_MEDIAN_TICK_MILLISECONDS,
+      .tickP95Milliseconds = std::nullopt,
+      .receivedBytesPerSecond = std::nullopt,
+      .sentBytesPerSecond = std::nullopt,
+      .lossPercent = std::nullopt,
+      .averagePingMilliseconds = std::nullopt};
 
-  const ServerMeasures measures = measuresOf(report);
-
-  EXPECT_DOUBLE_EQ(measures.tickP50Milliseconds.value_or(0.0),
-                   MEDIAN_TICK_MILLISECONDS);
-  EXPECT_DOUBLE_EQ(measures.tickP95Milliseconds.value_or(0.0),
-                   SLOW_TICK_MILLISECONDS);
-  EXPECT_DOUBLE_EQ(measures.averagePingMilliseconds.value_or(0.0),
-                   AVERAGE_PING_MILLISECONDS);
+  EXPECT_EQ(heartbeatOf({}, measures, std::nullopt).measures, measures);
 }
 
 /**
- * Given a report that measured no tick and no player
- * When its measures are written
- * Then each is left out, never sent as 0
- */
-TEST(MasterMessages, AMeasureNotTakenIsLeftOut) {
-  EXPECT_EQ(measuresOf(MetricsReport{}), ServerMeasures{});
-}
-
-/**
- * Given no report, as when the metrics module is off
+ * Given no measures, as before the supervised games published any
  * When a heartbeat is written
  * Then it carries the games and no measure
  */
-TEST(MasterMessages, AHeartbeatWithoutReportCarriesNoMeasure) {
+TEST(MasterMessages, AHeartbeatWithoutMeasuresCarriesNone) {
   const ServerHeartbeat heartbeat = heartbeatOf({}, std::nullopt, std::nullopt);
 
   EXPECT_TRUE(heartbeat.games.empty());

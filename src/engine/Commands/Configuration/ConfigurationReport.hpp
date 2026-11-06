@@ -16,6 +16,10 @@ struct ConfigurationReport {
   std::size_t executedLines{0};
   /** @brief One message per refused line, naming where the line came from. */
   std::vector<std::string> refusals;
+  /** @brief The lines the rule of the source handed over to another program,
+   * as they were written, in the order they were read: the lines of the file,
+   * then the forced ones. */
+  std::vector<std::string> handedOverLines;
 };
 
 }  // namespace rtype::engine

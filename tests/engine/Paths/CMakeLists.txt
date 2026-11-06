@@ -1,1 +1,1 @@
-target_sources(engine_tests PRIVATE AssetFolderTest.cpp ExecutablePathTest.cpp)
+target_sources(engine_tests PRIVATE AssetFolderTest.cpp ExecutablePathTest.cpp TextBeforeExtensionTest.cpp)

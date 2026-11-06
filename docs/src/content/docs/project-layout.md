@@ -53,7 +53,7 @@ The cases where people hesitate:
 | The heartbeat sent to the master | `src/server/Master` | only the server sends it; the message format lives in `src/network/Master` |
 | A new protocol message | `src/network/Protocol` | one struct per message, its encoding next to it, then a row in [Protocol](/R-Type/protocol/#messages) |
 | A fake transport that loses datagrams | `tests/doubles` | test doubles are never built into a program |
-| A feature of the server or the client you can switch on, off or replace (a sound, a lobby, a metrics reporter) | `src/server/<Name>/` or `src/client/<Name>/` | it is a module: its class implements `IModule` and is listed in `serverModules()` or `clientModules()`, see [Adding a module](#adding-a-module) |
+| A feature of the server or the client you can switch on, off or replace (a sound, a lobby, a metrics reporter) | `src/server/<Name>/` or `src/client/<Name>/` | it is a module: its class implements `IModule` and is listed in `gameProcessModules()`, `supervisorModules()` or `clientModules()`, see [Adding a module](#adding-a-module) |
 
 ## The libraries
 
@@ -145,17 +145,17 @@ src/network/
 
 ### Server
 
-`src/server` builds `r-type_server`: who plays where, and how the state reaches them. Every game owns its `World` and its event bus, and the games of one server run one after the other on the simulation thread; the network thread receives and sends; threads only talk through queues. With `--mode supervisor` the same binary runs no game: it starts one `r-type_server` process per game (see [Server](/R-Type/server/#supervisor-and-game-processes)).
+`src/server` builds `r-type_server`: who plays where, and how the state reaches them. The binary has three roles (see [Server](/R-Type/server/#the-three-roles-supervisor-game-and-master)): the supervisor, the default, runs no game and starts one `r-type_server --mode game` process per game; a game process owns its game, its `World` and its event bus, run on its simulation thread; the master lists the servers. In each process the network thread receives and sends, and threads only talk through queues.
 
 ```
 src/server/
-├── Modules/          the list of modules, nothing else
+├── Modules/          the list of modules of each role, and the rule that hands the lines of the games over
 ├── Logger/           the logger module
 ├── Network/          the network module: the socket, the network thread and the simulation thread; Rejections/, the counts of the datagrams it rejects and their report
 ├── Games/            the games module: the games, where a new player goes, the modules of each game
 ├── GameStatistics/   the game-statistics plugin: a CSV row per Bydo killed and the total of each game
 ├── Lobby/            the lobby module: players not in a game; list, create, join, chat
-├── Information/      the information module: the name of the server, and the answer to who asks what it is
+├── Information/      the information module of the supervisor: the name of the server, and the answer to who asks what it is
 ├── Metrics/          the metrics module: Measures/, tick time, counts of games, players and entities; Report/, the report and its lines; the traffic of the socket; the round trip of each player
 ├── Instances/        one GameInstance per game, what a game hosts whatever its rules; Context/, what it shares with its modules, split into Interfaces/ and Setup/
 ├── Rules/            the rtype rules module: Match/, the states, the tick and the world of a match; Players/, the lives, score and ship of each player
@@ -164,18 +164,18 @@ src/server/
 ├── Spawning/         when and where the enemies and missiles appear
 ├── Exceptions/       the root exception of the server, errors of the waves file
 ├── Platform/         what differs between Windows, macOS and Linux, and the stop signals
-├── LaunchOptions/    port, name, limits, master address
+├── LaunchOptions/    the options of the supervisor and of a game process: port, seed, database, link to the supervisor
 ├── Results/          the results module: what each game leaves, and the leaderboard requests
 ├── Processes/        starting child processes behind an interface (Boost.Process v2), and tying their life to the program that started them
-├── SupervisedGames/  the supervisor's games module: the registry of the game processes, starting and stopping them
+├── SupervisedGames/  the supervisor's games module: the registry of the game processes, starting and stopping them, the file of commands of the games, what the supervisor tells of them
 ├── SupervisorLobby/  the supervisor's lobby module: challenge, redirect or refuse a player
 ├── SupervisorLink/   the link module of a game process: its status to the supervisor, and when to stop
-├── Master/           the master module: registration and heartbeats, on the MasterLink thread, and the token of the probes
+├── Master/           the master module of the supervisor: registration and heartbeats, on the MasterLink thread, and the token of the probes
 ├── AdminConsole/     kick and close a game from the terminal
 └── Storage/          the storage module: Archive/, the thread that owns the file; Database/, the file and its SQL
 ```
 
-`Modules` (the list that assembles the modules), `Logger`, `Network` (the network module, which starts and stops the threads, and in `Rejections/` counts the datagrams the network thread rejects and reports them in the journal), `Games` (the games module, the rule that places a new player, the modules of each game, the entity sheets its games are made from, which the lobby reads, the rule that says whether its games are vanilla, the games as the master lists them in `HostedGames`, the farewell it sends when the server stops, and `IGameBuses`, the bus of each game for a module or a plugin that follows them), `GameStatistics` (the `game-statistics` plugin, built as a shared library and loaded by a `plugin` line: `GameTally` follows the bus of a game, `StatisticsSheet` keeps the rows not written yet), `Lobby` (the lobby module, which answers the connection requests only), `Information` (the information module, which declares the name of the server and answers the information requests with how full its games are), `Metrics` (the metrics module: in `Measures/` the durations of the ticks and the census of the games, in `Report/` the newest report and its lines in the journal), `Instances` (one `GameInstance` per game, run on the simulation thread like the rest, which installs the modules of a game and holds the inputs of its players for the input delay, and in `Context/` what a game shares with its modules: the interfaces of the modules in `Interfaces/`, the context, settings and hooks a game gives them in `Setup/`), `Rules` (the `RtypeRulesModule`, which holds the states of a game, its tick and its rules with `GameFlow`, runs the systems of the world, and keeps the score and the lives of its players), `Replication` (the replication module, which tells the players: in `Announcements/Milestones/` the waiting room announcer, the announcement of the ship of each new player and the announcer of the end of a game, in `Announcements/Streams/` the world state sender and the broadcaster of the game events, and in `Wire/` how they are written), `Sessions` (in `Tracking/` the classes that read the datagrams of the players of a game, keep their ready state and newest input, close their sessions, send their heartbeats and deliver a message to every player, once or guaranteed, and in `Roster/` the roster of the players, the session header of every datagram to a player and `SentStates`, the states sent to a player and the one it acknowledged; no other folder of `src/server` is linked by it), `Results` (the results module of a game: `GameResultKeeper` records what each game leaves, `LeaderboardDesk` answers the leaderboard requests), `Master` (the master module: `HeartbeatJob`, which registers the server with the master and sends its heartbeats on the MasterLink thread, and `MasterProbeDesk`, which keeps the token of the probes of the master for the next heartbeat), `Storage` (the storage module: in `Archive/` the thread that owns the SQLite file of the server and the queues that reach it, in `Database/` the file, its tables and its queries), `Spawning` (the wave spawner, the reader of the waves file and the weapon system), `Platform`, `LaunchOptions` and `Exceptions` exist today; the names of the modules sit in `ModuleConstants.hpp`, next to `ServerConstants.hpp` in `src/server/`. Together they hold the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, a game with its states, its ready rule and the newest input of each player, which moves its ship, the metrics of the server in its journal, and the results of each game in its SQLite file.
+`Modules` (the lists that assemble the modules of the supervisor and of a game process, `gameLineRule()`, which says which lines of `server.cfg` go to the games, and its catalogue `ServerRoleConstants.hpp`, which also names the modules of the supervisor), `Logger`, `Network` (the network module, which starts and stops the threads, and in `Rejections/` counts the datagrams the network thread rejects and reports them in the journal), `Games` (the games module, the rule that places a new player, the modules of each game, the entity sheets its games are made from, which the lobby reads, the rule that says whether its games are vanilla, the farewell it sends when the game process stops, and `IGameBuses`, the bus of each game for a module or a plugin that follows them), `GameStatistics` (the `game-statistics` plugin, built as a shared library and loaded by a `plugin` line: `GameTally` follows the bus of a game, `StatisticsSheet` keeps the rows not written yet), `Lobby` (the lobby module, which answers the connection requests only), `Information` (the information module of the supervisor, which declares the name of the server and answers the information requests with how full its games are), `Metrics` (the metrics module: in `Measures/` the durations of the ticks and the census of the games, in `Report/` the newest report and its lines in the journal), `Instances` (one `GameInstance` per game, run on the simulation thread like the rest, which installs the modules of a game and holds the inputs of its players for the input delay, and in `Context/` what a game shares with its modules: the interfaces of the modules in `Interfaces/`, the context, settings and hooks a game gives them in `Setup/`), `Rules` (the `RtypeRulesModule`, which holds the states of a game, its tick and its rules with `GameFlow`, runs the systems of the world, and keeps the score and the lives of its players), `Replication` (the replication module, which tells the players: in `Announcements/Milestones/` the waiting room announcer, the announcement of the ship of each new player and the announcer of the end of a game, in `Announcements/Streams/` the world state sender and the broadcaster of the game events, and in `Wire/` how they are written), `Sessions` (in `Tracking/` the classes that read the datagrams of the players of a game, keep their ready state and newest input, close their sessions, send their heartbeats and deliver a message to every player, once or guaranteed, and in `Roster/` the roster of the players, the session header of every datagram to a player and `SentStates`, the states sent to a player and the one it acknowledged; no other folder of `src/server` is linked by it), `Results` (the results module of a game: `GameResultKeeper` records what each game leaves, `LeaderboardDesk` answers the leaderboard requests), `Master` (the master module of the supervisor: `HeartbeatJob`, which registers the server with the master and sends its heartbeats on the MasterLink thread, and `MasterProbeDesk`, which keeps the token of the probes of the master for the next heartbeat), `Processes` (`IProcessLauncher` and its Boost.Process implementation), `SupervisedGames` (the registry of the game processes, `SupervisedGamesReport`, which turns it into the list of the master, the measures and the occupancy, and `SupervisedGamesWatch`, which publishes them), `SupervisorLobby` (the lobby of the supervisor, which redirects a player to a game), `SupervisorLink` (the module of a game process that sends its `GameStatus` to the supervisor), `Storage` (the storage module: in `Archive/` the thread that owns the SQLite file of the server and the queues that reach it, in `Database/` the file, its tables and its queries), `Spawning` (the wave spawner, the reader of the waves file and the weapon system), `Platform`, `LaunchOptions` and `Exceptions` exist today; the names of the modules sit in `ModuleConstants.hpp`, next to `ServerConstants.hpp` in `src/server/`. Together they hold the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, a game with its states, its ready rule and the newest input of each player, which moves its ship, the metrics of the server in its journal, and the results of each game in its SQLite file.
 
 ### Client
 
@@ -301,16 +301,24 @@ A **module** is a feature you can switch on, switch off or replace: a folder wit
 
 This list describes the code as it is today. A pull request that adds, removes or moves a module updates it.
 
-| Module of the server program | Class | Folder | Kind |
+| Module of the supervisor | Class | Folder | Kind |
+|---|---|---|---|
+| `logger` | `ServerLoggerModule` | `src/server/Logger/` | required |
+| `network` | `ServerNetworkModule` | `src/server/Network/` | required |
+| `supervised games` | `ServerSupervisedGamesModule` | `src/server/SupervisedGames/` | required |
+| `supervisor lobby` | `ServerSupervisorLobbyModule` | `src/server/SupervisorLobby/` | required |
+| `information` | `ServerInformationModule` | `src/server/Information/` | required |
+| `master` | `ServerMasterModule` | `src/server/Master/` | optional |
+
+| Module of a game process | Class | Folder | Kind |
 |---|---|---|---|
 | `logger` | `ServerLoggerModule` | `src/server/Logger/` | required |
 | `network` | `ServerNetworkModule` | `src/server/Network/` | required |
 | `storage` | `ServerStorageModule` | `src/server/Storage/` | required |
 | `games` | `ServerGamesModule` | `src/server/Games/` | required |
 | `lobby` | `ServerLobbyModule` | `src/server/Lobby/` | required |
-| `information` | `ServerInformationModule` | `src/server/Information/` | required |
 | `metrics` | `ServerMetricsModule` | `src/server/Metrics/` | optional |
-| `master` | `ServerMasterModule` | `src/server/Master/` | optional |
+| `supervisor link` | `ServerSupervisorLinkModule` | `src/server/SupervisorLink/` | required |
 | `game-statistics` | `ServerGameStatisticsModule` | `src/server/GameStatistics/` | optional, a plugin |
 
 | Module of a game | Class | Folder | Kind |
@@ -384,7 +392,8 @@ A new module is written directly in its own folder, `src/<program>/<Name>/`, cla
 
 | The module… | Listed in |
 |---|---|
-| belongs to the server and lives as long as the program | `serverModules()`, `src/server/Modules/ServerModules.cpp` |
+| belongs to a game process and lives as long as it | `gameProcessModules()`, `src/server/Modules/GameProcessModules.cpp`; a setting it declares goes in `GAME_SETTING_NAMES` of `src/server/Modules/ServerRoleConstants.hpp` |
+| belongs to the supervisor | `supervisorModules()`, `src/server/Modules/SupervisorModules.cpp` |
 | belongs to the client | `clientModules()`, `src/client/Modules/ClientModules.cpp` |
 | is a rule or a service of one game, and each game has its own | `rtypeGameModules()`, `src/server/Games/RtypeGameModules.cpp` |
 | belongs to the master | `masterModules()`, `src/master/Modules/MasterModules.cpp` |

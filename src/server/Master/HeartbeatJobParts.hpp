@@ -4,7 +4,7 @@
 #include <functional>
 #include "HeartbeatTimes.hpp"
 #include "LatestHostedGames.hpp"
-#include "LatestMetrics.hpp"
+#include "LatestServerMeasures.hpp"
 #include "LatestValue.hpp"
 #include "MasterAccess.hpp"
 #include "ServerIdentity.hpp"
@@ -31,9 +31,9 @@ struct HeartbeatJobParts {
    * they must outlive it. */
   std::reference_wrapper<const concurrency::LatestValue<std::uint64_t>>
       probeTokens;
-  /** @brief The metrics the heartbeat carries; empty when the metrics module
-   * is off, and the heartbeat then carries no measure. */
-  const LatestMetrics* metrics{nullptr};
+  /** @brief The measures the heartbeat carries; must outlive the job. Empty,
+   * or nothing published yet: the heartbeat carries no measure. */
+  const LatestServerMeasures* measures{nullptr};
   HeartbeatTimes times{};
 };
 

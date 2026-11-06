@@ -6,7 +6,9 @@
 #include "ConfigurationReaderTestConstants.hpp"
 #include "ConfigurationRegistryTestConstants.hpp"
 #include "ConfigurationReport.hpp"
+#include "ConfigurationSource.hpp"
 #include "ConfigurationStep.hpp"
+#include "HandOverRuleFixtures.hpp"
 
 /**
  * Given a file of commands that exists
@@ -121,4 +123,91 @@ TEST_F(ConfigurationReaderFixture, StepReadsTheFileAndFillsItsReport) {
 
   EXPECT_TRUE(report.fileFound);
   EXPECT_EQ(port().integer(), FORCED_PORT);
+}
+
+/**
+ * Given a file with two lines of a command its rule hands over, between lines
+ * it runs, and a forced line of that command
+ * When it is read
+ * Then the handed-over lines run nothing, are neither counted nor refused, and
+ * are kept as written, the lines of the file first
+ */
+TEST_F(ConfigurationReaderFixture, HandedOverLinesAreKeptInOrderAndNotRun) {
+  writeFile(FILE_WITH_HANDED_OVER_LINES);
+  const auto report = read(rtype::engine::ConfigurationSource{
+      .file = file(),
+      .forcedLines = {std::string(FORCED_HANDED_OVER_LINE)},
+      .handOver = handingOver({std::string(HANDED_OVER_COMMAND)})});
+
+  EXPECT_TRUE(report.refusals.empty());
+  EXPECT_EQ(report.executedLines, FILE_WITH_HANDED_OVER_LINES_RUNNABLE_LINES);
+  EXPECT_EQ(report.handedOverLines,
+            (std::vector<std::string>{std::string(FIRST_HANDED_OVER_LINE),
+                                      std::string(SECOND_HANDED_OVER_LINE),
+                                      std::string(FORCED_HANDED_OVER_LINE)}));
+  EXPECT_EQ(port().integer(), FILE_PORT);
+}
+
+/**
+ * Given a rule that hands over one command and a line of no known command
+ * When it is read
+ * Then the line is refused, as without a rule, and nothing is handed over
+ */
+TEST_F(ConfigurationReaderFixture, ALineOfNobodyIsStillRefused) {
+  const auto report = read(rtype::engine::ConfigurationSource{
+      .file = {},
+      .forcedLines = {std::string(UNKNOWN_COMMAND_LINE)},
+      .handOver = handingOver({std::string(HANDED_OVER_COMMAND)})});
+
+  EXPECT_EQ(report.refusals.size(), ONE_REFUSAL);
+  EXPECT_TRUE(report.handedOverLines.empty());
+}
+
+/**
+ * Given the same file read with no rule
+ * When it is read
+ * Then every line is run, the lines of the unknown command are refused, and
+ * nothing is handed over
+ */
+TEST_F(ConfigurationReaderFixture, WithoutARuleNothingIsHandedOver) {
+  writeFile(FILE_WITH_HANDED_OVER_LINES);
+  const auto report = read(file(), {});
+
+  EXPECT_EQ(report.refusals.size(), TWO_REFUSALS);
+  EXPECT_TRUE(report.handedOverLines.empty());
+}
+
+/**
+ * Given an empty file path and no forced line
+ * When it is read
+ * Then no file is read and the report says none was found
+ */
+TEST_F(ConfigurationReaderFixture, AnEmptyPathReadsNoFile) {
+  const auto report = read(rtype::engine::ConfigurationSource{
+      .file = {}, .forcedLines = {}, .handOver = {}});
+
+  EXPECT_FALSE(report.fileFound);
+  EXPECT_EQ(report.executedLines, 0U);
+}
+
+/**
+ * Given the file with lines its rule hands over, and a forced line of that
+ * command
+ * When only its handed-over lines are read
+ * Then they come as written, the lines of the file first, and no line runs
+ */
+TEST_F(ConfigurationReaderFixture, HandedOverLinesAreReadWithoutRunningAny) {
+  writeFile(FILE_WITH_HANDED_OVER_LINES);
+
+  const std::vector<std::string> lines =
+      rtype::engine::handedOverLines(rtype::engine::ConfigurationSource{
+          .file = file(),
+          .forcedLines = {std::string(FORCED_HANDED_OVER_LINE)},
+          .handOver = handingOver({std::string(HANDED_OVER_COMMAND)})});
+
+  EXPECT_EQ(lines,
+            (std::vector<std::string>{std::string(FIRST_HANDED_OVER_LINE),
+                                      std::string(SECOND_HANDED_OVER_LINE),
+                                      std::string(FORCED_HANDED_OVER_LINE)}));
+  EXPECT_EQ(port().integer(), DEFAULT_PORT_VALUE);
 }

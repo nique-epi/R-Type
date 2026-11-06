@@ -1,2 +1,2 @@
-target_sources(server_module_tests PRIVATE GameProcessWatchTest.cpp ServerSupervisorLinkFixture.cpp ServerSupervisorLinkModuleTest.cpp)
+target_sources(server_module_tests PRIVATE GameProcessWatchTest.cpp LatestStatusMeasuresTest.cpp ServerSupervisorLinkFixture.cpp ServerSupervisorLinkModuleTest.cpp)
 target_include_directories(server_module_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

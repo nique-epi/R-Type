@@ -2,7 +2,9 @@
 #include <filesystem>
 #include <memory>
 #include <optional>
+#include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 #include "BoostProcessLauncher.hpp"
 #include "EngineException.hpp"
@@ -11,7 +13,9 @@
 #include "IModule.hpp"
 #include "LaunchOptions.hpp"
 #include "NetworkConstants.hpp"
+#include "ServerInformationModule.hpp"
 #include "ServerLoggerModule.hpp"
+#include "ServerMasterModule.hpp"
 #include "ServerNetworkModule.hpp"
 #include "ServerSupervisedGamesModule.hpp"
 #include "ServerSupervisorLobbyModule.hpp"
@@ -23,24 +27,31 @@ namespace rtype::server {
 namespace {
 
 /**
- * @returns What every game process is started with: this executable, and the
- * folder next to it.
+ * @returns What every game process is started with: this executable, the
+ * folder next to it, @p gameLines, the lines of its file of commands, and what
+ * @p launchOptions hand the games: their logging options, the network
+ * simulated and the traffic file.
  * @throws engine::UnknownExecutablePathException when the system does not tell
  * where the executable is.
  */
-GameLaunchSettings gameLaunchSettings() {
+GameLaunchSettings gameLaunchSettings(const LaunchOptions& launchOptions,
+                                      std::vector<std::string> gameLines) {
   const std::optional<std::filesystem::path> program = engine::executablePath();
   if (!program.has_value()) {
     throw engine::UnknownExecutablePathException();
   }
   return GameLaunchSettings{.program = *program,
-                            .folder = engine::executableFolder()};
+                            .folder = engine::executableFolder(),
+                            .gameLines = std::move(gameLines),
+                            .forwardedArguments = launchOptions.gameArguments(),
+                            .trafficCsvFile = launchOptions.trafficCsvFile()};
 }
 
 }  // namespace
 
 std::vector<std::unique_ptr<engine::IModule>> supervisorModules(
-    const LaunchOptions& launchOptions, StopRequest& stopRequest) {
+    const LaunchOptions& launchOptions, StopRequest& stopRequest,
+    std::vector<std::string> gameLines) {
   std::vector<std::unique_ptr<engine::IModule>> modules;
   modules.push_back(
       std::make_unique<ServerLoggerModule>(launchOptions.logOptions()));
@@ -48,9 +59,12 @@ std::vector<std::unique_ptr<engine::IModule>> supervisorModules(
       network::DEFAULT_SERVER_PORT, stopRequest,
       launchOptions.networkConditions()));
   modules.push_back(std::make_unique<ServerSupervisedGamesModule>(
-      gameLaunchSettings(), std::make_unique<BoostProcessLauncher>(),
+      gameLaunchSettings(launchOptions, std::move(gameLines)),
+      std::make_unique<BoostProcessLauncher>(),
       [](engine::Duration pause) { std::this_thread::sleep_for(pause); }));
   modules.push_back(std::make_unique<ServerSupervisorLobbyModule>());
+  modules.push_back(std::make_unique<ServerInformationModule>());
+  modules.push_back(std::make_unique<ServerMasterModule>());
   return modules;
 }
 

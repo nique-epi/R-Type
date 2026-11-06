@@ -311,6 +311,12 @@ Alternative considered: peer to peer, with every peer running the game. It needs
 
 The second part answers each point (see [Version 2](/R-Type/protocol/#version-2)): guaranteed messages replaced the three copies in version 2, and version 5 delivers them in order; an input is to be repeated until the server confirms it, and states are to be sent as differences. The state already confirms the newest input of each player, which is what lets the client replay its newest inputs on top of a state and correct its ship. Prediction and interpolation themselves are client work, placed in `client/Prediction` (see [Project layout](/R-Type/project-layout/)).
 
+## Server roles
+
+`r-type_server` runs one game per process. The supervisor, the default mode, reads `server.cfg`, listens on the port the players know, starts a `--mode game` process for each game and sends each player to one; it alone talks to the master and answers the information requests. A game process holds only what one game needs and reads only the lines of `server.cfg` its supervisor hands it, through a file of its own. Each game reports to the supervisor what it holds, its state, its players and its measures, in a `GameStatus` every second. So a game that crashes stops its own players only, a setting or a plugin of the games never runs in the supervisor, and the master hears one server, not one per game. nginx splits its processes the same way: its master process reads and evaluates the configuration and maintains the workers, which handle the requests. The code is described in [Server](/R-Type/server/#the-three-roles-supervisor-game-and-master).
+
+Alternative considered: a mode that hosts every game in the process that reads `server.cfg`, which the server had before the supervisor. It needs no second process and no link between them, but an exception in one game stops them all, a slow game slows the others, and a second way to host games has to be kept working next to the supervisor; it was removed.
+
 ## Master
 
 The master lists the game servers and directs them: each server tells it the games it hosts, a player reads that list, an admin sends orders. It never runs a game and nothing of a game goes through it, so a game never waits for it and goes on when it stops. Its code is described in [Master](/R-Type/master/).

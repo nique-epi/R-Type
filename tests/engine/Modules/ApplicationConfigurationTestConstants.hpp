@@ -23,3 +23,6 @@ constexpr const char* SECOND_NEEDS_FIRST =
 constexpr const char* FIRST_IS_OFF = "module 'first'";
 constexpr const char* KNOWN_MODULES = "first, second, third";
 constexpr const char* EXPECTED_ON_OR_OFF = "expected 'on' or 'off'";
+
+/** @brief The command a rule of the tests hands over to another program. */
+constexpr const char* MODULE_COMMAND = "module";
