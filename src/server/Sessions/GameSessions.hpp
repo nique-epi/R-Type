@@ -118,12 +118,16 @@ class GameSessions {
   [[nodiscard]] std::vector<ConnectedPlayer> takeDepartedPlayers();
 
  private:
-  void readDatagram(const network::IncomingDatagram& datagram);
+  /** @brief Tells the dispatcher what handles each message that keeps the
+   * session of a player: its ready state, its inputs, its Heartbeats and its
+   * Disconnection. */
+  void registerSessionHandlers();
 
-  /** @brief Tells the dispatcher what handles each message of a player. A
-   * datagram may hold a Disconnection before a LeaderboardRequest, which frees
-   * the seat: the request of an address with no seat any more goes nowhere. */
-  void registerHandlers();
+  /** @brief Tells the dispatcher what handles each request of a player, which
+   * goes to its part with the player who sent it. A datagram may hold a
+   * Disconnection before a request, which frees the seat: the request of an
+   * address with no seat any more goes nowhere. */
+  void registerRequestHandlers();
 
   std::function<void(network::OutgoingDatagram)> send_;
   const engine::IClock* clock_{nullptr};
