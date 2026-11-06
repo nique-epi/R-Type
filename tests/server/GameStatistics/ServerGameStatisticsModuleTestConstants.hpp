@@ -25,8 +25,7 @@ constexpr std::string_view STATISTICS_FILE_EXTENSION = ".csv";
  * STATISTICS_TEST_PORT: the name, the port, then the extension. */
 constexpr std::string_view WRITTEN_STATISTICS_FILE_NAME = "statistics_4307.csv";
 
-/** @brief The games the tests drive, and the port the network double gives. */
-constexpr std::size_t GAMES_IN_THE_TESTS = 2;
+/** @brief The port the network double gives. */
 constexpr std::uint16_t STATISTICS_TEST_PORT = 4307;
 
 /** @brief The file the plugin writes, next to the executable, without a

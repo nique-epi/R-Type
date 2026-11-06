@@ -5,7 +5,6 @@
 #include "Disconnection.hpp"
 #include "Endpoint.hpp"
 #include "FarewellPause.hpp"
-#include "Games.hpp"
 #include "IDatagramSender.hpp"
 #include "ModuleConstants.hpp"
 #include "PlayerRoster.hpp"
@@ -16,30 +15,26 @@ namespace rtype::server {
 FarewellSender::FarewellSender(IDatagramSender& sender, FarewellPause pause)
     : sender_(&sender), pause_(std::move(pause)) {}
 
-void FarewellSender::sayGoodbyeTo(const Games& games) {
-  if (queueOneCopy(games) == 0) {
+void FarewellSender::sayGoodbyeTo(PlayerRoster& roster) {
+  if (queueOneCopy(roster) == 0) {
     return;
   }
   for (std::size_t copy = 1; copy < FAREWELL_COPIES; ++copy) {
     pause_(FAREWELL_COPY_INTERVAL);
-    static_cast<void>(queueOneCopy(games));
+    static_cast<void>(queueOneCopy(roster));
   }
   pause_(FAREWELL_FLUSH_WAIT);
 }
 
-std::size_t FarewellSender::queueOneCopy(const Games& games) {
+std::size_t FarewellSender::queueOneCopy(PlayerRoster& roster) {
   std::size_t playerCount = 0;
-  for (const auto& game : games.all()) {
-    PlayerRoster& roster = game->roster();
-    for (const network::Endpoint& endpoint : roster.endpoints()) {
-      ConnectedPlayer* const player = roster.find(endpoint);
-      if (player == nullptr) {
-        continue;
-      }
-      sender_->queueDatagram(
-          sessionDatagram(*player, network::Disconnection{}));
-      ++playerCount;
+  for (const network::Endpoint& endpoint : roster.endpoints()) {
+    ConnectedPlayer* const player = roster.find(endpoint);
+    if (player == nullptr) {
+      continue;
     }
+    sender_->queueDatagram(sessionDatagram(*player, network::Disconnection{}));
+    ++playerCount;
   }
   return playerCount;
 }

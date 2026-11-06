@@ -26,7 +26,7 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
 
    | Order | The code… | Then |
    |---|---|---|
-   | 1 | belongs to a required module | it stays there, and the code that needs it includes it: `Lobby/` and `Metrics/` include `Games.hpp`, `Widgets/` includes `PlayfieldMapping.hpp` |
+   | 1 | belongs to a required module | it stays there, and the code that needs it includes it: `Lobby/` and `Metrics/` include `RunningGame.hpp`, `Widgets/` includes `PlayfieldMapping.hpp` |
    | 2 | belongs to an optional module | it goes in the `Contract/` of that module: `ISoundPlayer` |
    | 3 | has no owner and serves several folders | it goes in a library: `Widgets/`, `Rendering/` |
 

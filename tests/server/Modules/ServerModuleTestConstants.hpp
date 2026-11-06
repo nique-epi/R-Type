@@ -62,17 +62,6 @@ constexpr std::chrono::seconds WAIT_FOR_THREADS{5};
 /** @brief How many passes of the loop a test waits for. */
 constexpr int PASSES_TO_WAIT_FOR = 2;
 
-/** @brief Indexes of the games of a server, in the order they were created. */
-constexpr std::size_t FIRST_GAME = 0;
-constexpr std::size_t SECOND_GAME = 1;
-
-/** @brief Numbers of games a test starts the server with. */
-constexpr std::size_t ONE_GAME = 1;
-constexpr std::size_t THREE_GAMES = 3;
-
-/** @brief The most games a heartbeat to the master lists. */
-constexpr std::size_t MOST_GAMES_A_HEARTBEAT_LISTS = 64;
-
 /**
  * @brief A line that gives the state rate setting a rate above the highest one.
  */

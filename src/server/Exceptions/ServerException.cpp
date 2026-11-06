@@ -36,14 +36,8 @@ UnknownDifficultyException::UnknownDifficultyException(
 EmptyEnemyCycleException::EmptyEnemyCycleException()
     : ServerException("A wave plan must name at least one enemy") {}
 
-NoJoinableGameException::NoJoinableGameException()
-    : ServerException("no game to join: the server has not created one") {}
-
-TooManyGamesException::TooManyGamesException(std::size_t requested,
-                                             std::size_t maximum)
-    : ServerException("the server cannot host " + std::to_string(requested) +
-                      " games: a heartbeat lists " + std::to_string(maximum) +
-                      " at most") {}
+GameNotCreatedException::GameNotCreatedException()
+    : ServerException("no game yet: the games module has not created it") {}
 
 ServerAlreadyOpenException::ServerAlreadyOpenException()
     : ServerException("the server is already open") {}

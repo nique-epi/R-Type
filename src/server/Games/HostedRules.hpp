@@ -13,9 +13,9 @@ struct HostedRules {
   std::uint64_t wavesFingerprint{0};
   /** @brief entitySheetsFingerprint() of the entity sheets. */
   std::uint64_t sheetsFingerprint{0};
-  /** @brief The seed the games start from; empty when each draws its own. */
+  /** @brief The seed the game starts from; empty when it draws its own. */
   std::optional<std::uint32_t> seed;
-  /** @brief The ticks every game holds each input. */
+  /** @brief The ticks the game holds each input. */
   std::size_t inputDelayTicks{0};
 };
 
