@@ -22,6 +22,10 @@ namespace rtype::storage {
  * Each migration commits together with its number, so a crash between two of
  * them leaves a file the next start carries on from.
  *
+ * Several programs may open the same file at once, as the games of one
+ * supervisor do: each waits up to DATABASE_BUSY_TIMEOUT_MILLISECONDS for the
+ * others, and a migration one of them applied is never applied again.
+ *
  * Use the connection from one thread at a time.
  *
  * @throws UnopenableDatabaseException when SQLite refuses the file or a
