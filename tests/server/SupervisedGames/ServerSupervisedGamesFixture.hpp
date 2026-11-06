@@ -2,7 +2,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
+#include <string>
 #include <vector>
 #include "Application.hpp"
 #include "GameStatus.hpp"
@@ -10,15 +12,18 @@
 #include "RecordingNetworkModule.hpp"
 #include "RecordingProcessLauncher.hpp"
 #include "ServerModuleFixture.hpp"
+#include "TemporaryFolder.hpp"
 #include "TimeConstants.hpp"
 
 /** @brief The base of the tests of the supervisor modules: the logger module, a
  * network module that records, the supervised games module on a launcher that
- * records, and the supervisor lobby after it, all started. */
+ * records, writing its files in a folder of the test, and the supervisor lobby
+ * after it, all started. */
 class ServerSupervisedGamesFixture : public ServerModuleFixture {
  protected:
-  /** @brief Builds the modules listed above and starts them. */
-  void startSupervisor();
+  /** @brief Builds the modules listed above, with @p gameLines as the lines
+   * of the configuration that belong to the games, and starts them. */
+  void startSupervisor(std::vector<std::string> gameLines = {});
 
   /** @brief Stops the application, which stops every game. */
   void stopSupervisor();
@@ -42,10 +47,19 @@ class ServerSupervisedGamesFixture : public ServerModuleFixture {
   void gameReports(std::size_t game, const rtype::network::GameStatus& status,
                    std::uint16_t sequence);
 
+  /** @returns The file r-type_games_4242.cfg of the folder of the test, the
+   * one the games of a supervisor on port 4242 read. */
+  [[nodiscard]] std::filesystem::path gameConfigurationFile() const;
+
+  /** @returns What gameConfigurationFile() holds; empty when it is missing. */
+  [[nodiscard]] std::string gameConfigurationText() const;
+
   [[nodiscard]] RecordingProcessLauncher& launcher();
   [[nodiscard]] RecordingNetworkModule& network();
 
  private:
+  TemporaryFolder folder_;
+  std::vector<std::string> gameLines_;
   std::unique_ptr<rtype::engine::Application> application_;
   RecordingNetworkModule* network_{nullptr};
   RecordingProcessLauncher* launcher_{nullptr};

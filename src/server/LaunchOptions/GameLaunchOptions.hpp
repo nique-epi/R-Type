@@ -16,11 +16,12 @@ namespace rtype::server {
 
 /**
  * @brief What a game process is told at launch by the supervisor that starts
- * it: its port, its database, the supervisor it reports to, the network
- * simulated and the logging options, or a request for its usage.
+ * it: its port, its database, the file of commands it reads, the supervisor it
+ * reports to, the network simulated and the logging options, or a request for
+ * its usage.
  *
  * `-p` and `--database` become lines of the command `set`, which run after
- * server.cfg, so a launch option wins over the file.
+ * the file of `--configuration`, so a launch option wins over the file.
  */
 class GameLaunchOptions {
  public:
@@ -28,11 +29,12 @@ class GameLaunchOptions {
    * @brief Reads every option of a game process from @p arguments, the
    * arguments after `--mode game`, in one pass: `-p <port>`,
    * `--supervisor <port>`, `--link-token <number>`, `--database <file>`,
-   * `--traffic-csv <file>` and `--help`, the options of the network simulator
-   * (see network::SimulatorLaunchOptions::readOption()) and the logging
-   * options (see logging::LogLaunchOptions::readOption()), whose exceptions
-   * this throws too. Without a logging option the journal is
-   * SERVER_LOG_FILE_NAME next to the executable.
+   * `--configuration <file>`, `--traffic-csv <file>` and `--help`, the options
+   * of the network simulator (see
+   * network::SimulatorLaunchOptions::readOption()) and the logging options (see
+   * logging::LogLaunchOptions::readOption()), whose exceptions this throws too.
+   * Without a logging option the journal is SERVER_LOG_FILE_NAME next to the
+   * executable.
    *
    * @throws engine::UnknownExecutablePathException when the system does not
    *         tell where the executable is, so the default journal has no
@@ -84,6 +86,12 @@ class GameLaunchOptions {
   /** @returns The file given after `--traffic-csv`, nothing when it was not
    * given. */
   [[nodiscard]] const std::optional<std::filesystem::path>& trafficCsvFile()
+      const;
+
+  /** @returns The file of commands given after `--configuration`, which the
+   * game reads when it starts; nothing when it was not given, and the game
+   * then reads no file. */
+  [[nodiscard]] const std::optional<std::filesystem::path>& configurationFile()
       const;
 
  private:

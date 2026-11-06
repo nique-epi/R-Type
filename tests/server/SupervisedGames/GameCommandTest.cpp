@@ -16,7 +16,8 @@ using rtype::server::GameLaunchSettings;
  * port 50123 under the token 99
  * When the command of the game is built
  * Then it starts the program as a game process, with its port, its supervisor,
- * its token, the leaderboard of the supervisor's port and its own journal file
+ * its token, the leaderboard of the supervisor's port, its own journal file and
+ * the file of commands the supervisor wrote for its games
  */
 TEST(GameCommand, GivesTheGameItsPortItsSupervisorItsTokenAndItsFiles) {
   const auto command = gameCommand(
@@ -32,5 +33,6 @@ TEST(GameCommand, GivesTheGameItsPortItsSupervisorItsTokenAndItsFiles) {
                 "--mode", "game", "-p", "50123", "--supervisor", "4242",
                 "--link-token", "99", "--database",
                 (folder / "r-type_server_4242.db").string(), "--log-file",
-                (folder / "r-type_game_3.log").string()}));
+                (folder / "r-type_game_3.log").string(), "--configuration",
+                (folder / "r-type_games_4242.cfg").string()}));
 }

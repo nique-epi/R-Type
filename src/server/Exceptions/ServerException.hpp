@@ -137,4 +137,14 @@ class MissingSupervisorLinkException : public ServerException {
   explicit MissingSupervisorLinkException(const std::string& missingOption);
 };
 
+/**
+ * @brief The supervisor could not write the file of commands of its games, so
+ * they would start without the lines of server.cfg meant for them.
+ */
+class GameConfigurationWriteException : public ServerException {
+ public:
+  /** @param file The file that could not be written. */
+  explicit GameConfigurationWriteException(const std::string& file);
+};
+
 }  // namespace rtype::server

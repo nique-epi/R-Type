@@ -2,6 +2,7 @@ add_library(rtype_server_supervised_games_module STATIC
   ChildrenStopper.cpp
   FreeUdpPort.cpp
   GameCommand.cpp
+  GameConfigurationFile.cpp
   GameLifecycle.cpp
   GameRegistry.cpp
   GameSpawner.cpp
@@ -32,6 +33,7 @@ target_link_libraries(rtype_server_supervised_games_module
     rtype_network_sequence_order
     rtype_network_udp_socket
     rtype_server_constants
+    rtype_server_exceptions
 )
 
 rtype_enable_warnings(rtype_server_supervised_games_module)

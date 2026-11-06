@@ -94,12 +94,23 @@ std::string supervisorLinkOptionEntries() {
   return text;
 }
 
+/** @returns The line of the usage that describes `--configuration`. */
+std::string configurationOptionEntry() {
+  return engine::usageEntry(
+      std::string(CONFIGURATION_OPTION) + " <file>",
+      "File of commands this game reads when it starts, written by its "
+      "supervisor from the lines of " +
+          std::string(SERVER_CONFIGURATION_FILE_NAME) +
+          " that belong to the games. Default: no file.");
+}
+
 }  // namespace
 
 GameLaunchOptions GameLaunchOptions::read(
     std::span<const std::string_view> arguments) {
   GameLaunchOptions options{GameLaunchValues{.forcedLines = {},
                                              .trafficCsvFile = std::nullopt,
+                                             .configurationFile = std::nullopt,
                                              .supervisorPort = std::nullopt,
                                              .linkToken = std::nullopt,
                                              .helpRequested = false}};
@@ -108,6 +119,8 @@ GameLaunchOptions GameLaunchOptions::read(
       databaseOption(options.values_.forcedLines),
       supervisorOption(options.values_),
       linkTokenOption(options.values_),
+      engine::pathOption(CONFIGURATION_OPTION,
+                         options.values_.configurationFile),
       engine::pathOption(network::TRAFFIC_CSV_OPTION,
                          options.values_.trafficCsvFile),
       engine::helpOption(options.values_.helpRequested)};
@@ -126,6 +139,7 @@ std::string GameLaunchOptions::usage() {
   text += portOptionEntry();
   text += supervisorLinkOptionEntries();
   text += databaseOptionEntry();
+  text += configurationOptionEntry();
   text += engine::usageEntry(network::TRAFFIC_CSV_OPTION_WITH_VALUE,
                              network::TRAFFIC_CSV_USAGE);
   text += helpOptionEntry();
@@ -159,6 +173,11 @@ const logging::LogLaunchOptions& GameLaunchOptions::logOptions() const {
 const std::optional<std::filesystem::path>& GameLaunchOptions::trafficCsvFile()
     const {
   return values_.trafficCsvFile;
+}
+
+const std::optional<std::filesystem::path>&
+GameLaunchOptions::configurationFile() const {
+  return values_.configurationFile;
 }
 
 GameLaunchOptions::GameLaunchOptions(GameLaunchValues values)

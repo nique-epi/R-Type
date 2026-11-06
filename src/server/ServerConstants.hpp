@@ -33,6 +33,14 @@ constexpr std::string_view MASTER_URL_SETTING_NAME = "master-url";
 constexpr std::string_view MASTER_KEY_SETTING_NAME = "master-key";
 constexpr std::string_view SERVER_NAME_SETTING_NAME = "server-name";
 
+/**
+ * @brief The setting that names the file of the game statistics, which the
+ * game-statistics plugin of a game process declares; the supervisor hands its
+ * lines to its games.
+ */
+constexpr std::string_view GAME_STATISTICS_FILE_SETTING_NAME =
+    "game-statistics-file";
+
 /** @brief Every setting of the server, in the order its usage lists them. */
 constexpr std::array SERVER_SETTING_NAMES{
     PORT_SETTING_NAME,        SEED_SETTING_NAME,       STATE_RATE_SETTING_NAME,
@@ -58,6 +66,13 @@ constexpr std::string_view SUPERVISOR_OPTION = "--supervisor";
  * Never 0.
  */
 constexpr std::string_view LINK_TOKEN_OPTION = "--link-token";
+
+/**
+ * @brief Launch option of a game process followed by the file of commands it
+ * reads when it starts, instead of server.cfg: the lines its supervisor kept
+ * for its games. Without it, a game process reads no file.
+ */
+constexpr std::string_view CONFIGURATION_OPTION = "--configuration";
 
 /** @brief How many games a game process hosts. */
 constexpr std::size_t GAME_PROCESS_GAME_COUNT = 1;

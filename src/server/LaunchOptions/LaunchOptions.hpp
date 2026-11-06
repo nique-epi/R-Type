@@ -21,7 +21,10 @@ namespace rtype::server {
  * `-p`, `--seed`, `--state-rate`, `--input-delay`, `--database` and `--set`
  * do not hold a value of their own: each becomes the line of the command
  * `set` that gives the setting that value, and the lines run after
- * server.cfg, so a launch option wins over the file.
+ * server.cfg, so a launch option wins over the file. The lines of a setting of
+ * the games (`--seed`, `--state-rate`, `--input-delay`, or `--set` on one of
+ * them) are not run by the supervisor: it hands them to its games after the
+ * lines of the file, as gameLineRule() says.
  */
 class LaunchOptions {
  public:

@@ -16,3 +16,7 @@ constexpr std::string_view ZERO_TEXT = "0";
 
 /** @brief A seed, which a game process is not given at launch. */
 constexpr std::string_view SOME_SEED_TEXT = "7";
+
+/** @brief The file of commands a supervisor gives a game in the tests. */
+constexpr std::string_view GAME_CONFIGURATION_ARGUMENT =
+    "games/r-type_games.cfg";

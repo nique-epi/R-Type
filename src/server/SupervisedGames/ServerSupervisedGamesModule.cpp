@@ -1,7 +1,9 @@
 #include "ServerSupervisedGamesModule.hpp"
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -10,6 +12,7 @@
 #include "Endpoint.hpp"
 #include "ExitedGame.hpp"
 #include "FreeUdpPort.hpp"
+#include "GameConfigurationFile.hpp"
 #include "GameLaunchSettings.hpp"
 #include "GameLifecycle.hpp"
 #include "GameSpawnerParts.hpp"
@@ -25,6 +28,7 @@
 #include "NetworkConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "PathText.hpp"
 #include "ReceivedStatus.hpp"
 #include "ServerConstants.hpp"
 #include "StopPause.hpp"
@@ -65,13 +69,13 @@ void ServerSupervisedGamesModule::install(engine::InstallContext& context) {
   sender_ = &context.require<IDatagramSender>();
   admission_ = &context.require<IPlayerAdmission>();
   tickDatagrams_ = &context.require<TickDatagrams>();
-  spawner_.emplace(
-      GameSpawnerParts{.launcher = *launcher_,
-                       .registry = registry_,
-                       .admission = *admission_,
-                       .supervisorPort = context.require<IListeningPort>(),
-                       .settings = settings_,
-                       .freePort = freeUdpPort});
+  listeningPort_ = &context.require<IListeningPort>();
+  spawner_.emplace(GameSpawnerParts{.launcher = *launcher_,
+                                    .registry = registry_,
+                                    .admission = *admission_,
+                                    .supervisorPort = *listeningPort_,
+                                    .settings = settings_,
+                                    .freePort = freeUdpPort});
   context.provide(registry_);
   context.provide(*spawner_);
   context.addWork(SIMULATION_STAGE, [this](engine::Duration elapsed) {
@@ -79,7 +83,16 @@ void ServerSupervisedGamesModule::install(engine::InstallContext& context) {
   });
 }
 
-void ServerSupervisedGamesModule::start() {}
+void ServerSupervisedGamesModule::start() {
+  const std::filesystem::path file = gameConfigurationFileOf(
+      settings_.folder, listeningPort_->listeningPort());
+  const std::span<const std::string> lines =
+      settings_.gameLines == nullptr ? std::span<const std::string>{}
+                                     : std::span{*settings_.gameLines};
+  writeGameConfiguration(file, lines);
+  logger_.info("configuration of the games written to ",
+               logging::genericText(file), ": ", lines.size(), " lines");
+}
 
 void ServerSupervisedGamesModule::stop() {
   ChildrenStopper stopper{*sender_, pause_};

@@ -102,15 +102,15 @@ GameProcessModulesFixture::gameApplication(
       rtype::engine::LoopStages(rtype::server::SERVER_LOOP_STAGES),
       rtype::server::gameProcessModules(options, stopRequest_),
       rtype::engine::configurationStep(
-          std::filesystem::path{rtype::server::SERVER_CONFIGURATION_FILE_NAME},
+          options.configurationFile().value_or(std::filesystem::path{}),
           options.forcedLines(), configurationReport_));
 }
 
 void GameProcessModulesFixture::writeConfiguration(
-    const std::vector<std::string>& lines) const {
+    std::string_view file, const std::vector<std::string>& lines) const {
   std::string text;
   for (const std::string& line : lines) {
     text += line + '\n';
   }
-  workingFolder_.write(rtype::server::SERVER_CONFIGURATION_FILE_NAME, text);
+  workingFolder_.write(file, text);
 }

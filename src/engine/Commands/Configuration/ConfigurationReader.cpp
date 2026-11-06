@@ -12,7 +12,9 @@
 #include "CommandLine.hpp"
 #include "CommandResult.hpp"
 #include "ConfigurationReport.hpp"
+#include "ConfigurationSource.hpp"
 #include "ConfigurationStep.hpp"
+#include "HandOverRule.hpp"
 #include "PathText.hpp"
 
 namespace rtype::engine {
@@ -22,23 +24,31 @@ namespace {
 constexpr std::string_view FORCED_LINE_ORIGIN = "launch option";
 
 /**
- * @brief Runs lines and keeps in a report what happened to each.
+ * @brief Runs lines, or hands them over, and keeps in a report what happened
+ * to each.
  */
 class LineRunner {
  public:
-  explicit LineRunner(const CommandInterpreter& interpreter)
-      : interpreter_(&interpreter) {}
+  LineRunner(const CommandInterpreter& interpreter,
+             const HandOverRule& handOver)
+      : interpreter_(&interpreter), handOver_(&handOver) {}
 
   /**
-   * @brief Runs @p line.
+   * @brief Hands @p line over when the rule says it belongs to another
+   * program, runs it otherwise.
    * @returns The message of the refusal when the line was refused.
    */
   std::optional<std::string> run(const std::string& line) {
+    const std::vector<std::string> words = splitCommandLine(line);
+    if (handsOver(words)) {
+      report_.handedOverLines.push_back(line);
+      return std::nullopt;
+    }
     const CommandResult result = interpreter_->execute(line);
     if (!result.accepted) {
       return result.message;
     }
-    if (!splitCommandLine(line).empty()) {
+    if (!words.empty()) {
       ++report_.executedLines;
     }
     return std::nullopt;
@@ -54,7 +64,12 @@ class LineRunner {
   ConfigurationReport finish() { return std::move(report_); }
 
  private:
+  [[nodiscard]] bool handsOver(std::span<const std::string> words) const {
+    return !words.empty() && *handOver_ && (*handOver_)(words);
+  }
+
   const CommandInterpreter* interpreter_;
+  const HandOverRule* handOver_;
   ConfigurationReport report_;
 };
 
@@ -71,18 +86,24 @@ void runFile(std::ifstream& stream, const std::filesystem::path& file,
   }
 }
 
-}  // namespace
-
-ConfigurationReport readConfiguration(const std::filesystem::path& file,
-                                      std::span<const std::string> forcedLines,
-                                      const CommandInterpreter& interpreter) {
-  LineRunner runner{interpreter};
-  std::ifstream stream{file};
+void runFileOf(const ConfigurationSource& source, LineRunner& runner) {
+  if (source.file.empty()) {
+    return;
+  }
+  std::ifstream stream{source.file};
   if (stream.is_open()) {
     runner.markFileFound();
-    runFile(stream, file, runner);
+    runFile(stream, source.file, runner);
   }
-  for (const std::string& line : forcedLines) {
+}
+
+}  // namespace
+
+ConfigurationReport readConfiguration(const ConfigurationSource& source,
+                                      const CommandInterpreter& interpreter) {
+  LineRunner runner{interpreter, source.handOver};
+  runFileOf(source, runner);
+  for (const std::string& line : source.forcedLines) {
     if (const std::optional<std::string> refusal = runner.run(line)) {
       runner.refuse(std::string(FORCED_LINE_ORIGIN) + ": " + *refusal);
     }
@@ -90,13 +111,33 @@ ConfigurationReport readConfiguration(const std::filesystem::path& file,
   return runner.finish();
 }
 
+ConfigurationReport readConfiguration(const std::filesystem::path& file,
+                                      std::span<const std::string> forcedLines,
+                                      const CommandInterpreter& interpreter) {
+  return readConfiguration(
+      ConfigurationSource{
+          .file = file,
+          .forcedLines = {forcedLines.begin(), forcedLines.end()},
+          .handOver = {}},
+      interpreter);
+}
+
+ConfigurationStep configurationStep(ConfigurationSource source,
+                                    ConfigurationReport& report) {
+  return
+      [source = std::move(source), &report](CommandInterpreter& interpreter) {
+        report = readConfiguration(source, interpreter);
+      };
+}
+
 ConfigurationStep configurationStep(std::filesystem::path file,
                                     std::vector<std::string> forcedLines,
                                     ConfigurationReport& report) {
-  return [file = std::move(file), forcedLines = std::move(forcedLines),
-          &report](CommandInterpreter& interpreter) {
-    report = readConfiguration(file, forcedLines, interpreter);
-  };
+  return configurationStep(
+      ConfigurationSource{.file = std::move(file),
+                          .forcedLines = std::move(forcedLines),
+                          .handOver = {}},
+      report);
 }
 
 }  // namespace rtype::engine

@@ -18,6 +18,9 @@ struct GameLaunchValues {
   /** @brief The file the traffic of the game goes to, given after
    * `--traffic-csv`; nothing when no file was asked for. */
   std::optional<std::filesystem::path> trafficCsvFile;
+  /** @brief The file of commands given after `--configuration`; nothing when
+   * the game reads no file. */
+  std::optional<std::filesystem::path> configurationFile;
   /** @brief The port given after `--supervisor`; nothing until it is read. */
   std::optional<std::uint16_t> supervisorPort;
   /** @brief The number given after `--link-token`; nothing until it is

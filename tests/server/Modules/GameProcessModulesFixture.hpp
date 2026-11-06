@@ -46,14 +46,16 @@ class GameProcessModulesFixture : public ServerModuleFixture {
       const std::vector<std::string_view>& more) const;
 
   /** @returns The modules of a whole game process read from @p options, with
-   * the configuration step main() gives them, so the launch options set the
-   * port and the database through its forced lines. Start it once. */
+   * the configuration step main() gives them: it reads the file of
+   * `--configuration`, none without it, and the launch options set the port
+   * and the database through its forced lines. Start it once. */
   [[nodiscard]] std::unique_ptr<rtype::engine::Application> gameApplication(
       const rtype::server::GameLaunchOptions& options);
 
-  /** @brief Writes @p lines, one per line, to the server.cfg of the folder the
-   * server starts in. */
-  void writeConfiguration(const std::vector<std::string>& lines) const;
+  /** @brief Writes @p lines, one per line, to @p file of the folder the game
+   * starts in. */
+  void writeConfiguration(std::string_view file,
+                          const std::vector<std::string>& lines) const;
 
  private:
   std::uint16_t port_;

@@ -15,15 +15,11 @@ constexpr std::string_view GAME_STATISTICS_MODULE_NAME = "game-statistics";
 /** @brief The name of the logger the plugin writes its lines with. */
 constexpr std::string_view GAME_STATISTICS_LOGGER_NAME = "GameStatistics";
 
-/** @brief The setting that names the file of the statistics. */
-constexpr std::string_view GAME_STATISTICS_FILE_SETTING_NAME =
-    "game-statistics-file";
-
 /**
- * @brief The name of the file while GAME_STATISTICS_FILE_SETTING_NAME is
- * empty, next to the executable, around the port of the server:
- * r-type_statistics_4242.csv. Two servers on one machine listen on two ports,
- * so they never write the same file.
+ * @brief The name of the file while GAME_STATISTICS_FILE_SETTING_NAME (of
+ * ServerConstants.hpp) is empty, next to the executable, around the port of the
+ * server: r-type_statistics_4242.csv. Two servers on one machine listen on two
+ * ports, so they never write the same file.
  */
 constexpr std::string_view GAME_STATISTICS_FILE_PREFIX = "r-type_statistics_";
 constexpr std::string_view GAME_STATISTICS_FILE_SUFFIX = ".csv";

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <string>
 #include "GameStatus.hpp"
 #include "MessageType.hpp"
@@ -141,4 +142,44 @@ TEST_F(ServerSupervisedGamesFixture, StopsEveryGameWhenItStops) {
         toldToStop || onlyMessageTypeOf(datagram) == MessageType::Disconnection;
   }
   EXPECT_TRUE(toldToStop);
+}
+
+/**
+ * Given two lines of the configuration that belong to the games
+ * When the supervisor starts
+ * Then the file of the games holds exactly those lines, in their order, before
+ * any game is started
+ */
+TEST_F(ServerSupervisedGamesFixture, WritesTheLinesOfTheGamesWhenItStarts) {
+  startSupervisor({std::string{GAME_SEED_LINE}, std::string{GAME_PLUGIN_LINE}});
+
+  EXPECT_TRUE(launcher().commands().empty());
+  EXPECT_EQ(gameConfigurationText(), GAME_LINES_TEXT);
+}
+
+/**
+ * Given a supervisor with no line for its games
+ * When it starts
+ * Then the file of the games exists and is empty
+ */
+TEST_F(ServerSupervisedGamesFixture, WritesAnEmptyFileWhenNoLineIsForTheGames) {
+  startSupervisor();
+
+  EXPECT_TRUE(std::filesystem::exists(gameConfigurationFile()));
+  EXPECT_EQ(gameConfigurationText(), "");
+}
+
+/**
+ * Given a started supervisor
+ * When a player asks for a game
+ * Then the game is told to read the file of the games
+ */
+TEST_F(ServerSupervisedGamesFixture, TellsEachGameToReadTheFileOfTheGames) {
+  startSupervisor();
+
+  askForAPlaceAs(0);
+
+  ASSERT_EQ(launcher().commands().size(), 1U);
+  EXPECT_EQ(argumentAfter(launcher().commands().front(), "--configuration"),
+            gameConfigurationFile().string());
 }

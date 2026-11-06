@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <string>
 #include <string_view>
+#include "GameConfigurationFile.hpp"
 #include "GameLaunch.hpp"
 #include "GameLaunchSettings.hpp"
 #include "LaunchArgumentsConstants.hpp"
@@ -53,6 +54,9 @@ ProcessCommand gameCommand(const GameLaunchSettings& settings,
             databaseFileOf(settings.folder, launch.supervisorPort));
   addOption(command, logging::FILE_OPTION,
             logFileOf(settings.folder, launch.number));
+  addOption(
+      command, CONFIGURATION_OPTION,
+      gameConfigurationFileOf(settings.folder, launch.supervisorPort).string());
   return command;
 }
 

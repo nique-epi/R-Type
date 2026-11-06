@@ -45,3 +45,15 @@ constexpr std::string_view FOLDER_FOR_TESTS = "some/folder";
  * tests: eight games need more players than SentDatagrams names. */
 constexpr std::string_view SUPERVISED_PLAYER_ADDRESS = "192.0.2.50";
 constexpr std::uint16_t FIRST_SUPERVISED_PLAYER_PORT = 40000;
+
+/** @brief The file of commands of the games of a supervisor on port 4242,
+ * which RecordingNetworkModule listens on. */
+constexpr std::string_view GAMES_FILE_OF_PORT_4242 = "r-type_games_4242.cfg";
+
+/** @brief Lines of a configuration that belong to the games, and the text the
+ * file of the games holds once they are written, one per line in their order.
+ */
+constexpr std::string_view GAME_SEED_LINE = "set seed 7";
+constexpr std::string_view GAME_PLUGIN_LINE = "plugin game-statistics";
+constexpr std::string_view GAME_LINES_TEXT =
+    "set seed 7\nplugin game-statistics\n";

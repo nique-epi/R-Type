@@ -9,6 +9,7 @@
 #include "GameRegistry.hpp"
 #include "GameSpawner.hpp"
 #include "IDatagramSender.hpp"
+#include "IListeningPort.hpp"
 #include "IModule.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IProcessLauncher.hpp"
@@ -35,8 +36,10 @@ namespace rtype::server {
  * stop() has every game stopped (see ChildrenStopper) before the network
  * closes.
  *
- * install() opens nothing; start() has nothing to open, since processes start
- * when a player asks for one.
+ * install() opens nothing. start() writes the file of commands of the games
+ * (see gameConfigurationFileOf()) with the lines of the configuration that
+ * belong to them, once, before a player can ask for a game, and every game is
+ * told to read it; processes start when a player asks for one.
  */
 class ServerSupervisedGamesModule final : public engine::IModule {
  public:
@@ -57,6 +60,13 @@ class ServerSupervisedGamesModule final : public engine::IModule {
    */
   void install(engine::InstallContext& context) override;
 
+  /**
+   * @brief Writes the lines of GameLaunchSettings::gameLines to the file of
+   * commands of the games, replacing it.
+   * @throws GameConfigurationWriteException when the file cannot be written:
+   * the supervisor then stops, as it does when its journal or a database
+   * cannot be opened, rather than run games without the lines meant for them.
+   */
   void start() override;
 
   /** @brief Stops every game, then reports how each ended. */
@@ -76,6 +86,7 @@ class ServerSupervisedGamesModule final : public engine::IModule {
   logging::Logger logger_;
   IDatagramSender* sender_{nullptr};
   IPlayerAdmission* admission_{nullptr};
+  const IListeningPort* listeningPort_{nullptr};
   TickDatagrams* tickDatagrams_{nullptr};
 };
 

@@ -1,4 +1,6 @@
 #include <gtest/gtest.h>
+#include <filesystem>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -18,6 +20,7 @@ using rtype::engine::InvalidLaunchOptionValueException;
 using rtype::engine::PORT_OPTION;
 using rtype::engine::UnknownLaunchArgumentException;
 using rtype::network::InvalidPortException;
+using rtype::server::CONFIGURATION_OPTION;
 using rtype::server::GameLaunchOptions;
 using rtype::server::LINK_TOKEN_OPTION;
 using rtype::server::MissingSupervisorLinkException;
@@ -167,8 +170,35 @@ TEST(GameLaunchOptions, UsageNamesItsOptions) {
 
   for (const std::string_view option :
        {PORT_OPTION, SUPERVISOR_OPTION, LINK_TOKEN_OPTION, DATABASE_OPTION,
-        HELP_OPTION}) {
+        CONFIGURATION_OPTION, HELP_OPTION}) {
     SCOPED_TRACE(option);
     EXPECT_NE(usage.find("\n  " + std::string(option)), std::string::npos);
   }
+}
+
+/**
+ * Given the configuration option with a file beside the supervisor link
+ * When the launch options of a game are read
+ * Then the game reads that file
+ */
+TEST(GameLaunchOptions, ReadsTheFileOfCommandsItIsGiven) {
+  const GameLaunchOptions options = GameLaunchOptions::read(GameArguments{
+      SUPERVISOR_OPTION, SUPERVISOR_PORT_TEXT, LINK_TOKEN_OPTION,
+      LINK_TOKEN_TEXT, CONFIGURATION_OPTION, GAME_CONFIGURATION_ARGUMENT});
+
+  EXPECT_EQ(options.configurationFile().value_or(std::filesystem::path{}),
+            std::filesystem::path{GAME_CONFIGURATION_ARGUMENT});
+}
+
+/**
+ * Given the supervisor link alone
+ * When the launch options of a game are read
+ * Then the game reads no file of commands
+ */
+TEST(GameLaunchOptions, ReadsNoFileOfCommandsWithoutTheOption) {
+  const GameLaunchOptions options = GameLaunchOptions::read(
+      GameArguments{SUPERVISOR_OPTION, SUPERVISOR_PORT_TEXT, LINK_TOKEN_OPTION,
+                    LINK_TOKEN_TEXT});
+
+  EXPECT_EQ(options.configurationFile(), std::nullopt);
 }

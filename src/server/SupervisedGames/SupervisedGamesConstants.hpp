@@ -30,6 +30,13 @@ constexpr std::string_view SUPERVISOR_LOGGER_NAME = "Supervisor";
 constexpr std::string_view GAME_LOG_FILE_PREFIX = "r-type_game_";
 constexpr std::string_view GAME_LOG_FILE_SUFFIX = ".log";
 
+/** @brief The file of commands the supervisor on port p writes for its games
+ * is GAME_CONFIGURATION_FILE_PREFIX, p and GAME_CONFIGURATION_FILE_SUFFIX,
+ * next to the executable: two supervisors on one machine listen on two ports,
+ * so they never write the same file. */
+constexpr std::string_view GAME_CONFIGURATION_FILE_PREFIX = "r-type_games_";
+constexpr std::string_view GAME_CONFIGURATION_FILE_SUFFIX = ".cfg";
+
 /** @brief How the journal names the lifecycle of a game. */
 constexpr std::string_view STARTING_TEXT = "starting";
 constexpr std::string_view WAITING_FOR_PLAYERS_TEXT = "waiting for players";

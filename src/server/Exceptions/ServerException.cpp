@@ -90,4 +90,9 @@ MissingSupervisorLinkException::MissingSupervisorLinkException(
           "--link-token: " +
           missingOption + " is missing") {}
 
+GameConfigurationWriteException::GameConfigurationWriteException(
+    const std::string& file)
+    : ServerException("cannot write the configuration of the games to " +
+                      file) {}
+
 }  // namespace rtype::server
