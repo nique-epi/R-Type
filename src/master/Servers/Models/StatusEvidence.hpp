@@ -18,6 +18,9 @@ struct StatusEvidence {
   network::ServerMeasures measures;
   /** @brief Whether an admin took it out of service. */
   bool maintenance{false};
+  /** @brief The second of its last valid answer to a probe; none since it
+   * registered. */
+  std::optional<std::chrono::sys_seconds> lastProbeAnswerAt = std::nullopt;
 };
 
 }  // namespace rtype::master

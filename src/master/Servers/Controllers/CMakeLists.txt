@@ -9,6 +9,7 @@ target_include_directories(rtype_master_servers_controllers PUBLIC ${CMAKE_CURRE
 target_link_libraries(rtype_master_servers_controllers
   PUBLIC
     rtype_master_http_module
+    rtype_master_probe_module
     rtype_master_servers_services
   PRIVATE
     nlohmann_json::nlohmann_json

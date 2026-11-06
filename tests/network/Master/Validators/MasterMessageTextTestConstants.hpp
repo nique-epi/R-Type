@@ -151,14 +151,15 @@ constexpr std::string_view POINTER_QUOTE = "\"";
 constexpr std::string_view QUOTED_WHOLE_MESSAGE = "\"\"";
 
 /**
- * @brief How the statuses of a server are written, and the text of the status
- * the probe will add, which no status reads yet.
+ * @brief How the statuses of a server are written, and a text no status
+ * has.
  */
 constexpr std::string_view ONLINE_TEXT = "online";
 constexpr std::string_view DEGRADED_TEXT = "degraded";
 constexpr std::string_view OFFLINE_TEXT = "offline";
 constexpr std::string_view MAINTENANCE_TEXT = "maintenance";
 constexpr std::string_view UNREACHABLE_TEXT = "unreachable";
+constexpr std::string_view UNKNOWN_STATUS_TEXT = "lost";
 
 /**
  * @brief The games and players of the heartbeat of "Paris 1", as a list of

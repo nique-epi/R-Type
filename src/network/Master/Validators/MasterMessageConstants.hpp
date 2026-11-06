@@ -95,9 +95,10 @@ constexpr std::string_view ONLINE_STATUS_TEXT = "online";
 constexpr std::string_view DEGRADED_STATUS_TEXT = "degraded";
 constexpr std::string_view OFFLINE_STATUS_TEXT = "offline";
 constexpr std::string_view MAINTENANCE_STATUS_TEXT = "maintenance";
+constexpr std::string_view UNREACHABLE_STATUS_TEXT = "unreachable";
 constexpr auto SERVER_STATUS_TEXTS = std::to_array<std::string_view>(
     {ONLINE_STATUS_TEXT, DEGRADED_STATUS_TEXT, OFFLINE_STATUS_TEXT,
-     MAINTENANCE_STATUS_TEXT});
+     MAINTENANCE_STATUS_TEXT, UNREACHABLE_STATUS_TEXT});
 
 /**
  * @brief The members of a listed server beside those of a registration, of a

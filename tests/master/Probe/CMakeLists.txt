@@ -1,1 +1,1 @@
-target_sources(master_tests PRIVATE ProbeThrottleTest.cpp ProbeThrottleFixtures.cpp)
+target_sources(master_tests PRIVATE ProbeThrottleTest.cpp ProbeThrottleFixtures.cpp MasterProbeModuleTest.cpp MasterProbeModuleFixture.cpp)

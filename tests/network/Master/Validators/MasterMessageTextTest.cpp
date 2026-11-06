@@ -125,6 +125,7 @@ using rtype::network::testing::TICK_P50_POINTER;
 using rtype::network::testing::UDP_PORT_POINTER;
 using rtype::network::testing::UNKNOWN_MEMBER_POINTER;
 using rtype::network::testing::UNKNOWN_MEMBER_VALUE;
+using rtype::network::testing::UNKNOWN_STATUS_TEXT;
 using rtype::network::testing::UNREACHABLE_TEXT;
 using rtype::network::testing::UPPERCASE_KEY;
 using rtype::network::testing::WAITING_GAME_NUMBER;
@@ -622,17 +623,17 @@ TEST(MasterMessageText, RefusesMoreListedGamesThanAServerMayHost) {
 }
 
 /**
- * Given the four texts of the statuses, and "unreachable", which comes with
- * the probe
+ * Given the five texts of the statuses, and a text no status has
  * When each is read
- * Then each of the four gives its status, and "unreachable" none yet
+ * Then each of the five gives its status, and the other none
  */
 TEST(MasterMessageText, ReadsEveryStatusFromItsText) {
   EXPECT_EQ(serverStatusOf(ONLINE_TEXT), ServerStatus::Online);
   EXPECT_EQ(serverStatusOf(DEGRADED_TEXT), ServerStatus::Degraded);
   EXPECT_EQ(serverStatusOf(OFFLINE_TEXT), ServerStatus::Offline);
   EXPECT_EQ(serverStatusOf(MAINTENANCE_TEXT), ServerStatus::Maintenance);
-  EXPECT_EQ(serverStatusOf(UNREACHABLE_TEXT), std::nullopt);
+  EXPECT_EQ(serverStatusOf(UNREACHABLE_TEXT), ServerStatus::Unreachable);
+  EXPECT_EQ(serverStatusOf(UNKNOWN_STATUS_TEXT), std::nullopt);
 }
 
 /**

@@ -12,9 +12,7 @@
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
 #include "MasterAccess.hpp"
-#include "MasterClient.hpp"
 #include "RunningMaster.hpp"
-#include "ServerCreation.hpp"
 #include "ServerIdentity.hpp"
 
 namespace rtype::server::testing {
@@ -38,10 +36,7 @@ bool holdsSoon(Condition condition) {
 }  // namespace
 
 HeartbeatJobFixture::HeartbeatJobFixture()
-    : created_(network::MasterClient{
-          network::MasterAccess{.url = master_.url(), .key = {}}}
-                   .createServer(network::ServerCreation{
-                       .name = std::string{LINKED_NAME}})) {}
+    : created_(master_.createServer(LINKED_NAME)) {}
 
 void HeartbeatJobFixture::startJob(HeartbeatTimes times) {
   job_.emplace(HeartbeatJobParts{

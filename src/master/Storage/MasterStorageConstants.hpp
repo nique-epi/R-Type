@@ -108,11 +108,22 @@ CREATE INDEX status_changes_by_date ON status_changes (changed_at);
 )sql";
 
 /**
+ * @brief The third version: the secret each server registered with, which the
+ * probes of the master carry, and the second the master last received a valid
+ * token of a probe of it. Both are null for a server registered before: its
+ * next heartbeat is answered 409, and it registers again with its secret.
+ */
+constexpr std::string_view PROBES_MIGRATION = R"sql(
+ALTER TABLE servers ADD COLUMN probe_secret INTEGER;
+ALTER TABLE servers ADD COLUMN last_probe_answer_at INTEGER;
+)sql";
+
+/**
  * @brief The migrations of the database of the master, in order:
  * MASTER_MIGRATIONS[0] is version 1. A change adds a migration at the end and
  * never edits one a master already applied.
  */
-constexpr std::array<std::string_view, 2> MASTER_MIGRATIONS{SERVERS_MIGRATION,
-                                                            STATUSES_MIGRATION};
+constexpr std::array<std::string_view, 3> MASTER_MIGRATIONS{
+    SERVERS_MIGRATION, STATUSES_MIGRATION, PROBES_MIGRATION};
 
 }  // namespace rtype::master
