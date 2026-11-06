@@ -15,6 +15,7 @@
 #include "DeltaWorldState.hpp"
 #include "DeltaWorldStateCodec.hpp"
 #include "Entity.hpp"
+#include "EntitySpawnSender.hpp"
 #include "EntityTypeNumber.hpp"
 #include "Intent.hpp"
 #include "Invulnerable.hpp"
@@ -34,6 +35,8 @@
 #include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
 #include "StateDelta.hpp"
+#include "StateEncoding.hpp"
+#include "StateSending.hpp"
 #include "TimeConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateDelta.hpp"
@@ -147,23 +150,23 @@ network::DeltaWorldState deltaAgainst(const network::WorldState& state,
 
 }  // namespace
 
-WorldStateSender::WorldStateSender(PlayerRoster& roster, Send send,
-                                   std::size_t statesPerSecond)
+WorldStateSender::WorldStateSender(PlayerRoster& roster, SendDatagram send,
+                                   StateSending sending)
     : roster_(&roster),
       send_(std::move(send)),
-      statesPerSecond_(statesPerSecond),
+      sending_(sending),
       logger_(std::string{REPLICATION_LOGGER_NAME}) {
-  if (statesPerSecond < LOWEST_WORLD_STATES_PER_SECOND ||
-      statesPerSecond > HIGHEST_WORLD_STATES_PER_SECOND) {
-    throw InvalidStateRateException(statesPerSecond);
+  if (sending.statesPerSecond < LOWEST_WORLD_STATES_PER_SECOND ||
+      sending.statesPerSecond > HIGHEST_WORLD_STATES_PER_SECOND) {
+    throw InvalidStateRateException(sending.statesPerSecond);
   }
 }
 
 bool WorldStateSender::carriesState(std::uint32_t tick) const {
   const std::uint64_t shareOfSecond = static_cast<std::uint64_t>(tick) *
-                                      statesPerSecond_ %
+                                      sending_.statesPerSecond %
                                       engine::SIMULATION_TICKS_PER_SECOND;
-  return shareOfSecond < statesPerSecond_;
+  return shareOfSecond < sending_.statesPerSecond;
 }
 
 void WorldStateSender::onTick(std::uint32_t tick,
@@ -190,8 +193,11 @@ void WorldStateSender::onTick(std::uint32_t tick,
 void WorldStateSender::sendTo(
     ConnectedPlayer& player, const network::WorldState& state,
     std::shared_ptr<const std::vector<network::EntityState>> entities) {
-  const network::DeltaWorldState delta =
-      deltaAgainst(state, player.sentStates.referenceFor(state.tick));
+  const SentState* const reference =
+      sending_.encoding == StateEncoding::Delta
+          ? player.sentStates.referenceFor(state.tick)
+          : nullptr;
+  const network::DeltaWorldState delta = deltaAgainst(state, reference);
   const auto payloads = encodedPartsOf(delta);
   if (!payloads.has_value()) {
     return;

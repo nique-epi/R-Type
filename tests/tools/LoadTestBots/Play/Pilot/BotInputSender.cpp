@@ -1,9 +1,13 @@
 #include "BotInputSender.hpp"
 #include <cstdint>
+#include <variant>
 #include "ActionSet.hpp"
+#include "EntityMessage.hpp"
 #include "IPlayerInputLink.hpp"
 #include "IWaitingRoom.hpp"
+#include "OwnShip.hpp"
 #include "TimeConstants.hpp"
+#include "WorldState.hpp"
 
 namespace rtype::tools {
 
@@ -21,6 +25,17 @@ bool BotInputSender::advance(engine::Duration elapsed) {
     return false;
   }
   return link_->sendPlayerInput(held).has_value();
+}
+
+void BotInputSender::confirm(const client::EntityMessage& message,
+                             std::uint8_t playerNumber) {
+  const auto* state = std::get_if<network::WorldState>(&message);
+  if (state == nullptr) {
+    return;
+  }
+  if (const auto own = client::ownShipOf(*state, playerNumber)) {
+    link_->confirmInputsUpTo(own->acknowledgedInput);
+  }
 }
 
 }  // namespace rtype::tools

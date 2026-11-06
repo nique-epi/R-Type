@@ -2,15 +2,15 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <vector>
 #include "ComponentRegistry.hpp"
 #include "DeltaWorldState.hpp"
+#include "EntitySpawnSender.hpp"
 #include "Logger.hpp"
-#include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
+#include "StateSending.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::server {
@@ -28,7 +28,8 @@ class ConnectedPlayers;
  * EntityType, each under its network id. Each player gets it as a
  * DeltaWorldState written against the newest state the player acknowledged
  * (see SentStates), or in full, with no reference, when it acknowledged none
- * within the last MAXIMUM_REFERENCE_DISTANCE ticks. It is sent as
+ * within the last MAXIMUM_REFERENCE_DISTANCE ticks or when the sender writes
+ * StateEncoding::Full. It is sent as
  * several datagrams, with the same tick, when it does not fit one. Each
  * datagram starts with the packet header of its player: its session token and
  * its next sequence (see nextSessionHeader), so each part of a state has a
@@ -44,21 +45,16 @@ class ConnectedPlayers;
 class WorldStateSender {
  public:
   /**
-   * @brief What the sender calls for each datagram to send.
-   */
-  using Send = std::function<void(network::OutgoingDatagram)>;
-
-  /**
    * @param roster The players of the game, who receive the state; it must
    * outlive the sender.
-   * @param send Must not be empty.
-   * @param statesPerSecond The states sent to each player per second, from
-   * LOWEST_WORLD_STATES_PER_SECOND to HIGHEST_WORLD_STATES_PER_SECOND; it need
-   * not divide the tick rate.
-   * @throws InvalidStateRateException when it is outside that range.
+   * @param send Called for each datagram to send. Must not be empty.
+   * @param sending The states sent to each player per second, from
+   * LOWEST_WORLD_STATES_PER_SECOND to HIGHEST_WORLD_STATES_PER_SECOND (it need
+   * not divide the tick rate), and how they are written.
+   * @throws InvalidStateRateException when the rate is outside that range.
    */
-  WorldStateSender(PlayerRoster& roster, Send send,
-                   std::size_t statesPerSecond);
+  WorldStateSender(PlayerRoster& roster, SendDatagram send,
+                   StateSending sending);
 
   /**
    * @brief Sends the state to every connected player when @p tick is one that
@@ -80,8 +76,9 @@ class WorldStateSender {
       std::uint32_t tick, engine::ComponentRegistry& components,
       std::size_t& leftOutCount);
   void reportLeftOut(std::size_t leftOutCount);
-  /** @brief Sends @p player the state as a delta against its acknowledged
-   * state, and keeps it, with @p entities, as the newest state sent to it. */
+  /** @brief Sends @p player the state, as a delta against its acknowledged
+   * state unless the sender writes in full, and keeps it, with @p entities, as
+   * the newest state sent to it. */
   void sendTo(
       ConnectedPlayer& player, const network::WorldState& state,
       std::shared_ptr<const std::vector<network::EntityState>> entities);
@@ -90,13 +87,13 @@ class WorldStateSender {
   [[nodiscard]] std::optional<std::vector<std::vector<std::byte>>>
   encodedPartsOf(const network::DeltaWorldState& delta);
   /** @returns Whether @p tick is one that carries a state: exactly
-   * statesPerSecond_ of every SIMULATION_TICKS_PER_SECOND consecutive ticks
-   * are, the first of them included. */
+   * sending_.statesPerSecond of every SIMULATION_TICKS_PER_SECOND consecutive
+   * ticks are, the first of them included. */
   [[nodiscard]] bool carriesState(std::uint32_t tick) const;
 
   PlayerRoster* roster_{nullptr};
-  Send send_;
-  std::size_t statesPerSecond_;
+  SendDatagram send_;
+  StateSending sending_;
   std::size_t reportedLeftOutCount_{0};
   logging::Logger logger_;
 };

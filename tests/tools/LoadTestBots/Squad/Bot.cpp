@@ -3,15 +3,26 @@
 #include <string_view>
 #include "BotReport.hpp"
 #include "BotStanding.hpp"
+#include "BotTraffic.hpp"
 #include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
 #include "EntityMessage.hpp"
 #include "NetworkConditionsConstants.hpp"
+#include "NetworkThread.hpp"
 #include "TimeConstants.hpp"
+#include "TrafficTotals.hpp"
 
 namespace rtype::tools {
 
 namespace {
+
+/** @returns What crossed the socket of @p thread since it was built, as the
+ * client reads it and as the network carried it. */
+BotTraffic trafficOf(client::NetworkThread& thread) {
+  return BotTraffic{
+      .plain = network::trafficTotalsOf(thread.traffic().report()),
+      .wire = network::trafficTotalsOf(thread.wireTraffic().report())};
+}
 
 /** @returns true: a bot draws nothing, so it plays every entity type a
  * server sends. */
@@ -30,7 +41,7 @@ void Bot::join(const network::Endpoint& server, std::string_view nickname) {
 
 void Bot::update(engine::Duration elapsed) {
   connection_.update(elapsed);
-  countReceived(elapsed);
+  readReceived(elapsed);
   if (inputs_.advance(elapsed)) {
     tally_.countInput();
   }
@@ -56,13 +67,17 @@ void Bot::leave() {
   connection_.network().close();
 }
 
-void Bot::countReceived(engine::Duration elapsed) {
+void Bot::readReceived(engine::Duration elapsed) {
   received_.clear();
   connection_.entityMessages().drainEntityMessages(received_);
+  const std::uint8_t playerNumber = connection_.session().status().playerNumber;
   for (const client::EntityMessage& message : received_) {
     tally_.count(message);
+    inputs_.confirm(message, playerNumber);
   }
-  tally_.addTime(elapsed, connection_.waitingRoom().gameStarted());
+  const bool gameStarted = connection_.waitingRoom().gameStarted();
+  tally_.addTime(elapsed, gameStarted);
+  tally_.addTraffic(trafficOf(connection_.network()), gameStarted);
 }
 
 }  // namespace rtype::tools
