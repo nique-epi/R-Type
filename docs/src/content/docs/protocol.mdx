@@ -46,6 +46,36 @@ A position is in logical units, in the frame described in [Architecture](/R-Type
 - The range holds the playfield plus one playfield size beyond each edge as long as `PLAYFIELD_WIDTH` and `PLAYFIELD_HEIGHT` stay at or below 2047 units. The code must check this at compile time, so enlarging the playfield breaks the build instead of sending positions to the opposite edge.
 - The server must destroy an entity before it leaves the range: a coordinate outside it is a bug. As a last resort, so that a coordinate never wraps to the opposite edge, the encoder clamps it to the nearest end of the range; this hides nothing from the server, which must still not let an entity get there.
 
+### Packing
+
+Every field takes the smallest whole number of bytes its values need, and flags that travel together share one byte, one bit each; nothing is written bit by bit across bytes, and the server compresses the result (see [Compression](#compression)). Since the first version, a coordinate is an `i16` instead of a 4-byte float, the five actions of a `PlayerInput` are bits 0 to 4 of `actions`, and the six flags of a pilot are bits 0 to 5 of `motion`.
+
+`PackingMeasurement` (`tests/network/Protocol/`) encodes a typical state twice: once with `WorldStateCodec`, once with a writer of the tests that puts each coordinate in a binary32 float and each bit of `motion` or `actions` in a byte of its own. The state is `LARGE_WORLD_STATE_BODY`, a `WorldState` the server sent during a real game of four players and 22 entities; the input holds up and shoot and repeats five inputs the server has not confirmed yet, as a client does between two world states.
+
+| Payload | Packed | Unpacked | Saved |
+|---|---|---|---|
+| Typical world state | 268 bytes (6 + 16 per player + 9 per entity) | 376 bytes (6 + 21 per player + 13 per entity) | 108 bytes, 28.7 % |
+| `PlayerInput` with 5 repeats | 11 bytes | 35 bytes | 24 bytes, 68.6 % |
+
+At 20 states and 60 inputs per second, that is 2160 bytes per second less to each client and 1440 less from it, before compression. The unpacked form is never sent: it exists only to give the figure. The test prints both sizes:
+
+```bash
+ctest --test-dir build -R PackingMeasurement -V
+```
+
+What each field could still lose:
+
+| Field | On the wire | Values | Why it stays |
+|---|---|---|---|
+| coordinate | `i16` | eighths, -4096 to 4095.875 units | already 2 bytes; the range holds the playfield and one playfield beyond each edge |
+| entity id, `shipEntityId` | `u32` | handed out once by `NetworkIdAllocator`, never reused | 16 bits would wrap after 65535 entities, within a long game, and need ids recycled |
+| `score` | `u32` | can pass 65535 | |
+| `lives`, `playerNumber`, `entityType` | `u8` | 0 to 3, 1 to 4, the [entity types](#entity-types) | one byte is the least without writing bit by bit |
+| `invulnerable` | `bool` | one bit | could take bit 6 of `motion`: 1 byte per player |
+| `acknowledgedInput` | `u32` | grows by 60 per second | 16 bits would wrap after 18 minutes and need serial number comparison: 2 bytes per player |
+
+Both changes together save 12 bytes on the 268 of the typical state, 4.5 %, before compression; they are left out, since each needs a new `version` and a new dictionary.
+
 ## Datagram
 
 A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 7.
