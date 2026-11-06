@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <string>
 #include "ByteSequence.hpp"
-#include "ChatLine.hpp"
 #include "ChatLineTestConstants.hpp"
 #include "MessagePayload.hpp"
 #include "NetworkException.hpp"
