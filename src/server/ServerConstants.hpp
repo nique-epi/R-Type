@@ -35,6 +35,14 @@ constexpr std::string_view MASTER_URL_SETTING_NAME = "master-url";
 constexpr std::string_view MASTER_KEY_SETTING_NAME = "master-key";
 constexpr std::string_view SERVER_NAME_SETTING_NAME = "server-name";
 
+/**
+ * @brief The setting that names the file of the game statistics, which the
+ * game-statistics plugin of a game process declares; the supervisor hands its
+ * lines to its games.
+ */
+constexpr std::string_view GAME_STATISTICS_FILE_SETTING_NAME =
+    "game-statistics-file";
+
 /** @brief Every setting of the server, in the order its usage lists them. */
 constexpr std::array SERVER_SETTING_NAMES{
     PORT_SETTING_NAME,        SEED_SETTING_NAME,
@@ -49,10 +57,10 @@ constexpr std::array SERVER_SETTING_NAMES{
 constexpr std::int64_t HIGHEST_SEED = 4294967295;
 
 /**
- * @brief Launch option followed by the UDP port of the supervisor that started
- * this server, on the loopback. Given together with LINK_TOKEN_OPTION: the
- * server is then a game process, which hosts one game and tells its supervisor
- * how it stands.
+ * @brief Launch option of a game process followed by the UDP port of the
+ * supervisor that started it, on the loopback. A game process always has it,
+ * with LINK_TOKEN_OPTION: it hosts one game and tells its supervisor how it
+ * stands.
  */
 constexpr std::string_view SUPERVISOR_OPTION = "--supervisor";
 
@@ -63,8 +71,26 @@ constexpr std::string_view SUPERVISOR_OPTION = "--supervisor";
  */
 constexpr std::string_view LINK_TOKEN_OPTION = "--link-token";
 
+/**
+ * @brief Launch option of a game process followed by the file of commands it
+ * reads when it starts, instead of server.cfg: the lines its supervisor kept
+ * for its games. Without it, a game process reads no file.
+ */
+constexpr std::string_view CONFIGURATION_OPTION = "--configuration";
+
+/**
+ * @brief The traffic file of game n, for a `--traffic-csv <stem><ext>` given
+ * to the supervisor, is <stem>, GAME_TRAFFIC_FILE_INFIX, n, then <ext>, in the
+ * same folder: traffic.csv gives traffic_game_0.csv to game 0. Each game
+ * writes its own file, so two games never write the same one.
+ */
+constexpr std::string_view GAME_TRAFFIC_FILE_INFIX = "_game_";
+
 /** @brief How many games a game process hosts. */
 constexpr std::size_t GAME_PROCESS_GAME_COUNT = 1;
+
+/** @brief How many game processes the supervisor runs at once. */
+constexpr std::size_t MAXIMUM_RUNNING_GAMES = 8;
 
 /**
  * @brief Launch option followed by the seed the random draws of the games start
@@ -167,11 +193,11 @@ constexpr std::string_view CHANGED_INPUT_DELAY_BREACH =
 
 /**
  * @brief Launch option followed by the program the binary runs:
- * SERVER_MODE_NAME, SUPERVISOR_MODE_NAME, the default, or MASTER_MODE_NAME. It
+ * SUPERVISOR_MODE_NAME, the default, GAME_MODE_NAME or MASTER_MODE_NAME. It
  * comes first, before every other option.
  */
 constexpr std::string_view MODE_OPTION = "--mode";
-constexpr std::string_view SERVER_MODE_NAME = "server";
+constexpr std::string_view GAME_MODE_NAME = "game";
 constexpr std::string_view SUPERVISOR_MODE_NAME = "supervisor";
 constexpr std::string_view MASTER_MODE_NAME = "master";
 

@@ -220,6 +220,15 @@ std::optional<LogLevel> Logger::parseLevel(std::string_view text) {
   return std::nullopt;
 }
 
+std::string_view levelNameOf(LogLevel level) {
+  for (const LevelName& levelName : levelNames) {
+    if (levelName.level == level) {
+      return levelName.name;
+    }
+  }
+  return INFO_NAME;
+}
+
 LogLevel Logger::level() {
   return currentLevel().load(std::memory_order_acquire);
 }

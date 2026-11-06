@@ -32,7 +32,7 @@ void HeartbeatJobFixture::startJob(HeartbeatTimes times) {
                                  .udpPort = LINKED_PORT,
                                  .maximumGames = LINKED_GAMES},
       .games = games_,
-      .metrics = nullptr,
+      .measures = nullptr,
       .times = times});
 }
 

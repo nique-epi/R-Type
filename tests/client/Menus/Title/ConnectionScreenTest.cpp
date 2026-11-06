@@ -409,8 +409,8 @@ INSTANTIATE_TEST_SUITE_P(
                                  std::string_view(NICKNAME_TAKEN_STATUS))));
 
 /**
- * Given an attempt a server of protocol version 8 refused as
- * IncompatibleVersion, the client speaking version 7
+ * Given an attempt a server of protocol version 9 refused as
+ * IncompatibleVersion, the client speaking version 8
  * When a frame goes by
  * Then the status line names both versions, the client's first
  */
@@ -419,7 +419,7 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
-  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V7, SERVER V8"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V8, SERVER V9"), nullptr);
 }
 
 /**
@@ -439,6 +439,23 @@ TEST_F(ConnectionScreenChoiceFixture, ANewScreenStartsWithTheLastAttempt) {
                             .server = {.address = std::string(LAUNCH_ADDRESS),
                                        .port = LAUNCH_PORT},
                             .nickname = std::string(TYPED_NICKNAME)}));
+}
+
+/**
+ * Given the server and the nickname of the launch values in the choice
+ * When a connection screen opens to connect at once, as the map opens it
+ * Then the attempt goes out to that server with that nickname, unasked
+ */
+TEST_F(ConnectionScreenChoiceFixture, AScreenOpenedAtOnceConnectsToTheChoice) {
+  reopenConnectingAtOnce();
+
+  ASSERT_FALSE(connectAttemptsOf(connection()).empty());
+  EXPECT_EQ(
+      connectAttemptsOf(connection()).back(),
+      (ServerConnectionCall{.request = ServerConnectionCall::Request::Connect,
+                            .server = {.address = std::string(LAUNCH_ADDRESS),
+                                       .port = LAUNCH_PORT},
+                            .nickname = std::string(LAUNCH_NICKNAME)}));
 }
 
 /**

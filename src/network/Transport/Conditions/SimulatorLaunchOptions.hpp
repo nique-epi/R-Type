@@ -4,6 +4,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 #include "NetworkConditions.hpp"
 
 namespace rtype::network {
@@ -42,6 +43,11 @@ class SimulatorLaunchOptions {
 
   /** @returns The network the options describe. */
   [[nodiscard]] const NetworkConditions& conditions() const;
+
+  /** @returns The options that give a program this one starts the same
+   * network: the five values, `--lag`, `--jitter`, `--loss`, `--duplicates`
+   * and `--reorder`, each with its value; none for PERFECT_NETWORK. */
+  [[nodiscard]] std::vector<std::string> forwardedArguments() const;
 
   /** @returns The part of a usage that describes these options, the
    * scenarios with their values included. */

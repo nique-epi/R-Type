@@ -17,6 +17,7 @@
 #include "NetworkException.hpp"
 #include "ServerCreation.hpp"
 #include "ServerHeartbeat.hpp"
+#include "ServerListing.hpp"
 #include "ServerRegistration.hpp"
 
 // NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
@@ -41,6 +42,18 @@ httplib::Request readRequestOf(MasterRoute route, const std::string& path) {
   request.method = std::string{methodNameOf(route.method)};
   request.path = path;
   return request;
+}
+
+/** @returns The path of the page of LIST_SERVERS_ROUTE that starts after
+ * @p offset servers: `/api/servers?limit=100&offset=200`. */
+std::string serverPagePathOf(std::int64_t offset) {
+  return apiPathOf(LIST_SERVERS_ROUTE) + std::string{QUERY_START} +
+         std::string{LIMIT_QUERY_PARAMETER} +
+         std::string{QUERY_VALUE_SEPARATOR} +
+         std::to_string(MAXIMUM_PAGE_SIZE) +
+         std::string{QUERY_PARAMETER_SEPARATOR} +
+         std::string{OFFSET_QUERY_PARAMETER} +
+         std::string{QUERY_VALUE_SEPARATOR} + std::to_string(offset);
 }
 
 /** @brief Sends @p key as Bearer with @p request, unless it is empty. */
@@ -95,6 +108,20 @@ GameListing MasterClient::listGames(std::int64_t serverId) {
   return gameListingFromText(
       send(readRequestOf(LIST_SERVER_GAMES_ROUTE,
                          serverPathOf(LIST_SERVER_GAMES_ROUTE, serverId))));
+}
+
+ServerListing MasterClient::listServers() {
+  ServerListing every;
+  for (std::int64_t page = 0; page < MAXIMUM_LISTED_SERVER_PAGES; ++page) {
+    const ServerListing read = serverListingFromText(send(readRequestOf(
+        LIST_SERVERS_ROUTE, serverPagePathOf(page * MAXIMUM_PAGE_SIZE))));
+    every.servers.insert(every.servers.end(), read.servers.begin(),
+                         read.servers.end());
+    if (std::cmp_less(read.servers.size(), MAXIMUM_PAGE_SIZE)) {
+      break;
+    }
+  }
+  return every;
 }
 
 std::string MasterClient::answerOf(MasterRoute route, const std::string& body) {

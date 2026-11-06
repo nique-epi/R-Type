@@ -177,4 +177,10 @@ class Logger {
  */
 void writeLogLine(const LogRecord& record);
 
+/**
+ * @returns The first name Logger::parseLevel() reads as @p level: trace,
+ * debug, info, warn, error or silent.
+ */
+[[nodiscard]] std::string_view levelNameOf(LogLevel level);
+
 }  // namespace rtype::logging

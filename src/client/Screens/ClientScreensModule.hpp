@@ -14,8 +14,10 @@
 #include "FrameLoop.hpp"
 #include "GameWindow.hpp"
 #include "IAudioService.hpp"
+#include "IGameCatalog.hpp"
 #include "IModule.hpp"
 #include "IOptionalDependencies.hpp"
+#include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
@@ -116,6 +118,8 @@ class ClientScreensModule final : public engine::IModule,
   ServerLeaderboard* leaderboard_{nullptr};
   std::unique_ptr<EntityTypeLooks> entityTypes_;
   const IServerTicks* serverTicks_{nullptr};
+  IServerCatalog* serverCatalog_{nullptr};
+  IGameCatalog* gameCatalog_{nullptr};
   FrameLoop* loop_{nullptr};
   EventListeners* listeners_{nullptr};
   /** @brief Declared before screens_, which keep a reference to it. */

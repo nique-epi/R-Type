@@ -107,6 +107,16 @@ namespace rtype::network {
  * registrationText() writes. */
 [[nodiscard]] std::string serverListingText(const ServerListing& listing);
 
+/**
+ * @returns The page of servers the master answered as @p text.
+ * @throws InvalidMasterMessageException naming the first member missing, of
+ * another type or out of its bounds: more than MAXIMUM_PAGE_SIZE servers, an id
+ * below FIRST_SERVER_ID, a registration as registrationFromText() reads it, a
+ * status that is not one of SERVER_STATUS_TEXTS, more than MAXIMUM_HOSTED_GAMES
+ * games, more players than MAXIMUM_HOSTED_GAMES games of MAXIMUM_PLAYERS hold.
+ */
+[[nodiscard]] ServerListing serverListingFromText(std::string_view text);
+
 /** @returns @p listing as the JSON answer of `GET /api/servers/{id}/samples`,
  * every measure not taken left out, as heartbeatText() leaves it out. */
 [[nodiscard]] std::string sampleListingText(const SampleListing& listing);

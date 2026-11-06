@@ -9,6 +9,7 @@
 #include "MasterRoute.hpp"
 #include "ServerCreation.hpp"
 #include "ServerHeartbeat.hpp"
+#include "ServerListing.hpp"
 #include "ServerRegistration.hpp"
 
 namespace httplib {
@@ -75,6 +76,16 @@ class MasterClient {
    * @throws InvalidMasterMessageException when the answer is no game listing.
    */
   [[nodiscard]] GameListing listGames(std::int64_t serverId);
+
+  /**
+   * @returns Every server the master lists, by id: it reads the pages of
+   * `GET /api/servers`, MAXIMUM_PAGE_SIZE servers each, until one is not full,
+   * MAXIMUM_LISTED_SERVER_PAGES pages at most; the route reads no key. It
+   * blocks for as long as the pages take.
+   * @throws MasterUnreachableException, MasterRefusedException as the other
+   * calls do; InvalidMasterMessageException for a page it cannot read.
+   */
+  [[nodiscard]] ServerListing listServers();
 
  private:
   /** @returns The body the master answered to @p body sent on @p route. */

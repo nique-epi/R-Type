@@ -3,13 +3,13 @@
 #include <string>
 #include <vector>
 #include "CookieIssuer.hpp"
-#include "Endpoint.hpp"
 #include "GameRegistry.hpp"
 #include "GameSpawner.hpp"
 #include "IDatagramSender.hpp"
 #include "IModule.hpp"
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
+#include "SeatRequest.hpp"
 #include "SystemClock.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
@@ -25,8 +25,11 @@ namespace rtype::server {
  * game that has a place (ConnectionRedirect), nowhere yet while that game
  * starts (the player asks again every CONNECTION_REQUEST_INTERVAL), to a new
  * game when none has a place and fewer than MAXIMUM_RUNNING_GAMES run, and
- * refused (GameFull) otherwise. A request of another protocol version is
- * refused as the games refuse it.
+ * refused (GameFull) otherwise. The registry holds a seat for each player it
+ * sends to a game, or makes wait for one, the player whose request opened a
+ * game included, so a burst of requests fills a game and opens the next
+ * instead of sending a fifth player to a game of four. A request of another
+ * protocol version is refused as the games refuse it.
  *
  * Its work is in the simulation stage, after the supervised games module's.
  */
@@ -48,7 +51,7 @@ class ServerSupervisorLobbyModule final : public engine::IModule {
   void answerConnectionRequests();
   void answer(const network::IncomingDatagram& datagram, engine::Duration now);
   void refuseAnotherVersion(const network::IncomingDatagram& datagram);
-  void answerValidRequest(const network::Endpoint& sender);
+  void answerValidRequest(const SeatRequest& request);
 
   engine::SystemClock clock_;
   network::CookieIssuer cookies_;

@@ -1,1 +1,1 @@
-target_sources(engine_tests PRIVATE ConfigurationLogTest.cpp ConfigurationLogFixture.cpp ConfigurationReaderTest.cpp ConfigurationReaderFixture.cpp)
+target_sources(engine_tests PRIVATE ConfigurationLogTest.cpp ConfigurationLogFixture.cpp ConfigurationReaderTest.cpp ConfigurationReaderFixture.cpp HandOverRuleFixtures.cpp)

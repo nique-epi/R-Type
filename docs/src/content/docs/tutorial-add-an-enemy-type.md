@@ -32,7 +32,7 @@ The server owns the game. It creates the Bydos, moves them and tells each client
 | 5 | See it on screen | the client, unchanged |
 | 6 | Document it | `docs/src/content/docs/` |
 
-How a sheet reaches the world: the server reads every sheet of `assets/entities/` when it starts (`EntitySheets`), and the waves file names the enemies among them. `WaveSpawner` takes the names of the list in turn and calls `World::spawn(sheet, position)`, which gives the new entity its `Pilot` (the behaviour the sheet names, with the settings the sheet gives it), its `SteadyMotion`, its `Health`, its `ScoreValue` and its `Gun`. Each tick, `PilotSystem` lets the behaviour write the `Intent` of its Bydo, `MovementSystem` moves it by that `Intent`, and the weapon system fires it, exactly as it moves and fires a player: a behaviour that wants to shoot needs no other line of yours.
+How a sheet reaches the world: each game process of the server reads every sheet of `assets/entities/` when it starts (`EntitySheets`), and the waves file names the enemies among them. `WaveSpawner` takes the names of the list in turn and calls `World::spawn(sheet, position)`, which gives the new entity its `Pilot` (the behaviour the sheet names, with the settings the sheet gives it), its `SteadyMotion`, its `Health`, its `ScoreValue` and its `Gun`. Each tick, `PilotSystem` lets the behaviour write the `Intent` of its Bydo, `MovementSystem` moves it by that `Intent`, and the weapon system fires it, exactly as it moves and fires a player: a behaviour that wants to shoot needs no other line of yours.
 
 An enemy that an existing behaviour already moves needs no C++ at all: a Weaver twice as fast is a sheet with `pilot = "weave"` and `period_ms = 1000`. Skip step 1 then. The Zigzagger follows a path no behaviour draws yet, so it needs one.
 
@@ -340,14 +340,14 @@ Build the game with its binaries at the repository root, start the server, then 
 
 ```bash
 cmake --workflow --preset build
-./r-type_server --mode server --seed 42
+./r-type_server --seed 42
 ```
 
 ```bash
 ./r-type_client
 ```
 
-The server logs the sheets it read when it starts (`entity sheets /…/assets/entities: 6 types`). On the connection screen of the client, press CONNECT (the server is at `127.0.0.1`, port 4242, by default), press ready in the waiting room, and wait for the first wave. Each Bydo goes left while it dips and rises every second, 48 units each way, and shooting one adds 300 points to your score. The server prints the wave as it starts (`wave 1: 3 Bydos, one every 2000 ms`).
+In the client, press PLAY, then D (ADDRESS) on the server map, then CONNECT on the connection screen (the server is at `127.0.0.1`, port 4242, by default), press ready in the waiting room, and wait for the first wave. The supervisor starts a game process for you, which logs in its journal, `r-type_game_<n>.log` next to the executable, the sheets it read when it starts (`entity sheets /…/assets/entities: 6 types`). Each Bydo goes left while it dips and rises every second, 48 units each way, and shooting one adds 300 points to your score. The same journal gives the wave as it starts (`wave 1: 3 Bydos, one every 2000 ms`).
 
 What to look at, and why: **the client needed no change**. When it accepts the player, the server sends the side and the name of every sheet it loaded, `zigzagger` included, then names each entity by the number of its sheet. The client finds the `[appearance]` of its own `zigzagger.toml`, which it read from the same `assets/` folder, and draws each Zigzagger with it; the behaviour and the gameplay never leave the server. A client whose `assets/entities/` has no `zigzagger.toml`, an older build for instance, cannot draw the type: it leaves the server at once and shows `NO SHEET: ZIGZAGGER` on its connection screen.
 

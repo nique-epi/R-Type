@@ -3,14 +3,21 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 #include "Application.hpp"
 #include "ConfigurationLog.hpp"
 #include "ConfigurationReader.hpp"
 #include "ConfigurationReport.hpp"
+#include "ConfigurationSource.hpp"
+#include "ConfigurationStep.hpp"
+#include "GameLaunchOptions.hpp"
+#include "GameLineRule.hpp"
+#include "GameProcessModules.hpp"
 #include "IModule.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
@@ -19,11 +26,12 @@
 #include "MasterConstants.hpp"
 #include "MasterLaunchOptions.hpp"
 #include "MasterModules.hpp"
+#include "PathText.hpp"
 #include "ServerConstants.hpp"
 #include "ServerMode.hpp"
 #include "ServerModeChoice.hpp"
 #include "ServerModeOption.hpp"
-#include "ServerModules.hpp"
+#include "ServerRoleConstants.hpp"
 #include "StopReason.hpp"
 #include "StopRequest.hpp"
 #include "StopSignals.hpp"
@@ -31,26 +39,27 @@
 
 namespace {
 
+/** @brief The modules of a program, in the order they install and start. */
+using ProgramModules = std::vector<std::unique_ptr<rtype::engine::IModule>>;
+
 /**
- * @brief What tells apart the two programs the binary runs, the game server
- * and the master, once their launch options are read.
+ * @brief What tells apart the programs the binary runs, the supervisor, a game
+ * process and the master, once their launch options are read.
  */
 struct ProgramRun {
   /** @brief The name of the mode, which starts the line of an error:
-   * `server stopped: …`. */
+   * `game stopped: …`. */
   std::string_view label;
   /** @brief The logger the program writes its errors with. */
   std::string_view loggerName;
-  /** @brief The file of commands read in the folder the program starts in. */
-  std::string_view configurationFile;
+  /** @brief The file of commands the program reads (empty to read none), the
+   * lines of `set` its launch options force, and the rule of the lines that
+   * belong to another program (empty to hand none over). */
+  rtype::engine::ConfigurationSource configuration;
   /** @brief The stages of the loop of the program. */
   std::span<const std::string_view> stages;
-  /** @brief The lines of `set` the launch options force. */
-  std::vector<std::string> forcedLines;
   /** @brief Builds the modules, which tell the StopRequest when they fail. */
-  std::function<std::vector<std::unique_ptr<rtype::engine::IModule>>(
-      rtype::server::StopRequest&)>
-      modules;
+  std::function<ProgramModules(rtype::server::StopRequest&)> modules;
 };
 
 /**
@@ -75,14 +84,16 @@ int runUntilStopped(const ProgramRun& program) {
   int exitCode = 0;
   try {
     rtype::engine::ConfigurationReport configurationReport;
+    ProgramModules modules = program.modules(stopRequest);
+    rtype::engine::ConfigurationStep step = rtype::engine::configurationStep(
+        program.configuration, configurationReport);
     rtype::engine::Application application{
-        rtype::engine::LoopStages{program.stages}, program.modules(stopRequest),
-        rtype::engine::configurationStep(
-            std::filesystem::path{program.configurationFile},
-            program.forcedLines, configurationReport)};
+        rtype::engine::LoopStages{program.stages}, std::move(modules),
+        std::move(step)};
     application.start();
     rtype::engine::logConfigurationReport(
-        configurationReport, program.configurationFile,
+        configurationReport,
+        rtype::logging::genericText(program.configuration.file),
         rtype::logging::Logger{std::string{program.loggerName}});
     const rtype::server::StopReason reason = stopRequest.wait();
     application.stop();
@@ -98,59 +109,78 @@ int runUntilStopped(const ProgramRun& program) {
   return exitCode;
 }
 
-/** @brief Builds the modules of a program of the server binary from its launch
- * options. */
-using ServerModulesBuilder =
-    std::function<std::vector<std::unique_ptr<rtype::engine::IModule>>(
-        const rtype::server::LaunchOptions&, rtype::server::StopRequest&)>;
+/**
+ * @returns The launch options @p options give, read with Options; nothing
+ * when they ask for the usage, which is then printed.
+ */
+template <typename Options>
+std::optional<Options> launchOptionsOrUsage(
+    std::span<const std::string_view> options) {
+  Options launchOptions = Options::read(options);
+  if (launchOptions.helpRequested()) {
+    std::cout << Options::usage();
+    return std::nullopt;
+  }
+  return launchOptions;
+}
 
 /**
- * @brief Runs a program that takes the options of the game server, named
- * @p label, with @p options, or prints its usage.
- * @returns the exit code of the program.
+ * @brief Runs a game process with @p options, or prints its usage. The game
+ * reads the file its supervisor gave after `--configuration`, and no file
+ * without it.
+ * @returns the exit code of the game.
  */
-int runServerProgram(std::string_view label,
-                     std::span<const std::string_view> options,
-                     const ServerModulesBuilder& build) {
-  const rtype::server::LaunchOptions launchOptions =
-      rtype::server::LaunchOptions::read(options);
-  if (launchOptions.helpRequested()) {
-    std::cout << rtype::server::LaunchOptions::usage();
+int runGame(std::span<const std::string_view> options) {
+  const std::optional<rtype::server::GameLaunchOptions> launchOptions =
+      launchOptionsOrUsage<rtype::server::GameLaunchOptions>(options);
+  if (!launchOptions.has_value()) {
     return 0;
   }
   return runUntilStopped(ProgramRun{
-      .label = label,
+      .label = rtype::server::GAME_MODE_NAME,
       .loggerName = rtype::server::SERVER_LOGGER_NAME,
-      .configurationFile = rtype::server::SERVER_CONFIGURATION_FILE_NAME,
+      .configuration =
+          rtype::engine::ConfigurationSource{
+              .file = launchOptions->configurationFile().value_or(
+                  std::filesystem::path{}),
+              .forcedLines = launchOptions->forcedLines(),
+              .handOver = {}},
       .stages = rtype::server::SERVER_LOOP_STAGES,
-      .forcedLines = launchOptions.forcedLines(),
-      .modules = [&launchOptions,
-                  &build](rtype::server::StopRequest& stopRequest) {
-        return build(launchOptions, stopRequest);
+      .modules = [&launchOptions](rtype::server::StopRequest& stopRequest) {
+        return rtype::server::gameProcessModules(*launchOptions, stopRequest);
       }});
 }
 
 /**
- * @brief Runs the game server with @p options, or prints its usage.
- * @returns the exit code of the server.
- */
-int runServer(std::span<const std::string_view> options) {
-  return runServerProgram(rtype::server::SERVER_MODE_NAME, options,
-                          [](const rtype::server::LaunchOptions& launchOptions,
-                             rtype::server::StopRequest& stopRequest) {
-                            return rtype::server::serverModules(
-                                launchOptions.logOptions(), launchOptions,
-                                stopRequest);
-                          });
-}
-
-/**
- * @brief Runs the supervisor with @p options, or prints its usage.
+ * @brief Runs the supervisor with @p options, or prints its usage. It first
+ * reads the lines of server.cfg and of its launch options that belong to its
+ * games (see gameLineRule()), builds its modules with them, the supervised
+ * games module writing them for every game, then runs its own lines.
  * @returns the exit code of the supervisor.
  */
 int runSupervisor(std::span<const std::string_view> options) {
-  return runServerProgram(rtype::server::SUPERVISOR_MODE_NAME, options,
-                          rtype::server::supervisorModules);
+  const std::optional<rtype::server::LaunchOptions> launchOptions =
+      launchOptionsOrUsage<rtype::server::LaunchOptions>(options);
+  if (!launchOptions.has_value()) {
+    return 0;
+  }
+  const rtype::engine::ConfigurationSource configuration{
+      .file =
+          std::filesystem::path{rtype::server::SERVER_CONFIGURATION_FILE_NAME},
+      .forcedLines = launchOptions->forcedLines(),
+      .handOver =
+          rtype::server::gameLineRule(rtype::server::SUPERVISOR_MODULE_NAMES)};
+  return runUntilStopped(ProgramRun{
+      .label = rtype::server::SUPERVISOR_MODE_NAME,
+      .loggerName = rtype::server::SERVER_LOGGER_NAME,
+      .configuration = configuration,
+      .stages = rtype::server::SERVER_LOOP_STAGES,
+      .modules = [&launchOptions,
+                  &configuration](rtype::server::StopRequest& stopRequest) {
+        return rtype::server::supervisorModules(
+            *launchOptions, stopRequest,
+            rtype::engine::handedOverLines(configuration));
+      }});
 }
 
 /**
@@ -158,21 +188,25 @@ int runSupervisor(std::span<const std::string_view> options) {
  * @returns the exit code of the master.
  */
 int runMaster(std::span<const std::string_view> options) {
-  const rtype::master::MasterLaunchOptions launchOptions =
-      rtype::master::MasterLaunchOptions::read(options);
-  if (launchOptions.helpRequested()) {
-    std::cout << rtype::master::MasterLaunchOptions::usage();
+  const std::optional<rtype::master::MasterLaunchOptions> launchOptions =
+      launchOptionsOrUsage<rtype::master::MasterLaunchOptions>(options);
+  if (!launchOptions.has_value()) {
     return 0;
   }
   return runUntilStopped(ProgramRun{
       .label = rtype::server::MASTER_MODE_NAME,
       .loggerName = rtype::master::MASTER_LOGGER_NAME,
-      .configurationFile = rtype::master::MASTER_CONFIGURATION_FILE_NAME,
+      .configuration =
+          rtype::engine::ConfigurationSource{
+              .file =
+                  std::filesystem::path{
+                      rtype::master::MASTER_CONFIGURATION_FILE_NAME},
+              .forcedLines = launchOptions->forcedLines(),
+              .handOver = {}},
       .stages = rtype::master::MASTER_LOOP_STAGES,
-      .forcedLines = launchOptions.forcedLines(),
       .modules = [&launchOptions](rtype::server::StopRequest& stopRequest) {
         return rtype::master::masterModules(
-            launchOptions.logOptions(),
+            launchOptions->logOptions(),
             [&stopRequest](const std::string& reason) {
               stopRequest.fail(reason);
             });
@@ -192,10 +226,10 @@ int main(int argumentCount, char** arguments) {
       programName = rtype::master::MASTER_PROGRAM_NAME;
       return runMaster(choice.options);
     }
-    if (choice.mode == rtype::server::ServerMode::Supervisor) {
-      return runSupervisor(choice.options);
+    if (choice.mode == rtype::server::ServerMode::Game) {
+      return runGame(choice.options);
     }
-    return runServer(choice.options);
+    return runSupervisor(choice.options);
   } catch (const std::exception& error) {
     std::cerr << rtype::engine::launchErrorText(programName, error.what());
     return 1;

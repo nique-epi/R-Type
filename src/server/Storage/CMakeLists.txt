@@ -1,7 +1,7 @@
 add_subdirectory(Database)
 add_subdirectory(Archive)
 
-add_library(rtype_server_storage_module STATIC ServerStorageModule.cpp)
+add_library(rtype_server_storage_module STATIC ServerDatabaseFile.cpp ServerStorageModule.cpp)
 
 target_include_directories(rtype_server_storage_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

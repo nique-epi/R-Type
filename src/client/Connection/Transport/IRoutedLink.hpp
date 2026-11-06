@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include "Endpoint.hpp"
 #include "IDatagramLink.hpp"
 
@@ -17,6 +18,13 @@ class IRoutedLink : public IDatagramLink {
    * recipient never reads a late answer of an earlier exchange.
    */
   virtual void listenTo(const network::Endpoint& sender) = 0;
+
+  /**
+   * @brief From now on, reads the datagrams of every sender of @p senders and
+   * no others, as listenTo() does for one: the datagrams that arrived before
+   * this call are dropped. An empty list listens to nobody.
+   */
+  virtual void listenToEach(std::vector<network::Endpoint> senders) = 0;
 };
 
 }  // namespace rtype::client

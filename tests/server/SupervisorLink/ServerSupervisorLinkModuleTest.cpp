@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <string>
 #include <vector>
+#include "ConnectedPlayer.hpp"
 #include "Disconnection.hpp"
 #include "GameStatus.hpp"
 #include "Heartbeat.hpp"
@@ -18,8 +20,8 @@ using rtype::server::testing::onlyMessageIn;
 /**
  * Given a game process that just started
  * When its first tick runs
- * Then it sends the supervisor a status "waiting for players, 0 players" at
- * once
+ * Then it sends the supervisor a status "waiting for players", with no
+ * nickname and, without the metrics module, no measure, at once
  */
 TEST_F(ServerSupervisorLinkFixture, SendsItsStatusAtTheFirstTick) {
   startWith(shippedWaves());
@@ -30,7 +32,8 @@ TEST_F(ServerSupervisorLinkFixture, SendsItsStatusAtTheFirstTick) {
   ASSERT_EQ(sent.size(), 1U);
   EXPECT_EQ(onlyMessageIn<GameStatus>(sent.front()),
             (GameStatus{.state = GameStatusState::WaitingForPlayers,
-                        .playerCount = 0}));
+                        .nicknames = {},
+                        .measures = {}}));
 }
 
 /**
@@ -75,22 +78,24 @@ TEST_F(ServerSupervisorLinkFixture, SendsAStatusAtOnceWhenAPlayerJoins) {
 
   const auto sent = statuses();
   ASSERT_EQ(sent.size(), 2U);
-  EXPECT_EQ(onlyMessageIn<GameStatus>(sent.back()).playerCount, 1);
+  EXPECT_EQ(onlyMessageIn<GameStatus>(sent.back()).nicknames.size(), 1U);
 }
 
 /**
  * Given a game with two players
  * When the next status goes out
- * Then it announces 2 players
+ * Then it names both, in the order of their numbers
  */
-TEST_F(ServerSupervisorLinkFixture, AnnouncesTheNumberOfPlayersOfItsGame) {
+TEST_F(ServerSupervisorLinkFixture,
+       AnnouncesTheNicknamesOfThePlayersOfItsGame) {
   startWith(shippedWaves());
-  join(0);
-  join(1);
+  const std::string first = join(0).nickname;
+  const std::string second = join(1).nickname;
 
   runTick({});
 
-  EXPECT_EQ(onlyMessageIn<GameStatus>(statuses().front()).playerCount, 2);
+  EXPECT_EQ(onlyMessageIn<GameStatus>(statuses().front()).nicknames,
+            (std::vector<std::string>{first, second}));
 }
 
 /**

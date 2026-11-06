@@ -34,7 +34,7 @@ HeartbeatJob::HeartbeatJob(HeartbeatJobParts parts)
     : client_(std::move(parts.access)),
       identity_(std::move(parts.identity)),
       games_(parts.games),
-      metrics_(parts.metrics),
+      measures_(parts.measures),
       times_(parts.times),
       logger_(std::string{SERVER_LOGGER_NAME}),
       masterLink_([this](const std::stop_token& stop) { run(stop); }) {}
@@ -78,7 +78,7 @@ bool HeartbeatJob::sendHeartbeat() {
   try {
     client_.sendHeartbeat(
         heartbeatOf(games_.value().value_or(std::vector<network::HostedGame>{}),
-                    metrics_ != nullptr ? metrics_->value() : std::nullopt));
+                    measures_ != nullptr ? measures_->value() : std::nullopt));
     return true;
   } catch (const network::MasterRefusedException& refusal) {
     tell(refusal.what());

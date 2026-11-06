@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <ios>
+#include <span>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -39,4 +40,13 @@ void TemporaryFolder::write(const std::filesystem::path& relativeFile,
   std::filesystem::create_directories(file.parent_path());
   std::ofstream stream(file, std::ios::binary);
   stream.write(content.data(), static_cast<std::streamsize>(content.size()));
+}
+
+void TemporaryFolder::writeLines(const std::filesystem::path& relativeFile,
+                                 std::span<const std::string> lines) const {
+  std::string text;
+  for (const std::string& line : lines) {
+    text += line + '\n';
+  }
+  write(relativeFile, text);
 }

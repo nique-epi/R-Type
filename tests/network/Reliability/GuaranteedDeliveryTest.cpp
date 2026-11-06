@@ -136,7 +136,7 @@ TEST(GuaranteedDelivery, MarksADatagramThatHoldsGuaranteedMessages) {
  * Given the protocol page
  * When the constants of guaranteed delivery are read
  * Then they are its values: flags 0x01 and 0x02, 32 bits, 100 ms, 1 s, 40 ms,
- * version 7
+ * version 8
  */
 TEST(GuaranteedDeliveryConstants, AreThoseOfTheProtocolPage) {
   EXPECT_EQ(ACKNOWLEDGES_FLAG, PROTOCOL_ACKNOWLEDGES_FLAG);

@@ -4,10 +4,10 @@
 #include <string>
 #include <vector>
 #include "ConfigurationRegistry.hpp"
-#include "Games.hpp"
 #include "IDatagramSender.hpp"
 #include "IModule.hpp"
 #include "IServerName.hpp"
+#include "IServerOccupancy.hpp"
 #include "InstallContext.hpp"
 #include "ServerInformationDesk.hpp"
 #include "SettingValue.hpp"
@@ -21,9 +21,11 @@ namespace rtype::server {
  * provides it as the IServerName the master module registers, and answers the
  * information requests of each tick with a ServerInformationDesk.
  *
- * Its work is in the simulation stage, after the games module's: the games
- * move on first, so an answer counts the players and the free seats the
- * games just reached. The name is final once the configuration was read, so
+ * It is a module of the supervisor: the occupancy it answers is the one the
+ * supervised games module counts (IServerOccupancy). Its work is in the
+ * simulation stage, after that module's: the games are supervised first, so
+ * an answer counts the players and the free seats their newest statuses
+ * gave. The name is final once the configuration was read, so
  * start() builds the desk.
  */
 class ServerInformationModule final : public engine::IModule,
@@ -35,8 +37,8 @@ class ServerInformationModule final : public engine::IModule,
   /**
    * @brief Declares server-name, reads the services and provides the
    * IServerName; opens nothing.
-   * @throws MissingServiceException when no module provided the games, the
-   * sender or the datagrams of the tick.
+   * @throws MissingServiceException when no module provided the occupancy,
+   * the sender or the datagrams of the tick.
    */
   void install(engine::InstallContext& context) override;
 
@@ -56,7 +58,7 @@ class ServerInformationModule final : public engine::IModule,
 
   engine::SystemClock clock_;
   const engine::SettingValue* nameSetting_{nullptr};
-  const Games* games_{nullptr};
+  const IServerOccupancy* occupancy_{nullptr};
   IDatagramSender* sender_{nullptr};
   const TickDatagrams* tickDatagrams_{nullptr};
   std::optional<ServerInformationDesk> desk_;
