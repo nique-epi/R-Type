@@ -53,7 +53,7 @@ start_server() {
 
 # Stops the server and fails unless it stopped cleanly.
 stop_server() {
-  kill "$server_pid"
+  kill "$server_pid" 2> /dev/null || true
   stopped=0
   wait "$server_pid" || stopped=$?
   server_pid=
