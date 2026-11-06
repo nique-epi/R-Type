@@ -5,24 +5,12 @@
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
 #include "ChatLine.hpp"
-#include "NetworkException.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::network {
 
-namespace {
-
-void requireValid(const PlayerChatLine& message) {
-  if (!isValidChatText(message.line.text)) {
-    throw InvalidChatTextException(message.line.text.size());
-  }
-  requireValidPlayerNumber(message.playerNumber);
-}
-
-}  // namespace
-
 void encodePayload(ByteWriter& writer, const PlayerChatLine& message) {
-  requireValid(message);
+  requireValidPlayerNumber(message.playerNumber);
   encodePayload(writer, message.line);
   writer.writeUint8(message.playerNumber);
 }
@@ -35,7 +23,7 @@ PlayerChatLine decodePayload(
   message.line = readChatLine(reader);
   message.playerNumber = reader.readUint8();
   requireFullyRead(reader);
-  requireValid(message);
+  requireValidPlayerNumber(message.playerNumber);
   return message;
 }
 

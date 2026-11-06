@@ -17,6 +17,7 @@
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "DebugJournal.hpp"
+#include "Disconnection.hpp"
 #include "Entity.hpp"
 #include "EntityIdConstants.hpp"
 #include "EntitySheet.hpp"
@@ -103,6 +104,17 @@ network::PacketHeader firstSessionHeader(std::size_t player) {
   network::PacketHeader header = sessionHeader(player);
   header.sequence = FIRST_SEQUENCE;
   return header;
+}
+
+network::IncomingDatagram disconnectionThen(
+    std::size_t player, const network::IncomingDatagram& following) {
+  std::vector<std::byte> datagram = network::DatagramCodec::encode(
+      firstSessionHeader(player), network::Disconnection{});
+  datagram.insert(datagram.end(),
+                  following.payload.begin() + network::PACKET_HEADER_SIZE,
+                  following.payload.end());
+  return network::IncomingDatagram{.sender = playerEndpoint(player),
+                                   .payload = datagram};
 }
 
 namespace {

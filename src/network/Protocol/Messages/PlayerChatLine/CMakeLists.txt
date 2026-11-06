@@ -9,7 +9,6 @@ target_link_libraries(rtype_network_player_chat_line
   PRIVATE
     rtype_network_byte_reader
     rtype_network_byte_writer
-    rtype_network_exceptions
     rtype_network_wire_types
 )
 

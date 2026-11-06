@@ -72,6 +72,11 @@ struct SentGameLoaded {
  * first datagram a test sends from that player. */
 [[nodiscard]] network::PacketHeader firstSessionHeader(std::size_t player);
 
+/** @returns A datagram from the player at @p player holding a Disconnection,
+ * then the messages of @p following, a datagram of that player. */
+[[nodiscard]] network::IncomingDatagram disconnectionThen(
+    std::size_t player, const network::IncomingDatagram& following);
+
 /** @returns How many of the network ids in @p removed belong to Bydos, as the
  * EntitySpawned among @p datagrams announced them; the missiles the Bydos fire
  * are not counted. */

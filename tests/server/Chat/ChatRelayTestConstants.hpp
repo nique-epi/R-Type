@@ -12,8 +12,9 @@ constexpr std::size_t SECOND_SEAT = 1;
 
 /** @brief 1 s at 60 ticks a second is 60 ticks: 59 is one short of the interval
  * of the protocol page. */
-constexpr std::size_t TICKS_ONE_SHORT_OF_THE_CHAT_INTERVAL = 59;
 constexpr std::size_t TICKS_OF_THE_CHAT_INTERVAL = 60;
+constexpr std::size_t TICKS_ONE_SHORT_OF_THE_CHAT_INTERVAL =
+    TICKS_OF_THE_CHAT_INTERVAL - 1;
 
 /** @brief Line numbers: one, the one after it, one before it, and the last
  * before the wrap with the first after it. */
