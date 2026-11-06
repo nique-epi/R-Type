@@ -6,12 +6,11 @@
 namespace rtype::server {
 
 /**
- * @brief The least time between two heartbeats when games change, and how long
- * the server waits before it registers again after a refusal or a master that
- * does not answer. How often it sends one when nothing changes is
- * network::MASTER_HEARTBEAT_INTERVAL, which the master reads too.
+ * @brief How long the server waits before it registers again after a refusal
+ * or a master that does not answer. The least time between two heartbeats,
+ * network::MINIMUM_NOTICE_GAP, and how often it sends one when nothing
+ * changes, network::MASTER_HEARTBEAT_INTERVAL, are read by the master too.
  */
-constexpr std::chrono::milliseconds MINIMUM_NOTICE_GAP{1'000};
 constexpr std::chrono::milliseconds REGISTRATION_RETRY{5'000};
 
 /**

@@ -152,4 +152,10 @@ constexpr double MAXIMUM_LOSS_PERCENT = 100.0;
  */
 constexpr std::chrono::milliseconds MASTER_HEARTBEAT_INTERVAL{5'000};
 
+/**
+ * @brief The least time between two heartbeats of a game server when its games
+ * change; the master probes one address and port at most this often.
+ */
+constexpr std::chrono::milliseconds MINIMUM_NOTICE_GAP{1'000};
+
 }  // namespace rtype::network

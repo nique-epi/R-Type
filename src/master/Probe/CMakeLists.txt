@@ -17,6 +17,7 @@ target_link_libraries(rtype_master_probe_module
     rtype_master_constants
     rtype_network_constants
     rtype_network_exceptions
+    rtype_network_master_validators
 )
 
 rtype_enable_warnings(rtype_master_probe_module)

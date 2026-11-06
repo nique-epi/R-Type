@@ -275,7 +275,7 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change the quota of creations | `MAXIMUM_CREATIONS_PER_ADDRESS` and `CREATION_WINDOW` in `src/master/Servers/Services/ServersServiceConstants.hpp` |
 | Change how long samples and changes of status are kept | `SAMPLE_RETENTION` in `src/master/Servers/Repositories/ServersRepositoryConstants.hpp`; `STATUS_CHANGE_RETENTION` follows it |
 | Change when a server is offline, unreachable or degraded | `OFFLINE_SILENCE`, `PROBE_ANSWER_SILENCE`, `DEGRADED_TICK_P95_MILLISECONDS` and `DEGRADED_LOSS_PERCENT` in `src/master/Servers/Services/Helpers/ServerStatusRuleConstants.hpp`, and `statusOf()` next to them |
-| Change how long a token of a probe lives, or how often a destination may be probed | `PROBE_TOKEN_WINDOWS` in `src/master/Servers/Services/ServersServiceConstants.hpp`; `PROBE_MINIMUM_GAP` in `src/master/Probe/ProbeConstants.hpp` |
+| Change how long a token of a probe lives, or how often a destination may be probed | `PROBE_TOKEN_WINDOWS` in `src/master/Servers/Services/ServersServiceConstants.hpp`; `PROBE_MINIMUM_GAP` in `src/master/Probe/ProbeConstants.hpp`, which follows `MINIMUM_NOTICE_GAP` in `src/network/Master/Validators/MasterMessageConstants.hpp` |
 | Change how often the statuses are refreshed | `STATUS_REFRESH_INTERVAL` in `src/master/Servers/Jobs/ServerStatusJobConstants.hpp` |
 | Change how often a game server beats | `MASTER_HEARTBEAT_INTERVAL` in `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master also reads to tell a silent server |
 | Change the size of a page of a list | `MINIMUM_PAGE_SIZE`, `DEFAULT_PAGE_SIZE` and `MAXIMUM_PAGE_SIZE` in `src/network/Master/Routes/MasterRouteConstants.hpp` |
