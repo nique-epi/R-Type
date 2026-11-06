@@ -26,13 +26,17 @@ void DatagramRoute::drainReceived(
 }
 
 void DatagramRoute::listenTo(const network::Endpoint& sender) {
+  listenToEach({sender});
+}
+
+void DatagramRoute::listenToEach(std::vector<network::Endpoint> senders) {
   pump_->pump();
   received_.clear();
-  listened_ = sender;
+  listened_ = std::move(senders);
 }
 
 bool DatagramRoute::listensTo(const network::Endpoint& sender) const {
-  return listened_.has_value() && *listened_ == sender;
+  return std::ranges::find(listened_, sender) != listened_.end();
 }
 
 void DatagramRoute::accept(network::IncomingDatagram datagram) {

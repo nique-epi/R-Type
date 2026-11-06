@@ -347,7 +347,7 @@ cmake --workflow --preset build
 ./r-type_client
 ```
 
-The server logs the sheets it read when it starts (`entity sheets /…/assets/entities: 6 types`). On the connection screen of the client, press CONNECT (the server is at `127.0.0.1`, port 4242, by default), press ready in the waiting room, and wait for the first wave. Each Bydo goes left while it dips and rises every second, 48 units each way, and shooting one adds 300 points to your score. The server prints the wave as it starts (`wave 1: 3 Bydos, one every 2000 ms`).
+The server logs the sheets it read when it starts (`entity sheets /…/assets/entities: 6 types`). In the client, press PLAY, then D (ADDRESS) on the server map, then CONNECT on the connection screen (the server is at `127.0.0.1`, port 4242, by default), press ready in the waiting room, and wait for the first wave. Each Bydo goes left while it dips and rises every second, 48 units each way, and shooting one adds 300 points to your score. The server prints the wave as it starts (`wave 1: 3 Bydos, one every 2000 ms`).
 
 What to look at, and why: **the client needed no change**. When it accepts the player, the server sends the side and the name of every sheet it loaded, `zigzagger` included, then names each entity by the number of its sheet. The client finds the `[appearance]` of its own `zigzagger.toml`, which it read from the same `assets/` folder, and draws each Zigzagger with it; the behaviour and the gameplay never leave the server. A client whose `assets/entities/` has no `zigzagger.toml`, an older build for instance, cannot draw the type: it leaves the server at once and shows `NO SHEET: ZIGZAGGER` on its connection screen.
 

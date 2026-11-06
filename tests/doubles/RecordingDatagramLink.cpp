@@ -24,6 +24,17 @@ void RecordingDatagramLink::listenTo(const rtype::network::Endpoint& sender) {
   delivered_.clear();
 }
 
+void RecordingDatagramLink::listenToEach(
+    std::vector<rtype::network::Endpoint> senders) {
+  listenedToEach_ = std::move(senders);
+  delivered_.clear();
+}
+
+const std::vector<rtype::network::Endpoint>&
+RecordingDatagramLink::listenedToEach() const {
+  return listenedToEach_;
+}
+
 void RecordingDatagramLink::deliver(rtype::network::IncomingDatagram datagram) {
   delivered_.push_back(std::move(datagram));
 }

@@ -3,7 +3,9 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <span>
 #include <string_view>
+#include "ColoredPixel.hpp"
 #include "ImagePlacement.hpp"
 #include "TextStyle.hpp"
 #include "TextureArea.hpp"
@@ -32,6 +34,13 @@ class IInterfaceCanvas {
   /** @brief Paints a rectangle of one color over what is painted there; a
    * translucent color lets it show through. */
   virtual void fill(sf::IntRect area, sf::Color color) = 0;
+
+  /**
+   * @brief Paints each of @p pixels, one pixel of its color, all at once: a
+   * picture of thousands of dots, such as the planet of the server map, costs
+   * one draw where fill() would cost one per dot.
+   */
+  virtual void plot(std::span<const ColoredPixel> pixels) = 0;
 
   /**
    * @brief Writes one line of text, on whole pixels, at the scale of its

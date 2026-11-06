@@ -10,3 +10,4 @@ target_sources(client_widget_piece_tests PRIVATE ItemListFixtures.cpp ItemListTe
 
 add_subdirectory(FlightLog)
 add_subdirectory(RowControls)
+add_subdirectory(SectorMap)
