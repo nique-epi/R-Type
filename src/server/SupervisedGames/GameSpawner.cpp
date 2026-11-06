@@ -29,7 +29,8 @@ bool GameSpawner::openGame() {
         .supervisorPort = parts_.supervisorPort.get().listeningPort(),
         .linkToken = drawLinkToken()};
     std::unique_ptr<IChildProcess> process =
-        parts_.launcher.get().launch(gameCommand(parts_.settings, launch));
+        parts_.launcher.get().launch(gameCommand(parts_.settings.get(), launch,
+                                                 parts_.database.get().text()));
     parts_.registry.get().open(GameOpening{.number = launch.number,
                                            .port = launch.port,
                                            .linkToken = launch.linkToken,

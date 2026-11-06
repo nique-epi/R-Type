@@ -3,7 +3,7 @@ title: Master
 description: What the master does today, how to start it, and where to add a route, a table or a module.
 ---
 
-The master is the program that lists the game servers and will direct them: a host creates its server on the master and gets its key, then the server registers with that key and tells the master, every few seconds, which games it hosts and who plays them; a player will read that list in the client, and an admin will send orders from the web site. It is a mode of the server binary, `r-type_server --mode master`, and it never runs a game: no datagram of a game goes through it, so the players of a server keep playing when the master stops. Why it speaks HTTP and why it is a mode rather than a binary of its own is told in [Architecture](/R-Type/architecture/#master).
+The master is the program that lists the game servers and will direct them: a host creates its server on the master and gets its key, then the server registers with that key and tells the master, every few seconds, which games it hosts and who plays them; on the game server, the supervisor does it once for all its games, which never talk to the master; a player will read that list in the client, and an admin will send orders from the web site. It is a mode of the server binary, `r-type_server --mode master`, and it never runs a game: no datagram of a game goes through it, so the players of a server keep playing when the master stops. Why it speaks HTTP and why it is a mode rather than a binary of its own is told in [Architecture](/R-Type/architecture/#master).
 
 This page tells you where to look when you need to change something. It describes what exists today and says plainly what does not exist yet.
 
@@ -12,16 +12,17 @@ This page tells you where to look when you need to change something. It describe
 | Start and stop: `--mode master`, `master.cfg`, Ctrl-C and SIGTERM | Available | `src/server/main.cpp`, `src/master/LaunchOptions/` |
 | HTTP API under `/api`, every error in JSON | Available | `src/master/Http/` |
 | Database `r-type_master.db` | Available: servers, samples, changes of status | `src/master/Storage/` |
-| Creation of a game server and its key, `POST /api/servers` | Available; the web site that calls it is not written | `src/master/Servers/` |
+| Creation of a game server and its key, `POST /api/servers` | Available; no page of the web site calls it yet | `src/master/Servers/` |
 | Registration and heartbeats of the game servers | Available; sent by the module `master` of the game server | `src/master/Servers/`, `src/network/Master/`, `src/server/Master/` |
 | The client of the master, `MasterClient` | Available | `src/network/Master/Client/` |
 | The games of a server, for the client, `GET /api/servers/{id}/games` | Available | `src/master/Servers/`, `src/network/Master/` |
 | The statuses of the servers, their list and their history, `GET /api/servers` | Available; the status `unreachable`, which needs a probe over UDP, and the route that puts a server in maintenance are not written | `src/master/Servers/`, `src/network/Master/` |
-| Administration, global leaderboard, accounts, web site | Not yet written | |
+| The web site, a Next.js server of its own that calls the API | Available: the skeleton, one page that shows whether the master answers | `web/` |
+| Administration, global leaderboard, accounts | Not yet written | |
 
 ## Starting the master
 
-`--mode master` comes first, before every other option; `r-type_server` alone, or `--mode server`, runs the game server as before (see [Server](/R-Type/server/#launch-options-launchoptions)). `chooseServerMode()` (`src/server/LaunchOptions/`) reads the mode, then `MasterLaunchOptions` (`src/master/LaunchOptions/`) reads the rest in one pass, the logging options included (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)).
+`--mode master` comes first, before every other option; `r-type_server` alone, or `--mode supervisor`, runs the game server, its supervisor, and `--mode game` is the game process a supervisor starts (see [Server](/R-Type/server/#the-three-roles-supervisor-game-and-master)). `chooseServerMode()` (`src/server/LaunchOptions/`) reads the mode, then `MasterLaunchOptions` (`src/master/LaunchOptions/`) reads the rest in one pass, the logging options included (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)).
 
 ```bash
 ./r-type_server --mode master -p 8081
@@ -40,7 +41,7 @@ This page tells you where to look when you need to change something. It describe
 
 ## Configuration: `master.cfg`
 
-The master reads `master.cfg`, in the folder it is started from, between the install and the start of its modules, in the language of `server.cfg` (see [Configuration commands](/R-Type/commands/)). A missing file is not an error. `master.cfg.example`, at the root of the repository, lists both settings with their default.
+The master reads `master.cfg`, in the folder it is started from, between the install and the start of its modules, in the language of `server.cfg` (see [Configuration commands](/R-Type/commands/)). A missing file is not an error. `master.cfg.example`, at the root of the repository, lists every setting with its default.
 
 | Setting | Value | Default | Effect |
 |---|---|---|---|
@@ -77,6 +78,14 @@ The storage starts before the HTTP API, so a database the master cannot open sto
 - **One master per port:** by default cpp-httplib sets `SO_REUSEPORT`, which lets a second program bind the port of the first with no error. The master sets `SO_REUSEADDR` instead (`SO_EXCLUSIVEADDRUSE` on Windows), so a second master on the same port stops at its start, with an error naming the port.
 - **No encryption:** the master listens in plain HTTP on every IPv4 interface (`ANY_IPV4_ADDRESS`), for a local network. On the Internet, a reverse proxy such as Caddy or nginx in front of it must add HTTPS.
 
+## The web site
+
+The web site is a program of its own: a Next.js server, in `web/` (see [Web site](/R-Type/technology-choices/#web-site-nextjs) for its tools). The browser only talks to that server, by default on port 3000; the server renders each page and calls the API of the master itself, at `MASTER_URL` (`http://localhost:8080` by default). The browser never calls the master, so the master needs no CORS, and the master serves its API only.
+
+- **Each request of a page asks the master again**: the home page is rendered at request time and asks `GET /api/health`, then renders again every 5 seconds while its tab is visible.
+- **A master that does not answer** is shown as "Unreachable"; the page itself keeps answering.
+- **The client of the master is server-only** (`web/src/lib/api/`): its code and `MASTER_URL` never reach the browser.
+
 ## The database: `MasterStorageModule`
 
 The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, see [Project layout](/R-Type/project-layout/#storage)): write-ahead log, foreign keys on, and the migrations of `MASTER_MIGRATIONS` (`src/master/Storage/MasterStorageConstants.hpp`) the file does not hold yet. A file it cannot open, or one written by a newer master, stops the start with an error naming the file. It provides the connection as a `MasterDatabase`, which the threads of the HTTP server share behind one lock: a request holds it for a few statements of one row each.
@@ -90,7 +99,7 @@ The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, se
 
 ## Creating a game server: `POST /api/servers`
 
-A host creates its server on the web site, which calls `POST /api/servers` with the name players will read; the web site is not written yet, so today the call is made by hand or by `MasterClient::createServer()`. The master answers 201, `Location: /api/servers/<id>`, and the server with its key:
+A host creates its server on the web site, which calls `POST /api/servers` with the name players will read; no page of the web site makes it yet, so today the call is made by hand or by `MasterClient::createServer()`. The master answers 201, `Location: /api/servers/<id>`, and the server with its key:
 
 ```json
 {"id":7,"name":"Paris 1","key":"rtk_<64 hexadecimal digits>"}
@@ -101,7 +110,7 @@ A host creates its server on the web site, which calls `POST /api/servers` with 
 - **One address creates `MAXIMUM_CREATIONS_PER_ADDRESS` (5) servers per `CREATION_WINDOW` (1 hour) at most**; the next one answers 429. The count and the insert are one transaction, so requests sent at once cannot pass the quota together. The address is the one of the TCP peer: behind a reverse proxy, every host shares the quota of the proxy.
 - **Anyone who reaches the master may create a server** until accounts exist: the web site will then ask for a signed-in host. Revoking a key, and giving it an expiry, are not written yet.
 
-The host then writes the key in the `server.cfg` of that server, as the setting `master-key`, next to `master-url`; `server.cfg` is never committed, only `server.cfg.example`, with an empty key. The game server registers and sends its heartbeats from then on (see [Server](/R-Type/server/#link-with-the-master-servermastermodule)).
+The host then writes the key in the `server.cfg` of that server, as the setting `master-key`, next to `master-url`; `server.cfg` is never committed, only `server.cfg.example`, with an empty key. The supervisor of the game server registers and sends its heartbeats from then on (see [Server](/R-Type/server/#link-with-the-master-servermastermodule)). One supervisor is one server on the master: it registers its own UDP port, `maximumGames` 8 (`MAXIMUM_RUNNING_GAMES`), and in each heartbeat the games it runs, numbered by place from 1 to 8 and named `GAME 1` to `GAME 8`; a place freed by a game that ended is given to the next game started, so a number names a place, not one game for ever. Its `measures` are the median and the 95th percentile of the ticks of its slowest game and the mean round trip of its players, each game counting as many times as it has players; it sends no traffic and no loss.
 
 ## Routes of a game server: `ServersModule`
 
@@ -206,7 +215,7 @@ Three routes read what the master keeps, to anyone, a page at a time. `GET /api/
 - **A page** is `?limit=<n>&offset=<m>`: `limit` from `MINIMUM_PAGE_SIZE` (1) to `MAXIMUM_PAGE_SIZE` (100), `DEFAULT_PAGE_SIZE` (50) when left out; `offset` from `FIRST_PAGE_OFFSET` (0), the items skipped. Each is a whole number with no sign; anything else answers 400, whose `detail` gives the bounds. A parameter given twice keeps its first value.
 - **An id** that is no number, or that no server has, answers 404. A server created and never registered has a history, empty.
 - **A read** of the list is one SQL statement, and a read of a history two: one checks that the server exists, then one reads the page. Both read plain columns, so no heartbeat is parsed. SQLite steps through the rows an `offset` skips, so a page deep in 7 days of samples costs more than the first one.
-- `MasterClient` has no function for these routes yet: the list of servers of the game client will add it.
+- `MasterClient::listServers()` reads the list for the server map of the game client (see [The client of the master](#the-client-of-the-master-masterclient)); the histories have no function yet.
 
 ## The client of the master: `MasterClient`
 
@@ -218,8 +227,11 @@ rtype::network::MasterClient master{rtype::network::MasterAccess{
 master.registerServer(registration);
 master.sendHeartbeat(heartbeat);
 
-rtype::network::GameListing listing = master.listGames(serverId);  // no key needed
+rtype::network::ServerListing servers = master.listServers();  // no key needed
+rtype::network::GameListing listing = master.listGames(serverId);
 ```
+
+`listServers()` reads every page of `GET /api/servers`, `MAXIMUM_PAGE_SIZE` (100) servers each, up to `MAXIMUM_LISTED_SERVER_PAGES` (10) pages, and returns them in one listing.
 
 - **Every call waits for its answer**, `MASTER_CONNECTION_TIMEOUT` (5 s) to connect, then `MASTER_TRANSFER_TIMEOUT` (5 s) for each read and write, so it is made away from the game loop. Two threads never call the same client together.
 - **An error status** throws `MasterRefusedException`: `status()` and the `detail` of the problem document. **No answer** throws `MasterUnreachableException`.
@@ -258,8 +270,9 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change how often a game server beats | `MASTER_HEARTBEAT_INTERVAL` in `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master also reads to tell a silent server |
 | Change the size of a page of a list | `MINIMUM_PAGE_SIZE`, `DEFAULT_PAGE_SIZE` and `MAXIMUM_PAGE_SIZE` in `src/network/Master/Routes/MasterRouteConstants.hpp` |
 | Call the master from the game server | `MasterClient` (`src/network/Master/Client/`) |
+| Add a page to the web site | `web/src/app/`, its calls to the API in `web/src/lib/api/` |
 | Change what the games of a server are listed as | `listedStateOf()` in `ServersService.cpp` (`src/master/Servers/Services/`) and `GameListing` (`src/network/Master/Messages/`) |
-| Change what a game server tells of its games | `hostedGamesOf()` (`src/server/Games/HostedGames.cpp`) |
+| Change what a game server tells of its games | `supervisedHostedGames()` and `supervisedMeasures()` (`src/server/SupervisedGames/SupervisedGamesReport.cpp`) |
 | Add a setting of the master | the `install()` of the module that reads it, `master.cfg.example` and the table above |
 | Change what an error answers | `problemDetailsText()` in `MasterHttpServer.cpp` |
 | Add a module | `src/master/<Name>/`, its line in `masterModules()` and its row in [the list of modules](/R-Type/project-layout/#the-list-of-modules) |

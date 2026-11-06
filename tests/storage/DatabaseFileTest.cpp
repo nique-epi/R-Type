@@ -95,6 +95,36 @@ TEST_F(DatabaseFileFixture, RunsWithTheSettingsThatSurviveACrash) {
 }
 
 /**
+ * Given a new file another connection is writing to, as a second game started
+ * at the same time does
+ * When it is opened
+ * Then the opening waits for that write and switches the file to WAL
+ */
+TEST_F(DatabaseFileFixture, WaitsForAnotherWriterBeforeSwitchingToWal) {
+  SQLite::Database database =
+      openWhileAnotherConnectionWrites(NO_MIGRATION, CREATE_SCORES);
+
+  EXPECT_EQ(database.execAndGet(std::string{READ_JOURNAL_MODE}).getString(),
+            "wal");
+}
+
+/**
+ * Given a file at version 0 another connection is migrating to version 1
+ * When it is opened with that migration
+ * Then the opening finds version 1 once that write ends, and runs nothing again
+ */
+TEST_F(DatabaseFileFixture, RunsNoMigrationAnotherConnectionApplied) {
+  {
+    const SQLite::Database empty = openDatabaseFile(file(), NO_MIGRATION);
+  }
+
+  SQLite::Database database =
+      openWhileAnotherConnectionWrites(FIRST_VERSION, MIGRATE_TO_FIRST_VERSION);
+
+  EXPECT_EQ(numberFrom(database, READ_USER_VERSION), 1);
+}
+
+/**
  * Given a database that cannot use WAL, one held in memory
  * When it is opened
  * Then the opening fails instead of running without durability

@@ -8,6 +8,7 @@
 #include "IncomingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "ReceivedStatus.hpp"
+#include "SupervisedGamesFixtures.hpp"
 #include "SupervisedGamesTestConstants.hpp"
 
 using rtype::network::GameStatus;
@@ -28,7 +29,7 @@ TEST(GameStatusReading, ReadsTheStatusTheTokenAndTheSequence) {
       .payload = rtype::network::DatagramCodec::encode(
           PacketHeader{.sessionToken = FIRST_LINK_TOKEN,
                        .sequence = SEQUENCE_FIVE},
-          GameStatus{.state = GameStatusState::InProgress, .playerCount = 3})};
+          statusWithPlayers(GameStatusState::InProgress, 3))};
 
   const auto received = readGameStatus(datagram);
 
@@ -36,7 +37,7 @@ TEST(GameStatusReading, ReadsTheStatusTheTokenAndTheSequence) {
   const ReceivedStatus status = received.value_or(ReceivedStatus{});
   EXPECT_EQ(status.token, FIRST_LINK_TOKEN);
   EXPECT_EQ(status.sequence, SEQUENCE_FIVE);
-  EXPECT_EQ(status.status.playerCount, 3);
+  EXPECT_EQ(status.status.nicknames.size(), 3U);
 }
 
 /**
@@ -67,15 +68,16 @@ TEST(GameStatusReading, FindsNoStatusInATooShortDatagram) {
 }
 
 /**
- * Given a datagram whose status announces five players
+ * Given a datagram whose status, of no player and no measure, announces five
+ * players in its count, the byte before its measures byte
  * When the status is read
  * Then there is none and nothing is thrown
  */
 TEST(GameStatusReading, RefusesAStatusThatAnnouncesTooManyPlayers) {
   auto payload = rtype::network::DatagramCodec::encode(
       PacketHeader{.sessionToken = FIRST_LINK_TOKEN},
-      GameStatus{.state = GameStatusState::InProgress, .playerCount = 1});
-  payload.back() = std::byte{FIVE_PLAYERS_BYTE};
+      statusWithPlayers(GameStatusState::InProgress, 0));
+  payload.at(payload.size() - 2) = std::byte{FIVE_PLAYERS_BYTE};
   const IncomingDatagram datagram{.sender = {}, .payload = payload};
 
   EXPECT_FALSE(readGameStatus(datagram).has_value());

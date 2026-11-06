@@ -6,7 +6,7 @@
 #include "HeartbeatJobParts.hpp"
 #include "HeartbeatTimes.hpp"
 #include "LatestHostedGames.hpp"
-#include "LatestMetrics.hpp"
+#include "LatestServerMeasures.hpp"
 #include "Logger.hpp"
 #include "MasterClient.hpp"
 #include "ServerIdentity.hpp"
@@ -20,7 +20,8 @@ namespace rtype::server {
  * interval when nothing changes: it sleeps on the list of games until a newer
  * one or the end of the interval, so an idle server wakes once per interval.
  *
- * It never touches a game: it reads the list the games module publishes. A
+ * It never touches a game: it reads the list and the measures the supervised
+ * games module publishes. A
  * master that refuses or does not answer is written in the journal once, not
  * at each try; the job registers again after times.retry, then goes on, so
  * the games play whatever the master does. MasterLink starts with the job and
@@ -53,7 +54,7 @@ class HeartbeatJob {
   network::MasterClient client_;
   ServerIdentity identity_;
   const LatestHostedGames& games_;
-  const LatestMetrics* metrics_;
+  const LatestServerMeasures* measures_;
   HeartbeatTimes times_;
   logging::Logger logger_;
   std::string lastProblem_;

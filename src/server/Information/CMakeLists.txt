@@ -1,5 +1,4 @@
 add_library(rtype_server_information_module STATIC
-  OccupancyCount.cpp
   ServerInformationDesk.cpp
   ServerInformationModule.cpp
 )
@@ -19,7 +18,6 @@ target_link_libraries(rtype_server_information_module
     rtype_network_server_information
     rtype_network_server_information_request
     rtype_network_transport
-    rtype_server_games_module
     rtype_server_network_module
   PRIVATE
     rtype_engine_exceptions

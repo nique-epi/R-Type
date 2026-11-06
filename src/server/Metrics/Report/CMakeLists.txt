@@ -9,6 +9,7 @@ target_link_libraries(rtype_server_metrics_report
     rtype_network_statistics
     rtype_server_metrics_measures
   PRIVATE
+    rtype_engine_time
     rtype_server_constants
 )
 

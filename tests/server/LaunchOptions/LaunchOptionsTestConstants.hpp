@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
@@ -135,3 +136,13 @@ constexpr std::string_view TOO_HIGH_INPUT_DELAY_ARGUMENT = "31";
 constexpr std::string_view NEGATIVE_INPUT_DELAY_ARGUMENT = "-1";
 constexpr std::string_view NOT_A_NUMBER_INPUT_DELAY_ARGUMENT = "slow";
 constexpr std::string_view EMPTY_INPUT_DELAY_ARGUMENT{};
+
+/**
+ * @brief The options a supervisor launched with `--log-level debug --network
+ * bad` hands its games: the level, then the five values of the "bad" network
+ * of the table of the scenarios (300 ms, 50 ms, 10 %, 2 %, 5 %).
+ */
+constexpr std::array<std::string_view, 12>
+    GAME_ARGUMENTS_OF_DEBUG_ON_A_BAD_NETWORK{
+        "--log-level", "debug", "--lag",        "300", "--jitter",  "50",
+        "--loss",      "10",    "--duplicates", "2",   "--reorder", "5"};

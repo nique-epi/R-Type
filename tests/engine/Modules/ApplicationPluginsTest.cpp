@@ -1,11 +1,19 @@
 #include <gtest/gtest.h>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include "Application.hpp"
+#include "ApplicationConfigurationFixtures.hpp"
 #include "ApplicationConfigurationTestConstants.hpp"
 #include "ApplicationPluginsFixture.hpp"
 #include "ApplicationPluginsTestConstants.hpp"
+#include "ConfigurationReader.hpp"
+#include "ConfigurationReport.hpp"
+#include "ConfigurationSource.hpp"
 #include "EngineException.hpp"
+#include "HandOverRuleFixtures.hpp"
+#include "IModule.hpp"
 #include "LogLevel.hpp"
 #include "PluginConstants.hpp"
 #include "PluginFiles.hpp"
@@ -247,4 +255,34 @@ TEST_F(ApplicationPluginsFixture, TheProgramJournalHoldsTheLineAPluginWrote) {
                                        .level = rtype::logging::LogLevel::Info,
                                        .loggerName = GREETER_LOGGER,
                                        .body = GREETER_START_LINE}}));
+}
+
+/**
+ * Given an application of the host whose configuration loads the probe plugin,
+ * with lines its rule hands over to another program
+ * When it starts and the host publishes an event
+ * Then the plugin receives nothing, since no pass loaded it, and both lines
+ * are kept in their order
+ */
+TEST_F(ApplicationPluginsFixture, AHandedOverPluginLineLoadsNothing) {
+  const std::vector<std::string> lines{
+      std::string{PLUGIN_FOLDER_LINE_START} + pluginFolderText(),
+      std::string{PLUGIN_LINE_START} + PROBE_PLUGIN_NAME};
+  rtype::engine::ConfigurationReport report;
+  std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
+  modules.push_back(hostNamed(PLUGIN_HOST_MODULE_NAME));
+  rtype::engine::Application application(
+      withoutStages(), std::move(modules),
+      rtype::engine::configurationStep(
+          rtype::engine::ConfigurationSource{
+              .file = {},
+              .forcedLines = lines,
+              .handOver = handingOver({PLUGIN_FOLDER_COMMAND, PLUGIN_COMMAND})},
+          report));
+  application.start();
+
+  publishOneEvent();
+
+  EXPECT_EQ(state.delivered.count, NO_EVENT);
+  EXPECT_EQ(report.handedOverLines, lines);
 }

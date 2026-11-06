@@ -5,6 +5,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 #include "LogLaunchSettings.hpp"
 
 namespace rtype::logging {
@@ -65,6 +66,16 @@ class LogLaunchOptions {
    *         unchanged, and nothing is written.
    */
   void apply() const;
+
+  /**
+   * @returns The options that give a process this program starts the choices
+   *          of these options it shares: `--log-level <name>` when a level
+   *          was given, `--no-log-file` when no journal is written, and
+   *          `--no-log-stderr` when standard error is off; none for a launch
+   *          that gives no logging option. The journal file is the caller's,
+   *          given before them so a `--no-log-file` wins over it.
+   */
+  [[nodiscard]] std::vector<std::string> forwardedArguments() const;
 
   /**
    * @returns the part of a program's usage that describes the logging

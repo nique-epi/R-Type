@@ -39,3 +39,8 @@ constexpr std::string_view LOGGED_REFUSAL =
  * @brief What marks a warning in a line of the journal.
  */
 constexpr std::string_view WARNING_LEVEL_TEXT = "WARN";
+
+/**
+ * @brief The name a program that read no file logs its report with.
+ */
+constexpr std::string_view NO_FILE_NAME;

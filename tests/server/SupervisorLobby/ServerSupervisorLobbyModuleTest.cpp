@@ -11,11 +11,11 @@
 #include "ServerDatagrams.hpp"
 #include "ServerSupervisedGamesFixture.hpp"
 #include "SupervisedGamesFixtures.hpp"
+#include "SupervisedGamesReportTestConstants.hpp"
 #include "SupervisedGamesTestConstants.hpp"
 
 using rtype::network::ConnectionRedirect;
 using rtype::network::ConnectionRefused;
-using rtype::network::GameStatus;
 using rtype::network::GameStatusState;
 using rtype::network::IncomingDatagram;
 using rtype::network::RefusalReason;
@@ -74,10 +74,8 @@ TEST_F(ServerSupervisedGamesFixture, StartsOnlyOneGameForSeveralRequests) {
 TEST_F(ServerSupervisedGamesFixture, RedirectsAPlayerOnceTheGameIsReady) {
   startSupervisor();
   askForAPlaceAs(0);
-  gameReports(
-      0,
-      GameStatus{.state = GameStatusState::WaitingForPlayers, .playerCount = 0},
-      SEQUENCE_FIVE);
+  gameReports(0, statusWithPlayers(GameStatusState::WaitingForPlayers, 0),
+              SEQUENCE_FIVE);
 
   askForAPlaceAs(0);
 
@@ -96,13 +94,10 @@ TEST_F(ServerSupervisedGamesFixture, RedirectsAPlayerOnceTheGameIsReady) {
 TEST_F(ServerSupervisedGamesFixture, AnOlderStatusDoesNotUndoANewerOne) {
   startSupervisor();
   askForAPlaceAs(0);
-  gameReports(
-      0, GameStatus{.state = GameStatusState::InProgress, .playerCount = 4},
-      SEQUENCE_FIVE);
-  gameReports(
-      0,
-      GameStatus{.state = GameStatusState::WaitingForPlayers, .playerCount = 0},
-      SEQUENCE_FOUR);
+  gameReports(0, statusWithPlayers(GameStatusState::InProgress, 4),
+              SEQUENCE_FIVE);
+  gameReports(0, statusWithPlayers(GameStatusState::WaitingForPlayers, 0),
+              SEQUENCE_FOUR);
 
   askForAPlaceAs(1);
 
@@ -118,10 +113,8 @@ TEST_F(ServerSupervisedGamesFixture, RefusesAPlayerWhenEveryGameIsFull) {
   startSupervisor();
   for (std::size_t game = 0; game < EIGHT_GAMES; ++game) {
     askForAPlaceAs(game);
-    gameReports(
-        game,
-        GameStatus{.state = GameStatusState::InProgress, .playerCount = 4},
-        SEQUENCE_FIVE);
+    gameReports(game, statusWithPlayers(GameStatusState::InProgress, 4),
+                SEQUENCE_FIVE);
   }
 
   askForAPlaceAs(EIGHT_GAMES);
@@ -150,4 +143,37 @@ TEST_F(ServerSupervisedGamesFixture, RefusesARequestOfAnotherVersion) {
   ASSERT_EQ(answers.size(), 1U);
   EXPECT_EQ(onlyMessageIn<ConnectionRefused>(answers.front()).reason,
             RefusalReason::IncompatibleVersion);
+}
+
+/**
+ * Given a supervisor with no game
+ * When five players ask for a place one after the other, before any status
+ * Then a second game starts for the fifth: a game has four seats, and the
+ * player whose request opened a game holds one of them
+ */
+TEST_F(ServerSupervisedGamesFixture, OpensASecondGameForTheFifthOfABurst) {
+  startSupervisor();
+
+  for (std::size_t player = 0; player <= FIFTH_PLAYER; ++player) {
+    askForAPlaceAs(player);
+  }
+
+  EXPECT_EQ(launcher().commands().size(), 2U);
+}
+
+/**
+ * Given a supervisor with no game
+ * When a first player asks twice, then three other players ask
+ * Then a single game starts: the player that asked twice holds one seat
+ */
+TEST_F(ServerSupervisedGamesFixture, APlayerThatAsksTwiceHoldsOneSeat) {
+  startSupervisor();
+  askForAPlaceAs(0);
+  askForAPlaceAs(0);
+
+  for (std::size_t player = 1; player < FOUR_PLAYERS; ++player) {
+    askForAPlaceAs(player);
+  }
+
+  EXPECT_EQ(launcher().commands().size(), 1U);
 }

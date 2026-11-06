@@ -19,11 +19,11 @@ constexpr std::string_view SECONDS_OPTION = "--seconds";
 constexpr std::string_view SEED_OPTION = "--seed";
 
 /**
- * @brief The seats of a server hosting DEFAULT_HOSTED_GAME_COUNT games of
+ * @brief The seats of a supervisor running MAXIMUM_RUNNING_GAMES games of
  * MAXIMUM_PLAYERS players: 32.
  */
 constexpr std::size_t SERVER_SEATS =
-    server::DEFAULT_HOSTED_GAME_COUNT * network::MAXIMUM_PLAYERS;
+    server::MAXIMUM_RUNNING_GAMES * network::MAXIMUM_PLAYERS;
 
 /**
  * @brief The bots of a launch that names no count: four full games, so the

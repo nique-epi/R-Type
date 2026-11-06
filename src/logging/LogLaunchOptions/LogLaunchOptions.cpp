@@ -8,6 +8,7 @@
 #include <string_view>
 #include <system_error>
 #include <utility>
+#include <vector>
 #include "LogLaunchSettings.hpp"
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
@@ -206,6 +207,21 @@ void LogLaunchOptions::apply() const {
     announceUnopenedJournal(*settings_.output.filePath);
   }
   announceJournal(applied);
+}
+
+std::vector<std::string> LogLaunchOptions::forwardedArguments() const {
+  std::vector<std::string> arguments;
+  if (settings_.level.has_value()) {
+    arguments.emplace_back(LEVEL_OPTION);
+    arguments.emplace_back(levelNameOf(*settings_.level));
+  }
+  if (!settings_.output.filePath.has_value()) {
+    arguments.emplace_back(NO_FILE_OPTION);
+  }
+  if (!settings_.output.toStderr) {
+    arguments.emplace_back(NO_STDERR_OPTION);
+  }
+  return arguments;
 }
 
 std::string LogLaunchOptions::usage(std::string_view defaultJournalName) {

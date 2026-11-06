@@ -14,7 +14,7 @@ Every file below was built and its tests were run on a copy of the repository be
 | 1 | The name of the module | `src/server/ModuleConstants.hpp` |
 | 2 | The class and its constant | `src/server/TickReport/` |
 | 3 | The library of the folder | `src/server/TickReport/CMakeLists.txt`, `src/server/CMakeLists.txt` |
-| 4 | The module in the server's list, and its row in the list of modules | `src/server/Modules/`, `docs/src/content/docs/project-layout.md` |
+| 4 | The module in the list of a game process, and its row in the list of modules | `src/server/Modules/`, `docs/src/content/docs/project-layout.md` |
 | 5 | Three tests, their fixture and their constants | `tests/server/TickReport/` |
 | 6 | A run, and the three checks of the project | the terminal |
 
@@ -22,7 +22,7 @@ Every file below was built and its tests were run on a copy of the repository be
 
 Three questions decide what your module is and where it goes.
 
-- **Which program?** The tick report writes in the journal and counts server ticks, so it belongs to the server. Anything that draws, plays a sound or reads a key belongs to the client (`src/client/`). The table "Where does a new class go?" in [Project layout](/R-Type/project-layout/#where-does-a-new-class-go) decides the other cases.
+- **Which program?** The tick report writes in the journal and counts server ticks, so it belongs to the server, and to the role that runs the ticks of a game: a game process, not the supervisor (see [Server](/R-Type/server/#the-three-roles-supervisor-game-and-master)). Anything that draws, plays a sound or reads a key belongs to the client (`src/client/`). The table "Where does a new class go?" in [Project layout](/R-Type/project-layout/#where-does-a-new-class-go) decides the other cases.
 - **Which scope?** A module of the program (`IModule`) lives as long as the server runs. A module of a game (`IGameModule`) lives as long as one game, and there are several games at once. Counting server ticks is a matter of the program, so this is an `IModule`.
 - **Required or optional?** The code that needs a required module may include it; an optional module is reached only through its `Contract/` sub-folder, and the program must work without it. The server does its job without a tick report and no other code needs it, so this one is optional, and it has no `Contract/` since nothing would go in it.
 
@@ -206,9 +206,9 @@ add_subdirectory(TickReport)
 add_subdirectory(Modules)
 ```
 
-## Step 4: put it in the server's list
+## Step 4: put it in the list of a game process
 
-`serverModules()` in `src/server/Modules/ServerModules.cpp` is the one place that lists the modules of the server. Add the include, and the line before the metrics module, which stays last so that its measure of a tick covers your work:
+`gameProcessModules()` in `src/server/Modules/GameProcessModules.cpp` is the one place that lists the modules of a game process; `supervisorModules()`, next to it, lists those of the supervisor, and a module added there is also named in `SUPERVISOR_MODULE_NAMES` (`ServerRoleConstants.hpp`). Add the include, and the line before the metrics module, so that its measure of a tick covers your work:
 
 ```cpp
 #include "ServerNetworkModule.hpp"
@@ -220,6 +220,8 @@ add_subdirectory(Modules)
   modules.push_back(std::make_unique<ServerTickReportModule>());
   modules.push_back(std::make_unique<ServerMetricsModule>(
       std::make_shared<engine::SystemClock>(), launchOptions.trafficCsvFile()));
+  modules.push_back(std::make_unique<ServerSupervisorLinkModule>(
+      launchOptions.supervisorLink(), stopRequest));
   return modules;
 ```
 
@@ -230,7 +232,7 @@ The module is only linked if its library is in the `CMakeLists.txt` of that fold
     rtype_server_tick_report_module
 ```
 
-Every new module also adds its row to [the list of modules](/R-Type/project-layout/#the-list-of-modules), in the same pull request. In the table of the server program, after `metrics`:
+Every new module also adds its row to [the list of modules](/R-Type/project-layout/#the-list-of-modules), in the same pull request. In the table of a game process, after `lobby`:
 
 ```markdown
 | `tick-report` | `ServerTickReportModule` | `src/server/TickReport/` | optional |
@@ -242,18 +244,19 @@ Build the server now:
 cmake --workflow --preset test
 ```
 
-The first build of a branch takes a few minutes. When it ends, the server is listed with one module more, and one test fails: the one that checks the list of modules. That is the next step.
+The first build of a branch takes a few minutes. When it ends, a game process is listed with one module more, and one test fails: the one that checks the list of modules of a game process. That is the next step. A module that declares a setting also names it in `GAME_SETTING_NAMES` (`src/server/Modules/ServerRoleConstants.hpp`), so the supervisor hands its line of `server.cfg` to the games; `tests/server/Modules/ServerRolesTest.cpp` fails when it does not.
 
 ## Step 5: test it
 
 Tests mirror the sources: the tests of `src/server/TickReport/` go in `tests/server/TickReport/`. Each test says what it checks in a Given / When / Then comment.
 
-First, the existing test that lists the modules. In `tests/server/Modules/ServerModulesTest.cpp`, add the new name before the metrics in the expected list, and add it to the sentence of the comment above the test:
+First, the existing test that lists the modules. In `tests/server/Modules/GameProcessModulesTest.cpp`, add the new name before the metrics in the expected list, and add it to the sentence of the comment above the test:
 
 ```cpp
-                       std::string{rtype::server::LOBBY_MODULE_NAME},
-                       std::string{rtype::server::TICK_REPORT_MODULE_NAME},
-                       std::string{rtype::server::METRICS_MODULE_NAME}}));
+                std::string{rtype::server::LOBBY_MODULE_NAME},
+                std::string{rtype::server::TICK_REPORT_MODULE_NAME},
+                std::string{rtype::server::METRICS_MODULE_NAME},
+                std::string{rtype::server::SUPERVISOR_LINK_MODULE_NAME}}));
 ```
 
 Then the tests of the module. A `…Test.cpp` holds only its tests: its constants and its fixture are files of their own, as in `tests/server/Lobby/` (`ServerLobbyFixture.{hpp,cpp}` and `ServerLobbyModuleTest.cpp`). A module is tested inside a real `Application`, with the modules it depends on; `ServerModuleFixture` gives the logger options that write to a journal of the test only.
@@ -449,13 +452,13 @@ Three tests pass.
 
 ## Step 6: run it and check the project's gates
 
-Start the server on a free port from the repository root, where the build writes `r-type_server`:
+Start the supervisor from the repository root, where the build writes `r-type_server`, then a client, and CONNECT: the supervisor starts a game process for that player, and your module runs there.
 
 ```bash
-./r-type_server --mode server -p 4242
+./r-type_server -p 4242
 ```
 
-After ten seconds, stop it with Ctrl-C. The journal `r-type_server.log`, next to the executable, holds the three lines of your module among the server's (each line starts with a time, left out here):
+After ten seconds, stop the supervisor with Ctrl-C; it stops its game. The journal of that game, `r-type_game_0.log` next to the executable for the first game the supervisor started, holds the three lines of your module among the game's (each line starts with a time, left out here):
 
 ```text
 [INFO ] [Server] - counting the ticks
@@ -463,7 +466,7 @@ After ten seconds, stop it with Ctrl-C. The journal `r-type_server.log`, next to
 [INFO ] [Server] - counted 720 ticks
 ```
 
-The first line is `start()`, the second is the report at `TICKS_PER_TICK_REPORT` (10 s × 60 ticks per second), the third is `stop()`, written after the loop stopped, with the ticks run since. The count at stop depends on how long you left the server running.
+The first line is `start()`, the second is the report at `TICKS_PER_TICK_REPORT` (10 s × 60 ticks per second), the third is `stop()`, written after the loop stopped, with the ticks run since. The count at stop depends on how long the game process ran.
 
 Before opening a pull request, the three gates of the project:
 
@@ -497,4 +500,4 @@ cmake --build build --target tidy
 | `MissingServiceException` naming your module | `require<>()` asked for a service no earlier module provides | List the providing module before yours, and add it to `dependencies()` |
 | `UnknownStageException` | The stage name is not one of the program's | Use a constant of `SERVER_LOOP_STAGES`, never a literal |
 | `undefined symbol` at the link of `r-type_server` | The library is not in the `PUBLIC` libraries of `rtype_server_modules` | Add it, as in step 4 |
-| The server starts but your lines are missing | The module is not in `serverModules()`, or the journal is off (`--no-log-file`) | Check the list and the logging options |
+| The server starts but your lines are missing | The module is not in `gameProcessModules()`, no player connected so no game process started, or you read `r-type_server.log`, the journal of the supervisor, instead of `r-type_game_<n>.log` | Check the list, connect a client, and read the journal of the game |

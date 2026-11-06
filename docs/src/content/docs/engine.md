@@ -18,7 +18,7 @@ This page tells you where to look when you need to change something. It describe
 | Event bus | Available | `src/engine/Events/` |
 | Collisions | Available: the overlap test and the event; the system that detects them is in the game | `src/engine/Collision/` |
 | Launch arguments | Available; used by the server and the client | `src/engine/LaunchArguments/` |
-| Commands and configuration | Available; the server and the client read `server.cfg` and `client.cfg` with it | `src/engine/Commands/` |
+| Commands and configuration | Available; the supervisor reads `server.cfg` with it and hands the lines of its games over, a game process reads the file its supervisor wrote, the client reads `client.cfg` | `src/engine/Commands/` |
 | Modules and application | Available; the server and the client are built from modules | `src/engine/Modules/` |
 | Plugins | Available: a module built as a shared library, loaded by a `plugin` line of the configuration file | `src/engine/SharedLibrary/`, `src/engine/Modules/PluginShelf/` |
 | Files next to the executable | Available; used by the server and the client | `src/engine/Paths/` |
@@ -226,7 +226,7 @@ rtype::engine::readLaunchArguments(
 - `locateAssetFolder()` returns the `assets/` folder (`ASSETS_FOLDER_NAME`) next to the executable, or in the folder above it, where the Visual Studio generator writes `Release/` and `Debug/`, and where every package puts it (see [Packages](https://github.com/nique-epi/R-Type#packages) in the README). When neither exists, it throws `AssetFolderNotFoundException`, which names both folders.
 - `genericText()` writes a path in UTF-8 with `/` between folders on every system, for logs and errors. It lives in `rtype_logging` (`src/logging/PathText/`), so the logger, the network and the engine all use it. Never `path::string()` or `generic_string()`: on Windows they convert to the code page of the system and throw on a folder name that page lacks (Cyrillic on a French Windows), which would stop the program at launch on a log line.
 
-The client loads its assets from that folder, the server reads its waves file there (`WAVE_FILE_IN_ASSETS`, see [Server and game](/R-Type/server/#waves-file-wavecatalog)), and both read the entity sheets of its `entities/` folder (see [Writing an entity sheet](/R-Type/entity-sheets/)); both write their default journal in `executableFolder()`, except the client on macOS, which writes it in `~/Library/Logs` (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)).
+The client loads its assets from that folder, a game process of the server reads its waves file there (`WAVE_FILE_IN_ASSETS`, see [Server and game](/R-Type/server/#waves-file-wavecatalog)), and both read the entity sheets of its `entities/` folder (see [Writing an entity sheet](/R-Type/entity-sheets/)); both write their default journal in `executableFolder()`, except the client on macOS, which writes it in `~/Library/Logs` (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)).
 
 ## Data files: `DataFileReading`
 
@@ -285,7 +285,7 @@ A plugin is a module built as a shared library of its own and loaded when the pr
 
 `Application` runs the configuration step three times (see [Commands and configuration](#commands-and-configuration-commandinterpreter)). The first pass holds the `plugin` and `plugin-folder` commands alone: the shelf opens the libraries, and their modules join the end of the list, in the order of the lines. The second holds the `module` command alone, so `module <plugin> off` finds the plugins. The third runs every command, the `plugin` lines already run included.
 
-A plugin that cannot be loaded stops the start, with an error that names it: `PluginNotFoundException` for a missing file, `PluginEntryNotFoundException` for a library without `rtypePluginEntry`, `PluginApiVersionException` for another version (its message gives both numbers), `InvalidPluginNameException`, `DuplicateModuleNameException` for a name a module already has, and `SharedLibraryOpenException`. None of them is a refused line: they cross the interpreter and the program prints `server stopped: <message>` and exits with code 1.
+A plugin that cannot be loaded stops the start, with an error that names it: `PluginNotFoundException` for a missing file, `PluginEntryNotFoundException` for a library without `rtypePluginEntry`, `PluginApiVersionException` for another version (its message gives both numbers), `InvalidPluginNameException`, `DuplicateModuleNameException` for a name a module already has, and `SharedLibraryOpenException`. None of them is a refused line: they cross the interpreter and the program prints `<mode> stopped: <message>` (`game stopped:` for a game process, the only role of the server that loads plugins) and exits with code 1.
 
 The shelf is the first member of `Application`, so it is destroyed last: the modules go first, then everything that may hold code of a plugin (the callbacks of the commands and the stages, the services), then the libraries close. How to write a plugin, and what crosses the boundary between a plugin and the program, is on the [Modules](/R-Type/modules/#write-a-plugin) page; the reasoning is in [Architecture](/R-Type/architecture/#plugins).
 

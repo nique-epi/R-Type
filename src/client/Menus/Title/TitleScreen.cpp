@@ -51,7 +51,7 @@ Menu TitleScreen::buildMenu(IScreenNavigator& navigator, ISoundPlayer& sounds) {
       .logo(LOGO_ID, LOGO_SIZE)
       .subtitle(TITLE_SUBTITLE)
       .button({.label = PLAY_LABEL, .description = PLAY_DESCRIPTION},
-              [&navigator] { navigator.push(CONNECTION_SCREEN); })
+              [&navigator] { navigator.push(SERVER_MAP_SCREEN); })
       .button(
           {.label = LEADERBOARD_LABEL, .description = LEADERBOARD_DESCRIPTION},
           [&navigator] { navigator.push(LEADERBOARD_SCREEN); })

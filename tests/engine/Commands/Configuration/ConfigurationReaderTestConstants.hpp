@@ -71,3 +71,28 @@ constexpr std::size_t TWO_SETTINGS_FILE_RUNNABLE_LINES = 2;
  * @brief The number of the line FILE_WITH_A_BAD_LINE gets wrong.
  */
 constexpr std::string_view BAD_LINE_POSITION = ":2:";
+
+/**
+ * @brief The command the tests hand over to another program, and a file that
+ * gives the nickname, hands two lines over around it, and sets the port.
+ */
+constexpr std::string_view HANDED_OVER_COMMAND = "plugin";
+constexpr std::string_view FIRST_HANDED_OVER_LINE = "plugin first";
+constexpr std::string_view SECOND_HANDED_OVER_LINE = "plugin   second # kept";
+constexpr std::string_view FILE_WITH_HANDED_OVER_LINES =
+    "plugin first\nset nickname ace\nplugin   second # kept\nset port 5000\n";
+
+/** @brief A forced line of the handed-over command. */
+constexpr std::string_view FORCED_HANDED_OVER_LINE = "plugin forced";
+
+/** @brief The number of lines of FILE_WITH_HANDED_OVER_LINES that run. */
+constexpr std::size_t FILE_WITH_HANDED_OVER_LINES_RUNNABLE_LINES = 2;
+
+/** @brief A line no command of the tests knows, and how many refusals it
+ * gives. */
+constexpr std::string_view UNKNOWN_COMMAND_LINE = "teleport now";
+constexpr std::size_t ONE_REFUSAL = 1;
+
+/** @brief How many lines of FILE_WITH_HANDED_OVER_LINES are refused when no
+ * rule hands them over. */
+constexpr std::size_t TWO_REFUSALS = 2;

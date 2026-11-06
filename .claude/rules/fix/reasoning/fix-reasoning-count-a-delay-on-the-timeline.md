@@ -21,6 +21,11 @@ Before writing a delay in ticks, frames, round trips or messages (in a question,
 2. **Never place a write from what it is for**: "the world state is an output, so it goes after the output stage" is a guess; the rules module sends it from the simulation stage.
 3. **Write the count for each placement the code holds**, a write before the check and a write after it, and compare them with the tests that pin the timing before saying "nothing changes".
 
+### A test constant of time adds the frames its helpers already ran
+
+1. **Before writing a test constant meant to land just short of a deadline (or just past it)**, list every update the helpers of the test run before it: a helper that "lists and updates" or "opens" has already moved the clock by a frame.
+2. **Write the sum in the comment of the constant**: "16 ms then 1980 ms make 1996 ms, short of 2 s", never the constant alone.
+
 ## Example
 
 - ❌ **Before (wrong)**: "with the next-dispatch option, the death is announced 2 ticks after the collision".

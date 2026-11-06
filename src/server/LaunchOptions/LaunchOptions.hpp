@@ -10,18 +10,23 @@
 #include "LogLaunchOptions.hpp"
 #include "NetworkConditions.hpp"
 #include "SimulatorLaunchOptions.hpp"
-#include "SupervisorLink.hpp"
 
 namespace rtype::server {
 
 /**
- * @brief What the server is told at launch: the settings it is forced to, the
- * network simulated and the logging options, or a request for its usage.
+ * @brief What the supervisor is told at launch: the settings it is forced to,
+ * the network simulated and the logging options, or a request for its usage.
+ * A game process reads GameLaunchOptions instead.
  *
  * `-p`, `--seed`, `--state-rate`, `--input-delay`, `--database` and `--set`
  * do not hold a value of their own: each becomes the line of the command
  * `set` that gives the setting that value, and the lines run after
- * server.cfg, so a launch option wins over the file.
+ * server.cfg, so a launch option wins over the file. The lines of a setting of
+ * the games (`--seed`, `--state-rate`, `--input-delay`, or `--set` on one of
+ * them) are not run by the supervisor: it hands them to its games after the
+ * lines of the file, as gameLineRule() says. The logging level, the choice of
+ * standard error and of a journal, the network simulated and `--traffic-csv`
+ * go to every game too (see gameArguments() and trafficCsvFile()).
  */
 class LaunchOptions {
  public:
@@ -30,8 +35,7 @@ class LaunchOptions {
    * it was launched with, without its name, in one pass from the first to the
    * last: `-p <port>`, `--seed <seed>`, `--state-rate <states>`,
    * `--input-delay <ticks>`, `--database <file>`, `--set <name>=<value>`,
-   * `--supervisor <port>`, `--link-token <number>`, `--traffic-csv <file>` and
-   * `--help`, the options of the network simulator
+   * `--traffic-csv <file>` and `--help`, the options of the network simulator
    * (see network::SimulatorLaunchOptions::readOption()) and the logging options
    * (see logging::LogLaunchOptions::readOption()), whose exceptions this
    * throws too.
@@ -52,10 +56,7 @@ class LaunchOptions {
    *         needs a value is the last argument.
    * @throws network::InvalidPortException when the value of `-p` is not a
    *         port from LOWEST_PORT to HIGHEST_PORT.
-   * @throws IncompleteSupervisorLinkException when only one of
-   *         `--supervisor` and `--link-token` was given.
    * @throws engine::InvalidLaunchOptionValueException when the value of
-   *         `--link-token` is 0 or not a whole number, the value of
    *         `--seed` is not a whole number from 0 to 4294967295, the value of
    *         `--state-rate` is not a whole number from
    *         LOWEST_WORLD_STATES_PER_SECOND to HIGHEST_WORLD_STATES_PER_SECOND,
@@ -79,13 +80,6 @@ class LaunchOptions {
   [[nodiscard]] const std::vector<std::string>& forcedLines() const;
 
   /**
-   * @returns The port of the supervisor and the token shared with it when
-   * `--supervisor` and `--link-token` were given: the server is then a game
-   * process; nothing otherwise.
-   */
-  [[nodiscard]] std::optional<SupervisorLink> supervisorLink() const;
-
-  /**
    * @returns whether `--help` was given: the server then prints its usage
    *          and starts nothing.
    */
@@ -104,8 +98,21 @@ class LaunchOptions {
    */
   [[nodiscard]] const logging::LogLaunchOptions& logOptions() const;
 
+  /**
+   * @returns The options every game the supervisor starts is given as they
+   * are, after its own: the logging options it shares (see
+   * logging::LogLaunchOptions::forwardedArguments()), then the network
+   * simulated (see network::SimulatorLaunchOptions::forwardedArguments()), so
+   * the players, who talk to the games, cross the network the operator asked
+   * for, and the journal of each game keeps its level. The supervisor keeps
+   * both for itself too: its socket carries the requests of the players.
+   */
+  [[nodiscard]] std::vector<std::string> gameArguments() const;
+
   /** @returns The file given after `--traffic-csv`, nothing when it was not
-   * given. */
+   * given. The supervisor writes no traffic of its own: each game it starts
+   * writes its traffic to a file of its own named after it (see
+   * gameCommand()). */
   [[nodiscard]] const std::optional<std::filesystem::path>& trafficCsvFile()
       const;
 
