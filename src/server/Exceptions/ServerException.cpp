@@ -36,14 +36,8 @@ UnknownDifficultyException::UnknownDifficultyException(
 EmptyEnemyCycleException::EmptyEnemyCycleException()
     : ServerException("A wave plan must name at least one enemy") {}
 
-NoJoinableGameException::NoJoinableGameException()
-    : ServerException("no game to join: the server has not created one") {}
-
-TooManyGamesException::TooManyGamesException(std::size_t requested,
-                                             std::size_t maximum)
-    : ServerException("the server cannot host " + std::to_string(requested) +
-                      " games: a heartbeat lists " + std::to_string(maximum) +
-                      " at most") {}
+GameNotCreatedException::GameNotCreatedException()
+    : ServerException("no game yet: the games module has not created it") {}
 
 ServerAlreadyOpenException::ServerAlreadyOpenException()
     : ServerException("the server is already open") {}
@@ -83,11 +77,20 @@ ChildBindingException::ChildBindingException(const std::string& step)
     : ServerException("cannot tie a game process to the supervisor: " + step +
                       " failed") {}
 
-IncompleteSupervisorLinkException::IncompleteSupervisorLinkException(
+MissingSupervisorLinkException::MissingSupervisorLinkException(
     const std::string& missingOption)
     : ServerException(
           "a game process needs both --supervisor and "
           "--link-token: " +
           missingOption + " is missing") {}
+
+GameConfigurationWriteException::GameConfigurationWriteException(
+    const std::string& file)
+    : ServerException("cannot write the configuration of the games to " +
+                      file) {}
+
+NoFreeGameSlotException::NoFreeGameSlotException(std::size_t slotCount)
+    : ServerException("no free place for a game: all " +
+                      std::to_string(slotCount) + " places hold one") {}
 
 }  // namespace rtype::server

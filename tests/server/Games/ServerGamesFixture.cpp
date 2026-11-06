@@ -74,7 +74,7 @@ rtype::server::GamesSettings ServerGamesFixture::shippedWaves() {
 }
 
 ConnectedPlayer& ServerGamesFixture::join(std::size_t index) {
-  return seatPlayerIn(*probe().games()->all().front(), index);
+  return seatPlayerIn(probe().runningGame()->game(), index);
 }
 
 void ServerGamesFixture::runTick(
@@ -84,7 +84,8 @@ void ServerGamesFixture::runTick(
   network().tickDatagrams().begin(rtype::server::ReceivedDatagrams{
       .players = players,
       .connectionRequests = requests,
-      .informationRequests = informationRequests});
+      .informationRequests = informationRequests,
+      .probes = {}});
   application().runStages(rtype::engine::SIMULATION_TICK_DURATION);
   network().tickDatagrams().end();
 }

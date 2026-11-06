@@ -8,7 +8,6 @@
 #include "RecordedLine.hpp"
 #include "ServerGameStatisticsFixture.hpp"
 #include "ServerGameStatisticsModuleTestConstants.hpp"
-#include "ServerModuleTestConstants.hpp"
 #include "TrafficTestConstants.hpp"
 
 using rtype::engine::ModuleStartFailedException;
@@ -32,9 +31,9 @@ TEST_F(ServerGameStatisticsFixture, WritesTheNamesOfTheColumnsWhenItStarts) {
  */
 TEST_F(ServerGameStatisticsFixture, WritesARowForEachBydoKilledInAGame) {
   start();
-  publish(FIRST_GAME, GAME_STARTED);
-  publish(FIRST_GAME, KILL_BY_FIRST_PILOT);
-  publish(FIRST_GAME, KILL_BY_SECOND_PILOT);
+  publish(GAME_STARTED);
+  publish(KILL_BY_FIRST_PILOT);
+  publish(KILL_BY_SECOND_PILOT);
 
   runTicks(TICKS_TO_A_WRITE);
 
@@ -50,11 +49,11 @@ TEST_F(ServerGameStatisticsFixture, WritesARowForEachBydoKilledInAGame) {
  */
 TEST_F(ServerGameStatisticsFixture, WritesTheTotalOfAGameThatEnds) {
   start();
-  publish(FIRST_GAME, GAME_STARTED);
-  publish(FIRST_GAME, KILL_BY_FIRST_PILOT);
-  publish(FIRST_GAME, KILL_BY_SECOND_PILOT);
+  publish(GAME_STARTED);
+  publish(KILL_BY_FIRST_PILOT);
+  publish(KILL_BY_SECOND_PILOT);
 
-  publish(FIRST_GAME, GAME_FINISHED);
+  publish(GAME_FINISHED);
   runTicks(TICKS_TO_A_WRITE);
 
   EXPECT_EQ(fileText(), std::string{STATISTICS_HEADER_LINE} +
@@ -64,37 +63,17 @@ TEST_F(ServerGameStatisticsFixture, WritesTheTotalOfAGameThatEnds) {
 }
 
 /**
- * Given the second game started before the first
- * When a pilot kills a Bydo in each
- * Then the second game is game 1 and the first is game 2: games are numbered
- * in the order they start, not by where they run
- */
-TEST_F(ServerGameStatisticsFixture, NumbersTheGamesInTheOrderTheyStart) {
-  start();
-  publish(SECOND_GAME, GAME_STARTED);
-  publish(FIRST_GAME, GAME_STARTED);
-
-  publish(FIRST_GAME, KILL_BY_FIRST_PILOT);
-  publish(SECOND_GAME, KILL_BY_SECOND_PILOT);
-  runTicks(TICKS_TO_A_WRITE);
-
-  EXPECT_EQ(fileText(), std::string{STATISTICS_HEADER_LINE} +
-                            std::string{FIRST_PILOT_KILL_IN_GAME_TWO} +
-                            std::string{SECOND_PILOT_KILL_IN_GAME_ONE});
-}
-
-/**
  * Given a game that started and ended without a kill
  * When it starts again and a pilot kills a Bydo
  * Then the kill belongs to game 2, after the empty total of game 1
  */
 TEST_F(ServerGameStatisticsFixture, NumbersAGamePlayedAgainAsANewGame) {
   start();
-  publish(FIRST_GAME, GAME_STARTED);
-  publish(FIRST_GAME, GAME_FINISHED);
+  publish(GAME_STARTED);
+  publish(GAME_FINISHED);
 
-  publish(FIRST_GAME, GAME_STARTED);
-  publish(FIRST_GAME, KILL_BY_FIRST_PILOT);
+  publish(GAME_STARTED);
+  publish(KILL_BY_FIRST_PILOT);
   runTicks(TICKS_TO_A_WRITE);
 
   EXPECT_EQ(fileText(), std::string{STATISTICS_HEADER_LINE} +
@@ -110,7 +89,7 @@ TEST_F(ServerGameStatisticsFixture, NumbersAGamePlayedAgainAsANewGame) {
 TEST_F(ServerGameStatisticsFixture, LeavesOutABydoKilledOutsideAGame) {
   start();
 
-  publish(FIRST_GAME, KILL_BY_FIRST_PILOT);
+  publish(KILL_BY_FIRST_PILOT);
   runTicks(TICKS_TO_A_WRITE);
 
   EXPECT_EQ(fileText(), STATISTICS_HEADER_LINE);
@@ -123,8 +102,8 @@ TEST_F(ServerGameStatisticsFixture, LeavesOutABydoKilledOutsideAGame) {
  */
 TEST_F(ServerGameStatisticsFixture, KeepsTheRowsInMemoryUntilASecondPassed) {
   start();
-  publish(FIRST_GAME, GAME_STARTED);
-  publish(FIRST_GAME, KILL_BY_FIRST_PILOT);
+  publish(GAME_STARTED);
+  publish(KILL_BY_FIRST_PILOT);
 
   runTicks(TICKS_SHORT_OF_A_WRITE);
 
@@ -138,10 +117,10 @@ TEST_F(ServerGameStatisticsFixture, KeepsTheRowsInMemoryUntilASecondPassed) {
  */
 TEST_F(ServerGameStatisticsFixture, WaitsAWholeSecondAgainAfterAWrite) {
   start();
-  publish(FIRST_GAME, GAME_STARTED);
-  publish(FIRST_GAME, KILL_BY_FIRST_PILOT);
+  publish(GAME_STARTED);
+  publish(KILL_BY_FIRST_PILOT);
   runTicks(TICKS_TO_A_WRITE);
-  publish(FIRST_GAME, KILL_BY_SECOND_PILOT);
+  publish(KILL_BY_SECOND_PILOT);
 
   runTicks(TICKS_SHORT_OF_A_WRITE);
 
@@ -156,8 +135,8 @@ TEST_F(ServerGameStatisticsFixture, WaitsAWholeSecondAgainAfterAWrite) {
  */
 TEST_F(ServerGameStatisticsFixture, WritesTheRowsLeftWhenTheServerStops) {
   start();
-  publish(FIRST_GAME, GAME_STARTED);
-  publish(FIRST_GAME, KILL_BY_FIRST_PILOT);
+  publish(GAME_STARTED);
+  publish(KILL_BY_FIRST_PILOT);
 
   stop();
 
@@ -182,16 +161,33 @@ TEST_F(ServerGameStatisticsFixture, NamesTheFileAfterThePortWithoutASetting) {
 }
 
 /**
- * Given a file that is a folder
+ * Given a configuration that names statistics.csv, and a game on port 4307
+ * When the server starts
+ * Then the game writes statistics_4307.csv, and nothing to statistics.csv: two
+ * games of one supervisor never write the same file
+ */
+TEST_F(ServerGameStatisticsFixture, NamesTheFileOfTheSettingAfterThePort) {
+  start();
+
+  EXPECT_TRUE(std::filesystem::exists(folder() / WRITTEN_STATISTICS_FILE_NAME));
+  EXPECT_FALSE(std::filesystem::exists(folder() / STATISTICS_FILE_NAME));
+}
+
+/**
+ * Given a file of the port that is a folder
  * When the server starts
  * Then its start stops, naming the module
  */
 TEST_F(ServerGameStatisticsFixture, StopsTheStartWhenTheFileCannotBeOpened) {
-  EXPECT_THROW(startWritingTo(folder()), ModuleStartFailedException);
+  static_cast<void>(std::filesystem::create_directory(
+      folder() / WRITTEN_STATISTICS_FILE_NAME));
+
+  EXPECT_THROW(startWritingTo(folder() / STATISTICS_FILE_NAME),
+               ModuleStartFailedException);
 }
 
 /**
- * Given a file on a device that refuses every write
+ * Given a file of the port that leads to a device that refuses every write
  * When a Bydo is killed in each of two seconds
  * Then the journal says so once, and the game goes on
  */
@@ -200,12 +196,14 @@ TEST_F(ServerGameStatisticsFixture,
   if (!std::filesystem::exists(FULL_DISK_DEVICE)) {
     GTEST_SKIP() << "this system has no device that refuses every write";
   }
-  startWritingTo(std::filesystem::path{FULL_DISK_DEVICE});
-  publish(FIRST_GAME, GAME_STARTED);
+  std::filesystem::create_symlink(std::filesystem::path{FULL_DISK_DEVICE},
+                                  folder() / WRITTEN_STATISTICS_FILE_NAME);
+  startWritingTo(folder() / STATISTICS_FILE_NAME);
+  publish(GAME_STARTED);
 
-  publish(FIRST_GAME, KILL_BY_FIRST_PILOT);
+  publish(KILL_BY_FIRST_PILOT);
   runTicks(TICKS_TO_A_WRITE);
-  publish(FIRST_GAME, KILL_BY_SECOND_PILOT);
+  publish(KILL_BY_SECOND_PILOT);
   runTicks(TICKS_TO_A_WRITE);
 
   EXPECT_EQ(std::ranges::count_if(journal().lines(),

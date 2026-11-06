@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "StateEncoding.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
@@ -27,17 +28,28 @@ constexpr std::string_view SERVER_CONFIGURATION_FILE_NAME = "server.cfg";
 constexpr std::string_view PORT_SETTING_NAME = "port";
 constexpr std::string_view SEED_SETTING_NAME = "seed";
 constexpr std::string_view STATE_RATE_SETTING_NAME = "state-rate";
+constexpr std::string_view STATE_ENCODING_SETTING_NAME = "state-encoding";
 constexpr std::string_view INPUT_DELAY_SETTING_NAME = "input-delay";
 constexpr std::string_view DATABASE_SETTING_NAME = "database";
 constexpr std::string_view MASTER_URL_SETTING_NAME = "master-url";
 constexpr std::string_view MASTER_KEY_SETTING_NAME = "master-key";
 constexpr std::string_view SERVER_NAME_SETTING_NAME = "server-name";
 
+/**
+ * @brief The setting that names the file of the game statistics, which the
+ * game-statistics plugin of a game process declares; the supervisor hands its
+ * lines to its games.
+ */
+constexpr std::string_view GAME_STATISTICS_FILE_SETTING_NAME =
+    "game-statistics-file";
+
 /** @brief Every setting of the server, in the order its usage lists them. */
 constexpr std::array SERVER_SETTING_NAMES{
-    PORT_SETTING_NAME,        SEED_SETTING_NAME,       STATE_RATE_SETTING_NAME,
-    INPUT_DELAY_SETTING_NAME, DATABASE_SETTING_NAME,   MASTER_URL_SETTING_NAME,
-    MASTER_KEY_SETTING_NAME,  SERVER_NAME_SETTING_NAME};
+    PORT_SETTING_NAME,        SEED_SETTING_NAME,
+    STATE_RATE_SETTING_NAME,  STATE_ENCODING_SETTING_NAME,
+    INPUT_DELAY_SETTING_NAME, DATABASE_SETTING_NAME,
+    MASTER_URL_SETTING_NAME,  MASTER_KEY_SETTING_NAME,
+    SERVER_NAME_SETTING_NAME};
 
 /**
  * @brief The highest seed: the seed of a game is 32 bits.
@@ -45,10 +57,10 @@ constexpr std::array SERVER_SETTING_NAMES{
 constexpr std::int64_t HIGHEST_SEED = 4294967295;
 
 /**
- * @brief Launch option followed by the UDP port of the supervisor that started
- * this server, on the loopback. Given together with LINK_TOKEN_OPTION: the
- * server is then a game process, which hosts one game and tells its supervisor
- * how it stands.
+ * @brief Launch option of a game process followed by the UDP port of the
+ * supervisor that started it, on the loopback. A game process always has it,
+ * with LINK_TOKEN_OPTION: it hosts one game and tells its supervisor how it
+ * stands.
  */
 constexpr std::string_view SUPERVISOR_OPTION = "--supervisor";
 
@@ -59,8 +71,23 @@ constexpr std::string_view SUPERVISOR_OPTION = "--supervisor";
  */
 constexpr std::string_view LINK_TOKEN_OPTION = "--link-token";
 
-/** @brief How many games a game process hosts. */
-constexpr std::size_t GAME_PROCESS_GAME_COUNT = 1;
+/**
+ * @brief Launch option of a game process followed by the file of commands it
+ * reads when it starts, instead of server.cfg: the lines its supervisor kept
+ * for its games. Without it, a game process reads no file.
+ */
+constexpr std::string_view CONFIGURATION_OPTION = "--configuration";
+
+/**
+ * @brief The traffic file of game n, for a `--traffic-csv <stem><ext>` given
+ * to the supervisor, is <stem>, GAME_TRAFFIC_FILE_INFIX, n, then <ext>, in the
+ * same folder: traffic.csv gives traffic_game_0.csv to game 0. Each game
+ * writes its own file, so two games never write the same one.
+ */
+constexpr std::string_view GAME_TRAFFIC_FILE_INFIX = "_game_";
+
+/** @brief How many game processes the supervisor runs at once. */
+constexpr std::size_t MAXIMUM_RUNNING_GAMES = 8;
 
 /**
  * @brief Launch option followed by the seed the random draws of the games start
@@ -69,26 +96,10 @@ constexpr std::size_t GAME_PROCESS_GAME_COUNT = 1;
 constexpr std::string_view SEED_OPTION = "--seed";
 
 /**
- * @brief How many games the server hosts at once, unless told otherwise. They
- * are all created when the server starts and reused: a finished game waits for
- * players again.
- */
-constexpr std::size_t DEFAULT_HOSTED_GAME_COUNT = 8;
-
-/**
  * @brief The name of game n, from 1, is this prefix and n: the name the master
  * lists it by, until a game is named by the player who creates it.
  */
 constexpr std::string_view GAME_NAME_PREFIX = "GAME ";
-
-/**
- * @brief The gap between the seeds of two games started from the same seed.
- *
- * A game draws the seed of each world it builds as its own seed plus the count
- * of worlds built, so a gap of 65536 keeps the worlds of one game away from
- * those of the next for 65536 worlds.
- */
-constexpr std::uint32_t GAME_SEED_STRIDE = 65536;
 
 /**
  * @brief Logger name the server writes its log lines under.
@@ -163,11 +174,11 @@ constexpr std::string_view CHANGED_INPUT_DELAY_BREACH =
 
 /**
  * @brief Launch option followed by the program the binary runs:
- * SERVER_MODE_NAME, SUPERVISOR_MODE_NAME, the default, or MASTER_MODE_NAME. It
+ * SUPERVISOR_MODE_NAME, the default, GAME_MODE_NAME or MASTER_MODE_NAME. It
  * comes first, before every other option.
  */
 constexpr std::string_view MODE_OPTION = "--mode";
-constexpr std::string_view SERVER_MODE_NAME = "server";
+constexpr std::string_view GAME_MODE_NAME = "game";
 constexpr std::string_view SUPERVISOR_MODE_NAME = "supervisor";
 constexpr std::string_view MASTER_MODE_NAME = "master";
 
@@ -215,16 +226,26 @@ constexpr std::size_t CONNECTION_REQUEST_QUEUE_CAPACITY = 16;
  * @brief Room of the queue of information requests waiting for the simulation
  * thread, so the most ServerInformation a tick sends.
  *
- * Provisional: a client asks only the servers the player looks at, the one
- * selected or those of the page shown, never every server of the list, and
- * the master asks each server every 30 s, so 16 a tick, 960 a second, is far
- * above what a server is asked. Above the room, the oldest are discarded,
+ * Provisional: the server map of a client asks each server the master lists
+ * once per reading of the list, every 15 s or when the player asks, and the
+ * master asks none, so 16 a tick, 960 a second, is far above what a server is
+ * asked. Above the room, the oldest are discarded,
  * each counted as InformationQueueFull, and the askers ask again; a queue of
  * its own keeps them from pushing connection requests out. One address and port
  * places at most REQUEST_BURST (11) of them between two ticks, its connection
  * requests included (see REQUEST_RATE_LIMIT).
  */
 constexpr std::size_t INFORMATION_REQUEST_QUEUE_CAPACITY = 16;
+
+/**
+ * @brief Room of the queue of probes of the master waiting for the simulation
+ * thread. The master sends a server one probe a second at most, so 16 a tick,
+ * 960 a second, leaves room for forged ones; above the room the oldest are
+ * discarded, each counted as ProbeQueueFull. One address and port places at
+ * most REQUEST_BURST (11) datagrams between two ticks, its requests included
+ * (see REQUEST_RATE_LIMIT).
+ */
+constexpr std::size_t PROBE_QUEUE_CAPACITY = 16;
 
 /**
  * @brief Room of the queue of datagrams the simulation thread leaves for the
@@ -256,6 +277,23 @@ constexpr std::string_view STATE_RATE_OPTION = "--state-rate";
  * is not given.
  */
 constexpr std::size_t DEFAULT_WORLD_STATES_PER_SECOND = 20;
+
+/**
+ * @brief The values of the `state-encoding` setting: `delta` writes each world
+ * state as the difference from the newest one the player acknowledged, or with
+ * every entity when it acknowledged none or when the newest it acknowledged is
+ * more than MAXIMUM_REFERENCE_DISTANCE ticks older; `full` lists every entity
+ * in every state.
+ */
+constexpr std::string_view DELTA_STATE_ENCODING_TEXT = "delta";
+constexpr std::string_view FULL_STATE_ENCODING_TEXT = "full";
+
+/** @brief How the world states are written when nothing sets the encoding. */
+constexpr StateEncoding DEFAULT_STATE_ENCODING = StateEncoding::Delta;
+
+/** @brief Why `set state-encoding` refused its value. */
+constexpr std::string_view INVALID_STATE_ENCODING_TEXT =
+    "the state encoding must be delta or full";
 
 /**
  * @brief The fewest states per second STATE_RATE_OPTION accepts. A client

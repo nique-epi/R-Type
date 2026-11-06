@@ -31,6 +31,13 @@ class NetworkContext {
   void run();
 
   /**
+   * @brief Runs the event loop until stop() is called, even while it has no
+   * work: a socket that only sends leaves none between two sends, and run()
+   * would return at once. The tasks post() queues run as they come.
+   */
+  void runUntilStopped();
+
+  /**
    * @brief Stops run() as soon as possible. Safe from any thread.
    */
   void stop();

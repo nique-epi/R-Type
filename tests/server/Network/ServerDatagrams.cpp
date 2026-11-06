@@ -9,6 +9,7 @@
 #include "EncodedMessage.hpp"
 #include "Endpoint.hpp"
 #include "Heartbeat.hpp"
+#include "MasterProbe.hpp"
 #include "MessagePayload.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
@@ -44,6 +45,16 @@ std::vector<std::byte> requestDatagram(
           .nickname = std::string{rtype::server::testing::PLAYER_NICKNAME}});
 }
 
+std::vector<std::byte> requestDatagramFor(
+    const rtype::network::GameChoice& game, std::uint64_t cookie) {
+  return rtype::network::DatagramCodec::encode(
+      rtype::network::PacketHeader{},
+      rtype::network::ConnectionRequest{
+          .cookie = cookie,
+          .nickname = std::string{rtype::server::testing::PLAYER_NICKNAME},
+          .game = game});
+}
+
 std::vector<std::byte> requestDatagramOf(const std::string& nickname,
                                          std::uint64_t cookie) {
   return rtype::network::DatagramCodec::encode(
@@ -65,6 +76,21 @@ std::vector<std::byte> requestAndInformationRequestDatagram() {
           .nickname = std::string{rtype::server::testing::PLAYER_NICKNAME}}),
       rtype::network::encodedMessage(
           rtype::network::ServerInformationRequest{.sentAt = 0})};
+  return rtype::network::DatagramCodec::encode(rtype::network::PacketHeader{},
+                                               messages);
+}
+
+std::vector<std::byte> probeDatagram(
+    const rtype::network::PacketHeader& header) {
+  return rtype::network::DatagramCodec::encode(header,
+                                               rtype::network::MasterProbe{});
+}
+
+std::vector<std::byte> informationRequestAndProbeDatagram() {
+  const std::vector<rtype::network::EncodedMessage> messages{
+      rtype::network::encodedMessage(
+          rtype::network::ServerInformationRequest{.sentAt = 0}),
+      rtype::network::encodedMessage(rtype::network::MasterProbe{})};
   return rtype::network::DatagramCodec::encode(rtype::network::PacketHeader{},
                                                messages);
 }

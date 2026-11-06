@@ -13,6 +13,7 @@
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
+#include "StateEncoding.hpp"
 #include "WorldStateSender.hpp"
 
 namespace rtype::server::testing {
@@ -26,6 +27,12 @@ class DeltaStateSenderFixture : public ::testing::Test {
   DeltaStateSenderFixture();
 
  protected:
+  /**
+   * @brief Builds the sender anew, at the default rate, writing states as
+   * @p encoding says; the constructor builds it writing deltas.
+   */
+  void encodeStatesAs(StateEncoding encoding);
+
   /**
    * @brief Connects a player who sends from the client on @p port.
    * @returns The player, who stays in the roster.

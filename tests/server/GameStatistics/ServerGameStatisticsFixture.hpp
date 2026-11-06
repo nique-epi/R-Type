@@ -9,15 +9,15 @@
 #include "Application.hpp"
 #include "ConfigurationReport.hpp"
 #include "EventBus.hpp"
-#include "GameBusesModule.hpp"
+#include "GameEventsModule.hpp"
 #include "PluginHostState.hpp"
 #include "RecordingJournal.hpp"
 #include "TemporaryFolder.hpp"
 
 /**
  * @brief The base of the tests of the game statistics plugin: an application
- * of a logger that records, a network that gives a port and the buses of two
- * games the test drives, whose configuration loads the compiled plugin.
+ * of a logger that records, a network that gives a port and the bus of the
+ * game the test drives, whose configuration loads the compiled plugin.
  */
 class ServerGameStatisticsFixture : public ::testing::Test {
  protected:
@@ -32,11 +32,11 @@ class ServerGameStatisticsFixture : public ::testing::Test {
   /** @brief Starts the application with no `game-statistics-file` line. */
   void startWithTheDefaultFile();
 
-  /** @brief Publishes @p event on the bus of the game at @p game, then
-   * delivers it, as the games module does in the outputs stage. */
+  /** @brief Publishes @p event on the bus of the game, then delivers it, as
+   * the games module does in the outputs stage. */
   template <typename Event>
-  void publish(std::size_t game, Event event) {
-    rtype::engine::EventBus& events = *games_->buses()[game];
+  void publish(Event event) {
+    rtype::engine::EventBus& events = game_->events();
     events.publish(event);
     events.dispatch();
   }
@@ -48,7 +48,8 @@ class ServerGameStatisticsFixture : public ::testing::Test {
   /** @brief Stops the application, as Ctrl-C does. */
   void stop();
 
-  /** @returns The text of STATISTICS_FILE_NAME in the temporary folder. */
+  /** @returns The text of WRITTEN_STATISTICS_FILE_NAME in the temporary
+   * folder: the file the plugin writes for STATISTICS_FILE_NAME. */
   [[nodiscard]] std::string fileText() const;
 
   [[nodiscard]] const RecordingJournal& journal() const;
@@ -63,6 +64,6 @@ class ServerGameStatisticsFixture : public ::testing::Test {
   TemporaryFolder folder_;
   PluginHostState host_;
   rtype::engine::ConfigurationReport report_;
-  GameBusesModule* games_{nullptr};
+  GameEventsModule* game_{nullptr};
   std::unique_ptr<rtype::engine::Application> application_;
 };

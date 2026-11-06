@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 #include "ActionSet.hpp"
 #include "BotInputSender.hpp"
@@ -17,12 +18,15 @@ using rtype::client::ActionSet;
 using rtype::engine::SIMULATION_TICK_DURATION;
 using rtype::tools::BotInputSender;
 using rtype::tools::BotPilot;
+using rtype::tools::testing::ACKNOWLEDGED_INPUT;
+using rtype::tools::testing::BOT_PLAYER_NUMBER;
 using rtype::tools::testing::BotInputSenderFixture;
 using rtype::tools::testing::FRAMES_IN_A_SECOND;
 using rtype::tools::testing::HALF_A_TICK;
 using rtype::tools::testing::HALF_TICKS_IN_A_SECOND;
 using rtype::tools::testing::heldOver;
 using rtype::tools::testing::INPUTS_IN_A_SECOND;
+using rtype::tools::testing::OTHER_PLAYER_NUMBER;
 using rtype::tools::testing::PILOT_SEED;
 
 /**
@@ -122,4 +126,28 @@ TEST_F(BotInputSenderFixture, SaysWhenAnInputWentOut) {
   const std::size_t said = advanceFor(FRAMES_IN_A_SECOND);
 
   EXPECT_EQ(said, link().sentActions().size());
+}
+
+/**
+ * Given a sender
+ * When a world state lists the ship of its player, the server having applied
+ * input ACKNOWLEDGED_INPUT
+ * Then the link confirms the inputs up to that one
+ */
+TEST_F(BotInputSenderFixture, AWorldStateConfirmsTheInputsTheServerApplied) {
+  confirmFrom(stateAcknowledgingFor(BOT_PLAYER_NUMBER), BOT_PLAYER_NUMBER);
+
+  EXPECT_EQ(link().confirmations(),
+            std::vector<std::uint32_t>{ACKNOWLEDGED_INPUT});
+}
+
+/**
+ * Given a sender
+ * When a world state lists the ship of another player only
+ * Then nothing is confirmed
+ */
+TEST_F(BotInputSenderFixture, AWorldStateOfAnotherPlayerConfirmsNothing) {
+  confirmFrom(stateAcknowledgingFor(OTHER_PLAYER_NUMBER), BOT_PLAYER_NUMBER);
+
+  EXPECT_TRUE(link().confirmations().empty());
 }

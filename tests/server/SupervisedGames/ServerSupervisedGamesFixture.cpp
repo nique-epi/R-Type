@@ -1,12 +1,16 @@
 #include "ServerSupervisedGamesFixture.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 #include "Application.hpp"
 #include "ConnectionChallenge.hpp"
+#include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "GameLaunchSettings.hpp"
@@ -33,7 +37,8 @@ using rtype::network::IncomingDatagram;
 using rtype::server::testing::onlyMessageIn;
 using rtype::server::testing::sentTo;
 
-void ServerSupervisedGamesFixture::startSupervisor() {
+void ServerSupervisedGamesFixture::startSupervisor(
+    std::vector<std::string> gameLines) {
   std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
   modules.push_back(
       std::make_unique<rtype::server::ServerLoggerModule>(journalOptions()));
@@ -45,7 +50,9 @@ void ServerSupervisedGamesFixture::startSupervisor() {
   modules.push_back(
       std::make_unique<rtype::server::ServerSupervisedGamesModule>(
           rtype::server::GameLaunchSettings{.program = PROGRAM_FOR_TESTS,
-                                            .folder = FOLDER_FOR_TESTS},
+                                            .folder = folder_.path(),
+                                            .gameLines = std::move(gameLines),
+                                            .forwardedArguments = {}},
           std::move(launcher), [](rtype::engine::Duration) {}));
   modules.push_back(
       std::make_unique<rtype::server::ServerSupervisorLobbyModule>());
@@ -63,7 +70,8 @@ void ServerSupervisedGamesFixture::runTick(
   network().tickDatagrams().begin(
       rtype::server::ReceivedDatagrams{.players = players,
                                        .connectionRequests = requests,
-                                       .informationRequests = {}});
+                                       .informationRequests = {},
+                                       .probes = {}});
   application_->runStages(rtype::engine::SIMULATION_TICK_DURATION);
   network().tickDatagrams().end();
 }
@@ -75,15 +83,16 @@ void ServerSupervisedGamesFixture::runFor(rtype::engine::Duration duration) {
   }
 }
 
-void ServerSupervisedGamesFixture::askForAPlaceAs(std::size_t index) {
+void ServerSupervisedGamesFixture::askForAPlaceAs(
+    std::size_t index, const rtype::network::GameChoice& game) {
   const rtype::network::Endpoint player = supervisedPlayer(index);
-  runTick({},
-          {IncomingDatagram{.sender = player, .payload = requestDatagram()}});
+  runTick({}, {IncomingDatagram{.sender = player,
+                                .payload = requestDatagramFor(game, 0)}});
   const auto answers = sentTo(network().sender().sent(), player);
   const auto cookie =
       onlyMessageIn<rtype::network::ConnectionChallenge>(answers.back()).cookie;
   runTick({}, {IncomingDatagram{.sender = player,
-                                .payload = requestDatagram(cookie)}});
+                                .payload = requestDatagramFor(game, cookie)}});
 }
 
 void ServerSupervisedGamesFixture::gameReports(
@@ -100,6 +109,17 @@ void ServerSupervisedGamesFixture::gameReports(
                             rtype::network::PacketHeader{.sessionToken = token,
                                                          .sequence = sequence},
                             status)}});
+}
+
+std::filesystem::path ServerSupervisedGamesFixture::gameConfigurationFile()
+    const {
+  return folder_.path() / GAMES_FILE_OF_PORT_4242;
+}
+
+std::string ServerSupervisedGamesFixture::gameConfigurationText() const {
+  std::ifstream stream{gameConfigurationFile()};
+  return std::string{std::istreambuf_iterator<char>{stream},
+                     std::istreambuf_iterator<char>{}};
 }
 
 RecordingProcessLauncher& ServerSupervisedGamesFixture::launcher() {

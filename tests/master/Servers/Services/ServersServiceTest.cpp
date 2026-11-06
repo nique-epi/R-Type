@@ -9,6 +9,8 @@
 #include <thread>
 #include <vector>
 #include "CreatedServer.hpp"
+#include "DatagramCodec.hpp"
+#include "Endpoint.hpp"
 #include "GameListing.hpp"
 #include "HostedGameState.hpp"
 #include "KnownServer.hpp"
@@ -16,8 +18,10 @@
 #include "MasterMessageText.hpp"
 #include "MasterMessageTextFixtures.hpp"
 #include "MasterMessageTextTestConstants.hpp"
+#include "MasterProbe.hpp"
 #include "MasterTestConstants.hpp"
 #include "NetworkException.hpp"
+#include "OutgoingDatagram.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerKey.hpp"
 #include "ServerLimits.hpp"
@@ -34,15 +38,22 @@ using rtype::master::ServerLimits;
 using rtype::master::ServerRecord;
 using rtype::master::ServersService;
 using rtype::network::CreatedServer;
+using rtype::network::DatagramCodec;
+using rtype::network::Endpoint;
 using rtype::network::GameListing;
 using rtype::network::heartbeatText;
 using rtype::network::HostedGameState;
 using rtype::network::InvalidMasterMessageException;
 using rtype::network::isWellFormedServerKey;
+using rtype::network::MasterProbe;
+using rtype::network::OutgoingDatagram;
 using rtype::network::ServerHeartbeat;
 using rtype::network::ServerRegistration;
 using rtype::network::testing::FIRST_PILOT;
 using rtype::network::testing::FOURTH_PILOT;
+using rtype::network::testing::PARIS_ADDRESS;
+using rtype::network::testing::PARIS_PROBE_SECRET;
+using rtype::network::testing::PARIS_UDP_PORT;
 using rtype::network::testing::parisHeartbeat;
 using rtype::network::testing::parisRegistration;
 using rtype::network::testing::SECOND_PILOT;
@@ -269,6 +280,47 @@ TEST(ServersService, AHeartbeatWhoseSampleFailsIsNotKept) {
 
 /**
  * Given a registered server
+ * When the master builds its probe
+ * Then the probe goes to the address and port it registered with, and
+ * carries its secret
+ */
+TEST(ServersService, TheProbeGoesWhereTheServerRegistered) {
+  MasterDatabaseFile databaseFile;
+  ServersService service{databaseFile.database()};
+  const KnownServer server =
+      registeredParis(service, CREATOR_ADDRESS, FIRST_HEARTBEAT_DATE);
+
+  const OutgoingDatagram probe = service.probeFor(server, FIRST_HEARTBEAT_DATE)
+                                     .value_or(OutgoingDatagram{});
+
+  EXPECT_EQ(probe.destination, (Endpoint{.address = std::string{PARIS_ADDRESS},
+                                         .port = PARIS_UDP_PORT}));
+  EXPECT_EQ(DatagramCodec::firstMessage<MasterProbe>(probe.payload)
+                .value_or(MasterProbe{})
+                .secret,
+            PARIS_PROBE_SECRET);
+}
+
+/**
+ * Given a server registered before the probes: no secret in its row
+ * When it sends a heartbeat
+ * Then it is refused, so it registers again with its secret
+ */
+TEST(ServersService, AHeartbeatOfAServerWithoutSecretIsRefused) {
+  MasterDatabaseFile databaseFile;
+  ServersService service{databaseFile.database()};
+  const std::string key =
+      keyOfRegisteredParis(service, CREATOR_ADDRESS, FIRST_HEARTBEAT_DATE);
+  executeStatement(databaseFile.database(), FORGET_PROBE_SECRETS_STATEMENT);
+  const KnownServer withoutSecret =
+      service.serverOfKey(key).value_or(KnownServer{});
+
+  EXPECT_FALSE(service.replaceOwnHeartbeat(withoutSecret, parisHeartbeat(),
+                                           FIRST_HEARTBEAT_DATE));
+}
+
+/**
+ * Given a registered server
  * When two heartbeats come in one second, then one a second later
  * Then one sample is kept for the first second, and one for the next
  */
@@ -390,7 +442,7 @@ TEST_F(ServersServiceFixture, EightServersBeatAtOnce) {
     std::vector<std::jthread> servers;
     servers.reserve(registered.size());
     for (const KnownServer& server : registered) {
-      servers.emplace_back([this, server, &failures] {
+      servers.emplace_back([this, &server, &failures] {
         for (std::size_t beat = 0; beat < HEARTBEATS_PER_SERVER; ++beat) {
           try {
             static_cast<void>(service().replaceOwnHeartbeat(

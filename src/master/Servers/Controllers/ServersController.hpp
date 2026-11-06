@@ -2,6 +2,7 @@
 
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
+#include "IProbeSender.hpp"
 #include "MasterDatabase.hpp"
 #include "ServersService.hpp"
 
@@ -17,7 +18,9 @@ namespace rtype::master {
  */
 class ServersController {
  public:
-  explicit ServersController(MasterDatabase& database);
+  /** @param probeSender Where the probes of the accepted heartbeats go; it
+   * must outlive the controller. */
+  ServersController(MasterDatabase& database, IProbeSender& probeSender);
 
   /**
    * @returns The answer of `POST /api/servers`: 201, `Location` naming the
@@ -35,7 +38,9 @@ class ServersController {
   /**
    * @returns The answer of `PUT /api/servers/me/heartbeat`: 200 and the
    * orders of the admins waiting for the server, an empty list until there are
-   * orders.
+   * orders; 409 for a server that registered before the probes, which must
+   * register again. An accepted heartbeat makes the master send its server a
+   * probe (ServersService::probeFor()).
    */
   [[nodiscard]] ApiResponse replaceOwnHeartbeat(const ApiRequest& request);
 
@@ -69,6 +74,7 @@ class ServersController {
 
  private:
   ServersService service_;
+  IProbeSender& probeSender_;
 };
 
 }  // namespace rtype::master

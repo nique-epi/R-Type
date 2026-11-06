@@ -33,16 +33,19 @@ using rtype::client::CONNECTING_STATUS;
 using rtype::client::ConnectionPhase;
 using rtype::client::GAME_FULL_STATUS;
 using rtype::client::GAME_IN_PROGRESS_STATUS;
+using rtype::client::GAME_NOT_FOUND_STATUS;
 using rtype::client::INVALID_ADDRESS_STATUS;
 using rtype::client::INVALID_PORT_STATUS;
 using rtype::client::LOBBY_SCREEN;
 using rtype::client::MISSING_NICKNAME_STATUS;
 using rtype::client::NICKNAME_TAKEN_STATUS;
+using rtype::client::SERVER_FULL_STATUS;
 using rtype::client::UNREACHABLE_STATUS;
 using rtype::client::testing::ACCEPTED_AS_FIRST_PLAYER;
 using rtype::client::testing::CANCEL;
 using rtype::client::testing::LAST_ADDRESS_NUMBER_TEXT;
 using rtype::client::testing::LAUNCH_ADDRESS;
+using rtype::client::testing::LAUNCH_GAME;
 using rtype::client::testing::LAUNCH_NICKNAME;
 using rtype::client::testing::LAUNCH_PORT;
 using rtype::client::testing::LAUNCH_PORT_TEXT;
@@ -90,7 +93,8 @@ TEST_F(ConnectionScreenFixture, BuildingTheScreenDropsAnEarlierAttempt) {
 /**
  * Given the connection screen, its address field selected
  * When Enter is pressed and released, and the press lasts
- * Then an attempt starts with the launch values
+ * Then an attempt starts with the launch values, the game of the launch
+ * options included
  */
 TEST_F(ConnectionScreenFixture, EnterConnectsWithTheValuesOfTheFields) {
   choose(sf::Keyboard::Key::Enter);
@@ -100,7 +104,8 @@ TEST_F(ConnectionScreenFixture, EnterConnectsWithTheValuesOfTheFields) {
                   .request = ServerConnectionCall::Request::Connect,
                   .server = {.address = std::string(LAUNCH_ADDRESS),
                              .port = LAUNCH_PORT},
-                  .nickname = std::string(LAUNCH_NICKNAME)}));
+                  .nickname = std::string(LAUNCH_NICKNAME),
+                  .game = LAUNCH_GAME}));
 }
 
 /**
@@ -406,11 +411,15 @@ INSTANTIATE_TEST_SUITE_P(
                       std::tuple(RefusalReason::GameInProgress,
                                  std::string_view(GAME_IN_PROGRESS_STATUS)),
                       std::tuple(RefusalReason::NicknameTaken,
-                                 std::string_view(NICKNAME_TAKEN_STATUS))));
+                                 std::string_view(NICKNAME_TAKEN_STATUS)),
+                      std::tuple(RefusalReason::GameNotFound,
+                                 std::string_view(GAME_NOT_FOUND_STATUS)),
+                      std::tuple(RefusalReason::ServerFull,
+                                 std::string_view(SERVER_FULL_STATUS))));
 
 /**
- * Given an attempt a server of protocol version 8 refused as
- * IncompatibleVersion, the client speaking version 7
+ * Given an attempt a server of protocol version 10 refused as
+ * IncompatibleVersion, the client speaking version 9
  * When a frame goes by
  * Then the status line names both versions, the client's first
  */
@@ -419,13 +428,14 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
-  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V7, SERVER V8"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V9, SERVER V10"), nullptr);
 }
 
 /**
  * Given a connection screen whose player connected as NOVA
  * When a new connection screen opens and the player chooses Enter at once
- * Then the attempt goes out as NOVA, to the server of the launch values
+ * Then the attempt goes out as NOVA, to the server and for the game of the
+ * launch values
  */
 TEST_F(ConnectionScreenChoiceFixture, ANewScreenStartsWithTheLastAttempt) {
   connectAs(TYPED_NICKNAME_TEXT);
@@ -438,13 +448,15 @@ TEST_F(ConnectionScreenChoiceFixture, ANewScreenStartsWithTheLastAttempt) {
       (ServerConnectionCall{.request = ServerConnectionCall::Request::Connect,
                             .server = {.address = std::string(LAUNCH_ADDRESS),
                                        .port = LAUNCH_PORT},
-                            .nickname = std::string(TYPED_NICKNAME)}));
+                            .nickname = std::string(TYPED_NICKNAME),
+                            .game = LAUNCH_GAME}));
 }
 
 /**
  * Given the server and the nickname of the launch values in the choice
  * When a connection screen opens to connect at once, as the map opens it
- * Then the attempt goes out to that server with that nickname, unasked
+ * Then the attempt goes out to that server with that nickname and that game,
+ * unasked
  */
 TEST_F(ConnectionScreenChoiceFixture, AScreenOpenedAtOnceConnectsToTheChoice) {
   reopenConnectingAtOnce();
@@ -455,7 +467,8 @@ TEST_F(ConnectionScreenChoiceFixture, AScreenOpenedAtOnceConnectsToTheChoice) {
       (ServerConnectionCall{.request = ServerConnectionCall::Request::Connect,
                             .server = {.address = std::string(LAUNCH_ADDRESS),
                                        .port = LAUNCH_PORT},
-                            .nickname = std::string(LAUNCH_NICKNAME)}));
+                            .nickname = std::string(LAUNCH_NICKNAME),
+                            .game = LAUNCH_GAME}));
 }
 
 /**

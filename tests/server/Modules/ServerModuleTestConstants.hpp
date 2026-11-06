@@ -13,6 +13,14 @@ constexpr const char* PORT_PROBE_MODULE = "port probe";
 /** @brief The database of a server a test starts, in a folder of the test. */
 constexpr std::string_view TEST_DATABASE_FILE = "results.db";
 
+/** @brief The file of commands a test gives a game process after
+ * `--configuration`, in the folder it starts in. */
+constexpr std::string_view GAME_CONFIGURATION_FILE = "games.cfg";
+
+/** @brief The token the game process a test starts shares with its
+ * supervisor, as its command line writes it. */
+constexpr std::string_view GAME_PROCESS_LINK_TOKEN = "4660";
+
 /** @brief The text the failing stage work of the tests throws. */
 constexpr const char* STAGE_FAILURE_TEXT = "a stage failed";
 
@@ -54,17 +62,6 @@ constexpr std::chrono::seconds WAIT_FOR_THREADS{5};
 /** @brief How many passes of the loop a test waits for. */
 constexpr int PASSES_TO_WAIT_FOR = 2;
 
-/** @brief Indexes of the games of a server, in the order they were created. */
-constexpr std::size_t FIRST_GAME = 0;
-constexpr std::size_t SECOND_GAME = 1;
-
-/** @brief Numbers of games a test starts the server with. */
-constexpr std::size_t ONE_GAME = 1;
-constexpr std::size_t THREE_GAMES = 3;
-
-/** @brief The most games a heartbeat to the master lists. */
-constexpr std::size_t MOST_GAMES_A_HEARTBEAT_LISTS = 64;
-
 /**
  * @brief A line that gives the state rate setting a rate above the highest one.
  */
@@ -75,6 +72,14 @@ constexpr std::string_view STATE_RATE_ABOVE_THE_HIGHEST_LINE =
  * @brief A line that clears the seed setting.
  */
 constexpr std::string_view CLEAR_THE_SEED_LINE = "set seed none";
+
+/**
+ * @brief A line that gives the state encoding a value that names no encoding,
+ * and one that asks for every state in full.
+ */
+constexpr std::string_view UNKNOWN_STATE_ENCODING_LINE =
+    "set state-encoding fast";
+constexpr std::string_view FULL_STATE_ENCODING_LINE = "set state-encoding full";
 
 /** @brief The only byte of the datagram a test queues for its client. */
 constexpr std::byte QUEUED_BYTE{0x2A};

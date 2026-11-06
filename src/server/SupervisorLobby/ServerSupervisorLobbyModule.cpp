@@ -22,6 +22,7 @@
 #include "PlaceKind.hpp"
 #include "ProtocolConstants.hpp"
 #include "RequestReading.hpp"
+#include "SeatRequest.hpp"
 #include "ServerConstants.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
@@ -38,6 +39,16 @@ network::OutgoingDatagram datagramTo(const network::Endpoint& destination,
   return network::OutgoingDatagram{.destination = destination,
                                    .payload = network::DatagramCodec::encode(
                                        network::PacketHeader{}, message)};
+}
+
+/** @returns Who opens the game a request of @p game starts: its sender
+ * for a NewGame, nobody otherwise. */
+std::optional<network::Endpoint> creatorOf(const SeatRequest& request,
+                                           const network::GameChoice& game) {
+  if (game.kind == network::GameChoiceKind::NewGame) {
+    return request.sender;
+  }
+  return std::nullopt;
 }
 
 }  // namespace
@@ -95,7 +106,9 @@ void ServerSupervisorLobbyModule::answer(
                              .cookie = cookies_.issue(datagram.sender, now)}));
     return;
   }
-  answerValidRequest(datagram.sender);
+  answerValidRequest(
+      SeatRequest{.sender = datagram.sender, .nickname = request->nickname},
+      request->game);
 }
 
 void ServerSupervisorLobbyModule::refuseAnotherVersion(
@@ -110,22 +123,23 @@ void ServerSupervisorLobbyModule::refuseAnotherVersion(
 }
 
 void ServerSupervisorLobbyModule::answerValidRequest(
-    const network::Endpoint& sender) {
-  const GamePlace place = registry_->placeForNewPlayer();
+    const SeatRequest& request, const network::GameChoice& game) {
+  const GamePlace place = registry_->placeFor(request, game);
   switch (place.kind) {
     case PlaceKind::Redirect:
-      sender_->queueDatagram(
-          datagramTo(sender, network::ConnectionRedirect{.port = place.port}));
+      sender_->queueDatagram(datagramTo(
+          request.sender, network::ConnectionRedirect{.port = place.port}));
       break;
     case PlaceKind::Wait:
       break;
     case PlaceKind::Open:
-      static_cast<void>(spawner_->openGame());
+      if (spawner_->openGame(creatorOf(request, game))) {
+        static_cast<void>(registry_->placeFor(request, game));
+      }
       break;
-    case PlaceKind::Full:
-      sender_->queueDatagram(
-          datagramTo(sender, network::ConnectionRefused{
-                                 .reason = network::RefusalReason::GameFull}));
+    case PlaceKind::Refuse:
+      sender_->queueDatagram(datagramTo(
+          request.sender, network::ConnectionRefused{.reason = place.refusal}));
       break;
   }
 }

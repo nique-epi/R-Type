@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
 #include "Heartbeat.hpp"
 #include "PacketHeader.hpp"
@@ -19,6 +20,11 @@
     std::uint64_t cookie, const rtype::network::PacketHeader& header = {});
 
 /** @returns A datagram holding a ConnectionRequest that carries @p cookie and
+ * asks for @p game, as PLAYER_NICKNAME. */
+[[nodiscard]] std::vector<std::byte> requestDatagramFor(
+    const rtype::network::GameChoice& game, std::uint64_t cookie);
+
+/** @returns A datagram holding a ConnectionRequest that carries @p cookie and
  * asks for @p nickname. */
 [[nodiscard]] std::vector<std::byte> requestDatagramOf(
     const std::string& nickname, std::uint64_t cookie);
@@ -31,6 +37,15 @@
 /** @returns A datagram holding a ConnectionRequest without a cookie, then a
  * ServerInformationRequest. */
 [[nodiscard]] std::vector<std::byte> requestAndInformationRequestDatagram();
+
+/** @returns A datagram holding a probe of the master with @p header; the
+ * sorter reads no payload, so its secret and token are 0. */
+[[nodiscard]] std::vector<std::byte> probeDatagram(
+    const rtype::network::PacketHeader& header = {});
+
+/** @returns A datagram holding a ServerInformationRequest, then a probe of the
+ * master. */
+[[nodiscard]] std::vector<std::byte> informationRequestAndProbeDatagram();
 
 /** @returns A datagram holding a ReadyState, which only a player sends. */
 [[nodiscard]] std::vector<std::byte> readyDatagram(

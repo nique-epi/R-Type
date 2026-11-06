@@ -35,6 +35,14 @@ constexpr std::string_view NICKNAME_OPTION = "-n";
 constexpr std::string_view DEFAULT_NICKNAME = "PILOT";
 
 /**
+ * @brief Launch option followed by the game to ask the server for: the value
+ * NEW_GAME_VALUE opens a game, a number joins the game of that number. Without
+ * it the client takes any game that has a seat.
+ */
+constexpr std::string_view GAME_OPTION = "--game";
+constexpr std::string_view NEW_GAME_VALUE = "new";
+
+/**
  * @brief The file of commands the client reads when it starts; a missing file
  * is not an error.
  */

@@ -167,9 +167,9 @@ Alternative considered: an executable that exports its symbols, with plugins lin
 
 Alternative considered: one exported function that returns a table of function pointers with a version field, as the game libraries of Quake 2 do (`GetGameAPI`). It needs a C-compatible description of a module and of its services, where the plugin here is the `IModule` class of the program. The single function keeps the idea of reading the version before anything else, with the module the engine already has.
 
-A plugin reaches the code of the program it must not copy through an interface. The games module provides `IGameBuses`, the bus of each game, so the `game-statistics` plugin of the server follows every game with one virtual call and holds none of the code of the games.
+A plugin reaches the code of the program it must not copy through an interface. The games module provides `IGameEvents`, the bus of the game, so the `game-statistics` plugin of the server follows the game with one virtual call and holds none of the code of the game.
 
-Alternative considered: a game module that a plugin adds to every game, through a list of extra game modules the games module reads when it creates its games. It hands the plugin the context of each game (its roster, its settings), but it adds a way into the creation of the games, and the module of the plugin is destroyed before the games, whose modules would still hold its code and point to its state.
+Alternative considered: a game module that a plugin adds to the game, through a list of extra game modules the games module reads when it creates its game. It hands the plugin the context of the game (its roster, its settings), but it adds a way into the creation of the game, and the module of the plugin is destroyed before the game, whose modules would still hold its code and point to its state.
 
 How to write a plugin is on the [Modules](/R-Type/modules/#write-a-plugin) page.
 
@@ -311,6 +311,12 @@ Alternative considered: peer to peer, with every peer running the game. It needs
 
 The second part answers each point (see [Version 2](/R-Type/protocol/#version-2)): guaranteed messages replaced the three copies in version 2, and version 5 delivers them in order; an input is to be repeated until the server confirms it, and states are to be sent as differences. The state already confirms the newest input of each player, which is what lets the client replay its newest inputs on top of a state and correct its ship. Prediction and interpolation themselves are client work, placed in `client/Prediction` (see [Project layout](/R-Type/project-layout/)).
 
+## Server roles
+
+`r-type_server` runs one game per process. The supervisor, the default mode, reads `server.cfg`, listens on the port the players know, starts a `--mode game` process for each game and sends each player to one; it alone talks to the master and answers the information requests. A game process holds only what one game needs and reads only the lines of `server.cfg` its supervisor hands it, through a file of its own. Each game reports to the supervisor what it holds, its state, its players and its measures, in a `GameStatus` every second. So a game that crashes stops its own players only, a setting or a plugin of the games never runs in the supervisor, and the master hears one server, not one per game. nginx splits its processes the same way: its master process reads and evaluates the configuration and maintains the workers, which handle the requests. The code is described in [Server](/R-Type/server/#the-three-roles-supervisor-game-and-master).
+
+Alternative considered: a mode that hosts every game in the process that reads `server.cfg`, which the server had before the supervisor. It needs no second process and no link between them, but an exception in one game stops them all, a slow game slows the others, and a second way to host games has to be kept working next to the supervisor; it was removed.
+
 ## Master
 
 The master lists the game servers and directs them: each server tells it the games it hosts, a player reads that list, an admin sends orders. It never runs a game and nothing of a game goes through it, so a game never waits for it and goes on when it stops. Its code is described in [Master](/R-Type/master/).
@@ -332,7 +338,7 @@ Alternative considered: UDP with messages of our own. It keeps one transport for
 
 The master is `r-type_server --mode master`. The subject lists two binaries, `r-type_server` and `r-type_client`: the master ships inside the first, with nothing more to build or deliver. It reuses what the server already has, the stop on Ctrl-C and SIGTERM, the configuration file and the journal, so `main()` runs either program through one function. A failure stays apart all the same, since the master and a server are two processes: the master that crashes stops no game.
 
-The cost is that the server binary holds the code of the master, cpp-httplib and nlohmann-json included, even where it only hosts games. `rtype_forbid_reachable_links` keeps the master away from SFML, Asio, the game and the code of the server, through every link it reaches.
+The cost is that the server binary holds the code of the master, cpp-httplib and nlohmann-json included, even where it only hosts games. `rtype_forbid_reachable_links` keeps the master away from SFML, Asio, the game and the code of the server, through every link it reaches, except the two network targets that hide Asio behind their headers, `rtype_network_context` and `rtype_network_udp_socket`, through which it sends its probes over UDP.
 
 Alternative considered: a third binary, `r-type_master`. It keeps the server smaller and the master deployable alone, but it is a binary the subject does not list, one more to build, package and ship, and it would have needed the stop and the launch of the server moved into the engine first.
 

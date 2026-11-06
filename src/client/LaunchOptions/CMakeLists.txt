@@ -10,10 +10,12 @@ target_link_libraries(rtype_client_launch_options
     rtype_engine_launch_arguments
     rtype_logging
     rtype_network_conditions
+    rtype_network_connection_request
     rtype_network_exceptions
     rtype_network_transport
   PRIVATE
     rtype_client_constants
+    rtype_client_platform
     rtype_engine_paths
     rtype_network_constants
     rtype_network_protocol

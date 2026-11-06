@@ -1,9 +1,7 @@
 #pragma once
 
 #include <functional>
-#include <string>
 #include "AssetLibrary.hpp"
-#include "Endpoint.hpp"
 #include "EntityAppearances.hpp"
 #include "EntityMessageQueue.hpp"
 #include "GameWindow.hpp"
@@ -13,6 +11,7 @@
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
 #include "PlayerSettings.hpp"
+#include "ServerChoice.hpp"
 #include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
 #include "SettingsService.hpp"
@@ -22,9 +21,9 @@ namespace rtype::client {
 
 /**
  * @brief What the screens of the client are built from: the services of the
- * modules listed before the screens module (the sound included), and the server
- * and the nickname the first connection screen starts with. Every reference
- * must outlive the screens.
+ * modules listed before the screens module (the sound included), and the
+ * server, the nickname and the game the first connection screen starts with.
+ * Every reference must outlive the screens.
  *
  * A std::reference_wrapper has no default constructor, so this struct is
  * only ever built with designated initializers naming every member: the
@@ -53,8 +52,9 @@ struct ScreenServices {
    * one of them, for the server map. */
   std::reference_wrapper<IServerCatalog> serverCatalog;
   std::reference_wrapper<IGameCatalog> gameCatalog;
-  network::Endpoint server;
-  std::string nickname;
+  /** @brief The server, the nickname and the game the first connection
+   * screen starts with. */
+  ServerChoice choice;
 };
 
 }  // namespace rtype::client

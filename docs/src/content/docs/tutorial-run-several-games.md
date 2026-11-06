@@ -1,117 +1,108 @@
 ---
 title: "Tutorial: run a server with several games"
-description: A step-by-step tutorial that runs one server hosting several games, fills them, reads what happened in the journal, and runs several servers side by side.
+description: A step-by-step tutorial that runs one supervisor, fills a first game until the next player gets a second game process, reads what happened in the journals, and runs several servers side by side.
 ---
 
-This tutorial runs one `r-type_server` that hosts several games at once, fills a first game until the next player lands in a second one, and reads what happened in the journal. It writes no code. The reasoning behind what you will see is in [Several games at once](/R-Type/server/#several-games-at-once).
+This tutorial runs one `r-type_server`, the supervisor, fills a first game until the next player gets a game of its own, and reads what happened in the journals. It writes no code. The reasoning behind what you will see is in [Supervisor and game processes](/R-Type/server/#supervisor-and-game-processes).
 
-Every server command below was run before this page was written, and the lines come from the journals of those runs; the players of those runs were scripted over UDP, speaking the [protocol](/R-Type/protocol/), rather than client windows. You need the project built (see the [README](https://github.com/nique-epi/R-Type#readme)).
+The commands of steps 1 and 2 were run on 6 November 2026 before this page was written, and their lines come from the journals of that run; the players were `load_test_bots` (see [Network](/R-Type/network/#load-test-bots-load_test_bots)) rather than client windows. The other steps were not run for this page: what they say is read from the code. You need the project built (see the [README](https://github.com/nique-epi/R-Type#readme)).
 
-The server has **no dashboard yet**: the journal is the only way to see its games, and it does not number them, though it gives how many are in progress every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)). A dashboard needs the master to know the games of each server, and the master does not hear from the servers yet (see [Master](/R-Type/master/)); this page will gain its steps once it does.
+The server has **no dashboard yet**: the journals are the only way to see its games, one for the supervisor and one per game. A supervisor that has a `master-url` and a `master-key` tells the master its games, and `GET /api/servers/{id}/games` lists them (see [Master](/R-Type/master/#listing-the-games-of-a-server)).
 
 ## What you will have at the end
 
 | Step | You do | You see |
 |---|---|---|
-| 1 | Start one server | Eight games ready |
-| 2 | Connect five players | The fifth lands in a second game |
-| 3 | Start a game, then connect one more player | The new player waits in another game |
-| 4 | Change the number of games | The server refuses the player above the new limit |
-| 5 | Start two servers | Two journals, on two ports |
+| 1 | Start the supervisor | It listens, and runs no game yet |
+| 2 | Connect four players, then a fifth | A first game process for the four, a second one for the fifth |
+| 3 | Start a game, then connect one more player | The new player gets another game |
+| 4 | Fill every place | The supervisor refuses the player above the limit |
+| 5 | Start two supervisors | Two journals, on two ports |
 
-## Step 1: start the server
+## Step 1: start the supervisor
 
 From the repository root, where the build writes `r-type_server`:
 
 ```bash
-./r-type_server --mode server -p 4242 --seed 42
+./r-type_server -p 4242 --seed 42
 ```
 
-There is nothing to ask for: a server always hosts `DEFAULT_HOSTED_GAME_COUNT` (8) games, created when it starts and kept until it stops. `--seed` is optional and makes the Bydos come out the same way at each launch. Each line goes both to the terminal and to the journal `r-type_server.log`, next to the executable (each line starts with a time, left out here):
+`--mode supervisor` is the default, so it needs no option. `--seed` is optional and makes the Bydos come out the same way in every game. Each line goes both to the terminal and to the journal of the supervisor, `r-type_server.log` next to the executable (each line starts with a time, left out here):
 
 ```text
 [INFO ] [Server] - server starting
 [INFO ] [Server] - listening on UDP port 4242
-[INFO ] [Storage] - results database /path/to/r-type_server_4242.db
-[INFO ] [Server] - entity sheets /path/to/assets/entities: 5 types
-[INFO ] [Server] - waves file /path/to/assets/waves/waves.toml: 3 difficulties
-[INFO ] [Server] - games play normal, not vanilla
-[INFO ] [Server] - not vanilla: a seed is set, so the waves can be known in advance
-[INFO ] [WaveSpawner] - wave spawning starts from the seed 42
-[INFO ] [WaveSpawner] - wave spawning starts from the seed 65578
+[INFO ] [Supervisor] - configuration of the games written to /path/to/r-type_games_4242.cfg: 1 lines
+[INFO ] [Server] - no master-url or master-key: the server runs alone
+[INFO ] [Server] - server.cfg not found, the defaults apply
 ```
 
-The `WaveSpawner` line appears eight times, once per game. The seed of each game is the seed given plus `GAME_SEED_STRIDE` (65536) times its rank from 0, so 42, then 65578, then 131114. It is the one line that shows how many games the server holds.
+The supervisor runs no game yet: it starts one when a player needs it, up to `MAXIMUM_RUNNING_GAMES` (8). The one line of `r-type_games_4242.cfg` is `set seed 42`: the seed is a setting of the games, so the supervisor hands it to every game it starts (see [Configuration](/R-Type/server/#configuration-servercfg)).
 
 ## Step 2: fill the first game
 
-Start five clients, in five terminals, each with its own nickname, and press CONNECT in each:
+Start four clients, in four terminals, each with its own nickname, and press CONNECT in each:
 
 ```bash
 ./r-type_client -n ONE
 ```
 
-A nickname is unique on the server, whichever game holds it: a second `ONE` is refused with `NicknameTaken`. The journal shows who joined:
+The supervisor starts a game process for the first one and sends the others to it:
 
 ```text
-[INFO ] [Lobby] - player 1 joined from 127.0.0.1 port 56370
-[INFO ] [Lobby] - player 2 joined from 127.0.0.1 port 56052
-[INFO ] [Lobby] - player 3 joined from 127.0.0.1 port 54222
-[INFO ] [Lobby] - player 4 joined from 127.0.0.1 port 65219
-[INFO ] [Lobby] - player 1 joined from 127.0.0.1 port 58434
+[INFO ] [Supervisor] - game 0 started on port 60884
+[INFO ] [Supervisor] - game 0 is ready
 ```
 
-A game holds `MAXIMUM_PLAYERS` (4) players, so the fifth starts a second one: its number is 1 again. That number is its place in its own game, and the journal names no game, so a second "player 1" is how you read it. The same number also picks the color of the ship, so the first and the fifth player have the same color without ever meeting.
+Game 0 writes its own journal, `r-type_game_0.log` next to the executable, which holds what the journal of a server held, for that game only. Its three commands are the line of the file and the port and the database its command line forces:
 
-Now mark every client ready. The games start one by one, each with its own players:
+```text
+[INFO ] [Server] - listening on UDP port 60884
+[INFO ] [WaveSpawner] - wave spawning starts from the seed 42
+[INFO ] [Server] - configuration read from /path/to/r-type_games_4242.cfg: 3 commands run
+[INFO ] [Lobby] - player 1 joined from 127.0.0.1 port 60823
+[INFO ] [Lobby] - player 2 joined from 127.0.0.1 port 57161
+[INFO ] [Lobby] - player 3 joined from 127.0.0.1 port 56508
+[INFO ] [Lobby] - player 4 joined from 127.0.0.1 port 59064
+```
+
+A game holds `MAXIMUM_PLAYERS` (4) players, so connect a fifth client a few seconds later: the supervisor starts a second process for it, which writes `r-type_game_1.log`, where the fifth player is player 1 again:
+
+```text
+[INFO ] [Supervisor] - game 1 started on port 52082
+[INFO ] [Supervisor] - game 1 is ready
+```
+
+The number of the journal, 0 then 1, grows with each game the supervisor starts. The master and the players read another number, the place of the game, from 1 to 8: game 0 holds place 1 and is `GAME 1`, game 1 holds place 2. A nickname is unique in a game, not on the supervisor.
+
+Now mark every client ready. Each game starts as soon as all of its players are ready, however few, and writes it in its own journal:
 
 ```text
 [INFO ] [Instances] - game started, players connected: 4
-[INFO ] [Instances] - game started, players connected: 1
 ```
 
-Each game waits only for its own players, and starts as soon as all of them are ready, however few. Close the clients: each game finishes on its own once its last player leaves, and waits for players again with a new world.
+Close the clients: each game finishes once its last player leaves, then its process stops by itself 10 s later (`EMPTY_GAME_GRACE`), and the supervisor writes `game 1 ended` and frees its place.
 
 ## Step 3: join while a game runs
 
-A new player never joins a game in progress, even one with free seats. Connect one client and mark it ready, so its game starts with one player, then connect a second client:
+A new player never joins a game in progress, even one with free seats. Connect one client and mark it ready, so its game starts with one player, then connect a second client: the supervisor finds no game waiting for players, so it starts another process for it. Two friends who connect while nothing else happens land together, and two who connect around the start of a game may not, unless they choose their game: a client started with `--game new` opens a game of its own, and one started with `--game <n>` joins the game the master lists as `GAME n`, or is refused with `REFUSED: NO SUCH GAME`, `REFUSED: GAME IN PROGRESS` or `REFUSED: GAME FULL` (see [Supervisor](/R-Type/protocol/#supervisor) on the protocol page).
 
-```text
-[INFO ] [Lobby] - player 1 joined from 127.0.0.1 port 53106
-[INFO ] [Instances] - game started, players connected: 1
-[INFO ] [Lobby] - player 1 joined from 127.0.0.1 port 57591
-```
+## Step 4: fill every place
 
-The second client waits alone in the next game, while the first one plays. `Games::joinable()` picks the first game waiting for players with a free seat, so two friends who connect while nothing else happens land together, and two who connect around the start of a game may not. There is no way yet to choose a game.
+A client that takes any game is refused only when no game waits with a free seat and its eight places are taken: the player gets `ConnectionRefused` (`ServerFull`), which the client shows on its connection screen as `REFUSED: SERVER FULL`. `MAXIMUM_RUNNING_GAMES` is a constant (`src/server/SupervisedGames/SupervisedGamesConstants.hpp`), so changing it takes a build; no launch option or line of `server.cfg` changes it.
 
-A server refuses a player only when no game waits with a free seat. Of 33 players connected to a server of eight games, 32 are accepted, and the last one is refused with `GameFull`. When a game in progress comes first, the refusal is `GameInProgress` instead: the first game answers the refusal, in the state it is in. The client tells the player on its connection screen.
+Each game runs in a process of its own, on its own simulation thread, so a slow game does not slow the others, and an exception a system of one game throws stops only that process: the supervisor writes `game <n> crashed` in its journal, at the `error` level. The journal of each game gives the cost of its ticks every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)).
 
-## Step 4: change the number of games
+## Step 5: run two supervisors side by side
 
-No launch option changes the number of games, and neither does a file: it is a constant, so changing it takes a build. In `src/server/ServerConstants.hpp`:
+Several supervisors can run on one machine, each on its own port, with nothing shared between them. Each keeps its leaderboard in a file named after its port, `r-type_server_4251.db` and `r-type_server_4252.db`, and writes the file of its games after its port, `r-type_games_4251.cfg` and `r-type_games_4252.cfg`, next to the executable. Give each its own journal, or their lines mix in one file:
 
-```cpp
-constexpr std::size_t DEFAULT_HOSTED_GAME_COUNT = 2;
+```bash
+./r-type_server -p 4251 --log-file first.log
 ```
 
 ```bash
-cmake --workflow --preset build
-```
-
-The server now creates two games, so the `WaveSpawner` line appears twice, and the ninth player is refused. Put the value back before you commit. A test that needs another number sets `GamesSettings::gameCount` itself, so no test depends on this constant.
-
-More games cost more per tick, and the journal gives that cost every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)). Every game of one server runs on the simulation thread, one after the other, so a slow game slows the others, and an exception a system of one game throws stops the server. To isolate them, run `./r-type_server --mode supervisor`: each game then runs in a process of its own (see [Supervisor and game processes](/R-Type/server/#supervisor-and-game-processes)). The tick loop writes a line at the `warn` level when ticks stall; if you see `stalls since the previous report` in the journal, the server is holding more than the machine can run.
-
-## Step 5: run two servers side by side
-
-Several servers can run on one machine, each on its own port, with nothing shared between them. Each keeps its leaderboard in a file named after its port, `r-type_server_4251.db` and `r-type_server_4252.db`, next to the executable. Give each its own journal, or their lines mix in one file:
-
-```bash
-./r-type_server --mode server -p 4251 --log-file first.log
-```
-
-```bash
-./r-type_server --mode server -p 4252 --log-file second.log
+./r-type_server -p 4252 --log-file second.log
 ```
 
 Each client names the server it joins:
@@ -120,19 +111,14 @@ Each client names the server it joins:
 ./r-type_client -p 4252 -n TWO
 ```
 
-```text
-[INFO ] [Server] - listening on UDP port 4252
-[INFO ] [Lobby] - player 1 joined from 127.0.0.1 port 54489
-```
-
-Two servers know nothing of each other: a nickname is unique per server, and a full server sends nobody to the other one. Stop each with Ctrl-C: it tells its players it shuts down, writes `server stopped`, and exits with code 0.
+Two supervisors know nothing of each other, and a full one sends nobody to the other. Their games still write `r-type_game_0.log`, `r-type_game_1.log` and so on next to the executable, whichever supervisor started them, so the lines of their games mix in the same files: the journal is opened to append. Stop each supervisor with Ctrl-C: it tells its games to stop, which tell their players, writes `server stopped`, and exits with code 0.
 
 ## If it does not work
 
 | You see | Cause | Fix |
 |---|---|---|
-| `Cannot open a UDP socket on 0.0.0.0 port 4242: Address already in use`, exit code 1 | Another server holds the port | Give another port with `-p`, or stop the other server |
-| The server stops at launch, naming `waves.toml` or `No assets folder found` | `assets/waves/waves.toml` was moved, or the executable was copied away from `assets/` | Put them back: see [Writing the waves file](/R-Type/waves-file/) |
-| `SERVER UNREACHABLE` on the client after 5 seconds | The server is not running, or the client names another port | Check `listening on UDP port` in the journal, and `-p` on the client |
-| `REFUSED: CALLSIGN TAKEN` on the client | Another player of that server holds it, or left less than 20 s ago without saying so | Pick another nickname, or wait for the seat to be freed |
-| The lines of two servers in one journal | Both write to the default `r-type_server.log` next to the executable, whatever folder they were started in | Give each its own `--log-file` |
+| `Cannot open a UDP socket on 0.0.0.0 port 4242: Address already in use`, exit code 1 | Another supervisor holds the port | Give another port with `-p`, or stop the other one |
+| `game 0 crashed while …` in the journal of the supervisor, naming `waves.toml` or `No assets folder found` in `r-type_game_0.log` | `assets/waves/waves.toml` was moved, or the executable was copied away from `assets/`; the supervisor reads neither, so only its games stop | Put them back: see [Writing the waves file](/R-Type/waves-file/) |
+| `SERVER UNREACHABLE` on the client after 5 seconds | The supervisor is not running, or the client names another port | Check `listening on UDP port` in the journal, and `-p` on the client |
+| `REFUSED: CALLSIGN TAKEN` on the client | Another player of that game holds it, or left less than 20 s ago without saying so | Pick another nickname, or wait for the seat to be freed |
+| The lines of two supervisors in one journal | Both write to the default `r-type_server.log` next to the executable, whatever folder they were started in | Give each its own `--log-file` |

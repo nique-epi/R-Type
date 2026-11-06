@@ -17,7 +17,7 @@ The repository builds two binaries on seven libraries, and the server binary run
 |---|---|---|
 | `r-type_client` | what the player sees, hears and presses | server or master code |
 | `r-type_server` | the lobby, the games running in parallel, the link with the master | SFML, Asio |
-| `src/master` | the master, run by `r-type_server --mode master`: the list of game servers, their status, administration, the HTTP API | SFML, Asio, `rtype_game`, server code |
+| `src/master` | the master, run by `r-type_server --mode master`: the list of game servers, their status, administration, the HTTP API | SFML, Asio outside `rtype_network_context` and `rtype_network_udp_socket`, `rtype_game`, server code |
 | `rtype_game` | what happens during a match | SFML, Asio, `rtype_network` |
 | `rtype_network` | everything that crosses the wire | SFML, `rtype_engine`, `rtype_game` |
 | `rtype_engine` | the building blocks any game needs | SFML, Asio, `rtype_game`, `rtype_network` |
@@ -26,7 +26,7 @@ The repository builds two binaries on seven libraries, and the server binary run
 | `rtype_identifiers` | the values the engine and the wire must agree on; every other target may link it | anything else |
 | `rtype_storage` | opening a SQLite file and applying its numbered migrations; the programs that keep a database link it | anything else, but SQLiteCpp |
 
-`rtype_logging`, `rtype_concurrency` and `rtype_identifiers` stand alone because `rtype_network` may not link `rtype_engine`, and code on both sides of that line writes logs, hands data from one thread to another and names entities by the same ids. A forbidden link fails the CMake configure step (`rtype_forbid_links` in the root `CMakeLists.txt`); for the libraries of the master, `rtype_forbid_reachable_links` follows every link they reach, `PRIVATE` ones included.
+`rtype_logging`, `rtype_concurrency` and `rtype_identifiers` stand alone because `rtype_network` may not link `rtype_engine`, and code on both sides of that line writes logs, hands data from one thread to another and names entities by the same ids. A forbidden link fails the CMake configure step (`rtype_forbid_links` in the root `CMakeLists.txt`); for the libraries of the master, `rtype_forbid_reachable_links` follows every link they reach, `PRIVATE` ones included, except the private link to Asio of the two network targets that hide it behind their headers (`RTYPE_ASIO_HIDING_TARGETS`: `rtype_network_context` and `rtype_network_udp_socket`).
 
 ## Where does a new class go?
 
@@ -53,7 +53,7 @@ The cases where people hesitate:
 | The heartbeat sent to the master | `src/server/Master` | only the server sends it; the message format lives in `src/network/Master` |
 | A new protocol message | `src/network/Protocol` | one struct per message, its encoding next to it, then a row in [Protocol](/R-Type/protocol/#messages) |
 | A fake transport that loses datagrams | `tests/doubles` | test doubles are never built into a program |
-| A feature of the server or the client you can switch on, off or replace (a sound, a lobby, a metrics reporter) | `src/server/<Name>/` or `src/client/<Name>/` | it is a module: its class implements `IModule` and is listed in `serverModules()` or `clientModules()`, see [Adding a module](#adding-a-module) |
+| A feature of the server or the client you can switch on, off or replace (a sound, a lobby, a metrics reporter) | `src/server/<Name>/` or `src/client/<Name>/` | it is a module: its class implements `IModule` and is listed in `gameProcessModules()`, `supervisorModules()` or `clientModules()`, see [Adding a module](#adding-a-module) |
 
 ## The libraries
 
@@ -145,17 +145,17 @@ src/network/
 
 ### Server
 
-`src/server` builds `r-type_server`: who plays where, and how the state reaches them. Every game owns its `World` and its event bus, and the games of one server run one after the other on the simulation thread; the network thread receives and sends; threads only talk through queues. With `--mode supervisor` the same binary runs no game: it starts one `r-type_server` process per game (see [Server](/R-Type/server/#supervisor-and-game-processes)).
+`src/server` builds `r-type_server`: who plays where, and how the state reaches them. The binary has three roles (see [Server](/R-Type/server/#the-three-roles-supervisor-game-and-master)): the supervisor, the default, runs no game and starts one `r-type_server --mode game` process per game; a game process owns its game, its `World` and its event bus, run on its simulation thread; the master lists the servers. In each process the network thread receives and sends, and threads only talk through queues.
 
 ```
 src/server/
-├── Modules/          the list of modules, nothing else
+├── Modules/          the list of modules of each role, and the rule that hands the lines of the games over
 ├── Logger/           the logger module
 ├── Network/          the network module: the socket, the network thread and the simulation thread; Rejections/, the counts of the datagrams it rejects and their report
-├── Games/            the games module: the games, where a new player goes, the modules of each game
+├── Games/            the games module: the game of a game process, the modules of a game, where the supervisor sends a new player
 ├── GameStatistics/   the game-statistics plugin: a CSV row per Bydo killed and the total of each game
-├── Lobby/            the lobby module: players not in a game; list, create, join, chat
-├── Information/      the information module: the name of the server, and the answer to who asks what it is
+├── Lobby/            the lobby module: players not in a game; list, create, join
+├── Information/      the information module of the supervisor: the name of the server, and the answer to who asks what it is
 ├── Metrics/          the metrics module: Measures/, tick time, counts of games, players and entities; Report/, the report and its lines; the traffic of the socket; the round trip of each player
 ├── Instances/        one GameInstance per game, what a game hosts whatever its rules; Context/, what it shares with its modules, split into Interfaces/ and Setup/
 ├── Rules/            the rtype rules module: Match/, the states, the tick and the world of a match; Players/, the lives, score and ship of each player
@@ -164,18 +164,19 @@ src/server/
 ├── Spawning/         when and where the enemies and missiles appear
 ├── Exceptions/       the root exception of the server, errors of the waves file
 ├── Platform/         what differs between Windows, macOS and Linux, and the stop signals
-├── LaunchOptions/    port, name, limits, master address
+├── LaunchOptions/    the options of the supervisor and of a game process: port, seed, database, link to the supervisor
 ├── Results/          the results module: what each game leaves, and the leaderboard requests
+├── Chat/             the chat module of a game: relays the lines of its players, one a second each
 ├── Processes/        starting child processes behind an interface (Boost.Process v2), and tying their life to the program that started them
-├── SupervisedGames/  the supervisor's games module: the registry of the game processes, starting and stopping them
+├── SupervisedGames/  the supervisor's games module: Registry/, what it knows of each game process and the seats held in them; Launch/, starting one and the file of commands of the games; Stopping/, ending them all; Status/, reading what a game reports; at the root, what the supervisor tells of them (report, watch)
 ├── SupervisorLobby/  the supervisor's lobby module: challenge, redirect or refuse a player
 ├── SupervisorLink/   the link module of a game process: its status to the supervisor, and when to stop
-├── Master/           the master module: registration and heartbeats, on the MasterLink thread
+├── Master/           the master module of the supervisor: registration and heartbeats, on the MasterLink thread, and the token of the probes
 ├── AdminConsole/     kick and close a game from the terminal
 └── Storage/          the storage module: Archive/, the thread that owns the file; Database/, the file and its SQL
 ```
 
-`Modules` (the list that assembles the modules), `Logger`, `Network` (the network module, which starts and stops the threads, and in `Rejections/` counts the datagrams the network thread rejects and reports them in the journal), `Games` (the games module, the rule that places a new player, the modules of each game, the entity sheets its games are made from, which the lobby reads, the rule that says whether its games are vanilla, the games as the master lists them in `HostedGames`, the farewell it sends when the server stops, and `IGameBuses`, the bus of each game for a module or a plugin that follows them), `GameStatistics` (the `game-statistics` plugin, built as a shared library and loaded by a `plugin` line: `GameTally` follows the bus of a game, `StatisticsSheet` keeps the rows not written yet), `Lobby` (the lobby module, which answers the connection requests only), `Information` (the information module, which declares the name of the server and answers the information requests with how full its games are), `Metrics` (the metrics module: in `Measures/` the durations of the ticks and the census of the games, in `Report/` the newest report and its lines in the journal), `Instances` (one `GameInstance` per game, run on the simulation thread like the rest, which installs the modules of a game and holds the inputs of its players for the input delay, and in `Context/` what a game shares with its modules: the interfaces of the modules in `Interfaces/`, the context, settings and hooks a game gives them in `Setup/`), `Rules` (the `RtypeRulesModule`, which holds the states of a game, its tick and its rules with `GameFlow`, runs the systems of the world, and keeps the score and the lives of its players), `Replication` (the replication module, which tells the players: in `Announcements/Milestones/` the waiting room announcer, the announcement of the ship of each new player and the announcer of the end of a game, in `Announcements/Streams/` the world state sender and the broadcaster of the game events, and in `Wire/` how they are written), `Sessions` (in `Tracking/` the classes that read the datagrams of the players of a game, keep their ready state and newest input, close their sessions, send their heartbeats and deliver a message to every player, once or guaranteed, and in `Roster/` the roster of the players, the session header of every datagram to a player and `SentStates`, the states sent to a player and the one it acknowledged; no other folder of `src/server` is linked by it), `Results` (the results module of a game: `GameResultKeeper` records what each game leaves, `LeaderboardDesk` answers the leaderboard requests), `Master` (the master module: `HeartbeatJob`, which registers the server with the master and sends its heartbeats on the MasterLink thread), `Storage` (the storage module: in `Archive/` the thread that owns the SQLite file of the server and the queues that reach it, in `Database/` the file, its tables and its queries), `Spawning` (the wave spawner, the reader of the waves file and the weapon system), `Platform`, `LaunchOptions` and `Exceptions` exist today; the names of the modules sit in `ModuleConstants.hpp`, next to `ServerConstants.hpp` in `src/server/`. Together they hold the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, a game with its states, its ready rule and the newest input of each player, which moves its ship, the metrics of the server in its journal, and the results of each game in its SQLite file.
+`Modules` (the lists that assemble the modules of the supervisor and of a game process, `gameLineRule()`, which says which lines of `server.cfg` go to the games, and its catalogue `ServerRoleConstants.hpp`, which also names the modules of the supervisor), `Logger`, `Network` (the network module, which starts and stops the threads, and in `Rejections/` counts the datagrams the network thread rejects and reports them in the journal), `Games` (the games module, `RunningGame`, the game of the process, the rule the supervisor places a new player with, the modules of a game, the entity sheets the game is made from, which the lobby reads, the rule that says whether the game is vanilla, the farewell it sends when the game process stops, and `IGameEvents`, the bus of the game for a module or a plugin that follows it), `GameStatistics` (the `game-statistics` plugin, built as a shared library and loaded by a `plugin` line: `GameTally` follows the bus of a game, `StatisticsSheet` keeps the rows not written yet), `Lobby` (the lobby module, which answers the connection requests only), `Information` (the information module of the supervisor, which declares the name of the server and answers the information requests with how full its games are), `Metrics` (the metrics module: in `Measures/` the durations of the ticks and the census of the games, in `Report/` the newest report and its lines in the journal), `Instances` (one `GameInstance` per game, run on the simulation thread like the rest, which installs the modules of a game and holds the inputs of its players for the input delay, and in `Context/` what a game shares with its modules: the interfaces of the modules in `Interfaces/`, the context, settings and hooks a game gives them in `Setup/`), `Rules` (the `RtypeRulesModule`, which holds the states of a game, its tick and its rules with `GameFlow`, runs the systems of the world, and keeps the score and the lives of its players), `Replication` (the replication module, which tells the players: in `Announcements/Milestones/` the waiting room announcer, the announcement of the ship of each new player and the announcer of the end of a game, in `Announcements/Streams/` the world state sender and the broadcaster of the game events, and in `Wire/` how they are written), `Sessions` (in `Tracking/` the classes that read the datagrams of the players of a game, keep their ready state and newest input, close their sessions, send their heartbeats and deliver a message to every player, once or guaranteed, and in `Roster/` the roster of the players, the seat of a player (`seatIndexOf()`), the session header of every datagram to a player and `SentStates`, the states sent to a player and the one it acknowledged; no other folder of `src/server` is linked by it), `Results` (the results module of a game: `GameResultKeeper` records what each game leaves, `LeaderboardDesk` answers the leaderboard requests), `Chat` (the chat module of a game: `ChatRelay` relays the lines of its players to all of them, guaranteed), `Master` (the master module of the supervisor: `HeartbeatJob`, which registers the server with the master and sends its heartbeats on the MasterLink thread, and `MasterProbeDesk`, which keeps the token of the probes of the master for the next heartbeat), `Processes` (`IProcessLauncher` and its Boost.Process implementation), `SupervisedGames` (the registry of the game processes, `SupervisedGamesReport`, which turns it into the list of the master, the measures and the occupancy, and `SupervisedGamesWatch`, which publishes them), `SupervisorLobby` (the lobby of the supervisor, which redirects a player to a game), `SupervisorLink` (the module of a game process that sends its `GameStatus` to the supervisor), `Storage` (the storage module: in `Archive/` the thread that owns the SQLite file of the server and the queues that reach it, in `Database/` the file, its tables and its queries), `Spawning` (the wave spawner, the reader of the waves file and the weapon system), `Platform`, `LaunchOptions` and `Exceptions` exist today; the names of the modules sit in `ModuleConstants.hpp`, next to `ServerConstants.hpp` and `StateEncoding.hpp`, the value of the `state-encoding` setting, in `src/server/`. Together they hold the network thread and the simulation thread, the waiting room, the start of the game, the world state, the game events and the end of a game sent to the players (see [Server](/R-Type/server/)), the timer resolution the server asks Windows for, the port and seed read at launch, the players let in, the Bydos appearing and moving, the missiles the players fire, a game with its states, its ready rule and the newest input of each player, which moves its ship, the metrics of the server in its journal, and the results of each game in its SQLite file.
 
 ### Client
 
@@ -261,7 +262,7 @@ Every folder of this tree exists today; some of what the comments name is not wr
 
 ### Master
 
-`src/master` holds the master, the program `r-type_server --mode master` runs: it lists the game servers and their games, records their heartbeats, and will run the administration; the web site of `web/` calls its API from a server of its own. Its folders are libraries, and only the server binary links them, so the master never links SFML, Asio, `rtype_game` or the code of the server. Today it creates the game servers with their keys, takes their registration and their heartbeats, keeps the status of each, lists the registered servers, and the games, the samples and the statuses of a server, and answers `GET /api/health` (see [Master](/R-Type/master/)).
+`src/master` holds the master, the program `r-type_server --mode master` runs: it lists the game servers and their games, records their heartbeats, and will run the administration; the web site of `web/` calls its API from a server of its own. Its folders are libraries, and only the server binary links them, so the master never links SFML, `rtype_game` or the code of the server, and reaches Asio only behind the network targets that hide it. Today it creates the game servers with their keys, takes their registration and their heartbeats, probes their UDP port, keeps the status of each, lists the registered servers, and the games, the samples and the statuses of a server, and answers `GET /api/health` (see [Master](/R-Type/master/)).
 
 ```
 src/master/
@@ -269,6 +270,7 @@ src/master/
 ├── Logger/           the module logger
 ├── Storage/          the module storage: the database, on the connection and migrations of rtype_storage
 ├── Http/             the module http: the HTTP server, its errors, GET /api/health
+├── Probe/            the module probe: the UDP socket that sends the probes, on ProbeWire, at most one a second per destination
 ├── Servers/          the module servers: creation and key, registration, heartbeats, statuses, the lists
 │   ├── Controllers/  ServersController: reads each route, writes its answer
 │   ├── Services/     ServersService, ServerStatusService: the rules; Helpers/, the key and the status rule
@@ -281,13 +283,13 @@ src/master/
 └── Accounts/         optional, with Tickets/: being written
 ```
 
-`LaunchOptions/`, `Logger/`, `Storage/`, `Http/`, `Servers/` and `Modules/` exist; the others are being written. A folder of a feature is laid out like a module of a web backend: its module class at the root, then one sub-folder per role, as `Servers/` shows.
+`LaunchOptions/`, `Logger/`, `Storage/`, `Http/`, `Probe/`, `Servers/` and `Modules/` exist; the others are being written. A folder of a feature is laid out like a module of a web backend: its module class at the root, then one sub-folder per role, as `Servers/` shows.
 
 ### Tests, web site, assets
 
-- **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; test tools in `tests/tools/`, never shipped: today, in `tests/tools/MalformedDatagrams/`, the tool that sends malformed datagrams (see [Network](/R-Type/network/#malformed-datagrams-malformed_datagrams)), in `tests/tools/network-conditions/`, the scripts that apply the network scenarios to the loopback interface from the system (see [Network](/R-Type/network/#network-conditions-from-the-system-teststoolsnetwork-conditions)), in `tests/tools/packaging/`, the script the CI runs to check the packages from another folder (see [Packages](https://github.com/nique-epi/R-Type#packages) in the README), and, in `tests/tools/LoadTestBots/`, the load-test bots (see [Network](/R-Type/network/#load-test-bots-load_test_bots)). Today the older tests sit at the root of `tests/`; `tests/client/`, `tests/concurrency/`, `tests/engine/`, `tests/network/` and `tests/server/` already follow this layout, and `tests/doubles/` holds a socket that records instead of sending, a datagram link that records what is sent and hands over what a test delivers, a connection to a server that records what a screen asks, a settings storage that records each save, a settings listener that records each change it is told, a window on a desktop of a given size, a draw surface that records each rectangle it is asked to draw, an entity layer that records what it paints, a sound player that records the ids it plays, a music clock whose position the test sets, a module that writes down when it is installed, started and stopped, the plugins the engine tests load (`tests/doubles/Plugins/`, shared libraries built next to the test executable), a journal that records the lines it is asked to write, a loss drawn from a seed for each datagram, and a network that delivers the datagrams a test sends late, twice or never, in an order the test gives or draws from a seed. Each folder of `tests/` has its `CMakeLists.txt`: it declares, with `rtype_add_test()`, the executables whose tests all sit in it or below it, and adds its own files to those its parents declare, with `target_sources()`; `rtype_test_support` holds the journal and temporary-folder helpers every executable shares. A test file holds only its tests: its constants are in `<Subject>TestConstants.hpp`, its fixture in `<Subject>Fixture.{hpp,cpp}` and its helpers in `<Subject>Fixtures.{hpp,cpp}`, next to it. In a folder of `tests/tools/`, the fixture and helper files sit in a `Fixtures/` folder beside the tests, as in `tests/tools/LoadTestBots/Play/Pilot/Fixtures/`, and its `CMakeLists.txt` gives them to the test executable of that folder.
+- **`tests/`** mirrors `src/`: the test of `src/game/Waves/WaveDirector` is `tests/game/Waves/WaveDirectorTest.cpp`, built into `game_tests`, one executable per library or program. Test doubles (fake clock, lossy transport) go in `tests/doubles/`; test tools in `tests/tools/`, never shipped: today, in `tests/tools/MalformedDatagrams/`, the tool that sends malformed datagrams (see [Network](/R-Type/network/#malformed-datagrams-malformed_datagrams)), in `tests/tools/network-conditions/`, the scripts that apply the network scenarios to the loopback interface from the system (see [Network](/R-Type/network/#network-conditions-from-the-system-teststoolsnetwork-conditions)), in `tests/tools/packaging/`, the script the CI runs to check the packages from another folder (see [Packages](https://github.com/nique-epi/R-Type#packages) in the README), in `tests/tools/LoadTestBots/`, the load-test bots (see [Network](/R-Type/network/#load-test-bots-load_test_bots)), and, in `tests/tools/bandwidth/`, the script of the bandwidth campaign (see [Network measurements](/R-Type/measurements/)). Today the older tests sit at the root of `tests/`; `tests/client/`, `tests/concurrency/`, `tests/engine/`, `tests/network/` and `tests/server/` already follow this layout, and `tests/doubles/` holds a socket that records instead of sending, a datagram link that records what is sent and hands over what a test delivers, a connection to a server that records what a screen asks, a settings storage that records each save, a settings listener that records each change it is told, a window on a desktop of a given size, a draw surface that records each rectangle it is asked to draw, an entity layer that records what it paints, a sound player that records the ids it plays, a music clock whose position the test sets, a module that writes down when it is installed, started and stopped, the plugins the engine tests load (`tests/doubles/Plugins/`, shared libraries built next to the test executable), a journal that records the lines it is asked to write, a loss drawn from a seed for each datagram, and a network that delivers the datagrams a test sends late, twice or never, in an order the test gives or draws from a seed. Each folder of `tests/` has its `CMakeLists.txt`: it declares, with `rtype_add_test()`, the executables whose tests all sit in it or below it, and adds its own files to those its parents declare, with `target_sources()`; `rtype_test_support` holds the journal and temporary-folder helpers every executable shares. A test file holds only its tests: its constants are in `<Subject>TestConstants.hpp`, its fixture in `<Subject>Fixture.{hpp,cpp}` and its helpers in `<Subject>Fixtures.{hpp,cpp}`, next to it. In a folder of `tests/tools/`, the fixture and helper files sit in a `Fixtures/` folder beside the tests, as in `tests/tools/LoadTestBots/Play/Pilot/Fixtures/`, and its `CMakeLists.txt` gives them to the test executable of that folder.
 - **`web/`** is the web site, a Next.js server of its own that calls the API of the master, run with bun (see [Master](/R-Type/master/#the-web-site)): `src/app/` (one folder per page), `src/lib/api/` (the client of the master, server-only, one function per route in `routes/`, the schemas of the answers in `schemas/`), `src/hooks/` and `src/components/` (`primitives/` for the shadcn pieces).
-- **`packaging/`** holds what CPack needs beyond the install rules, which sit with the CPack settings in the root `CMakeLists.txt`: the CPack config of each program (`CPackPartConfig.cmake.in`), the settings that differ per generator (`CPackGeneratorConfig.cmake`), the script that builds the AppImage, the `Info.plist` of the app, the `.desktop` file and the icon.
+- **`packaging/`** holds what CPack needs beyond the install rules, which sit with the CPack settings in the root `CMakeLists.txt`: the CPack config of each program (`CPackPartConfig.cmake.in`), the settings that differ per generator (`CPackGeneratorConfig.cmake`), the script that builds the AppImage, the scripts that sign the app (`SignApp.cmake`) and sign and notarize its disk image (`NotarizeDiskImage.cmake`), the `Info.plist` and the entitlements of the app, the `.desktop` file and the icon.
 - **`assets/`** holds the files read at run time: `sprites/`, `sounds/`, `music/`, `fonts/` and `icons/` for the client, `waves/` for the server (`waves.toml`, see [Writing the waves file](/R-Type/waves-file/)), and `entities/` for both, one sheet per entity type, whose gameplay the server reads and whose appearance the client reads (see [Writing an entity sheet](/R-Type/entity-sheets/)).
 
 ## Modules and libraries
@@ -300,16 +302,24 @@ A **module** is a feature you can switch on, switch off or replace: a folder wit
 
 This list describes the code as it is today. A pull request that adds, removes or moves a module updates it.
 
-| Module of the server program | Class | Folder | Kind |
+| Module of the supervisor | Class | Folder | Kind |
+|---|---|---|---|
+| `logger` | `ServerLoggerModule` | `src/server/Logger/` | required |
+| `network` | `ServerNetworkModule` | `src/server/Network/` | required |
+| `supervised games` | `ServerSupervisedGamesModule` | `src/server/SupervisedGames/` | required |
+| `supervisor lobby` | `ServerSupervisorLobbyModule` | `src/server/SupervisorLobby/` | required |
+| `information` | `ServerInformationModule` | `src/server/Information/` | required |
+| `master` | `ServerMasterModule` | `src/server/Master/` | optional |
+
+| Module of a game process | Class | Folder | Kind |
 |---|---|---|---|
 | `logger` | `ServerLoggerModule` | `src/server/Logger/` | required |
 | `network` | `ServerNetworkModule` | `src/server/Network/` | required |
 | `storage` | `ServerStorageModule` | `src/server/Storage/` | required |
 | `games` | `ServerGamesModule` | `src/server/Games/` | required |
 | `lobby` | `ServerLobbyModule` | `src/server/Lobby/` | required |
-| `information` | `ServerInformationModule` | `src/server/Information/` | required |
 | `metrics` | `ServerMetricsModule` | `src/server/Metrics/` | optional |
-| `master` | `ServerMasterModule` | `src/server/Master/` | optional |
+| `supervisor link` | `ServerSupervisorLinkModule` | `src/server/SupervisorLink/` | required |
 | `game-statistics` | `ServerGameStatisticsModule` | `src/server/GameStatistics/` | optional, a plugin |
 
 | Module of a game | Class | Folder | Kind |
@@ -317,11 +327,13 @@ This list describes the code as it is today. A pull request that adds, removes o
 | `replication` | `ReplicationModule` | `src/server/Replication/` | required |
 | `rtype rules` | `RtypeRulesModule` | `src/server/Rules/` | required |
 | `results` | `ResultsModule` | `src/server/Results/` | required |
+| `chat` | `ChatModule` | `src/server/Chat/` | optional |
 
 | Module of the master | Class | Folder | Kind |
 |---|---|---|---|
 | `logger` | `MasterLoggerModule` | `src/master/Logger/` | required |
 | `storage` | `MasterStorageModule` | `src/master/Storage/` | required |
+| `probe` | `MasterProbeModule` | `src/master/Probe/` | required |
 | `http` | `MasterHttpModule` | `src/master/Http/` | required |
 | `servers` | `ServersModule` | `src/master/Servers/` | required |
 
@@ -347,7 +359,7 @@ When another folder needs code of a module, the first row that fits decides.
 
 | Order | The code… | Then |
 |---|---|---|
-| 1 | belongs to a required module | it stays there, and the code that needs it includes it: `Lobby/` and `Metrics/` include `Games.hpp`, `Widgets/` includes `PlayfieldMapping.hpp` |
+| 1 | belongs to a required module | it stays there, and the code that needs it includes it: `Lobby/` and `Metrics/` include `RunningGame.hpp`, `Widgets/` includes `PlayfieldMapping.hpp` |
 | 2 | belongs to an optional module | it goes in the `Contract/` of that module: `ISoundPlayer`, in `src/client/Audio/Contract/Sounds/` |
 | 3 | has no owner and serves several folders | it goes in a library: `Widgets/`, `Rendering/` |
 
@@ -382,7 +394,8 @@ A new module is written directly in its own folder, `src/<program>/<Name>/`, cla
 
 | The module… | Listed in |
 |---|---|
-| belongs to the server and lives as long as the program | `serverModules()`, `src/server/Modules/ServerModules.cpp` |
+| belongs to a game process and lives as long as it | `gameProcessModules()`, `src/server/Modules/GameProcessModules.cpp`; a setting it declares goes in `GAME_SETTING_NAMES` of `src/server/Modules/ServerRoleConstants.hpp` |
+| belongs to the supervisor | `supervisorModules()`, `src/server/Modules/SupervisorModules.cpp` |
 | belongs to the client | `clientModules()`, `src/client/Modules/ClientModules.cpp` |
 | is a rule or a service of one game, and each game has its own | `rtypeGameModules()`, `src/server/Games/RtypeGameModules.cpp` |
 | belongs to the master | `masterModules()`, `src/master/Modules/MasterModules.cpp` |
@@ -437,7 +450,7 @@ A few files predate these conventions. Each move is a `refactor` pull request th
 | `src/engine/Components/ComponentStorage.hpp` | `src/engine/Components/ComponentStorage/` |
 | `tests/*.cpp`, `tests/SimulatedClock.hpp` | `tests/<owner>/<Folder>/`, `tests/doubles/` |
 
-`rtype_forbid_links` also reads only the direct links of a target: a class library inside `rtype_engine` that linked SFML would pass. `rtype_forbid_reachable_links` walks the links, but only the libraries of the master use it: `r-type_server` reaches Asio through `rtype_network_context`, which its network module links and the direct check does not follow, so the line "`r-type_server` never links Asio" holds for its direct links only.
+`rtype_forbid_links` also reads only the direct links of a target: a class library inside `rtype_engine` that linked SFML would pass. `rtype_forbid_reachable_links` walks the links, but only the libraries of the master use it, and it does not follow the private link of `rtype_network_context` and `rtype_network_udp_socket` to Asio. `r-type_server` reaches Asio through `rtype_network_context`, which its network module links and the direct check does not follow, so the line "`r-type_server` never links Asio" holds for its direct links only.
 
 ## Not decided yet
 

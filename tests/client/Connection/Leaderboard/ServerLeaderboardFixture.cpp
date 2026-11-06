@@ -7,6 +7,7 @@
 #include <string_view>
 #include <vector>
 #include "ConnectionAccepted.hpp"
+#include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
 #include "IncomingDatagram.hpp"
 #include "LeaderboardAnswer.hpp"
@@ -42,7 +43,7 @@ network::LeaderboardAnswer ServerLeaderboardFixture::answerFor(
 }
 
 void ServerLeaderboardFixture::connectAndGetAccepted() {
-  session_.connect(server(), NICKNAME);
+  session_.connect(server(), NICKNAME, rtype::network::ANY_GAME_CHOICE);
   network::PacketHeader header;
   header.sessionToken = SESSION_TOKEN;
   link_.deliver(network::IncomingDatagram{

@@ -80,11 +80,49 @@ TEST(AssetFolder, SkipsAFileNamedAssets) {
 }
 
 /**
- * Given no assets folder next to or above the executable folder
- * When the assets folder is searched
- * Then the error names both searched folders
+ * Given a macOS app whose assets folder sits in Contents/Resources
+ * When the assets folder is searched from Contents/MacOS
+ * Then the assets folder of the resources is used
  */
-TEST(AssetFolder, NamesBothSearchedFoldersWhenNoneExists) {
+TEST(AssetFolder, FindsTheFolderInTheResourcesOfAnApp) {
+  const TemporaryFolder app;
+  const std::filesystem::path executableFolder =
+      app.path() / APP_EXECUTABLE_FOLDER;
+  std::filesystem::create_directories(executableFolder);
+  std::filesystem::create_directories(executableFolder.parent_path() /
+                                      APP_RESOURCES_NAME / ASSETS_FOLDER);
+
+  EXPECT_EQ(
+      findAssetFolder(executableFolder),
+      executableFolder.parent_path() / APP_RESOURCES_NAME / ASSETS_FOLDER);
+}
+
+/**
+ * Given an assets folder one level above the executable folder of an app and
+ * another in its resources
+ * When the assets folder is searched
+ * Then the one above the executable is used
+ */
+TEST(AssetFolder, PrefersTheFolderAboveTheExecutableToTheResources) {
+  const TemporaryFolder app;
+  const std::filesystem::path executableFolder =
+      app.path() / APP_EXECUTABLE_FOLDER;
+  std::filesystem::create_directories(executableFolder);
+  std::filesystem::create_directories(executableFolder.parent_path() /
+                                      ASSETS_FOLDER);
+  std::filesystem::create_directories(executableFolder.parent_path() /
+                                      APP_RESOURCES_NAME / ASSETS_FOLDER);
+
+  EXPECT_EQ(findAssetFolder(executableFolder),
+            executableFolder.parent_path() / ASSETS_FOLDER);
+}
+
+/**
+ * Given no assets folder next to, above or beside the executable folder
+ * When the assets folder is searched
+ * Then the error names the three searched folders
+ */
+TEST(AssetFolder, NamesTheThreeSearchedFoldersWhenNoneExists) {
   const TemporaryFolder repository;
   const std::filesystem::path executableFolder =
       repository.path() / VISUAL_STUDIO_OUTPUT_FOLDER;
@@ -96,5 +134,7 @@ TEST(AssetFolder, NamesBothSearchedFoldersWhenNoneExists) {
       },
       ThrowsMessage<AssetFolderNotFoundException>(
           AllOf(HasSubstr(genericText(executableFolder / ASSETS_FOLDER)),
-                HasSubstr(genericText(repository.path() / ASSETS_FOLDER)))));
+                HasSubstr(genericText(repository.path() / ASSETS_FOLDER)),
+                HasSubstr(genericText(repository.path() / APP_RESOURCES_NAME /
+                                      ASSETS_FOLDER)))));
 }

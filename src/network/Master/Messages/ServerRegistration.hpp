@@ -27,6 +27,13 @@ struct ServerRegistration {
   std::uint16_t maximumGames{};
   /** @brief The players one of its games takes, MAXIMUM_PLAYERS at most. */
   std::uint8_t maximumPlayersPerGame{};
+  /**
+   * @brief The secret the probes of the master must carry, from
+   * LOWEST_PROBE_SECRET to HIGHEST_PROBE_SECRET. Written by registrationText()
+   * only: the list of servers never shows it, and a registration read back
+   * from the database leaves it 0.
+   */
+  std::uint64_t probeSecret{};
 
   bool operator==(const ServerRegistration&) const = default;
 };

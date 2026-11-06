@@ -3,44 +3,61 @@
 # Every value below is the default, so this file changes nothing as it is.
 # A launch option (-p, --seed, --state-rate, --database, --set <name>=<value>)
 # wins over it.
+#
+# Only the supervisor reads this file. It runs its own lines and keeps the
+# lines of its games, which it writes, in their order and followed by the ones
+# its launch options force, to r-type_games_<port>.cfg next to the executable;
+# each game process reads that file (--configuration) and nothing else. Each
+# section below says which program reads it: [supervisor] or [games].
 
-# The UDP port, from 1 to 65535.
+# [supervisor] The UDP port, from 1 to 65535.
 set port 4242
 
-# The seed of the first game, from 0 to 4294967295, or 'none' to draw one.
+# [games] The seed of the first game, from 0 to 4294967295, or 'none' to draw one.
 set seed none
 
-# The world states sent to each player per second, from 2 to 60.
+# [games] The world states sent to each player per second, from 2 to 60.
 set state-rate 20
 
-# The ticks every player's input is held before it is applied, from 0 to 30.
+# [games] How each world state is written: 'delta', as the difference from the
+# newest one the player acknowledged, or with every entity when it acknowledged
+# none or when the newest it acknowledged is more than 60 ticks older; 'full',
+# every entity in every state.
+set state-encoding delta
+
+# [games] The ticks every player's input is held before it is applied, from 0 to 30.
 set input-delay 3
 
-# The SQLite file the leaderboard of this server is kept in, on a local disk;
+# [supervisor] The SQLite file the leaderboard of this server is kept in, on a local disk;
 # a name with a space goes in quotes. Empty: r-type_server_<port>.db next to
 # the executable, with the port above.
 set database ""
 
-# The master this server is listed on (r-type_server --mode master), as
+# [supervisor] The master this server is listed on (r-type_server --mode master), as
 # http://<host>[:<port>], and the key the master gave when the host created the
 # server on it. Either one empty: the server runs alone and is listed nowhere.
 # Never commit a real key.
 set master-url ""
 set master-key ""
 
-# The name players read in the list of servers and in the answer to an
+# [supervisor] The name players read in the list of servers and in the answer to an
 # information request, 1 to 32 bytes.
 set server-name "R-Type server"
 
-# Turn a module off (it is never installed, provides no service and runs no work). Refused when a module
-# that stays on depends on it: storage needs network, games needs network and
-# storage, lobby needs games, information needs network and games, metrics
-# needs games and network, master needs network, games and information, the
-# game-statistics plugin needs network and games once loaded, all need
+# [supervisor or games] Turn a module off (it is never installed, provides no
+# service and runs no work). A module the supervisor has (logger, network,
+# supervised games, supervisor lobby, information, master) is turned off in
+# the supervisor; any other name goes to the games. Refused when a module
+# that stays on depends on it: in the supervisor, supervised games needs
+# network, supervisor lobby needs network and supervised games, information
+# needs network and supervised games, master needs network, supervised games
+# and information; in a game, storage needs network, games needs network and
+# storage, lobby needs network and games, metrics needs games and network, the
+# game-statistics plugin needs network and games once loaded; all need
 # logger.
 # module lobby off
 
-# Load a plugin: <name>.so (Linux, macOS) or <name>.dll (Windows), built by the
+# [games] Load a plugin: <name>.so (Linux, macOS) or <name>.dll (Windows), built by the
 # same compiler from the same sources as this server. A plugin that cannot be
 # loaded stops the server. The folder is plugins/ next to the executable; a
 # relative plugin-folder is read from the folder the server starts in, and comes
@@ -49,7 +66,8 @@ set server-name "R-Type server"
 # plugin-folder plugins
 # plugin game-statistics
 
-# The CSV file the game-statistics plugin writes a row per Bydo killed to, then
-# the total of each game. Refused unless the plugin is loaded. Empty:
-# r-type_statistics_<port>.csv next to the executable, with the port above.
+# [games] The CSV file the game-statistics plugin writes a row per Bydo killed to, then
+# the total of each game, named after it: each game writes <name>_<its port><extension>,
+# so stats.csv gives stats_50123.csv to the game on port 50123. Refused unless the
+# plugin is loaded. Empty: r-type_statistics_<its port>.csv next to the executable.
 # set game-statistics-file ""

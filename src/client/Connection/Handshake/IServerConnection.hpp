@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string_view>
+#include "ConnectionRequest.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
 
@@ -25,9 +26,12 @@ class IServerConnection {
    *
    * @param nickname 1 to MAXIMUM_NICKNAME_SIZE bytes of UTF-8, as the protocol
    * requires.
+   * @param game The game every request of the attempt asks for, after a
+   * redirect too.
    */
   virtual void connect(const network::Endpoint& server,
-                       std::string_view nickname) = 0;
+                       std::string_view nickname,
+                       const network::GameChoice& game) = 0;
 
   /**
    * @brief Drops the attempt, wherever it stands: the status goes back to

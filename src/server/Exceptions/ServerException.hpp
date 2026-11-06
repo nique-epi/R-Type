@@ -47,16 +47,11 @@ class UnknownDifficultyException : public ServerException {
                              const std::vector<std::string>& known);
 };
 
-/** @brief A new player has no game to join: no game was added yet. */
-class NoJoinableGameException : public ServerException {
+/** @brief The game of the process was asked for before the games module
+ * created it. */
+class GameNotCreatedException : public ServerException {
  public:
-  NoJoinableGameException();
-};
-
-/** @brief The server was asked to host more games than a heartbeat lists. */
-class TooManyGamesException : public ServerException {
- public:
-  TooManyGamesException(std::size_t requested, std::size_t maximum);
+  GameNotCreatedException();
 };
 
 /** @brief ServerApplication::open() was called on a server already open. */
@@ -128,13 +123,33 @@ class ChildBindingException : public ServerException {
 };
 
 /**
- * @brief Only one of the two options that make a server the child of a
- * supervisor was given.
+ * @brief A game process was launched without one of the two options that link
+ * it to its supervisor.
  */
-class IncompleteSupervisorLinkException : public ServerException {
+class MissingSupervisorLinkException : public ServerException {
  public:
   /** @param missingOption The option that was not given. */
-  explicit IncompleteSupervisorLinkException(const std::string& missingOption);
+  explicit MissingSupervisorLinkException(const std::string& missingOption);
+};
+
+/**
+ * @brief The supervisor could not write the file of commands of its games, so
+ * they would start without the lines of server.cfg meant for them.
+ */
+class GameConfigurationWriteException : public ServerException {
+ public:
+  /** @param file The file that could not be written. */
+  explicit GameConfigurationWriteException(const std::string& file);
+};
+
+/**
+ * @brief A game was opened while every place of the supervisor, from
+ * network::FIRST_HOSTED_GAME_NUMBER to MAXIMUM_RUNNING_GAMES, holds a game.
+ */
+class NoFreeGameSlotException : public ServerException {
+ public:
+  /** @param slotCount How many places the supervisor has. */
+  explicit NoFreeGameSlotException(std::size_t slotCount);
 };
 
 }  // namespace rtype::server

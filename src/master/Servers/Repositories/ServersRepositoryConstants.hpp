@@ -20,7 +20,8 @@ VALUES (:name, :key_fingerprint, :created_by_address, :created_at)
 RETURNING id
 )sql";
 constexpr std::string_view SERVER_OF_KEY_QUERY = R"sql(
-SELECT id, maximum_games, maximum_players_per_game
+SELECT id, maximum_games, maximum_players_per_game, address, udp_port,
+       probe_secret
 FROM servers WHERE key_fingerprint = :key_fingerprint
 )sql";
 constexpr std::string_view LAST_HEARTBEAT_OF_SERVER_QUERY =
@@ -31,17 +32,19 @@ SET name = :name, address = :address, udp_port = :udp_port,
     game_version = :game_version, protocol_version = :protocol_version,
     maximum_games = :maximum_games,
     maximum_players_per_game = :maximum_players_per_game,
-    registered_at = :registered_at,
+    registered_at = :registered_at, probe_secret = :probe_secret,
     last_heartbeat = NULL, last_heartbeat_at = NULL, last_game_count = NULL,
     last_player_count = NULL, last_tick_p95_milliseconds = NULL,
-    last_loss_percent = NULL
+    last_loss_percent = NULL, last_probe_answer_at = NULL
 WHERE id = :server_id
 )sql";
 constexpr std::string_view UPDATE_LAST_HEARTBEAT_STATEMENT = R"sql(
 UPDATE servers
 SET last_heartbeat = :heartbeat, last_heartbeat_at = :taken_at,
     last_game_count = :game_count, last_player_count = :player_count,
-    last_tick_p95_milliseconds = :tick_p95, last_loss_percent = :loss_percent
+    last_tick_p95_milliseconds = :tick_p95, last_loss_percent = :loss_percent,
+    last_probe_answer_at =
+      CASE WHEN :probe_answered THEN :taken_at ELSE last_probe_answer_at END
 WHERE id = :server_id
 )sql";
 
@@ -67,7 +70,7 @@ constexpr std::chrono::seconds STATUS_CHANGE_RETENTION = SAMPLE_RETENTION;
 /** @brief What the refresh of the statuses reads of each registered server. */
 constexpr std::string_view WATCHED_SERVERS_QUERY = R"sql(
 SELECT id, status, maintenance, registered_at, last_heartbeat_at,
-       last_tick_p95_milliseconds, last_loss_percent
+       last_tick_p95_milliseconds, last_loss_percent, last_probe_answer_at
 FROM servers WHERE registered_at IS NOT NULL ORDER BY id
 )sql";
 constexpr std::string_view UPDATE_STATUS_STATEMENT =
@@ -121,6 +124,8 @@ constexpr std::string_view MAXIMUM_GAMES_PARAMETER = ":maximum_games";
 constexpr std::string_view MAXIMUM_PLAYERS_PARAMETER =
     ":maximum_players_per_game";
 constexpr std::string_view REGISTERED_AT_PARAMETER = ":registered_at";
+constexpr std::string_view PROBE_SECRET_PARAMETER = ":probe_secret";
+constexpr std::string_view PROBE_ANSWERED_PARAMETER = ":probe_answered";
 constexpr std::string_view SERVER_ID_PARAMETER = ":server_id";
 constexpr std::string_view HEARTBEAT_PARAMETER = ":heartbeat";
 constexpr std::string_view TAKEN_AT_PARAMETER = ":taken_at";
@@ -149,6 +154,9 @@ constexpr int CREATION_COUNT_COLUMN = 0;
 constexpr int SERVER_ID_COLUMN = 0;
 constexpr int MAXIMUM_GAMES_COLUMN = 1;
 constexpr int MAXIMUM_PLAYERS_COLUMN = 2;
+constexpr int SERVER_ADDRESS_COLUMN = 3;
+constexpr int SERVER_UDP_PORT_COLUMN = 4;
+constexpr int SERVER_PROBE_SECRET_COLUMN = 5;
 
 /** @brief The column of the text LAST_HEARTBEAT_OF_SERVER_QUERY returns. */
 constexpr int LAST_HEARTBEAT_COLUMN = 0;
@@ -161,6 +169,7 @@ constexpr int WATCHED_REGISTERED_AT_COLUMN = 3;
 constexpr int WATCHED_HEARTBEAT_AT_COLUMN = 4;
 constexpr int WATCHED_TICK_P95_COLUMN = 5;
 constexpr int WATCHED_LOSS_PERCENT_COLUMN = 6;
+constexpr int WATCHED_PROBE_ANSWER_AT_COLUMN = 7;
 
 /** @brief The columns of REGISTERED_SERVERS_QUERY. */
 constexpr int LISTED_ID_COLUMN = 0;

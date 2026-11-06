@@ -15,6 +15,7 @@
 #include "GameListing.hpp"
 #include "HttpConstants.hpp"
 #include "HttpHeader.hpp"
+#include "IProbeSender.hpp"
 #include "KnownServer.hpp"
 #include "MasterDatabase.hpp"
 #include "MasterHttpConstants.hpp"
@@ -23,6 +24,7 @@
 #include "MasterRouteConstants.hpp"
 #include "MasterRoutePath.hpp"
 #include "NetworkException.hpp"
+#include "OutgoingDatagram.hpp"
 #include "PageRequest.hpp"
 #include "ServerRecord.hpp"
 #include "ServerRegistration.hpp"
@@ -215,8 +217,9 @@ ApiResponse heartbeatAnswer() {
 
 }  // namespace
 
-ServersController::ServersController(MasterDatabase& database)
-    : service_(database) {}
+ServersController::ServersController(MasterDatabase& database,
+                                     IProbeSender& probeSender)
+    : service_(database), probeSender_(probeSender) {}
 
 ApiResponse ServersController::createServer(const ApiRequest& request) {
   return answerOrRefuse([this, &request] {
@@ -247,9 +250,14 @@ ApiResponse ServersController::replaceOwnServer(const ApiRequest& request) {
 ApiResponse ServersController::replaceOwnHeartbeat(const ApiRequest& request) {
   return answerAsServerOfKey(
       service_, request, [this, &request](const KnownServer& server) {
+        const std::chrono::sys_seconds receivedAt = now();
         if (!service_.replaceOwnHeartbeat(
-                server, network::heartbeatFromText(request.body), now())) {
+                server, network::heartbeatFromText(request.body), receivedAt)) {
           return refusal(CONFLICT_STATUS, UNREGISTERED_SERVER_DETAIL);
+        }
+        if (std::optional<network::OutgoingDatagram> probe =
+                service_.probeFor(server, receivedAt)) {
+          probeSender_.sendProbe(std::move(*probe));
         }
         return heartbeatAnswer();
       });

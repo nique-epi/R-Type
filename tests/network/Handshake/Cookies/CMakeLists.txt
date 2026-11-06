@@ -1,1 +1,1 @@
-target_sources(network_tests PRIVATE SipHashTest.cpp CookieIssuerTest.cpp)
+target_sources(network_tests PRIVATE SipHashTest.cpp CookieIssuerTest.cpp CookieIssuerFixtures.cpp)

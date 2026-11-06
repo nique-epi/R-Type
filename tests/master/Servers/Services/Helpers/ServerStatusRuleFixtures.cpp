@@ -20,5 +20,6 @@ rtype::master::StatusEvidence heardWith(
   return rtype::master::StatusEvidence{.registeredAt = HEARD_AT,
                                        .lastHeartbeatAt = HEARD_AT,
                                        .measures = measures,
-                                       .maintenance = false};
+                                       .maintenance = false,
+                                       .lastProbeAnswerAt = HEARD_AT};
 }

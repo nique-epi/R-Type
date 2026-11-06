@@ -144,6 +144,7 @@ class ServerApplication final : public IDatagramSender,
   concurrency::BoundedQueue<network::IncomingDatagram> incoming_;
   concurrency::BoundedQueue<network::IncomingDatagram> connectionRequests_;
   concurrency::BoundedQueue<network::IncomingDatagram> informationRequests_;
+  concurrency::BoundedQueue<network::IncomingDatagram> probes_;
   concurrency::BoundedQueue<network::OutgoingDatagram> outgoing_;
   DatagramQueues destinations_;
   RejectionLedger rejections_;
@@ -154,6 +155,7 @@ class ServerApplication final : public IDatagramSender,
   std::vector<network::IncomingDatagram> received_;
   std::vector<network::IncomingDatagram> receivedRequests_;
   std::vector<network::IncomingDatagram> receivedInformationRequests_;
+  std::vector<network::IncomingDatagram> receivedProbes_;
 };
 
 }  // namespace rtype::server

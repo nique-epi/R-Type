@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include "ChatLine.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EventBus.hpp"
 #include "IClock.hpp"
@@ -36,6 +37,10 @@ struct GameSessionsParts {
   std::function<void(const ConnectedPlayer&,
                      const network::LeaderboardRequest&)>
       onLeaderboardRequest;
+  /** @brief Called with the player and each ChatLine it sends, copies included,
+   * for whoever relays it (the chat of the game). Must not be empty. */
+  std::function<void(const ConnectedPlayer&, const network::ChatLine&)>
+      onChatLine;
 };
 
 }  // namespace rtype::server

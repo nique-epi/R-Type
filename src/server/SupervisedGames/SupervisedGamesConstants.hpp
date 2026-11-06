@@ -1,18 +1,24 @@
 #pragma once
 
 #include <chrono>
-#include <cstddef>
 #include <string_view>
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
 
-/** @brief How many game processes the supervisor runs at once. */
-constexpr std::size_t MAXIMUM_RUNNING_GAMES = 8;
-
 /** @brief How long a game process may take to send its first status before the
  * supervisor kills it. */
 constexpr engine::Duration GAME_START_TIMEOUT = std::chrono::seconds(10);
+
+/**
+ * @brief How long a seat the supervisor gave a player stays held while the
+ * game does not report that player: the handshake of a redirected player with
+ * the game takes two round trips, a lost request costs it
+ * network::CONNECTION_REQUEST_INTERVAL (500 ms), and the game reports a new
+ * player at once. Three seconds leave room for four lost requests; a player
+ * still absent then is not coming, and its seat is free again.
+ */
+constexpr engine::Duration SEAT_RESERVATION_TIMEOUT = std::chrono::seconds(3);
 
 /** @brief How long the supervisor waits, after telling the games to stop, for
  * them to end before it kills the ones that remain. */
@@ -29,6 +35,13 @@ constexpr std::string_view SUPERVISOR_LOGGER_NAME = "Supervisor";
  * GAME_LOG_FILE_SUFFIX. */
 constexpr std::string_view GAME_LOG_FILE_PREFIX = "r-type_game_";
 constexpr std::string_view GAME_LOG_FILE_SUFFIX = ".log";
+
+/** @brief The file of commands the supervisor on port p writes for its games
+ * is GAME_CONFIGURATION_FILE_PREFIX, p and GAME_CONFIGURATION_FILE_SUFFIX,
+ * next to the executable: two supervisors on one machine listen on two ports,
+ * so they never write the same file. */
+constexpr std::string_view GAME_CONFIGURATION_FILE_PREFIX = "r-type_games_";
+constexpr std::string_view GAME_CONFIGURATION_FILE_SUFFIX = ".cfg";
 
 /** @brief How the journal names the lifecycle of a game. */
 constexpr std::string_view STARTING_TEXT = "starting";

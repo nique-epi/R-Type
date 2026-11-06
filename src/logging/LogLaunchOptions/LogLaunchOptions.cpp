@@ -8,6 +8,7 @@
 #include <string_view>
 #include <system_error>
 #include <utility>
+#include <vector>
 #include "LogLaunchSettings.hpp"
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
@@ -208,7 +209,28 @@ void LogLaunchOptions::apply() const {
   announceJournal(applied);
 }
 
+std::vector<std::string> LogLaunchOptions::forwardedArguments() const {
+  std::vector<std::string> arguments;
+  if (settings_.level.has_value()) {
+    arguments.emplace_back(LEVEL_OPTION);
+    arguments.emplace_back(levelNameOf(*settings_.level));
+  }
+  if (!settings_.output.filePath.has_value()) {
+    arguments.emplace_back(NO_FILE_OPTION);
+  }
+  if (!settings_.output.toStderr) {
+    arguments.emplace_back(NO_STDERR_OPTION);
+  }
+  return arguments;
+}
+
 std::string LogLaunchOptions::usage(std::string_view defaultJournalName) {
+  return usageWithJournalAt(std::string(defaultJournalName) +
+                            std::string(NEXT_TO_THE_EXECUTABLE));
+}
+
+std::string LogLaunchOptions::usageWithJournalAt(
+    std::string_view defaultJournal) {
   std::string text = "Logging options:\n";
   appendUsageEntry(text, std::string(LEVEL_OPTION) + " <name>",
                    "Level: trace, debug, info, warn, error or silent. "
@@ -218,9 +240,8 @@ std::string LogLaunchOptions::usage(std::string_view defaultJournalName) {
                        std::string(INFO_NAME) + ".");
   appendUsageEntry(
       text, std::string(FILE_OPTION) + " <path>",
-      "Journal to append to. Default: " + std::string(defaultJournalName) +
-          " next to the executable, or none when that file cannot be"
-          " opened.");
+      "Journal to append to. Default: " + std::string(defaultJournal) +
+          ", or none when that file cannot be opened.");
   appendUsageEntry(text, NO_FILE_OPTION, "Write no journal.");
   appendUsageEntry(text, STDERR_OPTION,
                    "Write to standard error too. This is the default.");

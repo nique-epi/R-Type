@@ -2,6 +2,7 @@
 #include <functional>
 #include <string>
 #include <vector>
+#include "IProbeSender.hpp"
 #include "InstallContext.hpp"
 #include "MasterDatabase.hpp"
 #include "MasterHttpServer.hpp"
@@ -18,12 +19,13 @@ std::string ServersModule::name() const {
 
 std::vector<std::string> ServersModule::dependencies() const {
   return {std::string{LOGGER_MODULE_NAME}, std::string{STORAGE_MODULE_NAME},
-          std::string{HTTP_MODULE_NAME}};
+          std::string{PROBE_MODULE_NAME}, std::string{HTTP_MODULE_NAME}};
 }
 
 void ServersModule::install(engine::InstallContext& context) {
   database_ = &context.require<MasterDatabase>();
-  ServersController& controller = controller_.emplace(*database_);
+  ServersController& controller =
+      controller_.emplace(*database_, context.require<IProbeSender>());
   auto& server = context.require<MasterHttpServer>();
   server.add(network::CREATE_SERVER_ROUTE,
              std::bind_front(&ServersController::createServer, &controller));

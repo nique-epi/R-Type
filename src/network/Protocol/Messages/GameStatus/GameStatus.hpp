@@ -3,8 +3,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string>
 #include <type_traits>
+#include <vector>
 #include "ByteWriter.hpp"
+#include "GameStatusMeasures.hpp"
 #include "MessageType.hpp"
 
 namespace rtype::network {
@@ -20,34 +23,49 @@ enum class GameStatusState : std::uint8_t {
 };
 
 /**
- * @brief A game process tells its supervisor where its game stands and how many
- * players are connected to it. Sent every second, under the session token the
- * supervisor gave the game: it holds the whole state, which replaces the one
- * before.
+ * @brief A game process tells its supervisor where its game stands, who plays
+ * it and what the process measured. Sent every second, under the session token
+ * the supervisor gave the game: it holds the whole state, which replaces the
+ * one before.
  */
 struct GameStatus {
   static constexpr MessageType TYPE = MessageType::GameStatus;
 
   GameStatusState state{GameStatusState::WaitingForPlayers};
-  std::uint8_t playerCount{};
+  /** @brief The nickname of each player connected to the game, in the order
+   * of their numbers: MAXIMUM_PLAYERS at most. */
+  std::vector<std::string> nicknames;
+  GameStatusMeasures measures;
 
   bool operator==(const GameStatus&) const = default;
 };
 
 /**
- * @brief Writes the state, then the number of players.
+ * @brief Writes the state, the number of nicknames, each nickname, the
+ * measures byte (one bit per measure taken, see
+ * TICK_MEDIAN_MEASURE_BIT_POSITION), then each measure taken as a 32-bit
+ * count of microseconds.
  * @throws InvalidFieldValueException when the state is not one of
- * GameStatusState, or the number of players is above MAXIMUM_PLAYERS; nothing
- * is written then.
+ * GameStatusState.
+ * @throws TooManyPlayersException when there are more than MAXIMUM_PLAYERS
+ * nicknames.
+ * @throws InvalidNicknameException when a nickname is not one the protocol
+ * accepts. Nothing is written then.
  */
 void encodePayload(ByteWriter& writer, const GameStatus& message);
 
 /**
- * @brief Reads a GameStatus from the whole of @p payload.
- * @throws BufferUnderflowException when @p payload holds fewer than two bytes.
- * @throws TrailingBytesException when bytes follow the number of players.
+ * @brief Reads a GameStatus from the whole of @p payload. The number of
+ * nicknames is checked before any nickname is read.
+ * @throws BufferUnderflowException when @p payload ends before the last field
+ * it announces.
+ * @throws TrailingBytesException when bytes follow the last measure.
+ * @throws TooManyPlayersException when it announces more than MAXIMUM_PLAYERS
+ * nicknames.
  * @throws InvalidFieldValueException when the state is not one of
- * GameStatusState, or the number of players is above MAXIMUM_PLAYERS.
+ * GameStatusState, or the measures byte sets a bit no measure uses.
+ * @throws InvalidNicknameException when a nickname is not one the protocol
+ * accepts.
  */
 [[nodiscard]] GameStatus decodePayload(std::span<const std::byte> payload,
                                        std::type_identity<GameStatus> type);

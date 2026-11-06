@@ -13,7 +13,6 @@
 #include "MetricsReport.hpp"
 #include "ServerMetricsFixture.hpp"
 #include "ServerMetricsTestConstants.hpp"
-#include "ServerModuleTestConstants.hpp"
 #include "ServerTestConstants.hpp"
 #include "SystemScheduler.hpp"
 #include "SystemTime.hpp"
@@ -37,7 +36,7 @@ using rtype::server::TickDurationSummary;
  * Then no report was published and the journal holds no line of the metrics
  */
 TEST_F(ServerMetricsFixture, PublishesNothingBeforeTheEndOfAReport) {
-  startWithGames(ONE_GAME);
+  startWith(shippedWaves());
 
   runTicks(ONE_TICK_BEFORE_THE_REPORT);
 
@@ -51,7 +50,7 @@ TEST_F(ServerMetricsFixture, PublishesNothingBeforeTheEndOfAReport) {
  * Then the report counts those ticks and gives that time for each figure
  */
 TEST_F(ServerMetricsFixture, ReportsHowLongTheTicksLasted) {
-  startWithGames(ONE_GAME);
+  startWith(shippedWaves());
 
   runTicks(TICKS_IN_TEN_SECONDS);
 
@@ -71,7 +70,7 @@ TEST_F(ServerMetricsFixture, ReportsHowLongTheTicksLasted) {
  * Then the journal holds the two lines of one report
  */
 TEST_F(ServerMetricsFixture, WritesTwoLinesInTheJournalEveryReport) {
-  startWithGames(ONE_GAME);
+  startWith(shippedWaves());
 
   runTicks(TICKS_IN_TEN_SECONDS);
 
@@ -84,7 +83,7 @@ TEST_F(ServerMetricsFixture, WritesTwoLinesInTheJournalEveryReport) {
  * Then the second report counts its own ticks only
  */
 TEST_F(ServerMetricsFixture, TheNextReportStartsAfresh) {
-  startWithGames(ONE_GAME);
+  startWith(shippedWaves());
 
   runTicks(TICKS_OF_TWO_REPORTS);
 
@@ -95,12 +94,12 @@ TEST_F(ServerMetricsFixture, TheNextReportStartsAfresh) {
 }
 
 /**
- * Given a server of three games, one player seated in the first one
+ * Given a game process, one player seated in its game
  * When it ran the ticks of ten seconds
- * Then the report counts the games, the player and its ship
+ * Then the report counts the game, the player and its ship
  */
-TEST_F(ServerMetricsFixture, ReportsTheGamesThePlayersAndTheEntities) {
-  startWithGames(THREE_GAMES);
+TEST_F(ServerMetricsFixture, ReportsTheGameThePlayersAndTheEntities) {
+  startWith(shippedWaves());
   join(0);
 
   runTicks(TICKS_IN_TEN_SECONDS);
@@ -108,19 +107,19 @@ TEST_F(ServerMetricsFixture, ReportsTheGamesThePlayersAndTheEntities) {
   const std::optional<MetricsReport> report = latestReport();
   ASSERT_TRUE(report.has_value());
   const GamesCensus games = report.value_or(MetricsReport{}).games;
-  EXPECT_EQ(games.hosted, THREE_GAMES);
+  EXPECT_EQ(games.hosted, GAMES_OF_THE_PROCESS);
   EXPECT_EQ(games.inProgress, 0U);
   EXPECT_EQ(games.players, 1U);
   EXPECT_EQ(games.entities, 1U);
 }
 
 /**
- * Given a server of three games, each with the same systems
+ * Given a game process, its game running its systems
  * When it ran the ticks of ten seconds
  * Then the report lists each system once
  */
 TEST_F(ServerMetricsFixture, ReportsEachSystemOnce) {
-  startWithGames(THREE_GAMES);
+  startWith(shippedWaves());
 
   runTicks(TICKS_IN_TEN_SECONDS);
 
@@ -136,8 +135,8 @@ TEST_F(ServerMetricsFixture, ReportsEachSystemOnce) {
  * Then its time is not counted: the module took its clock back
  */
 TEST_F(ServerMetricsFixture, StopsMeasuringTheSystemsWhenItStops) {
-  startWithGames(ONE_GAME);
-  rtype::server::GameInstance& game = *probe().games()->all()[FIRST_GAME];
+  startWith(shippedWaves());
+  rtype::server::GameInstance& game = probe().runningGame()->game();
   addTimedSystemTo(game);
   application().stop();
   rtype::engine::EntityRegistry entities;
@@ -156,7 +155,7 @@ TEST_F(ServerMetricsFixture, StopsMeasuringTheSystemsWhenItStops) {
  * Then the report holds it
  */
 TEST_F(ServerMetricsFixture, TheReportHoldsTheTraffic) {
-  startWithGames(ONE_GAME);
+  startWith(shippedWaves());
   network().traffic().countSent(loopbackOnPort(PEER_PORT),
                                 std::vector<std::byte>(1));
 
@@ -174,7 +173,7 @@ TEST_F(ServerMetricsFixture, TheReportHoldsTheTraffic) {
  * Then the journal holds no traffic line, then one
  */
 TEST_F(ServerMetricsFixture, WritesTheTrafficLineAfterTenSecondsOfTheClock) {
-  startWithGames(ONE_GAME);
+  startWith(shippedWaves());
 
   runTicks(TICKS_JUST_BEFORE_THE_TRAFFIC_LINE);
   EXPECT_EQ(trafficLinesInTheJournal(), 0U);
@@ -193,7 +192,7 @@ TEST_F(ServerMetricsFixture, WritesTheTrafficToTheFileItWasGiven) {
   const TemporaryFolder folder;
   const std::filesystem::path file = folder.path() / TRAFFIC_FILE_NAME;
   writeTrafficTo(file);
-  startWithGames(ONE_GAME);
+  startWith(shippedWaves());
   network().traffic().countSent(loopbackOnPort(PEER_PORT),
                                 std::vector<std::byte>(1));
 
@@ -211,5 +210,5 @@ TEST_F(ServerMetricsFixture, RefusesATrafficFileItCannotOpen) {
   const TemporaryFolder folder;
   writeTrafficTo(folder.path());
 
-  EXPECT_THROW(startWithGames(ONE_GAME), ModuleStartFailedException);
+  EXPECT_THROW(startWith(shippedWaves()), ModuleStartFailedException);
 }

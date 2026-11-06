@@ -1,27 +1,31 @@
 #include "ServerSupervisorLinkModule.hpp"
+#include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
+#include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "GameInstance.hpp"
 #include "GameState.hpp"
 #include "GameStatus.hpp"
-#include "Games.hpp"
 #include "IDatagramSender.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
+#include "LatestMetrics.hpp"
+#include "LatestStatusMeasures.hpp"
 #include "MessageType.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "RunningGame.hpp"
 #include "ServerConstants.hpp"
 #include "StopRequest.hpp"
 #include "SupervisorLink.hpp"
@@ -48,10 +52,33 @@ network::GameStatusState statusStateOf(GameState state) {
   return network::GameStatusState::WaitingForPlayers;
 }
 
-/** @returns How many players the only game of @p games holds. */
-std::size_t playerCountOf(const Games& games) {
-  const ConnectedPlayers players = games.all().front()->roster().connected();
-  return players.size();
+/** @returns Whether @p players are named @p nicknames, in that order. */
+bool namedAs(const ConnectedPlayers& players,
+             const std::vector<std::string>& nicknames) {
+  return std::ranges::equal(
+      players, nicknames, {},
+      [](const ConnectedPlayer* player) -> const std::string& {
+        return player->nickname;
+      });
+}
+
+/** @returns Whether @p last, the status sent last, still tells the game: the
+ * state and the measures of @p now, and the nicknames of @p players. */
+bool stillTells(const network::GameStatus& last, const network::GameStatus& now,
+                const ConnectedPlayers& players) {
+  return last.state == now.state && last.measures == now.measures &&
+         namedAs(players, last.nicknames);
+}
+
+/** @returns The status @p status, which holds the state and the measures,
+ * with the nicknames of @p players. */
+network::GameStatus namingPlayers(network::GameStatus status,
+                                  const ConnectedPlayers& players) {
+  status.nicknames.reserve(players.size());
+  for (const ConnectedPlayer* const player : players) {
+    status.nicknames.push_back(player->nickname);
+  }
+  return status;
 }
 
 /** @returns Whether @p datagram holds a Disconnection. */
@@ -82,11 +109,17 @@ std::vector<std::string> ServerSupervisorLinkModule::dependencies() const {
   return {std::string{NETWORK_MODULE_NAME}, std::string{GAMES_MODULE_NAME}};
 }
 
+std::vector<std::string> ServerSupervisorLinkModule::optionalDependencies()
+    const {
+  return {std::string{METRICS_MODULE_NAME}};
+}
+
 void ServerSupervisorLinkModule::install(engine::InstallContext& context) {
-  games_ = &context.require<Games>();
+  runningGame_ = &context.require<RunningGame>();
   sender_ = &context.require<IDatagramSender>();
   admission_ = &context.require<IPlayerAdmission>();
   tickDatagrams_ = &context.require<TickDatagrams>();
+  measures_ = LatestStatusMeasures{context.find<LatestMetrics>()};
   context.addWork(SIMULATION_STAGE,
                   [this](engine::Duration elapsed) { onTick(elapsed); });
 }
@@ -101,12 +134,17 @@ void ServerSupervisorLinkModule::stop() {
 
 void ServerSupervisorLinkModule::onTick(engine::Duration elapsed) {
   readSupervisorDatagrams();
-  const std::size_t playerCount = playerCountOf(*games_);
-  watch_.tick(elapsed, playerCount);
+  GameInstance& game = runningGame_->game();
+  const ConnectedPlayers players = game.roster().connected();
+  watch_.tick(elapsed, players.size());
   if (const std::optional<std::string_view> reason = watch_.reasonToStop()) {
     askToStop(*reason);
   }
-  sendStatusWhenDue(elapsed, playerCount);
+  sendStatusWhenDue(elapsed,
+                    network::GameStatus{.state = statusStateOf(game.state()),
+                                        .nicknames = {},
+                                        .measures = measures_.current()},
+                    players);
 }
 
 void ServerSupervisorLinkModule::readSupervisorDatagrams() {
@@ -121,29 +159,22 @@ void ServerSupervisorLinkModule::readSupervisorDatagrams() {
   }
 }
 
-void ServerSupervisorLinkModule::sendStatusWhenDue(engine::Duration elapsed,
-                                                   std::size_t playerCount) {
+void ServerSupervisorLinkModule::sendStatusWhenDue(
+    engine::Duration elapsed, network::GameStatus status,
+    const ConnectedPlayers& players) {
   sinceStatus_ += elapsed;
-  const network::GameStatus status = currentStatus(playerCount);
-  if (sinceStatus_ < STATUS_INTERVAL && status == lastStatus_) {
+  if (sinceStatus_ < STATUS_INTERVAL &&
+      stillTells(lastStatus_, status, players)) {
     return;
   }
   sinceStatus_ = engine::Duration::zero();
-  lastStatus_ = status;
+  lastStatus_ = namingPlayers(std::move(status), players);
   sender_->queueDatagram(network::OutgoingDatagram{
       .destination = supervisor_,
       .payload = network::DatagramCodec::encode(
           network::PacketHeader{.sessionToken = link_.token,
                                 .sequence = nextSequence_++},
-          status)});
-}
-
-network::GameStatus ServerSupervisorLinkModule::currentStatus(
-    std::size_t playerCount) const {
-  const GameInstance& game = *games_->all().front();
-  return network::GameStatus{
-      .state = statusStateOf(game.state()),
-      .playerCount = static_cast<std::uint8_t>(playerCount)};
+          lastStatus_)});
 }
 
 void ServerSupervisorLinkModule::askToStop(std::string_view reason) {

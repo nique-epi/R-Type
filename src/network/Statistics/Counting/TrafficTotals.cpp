@@ -13,6 +13,12 @@ void addRow(TrafficTotals& totals, const TwoWayTraffic& row) {
   addFigures(totals.received, row.received.datagrams);
 }
 
+TrafficFigures figuresBetween(const TrafficFigures& older,
+                              const TrafficFigures& newer) {
+  return TrafficFigures{.count = newer.count - older.count,
+                        .bytes = newer.bytes - older.bytes};
+}
+
 }  // namespace
 
 TrafficTotals trafficTotalsOf(const TrafficReport& report) {
@@ -23,6 +29,18 @@ TrafficTotals trafficTotalsOf(const TrafficReport& report) {
     addRow(totals, peer.traffic);
   }
   return totals;
+}
+
+void addTotals(TrafficTotals& total, const TrafficTotals& part) {
+  addFigures(total.sent, part.sent);
+  addFigures(total.received, part.received);
+}
+
+TrafficTotals trafficBetween(const TrafficTotals& older,
+                             const TrafficTotals& newer) {
+  return TrafficTotals{
+      .sent = figuresBetween(older.sent, newer.sent),
+      .received = figuresBetween(older.received, newer.received)};
 }
 
 }  // namespace rtype::network

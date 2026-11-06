@@ -1,29 +1,35 @@
 #include "ServerMasterModule.hpp"
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 #include "ConfigurationRegistry.hpp"
-#include "Games.hpp"
 #include "HeartbeatJobParts.hpp"
 #include "IListeningPort.hpp"
 #include "IServerName.hpp"
+#include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
 #include "LatestHostedGames.hpp"
-#include "LatestMetrics.hpp"
+#include "LatestServerMeasures.hpp"
 #include "MasterAccess.hpp"
+#include "MasterMessages.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "ServerConstants.hpp"
 #include "ServerIdentity.hpp"
 #include "TextSettingDefinition.hpp"
+#include "TickDatagrams.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::server {
 
 ServerMasterModule::ServerMasterModule()
-    : logger_(std::string{SERVER_LOGGER_NAME}) {}
+    : probeSecret_(randomProbeSecret()),
+      probeDesk_(probeSecret_, probeTokens_),
+      logger_(std::string{SERVER_LOGGER_NAME}) {}
 
 std::string ServerMasterModule::name() const {
   return std::string{MASTER_MODULE_NAME};
@@ -31,20 +37,20 @@ std::string ServerMasterModule::name() const {
 
 std::vector<std::string> ServerMasterModule::dependencies() const {
   return {std::string{LOGGER_MODULE_NAME}, std::string{NETWORK_MODULE_NAME},
-          std::string{GAMES_MODULE_NAME}, std::string{INFORMATION_MODULE_NAME}};
-}
-
-std::vector<std::string> ServerMasterModule::optionalDependencies() const {
-  return {std::string{METRICS_MODULE_NAME}};
+          std::string{SUPERVISED_GAMES_MODULE_NAME},
+          std::string{INFORMATION_MODULE_NAME}};
 }
 
 void ServerMasterModule::install(engine::InstallContext& context) {
   declareSettings(context.require<engine::ConfigurationRegistry>());
   port_ = &context.require<IListeningPort>();
-  games_ = &context.require<Games>();
   hostedGames_ = &context.require<LatestHostedGames>();
+  measures_ = &context.require<LatestServerMeasures>();
   serverName_ = &context.require<IServerName>();
-  metrics_ = context.find<LatestMetrics>();
+  tickDatagrams_ = &context.require<TickDatagrams>();
+  context.addWork(
+      SIMULATION_STAGE,
+      [this]([[maybe_unused]] engine::Duration elapsed) { keepProbeTokens(); });
 }
 
 void ServerMasterModule::declareSettings(
@@ -77,9 +83,11 @@ std::optional<HeartbeatJobParts> ServerMasterModule::jobParts() const {
       .identity = ServerIdentity{.name = serverName_->serverName(),
                                  .udpPort = udpPort,
                                  .maximumGames = static_cast<std::uint16_t>(
-                                     games_->all().size())},
+                                     MAXIMUM_RUNNING_GAMES),
+                                 .probeSecret = probeSecret_},
       .games = *hostedGames_,
-      .metrics = metrics_,
+      .probeTokens = probeTokens_,
+      .measures = measures_,
       .times = {}};
 }
 
@@ -96,5 +104,13 @@ void ServerMasterModule::start() {
 }
 
 void ServerMasterModule::stop() { job_.reset(); }
+
+void ServerMasterModule::keepProbeTokens() {
+  const std::span<const network::IncomingDatagram> probes =
+      tickDatagrams_->probes();
+  if (!probes.empty()) {
+    probeDesk_.keep(probes, clock_.now());
+  }
+}
 
 }  // namespace rtype::server

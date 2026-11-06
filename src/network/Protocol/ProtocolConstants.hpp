@@ -19,7 +19,11 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 7 numbers the
+ * @brief The version of the protocol this code speaks. Version 9 makes a
+ * ConnectionRequest name the game it asks for, and adds the refusals
+ * GameNotFound and ServerFull, see the Version 9 section; version 8 makes a
+ * GameStatus carry the nicknames of the players of its game and the measures
+ * of its process, see the Version 8 section; version 7 numbers the
  * guaranteed messages and delivers them in order, see the Ordered messages
  * section; version 6 names the
  * entity types by a table ConnectionAccepted carries, so the type of
@@ -30,7 +34,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * frame, see the Compression section; version 3 adds the outcome of a game to
  * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 7;
+constexpr std::uint8_t PROTOCOL_VERSION = 9;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -168,6 +172,20 @@ constexpr std::uint8_t DASHING_MOTION_BIT_POSITION = 5;
 constexpr std::size_t PLAYER_MOTION_BIT_COUNT = 6;
 constexpr auto PLAYER_MOTION_BITS =
     static_cast<std::uint8_t>((1U << PLAYER_MOTION_BIT_COUNT) - 1);
+
+/**
+ * @brief Where each measure of a GameStatus sits in its measures byte, counted
+ * from bit 0: the median of the duration of a tick, its 95th percentile, and
+ * the mean round trip of the players of the game. A measure whose bit is set
+ * follows, in that order, as a 32-bit count of microseconds; the bits above
+ * them are 0.
+ */
+constexpr std::uint8_t TICK_MEDIAN_MEASURE_BIT_POSITION = 0;
+constexpr std::uint8_t TICK_NINETY_FIFTH_PERCENTILE_MEASURE_BIT_POSITION = 1;
+constexpr std::uint8_t AVERAGE_ROUND_TRIP_MEASURE_BIT_POSITION = 2;
+constexpr std::size_t GAME_STATUS_MEASURE_COUNT = 3;
+constexpr auto GAME_STATUS_MEASURE_BITS =
+    static_cast<std::uint8_t>((1U << GAME_STATUS_MEASURE_COUNT) - 1);
 
 /**
  * @brief The inputNumber of the first PlayerInput of a session; each next one
@@ -347,6 +365,15 @@ constexpr std::size_t MAXIMUM_NICKNAME_SIZE = 16;
 constexpr std::size_t MAXIMUM_SERVER_NAME_SIZE = 32;
 
 /**
+ * @brief The longest text of a chat line, in bytes of UTF-8: Source cuts a line
+ * of chat at 127 characters. Provisional, see the protocol page.
+ */
+constexpr std::size_t MAXIMUM_CHAT_TEXT_SIZE = 127;
+
+static_assert(MAXIMUM_CHAT_TEXT_SIZE <= MAX_SHORT_STRING_LENGTH,
+              "a chat text fits a short string");
+
+/**
  * @brief The longest version of the game, in bytes: "1.12.0-rc.2" fits. The
  * master and the ServerInformation of the server alike.
  */
@@ -362,12 +389,25 @@ constexpr std::uint8_t SPACE_BYTE = 0x20;
 constexpr std::uint8_t DELETE_BYTE = 0x7F;
 
 /**
+ * @brief The number of the first game of a server, in the list of the master
+ * and in a ConnectionRequest that names a game; its games are numbered from it.
+ */
+constexpr std::uint16_t FIRST_HOSTED_GAME_NUMBER = 1;
+
+/**
+ * @brief The number a ConnectionRequest carries when its choice names no game:
+ * any game, or a new one.
+ */
+constexpr std::uint16_t UNUSED_GAME_NUMBER = 0;
+
+/**
  * @brief The size of the smallest datagram holding a ConnectionRequest: a
- * cookie and a nickname of one byte.
+ * cookie, a nickname of one byte, then the kind and the number of the game.
  */
 constexpr std::size_t SMALLEST_CONNECTION_REQUEST_DATAGRAM_SIZE =
     PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT64_WIRE_SIZE +
-    SHORT_STRING_PREFIX_SIZE + MINIMUM_NICKNAME_SIZE;
+    SHORT_STRING_PREFIX_SIZE + MINIMUM_NICKNAME_SIZE + UINT8_WIRE_SIZE +
+    UINT16_WIRE_SIZE;
 
 /**
  * @brief The size of the largest datagram the server sends a sender that did
@@ -449,6 +489,17 @@ static_assert(LARGEST_LEADERBOARD_ANSWER_SIZE <= MESSAGE_PAYLOAD_LIMIT,
               "a LeaderboardAnswer always fits in one datagram");
 
 /**
+ * @brief The largest PlayerChatLine payload: lineNumber, the longest text after
+ * its length, then playerNumber.
+ */
+constexpr std::size_t LARGEST_PLAYER_CHAT_LINE_SIZE =
+    UINT16_WIRE_SIZE + SHORT_STRING_PREFIX_SIZE + MAXIMUM_CHAT_TEXT_SIZE +
+    UINT8_WIRE_SIZE;
+
+static_assert(LARGEST_PLAYER_CHAT_LINE_SIZE <= ORDERED_PAYLOAD_LIMIT,
+              "a PlayerChatLine always fits in an OrderedMessage");
+
+/**
  * @brief The size of the largest datagram holding a ServerInformation: the
  * echo of the request (sentAt, heldFor), the protocol version, the longest
  * game version and server name, then the counts of players, games and free
@@ -517,6 +568,7 @@ constexpr std::string_view PADDING_FIELD = "padding";
 constexpr std::string_view FREE_SEAT_COUNT_FIELD = "freeSeatCount";
 constexpr std::string_view GAME_VERSION_FIELD = "gameVersion";
 constexpr std::string_view SERVER_NAME_FIELD = "name";
+constexpr std::string_view MEASURES_FIELD = "measures";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a

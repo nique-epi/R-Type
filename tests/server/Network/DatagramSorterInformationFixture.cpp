@@ -24,11 +24,13 @@ DatagramSorterInformationFixture::DatagramSorterInformationFixture()
     : players_(rtype::server::INCOMING_DATAGRAM_QUEUE_CAPACITY),
       connectionRequests_(rtype::server::CONNECTION_REQUEST_QUEUE_CAPACITY),
       informationRequests_(rtype::server::INFORMATION_REQUEST_QUEUE_CAPACITY),
+      probes_(rtype::server::PROBE_QUEUE_CAPACITY),
       sorter_(
           rtype::server::DatagramQueues{
               .players = &players_,
               .connectionRequests = &connectionRequests_,
-              .informationRequests = &informationRequests_},
+              .informationRequests = &informationRequests_,
+              .probes = &probes_},
           rejections_, clock_) {}
 
 void DatagramSorterInformationFixture::sort(
@@ -63,6 +65,11 @@ DatagramSorterInformationFixture::drainRequests() {
 std::vector<rtype::network::IncomingDatagram>
 DatagramSorterInformationFixture::drainInformationRequests() {
   return drained(informationRequests_);
+}
+
+std::vector<rtype::network::IncomingDatagram>
+DatagramSorterInformationFixture::drainProbes() {
+  return drained(probes_);
 }
 
 rtype::server::RejectionReport DatagramSorterInformationFixture::takeReport() {

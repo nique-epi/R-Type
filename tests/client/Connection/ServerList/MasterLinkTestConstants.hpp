@@ -13,6 +13,7 @@ constexpr std::uint16_t LINKED_SERVER_PORT = 4242;
 constexpr std::string_view LINKED_SERVER_GAME_VERSION = "0.4.0";
 constexpr std::uint16_t LINKED_SERVER_MAXIMUM_GAMES = 8;
 constexpr std::uint8_t LINKED_SERVER_PLAYERS_PER_GAME = 4;
+constexpr std::uint64_t LINKED_SERVER_PROBE_SECRET = 0x0A0B'0C0D'0E0F'1011;
 
 /** @brief How long a test waits for the thread of the link to read, longer
  * than the timeouts of MasterClient, and how often it looks. */

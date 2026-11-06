@@ -3,8 +3,7 @@
 #include <chrono>
 #include <vector>
 #include "ConnectedPlayer.hpp"
-#include "GamePlayers.hpp"
-#include "Games.hpp"
+#include "GameInstance.hpp"
 #include "GamesCensus.hpp"
 #include "GamesMeasures.hpp"
 #include "Heartbeat.hpp"
@@ -12,47 +11,45 @@
 #include "Metrics/ServerMetricsTestConstants.hpp"
 #include "PlayerRoundTripMeasure.hpp"
 #include "RoundTripFigures.hpp"
-#include "ServerModuleTestConstants.hpp"
 #include "SystemTime.hpp"
 
 using rtype::server::censusOf;
 using rtype::server::ConnectedPlayer;
-using rtype::server::Games;
+using rtype::server::GameInstance;
 using rtype::server::GamesCensus;
 using rtype::server::PlayerRoundTripMeasure;
 using rtype::server::roundTripsOf;
 using rtype::server::takeSystemTimesOf;
 
 /**
- * Given three games nobody joined
- * When they are counted
- * Then three are hosted and they hold nothing
+ * Given a game nobody joined
+ * When it is counted
+ * Then the one game of the process is hosted and it holds nothing
  */
-TEST_F(ServerMetricsFixture, TheCensusOfEmptyGamesHoldsOnlyTheGames) {
-  startWithGames(THREE_GAMES);
+TEST_F(ServerMetricsFixture, TheCensusOfAnEmptyGameHoldsOnlyTheGame) {
+  startWith(shippedWaves());
 
-  const GamesCensus census = censusOf(*probe().games());
+  const GamesCensus census = censusOf(probe().runningGame()->game());
 
-  EXPECT_EQ(census.hosted, THREE_GAMES);
+  EXPECT_EQ(census.hosted, GAMES_OF_THE_PROCESS);
   EXPECT_EQ(census.inProgress, 0U);
   EXPECT_EQ(census.players, 0U);
   EXPECT_EQ(census.entities, 0U);
 }
 
 /**
- * Given two players in the first game and one in the second, nobody ready
- * When the games are counted
- * Then the three players and their three ships are counted, and no game is in
- * progress
+ * Given three players in the game, nobody ready
+ * When the game is counted
+ * Then the three players and their three ships are counted, and the game is
+ * not in progress
  */
-TEST_F(ServerMetricsFixture, TheCensusAddsUpThePlayersAndTheShipsOfEveryGame) {
-  startWithGames(THREE_GAMES);
-  const Games& games = *probe().games();
+TEST_F(ServerMetricsFixture, TheCensusAddsUpThePlayersAndTheShipsOfTheGame) {
+  startWith(shippedWaves());
   join(0);
   join(1);
-  seatPlayerIn(*games.all()[SECOND_GAME], 2);
+  join(2);
 
-  const GamesCensus census = censusOf(games);
+  const GamesCensus census = censusOf(probe().runningGame()->game());
 
   EXPECT_EQ(census.inProgress, 0U);
   EXPECT_EQ(census.players, 3U);
@@ -61,79 +58,75 @@ TEST_F(ServerMetricsFixture, TheCensusAddsUpThePlayersAndTheShipsOfEveryGame) {
 
 /**
  * Given a game whose only player is ready, while its client still loads
- * When the games are counted
- * Then no game is in progress: its systems do not run yet
+ * When the game is counted
+ * Then it is not in progress: its systems do not run yet
  */
 TEST_F(ServerMetricsFixture, TheCensusLeavesOutAGameStillStarting) {
-  startWithGames(THREE_GAMES);
+  startWith(shippedWaves());
   join(0);
   sayReady(0);
 
-  EXPECT_EQ(censusOf(*probe().games()).inProgress, 0U);
+  EXPECT_EQ(censusOf(probe().runningGame()->game()).inProgress, 0U);
 }
 
 /**
- * Given three games, the first one started by its only player
- * When the games are counted
- * Then one game is in progress
+ * Given a game started by its only player
+ * When the game is counted
+ * Then it is in progress
  */
-TEST_F(ServerMetricsFixture, TheCensusCountsAGameInProgress) {
-  startWithGames(THREE_GAMES);
+TEST_F(ServerMetricsFixture, TheCensusCountsTheGameInProgress) {
+  startWith(shippedWaves());
   join(0);
   startTheGameOfPlayer(0);
 
-  const GamesCensus census = censusOf(*probe().games());
-
-  EXPECT_EQ(census.hosted, THREE_GAMES);
-  EXPECT_EQ(census.inProgress, 1U);
+  EXPECT_EQ(censusOf(probe().runningGame()->game()).inProgress, 1U);
 }
 
 /**
- * Given two games in progress and one waiting, each with a timed system
+ * Given a game in progress with two timed systems of one name
  * When a tick runs
- * Then that system is listed once, with the time of the two games in progress
+ * Then that name is listed once, with the time of the two systems
  */
-TEST_F(ServerMetricsFixture, AddsUpTheTimeOfASystemOverTheGamesInProgress) {
-  startWithGames(THREE_GAMES);
-  const Games& games = *probe().games();
+TEST_F(ServerMetricsFixture, AddsUpTheTimeOfTheSystemsOfOneName) {
+  startWith(shippedWaves());
+  GameInstance& game = probe().runningGame()->game();
   join(0);
-  seatPlayerIn(*games.all()[SECOND_GAME], 1);
   startTheGameOfPlayer(0);
-  startTheGameOfPlayer(1);
-  for (const auto& game : games.all()) {
-    addTimedSystemTo(*game);
-  }
+  addTimedSystemTo(game);
+  addTimedSystemTo(game);
 
   runTick({});
 
-  const std::vector<rtype::engine::SystemTime> times = takeSystemTimesOf(games);
+  const std::vector<rtype::engine::SystemTime> times = takeSystemTimesOf(game);
+  ASSERT_EQ(std::ranges::count(times, TIMED_SYSTEM_NAME,
+                               &rtype::engine::SystemTime::name),
+            1);
   const auto timed = std::ranges::find(times, TIMED_SYSTEM_NAME,
                                        &rtype::engine::SystemTime::name);
   ASSERT_NE(timed, times.end());
-  EXPECT_EQ(timed->total, TIMED_SYSTEM_TIME_IN_TWO_GAMES);
+  EXPECT_EQ(timed->total, TIMED_SYSTEM_TIME_OF_TWO_SYSTEMS);
 }
 
 /**
- * Given three games, a player of the second game measured at a round trip of
- * 42 ms
- * When the round trips of the games are gathered
- * Then that player is listed with the number of its game, 2, its number, its
+ * Given a player of the game measured at a round trip of 42 ms
+ * When the round trips of the game are gathered
+ * Then that player is listed with the number of the game, 1, its number, its
  * nickname and its figures
  */
 TEST_F(ServerMetricsFixture, ListsTheRoundTripOfEveryPlayerMeasured) {
-  startWithGames(THREE_GAMES);
-  const Games& games = *probe().games();
-  ConnectedPlayer& player = seatPlayerIn(*games.all()[SECOND_GAME], 0);
+  startWith(shippedWaves());
+  ConnectedPlayer& player = join(0);
   player.roundTrip.receive(
       rtype::network::Heartbeat{
           .sentAt = 0,
           .echo = rtype::network::HeartbeatEcho{.sentAt = 0, .heldFor = 0}},
       MEASURED_ROUND_TRIP);
 
-  const std::vector<PlayerRoundTripMeasure> measures = roundTripsOf(games);
+  const std::vector<PlayerRoundTripMeasure> measures =
+      roundTripsOf(probe().runningGame()->game());
 
   ASSERT_EQ(measures.size(), 1U);
-  EXPECT_EQ(measures.front().gameNumber, NUMBER_OF_THE_SECOND_GAME);
+  EXPECT_EQ(measures.front().gameNumber, NUMBER_OF_THE_ONLY_GAME);
   EXPECT_EQ(measures.front().playerNumber, player.playerNumber);
   EXPECT_EQ(measures.front().nickname, player.nickname);
   EXPECT_EQ(measures.front().figures,
@@ -144,12 +137,12 @@ TEST_F(ServerMetricsFixture, ListsTheRoundTripOfEveryPlayerMeasured) {
 
 /**
  * Given a game whose only player was measured nothing yet
- * When the round trips of the games are gathered
+ * When the round trips of the game are gathered
  * Then nobody is listed
  */
 TEST_F(ServerMetricsFixture, LeavesOutAPlayerNotMeasuredYet) {
-  startWithGames(THREE_GAMES);
+  startWith(shippedWaves());
   join(0);
 
-  EXPECT_TRUE(roundTripsOf(*probe().games()).empty());
+  EXPECT_TRUE(roundTripsOf(probe().runningGame()->game()).empty());
 }

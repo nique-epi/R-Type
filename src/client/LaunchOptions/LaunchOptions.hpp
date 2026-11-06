@@ -7,19 +7,19 @@
 #include <string_view>
 #include <vector>
 #include "AudioMode.hpp"
-#include "Endpoint.hpp"
 #include "LaunchValues.hpp"
 #include "LogLaunchOptions.hpp"
 #include "NetworkConditions.hpp"
+#include "ServerChoice.hpp"
 #include "SimulatorLaunchOptions.hpp"
 
 namespace rtype::client {
 
 /**
  * @brief What the client is told at launch: the address and the port of the
- * server to join and the nickname of the player, which the connection screen
- * starts with, whether it makes sound, the network simulated and the logging
- * options, or a request for its usage.
+ * server to join, the nickname of the player and the game it asks for, which
+ * the connection screen starts with, whether it makes sound, the network
+ * simulated and the logging options, or a request for its usage.
  *
  * `-h`, `-p`, `-n` and `--set` also force the setting they name: each gives a
  * line of the command `set`, run after client.cfg, so a launch option wins over
@@ -30,7 +30,7 @@ class LaunchOptions {
   /**
    * @brief Reads every option of the client from @p arguments, the arguments
    * it was launched with, without its name, in one pass from the first to the
-   * last: `-h <address>`, `-p <port>`, `-n <nickname>`,
+   * last: `-h <address>`, `-p <port>`, `-n <nickname>`, `--game <game>`,
    * `--set <name>=<value>`, `--no-sound`, `--traffic-csv <file>` and `--help`,
    * the options of the network simulator (see
    * network::SimulatorLaunchOptions::readOption()) and the logging options
@@ -41,17 +41,18 @@ class LaunchOptions {
    * when it is spelled as an option of the client, of the simulator or of the
    * logging: `-n --lag` is the nickname `--lag`. Without `-h` the address is
    * DEFAULT_SERVER_ADDRESS, without `-p` the port is DEFAULT_SERVER_PORT,
-   * without `-n` the nickname is DEFAULT_NICKNAME, without `--no-sound` the
+   * without `-n` the nickname is DEFAULT_NICKNAME, without `--game` the game
+   * is network::ANY_GAME_CHOICE, without `--no-sound` the
    * client makes sound, and without a logging option the journal is
-   * CLIENT_LOG_FILE_NAME next to the executable. The last of each option
-   * wins.
+   * CLIENT_LOG_FILE_NAME in journalFolder(), or next to the executable when
+   * that gives none. The last of each option wins.
    *
-   * @throws engine::UnknownExecutablePathException when the system does not
-   *         tell where the executable is, so the default journal has no
-   *         folder.
+   * @throws engine::UnknownExecutablePathException when the default journal
+   *         goes next to the executable and the system does not tell where
+   *         the executable is.
    * @throws engine::UnknownLaunchArgumentException for any other argument.
-   * @throws engine::MissingLaunchOptionValueException when `-h`, `-p` or `-n`
-   *         is the last argument.
+   * @throws engine::MissingLaunchOptionValueException when `-h`, `-p`, `-n`
+   *         or `--game` is the last argument.
    * @throws network::InvalidIpv4AddressException when the value of `-h` is
    *         not an IPv4 address written as four numbers: the server only
    *         listens over IPv4, and host names are not resolved.
@@ -59,6 +60,9 @@ class LaunchOptions {
    *         port from LOWEST_PORT to HIGHEST_PORT.
    * @throws InvalidNicknameOptionException when the value of `-n` is not
    *         MINIMUM_NICKNAME_SIZE to MAXIMUM_NICKNAME_SIZE bytes of UTF-8.
+   * @throws InvalidGameOptionException when the value of `--game` is neither
+   *         NEW_GAME_VALUE nor a number from network::FIRST_HOSTED_GAME_NUMBER
+   *         to 65535.
    * @throws engine::InvalidLaunchOptionValueException when the value of
    *         `--set` is not `name=value`.
    */
@@ -71,17 +75,15 @@ class LaunchOptions {
    */
   [[nodiscard]] static std::string usage();
 
-  /** @returns the address and the port of the server to join. */
-  [[nodiscard]] const network::Endpoint& serverEndpoint() const;
+  /** @returns the address and the port of the server to join, the nickname
+   * of the player, UTF-8, and the game it asks for. */
+  [[nodiscard]] const ServerChoice& serverChoice() const;
 
   /**
    * @returns The lines of the command `set` the launch options force, in the
    * order they were given; none when no option gave a setting.
    */
   [[nodiscard]] const std::vector<std::string>& forcedLines() const;
-
-  /** @returns the nickname of the player, UTF-8. */
-  [[nodiscard]] const std::string& nickname() const;
 
   /** @returns AudioMode::Disabled when `--no-sound` was given, otherwise
    * AudioMode::Enabled. */
