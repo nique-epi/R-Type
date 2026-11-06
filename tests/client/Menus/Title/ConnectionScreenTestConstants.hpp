@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string_view>
 #include "ConnectionPhase.hpp"
+#include "ConnectionRequest.hpp"
 #include "ConnectionStatus.hpp"
 #include "RecordingServerConnection.hpp"
 
@@ -14,6 +15,10 @@ constexpr std::string_view LAUNCH_ADDRESS = "192.168.1.20";
 constexpr std::uint16_t LAUNCH_PORT = 4243;
 constexpr std::u32string_view LAUNCH_PORT_TEXT = U"4243";
 constexpr std::string_view LAUNCH_NICKNAME = "ACE";
+
+/** @brief The game the launch options asked for: game 2 of the server. */
+constexpr network::GameChoice LAUNCH_GAME{
+    .kind = network::GameChoiceKind::ExistingGame, .number = 2};
 
 /** @brief A port the player types, as typed and as read. */
 constexpr std::u32string_view TYPED_PORT_TEXT = U"5000";

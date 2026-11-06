@@ -4,6 +4,7 @@
 #include "BotReport.hpp"
 #include "BotStanding.hpp"
 #include "BotTraffic.hpp"
+#include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
 #include "EntityMessage.hpp"
 #include "NetworkConditionsConstants.hpp"
@@ -35,7 +36,7 @@ Bot::Bot(std::uint32_t seed)
 
 void Bot::join(const network::Endpoint& server, std::string_view nickname) {
   connection_.network().open();
-  connection_.session().connect(server, nickname);
+  connection_.session().connect(server, nickname, network::ANY_GAME_CHOICE);
 }
 
 void Bot::update(engine::Duration elapsed) {

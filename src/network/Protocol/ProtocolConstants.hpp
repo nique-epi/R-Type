@@ -19,7 +19,9 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 8 makes a
+ * @brief The version of the protocol this code speaks. Version 9 makes a
+ * ConnectionRequest name the game it asks for, and adds the refusals
+ * GameNotFound and ServerFull, see the Version 9 section; version 8 makes a
  * GameStatus carry the nicknames of the players of its game and the measures
  * of its process, see the Version 8 section; version 7 numbers the
  * guaranteed messages and delivers them in order, see the Ordered messages
@@ -32,7 +34,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * frame, see the Compression section; version 3 adds the outcome of a game to
  * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 8;
+constexpr std::uint8_t PROTOCOL_VERSION = 9;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -378,12 +380,25 @@ constexpr std::uint8_t SPACE_BYTE = 0x20;
 constexpr std::uint8_t DELETE_BYTE = 0x7F;
 
 /**
+ * @brief The number of the first game of a server, in the list of the master
+ * and in a ConnectionRequest that names a game; its games are numbered from it.
+ */
+constexpr std::uint16_t FIRST_HOSTED_GAME_NUMBER = 1;
+
+/**
+ * @brief The number a ConnectionRequest carries when its choice names no game:
+ * any game, or a new one.
+ */
+constexpr std::uint16_t UNUSED_GAME_NUMBER = 0;
+
+/**
  * @brief The size of the smallest datagram holding a ConnectionRequest: a
- * cookie and a nickname of one byte.
+ * cookie, a nickname of one byte, then the kind and the number of the game.
  */
 constexpr std::size_t SMALLEST_CONNECTION_REQUEST_DATAGRAM_SIZE =
     PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT64_WIRE_SIZE +
-    SHORT_STRING_PREFIX_SIZE + MINIMUM_NICKNAME_SIZE;
+    SHORT_STRING_PREFIX_SIZE + MINIMUM_NICKNAME_SIZE + UINT8_WIRE_SIZE +
+    UINT16_WIRE_SIZE;
 
 /**
  * @brief The size of the largest datagram the server sends a sender that did

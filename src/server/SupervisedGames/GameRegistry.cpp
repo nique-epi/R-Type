@@ -6,6 +6,8 @@
 #include <span>
 #include <utility>
 #include <vector>
+#include "ConnectionRefused.hpp"
+#include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
 #include "ExitedGame.hpp"
 #include "GameLifecycle.hpp"
@@ -15,7 +17,6 @@
 #include "GameState.hpp"
 #include "GameStatus.hpp"
 #include "GameVacancy.hpp"
-#include "MasterMessageConstants.hpp"
 #include "PlaceKind.hpp"
 #include "ProcessExit.hpp"
 #include "ProtocolConstants.hpp"
@@ -105,6 +106,89 @@ GamePlace placeIn(const SupervisedGame& game) {
                    .port = game.port};
 }
 
+/** @returns The place of a player refused for @p reason. */
+GamePlace refusalFor(network::RefusalReason reason) {
+  return GamePlace{.kind = PlaceKind::Refuse, .port = 0, .refusal = reason};
+}
+
+/** @brief Gives the sender of @p request a seat of @p game, which has a free
+ * seat or holds one for it.
+ * @returns Its place in @p game. */
+GamePlace seatIn(SupervisedGame& game, const SeatRequest& request) {
+  game.reservations.reserve(request, game.nicknames);
+  return placeIn(game);
+}
+
+/** @returns A seat in the game at @p index of @p games when there is one; else
+ * Open while fewer than MAXIMUM_RUNNING_GAMES run, else a refusal with
+ * ServerFull. */
+GamePlace seatOrOpen(std::vector<SupervisedGame>& games,
+                     std::optional<std::size_t> index,
+                     const SeatRequest& request) {
+  if (index.has_value()) {
+    return seatIn(games[*index], request);
+  }
+  if (games.size() < MAXIMUM_RUNNING_GAMES) {
+    return GamePlace{.kind = PlaceKind::Open, .port = 0};
+  }
+  return refusalFor(network::RefusalReason::ServerFull);
+}
+
+/** @returns Whether nobody but @p sender came to @p game, or holds a seat in
+ * it: no player, and no seat held for another sender. */
+bool onlyAwaits(const SupervisedGame& game, const network::Endpoint& sender) {
+  return game.reservations.holds(sender) ||
+         (game.nicknames.empty() && game.reservations.count() == 0);
+}
+
+/** @returns The index of the game of @p games that @p sender opened with a
+ * NewGame, while it waits for players and nobody but its creator came;
+ * nothing when none does. */
+std::optional<std::size_t> gameCreatedBy(
+    const std::vector<SupervisedGame>& games, const network::Endpoint& sender) {
+  for (std::size_t index = 0; index < games.size(); ++index) {
+    const SupervisedGame& game = games[index];
+    if (game.creator == sender &&
+        stateOf(game.lifecycle) == GameState::WaitingForPlayers &&
+        onlyAwaits(game, sender)) {
+      return index;
+    }
+  }
+  return std::nullopt;
+}
+
+/** @returns Why the player of @p sender may not join @p game: GameInProgress
+ * when it no longer waits for players, then GameFull when it has no free seat
+ * and holds none for @p sender; nothing when it may. */
+std::optional<network::RefusalReason> refusalToJoin(
+    const SupervisedGame& game, const network::Endpoint& sender) {
+  const GameVacancy vacancy = vacancyOf(game);
+  if (vacancy.state != GameState::WaitingForPlayers) {
+    return network::RefusalReason::GameInProgress;
+  }
+  if (vacancy.full && !game.reservations.holds(sender)) {
+    return network::RefusalReason::GameFull;
+  }
+  return std::nullopt;
+}
+
+/** @returns The place of the player of @p request in the game of @p games
+ * whose place is @p number, or why it is refused: GameNotFound when no game
+ * holds that place, else as refusalToJoin() says. */
+GamePlace placeInNumberedGame(std::vector<SupervisedGame>& games,
+                              const SeatRequest& request,
+                              std::uint16_t number) {
+  const auto found = std::ranges::find(games, number, &SupervisedGame::slot);
+  if (found == games.end()) {
+    return refusalFor(network::RefusalReason::GameNotFound);
+  }
+  if (const std::optional<network::RefusalReason> refusal =
+          refusalToJoin(*found, request.sender)) {
+    return refusalFor(*refusal);
+  }
+  return seatIn(*found, request);
+}
+
 }  // namespace
 
 void GameRegistry::open(GameOpening opening) {
@@ -118,6 +202,7 @@ void GameRegistry::open(GameOpening opening) {
                                   .linkToken = opening.linkToken,
                                   .newestSequence = std::nullopt,
                                   .reservations = {},
+                                  .creator = std::move(opening.creator),
                                   .process = std::move(opening.process)});
   ++revision_;
 }
@@ -145,17 +230,17 @@ bool GameRegistry::record(SupervisedGame& game, std::uint16_t sequence,
   return true;
 }
 
-GamePlace GameRegistry::placeForNewPlayer(const SeatRequest& request) {
-  if (const std::optional<std::size_t> joinable =
-          gameFor(games_, request.sender)) {
-    SupervisedGame& game = games_[*joinable];
-    game.reservations.reserve(request, game.nicknames);
-    return placeIn(game);
+GamePlace GameRegistry::placeFor(const SeatRequest& request,
+                                 const network::GameChoice& game) {
+  switch (game.kind) {
+    case network::GameChoiceKind::AnyGame:
+      return seatOrOpen(games_, gameFor(games_, request.sender), request);
+    case network::GameChoiceKind::NewGame:
+      return seatOrOpen(games_, gameCreatedBy(games_, request.sender), request);
+    case network::GameChoiceKind::ExistingGame:
+      return placeInNumberedGame(games_, request, game.number);
   }
-  return GamePlace{.kind = games_.size() < MAXIMUM_RUNNING_GAMES
-                               ? PlaceKind::Open
-                               : PlaceKind::Full,
-                   .port = 0};
+  return refusalFor(network::RefusalReason::GameNotFound);
 }
 
 std::vector<ExitedGame> GameRegistry::collectExits() {

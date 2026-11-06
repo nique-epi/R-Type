@@ -3,6 +3,7 @@
 #include <string>
 #include "ConnectionRedirect.hpp"
 #include "ConnectionRefused.hpp"
+#include "ConnectionRequest.hpp"
 #include "GameStatus.hpp"
 #include "IncomingDatagram.hpp"
 #include "PacketHeader.hpp"
@@ -18,6 +19,7 @@ using rtype::network::ConnectionRedirect;
 using rtype::network::ConnectionRefused;
 using rtype::network::GameStatusState;
 using rtype::network::IncomingDatagram;
+using rtype::network::NEW_GAME_CHOICE;
 using rtype::network::RefusalReason;
 using rtype::server::testing::onlyMessageIn;
 using rtype::server::testing::sentTo;
@@ -107,7 +109,7 @@ TEST_F(ServerSupervisedGamesFixture, AnOlderStatusDoesNotUndoANewerOne) {
 /**
  * Given eight games in progress and full
  * When a ninth player asks for a place
- * Then it is refused as GameFull and no ninth game starts
+ * Then it is refused as ServerFull and no ninth game starts
  */
 TEST_F(ServerSupervisedGamesFixture, RefusesAPlayerWhenEveryGameIsFull) {
   startSupervisor();
@@ -123,7 +125,7 @@ TEST_F(ServerSupervisedGamesFixture, RefusesAPlayerWhenEveryGameIsFull) {
   const auto answers =
       sentTo(network().sender().sent(), supervisedPlayer(EIGHT_GAMES));
   EXPECT_EQ(onlyMessageIn<ConnectionRefused>(answers.back()).reason,
-            RefusalReason::GameFull);
+            RefusalReason::ServerFull);
 }
 
 /**
@@ -176,4 +178,59 @@ TEST_F(ServerSupervisedGamesFixture, APlayerThatAsksTwiceHoldsOneSeat) {
   }
 
   EXPECT_EQ(launcher().commands().size(), 1U);
+}
+
+/**
+ * Given two games opened for the new games of two players, both waiting for
+ * players
+ * When a third player asks for the game in the second place
+ * Then it gets a redirect to the port of the second game
+ */
+TEST_F(ServerSupervisedGamesFixture, RedirectsAPlayerToTheGameItNames) {
+  startSupervisor();
+  askForAPlaceAs(0, NEW_GAME_CHOICE);
+  askForAPlaceAs(1, NEW_GAME_CHOICE);
+  gameReports(0, statusWithPlayers(GameStatusState::WaitingForPlayers, 0),
+              SEQUENCE_FIVE);
+  gameReports(1, statusWithPlayers(GameStatusState::WaitingForPlayers, 0),
+              SEQUENCE_FIVE);
+
+  askForAPlaceAs(2, choiceOfGame(SECOND_PLACE));
+
+  const auto answers = sentTo(network().sender().sent(), supervisedPlayer(2));
+  EXPECT_EQ(
+      std::to_string(onlyMessageIn<ConnectionRedirect>(answers.back()).port),
+      argumentAfter(launcher().commands().at(1), "-p"));
+}
+
+/**
+ * Given a supervisor with no game
+ * When a player asks for a new game three times, as its client repeats it
+ * Then a single game process starts
+ */
+TEST_F(ServerSupervisedGamesFixture, StartsOneGameForARepeatedNewGame) {
+  startSupervisor();
+
+  for (std::size_t request = 0; request < REPEATED_REQUESTS; ++request) {
+    askForAPlaceAs(0, NEW_GAME_CHOICE);
+  }
+
+  EXPECT_EQ(launcher().commands().size(), 1U);
+}
+
+/**
+ * Given a supervisor with no game
+ * When a player asks for the game in the first place
+ * Then it is refused as GameNotFound and no game process starts
+ */
+TEST_F(ServerSupervisedGamesFixture,
+       RefusesAGameItDoesNotRunWithoutStartingOne) {
+  startSupervisor();
+
+  askForAPlaceAs(0, choiceOfGame(FIRST_PLACE));
+
+  EXPECT_TRUE(launcher().commands().empty());
+  const auto answers = sentTo(network().sender().sent(), supervisedPlayer(0));
+  EXPECT_EQ(onlyMessageIn<ConnectionRefused>(answers.back()).reason,
+            RefusalReason::GameNotFound);
 }
