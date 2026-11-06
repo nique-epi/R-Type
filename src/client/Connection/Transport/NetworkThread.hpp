@@ -35,6 +35,9 @@ namespace rtype::client {
  *
  * An exception on the network thread, such as a datagram it cannot send,
  * stops that thread; drainReceived() then throws it.
+ *
+ * Two TrafficCounters follow the socket: traffic() above the decoding of what
+ * the server compressed, wireTraffic() below it, as the network carried it.
  */
 class NetworkThread : public IDatagramLink {
  public:
@@ -109,6 +112,14 @@ class NetworkThread : public IDatagramLink {
    * object was built. Safe from any thread. */
   [[nodiscard]] network::TrafficCounters& traffic();
 
+  /**
+   * @returns What crossed the network since the object was built: a datagram
+   * the server compressed counts with the bytes it had on the network, before
+   * it is decoded, and as unreadable, since no message of a compressed body
+   * can be read. Safe from any thread.
+   */
+  [[nodiscard]] network::TrafficCounters& wireTraffic();
+
  private:
   /** @brief Starts receiving on @p socket, just opened, then starts the
    * network thread. */
@@ -124,6 +135,7 @@ class NetworkThread : public IDatagramLink {
   network::Endpoint listeningEndpoint_;
   network::NetworkConditions conditions_;
   network::TrafficCounters traffic_;
+  network::TrafficCounters wireTraffic_;
   network::NetworkContext network_;
   std::unique_ptr<network::IDatagramSocket> socket_;
   network::Endpoint localEndpoint_;

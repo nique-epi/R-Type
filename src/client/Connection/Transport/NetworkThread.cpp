@@ -36,8 +36,10 @@ void NetworkThread::open() {
   }
   socket_ = std::make_unique<network::CountingDatagramSocket>(
       std::make_unique<network::DecompressingDatagramSocket>(
-          network::openDatagramSocket(network_, listeningEndpoint_,
-                                      conditions_)),
+          std::make_unique<network::CountingDatagramSocket>(
+              network::openDatagramSocket(network_, listeningEndpoint_,
+                                          conditions_),
+              wireTraffic_)),
       traffic_);
   try {
     startNetwork(*socket_);
@@ -77,6 +79,8 @@ network::Endpoint NetworkThread::localEndpoint() const {
 }
 
 network::TrafficCounters& NetworkThread::traffic() { return traffic_; }
+
+network::TrafficCounters& NetworkThread::wireTraffic() { return wireTraffic_; }
 
 void NetworkThread::startNetwork(network::IDatagramSocket& socket) {
   localEndpoint_ = socket.localEndpoint();

@@ -6,6 +6,7 @@
 #include <string>
 #include "EntitySheets.hpp"
 #include "ServerConstants.hpp"
+#include "StateEncoding.hpp"
 #include "WavePlan.hpp"
 
 namespace rtype::server {
@@ -13,8 +14,8 @@ namespace rtype::server {
 /**
  * @brief What one game is set up with: the seed its random draws start from,
  * the waves of its difficulty, the entity sheets its entities are made from,
- * the world states it sends per second, the ticks it holds each input, the
- * name of its difficulty and whether it is vanilla.
+ * the world states it sends per second and how it writes them, the ticks it
+ * holds each input, the name of its difficulty and whether it is vanilla.
  */
 struct GameSettings {
   std::uint32_t seed{};
@@ -23,6 +24,7 @@ struct GameSettings {
    * of a player is SHIP_SHEET_NAME, and the waves name enemies among them. */
   std::reference_wrapper<const game::EntitySheets> types;
   std::size_t statesPerSecond{DEFAULT_WORLD_STATES_PER_SECOND};
+  StateEncoding stateEncoding{DEFAULT_STATE_ENCODING};
   std::size_t inputDelayTicks{DEFAULT_INPUT_DELAY_TICKS};
   /** @brief The name the results of the game are filed under; waves holds the
    * waves of that difficulty, not its name. */

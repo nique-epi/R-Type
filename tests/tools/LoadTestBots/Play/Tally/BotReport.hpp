@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include "BotTraffic.hpp"
 #include "ConnectionPhase.hpp"
 #include "TimeConstants.hpp"
 
@@ -20,6 +21,13 @@ struct BotReport {
   /** @brief The PlayerInput it sent during timeInGame: PLAYER_INPUTS_PER_SECOND
    * per second when its frames keep the pace of a client. */
   std::size_t inputsInGame{0};
+  /** @brief The entities the counted world states listed, each state once:
+   * divided by worldStates, the entities of a state on average. */
+  std::size_t entitiesListed{0};
+  /** @brief The datagrams the socket of the bot received and sent during
+   * timeInGame, with their bytes: those of the UDP payload, without the
+   * headers of IP and UDP. */
+  BotTraffic trafficInGame;
 };
 
 }  // namespace rtype::tools

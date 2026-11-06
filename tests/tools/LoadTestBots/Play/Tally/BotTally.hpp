@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <optional>
 #include "BotReport.hpp"
+#include "BotTraffic.hpp"
 #include "EntityMessage.hpp"
 #include "TimeConstants.hpp"
 
@@ -10,15 +11,16 @@ namespace rtype::tools {
 
 /**
  * @brief What a bot counts of its run: the world states it received, each tick
- * once, the games it saw end, the time it spent in a game and the inputs it
- * sent then. For the tally, a game runs from its first world state to its
- * GameEnded, or to the end of the session.
+ * once, with their entities, the games it saw end, the time it spent in a game
+ * and the inputs it sent and the traffic of its socket then. For the tally, a
+ * game runs from its first world state to its GameEnded, or to the end of the
+ * session.
  */
 class BotTally {
  public:
   /**
-   * @brief Counts @p message when it is a world state of a new tick or the
-   * end of the game.
+   * @brief Counts @p message when it is a world state of a new tick, with the
+   * entities it lists, or the end of the game.
    *
    * Comparing with the newest tick counted is enough: the server sends every
    * part of a tick before the next tick, and the session drops a datagram that
@@ -40,6 +42,15 @@ class BotTally {
    */
   void addTime(engine::Duration elapsed, bool gameStarted);
 
+  /**
+   * @brief Adds what crossed the socket since the previous call to the traffic
+   * in game, while a game the tally counted a world state of runs and
+   * @p gameStarted says the session still has it, as addTime() counts time.
+   * @param totals Every datagram of the socket since it opened (see
+   * network::trafficTotalsOf()); they only grow.
+   */
+  void addTraffic(const BotTraffic& totals, bool gameStarted);
+
   /** @brief Counts an input the bot sent, when it went out during a game. */
   void countInput();
 
@@ -47,7 +58,14 @@ class BotTally {
   [[nodiscard]] BotReport report() const;
 
  private:
+  /** @returns Whether a game the tally counted a world state of runs, and
+   * @p gameStarted says the session still has it: when time and traffic count
+   * in game. */
+  [[nodiscard]] bool isInGame(bool gameStarted) const;
+
   BotReport counts_;
+  /** @brief The totals of the previous addTraffic(); zero before the first. */
+  BotTraffic previousTraffic_;
   /** @brief The tick of the newest world state of the game in progress;
    * nothing before its first one, and once it ended. */
   std::optional<std::uint32_t> newestTick_;

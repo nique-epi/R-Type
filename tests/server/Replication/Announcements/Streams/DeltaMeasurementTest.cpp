@@ -1,8 +1,12 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <cstddef>
 #include <iostream>
 #include "DeltaStateSenderFixture.hpp"
 #include "DeltaStateSenderTestConstants.hpp"
+#include "DeltaWorldState.hpp"
+#include "ProtocolConstants.hpp"
+#include "StateEncoding.hpp"
 
 namespace rtype::server::testing {
 
@@ -56,6 +60,39 @@ TEST_F(DeltaStateSenderFixture, CostsAsMuchAsFullStatesWhenEveryEntityMoves) {
             << (MEASURED_STATES * FULL_STATE_BYTES) / MEASURED_SECONDS
             << " in full\n";
   EXPECT_EQ(bytes, MEASURED_STATES * FULL_STATE_BYTES);
+}
+
+/**
+ * Given a sender that writes every state in full, and ten seconds of a game of
+ * 30 enemies that all stand still
+ * When the bytes sent to the player are counted
+ * Then each of the 200 states lists every entity, as a state in full does
+ */
+TEST_F(DeltaStateSenderFixture, ListsEveryEntityInEveryStateWhenWritingInFull) {
+  encodeStatesAs(StateEncoding::Full);
+
+  const std::size_t bytes = bytesOfAMeasuredRun(0);
+
+  EXPECT_EQ(bytes, MEASURED_STATES * FULL_STATE_BYTES);
+}
+
+/**
+ * Given a sender that writes every state in full, and a player who acknowledges
+ * every state at once
+ * When ten seconds of a game of 30 enemies that all stand still are sent
+ * Then each of the 200 states is written with no reference
+ */
+TEST_F(DeltaStateSenderFixture,
+       WritesEveryStateWithNoReferenceWhenWritingInFull) {
+  encodeStatesAs(StateEncoding::Full);
+
+  static_cast<void>(bytesOfAMeasuredRun(0));
+
+  const auto parts = partsSentTo(FIRST_PLAYER_PORT);
+  EXPECT_EQ(static_cast<std::size_t>(
+                std::ranges::count(parts, network::NO_REFERENCE_DISTANCE,
+                                   &network::DeltaWorldState::baseDistance)),
+            MEASURED_STATES);
 }
 
 }  // namespace rtype::server::testing

@@ -5,7 +5,7 @@ add_library(rtype_tools_load_test_bots_play_pilot STATIC
 
 target_include_directories(rtype_tools_load_test_bots_play_pilot PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_tools_load_test_bots_play_pilot PUBLIC rtype_client_connection_module)
+target_link_libraries(rtype_tools_load_test_bots_play_pilot PUBLIC rtype_client_prediction)
 
 rtype_enable_warnings(rtype_tools_load_test_bots_play_pilot)
 
