@@ -10,10 +10,10 @@ enum class PlaceKind : std::uint8_t {
   Redirect,
   /** @brief A game that has a place is starting: answer nothing yet. */
   Wait,
-  /** @brief No game has a place and one more may run: start one. */
+  /** @brief A new game must run for it, and one more may: start one. */
   Open,
-  /** @brief No game has a place and no more may run: refuse. */
-  Full,
+  /** @brief The player gets no place: refuse it, see GamePlace::refusal. */
+  Refuse,
 };
 
 }  // namespace rtype::server

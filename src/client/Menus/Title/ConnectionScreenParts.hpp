@@ -22,9 +22,9 @@ struct ConnectionScreenParts {
   std::reference_wrapper<IServerConnection> connection;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
-  /** @brief Address, port and nickname the fields start with; the screen
-   * replaces them with those of each attempt it starts. It must outlive the
-   * screen. */
+  /** @brief Address, port and nickname the fields start with, and the game
+   * every attempt asks for; the screen replaces the first three with those of
+   * each attempt it starts. It must outlive the screen. */
   std::reference_wrapper<ServerChoice> choice;
   /** @brief What an accepted connection leads to. */
   ConnectionGoal goal = ConnectionGoal::WaitingRoom;

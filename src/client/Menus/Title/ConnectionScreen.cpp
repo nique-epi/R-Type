@@ -55,6 +55,10 @@ std::string refusalLine(const ConnectionStatus& status) {
       return GAME_IN_PROGRESS_STATUS;
     case network::RefusalReason::NicknameTaken:
       return NICKNAME_TAKEN_STATUS;
+    case network::RefusalReason::GameNotFound:
+      return GAME_NOT_FOUND_STATUS;
+    case network::RefusalReason::ServerFull:
+      return SERVER_FULL_STATUS;
     case network::RefusalReason::IncompatibleVersion:
       break;
   }
@@ -163,9 +167,9 @@ void ConnectionScreen::connect() {
       return;
     }
     fieldProblem_ = {};
-    *choice_ =
-        ServerChoice{.server = server, .nickname = std::string(nickname)};
-    connection_->connect(server, nickname);
+    choice_->server = server;
+    choice_->nickname = std::string(nickname);
+    connection_->connect(server, nickname, choice_->game);
   } catch (const network::InvalidIpv4AddressException&) {
     fieldProblem_ = INVALID_ADDRESS_STATUS;
   } catch (const network::InvalidPortException&) {

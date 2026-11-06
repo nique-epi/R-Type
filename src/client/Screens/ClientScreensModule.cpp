@@ -31,6 +31,7 @@
 #include "PlayerSettings.hpp"
 #include "ProtocolConstants.hpp"
 #include "ScreenServices.hpp"
+#include "ServerChoice.hpp"
 #include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
 #include "SettingsService.hpp"
@@ -70,11 +71,8 @@ void requireIpv4Address(std::string_view address) {
 
 }  // namespace
 
-ClientScreensModule::ClientScreensModule(network::Endpoint server,
-                                         std::string nickname)
-    : server_(std::move(server)),
-      nickname_(std::move(nickname)),
-      logger_(std::string{CLIENT_LOGGER_NAME}) {}
+ClientScreensModule::ClientScreensModule(ServerChoice launch)
+    : launch_(std::move(launch)), logger_(std::string{CLIENT_LOGGER_NAME}) {}
 
 std::string ClientScreensModule::name() const {
   return std::string{SCREENS_MODULE_NAME};
@@ -119,26 +117,27 @@ void ClientScreensModule::declareSettings(
     engine::ConfigurationRegistry& configuration) {
   nicknameSetting_ = &configuration.declareText(engine::TextSettingDefinition{
       .name = std::string{NICKNAME_SETTING_NAME},
-      .defaultValue = nickname_,
+      .defaultValue = launch_.nickname,
       .help = "Callsign the connection screen starts with",
       .validate = requireNickname});
   addressSetting_ = &configuration.declareText(engine::TextSettingDefinition{
       .name = std::string{SERVER_ADDRESS_SETTING_NAME},
-      .defaultValue = server_.address,
+      .defaultValue = launch_.server.address,
       .help = "IPv4 address of the server the connection screen starts with",
       .validate = requireIpv4Address});
   portSetting_ = &configuration.declareInteger(engine::IntegerSettingDefinition{
       .name = std::string{SERVER_PORT_SETTING_NAME},
-      .defaultValue = server_.port,
+      .defaultValue = launch_.server.port,
       .lowest = network::LOWEST_PORT,
       .highest = network::HIGHEST_PORT,
       .help = "UDP port of the server the connection screen starts with"});
 }
 
 network::Endpoint ClientScreensModule::configuredServer() const {
-  return network::Endpoint{.address = addressSetting_->text(),
-                           .port = static_cast<std::uint16_t>(
-                               portSetting_->integer().value_or(server_.port))};
+  return network::Endpoint{
+      .address = addressSetting_->text(),
+      .port = static_cast<std::uint16_t>(
+          portSetting_->integer().value_or(launch_.server.port))};
 }
 
 void ClientScreensModule::start() {
@@ -148,20 +147,22 @@ void ClientScreensModule::start() {
     logger_.info("no sound module: the client runs without sound");
   }
   screens_ = std::make_unique<ClientScreens>(
-      ScreenServices{.settings = *settings_,
-                     .settingsService = *settingsService_,
-                     .assets = *assets_,
-                     .appearances = *appearances_,
-                     .audio = *audio_,
-                     .window = *window_,
-                     .connection = *connection_,
-                     .waitingRoom = *waitingRoom_,
-                     .entityMessages = *entityMessages_,
-                     .leaderboard = *leaderboard_,
-                     .entityTypes = *entityTypes_,
-                     .serverTicks = *serverTicks_,
-                     .server = server,
-                     .nickname = nicknameSetting_->text()},
+      ScreenServices{
+          .settings = *settings_,
+          .settingsService = *settingsService_,
+          .assets = *assets_,
+          .appearances = *appearances_,
+          .audio = *audio_,
+          .window = *window_,
+          .connection = *connection_,
+          .waitingRoom = *waitingRoom_,
+          .entityMessages = *entityMessages_,
+          .leaderboard = *leaderboard_,
+          .entityTypes = *entityTypes_,
+          .serverTicks = *serverTicks_,
+          .choice = ServerChoice{.server = server,
+                                 .nickname = nicknameSetting_->text(),
+                                 .game = launch_.game}},
       registry_);
   listenerHandle_ = listeners_->add([this](const sf::Event& event) {
     screens_->handleEvent(event);

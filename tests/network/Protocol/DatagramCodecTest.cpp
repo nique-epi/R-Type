@@ -82,7 +82,7 @@ TEST(DatagramCodec, RefusesToSplitATemporaryDatagram) {
 /**
  * Given a default header
  * When a datagram is encoded with it
- * Then it starts with RTYP, version 8, and zeros for every other field
+ * Then it starts with RTYP, version 9, and zeros for every other field
  */
 TEST(DatagramCodec, DefaultHeaderIsThisVersionWithoutSession) {
   const auto datagram =
@@ -104,7 +104,7 @@ TEST(DatagramCodec, EncodesTheHeaderAndOneMessageByteByByte) {
       someSessionHeader(), MessageType::ReadyState, byteSequence({0x01}));
 
   EXPECT_EQ(datagram,
-            byteSequence({0x52, 0x54, 0x59, 0x50, 0x08, 0x00, 0x01, 0x02, 0x03,
+            byteSequence({0x52, 0x54, 0x59, 0x50, 0x09, 0x00, 0x01, 0x02, 0x03,
                           0x04, 0x05, 0x06, 0x07, 0x08, 0x0A, 0x0B, 0x00, 0x00,
                           0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x01, 0x01}));
 }

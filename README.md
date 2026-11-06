@@ -115,6 +115,13 @@ The server reads the waves of Bydos from `assets/waves/waves.toml`, in the `asse
 
 The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default, and the nickname of the player, `PILOT` by default; its connection screen starts with them. CONNECT on that screen joins the server, so start the server first: without one, the screen shows `SERVER UNREACHABLE` after 5 seconds.
 
+```bash
+./r-type_client --game new
+./r-type_client --game 2
+```
+
+`--game new` asks the server for a game of its own, which other players may join; `--game <n>` joins the game the server numbers `n` (`GAME 2` in the list of the master), and the connection screen says `REFUSED: NO SUCH GAME` when there is none. Without `--game` the client takes any game with a free seat. A game starts once all its connected players are ready, whoever opened it.
+
 `--no-sound` starts the client without sound: the screens and the volumes work as usual, and nothing plays.
 
 ```bash

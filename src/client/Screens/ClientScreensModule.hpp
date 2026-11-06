@@ -21,6 +21,7 @@
 #include "Logger.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenRegistry.hpp"
+#include "ServerChoice.hpp"
 #include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
 #include "SettingValue.hpp"
@@ -61,12 +62,11 @@ class ClientScreensModule final : public engine::IModule,
                                   public engine::IOptionalDependencies {
  public:
   /**
-   * @param server The server the connection screen starts with, unless the
-   * configuration sets another.
-   * @param nickname The nickname the connection screen starts with, unless the
-   * configuration sets another.
+   * @param launch The server and the nickname the connection screen starts
+   * with, unless the configuration sets others, and the game every attempt
+   * asks for.
    */
-  ClientScreensModule(network::Endpoint server, std::string nickname);
+  explicit ClientScreensModule(ServerChoice launch);
 
   /** @returns SCREENS_MODULE_NAME. */
   [[nodiscard]] std::string name() const override;
@@ -97,8 +97,7 @@ class ClientScreensModule final : public engine::IModule,
    * starts with. */
   [[nodiscard]] network::Endpoint configuredServer() const;
 
-  network::Endpoint server_;
-  std::string nickname_;
+  ServerChoice launch_;
   const engine::SettingValue* nicknameSetting_{nullptr};
   const engine::SettingValue* addressSetting_{nullptr};
   const engine::SettingValue* portSetting_{nullptr};

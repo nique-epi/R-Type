@@ -81,8 +81,8 @@ class ClientScreens {
   ScrollingBackground background_;
   GameResult gameResult_;
   std::optional<std::size_t> previousTaunt_;
-  /** @brief The server and the nickname every connection screen starts
-   * with: those of launch, then those of the last attempt. */
+  /** @brief The server, the nickname and the game every connection screen
+   * starts with: those of launch, then those of the last attempt. */
   ServerChoice serverChoice_;
   /** @brief Notices, once per end, a session the server let go silent or
    * closed. */

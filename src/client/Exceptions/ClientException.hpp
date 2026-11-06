@@ -61,4 +61,14 @@ class InvalidNicknameOptionException : public ClientException {
   explicit InvalidNicknameOptionException(std::string_view nickname);
 };
 
+/**
+ * @brief The game given at launch is neither NEW_GAME_VALUE nor the number of
+ * a game, network::FIRST_HOSTED_GAME_NUMBER to 65535.
+ */
+class InvalidGameOptionException : public ClientException {
+ public:
+  /** @param game The value given after GAME_OPTION. */
+  explicit InvalidGameOptionException(std::string_view game);
+};
+
 }  // namespace rtype::client

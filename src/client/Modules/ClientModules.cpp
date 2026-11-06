@@ -37,8 +37,8 @@ std::vector<std::unique_ptr<engine::IModule>> clientModules(
       std::make_shared<engine::SystemClock>(), launchOptions.trafficCsvFile()));
   modules.push_back(
       std::make_unique<ClientAudioModule>(launchOptions.audioMode()));
-  modules.push_back(std::make_unique<ClientScreensModule>(
-      launchOptions.serverEndpoint(), launchOptions.nickname()));
+  modules.push_back(
+      std::make_unique<ClientScreensModule>(launchOptions.serverChoice()));
   modules.push_back(std::make_unique<ClientMenusModule>());
   modules.push_back(std::make_unique<ClientLobbyModule>());
   modules.push_back(std::make_unique<ClientGameModule>());
