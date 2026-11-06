@@ -1,10 +1,48 @@
 # R-Type
 
-A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine.
+A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine. Up to four pilots fly together against waves of Bydos on a server that owns the game; the client draws it and sends the keys held. Epitech tek3 project.
 
-The client plays its theme in a loop, then the music of a game a second after a game starts, the sounds of the intro and of the game, and a click on the buttons of its menus. It opens on a second of black and an intro of 5.5 s set to the beats of the theme, which a key or a click skips, then on its title screen, over a scrolling starfield: PLAY opens the connection screen, then the game, RANKING opens the best scores of a server, SETTINGS opens the options (sound, keys, display mode and window size, accessibility), QUIT asks before closing the client; Escape during a game opens the options over it. The server listens for UDP datagrams on port 4242, or on the port given at launch: it answers each connection request with a challenge, an acceptance with a player number from 1 to 4, or a refusal when the game is full, and logs the datagrams of the players it admitted at the `debug` level.
+- **Platforms:** Linux (GCC or Clang), Windows (MSVC, Visual Studio 2022) and macOS (Apple Silicon). The CI builds and tests Linux and Windows on every pull request.
+- **Language and libraries:** C++20, SFML 3 on the client, standalone Asio on the server, GoogleTest for the tests.
+- **Programs:** `r-type_client` (window, sound, menus) and `r-type_server` (UDP on port 4242 by default; it also runs the master, a program that lists game servers, with `--mode master`).
+- **Network:** every message of a game travels over UDP; the protocol is specified byte by byte in [the protocol RFC](https://nique-epi.github.io/R-Type/protocol/).
 
-The code is split into engine, game and network libraries; see [the architecture decision](docs/src/content/docs/architecture.md).
+The code is split into engine, game and network libraries; see [the architecture decision](docs/src/content/docs/architecture.md) and [the project layout](docs/src/content/docs/project-layout.md).
+
+## Quick start
+
+```bash
+git clone --recurse-submodules git@github.com:nique-epi/R-Type.git
+cd R-Type
+cmake --workflow --preset build
+./r-type_server --mode server
+./r-type_client
+```
+
+Run the last two commands in two terminals. In the client, PLAY opens the server map, which needs the master; to join a server directly, open the connection screen with D (ADDRESS) and press CONNECT. The sections below give the prerequisites for each system, every option, and a game of four.
+
+### A game of four players
+
+On the machine that hosts (its address on the network is `192.168.1.20` here):
+
+```bash
+./r-type_server --mode server -p 4242
+```
+
+On each of the four machines, or four terminals of one machine, with a different nickname:
+
+```bash
+./r-type_client -h 192.168.1.20 -p 4242 -n ACE
+./r-type_client -h 192.168.1.20 -p 4242 -n BLAZE
+./r-type_client -h 192.168.1.20 -p 4242 -n COMET
+./r-type_client -h 192.168.1.20 -p 4242 -n DASH
+```
+
+Each client starts with these values in its connection screen: from the title, PLAY then D (ADDRESS) opens it, and CONNECT joins. The server gives each pilot a number from 1 to 4 and refuses a fifth player. Once every connected pilot says it is ready in the waiting room, the server starts the game; the arrows move the ship and the space bar shoots, until the player changes the keys in SETTINGS. When it ends, the end screen ranks the four pilots.
+
+## Features
+
+The client opens on a second of black and an intro set to the beats of its theme, which a key or a click skips, then on its title screen over a scrolling starfield: PLAY opens the server map, then the game, RANKING opens the best scores of a server, SETTINGS opens the options (sound, keys, display mode and window size, accessibility), QUIT asks before closing the client; Escape during a game opens the options over it. It plays a theme, the sounds of the intro and of the game, and a click on its menus. The server answers each connection request with a challenge, an acceptance with a player number from 1 to 4, or a refusal when the game is full, and logs the datagrams of the players it admitted at the `debug` level.
 
 ## Requirements
 
@@ -28,6 +66,8 @@ git clone --recurse-submodules git@github.com:nique-epi/R-Type.git
 cd R-Type
 cmake --workflow --preset build
 ```
+
+On Windows, run the same commands in a Developer PowerShell for Visual Studio 2022 (the "Desktop development with C++" workload); the binaries are then `Release\r-type_server.exe` and `Release\r-type_client.exe`, and `.\Release\r-type_server.exe --mode server` starts a server.
 
 The first configure builds every dependency and takes a few minutes. The `r-type_server` and `r-type_client` binaries are written at the repository root, or in `Release/` with the Visual Studio generator.
 
@@ -248,3 +288,22 @@ npm run dev
 ## Contributing
 
 How to branch, write a commit, write and test the code, open a pull request and know when a change is done is summed up in [the contributing guide](CONTRIBUTING.md).
+
+## Documentation and protocol
+
+- [Documentation site](https://nique-epi.github.io/R-Type/): architecture, engine, client, server, master, configuration and tutorials.
+- [Network protocol](https://nique-epi.github.io/R-Type/protocol/): the specification of every datagram and exchange, written as an RFC (MUST, SHOULD and MAY as in RFC 2119), enough to write another client or server.
+- [Contributing guide](CONTRIBUTING.md).
+
+## Authors
+
+Epitech tek3 team:
+
+- Yannis Lorang ([@Yannislrg](https://github.com/Yannislrg))
+- Loann Bideau ([@LoannBi](https://github.com/LoannBi))
+- Nolan Fribault ([@nolanfrb](https://github.com/nolanfrb))
+- Lukas ([@0rezh](https://github.com/0rezh))
+
+## License
+
+The code of this repository is released under the [MIT License](LICENSE). The assets keep the licences of their authors: see `assets/README.md` and the licence files in `assets/`.
