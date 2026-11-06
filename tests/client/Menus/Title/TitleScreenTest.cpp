@@ -23,7 +23,6 @@
 #include "TitleScreenTestConstants.hpp"
 
 using rtype::client::CLICK_SOUND_ID;
-using rtype::client::CONNECTION_SCREEN;
 using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::LEADERBOARD_SCREEN;
 using rtype::client::LOGO_ID;
@@ -31,6 +30,7 @@ using rtype::client::MotionPreference;
 using rtype::client::OPTIONS_SCREEN;
 using rtype::client::PlayerSettings;
 using rtype::client::QUIT_CONFIRMATION_SCREEN;
+using rtype::client::SERVER_MAP_SCREEN;
 using rtype::client::SquadronStart;
 using rtype::client::TitleScreen;
 using rtype::client::TitleScreenParts;
@@ -83,14 +83,14 @@ TEST(TitleScreen, ASquadronInPlaceShowsItsShipsOnTheFirstFrame) {
 /**
  * Given the title screen, PLAY selected
  * When Enter is pressed and released, and the press lasts
- * Then the connection screen is asked for over the title
+ * Then the map of the servers is asked for over the title
  */
-TEST_F(TitleScreenFixture, PlayOpensTheConnectionScreen) {
+TEST_F(TitleScreenFixture, PlayOpensTheServerMap) {
   choose(sf::Keyboard::Key::Enter);
 
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = CONNECTION_SCREEN}));
+                                        .screen = SERVER_MAP_SCREEN}));
 }
 
 /**
@@ -213,7 +213,7 @@ TEST_F(TitleInTheStackFixture,
  * Given the options opened over the title, then closed
  * When the left button is pressed and released on the bar of PLAY, and the
  * press lasts
- * Then the title asks for the connection screen
+ * Then the title asks for the map of the servers
  */
 TEST_F(TitleInTheStackFixture, OnceTheOptionsAreClosedAClickReachesTheTitle) {
   open(OPTIONS_SCREEN);
@@ -223,7 +223,7 @@ TEST_F(TitleInTheStackFixture, OnceTheOptionsAreClosedAClickReachesTheTitle) {
 
   EXPECT_THAT(titleNavigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = CONNECTION_SCREEN}));
+                                        .screen = SERVER_MAP_SCREEN}));
 }
 
 /**

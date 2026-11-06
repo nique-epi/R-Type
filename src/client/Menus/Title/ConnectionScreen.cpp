@@ -14,6 +14,7 @@
 #include "ConnectionRefused.hpp"
 #include "ConnectionScreenConstants.hpp"
 #include "ConnectionScreenParts.hpp"
+#include "ConnectionStart.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
 #include "EndpointText.hpp"
@@ -110,6 +111,9 @@ ConnectionScreen::ConnectionScreen(ConnectionScreenParts parts,
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       menu_(buildMenu(parts.sounds.get())) {
   connection_->cancel();
+  if (parts.start == ConnectionStart::AtOnce) {
+    connect();
+  }
   repaint(connection_->status());
 }
 

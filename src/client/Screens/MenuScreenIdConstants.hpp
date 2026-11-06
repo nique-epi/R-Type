@@ -42,6 +42,15 @@ constexpr ScreenId CONNECTION_SCREEN{"connection"};
 constexpr ScreenId CONNECTION_FOR_LEADERBOARD_SCREEN{
     "connection for the leaderboard"};
 
+/** @brief The same screen, pushed over the server map, which starts its
+ * attempt with the server the map chose as it opens. */
+constexpr ScreenId CONNECTION_TO_CHOSEN_SERVER_SCREEN{
+    "connection to the chosen server"};
+
+/** @brief The map of the servers the master lists, with their games, pushed
+ * over the title by PLAY. */
+constexpr ScreenId SERVER_MAP_SCREEN{"server map"};
+
 /** @brief The best scores of a server, pushed over the title or the waiting
  * room. */
 constexpr ScreenId LEADERBOARD_SCREEN{"leaderboard"};

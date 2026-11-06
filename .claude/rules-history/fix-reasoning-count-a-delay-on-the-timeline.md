@@ -56,3 +56,20 @@ The timeline of the plan placed the sends from what they are for ("outputs"), no
 
 ### Fix
 The time since the previous tick is added when the tick starts (`GameSessions::startTick()`, first in `GAME_INPUT_STAGE`), before anything is sent in it, and the heartbeat goes once the server sent nothing for `HEARTBEAT_INTERVAL` rounded down to whole ticks (60 ticks, 999 999 960 ns): every 60 ticks again, a stall included in full.
+
+## Update (2026-11-06) — a test constant that left out the frame its helper ran
+
+### Context
+`ServerCatalog` closes a round of pings once every server answered or `PING_GIVE_UP_TIME` (2 s) passed. A test checked that the list does not change before the round closes.
+
+### Mistake
+The test called `listAndUpdate()`, which runs a frame of 16 ms, then `update(JUST_BEFORE_GIVE_UP)` with 1990 ms: the round was 2006 ms old, past 2 s, and the test failed on correct code.
+
+### Root cause
+The constant was written from the deadline alone ("just before 2 s"), not from the timeline of the test, whose helper had already moved the round by a frame.
+
+### Fix
+`JUST_BEFORE_GIVE_UP` is 1980 ms, its comment writing the sum: 16 ms then 1980 ms make 1996 ms, short of 2 s.
+
+### Rule added
+"A test constant of time adds the frames its helpers already ran".

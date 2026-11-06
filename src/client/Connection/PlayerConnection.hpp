@@ -4,6 +4,7 @@
 #include "DrawableTypeCheck.hpp"
 #include "EntityMessageQueue.hpp"
 #include "GameLoadedReminder.hpp"
+#include "IServerPingProbe.hpp"
 #include "InstallContext.hpp"
 #include "MessageDispatcher.hpp"
 #include "NetworkConditions.hpp"
@@ -11,6 +12,7 @@
 #include "OrderedInbox.hpp"
 #include "RoundTripWatch.hpp"
 #include "ServerLeaderboard.hpp"
+#include "ServerPingProbe.hpp"
 #include "ServerSession.hpp"
 #include "SessionEntityTypes.hpp"
 #include "SystemClock.hpp"
@@ -25,8 +27,9 @@ namespace rtype::client {
  * and the game use, the ServerSession (the attempt and the session), the
  * WaitingRoom, the EntityMessageQueue, the ServerLeaderboard, the
  * RoundTripWatch, which sends the heartbeats and measures the round trips,
- * and the SessionEntityTypes, the entity types of the server the acceptance of
- * the session carried. ClientConnectionModule holds the one of the client; each
+ * the SessionEntityTypes, the entity types of the server the acceptance of
+ * the session carried, and the ServerPingProbe of the list of servers, on a
+ * route of its own. ClientConnectionModule holds the one of the client; each
  * load-test bot holds its own.
  *
  * Building it opens nothing: network().open() binds the socket on every IPv4
@@ -69,7 +72,7 @@ class PlayerConnection {
    * EntityMessageQueue, the ServerLeaderboard, the RoundTripWatch as
    * IPlayerRoundTrips and as IServerTicks, the IEntityTypeTable and the
    * TrafficCounters of the socket. They must outlive every module that
-   * requires them.
+   * requires them. The ServerPingProbe is reached through pings().
    */
   void provideParts(engine::InstallContext& context);
 
@@ -82,6 +85,9 @@ class PlayerConnection {
   [[nodiscard]] WaitingRoom& waitingRoom();
   [[nodiscard]] const WaitingRoom& waitingRoom() const;
   [[nodiscard]] EntityMessageQueue& entityMessages();
+
+  /** @returns The probe of the list of servers, on its own route. */
+  [[nodiscard]] IServerPingProbe& pings();
 
  private:
   NetworkThread network_;
@@ -96,6 +102,7 @@ class PlayerConnection {
   ServerLeaderboard leaderboard_;
   SessionEntityTypes entityTypes_;
   ServerSession session_;
+  ServerPingProbe pings_;
 };
 
 }  // namespace rtype::client

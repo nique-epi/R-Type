@@ -7,6 +7,8 @@
 #include "GameWindow.hpp"
 #include "IAudioService.hpp"
 #include "IEntityTypeSource.hpp"
+#include "IGameCatalog.hpp"
+#include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
 #include "PlayerSettings.hpp"
 #include "ServerChoice.hpp"
@@ -46,6 +48,10 @@ struct ScreenServices {
    * replicator of a game. */
   std::reference_wrapper<const IEntityTypeSource> entityTypes;
   std::reference_wrapper<const IServerTicks> serverTicks;
+  /** @brief The servers the master lists, with their ping, and the games of
+   * one of them, for the server map. */
+  std::reference_wrapper<IServerCatalog> serverCatalog;
+  std::reference_wrapper<IGameCatalog> gameCatalog;
   /** @brief The server, the nickname and the game the first connection
    * screen starts with. */
   ServerChoice choice;

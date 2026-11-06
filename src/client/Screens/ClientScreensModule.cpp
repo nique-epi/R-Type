@@ -22,6 +22,8 @@
 #include "FrameLoop.hpp"
 #include "GameWindow.hpp"
 #include "IEntityTypeTable.hpp"
+#include "IGameCatalog.hpp"
+#include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
@@ -102,6 +104,8 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   entityTypes_ = std::make_unique<EntityTypeLooks>(
       context.require<IEntityTypeTable>(), *appearances_);
   serverTicks_ = &context.require<IServerTicks>();
+  serverCatalog_ = &context.require<IServerCatalog>();
+  gameCatalog_ = &context.require<IGameCatalog>();
   loop_ = &context.require<FrameLoop>();
   listeners_ = &context.require<EventListeners>();
   declareSettings(context.require<engine::ConfigurationRegistry>());
@@ -160,6 +164,8 @@ void ClientScreensModule::start() {
           .leaderboard = *leaderboard_,
           .entityTypes = *entityTypes_,
           .serverTicks = *serverTicks_,
+          .serverCatalog = *serverCatalog_,
+          .gameCatalog = *gameCatalog_,
           .choice = ServerChoice{.server = server,
                                  .nickname = nicknameSetting_->text(),
                                  .game = launch_.game}},

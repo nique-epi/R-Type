@@ -453,6 +453,25 @@ TEST_F(ConnectionScreenChoiceFixture, ANewScreenStartsWithTheLastAttempt) {
 }
 
 /**
+ * Given the server and the nickname of the launch values in the choice
+ * When a connection screen opens to connect at once, as the map opens it
+ * Then the attempt goes out to that server with that nickname and that game,
+ * unasked
+ */
+TEST_F(ConnectionScreenChoiceFixture, AScreenOpenedAtOnceConnectsToTheChoice) {
+  reopenConnectingAtOnce();
+
+  ASSERT_FALSE(connectAttemptsOf(connection()).empty());
+  EXPECT_EQ(
+      connectAttemptsOf(connection()).back(),
+      (ServerConnectionCall{.request = ServerConnectionCall::Request::Connect,
+                            .server = {.address = std::string(LAUNCH_ADDRESS),
+                                       .port = LAUNCH_PORT},
+                            .nickname = std::string(LAUNCH_NICKNAME),
+                            .game = LAUNCH_GAME}));
+}
+
+/**
  * Given a connection screen whose nickname field was emptied, then Enter
  * chosen, which the empty nickname refuses
  * When a new connection screen opens and Enter is chosen

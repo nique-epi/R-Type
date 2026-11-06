@@ -48,7 +48,8 @@ Today it finds its assets folder, loads the assets of its interface, opens a win
 | Window | Available: windowed, or borderless over the whole screen | `src/client/Window/` |
 | Modules of the client and frame loop | Available: logger, assets, settings, window, connection, metrics, sound, screens, menus, lobby and game, over five stages | `src/client/Modules/` lists them; each has a folder of its own (see [Modules and frame loop](#modules-and-frame-loop-clientmodules-frameloop)) |
 | Screen stack | Available | `src/client/Application/` |
-| Screens | Available: intro, title, connection, waiting room, loading, game, end, options, leaderboard, and the dialogs of the quit confirmation and of a lost connection | `src/client/Screens/`, `src/client/Menus/`, `src/client/Lobby/`, `src/client/Game/` |
+| Screens | Available: intro, title, server map, connection, waiting room, loading, game, end, options, leaderboard, and the dialogs of the quit confirmation and of a lost connection | `src/client/Screens/`, `src/client/Menus/`, `src/client/Lobby/`, `src/client/Game/` |
+| Server map: the servers the master lists, around the planet of the player by the ping the client measures, and the games of each | Available; joining one game of a server is not written: Enter on a waiting game connects to its server, which seats the player | `src/client/Menus/ServerBrowser/`, `src/client/Connection/ServerList/`, `src/client/Widgets/SectorMap/` |
 | Lost connection: a dialog over the title | Available: shown once a session is lost or closed | `src/client/Menus/Title/`, `src/client/Screens/`, `src/client/Connection/Handshake/` |
 | End screen: the flight log of a game, its scores and its choices | Available: it replaces the game a second after the server ends it | `src/client/Game/`, `src/client/Widgets/FlightLog/`, `assets/sprites/flight_log.png` |
 | Menu widgets and their builder | Available; used by the title, the connection screen, the waiting room, the options, the leaderboard and the dialogs | `src/client/Widgets/` |
@@ -98,7 +99,7 @@ Today it finds its assets folder, loads the assets of its interface, opens a win
 | `metrics` | writes the traffic of the socket to the journal and, with `--traffic-csv`, to a file (see [Network](/R-Type/network/#traffic-counters-trafficcounters)); opens the file when it starts, closes it when it stops | `src/client/Metrics/` |
 | `audio` | provides the `IAudioService`: the sounds, the theme and the music of a game, or a service that plays nothing with `--no-sound`; opens the music files when it starts | `src/client/Audio/` |
 | `screens` | provides the `ScreenRegistry`; the screens and what they share (`ClientScreens`), built when it starts, on the intro or on the title | `src/client/Screens/` |
-| `menus` | adds the intro, the title, the options, the quit confirmation, the connection screen and the dialog of a lost connection to the `ScreenRegistry` when it installs (see [Screens](#screens-screenstack-screenregistry)); opens nothing | `src/client/Menus/` |
+| `menus` | adds the intro, the title, the server map, the options, the quit confirmation, the connection screen and the dialog of a lost connection to the `ScreenRegistry` when it installs (see [Screens](#screens-screenstack-screenregistry)); opens nothing | `src/client/Menus/` |
 | `lobby` | adds the waiting room to the `ScreenRegistry` when it installs; opens nothing | `src/client/Lobby/` |
 | `game` | adds the game and the end screen to the `ScreenRegistry` when it installs; opens nothing | `src/client/Game/` |
 
@@ -129,8 +130,9 @@ Screens are asked for by identifier: `push()` and `replaceAll()` take a `ScreenI
 | Screen | Shows | Leaves the stack when |
 |---|---|---|
 | `IntroScreen` | the intro, a second of black then 5.5 s of trailer over the scrolling background (see [Launch intro](#launch-intro-introscreen)) | after ten beats of the theme, or on a press from its ninth beat on, it asks `replaceAll(TITLE_AFTER_INTRO_SCREEN)`, the title with its squadron in place; a press during the black second asks `replaceAll(TITLE_SCREEN)` |
-| `TitleScreen` | the logo, PLAY, RANKING, SETTINGS and QUIT, and the squadron, over the scrolling background; PLAY pushes the connection screen over it, RANKING the leaderboard | the waiting room asks `replaceAll(GAME_SCREEN)` |
-| `ConnectionScreen` | over the title, which it hides: a form centered on the picture, DIRECT CONNECT, the fields ADDRESS, PORT and PILOT, CONNECT and BACK, then a status line | BACK or Escape drops the attempt and closes it; once the server has accepted the player for `ACCEPTED_STATUS_DURATION` (1 s), it pushes the waiting room over it (`LOBBY_SCREEN`), and leaves with it when the game starts |
+| `TitleScreen` | the logo, PLAY, RANKING, SETTINGS and QUIT, and the squadron, over the scrolling background; PLAY pushes the server map over it, RANKING the leaderboard | the waiting room asks `replaceAll(GAME_SCREEN)` |
+| `ServerMapScreen` | over the title, which it hides: SECTOR MAP, the servers around the planet of the player, the games of one server, and QUICK PLAY, RANKING, ADDRESS and BACK (see [Server map](#server-map-servermapscreen-iservercatalog-igamecatalog)) | BACK or Escape on the whole map closes it; joining a server pushes the connection screen over it, ADDRESS the form, RANKING the leaderboard |
+| `ConnectionScreen` | over the server map, which it hides: a form centered on the picture, DIRECT CONNECT, the fields ADDRESS, PORT and PILOT, CONNECT and BACK, then a status line; pushed by the map to join the server it chose (`CONNECTION_TO_CHOSEN_SERVER_SCREEN`), it connects as it opens | BACK or Escape drops the attempt and closes it; once the server has accepted the player for `ACCEPTED_STATUS_DURATION` (1 s), it pushes the waiting room over it (`LOBBY_SCREEN`), and leaves with it when the game starts |
 | `LobbyScreen` | over the connection screen, which it hides: WAITING ROOM, the number of pilots, a bay per player number, READY and the status line, RANKING, HELP and BACK in the corner (see [Waiting room](#waiting-room-lobbyscreen)) | BACK or Escape leaves the server and closes it; RANKING or L pushes the leaderboard over it; HELP or H opens its help over it; once the connection learns that the game started, it asks `replaceAll(GAME_SCREEN)` |
 | `LobbyScreen` after a game | alone, opened by PLAY AGAIN of the end screen (`LOBBY_AFTER_GAME_SCREEN`), the same room, the theme playing again | BACK or Escape leaves the server and asks `replaceAll(TITLE_SCREEN)`; the start of the next game asks `replaceAll(GAME_SCREEN)` |
 | `LeaderboardScreen` | over the title or the waiting room, which it hides and which go on behind it: RANKING, two banners and two guards, the tabs SERVER and GLOBAL, the best scores, FILTER and BACK (see [Leaderboard](#leaderboard-leaderboardscreen-ileaderboardsource)) | BACK or Escape closes it, and leaves a server joined from it; without a session, JOIN A SERVER or Enter opens the connection screen over it; over the waiting room, the start of a game removes it with the rest |
@@ -543,7 +545,35 @@ A menu paints through `IInterfaceCanvas` (`src/client/Rendering/Interface/`): re
 
 The screen drives an `IServerConnection` (`src/client/Connection/Handshake/`): `connect(server, nickname, game)`, whose `network::GameChoice` every request of the attempt carries, the ones after a redirect included, `cancel()` and `status()`, a `ConnectionStatus` whose `phase`, a `ConnectionPhase`, is `Idle`, `Connecting`, `Accepted` (with the player number), `Refused` (with its `network::RefusalReason`), `Unreachable`, `Lost` (the server of the session went silent), `Closed` (the server said it shuts down) or `MissingEntitySheet` (the server named a type the client has no sheet for, with `missingSheet` and `otherMissingSheets`). The waiting room of the session it opens is another interface, `IWaitingRoom`: `lobbyPlayers()`, `setReady()`, `requestedReady()` and `gameStarted()`; the waiting room screen and the game screen receive both. The connection module owns them, so they outlive every screen.
 
-The connection behind it is a `ServerSession` (see [Joining a server](#joining-a-server-serversession-waitingroom-entitymessagequeue)), so PLAY leads to the game only through a running server: without one, the screen shows `SERVER UNREACHABLE` after `CONNECTION_ATTEMPT_TIMEOUT` (5 s).
+The connection behind it is a `ServerSession` (see [Joining a server](#joining-a-server-serversession-waitingroom-entitymessagequeue)), so CONNECT leads to the game only through a running server: without one, the screen shows `SERVER UNREACHABLE` after `CONNECTION_ATTEMPT_TIMEOUT` (5 s).
+
+The server map opens the same screen as `CONNECTION_TO_CHOSEN_SERVER_SCREEN` to join the server it chose: built with `ConnectionStart::AtOnce`, the screen connects to the address of the `ServerChoice` as it opens, then follows the attempt as above.
+
+## Server map: `ServerMapScreen`, `IServerCatalog`, `IGameCatalog`
+
+PLAY on the title pushes `ServerMapScreen` (`src/client/Menus/ServerBrowser/`), SECTOR MAP: the planet of the player on the left, every server the master lists around it, farther the higher its ping, with dashed rings at 25, 75, 150 and 225 ms. A server stands in a direction its id gives, the same at every refresh (`angleOf()`, `src/client/Widgets/SectorMap/SectorLayout/`); a server of another version stands on the farthest ring, hollow and gold, and QUICK PLAY never picks it.
+
+| Input | Whole map | Zoomed on a server | Its games |
+|---|---|---|---|
+| Pointer over a star | chooses it and shows its bubble | the same | — |
+| Click on a star | opens its games | the same | — |
+| Arrows, Tab and Shift+Tab | the star in that direction, the next or previous by ping | the same | Up and Down move through the games, `GAME_ROWS_SHOWN` (6) at once |
+| Enter | zooms twice on the chosen server | opens its games | joins the chosen game when it waits |
+| Wheel up, wheel down | wheel up zooms | wheel down goes back to the whole map | — |
+| Escape, BACK | closes the map | back to the whole map | back to the zoom |
+
+R reads the list again, and the map does every `SERVER_LIST_REFRESH_INTERVAL` (15 s). Q (QUICK PLAY) joins the server of this version with the lowest ping, L opens the leaderboard and D (ADDRESS) the connection screen, which still joins any address. The whole map shows the bubble of the chosen server only while the pointer is over its star, or after an arrow or Tab chose it. Before a list, the map says `SEARCHING`; with none, `NO SERVER ONLINE`; when the master does not answer, `MASTER UNREACHABLE`, and R and D still work.
+
+Joining one game of a server is not written: the protocol names no game in a `ConnectionRequest`. Enter on a waiting game, like QUICK PLAY, writes the server in the `ServerChoice` and pushes the connection screen, which connects at once; the server seats the player in a game that waits with a free seat.
+
+The map reads two services of the connection module, so it never waits on the network:
+
+- `IServerCatalog` (`ServerCatalog`, `src/client/Connection/ServerList/`): `refresh()` asks the master its list on the thread of `MasterLink`, then pings each server listed online or degraded and of this version, once, with a `ServerInformationRequest` (`ServerPingProbe`, on a route of the router of the session). A server that has not answered within `PING_GIVE_UP_TIME` (2 s) is unreachable and is not shown. The snapshot changes once the round closes, sorted by ping.
+- `IGameCatalog` (`GameCatalog`): `ask(server)` reads the games of one server from the master.
+
+The client reaches the master at `http://127.0.0.1:8080` (`LOOPBACK_IPV4_ADDRESS` and `DEFAULT_MASTER_PORT`, joined in `clientMasterAccess()`); this address is **provisional**, a constant until the client takes an option for it.
+
+The planet is drawn in halftone by `ringedPlanetPixels()` (`src/client/Widgets/SectorMap/RingedPlanet/`): it turns once in `PLANET_TURN` (30 s) and its ring once in `RING_TURN` (20 s), at `PLANET_FRAMES_PER_SECOND` (24), and stands still when the system asks for less motion. The map plots its pixels through `IInterfaceCanvas::plot()`, a batch of single pixels in one draw.
 
 ## Waiting room: `LobbyScreen`
 
@@ -1038,6 +1068,9 @@ The dialog is a `DialogScreen` (`src/client/Screens/Common/`), which shows any m
 | Change how the own ship is predicted, or when the client takes the server position back | `ShipPrediction` and `PredictionConstants.hpp` (`RECONCILIATION_TOLERANCE`) in `src/client/Prediction/`; the movement itself is `shipAfter` in `src/game/ShipControl/` |
 | Change what an input carries | `ServerSession::sendPlayerInput()` in `src/client/Connection/`, `GameScreen::update()` and `GameScreen::playerActions()`, which adds the shoot of AUTO-FIRE, in `src/client/Game/` |
 | Change the texts, sizes or checks of the connection screen | `src/client/Menus/Title/ConnectionScreenConstants.hpp`, `ConnectionScreen::connect()` |
+| Change the keys, texts or refresh of the server map | `src/client/Menus/ServerBrowser/ServerMapScreenConstants.hpp`, `ServerMapScreen` |
+| Change where a server stands on the map, or how the planet is drawn | `src/client/Widgets/SectorMap/SectorMapConstants.hpp` with `SectorLayout`, `RingedPlanetConstants.hpp` with `RingedPlanet` |
+| Change how the list of servers is read and pinged, or the address of the master | `ServerCatalog`, `ServerPingProbe`, `MasterLink` and `ServerListConstants.hpp` in `src/client/Connection/ServerList/`; `clientMasterAccess()` in `ClientConnectionModule.cpp` |
 | Change what the fields of the connection screen start with | `ServerChoice` (`src/client/LaunchOptions/ServerChoice.hpp`), written by `ConnectionScreen::connect()`, kept by `ClientScreens` |
 | Change when the dialog of a lost connection opens | `SessionLossWatch` in `src/client/Connection/Handshake/`, `ClientScreens::update()` |
 | Change the dialog of a lost connection: its texts, its buttons | `src/client/Screens/Common/ScreenConstants.hpp`, `connectionLostMenu()` in `src/client/Menus/Title/` |
