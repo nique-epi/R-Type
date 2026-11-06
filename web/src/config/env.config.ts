@@ -11,7 +11,7 @@ const envSchema = z.object({
     .default(DEFAULT_MASTER_URL),
 });
 
-export type Env = z.infer<typeof envSchema>;
+type Env = z.infer<typeof envSchema>;
 
 /** Validates the variables `next dev` reads, so a wrong one stops it at start. */
 export function parseEnv(): Env {

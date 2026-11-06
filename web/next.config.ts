@@ -2,8 +2,9 @@ import type { NextConfig } from 'next';
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
 
 import { parseEnv } from './src/config/env.config';
+import { MASTER_API_PREFIX } from './src/config/master.config';
 
-const API_PATHS = '/api/:path*';
+const API_PATHS = `${MASTER_API_PREFIX}/:path*`;
 
 const sharedConfig: NextConfig = {
   agentRules: false,

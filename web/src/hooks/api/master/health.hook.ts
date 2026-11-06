@@ -1,11 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
-import type { ApiResponse } from '@/lib/api/helpers';
-import type { Health } from '@/lib/api/schemas';
+import { type ApiResponse, api, type Health } from '@/lib/api';
 
-export const HEALTH_REFRESH_INTERVAL_MS = 5_000;
+const HEALTH_REFRESH_INTERVAL_MS = 5_000;
 
 /** What the page knows of the master: not asked yet, answering, or silent. */
 export type MasterHealth =
@@ -22,27 +20,43 @@ export function masterHealthOf(response: ApiResponse<Health>): MasterHealth {
   return { state: 'online', version: response.data.version };
 }
 
-/** Asks the master for its health on mount, then every refresh interval. */
+/** Asks the master for its health, again after each answer while the tab is visible. */
 export function useMasterHealth(): MasterHealth {
   const [health, setHealth] = useState<MasterHealth>({ state: 'checking' });
 
   useEffect(() => {
     let mounted = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let asking = false;
 
     async function refresh() {
+      asking = true;
       const response = await api.health.getHealth();
+      asking = false;
 
-      if (mounted) {
-        setHealth(masterHealthOf(response));
+      if (!mounted) {
+        return;
+      }
+      setHealth(masterHealthOf(response));
+      if (document.visibilityState === 'visible') {
+        timer = setTimeout(refresh, HEALTH_REFRESH_INTERVAL_MS);
+      }
+    }
+
+    function refreshWhenShown() {
+      if (document.visibilityState === 'visible' && !asking) {
+        clearTimeout(timer);
+        void refresh();
       }
     }
 
     void refresh();
-    const timer = setInterval(refresh, HEALTH_REFRESH_INTERVAL_MS);
+    document.addEventListener('visibilitychange', refreshWhenShown);
 
     return () => {
       mounted = false;
-      clearInterval(timer);
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', refreshWhenShown);
     };
   }, []);
 

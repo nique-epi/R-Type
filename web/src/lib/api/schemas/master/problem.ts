@@ -6,5 +6,3 @@ export const problemSchema = z.object({
   title: z.string(),
   detail: z.string().optional(),
 });
-
-export type Problem = z.infer<typeof problemSchema>;

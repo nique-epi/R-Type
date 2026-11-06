@@ -1,16 +1,16 @@
 import { createFetch, createSchema } from '@better-fetch/fetch';
 
+import { MASTER_API_PREFIX } from '@/config/master.config';
+
 import { problemSchema } from '../../schemas/master';
 import { healthEndpointsSchema } from './endpoints';
-
-const MASTER_API_BASE_URL = '/api';
 
 const masterSchema = createSchema({
   ...healthEndpointsSchema,
 });
 
 export const master = createFetch({
-  baseURL: MASTER_API_BASE_URL,
+  baseURL: MASTER_API_PREFIX,
   schema: masterSchema,
   defaultError: problemSchema,
   catchAllError: true,

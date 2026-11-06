@@ -1,6 +1,6 @@
 import type { MasterErrorCode } from '../clients';
 
-export type ClientErrorCode =
+type ClientErrorCode =
   | 'ERR_API_FETCH_FAILED'
   | 'ERR_API_VALIDATION_FAILED'
   | 'UNKNOWN_ERROR';
