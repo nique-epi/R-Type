@@ -106,25 +106,27 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_subdirectory(src)
 
-# The packages hold bin/ and assets/ side by side: locateAssetFolder() finds
-# assets/ in the folder above the executable, whatever folder it is launched
-# from.
+# The archives and the AppImage hold bin/ and assets/ side by side, the macOS
+# app holds MacOS/ and Resources/assets/: locateAssetFolder() finds assets/ in
+# the folder above the executable or in Resources/ beside it, whatever folder
+# it is launched from.
 #
 # Each rule belongs to the package of one program: the client one holds the
 # assets it draws and plays, the server one the waves it spawns.
 include(GNUInstallDirs)
 
 # On macOS the client is the R-Type.app bundle: its executable in
-# Contents/MacOS, its assets in Contents, the folder above.
+# Contents/MacOS, its assets in Contents/Resources, where Apple wants every file
+# that is not code, so the signature seals them.
 if(APPLE)
   set(RTYPE_CLIENT_BINARY_FOLDER R-Type.app/Contents/MacOS)
-  set(RTYPE_CLIENT_ASSETS_PARENT R-Type.app/Contents)
+  set(RTYPE_CLIENT_ASSETS_PARENT R-Type.app/Contents/Resources)
   configure_file(packaging/Info.plist.in Info.plist @ONLY)
   install(FILES ${CMAKE_BINARY_DIR}/Info.plist
     DESTINATION R-Type.app/Contents COMPONENT client
   )
   install(FILES packaging/r-type.icns
-    DESTINATION R-Type.app/Contents/Resources COMPONENT client
+    DESTINATION ${RTYPE_CLIENT_ASSETS_PARENT} COMPONENT client
   )
 else()
   set(RTYPE_CLIENT_BINARY_FOLDER ${CMAKE_INSTALL_BINDIR})
@@ -165,16 +167,10 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/waves ${CMAKE_SOURCE_DIR}/assets/en
   DESTINATION assets COMPONENT server
 )
 
-# Once the bundle is complete, it is signed without an identity, so macOS
-# reports an unidentified developer instead of a damaged app. This rule stays
-# after every rule of the client.
+# Once the bundle is complete, SignApp.cmake signs it with the hardened
+# runtime. This rule stays after every rule of the client.
 if(APPLE)
-  install(CODE [[
-    execute_process(
-      COMMAND codesign --force --deep --sign -
-        "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/R-Type.app"
-      COMMAND_ERROR_IS_FATAL ANY)
-  ]] COMPONENT client)
+  install(SCRIPT packaging/SignApp.cmake COMPONENT client)
 endif()
 
 # vcpkg links its libraries statically on Linux and macOS and as DLLs on
@@ -245,7 +241,8 @@ include(CPack)
 # One CPack config per program, read by the package presets "client" and
 # "server" instead of CPackConfig.cmake. The server gets a plain archive, and
 # an installer on Windows; the client gets the formats a player opens: an app
-# in a disk image on macOS, and an AppImage next to its archive on Linux.
+# in a disk image on macOS, signed and notarized when the credentials are
+# given, and an AppImage next to its archive on Linux.
 foreach(RTYPE_PACKAGE_PART IN ITEMS client server)
   string(TOUPPER ${RTYPE_PACKAGE_PART} RTYPE_PACKAGE_PART_UPPER)
   set(RTYPE_PACKAGE_TITLE "R-Type Server")
@@ -259,6 +256,7 @@ foreach(RTYPE_PACKAGE_PART IN ITEMS client server)
     set(RTYPE_PACKAGE_TITLE "R-Type")
     if(APPLE)
       set(RTYPE_PACKAGE_GENERATORS "DragNDrop")
+      set(RTYPE_POST_BUILD_SCRIPTS ${CMAKE_SOURCE_DIR}/packaging/NotarizeDiskImage.cmake)
     elseif(NOT WIN32)
       set(RTYPE_POST_BUILD_SCRIPTS ${CMAKE_SOURCE_DIR}/packaging/AppImage.cmake)
     endif()
