@@ -12,7 +12,7 @@ namespace rtype::server {
  * @brief The modules of the supervisor, in the order an Application installs
  * and starts them (and stops them in reverse): the logger, the network, the
  * games, which run one process each, and the lobby that sends the players to
- * them. A game process is this same executable, run as a server.
+ * them. A game process is this same executable, run with `--mode game`.
  *
  * @param launchOptions Give the network conditions and the logging options.
  * @param stopRequest Told by the network module when the supervisor fails; it

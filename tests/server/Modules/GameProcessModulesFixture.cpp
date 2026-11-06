@@ -1,4 +1,4 @@
-#include "ServerModulesFixture.hpp"
+#include "GameProcessModulesFixture.hpp"
 #include <cstdint>
 #include <filesystem>
 #include <memory>
@@ -10,8 +10,10 @@
 #include "ConnectionChallenge.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
+#include "GameLaunchOptions.hpp"
+#include "GameProcessModules.hpp"
 #include "LaunchArgumentsConstants.hpp"
-#include "LaunchOptions.hpp"
+#include "LoggingConstants.hpp"
 #include "LoopStages.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
@@ -19,33 +21,33 @@
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerModuleTestConstants.hpp"
-#include "ServerModules.hpp"
 #include "StopRequest.hpp"
 #include "UdpTestClient.hpp"
 
-namespace {
-
-std::vector<std::string_view> launchArguments(const std::string& portText,
-                                              const std::string& databaseText) {
-  return {"-p",
-          portText,
-          rtype::server::SEED_OPTION,
-          "1",
-          rtype::engine::DATABASE_OPTION,
-          databaseText};
-}
-
-}  // namespace
-
-ServerModulesFixture::ServerModulesFixture()
+GameProcessModulesFixture::GameProcessModulesFixture()
     : port_(freeUdpPort()),
       workingFolderChange_(workingFolder_.path()),
       portText_(std::to_string(port_)),
+      supervisorPortText_(std::to_string(supervisor_.localEndpoint().port)),
       databaseText_((workingFolder_.path() / TEST_DATABASE_FILE).string()),
-      arguments_(launchArguments(portText_, databaseText_)),
-      launchOptions_(rtype::server::LaunchOptions::read(arguments_)) {}
+      journalText_(journal().path().string()),
+      launchOptions_(
+          rtype::server::GameLaunchOptions::read(gameArguments({}))) {}
 
-std::uint64_t ServerModulesFixture::joinWithTheClient() {
+std::vector<std::string_view> GameProcessModulesFixture::gameArguments(
+    const std::vector<std::string_view>& more) const {
+  std::vector<std::string_view> arguments{
+      rtype::engine::PORT_OPTION,       portText_,
+      rtype::server::SUPERVISOR_OPTION, supervisorPortText_,
+      rtype::server::LINK_TOKEN_OPTION, GAME_PROCESS_LINK_TOKEN,
+      rtype::engine::DATABASE_OPTION,   databaseText_,
+      rtype::logging::FILE_OPTION,      journalText_,
+      rtype::logging::NO_STDERR_OPTION};
+  arguments.insert(arguments.end(), more.begin(), more.end());
+  return arguments;
+}
+
+std::uint64_t GameProcessModulesFixture::joinWithTheClient() {
   const rtype::network::Endpoint server{
       .address = std::string{rtype::network::LOOPBACK_IPV4_ADDRESS},
       .port = port_};
@@ -65,7 +67,7 @@ std::uint64_t ServerModulesFixture::joinWithTheClient() {
       .sessionToken;
 }
 
-std::vector<ReceivedAt> ServerModulesFixture::holding(
+std::vector<ReceivedAt> GameProcessModulesFixture::holding(
     const std::vector<ReceivedAt>& received, rtype::network::MessageType type) {
   std::vector<ReceivedAt> matching;
   for (const ReceivedAt& datagram : received) {
@@ -80,31 +82,31 @@ std::vector<ReceivedAt> ServerModulesFixture::holding(
   return matching;
 }
 
-std::uint16_t ServerModulesFixture::port() const { return port_; }
+std::uint16_t GameProcessModulesFixture::port() const { return port_; }
 
-rtype::server::StopRequest& ServerModulesFixture::stopRequest() {
+rtype::server::StopRequest& GameProcessModulesFixture::stopRequest() {
   return stopRequest_;
 }
 
-UdpTestClient& ServerModulesFixture::client() { return client_; }
+UdpTestClient& GameProcessModulesFixture::client() { return client_; }
 
-const rtype::server::LaunchOptions& ServerModulesFixture::launchOptions()
-    const {
+const rtype::server::GameLaunchOptions&
+GameProcessModulesFixture::launchOptions() const {
   return launchOptions_;
 }
 
 std::unique_ptr<rtype::engine::Application>
-ServerModulesFixture::serverApplication(
-    const rtype::server::LaunchOptions& options) {
+GameProcessModulesFixture::gameApplication(
+    const rtype::server::GameLaunchOptions& options) {
   return std::make_unique<rtype::engine::Application>(
       rtype::engine::LoopStages(rtype::server::SERVER_LOOP_STAGES),
-      rtype::server::serverModules(journalOptions(), options, stopRequest_),
+      rtype::server::gameProcessModules(options, stopRequest_),
       rtype::engine::configurationStep(
           std::filesystem::path{rtype::server::SERVER_CONFIGURATION_FILE_NAME},
           options.forcedLines(), configurationReport_));
 }
 
-void ServerModulesFixture::writeConfiguration(
+void GameProcessModulesFixture::writeConfiguration(
     const std::vector<std::string>& lines) const {
   std::string text;
   for (const std::string& line : lines) {

@@ -40,6 +40,7 @@ using rtype::server::INPUT_DELAY_OPTION;
 using rtype::server::LaunchOptions;
 using rtype::server::SEED_OPTION;
 using rtype::server::STATE_RATE_OPTION;
+using rtype::server::SUPERVISOR_OPTION;
 
 using Arguments = std::vector<std::string_view>;
 using Lines = std::vector<std::string>;
@@ -154,6 +155,17 @@ TEST(ServerLaunchOptions, AddressOptionIsRejected) {
   EXPECT_THROW(
       static_cast<void>(LaunchOptions::read(Arguments{ADDRESS_OPTION})),
       UnknownLaunchArgumentException);
+}
+
+/**
+ * Given the supervisor option, which only a game process takes
+ * When the launch options of the supervisor are read
+ * Then it is rejected
+ */
+TEST(ServerLaunchOptions, SupervisorOptionIsRejected) {
+  EXPECT_THROW(static_cast<void>(LaunchOptions::read(
+                   Arguments{SUPERVISOR_OPTION, PORT_ARGUMENT})),
+               UnknownLaunchArgumentException);
 }
 
 /**

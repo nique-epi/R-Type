@@ -13,3 +13,6 @@ constexpr std::uint64_t LINK_TOKEN_VALUE = 987654321;
 /** @brief A link token that is not one, and a supervisor port no one can reach.
  */
 constexpr std::string_view ZERO_TEXT = "0";
+
+/** @brief A seed, which a game process is not given at launch. */
+constexpr std::string_view SOME_SEED_TEXT = "7";

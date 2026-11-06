@@ -1,1 +1,1 @@
-target_sources(server_module_tests PRIVATE ServerModuleFixture.cpp ServerModulesFixture.cpp ServerModulesTest.cpp)
+target_sources(server_module_tests PRIVATE ServerModuleFixture.cpp GameProcessModulesFixture.cpp GameProcessModulesTest.cpp SupervisorModulesTest.cpp)

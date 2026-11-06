@@ -285,19 +285,19 @@ jobs:
       - name: Test
         run: ctest --preset ${{ matrix.preset }}
 
-      - name: Stop the server under the sanitizers
+      - name: Stop the supervisor under the sanitizers
         if: matrix.preset == 'sanitize'
         timeout-minutes: 2
         shell: bash
-        # Job control on, or bash starts the server with SIGINT ignored.
+        # Job control on, or bash starts the supervisor with SIGINT ignored.
         run: |
           set -m
-          ./build-sanitize/r-type_server --mode server &
-          server=$!
+          ./build-sanitize/r-type_server --mode supervisor &
+          supervisor=$!
           sleep 5
-          kill -INT "$server"
+          kill -INT "$supervisor"
           code=0
-          wait "$server" || code=$?
+          wait "$supervisor" || code=$?
           echo "r-type_server exit code: $code"
           test "$code" -eq 0
 

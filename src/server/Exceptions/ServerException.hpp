@@ -128,13 +128,13 @@ class ChildBindingException : public ServerException {
 };
 
 /**
- * @brief Only one of the two options that make a server the child of a
- * supervisor was given.
+ * @brief A game process was launched without one of the two options that link
+ * it to its supervisor.
  */
-class IncompleteSupervisorLinkException : public ServerException {
+class MissingSupervisorLinkException : public ServerException {
  public:
   /** @param missingOption The option that was not given. */
-  explicit IncompleteSupervisorLinkException(const std::string& missingOption);
+  explicit MissingSupervisorLinkException(const std::string& missingOption);
 };
 
 }  // namespace rtype::server

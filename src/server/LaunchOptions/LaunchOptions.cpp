@@ -10,10 +10,8 @@
 #include <string_view>
 #include <utility>
 #include <vector>
-#include "EndpointText.hpp"
 #include "EngineException.hpp"
 #include "ExecutablePath.hpp"
-#include "ForcedSetting.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOption.hpp"
@@ -23,13 +21,11 @@
 #include "LoggingConstants.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
-#include "ProtocolConstants.hpp"
 #include "ServerConstants.hpp"
-#include "ServerException.hpp"
+#include "ServerLaunchOptionParts.hpp"
 #include "SettingLine.hpp"
 #include "SettingOptions.hpp"
 #include "SimulatorLaunchOptions.hpp"
-#include "SupervisorLink.hpp"
 #include "WholeNumberOption.hpp"
 
 namespace rtype::server {
@@ -74,19 +70,6 @@ std::size_t inputDelayFromText(std::string_view text) {
 }
 
 /**
- * @returns `-p <port>`, which forces the port setting to a checked port.
- */
-engine::LaunchOption portOption(LaunchValues& values) {
-  return engine::LaunchOption{
-      .name = engine::PORT_OPTION,
-      .takesValue = true,
-      .record = [&values](std::string_view port) {
-        values.forcedLines.push_back(engine::settingLine(
-            PORT_SETTING_NAME, std::to_string(network::portFromText(port))));
-      }};
-}
-
-/**
  * @returns `--seed <seed>`, which forces the seed setting to a checked seed.
  */
 engine::LaunchOption seedOption(LaunchValues& values) {
@@ -128,59 +111,10 @@ engine::LaunchOption inputDelayOption(LaunchValues& values) {
       }};
 }
 
-/**
- * @returns `--supervisor <port>`, which records the port of the supervisor.
- */
-engine::LaunchOption supervisorOption(LaunchValues& values) {
-  return engine::LaunchOption{.name = SUPERVISOR_OPTION,
-                              .takesValue = true,
-                              .record = [&values](std::string_view port) {
-                                values.supervisorPort =
-                                    network::portFromText(port);
-                              }};
-}
-
-/**
- * @returns `--link-token <number>`, which records the token shared with the
- * supervisor.
- * @throws engine::InvalidLaunchOptionValueException from the option when the
- * value is 0 or not a whole number.
- */
-engine::LaunchOption linkTokenOption(LaunchValues& values) {
-  return engine::LaunchOption{
-      .name = LINK_TOKEN_OPTION,
-      .takesValue = true,
-      .record = [&values](std::string_view text) {
-        const auto token =
-            wholeNumberFromText<std::uint64_t>(LINK_TOKEN_OPTION, text);
-        if (token == network::NO_SESSION_TOKEN) {
-          throw engine::InvalidLaunchOptionValueException(
-              std::string(LINK_TOKEN_OPTION), std::string(text));
-        }
-        values.linkToken = token;
-      }};
-}
-
-/**
- * @brief Checks that `--supervisor` and `--link-token` came together.
- * @throws IncompleteSupervisorLinkException when only one was given.
- */
-void requireCompleteSupervisorLink(const LaunchValues& values) {
-  if (values.supervisorPort.has_value() != values.linkToken.has_value()) {
-    throw IncompleteSupervisorLinkException(
-        std::string{values.supervisorPort.has_value() ? LINK_TOKEN_OPTION
-                                                      : SUPERVISOR_OPTION});
-  }
-}
-
 /** @returns The lines of the usage that describe the options that give a
  * setting a value of its own kind. */
 std::string settingOptionEntries() {
-  std::string text = engine::usageEntry(
-      std::string(engine::PORT_OPTION) + " <port>",
-      "UDP port to listen on, from " + std::to_string(network::LOWEST_PORT) +
-          " to " + std::to_string(network::HIGHEST_PORT) +
-          ". Default: " + std::to_string(network::DEFAULT_SERVER_PORT) + ".");
+  std::string text = portOptionEntry();
   text += engine::usageEntry(
       std::string(SEED_OPTION) + " <seed>",
       "Whole number the random draws of the games start from, from 0 to "
@@ -205,46 +139,23 @@ std::string settingOptionEntries() {
   return text;
 }
 
-/** @returns The line of the usage that describes `--database`. */
-std::string databaseOptionEntry() {
-  return engine::usageEntry(
-      std::string(engine::DATABASE_OPTION) + " <file>",
-      "File the leaderboard of this server is kept in, on a local disk. "
-      "Default: " +
-          std::string(DATABASE_FILE_PREFIX) + "<port>" +
-          std::string(DATABASE_FILE_SUFFIX) + " next to the executable.");
-}
-
 /** @returns The line of the usage that describes `--mode`. */
 std::string modeOptionEntry() {
   return engine::usageEntry(
-      std::string(MODE_OPTION) + " <" + std::string(SERVER_MODE_NAME) + "|" +
-          std::string(SUPERVISOR_MODE_NAME) + "|" +
+      std::string(MODE_OPTION) + " <" + std::string(SUPERVISOR_MODE_NAME) +
+          "|" + std::string(GAME_MODE_NAME) + "|" +
           std::string(MASTER_MODE_NAME) + ">",
-      "Runs the supervisor that starts a game server per game (" +
+      "Runs the supervisor that starts a game process per game (" +
           std::string(SUPERVISOR_MODE_NAME) +
-          ", the default), one game server alone (" +
-          std::string(SERVER_MODE_NAME) +
-          ") or the master that lists the game servers (" +
+          ", the default), one game process, "
+          "which only a supervisor starts (" +
+          std::string(GAME_MODE_NAME) +
+          "), or the master that lists the servers (" +
           std::string(MASTER_MODE_NAME) +
           "). It comes before every other option: `" +
           std::string(MODE_OPTION) + " " + std::string(MASTER_MODE_NAME) + " " +
           std::string(engine::HELP_OPTION) +
           "` prints the options of the master.");
-}
-
-/** @returns The lines of the usage that describe `--supervisor` and
- * `--link-token`. */
-std::string supervisorLinkOptionEntries() {
-  std::string text = engine::usageEntry(
-      std::string(SUPERVISOR_OPTION) + " <port>",
-      "Only for a game process: the UDP port of the supervisor that started "
-      "it. Given with " +
-          std::string(LINK_TOKEN_OPTION) + ".");
-  text += engine::usageEntry(
-      std::string(LINK_TOKEN_OPTION) + " <number>",
-      "Only for a game process: the number its supervisor gave it.");
-  return text;
 }
 
 /** @returns The lines of the usage that describe `--set` and `--help`. */
@@ -253,8 +164,7 @@ std::string generalOptionEntries() {
                                             SERVER_SETTING_NAMES);
   text += engine::usageEntry(network::TRAFFIC_CSV_OPTION_WITH_VALUE,
                              network::TRAFFIC_CSV_USAGE);
-  text += engine::usageEntry(engine::HELP_OPTION,
-                             "Print this help and start nothing.");
+  text += helpOptionEntry();
   return text;
 }
 
@@ -263,21 +173,14 @@ std::string generalOptionEntries() {
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
   LaunchOptions options{LaunchValues{.forcedLines = {},
                                      .trafficCsvFile = std::nullopt,
-                                     .supervisorPort = std::nullopt,
-                                     .linkToken = std::nullopt,
                                      .helpRequested = false}};
   const std::array launchOptions{
-      portOption(options.values_),
+      portOption(options.values_.forcedLines),
       seedOption(options.values_),
       stateRateOption(options.values_),
       inputDelayOption(options.values_),
-      engine::settingOption(
-          engine::ForcedSetting{.option = engine::DATABASE_OPTION,
-                                .setting = DATABASE_SETTING_NAME},
-          options.values_.forcedLines),
+      databaseOption(options.values_.forcedLines),
       engine::setOption(options.values_.forcedLines),
-      supervisorOption(options.values_),
-      linkTokenOption(options.values_),
       engine::pathOption(network::TRAFFIC_CSV_OPTION,
                          options.values_.trafficCsvFile),
       engine::helpOption(options.values_.helpRequested)};
@@ -287,7 +190,6 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
       std::bind_front(&logging::LogLaunchOptions::readOption,
                       &options.logOptions_)};
   engine::readLaunchArguments(arguments, launchOptions, readers);
-  requireCompleteSupervisorLink(options.values_);
   return options;
 }
 
@@ -296,7 +198,6 @@ std::string LaunchOptions::usage() {
   text += modeOptionEntry();
   text += settingOptionEntries();
   text += databaseOptionEntry();
-  text += supervisorLinkOptionEntries();
   text += generalOptionEntries();
   text += '\n';
   text += network::SimulatorLaunchOptions::usage();
@@ -317,14 +218,6 @@ const network::NetworkConditions& LaunchOptions::networkConditions() const {
 
 const logging::LogLaunchOptions& LaunchOptions::logOptions() const {
   return logOptions_;
-}
-
-std::optional<SupervisorLink> LaunchOptions::supervisorLink() const {
-  if (!values_.supervisorPort.has_value() || !values_.linkToken.has_value()) {
-    return std::nullopt;
-  }
-  return SupervisorLink{.port = *values_.supervisorPort,
-                        .token = *values_.linkToken};
 }
 
 const std::optional<std::filesystem::path>& LaunchOptions::trafficCsvFile()

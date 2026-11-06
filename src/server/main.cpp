@@ -11,6 +11,8 @@
 #include "ConfigurationLog.hpp"
 #include "ConfigurationReader.hpp"
 #include "ConfigurationReport.hpp"
+#include "GameLaunchOptions.hpp"
+#include "GameProcessModules.hpp"
 #include "IModule.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchOptions.hpp"
@@ -23,7 +25,6 @@
 #include "ServerMode.hpp"
 #include "ServerModeChoice.hpp"
 #include "ServerModeOption.hpp"
-#include "ServerModules.hpp"
 #include "StopReason.hpp"
 #include "StopRequest.hpp"
 #include "StopSignals.hpp"
@@ -32,12 +33,12 @@
 namespace {
 
 /**
- * @brief What tells apart the two programs the binary runs, the game server
- * and the master, once their launch options are read.
+ * @brief What tells apart the programs the binary runs, the supervisor, a game
+ * process and the master, once their launch options are read.
  */
 struct ProgramRun {
   /** @brief The name of the mode, which starts the line of an error:
-   * `server stopped: …`. */
+   * `game stopped: …`. */
   std::string_view label;
   /** @brief The logger the program writes its errors with. */
   std::string_view loggerName;
@@ -99,23 +100,25 @@ int runUntilStopped(const ProgramRun& program) {
 }
 
 /** @brief Builds the modules of a program of the server binary from its launch
- * options. */
+ * options of type Options. */
+template <typename Options>
 using ServerModulesBuilder =
     std::function<std::vector<std::unique_ptr<rtype::engine::IModule>>(
-        const rtype::server::LaunchOptions&, rtype::server::StopRequest&)>;
+        const Options&, rtype::server::StopRequest&)>;
 
 /**
- * @brief Runs a program that takes the options of the game server, named
- * @p label, with @p options, or prints its usage.
+ * @brief Runs a program of the server binary that reads its launch options
+ * with Options and server.cfg, named @p label, with @p options, or prints its
+ * usage.
  * @returns the exit code of the program.
  */
+template <typename Options>
 int runServerProgram(std::string_view label,
                      std::span<const std::string_view> options,
-                     const ServerModulesBuilder& build) {
-  const rtype::server::LaunchOptions launchOptions =
-      rtype::server::LaunchOptions::read(options);
+                     const ServerModulesBuilder<Options>& build) {
+  const Options launchOptions = Options::read(options);
   if (launchOptions.helpRequested()) {
-    std::cout << rtype::server::LaunchOptions::usage();
+    std::cout << Options::usage();
     return 0;
   }
   return runUntilStopped(ProgramRun{
@@ -131,17 +134,13 @@ int runServerProgram(std::string_view label,
 }
 
 /**
- * @brief Runs the game server with @p options, or prints its usage.
- * @returns the exit code of the server.
+ * @brief Runs a game process with @p options, or prints its usage.
+ * @returns the exit code of the game.
  */
-int runServer(std::span<const std::string_view> options) {
-  return runServerProgram(rtype::server::SERVER_MODE_NAME, options,
-                          [](const rtype::server::LaunchOptions& launchOptions,
-                             rtype::server::StopRequest& stopRequest) {
-                            return rtype::server::serverModules(
-                                launchOptions.logOptions(), launchOptions,
-                                stopRequest);
-                          });
+int runGame(std::span<const std::string_view> options) {
+  return runServerProgram<rtype::server::GameLaunchOptions>(
+      rtype::server::GAME_MODE_NAME, options,
+      rtype::server::gameProcessModules);
 }
 
 /**
@@ -149,8 +148,9 @@ int runServer(std::span<const std::string_view> options) {
  * @returns the exit code of the supervisor.
  */
 int runSupervisor(std::span<const std::string_view> options) {
-  return runServerProgram(rtype::server::SUPERVISOR_MODE_NAME, options,
-                          rtype::server::supervisorModules);
+  return runServerProgram<rtype::server::LaunchOptions>(
+      rtype::server::SUPERVISOR_MODE_NAME, options,
+      rtype::server::supervisorModules);
 }
 
 /**
@@ -192,10 +192,10 @@ int main(int argumentCount, char** arguments) {
       programName = rtype::master::MASTER_PROGRAM_NAME;
       return runMaster(choice.options);
     }
-    if (choice.mode == rtype::server::ServerMode::Supervisor) {
-      return runSupervisor(choice.options);
+    if (choice.mode == rtype::server::ServerMode::Game) {
+      return runGame(choice.options);
     }
-    return runServer(choice.options);
+    return runSupervisor(choice.options);
   } catch (const std::exception& error) {
     std::cerr << rtype::engine::launchErrorText(programName, error.what());
     return 1;
