@@ -3,9 +3,28 @@ name: package
 # Builds the packages of the client and the server on Linux, Windows and
 # macOS, checks them from another folder, and uploads them as artifacts.
 # Called by the pull request workflow and by the release workflow, so a release
-# ships exactly what the pull requests checked.
+# ships exactly what the pull requests checked. When the callers pass the Apple
+# credentials, the macOS client is signed with the Developer ID certificate and
+# notarized; without them (a pull request from a fork), it is signed without an
+# identity, as before.
 on:
   workflow_call:
+    secrets:
+      MACOS_CERTIFICATE_P12:
+        description: Developer ID Application certificate and its key, as a base64 .p12
+        required: false
+      MACOS_CERTIFICATE_PASSWORD:
+        description: Password of the .p12
+        required: false
+      APPLE_NOTARY_KEY:
+        description: App Store Connect API key, the text of its .p8 file
+        required: false
+      APPLE_NOTARY_KEY_ID:
+        description: Identifier of the App Store Connect API key
+        required: false
+      APPLE_NOTARY_ISSUER_ID:
+        description: Issuer of the App Store Connect API key
+        required: false
 
 jobs:
   package:
@@ -127,6 +146,53 @@ jobs:
       - name: Build
         run: cmake --build --preset default --parallel
 
+      # The certificate goes into a keychain of its own, deleted at the end of
+      # the job; the identity is named by its hash, so no other certificate of
+      # the runner can be picked.
+      - name: Import the Developer ID certificate
+        id: signing
+        if: runner.os == 'macOS'
+        env:
+          CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          NOTARY_KEY: ${{ secrets.APPLE_NOTARY_KEY }}
+          NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+        run: |
+          if [ -z "$CERTIFICATE" ]; then
+            echo "No Developer ID certificate: the client is signed without an identity."
+            exit 0
+          fi
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          keychain_password=$(openssl rand -hex 24)
+          echo "$CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$keychain" \
+            -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$keychain_password" "$keychain" > /dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/certificate.p12"
+          identity=$(security find-identity -v -p codesigning "$keychain" \
+            | sed -n -E 's/^ *[0-9]+\) ([0-9A-F]{40}) "Developer ID Application:.*/\1/p' | head -n 1)
+          if [ -z "$identity" ]; then
+            echo "The certificate holds no Developer ID Application identity"
+            exit 1
+          fi
+          echo "RTYPE_MACOS_SIGNING_IDENTITY=$identity" >> "$GITHUB_ENV"
+          echo "keychain=$keychain" >> "$GITHUB_OUTPUT"
+          if [ -n "$NOTARY_KEY" ] && [ -n "$NOTARY_KEY_ID" ] && [ -n "$NOTARY_ISSUER_ID" ]; then
+            printf '%s\n' "$NOTARY_KEY" > "$RUNNER_TEMP/notary-key.p8"
+            {
+              echo "RTYPE_NOTARY_KEY=$RUNNER_TEMP/notary-key.p8"
+              echo "RTYPE_NOTARY_KEY_ID=$NOTARY_KEY_ID"
+              echo "RTYPE_NOTARY_ISSUER=$NOTARY_ISSUER_ID"
+              echo "RTYPE_EXPECT_NOTARIZED=1"
+            } >> "$GITHUB_ENV"
+          fi
+
       - name: Package the client
         run: cpack --preset client
 
@@ -136,6 +202,14 @@ jobs:
       - name: Launch the packaged programs from another folder
         shell: bash
         run: sh tests/tools/packaging/check-package.sh build
+
+      - name: Delete the signing keychain
+        if: always() && steps.signing.outputs.keychain != ''
+        env:
+          KEYCHAIN: ${{ steps.signing.outputs.keychain }}
+        run: |
+          security delete-keychain "$KEYCHAIN"
+          rm -f "$RUNNER_TEMP/notary-key.p8"
 
       - name: Upload the packages
         uses: actions/upload-artifact@v4
