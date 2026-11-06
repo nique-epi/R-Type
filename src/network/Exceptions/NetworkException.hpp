@@ -160,6 +160,16 @@ class InvalidDifficultyException : public MalformedMessageException {
 };
 
 /**
+ * @brief The text of a chat line that is empty, longer than the protocol
+ * allows, not UTF-8, or holding a control character, read from a payload or
+ * about to be written into one.
+ */
+class InvalidChatTextException : public MalformedMessageException {
+ public:
+  explicit InvalidChatTextException(std::size_t size);
+};
+
+/**
  * @brief A server name or a game version that is empty, longer than the
  * protocol allows, not UTF-8, or holding a control character, read from a
  * ServerInformation or about to be written into one. The field is named as on

@@ -1,4 +1,6 @@
+add_subdirectory(ChatLine)
 add_subdirectory(ConnectionAccepted)
 add_subdirectory(ConnectionRedirect)
 add_subdirectory(GameStatus)
 add_subdirectory(GameStatusAcknowledged)
+add_subdirectory(PlayerChatLine)

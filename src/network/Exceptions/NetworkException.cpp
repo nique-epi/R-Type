@@ -101,6 +101,11 @@ InvalidDifficultyException::InvalidDifficultyException(std::size_t size)
                                 " byte(s) is empty, too long, not UTF-8 or "
                                 "holds a control character") {}
 
+InvalidChatTextException::InvalidChatTextException(std::size_t size)
+    : MalformedMessageException("a chat text of " + std::to_string(size) +
+                                " byte(s) is empty, too long, not UTF-8 or "
+                                "holds a control character") {}
+
 InvalidServerTextException::InvalidServerTextException(std::string_view field,
                                                        std::size_t size)
     : MalformedMessageException(std::string{field} + " of " +
