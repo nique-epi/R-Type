@@ -7,15 +7,32 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "MacOsUserDirectory.hpp"
 #include "PlatformConstants.hpp"
 
 namespace rtype::client {
 
+namespace {
+
+/** @returns The sysdir name of @p directory. */
+sysdir_search_path_directory_t sysdirNameOf(MacOsUserDirectory directory) {
+  switch (directory) {
+    case MacOsUserDirectory::Library:
+      return SYSDIR_DIRECTORY_LIBRARY;
+    case MacOsUserDirectory::ApplicationSupport:
+      return SYSDIR_DIRECTORY_APPLICATION_SUPPORT;
+  }
+  return SYSDIR_DIRECTORY_LIBRARY;
+}
+
+}  // namespace
+
 std::optional<std::filesystem::path> macOsUserFolder(
-    sysdir_search_path_directory_t directory, std::string_view child) {
+    MacOsUserDirectory directory, std::string_view child) {
   std::array<char, PATH_MAX> reported{};
   const sysdir_search_path_enumeration_state search =
-      sysdir_start_search_path_enumeration(directory, SYSDIR_DOMAIN_MASK_USER);
+      sysdir_start_search_path_enumeration(sysdirNameOf(directory),
+                                           SYSDIR_DOMAIN_MASK_USER);
   if (sysdir_get_next_search_path_enumeration(search, reported.data()) == 0) {
     return std::nullopt;
   }

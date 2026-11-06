@@ -1,6 +1,6 @@
-#include <sysdir.h>
 #include <filesystem>
 #include <optional>
+#include "MacOsUserDirectory.hpp"
 #include "MacOsUserFolder.hpp"
 #include "PlatformConstants.hpp"
 #include "SettingsFolder.hpp"
@@ -8,7 +8,7 @@
 namespace rtype::client {
 
 std::optional<std::filesystem::path> settingsFolder() {
-  return macOsUserFolder(SYSDIR_DIRECTORY_APPLICATION_SUPPORT,
+  return macOsUserFolder(MacOsUserDirectory::ApplicationSupport,
                          MACOS_SETTINGS_FOLDER_NAME);
 }
 
