@@ -223,7 +223,7 @@ endif()
 set(CPACK_PACKAGE_NAME "R-Type")
 set(CPACK_PACKAGE_VENDOR "R-Type team")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Networked shoot'em up")
-# The project has no licence file: without this, the installer would show
+# No licence file is given to CPack: without this, the installer would show
 # CPack's placeholder licence.
 set(CPACK_NSIS_IGNORE_LICENSE_PAGE ON)
 # The icon of the game on the installer and the uninstaller; the executable
