@@ -7,6 +7,7 @@
 #include "LogLaunchOptions.hpp"
 #include "MasterHttpModule.hpp"
 #include "MasterLoggerModule.hpp"
+#include "MasterProbeModule.hpp"
 #include "MasterStorageModule.hpp"
 #include "ServersModule.hpp"
 
@@ -19,6 +20,7 @@ std::vector<std::unique_ptr<engine::IModule>> masterModules(
   modules.push_back(std::make_unique<MasterLoggerModule>(logOptions));
   modules.push_back(
       std::make_unique<MasterStorageModule>(engine::executableFolder()));
+  modules.push_back(std::make_unique<MasterProbeModule>());
   modules.push_back(std::make_unique<MasterHttpModule>(onFailure));
   modules.push_back(std::make_unique<ServersModule>());
   return modules;
