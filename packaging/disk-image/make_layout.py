@@ -21,12 +21,11 @@ WINDOW_LEFT = 200
 WINDOW_TOP = 120
 ICON_SIZE = 112
 TEXT_SIZE = 12
-APP_CENTER = (160, 196)
-APPLICATIONS_CENTER = (440, 196)
+APP_CENTER = (160, 154)
+APPLICATIONS_CENTER = (440, 154)
 RETINA_SCALE = 2
 STAR_COUNT = 90
 STAR_SEED = 1987
-CAPTION_TOP = 340
 CAPTION = "DRAG R-TYPE INTO APPLICATIONS"
 CAPTION_FONT_SIZE = 8
 ARROW_HEAD = 10
@@ -41,6 +40,8 @@ BOX_HALF = 64
 BOX_CORNER = 6
 BOX_TOP_OFFSET = ICON_DRAWN_TOP_OFFSET - BOX_MARGIN
 BOX_BOTTOM_OFFSET = LABEL_BOTTOM_OFFSET + BOX_MARGIN
+CAPTION_GAP = 49
+CAPTION_TOP = APP_CENTER[1] + BOX_BOTTOM_OFFSET + CAPTION_GAP
 
 SKY_COLOR = (11, 13, 31)
 DEEP_BLUE = (38, 48, 94)
@@ -50,6 +51,7 @@ STAR_GOLD = (255, 211, 138)
 EDGE_BLUE = (31, 163, 201)
 HUD_CYAN = (127, 230, 255)
 
+COLOR_CHANNEL_MAXIMUM = 255.0
 STAR_COLORS = (DEEP_BLUE, DEEP_BLUE, PALE_BLUE, STAR_WHITE, STAR_GOLD)
 BACKGROUND_NAME = "background.tiff"
 DS_STORE_NAME = "DS_Store"
@@ -188,9 +190,9 @@ def icon_settings(background):
         "viewOptionsVersion": 1,
         "backgroundType": 2,
         "backgroundImageAlias": Alias.for_file(str(background)).to_bytes(),
-        "backgroundColorRed": 1.0,
-        "backgroundColorGreen": 1.0,
-        "backgroundColorBlue": 1.0,
+        "backgroundColorRed": SKY_COLOR[0] / COLOR_CHANNEL_MAXIMUM,
+        "backgroundColorGreen": SKY_COLOR[1] / COLOR_CHANNEL_MAXIMUM,
+        "backgroundColorBlue": SKY_COLOR[2] / COLOR_CHANNEL_MAXIMUM,
         "gridOffsetX": 0.0,
         "gridOffsetY": 0.0,
         "gridSpacing": 100.0,
