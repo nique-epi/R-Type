@@ -19,16 +19,19 @@ constexpr const char* METRICS_LINE_MARK = "[Metrics]";
 constexpr std::size_t LINES_OF_ONE_REPORT = 3;
 constexpr std::size_t LINES_OF_TWO_REPORTS = 6;
 
-/** @brief The round trip a test gives a player of the second game, and the
- * number the metrics give that game. */
+/** @brief The round trip a test gives a player, and the number the metrics
+ * give its game, the one game of the process, numbered from 1. */
 constexpr std::chrono::milliseconds MEASURED_ROUND_TRIP{42};
-constexpr std::size_t NUMBER_OF_THE_SECOND_GAME = 2;
+constexpr std::size_t NUMBER_OF_THE_ONLY_GAME = 1;
+
+/** @brief The games a game process hosts. */
+constexpr std::size_t GAMES_OF_THE_PROCESS = 1;
 
 /** @brief The system of a known time the tests add to a game, how long one run
- * of it takes, and how long a run in each of two games takes. */
+ * of it takes, and how long a run of two such systems takes. */
 constexpr std::string_view TIMED_SYSTEM_NAME = "timed";
 constexpr std::chrono::milliseconds TIMED_SYSTEM_TIME{3};
-constexpr std::chrono::milliseconds TIMED_SYSTEM_TIME_IN_TWO_GAMES{6};
+constexpr std::chrono::milliseconds TIMED_SYSTEM_TIME_OF_TWO_SYSTEMS{6};
 
 /** @brief Each tick moves the clock by TICK_WORK_TIME (3 ms), so the traffic
  * line, due at 10 s of the clock, comes after 3334 ticks (10.002 s), not 3333

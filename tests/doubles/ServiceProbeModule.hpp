@@ -2,12 +2,12 @@
 
 #include <string>
 #include <vector>
-#include "Games.hpp"
 #include "IDatagramSender.hpp"
 #include "IModule.hpp"
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
 #include "LatestMetrics.hpp"
+#include "RunningGame.hpp"
 #include "StageWork.hpp"
 #include "TickDatagrams.hpp"
 
@@ -30,7 +30,7 @@ class ServiceProbeModule : public rtype::engine::IModule {
   [[nodiscard]] rtype::server::IDatagramSender* sender() const;
   [[nodiscard]] rtype::server::IPlayerAdmission* admission() const;
   [[nodiscard]] rtype::server::TickDatagrams* tickDatagrams() const;
-  [[nodiscard]] rtype::server::Games* games() const;
+  [[nodiscard]] rtype::server::RunningGame* runningGame() const;
   [[nodiscard]] rtype::server::LatestMetrics* latestMetrics() const;
 
  private:
@@ -40,6 +40,6 @@ class ServiceProbeModule : public rtype::engine::IModule {
   rtype::server::IDatagramSender* sender_{nullptr};
   rtype::server::IPlayerAdmission* admission_{nullptr};
   rtype::server::TickDatagrams* tickDatagrams_{nullptr};
-  rtype::server::Games* games_{nullptr};
+  rtype::server::RunningGame* runningGame_{nullptr};
   rtype::server::LatestMetrics* latestMetrics_{nullptr};
 };

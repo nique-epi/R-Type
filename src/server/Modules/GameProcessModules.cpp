@@ -25,15 +25,14 @@ namespace rtype::server {
 
 namespace {
 
-/** @returns What the games module of a game process is built from: its one
- * game, the waves and the entity sheets of the assets folder. */
+/** @returns What the games module of a game process is built from: the waves
+ * and the entity sheets of the assets folder. */
 GamesSettings gameProcessGamesSettings() {
   return GamesSettings{
       .seed = std::nullopt,
       .wavesFile = engine::locateAssetFolder() / WAVE_FILE_IN_ASSETS,
       .entitySheetsFolder =
-          engine::locateAssetFolder() / game::ENTITY_SHEET_FOLDER_IN_ASSETS,
-      .gameCount = GAME_PROCESS_GAME_COUNT};
+          engine::locateAssetFolder() / game::ENTITY_SHEET_FOLDER_IN_ASSETS};
 }
 
 }  // namespace

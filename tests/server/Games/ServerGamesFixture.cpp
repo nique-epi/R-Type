@@ -74,7 +74,7 @@ rtype::server::GamesSettings ServerGamesFixture::shippedWaves() {
 }
 
 ConnectedPlayer& ServerGamesFixture::join(std::size_t index) {
-  return seatPlayerIn(*probe().games()->all().front(), index);
+  return seatPlayerIn(probe().runningGame()->game(), index);
 }
 
 void ServerGamesFixture::runTick(

@@ -5,32 +5,29 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "FarewellSender.hpp"
-#include "GameInstance.hpp"
-#include "Games.hpp"
+#include "PlayerRoster.hpp"
 #include "RecordingDatagramSender.hpp"
 #include "RecordingResultsArchive.hpp"
+#include "RunningGame.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
 
-/** @brief The base of the tests of Games and FarewellSender: games of the
- * server built by hand, a sender that records, and a pause that only writes
+/** @brief The base of the tests of RunningGame and FarewellSender: the game of
+ * a process built by hand, a sender that records, and a pause that only writes
  * down how long it was asked to wait. */
-class GamesFixture : public ::testing::Test {
+class RunningGameFixture : public ::testing::Test {
  protected:
-  /** @brief Adds a game to games(), with a sender that goes nowhere. */
-  void addGame();
+  /** @brief Hosts a game in runningGame(), with a sender that goes nowhere. */
+  void hostGame();
 
-  /** @brief Connects the player at @p index to the first game of games(). */
+  /** @brief Connects the player at @p index to the game of runningGame(). */
   rtype::server::ConnectedPlayer& join(std::size_t index);
 
-  /** @brief Connects the player at @p index to @p game. */
-  static rtype::server::ConnectedPlayer& joinIn(
-      rtype::server::GameInstance& game, std::size_t index);
+  [[nodiscard]] rtype::server::RunningGame& runningGame();
 
-  /** @brief Connects players to @p game until every seat is taken. */
-  static void fill(rtype::server::GameInstance& game);
+  /** @returns The roster of the game of runningGame(). */
+  [[nodiscard]] rtype::server::PlayerRoster& roster();
 
-  [[nodiscard]] rtype::server::Games& games();
   [[nodiscard]] RecordingDatagramSender& sender();
   [[nodiscard]] rtype::server::FarewellSender& farewell();
 
@@ -40,7 +37,7 @@ class GamesFixture : public ::testing::Test {
  private:
   SimulatedClock clock_;
   RecordingResultsArchive results_;
-  rtype::server::Games games_;
+  rtype::server::RunningGame runningGame_;
   RecordingDatagramSender sender_;
   std::vector<rtype::engine::Duration> pauses_;
   rtype::server::FarewellSender farewell_{

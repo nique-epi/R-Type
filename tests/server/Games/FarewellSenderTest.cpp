@@ -4,10 +4,10 @@
 #include <vector>
 #include "DatagramCodec.hpp"
 #include "Disconnection.hpp"
-#include "GamesFixture.hpp"
 #include "ModuleConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "RunningGameFixture.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "TimeConstants.hpp"
@@ -29,12 +29,12 @@ using rtype::server::testing::sentTo;
  * Then each player gets FAREWELL_COPIES datagrams, each one a
  * Disconnection
  */
-TEST_F(GamesFixture, SendsEveryPlayerAllTheCopiesOfADisconnection) {
-  addGame();
+TEST_F(RunningGameFixture, SendsEveryPlayerAllTheCopiesOfADisconnection) {
+  hostGame();
   join(0);
   join(1);
 
-  farewell().sayGoodbyeTo(games());
+  farewell().sayGoodbyeTo(roster());
 
   for (const std::size_t index : {0U, 1U}) {
     const std::vector<OutgoingDatagram> received =
@@ -53,11 +53,11 @@ TEST_F(GamesFixture, SendsEveryPlayerAllTheCopiesOfADisconnection) {
  * follow the ones already used: each copy takes the next sequence of its
  * session
  */
-TEST_F(GamesFixture, WritesTheCopiesUnderTheSessionHeaderOfThePlayer) {
-  addGame();
+TEST_F(RunningGameFixture, WritesTheCopiesUnderTheSessionHeaderOfThePlayer) {
+  hostGame();
   const std::uint16_t firstFreeSequence = join(0).nextSequence;
 
-  farewell().sayGoodbyeTo(games());
+  farewell().sayGoodbyeTo(roster());
 
   const std::vector<OutgoingDatagram> received =
       sentTo(sender().sent(), playerEndpoint(0));
@@ -76,11 +76,11 @@ TEST_F(GamesFixture, WritesTheCopiesUnderTheSessionHeaderOfThePlayer) {
  * Then it waits FAREWELL_COPY_INTERVAL between two copies, then
  * FAREWELL_FLUSH_WAIT after the last one
  */
-TEST_F(GamesFixture, WaitsBetweenTheCopiesThenForTheLastOneToLeave) {
-  addGame();
+TEST_F(RunningGameFixture, WaitsBetweenTheCopiesThenForTheLastOneToLeave) {
+  hostGame();
   join(0);
 
-  farewell().sayGoodbyeTo(games());
+  farewell().sayGoodbyeTo(roster());
 
   EXPECT_EQ(pauses(), (std::vector<rtype::engine::Duration>{
                           FAREWELL_COPY_INTERVAL, FAREWELL_COPY_INTERVAL,
@@ -92,10 +92,10 @@ TEST_F(GamesFixture, WaitsBetweenTheCopiesThenForTheLastOneToLeave) {
  * When the server says goodbye
  * Then nothing is sent and the server does not wait
  */
-TEST_F(GamesFixture, SendsNothingAndWaitsForNothingWhenNoPlayerIsThere) {
-  addGame();
+TEST_F(RunningGameFixture, SendsNothingAndWaitsForNothingWhenNoPlayerIsThere) {
+  hostGame();
 
-  farewell().sayGoodbyeTo(games());
+  farewell().sayGoodbyeTo(roster());
 
   EXPECT_TRUE(sender().sent().empty());
   EXPECT_TRUE(pauses().empty());

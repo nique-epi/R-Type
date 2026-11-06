@@ -5,12 +5,12 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include "Games.hpp"
 #include "IClock.hpp"
 #include "IModule.hpp"
 #include "InstallContext.hpp"
 #include "LatestMetrics.hpp"
 #include "Logger.hpp"
+#include "RunningGame.hpp"
 #include "TickDurations.hpp"
 #include "TimeConstants.hpp"
 #include "TrafficCounters.hpp"
@@ -21,7 +21,8 @@ namespace rtype::server {
 /**
  * @brief The module that measures the server and reports it every
  * TICKS_PER_REPORT ticks: how long the ticks last, what each system of the
- * games costs, and how many games, players and entities there are.
+ * game costs, whether the game is in progress, and how many players and
+ * entities there are.
  *
  * Its work brackets the stages of a tick: its work in the inputs stage, which
  * no other module uses, starts the measure, and its work in the outputs stage
@@ -34,9 +35,9 @@ namespace rtype::server {
  * the server runs the same without this module. The module also writes the
  * traffic of the socket as time goes by (see network::TrafficRecorder).
  *
- * start() has the schedulers of the games read its clock, which exist only once
- * the games module started; stop() takes the clock back. The games are never
- * replaced, so telling them once is enough. Everything runs on the simulation
+ * start() has the scheduler of the game read its clock, which exists only once
+ * the games module started; stop() takes the clock back. The game is never
+ * replaced, so telling it once is enough. Everything runs on the simulation
  * thread, and a tick allocates nothing unless a report or the traffic is due.
  */
 class ServerMetricsModule final : public engine::IModule {
@@ -51,7 +52,7 @@ class ServerMetricsModule final : public engine::IModule {
   [[nodiscard]] std::vector<std::string> dependencies() const override;
 
   /**
-   * @throws MissingServiceException when no module provided the games or the
+   * @throws MissingServiceException when no module provided the game or the
    * traffic.
    */
   void install(engine::InstallContext& context) override;
@@ -62,7 +63,7 @@ class ServerMetricsModule final : public engine::IModule {
    */
   void start() override;
 
-  /** @brief Stops measuring the systems of every game, and writes the last rows
+  /** @brief Stops measuring the systems of the game, and writes the last rows
    * of the traffic. */
   void stop() override;
 
@@ -72,7 +73,7 @@ class ServerMetricsModule final : public engine::IModule {
 
   std::shared_ptr<const engine::IClock> clock_;
   logging::Logger logger_;
-  Games* games_{nullptr};
+  RunningGame* runningGame_{nullptr};
   TickDurations durations_;
   LatestMetrics latest_;
   engine::Duration tickStart_{};

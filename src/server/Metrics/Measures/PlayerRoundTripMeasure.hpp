@@ -10,8 +10,8 @@ namespace rtype::server {
 /** @brief The round trip of one player of the server, as the metrics report
  * it. */
 struct PlayerRoundTripMeasure {
-  /** @brief 1 for the first game Games::all() lists, then one more for each.
-   */
+  /** @brief The number of the game of the player: NUMBER_OF_THE_GAME in a
+   * game process, which runs one game. */
   std::size_t gameNumber{0};
   std::uint8_t playerNumber{0};
   std::string nickname;

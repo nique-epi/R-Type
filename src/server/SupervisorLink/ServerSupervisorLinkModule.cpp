@@ -14,7 +14,6 @@
 #include "GameInstance.hpp"
 #include "GameState.hpp"
 #include "GameStatus.hpp"
-#include "Games.hpp"
 #include "IDatagramSender.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IncomingDatagram.hpp"
@@ -26,6 +25,7 @@
 #include "NetworkConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "RunningGame.hpp"
 #include "ServerConstants.hpp"
 #include "StopRequest.hpp"
 #include "SupervisorLink.hpp"
@@ -115,7 +115,7 @@ std::vector<std::string> ServerSupervisorLinkModule::optionalDependencies()
 }
 
 void ServerSupervisorLinkModule::install(engine::InstallContext& context) {
-  games_ = &context.require<Games>();
+  runningGame_ = &context.require<RunningGame>();
   sender_ = &context.require<IDatagramSender>();
   admission_ = &context.require<IPlayerAdmission>();
   tickDatagrams_ = &context.require<TickDatagrams>();
@@ -134,7 +134,7 @@ void ServerSupervisorLinkModule::stop() {
 
 void ServerSupervisorLinkModule::onTick(engine::Duration elapsed) {
   readSupervisorDatagrams();
-  GameInstance& game = *games_->all().front();
+  GameInstance& game = runningGame_->game();
   const ConnectedPlayers players = game.roster().connected();
   watch_.tick(elapsed, players.size());
   if (const std::optional<std::string_view> reason = watch_.reasonToStop()) {

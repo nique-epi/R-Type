@@ -24,7 +24,7 @@ namespace rtype::server {
  *
  * It depends on the network module, which it reads the port of, so the
  * application refuses a list without it; it is listed before the games module,
- * so it stops after it: no game hands it anything once it stops, and every game
+ * so it stops after it: the game hands it nothing once it stops, and the game
  * is still there when its thread ends.
  */
 class ServerStorageModule final : public engine::IModule {
