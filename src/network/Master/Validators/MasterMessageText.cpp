@@ -23,6 +23,7 @@
 #include "ListedServer.hpp"
 #include "MasterHttpConstants.hpp"
 #include "MasterMessageConstants.hpp"
+#include "MasterRouteConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
@@ -421,6 +422,63 @@ nlohmann::json listedServerDocument(const ListedServer& server) {
   return document;
 }
 
+/** @returns The registration whose members @p registration holds, each
+ * checked as registrationFromText() checks it. */
+ServerRegistration registrationOf(const JsonField& registration) {
+  return ServerRegistration{
+      .name = boundedTextOf(memberOf(registration, NAME_MEMBER),
+                            MAXIMUM_SERVER_NAME_SIZE),
+      .address = addressOf(registration),
+      .udpPort = static_cast<std::uint16_t>(integerOf(
+          memberOf(registration, UDP_PORT_MEMBER),
+          IntegerBounds{.lowest = LOWEST_PORT, .highest = HIGHEST_PORT})),
+      .gameVersion = boundedTextOf(memberOf(registration, GAME_VERSION_MEMBER),
+                                   MAXIMUM_GAME_VERSION_SIZE),
+      .protocolVersion = static_cast<std::uint8_t>(
+          integerOf(memberOf(registration, PROTOCOL_VERSION_MEMBER),
+                    IntegerBounds{.lowest = LOWEST_PROTOCOL_VERSION,
+                                  .highest = HIGHEST_PROTOCOL_VERSION})),
+      .maximumGames = static_cast<std::uint16_t>(
+          integerOf(memberOf(registration, MAXIMUM_GAMES_MEMBER),
+                    IntegerBounds{.lowest = MINIMUM_HOSTED_GAMES,
+                                  .highest = MAXIMUM_HOSTED_GAMES})),
+      .maximumPlayersPerGame = static_cast<std::uint8_t>(
+          integerOf(memberOf(registration, MAXIMUM_PLAYERS_PER_GAME_MEMBER),
+                    IntegerBounds{.lowest = MINIMUM_PLAYERS_PER_GAME,
+                                  .highest = MAXIMUM_PLAYERS}))};
+}
+
+/** @returns The status @p field writes, one of SERVER_STATUS_TEXTS. */
+ServerStatus listedStatusOf(const JsonField& field) {
+  const std::optional<ServerStatus> status = serverStatusOf(stringOf(field));
+  if (!status.has_value()) {
+    refuse(field);
+  }
+  return *status;
+}
+
+/** @returns The count @p field holds, 0 to @p highest. */
+std::uint16_t listedCountOf(const JsonField& field, std::uint64_t highest) {
+  return static_cast<std::uint16_t>(
+      integerOf(field, IntegerBounds{.lowest = 0, .highest = highest}));
+}
+
+ListedServer listedServerOf(const JsonField& server) {
+  requireObject(server);
+  return ListedServer{
+      .id = static_cast<std::int64_t>(
+          integerOf(memberOf(server, ID_MEMBER),
+                    IntegerBounds{.lowest = FIRST_SERVER_ID,
+                                  .highest = HIGHEST_SERVER_ID})),
+      .registration = registrationOf(server),
+      .status = listedStatusOf(memberOf(server, STATUS_MEMBER)),
+      .gameCount = listedCountOf(memberOf(server, GAME_COUNT_MEMBER),
+                                 MAXIMUM_HOSTED_GAMES),
+      .playerCount =
+          listedCountOf(memberOf(server, PLAYER_COUNT_MEMBER),
+                        std::uint64_t{MAXIMUM_HOSTED_GAMES} * MAXIMUM_PLAYERS)};
+}
+
 nlohmann::json sampleDocument(const ServerSample& sample) {
   nlohmann::json document;
   document[TAKEN_AT_MEMBER] = sample.takenAt.time_since_epoch().count();
@@ -499,30 +557,11 @@ std::string registrationText(const ServerRegistration& registration) {
 ServerRegistration registrationFromText(std::string_view text) {
   const nlohmann::json document = parsedObject(text);
   const JsonField registration = wholeMessage(document);
-  return ServerRegistration{
-      .name = boundedTextOf(memberOf(registration, NAME_MEMBER),
-                            MAXIMUM_SERVER_NAME_SIZE),
-      .address = addressOf(registration),
-      .udpPort = static_cast<std::uint16_t>(integerOf(
-          memberOf(registration, UDP_PORT_MEMBER),
-          IntegerBounds{.lowest = LOWEST_PORT, .highest = HIGHEST_PORT})),
-      .gameVersion = boundedTextOf(memberOf(registration, GAME_VERSION_MEMBER),
-                                   MAXIMUM_GAME_VERSION_SIZE),
-      .protocolVersion = static_cast<std::uint8_t>(
-          integerOf(memberOf(registration, PROTOCOL_VERSION_MEMBER),
-                    IntegerBounds{.lowest = LOWEST_PROTOCOL_VERSION,
-                                  .highest = HIGHEST_PROTOCOL_VERSION})),
-      .maximumGames = static_cast<std::uint16_t>(
-          integerOf(memberOf(registration, MAXIMUM_GAMES_MEMBER),
-                    IntegerBounds{.lowest = MINIMUM_HOSTED_GAMES,
-                                  .highest = MAXIMUM_HOSTED_GAMES})),
-      .maximumPlayersPerGame = static_cast<std::uint8_t>(
-          integerOf(memberOf(registration, MAXIMUM_PLAYERS_PER_GAME_MEMBER),
-                    IntegerBounds{.lowest = MINIMUM_PLAYERS_PER_GAME,
-                                  .highest = MAXIMUM_PLAYERS})),
-      .probeSecret = integerOf(memberOf(registration, PROBE_SECRET_MEMBER),
+  ServerRegistration read = registrationOf(registration);
+  read.probeSecret = integerOf(memberOf(registration, PROBE_SECRET_MEMBER),
                                IntegerBounds{.lowest = LOWEST_PROBE_SECRET,
-                                             .highest = HIGHEST_PROBE_SECRET})};
+                                             .highest = HIGHEST_PROBE_SECRET});
+  return read;
 }
 
 std::string heartbeatText(const ServerHeartbeat& heartbeat) {
@@ -573,6 +612,19 @@ std::optional<ServerStatus> serverStatusOf(std::string_view text) {
 
 std::string serverListingText(const ServerListing& listing) {
   return listingText(SERVERS_MEMBER, listing.servers, listedServerDocument);
+}
+
+ServerListing serverListingFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  const JsonField servers = memberOf(wholeMessage(document), SERVERS_MEMBER);
+  const std::size_t count =
+      arraySizeOf(servers, static_cast<std::size_t>(MAXIMUM_PAGE_SIZE));
+  ServerListing listing;
+  listing.servers.reserve(count);
+  for (std::size_t index = 0; index < count; ++index) {
+    listing.servers.push_back(listedServerOf(elementOf(servers, index)));
+  }
+  return listing;
 }
 
 std::string sampleListingText(const SampleListing& listing) {

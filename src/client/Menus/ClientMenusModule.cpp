@@ -6,6 +6,7 @@
 #include "ConnectionGoal.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenParts.hpp"
+#include "ConnectionStart.hpp"
 #include "DialogMenus.hpp"
 #include "IScreen.hpp"
 #include "InstallContext.hpp"
@@ -27,6 +28,8 @@
 #include "ScreenContext.hpp"
 #include "ScreenId.hpp"
 #include "ScreenRegistry.hpp"
+#include "ServerMapScreen.hpp"
+#include "ServerMapScreenParts.hpp"
 #include "SquadronStart.hpp"
 #include "TitleScreen.hpp"
 #include "TitleScreenParts.hpp"
@@ -96,15 +99,29 @@ std::unique_ptr<IScreen> buildConnectionLostScreen(
                          context.services.connection.get().status().phase));
 }
 
-std::unique_ptr<IScreen> buildConnectionScreen(const ScreenContext& context,
-                                               ConnectionGoal goal) {
+std::unique_ptr<IScreen> buildConnectionScreen(
+    const ScreenContext& context, ConnectionGoal goal,
+    ConnectionStart start = ConnectionStart::OnConfirm) {
   return std::make_unique<ConnectionScreen>(
       ConnectionScreenParts{.navigator = context.navigator.get(),
                             .sounds = soundsOf(context),
                             .connection = context.services.connection.get(),
                             .playfieldPointAt = playfieldMappingOf(context),
                             .choice = context.serverChoice.get(),
-                            .goal = goal},
+                            .goal = goal,
+                            .start = start},
+      interfaceCanvasOf(context));
+}
+
+std::unique_ptr<IScreen> buildServerMapScreen(const ScreenContext& context) {
+  return std::make_unique<ServerMapScreen>(
+      ServerMapScreenParts{.navigator = context.navigator.get(),
+                           .sounds = soundsOf(context),
+                           .servers = context.services.serverCatalog.get(),
+                           .games = context.services.gameCatalog.get(),
+                           .choice = context.serverChoice.get(),
+                           .playfieldPointAt = playfieldMappingOf(context),
+                           .motion = motionPreference()},
       interfaceCanvasOf(context));
 }
 
@@ -162,6 +179,12 @@ void ClientMenusModule::install(engine::InstallContext& context) {
       CONNECTION_FOR_LEADERBOARD_SCREEN, [](const ScreenContext& screens) {
         return buildConnectionScreen(screens, ConnectionGoal::ScreenBelow);
       });
+  registry.add(
+      CONNECTION_TO_CHOSEN_SERVER_SCREEN, [](const ScreenContext& screens) {
+        return buildConnectionScreen(screens, ConnectionGoal::WaitingRoom,
+                                     ConnectionStart::AtOnce);
+      });
+  registry.add(SERVER_MAP_SCREEN, buildServerMapScreen);
   registry.add(LEADERBOARD_SCREEN, buildLeaderboardScreen);
   registry.add(CONNECTION_LOST_SCREEN, buildConnectionLostScreen);
 }

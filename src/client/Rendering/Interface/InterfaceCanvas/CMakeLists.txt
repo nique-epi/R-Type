@@ -7,6 +7,7 @@ target_link_libraries(rtype_client_interface_canvas
     rtype_client_asset_texture_source
     rtype_client_pixel_canvas
     rtype_client_interface
+    rtype_client_smooth_image_layer
     rtype_client_text_writer
     rtype_logging
     SFML::Graphics

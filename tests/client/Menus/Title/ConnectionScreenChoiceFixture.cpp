@@ -7,6 +7,7 @@
 #include "ConnectionScreenFixtures.hpp"
 #include "ConnectionScreenParts.hpp"
 #include "ConnectionScreenTestConstants.hpp"
+#include "ConnectionStart.hpp"
 #include "KeyPress.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -16,6 +17,7 @@
 
 using rtype::client::ConnectionScreen;
 using rtype::client::ConnectionScreenParts;
+using rtype::client::ConnectionStart;
 using rtype::client::PRESS_DURATION;
 using rtype::client::testing::LAUNCH_NICKNAME;
 
@@ -46,6 +48,18 @@ void ConnectionScreenChoiceFixture::reopen() {
                             .connection = connection_,
                             .playfieldPointAt = samePlayfieldPoint,
                             .choice = choice_},
+      std::make_unique<RecordingInterfaceCanvas>(canvas_));
+}
+
+void ConnectionScreenChoiceFixture::reopenConnectingAtOnce() {
+  screen_.reset();
+  screen_ = std::make_unique<ConnectionScreen>(
+      ConnectionScreenParts{.navigator = navigator_,
+                            .sounds = sounds_,
+                            .connection = connection_,
+                            .playfieldPointAt = samePlayfieldPoint,
+                            .choice = choice_,
+                            .start = ConnectionStart::AtOnce},
       std::make_unique<RecordingInterfaceCanvas>(canvas_));
 }
 

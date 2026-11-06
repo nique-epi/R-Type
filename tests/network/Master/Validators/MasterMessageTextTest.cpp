@@ -13,6 +13,7 @@
 #include "ProtocolTestConstants.hpp"
 #include "ServerCreation.hpp"
 #include "ServerHeartbeat.hpp"
+#include "ServerListing.hpp"
 #include "ServerRegistration.hpp"
 #include "ServerStatus.hpp"
 #include "StatusListing.hpp"
@@ -34,6 +35,8 @@ using rtype::network::ServerCreation;
 using rtype::network::serverCreationFromText;
 using rtype::network::serverCreationText;
 using rtype::network::ServerHeartbeat;
+using rtype::network::ServerListing;
+using rtype::network::serverListingFromText;
 using rtype::network::serverListingText;
 using rtype::network::ServerRegistration;
 using rtype::network::ServerStatus;
@@ -55,6 +58,9 @@ using rtype::network::testing::FIRST_GAME_PLAYER_COUNT_POINTER;
 using rtype::network::testing::FIRST_GAME_PLAYERS_POINTER;
 using rtype::network::testing::FIRST_GAME_STATE_POINTER;
 using rtype::network::testing::FIRST_PILOT;
+using rtype::network::testing::FIRST_SERVER_ID_POINTER;
+using rtype::network::testing::FIRST_SERVER_PROBE_SECRET_POINTER;
+using rtype::network::testing::FIRST_SERVER_STATUS_POINTER;
 using rtype::network::testing::FIVE_PLAYERS;
 using rtype::network::testing::FOURTH_PILOT;
 using rtype::network::testing::FULL_STATE;
@@ -85,6 +91,7 @@ using rtype::network::testing::NAME_POINTER;
 using rtype::network::testing::NAME_WITH_LINE_FEED;
 using rtype::network::testing::NEGATIVE_MEASURE;
 using rtype::network::testing::NO_GAME;
+using rtype::network::testing::NO_SERVER_ID;
 using rtype::network::testing::NOT_JSON;
 using rtype::network::testing::OFFLINE_TEXT;
 using rtype::network::testing::ONLINE_TEXT;
@@ -92,6 +99,7 @@ using rtype::network::testing::PARIS_GAME_LISTING_TEXT;
 using rtype::network::testing::PARIS_ID;
 using rtype::network::testing::PARIS_KEY;
 using rtype::network::testing::PARIS_NAME;
+using rtype::network::testing::PARIS_PROBE_SECRET;
 using rtype::network::testing::PARIS_SAMPLE_LISTING_TEXT;
 using rtype::network::testing::PARIS_SERVER_LISTING_TEXT;
 using rtype::network::testing::parisGameListing;
@@ -118,6 +126,12 @@ using rtype::network::testing::registrationTextWithout;
 using rtype::network::testing::SAMPLE_DATE;
 using rtype::network::testing::SECOND_GAME_NUMBER_POINTER;
 using rtype::network::testing::SECOND_PILOT;
+using rtype::network::testing::serverListingRefusal;
+using rtype::network::testing::serverListingTextOfServers;
+using rtype::network::testing::serverListingTextWith;
+using rtype::network::testing::SERVERS_ABOVE_A_PAGE;
+using rtype::network::testing::SERVERS_OF_A_FULL_PAGE;
+using rtype::network::testing::SERVERS_POINTER;
 using rtype::network::testing::SEVENTEEN_BYTE_NICKNAME;
 using rtype::network::testing::SHORT_KEY;
 using rtype::network::testing::THIRD_PILOT;
@@ -637,15 +651,83 @@ TEST(MasterMessageText, ReadsEveryStatusFromItsText) {
 }
 
 /**
- * Given "Paris 1", online, with the games of its heartbeat, registered with a
- * probe secret
+ * Given "Paris 1", online, with the games of its heartbeat
  * When the list of servers is written
- * Then every member of the server is there, its status written "online", and
- * never its probe secret
+ * Then every member of the server is there, its status written "online"
  */
 TEST(MasterMessageText, WritesAServerListingWithItsStatus) {
   EXPECT_EQ(nlohmann::json::parse(serverListingText(parisServerListing())),
             nlohmann::json::parse(PARIS_SERVER_LISTING_TEXT));
+}
+
+/**
+ * Given "Paris 1" online in the list of servers the master writes
+ * When the list is read back
+ * Then it holds the same server, with its status, games and players
+ */
+TEST(MasterMessageText, ReadsBackTheServerListingItWrote) {
+  EXPECT_EQ(serverListingFromText(PARIS_SERVER_LISTING_TEXT),
+            parisServerListing());
+}
+
+/**
+ * Given a list whose first server has the status "lost", which no server
+ * takes
+ * When it is read
+ * Then the refusal names that status
+ */
+TEST(MasterMessageText, RefusesAServerStatusItDoesNotKnow) {
+  EXPECT_THAT(serverListingRefusal(serverListingTextWith(
+                  FIRST_SERVER_STATUS_POINTER, UNKNOWN_STATUS_TEXT)),
+              HasSubstr(quoted(FIRST_SERVER_STATUS_POINTER)));
+}
+
+/**
+ * Given "Paris 1" in a list of servers, its registration carrying a probe
+ * secret
+ * When the list is written
+ * Then it holds no probeSecret: only the registration of the server shows it
+ */
+TEST(MasterMessageText, TheListOfServersNeverShowsTheSecret) {
+  ServerListing listing = parisServerListing();
+  listing.servers.front().registration.probeSecret = PARIS_PROBE_SECRET;
+
+  EXPECT_FALSE(nlohmann::json::parse(serverListingText(listing))
+                   .contains(nlohmann::json::json_pointer(
+                       std::string{FIRST_SERVER_PROBE_SECRET_POINTER})));
+}
+
+/**
+ * Given a list whose first server has the id 0, below every id of the master
+ * When it is read
+ * Then the refusal names that id
+ */
+TEST(MasterMessageText, RefusesAServerIdOfZero) {
+  EXPECT_THAT(serverListingRefusal(
+                  serverListingTextWith(FIRST_SERVER_ID_POINTER, NO_SERVER_ID)),
+              HasSubstr(quoted(FIRST_SERVER_ID_POINTER)));
+}
+
+/**
+ * Given a page of the 100 servers a page holds at most
+ * When it is read
+ * Then it is accepted
+ */
+TEST(MasterMessageText, AcceptsAFullPageOfServers) {
+  EXPECT_THAT(
+      serverListingRefusal(serverListingTextOfServers(SERVERS_OF_A_FULL_PAGE)),
+      IsEmpty());
+}
+
+/**
+ * Given a page of 101 servers, one more than a page holds
+ * When it is read
+ * Then the refusal names the list
+ */
+TEST(MasterMessageText, RefusesMoreServersThanAPageHolds) {
+  EXPECT_THAT(
+      serverListingRefusal(serverListingTextOfServers(SERVERS_ABOVE_A_PAGE)),
+      HasSubstr(quoted(SERVERS_POINTER)));
 }
 
 /**

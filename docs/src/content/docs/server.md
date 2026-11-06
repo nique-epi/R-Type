@@ -113,7 +113,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Game events sent to the players | Available: the removal of a Bydo or a missile that leaves the playfield, the damage and destruction of a Bydo hit by missiles, and the loss of a ship and of a life when a ship touches a Bydo or a missile of a Bydo | `src/server/Replication/`, `src/game/Events/` |
 | Launch options | Available: the port, the seed, the state rate, the input delay, the database, `--set` and `--help` | `src/server/LaunchOptions/` |
 | Configuration file | Available: `server.cfg` (`module`, `set`, `plugin`, `plugin-folder`) | `src/server/Modules/` |
-| Information requests answered outside any session: name, versions, players, games, free seats, and the time the request was held | Available; nothing sends a request yet: the list of servers of the client is not written | `src/server/Information/` |
+| Information requests answered outside any session: name, versions, players, games, free seats, and the time the request was held | Available; the server map of the client sends them (see [Client](/R-Type/client/#server-map-servermapscreen-iservercatalog-igamecatalog)) | `src/server/Information/` |
 | Letting players in: challenge, acceptance or refusal | Available; a new player joins the first game waiting for players with a free seat, and is refused with `GameInProgress` or `GameFull` only when no game has one; the acceptance carries the entity types of the server | `src/server/Lobby/`, `src/server/Sessions/` |
 | One process per game, started by a supervisor (`--mode supervisor`) | Available: up to 8 game processes, each reporting its state every second and ending by itself or when told to | `src/server/Processes/`, `src/server/SupervisedGames/`, `src/server/SupervisorLink/`, `src/server/SupervisorLobby/` |
 | A game: states, ready rule, new world between two games | Available: eight games side by side, each ending once no player is left in it, no player left has a life, or the last wave of its level is over | `src/server/Rules/Match/` |
@@ -509,7 +509,7 @@ A datagram of this protocol with another version is answered with `ConnectionRef
 
 ## Server information: `ServerInformationModule`, `ServerInformationDesk`
 
-The module `information` (`src/server/Information/`) answers the `ServerInformationRequest` of anyone, without a session, as the [Protocol](/R-Type/protocol/#server-information) describes: a client reads from the answer its ping to a server the player looks at, never to every server of the list. It declares `server-name` and hands it to the master module as the `IServerName` it provides, so the name a player reads in the list and the one a ping returns are one setting.
+The module `information` (`src/server/Information/`) answers the `ServerInformationRequest` of anyone, without a session, as the [Protocol](/R-Type/protocol/#server-information) describes: the server map of a client reads from the answer its ping to each server the master lists (see [Client](/R-Type/client/#server-map-servermapscreen-iservercatalog-igamecatalog)). It declares `server-name` and hands it to the master module as the `IServerName` it provides, so the name a player reads in the list and the one a ping returns are one setting.
 
 Each tick, after the games module and the lobby, `ServerInformationDesk` answers the requests the sorter set aside, at most `INFORMATION_REQUEST_QUEUE_CAPACITY` (16), with one `ServerInformation` each, to the address and port the request came from, with session token 0 and sequence 0:
 

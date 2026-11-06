@@ -89,9 +89,11 @@ GameListing parisGameListing() {
 }
 
 ServerListing parisServerListing() {
+  ServerRegistration listed = parisRegistration();
+  listed.probeSecret = {};
   return ServerListing{
       .servers = {ListedServer{.id = PARIS_ID,
-                               .registration = parisRegistration(),
+                               .registration = listed,
                                .status = ServerStatus::Online,
                                .gameCount = LISTED_GAME_COUNT,
                                .playerCount = LISTED_PLAYER_COUNT}}};
@@ -131,6 +133,30 @@ std::string gameListingTextOfGames(std::size_t gameCount) {
 std::string gameListingRefusal(std::string_view text) {
   try {
     static_cast<void>(gameListingFromText(text));
+  } catch (const InvalidMasterMessageException& refusal) {
+    return refusal.what();
+  }
+  return {};
+}
+
+std::string serverListingTextWith(std::string_view pointer,
+                                  const nlohmann::json& value) {
+  return withValueAt(serverListingText(parisServerListing()), pointer, value);
+}
+
+std::string serverListingTextOfServers(std::size_t serverCount) {
+  ServerListing listing;
+  for (std::size_t index = 0; index < serverCount; ++index) {
+    ListedServer server = parisServerListing().servers.front();
+    server.id = static_cast<std::int64_t>(index) + 1;
+    listing.servers.push_back(server);
+  }
+  return serverListingText(listing);
+}
+
+std::string serverListingRefusal(std::string_view text) {
+  try {
+    static_cast<void>(serverListingFromText(text));
   } catch (const InvalidMasterMessageException& refusal) {
     return refusal.what();
   }

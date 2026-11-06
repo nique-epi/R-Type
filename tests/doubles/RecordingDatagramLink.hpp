@@ -26,6 +26,14 @@ class RecordingDatagramLink : public rtype::client::IRoutedLink {
    * yet drained. */
   void listenTo(const rtype::network::Endpoint& sender) override;
 
+  /** @brief Writes the senders down and drops the datagrams delivered and not
+   * yet drained. */
+  void listenToEach(std::vector<rtype::network::Endpoint> senders) override;
+
+  /** @returns The senders listenToEach() was last called with. */
+  [[nodiscard]] const std::vector<rtype::network::Endpoint>& listenedToEach()
+      const;
+
   /** @brief Leaves @p datagram for the next drainReceived(). */
   void deliver(rtype::network::IncomingDatagram datagram);
 
@@ -39,5 +47,6 @@ class RecordingDatagramLink : public rtype::client::IRoutedLink {
  private:
   std::vector<rtype::network::OutgoingDatagram> sent_;
   std::optional<rtype::network::Endpoint> listenedTo_;
+  std::vector<rtype::network::Endpoint> listenedToEach_;
   std::vector<rtype::network::IncomingDatagram> delivered_;
 };

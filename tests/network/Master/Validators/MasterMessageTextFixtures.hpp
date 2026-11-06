@@ -28,7 +28,8 @@ namespace rtype::network::testing {
 [[nodiscard]] GameListing parisGameListing();
 
 /** @returns "Paris 1" as the master lists it: id PARIS_ID, online, with the
- * games and players of parisHeartbeat(). */
+ * games and players of parisHeartbeat(); its registration holds no
+ * probeSecret, which a list never holds. */
 [[nodiscard]] ServerListing parisServerListing();
 
 /** @returns One sample taken at SAMPLE_DATE of the games and players of
@@ -85,6 +86,20 @@ namespace rtype::network::testing {
 
 /** @returns What heartbeatFromText() says of @p text, as above. */
 [[nodiscard]] std::string heartbeatRefusal(std::string_view text);
+
+/** @returns The list of servers of "Paris 1" with @p value at @p pointer. */
+[[nodiscard]] std::string serverListingTextWith(std::string_view pointer,
+                                                const nlohmann::json& value);
+
+/** @returns A list of @p serverCount copies of "Paris 1", their ids from 1, as
+ * JSON. */
+[[nodiscard]] std::string serverListingTextOfServers(std::size_t serverCount);
+
+/**
+ * @returns What serverListingFromText() says when it refuses @p text, or an
+ * empty text when it accepts it.
+ */
+[[nodiscard]] std::string serverListingRefusal(std::string_view text);
 
 /** @returns @p pointer between the quotes a refusal writes around it. */
 [[nodiscard]] std::string quoted(std::string_view pointer);

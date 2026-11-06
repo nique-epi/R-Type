@@ -11,6 +11,7 @@ The code is split into engine, game and network libraries; see [the architecture
 - CMake 4.2 or newer
 - A C++20 compiler: GCC or Clang on Linux, MSVC (Visual Studio 2022) on Windows
 - Git
+- For the web site only: bun 1.3 and Node.js 22.12 or newer
 
 Third-party libraries (SFML, Asio, toml++, SQLiteCpp, GoogleTest) are built by [vcpkg](https://vcpkg.io), pinned as a Git submodule and bootstrapped automatically on the first configure.
 
@@ -112,7 +113,9 @@ The server reads the waves of Bydos from `assets/waves/waves.toml`, in the `asse
 ./r-type_client -h 192.168.1.20 -p 4243 -n ACE
 ```
 
-The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default, and the nickname of the player, `PILOT` by default; its connection screen starts with them. CONNECT on that screen joins the server, so start the server first: without one, the screen shows `SERVER UNREACHABLE` after 5 seconds.
+PLAY opens the server map: the servers the master at `http://127.0.0.1:8080` lists, around the planet of the player by the ping the client measures, and the games of each; Enter or a click joins one. Start the master and a server registered with it first (see [the master page](https://nique-epi.github.io/R-Type/master/)): without the master, the map shows `MASTER UNREACHABLE`.
+
+The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default, and the nickname of the player, `PILOT` by default; the connection screen, which D (ADDRESS) opens from the map, starts with them. CONNECT on that screen joins any server, without the master: without a server, the screen shows `SERVER UNREACHABLE` after 5 seconds.
 
 `--no-sound` starts the client without sound: the screens and the volumes work as usual, and nothing plays.
 
@@ -158,6 +161,19 @@ Add `--mode server` to run one game server alone, hosting its games in one proce
 ```
 
 `--help` prints the options of either program, and `--mode master --help` those of the master. An invalid argument stops it with a message and exit code 1.
+
+### Web site
+
+The web site lives in `web/`: a Next.js server, run with [bun](https://bun.sh) 1.3 and Node.js 22.12 or newer, that calls the API of the master. With a master running on port 8080:
+
+```bash
+cd web
+bun install
+bun run build
+bun run start
+```
+
+The site is then on <http://localhost:3000>. The server reaches the master at `MASTER_URL` (`http://localhost:8080` by default); the browser only talks to the site. `bun run dev` serves the same pages while you edit them. `bun run lint`, `bun run typecheck` and `bun run test` are the checks of the `web` CI workflow.
 
 ## Tests
 

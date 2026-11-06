@@ -177,6 +177,17 @@ constexpr std::string_view PARIS_SERVER_LISTING_TEXT =
     R"("maximumPlayersPerGame":4,"name":"Paris 1","playerCount":3,)"
     R"("protocolVersion":2,"status":"online","udpPort":4242}]})";
 
+/** @brief The members of the first server of a list, and the servers a page
+ * holds at most, and one more. */
+constexpr std::string_view FIRST_SERVER_STATUS_POINTER = "/servers/0/status";
+constexpr std::string_view FIRST_SERVER_ID_POINTER = "/servers/0/id";
+constexpr std::string_view FIRST_SERVER_PROBE_SECRET_POINTER =
+    "/servers/0/probeSecret";
+constexpr std::string_view SERVERS_POINTER = "/servers";
+constexpr std::size_t SERVERS_OF_A_FULL_PAGE = 100;
+constexpr std::size_t SERVERS_ABOVE_A_PAGE = 101;
+constexpr std::int64_t NO_SERVER_ID = 0;
+
 /** @brief A sample with its tick p95 and its loss only, as the master writes
  * it. */
 constexpr std::string_view PARIS_SAMPLE_LISTING_TEXT =
