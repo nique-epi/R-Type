@@ -41,6 +41,16 @@ network::OutgoingDatagram datagramTo(const network::Endpoint& destination,
                                        network::PacketHeader{}, message)};
 }
 
+/** @returns Who opens the game a request of @p game starts: its sender
+ * for a NewGame, nobody otherwise. */
+std::optional<network::Endpoint> creatorOf(const SeatRequest& request,
+                                           const network::GameChoice& game) {
+  if (game.kind == network::GameChoiceKind::NewGame) {
+    return request.sender;
+  }
+  return std::nullopt;
+}
+
 }  // namespace
 
 std::string ServerSupervisorLobbyModule::name() const {
@@ -97,7 +107,8 @@ void ServerSupervisorLobbyModule::answer(
     return;
   }
   answerValidRequest(
-      SeatRequest{.sender = datagram.sender, .nickname = request->nickname});
+      SeatRequest{.sender = datagram.sender, .nickname = request->nickname},
+      request->game);
 }
 
 void ServerSupervisorLobbyModule::refuseAnotherVersion(
@@ -112,8 +123,8 @@ void ServerSupervisorLobbyModule::refuseAnotherVersion(
 }
 
 void ServerSupervisorLobbyModule::answerValidRequest(
-    const SeatRequest& request) {
-  const GamePlace place = registry_->placeForNewPlayer(request);
+    const SeatRequest& request, const network::GameChoice& game) {
+  const GamePlace place = registry_->placeFor(request, game);
   switch (place.kind) {
     case PlaceKind::Redirect:
       sender_->queueDatagram(datagramTo(
@@ -122,14 +133,13 @@ void ServerSupervisorLobbyModule::answerValidRequest(
     case PlaceKind::Wait:
       break;
     case PlaceKind::Open:
-      if (spawner_->openGame()) {
-        static_cast<void>(registry_->placeForNewPlayer(request));
+      if (spawner_->openGame(creatorOf(request, game))) {
+        static_cast<void>(registry_->placeFor(request, game));
       }
       break;
-    case PlaceKind::Full:
+    case PlaceKind::Refuse:
       sender_->queueDatagram(datagramTo(
-          request.sender, network::ConnectionRefused{
-                              .reason = network::RefusalReason::GameFull}));
+          request.sender, network::ConnectionRefused{.reason = place.refusal}));
       break;
   }
 }

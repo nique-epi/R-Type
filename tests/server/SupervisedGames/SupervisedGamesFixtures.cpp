@@ -5,13 +5,16 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
+#include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
 #include "GameLaunch.hpp"
 #include "GameLaunchOptions.hpp"
 #include "GameLaunchSettings.hpp"
 #include "GameLifecycle.hpp"
 #include "GameOpening.hpp"
+#include "GameRegistry.hpp"
 #include "GameStatus.hpp"
 #include "LaunchOptions.hpp"
 #include "NetworkConstants.hpp"
@@ -32,13 +35,27 @@ std::uint64_t tokenOfGame(std::uint32_t number) {
 }
 
 rtype::server::GameOpening openingOf(
-    std::uint32_t number, const std::shared_ptr<RecordingChildState>& state) {
+    std::uint32_t number, const std::shared_ptr<RecordingChildState>& state,
+    std::optional<rtype::network::Endpoint> creator) {
   return rtype::server::GameOpening{
       .number = number,
       .port = portOfGame(number),
       .linkToken = tokenOfGame(number),
+      .creator = std::move(creator),
       .process = std::make_unique<RecordingChildProcess>(
           FIRST_PROCESS_ID + number, state)};
+}
+
+void openReporting(rtype::server::GameRegistry& registry, std::uint32_t number,
+                   const rtype::network::GameStatus& status) {
+  registry.open(openingOf(number, std::make_shared<RecordingChildState>()));
+  registry.record(*registry.findByToken(tokenOfGame(number)), SEQUENCE_FIVE,
+                  status);
+}
+
+rtype::network::GameChoice choiceOfGame(std::uint16_t slot) {
+  return rtype::network::GameChoice{
+      .kind = rtype::network::GameChoiceKind::ExistingGame, .number = slot};
 }
 
 rtype::network::GameStatus statusWithPlayers(
@@ -67,6 +84,7 @@ rtype::server::SupervisedGame supervisedGameIn(
       .linkToken = tokenOfGame(slot),
       .newestSequence = std::nullopt,
       .reservations = {},
+      .creator = std::nullopt,
       .process = nullptr};
   return game;
 }

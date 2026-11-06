@@ -5,12 +5,13 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "ConnectionRequest.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
 #include "IServerConnection.hpp"
 
 /** @brief What a screen asked of the connection: to start an attempt, with its
- * server and its nickname, or to drop it. */
+ * server, its nickname and its game, or to drop it. */
 struct ServerConnectionCall {
   enum class Request : std::uint8_t {
     Connect,
@@ -20,6 +21,7 @@ struct ServerConnectionCall {
   Request request{};
   rtype::network::Endpoint server;
   std::string nickname;
+  rtype::network::GameChoice game{rtype::network::ANY_GAME_CHOICE};
 
   bool operator==(const ServerConnectionCall& other) const = default;
 };
@@ -36,7 +38,8 @@ class RecordingServerConnection : public rtype::client::IServerConnection {
  public:
   /** @brief Writes the request down; the status stays what the test set. */
   void connect(const rtype::network::Endpoint& server,
-               std::string_view nickname) override;
+               std::string_view nickname,
+               const rtype::network::GameChoice& game) override;
   /** @brief Writes the request down, and goes back to no attempt and no
    * session, as a real connection does. */
   void cancel() override;

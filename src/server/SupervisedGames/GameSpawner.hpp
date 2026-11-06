@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <random>
+#include "Endpoint.hpp"
 #include "GameSpawnerParts.hpp"
 #include "Logger.hpp"
 
@@ -17,12 +19,13 @@ class GameSpawner {
   explicit GameSpawner(GameSpawnerParts parts);
 
   /**
-   * @brief Starts a game process.
+   * @brief Starts a game process, which the registry remembers @p creator
+   * opened: the sender of a NewGame, nothing for a player who took any game.
    * @returns Whether it started. When the system refuses (no free port, the
    * program cannot be started), nothing is added, the error is logged and the
    * supervisor goes on: a game that cannot start never stops the others.
    */
-  [[nodiscard]] bool openGame();
+  [[nodiscard]] bool openGame(std::optional<network::Endpoint> creator);
 
  private:
   [[nodiscard]] std::uint64_t drawLinkToken();

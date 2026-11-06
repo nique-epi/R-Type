@@ -1,5 +1,6 @@
 #include "LaunchOptions.hpp"
 #include <array>
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <optional>
@@ -11,6 +12,7 @@
 #include "AudioMode.hpp"
 #include "ClientConstants.hpp"
 #include "ClientException.hpp"
+#include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
 #include "EndpointText.hpp"
 #include "ExecutablePath.hpp"
@@ -24,9 +26,11 @@
 #include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "ProtocolConstants.hpp"
+#include "ServerChoice.hpp"
 #include "SettingLine.hpp"
 #include "SettingOptions.hpp"
 #include "SimulatorLaunchOptions.hpp"
+#include "WholeNumberText.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::client {
@@ -42,9 +46,9 @@ engine::LaunchOption addressOption(LaunchValues& values) {
       .name = ADDRESS_OPTION,
       .takesValue = true,
       .record = [&values](std::string_view address) {
-        values.serverEndpoint.address = network::ipv4AddressFromText(address);
+        values.choice.server.address = network::ipv4AddressFromText(address);
         values.forcedLines.push_back(engine::settingLine(
-            SERVER_ADDRESS_SETTING_NAME, values.serverEndpoint.address));
+            SERVER_ADDRESS_SETTING_NAME, values.choice.server.address));
       }};
 }
 
@@ -57,10 +61,10 @@ engine::LaunchOption portOption(LaunchValues& values) {
       .name = engine::PORT_OPTION,
       .takesValue = true,
       .record = [&values](std::string_view port) {
-        values.serverEndpoint.port = network::portFromText(port);
+        values.choice.server.port = network::portFromText(port);
         values.forcedLines.push_back(
             engine::settingLine(SERVER_PORT_SETTING_NAME,
-                                std::to_string(values.serverEndpoint.port)));
+                                std::to_string(values.choice.server.port)));
       }};
 }
 
@@ -76,10 +80,36 @@ engine::LaunchOption nicknameOption(LaunchValues& values) {
         if (!network::isValidNickname(callsign)) {
           throw InvalidNicknameOptionException(callsign);
         }
-        values.nickname = std::string(callsign);
+        values.choice.nickname = std::string(callsign);
         values.forcedLines.push_back(
             engine::settingLine(NICKNAME_SETTING_NAME, callsign));
       }};
+}
+
+/** @returns The game @p text names after `--game`: NEW_GAME_VALUE for a new
+ * game, else a number from network::FIRST_HOSTED_GAME_NUMBER to 65535 for that
+ * game.
+ * @throws InvalidGameOptionException for any other text. */
+network::GameChoice gameChoiceFromText(std::string_view text) {
+  if (text == NEW_GAME_VALUE) {
+    return network::NEW_GAME_CHOICE;
+  }
+  const std::optional<std::uint16_t> number =
+      network::wholeNumberIn<std::uint16_t>(text);
+  if (!number.has_value() || *number < network::FIRST_HOSTED_GAME_NUMBER) {
+    throw InvalidGameOptionException(text);
+  }
+  return network::GameChoice{.kind = network::GameChoiceKind::ExistingGame,
+                             .number = *number};
+}
+
+/** @returns `--game <game>`, which sets the game the client asks for. */
+engine::LaunchOption gameOption(LaunchValues& values) {
+  return engine::LaunchOption{.name = GAME_OPTION,
+                              .takesValue = true,
+                              .record = [&values](std::string_view game) {
+                                values.choice.game = gameChoiceFromText(game);
+                              }};
 }
 
 /** @returns `--no-sound`, which starts the client without sound. */
@@ -112,6 +142,13 @@ std::string connectionOptionEntries() {
           std::to_string(network::MINIMUM_NICKNAME_SIZE) + " to " +
           std::to_string(network::MAXIMUM_NICKNAME_SIZE) +
           " bytes of UTF-8. Default: " + std::string(DEFAULT_NICKNAME) + ".");
+  text += engine::usageEntry(
+      std::string(GAME_OPTION) + " <game>",
+      "Game to ask the server for: " + std::string(NEW_GAME_VALUE) +
+          " opens one, a number from " +
+          std::to_string(network::FIRST_HOSTED_GAME_NUMBER) +
+          " joins the game of that number. Default: any game with a free "
+          "seat.");
   text += engine::setOptionEntry(CLIENT_CONFIGURATION_FILE_NAME,
                                  CLIENT_SETTING_NAMES);
   return text;
@@ -121,10 +158,13 @@ std::string connectionOptionEntries() {
 
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
   LaunchOptions options{LaunchValues{
-      .serverEndpoint =
-          network::Endpoint{.address = std::string(DEFAULT_SERVER_ADDRESS),
-                            .port = network::DEFAULT_SERVER_PORT},
-      .nickname = std::string(DEFAULT_NICKNAME),
+      .choice =
+          ServerChoice{.server =
+                           network::Endpoint{
+                               .address = std::string(DEFAULT_SERVER_ADDRESS),
+                               .port = network::DEFAULT_SERVER_PORT},
+                       .nickname = std::string(DEFAULT_NICKNAME),
+                       .game = network::ANY_GAME_CHOICE},
       .audioMode = AudioMode::Enabled,
       .trafficCsvFile = std::nullopt,
       .forcedLines = {},
@@ -133,6 +173,7 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
       addressOption(options.values_),
       portOption(options.values_),
       nicknameOption(options.values_),
+      gameOption(options.values_),
       engine::setOption(options.values_.forcedLines),
       noSoundOption(options.values_),
       engine::pathOption(network::TRAFFIC_CSV_OPTION,
@@ -163,15 +204,13 @@ std::string LaunchOptions::usage() {
   return text;
 }
 
-const network::Endpoint& LaunchOptions::serverEndpoint() const {
-  return values_.serverEndpoint;
+const ServerChoice& LaunchOptions::serverChoice() const {
+  return values_.choice;
 }
 
 const std::vector<std::string>& LaunchOptions::forcedLines() const {
   return values_.forcedLines;
 }
-
-const std::string& LaunchOptions::nickname() const { return values_.nickname; }
 
 AudioMode LaunchOptions::audioMode() const { return values_.audioMode; }
 

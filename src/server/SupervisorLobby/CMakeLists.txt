@@ -7,6 +7,7 @@ target_link_libraries(rtype_server_supervisor_lobby_module
     rtype_engine_modules
     rtype_engine_system_clock
     rtype_engine_time
+    rtype_network_connection_request
     rtype_network_handshake_cookies
     rtype_network_transport
     rtype_server_network_module

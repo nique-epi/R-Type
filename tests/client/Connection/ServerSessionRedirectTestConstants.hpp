@@ -15,4 +15,8 @@ constexpr std::uint16_t OTHER_GAME_PORT = 50124;
 constexpr std::chrono::seconds BEFORE_THE_REDIRECT{4};
 constexpr std::chrono::seconds AFTER_THE_REDIRECT{1};
 
+/** @brief The game an attempt of the tests asks for by its number: game 3 of
+ * the server. */
+constexpr std::uint16_t NAMED_GAME_NUMBER = 3;
+
 }  // namespace rtype::client::testing
