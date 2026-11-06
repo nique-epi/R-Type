@@ -19,6 +19,12 @@ set seed none
 # [games] The world states sent to each player per second, from 2 to 60.
 set state-rate 20
 
+# [games] How each world state is written: 'delta', as the difference from the
+# newest one the player acknowledged, or with every entity when it acknowledged
+# none or when the newest it acknowledged is more than 60 ticks older; 'full',
+# every entity in every state.
+set state-encoding delta
+
 # [games] The ticks every player's input is held before it is applied, from 0 to 30.
 set input-delay 3
 

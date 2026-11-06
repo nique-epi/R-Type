@@ -26,6 +26,8 @@
 #include "ServerConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "ShipMotion.hpp"
+#include "StateEncoding.hpp"
+#include "StateSending.hpp"
 #include "WorldState.hpp"
 #include "WorldStateSender.hpp"
 
@@ -56,7 +58,8 @@ void WorldStateSenderFixture::restartWithStatesPerSecond(
       [this](network::OutgoingDatagram datagram) {
         sent_.push_back(std::move(datagram));
       },
-      statesPerSecond);
+      StateSending{.statesPerSecond = statesPerSecond,
+                   .encoding = StateEncoding::Delta});
   sent_.clear();
   tick_ = 0;
 }

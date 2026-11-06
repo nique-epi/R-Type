@@ -44,6 +44,7 @@ Server settings. Only the supervisor reads `server.cfg`: it runs the lines of it
 | `port` | the supervisor | 1 to 65535 | 4242 | The UDP port the server listens on. |
 | `seed` | the games | 0 to 4294967295, or `none` | `none` | The seed of each game; `none` draws one at random. |
 | `state-rate` | the games | 2 to 60 | 20 | The world states sent to each player per second. |
+| `state-encoding` | the games | `delta` or `full` | `delta` | How each world state is written: as the difference from the newest one the player acknowledged, or with every entity. `delta` also writes a state with every entity when the player acknowledged none, or when the newest it acknowledged is more than 60 ticks older (`MAXIMUM_REFERENCE_DISTANCE`). |
 | `input-delay` | the games | 0 to 30 | 3 | The ticks every player's input is held before it is applied. |
 | `database` | the supervisor | a path | empty | The SQLite file the leaderboard of the server is kept in, given to every game; empty for `r-type_server_<port>.db` next to the executable, with the port of the supervisor. |
 | `master-url` | the supervisor | `http://<host>[:<port>]` | empty | The master the server is listed on; empty to run alone. |

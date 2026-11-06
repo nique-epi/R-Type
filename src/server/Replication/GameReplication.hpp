@@ -36,8 +36,8 @@ class GameReplication final : public IGameReplication {
   /**
    * @param game The players the announcements go to, how to send, the world
    * states each player is sent per second (LOWEST_WORLD_STATES_PER_SECOND to
-   * HIGHEST_WORLD_STATES_PER_SECOND) and the sheets, whose SHIP_SHEET_NAME is
-   * the ship of every player; it must outlive this.
+   * HIGHEST_WORLD_STATES_PER_SECOND) and how they are written, and the sheets,
+   * whose SHIP_SHEET_NAME is the ship of every player; it must outlive this.
    * @throws InvalidStateRateException when the rate is outside that range.
    * @throws game::UnknownEntityTypeException when no sheet is named
    * SHIP_SHEET_NAME.

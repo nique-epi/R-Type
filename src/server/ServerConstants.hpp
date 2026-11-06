@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "StateEncoding.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
@@ -27,6 +28,7 @@ constexpr std::string_view SERVER_CONFIGURATION_FILE_NAME = "server.cfg";
 constexpr std::string_view PORT_SETTING_NAME = "port";
 constexpr std::string_view SEED_SETTING_NAME = "seed";
 constexpr std::string_view STATE_RATE_SETTING_NAME = "state-rate";
+constexpr std::string_view STATE_ENCODING_SETTING_NAME = "state-encoding";
 constexpr std::string_view INPUT_DELAY_SETTING_NAME = "input-delay";
 constexpr std::string_view DATABASE_SETTING_NAME = "database";
 constexpr std::string_view MASTER_URL_SETTING_NAME = "master-url";
@@ -43,9 +45,11 @@ constexpr std::string_view GAME_STATISTICS_FILE_SETTING_NAME =
 
 /** @brief Every setting of the server, in the order its usage lists them. */
 constexpr std::array SERVER_SETTING_NAMES{
-    PORT_SETTING_NAME,        SEED_SETTING_NAME,       STATE_RATE_SETTING_NAME,
-    INPUT_DELAY_SETTING_NAME, DATABASE_SETTING_NAME,   MASTER_URL_SETTING_NAME,
-    MASTER_KEY_SETTING_NAME,  SERVER_NAME_SETTING_NAME};
+    PORT_SETTING_NAME,        SEED_SETTING_NAME,
+    STATE_RATE_SETTING_NAME,  STATE_ENCODING_SETTING_NAME,
+    INPUT_DELAY_SETTING_NAME, DATABASE_SETTING_NAME,
+    MASTER_URL_SETTING_NAME,  MASTER_KEY_SETTING_NAME,
+    SERVER_NAME_SETTING_NAME};
 
 /**
  * @brief The highest seed: the seed of a game is 32 bits.
@@ -273,6 +277,23 @@ constexpr std::string_view STATE_RATE_OPTION = "--state-rate";
  * is not given.
  */
 constexpr std::size_t DEFAULT_WORLD_STATES_PER_SECOND = 20;
+
+/**
+ * @brief The values of the `state-encoding` setting: `delta` writes each world
+ * state as the difference from the newest one the player acknowledged, or with
+ * every entity when it acknowledged none or when the newest it acknowledged is
+ * more than MAXIMUM_REFERENCE_DISTANCE ticks older; `full` lists every entity
+ * in every state.
+ */
+constexpr std::string_view DELTA_STATE_ENCODING_TEXT = "delta";
+constexpr std::string_view FULL_STATE_ENCODING_TEXT = "full";
+
+/** @brief How the world states are written when nothing sets the encoding. */
+constexpr StateEncoding DEFAULT_STATE_ENCODING = StateEncoding::Delta;
+
+/** @brief Why `set state-encoding` refused its value. */
+constexpr std::string_view INVALID_STATE_ENCODING_TEXT =
+    "the state encoding must be delta or full";
 
 /**
  * @brief The fewest states per second STATE_RATE_OPTION accepts. A client

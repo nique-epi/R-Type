@@ -10,6 +10,7 @@
 #include "ServerConstants.hpp"
 #include "ShipSpawnAnnouncer.hpp"
 #include "ShipSpawnAnnouncerParts.hpp"
+#include "StateSending.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
@@ -18,7 +19,10 @@ GameReplication::GameReplication(GameContext& game)
     : roster_(game.roster.get()),
       send_(game.send),
       ship_(game.settings.types.get().named(SHIP_SHEET_NAME)),
-      worldStateSender_(roster_, send_, game.settings.statesPerSecond) {}
+      worldStateSender_(
+          roster_, send_,
+          StateSending{.statesPerSecond = game.settings.statesPerSecond,
+                       .encoding = game.settings.stateEncoding}) {}
 
 void GameReplication::onWorldBuilt(game::World& world) {
   shipSpawnAnnouncer_ =
