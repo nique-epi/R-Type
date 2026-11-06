@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include "Application.hpp"
+#include "ConnectionRequest.hpp"
 #include "GameStatus.hpp"
 #include "IncomingDatagram.hpp"
 #include "RecordingNetworkModule.hpp"
@@ -37,10 +38,12 @@ class ServerSupervisedGamesFixture : public ServerModuleFixture {
   /** @brief Runs simulation ticks until @p duration has passed. */
   void runFor(rtype::engine::Duration duration);
 
-  /** @brief Has the player at @p index ask for a place with a valid cookie: a
-   * first request, the challenge it gets, then the request with that cookie, in
-   * two ticks. */
-  void askForAPlaceAs(std::size_t index);
+  /** @brief Has the player at @p index ask for a place in @p game with a
+   * valid cookie: a first request, the challenge it gets, then the request
+   * with that cookie, in two ticks. */
+  void askForAPlaceAs(
+      std::size_t index,
+      const rtype::network::GameChoice& game = rtype::network::ANY_GAME_CHOICE);
 
   /** @brief Has game @p game (by launch order) send @p status under
    * @p sequence, in one tick. */

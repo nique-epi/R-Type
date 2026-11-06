@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <span>
 #include <vector>
+#include "ConnectionRequest.hpp"
 #include "ExitedGame.hpp"
 #include "GameOpening.hpp"
 #include "GamePlace.hpp"
@@ -25,7 +26,7 @@ class GameRegistry {
    * lowest place no game of the registry holds, from
    * network::FIRST_HOSTED_GAME_NUMBER to MAXIMUM_RUNNING_GAMES.
    * @throws NoFreeGameSlotException when every place holds a game; nothing is
-   * added then. placeForNewPlayer() never asks for a game in that case.
+   * added then. placeFor() never asks for a game in that case.
    */
   void open(GameOpening opening);
 
@@ -45,17 +46,28 @@ class GameRegistry {
               const network::GameStatus& status);
 
   /**
-   * @returns Where the player of @p request goes: the game that holds a seat
-   * for its sender while that game still waits for players; else the first
-   * game that waits for players and has a free seat, its players and its
-   * seats held counted, a game still Starting counting as one that waits
-   * (Wait, or Redirect once it reported); else Open while fewer than
-   * MAXIMUM_RUNNING_GAMES run, else Full. On Wait and Redirect, the sender
-   * holds a seat of that game (see SeatReservations), so the players sent in
-   * one burst never get more seats than the game has; a sender that asks
-   * again takes no second seat.
+   * @returns Where the player of @p request goes, for the game it asks for,
+   * @p game. A game still Starting counts as one that waits for players (Wait,
+   * or Redirect once it reported), and the seats of a game are its players
+   * and its seats held.
+   * - AnyGame: the game that holds a seat for its sender while that game still
+   *   waits for players; else the first game that waits for players and has
+   *   a free seat, those opened for a NewGame included.
+   * - NewGame: the game its sender opened with a NewGame, while that game
+   *   waits for players and its sender holds a seat in it or nobody else
+   *   came; so a request repeated every 500 ms opens one game.
+   * - ExistingGame: the game of that number. Refuse with GameNotFound when no
+   *   game holds it, GameInProgress when it is in progress or finished, then
+   *   GameFull when it has no free seat and none held for the sender.
+   *
+   * When AnyGame or NewGame find no game: Open while fewer than
+   * MAXIMUM_RUNNING_GAMES run, else Refuse with ServerFull. On Wait and
+   * Redirect, the sender holds a seat of that game (see SeatReservations), so
+   * the players sent in one burst never get more seats than the game has; a
+   * sender that asks again takes no second seat.
    */
-  [[nodiscard]] GamePlace placeForNewPlayer(const SeatRequest& request);
+  [[nodiscard]] GamePlace placeFor(const SeatRequest& request,
+                                   const network::GameChoice& game);
 
   /**
    * @brief Removes the games whose process ended.

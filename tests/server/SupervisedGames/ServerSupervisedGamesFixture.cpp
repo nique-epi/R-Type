@@ -10,6 +10,7 @@
 #include <vector>
 #include "Application.hpp"
 #include "ConnectionChallenge.hpp"
+#include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "GameLaunchSettings.hpp"
@@ -81,15 +82,16 @@ void ServerSupervisedGamesFixture::runFor(rtype::engine::Duration duration) {
   }
 }
 
-void ServerSupervisedGamesFixture::askForAPlaceAs(std::size_t index) {
+void ServerSupervisedGamesFixture::askForAPlaceAs(
+    std::size_t index, const rtype::network::GameChoice& game) {
   const rtype::network::Endpoint player = supervisedPlayer(index);
-  runTick({},
-          {IncomingDatagram{.sender = player, .payload = requestDatagram()}});
+  runTick({}, {IncomingDatagram{.sender = player,
+                                .payload = requestDatagramFor(game, 0)}});
   const auto answers = sentTo(network().sender().sent(), player);
   const auto cookie =
       onlyMessageIn<rtype::network::ConnectionChallenge>(answers.back()).cookie;
   runTick({}, {IncomingDatagram{.sender = player,
-                                .payload = requestDatagram(cookie)}});
+                                .payload = requestDatagramFor(game, cookie)}});
 }
 
 void ServerSupervisedGamesFixture::gameReports(

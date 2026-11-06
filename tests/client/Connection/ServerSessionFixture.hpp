@@ -37,7 +37,8 @@ namespace rtype::client::testing {
  * and a clock that moves with the frames. */
 class ServerSessionFixture : public ::testing::Test {
  protected:
-  void connect();
+  /** @brief Starts an attempt to server() as NICKNAME, asking for @p game. */
+  void connect(const network::GameChoice& game = network::ANY_GAME_CHOICE);
 
   /** @brief Delivers a datagram holding @p message, as @p sender sent it. */
   template <typename Message>

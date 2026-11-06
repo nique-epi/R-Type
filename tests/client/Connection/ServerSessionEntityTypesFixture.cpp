@@ -3,6 +3,7 @@
 #include <utility>
 #include <vector>
 #include "ConnectionAccepted.hpp"
+#include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
 #include "Disconnection.hpp"
 #include "EntityTypeEntry.hpp"
@@ -20,7 +21,7 @@ namespace rtype::client::testing {
 
 void ServerSessionEntityTypesFixture::connectAndGetAcceptedWith(
     std::vector<network::EntityTypeEntry> types) {
-  session_.connect(server(), NICKNAME);
+  session_.connect(server(), NICKNAME, rtype::network::ANY_GAME_CHOICE);
   network::PacketHeader header;
   header.sessionToken = SESSION_TOKEN;
   link_.deliver(network::IncomingDatagram{

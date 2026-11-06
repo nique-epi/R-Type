@@ -111,3 +111,15 @@ constexpr std::string_view ASSIGNMENT_ARGUMENT = "nickname=ACE";
  */
 constexpr std::string_view ASSIGNMENT_WITHOUT_MARK = "nickname";
 constexpr std::string_view ASSIGNMENT_WITHOUT_NAME = "=ACE";
+
+/**
+ * @brief Values given after `--game`: a new game, game 3, then values that
+ * name no game: 0, below the first game, 65536, past the last number, and a
+ * word.
+ */
+constexpr std::string_view NEW_GAME_ARGUMENT = "new";
+constexpr std::string_view GAME_THREE_ARGUMENT = "3";
+constexpr std::uint16_t GAME_THREE_NUMBER = 3;
+constexpr std::string_view GAME_ZERO_ARGUMENT = "0";
+constexpr std::string_view GAME_PAST_THE_LAST_ARGUMENT = "65536";
+constexpr std::string_view WORD_GAME_ARGUMENT = "abc";

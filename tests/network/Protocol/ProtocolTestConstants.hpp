@@ -94,17 +94,17 @@ constexpr std::uint16_t SOME_SEQUENCE = 0x0A0B;
  * the transport sees and bit 3 is unknown, so no header above the transport
  * holds either.
  */
-constexpr std::uint8_t SOME_OTHER_VERSION = 9;
+constexpr std::uint8_t SOME_OTHER_VERSION = 10;
 constexpr std::uint32_t SOME_OTHER_PROTOCOL_ID = 0x52545951;
 constexpr std::uint8_t SOME_FLAGS = 0x0C;
 constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
 constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;
 
 /**
- * @brief The 22 bytes of a default header: RTYP, version 8, then zeros.
+ * @brief The 22 bytes of a default header: RTYP, version 9, then zeros.
  */
 constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
-    {0x52, 0x54, 0x59, 0x50, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    {0x52, 0x54, 0x59, 0x50, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
 /**
@@ -168,16 +168,32 @@ constexpr std::uint8_t NO_TYPE_NUMBER = 0;
 constexpr std::uint8_t LARGEST_TYPE_NUMBER = 255;
 
 /**
- * @brief Refusal reasons just outside the values 1 to 3 of the protocol page.
+ * @brief Refusal reasons just outside the values 1 to 6 of the protocol page.
  */
 constexpr std::uint8_t REFUSAL_REASON_BELOW_THE_FIRST = 0;
-constexpr std::uint8_t REFUSAL_REASON_ABOVE_THE_LAST = 5;
+constexpr std::uint8_t REFUSAL_REASON_ABOVE_THE_LAST = 7;
+
+/**
+ * @brief The byte of AnyGame on the protocol page, and the two values just
+ * outside the kinds of game a ConnectionRequest may ask for.
+ */
+constexpr std::uint8_t ANY_GAME_KIND_BYTE = 1;
+constexpr std::uint8_t GAME_KIND_BELOW_THE_FIRST = 0;
+constexpr std::uint8_t GAME_KIND_ABOVE_THE_LAST = 4;
+
+/**
+ * @brief The numbers the protocol page gives a request that names a game:
+ * the first and the last it may name, and 0, which names none.
+ */
+constexpr std::uint16_t FIRST_NAMED_GAME = 1;
+constexpr std::uint16_t LAST_NAMED_GAME = 65535;
+constexpr std::uint16_t NO_NAMED_GAME = 0;
 
 /**
  * @brief The sizes the protocol page gives for the smallest ConnectionRequest
  * datagram and for a ConnectionChallenge datagram.
  */
-constexpr std::size_t SMALLEST_REQUEST_DATAGRAM_SIZE_ON_THE_PAGE = 35;
+constexpr std::size_t SMALLEST_REQUEST_DATAGRAM_SIZE_ON_THE_PAGE = 38;
 constexpr std::size_t CHALLENGE_DATAGRAM_SIZE_ON_THE_PAGE = 33;
 
 /**

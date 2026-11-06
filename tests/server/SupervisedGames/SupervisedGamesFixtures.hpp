@@ -3,14 +3,17 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
+#include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
 #include "GameLaunch.hpp"
 #include "GameLaunchOptions.hpp"
 #include "GameLaunchSettings.hpp"
 #include "GameLifecycle.hpp"
 #include "GameOpening.hpp"
+#include "GameRegistry.hpp"
 #include "GameStatus.hpp"
 #include "LaunchOptions.hpp"
 #include "ProcessCommand.hpp"
@@ -25,9 +28,18 @@
 [[nodiscard]] std::uint64_t tokenOfGame(std::uint32_t number);
 
 /** @returns The opening of game @p number, whose process shares @p state with
- * the test. */
+ * the test, opened for a NewGame of @p creator when there is one. */
 [[nodiscard]] rtype::server::GameOpening openingOf(
-    std::uint32_t number, const std::shared_ptr<RecordingChildState>& state);
+    std::uint32_t number, const std::shared_ptr<RecordingChildState>& state,
+    std::optional<rtype::network::Endpoint> creator = std::nullopt);
+
+/** @brief Opens game @p number in @p registry, then takes @p status as its
+ * status of sequence SEQUENCE_FIVE. */
+void openReporting(rtype::server::GameRegistry& registry, std::uint32_t number,
+                   const rtype::network::GameStatus& status);
+
+/** @returns The choice of the game in @p slot. */
+[[nodiscard]] rtype::network::GameChoice choiceOfGame(std::uint16_t slot);
 
 /** @returns A status of @p state with the first @p playerCount nicknames of
  * SUPERVISED_NICKNAMES, at most four, and no measure. */

@@ -26,14 +26,20 @@ using testing::byteSequence;
 using testing::CHALLENGE_DATAGRAM_SIZE_ON_THE_PAGE;
 using testing::ECHO_HELD_FOR;
 using testing::ECHOED_SENT_AT;
+using testing::FIRST_NAMED_GAME;
 using testing::FIRST_PLAYER_JITTER;
 using testing::FIRST_PLAYER_ROUND_TRIP;
 using testing::FOUR_ROCKETS;
+using testing::GAME_KIND_ABOVE_THE_LAST;
+using testing::GAME_KIND_BELOW_THE_FIRST;
 using testing::HEARTBEAT_SENT_AT;
 using testing::HEARTBEAT_TICK;
+using testing::LAST_NAMED_GAME;
 using testing::NICKNAME_WITH_LINE_FEED;
+using testing::NO_NAMED_GAME;
 using testing::ONE_BYTE_NICKNAME;
 using testing::REFUSAL_REASON_ABOVE_THE_LAST;
+using testing::requestFor;
 using testing::SECOND_PLAYER_JITTER;
 using testing::SECOND_PLAYER_NUMBER;
 using testing::SECOND_PLAYER_ROUND_TRIP;
@@ -41,16 +47,18 @@ using testing::SEVENTEEN_BYTE_NICKNAME;
 using testing::SMALLEST_REQUEST_DATAGRAM_SIZE_ON_THE_PAGE;
 using testing::smallestRequest;
 using testing::SOME_COOKIE;
+using testing::writeAnyGameChoice;
+using testing::writeRequestFor;
 
 /**
- * Given a request with a cookie and the nickname "A"
+ * Given a request with a cookie and the nickname "A", for any game
  * When it is encoded
- * Then the payload is the cookie on eight bytes, then the length 1 and the
- * letter A
+ * Then the payload is the cookie on eight bytes, the length 1 and the letter
+ * A, then the kind 1 and the number 0 on two bytes
  */
 TEST(ConnectionRequest, EncodesTheCookieThenTheNicknameWithItsLength) {
-  const auto expected = byteSequence(
-      {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x41});
+  const auto expected = byteSequence({0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                                      0x08, 0x01, 0x41, 0x01, 0x00, 0x00});
 
   EXPECT_EQ(
       encodeMessage(ConnectionRequest{
@@ -76,8 +84,8 @@ TEST(ConnectionRequest, DecodesWhatItEncoded) {
  * Then the same bytes come back
  */
 TEST(ConnectionRequest, EncodesAgainTheBytesItDecoded) {
-  const auto bytes = byteSequence(
-      {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xC3, 0xA9});
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                   0x00, 0x02, 0xC3, 0xA9, 0x01, 0x00, 0x00});
 
   EXPECT_EQ(encodeMessage(decodeMessage<ConnectionRequest>(bytes)), bytes);
 }
@@ -119,8 +127,8 @@ TEST(ConnectionRequest, RefusedRequestWritesNothing) {
  * Then an InvalidNicknameException is raised
  */
 TEST(ConnectionRequest, RefusesToReadAnEmptyNickname) {
-  const auto bytes =
-      byteSequence({0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+  const auto bytes = byteSequence(
+      {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<ConnectionRequest>(bytes),
                InvalidNicknameException);
@@ -135,6 +143,7 @@ TEST(ConnectionRequest, RefusesToReadASeventeenByteNickname) {
   ByteWriter writer;
   writer.writeUint64(SOME_COOKIE);
   writer.writeString(SEVENTEEN_BYTE_NICKNAME);
+  writeAnyGameChoice(writer);
 
   EXPECT_THROW((void)decodeMessage<ConnectionRequest>(writer.bytes()),
                InvalidNicknameException);
@@ -149,6 +158,7 @@ TEST(ConnectionRequest, RefusesToReadANicknameHoldingALineFeed) {
   ByteWriter writer;
   writer.writeUint64(SOME_COOKIE);
   writer.writeString(NICKNAME_WITH_LINE_FEED);
+  writeAnyGameChoice(writer);
 
   EXPECT_THROW((void)decodeMessage<ConnectionRequest>(writer.bytes()),
                InvalidNicknameException);
@@ -160,8 +170,8 @@ TEST(ConnectionRequest, RefusesToReadANicknameHoldingALineFeed) {
  * Then an InvalidNicknameException is raised
  */
 TEST(ConnectionRequest, RefusesToReadANicknameThatIsNotUtf8) {
-  const auto bytes = byteSequence(
-      {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xC0, 0x80});
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                   0x00, 0x02, 0xC0, 0x80, 0x01, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<ConnectionRequest>(bytes),
                InvalidNicknameException);
@@ -184,20 +194,208 @@ TEST(ConnectionRequest, RefusesARequestCutShort) {
  * When it is decoded
  * Then a TrailingBytesException is raised
  */
-TEST(ConnectionRequest, RefusesBytesAfterTheNickname) {
-  const auto bytes = byteSequence(
-      {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x41, 0x00});
+TEST(ConnectionRequest, RefusesBytesAfterTheGame) {
+  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                   0x00, 0x01, 0x41, 0x01, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<ConnectionRequest>(bytes),
                TrailingBytesException);
 }
 
 /**
+ * Given a request for any game
+ * When it is encoded then decoded
+ * Then the decoded request asks for any game
+ */
+TEST(ConnectionRequest, CarriesAChoiceOfAnyGame) {
+  const ConnectionRequest request = requestFor(ANY_GAME_CHOICE);
+
+  EXPECT_EQ(decodeMessage<ConnectionRequest>(encodeMessage(request)), request);
+}
+
+/**
+ * Given a request for a new game
+ * When it is encoded then decoded
+ * Then the decoded request asks for a new game
+ */
+TEST(ConnectionRequest, CarriesAChoiceOfANewGame) {
+  const ConnectionRequest request = requestFor(NEW_GAME_CHOICE);
+
+  EXPECT_EQ(decodeMessage<ConnectionRequest>(encodeMessage(request)), request);
+}
+
+/**
+ * Given a request for game 1, the first a request may name
+ * When it is encoded then decoded
+ * Then the decoded request asks for game 1
+ */
+TEST(ConnectionRequest, CarriesTheFirstGameItMayName) {
+  const ConnectionRequest request = requestFor(GameChoice{
+      .kind = GameChoiceKind::ExistingGame, .number = FIRST_NAMED_GAME});
+
+  EXPECT_EQ(decodeMessage<ConnectionRequest>(encodeMessage(request)), request);
+}
+
+/**
+ * Given a request for game 65535, the last a request may name
+ * When it is encoded then decoded
+ * Then the decoded request asks for game 65535
+ */
+TEST(ConnectionRequest, CarriesTheLastGameItMayName) {
+  const ConnectionRequest request = requestFor(GameChoice{
+      .kind = GameChoiceKind::ExistingGame, .number = LAST_NAMED_GAME});
+
+  EXPECT_EQ(decodeMessage<ConnectionRequest>(encodeMessage(request)), request);
+}
+
+/**
+ * Given a request for game 0x0102
+ * When it is encoded
+ * Then the payload ends with the kind 2, then the number on two bytes, most
+ * significant first
+ */
+TEST(ConnectionRequest, EncodesTheKindThenTheNumberOfTheGame) {
+  const auto expected = byteSequence({0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                                      0x08, 0x01, 0x41, 0x02, 0x01, 0x02});
+
+  EXPECT_EQ(encodeMessage(requestFor(GameChoice{
+                .kind = GameChoiceKind::ExistingGame, .number = 0x0102})),
+            expected);
+}
+
+/**
+ * Given a payload whose kind of game is 0, just below the kinds of the
+ * protocol page
+ * When it is decoded
+ * Then an InvalidFieldValueException is raised
+ */
+TEST(ConnectionRequest, RefusesToReadAKindBelowTheFirst) {
+  ByteWriter writer;
+  // NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
+  const auto unlisted = static_cast<GameChoiceKind>(GAME_KIND_BELOW_THE_FIRST);
+  // NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
+  writeRequestFor(writer,
+                  GameChoice{.kind = unlisted, .number = NO_NAMED_GAME});
+
+  EXPECT_THROW((void)decodeMessage<ConnectionRequest>(writer.bytes()),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a payload whose kind of game is 4, just above the kinds of the
+ * protocol page
+ * When it is decoded
+ * Then an InvalidFieldValueException is raised
+ */
+TEST(ConnectionRequest, RefusesToReadAKindAboveTheLast) {
+  ByteWriter writer;
+  // NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
+  const auto unlisted = static_cast<GameChoiceKind>(GAME_KIND_ABOVE_THE_LAST);
+  // NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
+  writeRequestFor(writer,
+                  GameChoice{.kind = unlisted, .number = NO_NAMED_GAME});
+
+  EXPECT_THROW((void)decodeMessage<ConnectionRequest>(writer.bytes()),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a payload that asks for any game and names game 1
+ * When it is decoded
+ * Then an InvalidFieldValueException is raised: only a choice of an existing
+ * game carries a number
+ */
+TEST(ConnectionRequest, RefusesToReadANumberWithAnyGame) {
+  ByteWriter writer;
+  writeRequestFor(writer, GameChoice{.kind = GameChoiceKind::AnyGame,
+                                     .number = FIRST_NAMED_GAME});
+
+  EXPECT_THROW((void)decodeMessage<ConnectionRequest>(writer.bytes()),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a payload that asks for a new game and names game 1
+ * When it is decoded
+ * Then an InvalidFieldValueException is raised
+ */
+TEST(ConnectionRequest, RefusesToReadANumberWithANewGame) {
+  ByteWriter writer;
+  writeRequestFor(writer, GameChoice{.kind = GameChoiceKind::NewGame,
+                                     .number = FIRST_NAMED_GAME});
+
+  EXPECT_THROW((void)decodeMessage<ConnectionRequest>(writer.bytes()),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a payload that asks for the existing game 0
+ * When it is decoded
+ * Then an InvalidFieldValueException is raised: the first game is 1
+ */
+TEST(ConnectionRequest, RefusesToReadExistingGameZero) {
+  ByteWriter writer;
+  writeRequestFor(writer, GameChoice{.kind = GameChoiceKind::ExistingGame,
+                                     .number = NO_NAMED_GAME});
+
+  EXPECT_THROW((void)decodeMessage<ConnectionRequest>(writer.bytes()),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a request for the existing game 0
+ * When writing it is refused
+ * Then nothing was written, not even the cookie that comes first
+ */
+TEST(ConnectionRequest, RefusedChoiceWritesNothing) {
+  ByteWriter writer;
+
+  EXPECT_THROW(encodePayload(writer, requestFor(GameChoice{
+                                         .kind = GameChoiceKind::ExistingGame,
+                                         .number = NO_NAMED_GAME})),
+               InvalidFieldValueException);
+
+  EXPECT_TRUE(writer.bytes().empty());
+}
+
+/**
+ * Given a request whose kind of game is 4, outside the protocol page
+ * When writing it is refused
+ * Then nothing was written
+ */
+TEST(ConnectionRequest, RefusedKindWritesNothing) {
+  ByteWriter writer;
+  // NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
+  const auto unlisted = static_cast<GameChoiceKind>(GAME_KIND_ABOVE_THE_LAST);
+  // NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
+
+  EXPECT_THROW(
+      encodePayload(writer, requestFor(GameChoice{.kind = unlisted,
+                                                  .number = NO_NAMED_GAME})),
+      InvalidFieldValueException);
+
+  EXPECT_TRUE(writer.bytes().empty());
+}
+
+/**
+ * Given a request whose number of game lacks its last byte
+ * When it is decoded
+ * Then a BufferUnderflowException is raised
+ */
+TEST(ConnectionRequest, RefusesARequestCutInTheNumberOfTheGame) {
+  const auto bytes = byteSequence(
+      {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x41, 0x02, 0x01});
+
+  EXPECT_THROW((void)decodeMessage<ConnectionRequest>(bytes),
+               BufferUnderflowException);
+}
+
+/**
  * Given a request with a one-byte nickname, the smallest there is
  * When its datagram is encoded
- * Then it holds the 35 bytes the protocol page gives
+ * Then it holds the 38 bytes the protocol page gives
  */
-TEST(ConnectionRequest, SmallestRequestDatagramHoldsThirtyFiveBytes) {
+TEST(ConnectionRequest, SmallestRequestDatagramHoldsThirtyEightBytes) {
   EXPECT_EQ(DatagramCodec::encode(PacketHeader{}, smallestRequest()).size(),
             SMALLEST_REQUEST_DATAGRAM_SIZE_ON_THE_PAGE);
 }
@@ -301,16 +499,18 @@ TEST(ConnectionRefused, EncodesTheReason) {
 }
 
 /**
- * Given the payloads 01, 02, 03 and 04
+ * Given the payloads 01 to 06
  * When each is decoded
- * Then they give GameFull, GameInProgress, IncompatibleVersion and
- * NicknameTaken
+ * Then they give GameFull, GameInProgress, IncompatibleVersion,
+ * NicknameTaken, GameNotFound and ServerFull
  */
 TEST(ConnectionRefused, DecodesEveryReasonOfTheProtocolPage) {
   const auto gameFull = byteSequence({0x01});
   const auto gameInProgress = byteSequence({0x02});
   const auto incompatibleVersion = byteSequence({0x03});
   const auto nicknameTaken = byteSequence({0x04});
+  const auto gameNotFound = byteSequence({0x05});
+  const auto serverFull = byteSequence({0x06});
 
   EXPECT_EQ(decodeMessage<ConnectionRefused>(gameFull).reason,
             RefusalReason::GameFull);
@@ -320,16 +520,20 @@ TEST(ConnectionRefused, DecodesEveryReasonOfTheProtocolPage) {
             RefusalReason::IncompatibleVersion);
   EXPECT_EQ(decodeMessage<ConnectionRefused>(nicknameTaken).reason,
             RefusalReason::NicknameTaken);
+  EXPECT_EQ(decodeMessage<ConnectionRefused>(gameNotFound).reason,
+            RefusalReason::GameNotFound);
+  EXPECT_EQ(decodeMessage<ConnectionRefused>(serverFull).reason,
+            RefusalReason::ServerFull);
 }
 
 /**
- * Given the payloads 00 and 05, just outside the reasons of the protocol page
+ * Given the payloads 00 and 07, just outside the reasons of the protocol page
  * When each is decoded
  * Then each is refused
  */
 TEST(ConnectionRefused, RefusesToReadAReasonOutsideTheList) {
   const auto belowTheFirst = byteSequence({0x00});
-  const auto aboveTheLast = byteSequence({0x05});
+  const auto aboveTheLast = byteSequence({0x07});
 
   EXPECT_THROW((void)decodeMessage<ConnectionRefused>(belowTheFirst),
                InvalidFieldValueException);

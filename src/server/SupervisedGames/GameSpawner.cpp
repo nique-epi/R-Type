@@ -3,6 +3,7 @@
 #include <exception>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <random>
 #include <string>
 #include <utility>
@@ -20,7 +21,7 @@ namespace rtype::server {
 GameSpawner::GameSpawner(GameSpawnerParts parts)
     : parts_(std::move(parts)), logger_(std::string{SUPERVISOR_LOGGER_NAME}) {}
 
-bool GameSpawner::openGame() {
+bool GameSpawner::openGame(std::optional<network::Endpoint> creator) {
   const std::uint32_t number = nextNumber_;
   try {
     const GameLaunch launch{
@@ -34,6 +35,7 @@ bool GameSpawner::openGame() {
     parts_.registry.get().open(GameOpening{.number = launch.number,
                                            .port = launch.port,
                                            .linkToken = launch.linkToken,
+                                           .creator = std::move(creator),
                                            .process = std::move(process)});
     parts_.admission.get().admit(
         network::Endpoint{
