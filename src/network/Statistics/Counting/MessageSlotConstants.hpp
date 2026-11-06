@@ -14,19 +14,24 @@ namespace rtype::network {
 constexpr std::size_t FIRST_NAMED_MESSAGE_TYPE =
     static_cast<std::size_t>(MessageType::ConnectionRequest);
 constexpr auto MESSAGE_TYPE_NAMES = std::to_array<std::string_view>(
-    {"ConnectionRequest",   "ConnectionAccepted", "ConnectionRefused",
-     "Disconnection",       "Heartbeat",          "ReadyState",
-     "LobbyState",          "GameStarted",        "PlayerInput",
-     "WorldState",          "EntitySpawned",      "EntityDestroyed",
-     "GameEvent",           "PlayerLeft",         "GameEnded",
-     "ConnectionChallenge", "GameLoaded",         "LeaderboardRequest",
-     "LeaderboardAnswer",   "DeltaWorldState",    "RoundTrips",
-     "EnemyAction",         "OrderedMessage",     "ServerInformationRequest",
-     "ServerInformation"});
+    {"ConnectionRequest", "ConnectionAccepted",
+     "ConnectionRefused", "Disconnection",
+     "Heartbeat",         "ReadyState",
+     "LobbyState",        "GameStarted",
+     "PlayerInput",       "WorldState",
+     "EntitySpawned",     "EntityDestroyed",
+     "GameEvent",         "PlayerLeft",
+     "GameEnded",         "ConnectionChallenge",
+     "GameLoaded",        "LeaderboardRequest",
+     "LeaderboardAnswer", "DeltaWorldState",
+     "RoundTrips",        "EnemyAction",
+     "OrderedMessage",    "ServerInformationRequest",
+     "ServerInformation", "ConnectionRedirect",
+     "GameStatus",        "GameStatusAcknowledged"});
 
 static_assert(FIRST_NAMED_MESSAGE_TYPE + MESSAGE_TYPE_NAMES.size() - 1 ==
-                  static_cast<std::size_t>(MessageType::ServerInformation),
-              "every message up to ServerInformation has its name");
+                  static_cast<std::size_t>(MessageType::GameStatusAcknowledged),
+              "every message up to GameStatusAcknowledged has its name");
 
 /**
  * @brief The figures a DirectionTraffic keeps per type of message: one slot per

@@ -24,7 +24,7 @@ The server has **no dashboard yet**: the journal is the only way to see its game
 From the repository root, where the build writes `r-type_server`:
 
 ```bash
-./r-type_server -p 4242 --seed 42
+./r-type_server --mode server -p 4242 --seed 42
 ```
 
 There is nothing to ask for: a server always hosts `DEFAULT_HOSTED_GAME_COUNT` (8) games, created when it starts and kept until it stops. `--seed` is optional and makes the Bydos come out the same way at each launch. Each line goes both to the terminal and to the journal `r-type_server.log`, next to the executable (each line starts with a time, left out here):
@@ -100,18 +100,18 @@ cmake --workflow --preset build
 
 The server now creates two games, so the `WaveSpawner` line appears twice, and the ninth player is refused. Put the value back before you commit. A test that needs another number sets `GamesSettings::gameCount` itself, so no test depends on this constant.
 
-More games cost more per tick, and the journal gives that cost every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)). Every game runs on the simulation thread, one after the other, so a slow game slows the others, and an exception a system of one game throws stops the server. The tick loop writes a line at the `warn` level when ticks stall; if you see `stalls since the previous report` in the journal, the server is holding more than the machine can run.
+More games cost more per tick, and the journal gives that cost every 10 s (see [Metrics](/R-Type/server/#metrics-servermetricsmodule)). Every game of one server runs on the simulation thread, one after the other, so a slow game slows the others, and an exception a system of one game throws stops the server. To isolate them, run `./r-type_server --mode supervisor`: each game then runs in a process of its own (see [Supervisor and game processes](/R-Type/server/#supervisor-and-game-processes)). The tick loop writes a line at the `warn` level when ticks stall; if you see `stalls since the previous report` in the journal, the server is holding more than the machine can run.
 
 ## Step 5: run two servers side by side
 
 Several servers can run on one machine, each on its own port, with nothing shared between them. Each keeps its leaderboard in a file named after its port, `r-type_server_4251.db` and `r-type_server_4252.db`, next to the executable. Give each its own journal, or their lines mix in one file:
 
 ```bash
-./r-type_server -p 4251 --log-file first.log
+./r-type_server --mode server -p 4251 --log-file first.log
 ```
 
 ```bash
-./r-type_server -p 4252 --log-file second.log
+./r-type_server --mode server -p 4252 --log-file second.log
 ```
 
 Each client names the server it joins:

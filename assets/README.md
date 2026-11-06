@@ -39,6 +39,10 @@ The client and the server look for `assets/` next to their executable, then in t
 | `fonts/silkscreen/silkscreen.ttf` | Silkscreen, the small pixel font of the menus: version, copyright | SIL Open Font License 1.1, copyright 2001 The Silkscreen Project Authors, license in `fonts/silkscreen/OFL.txt`; from `google/fonts` (`ofl/silkscreen`) |
 | `sprites/logo.png` | The logo of the title screen, 210 × 42 pixels | Drawn for this project (main menu mockup 1c v4) |
 | `sprites/entities.png` | The sprite sheet of a match: four player ships, the Bydo, the bonus Bydo, the player missile and the enemy missile | Drawn for this project (proposal 3a); not taken from the sprite set shipped with the subject |
+| `sprites/mobs/voltjelly.png` | The Voltjelly: a Bydo jellyfish inside an electric aura that turns, one row of 4 frames | Drawn for this project (design system "R-Type — new mobs"), exported by the code of the design; not taken from the sprite set shipped with the subject |
+| `sprites/mobs/reaper.png` | The Reaper: a Bydo skeleton with a scythe, idle, raising its scythe, swinging it, open; and its bone, which no sheet uses yet | Drawn for this project (design system "R-Type — new mobs"), exported by the code of the design, the white of the blade turned to its light tint; not taken from the sprite set shipped with the subject |
+| `sprites/mobs/drillback.png` | The Drillback: an armoured Bydo beetle with a drill for a horn, idle, shaking, charging, stunned | Drawn for this project (design system "R-Type — new mobs"), exported by the code of the design, the white of the drill and of the flame turned to their light tint, the two stunned frames drawn twice; not taken from the sprite set shipped with the subject |
+| `sprites/mobs/bydomancer.png` | The Bydomancer: a Bydo mage with a staff, idle, raising its staff, casting, resting; its rune orb, the shard of the orb, and its nova, a green ring around its body | Drawn for this project (design system "R-Type — new mobs"), exported by the code of the design, the idle body drawn at the center of each frame of the nova; not taken from the sprite set shipped with the subject |
 | `sprites/effects.png` | The effects of a match: the explosions of the Bydo and of the ship, the impact of a missile and the muzzle flashes of both missiles, each with its version without flash | Drawn for this project (animation proposal, options C), generated from the drafts of the proposal; not taken from the sprite set shipped with the subject |
 | `sprites/hud.png` | The sheet of the status band of a game: the lives of the four player colors, a life lost, the marker of each player, and the icons of the notices of a game: the door of a departure and the bars of a weak signal | Drawn for this project (HUD design system, proposal B; the two icons from the disconnect notices design system); not taken from the sprite set shipped with the subject |
 | `sprites/professor.png` | Professor Bydo, the guide of the help of the waiting room: the Bydo under a mortarboard, round glasses over its eye, two frames facing left, then the same two mirrored | Drawn for this project (help design system, version 2), from the Bydo of `sprites/entities.png`; not taken from the sprite set shipped with the subject |
@@ -78,6 +82,19 @@ The client and the server look for `assets/` next to their executable, then in t
 The light shade of player 4, `#ffd38b`, is one step of blue above `#ffd38a`, the gold of every flame, here and in `sprites/hud.png`: a palette for color blindness swaps the three shades of a player color, and this step keeps the flame of player 4 out of the swap.
 
 The game and the squadron of the title screen show the two frames in turn, each for the frame time above. In the game, the frames and the frame time of each entity type are written once, in the `[appearance]` of its sheet in `entities/`; `src/client/Rendering/Sprites/EntitySpriteConstants.hpp` holds those the title, the intro and the waiting room draw, and the bonus Bydo, which no sheet uses yet. The client tests check that the frame times of the shipped sheets are those of the table above. The sheet is listed in `titleAssets()`, for the squadron of the title screen, and in `gameAssets()`.
+
+## The mob sheets
+
+Each mob of `sprites/mobs/` has a sheet of its own, laid out like the entity sheet: native size, one row per state, frames and rows 2 pixels apart, transparent outside the frames. A frame wider than the body of the mob (an attack that reaches out) is drawn with the `anchor_x` of its `[appearance]` table, so the body stays where the server puts it.
+
+| Sheet | Size | Rows: frames × frame size, frame time |
+|---|---|---|
+| `bydomancer.png` | 127 × 163 | idle: 2 × 24 × 24, 250 ms; staff raised: 2 × 24 × 24, 150 ms; cast: 1 × 30 × 24, 120 ms, the body in the 24 pixels on the right; resting: 1 × 24 × 24, 300 ms; rune orb: 2 × 9 × 9, 120 ms; shard: 1 × 5 × 5, 100 ms; nova: 3 × 41 × 41, 80 ms, the body at the center |
+| `drillback.png` | 102 × 102 | idle: 2 × 24 × 24, 200 ms; shaking: 2 × 24 × 24, 60 ms; charge: 2 × 40 × 24, 60 ms, the body in the 24 pixels on the left; stunned: 4 × 24 × 24, 225 ms |
+| `reaper.png` | 82 × 117 | idle: 2 × 24 × 24, 250 ms; scythe raised: 2 × 24 × 24, 200 ms; swing: 2 × 40 × 24, 70 ms, the body in the 24 pixels on the right; open: 1 × 24 × 24, 600 ms; bone: 4 × 13 × 13, 80 ms |
+| `voltjelly.png` | 166 × 40 | aura: 4 × 40 × 40, 120 ms; the bell, 24 × 24, at the center of each frame |
+
+The client tests check that the frame times of the idle rows are those of the table above. The game screen loads every sheet an `[appearance]` names.
 
 ## The effect sheet
 

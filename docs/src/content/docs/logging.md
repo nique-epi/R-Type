@@ -114,7 +114,7 @@ launchOptions.logOptions().apply();
 The journal is opened in append mode, so a second launch keeps the lines of the first, and it is flushed after every line, so it is complete even if the program crashes. `NO_COLOR` or `RT_LOG_NO_COLOR` turns the color of standard error off.
 
 ```bash
-./r-type_server --log-level debug
+./r-type_server --mode server --log-level debug
 RT_LOG_LEVEL=warn ./r-type_client --log-file /tmp/client.log
 ```
 

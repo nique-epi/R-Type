@@ -672,7 +672,7 @@ TEST(ConnectionAcceptor, AnswersTheNextRequestAfterOneWhoseAnswerThrew) {
 }
 
 /**
- * Given a sender that got a challenge, on a server of the five sheets the game
+ * Given a sender that got a challenge, on a server of the sheets the game
  * ships with
  * When it sends its request again with the cookie of the challenge
  * Then its acceptance lists every sheet in the order of its name, which is the
@@ -684,11 +684,17 @@ TEST_F(ConnectionAcceptorFixture, AcceptsWithTheEntityTypesOfTheGame) {
   EXPECT_EQ(
       onlyMessageIn<network::ConnectionAccepted>(lastAnswer()).types,
       (std::vector<network::EntityTypeEntry>{
+          {.side = network::EntitySide::Enemy, .name = "bydomancer"},
           {.side = network::EntitySide::Enemy, .name = "drifter"},
+          {.side = network::EntitySide::Enemy, .name = "drillback"},
           {.side = network::EntitySide::EnemyMissile, .name = "enemy_missile"},
+          {.side = network::EntitySide::EnemyMissile, .name = "orb_shard"},
           {.side = network::EntitySide::PlayerMissile,
            .name = "player_missile"},
+          {.side = network::EntitySide::Enemy, .name = "reaper"},
+          {.side = network::EntitySide::EnemyMissile, .name = "rune_orb"},
           {.side = network::EntitySide::Player, .name = "ship"},
+          {.side = network::EntitySide::Enemy, .name = "voltjelly"},
           {.side = network::EntitySide::Enemy, .name = "weaver"}}));
 }
 

@@ -13,6 +13,7 @@ namespace rtype::client {
 void ConnectionAttempt::begin(std::string_view nickname) {
   nickname_ = nickname;
   cookie_ = 0;
+  redirected_ = false;
   sinceBegin_ = engine::Duration::zero();
 }
 
@@ -25,6 +26,17 @@ void ConnectionAttempt::sendRequest(ISessionOutbox& outbox) {
 void ConnectionAttempt::answerChallenge(std::uint64_t cookie,
                                         ISessionOutbox& outbox) {
   cookie_ = cookie;
+  sendRequest(outbox);
+}
+
+bool ConnectionAttempt::acceptRedirect() {
+  const bool accepted = !redirected_;
+  redirected_ = true;
+  return accepted;
+}
+
+void ConnectionAttempt::answerRedirect(ISessionOutbox& outbox) {
+  cookie_ = 0;
   sendRequest(outbox);
 }
 

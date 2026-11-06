@@ -1,0 +1,47 @@
+#pragma once
+
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
+#include "TimeConstants.hpp"
+
+/** @brief The first game port and link token the registry tests give: game n
+ * has port FIRST_GAME_PORT + n and token FIRST_LINK_TOKEN + n. */
+constexpr std::uint16_t FIRST_GAME_PORT = 50000;
+constexpr std::uint64_t FIRST_LINK_TOKEN = 0x7000;
+
+/** @brief A token no game holds. */
+constexpr std::uint64_t UNKNOWN_LINK_TOKEN = 0x9999;
+
+/** @brief The requirement's limits: eight games at once, ten seconds to start,
+ * three to stop. */
+constexpr std::size_t EIGHT_GAMES = 8;
+constexpr rtype::engine::Duration TEN_SECONDS_TO_START =
+    std::chrono::seconds(10);
+constexpr rtype::engine::Duration JUST_UNDER_TEN_SECONDS_TO_START =
+    std::chrono::milliseconds(9999);
+constexpr rtype::engine::Duration THREE_SECONDS_TO_STOP =
+    std::chrono::seconds(3);
+
+/** @brief The sequences of the statuses the tests send. */
+constexpr std::uint16_t SEQUENCE_FIVE = 5;
+constexpr std::uint16_t SEQUENCE_FOUR = 4;
+constexpr std::uint16_t LAST_SEQUENCE = 65535;
+constexpr std::uint16_t FIRST_SEQUENCE = 0;
+
+/** @brief The exit code of a game process that crashed. */
+constexpr int CRASH_EXIT_CODE = 11;
+
+/** @brief A player count above what a game holds, as a byte of a payload. */
+constexpr unsigned char FIVE_PLAYERS_BYTE = 5;
+
+/** @brief The program that runs a game in the tests, and the folder the games
+ * write to: names, since no process starts. */
+constexpr std::string_view PROGRAM_FOR_TESTS = "some/r-type_server";
+constexpr std::string_view FOLDER_FOR_TESTS = "some/folder";
+
+/** @brief The address and the first port of the players of the supervisor
+ * tests: eight games need more players than SentDatagrams names. */
+constexpr std::string_view SUPERVISED_PLAYER_ADDRESS = "192.0.2.50";
+constexpr std::uint16_t FIRST_SUPERVISED_PLAYER_PORT = 40000;

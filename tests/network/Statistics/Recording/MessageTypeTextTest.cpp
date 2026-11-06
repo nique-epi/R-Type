@@ -38,8 +38,25 @@ TEST(MessageTypeText, EveryMessageHasItsName) {
   EXPECT_EQ(textOf(MessageType::LeaderboardRequest), "LeaderboardRequest");
   EXPECT_EQ(textOf(MessageType::LeaderboardAnswer), "LeaderboardAnswer");
   EXPECT_EQ(textOf(MessageType::DeltaWorldState), "DeltaWorldState");
+}
+
+/**
+ * Given every message added after the delta world state
+ * When its text is asked
+ * Then it is its name
+ */
+TEST(MessageTypeText, EveryLaterMessageHasItsName) {
+  const auto textOf = [](MessageType type) {
+    return messageTypeText(static_cast<std::size_t>(type));
+  };
+
   EXPECT_EQ(textOf(MessageType::RoundTrips), "RoundTrips");
   EXPECT_EQ(textOf(MessageType::EnemyAction), "EnemyAction");
+  EXPECT_EQ(textOf(MessageType::OrderedMessage), "OrderedMessage");
+  EXPECT_EQ(textOf(MessageType::ConnectionRedirect), "ConnectionRedirect");
+  EXPECT_EQ(textOf(MessageType::GameStatus), "GameStatus");
+  EXPECT_EQ(textOf(MessageType::GameStatusAcknowledged),
+            "GameStatusAcknowledged");
   EXPECT_EQ(textOf(MessageType::ServerInformationRequest),
             "ServerInformationRequest");
   EXPECT_EQ(textOf(MessageType::ServerInformation), "ServerInformation");

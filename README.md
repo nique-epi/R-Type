@@ -69,24 +69,24 @@ The release refuses a tag whose version is not the one of `project()`; change th
 ## Run
 
 ```bash
-./r-type_server -p 4243
+./r-type_server --mode server -p 4243
 ```
 
 The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on port 4242.
 
 ```bash
-./r-type_server --seed 42
+./r-type_server --mode server --seed 42
 ```
 
 The Bydos appear at heights drawn from the seed; without `--seed` the server draws one, and the journal records it (`wave spawning starts from the seed ...`) so the same game can be replayed. A seed makes the games not vanilla: their scores stay on the leaderboard of the server.
 
 ```bash
-./r-type_server --set state-rate=30
+./r-type_server --mode server --set state-rate=30
 ```
 
 `--set <name>=<value>` forces any setting of the server and wins over `server.cfg`, a file of commands the server reads from the folder it is started from. A missing file is fine; the defaults apply. `server.cfg.example`, at the root of the repository, lists every setting with its default and its bounds: copy it to `server.cfg`. Every command and setting is described in [Configuration commands](https://nique-epi.github.io/R-Type/commands/).
 
-A `plugin <name>` line of `server.cfg` loads the module of a shared library, `plugins/<name>.so` next to the executable (`.dll` on Windows), so a feature is added without recompiling the server. A plugin that cannot be loaded stops the server with an error that names it, and `module <name> off` turns a loaded plugin off. The plugin must be built by the same compiler, from the same sources, as the server: see [Write a plugin](https://nique-epi.github.io/R-Type/modules/#write-a-plugin).
+A `plugin <name>` line of `server.cfg` loads the module of a shared library, `plugins/<name>.so` next to the executable (`.dll` on Windows), so a feature is added without recompiling the server. A plugin that cannot be loaded stops the server with an error that names it, and `module <name> off` turns a loaded plugin off. The plugin must be built by the same compiler, from the same sources, as the server: see [Write a plugin](https://nique-epi.github.io/R-Type/modules/#write-a-plugin). The server has one, `game-statistics`: `plugin game-statistics` makes it write a row per Bydo killed and the total of each game to `r-type_statistics_<port>.csv` next to the executable (see [Game statistics](https://nique-epi.github.io/R-Type/server/#game-statistics-servergamestatisticsmodule)).
 
 ```
 # server.cfg
@@ -95,13 +95,13 @@ module lobby off
 ```
 
 ```bash
-./r-type_server --state-rate 30
+./r-type_server --mode server --state-rate 30
 ```
 
 Every player's input is held for the same few ticks before it moves the ship (3 ticks, 50 ms, by default); `--input-delay` changes it, from 0 to 30 ticks; any other delay than 3 makes the games not vanilla.
 
 ```bash
-./r-type_server --input-delay 5
+./r-type_server --mode server --input-delay 5
 ```
 
 The server sends each player 30 world states per second instead of 20, from 2 to 60: more states move the other ships more smoothly and use more bandwidth (about 350 bytes per state with four players and thirty entities, see [the server page](https://nique-epi.github.io/R-Type/server/)).
@@ -125,7 +125,7 @@ The client's datagrams cross a simulated bad network: 300 ms more ping, 10 % of 
 Without these options, `tests/tools/network-conditions/` applies the same scenarios to the loopback interface from the system: `sudo tests/tools/network-conditions/netem.sh apply --network bad` on Linux, `dummynet.sh` on macOS, then `clear` to remove them (see [the network page](https://nique-epi.github.io/R-Type/network/#network-conditions-from-the-system-teststoolsnetwork-conditions)).
 
 ```bash
-./r-type_server --traffic-csv traffic.csv
+./r-type_server --mode server --traffic-csv traffic.csv
 ```
 
 Both programs write what crosses their socket to the journal every 10 s; with `--traffic-csv` they also write it to a file every second, by player and by message type, for a measurement campaign (see [the network page](https://nique-epi.github.io/R-Type/network/#traffic-counters-trafficcounters)).
@@ -146,6 +146,14 @@ Without `master-url` or `master-key`, a game server runs alone and is listed now
 - **Why a mode and not a third binary:** the subject lists two binaries, `r-type_server` and `r-type_client`. The master ships inside the first and reuses its stop on Ctrl-C, its configuration file and its journal; it still runs as a process of its own, so a master that stops stops no game.
 
 Both choices are told in full in [Architecture](https://nique-epi.github.io/R-Type/architecture/#master).
+
+The binary runs as a supervisor unless `--mode` says otherwise: it runs no game, listens on port 4242, and starts one `r-type_server` process per game, up to eight, sending each player to the game that has a place. A game that crashes stops only its own players, and Ctrl-C on the supervisor stops every game; see [the server page](https://nique-epi.github.io/R-Type/server/#supervisor-and-game-processes).
+
+Add `--mode server` to run one game server alone, hosting its games in one process.
+
+```bash
+./r-type_server --mode server
+```
 
 `--help` prints the options of either program, and `--mode master --help` those of the master. An invalid argument stops it with a message and exit code 1.
 
@@ -178,7 +186,7 @@ This has 32 players with no window join the server on port 4242 of the same mach
 The client, the server and the master write a timestamped journal, `r-type_client.log`, `r-type_server.log` or `r-type_master.log` next to their executable, and show the same lines in the terminal; the first line gives the absolute path of the journal. Installed in a folder they cannot write to, they write no journal and say so in the terminal. The level and the output are chosen at launch:
 
 ```bash
-./r-type_server --log-level debug
+./r-type_server --mode server --log-level debug
 ```
 
 | Option | Effect |

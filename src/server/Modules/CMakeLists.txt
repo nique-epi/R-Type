@@ -1,4 +1,4 @@
-add_library(rtype_server_modules STATIC ServerModules.cpp)
+add_library(rtype_server_modules STATIC ServerModules.cpp SupervisorModules.cpp)
 
 target_include_directories(rtype_server_modules PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -17,7 +17,12 @@ target_link_libraries(rtype_server_modules
     rtype_server_network_module
     rtype_server_platform
     rtype_server_storage_module
+    rtype_server_supervised_games_module
+    rtype_server_supervisor_link_module
+    rtype_server_supervisor_lobby_module
   PRIVATE
+    rtype_engine_paths
+    rtype_server_processes
     rtype_engine_system_clock
     rtype_game_entity_types
     rtype_server_constants

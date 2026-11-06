@@ -112,9 +112,10 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | One header for every datagram to a player: session token and next sequence | Available | `src/server/Sessions/Roster/` |
 | Game events sent to the players | Available: the removal of a Bydo or a missile that leaves the playfield, the damage and destruction of a Bydo hit by missiles, and the loss of a ship and of a life when a ship touches a Bydo or a missile of a Bydo | `src/server/Replication/`, `src/game/Events/` |
 | Launch options | Available: the port, the seed, the state rate, the input delay, the database, `--set` and `--help` | `src/server/LaunchOptions/` |
-| Configuration file | Available: `server.cfg` (`module`, `set`) | `src/server/Modules/` |
+| Configuration file | Available: `server.cfg` (`module`, `set`, `plugin`, `plugin-folder`) | `src/server/Modules/` |
 | Information requests answered outside any session: name, versions, players, games, free seats, and the time the request was held | Available; nothing sends a request yet: the list of servers of the client and the probe of the master are not written | `src/server/Information/` |
 | Letting players in: challenge, acceptance or refusal | Available; a new player joins the first game waiting for players with a free seat, and is refused with `GameInProgress` or `GameFull` only when no game has one; the acceptance carries the entity types of the server | `src/server/Lobby/`, `src/server/Sessions/` |
+| One process per game, started by a supervisor (`--mode supervisor`) | Available: up to 8 game processes, each reporting its state every second and ending by itself or when told to | `src/server/Processes/`, `src/server/SupervisedGames/`, `src/server/SupervisorLink/`, `src/server/SupervisorLobby/` |
 | A game: states, ready rule, new world between two games | Available: eight games side by side, each ending once no player is left in it, no player left has a life, or the last wave of its level is over | `src/server/Rules/Match/` |
 | Newest input of each player, held by the `Intent` of its ship and acted on at each tick of a game in progress | Available: the arrows move the ship, shoot fires its missiles | `src/server/Sessions/Tracking/`, `src/server/Rules/Players/`, `src/game/Components/Intent.hpp` |
 | Heartbeats every 500 ms, and the round trip and jitter of each player measured from their echoes; a player silent for 5 seconds is away and keeps its seat 15 seconds, then its session closes | Available, and a `Disconnection` closes the session at once | `src/server/Sessions/Tracking/` |
@@ -123,6 +124,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | End of a game sent to the players (`GameEnded`) | Available: when the game is won or lost, with its outcome and the score of each, until the game waits for players again | `src/server/Replication/Announcements/Milestones/`, `src/server/Rules/Match/` |
 | Metrics in the journal every 10 s: duration of the ticks, time of each system, games, players, entities, round trip of each player and traffic | Available; losses are not measured yet | `src/server/Metrics/` |
 | Results of each game kept in a SQLite file, with statistics, and a leaderboard read with `LeaderboardRequest` | Available; the leaderboard of the client reads it, and nothing in the game shows the statistics | `src/server/Results/`, `src/server/Storage/`, `src/storage/` |
+| Game statistics: a CSV row per Bydo killed and the total of each game, written by a plugin | Available, loaded by `plugin game-statistics` | `src/server/GameStatistics/` |
 | Master mode: `--mode master` runs the master instead of the game server | Available (see [Master](/R-Type/master/)) | `src/server/LaunchOptions/`, `src/master/` |
 | Master link: registration and heartbeats | Available; admin orders, bans and results not yet written (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
 | Components (`Position`, `SteadyMotion`, `CollisionBox`, `Health`, `EntityType`, `EntityTypeNumber`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
@@ -146,7 +148,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 
 | Option | Effect |
 |---|---|
-| `--mode <server\|master>` | The program the binary runs: the game server (`server`, the default) or the master (`master`, see [Master](/R-Type/master/)). It comes before every other option; further on, it is an unknown argument. |
+| `--mode <server\|supervisor\|master>` | The program the binary runs: the supervisor that starts one game server per game (`supervisor`, the default, see [Supervisor and game processes](#supervisor-and-game-processes)), one game server alone (`server`) or the master (`master`, see [Master](/R-Type/master/)). It comes before every other option; further on, it is an unknown argument. |
 | `-p <port>` | The UDP port to listen on, from 1 to 65535 (see [Network](/R-Type/network/#ports-and-addresses-written-as-text-portfromtext-ipv4addressfromtext)). Default: `DEFAULT_SERVER_PORT` (4242). |
 | `--seed <seed>` | The number the random draws of the games start from, a whole number from 0 to 4294967295. Default: drawn at random. See [Waves](#waves-wavespawner). A seed makes the games not vanilla (see [Vanilla games](#vanilla-games-vanillabreaches)). |
 | `--state-rate <states>` | The world states sent to each player per second, a whole number from 2 to 60. Default: `DEFAULT_WORLD_STATES_PER_SECOND` (20). More states move the other ships more smoothly and use more bandwidth; see [World state](#world-state-worldstatesender). |
@@ -155,6 +157,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | `--set <name>=<value>` | Gives a setting a value, as the line `set <name> <value>` of `server.cfg` does (see [Configuration](#configuration-servercfg)). Can be given several times. |
 | `--network <name>`, `--lag <ms>`, `--jitter <ms>`, `--loss <percent>`, `--duplicates <percent>`, `--reorder <percent>` | The simulated network every datagram of the server crosses, for all its players (see [Network](/R-Type/network/#network-simulator-simulatednetworksocket)). Default: none, the network is not simulated. |
 | `--traffic-csv <file>` | The file the traffic of the server goes to every second (see [Network](/R-Type/network/#traffic-counters-trafficcounters)). Default: no file. |
+| `--supervisor <port>`, `--link-token <number>` | Only for a game process, which its supervisor starts with them: the UDP port of the supervisor, on the loopback, and the whole number from 1 to 18446744073709551615 they share (see [Supervisor and game processes](#supervisor-and-game-processes)). Given together; one without the other stops the start. Default: none, the server is on its own and hosts the games of `DEFAULT_HOSTED_GAME_COUNT`. |
 | `--help` | Prints the usage, the simulator and logging options included, on standard output, then exits with code 0 without starting anything or opening the journal. |
 
 - `-p`, `--seed`, `--state-rate`, `--input-delay` and `--database` are shortcuts: each forces the setting `port`, `seed`, `state-rate`, `input-delay` or `database` with the line `set <name> <value>`, the first four once their value is checked. The forced lines run after `server.cfg`, so a launch option wins over the file. `--traffic-csv` is no setting: it names the file of this run only.
@@ -162,7 +165,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 - An unknown argument, a `-p`, `--seed`, `--state-rate`, `--input-delay`, `--database` or `--traffic-csv` without a value, an invalid port, a seed that is not a whole number from 0 to 4294967295, a state rate that is not a whole number from 2 to 60, an input delay that is not a whole number from 0 to 30, a `--set` value that is not `name=value`, a simulator option without a value or with one out of its range, or a logging option that does not exist or has no value, stops the server before anything starts: it prints `r-type_server:`, the reason and how to see the usage on standard error, then exits with code 1. When several arguments are wrong, the first one from the left is reported.
 
 ```bash
-./r-type_server -p 4243
+./r-type_server --mode server -p 4243
 ```
 
 ## Threads: `ServerApplication`
@@ -259,7 +262,7 @@ The server reads `server.cfg`, in the folder it is started from, between the ins
 
 | Command | Effect |
 |---|---|
-| `module <name> on\|off` | Turns a module of the table below on or off. A module that is off is never installed, so it provides no service and its work never runs. Refused when a module that stays on depends on it (`storage` needs `network`, `games` needs `network` and `storage`, `lobby` and `metrics` need `games`, `information` needs `network` and `games`, `master` needs `network`, `games` and `information`, all need `logger`). |
+| `module <name> on\|off` | Turns a module of the table below on or off. A module that is off is never installed, so it provides no service and its work never runs. Refused when a module that stays on depends on it (`storage` needs `network`, `games` needs `network` and `storage`, `lobby` and `metrics` need `games`, `information` needs `network` and `games`, `master` needs `network`, `games` and `information`, the `game-statistics` plugin needs `network` and `games` once loaded, all need `logger`). |
 | `set port <port>` | The UDP port, from 1 to 65535. Default: 4242. |
 | `set seed <seed>` or `set seed none` | The seed of the first game, a whole number from 0 to 4294967295; `none` draws one. Default: `none`. |
 | `set state-rate <states>` | The world states sent to each player per second, from 2 to 60. Default: 20. |
@@ -268,6 +271,7 @@ The server reads `server.cfg`, in the folder it is started from, between the ins
 | `set master-url <url>` | The master this server is listed on, `http://<host>[:<port>]`. Default: empty, and the server runs alone (see [Link with the master](#link-with-the-master-servermastermodule)). |
 | `set master-key <key>` | The key the master gave when the host created this server on it. Default: empty, and the server runs alone. Never committed: only `server.cfg.example` is, with an empty key. |
 | `set server-name <name>` | The name players read in the list of servers and in the answer to an information request, 1 to 32 bytes of printable UTF-8. Declared by the information module. Default: `R-Type server`. |
+| `set game-statistics-file <file>` | Declared by the `game-statistics` plugin, so refused unless a `plugin game-statistics` line loads it: the CSV file of the statistics of the games. Default: empty, which writes `r-type_statistics_<port>.csv` next to the executable (see [Game statistics](#game-statistics-servergamestatisticsmodule)). |
 
 - A missing `server.cfg` is not an error: the defaults apply, and the journal says `server.cfg not found, the defaults apply`. A line that is refused (an unknown command, a value out of its bounds) does not stop the server: it is logged at the `warn` level, with its file and line number, and the next line runs.
 - The reading is logged once the journal is open, so the lines appear after the modules' own start lines. The `info` lines are hidden at the default level; start the server with `--log-level info` to see them.
@@ -290,11 +294,13 @@ module lobby off
 | `logger` | applies the logging options when it starts, logs "server starting" and "server stopped"; provides the journal of the server as an `ILogJournal`, so a plugin logs where the lines of the server go | `src/server/Logger/` |
 | `network` | declares the `port` setting; owns the `ServerApplication`: binds the socket and runs the server on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission`, `TickDatagrams` (the datagrams of the tick), `IListeningPort` (the port of the `port` setting) and `network::TrafficCounters` | `src/server/Network/` |
 | `storage` | declares the `database` setting; opens the SQLite file of the server and starts the thread that owns it when it starts, finishes what waits and closes the file when it stops; provides `IResultsArchive` | `src/server/Storage/` |
-| `games` | declares the `seed`, `state-rate` and `input-delay` settings; the games (`GamesSettings::gameCount`, `DEFAULT_HOSTED_GAME_COUNT` = 8), an `EventBus` for each; reads the waves file when it starts and judges whether its games are vanilla; provides `Games` and `LatestHostedGames` | `src/server/Games/` |
+| `games` | declares the `seed`, `state-rate` and `input-delay` settings; the games (`GamesSettings::gameCount`, `DEFAULT_HOSTED_GAME_COUNT` = 8), an `EventBus` for each; reads the waves file when it starts and judges whether its games are vanilla; provides `Games`, `IGameBuses` (the bus of each game, for a module listed after it or a plugin) and `LatestHostedGames` | `src/server/Games/` |
 | `lobby` | one `ConnectionAcceptor` per game, built on the roster of that game | `src/server/Lobby/` |
 | `information` | declares the `server-name` setting; answers the information requests of each tick with a `ServerInformationDesk`; provides `IServerName` | `src/server/Information/` |
 | `metrics` | measures the ticks and the systems of the games, and writes a report to the journal every `TICKS_PER_REPORT` ticks; writes the traffic of the socket; provides `LatestMetrics` | `src/server/Metrics/` |
 | `master` | declares the `master-url` and `master-key` settings, and registers the name `IServerName` gives; keeps the master told of the server on a thread of its own, MasterLink, when both a url and a key are set; uses `LatestMetrics` when the metrics module is on | `src/server/Master/` |
+
+A plugin joins the end of the list when a `plugin` line loads it, after `master`: the server has one, `game-statistics` (see [Game statistics](#game-statistics-servergamestatisticsmodule)).
 
 Each tick runs the stages of `SERVER_LOOP_STAGES` once, with `SIMULATION_TICK_DURATION`. In `simulation`, the games module runs `onTick()` on each game with the datagrams of its own players (`keepDatagramsOf()`) and makes the network forget the players whose session closed, then the lobby module answers the connection requests, so a request is placed and refused by the state the games just reached, and the information module the information requests, which count the players and the free seats of that state too. In `outputs`, the bus of each game delivers its events, and the guaranteed messages among them leave at once (see [Guaranteed messages](#guaranteed-messages-messagedelivery)). Only the metrics module works in `inputs`, where it starts measuring the tick, since `onTick()` reads the datagrams and moves the game in one step; it ends its measure in `outputs`, after the games module.
 
@@ -316,9 +322,37 @@ The rule itself is `firstJoinableGame()` (`src/server/Games/`), which reads a `G
 
 Each game has its own `EventBus`, since its rules and its broadcaster subscribe to it: with one bus, a game would apply the collisions of another to its own entities and send its events to the wrong players. The seed of game n, from 0, is the seed given plus n times `GAME_SEED_STRIDE` (65536), so a game can be played again; without a seed, each game draws its own.
 
-Every game runs on the simulation thread, one after the other in each tick, and the network thread is the only other one that handles datagrams during a game. No state is shared between games, so nothing needs a lock, and the queues between the two threads do not change. The cost of a tick grows with the number of games: the journal gives it every 10 s (see [Metrics](#metrics-servermetricsmodule)), and the tick loop reports its late ticks at the same rate. An exception a system of one game throws stops the server (one a message handler throws only drops that message, see [Threads](#threads-serverapplication)), and a slow game slows the others; running each game in a process of its own would isolate them.
+Every game runs on the simulation thread, one after the other in each tick, and the network thread is the only other one that handles datagrams during a game. No state is shared between games, so nothing needs a lock, and the queues between the two threads do not change. The cost of a tick grows with the number of games: the journal gives it every 10 s (see [Metrics](#metrics-servermetricsmodule)), and the tick loop reports its late ticks at the same rate. An exception a system of one game throws stops the server (one a message handler throws only drops that message, see [Threads](#threads-serverapplication)), and a slow game slows the others. Running each game in a process of its own isolates them: see [Supervisor and game processes](#supervisor-and-game-processes).
 
 The waves file is read when the games module starts, after the logger module started, so a missing or wrong file stops the start with an error that names the games module, the file, the line and the key, and the line "waves file …" reaches the journal.
+
+### Supervisor and game processes
+
+`r-type_server`, which runs the supervisor unless `--mode` says otherwise, runs no game. It listens on `DEFAULT_SERVER_PORT` (4242), answers the connection requests, starts one process per game and sends each player to the game that has a place. A game process is the same binary started with `--mode server --supervisor <port> --link-token <number>`: it hosts one game (`GAME_PROCESS_GAME_COUNT`), on a port the supervisor picked, with a journal of its own (`r-type_game_<n>.log`). An exception in a game stops that process only; the supervisor and the other games go on.
+
+| Step | Who | What |
+|---|---|---|
+| 1 | player to supervisor | a `ConnectionRequest` without a cookie gets a `ConnectionChallenge`; nothing is kept or started |
+| 2 | player to supervisor | the request with the cookie: if no game waits with a free seat and fewer than `MAXIMUM_RUNNING_GAMES` (8) run, the supervisor starts a game process; if 8 run and none has a place, it answers `ConnectionRefused` (`GameFull`) |
+| 3 | game process to supervisor | once it runs, a `GameStatus` (its state and its number of players) every `STATUS_INTERVAL` (1 s), and at once when either changes; the supervisor answers each with a `GameStatusAcknowledged` |
+| 4 | supervisor to player | once the game reported, the player's next request (they repeat every 500 ms) gets a `ConnectionRedirect` to the port of the game; while the game starts, the supervisor answers nothing |
+| 5 | player to game | a new handshake with the game process, which places the player as a server does |
+
+The supervisor does not see inside a game: `GameRegistry` (`src/server/SupervisedGames/`) holds, per game, the number, the port, the link token, the state its process reported (`Starting` until the first status), its number of players and the handle of the process. A game that has not reported counts as waiting for players, so a burst of requests starts one process. `firstJoinableGame()` places the player, as it does for the games of one server. A status is taken only if it is newer than the newest one of that game (serial number arithmetic on `sequence`), so a late one never undoes a newer one. A process that ended leaves the registry: with code 0 after it reported, the journal says the game ended; with any other code, or code 0 before any status, it says it crashed. A game that sends no status within `GAME_START_TIMEOUT` (10 s) is killed. A process that cannot be started (no free port, program refused) is logged and nothing else happens.
+
+The supervisor and a game process know each other by the link token, a random 64-bit number the supervisor draws for each game and passes on the command line: each side admits the other's address and token before the first datagram, so the network lets it through. The token is visible in the process list of the machine; it only gives the right to stop that game.
+
+A game process stops by itself, with code 0, when its supervisor has sent nothing for `SUPERVISOR_SILENCE_LIMIT` (5 s), when it had players and has none for `EMPTY_GAME_GRACE` (10 s), when no player came in `IDLE_GAME_TIMEOUT` (30 s), or when the supervisor sends it a `Disconnection`. A game that ends its round waits for players again; it does not stop. The journal line is `stopping: <reason>`.
+
+Stopping the supervisor with Ctrl-C or SIGTERM sends each game a `Disconnection` three times, waits up to `STOP_GRACE_WAIT` (3 s) for the processes to end, then kills the rest. If the supervisor is killed instead, the games do not stay behind:
+
+| System | What ends a game process whose supervisor died |
+|---|---|
+| Linux | `PR_SET_PDEATHSIG` (SIGTERM), asked between `fork` and `exec` |
+| Windows | a job object with `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`, which holds every child |
+| macOS | nothing at the system level; the silence limit above ends it within 5 s |
+
+On Linux the "parent" is the thread that started the child, so the supervisor starts every game from its simulation thread, which lives as long as it does. Processes are started through `IProcessLauncher` (`src/server/Processes/`), implemented with Boost.Process v2 and polled at each tick, never waited for, so the supervisor has no thread more.
 
 ### Stopping: Ctrl-C and SIGTERM
 
@@ -340,7 +374,7 @@ The limit is a choice for this game: during a longer stall the game freezes, the
 Every `TICKS_PER_REPORT` ticks, the loop logs at the `debug` level how late its ticks started, each compared with the moment it was due; a dropped stall shows in full. The lines go to the terminal and to the journal, `r-type_server.log` (see [Logging](/R-Type/logging/#choosing-the-level-and-the-output-at-launch)):
 
 ```bash
-./r-type_server --log-level debug
+./r-type_server --mode server --log-level debug
 ```
 
 After the time stamp, the line reads:
@@ -761,7 +795,7 @@ events.dispatch();
 - The generator is a `std::mt19937` started from a seed. The spawner logs it at the `info` level under `WaveSpawner` when it is built (`wave spawning starts from the seed 42`), so the same seed gives the same heights in the same order. `GameFlow` gives each world the seed of the game plus the number of worlds built before it, so one seed replays every game of a session; without `--seed`, the server draws it from `std::random_device`. The spawner also logs each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`).
 
 ```bash
-./r-type_server --seed 42
+./r-type_server --mode server --seed 42
 ```
 
 ## Piloted bodies: `PilotSystem` and `PlayfieldExitSystem`
@@ -769,11 +803,13 @@ events.dispatch();
 Each tick of a game in progress, `GameFlow` makes the ships of away players want nothing, then runs four systems of the world, in this order, before the missiles are fired and the Bydos appear: `PilotSystem`, which lets the behaviour of each Bydo and each missile write its `Intent`, `MovementSystem`, which moves the ships, the Bydos and the missiles by their `Intent` (see [Moving the ships](#moving-the-ships-shipcontrol)), `PlayfieldExitSystem`, then `CollisionSystem` (see [Collisions](#collisions)). It runs them with `SIMULATION_TICK_DURATION`, and the scheduler belongs to the `GameInstance`, which gives it to the modules: `RtypeRulesModule` adds the four systems when it starts (`addRtypeSystems`), so they survive the new worlds.
 
 - A Bydo or a missile is a body piloted by a behaviour (see [Architecture](/R-Type/architecture/#pilot-and-body)). Its `Pilot` holds the behaviour, the settings its sheet gives it, the place it appeared at and its age; `PilotSystem` (`src/game/Systems/PilotSystem/`) adds the tick to the age, then asks the behaviour for the `Intent` of the body. Its `SteadyMotion` makes `MovementSystem` move it at the `top_speed` of its sheet times the direction of that `Intent` on each axis, a share beyond 1 counting as 1.
-- The behaviours live in `src/game/Behaviours/`: the contract and the registry in `Piloting/`, the built-in behaviours in `Movements/`, each under a name, in the `BehaviourRegistry` that `EntitySheets` builds from `builtInBehaviours()` and owns; a sheet naming no behaviour stops the server when it reads the sheets. Each behaviour declares the settings it reads (`IBehaviour::settings()`, `BehaviourSetting`), and reads them with `settingAt()`. `straight` goes along its row, the way its `heading` setting says: -1 for the Drifter and the missile of a Bydo, 1 for the missile of a player. `weave` goes left and asks for the share that puts the Bydo at `origin.y + amplitude * sin(2 * pi * age / period)` at the end of the tick (`verticalShareTowards`), with the `amplitude` and the `period_ms` of its sheet, 48 units and 2 seconds for the Weaver, both **provisional**. The height is computed from the age, never added up tick by tick, so it does not depend on how the time is cut into steps. The amplitude may not exceed `ENEMY_PATTERN_ROOM`, the room every row keeps above and below it, which the reader of the sheets checks, so a Bydo on a wave stays in the area of play. Both want to shoot at every tick; a body without a gun fires nothing.
-- The sheet names the behaviour that pilots it: the `drifter` goes `straight`, the `weaver` follows the `weave` (see [Writing an entity sheet](/R-Type/entity-sheets/#behaviours-and-their-settings)).
-- `PlayfieldExitSystem` (`src/game/Systems/PlayfieldExitSystem/`) destroys an entity of type `Enemy` that has a `NetworkIdentity` once its `Position` is more than `ENEMY_EXIT_MARGIN` (64 logical units, **provisional**) beyond the left edge, and publishes an `EntityDestruction` with the cause `Removed` under its network id. A Bydo exactly at the margin is still in. It removes a missile of a player the same way once its center is more than half the width of its `CollisionBox` beyond the right edge (see [Shooting](#shooting-weaponsystem)), and a missile of a Bydo once its center is more than half that width beyond the left edge; a Bydo or a missile of a Bydo past the right edge, where Bydos appear, stays. The reader of the sheets refuses a missile whose pilot steers it away from the edge that removes it (see [Writing an entity sheet](/R-Type/entity-sheets/#rules-between-keys-and-between-sheets)), so every missile that hits nothing leaves. A ship is never removed by leaving. It takes the `EventBus` of the server, which `GameInstance` receives at construction and which must outlive it.
+- The behaviours live in `src/game/Behaviours/`: the contract and the registry in `Piloting/`, the built-in behaviours in `Movements/` (those that only move in `Paths/`, those that attack and their `ActionCycle` in `Attacks/`), each under a name, in the `BehaviourRegistry` that `EntitySheets` builds from `builtInBehaviours()` and owns; a sheet naming no behaviour stops the server when it reads the sheets. Each behaviour declares the settings it reads (`IBehaviour::settings()`, `BehaviourSetting`), and reads them with `settingAt()`. `straight` goes along its row, the way its `heading` setting says: -1 for the Drifter and the missile of a Bydo, 1 for the missile of a player. `weave` goes left and asks for the share that puts the Bydo at `origin.y + amplitude * sin(2 * pi * age / period)` at the end of the tick (`verticalShareTowards`), with the `amplitude` and the `period_ms` of its sheet, 48 units and 2 seconds for the Weaver, both **provisional**. The height is computed from the age, never added up tick by tick, so it does not depend on how the time is cut into steps. The amplitude may not exceed `ENEMY_PATTERN_ROOM`, the room every row keeps above and below it, which the reader of the sheets checks, so a Bydo on a wave stays in the area of play. Both want to shoot at every tick; a body without a gun fires nothing.
+- Besides its own body (`position`, `origin`, `age`, `topSpeed`), a behaviour sees in its `BehaviourView` the attack and phase its enemy is in and how long it has been in it (`action`, `actionAge`, from the clock `CurrentAction::since`, set back to zero whenever an action starts or ends), the center of the nearest ship (`nearestShip`, nothing while no ship is in play; `PilotSystem` lists the ships once a tick) and whether the body lost health points since it appeared (`wounded`, against `Health::full`). A behaviour that keeps no state of its own times its attacks from these.
+- The sheet names the behaviour that pilots it: the `drifter` goes `straight`, the `weaver` follows the `weave`, the `voltjelly` goes `straight` at 120 units per second, the `reaper`, the `drillback` and the `bydomancer` have behaviours of their own, the `rune_orb` weaves and its shards `scatter` (see [Writing an entity sheet](/R-Type/entity-sheets/#behaviours-and-their-settings)).
+- `PlayfieldExitSystem` (`src/game/Systems/PlayfieldExitSystem/`) destroys an entity of type `Enemy` that has a `NetworkIdentity` once its `Position` is more than `ENEMY_EXIT_MARGIN` (64 logical units, **provisional**) beyond the left edge, and publishes an `EntityDestruction` with the cause `Removed` under its network id. A Bydo exactly at the margin is still in. It removes a missile the same way once its center is more than half its `CollisionBox` beyond an edge it flies towards: the left or the right edge as the horizontal share of its `Intent` says, the top or the bottom edge as the vertical share does, so a shard that flies up and to the right leaves at the top or on the right (see [Shooting](#shooting-weaponsystem)). A missile no pilot has steered yet flies the way of its side, right for a player, left for an enemy, so a Bydo or a missile of a Bydo past the right edge, where Bydos appear, stays. The reader of the sheets refuses a missile whose pilot steers it away from the edge that removes it (see [Writing an entity sheet](/R-Type/entity-sheets/#rules-between-keys-and-between-sheets)), so every missile that hits nothing leaves. A ship is never removed by leaving. It takes the `EventBus` of the server, which `GameInstance` receives at construction and which must outlive it.
 - A Bydo crosses the playfield in about 8.5 seconds: 2048 logical units at 240 units per second, from `ENEMY_SPAWN_MARGIN` past the right edge to `ENEMY_EXIT_MARGIN` past the left one.
-- A behaviour announces an attack through its `Intent`: `startsAction` holds the attack and the phase the enemy enters at this tick, `endsAction` says it leaves its action. `PilotSystem` takes the bus it publishes on, and hands them to `startEnemyAction()` and `endEnemyAction()` (`src/game/EnemyActions/`). The first records the `CurrentAction` of the enemy and publishes an `EnemyActionStarted`, which the players get as a guaranteed `EnemyAction` (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)); the second empties it and publishes nothing, since the client goes back to the idle animation by itself. A behaviour must not enter the same attack and phase of one enemy twice within two seconds, or the client takes the second for a copy of the first. No shipped behaviour does it yet.
+- A behaviour announces an attack through its `Intent`: `startsAction` holds the attack and the phase the enemy enters at this tick, `endsAction` says it leaves its action. `PilotSystem` takes the bus it publishes on, and hands them to `startEnemyAction()` and `endEnemyAction()` (`src/game/EnemyActions/`). The first records the `CurrentAction` of the enemy and publishes an `EnemyActionStarted`, which the players get as a guaranteed `EnemyAction` (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)); the second empties it and publishes nothing, since the client goes back to the idle animation by itself. The client handles each `EnemyAction` once, by its number on the ordered channel, so an enemy may enter the same attack and phase again at any time. The `reaper`, the `drillback` and the `bydomancer` step through their phases with `ActionCycle` (`src/game/Behaviours/Movements/Attacks/`): `withStart()` enters the first phase of an attack that lasts, `withNextPhase()` the next one once a phase has lasted its time, then ends the action, and `hasRested()` lets an idle enemy start an attack again only once it has been idle for the rest its sheet gives.
+- A behaviour may also ask its body to appear elsewhere at once, `Intent::jumpsTo`: `PilotSystem` moves the `Position` there after the behaviour has steered. The Bydomancer leaps this way once it is wounded. The clients see the jump through the world state, as any move.
 - The players are sent a guaranteed `EntityDestroyed` (`Removed`) for each Bydo removed (see [Game events](#game-events-gameeventencoder-and-gameeventbroadcaster)).
 
 ## Waves of Bydos: `WaveDirector`
@@ -814,6 +850,7 @@ rtype::server::WavePlan waves =
 |---|---|---|---|
 | Ship (`ship.toml`) | `player_missile` | 333 ms, 20 ticks (**provisional**) | at once: `first_shot_ms` is 0 |
 | Bydo (`drifter.toml`, `weaver.toml`) | `enemy_missile` | 1500 ms, 90 ticks (**provisional**) | after 1500 ms, a whole interval |
+| Bydomancer (`bydomancer.toml`) | `rune_orb` | 1000 ms, 60 ticks (**provisional**); its behaviour wants to shoot during the cast of an orb only, so it fires one orb a cast | at its first cast: `first_shot_ms` is 0 |
 
 - The count goes down whether the `Intent` wants to shoot or not, so releasing shoot and pressing it again fires no sooner. The game keeps one `Intent` per ship, from the newest input, so sending more inputs fires no faster either: a modified client cannot beat the rate.
 - `projectileStartPosition(muzzle, box)` (`src/game/Spawning/ProjectileStartPosition.hpp`) puts a projectile on the row of the body that fires it, its back against the front of that body. A body of side `player` faces right, every other body faces left. The center of the missile of a player is 96 logical units ahead of the center of the ship, half of its 128 plus half of the 64 of the missile; that of a missile of a Bydo is 64 units before the center of the Bydo, half of its 96 plus half of the 32 of the missile.
@@ -823,6 +860,7 @@ rtype::server::WavePlan waves =
 - `PlayfieldExitSystem` removes a missile of a player once its center is past 1952, half its width beyond the right edge, and one of a Bydo once it is past −16, beyond the left edge, and announces it as `Removed`. A missile of a player crosses the playfield in 2 seconds, one of a Bydo in 5.3.
 - With these values a Bydo fires five times on its way across: 1.5, 3, 4.5, 6 and 7.5 seconds after it appears, the last when the Bydo is at x 184, and it leaves at about 8.5 seconds. Each Bydo counts from its own appearance, so Bydos that appeared a multiple of 1.5 seconds apart fire on the same tick. In the `normal` difficulty, the five Bydos of the third wave, which come one every 1.5 seconds, fire together, and from the fifth wave on, which brings one every second, up to three fire on the same tick.
 - A weapon system is built with each world, so every ship may fire at the start of a game, and bodies fire only while the game is in progress. When every network id was given, no projectile appears, a warning is logged, and the `Gun` counts its interval all the same.
+- A projectile whose sheet has a `[gameplay.burst]` carries a `ShardBurst`. After the guns, `onTick()` counts one tick off each; one whose time came is destroyed and announced on the event bus (`WeaponSystemParts::events`) with an `EntityDestruction` `Removed`, and its shards appear, each `SHARD_START_DISTANCE` (8 logical units) from its center along a direction of its own, spread evenly over the whole turn from `FIRST_SHARD_ANGLE_RADIANS` (up and to the right), y growing downwards. `World::spawnFrom()` makes each shard steer from the center of the projectile (`BodyPlacement`), so `scatter` flies it straight away from that center. Every connected player is sent an `EntitySpawned` for each shard, as for a projectile. The rune orb of the Bydomancer bursts after 1500 ms into four shards along the diagonals.
 
 The intervals, speeds and boxes live in the sheets, and code reads them from the `EntitySheet` it is given, never as numbers of its own. To add an enemy or a weapon, write its sheet with a `[gameplay.gun]` and a pilot (see [Writing an entity sheet](/R-Type/entity-sheets/)): no second path to move or shoot is needed.
 
@@ -873,14 +911,14 @@ The bus and the registry must outlive `CollisionRules`, and the bus must outlive
 
 ### Contact by zone: `HurtZoneSystem`
 
-An enemy whose sheet declares a `hurt_zone` (see [Writing an entity sheet](/R-Type/entity-sheets/)) hurts a ship that touches one of its boxes, whatever its hitbox covers. `HurtZoneSystem` (`src/game/Systems/HurtZoneSystem/`) runs after `CollisionSystem`: each tick, for each enemy with a `HurtZone` and a `Position`, it lays each active box at the position of the enemy plus its offset, and publishes a `ShipContact{player, enemy}` for each ship (an entity of type `Player` with a `Position` and a `CollisionBox`) that overlaps one; two boxes on one ship give one `ShipContact`. A box with no `attack` and `phase` is always active; any other is active while the `CurrentAction` of the enemy is that attack and phase, and an enemy with no `CurrentAction` has only its always-active boxes. What the contact costs is decided by `LifeKeeper`, exactly as for a hitbox contact. A sheet with `survives_contact` gives its enemy the `SurvivesContact` marker (see [Lives](#lives-lifekeeper)).
+An enemy whose sheet declares a `hurt_zone` (see [Writing an entity sheet](/R-Type/entity-sheets/)) hurts a ship that touches one of its boxes, whatever its hitbox covers. `HurtZoneSystem` (`src/game/Systems/HurtZoneSystem/`) runs after `CollisionSystem`: each tick, for each enemy with a `HurtZone` and a `Position`, it lays each active box at the position of the enemy plus its offset, and publishes a `ShipContact{player, enemy}` for each ship (an entity of type `Player` with a `Position` and a `CollisionBox`) that overlaps one; two boxes on one ship give one `ShipContact`. A box with no `attack` and `phase` is always active; any other is active while the `CurrentAction` of the enemy is that attack and phase and its clock is inside the window of the box (`HurtWindow`: from `from_ms` into the phase, until `until_ms`, excluded), and an enemy with no `CurrentAction` has only its always-active boxes. The Reaper gives each 70 ms frame of its swing a box of its own, and the Bydomancer each frame of its nova. What the contact costs is decided by `LifeKeeper`, exactly as for a hitbox contact. A sheet with `survives_contact` gives its enemy the `SurvivesContact` marker (see [Lives](#lives-lifekeeper)).
 
 ## Damage: `DamageRules`
 
 `DamageRules` (`src/game/Systems/DamageRules/`) decides what a `MissileHit` costs. It subscribes to `MissileHit` when it is created and unsubscribes when it is destroyed. For each hit, in this order:
 
 1. The missile is destroyed and announced with an `EntityDestruction` whose cause is `Removed`, so the clients show nothing.
-2. If the target has a `Health`, it loses `MISSILE_DAMAGE` (1) points. While it has points left it is announced with an `EntityDamage`. At 0 or less it is destroyed and announced with an `EntityDestruction` whose cause is `Killed`, which the client shows as an explosion.
+2. If the target has a `Health`, it loses `MISSILE_DAMAGE` (1) points, or every point it has left while it is in the action its `Fragile` names (the `[gameplay.fragile]` of its sheet: the Drillback, stunned). While it has points left it is announced with an `EntityDamage`. At 0 or less it is destroyed and announced with an `EntityDestruction` whose cause is `Killed`, which the client shows as an explosion.
 3. A target without `Health` is not hurt: the missile still disappears.
 
 - A Bydo has the `Health` of its sheet (`health.points`, 3 for the Drifter and the Weaver) when `World::spawn` creates it, so three missiles destroy it. Both values are **provisional** until gameplay tunes them. Code must read `MISSILE_DAMAGE` and the sheet and never assume 1 or 3.
@@ -1045,6 +1083,24 @@ A read ranks the whole leaderboard. Measured on one Mac in a Release build, with
 
 The client sends the request from its leaderboard screen (see [Client](/R-Type/client/#leaderboard-leaderboardscreen-ileaderboardsource)).
 
+## Game statistics: `ServerGameStatisticsModule`
+
+The `game-statistics` plugin (`src/server/GameStatistics/`) writes the statistics of the games to a CSV file, so a host balances the waves from real games. It is a shared library, not a module of `serverModules()`: the server behaves the same without it, and a `plugin game-statistics` line of `server.cfg` loads it (see [Write a plugin](/R-Type/modules/#write-a-plugin)). It needs `logger`, `network` and `games`, and follows every game through `IGameBuses`, the bus of each game the `games` module provides, so it holds none of the code of the games.
+
+```
+event,game,player,points
+kill,1,1,100
+kill,1,2,300
+total,1,,400
+```
+
+- A `kill` row is a Bydo a player killed (`EnemyKilled`): the game, the number of the player, from 1 to 4, and the points of the Bydo. A `total` row is the sum of the points of a game that ended, when its `GameStateChanged` goes from `InProgress` to `Finished`, with no player.
+- The games are numbered from 1 in the order they start on the server, whatever game of `Games` they run in; a game played again takes the next number. A Bydo killed while no game is in progress belongs to no game and has no row. A game the server stops in the middle has no end, so it has no total.
+- The file is the `game-statistics-file` setting, or, while it is empty, `r-type_statistics_<port>.csv` next to the executable, with the port of `set port`. It is emptied at launch, as the traffic file: one file is one run. A file that cannot be opened stops the start of the server, naming the module; one that stops accepting rows is told once in the journal and left, so a full disk never stops a game.
+- The rows wait in memory. The plugin adds the time of each pass of the `outputs` stage, after the games delivered the events of the tick, and writes once it reaches `GAME_STATISTICS_WRITE_PERIOD` (1 s), then counts from zero again: 60 ticks last 999.99996 ms, so the rows go out every 61 ticks (1016.7 ms) while the server keeps its pace. When the server stops, Ctrl-C included, it writes the rows left before it closes the file, so the file is complete once the server stopped.
+
+`GameTally` follows the bus of one game: it numbers the game that starts on it and hands its kills and its end to `StatisticsSheet`, which keeps the rows not written yet and the points of each game in progress. The tests load the compiled plugin into an application with doubles of the logger, the network and the games (`tests/server/GameStatistics/`), and into the modules of the whole server through its configuration file.
+
 ## Link with the master: `ServerMasterModule`
 
 The master lists the game servers for the players (see [Master](/R-Type/master/)). A host creates its server on the master, which gives a key once, then writes in `server.cfg` the address of the master and that key:
@@ -1092,6 +1148,8 @@ The games module tells the job when the games change. Its `HostedGamesWatch` fol
 | Change when a game ends | `reasonToFinish` in `src/server/Rules/Match/GameFlow.cpp` |
 | Change how often the end of a game is sent again | `GAME_ENDED_INTERVAL` in `src/server/ServerConstants.hpp` |
 | Change what a game records when it ends | `GameResultKeeper` in `src/server/Results/` |
+| Change the rows of the game statistics, their file or how often they are written | `StatisticsSheet`, `GameTally` and `GameStatisticsConstants.hpp` in `src/server/GameStatistics/` |
+| Follow every game from a module of the program or a plugin | `IGameBuses` (`src/server/Games/IGameBuses.hpp`), required in `install()`, its buses subscribed to in `start()` |
 | Change what makes a game vanilla | `vanillaBreaches()` in `src/server/Games/VanillaBreaches.cpp`, the values it judges in `HostedRules`; its reasons, `OFFICIAL_WAVES_FINGERPRINT` and `OFFICIAL_ENTITY_SHEETS_FINGERPRINT` in `src/server/ServerConstants.hpp` |
 | Change the tables of the results, or a query | A new line of `RESULTS_MIGRATIONS` and `LEADERBOARD_QUERY` in `src/server/Storage/Database/ResultsDatabaseConstants.hpp` |
 | Change how often a player is answered | `LEADERBOARD_ANSWER_INTERVAL` in `src/server/Instances/Context/Setup/GameInstanceConstants.hpp` |
@@ -1105,7 +1163,10 @@ The games module tells the job when the games change. Its `HostedGamesWatch` fol
 | Change the lives a player starts with, the wait for its new ship, or how long that ship cannot be hit | `STARTING_LIVES` in `src/game/Components/LivesConstants.hpp`, `RESPAWN_DELAY` and `INVULNERABILITY_DURATION` in `src/server/Rules/Players/LifeKeeperConstants.hpp` |
 | Change what a ship that touches an enemy, or that a missile of an enemy hits, costs | `LifeKeeper` in `src/server/Rules/Players/` |
 | Change the health of a Bydo, or the damage of a missile | `health.points` in its sheet in `assets/entities/`, `MISSILE_DAMAGE` in `src/game/Systems/DamageRules/DamageConstants.hpp` |
-| Change what a hit does | `DamageRules::onMissileHit` in `src/game/Systems/DamageRules/DamageRules.cpp` |
+| Change what a hit does | `DamageRules::onMissileHit` in `src/game/Systems/DamageRules/DamageRules.cpp`; what a hit takes from a fragile enemy, `damageOf` there |
+| Change how an attack steps through its phases, or how long an enemy waits before it attacks again | `ActionCycle` in `src/game/Behaviours/Movements/Attacks/`; the rests, `rest_ms` and `nova_rest_ms` in the sheets |
+| Change what a behaviour sees | `BehaviourView` in `src/game/Behaviours/Piloting/`, filled by `PilotSystem::update` |
+| Change how a projectile bursts | `[gameplay.burst]` in its sheet; where the shards appear, `FIRST_SHARD_ANGLE_RADIANS` and `SHARD_START_DISTANCE` in `src/server/Spawning/WeaponSystemConstants.hpp` |
 | Change what the world state lists | `WorldStateSender::capture` in `src/server/Replication/Announcements/Streams/WorldStateSender.cpp` |
 | Send a datagram from the tick | `ServerApplication::queueDatagram()` |
 | Change how a connection request is answered | `ConnectionAcceptor::answer` in `src/server/Lobby/ConnectionAcceptor.cpp` |
@@ -1124,9 +1185,9 @@ The games module tells the job when the games change. Its `HostedGamesWatch` fol
 | Add a key to the waves file | the keys and ranges in `src/server/Spawning/WaveFileConstants.hpp`, read by `src/server/Spawning/WaveCatalog.cpp` |
 | Change which difficulty the games play, or where the server finds the waves file or the sheets | `DEFAULT_DIFFICULTY` and `WAVE_FILE_IN_ASSETS` in `src/server/ServerConstants.hpp`, `ENTITY_SHEET_FOLDER_IN_ASSETS` in `src/game/EntityTypes/EntitySheetConstants.hpp`; the `assets/` folder itself is found by `findAssetFolder()` in `src/engine/Paths/AssetFolder.cpp` |
 | Change where a Bydo appears | `waveEntryPosition` and the margins in `src/game/Spawning/` |
-| Change how fast a Bydo moves, or the height and period of a wave | `top_speed`, `amplitude` and `period_ms` in its sheet; the ranges of the settings in `src/game/Behaviours/Movements/WeaveBehaviourConstants.hpp` |
+| Change how fast a Bydo moves, or the height and period of a wave | `top_speed`, `amplitude` and `period_ms` in its sheet; the ranges of the settings in `src/game/Behaviours/Movements/Paths/WeaveBehaviourConstants.hpp` |
 | Change which behaviour pilots a kind of Bydo | `pilot` in its sheet |
-| Add a behaviour | a class implementing `IBehaviour` in `src/game/Behaviours/Movements/`, with the settings it declares, added in `builtInBehaviours()` (see [Tutorial: an enemy type](/R-Type/tutorial-add-an-enemy-type/)) |
+| Add a behaviour | a class implementing `IBehaviour` in `src/game/Behaviours/Movements/Paths/` (or `Attacks/` for one that attacks), with the settings it declares, added in `builtInBehaviours()` (see [Tutorial: an enemy type](/R-Type/tutorial-add-an-enemy-type/)) |
 | Change when a Bydo or a missile leaves the playfield | `ENEMY_EXIT_MARGIN` in `src/game/Spawning/SpawningConstants.hpp`, `hasLeftThePlayfield` in `src/game/Systems/PlayfieldExitSystem/PlayfieldExitSystem.cpp` |
 | Change how often a ship fires | `gun.interval_ms` in `assets/entities/ship.toml` |
 | Change which action fires | `steerShipByInput` in `src/server/Rules/Players/PlayerController.cpp` |

@@ -58,7 +58,7 @@ class ServerMetricsModule final : public engine::IModule {
 
   /** @brief Starts writing the traffic and measuring the systems of every
    * game.
-   * @throws network::TrafficFileOpenException when the file cannot be opened.
+   * @throws network::CsvFileOpenException when the file cannot be opened.
    */
   void start() override;
 

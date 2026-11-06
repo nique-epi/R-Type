@@ -35,6 +35,18 @@ class ConnectionAttempt {
   /** @brief Keeps @p cookie and sends the request carrying it at once. */
   void answerChallenge(std::uint64_t cookie, ISessionOutbox& outbox);
 
+  /**
+   * @returns Whether a redirect may be followed now: the first one of the
+   * attempt may, a second one may not, so a redirect never makes another.
+   * Asking uses it up.
+   */
+  [[nodiscard]] bool acceptRedirect();
+
+  /** @brief Forgets the cookie, which belonged to the server that redirected
+   * the attempt, and sends the request without one at once. The delay of the
+   * attempt does not start again. */
+  void answerRedirect(ISessionOutbox& outbox);
+
   /** @brief Counts @p elapsed, and sends the request again once
    * network::CONNECTION_REQUEST_INTERVAL passed since the previous one.
    * @returns TimedOut once CONNECTION_ATTEMPT_TIMEOUT passed since begin(),
@@ -48,6 +60,7 @@ class ConnectionAttempt {
  private:
   std::string nickname_;
   std::uint64_t cookie_{0};
+  bool redirected_{false};
   engine::Duration sinceRequest_{};
   engine::Duration sinceBegin_{};
 };

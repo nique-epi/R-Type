@@ -1,0 +1,102 @@
+# The entity type voltjelly: a Bydo jellyfish inside an electric aura that
+# turns, carried along by the scrolling sky; it never fires, it is in the way.
+# [gameplay] is what the server gives an entity of this type, [appearance] how
+# the client draws it. Both programs read this file when they start, from
+# entities/voltjelly.toml in the assets folder next to their executable, or one
+# level above it: the name of the file is the name of the type. Each one reads
+# only its own table, and stops with an error naming the file, the line and the
+# key when a key is missing, misspelt, out of its range, or does not hold
+# together with another key or another sheet. Every number is an integer: 240,
+# never 240.0. The keys are described on the page "Writing an entity sheet" of
+# the docs.
+
+[gameplay]
+side = "enemy"
+pilot = "straight"
+
+# The bell of 24 by 24 sheet pixels: a shot through the aura hits it.
+[gameplay.hitbox]
+width = 96
+height = 96
+
+# Carried along with the sky, half as fast as a Bydo flies.
+[gameplay.motion]
+kind = "steady"
+top_speed = 120
+
+[gameplay.behaviour]
+heading = -1
+
+[gameplay.health]
+points = 2
+
+[gameplay.score]
+points = 100
+
+# A ship that touches it is lost, and the jellyfish stays.
+[gameplay.survives_contact]
+
+# The aura hurts all the time: a ring 17 to 18 sheet pixels from the center
+# (68 to 72 logical units), drawn as four bars across the axes and four
+# squares on the diagonals. Between the bell and the ring nothing hurts.
+[[gameplay.hurt_zone.box]]
+offset_x = 0
+offset_y = -70
+width = 48
+height = 8
+
+[[gameplay.hurt_zone.box]]
+offset_x = 0
+offset_y = 70
+width = 48
+height = 8
+
+[[gameplay.hurt_zone.box]]
+offset_x = -70
+offset_y = 0
+width = 8
+height = 48
+
+[[gameplay.hurt_zone.box]]
+offset_x = 70
+offset_y = 0
+width = 8
+height = 48
+
+[[gameplay.hurt_zone.box]]
+offset_x = -50
+offset_y = -50
+width = 20
+height = 20
+
+[[gameplay.hurt_zone.box]]
+offset_x = 50
+offset_y = -50
+width = 20
+height = 20
+
+[[gameplay.hurt_zone.box]]
+offset_x = -50
+offset_y = 50
+width = 20
+height = 20
+
+[[gameplay.hurt_zone.box]]
+offset_x = 50
+offset_y = 50
+width = 20
+height = 20
+
+# The frame is 40 by 40 sheet pixels, the bell centered in it and the aura
+# around: wider than the hitbox, which is the bell only.
+[appearance]
+sheet = "sprites/mobs/voltjelly.png"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 40
+height = 40
+frames = 4
+spacing = 2
+frame_ms = 120

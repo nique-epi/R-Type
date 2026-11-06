@@ -6,6 +6,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "ActionAnimation.hpp"
 #include "BackgroundConstants.hpp"
 #include "EngineException.hpp"
 #include "EntityAppearance.hpp"
@@ -16,11 +17,14 @@
 #include "EntitySpriteConstants.hpp"
 #include "EntitySpriteTestConstants.hpp"
 #include "EntityTypesTestConstants.hpp"
+#include "HurtBox.hpp"
+#include "HurtZone.hpp"
 #include "SheetPixels.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
 
+using rtype::client::ActionAnimation;
 using rtype::client::BACKGROUND_PIXEL_SIZE;
 using rtype::client::EntityAppearance;
 using rtype::client::EntityAppearances;
@@ -31,13 +35,21 @@ using rtype::engine::Duration;
 using rtype::engine::MissingDataFileKeyException;
 using rtype::engine::UnknownDataFileKeyException;
 using rtype::game::EntitySheet;
+using rtype::game::HurtBox;
+using rtype::game::HurtZone;
 using rtype::game::SpriteFrame;
+using rtype::game::testing::BYDOMANCER_SHEET;
 using rtype::game::testing::DRIFTER_SHEET;
+using rtype::game::testing::DRILLBACK_SHEET;
 using rtype::game::testing::ENEMY_MISSILE_SHEET;
+using rtype::game::testing::ORB_SHARD_SHEET;
 using rtype::game::testing::PLAYER_MISSILE_SHEET;
+using rtype::game::testing::REAPER_SHEET;
+using rtype::game::testing::RUNE_ORB_SHEET;
 using rtype::game::testing::SHIP_SHEET;
 using rtype::game::testing::SHIPPED_SHEET_NAMES;
 using rtype::game::testing::shippedEntitySheets;
+using rtype::game::testing::VOLTJELLY_SHEET;
 using rtype::game::testing::WEAVER_SHEET;
 using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
@@ -269,18 +281,52 @@ TEST(EntityAppearances, EveryShippedFrameShowsOneWholeSprite) {
 
 /**
  * Given the sheets shipped in assets/
+ * When each frame of each attack is laid on the sprite sheet it names
+ * Then it lies inside that sheet and shows at least one visible pixel, and
+ * the pixels just around it are all transparent, as an idle frame
+ */
+TEST(EntityAppearances, EveryShippedAttackFrameShowsOneWholeSprite) {
+  const EntityAppearances appearances = shippedAppearances();
+  for (const std::string_view name : SHIPPED_SHEET_NAMES) {
+    const EntityAppearance* const shipped = appearances.named(name);
+    ASSERT_NE(shipped, nullptr);
+    const sf::Image sheet = shippedSheet(shipped->sheet);
+    for (const ActionAnimation& action : shipped->actions) {
+      for (const SpriteFrame& frame : action.frames) {
+        SCOPED_TRACE(name);
+        SCOPED_TRACE(frame.top);
+        SCOPED_TRACE(frame.left);
+
+        ASSERT_TRUE(liesInside(frame, sheet.getSize()));
+        EXPECT_TRUE(showsAVisiblePixel(sheet, frame));
+        EXPECT_FALSE(hasAVisiblePixelAround(sheet, frame));
+      }
+    }
+  }
+}
+
+/**
+ * Given the sheets shipped in assets/
  * When the frame time of each is read
  * Then it is the one assets/README.md lists for its sprite: 80 ms for the
  * ship, 250 ms for a Bydo, 60 ms for a missile of a player, 120 ms for a
- * missile of an enemy
+ * missile of an enemy and for the Voltjelly, 250 ms for the Reaper, 200 ms
+ * for the Drillback, 250 ms for the Bydomancer, 120 ms for its orb and 100 ms
+ * for a shard
  */
 TEST(EntityAppearances, ShippedFramesLastWhatTheSheetReadmeLists) {
-  const std::array<std::pair<std::string_view, Duration>, 5> listed{{
+  const std::array<std::pair<std::string_view, Duration>, 11> listed{{
       {SHIP_SHEET, SHIP_FRAME_TIME_LISTED},
       {DRIFTER_SHEET, BYDO_FRAME_TIME_LISTED},
       {WEAVER_SHEET, BYDO_FRAME_TIME_LISTED},
       {PLAYER_MISSILE_SHEET, PLAYER_MISSILE_FRAME_TIME_LISTED},
       {ENEMY_MISSILE_SHEET, ENEMY_MISSILE_FRAME_TIME_LISTED},
+      {VOLTJELLY_SHEET, VOLTJELLY_FRAME_TIME_LISTED},
+      {REAPER_SHEET, REAPER_FRAME_TIME_LISTED},
+      {DRILLBACK_SHEET, DRILLBACK_FRAME_TIME_LISTED},
+      {BYDOMANCER_SHEET, BYDOMANCER_FRAME_TIME_LISTED},
+      {RUNE_ORB_SHEET, RUNE_ORB_FRAME_TIME_LISTED},
+      {ORB_SHARD_SHEET, ORB_SHARD_FRAME_TIME_LISTED},
   }};
   const EntityAppearances appearances = shippedAppearances();
   for (const auto& [name, frameTime] : listed) {
@@ -296,7 +342,7 @@ TEST(EntityAppearances, ShippedFramesLastWhatTheSheetReadmeLists) {
  * Given every pair of shipped sheets
  * When their idle frames are compared
  * Then two sheets either show the very same frames, as the drifter and the
- * weaver do today, or share no pixel of the sprite sheet
+ * weaver do today, or share no pixel of the sprite sheet they both draw from
  */
 TEST(EntityAppearances, ShippedSheetsShareTheirFramesWholeOrNotAtAll) {
   const EntityAppearances appearances = shippedAppearances();
@@ -306,7 +352,8 @@ TEST(EntityAppearances, ShippedSheetsShareTheirFramesWholeOrNotAtAll) {
       const EntityAppearance* const other = appearances.named(second);
       ASSERT_NE(one, nullptr);
       ASSERT_NE(other, nullptr);
-      if (first == second || one->idleFrames == other->idleFrames) {
+      if (first == second || one->sheet != other->sheet ||
+          one->idleFrames == other->idleFrames) {
         continue;
       }
       SCOPED_TRACE(first);
@@ -332,8 +379,8 @@ TEST(EntityAppearances, TheShippedShipStartsOnTheFirstPilotColorRow) {
 }
 
 /**
- * Given the shipped sheets, read by the client for their look and by the
- * server for their hitbox
+ * Given the shipped sheets whose every hurt box needs an action, read by the
+ * client for their look and by the server for their hitbox
  * When the idle frame of each is measured in logical units, each pixel of the
  * sheet covering BACKGROUND_PIXEL_SIZE
  * Then it is the box the server hits that type with
@@ -341,6 +388,9 @@ TEST(EntityAppearances, TheShippedShipStartsOnTheFirstPilotColorRow) {
 TEST(EntityAppearances, EveryShippedSheetDrawsTheBoxTheServerHits) {
   const EntityAppearances appearances = shippedAppearances();
   for (const EntitySheet& sheet : shippedEntitySheets().all()) {
+    if (hurtsAllTheTime(sheet)) {
+      continue;
+    }
     SCOPED_TRACE(sheet.name);
     const EntityAppearance* const look = appearances.named(sheet.name);
     ASSERT_NE(look, nullptr);
@@ -350,5 +400,30 @@ TEST(EntityAppearances, EveryShippedSheetDrawsTheBoxTheServerHits) {
                     sheet.hitbox.width);
     EXPECT_FLOAT_EQ(static_cast<float>(frame.height) * BACKGROUND_PIXEL_SIZE,
                     sheet.hitbox.height);
+  }
+}
+
+/**
+ * Given the shipped sheets with a hurt box that hurts all the time, as the aura
+ * of the Voltjelly
+ * When their idle frame is measured in logical units
+ * Then it holds the hitbox and every such box, all centered on the body: what
+ * hurts, or is hit, is drawn
+ */
+TEST(EntityAppearances, AFrameHoldsTheBoxesThatAlwaysHurt) {
+  const EntityAppearances appearances = shippedAppearances();
+  for (const EntitySheet& sheet : shippedEntitySheets().all()) {
+    if (!hurtsAllTheTime(sheet)) {
+      continue;
+    }
+    SCOPED_TRACE(sheet.name);
+    const EntityAppearance* const look = appearances.named(sheet.name);
+    ASSERT_NE(look, nullptr);
+    const SpriteFrame frame = look->idleFrames.front();
+
+    EXPECT_TRUE(holds(frame, sheet.hitbox));
+    for (const HurtBox& box : sheet.hurtZone.value_or(HurtZone{}).boxes) {
+      EXPECT_TRUE(box.activeIn.has_value() || holds(frame, box));
+    }
   }
 }

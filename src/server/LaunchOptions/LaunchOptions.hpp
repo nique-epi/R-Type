@@ -10,6 +10,7 @@
 #include "LogLaunchOptions.hpp"
 #include "NetworkConditions.hpp"
 #include "SimulatorLaunchOptions.hpp"
+#include "SupervisorLink.hpp"
 
 namespace rtype::server {
 
@@ -29,7 +30,8 @@ class LaunchOptions {
    * it was launched with, without its name, in one pass from the first to the
    * last: `-p <port>`, `--seed <seed>`, `--state-rate <states>`,
    * `--input-delay <ticks>`, `--database <file>`, `--set <name>=<value>`,
-   * `--traffic-csv <file>` and `--help`, the options of the network simulator
+   * `--supervisor <port>`, `--link-token <number>`, `--traffic-csv <file>` and
+   * `--help`, the options of the network simulator
    * (see network::SimulatorLaunchOptions::readOption()) and the logging options
    * (see logging::LogLaunchOptions::readOption()), whose exceptions this
    * throws too.
@@ -50,7 +52,10 @@ class LaunchOptions {
    *         needs a value is the last argument.
    * @throws network::InvalidPortException when the value of `-p` is not a
    *         port from LOWEST_PORT to HIGHEST_PORT.
+   * @throws IncompleteSupervisorLinkException when only one of
+   *         `--supervisor` and `--link-token` was given.
    * @throws engine::InvalidLaunchOptionValueException when the value of
+   *         `--link-token` is 0 or not a whole number, the value of
    *         `--seed` is not a whole number from 0 to 4294967295, the value of
    *         `--state-rate` is not a whole number from
    *         LOWEST_WORLD_STATES_PER_SECOND to HIGHEST_WORLD_STATES_PER_SECOND,
@@ -72,6 +77,13 @@ class LaunchOptions {
    * order they were given; none when no option gave a setting.
    */
   [[nodiscard]] const std::vector<std::string>& forcedLines() const;
+
+  /**
+   * @returns The port of the supervisor and the token shared with it when
+   * `--supervisor` and `--link-token` were given: the server is then a game
+   * process; nothing otherwise.
+   */
+  [[nodiscard]] std::optional<SupervisorLink> supervisorLink() const;
 
   /**
    * @returns whether `--help` was given: the server then prints its usage

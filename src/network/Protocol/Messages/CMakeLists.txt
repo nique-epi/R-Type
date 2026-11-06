@@ -1,5 +1,6 @@
 add_subdirectory(ConnectionAccepted)
 add_subdirectory(ConnectionChallenge)
+add_subdirectory(ConnectionRedirect)
 add_subdirectory(ConnectionRefused)
 add_subdirectory(ConnectionRequest)
 add_subdirectory(Disconnection)
@@ -10,6 +11,8 @@ add_subdirectory(GameEnded)
 add_subdirectory(GameEvent)
 add_subdirectory(GameLoaded)
 add_subdirectory(GameStarted)
+add_subdirectory(GameStatus)
+add_subdirectory(GameStatusAcknowledged)
 add_subdirectory(Heartbeat)
 add_subdirectory(LeaderboardAnswer)
 add_subdirectory(LeaderboardRequest)
@@ -28,6 +31,7 @@ target_link_libraries(rtype_network_messages
   INTERFACE
     rtype_network_connection_accepted
     rtype_network_connection_challenge
+    rtype_network_connection_redirect
     rtype_network_connection_refused
     rtype_network_connection_request
     rtype_network_disconnection
@@ -38,6 +42,8 @@ target_link_libraries(rtype_network_messages
     rtype_network_game_event
     rtype_network_game_loaded
     rtype_network_game_started
+    rtype_network_game_status
+    rtype_network_game_status_acknowledged
     rtype_network_heartbeat
     rtype_network_leaderboard_answer
     rtype_network_leaderboard_request

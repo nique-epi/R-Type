@@ -4,12 +4,14 @@
 #include <vector>
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
+#include "Direction.hpp"
 #include "Entity.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
 #include "PlayfieldExitSystem.hpp"
+#include "Position.hpp"
 
 namespace rtype::game::testing {
 
@@ -29,6 +31,10 @@ class PlayfieldExitSystemFixture : public ::testing::Test {
    * the tests use, that collides with @p box. */
   engine::Entity addMissileWithBox(EntityType type, float positionX,
                                    CollisionBox box);
+
+  /** @returns A new networked missile of an enemy at @p position, with the
+   * box of its sheet, that a pilot steers towards @p heading. */
+  engine::Entity addSteeredMissile(Position position, Direction heading);
 
   /** @brief Runs the system for one tick, then delivers what it published. */
   void updateAndDispatch();

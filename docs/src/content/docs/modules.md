@@ -106,33 +106,30 @@ Two rules decide which one fits:
 
 ## Write a plugin
 
-A plugin is a module built as a shared library of its own: the host of a server adds a feature without recompiling the server. The library exports one function, `rtypePluginEntry`, and a `plugin <name>` line of the configuration file loads it (see [Configuration commands](/R-Type/commands/#plugin)). A plugin is a module like any other once loaded, so `module <name> off` turns it off.
+A plugin is a module built as a shared library of its own: the host of a server adds a feature without recompiling the server. The library exports one function, `rtypePluginEntry`, and a `plugin <name>` line of the configuration file loads it (see [Configuration commands](/R-Type/commands/#plugin)). A plugin is a module like any other once loaded, so `module <name> off` turns it off. The server has one, `game-statistics` (`src/server/GameStatistics/`, see [Server](/R-Type/server/#game-statistics-servergamestatisticsmodule)); its entry is all it adds to a module:
 
 ```cpp
-#include <cstdint>
-#include <memory>
-#include "PluginConstants.hpp"
-#include "PluginEntry.hpp"
-
 std::uint32_t rtypePluginEntry(
     std::unique_ptr<rtype::engine::IModule>* module) {
   if (module != nullptr) {
-    *module = std::make_unique<StatsModule>();
+    *module = std::make_unique<rtype::server::ServerGameStatisticsModule>();
   }
   return rtype::engine::PLUGIN_API_VERSION;
 }
 ```
 
 ```cmake
-rtype_add_plugin(TARGET stats_plugin NAME stats
-  SOURCES StatsPlugin.cpp StatsModule.cpp
-  LIBS rtype_engine_event_bus)
+rtype_add_plugin(TARGET rtype_server_game_statistics_module NAME game-statistics
+  SOURCES GameStatisticsPluginEntry.cpp GameTally.cpp
+          ServerGameStatisticsModule.cpp StatisticsSheet.cpp
+  LIBS rtype_server_games_module rtype_network_statistics_recording)
 ```
 
-`rtype_add_plugin` (root `CMakeLists.txt`) builds `plugins/stats.so` (`stats.dll` on Windows) next to the programs, and exports `rtypePluginEntry` only. The plugin links the static libraries of the engine it uses: all the libraries are compiled as position-independent code for it.
+`rtype_add_plugin` (root `CMakeLists.txt`) builds `plugins/game-statistics.so` (`game-statistics.dll` on Windows) next to the programs. On Windows the library exports `rtypePluginEntry` only (`src/engine/Modules/PluginEntry.def`); on Linux and macOS it keeps the default visibility of the compiler, so its other symbols are visible too, and the program looks up `rtypePluginEntry` alone. The plugin links the static libraries it uses: all the libraries are compiled as position-independent code for it. The linker takes from a static library only the objects the plugin calls, so `game-statistics` links the games module for its headers and holds none of its code.
 
-- **Same compiler, same sources.** `PLUGIN_API_VERSION` covers the headers a plugin compiles against (`IModule`, `InstallContext`, `ServiceRegistry`, `LoopStages`, `EventBus`, `Logger`, `ILogJournal`, `PluginEntry`) and is raised by every change to one of them. The C++ binary format also changes from one compiler to another, and no number tells it: build the plugins with the compiler and from the sources of the program that loads them.
+- **Same compiler, same sources.** `PLUGIN_API_VERSION` covers the headers a plugin compiles against (`IModule`, `InstallContext`, `ServiceRegistry`, `LoopStages`, `EventBus`, `Logger`, `ILogJournal`, `PluginEntry`, and `ConfigurationRegistry` with the definitions of the settings it declares) and is raised by every change to one of them. The C++ binary format also changes from one compiler to another, and no number tells it: build the plugins with the compiler and from the sources of the program that loads them.
 - **A type crosses the boundary, a static does not.** The plugin holds its own copy of the code and of the static variables of the libraries it links. A service, an event and an exception thrown in the plugin are still the same types for the program: `ApplicationPlugins` (`tests/engine/Modules/`) loads a real plugin and checks that a service, an event and a `MissingServiceException` thrown in the plugin cross the boundary. A static variable is another matter: share state through a service and virtual calls, never through a global.
+- **The program is reached through its services.** A function of a class the plugin links, such as `EventBus::unsubscribe()` or `ConfigurationRegistry::declareText()`, runs the copy inside the plugin on the object of the program, which holds because both are built from the same sources. Code of the program a plugin must not copy is reached through an interface: `game-statistics` follows every game through `IGameBuses`, the bus of each game the `games` module provides (`src/server/Games/IGameBuses.hpp`), and declares its `game-statistics-file` setting in its `install()`, as any module does.
 - **The journal is a service.** A `Logger` built from a name alone writes through the copy of the logger inside the plugin, which the program never configured: its lines miss the log file and the level of the server. A plugin that logs names `logger` in its `dependencies()` and builds `Logger(name, context.require<logging::ILogJournal>())`, as `GreeterPluginModule` does (`tests/doubles/Plugins/`). Only the logger module of the server provides the journal today: a plugin that requires it in the client or in the master stops the start with a `MissingServiceException`.
 - **Position in the list.** The modules of the plugins join the end of the list, in the order of the `plugin` lines, so a plugin may depend on a module of the program or on a plugin whose line comes first.
 - **No unloading before the exit.** A plugin stays loaded until the program stops, and there is no hot reload.

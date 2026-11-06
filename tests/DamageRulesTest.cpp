@@ -1,109 +1,49 @@
 #include <gtest/gtest.h>
-#include <cstdint>
-#include <variant>
 #include <vector>
 #include "CollisionScene.hpp"
+#include "CurrentAction.hpp"
 #include "DamageRules.hpp"
+#include "DamageRulesFixtures.hpp"
+#include "DamageRulesTestConstants.hpp"
+#include "DamageScene.hpp"
 #include "EnemyKilled.hpp"
 #include "Entity.hpp"
 #include "EntityDamage.hpp"
-#include "EntityDestruction.hpp"
 #include "EntityType.hpp"
+#include "Fragile.hpp"
 #include "Health.hpp"
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
-#include "ScoreValue.hpp"
+#include "WorldTestConstants.hpp"
 
 using rtype::engine::Entity;
-using rtype::game::DamageRules;
-using rtype::game::DestructionCause;
+using rtype::game::CurrentAction;
 using rtype::game::EnemyKilled;
 using rtype::game::EntityDamage;
-using rtype::game::EntityDestruction;
 using rtype::game::EntityType;
+using rtype::game::Fragile;
 using rtype::game::Health;
 using rtype::game::MissileHit;
-using rtype::game::MissileOwner;
 using rtype::game::NetworkIdentity;
-using rtype::game::ScoreValue;
-
-namespace {
-
-constexpr std::uint32_t MISSILE_ID = 7;
-constexpr std::uint32_t OTHER_MISSILE_ID = 8;
-constexpr std::uint32_t BYDO_ID = 21;
-constexpr std::uint32_t OTHER_BYDO_ID = 22;
-constexpr std::uint32_t SHIP_ID = 31;
-constexpr int THREE_HEALTH_POINTS = 3;
-constexpr int ONE_HEALTH_POINT = 1;
-constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;
-constexpr MissileOwner FIRST_PLAYER{.playerNumber = 1};
-constexpr MissileOwner SECOND_PLAYER{.playerNumber = SECOND_PLAYER_NUMBER};
-constexpr std::uint32_t BYDO_POINTS = 200;
-
-using Announcement = std::variant<EntityDamage, EntityDestruction>;
-
-struct DamageScene {
-  DamageScene() {
-    scene.events.subscribe<EntityDamage>(
-        [this](const EntityDamage& damage) { announced.emplace_back(damage); });
-    scene.events.subscribe<EntityDestruction>(
-        [this](const EntityDestruction& destruction) {
-          announced.emplace_back(destruction);
-        });
-    scene.events.subscribe<EnemyKilled>(
-        [this](const EnemyKilled& kill) { kills.push_back(kill); });
-  }
-
-  Entity missileOf(std::uint32_t networkId, MissileOwner owner) {
-    const Entity entity = missile(networkId);
-    scene.components.add(entity, owner);
-    return entity;
-  }
-
-  Entity bydoWorth(std::uint32_t networkId, Health health,
-                   std::uint32_t points) {
-    const Entity entity = bydo(networkId, health);
-    scene.components.add(entity, ScoreValue{.points = points});
-    return entity;
-  }
-
-  Entity missile(std::uint32_t networkId) {
-    const Entity entity = scene.spawn(EntityType::PlayerMissile, 0.0F, 0.0F);
-    scene.components.add(entity, NetworkIdentity{.networkId = networkId});
-    return entity;
-  }
-
-  Entity bydo(std::uint32_t networkId, Health health) {
-    const Entity entity = scene.spawn(EntityType::Enemy, 0.0F, 0.0F);
-    scene.components.add(entity, NetworkIdentity{.networkId = networkId});
-    scene.components.add(entity, health);
-    return entity;
-  }
-
-  void hit(Entity missile, Entity target) {
-    scene.events.publish(MissileHit{.missile = missile, .target = target});
-    scene.events.dispatch();
-  }
-
-  CollisionScene scene;
-  DamageRules rules{scene.events, scene.components};
-  std::vector<Announcement> announced;
-  std::vector<EnemyKilled> kills;
-};
-
-Announcement removed(std::uint32_t networkId) {
-  return EntityDestruction{.networkId = networkId,
-                           .cause = DestructionCause::Removed};
-}
-
-Announcement killed(std::uint32_t networkId) {
-  return EntityDestruction{.networkId = networkId,
-                           .cause = DestructionCause::Killed};
-}
-
-}  // namespace
+using rtype::game::testing::Announcement;
+using rtype::game::testing::BYDO_ID;
+using rtype::game::testing::BYDO_POINTS;
+using rtype::game::testing::CHARGING;
+using rtype::game::testing::DamageScene;
+using rtype::game::testing::FIRST_PLAYER;
+using rtype::game::testing::FOUR_HEALTH_POINTS;
+using rtype::game::testing::killed;
+using rtype::game::testing::MISSILE_ID;
+using rtype::game::testing::ONE_HEALTH_POINT;
+using rtype::game::testing::OTHER_BYDO_ID;
+using rtype::game::testing::OTHER_MISSILE_ID;
+using rtype::game::testing::removed;
+using rtype::game::testing::SECOND_PLAYER;
+using rtype::game::testing::SECOND_PLAYER_NUMBER;
+using rtype::game::testing::SHIP_ID;
+using rtype::game::testing::STUNNED;
+using rtype::game::testing::THREE_HEALTH_POINTS;
 
 /**
  * Given a Bydo with three health points and a missile
@@ -344,4 +284,46 @@ TEST(DamageRules, TwoMissilesOnTheSameBydoCreditOnlyTheFirst) {
   const std::vector<EnemyKilled> expected{EnemyKilled{
       .playerNumber = FIRST_PLAYER.playerNumber, .points = BYDO_POINTS}};
   EXPECT_EQ(damage.kills, expected);
+}
+
+/**
+ * Given a Bydo with four health points, fragile in the recover of attack 0
+ * and in that recover
+ * When a missile hits it
+ * Then it is killed by that one hit
+ */
+TEST(DamageRules, AHitKillsAFragileEnemyInTheActionItIsFragileIn) {
+  DamageScene damage;
+  const Entity missile = damage.missile(MISSILE_ID);
+  const Entity bydo =
+      damage.bydo(BYDO_ID, Health{.points = FOUR_HEALTH_POINTS});
+  damage.scene.components.add(bydo, Fragile{.in = STUNNED});
+  damage.scene.components.add(bydo, CurrentAction{.key = STUNNED});
+
+  damage.hit(missile, bydo);
+
+  const std::vector<Announcement> expected{removed(MISSILE_ID),
+                                           killed(BYDO_ID)};
+  EXPECT_EQ(damage.announced, expected);
+}
+
+/**
+ * Given a Bydo with four health points, fragile in the recover of attack 0
+ * but in the strike of that attack
+ * When a missile hits it
+ * Then it loses one point, as any enemy
+ */
+TEST(DamageRules, AFragileEnemyOutOfItsActionLosesOnePoint) {
+  DamageScene damage;
+  const Entity missile = damage.missile(MISSILE_ID);
+  const Entity bydo =
+      damage.bydo(BYDO_ID, Health{.points = FOUR_HEALTH_POINTS});
+  damage.scene.components.add(bydo, Fragile{.in = STUNNED});
+  damage.scene.components.add(bydo, CurrentAction{.key = CHARGING});
+
+  damage.hit(missile, bydo);
+
+  ASSERT_NE(damage.scene.components.get<Health>(bydo), nullptr);
+  EXPECT_EQ(damage.scene.components.get<Health>(bydo)->points,
+            THREE_HEALTH_POINTS);
 }

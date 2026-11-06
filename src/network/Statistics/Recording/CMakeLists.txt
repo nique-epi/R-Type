@@ -1,6 +1,6 @@
 add_library(rtype_network_statistics_recording STATIC
+  CsvFile.cpp
   MessageTypeText.cpp
-  TrafficCsvFile.cpp
   TrafficCsvRows.cpp
   TrafficLine.cpp
   TrafficRecorder.cpp

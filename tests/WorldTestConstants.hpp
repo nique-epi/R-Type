@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include "Position.hpp"
 
 namespace rtype::game::testing {
 
@@ -47,5 +48,10 @@ constexpr std::size_t SHIP_SHOT_INTERVAL_TICKS = 20;
 
 /** @brief The lives the ship of a new player has. */
 constexpr std::uint8_t THREE_LIVES = 3;
+
+/** @brief Where a body spawned away from the point its pilot steers from
+ * appears, and that point. */
+constexpr Position AWAY_FROM_THE_ORIGIN{.x = 108.0F, .y = 92.0F};
+constexpr Position STEERING_ORIGIN{.x = 100.0F, .y = 100.0F};
 
 }  // namespace rtype::game::testing

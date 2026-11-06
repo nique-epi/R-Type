@@ -9,6 +9,8 @@ using rtype::engine::Entity;
 using rtype::game::DestructionCause;
 using rtype::game::EntityDestruction;
 using rtype::game::EntityType;
+using rtype::game::testing::DOWN_LEFT;
+using rtype::game::testing::DOWN_RIGHT;
 using rtype::game::testing::ENEMY_MISSILE_EXACTLY_AT_THE_MARGIN_X;
 using rtype::game::testing::ENEMY_MISSILE_JUST_PAST_THE_MARGIN_X;
 using rtype::game::testing::EXACTLY_AT_THE_MARGIN_X;
@@ -17,7 +19,11 @@ using rtype::game::testing::FAR_PAST_THE_EDGE_X;
 using rtype::game::testing::JUST_PAST_THE_MARGIN_X;
 using rtype::game::testing::MISSILE_EXACTLY_AT_THE_MARGIN_X;
 using rtype::game::testing::MISSILE_JUST_PAST_THE_MARGIN_X;
+using rtype::game::testing::PAST_THE_BOTTOM_EDGE;
+using rtype::game::testing::PAST_THE_RIGHT_EDGE;
+using rtype::game::testing::PAST_THE_TOP_EDGE;
 using rtype::game::testing::PlayfieldExitSystemFixture;
+using rtype::game::testing::UP_RIGHT;
 using rtype::game::testing::WHERE_ENEMIES_APPEAR_X;
 using rtype::game::testing::WIDER_MISSILE_BOX;
 
@@ -190,4 +196,57 @@ TEST_F(PlayfieldExitSystemFixture, AMissileLeavesByHalfItsOwnWidth) {
 
   EXPECT_TRUE(entities().isAlive(missile));
   EXPECT_TRUE(received().empty());
+}
+
+/**
+ * Given a missile of an enemy steered up and to the right, wholly past the
+ * right edge
+ * When the system runs
+ * Then it is gone: it left by an edge it flies towards
+ */
+TEST_F(PlayfieldExitSystemFixture, RemovesAMissileFlyingRightPastTheRightEdge) {
+  const Entity missile = addSteeredMissile(PAST_THE_RIGHT_EDGE, UP_RIGHT);
+
+  updateAndDispatch();
+
+  EXPECT_FALSE(entities().isAlive(missile));
+}
+
+/**
+ * Given a missile steered up and to the right, wholly past the top edge
+ * When the system runs
+ * Then it is gone
+ */
+TEST_F(PlayfieldExitSystemFixture, RemovesAMissileFlyingUpPastTheTopEdge) {
+  const Entity missile = addSteeredMissile(PAST_THE_TOP_EDGE, UP_RIGHT);
+
+  updateAndDispatch();
+
+  EXPECT_FALSE(entities().isAlive(missile));
+}
+
+/**
+ * Given a missile steered down and to the left, wholly past the bottom edge
+ * When the system runs
+ * Then it is gone
+ */
+TEST_F(PlayfieldExitSystemFixture, RemovesAMissileFlyingDownPastTheBottomEdge) {
+  const Entity missile = addSteeredMissile(PAST_THE_BOTTOM_EDGE, DOWN_LEFT);
+
+  updateAndDispatch();
+
+  EXPECT_FALSE(entities().isAlive(missile));
+}
+
+/**
+ * Given a missile steered down and to the right, wholly past the top edge
+ * When the system runs
+ * Then it is still in the world: it flies back into the playfield
+ */
+TEST_F(PlayfieldExitSystemFixture, KeepsAMissileFlyingIntoThePlayfield) {
+  const Entity missile = addSteeredMissile(PAST_THE_TOP_EDGE, DOWN_RIGHT);
+
+  updateAndDispatch();
+
+  EXPECT_TRUE(entities().isAlive(missile));
 }
