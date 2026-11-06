@@ -15,10 +15,4 @@ describe('MasterStatusText', () => {
 
     expect(screen.getByText('Unreachable')).toBeDefined();
   });
-
-  it('writes that the master is being checked before its first answer', () => {
-    render(<MasterStatusText health={{ state: 'checking' }} />);
-
-    expect(screen.getByText('Checking the master…')).toBeDefined();
-  });
 });

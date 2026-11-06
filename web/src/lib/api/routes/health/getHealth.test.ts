@@ -14,13 +14,15 @@ describe('getHealth', () => {
     vi.unstubAllGlobals();
   });
 
-  it('asks the health route of the master API on the same origin', async () => {
+  it('asks the health route of the master at MASTER_URL', async () => {
     const fetch = vi.fn().mockResolvedValue(answer(200, { version: '0.1.0' }));
     vi.stubGlobal('fetch', fetch);
 
     await getHealth();
 
-    expect(String(fetch.mock.calls[0]?.[0])).toBe('/api/health');
+    expect(String(fetch.mock.calls[0]?.[0])).toBe(
+      'http://master.test:8080/api/health',
+    );
   });
 
   it('returns the version the master answers', async () => {

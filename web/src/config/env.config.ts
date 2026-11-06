@@ -13,7 +13,7 @@ const envSchema = z.object({
 
 type Env = z.infer<typeof envSchema>;
 
-/** Validates the variables `next dev` reads, so a wrong one stops it at start. */
+/** Validates the variables of the server, so a wrong one stops it at start. */
 export function parseEnv(): Env {
   const result = envSchema.safeParse(process.env);
 
