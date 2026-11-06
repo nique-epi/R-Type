@@ -15,7 +15,9 @@
 #
 #   2. Does the client start?
 #      It is run with --help. If a library it needs is missing from the
-#      package (a DLL on Windows), it cannot even start.
+#      package (a DLL on Windows), it cannot even start. On macOS its
+#      signature is checked too and, when RTYPE_EXPECT_NOTARIZED is 1,
+#      Gatekeeper must accept the disk image and the app as notarized.
 #
 #   3. Does the server find its files from any folder?
 #      It is started from an empty folder, far from the package. It stops at
@@ -57,12 +59,12 @@ unpack_archive() {
   echo "$destination"/R-Type-"$program"-*
 }
 
-# Opens the macOS disk image and prints the folder it is mounted on. The image
-# is closed again when the script ends, whatever happens.
+# Opens the macOS disk image disk_image_file and prints the folder it is
+# mounted on. The image is closed again when the script ends, whatever happens.
 open_disk_image() {
   mount_point=$(mktemp -d)
   hdiutil attach -nobrowse -readonly -mountpoint "$mount_point" \
-    "$packages_folder"/R-Type-client-*.dmg > /dev/null
+    "$disk_image_file" > /dev/null
   echo "$mount_point"
 }
 
@@ -75,11 +77,12 @@ open_packages() {
 
   if [ "$system" = "Darwin" ]; then
     # On macOS the client is an app: its program and its files sit inside
-    # R-Type.app, in Contents/MacOS and Contents/assets.
+    # R-Type.app, in Contents/MacOS and Contents/Resources.
+    disk_image_file=$(echo "$packages_folder"/R-Type-client-*.dmg)
     disk_image=$(open_disk_image)
     trap 'hdiutil detach "$disk_image" > /dev/null' EXIT
-    client_folder=$disk_image/R-Type.app/Contents
-    client_program=$client_folder/MacOS/r-type_client
+    client_folder=$disk_image/R-Type.app/Contents/Resources
+    client_program=$disk_image/R-Type.app/Contents/MacOS/r-type_client
   else
     client_folder=$(unpack_archive client)
     client_program=$client_folder/bin/r-type_client$exe
@@ -139,10 +142,26 @@ check_the_client_starts() {
   fi
 
   if [ "$system" = "Darwin" ]; then
-    codesign --verify --deep "$disk_image/R-Type.app" ||
+    codesign --verify --strict "$disk_image/R-Type.app" ||
       fail "the signature of R-Type.app is not valid"
     passed "R-Type.app is signed"
+    if [ "${RTYPE_EXPECT_NOTARIZED:-0}" = "1" ]; then
+      check_the_app_is_notarized
+    fi
   fi
+}
+
+# Gatekeeper accepts the disk image and the app only when Apple notarized them,
+# and the ticket stapled to the image lets it decide without a connection.
+check_the_app_is_notarized() {
+  xcrun stapler validate "$disk_image_file" > /dev/null ||
+    fail "the disk image carries no notarization ticket"
+  spctl --assess --type open --context context:primary-signature \
+    "$disk_image_file" 2> /dev/null ||
+    fail "Gatekeeper refuses the disk image"
+  spctl --assess --type execute "$disk_image/R-Type.app" 2> /dev/null ||
+    fail "Gatekeeper refuses R-Type.app"
+  passed "R-Type.app is notarized and Gatekeeper accepts it"
 }
 
 # Question 3: does the server find its files from any folder? It stops at once
