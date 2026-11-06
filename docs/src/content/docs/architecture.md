@@ -167,9 +167,9 @@ Alternative considered: an executable that exports its symbols, with plugins lin
 
 Alternative considered: one exported function that returns a table of function pointers with a version field, as the game libraries of Quake 2 do (`GetGameAPI`). It needs a C-compatible description of a module and of its services, where the plugin here is the `IModule` class of the program. The single function keeps the idea of reading the version before anything else, with the module the engine already has.
 
-A plugin reaches the code of the program it must not copy through an interface. The games module provides `IGameBuses`, the bus of each game, so the `game-statistics` plugin of the server follows every game with one virtual call and holds none of the code of the games.
+A plugin reaches the code of the program it must not copy through an interface. The games module provides `IGameEvents`, the bus of the game, so the `game-statistics` plugin of the server follows the game with one virtual call and holds none of the code of the game.
 
-Alternative considered: a game module that a plugin adds to every game, through a list of extra game modules the games module reads when it creates its games. It hands the plugin the context of each game (its roster, its settings), but it adds a way into the creation of the games, and the module of the plugin is destroyed before the games, whose modules would still hold its code and point to its state.
+Alternative considered: a game module that a plugin adds to the game, through a list of extra game modules the games module reads when it creates its game. It hands the plugin the context of the game (its roster, its settings), but it adds a way into the creation of the game, and the module of the plugin is destroyed before the game, whose modules would still hold its code and point to its state.
 
 How to write a plugin is on the [Modules](/R-Type/modules/#write-a-plugin) page.
 

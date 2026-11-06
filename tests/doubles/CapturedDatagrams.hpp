@@ -11,7 +11,7 @@ namespace rtype::network::testing {
  *
  * The handler it gives points at it: keep it alive as long as the socket.
  */
-class HandledDatagrams {
+class CapturedDatagrams {
  public:
   /** @returns A handler that appends each datagram it receives. */
   [[nodiscard]] DatagramHandler handler();

@@ -3,17 +3,17 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include "CapturedDatagrams.hpp"
 #include "CompressingDatagramSocket.hpp"
 #include "DatagramCompressionFixtures.hpp"
 #include "DecompressingDatagramSocket.hpp"
-#include "HandledDatagrams.hpp"
 #include "RecordingDatagramSocket.hpp"
 
 using rtype::network::CompressingDatagramSocket;
 using rtype::network::DecompressingDatagramSocket;
+using rtype::network::testing::CapturedDatagrams;
 using rtype::network::testing::codedDatagramWithoutSession;
 using rtype::network::testing::codedSessionDatagram;
-using rtype::network::testing::HandledDatagrams;
 using rtype::network::testing::handshakeHeader;
 using rtype::network::testing::peer;
 using rtype::network::testing::sessionHeader;
@@ -28,7 +28,7 @@ TEST(DecompressingDatagramSocket, HandsOnTheOriginalOfACodedDatagram) {
   auto recording = std::make_unique<RecordingDatagramSocket>();
   RecordingDatagramSocket& real = *recording;
   DecompressingDatagramSocket socket{std::move(recording)};
-  HandledDatagrams received;
+  CapturedDatagrams received;
   socket.startReceiving(received.handler());
 
   real.receive(peer(), codedSessionDatagram());
@@ -46,7 +46,7 @@ TEST(DecompressingDatagramSocket, HandsOnAPlainDatagramAsItIs) {
   auto recording = std::make_unique<RecordingDatagramSocket>();
   RecordingDatagramSocket& real = *recording;
   DecompressingDatagramSocket socket{std::move(recording)};
-  HandledDatagrams received;
+  CapturedDatagrams received;
   socket.startReceiving(received.handler());
   const std::vector<std::byte> plain = worldStateDatagram(handshakeHeader());
 
@@ -65,7 +65,7 @@ TEST(DecompressingDatagramSocket, DropsACodedDatagramThatDoesNotDecode) {
   auto recording = std::make_unique<RecordingDatagramSocket>();
   RecordingDatagramSocket& real = *recording;
   DecompressingDatagramSocket socket{std::move(recording)};
-  HandledDatagrams received;
+  CapturedDatagrams received;
   socket.startReceiving(received.handler());
   std::vector<std::byte> coded = codedSessionDatagram();
   coded.pop_back();
@@ -84,7 +84,7 @@ TEST(DecompressingDatagramSocket, DropsACodedDatagramWithoutASession) {
   auto recording = std::make_unique<RecordingDatagramSocket>();
   RecordingDatagramSocket& real = *recording;
   DecompressingDatagramSocket socket{std::move(recording)};
-  HandledDatagrams received;
+  CapturedDatagrams received;
   socket.startReceiving(received.handler());
 
   real.receive(peer(), codedDatagramWithoutSession());
@@ -122,7 +122,7 @@ TEST(DecompressingDatagramSocket, ReadsWhatTheCompressingSocketSent) {
   auto clientWire = std::make_unique<RecordingDatagramSocket>();
   RecordingDatagramSocket& arrival = *clientWire;
   DecompressingDatagramSocket client{std::move(clientWire)};
-  HandledDatagrams received;
+  CapturedDatagrams received;
   client.startReceiving(received.handler());
   const std::vector<std::byte> plain = worldStateDatagram(sessionHeader());
 

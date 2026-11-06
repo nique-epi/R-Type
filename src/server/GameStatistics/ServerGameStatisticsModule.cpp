@@ -1,15 +1,12 @@
 #include "ServerGameStatisticsModule.hpp"
 #include <filesystem>
-#include <memory>
 #include <string>
 #include <vector>
 #include "ConfigurationRegistry.hpp"
 #include "CsvFile.hpp"
-#include "EventBus.hpp"
 #include "ExecutablePath.hpp"
 #include "GameStatisticsConstants.hpp"
-#include "GameTally.hpp"
-#include "IGameBuses.hpp"
+#include "IGameEvents.hpp"
 #include "IListeningPort.hpp"
 #include "ILogJournal.hpp"
 #include "InstallContext.hpp"
@@ -43,7 +40,7 @@ void ServerGameStatisticsModule::install(engine::InstallContext& context) {
                   "r-type_statistics_<its port>.csv next to the executable",
           .validate = {}});
   port_ = &context.require<IListeningPort>();
-  buses_ = &context.require<IGameBuses>();
+  game_ = &context.require<IGameEvents>();
   context.addWork(OUTPUT_STAGE,
                   [this](engine::Duration elapsed) { onTick(elapsed); });
 }
@@ -52,14 +49,14 @@ void ServerGameStatisticsModule::start() {
   const std::filesystem::path file = statisticsFile();
   file_.emplace(file, GAME_STATISTICS_CSV_HEADER);
   sinceWrite_ = engine::Duration::zero();
-  followEveryGame();
+  tally_.emplace(game_->events(), sheet_);
   if (logger_.has_value()) {
     logger_->info("game statistics written to ", logging::genericText(file));
   }
 }
 
 void ServerGameStatisticsModule::stop() {
-  tallies_.clear();
+  tally_.reset();
   writeRows();
   file_.reset();
 }
@@ -74,12 +71,6 @@ std::filesystem::path ServerGameStatisticsModule::statisticsFile() const {
   return engine::withTextBeforeExtension(
       std::filesystem::path{fileSetting_->text()},
       std::string{GAME_STATISTICS_PORT_SEPARATOR} + port);
-}
-
-void ServerGameStatisticsModule::followEveryGame() {
-  for (const std::unique_ptr<engine::EventBus>& events : buses_->buses()) {
-    tallies_.push_back(std::make_unique<GameTally>(*events, sheet_));
-  }
 }
 
 void ServerGameStatisticsModule::onTick(engine::Duration elapsed) {

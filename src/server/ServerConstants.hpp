@@ -82,9 +82,6 @@ constexpr std::string_view CONFIGURATION_OPTION = "--configuration";
  */
 constexpr std::string_view GAME_TRAFFIC_FILE_INFIX = "_game_";
 
-/** @brief How many games a game process hosts. */
-constexpr std::size_t GAME_PROCESS_GAME_COUNT = 1;
-
 /** @brief How many game processes the supervisor runs at once. */
 constexpr std::size_t MAXIMUM_RUNNING_GAMES = 8;
 
@@ -95,26 +92,10 @@ constexpr std::size_t MAXIMUM_RUNNING_GAMES = 8;
 constexpr std::string_view SEED_OPTION = "--seed";
 
 /**
- * @brief How many games the server hosts at once, unless told otherwise. They
- * are all created when the server starts and reused: a finished game waits for
- * players again.
- */
-constexpr std::size_t DEFAULT_HOSTED_GAME_COUNT = 8;
-
-/**
  * @brief The name of game n, from 1, is this prefix and n: the name the master
  * lists it by, until a game is named by the player who creates it.
  */
 constexpr std::string_view GAME_NAME_PREFIX = "GAME ";
-
-/**
- * @brief The gap between the seeds of two games started from the same seed.
- *
- * A game draws the seed of each world it builds as its own seed plus the count
- * of worlds built, so a gap of 65536 keeps the worlds of one game away from
- * those of the next for 65536 worlds.
- */
-constexpr std::uint32_t GAME_SEED_STRIDE = 65536;
 
 /**
  * @brief Logger name the server writes its log lines under.

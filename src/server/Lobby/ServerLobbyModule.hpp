@@ -4,11 +4,11 @@
 #include <string>
 #include <vector>
 #include "ConnectionAcceptor.hpp"
-#include "Games.hpp"
 #include "IDatagramSender.hpp"
 #include "IModule.hpp"
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
+#include "RunningGame.hpp"
 #include "SystemClock.hpp"
 #include "TickDatagrams.hpp"
 
@@ -16,21 +16,19 @@ namespace rtype::server {
 
 /**
  * @brief The module that lets players in: it answers the connection requests
- * of each tick, each by the acceptor of the game Games::placeOf() names for
- * its sender, and seats the players it accepts in that game.
+ * of each tick by the acceptor of the game, and seats the players it accepts
+ * in that game.
  *
- * A player already seated is answered by the acceptor of its own game, so a
- * repeated request that carries a valid cookie finds the same acceptance
- * again, and one without a cookie is challenged; a new player goes to the
- * first game waiting for players with a free seat. Each acceptor draws its own
- * cookies, so a player challenged by one game and sent to another, because
- * the first one filled up meanwhile, is challenged once more.
+ * A player already seated is answered again by the acceptor, so a repeated
+ * request that carries a valid cookie finds the same acceptance again, and one
+ * without a cookie is challenged; a new player is refused once the game left
+ * the waiting room or its seats are all taken.
  *
- * Its work is in the simulation stage, after the games module's: the games
- * move on first, then the requests of the tick are answered, so a request
- * answered in a tick is placed and refused by the state the games just
- * reached. The acceptors need the rosters of the games, which exist only once
- * the games module started, so start() builds them.
+ * Its work is in the simulation stage, after the games module's: the game
+ * moves on first, then the requests of the tick are answered, so a request
+ * answered in a tick is refused by the state the game just reached. The
+ * acceptor needs the roster of the game, which exists only once the games
+ * module started, so start() builds it.
  */
 class ServerLobbyModule final : public engine::IModule {
  public:
@@ -44,23 +42,22 @@ class ServerLobbyModule final : public engine::IModule {
   void install(engine::InstallContext& context) override;
 
   /**
-   * @brief Builds one acceptor on the roster of each game.
+   * @brief Builds the acceptor on the roster of the game.
    */
   void start() override;
 
-  /** @brief Drops the acceptors. */
+  /** @brief Drops the acceptor. */
   void stop() override;
 
  private:
   void answerConnectionRequests();
 
   engine::SystemClock clock_;
-  Games* games_{nullptr};
+  RunningGame* runningGame_{nullptr};
   IDatagramSender* sender_{nullptr};
   IPlayerAdmission* admission_{nullptr};
   TickDatagrams* tickDatagrams_{nullptr};
-  /** @brief One acceptor per game, in the order of Games::all(). */
-  std::vector<std::unique_ptr<ConnectionAcceptor>> acceptors_;
+  std::unique_ptr<ConnectionAcceptor> acceptor_;
 };
 
 }  // namespace rtype::server
