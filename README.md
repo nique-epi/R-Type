@@ -31,7 +31,7 @@ cmake --workflow --preset build
 
 The first configure builds every dependency and takes a few minutes. The `r-type_server` and `r-type_client` binaries are written at the repository root, or in `Release/` with the Visual Studio generator.
 
-The client and the server read their files from `assets/`, next to their executable or in the folder above it, wherever they are launched from. Each stops with exit code 1, naming both folders, when it finds neither.
+The client and the server read their files from `assets/`, next to their executable, in the folder above it, or in `Resources/` beside it for the macOS app, wherever they are launched from. Each stops with exit code 1, naming the three folders, when it finds none.
 
 If the repository was cloned without its submodules, run `git submodule update --init` first.
 
@@ -49,11 +49,12 @@ This builds in Release, then writes in `build/` one set of packages for the clie
 | Windows | `R-Type-client-<version>-win64.zip`, `R-Type-client-<version>-win64.exe` (installer) | `R-Type-server-<version>-win64.zip`, `R-Type-server-<version>-win64.exe` (installer) |
 | macOS | `R-Type-client-<version>-Darwin.dmg`, holding `R-Type.app` | `R-Type-server-<version>-Darwin.tar.gz` |
 
-Each package holds its program and the part of `assets/` it reads, in the folder above the executable (`bin/` and `assets/`; `usr/bin/` and `usr/assets/` in the AppImage; `Contents/MacOS/` and `Contents/assets/` in the app), so it starts from any folder. The version is the one of `project()` in `CMakeLists.txt`. The files that build the packages are in `packaging/`.
+Each package holds its program and the part of `assets/` it reads, where its executable finds them (`bin/` and `assets/`; `usr/bin/` and `usr/assets/` in the AppImage; `Contents/MacOS/` and `Contents/Resources/assets/` in the app, where Apple wants every file that is not code), so it starts from any folder. The version is the one of `project()` in `CMakeLists.txt`. The files that build the packages are in `packaging/`.
 
 - Linux: the programs need X11, OpenGL and udev from the distribution, and a glibc at least as recent as the one of the machine that built them (Ubuntu 24.04 on the CI). The AppImage needs FUSE, which most desktops have. Packaging the client on Linux needs [`appimagetool`](https://github.com/AppImage/appimagetool) on the `PATH`.
 - Windows: the installer of each program puts it in its own folder (`R-Type`, `R-Type Server`) with a Start menu shortcut and an uninstaller. Packaging needs [NSIS](https://nsis.sourceforge.io).
-- macOS: the app is built for Apple Silicon only and is not notarized: the first time, open it with right-click > Open.
+- macOS: the app is built for Apple Silicon only, with the hardened runtime. When `RTYPE_MACOS_SIGNING_IDENTITY` names a Developer ID Application identity of the keychain, the app and its disk image are signed with it; when `RTYPE_NOTARY_KEY` (the path of an App Store Connect API key, `.p8`), `RTYPE_NOTARY_KEY_ID` and `RTYPE_NOTARY_ISSUER` are set too, the disk image is sent to Apple's notary service and the ticket is stapled to it, so Gatekeeper opens it without a warning, even offline. Without an identity the app is signed without one, and macOS asks the player, the first time, to allow it in System Settings > Privacy & Security. The app may load plugins signed by another developer (`com.apple.security.cs.disable-library-validation`, in `packaging/r-type.entitlements`). The server archive is not signed.
+- The CI signs and notarizes the client when the repository holds the secrets `MACOS_CERTIFICATE_P12` (the Developer ID certificate and its key, as a base64 `.p12`), `MACOS_CERTIFICATE_PASSWORD`, `APPLE_NOTARY_KEY` (the text of the `.p8`), `APPLE_NOTARY_KEY_ID` and `APPLE_NOTARY_ISSUER_ID`; the package check then requires Gatekeeper to accept the app. A pull request from a fork, which receives no secret, gets an app signed without an identity.
 
 The CI builds the packages of the three systems on every push to `main`, and on a pull request that changes `packaging/`, `assets/`, the root `CMakeLists.txt`, the presets, vcpkg or the workflows that build them, and keeps them 7 days as artifacts of the run (`packages-Linux`, `packages-Windows`, `packages-macOS`). Pushing a tag `v<version>` that matches the version of `project()` publishes them in a GitHub release, with notes listing the pull requests merged since the previous tag:
 
