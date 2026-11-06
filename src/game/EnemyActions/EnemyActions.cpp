@@ -6,6 +6,7 @@
 #include "Entity.hpp"
 #include "EventBus.hpp"
 #include "NetworkIdentity.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::game {
 
@@ -18,6 +19,7 @@ void startEnemyAction(engine::EventBus& events,
     return;
   }
   current->key = start.action;
+  current->since = engine::Duration::zero();
   events.publish(EnemyActionStarted{.networkId = identity->networkId,
                                     .attack = start.action.attack,
                                     .phase = start.action.phase});
@@ -27,6 +29,7 @@ void endEnemyAction(engine::ComponentRegistry& components,
                     engine::Entity enemy) {
   if (auto* const current = components.get<CurrentAction>(enemy)) {
     current->key.reset();
+    current->since = engine::Duration::zero();
   }
 }
 

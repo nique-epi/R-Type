@@ -75,4 +75,19 @@ InvalidInputDelayException::InvalidInputDelayException(std::size_t delayTicks)
                       std::to_string(HIGHEST_INPUT_DELAY_TICKS) +
                       " ticks, not " + std::to_string(delayTicks)) {}
 
+ProcessLaunchException::ProcessLaunchException(const std::string& program,
+                                               const std::string& description)
+    : ServerException("cannot start " + program + ": " + description) {}
+
+ChildBindingException::ChildBindingException(const std::string& step)
+    : ServerException("cannot tie a game process to the supervisor: " + step +
+                      " failed") {}
+
+IncompleteSupervisorLinkException::IncompleteSupervisorLinkException(
+    const std::string& missingOption)
+    : ServerException(
+          "a game process needs both --supervisor and "
+          "--link-token: " +
+          missingOption + " is missing") {}
+
 }  // namespace rtype::server

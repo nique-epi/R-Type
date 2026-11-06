@@ -239,7 +239,7 @@ seconds,peer,direction,message,count,bytes
 
 - `peer` is an address and a port, `others` or `departed`. `message` is the name of a message, `unknown` for a byte no message has, `all` for the whole datagrams, or `unreadable`. `count` counts datagrams on `all` and `unreadable`, messages otherwise.
 - The figures are totals: a rate is the difference between two lines of one peer, direction and message. A player's lines stop when it leaves, and `departed` jumps by what it held.
-- The file is emptied at launch: one file is one run. A relative path is read from the folder the program was started in. A file that cannot be opened stops the program; one that stops accepting lines is told once in the journal and left, so a full disk never stops a game.
+- The file is a `CsvFile` (`Recording/`), emptied at launch and given its header first: one file is one run. The game statistics plugin of the server writes its file with it too (see [Server](/R-Type/server/#game-statistics-servergamestatisticsmodule)). A relative path is read from the folder the program was started in. A file that cannot be opened stops the program; one that stops accepting lines is told once in the journal and left, so a full disk never stops a game.
 
 Measured on an Apple M3 Pro with Apple clang 21.0.0 at `-O2`, median of 7 runs of a throwaway program that is not part of the repository:
 

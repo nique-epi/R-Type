@@ -109,4 +109,32 @@ class InvalidInputDelayException : public ServerException {
   explicit InvalidInputDelayException(std::size_t delayTicks);
 };
 
+/** @brief A child process could not be started. */
+class ProcessLaunchException : public ServerException {
+ public:
+  /** @param description What the system said about @p program. */
+  ProcessLaunchException(const std::string& program,
+                         const std::string& description);
+};
+
+/**
+ * @brief The system refused to tie the life of a child process to the one of
+ * the program that started it, so the child could outlive its parent.
+ */
+class ChildBindingException : public ServerException {
+ public:
+  /** @param step The system call that failed. */
+  explicit ChildBindingException(const std::string& step);
+};
+
+/**
+ * @brief Only one of the two options that make a server the child of a
+ * supervisor was given.
+ */
+class IncompleteSupervisorLinkException : public ServerException {
+ public:
+  /** @param missingOption The option that was not given. */
+  explicit IncompleteSupervisorLinkException(const std::string& missingOption);
+};
+
 }  // namespace rtype::server

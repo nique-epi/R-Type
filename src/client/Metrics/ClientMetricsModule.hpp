@@ -34,7 +34,7 @@ class ClientMetricsModule final : public engine::IModule {
   [[nodiscard]] std::vector<std::string> dependencies() const override;
   /** @throws MissingServiceException when no module provided the traffic. */
   void install(engine::InstallContext& context) override;
-  /** @throws network::TrafficFileOpenException when the file cannot be opened.
+  /** @throws network::CsvFileOpenException when the file cannot be opened.
    */
   void start() override;
   /** @brief Writes the last rows and closes the file. */

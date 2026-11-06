@@ -50,6 +50,7 @@ Server settings:
 | `master-url` | `http://<host>[:<port>]` | empty | The master the server is listed on; empty to run alone. |
 | `master-key` | a key | empty | The key the master gave when the host created the server; empty to run alone. |
 | `server-name` | 1 to 32 bytes | `R-Type server` | The name players read in the list of servers and in the answer to an information request. |
+| `game-statistics-file` | a path | empty | Declared by the `game-statistics` plugin, only once a `plugin game-statistics` line loads it: the CSV file of the statistics of the games; empty for `r-type_statistics_<port>.csv` next to the executable. |
 
 Client settings:
 
@@ -95,6 +96,7 @@ Server modules:
 | `lobby` | `network`, `games` | Answers the connection requests of the players. |
 | `metrics` | `games`, `network` | Measures the ticks and writes a report to the journal. |
 | `master` | `network`, `games` | Keeps the master told of the server; uses `metrics` when it is on. |
+| `game-statistics` | `logger`, `network`, `games` | A plugin, loaded by `plugin game-statistics`: writes a row per Bydo killed and the total of each game to a CSV file (see [Server](/R-Type/server/#game-statistics-servergamestatisticsmodule)). |
 
 Client modules:
 
@@ -160,7 +162,7 @@ A missing file is not an error: the defaults apply and the journal says `server.
 A module reads its settings when it starts, never when it installs, because the file is read between the two. A change to the file therefore takes effect at the next launch.
 
 ```bash
-./r-type_server --set state-rate=30 --seed 7
+./r-type_server --mode server --set state-rate=30 --seed 7
 ```
 
 The same two lines in `server.cfg` would be `set state-rate 30` and `set seed 7`.

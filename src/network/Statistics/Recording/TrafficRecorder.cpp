@@ -22,7 +22,7 @@ TrafficRecorder::TrafficRecorder(
       lastLine_(now),
       lastTotals_(trafficTotalsOf(counters.report())) {
   if (csvFile.has_value()) {
-    file_.emplace(*csvFile);
+    file_.emplace(*csvFile, TRAFFIC_CSV_HEADER);
   }
 }
 

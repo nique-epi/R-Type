@@ -26,6 +26,7 @@
 #include "HostedGamesWatch.hpp"
 #include "HostedRules.hpp"
 #include "IDatagramSender.hpp"
+#include "IGameBuses.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IResultsArchive.hpp"
 #include "InstallContext.hpp"
@@ -165,6 +166,7 @@ void ServerGamesModule::install(engine::InstallContext& context) {
   tickDatagrams_ = &context.require<TickDatagrams>();
   declareSettings(context.require<engine::ConfigurationRegistry>());
   context.provide(games_);
+  context.provide<IGameBuses>(games_);
   context.provide(hostedGames_);
   context.addWork(
       SIMULATION_STAGE,

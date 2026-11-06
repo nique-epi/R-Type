@@ -18,8 +18,8 @@ using rtype::client::ClientMetricsModule;
 using rtype::client::CONNECTION_MODULE_NAME;
 using rtype::engine::InstallContext;
 using rtype::engine::MissingServiceException;
+using rtype::network::CsvFileOpenException;
 using rtype::network::DEFAULT_SERVER_PORT;
-using rtype::network::TrafficFileOpenException;
 using rtype::network::testing::loopbackOnPort;
 using rtype::network::testing::textOf;
 
@@ -96,5 +96,5 @@ TEST_F(ClientMetricsModuleFixture, RefusesAFileItCannotOpen) {
   InstallContext installing = context();
   module.install(installing);
 
-  EXPECT_THROW(module.start(), TrafficFileOpenException);
+  EXPECT_THROW(module.start(), CsvFileOpenException);
 }

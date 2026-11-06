@@ -27,6 +27,7 @@
 #include "StopReason.hpp"
 #include "StopRequest.hpp"
 #include "StopSignals.hpp"
+#include "SupervisorModules.hpp"
 
 namespace {
 
@@ -97,11 +98,20 @@ int runUntilStopped(const ProgramRun& program) {
   return exitCode;
 }
 
+/** @brief Builds the modules of a program of the server binary from its launch
+ * options. */
+using ServerModulesBuilder =
+    std::function<std::vector<std::unique_ptr<rtype::engine::IModule>>(
+        const rtype::server::LaunchOptions&, rtype::server::StopRequest&)>;
+
 /**
- * @brief Runs the game server with @p options, or prints its usage.
- * @returns the exit code of the server.
+ * @brief Runs a program that takes the options of the game server, named
+ * @p label, with @p options, or prints its usage.
+ * @returns the exit code of the program.
  */
-int runServer(std::span<const std::string_view> options) {
+int runServerProgram(std::string_view label,
+                     std::span<const std::string_view> options,
+                     const ServerModulesBuilder& build) {
   const rtype::server::LaunchOptions launchOptions =
       rtype::server::LaunchOptions::read(options);
   if (launchOptions.helpRequested()) {
@@ -109,15 +119,38 @@ int runServer(std::span<const std::string_view> options) {
     return 0;
   }
   return runUntilStopped(ProgramRun{
-      .label = rtype::server::SERVER_MODE_NAME,
+      .label = label,
       .loggerName = rtype::server::SERVER_LOGGER_NAME,
       .configurationFile = rtype::server::SERVER_CONFIGURATION_FILE_NAME,
       .stages = rtype::server::SERVER_LOOP_STAGES,
       .forcedLines = launchOptions.forcedLines(),
-      .modules = [&launchOptions](rtype::server::StopRequest& stopRequest) {
-        return rtype::server::serverModules(launchOptions.logOptions(),
-                                            launchOptions, stopRequest);
+      .modules = [&launchOptions,
+                  &build](rtype::server::StopRequest& stopRequest) {
+        return build(launchOptions, stopRequest);
       }});
+}
+
+/**
+ * @brief Runs the game server with @p options, or prints its usage.
+ * @returns the exit code of the server.
+ */
+int runServer(std::span<const std::string_view> options) {
+  return runServerProgram(rtype::server::SERVER_MODE_NAME, options,
+                          [](const rtype::server::LaunchOptions& launchOptions,
+                             rtype::server::StopRequest& stopRequest) {
+                            return rtype::server::serverModules(
+                                launchOptions.logOptions(), launchOptions,
+                                stopRequest);
+                          });
+}
+
+/**
+ * @brief Runs the supervisor with @p options, or prints its usage.
+ * @returns the exit code of the supervisor.
+ */
+int runSupervisor(std::span<const std::string_view> options) {
+  return runServerProgram(rtype::server::SUPERVISOR_MODE_NAME, options,
+                          rtype::server::supervisorModules);
 }
 
 /**
@@ -158,6 +191,9 @@ int main(int argumentCount, char** arguments) {
     if (choice.mode == rtype::server::ServerMode::Master) {
       programName = rtype::master::MASTER_PROGRAM_NAME;
       return runMaster(choice.options);
+    }
+    if (choice.mode == rtype::server::ServerMode::Supervisor) {
+      return runSupervisor(choice.options);
     }
     return runServer(choice.options);
   } catch (const std::exception& error) {

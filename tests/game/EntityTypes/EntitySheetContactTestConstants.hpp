@@ -1,8 +1,10 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "TimeConstants.hpp"
 
 namespace rtype::game::testing {
 
@@ -49,6 +51,28 @@ constexpr std::string_view SECOND_BOX_TOO_WIDE =
     "height = 8\n\n"
     "[[gameplay.hurt_zone.box]]\noffset_x = 0\noffset_y = 0\nwidth = 1025\n"
     "height = 8\n";
+/** @brief Boxes of the strike of attack 1 that hurt from 70 ms into it, until
+ * 140 ms or to its end; boxes that time a phase they do not name, or end no
+ * later than they start. */
+constexpr std::string_view TIMED_BOX =
+    "[[gameplay.hurt_zone.box]]\noffset_x = 0\noffset_y = 0\nwidth = 8\n"
+    "height = 8\nattack = 1\nphase = \"strike\"\nfrom_ms = 70\nuntil_ms = "
+    "140\n";
+constexpr std::string_view OPEN_ENDED_BOX =
+    "[[gameplay.hurt_zone.box]]\noffset_x = 0\noffset_y = 0\nwidth = 8\n"
+    "height = 8\nattack = 1\nphase = \"strike\"\nfrom_ms = 70\n";
+constexpr std::string_view TIMED_BOX_WITHOUT_PHASE =
+    "[[gameplay.hurt_zone.box]]\noffset_x = 0\noffset_y = 0\nwidth = 8\n"
+    "height = 8\nuntil_ms = 140\n";
+constexpr std::string_view BOX_ENDING_AS_IT_STARTS =
+    "[[gameplay.hurt_zone.box]]\noffset_x = 0\noffset_y = 0\nwidth = 8\n"
+    "height = 8\nattack = 1\nphase = \"strike\"\nfrom_ms = 70\nuntil_ms = 70\n";
+/** @brief A Drillback is fragile in the recover of its attack 0; a fragile
+ * table that names no phase. */
+constexpr std::string_view FRAGILE_WHILE_STUNNED =
+    "[gameplay.fragile]\nattack = 0\nphase = \"recover\"\n";
+constexpr std::string_view FRAGILE_WITHOUT_PHASE =
+    "[gameplay.fragile]\nattack = 0\n";
 constexpr std::string_view SURVIVES_CONTACT_MARKER =
     "[gameplay.survives_contact]\n";
 constexpr std::string_view SURVIVES_CONTACT_WITH_A_KEY =
@@ -67,6 +91,11 @@ constexpr std::size_t HURT_BOXES_IN_TWO = 2;
 constexpr std::size_t HURT_BOXES_IN_EVERY_PHASE = 4;
 constexpr std::uint8_t ATTACK_OF_EVERY_PHASE = 2;
 
+/** @brief The window of TIMED_BOX and OPEN_ENDED_BOX: from 70 ms, until
+ * 140 ms for the first. */
+constexpr engine::Duration TIMED_BOX_FROM = std::chrono::milliseconds(70);
+constexpr engine::Duration TIMED_BOX_UNTIL = std::chrono::milliseconds(140);
+
 /** @brief What the refusals say. */
 constexpr std::string_view EMPTY_ZONE_RULE_TEXT =
     "a hurt zone holds at least one box";
@@ -76,6 +105,15 @@ constexpr std::string_view HURT_ZONE_SIDE_RULE_TEXT =
     "only a body of side enemy has a hurt zone";
 constexpr std::string_view SURVIVES_CONTACT_SIDE_RULE_TEXT =
     "only a body of side enemy survives a contact";
+constexpr std::string_view TIMING_RULE_TEXT =
+    "only a box that names its attack and its phase hurts from or until a time";
+constexpr std::string_view WINDOW_RULE_TEXT =
+    "a box stops hurting after it starts: until_ms is above from_ms";
+constexpr std::string_view FRAGILE_SIDE_RULE_TEXT =
+    "only a body of side enemy is fragile in one of its actions";
+constexpr std::string_view FRAGILE_DOTTED_KEY = "gameplay.fragile";
+constexpr std::string_view UNTIL_DOTTED_KEY =
+    "gameplay.hurt_zone.box[0].until_ms";
 constexpr std::string_view ATTACK_DOTTED_KEY =
     "gameplay.hurt_zone.box[0].attack";
 constexpr std::string_view PHASE_DOTTED_KEY = "gameplay.hurt_zone.box[0].phase";

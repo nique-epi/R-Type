@@ -45,6 +45,10 @@ class ServerModulesFixture : public ServerModuleFixture {
   [[nodiscard]] std::unique_ptr<rtype::engine::Application> serverApplication(
       const rtype::server::LaunchOptions& options);
 
+  /** @brief Writes @p lines, one per line, to the server.cfg of the folder the
+   * server starts in. */
+  void writeConfiguration(const std::vector<std::string>& lines) const;
+
  private:
   std::uint16_t port_;
   rtype::server::StopRequest stopRequest_;

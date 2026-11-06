@@ -1,1 +1,2 @@
-target_sources(game_tests PRIVATE StraightBehaviourTest.cpp WeaveBehaviourTest.cpp)
+add_subdirectory(Paths)
+add_subdirectory(Attacks)

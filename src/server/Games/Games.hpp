@@ -8,6 +8,7 @@
 #include "EntitySheets.hpp"
 #include "EventBus.hpp"
 #include "GameInstance.hpp"
+#include "IGameBuses.hpp"
 
 namespace rtype::server {
 
@@ -22,9 +23,11 @@ namespace rtype::server {
  * so the lobby asks here where a player goes instead of knowing the rule
  * itself. It starts empty: the games module adds the games when it starts,
  * after it keeps the entity sheets they are made from, which the lobby reads
- * to tell each player the entity types of the server.
+ * to tell each player the entity types of the server. It is also the
+ * IGameBuses of the server: a module that follows every game reads their buses
+ * through it.
  */
-class Games {
+class Games : public IGameBuses {
  public:
   /** @brief Adds @p game after the ones already there, with @p events, the bus
    * it publishes on, which is kept alive as long as the game. */
@@ -53,6 +56,10 @@ class Games {
 
   /** @returns Every game, in the order they were added. */
   [[nodiscard]] std::span<const std::unique_ptr<GameInstance>> all() const;
+
+  /** @returns The bus of each game, in the order of all(). */
+  [[nodiscard]] std::span<const std::unique_ptr<engine::EventBus>> buses()
+      const override;
 
   /** @brief Keeps @p types, the entity sheets every game of the list makes
    * its entities from (GameSettings::types); they must outlive the list. */

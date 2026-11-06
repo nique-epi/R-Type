@@ -1,10 +1,13 @@
 #include <gtest/gtest.h>
+#include <cstddef>
 #include "GamesFixture.hpp"
+#include "PlayerArrival.hpp"
 #include "ProtocolConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerException.hpp"
 #include "ServerModuleTestConstants.hpp"
 
+using rtype::game::PlayerArrival;
 using rtype::server::NoJoinableGameException;
 using rtype::server::testing::playerEndpoint;
 
@@ -81,4 +84,24 @@ TEST_F(GamesFixture, PlacesAStrangerInTheGameNewPlayersJoin) {
 
   EXPECT_EQ(games().placeOf(playerEndpoint(rtype::network::MAXIMUM_PLAYERS)),
             SECOND_GAME);
+}
+
+/**
+ * Given two games, and a subscriber to the arrivals on the second bus listed
+ * When a player joins the second game
+ * Then the subscriber hears that arrival: the buses follow the games in order
+ */
+TEST_F(GamesFixture, ListsTheBusOfEachGameInTheOrderOfTheGames) {
+  addGame();
+  addGame();
+  std::size_t arrivals = 0;
+  games().buses()[SECOND_GAME]->subscribe<PlayerArrival>(
+      [&arrivals]([[maybe_unused]] const PlayerArrival& arrival) {
+        ++arrivals;
+      });
+
+  joinIn(*games().all()[SECOND_GAME], 0);
+  games().dispatchEvents();
+
+  EXPECT_EQ(arrivals, 1U);
 }

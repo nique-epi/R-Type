@@ -1,8 +1,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
+#include "BurstSheet.hpp"
 #include "EngineException.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheetFixtures.hpp"
@@ -19,6 +21,7 @@
 #include "ShippedEntitySheets.hpp"
 
 using rtype::engine::UnknownDataFileChoiceException;
+using rtype::game::BurstSheet;
 using rtype::game::DuplicateEntityTypeException;
 using rtype::game::EntitySheet;
 using rtype::game::EntitySheets;
@@ -33,6 +36,7 @@ using rtype::game::testing::DRIFTER_FIRING_PLAYER_MISSILES_TEXT;
 using rtype::game::testing::DRIFTER_NAME_IN_TESTS;
 using rtype::game::testing::DRIFTER_NUMBER_AMONG_THREE;
 using rtype::game::testing::DRIFTER_SHEET_TEXT;
+using rtype::game::testing::DRIFTER_THAT_BURSTS_TEXT;
 using rtype::game::testing::EMPTY_NAME;
 using rtype::game::testing::ENEMY_MISSILE_NUMBER_AMONG_THREE;
 using rtype::game::testing::ENEMY_MISSILE_SHEET;
@@ -49,6 +53,10 @@ using rtype::game::testing::namesIn;
 using rtype::game::testing::NO_SHEET_NUMBER;
 using rtype::game::testing::NUMBER_PAST_THE_THREE;
 using rtype::game::testing::ONE_SHEET_TOO_MANY;
+using rtype::game::testing::ORB_BURST_TICKS;
+using rtype::game::testing::ORB_BURSTING_INTO_PLAYER_MISSILES_TEXT;
+using rtype::game::testing::ORB_NAME_IN_TESTS;
+using rtype::game::testing::ORB_SHEET_TEXT;
 using rtype::game::testing::pilotBehaviourName;
 using rtype::game::testing::PLAYER_MISSILE_NAME_IN_TESTS;
 using rtype::game::testing::PLAYER_MISSILE_SHEET_TEXT;
@@ -74,6 +82,9 @@ using rtype::game::testing::REQUIRED_WEAVE;
 using rtype::game::testing::REQUIRED_WEAVE_NAME;
 using rtype::game::testing::REQUIRED_WEAVER_POINTS;
 using rtype::game::testing::settingsOf;
+using rtype::game::testing::SHARD_NAME_IN_TESTS;
+using rtype::game::testing::SHARD_SHEET_TEXT;
+using rtype::game::testing::SHARDS_PER_ORB;
 using rtype::game::testing::sheetText;
 using rtype::game::testing::SHIP_NAME_IN_TESTS;
 using rtype::game::testing::SHIPPED_SHEET_NAMES;
@@ -352,10 +363,11 @@ TEST(EntitySheets, APilotStillHoldsAfterTheSheetsAreMoved) {
 /**
  * Given the folder of the sheets the game ships with
  * When its sheets are read
- * Then they are the five types of today, in the order of their names:
- * drifter, enemy_missile, player_missile, ship and weaver
+ * Then they are the types of today, in the order of their names:
+ * bydomancer, drifter, drillback, enemy_missile, orb_shard, player_missile,
+ * reaper, rune_orb, ship, voltjelly and weaver
  */
-TEST(EntitySheets, TheShippedSheetsAreTheFiveTypesOfToday) {
+TEST(EntitySheets, TheShippedSheetsAreTheTypesOfToday) {
   const EntitySheets& sheets = shippedEntitySheets();
 
   EXPECT_THAT(namesIn(sheets), ElementsAreArray(SHIPPED_SHEET_NAMES));
@@ -468,4 +480,84 @@ TEST(EntitySheets, TheShippedMissileOfAnEnemyIsTodaysMissile) {
   EXPECT_EQ(pilotBehaviourName(missile), REQUIRED_STRAIGHT_NAME);
   EXPECT_THAT(settingsOf(missile), ElementsAreArray(REQUIRED_LEFT_HEADING));
   EXPECT_FALSE(missile.gun.has_value());
+}
+
+/**
+ * Given the sheets of an orb that bursts into `shard`, and of that shard
+ * When the sheet numbered as the shards of the orb is looked up
+ * Then it is the sheet of the shard
+ */
+TEST(EntitySheets, NumbersTheShardsOfABurst) {
+  const std::vector<SheetText> texts{
+      sheetText(ORB_NAME_IN_TESTS, ORB_SHEET_TEXT),
+      sheetText(SHARD_NAME_IN_TESTS, SHARD_SHEET_TEXT)};
+  const EntitySheets sheets = EntitySheets::fromTexts(texts);
+  const EntitySheet& orb = sheets.named(ORB_NAME_IN_TESTS);
+  ASSERT_TRUE(orb.burst.has_value());
+
+  const EntitySheet* const shard =
+      sheets.numbered(orb.burst.value_or(BurstSheet{}).shardNumber);
+
+  ASSERT_NE(shard, nullptr);
+  EXPECT_EQ(shard->name, SHARD_NAME_IN_TESTS);
+}
+
+/**
+ * Given the sheet of an orb that bursts after 100 ms into four shards
+ * When the sheets are read
+ * Then it bursts after 6 ticks into 4 shards
+ */
+TEST(EntitySheets, ReadsWhenAndIntoHowManyShardsAMissileBursts) {
+  const std::vector<SheetText> texts{
+      sheetText(ORB_NAME_IN_TESTS, ORB_SHEET_TEXT),
+      sheetText(SHARD_NAME_IN_TESTS, SHARD_SHEET_TEXT)};
+  const EntitySheets sheets = EntitySheets::fromTexts(texts);
+
+  const std::optional<BurstSheet> burst = sheets.named(ORB_NAME_IN_TESTS).burst;
+
+  ASSERT_TRUE(burst.has_value());
+  EXPECT_EQ(burst.value_or(BurstSheet{}).afterTicks, ORB_BURST_TICKS);
+  EXPECT_EQ(burst.value_or(BurstSheet{}).count, SHARDS_PER_ORB);
+}
+
+/**
+ * Given the sheet of an orb that bursts into `shard`, without that sheet
+ * When the sheets are read
+ * Then they are refused: a missile bursts into a type that exists
+ */
+TEST(EntitySheets, RefusesABurstIntoNoSheet) {
+  const std::vector<SheetText> texts{
+      sheetText(ORB_NAME_IN_TESTS, ORB_SHEET_TEXT)};
+
+  EXPECT_THROW(static_cast<void>(EntitySheets::fromTexts(texts)),
+               UnknownDataFileChoiceException);
+}
+
+/**
+ * Given the sheet of a missile of an enemy that bursts into missiles of a
+ * player
+ * When the sheets are read
+ * Then they are refused: a missile bursts into missiles of its own side
+ */
+TEST(EntitySheets, RefusesAMissileThatBurstsIntoAnotherSide) {
+  const std::vector<SheetText> texts{
+      sheetText(ORB_NAME_IN_TESTS, ORB_BURSTING_INTO_PLAYER_MISSILES_TEXT),
+      sheetText(PLAYER_MISSILE_NAME_IN_TESTS, PLAYER_MISSILE_SHEET_TEXT)};
+
+  EXPECT_THROW(static_cast<void>(EntitySheets::fromTexts(texts)),
+               InconsistentEntitySheetException);
+}
+
+/**
+ * Given the sheet of a Drifter that declares a burst
+ * When the sheets are read
+ * Then they are refused: only a missile bursts
+ */
+TEST(EntitySheets, RefusesAnEnemyThatBursts) {
+  const std::vector<SheetText> texts{
+      sheetText(DRIFTER_NAME_IN_TESTS, DRIFTER_THAT_BURSTS_TEXT),
+      sheetText(SHARD_NAME_IN_TESTS, SHARD_SHEET_TEXT)};
+
+  EXPECT_THROW(static_cast<void>(EntitySheets::fromTexts(texts)),
+               InconsistentEntitySheetException);
 }

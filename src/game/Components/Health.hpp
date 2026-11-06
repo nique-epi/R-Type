@@ -8,6 +8,9 @@ namespace rtype::game {
  */
 struct Health {
   int points{0};
+  /** @brief The points it appeared with, which tell a wounded body from an
+   * untouched one; 0 for a body made with no such count. */
+  int full{0};
 };
 
 }  // namespace rtype::game

@@ -1,10 +1,12 @@
 #include "PlayfieldExitSystemFixture.hpp"
 #include <vector>
 #include "CollisionBox.hpp"
+#include "Direction.hpp"
 #include "Entity.hpp"
 #include "EntityDestruction.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityType.hpp"
+#include "Intent.hpp"
 #include "NetworkIdentity.hpp"
 #include "PlayfieldExitSystemTestConstants.hpp"
 #include "Position.hpp"
@@ -43,6 +45,17 @@ engine::Entity PlayfieldExitSystemFixture::addWithoutBox(EntityType type,
   components_.add(entity, type);
   components_.add(entity, NetworkIdentity{.networkId = EXITING_NETWORK_ID});
   return entity;
+}
+
+engine::Entity PlayfieldExitSystemFixture::addSteeredMissile(
+    Position position, Direction heading) {
+  const engine::Entity missile = entities_.create();
+  components_.add(missile, position);
+  components_.add(missile, EntityType::EnemyMissile);
+  components_.add(missile, NetworkIdentity{.networkId = EXITING_NETWORK_ID});
+  components_.add(missile, ENEMY_MISSILE_EXIT_BOX);
+  components_.add(missile, Intent{.direction = heading, .steered = true});
+  return missile;
 }
 
 void PlayfieldExitSystemFixture::updateAndDispatch() {
