@@ -86,6 +86,14 @@ class LogLaunchOptions {
    */
   [[nodiscard]] static std::string usage(std::string_view defaultJournalName);
 
+  /**
+   * @returns the same part of the usage, for a program whose default journal
+   *          is not next to its executable.
+   * @param defaultJournal the path of that journal, as the usage writes it.
+   */
+  [[nodiscard]] static std::string usageWithJournalAt(
+      std::string_view defaultJournal);
+
  private:
   LogLaunchSettings settings_;
 };

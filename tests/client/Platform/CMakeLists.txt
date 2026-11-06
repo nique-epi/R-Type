@@ -1,1 +1,1 @@
-target_sources(client_tests PRIVATE SettingsFolderTest.cpp)
+target_sources(client_tests PRIVATE JournalFolderTest.cpp SettingsFolderTest.cpp)

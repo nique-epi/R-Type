@@ -60,7 +60,7 @@ Today it finds its assets folder, loads the assets of its interface, opens a win
 | Controls of a row: slider, switch, selector, list, key slot, link | Available; used by the options | `src/client/Widgets/RowControls/` |
 | Assets folder and asset ids | Available | `src/client/Assets/`, `assets/README.md` |
 | Asset loading | Available; used at launch for the interface assets, and by the loading screen | `src/client/Assets/` |
-| Path of the running executable, the reduced motion setting of the system, the settings folder, how a borderless window covers the screen | Available | `src/client/Platform/` |
+| Path of the running executable, the reduced motion setting of the system, the settings folder, the journal folder, how a borderless window covers the screen | Available | `src/client/Platform/` |
 | Player settings and their file | Available; every change goes through the `SettingsService`, which tells the sounds and the music when a volume or MUTE ALL changes; the game reads the flashes setting, the sound cues and auto-fire, and every screen that paints a pilot reads the color mode | `src/client/Settings/` |
 | Color modes: the pilots in a palette for protanopia, deuteranopia or tritanopia | Available; read by the status band, the waiting room, the title, the intro, the flight log and the effects | `src/client/Rendering/Interface/PlayerPaletteConstants.hpp`, `src/client/Screens/` |
 | Drawing entities | Available; drawn by the game screen | `src/client/Rendering/Drawing/EntityLayer/`, `src/client/Rendering/Drawing/RenderSystem/`, `src/client/Rendering/Drawing/SfmlDrawSurface/`, `src/client/Rendering/Sprites/AssetTextureSource/` |
@@ -901,6 +901,8 @@ The `PlayerConnection` of the connection module builds one, and the module opens
 `systemPrefersReducedMotion()` tells whether the player asked the system for less motion: "Reduce motion" on macOS (read from AppKit), "Show animations in Windows" turned off on Windows (`SPI_GETCLIENTAREAANIMATION`), the GNOME setting `enable-animations` turned off on Linux (read with `gsettings`). A setting the system does not give counts as no request. No test reads it: its answer depends on the machine.
 
 `settingsFolder()`, in the same folder and the same way, gives the folder where the client keeps the player's files (see [Settings](/R-Type/client/#settings-playersettings-settingsservice-settingsfile)), or nothing when the system does not tell.
+
+`journalFolder()`, in the same folder, gives the folder of the default journal: on macOS the Logs folder of the user's Library (`~/Library/Logs`), which always exists and which Console shows, so the journal of a packaged client never writes into its signed app; on Linux and Windows nothing, and the journal stays next to the executable (`JournalFolderNextToExecutable.cpp` serves both). `macOsUserFolder()` reads a folder of the user's domain from `sysdir` for it and for `settingsFolder()`.
 
 `borderlessUsesDesktopFullscreen()`, in the same folder and the same way, tells how a borderless window covers the screen: `false` on Windows, a window without border; `true` on macOS and Linux, SFML's fullscreen at the video mode of the desktop (see [Window](#window-gamewindow-windowlayout)).
 

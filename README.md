@@ -209,7 +209,7 @@ This runs the bandwidth campaign: a server and four bots from the same seed, thr
 
 ## Logging
 
-The client, the server and the master write a timestamped journal, `r-type_client.log`, `r-type_server.log` or `r-type_master.log` next to their executable, and show the same lines in the terminal; each game of the server writes its own, `r-type_game_<n>.log`, at the level given to the supervisor; the first line gives the absolute path of the journal. Installed in a folder they cannot write to, they write no journal and say so in the terminal. The level and the output are chosen at launch:
+The client, the server and the master write a timestamped journal, `r-type_client.log`, `r-type_server.log` or `r-type_master.log` next to their executable (the client on macOS in `~/Library/Logs`, so it never writes into the signed app), and show the same lines in the terminal; each game of the server writes its own, `r-type_game_<n>.log`, at the level given to the supervisor; the first line gives the absolute path of the journal. Installed in a folder they cannot write to, they write no journal and say so in the terminal. The level and the output are chosen at launch:
 
 ```bash
 ./r-type_server --log-level debug

@@ -42,4 +42,8 @@ constexpr const char* MACOS_SETTINGS_FOLDER_NAME = "R-Type";
 constexpr const wchar_t* WINDOWS_SETTINGS_FOLDER_NAME = L"R-Type";
 constexpr char HOME_SHORTHAND = '~';
 
+/** @brief Folder of the user's Library where macOS keeps the logs of the
+ * user's programs. */
+constexpr const char* MACOS_LOGS_FOLDER_NAME = "Logs";
+
 }  // namespace rtype::client

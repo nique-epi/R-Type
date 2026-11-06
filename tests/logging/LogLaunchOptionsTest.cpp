@@ -11,6 +11,7 @@
 #include "LogLaunchOptionsFixture.hpp"
 #include "LogLaunchOptionsFixtures.hpp"
 #include "LogLaunchOptionsTestConstants.hpp"
+#include "LogLevel.hpp"
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
 #include "LoggingException.hpp"

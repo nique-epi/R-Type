@@ -15,6 +15,7 @@ target_link_libraries(rtype_client_launch_options
     rtype_network_transport
   PRIVATE
     rtype_client_constants
+    rtype_client_platform
     rtype_engine_paths
     rtype_network_constants
     rtype_network_protocol
