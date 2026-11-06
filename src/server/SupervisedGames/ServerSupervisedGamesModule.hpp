@@ -17,6 +17,7 @@
 #include "Logger.hpp"
 #include "StopPause.hpp"
 #include "SupervisedGame.hpp"
+#include "SupervisedGamesWatch.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
 
@@ -26,12 +27,17 @@ namespace rtype::server {
  * @brief The module that runs the games of the supervisor, one process each:
  * it owns the process launcher, the registry of the games and the spawner
  * that starts them, and provides the registry and the spawner to the modules
- * listed after it.
+ * listed after it, with what the games hold (see SupervisedGamesWatch): the
+ * LatestHostedGames and the LatestServerMeasures the master module sends, and
+ * the IServerOccupancy the information module answers. It declares the
+ * database setting: the leaderboard every game writes to.
  *
  * In the simulation stage, each tick: the games whose process ended leave the
  * registry (and the network forgets their address); the statuses the games sent
  * are read, each newer one updates its game and is answered with a Heartbeat;
- * a game that waited GAME_START_TIMEOUT without a word is killed. A game that
+ * a game that waited GAME_START_TIMEOUT without a word is killed; then the
+ * list and the measures of the games are published when they changed. A game
+ * that
  * crashes only leaves the registry: the supervisor and the other games go on.
  * stop() has every game stopped (see ChildrenStopper) before the network
  * closes.
@@ -54,6 +60,8 @@ class ServerSupervisedGamesModule final : public engine::IModule {
   [[nodiscard]] std::vector<std::string> dependencies() const override;
 
   /**
+   * @brief Declares the database setting, reads the services and provides
+   * its own.
    * @throws MissingServiceException when the network module did not provide
    * the sender, the admission, the listening port or the datagrams of the
    * tick.
@@ -82,6 +90,7 @@ class ServerSupervisedGamesModule final : public engine::IModule {
   std::unique_ptr<IProcessLauncher> launcher_;
   StopPause pause_;
   GameRegistry registry_;
+  SupervisedGamesWatch watch_{registry_};
   std::optional<GameSpawner> spawner_;
   logging::Logger logger_;
   IDatagramSender* sender_{nullptr};

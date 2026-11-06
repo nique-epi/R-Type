@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 #include "ChildrenStopper.hpp"
+#include "ConfigurationRegistry.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "ExitedGame.hpp"
@@ -22,6 +23,7 @@
 #include "IListeningPort.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IProcessLauncher.hpp"
+#include "IServerOccupancy.hpp"
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
@@ -31,9 +33,11 @@
 #include "PathText.hpp"
 #include "ReceivedStatus.hpp"
 #include "ServerConstants.hpp"
+#include "SettingValue.hpp"
 #include "StopPause.hpp"
 #include "SupervisedGame.hpp"
 #include "SupervisedGamesConstants.hpp"
+#include "TextSettingDefinition.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
 
@@ -45,6 +49,17 @@ namespace {
 network::Endpoint loopbackEndpoint(std::uint16_t port) {
   return network::Endpoint{
       .address = std::string{network::LOOPBACK_IPV4_ADDRESS}, .port = port};
+}
+
+/** @returns The database setting, declared in @p configuration. */
+const engine::SettingValue& declareDatabase(
+    engine::ConfigurationRegistry& configuration) {
+  return configuration.declareText(engine::TextSettingDefinition{
+      .name = std::string{DATABASE_SETTING_NAME},
+      .defaultValue = {},
+      .help = "SQLite file the leaderboard of the games of this server is "
+              "kept in; empty for the file of its port next to the executable",
+      .validate = {}});
 }
 
 }  // namespace
@@ -66,6 +81,8 @@ std::vector<std::string> ServerSupervisedGamesModule::dependencies() const {
 }
 
 void ServerSupervisedGamesModule::install(engine::InstallContext& context) {
+  settings_.database =
+      &declareDatabase(context.require<engine::ConfigurationRegistry>());
   sender_ = &context.require<IDatagramSender>();
   admission_ = &context.require<IPlayerAdmission>();
   tickDatagrams_ = &context.require<TickDatagrams>();
@@ -78,6 +95,9 @@ void ServerSupervisedGamesModule::install(engine::InstallContext& context) {
                                     .freePort = freeUdpPort});
   context.provide(registry_);
   context.provide(*spawner_);
+  context.provide<IServerOccupancy>(watch_);
+  context.provide(watch_.hostedGames());
+  context.provide(watch_.measures());
   context.addWork(SIMULATION_STAGE, [this](engine::Duration elapsed) {
     superviseGames(elapsed);
   });
@@ -103,6 +123,7 @@ void ServerSupervisedGamesModule::superviseGames(engine::Duration elapsed) {
   reportExits(registry_.collectExits());
   readStatuses();
   registry_.terminateStale(elapsed);
+  watch_.publishIfChanged();
 }
 
 void ServerSupervisedGamesModule::readStatuses() {

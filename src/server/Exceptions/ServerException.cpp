@@ -95,4 +95,8 @@ GameConfigurationWriteException::GameConfigurationWriteException(
     : ServerException("cannot write the configuration of the games to " +
                       file) {}
 
+NoFreeGameSlotException::NoFreeGameSlotException(std::size_t slotCount)
+    : ServerException("no free place for a game: all " +
+                      std::to_string(slotCount) + " places hold one") {}
+
 }  // namespace rtype::server

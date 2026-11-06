@@ -6,6 +6,7 @@
 #include "LaunchOptions.hpp"
 #include "ModuleConstants.hpp"
 #include "ServerConstants.hpp"
+#include "ServerInformation.hpp"
 #include "StopRequest.hpp"
 #include "SupervisorModules.hpp"
 #include "SupervisorModulesFixture.hpp"
@@ -19,8 +20,9 @@ using rtype::server::supervisorModules;
 /**
  * Given the launch options of a supervisor with no argument
  * When its modules are listed
- * Then they are the journal, the network, the supervised games and the lobby
- * that sends the players to them, in the order they start
+ * Then they are the journal, the network, the supervised games, the lobby
+ * that sends the players to them, then the information and the master, which
+ * read what the supervised games publish, in the order they start
  */
 TEST(SupervisorModules, ListsTheModulesOfTheSupervisor) {
   StopRequest stopRequest;
@@ -35,12 +37,13 @@ TEST(SupervisorModules, ListsTheModulesOfTheSupervisor) {
   for (const auto& listed : modules) {
     names.push_back(listed->name());
   }
-  EXPECT_EQ(names,
-            (std::vector<std::string>{
-                std::string{rtype::server::LOGGER_MODULE_NAME},
-                std::string{rtype::server::NETWORK_MODULE_NAME},
-                std::string{rtype::server::SUPERVISED_GAMES_MODULE_NAME},
-                std::string{rtype::server::SUPERVISOR_LOBBY_MODULE_NAME}}));
+  EXPECT_EQ(names, (std::vector<std::string>{
+                       std::string{rtype::server::LOGGER_MODULE_NAME},
+                       std::string{rtype::server::NETWORK_MODULE_NAME},
+                       std::string{rtype::server::SUPERVISED_GAMES_MODULE_NAME},
+                       std::string{rtype::server::SUPERVISOR_LOBBY_MODULE_NAME},
+                       std::string{rtype::server::INFORMATION_MODULE_NAME},
+                       std::string{rtype::server::MASTER_MODULE_NAME}}));
 }
 
 /**
@@ -98,5 +101,43 @@ TEST_F(SupervisorModulesFixture, RefusesALineThatBelongsToNobody) {
 
   EXPECT_EQ(report().refusals.size(), 1U);
   EXPECT_TRUE(report().handedOverLines.empty());
+  application->stop();
+}
+
+/**
+ * Given a server.cfg that sets server-name, master-url, master-key and
+ * database, the settings the supervisor owns
+ * When the supervisor starts
+ * Then it refuses none of them and hands none to its games
+ */
+TEST_F(SupervisorModulesFixture, KeepsTheLinesOfTheSettingsItOwns) {
+  writeConfiguration(
+      {std::string{SERVER_NAME_LINE}, std::string{MASTER_URL_LINE},
+       std::string{MASTER_KEY_LINE}, std::string{DATABASE_LINE}});
+  const auto application = supervisor({});
+
+  application->start();
+
+  EXPECT_TRUE(report().refusals.empty());
+  EXPECT_TRUE(report().handedOverLines.empty());
+  application->stop();
+}
+
+/**
+ * Given a supervisor that runs no game yet, built from its real list of
+ * modules
+ * When a stranger asks for its information
+ * Then it is told no player, the eight games it may run and their 32 seats
+ * free
+ */
+TEST_F(SupervisorModulesFixture, AnswersHowFullAnIdleSupervisorIs) {
+  const auto application = supervisor({});
+  application->start();
+
+  const rtype::network::ServerInformation answer = askInformation(*application);
+
+  EXPECT_EQ(answer.playerCount, 0U);
+  EXPECT_EQ(answer.gameCount, GAMES_OF_A_SUPERVISOR);
+  EXPECT_EQ(answer.freeSeatCount, SEATS_OF_A_SUPERVISOR);
   application->stop();
 }

@@ -6,14 +6,13 @@
 #include <vector>
 #include "ConfigurationRegistry.hpp"
 #include "EngineException.hpp"
-#include "Games.hpp"
 #include "IDatagramSender.hpp"
 #include "IServerName.hpp"
+#include "IServerOccupancy.hpp"
 #include "IncomingDatagram.hpp"
 #include "InformationConstants.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
-#include "OccupancyCount.hpp"
 #include "ServerConstants.hpp"
 #include "ServerInformationDeskParts.hpp"
 #include "TextSettingDefinition.hpp"
@@ -39,12 +38,13 @@ std::string ServerInformationModule::name() const {
 }
 
 std::vector<std::string> ServerInformationModule::dependencies() const {
-  return {std::string{NETWORK_MODULE_NAME}, std::string{GAMES_MODULE_NAME}};
+  return {std::string{NETWORK_MODULE_NAME},
+          std::string{SUPERVISED_GAMES_MODULE_NAME}};
 }
 
 void ServerInformationModule::install(engine::InstallContext& context) {
   declareSettings(context.require<engine::ConfigurationRegistry>());
-  games_ = &context.require<Games>();
+  occupancy_ = &context.require<IServerOccupancy>();
   sender_ = &context.require<IDatagramSender>();
   tickDatagrams_ = &context.require<TickDatagrams>();
   context.addWork(SIMULATION_STAGE,
@@ -80,7 +80,7 @@ void ServerInformationModule::answerInformationRequests() {
   const std::span<const network::IncomingDatagram> requests =
       tickDatagrams_->informationRequests();
   if (desk_.has_value() && !requests.empty()) {
-    desk_->answer(requests, occupancyOf(*games_), clock_.now());
+    desk_->answer(requests, occupancy_->occupancy(), clock_.now());
   }
 }
 

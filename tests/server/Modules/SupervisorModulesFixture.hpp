@@ -8,9 +8,11 @@
 #include <vector>
 #include "Application.hpp"
 #include "ConfigurationReport.hpp"
+#include "ServerInformation.hpp"
 #include "ServerModuleFixture.hpp"
 #include "StopRequest.hpp"
 #include "TemporaryFolder.hpp"
+#include "UdpTestClient.hpp"
 
 /** @brief The base of the tests of a whole supervisor: its modules on a free
  * port, its server.cfg in a folder of the test, read with the configuration
@@ -40,6 +42,13 @@ class SupervisorModulesFixture : public ServerModuleFixture {
   /** @returns What the file of the games holds; empty when it is missing. */
   [[nodiscard]] std::string gameConfigurationText() const;
 
+  /** @brief Sends a ServerInformationRequest to the started @p application
+   * over the loopback, then runs its ticks until the answer arrives.
+   * @returns The answer; the test fails when none came within
+   * INFORMATION_WAIT_TICKS ticks. */
+  [[nodiscard]] rtype::network::ServerInformation askInformation(
+      const rtype::engine::Application& application);
+
  private:
   [[nodiscard]] std::filesystem::path gameConfigurationFile() const;
 
@@ -49,4 +58,5 @@ class SupervisorModulesFixture : public ServerModuleFixture {
   TemporaryFolder folder_;
   rtype::server::StopRequest stopRequest_;
   rtype::engine::ConfigurationReport report_;
+  UdpTestClient client_;
 };

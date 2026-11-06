@@ -19,14 +19,21 @@ namespace rtype::server {
  */
 class GameRegistry {
  public:
-  /** @brief Adds the game of @p opening after the others, Starting. */
+  /**
+   * @brief Adds the game of @p opening after the others, Starting, in the
+   * lowest place no game of the registry holds, from
+   * network::FIRST_HOSTED_GAME_NUMBER to MAXIMUM_RUNNING_GAMES.
+   * @throws NoFreeGameSlotException when every place holds a game; nothing is
+   * added then. placeForNewPlayer() never asks for a game in that case.
+   */
   void open(GameOpening opening);
 
   /** @returns The game that holds @p linkToken, nullptr when none does. */
   [[nodiscard]] SupervisedGame* findByToken(std::uint64_t linkToken);
 
   /**
-   * @brief Takes @p status as the state of @p game when @p sequence is newer
+   * @brief Takes @p status as the state, the nicknames and the measures of
+   * @p game when @p sequence is newer
    * than the newest status taken so far (16-bit serial number arithmetic),
    * and ignores it otherwise: a status that arrives late must not undo a newer
    * one.

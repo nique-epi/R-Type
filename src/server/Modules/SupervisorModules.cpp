@@ -12,7 +12,9 @@
 #include "IModule.hpp"
 #include "LaunchOptions.hpp"
 #include "NetworkConstants.hpp"
+#include "ServerInformationModule.hpp"
 #include "ServerLoggerModule.hpp"
+#include "ServerMasterModule.hpp"
 #include "ServerNetworkModule.hpp"
 #include "ServerSupervisedGamesModule.hpp"
 #include "ServerSupervisorLobbyModule.hpp"
@@ -55,6 +57,8 @@ std::vector<std::unique_ptr<engine::IModule>> supervisorModules(
       gameLaunchSettings(gameLines), std::make_unique<BoostProcessLauncher>(),
       [](engine::Duration pause) { std::this_thread::sleep_for(pause); }));
   modules.push_back(std::make_unique<ServerSupervisorLobbyModule>());
+  modules.push_back(std::make_unique<ServerInformationModule>());
+  modules.push_back(std::make_unique<ServerMasterModule>());
   return modules;
 }
 

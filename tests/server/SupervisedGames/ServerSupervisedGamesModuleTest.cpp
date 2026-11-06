@@ -11,7 +11,6 @@
 #include "SupervisedGamesFixtures.hpp"
 #include "SupervisedGamesTestConstants.hpp"
 
-using rtype::network::GameStatus;
 using rtype::network::GameStatusState;
 using rtype::network::MessageType;
 using rtype::server::testing::onlyMessageTypeOf;
@@ -59,10 +58,8 @@ TEST_F(ServerSupervisedGamesFixture, AnswersAStatusWithAnAcknowledgement) {
   startSupervisor();
   askForAPlaceAs(0);
 
-  gameReports(
-      0,
-      GameStatus{.state = GameStatusState::WaitingForPlayers, .playerCount = 0},
-      SEQUENCE_FIVE);
+  gameReports(0, statusWithPlayers(GameStatusState::WaitingForPlayers, 0),
+              SEQUENCE_FIVE);
 
   const auto answers = sentTo(
       network().sender().sent(),
@@ -82,9 +79,8 @@ TEST_F(ServerSupervisedGamesFixture, AnswersAStatusWithAnAcknowledgement) {
 TEST_F(ServerSupervisedGamesFixture, KeepsServingWhenAGameCrashes) {
   startSupervisor();
   askForAPlaceAs(0);
-  gameReports(
-      0, GameStatus{.state = GameStatusState::InProgress, .playerCount = 4},
-      SEQUENCE_FIVE);
+  gameReports(0, statusWithPlayers(GameStatusState::InProgress, 4),
+              SEQUENCE_FIVE);
   askForAPlaceAs(1);
 
   launcher().exitChild(0, CRASH_EXIT_CODE);

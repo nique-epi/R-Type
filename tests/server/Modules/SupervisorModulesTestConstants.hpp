@@ -1,5 +1,8 @@
 #pragma once
 
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
 #include <string_view>
 
 /** @brief Lines of server.cfg that belong to the games: a module the
@@ -19,3 +22,19 @@ constexpr std::string_view UNKNOWN_SETTING_LINE = "set no-such-setting 1";
  * this prefix, p and this suffix, next to the executable. */
 constexpr std::string_view GAMES_FILE_PREFIX = "r-type_games_";
 constexpr std::string_view GAMES_FILE_SUFFIX = ".cfg";
+
+/** @brief How many ticks askInformation() runs at most, five seconds, and how
+ * long it waits for the answer after each. */
+constexpr std::size_t INFORMATION_WAIT_TICKS = 300;
+constexpr std::chrono::milliseconds ONE_TICK_WAIT{17};
+
+/** @brief What an idle supervisor answers: no player, the eight games it may
+ * run, and their 32 seats free. */
+constexpr std::uint16_t GAMES_OF_A_SUPERVISOR = 8;
+constexpr std::uint16_t SEATS_OF_A_SUPERVISOR = 32;
+
+/** @brief Lines of server.cfg for the settings the supervisor owns. */
+constexpr std::string_view SERVER_NAME_LINE = "set server-name Paris";
+constexpr std::string_view MASTER_URL_LINE = "set master-url \"\"";
+constexpr std::string_view MASTER_KEY_LINE = "set master-key \"\"";
+constexpr std::string_view DATABASE_LINE = "set database \"\"";

@@ -10,6 +10,7 @@
 #include "LoggingConstants.hpp"
 #include "ProcessCommand.hpp"
 #include "ServerConstants.hpp"
+#include "SettingValue.hpp"
 #include "SupervisedGamesConstants.hpp"
 
 namespace rtype::server {
@@ -31,11 +32,15 @@ std::string logFileOf(const std::filesystem::path& folder,
       .string();
 }
 
-/** @returns The leaderboard file of the supervisor on @p supervisorPort, in
- * @p folder. */
-std::string databaseFileOf(const std::filesystem::path& folder,
+/** @returns The leaderboard file of the games of the supervisor on
+ * @p supervisorPort: its database setting, or the file of its port in the
+ * folder of @p settings while that is empty. */
+std::string databaseFileOf(const GameLaunchSettings& settings,
                            std::uint16_t supervisorPort) {
-  return (folder /
+  if (settings.database != nullptr && !settings.database->text().empty()) {
+    return settings.database->text();
+  }
+  return (settings.folder /
           (std::string{DATABASE_FILE_PREFIX} + std::to_string(supervisorPort) +
            std::string{DATABASE_FILE_SUFFIX}))
       .string();
@@ -51,7 +56,7 @@ ProcessCommand gameCommand(const GameLaunchSettings& settings,
   addOption(command, SUPERVISOR_OPTION, std::to_string(launch.supervisorPort));
   addOption(command, LINK_TOKEN_OPTION, std::to_string(launch.linkToken));
   addOption(command, engine::DATABASE_OPTION,
-            databaseFileOf(settings.folder, launch.supervisorPort));
+            databaseFileOf(settings, launch.supervisorPort));
   addOption(command, logging::FILE_OPTION,
             logFileOf(settings.folder, launch.number));
   addOption(

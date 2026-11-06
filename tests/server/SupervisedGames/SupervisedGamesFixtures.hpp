@@ -6,9 +6,12 @@
 #include <string>
 #include <string_view>
 #include "Endpoint.hpp"
+#include "GameLifecycle.hpp"
 #include "GameOpening.hpp"
+#include "GameStatus.hpp"
 #include "ProcessCommand.hpp"
 #include "RecordingChildState.hpp"
+#include "SupervisedGame.hpp"
 
 /** @returns The port game @p number gets in the registry tests. */
 [[nodiscard]] std::uint16_t portOfGame(std::uint32_t number);
@@ -20,6 +23,17 @@
  * the test. */
 [[nodiscard]] rtype::server::GameOpening openingOf(
     std::uint32_t number, const std::shared_ptr<RecordingChildState>& state);
+
+/** @returns A status of @p state with the first @p playerCount nicknames of
+ * SUPERVISED_NICKNAMES, at most four, and no measure. */
+[[nodiscard]] rtype::network::GameStatus statusWithPlayers(
+    rtype::network::GameStatusState state, std::size_t playerCount);
+
+/** @returns A game of the registry in @p slot and @p lifecycle, with the
+ * first @p playerCount nicknames of SUPERVISED_NICKNAMES and no measure. */
+[[nodiscard]] rtype::server::SupervisedGame supervisedGameIn(
+    std::uint16_t slot, rtype::server::GameLifecycle lifecycle,
+    std::size_t playerCount);
 
 /** @returns The argument that follows @p option in @p command; empty when the
  * option is not there. */

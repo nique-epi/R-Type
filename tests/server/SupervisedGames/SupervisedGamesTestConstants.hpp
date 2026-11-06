@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -24,11 +25,24 @@ constexpr rtype::engine::Duration JUST_UNDER_TEN_SECONDS_TO_START =
 constexpr rtype::engine::Duration THREE_SECONDS_TO_STOP =
     std::chrono::seconds(3);
 
+/** @brief The first two places of a supervisor, which the master numbers its
+ * games by. */
+constexpr std::uint16_t FIRST_PLACE = 1;
+constexpr std::uint16_t SECOND_PLACE = 2;
+
+/** @brief Three games, so the number the fourth one opened gets. */
+constexpr std::uint32_t THREE_GAMES = 3;
+
 /** @brief The sequences of the statuses the tests send. */
 constexpr std::uint16_t SEQUENCE_FIVE = 5;
 constexpr std::uint16_t SEQUENCE_FOUR = 4;
 constexpr std::uint16_t LAST_SEQUENCE = 65535;
 constexpr std::uint16_t FIRST_SEQUENCE = 0;
+
+/** @brief The nicknames of the players a game reports, in the order of their
+ * numbers: four, the seats of a game. */
+constexpr std::array<std::string_view, 4> SUPERVISED_NICKNAMES{
+    "PILOT1", "PILOT2", "PILOT3", "PILOT4"};
 
 /** @brief The exit code of a game process that crashed. */
 constexpr int CRASH_EXIT_CODE = 11;
@@ -57,3 +71,9 @@ constexpr std::string_view GAME_SEED_LINE = "set seed 7";
 constexpr std::string_view GAME_PLUGIN_LINE = "plugin game-statistics";
 constexpr std::string_view GAME_LINES_TEXT =
     "set seed 7\nplugin game-statistics\n";
+
+/** @brief A line of the supervisor that sets its database, and the file it
+ * names. */
+constexpr std::string_view SET_DATABASE_LINE =
+    "set database some/leaderboard.db";
+constexpr std::string_view DATABASE_OF_THE_SUPERVISOR = "some/leaderboard.db";

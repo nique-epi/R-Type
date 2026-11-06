@@ -2,15 +2,19 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include "Endpoint.hpp"
+#include "GameLifecycle.hpp"
 #include "GameOpening.hpp"
+#include "GameStatus.hpp"
 #include "NetworkConstants.hpp"
 #include "ProcessCommand.hpp"
 #include "RecordingChildProcess.hpp"
 #include "RecordingChildState.hpp"
 #include "RecordingProcessLauncherConstants.hpp"
+#include "SupervisedGame.hpp"
 #include "SupervisedGamesTestConstants.hpp"
 
 std::uint16_t portOfGame(std::uint32_t number) {
@@ -29,6 +33,35 @@ rtype::server::GameOpening openingOf(
       .linkToken = tokenOfGame(number),
       .process = std::make_unique<RecordingChildProcess>(
           FIRST_PROCESS_ID + number, state)};
+}
+
+rtype::network::GameStatus statusWithPlayers(
+    rtype::network::GameStatusState state, std::size_t playerCount) {
+  rtype::network::GameStatus status{
+      .state = state, .nicknames = {}, .measures = {}};
+  for (std::size_t player = 0;
+       player < playerCount && player < SUPERVISED_NICKNAMES.size(); ++player) {
+    status.nicknames.emplace_back(SUPERVISED_NICKNAMES.at(player));
+  }
+  return status;
+}
+
+rtype::server::SupervisedGame supervisedGameIn(
+    std::uint16_t slot, rtype::server::GameLifecycle lifecycle,
+    std::size_t playerCount) {
+  rtype::server::SupervisedGame game{
+      .number = slot,
+      .slot = slot,
+      .lifecycle = lifecycle,
+      .nicknames = statusWithPlayers(
+                       rtype::network::GameStatusState::InProgress, playerCount)
+                       .nicknames,
+      .measures = {},
+      .port = portOfGame(slot),
+      .linkToken = tokenOfGame(slot),
+      .newestSequence = std::nullopt,
+      .process = nullptr};
+  return game;
 }
 
 std::string argumentAfter(const rtype::server::ProcessCommand& command,

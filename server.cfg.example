@@ -40,12 +40,14 @@ set server-name "R-Type server"
 
 # [supervisor or games] Turn a module off (it is never installed, provides no
 # service and runs no work). A module the supervisor has (logger, network,
-# supervised games, supervisor lobby) is turned off in the supervisor; any
-# other name goes to the games. Refused when a module
-# that stays on depends on it: storage needs network, games needs network and
-# storage, lobby needs games, information needs network and games, metrics
-# needs games and network, master needs network, games and information, the
-# game-statistics plugin needs network and games once loaded, all need
+# supervised games, supervisor lobby, information, master) is turned off in
+# the supervisor; any other name goes to the games. Refused when a module
+# that stays on depends on it: in the supervisor, supervised games needs
+# network, supervisor lobby needs network and supervised games, information
+# needs network and supervised games, master needs network, supervised games
+# and information; in a game, storage needs network, games needs network and
+# storage, lobby needs games, metrics needs games and network, the
+# game-statistics plugin needs network and games once loaded; all need
 # logger.
 # module lobby off
 

@@ -2,8 +2,6 @@ add_library(rtype_server_games_module STATIC
   FarewellSender.cpp
   GamePlacement.cpp
   Games.cpp
-  HostedGames.cpp
-  HostedGamesWatch.cpp
   PlayerDatagrams.cpp
   RtypeGameModules.cpp
   EntitySheetsFingerprint.cpp
@@ -15,13 +13,11 @@ target_include_directories(rtype_server_games_module PUBLIC ${CMAKE_CURRENT_SOUR
 
 target_link_libraries(rtype_server_games_module
   PUBLIC
-    rtype_concurrency_latest_value
     rtype_engine_application
     rtype_game_events
     rtype_engine_event_bus
     rtype_engine_time
     rtype_game_entity_types
-    rtype_network_master_messages
     rtype_logging
     rtype_server_exceptions
     rtype_server_constants

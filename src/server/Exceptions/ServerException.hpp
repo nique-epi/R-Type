@@ -147,4 +147,14 @@ class GameConfigurationWriteException : public ServerException {
   explicit GameConfigurationWriteException(const std::string& file);
 };
 
+/**
+ * @brief A game was opened while every place of the supervisor, from
+ * network::FIRST_HOSTED_GAME_NUMBER to MAXIMUM_RUNNING_GAMES, holds a game.
+ */
+class NoFreeGameSlotException : public ServerException {
+ public:
+  /** @param slotCount How many places the supervisor has. */
+  explicit NoFreeGameSlotException(std::size_t slotCount);
+};
+
 }  // namespace rtype::server

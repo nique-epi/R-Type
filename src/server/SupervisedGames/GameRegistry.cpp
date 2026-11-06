@@ -14,10 +14,12 @@
 #include "GameState.hpp"
 #include "GameStatus.hpp"
 #include "GameVacancy.hpp"
+#include "MasterMessageConstants.hpp"
 #include "PlaceKind.hpp"
 #include "ProcessExit.hpp"
 #include "ProtocolConstants.hpp"
 #include "SequenceOrder.hpp"
+#include "ServerException.hpp"
 #include "SupervisedGame.hpp"
 #include "SupervisedGamesConstants.hpp"
 #include "TimeConstants.hpp"
@@ -43,7 +45,20 @@ GameState stateOf(GameLifecycle lifecycle) {
 
 GameVacancy vacancyOf(const SupervisedGame& game) {
   return GameVacancy{.state = stateOf(game.lifecycle),
-                     .full = game.playerCount >= network::MAXIMUM_PLAYERS};
+                     .full = game.nicknames.size() >= network::MAXIMUM_PLAYERS};
+}
+
+/** @returns The lowest place none of @p games holds.
+ * @throws NoFreeGameSlotException when they hold every place. */
+std::uint16_t lowestFreeSlot(const std::vector<SupervisedGame>& games) {
+  for (std::uint16_t slot = network::FIRST_HOSTED_GAME_NUMBER;
+       slot < network::FIRST_HOSTED_GAME_NUMBER + MAXIMUM_RUNNING_GAMES;
+       ++slot) {
+    if (std::ranges::find(games, slot, &SupervisedGame::slot) == games.end()) {
+      return slot;
+    }
+  }
+  throw NoFreeGameSlotException(MAXIMUM_RUNNING_GAMES);
 }
 
 /** @returns The place of a player in @p game, which has a free seat. */
@@ -57,8 +72,12 @@ GamePlace placeIn(const SupervisedGame& game) {
 }  // namespace
 
 void GameRegistry::open(GameOpening opening) {
+  const std::uint16_t slot = lowestFreeSlot(games_);
   games_.push_back(SupervisedGame{.number = opening.number,
+                                  .slot = slot,
                                   .lifecycle = GameLifecycle::Starting,
+                                  .nicknames = {},
+                                  .measures = {},
                                   .port = opening.port,
                                   .linkToken = opening.linkToken,
                                   .newestSequence = std::nullopt,
@@ -80,7 +99,8 @@ bool GameRegistry::record(SupervisedGame& game, std::uint16_t sequence,
   }
   game.newestSequence = sequence;
   game.lifecycle = lifecycleOf(status.state);
-  game.playerCount = status.playerCount;
+  game.nicknames = status.nicknames;
+  game.measures = status.measures;
   return true;
 }
 

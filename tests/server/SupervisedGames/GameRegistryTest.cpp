@@ -8,14 +8,15 @@
 #include "PlaceKind.hpp"
 #include "ProcessExit.hpp"
 #include "RecordingChildState.hpp"
+#include "ServerException.hpp"
 #include "SupervisedGame.hpp"
 #include "SupervisedGamesFixtures.hpp"
 #include "SupervisedGamesTestConstants.hpp"
 
-using rtype::network::GameStatus;
 using rtype::network::GameStatusState;
 using rtype::server::GameLifecycle;
 using rtype::server::GameRegistry;
+using rtype::server::NoFreeGameSlotException;
 using rtype::server::PlaceKind;
 using rtype::server::ProcessExit;
 using rtype::server::SupervisedGame;
@@ -57,8 +58,7 @@ TEST(GameRegistry, SendsAPlayerToAGameThatWaitsForPlayers) {
   auto state = std::make_shared<RecordingChildState>();
   registry.open(openingOf(0, state));
   registry.record(*registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
-                  GameStatus{.state = GameStatusState::WaitingForPlayers,
-                             .playerCount = 2});
+                  statusWithPlayers(GameStatusState::WaitingForPlayers, 2));
 
   const auto place = registry.placeForNewPlayer();
 
@@ -77,12 +77,10 @@ TEST(GameRegistry, SkipsAGameInProgress) {
   auto second = std::make_shared<RecordingChildState>();
   registry.open(openingOf(0, first));
   registry.open(openingOf(1, second));
-  registry.record(
-      *registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
-      GameStatus{.state = GameStatusState::InProgress, .playerCount = 4});
+  registry.record(*registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
+                  statusWithPlayers(GameStatusState::InProgress, 4));
   registry.record(*registry.findByToken(tokenOfGame(1)), SEQUENCE_FIVE,
-                  GameStatus{.state = GameStatusState::WaitingForPlayers,
-                             .playerCount = 1});
+                  statusWithPlayers(GameStatusState::WaitingForPlayers, 1));
 
   EXPECT_EQ(registry.placeForNewPlayer().port, portOfGame(1));
 }
@@ -97,8 +95,7 @@ TEST(GameRegistry, SkipsAFullGame) {
   auto state = std::make_shared<RecordingChildState>();
   registry.open(openingOf(0, state));
   registry.record(*registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
-                  GameStatus{.state = GameStatusState::WaitingForPlayers,
-                             .playerCount = 4});
+                  statusWithPlayers(GameStatusState::WaitingForPlayers, 4));
 
   EXPECT_EQ(registry.placeForNewPlayer().kind, PlaceKind::Open);
 }
@@ -114,9 +111,8 @@ TEST(GameRegistry, IsFullWhenEightGamesRunAndNoneHasAPlace) {
   for (std::uint32_t number = 0; number < EIGHT_GAMES; ++number) {
     states.push_back(std::make_shared<RecordingChildState>());
     registry.open(openingOf(number, states.back()));
-    registry.record(
-        *registry.findByToken(tokenOfGame(number)), SEQUENCE_FIVE,
-        GameStatus{.state = GameStatusState::InProgress, .playerCount = 4});
+    registry.record(*registry.findByToken(tokenOfGame(number)), SEQUENCE_FIVE,
+                    statusWithPlayers(GameStatusState::InProgress, 4));
   }
 
   EXPECT_EQ(registry.placeForNewPlayer().kind, PlaceKind::Full);
@@ -133,9 +129,8 @@ TEST(GameRegistry, StillOpensAGameWhenSevenRun) {
   for (std::uint32_t number = 0; number < EIGHT_GAMES - 1; ++number) {
     states.push_back(std::make_shared<RecordingChildState>());
     registry.open(openingOf(number, states.back()));
-    registry.record(
-        *registry.findByToken(tokenOfGame(number)), SEQUENCE_FIVE,
-        GameStatus{.state = GameStatusState::InProgress, .playerCount = 4});
+    registry.record(*registry.findByToken(tokenOfGame(number)), SEQUENCE_FIVE,
+                    statusWithPlayers(GameStatusState::InProgress, 4));
   }
 
   EXPECT_EQ(registry.placeForNewPlayer().kind, PlaceKind::Open);
@@ -151,18 +146,16 @@ TEST(GameRegistry, IgnoresAStatusOlderThanTheNewestOne) {
   auto state = std::make_shared<RecordingChildState>();
   registry.open(openingOf(0, state));
   SupervisedGame& game = *registry.findByToken(tokenOfGame(0));
-  registry.record(
-      game, SEQUENCE_FIVE,
-      GameStatus{.state = GameStatusState::InProgress, .playerCount = 3});
+  registry.record(game, SEQUENCE_FIVE,
+                  statusWithPlayers(GameStatusState::InProgress, 3));
 
   const bool taken =
       registry.record(game, SEQUENCE_FOUR,
-                      GameStatus{.state = GameStatusState::WaitingForPlayers,
-                                 .playerCount = 0});
+                      statusWithPlayers(GameStatusState::WaitingForPlayers, 0));
 
   EXPECT_FALSE(taken);
   EXPECT_EQ(game.lifecycle, GameLifecycle::InProgress);
-  EXPECT_EQ(game.playerCount, 3);
+  EXPECT_EQ(game.nicknames.size(), 3U);
 }
 
 /**
@@ -175,13 +168,11 @@ TEST(GameRegistry, TakesSequenceZeroAfterTheLastSequence) {
   auto state = std::make_shared<RecordingChildState>();
   registry.open(openingOf(0, state));
   SupervisedGame& game = *registry.findByToken(tokenOfGame(0));
-  registry.record(
-      game, LAST_SEQUENCE,
-      GameStatus{.state = GameStatusState::InProgress, .playerCount = 3});
+  registry.record(game, LAST_SEQUENCE,
+                  statusWithPlayers(GameStatusState::InProgress, 3));
 
-  EXPECT_TRUE(registry.record(
-      game, FIRST_SEQUENCE,
-      GameStatus{.state = GameStatusState::Finished, .playerCount = 3}));
+  EXPECT_TRUE(registry.record(game, FIRST_SEQUENCE,
+                              statusWithPlayers(GameStatusState::Finished, 3)));
 }
 
 /**
@@ -208,8 +199,7 @@ TEST(GameRegistry, CollectsAGameThatEndedByItself) {
   auto state = std::make_shared<RecordingChildState>();
   registry.open(openingOf(0, state));
   registry.record(*registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
-                  GameStatus{.state = GameStatusState::WaitingForPlayers,
-                             .playerCount = 0});
+                  statusWithPlayers(GameStatusState::WaitingForPlayers, 0));
   state->exit = ProcessExit{.code = 0};
 
   const auto exits = registry.collectExits();
@@ -310,8 +300,7 @@ TEST(GameRegistry, NeverTerminatesAGameThatReported) {
   auto state = std::make_shared<RecordingChildState>();
   registry.open(openingOf(0, state));
   registry.record(*registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
-                  GameStatus{.state = GameStatusState::WaitingForPlayers,
-                             .playerCount = 0});
+                  statusWithPlayers(GameStatusState::WaitingForPlayers, 0));
 
   registry.terminateStale(TEN_SECONDS_TO_START);
 
@@ -334,4 +323,65 @@ TEST(GameRegistry, TerminatesEveryGame) {
 
   EXPECT_TRUE(first->terminated);
   EXPECT_TRUE(second->terminated);
+}
+
+/**
+ * Given a registry with no game
+ * When two games are opened
+ * Then the first takes place 1 and the second place 2
+ */
+TEST(GameRegistry, GivesEachNewGameTheLowestFreePlace) {
+  GameRegistry registry;
+  auto first = std::make_shared<RecordingChildState>();
+  auto second = std::make_shared<RecordingChildState>();
+
+  registry.open(openingOf(0, first));
+  registry.open(openingOf(1, second));
+
+  ASSERT_EQ(registry.all().size(), 2U);
+  EXPECT_EQ(registry.all()[0].slot, FIRST_PLACE);
+  EXPECT_EQ(registry.all()[1].slot, SECOND_PLACE);
+}
+
+/**
+ * Given three games, of which the one in place 1 ended and was collected
+ * When a fourth game is opened
+ * Then it takes place 1 again, while its number is a new one
+ */
+TEST(GameRegistry, GivesAgainThePlaceOfAGameThatLeft) {
+  GameRegistry registry;
+  std::vector<std::shared_ptr<RecordingChildState>> states;
+  for (std::uint32_t number = 0; number < THREE_GAMES; ++number) {
+    states.push_back(std::make_shared<RecordingChildState>());
+    registry.open(openingOf(number, states.back()));
+  }
+  states.front()->exit = ProcessExit{.code = 0};
+  static_cast<void>(registry.collectExits());
+  states.push_back(std::make_shared<RecordingChildState>());
+
+  registry.open(openingOf(THREE_GAMES, states.back()));
+
+  EXPECT_EQ(registry.all().back().slot, FIRST_PLACE);
+  EXPECT_EQ(registry.all().back().number, THREE_GAMES);
+}
+
+/**
+ * Given eight games, one in each place
+ * When a ninth game is opened
+ * Then it is refused and the registry keeps eight games
+ */
+TEST(GameRegistry, RefusesAGameWhenEveryPlaceHoldsOne) {
+  GameRegistry registry;
+  std::vector<std::shared_ptr<RecordingChildState>> states;
+  for (std::uint32_t number = 0; number <= EIGHT_GAMES; ++number) {
+    states.push_back(std::make_shared<RecordingChildState>());
+  }
+  for (std::uint32_t number = 0; number < EIGHT_GAMES; ++number) {
+    registry.open(openingOf(number, states.at(number)));
+  }
+
+  EXPECT_THROW(registry.open(openingOf(static_cast<std::uint32_t>(EIGHT_GAMES),
+                                       states.back())),
+               NoFreeGameSlotException);
+  EXPECT_EQ(registry.all().size(), EIGHT_GAMES);
 }

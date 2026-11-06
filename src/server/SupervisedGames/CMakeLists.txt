@@ -8,18 +8,24 @@ add_library(rtype_server_supervised_games_module STATIC
   GameSpawner.cpp
   GameStatusReading.cpp
   ServerSupervisedGamesModule.cpp
+  SupervisedGamesReport.cpp
+  SupervisedGamesWatch.cpp
 )
 
 target_include_directories(rtype_server_supervised_games_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(rtype_server_supervised_games_module
   PUBLIC
+    rtype_concurrency_latest_value
+    rtype_engine_commands
     rtype_engine_modules
     rtype_engine_time
     rtype_logging
     rtype_network_game_status
+    rtype_network_master_messages
     rtype_network_transport
     rtype_server_games_module
+    rtype_server_information_module
     rtype_server_network_module
     rtype_server_processes
   PRIVATE
@@ -30,6 +36,7 @@ target_link_libraries(rtype_server_supervised_games_module
     rtype_network_disconnection
     rtype_network_exceptions
     rtype_network_game_status_acknowledged
+    rtype_network_master_validators
     rtype_network_sequence_order
     rtype_network_udp_socket
     rtype_server_constants

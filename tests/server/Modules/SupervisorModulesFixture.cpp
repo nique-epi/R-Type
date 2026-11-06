@@ -1,4 +1,6 @@
 #include "SupervisorModulesFixture.hpp"
+#include <gtest/gtest.h>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -12,15 +14,23 @@
 #include "ConfigurationReader.hpp"
 #include "ConfigurationReport.hpp"
 #include "ConfigurationSource.hpp"
+#include "DatagramCodec.hpp"
+#include "Endpoint.hpp"
 #include "ExecutablePath.hpp"
 #include "GameLineRule.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"
 #include "LoggingConstants.hpp"
 #include "LoopStages.hpp"
+#include "MessagePayload.hpp"
+#include "NetworkConstants.hpp"
 #include "ServerConstants.hpp"
+#include "ServerDatagrams.hpp"
+#include "ServerInformation.hpp"
 #include "SupervisorModules.hpp"
 #include "SupervisorModulesTestConstants.hpp"
+#include "TimeConstants.hpp"
+#include "UdpTestClient.hpp"
 
 SupervisorModulesFixture::SupervisorModulesFixture()
     : port_(freeUdpPort()),
@@ -79,4 +89,26 @@ std::filesystem::path SupervisorModulesFixture::gameConfigurationFile() const {
   return rtype::engine::executableFolder() /
          (std::string{GAMES_FILE_PREFIX} + portText_ +
           std::string{GAMES_FILE_SUFFIX});
+}
+
+rtype::network::ServerInformation SupervisorModulesFixture::askInformation(
+    const rtype::engine::Application& application) {
+  client_.send(
+      rtype::network::Endpoint{
+          .address = std::string{rtype::network::LOOPBACK_IPV4_ADDRESS},
+          .port = port_},
+      informationRequestDatagram());
+  for (std::size_t tick = 0; tick < INFORMATION_WAIT_TICKS; ++tick) {
+    application.runStages(rtype::engine::SIMULATION_TICK_DURATION);
+    const std::vector<ReceivedAt> received =
+        client_.waitForDatagrams(1, ONE_TICK_WAIT);
+    if (!received.empty()) {
+      return rtype::network::decodeMessage<rtype::network::ServerInformation>(
+          rtype::network::DatagramCodec::splitMessages(received.front().payload)
+              .at(0)
+              .payload);
+    }
+  }
+  ADD_FAILURE() << "the supervisor did not answer the information request";
+  return rtype::network::ServerInformation{};
 }
