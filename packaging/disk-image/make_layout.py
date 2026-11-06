@@ -34,7 +34,10 @@ CAPTION_FONT_SIZE = 8
 ARROW_HEAD = 10
 ARROW_GAP = 12
 ICON_DRAWN_TOP_OFFSET = -45
-LABEL_BOTTOM_OFFSET = 81
+LABEL_PLATE_TOP_OFFSET = 64
+LABEL_BOTTOM_OFFSET = 83
+LABEL_PLATE_HALF = 46
+LABEL_PLATE_CORNER = 2
 BOX_MARGIN = 12
 BOX_HALF = 64
 BOX_CORNER = 6
@@ -70,6 +73,17 @@ def paint_logo(canvas):
         (logo.width * LOGO_SCALE, logo.height * LOGO_SCALE), Image.NEAREST
     )
     canvas.alpha_composite(logo, ((WINDOW_WIDTH - logo.width) // 2, LOGO_TOP))
+
+
+def paint_label_plate(draw, center):
+    """Fills a light plate where Finder writes the name of an icon, in black."""
+    left = center[0] - LABEL_PLATE_HALF
+    right = center[0] + LABEL_PLATE_HALF
+    top = center[1] + LABEL_PLATE_TOP_OFFSET
+    bottom = center[1] + LABEL_BOTTOM_OFFSET
+    cut = LABEL_PLATE_CORNER
+    draw.rectangle((left + cut, top, right - cut, bottom), fill=PALE_BLUE)
+    draw.rectangle((left, top + cut, right, bottom - cut), fill=PALE_BLUE)
 
 
 def paint_box(draw, center):
@@ -133,6 +147,8 @@ def paint_background():
     paint_logo(canvas)
     paint_box(draw, APP_CENTER)
     paint_box(draw, APPLICATIONS_CENTER)
+    paint_label_plate(draw, APP_CENTER)
+    paint_label_plate(draw, APPLICATIONS_CENTER)
     paint_arrow(draw)
     paint_caption(draw)
     return canvas.convert("RGB")
