@@ -11,6 +11,7 @@ endif()
 add_library(rtype_engine_paths STATIC
   AssetFolder.cpp
   ExecutablePath.cpp
+  TextBeforeExtension.cpp
   ${RTYPE_EXECUTABLE_PATH_SOURCE}
 )
 

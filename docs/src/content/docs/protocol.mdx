@@ -1,5 +1,5 @@
 ---
-title: 'Network protocol: version 7'
+title: 'Network protocol: version 8'
 description: The datagrams the client and the server exchange over UDP, byte by byte, and what each side does when one is lost or cannot be read.
 sidebar:
   label: Protocol
@@ -11,7 +11,7 @@ This page is the specification of the protocol the client and the server speak: 
 
 ## Status of this document
 
-- This is version 7 of the protocol. It is the only version the code speaks; [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6) and [Version 7](#version-7) say what each changed from the version before, and what the rest of the second part of the project will change.
+- This is version 8 of the protocol. It is the only version the code speaks; [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7) and [Version 8](#version-8) say what each changed from the version before, and what the rest of the second part of the project will change.
 - The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
 - Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
 - Numbers are decimal unless written `0x`. A size is in bytes.
@@ -48,7 +48,7 @@ A position is in logical units, in the frame described in [Architecture](/R-Type
 
 ## Datagram
 
-A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 7.
+A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 8.
 
 <ByteLayout
   label="The 22-byte header: protocolId on bytes 0 to 3, version on byte 4, flags on byte 5, sessionToken on bytes 6 to 13, sequence on bytes 14 and 15, acknowledgedSequence on bytes 16 and 17, acknowledgementBits on bytes 18 to 21."
@@ -71,7 +71,7 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
   ]}
 />
 
-| Offset | Size | Field | In version 7 |
+| Offset | Size | Field | In version 8 |
 |---|---|---|---|
 | 0 | 4 | `protocolId` | `0x52545950`, `RTYP` in ASCII |
 | 4 | 1 | `version` | 7 |
@@ -182,6 +182,7 @@ A message is accepted only when its payload has exactly the size its fields add 
 | `ServerInformationRequest` | the payload is 81 bytes: `sentAt`, then 77 bytes of 0; a shorter or longer one, or a byte of `padding` other than 0, is invalid |
 | `ChatLine`, `PlayerChatLine` | `text` is 1 to 127 bytes of valid UTF-8, no control character; `PlayerChatLine` names a `playerNumber` of 1 to 4 |
 | `ServerInformation` | `gameVersion` and `name` are 1 to 32 bytes of valid UTF-8, no control character; `playerCount` is at most 4 times `gameCount`, and `playerCount` plus `freeSeatCount` too |
+| `GameStatus` | `state` is in the table of its message; at most 4 nicknames, each following the rules of a nickname; the measures byte sets no bit above bit 2, and the payload ends after the last measure it announces |
 
 A `LobbyState` or a `GameEnded` with no player is well formed; a `WorldState` too, while the game has none. A `LeaderboardAnswer` with no row is well formed.
 
@@ -208,7 +209,7 @@ Alternative considered: a bucket of lines, as Source keeps (4 lines at once, the
 
 ### Server information
 
-Anyone may ask a server what it is, without a session: a client measures its ping to the servers of the master this way, since the server map places every server by its ping: one request to each server of this version the master lists, at each reading of the list (every 15 s and on R), while the rest of their information comes from the master; and the master checks that a server still answers. A `ServerInformationRequest` carries `sentAt`, the time it leaves on the clock of its sender, in microseconds modulo 2^32, as a `Heartbeat` does (see [Round trip](#round-trip)), with a session token and a `sequence` of 0. The server keeps nothing and answers with one `ServerInformation`, to the address and port the request came from:
+Anyone may ask a server what it is, without a session, on the port of its supervisor; a game process answers none: a client measures its ping to the servers of the master this way, since the server map places every server by its ping: one request to each server of this version the master lists, at each reading of the list (every 15 s and on R), while the rest of their information comes from the master; and the master checks that a server still answers. A `ServerInformationRequest` carries `sentAt`, the time it leaves on the clock of its sender, in microseconds modulo 2^32, as a `Heartbeat` does (see [Round trip](#round-trip)), with a session token and a `sequence` of 0. The server keeps nothing and answers with one `ServerInformation`, to the address and port the request came from:
 
 | Field | Holds |
 |---|---|
@@ -217,9 +218,9 @@ Anyone may ask a server what it is, without a session: a client measures its pin
 | `protocolVersion` | the version the server speaks, the one at offset 4 of its header |
 | `gameVersion` | the version of the game it runs, such as `0.1.0` |
 | `name` | the name players read in the list of servers |
-| `playerCount` | the players seated in its games, away ones included |
-| `gameCount` | the games it hosts, whatever their state |
-| `freeSeatCount` | the empty seats of the games that wait for players: a game that started gives none |
+| `playerCount` | the players seated in its games, away ones included, as each game last told its supervisor |
+| `gameCount` | the games it may run at once, whatever their state: `MAXIMUM_RUNNING_GAMES` (8) for a supervisor |
+| `freeSeatCount` | the empty seats of the games that wait for players or start, plus four for each place no game holds: a game that started gives none |
 
 The asker reads the round trip as the time since the request left, less `heldFor`, both on its own clock, so the time the request waited in the server for its tick is left out; an answer held longer than its trip, or back after more than 20 s, gives none.
 
@@ -459,12 +460,12 @@ This section gathers what each side does when something goes wrong, from a datag
 
 ### Supervisor
 
-A supervisor (`r-type_server --mode supervisor`) starts a game process per game and sends each player to one. Three messages carry it. The datagram of a `ConnectionRedirect` is 27 bytes, never more than the 35 bytes of the smallest `ConnectionRequest` it answers, so it adds no amplification.
+A supervisor (`r-type_server`, or `--mode supervisor`) starts a game process (`--mode game`) per game and sends each player to one. Three messages carry it. The datagram of a `ConnectionRedirect` is 27 bytes, never more than the 35 bytes of the smallest `ConnectionRequest` it answers, so it adds no amplification.
 
 | Type | Message | Payload | Sent |
 |---|---|---|---|
 | 26 | `ConnectionRedirect` | `port` `u16` (1 to 65535) | supervisor to player, in answer to a request with a valid cookie |
-| 27 | `GameStatus` | `state` `u8`: 1 waiting for players, 2 in progress, 3 finished; `playerCount` `u8` (0 to 4) | game process to supervisor, every second and when either value changes |
+| 27 | `GameStatus` | `state` `u8`: 1 waiting for players, 2 in progress, 3 finished; `nicknameCount` `u8` (0 to 4), then each `nickname` `string`, in the order of the player numbers; `measures` `u8`, one bit per measure that follows; then each measure the bits announce, a `u32` in microseconds, in the order of the bits: bit 0 the median duration of a tick, bit 1 its 95th percentile, bit 2 the mean round trip to the players | game process to supervisor, every second and when any field changes |
 | 28 | `GameStatusAcknowledged` | none | supervisor to game process, in answer to each `GameStatus` |
 
 A client that receives a `ConnectionRedirect` while it connects, and only the first one of an attempt, to a port other than the one it uses, sends its next request to that port with the cookie back at 0: the game draws its own cookies. The 5 s of the attempt do not restart. In any other state it ignores the message. Between the supervisor and a game process, the header carries the link token as `sessionToken`, and `sequence` orders the statuses.
@@ -621,9 +622,13 @@ Version 6 names the entity types by a table instead of four values fixed in the 
 
 Version 7 sends `EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` inside an `OrderedMessage` (type 23) and delivers them in the order they were given (see [Ordered messages](#ordered-messages)). The layout of the header and of every other message is the same. A client of version 6 would not read the envelope, so `version` became 7 and the server answers a client of version 6 with `ConnectionRefused` (`IncompatibleVersion`).
 
-`ChatLine` and `PlayerChatLine` (types 29 and 30) did not change `version`: a peer that does not know them skips them, and the ordered channel hands a `PlayerChatLine` over to a client without the chat, which skips it, so the order of the channel holds.
+`ServerInformationRequest` and `ServerInformation` (types 24 and 25) did not change `version`: a server of version 7 that does not know them drops the request as a datagram from a sender that was not admitted and holds no connection request, and the asker gets no answer, as from a server that does not answer.
 
-`ServerInformationRequest` and `ServerInformation` (types 24 and 25) did not change `version` either: a server of version 7 that does not know them drops the request as a datagram from a sender that was not admitted and holds no connection request, and the asker gets no answer, as from a server that does not answer.
+## Version 8
+
+Version 8 makes a `GameStatus` say who plays the game and what its process measured: the nicknames of its players and up to three measures replace `playerCount` (see [Supervisor](#supervisor)). The supervisor reads from them the list of games it gives the master and the measures of the server, and counts the players and the free seats it answers an information request with, so a game process never talks to the master. A measure the process has not taken, before its first metrics report or without its metrics module, is left out, never sent as 0. A supervisor of version 7 would refuse every status of a game of version 8, whose bytes go on past `playerCount`, so `version` became 8, and the server answers a client of version 7 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same.
+
+`ChatLine` and `PlayerChatLine` (types 29 and 30) did not change `version`: a peer that does not know them skips them, and the ordered channel hands a `PlayerChatLine` over to a client without the chat, which skips it, so the order of the channel holds.
 
 ## Implementation status
 
@@ -641,7 +646,7 @@ The code of this repository applies the rules above, with the exceptions listed 
 - The server answers a request with a valid cookie with the `ConnectionAccepted` of the player and the table of its entity types, at most once per 250 ms per player once accepted; the client keeps the table of its first acceptance, and leaves a server whose table names a type it has no sheet for.
 - The server limits the datagrams of each address and port, and of each player, on its network thread, as [A sender that sends too much](#a-sender-that-sends-too-much) says.
 - The server relays the chat lines as [Chat](#chat) describes; the client sends none yet.
-- The server answers `ServerInformationRequest` as [Server information](#server-information) describes. The server map of the client sends one to each server of this version the master lists, once per reading of the list (see [Client](/R-Type/client/#server-map-servermapscreen-iservercatalog-igamecatalog)); the probe of the master is not written.
+- The supervisor answers `ServerInformationRequest` as [Server information](#server-information) describes, and a game process does not. The server map of the client sends one to each server of this version the master lists, once per reading of the list (see [Client](/R-Type/client/#server-map-servermapscreen-iservercatalog-igamecatalog)); the probe of the master is not written.
 
 What the programs do not do yet is listed at the end of [A peer disappears](#a-peer-disappears).
 

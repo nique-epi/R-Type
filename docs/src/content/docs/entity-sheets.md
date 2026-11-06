@@ -7,7 +7,7 @@ sidebar:
 
 An entity sheet, `assets/entities/<name>.toml`, describes one type of entity: the ship of a player, a Bydo, a missile. This page is for whoever adds or tunes a type: it gives the keys, what each one gives an entity, the rules between keys and between sheets, and how to read the error a program prints, without opening the C++. Why the types are data and not code is told in [Architecture](/R-Type/architecture/#entity-types).
 
-Both programs read the folder `entities` (`ENTITY_SHEET_FOLDER_IN_ASSETS`) of the `assets/` folder next to their executable, or one level above it, once, when they start; the folder they are started from plays no part. The server reads the table `[gameplay]` of each sheet (`EntitySheets`, `src/game/EntityTypes/`) when its games module starts, before the waves file, which names its enemies among the sheets. The client reads the table `[appearance]` (`EntityAppearances`, `src/client/Rendering/Sprites/EntityAppearances/`) when its assets module is installed, before it opens its window. Each checks that the root of a sheet holds exactly these two tables, and only the keys of its own: the server never reads `[appearance]`, the client never reads `[gameplay]`.
+Both programs read the folder `entities` (`ENTITY_SHEET_FOLDER_IN_ASSETS`) of the `assets/` folder next to their executable, or one level above it, once, when they start; the folder they are started from plays no part. On the server, each game process reads the table `[gameplay]` of each sheet (`EntitySheets`, `src/game/EntityTypes/`) when its games module starts, so when the first player who needs that game connects; the supervisor reads no sheet, before the waves file, which names its enemies among the sheets. The client reads the table `[appearance]` (`EntityAppearances`, `src/client/Rendering/Sprites/EntityAppearances/`) when its assets module is installed, before it opens its window. Each checks that the root of a sheet holds exactly these two tables, and only the keys of its own: the server never reads `[appearance]`, the client never reads `[gameplay]`.
 
 ## The folder and the names
 
@@ -169,7 +169,7 @@ A phase the sheet leaves out has no animation: the enemy keeps what it plays whe
 
 ## When a program refuses a sheet
 
-Each program stops on the first error and exits with code 1. The server prints `server stopped: The module "games" failed to start:`, the client `client stopped:`, then the absolute path of the file, the line and the column of what is wrong, the dotted name of the key and the rule it breaks. The messages below come from runs of the programs; the path is shortened to `…/entities/`.
+Each program stops on the first error and exits with code 1. A game process prints `game stopped: The module "games" failed to start:`, in its journal too, and its supervisor writes that the game crashed; the client prints `client stopped:`, then the absolute path of the file, the line and the column of what is wrong, the dotted name of the key and the rule it breaks. The messages below come from runs of the programs; the path is shortened to `…/entities/`.
 
 | The sheet holds… | The program prints, after its prefix |
 |---|---|

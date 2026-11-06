@@ -61,17 +61,30 @@ TEST(ServerModeOption, ModeSupervisorRunsTheSupervisorWithTheArgumentsAfterIt) {
 }
 
 /**
- * Given `--mode server` alone
+ * Given `--mode game` alone
  * When the mode is chosen
- * Then the binary runs the game server with no option
+ * Then the binary runs a game process with no option
  */
-TEST(ServerModeOption, ModeServerRunsTheServer) {
-  const Arguments arguments{MODE, SERVER_MODE};
+TEST(ServerModeOption, ModeGameRunsAGameProcess) {
+  const Arguments arguments{MODE, GAME_MODE};
 
   const ServerModeChoice choice = chooseServerMode(arguments);
 
-  EXPECT_EQ(choice.mode, ServerMode::Server);
+  EXPECT_EQ(choice.mode, ServerMode::Game);
   EXPECT_TRUE(choice.options.empty());
+}
+
+/**
+ * Given `--mode server`
+ * When the mode is chosen
+ * Then it is refused: a server that hosts several games in one process is no
+ * program of the binary
+ */
+TEST(ServerModeOption, ServerIsNotAMode) {
+  const Arguments arguments{MODE, SERVER_MODE};
+
+  EXPECT_THROW(static_cast<void>(chooseServerMode(arguments)),
+               InvalidLaunchOptionValueException);
 }
 
 /**

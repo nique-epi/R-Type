@@ -19,7 +19,9 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 7 numbers the
+ * @brief The version of the protocol this code speaks. Version 8 makes a
+ * GameStatus carry the nicknames of the players of its game and the measures
+ * of its process, see the Version 8 section; version 7 numbers the
  * guaranteed messages and delivers them in order, see the Ordered messages
  * section; version 6 names the
  * entity types by a table ConnectionAccepted carries, so the type of
@@ -30,7 +32,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * frame, see the Compression section; version 3 adds the outcome of a game to
  * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 7;
+constexpr std::uint8_t PROTOCOL_VERSION = 8;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -168,6 +170,20 @@ constexpr std::uint8_t DASHING_MOTION_BIT_POSITION = 5;
 constexpr std::size_t PLAYER_MOTION_BIT_COUNT = 6;
 constexpr auto PLAYER_MOTION_BITS =
     static_cast<std::uint8_t>((1U << PLAYER_MOTION_BIT_COUNT) - 1);
+
+/**
+ * @brief Where each measure of a GameStatus sits in its measures byte, counted
+ * from bit 0: the median of the duration of a tick, its 95th percentile, and
+ * the mean round trip of the players of the game. A measure whose bit is set
+ * follows, in that order, as a 32-bit count of microseconds; the bits above
+ * them are 0.
+ */
+constexpr std::uint8_t TICK_MEDIAN_MEASURE_BIT_POSITION = 0;
+constexpr std::uint8_t TICK_NINETY_FIFTH_PERCENTILE_MEASURE_BIT_POSITION = 1;
+constexpr std::uint8_t AVERAGE_ROUND_TRIP_MEASURE_BIT_POSITION = 2;
+constexpr std::size_t GAME_STATUS_MEASURE_COUNT = 3;
+constexpr auto GAME_STATUS_MEASURE_BITS =
+    static_cast<std::uint8_t>((1U << GAME_STATUS_MEASURE_COUNT) - 1);
 
 /**
  * @brief The inputNumber of the first PlayerInput of a session; each next one
@@ -537,6 +553,7 @@ constexpr std::string_view PADDING_FIELD = "padding";
 constexpr std::string_view FREE_SEAT_COUNT_FIELD = "freeSeatCount";
 constexpr std::string_view GAME_VERSION_FIELD = "gameVersion";
 constexpr std::string_view SERVER_NAME_FIELD = "name";
+constexpr std::string_view MEASURES_FIELD = "measures";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a

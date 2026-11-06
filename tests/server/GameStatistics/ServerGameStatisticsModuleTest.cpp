@@ -182,16 +182,33 @@ TEST_F(ServerGameStatisticsFixture, NamesTheFileAfterThePortWithoutASetting) {
 }
 
 /**
- * Given a file that is a folder
+ * Given a configuration that names statistics.csv, and a game on port 4307
+ * When the server starts
+ * Then the game writes statistics_4307.csv, and nothing to statistics.csv: two
+ * games of one supervisor never write the same file
+ */
+TEST_F(ServerGameStatisticsFixture, NamesTheFileOfTheSettingAfterThePort) {
+  start();
+
+  EXPECT_TRUE(std::filesystem::exists(folder() / WRITTEN_STATISTICS_FILE_NAME));
+  EXPECT_FALSE(std::filesystem::exists(folder() / STATISTICS_FILE_NAME));
+}
+
+/**
+ * Given a file of the port that is a folder
  * When the server starts
  * Then its start stops, naming the module
  */
 TEST_F(ServerGameStatisticsFixture, StopsTheStartWhenTheFileCannotBeOpened) {
-  EXPECT_THROW(startWritingTo(folder()), ModuleStartFailedException);
+  static_cast<void>(std::filesystem::create_directory(
+      folder() / WRITTEN_STATISTICS_FILE_NAME));
+
+  EXPECT_THROW(startWritingTo(folder() / STATISTICS_FILE_NAME),
+               ModuleStartFailedException);
 }
 
 /**
- * Given a file on a device that refuses every write
+ * Given a file of the port that leads to a device that refuses every write
  * When a Bydo is killed in each of two seconds
  * Then the journal says so once, and the game goes on
  */
@@ -200,7 +217,9 @@ TEST_F(ServerGameStatisticsFixture,
   if (!std::filesystem::exists(FULL_DISK_DEVICE)) {
     GTEST_SKIP() << "this system has no device that refuses every write";
   }
-  startWritingTo(std::filesystem::path{FULL_DISK_DEVICE});
+  std::filesystem::create_symlink(std::filesystem::path{FULL_DISK_DEVICE},
+                                  folder() / WRITTEN_STATISTICS_FILE_NAME);
+  startWritingTo(folder() / STATISTICS_FILE_NAME);
   publish(FIRST_GAME, GAME_STARTED);
 
   publish(FIRST_GAME, KILL_BY_FIRST_PILOT);

@@ -48,7 +48,8 @@ class ServerGameStatisticsFixture : public ::testing::Test {
   /** @brief Stops the application, as Ctrl-C does. */
   void stop();
 
-  /** @returns The text of STATISTICS_FILE_NAME in the temporary folder. */
+  /** @returns The text of WRITTEN_STATISTICS_FILE_NAME in the temporary
+   * folder: the file the plugin writes for STATISTICS_FILE_NAME. */
   [[nodiscard]] std::string fileText() const;
 
   [[nodiscard]] const RecordingJournal& journal() const;

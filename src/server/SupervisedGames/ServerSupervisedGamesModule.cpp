@@ -1,15 +1,18 @@
 #include "ServerSupervisedGamesModule.hpp"
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 #include "ChildrenStopper.hpp"
+#include "ConfigurationRegistry.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "ExitedGame.hpp"
 #include "FreeUdpPort.hpp"
+#include "GameConfigurationFile.hpp"
 #include "GameLaunchSettings.hpp"
 #include "GameLifecycle.hpp"
 #include "GameSpawnerParts.hpp"
@@ -19,17 +22,21 @@
 #include "IListeningPort.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IProcessLauncher.hpp"
+#include "IServerOccupancy.hpp"
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "PathText.hpp"
 #include "ReceivedStatus.hpp"
 #include "ServerConstants.hpp"
+#include "SettingValue.hpp"
 #include "StopPause.hpp"
 #include "SupervisedGame.hpp"
 #include "SupervisedGamesConstants.hpp"
+#include "TextSettingDefinition.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
 
@@ -41,6 +48,17 @@ namespace {
 network::Endpoint loopbackEndpoint(std::uint16_t port) {
   return network::Endpoint{
       .address = std::string{network::LOOPBACK_IPV4_ADDRESS}, .port = port};
+}
+
+/** @returns The database setting, declared in @p configuration. */
+const engine::SettingValue& declareDatabase(
+    engine::ConfigurationRegistry& configuration) {
+  return configuration.declareText(engine::TextSettingDefinition{
+      .name = std::string{DATABASE_SETTING_NAME},
+      .defaultValue = {},
+      .help = "SQLite file the leaderboard of the games of this server is "
+              "kept in; empty for the file of its port next to the executable",
+      .validate = {}});
 }
 
 }  // namespace
@@ -62,24 +80,37 @@ std::vector<std::string> ServerSupervisedGamesModule::dependencies() const {
 }
 
 void ServerSupervisedGamesModule::install(engine::InstallContext& context) {
+  database_ =
+      &declareDatabase(context.require<engine::ConfigurationRegistry>());
   sender_ = &context.require<IDatagramSender>();
   admission_ = &context.require<IPlayerAdmission>();
   tickDatagrams_ = &context.require<TickDatagrams>();
-  spawner_.emplace(
-      GameSpawnerParts{.launcher = *launcher_,
-                       .registry = registry_,
-                       .admission = *admission_,
-                       .supervisorPort = context.require<IListeningPort>(),
-                       .settings = settings_,
-                       .freePort = freeUdpPort});
+  listeningPort_ = &context.require<IListeningPort>();
+  spawner_.emplace(GameSpawnerParts{.launcher = *launcher_,
+                                    .registry = registry_,
+                                    .admission = *admission_,
+                                    .supervisorPort = *listeningPort_,
+                                    .settings = settings_,
+                                    .database = *database_,
+                                    .freePort = freeUdpPort});
   context.provide(registry_);
   context.provide(*spawner_);
+  context.provide<IServerOccupancy>(watch_);
+  context.provide(watch_.hostedGames());
+  context.provide(watch_.measures());
   context.addWork(SIMULATION_STAGE, [this](engine::Duration elapsed) {
     superviseGames(elapsed);
   });
 }
 
-void ServerSupervisedGamesModule::start() {}
+void ServerSupervisedGamesModule::start() {
+  const std::filesystem::path file = gameConfigurationFileOf(
+      settings_.folder, listeningPort_->listeningPort());
+  writeGameConfiguration(file, settings_.gameLines);
+  logger_.info("configuration of the games written to ",
+               logging::genericText(file), ": ", settings_.gameLines.size(),
+               " lines");
+}
 
 void ServerSupervisedGamesModule::stop() {
   ChildrenStopper stopper{*sender_, pause_};
@@ -90,6 +121,7 @@ void ServerSupervisedGamesModule::superviseGames(engine::Duration elapsed) {
   reportExits(registry_.collectExits());
   readStatuses();
   registry_.terminateStale(elapsed);
+  watch_.publishIfChanged();
 }
 
 void ServerSupervisedGamesModule::readStatuses() {

@@ -1,6 +1,9 @@
 #include "ServerSupervisedGamesFixture.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <utility>
@@ -33,7 +36,8 @@ using rtype::network::IncomingDatagram;
 using rtype::server::testing::onlyMessageIn;
 using rtype::server::testing::sentTo;
 
-void ServerSupervisedGamesFixture::startSupervisor() {
+void ServerSupervisedGamesFixture::startSupervisor(
+    std::vector<std::string> gameLines) {
   std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
   modules.push_back(
       std::make_unique<rtype::server::ServerLoggerModule>(journalOptions()));
@@ -45,7 +49,9 @@ void ServerSupervisedGamesFixture::startSupervisor() {
   modules.push_back(
       std::make_unique<rtype::server::ServerSupervisedGamesModule>(
           rtype::server::GameLaunchSettings{.program = PROGRAM_FOR_TESTS,
-                                            .folder = FOLDER_FOR_TESTS},
+                                            .folder = folder_.path(),
+                                            .gameLines = std::move(gameLines),
+                                            .forwardedArguments = {}},
           std::move(launcher), [](rtype::engine::Duration) {}));
   modules.push_back(
       std::make_unique<rtype::server::ServerSupervisorLobbyModule>());
@@ -100,6 +106,17 @@ void ServerSupervisedGamesFixture::gameReports(
                             rtype::network::PacketHeader{.sessionToken = token,
                                                          .sequence = sequence},
                             status)}});
+}
+
+std::filesystem::path ServerSupervisedGamesFixture::gameConfigurationFile()
+    const {
+  return folder_.path() / GAMES_FILE_OF_PORT_4242;
+}
+
+std::string ServerSupervisedGamesFixture::gameConfigurationText() const {
+  std::ifstream stream{gameConfigurationFile()};
+  return std::string{std::istreambuf_iterator<char>{stream},
+                     std::istreambuf_iterator<char>{}};
 }
 
 RecordingProcessLauncher& ServerSupervisedGamesFixture::launcher() {

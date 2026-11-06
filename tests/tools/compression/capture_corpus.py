@@ -4,7 +4,7 @@ Usage: python3 capture_corpus.py <port> <players> <seconds> <output file>
                                  [<assets/compression/server_to_client.dict>]
 
 Start the real server first, on <port>, for instance:
-  ./r-type_server --mode server -p 4301 --seed 1 --no-log-file --no-log-stderr
+  ./r-type_server -p 4301 --no-log-file --no-log-stderr
 The script plays <players> scripted pilots through the whole protocol (cookie
 handshake, ready, inputs at 60 per second) and writes every datagram of both
 directions, as records of: seconds (f64), direction (u8, 0 client to server,
