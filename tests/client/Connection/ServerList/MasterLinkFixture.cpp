@@ -22,7 +22,7 @@ MasterLinkFixture::MasterLinkFixture()
   link_.start();
 }
 
-MasterLinkFixture::~MasterLinkFixture() { link_.stop(); }
+void MasterLinkFixture::TearDown() { link_.stop(); }
 
 network::CreatedServer MasterLinkFixture::registeredServer() const {
   network::MasterClient anyone{

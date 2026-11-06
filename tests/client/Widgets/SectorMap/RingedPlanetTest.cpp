@@ -92,9 +92,10 @@ TEST(RingedPlanet, PaintsNothingOutsideItsClip) {
       ringedPlanetPixels(mockupPlanet(0.0, 0.0), RIGHT_HALF);
 
   EXPECT_FALSE(pixels.empty());
-  EXPECT_TRUE(std::ranges::all_of(pixels, [](const ColoredPixel& pixel) {
-    return RIGHT_HALF.contains(pixel.position);
-  }));
+  EXPECT_TRUE(
+      std::ranges::all_of(pixels, [](const ColoredPixel& pixel) noexcept {
+        return RIGHT_HALF.contains(pixel.position);
+      }));
 }
 
 /**

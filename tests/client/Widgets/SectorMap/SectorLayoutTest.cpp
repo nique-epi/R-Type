@@ -12,16 +12,15 @@ using rtype::client::angleOf;
 using rtype::client::MapView;
 using rtype::client::placeOf;
 using rtype::client::reachOf;
-using rtype::client::SECTOR_PLANET_RADIUS;
 using rtype::client::viewOn;
 using rtype::client::ZOOMED_IN_FACTOR;
 using rtype::client::testing::BELOW_FLOOR_BEARING;
 using rtype::client::testing::CHOSEN_STAR_PIXEL;
-using rtype::client::testing::FAR_PING_MILLISECONDS;
+using rtype::client::testing::FAR_PING;
 using rtype::client::testing::FIRST_SERVER;
 using rtype::client::testing::FLOOR_BEARING;
 using rtype::client::testing::FLOOR_PIXEL;
-using rtype::client::testing::LOW_PING_MILLISECONDS;
+using rtype::client::testing::LOW_PING;
 using rtype::client::testing::MOCKUP_PLACEMENTS;
 using rtype::client::testing::MOCKUP_REACH_TO_THE_RIGHT;
 using rtype::client::testing::MOCKUP_ZOOMED_IN_CENTER_X;
@@ -43,8 +42,7 @@ using rtype::client::testing::WIDEST_ANGLE_AT_THE_FAR_PING;
  * Then it is the reach the kit of the mockup computes
  */
 TEST(SectorLayout, ReachesToTheRightAsTheMockup) {
-  EXPECT_NEAR(reachOf(0.0, SECTOR_PLANET_RADIUS), MOCKUP_REACH_TO_THE_RIGHT,
-              REACH_TOLERANCE);
+  EXPECT_NEAR(reachOf(0.0), MOCKUP_REACH_TO_THE_RIGHT, REACH_TOLERANCE);
 }
 
 /**
@@ -107,8 +105,7 @@ TEST(SectorLayout, NeverPlacesAServerInsideTheReachOfThePlanet) {
  * Then both are the same
  */
 TEST(SectorLayout, GivesAServerTheSameDirectionEveryTime) {
-  EXPECT_EQ(angleOf(FIRST_SERVER, LOW_PING_MILLISECONDS),
-            angleOf(FIRST_SERVER, LOW_PING_MILLISECONDS));
+  EXPECT_EQ(angleOf(FIRST_SERVER, LOW_PING), angleOf(FIRST_SERVER, LOW_PING));
 }
 
 /**
@@ -117,8 +114,7 @@ TEST(SectorLayout, GivesAServerTheSameDirectionEveryTime) {
  * Then they differ, so the two stars do not overlap
  */
 TEST(SectorLayout, GivesTwoServersOfOnePingTwoDirections) {
-  EXPECT_NE(angleOf(FIRST_SERVER, LOW_PING_MILLISECONDS),
-            angleOf(SECOND_SERVER, LOW_PING_MILLISECONDS));
+  EXPECT_NE(angleOf(FIRST_SERVER, LOW_PING), angleOf(SECOND_SERVER, LOW_PING));
 }
 
 /**
@@ -128,7 +124,7 @@ TEST(SectorLayout, GivesTwoServersOfOnePingTwoDirections) {
  */
 TEST(SectorLayout, KeepsEveryDirectionWithinTheWidestAngle) {
   for (std::int64_t id = 1; id <= SERVERS_TO_SPREAD; ++id) {
-    EXPECT_LE(std::abs(angleOf(id, LOW_PING_MILLISECONDS)), WIDEST_ANGLE);
+    EXPECT_LE(std::abs(angleOf(id, LOW_PING)), WIDEST_ANGLE);
   }
 }
 
@@ -139,7 +135,6 @@ TEST(SectorLayout, KeepsEveryDirectionWithinTheWidestAngle) {
  */
 TEST(SectorLayout, NarrowsTheDirectionsOfFarServers) {
   for (std::int64_t id = 1; id <= SERVERS_TO_SPREAD; ++id) {
-    EXPECT_LE(std::abs(angleOf(id, FAR_PING_MILLISECONDS)),
-              WIDEST_ANGLE_AT_THE_FAR_PING);
+    EXPECT_LE(std::abs(angleOf(id, FAR_PING)), WIDEST_ANGLE_AT_THE_FAR_PING);
   }
 }

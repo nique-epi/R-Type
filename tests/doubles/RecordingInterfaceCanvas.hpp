@@ -5,10 +5,12 @@
 #include <SFML/System/Vector2.hpp>
 #include <optional>
 #include <set>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "ColoredPixel.hpp"
 #include "DrawJournal.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"

@@ -7,9 +7,9 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <numbers>
 #include <optional>
 #include <vector>
+#include "BackgroundColorConstants.hpp"
 #include "ColoredPixel.hpp"
 #include "LandWave.hpp"
 #include "MotionPreference.hpp"
@@ -40,10 +40,10 @@ SpacePoint unit(SpacePoint point) {
       .x = point.x / length, .y = point.y / length, .z = point.z / length};
 }
 
-SpacePoint cross(SpacePoint first, SpacePoint second) {
-  return SpacePoint{.x = (first.y * second.z) - (first.z * second.y),
-                    .y = (first.z * second.x) - (first.x * second.z),
-                    .z = (first.x * second.y) - (first.y * second.x)};
+SpacePoint cross(SpacePoint left, SpacePoint right) {
+  return SpacePoint{.x = (left.y * right.z) - (left.z * right.y),
+                    .y = (left.z * right.x) - (left.x * right.z),
+                    .z = (left.x * right.y) - (left.y * right.x)};
 }
 
 /** @brief The axis of the planet and two directions of its equator, from
@@ -80,13 +80,19 @@ double cellNoise(int column, int row) {
   return wave - std::floor(wave);
 }
 
-double landAt(double longitude, double latitude) {
+/** @brief A point of the surface of the planet, in radians. */
+struct SurfacePoint {
+  double longitude{};
+  double latitude{};
+};
+
+double landAt(SurfacePoint point) {
   double land = LAND_LEVEL;
   for (const LandWave& wave : LAND_WAVES) {
     const double bent = wave.latitudeBend == 0.0
-                            ? latitude
-                            : std::sin(wave.latitudeBend * latitude);
-    land += wave.weight * std::sin((wave.longitude * longitude) +
+                            ? point.latitude
+                            : std::sin(wave.latitudeBend * point.latitude);
+    land += wave.weight * std::sin((wave.longitude * point.longitude) +
                                    (wave.latitude * bent) + wave.phase);
   }
   return land;
@@ -181,7 +187,8 @@ double sphereLight(SpacePoint normal, const EquatorFrame& frame, double spin) {
   return LIGHT_AMBIENT +
          (diffuse * diffuse *
           (LIGHT_OF_THE_SEA +
-           (LIGHT_OF_THE_LAND * landAt(longitude, latitude)))) +
+           (LIGHT_OF_THE_LAND *
+            landAt({.longitude = longitude, .latitude = latitude})))) +
          rim;
 }
 
@@ -256,7 +263,7 @@ std::optional<HalftoneDot> dotAt(const HalftoneCell& cell,
 std::optional<sf::Color> ringColorOf(const HalftoneDot& dot,
                                      const HalftoneCell& cell) {
   const double tone =
-      dot.light + ((cell.threshold - 1.0 / 2.0) * RING_TONE_SPREAD);
+      dot.light + ((cell.threshold - BAYER_CELL_CENTRE) * RING_TONE_SPREAD);
   if (tone < RING_DARKEST_TONE) {
     return std::nullopt;
   }
@@ -304,13 +311,13 @@ HalftoneCell cellAt(sf::Vector2i pixel, int half, int radius) {
       static_cast<std::size_t>((pixel.x / HALFTONE_PITCH) % BAYER_SIZE);
   const auto bayerRow =
       static_cast<std::size_t>((pixel.y / HALFTONE_PITCH) % BAYER_SIZE);
-  return HalftoneCell{
-      .x = static_cast<double>(pixel.x + 1 - half) / radius,
-      .y = static_cast<double>(pixel.y + 1 - half) / radius,
-      .column = pixel.x,
-      .row = pixel.y,
-      .threshold = (BAYER_MATRIX.at(bayerRow).at(bayerColumn) + 1.0 / 2.0) /
-                   BAYER_LEVELS};
+  return HalftoneCell{.x = static_cast<double>(pixel.x + 1 - half) / radius,
+                      .y = static_cast<double>(pixel.y + 1 - half) / radius,
+                      .column = pixel.x,
+                      .row = pixel.y,
+                      .threshold = (BAYER_MATRIX.at(bayerRow).at(bayerColumn) +
+                                    BAYER_CELL_CENTRE) /
+                                   BAYER_LEVELS};
 }
 
 /** @returns The half size of the picture of the planet: its ring, then the
@@ -331,7 +338,7 @@ std::int64_t framesIn(engine::Duration span) {
 /** @returns The angle a turn of @p period has reached after @p frame frames. */
 double turnAfter(std::int64_t frame, std::chrono::milliseconds period) {
   const std::int64_t framesPerTurn = framesIn(period);
-  return 2.0 * std::numbers::pi * static_cast<double>(frame % framesPerTurn) /
+  return FULL_TURN_RADIANS * static_cast<double>(frame % framesPerTurn) /
          static_cast<double>(framesPerTurn);
 }
 

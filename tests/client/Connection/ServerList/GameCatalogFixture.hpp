@@ -14,9 +14,9 @@ namespace rtype::client::testing {
 /** @brief A catalog of games over a master the tests answer for. */
 class GameCatalogFixture : public ::testing::Test {
  protected:
-  /** @returns A server of @p id whose games take
+  /** @returns A server of @p serverId whose games take
    * PLAYERS_PER_GAME_OF_THE_SERVER players. */
-  [[nodiscard]] static ServerRow serverOf(std::int64_t id);
+  [[nodiscard]] static ServerRow serverOf(std::int64_t serverId);
 
   /** @returns A listing of game 1 in @p first and game 2 in @p second, two
    * pilots each. */

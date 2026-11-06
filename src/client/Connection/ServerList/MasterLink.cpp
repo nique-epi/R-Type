@@ -6,14 +6,12 @@
 #include <thread>
 #include <utility>
 #include "GameListReading.hpp"
-#include "GameListing.hpp"
 #include "MasterAccess.hpp"
 #include "MasterAsks.hpp"
 #include "MasterClient.hpp"
 #include "NetworkException.hpp"
 #include "ServerListConstants.hpp"
 #include "ServerListReading.hpp"
-#include "ServerListing.hpp"
 
 namespace rtype::client {
 

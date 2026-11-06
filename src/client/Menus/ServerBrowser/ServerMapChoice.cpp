@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
+#include <ratio>
 #include <utility>
 #include <vector>
 #include "MapDirection.hpp"
@@ -20,13 +22,13 @@
 namespace rtype::client {
 
 StarBearing bearingOf(const ServerRow& server) {
-  const double ping =
+  const std::chrono::duration<double, std::milli> ping =
       server.compatibility == ServerCompatibility::UpdateNeeded
-          ? PING_OF_A_SERVER_OF_ANOTHER_VERSION
+          ? std::chrono::duration<double, std::milli>(
+                PING_OF_A_SERVER_OF_ANOTHER_VERSION)
           : std::chrono::duration<double, std::milli>(
-                server.ping.value_or(std::chrono::microseconds::zero()))
-                .count();
-  return StarBearing{.pingMilliseconds = ping,
+                server.ping.value_or(std::chrono::microseconds::zero()));
+  return StarBearing{.pingMilliseconds = ping.count(),
                      .angleDegrees = angleOf(server.id, ping)};
 }
 
@@ -92,8 +94,9 @@ void ServerMapChoice::moveByPing(int step) {
   if (servers_.empty()) {
     return;
   }
-  const auto count = static_cast<long>(servers_.size());
-  const long moved = (static_cast<long>(chosen_) + step) % count;
+  const auto count = static_cast<std::int64_t>(servers_.size());
+  const std::int64_t moved =
+      (static_cast<std::int64_t>(chosen_) + step) % count;
   chosen_ = static_cast<std::size_t>(moved < 0 ? moved + count : moved);
 }
 

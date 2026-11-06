@@ -2,9 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <cstdint>
-#include <vector>
 #include "Endpoint.hpp"
-#include "PingAnswer.hpp"
 #include "RecordingDatagramLink.hpp"
 #include "ServerPingProbe.hpp"
 #include "SimulatedClock.hpp"

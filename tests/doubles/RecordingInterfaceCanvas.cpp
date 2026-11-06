@@ -6,10 +6,12 @@
 #include <algorithm>
 #include <optional>
 #include <set>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "ColoredPixel.hpp"
 #include "DrawJournal.hpp"
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"

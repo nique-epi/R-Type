@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
-#include <memory>
-#include "IInterfaceCanvas.hpp"
 #include "LabelSide.hpp"
+#include "MapView.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "SectorMapConstants.hpp"
 #include "SectorMapPainting.hpp"

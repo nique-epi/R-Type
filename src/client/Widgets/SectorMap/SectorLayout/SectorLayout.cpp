@@ -1,9 +1,11 @@
 #include "SectorLayout.hpp"
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <numbers>
+#include <ratio>
 #include <vector>
 #include "MapView.hpp"
 #include "SectorMapConstants.hpp"
@@ -32,8 +34,8 @@ double radiansOf(double degrees) {
 double spreadDirectionOf(StarBearing bearing) {
   double direction = radiansOf(bearing.angleDegrees);
   for (int pass = 0; pass < DIRECTION_REFINEMENTS; ++pass) {
-    const double distance = reachOf(direction, SECTOR_PLANET_RADIUS) +
-                            spreadDistanceOf(bearing.pingMilliseconds);
+    const double distance =
+        reachOf(direction) + spreadDistanceOf(bearing.pingMilliseconds);
     const double widest =
         std::asin(std::min(1.0, SPREAD_HALF_HEIGHT / distance));
     direction = (bearing.angleDegrees / MAXIMUM_ANGLE_DEGREES) * widest;
@@ -43,8 +45,9 @@ double spreadDirectionOf(StarBearing bearing) {
 
 }  // namespace
 
-double reachOf(double angle, double planetRadius) {
-  const double longHalf = RING_OUTER_RADII * planetRadius;
+double reachOf(double angle) {
+  const double longHalf =
+      RING_OUTER_RADII * static_cast<double>(SECTOR_PLANET_RADIUS);
   const double shortHalf = longHalf * ringOpening();
   const double alongX = std::cos(angle);
   const double alongY = std::sin(angle);
@@ -55,7 +58,8 @@ double reachOf(double angle, double planetRadius) {
   const double ring =
       1.0 / std::sqrt(((along / longHalf) * (along / longHalf)) +
                       ((across / shortHalf) * (across / shortHalf)));
-  return std::max(planetRadius, ring) + PLANET_FADE_OUT + PLANET_REACH_GAP;
+  return std::max(static_cast<double>(SECTOR_PLANET_RADIUS), ring) +
+         PLANET_FADE_OUT + PLANET_REACH_GAP;
 }
 
 double spreadDistanceOf(double pingMilliseconds) {
@@ -65,8 +69,8 @@ double spreadDistanceOf(double pingMilliseconds) {
 
 sf::Vector2i placeOf(StarBearing bearing, const MapView& view) {
   const double direction = spreadDirectionOf(bearing);
-  const double distance = reachOf(direction, SECTOR_PLANET_RADIUS) +
-                          spreadDistanceOf(bearing.pingMilliseconds);
+  const double distance =
+      reachOf(direction) + spreadDistanceOf(bearing.pingMilliseconds);
   return {static_cast<int>(std::lround(
               view.centerX + (distance * std::cos(direction) * view.zoom))),
           static_cast<int>(std::lround(
@@ -81,17 +85,18 @@ MapView viewOn(StarBearing bearing, double zoom, sf::Vector2i target) {
                  .centerY = static_cast<double>(target.y - fromCenter.y)};
 }
 
-int angleOf(std::int64_t serverId, double pingMilliseconds) {
+int angleOf(std::int64_t serverId,
+            std::chrono::duration<double, std::milli> ping) {
   const double span = std::min(
       MAXIMUM_ANGLE_DEGREES,
       std::asin(std::min(
-          1.0, SPREAD_HALF_HEIGHT / (pingMilliseconds * ANGLE_SPAN_PER_PING))) *
+          1.0, SPREAD_HALF_HEIGHT / (ping.count() * ANGLE_SPAN_PER_PING))) *
           DEGREES_PER_HALF_TURN / std::numbers::pi);
   const std::uint64_t hashed =
       static_cast<std::uint64_t>(serverId) * GOLDEN_RATIO_64;
   const double share = static_cast<double>(hashed >> ANGLE_HASH_SHIFT) /
                        static_cast<double>(std::uint64_t{1} << ANGLE_HASH_BITS);
-  return static_cast<int>(std::lround(-span + (share * 2.0 * span)));
+  return static_cast<int>(std::lround(-span + (share * (span + span))));
 }
 
 std::vector<sf::Vector2f> pingContourOf(double pingMilliseconds,
@@ -101,9 +106,8 @@ std::vector<sf::Vector2f> pingContourOf(double pingMilliseconds,
   for (int degrees = -quarterTurn; degrees <= quarterTurn;
        degrees += PING_RING_STEP_DEGREES) {
     const double direction = radiansOf(degrees);
-    const double distance = (reachOf(direction, SECTOR_PLANET_RADIUS) +
-                             spreadDistanceOf(pingMilliseconds)) *
-                            view.zoom;
+    const double distance =
+        (reachOf(direction) + spreadDistanceOf(pingMilliseconds)) * view.zoom;
     points.emplace_back(
         static_cast<float>(view.centerX + (distance * std::cos(direction))),
         static_cast<float>(view.centerY + (distance * std::sin(direction))));

@@ -33,7 +33,7 @@ bool fitsTheMap(sf::IntRect box) {
 
 bool isFree(sf::IntRect box, const std::vector<sf::IntRect>& taken) {
   return fitsTheMap(box) &&
-         std::ranges::none_of(taken, [box](const sf::IntRect& other) {
+         std::ranges::none_of(taken, [box](const sf::IntRect& other) noexcept {
            return box.findIntersection(other).has_value();
          });
 }

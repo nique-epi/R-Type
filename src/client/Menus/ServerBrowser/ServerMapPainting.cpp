@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 #include "BackgroundColorConstants.hpp"
+#include "ColoredPixel.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "LabelCandidate.hpp"
@@ -20,7 +21,6 @@
 #include "SectorLayout.hpp"
 #include "SectorMapConstants.hpp"
 #include "SectorMapPainting.hpp"
-#include "SectorMapPaintingConstants.hpp"
 #include "ServerCompatibility.hpp"
 #include "ServerListPhase.hpp"
 #include "ServerMapChoice.hpp"
@@ -99,6 +99,7 @@ void paintNames(IInterfaceCanvas& canvas, const ServerMapChoice& choice,
     order.insert(isChosen ? order.begin() : order.end(), index);
   }
   std::vector<LabelCandidate> candidates;
+  candidates.reserve(order.size());
   for (const std::size_t index : order) {
     candidates.push_back(LabelCandidate{
         .point = stars[index],

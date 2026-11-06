@@ -15,6 +15,7 @@
 #include "CutCornerBox.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceColorConstants.hpp"
+#include "LabelSide.hpp"
 #include "MapView.hpp"
 #include "MiniMap.hpp"
 #include "Outline.hpp"
@@ -24,6 +25,7 @@
 #include "SectorMapConstants.hpp"
 #include "SectorMapPaintingConstants.hpp"
 #include "ServerTooltip.hpp"
+#include "StarLook.hpp"
 #include "StarMark.hpp"
 #include "StarName.hpp"
 #include "TextStyle.hpp"
@@ -46,7 +48,9 @@ void addDashes(std::vector<ColoredPixel>& pixels, sf::Vector2f start,
                sf::Vector2f end, float& travelled) {
   const sf::Vector2f along = end - start;
   const float length = along.length();
-  for (float step = 0.0F; step < length; step += RING_STEP) {
+  const auto steps = static_cast<int>(std::ceil(length / RING_STEP));
+  for (int index = 0; index < steps; ++index) {
+    const float step = static_cast<float>(index) * RING_STEP;
     if (std::fmod(travelled + step, RING_DASH_PERIOD) < RING_DASH) {
       const sf::Vector2f point = start + (along * (step / length));
       pixels.push_back(
@@ -64,8 +68,7 @@ void paintRingLabel(IInterfaceCanvas& canvas, int milliseconds,
                     const MapView& view) {
   const int crossing = static_cast<int>(std::lround(
       view.centerX +
-      ((reachOf(0.0, SECTOR_PLANET_RADIUS) + spreadDistanceOf(milliseconds)) *
-       view.zoom)));
+      ((reachOf(0.0) + spreadDistanceOf(milliseconds)) * view.zoom)));
   const int left = SECTOR_MAP_AREA.position.x;
   if (crossing <= left + RING_LABEL_LEFT_MARGIN ||
       crossing >= left + SECTOR_MAP_AREA.size.x - RING_LABEL_ROOM) {
@@ -93,11 +96,12 @@ void paintCross(IInterfaceCanvas& canvas, sf::Vector2i point, int reach,
   canvas.fill({{point.x - reach, point.y - 1}, {(2 * reach) + 1, 3}}, color);
 }
 
-/** @returns The color of the cell @p symbol of row @p row of the loupe, or
- * nothing where the loupe is clear: the glass lies between the first and last
- * rims of the rows of the glass. */
-std::optional<sf::Color> loupeColorOf(char symbol, std::size_t column,
-                                      std::size_t row) {
+/** @returns The color of the @p cell (column, row) of the loupe, or nothing
+ * where the loupe is clear: the glass lies between the first and last rims of
+ * the rows of the glass. */
+std::optional<sf::Color> loupeColorOf(sf::Vector2<std::size_t> cell) {
+  const std::string_view line = LOUPE_PICTURE.at(cell.y);
+  const char symbol = line.at(cell.x);
   if (symbol == LOUPE_RIM) {
     return HUD_CYAN;
   }
@@ -107,10 +111,9 @@ std::optional<sf::Color> loupeColorOf(char symbol, std::size_t column,
   if (symbol == LOUPE_HANDLE) {
     return PALE_BLUE;
   }
-  const std::string_view line = LOUPE_PICTURE.at(row);
   const bool insideTheRim =
-      column > line.find(LOUPE_RIM) && column < line.rfind(LOUPE_RIM);
-  if (row >= LOUPE_GLASS_FIRST_ROW && row <= LOUPE_GLASS_LAST_ROW &&
+      cell.x > line.find(LOUPE_RIM) && cell.x < line.rfind(LOUPE_RIM);
+  if (cell.y >= LOUPE_GLASS_FIRST_ROW && cell.y <= LOUPE_GLASS_LAST_ROW &&
       insideTheRim) {
     return DEEP_BLUE;
   }
@@ -156,6 +159,15 @@ std::vector<ColoredPixel> miniMapPixels(const MiniMap& map) {
     return !inside.contains(pixel.position);
   });
   return pixels;
+}
+
+/** @returns The color of @p name: cyan when chosen, blue for a server of
+ * another version, pale blue otherwise. */
+sf::Color nameColorOf(const StarName& name) {
+  if (name.chosen) {
+    return HUD_CYAN;
+  }
+  return name.incompatible ? BLUE : PALE_BLUE;
 }
 
 }  // namespace
@@ -219,13 +231,13 @@ void paintChosenStar(IInterfaceCanvas& canvas, sf::Vector2i point) {
   const sf::Vector2i corner = point - sf::Vector2i{half, half};
   const int far = STAR_CORNERS_SIZE - 1;
   const int stroke = STAR_CORNER_LENGTH;
-  for (const sf::Vector2i at :
+  for (const sf::Vector2i tip :
        {corner, corner + sf::Vector2i{far, 0}, corner + sf::Vector2i{0, far},
         corner + sf::Vector2i{far, far}}) {
-    const int across = at.x == corner.x ? at.x : at.x - stroke + 1;
-    const int down = at.y == corner.y ? at.y : at.y - stroke + 1;
-    canvas.fill({{across, at.y}, {stroke, 1}}, HUD_CYAN);
-    canvas.fill({{at.x, down}, {1, stroke}}, HUD_CYAN);
+    const int across = tip.x == corner.x ? tip.x : tip.x - stroke + 1;
+    const int down = tip.y == corner.y ? tip.y : tip.y - stroke + 1;
+    canvas.fill({{across, tip.y}, {stroke, 1}}, HUD_CYAN);
+    canvas.fill({{tip.x, down}, {1, stroke}}, HUD_CYAN);
   }
 }
 
@@ -234,8 +246,7 @@ void paintStarName(IInterfaceCanvas& canvas, const StarName& name) {
     return;
   }
   const bool left = name.side == LabelSide::Left;
-  const sf::Color color =
-      name.chosen ? HUD_CYAN : (name.incompatible ? BLUE : PALE_BLUE);
+  const sf::Color color = nameColorOf(name);
   canvas.write(name.name,
                {name.point.x + (left ? -LABEL_TEXT_GAP : LABEL_TEXT_GAP),
                 name.point.y - LABEL_TEXT_RISE},
@@ -273,7 +284,7 @@ void paintZoomLoupe(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
     const std::string_view line = LOUPE_PICTURE.at(row);
     for (std::size_t column = 0; column < line.size(); ++column) {
       if (const std::optional<sf::Color> color =
-              loupeColorOf(line[column], column, row)) {
+              loupeColorOf(sf::Vector2<std::size_t>{column, row})) {
         pixels.push_back(ColoredPixel{
             .position = topLeft + sf::Vector2i{static_cast<int>(column),
                                                static_cast<int>(row)},

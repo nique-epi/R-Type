@@ -2,7 +2,9 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <array>
+#include <chrono>
 #include <cstdint>
+#include <ratio>
 #include "MapView.hpp"
 #include "MockupPlacement.hpp"
 #include "StarBearing.hpp"
@@ -53,12 +55,12 @@ constexpr StarBearing BELOW_FLOOR_BEARING{.pingMilliseconds = 4,
 /** @brief Servers whose directions are compared. */
 constexpr std::int64_t FIRST_SERVER = 7;
 constexpr std::int64_t SECOND_SERVER = 8;
-constexpr double LOW_PING_MILLISECONDS = 24.0;
+constexpr std::chrono::duration<double, std::milli> LOW_PING{24.0};
 constexpr int SERVERS_TO_SPREAD = 50;
 
 /** @brief A far ping, and the widest direction the map shows at it:
  * asin(78 / (225 * 1.75)) is 11.43 degrees. */
-constexpr double FAR_PING_MILLISECONDS = 225.0;
+constexpr std::chrono::duration<double, std::milli> FAR_PING{225.0};
 constexpr int WIDEST_ANGLE_AT_THE_FAR_PING = 11;
 constexpr int WIDEST_ANGLE = 75;
 

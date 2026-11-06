@@ -4,6 +4,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <utility>
@@ -134,9 +135,9 @@ void GamePanel::move(int step) {
     first_ = 0;
     return;
   }
-  const auto last = static_cast<long>(games_.games.size()) - 1;
-  chosen_ = static_cast<std::size_t>(
-      std::clamp(static_cast<long>(chosen_) + step, 0L, last));
+  const auto last = static_cast<std::int64_t>(games_.games.size()) - 1;
+  chosen_ = static_cast<std::size_t>(std::clamp(
+      static_cast<std::int64_t>(chosen_) + step, std::int64_t{0}, last));
   if (chosen_ < first_) {
     first_ = chosen_;
   } else if (chosen_ >= first_ + GAME_ROWS_SHOWN) {

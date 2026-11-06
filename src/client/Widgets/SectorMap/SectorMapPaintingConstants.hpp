@@ -1,11 +1,7 @@
 #pragma once
 
-#include <SFML/Graphics/Color.hpp>
-#include <SFML/System/Vector2.hpp>
 #include <array>
 #include <string_view>
-#include "BackgroundColorConstants.hpp"
-#include "InterfaceColorConstants.hpp"
 
 namespace rtype::client {
 

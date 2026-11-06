@@ -12,9 +12,9 @@
 
 namespace rtype::client::testing {
 
-ServerRow GameCatalogFixture::serverOf(std::int64_t id) {
+ServerRow GameCatalogFixture::serverOf(std::int64_t serverId) {
   ServerRow server;
-  server.id = id;
+  server.id = serverId;
   server.maximumPlayersPerGame = PLAYERS_PER_GAME_OF_THE_SERVER;
   return server;
 }

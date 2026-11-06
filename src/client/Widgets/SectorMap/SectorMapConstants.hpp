@@ -64,8 +64,8 @@ inline constexpr int DIRECTION_REFINEMENTS = 2;
  * times its ping.
  */
 inline constexpr std::uint64_t GOLDEN_RATIO_64 = 0x9E3779B97F4A7C15ULL;
-inline constexpr int ANGLE_HASH_BITS = 24;
-inline constexpr int ANGLE_HASH_SHIFT = 64 - ANGLE_HASH_BITS;
+inline constexpr unsigned ANGLE_HASH_BITS = 24U;
+inline constexpr unsigned ANGLE_HASH_SHIFT = 64U - ANGLE_HASH_BITS;
 inline constexpr double ANGLE_SPAN_PER_PING = 1.75;
 
 /**

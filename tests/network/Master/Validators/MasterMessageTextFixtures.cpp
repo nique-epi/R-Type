@@ -145,7 +145,7 @@ std::string serverListingTextOfServers(std::size_t serverCount) {
   ServerListing listing;
   for (std::size_t index = 0; index < serverCount; ++index) {
     ListedServer server = parisServerListing().servers.front();
-    server.id = static_cast<std::int64_t>(index + 1);
+    server.id = static_cast<std::int64_t>(index) + 1;
     listing.servers.push_back(server);
   }
   return serverListingText(listing);

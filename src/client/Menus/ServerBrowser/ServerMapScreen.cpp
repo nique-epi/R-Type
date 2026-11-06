@@ -114,9 +114,24 @@ std::optional<ServerRow> quickPlayServerOf(
 
 /** @returns Whether a server of @p servers is of this version. */
 bool holdsAServerOfThisVersion(const std::vector<ServerRow>& servers) {
-  return std::ranges::any_of(servers, [](const ServerRow& server) {
+  return std::ranges::any_of(servers, [](const ServerRow& server) noexcept {
     return server.compatibility == ServerCompatibility::Compatible;
   });
+}
+
+/** @returns The rows an arrow moves the choice of a game by: one up, one
+ * down, none across. */
+int rowStepOf(MapDirection direction) {
+  switch (direction) {
+    case MapDirection::Up:
+      return -1;
+    case MapDirection::Down:
+      return 1;
+    case MapDirection::Left:
+    case MapDirection::Right:
+      break;
+  }
+  return 0;
 }
 
 KeyChipParts quickPlayChipParts(std::function<void()> action,
@@ -229,9 +244,7 @@ bool ServerMapScreen::hidesScreensBelow() const { return true; }
 void ServerMapScreen::keyPressed(const sf::Event::KeyPressed& key) {
   if (const std::optional<MapDirection> direction = directionOf(key.code)) {
     if (map_.stage() == ServerMapStage::Games) {
-      panel_.move(*direction == MapDirection::Up     ? -1
-                  : *direction == MapDirection::Down ? 1
-                                                     : 0);
+      panel_.move(rowStepOf(*direction));
     } else {
       map_.moveTowards(*direction);
     }

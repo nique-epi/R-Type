@@ -1,5 +1,4 @@
 #include "ServerMapScreenFixtures.hpp"
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -15,34 +14,35 @@
 #include "ServerListSnapshot.hpp"
 #include "ServerMapScreenTestConstants.hpp"
 #include "ServerRow.hpp"
-#include "ServerStatus.hpp"
 
 namespace rtype::client::testing {
 
 namespace {
 
-ServerRow serverOf(std::int64_t id, std::string_view name,
-                   std::string_view address) {
+ServerRow serverOf(std::int64_t serverId, std::string_view name) {
   ServerRow server;
-  server.id = id;
+  server.id = serverId;
   server.name = std::string{name};
-  server.endpoint = network::Endpoint{.address = std::string{address},
-                                      .port = SERVER_GAME_PORT};
   server.maximumPlayersPerGame = PLAYERS_PER_GAME;
   return server;
+}
+
+network::Endpoint gameEndpointAt(std::string_view address) {
+  return network::Endpoint{.address = std::string{address},
+                           .port = SERVER_GAME_PORT};
 }
 
 }  // namespace
 
 std::vector<ServerRow> threeServers() {
-  ServerRow lyon =
-      serverOf(LYON_SERVER_ID, LYON_SERVER_NAME, LYON_SERVER_ADDRESS);
+  ServerRow lyon = serverOf(LYON_SERVER_ID, LYON_SERVER_NAME);
+  lyon.endpoint = gameEndpointAt(LYON_SERVER_ADDRESS);
   lyon.ping = LYON_PING;
-  ServerRow paris =
-      serverOf(PARIS_SERVER_ID, PARIS_SERVER_NAME, PARIS_SERVER_ADDRESS);
+  ServerRow paris = serverOf(PARIS_SERVER_ID, PARIS_SERVER_NAME);
+  paris.endpoint = gameEndpointAt(PARIS_SERVER_ADDRESS);
   paris.ping = PARIS_PING;
-  ServerRow old =
-      serverOf(OLD_STATION_ID, OLD_STATION_NAME, OLD_STATION_ADDRESS);
+  ServerRow old = serverOf(OLD_STATION_ID, OLD_STATION_NAME);
+  old.endpoint = gameEndpointAt(OLD_STATION_ADDRESS);
   old.compatibility = ServerCompatibility::UpdateNeeded;
   return {lyon, paris, old};
 }

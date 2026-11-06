@@ -4,6 +4,7 @@
 #include "DrawableTypeCheck.hpp"
 #include "EntityMessageQueue.hpp"
 #include "GameLoadedReminder.hpp"
+#include "IServerPingProbe.hpp"
 #include "InstallContext.hpp"
 #include "MessageDispatcher.hpp"
 #include "NetworkConditions.hpp"

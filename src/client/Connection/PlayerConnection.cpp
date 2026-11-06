@@ -7,6 +7,7 @@
 #include "Endpoint.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IPlayerRoundTrips.hpp"
+#include "IServerPingProbe.hpp"
 #include "IServerTicks.hpp"
 #include "InstallContext.hpp"
 #include "NetworkConditions.hpp"

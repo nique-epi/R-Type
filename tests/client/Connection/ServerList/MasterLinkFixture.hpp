@@ -14,11 +14,9 @@ namespace rtype::client::testing {
 class MasterLinkFixture : public ::testing::Test {
  protected:
   MasterLinkFixture();
-  ~MasterLinkFixture() override;
-  MasterLinkFixture(const MasterLinkFixture&) = delete;
-  MasterLinkFixture& operator=(const MasterLinkFixture&) = delete;
-  MasterLinkFixture(MasterLinkFixture&&) = delete;
-  MasterLinkFixture& operator=(MasterLinkFixture&&) = delete;
+
+  /** @brief Stops the link before the master it reads goes away. */
+  void TearDown() override;
 
   /** @returns The server LINKED_SERVER_NAME, created then registered. */
   [[nodiscard]] network::CreatedServer registeredServer() const;

@@ -16,7 +16,6 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <vector>
 #include "AssetLibrary.hpp"
 #include "ColoredPixel.hpp"
 #include "FragmentShader.hpp"

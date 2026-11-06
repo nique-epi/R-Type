@@ -110,9 +110,10 @@ void ServerCatalog::update(engine::Duration elapsed) {
   if (!roundAge_.has_value()) {
     return;
   }
-  *roundAge_ += elapsed;
+  const engine::Duration age = *roundAge_ + elapsed;
+  roundAge_ = age;
   takeAnswers();
-  if (waiting_.empty() || *roundAge_ >= PING_GIVE_UP_TIME) {
+  if (waiting_.empty() || age >= PING_GIVE_UP_TIME) {
     closeRound();
   }
 }
