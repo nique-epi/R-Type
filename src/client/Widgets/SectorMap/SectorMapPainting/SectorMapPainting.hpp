@@ -42,10 +42,6 @@ void paintStarName(IInterfaceCanvas& canvas, const StarName& name);
 /** @brief Paints the bubble @p tooltip. */
 void paintServerTooltip(IInterfaceCanvas& canvas, const ServerTooltip& tooltip);
 
-/** @brief Paints the loupe at @p topLeft, @p zoom written under it. */
-void paintZoomLoupe(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
-                    std::string_view zoom);
-
 /** @brief Paints @p map, scaled from the map to its frame. */
 void paintMiniMap(IInterfaceCanvas& canvas, const MiniMap& map);
 

@@ -1,15 +1,14 @@
 #include "ServerMapPainting.hpp"
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <optional>
-#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 #include "BackgroundColorConstants.hpp"
-#include "ColoredPixel.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "LabelCandidate.hpp"
@@ -55,6 +54,16 @@ std::string pingTextOf(const ServerRow& server) {
           .count());
 }
 
+/** @returns @p bubble raised so its bottom stays inside the map, above the row
+ * of the chips: a star low on the map would push it over them. */
+ServerTooltip keptInTheMap(ServerTooltip bubble) {
+  const sf::IntRect area = tooltipAreaOf(bubble);
+  const int lowestTop =
+      SECTOR_MAP_AREA.position.y + SECTOR_MAP_AREA.size.y - area.size.y;
+  bubble.topLeft.y = std::min(bubble.topLeft.y, lowestTop);
+  return bubble;
+}
+
 /** @returns The bubble of @p server standing at @p star: its pilots of the
  * most it takes and its games, its ping
  * and version, a warning when it is slow or of another version, and what
@@ -77,20 +86,21 @@ ServerTooltip tooltipOf(const ServerRow& server, sf::Vector2i star,
                                                               : OPEN_GAMES_HINT,
                    .color = HUD_CYAN});
   const bool onTheLeft = star.x > BUBBLE_FLIP_X;
-  return ServerTooltip{
+  ServerTooltip bubble{
       .topLeft = {onTheLeft ? star.x - BUBBLE_OFFSET.x - BUBBLE_WIDTH
                             : star.x + BUBBLE_OFFSET.x,
                   star.y + BUBBLE_OFFSET.y},
       .width = BUBBLE_WIDTH,
       .title = server.name,
       .lines = std::move(lines)};
+  return keptInTheMap(bubble);
 }
 
 /** @brief Writes the name of every server that finds a free side, the chosen
  * one served first, away from the boxes @p keepOut. */
 void paintNames(IInterfaceCanvas& canvas, const ServerMapChoice& choice,
                 const std::vector<sf::IntRect>& keepOut) {
-  const std::vector<sf::Vector2i> stars = choice.points();
+  const std::vector<sf::Vector2i> stars = starPointsOf(choice);
   const std::optional<ServerRow> chosen = choice.chosen();
   std::vector<std::size_t> order;
   for (std::size_t index = 0; index < stars.size(); ++index) {
@@ -121,25 +131,25 @@ void paintNames(IInterfaceCanvas& canvas, const ServerMapChoice& choice,
 }
 
 void paintStars(IInterfaceCanvas& canvas, const ServerMapChoice& choice) {
-  const std::vector<sf::Vector2i> stars = choice.points();
+  const std::vector<sf::Vector2i> stars = starPointsOf(choice);
   for (std::size_t index = 0; index < stars.size(); ++index) {
     paintStar(canvas, StarMark{.point = stars[index],
                                .look = lookOf(choice.servers()[index])});
   }
 }
 
-/** @brief Paints the corners and the bubble of the chosen server, and the
- * names that find a free side away from the bubble, the loupe and, while @p
- * zoomedIn, the minimap. */
+/** @brief Paints, when @p chosenShown, the corners and the bubble of the
+ * chosen server, and the names that find a free side away from the bubble
+ * and, while zoomed in, the minimap. */
 void paintNamesAndBubble(IInterfaceCanvas& canvas,
-                         const ServerMapChoice& choice, bool zoomedIn) {
-  std::vector<sf::IntRect> keepOut{LOUPE_KEEP_OUT};
-  if (zoomedIn) {
+                         const ServerMapChoice& choice, bool chosenShown) {
+  std::vector<sf::IntRect> keepOut;
+  if (choice.stage() != ServerMapStage::ZoomedOut) {
     keepOut.push_back(MINIMAP_KEEP_OUT);
   }
   const std::optional<ServerRow> chosen = choice.chosen();
   std::optional<ServerTooltip> bubble;
-  if (chosen.has_value()) {
+  if (chosen.has_value() && chosenShown) {
     const sf::Vector2i star = placeOf(bearingOf(*chosen), choice.view());
     bubble = tooltipOf(*chosen, star, choice.stage());
     keepOut.push_back(tooltipAreaOf(*bubble));
@@ -186,7 +196,9 @@ void paintServerMapHeader(IInterfaceCanvas& canvas, std::size_t serverCount) {
       TextStyle{
           .font = TextFont::Regular, .color = HUD_CYAN, .outlined = true});
   canvas.write(
-      std::to_string(serverCount) + SERVER_COUNT_SUFFIX,
+      (serverCount == 1 ? std::string{ONE_SERVER_TEXT}
+                        : std::to_string(serverCount) + SERVER_COUNT_SUFFIX) +
+          SERVER_MAP_HINT,
       SERVER_MAP_SUBTITLE_ANCHOR,
       TextStyle{.font = TextFont::Small, .color = PALE_BLUE, .outlined = true});
 }
@@ -230,15 +242,12 @@ PlanetPose planetPoseIn(const MapView& view, PlanetPose turned) {
 }
 
 void paintServerMap(IInterfaceCanvas& canvas, const ServerMapChoice& choice,
-                    std::span<const ColoredPixel> planet) {
+                    bool chosenShown) {
   const MapView view = choice.view();
-  canvas.plot(planet);
   paintPingRings(canvas, view);
   paintStars(canvas, choice);
   const bool zoomedIn = choice.stage() != ServerMapStage::ZoomedOut;
-  paintNamesAndBubble(canvas, choice, zoomedIn);
-  paintZoomLoupe(canvas, LOUPE_TOP_LEFT,
-                 zoomedIn ? ZOOMED_IN_WORD : ZOOMED_OUT_WORD);
+  paintNamesAndBubble(canvas, choice, chosenShown || zoomedIn);
   if (zoomedIn) {
     paintMiniMap(canvas, miniMapOf(choice));
   }

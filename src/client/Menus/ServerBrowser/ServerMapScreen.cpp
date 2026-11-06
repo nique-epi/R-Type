@@ -3,6 +3,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <SFML/Window/Mouse.hpp>
 #include <algorithm>
 #include <functional>
 #include <memory>
@@ -11,8 +12,10 @@
 #include <vector>
 #include "BarState.hpp"
 #include "Button.hpp"
+#include "IGameCatalog.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
+#include "InterfacePixel.hpp"
 #include "KeyChip.hpp"
 #include "KeyChipParts.hpp"
 #include "MapDirection.hpp"
@@ -23,6 +26,7 @@
 #include "SectorMapPainting.hpp"
 #include "ServerCompatibility.hpp"
 #include "ServerListPhase.hpp"
+#include "ServerMapChoice.hpp"
 #include "ServerMapPainting.hpp"
 #include "ServerMapScreenConstants.hpp"
 #include "ServerMapScreenParts.hpp"
@@ -134,6 +138,22 @@ int rowStepOf(MapDirection direction) {
   return 0;
 }
 
+/** @brief Opens the games of the server @p map chose, from any stage, and
+ * asks @p games for them; nothing without a chosen server. */
+void openGamesOf(ServerMapChoice& map, IGameCatalog& games) {
+  const std::optional<ServerRow> chosen = map.chosen();
+  if (!chosen.has_value()) {
+    return;
+  }
+  if (map.stage() == ServerMapStage::ZoomedOut) {
+    map.deeper();
+  }
+  if (map.stage() == ServerMapStage::ZoomedIn) {
+    map.deeper();
+    games.ask(*chosen);
+  }
+}
+
 KeyChipParts quickPlayChipParts(std::function<void()> action,
                                 ISoundPlayer& sounds) {
   return KeyChipParts{.text = quickPlayText(),
@@ -208,6 +228,14 @@ void ServerMapScreen::handleEvent(const sf::Event& event) {
   } else if (event.is<sf::Event::KeyReleased>() ||
              event.is<sf::Event::FocusLost>()) {
     heldKey_.reset();
+  } else if (const auto* moved = event.getIf<sf::Event::MouseMoved>()) {
+    chosenShown_ =
+        map_.chooseAt(interfacePixelAt(playfieldPointAt_(moved->position)));
+  } else if (const auto* click = event.getIf<sf::Event::MouseButtonPressed>();
+             click != nullptr && click->button == sf::Mouse::Button::Left &&
+             map_.chooseAt(
+                 interfacePixelAt(playfieldPointAt_(click->position)))) {
+    openGamesOf(map_, *games_);
   } else if (const auto* wheel = event.getIf<sf::Event::MouseWheelScrolled>()) {
     if (wheel->delta > 0.0F && map_.stage() == ServerMapStage::ZoomedOut) {
       map_.deeper();
@@ -247,12 +275,14 @@ void ServerMapScreen::keyPressed(const sf::Event::KeyPressed& key) {
       panel_.move(rowStepOf(*direction));
     } else {
       map_.moveTowards(*direction);
+      chosenShown_ = true;
     }
     return;
   }
   if (key.code == sf::Keyboard::Key::Tab &&
       map_.stage() != ServerMapStage::Games) {
     map_.moveByPing(key.shift ? -1 : 1);
+    chosenShown_ = true;
     return;
   }
   if ((key.code != MENU_CONFIRM_KEY && key.code != REFRESH_KEY) ||
@@ -277,8 +307,7 @@ void ServerMapScreen::confirm() {
       map_.deeper();
       return;
     case ServerMapStage::ZoomedIn:
-      map_.deeper();
-      games_->ask(*chosen);
+      openGamesOf(map_, *games_);
       return;
     case ServerMapStage::Games:
       break;
@@ -320,7 +349,8 @@ void ServerMapScreen::repaint() {
       planetPixels_ = sectorPlanetPixels(pose);
       planetPose_ = pose;
     }
-    paintServerMap(*canvas_, map_, planetPixels_);
+    canvas_->plot(planetPixels_);
+    paintServerMap(*canvas_, map_, chosenShown_);
     if (map_.stage() == ServerMapStage::Games) {
       panel_.paint(*canvas_);
     }

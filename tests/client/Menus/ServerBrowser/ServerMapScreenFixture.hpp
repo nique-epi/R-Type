@@ -1,6 +1,7 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
 #include "RecordingGameCatalog.hpp"
@@ -26,6 +27,10 @@ class ServerMapScreenFixture : public ::testing::Test {
   void press(sf::Keyboard::Key key);
   /** @brief Presses @p key without releasing it. */
   void hold(sf::Keyboard::Key key);
+  /** @brief Moves the pointer to @p pixel of the interface, at the pixel of
+   * the window INTERFACE_PIXEL times as far, when @p clicked is false;
+   * presses and releases the left button there otherwise; then runs a frame. */
+  void pointAt(sf::Vector2i pixel, bool clicked);
   void update(engine::Duration elapsed);
 
   [[nodiscard]] RecordingServerCatalog& servers();

@@ -26,6 +26,7 @@ target_link_libraries(rtype_client_menus_server_browser
     rtype_client_button
     rtype_client_cut_corner_box
     rtype_client_ink_tag
+    rtype_client_interface_pixel
     rtype_client_label_placement
     rtype_client_menu_builder
     rtype_client_ringed_planet

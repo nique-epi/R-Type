@@ -37,12 +37,16 @@ class ServerMapChoice {
    * is negative, going round. */
   void moveByPing(int step);
 
+  /**
+   * @brief Chooses the star under @p pointer, a pixel of the grid, as
+   * starUnder() finds it, the games of a server left open.
+   * @returns Whether a star was under it; nothing changes otherwise.
+   */
+  bool chooseAt(sf::Vector2i pointer);
+
   /** @returns How the map is seen at this stage: the whole map, or zoomed on
    * the chosen server. */
   [[nodiscard]] MapView view() const;
-  /** @returns The pixel each server stands on in view(), in the order of
-   * servers(). */
-  [[nodiscard]] std::vector<sf::Vector2i> points() const;
 
  private:
   std::vector<ServerRow> servers_;
@@ -54,5 +58,10 @@ class ServerMapChoice {
  * ring for a server of another version, which gives none, and the direction
  * its id takes. */
 [[nodiscard]] StarBearing bearingOf(const ServerRow& server);
+
+/** @returns The pixel each server of @p choice stands on in its view(), in
+ * the order of its servers(). */
+[[nodiscard]] std::vector<sf::Vector2i> starPointsOf(
+    const ServerMapChoice& choice);
 
 }  // namespace rtype::client

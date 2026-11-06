@@ -23,13 +23,13 @@ using rtype::client::testing::LYON_SERVER_ID;
 using rtype::client::testing::lyonGames;
 using rtype::client::testing::ONE_FRAME;
 using rtype::client::testing::PARIS_SERVER_ID;
+using rtype::client::testing::parisOnTheWholeMap;
 using rtype::client::testing::readyList;
 using rtype::client::testing::REFRESH_INTERVAL;
 using rtype::client::testing::ServerMapScreenFixture;
 using rtype::client::testing::SHORT_OF_THE_REFRESH;
+using rtype::client::testing::showsTheMiniMap;
 using rtype::client::testing::UNREACHABLE_MASTER;
-using rtype::client::testing::ZOOMED_IN_LOUPE;
-using rtype::client::testing::ZOOMED_OUT_LOUPE;
 using ::testing::ElementsAre;
 
 /**
@@ -72,17 +72,17 @@ TEST_F(ServerMapScreenFixture, TheRefreshKeyReadsTheListAgain) {
 }
 
 /**
- * Given the whole map, its loupe at X1
+ * Given the whole map, without its minimap
  * When Enter is pressed
- * Then the map zooms on the chosen server, its loupe at X2
+ * Then the map zooms on the chosen server, its minimap shown
  */
 TEST_F(ServerMapScreenFixture, EnterZoomsOnTheChosenServer) {
   openOn(readyList());
-  ASSERT_NE(writingOf(painting(), ZOOMED_OUT_LOUPE), nullptr);
+  ASSERT_FALSE(showsTheMiniMap(painting()));
 
   press(sf::Keyboard::Key::Enter);
 
-  EXPECT_NE(writingOf(painting(), ZOOMED_IN_LOUPE), nullptr);
+  EXPECT_TRUE(showsTheMiniMap(painting()));
 }
 
 /**
@@ -97,6 +97,35 @@ TEST_F(ServerMapScreenFixture, EnterOnTheZoomAsksForTheGamesOfTheServer) {
   press(sf::Keyboard::Key::Enter);
 
   EXPECT_THAT(games().asked(), ElementsAre(LYON_SERVER_ID));
+}
+
+/**
+ * Given the whole map, Lyon chosen first
+ * When the left button is pressed on the star of Paris
+ * Then the games of Paris are asked for at once, not those of Lyon
+ */
+TEST_F(ServerMapScreenFixture, AClickOnAStarOpensTheGamesOfItsServer) {
+  openOn(readyList());
+
+  pointAt(parisOnTheWholeMap(), true);
+
+  EXPECT_THAT(games().asked(), ElementsAre(PARIS_SERVER_ID));
+}
+
+/**
+ * Given the whole map, Lyon chosen first
+ * When the pointer moves over the star of Paris, then Enter zooms and Enter
+ * opens the games
+ * Then the games of Paris are asked for: the pointer chose it
+ */
+TEST_F(ServerMapScreenFixture, ThePointerOverAStarChoosesItsServer) {
+  openOn(readyList());
+  pointAt(parisOnTheWholeMap(), false);
+
+  press(sf::Keyboard::Key::Enter);
+  press(sf::Keyboard::Key::Enter);
+
+  EXPECT_THAT(games().asked(), ElementsAre(PARIS_SERVER_ID));
 }
 
 /**
@@ -161,7 +190,7 @@ TEST_F(ServerMapScreenFixture, EscapeOnTheZoomGoesBackToTheWholeMap) {
 
   press(sf::Keyboard::Key::Escape);
 
-  EXPECT_NE(writingOf(painting(), ZOOMED_OUT_LOUPE), nullptr);
+  EXPECT_FALSE(showsTheMiniMap(painting()));
   EXPECT_TRUE(navigator().calls().empty());
 }
 

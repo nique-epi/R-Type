@@ -1,8 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <span>
-#include "ColoredPixel.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "MapView.hpp"
 #include "PlanetPose.hpp"
@@ -25,13 +23,14 @@ void paintServerMapMessage(IInterfaceCanvas& canvas, ServerListPhase phase);
 [[nodiscard]] PlanetPose planetPoseIn(const MapView& view, PlanetPose turned);
 
 /**
- * @brief Paints the map as @p choice sees it, as the mockup draws it: the
- * pixels @p planet of the planet, which sectorPlanetPixels() gives for
- * planetPoseIn() the view, the rings of ping, every server, the names that
- * find a free side, the corners and the bubble of the chosen server, the loupe
- * of the zoom, and the minimap while zoomed in.
+ * @brief Paints the map as @p choice sees it, as the mockup draws it, over the
+ * planet the caller plotted: the rings of ping, every server, the names that
+ * find a free side and the minimap while zoomed in.
+ * The corners and the bubble of the chosen server are painted while zoomed
+ * in, and on the whole map only when @p chosenShown: the pointer is over it,
+ * or a key chose it.
  */
 void paintServerMap(IInterfaceCanvas& canvas, const ServerMapChoice& choice,
-                    std::span<const ColoredPixel> planet);
+                    bool chosenShown);
 
 }  // namespace rtype::client

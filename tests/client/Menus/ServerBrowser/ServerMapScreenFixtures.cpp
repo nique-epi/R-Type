@@ -1,4 +1,6 @@
 #include "ServerMapScreenFixtures.hpp"
+#include <SFML/System/Vector2.hpp>
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -8,10 +10,14 @@
 #include "Endpoint.hpp"
 #include "GameListSnapshot.hpp"
 #include "GameRow.hpp"
+#include "InterfaceColorConstants.hpp"
 #include "ListedGameState.hpp"
+#include "RecordingInterfaceCanvas.hpp"
 #include "ServerCompatibility.hpp"
 #include "ServerListPhase.hpp"
 #include "ServerListSnapshot.hpp"
+#include "ServerMapChoice.hpp"
+#include "ServerMapScreenConstants.hpp"
 #include "ServerMapScreenTestConstants.hpp"
 #include "ServerRow.hpp"
 
@@ -67,6 +73,20 @@ GameListSnapshot lyonGames() {
       .phase = ServerListPhase::Ready,
       .games = {gameOf(WAITING_GAME_NUMBER, network::ListedGameState::Waiting),
                 gameOf(PLAYING_GAME_NUMBER, network::ListedGameState::InGame)}};
+}
+
+sf::Vector2i parisOnTheWholeMap() {
+  ServerMapChoice map;
+  map.showServers(threeServers());
+  return starPointsOf(map).at(PARIS_INDEX);
+}
+
+bool showsTheMiniMap(const InterfaceCanvasRecord& painting) {
+  return std::ranges::any_of(
+      painting.fills, [](const RecordedFill& fill) noexcept {
+        return fill.color == INK &&
+               MINIMAP_AREA.findIntersection(fill.area) == fill.area;
+      });
 }
 
 GameListSnapshot waitingGames(std::size_t count) {

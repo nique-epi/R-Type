@@ -96,30 +96,6 @@ void paintCross(IInterfaceCanvas& canvas, sf::Vector2i point, int reach,
   canvas.fill({{point.x - reach, point.y - 1}, {(2 * reach) + 1, 3}}, color);
 }
 
-/** @returns The color of the @p cell (column, row) of the loupe, or nothing
- * where the loupe is clear: the glass lies between the first and last rims of
- * the rows of the glass. */
-std::optional<sf::Color> loupeColorOf(sf::Vector2<std::size_t> cell) {
-  const std::string_view line = LOUPE_PICTURE.at(cell.y);
-  const char symbol = line.at(cell.x);
-  if (symbol == LOUPE_RIM) {
-    return HUD_CYAN;
-  }
-  if (symbol == LOUPE_GLINT) {
-    return STAR_WHITE;
-  }
-  if (symbol == LOUPE_HANDLE) {
-    return PALE_BLUE;
-  }
-  const bool insideTheRim =
-      cell.x > line.find(LOUPE_RIM) && cell.x < line.rfind(LOUPE_RIM);
-  if (cell.y >= LOUPE_GLASS_FIRST_ROW && cell.y <= LOUPE_GLASS_LAST_ROW &&
-      insideTheRim) {
-    return DEEP_BLUE;
-  }
-  return std::nullopt;
-}
-
 /** @returns @p length of the map, in pixels of @p map. */
 int scaledToMiniMap(const MiniMap& map, int length) {
   return static_cast<int>(std::lround(
@@ -275,29 +251,6 @@ void paintServerTooltip(IInterfaceCanvas& canvas,
                          TOOLTIP_FIRST_LINE + (index * TOOLTIP_LINE_PITCH)},
         TextStyle{.font = TextFont::Small, .color = line.color});
   }
-}
-
-void paintZoomLoupe(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
-                    std::string_view zoom) {
-  std::vector<ColoredPixel> pixels;
-  for (std::size_t row = 0; row < LOUPE_PICTURE.size(); ++row) {
-    const std::string_view line = LOUPE_PICTURE.at(row);
-    for (std::size_t column = 0; column < line.size(); ++column) {
-      if (const std::optional<sf::Color> color =
-              loupeColorOf(sf::Vector2<std::size_t>{column, row})) {
-        pixels.push_back(ColoredPixel{
-            .position = topLeft + sf::Vector2i{static_cast<int>(column),
-                                               static_cast<int>(row)},
-            .color = *color});
-      }
-    }
-  }
-  canvas.plot(pixels);
-  canvas.write(zoom, topLeft + sf::Vector2i{LOUPE_TEXT_SHIFT, LOUPE_TEXT_DROP},
-               TextStyle{.font = TextFont::Small,
-                         .color = HUD_CYAN,
-                         .outlined = true,
-                         .alignment = TextAlignment::Center});
 }
 
 void paintMiniMap(IInterfaceCanvas& canvas, const MiniMap& map) {

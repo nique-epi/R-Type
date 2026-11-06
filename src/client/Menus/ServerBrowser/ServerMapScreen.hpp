@@ -98,6 +98,9 @@ class ServerMapScreen : public IScreen {
    * reduced motion, so its pixels are computed again only when it moved. */
   std::optional<PlanetPose> planetPose_;
   std::vector<ColoredPixel> planetPixels_;
+  /** @brief Whether the whole map shows the corners and the bubble of the
+   * chosen server: the pointer is over it, or an arrow or Tab chose it. */
+  bool chosenShown_{false};
 };
 
 }  // namespace rtype::client

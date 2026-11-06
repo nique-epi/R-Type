@@ -14,7 +14,6 @@ using rtype::client::MapView;
 using rtype::client::paintPingRings;
 using rtype::client::paintStar;
 using rtype::client::paintStarName;
-using rtype::client::paintZoomLoupe;
 using rtype::client::SECTOR_MAP_AREA;
 using rtype::client::SECTOR_PLANET_CENTER;
 using rtype::client::StarLook;
@@ -29,7 +28,6 @@ using rtype::client::testing::MIDDLE_STAR;
 using rtype::client::testing::NO_PILOT;
 using rtype::client::testing::STAR_NAME;
 using rtype::client::testing::STAR_NEAR_THE_TOP;
-using rtype::client::testing::ZOOM_TWICE;
 
 /**
  * Given an empty server, one of a few pilots and one of a crowd
@@ -105,18 +103,4 @@ TEST(SectorMapPainting, PaintsTheRingsInsideTheMapOnly) {
   for (const auto& [column, row] : litPixelsOf(record)) {
     EXPECT_TRUE(SECTOR_MAP_AREA.contains({column, row}));
   }
-}
-
-/**
- * Given the loupe of the zoom
- * When it is painted
- * Then it writes its zoom under it
- */
-TEST(SectorMapPainting, TheLoupeWritesItsZoom) {
-  InterfaceCanvasRecord record;
-  RecordingInterfaceCanvas canvas{record};
-
-  paintZoomLoupe(canvas, MIDDLE_STAR, ZOOM_TWICE);
-
-  EXPECT_NE(writingOf(record, ZOOM_TWICE), nullptr);
 }

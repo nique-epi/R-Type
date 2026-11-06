@@ -9,7 +9,10 @@
 
 using rtype::client::MapDirection;
 using rtype::client::neighbourOf;
+using rtype::client::starUnder;
+using rtype::client::testing::AT_THE_EDGE_OF_THE_PICK;
 using rtype::client::testing::FAR_ON_THE_RIGHT;
+using rtype::client::testing::JUST_PAST_THE_PICK;
 using rtype::client::testing::MIDDLE_STAR;
 using rtype::client::testing::NEAR_ON_THE_RIGHT;
 using rtype::client::testing::NO_SUCH_STAR;
@@ -71,4 +74,27 @@ TEST(StarNavigation, FromAStarTheListDoesNotHoldReachesNothing) {
   const std::vector<sf::Vector2i> stars;
 
   EXPECT_EQ(neighbourOf(stars, NO_SUCH_STAR, MapDirection::Down), std::nullopt);
+}
+
+/**
+ * Given a star and the pointer 6 pixels right of it and 6 below
+ * When the star under the pointer is looked for
+ * Then it is that star: 6 pixels is still close enough to pick it
+ */
+TEST(StarNavigation, APointerAtTheEdgeOfThePickFindsTheStar) {
+  const std::vector<sf::Vector2i> stars{FAR_ON_THE_RIGHT, MIDDLE_STAR};
+
+  EXPECT_EQ(starUnder(stars, AT_THE_EDGE_OF_THE_PICK),
+            std::optional<std::size_t>{1});
+}
+
+/**
+ * Given a star and the pointer 7 pixels right of it
+ * When the star under the pointer is looked for
+ * Then there is none: the pointer is past the pick
+ */
+TEST(StarNavigation, APointerPastThePickFindsNoStar) {
+  const std::vector<sf::Vector2i> stars{MIDDLE_STAR};
+
+  EXPECT_EQ(starUnder(stars, JUST_PAST_THE_PICK), std::nullopt);
 }

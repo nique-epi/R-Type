@@ -1,4 +1,5 @@
 #include "ServerMapScreenFixture.hpp"
+#include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
 #include "KeyPress.hpp"
@@ -39,6 +40,17 @@ void ServerMapScreenFixture::press(sf::Keyboard::Key key) {
 
 void ServerMapScreenFixture::hold(sf::Keyboard::Key key) {
   screen_->handleEvent(keyPress(key));
+  update(ONE_FRAME);
+}
+
+void ServerMapScreenFixture::pointAt(sf::Vector2i pixel, bool clicked) {
+  const sf::Vector2i windowPixel = pixel * INTERFACE_PIXEL;
+  if (clicked) {
+    screen_->handleEvent(leftPress(windowPixel));
+    screen_->handleEvent(leftRelease(windowPixel));
+  } else {
+    screen_->handleEvent(pointerMove(windowPixel));
+  }
   update(ONE_FRAME);
 }
 

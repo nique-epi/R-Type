@@ -47,25 +47,6 @@ inline constexpr int TOOLTIP_FIRST_LINE = 17;
 inline constexpr int TOOLTIP_LINE_PITCH = 10;
 inline constexpr int TOOLTIP_BOTTOM = 18;
 
-/**
- * @brief The loupe that says the zoom: its picture, a row per string, '#' its
- * rim in cyan, 'l' its glint in white, 'h' its handle in pale blue, the glass
- * inside the rim deep blue; the zoom written LOUPE_TEXT_DROP below its top,
- * LOUPE_TEXT_SHIFT right of it.
- */
-inline constexpr std::array<std::string_view, 13> LOUPE_PICTURE{
-    "...#####.....", "..#.....#....", ".#.ll....#...", ".#.l.....#...",
-    ".#.......#...", ".#.......#...", ".#.......#...", "..#.....#....",
-    "...#####hh...", "........hhh..", ".........hhh.", "..........hhh",
-    "...........hh"};
-inline constexpr char LOUPE_RIM = '#';
-inline constexpr char LOUPE_GLINT = 'l';
-inline constexpr char LOUPE_HANDLE = 'h';
-inline constexpr int LOUPE_GLASS_FIRST_ROW = 1;
-inline constexpr int LOUPE_GLASS_LAST_ROW = 7;
-inline constexpr int LOUPE_TEXT_SHIFT = 6;
-inline constexpr int LOUPE_TEXT_DROP = 16;
-
 /** @brief The minimap: its planet at least
  * MINIMAP_SMALLEST_PLANET pixels in radius, its frame of the part shown at
  * least MINIMAP_SMALLEST_FRAME wide. */

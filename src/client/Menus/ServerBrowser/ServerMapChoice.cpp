@@ -83,11 +83,24 @@ bool ServerMapChoice::shallower() {
 }
 
 void ServerMapChoice::moveTowards(MapDirection direction) {
-  const std::vector<sf::Vector2i> stars = points();
+  const std::vector<sf::Vector2i> stars = starPointsOf(*this);
   if (const std::optional<std::size_t> next =
           neighbourOf(stars, chosen_, direction)) {
     chosen_ = *next;
   }
+}
+
+bool ServerMapChoice::chooseAt(sf::Vector2i pointer) {
+  if (stage_ == ServerMapStage::Games) {
+    return false;
+  }
+  const std::vector<sf::Vector2i> stars = starPointsOf(*this);
+  const std::optional<std::size_t> under = starUnder(stars, pointer);
+  if (!under.has_value()) {
+    return false;
+  }
+  chosen_ = *under;
+  return true;
 }
 
 void ServerMapChoice::moveByPing(int step) {
@@ -110,11 +123,11 @@ MapView ServerMapChoice::view() const {
   return viewOn(bearingOf(*server), ZOOMED_IN_FACTOR, CHOSEN_STAR_ZOOMED_IN);
 }
 
-std::vector<sf::Vector2i> ServerMapChoice::points() const {
-  const MapView seen = view();
+std::vector<sf::Vector2i> starPointsOf(const ServerMapChoice& choice) {
+  const MapView seen = choice.view();
   std::vector<sf::Vector2i> stars;
-  stars.reserve(servers_.size());
-  for (const ServerRow& server : servers_) {
+  stars.reserve(choice.servers().size());
+  for (const ServerRow& server : choice.servers()) {
     stars.push_back(placeOf(bearingOf(server), seen));
   }
   return stars;

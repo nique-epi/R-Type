@@ -21,6 +21,8 @@ constexpr std::string_view OLD_STATION_ADDRESS = "203.0.113.9";
 constexpr std::uint16_t SERVER_GAME_PORT = 4242;
 constexpr std::chrono::milliseconds LYON_PING{24};
 constexpr std::chrono::milliseconds PARIS_PING{88};
+/** @brief Where Paris comes in the list of three servers, sorted by ping. */
+constexpr std::size_t PARIS_INDEX = 1;
 constexpr std::uint8_t PLAYERS_PER_GAME = 4;
 
 /** @brief The games of Lyon: one waiting, one in game. */
@@ -36,9 +38,7 @@ constexpr std::chrono::milliseconds ONE_FRAME{16};
 constexpr std::chrono::seconds REFRESH_INTERVAL{15};
 constexpr std::chrono::seconds SHORT_OF_THE_REFRESH{14};
 
-/** @brief The words the map writes: the zoom, and the master unreachable. */
-constexpr std::string_view ZOOMED_OUT_LOUPE = "X1";
-constexpr std::string_view ZOOMED_IN_LOUPE = "X2";
+/** @brief The words the map writes when the master is unreachable. */
 constexpr std::string_view UNREACHABLE_MASTER = "MASTER UNREACHABLE";
 
 /** @brief Seven games, one more than the panel shows at once. */

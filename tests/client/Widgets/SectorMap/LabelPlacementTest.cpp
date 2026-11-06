@@ -55,7 +55,7 @@ TEST(LabelPlacement, ASecondNameMovesToTheLeftOfTheFirst) {
 }
 
 /**
- * Given a star whose both sides are taken by the bubble and the loupe
+ * Given a star whose both sides are taken by the bubble and the minimap
  * When its name is placed
  * Then it writes no name
  */

@@ -5,6 +5,7 @@
 #include <optional>
 #include <span>
 #include "MapDirection.hpp"
+#include "SectorMapConstants.hpp"
 
 namespace rtype::client {
 
@@ -48,6 +49,23 @@ std::optional<std::size_t> neighbourOf(std::span<const sf::Vector2i> stars,
     const sf::Vector2i offset = stars[index] - stars[from];
     const int distance = (offset.x * offset.x) + (offset.y * offset.y);
     if (index != from && liesTowards(offset, step) &&
+        (!nearest.has_value() || distance < nearestDistance)) {
+      nearest = index;
+      nearestDistance = distance;
+    }
+  }
+  return nearest;
+}
+
+std::optional<std::size_t> starUnder(std::span<const sf::Vector2i> stars,
+                                     sf::Vector2i pointer) {
+  std::optional<std::size_t> nearest;
+  int nearestDistance = 0;
+  for (std::size_t index = 0; index < stars.size(); ++index) {
+    const sf::Vector2i offset = stars[index] - pointer;
+    const int distance = (offset.x * offset.x) + (offset.y * offset.y);
+    if (std::abs(offset.x) <= STAR_PICK_REACH &&
+        std::abs(offset.y) <= STAR_PICK_REACH &&
         (!nearest.has_value() || distance < nearestDistance)) {
       nearest = index;
       nearestDistance = distance;

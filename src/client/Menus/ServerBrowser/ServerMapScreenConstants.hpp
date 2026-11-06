@@ -11,8 +11,10 @@ namespace rtype::client {
 /** @brief The header of the map: its title, and the line under it, which
  * starts with the number of servers shown. */
 constexpr const char* SERVER_MAP_TITLE = "SECTOR MAP";
-constexpr const char* SERVER_COUNT_SUFFIX =
-    " SERVERS - THE CLOSER TO YOUR PLANET, THE LOWER THE PING";
+constexpr const char* SERVER_COUNT_SUFFIX = " SERVERS";
+constexpr const char* ONE_SERVER_TEXT = "1 SERVER";
+constexpr const char* SERVER_MAP_HINT =
+    " - THE CLOSER TO YOUR PLANET, THE LOWER THE PING";
 constexpr sf::Vector2i SERVER_MAP_TITLE_ANCHOR{24, 24};
 constexpr sf::Vector2i SERVER_MAP_SUBTITLE_ANCHOR{24, 37};
 
@@ -38,17 +40,13 @@ constexpr sf::Keyboard::Key REFRESH_KEY = sf::Keyboard::Key::R;
  * on the farthest ring. */
 constexpr double PING_OF_A_SERVER_OF_ANOTHER_VERSION = 225.0;
 
-/** @brief The loupe in the top right corner of the map, the minimap in its
- * bottom right corner while zoomed in, and the words of the zoom. */
-constexpr sf::Vector2i LOUPE_TOP_LEFT{436, 60};
+/** @brief The minimap in the bottom right corner of the map, while zoomed
+ * in. */
 constexpr sf::IntRect MINIMAP_AREA{{368, 178}, {72, 30}};
-constexpr const char* ZOOMED_OUT_WORD = "X1";
-constexpr const char* ZOOMED_IN_WORD = "X2";
 
-/** @brief Where the names of the stars may not go: the minimap, the loupe,
- * and the bubble of the chosen server, as the mockup keeps them free. */
+/** @brief Where the names of the stars may not go besides the bubble of the
+ * chosen server: the minimap, as the mockup keeps it free. */
 constexpr sf::IntRect MINIMAP_KEEP_OUT{{366, 176}, {76, 34}};
-constexpr sf::IntRect LOUPE_KEEP_OUT{{432, 58}, {20, 24}};
 
 /** @brief The bubble of the chosen server, BUBBLE_WIDTH wide, BUBBLE_OFFSET
  * from the star, on its left when the star lies right of BUBBLE_FLIP_X. */

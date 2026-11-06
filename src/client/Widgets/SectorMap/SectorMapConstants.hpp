@@ -85,4 +85,9 @@ inline constexpr int LABEL_MARGIN = 2;
 inline constexpr std::array<int, 4> PING_RINGS_MILLISECONDS{25, 75, 150, 225};
 inline constexpr int PING_RING_STEP_DEGREES = 3;
 
+/** @brief How far from a star, across and down, the pointer still picks it:
+ * one pixel past the arms of the largest star (3 pixels from its centre),
+ * plus two for the hand. */
+inline constexpr int STAR_PICK_REACH = 6;
+
 }  // namespace rtype::client

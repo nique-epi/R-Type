@@ -18,4 +18,12 @@ namespace rtype::client {
     std::span<const sf::Vector2i> stars, std::size_t from,
     MapDirection direction);
 
+/**
+ * @returns The index of the star of @p stars nearest to @p pointer, among
+ * those at most STAR_PICK_REACH pixels from it across and down; the lower
+ * index on a tie. Nothing when no star is that close.
+ */
+[[nodiscard]] std::optional<std::size_t> starUnder(
+    std::span<const sf::Vector2i> stars, sf::Vector2i pointer);
+
 }  // namespace rtype::client
