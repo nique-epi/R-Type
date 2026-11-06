@@ -1,10 +1,10 @@
 # R-Type
 
-A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine. Up to four pilots fly together against waves of Bydos on a server that owns the game; the client draws it and sends the keys held. Epitech tek3 project.
+A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine. Up to four pilots fly together in a game against waves of Bydos; the server owns the game, the client draws it and sends the keys held. One server runs up to eight games at once. Epitech tek3 project.
 
 - **Platforms:** Linux (GCC or Clang), Windows (MSVC, Visual Studio 2022) and macOS (Apple Silicon). The CI builds and tests Linux and Windows on every pull request.
 - **Language and libraries:** C++20, SFML 3 on the client, standalone Asio on the server, GoogleTest for the tests.
-- **Programs:** `r-type_client` (window, sound, menus) and `r-type_server` (UDP on port 4242 by default; it also runs the master, a program that lists game servers, with `--mode master`).
+- **Programs:** `r-type_client` (window, sound, menus) and `r-type_server` (UDP on port 4242 by default). By default it is a supervisor that starts one process per game and sends each player to the game that has a place; `--mode server` hosts the games in one process, and `--mode master` runs the master, the program that lists game servers.
 - **Network:** every message of a game travels over UDP; the protocol is specified byte by byte in [the protocol RFC](https://nique-epi.github.io/R-Type/protocol/).
 
 The code is split into engine, game and network libraries; see [the architecture decision](docs/src/content/docs/architecture.md) and [the project layout](docs/src/content/docs/project-layout.md).
@@ -15,7 +15,7 @@ The code is split into engine, game and network libraries; see [the architecture
 git clone --recurse-submodules git@github.com:nique-epi/R-Type.git
 cd R-Type
 cmake --workflow --preset build
-./r-type_server --mode server
+./r-type_server
 ./r-type_client
 ```
 
@@ -26,7 +26,7 @@ Run the last two commands in two terminals. In the client, PLAY opens the server
 On the machine that hosts (its address on the network is `192.168.1.20` here):
 
 ```bash
-./r-type_server --mode server -p 4242
+./r-type_server -p 4242
 ```
 
 On each of the four machines, or four terminals of one machine, with a different nickname:
@@ -38,7 +38,7 @@ On each of the four machines, or four terminals of one machine, with a different
 ./r-type_client -h 192.168.1.20 -p 4242 -n DASH
 ```
 
-Each client starts with these values in its connection screen: from the title, PLAY then D (ADDRESS) opens it, and CONNECT joins. The server gives each pilot a number from 1 to 4 and refuses a fifth player. Once every connected pilot says it is ready in the waiting room, the server starts the game; the arrows move the ship and the space bar shoots, until the player changes the keys in SETTINGS. When it ends, the end screen ranks the four pilots.
+Each client starts with these values in its connection screen: from the title, PLAY then D (ADDRESS) opens it, and CONNECT joins. The supervisor sends the four pilots to the same game, where each gets a number from 1 to 4. A fifth player lands in a second game, and is refused only when the eight games are full. Once every connected pilot says it is ready in the waiting room, the game starts; the arrows move the ship and the space bar shoots, until the player changes the keys in SETTINGS. When it ends, the end screen ranks the four pilots.
 
 ## Features
 
@@ -67,7 +67,7 @@ cd R-Type
 cmake --workflow --preset build
 ```
 
-On Windows, run the same commands in a Developer PowerShell for Visual Studio 2022 (the "Desktop development with C++" workload); the binaries are then `Release\r-type_server.exe` and `Release\r-type_client.exe`, and `.\Release\r-type_server.exe --mode server` starts a server.
+On Windows, run the same commands in a Developer PowerShell for Visual Studio 2022 (the "Desktop development with C++" workload); the binaries are then `Release\r-type_server.exe` and `Release\r-type_client.exe`, and `.\Release\r-type_server.exe` starts a server.
 
 The first configure builds every dependency and takes a few minutes. The `r-type_server` and `r-type_client` binaries are written at the repository root, or in `Release/` with the Visual Studio generator.
 
