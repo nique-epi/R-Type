@@ -152,22 +152,16 @@ Both choices are told in full in [Architecture](https://nique-epi.github.io/R-Ty
 
 ### Web site
 
-The web site lives in `web/` and is built with [bun](https://bun.sh) 1.3 and Node.js 22.12 or newer:
+The web site lives in `web/`: a Next.js server, run with [bun](https://bun.sh) 1.3 and Node.js 22.12 or newer, that calls the API of the master. With a master running on port 8080:
 
 ```bash
 cd web
 bun install
 bun run build
+bun run start
 ```
 
-This writes the site to `web/out/`; a master started from the root of the repository serves it under `/`, beside its API (`set web "<folder>"` in `master.cfg` names another folder). To work on a page with a master running on port 8080:
-
-```bash
-cd web
-bun run dev
-```
-
-The site is then on <http://localhost:3000>, and `next dev` passes every `/api` request to the master of `MASTER_URL` (`http://localhost:8080` by default). `bun run lint`, `bun run typecheck` and `bun run test` are the checks of the `web` CI workflow.
+The site is then on <http://localhost:3000>. The server reaches the master at `MASTER_URL` (`http://localhost:8080` by default); the browser only talks to the site. `bun run dev` serves the same pages while you edit them. `bun run lint`, `bun run typecheck` and `bun run test` are the checks of the `web` CI workflow.
 
 ## Tests
 

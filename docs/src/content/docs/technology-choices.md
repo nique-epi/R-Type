@@ -3,7 +3,7 @@ title: Technology choices
 description: Why the project uses SFML, Asio, vcpkg, CMake and, for its web site, Next.js, and what each was compared with.
 ---
 
-The project rests on four tools: SFML draws the client, Asio carries the datagrams, vcpkg installs both and CMake builds everything. The web site the master serves has tools of its own, Next.js and bun, which CMake never builds (see [Web site](#web-site-nextjs)). This page states the criteria the team used, compares each tool with its main alternatives, and says what each choice costs. The decisions about the code itself (libraries, ECS, network model) are in [Architecture](/R-Type/architecture/).
+The project rests on four tools: SFML draws the client, Asio carries the datagrams, vcpkg installs both and CMake builds everything. The web site, a program of its own that calls the master, has tools of its own, Next.js and bun, which CMake never builds (see [Web site](#web-site-nextjs)). This page states the criteria the team used, compares each tool with its main alternatives, and says what each choice costs. The decisions about the code itself (libraries, ECS, network model) are in [Architecture](/R-Type/architecture/).
 
 ## Criteria
 
@@ -95,18 +95,18 @@ Alternative considered: Meson. Its language is easier to read and it configures 
 
 ## Web site: Next.js
 
-The master serves a web site: today a page that says whether it answers, then the list of the servers, the leaderboard and the administration. It needs pages that read the API of the master in a browser, and no program beside the master to serve them. The site uses the tools of the other web projects of the team: Next.js with the App Router and TypeScript, bun to install and run, Biome to lint and format, Tailwind and shadcn for the look.
+The web site shows the game servers to the team and the players: today a page that says whether the master answers, then the list of the servers, the leaderboard and the administration. It is a program of its own beside the master, which serves its API only. The site uses the tools of the other web projects of the team: Next.js with the App Router and TypeScript, bun to install and run, Biome to lint and format, Tailwind and shadcn for the look.
 
-| | Next.js, static export | React with Vite | Astro |
+| | Next.js server | React with Vite | Astro |
 |---|---|---|---|
-| Cross-platform | builds anywhere bun and Node.js run | the same | the same |
-| Scope | pages and routing, React components, a build to static files | a bundler: routing and the layout of pages are left to the project | static pages first, React only in islands |
+| Cross-platform | runs anywhere bun and Node.js run | the same | the same |
+| Scope | pages and routing, React components rendered on the server, server-only calls to the API | a bundler: routing, the layout of pages and any server are left to the project | static pages first, React only in islands |
 | License | MIT | MIT | MIT |
 | Learning curve | known by the team, who use it on other projects | known, with a router to choose and wire | known from `docs/`, less for an interactive page |
 
-Next.js builds with `output: 'export'`, so `web/out/` holds only HTML, JavaScript and CSS, which cpp-httplib serves from the master; no Node.js process runs in production. The cost is every feature that needs a server at request time: no Server Actions, no proxy, no rendering per request, and a page with a parameter in its path needs every value at build time. The pages call the API from the browser instead.
+The Next.js server renders the pages and calls the master itself, so the browser talks to one origin and the master needs no CORS, and what the administration will need (a secret kept on the server, a session in a cookie) is available. The cost is a second program to run in production, with Node.js.
 
-Alternative considered: React with Vite. It builds the same kind of static site with fewer rules, but leaves routing and the layout of pages to the project, and the team already writes Next.js elsewhere.
+Alternative considered: a static export served by the master. It leaves one program to run, but forbids rendering on the server, Server Actions and cookies, so the secret of the administration would have to live in the browser.
 
 ## Where each choice is visible
 
