@@ -5,7 +5,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "Games.hpp"
+#include "GameInstance.hpp"
 #include "GamesMeasures.hpp"
 #include "IClock.hpp"
 #include "InstallContext.hpp"
@@ -13,6 +13,7 @@
 #include "MetricsLines.hpp"
 #include "MetricsReport.hpp"
 #include "ModuleConstants.hpp"
+#include "RunningGame.hpp"
 #include "ServerConstants.hpp"
 #include "TimeConstants.hpp"
 #include "TrafficCounters.hpp"
@@ -36,7 +37,7 @@ std::vector<std::string> ServerMetricsModule::dependencies() const {
 }
 
 void ServerMetricsModule::install(engine::InstallContext& context) {
-  games_ = &context.require<Games>();
+  runningGame_ = &context.require<RunningGame>();
   traffic_ = &context.require<network::TrafficCounters>();
   context.provide(latest_);
   context.addWork(INPUT_STAGE,
@@ -51,11 +52,11 @@ void ServerMetricsModule::install(engine::InstallContext& context) {
 void ServerMetricsModule::start() {
   trafficRecorder_ = std::make_unique<network::TrafficRecorder>(
       *traffic_, trafficFile_, clock_->now());
-  measureSystemsOf(*games_, clock_.get());
+  measureSystemsOf(runningGame_->game(), clock_.get());
 }
 
 void ServerMetricsModule::stop() {
-  measureSystemsOf(*games_, nullptr);
+  measureSystemsOf(runningGame_->game(), nullptr);
   trafficRecorder_->finish(clock_->now());
   trafficRecorder_.reset();
 }
@@ -70,11 +71,12 @@ void ServerMetricsModule::endTick() {
 }
 
 void ServerMetricsModule::reportTheTicks() {
+  GameInstance& game = runningGame_->game();
   MetricsReport report{.ticks = durations_.takeSummary(),
-                       .games = censusOf(*games_),
-                       .systemTimes = takeSystemTimesOf(*games_),
+                       .games = censusOf(game),
+                       .systemTimes = takeSystemTimesOf(game),
                        .traffic = traffic_->report(),
-                       .roundTrips = roundTripsOf(*games_)};
+                       .roundTrips = roundTripsOf(game)};
   logger_.info(ticksLineOf(report));
   logger_.info(systemsLineOf(report));
   logger_.info(roundTripsLineOf(report));

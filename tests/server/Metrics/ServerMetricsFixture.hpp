@@ -19,9 +19,6 @@ class ServerMetricsFixture : public ServerLobbyFixture {
   [[nodiscard]] std::vector<std::unique_ptr<rtype::engine::IModule>>
   modulesAfterTheGames() const override;
 
-  /** @brief Starts the server with @p gameCount games. */
-  void startWithGames(std::size_t gameCount);
-
   /** @brief Runs @p count ticks in which nothing is received. */
   void runTicks(std::size_t count);
 
@@ -32,7 +29,7 @@ class ServerMetricsFixture : public ServerLobbyFixture {
   [[nodiscard]] std::size_t trafficLinesInTheJournal() const;
 
   /** @brief Has the module write its rows to @p file; call it before
-   * startWithGames(). */
+   * startWith(). */
   void writeTrafficTo(std::filesystem::path file);
 
   /** @returns The report the metrics module published last, if any. */

@@ -8,7 +8,6 @@
 #include "Endpoint.hpp"
 #include "GameProcessWatch.hpp"
 #include "GameStatus.hpp"
-#include "Games.hpp"
 #include "IDatagramSender.hpp"
 #include "IModule.hpp"
 #include "IOptionalDependencies.hpp"
@@ -16,6 +15,7 @@
 #include "InstallContext.hpp"
 #include "LatestStatusMeasures.hpp"
 #include "Logger.hpp"
+#include "RunningGame.hpp"
 #include "StopRequest.hpp"
 #include "SupervisorLink.hpp"
 #include "TickDatagrams.hpp"
@@ -54,7 +54,7 @@ class ServerSupervisorLinkModule final : public engine::IModule,
   [[nodiscard]] std::vector<std::string> optionalDependencies() const override;
 
   /**
-   * @throws MissingServiceException when no module provided the games, the
+   * @throws MissingServiceException when no module provided the game, the
    * sender, the admission or the datagrams of the tick. The metrics are
    * found, not required: without them the statuses carry no measure.
    */
@@ -82,7 +82,7 @@ class ServerSupervisorLinkModule final : public engine::IModule,
   network::GameStatus lastStatus_;
   std::uint16_t nextSequence_{0};
   bool stopAsked_{false};
-  Games* games_{nullptr};
+  RunningGame* runningGame_{nullptr};
   LatestStatusMeasures measures_{nullptr};
   IDatagramSender* sender_{nullptr};
   IPlayerAdmission* admission_{nullptr};

@@ -20,23 +20,21 @@
 #include "GameInstance.hpp"
 #include "GameInstanceParts.hpp"
 #include "GameSettings.hpp"
-#include "Games.hpp"
 #include "GamesSettings.hpp"
 #include "HostedRules.hpp"
 #include "IDatagramSender.hpp"
-#include "IGameBuses.hpp"
+#include "IGameEvents.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IResultsArchive.hpp"
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
 #include "Logger.hpp"
-#include "MasterMessageConstants.hpp"
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
 #include "PlayerDatagrams.hpp"
 #include "RtypeGameModules.hpp"
+#include "RunningGame.hpp"
 #include "ServerConstants.hpp"
-#include "ServerException.hpp"
 #include "SettingValue.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
@@ -81,8 +79,8 @@ void logWavesFile(const logging::Logger& logger,
 }
 
 /**
- * @brief Writes in the journal the difficulty the games play and whether they
- * are vanilla, then one line per reason when they are not.
+ * @brief Writes in the journal the difficulty the game plays and whether it is
+ * vanilla, then one line per reason when it is not.
  */
 void logHowGamesPlay(const logging::Logger& logger, std::string_view difficulty,
                      const std::vector<std::string_view>& breaches) {
@@ -90,20 +88,6 @@ void logHowGamesPlay(const logging::Logger& logger, std::string_view difficulty,
               breaches.empty() ? ", vanilla" : ", not vanilla");
   for (const std::string_view breach : breaches) {
     logger.info("not vanilla: ", breach);
-  }
-}
-
-/**
- * @throws NoJoinableGameException when @p gameCount is 0.
- * @throws TooManyGamesException when it is above MAXIMUM_HOSTED_GAMES, the most
- * games a heartbeat lists.
- */
-void requireGameCount(std::size_t gameCount) {
-  if (gameCount == 0) {
-    throw NoJoinableGameException();
-  }
-  if (gameCount > network::MAXIMUM_HOSTED_GAMES) {
-    throw TooManyGamesException(gameCount, network::MAXIMUM_HOSTED_GAMES);
   }
 }
 
@@ -127,14 +111,14 @@ void ServerGamesModule::install(engine::InstallContext& context) {
   results_ = &context.require<IResultsArchive>();
   tickDatagrams_ = &context.require<TickDatagrams>();
   declareSettings(context.require<engine::ConfigurationRegistry>());
-  context.provide(games_);
-  context.provide<IGameBuses>(games_);
+  context.provide(runningGame_);
+  context.provide<IGameEvents>(runningGame_);
   context.addWork(
       SIMULATION_STAGE,
-      [this]([[maybe_unused]] engine::Duration elapsed) { playGames(); });
+      [this]([[maybe_unused]] engine::Duration elapsed) { playGame(); });
   context.addWork(OUTPUT_STAGE,
                   [this]([[maybe_unused]] engine::Duration elapsed) {
-                    games_.dispatchEvents();
+                    runningGame_.events().dispatch();
                   });
 }
 
@@ -145,7 +129,7 @@ void ServerGamesModule::declareSettings(
       .defaultValue = settings_.seed,
       .lowest = 0,
       .highest = HIGHEST_SEED,
-      .help = "Seed the random draws of the first game start from, or none",
+      .help = "Seed the random draws of the game start from, or none",
       .allowsNone = true});
   stateRateSetting_ =
       &configuration.declareInteger(engine::IntegerSettingDefinition{
@@ -164,20 +148,19 @@ void ServerGamesModule::declareSettings(
 }
 
 void ServerGamesModule::start() {
-  requireGameCount(settings_.gameCount);
   const game::EntitySheets& types = types_.emplace(
       game::EntitySheets::fromFolder(settings_.entitySheetsFolder));
   logEntitySheets(logger_, settings_.entitySheetsFolder, types);
-  games_.keepEntityTypes(types);
+  runningGame_.keepEntityTypes(types);
   const WaveCatalog catalog = WaveCatalog::fromFile(settings_.wavesFile, types);
   logWavesFile(logger_, settings_.wavesFile, catalog);
   const std::optional<std::uint32_t> seed = seedOf(*seedSetting_);
-  createGames(sharedSettingsOf(catalog, types, seed), seed);
+  runningGame_.host(createGame(settingsOf(catalog, types, seed)));
 }
 
-GameSettings ServerGamesModule::sharedSettingsOf(
-    const WaveCatalog& catalog, const game::EntitySheets& types,
-    std::optional<std::uint32_t> seed) {
+GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
+                                           const game::EntitySheets& types,
+                                           std::optional<std::uint32_t> seed) {
   const std::string_view difficulty = DEFAULT_DIFFICULTY;
   const auto statesPerSecond =
       static_cast<std::size_t>(stateRateSetting_->integer().value_or(
@@ -191,7 +174,7 @@ GameSettings ServerGamesModule::sharedSettingsOf(
                   .seed = seed,
                   .inputDelayTicks = inputDelayTicks});
   logHowGamesPlay(logger_, difficulty, breaches);
-  return GameSettings{.seed = 0,
+  return GameSettings{.seed = seed.has_value() ? *seed : std::random_device{}(),
                       .waves = catalog.planOf(difficulty),
                       .types = types,
                       .statesPerSecond = statesPerSecond,
@@ -200,46 +183,30 @@ GameSettings ServerGamesModule::sharedSettingsOf(
                       .vanilla = breaches.empty()};
 }
 
-void ServerGamesModule::createGames(const GameSettings& shared,
-                                    std::optional<std::uint32_t> seed) {
-  for (std::size_t game = 0; game < settings_.gameCount; ++game) {
-    auto events = std::make_unique<engine::EventBus>();
-    GameSettings settings = shared;
-    settings.seed =
-        seed ? *seed + (static_cast<std::uint32_t>(game) * GAME_SEED_STRIDE)
-             : std::random_device{}();
-    std::unique_ptr<GameInstance> created =
-        createGame(*events, std::move(settings));
-    games_.add(std::move(events), std::move(created));
-  }
-}
-
 void ServerGamesModule::stop() {
   FarewellSender farewell{*sender_, [](engine::Duration pause) {
                             std::this_thread::sleep_for(pause);
                           }};
-  farewell.sayGoodbyeTo(games_);
+  farewell.sayGoodbyeTo(runningGame_.game().roster());
 }
 
 std::unique_ptr<GameInstance> ServerGamesModule::createGame(
-    engine::EventBus& events, GameSettings settings) {
+    GameSettings settings) {
   return std::make_unique<GameInstance>(
       GameInstanceParts{
           .send = std::bind_front(&IDatagramSender::queueDatagram, sender_),
           .settings = std::move(settings),
-          .events = events,
+          .events = runningGame_.events(),
           .clock = clock_},
       rtypeGameModules(*results_));
 }
 
-void ServerGamesModule::playGames() {
-  for (const std::unique_ptr<GameInstance>& game : games_.all()) {
-    keepDatagramsOf(game->roster(), tickDatagrams_->players(),
-                    datagramsOfGame_);
-    game->onTick(datagramsOfGame_);
-    for (const ConnectedPlayer& departed : game->takeDepartedPlayers()) {
-      admission_->forget(departed.endpoint, departed.sessionToken);
-    }
+void ServerGamesModule::playGame() {
+  GameInstance& game = runningGame_.game();
+  keepDatagramsOf(game.roster(), tickDatagrams_->players(), datagramsOfGame_);
+  game.onTick(datagramsOfGame_);
+  for (const ConnectedPlayer& departed : game.takeDepartedPlayers()) {
+    admission_->forget(departed.endpoint, departed.sessionToken);
   }
 }
 

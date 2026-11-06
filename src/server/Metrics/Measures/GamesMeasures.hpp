@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "Games.hpp"
+#include "GameInstance.hpp"
 #include "GamesCensus.hpp"
 #include "IClock.hpp"
 #include "PlayerRoundTripMeasure.hpp"
@@ -9,30 +9,30 @@
 
 namespace rtype::server {
 
-/** @returns What @p games hold now. Use it from the simulation thread only. */
-[[nodiscard]] GamesCensus censusOf(const Games& games);
+/** @returns What @p game holds now, the game of a game process. Use it from
+ * the simulation thread only. */
+[[nodiscard]] GamesCensus censusOf(GameInstance& game);
 
 /**
- * @brief Has the systems of every game of @p games read @p clock (see
+ * @brief Has the systems of @p game read @p clock (see
  * SystemScheduler::measureWith()); nullptr stops them.
  * @param clock Must stay valid until the next call.
  */
-void measureSystemsOf(const Games& games, const engine::IClock* clock);
+void measureSystemsOf(GameInstance& game, const engine::IClock* clock);
 
 /**
- * @returns How long each system ran since the previous call, added up by name
- * over every game of @p games, each name once, in the order first met.
+ * @returns How long each system of @p game ran since the previous call, added
+ * up by name, each name once, in the order first met.
  */
 [[nodiscard]] std::vector<engine::SystemTime> takeSystemTimesOf(
-    const Games& games);
+    GameInstance& game);
 
 /**
- * @returns The round trip of every player of @p games measured, game by game
- * in the order Games::all() lists them, players in order of number; a player
- * measured nothing with yet is left out. Use it from the simulation thread
- * only.
+ * @returns The round trip of every player of @p game measured, in order of
+ * number, each under NUMBER_OF_THE_GAME; a player measured nothing with yet is
+ * left out. Use it from the simulation thread only.
  */
 [[nodiscard]] std::vector<PlayerRoundTripMeasure> roundTripsOf(
-    const Games& games);
+    GameInstance& game);
 
 }  // namespace rtype::server

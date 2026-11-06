@@ -8,7 +8,7 @@
 #include <vector>
 #include "Application.hpp"
 #include "ConfigurationReader.hpp"
-#include "GameBusesModule.hpp"
+#include "GameEventsModule.hpp"
 #include "GameStatisticsFixtures.hpp"
 #include "IModule.hpp"
 #include "ListeningPortModule.hpp"
@@ -65,9 +65,9 @@ void ServerGameStatisticsFixture::startWith(
       std::string{rtype::server::LOGGER_MODULE_NAME}, host_));
   modules.push_back(
       std::make_unique<ListeningPortModule>(STATISTICS_TEST_PORT));
-  auto games = std::make_unique<GameBusesModule>(GAMES_IN_THE_TESTS);
-  games_ = games.get();
-  modules.push_back(std::move(games));
+  auto game = std::make_unique<GameEventsModule>();
+  game_ = game.get();
+  modules.push_back(std::move(game));
   application_ = std::make_unique<rtype::engine::Application>(
       rtype::engine::LoopStages(rtype::server::SERVER_LOOP_STAGES),
       std::move(modules),
