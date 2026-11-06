@@ -43,12 +43,12 @@ class LaunchOptions {
    * DEFAULT_SERVER_ADDRESS, without `-p` the port is DEFAULT_SERVER_PORT,
    * without `-n` the nickname is DEFAULT_NICKNAME, without `--no-sound` the
    * client makes sound, and without a logging option the journal is
-   * CLIENT_LOG_FILE_NAME next to the executable. The last of each option
-   * wins.
+   * CLIENT_LOG_FILE_NAME in journalFolder(), or next to the executable when
+   * that gives none. The last of each option wins.
    *
-   * @throws engine::UnknownExecutablePathException when the system does not
-   *         tell where the executable is, so the default journal has no
-   *         folder.
+   * @throws engine::UnknownExecutablePathException when the default journal
+   *         goes next to the executable and the system does not tell where
+   *         the executable is.
    * @throws engine::UnknownLaunchArgumentException for any other argument.
    * @throws engine::MissingLaunchOptionValueException when `-h`, `-p` or `-n`
    *         is the last argument.

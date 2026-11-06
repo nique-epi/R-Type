@@ -183,7 +183,7 @@ This has 32 players with no window join the server on port 4242 of the same mach
 
 ## Logging
 
-The client, the server and the master write a timestamped journal, `r-type_client.log`, `r-type_server.log` or `r-type_master.log` next to their executable, and show the same lines in the terminal; the first line gives the absolute path of the journal. Installed in a folder they cannot write to, they write no journal and say so in the terminal. The level and the output are chosen at launch:
+The client, the server and the master write a timestamped journal, `r-type_client.log`, `r-type_server.log` or `r-type_master.log` next to their executable (the client on macOS in `~/Library/Logs`, so it never writes into the signed app), and show the same lines in the terminal; the first line gives the absolute path of the journal. Installed in a folder they cannot write to, they write no journal and say so in the terminal. The level and the output are chosen at launch:
 
 ```bash
 ./r-type_server --mode server --log-level debug

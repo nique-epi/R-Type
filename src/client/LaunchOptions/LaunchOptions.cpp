@@ -14,6 +14,7 @@
 #include "Endpoint.hpp"
 #include "EndpointText.hpp"
 #include "ExecutablePath.hpp"
+#include "JournalFolder.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOption.hpp"
@@ -23,6 +24,7 @@
 #include "LoggingConstants.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
+#include "PathText.hpp"
 #include "ProtocolConstants.hpp"
 #include "SettingLine.hpp"
 #include "SettingOptions.hpp"
@@ -117,6 +119,31 @@ std::string connectionOptionEntries() {
   return text;
 }
 
+std::optional<std::filesystem::path> journalInItsFolder() {
+  const std::optional<std::filesystem::path> folder = journalFolder();
+  if (!folder.has_value()) {
+    return std::nullopt;
+  }
+  return *folder / logging::CLIENT_LOG_FILE_NAME;
+}
+
+std::filesystem::path defaultJournal() {
+  const std::optional<std::filesystem::path> journal = journalInItsFolder();
+  if (journal.has_value()) {
+    return *journal;
+  }
+  return engine::executableFolder() / logging::CLIENT_LOG_FILE_NAME;
+}
+
+std::string journalUsage() {
+  const std::optional<std::filesystem::path> journal = journalInItsFolder();
+  if (journal.has_value()) {
+    return logging::LogLaunchOptions::usageWithJournalAt(
+        logging::genericText(*journal));
+  }
+  return logging::LogLaunchOptions::usage(logging::CLIENT_LOG_FILE_NAME);
+}
+
 }  // namespace
 
 LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
@@ -159,7 +186,7 @@ std::string LaunchOptions::usage() {
   text += '\n';
   text += network::SimulatorLaunchOptions::usage();
   text += '\n';
-  text += logging::LogLaunchOptions::usage(logging::CLIENT_LOG_FILE_NAME);
+  text += journalUsage();
   return text;
 }
 
@@ -191,7 +218,6 @@ const std::optional<std::filesystem::path>& LaunchOptions::trafficCsvFile()
 }
 
 LaunchOptions::LaunchOptions(LaunchValues values)
-    : values_(std::move(values)),
-      logOptions_(engine::executableFolder() / logging::CLIENT_LOG_FILE_NAME) {}
+    : values_(std::move(values)), logOptions_(defaultJournal()) {}
 
 }  // namespace rtype::client
