@@ -8,6 +8,7 @@ target_include_directories(rtype_client_lobby_module PUBLIC ${CMAKE_CURRENT_SOUR
 target_link_libraries(rtype_client_lobby_module
   PUBLIC
     SFML::Graphics
+    rtype_client_chat_window
     rtype_client_handshake
     rtype_client_help_walkthrough
     rtype_client_interface

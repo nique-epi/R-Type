@@ -47,9 +47,11 @@ Server settings. Only the supervisor reads `server.cfg`: it runs the lines of it
 | `state-rate` | the games | 2 to 60 | 20 | The world states sent to each player per second. |
 | `state-encoding` | the games | `delta` or `full` | `delta` | How each world state is written: as the difference from the newest one the player acknowledged, or with every entity. `delta` also writes a state with every entity when the player acknowledged none, or when the newest it acknowledged is more than 60 ticks older (`MAXIMUM_REFERENCE_DISTANCE`). |
 | `input-delay` | the games | 0 to 30 | 3 | The ticks every player's input is held before it is applied. |
+| `start-at-boss` | the games | 0 or 1 | 0 | 1 starts every game at its boss, without the waves, with ships that never die; the games are then not vanilla. |
 | `database` | the supervisor | a path | empty | The SQLite file the leaderboard of the server is kept in, given to every game; empty for `r-type_server_<port>.db` next to the executable, with the port of the supervisor. |
 | `master-url` | the supervisor | `http://<host>[:<port>]` | empty | The master the server is listed on; empty to run alone. |
 | `master-key` | the supervisor | a key | empty | The key the master gave when the host created the server; empty to run alone. |
+| `public-address` | the supervisor | an IPv4 address written as four numbers, or empty; never `0.0.0.0`, `127.x.x.x` or `255.255.255.255` | empty | The address the master lists for this server; empty lets the master take the address the registration comes from. |
 | `server-name` | the supervisor | 1 to 32 bytes | `R-Type server` | The name players read in the list of servers and in the answer to an information request. |
 | `game-statistics-file` | the games | a path | empty | Declared by the `game-statistics` plugin, only once a `plugin game-statistics` line loads it: the CSV file the statistics of each game are named after, each game putting `_<port>` before its extension, with its own port; empty for `r-type_statistics_<port>.csv` next to the executable. |
 
@@ -60,8 +62,9 @@ Client settings:
 | `nickname` | 1 to 16 bytes of UTF-8, with no control character | `PILOT` | The nickname the connection screen starts with. |
 | `server-address` | an IPv4 address written as four numbers | `127.0.0.1` | The address the connection screen starts with. A host name is refused. |
 | `server-port` | 1 to 65535 | 4242 | The port the connection screen starts with. |
+| `master-url` | `http://<host>[:<port>]` | `http://127.0.0.1:8080` | The master the server map reads its servers from, until the player chooses one on the map (MASTER), which `settings.ini` keeps and which wins over this setting. An `https://` url is refused. |
 
-The client settings only change what the connection screen offers first: the player can still edit the fields.
+The settings of the connection screen only change what it offers first: the player can still edit the fields.
 
 Master settings (see [Master](/R-Type/master/#configuration-mastercfg)):
 
@@ -172,7 +175,7 @@ From the lowest priority to the highest:
 
 1. The default of the setting, written in the module that declares it.
 2. The file: `server.cfg`, `client.cfg` or `master.cfg`, in the folder the program is started from.
-3. The launch options. `-p`, `--seed`, `--state-rate`, `--input-delay` and `--database` on the supervisor, which hands the lines of the settings of the games to its games after the lines of the file, `-h`, `-p` and `-n` on the client, `-p` and `--database` on the master, and `--set <name>=<value>` on all three, are turned into `set` lines that run after the file. The last value given wins, so a launch option always wins over the file.
+3. The launch options. `-p`, `--seed`, `--state-rate`, `--input-delay`, `--boss` and `--database` on the supervisor, which hands the lines of the settings of the games to its games after the lines of the file, `-h`, `-p` and `-n` on the client, `-p` and `--database` on the master, and `--set <name>=<value>` on all three, are turned into `set` lines that run after the file. The last value given wins, so a launch option always wins over the file.
 
 A missing file is not an error: the defaults apply and the journal says `server.cfg not found, the defaults apply` (or `client.cfg`, `master.cfg`). The `info` lines are hidden at the default log level; start the program with `--log-level info` to see them.
 

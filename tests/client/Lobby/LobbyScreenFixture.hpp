@@ -3,10 +3,11 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
 #include <vector>
-#include "KeyBindings.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreen.hpp"
 #include "LobbyState.hpp"
+#include "PlayerSettings.hpp"
+#include "RecordingChatChannel.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
@@ -43,13 +44,17 @@ class LobbyScreenFixture : public ::testing::Test {
   /** @returns The sounds the waiting room played. */
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
 
+  /** @returns The chat of the session, and what the room sent to it. */
+  [[nodiscard]] const RecordingChatChannel& chat() const;
+
  private:
   RecordingNavigator navigator_;
   RecordingServerConnection connection_;
   RecordingWaitingRoom waitingRoom_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
-  rtype::client::KeyBindings keys_;
+  rtype::client::PlayerSettings settings_;
+  RecordingChatChannel chat_;
   rtype::client::ShipLook look_{};
   rtype::client::LobbyScreen screen_;
 };

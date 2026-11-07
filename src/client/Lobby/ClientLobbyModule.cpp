@@ -36,7 +36,9 @@ std::unique_ptr<IScreen> buildLobbyScreen(const ScreenContext& context,
                        .palette = playerPaletteOf(settings),
                        .look = settings.shipLook,
                        .motion = motionPreference(),
-                       .place = place},
+                       .place = place,
+                       .chat = context.services.chat.get(),
+                       .settings = settings},
       interfaceCanvasOf(context));
 }
 

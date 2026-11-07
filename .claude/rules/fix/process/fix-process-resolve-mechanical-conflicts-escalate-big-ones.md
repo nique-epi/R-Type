@@ -43,6 +43,12 @@ In that case: do not resolve, leave the merge in progress (or `git merge --abort
 1. **Before joining both sides of a block, read the line just above and just below it.** When both sides start inside a shared opening (`/**`, `{`, a list) or end before a shared closing (`}`, `*/`), each side holds half of an item: the union must put the closing and the opening back between them (`}`, a blank line, `/**`).
 2. **A union is checked by compiling the file**, never by the absence of markers: a missing `}` leaves no marker and turns every following test into a local class.
 
+### A union of include lists keeps each header once
+
+1. **Before joining two include lists, look for each header of one side anywhere in the file**, not only in the other side of the block: the other branch may include it elsewhere, in its sorted place or under a `NOLINTNEXTLINE`.
+2. **A `// NOLINTNEXTLINE` above a joined block covers the line that now follows it**: check it still covers the header it covered on each side.
+3. **After the resolution, list the repeated includes of every file the merge touched** (`grep -h '^#include' <file> | sort | uniq -d`): the output is empty before the commit.
+
 ## Example
 
 - ❌ **Forbidden**: `git checkout --ours src/server/CMakeLists.txt` to get rid of the markers → the sources added by the other branch disappear from the build.

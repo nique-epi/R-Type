@@ -18,6 +18,13 @@ enum class SettingId : std::uint8_t {
   AutoFire,
   ClientPrediction,
   PilotNames,
+  ChatShown,
+  ChatLetters,
+  ChatClosedLines,
+  ChatOpenLines,
+  ChatSeconds,
+  ChatBackground,
+  Master,
   ShipLook,
 };
 

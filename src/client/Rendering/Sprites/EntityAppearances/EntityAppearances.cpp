@@ -151,6 +151,8 @@ std::vector<ActionAnimation> actionsOf(
   const std::vector<AttackKey> attacks = attackKeysOf(appearance);
   std::vector<std::string_view> known{APPEARANCE_KEYS.begin(),
                                       APPEARANCE_KEYS.end()};
+  known.insert(known.end(), OPTIONAL_APPEARANCE_KEYS.begin(),
+               OPTIONAL_APPEARANCE_KEYS.end());
   for (const AttackKey& attack : attacks) {
     known.push_back(attack.key);
   }
@@ -163,6 +165,21 @@ std::vector<ActionAnimation> actionsOf(
   return actions;
 }
 
+/** @brief Reads `[appearance.enraged_idle]` into @p look, every key checked;
+ * leaves @p look without enraged frames when the table is left out. */
+void readEnragedIdle(const engine::DataFileTable& appearance,
+                     EntityAppearance& look) {
+  const std::optional<engine::DataFileTable> enraged =
+      engine::optionalTableAt(appearance, ENRAGED_IDLE_TABLE_KEY);
+  if (!enraged.has_value()) {
+    return;
+  }
+  engine::refuseUnknownKeys(*enraged, IDLE_KEYS);
+  look.enragedIdleFrames = framesOf(*enraged);
+  look.enragedIdleFrameDuration =
+      engine::millisecondsAt(*enraged, FRAME_TIME_KEY, FRAME_TIME_RANGE);
+}
+
 /** @returns The appearance the `[appearance]` table @p appearance
  * describes, every key checked. */
 EntityAppearance appearanceFrom(const engine::DataFileTable& appearance) {
@@ -170,11 +187,14 @@ EntityAppearance appearanceFrom(const engine::DataFileTable& appearance) {
   const engine::DataFileTable idle =
       engine::tableAt(appearance, IDLE_TABLE_KEY);
   engine::refuseUnknownKeys(idle, IDLE_KEYS);
-  return EntityAppearance{.sheet = engine::textAt(appearance, SHEET_KEY),
-                          .idleFrames = framesOf(idle),
-                          .idleFrameDuration = engine::millisecondsAt(
-                              idle, FRAME_TIME_KEY, FRAME_TIME_RANGE),
-                          .actions = std::move(actions)};
+  EntityAppearance look{.sheet = engine::textAt(appearance, SHEET_KEY),
+                        .idleFrames = framesOf(idle),
+                        .idleFrameDuration = engine::millisecondsAt(
+                            idle, FRAME_TIME_KEY, FRAME_TIME_RANGE),
+                        .actions = std::move(actions),
+                        .enragedIdleFrames = {}};
+  readEnragedIdle(appearance, look);
+  return look;
 }
 
 /** @returns The appearance of the sheet @p text holds, which the errors call

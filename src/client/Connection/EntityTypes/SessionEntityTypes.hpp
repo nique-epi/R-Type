@@ -9,6 +9,7 @@
 #include "LocalContent.hpp"
 #include "NumberedEntityType.hpp"
 #include "PackContent.hpp"
+#include "ShipGun.hpp"
 
 namespace rtype::client {
 
@@ -49,6 +50,8 @@ class SessionEntityTypes final : public IEntityTypeTable {
       std::uint8_t number) const override;
 
   [[nodiscard]] const EntityAppearances& appearances() const override;
+
+  [[nodiscard]] game::ShipGun shipGun() const override;
 
  private:
   [[nodiscard]] const std::vector<game::NumberedEntityType>& types() const;

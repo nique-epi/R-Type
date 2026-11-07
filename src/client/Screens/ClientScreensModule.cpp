@@ -8,6 +8,7 @@
 #include <vector>
 #include "AssetLibrary.hpp"
 #include "AudioServiceChoice.hpp"
+#include "ChatChannel.hpp"
 #include "ClientConstants.hpp"
 #include "ClientScreens.hpp"
 #include "ConfigurationRegistry.hpp"
@@ -22,6 +23,7 @@
 #include "GameWindow.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
+#include "IMasterAddress.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
 #include "InstallContext.hpp"
@@ -29,6 +31,7 @@
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
+#include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
 #include "ProtocolConstants.hpp"
 #include "ScreenServices.hpp"
@@ -72,8 +75,11 @@ void requireIpv4Address(std::string_view address) {
 
 }  // namespace
 
-ClientScreensModule::ClientScreensModule(ServerChoice launch)
-    : launch_(std::move(launch)), logger_(std::string{CLIENT_LOGGER_NAME}) {}
+ClientScreensModule::ClientScreensModule(ServerChoice launch,
+                                         PlayStart playStart)
+    : launch_(std::move(launch)),
+      playStart_(playStart),
+      logger_(std::string{CLIENT_LOGGER_NAME}) {}
 
 std::string ClientScreensModule::name() const {
   return std::string{SCREENS_MODULE_NAME};
@@ -99,11 +105,13 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   waitingRoom_ = &context.require<WaitingRoom>();
   entityMessages_ = &context.require<EntityMessageQueue>();
   leaderboard_ = &context.require<ServerLeaderboard>();
+  chat_ = &context.require<ChatChannel>();
   entityTable_ = &context.require<IEntityTypeTable>();
   entityTypes_ = std::make_unique<EntityTypeLooks>(*entityTable_);
   serverTicks_ = &context.require<IServerTicks>();
   serverCatalog_ = &context.require<IServerCatalog>();
   gameCatalog_ = &context.require<IGameCatalog>();
+  masterAddress_ = &context.require<IMasterAddress>();
   loop_ = &context.require<FrameLoop>();
   listeners_ = &context.require<EventListeners>();
   declareSettings(context.require<engine::ConfigurationRegistry>());
@@ -160,13 +168,16 @@ void ClientScreensModule::start() {
           .waitingRoom = *waitingRoom_,
           .entityMessages = *entityMessages_,
           .leaderboard = *leaderboard_,
+          .chat = *chat_,
           .entityTypes = *entityTypes_,
           .serverTicks = *serverTicks_,
           .serverCatalog = *serverCatalog_,
           .gameCatalog = *gameCatalog_,
+          .masterAddress = *masterAddress_,
           .choice = ServerChoice{.server = server,
                                  .nickname = nicknameSetting_->text(),
-                                 .game = launch_.game}},
+                                 .game = launch_.game},
+          .playStart = playStart_},
       registry_);
   listenerHandle_ = listeners_->add([this](const sf::Event& event) {
     screens_->handleEvent(event);

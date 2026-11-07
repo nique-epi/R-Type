@@ -3,6 +3,7 @@
 #include <vector>
 #include "Collision.hpp"
 #include "CollisionRules.hpp"
+#include "CollisionRulesFixtures.hpp"
 #include "CollisionScene.hpp"
 #include "CollisionSystem.hpp"
 #include "CollisionTestConstants.hpp"
@@ -12,6 +13,7 @@
 #include "ShipContact.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
+#include "ViewDelay.hpp"
 
 using rtype::engine::Collision;
 using rtype::engine::Entity;
@@ -22,47 +24,11 @@ using rtype::game::CollisionSystem;
 using rtype::game::EntityType;
 using rtype::game::MissileHit;
 using rtype::game::ShipContact;
-
-namespace {
-
-struct Recorded {
-  std::vector<MissileHit> missileHits;
-  std::vector<ShipContact> shipContacts;
-};
-
-void record(CollisionScene& scene, Recorded& recorded) {
-  scene.events.subscribe<MissileHit>([&recorded](const MissileHit& hit) {
-    recorded.missileHits.push_back(hit);
-  });
-  scene.events.subscribe<ShipContact>([&recorded](const ShipContact& contact) {
-    recorded.shipContacts.push_back(contact);
-  });
-}
-
-class CollisionRulesInAnyOrder : public ::testing::TestWithParam<bool> {
- protected:
-  [[nodiscard]] static Collision collisionOf(Entity entity, Entity other) {
-    return GetParam() ? Collision{.first = other, .second = entity}
-                      : Collision{.first = entity, .second = other};
-  }
-};
-
-void expectNoEventFor(EntityType firstType, EntityType secondType) {
-  CollisionScene scene;
-  const Entity first = scene.spawn(firstType, 0.0F, 0.0F);
-  const Entity second = scene.spawn(secondType, 0.0F, 0.0F);
-  const CollisionRules rules(scene.events, scene.components);
-  Recorded recorded;
-  record(scene, recorded);
-
-  scene.events.publish(Collision{.first = first, .second = second});
-  scene.events.dispatch();
-
-  EXPECT_TRUE(recorded.missileHits.empty());
-  EXPECT_TRUE(recorded.shipContacts.empty());
-}
-
-}  // namespace
+using rtype::game::ViewDelay;
+using rtype::game::testing::CollisionRulesInAnyOrder;
+using rtype::game::testing::expectNoEventFor;
+using rtype::game::testing::record;
+using rtype::game::testing::Recorded;
 
 /**
  * Given a player missile and an enemy
@@ -124,6 +90,27 @@ TEST_P(CollisionRulesInAnyOrder, PlayerTouchesEnemy) {
 
   EXPECT_EQ(recorded.shipContacts, (std::vector<ShipContact>{ShipContact{
                                        .player = player, .enemy = enemy}}));
+  EXPECT_TRUE(recorded.missileHits.empty());
+}
+
+/**
+ * Given a player missile that carries a ViewDelay, and an enemy
+ * When a Collision names them, in either order
+ * Then no MissileHit is published: LagCompensatedHitSystem tests that missile
+ * where its player saw the enemies
+ */
+TEST_P(CollisionRulesInAnyOrder, LeavesACompensatedMissileToTheLagSystem) {
+  CollisionScene scene;
+  const Entity missile = scene.spawn(EntityType::PlayerMissile, 0.0F, 0.0F);
+  scene.components.add(missile, ViewDelay{.ticks = 0});
+  const Entity enemy = scene.spawn(EntityType::Enemy, 0.0F, 0.0F);
+  const CollisionRules rules(scene.events, scene.components);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(collisionOf(missile, enemy));
+  scene.events.dispatch();
+
   EXPECT_TRUE(recorded.missileHits.empty());
 }
 

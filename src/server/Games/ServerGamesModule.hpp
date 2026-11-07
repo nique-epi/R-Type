@@ -95,6 +95,7 @@ class ServerGamesModule final : public engine::IModule {
   const engine::SettingValue* stateRateSetting_{nullptr};
   const engine::SettingValue* stateEncodingSetting_{nullptr};
   const engine::SettingValue* inputDelaySetting_{nullptr};
+  const engine::SettingValue* startAtBossSetting_{nullptr};
   logging::Logger logger_;
   engine::SystemClock clock_;
   std::optional<game::EntitySheets> types_;

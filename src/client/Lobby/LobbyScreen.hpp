@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include "ChatWindow.hpp"
 #include "HelpWalkthrough.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
@@ -63,6 +64,9 @@ struct HangarBay;
  * HANGAR, a chip beside RANKING, HANGAR_KEY, or a click on the bay of the
  * local player opens the hangar over the room the same way; the bay of the
  * local player shows what its ship wears.
+ * The chat of the session shows at the bottom left, and its key opens it over
+ * the room (ChatWindow): while it is open it takes every key, so READY, HELP
+ * and BACK wait until it closes.
  */
 class LobbyScreen : public IScreen {
  public:
@@ -133,6 +137,7 @@ class LobbyScreen : public IScreen {
   KeyChip leaderboardChip_;
   const ShipLook* look_;
   KeyChip hangarChip_;
+  ChatWindow chat_;
 };
 
 }  // namespace rtype::client

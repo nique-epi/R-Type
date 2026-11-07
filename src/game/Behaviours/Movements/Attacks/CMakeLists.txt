@@ -1,5 +1,6 @@
 add_library(rtype_game_behaviours_attacks STATIC
   ActionCycle.cpp
+  BydoTyrantBehaviour.cpp
   BydomancerBehaviour.cpp
   DrillbackBehaviour.cpp
   ReaperBehaviour.cpp

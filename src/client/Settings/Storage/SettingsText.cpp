@@ -7,16 +7,22 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <system_error>
 #include "BoundAction.hpp"
 #include "ColorMode.hpp"
+#include "EndpointText.hpp"
 #include "InputConstants.hpp"
 #include "KeyNames.hpp"
+#include "NamedNumber.hpp"
 #include "PixelSize.hpp"
 #include "PlayerSettings.hpp"
+#include "Setting.hpp"
+#include "SettingRange.hpp"
 #include "SettingsConstants.hpp"
+#include "SettingsTextConstants.hpp"
 #include "ShipLookConstants.hpp"
 #include "ShipLookNumbers.hpp"
 #include "ShipLookSlot.hpp"
@@ -71,13 +77,16 @@ std::optional<int> integerOf(std::string_view text) {
   return value;
 }
 
-std::optional<int> volumeOf(std::string_view text) {
-  const std::optional<int> volume = integerOf(text);
-  if (!volume.has_value() || *volume < MINIMUM_VOLUME ||
-      *volume > MAXIMUM_VOLUME) {
+/** @returns The whole number @p text holds when @p range takes it, or nothing:
+ * an integer setting always has a range, so none takes nothing. */
+std::optional<int> integerIn(std::string_view text,
+                             const std::optional<SettingRange>& range) {
+  const std::optional<int> value = integerOf(text);
+  if (!value.has_value() || !range.has_value() || *value < range->minimum ||
+      *value > range->maximum) {
     return std::nullopt;
   }
-  return volume;
+  return value;
 }
 
 std::optional<bool> switchOf(std::string_view text) {
@@ -119,12 +128,12 @@ std::optional<Value> valueNamed(
   return std::nullopt;
 }
 
-template <typename Value, typename Setting>
-LineOutcome assign(std::optional<Value> parsed, Setting& setting) {
+template <typename Value, typename Field>
+LineOutcome assign(std::optional<Value> parsed, Field& field) {
   if (!parsed.has_value()) {
     return LineOutcome::InvalidValue;
   }
-  setting = *parsed;
+  field = *parsed;
   return LineOutcome::Applied;
 }
 
@@ -156,6 +165,23 @@ std::optional<SettingLine> settingLineOf(std::string_view line) {
                      .value = trimmed(line.substr(separator + 1))};
 }
 
+/** @returns What became of an integer setting, or nothing when the line names
+ * another kind of setting. */
+std::optional<LineOutcome> applyNumber(PlayerSettings& settings,
+                                       SettingLine setting) {
+  for (const std::span<const NamedNumber> numbers :
+       {std::span<const NamedNumber>(VOLUME_NUMBERS),
+        std::span<const NamedNumber>(CHAT_NUMBERS)}) {
+    for (const NamedNumber& number : numbers) {
+      if (setting.name == number.name) {
+        return assign(integerIn(setting.value, number.setting->range),
+                      settings.*number.setting->member);
+      }
+    }
+  }
+  return std::nullopt;
+}
+
 /** @returns What became of a setting that is an on or off switch, or nothing
  * when the line names another kind of setting. */
 std::optional<LineOutcome> applySwitch(PlayerSettings& settings,
@@ -178,6 +204,9 @@ std::optional<LineOutcome> applySwitch(PlayerSettings& settings,
   }
   if (name == PILOT_NAMES_NAME) {
     return assign(switchOf(value), settings.pilotNames);
+  }
+  if (name == CHAT_SHOWN_NAME) {
+    return assign(switchOf(value), settings.chatShown);
   }
   return std::nullopt;
 }
@@ -228,39 +257,12 @@ std::optional<LineOutcome> applyLook(PlayerSettings& settings,
   return std::nullopt;
 }
 
-/** @returns What became of a switch, a slot of the ship or a key: applied,
- * or left out with the reason; an unknown setting when the line names none of
- * them. */
-LineOutcome applyFlagOrKey(PlayerSettings& settings, SettingLine setting) {
-  if (const std::optional<LineOutcome> outcome =
-          applySwitch(settings, setting)) {
-    return *outcome;
-  }
-  if (const std::optional<LineOutcome> outcome = applyLook(settings, setting)) {
-    return *outcome;
-  }
-  const std::optional<BoundAction> action =
-      valueNamed(setting.name, BOUND_ACTION_KEY_NAMES, BOUND_ACTIONS);
-  if (!action.has_value()) {
-    return LineOutcome::UnknownSetting;
-  }
-  return applyKey(settings, *action, setting.value);
-}
-
-/** @returns What became of a setting written into the settings: applied, or
- * left out with the reason. */
-LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
+/** @brief Applies @p setting when it names a setting written as a word or a
+ * pair: the window size, the display and color modes, or the master.
+ * @returns What became of the line, nothing for any other name. */
+std::optional<LineOutcome> applyValue(PlayerSettings& settings,
+                                      SettingLine setting) {
   const auto [name, value] = setting;
-  if (name == SETTINGS_VERSION_NAME) {
-    return integerOf(value) == SETTINGS_VERSION ? LineOutcome::Applied
-                                                : LineOutcome::InvalidValue;
-  }
-  if (name == MUSIC_VOLUME_NAME) {
-    return assign(volumeOf(value), settings.musicVolume);
-  }
-  if (name == EFFECTS_VOLUME_NAME) {
-    return assign(volumeOf(value), settings.effectsVolume);
-  }
   if (name == WINDOW_SIZE_NAME) {
     return assign(windowSizeOf(value), settings.windowSize);
   }
@@ -272,7 +274,39 @@ LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
     return assign(valueNamed(value, COLOR_MODE_VALUES, COLOR_MODES),
                   settings.colorMode);
   }
-  return applyFlagOrKey(settings, setting);
+  if (name == MASTER_NAME) {
+    return assign(network::endpointFromText(value), settings.master);
+  }
+  return std::nullopt;
+}
+
+LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
+  const auto [name, value] = setting;
+  if (name == SETTINGS_VERSION_NAME) {
+    return integerOf(value) == SETTINGS_VERSION ? LineOutcome::Applied
+                                                : LineOutcome::InvalidValue;
+  }
+  if (const std::optional<LineOutcome> outcome =
+          applyNumber(settings, setting)) {
+    return *outcome;
+  }
+  if (const std::optional<LineOutcome> outcome =
+          applyValue(settings, setting)) {
+    return *outcome;
+  }
+  if (const std::optional<LineOutcome> outcome =
+          applySwitch(settings, setting)) {
+    return *outcome;
+  }
+  if (const std::optional<LineOutcome> outcome = applyLook(settings, setting)) {
+    return *outcome;
+  }
+  const std::optional<BoundAction> action =
+      valueNamed(name, BOUND_ACTION_KEY_NAMES, BOUND_ACTIONS);
+  if (!action.has_value()) {
+    return LineOutcome::UnknownSetting;
+  }
+  return applyKey(settings, *action, value);
 }
 
 LineOutcome applyLine(PlayerSettings& settings, std::string_view line) {
@@ -300,6 +334,15 @@ std::string ignoredLine(std::size_t number, LineOutcome outcome) {
       break;
   }
   return text;
+}
+
+/** @brief Writes the lines of the settings of the chat. */
+void writeChat(std::string& text, const PlayerSettings& settings) {
+  writeLine(text, CHAT_SHOWN_NAME, switchValue(settings.chatShown));
+  for (const NamedNumber& number : CHAT_NUMBERS) {
+    writeLine(text, number.name,
+              std::to_string(settings.*number.setting->member));
+  }
 }
 
 }  // namespace
@@ -330,9 +373,13 @@ std::string settingsText(const PlayerSettings& settings) {
   writeLine(text, CLIENT_PREDICTION_NAME,
             switchValue(settings.clientPrediction));
   writeLine(text, PILOT_NAMES_NAME, switchValue(settings.pilotNames));
+  writeChat(text, settings);
   writeLine(text, SHIP_HEAD_NAME, lookItemValue(settings.shipLook.head));
   writeLine(text, SHIP_EYES_NAME, lookItemValue(settings.shipLook.eyes));
   writeLine(text, SHIP_FACE_NAME, lookItemValue(settings.shipLook.face));
+  if (settings.master.has_value()) {
+    writeLine(text, MASTER_NAME, network::endpointText(*settings.master));
+  }
   return text;
 }
 

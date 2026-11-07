@@ -36,6 +36,8 @@ void AudioService::playTheme() { soundtrack_.playTheme(); }
 
 void AudioService::playGameMusic() { soundtrack_.playGameMusic(); }
 
+void AudioService::silenceMusic() { soundtrack_.silenceMusic(); }
+
 void AudioService::open() {
   bank_.load(*library_, ALL_SOUND_IDS);
   theme_.open(*library_);

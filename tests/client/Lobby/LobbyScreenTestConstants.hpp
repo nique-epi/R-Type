@@ -4,6 +4,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <cstdint>
+#include <string_view>
 #include "PointerEvents.hpp"
 
 namespace rtype::client::testing {
@@ -49,5 +50,11 @@ constexpr sf::Keyboard::Scancode READY_KEY = sf::Keyboard::Scan::R;
 /** @brief The two ready states a test expects the waiting room to ask. */
 constexpr bool ASK_READY = true;
 constexpr bool ASK_NOT_READY = false;
+
+/** @brief The key of a first launch that opens the chat, a letter typed into
+ * it, and the line it makes typed twice. */
+constexpr sf::Keyboard::Scancode CHAT_KEY = sf::Keyboard::Scan::T;
+constexpr char32_t CHAT_LETTER = U'g';
+constexpr std::string_view CHAT_LINE = "gg";
 
 }  // namespace rtype::client::testing

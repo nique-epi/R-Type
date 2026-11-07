@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include "IChatChannel.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
@@ -10,6 +11,7 @@
 #include "LobbyPlace.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
+#include "PlayerSettings.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ShipLook.hpp"
 
@@ -54,6 +56,11 @@ struct LobbyScreenParts {
   MotionPreference motion{};
   /** @brief Where BACK leads: the connection screen below, or the title. */
   LobbyPlace place{};
+  /** @brief The chat of the session, which must outlive the screen. */
+  std::reference_wrapper<IChatChannel> chat;
+  /** @brief The settings of the player, which must outlive the screen: the
+   * chat reads its key and its look there. */
+  std::reference_wrapper<const PlayerSettings> settings;
 };
 
 }  // namespace rtype::client

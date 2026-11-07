@@ -21,6 +21,7 @@ add_subdirectory(LobbyState)
 add_subdirectory(MasterProbe)
 add_subdirectory(OrderedMessage)
 add_subdirectory(PlayerChatLine)
+add_subdirectory(BossStatus)
 add_subdirectory(PlayerInput)
 add_subdirectory(PlayerLeft)
 add_subdirectory(ReadyState)
@@ -33,6 +34,7 @@ add_library(rtype_network_messages INTERFACE)
 target_link_libraries(rtype_network_messages
   INTERFACE
     rtype_network_chat_line
+    rtype_network_boss_status
     rtype_network_connection_accepted
     rtype_network_connection_challenge
     rtype_network_connection_redirect

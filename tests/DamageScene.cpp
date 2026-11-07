@@ -1,5 +1,9 @@
 #include "DamageScene.hpp"
 #include <cstdint>
+#include "Boss.hpp"
+#include "BossDamageTestConstants.hpp"
+#include "BossHealthChanged.hpp"
+#include "CurrentAction.hpp"
 #include "EnemyKilled.hpp"
 #include "Entity.hpp"
 #include "EntityDamage.hpp"
@@ -22,6 +26,10 @@ DamageScene::DamageScene() {
       });
   scene.events.subscribe<EnemyKilled>(
       [this](const EnemyKilled& kill) { kills.push_back(kill); });
+  scene.events.subscribe<BossHealthChanged>(
+      [this](const BossHealthChanged& health) {
+        bossHealths.push_back(health);
+      });
 }
 
 engine::Entity DamageScene::missileOf(std::uint32_t networkId,
@@ -49,6 +57,14 @@ engine::Entity DamageScene::bydo(std::uint32_t networkId, Health health) {
   const engine::Entity entity = scene.spawn(EntityType::Enemy, 0.0F, 0.0F);
   scene.components.add(entity, NetworkIdentity{.networkId = networkId});
   scene.components.add(entity, health);
+  return entity;
+}
+
+engine::Entity DamageScene::boss(Health health, Boss boss,
+                                 CurrentAction current) {
+  const engine::Entity entity = bydo(BOSS_ID, health);
+  scene.components.add(entity, boss);
+  scene.components.add(entity, current);
   return entity;
 }
 

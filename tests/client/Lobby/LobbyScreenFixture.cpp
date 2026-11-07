@@ -14,6 +14,7 @@
 #include "MotionPreference.hpp"
 #include "OptionsScreenFixtures.hpp"
 #include "PointerEvents.hpp"
+#include "RecordingChatChannel.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
@@ -36,12 +37,14 @@ LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place)
                                .connection = connection_,
                                .waitingRoom = waitingRoom_,
                                .playfieldPointAt = samePlayfieldPoint,
-                               .keys = keys_,
+                               .keys = settings_.keys,
                                .keyName = nameInTheFile,
                                .palette = PLAYER_COLORS,
                                .look = look_,
                                .motion = MotionPreference::Full,
-                               .place = place},
+                               .place = place,
+                               .chat = chat_,
+                               .settings = settings_},
               std::make_unique<RecordingInterfaceCanvas>(canvas_)) {
   connection_.setStatus(
       {.phase = ConnectionPhase::Accepted, .playerNumber = OWN_NUMBER});
@@ -82,4 +85,5 @@ const RecordingSoundPlayer& LobbyScreenFixture::sounds() const {
   return sounds_;
 }
 
+const RecordingChatChannel& LobbyScreenFixture::chat() const { return chat_; }
 rtype::client::ShipLook& LobbyScreenFixture::look() { return look_; }

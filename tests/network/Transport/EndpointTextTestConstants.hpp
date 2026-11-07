@@ -84,3 +84,16 @@ constexpr std::string_view HOST_NAME = "localhost";
  * @brief The IPv6 address of the machine itself.
  */
 constexpr std::string_view IPV6_LOOPBACK_ADDRESS = "::1";
+
+/**
+ * @brief LOCAL_NETWORK_ADDRESS and PORT_TEXT written as one endpoint.
+ */
+constexpr std::string_view LOCAL_NETWORK_ENDPOINT_TEXT = "192.168.1.20:4243";
+
+/**
+ * @brief Texts that are no endpoint: no port, an empty port, a host name, a
+ * port followed by other text, and the port alone.
+ */
+constexpr std::array<std::string_view, 5> TEXTS_THAT_ARE_NO_ENDPOINT{
+    "192.168.1.20", "192.168.1.20:", "localhost:4243", "192.168.1.20:4243/",
+    ":4243"};

@@ -8,6 +8,7 @@
 #include "ColorMode.hpp"
 #include "SettingsConstants.hpp"
 #include "Slider.hpp"
+#include "SliderLook.hpp"
 #include "TimeConstants.hpp"
 #include "WindowConstants.hpp"
 
@@ -18,13 +19,14 @@ constexpr const char* SETTINGS_HEADING = "SETTINGS";
 constexpr const char* GAME_GOES_ON_NOTICE = "THE GAME GOES ON";
 
 /** @brief The tabs, left to right, and the order of each. */
-constexpr std::size_t OPTIONS_TAB_COUNT = 4;
+constexpr std::size_t OPTIONS_TAB_COUNT = 5;
 constexpr std::array<std::string_view, OPTIONS_TAB_COUNT> OPTIONS_TAB_LABELS{
-    "SOUND", "CONTROLS", "DISPLAY", "ACCESS"};
+    "SOUND", "CONTROLS", "DISPLAY", "ACCESS", "CHAT"};
 constexpr std::size_t SOUND_TAB = 0;
 constexpr std::size_t CONTROLS_TAB = 1;
 constexpr std::size_t DISPLAY_TAB = 2;
 constexpr std::size_t ACCESS_TAB = 3;
+constexpr std::size_t CHAT_TAB = 4;
 
 /** @brief Order of the rows whose description changes, in their tab. */
 constexpr std::size_t MUSIC_ROW = 0;
@@ -32,6 +34,14 @@ constexpr std::size_t EFFECTS_ROW = 1;
 constexpr std::size_t FIRST_KEY_ROW = 0;
 constexpr std::size_t DISPLAY_MODE_ROW = 0;
 constexpr std::size_t WINDOW_SIZE_ROW = 1;
+constexpr std::size_t CHAT_KEY_ROW = 1;
+
+/** @brief CONTROLS lists the key of every bound action but the last, OPEN
+ * CHAT, which CHAT lists: CONTROLS already holds the eight rows of a panel. */
+constexpr std::size_t OPEN_CHAT_ACTION =
+    static_cast<std::size_t>(BoundAction::OpenChat);
+static_assert(OPEN_CHAT_ACTION == BOUND_ACTION_COUNT - 1,
+              "OPEN CHAT is the last bound action");
 
 /** @brief How a description starts. */
 constexpr std::string_view DESCRIPTION_START = "> ";
@@ -63,7 +73,8 @@ constexpr const char* RESET_TEXT = "RESET";
 /** @brief CONTROLS: the label of each bound action, in the order of
  * BOUND_ACTIONS; what a key row says; putting the keys back. */
 constexpr std::array<std::string_view, BOUND_ACTION_COUNT> BOUND_ACTION_LABELS{
-    "MOVE UP", "MOVE DOWN", "MOVE LEFT", "MOVE RIGHT", "SHOOT", "READY"};
+    "MOVE UP", "MOVE DOWN", "MOVE LEFT", "MOVE RIGHT",
+    "SHOOT",   "READY",     "OPEN CHAT"};
 constexpr const char* KEY_DESCRIPTION = "> ENTER, THEN THE NEW KEY";
 constexpr const char* LISTENING_DESCRIPTION =
     "> PRESS THE NEW KEY. ESC CANCELS";
@@ -109,6 +120,30 @@ constexpr const char* PILOT_NAMES_LABEL = "PILOT NAMES";
 constexpr const char* PILOT_NAMES_DESCRIPTION = "> NICKNAMES OVER THE SHIPS";
 constexpr const char* PREDICTION_LABEL = "PREDICTION";
 constexpr const char* PREDICTION_DESCRIPTION = "> SHIP MOVES BEFORE THE SERVER";
+
+/** @brief CHAT: its rows, what they say, and how each slider reads. */
+constexpr const char* CHAT_SHOWN_LABEL = "CHAT";
+constexpr const char* CHAT_SHOWN_DESCRIPTION = "> LINES OF THE OTHER PILOTS";
+constexpr const char* CHAT_LETTERS_LABEL = "LINE WIDTH";
+constexpr const char* CHAT_LETTERS_DESCRIPTION = "> LETTERS IN ONE LINE";
+constexpr const char* CHAT_CLOSED_LINES_LABEL = "LINES CLOSED";
+constexpr const char* CHAT_CLOSED_LINES_DESCRIPTION =
+    "> LINES SHOWN WHILE YOU PLAY";
+constexpr const char* CHAT_OPEN_LINES_LABEL = "LINES OPEN";
+constexpr const char* CHAT_OPEN_LINES_DESCRIPTION =
+    "> LINES SHOWN WHILE YOU TYPE";
+constexpr const char* CHAT_SECONDS_LABEL = "SHOWN FOR";
+constexpr const char* CHAT_SECONDS_DESCRIPTION =
+    "> SECONDS A LINE STAYS WHILE YOU PLAY";
+constexpr const char* CHAT_BACKGROUND_LABEL = "BACKGROUND";
+constexpr const char* CHAT_BACKGROUND_DESCRIPTION =
+    "> DARKENS THE GAME WHILE YOU TYPE";
+constexpr const char* SECONDS_UNIT = "S";
+constexpr SliderLook CHAT_LETTERS_LOOK{.step = CHAT_LETTERS_STEP};
+constexpr SliderLook CHAT_LINES_LOOK{};
+constexpr SliderLook CHAT_SECONDS_LOOK{.unit = SECONDS_UNIT};
+constexpr SliderLook CHAT_BACKGROUND_LOOK{.step = CHAT_BACKGROUND_STEP,
+                                          .unit = PERCENT_UNIT};
 
 /** @brief BACK, and the stamp written after a save, SAVED for
  * SAVED_STAMP_DURATION, NOT SAVED until the next save. */

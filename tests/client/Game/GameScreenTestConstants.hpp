@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "BossStatus.hpp"
 #include "PlayerLeft.hpp"
 #include "TimeConstants.hpp"
 
@@ -78,3 +79,21 @@ constexpr rtype::network::PlayerLeft THIRD_PILOT_LEFT{
     .playerNumber = THIRD_PILOT,
     .reason = rtype::network::DepartureReason::Left};
 constexpr int PLAYER_LEFT_COPIES = 3;
+
+/** @brief The statuses of a boss the screen is told: its stage starting, its
+ * fight with its 240 points, then 200 of them left; its name on the bar, and
+ * the word of its WARNING screen. */
+constexpr rtype::network::BossStatus BOSS_ARRIVING{
+    .stage = rtype::network::BossStage::Arriving};
+constexpr rtype::network::BossStatus BOSS_FIGHTING_UNHARMED{
+    .bossEntityId = 77,
+    .health = 240,
+    .fullHealth = 240,
+    .stage = rtype::network::BossStage::Fighting};
+constexpr rtype::network::BossStatus BOSS_FIGHTING_HIT{
+    .bossEntityId = 77,
+    .health = 200,
+    .fullHealth = 240,
+    .stage = rtype::network::BossStage::Fighting};
+constexpr std::string_view BOSS_NAME_ON_THE_BAR = "BYDO TYRANT";
+constexpr std::string_view WARNING_WORD_ON_SCREEN = "WARNING";

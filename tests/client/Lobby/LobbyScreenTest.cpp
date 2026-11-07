@@ -39,6 +39,9 @@ using rtype::client::TITLE_SCREEN;
 using rtype::client::testing::ASK_NOT_READY;
 using rtype::client::testing::ASK_READY;
 using rtype::client::testing::BACK_CHIP_MIDDLE;
+using rtype::client::testing::CHAT_KEY;
+using rtype::client::testing::CHAT_LETTER;
+using rtype::client::testing::CHAT_LINE;
 using rtype::client::testing::FIRST_BAY_CELL_INSIDE;
 using rtype::client::testing::FIRST_BAY_LOCAL_TAG;
 using rtype::client::testing::FIRST_BAY_NICKNAME;
@@ -558,4 +561,35 @@ TEST_F(LobbyScreenFixture, TheOwnBayShowsWhatTheShipWears) {
   EXPECT_TRUE(std::ranges::any_of(
       canvas().images,
       [](const RecordedImage& image) { return image.assetId == LOOK_SHEET; }));
+}
+
+/**
+ * Given the waiting room, the local player not ready
+ * When T opens the chat, then R is pressed and released
+ * Then the room asks for no ready state: R is typed
+ */
+TEST_F(LobbyScreenFixture, WhileTheChatIsOpenTheReadyKeyIsTyped) {
+  list({pilot(OWN_NUMBER, OWN_NICKNAME, false)});
+  tap(sf::Keyboard::Key::T, CHAT_KEY);
+
+  tap(sf::Keyboard::Key::R, READY_KEY);
+
+  EXPECT_THAT(readyRequests(), IsEmpty());
+}
+
+/**
+ * Given the open chat of the waiting room
+ * When gg is typed and ENTER pressed and released
+ * Then the chat of the session is sent gg, and ENTER presses no bar
+ */
+TEST_F(LobbyScreenFixture, EnterSendsTheLineAndPressesNoBar) {
+  list({pilot(OWN_NUMBER, OWN_NICKNAME, false)});
+  tap(sf::Keyboard::Key::T, CHAT_KEY);
+  screen().handleEvent(typedCharacter(CHAT_LETTER));
+  screen().handleEvent(typedCharacter(CHAT_LETTER));
+
+  tap(sf::Keyboard::Key::Enter, sf::Keyboard::Scan::Enter);
+
+  EXPECT_THAT(chat().sent(), ElementsAre(std::string{CHAT_LINE}));
+  EXPECT_THAT(readyRequests(), IsEmpty());
 }

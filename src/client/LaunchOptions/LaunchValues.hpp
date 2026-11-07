@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "AudioMode.hpp"
+#include "PlayStart.hpp"
 #include "ServerChoice.hpp"
 
 namespace rtype::client {
@@ -17,6 +18,9 @@ struct LaunchValues {
   /** @brief The server to join, the nickname of the player, UTF-8, and the
    * game it asks for. */
   ServerChoice choice;
+  /** @brief Where PLAY leads: PlayStart::GivenServer once `-h` named the
+   * server. */
+  PlayStart playStart{PlayStart::ServerMap};
   /** @brief Whether the client makes sound. */
   AudioMode audioMode{AudioMode::Enabled};
   /** @brief The file the traffic of the program goes to, given after

@@ -105,8 +105,8 @@ std::span<const DepartureLine> DepartureFeed::lines() const { return lines_; }
 std::uint32_t DepartureFeed::revision() const { return revision_; }
 
 void DepartureFeed::paint(IInterfaceCanvas& canvas,
-                          const PlayerPalette& palette) const {
-  sf::Vector2i topLeft = DEPARTURE_FEED_TOP_LEFT;
+                          const PlayerPalette& palette,
+                          sf::Vector2i topLeft) const {
   for (const DepartureLine& line : lines_) {
     const auto color =
         static_cast<std::size_t>(pilotColorOfPlayerNumber(line.playerNumber));

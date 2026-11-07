@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
+#include <string_view>
 #include "PixelSize.hpp"
 
 namespace rtype::client::testing {
@@ -20,12 +22,19 @@ constexpr const char* FIRST_LAUNCH_FILE =
     "key_move_right=RIGHT\n"
     "key_shoot=SPACE\n"
     "key_ready=R\n"
+    "key_open_chat=T\n"
     "color_mode=off\n"
     "reduce_flashes=off\n"
     "sound_cues=off\n"
     "auto_fire=off\n"
     "client_prediction=on\n"
     "pilot_names=on\n"
+    "chat_shown=on\n"
+    "chat_letters=33\n"
+    "chat_closed_lines=3\n"
+    "chat_open_lines=8\n"
+    "chat_seconds=8\n"
+    "chat_background=70\n"
     "ship_head=none\n"
     "ship_eyes=none\n"
     "ship_face=none\n";
@@ -43,10 +52,33 @@ constexpr const char* CROWN_AND_SHADES_FILE =
 constexpr const char* SHADES_ON_THE_HEAD_FILE = "ship_head=cool_shades\n";
 constexpr const char* BARE_HEAD_FILE = "ship_head=none\n";
 
+/** @brief Chat settings changed from a first launch, all on a step of their
+ * slider; and a file whose chat values each lie one past their range. */
+constexpr int CHANGED_CHAT_LETTERS = 21;
+constexpr int CHANGED_CHAT_CLOSED_LINES = 1;
+constexpr int CHANGED_CHAT_OPEN_LINES = 12;
+constexpr int CHANGED_CHAT_SECONDS = 15;
+constexpr int CHANGED_CHAT_BACKGROUND = 40;
+constexpr const char* CHAT_PAST_ITS_RANGES_FILE =
+    "chat_letters=34\n"
+    "chat_closed_lines=0\n"
+    "chat_open_lines=17\n"
+    "chat_seconds=1\n"
+    "chat_background=101\n";
+constexpr std::size_t CHAT_LINES_PAST_THEIR_RANGES = 5;
+
 constexpr int ANY_VOLUME = 40;
 constexpr int CHANGED_MUSIC_VOLUME = 35;
 constexpr int CHANGED_EFFECTS_VOLUME = 5;
 constexpr PixelSize SMALLER_WINDOW{.width = 1280, .height = 720};
+
+/** @brief A master the player chose, and the line settings.ini keeps it on. */
+constexpr std::string_view CHOSEN_MASTER_ADDRESS = "10.0.0.2";
+constexpr std::uint16_t CHOSEN_MASTER_PORT = 8080;
+constexpr const char* CHOSEN_MASTER_LINE = "master=10.0.0.2:8080";
+
+/** @brief A master named by host: the line is left out. */
+constexpr const char* HOST_NAME_MASTER_LINE = "master=master.example.org:8080";
 
 /** @brief The music volume of a first launch, and the lowest and the highest
  * volumes a file may hold. */

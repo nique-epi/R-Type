@@ -24,8 +24,9 @@ class GameInstanceShootingFixture : public GameInstanceMovementTest {
    * one at its end. */
   void runTicksDispatching(std::size_t count);
 
-  /** @returns The EntitySpawned of the missiles sent to @p player, oldest
-   * first. */
+  /** @returns The EntitySpawned of the missiles of players sent to
+   * @p player, oldest first, each missile once: a guaranteed message is sent
+   * again until it is acknowledged. */
   [[nodiscard]] std::vector<network::EntitySpawned> missilesSentTo(
       std::size_t player);
 

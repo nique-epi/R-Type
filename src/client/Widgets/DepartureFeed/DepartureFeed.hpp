@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/System/Vector2.hpp>
 #include <cstdint>
 #include <span>
 #include <vector>
@@ -38,8 +39,10 @@ class DepartureFeed {
   [[nodiscard]] std::uint32_t revision() const;
 
   /** @brief Paints every line, each pilot in the shades @p palette gives its
-   * color. */
-  void paint(IInterfaceCanvas& canvas, const PlayerPalette& palette) const;
+   * color, from @p topLeft down: DEPARTURE_FEED_TOP_LEFT, or
+   * DEPARTURE_FEED_UNDER_BOSS_BAR while the bar of a boss shows. */
+  void paint(IInterfaceCanvas& canvas, const PlayerPalette& palette,
+             sf::Vector2i topLeft) const;
 
  private:
   /** @returns Whether @p pilot left or lost its signal, and had no line this

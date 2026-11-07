@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include "AppliedInput.hpp"
 #include "ArrivalLedger.hpp"
 #include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
@@ -67,15 +68,14 @@ struct ConnectedPlayer {
    * arrives. The input itself is held by the Intent of the ship of the player.
    * InputKeeper keeps it. */
   std::optional<std::uint32_t> newestInputNumber;
-  /** @brief The inputNumber of the newest input applied to the ship of the
-   * player, which the world state confirms to its client; empty until one is
-   * applied and cleared with newestInputNumber. An input is applied when the
-   * hooks of the game see it, so this number never runs ahead of the ship, as
-   * newestInputNumber does when inputs are held before they are applied.
-   * It also tells an input that follows earlier ones from the first of the
+  /** @brief The newest input applied to the ship of the player; empty until
+   * one is applied and cleared with newestInputNumber. An input is applied when
+   * the hooks of the game see it, so this number never runs ahead of the ship,
+   * as newestInputNumber does when inputs are held before they are applied. It
+   * also tells an input that follows earlier ones from the first of the
    * session, which newestInputNumber cannot, since it runs ahead by the input
    * delay. DelayedInputs keeps it. */
-  std::optional<std::uint32_t> appliedInputNumber;
+  std::optional<AppliedInput> appliedInput;
   /** @brief Ticks the game ran since it last read a datagram of the player;
    * the player is away once it reaches SESSION_TIMEOUT_TICKS, and the session
    * closes once it reaches SESSION_CLOSING_TICKS.
