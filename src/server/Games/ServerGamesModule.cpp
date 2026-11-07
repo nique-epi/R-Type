@@ -222,8 +222,7 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
                   .sheetsFingerprint = entitySheetsFingerprint(types),
                   .seed = seed,
                   .inputDelayTicks = inputDelayTicks,
-                  .lives = rules.lives,
-                  .friendlyFire = rules.friendlyFire});
+                  .gameRules = rules});
   logHowGamesPlay(logger_, rules, breaches);
   return GameSettings{.seed = seed.has_value() ? *seed : std::random_device{}(),
                       .waves = catalog.planOf(rules.difficulty),
@@ -231,9 +230,7 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
                       .statesPerSecond = statesPerSecond,
                       .stateEncoding = encoding,
                       .inputDelayTicks = inputDelayTicks,
-                      .difficulty = rules.difficulty,
-                      .lives = rules.lives,
-                      .friendlyFire = rules.friendlyFire,
+                      .rules = rules,
                       .vanilla = breaches.empty()};
 }
 

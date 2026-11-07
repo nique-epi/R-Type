@@ -7,6 +7,7 @@
 #include "GameResultKeeper.hpp"
 #include "GameResultKeeperFixture.hpp"
 #include "GameResultKeeperTestConstants.hpp"
+#include "GameRules.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "GameStateChanged.hpp"
@@ -109,7 +110,10 @@ TEST(GameResultKeeper, CountsDeathsFromTheLivesOfTheRules) {
       roster, archive,
       GameSettings{.waves = {},
                    .types = game::testing::shippedEntitySheets(),
-                   .lives = FIVE_LIVES_OF_THE_RULES}};
+                   .rules = network::GameRules{
+                       .difficulty = std::string{KEEPER_DIFFICULTY},
+                       .lives = FIVE_LIVES_OF_THE_RULES,
+                       .friendlyFire = false}}};
   ConnectedPlayer* const player =
       roster.add(playerEndpoint(FIRST_PLAYER),
                  std::string{NICKNAMES.at(FIRST_PLAYER)}, SESSION_TOKEN);

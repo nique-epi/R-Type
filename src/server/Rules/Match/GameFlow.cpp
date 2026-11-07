@@ -192,7 +192,8 @@ void GameFlow::buildWorld() {
   game::World& world = worldSlot_.renew();
   replication_.onWorldBuilt(world);
   collisionRules_ = std::make_unique<game::CollisionRules>(
-      game_.events.get(), world.components(), game_.settings.friendlyFire);
+      game_.events.get(), world.components(),
+      game_.settings.rules.friendlyFire);
   damageRules_ = std::make_unique<game::DamageRules>(game_.events.get(),
                                                      world.components());
   waveSpawner_ = std::make_unique<WaveSpawner>(
@@ -225,7 +226,7 @@ void GameFlow::startNewWorld() {
   for (ConnectedPlayer* const player : game_.roster.get().connected()) {
     player->ready = false;
     player->score = 0;
-    player->livesWithoutShip = game_.settings.lives;
+    player->livesWithoutShip = game_.settings.rules.lives;
     player->ticksUntilRespawn = 0;
     player->shipEntityId = identifiers::NO_ENTITY_ID;
     replication_.onPlayerJoined(*player);

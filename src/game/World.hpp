@@ -48,7 +48,8 @@ class World {
    * the sheet declares them, and a CurrentAction, idle, for every body of
    * side enemy.
    * A body no behaviour pilots is the ship of a player: it also gets
-   * STARTING_LIVES Lives and no protection in its Invulnerable, and is listed
+   * STARTING_LIVES Lives, which the server replaces with the lives of the
+   * rules of its game, and no protection in its Invulnerable, and is listed
    * as a ship; with @p owner, it gets a ShipPilot naming that player, so a
    * missile of that player never hits it. Any other body given @p owner gets
    * a MissileOwner naming that player, so a kill is credited to it.

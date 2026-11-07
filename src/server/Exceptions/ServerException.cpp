@@ -28,9 +28,10 @@ UnknownEnemyException::UnknownEnemyException(
                       "\"; known: " + engine::listText(known)) {}
 
 InvalidDifficultyNameException::InvalidDifficultyNameException(
-    const engine::DataFilePlace& place)
+    const engine::DataFilePlace& place, engine::WholeNumberRange length)
     : ServerException(engine::placeText(place) + ": " + place.key +
-                      ": a difficulty is named by 1 to 16 printable bytes") {}
+                      ": a difficulty is named by " +
+                      engine::rangeText(length) + " printable bytes") {}
 
 TooManyDifficultiesException::TooManyDifficultiesException(
     const engine::DataFilePlace& place, std::size_t maximum)

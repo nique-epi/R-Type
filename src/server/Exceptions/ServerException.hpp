@@ -45,7 +45,9 @@ class UnknownEnemyException : public ServerException {
  */
 class InvalidDifficultyNameException : public ServerException {
  public:
-  explicit InvalidDifficultyNameException(const engine::DataFilePlace& place);
+  /** @param length The sizes a name may have, in bytes, in the message. */
+  InvalidDifficultyNameException(const engine::DataFilePlace& place,
+                                 engine::WholeNumberRange length);
 };
 
 /**

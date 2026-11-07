@@ -58,7 +58,7 @@ TEST_F(RtypeGameFixture, RtypeRulesModuleTellsTheRoomThroughTheReplication) {
  * Then the player has five lives, its first ship included
  */
 TEST_F(RtypeGameFixture, RtypeRulesModuleGivesAJoiningPlayerTheRuledLives) {
-  context().settings.lives = RULED_LIVES;
+  context().settings.rules.lives = RULED_LIVES;
   startBoth();
   ConnectedPlayer& player = join(0);
 

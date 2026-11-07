@@ -37,8 +37,8 @@ GameResultKeeper::GameResultKeeper(PlayerRoster& roster,
                                    const GameSettings& settings)
     : roster_(roster),
       archive_(archive),
-      difficulty_(settings.difficulty),
-      lives_(settings.lives),
+      difficulty_(settings.rules.difficulty),
+      lives_(settings.rules.lives),
       vanilla_(settings.vanilla) {}
 
 void GameResultKeeper::onPlayerClosing(const ConnectedPlayer& departed) {

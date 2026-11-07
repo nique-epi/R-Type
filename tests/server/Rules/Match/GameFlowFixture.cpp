@@ -12,6 +12,8 @@
 #include "EntityTypesTestConstants.hpp"
 #include "GameEnded.hpp"
 #include "GameFlow.hpp"
+#include "GameRuleConstants.hpp"
+#include "GameRules.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "GameStateChanged.hpp"
@@ -133,11 +135,14 @@ GameFlowOneWaveLevelFixture::GameFlowOneWaveLevelFixture()
     : GameFlowFixture(oneWaveLevelWavePlan()) {}
 
 GameFlowFriendlyFireFixture::GameFlowFriendlyFireFixture()
-    : GameFlowFixture(
-          GameSettings{.seed = SOME_SEED,
-                       .waves = testWavePlan(),
-                       .types = game::testing::shippedEntitySheets(),
-                       .friendlyFire = true}) {}
+    : GameFlowFixture(GameSettings{
+          .seed = SOME_SEED,
+          .waves = testWavePlan(),
+          .types = game::testing::shippedEntitySheets(),
+          .rules = network::GameRules{
+              .difficulty = std::string{identifiers::DEFAULT_DIFFICULTY},
+              .lives = identifiers::DEFAULT_LIVES,
+              .friendlyFire = true}}) {}
 
 void GameFlowFriendlyFireFixture::fireAt(const ConnectedPlayer& target,
                                          std::uint8_t shooter) {

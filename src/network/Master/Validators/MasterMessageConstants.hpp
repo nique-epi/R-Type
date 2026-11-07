@@ -130,7 +130,8 @@ constexpr std::string_view PLAYER_COUNT_MEMBER = "playerCount";
  * players: what one byte holds, above 0. A server checks its own, narrower
  * bounds when a game is created. */
 constexpr std::uint64_t LOWEST_GAME_LIVES = 1;
-constexpr std::uint64_t HIGHEST_GAME_LIVES = 255;
+constexpr std::uint64_t HIGHEST_GAME_LIVES =
+    std::numeric_limits<std::uint8_t>::max();
 
 /** @brief The fewest players a listed game may hold. */
 constexpr std::uint64_t MINIMUM_LISTED_PLAYERS = 0;

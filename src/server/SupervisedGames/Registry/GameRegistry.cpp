@@ -49,12 +49,14 @@ GameState stateOf(GameLifecycle lifecycle) {
 }
 
 /** @returns The state and the seats of @p game: its players and the seats it
- * holds for players sent to it are taken. */
+ * holds for players sent to it are taken, and only a game played by the
+ * default rules takes any player. */
 GameVacancy vacancyOf(const SupervisedGame& game) {
   return GameVacancy{
       .state = stateOf(game.lifecycle),
       .full = game.nicknames.size() + game.reservations.count() >=
-              network::MAXIMUM_PLAYERS};
+              network::MAXIMUM_PLAYERS,
+      .takesAnyPlayer = game.rules == network::defaultGameRules()};
 }
 
 /** @returns The index of the game of @p games that waits for players and
@@ -70,15 +72,6 @@ std::optional<std::size_t> gameHolding(const std::vector<SupervisedGame>& games,
   return std::nullopt;
 }
 
-/** @returns The state and the seats of @p game for a player who takes any
- * game: a game played by other rules than the default ones counts as full,
- * since that player never chose them. */
-GameVacancy vacancyForAnyGame(const SupervisedGame& game) {
-  GameVacancy vacancy = vacancyOf(game);
-  vacancy.full = vacancy.full || game.rules != network::defaultGameRules();
-  return vacancy;
-}
-
 /** @returns The index of the game of @p games the player of @p sender goes
  * to: the one that holds its seat, else the first played by the default rules
  * with a free seat; nothing when none fits. */
@@ -90,7 +83,7 @@ std::optional<std::size_t> gameFor(const std::vector<SupervisedGame>& games,
   std::vector<GameVacancy> vacancies;
   vacancies.reserve(games.size());
   for (const SupervisedGame& game : games) {
-    vacancies.push_back(vacancyForAnyGame(game));
+    vacancies.push_back(vacancyOf(game));
   }
   return firstJoinableGame(vacancies);
 }

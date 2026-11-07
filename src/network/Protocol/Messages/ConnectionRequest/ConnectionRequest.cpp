@@ -68,10 +68,9 @@ void encodeRules(ByteWriter& writer, const GameRules& rules) {
 }
 
 GameRules decodeRules(ByteReader& reader) {
-  GameRules rules{.difficulty = reader.readString()};
-  rules.lives = reader.readUint8();
-  rules.friendlyFire = readBool(reader);
-  return rules;
+  return GameRules{.difficulty = reader.readString(),
+                   .lives = reader.readUint8(),
+                   .friendlyFire = readBool(reader)};
 }
 
 /** @returns The rules that follow the choice of a NewGame; nothing for any

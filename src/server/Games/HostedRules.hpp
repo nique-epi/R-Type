@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include "GameRuleConstants.hpp"
+#include "GameRules.hpp"
 
 namespace rtype::server {
 
@@ -19,10 +19,9 @@ struct HostedRules {
   std::optional<std::uint32_t> seed;
   /** @brief The ticks the game holds each input. */
   std::size_t inputDelayTicks{0};
-  /** @brief The lives each player starts the game with. */
-  std::uint8_t lives{identifiers::DEFAULT_LIVES};
-  /** @brief Whether a missile of a player costs another player a life. */
-  bool friendlyFire{false};
+  /** @brief The rules of the game: its lives and its friendly fire count;
+   * every difficulty of the shipped waves file is vanilla. */
+  network::GameRules gameRules{network::defaultGameRules()};
 };
 
 }  // namespace rtype::server

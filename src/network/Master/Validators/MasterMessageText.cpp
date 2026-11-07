@@ -8,6 +8,7 @@
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -218,6 +219,19 @@ HostedGameState stateOf(const JsonField& field) {
   return *state;
 }
 
+/** @returns The nicknames of the protocol @p field lists, @p maximumCount at
+ * most. */
+std::vector<std::string> nicknamesOf(const JsonField& field,
+                                     std::size_t maximumCount) {
+  const std::size_t count = arraySizeOf(field, maximumCount);
+  std::vector<std::string> nicknames;
+  nicknames.reserve(count);
+  for (std::size_t index = 0; index < count; ++index) {
+    nicknames.push_back(nicknameOf(elementOf(field, index)));
+  }
+  return nicknames;
+}
+
 /** @returns Whether @p field holds true; it must hold a JSON boolean. */
 bool booleanOf(const JsonField& field) {
   const nlohmann::json& value = field.value.get();
@@ -242,31 +256,21 @@ std::uint8_t livesOf(const JsonField& game) {
 std::vector<std::string> difficultiesOf(const JsonField& message,
                                         std::size_t fewest) {
   const JsonField field = memberOf(message, DIFFICULTIES_MEMBER);
-  const std::size_t count = arraySizeOf(field, MAXIMUM_DIFFICULTIES);
-  if (count < fewest) {
+  std::vector<std::string> names = nicknamesOf(field, MAXIMUM_DIFFICULTIES);
+  if (names.size() < fewest) {
     refuse(field);
   }
-  std::vector<std::string> names;
-  names.reserve(count);
-  for (std::size_t index = 0; index < count; ++index) {
-    std::string name = nicknameOf(elementOf(field, index));
-    if (std::ranges::find(names, name) != names.end()) {
-      refuse(elementOf(field, index));
+  for (std::size_t later = 1; later < names.size(); ++later) {
+    const std::span<const std::string> earlier = std::span(names).first(later);
+    if (std::ranges::find(earlier, names.at(later)) != earlier.end()) {
+      refuse(elementOf(field, later));
     }
-    names.push_back(std::move(name));
   }
   return names;
 }
 
 std::vector<std::string> playersOf(const JsonField& game) {
-  const JsonField players = memberOf(game, PLAYERS_MEMBER);
-  const std::size_t count = arraySizeOf(players, MAXIMUM_PLAYERS);
-  std::vector<std::string> nicknames;
-  nicknames.reserve(count);
-  for (std::size_t index = 0; index < count; ++index) {
-    nicknames.push_back(nicknameOf(elementOf(players, index)));
-  }
-  return nicknames;
+  return nicknamesOf(memberOf(game, PLAYERS_MEMBER), MAXIMUM_PLAYERS);
 }
 
 /** @returns The number of the game @p game, which a heartbeat and a listing
@@ -433,6 +437,22 @@ nlohmann::json measuresDocument(const ServerMeasures& measures) {
 }
 
 /**
+ * @returns An object whose member @p member lists each of @p items as
+ * @p documentOf writes it.
+ */
+template <typename Item, typename Document>
+nlohmann::json listingDocument(std::string_view member,
+                               const std::vector<Item>& items,
+                               Document documentOf) {
+  nlohmann::json document;
+  document[member] = nlohmann::json::array();
+  for (const Item& item : items) {
+    document[member].push_back(documentOf(item));
+  }
+  return document;
+}
+
+/**
  * @returns The text of an object whose one member, @p member, lists each of
  * @p items as @p documentOf writes it: the shape of every list the master
  * answers.
@@ -440,12 +460,7 @@ nlohmann::json measuresDocument(const ServerMeasures& measures) {
 template <typename Item, typename Document>
 std::string listingText(std::string_view member, const std::vector<Item>& items,
                         Document documentOf) {
-  nlohmann::json document;
-  document[member] = nlohmann::json::array();
-  for (const Item& item : items) {
-    document[member].push_back(documentOf(item));
-  }
-  return textOf(document);
+  return textOf(listingDocument(member, items, documentOf));
 }
 
 /** @returns The members of @p registration, its address left out when it is
@@ -617,11 +632,8 @@ ServerRegistration registrationFromText(std::string_view text) {
 }
 
 std::string heartbeatText(const ServerHeartbeat& heartbeat) {
-  nlohmann::json document;
-  document[GAMES_MEMBER] = nlohmann::json::array();
-  for (const HostedGame& game : heartbeat.games) {
-    document[GAMES_MEMBER].push_back(gameDocument(game));
-  }
+  nlohmann::json document =
+      listingDocument(GAMES_MEMBER, heartbeat.games, gameDocument);
   document[DIFFICULTIES_MEMBER] = heartbeat.difficulties;
   document[MEASURES_MEMBER] = measuresDocument(heartbeat.measures);
   if (heartbeat.probeToken.has_value()) {
@@ -641,11 +653,8 @@ ServerHeartbeat heartbeatFromText(std::string_view text) {
 }
 
 std::string gameListingText(const GameListing& listing) {
-  nlohmann::json document;
-  document[GAMES_MEMBER] = nlohmann::json::array();
-  for (const ListedGame& game : listing.games) {
-    document[GAMES_MEMBER].push_back(listedGameDocument(game));
-  }
+  nlohmann::json document =
+      listingDocument(GAMES_MEMBER, listing.games, listedGameDocument);
   document[DIFFICULTIES_MEMBER] = listing.difficulties;
   return textOf(document);
 }

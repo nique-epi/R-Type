@@ -61,8 +61,8 @@ struct ConnectedPlayer;
  * and the player stays without a ship in that world.
  *
  * A keeper works on one world: the game builds a new one with each new world,
- * and gives every player its STARTING_LIVES back. The bus, the world and the
- * roster must outlive the keeper.
+ * and gives every player the lives of its rules back. The bus, the world and
+ * the roster must outlive the keeper.
  *
  * Not thread-safe: use it from the simulation thread only.
  */

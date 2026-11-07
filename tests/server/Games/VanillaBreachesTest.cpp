@@ -3,6 +3,7 @@
 #include <string_view>
 #include <vector>
 #include "GameRuleConstants.hpp"
+#include "GameRules.hpp"
 #include "HostedRules.hpp"
 #include "ServerConstants.hpp"
 #include "VanillaBreaches.hpp"
@@ -102,14 +103,18 @@ TEST(VanillaBreaches, ALongerInputDelayIsNotVanilla) {
  * Then the lives are the only reason it is not vanilla
  */
 TEST(VanillaBreaches, FewerLivesAreNotVanilla) {
-  EXPECT_EQ(vanillaBreaches(HostedRules{
-                .wavesFingerprint = OFFICIAL_WAVES_FINGERPRINT,
-                .sheetsFingerprint = OFFICIAL_ENTITY_SHEETS_FINGERPRINT,
-                .seed = std::nullopt,
-                .inputDelayTicks = DEFAULT_INPUT_DELAY_TICKS,
-                .lives = ONE_LIFE_FEWER,
-                .friendlyFire = false}),
-            std::vector<std::string_view>{CHANGED_LIVES_BREACH});
+  EXPECT_EQ(
+      vanillaBreaches(HostedRules{
+          .wavesFingerprint = OFFICIAL_WAVES_FINGERPRINT,
+          .sheetsFingerprint = OFFICIAL_ENTITY_SHEETS_FINGERPRINT,
+          .seed = std::nullopt,
+          .inputDelayTicks = DEFAULT_INPUT_DELAY_TICKS,
+          .gameRules =
+              network::GameRules{
+                  .difficulty = std::string{identifiers::DEFAULT_DIFFICULTY},
+                  .lives = ONE_LIFE_FEWER,
+                  .friendlyFire = false}}),
+      std::vector<std::string_view>{CHANGED_LIVES_BREACH});
 }
 
 /**
@@ -118,14 +123,18 @@ TEST(VanillaBreaches, FewerLivesAreNotVanilla) {
  * Then the lives are the only reason it is not vanilla
  */
 TEST(VanillaBreaches, MoreLivesAreNotVanilla) {
-  EXPECT_EQ(vanillaBreaches(HostedRules{
-                .wavesFingerprint = OFFICIAL_WAVES_FINGERPRINT,
-                .sheetsFingerprint = OFFICIAL_ENTITY_SHEETS_FINGERPRINT,
-                .seed = std::nullopt,
-                .inputDelayTicks = DEFAULT_INPUT_DELAY_TICKS,
-                .lives = ONE_LIFE_MORE,
-                .friendlyFire = false}),
-            std::vector<std::string_view>{CHANGED_LIVES_BREACH});
+  EXPECT_EQ(
+      vanillaBreaches(HostedRules{
+          .wavesFingerprint = OFFICIAL_WAVES_FINGERPRINT,
+          .sheetsFingerprint = OFFICIAL_ENTITY_SHEETS_FINGERPRINT,
+          .seed = std::nullopt,
+          .inputDelayTicks = DEFAULT_INPUT_DELAY_TICKS,
+          .gameRules =
+              network::GameRules{
+                  .difficulty = std::string{identifiers::DEFAULT_DIFFICULTY},
+                  .lives = ONE_LIFE_MORE,
+                  .friendlyFire = false}}),
+      std::vector<std::string_view>{CHANGED_LIVES_BREACH});
 }
 
 /**
@@ -134,14 +143,18 @@ TEST(VanillaBreaches, MoreLivesAreNotVanilla) {
  * Then friendly fire is the only reason it is not vanilla
  */
 TEST(VanillaBreaches, FriendlyFireIsNotVanilla) {
-  EXPECT_EQ(vanillaBreaches(HostedRules{
-                .wavesFingerprint = OFFICIAL_WAVES_FINGERPRINT,
-                .sheetsFingerprint = OFFICIAL_ENTITY_SHEETS_FINGERPRINT,
-                .seed = std::nullopt,
-                .inputDelayTicks = DEFAULT_INPUT_DELAY_TICKS,
-                .lives = identifiers::DEFAULT_LIVES,
-                .friendlyFire = true}),
-            std::vector<std::string_view>{FRIENDLY_FIRE_BREACH});
+  EXPECT_EQ(
+      vanillaBreaches(HostedRules{
+          .wavesFingerprint = OFFICIAL_WAVES_FINGERPRINT,
+          .sheetsFingerprint = OFFICIAL_ENTITY_SHEETS_FINGERPRINT,
+          .seed = std::nullopt,
+          .inputDelayTicks = DEFAULT_INPUT_DELAY_TICKS,
+          .gameRules =
+              network::GameRules{
+                  .difficulty = std::string{identifiers::DEFAULT_DIFFICULTY},
+                  .lives = identifiers::DEFAULT_LIVES,
+                  .friendlyFire = true}}),
+      std::vector<std::string_view>{FRIENDLY_FIRE_BREACH});
 }
 
 /**
@@ -151,17 +164,21 @@ TEST(VanillaBreaches, FriendlyFireIsNotVanilla) {
  * Then every reason is given, in the order of the rules
  */
 TEST(VanillaBreaches, GivesEveryReasonInOrder) {
-  EXPECT_EQ(vanillaBreaches(
-                HostedRules{.wavesFingerprint = ANOTHER_WAVES_FINGERPRINT,
-                            .sheetsFingerprint = ANOTHER_SHEETS_FINGERPRINT,
-                            .seed = ZERO_SEED,
-                            .inputDelayTicks = ONE_TICK_LONGER_DELAY,
-                            .lives = ONE_LIFE_MORE,
-                            .friendlyFire = true}),
-            (std::vector<std::string_view>{
-                MODIFIED_WAVES_BREACH, MODIFIED_ENTITY_SHEETS_BREACH,
-                IMPOSED_SEED_BREACH, CHANGED_INPUT_DELAY_BREACH,
-                CHANGED_LIVES_BREACH, FRIENDLY_FIRE_BREACH}));
+  EXPECT_EQ(
+      vanillaBreaches(HostedRules{
+          .wavesFingerprint = ANOTHER_WAVES_FINGERPRINT,
+          .sheetsFingerprint = ANOTHER_SHEETS_FINGERPRINT,
+          .seed = ZERO_SEED,
+          .inputDelayTicks = ONE_TICK_LONGER_DELAY,
+          .gameRules =
+              network::GameRules{
+                  .difficulty = std::string{identifiers::DEFAULT_DIFFICULTY},
+                  .lives = ONE_LIFE_MORE,
+                  .friendlyFire = true}}),
+      (std::vector<std::string_view>{
+          MODIFIED_WAVES_BREACH, MODIFIED_ENTITY_SHEETS_BREACH,
+          IMPOSED_SEED_BREACH, CHANGED_INPUT_DELAY_BREACH, CHANGED_LIVES_BREACH,
+          FRIENDLY_FIRE_BREACH}));
 }
 
 }  // namespace rtype::server::testing

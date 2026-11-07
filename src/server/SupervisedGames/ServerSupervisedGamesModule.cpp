@@ -11,6 +11,7 @@
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "EntitySheets.hpp"
+#include "ErrorText.hpp"
 #include "ExitedGame.hpp"
 #include "FreeUdpPort.hpp"
 #include "GameConfigurationFile.hpp"
@@ -59,15 +60,6 @@ std::vector<std::string> difficultyNamesOf(const GameLaunchSettings& settings) {
   const game::EntitySheets types =
       game::EntitySheets::fromFolder(settings.entitySheetsFolder);
   return WaveCatalog::fromFile(settings.wavesFile, types).difficulties();
-}
-
-/** @returns @p names one after the other, separated by DIFFICULTY_SEPARATOR. */
-std::string namesInALine(const std::vector<std::string>& names) {
-  std::string line;
-  for (const std::string& name : names) {
-    line += line.empty() ? name : std::string{DIFFICULTY_SEPARATOR} + name;
-  }
-  return line;
 }
 
 /** @returns The database setting, declared in @p configuration. */
@@ -127,7 +119,7 @@ void ServerSupervisedGamesModule::install(engine::InstallContext& context) {
 void ServerSupervisedGamesModule::start() {
   difficulties_.keep(difficultyNamesOf(settings_));
   logger_.info("difficulties of the games: ",
-               namesInALine(difficulties_.names()));
+               engine::listText(difficulties_.names()));
   const std::filesystem::path file = gameConfigurationFileOf(
       settings_.folder, listeningPort_->listeningPort());
   writeGameConfiguration(file, settings_.gameLines);

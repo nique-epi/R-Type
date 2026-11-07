@@ -158,7 +158,12 @@ WavePlan planFrom(const DataFileTable& table, const game::EntitySheets& types) {
  * cannot carry @p name, a table of @p levels: the rules of a nickname. */
 void requireDifficultyName(const DataFileTable& levels, std::string_view name) {
   if (!network::isValidNickname(name)) {
-    throw InvalidDifficultyNameException(engine::placeOfKey(levels, name));
+    throw InvalidDifficultyNameException(
+        engine::placeOfKey(levels, name),
+        engine::WholeNumberRange{
+            .lowest = static_cast<std::int64_t>(network::MINIMUM_NICKNAME_SIZE),
+            .highest =
+                static_cast<std::int64_t>(network::MAXIMUM_NICKNAME_SIZE)});
   }
 }
 
