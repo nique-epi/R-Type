@@ -152,19 +152,25 @@ std::optional<int> ownSlotOf(std::span<const network::LobbyPlayer> players,
   return pilotColorOfPlayerNumber(ownNumber);
 }
 
+/** @returns The bay of slot @p ownSlot among @p bays: nothing without
+ * bays or without a slot. */
+std::optional<sf::IntRect> ownBayArea(std::optional<sf::IntRect> bays,
+                                      std::optional<int> ownSlot) {
+  if (!bays.has_value() || !ownSlot.has_value()) {
+    return std::nullopt;
+  }
+  return sf::IntRect(bayTopLeft(*bays, *ownSlot), HANGAR_BAY_SIZE);
+}
+
 /** @returns The bay of the local player in the room of @p menu: nothing while
  * the server lists no player with its number, or while the room shows no
  * bays. */
 std::optional<sf::IntRect> ownBayAreaIn(const Menu& menu,
                                         const IWaitingRoom& waitingRoom,
                                         const IServerConnection& connection) {
-  const std::optional<sf::IntRect> bays = menu.illustrationArea();
-  const std::optional<int> ownSlot =
-      ownSlotOf(waitingRoom.lobbyPlayers(), connection.status().playerNumber);
-  if (!bays.has_value() || !ownSlot.has_value()) {
-    return std::nullopt;
-  }
-  return sf::IntRect(bayTopLeft(*bays, *ownSlot), HANGAR_BAY_SIZE);
+  return ownBayArea(
+      menu.illustrationArea(),
+      ownSlotOf(waitingRoom.lobbyPlayers(), connection.status().playerNumber));
 }
 
 /** @returns Where the room paints the parts its help explains, as
@@ -180,17 +186,14 @@ LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot,
        bays.position.y + bays.size.y + SPACE_ABOVE_ROOM_BARS},
       BUTTON_SIZE);
   const int statusShown = std::max(statusWidth, BUTTON_SIZE.x);
-  return {
-      .bays = bays,
-      .ownBay = ownSlot.has_value()
-                    ? sf::IntRect(bayTopLeft(bays, *ownSlot), HANGAR_BAY_SIZE)
-                    : bays,
-      .ready = ready,
-      .status =
-          sf::IntRect({(INTERFACE_AREA.size.x - statusShown) / SIDES_PER_AXIS,
-                       ready.position.y + ready.size.y + BUTTON_GAP},
-                      {statusShown, TEXT_LINE_HEIGHT}),
-      .back = backChipArea()};
+  return {.bays = bays,
+          .ownBay = ownBayArea(bays, ownSlot).value_or(bays),
+          .ready = ready,
+          .status = sf::IntRect(
+              {(INTERFACE_AREA.size.x - statusShown) / SIDES_PER_AXIS,
+               ready.position.y + ready.size.y + BUTTON_GAP},
+              {statusShown, TEXT_LINE_HEIGHT}),
+          .back = backChipArea()};
 }
 
 }  // namespace

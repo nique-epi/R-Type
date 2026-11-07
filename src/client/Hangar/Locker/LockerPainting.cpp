@@ -20,6 +20,7 @@
 #include "MetalTextureConstants.hpp"
 #include "Outline.hpp"
 #include "PixelShapes.hpp"
+#include "RenderingConstants.hpp"
 #include "ShipLookConstants.hpp"
 #include "ShipLookSpriteConstants.hpp"
 #include "ShipLooks.hpp"
@@ -38,13 +39,6 @@ void paintBevel(IInterfaceCanvas& canvas, sf::IntRect area,
   canvas.fill({area.position, {1, area.size.y}}, shades.light);
   canvas.fill({{area.position.x, end.y}, {area.size.x, 1}}, shades.dark);
   canvas.fill({{end.x, area.position.y}, {1, area.size.y}}, shades.dark);
-}
-
-/** @returns @p area grown by @p margin on every side; shrunk when negative.
- */
-sf::IntRect grownBy(sf::IntRect area, int margin) {
-  return {area.position - sf::Vector2i(margin, margin),
-          area.size + sf::Vector2i(margin + margin, margin + margin)};
 }
 
 /** @brief Adds a rivet near each corner of @p area. */

@@ -1,4 +1,5 @@
 #include "PixelShapes.hpp"
+#include <SFML/Graphics/Rect.hpp>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
@@ -94,6 +95,11 @@ double bayerThresholdAt(sf::Vector2i pixel) {
   const int level =
       BAYER_MATRIX.at(bayerIndexOf(pixel.y)).at(bayerIndexOf(pixel.x));
   return (static_cast<double>(level) + BAYER_CELL_CENTRE) / BAYER_LEVELS;
+}
+
+sf::IntRect grownBy(sf::IntRect area, int margin) {
+  return {area.position - sf::Vector2i(margin, margin),
+          area.size + sf::Vector2i(margin + margin, margin + margin)};
 }
 
 }  // namespace rtype::client

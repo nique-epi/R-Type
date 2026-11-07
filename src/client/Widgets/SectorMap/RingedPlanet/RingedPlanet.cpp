@@ -14,6 +14,7 @@
 #include "DitherConstants.hpp"
 #include "LandWave.hpp"
 #include "MotionPreference.hpp"
+#include "PixelShapes.hpp"
 #include "PlanetPose.hpp"
 #include "RingedPlanetConstants.hpp"
 #include "SectorMapConstants.hpp"
@@ -308,17 +309,11 @@ void plotDot(std::vector<ColoredPixel>& pixels, sf::Vector2i corner,
 /** @returns The cell of the halftone at @p column and @p row of the picture of
  * the planet, whose centre is @p half pixels from its corner. */
 HalftoneCell cellAt(sf::Vector2i pixel, int half, int radius) {
-  const auto bayerColumn =
-      static_cast<std::size_t>((pixel.x / HALFTONE_PITCH) % BAYER_SIZE);
-  const auto bayerRow =
-      static_cast<std::size_t>((pixel.y / HALFTONE_PITCH) % BAYER_SIZE);
   return HalftoneCell{.x = static_cast<double>(pixel.x + 1 - half) / radius,
                       .y = static_cast<double>(pixel.y + 1 - half) / radius,
                       .column = pixel.x,
                       .row = pixel.y,
-                      .threshold = (BAYER_MATRIX.at(bayerRow).at(bayerColumn) +
-                                    BAYER_CELL_CENTRE) /
-                                   BAYER_LEVELS};
+                      .threshold = bayerThresholdAt(pixel / HALFTONE_PITCH)};
 }
 
 /** @returns The half size of the picture of the planet: its ring, then the

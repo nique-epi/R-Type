@@ -4,11 +4,14 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <vector>
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
+#include "RenderingConstants.hpp"
 #include "ShipLook.hpp"
 #include "ShipLookConstants.hpp"
+#include "ShipLookNumbers.hpp"
 #include "ShipLookSlot.hpp"
 #include "ShipLookSpriteConstants.hpp"
 #include "ShipPlacement.hpp"
@@ -32,28 +35,31 @@ std::uint8_t& slotOf(ShipLook& look, ShipLookSlot slot) {
   return look.face;
 }
 
-/** @returns What a slot holds when it wears @p item. */
-std::uint8_t numberOf(std::size_t item) {
-  return static_cast<std::uint8_t>(item + 1);
-}
-
 }  // namespace
 
 ShipLook wearing(ShipLook look, std::size_t item) {
-  slotOf(look, SHIP_LOOK_ITEM_SLOTS.at(item)) = numberOf(item);
+  slotOf(look, SHIP_LOOK_ITEM_SLOTS.at(item)) = lookNumberOf(item);
   return look;
 }
 
 ShipLook without(ShipLook look, std::size_t item) {
   std::uint8_t& slot = slotOf(look, SHIP_LOOK_ITEM_SLOTS.at(item));
-  if (slot == numberOf(item)) {
+  if (slot == lookNumberOf(item)) {
     slot = NO_SHIP_LOOK_ITEM;
   }
   return look;
 }
 
 bool wears(ShipLook look, std::size_t item) {
-  return slotOf(look, SHIP_LOOK_ITEM_SLOTS.at(item)) == numberOf(item);
+  return slotOf(look, SHIP_LOOK_ITEM_SLOTS.at(item)) == lookNumberOf(item);
+}
+
+std::optional<std::size_t> itemInSlot(ShipLook look, ShipLookSlot slot) {
+  const std::uint8_t number = slotOf(look, slot);
+  if (number == NO_SHIP_LOOK_ITEM) {
+    return std::nullopt;
+  }
+  return lookIndexOf(number);
 }
 
 std::vector<std::size_t> wornItemsOf(ShipLook look) {
@@ -84,8 +90,10 @@ void paintLookItem(IInterfaceCanvas& canvas, std::size_t item,
 
 void paintShipLook(IInterfaceCanvas& canvas, ShipLook look,
                    ShipPlacement ship) {
-  for (const std::size_t item : wornItemsOf(look)) {
-    paintLookItem(canvas, item, ship);
+  for (std::size_t item = 0; item < SHIP_LOOK_ITEM_COUNT; ++item) {
+    if (wears(look, item)) {
+      paintLookItem(canvas, item, ship);
+    }
   }
 }
 

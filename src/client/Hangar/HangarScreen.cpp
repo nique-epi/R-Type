@@ -12,8 +12,9 @@
 #include "DockPainting.hpp"
 #include "DockScene.hpp"
 #include "FittingRun.hpp"
-#include "FittingTimelineConstants.hpp"
+#include "FittingTimeline.hpp"
 #include "HangarScreenConstants.hpp"
+#include "HangarScreenIdConstants.hpp"
 #include "HangarScreenParts.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceColorConstants.hpp"
@@ -33,6 +34,12 @@
 namespace rtype::client {
 
 namespace {
+
+/** @returns The item whose cell lies under @p position of the window. */
+std::optional<std::size_t> itemUnder(sf::Vector2i position,
+                                     const PlayfieldMapping& playfieldPointAt) {
+  return lockerItemAt(interfacePixelAt(playfieldPointAt(position)));
+}
 
 Button::Text backText() {
   return {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME};
@@ -78,14 +85,14 @@ void HangarScreen::handleEvent(const sf::Event& event) {
              event.is<sf::Event::FocusLost>()) {
     confirmHeld_ = false;
   } else if (const auto* moved = event.getIf<sf::Event::MouseMoved>()) {
-    if (const std::optional<std::size_t> item = lockerItemAt(
-            interfacePixelAt(playfieldPointAt_(moved->position)))) {
+    if (const std::optional<std::size_t> item =
+            itemUnder(moved->position, playfieldPointAt_)) {
       chosen_ = *item;
     }
   } else if (const auto* click = event.getIf<sf::Event::MouseButtonPressed>();
              click != nullptr && click->button == sf::Mouse::Button::Left) {
-    if (const std::optional<std::size_t> item = lockerItemAt(
-            interfacePixelAt(playfieldPointAt_(click->position)))) {
+    if (const std::optional<std::size_t> item =
+            itemUnder(click->position, playfieldPointAt_)) {
       chosen_ = *item;
       choose();
     }
@@ -94,8 +101,7 @@ void HangarScreen::handleEvent(const sf::Event& event) {
 
 void HangarScreen::update(engine::Duration elapsed) {
   elapsed_ += elapsed;
-  if (fitting_.has_value() &&
-      elapsed_ - fitting_->started >= FITTING_DURATION) {
+  if (fitting_.has_value() && fittingProgressOf(*fitting_, elapsed_) >= 1.0F) {
     fitting_.reset();
   }
   static_cast<void>(settings_->saveIfChanged());
@@ -144,7 +150,7 @@ void HangarScreen::choose() {
 void HangarScreen::repaint() {
   const ShipLook worn = settings_->settings().shipLook;
   canvas_->clear();
-  canvas_->write(HANGAR_TITLE, HANGAR_TITLE_ANCHOR, HANGAR_TITLE_STYLE);
+  canvas_->write(HANGAR_LABEL, HANGAR_TITLE_ANCHOR, HANGAR_TITLE_STYLE);
   canvas_->fill(HANGAR_RULE, EDGE_BLUE);
   paintLocker(*canvas_, LockerView{.chosen = chosen_, .worn = worn});
   paintDockWall(*canvas_, litBeaconOf(elapsed_, motion_));

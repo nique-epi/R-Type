@@ -163,6 +163,14 @@ bool hangarStarShownAt(const ServerMapChoice& map, sf::Vector2i pixel) {
   return map.stage() == ServerMapStage::ZoomedOut && hangarStarAt(pixel);
 }
 
+/** @brief Lets go of @p heldKey, then pushes the hangar over the map: the
+ * release of that key goes to the hangar. */
+void openHangar(std::optional<sf::Keyboard::Key>& heldKey,
+                IScreenNavigator& navigator) {
+  heldKey.reset();
+  navigator.push(HANGAR_SCREEN);
+}
+
 /** @brief Zooms in when the wheel turns up over the whole map, out when it
  * turns down over the zoomed map. */
 void zoomWithWheel(ServerMapChoice& map, float delta) {
@@ -257,8 +265,7 @@ void ServerMapScreen::handleEvent(const sf::Event& event) {
     const sf::Vector2i pixel =
         interfacePixelAt(playfieldPointAt_(click->position));
     if (hangarStarShownAt(map_, pixel)) {
-      heldKey_.reset();
-      navigator_->push(HANGAR_SCREEN);
+      openHangar(heldKey_, *navigator_);
     } else if (map_.chooseAt(pixel)) {
       openGamesOf(map_, *games_);
     }
@@ -306,9 +313,8 @@ void ServerMapScreen::keyPressed(const sf::Event::KeyPressed& key) {
     chosenShown_ = true;
     return;
   }
-  if (key.code == MAP_HANGAR_KEY && heldKey_ != key.code) {
-    heldKey_.reset();
-    navigator_->push(HANGAR_SCREEN);
+  if (key.code == HANGAR_KEY) {
+    openHangar(heldKey_, *navigator_);
     return;
   }
   if ((key.code != MENU_CONFIRM_KEY && key.code != REFRESH_KEY) ||

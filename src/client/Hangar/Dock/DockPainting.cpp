@@ -36,6 +36,7 @@
 #include "Outline.hpp"
 #include "PilotShipPicture.hpp"
 #include "PixelShapes.hpp"
+#include "RenderingConstants.hpp"
 #include "ShipLook.hpp"
 #include "ShipLookConstants.hpp"
 #include "ShipLookSlot.hpp"
@@ -52,7 +53,6 @@ namespace rtype::client {
 
 namespace {
 
-using ArmPoses = std::array<ArmPose, DOCK_ARMS.size()>;
 using StillPoses = std::array<std::optional<ArmPose>, DOCK_ARMS.size()>;
 
 /** @returns Where the ship stands: centred in the bay, its top on
@@ -71,12 +71,16 @@ ShipPlacement dockedShipOf(const DockScene& scene) {
           .visibleArea = DOCK_AREA};
 }
 
+/** @returns Whether @p item is brought from below: the mustache, held by
+ * its bottom. */
+bool comesFromBelow(std::size_t item) {
+  return SHIP_LOOK_ITEM_SLOTS.at(item) == ShipLookSlot::Face;
+}
+
 /** @returns The arm that fetches @p item: the top right one for a hat or
  * shades, held from above; the bottom right one for the mustache. */
 std::size_t fittingArmOf(std::size_t item) {
-  return SHIP_LOOK_ITEM_SLOTS.at(item) == ShipLookSlot::Face
-             ? FLOOR_RIGHT_ARM_INDEX
-             : CEILING_RIGHT_ARM_INDEX;
+  return comesFromBelow(item) ? FLOOR_RIGHT_ARM_INDEX : CEILING_RIGHT_ARM_INDEX;
 }
 
 /** @returns Where the jaws hold @p item, from the top-left corner of its
@@ -84,8 +88,7 @@ std::size_t fittingArmOf(std::size_t item) {
  * when the arm comes from below. */
 sf::Vector2i holdOf(std::size_t item, int scale) {
   const sf::Vector2i size = SHIP_LOOK_SPRITES.at(item).size * scale;
-  const bool fromBelow = fittingArmOf(item) == FLOOR_RIGHT_ARM_INDEX;
-  return {size.x / HALF_DIVISOR, fromBelow ? size.y - 1 : 1};
+  return {size.x / HALF_DIVISOR, comesFromBelow(item) ? size.y - 1 : 1};
 }
 
 /** @returns Where the top-left corner of @p item lies on the ship. */
@@ -95,34 +98,31 @@ sf::Vector2i mountOf(std::size_t item, ShipPlacement ship) {
 
 /** @returns Where @p arm grips the ship. */
 sf::Vector2i gripOf(std::size_t arm, ShipPlacement ship) {
-  return ship.topLeft + (SHIP_GRIPS.at(arm) * ship.scale);
+  return ship.topLeft + (DOCK_ARMS.at(arm).grip * ship.scale);
 }
 
 FittingRoute routeOf(std::size_t item, ShipPlacement ship) {
-  const std::size_t arm = fittingArmOf(item);
-  const bool fromBelow = arm == FLOOR_RIGHT_ARM_INDEX;
+  const bool fromBelow = comesFromBelow(item);
   const int awayY =
       fromBelow ? DOCK_AREA.position.y + DOCK_AREA.size.y - ARM_AWAY_DROP
                 : DOCK_AREA.position.y + ARM_AWAY_DROP;
-  return {.grip = gripOf(arm, ship),
+  return {.grip = gripOf(fittingArmOf(item), ship),
           .away = {ARM_AWAY_X, awayY},
           .place = mountOf(item, ship) + holdOf(item, ship.scale),
           .approach = fromBelow ? FITTING_APPROACH : -FITTING_APPROACH};
 }
 
-/** @returns What each arm does: every arm grips the hull, but the one that
- * fits an item, which follows the timeline of the fitting. */
-ArmPoses posesOf(const DockScene& scene, ShipPlacement ship) {
-  ArmPoses poses{};
+/** @returns The pose of each arm the fitting does not move: gripping the
+ * hull; none for the arm that fits an item. */
+StillPoses stillPosesOf(const DockScene& scene, ShipPlacement ship) {
+  StillPoses still{};
   for (std::size_t arm = 0; arm < DOCK_ARMS.size(); ++arm) {
-    poses.at(arm) = {.target = gripOf(arm, ship), .gripping = true};
+    if (!scene.fitting.has_value() ||
+        fittingArmOf(scene.fitting->item) != arm) {
+      still.at(arm) = ArmPose{.target = gripOf(arm, ship), .gripping = true};
+    }
   }
-  if (scene.fitting.has_value()) {
-    const std::size_t item = scene.fitting->item;
-    poses.at(fittingArmOf(item)) = fittingPoseAt(
-        fittingProgressOf(*scene.fitting, scene.elapsed), routeOf(item, ship));
-  }
-  return poses;
+  return still;
 }
 
 void paintSparks(IInterfaceCanvas& canvas, sf::Vector2i center, float share) {
@@ -160,12 +160,11 @@ void paintFittingSparks(IInterfaceCanvas& canvas, const DockScene& scene,
   }
   const FittingRun& run = *scene.fitting;
   const float progress = fittingProgressOf(run, scene.elapsed);
-  for (const std::size_t old : wornItemsOf(run.before)) {
-    if (SHIP_LOOK_ITEM_SLOTS.at(old) == SHIP_LOOK_ITEM_SLOTS.at(run.item) &&
-        old != run.item) {
-      paintSparks(canvas, middleOf(old, ship),
-                  sparksShareAt(progress, FITTING_HOVER_END));
-    }
+  const std::optional<std::size_t> old =
+      itemInSlot(run.before, SHIP_LOOK_ITEM_SLOTS.at(run.item));
+  if (old.has_value() && *old != run.item) {
+    paintSparks(canvas, middleOf(*old, ship),
+                sparksShareAt(progress, FITTING_HOVER_END));
   }
   paintSparks(canvas, middleOf(run.item, ship),
               sparksShareAt(progress, FITTING_PLACE_AT));
@@ -175,32 +174,18 @@ void paintFittingSparks(IInterfaceCanvas& canvas, const DockScene& scene,
  * while it carries it. */
 void paintFittingArm(IInterfaceCanvas& canvas, const DockScene& scene,
                      ShipPlacement ship) {
-  const ArmPoses poses = posesOf(scene, ship);
   const std::size_t item = scene.fitting->item;
-  const std::size_t arm = fittingArmOf(item);
-  if (poses.at(arm).carrying) {
-    const sf::Vector2i topLeft =
-        poses.at(arm).target - holdOf(item, ship.scale);
+  const ArmPose pose = fittingPoseAt(
+      fittingProgressOf(*scene.fitting, scene.elapsed), routeOf(item, ship));
+  if (pose.carrying) {
+    const sf::Vector2i topLeft = pose.target - holdOf(item, ship.scale);
     paintLookItem(
         canvas, item,
         {.topLeft = topLeft - (SHIP_LOOK_SPRITES.at(item).mount * ship.scale),
          .scale = ship.scale,
          .visibleArea = DOCK_AREA});
   }
-  paintArm(canvas, DOCK_ARMS.at(arm), poses.at(arm));
-}
-
-/** @returns The poses of the arms the fitting does not move; none for the
- * arm that fits an item. */
-StillPoses stillPosesOf(const ArmPoses& poses,
-                        std::optional<std::size_t> fittingArm) {
-  StillPoses still{};
-  for (std::size_t arm = 0; arm < poses.size(); ++arm) {
-    if (fittingArm != arm) {
-      still.at(arm) = poses.at(arm);
-    }
-  }
-  return still;
+  paintArm(canvas, DOCK_ARMS.at(fittingArmOf(item)), pose);
 }
 
 /** @brief Paints the arms of @p arms that hold a still pose. */
@@ -294,14 +279,13 @@ void paintLightAndBeacons(IInterfaceCanvas& canvas,
  * a pale frame, its label. */
 void paintBlueprintPaper(IInterfaceCanvas& canvas) {
   const sf::IntRect card = BLUEPRINT_AREA;
-  canvas.fill(
-      {card.position - sf::Vector2i(1, 1), card.size + sf::Vector2i(2, 2)},
-      INK);
+  canvas.fill(grownBy(card, 1), INK);
   canvas.fill(card, DEEP_BLUE);
   std::vector<ColoredPixel> grid;
   for (int row = BLUEPRINT_GRID_PITCH; row < card.size.y;
        row += BLUEPRINT_GRID_PITCH) {
-    for (int column = 1; column < card.size.x; column += HALF_DIVISOR) {
+    for (int column = 1; column < card.size.x;
+         column += BLUEPRINT_GRID_DOT_STEP) {
       grid.push_back({.position = card.position + sf::Vector2i(column, row),
                       .color = BLUE});
     }
@@ -357,18 +341,13 @@ void paintBlueprint(IInterfaceCanvas& canvas, std::size_t item) {
 
 void paintDock(IInterfaceCanvas& canvas, const DockScene& scene) {
   const ShipPlacement ship = dockedShipOf(scene);
-  const ArmPoses poses = posesOf(scene, ship);
-  const std::optional<std::size_t> fittingArm =
-      scene.fitting.has_value()
-          ? std::optional<std::size_t>(fittingArmOf(scene.fitting->item))
-          : std::nullopt;
-  const StillPoses still = stillPosesOf(poses, fittingArm);
+  const StillPoses still = stillPosesOf(scene, ship);
   paintStillArms(canvas, still,
                  {CEILING_LEFT_ARM_INDEX, CEILING_RIGHT_ARM_INDEX});
   paintDockedShip(canvas, scene, ship);
   paintFittingSparks(canvas, scene, ship);
   paintStillArms(canvas, still, {FLOOR_LEFT_ARM_INDEX, FLOOR_RIGHT_ARM_INDEX});
-  if (fittingArm.has_value()) {
+  if (scene.fitting.has_value()) {
     paintFittingArm(canvas, scene, ship);
   }
 }

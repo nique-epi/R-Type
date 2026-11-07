@@ -52,9 +52,7 @@ constexpr std::array SHIP_LOOK_SPRITES{TOP_HAT_SPRITE,     PARTY_HAT_SPRITE,
 static_assert(SHIP_LOOK_SPRITES.size() == SHIP_LOOK_ITEM_COUNT,
               "every item of the locker has its drawing");
 
-/** @brief The largest scale an icon of the locker is drawn at, and what a
- * size is divided by to centre a drawing in a cell. */
+/** @brief The largest scale an icon of the locker is drawn at. */
 constexpr int MAXIMUM_LOOK_ICON_SCALE = 3;
-constexpr int HALF_DIVISOR = 2;
 
 }  // namespace rtype::client

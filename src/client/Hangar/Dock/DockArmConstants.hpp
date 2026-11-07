@@ -41,6 +41,8 @@ constexpr float CLAW_LENGTH = 5.0F;
 constexpr float CLOSED_JAW_SPREAD = 2.0F;
 constexpr float OPENING_JAW_SPREAD = 6.0F;
 constexpr float CLAW_HOOK = 3.0F;
+/** @brief How much less a claw hooks in once its jaws are wide open. */
+constexpr float CLAW_HOOK_OPENING = 2.0F;
 constexpr std::array<int, 3> JAW_SIDES{-1, 0, 1};
 constexpr int JAW_OUTLINE_WIDTH = 5;
 constexpr int CLAW_OUTLINE_WIDTH = 4;
@@ -61,38 +63,32 @@ constexpr int ARM_BASE_INSET = 34;
 constexpr ArmMount CEILING_LEFT_ARM{
     .base = {DOCK_AREA.position.x + ARM_BASE_INSET, DOCK_AREA.position.y},
     .side = ArmSide::Ceiling,
-    .bend = 1};
+    .bend = 1,
+    .grip = {5, 5}};
 constexpr ArmMount CEILING_RIGHT_ARM{
     .base = {DOCK_AREA.position.x + DOCK_AREA.size.x - ARM_BASE_INSET,
              DOCK_AREA.position.y},
     .side = ArmSide::Ceiling,
-    .bend = -1};
+    .bend = -1,
+    .grip = {25, 5}};
 constexpr ArmMount FLOOR_LEFT_ARM{
     .base = {DOCK_AREA.position.x + ARM_BASE_INSET,
              DOCK_AREA.position.y + DOCK_AREA.size.y},
     .side = ArmSide::Floor,
-    .bend = -1};
+    .bend = -1,
+    .grip = {5, 11}};
 constexpr ArmMount FLOOR_RIGHT_ARM{
     .base = {DOCK_AREA.position.x + DOCK_AREA.size.x - ARM_BASE_INSET,
              DOCK_AREA.position.y + DOCK_AREA.size.y},
     .side = ArmSide::Floor,
-    .bend = 1};
+    .bend = 1,
+    .grip = {24, 10}};
 constexpr std::array DOCK_ARMS{CEILING_LEFT_ARM, CEILING_RIGHT_ARM,
                                FLOOR_LEFT_ARM, FLOOR_RIGHT_ARM};
 constexpr std::size_t CEILING_LEFT_ARM_INDEX = 0;
 constexpr std::size_t CEILING_RIGHT_ARM_INDEX = 1;
 constexpr std::size_t FLOOR_LEFT_ARM_INDEX = 2;
 constexpr std::size_t FLOOR_RIGHT_ARM_INDEX = 3;
-
-/** @brief Where each arm grips the ship, in pixels of the ship frame, in the
- * order of DOCK_ARMS: the top and the bottom of the hull, by the tail and by
- * the nose. */
-constexpr sf::Vector2i SHIP_TAIL_TOP_GRIP{5, 5};
-constexpr sf::Vector2i SHIP_NOSE_TOP_GRIP{25, 5};
-constexpr sf::Vector2i SHIP_TAIL_BOTTOM_GRIP{5, 11};
-constexpr sf::Vector2i SHIP_NOSE_BOTTOM_GRIP{24, 10};
-constexpr std::array SHIP_GRIPS{SHIP_TAIL_TOP_GRIP, SHIP_NOSE_TOP_GRIP,
-                                SHIP_TAIL_BOTTOM_GRIP, SHIP_NOSE_BOTTOM_GRIP};
 
 /** @brief Where a fetching arm reaches off screen: ARM_AWAY_BEYOND past the
  * right edge of the picture, ARM_AWAY_DROP into the bay from its side. */

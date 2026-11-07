@@ -18,6 +18,7 @@
 #include "PlayerSettings.hpp"
 #include "SettingsConstants.hpp"
 #include "ShipLookConstants.hpp"
+#include "ShipLookNumbers.hpp"
 #include "ShipLookSlot.hpp"
 #include "WindowConstants.hpp"
 
@@ -187,7 +188,7 @@ std::string_view lookItemValue(std::uint8_t item) {
   if (item == NO_SHIP_LOOK_ITEM) {
     return NO_LOOK_ITEM_VALUE;
   }
-  return SHIP_LOOK_ITEM_NAMES.at(item - 1U);
+  return SHIP_LOOK_ITEM_NAMES.at(lookIndexOf(item));
 }
 
 /** @returns What a slot of the ship holds for @p text: NO_SHIP_LOOK_ITEM for
@@ -201,7 +202,7 @@ std::optional<std::uint8_t> lookItemOf(std::string_view text,
   for (std::size_t item = 0; item < SHIP_LOOK_ITEM_COUNT; ++item) {
     if (SHIP_LOOK_ITEM_NAMES.at(item) == text &&
         SHIP_LOOK_ITEM_SLOTS.at(item) == slot) {
-      return static_cast<std::uint8_t>(item + 1);
+      return lookNumberOf(item);
     }
   }
   return std::nullopt;

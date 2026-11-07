@@ -1,11 +1,11 @@
 #include "FittingTimeline.hpp"
 #include <SFML/System/Vector2.hpp>
-#include <algorithm>
 #include "ArmPose.hpp"
 #include "Easing.hpp"
 #include "FittingRoute.hpp"
 #include "FittingRun.hpp"
 #include "FittingTimelineConstants.hpp"
+#include "PixelRounding.hpp"
 #include "ShipLook.hpp"
 #include "ShipLooks.hpp"
 #include "TimeConstants.hpp"
@@ -20,12 +20,6 @@ float eased(float progress, float start, float end) {
   return easeInOutCubic(progressThrough(progress, start, end - start));
 }
 
-/** @returns The pixel @p share of the way from @p from to @p to. */
-sf::Vector2i between(sf::Vector2i from, sf::Vector2i to, float share) {
-  return from + sf::Vector2i(pixelsOf(to.x - from.x, share),
-                             pixelsOf(to.y - from.y, share));
-}
-
 /** @returns What the arm does on its way out: it lets go of the hull,
  * reaches off screen and closes on the item there. */
 ArmPose outboundPoseAt(float progress, const FittingRoute& route) {
@@ -35,7 +29,7 @@ ArmPose outboundPoseAt(float progress, const FittingRoute& route) {
                     progressThrough(progress, 0.0F, FITTING_RELEASE_END)};
   }
   if (progress < FITTING_REACH_OUT_END) {
-    return {.target = between(
+    return {.target = pixelAlong(
                 route.grip, route.away,
                 eased(progress, FITTING_RELEASE_END, FITTING_REACH_OUT_END)),
             .open = GRIPPER_OPEN};
@@ -51,16 +45,16 @@ ArmPose outboundPoseAt(float progress, const FittingRoute& route) {
 ArmPose placingPoseAt(float progress, const FittingRoute& route) {
   const sf::Vector2i hover = route.place + sf::Vector2i(0, route.approach);
   if (progress < FITTING_HOVER_END) {
-    return {.target =
-                between(route.away, hover,
-                        eased(progress, FITTING_LEAVE_END, FITTING_HOVER_END)),
+    return {.target = pixelAlong(
+                route.away, hover,
+                eased(progress, FITTING_LEAVE_END, FITTING_HOVER_END)),
             .carrying = true};
   }
   if (progress < FITTING_PLACE_AT) {
-    return {
-        .target = between(hover, route.place,
-                          eased(progress, FITTING_HOVER_END, FITTING_PLACE_AT)),
-        .carrying = true};
+    return {.target = pixelAlong(
+                hover, route.place,
+                eased(progress, FITTING_HOVER_END, FITTING_PLACE_AT)),
+            .carrying = true};
   }
   return {.target = route.place,
           .open = GRIPPER_OPEN *
@@ -72,9 +66,9 @@ ArmPose placingPoseAt(float progress, const FittingRoute& route) {
  * closes on it. */
 ArmPose returningPoseAt(float progress, const FittingRoute& route) {
   if (progress < FITTING_BACK_END) {
-    return {.target =
-                between(route.place, route.grip,
-                        eased(progress, FITTING_LET_GO_END, FITTING_BACK_END)),
+    return {.target = pixelAlong(
+                route.place, route.grip,
+                eased(progress, FITTING_LET_GO_END, FITTING_BACK_END)),
             .open = GRIPPER_OPEN};
   }
   return {
@@ -86,7 +80,7 @@ ArmPose returningPoseAt(float progress, const FittingRoute& route) {
 }  // namespace
 
 float fittingProgressOf(const FittingRun& run, engine::Duration now) {
-  return std::clamp(shareOf(now - run.started, FITTING_DURATION), 0.0F, 1.0F);
+  return progressBetween(now, run.started, FITTING_DURATION);
 }
 
 ArmPose fittingPoseAt(float progress, const FittingRoute& route) {

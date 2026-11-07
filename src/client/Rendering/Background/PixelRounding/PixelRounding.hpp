@@ -10,4 +10,9 @@ namespace rtype::client {
  */
 [[nodiscard]] sf::Vector2i nearestPixel(sf::Vector2f position);
 
+/** @returns The pixel @p share of the way from @p from to @p to, rounded
+ * as nearestPixel() does. */
+[[nodiscard]] sf::Vector2i pixelAlong(sf::Vector2i from, sf::Vector2i to,
+                                      float share);
+
 }  // namespace rtype::client

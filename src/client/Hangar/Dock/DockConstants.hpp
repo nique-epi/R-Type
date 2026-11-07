@@ -28,6 +28,8 @@ constexpr int DOCK_BEACONS_TOP = 208;
  * label. */
 constexpr sf::IntRect BLUEPRINT_AREA{{284, 40}, {64, 58}};
 constexpr int BLUEPRINT_GRID_PITCH = 4;
+/** @brief A row of the grid of the card lights one pixel in this many. */
+constexpr int BLUEPRINT_GRID_DOT_STEP = 2;
 constexpr int BLUEPRINT_DRAWING_TOP = 13;
 constexpr int BLUEPRINT_DRAWING_SCALE = 2;
 constexpr int BLUEPRINT_RULE_GAP = 3;

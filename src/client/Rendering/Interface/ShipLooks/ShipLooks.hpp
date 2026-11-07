@@ -2,9 +2,11 @@
 
 #include <SFML/Graphics/Rect.hpp>
 #include <cstddef>
+#include <optional>
 #include <vector>
 #include "IInterfaceCanvas.hpp"
 #include "ShipLook.hpp"
+#include "ShipLookSlot.hpp"
 #include "ShipPlacement.hpp"
 
 namespace rtype::client {
@@ -18,6 +20,10 @@ namespace rtype::client {
 
 /** @returns Whether the slot of @p item wears it. */
 [[nodiscard]] bool wears(ShipLook look, std::size_t item);
+
+/** @returns The item @p slot of @p look wears, or nothing. */
+[[nodiscard]] std::optional<std::size_t> itemInSlot(ShipLook look,
+                                                    ShipLookSlot slot);
 
 /** @returns The items @p look wears, in the order of SHIP_LOOK_ITEM_NAMES:
  * the order they are drawn in. */

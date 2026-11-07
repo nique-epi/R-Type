@@ -8,7 +8,6 @@
 namespace rtype::client {
 
 /** @brief The heading of the screen and the rule under it. */
-constexpr const char* HANGAR_TITLE = "HANGAR";
 constexpr sf::Vector2i HANGAR_TITLE_ANCHOR{24, 14};
 constexpr TextStyle HANGAR_TITLE_STYLE{
     .font = TextFont::Regular, .color = PAGE_TEXT_COLOR, .outlined = true};

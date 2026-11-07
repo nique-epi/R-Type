@@ -1,9 +1,11 @@
 #include "HangarStar.hpp"
 #include <SFML/System/Vector2.hpp>
 #include <span>
+#include <string>
 #include <vector>
 #include "BackgroundColorConstants.hpp"
 #include "ColoredPixel.hpp"
+#include "HangarScreenIdConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "LabelSide.hpp"
 #include "PixelCircle.hpp"
@@ -30,7 +32,7 @@ void paintHangarStar(IInterfaceCanvas& canvas, bool shown) {
   pixels.push_back({.position = HANGAR_STAR_POINT, .color = STAR_WHITE});
   canvas.plot(pixels);
   paintStarName(canvas, StarName{.point = HANGAR_STAR_POINT,
-                                 .name = HANGAR_STAR_NAME,
+                                 .name = HANGAR_LABEL,
                                  .side = LabelSide::Right,
                                  .chosen = shown,
                                  .incompatible = false});
@@ -43,9 +45,11 @@ void paintHangarStar(IInterfaceCanvas& canvas, bool shown) {
       ServerTooltip{
           .topLeft = HANGAR_STAR_POINT + BUBBLE_OFFSET,
           .width = BUBBLE_WIDTH,
-          .title = HANGAR_STAR_NAME,
+          .title = HANGAR_LABEL,
           .lines = {{.text = HANGAR_STAR_DETAIL, .color = PAGE_TEXT_COLOR},
-                    {.text = HANGAR_STAR_HINT, .color = STATUS_TEXT_COLOR}}});
+                    {.text = std::string(HANGAR_STAR_HINT_START) +
+                             HANGAR_KEY_NAME + HANGAR_STAR_HINT_END,
+                     .color = STATUS_TEXT_COLOR}}});
 }
 
 }  // namespace rtype::client

@@ -15,7 +15,7 @@
 #include "InterfaceColorConstants.hpp"
 #include "PixelRounding.hpp"
 #include "PixelShapes.hpp"
-#include "ShipLookSpriteConstants.hpp"
+#include "RenderingConstants.hpp"
 
 namespace rtype::client {
 
@@ -69,11 +69,6 @@ ArmJoints jointsOf(ArmMount mount, sf::Vector2i target) {
           .wrist = wrist};
 }
 
-/** @returns The pixel @p share of the way from @p from to @p to. */
-sf::Vector2i pointAlong(sf::Vector2i from, sf::Vector2i to, float share) {
-  return from + nearestPixel(sf::Vector2f(to - from) * share);
-}
-
 void addLink(std::vector<ColoredPixel>& pixels, PixelSegment link) {
   const int width = link.thickness;
   addSegment(
@@ -87,22 +82,28 @@ void addLink(std::vector<ColoredPixel>& pixels, PixelSegment link) {
   addSegment(pixels, {.from = link.from + lift,
                       .to = link.to + lift,
                       .thickness = width - 3,
-                      .color = STAR_WHITE});
-  addSegment(pixels, {.from = pointAlong(link.from, link.to, COLLAR_START),
-                      .to = pointAlong(link.from, link.to, COLLAR_END),
+                      .color = link.color});
+  addSegment(pixels, {.from = pixelAlong(link.from, link.to, COLLAR_START),
+                      .to = pixelAlong(link.from, link.to, COLLAR_END),
                       .thickness = width,
                       .color = STAR_GOLD});
 }
 
-void addJoint(std::vector<ColoredPixel>& pixels, PixelDisc joint) {
+/** @brief Adds a white disc of the radius of @p disc, outlined in ink,
+ * shaded pale blue on its bottom right: the body of a joint or a drum. */
+void addShadedDisc(std::vector<ColoredPixel>& pixels, PixelDisc disc) {
   const sf::Vector2i lit(-1, -1);
   addDisc(pixels,
-          {.center = joint.center, .radius = joint.radius + 1, .color = INK});
+          {.center = disc.center, .radius = disc.radius + 1, .color = INK});
   addDisc(pixels,
-          {.center = joint.center, .radius = joint.radius, .color = PALE_BLUE});
-  addDisc(pixels, {.center = joint.center + lit,
-                   .radius = joint.radius - 1,
+          {.center = disc.center, .radius = disc.radius, .color = PALE_BLUE});
+  addDisc(pixels, {.center = disc.center + lit,
+                   .radius = disc.radius - 1,
                    .color = STAR_WHITE});
+}
+
+void addJoint(std::vector<ColoredPixel>& pixels, PixelDisc joint) {
+  addShadedDisc(pixels, joint);
   addDisc(pixels, {.center = joint.center,
                    .radius = std::max(1, joint.radius - 4),
                    .color = INK});
@@ -118,7 +119,7 @@ void addPiston(std::vector<ColoredPixel>& pixels, ArmMount mount,
       sf::Vector2i(PISTON_SIDE_OFFSET * mount.bend,
                    riseOf(mount.side) * -(SHOULDER_RISE / HALF_DIVISOR));
   const sf::Vector2i head =
-      pointAlong(joints.shoulder, joints.elbow, PISTON_REACH);
+      pixelAlong(joints.shoulder, joints.elbow, PISTON_REACH);
   addSegment(pixels, {.from = foot,
                       .to = head,
                       .thickness = PISTON_BODY_WIDTH + 2,
@@ -128,7 +129,7 @@ void addPiston(std::vector<ColoredPixel>& pixels, ArmMount mount,
                       .thickness = PISTON_ROD_WIDTH,
                       .color = HUD_CYAN});
   addSegment(pixels, {.from = foot,
-                      .to = pointAlong(foot, head, PISTON_BODY_SHARE),
+                      .to = pixelAlong(foot, head, PISTON_BODY_SHARE),
                       .thickness = PISTON_BODY_WIDTH,
                       .color = PALE_BLUE});
 }
@@ -145,11 +146,7 @@ struct JawStroke {
  * while it grips the hull. */
 void addDrum(std::vector<ColoredPixel>& pixels, sf::Vector2i drum,
              bool gripping) {
-  addDisc(pixels, {.center = drum, .radius = DRUM_RADIUS + 1, .color = INK});
-  addDisc(pixels, {.center = drum, .radius = DRUM_RADIUS, .color = PALE_BLUE});
-  addDisc(pixels, {.center = drum + sf::Vector2i(-1, -1),
-                   .radius = DRUM_RADIUS - 1,
-                   .color = STAR_WHITE});
+  addShadedDisc(pixels, {.center = drum, .radius = DRUM_RADIUS});
   addDisc(pixels, {.center = drum,
                    .radius = DRUM_CORE_RADIUS,
                    .color = gripping ? HUD_CYAN : DEEP_BLUE});
@@ -186,7 +183,7 @@ void addGripper(std::vector<ColoredPixel>& pixels, sf::Vector2i wrist,
   const sf::Vector2i drum = wrist + nearestPixel(along * DRUM_OFFSET);
   addDrum(pixels, drum, pose.gripping);
   const float spread = CLOSED_JAW_SPREAD + (pose.open * OPENING_JAW_SPREAD);
-  const float hook = CLAW_HOOK - (pose.open * static_cast<float>(HALF_DIVISOR));
+  const float hook = CLAW_HOOK - (pose.open * CLAW_HOOK_OPENING);
   for (const int side : JAW_SIDES) {
     const auto sideward = static_cast<float>(side);
     const sf::Vector2f root = sf::Vector2f(drum) + (along * JAW_ROOT) +
@@ -221,9 +218,7 @@ void paintBase(IInterfaceCanvas& canvas, ArmMount mount, bool gripping) {
       {mount.base.x - (COLUMN_WIDTH / HALF_DIVISOR), columnTop},
       {COLUMN_WIDTH, std::abs(mount.base.y - shoulder.y)});
   canvas.fill(column, INK);
-  canvas.fill(
-      {column.position + sf::Vector2i(1, 1), column.size - sf::Vector2i(2, 2)},
-      STAR_WHITE);
+  canvas.fill(grownBy(column, -1), STAR_WHITE);
   canvas.fill({{mount.base.x - (BASE_LIGHT_SIZE.x / HALF_DIVISOR),
                 column.position.y + (column.size.y / HALF_DIVISOR)},
                BASE_LIGHT_SIZE},
