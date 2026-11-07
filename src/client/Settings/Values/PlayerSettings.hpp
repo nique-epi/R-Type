@@ -6,6 +6,7 @@
 #include "KeyBindings.hpp"
 #include "PixelSize.hpp"
 #include "SettingsConstants.hpp"
+#include "ShipLook.hpp"
 
 namespace rtype::client {
 
@@ -20,6 +21,7 @@ namespace rtype::client {
  * window opens windowed until the player picks another display mode.
  * clientPrediction is on: the ship moves before the server answers.
  * pilotNames is on: the nickname of each pilot is written over its ship.
+ * shipLook wears nothing: the player dresses the ship in the hangar.
  */
 struct PlayerSettings {
   int musicVolume = DEFAULT_MUSIC_VOLUME;
@@ -34,6 +36,7 @@ struct PlayerSettings {
   bool autoFire = false;
   bool clientPrediction = true;
   bool pilotNames = true;
+  ShipLook shipLook;
 
   bool operator==(const PlayerSettings& other) const = default;
 };

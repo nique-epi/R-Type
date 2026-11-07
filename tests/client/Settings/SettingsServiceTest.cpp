@@ -206,13 +206,14 @@ TEST_F(SettingsServiceFixture, RestoringTakesTheSettingsAndTellsEveryOne) {
   service().restore(kept);
 
   EXPECT_EQ(settings(), kept);
-  EXPECT_EQ(listener().changes(),
-            (std::vector<SettingId>{
-                SettingId::MusicVolume, SettingId::EffectsVolume,
-                SettingId::Muted, SettingId::WindowSize, SettingId::DisplayMode,
-                SettingId::Keys, SettingId::ColorMode, SettingId::ReduceFlashes,
-                SettingId::SoundCues, SettingId::AutoFire,
-                SettingId::ClientPrediction, SettingId::PilotNames}));
+  EXPECT_EQ(
+      listener().changes(),
+      (std::vector<SettingId>{
+          SettingId::MusicVolume, SettingId::EffectsVolume, SettingId::Muted,
+          SettingId::WindowSize, SettingId::DisplayMode, SettingId::Keys,
+          SettingId::ColorMode, SettingId::ReduceFlashes, SettingId::SoundCues,
+          SettingId::AutoFire, SettingId::ClientPrediction,
+          SettingId::PilotNames, SettingId::ShipLook}));
 }
 
 /**

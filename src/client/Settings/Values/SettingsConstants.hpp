@@ -55,6 +55,12 @@ constexpr std::string_view SOUND_CUES_NAME = "sound_cues";
 constexpr std::string_view AUTO_FIRE_NAME = "auto_fire";
 constexpr std::string_view CLIENT_PREDICTION_NAME = "client_prediction";
 constexpr std::string_view PILOT_NAMES_NAME = "pilot_names";
+constexpr std::string_view SHIP_HEAD_NAME = "ship_head";
+constexpr std::string_view SHIP_EYES_NAME = "ship_eyes";
+constexpr std::string_view SHIP_FACE_NAME = "ship_face";
+
+/** @brief The value of a slot of the ship that wears nothing. */
+constexpr std::string_view NO_LOOK_ITEM_VALUE = "none";
 
 /** @brief Names of the keys of the bound actions, in the order of
  * BOUND_ACTIONS. */

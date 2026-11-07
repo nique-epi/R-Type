@@ -10,6 +10,7 @@
 #include "SettingId.hpp"
 #include "SettingRange.hpp"
 #include "SettingsConstants.hpp"
+#include "ShipLook.hpp"
 
 namespace rtype::client {
 
@@ -57,6 +58,10 @@ constexpr Setting<bool> PILOT_NAMES_SETTING{
     .member = &PlayerSettings::pilotNames,
     .id = SettingId::PilotNames,
     .range = std::nullopt};
+constexpr Setting<ShipLook> SHIP_LOOK_SETTING{
+    .member = &PlayerSettings::shipLook,
+    .id = SettingId::ShipLook,
+    .range = std::nullopt};
 
 /** @brief Every setting a listener can be told about. */
 constexpr std::array ALL_SETTING_IDS{
@@ -64,6 +69,7 @@ constexpr std::array ALL_SETTING_IDS{
     SettingId::WindowSize,  SettingId::DisplayMode,      SettingId::Keys,
     SettingId::ColorMode,   SettingId::ReduceFlashes,    SettingId::SoundCues,
     SettingId::AutoFire,    SettingId::ClientPrediction, SettingId::PilotNames,
+    SettingId::ShipLook,
 };
 
 }  // namespace rtype::client

@@ -12,6 +12,7 @@
 #include "SettingDefinitionConstants.hpp"
 #include "SettingId.hpp"
 #include "SettingRange.hpp"
+#include "ShipLook.hpp"
 
 namespace rtype::client {
 
@@ -88,6 +89,8 @@ template bool SettingsService::apply<DisplayMode>(const Setting<DisplayMode>&,
                                                   DisplayMode);
 template bool SettingsService::apply<std::optional<PixelSize>>(
     const Setting<std::optional<PixelSize>>&, std::optional<PixelSize>);
+template bool SettingsService::apply<ShipLook>(const Setting<ShipLook>&,
+                                               ShipLook);
 
 void SettingsService::bindKey(BoundAction action, sf::Keyboard::Scancode key) {
   settings_->keys.bind(action, key);

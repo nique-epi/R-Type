@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include "PixelSize.hpp"
 
 namespace rtype::client::testing {
@@ -24,7 +25,23 @@ constexpr const char* FIRST_LAUNCH_FILE =
     "sound_cues=off\n"
     "auto_fire=off\n"
     "client_prediction=on\n"
-    "pilot_names=on\n";
+    "pilot_names=on\n"
+    "ship_head=none\n"
+    "ship_eyes=none\n"
+    "ship_face=none\n";
+
+/** @brief The ship wearing the crown, the third item of the locker, and the
+ * shades, the ninth: what a slot holds is the place of its item plus one. */
+constexpr std::uint8_t WEARS_CROWN = 3;
+constexpr std::uint8_t WEARS_SHADES = 9;
+constexpr std::uint8_t WEARS_NOTHING = 0;
+constexpr const char* CROWN_LINE = "ship_head=crown\n";
+constexpr const char* CROWN_AND_SHADES_FILE =
+    "ship_head=crown\n"
+    "ship_eyes=cool_shades\n";
+/** @brief The shades named on the head, a slot they never take. */
+constexpr const char* SHADES_ON_THE_HEAD_FILE = "ship_head=cool_shades\n";
+constexpr const char* BARE_HEAD_FILE = "ship_head=none\n";
 
 constexpr int ANY_VOLUME = 40;
 constexpr int CHANGED_MUSIC_VOLUME = 35;
