@@ -137,3 +137,7 @@ Before the first push of a branch, run the match over every file the branch chan
 - ❌ **Before (wrong)**: the match run on the files of the last commits only.
 - ✅ **After (right)**: a script lists, for each of the 135 files, the standard headers it names nothing of; `ArrivalLedger.cpp` comes out with `<cstddef>`.
 
+
+## Update (7 November 2026) — A new struct and an old one without initializers
+
+On the boss branch, the clang-tidy gate run before any push reported `cppcoreguidelines-pro-type-member-init` on two headers linted as main files: `BossHealthChanged`, a new event whose `networkId`, `points` and `full` had no initializer, which point 2 of the subsection already forbade, and `CollisionBox`, whose old `width` and `height` had none while the branch added `offsetX{0.0F}` and `offsetY{0.0F}` next to them. Both got `{}`. A search of the headers of the branch for a built-in member followed by `;` finds both before any lint.

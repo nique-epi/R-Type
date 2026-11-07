@@ -78,7 +78,12 @@ A platform file such as `FineTimerResolutionWindows.cpp` is linted only by the C
 
 1. **The local run is not the CI's toolchain**: Homebrew clang-tidy 21 on libc++ here, clang-tidy 20 on libstdc++ on the CI. A file can be clean locally and fail on the CI: `cppcoreguidelines-pro-type-member-init` on `struct NavigatorCall { NavigatorRequest request; std::optional<ScreenId> screen; }` was reported by the CI only.
 2. **Give every data member of a built-in or enum type (`int`, `bool`, a pointer, an `enum class`) of a new struct or class a default member initializer** (`NavigatorRequest request{};`), so the member-init checks have nothing to report on either toolchain. Designated initializers still work on such an aggregate. A member of class type (`std::string`, `std::optional`) initializes itself: a `{}` on it is reported by `readability-redundant-member-init`.
-3. **When the CI reports what the local run did not**, fix it from the CI log (`gh api repos/<owner>/<repo>/actions/jobs/<job id>/logs` when `gh run view --log-failed` prints nothing), say in the report that the local run could not see it, and follow the job until it is green.
+3. **Before the first commit of a struct, search the headers of the branch for a built-in member without an initializer**, the one already there included when a member is added to an old struct:
+   ```bash
+   git diff --name-only origin/main...HEAD -- '*.hpp' | xargs git grep -n -P '^\s+(std::u?int\d+_t|int|float|double|bool|char|std::size_t) [a-z][A-Za-z]*;' --
+   ```
+   Every line printed gets `{}`. Calibrated on `src/engine/Collision/Bounds.hpp`, whose four `float` members it prints.
+4. **When the CI reports what the local run did not**, fix it from the CI log (`gh api repos/<owner>/<repo>/actions/jobs/<job id>/logs` when `gh run view --log-failed` prints nothing), say in the report that the local run could not see it, and follow the job until it is green.
 
 ## Example
 
