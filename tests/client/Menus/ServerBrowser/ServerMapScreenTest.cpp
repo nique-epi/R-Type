@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "Endpoint.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -30,6 +31,7 @@ using rtype::client::testing::ServerMapScreenFixture;
 using rtype::client::testing::SHORT_OF_THE_REFRESH;
 using rtype::client::testing::showsTheMiniMap;
 using rtype::client::testing::UNREACHABLE_MASTER;
+using rtype::network::Endpoint;
 using ::testing::ElementsAre;
 
 /**
@@ -145,7 +147,8 @@ TEST_F(ServerMapScreenFixture, AHeldEnterActsOnce) {
 /**
  * Given the panel of the games of Lyon, its waiting game chosen
  * When Enter is pressed
- * Then Lyon goes in the choice and the connection to it opens
+ * Then Lyon goes in the choice as the server of the last attempt, and the
+ * connection to it opens
  */
 TEST_F(ServerMapScreenFixture, EnterOnAWaitingGameJoinsItsServer) {
   openOn(readyList());
@@ -155,7 +158,8 @@ TEST_F(ServerMapScreenFixture, EnterOnAWaitingGameJoinsItsServer) {
 
   press(sf::Keyboard::Key::Enter);
 
-  EXPECT_EQ(choice().server.address, std::string{LYON_SERVER_ADDRESS});
+  EXPECT_EQ(choice().lastServer.value_or(Endpoint{}).address,
+            std::string{LYON_SERVER_ADDRESS});
   EXPECT_THAT(
       navigator().calls(),
       ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
@@ -219,7 +223,21 @@ TEST_F(ServerMapScreenFixture, QuickPlayJoinsTheNearestServerOfThisVersion) {
 
   press(sf::Keyboard::Key::Q);
 
-  EXPECT_EQ(choice().server.address, std::string{LYON_SERVER_ADDRESS});
+  EXPECT_EQ(choice().lastServer.value_or(Endpoint{}).address,
+            std::string{LYON_SERVER_ADDRESS});
+}
+
+/**
+ * Given the whole map, its choice holding no server yet
+ * When Q joins Lyon
+ * Then the server the form opened by ADDRESS remembers stays as it was
+ */
+TEST_F(ServerMapScreenFixture, JoiningLeavesTheServerOfTheForm) {
+  openOn(readyList());
+
+  press(sf::Keyboard::Key::Q);
+
+  EXPECT_EQ(choice().server, Endpoint{});
 }
 
 /**

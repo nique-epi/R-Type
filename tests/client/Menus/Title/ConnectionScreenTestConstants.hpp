@@ -15,6 +15,10 @@ namespace rtype::client::testing {
 constexpr std::string_view LAUNCH_ADDRESS = "192.168.1.20";
 constexpr std::uint16_t LAUNCH_PORT = 4243;
 constexpr std::u32string_view LAUNCH_PORT_TEXT = U"4243";
+
+/** @brief The server the server map chose, other than the launch one. */
+constexpr std::string_view MAP_ADDRESS = "203.0.113.9";
+constexpr std::uint16_t MAP_PORT = 4300;
 constexpr std::string_view LAUNCH_NICKNAME = "ACE";
 
 /** @brief The game the launch options asked for: game 2 of the server. */

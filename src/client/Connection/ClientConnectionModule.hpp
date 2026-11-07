@@ -10,6 +10,7 @@
 #include "NetworkConditions.hpp"
 #include "PlayerConnection.hpp"
 #include "ServerCatalog.hpp"
+#include "SettingValue.hpp"
 
 namespace rtype::client {
 
@@ -27,20 +28,22 @@ namespace rtype::client {
  * Building it reads the content of the assets folder, the client's own, and
  * keeps the packs of the servers it meets in PACK_CACHE_FOLDER_NAME of the
  * settings folder. install() draws the client's own content with the
- * EntityAppearances of the assets module. It provides those parts, over a
- * socket still closed,
- * and adds to NETWORK_STAGE the work that reads what the server sent and sends
- * what is due. start() opens the socket on every IPv4 interface, on a port the
- * system picks, and starts the network thread, then the thread of the
- * MasterLink; when that one cannot start, it closes the socket again before
- * the exception leaves. stop() ends the MasterLink, then leaves the session
- * with the server, if any (see PlayerConnection::leave()): it returns once
- * every copy of the Disconnection went out, so the server frees the place of
- * the player as soon as one copy reaches it; then it closes the socket. Over a
- * simulated network, the copies still in flight then never arrive (see
- * NetworkThread::close()), and the server frees the place once the player was
- * silent for SESSION_SILENCE_LIMIT, counted in the ticks it runs, so longer
- * when the server stalls. A failure while leaving is logged, never thrown.
+ * EntityAppearances of the assets module, and declares the `master-url`
+ * setting, defaultMasterUrl() until the configuration names another master.
+ * It provides those parts, over a socket still closed, and adds to
+ * NETWORK_STAGE the work that reads what the server sent and sends what is
+ * due. start() opens the socket on every IPv4 interface, on a port the system
+ * picks, and starts the network thread, then the thread of the MasterLink, on
+ * the master the setting names once the configuration was read; when that one
+ * cannot start, it closes the socket again before the exception leaves. stop()
+ * ends the MasterLink, then leaves the session with the server, if any (see
+ * PlayerConnection::leave()): it returns once every copy of the Disconnection
+ * went out, so the server frees the place of the player as soon as one copy
+ * reaches it; then it closes the socket. Over a simulated network, the copies
+ * still in flight then never arrive (see NetworkThread::close()), and the
+ * server frees the place once the player was silent for SESSION_SILENCE_LIMIT,
+ * counted in the ticks it runs, so longer when the server stalls. A failure
+ * while leaving is logged, never thrown.
  */
 class ClientConnectionModule final : public engine::IModule {
  public:
@@ -63,6 +66,8 @@ class ClientConnectionModule final : public engine::IModule {
 
  private:
   PlayerConnection connection_;
+  /** @brief The `master-url` setting, declared by install(). */
+  const engine::SettingValue* masterUrl_{nullptr};
   MasterLink masterLink_;
   ServerCatalog servers_;
   GameCatalog games_;

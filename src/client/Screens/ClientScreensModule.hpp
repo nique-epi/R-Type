@@ -21,6 +21,7 @@
 #include "IServerTicks.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
+#include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenRegistry.hpp"
 #include "ServerChoice.hpp"
@@ -67,8 +68,9 @@ class ClientScreensModule final : public engine::IModule,
    * @param launch The server and the nickname the connection screen starts
    * with, unless the configuration sets others, and the game every attempt
    * asks for.
+   * @param playStart Where PLAY leads from the title.
    */
-  explicit ClientScreensModule(ServerChoice launch);
+  ClientScreensModule(ServerChoice launch, PlayStart playStart);
 
   /** @returns SCREENS_MODULE_NAME. */
   [[nodiscard]] std::string name() const override;
@@ -100,6 +102,7 @@ class ClientScreensModule final : public engine::IModule,
   [[nodiscard]] network::Endpoint configuredServer() const;
 
   ServerChoice launch_;
+  PlayStart playStart_;
   const engine::SettingValue* nicknameSetting_{nullptr};
   const engine::SettingValue* addressSetting_{nullptr};
   const engine::SettingValue* portSetting_{nullptr};

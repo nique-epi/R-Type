@@ -50,6 +50,7 @@ Server settings. Only the supervisor reads `server.cfg`: it runs the lines of it
 | `database` | the supervisor | a path | empty | The SQLite file the leaderboard of the server is kept in, given to every game; empty for `r-type_server_<port>.db` next to the executable, with the port of the supervisor. |
 | `master-url` | the supervisor | `http://<host>[:<port>]` | empty | The master the server is listed on; empty to run alone. |
 | `master-key` | the supervisor | a key | empty | The key the master gave when the host created the server; empty to run alone. |
+| `public-address` | the supervisor | an IPv4 address written as four numbers, or empty; never `0.0.0.0`, `127.x.x.x` or `255.255.255.255` | empty | The address the master lists for this server; empty lets the master take the address the registration comes from. |
 | `server-name` | the supervisor | 1 to 32 bytes | `R-Type server` | The name players read in the list of servers and in the answer to an information request. |
 | `game-statistics-file` | the games | a path | empty | Declared by the `game-statistics` plugin, only once a `plugin game-statistics` line loads it: the CSV file the statistics of each game are named after, each game putting `_<port>` before its extension, with its own port; empty for `r-type_statistics_<port>.csv` next to the executable. |
 
@@ -60,8 +61,9 @@ Client settings:
 | `nickname` | 1 to 16 bytes of UTF-8, with no control character | `PILOT` | The nickname the connection screen starts with. |
 | `server-address` | an IPv4 address written as four numbers | `127.0.0.1` | The address the connection screen starts with. A host name is refused. |
 | `server-port` | 1 to 65535 | 4242 | The port the connection screen starts with. |
+| `master-url` | `http://<host>[:<port>]` | `http://127.0.0.1:8080` | The master the server map reads its servers from. An `https://` url is refused. |
 
-The client settings only change what the connection screen offers first: the player can still edit the fields.
+The settings of the connection screen only change what it offers first: the player can still edit the fields.
 
 Master settings (see [Master](/R-Type/master/#configuration-mastercfg)):
 

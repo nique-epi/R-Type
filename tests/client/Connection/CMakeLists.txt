@@ -1,4 +1,4 @@
-target_sources(client_connection_tests PRIVATE ServerSessionTest.cpp ServerSessionRedirectTest.cpp UnconfirmedInputsTest.cpp ServerSessionArrivalTest.cpp ServerSessionArrivalFixture.cpp ServerSessionFixture.cpp ServerSessionFixtures.cpp ServerSessionLogFixture.cpp ServerSessionContentTest.cpp ServerSessionContentFixture.cpp ContentPack/ContentPackTestFiles.cpp ContentPack/Download/ContentPackDownloadFixtures.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/FakePackServer.cpp PlayerConnectionTest.cpp PlayerConnectionFixture.cpp)
+target_sources(client_connection_tests PRIVATE ServerSessionTest.cpp ServerSessionRedirectTest.cpp UnconfirmedInputsTest.cpp ServerSessionArrivalTest.cpp ServerSessionArrivalFixture.cpp ServerSessionFixture.cpp ServerSessionFixtures.cpp ServerSessionLogFixture.cpp ServerSessionContentTest.cpp ServerSessionContentFixture.cpp ContentPack/ContentPackTestFiles.cpp ContentPack/Download/ContentPackDownloadFixtures.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/FakePackServer.cpp PlayerConnectionTest.cpp PlayerConnectionFixture.cpp MasterUrlSettingTest.cpp)
 
 target_include_directories(client_connection_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ContentPack ${CMAKE_CURRENT_SOURCE_DIR}/ContentPack/Download ${CMAKE_CURRENT_SOURCE_DIR}/EntityTypes)
 target_link_libraries(client_connection_tests PRIVATE httplib::httplib rtype_test_support)
@@ -11,3 +11,6 @@ add_subdirectory(ServerList)
 add_subdirectory(Session)
 add_subdirectory(Transport)
 add_subdirectory(WaitingRoom)
+
+rtype_add_test(NAME client_connection_module_tests SOURCES ClientConnectionModuleTest.cpp ClientConnectionModuleFixture.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/EntityAppearancesModule.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/ServerCatalogFindingModule.cpp ${RTYPE_TEST_SOURCE_DIR}/master/RunningMaster.cpp ${RTYPE_TEST_SOURCE_DIR}/master/MasterDatabaseFile.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/HttpPortProbe.cpp ${RTYPE_TEST_SOURCE_DIR}/logging/LogLaunchOptionsFixtures.cpp LIBS rtype_client_connection_module rtype_client_logger_module rtype_client_constants rtype_engine_application rtype_engine_command_configuration rtype_master_modules rtype_master_storage_module rtype_master_http_module rtype_master_constants rtype_test_support httplib::httplib TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
+target_include_directories(client_connection_module_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/master ${RTYPE_TEST_SOURCE_DIR}/doubles ${RTYPE_TEST_SOURCE_DIR}/logging)

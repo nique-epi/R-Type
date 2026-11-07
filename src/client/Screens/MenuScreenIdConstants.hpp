@@ -25,8 +25,8 @@ constexpr ScreenId GAME_OPTIONS_SCREEN{"game options"};
 
 /** @brief The dialog that says the session with the server ended, lost or
  * closed, which ClientScreens pushes over the title it puts in place of every
- * screen; RETRY opens the connection screen over the title, OK leaves the
- * title. */
+ * screen; RETRY opens the server map and CONNECTION_AGAIN_SCREEN over it, OK
+ * leaves the title. */
 constexpr ScreenId CONNECTION_LOST_SCREEN{"connection lost"};
 
 /** @brief The question asked before closing the client, pushed over the
@@ -34,7 +34,7 @@ constexpr ScreenId CONNECTION_LOST_SCREEN{"connection lost"};
 constexpr ScreenId QUIT_CONFIRMATION_SCREEN{"quit confirmation"};
 
 /** @brief The server to join and the nickname to join it with, then how the
- * attempt stands, pushed over the title. */
+ * attempt stands, pushed by ADDRESS over the server map. */
 constexpr ScreenId CONNECTION_SCREEN{"connection"};
 
 /** @brief The same screen, pushed over the leaderboard: once the server
@@ -42,13 +42,18 @@ constexpr ScreenId CONNECTION_SCREEN{"connection"};
 constexpr ScreenId CONNECTION_FOR_LEADERBOARD_SCREEN{
     "connection for the leaderboard"};
 
-/** @brief The same screen, pushed over the server map, which starts its
- * attempt with the server the map chose as it opens. */
+/** @brief The same screen, which starts its attempt as it opens: pushed over
+ * the server map with the server the map chose, or by PLAY over the title for
+ * a client launched with `-h`. */
 constexpr ScreenId CONNECTION_TO_CHOSEN_SERVER_SCREEN{
     "connection to the chosen server"};
 
+/** @brief The same screen, pushed by RETRY over the server map: its fields
+ * start with the server of the lost game, and the player confirms them. */
+constexpr ScreenId CONNECTION_AGAIN_SCREEN{"connection again"};
+
 /** @brief The map of the servers the master lists, with their games, pushed
- * over the title by PLAY. */
+ * over the title by PLAY, or by RETRY under CONNECTION_AGAIN_SCREEN. */
 constexpr ScreenId SERVER_MAP_SCREEN{"server map"};
 
 /** @brief The best scores of a server, pushed over the title or the waiting
