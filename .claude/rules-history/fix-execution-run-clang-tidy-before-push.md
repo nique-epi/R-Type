@@ -141,3 +141,7 @@ Before the first push of a branch, run the match over every file the branch chan
 ## Update (7 November 2026) — A new struct and an old one without initializers
 
 On the boss branch, the clang-tidy gate run before any push reported `cppcoreguidelines-pro-type-member-init` on two headers linted as main files: `BossHealthChanged`, a new event whose `networkId`, `points` and `full` had no initializer, which point 2 of the subsection already forbade, and `CollisionBox`, whose old `width` and `height` had none while the branch added `offsetX{0.0F}` and `offsetY{0.0F}` next to them. Both got `{}`. A search of the headers of the branch for a built-in member followed by `;` finds both before any lint.
+
+## Update (7 November 2026) — The lint of the last commit only
+
+`BossArrivalEffects::advance()` and `playRoar()` were made `const` in a lint commit, linted on the files of that commit only. `BossArrivalEffectsTest.cpp`, a file of the branch the commit did not touch, then held four `BossArrivalEffects arrival(...)` that `misc-const-correctness` reports. The lint of the whole branch after the merge of main found them before the push, and the CI, which lints the files of the branch, would have failed on them.

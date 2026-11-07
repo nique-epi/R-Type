@@ -85,6 +85,11 @@ A platform file such as `FineTimerResolutionWindows.cpp` is linted only by the C
    Every line printed gets `{}`. Calibrated on `src/engine/Collision/Bounds.hpp`, whose four `float` members it prints.
 4. **When the CI reports what the local run did not**, fix it from the CI log (`gh api repos/<owner>/<repo>/actions/jobs/<job id>/logs` when `gh run view --log-failed` prints nothing), say in the report that the local run could not see it, and follow the job until it is green.
 
+### The last lint before a push covers the whole branch, not the last commit
+
+1. **Before the push, lint the files of `git diff --name-only origin/main...HEAD`**, the list the CI lints, never the files of the last commit alone: a change in one file (a method made `const`, an include removed from a header) makes a finding in another file of the branch that the last commit does not touch.
+2. **After a merge of main, lint that list again**: the merge changes the base the list is taken from and the compile commands of moved files.
+
 ## Example
 
 - ❌ **Before (wrong)**: 43 changed files linted, exit 0 everywhere, "clang-tidy clean" written in the context; every log started with `Error parsing .clang-tidy: Invalid argument` (two option keys twice), so only the default checks ran, and the CI had run the same way since the merge that doubled the keys.
