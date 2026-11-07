@@ -7,6 +7,7 @@
 #include "MissileHit.hpp"
 #include "ShipContact.hpp"
 #include "TypedEntity.hpp"
+#include "ViewDelay.hpp"
 
 namespace rtype::game {
 
@@ -36,7 +37,8 @@ void CollisionRules::onCollision(const engine::Collision& collision) {
 void CollisionRules::publishIfRuleMatches(TypedEntity first,
                                           TypedEntity second) {
   const bool playerMissileHitsEnemy = first.type == EntityType::PlayerMissile &&
-                                      second.type == EntityType::Enemy;
+                                      second.type == EntityType::Enemy &&
+                                      !components_.has<ViewDelay>(first.entity);
   const bool enemyMissileHitsPlayer = first.type == EntityType::EnemyMissile &&
                                       second.type == EntityType::Player;
   if (playerMissileHitsEnemy || enemyMissileHitsPlayer) {

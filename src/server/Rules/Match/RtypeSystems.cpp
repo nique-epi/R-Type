@@ -3,6 +3,7 @@
 #include "CollisionSystem.hpp"
 #include "EventBus.hpp"
 #include "HurtZoneSystem.hpp"
+#include "LagCompensatedHitSystem.hpp"
 #include "MovementSystem.hpp"
 #include "PilotSystem.hpp"
 #include "PlayfieldExitSystem.hpp"
@@ -19,6 +20,8 @@ void addRtypeSystems(engine::SystemScheduler& systems,
               PLAYFIELD_EXIT_SYSTEM_NAME);
   systems.add(std::make_unique<game::CollisionSystem>(events),
               COLLISION_SYSTEM_NAME);
+  systems.add(std::make_unique<game::LagCompensatedHitSystem>(events),
+              LAG_COMPENSATED_HIT_SYSTEM_NAME);
   systems.add(std::make_unique<game::HurtZoneSystem>(events),
               HURT_ZONE_SYSTEM_NAME);
 }

@@ -31,6 +31,7 @@ void DelayedInputs::release(PlayerRoster& roster, const InputSink& sink) {
     if (player != nullptr) {
       sink(*player, due.input);
       player->appliedInputNumber = due.input.inputNumber;
+      player->appliedShownTick = due.input.shownTick;
     }
   }
   ++currentTick_;

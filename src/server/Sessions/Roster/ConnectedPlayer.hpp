@@ -8,6 +8,7 @@
 #include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
 #include "LivesConstants.hpp"
+#include "ProtocolConstants.hpp"
 #include "RoundTripMeter.hpp"
 #include "SentStates.hpp"
 #include "TimeConstants.hpp"
@@ -76,6 +77,11 @@ struct ConnectedPlayer {
    * session, which newestInputNumber cannot, since it runs ahead by the input
    * delay. DelayedInputs keeps it. */
   std::optional<std::uint32_t> appliedInputNumber;
+  /** @brief The tick the client of the player showed when it sent the input
+   * applied last (PlayerInput::shownTick), NO_SHOWN_TICK before one is
+   * applied: the missiles of the player are tested against the enemies of
+   * that tick (see giveShooterViews()). */
+  std::uint32_t appliedShownTick{network::NO_SHOWN_TICK};
   /** @brief Ticks the game ran since it last read a datagram of the player;
    * the player is away once it reaches SESSION_TIMEOUT_TICKS, and the session
    * closes once it reaches SESSION_CLOSING_TICKS.

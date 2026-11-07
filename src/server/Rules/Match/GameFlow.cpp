@@ -25,6 +25,7 @@
 #include "PlayerController.hpp"
 #include "PlayerLives.hpp"
 #include "PlayerRoster.hpp"
+#include "ShooterViews.hpp"
 #include "TimeConstants.hpp"
 #include "WaveSpawner.hpp"
 #include "WaveSpawnerParts.hpp"
@@ -91,10 +92,14 @@ std::optional<GameEnding> endingOf(PlayerRoster& roster, game::World& world,
 
 /**
  * @brief Makes the ship of every player who is away want nothing (see
- * silenceAwayShips), then runs the systems of @p world for one tick.
+ * silenceAwayShips), gives every missile of a player the view of its player at
+ * tick @p tick (see giveShooterViews), then runs the systems of @p world for
+ * one tick.
  */
-void runWorldSystems(GameContext& game, game::World& world) {
+void runWorldSystems(GameContext& game, game::World& world,
+                     std::uint32_t tick) {
   silenceAwayShips(world, game.roster.get());
+  giveShooterViews(world, game.roster.get(), tick);
   game.systems.get().run(world.components(), engine::SIMULATION_TICK_DURATION);
 }
 
@@ -150,7 +155,7 @@ void GameFlow::advanceState() {
       break;
     case GameState::InProgress:
       ++tick_;
-      runWorldSystems(game_, world());
+      runWorldSystems(game_, world(), tick_);
       weaponSystem_->onTick();
       waveSpawner_->onTick();
       lifeKeeper_->onTick();
