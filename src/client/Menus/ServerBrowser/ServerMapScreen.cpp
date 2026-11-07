@@ -384,7 +384,7 @@ void ServerMapScreen::repaint() {
     paintServerMapMessage(*canvas_, phase);
   }
   if (map_.stage() == ServerMapStage::ZoomedOut) {
-    paintHangarStar(*canvas_, hangarShown_);
+    paintHangarStar(*canvas_, hangarShown_ && !chosenShown_);
   }
   quickPlayChip_.paint(*canvas_);
   rankingChip_.paint(*canvas_);

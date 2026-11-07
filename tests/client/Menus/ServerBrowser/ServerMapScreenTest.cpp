@@ -343,3 +343,17 @@ TEST_F(ServerMapScreenFixture, TheHangarStarShowsItsBubbleUnderThePointer) {
 
   EXPECT_NE(writingOf(painting(), HANGAR_STAR_HINT_LINE), nullptr);
 }
+
+/**
+ * Given the map, the pointer over the hangar star
+ * When an arrow chooses a server
+ * Then the bubble of the hangar goes: only the chosen server shows one
+ */
+TEST_F(ServerMapScreenFixture, AnArrowHidesTheBubbleOfTheHangar) {
+  openOn(readyList());
+  pointAt(HANGAR_STAR_ON_THE_MAP, false);
+
+  press(sf::Keyboard::Key::Right);
+
+  EXPECT_EQ(writingOf(painting(), HANGAR_STAR_HINT_LINE), nullptr);
+}
