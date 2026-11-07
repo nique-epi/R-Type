@@ -9,6 +9,8 @@ target_link_libraries(rtype_server_admin_console_commands
     rtype_server_network_module
     rtype_server_supervised_games_module
   PRIVATE
+    rtype_network_expulsion_order
+    rtype_network_wire_types
     rtype_server_admin_console_constants
     rtype_server_constants
     rtype_server_supervised_games_stopping

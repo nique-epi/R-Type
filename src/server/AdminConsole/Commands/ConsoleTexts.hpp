@@ -5,6 +5,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "ServerMeasures.hpp"
 #include "SupervisedGame.hpp"
@@ -29,6 +30,11 @@ namespace rtype::server {
 /** @returns The line close-game writes once it sent the stop order of
  * @p game. */
 [[nodiscard]] std::string closingLineOf(const SupervisedGame& game);
+
+/** @returns The line kick writes once it sent @p game the order to expel
+ * @p nickname. */
+[[nodiscard]] std::string kickLineOf(const SupervisedGame& game,
+                                     std::string_view nickname);
 
 /**
  * @returns What crossed the socket of the supervisor over @p elapsed (see
