@@ -19,6 +19,7 @@
 #include "ModuleConstants.hpp"
 #include "RunningGame.hpp"
 #include "ServerConstants.hpp"
+#include "ShipGun.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
 
@@ -35,6 +36,15 @@ std::vector<network::EntityTypeEntry> entityTypeTableOrNone(
     return {};
   }
   return entityTypeTableOf(*types);
+}
+
+/** @returns The gun of the ships of @p types, or one that predicts nothing
+ * when the games module kept no types (see entityTypeTableOrNone()). */
+network::ShipGun shipGunOrNone(const game::EntitySheets* types) {
+  if (types == nullptr) {
+    return network::ShipGun{};
+  }
+  return shipGunOf(*types);
 }
 
 }  // namespace
@@ -73,7 +83,8 @@ void ServerLobbyModule::start() {
           [seating](ConnectedPlayer& player) {
             seating->onPlayerJoined(player);
           },
-      .entityTypes = entityTypeTableOrNone(runningGame_->entityTypes())});
+      .entityTypes = entityTypeTableOrNone(runningGame_->entityTypes()),
+      .shipGun = shipGunOrNone(runningGame_->entityTypes())});
 }
 
 void ServerLobbyModule::stop() { acceptor_.reset(); }

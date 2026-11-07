@@ -38,7 +38,8 @@ ConnectionAcceptorFixture::ConnectionAcceptorFixture()
                 joinedPlayers_.push_back(player.playerNumber);
               },
           .entityTypes =
-              entityTypeTableOf(game::testing::shippedEntitySheets())}) {}
+              entityTypeTableOf(game::testing::shippedEntitySheets()),
+          .shipGun = shipGunOf(game::testing::shippedEntitySheets())}) {}
 
 void ConnectionAcceptorFixture::receive(const network::Endpoint& sender,
                                         std::vector<std::byte> datagram,

@@ -1,9 +1,8 @@
 #pragma once
 
 #include "Collision.hpp"
-#include "Entity.hpp"
-#include "EntityType.hpp"
 #include "SubscriptionHandle.hpp"
+#include "TypedEntity.hpp"
 
 namespace rtype::engine {
 
@@ -19,7 +18,9 @@ namespace rtype::game {
  *
  * Subscribes to engine::Collision on construction and unsubscribes on
  * destruction. A player missile and an enemy, or an enemy missile and a
- * player, become a MissileHit; a player and an enemy become a ShipContact. Any
+ * player, become a MissileHit, except a player missile that carries a
+ * ViewDelay: LagCompensatedHitSystem tests that one where its player saw the
+ * enemies. A player and an enemy become a ShipContact. Any
  * other pair, an entity without an EntityType and an entity that is no longer
  * alive are ignored. The two entities of a Collision may come in either order.
  * The bus and the registry must outlive this object.
@@ -37,8 +38,9 @@ class CollisionRules {
 
  private:
   void onCollision(const engine::Collision& collision);
-  void publishIfRuleMatches(engine::Entity first, EntityType firstType,
-                            engine::Entity second, EntityType secondType);
+  /** @brief Publishes what @p striker touching @p struck means, if anything:
+   * a MissileHit or a ShipContact. */
+  void publishIfRuleMatches(TypedEntity striker, TypedEntity struck);
 
   engine::EventBus& events_;
   engine::ComponentRegistry& components_;

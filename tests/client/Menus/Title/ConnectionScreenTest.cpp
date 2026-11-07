@@ -418,8 +418,8 @@ INSTANTIATE_TEST_SUITE_P(
                                  std::string_view(SERVER_FULL_STATUS))));
 
 /**
- * Given an attempt a server of protocol version 10 refused as
- * IncompatibleVersion, the client speaking version 9
+ * Given an attempt a server of protocol version 11 refused as
+ * IncompatibleVersion, the client speaking version 10
  * When a frame goes by
  * Then the status line names both versions, the client's first
  */
@@ -428,7 +428,7 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
-  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V9, SERVER V10"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V10, SERVER V11"), nullptr);
 }
 
 /**

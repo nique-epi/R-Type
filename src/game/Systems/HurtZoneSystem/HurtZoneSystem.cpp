@@ -1,6 +1,7 @@
 #include "HurtZoneSystem.hpp"
 #include <algorithm>
 #include "Bounds.hpp"
+#include "BoundsOf.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
@@ -42,14 +43,6 @@ engine::Bounds hurtBoxBounds(const HurtBox& box, const Position& position) {
                         .height = box.height};
 }
 
-/** @returns The rectangle of a ship at @p position with the box @p box. */
-engine::Bounds shipBoundsAt(const Position& position, const CollisionBox& box) {
-  return engine::Bounds{.centerX = position.x,
-                        .centerY = position.y,
-                        .width = box.width,
-                        .height = box.height};
-}
-
 /** @returns Whether an active box of @p zone, on the enemy at @p position that
  * is in @p current, overlaps @p ship. */
 bool isHurt(const HurtZone& zone, const Position& position,
@@ -71,8 +64,8 @@ void HurtZoneSystem::collectShips(engine::ComponentRegistry& components) {
                           const CollisionBox& box) {
         const Position* const position = components.get<Position>(entity);
         if (type == EntityType::Player && position != nullptr) {
-          ships_.push_back(ShipBounds{.entity = entity,
-                                      .bounds = shipBoundsAt(*position, box)});
+          ships_.push_back(
+              ShipBounds{.entity = entity, .bounds = boundsOf(*position, box)});
         }
       });
 }

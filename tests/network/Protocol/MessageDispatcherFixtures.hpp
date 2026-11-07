@@ -20,6 +20,10 @@ namespace rtype::network::testing {
  */
 MessageOrigin someOrigin();
 
+/** @returns The payload of a valid ConnectionAccepted: player 1, one enemy
+ * type named a, and a gun that predicts nothing. */
+std::vector<std::byte> acceptanceOfPlayerOne();
+
 /** @returns A message of type @p type carrying @p payload. */
 MessageFrame frameOf(MessageType type, const std::vector<std::byte>& payload);
 

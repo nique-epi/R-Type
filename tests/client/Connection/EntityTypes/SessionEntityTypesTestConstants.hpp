@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string_view>
+#include "ShipGun.hpp"
 
 namespace rtype::client::testing {
 
@@ -18,5 +19,15 @@ constexpr std::string_view THIRD_UNDRAWN_ENEMY_NAME = "bydomancer";
 constexpr std::uint8_t FIRST_TYPE_NUMBER = 1;
 constexpr std::uint8_t SECOND_TYPE_NUMBER = 2;
 constexpr std::uint8_t THIRD_TYPE_NUMBER = 3;
+
+/** @brief A gun an acceptance of drawnTypes() may carry: its ship, the
+ * second type, firing every 20 ticks a missile the table does not list, so
+ * the client predicts none. */
+constexpr network::ShipGun SOME_SHIP_GUN{.shipType = 2,
+                                         .projectileType = 0,
+                                         .intervalTicks = 20,
+                                         .firstShotTicks = 0,
+                                         .velocityX = 0.0F,
+                                         .velocityY = 0.0F};
 
 }  // namespace rtype::client::testing

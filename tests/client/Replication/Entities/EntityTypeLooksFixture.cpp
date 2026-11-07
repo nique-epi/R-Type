@@ -29,10 +29,13 @@ EntityTypeLooksFixture::EntityTypeLooksFixture()
     : table_(drawsEveryType), appearances_(lookedUpAppearance()) {
   table_.keep(
       {network::EntityTypeEntry{.side = network::EntitySide::Enemy,
-                                .name = std::string{LOOKED_UP_TYPE_NAME}},
+                                .name = std::string{LOOKED_UP_TYPE_NAME},
+                                .hitboxWidth = LOOKED_UP_BOX_WIDTH,
+                                .hitboxHeight = LOOKED_UP_BOX_HEIGHT},
        network::EntityTypeEntry{
            .side = network::EntitySide::Enemy,
-           .name = std::string{TYPE_WITHOUT_APPEARANCE_NAME}}});
+           .name = std::string{TYPE_WITHOUT_APPEARANCE_NAME}}},
+      LOOKED_UP_SHIP_GUN);
 }
 
 const EntityTypeLooks& EntityTypeLooksFixture::looks() const { return looks_; }

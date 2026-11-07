@@ -118,7 +118,7 @@ src/game/
 └── Events/           entity destroyed, player left...
 ```
 
-`World`, which makes every entity from the sheet of its type, `Components`, `Events`, `EntityTypes` (`EntitySheets`, the gameplay of every sheet of `assets/entities/`, read strictly and numbered from 1 in the order of their names, see [Writing an entity sheet](/R-Type/entity-sheets/)), `Spawning` (the start position of a player's ship, where a projectile appears in front of the body that fires it, and where an enemy of a wave enters), the systems for movement (`Systems/MovementSystem/`, which moves a body by its `Intent`, as a ship or at the top speed of its sheet), the pilots of the Bydos and the missiles (`Systems/PilotSystem/`, which lets a named behaviour of `Behaviours/` write the `Intent` of each body it pilots) and leaving the playfield (`Systems/PlayfieldExitSystem/`), the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`), the contact by zone (`Systems/HurtZoneSystem/`), the actions of an enemy (`EnemyActions/`), the damage rules (`Systems/DamageRules/`), `Waves` (how the waves of Bydos grow and when their Bydos are due) and `ShipControl`, which the server runs and the client does not run yet, exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
+`World`, which makes every entity from the sheet of its type, `Components`, `Events`, `EntityTypes` (`EntitySheets`, the gameplay of every sheet of `assets/entities/`, read strictly and numbered from 1 in the order of their names, see [Writing an entity sheet](/R-Type/entity-sheets/)), `Spawning` (the start position of a player's ship, where a projectile appears in front of the body that fires it, and where an enemy of a wave enters), the systems for movement (`Systems/MovementSystem/`, which moves a body by its `Intent`, as a ship or at the top speed of its sheet), the pilots of the Bydos and the missiles (`Systems/PilotSystem/`, which lets a named behaviour of `Behaviours/` write the `Intent` of each body it pilots) and leaving the playfield (`Systems/PlayfieldExitSystem/`), the collision classes (`Systems/CollisionSystem/`, `Systems/CollisionRules/`), the test of the missiles of the players where their players saw the enemies (`Systems/LagCompensatedHitSystem/`), the contact by zone (`Systems/HurtZoneSystem/`), the actions of an enemy (`EnemyActions/`), the damage rules (`Systems/DamageRules/`), `Waves` (how the waves of Bydos grow and when their Bydos are due) and `ShipControl`, which the server runs and the client does not run yet, exist; the other systems and folders are not written yet. See [Server and game](/R-Type/server/).
 
 ### Network
 
@@ -230,6 +230,9 @@ src/client/
 │   ├── EntityMessages/  what the session queues for the game
 │   └── Pilots/          scores and ranking of the pilots
 ├── Prediction/          own ship predicted, other ships interpolated
+│   ├── Interpolation/   the other entities shown between two states
+│   ├── OwnMissiles/     the own missiles fired at once and matched to the server
+│   └── OwnShip/         the own ship predicted and corrected
 ├── Input/               keyboard and gamepad to player input
 │   ├── Keys/            the keys, their names and their bindings
 │   └── Commands/        the actions held and their pace

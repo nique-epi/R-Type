@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include "EntityTypeEntry.hpp"
+#include "ShipGun.hpp"
 
 namespace rtype::client {
 
@@ -22,6 +23,12 @@ class IEntityTypeTable {
    */
   [[nodiscard]] virtual const network::EntityTypeEntry* entryNumbered(
       std::uint8_t number) const = 0;
+
+  /**
+   * @returns The gun of the ships the acceptance of the session carried; one
+   * that predicts nothing outside a session.
+   */
+  [[nodiscard]] virtual network::ShipGun shipGun() const = 0;
 };
 
 }  // namespace rtype::client

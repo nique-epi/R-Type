@@ -23,6 +23,12 @@ network::WorldState stateWithShip(std::uint8_t playerNumber,
                                   std::uint32_t shipId, game::Position position,
                                   std::uint32_t acknowledgedInput);
 
+/** @returns A state that lists the player @p playerNumber without a ship, as
+ * once its ship was destroyed, the server having applied its inputs up to
+ * @p acknowledgedInput. */
+network::WorldState stateWithoutAShip(std::uint8_t playerNumber,
+                                      std::uint32_t acknowledgedInput);
+
 /** @returns A state that lists the player @p playerNumber and its ship id but
  * no entity, as another part of a state cut in several datagrams does. */
 network::WorldState stateWithoutEntities(std::uint8_t playerNumber,

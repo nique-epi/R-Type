@@ -8,6 +8,7 @@
 #include "DrawableTypeCheck.hpp"
 #include "EntityTypeConstants.hpp"
 #include "EntityTypeEntry.hpp"
+#include "ShipGun.hpp"
 
 namespace rtype::client {
 
@@ -25,11 +26,18 @@ std::vector<std::string> SessionEntityTypes::undrawableNamesOf(
   return names;
 }
 
-void SessionEntityTypes::keep(std::vector<network::EntityTypeEntry> types) {
+void SessionEntityTypes::keep(std::vector<network::EntityTypeEntry> types,
+                              network::ShipGun gun) {
   types_ = std::move(types);
+  gun_ = gun;
 }
 
-void SessionEntityTypes::forget() { types_.clear(); }
+void SessionEntityTypes::forget() {
+  types_.clear();
+  gun_ = network::ShipGun{};
+}
+
+network::ShipGun SessionEntityTypes::shipGun() const { return gun_; }
 
 const network::EntityTypeEntry* SessionEntityTypes::entryNumbered(
     std::uint8_t number) const {

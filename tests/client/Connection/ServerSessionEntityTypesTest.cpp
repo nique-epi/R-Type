@@ -32,6 +32,7 @@ using testing::SECOND_TYPE_NUMBER;
 using testing::ServerSessionEntityTypesFixture;
 using testing::SESSION_TOKEN;
 using ::testing::SizeIs;
+using testing::SOME_SHIP_GUN;
 using testing::THIRD_TYPE_NUMBER;
 using testing::threeUndrawnTypes;
 using testing::UNDRAWN_ENEMY_NAME;
@@ -62,6 +63,17 @@ TEST_F(ServerSessionEntityTypesFixture,
   ASSERT_NE(entry, nullptr);
   EXPECT_EQ(*entry, (EntityTypeEntry{.side = EntitySide::Player,
                                      .name = std::string{DRAWN_SHIP_NAME}}));
+}
+
+/**
+ * Given a client connecting to a server
+ * When the server accepts it with the gun of its ships
+ * Then the session keeps that gun with the table
+ */
+TEST_F(ServerSessionEntityTypesFixture, TheSessionKeepsTheGunOfItsAcceptance) {
+  connectAndGetAcceptedWith(drawnTypes(), SOME_SHIP_GUN);
+
+  EXPECT_EQ(entityTypes().shipGun(), SOME_SHIP_GUN);
 }
 
 /**

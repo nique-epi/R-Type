@@ -20,7 +20,8 @@ class UnconfirmedInputs {
    * @returns The PlayerInput to send: the new input, and the unconfirmed ones
    * before it, newest first.
    */
-  [[nodiscard]] network::PlayerInput add(std::uint8_t actions);
+  [[nodiscard]] network::PlayerInput add(std::uint8_t actions,
+                                         std::uint32_t shownTick);
 
   /** @brief Forgets the inputs numbered @p acknowledged or lower. */
   void confirmUpTo(std::uint32_t acknowledged);

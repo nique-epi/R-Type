@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include "Position.hpp"
 
 namespace rtype::server::testing {
@@ -11,6 +12,9 @@ namespace rtype::server::testing {
  */
 constexpr std::size_t MISSILES_PER_SECOND_OF_FIRE = 3;
 constexpr std::size_t TICKS_BETWEEN_TWO_SHOTS = 20;
+
+/** @brief The newest input a test applied to the ship that fires. */
+constexpr std::uint32_t SOME_APPLIED_INPUT = 41;
 
 /**
  * @brief The fire rate chosen for the Bydos: one and a half seconds at 60 ticks

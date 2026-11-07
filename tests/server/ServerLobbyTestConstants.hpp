@@ -99,4 +99,12 @@ constexpr std::size_t DROPPED_TOGETHER_COUNT = 3;
 /** @brief The network id of a ship in the tests that only need one. */
 constexpr std::uint32_t SOME_SHIP_ID = 7;
 
+/** @brief The gun of the shipped ship as the acceptance carries it: ship is
+ * the ninth sheet by name, player_missile the sixth, 333 ms between shots is
+ * 20 ticks, and the missile flies right at 960 units per second. */
+constexpr std::uint8_t SHIPPED_SHIP_TYPE = 9;
+constexpr std::uint8_t SHIPPED_MISSILE_TYPE = 6;
+constexpr std::uint16_t SHIPPED_GUN_INTERVAL = 20;
+constexpr float SHIPPED_MISSILE_VELOCITY = 960.0F;
+
 }  // namespace rtype::server::testing

@@ -11,6 +11,7 @@
 #include "ServerSessionParts.hpp"
 #include "SessionEntityTypes.hpp"
 #include "SessionEntityTypesFixtures.hpp"
+#include "ShipGun.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
@@ -24,7 +25,8 @@ class ServerSessionEntityTypesFixture : public ::testing::Test {
   /** @brief Connects, then has the server accept the attempt with @p types,
    * its acceptance carrying SESSION_TOKEN, and runs the frame that reads
    * it. */
-  void connectAndGetAcceptedWith(std::vector<network::EntityTypeEntry> types);
+  void connectAndGetAcceptedWith(std::vector<network::EntityTypeEntry> types,
+                                 network::ShipGun gun = network::ShipGun{});
 
   /** @brief Delivers another acceptance carrying @p types, in a datagram of
    * sequence REPEATED_ACCEPTANCE_SEQUENCE and SESSION_TOKEN, and runs the

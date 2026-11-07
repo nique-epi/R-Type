@@ -7,6 +7,7 @@
 #include "SessionEntityTypes.hpp"
 #include "SessionEntityTypesFixtures.hpp"
 #include "SessionEntityTypesTestConstants.hpp"
+#include "ShipGun.hpp"
 
 namespace rtype::client {
 
@@ -22,6 +23,7 @@ using ::testing::IsEmpty;
 using testing::oneUndrawnType;
 using testing::OTHER_UNDRAWN_ENEMY_NAME;
 using testing::SECOND_TYPE_NUMBER;
+using testing::SOME_SHIP_GUN;
 using testing::THIRD_TYPE_NUMBER;
 using testing::THIRD_UNDRAWN_ENEMY_NAME;
 using testing::threeUndrawnTypes;
@@ -79,6 +81,33 @@ TEST(SessionEntityTypes, KnowsNoNumberOnceForgotten) {
   table.forget();
 
   EXPECT_EQ(table.entryNumbered(FIRST_TYPE_NUMBER), nullptr);
+}
+
+/**
+ * Given a table kept for a session with the gun of its ships
+ * When the gun is asked for
+ * Then it is that gun
+ */
+TEST(SessionEntityTypes, KeepsTheGunOfTheShips) {
+  SessionEntityTypes table{isDrawnInTheTests};
+
+  table.keep(drawnTypes(), SOME_SHIP_GUN);
+
+  EXPECT_EQ(table.shipGun(), SOME_SHIP_GUN);
+}
+
+/**
+ * Given a table kept with the gun of its ships
+ * When it is forgotten
+ * Then the gun predicts nothing any more
+ */
+TEST(SessionEntityTypes, ForgetsTheGunWithTheTable) {
+  SessionEntityTypes table{isDrawnInTheTests};
+  table.keep(drawnTypes(), SOME_SHIP_GUN);
+
+  table.forget();
+
+  EXPECT_EQ(table.shipGun(), network::ShipGun{});
 }
 
 /**

@@ -3,6 +3,7 @@
 #include <tuple>
 #include <vector>
 #include "PlayerInput.hpp"
+#include "ProtocolConstants.hpp"
 #include "UnconfirmedInputs.hpp"
 #include "UnconfirmedInputsTestConstants.hpp"
 
@@ -28,7 +29,8 @@ using testing::UP_ACTION;
 TEST(UnconfirmedInputs, NumbersTheFirstInputOneAndRepeatsNothing) {
   UnconfirmedInputs inputs;
 
-  const network::PlayerInput first = inputs.add(UP_ACTION);
+  const network::PlayerInput first =
+      inputs.add(UP_ACTION, network::NO_SHOWN_TICK);
 
   EXPECT_EQ(first,
             (network::PlayerInput{
@@ -42,10 +44,11 @@ TEST(UnconfirmedInputs, NumbersTheFirstInputOneAndRepeatsNothing) {
  */
 TEST(UnconfirmedInputs, RepeatsTheEarlierInputsNewestFirst) {
   UnconfirmedInputs inputs;
-  std::ignore = inputs.add(UP_ACTION);
-  std::ignore = inputs.add(DOWN_ACTION);
+  std::ignore = inputs.add(UP_ACTION, network::NO_SHOWN_TICK);
+  std::ignore = inputs.add(DOWN_ACTION, network::NO_SHOWN_TICK);
 
-  const network::PlayerInput third = inputs.add(LEFT_ACTION);
+  const network::PlayerInput third =
+      inputs.add(LEFT_ACTION, network::NO_SHOWN_TICK);
 
   EXPECT_EQ(third,
             (network::PlayerInput{.inputNumber = THIRD_INPUT,
@@ -62,7 +65,8 @@ TEST(UnconfirmedInputs, RepeatsAtMostTheLimitOfEarlierInputs) {
   UnconfirmedInputs inputs;
   network::PlayerInput last;
   for (std::uint32_t number = 1; number <= TWENTY_INPUTS; ++number) {
-    last = inputs.add(static_cast<std::uint8_t>(number & ACTION_BITS_MASK));
+    last = inputs.add(static_cast<std::uint8_t>(number & ACTION_BITS_MASK),
+                      network::NO_SHOWN_TICK);
   }
 
   ASSERT_EQ(last.earlierActions.size(), REPEATED_INPUT_LIMIT);
@@ -78,11 +82,13 @@ TEST(UnconfirmedInputs, RepeatsAtMostTheLimitOfEarlierInputs) {
 TEST(UnconfirmedInputs, DoesNotRepeatAConfirmedInput) {
   UnconfirmedInputs inputs;
   for (std::uint32_t number = 1; number <= FIFTH_INPUT; ++number) {
-    std::ignore = inputs.add(static_cast<std::uint8_t>(number));
+    std::ignore =
+        inputs.add(static_cast<std::uint8_t>(number), network::NO_SHOWN_TICK);
   }
   inputs.confirmUpTo(THIRD_INPUT);
 
-  const network::PlayerInput sixth = inputs.add(SHOOT_ACTION);
+  const network::PlayerInput sixth =
+      inputs.add(SHOOT_ACTION, network::NO_SHOWN_TICK);
 
   EXPECT_EQ(sixth.earlierActions, (std::vector<std::uint8_t>{5, 4}));
 }
@@ -96,12 +102,13 @@ TEST(UnconfirmedInputs, DoesNotRepeatAConfirmedInput) {
 TEST(UnconfirmedInputs, RepeatsNothingOnceEveryInputIsConfirmed) {
   UnconfirmedInputs inputs;
   for (std::uint32_t number = 1; number <= THIRD_INPUT; ++number) {
-    std::ignore = inputs.add(UP_ACTION);
+    std::ignore = inputs.add(UP_ACTION, network::NO_SHOWN_TICK);
   }
   inputs.confirmUpTo(THIRD_INPUT);
   inputs.confirmUpTo(FAR_BEYOND_THE_NEWEST_INPUT);
 
-  const network::PlayerInput fourth = inputs.add(UP_ACTION);
+  const network::PlayerInput fourth =
+      inputs.add(UP_ACTION, network::NO_SHOWN_TICK);
 
   EXPECT_EQ(fourth, (network::PlayerInput{.inputNumber = THIRD_INPUT + 1,
                                           .actions = UP_ACTION,
@@ -115,11 +122,12 @@ TEST(UnconfirmedInputs, RepeatsNothingOnceEveryInputIsConfirmed) {
  */
 TEST(UnconfirmedInputs, KeepsEveryInputWhileNothingIsConfirmed) {
   UnconfirmedInputs inputs;
-  std::ignore = inputs.add(UP_ACTION);
-  std::ignore = inputs.add(DOWN_ACTION);
+  std::ignore = inputs.add(UP_ACTION, network::NO_SHOWN_TICK);
+  std::ignore = inputs.add(DOWN_ACTION, network::NO_SHOWN_TICK);
   inputs.confirmUpTo(0);
 
-  const network::PlayerInput third = inputs.add(LEFT_ACTION);
+  const network::PlayerInput third =
+      inputs.add(LEFT_ACTION, network::NO_SHOWN_TICK);
 
   EXPECT_EQ(third.earlierActions,
             (std::vector<std::uint8_t>{DOWN_ACTION, UP_ACTION}));
@@ -132,11 +140,12 @@ TEST(UnconfirmedInputs, KeepsEveryInputWhileNothingIsConfirmed) {
  */
 TEST(UnconfirmedInputs, StartsAgainFromTheFirstInputWhenCleared) {
   UnconfirmedInputs inputs;
-  std::ignore = inputs.add(UP_ACTION);
-  std::ignore = inputs.add(DOWN_ACTION);
+  std::ignore = inputs.add(UP_ACTION, network::NO_SHOWN_TICK);
+  std::ignore = inputs.add(DOWN_ACTION, network::NO_SHOWN_TICK);
   inputs.clear();
 
-  const network::PlayerInput first = inputs.add(LEFT_ACTION);
+  const network::PlayerInput first =
+      inputs.add(LEFT_ACTION, network::NO_SHOWN_TICK);
 
   EXPECT_EQ(first, (network::PlayerInput{.inputNumber = 1,
                                          .actions = LEFT_ACTION,

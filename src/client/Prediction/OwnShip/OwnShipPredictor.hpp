@@ -2,9 +2,11 @@
 
 #include <cstdint>
 #include <optional>
-#include "ActionSet.hpp"
+#include <vector>
 #include "IPlayerInputLink.hpp"
+#include "PlayerCommand.hpp"
 #include "Position.hpp"
+#include "PredictedCommand.hpp"
 #include "ShipPrediction.hpp"
 #include "TimeConstants.hpp"
 #include "WorldState.hpp"
@@ -30,15 +32,19 @@ class OwnShipPredictor {
 
   /**
    * @brief Counts @p elapsed into ticks, and for each sends @p link the
-   * actions @p held, then predicts the number it was sent under; nothing is
-   * predicted for a command the link did not send.
+   * actions and the shown tick of @p command, then predicts the number it was
+   * sent under; nothing is predicted for a command the link did not send.
+   * @returns The commands predicted, oldest first, with the ship after each.
    */
-  void advance(engine::Duration elapsed, ActionSet held,
-               IPlayerInputLink& link);
+  std::vector<PredictedCommand> advance(engine::Duration elapsed,
+                                        PlayerCommand command,
+                                        IPlayerInputLink& link);
 
-  /** @brief Reads what @p state says of the ship of the player: starts the
-   * prediction, or reconciles it. Nothing when the state does not list the
-   * ship. */
+  /** @brief Reads what @p state says of the ship of the player: forgets the
+   * ship followed when the state lists the player with another ship or none,
+   * as once it was destroyed; then starts the prediction, or reconciles it.
+   * A part of a state that lists the player with the ship followed but not
+   * its entity changes nothing. */
   void apply(const network::WorldState& state);
 
   /** @brief Forgets the prediction and the time not yet counted, as when the

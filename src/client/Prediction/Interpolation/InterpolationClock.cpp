@@ -7,6 +7,7 @@
 #include <span>
 #include "InterpolationConstants.hpp"
 #include "PositionHistoryConstants.hpp"
+#include "ProtocolConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -53,6 +54,13 @@ void InterpolationClock::observe(std::uint32_t tick) {
 
 std::optional<double> InterpolationClock::renderTick() const {
   return renderTick_;
+}
+
+std::uint32_t InterpolationClock::shownTick() const {
+  if (!renderTick_.has_value() || *renderTick_ < 1.0) {
+    return network::NO_SHOWN_TICK;
+  }
+  return static_cast<std::uint32_t>(std::floor(*renderTick_));
 }
 
 double InterpolationClock::referenceTick() const {

@@ -59,9 +59,18 @@ void GameInstanceShootingFixture::runTicksDispatching(std::size_t count) {
 
 std::vector<network::EntitySpawned> GameInstanceShootingFixture::missilesSentTo(
     std::size_t player) {
-  return spawnsOfType(
-      ofType(network::MessageType::EntitySpawned, sentTo(player)),
-      game::testing::PLAYER_MISSILE_SHEET);
+  std::vector<network::EntitySpawned> missiles;
+  for (const network::EntitySpawned& spawned :
+       spawnsOfType(ofType(network::MessageType::EntitySpawned, sentTo(player)),
+                    game::testing::PLAYER_MISSILE_SHEET)) {
+    if (std::ranges::none_of(missiles,
+                             [&spawned](const network::EntitySpawned& kept) {
+                               return kept.entityId == spawned.entityId;
+                             })) {
+      missiles.push_back(spawned);
+    }
+  }
+  return missiles;
 }
 
 std::vector<network::EntitySpawned>

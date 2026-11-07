@@ -11,6 +11,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "AppliedInput.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "DebugJournal.hpp"
@@ -54,6 +55,7 @@ using game::testing::HELD_SECOND_DISTANCE;
 using game::testing::POSITION_TOLERANCE;
 using game::testing::ROLL_DISTANCE;
 using game::testing::ROLL_END_TICK;
+using rtype::server::AppliedInput;
 using testing::bydosAmong;
 using testing::bydosIn;
 using testing::ECHO_HELD_FOR;
@@ -86,6 +88,7 @@ using testing::HOLDS_UP;
 using testing::INPUT_DELAY_TICKS;
 using testing::inputPayload;
 using testing::LARGEST_INPUT_NUMBER;
+using testing::LAST_READY_SEQUENCE;
 using testing::messageTypesOf;
 using testing::newestHeartbeatIn;
 using testing::NEXT_PROTOCOL_VERSION;
@@ -111,6 +114,7 @@ using testing::STRANGER;
 using testing::THIRD_PLAYER;
 using testing::THIRD_SENT;
 using testing::THIRD_SEQUENCE;
+using testing::TICK_THE_CLIENT_SHOWED;
 using testing::TICKS_PER_REJECTION_LINE;
 using testing::UNLISTED_ACTION;
 using testing::WIRE_COORDINATE_TOLERANCE;
@@ -1385,6 +1389,32 @@ TEST_F(GameInstanceInputTest, KeepsTheFirstInputOfAPlayer) {
 }
 
 /**
+ * Given a player who sent one input holding up, its client showing tick 42
+ * When a tick reads it
+ * Then tick 42 is recorded with the input applied, the tick its missiles are
+ * tested against
+ */
+TEST_F(GameInstanceInputTest, RecordsTheTickItsClientShowedWithTheInput) {
+  network::PacketHeader header = sessionHeader(FIRST_PLAYER);
+  header.sequence = static_cast<std::uint16_t>(LAST_READY_SEQUENCE + 1);
+  sendDatagram(FIRST_PLAYER, inputDatagram(
+                                 network::PlayerInput{
+                                     .inputNumber = network::FIRST_INPUT_NUMBER,
+                                     .actions = HOLDS_UP,
+                                     .earlierActions = {},
+                                     .shownTick = TICK_THE_CLIENT_SHOWED},
+                                 header));
+
+  deliver({FIRST_SENT});
+
+  const ConnectedPlayer* const connected =
+      game().roster().find(playerEndpoint(FIRST_PLAYER));
+  ASSERT_NE(connected, nullptr);
+  EXPECT_EQ(connected->appliedInput.value_or(AppliedInput{}).shownTick,
+            TICK_THE_CLIENT_SHOWED);
+}
+
+/**
  * Given a player who sent one input holding up
  * When a tick reads it
  * Then the input is recorded as applied to the ship of the player
@@ -1397,7 +1427,8 @@ TEST_F(GameInstanceInputTest, RecordsTheInputAppliedToTheShip) {
   const ConnectedPlayer* const connected =
       game().roster().find(playerEndpoint(FIRST_PLAYER));
   ASSERT_NE(connected, nullptr);
-  EXPECT_EQ(connected->appliedInputNumber, lastInputNumber(FIRST_PLAYER));
+  EXPECT_EQ(connected->appliedInput.value_or(AppliedInput{}).inputNumber,
+            lastInputNumber(FIRST_PLAYER));
 }
 
 /**
@@ -2060,12 +2091,12 @@ TEST_F(GameInstanceInputDelayTest, ConfirmsAnInputOnlyOnceItIsApplied) {
 
   deliver({FIRST_SENT});
   tick();
-  const std::optional<std::uint32_t> beforeTheDelay =
-      connected->appliedInputNumber;
+  const std::optional<AppliedInput> beforeTheDelay = connected->appliedInput;
   runTicks(INPUT_DELAY_TICKS);
 
   EXPECT_FALSE(beforeTheDelay.has_value());
-  EXPECT_EQ(connected->appliedInputNumber, lastInputNumber(FIRST_PLAYER));
+  EXPECT_EQ(connected->appliedInput.value_or(AppliedInput{}).inputNumber,
+            lastInputNumber(FIRST_PLAYER));
 }
 
 /**

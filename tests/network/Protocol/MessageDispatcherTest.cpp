@@ -24,6 +24,7 @@
 
 namespace rtype::network {
 
+using testing::acceptanceOfPlayerOne;
 using testing::byteSequence;
 using testing::FAILED_HANDLER_LINE_TEXT;
 using testing::frameOf;
@@ -194,7 +195,7 @@ TEST(MessageDispatcher, DropsATruncatedPayloadWithoutThrowing) {
 TEST(MessageDispatcher, CountsAMessageWhoseHandlerThrew) {
   MessageDispatcher dispatcher;
   registerThrowingHandler<ConnectionAccepted>(dispatcher);
-  const auto playerOneWithOneType = byteSequence({0x01, 0x01, 0x02, 0x01, 'a'});
+  const auto playerOneWithOneType = acceptanceOfPlayerOne();
   const std::vector frames{
       frameOf(MessageType::ConnectionAccepted, playerOneWithOneType)};
 
@@ -211,7 +212,7 @@ TEST(MessageDispatcher, CountsAMessageWhoseHandlerThrew) {
 TEST(MessageDispatcher, DoesNotCountAHandlerErrorAsMalformed) {
   MessageDispatcher dispatcher;
   registerThrowingHandler<ConnectionAccepted>(dispatcher);
-  const auto playerOneWithOneType = byteSequence({0x01, 0x01, 0x02, 0x01, 'a'});
+  const auto playerOneWithOneType = acceptanceOfPlayerOne();
   const std::vector frames{
       frameOf(MessageType::ConnectionAccepted, playerOneWithOneType)};
 
@@ -394,7 +395,7 @@ TEST_F(MessageDispatcherFixture, WritesOneLineForMessagesRejectedTogether) {
 TEST_F(MessageDispatcherFixture, LogsAThrowingHandlerAtTheErrorLevel) {
   MessageDispatcher dispatcher;
   registerThrowingHandler<ConnectionAccepted>(dispatcher);
-  const auto playerOneWithOneType = byteSequence({0x01, 0x01, 0x02, 0x01, 'a'});
+  const auto playerOneWithOneType = acceptanceOfPlayerOne();
   const std::vector frames{
       frameOf(MessageType::ConnectionAccepted, playerOneWithOneType)};
 
@@ -413,7 +414,7 @@ TEST_F(MessageDispatcherFixture, LogsAThrowingHandlerAtTheErrorLevel) {
 TEST_F(MessageDispatcherFixture, LogsAThrowingHandlerWithItsSender) {
   MessageDispatcher dispatcher;
   registerThrowingHandler<ConnectionAccepted>(dispatcher);
-  const auto playerOneWithOneType = byteSequence({0x01, 0x01, 0x02, 0x01, 'a'});
+  const auto playerOneWithOneType = acceptanceOfPlayerOne();
   const std::vector frames{
       frameOf(MessageType::ConnectionAccepted, playerOneWithOneType)};
 
