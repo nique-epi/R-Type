@@ -32,6 +32,11 @@ HitArbitrationFixture::HitArbitrationFixture()
                                        .shownTick = TICK_FIVE_BEFORE};
 }
 
+void HitArbitrationFixture::seeThirtyTicksBehind() {
+  player_->appliedInput = AppliedInput{.inputNumber = SHOOTER_INPUT_NUMBER,
+                                       .shownTick = TICK_THIRTY_BEFORE};
+}
+
 void HitArbitrationFixture::giveViewsOf(const IHitArbitration& arbitration) {
   arbitration.giveViews(world_, roster_, PRESENT_TICK);
 }

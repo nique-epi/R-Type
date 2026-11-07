@@ -16,6 +16,13 @@ constexpr std::size_t FIVE_TICKS_BEHIND = 5;
  * player who fires. */
 constexpr std::uint32_t SHOOTER_INPUT_NUMBER = 41;
 
+/** @brief A tick thirty before the present that a client showed, past what
+ * either mode looks back: 200 ms (12 ticks) between players, 400 ms (24 ticks)
+ * in co-op. */
+constexpr std::uint32_t TICK_THIRTY_BEFORE = 70;
+constexpr std::size_t SHOOTER_REWIND_IN_TICKS = 12;
+constexpr std::size_t PLAYERS_REWIND_IN_TICKS = 24;
+
 /** @brief The session token of the player who fires. */
 constexpr std::uint64_t SHOOTER_SESSION_TOKEN = 0x5115'7E25;
 
