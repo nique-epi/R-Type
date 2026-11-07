@@ -18,6 +18,8 @@
 #include "LeaderboardScreenParts.hpp"
 #include "LeaderboardTab.hpp"
 #include "LocalizedKeyName.hpp"
+#include "MasterScreen.hpp"
+#include "MasterScreenParts.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "ModuleConstants.hpp"
 #include "OptionsPlace.hpp"
@@ -121,8 +123,20 @@ std::unique_ptr<IScreen> buildServerMapScreen(const ScreenContext& context) {
                            .servers = context.services.serverCatalog.get(),
                            .games = context.services.gameCatalog.get(),
                            .choice = context.serverChoice.get(),
+                           .master = context.services.masterAddress.get(),
                            .playfieldPointAt = playfieldMappingOf(context),
                            .motion = motionPreference()},
+      interfaceCanvasOf(context));
+}
+
+/** @returns The form of the master the server map reads. */
+std::unique_ptr<IScreen> buildMasterScreen(const ScreenContext& context) {
+  return std::make_unique<MasterScreen>(
+      MasterScreenParts{.navigator = context.navigator.get(),
+                        .sounds = soundsOf(context),
+                        .settings = context.services.settingsService.get(),
+                        .master = context.services.masterAddress.get(),
+                        .playfieldPointAt = playfieldMappingOf(context)},
       interfaceCanvasOf(context));
 }
 
@@ -196,6 +210,7 @@ void ClientMenusModule::install(engine::InstallContext& context) {
   registry.add(QUIT_CONFIRMATION_SCREEN, buildQuitConfirmationScreen);
   addConnectionScreens(registry);
   registry.add(SERVER_MAP_SCREEN, buildServerMapScreen);
+  registry.add(MASTER_SCREEN, buildMasterScreen);
   registry.add(LEADERBOARD_SCREEN, buildLeaderboardScreen);
   registry.add(CONNECTION_LOST_SCREEN, buildConnectionLostScreen);
 }

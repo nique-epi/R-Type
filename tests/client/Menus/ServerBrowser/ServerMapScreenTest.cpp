@@ -17,11 +17,13 @@
 using rtype::client::CONNECTION_SCREEN;
 using rtype::client::CONNECTION_TO_CHOSEN_SERVER_SCREEN;
 using rtype::client::LEADERBOARD_SCREEN;
+using rtype::client::MASTER_SCREEN;
 using rtype::client::ServerListPhase;
 using rtype::client::ServerListSnapshot;
 using rtype::client::testing::LYON_SERVER_ADDRESS;
 using rtype::client::testing::LYON_SERVER_ID;
 using rtype::client::testing::lyonGames;
+using rtype::client::testing::MAP_MASTER_TEXT;
 using rtype::client::testing::ONE_FRAME;
 using rtype::client::testing::PARIS_SERVER_ID;
 using rtype::client::testing::parisOnTheWholeMap;
@@ -284,6 +286,33 @@ TEST_F(ServerMapScreenFixture, AddressOpensTheFormEvenWithoutAMaster) {
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
                                         .screen = CONNECTION_SCREEN}));
+}
+
+/**
+ * Given the map, its master not answering
+ * When M is pressed and released
+ * Then the form of the master opens over it
+ */
+TEST_F(ServerMapScreenFixture, MasterOpensTheMasterForm) {
+  openOn(ServerListSnapshot{.phase = ServerListPhase::MasterUnreachable,
+                            .servers = {}});
+
+  press(sf::Keyboard::Key::M);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = MASTER_SCREEN}));
+}
+
+/**
+ * Given the map of a master at 10.0.0.2:8080
+ * When the map is painted
+ * Then it writes that master, without http://
+ */
+TEST_F(ServerMapScreenFixture, TheMapNamesTheMasterItReads) {
+  openOn(readyList());
+
+  EXPECT_NE(writingOf(painting(), MAP_MASTER_TEXT), nullptr);
 }
 
 /**

@@ -19,6 +19,7 @@
 #include "KeyChip.hpp"
 #include "KeyChipParts.hpp"
 #include "MapDirection.hpp"
+#include "MasterUrl.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PlanetPose.hpp"
@@ -51,6 +52,10 @@ Button::Text addressText() {
   return {.label = ADDRESS_LABEL, .keyName = ADDRESS_KEY_NAME};
 }
 
+Button::Text masterText() {
+  return {.label = MASTER_LABEL, .keyName = MASTER_KEY_NAME};
+}
+
 Button::Text backText() {
   return {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME};
 }
@@ -79,6 +84,15 @@ sf::IntRect addressChipArea() {
 
 sf::IntRect rankingChipArea() {
   return chipAreaLeftOf(rankingText(), addressChipArea());
+}
+
+/** @returns Where MASTER lies: on the right of the title, apart from the
+ * chips that act on the servers. */
+sf::IntRect masterChipArea() {
+  sf::IntRect area =
+      MenuBuilder::chipArea(masterText(), SERVER_MAP_CHIPS_RIGHT);
+  area.position.y = MASTER_CHIP_TOP;
+  return area;
 }
 
 /** @returns Where QUICK PLAY lies: alone on the left, the main action. */
@@ -182,6 +196,15 @@ KeyChipParts addressChipParts(std::function<void()> action,
                       .sounds = sounds};
 }
 
+KeyChipParts masterChipParts(std::function<void()> action,
+                             ISoundPlayer& sounds) {
+  return KeyChipParts{.text = masterText(),
+                      .area = masterChipArea(),
+                      .key = MASTER_KEY,
+                      .action = std::move(action),
+                      .sounds = sounds};
+}
+
 KeyChipParts backChipParts(std::function<void()> action, ISoundPlayer& sounds) {
   return KeyChipParts{.text = backText(),
                       .area = backChipArea(),
@@ -198,6 +221,7 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
       servers_(&parts.servers.get()),
       games_(&parts.games.get()),
       choice_(&parts.choice.get()),
+      master_(&parts.master.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       motion_(parts.motion),
@@ -213,6 +237,8 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
           [this] { navigator_->push(LEADERBOARD_SCREEN); }, parts.sounds)),
       addressChip_(addressChipParts(
           [this] { navigator_->push(CONNECTION_SCREEN); }, parts.sounds)),
+      masterChip_(masterChipParts([this] { navigator_->push(MASTER_SCREEN); },
+                                  parts.sounds)),
       backChip_(backChipParts([this] { stepBack(); }, parts.sounds)) {
   servers_->refresh();
   repaint();
@@ -222,6 +248,7 @@ void ServerMapScreen::handleEvent(const sf::Event& event) {
   quickPlayChip_.handleEvent(event, playfieldPointAt_);
   rankingChip_.handleEvent(event, playfieldPointAt_);
   addressChip_.handleEvent(event, playfieldPointAt_);
+  masterChip_.handleEvent(event, playfieldPointAt_);
   backChip_.handleEvent(event, playfieldPointAt_);
   if (const auto* pressed = event.getIf<sf::Event::KeyPressed>()) {
     keyPressed(*pressed);
@@ -342,6 +369,7 @@ void ServerMapScreen::repaint() {
   canvas_->clear();
   const ServerListPhase phase = servers_->snapshot().phase;
   paintServerMapHeader(*canvas_, map_.servers().size());
+  paintMasterAddress(*canvas_, masterTextOf(master_->url()));
   if (phase == ServerListPhase::Ready) {
     const PlanetPose pose = planetPoseIn(
         map_.view(), turnedPlanet(PlanetPose{}, elapsed_, motion_));
@@ -360,6 +388,7 @@ void ServerMapScreen::repaint() {
   quickPlayChip_.paint(*canvas_);
   rankingChip_.paint(*canvas_);
   addressChip_.paint(*canvas_);
+  masterChip_.paint(*canvas_);
   backChip_.paint(*canvas_);
   canvas_->display();
 }

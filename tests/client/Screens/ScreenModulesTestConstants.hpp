@@ -7,7 +7,7 @@
 #include "ScreenId.hpp"
 
 /** @brief The screens the menus module registers. */
-constexpr std::array<rtype::client::ScreenId, 11> MENU_SCREENS{
+constexpr std::array<rtype::client::ScreenId, 14> MENU_SCREENS{
     rtype::client::INTRO_SCREEN,
     rtype::client::TITLE_SCREEN,
     rtype::client::TITLE_AFTER_INTRO_SCREEN,
@@ -16,8 +16,11 @@ constexpr std::array<rtype::client::ScreenId, 11> MENU_SCREENS{
     rtype::client::QUIT_CONFIRMATION_SCREEN,
     rtype::client::CONNECTION_SCREEN,
     rtype::client::CONNECTION_FOR_LEADERBOARD_SCREEN,
+    rtype::client::CONNECTION_TO_CHOSEN_SERVER_SCREEN,
     rtype::client::CONNECTION_AGAIN_SCREEN,
     rtype::client::CONNECTION_LOST_SCREEN,
+    rtype::client::SERVER_MAP_SCREEN,
+    rtype::client::MASTER_SCREEN,
     rtype::client::LEADERBOARD_SCREEN};
 
 /** @brief The screens the lobby module registers. */

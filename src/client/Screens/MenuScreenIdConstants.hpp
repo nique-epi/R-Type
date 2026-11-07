@@ -56,6 +56,10 @@ constexpr ScreenId CONNECTION_AGAIN_SCREEN{"connection again"};
  * over the title by PLAY, or by RETRY under CONNECTION_AGAIN_SCREEN. */
 constexpr ScreenId SERVER_MAP_SCREEN{"server map"};
 
+/** @brief The address and the port of the master the server map reads,
+ * pushed by MASTER over the server map. */
+constexpr ScreenId MASTER_SCREEN{"master"};
+
 /** @brief The best scores of a server, pushed over the title or the waiting
  * room. */
 constexpr ScreenId LEADERBOARD_SCREEN{"leaderboard"};
