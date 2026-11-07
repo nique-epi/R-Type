@@ -4,6 +4,8 @@ add_library(rtype_server_rules_players STATIC
   PlayerLives.cpp
   ScoreKeeper.cpp
   ShipInput.cpp
+  FavorTheShooter.cpp
+  FavorThePlayers.cpp
   ShooterViews.cpp
 )
 

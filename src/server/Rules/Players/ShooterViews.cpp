@@ -6,7 +6,9 @@
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "Entity.hpp"
+#include "EntityType.hpp"
 #include "MissileOwner.hpp"
+#include "NetworkIdentity.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
 #include "ViewDelay.hpp"
@@ -30,31 +32,55 @@ std::size_t ticksBehind(const ConnectedPlayer* player, std::uint32_t tick) {
   return tick - shown;
 }
 
-/** @brief A missile of a player and the ViewDelay it gets. */
-struct MissileView {
-  engine::Entity missile;
+/** @brief A missile or a ship of a player and the ViewDelay it gets. */
+struct EntityView {
+  engine::Entity entity;
   game::ViewDelay delay;
 };
+
+/** @brief Gives each entity of @p views its ViewDelay in @p components. */
+void addViews(engine::ComponentRegistry& components,
+              const std::vector<EntityView>& views) {
+  for (const EntityView& view : views) {
+    components.add(view.entity, view.delay);
+  }
+}
 
 }  // namespace
 
 void giveShooterViews(game::World& world, PlayerRoster& roster,
                       std::uint32_t tick) {
   engine::ComponentRegistry& components = world.components();
-  std::vector<MissileView> views;
+  std::vector<EntityView> views;
   components.forEach<game::MissileOwner, game::MissileOwner>(
       [&roster, &views, tick](engine::Entity missile,
                               const game::MissileOwner& owner,
                               const game::MissileOwner&) {
-        views.push_back(MissileView{
-            .missile = missile,
+        views.push_back(EntityView{
+            .entity = missile,
             .delay = game::ViewDelay{
                 .ticks = ticksBehind(roster.findByNumber(owner.playerNumber),
                                      tick)}});
       });
-  for (const MissileView& view : views) {
-    components.add(view.missile, view.delay);
-  }
+  addViews(components, views);
+}
+
+void giveShipViews(game::World& world, PlayerRoster& roster,
+                   std::uint32_t tick) {
+  engine::ComponentRegistry& components = world.components();
+  std::vector<EntityView> views;
+  components.forEach<game::EntityType, game::NetworkIdentity>(
+      [&roster, &views, tick](engine::Entity ship, const game::EntityType& side,
+                              const game::NetworkIdentity& identity) {
+        if (side == game::EntityType::Player) {
+          views.push_back(EntityView{
+              .entity = ship,
+              .delay = game::ViewDelay{
+                  .ticks = ticksBehind(roster.findByShip(identity.networkId),
+                                       tick)}});
+        }
+      });
+  addViews(components, views);
 }
 
 }  // namespace rtype::server

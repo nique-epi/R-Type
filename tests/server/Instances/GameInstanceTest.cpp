@@ -45,6 +45,7 @@
 #include "ServerTestConstants.hpp"
 #include "TimeConstants.hpp"
 #include "UnreliableNetwork.hpp"
+#include "ViewDelay.hpp"
 #include "WorldState.hpp"
 #include "game/ShipControl/ShipControlTestConstants.hpp"
 
@@ -1745,6 +1746,21 @@ TEST_F(GameInstanceMovementTest, RollsAShipOnADoublePressOfDown) {
   EXPECT_NEAR(arrival.y, expected.y, POSITION_TOLERANCE);
   EXPECT_GT(arrival.y, start.y + ROLL_DISTANCE);
   EXPECT_FLOAT_EQ(arrival.x, start.x);
+}
+
+/**
+ * Given a game in progress
+ * When a tick runs
+ * Then the ship of a player carries a ViewDelay: a game of players against
+ * the Bydos tests each ship where its player saw the enemies (FavorThePlayers)
+ */
+TEST_F(GameInstanceMovementTest, TestsEachShipWhereItsPlayerSawTheEnemies) {
+  startGame();
+
+  runTicks(1);
+
+  EXPECT_NE(world().shipComponentOf<game::ViewDelay>(shipIdOf(FIRST_PLAYER)),
+            nullptr);
 }
 
 /**

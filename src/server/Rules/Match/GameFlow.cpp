@@ -12,6 +12,7 @@
 #include "DamageRules.hpp"
 #include "EntityIdConstants.hpp"
 #include "EventBus.hpp"
+#include "FavorThePlayers.hpp"
 #include "GameContext.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameOutcome.hpp"
@@ -25,7 +26,6 @@
 #include "PlayerController.hpp"
 #include "PlayerLives.hpp"
 #include "PlayerRoster.hpp"
-#include "ShooterViews.hpp"
 #include "TimeConstants.hpp"
 #include "WaveSpawner.hpp"
 #include "WaveSpawnerParts.hpp"
@@ -92,14 +92,10 @@ std::optional<GameEnding> endingOf(PlayerRoster& roster, game::World& world,
 
 /**
  * @brief Makes the ship of every player who is away want nothing (see
- * silenceAwayShips), gives every missile of a player the view of its player at
- * tick @p tick (see giveShooterViews), then runs the systems of @p world for
- * one tick.
+ * silenceAwayShips), then runs the systems of @p world for one tick.
  */
-void runWorldSystems(GameContext& game, game::World& world,
-                     std::uint32_t tick) {
+void runWorldSystems(GameContext& game, game::World& world) {
   silenceAwayShips(world, game.roster.get());
-  giveShooterViews(world, game.roster.get(), tick);
   game.systems.get().run(world.components(), engine::SIMULATION_TICK_DURATION);
 }
 
@@ -118,6 +114,7 @@ GameFlow::GameFlow(GameContext& game, WorldSlot& world,
       worldSlot_(world),
       replication_(replication),
       startBarrier_(game.roster.get(), game.send),
+      hitArbitration_(std::make_unique<FavorThePlayers>()),
       logger_(std::string{INSTANCES_LOGGER_NAME}) {}
 
 void GameFlow::begin() { startNewWorld(); }
@@ -154,8 +151,8 @@ void GameFlow::advanceState() {
       }
       break;
     case GameState::InProgress:
-      ++tick_;
-      runWorldSystems(game_, world(), tick_);
+      hitArbitration_->giveViews(world(), game_.roster.get(), ++tick_);
+      runWorldSystems(game_, world());
       weaponSystem_->onTick();
       waveSpawner_->onTick();
       lifeKeeper_->onTick();
