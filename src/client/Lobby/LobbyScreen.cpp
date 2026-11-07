@@ -24,6 +24,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
+#include "IShipLookExchange.hpp"
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
 #include "InterfaceConstants.hpp"
@@ -38,6 +39,7 @@
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PilotColor.hpp"
+#include "PlayerLooks.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
@@ -199,6 +201,15 @@ LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot,
           .back = backChipArea()};
 }
 
+/** @returns The look @p looks shows on the player numbered @p number; nothing
+ * worn when it does not list that player. */
+ShipLook lookOf(std::span<const network::PlayerLook> looks,
+                std::uint8_t number) {
+  const auto found =
+      std::ranges::find(looks, number, &network::PlayerLook::playerNumber);
+  return found == looks.end() ? ShipLook{} : found->look;
+}
+
 }  // namespace
 
 LobbyScreen::LobbyScreen(LobbyScreenParts parts,
@@ -206,6 +217,7 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
     : navigator_(&parts.navigator.get()),
       connection_(&parts.connection.get()),
       waitingRoom_(&parts.waitingRoom.get()),
+      shipLooks_(&parts.shipLooks.get()),
       sounds_(&parts.sounds.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
@@ -297,6 +309,7 @@ void LobbyScreen::update(engine::Duration elapsed) {
     gameAsked_ = true;
     navigator_->replaceAll(GAME_SCREEN);
   }
+  shipLooks_->chooseLook(*look_);
   repaint();
 }
 
@@ -396,7 +409,9 @@ BayPilot LobbyScreen::pilotOf(const network::LobbyPlayer& player) const {
   return {.nickname = player.nickname,
           .readiness = readinessOf(player, requested),
           .isLocalPlayer = isLocalPlayer,
-          .look = isLocalPlayer ? *look_ : ShipLook{}};
+          .look = isLocalPlayer
+                      ? *look_
+                      : lookOf(shipLooks_->playerLooks(), player.playerNumber)};
 }
 
 }  // namespace rtype::client

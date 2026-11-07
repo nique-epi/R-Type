@@ -18,6 +18,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
+#include "RecordingShipLookExchange.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "RecordingWaitingRoom.hpp"
 #include "ScreenTestConstants.hpp"
@@ -37,6 +38,7 @@ LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place)
                                .sounds = sounds_,
                                .connection = connection_,
                                .waitingRoom = waitingRoom_,
+                               .shipLooks = shipLooks_,
                                .playfieldPointAt = samePlayfieldPoint,
                                .keys = settings_.keys,
                                .keyName = nameInTheFile,
@@ -75,6 +77,10 @@ RecordingServerConnection& LobbyScreenFixture::connection() {
 }
 
 RecordingWaitingRoom& LobbyScreenFixture::waitingRoom() { return waitingRoom_; }
+
+RecordingShipLookExchange& LobbyScreenFixture::shipLooks() {
+  return shipLooks_;
+}
 
 const InterfaceCanvasRecord& LobbyScreenFixture::canvas() const {
   return canvas_;

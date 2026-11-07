@@ -27,6 +27,7 @@
 #include "ServerSessionParts.hpp"
 #include "SessionEntityTypes.hpp"
 #include "SessionEntityTypesFixtures.hpp"
+#include "ShipLookExchange.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
 #include "WaitingRoom.hpp"
@@ -68,6 +69,8 @@ class ServerSessionFixture : public ::testing::Test {
   [[nodiscard]] ServerSession& session();
 
   [[nodiscard]] WaitingRoom& waitingRoom();
+
+  [[nodiscard]] ShipLookExchange& shipLooks();
 
   [[nodiscard]] const std::vector<network::OutgoingDatagram>& sent() const;
 
@@ -112,6 +115,7 @@ class ServerSessionFixture : public ::testing::Test {
   network::MessageDispatcher dispatcher_;
   GameLoadedReminder gameLoaded_;
   WaitingRoom waitingRoom_{dispatcher_, gameLoaded_};
+  ShipLookExchange shipLooks_{dispatcher_, waitingRoom_};
   EntityMessageQueue entityMessages_{dispatcher_, waitingRoom_, gameLoaded_};
   SimulatedClock clock_;
   RoundTripWatch roundTrips_{dispatcher_, clock_};
@@ -123,7 +127,8 @@ class ServerSessionFixture : public ::testing::Test {
       .gameLoaded = gameLoaded_,
       .entityTypes = entityTypes_,
       .content = content_,
-      .observers = {waitingRoom_, entityMessages_, gameLoaded_, roundTrips_}}};
+      .observers = {waitingRoom_, shipLooks_, entityMessages_, gameLoaded_,
+                    roundTrips_}}};
 };
 
 }  // namespace rtype::client::testing

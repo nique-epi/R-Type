@@ -11,6 +11,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
+#include "RecordingShipLookExchange.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "RecordingWaitingRoom.hpp"
 #include "ShipLook.hpp"
@@ -35,6 +36,7 @@ class LobbyScreenFixture : public ::testing::Test {
   [[nodiscard]] const RecordingNavigator& navigator() const;
   [[nodiscard]] RecordingServerConnection& connection();
   [[nodiscard]] RecordingWaitingRoom& waitingRoom();
+  [[nodiscard]] RecordingShipLookExchange& shipLooks();
   [[nodiscard]] const InterfaceCanvasRecord& canvas() const;
   [[nodiscard]] rtype::client::LobbyScreen& screen();
   /** @returns What the ship of the local player wears, as the settings
@@ -51,6 +53,7 @@ class LobbyScreenFixture : public ::testing::Test {
   RecordingNavigator navigator_;
   RecordingServerConnection connection_;
   RecordingWaitingRoom waitingRoom_;
+  RecordingShipLookExchange shipLooks_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
   rtype::client::PlayerSettings settings_;

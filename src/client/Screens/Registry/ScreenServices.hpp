@@ -18,6 +18,7 @@
 #include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
 #include "SettingsService.hpp"
+#include "ShipLookExchange.hpp"
 #include "WaitingRoom.hpp"
 
 namespace rtype::client {
@@ -45,6 +46,7 @@ struct ScreenServices {
   std::reference_wrapper<GameWindow> window;
   std::reference_wrapper<ServerSession> connection;
   std::reference_wrapper<WaitingRoom> waitingRoom;
+  std::reference_wrapper<ShipLookExchange> shipLooks;
   std::reference_wrapper<EntityMessageQueue> entityMessages;
   std::reference_wrapper<ServerLeaderboard> leaderboard;
   /** @brief The chat of the session, shown by the waiting room and the

@@ -31,6 +31,7 @@
 #include "ServerSession.hpp"
 #include "SettingValue.hpp"
 #include "SettingsService.hpp"
+#include "ShipLookExchange.hpp"
 #include "SilentAudioService.hpp"
 #include "SubscriptionHandle.hpp"
 #include "TimeConstants.hpp"
@@ -118,6 +119,7 @@ class ClientScreensModule final : public engine::IModule,
   GameWindow* window_{nullptr};
   ServerSession* connection_{nullptr};
   WaitingRoom* waitingRoom_{nullptr};
+  ShipLookExchange* shipLooks_{nullptr};
   EntityMessageQueue* entityMessages_{nullptr};
   ServerLeaderboard* leaderboard_{nullptr};
   ChatChannel* chat_{nullptr};
