@@ -290,6 +290,34 @@ First, the existing test that lists the modules. In `tests/server/Modules/GamePr
                 std::string{rtype::server::SUPERVISOR_LINK_MODULE_NAME}}));
 ```
 
+That list holds every optional module, so the test runs only in a build that has them all. Its first lines already skip it without the metrics; skip it without the tick report too, with `using rtype::engine::TICK_REPORT_MODULE_BUILT;` next to the `using` of the metrics:
+
+```cpp
+  if (!METRICS_MODULE_BUILT || !TICK_REPORT_MODULE_BUILT) {
+    GTEST_SKIP() << "the build leaves the metrics or the tick report out";
+  }
+```
+
+Then say what the option does, on the model of `ListsTheMetricsOnlyWhenTheyAreBuilt` in the same file: the module is listed exactly when the build has it. This test runs in both builds, so the `test` preset checks that the module is there and the `modules-off` preset that it is not:
+
+```cpp
+/**
+ * Given the modules of a game process, in a build with or without the tick
+ * report
+ * When they are listed
+ * Then the tick report is among them exactly when the build compiled it
+ */
+TEST_F(GameProcessModulesFixture, ListsTheTickReportOnlyWhenItIsBuilt) {
+  const auto modules = gameProcessModules(launchOptions(), stopRequest());
+
+  const bool listed =
+      std::ranges::find(modules, rtype::server::TICK_REPORT_MODULE_NAME,
+                        &rtype::engine::IModule::name) != modules.end();
+
+  EXPECT_EQ(listed, TICK_REPORT_MODULE_BUILT);
+}
+```
+
 Then the tests of the module. A `…Test.cpp` holds only its tests: its constants and its fixture are files of their own, as in `tests/server/Lobby/` (`ServerLobbyFixture.{hpp,cpp}` and `ServerLobbyModuleTest.cpp`). A module is tested inside a real `Application`, with the modules it depends on; `ServerModuleFixture` gives the logger options that write to a journal of the test only.
 
 `tests/server/TickReport/ServerTickReportModuleTestConstants.hpp`:
