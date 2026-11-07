@@ -77,6 +77,17 @@ constexpr const char* ADDRESS_LABEL = "ADDRESS";
 constexpr const char* ADDRESS_KEY_NAME = "D";
 constexpr sf::Keyboard::Key ADDRESS_KEY = sf::Keyboard::Key::D;
 
+/** @brief The hangar star: where it stands on the whole map, close to the
+ * planet, where no server stands (servers start past the reach of the planet
+ * and its ring, 120 pixels from its centre); its size; its name; its bubble;
+ * and the key that opens the hangar from the map. */
+constexpr sf::Vector2i HANGAR_STAR_POINT{84, 64};
+constexpr int HANGAR_STAR_RADIUS = 3;
+constexpr const char* HANGAR_STAR_NAME = "HANGAR";
+constexpr const char* HANGAR_STAR_DETAIL = "LOCKER AND SHIP";
+constexpr const char* HANGAR_STAR_HINT = "CLICK OR G: OPEN";
+constexpr sf::Keyboard::Key MAP_HANGAR_KEY = sf::Keyboard::Key::G;
+
 /** @brief The panel of the games of a server, over the map dimmed: its area,
  * its title, the count of its games, its rule, its columns, its rows, and the
  * line under them that says what ENTER does. */

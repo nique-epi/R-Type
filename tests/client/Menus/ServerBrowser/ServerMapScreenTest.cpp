@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "HangarScreenIdConstants.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -15,9 +16,12 @@
 
 using rtype::client::CONNECTION_SCREEN;
 using rtype::client::CONNECTION_TO_CHOSEN_SERVER_SCREEN;
+using rtype::client::HANGAR_SCREEN;
 using rtype::client::LEADERBOARD_SCREEN;
 using rtype::client::ServerListPhase;
 using rtype::client::ServerListSnapshot;
+using rtype::client::testing::HANGAR_STAR_HINT_LINE;
+using rtype::client::testing::HANGAR_STAR_ON_THE_MAP;
 using rtype::client::testing::LYON_SERVER_ADDRESS;
 using rtype::client::testing::LYON_SERVER_ID;
 using rtype::client::testing::lyonGames;
@@ -294,4 +298,48 @@ TEST_F(ServerMapScreenFixture, EnterWithoutAServerDoesNothing) {
 
   EXPECT_TRUE(games().asked().empty());
   EXPECT_TRUE(navigator().calls().empty());
+}
+
+/**
+ * Given a master that did not answer, so no server stands on the map
+ * When the hangar star is clicked
+ * Then the hangar opens over the map: it needs no server
+ */
+TEST_F(ServerMapScreenFixture, ClickingTheHangarStarOpensTheHangar) {
+  openOn(ServerListSnapshot{.phase = ServerListPhase::MasterUnreachable,
+                            .servers = {}});
+
+  pointAt(HANGAR_STAR_ON_THE_MAP, true);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = HANGAR_SCREEN}));
+}
+
+/**
+ * Given the map
+ * When G is pressed and released
+ * Then the hangar opens over it
+ */
+TEST_F(ServerMapScreenFixture, GOpensTheHangar) {
+  openOn(readyList());
+
+  press(sf::Keyboard::Key::G);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = HANGAR_SCREEN}));
+}
+
+/**
+ * Given the map
+ * When the pointer moves over the hangar star
+ * Then its bubble tells how to open it
+ */
+TEST_F(ServerMapScreenFixture, TheHangarStarShowsItsBubbleUnderThePointer) {
+  openOn(readyList());
+
+  pointAt(HANGAR_STAR_ON_THE_MAP, false);
+
+  EXPECT_NE(writingOf(painting(), HANGAR_STAR_HINT_LINE), nullptr);
 }

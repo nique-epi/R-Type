@@ -38,6 +38,7 @@ namespace rtype::client {
  * since the protocol names no game yet. The chips: QUICK PLAY joins the
  * server of this version with the lowest ping, RANKING opens the leaderboard,
  * ADDRESS the connection form, BACK goes one stage back, then closes the map.
+ * The hangar star of the whole map, or MAP_HANGAR_KEY, pushes HANGAR_SCREEN.
  *
  * The list is read when the map opens, again every
  * SERVER_LIST_REFRESH_INTERVAL and on REFRESH_KEY. A key that changes the map
@@ -101,6 +102,9 @@ class ServerMapScreen : public IScreen {
   /** @brief Whether the whole map shows the corners and the bubble of the
    * chosen server: the pointer is over it, or an arrow or Tab chose it. */
   bool chosenShown_{false};
+  /** @brief Whether the pointer is over the hangar star: its corners and its
+   * bubble show, and the chosen server shows none. */
+  bool hangarShown_{false};
 };
 
 }  // namespace rtype::client
