@@ -17,7 +17,6 @@ using testing::CHAT_INTERVAL;
 using testing::ChatChannelFixture;
 using testing::COPIES_BEFORE_GIVING_UP;
 using ::testing::Each;
-using ::testing::ElementsAre;
 using ::testing::Field;
 using testing::FILLER_LETTER;
 using testing::FIRST_LINE;
@@ -58,9 +57,10 @@ TEST_F(ChatChannelFixture, ALineLeavesAtOnceAsLineOne) {
 
   EXPECT_TRUE(chat().send(FIRST_TEXT));
 
-  EXPECT_THAT(sentLines(),
-              ElementsAre(network::ChatLine{.lineNumber = FIRST_LINE,
-                                            .text = std::string{FIRST_TEXT}}));
+  ASSERT_EQ(sentLines().size(), 1U);
+  EXPECT_EQ(sentLines().front(),
+            (network::ChatLine{.lineNumber = FIRST_LINE,
+                               .text = std::string{FIRST_TEXT}}));
 }
 
 /**
@@ -165,11 +165,12 @@ TEST_F(ChatChannelFixture, ARelayedLineIsNamedByTheWaitingRoom) {
 
   relayLine(NOVA_LINE, SECOND_TEXT, NOVA_NUMBER);
 
-  EXPECT_THAT(chat().entries(),
-              ElementsAre(ChatEntry{.playerNumber = NOVA_NUMBER,
-                                    .nickname = std::string{NOVA},
-                                    .text = std::string{SECOND_TEXT},
-                                    .age = {}}));
+  ASSERT_EQ(chat().entries().size(), 1U);
+  EXPECT_EQ(chat().entries().front(),
+            (ChatEntry{.playerNumber = NOVA_NUMBER,
+                       .nickname = std::string{NOVA},
+                       .text = std::string{SECOND_TEXT},
+                       .age = {}}));
 }
 
 /**

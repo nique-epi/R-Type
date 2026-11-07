@@ -24,8 +24,8 @@ namespace {
 /** @returns An empty field that takes a line of chat, at most
  * MAXIMUM_CHAT_TEXT_SIZE bytes of printable characters. */
 TextField emptyDraft() {
-  return TextField("", network::MAXIMUM_CHAT_TEXT_SIZE,
-                   TextField::Characters::Printable);
+  return {"", network::MAXIMUM_CHAT_TEXT_SIZE,
+          TextField::Characters::Printable};
 }
 
 /** @returns The key @p event presses when it falls to BoundAction::OpenChat,
@@ -76,7 +76,7 @@ bool ChatWindow::isShown() const {
   }
   return settings_->chatShown &&
          std::ranges::any_of(channel_->entries(),
-                             [this](const ChatEntry& entry) {
+                             [this](const ChatEntry& entry) noexcept {
                                return isShownClosed(entry, *settings_);
                              });
 }

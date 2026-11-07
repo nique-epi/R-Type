@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "AssetLibrary.hpp"
+#include "ChatChannel.hpp"
 #include "ClientScreens.hpp"
 #include "ConfigurationRegistry.hpp"
 #include "Endpoint.hpp"

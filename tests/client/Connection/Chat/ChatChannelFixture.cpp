@@ -6,6 +6,7 @@
 #include "ChatChannel.hpp"
 #include "ChatLine.hpp"
 #include "ConnectionAccepted.hpp"
+#include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
 #include "IncomingDatagram.hpp"
 #include "OutgoingDatagram.hpp"
