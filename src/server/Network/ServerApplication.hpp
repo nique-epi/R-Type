@@ -132,6 +132,12 @@ class ServerApplication final : public IDatagramSender,
    */
   [[nodiscard]] network::TrafficCounters& traffic();
 
+  /**
+   * @returns The datagrams the network thread rejected, by cause and by
+   * sender. Safe from any thread; it lives as long as this object.
+   */
+  [[nodiscard]] RejectionLedger& rejections();
+
  private:
   void simulateTick();
 

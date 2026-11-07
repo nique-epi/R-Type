@@ -1,10 +1,12 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <cstddef>
 #include <string>
 #include <string_view>
 #include <vector>
 #include "BuiltModuleConstants.hpp"
 #include "CreatedServer.hpp"
+#include "IModule.hpp"
 #include "LaunchOptions.hpp"
 #include "ModuleConstants.hpp"
 #include "ServerConstants.hpp"
@@ -18,6 +20,7 @@
 #include "SupervisorModulesTestConstants.hpp"
 #include "SupervisorWithMasterFixture.hpp"
 
+using rtype::engine::ADMIN_CONSOLE_MODULE_BUILT;
 using rtype::engine::MASTER_LINK_MODULE_BUILT;
 using rtype::server::LaunchOptions;
 using rtype::server::STATE_RATE_OPTION;
@@ -27,15 +30,16 @@ using rtype::server::supervisorModules;
 
 /**
  * Given the launch options of a supervisor with no argument, in a build that
- * compiled the master link
+ * compiled the master link and the console
  * When its modules are listed
  * Then they are the journal, the network, the supervised games, the lobby
  * that sends the players to them, then the information and the master, which
- * read what the supervised games publish, in the order they start
+ * read what the supervised games publish, then the console, in the order
+ * they start
  */
 TEST(SupervisorModules, ListsTheModulesOfTheSupervisor) {
-  if (!MASTER_LINK_MODULE_BUILT) {
-    GTEST_SKIP() << "the build leaves the master link out";
+  if (!MASTER_LINK_MODULE_BUILT || !ADMIN_CONSOLE_MODULE_BUILT) {
+    GTEST_SKIP() << "the build leaves the master link or the console out";
   }
   StopRequest stopRequest;
   const LaunchOptions options =
@@ -55,7 +59,26 @@ TEST(SupervisorModules, ListsTheModulesOfTheSupervisor) {
                        std::string{rtype::server::SUPERVISED_GAMES_MODULE_NAME},
                        std::string{rtype::server::SUPERVISOR_LOBBY_MODULE_NAME},
                        std::string{rtype::server::INFORMATION_MODULE_NAME},
-                       std::string{rtype::server::MASTER_MODULE_NAME}}));
+                       std::string{rtype::server::MASTER_MODULE_NAME},
+                       std::string{rtype::server::ADMIN_CONSOLE_MODULE_NAME}}));
+}
+
+/**
+ * Given the launch options of a supervisor, in a build with or without the
+ * console
+ * When its modules are listed
+ * Then the console is among them exactly when the build compiled it
+ */
+TEST(SupervisorModules, ListsTheConsoleOnlyWhenItIsBuilt) {
+  StopRequest stopRequest;
+  const auto modules = supervisorModules(
+      LaunchOptions::read(std::vector<std::string_view>{}), stopRequest, {});
+
+  const bool listed =
+      std::ranges::find(modules, rtype::server::ADMIN_CONSOLE_MODULE_NAME,
+                        &rtype::engine::IModule::name) != modules.end();
+
+  EXPECT_EQ(listed, ADMIN_CONSOLE_MODULE_BUILT);
 }
 
 /**

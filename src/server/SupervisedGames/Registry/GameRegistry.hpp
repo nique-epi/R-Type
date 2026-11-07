@@ -86,6 +86,9 @@ class GameRegistry {
 
   [[nodiscard]] std::span<const SupervisedGame> all() const;
 
+  /** @returns The game in @p slot, nullptr when no game holds it. */
+  [[nodiscard]] const SupervisedGame* findBySlot(std::uint16_t slot) const;
+
   /** @returns A number that changes whenever what the master and the
    * information requests are told may have changed: a game opened, a game
    * that left, a status taken. The seats held and the time a game waited do

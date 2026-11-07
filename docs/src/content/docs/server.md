@@ -34,6 +34,7 @@ A game process and the supervisor each run on the threads below. Only the networ
 | Simulation | Started by `ServerApplication::run()`. Runs `SIMULATION_TICKS_PER_SECOND` (60) ticks per second, and in them every module and every game | `src/server/Network/` |
 | Content pack | In the supervisor only. Started by `ServerContentModule::start()`: the `HttpServer` listens on a thread of its own and answers the downloads of the content pack on the threads of cpp-httplib (see [Content pack](#content-pack-servercontentmodule-contentpackdesk)) | `src/server/Content/`, `src/network/Http/` |
 | MasterLink | In the supervisor only. Started by `ServerMasterModule::start()` when `master-url` and `master-key` are set. Runs the `HeartbeatJob`: registers the supervisor with the master and sends its heartbeats, reading only `LatestHostedGames` and `LatestServerMeasures`, which the supervised games module publishes (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
+| AdminConsole | In the supervisor only. Started by `ServerAdminConsoleModule::start()`: reads the standard input and hands each line to the simulation thread, which runs it (see [Administration console](#administration-console-serveradminconsolemodule)) | `src/server/AdminConsole/` |
 | Signals | Started by `StopSignals`, on Linux and macOS. Waits for Ctrl-C or SIGTERM and asks for the stop; on Windows, the system runs the handler on a thread of its own | `src/server/Platform/` |
 
 The path of a datagram through the network thread and the simulation thread:
@@ -117,7 +118,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Timer resolution on Windows | Available | `src/server/Platform/` |
 | The server assembled from modules (logger, network, storage, games, lobby, information, metrics, master), stopped on Ctrl-C or SIGTERM with a `Disconnection` to every player | Available | `src/server/Modules/`, `src/server/Platform/` |
 | Sorting the datagrams before the queues, session token checked, rate limit per address and port with temporary bans | Available | `src/server/Network/` |
-| Rejected datagrams counted by cause and by sender, reported in the journal every 10 s | Available for the datagrams the network thread rejects; no console reads it yet | `src/server/Network/Rejections/` |
+| Rejected datagrams counted by cause and by sender, reported in the journal every 10 s | Available for the datagrams the network thread rejects; the `network` command of the [administration console](#administration-console-serveradminconsolemodule) reads the count since the start | `src/server/Network/Rejections/` |
 | World state sent to the players of a game, at a rate set at launch (`--state-rate`) | Available | `src/server/Replication/Announcements/Streams/`, `src/server/Rules/Match/` |
 | Every player's input applied after the same delay, set at launch (`--input-delay`) | Available | `src/server/Instances/` |
 | One header for every datagram to a player: session token and next sequence | Available | `src/server/Sessions/Roster/` |
@@ -138,6 +139,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Text chat in the waiting room and during a match (`ChatLine`, `PlayerChatLine`), one line a second per player, 127 bytes at most | Available on the server; the client sends and shows none yet | `src/server/Chat/` |
 | Game statistics: a CSV row per Bydo killed and the total of each game, written by a plugin | Available, loaded by `plugin game-statistics` | `src/server/GameStatistics/` |
 | Master mode: `--mode master` runs the master instead of the supervisor | Available (see [Master](/R-Type/master/)) | `src/server/LaunchOptions/`, `src/master/` |
+| Administration console of the supervisor: the games and their pilots, closing a game, the traffic, the rejected datagrams and the measures of the games | Available; expelling and banning a player not written yet | `src/server/AdminConsole/` |
 | Master link: registration and heartbeats | Available, from the supervisor, one registration for all its games; admin orders, bans and results not yet written (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
 | Components (`Position`, `SteadyMotion`, `CollisionBox`, `Health`, `EntityType`, `EntityTypeNumber`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Entity sheets: every entity made from the sheet of its type, the sheets read at launch | Available: the ship, the Drifter, the Weaver and the two missiles (see [Writing an entity sheet](/R-Type/entity-sheets/)) | `assets/entities/`, `src/game/EntityTypes/`, `src/game/World.cpp` |
@@ -289,7 +291,7 @@ rejected datagrams from 2 more senders in the last 10 s, besides 1 forgotten to 
 - A queue only knows the sender of the datagram that made room: the one it discards is an older one, whose sender may be another. In a flood, the sender that pushes is almost always the one that floods.
 - The address and port are written as they are, so a tool that reads the journal, fail2ban for instance, can match the lines of one address.
 - The ledger is safe from any thread: the sorter records on the network thread and the reporter reads on the simulation thread, each under one lock, held to count one datagram or to copy the report.
-- Not counted: a datagram larger than `MAX_DATAGRAM_SIZE` (1200 bytes), which the socket drops before the sorter; a connection request the `ConnectionAcceptor` cannot read or refuses; a message of a player the game cannot read or has no handler for; a datagram whose sequence is not newer than the newest one read. Each of them keeps its own line at the `debug` level. An administration console that reads the ledger is not written yet.
+- Not counted: a datagram larger than `MAX_DATAGRAM_SIZE` (1200 bytes), which the socket drops before the sorter; a connection request the `ConnectionAcceptor` cannot read or refuses; a message of a player the game cannot read or has no handler for; a datagram whose sequence is not newer than the newest one read. Each of them keeps its own line at the `debug` level. The `network` command of the [administration console](#administration-console-serveradminconsolemodule) reads the count since the start with `rejectedSinceStart()`, which resets nothing.
 
 ### Flood protection
 
@@ -354,7 +356,7 @@ module lobby off
 | Module | Does | Where |
 |---|---|---|
 | `logger` | applies the logging options when it starts, logs "server starting" and "server stopped"; provides the journal as an `ILogJournal`, so a plugin logs where the lines of the game go | `src/server/Logger/` |
-| `network` | declares the `port` setting; owns the `ServerApplication`: binds the socket and runs it on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission`, `TickDatagrams` (the datagrams of the tick), `IListeningPort` (the port of the `port` setting) and `network::TrafficCounters` | `src/server/Network/` |
+| `network` | declares the `port` setting; owns the `ServerApplication`: binds the socket and runs it on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission`, `TickDatagrams` (the datagrams of the tick), `IListeningPort` (the port of the `port` setting), `network::TrafficCounters` and the `RejectionLedger` | `src/server/Network/` |
 | `storage` | declares the `database` setting; opens the SQLite file and starts the thread that owns it when it starts, finishes what waits and closes the file when it stops; provides `IResultsArchive` | `src/server/Storage/` |
 | `games` | declares the `seed`, `state-rate`, `state-encoding` and `input-delay` settings; the one game of the process and its `EventBus`; reads the waves file when it starts and judges whether its game is vanilla; provides `RunningGame` and `IGameEvents` (the bus of the game, for a module listed after it or a plugin) | `src/server/Games/` |
 | `lobby` | one `ConnectionAcceptor`, built on the roster of the game; reads the content of the assets folder when it installs, which every acceptance announces with the port of the supervisor | `src/server/Lobby/` |
@@ -374,10 +376,11 @@ A plugin joins the end of that list when a `plugin` line of its file loads it, a
 | `supervisor lobby` | answers the connection requests: sends each player to a game, or starts one | `src/server/SupervisorLobby/` |
 | `information` | declares the `server-name` setting; answers the information requests with what `IServerOccupancy` counts; provides `IServerName` | `src/server/Information/` |
 | `master` | declares the `master-url`, `master-key` and `public-address` settings, and registers the name `IServerName` gives; keeps the master told of the games on a thread of its own, MasterLink, when both a url and a key are set | `src/server/Master/` |
+| `admin console` | registers `games`, `players`, `close-game`, `network` and `help` in the interpreter; reads the terminal on a thread of its own, AdminConsole, from its start to its stop, and runs the lines typed at each tick (see [Administration console](#administration-console-serveradminconsolemodule)) | `src/server/AdminConsole/` |
 
 The supervisor loads no plugin: a `plugin` line goes to its games (see [Configuration](#configuration-servercfg)).
 
-Each tick runs the stages of `SERVER_LOOP_STAGES` once, with `SIMULATION_TICK_DURATION`. In a game process, in `simulation`, the games module runs `onTick()` on its game with the datagrams of its own players (`keepDatagramsOf()`) and makes the network forget the players whose session closed, then the lobby module answers the connection requests, so a request is refused by the state the game just reached, then the supervisor link reads the datagrams of the supervisor and sends its status. In `outputs`, the bus of the game delivers its events, and the guaranteed messages among them leave at once (see [Guaranteed messages](#guaranteed-messages-messagedelivery)). Only the metrics module works in `inputs`, where it starts measuring the tick, since `onTick()` reads the datagrams and moves the game in one step; it ends its measure in `outputs`, after the games module. In the supervisor, every module works in `simulation`: the supervised games read the statuses and the exits of the games, then the lobby answers the connection requests and the information module the information requests, by the state the games just reported.
+Each tick runs the stages of `SERVER_LOOP_STAGES` once, with `SIMULATION_TICK_DURATION`. In a game process, in `simulation`, the games module runs `onTick()` on its game with the datagrams of its own players (`keepDatagramsOf()`) and makes the network forget the players whose session closed, then the lobby module answers the connection requests, so a request is refused by the state the game just reached, then the supervisor link reads the datagrams of the supervisor and sends its status. In `outputs`, the bus of the game delivers its events, and the guaranteed messages among them leave at once (see [Guaranteed messages](#guaranteed-messages-messagedelivery)). Only the metrics module works in `inputs`, where it starts measuring the tick, since `onTick()` reads the datagrams and moves the game in one step; it ends its measure in `outputs`, after the games module. In the supervisor, every module works in `simulation`: the supervised games read the statuses and the exits of the games, then the lobby answers the connection requests and the information module the information requests, by the state the games just reported, and last the console runs the lines typed since the previous tick.
 
 ### Several games at once
 
@@ -451,6 +454,31 @@ Stopping the supervisor with Ctrl-C or SIGTERM sends each game a `Disconnection`
 | macOS | nothing at the system level; the silence limit above ends it within 5 s |
 
 On Linux the "parent" is the thread that started the child, so the supervisor starts every game from its simulation thread, which lives as long as it does. Processes are started through `IProcessLauncher` (`src/server/Processes/`), implemented with Boost.Process v2 and polled at each tick, never waited for, so the supervisor has no thread more.
+
+### Administration console: `ServerAdminConsoleModule`
+
+The supervisor reads commands from the terminal it was started in. The `admin console` module (`src/server/AdminConsole/`) registers five commands in the interpreter of the supervisor, the one `server.cfg` is read with, so a line does the same typed in the terminal or written in `server.cfg`:
+
+| Command | Answer |
+|---|---|
+| `games` | one line per game: its place, its number, its state, its pilots, its port, then the 95th percentile of its tick and its mean round trip once its status gave them; `no game runs` without a game |
+| `players` | the nicknames of the pilots of each game, by place |
+| `close-game <place>` | sends the game in that place the order the supervisor sends its games when it stops, `FAREWELL_COPIES` (3) copies of a `Disconnection` under its link token; the game tells its pilots and ends, and `games` lists it until its process ended. Refused when no game holds the place |
+| `network` | what crossed the socket of the supervisor since the module installed, the datagrams the network thread rejected since the start (`RejectionLedger::rejectedSinceStart()`, which takes nothing from the report of the journal), then the measures of the games the heartbeats carry to the master |
+| `help` | one line per command of the supervisor, with its arguments |
+
+The answers go to the standard output and the journal to the standard error, so the two never mix when the journal is redirected. A refused line is answered with the reason the interpreter gives, `unknown command 'gmaes' in line 'gmaes'` for instance.
+
+The commands read the registry of the games, which only the simulation thread touches, so the thread `AdminConsole` (`ConsoleReader`) only reads: it hands each line to the simulation thread through a `BoundedQueue` of `CONSOLE_LINE_CAPACITY` (64) lines, and the module runs them at the next tick, in their order. A `\r` before the end of a line is removed, and a line longer than `MAXIMUM_CONSOLE_LINE_LENGTH` (1024 bytes) is dropped whole, never cut. The stop wakes the read: on Linux and macOS, `select()` waits on the input and on a pipe the stop writes to (`poll()` does not work on a terminal under macOS); on Windows, the stop cancels `ReadFile()` with `CancelSynchronousIo()`, a file the Windows job of the CI only checks.
+
+| Situation | The console |
+|---|---|
+| No terminal (`< /dev/null`, a service, the CI) | runs the last line, writes `the console input ended` in the journal and reads nothing more; the server goes on |
+| The supervisor runs in the background of a shell (`&`) | is not suspended: `SIGTTIN` is ignored during a read, so the read fails and is tried again every `CONSOLE_BACKGROUND_WAIT` (500 ms), until `fg` |
+| `module "admin console" off` in `server.cfg` | is never installed: no thread, and its commands are unknown |
+| The build sets `RTYPE_MODULE_ADMIN_CONSOLE` off | is not compiled, and the supervisor lists no such module |
+
+Expelling and banning a player are not written yet. A game process that no longer reads its datagrams does not stop on `close-game`, and stays in `games`.
 
 ### Stopping: Ctrl-C and SIGTERM
 
