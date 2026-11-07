@@ -102,7 +102,7 @@ export const getServerNames = cache(async (): Promise<string[]> => {
 });
 
 /** Everything the page of one server shows. */
-type ServerSheet = {
+export type ServerSheet = {
   source: ServerSource;
   /** The server; nothing while it is created and has not registered yet. */
   server: MapServer | null;

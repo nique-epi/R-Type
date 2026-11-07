@@ -109,7 +109,7 @@ The web site is a program of its own: a Next.js server, in `web/` (see [Web site
 
 ### The components of the site
 
-`web/src/components/` holds every component the design of the site needs: the home page, the downloads, the sector map, a server, hosting, the leaderboard, the wiki and the team. A component takes its data and its words as props and never calls the master, so a page reads the API, then hands the answer down.
+`web/src/components/` holds every component the design of the site needs: the home page, the downloads, the sector map, a server, hosting, the leaderboard, the wiki and the team. A component takes its data and its words as props and never calls the master, so a block reads the API, then hands the answer down.
 
 | Folder | Holds |
 |---|---|
@@ -117,6 +117,7 @@ The web site is a program of its own: a Next.js server, in `web/` (see [Web site
 | `motion/`, `sky/`, `sprites/` | the animations, the star layers and the planet, and `Sprite`, which draws one frame of a sheet of `web/public/sprites/` at a whole scale |
 | `layout/`, `game/` | the header, the menu, the footer and the hero of a page; a game screen of 960 × 540, which scales to the width it is given, with its frames and chips |
 | `home/`, `download/`, `servers/`, `ranking/`, `wiki/`, `team/` | the sections of each page, such as `SectorMap` and `RankingScreen` |
+| `blocks/` | the bigger pieces a page is made of, built from the ones above: a block reads its own words (`getDictionary()`) and its own data (`web/src/hooks/api/`), so a page calls it with a language and nothing else; one folder per page (`blocks/home/`, `blocks/servers/`…), and `blocks/shell/` for what every page sits in |
 
 - **Every animation goes through `useMotion()`** (`web/src/hooks/`), which runs nothing when the system asks for reduced motion, so the page then shows each element in its final place. `SmoothScroll` drives Lenis from the ticker of GSAP, so ScrollTrigger reads the scroll the page draws.
 - **The words come from a dictionary**, French or English (`web/src/i18n/dictionaries/`), given by `getDictionary(locale)`. Each component names the words it needs in a label type, and `Dictionary` gathers them, so a word missing from a language fails the type check. A template holds `{name}` holes, filled by `format()`, or by `formatNodes()` when a word is set in bold.
@@ -339,7 +340,7 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change how often a game server beats | `MASTER_HEARTBEAT_INTERVAL` in `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master also reads to tell a silent server |
 | Change the size of a page of a list | `MINIMUM_PAGE_SIZE`, `DEFAULT_PAGE_SIZE` and `MAXIMUM_PAGE_SIZE` in `src/network/Master/Routes/MasterRouteConstants.hpp` |
 | Call the master from the game server | `MasterClient` (`src/network/Master/Client/`) |
-| Add a page to the web site | `web/src/app/[lang]/`, its calls to the API in `web/src/lib/api/`, its sections in `web/src/components/`, its words in `web/src/i18n/dictionaries/` |
+| Add a page to the web site | `web/src/app/[lang]/` for its path, its title and its language, then a block in `web/src/components/blocks/` that builds it; its calls to the API in `web/src/lib/api/`, its words in `web/src/i18n/dictionaries/` |
 | Change a color, a face or a size of the site | the tokens of `web/src/styles/globals.css` |
 | Add or change a word of the site | its label type in the component, then both `web/src/i18n/dictionaries/` |
 | Change what the games of a server are listed as | `listedStateOf()` in `ServersService.cpp` (`src/master/Servers/Services/`) and `GameListing` (`src/network/Master/Messages/`) |
