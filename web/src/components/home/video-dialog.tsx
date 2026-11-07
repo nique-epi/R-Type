@@ -46,7 +46,7 @@ export function VideoDialog({
       open={open}
       onClose={onClose}
       aria-label={title}
-      className="inset-0 grid size-full place-items-center p-6 backdrop:bg-sky/92"
+      className="inset-0 size-full place-items-center p-6 backdrop:bg-sky/92 open:grid"
     >
       <div
         ref={screen}
