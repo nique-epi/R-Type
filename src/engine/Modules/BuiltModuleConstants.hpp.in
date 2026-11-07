@@ -17,6 +17,8 @@
 #cmakedefine01 RTYPE_MODULE_METRICS
 #cmakedefine01 RTYPE_MODULE_MASTER_LINK
 #cmakedefine01 RTYPE_MODULE_CHAT
+#cmakedefine01 RTYPE_MODULE_PLUGINS
+#cmakedefine01 RTYPE_MODULE_GAME_STATISTICS
 
 namespace rtype::engine {
 
@@ -30,5 +32,11 @@ constexpr bool METRICS_MODULE_BUILT = RTYPE_MODULE_METRICS == 1;
 constexpr bool MASTER_LINK_MODULE_BUILT = RTYPE_MODULE_MASTER_LINK == 1;
 /** @brief Whether each game holds its `chat` module. */
 constexpr bool CHAT_MODULE_BUILT = RTYPE_MODULE_CHAT == 1;
+/** @brief Whether an Application runs the `plugin` and `plugin-folder` lines
+ * and loads the shared libraries they name. */
+constexpr bool PLUGINS_BUILT = RTYPE_MODULE_PLUGINS == 1;
+/** @brief Whether the build writes the `game-statistics` plugin next to the
+ * programs. */
+constexpr bool GAME_STATISTICS_MODULE_BUILT = RTYPE_MODULE_GAME_STATISTICS == 1;
 
 }  // namespace rtype::engine

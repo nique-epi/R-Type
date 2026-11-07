@@ -3,6 +3,7 @@
 #include "CommandLine.hpp"
 #include "GameLineRule.hpp"
 #include "GameLineRuleTestConstants.hpp"
+#include "ServerModuleTestConstants.hpp"
 #include "ServerRoleConstants.hpp"
 
 using rtype::engine::splitCommandLine;

@@ -1,3 +1,7 @@
+if(NOT RTYPE_MODULE_PLUGINS)
+  return()
+endif()
+
 if(WIN32)
   set(RTYPE_SHARED_LIBRARY_SOURCE SharedLibraryWindows.cpp)
 else()

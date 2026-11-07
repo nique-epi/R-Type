@@ -1,3 +1,7 @@
+if(NOT RTYPE_MODULE_PLUGINS)
+  return()
+endif()
+
 # The plugins the tests load: shared libraries built next to the test
 # executable, in plugins/. Each links the static libraries of the engine it
 # uses, as a plugin of the server does.
@@ -24,4 +28,5 @@ add_dependencies(engine_tests rtype_test_plugin_probe rtype_test_plugin_greeter 
 
 # The tests read where the plugins are and which test file names them.
 target_sources(engine_tests PRIVATE PluginFiles.cpp)
+target_compile_definitions(engine_tests PRIVATE RTYPE_TEST_PLUGIN_FOLDER="$<TARGET_FILE_DIR:rtype_test_plugin_probe>")
 target_include_directories(engine_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

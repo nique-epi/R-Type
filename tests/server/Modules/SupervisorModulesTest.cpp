@@ -6,12 +6,12 @@
 #include <string_view>
 #include <vector>
 #include "BuiltModuleConstants.hpp"
-#include "GameStatisticsFixtures.hpp"
 #include "IModule.hpp"
 #include "LaunchOptions.hpp"
 #include "ModuleConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerInformation.hpp"
+#include "ServerModuleTestConstants.hpp"
 #include "ServerRoleConstants.hpp"
 #include "StopRequest.hpp"
 #include "SupervisorModules.hpp"
@@ -101,13 +101,15 @@ TEST(SupervisorModules, TheRuleKnowsEveryModuleOfTheSupervisor) {
  * Then it starts, refuses no line, and keeps both plugin lines for its games
  */
 TEST_F(SupervisorModulesFixture, LeavesThePluginLinesToItsGames) {
-  writeConfiguration(gameStatisticsPluginLines());
+  const std::vector<std::string> pluginLines{std::string{PLUGIN_FOLDER_LINE},
+                                             std::string{PLUGIN_LINE}};
+  writeConfiguration(pluginLines);
   const auto application = supervisor({});
 
   EXPECT_NO_THROW(application->start());
 
   EXPECT_TRUE(report().refusals.empty());
-  EXPECT_EQ(report().handedOverLines, gameStatisticsPluginLines());
+  EXPECT_EQ(report().handedOverLines, pluginLines);
   application->stop();
 }
 
@@ -119,7 +121,8 @@ TEST_F(SupervisorModulesFixture, LeavesThePluginLinesToItsGames) {
  * first, in their order, and nothing else
  */
 TEST_F(SupervisorModulesFixture, WritesTheGameLinesForItsGames) {
-  std::vector<std::string> lines = gameStatisticsPluginLines();
+  std::vector<std::string> lines{std::string{PLUGIN_FOLDER_LINE},
+                                 std::string{PLUGIN_LINE}};
   lines.emplace_back(LOBBY_OFF_LINE);
   lines.emplace_back(SEED_SEVEN_LINE);
   writeConfiguration(lines);

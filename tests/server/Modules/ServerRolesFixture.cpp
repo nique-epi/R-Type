@@ -16,7 +16,6 @@
 #include "CommandResult.hpp"
 #include "GameLaunchOptions.hpp"
 #include "GameProcessModules.hpp"
-#include "GameStatisticsFixtures.hpp"
 #include "IModule.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"
@@ -28,6 +27,9 @@
 #include "SettingCommandConstants.hpp"
 #include "StartRefusedException.hpp"
 #include "SupervisorModules.hpp"
+#if RTYPE_MODULE_GAME_STATISTICS
+#include "GameStatisticsFixtures.hpp"
+#endif
 
 ServerRolesFixture::ServerRolesFixture()
     : journalText_(journal().path().string()) {}
@@ -43,7 +45,11 @@ std::set<std::string> ServerRolesFixture::supervisorSettings() {
 }
 
 std::set<std::string> ServerRolesFixture::gameSettings() {
+#if RTYPE_MODULE_GAME_STATISTICS
   return declaredSettingsOf(gameModules(), gameStatisticsPluginLines());
+#else
+  return declaredSettingsOf(gameModules(), {});
+#endif
 }
 
 std::vector<std::unique_ptr<rtype::engine::IModule>>
@@ -72,6 +78,9 @@ std::set<std::string> ServerRolesFixture::exampleSettingsOfThisBuild() {
   if (!rtype::engine::MASTER_LINK_MODULE_BUILT) {
     names.erase(std::string{rtype::server::MASTER_URL_SETTING_NAME});
     names.erase(std::string{rtype::server::MASTER_KEY_SETTING_NAME});
+  }
+  if (!rtype::engine::GAME_STATISTICS_MODULE_BUILT) {
+    names.erase(std::string{rtype::server::GAME_STATISTICS_FILE_SETTING_NAME});
   }
   return names;
 }

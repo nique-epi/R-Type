@@ -1,3 +1,7 @@
+if(NOT RTYPE_MODULE_GAME_STATISTICS)
+  return()
+endif()
+
 rtype_add_plugin(TARGET rtype_server_game_statistics_module NAME game-statistics
   SOURCES
     GameStatisticsPluginEntry.cpp

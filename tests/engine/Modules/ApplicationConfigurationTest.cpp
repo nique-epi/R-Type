@@ -8,6 +8,7 @@
 #include "ApplicationLoopFixtures.hpp"
 #include "ApplicationLoopTestConstants.hpp"
 #include "ApplicationTestConstants.hpp"
+#include "BuiltModuleConstants.hpp"
 #include "CommandInterpreter.hpp"
 #include "ConfigurationReader.hpp"
 #include "ConfigurationReport.hpp"
@@ -20,6 +21,7 @@
 using rtype::engine::Application;
 using rtype::engine::CommandInterpreter;
 using rtype::engine::LoopStages;
+using rtype::engine::PLUGINS_BUILT;
 using Lines = std::vector<std::string>;
 
 /**
@@ -172,12 +174,15 @@ TEST(ApplicationConfiguration, WordThatIsNeitherOnNorOffIsRefused) {
 }
 
 /**
- * Given an application
+ * Given an application, in a build that compiled the plugins
  * When its configuration step receives the interpreter
  * Then the interpreter holds the `module`, `plugin`, `plugin-folder` and `set`
  * commands
  */
 TEST(ApplicationConfiguration, InterpreterHoldsModulePluginAndSetCommands) {
+  if (!PLUGINS_BUILT) {
+    GTEST_SKIP();
+  }
   JournalModule journal;
   Lines help;
   Application application(
@@ -191,6 +196,30 @@ TEST(ApplicationConfiguration, InterpreterHoldsModulePluginAndSetCommands) {
   EXPECT_EQ(help[1].rfind(PLUGIN_HELP_START, 0), 0U);
   EXPECT_EQ(help[2].rfind(PLUGIN_FOLDER_HELP_START, 0), 0U);
   EXPECT_EQ(help[3].rfind(SET_HELP_START, 0), 0U);
+}
+
+/**
+ * Given an application, in a build without the plugins
+ * When its configuration step receives the interpreter
+ * Then the interpreter holds the `module` and `set` commands only, so a
+ * `plugin` line is an unknown command
+ */
+TEST(ApplicationConfiguration,
+     InterpreterHoldsModuleAndSetCommandsWithoutThePlugins) {
+  if (PLUGINS_BUILT) {
+    GTEST_SKIP();
+  }
+  JournalModule journal;
+  Lines help;
+  Application application(
+      withoutStages(), threeModules(journal),
+      [&help](CommandInterpreter& interpreter) { help = interpreter.help(); });
+
+  application.start();
+
+  ASSERT_EQ(help.size(), 2U);
+  EXPECT_EQ(help[0].rfind(MODULE_HELP_START, 0), 0U);
+  EXPECT_EQ(help[1].rfind(SET_HELP_START, 0), 0U);
 }
 
 /**

@@ -2,6 +2,9 @@ add_library(rtype_engine_application STATIC Application.cpp)
 
 target_include_directories(rtype_engine_application PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_engine_application PUBLIC rtype_engine_modules rtype_engine_commands rtype_engine_module_switches rtype_engine_plugin_shelf rtype_engine_paths)
+target_link_libraries(rtype_engine_application PUBLIC rtype_engine_modules rtype_engine_commands rtype_engine_module_switches rtype_engine_paths)
+if(RTYPE_MODULE_PLUGINS)
+  target_link_libraries(rtype_engine_application PUBLIC rtype_engine_plugin_shelf)
+endif()
 
 rtype_enable_warnings(rtype_engine_application)
