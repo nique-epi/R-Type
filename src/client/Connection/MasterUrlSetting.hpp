@@ -6,9 +6,8 @@
 namespace rtype::client {
 
 /** @returns The master the server map reads when the `master-url` setting
- * names none, on this machine: MASTER_URL_SCHEME, then
- * network::LOOPBACK_IPV4_ADDRESS and network::DEFAULT_MASTER_PORT joined by
- * MASTER_PORT_SEPARATOR. */
+ * names none and the player chose none, on this machine: masterUrlOf()
+ * network::LOOPBACK_IPV4_ADDRESS and network::DEFAULT_MASTER_PORT. */
 [[nodiscard]] std::string defaultMasterUrl();
 
 /**

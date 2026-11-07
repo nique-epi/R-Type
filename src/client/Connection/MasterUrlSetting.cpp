@@ -1,20 +1,20 @@
 #include "MasterUrlSetting.hpp"
 #include <string>
 #include <string_view>
+#include "Endpoint.hpp"
 #include "EngineException.hpp"
 #include "MasterAccess.hpp"
 #include "MasterClient.hpp"
+#include "MasterUrl.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
-#include "ServerListConstants.hpp"
 
 namespace rtype::client {
 
 std::string defaultMasterUrl() {
-  return std::string{MASTER_URL_SCHEME} +
-         std::string{network::LOOPBACK_IPV4_ADDRESS} +
-         std::string{MASTER_PORT_SEPARATOR} +
-         std::to_string(network::DEFAULT_MASTER_PORT);
+  return masterUrlOf(
+      network::Endpoint{.address = std::string{network::LOOPBACK_IPV4_ADDRESS},
+                        .port = network::DEFAULT_MASTER_PORT});
 }
 
 void requireMasterUrl(std::string_view url) {

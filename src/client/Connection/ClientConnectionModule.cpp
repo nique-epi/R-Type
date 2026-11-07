@@ -11,13 +11,17 @@
 #include "ContentPlaces.hpp"
 #include "ExecutablePath.hpp"
 #include "IGameCatalog.hpp"
+#include "IMasterAddress.hpp"
 #include "IServerCatalog.hpp"
 #include "InstallContext.hpp"
 #include "MasterAccess.hpp"
+#include "MasterChoiceParts.hpp"
 #include "MasterUrlSetting.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConditions.hpp"
+#include "PlayerSettings.hpp"
 #include "SettingsFolder.hpp"
+#include "SettingsService.hpp"
 #include "TextSettingDefinition.hpp"
 #include "TimeConstants.hpp"
 
@@ -49,7 +53,8 @@ std::string ClientConnectionModule::name() const {
 }
 
 std::vector<std::string> ClientConnectionModule::dependencies() const {
-  return {std::string{LOGGER_MODULE_NAME}, std::string{ASSETS_MODULE_NAME}};
+  return {std::string{LOGGER_MODULE_NAME}, std::string{ASSETS_MODULE_NAME},
+          std::string{SETTINGS_MODULE_NAME}};
 }
 
 void ClientConnectionModule::install(engine::InstallContext& context) {
@@ -59,8 +64,15 @@ void ClientConnectionModule::install(engine::InstallContext& context) {
           .defaultValue = defaultMasterUrl(),
           .help = "http://<host>[:<port>] of the master the server map reads",
           .validate = requireMasterUrl});
+  settingsService_ = &context.require<SettingsService>();
+  masterChoice_.emplace(
+      MasterChoiceParts{.settings = context.require<PlayerSettings>(),
+                        .masterUrl = *masterUrl_,
+                        .link = masterLink_,
+                        .servers = servers_});
   connection_.provideParts(context);
   context.provide<IServerCatalog>(servers_);
+  context.provide<IMasterAddress>(*masterChoice_);
   context.provide<IGameCatalog>(games_);
   context.addWork(NETWORK_STAGE, [this](engine::Duration elapsed) {
     connection_.update(elapsed);
@@ -72,15 +84,17 @@ void ClientConnectionModule::install(engine::InstallContext& context) {
 void ClientConnectionModule::start() {
   connection_.network().open();
   try {
-    masterLink_.start(
-        network::MasterAccess{.url = masterUrl_->text(), .key = std::string{}});
+    masterLink_.start(network::MasterAccess{.url = masterChoice_->url(),
+                                            .key = std::string{}});
   } catch (const std::exception&) {
     connection_.network().close();
     throw;
   }
+  settingsService_->subscribe(*masterChoice_);
 }
 
 void ClientConnectionModule::stop() {
+  settingsService_->unsubscribe(*masterChoice_);
   masterLink_.stop();
   try {
     connection_.leave();
