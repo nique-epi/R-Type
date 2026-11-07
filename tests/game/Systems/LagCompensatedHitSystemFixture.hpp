@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <memory>
 #include <vector>
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
@@ -34,6 +35,11 @@ class LagCompensatedHitSystemFixture : public ::testing::Test {
   /** @brief Runs the system for one tick, then delivers its events. */
   void runTick();
 
+  /** @brief Gives the system the registries of a new world from the next
+   * tick, built before the old ones are freed, as a new game builds its
+   * world. */
+  void startANewWorld();
+
   /** @brief Runs @p count ticks. */
   void runTicks(std::size_t count);
 
@@ -43,8 +49,10 @@ class LagCompensatedHitSystemFixture : public ::testing::Test {
   [[nodiscard]] engine::ComponentRegistry& components();
 
  private:
-  engine::EntityRegistry entities_;
-  engine::ComponentRegistry components_{entities_};
+  std::unique_ptr<engine::EntityRegistry> entities_ =
+      std::make_unique<engine::EntityRegistry>();
+  std::unique_ptr<engine::ComponentRegistry> components_ =
+      std::make_unique<engine::ComponentRegistry>(*entities_);
   engine::EventBus events_;
   LagCompensatedHitSystem system_{events_};
   std::vector<MissileHit> hits_;

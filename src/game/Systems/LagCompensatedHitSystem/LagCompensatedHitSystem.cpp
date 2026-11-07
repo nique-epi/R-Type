@@ -71,6 +71,9 @@ LagCompensatedHitSystem::LagCompensatedHitSystem(engine::EventBus& events)
 
 void LagCompensatedHitSystem::update(engine::ComponentRegistry& components,
                                      engine::Duration elapsed) {
+  if (world_ != &components) {
+    startWith(components);
+  }
   recordEnemies(components);
   components.forEach<ViewDelay, Position>(
       [this, &components, elapsed](engine::Entity missile,
@@ -104,6 +107,15 @@ void LagCompensatedHitSystem::recordEnemies(
               PastEnemy{.entity = entity, .bounds = boundsOf(position, *box)});
         }
       });
+}
+
+void LagCompensatedHitSystem::startWith(
+    const engine::ComponentRegistry& components) {
+  for (std::vector<PastEnemy>& enemies : history_) {
+    enemies.clear();
+  }
+  recorded_ = 0;
+  world_ = &components;
 }
 
 const std::vector<PastEnemy>& LagCompensatedHitSystem::enemiesAgo(

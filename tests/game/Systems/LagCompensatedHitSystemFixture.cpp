@@ -1,5 +1,7 @@
 #include "LagCompensatedHitSystemFixture.hpp"
 #include <cstddef>
+#include <memory>
+#include <utility>
 #include <vector>
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
@@ -19,31 +21,38 @@ LagCompensatedHitSystemFixture::LagCompensatedHitSystemFixture() {
 }
 
 engine::Entity LagCompensatedHitSystemFixture::enemyAt(Position position) {
-  const engine::Entity enemy = entities_.create();
-  components_.add(enemy, position);
-  components_.add(enemy, EntityType::Enemy);
-  components_.add(enemy, ENEMY_BOX);
+  const engine::Entity enemy = entities_->create();
+  components_->add(enemy, position);
+  components_->add(enemy, EntityType::Enemy);
+  components_->add(enemy, ENEMY_BOX);
   return enemy;
 }
 
 engine::Entity LagCompensatedHitSystemFixture::missileAt(
     Position position, std::size_t ticksBehind) {
-  const engine::Entity missile = entities_.create();
-  components_.add(missile, position);
-  components_.add(missile, EntityType::PlayerMissile);
-  components_.add(missile, MISSILE_BOX);
-  components_.add(missile, ViewDelay{.ticks = ticksBehind});
+  const engine::Entity missile = entities_->create();
+  components_->add(missile, position);
+  components_->add(missile, EntityType::PlayerMissile);
+  components_->add(missile, MISSILE_BOX);
+  components_->add(missile, ViewDelay{.ticks = ticksBehind});
   return missile;
 }
 
 void LagCompensatedHitSystemFixture::move(engine::Entity entity,
                                           Position position) {
-  *components_.get<Position>(entity) = position;
+  *components_->get<Position>(entity) = position;
 }
 
 void LagCompensatedHitSystemFixture::runTick() {
-  system_.update(components_, engine::SIMULATION_TICK_DURATION);
+  system_.update(*components_, engine::SIMULATION_TICK_DURATION);
   events_.dispatch();
+}
+
+void LagCompensatedHitSystemFixture::startANewWorld() {
+  auto entities = std::make_unique<engine::EntityRegistry>();
+  auto components = std::make_unique<engine::ComponentRegistry>(*entities);
+  components_ = std::move(components);
+  entities_ = std::move(entities);
 }
 
 void LagCompensatedHitSystemFixture::runTicks(std::size_t count) {
@@ -57,7 +66,7 @@ const std::vector<MissileHit>& LagCompensatedHitSystemFixture::hits() const {
 }
 
 engine::ComponentRegistry& LagCompensatedHitSystemFixture::components() {
-  return components_;
+  return *components_;
 }
 
 }  // namespace rtype::game::testing

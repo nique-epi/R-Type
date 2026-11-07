@@ -145,3 +145,21 @@ TEST_F(LagCompensatedHitSystemFixture, AClaimFarInThePastLooksBackTwelveTicks) {
 
   EXPECT_TRUE(hits().empty());
 }
+
+/**
+ * Given an enemy recorded in the world of a game that ended
+ * When a new world starts, with an enemy 200 units higher, and a missile one
+ * tick behind reaches where the old enemy stood
+ * Then it hits nothing: the enemies of the old world are gone with it
+ */
+TEST_F(LagCompensatedHitSystemFixture, ANewWorldForgetsTheEnemiesOfTheOldOne) {
+  enemyAt(WHERE_THE_PLAYER_SAW_THE_ENEMY);
+  runTick();
+  startANewWorld();
+  enemyAt(WHERE_THE_ENEMY_WENT);
+  missileAt(WHERE_THE_PLAYER_SAW_THE_ENEMY, 1);
+
+  runTick();
+
+  EXPECT_TRUE(hits().empty());
+}
