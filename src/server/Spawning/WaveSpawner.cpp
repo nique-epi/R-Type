@@ -12,13 +12,12 @@
 #include <vector>
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
+#include "EnemyCount.hpp"
 #include "EngineException.hpp"
-#include "Entity.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheets.hpp"
 #include "EntitySpawnSender.hpp"
 #include "EntitySpawned.hpp"
-#include "EntityType.hpp"
 #include "EntityTypeNumber.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
@@ -122,15 +121,7 @@ void WaveSpawner::announce(const game::EntitySheet& sheet,
 }
 
 std::size_t WaveSpawner::enemiesInPlay() {
-  std::size_t enemies = 0;
-  world_->components().forEach<game::EntityType, game::EntityType>(
-      [&enemies](engine::Entity, const game::EntityType& type,
-                 const game::EntityType&) {
-        if (type == game::EntityType::Enemy) {
-          ++enemies;
-        }
-      });
-  return enemies;
+  return game::enemiesIn(world_->components());
 }
 
 void WaveSpawner::logCurrentWave() {

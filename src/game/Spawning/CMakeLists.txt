@@ -2,7 +2,7 @@ add_library(rtype_game_spawning_constants INTERFACE)
 
 target_include_directories(rtype_game_spawning_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(rtype_game_spawning STATIC ShipStartPosition.cpp WaveEntryPosition.cpp ProjectileStartPosition.cpp)
+add_library(rtype_game_spawning STATIC ShipStartPosition.cpp WaveEntryPosition.cpp ProjectileStartPosition.cpp EnemyCount.cpp)
 
 target_include_directories(rtype_game_spawning PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
