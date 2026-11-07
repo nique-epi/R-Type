@@ -1,4 +1,4 @@
-add_library(rtype_server_supervised_games_stopping STATIC ChildrenStopper.cpp)
+add_library(rtype_server_supervised_games_stopping STATIC ChildrenStopper.cpp StopOrder.cpp)
 
 target_include_directories(rtype_server_supervised_games_stopping PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
