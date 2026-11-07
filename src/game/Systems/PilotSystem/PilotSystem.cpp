@@ -16,6 +16,7 @@
 #include "Pilot.hpp"
 #include "Position.hpp"
 #include "SteadyMotion.hpp"
+#include "Summoning.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game {
@@ -106,6 +107,10 @@ void PilotSystem::update(engine::ComponentRegistry& components,
                                    Intent& intent) {
         auto* const position = components.get<Position>(body);
         if (position == nullptr) {
+          return;
+        }
+        if (components.has<Summoning>(body)) {
+          intent = Intent{};
           return;
         }
         pilot.age += elapsed;

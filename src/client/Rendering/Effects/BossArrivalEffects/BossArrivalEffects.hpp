@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include "EffectTools.hpp"
+#include "Position.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -40,6 +42,17 @@ class BossArrivalEffects {
    * BOSS_ROAR_TRAUMA, and the two shockwaves of the roar centered on its
    * mouth; no shockwave when the client has no such entity. */
   void playRoar(std::uint32_t bossId) const;
+
+  /** @brief Draws the boss of network id @p bossId as a ship that cannot be
+   * hit, blinking dithered (steady when effects may not flash), while
+   * @p shielded, as the server shields it during its arrival; draws it
+   * plainly again otherwise. Nothing when the client has no such entity. */
+  void shield(std::uint32_t bossId, bool shielded) const;
+
+  /** @returns Where the boss of network id @p bossId is, or nothing when
+   * the client has no such entity. */
+  [[nodiscard]] std::optional<game::Position> positionOf(
+      std::uint32_t bossId) const;
 
  private:
   EffectTools tools_;

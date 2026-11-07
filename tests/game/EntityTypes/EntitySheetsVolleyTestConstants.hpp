@@ -65,7 +65,8 @@ offset_y = 0
 )";
 
 /** @brief The volleys of the shipped Bydo Tyrant: its calm and enraged
- * bursts, its calm and enraged broods, its spores and its wall. */
-constexpr std::size_t VOLLEYS_OF_THE_TYRANT = 6;
+ * bursts (2), the six mobs of its calm brood and the six of its enraged one
+ * (12), its spores and its wall (2). */
+constexpr std::size_t VOLLEYS_OF_THE_TYRANT = 16;
 
 }  // namespace rtype::game::testing

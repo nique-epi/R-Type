@@ -18,6 +18,9 @@ struct WavePlan {
   /** @brief The sheet of the boss that comes once the last wave is over;
    * nothing for a level the last wave ends. */
   std::optional<std::string> boss{std::nullopt};
+  /** @brief The health of the boss in percent of what its sheet gives,
+   * before the players scale it (see BossStage). */
+  int bossHealthPercent{100};
 
   bool operator==(const WavePlan&) const = default;
 };

@@ -13,12 +13,13 @@ namespace rtype::game {
 namespace {
 
 /** @returns The heading of body @p index of @p volley, in degrees from the
- * left: spread evenly over the volley, 0 for a volley of one body. */
+ * left: spread evenly over the volley around its heading, its heading for a
+ * volley of one body. */
 float headingDegreesOf(const VolleySheet& volley, std::size_t index) {
   if (volley.count <= 1) {
-    return 0.0F;
+    return volley.headingDegrees;
   }
-  return (-volley.spreadDegrees * engine::HALF) +
+  return volley.headingDegrees + (-volley.spreadDegrees * engine::HALF) +
          (volley.spreadDegrees * static_cast<float>(index) /
           static_cast<float>(volley.count - 1));
 }

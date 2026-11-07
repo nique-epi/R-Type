@@ -94,6 +94,9 @@ constexpr engine::Duration PAST_THE_TURN_OF_THE_CHARGE =
     std::chrono::milliseconds(1000);
 constexpr Position TYRANT_PAST_THE_LEFT_EDGE{.x = -320.0F, .y = 492.0F};
 constexpr Position WHERE_THE_CHARGE_COMES_BACK{.x = 2084.0F, .y = 492.0F};
+/** @brief Past the turn of its charge but late: its center at -100, so
+ * the right 156 units of its 512-unit body still show. */
+constexpr Position TYRANT_STILL_SHOWING_ON_THE_LEFT{.x = -100.0F, .y = 492.0F};
 
 /** @brief An attack it does not know. */
 constexpr ActionKey UNKNOWN_TYRANT_ATTACK{.attack = 7,

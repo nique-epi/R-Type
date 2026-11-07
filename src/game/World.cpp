@@ -134,12 +134,11 @@ void addBoss(engine::ComponentRegistry& components, const BodyStart& start) {
   if (!sheet.boss.has_value() || !sheet.health.has_value()) {
     return;
   }
-  components.add(
-      start.body,
-      Boss{.rageBelowPoints =
-               *sheet.health * sheet.boss->rageBelowPercent / WHOLE_PERCENT,
-           .rageAttack = sheet.boss->rageAttack,
-           .arrivalAttack = sheet.boss->arrivalAttack});
+  components.add(start.body,
+                 Boss{.rageBelowPoints = rageBelowPointsOf(
+                          *sheet.health, sheet.boss->rageBelowPercent),
+                      .rageAttack = sheet.boss->rageAttack,
+                      .arrivalAttack = sheet.boss->arrivalAttack});
 }
 
 /** @brief Gives the ship of a player its lives and no protection yet. */

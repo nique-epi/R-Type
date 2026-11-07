@@ -80,7 +80,8 @@ TEST(EntitySheets, RefusesAVolleyOfPlayerMissiles) {
 /**
  * Given the sheets the game ships
  * When the sheet of the Bydo Tyrant is read
- * Then it is a boss with its six volleys, each body numbered as a sheet
+ * Then it is a boss with its sixteen volleys, each body numbered as a
+ * sheet
  */
 TEST(EntitySheets, ShipsAReadableBydoTyrant) {
   const EntitySheet& tyrant = shippedEntitySheets().named(BYDO_TYRANT_SHEET);

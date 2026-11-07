@@ -174,12 +174,23 @@ std::optional<std::string> bossFrom(const DataFileTable& table,
   return boss;
 }
 
+/** @returns The health percent of the boss the table of one difficulty
+ * gives, DEFAULT_BOSS_HEALTH_PERCENT when it gives none. */
+int bossHealthPercentFrom(const DataFileTable& table) {
+  if (!table.table.get().contains(BOSS_HEALTH_PERCENT_KEY)) {
+    return DEFAULT_BOSS_HEALTH_PERCENT;
+  }
+  return static_cast<int>(engine::wholeNumberAt(table, BOSS_HEALTH_PERCENT_KEY,
+                                                BOSS_HEALTH_PERCENT_RANGE));
+}
+
 WavePlan planFrom(const DataFileTable& table, const game::EntitySheets& types) {
   engine::refuseUnknownKeys(table, WAVE_PLAN_KEYS);
   return WavePlan{
       .curve = curveFrom(table),
       .enemies = enemiesFrom(EnemyList{.table = table, .types = types}),
-      .boss = bossFrom(table, types)};
+      .boss = bossFrom(table, types),
+      .bossHealthPercent = bossHealthPercentFrom(table)};
 }
 
 /** @returns The waves of every difficulty of the file whose root is @p root,

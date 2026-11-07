@@ -29,6 +29,10 @@
 #                                   which arrives once the last wave is over;
 #                                   the game is then won once it is destroyed
 #                                   and no enemy is left
+#   boss_health_percent             optional: the health of that boss in
+#                                   percent of what its sheet gives, before
+#                                   each player past the first adds 25 %,
+#                                   1 to 1000; 100 when left out
 # Numbers are integers: 2500, never 2500.0. A wave ends once every one of its
 # Bydos has appeared and none is left in the world, killed or gone on the
 # left; the pause before the next wave starts then.
@@ -64,3 +68,4 @@ shortest_spawn_interval_ms = 500
 wave_pause_ms = 3000
 level_waves = 10
 boss = "bydo_tyrant"
+boss_health_percent = 130

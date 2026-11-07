@@ -695,6 +695,7 @@ TEST_F(ConnectionAcceptorFixture, AcceptsWithTheEntityTypesOfTheGame) {
           {.side = network::EntitySide::Enemy, .name = "reaper"},
           {.side = network::EntitySide::EnemyMissile, .name = "rune_orb"},
           {.side = network::EntitySide::Player, .name = "ship"},
+          {.side = network::EntitySide::Enemy, .name = "tyrant_diver"},
           {.side = network::EntitySide::EnemyMissile, .name = "tyrant_missile"},
           {.side = network::EntitySide::EnemyMissile, .name = "tyrant_spore"},
           {.side = network::EntitySide::EnemyMissile,

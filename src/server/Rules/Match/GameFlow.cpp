@@ -9,6 +9,7 @@
 #include "BossStage.hpp"
 #include "BossStageParts.hpp"
 #include "CollisionRules.hpp"
+#include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
 #include "DamageRules.hpp"
@@ -20,6 +21,7 @@
 #include "GameState.hpp"
 #include "GameStateChanged.hpp"
 #include "IGameReplication.hpp"
+#include "Invulnerable.hpp"
 #include "LifeKeeper.hpp"
 #include "LifeKeeperParts.hpp"
 #include "LivesConstants.hpp"
@@ -118,7 +120,8 @@ std::unique_ptr<BossStage> bossStageFor(GameContext& game, game::World& world) {
                      .send = game.send,
                      .events = game.events.get(),
                      .types = game.settings.types,
-                     .boss = game.settings.waves.boss});
+                     .boss = game.settings.waves.boss,
+                     .healthPercent = game.settings.waves.bossHealthPercent});
 }
 
 /** @brief Writes that the game started, with how many players. */
@@ -157,7 +160,19 @@ std::unique_ptr<VolleySystem> volleySystemFor(GameContext& game,
       VolleySystemParts{.world = world,
                         .roster = game.roster.get(),
                         .send = game.send,
-                        .types = game.settings.types});
+                        .types = game.settings.types,
+                        .seed = game.settings.seed});
+}
+
+/** @brief Keeps every ship of @p components invulnerable for
+ * SHIELDED_SHIP_TICKS more ticks: a game started at its boss is a test of the
+ * fight, its pilots never die. */
+void keepShipsShielded(engine::ComponentRegistry& components) {
+  components.forEach<game::Invulnerable, game::Invulnerable>(
+      [](engine::Entity, game::Invulnerable& protection, game::Invulnerable&) {
+        protection.ticksLeft =
+            std::max(protection.ticksLeft, SHIELDED_SHIP_TICKS);
+      });
 }
 
 }  // namespace
@@ -207,8 +222,13 @@ void GameFlow::advanceState() {
       runWorldSystems(game_, world());
       weaponSystem_->onTick();
       volleySystem_->onTick();
-      waveSpawner_->onTick();
-      bossStage_->onTick(waveSpawner_->lastWaveFinished());
+      if (game_.settings.startsAtBoss) {
+        keepShipsShielded(world().components());
+        bossStage_->onTick(true);
+      } else {
+        waveSpawner_->onTick();
+        bossStage_->onTick(waveSpawner_->lastWaveFinished());
+      }
       lifeKeeper_->onTick();
       break;
     case GameState::Finished:

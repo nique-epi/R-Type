@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include "BossStageParts.hpp"
 #include "EntitySheet.hpp"
@@ -11,6 +12,13 @@
 #include "World.hpp"
 
 namespace rtype::server {
+
+/** @returns @p points scaled for @p players (at least one counts) and the
+ * difficulty's @p healthPercent: each player past the first adds
+ * BOSS_HEALTH_PER_EXTRA_PLAYER percent, then the whole is taken at
+ * @p healthPercent percent, rounded down. */
+[[nodiscard]] int scaledBossHealth(int points, std::size_t players,
+                                   int healthPercent);
 
 /**
  * @brief The end of a level: the boss of the difficulty, once its last wave
@@ -47,10 +55,16 @@ class BossStage {
   void announceArrival();
   void bringTheBossIn();
 
+  /** @brief Scales the health of the boss just brought in, and the points
+   * it enrages below, by the players connected and the health percent of
+   * the difficulty (see scaledBossHealth()). */
+  void strengthen() const;
+
   game::World* world_;
   PlayerRoster* roster_;
   engine::EventBus* events_;
   const game::EntitySheet* boss_;
+  int healthPercent_;
   SendDatagram send_;
   logging::Logger logger_;
   std::optional<std::size_t> ticksToArrival_{std::nullopt};

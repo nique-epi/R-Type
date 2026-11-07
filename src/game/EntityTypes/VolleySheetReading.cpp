@@ -32,6 +32,16 @@ float floatOrZeroAt(const engine::DataFileTable& table, std::string_view key,
   return static_cast<float>(wholeOrZeroAt(table, key, range));
 }
 
+/** @returns The chance of the volley of @p table, VOLLEY_SURE_CHANCE when
+ * it gives none. */
+std::uint8_t chanceAt(const engine::DataFileTable& table) {
+  if (!table.table.get().contains(CHANCE_KEY)) {
+    return VOLLEY_SURE_CHANCE;
+  }
+  return static_cast<std::uint8_t>(
+      engine::wholeNumberAt(table, CHANCE_KEY, VOLLEY_CHANCE_RANGE));
+}
+
 /** @returns The volley one table of `[[gameplay.volley]]` describes.
  * @throws InconsistentEntitySheetException when its gap leaves no body. */
 VolleySheet volleyFrom(const engine::DataFileTable& table) {
@@ -48,10 +58,14 @@ VolleySheet volleyFrom(const engine::DataFileTable& table) {
       .stepY = floatOrZeroAt(table, STEP_Y_KEY, VOLLEY_OFFSET_RANGE),
       .spreadDegrees = floatOrZeroAt(table, SPREAD_KEY, VOLLEY_SPREAD_RANGE),
       .distance = floatOrZeroAt(table, DISTANCE_KEY, VOLLEY_DISTANCE_RANGE),
+      .headingDegrees = floatOrZeroAt(table, HEADING_KEY, VOLLEY_HEADING_RANGE),
+      .jitterX = floatOrZeroAt(table, JITTER_X_KEY, VOLLEY_JITTER_RANGE),
+      .jitterY = floatOrZeroAt(table, JITTER_Y_KEY, VOLLEY_JITTER_RANGE),
       .gapFrom = static_cast<std::uint8_t>(
           wholeOrZeroAt(table, GAP_FROM_KEY, VOLLEY_GAP_RANGE)),
       .gapCount = static_cast<std::uint8_t>(
           wholeOrZeroAt(table, GAP_COUNT_KEY, VOLLEY_GAP_RANGE)),
+      .chancePercent = chanceAt(table),
       .body = engine::textAt(table, BODY_KEY),
       .bodyPlace = engine::placeOfKey(table, BODY_KEY)};
   if (volley.gapCount >= volley.count) {

@@ -239,6 +239,29 @@ constexpr std::uint8_t TYRANT_SPORES_ATTACK = 16;
 constexpr std::uint8_t TYRANT_WALL_ATTACK = 17;
 constexpr std::uint8_t TYRANT_CHARGE_ATTACK = 18;
 
+/** @brief The attacks that lay their bodies out on the playfield from the
+ * row it arrived on (its broods, its spores and its wall): it goes back to
+ * that row before them. */
+constexpr std::array TYRANT_LAID_OUT_ATTACKS{
+    TYRANT_BROOD_ATTACK, TYRANT_ENRAGED_BROOD_ATTACK, TYRANT_SPORES_ATTACK,
+    TYRANT_WALL_ATTACK};
+
+/** @brief Between two attacks it drifts up or down, never during one (its
+ * attacks start from where it stands), at TYRANT_DRIFT_SPEED units per
+ * second at most, within TYRANT_DRIFT_SPAN units of the row it arrived on:
+ * a 512-unit body keeps the play area on both sides. It heads, in turn, for
+ * the row of the nearest ship and for a row drawn from its count of actions
+ * (TYRANT_DRIFT_TURNS), so with four players it does not follow one. */
+constexpr float TYRANT_DRIFT_SPEED = 240.0F;
+constexpr float TYRANT_DRIFT_SPAN = 200.0F;
+constexpr std::uint32_t TYRANT_DRIFT_TURNS = 2;
+/** @brief A drawn row is a share from 0 to 1 (the high 16 bits of the count
+ * times a Knuth multiplier), stretched over both sides of the row it arrived
+ * on: TYRANT_DRIFT_SIDES times the share, less one, from -1 to 1. */
+constexpr std::uint32_t TYRANT_DRIFT_DRAW_MULTIPLIER = 2654435761U;
+constexpr int TYRANT_DRIFT_DRAW_SHIFT = 16;
+constexpr float TYRANT_DRIFT_SIDES = 2.0F;
+
 /** @brief Every attack of the Tyrant and where its timings are. */
 constexpr std::array TYRANT_ATTACKS{
     TyrantAttack{.attack = TYRANT_ARRIVAL_ATTACK,
@@ -284,12 +307,21 @@ constexpr std::array TYRANT_ENRAGED_ROTATION{
     TYRANT_ENRAGED_BEAM_ATTACK, TYRANT_WALL_ATTACK,
     TYRANT_ENRAGED_BROOD_ATTACK};
 
+/** @brief Half its 512-unit frame: its center that far past an edge is
+ * where the last of its body leaves the screen. */
+constexpr float TYRANT_HALF_FRAME = 256.0F;
 /** @brief How far past an edge its charge takes its center, in logical
- * units: half its 512-unit frame and 64 more, so it is wholly off screen. */
-constexpr float TYRANT_OFF_SCREEN_MARGIN = 320.0F;
+ * units: TYRANT_HALF_FRAME and TYRANT_OFF_SCREEN_SLACK more, so it is wholly
+ * off screen. */
+constexpr float TYRANT_OFF_SCREEN_SLACK = 64.0F;
+constexpr float TYRANT_OFF_SCREEN_MARGIN =
+    TYRANT_HALF_FRAME + TYRANT_OFF_SCREEN_SLACK;
 constexpr float TYRANT_CHARGE_LEFT_COLUMN = -TYRANT_OFF_SCREEN_MARGIN;
 constexpr float TYRANT_CHARGE_RIGHT_COLUMN =
     PLAYFIELD_WIDTH + TYRANT_OFF_SCREEN_MARGIN;
+/** @brief The column its center must be past before it leaps back to the
+ * right: the last of its body left the screen. */
+constexpr float TYRANT_HIDDEN_LEFT_COLUMN = -TYRANT_HALF_FRAME;
 /** @brief The share of the strike of its charge spent going out on the left;
  * the rest brings it back from the right. */
 constexpr float TYRANT_CHARGE_TURN_SHARE = 0.5F;

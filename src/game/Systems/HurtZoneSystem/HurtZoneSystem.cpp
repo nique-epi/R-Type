@@ -25,6 +25,7 @@
 #include "Position.hpp"
 #include "ShipBounds.hpp"
 #include "ShipContact.hpp"
+#include "Summoning.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game {
@@ -138,6 +139,9 @@ void HurtZoneSystem::publishContacts(engine::ComponentRegistry& components) {
   components.forEach<HurtZone, Position>(
       [this, &components](engine::Entity enemy, const HurtZone& zone,
                           const Position& position) {
+        if (components.has<Summoning>(enemy)) {
+          return;
+        }
         const HurtingEnemy hurting{
             .zone = zone,
             .position = position,

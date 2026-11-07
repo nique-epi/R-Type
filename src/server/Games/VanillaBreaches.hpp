@@ -18,8 +18,8 @@ namespace rtype::server {
  * and a server rebuilt with other constants cannot be told apart.
  *
  * @returns MODIFIED_WAVES_BREACH, MODIFIED_ENTITY_SHEETS_BREACH,
- * IMPOSED_SEED_BREACH and CHANGED_INPUT_DELAY_BREACH, in this order, for each
- * rule broken; empty when the games are vanilla.
+ * IMPOSED_SEED_BREACH, CHANGED_INPUT_DELAY_BREACH and STARTS_AT_BOSS_BREACH,
+ * in this order, for each rule broken; empty when the games are vanilla.
  */
 [[nodiscard]] std::vector<std::string_view> vanillaBreaches(
     const HostedRules& rules);

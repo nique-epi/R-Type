@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "PercentConstants.hpp"
 
 namespace rtype::game {
 
@@ -23,5 +24,12 @@ struct Boss {
   /** @brief Whether it enraged; set once by BossPhaseSystem, never cleared. */
   bool enraged{false};
 };
+
+/** @returns The points a boss of @p fullHealth enrages below, for the
+ * `rage_below_percent` @p rageBelowPercent of its sheet, rounded down. */
+[[nodiscard]] constexpr int rageBelowPointsOf(int fullHealth,
+                                              int rageBelowPercent) {
+  return fullHealth * rageBelowPercent / WHOLE_PERCENT;
+}
 
 }  // namespace rtype::game

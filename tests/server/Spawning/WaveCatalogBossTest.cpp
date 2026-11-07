@@ -17,6 +17,8 @@ using rtype::server::testing::calmFile;
 using rtype::server::testing::calmFileWith;
 using rtype::server::testing::DRIFTER_AS_A_BOSS;
 using rtype::server::testing::errorReading;
+using rtype::server::testing::HARD_BOSS_HEALTH_PERCENT;
+using rtype::server::testing::NORMAL_BOSS_HEALTH_PERCENT;
 using rtype::server::testing::sheetsWithAWarlord;
 using rtype::server::testing::shippedCatalog;
 using rtype::server::testing::TEST_FILE_NAME;
@@ -70,4 +72,26 @@ TEST(WaveCatalog, RefusesABossThatIsNoBoss) {
 TEST(WaveCatalog, NormalEndsWithTheBydoTyrant) {
   EXPECT_EQ(shippedCatalog().planOf("normal").boss,
             std::optional<std::string>{BYDO_TYRANT_SHEET});
+}
+
+/**
+ * Given the waves file the game ships, whose normal gives no
+ * boss_health_percent
+ * When it is read
+ * Then the boss of normal keeps the health of its sheet: 100 %
+ */
+TEST(WaveCatalog, NormalKeepsTheHealthOfItsBossSheet) {
+  EXPECT_EQ(shippedCatalog().planOf("normal").bossHealthPercent,
+            NORMAL_BOSS_HEALTH_PERCENT);
+}
+
+/**
+ * Given the waves file the game ships, whose hard gives
+ * boss_health_percent = 130
+ * When it is read
+ * Then the boss of hard has 130 % of the health of its sheet
+ */
+TEST(WaveCatalog, HardMakesItsBossMoreSolid) {
+  EXPECT_EQ(shippedCatalog().planOf("hard").bossHealthPercent,
+            HARD_BOSS_HEALTH_PERCENT);
 }

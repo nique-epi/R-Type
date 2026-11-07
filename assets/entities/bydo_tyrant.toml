@@ -2,7 +2,8 @@
 # arrives once the last wave of a difficulty that names it is over, slides in
 # and roars, then bursts missiles, sweeps beams, lays Bydos and spores, lashes
 # its tentacles at a ship under its jaw, and enrages below half its health.
-# Only its eye takes a hit; its body destroys a ship that touches it.
+# A shot anywhere on its body hurts it; its body destroys a ship that
+# touches it.
 # [gameplay] is what the server gives an entity of this type, [appearance] how
 # the client draws it. Both programs read this file when they start, from
 # entities/bydo_tyrant.toml in the assets folder next to their executable, or
@@ -17,13 +18,14 @@
 side = "enemy"
 pilot = "bydo_tyrant"
 
-# Its only weak point is its eye: 18 by 18 sheet pixels, 19 pixels left of
-# and 13 above the center of its 128-pixel frame.
+# Its body, skull and legs included: the opaque pixels of its idle frame run
+# from column 12 to 122 and from row 4 to 126 of the 128-pixel frame, so the
+# box is 110 by 122 sheet pixels, 3 right of and 1 below the center.
 [gameplay.hitbox]
-width = 72
-height = 72
-offset_x = -76
-offset_y = -52
+width = 440
+height = 488
+offset_x = 12
+offset_y = 4
 
 # Fast enough for its charge: 1936 units out in 800 ms.
 [gameplay.motion]
@@ -101,24 +103,138 @@ offset_y = 44
 spread_deg = 48
 distance = 8
 
-# Brood: 3 Bydos out of the sacs, 120 units apart (rows 296, 416, 536).
+# Brood: a mix of mobs in front of it, never on it nor behind it (its body
+# ends about 260 units left of its center), drawn anew at each brood: a
+# Weaver always, then each other one with its chance_percent, each at a
+# point moved at random by up to jitter_x and jitter_y. Two divers come in
+# from the top and the bottom edges and fly straight down-left or up-left
+# at 28 degrees, which takes them to the left edge before the other one.
+# Enraged, every chance is higher. Each mob keeps the path of its sheet.
 [[gameplay.volley]]
 attack = 3
 phase = "strike"
-body = "drifter"
-count = 3
-offset_x = 164
-offset_y = -196
-step_y = 120
+body = "weaver"
+count = 1
+offset_x = -420
+offset_y = -180
+jitter_y = 120
+
+[[gameplay.volley]]
+attack = 3
+phase = "strike"
+body = "tyrant_diver"
+count = 1
+offset_x = -500
+offset_y = -440
+heading_deg = 28
+distance = 8
+jitter_x = 220
+chance_percent = 70
+
+[[gameplay.volley]]
+attack = 3
+phase = "strike"
+body = "tyrant_diver"
+count = 1
+offset_x = -560
+offset_y = 430
+heading_deg = -28
+distance = 8
+jitter_x = 220
+chance_percent = 70
+
+[[gameplay.volley]]
+attack = 3
+phase = "strike"
+body = "voltjelly"
+count = 1
+offset_x = -380
+offset_y = 200
+jitter_y = 100
+chance_percent = 60
+
+[[gameplay.volley]]
+attack = 3
+phase = "strike"
+body = "reaper"
+count = 1
+offset_x = -560
+offset_y = 0
+jitter_y = 180
+chance_percent = 40
+
+[[gameplay.volley]]
+attack = 3
+phase = "strike"
+body = "bydomancer"
+count = 1
+offset_x = -620
+offset_y = -300
+jitter_y = 60
+chance_percent = 30
 
 [[gameplay.volley]]
 attack = 13
 phase = "strike"
-body = "drifter"
-count = 3
-offset_x = 164
-offset_y = -196
-step_y = 120
+body = "weaver"
+count = 1
+offset_x = -420
+offset_y = -180
+jitter_y = 120
+
+[[gameplay.volley]]
+attack = 13
+phase = "strike"
+body = "tyrant_diver"
+count = 1
+offset_x = -500
+offset_y = -440
+heading_deg = 28
+distance = 8
+jitter_x = 220
+chance_percent = 90
+
+[[gameplay.volley]]
+attack = 13
+phase = "strike"
+body = "tyrant_diver"
+count = 1
+offset_x = -560
+offset_y = 430
+heading_deg = -28
+distance = 8
+jitter_x = 220
+chance_percent = 90
+
+[[gameplay.volley]]
+attack = 13
+phase = "strike"
+body = "voltjelly"
+count = 1
+offset_x = -380
+offset_y = 200
+jitter_y = 100
+chance_percent = 80
+
+[[gameplay.volley]]
+attack = 13
+phase = "strike"
+body = "reaper"
+count = 1
+offset_x = -560
+offset_y = 0
+jitter_y = 180
+chance_percent = 60
+
+[[gameplay.volley]]
+attack = 13
+phase = "strike"
+body = "bydomancer"
+count = 1
+offset_x = -620
+offset_y = -300
+jitter_y = 60
+chance_percent = 50
 
 # Spores: 5 mines on a diagonal, (200,120) to (1400,840) at rest.
 [[gameplay.volley]]
@@ -143,7 +259,7 @@ step_y = 108
 gap_from = 1
 gap_count = 2
 
-# Its body, always: a ship touching it is destroyed, a missile passes.
+# Its body, always: a ship touching it is destroyed.
 [[gameplay.hurt_zone.box]]
 offset_x = 24
 offset_y = 0

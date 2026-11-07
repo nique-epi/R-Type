@@ -63,17 +63,66 @@ float columnAt(const BehaviourView& view) {
   return view.origin.x + ((restX - view.origin.x) * share);
 }
 
-/** @returns It steering towards @p column, on its row. */
-Intent towardsColumn(const BehaviourView& view, float column) {
+/** @returns It steering towards @p column, moving up or down by
+ * @p verticalShare of its top speed. */
+Intent towardsColumn(const BehaviourView& view, float column,
+                     float verticalShare) {
   return Intent{
       .direction = Direction{.x = horizontalShareTowards(column, view),
-                             .y = verticalShareTowards(view.origin.y, view)},
+                             .y = verticalShare},
       .steered = true};
 }
 
-/** @returns It keeping its place: its column of the moment, on its row. */
+/** @returns It keeping its place in an action: its column of the moment, on
+ * the row it stands on, since its attacks start from where it is. */
 Intent holdingAt(const BehaviourView& view) {
-  return towardsColumn(view, columnAt(view));
+  return towardsColumn(view, columnAt(view), 0.0F);
+}
+
+/** @returns Whether @p attack lays its bodies out on the playfield, so it
+ * starts from the row it arrived on. */
+bool laysOut(std::uint8_t attack) {
+  return std::ranges::find(TYRANT_LAID_OUT_ATTACKS, attack) !=
+         TYRANT_LAID_OUT_ATTACKS.end();
+}
+
+/** @returns A share from 0 to 1 drawn from @p seed, the same for the same
+ * seed. */
+float shareDrawnFrom(std::uint32_t seed) {
+  const std::uint32_t mixed = seed * TYRANT_DRIFT_DRAW_MULTIPLIER;
+  return static_cast<float>(mixed >> TYRANT_DRIFT_DRAW_SHIFT) /
+         static_cast<float>(1U << TYRANT_DRIFT_DRAW_SHIFT);
+}
+
+/** @returns The row it heads for while resting before its attack
+ * @p next: the row it arrived on for its arrival and the attacks laid out on
+ * the playfield; else, after an even count of actions the row of the nearest
+ * ship and after an odd one a row drawn from that count, within
+ * TYRANT_DRIFT_SPAN of the row it arrived on. */
+float driftRowOf(const BehaviourView& view, std::uint8_t next) {
+  const float home = view.origin.y;
+  if (view.actionsEnded == 0 || laysOut(next)) {
+    return home;
+  }
+  const bool followsAShip = view.actionsEnded % TYRANT_DRIFT_TURNS == 0 &&
+                            view.nearestShip.has_value();
+  const float row =
+      followsAShip
+          ? view.nearestShip->y
+          : home + (TYRANT_DRIFT_SPAN *
+                    ((TYRANT_DRIFT_SIDES * shareDrawnFrom(view.actionsEnded)) -
+                     1.0F));
+  return std::clamp(row, home - TYRANT_DRIFT_SPAN, home + TYRANT_DRIFT_SPAN);
+}
+
+/** @returns It resting before its attack @p next: its column of the moment,
+ * drifting towards driftRowOf() at TYRANT_DRIFT_SPEED at most. */
+Intent driftingAt(const BehaviourView& view, std::uint8_t next) {
+  const float cap =
+      view.topSpeed > 0.0F ? TYRANT_DRIFT_SPEED / view.topSpeed : 0.0F;
+  const float share =
+      std::clamp(verticalShareTowards(driftRowOf(view, next), view), -cap, cap);
+  return towardsColumn(view, columnAt(view), share);
 }
 
 /** @returns The column its charge takes it to at this point of its strike:
@@ -94,17 +143,21 @@ float chargeColumnAt(const BehaviourView& view, const ActionTimings& charge) {
          ((restX - TYRANT_CHARGE_RIGHT_COLUMN) * back);
 }
 
-/** @returns Its charge at this tick: towards its charge column, or a leap
- * there once that column came back on the right while it is still left of
- * the middle. */
+/** @returns Its charge at this tick: towards its charge column; once that
+ * column came back on the right while it is still left of the middle, on to
+ * past the left edge until the whole body left the screen, then a leap to
+ * that column: its body is off the screen when it leaps. */
 Intent charging(const BehaviourView& view, const ActionTimings& charge) {
   const float column = chargeColumnAt(view, charge);
   if (column > TYRANT_PLAYFIELD_MIDDLE_COLUMN &&
       view.position.x < TYRANT_PLAYFIELD_MIDDLE_COLUMN) {
+    if (view.position.x > TYRANT_HIDDEN_LEFT_COLUMN) {
+      return towardsColumn(view, TYRANT_CHARGE_LEFT_COLUMN, 0.0F);
+    }
     return Intent{.steered = true,
-                  .jumpsTo = Position{.x = column, .y = view.origin.y}};
+                  .jumpsTo = Position{.x = column, .y = view.position.y}};
   }
-  return towardsColumn(view, column);
+  return towardsColumn(view, column, 0.0F);
 }
 
 /** @returns It holding still in its rage, which it ends after `rage_ms`. */
@@ -149,10 +202,11 @@ std::uint8_t nextAttackOf(const BehaviourView& view) {
   return rotation[view.actionsEnded % rotation.size()];
 }
 
-/** @returns What it does while idle: arrive until it ended an action, then,
- * rested, its tentacles at a close ship or its next attack. */
+/** @returns What it does while idle: arrive until it ended an action, then
+ * drift while it rests, and, rested, its tentacles at a close ship or its
+ * next attack. */
 Intent whenIdle(const BehaviourView& view) {
-  const Intent holding = holdingAt(view);
+  const Intent holding = driftingAt(view, nextAttackOf(view));
   if (view.actionsEnded == 0) {
     return withStart(holding, timingsOf(view, TYRANT_ARRIVAL_ATTACK));
   }

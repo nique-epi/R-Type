@@ -29,8 +29,18 @@ struct VolleySheet {
   float stepY{0.0F};
   float spreadDegrees{0.0F};
   float distance{0.0F};
+  /** @brief The heading the fan turns around, in degrees from the left,
+   * a positive angle turning down. */
+  float headingDegrees{0.0F};
+  /** @brief How far the start moves at random each time it fires, on
+   * each axis (see VolleySystem). */
+  float jitterX{0.0F};
+  float jitterY{0.0F};
   std::uint8_t gapFrom{0};
   std::uint8_t gapCount{0};
+  /** @brief The chance it fires when `on` starts, in percent: 100 fires
+   * it every time (see VolleySystem). */
+  std::uint8_t chancePercent{100};
   /** @brief The name of the sheet of its bodies, as the file writes it. */
   std::string body;
   /** @brief The number of that sheet; 0 until EntitySheets checked that it

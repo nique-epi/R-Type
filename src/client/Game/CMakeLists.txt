@@ -23,6 +23,7 @@ target_link_libraries(rtype_client_game_module
     rtype_client_handshake
     rtype_client_input
     rtype_client_interface
+    rtype_client_interface_pixel
     rtype_client_mission_banner
     rtype_client_prediction
     rtype_client_replication
@@ -30,6 +31,7 @@ target_link_libraries(rtype_client_game_module
     rtype_client_silence_warning
     rtype_client_waiting_room
     rtype_client_warning_banner
+    rtype_client_watch_out
     rtype_client_window_display
     rtype_engine
     rtype_engine_modules

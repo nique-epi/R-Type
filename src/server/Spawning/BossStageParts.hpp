@@ -27,6 +27,9 @@ struct BossStageParts {
   /** @brief The sheet of the boss of the difficulty; nothing for a level that
    * ends with its last wave. */
   std::optional<std::string> boss;
+  /** @brief The health of the boss in percent of its sheet, for the
+   * difficulty (WavePlan::bossHealthPercent). */
+  int healthPercent{100};
 };
 
 }  // namespace rtype::server

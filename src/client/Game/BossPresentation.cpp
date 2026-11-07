@@ -14,8 +14,11 @@
 #include "IAudioService.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ISoundPlayer.hpp"
+#include "InterfacePixel.hpp"
+#include "Position.hpp"
 #include "TimeConstants.hpp"
 #include "WarningBanner.hpp"
+#include "WatchOut.hpp"
 
 namespace rtype::client {
 
@@ -36,13 +39,30 @@ BossPresentation::BossPresentation(EffectTools tools, ISoundPlayer& sounds,
 
 void BossPresentation::apply(const network::BossStatus& status) {
   tracker_.follow(status, now_);
+  if (status.stage != network::BossStage::Arriving && shielded_.has_value()) {
+    effects_.shield(*shielded_, false);
+    shielded_.reset();
+  }
   followMusic();
 }
 
 void BossPresentation::apply(const network::EnemyAction& action) {
-  if (action.attack != BOSS_ROAR_ATTACK ||
-      action.phase != network::EnemyActionPhase::Strike ||
-      !isArriving(tracker_, now_)) {
+  if (action.attack == BOSS_CHARGE_ATTACK &&
+      action.phase == network::EnemyActionPhase::Signal) {
+    const std::optional<game::Position> boss =
+        effects_.positionOf(action.entityId);
+    if (boss.has_value()) {
+      chargeSignalledAt_ = now_;
+      chargeRow_ = interfacePixelAt({boss->x, boss->y}).y;
+    }
+    return;
+  }
+  if (action.attack != BOSS_ROAR_ATTACK || !isArriving(tracker_, now_)) {
+    return;
+  }
+  effects_.shield(action.entityId, true);
+  shielded_ = action.entityId;
+  if (action.phase != network::EnemyActionPhase::Strike) {
     return;
   }
   roarAt_ = now_;
@@ -70,9 +90,19 @@ void BossPresentation::endGame() {
 }
 
 BossLook BossPresentation::look(FlashPreference preference) const {
-  BossLook look{.warning = {},
-                .edges = {},
-                .bar = bossBarAt(tracker_.fight(), now_, preference)};
+  BossLook look{
+      .warning = {},
+      .edges = {},
+      .bar = bossBarAt(tracker_.fight(), now_, preference),
+      .watchOut = watchOutAt(
+          WatchOutCue{
+              .row = chargeRow_,
+              .sinceSignal =
+                  chargeSignalledAt_.has_value()
+                      ? std::optional<engine::Duration>{now_ -
+                                                        *chargeSignalledAt_}
+                      : std::nullopt},
+          preference)};
   const std::optional<engine::Duration> since = tracker_.sinceArrival(now_);
   if (since.has_value()) {
     look.warning = warningBannerAt(*since, preference);
@@ -104,6 +134,7 @@ std::optional<engine::Duration> BossPresentation::sinceRoar() const {
 void paintBossAlert(IInterfaceCanvas& canvas, const BossLook& look) {
   paintEdgePulse(canvas, look.edges);
   paintWarningBanner(canvas, look.warning);
+  paintWatchOut(canvas, look.watchOut);
 }
 
 }  // namespace rtype::client

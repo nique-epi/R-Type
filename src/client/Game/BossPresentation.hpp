@@ -63,6 +63,12 @@ class BossPresentation {
   IAudioService* audio_;
   engine::Duration now_{};
   std::optional<engine::Duration> roarAt_;
+  /** @brief When the newest charge was signalled, and the row of the
+   * interface picture it runs along. */
+  std::optional<engine::Duration> chargeSignalledAt_;
+  int chargeRow_{};
+  /** @brief The network id of the boss drawn shielded, until its fight. */
+  std::optional<std::uint32_t> shielded_;
   bool musicSilenced_{false};
   bool gameEnded_{false};
 };

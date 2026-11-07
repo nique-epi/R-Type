@@ -40,6 +40,7 @@ using rtype::game::testing::TYRANT_COLUMN_TOLERANCE;
 using rtype::game::testing::TYRANT_PAST_THE_LEFT_EDGE;
 using rtype::game::testing::TYRANT_REACH_IN_A_TICK;
 using rtype::game::testing::TYRANT_SHORT_OF_ITS_REST;
+using rtype::game::testing::TYRANT_STILL_SHOWING_ON_THE_LEFT;
 using rtype::game::testing::tyrantView;
 using rtype::game::testing::UNKNOWN_TYRANT_ATTACK;
 using rtype::game::testing::WHERE_THE_CHARGE_COMES_BACK;
@@ -260,6 +261,25 @@ TEST(BydoTyrantBehaviour, ItComesBackFromTheRightPastTheTurnOfItsCharge) {
   const Position leap = intent.jumpsTo.value_or(Position{});
   EXPECT_FLOAT_EQ(leap.x, WHERE_THE_CHARGE_COMES_BACK.x);
   EXPECT_FLOAT_EQ(leap.y, WHERE_THE_CHARGE_COMES_BACK.y);
+}
+
+/**
+ * Given a Tyrant past the turn of its charge, 1000 ms in, whose body still
+ * shows on the left (its center at -100)
+ * When it steers
+ * Then it does not leap yet: it goes on left, off the screen
+ */
+TEST(BydoTyrantBehaviour, ItLeapsBackOnlyOnceItsBodyLeftTheScreen) {
+  BehaviourView view =
+      tyrantView(TYRANT_STILL_SHOWING_ON_THE_LEFT, SHIP_FAR_FROM_THE_TYRANT);
+  view.enraged = true;
+  view.action = CHARGE_STRIKE;
+  view.actionAge = PAST_THE_TURN_OF_THE_CHARGE;
+
+  const Intent intent = BydoTyrantBehaviour{}.steer(view);
+
+  EXPECT_FALSE(intent.jumpsTo.has_value());
+  EXPECT_LT(intent.direction.x, 0.0F);
 }
 
 /**

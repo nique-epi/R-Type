@@ -37,6 +37,10 @@ constexpr float BOSS_ROAR_TRAUMA = 0.71F;
  * arrival (TYRANT_ARRIVAL_ATTACK on the server). */
 constexpr std::uint8_t BOSS_ROAR_ATTACK = 0;
 
+/** @brief The attack whose signal warns of the charge of the boss across
+ * the playfield (TYRANT_CHARGE_ATTACK on the server). */
+constexpr std::uint8_t BOSS_CHARGE_ATTACK = 18;
+
 /** @brief The mouth of the boss in its BOSS_FRAME_SIDE square frame, and how
  * far it is from the center the frame is drawn on, in logical units. */
 constexpr sf::Vector2i BOSS_MOUTH_IN_FRAME(33, 75);

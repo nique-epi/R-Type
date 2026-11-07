@@ -1,8 +1,10 @@
 #pragma once
 
 #include <optional>
+#include <random>
 #include <vector>
 #include "BodyPlacement.hpp"
+#include "Entity.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheets.hpp"
 #include "EntitySpawnSender.hpp"
@@ -52,6 +54,10 @@ class VolleySystem {
   [[nodiscard]] std::optional<network::EntitySpawned> spawnAt(
       const game::EntitySheet& sheet, game::BodyPlacement placement);
 
+  /** @brief Counts down the Summoning of every enemy summoned, and lets
+   * the ones whose count reached 0 take part. */
+  void wakeSummoned();
+
   /** @brief Sends @p body to every connected player. */
   void announce(const network::EntitySpawned& body);
 
@@ -61,6 +67,8 @@ class VolleySystem {
   const game::EntitySheets* types_;
   logging::Logger logger_;
   std::vector<VolleyShot> shots_;
+  std::mt19937 draws_;
+  std::vector<engine::Entity> awoken_;
 };
 
 }  // namespace rtype::server

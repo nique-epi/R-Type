@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
 #include "EnemyPhase.hpp"
 #include "EntityType.hpp"
@@ -116,10 +117,29 @@ constexpr std::string_view SPREAD_KEY = "spread_deg";
 constexpr std::string_view DISTANCE_KEY = "distance";
 constexpr std::string_view GAP_FROM_KEY = "gap_from";
 constexpr std::string_view GAP_COUNT_KEY = "gap_count";
-constexpr std::array VOLLEY_KEYS{ATTACK_KEY,   PHASE_KEY,    BODY_KEY,
-                                 COUNT_KEY,    OFFSET_X_KEY, OFFSET_Y_KEY,
-                                 STEP_X_KEY,   STEP_Y_KEY,   SPREAD_KEY,
-                                 DISTANCE_KEY, GAP_FROM_KEY, GAP_COUNT_KEY};
+/** @brief The chance a volley fires when its action starts, in percent,
+ * from 1 to 100; 100 when the table leaves it out. */
+constexpr std::string_view CHANCE_KEY = "chance_percent";
+/** @brief The heading of a volley of one body, or the middle of the fan
+ * of a spread, in degrees from the left, a positive angle turning down;
+ * 0 when left out. */
+constexpr std::string_view HEADING_KEY = "heading_deg";
+constexpr engine::WholeNumberRange VOLLEY_HEADING_RANGE{.lowest = -80,
+                                                        .highest = 80};
+/** @brief How far the start of a volley may move at random each time it
+ * fires, on each axis, in units; 0 when left out. */
+constexpr std::string_view JITTER_X_KEY = "jitter_x";
+constexpr std::string_view JITTER_Y_KEY = "jitter_y";
+constexpr engine::WholeNumberRange VOLLEY_JITTER_RANGE{.lowest = 0,
+                                                       .highest = 960};
+constexpr engine::WholeNumberRange VOLLEY_CHANCE_RANGE{.lowest = 1,
+                                                       .highest = 100};
+constexpr std::uint8_t VOLLEY_SURE_CHANCE = 100;
+constexpr std::array VOLLEY_KEYS{
+    ATTACK_KEY,   PHASE_KEY,    BODY_KEY,     COUNT_KEY,
+    OFFSET_X_KEY, OFFSET_Y_KEY, STEP_X_KEY,   STEP_Y_KEY,
+    SPREAD_KEY,   DISTANCE_KEY, GAP_FROM_KEY, GAP_COUNT_KEY,
+    CHANCE_KEY,   HEADING_KEY,  JITTER_X_KEY, JITTER_Y_KEY};
 constexpr engine::WholeNumberRange VOLLEY_COUNT_RANGE{.lowest = 1,
                                                       .highest = 16};
 /** @brief A volley may start anywhere on the playfield from its enemy: a
