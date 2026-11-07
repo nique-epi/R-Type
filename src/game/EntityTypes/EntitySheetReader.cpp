@@ -34,6 +34,7 @@
 #include "SheetTextReading.hpp"
 #include "ShipControlConstants.hpp"
 #include "TimeConstants.hpp"
+#include "VolleySheetReading.hpp"
 #include "WholeNumberRange.hpp"
 
 namespace rtype::game {
@@ -379,6 +380,10 @@ void checkContactPartsBelongToAnEnemy(const EntitySheet& sheet,
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, FRAGILE_KEY), FRAGILE_SIDE_RULE);
   }
+  if (!sheet.volleys.empty()) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, VOLLEY_KEY), VOLLEY_SIDE_RULE);
+  }
 }
 
 /** @throws InconsistentEntitySheetException when a player pilots @p sheet and
@@ -487,7 +492,8 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .hurtZone = hurtZoneFrom(gameplay),
       .survivesContact = survivesContactFrom(gameplay),
       .fragileIn = fragileFrom(gameplay),
-      .burst = burstFrom(gameplay)};
+      .burst = burstFrom(gameplay),
+      .volleys = volleysFrom(gameplay)};
   checkPilotMatchesSide(read, gameplay);
   checkShipMotion(read, gameplay);
   checkWhatItFires(read, gameplay);

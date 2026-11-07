@@ -59,4 +59,44 @@ constexpr std::string_view TO_DEGREES_DOTTED_KEY =
 constexpr std::string_view SWEEP_RULE_TEXT =
     "a beam that sweeps (to_deg other than from_deg) names until_ms";
 
+/** @brief A volley of every key: three Drifters in the strike of attack 3,
+ * from (-40, -60), 120 units apart going down, spread over 20 degrees, 8
+ * units out, the second one left out. */
+constexpr std::string_view VOLLEY_OF_EVERY_KEY =
+    "[[gameplay.volley]]\nattack = 3\nphase = \"strike\"\n"
+    "body = \"drifter\"\ncount = 3\noffset_x = -40\noffset_y = -60\n"
+    "step_x = 0\nstep_y = 120\nspread_deg = 20\ndistance = 8\n"
+    "gap_from = 1\ngap_count = 1\n";
+constexpr std::uint8_t VOLLEY_ATTACK = 3;
+constexpr std::string_view VOLLEY_BODY = "drifter";
+constexpr std::uint8_t VOLLEY_COUNT = 3;
+constexpr float VOLLEY_OFFSET_X = -40.0F;
+constexpr float VOLLEY_OFFSET_Y = -60.0F;
+constexpr float VOLLEY_STEP_Y = 120.0F;
+constexpr float VOLLEY_SPREAD_DEGREES = 20.0F;
+constexpr float VOLLEY_DISTANCE = 8.0F;
+constexpr std::uint8_t VOLLEY_GAP_FROM = 1;
+constexpr std::uint8_t VOLLEY_GAP_COUNT = 1;
+
+/** @brief A volley of its required keys only. */
+constexpr std::string_view VOLLEY_OF_REQUIRED_KEYS =
+    "[[gameplay.volley]]\nattack = 3\nphase = \"strike\"\n"
+    "body = \"drifter\"\ncount = 3\noffset_x = -40\noffset_y = -60\n";
+
+/** @brief A volley of two bodies whose gap takes both, and where and why it
+ * is refused. */
+constexpr std::string_view VOLLEY_WITH_NO_BODY_LEFT =
+    "[[gameplay.volley]]\nattack = 3\nphase = \"strike\"\n"
+    "body = \"drifter\"\ncount = 2\noffset_x = 0\noffset_y = 0\n"
+    "gap_count = 2\n";
+constexpr std::string_view GAP_COUNT_DOTTED_KEY =
+    "gameplay.volley[0].gap_count";
+constexpr std::string_view VOLLEY_GAP_RULE_TEXT =
+    "a gap leaves at least one body of the volley";
+
+/** @brief Where and why a volley on a missile is refused. */
+constexpr std::string_view VOLLEY_DOTTED_KEY = "gameplay.volley";
+constexpr std::string_view VOLLEY_SIDE_RULE_TEXT =
+    "only a body of side enemy fires volleys";
+
 }  // namespace rtype::game::testing

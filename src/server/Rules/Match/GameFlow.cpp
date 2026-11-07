@@ -25,6 +25,8 @@
 #include "PlayerLives.hpp"
 #include "PlayerRoster.hpp"
 #include "TimeConstants.hpp"
+#include "VolleySystem.hpp"
+#include "VolleySystemParts.hpp"
 #include "WaveSpawner.hpp"
 #include "WaveSpawnerParts.hpp"
 #include "WeaponSystem.hpp"
@@ -97,6 +99,40 @@ void runWorldSystems(GameContext& game, game::World& world) {
   game.systems.get().run(world.components(), engine::SIMULATION_TICK_DURATION);
 }
 
+/** @returns The spawner of the Bydos of @p world, its draws from @p seed. */
+std::unique_ptr<WaveSpawner> waveSpawnerFor(GameContext& game,
+                                            game::World& world,
+                                            std::uint32_t seed) {
+  return std::make_unique<WaveSpawner>(
+      WaveSpawnerParts{.world = world,
+                       .roster = game.roster.get(),
+                       .send = game.send,
+                       .seed = seed,
+                       .waves = game.settings.waves,
+                       .types = game.settings.types});
+}
+
+/** @returns The weapon system of the missiles of @p world. */
+std::unique_ptr<WeaponSystem> weaponSystemFor(GameContext& game,
+                                              game::World& world) {
+  return std::make_unique<WeaponSystem>(
+      WeaponSystemParts{.world = world,
+                        .roster = game.roster.get(),
+                        .send = game.send,
+                        .types = game.settings.types,
+                        .events = game.events.get()});
+}
+
+/** @returns The volley system of the enemies of @p world. */
+std::unique_ptr<VolleySystem> volleySystemFor(GameContext& game,
+                                              game::World& world) {
+  return std::make_unique<VolleySystem>(
+      VolleySystemParts{.world = world,
+                        .roster = game.roster.get(),
+                        .send = game.send,
+                        .types = game.settings.types});
+}
+
 }  // namespace
 
 GameFlow::GameFlow(GameContext& game, WorldSlot& world,
@@ -148,6 +184,7 @@ void GameFlow::advanceState() {
       ++tick_;
       runWorldSystems(game_, world());
       weaponSystem_->onTick();
+      volleySystem_->onTick();
       waveSpawner_->onTick();
       lifeKeeper_->onTick();
       break;
@@ -195,19 +232,10 @@ void GameFlow::buildWorld() {
                                                            world.components());
   damageRules_ = std::make_unique<game::DamageRules>(game_.events.get(),
                                                      world.components());
-  waveSpawner_ = std::make_unique<WaveSpawner>(
-      WaveSpawnerParts{.world = world,
-                       .roster = game_.roster.get(),
-                       .send = game_.send,
-                       .seed = game_.settings.seed + worldsBuilt_,
-                       .waves = game_.settings.waves,
-                       .types = game_.settings.types});
-  weaponSystem_ = std::make_unique<WeaponSystem>(
-      WeaponSystemParts{.world = world,
-                        .roster = game_.roster.get(),
-                        .send = game_.send,
-                        .types = game_.settings.types,
-                        .events = game_.events.get()});
+  waveSpawner_ =
+      waveSpawnerFor(game_, world, game_.settings.seed + worldsBuilt_);
+  weaponSystem_ = weaponSystemFor(game_, world);
+  volleySystem_ = volleySystemFor(game_, world);
   lifeKeeper_ = std::make_unique<LifeKeeper>(
       LifeKeeperParts{.events = game_.events.get(),
                       .world = world,

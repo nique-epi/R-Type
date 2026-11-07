@@ -33,10 +33,11 @@ constexpr std::string_view HURT_ZONE_KEY = "hurt_zone";
 constexpr std::string_view SURVIVES_CONTACT_KEY = "survives_contact";
 constexpr std::string_view FRAGILE_KEY = "fragile";
 constexpr std::string_view BURST_KEY = "burst";
+constexpr std::string_view VOLLEY_KEY = "volley";
 constexpr std::array GAMEPLAY_KEYS{
     SIDE_KEY,    PILOT_KEY, HITBOX_KEY, MOTION_KEY,    BEHAVIOUR_KEY,
     HEALTH_KEY,  SCORE_KEY, GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
-    FRAGILE_KEY, BURST_KEY};
+    FRAGILE_KEY, BURST_KEY, VOLLEY_KEY};
 
 /** @brief The keys of `[gameplay.hitbox]`, in logical units: its size, and
  * where its center is from the Position of the body, 0 without them. */
@@ -103,6 +104,32 @@ constexpr engine::WholeNumberRange BEAM_LENGTH_RANGE{.lowest = 1,
                                                      .highest = 4096};
 constexpr engine::WholeNumberRange BEAM_ANGLE_RANGE{.lowest = -180,
                                                     .highest = 180};
+
+/** @brief The keys of a volley, `[[gameplay.volley]]`: the action it is
+ * fired on, the sheet and the count of its bodies and where it starts,
+ * required; its step, spread (degrees), distance and gap, 0 without them. */
+constexpr std::string_view BODY_KEY = "body";
+constexpr std::string_view STEP_X_KEY = "step_x";
+constexpr std::string_view STEP_Y_KEY = "step_y";
+constexpr std::string_view SPREAD_KEY = "spread_deg";
+constexpr std::string_view DISTANCE_KEY = "distance";
+constexpr std::string_view GAP_FROM_KEY = "gap_from";
+constexpr std::string_view GAP_COUNT_KEY = "gap_count";
+constexpr std::array VOLLEY_KEYS{ATTACK_KEY,   PHASE_KEY,    BODY_KEY,
+                                 COUNT_KEY,    OFFSET_X_KEY, OFFSET_Y_KEY,
+                                 STEP_X_KEY,   STEP_Y_KEY,   SPREAD_KEY,
+                                 DISTANCE_KEY, GAP_FROM_KEY, GAP_COUNT_KEY};
+constexpr engine::WholeNumberRange VOLLEY_COUNT_RANGE{.lowest = 1,
+                                                      .highest = 16};
+/** @brief A volley may start anywhere on the playfield from its enemy: a
+ * spore mine is laid across it. */
+constexpr engine::WholeNumberRange VOLLEY_OFFSET_RANGE{.lowest = -1920,
+                                                       .highest = 1920};
+constexpr engine::WholeNumberRange VOLLEY_SPREAD_RANGE{.lowest = 0,
+                                                       .highest = 360};
+constexpr engine::WholeNumberRange VOLLEY_DISTANCE_RANGE{.lowest = 0,
+                                                         .highest = 1024};
+constexpr engine::WholeNumberRange VOLLEY_GAP_RANGE{.lowest = 0, .highest = 15};
 
 /** @brief `[gameplay.survives_contact]` is a marker: it holds no key. */
 constexpr std::array<std::string_view, 0> SURVIVES_CONTACT_KEYS{};
@@ -182,6 +209,12 @@ constexpr std::string_view SHIP_HITBOX_RULE =
 constexpr std::string_view MISSILE_GUN_RULE = "a missile has no gun";
 constexpr std::string_view BURST_SIDE_RULE =
     "only a missile bursts into shards";
+constexpr std::string_view VOLLEY_SIDE_RULE =
+    "only a body of side enemy fires volleys";
+constexpr std::string_view VOLLEY_GAP_RULE =
+    "a gap leaves at least one body of the volley: gap_count is below count";
+constexpr std::string_view VOLLEY_BODY_SIDE_RULE =
+    "a volley is made of enemies or of missiles of an enemy";
 constexpr std::string_view SHARD_SIDE_RULE =
     "a missile bursts into missiles of its own side";
 constexpr std::string_view BEHAVIOUR_TABLE_RULE =

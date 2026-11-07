@@ -10,16 +10,20 @@
 #include "EntitySheetReaderTestConstants.hpp"
 #include "HurtBeam.hpp"
 #include "HurtZone.hpp"
+#include "VolleySheet.hpp"
 
 using rtype::game::ActionKey;
 using rtype::game::EnemyPhase;
 using rtype::game::EntitySheet;
 using rtype::game::HurtBeam;
 using rtype::game::HurtZone;
+using rtype::game::VolleySheet;
 using rtype::game::testing::APPEARANCE;
 using rtype::game::testing::BYDO_HITBOX;
 using rtype::game::testing::ENEMY_GAMEPLAY;
+using rtype::game::testing::ENEMY_MISSILE_GAMEPLAY;
 using rtype::game::testing::EntitySheetReaderFixture;
+using rtype::game::testing::GAP_COUNT_DOTTED_KEY;
 using rtype::game::testing::HITBOX_DOTTED_KEY;
 using rtype::game::testing::LEFT_HEADING_TABLE;
 using rtype::game::testing::MOVED_HITBOX;
@@ -41,6 +45,22 @@ using rtype::game::testing::SWEEPING_BEAM_THICKNESS;
 using rtype::game::testing::SWEEPING_BEAM_TO_DEGREES;
 using rtype::game::testing::SWEEPING_BEAM_UNTIL;
 using rtype::game::testing::TO_DEGREES_DOTTED_KEY;
+using rtype::game::testing::VOLLEY_ATTACK;
+using rtype::game::testing::VOLLEY_BODY;
+using rtype::game::testing::VOLLEY_COUNT;
+using rtype::game::testing::VOLLEY_DISTANCE;
+using rtype::game::testing::VOLLEY_DOTTED_KEY;
+using rtype::game::testing::VOLLEY_GAP_COUNT;
+using rtype::game::testing::VOLLEY_GAP_FROM;
+using rtype::game::testing::VOLLEY_GAP_RULE_TEXT;
+using rtype::game::testing::VOLLEY_OF_EVERY_KEY;
+using rtype::game::testing::VOLLEY_OF_REQUIRED_KEYS;
+using rtype::game::testing::VOLLEY_OFFSET_X;
+using rtype::game::testing::VOLLEY_OFFSET_Y;
+using rtype::game::testing::VOLLEY_SIDE_RULE_TEXT;
+using rtype::game::testing::VOLLEY_SPREAD_DEGREES;
+using rtype::game::testing::VOLLEY_STEP_Y;
+using rtype::game::testing::VOLLEY_WITH_NO_BODY_LEFT;
 using rtype::game::testing::ZONE_WITH_A_SWEEPING_BEAM;
 using rtype::game::testing::ZONE_WITH_AN_ENDLESS_SWEEP;
 using rtype::game::testing::zoneOf;
@@ -125,4 +145,78 @@ TEST_F(EntitySheetReaderFixture, RefusesASweepWithoutAnEnd) {
 
   EXPECT_THAT(message, HasSubstr(TO_DEGREES_DOTTED_KEY));
   EXPECT_THAT(message, HasSubstr(SWEEP_RULE_TEXT));
+}
+
+/**
+ * Given the sheet of an enemy with a volley that gives every key
+ * When its gameplay is read
+ * Then the sheet holds that volley, its body still a name
+ */
+TEST_F(EntitySheetReaderFixture, ReadsAVolley) {
+  const EntitySheet sheet =
+      read({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION, LEFT_HEADING_TABLE,
+            VOLLEY_OF_EVERY_KEY, APPEARANCE});
+
+  ASSERT_EQ(sheet.volleys.size(), 1U);
+  const VolleySheet& volley = sheet.volleys.front();
+  EXPECT_EQ(volley.on,
+            (ActionKey{.attack = VOLLEY_ATTACK, .phase = EnemyPhase::Strike}));
+  EXPECT_EQ(volley.body, VOLLEY_BODY);
+  EXPECT_EQ(volley.count, VOLLEY_COUNT);
+  EXPECT_FLOAT_EQ(volley.offsetX, VOLLEY_OFFSET_X);
+  EXPECT_FLOAT_EQ(volley.offsetY, VOLLEY_OFFSET_Y);
+  EXPECT_FLOAT_EQ(volley.stepY, VOLLEY_STEP_Y);
+  EXPECT_FLOAT_EQ(volley.spreadDegrees, VOLLEY_SPREAD_DEGREES);
+  EXPECT_FLOAT_EQ(volley.distance, VOLLEY_DISTANCE);
+  EXPECT_EQ(volley.gapFrom, VOLLEY_GAP_FROM);
+  EXPECT_EQ(volley.gapCount, VOLLEY_GAP_COUNT);
+}
+
+/**
+ * Given the sheet of an enemy with a volley of its required keys only
+ * When its gameplay is read
+ * Then its step, spread, distance and gap are 0
+ */
+TEST_F(EntitySheetReaderFixture, ReadsTheOptionalKeysOfAVolleyAsZero) {
+  const EntitySheet sheet =
+      read({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION, LEFT_HEADING_TABLE,
+            VOLLEY_OF_REQUIRED_KEYS, APPEARANCE});
+
+  ASSERT_EQ(sheet.volleys.size(), 1U);
+  const VolleySheet& volley = sheet.volleys.front();
+  EXPECT_FLOAT_EQ(volley.stepX, 0.0F);
+  EXPECT_FLOAT_EQ(volley.stepY, 0.0F);
+  EXPECT_FLOAT_EQ(volley.spreadDegrees, 0.0F);
+  EXPECT_FLOAT_EQ(volley.distance, 0.0F);
+  EXPECT_EQ(volley.gapFrom, 0U);
+  EXPECT_EQ(volley.gapCount, 0U);
+}
+
+/**
+ * Given the sheet of an enemy with a volley of two bodies whose gap takes
+ * both
+ * When its gameplay is read
+ * Then it is refused at gap_count: a volley fires at least one body
+ */
+TEST_F(EntitySheetReaderFixture, RefusesAGapThatLeavesNoBody) {
+  const std::string message =
+      refusalOf({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION, LEFT_HEADING_TABLE,
+                 VOLLEY_WITH_NO_BODY_LEFT, APPEARANCE});
+
+  EXPECT_THAT(message, HasSubstr(GAP_COUNT_DOTTED_KEY));
+  EXPECT_THAT(message, HasSubstr(VOLLEY_GAP_RULE_TEXT));
+}
+
+/**
+ * Given the sheet of a missile of an enemy with a volley
+ * When its gameplay is read
+ * Then it is refused at the volley: only an enemy fires volleys
+ */
+TEST_F(EntitySheetReaderFixture, RefusesAVolleyOfAMissile) {
+  const std::string message =
+      refusalOf({ENEMY_MISSILE_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION,
+                 LEFT_HEADING_TABLE, VOLLEY_OF_REQUIRED_KEYS, APPEARANCE});
+
+  EXPECT_THAT(message, HasSubstr(VOLLEY_DOTTED_KEY));
+  EXPECT_THAT(message, HasSubstr(VOLLEY_SIDE_RULE_TEXT));
 }
