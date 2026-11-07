@@ -25,12 +25,8 @@
 using rtype::client::AppearanceReference;
 using rtype::client::BIG_EXPLOSION_SOUND_ID;
 using rtype::client::BYDO_EXPLOSION_FRAME;
-using rtype::client::ENEMY_MUZZLE_FLASH_FRAME;
-using rtype::client::ENEMY_SHOT_SOUND_ID;
 using rtype::client::HIT_SOUND_ID;
 using rtype::client::PLAYER_HIT_SOUND_ID;
-using rtype::client::PLAYER_MUZZLE_FLASH_FRAME;
-using rtype::client::PLAYER_SHOT_SOUND_ID;
 using rtype::client::SHIP_EXPLOSION_FRAME;
 using rtype::client::SMALL_EXPLOSION_SOUND_ID;
 using rtype::client::testing::AFTER_REMOVAL_TICK;
@@ -138,19 +134,17 @@ TEST_F(EntityReplicatorFixture,
 /**
  * Given a replicator that has applied nothing
  * When one entity of each side is announced
- * Then each is drawn with the look of the side the table gives its type
+ * Then the ship and the Bydo are drawn with the look of the side the table
+ * gives their type, and the missiles are not drawn yet: they await the tick
+ * the client shows
  */
-TEST_F(EntityReplicatorFixture, GivesEachTypeOfTheProtocolItsSprite) {
+TEST_F(EntityReplicatorFixture, DrawsAShipAndABydoAndHoldsTheMissilesBack) {
   announceOneOfEachType();
 
   EXPECT_THAT(
       drawnEntities(components()),
       UnorderedElementsAre(drawnAs(EntityType::Player, SHIP_ID, SHIP_POSITION),
-                           drawnAs(EntityType::PlayerMissile, PLAYER_MISSILE_ID,
-                                   PLAYER_MISSILE_POSITION),
-                           drawnAs(EntityType::Enemy, BYDO_ID, BYDO_POSITION),
-                           drawnAs(EntityType::EnemyMissile, ENEMY_MISSILE_ID,
-                                   ENEMY_MISSILE_POSITION)));
+                           drawnAs(EntityType::Enemy, BYDO_ID, BYDO_POSITION)));
 }
 
 /**
@@ -456,45 +450,42 @@ TEST_F(EntityReplicatorFixture, ALaterCopyOfAKillPlaysNoSecondExplosion) {
 /**
  * Given a replicator that has applied nothing
  * When an EntitySpawned announces a player missile
- * Then the muzzle flash of a player missile starts where it appears
+ * Then no muzzle flash starts yet: it starts once the tick the client shows
+ * reaches the missile
  */
-TEST_F(EntityReplicatorFixture, AMissileItCreatesShowsItsMuzzleFlash) {
+TEST_F(EntityReplicatorFixture, AMissileItCreatesWaitsToShowItsMuzzleFlash) {
   replicator().apply(
       spawned(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER, FIRST_POSITION));
 
-  EXPECT_THAT(drawnEffects(components()),
-              ElementsAre(effectAt(PLAYER_MUZZLE_FLASH_FRAME, FIRST_POSITION)));
+  EXPECT_THAT(drawnEffects(components()), IsEmpty());
 }
 
 /**
  * Given a replicator that has applied nothing, as after a lost EntitySpawned
  * When a WorldState lists an enemy missile
- * Then the muzzle flash of an enemy missile starts where it is created, as the
- * protocol page asks
+ * Then no muzzle flash starts yet either
  */
-TEST_F(EntityReplicatorFixture, AMissileAStateCreatesShowsItsMuzzleFlashToo) {
+TEST_F(EntityReplicatorFixture, AMissileAStateCreatesWaitsToShowItsFlashToo) {
   replicator().apply(stateListing(
       APPLIED_TICK,
       {listed(ENEMY_MISSILE_ID, ENEMY_MISSILE_TYPE_NUMBER, FIRST_POSITION)}));
 
-  EXPECT_THAT(drawnEffects(components()),
-              ElementsAre(effectAt(ENEMY_MUZZLE_FLASH_FRAME, FIRST_POSITION)));
+  EXPECT_THAT(drawnEffects(components()), IsEmpty());
 }
 
 /**
  * Given a player missile the client has
  * When a later copy of its EntitySpawned arrives
- * Then one muzzle flash plays, not two
+ * Then the client still holds one missile, not two
  */
-TEST_F(EntityReplicatorFixture, ALaterCopyOfASpawnPlaysNoSecondFlash) {
+TEST_F(EntityReplicatorFixture, ALaterCopyOfASpawnCreatesNoSecondMissile) {
   replicator().apply(
       spawned(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER, FIRST_POSITION));
 
   replicator().apply(
       spawned(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER, FIRST_POSITION));
 
-  EXPECT_THAT(drawnEffects(components()),
-              ElementsAre(effectAt(PLAYER_MUZZLE_FLASH_FRAME, FIRST_POSITION)));
+  EXPECT_EQ(announcedEntityCount(components()), 1U);
 }
 
 /**
@@ -650,25 +641,14 @@ TEST_F(EntityReplicatorFixture, IgnoresAShipIdThatNamesNoShip) {
 /**
  * Given a replicator that has applied nothing
  * When an EntitySpawned announces a missile of a player
- * Then the shot of a player plays, once
+ * Then its shot does not play yet: it plays once the tick the client shows
+ * reaches the missile
  */
-TEST_F(EntityReplicatorFixture, AMissileOfAPlayerPlaysTheShotOfAPlayer) {
+TEST_F(EntityReplicatorFixture, AMissileWaitsToPlayItsShot) {
   replicator().apply(spawned(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER,
                              PLAYER_MISSILE_POSITION));
 
-  EXPECT_THAT(sounds().played(), ElementsAre(PLAYER_SHOT_SOUND_ID));
-}
-
-/**
- * Given a replicator that has applied nothing
- * When an EntitySpawned announces a missile of an enemy
- * Then the shot of an enemy plays, once
- */
-TEST_F(EntityReplicatorFixture, AMissileOfAnEnemyPlaysTheShotOfAnEnemy) {
-  replicator().apply(spawned(ENEMY_MISSILE_ID, ENEMY_MISSILE_TYPE_NUMBER,
-                             ENEMY_MISSILE_POSITION));
-
-  EXPECT_THAT(sounds().played(), ElementsAre(ENEMY_SHOT_SOUND_ID));
+  EXPECT_THAT(sounds().played(), IsEmpty());
 }
 
 /**
@@ -687,29 +667,28 @@ TEST_F(EntityReplicatorFixture, AShipAndABydoAppearWithoutASound) {
  * Given a WorldState listing a missile of an enemy whose EntitySpawned was
  * lost
  * When it is applied
- * Then the shot of an enemy plays, as the muzzle flash shows
+ * Then its shot does not play yet either
  */
-TEST_F(EntityReplicatorFixture, AMissileAWorldStateCreatesPlaysItsShot) {
+TEST_F(EntityReplicatorFixture, AMissileAWorldStateCreatesWaitsToPlayItsShot) {
   replicator().apply(stateListing(
       APPLIED_TICK, {listed(ENEMY_MISSILE_ID, ENEMY_MISSILE_TYPE_NUMBER,
                             ENEMY_MISSILE_POSITION)}));
 
-  EXPECT_THAT(sounds().played(), ElementsAre(ENEMY_SHOT_SOUND_ID));
+  EXPECT_THAT(sounds().played(), IsEmpty());
 }
 
 /**
- * Given a missile of a player the client already shows
- * When a later copy of its EntitySpawned arrives
- * Then its shot does not play again
+ * Given a missile of an enemy the client holds back, its arrival awaited
+ * When an EntityDestroyed says it was killed
+ * Then no impact and no sound play: the player never saw it
  */
-TEST_F(EntityReplicatorFixture, ALaterCopyOfAnEntitySpawnedPlaysNoSecondShot) {
-  replicator().apply(spawned(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER,
-                             PLAYER_MISSILE_POSITION));
+TEST_F(EntityReplicatorFixture, AMissileKilledBeforeItsArrivalLeavesNothing) {
+  replicator().apply(spawned(ENEMY_MISSILE_ID, ENEMY_MISSILE_TYPE_NUMBER,
+                             ENEMY_MISSILE_POSITION));
 
-  replicator().apply(spawned(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER,
-                             PLAYER_MISSILE_POSITION));
+  replicator().apply(killed(ENEMY_MISSILE_ID));
 
-  EXPECT_THAT(sounds().played(), ElementsAre(PLAYER_SHOT_SOUND_ID));
+  EXPECT_THAT(drawnEffects(components()), IsEmpty());
 }
 
 /**
@@ -827,8 +806,8 @@ TEST_F(EntityReplicatorFixture, KeepsAnEntityTheNewestStateLists) {
  * LAST_KEPT_TICK that leaves it out
  * When the state of REMOVAL_TICK comes in two parts, the first leaving the
  * missile out and the second listing it
- * Then its muzzle flash has played once: the first part does not remove the
- * missile for the second to create it again
+ * Then the missile keeps its history from LISTING_TICK: the first part does
+ * not remove the missile for the second to create it again
  */
 TEST_F(EntityReplicatorFixture, KeepsAnEntityALaterPartOfTheSameStateLists) {
   replicator().apply(stateListing(
@@ -841,8 +820,11 @@ TEST_F(EntityReplicatorFixture, KeepsAnEntityALaterPartOfTheSameStateLists) {
       REMOVAL_TICK, {listed(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER,
                             SECOND_POSITION)}));
 
-  EXPECT_THAT(drawnEffects(components()),
-              ElementsAre(effectAt(PLAYER_MUZZLE_FLASH_FRAME, FIRST_POSITION)));
+  const auto atTheFirstListing =
+      historyPositionAt(components(), static_cast<double>(LISTING_TICK));
+  ASSERT_TRUE(atTheFirstListing.has_value());
+  EXPECT_FLOAT_EQ(atTheFirstListing.value_or(NO_HISTORY_POSITION).x,
+                  FIRST_POSITION.x);
 }
 
 /**

@@ -239,14 +239,19 @@ TEST_F(GameScreenFixture, AnExplosionEndsAfterItsLength) {
 }
 
 /**
- * Given a player missile the server announced
+ * Given a player missile the server announced and listed, applied in one
+ * frame
  * When the next update is one long frame of 500 ms, as after the window was
- * dragged
+ * dragged, which brings the tick shown to the missile
  * Then the muzzle flash born in that frame is painted, though it lasts 100 ms
  */
 TEST_F(GameScreenFixture, AnEffectBornInALongFrameIsPaintedOnce) {
   entityMessages().queue(
       spawned(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER, FIRST_POSITION));
+  entityMessages().queue(stateListing(
+      APPLIED_TICK,
+      {listed(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER, FIRST_POSITION)}));
+  screens().update(ONE_FRAME);
 
   screens().update(LONG_FRAME);
 
@@ -257,15 +262,20 @@ TEST_F(GameScreenFixture, AnEffectBornInALongFrameIsPaintedOnce) {
 /**
  * Given the game running, and the player who turns REDUCE FLASHES on in the
  * options
- * When the server announces a player missile
+ * When the server announces and lists a player missile, and the tick shown
+ * reaches it
  * Then its muzzle flash shows its version without flash
  */
 TEST_F(GameScreenFixture, ReducingFlashesDuringTheGameAppliesToTheNextEffect) {
   settings().reduceFlashes = true;
   entityMessages().queue(
       spawned(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER, FIRST_POSITION));
+  entityMessages().queue(stateListing(
+      APPLIED_TICK,
+      {listed(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER, FIRST_POSITION)}));
 
   screens().update(ONE_FRAME);
+  screens().update(LONG_FRAME);
 
   EXPECT_THAT(layerRecord().framesAtLastPaint,
               Contains(PLAYER_MUZZLE_FLASH_WITHOUT_FLASH_FRAME));
@@ -808,14 +818,19 @@ TEST_F(GameScreenFixture, TheEntitiesArePaintedInPlaceAtRest) {
 
 /**
  * Given a game screen
- * When the server announces a missile of a player and the screen updates
+ * When the server announces and lists a missile of a player, and the screen
+ * updates until the tick shown reaches it
  * Then the shot of a player plays through the sounds of its parts
  */
 TEST_F(GameScreenFixture, TheGamePlaysTheSoundsOfWhatTheServerAnnounces) {
   entityMessages().queue(spawned(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER,
                                  PLAYER_MISSILE_POSITION));
+  entityMessages().queue(stateListing(
+      APPLIED_TICK, {listed(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER,
+                            PLAYER_MISSILE_POSITION)}));
 
   screens().update(ONE_FRAME);
+  screens().update(LONG_FRAME);
 
   EXPECT_THAT(sounds().played(), ElementsAre(PLAYER_SHOT_SOUND_ID));
 }

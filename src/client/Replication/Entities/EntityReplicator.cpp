@@ -2,14 +2,15 @@
 #include <cstdint>
 #include <optional>
 #include <span>
-#include <string_view>
 #include <utility>
 #include <vector>
 #include "AnimatedSprite.hpp"
 #include "AppearanceReference.hpp"
+#include "AwaitedArrival.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
 #include "Entity.hpp"
+#include "EntityCues.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityFeedback.hpp"
 #include "EntityIdConstants.hpp"
@@ -110,77 +111,23 @@ void moveEntity(engine::ComponentRegistry& components, engine::Entity entity,
   }
 }
 
-/** @returns The sound of the appearance of an entity of that type: the shot
- * of a missile of a player or of an enemy; nothing for a ship or a Bydo. */
-std::optional<std::string_view> appearanceSoundOf(game::EntityType type) {
-  switch (type) {
-    case game::EntityType::PlayerMissile:
-      return PLAYER_SHOT_SOUND_ID;
-    case game::EntityType::EnemyMissile:
-      return ENEMY_SHOT_SOUND_ID;
-    case game::EntityType::Player:
-    case game::EntityType::Enemy:
-      return std::nullopt;
-  }
-  return std::nullopt;
+/** @returns Whether an entity of @p type appears only once the tick the client
+ * shows reaches its first state: a missile, which the server creates at the
+ * muzzle of a shooter the client shows a little in the past. A ship and a
+ * Bydo appear as soon as they are announced. */
+bool awaitsTheShownTick(game::EntityType type) {
+  return type == game::EntityType::PlayerMissile ||
+         type == game::EntityType::EnemyMissile;
 }
 
-/** @returns The sound of an entity of that type killed: the big explosion of
- * a ship, the small one of a Bydo; nothing for a missile, which only shows
- * its impact. */
-std::optional<std::string_view> explosionSoundOf(game::EntityType type) {
-  switch (type) {
-    case game::EntityType::Player:
-      return BIG_EXPLOSION_SOUND_ID;
-    case game::EntityType::Enemy:
-      return SMALL_EXPLOSION_SOUND_ID;
-    case game::EntityType::PlayerMissile:
-    case game::EntityType::EnemyMissile:
-      return std::nullopt;
+/** @brief Plays the appearance of @p entity now, unless it awaits the tick
+ * shown: revealArrivedEntities() plays it then. */
+void announceUnlessAwaited(const EntityFeedback& feedback,
+                           engine::ComponentRegistry& components,
+                           engine::Entity entity) {
+  if (!components.has<AwaitedArrival>(entity)) {
+    announce(feedback, components, entity);
   }
-  return std::nullopt;
-}
-
-/** @brief Plays the sound, when there is one. */
-void playSound(ISoundPlayer& sounds, std::optional<std::string_view> soundId) {
-  if (soundId.has_value()) {
-    sounds.play(*soundId);
-  }
-}
-
-/** @brief Plays the appearance of an entity created: the arrival of a ship,
- * the muzzle flash and the shot of a missile, nothing for a Bydo. */
-void announce(const EntityFeedback& feedback,
-              engine::ComponentRegistry& components, engine::Entity entity) {
-  const game::EntityType* type = components.get<game::EntityType>(entity);
-  const game::Position* position = components.get<game::Position>(entity);
-  if (type == nullptr || position == nullptr) {
-    return;
-  }
-  playSound(feedback.sounds, appearanceSoundOf(*type));
-  if (*type == game::EntityType::Player) {
-    feedback.effects.get().playArrival(entity);
-    return;
-  }
-  feedback.effects.get().playAppearance(*type, *position);
-}
-
-/** @brief Plays the explosion of the entity, centered where it stands, and
- * its sound: T4 for a ship; does nothing for an entity without a Position or
- * an EntityType. */
-void explode(const EntityFeedback& feedback,
-             engine::ComponentRegistry& components, engine::Entity entity) {
-  const game::EntityType* type = components.get<game::EntityType>(entity);
-  const game::Position* position = components.get<game::Position>(entity);
-  if (type == nullptr || position == nullptr) {
-    return;
-  }
-  playSound(feedback.sounds, explosionSoundOf(*type));
-  if (*type == game::EntityType::Player) {
-    feedback.effects.get().playShipDown(entity);
-    return;
-  }
-  feedback.effects.get().playExplosion(*type, *position);
 }
 
 /** @returns The ship a network id names, or nothing when the client has no
@@ -215,7 +162,7 @@ void EntityReplicator::apply(const network::EntitySpawned& message) {
           create(announcedBy(message));
       created.has_value()) {
     lastListedTicks_.appeared(message.entityId);
-    announce(feedback_, *components_, *created);
+    announceUnlessAwaited(feedback_, *components_, *created);
   }
 }
 
@@ -228,7 +175,7 @@ void EntityReplicator::apply(const network::WorldState& state) {
   removeUnlistedAt(state.tick);
   applyPlayers(state.players);
   for (const engine::Entity entity : created) {
-    announce(feedback_, *components_, entity);
+    announceUnlessAwaited(feedback_, *components_, entity);
   }
 }
 
@@ -247,8 +194,9 @@ void EntityReplicator::apply(const network::EntityDestroyed& message) {
 }
 
 void EntityReplicator::apply(const network::GameEvent& event) {
+  ISoundPlayer& sounds = feedback_.sounds.get();
   if (event.kind == network::GameEventKind::PlayerHit) {
-    feedback_.sounds.get().play(PLAYER_HIT_SOUND_ID);
+    sounds.play(PLAYER_HIT_SOUND_ID);
     return;
   }
   if (event.kind != network::GameEventKind::EntityDamaged) {
@@ -258,7 +206,7 @@ void EntityReplicator::apply(const network::GameEvent& event) {
           entityByNetworkId_.find(event.entityId);
       known.has_value()) {
     feedback_.effects.get().playHit(*known);
-    feedback_.sounds.get().play(HIT_SOUND_ID);
+    sounds.play(HIT_SOUND_ID);
   }
 }
 
@@ -285,7 +233,11 @@ engine::Entity EntityReplicator::addEntity(game::EntityType type,
   components_->add(entity, position);
   components_->add(entity, PositionHistory{});
   components_->add(entity, type);
-  components_->add(entity, std::move(look.sprite));
+  if (awaitsTheShownTick(type)) {
+    components_->add(entity, AwaitedArrival{.sprite = std::move(look.sprite)});
+  } else {
+    components_->add(entity, std::move(look.sprite));
+  }
   components_->add(entity, look.animation);
   return entity;
 }

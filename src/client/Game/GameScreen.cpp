@@ -11,6 +11,7 @@
 #include <variant>
 #include "ActionSet.hpp"
 #include "AnimationSystem.hpp"
+#include "ArrivalReveal.hpp"
 #include "EffectPreferences.hpp"
 #include "EffectSpawner.hpp"
 #include "EnemyAction.hpp"
@@ -90,12 +91,11 @@ GameScreen::GameScreen(GameScreenParts parts,
       statusCanvas_(std::move(statusCanvas)),
       settings_(&parts.settings.get()),
       effects_(entities_, components_, std::random_device{}()),
-      replicator_(EntityReplicatorParts{
-          .entities = entities_,
-          .components = components_,
-          .feedback =
-              EntityFeedback{.effects = effects_, .sounds = parts.sounds},
-          .types = parts.entityTypes}),
+      feedback_(EntityFeedback{.effects = effects_, .sounds = parts.sounds}),
+      replicator_(EntityReplicatorParts{.entities = entities_,
+                                        .components = components_,
+                                        .feedback = feedback_,
+                                        .types = parts.entityTypes}),
       enemyActions_(components_),
       playerCommands_(true, parts.settings.get().keys),
       inputs_(&parts.inputs.get()),
@@ -164,6 +164,7 @@ void GameScreen::update(engine::Duration elapsed) {
   silence_.advance(sinceTheWorld);
   applyEntityMessages();
   placeInterpolatedPositions(interpolationClock_, components_);
+  revealArrivedEntities(interpolationClock_, components_, feedback_);
   if (settings_->clientPrediction) {
     placePredictedShip(prediction_, replicator_, components_);
   }
@@ -196,18 +197,22 @@ void GameScreen::applyEntityMessages() {
         },
         message);
     if (const auto* state = std::get_if<network::WorldState>(&message)) {
-      worldSeen_ = true;
-      scoreBoard_.apply(*state);
-      interpolationClock_.observe(state->tick);
-      if (const auto own = ownShipOf(*state, playerNumber_)) {
-        inputs_->confirmInputsUpTo(own->acknowledgedInput);
-      }
-      if (settings_->clientPrediction) {
-        prediction_.apply(*state);
-      }
+      applyWorldState(*state);
     }
   }
   receivedEntityMessages_.clear();
+}
+
+void GameScreen::applyWorldState(const network::WorldState& state) {
+  worldSeen_ = true;
+  scoreBoard_.apply(state);
+  interpolationClock_.observe(state.tick);
+  if (const auto own = ownShipOf(state, playerNumber_)) {
+    inputs_->confirmInputsUpTo(own->acknowledgedInput);
+  }
+  if (settings_->clientPrediction) {
+    prediction_.apply(state);
+  }
 }
 
 void GameScreen::recordEnd(const network::GameEnded& ended) {
