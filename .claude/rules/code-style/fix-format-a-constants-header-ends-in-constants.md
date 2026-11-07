@@ -27,6 +27,11 @@ Why: a review asked to rename `EffectColors.hpp` and `EffectTiers.hpp`, two head
    - Calibration, with `git grep` itself and a commit in place of `--`: `git grep -c -P '<first pattern>' 275b065 -- src/client/Rendering/Effects/EffectColors.hpp` prints 20; the second pattern at `275b065` prints `struct Burst` and `struct Ring` of `Ground/GroundEffectConstants.hpp` and `isPilotColor` of `Sprites/EntitySpriteConstants.hpp`.
 6. **A header the change touches, moves or renames is renamed when it breaks points 1 or 3** (`code-style-file-named-after-its-class.md`: "renamed as soon as it is touched"), its includes and the documentation pages that name its path updated in the same change. A header the change does not touch is reported. A file whose only change is an `#include` line rewritten because the header it names was renamed is not touched by the change: it is reported, not reworked.
 
+### The code of a plan goes through point 5 before it is shown
+
+1. **Before a plan shows its code, run the first grep of point 5 on it**: write each block to the scratchpad under its future file name and run, from the scratchpad, `git grep --no-index -n -P '<first pattern>' -- <scratch files>` (`--no-index` comes first, or git refuses to run outside a repository; calibrated on a `StandardInputPosix.cpp` holding `constexpr char WAKE_BYTE = 0;` in an anonymous namespace: it prints that line), or read every `constexpr` and `const` line of each `.cpp` block. A constant in the anonymous namespace of a `.cpp` block is moved to the constants header of the plan before the plan is shown.
+2. **A text a function answers with is a constant too**: `"no game runs"`, `"games: no measure yet"` and a conversion factor go in the `…Constants.hpp` of the folder like a size or a delay.
+
 ## Example
 
 - ❌ **Before (wrong)**: `Effects/EffectColors.hpp` (twenty colors and ramps), `Effects/EffectTiers.hpp` (`struct KillTier` and the bursts, rings and tiers made of it), `Ground/GroundEffectConstants.hpp` defining `struct Burst` and `struct Ring` among its values.

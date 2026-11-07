@@ -43,6 +43,13 @@ class RejectionLedger {
    */
   [[nodiscard]] RejectionReport takeReport();
 
+  /**
+   * @returns How many datagrams were rejected since the ledger was built. It
+   * takes no report: the counts of each cause and of each sender stay for the
+   * next one.
+   */
+  [[nodiscard]] std::size_t rejectedSinceStart() const;
+
  private:
   /**
    * @returns The place of @p sender: the one it had, a free one, or the one of
@@ -51,7 +58,7 @@ class RejectionLedger {
    */
   [[nodiscard]] RejectedSender& placeOf(const network::Endpoint& sender);
 
-  std::mutex mutex_;
+  mutable std::mutex mutex_;
   RejectionCounts sincePreviousReport_{};
   std::size_t rejectedSinceStart_{0};
   std::vector<RejectedSender> senders_;

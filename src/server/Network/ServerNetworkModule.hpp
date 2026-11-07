@@ -21,8 +21,9 @@ namespace rtype::server {
  * @brief The module that owns the two threads of the server and its UDP
  * socket. It provides to the modules installed after it the IDatagramSender,
  * the IPlayerAdmission, the TickDatagrams, the network::TrafficCounters of its
- * socket and itself as the IListeningPort, and runs the stages of the loop
- * once per tick.
+ * socket, the RejectionLedger of the datagrams its network thread rejects and
+ * itself as the IListeningPort, and runs the stages of the loop once per
+ * tick.
  *
  * install() builds the ServerApplication, which binds nothing, and declares the
  * `port` setting. start() binds the socket on the port the setting holds once

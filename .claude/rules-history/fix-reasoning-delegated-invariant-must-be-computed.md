@@ -45,3 +45,6 @@ Before asserting a side between two things, compute both positions with the cons
 - ❌ **Before (wrong)**: `showStep(BACK_STEP)` then expect the right-facing row.
 - ✅ **After (right)**: `showStep(BYDOS_STEP)`: the Bydos (middle x 361) push the professor to x 38, and lie on his right.
 
+## Update (7 November 2026) — a count a report keeps is read from the run
+
+`ServerAdminConsoleModuleFixture.RunsItsCommandsFromTheConfiguration` asserted `report().executedLines == 1` for a `server.cfg` holding one `games` line. The fixture launches the supervisor with `-p <port>`, which the launch options turn into a forced `set port` line, so the run counted 2 and the test failed on correct code. The assertion now checks what the line did: the console wrote `no game runs`, and no line was refused.
