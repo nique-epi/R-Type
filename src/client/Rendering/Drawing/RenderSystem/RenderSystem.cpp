@@ -102,6 +102,11 @@ std::optional<int> shownRowsOf(const Reveal* reveal, int height) {
   return static_cast<int>(std::ceil(shown * static_cast<double>(height)));
 }
 
+/** @returns A position moved by an offset in logical units. */
+game::Position offsetBy(game::Position position, game::Position offset) {
+  return game::Position{.x = position.x + offset.x, .y = position.y + offset.y};
+}
+
 /** @returns A position moved by an offset in pixels of the canvas. */
 game::Position nudged(game::Position position, sf::Vector2i offset) {
   return game::Position{
@@ -222,11 +227,12 @@ void RenderSystem::collectCaptions(engine::ComponentRegistry& components) {
     if (!caption.visible || layerIndex >= drawCallsByLayer_.size()) {
       return;
     }
-    drawCallsByLayer_[layerIndex].push_back({.entityIndex = entity.index,
-                                             .position = position,
-                                             .sprite = nullptr,
-                                             .caption = &caption,
-                                             .look = {}});
+    drawCallsByLayer_[layerIndex].push_back(
+        {.entityIndex = entity.index,
+         .position = offsetBy(position, caption.offset),
+         .sprite = nullptr,
+         .caption = &caption,
+         .look = {}});
   });
 }
 

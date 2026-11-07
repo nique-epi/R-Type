@@ -4,6 +4,7 @@
 #include "BackgroundConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "Layer.hpp"
+#include "Position.hpp"
 #include "RenderingConstants.hpp"
 #include "SpriteFrame.hpp"
 #include "TextStyle.hpp"
@@ -11,9 +12,10 @@
 namespace rtype::client {
 
 /**
- * @brief Component of an entity drawn as a line of text instead of a sprite:
- * the figure of a gain. RenderSystem writes it centered on the Position of the
- * entity, in its layer, while it is visible.
+ * @brief Component of an entity drawn as a line of text, instead of a sprite
+ * (the figure of a gain) or beside it (the name of a pilot over its ship).
+ * RenderSystem writes it centered on the Position of the entity moved by
+ * `offset`, in its layer, while it is visible.
  */
 struct Caption {
   /** @brief UTF-8 text. */
@@ -21,6 +23,9 @@ struct Caption {
   TextStyle style;
   game::Layer layer{};
   bool visible = true;
+  /** @brief How far from the Position of the entity the line is centered, in
+   * logical units; (0, 0) centers it on the entity. */
+  game::Position offset{};
 };
 
 /**
