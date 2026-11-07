@@ -22,6 +22,9 @@ struct WavePlan {
   /** @brief The health of the boss in percent of what its sheet gives,
    * before the players scale it (see BossStage). */
   int bossHealthPercent{game::WHOLE_PERCENT};
+  /** @brief The look items that float in at the start of a wave, from the
+   * second; empty for a level without any. */
+  std::vector<std::string> lookItems;
 
   bool operator==(const WavePlan&) const = default;
 };

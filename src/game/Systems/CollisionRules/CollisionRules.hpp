@@ -24,7 +24,8 @@ namespace rtype::game {
  * the enemies. A player and an enemy become a ShipContact. With friendly
  * fire on, a player missile and the ship of another player become a
  * MissileHit too: the MissileOwner of the missile and the ShipPilot of the
- * ship name two players. Any other pair, a missile of no player, a ship of
+ * ship name two players. A player and a look item become a LookItemTouched.
+ * Any other pair, a missile of no player, a ship of
  * no pilot, an entity without an EntityType and an entity that is no longer
  * alive are ignored. The two entities of a Collision may come in either order.
  * The bus and the registry must outlive this object.

@@ -12,6 +12,13 @@ namespace rtype::server::testing {
  */
 [[nodiscard]] WavePlan wavePlanOf(std::span<const std::string_view> enemies);
 
+/**
+ * @returns The waves the server tests play, their look items taking the
+ * sheets @p lookItems names in turn.
+ */
+[[nodiscard]] WavePlan wavePlanWithLookItems(
+    std::span<const std::string_view> lookItems);
+
 /** @returns The waves the server tests play: wavePlanOf(TEST_ENEMY_CYCLE). */
 [[nodiscard]] WavePlan testWavePlan();
 

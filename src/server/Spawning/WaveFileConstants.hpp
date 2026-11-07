@@ -13,11 +13,12 @@ constexpr std::string_view DIFFICULTY_TABLE_KEY = "difficulty";
 
 /**
  * @brief The keys of a difficulty: the names of the entity sheets its enemies
- * are in turn, then one
- * key per value of its WaveCurve, the durations in whole milliseconds, the
+ * are in turn, the names of the sheets of the look items its waves bring, then
+ * one key per value of its WaveCurve, the durations in whole milliseconds, the
  * last being the number of waves of its level.
  */
 constexpr std::string_view ENEMIES_KEY = "enemies";
+constexpr std::string_view LOOK_ITEMS_KEY = "look_items";
 constexpr std::string_view FIRST_WAVE_BYDOS_KEY = "first_wave_bydos";
 constexpr std::string_view BYDOS_ADDED_PER_WAVE_KEY = "bydos_added_per_wave";
 constexpr std::string_view FIRST_SPAWN_INTERVAL_KEY = "first_spawn_interval_ms";
@@ -47,6 +48,7 @@ constexpr int DEFAULT_BOSS_HEALTH_PERCENT = 100;
  */
 constexpr std::array ROOT_KEYS{DIFFICULTY_TABLE_KEY};
 constexpr std::array WAVE_PLAN_KEYS{ENEMIES_KEY,
+                                    LOOK_ITEMS_KEY,
                                     FIRST_WAVE_BYDOS_KEY,
                                     BYDOS_ADDED_PER_WAVE_KEY,
                                     FIRST_SPAWN_INTERVAL_KEY,
@@ -83,6 +85,8 @@ constexpr std::int64_t LONGEST_WAVE_FILE_MILLISECONDS = 60000;
  */
 constexpr engine::WholeNumberRange ENEMY_LIST_LENGTH{
     .lowest = 1, .highest = MOST_BYDOS_IN_A_WAVE_FILE};
+constexpr engine::WholeNumberRange LOOK_ITEM_LIST_LENGTH{
+    .lowest = 0, .highest = MOST_BYDOS_IN_A_WAVE_FILE};
 constexpr engine::WholeNumberRange FIRST_WAVE_BYDOS_RANGE{
     .lowest = 1, .highest = MOST_BYDOS_IN_A_WAVE_FILE};
 constexpr engine::WholeNumberRange BYDOS_ADDED_PER_WAVE_RANGE{

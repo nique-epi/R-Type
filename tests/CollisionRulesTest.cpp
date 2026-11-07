@@ -9,6 +9,7 @@
 #include "CollisionTestConstants.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "LookItemTouched.hpp"
 #include "MissileHit.hpp"
 #include "ShipContact.hpp"
 #include "SystemScheduler.hpp"
@@ -22,6 +23,7 @@ using rtype::engine::SystemScheduler;
 using rtype::game::CollisionRules;
 using rtype::game::CollisionSystem;
 using rtype::game::EntityType;
+using rtype::game::LookItemTouched;
 using rtype::game::MissileHit;
 using rtype::game::ShipContact;
 using rtype::game::ViewDelay;
@@ -136,6 +138,29 @@ TEST_P(CollisionRulesInAnyOrder, LeavesACompensatedMissileToTheLagSystem) {
   EXPECT_TRUE(recorded.missileHits.empty());
 }
 
+/**
+ * Given a player and a look item
+ * When a Collision names them, in either order
+ * Then one LookItemTouched is published, naming the ship and the item
+ */
+TEST_P(CollisionRulesInAnyOrder, AShipTouchingALookItemPublishesOneTouch) {
+  CollisionScene scene;
+  const Entity ship = scene.spawn(EntityType::Player, 0.0F, 0.0F);
+  const Entity item = scene.spawn(EntityType::LookItem, 0.0F, 0.0F);
+  const CollisionRules rules(scene.events, scene.components);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(collisionOf(ship, item));
+  scene.events.dispatch();
+
+  EXPECT_EQ(recorded.lookItemTouches,
+            (std::vector<LookItemTouched>{
+                LookItemTouched{.ship = ship, .item = item}}));
+  EXPECT_TRUE(recorded.missileHits.empty());
+  EXPECT_TRUE(recorded.shipContacts.empty());
+}
+
 INSTANTIATE_TEST_SUITE_P(BothOrders, CollisionRulesInAnyOrder,
                          ::testing::Bool());
 
@@ -212,6 +237,24 @@ TEST(CollisionRules, PlayerMissileDoesNotHitPlayer) {
  */
 TEST(CollisionRules, EnemyMissileDoesNotHitEnemy) {
   expectNoEventFor(EntityType::EnemyMissile, EntityType::Enemy);
+}
+
+/**
+ * Given a missile of a player and a look item
+ * When a Collision names them
+ * Then nothing is published: a missile passes through an item
+ */
+TEST(CollisionRules, AMissileTouchingALookItemPublishesNothing) {
+  expectNoEventFor(EntityType::PlayerMissile, EntityType::LookItem);
+}
+
+/**
+ * Given an enemy and a look item
+ * When a Collision names them
+ * Then nothing is published
+ */
+TEST(CollisionRules, AnEnemyTouchingALookItemPublishesNothing) {
+  expectNoEventFor(EntityType::Enemy, EntityType::LookItem);
 }
 
 /**

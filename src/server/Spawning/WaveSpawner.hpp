@@ -43,6 +43,12 @@ namespace rtype::server {
  * describes. When every network id was given, the enemy is skipped and a
  * warning is logged.
  *
+ * From the second wave, a look item of the sheets the look items of the plan
+ * name, taken in turn, enters at the middle of the right edge as the wave
+ * begins, that is when its pause starts. It is not counted among the enemies of
+ * the wave, so it never holds a wave open, and it draws no number from the
+ * random generator.
+ *
  * Not thread-safe: use it from the simulation thread only.
  */
 class WaveSpawner {
@@ -73,9 +79,16 @@ class WaveSpawner {
 
  private:
   void spawnOne();
+
+  /** @brief Creates the next look item of the plan at the middle of the right
+   * edge and announces it, in the tick the director moves to a new wave: the
+   * director does so when the last wave is cleared, at the start of the pause
+   * before the next one. Skipped, with a warning, when every network id was
+   * given. */
+  void spawnLookItem();
   [[nodiscard]] game::Position nextPosition();
   [[nodiscard]] const game::EntitySheet& nextEnemy() const;
-  [[nodiscard]] std::optional<std::uint32_t> createEnemy(
+  [[nodiscard]] std::optional<std::uint32_t> createEntity(
       const game::EntitySheet& sheet, game::Position position);
   void announce(const game::EntitySheet& sheet, std::uint32_t networkId,
                 game::Position position);
@@ -88,7 +101,9 @@ class WaveSpawner {
   logging::Logger logger_;
   std::mt19937 random_;
   std::vector<std::reference_wrapper<const game::EntitySheet>> enemies_;
+  std::vector<std::reference_wrapper<const game::EntitySheet>> lookItems_;
   std::size_t spawnedCount_{0};
+  std::size_t lookItemsSpawned_{0};
   game::WaveDirector waveDirector_;
   std::size_t loggedWaveNumber_{0};
 };

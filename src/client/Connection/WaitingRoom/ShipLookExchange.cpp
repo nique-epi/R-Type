@@ -7,6 +7,7 @@
 #include "ConnectionConstants.hpp"
 #include "ISessionOutbox.hpp"
 #include "LobbyState.hpp"
+#include "LookItemWon.hpp"
 #include "MessageDispatcher.hpp"
 #include "MessageOrigin.hpp"
 #include "PlayerLooks.hpp"
@@ -36,6 +37,10 @@ ShipLookExchange::ShipLookExchange(network::MessageDispatcher& dispatcher,
         if (outbox_ != nullptr) {
           looks_ = looks.players;
         }
+      });
+  dispatcher.registerHandler<network::LookItemWon>(
+      [this](const network::MessageOrigin&, const network::LookItemWon& won) {
+        wonItems_.push_back(won.item);
       });
 }
 

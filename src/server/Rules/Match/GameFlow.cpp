@@ -23,6 +23,8 @@
 #include "LifeKeeper.hpp"
 #include "LifeKeeperParts.hpp"
 #include "Logger.hpp"
+#include "LookItemKeeper.hpp"
+#include "LookItemKeeperParts.hpp"
 #include "PlayerController.hpp"
 #include "PlayerLives.hpp"
 #include "PlayerRoster.hpp"
@@ -222,6 +224,7 @@ void GameFlow::advanceState() {
       break;
     case GameState::InProgress:
       ++tick_;
+      lookItemKeeper_->onTick();
       runWorldSystems(game_, world(), tick_);
       weaponSystem_->onTick();
       volleySystem_->onTick();
@@ -283,6 +286,11 @@ void GameFlow::buildWorld() {
                             replication_.onPlayerJoined(player);
                           },
                       .shipsNeverDie = game_.settings.startsAtBoss});
+  lookItemKeeper_ = std::make_unique<LookItemKeeper>(
+      LookItemKeeperParts{.events = game_.events.get(),
+                          .world = world,
+                          .roster = game_.roster.get(),
+                          .send = game_.send});
 }
 
 void GameFlow::startNewWorld() {

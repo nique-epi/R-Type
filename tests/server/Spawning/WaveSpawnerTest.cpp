@@ -1,5 +1,8 @@
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <iterator>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -16,6 +19,7 @@
 #include "ServerException.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "SpawningConstants.hpp"
+#include "WaveEntryPosition.hpp"
 #include "WavePlanFixtures.hpp"
 #include "WaveSpawner.hpp"
 #include "WaveSpawnerScene.hpp"
@@ -29,6 +33,8 @@ using rtype::game::STRAIGHT_BEHAVIOUR_NAME;
 using rtype::game::UnknownEntityTypeException;
 using rtype::game::WEAVE_BEHAVIOUR_NAME;
 using rtype::game::testing::DRIFTER_SHEET;
+using rtype::game::testing::LOOK_CROWN_SHEET;
+using rtype::game::testing::LOOK_PARTY_HAT_SHEET;
 using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::TEST_WAVE_CURVE;
 using rtype::game::testing::TICKS_OF_A_PAUSE;
@@ -40,15 +46,19 @@ using rtype::server::EmptyEnemyCycleException;
 using rtype::server::WaveSpawner;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::FIRST_WAVE_LINE_TEXT;
+using rtype::server::testing::HALF_OF_THE_HEIGHT;
 using rtype::server::testing::NO_SHEET_CYCLE;
 using rtype::server::testing::oneWaveLevelWavePlan;
 using rtype::server::testing::OTHER_SPAWNER_SEED;
 using rtype::server::testing::SECOND_PLAYER;
 using rtype::server::testing::SPAWNER_SEED;
+using rtype::server::testing::TEST_LOOK_ITEMS;
+using rtype::server::testing::TICKS_OF_FOUR_WAVES;
 using rtype::server::testing::TICKS_TO_THE_FIRST_BYDO;
 using rtype::server::testing::TICKS_TO_THE_SECOND_BYDO;
 using rtype::server::testing::TWENTY_SECONDS_OF_TICKS;
 using rtype::server::testing::wavePlanOf;
+using rtype::server::testing::wavePlanWithLookItems;
 using rtype::server::testing::WaveSpawnerScene;
 using rtype::server::testing::WEAVER_FIRST_CYCLE;
 
@@ -324,4 +334,120 @@ TEST(WaveSpawner, RefusesAPlanNamingNoSheet) {
   EXPECT_THROW(static_cast<void>(scene.makeSpawnerWith(
                    SPAWNER_SEED, wavePlanOf(NO_SHEET_CYCLE))),
                UnknownEntityTypeException);
+}
+
+namespace {
+
+/** @returns The EntitySpawned among @p spawns of the type @p number, in
+ * order. */
+std::vector<EntitySpawned> spawnsOfType(
+    const std::vector<EntitySpawned>& spawns, std::uint8_t number) {
+  std::vector<EntitySpawned> found;
+  std::ranges::copy_if(spawns, std::back_inserter(found),
+                       [number](const EntitySpawned& spawned) {
+                         return spawned.entityType == number;
+                       });
+  return found;
+}
+
+}  // namespace
+
+/**
+ * Given a spawner whose plan brings the crown and the party hat
+ * When the whole first wave has appeared
+ * Then no look item was announced: the first wave brings none
+ */
+TEST(WaveSpawner, NoLookItemDuringTheFirstWave) {
+  WaveSpawnerScene scene;
+  scene.connect(FIRST_PLAYER);
+  WaveSpawner spawner = scene.makeSpawnerWith(
+      SPAWNER_SEED, wavePlanWithLookItems(TEST_LOOK_ITEMS));
+
+  WaveSpawnerScene::runTicks(spawner, TICKS_TO_THE_WHOLE_FIRST_WAVE);
+
+  EXPECT_TRUE(spawnsOfType(scene.spawnsSent(),
+                           shippedEntitySheets().named(LOOK_CROWN_SHEET).number)
+                  .empty());
+}
+
+/**
+ * Given two players and a spawner whose plan brings the crown, its first wave
+ * over
+ * When the second wave begins
+ * Then one crown is announced to each player, at the middle of the right edge
+ */
+TEST(WaveSpawner, ALookItemEntersAtTheStartOfTheSecondWave) {
+  WaveSpawnerScene scene;
+  scene.connect(FIRST_PLAYER);
+  scene.connect(SECOND_PLAYER);
+  WaveSpawner spawner = scene.makeSpawnerWith(
+      SPAWNER_SEED, wavePlanWithLookItems(TEST_LOOK_ITEMS));
+  WaveSpawnerScene::runTicks(spawner, TICKS_TO_THE_WHOLE_FIRST_WAVE);
+  scene.clearTheSky();
+
+  WaveSpawnerScene::runTicks(spawner, 1);
+
+  const std::vector<EntitySpawned> crowns = spawnsOfType(
+      scene.spawnsSent(), shippedEntitySheets().named(LOOK_CROWN_SHEET).number);
+  ASSERT_EQ(crowns.size(), 2U);
+  const rtype::game::Position middle =
+      rtype::game::waveEntryPosition(HALF_OF_THE_HEIGHT);
+  for (const EntitySpawned& crown : crowns) {
+    EXPECT_EQ(crown.x, middle.x);
+    EXPECT_EQ(crown.y, middle.y);
+  }
+}
+
+/**
+ * Given a spawner whose plan brings the crown and the party hat, playing
+ * until its fourth wave begins with the sky cleared at each wave
+ * When the look items it announced are listed
+ * Then they are the crown, the party hat, then the crown again
+ */
+TEST(WaveSpawner, LookItemsAreTakenInTurn) {
+  WaveSpawnerScene scene;
+  scene.connect(FIRST_PLAYER);
+  WaveSpawner spawner = scene.makeSpawnerWith(
+      SPAWNER_SEED, wavePlanWithLookItems(TEST_LOOK_ITEMS));
+
+  for (std::size_t tick = 0; tick < TICKS_OF_FOUR_WAVES; ++tick) {
+    WaveSpawnerScene::runTicks(spawner, 1);
+    scene.clearTheSky();
+  }
+
+  const std::uint8_t crown =
+      shippedEntitySheets().named(LOOK_CROWN_SHEET).number;
+  const std::uint8_t partyHat =
+      shippedEntitySheets().named(LOOK_PARTY_HAT_SHEET).number;
+  std::vector<std::uint8_t> items;
+  for (const EntitySpawned& spawned : scene.spawnsSent()) {
+    if (spawned.entityType == crown || spawned.entityType == partyHat) {
+      items.push_back(spawned.entityType);
+    }
+  }
+  ASSERT_GE(items.size(), 3U);
+  EXPECT_EQ(items.at(0), crown);
+  EXPECT_EQ(items.at(1), partyHat);
+  EXPECT_EQ(items.at(2), crown);
+}
+
+/**
+ * Given a spawner whose plan brings the crown, at the start of its second
+ * wave with the crown still in the world
+ * When the pause of that wave passes
+ * Then the Bydos of the wave appear: the crown does not hold the wave open
+ */
+TEST(WaveSpawner, ALookItemDoesNotHoldAWaveOpen) {
+  WaveSpawnerScene scene;
+  scene.connect(FIRST_PLAYER);
+  WaveSpawner spawner = scene.makeSpawnerWith(
+      SPAWNER_SEED, wavePlanWithLookItems(TEST_LOOK_ITEMS));
+  WaveSpawnerScene::runTicks(spawner, TICKS_TO_THE_WHOLE_FIRST_WAVE);
+  scene.clearTheSky();
+  WaveSpawnerScene::runTicks(spawner, 1);
+  const std::size_t before = scene.spawnsSent().size();
+
+  WaveSpawnerScene::runTicks(spawner, TICKS_OF_A_PAUSE);
+
+  EXPECT_GT(scene.spawnsSent().size(), before);
 }

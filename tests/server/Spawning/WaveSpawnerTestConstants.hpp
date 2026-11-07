@@ -35,6 +35,22 @@ constexpr std::array TEST_ENEMY_CYCLE{game::testing::DRIFTER_SHEET,
 constexpr std::array WEAVER_FIRST_CYCLE{game::testing::WEAVER_SHEET,
                                         game::testing::DRIFTER_SHEET};
 
+/** @brief The look items the spawner tests take in turn: the crown then the
+ * party hat. */
+constexpr std::array TEST_LOOK_ITEMS{game::testing::LOOK_CROWN_SHEET,
+                                     game::testing::LOOK_PARTY_HAT_SHEET};
+
+/**
+ * @brief The time the first three waves of game::testing::TEST_WAVE_CURVE take
+ * when the sky is cleared as the Bydos appear, 8 + 9.25 + 10 = 27.25 seconds,
+ * rounded up to forty: the fourth wave has begun then.
+ */
+constexpr std::size_t TICKS_OF_FOUR_WAVES =
+    engine::wholeTicksIn(std::chrono::seconds(40));
+
+/** @brief Where a look item enters, from the top: half of the way down. */
+constexpr float HALF_OF_THE_HEIGHT = 0.5F;
+
 /** @brief A cycle naming a sheet the server does not have. */
 constexpr std::array NO_SHEET_CYCLE{std::string_view{"no_such_sheet"}};
 

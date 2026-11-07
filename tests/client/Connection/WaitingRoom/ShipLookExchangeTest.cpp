@@ -4,6 +4,7 @@
 #include <vector>
 #include "ConnectionConstants.hpp"
 #include "GameStarted.hpp"
+#include "LookItemWon.hpp"
 #include "PlayerLooks.hpp"
 #include "ServerSessionTestConstants.hpp"
 #include "ShipLook.hpp"
@@ -18,6 +19,7 @@ using testing::ACCEPTED_PLAYER_NUMBER;
 using ::testing::ElementsAre;
 using testing::FIRST_SEQUENCE;
 using ::testing::IsEmpty;
+using testing::SECOND_SEQUENCE;
 using testing::ShipLookExchangeFixture;
 
 namespace {
@@ -133,6 +135,21 @@ TEST_F(ShipLookExchangeFixture, ForgetsTheLooksWhenTheSessionCloses) {
   update();
 
   EXPECT_THAT(shipLooks().playerLooks(), IsEmpty());
+}
+
+/**
+ * Given a session
+ * When the server sends two LookItemWon
+ * Then takeWonItems() hands both over in the order they came, then none
+ */
+TEST_F(ShipLookExchangeFixture, KeepsTheWonItemsUntilTaken) {
+  accept();
+  deliverInSession(network::LookItemWon{.item = 3}, FIRST_SEQUENCE);
+  deliverInSession(network::LookItemWon{.item = 8}, SECOND_SEQUENCE);
+  update();
+
+  EXPECT_THAT(shipLooks().takeWonItems(), ElementsAre(3, 8));
+  EXPECT_THAT(shipLooks().takeWonItems(), IsEmpty());
 }
 
 /**

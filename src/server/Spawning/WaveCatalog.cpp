@@ -69,6 +69,27 @@ bool namesAnEnemy(const game::EntitySheets& types, std::string_view name) {
       });
 }
 
+/** @returns The names of the sheets of @p types of the side look_item, in the
+ * order of their names, for the errors. */
+std::vector<std::string> lookItemNamesOf(const game::EntitySheets& types) {
+  std::vector<std::string> names;
+  for (const game::EntitySheet& sheet : types.all()) {
+    if (sheet.side == game::EntityType::LookItem) {
+      names.push_back(sheet.name);
+    }
+  }
+  return names;
+}
+
+/** @returns Whether @p types has a sheet named @p name of the side look_item.
+ */
+bool namesALookItem(const game::EntitySheets& types, std::string_view name) {
+  return std::ranges::any_of(
+      types.all(), [name](const game::EntitySheet& sheet) {
+        return sheet.name == name && sheet.side == game::EntityType::LookItem;
+      });
+}
+
 /** @brief The list of enemies of a table, and the sheets its names are checked
  * against. */
 struct EnemyList {
@@ -116,6 +137,55 @@ std::vector<std::string> enemiesFrom(const EnemyList& list) {
     enemies.push_back(enemyNamed(name, list));
   }
   return enemies;
+}
+
+/**
+ * @returns The name @p name, an element of the look items of the table,
+ * holds.
+ * @throws InvalidLookItemListException when it is not a string, and
+ * UnknownLookItemException when it names no sheet of the side look_item.
+ */
+std::string lookItemNamed(const toml::node& name, const EnemyList& list) {
+  const DataFileTable& table = list.table.get();
+  const std::optional<std::string> text = name.value_exact<std::string>();
+  if (!text.has_value()) {
+    throw InvalidLookItemListException(
+        engine::placeOf(name.source(), table, LOOK_ITEMS_KEY),
+        LOOK_ITEM_LIST_LENGTH);
+  }
+  if (!namesALookItem(list.types.get(), *text)) {
+    throw UnknownLookItemException(
+        engine::placeOf(name.source(), table, LOOK_ITEMS_KEY), *text,
+        lookItemNamesOf(list.types.get()));
+  }
+  return *text;
+}
+
+/**
+ * @returns The names the look items of the list hold, in their order; none
+ * when the table has no such key.
+ * @throws InvalidLookItemListException when they are not a list of
+ * LOOK_ITEM_LIST_LENGTH names, and UnknownLookItemException for a name of no
+ * look item sheet.
+ */
+std::vector<std::string> lookItemsFrom(const EnemyList& list) {
+  const DataFileTable& table = list.table.get();
+  if (!table.table.get().contains(LOOK_ITEMS_KEY)) {
+    return {};
+  }
+  const toml::node& node = engine::nodeAt(table, LOOK_ITEMS_KEY);
+  const toml::array* const names = node.as_array();
+  if (names == nullptr || !countFits(names->size(), LOOK_ITEM_LIST_LENGTH)) {
+    throw InvalidLookItemListException(
+        engine::placeOf(node.source(), table, LOOK_ITEMS_KEY),
+        LOOK_ITEM_LIST_LENGTH);
+  }
+  std::vector<std::string> items;
+  items.reserve(names->size());
+  for (const toml::node& name : *names) {
+    items.push_back(lookItemNamed(name, list));
+  }
+  return items;
 }
 
 /**
@@ -188,11 +258,12 @@ int bossHealthPercentFrom(const DataFileTable& table) {
 
 WavePlan planFrom(const DataFileTable& table, const game::EntitySheets& types) {
   engine::refuseUnknownKeys(table, WAVE_PLAN_KEYS);
-  return WavePlan{
-      .curve = curveFrom(table),
-      .enemies = enemiesFrom(EnemyList{.table = table, .types = types}),
-      .boss = bossFrom(table, types),
-      .bossHealthPercent = bossHealthPercentFrom(table)};
+  const EnemyList list{.table = table, .types = types};
+  return WavePlan{.curve = curveFrom(table),
+                  .enemies = enemiesFrom(list),
+                  .boss = bossFrom(table, types),
+                  .bossHealthPercent = bossHealthPercentFrom(table),
+                  .lookItems = lookItemsFrom(list)};
 }
 
 /** @throws InvalidDifficultyNameException, at the table, when the protocol
