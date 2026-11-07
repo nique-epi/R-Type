@@ -2,7 +2,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { fr } from '@/i18n/dictionaries/fr';
-import { HostServerForm, SERVER_NAME_MAXIMUM } from './host-server-form';
+import { SERVER_NAME_MAXIMUM } from '@/lib/rtype/server-name';
+import { HostServerForm } from './host-server-form';
 
 function renderForm(quotaMessage?: string) {
   const onSubmit = vi.fn();

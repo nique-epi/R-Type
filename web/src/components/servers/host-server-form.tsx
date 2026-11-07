@@ -8,9 +8,7 @@ import { TextField } from '@/components/primitives/inputs/text-field';
 import { Notice } from '@/components/primitives/status/notice';
 import { PanelTitle } from '@/components/primitives/surfaces/panel';
 import { format } from '@/i18n/format';
-
-/** The longest name of a server the master takes. */
-export const SERVER_NAME_MAXIMUM = 32;
+import { SERVER_NAME_MAXIMUM } from '@/lib/rtype/server-name';
 
 export type HostServerFormLabels = {
   title: string;
