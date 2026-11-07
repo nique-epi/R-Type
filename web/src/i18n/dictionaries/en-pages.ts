@@ -43,28 +43,6 @@ export const enPages: PageCopy = {
       open: '{name}, see the server',
       none: 'No free seat at the moment.',
     },
-    trailer: {
-      eyebrow: 'Videos',
-      title: 'Trailer',
-      watchAria: 'Watch the trailer',
-      videos: [
-        {
-          label: 'Gameplay',
-          title: 'Four pilots',
-          aria: 'Watch: four pilots',
-        },
-        {
-          label: 'Bestiary',
-          title: 'The Bydos',
-          aria: 'Watch: the Bydos',
-        },
-        {
-          label: 'Guide',
-          title: 'Host a server',
-          aria: 'Watch: host a server',
-        },
-      ],
-    },
     bydos: {
       aria: 'The Bydos',
       eyebrow: 'Bestiary',

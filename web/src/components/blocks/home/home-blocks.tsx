@@ -10,7 +10,6 @@ import { FreeSeats } from './free-seats';
 import { Hero } from './hero';
 import { News } from './news';
 import { OpenSource } from './open-source';
-import { Videos } from './videos';
 
 /** The whole home page, one block after the other. */
 export async function HomeBlocks({ lang }: { lang: Locale }) {
@@ -23,7 +22,6 @@ export async function HomeBlocks({ lang }: { lang: Locale }) {
     <main>
       <Hero lang={lang} version={release?.version} />
       <FreeSeats lang={lang} />
-      <Videos lang={lang} />
       <Bydos lang={lang} version={release?.version} />
       <Features lang={lang} />
       <StoryBand

@@ -94,7 +94,7 @@ The web site is a program of its own: a Next.js server, in `web/` (see [Web site
 
 | Path under `/fr` or `/en` | Shows | Reads |
 |---|---|---|
-| `/` | the hero, the servers with free seats, the videos, the Bydos, the features, the notes of the latest release | the list of servers, the latest release |
+| `/` | the hero, the servers with free seats, the Bydos, the features, the notes of the latest release | the list of servers, the latest release |
 | `/download` | the installer of the system of the reader, its steps, the other files of the release | the latest release |
 | `/servers` | the sector map, read only: a seat is taken in the game, so the map has no Join and no quick play | the list of servers, each with its games and its last ping |
 | `/servers/{id}` | the games of a server, its figures and the pilots of its last 100 samples (the master keeps one sample a second, a page of the list holds 100); a server created and not registered yet shows a waiting notice | the list, `GET /api/servers/{id}/samples` |

@@ -45,28 +45,6 @@ export const frPages = {
       open: '{name}, voir le serveur',
       none: 'Aucune place libre pour le moment.',
     },
-    trailer: {
-      eyebrow: 'Vidéos',
-      title: 'Bande-annonce',
-      watchAria: 'Regarder la bande-annonce',
-      videos: [
-        {
-          label: 'Gameplay',
-          title: 'A quatre pilotes',
-          aria: 'Regarder : à quatre pilotes',
-        },
-        {
-          label: 'Bestiaire',
-          title: 'Les Bydos',
-          aria: 'Regarder : les Bydos',
-        },
-        {
-          label: 'Guide',
-          title: 'Heberger un serveur',
-          aria: 'Regarder : héberger un serveur',
-        },
-      ],
-    },
     bydos: {
       aria: 'Les Bydos',
       eyebrow: 'Bestiaire',

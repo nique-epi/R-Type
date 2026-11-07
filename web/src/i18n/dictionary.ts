@@ -23,7 +23,6 @@ export type Dictionary = {
   header: SiteHeaderLabels;
   footer: { navigation: string };
   hero: { scrollCue: string };
-  video: { close: string; comingSoon: string; watch: string };
   download: DownloadPanelLabels;
   gamesTable: GamesTableLabels;
   chart: { now: string; period: string };

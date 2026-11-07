@@ -17,11 +17,6 @@ export const fr: Dictionary = {
   },
   footer: { navigation: 'Pied de page' },
   hero: { scrollCue: 'Défilez' },
-  video: {
-    close: 'Fermer la vidéo',
-    comingSoon: '[Vidéo à venir]',
-    watch: 'Regarder',
-  },
   download: { systems: 'Système', progress: 'Progression du téléchargement' },
   gamesTable: {
     game: 'Partie',
