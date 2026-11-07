@@ -67,8 +67,11 @@ constexpr std::chrono::nanoseconds JUST_AFTER_THE_REPEAT =
 constexpr std::chrono::nanoseconds NEXT_ACCEPTANCE_REPEAT_TIME =
     REQUEST_TIME + std::chrono::milliseconds{500};
 
-/** @brief The name of the entity type of the sample acceptances: the ship. */
-constexpr std::string_view SAMPLE_ENTITY_TYPE_NAME = "ship";
+/** @brief The content an acceptor of the tests announces: a fingerprint of
+ * one repeated byte, a size and a port. */
+constexpr std::byte GAME_FINGERPRINT_BYTE{0x5a};
+constexpr std::uint32_t GAME_PACK_SIZE = 151'000;
+constexpr std::uint16_t GAME_PACK_PORT = 4242;
 
 /**
  * @brief A protocol id and a version this server does not speak.

@@ -1,50 +1,42 @@
 #include "SessionEntityTypesFixtures.hpp"
+#include <cstdint>
+#include <filesystem>
 #include <string>
-#include <string_view>
-#include <vector>
-#include "EntitySide.hpp"
-#include "EntityTypeEntry.hpp"
+#include "ContentAnnouncement.hpp"
+#include "ContentFingerprint.hpp"
+#include "EntityType.hpp"
+#include "LocalContent.hpp"
+#include "NumberedEntityType.hpp"
 #include "SessionEntityTypesTestConstants.hpp"
 
 namespace rtype::client::testing {
 
-namespace {
-
-/** @returns The entry of an enemy named @p name. */
-network::EntityTypeEntry enemyNamed(std::string_view name) {
-  return network::EntityTypeEntry{.side = network::EntitySide::Enemy,
-                                  .name = std::string{name}};
+LocalContent testLocalContent() {
+  LocalContent content{
+      .fingerprint = {},
+      .types = {game::NumberedEntityType{.name = std::string{DRAWN_ENEMY_NAME},
+                                         .side = game::EntityType::Enemy},
+                game::NumberedEntityType{.name = std::string{DRAWN_SHIP_NAME},
+                                         .side = game::EntityType::Player}}};
+  content.fingerprint.bytes.fill(LOCAL_FINGERPRINT_BYTE);
+  return content;
 }
 
-/** @returns The entry of the ship of a player, named DRAWN_SHIP_NAME. */
-network::EntityTypeEntry drawnShip() {
-  return network::EntityTypeEntry{.side = network::EntitySide::Player,
-                                  .name = std::string{DRAWN_SHIP_NAME}};
+network::ContentAnnouncement localAnnouncement() {
+  return network::ContentAnnouncement{
+      .fingerprint = testLocalContent().fingerprint, .size = 0, .port = 0};
 }
 
-}  // namespace
-
-bool isDrawnInTheTests(std::string_view name) {
-  return name == DRAWN_ENEMY_NAME || name == DRAWN_SHIP_NAME ||
-         name == OTHER_DRAWN_ENEMY_NAME;
+network::ContentAnnouncement otherAnnouncement(std::uint32_t size,
+                                               std::uint16_t port) {
+  network::ContentAnnouncement announcement{
+      .fingerprint = {}, .size = size, .port = port};
+  announcement.fingerprint.bytes.fill(OTHER_FINGERPRINT_BYTE);
+  return announcement;
 }
 
-std::vector<network::EntityTypeEntry> drawnTypes() {
-  return {enemyNamed(DRAWN_ENEMY_NAME), drawnShip()};
-}
-
-std::vector<network::EntityTypeEntry> otherDrawnTypes() {
-  return {enemyNamed(OTHER_DRAWN_ENEMY_NAME)};
-}
-
-std::vector<network::EntityTypeEntry> oneUndrawnType() {
-  return {enemyNamed(DRAWN_ENEMY_NAME), enemyNamed(UNDRAWN_ENEMY_NAME)};
-}
-
-std::vector<network::EntityTypeEntry> threeUndrawnTypes() {
-  return {enemyNamed(UNDRAWN_ENEMY_NAME), drawnShip(),
-          enemyNamed(OTHER_UNDRAWN_ENEMY_NAME),
-          enemyNamed(THIRD_UNDRAWN_ENEMY_NAME)};
+std::filesystem::path unusedCacheFolder() {
+  return std::filesystem::temp_directory_path() / UNUSED_CACHE_FOLDER;
 }
 
 }  // namespace rtype::client::testing

@@ -16,6 +16,7 @@
 #include "MessageType.hpp"
 #include "NetworkException.hpp"
 #include "NetworkTestConstants.hpp"
+#include "ProtocolConstants.hpp"
 #include "ProtocolTestConstants.hpp"
 #include "ReadyState.hpp"
 #include "WorldState.hpp"
@@ -194,9 +195,10 @@ TEST(MessageDispatcher, DropsATruncatedPayloadWithoutThrowing) {
 TEST(MessageDispatcher, CountsAMessageWhoseHandlerThrew) {
   MessageDispatcher dispatcher;
   registerThrowingHandler<ConnectionAccepted>(dispatcher);
-  const auto playerOneWithOneType = byteSequence({0x01, 0x01, 0x02, 0x01, 'a'});
+  const std::vector<std::byte> playerOneAccepted = encodeMessage(
+      ConnectionAccepted{.playerNumber = FIRST_PLAYER_NUMBER, .content = {}});
   const std::vector frames{
-      frameOf(MessageType::ConnectionAccepted, playerOneWithOneType)};
+      frameOf(MessageType::ConnectionAccepted, playerOneAccepted)};
 
   dispatcher.dispatch(someOrigin(), frames);
 
@@ -211,9 +213,10 @@ TEST(MessageDispatcher, CountsAMessageWhoseHandlerThrew) {
 TEST(MessageDispatcher, DoesNotCountAHandlerErrorAsMalformed) {
   MessageDispatcher dispatcher;
   registerThrowingHandler<ConnectionAccepted>(dispatcher);
-  const auto playerOneWithOneType = byteSequence({0x01, 0x01, 0x02, 0x01, 'a'});
+  const std::vector<std::byte> playerOneAccepted = encodeMessage(
+      ConnectionAccepted{.playerNumber = FIRST_PLAYER_NUMBER, .content = {}});
   const std::vector frames{
-      frameOf(MessageType::ConnectionAccepted, playerOneWithOneType)};
+      frameOf(MessageType::ConnectionAccepted, playerOneAccepted)};
 
   dispatcher.dispatch(someOrigin(), frames);
 
@@ -394,9 +397,10 @@ TEST_F(MessageDispatcherFixture, WritesOneLineForMessagesRejectedTogether) {
 TEST_F(MessageDispatcherFixture, LogsAThrowingHandlerAtTheErrorLevel) {
   MessageDispatcher dispatcher;
   registerThrowingHandler<ConnectionAccepted>(dispatcher);
-  const auto playerOneWithOneType = byteSequence({0x01, 0x01, 0x02, 0x01, 'a'});
+  const std::vector<std::byte> playerOneAccepted = encodeMessage(
+      ConnectionAccepted{.playerNumber = FIRST_PLAYER_NUMBER, .content = {}});
   const std::vector frames{
-      frameOf(MessageType::ConnectionAccepted, playerOneWithOneType)};
+      frameOf(MessageType::ConnectionAccepted, playerOneAccepted)};
 
   dispatcher.dispatch(someOrigin(), frames);
 
@@ -413,9 +417,10 @@ TEST_F(MessageDispatcherFixture, LogsAThrowingHandlerAtTheErrorLevel) {
 TEST_F(MessageDispatcherFixture, LogsAThrowingHandlerWithItsSender) {
   MessageDispatcher dispatcher;
   registerThrowingHandler<ConnectionAccepted>(dispatcher);
-  const auto playerOneWithOneType = byteSequence({0x01, 0x01, 0x02, 0x01, 'a'});
+  const std::vector<std::byte> playerOneAccepted = encodeMessage(
+      ConnectionAccepted{.playerNumber = FIRST_PLAYER_NUMBER, .content = {}});
   const std::vector frames{
-      frameOf(MessageType::ConnectionAccepted, playerOneWithOneType)};
+      frameOf(MessageType::ConnectionAccepted, playerOneAccepted)};
 
   dispatcher.dispatch(someOrigin(), frames);
 

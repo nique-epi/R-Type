@@ -1,9 +1,11 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
 #include "ConnectionAcceptor.hpp"
+#include "ContentAnnouncement.hpp"
 #include "IDatagramSender.hpp"
 #include "IModule.hpp"
 #include "IPlayerAdmission.hpp"
@@ -28,16 +30,24 @@ namespace rtype::server {
  * moves on first, then the requests of the tick are answered, so a request
  * answered in a tick is refused by the state the game just reached. The
  * acceptor needs the roster of the game, which exists only once the games
- * module started, so start() builds it.
+ * module started, so start() builds it. Every acceptance announces the
+ * content pack of the assets folder, read once while it installs, served by
+ * the supervisor on the TCP port it is built with.
  */
 class ServerLobbyModule final : public engine::IModule {
  public:
+  /** @param contentPort The TCP port the supervisor serves the content pack
+   * on: the number of its UDP port. */
+  explicit ServerLobbyModule(std::uint16_t contentPort);
+
   [[nodiscard]] std::string name() const override;
   [[nodiscard]] std::vector<std::string> dependencies() const override;
 
   /**
+   * @brief Reads the content of the assets folder into the announcement.
    * @throws MissingServiceException when no module provided the games, the
-   * sender, the admission or the datagrams of the tick.
+   * sender, the admission or the datagrams of the tick, and what
+   * contentAnnouncementOf() throws.
    */
   void install(engine::InstallContext& context) override;
 
@@ -53,6 +63,8 @@ class ServerLobbyModule final : public engine::IModule {
   void answerConnectionRequests();
 
   engine::SystemClock clock_;
+  std::uint16_t contentPort_;
+  network::ContentAnnouncement content_;
   RunningGame* runningGame_{nullptr};
   IDatagramSender* sender_{nullptr};
   IPlayerAdmission* admission_{nullptr};

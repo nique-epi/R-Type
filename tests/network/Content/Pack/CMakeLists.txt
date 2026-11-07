@@ -1,0 +1,2 @@
+rtype_add_test(NAME network_content_tests SOURCES ContentPackTest.cpp ContentFingerprintTextTest.cpp ContentPackFixtures.cpp LIBS rtype_network_content_pack rtype_network_serialization)
+target_include_directories(network_content_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

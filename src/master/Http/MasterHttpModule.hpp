@@ -37,7 +37,8 @@ class MasterHttpModule final : public engine::IModule {
 
   /**
    * @brief Listens on the port of the setting.
-   * @throws HttpPortUnavailableException when another program holds it.
+   * @throws network::HttpPortUnavailableException when another program holds
+   * it.
    */
   void start() override;
 

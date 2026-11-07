@@ -1,18 +1,23 @@
 #include "HandshakeAnswers.hpp"
-#include <cstdint>
-#include <string>
-#include <vector>
+#include <optional>
+#include <utility>
 #include "ConnectionAccepted.hpp"
 #include "ConnectionChallenge.hpp"
 #include "ConnectionPhase.hpp"
 #include "ConnectionRedirect.hpp"
 #include "ConnectionRefused.hpp"
+#include "ConnectionStatus.hpp"
+#include "ContentFingerprintText.hpp"
+#include "ContentLoading.hpp"
+#include "ContentStep.hpp"
 #include "Endpoint.hpp"
-#include "ErrorText.hpp"
 #include "HandshakeAnswersParts.hpp"
 #include "LobbyState.hpp"
 #include "MessageDispatcher.hpp"
 #include "MessageOrigin.hpp"
+#include "PackContent.hpp"
+#include "PackDownloadProgress.hpp"
+#include "SessionEntityTypes.hpp"
 #include "SessionOutbox.hpp"
 
 namespace rtype::client {
@@ -58,21 +63,76 @@ void HandshakeAnswers::onAccepted(const network::MessageOrigin& origin,
   if (!isConnecting()) {
     return;
   }
-  const std::vector<std::string> undrawable =
-      parts_.entityTypes.get().undrawableNamesOf(accepted.types);
-  if (undrawable.empty()) {
-    openSession(origin, accepted);
+  const ConnectionPhase phase = loadContentOf(accepted);
+  if (phase == ConnectionPhase::Accepted ||
+      phase == ConnectionPhase::LoadingContent) {
+    openSession(origin, accepted, phase);
   } else {
-    leaveForMissingSheets(origin, undrawable);
+    leaveAtOnce(origin, phase);
   }
 }
 
-void HandshakeAnswers::openSession(
-    const network::MessageOrigin& origin,
-    const network::ConnectionAccepted& accepted) const {
-  parts_.status.get() = {.phase = ConnectionPhase::Accepted,
-                         .playerNumber = accepted.playerNumber};
-  parts_.entityTypes.get().keep(accepted.types);
+bool HandshakeAnswers::followContent() {
+  ContentLoading& loading = parts_.content.get();
+  const ConnectionPhase phase = phaseAfter(loading.follow());
+  ConnectionStatus& status = parts_.status.get();
+  if (phase == ConnectionPhase::LoadingContent) {
+    const PackDownloadProgress progress = loading.progress();
+    status.contentReceived = progress.received;
+    return false;
+  }
+  status = {.phase = phase,
+            .playerNumber = status.playerNumber,
+            .contentSize = status.contentSize};
+  if (phase == ConnectionPhase::Accepted) {
+    parts_.logger.get().info("the content pack of the server is loaded");
+    return false;
+  }
+  parts_.logger.get().warn(
+      "the content pack of the server could not be loaded: it leaves the "
+      "server");
+  return true;
+}
+
+ConnectionPhase HandshakeAnswers::loadContentOf(
+    const network::ConnectionAccepted& accepted) {
+  SessionEntityTypes& types = parts_.entityTypes.get();
+  if (accepted.content.fingerprint == types.localFingerprint()) {
+    types.forget();
+    return ConnectionPhase::Accepted;
+  }
+  parts_.logger.get().info(
+      "the server plays with other content: pack ",
+      network::fingerprintText(accepted.content.fingerprint), ", ",
+      accepted.content.size, " bytes");
+  return phaseAfter(parts_.content.get().begin(
+      accepted.content, parts_.outbox.get().server().address));
+}
+
+ConnectionPhase HandshakeAnswers::phaseAfter(ContentStep step) const {
+  switch (step) {
+    case ContentStep::Ready:
+      if (std::optional<PackContent> content =
+              parts_.content.get().takeContent()) {
+        parts_.entityTypes.get().use(std::move(*content));
+      }
+      return ConnectionPhase::Accepted;
+    case ContentStep::Loading:
+      return ConnectionPhase::LoadingContent;
+    case ContentStep::DownloadFailed:
+      return ConnectionPhase::ContentDownloadFailed;
+    case ContentStep::Refused:
+      break;
+  }
+  return ConnectionPhase::ContentRefused;
+}
+
+void HandshakeAnswers::openSession(const network::MessageOrigin& origin,
+                                   const network::ConnectionAccepted& accepted,
+                                   ConnectionPhase phase) const {
+  parts_.status.get() = {.phase = phase,
+                         .playerNumber = accepted.playerNumber,
+                         .contentSize = accepted.content.size};
   parts_.outbox.get().openSession(origin.header.sessionToken);
   parts_.inbound.get().open(origin.header);
   parts_.observers.get().opened(
@@ -84,19 +144,15 @@ void HandshakeAnswers::openSession(
                            static_cast<unsigned int>(accepted.playerNumber));
 }
 
-void HandshakeAnswers::leaveForMissingSheets(
-    const network::MessageOrigin& origin,
-    const std::vector<std::string>& undrawable) const {
+void HandshakeAnswers::leaveAtOnce(const network::MessageOrigin& origin,
+                                   ConnectionPhase ending) const {
   parts_.outbox.get().openSession(origin.header.sessionToken);
   parts_.departure.get().leave(parts_.outbox.get());
   parts_.outbox.get().closeSession();
-  parts_.status.get() = {
-      .phase = ConnectionPhase::MissingEntitySheet,
-      .missingSheet = undrawable.front(),
-      .otherMissingSheets = static_cast<std::uint8_t>(undrawable.size() - 1)};
+  parts_.status.get() = {.phase = ending};
   parts_.logger.get().warn(
-      "accepted, but this client has no sheet for the entity types ",
-      engine::listText(undrawable), ": it leaves the server");
+      "accepted, but the content pack of the server cannot be loaded: it "
+      "leaves the server");
 }
 
 void HandshakeAnswers::onRedirected(

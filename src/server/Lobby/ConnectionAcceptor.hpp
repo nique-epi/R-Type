@@ -6,14 +6,13 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "ConnectionAcceptorParts.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
+#include "ContentAnnouncement.hpp"
 #include "CookieIssuer.hpp"
 #include "Endpoint.hpp"
-#include "EntityTypeEntry.hpp"
 #include "IncomingDatagram.hpp"
 #include "LobbyConstants.hpp"
 #include "Logger.hpp"
@@ -44,8 +43,8 @@ namespace rtype::server {
  *
  * - from a connected player: a ConnectionChallenge when the cookie is not
  *   valid, even while a game is in progress; with a valid cookie, the same
- *   ConnectionAccepted again, same number, same session token and same table
- *   of entity types, once CONNECTION_ACCEPTANCE_REPEAT_INTERVAL passed since
+ *   ConnectionAccepted again, same number, same session token and same content
+ *   pack, once CONNECTION_ACCEPTANCE_REPEAT_INTERVAL passed since
  *   the previous acceptance of that player, and nothing before;
  * - while a game is in progress: ConnectionRefused (GameInProgress);
  * - when MAXIMUM_PLAYERS players are connected: ConnectionRefused (GameFull);
@@ -54,7 +53,7 @@ namespace rtype::server {
  *   (NicknameTaken);
  * - without a valid cookie: a ConnectionChallenge, and nothing is kept;
  * - with a valid cookie: a place in the roster, a session token drawn at
- *   random, and a ConnectionAccepted that carries both and the entity types of
+ *   random, and a ConnectionAccepted that carries both and the content pack of
  *   the game; the new player is announced to admit once.
  *
  * A refusal reserves nothing, so it is sent before the cookie is checked. Only
@@ -108,7 +107,7 @@ class ConnectionAcceptor {
                             engine::Duration now);
   void answer(const network::Endpoint& sender,
               const network::ConnectionRequest& request, engine::Duration now);
-  /** @brief Sends @p player its ConnectionAccepted, with the entity types of
+  /** @brief Sends @p player its ConnectionAccepted, with the content pack of
    * the game, and notes @p now as the time of its last acceptance. */
   void accept(ConnectedPlayer& player, engine::Duration now);
   void challenge(const network::Endpoint& sender, engine::Duration now);
@@ -121,7 +120,7 @@ class ConnectionAcceptor {
   std::function<void(network::OutgoingDatagram)> send_;
   std::function<void(const network::Endpoint&, std::uint64_t)> admit_;
   std::function<void(ConnectedPlayer&)> onPlayerJoined_;
-  std::vector<network::EntityTypeEntry> entityTypes_;
+  network::ContentAnnouncement content_;
   network::CookieIssuer cookies_;
   std::random_device random_;
   bool gameInProgress_{false};
