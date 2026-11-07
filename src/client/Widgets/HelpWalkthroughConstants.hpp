@@ -43,7 +43,7 @@ constexpr std::array HELP_PREVIOUS_KEYS{sf::Keyboard::Key::Left,
 /** @brief The words between braces that name the key bound to an action, in
  * the order of BOUND_ACTIONS. */
 constexpr std::array<std::string_view, BOUND_ACTION_COUNT> HELP_KEY_TOKENS{
-    "UP", "DOWN", "LEFT", "RIGHT", "SHOOT", "READY"};
+    "UP", "DOWN", "LEFT", "RIGHT", "SHOOT", "READY", "CHAT"};
 
 /** @brief Marks of a sentence: a keycap between braces, a word of the
  * interface between stars, the punctuation written plain after either, and

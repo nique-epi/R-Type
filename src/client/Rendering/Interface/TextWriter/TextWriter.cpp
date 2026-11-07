@@ -1,4 +1,5 @@
 #include "TextWriter.hpp"
+#include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
@@ -64,7 +65,9 @@ void TextWriter::write(sf::RenderTarget& target, const TextLine& line) const {
   const sf::RenderStates states(crispText_.has_value() ? &*crispText_
                                                        : nullptr);
   if (line.style.outlined) {
-    text.setFillColor(INK);
+    sf::Color outline = INK;
+    outline.a = line.style.color.a;
+    text.setFillColor(outline);
     for (const auto& directions : {CROSS_DIRECTIONS, DIAGONAL_DIRECTIONS}) {
       for (const sf::Vector2i offset : directions) {
         text.setPosition(sf::Vector2f(position + offset));

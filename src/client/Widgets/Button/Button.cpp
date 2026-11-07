@@ -9,6 +9,8 @@
 #include <utility>
 #include "BarState.hpp"
 #include "CutCornerBox.hpp"
+#include "FieldText.hpp"
+#include "FieldTextPainting.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceConstants.hpp"
 #include "KeyCap.hpp"
@@ -138,17 +140,10 @@ void Button::paintField(IInterfaceCanvas& canvas, BarState state,
   const sf::IntRect box({area_.position.x, area_.position.y + labelHeight},
                         {area_.size.x, area_.size.y - labelHeight});
   SunkBox(box, look.sides).paint(canvas);
-  const std::string& text = field.text();
-  const sf::Vector2i textAnchor =
-      box.position + sf::Vector2i(FIELD_TEXT_PADDING, FIELD_TEXT_PADDING);
-  canvas.write(text, textAnchor,
-               {.font = TextFont::Regular, .color = look.text});
-  if (look.caret) {
-    canvas.fill({{textAnchor.x + regularTextWidth(text),
-                  textAnchor.y - FIELD_CARET_OVERHANG},
-                 FIELD_CARET_SIZE},
-                FIELD_CARET_COLOR);
-  }
+  paintFieldText(canvas, FieldText{.box = box,
+                                   .text = field.text(),
+                                   .color = look.text,
+                                   .caret = look.caret});
 }
 
 Button::Look Button::lookOf(BarState state) {

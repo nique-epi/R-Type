@@ -21,6 +21,11 @@ namespace rtype::client {
  * window opens windowed until the player picks another display mode.
  * clientPrediction is on: the ship moves before the server answers.
  * pilotNames is on: the nickname of each pilot is written over its ship.
+ * chatShown is on: the chat of the session shows, and its key opens it.
+ * chatLetters, chatClosedLines, chatOpenLines: the letters of a line of the
+ * chat, and its lines while closed and while open. chatSeconds: how long a
+ * line shows while the chat is closed. chatBackground: the opacity of the
+ * layer under the open chat, in percent.
  */
 struct PlayerSettings {
   int musicVolume = DEFAULT_MUSIC_VOLUME;
@@ -35,6 +40,12 @@ struct PlayerSettings {
   bool autoFire = false;
   bool clientPrediction = true;
   bool pilotNames = true;
+  bool chatShown = true;
+  int chatLetters = DEFAULT_CHAT_LETTERS;
+  int chatClosedLines = DEFAULT_CHAT_CLOSED_LINES;
+  int chatOpenLines = DEFAULT_CHAT_OPEN_LINES;
+  int chatSeconds = DEFAULT_CHAT_SECONDS;
+  int chatBackground = DEFAULT_CHAT_BACKGROUND;
   /** @brief The master the player chose on the server map; nothing lets the
    * master-url setting choose. */
   std::optional<network::Endpoint> master = std::nullopt;

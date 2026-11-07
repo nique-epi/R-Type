@@ -20,3 +20,18 @@ The union was applied to the lines inside the block without reading the shared l
 ### Example
 - ❌ **Before (wrong)**: ours + theirs → `EXPECT_TRUE(…);` followed directly by ` * Given an attempt the server has not answered yet`.
 - ✅ **After (right)**: ours + `}` + blank line + `/**` + theirs, then the file compiled.
+
+## Update (2026-11-07) — a header included twice after a merge
+
+### Context
+Merging `origin/main` into `feat/client-chat` (pull request #268) resolved a conflict on the includes of `src/client/Game/GameScreen.cpp`.
+
+### Mistake
+The chat branch included `GameNoticeConstants.hpp` under `// NOLINTNEXTLINE(misc-include-cleaner)`, just above `GameScreenIdConstants.hpp`; `main` had added the same header in its sorted place. The merge kept both lines. The build and the 5249 tests passed; the CI `Clang-tidy` job failed on `readability-duplicate-include`, and the `NOLINTNEXTLINE` no longer covered `GameScreenIdConstants.hpp`, which it covers on `main`.
+
+### Root cause
+The resolution only compared the two sides of each block; the auto-merged lines of the same file, which held the other copy, were never searched.
+
+### Rule
+Look for each header of a joined include list in the whole file, check what a `NOLINTNEXTLINE` above the block now covers, and list repeated includes of every merged file before committing.
+

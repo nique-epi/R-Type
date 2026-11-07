@@ -18,8 +18,15 @@ using rtype::client::PlayerSettings;
 using rtype::client::readSettingsText;
 using rtype::client::settingsText;
 using rtype::client::testing::ANY_VOLUME;
+using rtype::client::testing::CHANGED_CHAT_BACKGROUND;
+using rtype::client::testing::CHANGED_CHAT_CLOSED_LINES;
+using rtype::client::testing::CHANGED_CHAT_LETTERS;
+using rtype::client::testing::CHANGED_CHAT_OPEN_LINES;
+using rtype::client::testing::CHANGED_CHAT_SECONDS;
 using rtype::client::testing::CHANGED_EFFECTS_VOLUME;
 using rtype::client::testing::CHANGED_MUSIC_VOLUME;
+using rtype::client::testing::CHAT_LINES_PAST_THEIR_RANGES;
+using rtype::client::testing::CHAT_PAST_ITS_RANGES_FILE;
 using rtype::client::testing::CHOSEN_MASTER_ADDRESS;
 using rtype::client::testing::CHOSEN_MASTER_LINE;
 using rtype::client::testing::CHOSEN_MASTER_PORT;
@@ -63,11 +70,31 @@ TEST(SettingsTextTest, EveryChangedSettingReadsBack) {
   settings.autoFire = true;
   settings.clientPrediction = false;
   settings.pilotNames = false;
+  settings.keys.bind(BoundAction::OpenChat, Scan::Y);
+  settings.chatShown = false;
+  settings.chatLetters = CHANGED_CHAT_LETTERS;
+  settings.chatClosedLines = CHANGED_CHAT_CLOSED_LINES;
+  settings.chatOpenLines = CHANGED_CHAT_OPEN_LINES;
+  settings.chatSeconds = CHANGED_CHAT_SECONDS;
+  settings.chatBackground = CHANGED_CHAT_BACKGROUND;
   settings.master = Endpoint{.address = std::string{CHOSEN_MASTER_ADDRESS},
                              .port = CHOSEN_MASTER_PORT};
 
   EXPECT_EQ(readSettingsText(settingsText(settings), PlayerSettings{}).settings,
             settings);
+}
+
+/**
+ * Given a file whose five chat numbers each lie one past their range
+ * When it is read over the settings of a first launch
+ * Then the chat keeps its first launch look, and the five lines are listed
+ */
+TEST(SettingsTextTest, AChatValuePastItsRangeKeepsItsDefault) {
+  const auto reading =
+      readSettingsText(CHAT_PAST_ITS_RANGES_FILE, PlayerSettings{});
+
+  EXPECT_EQ(reading.settings, PlayerSettings{});
+  EXPECT_EQ(reading.ignoredLines.size(), CHAT_LINES_PAST_THEIR_RANGES);
 }
 
 /**

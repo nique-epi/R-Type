@@ -12,6 +12,7 @@
 #include <string>
 #include <utility>
 #include "BoundAction.hpp"
+#include "ChatWindow.hpp"
 #include "GameScreenIdConstants.hpp"
 #include "HangarBay.hpp"
 #include "HangarBayConstants.hpp"
@@ -186,13 +187,20 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
                 handleEvent(sf::Event::FocusLost{});
                 navigator_->push(LEADERBOARD_SCREEN);
               },
-          .sounds = parts.sounds}) {
+          .sounds = parts.sounds}),
+      chat_(parts.chat.get(), parts.settings.get()) {
   repaint();
 }
 
 void LobbyScreen::handleEvent(const sf::Event& event) {
-  if (help_.handleEvent(event, playfieldPointAt_)) {
+  if (!chat_.isOpen() && help_.handleEvent(event, playfieldPointAt_)) {
     leaderboardChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+    return;
+  }
+  if (chat_.handleEvent(event)) {
+    readyKeyHeld_ = false;
+    leaderboardChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+    menu_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
     return;
   }
   if (const auto* pressed = event.getIf<sf::Event::KeyPressed>();
@@ -286,6 +294,7 @@ void LobbyScreen::repaint() {
     leaderboardChip_.paint(*canvas_);
   }
   help_.paint(*canvas_, parts);
+  chat_.paint(*canvas_, palette_.get(), LOBBY_CHAT_BOTTOM);
   canvas_->display();
 }
 
