@@ -78,3 +78,7 @@ The tests of `ServerLeaderboard` jumped five seconds in one `update()`: removing
 ## Update (5 November 2026) — A job stopped before its thread reached its loop
 
 `ServerStatusJobFixture.StoppingTheJobDoesNotWaitForItsInterval` built the job with an interval of an hour and stopped it at once. The thread had not started its loop yet: it saw the stop and left, so the variant that slept with `std::this_thread::sleep_for`, deaf to the stop, passed in 0.02 s. `TheJobRefreshesEveryInterval` registered its server right after building the job, so the first pass often saw it, and the variant that refreshed only once stayed green. Both tests now wait until a first server is online, the sign the first pass ran, before they stop the job or register the second server; each variant then turns its test red.
+
+## Update (7 November 2026) — A guard backed up by the lookup after it
+
+`AdminConsoleCommandsFixture.RefusesWhatIsNotANickname` ran `kick` with 17 bytes and asserted that the line was refused and nothing sent. Without `isValidNickname()` in `nicknameNamedBy()`, the 17 bytes went on to `gamesPlaying()`, which found no game holding such a pilot and refused the line too, so the red proof stayed green. The test now also asserts the reason, `'ABCDEFGHIJKLMNOPQ' is not a nickname`, which only the nickname check writes, and the variant turns it red.
