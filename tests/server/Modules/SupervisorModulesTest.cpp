@@ -4,16 +4,19 @@
 #include <string_view>
 #include <vector>
 #include "BuiltModuleConstants.hpp"
+#include "CreatedServer.hpp"
 #include "LaunchOptions.hpp"
 #include "ModuleConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerInformation.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "ServerRoleConstants.hpp"
+#include "SettingLine.hpp"
 #include "StopRequest.hpp"
 #include "SupervisorModules.hpp"
 #include "SupervisorModulesFixture.hpp"
 #include "SupervisorModulesTestConstants.hpp"
+#include "SupervisorWithMasterFixture.hpp"
 
 using rtype::engine::MASTER_LINK_MODULE_BUILT;
 using rtype::server::LaunchOptions;
@@ -287,5 +290,33 @@ TEST_F(SupervisorModulesFixture, AnswersHowFullAnIdleSupervisorIs) {
   EXPECT_EQ(answer.playerCount, 0U);
   EXPECT_EQ(answer.gameCount, GAMES_OF_A_SUPERVISOR);
   EXPECT_EQ(answer.freeSeatCount, SEATS_OF_A_SUPERVISOR);
+  application->stop();
+}
+
+/**
+ * Given a master, a server created on it, and a server.cfg that names that
+ * master, its key and a public-address
+ * When the supervisor starts and registers
+ * Then the master lists the server at the declared address, not at the
+ * address its requests come from
+ */
+TEST_F(SupervisorWithMasterFixture, TheMasterListsTheDeclaredAddress) {
+  if (!MASTER_LINK_MODULE_BUILT) {
+    GTEST_SKIP() << "the build leaves the master link out";
+  }
+  const rtype::network::CreatedServer created =
+      master().createServer(LISTED_SERVER_NAME);
+  writeConfiguration(
+      {rtype::engine::settingLine(rtype::server::MASTER_URL_SETTING_NAME,
+                                  master().url()),
+       rtype::engine::settingLine(rtype::server::MASTER_KEY_SETTING_NAME,
+                                  created.key),
+       rtype::engine::settingLine(rtype::server::PUBLIC_ADDRESS_SETTING_NAME,
+                                  DECLARED_PUBLIC_ADDRESS)});
+  const auto application = supervisor({});
+  application->start();
+
+  EXPECT_EQ(listedAddressSoon(created.id).value_or(std::string{}),
+            DECLARED_PUBLIC_ADDRESS);
   application->stop();
 }

@@ -57,4 +57,14 @@ constexpr std::string_view ANY_INTERFACE_PUBLIC_ADDRESS_LINE =
     "set public-address 0.0.0.0";
 constexpr std::string_view BROADCAST_PUBLIC_ADDRESS_LINE =
     "set public-address 255.255.255.255";
+
+/** @brief A server created on the master, and the address it declares there
+ * with public-address, which is not the address its requests come from. */
+constexpr std::string_view LISTED_SERVER_NAME = "Paris 1";
+constexpr std::string_view DECLARED_PUBLIC_ADDRESS = "203.0.113.20";
+
+/** @brief How long a test waits for the supervisor to register with the
+ * master, and how often it asks the master meanwhile. */
+constexpr std::chrono::seconds REGISTRATION_DEADLINE{10};
+constexpr std::chrono::milliseconds LISTING_WAIT_STEP{20};
 constexpr std::string_view DATABASE_LINE = "set database \"\"";
