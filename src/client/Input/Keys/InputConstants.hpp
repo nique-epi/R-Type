@@ -9,12 +9,13 @@ namespace rtype::client {
 
 /**
  * @brief The keys of a first launch, in the order of BOUND_ACTIONS: the
- * arrows move, space shoots, R is ready.
+ * arrows move, space shoots, R is ready, T opens the chat.
  */
 constexpr std::array<sf::Keyboard::Scancode, BOUND_ACTION_COUNT> DEFAULT_KEYS{
     sf::Keyboard::Scan::Up,    sf::Keyboard::Scan::Down,
     sf::Keyboard::Scan::Left,  sf::Keyboard::Scan::Right,
-    sf::Keyboard::Scan::Space, sf::Keyboard::Scan::R};
+    sf::Keyboard::Scan::Space, sf::Keyboard::Scan::R,
+    sf::Keyboard::Scan::T};
 
 /** @brief A physical key and its name in capitals, as the options draw it
  * and the settings file writes it. */

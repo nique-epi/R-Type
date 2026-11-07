@@ -93,3 +93,14 @@ TEST(KeyBindingsTest, AFirstLaunchSharesNoKey) {
     EXPECT_FALSE(keys.otherActionWithKeyOf(action).has_value());
   }
 }
+
+/**
+ * Given the keys of a first launch
+ * When T is read
+ * Then it opens the chat and moves nothing
+ */
+TEST(KeyBindingsTest, AFirstLaunchOpensTheChatWithT) {
+  const KeyBindings keys;
+  EXPECT_EQ(keys.boundActionFor(Scan::T), BoundAction::OpenChat);
+  EXPECT_EQ(keys.playerActionFor(Scan::T), std::nullopt);
+}

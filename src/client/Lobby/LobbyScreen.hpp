@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include "ChatWindow.hpp"
 #include "HelpWalkthrough.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
@@ -58,6 +59,10 @@ struct HangarBay;
  * once it starts, replaces both. Since only the screen on top receives events,
  * the chip first drops what the room held, as losing the focus does; otherwise
  * the room would never see the release of a key held down at that moment.
+ *
+ * The chat of the session shows at the bottom left, and its key opens it over
+ * the room (ChatWindow): while it is open it takes every key, so READY, HELP
+ * and BACK wait until it closes.
  */
 class LobbyScreen : public IScreen {
  public:
@@ -126,6 +131,7 @@ class LobbyScreen : public IScreen {
   Menu menu_;
   HelpWalkthrough help_;
   KeyChip leaderboardChip_;
+  ChatWindow chat_;
 };
 
 }  // namespace rtype::client

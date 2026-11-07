@@ -9,5 +9,6 @@ constexpr int BELOW_LOWEST_VOLUME = -1;
 constexpr int ABOVE_HIGHEST_VOLUME = 101;
 constexpr int A_VOLUME = 35;
 constexpr int ANOTHER_VOLUME = 60;
+constexpr int TOO_MANY_CHAT_LETTERS = 34;
 constexpr rtype::client::PixelSize A_WINDOW_SIZE{.width = 1280, .height = 720};
 constexpr sf::Keyboard::Scancode A_KEY = sf::Keyboard::Scancode::J;

@@ -1099,6 +1099,42 @@ TEST_F(GameScreenFixture, NoWarningOnceTheGameEnded) {
 }
 
 /**
+ * Given the game, prediction off, UP held
+ * When T opens the chat and a frame goes by
+ * Then the input sent holds nothing: the ship stops while the player types
+ */
+TEST(GameScreenInputsTest, OpeningTheChatReleasesTheShip) {
+  LoneGameParts doubles;
+  doubles.settings.clientPrediction = false;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
+  game.handleEvent(keyPress(sf::Keyboard::Key::T, sf::Keyboard::Scan::T));
+
+  game.update(ONE_FRAME);
+
+  EXPECT_THAT(doubles.inputs.sentActions(), ElementsAre(NOTHING_HELD));
+}
+
+/**
+ * Given the open chat in a game
+ * When ESC is pressed then released
+ * Then the chat closes and no options open over the game
+ */
+TEST(GameScreenInputsTest, EscapeClosingTheChatOpensNoOptions) {
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  game.handleEvent(keyPress(sf::Keyboard::Key::T, sf::Keyboard::Scan::T));
+  game.handleEvent(keyRelease(sf::Keyboard::Key::T, sf::Keyboard::Scan::T));
+
+  game.handleEvent(keyPress(OPTIONS_KEY, sf::Keyboard::Scan::Escape));
+  game.handleEvent(keyRelease(OPTIONS_KEY, sf::Keyboard::Scan::Escape));
+
+  EXPECT_THAT(doubles.navigator.calls(), IsEmpty());
+}
+
+/**
  * Given the game
  * When the boss stage starts and a second passes
  * Then the word of the WARNING screen is painted

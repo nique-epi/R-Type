@@ -9,6 +9,7 @@
 #include "GameResult.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingAudioService.hpp"
+#include "RecordingChatChannel.hpp"
 #include "RecordingEntityLayer.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingPlayerInputLink.hpp"
@@ -66,5 +67,6 @@ class GameScreenFixture : public ::testing::Test {
   RecordingAudioService audio_{sounds_};
   FixedEntityTypeSource entityTypes_;
   rtype::client::GameResult result_;
+  RecordingChatChannel chat_;
   rtype::client::ScreenStack screens_;
 };
