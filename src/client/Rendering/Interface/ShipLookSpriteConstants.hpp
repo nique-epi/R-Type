@@ -18,7 +18,8 @@ constexpr const char* SHIP_LOOK_SHEET_ID = "sprites/looks.png";
 constexpr game::SpriteFrame SHIP_LOOK_CELL{
     .left = 0, .top = 0, .width = 16, .height = 16};
 constexpr std::array SHIP_LOOK_CELLS =
-    framesInRow<SHIP_LOOK_ITEM_COUNT>(SHIP_LOOK_CELL, SPRITE_SPACING);
+    framesInRow<identifiers::SHIP_LOOK_ITEM_COUNT>(SHIP_LOOK_CELL,
+                                                   SPRITE_SPACING);
 
 /** @brief The hats sit their brim on the top fin of the ship: centred on
  * column 16, their last row on row 2. The shades cover the canopy, columns 17
@@ -49,7 +50,7 @@ constexpr std::array SHIP_LOOK_SPRITES{TOP_HAT_SPRITE,     PARTY_HAT_SPRITE,
                                        COWBOY_HAT_SPRITE,  VIKING_HELMET_SPRITE,
                                        WIZARD_HAT_SPRITE,  CHEF_TOQUE_SPRITE,
                                        COOL_SHADES_SPRITE, MUSTACHE_SPRITE};
-static_assert(SHIP_LOOK_SPRITES.size() == SHIP_LOOK_ITEM_COUNT,
+static_assert(SHIP_LOOK_SPRITES.size() == identifiers::SHIP_LOOK_ITEM_COUNT,
               "every item of the locker has its drawing");
 
 /** @brief The largest scale an icon of the locker is drawn at. */

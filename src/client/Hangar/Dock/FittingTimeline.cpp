@@ -12,6 +12,8 @@
 
 namespace rtype::client {
 
+using identifiers::ShipLook;
+
 namespace {
 
 /** @returns The eased share of the phase from @p start to @p end at

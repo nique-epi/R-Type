@@ -39,7 +39,7 @@ class LobbyScreenFixture : public ::testing::Test {
   [[nodiscard]] rtype::client::LobbyScreen& screen();
   /** @returns What the ship of the local player wears, as the settings
    * would hold it; the room reads it at each frame. */
-  [[nodiscard]] rtype::client::ShipLook& look();
+  [[nodiscard]] rtype::identifiers::ShipLook& look();
 
   /** @returns The sounds the waiting room played. */
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
@@ -55,6 +55,6 @@ class LobbyScreenFixture : public ::testing::Test {
   RecordingSoundPlayer sounds_;
   rtype::client::PlayerSettings settings_;
   RecordingChatChannel chat_;
-  rtype::client::ShipLook look_{};
+  rtype::identifiers::ShipLook look_{};
   rtype::client::LobbyScreen screen_;
 };

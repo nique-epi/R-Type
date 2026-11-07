@@ -8,7 +8,7 @@ namespace rtype::client {
 /** @brief What the locker shows: the chosen item, and what the ship wears. */
 struct LockerView {
   std::size_t chosen{};
-  ShipLook worn;
+  identifiers::ShipLook worn;
 };
 
 }  // namespace rtype::client

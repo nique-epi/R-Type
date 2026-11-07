@@ -19,7 +19,8 @@ namespace rtype::client {
 /** @returns What the ship shows at @p progress of @p run: what it wore, then
  * the slot of the item empty from FITTING_HOVER_END, then the item from
  * FITTING_PLACE_AT. */
-[[nodiscard]] ShipLook lookShownAt(float progress, const FittingRun& run);
+[[nodiscard]] identifiers::ShipLook lookShownAt(float progress,
+                                                const FittingRun& run);
 
 /** @returns How far the sparks of an event at @p start are at @p progress:
  * under 0 before, 0 to 1 while they show, over 1 after. */

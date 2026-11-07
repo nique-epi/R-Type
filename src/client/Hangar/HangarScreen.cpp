@@ -37,6 +37,8 @@
 
 namespace rtype::client {
 
+using identifiers::ShipLook;
+
 namespace {
 
 /** @returns The item whose cell lies under @p position of the window. */

@@ -20,7 +20,8 @@ constexpr std::uint8_t WEARS_SHADES = 9;
 constexpr std::uint8_t WEARS_NOTHING = 0;
 
 /** @brief A ship wearing an item in every slot. */
-constexpr ShipLook FULLY_DRESSED{.head = 1, .eyes = 9, .face = 10};
+constexpr rtype::identifiers::ShipLook FULLY_DRESSED{
+    .head = 1, .eyes = 9, .face = 10};
 
 /** @brief A ship drawn at (100, 100), twice its size: the brim of the top hat
  * sits on its top fin, 9 pixels right and 7 up of its corner, so its drawing

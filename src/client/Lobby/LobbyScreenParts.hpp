@@ -51,7 +51,7 @@ struct LobbyScreenParts {
   /** @brief What the ship of the local player wears, read from the settings
    * at each frame, since the hangar pushed over the room changes it; it must
    * outlive the screen. */
-  std::reference_wrapper<const ShipLook> look;
+  std::reference_wrapper<const identifiers::ShipLook> look;
   /** @brief Whether the ships and the beacons may move. */
   MotionPreference motion{};
   /** @brief Where BACK leads: the connection screen below, or the title. */

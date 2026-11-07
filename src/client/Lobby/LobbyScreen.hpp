@@ -135,7 +135,7 @@ class LobbyScreen : public IScreen {
   Menu menu_;
   HelpWalkthrough help_;
   KeyChip leaderboardChip_;
-  const ShipLook* look_;
+  const identifiers::ShipLook* look_;
   KeyChip hangarChip_;
   ChatWindow chat_;
 };

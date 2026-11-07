@@ -30,6 +30,14 @@
 
 namespace rtype::client {
 
+using identifiers::lookIndexOf;
+using identifiers::lookNumberOf;
+using identifiers::NO_SHIP_LOOK_ITEM;
+using identifiers::SHIP_LOOK_ITEM_COUNT;
+using identifiers::SHIP_LOOK_ITEM_NAMES;
+using identifiers::SHIP_LOOK_ITEM_SLOTS;
+using identifiers::ShipLookSlot;
+
 namespace {
 
 /** @brief What became of one line of a settings text. */

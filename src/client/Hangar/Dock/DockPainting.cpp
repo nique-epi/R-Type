@@ -51,6 +51,9 @@
 
 namespace rtype::client {
 
+using identifiers::SHIP_LOOK_ITEM_SLOTS;
+using identifiers::ShipLookSlot;
+
 namespace {
 
 using StillPoses = std::array<std::optional<ArmPose>, DOCK_ARMS.size()>;

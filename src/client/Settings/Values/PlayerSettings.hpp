@@ -51,7 +51,7 @@ struct PlayerSettings {
   /** @brief The master the player chose on the server map; nothing lets the
    * master-url setting choose. */
   std::optional<network::Endpoint> master = std::nullopt;
-  ShipLook shipLook;
+  identifiers::ShipLook shipLook;
 
   bool operator==(const PlayerSettings& other) const = default;
 };

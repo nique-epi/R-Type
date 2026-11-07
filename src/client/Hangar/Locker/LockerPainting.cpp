@@ -27,6 +27,8 @@
 
 namespace rtype::client {
 
+using identifiers::SHIP_LOOK_ITEM_COUNT;
+
 namespace {
 
 /** @brief Paints the four sides of @p area: @p shades.light on the top and

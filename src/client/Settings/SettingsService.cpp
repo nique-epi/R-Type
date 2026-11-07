@@ -15,6 +15,8 @@
 
 namespace rtype::client {
 
+using identifiers::ShipLook;
+
 namespace {
 
 /** @returns Whether @p value is inside @p range, both ends included; always

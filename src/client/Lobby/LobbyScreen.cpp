@@ -49,6 +49,8 @@
 
 namespace rtype::client {
 
+using identifiers::ShipLook;
+
 namespace {
 
 /** @returns The player of the waiting room with this number, or nullptr when

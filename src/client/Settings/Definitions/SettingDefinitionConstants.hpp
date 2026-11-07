@@ -59,7 +59,7 @@ constexpr Setting<bool> PILOT_NAMES_SETTING{
     .member = &PlayerSettings::pilotNames,
     .id = SettingId::PilotNames,
     .range = std::nullopt};
-constexpr Setting<ShipLook> SHIP_LOOK_SETTING{
+constexpr Setting<identifiers::ShipLook> SHIP_LOOK_SETTING{
     .member = &PlayerSettings::shipLook,
     .id = SettingId::ShipLook,
     .range = std::nullopt};

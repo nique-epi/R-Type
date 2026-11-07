@@ -87,4 +87,4 @@ const RecordingSoundPlayer& LobbyScreenFixture::sounds() const {
 }
 
 const RecordingChatChannel& LobbyScreenFixture::chat() const { return chat_; }
-rtype::client::ShipLook& LobbyScreenFixture::look() { return look_; }
+rtype::identifiers::ShipLook& LobbyScreenFixture::look() { return look_; }
