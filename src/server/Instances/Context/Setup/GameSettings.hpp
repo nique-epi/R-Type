@@ -33,6 +33,9 @@ struct GameSettings {
    * vanillaBreaches()): only the results of a vanilla game may leave this
    * server. */
   bool vanilla{false};
+  /** @brief Whether the game skips its waves and brings its boss in at
+   * once; a game started so is never vanilla. */
+  bool startsAtBoss{false};
 };
 
 }  // namespace rtype::server

@@ -79,11 +79,7 @@ WeaponSystemFixture::enemyMissilesInTheWorld() {
 
 std::vector<network::EntitySpawned> WeaponSystemFixture::spawnsSentTo(
     std::size_t index) const {
-  std::vector<network::EntitySpawned> spawns;
-  for (const network::OutgoingDatagram& datagram : datagramsSentTo(index)) {
-    spawns.push_back(onlyMessageIn<network::EntitySpawned>(datagram));
-  }
-  return spawns;
+  return onlyMessagesIn<network::EntitySpawned>(datagramsSentTo(index));
 }
 
 std::vector<network::OutgoingDatagram> WeaponSystemFixture::datagramsSentTo(

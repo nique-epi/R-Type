@@ -24,6 +24,11 @@ void Soundtrack::playGameMusic() {
   silenceLeft_ = GAME_MUSIC_SILENCE;
 }
 
+void Soundtrack::silenceMusic() {
+  silenceLeft_.reset();
+  gameMusic_->stop();
+}
+
 void Soundtrack::advance(engine::Duration elapsed) {
   if (!silenceLeft_.has_value()) {
     return;

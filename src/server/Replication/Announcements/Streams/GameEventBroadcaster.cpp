@@ -3,6 +3,8 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include "BossArrival.hpp"
+#include "BossHealthChanged.hpp"
 #include "EnemyActionStarted.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestruction.hpp"
@@ -51,6 +53,8 @@ GameEventBroadcaster::GameEventBroadcaster(GameEventBroadcasterParts parts)
   subscribeTo<game::EntityDestruction>(ENTITY_DESTRUCTION_EVENT_NAME);
   subscribeTo<game::EntityDamage>(ENTITY_DAMAGE_EVENT_NAME);
   subscribeTo<game::EnemyActionStarted>(ENEMY_ACTION_STARTED_EVENT_NAME);
+  subscribeTo<game::BossArrival>(BOSS_ARRIVAL_EVENT_NAME);
+  subscribeTo<game::BossHealthChanged>(BOSS_HEALTH_CHANGED_EVENT_NAME);
   subscribeTo<game::PlayerHit>(PLAYER_HIT_EVENT_NAME);
   subscribeTo<game::PlayerElimination>(PLAYER_ELIMINATION_EVENT_NAME);
   subscribeTo<game::PlayerDeparture>(PLAYER_DEPARTURE_EVENT_NAME);

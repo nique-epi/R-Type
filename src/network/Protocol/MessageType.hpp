@@ -40,6 +40,7 @@ enum class MessageType : std::uint8_t {
   MasterProbe = 29,
   ChatLine = 30,
   PlayerChatLine = 31,
+  BossStatus = 32,
 };
 
 }  // namespace rtype::network

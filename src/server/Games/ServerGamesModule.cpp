@@ -128,6 +128,19 @@ void logHowGamesPlay(const logging::Logger& logger, std::string_view difficulty,
   }
 }
 
+/** @returns The setting START_AT_BOSS_SETTING_NAME, declared in
+ * @p configuration: 1 starts every game at its boss, 0 (the default) plays
+ * the waves. */
+const engine::SettingValue& declareStartAtBoss(
+    engine::ConfigurationRegistry& configuration) {
+  return configuration.declareInteger(engine::IntegerSettingDefinition{
+      .name = std::string{START_AT_BOSS_SETTING_NAME},
+      .defaultValue = 0,
+      .lowest = 0,
+      .highest = 1,
+      .help = "1 starts every game at its boss, without the waves"});
+}
+
 }  // namespace
 
 ServerGamesModule::ServerGamesModule(GamesSettings settings)
@@ -188,6 +201,7 @@ void ServerGamesModule::declareSettings(
           .lowest = LOWEST_INPUT_DELAY_TICKS,
           .highest = HIGHEST_INPUT_DELAY_TICKS,
           .help = "Ticks every player's input is held before it is applied"});
+  startAtBossSetting_ = &declareStartAtBoss(configuration);
 }
 
 void ServerGamesModule::start() {
@@ -212,11 +226,13 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
   const auto inputDelayTicks =
       static_cast<std::size_t>(inputDelaySetting_->integer().value_or(
           static_cast<std::int64_t>(settings_.inputDelayTicks)));
+  const bool startsAtBoss = startAtBossSetting_->integer().value_or(0) != 0;
   const std::vector<std::string_view> breaches = vanillaBreaches(
       HostedRules{.wavesFingerprint = catalog.fingerprint(),
                   .sheetsFingerprint = entitySheetsFingerprint(types),
                   .seed = seed,
-                  .inputDelayTicks = inputDelayTicks});
+                  .inputDelayTicks = inputDelayTicks,
+                  .startsAtBoss = startsAtBoss});
   logHowGamesPlay(logger_, difficulty, breaches);
   return GameSettings{.seed = seed.has_value() ? *seed : std::random_device{}(),
                       .waves = catalog.planOf(difficulty),
@@ -225,7 +241,8 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
                       .stateEncoding = encoding,
                       .inputDelayTicks = inputDelayTicks,
                       .difficulty = std::string{difficulty},
-                      .vanilla = breaches.empty()};
+                      .vanilla = breaches.empty(),
+                      .startsAtBoss = startsAtBoss};
 }
 
 void ServerGamesModule::stop() {

@@ -4,3 +4,4 @@ target_include_directories(client_replication_tests PRIVATE ${RTYPE_TEST_SOURCE_
 add_subdirectory(Entities)
 add_subdirectory(EntityMessages)
 add_subdirectory(Pilots)
+add_subdirectory(Boss)

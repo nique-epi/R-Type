@@ -1,5 +1,6 @@
 #include "RtypeSystems.hpp"
 #include <memory>
+#include "BossPhaseSystem.hpp"
 #include "CollisionSystem.hpp"
 #include "EventBus.hpp"
 #include "HurtZoneSystem.hpp"
@@ -13,6 +14,8 @@ namespace rtype::server {
 
 void addRtypeSystems(engine::SystemScheduler& systems,
                      engine::EventBus& events) {
+  systems.add(std::make_unique<game::BossPhaseSystem>(events),
+              BOSS_PHASE_SYSTEM_NAME);
   systems.add(std::make_unique<game::PilotSystem>(events), PILOT_SYSTEM_NAME);
   systems.add(std::make_unique<game::MovementSystem>(), MOVEMENT_SYSTEM_NAME);
   systems.add(std::make_unique<game::PlayfieldExitSystem>(events),

@@ -15,6 +15,8 @@
 using rtype::client::AnimatedSprite;
 using rtype::client::animatedSpriteOf;
 using rtype::client::Animation;
+using rtype::client::enragedIdleAnimationOf;
+using rtype::client::idleAnimationOf;
 using rtype::client::layerOf;
 using rtype::client::Playback;
 using rtype::client::SpriteAnimation;
@@ -135,4 +137,19 @@ TEST(EntitySprites, ANewEntityShowsTheFrameItsAnimationStartsOn) {
 
     ASSERT_EQ(look.sprite.frame, startFrameOf(look.animation));
   }
+}
+
+/**
+ * Given the test appearance, which has no enraged idle frames
+ * When its enraged idle animation is asked for
+ * Then it is its idle animation: the same frames, the same time, a loop
+ */
+TEST(EntitySprites, TheEnragedIdleFallsBackToTheIdleWithoutItsFrames) {
+  const Animation enraged = enragedIdleAnimationOf(testAppearance());
+  const Animation idle = idleAnimationOf(testAppearance());
+
+  EXPECT_EQ(enraged.frames.data(), idle.frames.data());
+  EXPECT_EQ(enraged.frames.size(), idle.frames.size());
+  EXPECT_EQ(enraged.frameDuration, idle.frameDuration);
+  EXPECT_EQ(enraged.playback, Playback::Loop);
 }

@@ -179,16 +179,17 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 12 | `EntityDestroyed` | `entityId` `u32`, `reason` `u8`: 1 `Killed` (explosion), 2 `Removed` (no effect) | when an entity disappears, guaranteed and ordered (see [Ordered messages](#ordered-messages)) |
 | 13 | `GameEvent` | `eventNumber` `u16`, `kind` `u8`, `playerNumber` `u8`, `entityId` `u32` | see [Game events](#game-events), guaranteed and ordered |
 | 14 | `PlayerLeft` | `playerNumber` `u8`, `reason` `u8`: 1 `Left`, 2 `TimedOut` | to the other players, when one leaves or times out, guaranteed and ordered |
-| 15 | `GameEnded` | `outcome` `u8`: 1 `Victory`, 2 `Defeat`, then `playerCount` `u8`, then per player `playerNumber` `u8`, `score` `u32` | when the game ends: `Victory` once the players beat the last wave of the level, `Defeat` when no player has a life left; then every 500 ms until the server waits for players again |
+| 15 | `GameEnded` | `outcome` `u8`: 1 `Victory`, 2 `Defeat`, then `playerCount` `u8`, then per player `playerNumber` `u8`, `score` `u32` | when the game ends: `Victory` once the players cleared the level, its last wave over and its boss, when it has one, destroyed with every other enemy, `Defeat` when no player has a life left; then every 500 ms until the server waits for players again |
 | 16 | `ConnectionChallenge` | `cookie` `u64` | in answer to a request without a valid cookie |
 | 19 | `LeaderboardAnswer` | `playerCount` `u8`, `difficulty` `string`, `rowCount` `u8` (0 to 10), then per row `rank` `u32`, `score` `u32`, `playedAt` `i64` (seconds since 1970 UTC), `nickname` `string`; then `hasOwnRow` `bool`, followed by one row when true | in answer to a request, to the player who sent it, at most once per 500 ms per player |
 | 20 | `DeltaWorldState` | see [Delta world state](#delta-world-state) | during a game, as many times per second as the server was told to (20 by default, from 2 to 60) |
 | 21 | `RoundTrips` | `playerCount` `u8`, then per player `playerNumber` `u8`, `roundTrip` `u32`, `jitter` `u32`, in microseconds | right after each `Heartbeat` of the server (see [Round trip](#round-trip)) |
 | 22 | `EnemyAction` | `entityId` `u32`, `attack` `u8`, `phase` `u8`: 1 `Signal`, 2 `Strike`, 3 `Recover`, 4 `Enraged` | when an enemy enters a step of one of its attacks, guaranteed and ordered (see [Ordered messages](#ordered-messages)) |
-| 23 | `OrderedMessage` | `number` `u16`, `firstKept` `u16`, `innerType` `u8`, then the payload of the carried message to the end | carries `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft` and `PlayerChatLine` (see [Ordered messages](#ordered-messages)) |
+| 23 | `OrderedMessage` | `number` `u16`, `firstKept` `u16`, `innerType` `u8`, then the payload of the carried message to the end | carries `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine` and `BossStatus` (see [Ordered messages](#ordered-messages)) |
 | 25 | `ServerInformation` | `sentAt` `u32`, `heldFor` `u32`, `protocolVersion` `u8`, `gameVersion` `string`, `name` `string`, `playerCount` `u16`, `gameCount` `u16`, `freeSeatCount` `u16` | in answer to a `ServerInformationRequest`, to its sender, outside any session (see [Server information](#server-information)) |
 | 26 | `ConnectionRedirect` | `port` `u16` (1 to 65535) | from a supervisor only, in answer to a request with a valid cookie, once a game that has a place reported; the player asks again at that port of the same address (see [Supervisor](#supervisor)) |
 | 31 | `PlayerChatLine` | `lineNumber` `u16`, `text` `string` (1 to 127 bytes), `playerNumber` `u8` (1 to 4) | to every player of the game, its writer included, once for each new line the server takes, guaranteed and ordered (see [Chat](#chat)) |
+| 32 | `BossStatus` | `bossEntityId` `u32`, `health` `u16`, `fullHealth` `u16`, `stage` `u8`: 1 `Arriving`, 2 `Fighting`, 3 `Enraged`, 4 `Defeated` | when the last wave of a level with a boss is over, when the fight starts, at each hit that takes points from the boss, when it enrages and when it dies, guaranteed and ordered (see [Boss status](#boss-status)) |
 
 ### Payload rules
 
@@ -206,6 +207,7 @@ A message is accepted only when its payload has exactly the size its fields add 
 | `GameEvent` | `kind` is in the table of [Game events](#game-events), and `playerNumber` and `entityId` are 0 or a valid value as that table says |
 | `RoundTrips` | at most 4 players, each `playerNumber` 1 to 4 and listed once |
 | `EnemyAction` | `entityId` is not 0, `phase` is in the table of its message; `attack` is any `u8`, since the sheet of the enemy gives it its meaning |
+| `BossStatus` | the payload is 9 bytes; `stage` is in the table of its message; with `Arriving`, `bossEntityId`, `health` and `fullHealth` are 0; with any other stage, `bossEntityId` and `fullHealth` are not 0, `health` is at most `fullHealth`, and `health` is 0 exactly with `Defeated` |
 | `Heartbeat` | `echoes` and `ticks` are 0 or 1; when `echoes` is 0, `echo.sentAt` and `echo.heldFor` are 0; when `ticks` is 0, `tick` is 0 |
 | `Disconnection`, `GameStarted` | the payload is empty |
 | `LeaderboardRequest` | `playerCount` is 1 to 4; `difficulty` follows the rules of a nickname: 1 to 16 bytes of valid UTF-8, no control character |
@@ -467,6 +469,19 @@ An `EntityDamaged` naming an entity the client does not know changes nothing. Th
 
 A shot has no event of its own: a missile appears through the `EntitySpawned` of a type of side `PlayerMissile` or `EnemyMissile`.
 
+### Boss status
+
+A `BossStatus` tells where the fight with the boss of a level stands, so a client can warn the players and show its health. Each holds the whole state and replaces the one handed over before it; the ordered channel hands them over in the order sent, so the newest status is the newest state.
+
+| `stage` | Sent when | `bossEntityId`, `health`, `fullHealth` |
+|---|---|---|
+| 1 `Arriving` | the last wave of a level with a boss is over; the boss appears 4400 ms later, through its `EntitySpawned` | 0, 0, 0 |
+| 2 `Fighting` | the arrival of the boss is over, then at each hit that takes points from it | the boss, its points left, the points it appeared with |
+| 3 `Enraged` | its health fell below its rage threshold, then at each hit that takes points from it | as `Fighting` |
+| 4 `Defeated` | a hit took its last point, before its `EntityDestroyed` | the boss, 0, its full health |
+
+A hit during the arrival takes nothing from the boss and sends nothing. The boss is an entity like any other: it moves through the states and is removed by its `EntityDestroyed`, and its attacks come as `EnemyAction`s. A client that receives a `Fighting` or an `Enraged` without an `Arriving` before it shows the fight from there. The time of the warning is not sent: a client counts it from the `Arriving` it received.
+
 ## A session
 
 The messages of one session, from the connection to the end of a game:
@@ -624,7 +639,7 @@ The programs handle every case above. In a game, a `PlayerLeft` marks its pilot 
 
 ## Ordered messages
 
-`EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft` and `PlayerChatLine` change the screen once, and no state message repeats what they show, so they are guaranteed and ordered: their sender sends them again until they are acknowledged, and their receiver handles them in the order they were given, so a player never dies on the screen before the hit that killed it. In this version only the server sends them, and only the client acknowledges them.
+`EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine` and `BossStatus` change the screen once, and no state message repeats what they show, so they are guaranteed and ordered: their sender sends them again until they are acknowledged, and their receiver handles them in the order they were given, so a player never dies on the screen before the hit that killed it. In this version only the server sends them, and only the client acknowledges them.
 
 - **Acknowledging.** Within a session, every datagram a side sends MUST acknowledge the datagrams it accepted from its peer, with `ACKNOWLEDGES`, `acknowledgedSequence` and `acknowledgementBits` (see [Datagram](#datagram)). A side that accepts a datagram with `GUARANTEED` set SHOULD send a `Heartbeat` to carry the acknowledgement when 40 ms (`ACKNOWLEDGEMENT_DELAY`) pass with nothing else sent; during a game the next `PlayerInput` carries it first.
 - **Numbering.** The server sends each of these messages to each player inside an `OrderedMessage` (type 23): `number` (`u16`), `firstKept` (`u16`), `innerType` (`u8`), then the payload of the message it carries, to the end of the payload. The numbers of a player start at 1 (`FIRST_ORDERED_NUMBER`) and grow by 1 for each message given to that player, wrapping from 65535 to 0. A receiver MUST refuse an `OrderedMessage` that carries an `OrderedMessage`, whose `firstKept` is later than its `number`, or whose carried payload is over 1170 bytes (`ORDERED_PAYLOAD_LIMIT`). The envelope adds 5 bytes to a message.
@@ -661,13 +676,14 @@ Only the messages of [Ordered messages](#ordered-messages) are sent again until 
 | `ServerInformationRequest`, or its answer | not corrected by the protocol: the asker asks again when it chooses, and one ping is missing until then | — |
 | `MasterProbe` | not corrected: the next heartbeat carries no token, and the master sends another probe after it | two lost in a row may list the server unreachable until a probe gets through |
 | `EntitySpawned` | the next `WorldState` creates the entity, with its appearance effect | 50 ms at 20 per second |
-| `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine` | the next send | 116.7 ms |
+| `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine`, `BossStatus` | the next send | 116.7 ms |
 | `Disconnection` | the next copy | 50 ms |
 | all three copies of `Disconnection` | the session times out: the others get `PlayerLeft` (`TimedOut`) instead of (`Left`) | 20 s |
 | every send of an `EntityDestroyed`, 9 in 1 s | the entity is removed once no `WorldState` has listed it for 900 ms up to a closed tick, without explosion | 950 ms at 20 per second |
 | every send of an `EnemyAction` | not corrected: the enemy keeps its idle animation for that step; its position and health stay right through the state messages | — |
 | every send of a `GameEvent` or a `PlayerLeft` | not corrected: the sound, effect or message on screen is missed; lives, scores and players stay right through the state messages | — |
 | every send of a `PlayerChatLine` | not corrected: that player misses the line; when it is the writer, it sends the line again until it gives up after 5 s, and the server ignores those copies | — |
+| every send of a `BossStatus` | the next `BossStatus`, which holds the whole state: a lost `Arriving` shows no warning, and the fight shows from its first status that arrives; a lost `Defeated` has none after it, so the client keeps the last health until the game screen closes | the next hit, rage or death of the boss |
 
 The rates and delays on this page (60 inputs and 20 states per second by default, 40 ms, 100 ms, 250 ms, 500 ms, 900 ms, 1 s, 5 s, 15 s, 20 s, the 10-second cookie window, and the eighth and the 16 round trips of [Round trip](#round-trip)) are **provisional**: they will be revised once measured on a real network. Code must name each of them as a constant and never repeat the number.
 
@@ -738,6 +754,8 @@ Version 9 lets a player create or join a game: `ConnectionRequest` carries `kind
 
 Version 10 makes `ConnectionAccepted` announce the content pack of the game, its fingerprint, size and port, in place of the table of its entity types (see [Content pack](#content-pack)), and adds the route of the pack, over HTTP. The types are still the sheets numbered from 1 in the order of their names, so `EntitySpawned`, `WorldState` and `DeltaWorldState` keep their layout and their meaning; what changes is where a client finds the sheets: in its own assets, its cache or the pack of the server, so a server with sheets the client lacks no longer turns it away. An acceptance now takes 64 bytes whatever the content, where it took up to 859. The layout of `ConnectionAccepted` changes, so `version` became 10, and the server answers a client of version 9 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same.
 
+`BossStatus` (type 32) did not change `version`: the ordered channel hands it over to a client that does not know it, which skips it, so the order holds. Such a client plays the boss as any enemy, without its warning or its bar.
+
 ## Implementation status
 
 The code of this repository applies the rules above, with the exceptions listed at the end of this section.
@@ -746,11 +764,12 @@ The code of this repository applies the rules above, with the exceptions listed 
 - `src/network` holds the pieces: the socket in `Transport` drops a datagram over 1200 bytes (see [Network](/R-Type/network/)), `Serialization` encodes integers and strings, and `Protocol` holds the header and every message of this page, each checked as listed here. A `WorldState` without players is accepted while the game has none (see [Network](/R-Type/network/#world-state-worldstatecodec)).
 - Both programs drop a datagram whose header is not of this protocol and version, or whose message sizes do not add up. The server drops on its network thread every datagram that is neither a connection request, an information request nor from a player it admitted, answers the requests as [Connection](#connection) and [Server information](#server-information) describe, and answers a datagram of another version from an unknown sender with `ConnectionRefused` (`IncompatibleVersion`). The client reads only the server it contacts.
 - Within a session, each side writes the session token and its next sequence into every datagram it sends: the server in its acceptances, the `EntitySpawned` of the ships, the Bydos and the missiles, `LobbyState`, `GameStarted`, `DeltaWorldState`, the game events, `GameEnded`, `LeaderboardAnswer`, `Heartbeat`, `RoundTrips` and `Disconnection`; the client in its inputs, `ReadyState`, `GameLoaded`, `LeaderboardRequest`, `Heartbeat` and `Disconnection`. Each also acknowledges there the datagrams it accepted, except the client in its `Disconnection`, sent once the session is closed.
-- The server sends `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft` and `PlayerChatLine` as [Ordered messages](#ordered-messages) describes, and reads the acknowledgements of every datagram of a player it accepts. The client hands them over in order, and sends a `Heartbeat` 40 ms after a datagram that holds guaranteed messages when nothing else went out.
+- The server sends `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine` and `BossStatus` as [Ordered messages](#ordered-messages) describes, and reads the acknowledgements of every datagram of a player it accepts. The client hands them over in order, and sends a `Heartbeat` 40 ms after a datagram that holds guaranteed messages when nothing else went out.
 - The server checks the token of every datagram from the address of a player it admitted, on its network thread before any queue, and the sequence of every datagram it reads from a player, so a duplicate or a late one is dropped whatever its message. The client checks the token, then the sequence, of every datagram of the server.
 - Each side sends a `Heartbeat` every 500 ms and measures the round trip from its echo, and the server sends each player `RoundTrips` after each of its `Heartbeat`s, as [Round trip](#round-trip) describes; the `Heartbeat` of the server also carries its tick during a game, as [Clock of the server](#clock-of-the-server) describes. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
 
 - The client sends `LeaderboardRequest` from its leaderboard screen, and the server answers it.
+- The server sends `BossStatus` in the games whose difficulty names a boss, as [Boss status](#boss-status) describes, and the client shows the warning and the bar of the boss from it (see [Client](/R-Type/client/#boss-bosspresentation-bossbarat)).
 - The server answers a request with a valid cookie with the `ConnectionAccepted` of the player and the content pack of the game, at most once per 250 ms per player once accepted. The supervisor serves its pack over HTTP, and the client plays with its own sheets, a pack it kept or a pack it downloads, as [Content pack](#content-pack) describes.
 - The server limits the datagrams of each address and port, and of each player, on its network thread, as [A sender that sends too much](#a-sender-that-sends-too-much) says.
 - The server relays the chat lines as [Chat](#chat) describes; the client sends none yet.
