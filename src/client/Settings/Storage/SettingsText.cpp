@@ -15,12 +15,13 @@
 #include "ColorMode.hpp"
 #include "InputConstants.hpp"
 #include "KeyNames.hpp"
+#include "NamedNumber.hpp"
 #include "PixelSize.hpp"
 #include "PlayerSettings.hpp"
 #include "Setting.hpp"
-#include "SettingDefinitionConstants.hpp"
 #include "SettingRange.hpp"
 #include "SettingsConstants.hpp"
+#include "SettingsTextConstants.hpp"
 #include "WindowConstants.hpp"
 
 namespace rtype::client {
@@ -159,30 +160,6 @@ std::optional<SettingLine> settingLineOf(std::string_view line) {
   return SettingLine{.name = trimmed(line.substr(0, separator)),
                      .value = trimmed(line.substr(separator + 1))};
 }
-
-/** @brief An integer setting and its name in the file. */
-struct NamedNumber {
-  std::string_view name;
-  const Setting<int>* setting = nullptr;
-};
-
-/** @brief The integer settings of the file: the volumes, written first, and
- * those of the chat, written last. */
-constexpr std::array VOLUME_NUMBERS{
-    NamedNumber{.name = MUSIC_VOLUME_NAME, .setting = &MUSIC_VOLUME_SETTING},
-    NamedNumber{.name = EFFECTS_VOLUME_NAME,
-                .setting = &EFFECTS_VOLUME_SETTING},
-};
-constexpr std::array CHAT_NUMBERS{
-    NamedNumber{.name = CHAT_LETTERS_NAME, .setting = &CHAT_LETTERS_SETTING},
-    NamedNumber{.name = CHAT_CLOSED_LINES_NAME,
-                .setting = &CHAT_CLOSED_LINES_SETTING},
-    NamedNumber{.name = CHAT_OPEN_LINES_NAME,
-                .setting = &CHAT_OPEN_LINES_SETTING},
-    NamedNumber{.name = CHAT_SECONDS_NAME, .setting = &CHAT_SECONDS_SETTING},
-    NamedNumber{.name = CHAT_BACKGROUND_NAME,
-                .setting = &CHAT_BACKGROUND_SETTING},
-};
 
 /** @returns What became of an integer setting, or nothing when the line names
  * another kind of setting. */
