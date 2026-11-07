@@ -19,7 +19,7 @@ using rtype::engine::METRICS_MODULE_BUILT;
  */
 TEST_F(ClientModulesFixture, TheSoundIsListedBeforeTheScreens) {
   if (!AUDIO_MODULE_BUILT) {
-    GTEST_SKIP();
+    GTEST_SKIP() << "the build leaves the sound out";
   }
   EXPECT_LT(positionOf(AUDIO_MODULE_NAME), positionOf(SCREENS_MODULE_NAME));
 }

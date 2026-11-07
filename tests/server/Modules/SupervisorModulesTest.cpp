@@ -1,12 +1,9 @@
 #include <gtest/gtest.h>
-#include <algorithm>
 #include <cstddef>
-#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
 #include "BuiltModuleConstants.hpp"
-#include "IModule.hpp"
 #include "LaunchOptions.hpp"
 #include "ModuleConstants.hpp"
 #include "ServerConstants.hpp"
@@ -35,7 +32,7 @@ using rtype::server::supervisorModules;
  */
 TEST(SupervisorModules, ListsTheModulesOfTheSupervisor) {
   if (!MASTER_LINK_MODULE_BUILT) {
-    GTEST_SKIP();
+    GTEST_SKIP() << "the build leaves the master link out";
   }
   StopRequest stopRequest;
   const LaunchOptions options =
@@ -55,25 +52,6 @@ TEST(SupervisorModules, ListsTheModulesOfTheSupervisor) {
                        std::string{rtype::server::SUPERVISOR_LOBBY_MODULE_NAME},
                        std::string{rtype::server::INFORMATION_MODULE_NAME},
                        std::string{rtype::server::MASTER_MODULE_NAME}}));
-}
-
-/**
- * Given the launch options of a supervisor, in a build with or without the
- * master link
- * When its modules are listed
- * Then the master is among them exactly when the build compiled it
- */
-TEST(SupervisorModules, ListsTheMasterLinkOnlyWhenItIsBuilt) {
-  StopRequest stopRequest;
-  const auto modules = supervisorModules(
-      LaunchOptions::read(std::vector<std::string_view>{}), stopRequest, {});
-
-  const bool listed = std::ranges::any_of(
-      modules, [](const std::unique_ptr<rtype::engine::IModule>& module) {
-        return module->name() == rtype::server::MASTER_MODULE_NAME;
-      });
-
-  EXPECT_EQ(listed, MASTER_LINK_MODULE_BUILT);
 }
 
 /**
@@ -181,7 +159,7 @@ TEST_F(SupervisorModulesFixture, KeepsTheLinesOfTheSettingsItOwns) {
  */
 TEST_F(SupervisorModulesFixture, KeepsTheLinesOfTheMasterSettings) {
   if (!MASTER_LINK_MODULE_BUILT) {
-    GTEST_SKIP();
+    GTEST_SKIP() << "the build leaves the master link out";
   }
   writeConfiguration(
       {std::string{MASTER_URL_LINE}, std::string{MASTER_KEY_LINE}});

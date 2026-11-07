@@ -181,7 +181,7 @@ TEST(ApplicationConfiguration, WordThatIsNeitherOnNorOffIsRefused) {
  */
 TEST(ApplicationConfiguration, InterpreterHoldsModulePluginAndSetCommands) {
   if (!PLUGINS_BUILT) {
-    GTEST_SKIP();
+    GTEST_SKIP() << "the build leaves the plugins out";
   }
   JournalModule journal;
   Lines help;
@@ -207,7 +207,7 @@ TEST(ApplicationConfiguration, InterpreterHoldsModulePluginAndSetCommands) {
 TEST(ApplicationConfiguration,
      InterpreterHoldsModuleAndSetCommandsWithoutThePlugins) {
   if (PLUGINS_BUILT) {
-    GTEST_SKIP();
+    GTEST_SKIP() << "the build has the plugins";
   }
   JournalModule journal;
   Lines help;

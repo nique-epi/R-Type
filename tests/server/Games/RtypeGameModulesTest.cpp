@@ -23,10 +23,8 @@ TEST(RtypeGameModules, ListsTheChatOnlyWhenItIsBuilt) {
   const std::vector<std::unique_ptr<IGameModule>> modules =
       rtypeGameModules(results);
 
-  const bool listed = std::ranges::any_of(
-      modules, [](const std::unique_ptr<IGameModule>& module) {
-        return module->name() == CHAT_MODULE_NAME;
-      });
+  const bool listed = std::ranges::find(modules, CHAT_MODULE_NAME,
+                                        &IGameModule::name) != modules.end();
 
   EXPECT_EQ(listed, CHAT_MODULE_BUILT);
 }

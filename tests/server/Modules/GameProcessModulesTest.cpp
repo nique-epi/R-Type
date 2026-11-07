@@ -4,7 +4,6 @@
 #include <filesystem>
 #include <memory>
 #include <string>
-#include <string_view>
 #include <vector>
 #include "Application.hpp"
 #include "BuiltModuleConstants.hpp"
@@ -17,7 +16,6 @@
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "PacketHeader.hpp"
-#include "ServerConstants.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "TrafficFileTestConstants.hpp"
 #include "UdpTestClient.hpp"
@@ -37,7 +35,7 @@ using rtype::server::gameProcessModules;
  */
 TEST_F(GameProcessModulesFixture, ListsTheModulesOfAGameWithTheLinkLast) {
   if (!METRICS_MODULE_BUILT) {
-    GTEST_SKIP();
+    GTEST_SKIP() << "the build leaves the metrics out";
   }
   const auto modules = gameProcessModules(launchOptions(), stopRequest());
 
@@ -65,10 +63,9 @@ TEST_F(GameProcessModulesFixture, ListsTheModulesOfAGameWithTheLinkLast) {
 TEST_F(GameProcessModulesFixture, ListsTheMetricsOnlyWhenTheyAreBuilt) {
   const auto modules = gameProcessModules(launchOptions(), stopRequest());
 
-  const bool listed = std::ranges::any_of(
-      modules, [](const std::unique_ptr<rtype::engine::IModule>& module) {
-        return module->name() == rtype::server::METRICS_MODULE_NAME;
-      });
+  const bool listed =
+      std::ranges::find(modules, rtype::server::METRICS_MODULE_NAME,
+                        &rtype::engine::IModule::name) != modules.end();
 
   EXPECT_EQ(listed, METRICS_MODULE_BUILT);
 }
@@ -96,7 +93,7 @@ TEST_F(GameProcessModulesFixture,
  */
 TEST_F(GameProcessModulesFixture, OpensTheTrafficFileOfItsLaunchOption) {
   if (!METRICS_MODULE_BUILT) {
-    GTEST_SKIP();
+    GTEST_SKIP() << "the build leaves the metrics out";
   }
   const auto application = gameApplication(GameLaunchOptions::read(
       gameArguments({TRAFFIC_CSV_OPTION, TRAFFIC_FILE_NAME})));

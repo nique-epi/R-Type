@@ -30,15 +30,13 @@ constexpr std::array GAME_COMMAND_NAMES{engine::PLUGIN_COMMAND_NAME,
  * to read the configuration the games module is built with. The master link
  * is among them only when the build compiled it (RTYPE_MODULE_MASTER_LINK).
  */
-#if RTYPE_MODULE_MASTER_LINK
 constexpr std::array SUPERVISOR_MODULE_NAMES{
     LOGGER_MODULE_NAME,           NETWORK_MODULE_NAME,
     SUPERVISED_GAMES_MODULE_NAME, SUPERVISOR_LOBBY_MODULE_NAME,
-    INFORMATION_MODULE_NAME,      MASTER_MODULE_NAME};
-#else
-constexpr std::array SUPERVISOR_MODULE_NAMES{
-    LOGGER_MODULE_NAME, NETWORK_MODULE_NAME, SUPERVISED_GAMES_MODULE_NAME,
-    SUPERVISOR_LOBBY_MODULE_NAME, INFORMATION_MODULE_NAME};
+    INFORMATION_MODULE_NAME,
+#if RTYPE_MODULE_MASTER_LINK
+    MASTER_MODULE_NAME,
 #endif
+};
 
 }  // namespace rtype::server

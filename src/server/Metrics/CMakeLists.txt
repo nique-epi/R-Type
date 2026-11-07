@@ -13,14 +13,12 @@ target_include_directories(rtype_server_metrics_module PUBLIC ${CMAKE_CURRENT_SO
 target_link_libraries(rtype_server_metrics_module
   PUBLIC
     rtype_engine_application
-    rtype_engine_systems
     rtype_logging
     rtype_network_statistics
     rtype_server_games_module
     rtype_server_metrics_contract
     rtype_server_metrics_measures
   PRIVATE
-    rtype_engine_time
     rtype_server_constants
 )
 
