@@ -14,7 +14,11 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    setupFiles: ['./src/test/match-media.ts'],
+    setupFiles: [
+      './src/test/match-media.ts',
+      './src/test/resize-observer.ts',
+      './src/test/cleanup.ts',
+    ],
     env: {
       MASTER_URL: 'http://master.test:8080',
     },
