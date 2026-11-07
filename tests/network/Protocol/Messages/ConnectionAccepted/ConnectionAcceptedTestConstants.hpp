@@ -41,7 +41,23 @@ constexpr std::uint8_t FIRST_PLAYER_BYTE = 1;
 
 /** @brief The largest datagram of a ConnectionAccepted, added up by hand from
  * the protocol page: a header of 22 bytes, a message prefix of 3, then
- * 1 + 1 + 32 x (1 + 1 + 24). */
-constexpr std::size_t LARGEST_ACCEPTANCE_ON_THE_PROTOCOL_PAGE = 859;
+ * 1 + 1 + 32 x (1 + 1 + 24 + 2 + 2), then the gun, 1 + 1 + 2 + 2 + 4 + 4. */
+constexpr std::size_t LARGEST_ACCEPTANCE_ON_THE_PROTOCOL_PAGE = 1001;
+
+/** @brief The bytes a box of a type takes, and the gun, on the protocol page.
+ */
+constexpr std::size_t NO_BOX_BYTE_COUNT = 4;
+constexpr std::size_t NO_GUN_BYTE_COUNT = 14;
+
+/** @brief The numbers of the ship and its missile in acceptanceWithGun(), and
+ * a number past its table of two types. */
+constexpr std::uint8_t SHIP_TYPE_NUMBER = 1;
+constexpr std::uint8_t MISSILE_TYPE_NUMBER = 2;
+constexpr std::uint8_t TYPE_NUMBER_PAST_THE_TABLE = 3;
+
+/** @brief The gun of the shipped ship: 20 ticks between shots (333 ms), ready
+ * at once, its missile flying right at 960 units per second. */
+constexpr std::uint16_t SHIPPED_INTERVAL_TICKS = 20;
+constexpr float SHIPPED_MISSILE_SPEED = 960.0F;
 
 }  // namespace rtype::network::testing

@@ -168,14 +168,14 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 
 | Type | Message | Payload | Sent |
 |---|---|---|---|
-| 2 | `ConnectionAccepted` | `playerNumber` `u8` (1 to 4), `typeCount` `u8` (1 to 32), then per type `side` `u8`: 1 `Player`, 2 `Enemy`, 3 `PlayerMissile`, 4 `EnemyMissile`, and `name` `string` (1 to 24 bytes); see [Entity types](#entity-types) | in answer to a request with a valid cookie; its header carries the session token; to a connected player, again at most once per 250 ms |
+| 2 | `ConnectionAccepted` | `playerNumber` `u8` (1 to 4), `typeCount` `u8` (1 to 32), then per type `side` `u8`: 1 `Player`, 2 `Enemy`, 3 `PlayerMissile`, 4 `EnemyMissile`, `name` `string` (1 to 24 bytes), `hitboxWidth` `u16` and `hitboxHeight` `u16`, then the gun of the ships: `shipType` `u8`, `projectileType` `u8`, `intervalTicks` `u16`, `firstShotTicks` `u16`, `velocityX` `f32`, `velocityY` `f32`; see [Entity types](#entity-types) | in answer to a request with a valid cookie; its header carries the session token; to a connected player, again at most once per 250 ms |
 | 3 | `ConnectionRefused` | `reason` `u8`: 1 `GameFull`, 2 `GameInProgress`, 3 `IncompatibleVersion`, 4 `NicknameTaken`, 5 `GameNotFound`, 6 `ServerFull` | in answer to a request |
 | 4 | `Disconnection` | none | when the server shuts down, three times 50 ms apart |
 | 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32`, `ticks` `bool`, `tick` `u32` (see [Round trip](#round-trip) and [Clock of the server](#clock-of-the-server)) | every 500 ms, whatever else it sends; `ticks` is 1 only while a game is in progress |
 | 7 | `LobbyState` | `playerCount` `u8`, then per player `playerNumber` `u8`, `ready` `bool`, `nickname` `string` | on every change, and at least every 500 ms while no game runs |
 | 8 | `GameStarted` | none | when every connected player is ready, then every 500 ms to the players that did not send `GameLoaded` yet |
 | 10 | `WorldState` | see [World state](#world-state) | not sent by the server since `DeltaWorldState`; a client still reads it |
-| 11 | `EntitySpawned` | `entityId` `u32`, `entityType` `u8` (a number of the [entity types](#entity-types)), `position` | when an entity appears; the ship of a player, when the player is accepted; the ship of a player again, when it comes back after a hit; a Bydo, every time one appears; a missile, every time one is fired |
+| 11 | `EntitySpawned` | `entityId` `u32`, `entityType` `u8` (a number of the [entity types](#entity-types)), `position`, `owner` `u8` (0 to 4), `firingInput` `u32`; see [Own missiles](#own-missiles) | when an entity appears; the ship of a player, when the player is accepted; the ship of a player again, when it comes back after a hit; a Bydo, every time one appears; a missile, every time one is fired |
 | 12 | `EntityDestroyed` | `entityId` `u32`, `reason` `u8`: 1 `Killed` (explosion), 2 `Removed` (no effect) | when an entity disappears, guaranteed and ordered (see [Ordered messages](#ordered-messages)) |
 | 13 | `GameEvent` | `eventNumber` `u16`, `kind` `u8`, `playerNumber` `u8`, `entityId` `u32` | see [Game events](#game-events), guaranteed and ordered |
 | 14 | `PlayerLeft` | `playerNumber` `u8`, `reason` `u8`: 1 `Left`, 2 `TimedOut` | to the other players, when one leaves or times out, guaranteed and ordered |
@@ -197,11 +197,11 @@ A message is accepted only when its payload has exactly the size its fields add 
 | Message | Rule |
 |---|---|
 | `ConnectionRequest` | the nickname follows the rules of [Connection](#connection): 1 to 16 bytes of valid UTF-8, no control character; `kind` is 1 to 3; `number` is 1 to 65535 with `ExistingGame`, and 0 with `AnyGame` and `NewGame` |
-| `ConnectionAccepted` | `playerNumber` is 1 to 4; `typeCount` is 1 to 32, checked before any type is read; each `side` is 1 to 4; each `name` is 1 to 24 bytes of lowercase ASCII letters, digits and underscores |
+| `ConnectionAccepted` | `playerNumber` is 1 to 4; `typeCount` is 1 to 32, checked before any type is read; each `side` is 1 to 4; each `name` is 1 to 24 bytes of lowercase ASCII letters, digits and underscores; `shipType` and `projectileType` are 0 or a number of the table; when `projectileType` is not 0, `shipType` is not 0, names a type of side `Player`, `projectileType` names a type of side `PlayerMissile`, and `intervalTicks` is not 0; `velocityX` and `velocityY` are finite |
 | `LobbyState` | at most 4 players, each `playerNumber` 1 to 4 and listed once, each nickname valid as above |
 | `GameEnded` | `outcome` is 1 or 2; at most 4 players, each `playerNumber` 1 to 4 and listed once |
 | `WorldState` | at most 4 players, each `playerNumber` 1 to 4 and listed once; `motion` follows [World state](#world-state) |
-| `EntitySpawned` | `entityId` is not 0, `entityType` is not 0 |
+| `EntitySpawned` | `entityId` is not 0, `entityType` is not 0, `owner` is 0 to 4 |
 | `EntityDestroyed`, `PlayerLeft`, `ConnectionRefused` | `reason` is in the table of its message; `PlayerLeft` names a `playerNumber` of 1 to 4 |
 | `GameEvent` | `kind` is in the table of [Game events](#game-events), and `playerNumber` and `entityId` are 0 or a valid value as that table says |
 | `RoundTrips` | at most 4 players, each `playerNumber` 1 to 4 and listed once |
@@ -284,13 +284,15 @@ How the server computes the cookie is its own business, as long as it keeps noth
 
 A player keeps the number given by `ConnectionAccepted` until it leaves; the number also picks the color of the player, so no color travels. The nickname travels only in `ConnectionRequest` and `LobbyState`, never during a game. Its limit is 16 bytes, not 16 characters: a letter without accent takes 1 byte, an accented letter 2 and some symbols up to 4, so each accent leaves room for one letter less. The text field of the client counts bytes and refuses a character that would not fit whole; the server drops a request whose nickname is empty, longer than 16 bytes, not valid UTF-8 or holds a control character, U+0000 to U+001F or U+007F, so a nickname can never start a line of its own in a log. The server answers a `ConnectionRequest` with a valid cookie from a sender it already accepted with the same `ConnectionAccepted` again, same number, same token and same table, at most once per 250 ms per player (half the 500 ms between two requests, so a request whose acceptance was lost is not held back because it crossed the network faster than the one before); the requests in between get nothing.
 
-A sender that did not prove its address, that is whose request carries no valid cookie, never gets more bytes than it sent: a challenge (33 bytes) is smaller than the smallest request (38), and so is a refusal (26). Only a request with a valid cookie gets a `ConnectionAccepted`, which carries the table of the entity types and may reach 859 bytes: the cookie went to the address the request came from, so the acceptance goes to an address that proved it receives the datagrams of the server. QUIC lifts its own limit on what it sends an address once it has validated that address the same way (RFC 9000, section 8). Whoever sees the traffic of a player and replays its cookie gets at most four acceptances per second sent to that player, for the 20 s at most that the cookie stays valid.
+A sender that did not prove its address, that is whose request carries no valid cookie, never gets more bytes than it sent: a challenge (33 bytes) is smaller than the smallest request (38), and so is a refusal (26). Only a request with a valid cookie gets a `ConnectionAccepted`, which carries the table of the entity types and may reach 1001 bytes: the cookie went to the address the request came from, so the acceptance goes to an address that proved it receives the datagrams of the server. QUIC lifts its own limit on what it sends an address once it has validated that address the same way (RFC 9000, section 8). Whoever sees the traffic of a player and replays its cookie gets at most four acceptances per second sent to that player, for the 20 s at most that the cookie stays valid.
 
 A nickname is unique on the server: a request whose nickname a player already holds is refused with `NicknameTaken`, before the cookie is checked. Letters of the ASCII alphabet compare without regard to case (`Ace` and `ACE` are the same nickname), every other byte compares as it is, so `É` and `é` are two nicknames. A player whose seat is held (see [A session](#a-session)) still holds its nickname; it is free again once the seat is. A sender already accepted is not refused as a duplicate of itself.
 
 ### Entity types
 
-A type is named by the sheet it is read from (`assets/entities/drifter.toml` is `drifter`, see [Writing an entity sheet](/R-Type/entity-sheets/)), never by a number fixed in the code. The server numbers the sheets it loaded in the order of their names, from 1, and keeps those numbers while it runs; `ConnectionAccepted` lists them, and `EntitySpawned`, `WorldState` and `DeltaWorldState` carry them. The number of a type is its place in that list: the first entry is type 1, and 0 names no type. The side says what an entity of that type is, so a receiver knows who it hits and how to draw it without the gameplay of the sheet.
+A type is named by the sheet it is read from (`assets/entities/drifter.toml` is `drifter`, see [Writing an entity sheet](/R-Type/entity-sheets/)), never by a number fixed in the code. The server numbers the sheets it loaded in the order of their names, from 1, and keeps those numbers while it runs; `ConnectionAccepted` lists them, and `EntitySpawned`, `WorldState` and `DeltaWorldState` carry them. The number of a type is its place in that list: the first entry is type 1, and 0 names no type. The side says what an entity of that type is, so a receiver knows who it hits and how to draw it without the gameplay of the sheet. The box is the `[gameplay.hitbox]` of the sheet, in whole logical units, so a client can tell where its own missile touches (see [Own missiles](#own-missiles)).
+
+The gun that follows the types describes the gun of the ships of the players: the type of the ships, the type of what they fire, the ticks between two shots and before the first one, and the velocity of the missile, in logical units per second. A `projectileType` of 0 says the client may not predict the missile: the ships fire nothing, or what they fire is not a missile of a player piloted by `straight`, so its path is not a straight line at a steady speed; the velocity is then 0 on both axes.
 
 The payload of the `ConnectionAccepted` of player 1 on a server of five sheets, `drifter`, `enemy_missile`, `player_missile`, `ship` and `weaver`, the sheets the game shipped before its mobs, byte by byte:
 
@@ -300,16 +302,27 @@ The payload of the `ConnectionAccepted` of player 1 on a server of five sheets, 
 | 1 | `typeCount` | 5 |
 | 2 | `side` of type 1 | 2 (`Enemy`) |
 | 3 to 10 | `name` of type 1 | 7, then `drifter` |
-| 11 | `side` of type 2 | 4 (`EnemyMissile`) |
-| 12 to 25 | `name` of type 2 | 13, then `enemy_missile` |
-| 26 | `side` of type 3 | 3 (`PlayerMissile`) |
-| 27 to 41 | `name` of type 3 | 14, then `player_missile` |
-| 42 | `side` of type 4 | 1 (`Player`) |
-| 43 to 47 | `name` of type 4 | 4, then `ship` |
-| 48 | `side` of type 5 | 2 (`Enemy`) |
-| 49 to 55 | `name` of type 5 | 6, then `weaver` |
+| 11 to 14 | box of type 1 | 96, 96 |
+| 15 | `side` of type 2 | 4 (`EnemyMissile`) |
+| 16 to 29 | `name` of type 2 | 13, then `enemy_missile` |
+| 30 to 33 | box of type 2 | 32, 32 |
+| 34 | `side` of type 3 | 3 (`PlayerMissile`) |
+| 35 to 49 | `name` of type 3 | 14, then `player_missile` |
+| 50 to 53 | box of type 3 | 64, 24 |
+| 54 | `side` of type 4 | 1 (`Player`) |
+| 55 to 59 | `name` of type 4 | 4, then `ship` |
+| 60 to 63 | box of type 4 | 128, 64 |
+| 64 | `side` of type 5 | 2 (`Enemy`) |
+| 65 to 71 | `name` of type 5 | 6, then `weaver` |
+| 72 to 75 | box of type 5 | 96, 96 |
+| 76 | `shipType` | 4 (`ship`) |
+| 77 | `projectileType` | 3 (`player_missile`) |
+| 78 to 79 | `intervalTicks` | 20 (333 ms) |
+| 80 to 81 | `firstShotTicks` | 0 |
+| 82 to 85 | `velocityX` | 960.0 |
+| 86 to 89 | `velocityY` | 0.0 |
 
-With its header and its message prefix, that acceptance takes 81 bytes. The largest one takes 22 + 3 + 1 + 1 + 32 × (1 + 1 + 24) = 859 bytes, so it always fits one datagram.
+With its header and its message prefix, that acceptance takes 115 bytes. The largest one takes 22 + 3 + 1 + 1 + 32 × (1 + 1 + 24 + 2 + 2) + 14 = 1001 bytes, so it always fits one datagram.
 
 A player who is accepted holds the table: the request the client sends again every 500 ms until it is answered delivers it as it delivers the acceptance, so no session can reach the waiting room without it. The client keeps the table of the first acceptance of its session; a repeated acceptance changes nothing. A client that has no sheet for a name of the table opens no session: it sends its `Disconnection` with the token of that acceptance, three times, as when a player leaves, so the server frees the seat at once, and it tells the player (see [Joining fails](#joining-fails)). A number a state carries that the table does not hold, past its last entry, names nothing the client can draw: the client creates nothing for it.
 
@@ -432,6 +445,16 @@ A `GameEvent` drives sounds and effects on the client, never a game rule. `event
 An `EntityDamaged` naming an entity the client does not know changes nothing. The explosion of a ship that is hit comes from its `EntityDestroyed` (`Killed`).
 
 A shot has no event of its own: a missile appears through the `EntitySpawned` of a type of side `PlayerMissile` or `EnemyMissile`.
+
+### Own missiles
+
+A client draws its own ship ahead of the server (it predicts it), and the other entities behind it (it interpolates them). A missile the server creates for that ship would show up a round trip late, behind the ship as the client draws it. So the client fires its own missile at once, from its predicted ship, and the server tells it which missile of the game is that one:
+
+- `owner` is the number of the player whose ship fired the missile, `firingInput` the `inputNumber` of the newest `PlayerInput` the server had applied to that ship in the tick it fired. Both are 0 for anything else: a ship, a Bydo, a missile of an enemy, a shard.
+- The server guarantees the `EntitySpawned` of a missile of a player, on the ordered channel (see [Ordered messages](#ordered-messages)), so the client always learns which input fired it. The others are sent once, as before.
+- A client matches a missile it fired to the `EntitySpawned` whose `owner` is its own player number and whose `firingInput` is the input it fired with. What it draws of that missile, and when it gives up a shot the server did not make, is the business of the client (see [Client](/R-Type/client/)).
+
+The gun of the acceptance gives the client what it needs to fire as the server does: the ticks between two shots and before the first one, and the velocity of the missile (see [Entity types](#entity-types)).
 
 ## A session
 
@@ -624,7 +647,8 @@ Only the messages of [Ordered messages](#ordered-messages) are sent again until 
 | `RoundTrips` | the next one | 500 ms |
 | `ServerInformationRequest`, or its answer | not corrected by the protocol: the asker asks again when it chooses, and one ping is missing until then | — |
 | `MasterProbe` | not corrected: the next heartbeat carries no token, and the master sends another probe after it | two lost in a row may list the server unreachable until a probe gets through |
-| `EntitySpawned` | the next `WorldState` creates the entity, with its appearance effect | 50 ms at 20 per second |
+| `EntitySpawned` of a ship, a Bydo or a missile of an enemy | the next `WorldState` creates the entity, with its appearance effect | 50 ms at 20 per second |
+| `EntitySpawned` of a missile of a player | the next send, since it is guaranteed (see [Own missiles](#own-missiles)) | 116.7 ms |
 | `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine` | the next send | 116.7 ms |
 | `Disconnection` | the next copy | 50 ms |
 | all three copies of `Disconnection` | the session times out: the others get `PlayerLeft` (`TimedOut`) instead of (`Left`) | 20 s |
@@ -697,6 +721,10 @@ Version 9 lets a player create or join a game: `ConnectionRequest` carries `kind
 `MasterProbe` (type 29) did not change `version`: a server of version 9 that does not know it drops it as a datagram from a sender that was not admitted and holds no connection request, sends no token back, and the master lists it as unreachable.
 
 `ChatLine` and `PlayerChatLine` (types 30 and 31) did not change `version`: a peer that does not know them skips them, and the ordered channel hands a `PlayerChatLine` over to a client without the chat, which skips it, so the order of the channel holds.
+
+## Version 10
+
+Version 10 lets a client predict its own missiles (see [Own missiles](#own-missiles)): each type of `ConnectionAccepted` carries its box, `hitboxWidth` and `hitboxHeight`, the acceptance ends with the gun of the ships, and `EntitySpawned` ends with `owner` and `firingInput`. The layout of both messages changes, so a receiver of version 9 would read the box of the first type as the side of the second, which is why `version` became 10. The largest acceptance grows from 859 to 1001 bytes, still sent only to a sender that proved its address, and an `EntitySpawned` from 9 to 14 bytes. The server now guarantees the `EntitySpawned` of a missile of a player; the others are still sent once.
 
 ## Implementation status
 

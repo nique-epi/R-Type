@@ -1,4 +1,6 @@
 #include <gtest/gtest.h>
+#include <cstddef>
+#include <limits>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -14,44 +16,94 @@
 #include "NetworkException.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolTestConstants.hpp"
+#include "ShipGun.hpp"
 
 namespace rtype::network::testing {
 
 /**
- * Given the acceptance of player 1 on a server of a Drifter, an enemy, then
- * the ship, a player
+ * Given the acceptance of player 1 on a server of a Drifter, an enemy of 64 by
+ * 32 units, then the ship, a player of 96 by 48, with a gun that predicts
+ * nothing
  * When it is encoded
  * Then the payload is the player number, the count of types, then for each
- * type its side, the length of its name and its bytes, as the protocol page
- * writes them
+ * type its side, the length of its name, its bytes and its box, then the 14
+ * bytes of the gun, as the protocol page writes them
  */
 TEST(ConnectionAccepted, EncodesThePlayerNumberThenTheTypes) {
   const ConnectionAccepted acceptance{
       .playerNumber = 1,
-      .types = {EntityTypeEntry{.side = EntitySide::Enemy, .name = "drifter"},
-                EntityTypeEntry{.side = EntitySide::Player, .name = "ship"}}};
+      .types = {EntityTypeEntry{.side = EntitySide::Enemy,
+                                .name = "drifter",
+                                .hitboxWidth = 64,
+                                .hitboxHeight = 32},
+                EntityTypeEntry{.side = EntitySide::Player,
+                                .name = "ship",
+                                .hitboxWidth = 96,
+                                .hitboxHeight = 48}}};
 
-  EXPECT_EQ(encodeMessage(acceptance),
-            byteSequence({0x01, 0x02, 0x02, 0x07, 'd', 'r', 'i', 'f', 't', 'e',
-                          'r', 0x01, 0x04, 's', 'h', 'i', 'p'}));
+  EXPECT_EQ(
+      encodeMessage(acceptance),
+      byteSequence({0x01, 0x02, 0x02, 0x07, 'd',  'r',  'i',  'f',  't',  'e',
+                    'r',  0x00, 0x40, 0x00, 0x20, 0x01, 0x04, 's',  'h',  'i',
+                    'p',  0x00, 0x60, 0x00, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}));
+}
+
+/**
+ * Given the acceptance of a ship and its missile, the gun of the shipped ship:
+ * 20 ticks between shots, ready at once, the missile flying right at 960
+ * units per second
+ * When it is encoded
+ * Then its last 14 bytes are the ship type, the missile type, 20 and 0 on two
+ * bytes each, then 960 and 0 as big-endian floats
+ */
+TEST(ConnectionAccepted, EncodesTheGunAfterTheTypes) {
+  const std::vector<std::byte> payload = encodeMessage(
+      acceptanceWithGun(ShipGun{.shipType = SHIP_TYPE_NUMBER,
+                                .projectileType = MISSILE_TYPE_NUMBER,
+                                .intervalTicks = SHIPPED_INTERVAL_TICKS,
+                                .firstShotTicks = 0,
+                                .velocityX = SHIPPED_MISSILE_SPEED,
+                                .velocityY = 0.0F}));
+
+  EXPECT_EQ(
+      std::vector<std::byte>(payload.end() - NO_GUN_BYTE_COUNT, payload.end()),
+      byteSequence({0x01, 0x02, 0x00, 0x14, 0x00, 0x00, 0x44, 0x70, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00}));
 }
 
 /**
  * Given the acceptance of the last player, with a type of every side, one of
- * them with a name of every kind of character
+ * them with a name of every kind of character, and a gun
  * When it is encoded then decoded
  * Then the decoded acceptance equals the original, the types in the same order
+ * with their boxes, and the gun
  */
 TEST(ConnectionAccepted, DecodesWhatItEncoded) {
   const ConnectionAccepted acceptance{
       .playerNumber = LAST_PLAYER_NUMBER,
-      .types = {EntityTypeEntry{.side = EntitySide::Player, .name = "ship"},
+      .types = {EntityTypeEntry{.side = EntitySide::Player,
+                                .name = "ship",
+                                .hitboxWidth = 96,
+                                .hitboxHeight = 48},
                 EntityTypeEntry{.side = EntitySide::Enemy,
-                                .name = std::string{NAME_OF_EVERY_KIND}},
+                                .name = std::string{NAME_OF_EVERY_KIND},
+                                .hitboxWidth = 64,
+                                .hitboxHeight = 32},
                 EntityTypeEntry{.side = EntitySide::PlayerMissile,
-                                .name = "player_missile"},
+                                .name = "player_missile",
+                                .hitboxWidth = 64,
+                                .hitboxHeight = 24},
                 EntityTypeEntry{.side = EntitySide::EnemyMissile,
-                                .name = "enemy_missile"}}};
+                                .name = "enemy_missile",
+                                .hitboxWidth = 32,
+                                .hitboxHeight = 32}},
+      .shipGun = ShipGun{.shipType = 1,
+                         .projectileType = 3,
+                         .intervalTicks = SHIPPED_INTERVAL_TICKS,
+                         .firstShotTicks = SHIPPED_INTERVAL_TICKS,
+                         .velocityX = SHIPPED_MISSILE_SPEED,
+                         .velocityY = 0.0F}};
 
   EXPECT_EQ(decodeMessage<ConnectionAccepted>(encodeMessage(acceptance)),
             acceptance);
@@ -63,19 +115,18 @@ TEST(ConnectionAccepted, DecodesWhatItEncoded) {
  * Then 1 and 4 give their player number, 0 and 5 are refused
  */
 TEST(ConnectionAccepted, ReadsThePlayerNumbersOneToFourOnly) {
-  EXPECT_EQ(decodeMessage<ConnectionAccepted>(
-                byteSequence({0x01, 0x01, 0x02, 0x01, 'a'}))
+  EXPECT_EQ(decodeMessage<ConnectionAccepted>(acceptancePayloadOfPlayer(1))
                 .playerNumber,
             1);
   EXPECT_EQ(decodeMessage<ConnectionAccepted>(
-                byteSequence({0x04, 0x01, 0x02, 0x01, 'a'}))
+                acceptancePayloadOfPlayer(LAST_PLAYER_NUMBER))
                 .playerNumber,
             LAST_PLAYER_NUMBER);
+  EXPECT_THROW(
+      (void)decodeMessage<ConnectionAccepted>(acceptancePayloadOfPlayer(0)),
+      InvalidFieldValueException);
   EXPECT_THROW((void)decodeMessage<ConnectionAccepted>(
-                   byteSequence({0x00, 0x01, 0x02, 0x01, 'a'})),
-               InvalidFieldValueException);
-  EXPECT_THROW((void)decodeMessage<ConnectionAccepted>(
-                   byteSequence({0x05, 0x01, 0x02, 0x01, 'a'})),
+                   acceptancePayloadOfPlayer(PLAYER_NUMBER_ABOVE_THE_LAST)),
                InvalidFieldValueException);
 }
 
@@ -226,20 +277,104 @@ TEST(ConnectionAccepted, ReadsTheFourSidesOnly) {
  * Then it is refused as cut short
  */
 TEST(ConnectionAccepted, RefusesTypesCutShort) {
-  EXPECT_THROW((void)decodeMessage<ConnectionAccepted>(
-                   byteSequence({0x01, 0x02, 0x02, 0x01, 'a'})),
+  EXPECT_THROW((void)decodeMessage<ConnectionAccepted>(byteSequence(
+                   {0x01, 0x02, 0x02, 0x01, 'a', 0x00, 0x00, 0x00, 0x00})),
                BufferUnderflowException);
 }
 
 /**
- * Given an acceptance of one type followed by one more byte
+ * Given an acceptance of one type, then one type and its box with no gun
+ * When each is decoded
+ * Then the second is refused as cut short: an acceptance always ends with the
+ * gun
+ */
+TEST(ConnectionAccepted, RefusesAPayloadCutBeforeItsGun) {
+  std::vector<std::byte> withoutGun = acceptancePayloadOfPlayer(1);
+  withoutGun.resize(withoutGun.size() - NO_GUN_BYTE_COUNT);
+
+  EXPECT_NO_THROW(
+      (void)decodeMessage<ConnectionAccepted>(acceptancePayloadOfPlayer(1)));
+  EXPECT_THROW((void)decodeMessage<ConnectionAccepted>(withoutGun),
+               BufferUnderflowException);
+}
+
+/**
+ * Given an acceptance of one type and its gun followed by one more byte
  * When it is decoded
  * Then it is refused
  */
-TEST(ConnectionAccepted, RefusesBytesAfterTheLastType) {
-  EXPECT_THROW((void)decodeMessage<ConnectionAccepted>(
-                   byteSequence({0x01, 0x01, 0x02, 0x01, 'a', 0x00})),
+TEST(ConnectionAccepted, RefusesBytesAfterTheGun) {
+  std::vector<std::byte> payload = acceptancePayloadOfPlayer(1);
+  payload.push_back(std::byte{0});
+
+  EXPECT_THROW((void)decodeMessage<ConnectionAccepted>(payload),
                TrailingBytesException);
+}
+
+/**
+ * Given a gun naming as its ship, then as its missile, the type after the two
+ * of the table
+ * When each acceptance is encoded
+ * Then both are refused
+ */
+TEST(ConnectionAccepted, RefusesAGunNamingATypePastTheTable) {
+  EXPECT_THROW((void)encodeMessage(acceptanceWithGun(
+                   ShipGun{.shipType = TYPE_NUMBER_PAST_THE_TABLE})),
+               InvalidFieldValueException);
+  EXPECT_THROW((void)encodeMessage(acceptanceWithGun(
+                   ShipGun{.projectileType = TYPE_NUMBER_PAST_THE_TABLE})),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given a gun whose ship is the missile and whose missile is the ship, then a
+ * missile and no ship
+ * When each acceptance is encoded
+ * Then both are refused: only a ship of a player fires a missile the client
+ * predicts
+ */
+TEST(ConnectionAccepted, PredictsOnlyAMissileOfAPlayerFiredByAShip) {
+  EXPECT_THROW((void)encodeMessage(acceptanceWithGun(
+                   ShipGun{.shipType = MISSILE_TYPE_NUMBER,
+                           .projectileType = SHIP_TYPE_NUMBER,
+                           .intervalTicks = SHIPPED_INTERVAL_TICKS})),
+               InvalidFieldValueException);
+  EXPECT_THROW((void)encodeMessage(acceptanceWithGun(
+                   ShipGun{.projectileType = MISSILE_TYPE_NUMBER,
+                           .intervalTicks = SHIPPED_INTERVAL_TICKS})),
+               InvalidFieldValueException);
+}
+
+/**
+ * Given the gun of a ship firing its missile every 0 ticks, then every tick
+ * When each acceptance is encoded
+ * Then the first is refused and the second written
+ */
+TEST(ConnectionAccepted, RefusesAGunWithoutTicksBetweenShots) {
+  EXPECT_THROW((void)encodeMessage(acceptanceWithGun(
+                   ShipGun{.shipType = SHIP_TYPE_NUMBER,
+                           .projectileType = MISSILE_TYPE_NUMBER,
+                           .intervalTicks = 0})),
+               InvalidFieldValueException);
+  EXPECT_NO_THROW((void)encodeMessage(
+      acceptanceWithGun(ShipGun{.shipType = SHIP_TYPE_NUMBER,
+                                .projectileType = MISSILE_TYPE_NUMBER,
+                                .intervalTicks = 1})));
+}
+
+/**
+ * Given a gun whose missile flies at an infinite speed along x, then a NaN
+ * along y
+ * When each acceptance is encoded
+ * Then both are refused
+ */
+TEST(ConnectionAccepted, RefusesAVelocityThatIsNotFinite) {
+  EXPECT_THROW((void)encodeMessage(acceptanceWithGun(ShipGun{
+                   .velocityX = std::numeric_limits<float>::infinity()})),
+               InvalidCoordinateException);
+  EXPECT_THROW((void)encodeMessage(acceptanceWithGun(ShipGun{
+                   .velocityY = std::numeric_limits<float>::quiet_NaN()})),
+               InvalidCoordinateException);
 }
 
 /**

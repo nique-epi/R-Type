@@ -94,17 +94,17 @@ constexpr std::uint16_t SOME_SEQUENCE = 0x0A0B;
  * the transport sees and bit 3 is unknown, so no header above the transport
  * holds either.
  */
-constexpr std::uint8_t SOME_OTHER_VERSION = 10;
+constexpr std::uint8_t SOME_OTHER_VERSION = 11;
 constexpr std::uint32_t SOME_OTHER_PROTOCOL_ID = 0x52545951;
 constexpr std::uint8_t SOME_FLAGS = 0x0C;
 constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
 constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;
 
 /**
- * @brief The 22 bytes of a default header: RTYP, version 9, then zeros.
+ * @brief The 22 bytes of a default header: RTYP, version 10, then zeros.
  */
 constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
-    {0x52, 0x54, 0x59, 0x50, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    {0x52, 0x54, 0x59, 0x50, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
 /**
@@ -154,6 +154,11 @@ constexpr std::uint64_t SOME_COOKIE = 0x0102030405060708;
 constexpr std::uint8_t LAST_PLAYER_NUMBER = 4;
 constexpr std::uint8_t PLAYER_NUMBER_BELOW_THE_FIRST = 0;
 constexpr std::uint8_t PLAYER_NUMBER_ABOVE_THE_LAST = 5;
+
+/** @brief The input of an example missile, 300, and the bytes the owner and
+ * the firing input take at the end of an EntitySpawned. */
+constexpr std::uint32_t SOME_FIRING_INPUT = 300;
+constexpr std::size_t OWNER_AND_INPUT_BYTE_COUNT = 5;
 
 /**
  * @brief Type numbers of the examples of the tests, as their byte layouts
