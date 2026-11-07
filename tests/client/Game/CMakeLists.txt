@@ -1,1 +1,1 @@
-target_sources(client_screen_tests PRIVATE GameScreenTest.cpp GameScreenFixture.cpp GameScreenFixtures.cpp LoneGameParts.cpp EndScreenTest.cpp EndScreenFixture.cpp)
+target_sources(client_screen_tests PRIVATE GameScreenTest.cpp GameScreenFixture.cpp GameScreenFixtures.cpp LoneGameParts.cpp EndScreenTest.cpp EndScreenFixture.cpp PilotNameTagsTest.cpp PilotNameTagsFixture.cpp)
