@@ -4,7 +4,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace rtype::master {
+namespace rtype::network {
 
 /** @brief What a route of the API reads of the request it answers. */
 struct ApiRequest {
@@ -34,4 +34,4 @@ struct ApiRequest {
   std::unordered_map<std::string, std::string> queryParameters;
 };
 
-}  // namespace rtype::master
+}  // namespace rtype::network

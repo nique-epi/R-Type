@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstddef>
 #include <string_view>
 
 namespace rtype::master {
@@ -21,23 +20,5 @@ constexpr int TOO_MANY_REQUESTS_STATUS = 429;
 /** @brief The headers only the master writes (see MasterHttpConstants.hpp). */
 constexpr std::string_view LOCATION_HEADER = "Location";
 constexpr std::string_view WWW_AUTHENTICATE_HEADER = "WWW-Authenticate";
-
-/** @brief What cpp-httplib gives in place of a port it could not bind. */
-constexpr int NO_PORT_BOUND = -1;
-
-/**
- * @brief The largest body of a request a route reads, 64 KiB: a heartbeat of
- * a server is a few KiB, and a larger body gets 413 without being kept whole,
- * where cpp-httplib would keep up to 100 MiB. A path no route answers gets 404
- * and its body is never read.
- */
-constexpr std::size_t MAX_REQUEST_BODY_BYTES = std::size_t{64} * 1024;
-
-/** @brief What the journal says when the HTTP server stops on its own. */
-constexpr std::string_view LISTENING_LOST_TEXT =
-    "the HTTP server stopped listening";
-
-/** @brief What the journal says of an exception that is no std::exception. */
-constexpr std::string_view UNKNOWN_ERROR_TEXT = "unknown error";
 
 }  // namespace rtype::master

@@ -26,6 +26,15 @@ class InvalidAddressException : public NetworkException {
 };
 
 /**
+ * @brief An HTTP server could not take its address and port: another program
+ * holds the port, or the address is none of the machine.
+ */
+class HttpPortUnavailableException : public NetworkException {
+ public:
+  HttpPortUnavailableException(const std::string& address, std::uint16_t port);
+};
+
+/**
  * @brief A text that should hold a port, from LOWEST_PORT to HIGHEST_PORT
  *        in decimal digits, and does not.
  */

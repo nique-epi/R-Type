@@ -4,15 +4,15 @@
 #include <string>
 #include "HttpHeader.hpp"
 
-namespace rtype::master {
+namespace rtype::network {
 
 /** @brief What a route of the API answers: a status, a body and a header. */
 struct ApiResponse {
-  /** @brief The HTTP status, OK_STATUS when the route succeeded. */
+  /** @brief The HTTP status, 200 when the route succeeded. */
   int status{};
   /**
-   * @brief The JSON text of the answer, sent as network::JSON_CONTENT_TYPE. An
-   * error status (network::LOWEST_ERROR_STATUS or more) with no body is sent as
+   * @brief The JSON text of the answer, sent as JSON_CONTENT_TYPE. An
+   * error status (LOWEST_ERROR_STATUS or more) with no body is sent as
    * the problem document of RFC 9457 of that status.
    */
   std::string body;
@@ -23,4 +23,4 @@ struct ApiResponse {
   std::optional<HttpHeader> header = std::nullopt;
 };
 
-}  // namespace rtype::master
+}  // namespace rtype::network

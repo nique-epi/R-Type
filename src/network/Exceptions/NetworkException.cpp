@@ -15,6 +15,13 @@ NetworkException::NetworkException(const std::string& message)
 InvalidAddressException::InvalidAddressException(const std::string& address)
     : NetworkException("Not an IP address: " + address) {}
 
+HttpPortUnavailableException::HttpPortUnavailableException(
+    const std::string& address, std::uint16_t port)
+    : NetworkException("cannot listen for HTTP on " + address + " port " +
+                       std::to_string(port) +
+                       ": another program holds the port, or the address is "
+                       "not one of this machine") {}
+
 InvalidPortException::InvalidPortException(const std::string& text)
     : NetworkException(
           "Invalid port \"" + text + "\": expected a number from " +

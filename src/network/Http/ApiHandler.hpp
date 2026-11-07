@@ -4,7 +4,7 @@
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
 
-namespace rtype::master {
+namespace rtype::network {
 
 /**
  * @brief What answers a route of the API, on a thread of the HTTP server: it
@@ -12,4 +12,4 @@ namespace rtype::master {
  */
 using ApiHandler = std::function<ApiResponse(const ApiRequest&)>;
 
-}  // namespace rtype::master
+}  // namespace rtype::network

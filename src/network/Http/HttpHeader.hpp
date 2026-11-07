@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace rtype::master {
+namespace rtype::network {
 
 /** @brief A header of an answer of the API, such as `Location`. */
 struct HttpHeader {
@@ -10,4 +10,4 @@ struct HttpHeader {
   std::string value;
 };
 
-}  // namespace rtype::master
+}  // namespace rtype::network
