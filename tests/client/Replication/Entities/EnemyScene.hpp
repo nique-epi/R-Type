@@ -19,6 +19,8 @@ namespace rtype::client::testing {
 class EnemyScene {
  public:
   EnemyScene();
+  /** @brief The same enemy, of @p appearance. */
+  explicit EnemyScene(EntityAppearance appearance);
 
   /** @brief Hands the player the action @p attack in @p phase of the enemy
    * @p entityId. */

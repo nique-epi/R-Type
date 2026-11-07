@@ -1,5 +1,6 @@
 #include "EnemyScene.hpp"
 #include <cstdint>
+#include <utility>
 #include "Animation.hpp"
 #include "AppearanceReference.hpp"
 #include "EnemyAction.hpp"
@@ -27,7 +28,10 @@ Animation idleOf(const EntityAppearance& appearance) {
 
 }  // namespace
 
-EnemyScene::EnemyScene() : appearance_(appearanceWithAStrike()) {
+EnemyScene::EnemyScene() : EnemyScene(appearanceWithAStrike()) {}
+
+EnemyScene::EnemyScene(EntityAppearance appearance)
+    : appearance_(std::move(appearance)) {
   enemy_ = entities_.create();
   components_.add(enemy_, game::NetworkIdentity{ENEMY_ID});
   components_.add(enemy_, AppearanceReference{&appearance_});
