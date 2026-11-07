@@ -215,6 +215,63 @@ TEST_F(SupervisorModulesFixture, RefusesAPublicAddressThatIsNoIpv4Address) {
 }
 
 /**
+ * Given a server.cfg whose public-address is a loopback address, 127.0.0.2,
+ * in a build that compiled the master link
+ * When the supervisor starts
+ * Then that line is refused: every player would be sent to its own machine
+ */
+TEST_F(SupervisorModulesFixture, RefusesALoopbackPublicAddress) {
+  if (!MASTER_LINK_MODULE_BUILT) {
+    GTEST_SKIP() << "the build leaves the master link out";
+  }
+  writeConfiguration({std::string{LOOPBACK_PUBLIC_ADDRESS_LINE}});
+  const auto application = supervisor({});
+
+  application->start();
+
+  EXPECT_EQ(report().refusals.size(), 1U);
+  application->stop();
+}
+
+/**
+ * Given a server.cfg whose public-address is 0.0.0.0, the address of every
+ * interface, in a build that compiled the master link
+ * When the supervisor starts
+ * Then that line is refused
+ */
+TEST_F(SupervisorModulesFixture, RefusesTheAddressOfEveryInterface) {
+  if (!MASTER_LINK_MODULE_BUILT) {
+    GTEST_SKIP() << "the build leaves the master link out";
+  }
+  writeConfiguration({std::string{ANY_INTERFACE_PUBLIC_ADDRESS_LINE}});
+  const auto application = supervisor({});
+
+  application->start();
+
+  EXPECT_EQ(report().refusals.size(), 1U);
+  application->stop();
+}
+
+/**
+ * Given a server.cfg whose public-address is the broadcast address, in a
+ * build that compiled the master link
+ * When the supervisor starts
+ * Then that line is refused
+ */
+TEST_F(SupervisorModulesFixture, RefusesTheBroadcastAddress) {
+  if (!MASTER_LINK_MODULE_BUILT) {
+    GTEST_SKIP() << "the build leaves the master link out";
+  }
+  writeConfiguration({std::string{BROADCAST_PUBLIC_ADDRESS_LINE}});
+  const auto application = supervisor({});
+
+  application->start();
+
+  EXPECT_EQ(report().refusals.size(), 1U);
+  application->stop();
+}
+
+/**
  * Given a supervisor that runs no game yet, built from its real list of
  * modules
  * When a stranger asks for its information

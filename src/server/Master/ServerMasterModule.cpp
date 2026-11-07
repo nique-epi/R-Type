@@ -23,6 +23,7 @@
 #include "NetworkException.hpp"
 #include "ServerConstants.hpp"
 #include "ServerIdentity.hpp"
+#include "ServerMasterConstants.hpp"
 #include "TextSettingDefinition.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
@@ -31,8 +32,16 @@ namespace rtype::server {
 
 namespace {
 
+/** @returns Whether no player reaches a server at @p address: the address
+ * of every interface, a loopback address or the broadcast address. */
+bool isUnreachableAddress(std::string_view address) {
+  return address == network::ANY_IPV4_ADDRESS ||
+         address.starts_with(LOOPBACK_IPV4_PREFIX) ||
+         address == BROADCAST_IPV4_ADDRESS;
+}
+
 /** @brief Accepts an empty public-address, which declares none, or an IPv4
- * address written as four numbers.
+ * address written as four numbers that a player can reach.
  * @throws engine::CommandRefusedException for any other text. */
 void requirePublicAddress(std::string_view address) {
   if (address.empty()) {
@@ -42,6 +51,10 @@ void requirePublicAddress(std::string_view address) {
     static_cast<void>(network::ipv4AddressFromText(address));
   } catch (const network::NetworkException& error) {
     throw engine::CommandRefusedException(error.what());
+  }
+  if (isUnreachableAddress(address)) {
+    throw engine::CommandRefusedException(
+        std::string{address} + std::string{UNREACHABLE_PUBLIC_ADDRESS_REASON});
   }
 }
 

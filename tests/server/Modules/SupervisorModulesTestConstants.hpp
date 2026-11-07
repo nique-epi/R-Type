@@ -48,4 +48,13 @@ constexpr std::array MASTER_SETTING_LINES{MASTER_URL_LINE, MASTER_KEY_LINE,
  * be. */
 constexpr std::string_view HOST_NAME_PUBLIC_ADDRESS_LINE =
     "set public-address paris.example.org";
+
+/** @brief Public addresses no player reaches a server at: a loopback address,
+ * the address of every interface and the broadcast address. */
+constexpr std::string_view LOOPBACK_PUBLIC_ADDRESS_LINE =
+    "set public-address 127.0.0.2";
+constexpr std::string_view ANY_INTERFACE_PUBLIC_ADDRESS_LINE =
+    "set public-address 0.0.0.0";
+constexpr std::string_view BROADCAST_PUBLIC_ADDRESS_LINE =
+    "set public-address 255.255.255.255";
 constexpr std::string_view DATABASE_LINE = "set database \"\"";
