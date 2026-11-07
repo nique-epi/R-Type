@@ -8,6 +8,7 @@
 #include "ConsoleReaderFixtures.hpp"
 #include "ConsoleReaderTestConstants.hpp"
 #include "ScriptedConsoleInput.hpp"
+#include "ServerModuleTestConstants.hpp"
 
 using rtype::concurrency::BoundedQueue;
 using rtype::server::CONSOLE_LINE_CAPACITY;

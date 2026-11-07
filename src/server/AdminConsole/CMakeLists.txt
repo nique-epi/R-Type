@@ -1,3 +1,7 @@
+if(NOT RTYPE_MODULE_ADMIN_CONSOLE)
+  return()
+endif()
+
 add_library(rtype_server_admin_console_constants INTERFACE)
 target_include_directories(rtype_server_admin_console_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 

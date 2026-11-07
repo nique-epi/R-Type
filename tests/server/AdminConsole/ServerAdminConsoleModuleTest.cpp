@@ -4,6 +4,7 @@
 #include "AdminConsoleTestConstants.hpp"
 #include "ServerAdminConsoleModuleFixture.hpp"
 #include "ServerAdminConsoleModuleTestConstants.hpp"
+#include "ServerModuleTestConstants.hpp"
 
 /**
  * Given a supervisor whose console input hands "games"

@@ -6,6 +6,7 @@
 #include "ConsoleChunk.hpp"
 #include "ConsoleLineSplitter.hpp"
 #include "ConsoleLineSplitterTestConstants.hpp"
+#include "ServerModuleTestConstants.hpp"
 
 using rtype::server::ConsoleChunk;
 using rtype::server::ConsoleLineSplitter;

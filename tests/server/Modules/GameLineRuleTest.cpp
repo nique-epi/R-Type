@@ -1,12 +1,13 @@
 #include <gtest/gtest.h>
 #include <string_view>
-#include "AdminConsoleTestConstants.hpp"
+#include "BuiltModuleConstants.hpp"
 #include "CommandLine.hpp"
 #include "GameLineRule.hpp"
 #include "GameLineRuleTestConstants.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "ServerRoleConstants.hpp"
 
+using rtype::engine::ADMIN_CONSOLE_MODULE_BUILT;
 using rtype::engine::splitCommandLine;
 using rtype::server::gameLineRule;
 using rtype::server::SUPERVISOR_MODULE_NAMES;
@@ -31,8 +32,8 @@ TEST(GameLineRule, HandsTheLinesOfTheGamesOver) {
 /**
  * Given the rule built from the names of the modules of a supervisor
  * When it reads a module line on a module of the supervisor, a setting of the
- * supervisor, an unknown setting, a module line without a name, the line
- * that turns the console off and a command of the console
+ * supervisor, an unknown setting, a module line without a name and a command
+ * of the console
  * Then none of them belongs to the games: the supervisor runs or refuses them
  */
 TEST(GameLineRule, KeepsTheOtherLinesForTheSupervisor) {
@@ -40,8 +41,23 @@ TEST(GameLineRule, KeepsTheOtherLinesForTheSupervisor) {
 
   for (const std::string_view line :
        {NETWORK_OFF_LINE, SET_PORT_LINE, SET_UNKNOWN_LINE, BARE_MODULE_LINE,
-        CONSOLE_OFF_LINE, GAMES_LINE}) {
+        GAMES_LINE}) {
     SCOPED_TRACE(line);
     EXPECT_FALSE(rule(splitCommandLine(line)));
   }
+}
+
+/**
+ * Given the rule built from the names of the modules of a supervisor, in a
+ * build that compiled the console
+ * When it reads the line that turns the console off
+ * Then the line stays with the supervisor, which turns its console off
+ */
+TEST(GameLineRule, KeepsTheConsoleLineForTheSupervisor) {
+  if (!ADMIN_CONSOLE_MODULE_BUILT) {
+    GTEST_SKIP() << "the build leaves the console out";
+  }
+  const auto rule = gameLineRule(SUPERVISOR_MODULE_NAMES);
+
+  EXPECT_FALSE(rule(splitCommandLine(CONSOLE_OFF_LINE)));
 }

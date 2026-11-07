@@ -316,7 +316,7 @@ This list describes the code as it is today. A pull request that adds, removes o
 | `supervisor lobby` | `ServerSupervisorLobbyModule` | `src/server/SupervisorLobby/` | required |
 | `information` | `ServerInformationModule` | `src/server/Information/` | required |
 | `master` | `ServerMasterModule` | `src/server/Master/` | optional, `RTYPE_MODULE_MASTER_LINK` |
-| `admin console` | `ServerAdminConsoleModule` | `src/server/AdminConsole/` | optional |
+| `admin console` | `ServerAdminConsoleModule` | `src/server/AdminConsole/` | optional, `RTYPE_MODULE_ADMIN_CONSOLE` |
 
 | Module of a game process | Class | Folder | Kind |
 |---|---|---|---|

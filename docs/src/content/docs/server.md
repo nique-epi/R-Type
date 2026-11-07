@@ -475,6 +475,7 @@ The commands read the registry of the games, which only the simulation thread to
 | No terminal (`< /dev/null`, a service, the CI) | runs the last line, writes `the console input ended` in the journal and reads nothing more; the server goes on |
 | The supervisor runs in the background of a shell (`&`) | is not suspended: `SIGTTIN` is ignored during a read, so the read fails and is tried again every `CONSOLE_BACKGROUND_WAIT` (500 ms), until `fg` |
 | `module "admin console" off` in `server.cfg` | is never installed: no thread, and its commands are unknown |
+| The build sets `RTYPE_MODULE_ADMIN_CONSOLE` off | is not compiled, and the supervisor lists no such module |
 
 Expelling and banning a player are not written yet. A game process that no longer reads its datagrams does not stop on `close-game`, and stays in `games`.
 

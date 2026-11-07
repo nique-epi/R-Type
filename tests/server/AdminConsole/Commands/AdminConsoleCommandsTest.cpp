@@ -11,6 +11,7 @@
 #include "ModuleConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "SentDatagrams.hpp"
+#include "ServerModuleTestConstants.hpp"
 #include "SupervisedGamesFixtures.hpp"
 #include "SupervisedGamesTestConstants.hpp"
 

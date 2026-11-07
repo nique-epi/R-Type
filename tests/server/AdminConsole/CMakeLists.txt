@@ -1,3 +1,7 @@
+if(NOT RTYPE_MODULE_ADMIN_CONSOLE)
+  return()
+endif()
+
 add_subdirectory(Input)
 add_subdirectory(Commands)
 
