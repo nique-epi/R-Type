@@ -18,6 +18,7 @@ GameScreenParts LoneGameParts::parts() {
                          .waitingRoom = waitingRoom,
                          .sky = sky,
                          .sounds = sounds,
+                         .audio = audio,
                          .entityTypes = entityTypes,
                          .result = result,
                          .chat = chat};

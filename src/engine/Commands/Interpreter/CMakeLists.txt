@@ -2,6 +2,7 @@ add_library(rtype_engine_command_interpreter STATIC
   CommandInterpreter.cpp
   CommandLine.cpp
   NameList.cpp
+  WholeNumber.cpp
 )
 
 target_include_directories(rtype_engine_command_interpreter PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

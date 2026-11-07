@@ -70,3 +70,7 @@ Compute both values in the type the code computes in; when they differ only wher
 
 - ❌ **Before (wrong)**: a jump of 33 sequences.
 - ✅ **After (right)**: a jump of 65 (`ForgetsEveryEarlierDatagramAfterAJumpOfSixtyFive`); without the bound the shift is by 64, which arm64 wraps to 0, and the test turns red.
+
+## Update (7 November 2026) — a guard on a cast, and a check on a count of words
+
+`close-game <place>` reads the place as a 64-bit number and refuses anything outside 0 to 65535 before it casts it to the 16 bits of a place. The test written with the plan sent `close-game -1`, which cuts to 65535, a place no game holds, so the line was refused with or without the guard. The red proof that removed the guard was the first to show it; the tests now send `65537` and `-65535`, which both cut to place 1 and close game 1 without the guard. In the same run, the variant that replaced `words.size() != 1` by `words.empty()` stayed green: the only test sent `close-game` with no word, which both refuse. `close-game 1 2` now turns it red.

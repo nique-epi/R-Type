@@ -49,7 +49,8 @@ class IInterfaceCanvas {
    * @param text UTF-8 text.
    * @param anchor Top-left corner of the line, its top-right corner with
    * TextAlignment::Right, or the middle of its top edge with
-   * TextAlignment::Center.
+   * TextAlignment::Center. The line paints only inside `style.clip` when it
+   * has one.
    */
   virtual void write(std::string_view text, sf::Vector2i anchor,
                      TextStyle style) = 0;

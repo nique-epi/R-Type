@@ -1,0 +1,2 @@
+target_sources(client_prediction_tests PRIVATE PredictedGunTest.cpp PredictedGunFixtures.cpp OwnMissilesTest.cpp OwnMissilesFixture.cpp OwnPredictionTest.cpp OwnPredictionFixture.cpp)
+target_include_directories(client_prediction_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

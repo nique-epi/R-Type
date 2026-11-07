@@ -24,6 +24,7 @@ enum class SettingId : std::uint8_t {
   ChatOpenLines,
   ChatSeconds,
   ChatBackground,
+  Master,
 };
 
 }  // namespace rtype::client

@@ -137,3 +137,23 @@ Before the first push of a branch, run the match over every file the branch chan
 - ❌ **Before (wrong)**: the match run on the files of the last commits only.
 - ✅ **After (right)**: a script lists, for each of the 135 files, the standard headers it names nothing of; `ArrivalLedger.cpp` comes out with `<cstddef>`.
 
+
+## Update (7 November 2026) — A new struct and an old one without initializers
+
+On the boss branch, the clang-tidy gate run before any push reported `cppcoreguidelines-pro-type-member-init` on two headers linted as main files: `BossHealthChanged`, a new event whose `networkId`, `points` and `full` had no initializer, which point 2 of the subsection already forbade, and `CollisionBox`, whose old `width` and `height` had none while the branch added `offsetX{0.0F}` and `offsetY{0.0F}` next to them. Both got `{}`. A search of the headers of the branch for a built-in member followed by `;` finds both before any lint.
+
+## Update (7 November 2026) — The lint of the last commit only
+
+`BossArrivalEffects::advance()` and `playRoar()` were made `const` in a lint commit, linted on the files of that commit only. `BossArrivalEffectsTest.cpp`, a file of the branch the commit did not touch, then held four `BossArrivalEffects arrival(...)` that `misc-const-correctness` reports. The lint of the whole branch after the merge of main found them before the push, and the CI, which lints the files of the branch, would have failed on them.
+
+## Update (7 November 2026) — auto* on an array iterator
+
+To meet `readability-qualified-auto`, reported by the local clang-tidy on libc++, `timingsOf()` in `BydoTyrantBehaviour.cpp` held the result of `std::ranges::find(TYRANT_ATTACKS, …)` in a `const auto* const`. AppleClang, Homebrew GCC and the local clang-tidy all accepted it; the Windows job of PR #260 failed with `error C3535: cannot deduce type for 'const auto *const ' from 'std::_Array_const_iterator<_Ty,13>'`. The lookup became `tyrantAttackOf()`, which returns a `const TyrantAttack*`.
+
+## Update (7 November 2026) — int and size_t side by side
+
+`scaledBossHealth(int points, std::size_t players, int healthPercent)` was clean for the local clang-tidy 21 and failed `bugprone-easily-swappable-parameters` in the CI's clang-tidy 22. The three values became the struct `BossHealthScaling`.
+
+## Update (7 November 2026) — a const Win32 handle
+
+`StandardInputWindows.cpp`, the console input of the supervisor on Windows, declared `const HANDLE reader = callingThread();` and `const HANDLE input = ::GetStdHandle(STD_INPUT_HANDLE);`. No local run could lint the file; the `Clang-tidy (Windows-only files)` job reported `misc-misplaced-const` three times, the third on the copy of `reader` that a `std::stop_callback` lambda captures. The handles became plain `HANDLE` values, as in `ChildBindingWindows.cpp`, and the point added to the subsection on files the local machine cannot compile names the grep to run before the push.

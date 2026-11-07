@@ -24,6 +24,11 @@ Before shipping code whose result must stay **within a range** — index in a bu
 2. **Find the smallest size the callers really pass**, by reading them: a box whose corners close passes a height of 0.
 3. **Compute both values in the type the code computes in**, not in the type of its result: a shift done in 64 bits and cut to 32 gives 0 with or without a bound on 32 for every distance up to 64. They differ only past the width of the computation, where the unguarded shift is undefined behavior: test there, and say in the report that the red proof goes through undefined behavior.
 
+### A guard on a cast is tested past the width of the cast
+
+1. **A guard that keeps a wide number out of a narrow type** (`place < 0 || place > 65535` before a `static_cast<std::uint16_t>`) **is tested with values whose cut lands on a valid value**: `65537` and `-65535` both cut to `1`. A value such as `-1` cuts to `65535`, which the lookup refuses anyway, so the test passes without the guard.
+2. **A check on the number of words is tested with one word too many**, not only with none: `words.size() != 1` and `words.empty()` both refuse an empty line.
+
 ## Example
 
 - ❌ **Before (wrong)**: `readUint16(buffer, offset)` tested on a full 64-byte packet only → out-of-bounds read on a 1-byte datagram.

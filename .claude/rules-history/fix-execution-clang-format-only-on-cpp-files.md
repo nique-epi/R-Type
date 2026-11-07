@@ -26,3 +26,7 @@ The filter was applied to one of the two lists and not the other, on the belief 
 
 - ❌ **Before (wrong)**: `git ls-files -o --exclude-standard -- src tests | xargs clang-format -i` → the new `CMakeLists.txt` rewritten as code.
 - ✅ **After (right)**: `git ls-files -z -o --exclude-standard -- '*.cpp' '*.hpp' | xargs -0 clang-format -i`, then `git status --short`.
+
+## Update (2026-11-07) — a folder glob took the CMakeLists of a new test folder
+
+A new test folder `tests/network/Protocol/Messages/BossStatus/` held a `CMakeLists.txt`, a test and its constants; `clang-format -i tests/network/Protocol/Messages/BossStatus/*` rewrote the `CMakeLists.txt` as C++, and the next configure stopped on "Syntax error in cmake code". Point 1 was known, but a glob over one folder did not read as "a list of files". The rule now names the folder glob and asks for the extensions in the glob.

@@ -11,8 +11,8 @@
 #include "BehaviourRegistry.hpp"
 #include "BehaviourSetting.hpp"
 #include "BehaviourView.hpp"
+#include "BossSheet.hpp"
 #include "BurstSheet.hpp"
-#include "CollisionBox.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "EntitySheet.hpp"
@@ -20,6 +20,7 @@
 #include "EntityType.hpp"
 #include "GameException.hpp"
 #include "GunSheet.hpp"
+#include "HurtBeam.hpp"
 #include "HurtBox.hpp"
 #include "HurtWindow.hpp"
 #include "HurtZone.hpp"
@@ -28,10 +29,12 @@
 #include "MotionSheet.hpp"
 #include "PilotSheet.hpp"
 #include "Position.hpp"
+#include "SheetActionReading.hpp"
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
 #include "ShipControlConstants.hpp"
 #include "TimeConstants.hpp"
+#include "VolleySheetReading.hpp"
 #include "WholeNumberRange.hpp"
 
 namespace rtype::game {
@@ -58,14 +61,10 @@ EntityType sideFrom(const engine::DataFileTable& gameplay) {
   return SIDES.at(engine::choiceAt(gameplay, SIDE_KEY, SIDE_NAMES));
 }
 
-/** @returns The box `[gameplay.hitbox]` describes. */
-CollisionBox hitboxFrom(const engine::DataFileTable& gameplay) {
-  const engine::DataFileTable hitbox = engine::tableAt(gameplay, HITBOX_KEY);
-  engine::refuseUnknownKeys(hitbox, HITBOX_KEYS);
-  return CollisionBox{.width = static_cast<float>(engine::wholeNumberAt(
-                          hitbox, WIDTH_KEY, HITBOX_SIDE_RANGE)),
-                      .height = static_cast<float>(engine::wholeNumberAt(
-                          hitbox, HEIGHT_KEY, HITBOX_SIDE_RANGE))};
+/** @returns The value of @p key of @p box as a number of logical units. */
+float unitsAt(const engine::DataFileTable& box, std::string_view key,
+              engine::WholeNumberRange range) {
+  return static_cast<float>(engine::wholeNumberAt(box, key, range));
 }
 
 /** @returns The motion `[gameplay.motion]` describes: a ship with its kind
@@ -213,15 +212,6 @@ std::optional<BurstSheet> burstFrom(const engine::DataFileTable& gameplay) {
       .shardPlace = engine::placeOfKey(*burst, SHARD_KEY)};
 }
 
-/** @returns The attack and the phase @p table names, both required.
- * @throws What wholeNumberAt() and choiceAt() throw. */
-ActionKey actionKeyAt(const engine::DataFileTable& table) {
-  return ActionKey{
-      .attack = static_cast<std::uint8_t>(
-          engine::wholeNumberAt(table, ATTACK_KEY, ATTACK_NUMBER_RANGE)),
-      .phase = PHASES.at(engine::choiceAt(table, PHASE_KEY, PHASE_NAMES))};
-}
-
 /** @returns The attack and the phase the box @p box hurts in, nothing for a
  * box that hurts all the time.
  * @throws InconsistentEntitySheetException when it names only one of them. */
@@ -266,10 +256,25 @@ HurtWindow windowFrom(const engine::DataFileTable& box,
   return window;
 }
 
-/** @returns The value of @p key of @p box as a number of logical units. */
-float unitsAt(const engine::DataFileTable& box, std::string_view key,
-              engine::WholeNumberRange range) {
-  return static_cast<float>(engine::wholeNumberAt(box, key, range));
+/** @returns The beam one table of `[[gameplay.hurt_zone.beam]]` describes.
+ * @throws InconsistentEntitySheetException when it sweeps with no end. */
+HurtBeam hurtBeamFrom(const engine::DataFileTable& beam) {
+  engine::refuseUnknownKeys(beam, HURT_BEAM_KEYS);
+  const ActionKey activeIn = actionKeyAt(beam);
+  const HurtBeam read{
+      .offsetX = unitsAt(beam, OFFSET_X_KEY, HURT_BOX_OFFSET_RANGE),
+      .offsetY = unitsAt(beam, OFFSET_Y_KEY, HURT_BOX_OFFSET_RANGE),
+      .length = unitsAt(beam, LENGTH_KEY, BEAM_LENGTH_RANGE),
+      .thickness = unitsAt(beam, THICKNESS_KEY, HITBOX_SIDE_RANGE),
+      .fromDegrees = unitsAt(beam, FROM_DEGREES_KEY, BEAM_ANGLE_RANGE),
+      .toDegrees = unitsAt(beam, TO_DEGREES_KEY, BEAM_ANGLE_RANGE),
+      .activeIn = activeIn,
+      .window = windowFrom(beam, activeIn)};
+  if (read.fromDegrees != read.toDegrees && !read.window.until.has_value()) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(beam, TO_DEGREES_KEY), HURT_BEAM_SWEEP_RULE);
+  }
+  return read;
 }
 
 /** @returns The box one table of `[[gameplay.hurt_zone.box]]` describes. */
@@ -302,7 +307,30 @@ std::optional<HurtZone> hurtZoneFrom(const engine::DataFileTable& gameplay) {
     throw InconsistentEntitySheetException(engine::placeOfKey(*zone, BOX_KEY),
                                            HURT_ZONE_BOXES_RULE);
   }
+  if (zone->table.get().contains(BEAM_KEY)) {
+    for (const engine::DataFileTable& beam :
+         engine::tablesAt(*zone, BEAM_KEY)) {
+      read.beams.push_back(hurtBeamFrom(beam));
+    }
+  }
   return read;
+}
+
+/** @returns The boss `[gameplay.boss]` describes; nothing without it. */
+std::optional<BossSheet> bossFrom(const engine::DataFileTable& gameplay) {
+  const std::optional<engine::DataFileTable> boss =
+      engine::optionalTableAt(gameplay, BOSS_KEY);
+  if (!boss.has_value()) {
+    return std::nullopt;
+  }
+  engine::refuseUnknownKeys(*boss, BOSS_KEYS);
+  return BossSheet{
+      .rageBelowPercent = static_cast<int>(engine::wholeNumberAt(
+          *boss, RAGE_BELOW_PERCENT_KEY, RAGE_PERCENT_RANGE)),
+      .rageAttack = static_cast<std::uint8_t>(
+          engine::wholeNumberAt(*boss, RAGE_ATTACK_KEY, ATTACK_NUMBER_RANGE)),
+      .arrivalAttack = static_cast<std::uint8_t>(engine::wholeNumberAt(
+          *boss, ARRIVAL_ATTACK_KEY, ATTACK_NUMBER_RANGE))};
 }
 
 /** @returns Whether the sheet holds the marker table
@@ -347,6 +375,24 @@ void checkContactPartsBelongToAnEnemy(const EntitySheet& sheet,
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, FRAGILE_KEY), FRAGILE_SIDE_RULE);
   }
+  if (!sheet.volleys.empty()) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, VOLLEY_KEY), VOLLEY_SIDE_RULE);
+  }
+  if (sheet.boss.has_value()) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, BOSS_KEY), BOSS_SIDE_RULE);
+  }
+}
+
+/** @throws InconsistentEntitySheetException when @p sheet is a boss without
+ * health. */
+void checkBossHasHealth(const EntitySheet& sheet,
+                        const engine::DataFileTable& gameplay) {
+  if (sheet.boss.has_value() && !sheet.health.has_value()) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, BOSS_KEY), BOSS_HEALTH_RULE);
+  }
 }
 
 /** @throws InconsistentEntitySheetException when a player pilots @p sheet and
@@ -370,8 +416,9 @@ void checkShipMotion(const EntitySheet& sheet,
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, MOTION_KEY), SHIP_MOTION_RULE);
   }
-  if (movesAsAShip && (sheet.hitbox.width != SHIP_WIDTH ||
-                       sheet.hitbox.height != SHIP_HEIGHT)) {
+  if (movesAsAShip &&
+      (sheet.hitbox.width != SHIP_WIDTH || sheet.hitbox.height != SHIP_HEIGHT ||
+       sheet.hitbox.offsetX != 0.0F || sheet.hitbox.offsetY != 0.0F)) {
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, HITBOX_KEY), SHIP_HITBOX_RULE);
   }
@@ -445,7 +492,7 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .name = sheet.name,
       .number = 0,
       .side = sideFrom(gameplay),
-      .hitbox = hitboxFrom(gameplay),
+      .hitbox = hitboxOf(gameplay),
       .motion = motionFrom(gameplay),
       .pilot = pilotFrom(gameplay, behaviours),
       .health = pointsIn<int>(gameplay, HEALTH_KEY, HEALTH_RANGE),
@@ -454,12 +501,15 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .hurtZone = hurtZoneFrom(gameplay),
       .survivesContact = survivesContactFrom(gameplay),
       .fragileIn = fragileFrom(gameplay),
-      .burst = burstFrom(gameplay)};
+      .burst = burstFrom(gameplay),
+      .volleys = volleysFrom(gameplay),
+      .boss = bossFrom(gameplay)};
   checkPilotMatchesSide(read, gameplay);
   checkShipMotion(read, gameplay);
   checkWhatItFires(read, gameplay);
   checkMissileFliesTowardsItsEdge(read, gameplay);
   checkContactPartsBelongToAnEnemy(read, gameplay);
+  checkBossHasHealth(read, gameplay);
   return read;
 }
 

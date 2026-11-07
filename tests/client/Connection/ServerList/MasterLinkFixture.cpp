@@ -17,9 +17,9 @@
 
 namespace rtype::client::testing {
 
-MasterLinkFixture::MasterLinkFixture()
-    : link_(network::MasterAccess{.url = master_.url(), .key = std::string{}}) {
-  link_.start();
+MasterLinkFixture::MasterLinkFixture() {
+  link_.start(
+      network::MasterAccess{.url = master_.url(), .key = std::string{}});
 }
 
 void MasterLinkFixture::TearDown() { link_.stop(); }

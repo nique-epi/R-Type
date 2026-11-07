@@ -3,9 +3,12 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 #include "ConfigurationRegistry.hpp"
+#include "EndpointText.hpp"
+#include "EngineException.hpp"
 #include "HeartbeatJobParts.hpp"
 #include "IListeningPort.hpp"
 #include "IServerName.hpp"
@@ -20,11 +23,51 @@
 #include "NetworkException.hpp"
 #include "ServerConstants.hpp"
 #include "ServerIdentity.hpp"
+#include "ServerMasterConstants.hpp"
 #include "TextSettingDefinition.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
+
+namespace {
+
+/** @returns Whether no player reaches a server at @p address: the address
+ * of every interface, a loopback address or the broadcast address. */
+bool isUnreachableAddress(std::string_view address) {
+  return address == network::ANY_IPV4_ADDRESS ||
+         address.starts_with(LOOPBACK_IPV4_PREFIX) ||
+         address == BROADCAST_IPV4_ADDRESS;
+}
+
+/** @brief Accepts an empty public-address, which declares none, or an IPv4
+ * address written as four numbers that a player can reach.
+ * @throws engine::CommandRefusedException for any other text. */
+void requirePublicAddress(std::string_view address) {
+  if (address.empty()) {
+    return;
+  }
+  try {
+    static_cast<void>(network::ipv4AddressFromText(address));
+  } catch (const network::NetworkException& error) {
+    throw engine::CommandRefusedException(error.what());
+  }
+  if (isUnreachableAddress(address)) {
+    throw engine::CommandRefusedException(
+        std::string{address} + std::string{UNREACHABLE_PUBLIC_ADDRESS_REASON});
+  }
+}
+
+/** @returns The address @p text declares, nothing when it is empty; the
+ * setting checked it with requirePublicAddress(). */
+std::optional<std::string> declaredAddressOf(const std::string& text) {
+  if (text.empty()) {
+    return std::nullopt;
+  }
+  return text;
+}
+
+}  // namespace
 
 ServerMasterModule::ServerMasterModule()
     : probeSecret_(randomProbeSecret()),
@@ -65,6 +108,13 @@ void ServerMasterModule::declareSettings(
       .defaultValue = {},
       .help = "Key the master gave when this server was created",
       .validate = {}});
+  publicAddressSetting_ =
+      &configuration.declareText(engine::TextSettingDefinition{
+          .name = std::string{PUBLIC_ADDRESS_SETTING_NAME},
+          .defaultValue = {},
+          .help = "IPv4 address players reach this server at; empty to let "
+                  "the master take the address it is called from",
+          .validate = requirePublicAddress});
 }
 
 std::optional<HeartbeatJobParts> ServerMasterModule::jobParts() const {
@@ -80,11 +130,13 @@ std::optional<HeartbeatJobParts> ServerMasterModule::jobParts() const {
   return HeartbeatJobParts{
       .access = network::MasterAccess{.url = urlSetting_->text(),
                                       .key = keySetting_->text()},
-      .identity = ServerIdentity{.name = serverName_->serverName(),
-                                 .udpPort = udpPort,
-                                 .maximumGames = static_cast<std::uint16_t>(
-                                     MAXIMUM_RUNNING_GAMES),
-                                 .probeSecret = probeSecret_},
+      .identity =
+          ServerIdentity{
+              .name = serverName_->serverName(),
+              .udpPort = udpPort,
+              .maximumGames = static_cast<std::uint16_t>(MAXIMUM_RUNNING_GAMES),
+              .probeSecret = probeSecret_,
+              .address = declaredAddressOf(publicAddressSetting_->text())},
       .games = *hostedGames_,
       .probeTokens = probeTokens_,
       .measures = measures_,

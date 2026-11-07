@@ -41,6 +41,10 @@ constexpr std::chrono::seconds SHORT_OF_THE_REFRESH{14};
 /** @brief The words the map writes when the master is unreachable. */
 constexpr std::string_view UNREACHABLE_MASTER = "MASTER UNREACHABLE";
 
+/** @brief The master the map reads, as its url and as the map writes it. */
+constexpr std::string_view MAP_MASTER_URL = "http://10.0.0.2:8080";
+constexpr std::string_view MAP_MASTER_TEXT = "10.0.0.2:8080";
+
 /** @brief Seven games, one more than the panel shows at once. */
 constexpr std::size_t SEVEN_GAMES = 7;
 constexpr std::uint16_t SEVENTH_GAME_NUMBER = 7;

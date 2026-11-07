@@ -41,7 +41,7 @@ game::ShipDirections heldBefore(const ConnectedPlayer& player,
   if (steeredBefore != nullptr) {
     return *steeredBefore;
   }
-  return player.appliedInputNumber.has_value() ? now : game::ShipDirections{};
+  return player.appliedInput.has_value() ? now : game::ShipDirections{};
 }
 
 }  // namespace

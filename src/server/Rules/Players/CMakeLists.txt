@@ -4,6 +4,7 @@ add_library(rtype_server_rules_players STATIC
   PlayerLives.cpp
   ScoreKeeper.cpp
   ShipInput.cpp
+  ShooterViews.cpp
 )
 
 target_include_directories(rtype_server_rules_players PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

@@ -20,6 +20,11 @@ constexpr std::string_view IDLE_TABLE_KEY = "idle";
 constexpr std::string_view ATTACK_TABLE_PREFIX = "attack_";
 constexpr std::array APPEARANCE_KEYS{SHEET_KEY, IDLE_TABLE_KEY};
 
+/** @brief The optional keys of `[appearance]`: `enraged_idle`, the idle
+ * animation of an enemy once enraged, read like `idle` (IDLE_KEYS). */
+constexpr std::string_view ENRAGED_IDLE_TABLE_KEY = "enraged_idle";
+constexpr std::array OPTIONAL_APPEARANCE_KEYS{ENRAGED_IDLE_TABLE_KEY};
+
 /**
  * @brief The keys of `[appearance.idle]`: the first frame, in pixels of the
  * sheet, how many frames follow it in its row, the pixels between two of

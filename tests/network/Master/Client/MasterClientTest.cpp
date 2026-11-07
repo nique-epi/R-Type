@@ -110,6 +110,18 @@ TEST(MasterClient, AnHttpsUrlIsRefused) {
 }
 
 /**
+ * Given a url of the master whose port is past 65535
+ * When a client is built for it
+ * Then it throws InvalidMasterUrlException, instead of holding no connection
+ */
+TEST(MasterClient, AUrlWithAPortPastTheLastIsRefused) {
+  EXPECT_THROW(
+      MasterClient(MasterAccess{.url = std::string{PORT_TOO_HIGH_MASTER_URL},
+                                .key = std::string{}}),
+      InvalidMasterUrlException);
+}
+
+/**
  * Given a registered server that sent its heartbeat
  * When a client with no key lists its games
  * Then it reads the games of that heartbeat

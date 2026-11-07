@@ -90,6 +90,7 @@ constexpr std::string_view CHAT_CLOSED_LINES_NAME = "chat_closed_lines";
 constexpr std::string_view CHAT_OPEN_LINES_NAME = "chat_open_lines";
 constexpr std::string_view CHAT_SECONDS_NAME = "chat_seconds";
 constexpr std::string_view CHAT_BACKGROUND_NAME = "chat_background";
+constexpr std::string_view MASTER_NAME = "master";
 
 /** @brief Names of the keys of the bound actions, in the order of
  * BOUND_ACTIONS. */

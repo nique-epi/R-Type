@@ -8,6 +8,7 @@
 #include "GamePanel.hpp"
 #include "IGameCatalog.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "IMasterAddress.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerCatalog.hpp"
@@ -24,7 +25,8 @@
 namespace rtype::client {
 
 /**
- * @brief The map of the servers PLAY opens over the title, as the mockup C1
+ * @brief The map of the servers PLAY opens over the title, and RETRY under the
+ * connection screen of a lost game, as the mockup C1
  * v13 draws it: the planet of the player cut by the left edge, each server the
  * master lists standing past it by its ping, the chosen one framed with its
  * bubble.
@@ -38,6 +40,8 @@ namespace rtype::client {
  * since the protocol names no game yet. The chips: QUICK PLAY joins the
  * server of this version with the lowest ping, RANKING opens the leaderboard,
  * ADDRESS the connection form, BACK goes one stage back, then closes the map.
+ * MASTER, on the right of the title, opens the form of the master the map
+ * reads, which is written under it.
  *
  * The list is read when the map opens, again every
  * SERVER_LIST_REFRESH_INTERVAL and on REFRESH_KEY. A key that changes the map
@@ -81,6 +85,7 @@ class ServerMapScreen : public IScreen {
   IServerCatalog* servers_;
   IGameCatalog* games_;
   ServerChoice* choice_;
+  const IMasterAddress* master_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   MotionPreference motion_;
@@ -89,6 +94,7 @@ class ServerMapScreen : public IScreen {
   KeyChip quickPlayChip_;
   KeyChip rankingChip_;
   KeyChip addressChip_;
+  KeyChip masterChip_;
   KeyChip backChip_;
   engine::Duration elapsed_{};
   engine::Duration sinceRefresh_{};

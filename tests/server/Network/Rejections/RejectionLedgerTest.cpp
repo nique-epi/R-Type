@@ -36,6 +36,21 @@ TEST(RejectionLedger, ReportsNothingBeforeTheFirstRejection) {
 }
 
 /**
+ * Given a ledger that rejected two datagrams of one sender
+ * When the count since the start is read, then the report is taken
+ * Then the count is 2, and the report still counts both for that sender:
+ * reading the count took nothing from the journal
+ */
+TEST(RejectionLedger, CountsSinceTheStartWithoutTakingTheReport) {
+  RejectionLedger ledger;
+  ledger.record(RejectionCause::Stranger, rejectedSender(0));
+  ledger.record(RejectionCause::Stranger, rejectedSender(0));
+
+  EXPECT_EQ(ledger.rejectedSinceStart(), 2U);
+  EXPECT_EQ(totalOf(ledger.takeReport().sincePreviousReport), 2U);
+}
+
+/**
  * Given a ledger
  * When two wrong tokens come from one sender, then a stranger's datagram from
  * another

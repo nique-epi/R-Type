@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -50,6 +51,8 @@ using rtype::client::testing::LAUNCH_GAME;
 using rtype::client::testing::LAUNCH_NICKNAME;
 using rtype::client::testing::LAUNCH_PORT;
 using rtype::client::testing::LAUNCH_PORT_TEXT;
+using rtype::client::testing::MAP_ADDRESS;
+using rtype::client::testing::MAP_PORT;
 using rtype::client::testing::NEXT_PROTOCOL_VERSION;
 using rtype::client::testing::NO_NICKNAME_TEXT;
 using rtype::client::testing::NOTHING_RECEIVED;
@@ -415,8 +418,8 @@ INSTANTIATE_TEST_SUITE_P(
                                  std::string_view(SERVER_FULL_STATUS))));
 
 /**
- * Given an attempt a server of protocol version 11 refused as
- * IncompatibleVersion, the client speaking version 10
+ * Given an attempt a server of protocol version 12 refused as
+ * IncompatibleVersion, the client speaking version 11
  * When a frame goes by
  * Then the status line names both versions, the client's first
  */
@@ -425,7 +428,7 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
-  EXPECT_NE(writingOf(canvas(), "REFUSED: V10, SERVER V11"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "REFUSED: V11, SERVER V12"), nullptr);
 }
 
 /**
@@ -466,6 +469,86 @@ TEST_F(ConnectionScreenChoiceFixture, AScreenOpenedAtOnceConnectsToTheChoice) {
                                        .port = LAUNCH_PORT},
                             .nickname = std::string(LAUNCH_NICKNAME),
                             .game = LAUNCH_GAME}));
+}
+
+/**
+ * Given a server the map chose, other than the launch one
+ * When a connection screen opens to connect at once, as the map opens it
+ * Then the attempt goes out to the server the map chose
+ */
+TEST_F(ConnectionScreenChoiceFixture,
+       AScreenOpenedAtOnceJoinsTheServerTheMapChose) {
+  chooseOnTheMap();
+
+  reopenConnectingAtOnce();
+
+  ASSERT_FALSE(connectAttemptsOf(connection()).empty());
+  EXPECT_EQ(
+      connectAttemptsOf(connection()).back(),
+      (ServerConnectionCall{
+          .request = ServerConnectionCall::Request::Connect,
+          .server = {.address = std::string(MAP_ADDRESS), .port = MAP_PORT},
+          .nickname = std::string(LAUNCH_NICKNAME),
+          .game = LAUNCH_GAME}));
+}
+
+/**
+ * Given an attempt at once to the server the map chose
+ * When the form opens again and Enter is chosen
+ * Then the attempt goes out to the launch server: the map leaves the server
+ * the form remembers as it was
+ */
+TEST_F(ConnectionScreenChoiceFixture,
+       TheFormAfterAMapAttemptKeepsTheTypedServer) {
+  chooseOnTheMap();
+  reopenConnectingAtOnce();
+
+  reopen();
+  chooseEnter();
+
+  EXPECT_EQ(
+      connectAttemptsOf(connection()).back(),
+      (ServerConnectionCall{.request = ServerConnectionCall::Request::Connect,
+                            .server = {.address = std::string(LAUNCH_ADDRESS),
+                                       .port = LAUNCH_PORT},
+                            .nickname = std::string(LAUNCH_NICKNAME),
+                            .game = LAUNCH_GAME}));
+}
+
+/**
+ * Given an attempt at once to the server the map chose, then a lost game
+ * When the form RETRY opens appears
+ * Then no attempt goes out until Enter is chosen
+ */
+TEST_F(ConnectionScreenChoiceFixture, ARetryFormWaitsForEnter) {
+  chooseOnTheMap();
+  reopenConnectingAtOnce();
+  const std::size_t attemptsBefore = connectAttemptsOf(connection()).size();
+
+  reopenForARetry();
+
+  EXPECT_EQ(connectAttemptsOf(connection()).size(), attemptsBefore);
+}
+
+/**
+ * Given an attempt at once to the server the map chose, then a lost game
+ * When the form RETRY opens appears and Enter is chosen
+ * Then the attempt goes out to the server of the lost game
+ */
+TEST_F(ConnectionScreenChoiceFixture, ARetryFormStartsWithTheLastAttempt) {
+  chooseOnTheMap();
+  reopenConnectingAtOnce();
+
+  reopenForARetry();
+  chooseEnter();
+
+  EXPECT_EQ(
+      connectAttemptsOf(connection()).back(),
+      (ServerConnectionCall{
+          .request = ServerConnectionCall::Request::Connect,
+          .server = {.address = std::string(MAP_ADDRESS), .port = MAP_PORT},
+          .nickname = std::string(LAUNCH_NICKNAME),
+          .game = LAUNCH_GAME}));
 }
 
 /**

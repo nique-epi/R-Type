@@ -6,6 +6,7 @@
 #include "EntityTypeLook.hpp"
 #include "IEntityTypeTable.hpp"
 #include "NumberedEntityType.hpp"
+#include "ShipGun.hpp"
 
 namespace rtype::client {
 
@@ -23,7 +24,10 @@ std::optional<EntityTypeLook> EntityTypeLooks::lookOf(
   if (appearance == nullptr) {
     return std::nullopt;
   }
-  return EntityTypeLook{.side = entry->side, .appearance = *appearance};
+  return EntityTypeLook{
+      .side = entry->side, .appearance = *appearance, .hitbox = entry->hitbox};
 }
+
+game::ShipGun EntityTypeLooks::shipGun() const { return table_->shipGun(); }
 
 }  // namespace rtype::client

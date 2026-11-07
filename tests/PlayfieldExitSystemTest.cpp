@@ -250,3 +250,17 @@ TEST_F(PlayfieldExitSystemFixture, KeepsAMissileFlyingIntoThePlayfield) {
 
   EXPECT_TRUE(entities().isAlive(missile));
 }
+
+/**
+ * Given a boss far past the left edge, as its charge takes it
+ * When the system runs
+ * Then the boss is still in the world and nothing is announced
+ */
+TEST_F(PlayfieldExitSystemFixture, ABossPastTheLeftEdgeStays) {
+  const Entity boss = addBoss(FAR_PAST_THE_EDGE_X);
+
+  updateAndDispatch();
+
+  EXPECT_TRUE(entities().isAlive(boss));
+  EXPECT_TRUE(received().empty());
+}

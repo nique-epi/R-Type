@@ -32,6 +32,9 @@ struct LifeKeeperParts {
    * announces it to the players; it may throw NetworkIdExhaustedException.
    * Must not be empty. */
   std::function<void(ConnectedPlayer&)> respawn;
+  /** @brief Whether every ship stays invulnerable, as in a game started
+   * at its boss to test the fight. */
+  bool shipsNeverDie{false};
 };
 
 }  // namespace rtype::server

@@ -13,6 +13,7 @@
 #include <system_error>
 #include "BoundAction.hpp"
 #include "ColorMode.hpp"
+#include "EndpointText.hpp"
 #include "InputConstants.hpp"
 #include "KeyNames.hpp"
 #include "NamedNumber.hpp"
@@ -207,18 +208,12 @@ std::optional<LineOutcome> applySwitch(PlayerSettings& settings,
   return std::nullopt;
 }
 
-/** @returns What became of a setting written into the settings: applied, or
- * left out with the reason. */
-LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
+/** @brief Applies @p setting when it names a setting written as a word or a
+ * pair: the window size, the display and color modes, or the master.
+ * @returns What became of the line, nothing for any other name. */
+std::optional<LineOutcome> applyValue(PlayerSettings& settings,
+                                      SettingLine setting) {
   const auto [name, value] = setting;
-  if (name == SETTINGS_VERSION_NAME) {
-    return integerOf(value) == SETTINGS_VERSION ? LineOutcome::Applied
-                                                : LineOutcome::InvalidValue;
-  }
-  if (const std::optional<LineOutcome> outcome =
-          applyNumber(settings, setting)) {
-    return *outcome;
-  }
   if (name == WINDOW_SIZE_NAME) {
     return assign(windowSizeOf(value), settings.windowSize);
   }
@@ -229,6 +224,26 @@ LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
   if (name == COLOR_MODE_NAME) {
     return assign(valueNamed(value, COLOR_MODE_VALUES, COLOR_MODES),
                   settings.colorMode);
+  }
+  if (name == MASTER_NAME) {
+    return assign(network::endpointFromText(value), settings.master);
+  }
+  return std::nullopt;
+}
+
+LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
+  const auto [name, value] = setting;
+  if (name == SETTINGS_VERSION_NAME) {
+    return integerOf(value) == SETTINGS_VERSION ? LineOutcome::Applied
+                                                : LineOutcome::InvalidValue;
+  }
+  if (const std::optional<LineOutcome> outcome =
+          applyNumber(settings, setting)) {
+    return *outcome;
+  }
+  if (const std::optional<LineOutcome> outcome =
+          applyValue(settings, setting)) {
+    return *outcome;
   }
   if (const std::optional<LineOutcome> outcome =
           applySwitch(settings, setting)) {
@@ -307,6 +322,9 @@ std::string settingsText(const PlayerSettings& settings) {
             switchValue(settings.clientPrediction));
   writeLine(text, PILOT_NAMES_NAME, switchValue(settings.pilotNames));
   writeChat(text, settings);
+  if (settings.master.has_value()) {
+    writeLine(text, MASTER_NAME, network::endpointText(*settings.master));
+  }
   return text;
 }
 

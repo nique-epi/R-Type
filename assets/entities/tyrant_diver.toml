@@ -1,0 +1,41 @@
+# The entity type tyrant_diver: a Bydo the Bydo Tyrant calls in from the top
+# or the bottom edge of the playfield. It flies straight on the heading of the
+# volley that brought it, down-left or up-left, and fires as it goes.
+# [gameplay] is what the server gives an entity of this type, [appearance] how
+# the client draws it; the keys are described on the page "Writing an entity
+# sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+pilot = "scatter"
+
+[gameplay.hitbox]
+width = 96
+height = 96
+
+[gameplay.motion]
+kind = "steady"
+top_speed = 360
+
+[gameplay.health]
+points = 2
+
+[gameplay.score]
+points = 150
+
+[gameplay.gun]
+interval_ms = 1800
+first_shot_ms = 800
+projectile = "enemy_missile"
+
+[appearance]
+sheet = "sprites/mobs/drillback.png"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 24
+height = 24
+frames = 2
+spacing = 2
+frame_ms = 120

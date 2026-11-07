@@ -6,7 +6,8 @@
 #include "ProtocolConstants.hpp"
 
 std::optional<std::uint32_t> RecordingPlayerInputLink::sendPlayerInput(
-    rtype::client::ActionSet held) {
+    rtype::client::ActionSet held, std::uint32_t shownTick) {
+  shownTicks_.push_back(shownTick);
   const auto number = static_cast<std::uint32_t>(
       rtype::network::FIRST_INPUT_NUMBER + sentActions_.size());
   sentActions_.push_back(held.bits());
@@ -24,4 +25,8 @@ const std::vector<std::uint8_t>& RecordingPlayerInputLink::sentActions() const {
 const std::vector<std::uint32_t>& RecordingPlayerInputLink::confirmations()
     const {
   return confirmations_;
+}
+
+const std::vector<std::uint32_t>& RecordingPlayerInputLink::shownTicks() const {
+  return shownTicks_;
 }

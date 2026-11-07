@@ -5,6 +5,7 @@
 #include "EntityReplicator.hpp"
 #include "EntityReplicatorTestConstants.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
+#include "RecordingOwnMissileListener.hpp"
 #include "RecordingSoundPlayer.hpp"
 
 namespace rtype::client::testing {
@@ -30,6 +31,10 @@ std::size_t EntityReplicatorFixture::entityCount() const {
 
 const RecordingSoundPlayer& EntityReplicatorFixture::sounds() const {
   return sounds_;
+}
+
+RecordingOwnMissileListener& EntityReplicatorFixture::ownMissiles() {
+  return ownMissiles_;
 }
 
 }  // namespace rtype::client::testing

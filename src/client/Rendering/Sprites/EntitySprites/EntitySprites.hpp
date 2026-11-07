@@ -23,6 +23,11 @@ namespace rtype::client {
 /** @returns The idle animation of @p appearance, in a loop. */
 [[nodiscard]] Animation idleAnimationOf(const EntityAppearance& appearance);
 
+/** @returns The enraged idle animation of @p appearance, in a loop; its idle
+ * animation when the sheet has no enraged frames. */
+[[nodiscard]] Animation enragedIdleAnimationOf(
+    const EntityAppearance& appearance);
+
 /**
  * @brief What code that creates an entity gives it: the idle animation of
  * @p appearance in a loop, started at an offset taken from @p networkId, so

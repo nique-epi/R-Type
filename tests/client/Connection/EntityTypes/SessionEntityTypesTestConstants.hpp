@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "ShipGun.hpp"
 
 namespace rtype::client::testing {
 
@@ -28,5 +29,15 @@ constexpr std::string_view UNUSED_CACHE_FOLDER = "r-type-tests-unused-cache";
 constexpr std::uint8_t FIRST_TYPE_NUMBER = 1;
 constexpr std::uint8_t SECOND_TYPE_NUMBER = 2;
 constexpr std::uint8_t THIRD_TYPE_NUMBER = 3;
+
+/** @brief The gun of the client's own content of the tests: its ship, the
+ * second type, firing every 20 ticks a missile it does not list, so the
+ * client predicts none. */
+constexpr game::ShipGun LOCAL_SHIP_GUN{.shipType = 2,
+                                       .projectileType = 0,
+                                       .intervalTicks = 20,
+                                       .firstShotTicks = 0,
+                                       .velocityX = 0.0F,
+                                       .velocityY = 0.0F};
 
 }  // namespace rtype::client::testing

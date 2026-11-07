@@ -17,6 +17,7 @@
 #include "NetworkConditions.hpp"
 #include "OutgoingDatagram.hpp"
 #include "ReceivedDatagrams.hpp"
+#include "RejectionLedger.hpp"
 #include "ServerConstants.hpp"
 #include "ServerException.hpp"
 #include "TickHandler.hpp"
@@ -133,6 +134,8 @@ void ServerApplication::queueDatagram(network::OutgoingDatagram datagram) {
 }
 
 network::TrafficCounters& ServerApplication::traffic() { return traffic_; }
+
+RejectionLedger& ServerApplication::rejections() { return rejections_; }
 
 void ServerApplication::simulateTick() {
   received_.clear();

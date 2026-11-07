@@ -218,7 +218,8 @@ TEST_F(SettingsServiceFixture, RestoringTakesTheSettingsAndTellsEveryOne) {
           SettingId::AutoFire, SettingId::ClientPrediction,
           SettingId::PilotNames, SettingId::ChatShown, SettingId::ChatLetters,
           SettingId::ChatClosedLines, SettingId::ChatOpenLines,
-          SettingId::ChatSeconds, SettingId::ChatBackground}));
+          SettingId::ChatSeconds, SettingId::ChatBackground,
+          SettingId::Master}));
 }
 
 /**

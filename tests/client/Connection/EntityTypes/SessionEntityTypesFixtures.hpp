@@ -9,7 +9,7 @@ namespace rtype::client::testing {
 
 /** @returns The client's own content of the tests: a fingerprint of
  * LOCAL_FINGERPRINT_BYTE, then DRAWN_ENEMY_NAME, an enemy, and
- * DRAWN_SHIP_NAME, a ship. */
+ * DRAWN_SHIP_NAME, a ship, armed with LOCAL_SHIP_GUN. */
 [[nodiscard]] LocalContent testLocalContent();
 
 /** @returns What a server playing the client's own content announces. */

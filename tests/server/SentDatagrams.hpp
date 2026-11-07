@@ -87,6 +87,20 @@ template <network::DecodableMessage Message>
   return network::decodeMessage<Message>(carried.at(0).payload);
 }
 
+/**
+ * @returns The only message of each of @p datagrams, read as a Message, in
+ * order. The test fails as onlyMessageIn() does for any of them.
+ */
+template <network::DecodableMessage Message>
+[[nodiscard]] std::vector<Message> onlyMessagesIn(
+    std::span<const network::OutgoingDatagram> datagrams) {
+  std::vector<Message> messages;
+  for (const network::OutgoingDatagram& datagram : datagrams) {
+    messages.push_back(onlyMessageIn<Message>(datagram));
+  }
+  return messages;
+}
+
 /** @returns Every message of type Message that @p datagram holds, in order. */
 template <network::DecodableMessage Message>
 [[nodiscard]] std::vector<Message> messagesIn(

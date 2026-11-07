@@ -113,6 +113,18 @@ engine::LaunchOption inputDelayOption(LaunchValues& values) {
       }};
 }
 
+/** @returns `--boss`, which forces the setting that starts every game at its
+ * boss. */
+engine::LaunchOption startAtBossOption(LaunchValues& values) {
+  return engine::LaunchOption{
+      .name = START_AT_BOSS_OPTION,
+      .takesValue = false,
+      .record = [&values]([[maybe_unused]] std::string_view value) {
+        values.forcedLines.push_back(
+            engine::settingLine(START_AT_BOSS_SETTING_NAME, "1"));
+      }};
+}
+
 /** @returns The lines of the usage that describe the options that give a
  * setting a value of its own kind. */
 std::string settingOptionEntries() {
@@ -138,6 +150,11 @@ std::string settingOptionEntries() {
           ". The same delay holds for every player, so it adds the same lag to "
           "all of them. Default: " +
           std::to_string(DEFAULT_INPUT_DELAY_TICKS) + ".");
+  text += engine::usageEntry(
+      std::string(START_AT_BOSS_OPTION),
+      "Starts every game at its boss, without the waves, to test the fight. "
+      "Its ships never die, and its results are not vanilla. A level without "
+      "a boss is won at once. Default: the waves are played.");
   return text;
 }
 
@@ -185,6 +202,7 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
       seedOption(options.values_),
       stateRateOption(options.values_),
       inputDelayOption(options.values_),
+      startAtBossOption(options.values_),
       databaseOption(options.values_.forcedLines),
       engine::setOption(options.values_.forcedLines),
       engine::pathOption(network::TRAFFIC_CSV_OPTION,
