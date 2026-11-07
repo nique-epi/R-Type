@@ -117,6 +117,16 @@ TEST(ConsoleTexts, SaysWhenTheGamesWereNotMeasuredYet) {
 }
 
 /**
+ * Given measures of the games in which no measure was taken, as an idle
+ * supervisor publishes them
+ * When their line is written
+ * Then it says the games were not measured yet
+ */
+TEST(ConsoleTexts, SaysWhenNoMeasureOfTheGamesWasTaken) {
+  EXPECT_EQ(measuresLineOf(ServerMeasures{}), NO_MEASURE_LINE);
+}
+
+/**
  * Given seven datagrams rejected since the start
  * When the lines of the network are written
  * Then the second one counts them

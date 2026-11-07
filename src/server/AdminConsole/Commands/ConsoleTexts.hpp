@@ -39,7 +39,8 @@ namespace rtype::server {
     std::size_t rejected);
 
 /** @returns The line of the measures of the games: each measure of
- * @p measures that was taken, or "games: no measure yet". */
+ * @p measures that was taken, or "games: no measure yet" when none was, as
+ * when no game ran yet. */
 [[nodiscard]] std::string measuresLineOf(
     const std::optional<network::ServerMeasures>& measures);
 

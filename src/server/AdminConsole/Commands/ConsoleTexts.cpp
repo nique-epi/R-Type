@@ -102,13 +102,15 @@ std::string measuresLineOf(
   if (!measures.has_value()) {
     return std::string{NO_MEASURE_TEXT};
   }
-  return "games: measured" +
-         measureText("tick p50", measures->tickP50Milliseconds, " ms") +
-         measureText("tick p95", measures->tickP95Milliseconds, " ms") +
-         measureText("received", measures->receivedBytesPerSecond, " B/s") +
-         measureText("sent", measures->sentBytesPerSecond, " B/s") +
-         measureText("loss", measures->lossPercent, " %") +
-         measureText("ping", measures->averagePingMilliseconds, " ms");
+  const std::string taken =
+      measureText("tick p50", measures->tickP50Milliseconds, " ms") +
+      measureText("tick p95", measures->tickP95Milliseconds, " ms") +
+      measureText("received", measures->receivedBytesPerSecond, " B/s") +
+      measureText("sent", measures->sentBytesPerSecond, " B/s") +
+      measureText("loss", measures->lossPercent, " %") +
+      measureText("ping", measures->averagePingMilliseconds, " ms");
+  return taken.empty() ? std::string{NO_MEASURE_TEXT}
+                       : "games: measured" + taken;
 }
 
 }  // namespace rtype::server
