@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <vector>
 #include "BodyPlacement.hpp"
@@ -13,6 +12,7 @@
 #include "Logger.hpp"
 #include "PendingBurst.hpp"
 #include "PlayerRoster.hpp"
+#include "ShotAuthor.hpp"
 #include "WeaponShot.hpp"
 #include "WeaponSystemParts.hpp"
 #include "World.hpp"
@@ -92,12 +92,12 @@ class WeaponSystem {
 
   /**
    * @returns The EntitySpawned of a body of @p sheet made at @p placement,
-   * belonging to @p owner when it is a missile of a player; nothing when
+   * naming @p author; the body belongs to its owner, if any. Nothing when
    * every network id was given, which is logged.
    */
   [[nodiscard]] std::optional<network::EntitySpawned> spawnAt(
       const game::EntitySheet& sheet, game::BodyPlacement placement,
-      std::optional<std::uint8_t> owner);
+      const ShotAuthor& author);
 
   /** @brief Sends @p projectile to every connected player: once, or as a
    * guaranteed message for a missile of a player. */
