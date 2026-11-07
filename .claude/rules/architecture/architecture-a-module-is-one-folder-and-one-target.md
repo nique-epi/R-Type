@@ -18,7 +18,7 @@ Why: the subject (page 16) makes an engine modular through what a developer choo
 ### Required or optional
 
 3. **Every module is required or optional, and the list of modules in `docs/src/content/docs/project-layout.md` says which.** A required module may be included by the code that needs it. An optional module is reached only through its `Contract/` sub-folder, which stays compiled when the module is removed. In `src/`, the class of a module is included by the list that names it (`gameProcessModules()`, `supervisorModules()`, `clientModules()`, `rtypeGameModules()`) and nothing else.
-4. **The removal test, for an optional module**: remove its folder, except `Contract/`, and its line in the list; the program compiles, starts, and its binary is smaller. Its option `RTYPE_MODULE_<NAME>` of the root `CMakeLists.txt` runs it, and the CI builds and tests with every option off (the `modules-off` preset): a new optional module gets its option in the pull request that adds it.
+4. **The removal test, for an optional module**: remove its folder, except `Contract/`, and its line in the list; the program compiles, starts, and its binary is smaller. Its option `RTYPE_MODULE_<NAME>` of the root `CMakeLists.txt` runs it in the build: off, nothing of the folder but `Contract/` is compiled or linked, while the folder stays on disk, its `CMakeLists.txt` returning after `Contract/`. The CI builds and tests with every option off (the `modules-off` preset): a new optional module gets its option in the pull request that adds it.
 
 ### The code of a module used elsewhere
 
