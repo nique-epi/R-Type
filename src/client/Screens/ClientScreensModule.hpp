@@ -115,6 +115,7 @@ class ClientScreensModule final : public engine::IModule,
   WaitingRoom* waitingRoom_{nullptr};
   EntityMessageQueue* entityMessages_{nullptr};
   ServerLeaderboard* leaderboard_{nullptr};
+  ChatChannel* chat_{nullptr};
   std::unique_ptr<EntityTypeLooks> entityTypes_;
   const IServerTicks* serverTicks_{nullptr};
   IServerCatalog* serverCatalog_{nullptr};

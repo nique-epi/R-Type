@@ -2,6 +2,7 @@
 
 #include <functional>
 #include "AssetLibrary.hpp"
+#include "ChatChannel.hpp"
 #include "EntityMessageQueue.hpp"
 #include "GameWindow.hpp"
 #include "IAudioService.hpp"
@@ -44,6 +45,9 @@ struct ScreenServices {
   std::reference_wrapper<WaitingRoom> waitingRoom;
   std::reference_wrapper<EntityMessageQueue> entityMessages;
   std::reference_wrapper<ServerLeaderboard> leaderboard;
+  /** @brief The chat of the session, shown by the waiting room and the
+   * game. */
+  std::reference_wrapper<ChatChannel> chat;
   /** @brief What the entity type numbers of the server mean, for the
    * replicator of a game. */
   std::reference_wrapper<const IEntityTypeSource> entityTypes;

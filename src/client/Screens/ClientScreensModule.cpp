@@ -8,6 +8,7 @@
 #include <vector>
 #include "AssetLibrary.hpp"
 #include "AudioServiceChoice.hpp"
+#include "ChatChannel.hpp"
 #include "ClientConstants.hpp"
 #include "ClientScreens.hpp"
 #include "ConfigurationRegistry.hpp"
@@ -99,6 +100,7 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   waitingRoom_ = &context.require<WaitingRoom>();
   entityMessages_ = &context.require<EntityMessageQueue>();
   leaderboard_ = &context.require<ServerLeaderboard>();
+  chat_ = &context.require<ChatChannel>();
   entityTable_ = &context.require<IEntityTypeTable>();
   entityTypes_ = std::make_unique<EntityTypeLooks>(*entityTable_);
   serverTicks_ = &context.require<IServerTicks>();
@@ -160,6 +162,7 @@ void ClientScreensModule::start() {
           .waitingRoom = *waitingRoom_,
           .entityMessages = *entityMessages_,
           .leaderboard = *leaderboard_,
+          .chat = *chat_,
           .entityTypes = *entityTypes_,
           .serverTicks = *serverTicks_,
           .serverCatalog = *serverCatalog_,

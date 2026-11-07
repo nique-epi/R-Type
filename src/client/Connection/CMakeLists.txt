@@ -5,6 +5,7 @@ add_subdirectory(EntityTypes)
 add_subdirectory(Handshake)
 add_subdirectory(WaitingRoom)
 add_subdirectory(Leaderboard)
+add_subdirectory(Chat)
 add_subdirectory(ServerList)
 
 add_library(rtype_client_connection_module STATIC
@@ -18,6 +19,7 @@ target_include_directories(rtype_client_connection_module PUBLIC ${CMAKE_CURRENT
 
 target_link_libraries(rtype_client_connection_module
   PUBLIC
+    rtype_client_connection_chat
     rtype_client_connection_entity_types
     rtype_client_content_pack
     rtype_client_connection_leaderboard
