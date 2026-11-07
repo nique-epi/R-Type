@@ -3,6 +3,7 @@
 #include "Collision.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "MissileHit.hpp"
 #include "SubscriptionHandle.hpp"
 
 namespace rtype::engine {
@@ -43,10 +44,10 @@ class CollisionRules {
   void onCollision(const engine::Collision& collision);
   void publishIfRuleMatches(engine::Entity first, EntityType firstType,
                             engine::Entity second, EntityType secondType);
-  /** @returns Whether friendly fire is on and @p missile, a player missile,
-   * belongs to another player than the pilot of @p ship, a player ship. */
-  [[nodiscard]] bool hitsAnotherPilot(engine::Entity missile,
-                                      engine::Entity ship) const;
+  /** @returns Whether friendly fire is on and the missile of @p hit, a player
+   * missile, belongs to another player than the pilot of its target, a player
+   * ship. */
+  [[nodiscard]] bool hitsAnotherPilot(const MissileHit& hit) const;
 
   engine::EventBus& events_;
   engine::ComponentRegistry& components_;

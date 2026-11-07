@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <string>
 #include "EntitySheets.hpp"
 #include "GameRules.hpp"
 #include "ServerConstants.hpp"

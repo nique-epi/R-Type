@@ -35,10 +35,10 @@ void GameRuleSettings::declare(engine::ConfigurationRegistry& configuration) {
 }
 
 network::GameRules GameRuleSettings::rules() const {
-  const network::GameRules defaults = network::defaultGameRules();
   if (difficulty_ == nullptr) {
-    return defaults;
+    return network::defaultGameRules();
   }
+  const network::GameRules defaults = network::defaultGameRules();
   return network::GameRules{
       .difficulty = difficulty_->text(),
       .lives =

@@ -19,7 +19,6 @@
 #include "IGameReplication.hpp"
 #include "LifeKeeper.hpp"
 #include "LifeKeeperParts.hpp"
-#include "LivesConstants.hpp"
 #include "Logger.hpp"
 #include "PlayerController.hpp"
 #include "PlayerLives.hpp"

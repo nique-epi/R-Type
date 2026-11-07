@@ -10,7 +10,6 @@
 #include "GameState.hpp"
 #include "GameStateChanged.hpp"
 #include "IResultsArchive.hpp"
-#include "LivesConstants.hpp"
 #include "PlayerRoster.hpp"
 
 namespace rtype::server {

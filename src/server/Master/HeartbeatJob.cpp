@@ -13,6 +13,7 @@
 #include "MasterMessages.hpp"
 #include "NetworkException.hpp"
 #include "ServerConstants.hpp"
+#include "ServerHeartbeat.hpp"
 #include "ServerMasterConstants.hpp"
 
 namespace rtype::server {

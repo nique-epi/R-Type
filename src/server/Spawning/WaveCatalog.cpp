@@ -168,10 +168,9 @@ void requireDifficultyName(const DataFileTable& levels, std::string_view name) {
 }
 
 /** @throws TooManyDifficultiesException, at the table of difficulties of
- * @p root, when @p levels holds more than network::MAXIMUM_DIFFICULTIES. */
-void requireFewDifficulties(const DataFileTable& root,
-                            const DataFileTable& levels) {
-  if (levels.table.get().size() > network::MAXIMUM_DIFFICULTIES) {
+ * @p root, when @p count exceeds network::MAXIMUM_DIFFICULTIES. */
+void requireFewDifficulties(const DataFileTable& root, std::size_t count) {
+  if (count > network::MAXIMUM_DIFFICULTIES) {
     throw TooManyDifficultiesException(
         engine::placeOfKey(root, DIFFICULTY_TABLE_KEY),
         network::MAXIMUM_DIFFICULTIES);
@@ -184,7 +183,7 @@ PlansByDifficulty plansFrom(const DataFileTable& root,
                             const game::EntitySheets& types) {
   engine::refuseUnknownKeys(root, ROOT_KEYS);
   const DataFileTable levels = engine::tableAt(root, DIFFICULTY_TABLE_KEY);
-  requireFewDifficulties(root, levels);
+  requireFewDifficulties(root, levels.table.get().size());
   PlansByDifficulty plans;
   for (auto&& entry : levels.table.get()) {
     const std::string_view name = entry.first.str();

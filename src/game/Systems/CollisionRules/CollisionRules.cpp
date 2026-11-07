@@ -46,7 +46,8 @@ void CollisionRules::publishIfRuleMatches(engine::Entity first,
       firstType == EntityType::EnemyMissile && secondType == EntityType::Player;
   const bool playerMissileHitsAnotherPilot =
       firstType == EntityType::PlayerMissile &&
-      secondType == EntityType::Player && hitsAnotherPilot(first, second);
+      secondType == EntityType::Player &&
+      hitsAnotherPilot(MissileHit{.missile = first, .target = second});
   if (playerMissileHitsEnemy || enemyMissileHitsPlayer ||
       playerMissileHitsAnotherPilot) {
     events_.publish(MissileHit{.missile = first, .target = second});
@@ -56,13 +57,12 @@ void CollisionRules::publishIfRuleMatches(engine::Entity first,
   }
 }
 
-bool CollisionRules::hitsAnotherPilot(engine::Entity missile,
-                                      engine::Entity ship) const {
+bool CollisionRules::hitsAnotherPilot(const MissileHit& hit) const {
   if (!friendlyFire_) {
     return false;
   }
-  const auto* const owner = components_.get<MissileOwner>(missile);
-  const auto* const pilot = components_.get<ShipPilot>(ship);
+  const auto* const owner = components_.get<MissileOwner>(hit.missile);
+  const auto* const pilot = components_.get<ShipPilot>(hit.target);
   return owner != nullptr && pilot != nullptr &&
          owner->playerNumber != pilot->playerNumber;
 }

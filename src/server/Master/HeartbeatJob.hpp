@@ -5,6 +5,7 @@
 #include <stop_token>
 #include <string>
 #include <thread>
+#include <vector>
 #include "HeartbeatJobParts.hpp"
 #include "HeartbeatTimes.hpp"
 #include "LatestHostedGames.hpp"
