@@ -126,7 +126,9 @@ Menu accessTab(const OptionsTabsParts& parts) {
       .row({.label = SOUND_CUES_LABEL, .description = SOUND_CUES_DESCRIPTION},
            settingSwitch(service, SOUND_CUES_SETTING))
       .row({.label = AUTO_FIRE_LABEL, .description = AUTO_FIRE_DESCRIPTION},
-           settingSwitch(service, AUTO_FIRE_SETTING));
+           settingSwitch(service, AUTO_FIRE_SETTING))
+      .row({.label = PILOT_NAMES_LABEL, .description = PILOT_NAMES_DESCRIPTION},
+           settingSwitch(service, PILOT_NAMES_SETTING));
   return withBack(parts, builder);
 }
 

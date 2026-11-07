@@ -173,6 +173,9 @@ std::optional<LineOutcome> applySwitch(PlayerSettings& settings,
   if (name == CLIENT_PREDICTION_NAME) {
     return assign(switchOf(value), settings.clientPrediction);
   }
+  if (name == PILOT_NAMES_NAME) {
+    return assign(switchOf(value), settings.pilotNames);
+  }
   return std::nullopt;
 }
 
@@ -267,6 +270,7 @@ std::string settingsText(const PlayerSettings& settings) {
   writeLine(text, AUTO_FIRE_NAME, switchValue(settings.autoFire));
   writeLine(text, CLIENT_PREDICTION_NAME,
             switchValue(settings.clientPrediction));
+  writeLine(text, PILOT_NAMES_NAME, switchValue(settings.pilotNames));
   return text;
 }
 

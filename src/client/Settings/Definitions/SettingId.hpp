@@ -17,6 +17,7 @@ enum class SettingId : std::uint8_t {
   SoundCues,
   AutoFire,
   ClientPrediction,
+  PilotNames,
 };
 
 }  // namespace rtype::client
