@@ -58,16 +58,18 @@ std::vector<std::string> ClientConnectionModule::dependencies() const {
 }
 
 void ClientConnectionModule::install(engine::InstallContext& context) {
-  masterUrl_ = &context.require<engine::ConfigurationRegistry>().declareText(
-      engine::TextSettingDefinition{
-          .name = std::string{MASTER_URL_SETTING_NAME},
-          .defaultValue = defaultMasterUrl(),
-          .help = "http://<host>[:<port>] of the master the server map reads",
-          .validate = requireMasterUrl});
+  const engine::SettingValue& masterUrl =
+      context.require<engine::ConfigurationRegistry>().declareText(
+          engine::TextSettingDefinition{
+              .name = std::string{MASTER_URL_SETTING_NAME},
+              .defaultValue = defaultMasterUrl(),
+              .help =
+                  "http://<host>[:<port>] of the master the server map reads",
+              .validate = requireMasterUrl});
   settingsService_ = &context.require<SettingsService>();
   masterChoice_.emplace(
       MasterChoiceParts{.settings = context.require<PlayerSettings>(),
-                        .masterUrl = *masterUrl_,
+                        .masterUrl = masterUrl,
                         .link = masterLink_,
                         .servers = servers_});
   connection_.provideParts(context);

@@ -53,9 +53,11 @@ std::unique_ptr<network::MasterClient> clientFor(
 }  // namespace
 
 void MasterLink::start(network::MasterAccess access) {
-  static_cast<void>(network::MasterClient{access});
-  access_.publish(std::move(access));
-  thread_ = std::jthread([this](const std::stop_token& stop) { run(stop); });
+  auto client = std::make_unique<network::MasterClient>(std::move(access));
+  thread_ = std::jthread(
+      [this, client = std::move(client)](const std::stop_token& stop) mutable {
+        run(stop, std::move(client));
+      });
 }
 
 void MasterLink::retarget(network::MasterAccess access) {
@@ -85,16 +87,16 @@ std::optional<GameListReading> MasterLink::games() const {
   return games_.value();
 }
 
-void MasterLink::run(const std::stop_token& stop) {
+void MasterLink::run(const std::stop_token& stop,
+                     std::unique_ptr<network::MasterClient> client) {
   std::uint64_t seen = 0;
   std::uint64_t accessSeen = 0;
-  std::unique_ptr<network::MasterClient> client;
   MasterAsks served;
   while (!stop.stop_requested()) {
     seen = asks_.waitForNewer(seen, MASTER_ASK_WAIT, stop);
     client = clientFor(access_, accessSeen, std::move(client));
     const std::optional<MasterAsks> asks = asks_.value();
-    if (client != nullptr && asks.has_value()) {
+    if (asks.has_value()) {
       serve(*client, *asks, served);
     }
   }

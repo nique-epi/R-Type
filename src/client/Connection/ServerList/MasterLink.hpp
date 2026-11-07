@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <stop_token>
 #include <thread>
@@ -24,13 +25,13 @@ namespace rtype::client {
  * A master that does not answer, refuses or writes what cannot be read gives a
  * reading with no listing, so the list says so instead of waiting for ever.
  *
- * Building it opens nothing; start() checks the url and starts the thread,
- * which builds its own client, stop() ends the thread, a call in progress ended
- * within the timeouts of MasterClient. retarget() names another master while
- * the thread runs, without waiting for it: the thread builds the client of
- * that master before it serves the next ask, and a call in progress ends on
- * the master it began with, its reading answering an older ask. The asks, the
- * master and the readings are safe from both threads.
+ * Building it opens nothing; start() builds the client of the master, which
+ * checks its url, and starts the thread, which owns it; stop() ends the thread,
+ * a call in progress ended within the timeouts of MasterClient. retarget()
+ * names another master while the thread runs, without waiting for it: the
+ * thread builds the client of that master before it serves the next ask, and a
+ * call in progress ends on the master it began with, its reading answering an
+ * older ask. The asks, the master and the readings are safe from both threads.
  */
 class MasterLink final : public IMasterReads {
  public:
@@ -59,8 +60,10 @@ class MasterLink final : public IMasterReads {
   [[nodiscard]] std::optional<GameListReading> games() const override;
 
  private:
-  /** @brief The loop of MasterLink: waits for a newer ask, serves it. */
-  void run(const std::stop_token& stop);
+  /** @brief The loop of MasterLink: waits for a newer ask, serves it with
+   * @p client, or with the client of a master retarget() named since. */
+  void run(const std::stop_token& stop,
+           std::unique_ptr<network::MasterClient> client);
   /** @brief Serves each kind of @p asks newer than @p served with @p client,
    * then marks it served. */
   void serve(network::MasterClient& client, const MasterAsks& asks,

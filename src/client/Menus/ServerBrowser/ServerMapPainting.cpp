@@ -204,7 +204,7 @@ void paintServerMapHeader(IInterfaceCanvas& canvas, std::size_t serverCount) {
 }
 
 void paintMasterAddress(IInterfaceCanvas& canvas, std::string_view master) {
-  canvas.write(std::string{master}, MASTER_ADDRESS_ANCHOR,
+  canvas.write(master, MASTER_ADDRESS_ANCHOR,
                TextStyle{.font = TextFont::Small,
                          .color = PALE_BLUE,
                          .outlined = true,

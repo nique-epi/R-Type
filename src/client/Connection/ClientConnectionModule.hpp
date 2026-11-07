@@ -75,8 +75,6 @@ class ClientConnectionModule final : public engine::IModule {
 
  private:
   PlayerConnection connection_;
-  /** @brief The `master-url` setting, declared by install(). */
-  const engine::SettingValue* masterUrl_{nullptr};
   SettingsService* settingsService_{nullptr};
   MasterLink masterLink_;
   ServerCatalog servers_;
