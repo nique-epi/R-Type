@@ -15,6 +15,7 @@
 #include "RecordingPlayerInputLink.hpp"
 #include "RecordingScreen.hpp"
 #include "RecordingServerConnection.hpp"
+#include "RecordingShipLookExchange.hpp"
 #include "RecordingSky.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "RecordingWaitingRoom.hpp"
@@ -60,6 +61,7 @@ class GameScreenFixture : public ::testing::Test {
   FakeServerTicks serverTicks_;
   RecordingServerConnection connection_;
   RecordingWaitingRoom waitingRoom_;
+  RecordingShipLookExchange shipLooks_;
   InterfaceCanvasRecord statusCanvas_;
   DrawJournal drawJournal_;
   RecordingSky sky_;

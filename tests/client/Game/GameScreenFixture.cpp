@@ -36,6 +36,7 @@ GameScreenFixture::GameScreenFixture()
                               .serverTicks = serverTicks_,
                               .connection = connection_,
                               .waitingRoom = waitingRoom_,
+                              .shipLooks = shipLooks_,
                               .sky = sky_,
                               .sounds = sounds_,
                               .audio = audio_,

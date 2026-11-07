@@ -2,6 +2,7 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <optional>
@@ -22,6 +23,9 @@
 #include "Reveal.hpp"
 #include "ShipFlight.hpp"
 #include "ShipFlightConstants.hpp"
+#include "ShipLookConstants.hpp"
+#include "ShipLookSpriteConstants.hpp"
+#include "ShipLooks.hpp"
 #include "Sprite.hpp"
 #include "SpriteAnimation.hpp"
 #include "SpriteAppearance.hpp"
@@ -29,6 +33,7 @@
 #include "SpriteFrame.hpp"
 #include "SpriteTone.hpp"
 #include "TimeConstants.hpp"
+#include "WornLook.hpp"
 
 namespace rtype::client {
 
@@ -184,6 +189,48 @@ DrawCall afterimageAt(engine::Entity entity, const game::Sprite& sprite,
                                            .rollAngle = std::nullopt}};
 }
 
+/** @returns The sprite of @p item on the sheet of the looks: its drawing, cut
+ * from its cell, in the layer of the ships. */
+const game::Sprite& lookSpriteOf(std::size_t item) {
+  static const std::array<game::Sprite, identifiers::SHIP_LOOK_ITEM_COUNT>
+      sprites = [] {
+        std::array<game::Sprite, identifiers::SHIP_LOOK_ITEM_COUNT> made{};
+        for (std::size_t index = 0; index < made.size(); ++index) {
+          const game::SpriteFrame cell = SHIP_LOOK_CELLS.at(index);
+          const sf::Vector2i size = SHIP_LOOK_SPRITES.at(index).size;
+          made.at(index) = game::Sprite{.assetId = SHIP_LOOK_SHEET_ID,
+                                        .frame = {.left = cell.left,
+                                                  .top = cell.top,
+                                                  .width = size.x,
+                                                  .height = size.y},
+                                        .layer = game::Layer::Players};
+        }
+        return made;
+      }();
+  return sprites.at(item);
+}
+
+/** @returns How far the center of a drawing lies from the center of a ship
+ * drawn with @p shipFrame along one axis, in logical units: the drawing starts
+ * at @p mount pixels of the frame and is @p size pixels long, the frame
+ * @p frame pixels long. */
+float centerAlong(int mount, int size, int frame) {
+  return ((static_cast<float>(mount) + (static_cast<float>(size) * HALF)) -
+          (static_cast<float>(frame) * HALF)) *
+         BACKGROUND_PIXEL_SIZE;
+}
+
+/** @returns Where the center of @p item lies from the center of a ship drawn
+ * with @p shipFrame, in logical units: its drawing's top-left corner at its
+ * mount in the frame of the ship, one pixel of the frame BACKGROUND_PIXEL_SIZE
+ * units wide. */
+game::Position lookOffsetOf(std::size_t item, game::SpriteFrame shipFrame) {
+  const ShipLookSprite& sprite = SHIP_LOOK_SPRITES.at(item);
+  return game::Position{
+      .x = centerAlong(sprite.mount.x, sprite.size.x, shipFrame.width),
+      .y = centerAlong(sprite.mount.y, sprite.size.y, shipFrame.height)};
+}
+
 }  // namespace
 
 void RenderSystem::render(engine::ComponentRegistry& components,
@@ -192,10 +239,11 @@ void RenderSystem::render(engine::ComponentRegistry& components,
     drawCalls.clear();
   }
   collectSprites(components);
+  collectLooks(components);
   collectAfterimages(components);
   collectCaptions(components);
   for (auto& drawCalls : drawCallsByLayer_) {
-    std::ranges::sort(drawCalls, {}, &DrawCall::entityIndex);
+    std::ranges::stable_sort(drawCalls, {}, &DrawCall::entityIndex);
     for (const DrawCall& drawCall : drawCalls) {
       draw(surface, drawCall);
     }
@@ -216,6 +264,39 @@ void RenderSystem::collectSprites(engine::ComponentRegistry& components) {
              .sprite = &sprite,
              .caption = nullptr,
              .look = lookOf(components, entity, sprite.frame.height)});
+      });
+}
+
+void RenderSystem::collectLooks(engine::ComponentRegistry& components) {
+  components.forEach<WornLook, game::Sprite>(
+      [this, &components](engine::Entity entity, WornLook& worn,
+                          game::Sprite& ship) {
+        const game::Position* const position =
+            components.get<game::Position>(entity);
+        const auto layerIndex = static_cast<std::size_t>(ship.layer);
+        const SpriteAppearance look =
+            lookOf(components, entity, ship.frame.height);
+        if (position == nullptr || layerIndex >= drawCallsByLayer_.size() ||
+            look.shownRows.has_value() || look.rollAngle.has_value()) {
+          return;
+        }
+        for (std::size_t item = 0; item < identifiers::SHIP_LOOK_ITEM_COUNT;
+             ++item) {
+          if (!wears(worn.look, item)) {
+            continue;
+          }
+          drawCallsByLayer_[layerIndex].push_back(
+              {.entityIndex = entity.index,
+               .position = offsetBy(*position, lookOffsetOf(item, ship.frame)),
+               .sprite = &lookSpriteOf(item),
+               .caption = nullptr,
+               .look = SpriteAppearance{.tone = look.tone,
+                                        .outline = look.outline,
+                                        .offset = look.offset,
+                                        .shownRows = std::nullopt,
+                                        .leadingLine = false,
+                                        .rollAngle = std::nullopt}});
+        }
       });
 }
 

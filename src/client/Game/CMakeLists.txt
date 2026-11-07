@@ -5,6 +5,8 @@ add_library(rtype_client_game_module STATIC
   GameScreen.cpp
   HeldKey.cpp
   PilotNameTags.cpp
+  PilotShipLooks.cpp
+  PilotShips.cpp
 )
 
 target_include_directories(rtype_client_game_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -53,6 +55,7 @@ target_link_libraries(rtype_client_game_module
     rtype_client_pilot_color
     rtype_client_pilot_name
     rtype_client_settings_values
+    rtype_client_sprite_look
     rtype_client_ship_flight_system
     rtype_client_sprite_effect_system
     rtype_client_status_band

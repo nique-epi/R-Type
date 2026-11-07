@@ -17,6 +17,7 @@
 #include "PilotName.hpp"
 #include "PilotNameTagConstants.hpp"
 #include "PilotShip.hpp"
+#include "PilotShips.hpp"
 #include "PilotStatus.hpp"
 #include "PlayerPreferences.hpp"
 #include "PlayerSettings.hpp"
@@ -31,27 +32,6 @@
 namespace rtype::client {
 
 namespace {
-
-/** @brief The ships of the pilots, at most PLAYER_COLOR_COUNT: gathered
- * first, since forEach forbids adding a component while it runs. */
-struct PilotShips {
-  std::array<engine::Entity, PLAYER_COLOR_COUNT> ships{};
-  std::size_t count{};
-};
-
-/** @returns Every alive entity with a PilotShip and a Sprite, up to
- * PLAYER_COLOR_COUNT; a ship past that count waits for the next frame. */
-PilotShips pilotShipsOf(engine::ComponentRegistry& components) {
-  PilotShips found;
-  components.forEach<PilotShip, game::Sprite>(
-      [&found](engine::Entity ship, const PilotShip&, const game::Sprite&) {
-        if (found.count < found.ships.size()) {
-          found.ships.at(found.count) = ship;
-          ++found.count;
-        }
-      });
-  return found;
-}
 
 /** @returns The pilot of @p pilots flying the ship of a pilot color, or
  * nullptr when none has its number. */
