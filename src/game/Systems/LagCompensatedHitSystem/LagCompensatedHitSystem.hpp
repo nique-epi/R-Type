@@ -22,7 +22,8 @@ namespace rtype::game {
  * keeping the present and the MAXIMUM_REWIND_TICKS ticks before it. Then
  * every entity that carries a ViewDelay is tested against the boxes of that
  * many ticks ago, at most MAXIMUM_REWIND_TICKS and at most as far back as was
- * recorded:
+ * recorded; the mode of play may give a shorter ViewDelay (see
+ * IHitArbitration):
  * - a missile of a player, its box stretched back over the way it moved this
  *   tick so it never jumps over an enemy, against the bodies: the first it
  *   touches gives a MissileHit, the event CollisionRules publishes for a

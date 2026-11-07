@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include "CollisionBox.hpp"
+#include "LagCompensationConstants.hpp"
 #include "Position.hpp"
 
 namespace rtype::game::testing {
@@ -15,18 +16,18 @@ constexpr Position WHERE_THE_ENEMY_WENT{.x = 500.0F, .y = 100.0F};
 constexpr CollisionBox ENEMY_BOX{.width = 96.0F, .height = 96.0F};
 constexpr CollisionBox MISSILE_BOX{.width = 64.0F, .height = 24.0F};
 
-/** @brief A view five ticks behind the present, and the cap of the rewind
- * with the tick just past it. */
+/** @brief A view five ticks behind the present, and the furthest the system
+ * keeps with the tick just past it. */
 constexpr std::size_t FIVE_TICKS_BEHIND = 5;
-constexpr std::size_t TWELVE_TICKS_BEHIND = 12;
-constexpr std::size_t THIRTEEN_TICKS_BEHIND = 13;
+constexpr std::size_t KEPT_TICKS_BEHIND = MAXIMUM_REWIND_TICKS;
+constexpr std::size_t PAST_THE_KEPT_TICKS_BEHIND = MAXIMUM_REWIND_TICKS + 1;
 
-/** @brief A view a client may claim far beyond the cap, 20 ticks behind, and
- * the ticks the enemy spends gone before it stands at its place, then after:
- * the place is 7 ticks behind the present, within what a client may claim but
- * past what the server looks back for it. */
-constexpr std::size_t TWENTY_TICKS_BEHIND = 20;
-constexpr std::size_t TICKS_GONE_BEFORE = 5;
+/** @brief A view a client may claim far beyond what the system keeps, eight
+ * ticks further, and the ticks the enemy spends gone before it stands at its
+ * place, then after: the place is 7 ticks behind the present, within what a
+ * client may claim but not where the system looks for it. */
+constexpr std::size_t FAR_CLAIM_TICKS_BEHIND = MAXIMUM_REWIND_TICKS + 8;
+constexpr std::size_t TICKS_GONE_BEFORE = MAXIMUM_REWIND_TICKS;
 constexpr std::size_t TICKS_GONE_AFTER = 6;
 
 }  // namespace rtype::game::testing

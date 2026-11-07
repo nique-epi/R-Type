@@ -19,6 +19,10 @@ class HitArbitrationFixture : public ::testing::Test {
  protected:
   HitArbitrationFixture();
 
+  /** @brief Makes the client of the player have shown tick 70, thirty ticks
+   * before the present. */
+  void seeThirtyTicksBehind();
+
   /** @brief Gives the views of @p arbitration at tick 100. */
   void giveViewsOf(const IHitArbitration& arbitration);
 

@@ -12,7 +12,7 @@ namespace rtype::server {
  * player showed the enemies when it sent the input applied last
  * (the shownTick of ConnectedPlayer::appliedInput). 0 for a player whose client
  * showed no state yet, showed a tick not before @p tick, or is not in @p
- * roster; the LagCompensatedHitSystem caps it at MAXIMUM_REWIND_TICKS. Call it
+ * roster; capViewDelays() bounds it for a mode. Call it
  * before the systems of the tick run, never during a forEach of the registry.
  */
 void giveShooterViews(game::World& world, PlayerRoster& roster,
@@ -27,5 +27,9 @@ void giveShooterViews(game::World& world, PlayerRoster& roster,
  */
 void giveShipViews(game::World& world, PlayerRoster& roster,
                    std::uint32_t tick);
+
+/** @brief Brings every ViewDelay of @p world above @p mostTicks down to it:
+ * the furthest a mode of play looks back. */
+void capViewDelays(game::World& world, std::size_t mostTicks);
 
 }  // namespace rtype::server

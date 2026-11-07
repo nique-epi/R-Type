@@ -16,6 +16,7 @@ target_link_libraries(rtype_server_rules_players
     rtype_engine_event_bus
     rtype_game
     rtype_game_events
+    rtype_game_lag_compensated_hit_system
     rtype_game_ship_control
     rtype_logging
     rtype_network_player_input

@@ -1,4 +1,5 @@
 #include "ShooterViews.hpp"
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -81,6 +82,13 @@ void giveShipViews(game::World& world, PlayerRoster& roster,
         }
       });
   addViews(components, views);
+}
+
+void capViewDelays(game::World& world, std::size_t mostTicks) {
+  world.components().forEach<game::ViewDelay, game::ViewDelay>(
+      [mostTicks](engine::Entity, game::ViewDelay& delay, game::ViewDelay&) {
+        delay.ticks = std::min(delay.ticks, mostTicks);
+      });
 }
 
 }  // namespace rtype::server
