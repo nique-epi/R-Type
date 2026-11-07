@@ -1,6 +1,7 @@
 #include "HangarScreen.hpp"
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <cstddef>
@@ -24,11 +25,14 @@
 #include "LockerPainting.hpp"
 #include "LockerView.hpp"
 #include "MenuBuilder.hpp"
+#include "MotionPreference.hpp"
+#include "PlayfieldMapping.hpp"
 #include "SettingDefinitionConstants.hpp"
 #include "ShipLook.hpp"
 #include "ShipLookSpriteConstants.hpp"
 #include "ShipLooks.hpp"
 #include "SoundConstants.hpp"
+#include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
 
 namespace rtype::client {
@@ -48,7 +52,7 @@ Button::Text backText() {
 /** @returns The status line: the name of @p item, then what Enter does with
  * it, or that an arm is fitting an item. */
 std::string statusOf(std::size_t item, ShipLook worn, bool fitting) {
-  std::string status(SHIP_LOOK_SPRITES.at(item).label);
+  const std::string status(SHIP_LOOK_SPRITES.at(item).label);
   if (fitting) {
     return status + FITTING_HINT;
   }

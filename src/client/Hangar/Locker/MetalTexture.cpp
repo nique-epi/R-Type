@@ -8,7 +8,6 @@
 #include "BackgroundColorConstants.hpp"
 #include "ColoredPixel.hpp"
 #include "HangarColorConstants.hpp"
-#include "InterfaceColorConstants.hpp"
 #include "MetalPatch.hpp"
 #include "MetalTextureConstants.hpp"
 #include "RandomRange.hpp"

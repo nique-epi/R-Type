@@ -14,7 +14,6 @@
 #include "ServerTooltip.hpp"
 #include "StarName.hpp"
 #include "StarNavigation.hpp"
-#include "TooltipLine.hpp"
 #include "WidgetColors.hpp"
 
 namespace rtype::client {

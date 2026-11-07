@@ -558,9 +558,10 @@ TEST_F(LobbyScreenFixture, TheOwnBayShowsWhatTheShipWears) {
 
   list({pilot(OWN_NUMBER, OWN_NICKNAME, false)});
 
-  EXPECT_TRUE(std::ranges::any_of(
-      canvas().images,
-      [](const RecordedImage& image) { return image.assetId == LOOK_SHEET; }));
+  EXPECT_TRUE(std::ranges::any_of(canvas().images,
+                                  [](const RecordedImage& image) noexcept {
+                                    return image.assetId == LOOK_SHEET;
+                                  }));
 }
 
 /**

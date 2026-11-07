@@ -22,7 +22,6 @@
 #include "PixelShapes.hpp"
 #include "RenderingConstants.hpp"
 #include "ShipLookConstants.hpp"
-#include "ShipLookSpriteConstants.hpp"
 #include "ShipLooks.hpp"
 #include "TextStyle.hpp"
 
@@ -167,7 +166,7 @@ void paintCellItem(IInterfaceCanvas& canvas, std::size_t slot,
  * GLASS_STREAK_SLOPE per row, one pixel in two lit by the dither. */
 void addStreak(std::vector<ColoredPixel>& pixels, sf::IntRect inside,
                GlassStreak streak) {
-  const float height = static_cast<float>(inside.size.y);
+  const auto height = static_cast<float>(inside.size.y);
   const int start =
       inside.position.x +
       static_cast<int>(streak.start * static_cast<float>(inside.size.x)) -

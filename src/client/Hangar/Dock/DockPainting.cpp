@@ -174,9 +174,13 @@ void paintFittingSparks(IInterfaceCanvas& canvas, const DockScene& scene,
  * while it carries it. */
 void paintFittingArm(IInterfaceCanvas& canvas, const DockScene& scene,
                      ShipPlacement ship) {
-  const std::size_t item = scene.fitting->item;
-  const ArmPose pose = fittingPoseAt(
-      fittingProgressOf(*scene.fitting, scene.elapsed), routeOf(item, ship));
+  if (!scene.fitting.has_value()) {
+    return;
+  }
+  const FittingRun& run = *scene.fitting;
+  const std::size_t item = run.item;
+  const ArmPose pose =
+      fittingPoseAt(fittingProgressOf(run, scene.elapsed), routeOf(item, ship));
   if (pose.carrying) {
     const sf::Vector2i topLeft = pose.target - holdOf(item, ship.scale);
     paintLookItem(
@@ -192,8 +196,8 @@ void paintFittingArm(IInterfaceCanvas& canvas, const DockScene& scene,
 void paintStillArms(IInterfaceCanvas& canvas, const StillPoses& still,
                     std::array<std::size_t, 2> arms) {
   for (const std::size_t arm : arms) {
-    if (still.at(arm).has_value()) {
-      paintArm(canvas, DOCK_ARMS.at(arm), *still.at(arm));
+    if (const std::optional<ArmPose>& pose = still.at(arm); pose.has_value()) {
+      paintArm(canvas, DOCK_ARMS.at(arm), *pose);
     }
   }
 }

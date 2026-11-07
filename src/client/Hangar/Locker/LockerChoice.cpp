@@ -11,9 +11,9 @@ namespace rtype::client {
 
 namespace {
 
-/** @returns @p to when it holds an item, else @p from. */
-std::size_t itemOrStay(std::size_t from, std::size_t to) {
-  return to < SHIP_LOOK_ITEM_COUNT ? to : from;
+/** @returns @p wanted when it holds an item, else @p current. */
+std::size_t itemOrStay(std::size_t current, std::size_t wanted) {
+  return wanted < SHIP_LOOK_ITEM_COUNT ? wanted : current;
 }
 
 }  // namespace

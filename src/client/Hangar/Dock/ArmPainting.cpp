@@ -13,7 +13,9 @@
 #include "DockArmConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceColorConstants.hpp"
+#include "PixelDisc.hpp"
 #include "PixelRounding.hpp"
+#include "PixelSegment.hpp"
 #include "PixelShapes.hpp"
 #include "RenderingConstants.hpp"
 
@@ -32,10 +34,10 @@ struct ArmJoints {
  * floor: the way its column rises. */
 int riseOf(ArmSide side) { return side == ArmSide::Ceiling ? -1 : 1; }
 
-/** @returns The unit vector from @p from to @p to; to the right when they
- * are the same pixel. */
-sf::Vector2f directionOf(sf::Vector2i from, sf::Vector2i to) {
-  const sf::Vector2f way(to - from);
+/** @returns The unit vector from @p start to @p end; to the right when
+ * they are the same pixel. */
+sf::Vector2f directionOf(sf::Vector2i start, sf::Vector2i end) {
+  const sf::Vector2f way(end - start);
   const float length = way.length();
   return length > 0.0F ? way / length : sf::Vector2f(1.0F, 0.0F);
 }
@@ -105,10 +107,10 @@ void addShadedDisc(std::vector<ColoredPixel>& pixels, PixelDisc disc) {
 void addJoint(std::vector<ColoredPixel>& pixels, PixelDisc joint) {
   addShadedDisc(pixels, joint);
   addDisc(pixels, {.center = joint.center,
-                   .radius = std::max(1, joint.radius - 4),
+                   .radius = std::max(1, joint.radius - JOINT_RING_INSET),
                    .color = INK});
   addDisc(pixels, {.center = joint.center,
-                   .radius = std::max(0, joint.radius - 5),
+                   .radius = std::max(0, joint.radius - JOINT_CORE_INSET),
                    .color = joint.color});
 }
 
@@ -146,7 +148,8 @@ struct JawStroke {
  * while it grips the hull. */
 void addDrum(std::vector<ColoredPixel>& pixels, sf::Vector2i drum,
              bool gripping) {
-  addShadedDisc(pixels, {.center = drum, .radius = DRUM_RADIUS});
+  addShadedDisc(pixels,
+                {.center = drum, .radius = DRUM_RADIUS, .color = STAR_WHITE});
   addDisc(pixels, {.center = drum,
                    .radius = DRUM_CORE_RADIUS,
                    .color = gripping ? HUD_CYAN : DEEP_BLUE});

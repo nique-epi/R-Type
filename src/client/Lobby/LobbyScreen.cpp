@@ -277,7 +277,10 @@ void LobbyScreen::handleEvent(const sf::Event& event) {
   }
   if (clicksInside(event, ownBayAreaIn(menu_, *waitingRoom_, *connection_),
                    playfieldPointAt_)) {
-    handleEvent(sf::Event::FocusLost{});
+    readyKeyHeld_ = false;
+    leaderboardChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+    hangarChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+    menu_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
     navigator_->push(HANGAR_SCREEN);
     return;
   }

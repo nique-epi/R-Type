@@ -9,8 +9,8 @@ sf::Vector2i nearestPixel(sf::Vector2f position) {
           static_cast<int>(std::lround(position.y))};
 }
 
-sf::Vector2i pixelAlong(sf::Vector2i from, sf::Vector2i to, float share) {
-  return from + nearestPixel(sf::Vector2f(to - from) * share);
+sf::Vector2i pixelAlong(sf::Vector2i start, sf::Vector2i end, float share) {
+  return start + nearestPixel(sf::Vector2f(end - start) * share);
 }
 
 }  // namespace rtype::client

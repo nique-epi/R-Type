@@ -12,7 +12,6 @@
 #include "SettingDefinitionConstants.hpp"
 #include "SettingId.hpp"
 #include "SettingRange.hpp"
-#include "ShipLook.hpp"
 
 namespace rtype::client {
 

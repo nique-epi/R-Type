@@ -21,6 +21,7 @@
 #include "RecordingSoundPlayer.hpp"
 #include "RecordingWaitingRoom.hpp"
 #include "ScreenTestConstants.hpp"
+#include "ShipLook.hpp"
 
 using rtype::client::ConnectionPhase;
 using rtype::client::LobbyPlace;

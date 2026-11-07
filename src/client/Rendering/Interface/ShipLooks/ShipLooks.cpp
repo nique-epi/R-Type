@@ -8,6 +8,7 @@
 #include <vector>
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
+#include "InterfaceConstants.hpp"
 #include "RenderingConstants.hpp"
 #include "ShipLook.hpp"
 #include "ShipLookConstants.hpp"

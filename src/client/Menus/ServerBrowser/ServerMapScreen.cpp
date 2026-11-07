@@ -17,6 +17,7 @@
 #include "HangarStar.hpp"
 #include "IGameCatalog.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "InterfacePixel.hpp"
 #include "KeyChip.hpp"

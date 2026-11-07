@@ -2,6 +2,7 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <array>
+#include <cstddef>
 #include "ArmMount.hpp"
 #include "ArmSide.hpp"
 #include "DockConstants.hpp"
@@ -49,6 +50,11 @@ constexpr int CLAW_OUTLINE_WIDTH = 4;
 constexpr int JAW_WIDTH = 3;
 constexpr int CLAW_WIDTH = 2;
 constexpr int DRUM_CORE_RADIUS = 2;
+
+/** @brief How far inside the edge of a joint its ink ring and its colored
+ * core start. */
+constexpr int JOINT_RING_INSET = 4;
+constexpr int JOINT_CORE_INSET = 5;
 
 /** @brief The base of an arm: a plate BASE_PLATE_SIZE large, banded with
  * hazard stripes HAZARD_STRIPE wide, a column COLUMN_WIDTH wide, a light. */
