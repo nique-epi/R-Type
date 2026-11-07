@@ -1,6 +1,6 @@
-rtype_add_test(NAME server_metrics_tests LIBS rtype_server_metrics_report rtype_server_constants TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
+rtype_add_test(NAME server_metrics_tests LIBS rtype_server_metrics_module rtype_server_constants TIMEOUT ${RTYPE_THREAD_TEST_TIMEOUT_SECONDS})
 target_include_directories(server_metrics_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/server)
+target_sources(server_metrics_tests PRIVATE MetricsLinesTest.cpp)
 target_sources(server_module_tests PRIVATE ServerMetricsFixture.cpp ServerMetricsModuleTest.cpp)
 
 add_subdirectory(Measures)
-add_subdirectory(Report)

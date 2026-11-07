@@ -1,19 +1,21 @@
+add_subdirectory(Contract)
 add_subdirectory(Measures)
-add_subdirectory(Report)
 
-add_library(rtype_server_metrics_module STATIC ServerMetricsModule.cpp)
+add_library(rtype_server_metrics_module STATIC MetricsLines.cpp ServerMetricsModule.cpp)
 
 target_include_directories(rtype_server_metrics_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(rtype_server_metrics_module
   PUBLIC
     rtype_engine_application
+    rtype_engine_systems
     rtype_logging
     rtype_network_statistics
     rtype_server_games_module
+    rtype_server_metrics_contract
     rtype_server_metrics_measures
-    rtype_server_metrics_report
   PRIVATE
+    rtype_engine_time
     rtype_server_constants
 )
 

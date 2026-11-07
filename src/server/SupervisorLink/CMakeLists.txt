@@ -14,7 +14,7 @@ target_link_libraries(rtype_server_supervisor_link_module
     rtype_network_transport
     rtype_server_games_module
     rtype_server_launch_options
-    rtype_server_metrics_report
+    rtype_server_metrics_contract
     rtype_server_network_module
     rtype_server_platform
   PRIVATE

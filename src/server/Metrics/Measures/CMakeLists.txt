@@ -7,6 +7,7 @@ target_link_libraries(rtype_server_metrics_measures
     rtype_engine_systems
     rtype_network_statistics_round_trip
     rtype_server_games_module
+    rtype_server_metrics_contract
   PRIVATE
     rtype_server_constants
 )
