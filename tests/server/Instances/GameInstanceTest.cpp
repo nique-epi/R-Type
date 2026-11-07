@@ -58,6 +58,7 @@ using game::testing::ROLL_END_TICK;
 using rtype::server::AppliedInput;
 using testing::bydosAmong;
 using testing::bydosIn;
+using testing::DOUBLE_PRESS_OF_DOWN;
 using testing::ECHO_HELD_FOR;
 using testing::ECHO_ROUND_TRIP_ON_THE_WIRE;
 using testing::ECHO_SEQUENCE;
@@ -90,6 +91,7 @@ using testing::inputPayload;
 using testing::LARGEST_INPUT_NUMBER;
 using testing::LAST_READY_SEQUENCE;
 using testing::messageTypesOf;
+using testing::movedOneInputPerTick;
 using testing::newestHeartbeatIn;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::ofType;
@@ -1722,8 +1724,9 @@ TEST_F(GameInstanceMovementTest, MovesEachShipByTheInputOfItsOwnPlayer) {
  * Given a game in progress
  * When the first player sends down, nothing, down and nothing, read in one
  * tick, then the ticks of a whole roll run
- * Then its ship is ROLL_DISTANCE lower, on the same column: the server
- * read the double press and rolled the ship, no direction held to drift it
+ * Then its ship is where the same inputs, one a tick, put it: the server
+ * applies them in four ticks, as the client predicts them, so the first press
+ * holds down for one tick before the roll
  */
 TEST_F(GameInstanceMovementTest, RollsAShipOnADoublePressOfDown) {
   startGame();
@@ -1736,8 +1739,11 @@ TEST_F(GameInstanceMovementTest, RollsAShipOnADoublePressOfDown) {
   deliver({FIRST_SENT, SECOND_SENT, THIRD_SENT, FOURTH_SENT});
   runTicks(ROLL_END_TICK - 1);
 
+  const game::Position expected = movedOneInputPerTick(
+      start, DOUBLE_PRESS_OF_DOWN, ROLL_END_TICK - DOUBLE_PRESS_OF_DOWN.size());
   const game::Position arrival = shipPositionOf(FIRST_PLAYER);
-  EXPECT_NEAR(arrival.y, start.y + ROLL_DISTANCE, POSITION_TOLERANCE);
+  EXPECT_NEAR(arrival.y, expected.y, POSITION_TOLERANCE);
+  EXPECT_GT(arrival.y, start.y + ROLL_DISTANCE);
   EXPECT_FLOAT_EQ(arrival.x, start.x);
 }
 

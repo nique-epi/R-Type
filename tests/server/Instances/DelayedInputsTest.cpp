@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "DelayedInputs.hpp"
@@ -14,13 +15,16 @@ using testing::addPlayer;
 using testing::FIRST_HELD_ACTIONS;
 using testing::FIRST_HELD_INPUT_NUMBER;
 using testing::inputNumbered;
+using testing::INPUTS_READ_TOGETHER;
 using testing::NO_DELAY_TICKS;
 using testing::recorderOf;
+using testing::RELEASED_BY_THE_FIRST_CATCH_UP;
 using testing::SECOND_HELD_ACTIONS;
 using testing::SECOND_HELD_INPUT_NUMBER;
 using testing::SECOND_PLAYER_INDEX;
 using testing::ShownInput;
 using testing::SOME_DELAY_TICKS;
+using testing::TICKS_UP_TO_THE_FIRST_CATCH_UP;
 using testing::TOO_MANY_DELAY_TICKS;
 
 /**
@@ -145,6 +149,82 @@ TEST(DelayedInputs, DropsAnInputWhosePlayerLeft) {
  */
 TEST(DelayedInputs, RefusesADelayOverTheHighest) {
   EXPECT_THROW(DelayedInputs{TOO_MANY_DELAY_TICKS}, InvalidInputDelayException);
+}
+
+/**
+ * Given two inputs of one player read in the same tick, held for three ticks
+ * When the ticks release their inputs
+ * Then the first comes out in the fourth tick and the second in the fifth: one
+ * input of a player per tick, as the client predicts them
+ */
+TEST(DelayedInputs, AppliesTwoInputsReadTogetherInTwoTicks) {
+  PlayerRoster roster;
+  const ConnectedPlayer& player = addPlayer(roster);
+  std::vector<ShownInput> released;
+  DelayedInputs delayed(SOME_DELAY_TICKS);
+  const auto sink = recorderOf(released);
+  delayed.push(player.playerNumber,
+               inputNumbered(FIRST_HELD_INPUT_NUMBER, FIRST_HELD_ACTIONS));
+  delayed.push(player.playerNumber,
+               inputNumbered(SECOND_HELD_INPUT_NUMBER, SECOND_HELD_ACTIONS));
+  for (std::size_t tick = 0; tick < SOME_DELAY_TICKS; ++tick) {
+    delayed.release(roster, sink);
+  }
+
+  delayed.release(roster, sink);
+  const std::size_t releasedInTheFourthTick = released.size();
+  delayed.release(roster, sink);
+
+  EXPECT_EQ(releasedInTheFourthTick, 1U);
+  ASSERT_EQ(released.size(), 2U);
+  EXPECT_EQ(released.at(0).input.actions, FIRST_HELD_ACTIONS);
+  EXPECT_EQ(released.at(1).input.actions, SECOND_HELD_ACTIONS);
+}
+
+/**
+ * Given one input of each of two players read in the same tick, with no delay
+ * When that tick releases its inputs
+ * Then both come out: each player has its own input of the tick
+ */
+TEST(DelayedInputs, AppliesOneInputOfEachPlayerInTheSameTick) {
+  PlayerRoster roster;
+  const ConnectedPlayer& first = addPlayer(roster);
+  const ConnectedPlayer& second = addPlayer(roster, SECOND_PLAYER_INDEX);
+  std::vector<ShownInput> released;
+  DelayedInputs delayed(NO_DELAY_TICKS);
+  delayed.push(first.playerNumber,
+               inputNumbered(FIRST_HELD_INPUT_NUMBER, FIRST_HELD_ACTIONS));
+  delayed.push(second.playerNumber,
+               inputNumbered(SECOND_HELD_INPUT_NUMBER, SECOND_HELD_ACTIONS));
+
+  delayed.release(roster, recorderOf(released));
+
+  EXPECT_EQ(released.size(), 2U);
+}
+
+/**
+ * Given ten inputs of one player read in the same tick, with no delay
+ * When eight ticks release their inputs
+ * Then nine came out: one per tick while the oldest waited at most six ticks
+ * past its delay, then two in the tick it waited seven
+ */
+TEST(DelayedInputs, CatchesUpOnceAnInputWaitedPastTheMargin) {
+  PlayerRoster roster;
+  const ConnectedPlayer& player = addPlayer(roster);
+  std::vector<ShownInput> released;
+  DelayedInputs delayed(NO_DELAY_TICKS);
+  const auto sink = recorderOf(released);
+  for (std::size_t input = 1; input <= INPUTS_READ_TOGETHER; ++input) {
+    delayed.push(
+        player.playerNumber,
+        inputNumbered(static_cast<std::uint32_t>(input), FIRST_HELD_ACTIONS));
+  }
+
+  for (std::size_t tick = 0; tick < TICKS_UP_TO_THE_FIRST_CATCH_UP; ++tick) {
+    delayed.release(roster, sink);
+  }
+
+  EXPECT_EQ(released.size(), RELEASED_BY_THE_FIRST_CATCH_UP);
 }
 
 }  // namespace rtype::server
