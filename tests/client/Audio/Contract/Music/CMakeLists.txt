@@ -1,5 +1,5 @@
 rtype_add_test(NAME client_theme_tests SOURCES ThemeMusicTest.cpp GameMusicTest.cpp ThemeLoopFixtures.cpp LIBS rtype_client_audio_contract SFML::Audio)
 target_include_directories(client_theme_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/client/Audio ${RTYPE_TEST_SOURCE_DIR}/client/Audio/Music ${RTYPE_TEST_SOURCE_DIR}/client/Audio/Sounds)
 target_compile_definitions(client_theme_tests PRIVATE RTYPE_SOURCE_ASSETS_FOLDER="${PROJECT_SOURCE_DIR}/assets")
-target_sources(client_audio_tests PRIVATE SyncedClockTest.cpp)
+target_sources(client_null_audio_tests PRIVATE SyncedClockTest.cpp)
 target_sources(client_null_audio_tests PRIVATE NullMusicPlayerTest.cpp)

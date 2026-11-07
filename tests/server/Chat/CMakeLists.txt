@@ -1,2 +1,6 @@
+if(NOT RTYPE_MODULE_CHAT)
+  return()
+endif()
+
 rtype_add_test(NAME server_chat_tests SOURCES ChatRelayTest.cpp ChatRelayFixture.cpp LIBS rtype_server_chat_module rtype_network_player_chat_line server_test_datagrams)
 target_include_directories(server_chat_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/server)

@@ -78,7 +78,7 @@ Alternative considered: Conan. Its binary packages and its profiles give finer c
 
 ## Build: CMake
 
-CMake 4.2 or newer builds the project with C++20 and the presets `default` (Release) and `test` (Debug with the tests). The CI builds with GCC on Linux and MSVC on Windows.
+CMake 4.2 or newer builds the project with C++20 and the presets `default` (Release), `test` (Debug with the tests), `sanitize` (the tests under AddressSanitizer and UndefinedBehaviorSanitizer) and `modules-off` (the tests with every optional module left out). The CI builds with GCC on Linux and MSVC on Windows.
 
 | | CMake | Meson | Bazel |
 |---|---|---|---|

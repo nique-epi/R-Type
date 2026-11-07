@@ -9,6 +9,27 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(BUILD_TESTS "Build unit tests" OFF)
 
+include(CMakeDependentOption)
+include(FeatureSummary)
+
+# One option per optional module. OFF leaves the folder of the module out of
+# the build, its Contract/ excepted, and its line out of the list of its
+# program. CMake writes the choices into BuiltModuleConstants.hpp, which the
+# lists of modules include (see src/engine/Modules/).
+option(RTYPE_MODULE_AUDIO "Build the sound module of the client" ON)
+option(RTYPE_MODULE_METRICS "Build the metrics modules of the client and of the game processes" ON)
+option(RTYPE_MODULE_MASTER_LINK "Build the module that registers the server with the master" ON)
+option(RTYPE_MODULE_CHAT "Build the chat module of the games" ON)
+option(RTYPE_MODULE_PLUGINS "Build the loading of plugins: the plugin and plugin-folder commands" ON)
+cmake_dependent_option(RTYPE_MODULE_GAME_STATISTICS "Build the game-statistics plugin" ON "RTYPE_MODULE_PLUGINS" OFF)
+
+add_feature_info(audio RTYPE_MODULE_AUDIO "the sound of the client")
+add_feature_info(metrics RTYPE_MODULE_METRICS "the metrics of the client and of the game processes")
+add_feature_info(master-link RTYPE_MODULE_MASTER_LINK "the registration of the server with the master")
+add_feature_info(chat RTYPE_MODULE_CHAT "the chat of the games")
+add_feature_info(plugins RTYPE_MODULE_PLUGINS "the loading of plugins")
+add_feature_info(game-statistics RTYPE_MODULE_GAME_STATISTICS "the game-statistics plugin")
+
 if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
@@ -332,7 +353,9 @@ rtype_forbid_links(rtype_identifiers "SFML::" "asio::" "rtype_engine" "rtype_gam
 rtype_forbid_links(rtype_storage "SFML::" "asio::" "rtype_engine" "rtype_game" "rtype_network" "rtype_client" "rtype_logging" "rtype_concurrency" "rtype_identifiers")
 rtype_forbid_links(r-type_server "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_server_network_module "SFML::" "asio::" "rtype_network_asio" "rtype_client")
-rtype_forbid_links(rtype_server_game_statistics_module "SFML::" "asio::" "rtype_network_asio" "rtype_client")
+if(TARGET rtype_server_game_statistics_module)
+  rtype_forbid_links(rtype_server_game_statistics_module "SFML::" "asio::" "rtype_network_asio" "rtype_client")
+endif()
 rtype_forbid_links(rtype_network_datagram_relay "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_network_compression "SFML::" "asio::" "rtype_network_asio" "rtype_client")
 rtype_forbid_links(rtype_server_platform "SFML::" "asio::" "rtype_network_asio" "rtype_client")
@@ -344,6 +367,8 @@ rtype_forbid_links(rtype_server_replication_wire "SFML::" "asio::" "rtype_networ
 set(RTYPE_MASTER_FORBIDDEN_LINKS "SFML::" "asio::" "rtype_network_asio" "rtype_game" "rtype_client" "rtype_server")
 rtype_forbid_reachable_links(rtype_master_modules ${RTYPE_MASTER_FORBIDDEN_LINKS})
 rtype_forbid_reachable_links(rtype_master_launch_options ${RTYPE_MASTER_FORBIDDEN_LINKS})
+
+feature_summary(WHAT ENABLED_FEATURES DISABLED_FEATURES)
 
 if(BUILD_TESTS)
   enable_testing()

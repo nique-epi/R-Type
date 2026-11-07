@@ -1,3 +1,7 @@
+if(NOT RTYPE_MODULE_METRICS)
+  return()
+endif()
+
 add_library(rtype_client_metrics_module STATIC ClientMetricsModule.cpp)
 
 target_include_directories(rtype_client_metrics_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

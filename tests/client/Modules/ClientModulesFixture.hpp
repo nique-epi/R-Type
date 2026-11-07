@@ -28,6 +28,9 @@ class ClientModulesFixture : public ::testing::Test {
    * the size of the list when it is not there. */
   [[nodiscard]] std::size_t positionOf(std::string_view name);
 
+  /** @returns Whether clientModules() lists a module named @p name. */
+  [[nodiscard]] bool lists(std::string_view name);
+
  private:
   SimulatedClock clock_;
   rtype::client::FrameLoop loop_;

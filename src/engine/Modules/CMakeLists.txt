@@ -4,7 +4,9 @@ add_subdirectory(InstallContext)
 
 add_library(rtype_engine_modules INTERFACE)
 
-target_include_directories(rtype_engine_modules INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+configure_file(BuiltModuleConstants.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/BuiltModuleConstants.hpp)
+
+target_include_directories(rtype_engine_modules INTERFACE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(rtype_engine_modules INTERFACE rtype_engine_exceptions rtype_engine_install_context)
 

@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 #include "BoostProcessLauncher.hpp"
+#include "BuiltModuleConstants.hpp"
 #include "EngineException.hpp"
 #include "ExecutablePath.hpp"
 #include "GameLaunchSettings.hpp"
@@ -16,12 +17,14 @@
 #include "ServerContentModule.hpp"
 #include "ServerInformationModule.hpp"
 #include "ServerLoggerModule.hpp"
-#include "ServerMasterModule.hpp"
 #include "ServerNetworkModule.hpp"
 #include "ServerSupervisedGamesModule.hpp"
 #include "ServerSupervisorLobbyModule.hpp"
 #include "StopRequest.hpp"
 #include "TimeConstants.hpp"
+#if RTYPE_MODULE_MASTER_LINK
+#include "ServerMasterModule.hpp"
+#endif
 
 namespace rtype::server {
 
@@ -66,7 +69,9 @@ std::vector<std::unique_ptr<engine::IModule>> supervisorModules(
       [](engine::Duration pause) { std::this_thread::sleep_for(pause); }));
   modules.push_back(std::make_unique<ServerSupervisorLobbyModule>());
   modules.push_back(std::make_unique<ServerInformationModule>());
+#if RTYPE_MODULE_MASTER_LINK
   modules.push_back(std::make_unique<ServerMasterModule>());
+#endif
   return modules;
 }
 
