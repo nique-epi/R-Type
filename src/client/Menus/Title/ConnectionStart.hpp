@@ -9,7 +9,7 @@ enum class ConnectionStart : std::uint8_t {
   /** @brief Once the player confirms the fields. */
   OnConfirm,
   /** @brief As soon as it is built, with the server and the nickname of the
-   * ServerChoice: the server map chose them. */
+   * ServerChoice: the server map chose them, or `-h` named the server. */
   AtOnce,
 };
 

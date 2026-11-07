@@ -6,6 +6,7 @@
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "Menu.hpp"
+#include "PlayStart.hpp"
 #include "PlayfieldMapping.hpp"
 #include "Squadron.hpp"
 #include "TimeConstants.hpp"
@@ -19,7 +20,9 @@ struct PlayerSettings;
  * @brief The screen the client opens on: the logo, PLAY, SETTINGS and QUIT
  * over the scrolling background, and the squadron flying in on the right.
  *
- * PLAY puts the connection screen over the title, which it hides; SETTINGS
+ * PLAY puts the server map over the title, which it hides, or, for a client
+ * launched with `-h` (PlayStart::GivenServer), the connection screen that
+ * joins that server at once; SETTINGS
  * puts the options over the title, which hide it; QUIT, or MENU_CANCEL_KEY,
  * puts the quit confirmation over it, which dims it. The title keeps its
  * selection under those screens, and its squadron goes on moving. The menu and
@@ -39,7 +42,8 @@ class TitleScreen : public IScreen {
 
  private:
   [[nodiscard]] static Menu buildMenu(IScreenNavigator& navigator,
-                                      ISoundPlayer& sounds);
+                                      ISoundPlayer& sounds,
+                                      PlayStart playStart);
   void repaint();
 
   std::unique_ptr<IInterfaceCanvas> canvas_;

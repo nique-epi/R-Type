@@ -21,8 +21,10 @@
 #include "TitleScreenFixture.hpp"
 #include "TitleScreenParts.hpp"
 #include "TitleScreenTestConstants.hpp"
+#include "TitleWithAGivenServerFixture.hpp"
 
 using rtype::client::CLICK_SOUND_ID;
+using rtype::client::CONNECTION_TO_CHOSEN_SERVER_SCREEN;
 using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::LEADERBOARD_SCREEN;
 using rtype::client::LOGO_ID;
@@ -91,6 +93,20 @@ TEST_F(TitleScreenFixture, PlayOpensTheServerMap) {
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
                                         .screen = SERVER_MAP_SCREEN}));
+}
+
+/**
+ * Given the title of a client launched with -h, PLAY selected
+ * When Enter is pressed and released, and the press lasts
+ * Then the connection to the server given at launch is asked for, not the map
+ */
+TEST_F(TitleWithAGivenServerFixture, PlayJoinsTheServerGivenAtLaunch) {
+  choose(sf::Keyboard::Key::Enter);
+
+  EXPECT_THAT(
+      navigator().calls(),
+      ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                .screen = CONNECTION_TO_CHOSEN_SERVER_SCREEN}));
 }
 
 /**

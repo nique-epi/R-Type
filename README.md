@@ -38,7 +38,7 @@ On each of the four machines, or four terminals of one machine, with a different
 ./r-type_client -h 192.168.1.20 -p 4242 -n DASH
 ```
 
-Each client starts with these values in its connection screen: from the title, PLAY then D (ADDRESS) opens it, and CONNECT joins. The supervisor sends the four pilots to the same game, where each gets a number from 1 to 4. A fifth player lands in a second game, and is refused only when the eight games are full. Once every connected pilot says it is ready in the waiting room, the game starts; the arrows move the ship and the space bar shoots, until the player changes the keys in SETTINGS. When it ends, the end screen ranks the four pilots.
+Each client is given its server with `-h`, so PLAY on the title joins it at once, its connection screen filled with these values; without `-h`, PLAY opens the server map, and D (ADDRESS) there opens the connection screen, where CONNECT joins. The supervisor sends the four pilots to the same game, where each gets a number from 1 to 4. A fifth player lands in a second game, and is refused only when the eight games are full. Once every connected pilot says it is ready in the waiting room, the game starts; the arrows move the ship and the space bar shoots, until the player changes the keys in SETTINGS. When it ends, the end screen ranks the four pilots.
 
 ## Features
 
@@ -174,7 +174,7 @@ The server reads the waves of Bydos from `assets/waves/waves.toml`, in the `asse
 ./r-type_client -h 192.168.1.20 -p 4243 -n ACE
 ```
 
-PLAY opens the server map: the servers the master lists, `http://127.0.0.1:8080` unless `set master-url` (in `client.cfg`, or `--set master-url=<url>`) names another, around the planet of the player by the ping the client measures, and the games of each; Enter or a click joins one. Start the master and a server registered with it first (see [the master page](https://nique-epi.github.io/R-Type/master/)): without the master, the map shows `MASTER UNREACHABLE`.
+Without `-h`, PLAY opens the server map: the servers the master lists, `http://127.0.0.1:8080` unless `set master-url` (in `client.cfg`, or `--set master-url=<url>`) names another, around the planet of the player by the ping the client measures, and the games of each; Enter or a click joins one. Start the master and a server registered with it first (see [the master page](https://nique-epi.github.io/R-Type/master/)): without the master, the map shows `MASTER UNREACHABLE`.
 
 The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default, and the nickname of the player, `PILOT` by default; the connection screen, which D (ADDRESS) opens from the map, starts with them. CONNECT on that screen joins any server, without the master: without a server, the screen shows `SERVER UNREACHABLE` after 5 seconds.
 

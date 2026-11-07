@@ -68,7 +68,8 @@ std::unique_ptr<IScreen> buildTitleScreen(const ScreenContext& context,
                        .playfieldPointAt = playfieldMappingOf(context),
                        .motion = motionPreference(),
                        .seed = std::random_device{}(),
-                       .squadronStart = squadronStart},
+                       .squadronStart = squadronStart,
+                       .playStart = context.services.playStart},
       interfaceCanvasOf(context));
 }
 

@@ -72,8 +72,11 @@ void requireIpv4Address(std::string_view address) {
 
 }  // namespace
 
-ClientScreensModule::ClientScreensModule(ServerChoice launch)
-    : launch_(std::move(launch)), logger_(std::string{CLIENT_LOGGER_NAME}) {}
+ClientScreensModule::ClientScreensModule(ServerChoice launch,
+                                         PlayStart playStart)
+    : launch_(std::move(launch)),
+      playStart_(playStart),
+      logger_(std::string{CLIENT_LOGGER_NAME}) {}
 
 std::string ClientScreensModule::name() const {
   return std::string{SCREENS_MODULE_NAME};
@@ -166,7 +169,8 @@ void ClientScreensModule::start() {
           .gameCatalog = *gameCatalog_,
           .choice = ServerChoice{.server = server,
                                  .nickname = nicknameSetting_->text(),
-                                 .game = launch_.game}},
+                                 .game = launch_.game},
+          .playStart = playStart_},
       registry_);
   listenerHandle_ = listeners_->add([this](const sf::Event& event) {
     screens_->handleEvent(event);
