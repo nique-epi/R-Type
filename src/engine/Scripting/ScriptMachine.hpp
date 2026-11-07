@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstddef>
+#include <deque>
 #include <memory>
 #include <span>
+#include <string>
 #include <string_view>
 #include "ScriptBudget.hpp"
 #include "ScriptFunction.hpp"
@@ -68,6 +70,10 @@ class ScriptMachine {
   void callOn(lua_State* thread, int arguments, int results);
 
   ScriptBudget budget_;
+  /** The names of the exposed functions: Luau keeps the debug name of a C
+   * function by its address and reads it for an error message, so each name
+   * lives as long as the machine. Declared before state_, so it outlives it. */
+  std::deque<std::string> exposedNames_;
   std::unique_ptr<lua_State, void (*)(lua_State*)> state_;
   bool sealed_{false};
 };

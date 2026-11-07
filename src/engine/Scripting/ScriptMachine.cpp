@@ -123,7 +123,7 @@ void ScriptMachine::expose(std::string_view table,
   lua_State* const state = state_.get();
   lua_createtable(state, 0, static_cast<int>(functions.size()));
   for (const ScriptFunction& function : functions) {
-    const std::string name{function.name};
+    const std::string& name = exposedNames_.emplace_back(function.name);
     lua_pushlightuserdata(state, context);
     lua_pushcclosurek(state, function.function, name.c_str(), 1, nullptr);
     lua_setfield(state, -2, name.c_str());
