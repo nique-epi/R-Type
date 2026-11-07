@@ -7,6 +7,7 @@
 #include <string>
 #include "DirectionTraffic.hpp"
 #include "Endpoint.hpp"
+#include "EndpointText.hpp"
 #include "MessageTypeText.hpp"
 #include "PeerTraffic.hpp"
 #include "TrafficFigures.hpp"
@@ -23,10 +24,6 @@ std::string secondsText(std::chrono::nanoseconds elapsed) {
   text << std::fixed << std::setprecision(TRAFFIC_CSV_SECONDS_DECIMALS)
        << std::chrono::duration<double>(elapsed).count();
   return text.str();
-}
-
-std::string peerText(const Endpoint& peer) {
-  return peer.address + ':' + std::to_string(peer.port);
 }
 
 /** @returns The last two columns of a row, each after a comma, and the end of
@@ -71,7 +68,7 @@ std::string trafficCsvRowsOf(std::chrono::nanoseconds elapsed,
   const std::string seconds = secondsText(elapsed) + ',';
   std::string rows;
   for (const PeerTraffic& peer : report.peers) {
-    rows += twoWayRows(seconds + peerText(peer.peer) + ',', peer.traffic);
+    rows += twoWayRows(seconds + endpointText(peer.peer) + ',', peer.traffic);
   }
   rows +=
       twoWayRows(seconds + std::string{OTHERS_PEER_TEXT} + ',', report.others);

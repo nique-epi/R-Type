@@ -5,10 +5,9 @@
 
 namespace rtype::client {
 
-/** @brief The scheme and the separator of the port defaultMasterUrl() joins
- * the address and the port of the master with. */
+/** @brief The scheme masterUrlOf() writes before the address and the port of
+ * the master. */
 constexpr std::string_view MASTER_URL_SCHEME = "http://";
-constexpr std::string_view MASTER_PORT_SEPARATOR = ":";
 
 /** @brief How long MasterLink sleeps before it looks again whether it must
  * stop, when no ask comes; a stop wakes it at once. */

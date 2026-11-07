@@ -7,13 +7,13 @@
 
 namespace rtype::client {
 
-/** @returns The url of the master at @p master: MASTER_URL_SCHEME, its
- * address, MASTER_PORT_SEPARATOR and its port. */
+/** @returns The url of the master at @p master: MASTER_URL_SCHEME, then its
+ * address and its port as network::endpointText() writes them. */
 [[nodiscard]] std::string masterUrlOf(const network::Endpoint& master);
 
 /** @returns The IPv4 address and the port @p url names, as masterUrlOf()
- * writes them; nothing for a url that names a host, has no port, or has
- * anything after its port. */
+ * writes them and network::endpointFromText() reads them; nothing for a url
+ * that names a host, has no port, or has anything after its port. */
 [[nodiscard]] std::optional<network::Endpoint> masterEndpointOf(
     std::string_view url);
 

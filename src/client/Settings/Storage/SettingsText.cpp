@@ -16,7 +16,6 @@
 #include "EndpointText.hpp"
 #include "InputConstants.hpp"
 #include "KeyNames.hpp"
-#include "NetworkException.hpp"
 #include "PixelSize.hpp"
 #include "PlayerSettings.hpp"
 #include "SettingsConstants.hpp"
@@ -49,10 +48,6 @@ std::string_view switchValue(bool switchedOn) {
 std::string windowSizeValue(PixelSize size) {
   return std::to_string(size.width) + WINDOW_SIZE_VALUE_SEPARATOR +
          std::to_string(size.height);
-}
-
-std::string masterValue(const network::Endpoint& master) {
-  return master.address + MASTER_VALUE_SEPARATOR + std::to_string(master.port);
 }
 
 std::string_view trimmed(std::string_view text) {
@@ -107,22 +102,6 @@ std::optional<PixelSize> windowSizeOf(std::string_view text) {
   }
   return PixelSize{.width = static_cast<unsigned int>(*width),
                    .height = static_cast<unsigned int>(*height)};
-}
-
-/** @returns The master @p text names as <IPv4 address>:<port>; nothing for
- * any other text, a host name included. */
-std::optional<network::Endpoint> masterOf(std::string_view text) {
-  const std::size_t separator = text.rfind(MASTER_VALUE_SEPARATOR);
-  if (separator == std::string_view::npos) {
-    return std::nullopt;
-  }
-  try {
-    return network::Endpoint{
-        .address = network::ipv4AddressFromText(text.substr(0, separator)),
-        .port = network::portFromText(text.substr(separator + 1))};
-  } catch (const network::NetworkException&) {
-    return std::nullopt;
-  }
 }
 
 /** @returns The value placed in its list as this text is placed in the list of
@@ -202,8 +181,6 @@ std::optional<LineOutcome> applySwitch(PlayerSettings& settings,
   return std::nullopt;
 }
 
-/** @returns What became of a setting written into the settings: applied, or
- * left out with the reason. */
 /** @brief Applies @p setting when it names a setting written as a word or a
  * pair: the window size, the display and color modes, or the master.
  * @returns What became of the line, nothing for any other name. */
@@ -222,7 +199,7 @@ std::optional<LineOutcome> applyValue(PlayerSettings& settings,
                   settings.colorMode);
   }
   if (name == MASTER_NAME) {
-    return assign(masterOf(value), settings.master);
+    return assign(network::endpointFromText(value), settings.master);
   }
   return std::nullopt;
 }
@@ -311,7 +288,7 @@ std::string settingsText(const PlayerSettings& settings) {
             switchValue(settings.clientPrediction));
   writeLine(text, PILOT_NAMES_NAME, switchValue(settings.pilotNames));
   if (settings.master.has_value()) {
-    writeLine(text, MASTER_NAME, masterValue(*settings.master));
+    writeLine(text, MASTER_NAME, network::endpointText(*settings.master));
   }
   return text;
 }

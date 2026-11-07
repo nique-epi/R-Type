@@ -73,8 +73,6 @@ constexpr std::array<std::string_view, DISPLAY_MODE_COUNT> DISPLAY_MODE_VALUES{
 constexpr std::array<std::string_view, COLOR_MODE_COUNT> COLOR_MODE_VALUES{
     "off", "protanopia", "deuteranopia", "tritanopia"};
 constexpr char WINDOW_SIZE_VALUE_SEPARATOR = 'x';
-/** @brief What joins the address and the port of the master. */
-constexpr char MASTER_VALUE_SEPARATOR = ':';
 
 /** @brief Why a line of the settings file was left out, after its number. */
 constexpr std::string_view LINE_WITHOUT_SEPARATOR = "not NAME=VALUE";
