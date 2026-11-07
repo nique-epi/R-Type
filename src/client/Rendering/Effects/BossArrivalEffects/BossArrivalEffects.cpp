@@ -86,6 +86,4 @@ void BossArrivalEffects::playRoar(std::uint32_t bossId) {
                .delay = ROAR_ORANGE_RING_DELAY});
 }
 
-bool BossArrivalEffects::flashes() const { return tools_.gate.get().flashes(); }
-
 }  // namespace rtype::client

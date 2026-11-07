@@ -2,7 +2,6 @@
 
 #include <chrono>
 #include <cstdint>
-#include <numbers>
 #include "TimeConstants.hpp"
 #include "WarningBannerConstants.hpp"
 
@@ -16,8 +15,6 @@ constexpr engine::Duration EDGE_PULSE_PERIOD = std::chrono::milliseconds(800);
 constexpr std::uint8_t EDGE_PULSE_PEAK_ALPHA = 178;
 constexpr int EDGE_PULSE_DEPTH = 56;
 constexpr int EDGE_PULSE_STEP = 2;
-constexpr double EDGE_PULSE_FULL_TURN = 2.0 * std::numbers::pi;
-constexpr double EDGE_PULSE_HALF = 0.5;
 
 /** @brief The roar of the boss tints the edges ROAR_EDGE_FLASH_ALPHA (40 %),
  * fading to clear over ROAR_EDGE_FLASH_TIME. */

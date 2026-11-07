@@ -78,12 +78,8 @@ std::vector<game::Position> BossStageFixture::bosses() {
 
 std::vector<network::EntitySpawned> BossStageFixture::spawnsSentTo(
     std::size_t index) const {
-  std::vector<network::EntitySpawned> spawns;
-  for (const network::OutgoingDatagram& datagram :
-       sentTo(sent_, playerEndpoint(index))) {
-    spawns.push_back(onlyMessageIn<network::EntitySpawned>(datagram));
-  }
-  return spawns;
+  return onlyMessagesIn<network::EntitySpawned>(
+      sentTo(sent_, playerEndpoint(index)));
 }
 
 void BossStageFixture::addMinion() {

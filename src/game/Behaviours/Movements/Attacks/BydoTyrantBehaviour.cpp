@@ -63,12 +63,17 @@ float columnAt(const BehaviourView& view) {
   return view.origin.x + ((restX - view.origin.x) * share);
 }
 
-/** @returns It keeping its place: its column of the moment, on its row. */
-Intent holdingAt(const BehaviourView& view) {
+/** @returns It steering towards @p column, on its row. */
+Intent towardsColumn(const BehaviourView& view, float column) {
   return Intent{
-      .direction = Direction{.x = horizontalShareTowards(columnAt(view), view),
+      .direction = Direction{.x = horizontalShareTowards(column, view),
                              .y = verticalShareTowards(view.origin.y, view)},
       .steered = true};
+}
+
+/** @returns It keeping its place: its column of the moment, on its row. */
+Intent holdingAt(const BehaviourView& view) {
+  return towardsColumn(view, columnAt(view));
 }
 
 /** @returns The column its charge takes it to at this point of its strike:
@@ -99,10 +104,7 @@ Intent charging(const BehaviourView& view, const ActionTimings& charge) {
     return Intent{.steered = true,
                   .jumpsTo = Position{.x = column, .y = view.origin.y}};
   }
-  return Intent{
-      .direction = Direction{.x = horizontalShareTowards(column, view),
-                             .y = verticalShareTowards(view.origin.y, view)},
-      .steered = true};
+  return towardsColumn(view, column);
 }
 
 /** @returns It holding still in its rage, which it ends after `rage_ms`. */

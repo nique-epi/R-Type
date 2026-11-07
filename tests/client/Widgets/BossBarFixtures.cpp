@@ -11,7 +11,6 @@
 rtype::client::BossFight fightWith(rtype::network::BossStage stage,
                                    std::uint16_t health) {
   return rtype::client::BossFight{.stage = stage,
-                                  .bossEntityId = BAR_BOSS_ID,
                                   .health = health,
                                   .fullHealth = BAR_FULL_HEALTH,
                                   .lagHealth = health,

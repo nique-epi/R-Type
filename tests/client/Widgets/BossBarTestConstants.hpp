@@ -13,7 +13,6 @@
  * columns of gauge I; 119 points leave gauge I empty; 1 point still lights a
  * column of gauge II.
  */
-constexpr std::uint32_t BAR_BOSS_ID = 31;
 constexpr std::uint16_t BAR_FULL_HEALTH = 240;
 constexpr std::uint16_t BAR_AFTER_ONE_HIT = 230;
 constexpr std::uint16_t BAR_BELOW_HALF = 119;

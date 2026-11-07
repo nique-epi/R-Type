@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <optional>
 #include "BossStatus.hpp"
-#include "EntityIdConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -14,7 +13,6 @@ namespace rtype::client {
  */
 struct BossFight {
   network::BossStage stage{network::BossStage::Arriving};
-  std::uint32_t bossEntityId{identifiers::NO_ENTITY_ID};
   std::uint16_t health{};
   std::uint16_t fullHealth{};
   /** @brief The health before the losses of the current lag. */

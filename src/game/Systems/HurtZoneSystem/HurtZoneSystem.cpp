@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cmath>
 #include <optional>
+#include <vector>
 #include "ActionKey.hpp"
 #include "BeamLine.hpp"
 #include "BeamOverlap.hpp"
@@ -98,13 +99,21 @@ bool isHurtByABox(const HurtingEnemy& enemy, const ShipBounds& ship) {
       });
 }
 
-/** @returns Whether an active beam of @p enemy overlaps @p ship; an active
- * beam names its action, so the enemy is in it. */
-bool isHurtByABeam(const HurtingEnemy& enemy, const ShipBounds& ship) {
-  return std::ranges::any_of(enemy.zone.get().beams, [&](const HurtBeam& beam) {
-    return isActive(beam.activeIn, beam.window, enemy.current) &&
-           beamOverlaps(beamLineOf(beam, enemy.position, enemy.current->since),
-                        ship.bounds);
+/** @brief Lays in @p lines the active beams of @p enemy, once for all the
+ * ships; an active beam names its action, so the enemy is in it. */
+void layActiveBeams(const HurtingEnemy& enemy, std::vector<BeamLine>& lines) {
+  lines.clear();
+  for (const HurtBeam& beam : enemy.zone.get().beams) {
+    if (isActive(beam.activeIn, beam.window, enemy.current)) {
+      lines.push_back(beamLineOf(beam, enemy.position, enemy.current->since));
+    }
+  }
+}
+
+/** @returns Whether one of the beam @p lines overlaps @p ship. */
+bool isHurtByABeam(const std::vector<BeamLine>& lines, const ShipBounds& ship) {
+  return std::ranges::any_of(lines, [&](const BeamLine& line) {
+    return beamOverlaps(line, ship.bounds);
   });
 }
 
@@ -133,8 +142,9 @@ void HurtZoneSystem::publishContacts(engine::ComponentRegistry& components) {
             .zone = zone,
             .position = position,
             .current = components.get<CurrentAction>(enemy)};
+        layActiveBeams(hurting, beamLines_);
         for (const ShipBounds& ship : ships_) {
-          if (isHurtByABox(hurting, ship) || isHurtByABeam(hurting, ship)) {
+          if (isHurtByABox(hurting, ship) || isHurtByABeam(beamLines_, ship)) {
             events_.publish(ShipContact{.player = ship.entity, .enemy = enemy});
           }
         }

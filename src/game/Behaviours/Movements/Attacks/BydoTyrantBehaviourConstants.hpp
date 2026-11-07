@@ -165,6 +165,55 @@ constexpr std::size_t TYRANT_SPORES_SIGNAL_SETTING = 25;
 constexpr std::size_t TYRANT_WALL_SIGNAL_SETTING = 28;
 constexpr std::size_t TYRANT_CHARGE_SIGNAL_SETTING = 31;
 
+static_assert(BYDO_TYRANT_SETTINGS[TYRANT_REST_X_SETTING].name ==
+                  TYRANT_REST_X_SETTING_NAME,
+              "TYRANT_REST_X_SETTING names its setting");
+static_assert(BYDO_TYRANT_SETTINGS[TYRANT_REST_SETTING].name ==
+                  REST_SETTING_NAME,
+              "TYRANT_REST_SETTING names its setting");
+static_assert(BYDO_TYRANT_SETTINGS[TYRANT_SLIDE_SETTING].name ==
+                  TYRANT_SLIDE_SETTING_NAME,
+              "TYRANT_SLIDE_SETTING names its setting");
+static_assert(BYDO_TYRANT_SETTINGS[TYRANT_BURST_SIGNAL_SETTING].name ==
+                  TYRANT_BURST_SIGNAL_SETTING_NAME,
+              "TYRANT_BURST_SIGNAL_SETTING names its setting");
+static_assert(BYDO_TYRANT_SETTINGS[TYRANT_BEAM_SIGNAL_SETTING].name ==
+                  TYRANT_BEAM_SIGNAL_SETTING_NAME,
+              "TYRANT_BEAM_SIGNAL_SETTING names its setting");
+static_assert(BYDO_TYRANT_SETTINGS[TYRANT_BROOD_SIGNAL_SETTING].name ==
+                  TYRANT_BROOD_SIGNAL_SETTING_NAME,
+              "TYRANT_BROOD_SIGNAL_SETTING names its setting");
+static_assert(BYDO_TYRANT_SETTINGS[TYRANT_TENTACLE_SIGNAL_SETTING].name ==
+                  TYRANT_TENTACLE_SIGNAL_SETTING_NAME,
+              "TYRANT_TENTACLE_SIGNAL_SETTING names its setting");
+static_assert(BYDO_TYRANT_SETTINGS[TYRANT_MELEE_X_SETTING].name ==
+                  TYRANT_MELEE_X_SETTING_NAME,
+              "TYRANT_MELEE_X_SETTING names its setting");
+static_assert(BYDO_TYRANT_SETTINGS[TYRANT_MELEE_Y_SETTING].name ==
+                  TYRANT_MELEE_Y_SETTING_NAME,
+              "TYRANT_MELEE_Y_SETTING names its setting");
+static_assert(BYDO_TYRANT_SETTINGS[TYRANT_MELEE_REACH_SETTING].name ==
+                  TYRANT_MELEE_REACH_SETTING_NAME,
+              "TYRANT_MELEE_REACH_SETTING names its setting");
+static_assert(BYDO_TYRANT_SETTINGS[TYRANT_RAGE_SETTING].name ==
+                  TYRANT_RAGE_SETTING_NAME,
+              "TYRANT_RAGE_SETTING names its setting");
+static_assert(BYDO_TYRANT_SETTINGS[TYRANT_RAGE_SIGNAL_SETTING].name ==
+                  TYRANT_RAGE_SIGNAL_SETTING_NAME,
+              "TYRANT_RAGE_SIGNAL_SETTING names its setting");
+static_assert(BYDO_TYRANT_SETTINGS[TYRANT_SWEEP_SIGNAL_SETTING].name ==
+                  TYRANT_SWEEP_SIGNAL_SETTING_NAME,
+              "TYRANT_SWEEP_SIGNAL_SETTING names its setting");
+static_assert(BYDO_TYRANT_SETTINGS[TYRANT_SPORES_SIGNAL_SETTING].name ==
+                  TYRANT_SPORES_SIGNAL_SETTING_NAME,
+              "TYRANT_SPORES_SIGNAL_SETTING names its setting");
+static_assert(BYDO_TYRANT_SETTINGS[TYRANT_WALL_SIGNAL_SETTING].name ==
+                  TYRANT_WALL_SIGNAL_SETTING_NAME,
+              "TYRANT_WALL_SIGNAL_SETTING names its setting");
+static_assert(BYDO_TYRANT_SETTINGS[TYRANT_CHARGE_SIGNAL_SETTING].name ==
+                  TYRANT_CHARGE_SIGNAL_SETTING_NAME,
+              "TYRANT_CHARGE_SIGNAL_SETTING names its setting");
+
 /** @brief The attack numbers of the Tyrant, which its sheet animates and
  * times its hurt parts and volleys with: its arrival, its four calm attacks,
  * their enraged variants TYRANT_ENRAGED_SHIFT above them (so the client

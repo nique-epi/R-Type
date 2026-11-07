@@ -165,7 +165,7 @@ GameScreen::GameScreen(GameScreenParts parts,
   systems_.add(std::make_unique<ShipFlightSystem>());
   moveSky(*sky_, effects_, flashPreferenceOf(*settings_));
   entityLayer_->paint(components_, cameraOffsetOf(effects_));
-  repaintStatus();
+  repaintStatus(boss_.look(flashPreferenceOf(*settings_)));
 }
 
 GameScreen::~GameScreen() {
@@ -275,20 +275,19 @@ void GameScreen::askForTheEndWhenDue() {
 }
 
 void GameScreen::repaintStatusWhenChanged() {
+  const BossLook boss = boss_.look(flashPreferenceOf(*settings_));
   if (scoreBoard_.revision() != paintedStatusRevision_ ||
       missionBannerAt(effects_.sinceStart()) != paintedBanner_ ||
       paintedPalette_ != playerPaletteOf(*settings_) ||
       departures_.revision() != paintedDepartures_ ||
-      silence_.isShown() != paintedSilence_ ||
-      boss_.look(flashPreferenceOf(*settings_)) != paintedBoss_) {
-    repaintStatus();
+      silence_.isShown() != paintedSilence_ || boss != paintedBoss_) {
+    repaintStatus(boss);
   }
 }
 
-void GameScreen::repaintStatus() {
+void GameScreen::repaintStatus(const BossLook& boss) {
   const MissionBannerLook banner = missionBannerAt(effects_.sinceStart());
   const PlayerPalette& palette = playerPaletteOf(*settings_);
-  const BossLook boss = boss_.look(flashPreferenceOf(*settings_));
   statusCanvas_->clear();
   paintBossAlert(*statusCanvas_, boss);
   paintStatusBand(*statusCanvas_, scoreBoard_.pilots(), palette);

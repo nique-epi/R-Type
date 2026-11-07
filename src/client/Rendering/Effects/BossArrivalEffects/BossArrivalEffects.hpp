@@ -41,10 +41,6 @@ class BossArrivalEffects {
    * mouth; no shockwave when the client has no such entity. */
   void playRoar(std::uint32_t bossId);
 
-  /** @returns Whether the preference of the player lets effects flash, as
-   * the FlashGate says. */
-  [[nodiscard]] bool flashes() const;
-
  private:
   EffectTools tools_;
 };

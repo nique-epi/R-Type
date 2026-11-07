@@ -100,11 +100,9 @@ void PlayfieldExitSystem::update(engine::ComponentRegistry& components,
   components.forEach<Position, EntityType>(
       [this, &components](engine::Entity entity, const Position& position,
                           const EntityType& type) {
-        if (components.get<Boss>(entity) != nullptr) {
-          return;
-        }
         if (!hasLeftThePlayfield(type, position,
-                                 missileExitOf(components, entity, type))) {
+                                 missileExitOf(components, entity, type)) ||
+            components.get<Boss>(entity) != nullptr) {
           return;
         }
         const NetworkIdentity* identity =

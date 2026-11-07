@@ -7,6 +7,7 @@
 #include "GameNoticeConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "TimeConstants.hpp"
+#include "WidgetConstants.hpp"
 
 namespace rtype::client {
 
@@ -34,7 +35,7 @@ constexpr sf::IntRect BOSS_PHASE_ONE_GAUGE(
  * BOSS_GAUGE_INNER_WIDTH columns of fill. */
 constexpr int BOSS_GAUGE_BORDER = 1;
 constexpr int BOSS_GAUGE_INNER_WIDTH =
-    BOSS_GAUGE_WIDTH - (BOSS_GAUGE_COUNT * BOSS_GAUGE_BORDER);
+    BOSS_GAUGE_WIDTH - (SIDES_PER_AXIS * BOSS_GAUGE_BORDER);
 
 /** @brief The name of the boss, centred BOSS_NAME_GAP above the bar, and the
  * label of each gauge, centred BOSS_LABEL_GAP under it. */

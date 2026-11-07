@@ -45,10 +45,12 @@ void VolleySystem::collectShots() {
   components.forEach<game::Intent, game::EntityTypeNumber>(
       [this, &components](engine::Entity body, const game::Intent& intent,
                           const game::EntityTypeNumber& type) {
+        if (!intent.startsAction.has_value()) {
+          return;
+        }
         const game::EntitySheet* const sheet = types_->numbered(type.number);
         const auto* const position = components.get<game::Position>(body);
-        if (!intent.startsAction.has_value() || sheet == nullptr ||
-            position == nullptr) {
+        if (sheet == nullptr || position == nullptr) {
           return;
         }
         for (const game::VolleySheet& volley : sheet->volleys) {

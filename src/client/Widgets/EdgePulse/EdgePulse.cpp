@@ -6,9 +6,12 @@
 #include <cmath>
 #include <cstdint>
 #include <optional>
+#include "BackgroundConstants.hpp"
+#include "Easing.hpp"
 #include "EdgePulseConstants.hpp"
 #include "FlashPreference.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "RenderingConstants.hpp"
 #include "TimeConstants.hpp"
 #include "WarningBannerConstants.hpp"
 
@@ -18,25 +21,22 @@ namespace {
 
 /** @returns The share of the pulse at that time, 0 to 1: a cosine from 0
  * at WARNING_START, 1 half a period later; 0 outside the WARNING screen. */
-double pulseShareAt(engine::Duration sinceArrival) {
+float pulseShareAt(engine::Duration sinceArrival) {
   if (sinceArrival < WARNING_START || sinceArrival >= WARNING_END) {
-    return 0.0;
+    return 0.0F;
   }
-  const double turns =
-      static_cast<double>((sinceArrival - WARNING_START).count()) /
-      static_cast<double>(EDGE_PULSE_PERIOD.count());
-  return (1.0 - std::cos(EDGE_PULSE_FULL_TURN * turns)) * EDGE_PULSE_HALF;
+  const float turns = shareOf(sinceArrival - WARNING_START, EDGE_PULSE_PERIOD);
+  return (1.0F - std::cos(FULL_TURN * turns)) * HALF;
 }
 
 /** @returns The share of the flash of the roar, from 1 when it roars to 0
  * ROAR_EDGE_FLASH_TIME later; 0 without a roar. */
-double roarShareAt(std::optional<engine::Duration> sinceRoar) {
+float roarShareAt(std::optional<engine::Duration> sinceRoar) {
   if (!sinceRoar.has_value() || *sinceRoar < engine::Duration::zero() ||
       *sinceRoar >= ROAR_EDGE_FLASH_TIME) {
-    return 0.0;
+    return 0.0F;
   }
-  return 1.0 - (static_cast<double>(sinceRoar->count()) /
-                static_cast<double>(ROAR_EDGE_FLASH_TIME.count()));
+  return 1.0F - shareOf(*sinceRoar, ROAR_EDGE_FLASH_TIME);
 }
 
 sf::Color edgeColorAt(std::uint8_t alpha, int depth) {
@@ -53,8 +53,8 @@ EdgePulseLook edgePulseAt(engine::Duration sinceArrival,
   if (flashes == FlashPreference::Reduced) {
     return {};
   }
-  const double pulse = EDGE_PULSE_PEAK_ALPHA * pulseShareAt(sinceArrival);
-  const double roar = ROAR_EDGE_FLASH_ALPHA * roarShareAt(sinceRoar);
+  const float pulse = EDGE_PULSE_PEAK_ALPHA * pulseShareAt(sinceArrival);
+  const float roar = ROAR_EDGE_FLASH_ALPHA * roarShareAt(sinceRoar);
   return EdgePulseLook{
       .alpha = static_cast<std::uint8_t>(std::lround(std::max(pulse, roar)))};
 }

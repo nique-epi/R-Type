@@ -150,8 +150,8 @@ class GameScreen : public IScreen {
   void repaintStatusWhenChanged();
 
   /** @brief Paints the status band from the score board, and the banner of
-   * the start of the game over it, and keeps what was painted. */
-  void repaintStatus();
+   * the start of the game and @p boss over it, and keeps what was painted. */
+  void repaintStatus(const BossLook& boss);
 
   /** @brief Ranks the pilots of the board by the scores of @p ended into the
    * result of the parts, and remembers when the game ended. */

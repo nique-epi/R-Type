@@ -17,12 +17,10 @@ void BossTracker::follow(const network::BossStatus& status,
   }
   if (!fight_.fightingSince.has_value()) {
     fight_.fightingSince = now;
-    fight_.health = status.health;
     fight_.lagHealth = status.health;
   }
   recordLoss(status.health, now);
   fight_.stage = status.stage;
-  fight_.bossEntityId = status.bossEntityId;
   fight_.health = status.health;
   fight_.fullHealth = status.fullHealth;
   if (!fight_.phaseOneEmptiedAt.has_value() &&

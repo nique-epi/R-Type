@@ -83,12 +83,8 @@ std::size_t VolleySystemFixture::enemies() {
 
 std::vector<network::EntitySpawned> VolleySystemFixture::spawnsSentTo(
     std::size_t index) const {
-  std::vector<network::EntitySpawned> spawns;
-  for (const network::OutgoingDatagram& datagram :
-       sentTo(sent_, playerEndpoint(index))) {
-    spawns.push_back(onlyMessageIn<network::EntitySpawned>(datagram));
-  }
-  return spawns;
+  return onlyMessagesIn<network::EntitySpawned>(
+      sentTo(sent_, playerEndpoint(index)));
 }
 
 std::uint8_t VolleySystemFixture::minionNumber() const {

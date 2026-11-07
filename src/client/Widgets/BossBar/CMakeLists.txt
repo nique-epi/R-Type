@@ -8,6 +8,7 @@ target_link_libraries(rtype_client_boss_bar
     rtype_client_rendering_interfaces
     rtype_client_widgets
   PRIVATE
+    rtype_client_easing
     rtype_client_effect_interfaces
     rtype_network_boss_status
 )

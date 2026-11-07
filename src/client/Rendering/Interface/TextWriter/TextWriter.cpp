@@ -7,6 +7,7 @@
 #include <SFML/System/String.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cmath>
+#include <optional>
 #include <string>
 #include <string_view>
 #include "AssetLibrary.hpp"
@@ -53,8 +54,9 @@ TextWriter::TextWriter(const AssetLibrary& library)
       crispText_(loadFragmentShader(CRISP_TEXT_SHADER, logger_)) {}
 
 void TextWriter::write(sf::RenderTarget& target, const TextLine& line) const {
-  const sf::View whole = target.getView();
+  std::optional<sf::View> whole;
   if (line.style.clip.has_value()) {
+    whole = target.getView();
     target.setView(clippedViewOf(target, *line.style.clip));
   }
   sf::Text text = lineOf(line.text, line.style.font, line.style.scale);
@@ -73,7 +75,9 @@ void TextWriter::write(sf::RenderTarget& target, const TextLine& line) const {
   text.setFillColor(line.style.color);
   text.setPosition(sf::Vector2f(position));
   target.draw(text, states);
-  target.setView(whole);
+  if (whole.has_value()) {
+    target.setView(*whole);
+  }
 }
 
 int TextWriter::width(std::string_view text, TextFont font) const {

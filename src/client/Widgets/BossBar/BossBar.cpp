@@ -13,11 +13,13 @@
 #include "BossGaugeState.hpp"
 #include "BossStatus.hpp"
 #include "BossTrackerConstants.hpp"
+#include "Easing.hpp"
 #include "FlashPreference.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
+#include "WidgetConstants.hpp"
 
 namespace rtype::client {
 
@@ -47,14 +49,6 @@ BossGaugeLook gaugeOf(GaugePoints points, BossGaugeState state) {
       .fill = fill,
       .lagEnd = std::max(fill, columnsOf(points.lag, points.share)),
       .state = state};
-}
-
-/** @returns The share of the health shown @p now: 0 when the boss appeared,
- * 1 from BOSS_BAR_FILL_TIME later. */
-float filledShareAt(engine::Duration appeared, engine::Duration now) {
-  const std::chrono::duration<float> into = now - appeared;
-  return std::clamp(into / std::chrono::duration<float>(BOSS_BAR_FILL_TIME),
-                    0.0F, 1.0F);
 }
 
 int shownPoints(int points, float share) {
@@ -111,7 +105,7 @@ sf::Color borderOf(BossGaugeState state) {
 
 sf::IntRect innerOf(sf::IntRect gauge) {
   const sf::Vector2i border(BOSS_GAUGE_BORDER, BOSS_GAUGE_BORDER);
-  return {gauge.position + border, gauge.size - (border * BOSS_GAUGE_COUNT)};
+  return {gauge.position + border, gauge.size - (border * SIDES_PER_AXIS)};
 }
 
 void paintPixel(IInterfaceCanvas& canvas, sf::Vector2i at, sf::Color color) {
@@ -166,10 +160,7 @@ void paintHotPixels(IInterfaceCanvas& canvas, int fill, int step) {
 void paintShards(IInterfaceCanvas& canvas, int milliseconds) {
   const sf::IntRect inner = innerOf(BOSS_PHASE_ONE_GAUGE);
   const float time =
-      static_cast<float>(milliseconds) /
-      static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(
-                             BOSS_GAUGE_SHATTER_TIME)
-                             .count());
+      shareOf(std::chrono::milliseconds(milliseconds), BOSS_GAUGE_SHATTER_TIME);
   const int fall =
       static_cast<int>(static_cast<float>(BOSS_SHARD_FALL) * time * time);
   for (int shard = 0; shard < BOSS_GAUGE_SHARDS; ++shard) {
@@ -213,7 +204,8 @@ BossBarLook bossBarAt(const BossFight& fight, engine::Duration now,
       fight.stage == network::BossStage::Defeated) {
     return {};
   }
-  const float filled = filledShareAt(*fight.fightingSince, now);
+  const float filled =
+      progressBetween(now, *fight.fightingSince, BOSS_BAR_FILL_TIME);
   const int health = shownPoints(fight.health, filled);
   const bool lagShows =
       fight.lastLossAt.has_value() && now - *fight.lastLossAt < BOSS_LAG_TIME;
