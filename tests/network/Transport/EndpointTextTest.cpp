@@ -1,11 +1,16 @@
 #include <gtest/gtest.h>
+#include <optional>
 #include <string>
 #include <string_view>
+#include "Endpoint.hpp"
 #include "EndpointText.hpp"
 #include "EndpointTextTestConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 
+using rtype::network::Endpoint;
+using rtype::network::endpointFromText;
+using rtype::network::endpointText;
 using rtype::network::HIGHEST_PORT;
 using rtype::network::InvalidIpv4AddressException;
 using rtype::network::InvalidPortException;
@@ -192,4 +197,42 @@ TEST(EndpointText, RefusesAHostName) {
 TEST(EndpointText, RefusesAnIpv6Address) {
   EXPECT_THROW(static_cast<void>(ipv4AddressFromText(IPV6_LOOPBACK_ADDRESS)),
                InvalidIpv4AddressException);
+}
+
+/**
+ * Given an IPv4 address and a port
+ * When the endpoint is written as text
+ * Then it reads <address>:<port>
+ */
+TEST(EndpointText, WritesTheAddressThenThePort) {
+  const Endpoint endpoint{.address = std::string{LOCAL_NETWORK_ADDRESS},
+                          .port = PORT_OF_PORT_TEXT};
+
+  EXPECT_EQ(endpointText(endpoint), LOCAL_NETWORK_ENDPOINT_TEXT);
+}
+
+/**
+ * Given an IPv4 address and a port written as <address>:<port>
+ * When the text is read as an endpoint
+ * Then it names that address and that port
+ */
+TEST(EndpointText, ReadsAnEndpointWrittenAsText) {
+  const std::optional<Endpoint> endpoint =
+      endpointFromText(LOCAL_NETWORK_ENDPOINT_TEXT);
+
+  EXPECT_EQ(endpoint, std::optional(Endpoint{
+                          .address = std::string{LOCAL_NETWORK_ADDRESS},
+                          .port = PORT_OF_PORT_TEXT}));
+}
+
+/**
+ * Given texts with no port, a host name, or more after the port
+ * When each is read as an endpoint
+ * Then none names one
+ */
+TEST(EndpointText, ReadsNoEndpointFromAnyOtherText) {
+  for (const std::string_view text : TEXTS_THAT_ARE_NO_ENDPOINT) {
+    SCOPED_TRACE(text);
+    EXPECT_EQ(endpointFromText(text), std::nullopt);
+  }
 }

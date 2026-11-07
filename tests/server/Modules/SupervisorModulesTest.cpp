@@ -5,6 +5,7 @@
 #include <string_view>
 #include <vector>
 #include "BuiltModuleConstants.hpp"
+#include "CreatedServer.hpp"
 #include "IModule.hpp"
 #include "LaunchOptions.hpp"
 #include "ModuleConstants.hpp"
@@ -12,10 +13,12 @@
 #include "ServerInformation.hpp"
 #include "ServerModuleTestConstants.hpp"
 #include "ServerRoleConstants.hpp"
+#include "SettingLine.hpp"
 #include "StopRequest.hpp"
 #include "SupervisorModules.hpp"
 #include "SupervisorModulesFixture.hpp"
 #include "SupervisorModulesTestConstants.hpp"
+#include "SupervisorWithMasterFixture.hpp"
 
 using rtype::engine::ADMIN_CONSOLE_MODULE_BUILT;
 using rtype::engine::MASTER_LINK_MODULE_BUILT;
@@ -176,17 +179,18 @@ TEST_F(SupervisorModulesFixture, KeepsTheLinesOfTheSettingsItOwns) {
 }
 
 /**
- * Given a server.cfg that sets master-url and master-key, in a build that
- * compiled the master link, which declares them
+ * Given a server.cfg that sets master-url, master-key and an empty
+ * public-address, in a build that compiled the master link, which declares
+ * them
  * When the supervisor starts
- * Then it refuses neither and hands neither to its games
+ * Then it refuses none of them and hands none to its games
  */
 TEST_F(SupervisorModulesFixture, KeepsTheLinesOfTheMasterSettings) {
   if (!MASTER_LINK_MODULE_BUILT) {
     GTEST_SKIP() << "the build leaves the master link out";
   }
   writeConfiguration(
-      {std::string{MASTER_URL_LINE}, std::string{MASTER_KEY_LINE}});
+      {MASTER_SETTING_LINES.begin(), MASTER_SETTING_LINES.end()});
   const auto application = supervisor({});
 
   application->start();
@@ -197,23 +201,99 @@ TEST_F(SupervisorModulesFixture, KeepsTheLinesOfTheMasterSettings) {
 }
 
 /**
- * Given a server.cfg that sets master-url and master-key, in a build that left
- * the master link out, so nothing declares them
+ * Given a server.cfg that sets master-url, master-key and public-address, in
+ * a build that left the master link out, so nothing declares them
  * When the supervisor starts
- * Then it starts, refuses both lines, and hands neither to its games
+ * Then it starts, refuses the three lines, and hands none to its games
  */
 TEST_F(SupervisorModulesFixture, RefusesTheMasterSettingsWithoutTheMasterLink) {
   if (MASTER_LINK_MODULE_BUILT) {
     GTEST_SKIP() << "the build has the master link";
   }
   writeConfiguration(
-      {std::string{MASTER_URL_LINE}, std::string{MASTER_KEY_LINE}});
+      {MASTER_SETTING_LINES.begin(), MASTER_SETTING_LINES.end()});
   const auto application = supervisor({});
 
   EXPECT_NO_THROW(application->start());
 
-  EXPECT_EQ(report().refusals.size(), 2U);
+  EXPECT_EQ(report().refusals.size(), MASTER_SETTING_LINES.size());
   EXPECT_TRUE(report().handedOverLines.empty());
+  application->stop();
+}
+
+/**
+ * Given a server.cfg whose public-address is a host name, not an IPv4
+ * address, in a build that compiled the master link
+ * When the supervisor starts
+ * Then that line is refused
+ */
+TEST_F(SupervisorModulesFixture, RefusesAPublicAddressThatIsNoIpv4Address) {
+  if (!MASTER_LINK_MODULE_BUILT) {
+    GTEST_SKIP() << "the build leaves the master link out";
+  }
+  writeConfiguration({std::string{HOST_NAME_PUBLIC_ADDRESS_LINE}});
+  const auto application = supervisor({});
+
+  application->start();
+
+  EXPECT_EQ(report().refusals.size(), 1U);
+  application->stop();
+}
+
+/**
+ * Given a server.cfg whose public-address is a loopback address, 127.0.0.2,
+ * in a build that compiled the master link
+ * When the supervisor starts
+ * Then that line is refused: every player would be sent to its own machine
+ */
+TEST_F(SupervisorModulesFixture, RefusesALoopbackPublicAddress) {
+  if (!MASTER_LINK_MODULE_BUILT) {
+    GTEST_SKIP() << "the build leaves the master link out";
+  }
+  writeConfiguration({std::string{LOOPBACK_PUBLIC_ADDRESS_LINE}});
+  const auto application = supervisor({});
+
+  application->start();
+
+  EXPECT_EQ(report().refusals.size(), 1U);
+  application->stop();
+}
+
+/**
+ * Given a server.cfg whose public-address is 0.0.0.0, the address of every
+ * interface, in a build that compiled the master link
+ * When the supervisor starts
+ * Then that line is refused
+ */
+TEST_F(SupervisorModulesFixture, RefusesTheAddressOfEveryInterface) {
+  if (!MASTER_LINK_MODULE_BUILT) {
+    GTEST_SKIP() << "the build leaves the master link out";
+  }
+  writeConfiguration({std::string{ANY_INTERFACE_PUBLIC_ADDRESS_LINE}});
+  const auto application = supervisor({});
+
+  application->start();
+
+  EXPECT_EQ(report().refusals.size(), 1U);
+  application->stop();
+}
+
+/**
+ * Given a server.cfg whose public-address is the broadcast address, in a
+ * build that compiled the master link
+ * When the supervisor starts
+ * Then that line is refused
+ */
+TEST_F(SupervisorModulesFixture, RefusesTheBroadcastAddress) {
+  if (!MASTER_LINK_MODULE_BUILT) {
+    GTEST_SKIP() << "the build leaves the master link out";
+  }
+  writeConfiguration({std::string{BROADCAST_PUBLIC_ADDRESS_LINE}});
+  const auto application = supervisor({});
+
+  application->start();
+
+  EXPECT_EQ(report().refusals.size(), 1U);
   application->stop();
 }
 
@@ -233,5 +313,33 @@ TEST_F(SupervisorModulesFixture, AnswersHowFullAnIdleSupervisorIs) {
   EXPECT_EQ(answer.playerCount, 0U);
   EXPECT_EQ(answer.gameCount, GAMES_OF_A_SUPERVISOR);
   EXPECT_EQ(answer.freeSeatCount, SEATS_OF_A_SUPERVISOR);
+  application->stop();
+}
+
+/**
+ * Given a master, a server created on it, and a server.cfg that names that
+ * master, its key and a public-address
+ * When the supervisor starts and registers
+ * Then the master lists the server at the declared address, not at the
+ * address its requests come from
+ */
+TEST_F(SupervisorWithMasterFixture, TheMasterListsTheDeclaredAddress) {
+  if (!MASTER_LINK_MODULE_BUILT) {
+    GTEST_SKIP() << "the build leaves the master link out";
+  }
+  const rtype::network::CreatedServer created =
+      master().createServer(LISTED_SERVER_NAME);
+  writeConfiguration(
+      {rtype::engine::settingLine(rtype::server::MASTER_URL_SETTING_NAME,
+                                  master().url()),
+       rtype::engine::settingLine(rtype::server::MASTER_KEY_SETTING_NAME,
+                                  created.key),
+       rtype::engine::settingLine(rtype::server::PUBLIC_ADDRESS_SETTING_NAME,
+                                  DECLARED_PUBLIC_ADDRESS)});
+  const auto application = supervisor({});
+  application->start();
+
+  EXPECT_EQ(listedAddressSoon(created.id).value_or(std::string{}),
+            DECLARED_PUBLIC_ADDRESS);
   application->stop();
 }

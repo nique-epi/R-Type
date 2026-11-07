@@ -11,7 +11,7 @@ This page is the specification of the protocol the client and the server speak: 
 
 ## Status of this document
 
-- This is version 12 of the protocol. It is the only version the code speaks; [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11) and [Version 12](#version-12) say what each changed from the version before, and what the rest of the second part of the project will change.
+- This is version 12 of the protocol. It is the only version the code speaks. [Versions and compatibility](#versions-and-compatibility) says when the version changes and what two programs of different versions do; [Version 2](#version-2), [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11) and [Version 12](#version-12) say what each changed from the version before, and what the rest of the second part of the project will change.
 - The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
 - Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
 - Numbers are decimal unless written `0x`. A size is in bytes.
@@ -719,6 +719,44 @@ From version 4, the server may send the body of a datagram, the bytes after the 
 
 On the games captured while the dictionary was trained, the datagram of the server is 25.1 % shorter with level 1 (23.9 % with level 3).
 
+## Versions and compatibility
+
+A program speaks one version of the protocol, the number at offset 4 of every datagram it sends. This section says what stays the same in every version, which changes give the protocol a new number, and what two programs of different versions do when they meet. The sections after it apply these rules to each version, from version 2 to version 12.
+
+### What never changes
+
+- `protocolId` stays at offset 0 and `version` at offset 4, in every version, so a receiver of any version reads from the first 5 bytes of a datagram which protocol and which version sent it.
+- A type byte keeps its message. A number of the [message tables](#messages) is never given to another message, even once its message is no longer sent: the server no longer sends `WorldState` (type 10), and a client still reads it.
+- A value of an enumeration keeps its meaning: `ConnectionRefused` reason 3 is `IncompatibleVersion` in every version, and a new value takes the next free number.
+
+### What changes the version
+
+`version` MUST grow by 1 when a change makes a receiver of the version before read a datagram wrongly, or drop a message it needs:
+
+| Change | Example |
+|---|---|
+| A field added to, removed from or moved in the header or a message that already exists | `GameEnded` gains `outcome` before `playerCount` (version 3); `PlayerInput` repeats earlier inputs (version 5); `ConnectionRequest` gains `kind` and `number` (version 9); `ConnectionAccepted` announces the content pack (version 10); `EntitySpawned` gains `owner` and `firingInput`, `PlayerInput` gains `shownTick` (version 11) |
+| A field that keeps its place and changes its meaning | the acknowledgement fields of the header, written as 0 before (version 2); `entityType` read from a table (version 6) |
+| A flag or an encoding of the body a receiver of the version before cannot read | `COMPRESSED` (version 4) |
+| A message that already exists moved into an envelope | `EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` inside `OrderedMessage` (version 7) |
+| A new value of an enumeration of a message that already exists | a receiver of the version before drops the whole message as out of range (see [Payload rules](#payload-rules)): `ConnectionRefused` gains `GameNotFound` and `ServerFull` (version 9); `PlayerLeft` gains `Expelled` (version 12) |
+
+A message between a game process and its supervisor counts too: `GameStatus` gained the nicknames and the measures in version 8.
+
+### What keeps the version
+
+- **A new message type.** A receiver that does not know a type skips that message and reads the next one (see [A datagram or a message that cannot be read](#a-datagram-or-a-message-that-cannot-be-read)), so a new type MAY be added without changing `version`, on one condition: a peer that does not know it still plays, and loses at most what the message adds. `EnemyAction` (type 22) only loses the animation of an attack; `ChatLine` and `PlayerChatLine` (types 30 and 31) only lose the chat. When the new message replaces one a peer needs, the sender MUST keep sending the old one, or `version` changes: see the case of `DeltaWorldState` in [Version 3](#version-3).
+- **A new message outside any session.** `ServerInformationRequest`, `ServerInformation` (types 24 and 25) and `MasterProbe` (type 29) did not change `version`: a server that does not know them drops them as datagrams of a sender it did not admit, and the asker gets no answer.
+- **A change with nothing on the wire.** How a side measures, waits or limits, such as the client counting the losses of the server from the gaps in `sequence`, changes no byte.
+
+Each new version gets a section below that says what changed and why `version` did, and each new message that kept the version is named in the section of the version it was added in, with what a peer that does not know it does.
+
+### When two versions meet
+
+- There is no negotiation. A program speaks exactly one version and drops every datagram of another (see [Receiving a datagram](#receiving-a-datagram)), so a client and a server of different versions never play together.
+- The server answers a datagram of another version from an unknown sender with `ConnectionRefused` (`IncompatibleVersion`), written in its own version, if the datagram holds at least 26 bytes. A client that is connecting MUST read offset 4 of a datagram of another version from the server it contacts, before dropping it, end the attempt and SHOULD tell the player both numbers, its own and that of the server (see [Joining fails](#joining-fails)).
+- A server registers its version with the master (see [Server](/R-Type/server/)). The server map of the client sends a `ServerInformationRequest` only to the servers of its own version, and SHOULD mark the others as needing an update, as it does, so a player knows before trying one that it cannot be joined.
+
 ## Version 2
 
 Version 2 guarantees `EntityDestroyed`, `GameEvent` and `PlayerLeft` with `flags`, `acknowledgedSequence` and `acknowledgementBits`, which version 1 wrote as 0 (see [Ordered messages](#ordered-messages)). The layout of the header is the same, its meaning is not, so `version` became 2. The server also groups the guaranteed messages it sends again in one datagram, which receivers of version 1 already accepted.
@@ -729,13 +767,11 @@ Version 2 also gives `Heartbeat` the time it is sent and the echo of the newest 
 
 Version 3 gives `GameEnded` the outcome of the game: `outcome`, one byte, comes first, before `playerCount` (see [Messages](#messages)). A game now has an end other than the loss of every life: it is won once the players beat the last wave of the level, so a client needs the outcome to tell a victory from a defeat. The layout of the other messages and of the header is the same; a payload of version 2 has no `outcome`, so its first byte would be read as one, which is why `version` became 3.
 
-The rest of the second part of the project changes the protocol again:
+Three changes made while the protocol was at version 3 kept it there:
 
 - The client measures the loss rate of the server from the gaps in `sequence`, as the server does for each player: nothing changes on the wire.
-- States are already sent as differences from the last one the player acknowledged, by a new message, `DeltaWorldState` (see [Delta world state](#delta-world-state)): `WorldState` is unchanged, so `version` did not change.
-- A server already answers `ServerInformationRequest` with `ServerInformation`, two new messages (see [Server information](#server-information)): no message changed, so `version` did not change. A server of version 3 built before them drops the request of a stranger, as it drops any datagram that holds no `ConnectionRequest`.
-
-A client and a server of different versions never play together: the connection is refused with `IncompatibleVersion`.
+- States are sent as differences from the last one the player acknowledged, by a new message, `DeltaWorldState` (see [Delta world state](#delta-world-state)): `WorldState` is unchanged, so `version` did not change. The server then stopped sending `WorldState`, so a build of version 3 from before `DeltaWorldState` sees no world with a later server; under the rules of [Versions and compatibility](#versions-and-compatibility), `version` should have changed then. Every build of version 4 and later reads both.
+- A server answers `ServerInformationRequest` with `ServerInformation`, two new messages (see [Server information](#server-information)): no message changed, so `version` did not change. A server of version 3 built before them drops the request of a stranger, as it drops any datagram that holds no `ConnectionRequest`.
 
 ## Version 4
 

@@ -24,6 +24,7 @@ using rtype::server::testing::LINKED_SERVER_GAMES;
 using rtype::server::testing::LINKED_SERVER_NAME;
 using rtype::server::testing::LINKED_SERVER_PORT;
 using rtype::server::testing::LINKED_SERVER_PROBE_SECRET;
+using rtype::server::testing::LINKED_SERVER_PUBLIC_ADDRESS;
 using rtype::server::testing::PROBE_SECRET_CEILING;
 using rtype::server::testing::PROBE_SECRET_FLOOR;
 using rtype::server::testing::PROBE_TOKEN_OF_A_HEARTBEAT;
@@ -45,6 +46,22 @@ TEST(MasterMessages, TheRegistrationTellsWhatTheServerIs) {
   EXPECT_EQ(registration.protocolVersion, ANNOUNCED_PROTOCOL_VERSION);
   EXPECT_EQ(registration.maximumPlayersPerGame, ANNOUNCED_PLAYERS_PER_GAME);
   EXPECT_FALSE(registration.address.has_value());
+}
+
+/**
+ * Given a server that declares the address players reach it at
+ * When its registration is written
+ * Then the registration carries that address
+ */
+TEST(MasterMessages, TheRegistrationCarriesTheDeclaredAddress) {
+  const ServerRegistration registration = registrationOf(
+      ServerIdentity{.name = std::string{LINKED_SERVER_NAME},
+                     .udpPort = LINKED_SERVER_PORT,
+                     .maximumGames = LINKED_SERVER_GAMES,
+                     .address = std::string{LINKED_SERVER_PUBLIC_ADDRESS}});
+
+  EXPECT_EQ(registration.address.value_or(std::string{}),
+            LINKED_SERVER_PUBLIC_ADDRESS);
 }
 
 /**

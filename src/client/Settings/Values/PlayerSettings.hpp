@@ -3,6 +3,7 @@
 #include <optional>
 #include "ColorMode.hpp"
 #include "DisplayMode.hpp"
+#include "Endpoint.hpp"
 #include "KeyBindings.hpp"
 #include "PixelSize.hpp"
 #include "SettingsConstants.hpp"
@@ -34,6 +35,9 @@ struct PlayerSettings {
   bool autoFire = false;
   bool clientPrediction = true;
   bool pilotNames = true;
+  /** @brief The master the player chose on the server map; nothing lets the
+   * master-url setting choose. */
+  std::optional<network::Endpoint> master = std::nullopt;
 
   bool operator==(const PlayerSettings& other) const = default;
 };

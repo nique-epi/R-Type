@@ -20,8 +20,8 @@ namespace rtype::server {
 /**
  * @returns The registration of the server of @p identity: its name, its port,
  * SERVER_GAME_VERSION, network::PROTOCOL_VERSION, its games,
- * network::MAXIMUM_PLAYERS per game and its probe secret. It names no address,
- * so the master takes the address the request comes from.
+ * network::MAXIMUM_PLAYERS per game, its probe secret and the address of the
+ * identity; without one, the master takes the address the request comes from.
  */
 [[nodiscard]] network::ServerRegistration registrationOf(
     const ServerIdentity& identity);

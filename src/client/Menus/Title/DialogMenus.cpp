@@ -53,7 +53,8 @@ Menu connectionLostMenu(IScreenNavigator& navigator, ISoundPlayer& sounds,
       .button({.label = RETRY_LABEL},
               [&navigator] {
                 navigator.pop();
-                navigator.push(CONNECTION_SCREEN);
+                navigator.push(SERVER_MAP_SCREEN);
+                navigator.push(CONNECTION_AGAIN_SCREEN);
               })
       .cancelButton({.label = OK_LABEL}, [&navigator] { navigator.pop(); })
       .build();

@@ -4,6 +4,7 @@
 #include <optional>
 #include "ColorMode.hpp"
 #include "DisplayMode.hpp"
+#include "Endpoint.hpp"
 #include "PixelSize.hpp"
 #include "PlayerSettings.hpp"
 #include "Setting.hpp"
@@ -58,12 +59,18 @@ constexpr Setting<bool> PILOT_NAMES_SETTING{
     .id = SettingId::PilotNames,
     .range = std::nullopt};
 
+constexpr Setting<std::optional<network::Endpoint>> MASTER_SETTING{
+    .member = &PlayerSettings::master,
+    .id = SettingId::Master,
+    .range = std::nullopt};
+
 /** @brief Every setting a listener can be told about. */
 constexpr std::array ALL_SETTING_IDS{
     SettingId::MusicVolume, SettingId::EffectsVolume,    SettingId::Muted,
     SettingId::WindowSize,  SettingId::DisplayMode,      SettingId::Keys,
     SettingId::ColorMode,   SettingId::ReduceFlashes,    SettingId::SoundCues,
     SettingId::AutoFire,    SettingId::ClientPrediction, SettingId::PilotNames,
+    SettingId::Master,
 };
 
 }  // namespace rtype::client

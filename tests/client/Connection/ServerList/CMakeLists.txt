@@ -1,6 +1,7 @@
 target_sources(client_connection_tests PRIVATE
   GameCatalogFixture.cpp
   GameCatalogTest.cpp
+  MasterUrlTest.cpp
   ServerCatalogFixture.cpp
   ServerCatalogTest.cpp
   ServerPingProbeFixture.cpp
