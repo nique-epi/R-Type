@@ -24,6 +24,11 @@ Why: `-Wmissing-field-initializers` with warnings as errors failed the Linux job
 2. **Homebrew GCC (`g++-16`) is installed and reports the warning itself**: take the compile command of each file that names the aggregate from `build/compile_commands.json`, replace the compiler by `/opt/homebrew/bin/g++-16 -isysroot "$(xcrun --show-sdk-path)" -D_GNU_SOURCE -Wall -Wextra -Wpedantic`, and replace `-o` and `-c` by `-fsyntax-only`. Without the `-isysroot` GCC finds no system header; without the warning flags it stays silent, since the build's own flags do not carry them for this target.
 3. **Calibrate it on the faulty version first**: the file as it was at the failing commit must print `missing initializer for member`, and the fixed one nothing. Calibrated on `EntitySpritesFixtures.cpp` (`actions` left out): one warning on the old file, none on the 50 files of the branch after the fix.
 
+### A member removed is searched by its designator, in tests too
+
+1. **Before removing a member of an aggregate, search its designator**: `git grep -n '\.<member> =' -- src tests`. Each hit that builds that type (not another type with a member of the same name) loses the line, and a test constant used only there goes with it.
+2. **Read every hit against the type it builds**: a name shared by the message and the struct the client keeps of it (`BossStatus::bossEntityId`, `BossFight::bossEntityId`) puts both in one list, and a hit of the struct reads as one of the message.
+
 ## Example
 
 - ❌ **Before (wrong)**: `ConnectedPlayer` gains `std::optional<std::uint16_t> newestReceivedSequence;` and `PlayerRoster::add` keeps `ConnectedPlayer{.playerNumber = …, .nextSequence = 0}` → `missing initializer for member ‘newestReceivedSequence’` on Linux.
