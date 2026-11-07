@@ -28,6 +28,7 @@
 #include "MotionSheet.hpp"
 #include "PilotSheet.hpp"
 #include "Position.hpp"
+#include "SheetActionReading.hpp"
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
 #include "ShipControlConstants.hpp"
@@ -211,15 +212,6 @@ std::optional<BurstSheet> burstFrom(const engine::DataFileTable& gameplay) {
           engine::wholeNumberAt(*burst, COUNT_KEY, SHARD_COUNT_RANGE)),
       .shard = engine::textAt(*burst, SHARD_KEY),
       .shardPlace = engine::placeOfKey(*burst, SHARD_KEY)};
-}
-
-/** @returns The attack and the phase @p table names, both required.
- * @throws What wholeNumberAt() and choiceAt() throw. */
-ActionKey actionKeyAt(const engine::DataFileTable& table) {
-  return ActionKey{
-      .attack = static_cast<std::uint8_t>(
-          engine::wholeNumberAt(table, ATTACK_KEY, ATTACK_NUMBER_RANGE)),
-      .phase = PHASES.at(engine::choiceAt(table, PHASE_KEY, PHASE_NAMES))};
 }
 
 /** @returns The attack and the phase the box @p box hurts in, nothing for a
