@@ -10,7 +10,6 @@
 #include "WorldStateFixtures.hpp"
 
 namespace rtype::network {
-namespace {
 
 using testing::ACCENTED_LETTER;
 using testing::BEYOND_RANGE_X;
@@ -372,5 +371,4 @@ TEST(WireTypes, RejectsANicknameHoldingTheDeleteCharacter) {
   EXPECT_FALSE(isValidNickname(NICKNAME_WITH_DELETE));
 }
 
-}  // namespace
 }  // namespace rtype::network
