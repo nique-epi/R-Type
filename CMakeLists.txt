@@ -17,8 +17,10 @@ include(FeatureSummary)
 # program. CMake writes the choices into BuiltModuleConstants.hpp, which the
 # lists of modules include (see src/engine/Modules/).
 option(RTYPE_MODULE_AUDIO "Build the sound module of the client" ON)
+option(RTYPE_MODULE_METRICS "Build the metrics modules of the client and of the game processes" ON)
 
 add_feature_info(audio RTYPE_MODULE_AUDIO "the sound of the client")
+add_feature_info(metrics RTYPE_MODULE_METRICS "the metrics of the client and of the game processes")
 
 if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})

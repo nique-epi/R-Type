@@ -14,10 +14,14 @@
  */
 
 #cmakedefine01 RTYPE_MODULE_AUDIO
+#cmakedefine01 RTYPE_MODULE_METRICS
 
 namespace rtype::engine {
 
 /** @brief Whether the client holds its sound module, `audio`. */
 constexpr bool AUDIO_MODULE_BUILT = RTYPE_MODULE_AUDIO == 1;
+/** @brief Whether the client and each game process hold their `metrics`
+ * module. */
+constexpr bool METRICS_MODULE_BUILT = RTYPE_MODULE_METRICS == 1;
 
 }  // namespace rtype::engine

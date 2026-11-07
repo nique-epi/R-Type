@@ -5,9 +5,11 @@
 #include "ModuleConstants.hpp"
 
 using rtype::client::AUDIO_MODULE_NAME;
+using rtype::client::METRICS_MODULE_NAME;
 using rtype::client::SCREENS_MODULE_NAME;
 using rtype::engine::Application;
 using rtype::engine::AUDIO_MODULE_BUILT;
+using rtype::engine::METRICS_MODULE_BUILT;
 
 /**
  * Given the modules of the client, in a build that compiled the sound
@@ -39,4 +41,13 @@ TEST_F(ClientModulesFixture, AListWithoutTheSoundModuleIsAccepted) {
  */
 TEST_F(ClientModulesFixture, ListsTheSoundOnlyWhenItIsBuilt) {
   EXPECT_EQ(lists(AUDIO_MODULE_NAME), AUDIO_MODULE_BUILT);
+}
+
+/**
+ * Given the modules of the client, in a build with or without the metrics
+ * When they are listed
+ * Then the metrics are among them exactly when the build compiled them
+ */
+TEST_F(ClientModulesFixture, ListsTheMetricsOnlyWhenTheyAreBuilt) {
+  EXPECT_EQ(lists(METRICS_MODULE_NAME), METRICS_MODULE_BUILT);
 }

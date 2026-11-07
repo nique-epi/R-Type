@@ -17,14 +17,15 @@ target_link_libraries(rtype_client_modules
     rtype_client_lobby_module
     rtype_client_logger_module
     rtype_client_menus_module
-    rtype_client_metrics_module
     rtype_client_screens_module
     rtype_client_settings_module
-    rtype_engine_system_clock
 )
 
 if(RTYPE_MODULE_AUDIO)
   target_link_libraries(rtype_client_modules PRIVATE rtype_client_audio_module)
+endif()
+if(RTYPE_MODULE_METRICS)
+  target_link_libraries(rtype_client_modules PRIVATE rtype_client_metrics_module rtype_engine_system_clock)
 endif()
 
 rtype_enable_warnings(rtype_client_modules)

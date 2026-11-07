@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
@@ -6,6 +7,7 @@
 #include <string_view>
 #include <vector>
 #include "Application.hpp"
+#include "BuiltModuleConstants.hpp"
 #include "DatagramCodec.hpp"
 #include "GameLaunchOptions.hpp"
 #include "GameProcessModules.hpp"
@@ -24,6 +26,7 @@
 #include "TrafficFixtures.hpp"
 #include "UdpTestClient.hpp"
 
+using rtype::engine::METRICS_MODULE_BUILT;
 using rtype::network::MessageType;
 using rtype::network::TRAFFIC_CSV_OPTION;
 using rtype::network::testing::textOf;
@@ -32,13 +35,16 @@ using rtype::server::GameLaunchOptions;
 using rtype::server::gameProcessModules;
 
 /**
- * Given the modules of a game process
+ * Given the modules of a game process, in a build that compiled the metrics
  * When they are listed
  * Then they are the journal, the network, the storage, the games, the lobby,
  * the metrics and the link to the supervisor, in the order they start, with
  * neither the information nor the master
  */
 TEST_F(GameProcessModulesFixture, ListsTheModulesOfAGameWithTheLinkLast) {
+  if (!METRICS_MODULE_BUILT) {
+    GTEST_SKIP();
+  }
   const auto modules = gameProcessModules(launchOptions(), stopRequest());
 
   std::vector<std::string> names;
@@ -58,6 +64,22 @@ TEST_F(GameProcessModulesFixture, ListsTheModulesOfAGameWithTheLinkLast) {
 }
 
 /**
+ * Given the modules of a game process, in a build with or without the metrics
+ * When they are listed
+ * Then the metrics are among them exactly when the build compiled them
+ */
+TEST_F(GameProcessModulesFixture, ListsTheMetricsOnlyWhenTheyAreBuilt) {
+  const auto modules = gameProcessModules(launchOptions(), stopRequest());
+
+  const bool listed = std::ranges::any_of(
+      modules, [](const std::unique_ptr<rtype::engine::IModule>& module) {
+        return module->name() == rtype::server::METRICS_MODULE_NAME;
+      });
+
+  EXPECT_EQ(listed, METRICS_MODULE_BUILT);
+}
+
+/**
  * Given a game process started from an empty folder, its waves file next to
  * its executable
  * When the application starts
@@ -73,11 +95,15 @@ TEST_F(GameProcessModulesFixture,
 }
 
 /**
- * Given a game process launched with the traffic option and a relative file
+ * Given a game process launched with the traffic option and a relative file,
+ * in a build that compiled the metrics, which write it
  * When the application starts
  * Then the file exists in the folder the game was started in
  */
 TEST_F(GameProcessModulesFixture, OpensTheTrafficFileOfItsLaunchOption) {
+  if (!METRICS_MODULE_BUILT) {
+    GTEST_SKIP();
+  }
   const auto application = gameApplication(GameLaunchOptions::read(
       gameArguments({TRAFFIC_CSV_OPTION, TRAFFIC_FILE_NAME})));
 

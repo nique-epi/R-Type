@@ -1,4 +1,9 @@
 add_subdirectory(Contract)
+
+if(NOT RTYPE_MODULE_METRICS)
+  return()
+endif()
+
 add_subdirectory(Measures)
 
 add_library(rtype_server_metrics_module STATIC MetricsLines.cpp ServerMetricsModule.cpp)
