@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   canJoin,
   cycleServer,
+  freeSeatsOf,
   quickPlayTarget,
   serversOnMap,
   starLook,
@@ -37,6 +38,23 @@ describe('canJoin', () => {
     expect(
       canJoin(server({ status: 'offline' }), { pilots: 1, state: 'waiting' }),
     ).toBe(false);
+  });
+});
+
+describe('freeSeatsOf', () => {
+  const games = [
+    { pilots: 2, state: 'waiting' },
+    { pilots: 3, state: 'waiting' },
+    { pilots: 4, state: 'playing' },
+    { pilots: 1, state: 'playing' },
+  ] as const;
+
+  it('counts the free seats of the games that wait, and none of a game in play', () => {
+    expect(freeSeatsOf(server({ games }))).toBe(3);
+  });
+
+  it('counts none on a server that does not answer', () => {
+    expect(freeSeatsOf(server({ games, status: 'offline' }))).toBe(0);
   });
 });
 
