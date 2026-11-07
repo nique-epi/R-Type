@@ -1,4 +1,4 @@
-rtype_add_test(NAME server_content_tests SOURCES ContentPackDeskTest.cpp ContentPackDeskFixtures.cpp LIBS rtype_server_content_module rtype_network_content)
+rtype_add_test(NAME server_content_tests SOURCES ContentPackDeskTest.cpp ContentPackDeskFixtures.cpp ${RTYPE_TEST_SOURCE_DIR}/network/Content/ContentPackFixtures.cpp LIBS rtype_server_content_module rtype_network_content)
 target_include_directories(server_content_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/network/Content)
 
 target_sources(server_module_tests PRIVATE ServerContentModuleTest.cpp ServerContentModuleFixtures.cpp)

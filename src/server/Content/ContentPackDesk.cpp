@@ -7,6 +7,7 @@
 #include "AllowanceVerdict.hpp"
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
+#include "ByteText.hpp"
 #include "ContentFingerprint.hpp"
 #include "ContentFingerprintText.hpp"
 #include "ContentPack.hpp"
@@ -23,15 +24,6 @@ namespace rtype::server {
 
 namespace {
 
-/** @returns The bytes of @p pack, kept as the text an answer carries. */
-std::string textOf(const std::vector<std::byte>& pack) {
-  std::string text(pack.size(), '\0');
-  for (std::size_t index = 0; index < pack.size(); ++index) {
-    text[index] = static_cast<char>(pack[index]);
-  }
-  return text;
-}
-
 /** @returns The fingerprint @p request names in its path, as it wrote it. */
 std::string namedFingerprintOf(const network::ApiRequest& request) {
   const auto named = request.pathParameters.find(
@@ -43,7 +35,7 @@ std::string namedFingerprintOf(const network::ApiRequest& request) {
 
 ContentPackDesk::ContentPackDesk(std::vector<std::byte> pack,
                                  const engine::IClock& clock)
-    : pack_(textOf(pack)),
+    : pack_(network::textOf(pack)),
       fingerprint_(network::contentFingerprintOf(pack)),
       fingerprintText_(network::fingerprintText(fingerprint_)),
       clock_(&clock),

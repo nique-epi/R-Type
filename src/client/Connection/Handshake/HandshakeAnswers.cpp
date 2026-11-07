@@ -80,10 +80,11 @@ bool HandshakeAnswers::followContent() {
   if (phase == ConnectionPhase::LoadingContent) {
     const PackDownloadProgress progress = loading.progress();
     status.contentReceived = progress.received;
-    status.contentSize = progress.size;
     return false;
   }
-  status = {.phase = phase, .playerNumber = status.playerNumber};
+  status = {.phase = phase,
+            .playerNumber = status.playerNumber,
+            .contentSize = status.contentSize};
   if (phase == ConnectionPhase::Accepted) {
     parts_.logger.get().info("the content pack of the server is loaded");
     return false;

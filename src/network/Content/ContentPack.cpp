@@ -3,12 +3,14 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 #include "ByteReader.hpp"
+#include "ByteText.hpp"
 #include "ByteWriter.hpp"
 #include "ContentFile.hpp"
 #include "ContentFingerprint.hpp"
@@ -46,23 +48,13 @@ void checkContentFiles(std::span<const identifiers::ContentFile> files) {
   }
 }
 
-/** @returns The bytes of @p text, as a view. */
-std::span<const std::byte> bytesOf(const std::string& text) {
-  return std::as_bytes(std::span{text.data(), text.size()});
-}
-
 /** @returns The next file @p reader holds; its size is checked against what
  * remains before any of its bytes is copied. */
 identifiers::ContentFile readContentFile(ByteReader& reader) {
   std::string path = reader.readString();
   const std::uint32_t size = reader.readUint32();
-  const std::span<const std::byte> bytes = reader.readBytes(size);
-  std::string content(bytes.size(), '\0');
-  std::ranges::transform(bytes, content.begin(), [](std::byte value) {
-    return static_cast<char>(value);
-  });
   return identifiers::ContentFile{.path = std::move(path),
-                                  .bytes = std::move(content)};
+                                  .bytes = textOf(reader.readBytes(size))};
 }
 
 /** @returns The files of @p pack, read as decodeContentPack() says, before
@@ -123,6 +115,18 @@ std::vector<identifiers::ContentFile> decodeContentPack(
 
 ContentFingerprint contentFingerprintOf(std::span<const std::byte> pack) {
   return ContentFingerprint{.bytes = hashOf(pack, CONTENT_FINGERPRINT_CONTEXT)};
+}
+
+std::optional<std::vector<identifiers::ContentFile>> filesOfPack(
+    std::span<const std::byte> pack, const ContentFingerprint& fingerprint) {
+  if (contentFingerprintOf(pack) != fingerprint) {
+    return std::nullopt;
+  }
+  try {
+    return decodeContentPack(pack);
+  } catch (const NetworkException&) {
+    return std::nullopt;
+  }
 }
 
 bool isContentPath(std::string_view path) {

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "ApiResponse.hpp"
+#include "ByteText.hpp"
 #include "ContentFingerprintText.hpp"
 #include "ContentPack.hpp"
 #include "ContentPackDesk.hpp"
@@ -15,6 +16,7 @@ using rtype::network::ApiResponse;
 using rtype::network::contentFingerprintOf;
 using rtype::network::fingerprintText;
 using rtype::network::HttpHeader;
+using rtype::network::textOf;
 using rtype::server::ContentPackDesk;
 using rtype::server::testing::ETAG;
 using rtype::server::testing::ETAG_QUOTE;
@@ -26,7 +28,6 @@ using rtype::server::testing::packRequest;
 using rtype::server::testing::PLAYER_ADDRESS;
 using rtype::server::testing::REQUESTS_AT_ONCE;
 using rtype::server::testing::somePack;
-using rtype::server::testing::textOf;
 using rtype::server::testing::TIME_BETWEEN_REQUESTS;
 using rtype::server::testing::TOO_MANY_REQUESTS;
 using rtype::server::testing::UNKNOWN_FINGERPRINT;

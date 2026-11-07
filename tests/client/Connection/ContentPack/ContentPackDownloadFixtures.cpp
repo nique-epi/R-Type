@@ -5,6 +5,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include "ByteText.hpp"
 #include "ContentPackDownload.hpp"
 #include "ContentPackDownloadTestConstants.hpp"
 #include "ContentPackTestFiles.hpp"
@@ -26,21 +27,13 @@ PackDownloadProgress endOf(const ContentPackDownload& download) {
   return progress;
 }
 
-std::string lancerBody() { return textOf(lancerPack()); }
+std::string lancerBody() { return network::textOf(lancerPack()); }
 
 PackDownloadTarget packAt(std::uint16_t port, std::size_t size) {
   return PackDownloadTarget{.host = std::string{network::LOOPBACK_IPV4_ADDRESS},
                             .port = port,
                             .path = std::string{PACK_PATH},
                             .size = size};
-}
-
-std::string textOf(const std::vector<std::byte>& bytes) {
-  std::string text;
-  for (const std::byte value : bytes) {
-    text.push_back(static_cast<char>(value));
-  }
-  return text;
 }
 
 }  // namespace rtype::client::testing

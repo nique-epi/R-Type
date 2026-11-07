@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "ByteText.hpp"
 #include "ConnectionPhase.hpp"
 #include "ContentAnnouncement.hpp"
 #include "ContentPackDownloadFixtures.hpp"
@@ -17,6 +18,8 @@
 #include "SessionEntityTypesTestConstants.hpp"
 
 namespace rtype::client::testing {
+
+using network::textOf;
 
 /**
  * Given a client connecting to a server

@@ -28,9 +28,7 @@ constexpr std::string_view PACK_FILE_EXTENSION = ".pack";
 constexpr std::string_view PARTIAL_PACK_FILE_SUFFIX = ".part";
 
 /** @brief What a range of bytes from an offset to the end of a body ends with
- * (cpp-httplib), and the statuses of a whole and a partial answer. */
+ * (cpp-httplib). */
 constexpr long RANGE_TO_THE_END = -1;
-constexpr int WHOLE_PACK_STATUS = 200;
-constexpr int PARTIAL_PACK_STATUS = 206;
 
 }  // namespace rtype::client

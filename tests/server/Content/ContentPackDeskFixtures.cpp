@@ -6,28 +6,13 @@
 #include "ApiRequest.hpp"
 #include "ContentFile.hpp"
 #include "ContentPack.hpp"
-#include "ContentPackTestConstants.hpp"
+#include "ContentPackFixtures.hpp"
 #include "ContentRouteConstants.hpp"
 
 namespace rtype::server::testing {
 
 std::vector<std::byte> somePack() {
-  const std::vector<identifiers::ContentFile> files{
-      identifiers::ContentFile{
-          .path = std::string{network::testing::DRIFTER_SHEET_PATH},
-          .bytes = std::string{network::testing::DRIFTER_SHEET_BYTES}},
-      identifiers::ContentFile{
-          .path = std::string{network::testing::BYDOMANCER_SPRITES_PATH},
-          .bytes = std::string{network::testing::BYDOMANCER_PIXELS}}};
-  return network::encodeContentPack(files);
-}
-
-std::string textOf(const std::vector<std::byte>& pack) {
-  std::string text;
-  for (const std::byte value : pack) {
-    text.push_back(static_cast<char>(value));
-  }
-  return text;
+  return network::encodeContentPack(network::testing::twoContentFiles());
 }
 
 network::ApiRequest packRequest(std::string_view address,

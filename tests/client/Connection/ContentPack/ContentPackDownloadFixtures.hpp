@@ -19,7 +19,4 @@ namespace rtype::client::testing {
 /** @returns The pack at PACK_PATH on the loopback and @p port, of @p size. */
 [[nodiscard]] PackDownloadTarget packAt(std::uint16_t port, std::size_t size);
 
-/** @returns @p bytes as the text of a body. */
-[[nodiscard]] std::string textOf(const std::vector<std::byte>& bytes);
-
 }  // namespace rtype::client::testing

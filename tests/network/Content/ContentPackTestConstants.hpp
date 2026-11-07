@@ -79,17 +79,4 @@ constexpr std::string_view LOWERCASE_DIGITS = "0123456789abcdef";
 /** @brief A fingerprint written in hexadecimal is 64 lowercase digits. */
 constexpr std::size_t FINGERPRINT_TEXT_LENGTH = 64;
 
-/** @brief Texts that write no fingerprint: one digit short, one too many, an
- * uppercase digit, a letter past `f`. */
-constexpr std::array REFUSED_FINGERPRINT_TEXTS{
-    std::string_view{
-        "000000000000000000000000000000000000000000000000000000000000000"},
-    std::string_view{
-        "00000000000000000000000000000000000000000000000000000000000000000"},
-    std::string_view{
-        "A000000000000000000000000000000000000000000000000000000000000000"},
-    std::string_view{
-        "g000000000000000000000000000000000000000000000000000000000000000"},
-};
-
 }  // namespace rtype::network::testing

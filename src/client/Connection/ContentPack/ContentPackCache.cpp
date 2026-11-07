@@ -5,19 +5,21 @@
 #include <filesystem>
 #include <fstream>
 #include <ios>
-#include <iterator>
 #include <optional>
 #include <span>
+#include <string>
 #include <system_error>
 #include <utility>
 #include <vector>
+#include "ByteText.hpp"
 #include "ContentFile.hpp"
 #include "ContentFingerprint.hpp"
 #include "ContentFingerprintText.hpp"
 #include "ContentLoadingConstants.hpp"
 #include "ContentPack.hpp"
 #include "ContentPackConstants.hpp"
-#include "NetworkException.hpp"
+#include "DataFileReading.hpp"
+#include "EngineException.hpp"
 
 namespace rtype::client {
 
@@ -25,36 +27,15 @@ namespace {
 
 /** @returns Every byte of @p file, or nothing when it cannot be read or holds
  * more than a pack may. */
-std::optional<std::vector<std::byte>> bytesOf(
-    const std::filesystem::path& file) {
+std::optional<std::string> bytesOf(const std::filesystem::path& file) {
   std::error_code error;
   const std::uintmax_t size = std::filesystem::file_size(file, error);
   if (error || size > network::MAXIMUM_CONTENT_PACK_BYTES) {
     return std::nullopt;
   }
-  std::ifstream stream{file, std::ios::binary};
-  const std::vector<char> text{std::istreambuf_iterator<char>{stream},
-                               std::istreambuf_iterator<char>{}};
-  if (text.size() != size) {
-    return std::nullopt;
-  }
-  std::vector<std::byte> bytes(text.size());
-  std::ranges::transform(text, bytes.begin(), [](char value) {
-    return static_cast<std::byte>(value);
-  });
-  return bytes;
-}
-
-/** @returns The files of @p pack when it is the pack @p fingerprint names. */
-std::optional<std::vector<identifiers::ContentFile>> checkedFilesOf(
-    std::span<const std::byte> pack,
-    const network::ContentFingerprint& fingerprint) {
-  if (network::contentFingerprintOf(pack) != fingerprint) {
-    return std::nullopt;
-  }
   try {
-    return network::decodeContentPack(pack);
-  } catch (const network::NetworkException&) {
+    return engine::dataFileContent(file);
+  } catch (const engine::EngineException&) {
     return std::nullopt;
   }
 }
@@ -67,12 +48,12 @@ ContentPackCache::ContentPackCache(std::filesystem::path folder)
 std::optional<std::vector<identifiers::ContentFile>> ContentPackCache::find(
     const network::ContentFingerprint& fingerprint) const {
   const std::filesystem::path file = fileOf(fingerprint);
-  const std::optional<std::vector<std::byte>> pack = bytesOf(file);
+  const std::optional<std::string> pack = bytesOf(file);
   if (!pack.has_value()) {
     return std::nullopt;
   }
   std::optional<std::vector<identifiers::ContentFile>> files =
-      checkedFilesOf(*pack, fingerprint);
+      network::filesOfPack(network::bytesOf(*pack), fingerprint);
   std::error_code ignored;
   if (!files.has_value()) {
     std::filesystem::remove(file, ignored);
@@ -92,9 +73,8 @@ void ContentPackCache::keep(const network::ContentFingerprint& fingerprint,
   written += PARTIAL_PACK_FILE_SUFFIX;
   {
     std::ofstream stream{written, std::ios::binary | std::ios::trunc};
-    for (const std::byte value : pack) {
-      stream.put(static_cast<char>(value));
-    }
+    const std::string text = network::textOf(pack);
+    stream.write(text.data(), static_cast<std::streamsize>(text.size()));
     if (!stream) {
       std::filesystem::remove(written, error);
       return;

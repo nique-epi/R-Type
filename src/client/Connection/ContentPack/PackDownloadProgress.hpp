@@ -7,9 +7,8 @@ namespace rtype::client {
 
 /** @brief How far a download of a content pack went. */
 struct PackDownloadProgress {
+  /** @brief The bytes received, never more than the size announced. */
   std::size_t received{};
-  /** @brief The size the server announced, never exceeded. */
-  std::size_t size{};
   PackDownloadOutcome outcome{PackDownloadOutcome::Running};
 };
 

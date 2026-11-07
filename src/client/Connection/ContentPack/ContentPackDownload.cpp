@@ -4,10 +4,13 @@
 #include <mutex>
 #include <span>
 #include <stop_token>
+#include <string_view>
 #include <thread>
 #include <utility>
 #include <vector>
+#include "ByteText.hpp"
 #include "ContentLoadingConstants.hpp"
+#include "HttpStatusConstants.hpp"
 #include "PackDownloadOutcome.hpp"
 #include "PackDownloadProgress.hpp"
 #include "PackDownloadTarget.hpp"
@@ -17,12 +20,14 @@ namespace rtype::client {
 
 ContentPackDownload::ContentPackDownload(PackDownloadTarget target)
     : target_(std::move(target)),
-      thread_([this](const std::stop_token& stop) { run(stop); }) {}
+      thread_([this](const std::stop_token& stop) { run(stop); }) {
+  const std::scoped_lock lock{mutex_};
+  bytes_.reserve(target_.size);
+}
 
 PackDownloadProgress ContentPackDownload::progress() const {
   const std::scoped_lock lock{mutex_};
-  return PackDownloadProgress{
-      .received = bytes_.size(), .size = target_.size, .outcome = outcome_};
+  return PackDownloadProgress{.received = bytes_.size(), .outcome = outcome_};
 }
 
 std::vector<std::byte> ContentPackDownload::takeBytes() {
@@ -63,9 +68,9 @@ PackTryEnd ContentPackDownload::tryOnce(const std::stop_token& stop) {
   const httplib::Result result = client.Get(
       target_.path, headers,
       [this, from, &refused](const httplib::Response& response) {
-        refused = response.status != WHOLE_PACK_STATUS &&
-                  response.status != PARTIAL_PACK_STATUS;
-        if (response.status == WHOLE_PACK_STATUS && from > 0) {
+        refused = response.status != network::OK_STATUS &&
+                  response.status != network::PARTIAL_CONTENT_STATUS;
+        if (response.status == network::OK_STATUS && from > 0) {
           const std::scoped_lock lock{mutex_};
           bytes_.clear();
         }
@@ -87,9 +92,9 @@ bool ContentPackDownload::keep(std::span<const char> data) {
   if (bytes_.size() + data.size() > target_.size) {
     return false;
   }
-  for (const char value : data) {
-    bytes_.push_back(static_cast<std::byte>(value));
-  }
+  const std::span<const std::byte> received =
+      network::bytesOf(std::string_view{data.data(), data.size()});
+  bytes_.insert(bytes_.end(), received.begin(), received.end());
   return true;
 }
 

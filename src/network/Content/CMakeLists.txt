@@ -6,6 +6,7 @@ target_link_libraries(rtype_network_content
   PUBLIC
     rtype_identifiers
     rtype_network_constants
+    rtype_network_byte_text
     rtype_network_exceptions
     rtype_network_master_routes
   PRIVATE

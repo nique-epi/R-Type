@@ -135,10 +135,15 @@ ApiRequest apiRequestOf(const httplib::Request& request) {
 
 /**
  * @brief Writes @p reply into @p response: its header, then its body, or the
- * problem document of its status when it is an error with no body.
+ * problem document of its status when it is an error with no body. A success
+ * of OK_STATUS leaves the status to cpp-httplib, which answers a request for
+ * a range of bytes with 206 and those bytes (RFC 9110, section 14), and the
+ * others with 200.
  */
 void writeReply(ApiResponse reply, httplib::Response& response) {
-  response.status = reply.status;
+  if (reply.status != OK_STATUS) {
+    response.status = reply.status;
+  }
   if (reply.header.has_value()) {
     response.set_header(reply.header->name, reply.header->value);
   }
@@ -150,24 +155,10 @@ void writeReply(ApiResponse reply, httplib::Response& response) {
   response.set_content(std::move(reply.body), std::string{reply.contentType});
 }
 
-/**
- * @brief Makes a success of @p response to a request for a range of bytes a
- * partial answer, as cpp-httplib does for a route that sets no status: it
- * then sends only the bytes @p request asks for (RFC 9110, section 14), or
- * 416 for a range outside the body.
- */
-void answerRangeOf(const httplib::Request& request,
-                   httplib::Response& response) {
-  if (!request.ranges.empty() && response.status == OK_STATUS) {
-    response.status = httplib::StatusCode::PartialContent_206;
-  }
-}
-
 httplib::Server::Handler handlerOf(ApiHandler route) {
   return [answer = std::move(route)](const httplib::Request& request,
                                      httplib::Response& response) {
     writeReply(answer(apiRequestOf(request)), response);
-    answerRangeOf(request, response);
   };
 }
 

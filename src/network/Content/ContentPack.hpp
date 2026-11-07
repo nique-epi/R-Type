@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 #include <span>
+#include <string_view>
 #include <vector>
 #include "ContentFile.hpp"
 #include "ContentFingerprint.hpp"
@@ -43,6 +45,14 @@ namespace rtype::network {
  */
 [[nodiscard]] ContentFingerprint contentFingerprintOf(
     std::span<const std::byte> pack);
+
+/**
+ * @returns The files of @p pack when it is the pack @p fingerprint names and
+ * reads well; nothing when its fingerprint differs or decodeContentPack()
+ * refuses it, so a pack that passes this is the one announced, whole.
+ */
+[[nodiscard]] std::optional<std::vector<identifiers::ContentFile>> filesOfPack(
+    std::span<const std::byte> pack, const ContentFingerprint& fingerprint);
 
 /**
  * @returns Whether @p path may name a file of a pack: 1 to

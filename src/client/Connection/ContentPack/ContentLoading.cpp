@@ -15,7 +15,6 @@
 #include "ContentPackRoute.hpp"
 #include "ContentStep.hpp"
 #include "NetworkConstants.hpp"
-#include "NetworkException.hpp"
 #include "PackContent.hpp"
 #include "PackContentReading.hpp"
 #include "PackDownloadOutcome.hpp"
@@ -66,7 +65,6 @@ ContentStep ContentLoading::follow() {
 PackDownloadProgress ContentLoading::progress() const {
   if (download_ == nullptr) {
     return PackDownloadProgress{.received = 0,
-                                .size = announced_.size,
                                 .outcome = PackDownloadOutcome::Running};
   }
   return download_->progress();
@@ -82,18 +80,13 @@ void ContentLoading::cancel() {
 }
 
 ContentStep ContentLoading::readDownloaded(std::span<const std::byte> pack) {
-  if (pack.size() != announced_.size ||
-      network::contentFingerprintOf(pack) != announced_.fingerprint) {
-    return ContentStep::Refused;
-  }
-  std::vector<identifiers::ContentFile> files;
-  try {
-    files = network::decodeContentPack(pack);
-  } catch (const network::NetworkException&) {
+  const std::optional<std::vector<identifiers::ContentFile>> files =
+      network::filesOfPack(pack, announced_.fingerprint);
+  if (!files.has_value()) {
     return ContentStep::Refused;
   }
   cache_.keep(announced_.fingerprint, pack);
-  return read(files);
+  return read(*files);
 }
 
 ContentStep ContentLoading::read(

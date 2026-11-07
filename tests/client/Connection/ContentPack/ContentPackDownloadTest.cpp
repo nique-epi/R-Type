@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <string>
 #include <vector>
+#include "ByteText.hpp"
 #include "ContentPackDownload.hpp"
 #include "ContentPackDownloadFixtures.hpp"
 #include "ContentPackDownloadTestConstants.hpp"
@@ -24,8 +25,8 @@ using rtype::client::testing::PACK_PATH;
 using rtype::client::testing::packAt;
 using rtype::client::testing::RANGE_FROM_THE_CUT;
 using rtype::client::testing::SILENT_PORT;
-using rtype::client::testing::textOf;
 using rtype::client::testing::TWO_REQUESTS;
+using rtype::network::textOf;
 
 /**
  * Given a server of a pack

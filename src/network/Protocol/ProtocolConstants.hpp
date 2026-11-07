@@ -448,6 +448,11 @@ constexpr std::size_t CONNECTION_ACCEPTED_PAYLOAD_SIZE =
     UINT8_WIRE_SIZE + CONTENT_FINGERPRINT_BYTES + UINT32_WIRE_SIZE +
     UINT16_WIRE_SIZE;
 
+static_assert(PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE +
+                      CONNECTION_ACCEPTED_PAYLOAD_SIZE <=
+                  MAX_DATAGRAM_SIZE,
+              "a ConnectionAccepted always fits in one datagram");
+
 /**
  * @brief The size of a datagram holding a ConnectionRefused and its reason:
  * the server answers a datagram of another version from a sender it does not
