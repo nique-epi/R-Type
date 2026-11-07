@@ -1,6 +1,7 @@
 #include "ClientConnectionModule.hpp"
 #include <exception>
 #include <filesystem>
+#include <memory>
 #include <string>
 #include <vector>
 #include "AssetFolder.hpp"
@@ -15,11 +16,13 @@
 #include "IServerCatalog.hpp"
 #include "InstallContext.hpp"
 #include "MasterAccess.hpp"
+#include "MasterChoice.hpp"
 #include "MasterChoiceParts.hpp"
 #include "MasterUrlSetting.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConditions.hpp"
 #include "PlayerSettings.hpp"
+#include "SettingValue.hpp"
 #include "SettingsFolder.hpp"
 #include "SettingsService.hpp"
 #include "TextSettingDefinition.hpp"
@@ -67,7 +70,7 @@ void ClientConnectionModule::install(engine::InstallContext& context) {
                   "http://<host>[:<port>] of the master the server map reads",
               .validate = requireMasterUrl});
   settingsService_ = &context.require<SettingsService>();
-  masterChoice_.emplace(
+  masterChoice_ = std::make_unique<MasterChoice>(
       MasterChoiceParts{.settings = context.require<PlayerSettings>(),
                         .masterUrl = masterUrl,
                         .link = masterLink_,

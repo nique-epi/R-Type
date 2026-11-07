@@ -9,6 +9,7 @@
 #include "EndpointForm.hpp"
 #include "EndpointReading.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "IMasterAddress.hpp"
 #include "IScreenNavigator.hpp"
 #include "MasterScreenConstants.hpp"
 #include "MasterScreenParts.hpp"

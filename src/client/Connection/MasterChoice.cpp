@@ -1,7 +1,6 @@
 #include "MasterChoice.hpp"
 #include <optional>
 #include <string>
-#include <utility>
 #include "Endpoint.hpp"
 #include "MasterAccess.hpp"
 #include "MasterChoiceParts.hpp"
@@ -10,8 +9,7 @@
 
 namespace rtype::client {
 
-MasterChoice::MasterChoice(MasterChoiceParts parts)
-    : parts_(std::move(parts)) {}
+MasterChoice::MasterChoice(MasterChoiceParts parts) : parts_(parts) {}
 
 std::string MasterChoice::url() const {
   const std::optional<network::Endpoint>& chosen = parts_.settings.get().master;

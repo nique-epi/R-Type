@@ -1,6 +1,6 @@
 #pragma once
 
-#include <optional>
+#include <memory>
 #include <string>
 #include <vector>
 #include "GameCatalog.hpp"
@@ -12,7 +12,6 @@
 #include "NetworkConditions.hpp"
 #include "PlayerConnection.hpp"
 #include "ServerCatalog.hpp"
-#include "SettingValue.hpp"
 #include "SettingsService.hpp"
 
 namespace rtype::client {
@@ -79,7 +78,7 @@ class ClientConnectionModule final : public engine::IModule {
   MasterLink masterLink_;
   ServerCatalog servers_;
   /** @brief Built by install(), once master-url is declared. */
-  std::optional<MasterChoice> masterChoice_;
+  std::unique_ptr<MasterChoice> masterChoice_;
   GameCatalog games_;
   logging::Logger logger_;
 };
