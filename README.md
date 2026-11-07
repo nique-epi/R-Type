@@ -83,7 +83,7 @@ Each optional module has a CMake option, on by default. Off, its folder is not c
 |---|---|---|
 | `RTYPE_MODULE_AUDIO` | the sound of the client | the client plays nothing, and `--no-sound` changes nothing |
 | `RTYPE_MODULE_METRICS` | the metrics of the client and of each game process | no report in the journal, and `--traffic-csv` writes no file |
-| `RTYPE_MODULE_MASTER_LINK` | the registration of the server with the master | the server never registers, and `set master-url` and `set master-key` are refused |
+| `RTYPE_MODULE_MASTER_LINK` | the registration of the server with the master | the server never registers, and `set master-url`, `set master-key` and `set public-address` are refused |
 | `RTYPE_MODULE_CHAT` | the chat of the games | a chat line reaches nobody |
 | `RTYPE_MODULE_PLUGINS` | the loading of plugins | `plugin` and `plugin-folder` are unknown commands |
 | `RTYPE_MODULE_GAME_STATISTICS` | the `game-statistics` plugin; off whenever `RTYPE_MODULE_PLUGINS` is | no `game-statistics` file in `plugins/` |
@@ -213,7 +213,7 @@ curl -X POST http://127.0.0.1:8080/api/servers -d '{"name":"Paris 1"}'
 
 After each heartbeat, the master sends a probe over UDP to the port the game server registered, and lists as unreachable a server whose port it cannot reach: that port must be open to the master, as it is to the players.
 
-Without `master-url` or `master-key`, a game server runs alone and is listed nowhere.
+Without `master-url` or `master-key`, a game server runs alone and is listed nowhere. A supervisor on the machine of the master sets `public-address` to the address players reach it at, or the master lists it at `127.0.0.1`.
 
 - **Why HTTP:** the subject requires UDP for every message of a game and accepts TCP for other needs when it is justified. The master carries no message of a game, and the web administration the subject accepts needs HTTP in a browser, so one protocol serves the programs and the web site, readable with `curl`. A player still joins a server over UDP when the master is stopped.
 - **Why a mode and not a third binary:** the subject lists two binaries, `r-type_server` and `r-type_client`. The master ships inside the first and reuses its stop on Ctrl-C, its configuration file and its journal; it still runs as a process of its own, so a master that stops stops no game.

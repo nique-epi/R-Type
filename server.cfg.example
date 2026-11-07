@@ -40,6 +40,11 @@ set database ""
 set master-url ""
 set master-key ""
 
+# [supervisor] The IPv4 address players reach this server at, which the master
+# lists. Empty: the master lists the address the registration comes from,
+# 127.0.0.1 when the master runs on this machine.
+set public-address ""
+
 # [supervisor] The name players read in the list of servers and in the answer to an
 # information request, 1 to 32 bytes.
 set server-name "R-Type server"

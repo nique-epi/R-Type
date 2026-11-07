@@ -49,6 +49,7 @@ Server settings. Only the supervisor reads `server.cfg`: it runs the lines of it
 | `database` | the supervisor | a path | empty | The SQLite file the leaderboard of the server is kept in, given to every game; empty for `r-type_server_<port>.db` next to the executable, with the port of the supervisor. |
 | `master-url` | the supervisor | `http://<host>[:<port>]` | empty | The master the server is listed on; empty to run alone. |
 | `master-key` | the supervisor | a key | empty | The key the master gave when the host created the server; empty to run alone. |
+| `public-address` | the supervisor | an IPv4 address written as four numbers, or empty | empty | The address the master lists for this server; empty lets the master take the address the registration comes from. |
 | `server-name` | the supervisor | 1 to 32 bytes | `R-Type server` | The name players read in the list of servers and in the answer to an information request. |
 | `game-statistics-file` | the games | a path | empty | Declared by the `game-statistics` plugin, only once a `plugin game-statistics` line loads it: the CSV file the statistics of each game are named after, each game putting `_<port>` before its extension, with its own port; empty for `r-type_statistics_<port>.csv` next to the executable. |
 

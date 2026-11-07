@@ -153,17 +153,19 @@ TEST_F(SupervisorModulesFixture, KeepsTheLinesOfTheSettingsItOwns) {
 }
 
 /**
- * Given a server.cfg that sets master-url and master-key, in a build that
- * compiled the master link, which declares them
+ * Given a server.cfg that sets master-url, master-key and an empty
+ * public-address, in a build that compiled the master link, which declares
+ * them
  * When the supervisor starts
- * Then it refuses neither and hands neither to its games
+ * Then it refuses none of them and hands none to its games
  */
 TEST_F(SupervisorModulesFixture, KeepsTheLinesOfTheMasterSettings) {
   if (!MASTER_LINK_MODULE_BUILT) {
     GTEST_SKIP() << "the build leaves the master link out";
   }
-  writeConfiguration(
-      {std::string{MASTER_URL_LINE}, std::string{MASTER_KEY_LINE}});
+  writeConfiguration({std::string{MASTER_URL_LINE},
+                      std::string{MASTER_KEY_LINE},
+                      std::string{PUBLIC_ADDRESS_LINE}});
   const auto application = supervisor({});
 
   application->start();
@@ -174,23 +176,43 @@ TEST_F(SupervisorModulesFixture, KeepsTheLinesOfTheMasterSettings) {
 }
 
 /**
- * Given a server.cfg that sets master-url and master-key, in a build that left
- * the master link out, so nothing declares them
+ * Given a server.cfg that sets master-url, master-key and public-address, in
+ * a build that left the master link out, so nothing declares them
  * When the supervisor starts
- * Then it starts, refuses both lines, and hands neither to its games
+ * Then it starts, refuses the three lines, and hands none to its games
  */
 TEST_F(SupervisorModulesFixture, RefusesTheMasterSettingsWithoutTheMasterLink) {
   if (MASTER_LINK_MODULE_BUILT) {
     GTEST_SKIP() << "the build has the master link";
   }
-  writeConfiguration(
-      {std::string{MASTER_URL_LINE}, std::string{MASTER_KEY_LINE}});
+  writeConfiguration({std::string{MASTER_URL_LINE},
+                      std::string{MASTER_KEY_LINE},
+                      std::string{PUBLIC_ADDRESS_LINE}});
   const auto application = supervisor({});
 
   EXPECT_NO_THROW(application->start());
 
-  EXPECT_EQ(report().refusals.size(), 2U);
+  EXPECT_EQ(report().refusals.size(), MASTER_SETTING_COUNT);
   EXPECT_TRUE(report().handedOverLines.empty());
+  application->stop();
+}
+
+/**
+ * Given a server.cfg whose public-address is a host name, not an IPv4
+ * address, in a build that compiled the master link
+ * When the supervisor starts
+ * Then that line is refused
+ */
+TEST_F(SupervisorModulesFixture, RefusesAPublicAddressThatIsNoIpv4Address) {
+  if (!MASTER_LINK_MODULE_BUILT) {
+    GTEST_SKIP() << "the build leaves the master link out";
+  }
+  writeConfiguration({std::string{HOST_NAME_PUBLIC_ADDRESS_LINE}});
+  const auto application = supervisor({});
+
+  application->start();
+
+  EXPECT_EQ(report().refusals.size(), 1U);
   application->stop();
 }
 

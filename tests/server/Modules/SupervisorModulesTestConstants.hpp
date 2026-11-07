@@ -37,4 +37,14 @@ constexpr std::uint16_t SEATS_OF_A_SUPERVISOR = 32;
 constexpr std::string_view SERVER_NAME_LINE = "set server-name Paris";
 constexpr std::string_view MASTER_URL_LINE = "set master-url \"\"";
 constexpr std::string_view MASTER_KEY_LINE = "set master-key \"\"";
+constexpr std::string_view PUBLIC_ADDRESS_LINE = "set public-address \"\"";
+
+/** @brief The settings the master link declares: master-url, master-key and
+ * public-address. */
+constexpr std::size_t MASTER_SETTING_COUNT = 3;
+
+/** @brief A public-address that names a host, which only an IPv4 address may
+ * be. */
+constexpr std::string_view HOST_NAME_PUBLIC_ADDRESS_LINE =
+    "set public-address paris.example.org";
 constexpr std::string_view DATABASE_LINE = "set database \"\"";

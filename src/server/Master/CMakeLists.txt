@@ -29,6 +29,7 @@ target_link_libraries(rtype_server_master_module
     rtype_concurrency_interruptible_sleep
     rtype_network_constants
     rtype_network_exceptions
+    rtype_network_transport
     rtype_server_constants
 )
 
