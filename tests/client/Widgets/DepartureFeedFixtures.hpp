@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/System/Vector2.hpp>
 #include <cstdint>
 #include <string_view>
 #include "PilotStatus.hpp"
@@ -14,3 +15,7 @@
  * sheets. */
 [[nodiscard]] InterfaceCanvasRecord feedPaintingOf(
     const rtype::client::PilotStatus& pilot);
+
+/** @returns What a feed that followed @p pilot paints from @p topLeft down. */
+[[nodiscard]] InterfaceCanvasRecord feedPaintingFrom(
+    const rtype::client::PilotStatus& pilot, sf::Vector2i topLeft);

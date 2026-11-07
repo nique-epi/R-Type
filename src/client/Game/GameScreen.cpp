@@ -24,6 +24,7 @@
 #include "FinalRanking.hpp"
 #include "FlashPreference.hpp"
 #include "GameEnded.hpp"
+#include "GameNoticeConstants.hpp"
 #include "GameResult.hpp"
 #include "GameScreenParts.hpp"
 #include "GroundEffectSystem.hpp"
@@ -270,7 +271,7 @@ void GameScreen::repaintStatus() {
   statusCanvas_->clear();
   paintStatusBand(*statusCanvas_, scoreBoard_.pilots(), palette);
   paintMissionBanner(*statusCanvas_, banner);
-  departures_.paint(*statusCanvas_, palette);
+  departures_.paint(*statusCanvas_, palette, DEPARTURE_FEED_TOP_LEFT);
   silence_.paint(*statusCanvas_);
   statusCanvas_->display();
   paintedStatusRevision_ = scoreBoard_.revision();
