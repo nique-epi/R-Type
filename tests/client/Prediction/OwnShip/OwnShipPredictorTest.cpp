@@ -11,6 +11,7 @@
 #include "PredictionTestConstants.hpp"
 #include "ProtocolConstants.hpp"
 #include "RecordingPlayerInputLink.hpp"
+#include "ShipControl.hpp"
 #include "TimeConstants.hpp"
 
 using rtype::client::ActionSet;
@@ -18,16 +19,22 @@ using rtype::client::OwnShipPredictor;
 using rtype::client::PlayerAction;
 using rtype::client::PlayerCommand;
 using rtype::client::PredictedCommand;
+using rtype::client::testing::FIRST_COMMAND;
 using rtype::client::testing::HALF_A_TICK;
+using rtype::client::testing::HOLDING_RIGHT;
 using rtype::client::testing::NEWER_SHIP_ID;
 using rtype::client::testing::OTHER_PLAYER_NUMBER;
 using rtype::client::testing::OWN_PLAYER_NUMBER;
 using rtype::client::testing::OWN_SHIP_ID;
+using rtype::client::testing::shipAfterCommands;
 using rtype::client::testing::SHOWN_TICK;
 using rtype::client::testing::START;
+using rtype::client::testing::stateWithoutAShip;
 using rtype::client::testing::stateWithoutEntities;
 using rtype::client::testing::stateWithShip;
+using rtype::client::testing::THREE_TICKS;
 using rtype::client::testing::TICKS_OF_A_STALL;
+using rtype::client::testing::TWO_COMMANDS;
 using rtype::engine::MAXIMUM_TICKS_PER_ADVANCE;
 using rtype::engine::SIMULATION_TICK_DURATION;
 using rtype::identifiers::NO_ENTITY_ID;
@@ -225,4 +232,29 @@ TEST(OwnShipPredictor, StopForgetsTheTimeNotYetCounted) {
   predictor.advance(HALF_A_TICK, PlayerCommand{}, link);
 
   EXPECT_TRUE(link.sentActions().empty());
+}
+
+/**
+ * Given a predictor whose ship was destroyed, which advanced three ticks
+ * holding right while it had none
+ * When a state lists the new ship at rest at START, the server having applied
+ * command 1
+ * Then the ship is where commands 2 and 3 take it from START, not at START:
+ * no snap back once the server applies them
+ */
+TEST(OwnShipPredictor, ANewShipStartsWithTheCommandsSentSince) {
+  RecordingPlayerInputLink link;
+  OwnShipPredictor predictor(OWN_PLAYER_NUMBER);
+  predictor.apply(stateWithShip(OWN_PLAYER_NUMBER, OWN_SHIP_ID, START, 0));
+  predictor.apply(stateWithoutAShip(OWN_PLAYER_NUMBER, 0));
+  ActionSet held;
+  held.add(PlayerAction::Right);
+  predictor.advance(THREE_TICKS, PlayerCommand{.held = held}, link);
+
+  predictor.apply(
+      stateWithShip(OWN_PLAYER_NUMBER, NEWER_SHIP_ID, START, FIRST_COMMAND));
+
+  const rtype::game::MovingShip server = shipAfterCommands(
+      HOLDING_RIGHT, static_cast<std::uint32_t>(TWO_COMMANDS));
+  EXPECT_FLOAT_EQ(predictor.position().x, server.position.x);
 }
