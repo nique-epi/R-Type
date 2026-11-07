@@ -18,9 +18,9 @@ namespace rtype::game {
  *
  * Subscribes to engine::Collision on construction and unsubscribes on
  * destruction. A player missile and an enemy, or an enemy missile and a
- * player, become a MissileHit, except a player missile that carries a
- * ViewDelay: LagCompensatedHitSystem tests that one where its player saw the
- * enemies. A player and an enemy become a ShipContact. Any
+ * player, become a MissileHit, and a player and an enemy a ShipContact,
+ * except when the missile of the player or the ship carries a ViewDelay:
+ * LagCompensatedHitSystem tests those where their player saw the enemies. Any
  * other pair, an entity without an EntityType and an entity that is no longer
  * alive are ignored. The two entities of a Collision may come in either order.
  * The bus and the registry must outlive this object.

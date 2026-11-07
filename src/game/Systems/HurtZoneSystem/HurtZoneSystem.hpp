@@ -22,7 +22,9 @@ namespace rtype::game {
  * CurrentAction of the enemy; an enemy with no CurrentAction, or an idle one,
  * has only its boxes that hurt all the time. At most one ShipContact per ship
  * and enemy and update, however many boxes overlap. Only ships (EntityType
- * Player with a Position and a CollisionBox) are hurt. What the contact costs
+ * Player with a Position and a CollisionBox) are hurt, and not a ship that
+ * carries a ViewDelay: LagCompensatedHitSystem tests that one against the
+ * boxes its player saw. What the contact costs
  * is not decided here: LifeKeeper does. The events are only queued: the loop
  * must call EventBus::dispatch() after the systems. The bus must outlive the
  * system.
