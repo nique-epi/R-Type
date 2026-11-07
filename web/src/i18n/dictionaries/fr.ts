@@ -1,4 +1,5 @@
 import type { Dictionary } from '../dictionary';
+import { frPages } from './fr-pages';
 
 /** The words of the mockup. Lines drawn in Press Start 2P carry no accent: it has no glyph for them. */
 export const fr: Dictionary = {
@@ -131,4 +132,5 @@ export const fr: Dictionary = {
   keyBindings: { key: 'Touche', action: 'Action' },
   wiki: { navigation: 'Wiki' },
   team: { github: 'GitHub {handle}' },
+  pages: frPages,
 };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { format, formatCount } from './format';
+import { format, formatCount, selectCountTemplate } from './format';
 
 const PILOTS = { one: '{count} pilote', other: '{count} pilotes' };
 const PILOTS_EN = { one: '{count} pilot', other: '{count} pilots' };
@@ -31,5 +31,19 @@ describe('formatCount', () => {
     expect(formatCount(2, PILOTS, 'fr')).toBe('2 pilotes');
     expect(formatCount(1, PILOTS_EN, 'en')).toBe('1 pilot');
     expect(formatCount(2, PILOTS_EN, 'en')).toBe('2 pilots');
+  });
+});
+
+describe('selectCountTemplate', () => {
+  const templates = { one: '{count} pilote', other: '{count} pilotes' };
+
+  it('gives the template of the count, unfilled', () => {
+    expect(selectCountTemplate(1, templates, 'fr')).toBe('{count} pilote');
+    expect(selectCountTemplate(3, templates, 'fr')).toBe('{count} pilotes');
+  });
+
+  it('reads zero as French does, as a singular', () => {
+    expect(selectCountTemplate(0, templates, 'fr')).toBe('{count} pilote');
+    expect(selectCountTemplate(0, templates, 'en')).toBe('{count} pilotes');
   });
 });

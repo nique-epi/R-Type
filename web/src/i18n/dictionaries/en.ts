@@ -1,4 +1,5 @@
 import type { Dictionary } from '../dictionary';
+import { enPages } from './en-pages';
 
 /** The words of the mockup in English, laid out like the French ones. */
 export const en: Dictionary = {
@@ -130,4 +131,5 @@ export const en: Dictionary = {
   keyBindings: { key: 'Key', action: 'Action' },
   wiki: { navigation: 'Wiki' },
   team: { github: 'GitHub {handle}' },
+  pages: enPages,
 };

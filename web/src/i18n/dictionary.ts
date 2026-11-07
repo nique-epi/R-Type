@@ -9,6 +9,7 @@ import type { BestiaryBookLabels } from '@/components/wiki/bestiary-book';
 import type { PalettePickerProps } from '@/components/wiki/palette-picker';
 import type { GameState, ServerStatus } from '@/lib/rtype/servers';
 import type { Locale } from './locales';
+import type { PageCopy } from './page-copy';
 
 /**
  * The fixed words of the components, in one language. Each component names
@@ -35,4 +36,5 @@ export type Dictionary = {
   keyBindings: { key: string; action: string };
   wiki: { navigation: string };
   team: { github: string };
+  pages: PageCopy;
 };
