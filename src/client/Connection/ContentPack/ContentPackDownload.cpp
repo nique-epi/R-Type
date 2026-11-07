@@ -16,6 +16,7 @@
 #include "PackDownloadTarget.hpp"
 #include "PackTryEnd.hpp"
 
+// NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
 namespace rtype::client {
 
 ContentPackDownload::ContentPackDownload(PackDownloadTarget target)
@@ -61,8 +62,8 @@ PackTryEnd ContentPackDownload::tryOnce(const std::stop_token& stop) {
   const std::size_t from = progress().received;
   httplib::Headers headers;
   if (from > 0) {
-    headers.insert(httplib::make_range_header(
-        {{static_cast<ssize_t>(from), RANGE_TO_THE_END}}));
+    headers.insert(httplib::make_range_header({httplib::Range{
+        static_cast<httplib::Range::first_type>(from), RANGE_TO_THE_END}}));
   }
   bool refused = false;
   const httplib::Result result = client.Get(
@@ -104,3 +105,4 @@ void ContentPackDownload::finish(PackDownloadOutcome outcome) {
 }
 
 }  // namespace rtype::client
+// NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)

@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 #include "ContentFile.hpp"
-#include "ContentFingerprintText.hpp"
 #include "ContentPack.hpp"
 #include "ContentPackRoute.hpp"
 #include "ServerContentModuleFixtures.hpp"

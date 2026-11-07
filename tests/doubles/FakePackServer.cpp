@@ -9,16 +9,20 @@
 #include <thread>
 #include <utility>
 #include "FakePackServerConstants.hpp"
+#include "ServedPack.hpp"
 
-FakePackServer::FakePackServer(std::string path, std::string body)
-    : body_(std::move(body)) {
-  server_.Get(
-      path, [this](const httplib::Request& request,
-                   httplib::Response& response) { answer(request, response); });
+// NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
+FakePackServer::FakePackServer(ServedPack pack) : body_(std::move(pack.body)) {
+  server_.Get(pack.path, [this](const httplib::Request& request,
+                                httplib::Response& response) {
+    answer(request, response);
+  });
   port_ = server_.bind_to_any_port(LOOPBACK);
   listener_ = std::thread{[this] { server_.listen_after_bind(); }};
   server_.wait_until_ready();
 }
+
+// NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)
 
 FakePackServer::~FakePackServer() {
   releaseTheAnswers();

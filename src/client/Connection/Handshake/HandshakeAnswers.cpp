@@ -1,5 +1,4 @@
 #include "HandshakeAnswers.hpp"
-#include <cstdint>
 #include <optional>
 #include <utility>
 #include "ConnectionAccepted.hpp"
@@ -110,7 +109,7 @@ ConnectionPhase HandshakeAnswers::loadContentOf(
       accepted.content, parts_.outbox.get().server().address));
 }
 
-ConnectionPhase HandshakeAnswers::phaseAfter(ContentStep step) {
+ConnectionPhase HandshakeAnswers::phaseAfter(ContentStep step) const {
   switch (step) {
     case ContentStep::Ready:
       if (std::optional<PackContent> content =

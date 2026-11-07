@@ -1,11 +1,9 @@
 #include <gtest/gtest.h>
 #include <cstdint>
-#include <string>
 #include <vector>
 #include "ByteText.hpp"
 #include "ConnectionPhase.hpp"
 #include "ContentAnnouncement.hpp"
-#include "ContentPackDownloadFixtures.hpp"
 #include "ContentPackDownloadTestConstants.hpp"
 #include "ContentPackTestFiles.hpp"
 #include "ContentPackTestFilesConstants.hpp"

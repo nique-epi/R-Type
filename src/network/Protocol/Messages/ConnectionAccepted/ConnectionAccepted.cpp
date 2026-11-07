@@ -1,6 +1,6 @@
 #include "ConnectionAccepted.hpp"
+#include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <span>
 #include <type_traits>
 #include "ByteReader.hpp"

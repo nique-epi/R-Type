@@ -2,7 +2,6 @@
 #include <cstddef>
 #include <mutex>
 #include <string>
-#include <utility>
 #include <vector>
 #include "AllowanceVerdict.hpp"
 #include "ApiRequest.hpp"

@@ -77,7 +77,7 @@ class HandshakeAnswers {
 
   /** @returns The phase @p step leads to; a pack read is kept as the content
    * of the session. */
-  [[nodiscard]] ConnectionPhase phaseAfter(ContentStep step);
+  [[nodiscard]] ConnectionPhase phaseAfter(ContentStep step) const;
 
   HandshakeAnswersParts parts_;
 };

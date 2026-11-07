@@ -16,6 +16,7 @@
 #include "MessageType.hpp"
 #include "NetworkException.hpp"
 #include "NetworkTestConstants.hpp"
+#include "ProtocolConstants.hpp"
 #include "ProtocolTestConstants.hpp"
 #include "ReadyState.hpp"
 #include "WorldState.hpp"

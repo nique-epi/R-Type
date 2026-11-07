@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
-#include <vector>
 #include "ContentPackDownload.hpp"
 #include "PackDownloadProgress.hpp"
 #include "PackDownloadTarget.hpp"

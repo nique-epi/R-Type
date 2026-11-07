@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
 
 namespace rtype::client {
@@ -29,6 +30,6 @@ constexpr std::string_view PARTIAL_PACK_FILE_SUFFIX = ".part";
 
 /** @brief What a range of bytes from an offset to the end of a body ends with
  * (cpp-httplib). */
-constexpr long RANGE_TO_THE_END = -1;
+constexpr std::int64_t RANGE_TO_THE_END = -1;
 
 }  // namespace rtype::client

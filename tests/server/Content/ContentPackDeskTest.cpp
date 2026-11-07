@@ -22,7 +22,7 @@ using rtype::server::testing::ETAG;
 using rtype::server::testing::ETAG_QUOTE;
 using rtype::server::testing::NOT_FOUND;
 using rtype::server::testing::OCTET_STREAM;
-using rtype::server::testing::OK;
+using rtype::server::testing::OK_ANSWER;
 using rtype::server::testing::OTHER_PLAYER_ADDRESS;
 using rtype::server::testing::packRequest;
 using rtype::server::testing::PLAYER_ADDRESS;
@@ -46,7 +46,7 @@ TEST(ContentPackDesk, ServesThePackByItsFingerprint) {
   const ApiResponse answer =
       desk.answer(packRequest(PLAYER_ADDRESS, fingerprint));
 
-  EXPECT_EQ(answer.status, OK);
+  EXPECT_EQ(answer.status, OK_ANSWER);
   EXPECT_EQ(answer.body, textOf(pack));
   EXPECT_EQ(answer.contentType, OCTET_STREAM);
   EXPECT_EQ(answer.header.value_or(HttpHeader{}).name, ETAG);
@@ -81,7 +81,8 @@ TEST(ContentPackDesk, RefusesOneRequestMoreThanItAllowsAtOnce) {
   const std::string fingerprint = fingerprintText(contentFingerprintOf(pack));
   ContentPackDesk desk{pack, clock};
   for (std::size_t request = 0; request < REQUESTS_AT_ONCE; ++request) {
-    ASSERT_EQ(desk.answer(packRequest(PLAYER_ADDRESS, fingerprint)).status, OK);
+    ASSERT_EQ(desk.answer(packRequest(PLAYER_ADDRESS, fingerprint)).status,
+              OK_ANSWER);
   }
 
   const ApiResponse answer =
@@ -106,7 +107,7 @@ TEST(ContentPackDesk, AnotherAddressKeepsItsOwnAllowance) {
   }
 
   EXPECT_EQ(desk.answer(packRequest(OTHER_PLAYER_ADDRESS, fingerprint)).status,
-            OK);
+            OK_ANSWER);
 }
 
 /**
@@ -125,5 +126,6 @@ TEST(ContentPackDesk, AllowsOneMoreRequestOnceItsTimePassed) {
 
   clock.advance(TIME_BETWEEN_REQUESTS);
 
-  EXPECT_EQ(desk.answer(packRequest(PLAYER_ADDRESS, fingerprint)).status, OK);
+  EXPECT_EQ(desk.answer(packRequest(PLAYER_ADDRESS, fingerprint)).status,
+            OK_ANSWER);
 }

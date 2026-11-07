@@ -19,6 +19,7 @@ std::string pathOfTheLocalPack() {
       rtype::network::encodeContentPack(files)));
 }
 
+// NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
 httplib::Result fetchedFrom(std::uint16_t port, const std::string& path) {
   httplib::Client client{std::string{rtype::network::LOOPBACK_IPV4_ADDRESS},
                          port};
@@ -30,6 +31,8 @@ httplib::Result fetchedFromOffset(std::uint16_t port, const std::string& path,
   httplib::Client client{std::string{rtype::network::LOOPBACK_IPV4_ADDRESS},
                          port};
   const httplib::Headers headers{httplib::make_range_header(
-      {{static_cast<ssize_t>(offset), rtype::server::testing::NO_RANGE_END}})};
+      {httplib::Range{static_cast<httplib::Range::first_type>(offset),
+                      rtype::server::testing::NO_RANGE_END}})};
   return client.Get(path, headers);
 }
+// NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)

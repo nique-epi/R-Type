@@ -20,7 +20,7 @@ constexpr std::size_t REQUESTS_AT_ONCE = 3;
 constexpr std::chrono::seconds TIME_BETWEEN_REQUESTS{10};
 
 /** @brief The statuses of RFC 9110 the desk answers. */
-constexpr int OK = 200;
+constexpr int OK_ANSWER = 200;
 constexpr int NOT_FOUND = 404;
 constexpr int TOO_MANY_REQUESTS = 429;
 

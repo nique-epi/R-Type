@@ -48,6 +48,9 @@ void ServerContentModule::install(engine::InstallContext& context) {
 }
 
 void ServerContentModule::start() {
+  if (!desk_.has_value()) {
+    return;
+  }
   const std::uint16_t port = port_->listeningPort();
   if (port == network::ANY_PORT) {
     logger_.warn(

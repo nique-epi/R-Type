@@ -6,6 +6,7 @@
 #include <stop_token>
 #include <thread>
 #include <vector>
+#include "PackDownloadOutcome.hpp"
 #include "PackDownloadProgress.hpp"
 #include "PackDownloadTarget.hpp"
 #include "PackTryEnd.hpp"

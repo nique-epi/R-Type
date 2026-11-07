@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <cstdint>
 #include <span>
 #include <vector>
 #include "ConnectionAccepted.hpp"

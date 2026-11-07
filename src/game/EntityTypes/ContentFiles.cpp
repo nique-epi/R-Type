@@ -11,6 +11,7 @@
 #include "ContentFile.hpp"
 #include "DataFileConstants.hpp"
 #include "DataFileReading.hpp"
+#include "DataFileTable.hpp"
 #include "EntitySheetConstants.hpp"
 #include "PathText.hpp"
 #include "SheetText.hpp"

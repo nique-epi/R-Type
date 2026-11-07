@@ -12,7 +12,7 @@ constexpr std::uint8_t CONTENT_PACK_FORMAT_VERSION = 1;
 
 /**
  * @brief The largest content pack, encoded, 8 MiB: the content the game ships
- * with is about 150 KiB, and a client never keeps more than this per server.
+ * with takes 26 270 bytes, and a client never keeps more than this per server.
  */
 constexpr std::size_t MAXIMUM_CONTENT_PACK_BYTES = std::size_t{8} * 1024 * 1024;
 

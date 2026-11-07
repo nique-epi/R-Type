@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <string>
 #include <thread>
-#include <vector>
 #include "ByteText.hpp"
 #include "ContentPackDownload.hpp"
 #include "ContentPackDownloadTestConstants.hpp"

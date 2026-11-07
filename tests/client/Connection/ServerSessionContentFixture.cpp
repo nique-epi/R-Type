@@ -1,5 +1,6 @@
 #include "ServerSessionContentFixture.hpp"
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -7,6 +8,7 @@
 #include <vector>
 #include "ConnectionAccepted.hpp"
 #include "ConnectionPhase.hpp"
+#include "ConnectionRequest.hpp"
 #include "ContentAnnouncement.hpp"
 #include "ContentPackRoute.hpp"
 #include "ContentPackTestFiles.hpp"
@@ -18,6 +20,7 @@
 #include "NetworkConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
+#include "ServedPack.hpp"
 #include "ServerSession.hpp"
 #include "ServerSessionContentTestConstants.hpp"
 #include "ServerSessionFixtures.hpp"
@@ -65,8 +68,8 @@ network::ContentAnnouncement ServerSessionContentFixture::serveTheLancerPackAs(
       .fingerprint = fingerprintOf(pack),
       .size = static_cast<std::uint32_t>(body.size()),
       .port = 0};
-  supervisor_ = std::make_unique<FakePackServer>(
-      network::contentPackPathOf(content.fingerprint), body);
+  supervisor_ = std::make_unique<FakePackServer>(ServedPack{
+      .path = network::contentPackPathOf(content.fingerprint), .body = body});
   return network::ContentAnnouncement{.fingerprint = content.fingerprint,
                                       .size = content.size,
                                       .port = supervisor_->port()};

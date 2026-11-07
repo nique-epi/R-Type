@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <functional>
-#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "ContentAnnouncement.hpp"
 #include "Endpoint.hpp"

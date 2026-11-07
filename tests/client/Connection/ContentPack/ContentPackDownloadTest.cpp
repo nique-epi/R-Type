@@ -6,16 +6,14 @@
 #include "ContentPackDownload.hpp"
 #include "ContentPackDownloadFixtures.hpp"
 #include "ContentPackDownloadTestConstants.hpp"
-#include "ContentPackTestFiles.hpp"
 #include "FakePackServer.hpp"
 #include "PackDownloadOutcome.hpp"
 #include "PackDownloadProgress.hpp"
-#include "PackDownloadTarget.hpp"
+#include "ServedPack.hpp"
 
 using rtype::client::ContentPackDownload;
 using rtype::client::PackDownloadOutcome;
 using rtype::client::PackDownloadProgress;
-using rtype::client::PackDownloadTarget;
 using rtype::client::testing::CUT_AFTER;
 using rtype::client::testing::endOf;
 using rtype::client::testing::lancerBody;
@@ -35,7 +33,8 @@ using rtype::network::textOf;
  */
 TEST(ContentPackDownload, DownloadsAWholePack) {
   const std::string body = lancerBody();
-  const FakePackServer server{std::string{PACK_PATH}, body};
+  const FakePackServer server{
+      ServedPack{.path = std::string{PACK_PATH}, .body = body}};
   ContentPackDownload download{packAt(server.port(), body.size())};
 
   const PackDownloadProgress end = endOf(download);
@@ -52,7 +51,8 @@ TEST(ContentPackDownload, DownloadsAWholePack) {
  */
 TEST(ContentPackDownload, ResumesACutTryWhereItStopped) {
   const std::string body = lancerBody();
-  FakePackServer server{std::string{PACK_PATH}, body};
+  FakePackServer server{
+      ServedPack{.path = std::string{PACK_PATH}, .body = body}};
   server.cutTheFirstAnswerAfter(CUT_AFTER);
   ContentPackDownload download{packAt(server.port(), body.size())};
 
@@ -70,7 +70,8 @@ TEST(ContentPackDownload, ResumesACutTryWhereItStopped) {
  * Then the download fails at once, without trying again
  */
 TEST(ContentPackDownload, FailsAtOnceOnARefusal) {
-  FakePackServer server{std::string{PACK_PATH}, lancerBody()};
+  FakePackServer server{
+      ServedPack{.path = std::string{PACK_PATH}, .body = lancerBody()}};
   server.answerEveryRequestWith(NOT_FOUND_STATUS);
   ContentPackDownload download{packAt(server.port(), lancerBody().size())};
 
@@ -88,8 +89,9 @@ TEST(ContentPackDownload, FailsAtOnceOnARefusal) {
  */
 TEST(ContentPackDownload, FailsWhenTheServerSendsMoreThanItAnnounced) {
   const std::string body = lancerBody();
-  const FakePackServer server{std::string{PACK_PATH}, body};
-  ContentPackDownload download{packAt(server.port(), body.size() - 1)};
+  const FakePackServer server{
+      ServedPack{.path = std::string{PACK_PATH}, .body = body}};
+  const ContentPackDownload download{packAt(server.port(), body.size() - 1)};
 
   const PackDownloadProgress end = endOf(download);
 
@@ -104,7 +106,7 @@ TEST(ContentPackDownload, FailsWhenTheServerSendsMoreThanItAnnounced) {
  * Then the download fails once its tries are spent
  */
 TEST(ContentPackDownload, FailsWhenNothingAnswers) {
-  ContentPackDownload download{packAt(SILENT_PORT, lancerBody().size())};
+  const ContentPackDownload download{packAt(SILENT_PORT, lancerBody().size())};
 
   EXPECT_EQ(endOf(download).outcome, PackDownloadOutcome::Failed);
 }

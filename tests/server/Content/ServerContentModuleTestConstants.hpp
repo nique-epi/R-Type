@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
 
 namespace rtype::server::testing {
@@ -13,7 +14,7 @@ constexpr int PARTIAL_ANSWER = 206;
 constexpr std::size_t BYTES_ALREADY_RECEIVED = 10;
 
 /** @brief The end of a range that runs to the end of the body. */
-constexpr long NO_RANGE_END = -1;
+constexpr std::int64_t NO_RANGE_END = -1;
 
 /** @brief A sheet the assets of the tests hold. */
 constexpr std::string_view DRIFTER_SHEET = "entities/drifter.toml";

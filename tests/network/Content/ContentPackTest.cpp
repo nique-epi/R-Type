@@ -6,7 +6,6 @@
 #include <utility>
 #include <vector>
 #include "ContentFile.hpp"
-#include "ContentFingerprint.hpp"
 #include "ContentPack.hpp"
 #include "ContentPackFixtures.hpp"
 #include "ContentPackTestConstants.hpp"

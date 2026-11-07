@@ -6,7 +6,6 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <vector>
 #include "ConnectedPlayer.hpp"
 #include "ConnectionAcceptorParts.hpp"
 #include "ConnectionRefused.hpp"

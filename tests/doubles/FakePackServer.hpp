@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <thread>
+#include "ServedPack.hpp"
 
 /**
  * @brief An HTTP server on the loopback that stands in for a supervisor
@@ -21,7 +22,7 @@
  */
 class FakePackServer {
  public:
-  FakePackServer(std::string path, std::string body);
+  explicit FakePackServer(ServedPack pack);
   ~FakePackServer();
   FakePackServer(const FakePackServer&) = delete;
   FakePackServer& operator=(const FakePackServer&) = delete;
