@@ -101,14 +101,19 @@ float shareOf(double value) {
       std::clamp(value, -double{FULL_STEERING}, double{FULL_STEERING}));
 }
 
+std::optional<EnemyPhase> phaseNamed(std::string_view name) {
+  for (std::size_t index = 0; index < PHASE_NAMES.size(); ++index) {
+    if (PHASE_NAMES.at(index) == name) {
+      return static_cast<EnemyPhase>(index);
+    }
+  }
+  return std::nullopt;
+}
+
 std::optional<EnemyPhase> phaseAt(lua_State* state, int table) {
   std::optional<EnemyPhase> phase;
   if (lua_getfield(state, table, ACTION_PHASE_KEY) == LUA_TSTRING) {
-    const std::string_view name{lua_tostring(state, -1)};
-    const auto* const found = std::ranges::find(PHASE_NAMES, name);
-    if (found != PHASE_NAMES.end()) {
-      phase = static_cast<EnemyPhase>(found - PHASE_NAMES.begin());
-    }
+    phase = phaseNamed(lua_tostring(state, -1));
   }
   lua_pop(state, 1);
   return phase;
