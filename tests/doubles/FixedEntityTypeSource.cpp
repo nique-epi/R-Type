@@ -2,11 +2,13 @@
 #include <cstdint>
 #include <optional>
 #include "Animation.hpp"
+#include "CollisionBox.hpp"
 #include "EntityAppearance.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "EntityType.hpp"
 #include "EntityTypeLook.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
+#include "ShipGun.hpp"
 
 using rtype::client::Animation;
 using rtype::client::ENTITY_SHEET_ID;
@@ -22,7 +24,8 @@ EntityAppearance appearancePlaying(const Animation& animation) {
       .sheet = ENTITY_SHEET_ID,
       .idleFrames = {animation.frames.begin(), animation.frames.end()},
       .idleFrameDuration = animation.frameDuration,
-      .actions = {}};
+      .actions = {},
+      .enragedIdleFrames = {}};
 }
 
 /** @returns The side of the type the double numbers @p number, or nothing
@@ -41,6 +44,21 @@ std::optional<EntityType> sideNumbered(std::uint8_t number) {
     default:
       return std::nullopt;
   }
+}
+
+/** @returns The box the double gives every type of side @p side. */
+rtype::game::CollisionBox boxOfSide(EntityType side) {
+  switch (side) {
+    case EntityType::Player:
+      return rtype::client::testing::SHIP_BOX;
+    case EntityType::PlayerMissile:
+      return rtype::client::testing::PLAYER_MISSILE_BOX;
+    case EntityType::EnemyMissile:
+      return rtype::client::testing::ENEMY_MISSILE_BOX;
+    case EntityType::Enemy:
+      return rtype::client::testing::BYDO_BOX;
+  }
+  return rtype::client::testing::BYDO_BOX;
 }
 
 }  // namespace
@@ -73,5 +91,17 @@ std::optional<EntityTypeLook> FixedEntityTypeSource::lookOf(
   if (!side.has_value()) {
     return std::nullopt;
   }
-  return EntityTypeLook{.side = *side, .appearance = appearanceOfSide(*side)};
+  return EntityTypeLook{.side = *side,
+                        .appearance = appearanceOfSide(*side),
+                        .hitbox = boxOfSide(*side)};
+}
+
+rtype::game::ShipGun FixedEntityTypeSource::shipGun() const {
+  return rtype::game::ShipGun{
+      .shipType = rtype::client::testing::SHIP_TYPE_NUMBER,
+      .projectileType = rtype::client::testing::PLAYER_MISSILE_TYPE_NUMBER,
+      .intervalTicks = rtype::client::testing::SHIP_GUN_INTERVAL_TICKS,
+      .firstShotTicks = 0,
+      .velocityX = rtype::client::testing::PLAYER_MISSILE_SPEED,
+      .velocityY = 0.0F};
 }

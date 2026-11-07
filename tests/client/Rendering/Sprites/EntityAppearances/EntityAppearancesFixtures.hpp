@@ -28,6 +28,15 @@
 [[nodiscard]] bool holds(rtype::game::SpriteFrame frame,
                          const rtype::game::CollisionBox& box);
 
+/** @returns Whether the hitbox of @p sheet lies away from the center of its
+ * body, as the eye of the Bydo Tyrant does. */
+[[nodiscard]] bool hitsAnOffsetBox(const rtype::game::EntitySheet& sheet);
+
+/** @returns Whether @p frame, laid as holds() lays it, holds @p box at its
+ * offset from the body. */
+[[nodiscard]] bool holdsTheHitbox(rtype::game::SpriteFrame frame,
+                                  const rtype::game::CollisionBox& box);
+
 /** @returns Whether @p frame, laid as holds() lays it, holds the hurt box
  * @p box, offset from the body. */
 [[nodiscard]] bool holds(rtype::game::SpriteFrame frame,

@@ -5,6 +5,7 @@
 #include <initializer_list>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "EntitySheets.hpp"
 #include "EventBus.hpp"
 #include "GameContext.hpp"
 #include "GameEnded.hpp"
@@ -33,6 +34,9 @@ class GameFlowFixture : public ::testing::Test {
 
   /** @brief A game flow whose Bydos come in @p waves. */
   explicit GameFlowFixture(WavePlan waves);
+  /** @brief A game flow whose Bydos come in @p waves, of the sheets @p types,
+   * which must outlive the fixture. */
+  GameFlowFixture(WavePlan waves, const game::EntitySheets& types);
 
  protected:
   /** @brief Connects the player at @p index and gives it a ship. */

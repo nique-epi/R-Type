@@ -1,5 +1,6 @@
 #include "PlayfieldExitSystemFixture.hpp"
 #include <vector>
+#include "Boss.hpp"
 #include "CollisionBox.hpp"
 #include "Direction.hpp"
 #include "Entity.hpp"
@@ -56,6 +57,12 @@ engine::Entity PlayfieldExitSystemFixture::addSteeredMissile(
   components_.add(missile, ENEMY_MISSILE_EXIT_BOX);
   components_.add(missile, Intent{.direction = heading, .steered = true});
   return missile;
+}
+
+engine::Entity PlayfieldExitSystemFixture::addBoss(float positionX) {
+  const engine::Entity boss = add(EntityType::Enemy, positionX);
+  components_.add(boss, Boss{});
+  return boss;
 }
 
 void PlayfieldExitSystemFixture::updateAndDispatch() {

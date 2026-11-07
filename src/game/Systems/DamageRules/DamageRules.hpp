@@ -14,6 +14,7 @@ class EventBus;
 
 namespace rtype::game {
 
+struct Health;
 struct MissileHit;
 
 /**
@@ -26,11 +27,14 @@ struct MissileHit;
  * while it is in the action its Fragile names: it is announced
  * with an EntityDamage while it has points left, and destroyed with an
  * EntityDestruction Killed when it has none. A target without Health is not
- * hurt. When the missile has a MissileOwner and the target that dies has a
- * ScoreValue above 0, an EnemyKilled follows the destruction, naming the owner
- * and the points. A hit naming an entity that is gone or has no NetworkIdentity
- * is ignored, so two missiles reaching the same target in one dispatch never
- * destroy it twice. The bus and the registry must outlive this object.
+ * hurt. A Boss in its arrival loses nothing: the missile is removed, nothing
+ * else is announced. A Boss that loses points is announced with a
+ * BossHealthChanged. When the missile has a MissileOwner and the target that
+ * dies has a ScoreValue above 0, an EnemyKilled follows the destruction, naming
+ * the owner and the points. A hit naming an entity that is gone or has no
+ * NetworkIdentity is ignored, so two missiles reaching the same target in one
+ * dispatch never destroy it twice. The bus and the registry must outlive this
+ * object.
  */
 class DamageRules {
  public:
@@ -50,6 +54,11 @@ class DamageRules {
    * to @p shooter, when a player shot it and it is worth any. */
   void killTarget(engine::Entity target, std::uint32_t networkId,
                   std::optional<std::uint8_t> shooter);
+
+  /** @brief Publishes a BossHealthChanged for @p target, which has
+   * @p health, when it is a boss. */
+  void announceBossHealth(engine::Entity target, std::uint32_t networkId,
+                          const Health& health);
 
   engine::EventBus& events_;
   engine::ComponentRegistry& components_;

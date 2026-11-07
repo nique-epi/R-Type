@@ -13,6 +13,8 @@ void SilentAudioService::playTheme() {}
 
 void SilentAudioService::playGameMusic() {}
 
+void SilentAudioService::silenceMusic() {}
+
 void SilentAudioService::open() {}
 
 void SilentAudioService::update([[maybe_unused]] engine::Duration elapsed) {}

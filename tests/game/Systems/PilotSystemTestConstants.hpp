@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include "Boss.hpp"
 #include "Health.hpp"
 #include "Position.hpp"
 
@@ -40,5 +41,13 @@ constexpr Health UNTOUCHED{.points = 3, .full = 3};
 
 /** @brief Where a behaviour of the tests makes its body jump. */
 constexpr Position JUMP_TARGET{.x = 640.0F, .y = 700.0F};
+
+/** @brief A boss that enraged, and how many actions an enemy has ended. */
+constexpr Boss ENRAGED_BOSS{.rageBelowPoints = 120,
+                            .rageAttack = 9,
+                            .arrivalAttack = 0,
+                            .fighting = true,
+                            .enraged = true};
+constexpr std::uint32_t THREE_ENDED_ACTIONS = 3;
 
 }  // namespace rtype::game::testing

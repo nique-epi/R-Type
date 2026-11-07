@@ -17,6 +17,8 @@ struct HostedRules {
   std::optional<std::uint32_t> seed;
   /** @brief The ticks the game holds each input. */
   std::size_t inputDelayTicks{0};
+  /** @brief Whether every game starts at its boss (`--boss`). */
+  bool startsAtBoss{false};
 };
 
 }  // namespace rtype::server

@@ -75,6 +75,7 @@ Paths below are relative to `.claude/rules/`.
 - `architecture/architecture-hpp-declarations-cpp-definitions.md`
 - `architecture/architecture-pure-virtual-interfaces.md`
 - `architecture/fix-architecture-a-class-the-tests-build-opens-no-opengl-context.md`
+- `architecture/fix-architecture-a-component-is-added-after-its-query-returns.md`
 - `architecture/fix-architecture-a-destructor-calls-nothing-that-may-throw.md`
 - `architecture/fix-architecture-a-function-does-one-kind-of-step.md`
 - `architecture/fix-architecture-a-module-declares-the-modules-it-reads.md`
@@ -145,6 +146,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-a-screen-pushed-over-others-leaves-them-running.md`
 - `fix/reasoning/fix-reasoning-a-sequence-asserts-its-starting-state.md`
 - `fix/reasoning/fix-reasoning-a-turn-is-counted-in-whole-frames.md`
+- `fix/reasoning/fix-reasoning-a-view-never-waits-on-a-message-it-can-do-without.md`
 - `fix/reasoning/fix-reasoning-an-error-type-is-not-a-diagnosis.md`
 - `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`
 - `fix/reasoning/fix-reasoning-bounded-contract-check-the-empty-state.md`

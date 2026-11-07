@@ -9,6 +9,8 @@
 #include "BlankRenderTarget.hpp"
 #include "BoundAction.hpp"
 #include "ColorMode.hpp"
+#include "ConnectionPhase.hpp"
+#include "ConnectionStatus.hpp"
 #include "DepartureFeedTestConstants.hpp"
 #include "DrawJournal.hpp"
 #include "EffectConstants.hpp"
@@ -50,6 +52,8 @@
 using rtype::client::BoundAction;
 using rtype::client::BYDO_EXPLOSION_FRAME;
 using rtype::client::ColorMode;
+using rtype::client::ConnectionPhase;
+using rtype::client::ConnectionStatus;
 using rtype::client::END_SCREEN;
 using rtype::client::GAME_OPTIONS_SCREEN;
 using rtype::client::GameScreen;
@@ -239,14 +243,19 @@ TEST_F(GameScreenFixture, AnExplosionEndsAfterItsLength) {
 }
 
 /**
- * Given a player missile the server announced
+ * Given a player missile the server announced and listed, applied in one
+ * frame
  * When the next update is one long frame of 500 ms, as after the window was
- * dragged
+ * dragged, which brings the tick shown to the missile
  * Then the muzzle flash born in that frame is painted, though it lasts 100 ms
  */
 TEST_F(GameScreenFixture, AnEffectBornInALongFrameIsPaintedOnce) {
   entityMessages().queue(
       spawned(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER, FIRST_POSITION));
+  entityMessages().queue(stateListing(
+      APPLIED_TICK,
+      {listed(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER, FIRST_POSITION)}));
+  screens().update(ONE_FRAME);
 
   screens().update(LONG_FRAME);
 
@@ -257,15 +266,20 @@ TEST_F(GameScreenFixture, AnEffectBornInALongFrameIsPaintedOnce) {
 /**
  * Given the game running, and the player who turns REDUCE FLASHES on in the
  * options
- * When the server announces a player missile
+ * When the server announces and lists a player missile, and the tick shown
+ * reaches it
  * Then its muzzle flash shows its version without flash
  */
 TEST_F(GameScreenFixture, ReducingFlashesDuringTheGameAppliesToTheNextEffect) {
   settings().reduceFlashes = true;
   entityMessages().queue(
       spawned(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER, FIRST_POSITION));
+  entityMessages().queue(stateListing(
+      APPLIED_TICK,
+      {listed(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER, FIRST_POSITION)}));
 
   screens().update(ONE_FRAME);
+  screens().update(LONG_FRAME);
 
   EXPECT_THAT(layerRecord().framesAtLastPaint,
               Contains(PLAYER_MUZZLE_FLASH_WITHOUT_FLASH_FRAME));
@@ -526,6 +540,73 @@ TEST(GameScreenPredictionTest, SendsOneInputPerTickWhenItIsOn) {
   game.update(THREE_TICKS);
 
   EXPECT_EQ(doubles.inputs.sentActions().size(), INPUTS_IN_THREE_TICKS);
+}
+
+/**
+ * Given the game of player 1 with PREDICTION on, a state listing its ship
+ * applied
+ * When the player holds shoot for three ticks, the server having answered
+ * nothing yet
+ * Then the shot of a player plays at once: the client fired its own missile
+ */
+TEST(GameScreenPredictionTest, FiresItsOwnMissileBeforeTheServerAnswers) {
+  LoneGameParts doubles;
+  doubles.connection.setStatus(ConnectionStatus{
+      .phase = ConnectionPhase::Accepted, .playerNumber = FIRST_PILOT});
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  doubles.entityMessages.queue(stateWithTheShipOfTheFirstPilot(APPLIED_TICK));
+  game.update(THREE_TICKS);
+
+  game.handleEvent(
+      keyPress(sf::Keyboard::Key::Space, sf::Keyboard::Scan::Space));
+  game.update(THREE_TICKS);
+
+  EXPECT_THAT(doubles.sounds.played(), Contains(PLAYER_SHOT_SOUND_ID));
+}
+
+/**
+ * Given the game of player 1 with PREDICTION on, no state received yet
+ * When the player holds shoot for three ticks
+ * Then no shot plays: the ship has no place to fire from yet
+ */
+TEST(GameScreenPredictionTest, FiresNothingBeforeAStateListsTheShip) {
+  LoneGameParts doubles;
+  doubles.connection.setStatus(ConnectionStatus{
+      .phase = ConnectionPhase::Accepted, .playerNumber = FIRST_PILOT});
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+
+  game.handleEvent(
+      keyPress(sf::Keyboard::Key::Space, sf::Keyboard::Scan::Space));
+  game.update(THREE_TICKS);
+
+  EXPECT_THAT(doubles.sounds.played(),
+              ::testing::Not(Contains(PLAYER_SHOT_SOUND_ID)));
+}
+
+/**
+ * Given the game of player 1 with PREDICTION on, a state listing its ship
+ * applied, then the end of the game received
+ * When the player holds shoot for three ticks
+ * Then no shot plays: the server runs nothing once the game is over
+ */
+TEST(GameScreenPredictionTest, FiresNothingOnceTheGameEnded) {
+  LoneGameParts doubles;
+  doubles.connection.setStatus(ConnectionStatus{
+      .phase = ConnectionPhase::Accepted, .playerNumber = FIRST_PILOT});
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  doubles.entityMessages.queue(stateWithTheShipOfTheFirstPilot(APPLIED_TICK));
+  doubles.entityMessages.queue(rtype::network::GameEnded{});
+  game.update(THREE_TICKS);
+
+  game.handleEvent(
+      keyPress(sf::Keyboard::Key::Space, sf::Keyboard::Scan::Space));
+  game.update(THREE_TICKS);
+
+  EXPECT_THAT(doubles.sounds.played(),
+              ::testing::Not(Contains(PLAYER_SHOT_SOUND_ID)));
 }
 
 /**
@@ -808,14 +889,19 @@ TEST_F(GameScreenFixture, TheEntitiesArePaintedInPlaceAtRest) {
 
 /**
  * Given a game screen
- * When the server announces a missile of a player and the screen updates
+ * When the server announces and lists a missile of a player, and the screen
+ * updates until the tick shown reaches it
  * Then the shot of a player plays through the sounds of its parts
  */
 TEST_F(GameScreenFixture, TheGamePlaysTheSoundsOfWhatTheServerAnnounces) {
   entityMessages().queue(spawned(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER,
                                  PLAYER_MISSILE_POSITION));
+  entityMessages().queue(stateListing(
+      APPLIED_TICK, {listed(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER,
+                            PLAYER_MISSILE_POSITION)}));
 
   screens().update(ONE_FRAME);
+  screens().update(LONG_FRAME);
 
   EXPECT_THAT(sounds().played(), ElementsAre(PLAYER_SHOT_SOUND_ID));
 }
@@ -1010,4 +1096,64 @@ TEST_F(GameScreenFixture, NoWarningOnceTheGameEnded) {
   screens().update(ONE_SECOND);
 
   EXPECT_EQ(writingOf(statusCanvas(), WARNING_WORDS), nullptr);
+}
+
+/**
+ * Given the game
+ * When the boss stage starts and a second passes
+ * Then the word of the WARNING screen is painted
+ */
+TEST_F(GameScreenFixture, PaintsTheWarningWhenTheBossStageStarts) {
+  entityMessages().queue(BOSS_ARRIVING);
+  screens().update(ONE_FRAME);
+
+  screens().update(ONE_SECOND);
+
+  EXPECT_NE(writingOf(statusCanvas(), WARNING_WORD_ON_SCREEN), nullptr);
+}
+
+/**
+ * Given the game
+ * When the first status of the fight of the boss arrives and a frame passes
+ * Then its bar is painted, with its name
+ */
+TEST_F(GameScreenFixture, PaintsTheBossBarOnceTheBossFights) {
+  entityMessages().queue(BOSS_FIGHTING_UNHARMED);
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_NE(writingOf(statusCanvas(), BOSS_NAME_ON_THE_BAR), nullptr);
+}
+
+/**
+ * Given the bar of a boss filled
+ * When a status with fewer points arrives and a frame passes
+ * Then the status is painted again
+ */
+TEST_F(GameScreenFixture, RepaintsTheStatusWhenTheBossLosesPoints) {
+  entityMessages().queue(BOSS_FIGHTING_UNHARMED);
+  screens().update(ONE_FRAME);
+  screens().update(ONE_SECOND);
+  const int displays = statusCanvas().displayCount;
+  entityMessages().queue(BOSS_FIGHTING_HIT);
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_GT(statusCanvas().displayCount, displays);
+}
+
+/**
+ * Given the bar of a boss filled, its points unchanged
+ * When a frame passes
+ * Then the status is not painted again
+ */
+TEST_F(GameScreenFixture, TheStatusIsNotRepaintedWhenTheBossLookDoesNotChange) {
+  entityMessages().queue(BOSS_FIGHTING_UNHARMED);
+  screens().update(ONE_FRAME);
+  screens().update(ONE_SECOND);
+  const int displays = statusCanvas().displayCount;
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_EQ(statusCanvas().displayCount, displays);
 }

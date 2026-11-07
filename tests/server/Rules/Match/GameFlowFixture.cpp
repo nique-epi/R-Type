@@ -7,6 +7,7 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "Entity.hpp"
+#include "EntitySheets.hpp"
 #include "EntityType.hpp"
 #include "GameEnded.hpp"
 #include "GameFlow.hpp"
@@ -30,15 +31,18 @@ namespace rtype::server::testing {
 GameFlowFixture::GameFlowFixture() : GameFlowFixture(testWavePlan()) {}
 
 GameFlowFixture::GameFlowFixture(WavePlan waves)
+    : GameFlowFixture(std::move(waves), game::testing::shippedEntitySheets()) {}
+
+GameFlowFixture::GameFlowFixture(WavePlan waves,
+                                 const game::EntitySheets& types)
     : readyKeeper_(roster_, [] { return true; }),
       context_{.events = events_,
                .systems = systems_,
                .roster = roster_,
                .hooks = hooks_,
-               .settings =
-                   GameSettings{.seed = SOME_SEED,
-                                .waves = std::move(waves),
-                                .types = game::testing::shippedEntitySheets()},
+               .settings = GameSettings{.seed = SOME_SEED,
+                                        .waves = std::move(waves),
+                                        .types = types},
                .send =
                    [this](network::OutgoingDatagram datagram) {
                      sent_.push_back(std::move(datagram));

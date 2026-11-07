@@ -28,6 +28,10 @@ set state-encoding delta
 # [games] The ticks every player's input is held before it is applied, from 0 to 30.
 set input-delay 3
 
+# [games] 1 starts every game at its boss, without the waves, to test the fight:
+# the ships never die, and the game is never vanilla. 0 plays the waves.
+set start-at-boss 0
+
 # [supervisor] The SQLite file the leaderboard of this server is kept in, on a local disk;
 # a name with a space goes in quotes. Empty: r-type_server_<port>.db next to
 # the executable, with the port above.

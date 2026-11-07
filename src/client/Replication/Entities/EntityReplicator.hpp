@@ -4,6 +4,7 @@
 #include <optional>
 #include <span>
 #include <vector>
+#include "ClaimedMissiles.hpp"
 #include "Entity.hpp"
 #include "EntityFeedback.hpp"
 #include "EntityReplicatorParts.hpp"
@@ -176,6 +177,7 @@ class EntityReplicator {
   engine::NetworkEntityTable entityByNetworkId_;
   WorldStateFilter worldStateFilter_;
   LastListedTicks lastListedTicks_;
+  ClaimedMissiles claimedMissiles_;
 };
 
 }  // namespace rtype::client

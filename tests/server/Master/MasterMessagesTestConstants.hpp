@@ -22,7 +22,7 @@ constexpr std::uint64_t PROBE_SECRET_CEILING = 9'223'372'036'854'775'807;
 constexpr std::uint64_t PROBE_TOKEN_OF_A_HEARTBEAT = 0x1357'9BDF'2468'ACE0;
 
 /** @brief What the server announces of the protocol and of its games. */
-constexpr std::uint8_t ANNOUNCED_PROTOCOL_VERSION = 10;
+constexpr std::uint8_t ANNOUNCED_PROTOCOL_VERSION = 11;
 constexpr std::uint8_t ANNOUNCED_PLAYERS_PER_GAME = 4;
 
 /** @brief A median tick a heartbeat carries, in milliseconds. */

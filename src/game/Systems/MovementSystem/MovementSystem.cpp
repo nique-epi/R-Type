@@ -1,14 +1,12 @@
 #include "MovementSystem.hpp"
-#include <algorithm>
-#include <chrono>
 #include "ComponentRegistry.hpp"
-#include "DirectionConstants.hpp"
 #include "Entity.hpp"
 #include "Intent.hpp"
 #include "Position.hpp"
 #include "ShipControl.hpp"
 #include "ShipMotion.hpp"
 #include "SteadyMotion.hpp"
+#include "SteadyTravel.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game {
@@ -36,11 +34,6 @@ void moveByIntent(engine::ComponentRegistry& components,
       });
 }
 
-/** @returns @p share brought within -FULL_STEERING and FULL_STEERING. */
-float clampedShare(float share) {
-  return std::clamp(share, -FULL_STEERING, FULL_STEERING);
-}
-
 /**
  * @brief Moves every entity with a Position, a SteadyMotion and an Intent over
  * @p elapsed, by its top speed times the share its Intent asks for on each
@@ -48,18 +41,16 @@ float clampedShare(float share) {
  */
 void moveSteadily(engine::ComponentRegistry& components,
                   engine::Duration elapsed) {
-  const float elapsedSeconds = std::chrono::duration<float>(elapsed).count();
   components.forEach<SteadyMotion, Intent>(
-      [&components, elapsedSeconds](engine::Entity body,
-                                    const SteadyMotion& motion,
-                                    const Intent& intent) {
+      [&components, elapsed](engine::Entity body, const SteadyMotion& motion,
+                             const Intent& intent) {
         auto* const position = components.get<Position>(body);
         if (position == nullptr) {
           return;
         }
-        const float reach = motion.topSpeed * elapsedSeconds;
-        position->x += clampedShare(intent.direction.x) * reach;
-        position->y += clampedShare(intent.direction.y) * reach;
+        const Position travel = steadyTravel(motion, intent.direction, elapsed);
+        position->x += travel.x;
+        position->y += travel.y;
       });
 }
 

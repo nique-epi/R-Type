@@ -5,6 +5,7 @@
 #include "EntityTypeLook.hpp"
 #include "IEntityTypeSource.hpp"
 #include "IEntityTypeTable.hpp"
+#include "ShipGun.hpp"
 
 namespace rtype::client {
 
@@ -21,6 +22,8 @@ class EntityTypeLooks final : public IEntityTypeSource {
 
   [[nodiscard]] std::optional<EntityTypeLook> lookOf(
       std::uint8_t number) const override;
+
+  [[nodiscard]] game::ShipGun shipGun() const override;
 
  private:
   const IEntityTypeTable* table_;
