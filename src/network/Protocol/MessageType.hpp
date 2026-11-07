@@ -43,6 +43,9 @@ enum class MessageType : std::uint8_t {
   BossStatus = 32,
   ExpulsionOrder = 33,
   Expulsion = 34,
+  ShipLookChoice = 35,
+  PlayerLooks = 36,
+  LookItemWon = 37,
 };
 
 }  // namespace rtype::network
