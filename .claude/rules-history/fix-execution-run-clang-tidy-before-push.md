@@ -145,3 +145,7 @@ On the boss branch, the clang-tidy gate run before any push reported `cppcoregui
 ## Update (7 November 2026) — The lint of the last commit only
 
 `BossArrivalEffects::advance()` and `playRoar()` were made `const` in a lint commit, linted on the files of that commit only. `BossArrivalEffectsTest.cpp`, a file of the branch the commit did not touch, then held four `BossArrivalEffects arrival(...)` that `misc-const-correctness` reports. The lint of the whole branch after the merge of main found them before the push, and the CI, which lints the files of the branch, would have failed on them.
+
+## Update (7 November 2026) — auto* on an array iterator
+
+To meet `readability-qualified-auto`, reported by the local clang-tidy on libc++, `timingsOf()` in `BydoTyrantBehaviour.cpp` held the result of `std::ranges::find(TYRANT_ATTACKS, …)` in a `const auto* const`. AppleClang, Homebrew GCC and the local clang-tidy all accepted it; the Windows job of PR #260 failed with `error C3535: cannot deduce type for 'const auto *const ' from 'std::_Array_const_iterator<_Ty,13>'`. The lookup became `tyrantAttackOf()`, which returns a `const TyrantAttack*`.

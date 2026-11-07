@@ -90,6 +90,11 @@ A platform file such as `FineTimerResolutionWindows.cpp` is linted only by the C
 1. **Before the push, lint the files of `git diff --name-only origin/main...HEAD`**, the list the CI lints, never the files of the last commit alone: a change in one file (a method made `const`, an include removed from a header) makes a finding in another file of the branch that the last commit does not touch.
 2. **After a merge of main, lint that list again**: the merge changes the base the list is taken from and the compile commands of moved files.
 
+### A qualifier clang-tidy asks for on an iterator holds only where the iterator is a pointer
+
+1. **`readability-qualified-auto` on `auto it = std::ranges::find(array, …)` comes from libc++, where the iterator of a `std::array` is a pointer.** In the standard library of MSVC it is a class (`std::_Array_const_iterator`), so `const auto* const it` does not compile there (`C3535`) and the Windows job fails.
+2. **Never answer that finding with `auto*` on an iterator.** Write a lookup that returns a pointer itself (`const T* found = findOf(…)`, a loop that returns `&candidate` or `nullptr`), so the type is the same with every standard library.
+
 ## Example
 
 - ❌ **Before (wrong)**: 43 changed files linted, exit 0 everywhere, "clang-tidy clean" written in the context; every log started with `Error parsing .clang-tidy: Invalid argument` (two option keys twice), so only the default checks ran, and the CI had run the same way since the merge that doubled the keys.
