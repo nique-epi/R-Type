@@ -1,8 +1,11 @@
 #pragma once
 
 #include <filesystem>
+#include <span>
+#include <string>
 #include <vector>
 #include "ContentFile.hpp"
+#include "SheetText.hpp"
 
 namespace rtype::game {
 
@@ -20,5 +23,18 @@ namespace rtype::game {
  */
 [[nodiscard]] std::vector<identifiers::ContentFile> contentFilesIn(
     const std::filesystem::path& assetFolder);
+
+/** @returns Whether @p path names a sheet: a `.toml` file right in
+ * ENTITY_SHEET_FOLDER_IN_ASSETS, as contentFilesIn() lists it. */
+[[nodiscard]] bool isSheetPath(const std::string& path);
+
+/**
+ * @returns The sheets among @p files, a `.toml` file right in
+ * ENTITY_SHEET_FOLDER_IN_ASSETS each, named after its file, in their order;
+ * the errors call each the file of its path below @p folder.
+ */
+[[nodiscard]] std::vector<SheetText> sheetTextsOf(
+    std::span<const identifiers::ContentFile> files,
+    const std::filesystem::path& folder);
 
 }  // namespace rtype::game

@@ -17,6 +17,9 @@ target_link_libraries(rtype_client_content_pack
     rtype_network_content
   PRIVATE
     httplib::httplib
+    rtype_engine_exceptions
+    rtype_logging
+    rtype_network_http
     rtype_client_exceptions
     rtype_engine_data_files
     rtype_network_exceptions

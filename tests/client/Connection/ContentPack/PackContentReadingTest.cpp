@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iterator>
 #include <string>
+#include "ClientException.hpp"
 #include "ContentPackTestFiles.hpp"
 #include "ContentPackTestFilesConstants.hpp"
 #include "EntityAppearance.hpp"
@@ -12,12 +13,14 @@
 #include "TemporaryFolder.hpp"
 
 using rtype::client::EntityAppearance;
+using rtype::client::ForeignSpriteSheetException;
 using rtype::client::PackContent;
 using rtype::client::packContentOf;
 using rtype::client::testing::LANCER_PIXELS;
 using rtype::client::testing::LANCER_SPRITES_PATH;
 using rtype::client::testing::LANCER_TYPE;
 using rtype::client::testing::lancerFiles;
+using rtype::client::testing::lancerFilesNamingAFileOutside;
 using rtype::client::testing::ONE_TYPE;
 using rtype::game::EntityType;
 
@@ -57,4 +60,19 @@ TEST(PackContentReading, WritesTheSpriteSheetWhereTheAppearanceFindsIt) {
   ASSERT_NE(lancer, nullptr);
   EXPECT_EQ(lancer->sheet, written.generic_string());
   EXPECT_TRUE(std::filesystem::path{lancer->sheet}.is_absolute());
+}
+
+/**
+ * Given the pack of a Bydo whose sheet names a sprite sheet outside the pack
+ * When it is read
+ * Then it is refused before any file is written, so a pack never makes the
+ * client read a file of its own
+ */
+TEST(PackContentReading, RefusesASpriteSheetOutsideThePack) {
+  const TemporaryFolder folder;
+
+  EXPECT_THROW(static_cast<void>(packContentOf(lancerFilesNamingAFileOutside(),
+                                               folder.path())),
+               ForeignSpriteSheetException);
+  EXPECT_FALSE(std::filesystem::exists(folder.path() / LANCER_SPRITES_PATH));
 }

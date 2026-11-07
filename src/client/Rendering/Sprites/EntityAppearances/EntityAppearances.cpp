@@ -23,6 +23,7 @@
 #include "EntityAppearanceConstants.hpp"
 #include "EntitySheetConstants.hpp"
 #include "FrameAnchor.hpp"
+#include "PathText.hpp"
 #include "SheetRow.hpp"
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
@@ -198,7 +199,7 @@ EntityAppearances EntityAppearances::fromTexts(
   for (const game::SheetText& sheet : sheets) {
     EntityAppearance appearance = appearanceIn(sheet.text, sheet.source);
     if (!spriteFolder.empty()) {
-      appearance.sheet = (spriteFolder / appearance.sheet).generic_string();
+      appearance.sheet = logging::genericText(spriteFolder / appearance.sheet);
     }
     appearances.emplace(sheet.name, std::move(appearance));
   }

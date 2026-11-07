@@ -3,13 +3,16 @@
 #include <filesystem>
 #include <functional>
 #include <set>
+#include <span>
 #include <string>
 #include <toml++/toml.hpp>
+#include <utility>
 #include <vector>
 #include "ContentFile.hpp"
 #include "DataFileConstants.hpp"
 #include "DataFileReading.hpp"
 #include "EntitySheetConstants.hpp"
+#include "PathText.hpp"
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
 
@@ -33,16 +36,37 @@ std::string spriteSheetOf(const SheetText& sheet) {
 
 }  // namespace
 
+bool isSheetPath(const std::string& path) {
+  const std::filesystem::path file{path};
+  return file.parent_path() == ENTITY_SHEET_FOLDER_IN_ASSETS &&
+         file.extension() == engine::DATA_FILE_EXTENSION;
+}
+
+std::vector<SheetText> sheetTextsOf(
+    std::span<const identifiers::ContentFile> files,
+    const std::filesystem::path& folder) {
+  std::vector<SheetText> sheets;
+  for (const identifiers::ContentFile& file : files) {
+    if (isSheetPath(file.path)) {
+      const std::filesystem::path path{file.path};
+      sheets.push_back(SheetText{.name = logging::genericText(path.stem()),
+                                 .source = engine::shownPath(folder / path),
+                                 .text = file.bytes});
+    }
+  }
+  return sheets;
+}
+
 std::vector<identifiers::ContentFile> contentFilesIn(
     const std::filesystem::path& assetFolder) {
-  const std::vector<SheetText> sheets =
+  std::vector<SheetText> sheets =
       sheetTextsIn(assetFolder / ENTITY_SHEET_FOLDER_IN_ASSETS);
   std::vector<identifiers::ContentFile> files;
   std::set<std::string> spriteSheets;
-  for (const SheetText& sheet : sheets) {
-    files.push_back(identifiers::ContentFile{.path = sheetPathOf(sheet.name),
-                                             .bytes = sheet.text});
+  for (SheetText& sheet : sheets) {
     spriteSheets.insert(spriteSheetOf(sheet));
+    files.push_back(identifiers::ContentFile{.path = sheetPathOf(sheet.name),
+                                             .bytes = std::move(sheet.text)});
   }
   for (const std::string& spriteSheet : spriteSheets) {
     files.push_back(identifiers::ContentFile{

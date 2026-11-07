@@ -14,6 +14,13 @@ constexpr std::string_view LANCER_SHEET =
     "[appearance.idle]\nleft = 0\ntop = 0\nwidth = 24\nheight = 16\n"
     "frames = 1\nspacing = 0\nframe_ms = 100\n";
 constexpr std::string_view LANCER_TYPE = "lancer";
+
+/** @brief A sheet whose sprite sheet lies outside its pack. */
+constexpr std::string_view SHEET_NAMING_A_FILE_OUTSIDE =
+    "[gameplay]\nside = \"enemy\"\n"
+    "[appearance]\nsheet = \"../../secret.png\"\n"
+    "[appearance.idle]\nleft = 0\ntop = 0\nwidth = 24\nheight = 16\n"
+    "frames = 1\nspacing = 0\nframe_ms = 100\n";
 constexpr std::string_view LANCER_SPRITES_PATH = "sprites/mobs/lancer.png";
 constexpr std::string_view LANCER_PIXELS = "\x89PNG\r\n\x1a\nlancer";
 
