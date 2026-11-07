@@ -30,11 +30,8 @@ auto listingOrNothing(Call call) -> std::optional<decltype(call())> {
 
 }  // namespace
 
-MasterLink::MasterLink(network::MasterAccess access)
-    : access_(std::move(access)) {}
-
-void MasterLink::start() {
-  client_ = std::make_unique<network::MasterClient>(access_);
+void MasterLink::start(network::MasterAccess access) {
+  client_ = std::make_unique<network::MasterClient>(std::move(access));
   thread_ = std::jthread([this](const std::stop_token& stop) { run(stop); });
 }
 

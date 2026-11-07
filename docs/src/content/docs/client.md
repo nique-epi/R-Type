@@ -572,7 +572,7 @@ The map reads two services of the connection module, so it never waits on the ne
 - `IServerCatalog` (`ServerCatalog`, `src/client/Connection/ServerList/`): `refresh()` asks the master its list on the thread of `MasterLink`, then pings each server listed online or degraded and of this version, once, with a `ServerInformationRequest` (`ServerPingProbe`, on a route of the router of the session). A server that has not answered within `PING_GIVE_UP_TIME` (2 s) is unreachable and is not shown. The snapshot changes once the round closes, sorted by ping.
 - `IGameCatalog` (`GameCatalog`): `ask(server)` reads the games of one server from the master.
 
-The client reaches the master at `http://127.0.0.1:8080` (`LOOPBACK_IPV4_ADDRESS` and `DEFAULT_MASTER_PORT`, joined in `clientMasterAccess()`); this address is **provisional**, a constant until the client takes an option for it.
+The client reads the master the `master-url` setting names (see [Configuration](#configuration-clientcfg)): `http://127.0.0.1:8080` by default, `LOOPBACK_IPV4_ADDRESS` and `DEFAULT_MASTER_PORT` joined in `defaultMasterUrl()` (`src/client/Connection/MasterUrlSetting.hpp`). The connection module declares the setting when it installs and starts its `MasterLink` on it once the configuration was read. `requireMasterUrl()` refuses an url `MasterClient` cannot call, such as `https://`, and the default stays; a text without a scheme reads as a host name, and the map then says `MASTER UNREACHABLE`.
 
 The planet is drawn in halftone by `ringedPlanetPixels()` (`src/client/Widgets/SectorMap/RingedPlanet/`): it turns once in `PLANET_TURN` (30 s) and its ring once in `RING_TURN` (20 s), at `PLANET_FRAMES_PER_SECOND` (24), and stands still when the system asks for less motion. The map plots its pixels through `IInterfaceCanvas::plot()`, a batch of single pixels in one draw.
 
@@ -873,8 +873,9 @@ The client reads `client.cfg`, in the folder it is started from, between the ins
 | `set nickname <nickname>` | The nickname the connection screen starts with, 1 to 16 bytes of UTF-8. Default: `PILOT`. Quote it when it holds a space. |
 | `set server-address <address>` | The IPv4 address the connection screen starts with. Default: `127.0.0.1`. |
 | `set server-port <port>` | The UDP port the connection screen starts with, from 1 to 65535. Default: 4242. |
+| `set master-url <url>` | The master the server map reads, `http://<host>[:<port>]`. Default: `http://127.0.0.1:8080`. An `https://` url is refused. |
 
-A missing file is not an error and a refused line does not stop the client; the journal says so at the `info` and `warn` levels. The screens module reads the settings when it starts, so a line only changes what the connection screen offers first. `client.cfg.example`, at the root of the repository, lists every setting with its default; it is not read by the client: copy it to `client.cfg`.
+A missing file is not an error and a refused line does not stop the client; the journal says so at the `info` and `warn` levels. The screens module reads the settings of the connection screen when it starts, so those lines only change what the connection screen offers first; the connection module reads `master-url` when it starts. `client.cfg.example`, at the root of the repository, lists every setting with its default; it is not read by the client: copy it to `client.cfg`.
 
 ## Launch options: `LaunchOptions`
 
@@ -1104,7 +1105,7 @@ The dialog is a `DialogScreen` (`src/client/Screens/Common/`), which shows any m
 | Change the texts, sizes or checks of the connection screen | `src/client/Menus/Title/ConnectionScreenConstants.hpp`, `ConnectionScreen::connect()` |
 | Change the keys, texts or refresh of the server map | `src/client/Menus/ServerBrowser/ServerMapScreenConstants.hpp`, `ServerMapScreen` |
 | Change where a server stands on the map, or how the planet is drawn | `src/client/Widgets/SectorMap/SectorMapConstants.hpp` with `SectorLayout`, `RingedPlanetConstants.hpp` with `RingedPlanet` |
-| Change how the list of servers is read and pinged, or the address of the master | `ServerCatalog`, `ServerPingProbe`, `MasterLink` and `ServerListConstants.hpp` in `src/client/Connection/ServerList/`; `clientMasterAccess()` in `ClientConnectionModule.cpp` |
+| Change how the list of servers is read and pinged, or the address of the master | `ServerCatalog`, `ServerPingProbe`, `MasterLink` and `ServerListConstants.hpp` in `src/client/Connection/ServerList/`; `MasterUrlSetting.hpp` and `ClientConnectionModule.cpp` in `src/client/Connection/` |
 | Change what the fields of the connection screen start with | `ServerChoice` (`src/client/LaunchOptions/ServerChoice.hpp`), written by `ConnectionScreen::connect()`, kept by `ClientScreens` |
 | Change when the dialog of a lost connection opens | `SessionLossWatch` in `src/client/Connection/Handshake/`, `ClientScreens::update()` |
 | Change the dialog of a lost connection: its texts, its buttons | `src/client/Screens/Common/ScreenConstants.hpp`, `connectionLostMenu()` in `src/client/Menus/Title/` |

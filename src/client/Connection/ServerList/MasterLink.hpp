@@ -31,16 +31,17 @@ namespace rtype::client {
  */
 class MasterLink final : public IMasterReads {
  public:
-  explicit MasterLink(network::MasterAccess access);
+  MasterLink() = default;
   ~MasterLink() override = default;
   MasterLink(const MasterLink&) = delete;
   MasterLink& operator=(const MasterLink&) = delete;
   MasterLink(MasterLink&&) = delete;
   MasterLink& operator=(MasterLink&&) = delete;
 
-  /** @throws network::InvalidMasterUrlException when the url is not
+  /** @brief Builds the client of the master @p access names, then the thread.
+   * @throws network::InvalidMasterUrlException when the url is not
    * `http://<host>[:<port>]`; the thread does not start then. */
-  void start();
+  void start(network::MasterAccess access);
 
   /** @brief Ends the thread, then forgets the client. */
   void stop();
@@ -57,7 +58,6 @@ class MasterLink final : public IMasterReads {
    * served. */
   void serve(const MasterAsks& asks, MasterAsks& served);
 
-  network::MasterAccess access_;
   MasterAsks asked_;
   concurrency::LatestValue<MasterAsks> asks_;
   concurrency::LatestValue<ServerListReading> servers_;
