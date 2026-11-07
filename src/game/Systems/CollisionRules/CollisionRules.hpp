@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Collision.hpp"
-#include "Entity.hpp"
-#include "EntityType.hpp"
 #include "SubscriptionHandle.hpp"
 #include "TypedEntity.hpp"
 
@@ -40,7 +38,9 @@ class CollisionRules {
 
  private:
   void onCollision(const engine::Collision& collision);
-  void publishIfRuleMatches(TypedEntity first, TypedEntity second);
+  /** @brief Publishes what @p striker touching @p struck means, if anything:
+   * a MissileHit or a ShipContact. */
+  void publishIfRuleMatches(TypedEntity striker, TypedEntity struck);
 
   engine::EventBus& events_;
   engine::ComponentRegistry& components_;

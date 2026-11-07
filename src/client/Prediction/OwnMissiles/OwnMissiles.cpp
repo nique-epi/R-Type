@@ -1,7 +1,6 @@
 #include "OwnMissiles.hpp"
 #include <algorithm>
 #include <chrono>
-#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <span>

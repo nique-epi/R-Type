@@ -34,20 +34,22 @@ void CollisionRules::onCollision(const engine::Collision& collision) {
   publishIfRuleMatches(second, first);
 }
 
-void CollisionRules::publishIfRuleMatches(TypedEntity first,
-                                          TypedEntity second) {
-  const bool playerMissileHitsEnemy = first.type == EntityType::PlayerMissile &&
-                                      second.type == EntityType::Enemy &&
-                                      !components_.has<ViewDelay>(first.entity);
-  const bool enemyMissileHitsPlayer = first.type == EntityType::EnemyMissile &&
-                                      second.type == EntityType::Player;
+void CollisionRules::publishIfRuleMatches(TypedEntity striker,
+                                          TypedEntity struck) {
+  const bool playerMissileHitsEnemy =
+      striker.type == EntityType::PlayerMissile &&
+      struck.type == EntityType::Enemy &&
+      !components_.has<ViewDelay>(striker.entity);
+  const bool enemyMissileHitsPlayer =
+      striker.type == EntityType::EnemyMissile &&
+      struck.type == EntityType::Player;
   if (playerMissileHitsEnemy || enemyMissileHitsPlayer) {
     events_.publish(
-        MissileHit{.missile = first.entity, .target = second.entity});
-  } else if (first.type == EntityType::Player &&
-             second.type == EntityType::Enemy) {
+        MissileHit{.missile = striker.entity, .target = struck.entity});
+  } else if (striker.type == EntityType::Player &&
+             struck.type == EntityType::Enemy) {
     events_.publish(
-        ShipContact{.player = first.entity, .enemy = second.entity});
+        ShipContact{.player = striker.entity, .enemy = struck.entity});
   }
 }
 
