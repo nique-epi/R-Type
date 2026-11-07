@@ -52,6 +52,7 @@
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "ShipDirections.hpp"
+#include "ShipLookChoice.hpp"
 #include "ShipMotion.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
@@ -244,6 +245,16 @@ void GameInstanceTest::sendReady(const SentReadyState& sent) {
       .sender = playerEndpoint(sent.player),
       .payload = network::DatagramCodec::encode(
           header, network::ReadyState{.ready = sent.ready})});
+}
+
+void GameInstanceTest::sendLook(const SentShipLook& sent) {
+  network::PacketHeader header;
+  header.sessionToken = SESSION_TOKEN;
+  header.sequence = sent.sequence;
+  queue(network::IncomingDatagram{
+      .sender = playerEndpoint(sent.player),
+      .payload = network::DatagramCodec::encode(
+          header, network::ShipLookChoice{.look = sent.look})});
 }
 
 void GameInstanceTest::sendLoaded(const SentGameLoaded& sent) {

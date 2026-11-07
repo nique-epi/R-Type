@@ -48,6 +48,7 @@ constexpr std::string_view RTYPE_RULES_MODULE_NAME = "rtype rules";
 constexpr std::string_view REPLICATION_MODULE_NAME = "replication";
 constexpr std::string_view RESULTS_MODULE_NAME = "results";
 constexpr std::string_view CHAT_MODULE_NAME = "chat";
+constexpr std::string_view LOOKS_MODULE_NAME = "looks";
 
 /**
  * @brief The least time between two answers to the same player: the time after

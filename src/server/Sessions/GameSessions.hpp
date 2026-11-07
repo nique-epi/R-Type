@@ -20,6 +20,7 @@
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyKeeper.hpp"
+#include "ShipLookChoice.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
@@ -127,10 +128,11 @@ class GameSessions {
   void registerSessionHandlers();
 
   /** @brief Tells the dispatcher what handles each request of a player, a
-   * LeaderboardRequest or a ChatLine, which goes to its part with the player
-   * who sent it. A datagram may hold a Disconnection before a request, which
-   * frees the seat: the request of an address with no seat any more goes
-   * nowhere. */
+   * LeaderboardRequest, a ChatLine or a ShipLookChoice, which goes to its part
+   * with the player who sent it; a ShipLookChoice only while the game takes
+   * the choices of the waiting room. A datagram may hold a Disconnection before
+   * a request, which frees the seat: the request of an address with no seat any
+   * more goes nowhere. */
   void registerRequestHandlers();
 
   std::function<void(network::OutgoingDatagram)> send_;
@@ -146,6 +148,8 @@ class GameSessions {
       onLeaderboardRequest_;
   std::function<void(const ConnectedPlayer&, const network::ChatLine&)>
       onChatLine_;
+  std::function<void(ConnectedPlayer&, const network::ShipLookChoice&)>
+      onShipLookChoice_;
   network::MessageDispatcher dispatcher_;
 };
 

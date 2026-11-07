@@ -12,6 +12,7 @@ target_sources(server_module_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/doubles/Reco
 
 add_subdirectory(AdminConsole)
 add_subdirectory(Chat)
+add_subdirectory(Looks)
 add_subdirectory(Content)
 add_subdirectory(Games)
 add_subdirectory(GameStatistics)

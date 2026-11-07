@@ -4,6 +4,7 @@
 #include "BuiltModuleConstants.hpp"
 #include "IGameModule.hpp"
 #include "IResultsArchive.hpp"
+#include "LooksModule.hpp"
 #include "ReplicationModule.hpp"
 #include "ResultsModule.hpp"
 #include "RtypeRulesModule.hpp"
@@ -19,6 +20,7 @@ std::vector<std::unique_ptr<IGameModule>> rtypeGameModules(
   modules.push_back(std::make_unique<ReplicationModule>());
   modules.push_back(std::make_unique<RtypeRulesModule>());
   modules.push_back(std::make_unique<ResultsModule>(results));
+  modules.push_back(std::make_unique<LooksModule>());
 #if RTYPE_MODULE_CHAT
   modules.push_back(std::make_unique<ChatModule>());
 #endif

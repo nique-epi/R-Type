@@ -20,6 +20,9 @@ class MessageDeliveryFixture : public ::testing::Test {
   [[nodiscard]] PlayerRoster& roster();
   void sendOnce(const network::EncodedMessage& message);
   void guarantee(const network::EncodedMessage& message);
+  /** @brief Guarantees @p message to the player at @p index alone. */
+  void guaranteeToOne(std::size_t index,
+                      const network::EncodedMessage& message);
 
   /** @brief Runs @p count ticks of the server: each makes the guaranteed
    * messages one tick older, as the start of a tick does, then resends what
