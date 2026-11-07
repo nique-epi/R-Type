@@ -27,8 +27,9 @@ namespace rtype::network {
  * (PROBLEM_CONTENT_TYPE), with the ApiResponse::detail of the route, so every
  * error is JSON: an unknown path gets 404, and a body over
  * MAX_REQUEST_BODY_BYTES sent to a route gets 413. A route that throws gets
- * 500, and only the journal reads why. No other socket may listen on the port
- * while the server holds it.
+ * 500, and only the journal reads why. A success to a request for a range of
+ * bytes (a resumed download) gets 206 and those bytes only. No other socket
+ * may listen on the port while the server holds it.
  */
 class HttpServer {
  public:

@@ -71,6 +71,8 @@ SupervisorModulesFixture::supervisor(
       std::move(modules), std::move(step));
 }
 
+std::uint16_t SupervisorModulesFixture::port() const { return port_; }
+
 const rtype::engine::ConfigurationReport& SupervisorModulesFixture::report()
     const {
   return report_;

@@ -38,8 +38,8 @@ namespace rtype::network {
     std::span<const std::byte> pack);
 
 /**
- * @returns The fingerprint of every byte of @p pack: hydro_hash_hash() of
- * libhydrogen, in CONTENT_FINGERPRINT_CONTEXT, without key.
+ * @returns The fingerprint of every byte of @p pack: hashOf() in
+ * CONTENT_FINGERPRINT_CONTEXT.
  */
 [[nodiscard]] ContentFingerprint contentFingerprintOf(
     std::span<const std::byte> pack);

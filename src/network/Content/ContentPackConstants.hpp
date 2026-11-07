@@ -43,8 +43,8 @@ constexpr std::string_view PARENT_FOLDER_NAME = "..";
 constexpr std::size_t CONTENT_FINGERPRINT_BYTES = 32;
 
 /**
- * @brief The context of libhydrogen the fingerprint of a pack is computed in:
- * exactly hydro_hash_CONTEXTBYTES characters, so no other hash of the project
+ * @brief The context of hashOf() the fingerprint of a pack is computed in:
+ * exactly HASH_CONTEXT_LENGTH characters, so no other hash of the project
  * gives the same value for the same bytes.
  */
 constexpr std::string_view CONTENT_FINGERPRINT_CONTEXT = "rtpack01";

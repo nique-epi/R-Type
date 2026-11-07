@@ -1,5 +1,4 @@
 #include "ContentPack.hpp"
-#include <hydrogen.h>
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -14,15 +13,16 @@
 #include "ContentFile.hpp"
 #include "ContentFingerprint.hpp"
 #include "ContentPackConstants.hpp"
+#include "Hashing.hpp"
+#include "HashingConstants.hpp"
 #include "NetworkException.hpp"
 
 namespace rtype::network {
 
 namespace {
 
-static_assert(CONTENT_FINGERPRINT_CONTEXT.size() == hydro_hash_CONTEXTBYTES);
-static_assert(CONTENT_FINGERPRINT_BYTES >= hydro_hash_BYTES_MIN &&
-              CONTENT_FINGERPRINT_BYTES <= hydro_hash_BYTES_MAX);
+static_assert(CONTENT_FINGERPRINT_CONTEXT.size() == HASH_CONTEXT_LENGTH);
+static_assert(CONTENT_FINGERPRINT_BYTES == HASH_BYTES);
 
 /** @returns Whether @p name may name a folder or a file of a path. */
 bool isPathPart(std::string_view name) {
@@ -122,15 +122,7 @@ std::vector<identifiers::ContentFile> decodeContentPack(
 }
 
 ContentFingerprint contentFingerprintOf(std::span<const std::byte> pack) {
-  std::array<char, hydro_hash_CONTEXTBYTES> context{};
-  std::ranges::copy(CONTENT_FINGERPRINT_CONTEXT, context.begin());
-  std::array<std::uint8_t, CONTENT_FINGERPRINT_BYTES> hash{};
-  hydro_hash_hash(hash.data(), hash.size(), pack.data(), pack.size(),
-                  context.data(), nullptr);
-  ContentFingerprint fingerprint;
-  std::ranges::transform(hash, fingerprint.bytes.begin(),
-                         [](std::uint8_t value) { return std::byte{value}; });
-  return fingerprint;
+  return ContentFingerprint{.bytes = hashOf(pack, CONTENT_FINGERPRINT_CONTEXT)};
 }
 
 bool isContentPath(std::string_view path) {

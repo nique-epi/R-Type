@@ -6,6 +6,7 @@
 #include <string_view>
 #include "ContentFingerprint.hpp"
 #include "ContentPackConstants.hpp"
+#include "Hashing.hpp"
 #include "NetworkConstants.hpp"
 
 namespace rtype::network {
@@ -25,14 +26,7 @@ std::optional<std::uint8_t> digitValueOf(char digit) {
 }  // namespace
 
 std::string fingerprintText(const ContentFingerprint& fingerprint) {
-  std::string text;
-  text.reserve(CONTENT_FINGERPRINT_TEXT_LENGTH);
-  for (const std::byte value : fingerprint.bytes) {
-    const auto whole = std::to_integer<std::size_t>(value);
-    text.push_back(LOWERCASE_HEX_DIGITS[whole / LOWERCASE_HEX_DIGITS.size()]);
-    text.push_back(LOWERCASE_HEX_DIGITS[whole % LOWERCASE_HEX_DIGITS.size()]);
-  }
-  return text;
+  return hexadecimalOf(fingerprint.bytes);
 }
 
 std::optional<ContentFingerprint> fingerprintFromText(std::string_view text) {

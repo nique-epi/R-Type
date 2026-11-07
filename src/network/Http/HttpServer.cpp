@@ -18,6 +18,7 @@
 #include "ApiResponse.hpp"
 #include "Endpoint.hpp"
 #include "HttpServerConstants.hpp"
+#include "HttpStatusConstants.hpp"
 #include "ListeningLoss.hpp"
 #include "MasterHttpConstants.hpp"
 #include "NetworkConstants.hpp"
@@ -146,13 +147,27 @@ void writeReply(ApiResponse reply, httplib::Response& response) {
                          std::string{PROBLEM_CONTENT_TYPE});
     return;
   }
-  response.set_content(std::move(reply.body), std::string{JSON_CONTENT_TYPE});
+  response.set_content(std::move(reply.body), std::string{reply.contentType});
+}
+
+/**
+ * @brief Makes a success of @p response to a request for a range of bytes a
+ * partial answer, as cpp-httplib does for a route that sets no status: it
+ * then sends only the bytes @p request asks for (RFC 9110, section 14), or
+ * 416 for a range outside the body.
+ */
+void answerRangeOf(const httplib::Request& request,
+                   httplib::Response& response) {
+  if (!request.ranges.empty() && response.status == OK_STATUS) {
+    response.status = httplib::StatusCode::PartialContent_206;
+  }
 }
 
 httplib::Server::Handler handlerOf(ApiHandler route) {
   return [answer = std::move(route)](const httplib::Request& request,
                                      httplib::Response& response) {
     writeReply(answer(apiRequestOf(request)), response);
+    answerRangeOf(request, response);
   };
 }
 
