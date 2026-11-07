@@ -5,7 +5,6 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include "KeyPress.hpp"
 #include "MasterScreen.hpp"
 #include "MasterScreenParts.hpp"
 #include "MasterScreenTestConstants.hpp"
@@ -13,6 +12,7 @@
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
+#include "ScreenInputs.hpp"
 #include "WidgetConstants.hpp"
 
 using rtype::client::MasterScreen;
@@ -54,10 +54,7 @@ const InterfaceCanvasRecord& MasterScreenFixture::canvas() const {
   return canvas_;
 }
 
-void MasterScreenFixture::tap(sf::Keyboard::Key key) {
-  screen_.handleEvent(keyPress(key));
-  screen_.handleEvent(keyRelease(key));
-}
+void MasterScreenFixture::tap(sf::Keyboard::Key key) { tapKey(screen_, key); }
 
 void MasterScreenFixture::choose(sf::Keyboard::Key key) {
   tap(key);
@@ -65,13 +62,9 @@ void MasterScreenFixture::choose(sf::Keyboard::Key key) {
 }
 
 void MasterScreenFixture::type(std::u32string_view text) {
-  for (const char32_t character : text) {
-    screen_.handleEvent(typedCharacter(character));
-  }
+  typeText(screen_, text);
 }
 
 void MasterScreenFixture::erase(std::size_t characters) {
-  for (std::size_t erased = 0; erased < characters; ++erased) {
-    screen_.handleEvent(keyPress(sf::Keyboard::Key::Backspace));
-  }
+  eraseCharacters(screen_, characters);
 }
