@@ -11,6 +11,7 @@
 #include <vector>
 #include "BackgroundColorConstants.hpp"
 #include "ColoredPixel.hpp"
+#include "DitherConstants.hpp"
 #include "LandWave.hpp"
 #include "MotionPreference.hpp"
 #include "PlanetPose.hpp"
