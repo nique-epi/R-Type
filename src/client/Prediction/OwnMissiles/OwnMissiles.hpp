@@ -45,13 +45,17 @@ class OwnMissiles final : public IOwnMissileListener {
  public:
   explicit OwnMissiles(OwnMissilesParts parts);
 
-  /** @brief The ship of the player appeared: arms the gun of the ships of
-   * the session, its first shot firstShotTicks away. */
-  void restart();
+  /** @brief A state listed a new ship of the player at @p ship, the server
+   * having applied the inputs up to @p acknowledged: arms the gun of the
+   * ships of the session as the server did (see PredictedGun::arm()), and
+   * fires from @p ship the commands sent since that fire. */
+  void restart(std::uint32_t acknowledged, game::Position ship);
 
-  /** @brief Fires the commands of @p commands that fire, oldest first, then
-   * draws every missile at the newest of them. */
-  void follow(std::span<const PredictedCommand> commands);
+  /** @brief Fires the commands of @p commands that fire, oldest first, while
+   * @p mayFire (the player has a ship and the game goes on); otherwise only
+   * keeps them for restart(). Then draws every missile at the newest of
+   * them: the missiles fired fly on either way. */
+  void follow(std::span<const PredictedCommand> commands, bool mayFire);
 
   /** @brief The server applied the inputs up to @p acknowledged: the shots
    * still unanswered REFUSED_SHOT_TICKS before it are taken away. */
@@ -72,10 +76,12 @@ class OwnMissiles final : public IOwnMissileListener {
   void ownMissileDestroyed(const network::EntityDestroyed& destroyed) override;
 
  private:
-  /** @returns The missile of @p firingInput, created at @p start with its
-   * shot and its muzzle flash; nullptr, and nothing created, when the session
-   * gives no look for it. */
-  OwnMissile* fire(std::uint32_t firingInput, game::Position start);
+  /** @brief Fires the command @p firingInput from a ship at @p ship: nothing
+   * when a missile of the server already stands for it; the predicted shot
+   * near it moved to it, without a second shot, when there is one; a new
+   * missile otherwise. Near means less than an interval of the gun divided by
+   * SHOT_MATCH_DIVISOR. */
+  void fireOrMove(std::uint32_t firingInput, game::Position ship);
 
   /** @brief Puts every missile drawn where it flies at the newest command. */
   void place();

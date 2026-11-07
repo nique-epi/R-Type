@@ -27,4 +27,11 @@ constexpr std::uint32_t SHOT_AFTER_THE_SERVER_ONE = 23;
 constexpr std::size_t THIRTY_COMMANDS = 30;
 constexpr std::uint32_t THIRTIETH_INPUT = 30;
 
+/** @brief Commands sent before a ship was known: the server applied up to
+ * the second when its state listed the ship, so its first shot is the
+ * third. */
+constexpr std::size_t FIVE_COMMANDS = 5;
+constexpr std::uint32_t ACKNOWLEDGED_BEFORE_THE_SHIP = 2;
+constexpr std::uint32_t FIRST_SHOT_OF_THE_SHIP = 3;
+
 }  // namespace rtype::client::testing

@@ -93,16 +93,63 @@ engine::Entity drawnMissile(const OwnMissilesParts& parts,
   return entity;
 }
 
-/** @returns The missile of @p missiles fired by @p firingInput that no
- * missile of the server stands for yet; nullptr when there is none. */
-OwnMissile* unmatchedOf(std::vector<OwnMissile>& missiles,
-                        std::uint32_t firingInput) {
-  const auto found =
-      std::ranges::find_if(missiles, [firingInput](const OwnMissile& missile) {
-        return !missile.serverId.has_value() &&
-               missile.firingInput == firingInput;
+/** @returns How many inputs lie between @p first and @p second. */
+std::uint32_t inputsBetween(std::uint32_t first, std::uint32_t second) {
+  return first > second ? first - second : second - first;
+}
+
+/** @returns Whether @p missile was fired near @p firingInput: less than
+ * @p intervalTicks divided by SHOT_MATCH_DIVISOR inputs from it. */
+bool firedNear(const OwnMissile& missile, std::uint32_t firingInput,
+               std::uint32_t intervalTicks) {
+  return inputsBetween(missile.firingInput, firingInput) * SHOT_MATCH_DIVISOR <
+         intervalTicks;
+}
+
+/** @returns The missile of @p missiles that no missile of the server stands
+ * for yet fired nearest @p firingInput, among those fired near it (see
+ * firedNear()) for the gun @p gun; nullptr when there is none. */
+OwnMissile* nearestUnmatched(std::vector<OwnMissile>& missiles,
+                             std::uint32_t firingInput,
+                             const network::ShipGun& gun) {
+  OwnMissile* nearest = nullptr;
+  for (OwnMissile& missile : missiles) {
+    if (!missile.serverId.has_value() &&
+        firedNear(missile, firingInput, gun.intervalTicks) &&
+        (nearest == nullptr ||
+         inputsBetween(missile.firingInput, firingInput) <
+             inputsBetween(nearest->firingInput, firingInput))) {
+      nearest = &missile;
+    }
+  }
+  return nearest;
+}
+
+/** @returns Whether a missile of @p missiles that the server stands for was
+ * fired near @p firingInput for the gun @p gun. */
+bool serverFiredNear(const std::vector<OwnMissile>& missiles,
+                     std::uint32_t firingInput, const network::ShipGun& gun) {
+  return std::ranges::any_of(
+      missiles, [firingInput, &gun](const OwnMissile& missile) {
+        return missile.serverId.has_value() &&
+               firedNear(missile, firingInput, gun.intervalTicks);
       });
-  return found == missiles.end() ? nullptr : &*found;
+}
+
+/** @returns The missile @p shot, added to @p missiles and drawn with its shot
+ * and its muzzle flash; nullptr, and nothing added, when @p parts gives no
+ * look for it. */
+OwnMissile* fireMissile(const OwnMissilesParts& parts,
+                        std::vector<OwnMissile>& missiles, OwnMissile shot) {
+  const std::optional<EntityTypeLook> look =
+      parts.types.get().lookOf(parts.types.get().shipGun().projectileType);
+  if (!look.has_value()) {
+    return nullptr;
+  }
+  shot.entity = drawnMissile(parts, *look, shot);
+  missiles.push_back(shot);
+  announce(parts.feedback, parts.components.get(), *shot.entity);
+  return &missiles.back();
 }
 
 /** @brief Takes away and forgets every missile of @p missiles that
@@ -157,16 +204,22 @@ bool touchesAnEnemy(const engine::Bounds& missile,
 
 OwnMissiles::OwnMissiles(OwnMissilesParts parts) : parts_(parts) {}
 
-void OwnMissiles::restart() { gun_.arm(parts_.types.get().shipGun()); }
+void OwnMissiles::restart(std::uint32_t acknowledged, game::Position ship) {
+  for (const PredictedCommand& shot :
+       gun_.arm(parts_.types.get().shipGun(), acknowledged)) {
+    fireOrMove(shot.inputNumber, ship);
+  }
+  place();
+}
 
-void OwnMissiles::follow(std::span<const PredictedCommand> commands) {
+void OwnMissiles::follow(std::span<const PredictedCommand> commands,
+                         bool mayFire) {
   for (const PredictedCommand& command : commands) {
     newestInput_ = command.inputNumber;
-    if (gun_.fires(command) && active_) {
-      if (const std::optional<game::Position> start =
-              startOf(parts_.types.get(), command.shipAfter)) {
-        fire(command.inputNumber, *start);
-      }
+    if (!mayFire) {
+      gun_.record(command);
+    } else if (gun_.fires(command) && active_) {
+      fireOrMove(command.inputNumber, command.shipAfter);
     }
   }
   place();
@@ -223,17 +276,25 @@ bool OwnMissiles::predictsOwnMissiles() const {
 }
 
 void OwnMissiles::ownMissileSpawned(const network::EntitySpawned& missile) {
-  const game::Position serverStart{.x = missile.x, .y = missile.y};
-  OwnMissile* matched = unmatchedOf(missiles_, missile.firingInput);
+  const network::ShipGun gun = parts_.types.get().shipGun();
+  const OwnMissile serverShot{.firingInput = missile.firingInput,
+                              .start = {.x = missile.x, .y = missile.y},
+                              .entity = std::nullopt,
+                              .serverId = missile.entityId};
+  OwnMissile* matched = nearestUnmatched(missiles_, missile.firingInput, gun);
   if (matched == nullptr) {
-    matched = fire(missile.firingInput, serverStart);
+    matched = fireMissile(parts_, missiles_, serverShot);
   }
   if (matched != nullptr) {
-    matched->serverId = missile.entityId;
-    matched->start = serverStart;
+    matched->firingInput = serverShot.firingInput;
+    matched->start = serverShot.start;
+    matched->serverId = serverShot.serverId;
   }
   const std::vector<PredictedCommand> firing =
       gun_.confirm(missile.firingInput);
+  for (const PredictedCommand& shot : firing) {
+    fireOrMove(shot.inputNumber, shot.shipAfter);
+  }
   takeAwayIf(missiles_, parts_.components.get(),
              [&missile, &firing](const OwnMissile& shot) {
                return !shot.serverId.has_value() &&
@@ -243,14 +304,6 @@ void OwnMissiles::ownMissileSpawned(const network::EntitySpawned& missile) {
                             return fired.inputNumber == shot.firingInput;
                           });
              });
-  for (const PredictedCommand& shot : firing) {
-    const std::optional<game::Position> start =
-        startOf(parts_.types.get(), shot.shipAfter);
-    if (unmatchedOf(missiles_, shot.inputNumber) == nullptr &&
-        start.has_value()) {
-      fire(shot.inputNumber, *start);
-    }
-  }
   place();
 }
 
@@ -262,20 +315,22 @@ void OwnMissiles::ownMissileDestroyed(
              });
 }
 
-OwnMissile* OwnMissiles::fire(std::uint32_t firingInput, game::Position start) {
-  const std::optional<EntityTypeLook> look =
-      parts_.types.get().lookOf(parts_.types.get().shipGun().projectileType);
-  if (!look.has_value()) {
-    return nullptr;
+void OwnMissiles::fireOrMove(std::uint32_t firingInput, game::Position ship) {
+  const network::ShipGun gun = parts_.types.get().shipGun();
+  const std::optional<game::Position> start = startOf(parts_.types.get(), ship);
+  if (!start.has_value() || serverFiredNear(missiles_, firingInput, gun)) {
+    return;
   }
-  OwnMissile missile{.firingInput = firingInput,
-                     .start = start,
-                     .entity = std::nullopt,
-                     .serverId = std::nullopt};
-  missile.entity = drawnMissile(parts_, *look, missile);
-  missiles_.push_back(missile);
-  announce(parts_.feedback, parts_.components.get(), *missile.entity);
-  return &missiles_.back();
+  if (OwnMissile* const near = nearestUnmatched(missiles_, firingInput, gun)) {
+    near->firingInput = firingInput;
+    near->start = *start;
+    return;
+  }
+  fireMissile(parts_, missiles_,
+              OwnMissile{.firingInput = firingInput,
+                         .start = *start,
+                         .entity = std::nullopt,
+                         .serverId = std::nullopt});
 }
 
 void OwnMissiles::place() {

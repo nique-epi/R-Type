@@ -33,6 +33,10 @@ class OwnMissilesFixture : public ::testing::Test {
    * nothing. */
   void holdNothingUpTo(std::uint32_t input);
 
+  /** @brief Sends the commands after the newest up to @p input, holding
+   * shoot, the ship at SHIP_WHEN_IT_FIRES. */
+  void holdShootUpTo(std::uint32_t input);
+
   /** @returns Where every missile drawn is, in no particular order. */
   [[nodiscard]] std::vector<game::Position> drawnMissiles();
 

@@ -8,16 +8,28 @@
 
 namespace rtype::client {
 
-void PredictedGun::arm(network::ShipGun gun) {
+std::vector<PredictedCommand> PredictedGun::arm(network::ShipGun gun,
+                                                std::uint32_t acknowledged) {
   countDown_ = game::Gun{.intervalTicks = gun.intervalTicks,
                          .ticksUntilReady = gun.firstShotTicks,
                          .projectileNumber = gun.projectileType};
-  commands_.clear();
+  forgetUpTo(acknowledged);
+  std::vector<PredictedCommand> firing;
+  for (const PredictedCommand& command : commands_) {
+    if (countsDown(command.shooting)) {
+      firing.push_back(command);
+    }
+  }
+  return firing;
 }
 
 bool PredictedGun::fires(const PredictedCommand& command) {
   commands_.push_back(command);
   return countsDown(command.shooting);
+}
+
+void PredictedGun::record(const PredictedCommand& command) {
+  commands_.push_back(command);
 }
 
 std::vector<PredictedCommand> PredictedGun::confirm(std::uint32_t firingInput) {

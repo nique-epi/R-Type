@@ -1,7 +1,7 @@
 #pragma once
 
 #include <gtest/gtest.h>
-#include <cstddef>
+#include <vector>
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
 #include "Effects/EffectTestConstants.hpp"
@@ -10,6 +10,7 @@
 #include "FixedEntityTypeSource.hpp"
 #include "OwnMissilesParts.hpp"
 #include "OwnPrediction.hpp"
+#include "Position.hpp"
 #include "PredictionTestConstants.hpp"
 #include "RecordingPlayerInputLink.hpp"
 #include "RecordingSoundPlayer.hpp"
@@ -32,8 +33,9 @@ class OwnPredictionFixture : public ::testing::Test {
   /** @brief Gives the prediction @p state. */
   void apply(const network::WorldState& state);
 
-  /** @returns How many missiles of a player are drawn. */
-  [[nodiscard]] std::size_t drawnMissileCount();
+  /** @returns Where every missile of a player drawn is, in no particular
+   * order. */
+  [[nodiscard]] std::vector<game::Position> drawnMissiles();
 
   /** @returns The prediction under test. */
   [[nodiscard]] OwnPrediction& prediction();

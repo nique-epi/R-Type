@@ -20,12 +20,23 @@ namespace rtype::client {
  */
 class PredictedGun {
  public:
-  /** @brief Takes @p gun as the gun of the ships, as the ship appeared: the
-   * first shot is firstShotTicks away, and no command is kept. */
-  void arm(network::ShipGun gun);
+  /**
+   * @brief Takes @p gun as the gun of the ships, as the server arms the gun
+   * of a new ship: its first shot firstShotTicks away from the input after
+   * @p acknowledged, the newest one the server applied when its state listed
+   * the ship. Drops the commands up to it, then plays the ones kept after it.
+   * @returns The commands after @p acknowledged that fire then, oldest first:
+   * the client sent them before it knew the ship, the server fires them.
+   */
+  [[nodiscard]] std::vector<PredictedCommand> arm(network::ShipGun gun,
+                                                  std::uint32_t acknowledged);
 
   /** @returns Whether @p command fires, and keeps it. */
   [[nodiscard]] bool fires(const PredictedCommand& command);
+
+  /** @brief Keeps @p command without counting it, while the player has no
+   * ship to fire from: arm() plays it once a ship appears. */
+  void record(const PredictedCommand& command);
 
   /**
    * @brief Puts the gun where the server had it once it fired for the input

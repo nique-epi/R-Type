@@ -6,6 +6,7 @@
 #include "EntityType.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
 #include "OwnMissiles.hpp"
+#include "OwnMissilesTestConstants.hpp"
 #include "Position.hpp"
 #include "PredictedCommand.hpp"
 #include "RecordingSoundPlayer.hpp"
@@ -15,13 +16,13 @@ namespace rtype::client::testing {
 
 OwnMissilesFixture::OwnMissilesFixture() {
   missiles_.setActive(true);
-  missiles_.restart();
+  missiles_.restart(NOTHING_ACKNOWLEDGED, SHIP_WHEN_IT_FIRES);
 }
 
 void OwnMissilesFixture::fireAt(std::uint32_t input, game::Position ship) {
   const std::vector<PredictedCommand> commands{PredictedCommand{
       .inputNumber = input, .shooting = true, .shipAfter = ship}};
-  missiles_.follow(commands);
+  missiles_.follow(commands, true);
   newestInput_ = input;
 }
 
@@ -31,7 +32,18 @@ void OwnMissilesFixture::holdNothingUpTo(std::uint32_t input) {
     commands.push_back(PredictedCommand{
         .inputNumber = next, .shooting = false, .shipAfter = {}});
   }
-  missiles_.follow(commands);
+  missiles_.follow(commands, true);
+  newestInput_ = input;
+}
+
+void OwnMissilesFixture::holdShootUpTo(std::uint32_t input) {
+  std::vector<PredictedCommand> commands;
+  for (std::uint32_t next = newestInput_ + 1; next <= input; ++next) {
+    commands.push_back(PredictedCommand{.inputNumber = next,
+                                        .shooting = true,
+                                        .shipAfter = SHIP_WHEN_IT_FIRES});
+  }
+  missiles_.follow(commands, true);
   newestInput_ = input;
 }
 

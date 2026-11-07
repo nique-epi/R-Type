@@ -1,5 +1,5 @@
 #include "OwnPredictionFixture.hpp"
-#include <cstddef>
+#include <vector>
 #include "ActionSet.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
@@ -31,17 +31,17 @@ void OwnPredictionFixture::apply(const network::WorldState& state) {
   prediction_.apply(state);
 }
 
-std::size_t OwnPredictionFixture::drawnMissileCount() {
-  std::size_t count = 0;
+std::vector<game::Position> OwnPredictionFixture::drawnMissiles() {
+  std::vector<game::Position> drawn;
   components_.forEach<game::EntityType, game::Position>(
-      [this, &count](engine::Entity entity, const game::EntityType& side,
-                     const game::Position&) {
+      [this, &drawn](engine::Entity entity, const game::EntityType& side,
+                     const game::Position& position) {
         if (side == game::EntityType::PlayerMissile &&
             components_.has<game::Sprite>(entity)) {
-          ++count;
+          drawn.push_back(position);
         }
       });
-  return count;
+  return drawn;
 }
 
 OwnPrediction& OwnPredictionFixture::prediction() { return prediction_; }

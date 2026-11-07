@@ -24,19 +24,19 @@ void OwnPrediction::advance(engine::Duration elapsed, PlayerCommand command,
   missiles_.setActive(true);
   const std::vector<PredictedCommand> commands =
       ship_.advance(elapsed, command, link);
-  if (firing_ && ship_.shipEntityId().has_value()) {
-    missiles_.follow(commands);
-  }
+  missiles_.follow(commands, firing_ && ship_.shipEntityId().has_value());
 }
 
 void OwnPrediction::apply(const network::WorldState& state) {
   const std::optional<std::uint32_t> shipBefore = ship_.shipEntityId();
   ship_.apply(state);
-  if (ship_.shipEntityId() != shipBefore) {
-    missiles_.restart();
+  const std::optional<OwnShip> own = ownShipOf(state, playerNumber_);
+  if (ship_.shipEntityId() != shipBefore && own.has_value()) {
+    missiles_.restart(own->acknowledgedInput, own->position);
   }
-  if (const std::optional<OwnShip> own = ownShipOf(state, playerNumber_)) {
-    missiles_.acknowledge(own->acknowledgedInput);
+  if (const std::optional<std::uint32_t> acknowledged =
+          acknowledgedInputOf(state, playerNumber_)) {
+    missiles_.acknowledge(*acknowledged);
   }
 }
 
