@@ -31,8 +31,8 @@ namespace rtype::server {
  * in it has a life (the game is lost), or once the last wave of the level is
  * over (the game is won), and from Finished back to WaitingForPlayers after
  * FINISHED_STATE_TICKS ticks. Coming back to WaitingForPlayers builds a new
- * world: every player gets a new ship and its STARTING_LIVES back, is no longer
- * ready, and the tick is 0. The players stay connected.
+ * world: every player gets a new ship and the lives of the rules back, is no
+ * longer ready, and the tick is 0. The players stay connected.
  *
  * The flow tells the players where the game stands, as the A session section
  * of the protocol page describes, through the IGameReplication it is given.

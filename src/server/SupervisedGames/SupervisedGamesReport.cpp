@@ -9,6 +9,7 @@
 #include <vector>
 #include "DurationConversion.hpp"
 #include "GameLifecycle.hpp"
+#include "GameRuleConstants.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
 #include "MeasureMilliseconds.hpp"
@@ -52,7 +53,7 @@ network::HostedGame hostedGameOf(const SupervisedGame& game) {
       .number = game.slot,
       .name = std::string{GAME_NAME_PREFIX} + std::to_string(game.slot),
       .state = hostedStateOf(game),
-      .difficulty = std::string{DEFAULT_DIFFICULTY},
+      .difficulty = std::string{identifiers::DEFAULT_DIFFICULTY},
       .players = game.nicknames};
 }
 

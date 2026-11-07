@@ -97,6 +97,39 @@ TEST(GameResultKeeper, SaysTheResultOfAGameThatIsNotVanillaIsNot) {
 }
 
 /**
+ * Given a game whose rules give five lives, and a player with two left
+ * When the game finishes
+ * Then the player died three times: its deaths count from the lives of the
+ * rules, not from the default lives
+ */
+TEST(GameResultKeeper, CountsDeathsFromTheLivesOfTheRules) {
+  PlayerRoster roster;
+  RecordingResultsArchive archive;
+  GameResultKeeper keeper{
+      roster, archive,
+      GameSettings{.waves = {},
+                   .types = game::testing::shippedEntitySheets(),
+                   .lives = FIVE_LIVES_OF_THE_RULES}};
+  ConnectedPlayer* const player =
+      roster.add(playerEndpoint(FIRST_PLAYER),
+                 std::string{NICKNAMES.at(FIRST_PLAYER)}, SESSION_TOKEN);
+  ASSERT_NE(player, nullptr);
+  keeper.onStateChanged(
+      GameStateChanged{.previous = GameState::WaitingForPlayers,
+                       .current = GameState::Starting});
+  keeper.onStateChanged(GameStateChanged{.previous = GameState::Starting,
+                                         .current = GameState::InProgress});
+  player->livesWithoutShip = TWO_LIVES_LEFT;
+
+  keeper.onStateChanged(GameStateChanged{.previous = GameState::InProgress,
+                                         .current = GameState::Finished});
+
+  ASSERT_EQ(archive.results().size(), 1U);
+  ASSERT_EQ(archive.results().front().players.size(), 1U);
+  EXPECT_EQ(archive.results().front().players.front().deaths, THREE_LIVES_LOST);
+}
+
+/**
  * Given three players at the start, one of whom leaves with a score
  * When the game finishes
  * Then the count of players stays 3, the three have a row, and the one who left

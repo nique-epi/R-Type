@@ -20,6 +20,7 @@
 #include "FarewellSender.hpp"
 #include "GameInstance.hpp"
 #include "GameInstanceParts.hpp"
+#include "GameRules.hpp"
 #include "GameSettings.hpp"
 #include "GamesSettings.hpp"
 #include "HostedRules.hpp"
@@ -116,12 +117,15 @@ void logWavesFile(const logging::Logger& logger,
 }
 
 /**
- * @brief Writes in the journal the difficulty the game plays and whether it is
+ * @brief Writes in the journal the rules the game plays and whether it is
  * vanilla, then one line per reason when it is not.
  */
-void logHowGamesPlay(const logging::Logger& logger, std::string_view difficulty,
+void logHowGamesPlay(const logging::Logger& logger,
+                     const network::GameRules& rules,
                      const std::vector<std::string_view>& breaches) {
-  logger.info("games play ", difficulty,
+  logger.info("games play ", rules.difficulty, ", ",
+              static_cast<unsigned int>(rules.lives), " lives, friendly fire ",
+              rules.friendlyFire ? "on" : "off",
               breaches.empty() ? ", vanilla" : ", not vanilla");
   for (const std::string_view breach : breaches) {
     logger.info("not vanilla: ", breach);
@@ -188,6 +192,7 @@ void ServerGamesModule::declareSettings(
           .lowest = LOWEST_INPUT_DELAY_TICKS,
           .highest = HIGHEST_INPUT_DELAY_TICKS,
           .help = "Ticks every player's input is held before it is applied"});
+  ruleSettings_.declare(configuration);
 }
 
 void ServerGamesModule::start() {
@@ -204,7 +209,7 @@ void ServerGamesModule::start() {
 GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
                                            const game::EntitySheets& types,
                                            std::optional<std::uint32_t> seed) {
-  const std::string_view difficulty = DEFAULT_DIFFICULTY;
+  const network::GameRules rules = ruleSettings_.rules();
   const auto statesPerSecond =
       static_cast<std::size_t>(stateRateSetting_->integer().value_or(
           static_cast<std::int64_t>(settings_.statesPerSecond)));
@@ -216,15 +221,19 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
       HostedRules{.wavesFingerprint = catalog.fingerprint(),
                   .sheetsFingerprint = entitySheetsFingerprint(types),
                   .seed = seed,
-                  .inputDelayTicks = inputDelayTicks});
-  logHowGamesPlay(logger_, difficulty, breaches);
+                  .inputDelayTicks = inputDelayTicks,
+                  .lives = rules.lives,
+                  .friendlyFire = rules.friendlyFire});
+  logHowGamesPlay(logger_, rules, breaches);
   return GameSettings{.seed = seed.has_value() ? *seed : std::random_device{}(),
-                      .waves = catalog.planOf(difficulty),
+                      .waves = catalog.planOf(rules.difficulty),
                       .types = types,
                       .statesPerSecond = statesPerSecond,
                       .stateEncoding = encoding,
                       .inputDelayTicks = inputDelayTicks,
-                      .difficulty = std::string{difficulty},
+                      .difficulty = rules.difficulty,
+                      .lives = rules.lives,
+                      .friendlyFire = rules.friendlyFire,
                       .vanilla = breaches.empty()};
 }
 

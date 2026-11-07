@@ -225,7 +225,7 @@ void GameFlow::startNewWorld() {
   for (ConnectedPlayer* const player : game_.roster.get().connected()) {
     player->ready = false;
     player->score = 0;
-    player->livesWithoutShip = game::STARTING_LIVES;
+    player->livesWithoutShip = game_.settings.lives;
     player->ticksUntilRespawn = 0;
     player->shipEntityId = identifiers::NO_ENTITY_ID;
     replication_.onPlayerJoined(*player);

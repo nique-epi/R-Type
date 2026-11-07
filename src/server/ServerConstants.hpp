@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "GameRuleConstants.hpp"
 #include "StateEncoding.hpp"
 #include "TimeConstants.hpp"
 
@@ -138,12 +139,6 @@ constexpr std::string_view WAVE_FILE_IN_ASSETS = "waves/waves.toml";
 constexpr std::string_view SHIP_SHEET_NAME = "ship";
 
 /**
- * @brief The difficulty every game is played at, until the rules of a game can
- * choose another one.
- */
-constexpr std::string_view DEFAULT_DIFFICULTY = "normal";
-
-/**
  * @brief The fingerprint of the waves file the game ships, as
  * WaveCatalog::fingerprint() gives it: games read from a file with another one
  * are not vanilla. A test fails when the shipped file changes and this does
@@ -171,6 +166,9 @@ constexpr std::string_view IMPOSED_SEED_BREACH =
     "a seed is set, so the waves can be known in advance";
 constexpr std::string_view CHANGED_INPUT_DELAY_BREACH =
     "the input delay is not the default one";
+constexpr std::string_view CHANGED_LIVES_BREACH =
+    "the players do not start with the default lives";
+constexpr std::string_view FRIENDLY_FIRE_BREACH = "friendly fire is on";
 
 /**
  * @brief Launch option followed by the program the binary runs:
@@ -337,6 +335,43 @@ constexpr std::size_t HIGHEST_INPUT_DELAY_TICKS =
 static_assert(DEFAULT_INPUT_DELAY_TICKS >= LOWEST_INPUT_DELAY_TICKS &&
                   DEFAULT_INPUT_DELAY_TICKS <= HIGHEST_INPUT_DELAY_TICKS,
               "the default input delay must be one the option accepts");
+
+/**
+ * @brief The names the rules of a game go by in `set`. A game process declares
+ * them; its supervisor forces the rules the creator of the game chose with
+ * DIFFICULTY_OPTION, LIVES_OPTION and FRIENDLY_FIRE_OPTION. They are no
+ * settings of the supervisor, so a line of server.cfg cannot set them: a rule
+ * belongs to one game, never to every game of a server.
+ */
+constexpr std::string_view DIFFICULTY_SETTING_NAME = "difficulty";
+constexpr std::string_view LIVES_SETTING_NAME = "lives";
+constexpr std::string_view FRIENDLY_FIRE_SETTING_NAME = "friendly-fire";
+
+/**
+ * @brief Launch options of a game process, each followed by a rule of its game
+ * and forced as the setting of the same name.
+ */
+constexpr std::string_view DIFFICULTY_OPTION = "--difficulty";
+constexpr std::string_view LIVES_OPTION = "--lives";
+constexpr std::string_view FRIENDLY_FIRE_OPTION = "--friendly-fire";
+
+/**
+ * @brief The fewest and the most lives the creator of a game may give each
+ * player. Provisional, until gameplay tunes them.
+ */
+constexpr std::uint8_t LOWEST_LIVES = 1;
+constexpr std::uint8_t HIGHEST_LIVES = 9;
+
+static_assert(identifiers::DEFAULT_LIVES >= LOWEST_LIVES &&
+                  identifiers::DEFAULT_LIVES <= HIGHEST_LIVES,
+              "the default lives must be a count the rules accept");
+
+/**
+ * @brief The values of FRIENDLY_FIRE_SETTING_NAME and FRIENDLY_FIRE_OPTION:
+ * off, then on.
+ */
+constexpr std::int64_t FRIENDLY_FIRE_OFF = 0;
+constexpr std::int64_t FRIENDLY_FIRE_ON = 1;
 
 static_assert(DEFAULT_WORLD_STATES_PER_SECOND >=
                       LOWEST_WORLD_STATES_PER_SECOND &&

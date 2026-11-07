@@ -23,11 +23,11 @@ namespace {
  * given that value, so it holds the lives left even while the player has a
  * ship.
  */
-PlayerResult resultOf(const ConnectedPlayer& player) {
-  return PlayerResult{.nickname = player.nickname,
-                      .score = player.score,
-                      .deaths = static_cast<std::uint32_t>(
-                          game::STARTING_LIVES - player.livesWithoutShip)};
+PlayerResult resultOf(const ConnectedPlayer& player, std::uint8_t lives) {
+  return PlayerResult{
+      .nickname = player.nickname,
+      .score = player.score,
+      .deaths = static_cast<std::uint32_t>(lives - player.livesWithoutShip)};
 }
 
 }  // namespace
@@ -38,11 +38,12 @@ GameResultKeeper::GameResultKeeper(PlayerRoster& roster,
     : roster_(roster),
       archive_(archive),
       difficulty_(settings.difficulty),
+      lives_(settings.lives),
       vanilla_(settings.vanilla) {}
 
 void GameResultKeeper::onPlayerClosing(const ConnectedPlayer& departed) {
   if (state_ == GameState::InProgress) {
-    departed_.push_back(resultOf(departed));
+    departed_.push_back(resultOf(departed, lives_));
   }
 }
 
@@ -63,7 +64,7 @@ void GameResultKeeper::startCounting() {
 void GameResultKeeper::recordTheGame() {
   std::vector<PlayerResult> players = std::exchange(departed_, {});
   for (const ConnectedPlayer* const player : roster_.connected()) {
-    players.push_back(resultOf(*player));
+    players.push_back(resultOf(*player, lives_));
   }
   if (players.empty()) {
     return;

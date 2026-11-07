@@ -6,6 +6,7 @@
 #include "Instances/GameModuleTestConstants.hpp"
 #include "Instances/RtypeGameFixture.hpp"
 #include "MessageType.hpp"
+#include "PlayerLives.hpp"
 
 namespace rtype::server::testing {
 
@@ -49,6 +50,21 @@ TEST_F(RtypeGameFixture, RtypeRulesModuleTellsTheRoomThroughTheReplication) {
   runStages();
 
   expectFirstMessageSentTo(0, network::MessageType::LobbyState);
+}
+
+/**
+ * Given both modules started in a game whose rules give five lives
+ * When a player joins
+ * Then the player has five lives, its first ship included
+ */
+TEST_F(RtypeGameFixture, RtypeRulesModuleGivesAJoiningPlayerTheRuledLives) {
+  context().settings.lives = RULED_LIVES;
+  startBoth();
+  ConnectedPlayer& player = join(0);
+
+  playerJoined(player);
+
+  EXPECT_EQ(livesOf(world(), player), RULED_LIVES);
 }
 
 /**

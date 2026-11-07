@@ -22,6 +22,31 @@ namespace rtype::server {
 [[nodiscard]] engine::LaunchOption databaseOption(
     std::vector<std::string>& forcedLines);
 
+/**
+ * @returns `--difficulty <name>`, which adds to @p forcedLines the line that
+ * forces the difficulty of the game.
+ */
+[[nodiscard]] engine::LaunchOption difficultyOption(
+    std::vector<std::string>& forcedLines);
+
+/**
+ * @returns `--lives <count>`, which adds to @p forcedLines the line that
+ * forces the lives each player of the game starts with.
+ */
+[[nodiscard]] engine::LaunchOption livesOption(
+    std::vector<std::string>& forcedLines);
+
+/**
+ * @returns `--friendly-fire <0|1>`, which adds to @p forcedLines the line that
+ * forces whether a missile of a player costs another player a life.
+ */
+[[nodiscard]] engine::LaunchOption friendlyFireOption(
+    std::vector<std::string>& forcedLines);
+
+/** @returns The lines of the usage that describe the three options of the
+ * rules of a game. */
+[[nodiscard]] std::string ruleOptionEntries();
+
 /** @returns The line of the usage that describes `-p`, with its default. */
 [[nodiscard]] std::string portOptionEntry();
 
