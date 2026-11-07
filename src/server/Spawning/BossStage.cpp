@@ -7,6 +7,7 @@
 #include <utility>
 #include "Boss.hpp"
 #include "BossArrival.hpp"
+#include "BossHealthScaling.hpp"
 #include "BossStageConstants.hpp"
 #include "BossStageParts.hpp"
 #include "ComponentRegistry.hpp"
@@ -38,14 +39,14 @@ const game::EntitySheet* bossSheetOf(const BossStageParts& parts) {
 
 }  // namespace
 
-int scaledBossHealth(int points, std::size_t players, int healthPercent) {
+int scaledBossHealth(const BossHealthScaling& scaling) {
   const auto extraPlayers =
-      static_cast<int>(std::max<std::size_t>(players, 1) - 1);
+      static_cast<int>(std::max<std::size_t>(scaling.players, 1) - 1);
   const int forPlayers =
-      points *
+      scaling.sheetPoints *
       (game::WHOLE_PERCENT + (BOSS_HEALTH_PER_EXTRA_PLAYER * extraPlayers)) /
       game::WHOLE_PERCENT;
-  return std::max(1, forPlayers * healthPercent / game::WHOLE_PERCENT);
+  return std::max(1, forPlayers * scaling.healthPercent / game::WHOLE_PERCENT);
 }
 
 BossStage::BossStage(BossStageParts parts)
@@ -90,7 +91,10 @@ void BossStage::strengthen() const {
       static_cast<std::size_t>(std::ranges::distance(roster_->connected()));
   world_->components().forEach<game::Boss, game::Health>(
       [this, players](engine::Entity, game::Boss& phase, game::Health& health) {
-        health.full = scaledBossHealth(health.full, players, healthPercent_);
+        health.full = scaledBossHealth(
+            BossHealthScaling{.sheetPoints = health.full,
+                              .players = players,
+                              .healthPercent = healthPercent_});
         health.points = health.full;
         phase.rageBelowPoints =
             game::rageBelowPointsOf(health.full, boss_->boss->rageBelowPercent);

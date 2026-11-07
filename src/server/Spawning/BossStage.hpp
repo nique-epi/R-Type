@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <optional>
+#include "BossHealthScaling.hpp"
 #include "BossStageParts.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySpawnSender.hpp"
@@ -12,12 +13,11 @@
 
 namespace rtype::server {
 
-/** @returns @p points scaled for @p players (at least one counts) and the
- * difficulty's @p healthPercent: each player past the first adds
- * BOSS_HEALTH_PER_EXTRA_PLAYER percent, then the whole is taken at
- * @p healthPercent percent, rounded down. */
-[[nodiscard]] int scaledBossHealth(int points, std::size_t players,
-                                   int healthPercent);
+/** @returns The points of the sheet of @p scaling scaled for its players
+ * (at least one counts) and its health percent: each player past the first
+ * adds BOSS_HEALTH_PER_EXTRA_PLAYER percent, then the whole is taken at the
+ * health percent, rounded down, never under 1. */
+[[nodiscard]] int scaledBossHealth(const BossHealthScaling& scaling);
 
 /**
  * @brief The end of a level: the boss of the difficulty, once its last wave
