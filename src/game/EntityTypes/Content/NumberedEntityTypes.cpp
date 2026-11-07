@@ -7,7 +7,6 @@
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "EntitySheetConstants.hpp"
-#include "EntityType.hpp"
 #include "NumberedEntityType.hpp"
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"

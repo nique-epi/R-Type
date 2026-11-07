@@ -7,6 +7,7 @@
 #include "ContentPack.hpp"
 #include "LocalContent.hpp"
 #include "NumberedEntityTypes.hpp"
+#include "SheetText.hpp"
 #include "ShipGunReading.hpp"
 
 namespace rtype::client {
