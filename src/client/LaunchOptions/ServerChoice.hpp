@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
@@ -13,9 +14,16 @@ namespace rtype::client {
  * field for the game: every attempt asks for the game given at launch.
  */
 struct ServerChoice {
+  /** @brief The server the form opened by ADDRESS or JOIN A SERVER starts
+   * with: the one given at launch or by client.cfg, then the one of the last
+   * attempt started from that form. The server map never changes it. */
   network::Endpoint server;
   std::string nickname;
   network::GameChoice game{network::ANY_GAME_CHOICE};
+  /** @brief The server of the last attempt, whichever screen started it;
+   * nothing before the first. A screen that connects at once starts with
+   * it. */
+  std::optional<network::Endpoint> lastServer = std::nullopt;
 };
 
 }  // namespace rtype::client

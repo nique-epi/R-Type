@@ -334,7 +334,7 @@ void ServerMapScreen::refresh() {
 
 void ServerMapScreen::join(const ServerRow& server) {
   heldKey_.reset();
-  choice_->server = server.endpoint;
+  choice_->lastServer = server.endpoint;
   navigator_->push(CONNECTION_TO_CHOSEN_SERVER_SCREEN);
 }
 

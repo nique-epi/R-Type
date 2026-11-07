@@ -76,6 +76,17 @@ std::string loadingContentLine(const ConnectionStatus& status) {
   return LOADING_CONTENT_STATUS + std::to_string(percent) + PERCENT_SIGN;
 }
 
+/** @returns The server the fields of a screen started by @p start show: the
+ * server the form remembers for ConnectionStart::OnConfirm, the server of the
+ * last attempt otherwise, the server the form remembers before any. */
+network::Endpoint shownServerOf(const ServerChoice& choice,
+                                ConnectionStart start) {
+  if (start == ConnectionStart::OnConfirm) {
+    return choice.server;
+  }
+  return choice.lastServer.value_or(choice.server);
+}
+
 }  // namespace
 
 ConnectionScreen::ConnectionScreen(ConnectionScreenParts parts,
@@ -84,9 +95,11 @@ ConnectionScreen::ConnectionScreen(ConnectionScreenParts parts,
       connection_(&parts.connection.get()),
       choice_(&parts.choice.get()),
       goal_(parts.goal),
+      remembersServer_(parts.start == ConnectionStart::OnConfirm),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
-      menu_(buildMenu(parts.sounds.get())) {
+      menu_(buildMenu(parts.sounds.get(),
+                      shownServerOf(parts.choice.get(), parts.start))) {
   connection_->cancel();
   if (parts.start == ConnectionStart::AtOnce) {
     connect();
@@ -111,21 +124,21 @@ void ConnectionScreen::draw(sf::RenderTarget& target) const {
 
 bool ConnectionScreen::hidesScreensBelow() const { return true; }
 
-Menu ConnectionScreen::buildMenu(ISoundPlayer& sounds) {
-  const ServerChoice& choice = *choice_;
+Menu ConnectionScreen::buildMenu(ISoundPlayer& sounds,
+                                 const network::Endpoint& shown) {
   const std::function<void()> connectAction = [this] { connect(); };
   return MenuBuilder(MenuBuilder::Frame::Form, &sounds)
       .heading(CONNECTION_HEADING)
       .textField({.label = ADDRESS_LABEL, .description = ADDRESS_DESCRIPTION},
-                 TextField(choice.server.address, ADDRESS_FIELD_SIZE,
+                 TextField(shown.address, ADDRESS_FIELD_SIZE,
                            TextField::Characters::DigitsAndDots),
                  connectAction)
       .textField({.label = PORT_LABEL, .description = PORT_DESCRIPTION},
-                 TextField(std::to_string(choice.server.port), PORT_FIELD_SIZE,
+                 TextField(std::to_string(shown.port), PORT_FIELD_SIZE,
                            TextField::Characters::Digits),
                  connectAction)
       .textField({.label = NICKNAME_LABEL, .description = NICKNAME_DESCRIPTION},
-                 TextField(choice.nickname, NICKNAME_FIELD_SIZE,
+                 TextField(choice_->nickname, NICKNAME_FIELD_SIZE,
                            TextField::Characters::Printable),
                  connectAction)
       .button({.label = CONNECT_LABEL, .description = CONNECT_DESCRIPTION},
@@ -148,7 +161,10 @@ void ConnectionScreen::connect() {
       return;
     }
     fieldProblem_ = {};
-    choice_->server = server;
+    choice_->lastServer = server;
+    if (remembersServer_) {
+      choice_->server = server;
+    }
     choice_->nickname = std::string(nickname);
     connection_->connect(server, nickname, choice_->game);
   } catch (const network::InvalidIpv4AddressException&) {

@@ -4,6 +4,7 @@
 #include <memory>
 #include <string_view>
 #include "ConnectionScreen.hpp"
+#include "ConnectionStart.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
@@ -27,6 +28,10 @@ class ConnectionScreenChoiceFixture : public ::testing::Test {
    * built, as the server map opens it. */
   void reopenConnectingAtOnce();
 
+  /** @brief Writes MAP_ADDRESS and MAP_PORT as the server of the last
+   * attempt, as the server map does when the player joins a server. */
+  void chooseOnTheMap();
+
   /** @brief Presses and releases Enter on the screen shown, then lets the
    * press last. */
   void chooseEnter();
@@ -34,6 +39,10 @@ class ConnectionScreenChoiceFixture : public ::testing::Test {
   [[nodiscard]] const RecordingServerConnection& connection() const;
 
  private:
+  /** @brief Builds a new screen from the same choice, started by @p start, in
+   * place of the one shown. */
+  void openWith(rtype::client::ConnectionStart start);
+
   RecordingNavigator navigator_;
   RecordingServerConnection connection_;
   InterfaceCanvasRecord canvas_;
