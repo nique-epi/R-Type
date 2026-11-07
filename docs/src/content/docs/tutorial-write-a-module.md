@@ -218,8 +218,10 @@ add_subdirectory(Modules)
 ```cpp
   modules.push_back(std::make_unique<ServerLobbyModule>());
   modules.push_back(std::make_unique<ServerTickReportModule>());
+#if RTYPE_MODULE_METRICS
   modules.push_back(std::make_unique<ServerMetricsModule>(
       std::make_shared<engine::SystemClock>(), launchOptions.trafficCsvFile()));
+#endif
   modules.push_back(std::make_unique<ServerSupervisorLinkModule>(
       launchOptions.supervisorLink(), stopRequest));
   return modules;
@@ -231,6 +233,8 @@ The module is only linked if its library is in the `CMakeLists.txt` of that fold
     rtype_server_platform
     rtype_server_tick_report_module
 ```
+
+An optional module, one the program runs without, also gets its option, as the metrics have `RTYPE_MODULE_METRICS` (see [Modules](/R-Type/modules/#turning-a-module-on-or-off)): an `option()` and its `add_feature_info()` in the root `CMakeLists.txt`, a `#cmakedefine01` and a constant in `src/engine/Modules/BuiltModuleConstants.hpp.in`, `if(NOT RTYPE_MODULE_TICK_REPORT) return()` at the top of its `CMakeLists.txt`, its library linked in an `if(RTYPE_MODULE_TICK_REPORT)` block, its two lines of the list under `#if RTYPE_MODULE_TICK_REPORT`, and the option `OFF` in the `modules-off` preset. This tutorial keeps its module in every build, so it skips that step.
 
 Every new module also adds its row to [the list of modules](/R-Type/project-layout/#the-list-of-modules), in the same pull request. In the table of a game process, after `lobby`:
 
