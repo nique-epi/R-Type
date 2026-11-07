@@ -32,6 +32,10 @@ class ConnectionScreenChoiceFixture : public ::testing::Test {
    * attempt, as the server map does when the player joins a server. */
   void chooseOnTheMap();
 
+  /** @brief Opens a new screen whose fields start with the server of the last
+   * attempt, as RETRY opens it after a lost game. */
+  void reopenForARetry();
+
   /** @brief Presses and releases Enter on the screen shown, then lets the
    * press last. */
   void chooseEnter();

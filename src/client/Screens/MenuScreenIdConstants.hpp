@@ -25,8 +25,8 @@ constexpr ScreenId GAME_OPTIONS_SCREEN{"game options"};
 
 /** @brief The dialog that says the session with the server ended, lost or
  * closed, which ClientScreens pushes over the title it puts in place of every
- * screen; RETRY opens the connection screen over the title, OK leaves the
- * title. */
+ * screen; RETRY opens the server map and CONNECTION_AGAIN_SCREEN over it, OK
+ * leaves the title. */
 constexpr ScreenId CONNECTION_LOST_SCREEN{"connection lost"};
 
 /** @brief The question asked before closing the client, pushed over the
@@ -46,6 +46,10 @@ constexpr ScreenId CONNECTION_FOR_LEADERBOARD_SCREEN{
  * attempt with the server the map chose as it opens. */
 constexpr ScreenId CONNECTION_TO_CHOSEN_SERVER_SCREEN{
     "connection to the chosen server"};
+
+/** @brief The same screen, pushed by RETRY over the server map: its fields
+ * start with the server of the lost game, and the player confirms them. */
+constexpr ScreenId CONNECTION_AGAIN_SCREEN{"connection again"};
 
 /** @brief The map of the servers the master lists, with their games, pushed
  * over the title by PLAY. */

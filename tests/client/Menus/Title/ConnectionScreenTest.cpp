@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -512,6 +513,42 @@ TEST_F(ConnectionScreenChoiceFixture,
                                        .port = LAUNCH_PORT},
                             .nickname = std::string(LAUNCH_NICKNAME),
                             .game = LAUNCH_GAME}));
+}
+
+/**
+ * Given an attempt at once to the server the map chose, then a lost game
+ * When the form RETRY opens appears
+ * Then no attempt goes out until Enter is chosen
+ */
+TEST_F(ConnectionScreenChoiceFixture, ARetryFormWaitsForEnter) {
+  chooseOnTheMap();
+  reopenConnectingAtOnce();
+  const std::size_t attemptsBefore = connectAttemptsOf(connection()).size();
+
+  reopenForARetry();
+
+  EXPECT_EQ(connectAttemptsOf(connection()).size(), attemptsBefore);
+}
+
+/**
+ * Given an attempt at once to the server the map chose, then a lost game
+ * When the form RETRY opens appears and Enter is chosen
+ * Then the attempt goes out to the server of the lost game
+ */
+TEST_F(ConnectionScreenChoiceFixture, ARetryFormStartsWithTheLastAttempt) {
+  chooseOnTheMap();
+  reopenConnectingAtOnce();
+
+  reopenForARetry();
+  chooseEnter();
+
+  EXPECT_EQ(
+      connectAttemptsOf(connection()).back(),
+      (ServerConnectionCall{
+          .request = ServerConnectionCall::Request::Connect,
+          .server = {.address = std::string(MAP_ADDRESS), .port = MAP_PORT},
+          .nickname = std::string(LAUNCH_NICKNAME),
+          .game = LAUNCH_GAME}));
 }
 
 /**

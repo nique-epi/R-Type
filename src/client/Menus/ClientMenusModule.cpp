@@ -146,6 +146,27 @@ std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
       interfaceCanvasOf(context));
 }
 
+/** @brief Adds to @p registry the four connection screens: the form, the one
+ * for the leaderboard, the one that joins at once and the one RETRY opens. */
+void addConnectionScreens(ScreenRegistry& registry) {
+  registry.add(CONNECTION_SCREEN, [](const ScreenContext& screens) {
+    return buildConnectionScreen(screens, ConnectionGoal::WaitingRoom);
+  });
+  registry.add(
+      CONNECTION_FOR_LEADERBOARD_SCREEN, [](const ScreenContext& screens) {
+        return buildConnectionScreen(screens, ConnectionGoal::ScreenBelow);
+      });
+  registry.add(
+      CONNECTION_TO_CHOSEN_SERVER_SCREEN, [](const ScreenContext& screens) {
+        return buildConnectionScreen(screens, ConnectionGoal::WaitingRoom,
+                                     ConnectionStart::AtOnce);
+      });
+  registry.add(CONNECTION_AGAIN_SCREEN, [](const ScreenContext& screens) {
+    return buildConnectionScreen(screens, ConnectionGoal::WaitingRoom,
+                                 ConnectionStart::LastAttemptOnConfirm);
+  });
+}
+
 }  // namespace
 
 std::string ClientMenusModule::name() const {
@@ -173,18 +194,7 @@ void ClientMenusModule::install(engine::InstallContext& context) {
     return buildOptionsScreen(screens, OptionsPlace::OverGame);
   });
   registry.add(QUIT_CONFIRMATION_SCREEN, buildQuitConfirmationScreen);
-  registry.add(CONNECTION_SCREEN, [](const ScreenContext& screens) {
-    return buildConnectionScreen(screens, ConnectionGoal::WaitingRoom);
-  });
-  registry.add(
-      CONNECTION_FOR_LEADERBOARD_SCREEN, [](const ScreenContext& screens) {
-        return buildConnectionScreen(screens, ConnectionGoal::ScreenBelow);
-      });
-  registry.add(
-      CONNECTION_TO_CHOSEN_SERVER_SCREEN, [](const ScreenContext& screens) {
-        return buildConnectionScreen(screens, ConnectionGoal::WaitingRoom,
-                                     ConnectionStart::AtOnce);
-      });
+  addConnectionScreens(registry);
   registry.add(SERVER_MAP_SCREEN, buildServerMapScreen);
   registry.add(LEADERBOARD_SCREEN, buildLeaderboardScreen);
   registry.add(CONNECTION_LOST_SCREEN, buildConnectionLostScreen);

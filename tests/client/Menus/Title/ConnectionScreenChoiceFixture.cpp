@@ -53,6 +53,10 @@ void ConnectionScreenChoiceFixture::reopenConnectingAtOnce() {
   openWith(ConnectionStart::AtOnce);
 }
 
+void ConnectionScreenChoiceFixture::reopenForARetry() {
+  openWith(ConnectionStart::LastAttemptOnConfirm);
+}
+
 void ConnectionScreenChoiceFixture::chooseOnTheMap() {
   choice_.lastServer =
       Endpoint{.address = std::string(MAP_ADDRESS), .port = MAP_PORT};

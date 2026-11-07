@@ -22,7 +22,7 @@ struct ServerChoice {
   network::GameChoice game{network::ANY_GAME_CHOICE};
   /** @brief The server of the last attempt, whichever screen started it;
    * nothing before the first. A screen that connects at once starts with
-   * it. */
+   * it, and so does the form RETRY opens after a lost game. */
   std::optional<network::Endpoint> lastServer = std::nullopt;
 };
 
