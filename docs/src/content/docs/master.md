@@ -167,7 +167,9 @@ The bodies are JSON, read and written by `rtype_network_master` (`src/network/Ma
 ```
 
 ```json
-{"games":[{"number":1,"name":"GAME 1","state":"waiting","difficulty":"normal","players":["ACE"]}],
+{"games":[{"number":1,"name":"GAME 1","state":"waiting","difficulty":"normal","lives":3,
+            "friendlyFire":false,"players":["ACE"]}],
+ "difficulties":["easy","hard","normal"],
  "measures":{"tickP50Milliseconds":1.5,"tickP95Milliseconds":4.25},"probeToken":4242424242}
 ```
 
@@ -180,20 +182,25 @@ The bodies are JSON, read and written by `rtype_network_master` (`src/network/Ma
 | `games` | as many as the server registered at most; numbers from 1 to its `maximumGames`, none twice |
 | `state` | `waiting`, `starting`, `playing`, `finished` or `full`; `full` means the game waits for players and every seat is taken, so it holds as many players as the server registered per game, and `waiting` holds fewer; the other states hold any number |
 | `difficulty`, `players` | nicknames of the protocol, 1 to 16 bytes; as many players as the server registered per game at most |
+| `lives`, `friendlyFire` | the rules of a game: 1 to 255 lives (`LOWEST_GAME_LIVES`, `HIGHEST_GAME_LIVES`, what one byte holds; a server accepts fewer when a game is created), and a boolean |
+| `difficulties` | the tables of the waves file of the server, the difficulties a new game may be played at: 1 to `MAXIMUM_DIFFICULTIES` (16) nicknames of the protocol, none twice |
 | `probeSecret` | 1 to 9223372036854775807 (2^63 − 1, what a column `INTEGER` of SQLite holds); required in a registration, and never written in a list |
 | `probeToken` | optional, 1 to 18446744073709551615 (2^64 − 1): the token of the last probe, sent once |
 | `measures` | an object; each of `tickP50Milliseconds`, `tickP95Milliseconds`, `receivedBytesPerSecond`, `sentBytesPerSecond`, `lossPercent` (0 to 100) and `averagePingMilliseconds` is a number from 0, or left out when the server does not measure it, never sent as 0 |
 
 ## Listing the games of a server
 
-`GET /api/servers/{id}/games` answers, to anyone, the games of the last heartbeat of a server, so a player who picked a server can choose a game in it. The `id` is the one the creation answered. A server that registered and sent no heartbeat since lists no game: `{"games":[]}`, since a registration forgets the last heartbeat. An `id` that is no number, or that no server has, answers 404.
+`GET /api/servers/{id}/games` answers, to anyone, the games of the last heartbeat of a server, so a player who picked a server can choose a game in it. The `id` is the one the creation answered. A server that registered and sent no heartbeat since lists no game and no difficulty: `{"difficulties":[],"games":[]}`, since a registration forgets the last heartbeat. An `id` that is no number, or that no server has, answers 404.
 
 ```json
-{"games":[{"number":1,"name":"GAME 1","state":"waiting","playerCount":1},
-          {"number":2,"name":"GAME 2","state":"inGame","playerCount":2}]}
+{"difficulties":["easy","hard","normal"],
+ "games":[{"number":1,"name":"GAME 1","state":"waiting","playerCount":1,
+            "difficulty":"normal","lives":3,"friendlyFire":false},
+           {"number":2,"name":"GAME 2","state":"inGame","playerCount":2,
+            "difficulty":"hard","lives":5,"friendlyFire":true}]}
 ```
 
-The answer never holds a nickname, a difficulty or a measure: those stay in the heartbeat. The state of a game is the one of its heartbeat, folded to the three a player picks from:
+Each game carries its rules, so a player sees them before it joins, and `difficulties` gives the ones a new game of that server may be played at, so a client offers only those. The answer never holds a nickname or a measure: those stay in the heartbeat. The state of a game is the one of its heartbeat, folded to the three a player picks from:
 
 | Heartbeat | Listed as |
 |---|---|
@@ -209,7 +216,7 @@ Three things the route does not do:
 - **It does not age the list.** The games are those of the last heartbeat kept, whatever its date: a server that stopped sending heartbeats keeps listing its games as it last described them, until it registers again. Its status in [the list of the servers](#listing-the-servers-and-their-history) says whether it still beats.
 - **It does not hide a heartbeat it can no longer read.** A last heartbeat stored in a form the master no longer reads (for instance one stored before `name` became a member of a game) makes `ServersService::gameListingOf()` throw `InvalidMasterMessageException`. The controller does not catch it, so the exception handler of the HTTP server answers 500 and writes the reason in the journal. The next heartbeat of the server replaces the stored one.
 
-The master and the game servers are deployed together: a game of a heartbeat must carry its `name`, and a master that reads this version refuses with 400 the heartbeat of a server that does not write it.
+The master and the game servers are deployed together: a game of a heartbeat must carry its `name`, its `lives` and its `friendlyFire`, and the heartbeat its `difficulties`; a master that reads this version refuses with 400 the heartbeat of a server that does not write them.
 
 ## Statuses of the game servers: `ServerStatusJob`
 

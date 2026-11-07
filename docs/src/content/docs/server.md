@@ -102,10 +102,10 @@ The rules play while a game is `InProgress`. What needs only entities lives in `
 | [Moving](#moving-the-ships-shipcontrol) | A ship follows the arrows of the newest input of its player, at `SHIP_SPEED` (480 logical units per second), and stays in the play area | `src/game/ShipControl/`, `src/game/Systems/MovementSystem/` |
 | [Shooting](#shooting-weaponsystem) | A ship fires a missile every 333 ms (20 ticks) while shoot is held, a Bydo every 1500 ms (90 ticks): the gun of their [sheet](/R-Type/entity-sheets/) | `src/server/Spawning/`, `assets/entities/` |
 | [Bydos](#waves-of-bydos-wavedirector) | They come in waves read from `assets/waves/waves.toml`; the next wave waits until none is left, and the last wave of the level ends the game in a victory | `src/game/Waves/`, `src/server/Spawning/` |
-| [Contacts](#rules-collisionrules) | Only three pairs count: a missile of a player and a Bydo, a missile of a Bydo and a ship, a ship and a Bydo | `src/game/Systems/CollisionRules/` |
+| [Contacts](#rules-collisionrules) | Three pairs count: a missile of a player and a Bydo, a missile of a Bydo and a ship, a ship and a Bydo; with friendly fire, a missile of a player and the ship of another player too | `src/game/Systems/CollisionRules/` |
 | [Damage](#damage-damagerules) | A missile takes `MISSILE_DAMAGE` (1) from a Bydo, which has the health of its sheet (3) | `src/game/Systems/DamageRules/`, `assets/entities/` |
 | [Score](#damage-damagerules) | The player whose missile destroys a Bydo earns the score of its sheet: 100 for a Drifter, 200 for a Weaver | `assets/entities/`, `src/server/Rules/Players/` |
-| [Lives](#lives-lifekeeper) | A player has `STARTING_LIVES` (3); a hit on its ship costs one, and a new ship comes after `RESPAWN_DELAY` (1 s) and cannot be hit for `INVULNERABILITY_DURATION` (2 s) | `src/server/Rules/Players/` |
+| [Lives](#lives-lifekeeper) | A player has the lives of the rules of its game, `STARTING_LIVES` (3) by default; a hit on its ship costs one, and a new ship comes after `RESPAWN_DELAY` (1 s) and cannot be hit for `INVULNERABILITY_DURATION` (2 s) | `src/server/Rules/Players/` |
 | [End](#end-of-a-game-gameendannouncer) | The game ends in a defeat once no player left in it has a life, or in a victory once the last wave of the level is over, and each player is told the outcome and the scores | `GameFlow` in `src/server/Rules/Match/`, `GameEndAnnouncer` in `src/server/Replication/Announcements/Milestones/` |
 
 To change one of them, see [Where to intervene](#where-to-intervene).
@@ -153,7 +153,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Missiles of the players: fired in front of the ship while shoot is held, three per second at most, removed past the right edge | Available | `src/server/Spawning/`, `src/game/Spawning/ProjectileStartPosition.*`, `src/game/Systems/PlayfieldExitSystem/` |
 | Missiles of the Bydos: every Bydo fires to the left 1.5 s after it appears, then every 1.5 s; removed past the left edge | Available | `src/server/Spawning/`, `src/game/Spawning/ProjectileStartPosition.*`, `src/game/Systems/PlayfieldExitSystem/` |
 | Score: the points of the sheet of each Bydo, credited to the player who fired the missile, sent in the world state | Available | `assets/entities/`, `src/game/Systems/DamageRules/`, `src/server/Rules/Players/` |
-| Waves of Bydos that grow, read from the waves file at launch, up to the last wave of the level | Available: every game plays the `normal` difficulty, 8 waves; a boss after the last wave is not written yet | `src/game/Waves/`, `src/server/Spawning/`, `assets/waves/waves.toml` |
+| Waves of Bydos that grow, read from the waves file at launch, up to the last wave of the level | Available: each game plays the difficulty its creator chose, `normal` (8 waves) by default; a boss after the last wave is not written yet | `src/game/Waves/`, `src/server/Spawning/`, `assets/waves/waves.toml` |
 | Lives: a life lost when a ship touches a Bydo or a missile of a Bydo, a new ship 1 s later that cannot be hit for 2 s, a player with no life left watching | Available | `src/server/Rules/Players/` |
 
 ## The three roles: supervisor, game and master
@@ -212,8 +212,9 @@ The host only starts the supervisor and the master. `--mode game` is the command
 | `--log-file <file>` | `r-type_game_<n>.log` next to the executable. |
 | `--configuration <file>` | The file of commands the game reads, `r-type_games_<port>.cfg` next to the executable with the port of the supervisor; no file without it. |
 | `--traffic-csv <file>`, the simulator and logging options | As for the supervisor. The supervisor gives each game its own `--log-file`, then the logging options it shares (`--log-level`, `--no-log-file`, `--no-log-stderr`, see `LogLaunchOptions::forwardedArguments()`), then the five values of its simulated network, then `--traffic-csv` with the file of that game when it was given one. A `--no-log-file` comes after the journal of the game, so the last one wins and the game writes none either. |
+| `--difficulty <name>`, `--lives <count>`, `--friendly-fire <0\|1>` | The rules of the game, as its creator chose them (see [Rules of a game](#rules-of-a-game)). |
 
-`-p` and `--database` force the settings `port` and `database`, after the file of `--configuration`.
+`-p`, `--database`, `--difficulty`, `--lives` and `--friendly-fire` force the settings `port`, `database`, `difficulty`, `lives` and `friendly-fire`, after the file of `--configuration`.
 
 ## Threads: `ServerApplication`
 
@@ -357,7 +358,7 @@ module lobby off
 | `logger` | applies the logging options when it starts, logs "server starting" and "server stopped"; provides the journal as an `ILogJournal`, so a plugin logs where the lines of the game go | `src/server/Logger/` |
 | `network` | declares the `port` setting; owns the `ServerApplication`: binds the socket and runs it on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission`, `TickDatagrams` (the datagrams of the tick), `IListeningPort` (the port of the `port` setting), `network::TrafficCounters` and the `RejectionLedger` | `src/server/Network/` |
 | `storage` | declares the `database` setting; opens the SQLite file and starts the thread that owns it when it starts, finishes what waits and closes the file when it stops; provides `IResultsArchive` | `src/server/Storage/` |
-| `games` | declares the `seed`, `state-rate`, `state-encoding` and `input-delay` settings; the one game of the process and its `EventBus`; reads the waves file when it starts and judges whether its game is vanilla; provides `RunningGame` and `IGameEvents` (the bus of the game, for a module listed after it or a plugin) | `src/server/Games/` |
+| `games` | declares the `seed`, `state-rate`, `state-encoding` and `input-delay` settings, and the rules of its game, `difficulty`, `lives` and `friendly-fire` (`GameRuleSettings`); the one game of the process and its `EventBus`; reads the waves file when it starts and judges whether its game is vanilla; provides `RunningGame` and `IGameEvents` (the bus of the game, for a module listed after it or a plugin) | `src/server/Games/` |
 | `lobby` | one `ConnectionAcceptor`, built on the roster of the game; reads the content of the assets folder when it installs, which every acceptance announces with the port of the supervisor | `src/server/Lobby/` |
 | `metrics` | measures the ticks and the systems of the game, and writes a report to the journal every `TICKS_PER_REPORT` ticks; writes the traffic of the socket; provides `LatestMetrics` | `src/server/Metrics/` |
 | `supervisor link` | sends the supervisor a `GameStatus` every second and when it changes, with the measures of `LatestMetrics` when the metrics module is on; asks the process to stop when the supervisor does or is gone | `src/server/SupervisorLink/` |
@@ -371,8 +372,8 @@ A plugin joins the end of that list when a `plugin` line of its file loads it, a
 | `logger` | as in a game, for `r-type_server.log` | `src/server/Logger/` |
 | `network` | as in a game, on the port of the supervisor | `src/server/Network/` |
 | `content` | reads the sheets and the sprite sheets of the assets folder and encodes the content pack when it installs; serves it over HTTP on the TCP port of the number of `port` when it starts (see [Content pack](#content-pack-servercontentmodule-contentpackdesk)) | `src/server/Content/` |
-| `supervised games` | declares the `database` setting, which it gives every game; writes the file of commands of the games when it starts; starts, follows and stops the game processes (`GameRegistry`); provides `IServerOccupancy`, `LatestHostedGames` and `LatestServerMeasures` | `src/server/SupervisedGames/` |
-| `supervisor lobby` | answers the connection requests: sends each player to a game, or starts one | `src/server/SupervisorLobby/` |
+| `supervised games` | declares the `database` setting, which it gives every game; reads the difficulties of the waves file and writes the file of commands of the games when it starts; starts, follows and stops the game processes (`GameRegistry`); provides `IServerOccupancy`, `LatestHostedGames`, `LatestServerMeasures` and `HostedDifficulties` | `src/server/SupervisedGames/` |
+| `supervisor lobby` | answers the connection requests: refuses the rules of a new game it does not accept, sends each player to a game, or starts one | `src/server/SupervisorLobby/` |
 | `information` | declares the `server-name` setting; answers the information requests with what `IServerOccupancy` counts; provides `IServerName` | `src/server/Information/` |
 | `master` | declares the `master-url` and `master-key` settings, and registers the name `IServerName` gives; keeps the master told of the games on a thread of its own, MasterLink, when both a url and a key are set | `src/server/Master/` |
 | `admin console` | registers `games`, `players`, `close-game`, `network` and `help` in the interpreter; reads the terminal on a thread of its own, AdminConsole, from its start to its stop, and runs the lines typed at each tick (see [Administration console](#administration-console-serveradminconsolemodule)) | `src/server/AdminConsole/` |
@@ -401,7 +402,7 @@ The waves file is read when the games module starts, after the logger module sta
 
 ### Supervisor and game processes
 
-`r-type_server`, which runs the supervisor unless `--mode` says otherwise, runs no game. It listens on `DEFAULT_SERVER_PORT` (4242), answers the connection requests, starts one process per game and sends each player to the game that has a place. A game process is the same binary started with `--mode game -p <port> --supervisor <port> --link-token <number> --database <file> --log-file r-type_game_<n>.log --configuration r-type_games_<port>.cfg` (see [A game process](#a-game-process-gamelaunchoptions)): it hosts one game, on a port the system picked for it. An exception in a game stops that process only; the supervisor and the other games go on.
+`r-type_server`, which runs the supervisor unless `--mode` says otherwise, runs no game. It listens on `DEFAULT_SERVER_PORT` (4242), answers the connection requests, starts one process per game and sends each player to the game that has a place. A game process is the same binary started with `--mode game -p <port> --supervisor <port> --link-token <number> --database <file> --log-file r-type_game_<n>.log --configuration r-type_games_<port>.cfg --difficulty <name> --lives <count> --friendly-fire <0|1>` (see [A game process](#a-game-process-gamelaunchoptions)): it hosts one game, on a port the system picked for it. An exception in a game stops that process only; the supervisor and the other games go on.
 
 | Step | Who | What |
 |---|---|---|
@@ -417,9 +418,20 @@ The supervisor does not see inside a game: `GameRegistry` (`src/server/Supervise
 
 | The request asks for | `placeFor()` |
 |---|---|
-| `AnyGame` | the game that holds a seat for its sender, else the first game `firstJoinableGame()` finds; else `Open` while fewer than 8 games run, else `Refuse` (`ServerFull`) |
+| `AnyGame` | the game that holds a seat for its sender, else the first game played by the default rules that `firstJoinableGame()` finds; else `Open` while fewer than 8 games run, else `Refuse` (`ServerFull`) |
 | `NewGame` | the game its sender opened with a `NewGame`, while that game waits for players and its sender holds a seat there or nobody else came; else `Open` while fewer than 8 games run, else `Refuse` (`ServerFull`) |
-| `ExistingGame` | the game in that place: `Refuse` with `GameNotFound` when no game holds it, `GameInProgress` when it is in progress or finished, then `GameFull` when its seats are taken and none is held for the sender |
+| `ExistingGame` | the game in that place, whatever its rules: `Refuse` with `GameNotFound` when no game holds it, `GameInProgress` when it is in progress or finished, then `GameFull` when its seats are taken and none is held for the sender |
+
+### Rules of a game
+
+The player who creates a game chooses its difficulty, the lives of each player and friendly fire, in its `NewGame` (see [Supervisor](/R-Type/protocol/#supervisor) on the protocol page). The rules are fixed when the game opens and apply to that game only; a game opened for an `AnyGame` gets the default ones, `network::defaultGameRules()`: `normal`, `STARTING_LIVES` (3), no friendly fire.
+
+1. The supervised games module reads the entity sheets and the waves file when it starts, and keeps the names of its tables in `HostedDifficulties`. A file the server cannot read stops the supervisor there, before it opens any game.
+2. `ServerSupervisorLobbyModule` asks `refusalOf()` (`src/server/SupervisorLobby/`) before it places a `NewGame`: `UnknownDifficulty` for a difficulty the file has no table for, then `LivesOutOfRange` for lives out of `LOWEST_LIVES` to `HIGHEST_LIVES` (1 to 9, **provisional**). Nothing is opened then.
+3. `GameSpawner::openGame()` keeps the rules in the `SupervisedGame` and gives them to the process: `gameCommand()` writes `--difficulty`, `--lives` and `--friendly-fire`.
+4. The games module of the process reads them as settings (`GameRuleSettings`, `src/server/Games/`) into `GameSettings`: the game plays the waves of that difficulty, each player gets those lives when it joins and with each new world, and the deaths of its results count from them.
+
+The three settings are no lines of `server.cfg`: the supervisor does not declare them, so a host cannot set the rules of every game. An `AnyGame` only goes to a game played by the default rules, so a player never lands in rules it did not choose; it joins any other by its number.
 
 A game opened for a `NewGame` remembers who asked for it (`SupervisedGame::creator`, given to `GameSpawner::openGame()`), until the game leaves the registry: the request the client repeats every 500 ms while the game starts finds it, so one player opens one game. Any player may join it afterwards; it starts like any game, once every connected player is ready. On `Open`, `ServerSupervisorLobbyModule` starts the game, then places the player again, so the player that opened the game holds a seat of it at once.
 
@@ -712,7 +724,7 @@ The ledger also counts the loss. An accepted datagram counts as received, and th
 | `InProgress` | counts one tick per `onTick`, makes the ships of away players want nothing, writes the `Intent` of the Bydos, runs the systems of the world, which move the ships by their `Intent`, fires every `Gun` whose `Intent` wants to shoot, lets the Bydos appear, counts the lives and sends the world state; refuses new connections | `Finished` when `finish()` is called, on the tick the session of its last player closes, or on the tick after the last life of its players is lost (see [End of a game](#end-of-a-game-gameendannouncer)) |
 | `Finished` | refuses new connections; a game that ended by itself sends every player the result (see [End of a game](#end-of-a-game-gameendannouncer)) | `WaitingForPlayers` after `FINISHED_STATE_TICKS` (300) ticks, `FINISHED_STATE_SECONDS` (5) seconds |
 
-- Going back to `WaitingForPlayers` builds a new `World`: the tick is 0, the players stay connected, none is ready any more, and each gets its `STARTING_LIVES` back and a new ship, announced again. Network ids start again at 1 in the new world, so the announced ids are the ones of the previous game.
+- Going back to `WaitingForPlayers` builds a new `World`: the tick is 0, the players stay connected, none is ready any more, and each gets the lives of the rules back and a new ship, announced again. Network ids start again at 1 in the new world, so the announced ids are the ones of the previous game.
 - `onTick` reads a datagram only when its header is of this protocol and version, its message sizes add up, its sender is a player of the game and its sequence is newer than the newest one accepted from that player. It does not check the session token: the sorter already dropped, on the network thread, every datagram from the address of a player that does not carry its token (see [Sorting the datagrams](#sorting-the-datagrams-datagramsorter)), so a sender that forges the address of a player can neither say ready nor steer in its place. Every datagram it does not read is logged at the `debug` level under `Sessions` with its sender and why, at most once per `REJECTION_LINE_INTERVAL` of the ticks the game ran: 600 ticks count as exactly 10 s.
 - A `ReadyState` counts only while the game waits for players; anything else is ignored. A late copy never undoes a newer one, because `DatagramReader` already dropped it (see [Order and loss](#order-and-loss-arrivalledger)).
 - `finish()` ends the game in progress and does nothing in another state; it tells the players no result. The game ends itself the same way once no player is left in it (see [Silent players](#silent-players-heartbeats-and-timeouts)) or once no player left in it has a life (see [End of a game](#end-of-a-game-gameendannouncer)), and only then tells them the result.
@@ -971,9 +983,9 @@ Each tick of a game in progress, `GameFlow` makes the ships of away players want
 
 ## Waves file: `WaveCatalog`
 
-`WaveCatalog` (`src/server/Spawning/`, built into `rtype_server_spawning`) reads the waves of each difficulty from a TOML file, with the strict reading of `src/engine/DataFiles/` (see [Engine](/R-Type/engine/#data-files-datafilereading)), which the client also uses for the appearance of the entity sheets. Only the server links `rtype_server_spawning`, so no client target can read the levels. `gameProcessModules()` hands the games module `WAVE_FILE_IN_ASSETS` (`waves/waves.toml`) in the `assets/` folder that `locateAssetFolder()` finds next to the executable or one level above it, whatever folder the server was started in (see [Engine](/R-Type/engine/#files-next-to-the-executable-locateassetfolder)). When the games module starts, it reads the entity sheets first, then that file, takes the `WavePlan` of `DEFAULT_DIFFICULTY` (`normal`) and gives it to the game in its `GameSettings`, with the seed and the sheets. A `WavePlan` holds a `WaveCurve` and the names of the enemy sheets its Bydos take in turn.
+`WaveCatalog` (`src/server/Spawning/`, built into `rtype_server_spawning`) reads the waves of each difficulty from a TOML file, with the strict reading of `src/engine/DataFiles/` (see [Engine](/R-Type/engine/#data-files-datafilereading)), which the client also uses for the appearance of the entity sheets. Only the server links `rtype_server_spawning`, so no client target can read the levels. `gameProcessModules()` hands the games module `WAVE_FILE_IN_ASSETS` (`waves/waves.toml`) in the `assets/` folder that `locateAssetFolder()` finds next to the executable or one level above it, whatever folder the server was started in (see [Engine](/R-Type/engine/#files-next-to-the-executable-locateassetfolder)). When the games module starts, it reads the entity sheets first, then that file, takes the `WavePlan` of the difficulty of its rules (`normal` by default) and gives it to the game in its `GameSettings`, with the seed and the sheets. A `WavePlan` holds a `WaveCurve` and the names of the enemy sheets its Bydos take in turn.
 
-Every key, value and enemy name of every difficulty is checked: an enemy names a sheet of side `enemy`. The first error throws an `engine::EngineException` (`src/engine/Exceptions/`) for a key, a value or the syntax, or a `ServerException` (`src/server/Exceptions/`) for the list of enemies or a missing difficulty, naming the file, the line and the column, and the dotted name of the key; the game process prints it after `game stopped:` and exits with code 1, and the supervisor writes in its journal that the game crashed. The format, the ranges, the shipped difficulties and every error are in [Writing the waves file](/R-Type/waves-file/).
+Every key, value and enemy name of every difficulty is checked: an enemy names a sheet of side `enemy`. The first error throws an `engine::EngineException` (`src/engine/Exceptions/`) for a key, a value or the syntax, or a `ServerException` (`src/server/Exceptions/`) for the list of enemies, a missing difficulty, a difficulty named by more than 16 bytes or more than `MAXIMUM_DIFFICULTIES` (16) of them, naming the file, the line and the column, and the dotted name of the key; the game process prints it after `game stopped:` and exits with code 1, and the supervisor writes in its journal that the game crashed. The format, the ranges, the shipped difficulties and every error are in [Writing the waves file](/R-Type/waves-file/).
 
 ```cpp
 const rtype::game::EntitySheets sheets =
@@ -986,7 +998,7 @@ const rtype::server::WaveCatalog catalog =
             rtype::server::WAVE_FILE_IN_ASSETS,
         sheets);
 rtype::server::WavePlan waves =
-    catalog.planOf(rtype::server::DEFAULT_DIFFICULTY);
+    catalog.planOf(rtype::identifiers::DEFAULT_DIFFICULTY);
 ```
 
 ## Shooting: `WeaponSystem`
@@ -1063,7 +1075,7 @@ A collision takes two steps, in two classes. The first finds what overlaps; the 
 | `EnemyMissile` and `Player` | `MissileHit{missile, target}`, the target being the player |
 | `Player` and `Enemy` | `ShipContact{player, enemy}` |
 
-Every other pair is ignored: a player missile does not hurt a player, two enemies do not hurt each other, two missiles do not stop each other. An entity without an `EntityType`, or destroyed between the moment the `Collision` was published and the moment it is delivered, is ignored too.
+With friendly fire on, the third argument of its constructor, a fourth pair counts: `PlayerMissile` and `Player` publish `MissileHit{missile, target}` when the `MissileOwner` of the missile and the `ShipPilot` of the ship name two players. A missile never hits the ship of the player who fired it. `World::spawn` gives a ship the `ShipPilot` of the player it is spawned for. Every other pair is ignored: without friendly fire a player missile does not hurt a player, two enemies do not hurt each other, two missiles do not stop each other. An entity without an `EntityType`, or destroyed between the moment the `Collision` was published and the moment it is delivered, is ignored too.
 
 The events are structs in `src/game/Events/`. `MissileHit` and `ShipContact` say that a contact happened; what it costs is decided by [`DamageRules`](#damage-damagerules) for a `MissileHit`, and by [`LifeKeeper`](#lives-lifekeeper) for a `ShipContact` and for a `MissileHit` whose target is a ship.
 
@@ -1111,9 +1123,9 @@ rtype::game::DamageRules damageRules{events, world.components()};
 
 ## Lives: `LifeKeeper`
 
-`LifeKeeper` (`src/server/Rules/Players/`) keeps the lives of the players of one world. It subscribes to `ShipContact` and `MissileHit` when it is created and unsubscribes when it is destroyed. A player joins with `STARTING_LIVES` (3, `src/game/Components/LivesConstants.hpp`), its ship included, and each new world gives them back. The lives and the protection of a ship are the `Lives` and `Invulnerable` components of that ship.
+`LifeKeeper` (`src/server/Rules/Players/`) keeps the lives of the players of one world. It subscribes to `ShipContact` and `MissileHit` when it is created and unsubscribes when it is destroyed. A player joins with the lives of the rules of its game (`GameSettings::lives`, `STARTING_LIVES` (3) by default), its ship included, and each new world gives them back. The lives and the protection of a ship are the `Lives` and `Invulnerable` components of that ship.
 
-1. A ship that touches a Bydo is destroyed, and so is the Bydo, each announced with an `EntityDestruction` (`Killed`), so the clients show two explosions. Nobody earns the points of the Bydo. A Bydo that carries `SurvivesContact` is not destroyed and no `EntityDestruction` names it: the ship is destroyed and the player loses its life all the same. A ship that a missile of a Bydo hits is destroyed the same way, announced `Killed`; `DamageRules` removes the missile.
+1. A ship that touches a Bydo is destroyed, and so is the Bydo, each announced with an `EntityDestruction` (`Killed`), so the clients show two explosions. Nobody earns the points of the Bydo. A Bydo that carries `SurvivesContact` is not destroyed and no `EntityDestruction` names it: the ship is destroyed and the player loses its life all the same. A ship that a missile of a Bydo hits, or with friendly fire a missile of another player, is destroyed the same way, announced `Killed`; `DamageRules` removes the missile, and nobody earns points.
 2. The player loses a life, announced with a `PlayerHit`, then with a `PlayerElimination` when none is left.
 3. A player with a life left has no ship for `RESPAWN_DELAY` (1 s, 60 ticks), then gets a new one at its start position through `IGameReplication::onPlayerJoined`, which announces it again.
 4. That ship cannot be hit for `INVULNERABILITY_DURATION` (2 s, 120 ticks), the tick it comes back included: a Bydo it touches meanwhile costs nothing and stays, and a missile that hits it meanwhile disappears and costs nothing.
@@ -1121,7 +1133,7 @@ rtype::game::DamageRules damageRules{events, world.components()};
 - A player with no life left has no ship and only watches: its input moves and fires nothing. Once no player left in the game has a life, the game is lost (see [End of a game](#end-of-a-game-gameendannouncer)).
 - A contact naming an entity already gone is ignored, so two Bydos touching one ship in the same `dispatch()` cost one life.
 - While a player has a ship, its lives are the `Lives` of the ship and its protection the `Invulnerable` of the ship. When the ship is destroyed, the player keeps the lives it had, one less, in `ConnectedPlayer::livesWithoutShip`, with the wait in `ticksUntilRespawn`, and the next ship is created with them. `livesOf(world, player)` (`src/server/Rules/Players/`) says how many a player has, whichever holds them. `onTick()` counts the protections and the waits down at each tick of a game in progress, and the world state sends `lives` and `invulnerable`.
-- The three values are **provisional** until gameplay tunes them. Code must read the constants (`STARTING_LIVES` in `src/game/Components/LivesConstants.hpp`, the other two in `src/server/Rules/Players/LifeKeeperConstants.hpp`) and never repeat 3, 1 s or 2 s.
+- The three values are **provisional** until gameplay tunes them. Code must read the constants (`DEFAULT_LIVES` in `src/identifiers/GameRuleConstants.hpp`, which `STARTING_LIVES` takes, the other two in `src/server/Rules/Players/LifeKeeperConstants.hpp`) and never repeat 3, 1 s or 2 s.
 - A hit on anything but the ship of a connected player, a Bydo hit by a missile of a player, changes nothing here.
 - `DamageRules` must subscribe before the keeper. The bus hands each `MissileHit` to its subscribers in the order they subscribed, and `DamageRules` ignores a hit whose target is already gone, so in the other order the missile would fly on past the ship. `GameFlow::buildWorld()` builds them in that order, and a test of the game checks that the hit removes the missile.
 
@@ -1150,7 +1162,7 @@ The defeat is checked first, so a game that loses its last life on the tick its 
 
 - The result is read once, when the game ends: the outcome, then every connected player, in order of number, with its score. Every copy says the same, whoever leaves meanwhile.
 - It goes to every connected player at the first tick of the end, one tick after the end was reached (the last life lost, or the last Bydo of the last wave gone), so after the first copy of the last explosion and of its game events. It goes again to the players still connected every `TICKS_PER_GAME_ENDED` (30) ticks, until the game waits for players again `FINISHED_STATE_TICKS` (300) ticks after the end.
-- No world state goes out meanwhile. The new world then gives every player its `STARTING_LIVES` and a score of 0; the players stay connected and say ready to play again.
+- No world state goes out meanwhile. The new world then gives every player the lives of the rules and a score of 0; the players stay connected and say ready to play again.
 - `GAME_ENDED_INTERVAL` (500 ms) is **provisional**, like the protocol rate it follows; `TICKS_PER_GAME_ENDED` is that interval in whole ticks, rounded down. Code must read the constants (`src/server/ServerConstants.hpp`) and never repeat 500 or 30.
 
 A game ended by `finish()`, or by the departure of its last player, tells no one a result.
@@ -1165,7 +1177,7 @@ Every game that ends leaves a row per player in the SQLite file of its server, a
 
 - A row goes to each player connected when the game started. A player who leaves keeps a row, with the score and the deaths it had when it left, so leaving does not erase a bad game. A player who leaves during `Starting` was never counted.
 - The score is read when the bus delivers the end, in the tick of the end, so it is the score `GameEnded` tells the players.
-- Deaths are `STARTING_LIVES` minus `ConnectedPlayer::livesWithoutShip`, which holds the lives left even while the player has a ship.
+- Deaths are the lives of the rules (`GameSettings::lives`) minus `ConnectedPlayer::livesWithoutShip`, which holds the lives left even while the player has a ship.
 - A game ended by `finish()` or left by all its players is recorded like the others. A game with no row to write leaves nothing. A game the server stops in the middle has no end, so it leaves nothing either.
 
 ### Vanilla games: `vanillaBreaches`
@@ -1180,8 +1192,12 @@ The games module judges its game once, when it starts, since the values it reads
 | The shipped entity sheets | `entitySheetsFingerprint()`, SipHash-2-4 of the name and the bytes of each sheet in the order of their names, is not `OFFICIAL_ENTITY_SHEETS_FINGERPRINT`: any change, addition or removal of a sheet, a comment or a line ending included (see [Writing an entity sheet](/R-Type/entity-sheets/#the-shipped-sheets-and-vanilla-games)) |
 | No seed | a seed is set, even 0, since a seed lets the Bydos of every game be known in advance |
 | The default input delay | `input-delay` is not `DEFAULT_INPUT_DELAY_TICKS` (3) |
+| The default lives | the rules give each player other lives than `DEFAULT_LIVES` (3) |
+| No friendly fire | the rules turn friendly fire on |
 
-The result reaches `GameSettings::vanilla`, then `GameResult::vanilla` and the `vanilla` column, the path the name of the difficulty takes. The journal says it once: `games play normal, vanilla`, or `games play normal, not vanilla` followed by one `not vanilla: <reason>` line per reason. The server judges its own games: this keeps honest changes apart, not a host who lies, and a server rebuilt with other constants cannot be told apart.
+Every difficulty of the shipped waves file is vanilla: the leaderboard keeps them apart by `difficulty`.
+
+The result reaches `GameSettings::vanilla`, then `GameResult::vanilla` and the `vanilla` column, the path the name of the difficulty takes. The journal says it once, with the rules: `games play normal, 3 lives, friendly fire off, vanilla`, or `... not vanilla` followed by one `not vanilla: <reason>` line per reason. The server judges its own games: this keeps honest changes apart, not a host who lies, and a server rebuilt with other constants cannot be told apart.
 
 ### The file: `ResultsDatabase`
 
@@ -1303,7 +1319,7 @@ set server-name "Paris 1"
 The module `master` (`src/server/Master/`), a module of the supervisor, reads the name of the server from the information module (`IServerName`), then starts a `HeartbeatJob`, which runs on a thread of its own, MasterLink, the link of the server with the master; the games never wait for it:
 
 1. It registers the server with `MasterClient`: its name, the UDP port of the supervisor, `SERVER_GAME_VERSION` (the version of the CMake project), the protocol version, `MAXIMUM_RUNNING_GAMES` (8) as the most games it hosts, `MAXIMUM_PLAYERS` per game and its `probeSecret`, drawn once by `randomProbeSecret()` when the module is built. One supervisor is one registration, whatever its games; a game process never talks to the master. The journal says `registered with the master as Paris 1`.
-2. It sends a heartbeat, the state of every game with the nicknames of its players, the measures of `LatestServerMeasures` and the token of the last probe of the master when one came since the last heartbeat sent, each time the games change, at most once per `MINIMUM_NOTICE_GAP` (1 s), and every `MASTER_HEARTBEAT_INTERVAL` (5 s, `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master reads to tell a silent server) when nothing changes. A heartbeat always carries the whole state, so a lost one is corrected by the next.
+2. It sends a heartbeat, the state and the rules of every game with the nicknames of its players, the difficulties of `HostedDifficulties`, the measures of `LatestServerMeasures` and the token of the last probe of the master when one came since the last heartbeat sent, each time the games change, at most once per `MINIMUM_NOTICE_GAP` (1 s), and every `MASTER_HEARTBEAT_INTERVAL` (5 s, `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master reads to tell a silent server) when nothing changes. A heartbeat always carries the whole state, so a lost one is corrected by the next.
 3. A master that refuses the key, does not know the registration or does not answer is written in the journal once, not at each try. The job registers again every `REGISTRATION_RETRY` (5 s) until the master answers, then goes on.
 
 The master probes the UDP port of the supervisor after each heartbeat (see [Master](/R-Type/master/#probing-the-game-servers-masterprobemodule)). The sorter hands a datagram holding a `MasterProbe` to the probe queue, `PROBE_QUEUE_CAPACITY` (16) datagrams per tick, and in the simulation stage the `MasterProbeDesk` of the master module keeps the token of each probe whose secret is that of the registration, in a `LatestValue` the job reads; a probe with another secret is dropped and logged at the `debug` level. The job sends a token once: a heartbeat sent without a newer token carries none. The supervisor sends nothing over UDP in answer to a probe, and a game process never gets one.
@@ -1353,7 +1369,7 @@ The supervised games module tells the job when the games change. At each tick, o
 | Change whether an event is guaranteed | `EventMessage::guaranteed` in the `encode` overloads of `GameEventEncoder` (`src/server/Replication/Wire/`) |
 | Change how a guaranteed message is sent again | `MessageDelivery` in `src/server/Sessions/Tracking/`, and the delays in `src/network/Protocol/ProtocolConstants.hpp` |
 | Change how many `Disconnection` copies the server sends when it stops | `FAREWELL_COPIES` and `FAREWELL_COPY_INTERVAL` in `src/server/ModuleConstants.hpp` |
-| Change the lives a player starts with, the wait for its new ship, or how long that ship cannot be hit | `STARTING_LIVES` in `src/game/Components/LivesConstants.hpp`, `RESPAWN_DELAY` and `INVULNERABILITY_DURATION` in `src/server/Rules/Players/LifeKeeperConstants.hpp` |
+| Change the lives a player starts with, the wait for its new ship, or how long that ship cannot be hit | `DEFAULT_LIVES` in `src/identifiers/GameRuleConstants.hpp`, the lives a creator may choose, `LOWEST_LIVES` and `HIGHEST_LIVES`, in `src/server/ServerConstants.hpp`, `RESPAWN_DELAY` and `INVULNERABILITY_DURATION` in `src/server/Rules/Players/LifeKeeperConstants.hpp` |
 | Change what a ship that touches an enemy, or that a missile of an enemy hits, costs | `LifeKeeper` in `src/server/Rules/Players/` |
 | Change the health of a Bydo, or the damage of a missile | `health.points` in its sheet in `assets/entities/`, `MISSILE_DAMAGE` in `src/game/Systems/DamageRules/DamageConstants.hpp` |
 | Change what a hit does | `DamageRules::onMissileHit` in `src/game/Systems/DamageRules/DamageRules.cpp`; what a hit takes from a fragile enemy, `damageOf` there |
@@ -1378,7 +1394,7 @@ The supervised games module tells the job when the games change. At each tick, o
 | Change how a wave follows the one before | `waveAfter` in `src/game/Waves/WaveProgression/WaveProgression.cpp` |
 | Change when the next wave starts | `WaveDirector::advance` in `src/game/Waves/WaveDirector/WaveDirector.cpp` |
 | Add a key to the waves file | the keys and ranges in `src/server/Spawning/WaveFileConstants.hpp`, read by `src/server/Spawning/WaveCatalog.cpp` |
-| Change which difficulty the games play, or where the server finds the waves file or the sheets | `DEFAULT_DIFFICULTY` and `WAVE_FILE_IN_ASSETS` in `src/server/ServerConstants.hpp`, `ENTITY_SHEET_FOLDER_IN_ASSETS` in `src/game/EntityTypes/EntitySheetConstants.hpp`; the `assets/` folder itself is found by `findAssetFolder()` in `src/engine/Paths/AssetFolder.cpp` |
+| Change which difficulty the games play by default, or where the server finds the waves file or the sheets | `DEFAULT_DIFFICULTY` in `src/identifiers/GameRuleConstants.hpp`, `WAVE_FILE_IN_ASSETS` in `src/server/ServerConstants.hpp`, `ENTITY_SHEET_FOLDER_IN_ASSETS` in `src/game/EntityTypes/EntitySheetConstants.hpp`; the `assets/` folder itself is found by `findAssetFolder()` in `src/engine/Paths/AssetFolder.cpp` |
 | Change where a Bydo appears | `waveEntryPosition` and the margins in `src/game/Spawning/` |
 | Change how fast a Bydo moves, or the height and period of a wave | `top_speed`, `amplitude` and `period_ms` in its sheet; the ranges of the settings in `src/game/Behaviours/Movements/Paths/WeaveBehaviourConstants.hpp` |
 | Change which behaviour pilots a kind of Bydo | `pilot` in its sheet |
