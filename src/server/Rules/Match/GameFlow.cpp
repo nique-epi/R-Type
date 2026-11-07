@@ -11,6 +11,7 @@
 #include "ConnectedPlayers.hpp"
 #include "DamageRules.hpp"
 #include "EntityIdConstants.hpp"
+#include "EventBus.hpp"
 #include "GameContext.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameOutcome.hpp"
@@ -99,6 +100,17 @@ void runWorldSystems(GameContext& game, game::World& world) {
   game.systems.get().run(world.components(), engine::SIMULATION_TICK_DURATION);
 }
 
+/** @brief Moves @p state to @p next and announces the change on @p events. */
+void moveTo(engine::EventBus& events, GameState& state, GameState next) {
+  events.publish(GameStateChanged{.previous = std::exchange(state, next),
+                                  .current = next});
+}
+
+/** @brief Writes that the game started, with how many players. */
+void logStart(const logging::Logger& logger, PlayerRoster& roster) {
+  logger.info("game started, players connected: ", roster.connected().size());
+}
+
 /** @returns The spawner of the Bydos of @p world, its draws from @p seed. */
 std::unique_ptr<WaveSpawner> waveSpawnerFor(GameContext& game,
                                             game::World& world,
@@ -162,22 +174,17 @@ void GameFlow::onTick() {
 void GameFlow::advanceState() {
   switch (state_) {
     case GameState::WaitingForPlayers:
-      if (game_.everyPlayerIsReady()) {
-        game_.events.get().publish(GameStateChanged{
-            .previous = std::exchange(state_, GameState::Starting),
-            .current = GameState::Starting});
-        startBarrier_.open();
-      } else {
+      if (!game_.everyPlayerIsReady()) {
         replication_.onWaitingTick();
+        break;
       }
+      moveTo(game_.events.get(), state_, GameState::Starting);
+      startBarrier_.open();
       break;
     case GameState::Starting:
       if (startBarrier_.advance()) {
-        game_.events.get().publish(GameStateChanged{
-            .previous = std::exchange(state_, GameState::InProgress),
-            .current = GameState::InProgress});
-        logger_.info("game started, players connected: ",
-                     game_.roster.get().connected().size());
+        moveTo(game_.events.get(), state_, GameState::InProgress);
+        logStart(logger_, game_.roster.get());
       }
       break;
     case GameState::InProgress:
@@ -189,15 +196,12 @@ void GameFlow::advanceState() {
       lifeKeeper_->onTick();
       break;
     case GameState::Finished:
-      ++finishedTicks_;
-      if (finishedTicks_ >= FINISHED_STATE_TICKS) {
-        startNewWorld();
-        game_.events.get().publish(GameStateChanged{
-            .previous = std::exchange(state_, GameState::WaitingForPlayers),
-            .current = GameState::WaitingForPlayers});
-      } else {
+      if (++finishedTicks_ < FINISHED_STATE_TICKS) {
         replication_.onFinishedTick();
+        break;
       }
+      startNewWorld();
+      moveTo(game_.events.get(), state_, GameState::WaitingForPlayers);
       break;
   }
 }
