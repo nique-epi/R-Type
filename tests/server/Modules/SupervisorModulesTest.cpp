@@ -163,9 +163,8 @@ TEST_F(SupervisorModulesFixture, KeepsTheLinesOfTheMasterSettings) {
   if (!MASTER_LINK_MODULE_BUILT) {
     GTEST_SKIP() << "the build leaves the master link out";
   }
-  writeConfiguration({std::string{MASTER_URL_LINE},
-                      std::string{MASTER_KEY_LINE},
-                      std::string{PUBLIC_ADDRESS_LINE}});
+  writeConfiguration(
+      {MASTER_SETTING_LINES.begin(), MASTER_SETTING_LINES.end()});
   const auto application = supervisor({});
 
   application->start();
@@ -185,14 +184,13 @@ TEST_F(SupervisorModulesFixture, RefusesTheMasterSettingsWithoutTheMasterLink) {
   if (MASTER_LINK_MODULE_BUILT) {
     GTEST_SKIP() << "the build has the master link";
   }
-  writeConfiguration({std::string{MASTER_URL_LINE},
-                      std::string{MASTER_KEY_LINE},
-                      std::string{PUBLIC_ADDRESS_LINE}});
+  writeConfiguration(
+      {MASTER_SETTING_LINES.begin(), MASTER_SETTING_LINES.end()});
   const auto application = supervisor({});
 
   EXPECT_NO_THROW(application->start());
 
-  EXPECT_EQ(report().refusals.size(), MASTER_SETTING_COUNT);
+  EXPECT_EQ(report().refusals.size(), MASTER_SETTING_LINES.size());
   EXPECT_TRUE(report().handedOverLines.empty());
   application->stop();
 }

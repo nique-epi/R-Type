@@ -5,12 +5,8 @@
 
 namespace rtype::client {
 
-/**
- * @brief The master the client reaches when the `master-url` setting names
- * none: `http://`, then network::LOOPBACK_IPV4_ADDRESS and
- * network::DEFAULT_MASTER_PORT joined by MASTER_PORT_SEPARATOR. The reads need
- * no key.
- */
+/** @brief The scheme and the separator of the port defaultMasterUrl() joins
+ * the address and the port of the master with. */
 constexpr std::string_view MASTER_URL_SCHEME = "http://";
 constexpr std::string_view MASTER_PORT_SEPARATOR = ":";
 

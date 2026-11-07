@@ -45,12 +45,13 @@ void requirePublicAddress(std::string_view address) {
   }
 }
 
-/** @returns The address @p text declares, nothing when it is empty. */
+/** @returns The address @p text declares, nothing when it is empty; the
+ * setting checked it with requirePublicAddress(). */
 std::optional<std::string> declaredAddressOf(const std::string& text) {
   if (text.empty()) {
     return std::nullopt;
   }
-  return network::ipv4AddressFromText(text);
+  return text;
 }
 
 }  // namespace

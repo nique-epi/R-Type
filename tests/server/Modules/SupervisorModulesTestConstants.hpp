@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -39,9 +40,9 @@ constexpr std::string_view MASTER_URL_LINE = "set master-url \"\"";
 constexpr std::string_view MASTER_KEY_LINE = "set master-key \"\"";
 constexpr std::string_view PUBLIC_ADDRESS_LINE = "set public-address \"\"";
 
-/** @brief The settings the master link declares: master-url, master-key and
- * public-address. */
-constexpr std::size_t MASTER_SETTING_COUNT = 3;
+/** @brief A line for each setting the master link declares. */
+constexpr std::array MASTER_SETTING_LINES{MASTER_URL_LINE, MASTER_KEY_LINE,
+                                          PUBLIC_ADDRESS_LINE};
 
 /** @brief A public-address that names a host, which only an IPv4 address may
  * be. */
