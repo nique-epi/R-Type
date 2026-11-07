@@ -12,6 +12,7 @@
 #include "GameException.hpp"
 #include "PathText.hpp"
 #include "SheetText.hpp"
+#include "WholeNumberRange.hpp"
 
 namespace rtype::game {
 
