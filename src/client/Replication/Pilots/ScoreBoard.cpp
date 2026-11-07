@@ -24,7 +24,8 @@ bool isPlayerNumber(std::uint8_t number) {
  * changes its state any more. */
 bool hasLeft(const PilotStatus& pilot) {
   return pilot.state == PilotState::Left ||
-         pilot.state == PilotState::SignalLost;
+         pilot.state == PilotState::SignalLost ||
+         pilot.state == PilotState::Expelled;
 }
 
 /** @returns The state a world state gives a pilot still in the game. */
@@ -52,8 +53,9 @@ PilotState stateAfter(network::DepartureReason reason) {
   switch (reason) {
     case network::DepartureReason::TimedOut:
       return PilotState::SignalLost;
-    case network::DepartureReason::Left:
     case network::DepartureReason::Expelled:
+      return PilotState::Expelled;
+    case network::DepartureReason::Left:
       break;
   }
   return PilotState::Left;

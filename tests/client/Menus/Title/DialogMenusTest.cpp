@@ -22,6 +22,7 @@ using rtype::client::CONNECTION_SCREEN;
 using rtype::client::ConnectionPhase;
 using rtype::client::DIALOG_MESSAGE_OFFSET;
 using rtype::client::DIALOG_SIZE;
+using rtype::client::EXPELLED_MESSAGE;
 using rtype::client::regularTextWidth;
 using rtype::client::SIDES_PER_AXIS;
 using rtype::client::SILENT_SERVER_MESSAGE;
@@ -114,7 +115,19 @@ TEST_F(DialogMenusFixture, AClosedServerShutDown) {
 }
 
 /**
- * Given either reason of the connection lost dialog
+ * Given the dialog of a session the host expelled
+ * When it opens
+ * Then it says the connection is lost and the host expelled the player
+ */
+TEST_F(DialogMenusFixture, AnExpelledPilotIsToldTheHostExpelledIt) {
+  openConnectionLost(ConnectionPhase::Expelled);
+
+  EXPECT_NE(writingOf(canvas(), CONNECTION_LOST_HEADING), nullptr);
+  EXPECT_NE(writingOf(canvas(), "THE HOST EXPELLED YOU."), nullptr);
+}
+
+/**
+ * Given each reason of the connection lost dialog
  * When its width is compared with the panel of a dialog
  * Then it stays inside the panel, its margin kept on both sides
  */
@@ -124,6 +137,7 @@ TEST(DialogMenus, TheReasonsOfALostConnectionFitTheirPanel) {
 
   EXPECT_LE(regularTextWidth(SILENT_SERVER_MESSAGE), widestLine);
   EXPECT_LE(regularTextWidth(CLOSED_SERVER_MESSAGE), widestLine);
+  EXPECT_LE(regularTextWidth(EXPELLED_MESSAGE), widestLine);
 }
 
 /**

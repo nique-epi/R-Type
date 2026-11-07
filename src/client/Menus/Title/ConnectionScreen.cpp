@@ -202,6 +202,7 @@ std::string ConnectionScreen::statusLine(const ConnectionStatus& status) const {
     case ConnectionPhase::Idle:
     case ConnectionPhase::Lost:
     case ConnectionPhase::Closed:
+    case ConnectionPhase::Expelled:
       break;
   }
   return {};

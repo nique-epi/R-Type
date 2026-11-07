@@ -222,6 +222,20 @@ TEST(ScoreBoard, ADepartureSaysHowThePilotLeft) {
 }
 
 /**
+ * Given a board of three pilots
+ * When player 3 leaves because the host expelled it
+ * Then player 3 is expelled
+ */
+TEST(ScoreBoard, AnExpelledPilotIsExpelled) {
+  ScoreBoard board = boardOfThree();
+
+  board.apply(PlayerLeft{.playerNumber = PLAYER_THREE,
+                         .reason = DepartureReason::Expelled});
+
+  EXPECT_EQ(board.pilots().back().state, PilotState::Expelled);
+}
+
+/**
  * Given a board where player 1 has left
  * When a newer world state still lists player 1
  * Then player 1 is still gone, with the score of that state

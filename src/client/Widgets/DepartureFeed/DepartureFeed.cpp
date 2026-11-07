@@ -34,14 +34,32 @@ struct LinePlace {
   sf::Color nameColor;
 };
 
-/** @returns Whether a pilot left the game or lost its signal. */
+/** @returns Whether a pilot left the game, lost its signal or was expelled. */
 bool hasLeft(const PilotStatus& pilot) {
   return pilot.state == PilotState::Left ||
-         pilot.state == PilotState::SignalLost;
+         pilot.state == PilotState::SignalLost ||
+         pilot.state == PilotState::Expelled;
+}
+
+/** @returns The words after the name of a pilot who left in @p state: SIGNAL
+ * LOST, WAS EXPELLED, or LEFT THE GAME. */
+const char* departureWordsOf(PilotState state) {
+  switch (state) {
+    case PilotState::SignalLost:
+      return SIGNAL_LOST_TEXT;
+    case PilotState::Expelled:
+      return WAS_EXPELLED_TEXT;
+    case PilotState::Left:
+    case PilotState::Flying:
+    case PilotState::Respawning:
+    case PilotState::OutOfLives:
+      break;
+  }
+  return LEFT_THE_GAME_TEXT;
 }
 
 /** @brief Paints the icon of a departure in its column: the door for a pilot
- * who left, the plug of the status band for a lost signal. */
+ * who left or was expelled, the plug of the status band for a lost signal. */
 void paintIcon(IInterfaceCanvas& canvas, PilotState state,
                sf::Vector2i topLeft) {
   if (state != PilotState::SignalLost) {
@@ -66,10 +84,8 @@ void paintLine(IInterfaceCanvas& canvas, const DepartureLine& line,
   canvas.write(
       name, nameTopLeft,
       {.font = TextFont::Regular, .color = place.nameColor, .outlined = true});
-  const char* words = line.state == PilotState::SignalLost ? SIGNAL_LOST_TEXT
-                                                           : LEFT_THE_GAME_TEXT;
   canvas.write(
-      words,
+      departureWordsOf(line.state),
       nameTopLeft + sf::Vector2i(canvas.textWidth(name, TextFont::Regular) +
                                      DEPARTURE_WORD_GAP,
                                  0),
