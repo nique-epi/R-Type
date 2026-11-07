@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <initializer_list>
 #include <vector>
+#include "AppliedInput.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EntityIdConstants.hpp"
 #include "EntitySheet.hpp"
@@ -11,13 +12,18 @@
 #include "EntityTypesTestConstants.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PlayerRoster.hpp"
 #include "Position.hpp"
+#include "ProtocolConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ShipWeaponFixture.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "TimeConstants.hpp"
 #include "WeaponSystemFixture.hpp"
 #include "WeaponSystemTestConstants.hpp"
+
+using rtype::network::NO_SHOWN_TICK;
+using rtype::server::AppliedInput;
 
 namespace rtype::server::testing {
 
@@ -82,6 +88,61 @@ TEST_F(ShipWeaponFixture, GivesTheMissileToThePlayerWhoFired) {
 
   EXPECT_EQ(ownersOfTheMissiles(),
             std::vector<std::uint8_t>{shooter.playerNumber});
+}
+
+/**
+ * Given a player with a ship whose newest applied input is input 41, holding
+ * shoot
+ * When one tick runs
+ * Then the EntitySpawned of its missile names that player and input 41, so its
+ * client can tell the missile it predicted
+ */
+TEST_F(ShipWeaponFixture, NamesThePlayerAndTheInputThatFired) {
+  ConnectedPlayer& player = connect(FIRST_PLAYER);
+  player.appliedInput = AppliedInput{.inputNumber = SOME_APPLIED_INPUT,
+                                     .shownTick = NO_SHOWN_TICK};
+
+  runTicksShooting(player, 1);
+
+  const std::vector<network::EntitySpawned> spawns = spawnsSentTo(FIRST_PLAYER);
+  ASSERT_EQ(spawns.size(), 1U);
+  EXPECT_EQ(spawns.front().owner, player.playerNumber);
+  EXPECT_EQ(spawns.front().firingInput, SOME_APPLIED_INPUT);
+}
+
+/**
+ * Given a player with a ship, holding shoot
+ * When one tick runs
+ * Then the EntitySpawned of its missile waits for its acknowledgement as a
+ * guaranteed message
+ */
+TEST_F(ShipWeaponFixture, GuaranteesTheMissileOfAPlayer) {
+  ConnectedPlayer& player = connect(FIRST_PLAYER);
+
+  runTicksShooting(player, 1);
+
+  EXPECT_EQ(player.unacknowledged.count(), 1U);
+}
+
+/**
+ * Given a connected player and a Bydo
+ * When the Bydo fires
+ * Then the EntitySpawned of its missile names no player and no input, and is
+ * not guaranteed
+ */
+TEST_F(WeaponSystemFixture, AMissileOfABydoNamesNoPlayer) {
+  connectWithoutShip(FIRST_PLAYER);
+  bydoAt(SOME_BYDO);
+
+  runTicks(ONE_AND_A_HALF_SECONDS_IN_TICKS);
+
+  const std::vector<network::EntitySpawned> spawns = spawnsSentTo(FIRST_PLAYER);
+  ASSERT_EQ(spawns.size(), 1U);
+  EXPECT_EQ(spawns.front().owner, network::NO_OWNER);
+  EXPECT_EQ(spawns.front().firingInput, network::NO_FIRING_INPUT);
+  for (const ConnectedPlayer* const player : roster().connected()) {
+    EXPECT_EQ(player->unacknowledged.count(), 0U);
+  }
 }
 
 /**

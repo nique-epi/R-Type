@@ -20,9 +20,12 @@ using rtype::game::NumberedEntityType;
 using rtype::game::numberedEntityTypesOf;
 using rtype::game::SheetText;
 using rtype::game::sheetTextsIn;
+using rtype::game::testing::LANCER_BOX_HEIGHT;
+using rtype::game::testing::LANCER_BOX_WIDTH;
 using rtype::game::testing::LANCER_TYPE;
 using rtype::game::testing::ONE_TYPE;
 using rtype::game::testing::SHEET_OF_A_PLUGIN_PILOT;
+using rtype::game::testing::SHEET_WITHOUT_BOX;
 using rtype::game::testing::SHEET_WITHOUT_SIDE;
 using rtype::game::testing::sheetText;
 using rtype::game::testing::SHIP_TEXT;
@@ -36,7 +39,8 @@ using rtype::game::testing::WEAVER_TYPE;
 /**
  * Given the sheets the game ships with
  * When a client numbers their types
- * Then each type has the number, the name and the side the server gives it
+ * Then each type has the number, the name, the side and the box the server
+ * gives it
  */
 TEST(NumberedEntityTypes, NumbersTheShippedTypesAsTheServerDoes) {
   const std::vector<NumberedEntityType> types =
@@ -48,6 +52,8 @@ TEST(NumberedEntityTypes, NumbersTheShippedTypesAsTheServerDoes) {
     SCOPED_TRACE(sheets[index].name);
     EXPECT_EQ(types[index].name, sheets[index].name);
     EXPECT_EQ(types[index].side, sheets[index].side);
+    EXPECT_FLOAT_EQ(types[index].hitbox.width, sheets[index].hitbox.width);
+    EXPECT_FLOAT_EQ(types[index].hitbox.height, sheets[index].hitbox.height);
   }
 }
 
@@ -72,7 +78,7 @@ TEST(NumberedEntityTypes, NumbersTheTypesInTheOrderOfTheirNames) {
 /**
  * Given a sheet whose pilot is a behaviour only a plugin of the server knows
  * When its type is numbered by a client that knows no such behaviour
- * Then it is numbered with its side: only the side is read
+ * Then it is numbered with its side and its box: only those are read
  */
 TEST(NumberedEntityTypes, ReadsTheSideOfASheetWhosePilotItDoesNotKnow) {
   const std::vector<SheetText> sheets{
@@ -82,6 +88,8 @@ TEST(NumberedEntityTypes, ReadsTheSideOfASheetWhosePilotItDoesNotKnow) {
 
   ASSERT_EQ(types.size(), ONE_TYPE);
   EXPECT_EQ(types[0].side, EntityType::Enemy);
+  EXPECT_FLOAT_EQ(types[0].hitbox.width, LANCER_BOX_WIDTH);
+  EXPECT_FLOAT_EQ(types[0].hitbox.height, LANCER_BOX_HEIGHT);
 }
 
 /**
@@ -92,6 +100,19 @@ TEST(NumberedEntityTypes, ReadsTheSideOfASheetWhosePilotItDoesNotKnow) {
 TEST(NumberedEntityTypes, RefusesASheetWithoutSide) {
   const std::vector<SheetText> sheets{
       sheetText(LANCER_TYPE, SHEET_WITHOUT_SIDE)};
+
+  EXPECT_THROW(static_cast<void>(numberedEntityTypesOf(sheets)),
+               MissingDataFileKeyException);
+}
+
+/**
+ * Given a sheet that names a side and no box
+ * When its type is numbered
+ * Then the numbering fails on the missing box, as the server would
+ */
+TEST(NumberedEntityTypes, RefusesASheetWithoutBox) {
+  const std::vector<SheetText> sheets{
+      sheetText(LANCER_TYPE, SHEET_WITHOUT_BOX)};
 
   EXPECT_THROW(static_cast<void>(numberedEntityTypesOf(sheets)),
                MissingDataFileKeyException);

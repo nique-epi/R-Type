@@ -15,6 +15,7 @@ target_link_libraries(rtype_server_spawning
     rtype_server_instances_context
     rtype_server_replication_wire
     rtype_server_sessions_roster
+    rtype_server_sessions_tracking
   PRIVATE
     rtype_engine_data_files
     rtype_network_handshake

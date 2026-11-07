@@ -9,7 +9,9 @@
 #include "EntityRegistry.hpp"
 #include "EntityReplicator.hpp"
 #include "EntityReplicatorParts.hpp"
+#include "EntityReplicatorTestConstants.hpp"
 #include "FixedEntityTypeSource.hpp"
+#include "RecordingOwnMissileListener.hpp"
 #include "RecordingSoundPlayer.hpp"
 
 namespace rtype::client::testing {
@@ -48,17 +50,24 @@ class EntityReplicatorFixture : public ::testing::Test {
   /** @returns The sounds the replicator played. */
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
 
+  /** @returns Who the replicator hands the missiles of player OWN_PLAYER to;
+   * it predicts none until told to. */
+  [[nodiscard]] RecordingOwnMissileListener& ownMissiles();
+
  private:
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
   EffectSpawner effects_{entities_, components_, EFFECT_TEST_SEED};
   RecordingSoundPlayer sounds_;
   FixedEntityTypeSource types_;
+  RecordingOwnMissileListener ownMissiles_;
   EntityReplicator replicator_{EntityReplicatorParts{
       .entities = entities_,
       .components = components_,
       .feedback = EntityFeedback{.effects = effects_, .sounds = sounds_},
-      .types = types_}};
+      .types = types_,
+      .ownPlayerNumber = OWN_PLAYER,
+      .ownMissiles = &ownMissiles_}};
 };
 
 }  // namespace rtype::client::testing

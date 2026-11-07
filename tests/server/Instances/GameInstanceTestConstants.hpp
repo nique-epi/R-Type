@@ -218,6 +218,9 @@ constexpr std::uint32_t ECHO_HELD_FOR = 3'000;
 constexpr std::uint32_t ECHO_ROUND_TRIP_ON_THE_WIRE = 42'000;
 constexpr std::uint16_t ECHO_SEQUENCE = 1'000;
 
+/** @brief The tick the client of a player showed when it sent its input. */
+constexpr std::uint32_t TICK_THE_CLIENT_SHOWED = 42;
+
 /** @brief A score worth some points, when the number does not matter. */
 constexpr std::uint32_t SOME_POINTS = 100;
 

@@ -9,6 +9,7 @@
 #include "LocalContent.hpp"
 #include "NumberedEntityType.hpp"
 #include "PackContent.hpp"
+#include "ShipGun.hpp"
 
 namespace rtype::client {
 
@@ -46,6 +47,10 @@ const EntityAppearances& SessionEntityTypes::appearances() const {
     return pack_->appearances;
   }
   return localAppearances_ != nullptr ? *localAppearances_ : none_;
+}
+
+game::ShipGun SessionEntityTypes::shipGun() const {
+  return playsThePack_ && pack_.has_value() ? pack_->gun : local_.gun;
 }
 
 const std::vector<game::NumberedEntityType>& SessionEntityTypes::types() const {

@@ -13,6 +13,7 @@
 #include <variant>
 #include "ActionSet.hpp"
 #include "AnimationSystem.hpp"
+#include "ArrivalReveal.hpp"
 #include "BossBar.hpp"
 #include "BossBarConstants.hpp"
 #include "BossLook.hpp"
@@ -41,19 +42,21 @@
 #include "IPlayerInputLink.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISky.hpp"
+#include "InterpolationClock.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
 #include "MissionStart.hpp"
+#include "OwnMissilesParts.hpp"
+#include "OwnPrediction.hpp"
 #include "OwnShip.hpp"
-#include "OwnShipPredictor.hpp"
 #include "PilotNameTags.hpp"
 #include "PlayerAction.hpp"
+#include "PlayerCommand.hpp"
 #include "PlayerInputPacer.hpp"
 #include "PlayerLeft.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayerPreferences.hpp"
 #include "PositionInterpolation.hpp"
-#include "PredictedShipPlacement.hpp"
 #include "ScoreBoard.hpp"
 #include "ShipFlightSystem.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
@@ -131,6 +134,16 @@ void routeEntityMessage(const EntityMessageRoutes& routes,
       message);
 }
 
+/** @brief Puts the other entities at the tick @p clock shows, then reveals
+ * those that arrived (see placeInterpolatedPositions() and
+ * revealArrivedEntities()). */
+void showOtherEntities(const InterpolationClock& clock,
+                       engine::ComponentRegistry& components,
+                       const EntityFeedback& feedback) {
+  placeInterpolatedPositions(clock, components);
+  revealArrivedEntities(clock, components, feedback);
+}
+
 }  // namespace
 
 GameScreen::GameScreen(GameScreenParts parts,
@@ -141,12 +154,19 @@ GameScreen::GameScreen(GameScreenParts parts,
       statusCanvas_(std::move(statusCanvas)),
       settings_(&parts.settings.get()),
       effects_(entities_, components_, std::random_device{}()),
+      feedback_(EntityFeedback{.effects = effects_, .sounds = parts.sounds}),
+      prediction_(parts.connection.get().status().playerNumber,
+                  OwnMissilesParts{.entities = entities_,
+                                   .components = components_,
+                                   .feedback = feedback_,
+                                   .types = parts.entityTypes}),
       replicator_(EntityReplicatorParts{
           .entities = entities_,
           .components = components_,
-          .feedback =
-              EntityFeedback{.effects = effects_, .sounds = parts.sounds},
-          .types = parts.entityTypes}),
+          .feedback = feedback_,
+          .types = parts.entityTypes,
+          .ownPlayerNumber = parts.connection.get().status().playerNumber,
+          .ownMissiles = &prediction_.missiles()}),
       enemyActions_(components_),
       boss_(effects_.tools(), parts.sounds, parts.audio),
       playerCommands_(true, parts.settings.get().keys),
@@ -157,7 +177,6 @@ GameScreen::GameScreen(GameScreenParts parts,
                   parts.connection.get().status().playerNumber),
       result_(&parts.result.get()),
       playerNumber_(parts.connection.get().status().playerNumber),
-      prediction_(playerNumber_),
       sky_(&parts.sky.get()) {
   systems_.add(std::make_unique<AnimationSystem>());
   systems_.add(std::make_unique<HitFlashSystem>());
@@ -192,16 +211,17 @@ void GameScreen::handleEvent(const sf::Event& event) {
 }
 
 void GameScreen::update(engine::Duration elapsed) {
-  const ActionSet held = playerActions();
+  const PlayerCommand command{.held = playerActions(),
+                              .shownTick = interpolationClock_.shownTick()};
   if (settings_->clientPrediction) {
-    prediction_.advance(elapsed, held, *inputs_);
+    prediction_.advance(elapsed, command, *inputs_);
   } else {
     prediction_.stop();
     if (inputPacer_.advance(elapsed)) {
-      std::ignore = inputs_->sendPlayerInput(held);
+      std::ignore = inputs_->sendPlayerInput(command.held, command.shownTick);
     }
   }
-  traceHeldActions(logger_, held, loggedActions_);
+  traceHeldActions(logger_, command.held, loggedActions_);
   systems_.run(components_, elapsed);
   interpolationClock_.follow(serverTicks_->serverTickNow());
   interpolationClock_.advance(elapsed);
@@ -216,9 +236,9 @@ void GameScreen::update(engine::Duration elapsed) {
   silence_.advance(sinceTheWorld);
   boss_.advance(elapsed);
   applyEntityMessages();
-  placeInterpolatedPositions(interpolationClock_, components_);
+  showOtherEntities(interpolationClock_, components_, feedback_);
   if (settings_->clientPrediction) {
-    placePredictedShip(prediction_, replicator_, components_);
+    prediction_.place(replicator_, components_);
   }
   tagPilotShips(components_, scoreBoard_.pilots(), *settings_);
   askForTheEndWhenDue();
@@ -243,18 +263,22 @@ void GameScreen::applyEntityMessages() {
       recordEnd(*ended);
     }
     if (const auto* state = std::get_if<network::WorldState>(&message)) {
-      worldSeen_ = true;
-      scoreBoard_.apply(*state);
-      interpolationClock_.observe(state->tick);
-      if (const auto own = ownShipOf(*state, playerNumber_)) {
-        inputs_->confirmInputsUpTo(own->acknowledgedInput);
-      }
-      if (settings_->clientPrediction) {
-        prediction_.apply(*state);
-      }
+      applyWorldState(*state);
     }
   }
   receivedEntityMessages_.clear();
+}
+
+void GameScreen::applyWorldState(const network::WorldState& state) {
+  worldSeen_ = true;
+  scoreBoard_.apply(state);
+  interpolationClock_.observe(state.tick);
+  if (const auto own = ownShipOf(state, playerNumber_)) {
+    inputs_->confirmInputsUpTo(own->acknowledgedInput);
+  }
+  if (settings_->clientPrediction) {
+    prediction_.apply(state);
+  }
 }
 
 void GameScreen::recordEnd(const network::GameEnded& ended) {
@@ -263,6 +287,7 @@ void GameScreen::recordEnd(const network::GameEnded& ended) {
       .outcome = ended.outcome};
   worldSeen_ = true;
   endedAt_ = effects_.sinceStart();
+  prediction_.ceaseFire();
   silence_.stop();
   boss_.endGame();
 }

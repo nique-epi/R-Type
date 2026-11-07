@@ -2,15 +2,16 @@
 #include <cstdint>
 #include <optional>
 #include <span>
-#include <string_view>
 #include <utility>
 #include <vector>
 #include "AnimatedSprite.hpp"
 #include "AppearanceReference.hpp"
+#include "AwaitedArrival.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
 #include "EffectTools.hpp"
 #include "Entity.hpp"
+#include "EntityCues.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityFeedback.hpp"
 #include "EntityIdConstants.hpp"
@@ -116,41 +117,22 @@ void moveEntity(engine::ComponentRegistry& components, engine::Entity entity,
   }
 }
 
-/** @returns The sound of the appearance of an entity of that type: the shot
- * of a missile of a player or of an enemy; nothing for a ship or a Bydo. */
-std::optional<std::string_view> appearanceSoundOf(game::EntityType type) {
-  switch (type) {
-    case game::EntityType::PlayerMissile:
-      return PLAYER_SHOT_SOUND_ID;
-    case game::EntityType::EnemyMissile:
-      return ENEMY_SHOT_SOUND_ID;
-    case game::EntityType::Player:
-    case game::EntityType::Enemy:
-      return std::nullopt;
-  }
-  return std::nullopt;
+/** @returns Whether an entity of @p type appears only once the tick the client
+ * shows reaches its first state: a missile, which the server creates at the
+ * muzzle of a shooter the client shows a little in the past. A ship and a
+ * Bydo appear as soon as they are announced. */
+bool awaitsTheShownTick(game::EntityType type) {
+  return type == game::EntityType::PlayerMissile ||
+         type == game::EntityType::EnemyMissile;
 }
 
-/** @returns The sound of an entity of that type killed: the big explosion of
- * a ship, the small one of a Bydo; nothing for a missile, which only shows
- * its impact. */
-std::optional<std::string_view> explosionSoundOf(game::EntityType type) {
-  switch (type) {
-    case game::EntityType::Player:
-      return BIG_EXPLOSION_SOUND_ID;
-    case game::EntityType::Enemy:
-      return SMALL_EXPLOSION_SOUND_ID;
-    case game::EntityType::PlayerMissile:
-    case game::EntityType::EnemyMissile:
-      return std::nullopt;
-  }
-  return std::nullopt;
-}
-
-/** @brief Plays the sound, when there is one. */
-void playSound(ISoundPlayer& sounds, std::optional<std::string_view> soundId) {
-  if (soundId.has_value()) {
-    sounds.play(*soundId);
+/** @brief Plays the appearance of @p entity now, unless it awaits the tick
+ * shown: revealArrivedEntities() plays it then. */
+void announceUnlessAwaited(const EntityFeedback& feedback,
+                           engine::ComponentRegistry& components,
+                           engine::Entity entity) {
+  if (!components.has<AwaitedArrival>(entity)) {
+    announce(feedback, components, entity);
   }
 }
 
@@ -175,41 +157,6 @@ void warnOfTheSummoning(const EffectTools& tools,
                                .leadingLine = tools.gate.get().flashes()});
 }
 
-/** @brief Plays the appearance of an entity created: the arrival of a ship,
- * the muzzle flash and the shot of a missile, nothing for a Bydo. */
-void announce(const EntityFeedback& feedback,
-              engine::ComponentRegistry& components, engine::Entity entity) {
-  const game::EntityType* type = components.get<game::EntityType>(entity);
-  const game::Position* position = components.get<game::Position>(entity);
-  if (type == nullptr || position == nullptr) {
-    return;
-  }
-  playSound(feedback.sounds, appearanceSoundOf(*type));
-  if (*type == game::EntityType::Player) {
-    feedback.effects.get().playArrival(entity);
-    return;
-  }
-  feedback.effects.get().playAppearance(*type, *position);
-}
-
-/** @brief Plays the explosion of the entity, centered where it stands, and
- * its sound: T4 for a ship; does nothing for an entity without a Position or
- * an EntityType. */
-void explode(const EntityFeedback& feedback,
-             engine::ComponentRegistry& components, engine::Entity entity) {
-  const game::EntityType* type = components.get<game::EntityType>(entity);
-  const game::Position* position = components.get<game::Position>(entity);
-  if (type == nullptr || position == nullptr) {
-    return;
-  }
-  playSound(feedback.sounds, explosionSoundOf(*type));
-  if (*type == game::EntityType::Player) {
-    feedback.effects.get().playShipDown(entity);
-    return;
-  }
-  feedback.effects.get().playExplosion(*type, *position);
-}
-
 /** @returns The ship a network id names, or nothing when the client has no
  * entity of that id or it is no ship. */
 std::optional<engine::Entity> shipOf(
@@ -232,17 +179,28 @@ EntityReplicator::EntityReplicator(EntityReplicatorParts parts)
     : entities_(&parts.entities.get()),
       components_(&parts.components.get()),
       feedback_(parts.feedback),
-      types_(&parts.types.get()) {}
+      types_(&parts.types.get()),
+      claimedMissiles_(parts.ownPlayerNumber, parts.ownMissiles) {}
 
 void EntityReplicator::apply(const network::EntitySpawned& message) {
-  if (entityByNetworkId_.find(message.entityId).has_value()) {
+  const std::optional<engine::Entity> known =
+      entityByNetworkId_.find(message.entityId);
+  if (claimedMissiles_.claim(message)) {
+    if (known.has_value()) {
+      components_->destroy(*known);
+      entityByNetworkId_.unbind(message.entityId);
+      lastListedTicks_.forget(message.entityId);
+    }
+    return;
+  }
+  if (known.has_value()) {
     return;
   }
   if (const std::optional<engine::Entity> created =
           create(announcedBy(message));
       created.has_value()) {
     lastListedTicks_.appeared(message.entityId);
-    announce(feedback_, *components_, *created);
+    announceUnlessAwaited(feedback_, *components_, *created);
     const auto* const type = components_->get<game::EntityType>(*created);
     if (type != nullptr && *type == game::EntityType::Enemy &&
         isSummonedAt(game::Position{.x = message.x, .y = message.y})) {
@@ -261,11 +219,14 @@ void EntityReplicator::apply(const network::WorldState& state) {
   removeUnlistedAt(state.tick);
   applyPlayers(state.players);
   for (const engine::Entity entity : created) {
-    announce(feedback_, *components_, entity);
+    announceUnlessAwaited(feedback_, *components_, entity);
   }
 }
 
 void EntityReplicator::apply(const network::EntityDestroyed& message) {
+  if (claimedMissiles_.release(message)) {
+    return;
+  }
   const std::optional<engine::Entity> known =
       entityByNetworkId_.find(message.entityId);
   if (!known.has_value()) {
@@ -280,8 +241,9 @@ void EntityReplicator::apply(const network::EntityDestroyed& message) {
 }
 
 void EntityReplicator::apply(const network::GameEvent& event) {
+  ISoundPlayer& sounds = feedback_.sounds.get();
   if (event.kind == network::GameEventKind::PlayerHit) {
-    feedback_.sounds.get().play(PLAYER_HIT_SOUND_ID);
+    sounds.play(PLAYER_HIT_SOUND_ID);
     return;
   }
   if (event.kind != network::GameEventKind::EntityDamaged) {
@@ -291,7 +253,7 @@ void EntityReplicator::apply(const network::GameEvent& event) {
           entityByNetworkId_.find(event.entityId);
       known.has_value()) {
     feedback_.effects.get().playHit(*known);
-    feedback_.sounds.get().play(HIT_SOUND_ID);
+    sounds.play(HIT_SOUND_ID);
   }
 }
 
@@ -306,6 +268,7 @@ std::optional<engine::Entity> EntityReplicator::create(
       look->side, game::Position{.x = announced.x, .y = announced.y},
       animatedSpriteOf(look->appearance.get(), look->side, announced.entityId));
   components_->add(entity, game::NetworkIdentity{announced.entityId});
+  components_->add(entity, look->hitbox);
   components_->add(entity, AppearanceReference{&look->appearance.get()});
   entityByNetworkId_.bind(announced.entityId, entity);
   return entity;
@@ -318,7 +281,11 @@ engine::Entity EntityReplicator::addEntity(game::EntityType type,
   components_->add(entity, position);
   components_->add(entity, PositionHistory{});
   components_->add(entity, type);
-  components_->add(entity, std::move(look.sprite));
+  if (awaitsTheShownTick(type)) {
+    components_->add(entity, AwaitedArrival{.sprite = std::move(look.sprite)});
+  } else {
+    components_->add(entity, std::move(look.sprite));
+  }
   components_->add(entity, look.animation);
   return entity;
 }
@@ -327,6 +294,9 @@ std::vector<engine::Entity> EntityReplicator::applyEntities(
     std::span<const network::EntityState> entities, std::uint32_t tick) {
   std::vector<engine::Entity> created;
   for (const network::EntityState& listed : entities) {
+    if (claimedMissiles_.holds(listed.entityId)) {
+      continue;
+    }
     const PositionSample sample{.tick = tick,
                                 .position = {.x = listed.x, .y = listed.y}};
     const std::optional<engine::Entity> known =

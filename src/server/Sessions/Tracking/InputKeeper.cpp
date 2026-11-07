@@ -47,11 +47,13 @@ void InputKeeper::keepNewerOf(const network::MessageOrigin& origin,
     keepIfNewer(origin, {.inputNumber = message.inputNumber -
                                         static_cast<std::uint32_t>(back),
                          .actions = message.earlierActions[back - 1],
-                         .earlierActions = {}});
+                         .earlierActions = {},
+                         .shownTick = message.shownTick});
   }
   keepIfNewer(origin, {.inputNumber = message.inputNumber,
                        .actions = message.actions,
-                       .earlierActions = {}});
+                       .earlierActions = {},
+                       .shownTick = message.shownTick});
 }
 
 }  // namespace rtype::server

@@ -39,4 +39,7 @@ constexpr std::uint32_t ACKNOWLEDGED_COMMAND = 5;
 constexpr engine::Duration HALF_A_TICK = engine::SIMULATION_TICK_DURATION / 2;
 constexpr std::size_t TICKS_OF_A_STALL = 10;
 
+/** @brief A tick of the server a client shows while it sends inputs. */
+constexpr std::uint32_t SHOWN_TICK = 300;
+
 }  // namespace rtype::client::testing

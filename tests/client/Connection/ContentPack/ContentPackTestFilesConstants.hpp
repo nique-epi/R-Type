@@ -10,6 +10,7 @@ namespace rtype::client::testing {
 constexpr std::string_view LANCER_SHEET_PATH = "entities/lancer.toml";
 constexpr std::string_view LANCER_SHEET =
     "[gameplay]\nside = \"enemy\"\npilot = \"lancer_charge\"\n"
+    "[gameplay.hitbox]\nwidth = 96\nheight = 96\n"
     "[appearance]\nsheet = \"sprites/mobs/lancer.png\"\n"
     "[appearance.idle]\nleft = 0\ntop = 0\nwidth = 24\nheight = 16\n"
     "frames = 1\nspacing = 0\nframe_ms = 100\n";
@@ -18,6 +19,7 @@ constexpr std::string_view LANCER_TYPE = "lancer";
 /** @brief A sheet whose sprite sheet lies outside its pack. */
 constexpr std::string_view SHEET_NAMING_A_FILE_OUTSIDE =
     "[gameplay]\nside = \"enemy\"\n"
+    "[gameplay.hitbox]\nwidth = 96\nheight = 96\n"
     "[appearance]\nsheet = \"../../secret.png\"\n"
     "[appearance.idle]\nleft = 0\ntop = 0\nwidth = 24\nheight = 16\n"
     "frames = 1\nspacing = 0\nframe_ms = 100\n";

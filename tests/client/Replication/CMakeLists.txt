@@ -1,4 +1,4 @@
-rtype_add_test(NAME client_replication_tests SOURCES ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingSoundPlayer.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/FixedEntityTypeSource.cpp LIBS rtype_client_animation_system rtype_client_pilots rtype_client_sprite_effect_interfaces rtype_identifiers rtype_test_shipped_entity_sheets GTest::gmock)
+rtype_add_test(NAME client_replication_tests SOURCES ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingSoundPlayer.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/FixedEntityTypeSource.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingOwnMissileListener.cpp LIBS rtype_client_animation_system rtype_client_pilots rtype_client_sprite_effect_interfaces rtype_identifiers rtype_test_shipped_entity_sheets GTest::gmock)
 target_include_directories(client_replication_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/client/Rendering ${RTYPE_TEST_SOURCE_DIR}/client/Replication/Entities ${RTYPE_TEST_SOURCE_DIR}/doubles $<TARGET_PROPERTY:rtype_client_entity_sprites,INTERFACE_INCLUDE_DIRECTORIES>)
 
 add_subdirectory(Entities)

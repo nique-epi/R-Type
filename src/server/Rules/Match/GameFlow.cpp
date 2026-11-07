@@ -27,6 +27,7 @@
 #include "PlayerController.hpp"
 #include "PlayerLives.hpp"
 #include "PlayerRoster.hpp"
+#include "ShooterViews.hpp"
 #include "TimeConstants.hpp"
 #include "VolleySystem.hpp"
 #include "VolleySystemParts.hpp"
@@ -97,15 +98,20 @@ std::optional<GameEnding> endingOf(PlayerRoster& roster, game::World& world,
 
 /**
  * @brief Makes the ship of every player who is away want nothing (see
- * silenceAwayShips), then runs the systems of @p world for one tick.
+ * silenceAwayShips), gives every missile of a player the view of its player at
+ * tick @p tick (see giveShooterViews), then runs the systems of @p world for
+ * one tick.
  */
-void runWorldSystems(GameContext& game, game::World& world) {
+void runWorldSystems(GameContext& game, game::World& world,
+                     std::uint32_t tick) {
   silenceAwayShips(world, game.roster.get());
+  giveShooterViews(world, game.roster.get(), tick);
   game.systems.get().run(world.components(), engine::SIMULATION_TICK_DURATION);
 }
 
-/** @brief Moves @p state to @p next and announces the change on @p events. */
-void moveTo(engine::EventBus& events, GameState& state, GameState next) {
+/** @brief Moves @p state to @p next and tells @p events so, with the state it
+ * left. */
+void changeState(GameState& state, GameState next, engine::EventBus& events) {
   events.publish(GameStateChanged{.previous = std::exchange(state, next),
                                   .current = next});
 }
@@ -206,18 +212,18 @@ void GameFlow::advanceState() {
         replication_.onWaitingTick();
         break;
       }
-      moveTo(game_.events.get(), state_, GameState::Starting);
+      changeState(state_, GameState::Starting, game_.events.get());
       startBarrier_.open();
       break;
     case GameState::Starting:
       if (startBarrier_.advance()) {
-        moveTo(game_.events.get(), state_, GameState::InProgress);
+        changeState(state_, GameState::InProgress, game_.events.get());
         logStart(logger_, game_.roster.get());
       }
       break;
     case GameState::InProgress:
       ++tick_;
-      runWorldSystems(game_, world());
+      runWorldSystems(game_, world(), tick_);
       weaponSystem_->onTick();
       volleySystem_->onTick();
       bossStage_->onTick(
@@ -230,16 +236,14 @@ void GameFlow::advanceState() {
         break;
       }
       startNewWorld();
-      moveTo(game_.events.get(), state_, GameState::WaitingForPlayers);
+      changeState(state_, GameState::WaitingForPlayers, game_.events.get());
       break;
   }
 }
 
 void GameFlow::finish() {
   if (state_ == GameState::InProgress) {
-    game_.events.get().publish(
-        GameStateChanged{.previous = std::exchange(state_, GameState::Finished),
-                         .current = GameState::Finished});
+    changeState(state_, GameState::Finished, game_.events.get());
     finishedTicks_ = 0;
   }
 }

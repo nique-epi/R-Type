@@ -8,6 +8,7 @@
 #include "BeamLine.hpp"
 #include "BeamOverlap.hpp"
 #include "Bounds.hpp"
+#include "BoundsOf.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
@@ -82,14 +83,6 @@ BeamLine beamLineOf(const HurtBeam& beam, const Position& position,
       .thickness = beam.thickness};
 }
 
-/** @returns The rectangle of a ship at @p position with the box @p box. */
-engine::Bounds shipBoundsAt(const Position& position, const CollisionBox& box) {
-  return engine::Bounds{.centerX = position.x + box.offsetX,
-                        .centerY = position.y + box.offsetY,
-                        .width = box.width,
-                        .height = box.height};
-}
-
 /** @returns Whether an active box of @p enemy overlaps @p ship. */
 bool isHurtByABox(const HurtingEnemy& enemy, const ShipBounds& ship) {
   return std::ranges::any_of(
@@ -129,8 +122,8 @@ void HurtZoneSystem::collectShips(engine::ComponentRegistry& components) {
                           const CollisionBox& box) {
         const Position* const position = components.get<Position>(entity);
         if (type == EntityType::Player && position != nullptr) {
-          ships_.push_back(ShipBounds{.entity = entity,
-                                      .bounds = shipBoundsAt(*position, box)});
+          ships_.push_back(
+              ShipBounds{.entity = entity, .bounds = boundsOf(*position, box)});
         }
       });
 }

@@ -1,6 +1,7 @@
 #include "PositionHistory.hpp"
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <iterator>
 #include <optional>
 #include <span>
@@ -70,6 +71,13 @@ std::optional<game::Position> PositionHistory::at(double tick) const {
   return moved(
       previous, newest,
       1.0 + (ahead / static_cast<double>(newest.tick - previous.tick)));
+}
+
+std::optional<std::uint32_t> PositionHistory::oldestTick() const {
+  if (count_ == 0) {
+    return std::nullopt;
+  }
+  return samples_.front().tick;
 }
 
 }  // namespace rtype::client

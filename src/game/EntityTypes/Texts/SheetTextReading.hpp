@@ -4,6 +4,7 @@
 #include <span>
 #include <string_view>
 #include <vector>
+#include "CollisionBox.hpp"
 #include "DataFileTable.hpp"
 #include "SheetText.hpp"
 
@@ -45,5 +46,16 @@ void checkSheetNames(std::span<const SheetText> texts);
  */
 [[nodiscard]] engine::DataFileTable sheetTableOf(
     const engine::DataFileTable& root, std::string_view key);
+
+/**
+ * @returns The box `[gameplay.hitbox]` of @p gameplay describes, in logical
+ * units. The server collides its entities with it, the client tests its own
+ * missiles against it, so both read it the same way.
+ * @throws engine::MissingDataFileKeyException or
+ * DataFileTableExpectedException when the table is missing or is not one;
+ * UnknownDataFileKeyException for a key other than HITBOX_KEYS; and what
+ * engine::wholeNumberAt() throws for a side outside HITBOX_SIDE_RANGE.
+ */
+[[nodiscard]] CollisionBox hitboxOf(const engine::DataFileTable& gameplay);
 
 }  // namespace rtype::game

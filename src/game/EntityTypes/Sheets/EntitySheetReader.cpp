@@ -13,7 +13,6 @@
 #include "BehaviourView.hpp"
 #include "BossSheet.hpp"
 #include "BurstSheet.hpp"
-#include "CollisionBox.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "EntitySheet.hpp"
@@ -66,28 +65,6 @@ EntityType sideFrom(const engine::DataFileTable& gameplay) {
 float unitsAt(const engine::DataFileTable& box, std::string_view key,
               engine::WholeNumberRange range) {
   return static_cast<float>(engine::wholeNumberAt(box, key, range));
-}
-
-/** @returns The value of @p key of @p table in logical units, 0 when the
- * table leaves it out. */
-float unitsOrZeroAt(const engine::DataFileTable& table, std::string_view key,
-                    engine::WholeNumberRange range) {
-  if (!table.table.get().contains(key)) {
-    return 0.0F;
-  }
-  return unitsAt(table, key, range);
-}
-
-/** @returns The box `[gameplay.hitbox]` describes, centered on the Position
- * of the body unless it gives an offset. */
-CollisionBox hitboxFrom(const engine::DataFileTable& gameplay) {
-  const engine::DataFileTable hitbox = engine::tableAt(gameplay, HITBOX_KEY);
-  engine::refuseUnknownKeys(hitbox, HITBOX_KEYS);
-  return CollisionBox{
-      .width = unitsAt(hitbox, WIDTH_KEY, HITBOX_SIDE_RANGE),
-      .height = unitsAt(hitbox, HEIGHT_KEY, HITBOX_SIDE_RANGE),
-      .offsetX = unitsOrZeroAt(hitbox, OFFSET_X_KEY, HURT_BOX_OFFSET_RANGE),
-      .offsetY = unitsOrZeroAt(hitbox, OFFSET_Y_KEY, HURT_BOX_OFFSET_RANGE)};
 }
 
 /** @returns The motion `[gameplay.motion]` describes: a ship with its kind
@@ -515,7 +492,7 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .name = sheet.name,
       .number = 0,
       .side = sideFrom(gameplay),
-      .hitbox = hitboxFrom(gameplay),
+      .hitbox = hitboxOf(gameplay),
       .motion = motionFrom(gameplay),
       .pilot = pilotFrom(gameplay, behaviours),
       .health = pointsIn<int>(gameplay, HEALTH_KEY, HEALTH_RANGE),

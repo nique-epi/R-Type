@@ -6,6 +6,7 @@
 #include "EntityType.hpp"
 #include "EntityTypeLook.hpp"
 #include "IEntityTypeSource.hpp"
+#include "ShipGun.hpp"
 
 /**
  * @returns The appearance the double gives every type of side @p side: the
@@ -24,4 +25,6 @@ class FixedEntityTypeSource final : public rtype::client::IEntityTypeSource {
  public:
   [[nodiscard]] std::optional<rtype::client::EntityTypeLook> lookOf(
       std::uint8_t number) const override;
+
+  [[nodiscard]] rtype::game::ShipGun shipGun() const override;
 };
