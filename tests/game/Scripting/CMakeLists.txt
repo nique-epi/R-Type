@@ -1,0 +1,2 @@
+rtype_add_test(NAME game_scripting_tests SOURCES BehaviourScriptFilesTest.cpp BehaviourScriptsFixtures.cpp BehaviourScriptsTest.cpp LIBS rtype_game_scripting rtype_game_exceptions rtype_test_support)
+target_include_directories(game_scripting_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR})
