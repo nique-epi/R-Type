@@ -139,6 +139,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-a-detour-comes-back-to-where-it-started.md`
 - `fix/reasoning/fix-reasoning-a-guard-after-the-write-is-only-an-alarm.md`
 - `fix/reasoning/fix-reasoning-a-library-may-fail-without-throwing.md`
+- `fix/reasoning/fix-reasoning-a-second-connection-of-a-test-waits-like-the-first.md`
 - `fix/reasoning/fix-reasoning-a-pointer-is-read-in-the-grid-it-is-compared-with.md`
 - `fix/reasoning/fix-reasoning-a-sanitizer-sees-only-what-leaves-the-allocation.md`
 - `fix/reasoning/fix-reasoning-a-session-opened-to-read-holds-a-seat.md`
