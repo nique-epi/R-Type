@@ -1,0 +1,107 @@
+#include "ShipLooks.hpp"
+#include <SFML/Graphics/Rect.hpp>
+#include <SFML/System/Vector2.hpp>
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <vector>
+#include "IInterfaceCanvas.hpp"
+#include "ImagePlacement.hpp"
+#include "ShipLook.hpp"
+#include "ShipLookConstants.hpp"
+#include "ShipLookSlot.hpp"
+#include "ShipLookSpriteConstants.hpp"
+#include "ShipPlacement.hpp"
+#include "SpriteFrame.hpp"
+#include "TextureArea.hpp"
+
+namespace rtype::client {
+
+namespace {
+
+/** @returns The slot of @p look that @p slot names. */
+std::uint8_t& slotOf(ShipLook& look, ShipLookSlot slot) {
+  switch (slot) {
+    case ShipLookSlot::Head:
+      return look.head;
+    case ShipLookSlot::Eyes:
+      return look.eyes;
+    case ShipLookSlot::Face:
+      break;
+  }
+  return look.face;
+}
+
+/** @returns What a slot holds when it wears @p item. */
+std::uint8_t numberOf(std::size_t item) {
+  return static_cast<std::uint8_t>(item + 1);
+}
+
+}  // namespace
+
+ShipLook wearing(ShipLook look, std::size_t item) {
+  slotOf(look, SHIP_LOOK_ITEM_SLOTS.at(item)) = numberOf(item);
+  return look;
+}
+
+ShipLook without(ShipLook look, std::size_t item) {
+  std::uint8_t& slot = slotOf(look, SHIP_LOOK_ITEM_SLOTS.at(item));
+  if (slot == numberOf(item)) {
+    slot = NO_SHIP_LOOK_ITEM;
+  }
+  return look;
+}
+
+bool wears(ShipLook look, std::size_t item) {
+  return slotOf(look, SHIP_LOOK_ITEM_SLOTS.at(item)) == numberOf(item);
+}
+
+std::vector<std::size_t> wornItemsOf(ShipLook look) {
+  std::vector<std::size_t> worn;
+  for (std::size_t item = 0; item < SHIP_LOOK_ITEM_COUNT; ++item) {
+    if (wears(look, item)) {
+      worn.push_back(item);
+    }
+  }
+  return worn;
+}
+
+sf::IntRect lookRectangleOf(std::size_t item) {
+  const game::SpriteFrame cell = SHIP_LOOK_CELLS.at(item);
+  return {{cell.left, cell.top}, SHIP_LOOK_SPRITES.at(item).size};
+}
+
+void paintLookItem(IInterfaceCanvas& canvas, std::size_t item,
+                   ShipPlacement ship) {
+  canvas.drawImage(
+      TextureArea{.assetId = SHIP_LOOK_SHEET_ID,
+                  .rectangle = lookRectangleOf(item)},
+      ImagePlacement{.topLeft = ship.topLeft +
+                                (SHIP_LOOK_SPRITES.at(item).mount * ship.scale),
+                     .scale = ship.scale},
+      ship.visibleArea);
+}
+
+void paintShipLook(IInterfaceCanvas& canvas, ShipLook look,
+                   ShipPlacement ship) {
+  for (const std::size_t item : wornItemsOf(look)) {
+    paintLookItem(canvas, item, ship);
+  }
+}
+
+void paintLookIcon(IInterfaceCanvas& canvas, std::size_t item,
+                   sf::IntRect cell) {
+  const sf::Vector2i size = SHIP_LOOK_SPRITES.at(item).size;
+  const int scale =
+      std::clamp(std::min(cell.size.x / size.x, cell.size.y / size.y),
+                 NATIVE_SCALE, MAXIMUM_LOOK_ICON_SCALE);
+  canvas.drawImage(
+      TextureArea{.assetId = SHIP_LOOK_SHEET_ID,
+                  .rectangle = lookRectangleOf(item)},
+      ImagePlacement{.topLeft = cell.position +
+                                ((cell.size - (size * scale)) / HALF_DIVISOR),
+                     .scale = scale},
+      cell);
+}
+
+}  // namespace rtype::client
