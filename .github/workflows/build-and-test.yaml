@@ -199,7 +199,7 @@ jobs:
           xargs -0 -a "$RUNNER_TEMP/files-to-lint" "/c/Program Files/LLVM/bin/clang-tidy.exe" -p build --quiet
 
   build:
-    name: Build and test (${{ matrix.os }}${{ matrix.preset == 'sanitize' && ', sanitizers' || matrix.preset == 'modules-off' && ', optional modules off' || '' }})
+    name: Build and test (${{ matrix.os }}${{ matrix.label }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
@@ -211,11 +211,13 @@ jobs:
             generator_arguments: ""
           - os: ubuntu-latest
             preset: sanitize
+            label: ", sanitizers"
             generator_arguments: ""
           # Every RTYPE_MODULE_* option off: the build, the tests and the start
           # of the supervisor without the optional modules.
           - os: ubuntu-latest
             preset: modules-off
+            label: ", optional modules off"
             generator_arguments: ""
           - os: windows-latest
             preset: test
