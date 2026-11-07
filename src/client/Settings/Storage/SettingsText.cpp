@@ -12,7 +12,6 @@
 #include <system_error>
 #include "BoundAction.hpp"
 #include "ColorMode.hpp"
-#include "Endpoint.hpp"
 #include "EndpointText.hpp"
 #include "InputConstants.hpp"
 #include "KeyNames.hpp"

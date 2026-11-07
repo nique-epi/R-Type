@@ -6,7 +6,6 @@
 #include <sstream>
 #include <string>
 #include "DirectionTraffic.hpp"
-#include "Endpoint.hpp"
 #include "EndpointText.hpp"
 #include "MessageTypeText.hpp"
 #include "PeerTraffic.hpp"
