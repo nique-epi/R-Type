@@ -42,8 +42,9 @@ constexpr ScreenId CONNECTION_SCREEN{"connection"};
 constexpr ScreenId CONNECTION_FOR_LEADERBOARD_SCREEN{
     "connection for the leaderboard"};
 
-/** @brief The same screen, pushed over the server map, which starts its
- * attempt with the server the map chose as it opens. */
+/** @brief The same screen, which starts its attempt as it opens: pushed over
+ * the server map with the server the map chose, or by PLAY over the title for
+ * a client launched with `-h`. */
 constexpr ScreenId CONNECTION_TO_CHOSEN_SERVER_SCREEN{
     "connection to the chosen server"};
 
