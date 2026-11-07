@@ -1,37 +1,26 @@
 #include <gtest/gtest.h>
-#include <chrono>
 #include <cstddef>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "GameEnded.hpp"
 #include "GameFlowFixture.hpp"
+#include "GameFlowTestConstants.hpp"
 #include "GameState.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
 #include "PlayerRoster.hpp"
 #include "SentDatagrams.hpp"
-#include "TimeConstants.hpp"
 #include "game/Waves/WaveTestConstants.hpp"
 
 using rtype::game::testing::TICKS_TO_THE_WHOLE_FIRST_WAVE;
 using rtype::network::GameEnded;
 using rtype::network::WireGameOutcome;
 using rtype::server::GameState;
+using rtype::server::testing::A_SECOND_OF_TICKS;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::GameFlowFixture;
 using rtype::server::testing::GameFlowOneWaveLevelFixture;
 using rtype::server::testing::playerEndpoint;
-
-namespace {
-
-/** @brief The ticks the game needs after the last Bydo is gone to find it. */
-constexpr std::size_t TICKS_TO_FIND_THE_SKY_CLEAR = 1;
-
-/** @brief A second of ticks: the Bydos of the wave are still far from the
- * ships. */
-constexpr std::size_t A_SECOND_OF_TICKS =
-    rtype::engine::wholeTicksIn(std::chrono::seconds(1));
-
-}  // namespace
+using rtype::server::testing::TICKS_TO_FIND_THE_SKY_CLEAR;
 
 /**
  * Given a game on a level of one wave, every Bydo of the wave in the world
