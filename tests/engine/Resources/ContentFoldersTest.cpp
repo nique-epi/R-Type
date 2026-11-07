@@ -14,6 +14,7 @@ using rtype::engine::contentFoldersOf;
 using rtype::engine::ResourceDependencyCycleException;
 using rtype::engine::ResourceNotFoundException;
 using rtype::engine::ResourcePlaces;
+using rtype::engine::topmostContentFile;
 
 /**
  * Given no resource to start
@@ -106,4 +107,35 @@ TEST(ContentFolders, RefuseResourcesThatDependOnEachOther) {
 
   EXPECT_THROW(static_cast<void>(contentFoldersOf(places, names)),
                ResourceDependencyCycleException);
+}
+
+/**
+ * Given assets and a resource that both hold the waves file
+ * When the topmost waves file is asked for
+ * Then it is the file of the resource
+ */
+TEST(ContentFolders, TheTopmostFileIsTheOneOfTheLastFolderThatHoldsIt) {
+  const TemporaryFolder root;
+  const std::array folders{root.path() / TEST_ASSET_FOLDER,
+                           root.path() / TEST_RESOURCE_FOLDER};
+  root.write(folders[0] / REPLACEABLE_FILE, WAVES_OF_THE_ASSETS);
+  root.write(folders[1] / REPLACEABLE_FILE, WAVES_OF_THE_RESOURCE);
+
+  EXPECT_EQ(topmostContentFile(folders, REPLACEABLE_FILE),
+            folders[1] / REPLACEABLE_FILE);
+}
+
+/**
+ * Given assets that hold the waves file and a resource that does not
+ * When the topmost waves file is asked for
+ * Then it is the file of the assets
+ */
+TEST(ContentFolders, TheTopmostFileIsTheOneOfTheAssetsWhenNoResourceHoldsIt) {
+  const TemporaryFolder root;
+  const std::array folders{root.path() / TEST_ASSET_FOLDER,
+                           root.path() / TEST_RESOURCE_FOLDER};
+  root.write(folders[0] / REPLACEABLE_FILE, WAVES_OF_THE_ASSETS);
+
+  EXPECT_EQ(topmostContentFile(folders, REPLACEABLE_FILE),
+            folders[0] / REPLACEABLE_FILE);
 }

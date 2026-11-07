@@ -6,7 +6,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "AssetFolder.hpp"
 #include "BuiltModuleConstants.hpp"
 #include "ContentFolders.hpp"
 #include "ExecutablePath.hpp"
@@ -31,14 +30,16 @@ namespace rtype::server {
 
 namespace {
 
-/** @returns What the games module of a game process is built from: the waves
- * of the assets folder and the entity sheets of @p contentFolders. */
+/** @returns What the games module of a game process is built from: the
+ * waves file of the last of @p contentFolders that holds one, and the entity
+ * sheets of all of them. */
 GamesSettings gameProcessGamesSettings(
     std::vector<std::filesystem::path> contentFolders) {
-  return GamesSettings{
-      .seed = std::nullopt,
-      .wavesFile = engine::locateAssetFolder() / WAVE_FILE_IN_ASSETS,
-      .contentFolders = std::move(contentFolders)};
+  std::filesystem::path wavesFile = engine::topmostContentFile(
+      contentFolders, std::filesystem::path{WAVE_FILE_IN_ASSETS});
+  return GamesSettings{.seed = std::nullopt,
+                       .wavesFile = std::move(wavesFile),
+                       .contentFolders = std::move(contentFolders)};
 }
 
 }  // namespace

@@ -119,4 +119,17 @@ std::vector<std::filesystem::path> contentFoldersOf(
   return walk.folders;
 }
 
+std::filesystem::path topmostContentFile(
+    std::span<const std::filesystem::path> contentFolders,
+    const std::filesystem::path& relativeFile) {
+  for (const std::filesystem::path& folder :
+       contentFolders | std::views::reverse) {
+    std::error_code error;
+    if (std::filesystem::is_regular_file(folder / relativeFile, error)) {
+      return folder / relativeFile;
+    }
+  }
+  return contentFolders.front() / relativeFile;
+}
+
 }  // namespace rtype::engine
