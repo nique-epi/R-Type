@@ -23,6 +23,8 @@ void EntityReplicatorFixture::announceOneOfEachType() {
   replicator_.apply(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, BYDO_POSITION));
   replicator_.apply(spawned(ENEMY_MISSILE_ID, ENEMY_MISSILE_TYPE_NUMBER,
                             ENEMY_MISSILE_POSITION));
+  replicator_.apply(
+      spawned(LOOK_ITEM_ID, LOOK_ITEM_TYPE_NUMBER, BYDO_POSITION));
 }
 
 std::size_t EntityReplicatorFixture::entityCount() const {

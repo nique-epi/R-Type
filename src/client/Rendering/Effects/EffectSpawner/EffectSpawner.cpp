@@ -54,6 +54,8 @@ void EffectSpawner::playExplosion(game::EntityType type,
     case game::EntityType::EnemyMissile:
       hits_.playImpact(type, center);
       return;
+    case game::EntityType::LookItem:
+      return;
   }
 }
 
@@ -78,6 +80,7 @@ void EffectSpawner::playAppearance(game::EntityType type,
       return;
     case game::EntityType::Player:
     case game::EntityType::Enemy:
+    case game::EntityType::LookItem:
       return;
   }
 }

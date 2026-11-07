@@ -16,6 +16,7 @@
 #include "Health.hpp"
 #include "Intent.hpp"
 #include "Lives.hpp"
+#include "LookItem.hpp"
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
 #include "Pilot.hpp"
@@ -39,6 +40,7 @@ using rtype::game::testing::componentOf;
 using rtype::game::testing::DRIFTER_SHEET;
 using rtype::game::testing::ENEMY_MISSILE_SHEET;
 using rtype::game::testing::ENEMY_MISSILE_UNITS_PER_SECOND;
+using rtype::game::testing::LOOK_CROWN_SHEET;
 using rtype::game::testing::MISSILE_UNITS_PER_SECOND;
 using rtype::game::testing::OTHER_X;
 using rtype::game::testing::OTHER_Y;
@@ -687,6 +689,26 @@ TEST(World, SpawnedEnemyMissileIsANetworkedMissileAtItsPosition) {
   EXPECT_EQ(found.y, SOME_Y);
   EXPECT_EQ(componentOf<rtype::game::EntityType>(world, networkId),
             rtype::game::EntityType::EnemyMissile);
+}
+
+/**
+ * Given an empty world
+ * When the look item of the crown is spawned
+ * Then the world holds it as a look item carrying the number of the crown, 3
+ */
+TEST(World, ALookItemCarriesItsItem) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId =
+      world.spawn(shippedEntitySheets().named(LOOK_CROWN_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_EQ(componentOf<rtype::game::EntityType>(world, networkId),
+            rtype::game::EntityType::LookItem);
+  const std::optional<rtype::game::LookItem> item =
+      componentOf<rtype::game::LookItem>(world, networkId);
+  ASSERT_TRUE(item.has_value());
+  EXPECT_EQ(item->number, 3U);
 }
 
 /**

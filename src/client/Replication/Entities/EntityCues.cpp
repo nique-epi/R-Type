@@ -25,6 +25,7 @@ std::optional<std::string_view> appearanceSoundOf(game::EntityType type) {
       return ENEMY_SHOT_SOUND_ID;
     case game::EntityType::Player:
     case game::EntityType::Enemy:
+    case game::EntityType::LookItem:
       return std::nullopt;
   }
   return std::nullopt;
@@ -41,6 +42,7 @@ std::optional<std::string_view> explosionSoundOf(game::EntityType type) {
       return SMALL_EXPLOSION_SOUND_ID;
     case game::EntityType::PlayerMissile:
     case game::EntityType::EnemyMissile:
+    case game::EntityType::LookItem:
       return std::nullopt;
   }
   return std::nullopt;

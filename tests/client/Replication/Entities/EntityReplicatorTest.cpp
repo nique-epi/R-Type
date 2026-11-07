@@ -65,6 +65,7 @@ using rtype::client::testing::killed;
 using rtype::client::testing::LAST_KEPT_TICK;
 using rtype::client::testing::listed;
 using rtype::client::testing::LISTING_TICK;
+using rtype::client::testing::LOOK_ITEM_ID;
 using rtype::client::testing::NEWER_TICK;
 using rtype::client::testing::NO_HISTORY_POSITION;
 using rtype::client::testing::NUMBER_OF_NO_TYPE;
@@ -149,10 +150,11 @@ TEST_F(EntityReplicatorFixture,
 TEST_F(EntityReplicatorFixture, DrawsAShipAndABydoAndHoldsTheMissilesBack) {
   announceOneOfEachType();
 
-  EXPECT_THAT(
-      drawnEntities(components()),
-      UnorderedElementsAre(drawnAs(EntityType::Player, SHIP_ID, SHIP_POSITION),
-                           drawnAs(EntityType::Enemy, BYDO_ID, BYDO_POSITION)));
+  EXPECT_THAT(drawnEntities(components()),
+              UnorderedElementsAre(
+                  drawnAs(EntityType::Player, SHIP_ID, SHIP_POSITION),
+                  drawnAs(EntityType::Enemy, BYDO_ID, BYDO_POSITION),
+                  drawnAs(EntityType::LookItem, LOOK_ITEM_ID, BYDO_POSITION)));
 }
 
 /**
