@@ -208,4 +208,7 @@ ResourceDependenciesExpectedException::ResourceDependenciesExpectedException(
     : EngineException(placeText(place) + ": " + place.key +
                       " must be a list of resource names") {}
 
+ScriptException::ScriptException(const std::string& message)
+    : EngineException(message) {}
+
 }  // namespace rtype::engine

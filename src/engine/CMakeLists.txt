@@ -13,6 +13,7 @@ add_subdirectory(Paths)
 add_subdirectory(DataFiles)
 add_subdirectory(SharedLibrary)
 add_subdirectory(Resources)
+add_subdirectory(Scripting)
 
 add_library(rtype_engine INTERFACE)
 

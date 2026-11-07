@@ -10,6 +10,7 @@
       "default-features": false
     },
     "libhydrogen",
+    "luau",
     "nlohmann-json",
     {
       "name": "sfml",
