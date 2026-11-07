@@ -7,7 +7,6 @@
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "EngineException.hpp"
-#include "PathText.hpp"
 #include "ResourceConstants.hpp"
 #include "ResourceManifest.hpp"
 #include "ResourceName.hpp"
@@ -60,7 +59,6 @@ ResourceManifest readResourceManifest(
   const DataFileTable table = rootOf(root, source);
   refuseUnknownKeys(table, RESOURCE_MANIFEST_KEYS);
   return ResourceManifest{
-      .name = logging::genericText(resourceFolder.filename()),
       .description = textAt(table, RESOURCE_DESCRIPTION_KEY),
       .dependencies = dependenciesOf(table)};
 }

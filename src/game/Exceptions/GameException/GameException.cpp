@@ -10,18 +10,6 @@
 
 namespace rtype::game {
 
-namespace {
-
-std::string foldersText(const std::vector<std::string>& folders) {
-  std::string text;
-  for (const std::string& folder : folders) {
-    text += " " + folder;
-  }
-  return text;
-}
-
-}  // namespace
-
 GameException::GameException(const std::string& message)
     : std::runtime_error(message) {}
 
@@ -76,7 +64,8 @@ InconsistentEntitySheetException::InconsistentEntitySheetException(
 
 SharedContentFileException::SharedContentFileException(
     const std::string& path, const std::vector<std::string>& folders)
-    : GameException("The content file " + path +
-                    " is in more than one folder:" + foldersText(folders)) {}
+    : GameException(
+          "The content file " + path +
+          " is in more than one folder: " + engine::listText(folders)) {}
 
 }  // namespace rtype::game

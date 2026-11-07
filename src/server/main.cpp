@@ -152,8 +152,7 @@ int runGame(std::span<const std::string_view> options) {
                   &configuration](rtype::server::StopRequest& stopRequest) {
         return rtype::server::gameProcessModules(
             *launchOptions, stopRequest,
-            rtype::engine::ensuredResources(
-                rtype::engine::handedOverLines(configuration)));
+            rtype::engine::handedOverLines(configuration));
       }});
 }
 

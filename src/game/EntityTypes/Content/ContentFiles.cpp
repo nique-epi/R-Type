@@ -76,16 +76,6 @@ std::string contentOf(std::span<const std::filesystem::path> contentFolders,
   return engine::dataFileContent(folder / path);
 }
 
-/** @throws DuplicateEntityTypeException when two of @p sheets share a name. */
-void refuseSharedSheets(std::span<const SheetText> sheets) {
-  std::set<std::string> names;
-  for (const SheetText& sheet : sheets) {
-    if (!names.insert(sheet.name).second) {
-      throw DuplicateEntityTypeException(sheet.name);
-    }
-  }
-}
-
 }  // namespace
 
 bool isSheetPath(const std::string& path) {
@@ -112,7 +102,6 @@ std::vector<SheetText> sheetTextsOf(
 std::vector<identifiers::ContentFile> contentFilesIn(
     std::span<const std::filesystem::path> contentFolders) {
   std::vector<SheetText> sheets = sheetTextsInFolders(contentFolders);
-  refuseSharedSheets(sheets);
   std::vector<identifiers::ContentFile> files;
   std::set<std::string> spriteSheets;
   for (SheetText& sheet : sheets) {

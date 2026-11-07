@@ -14,6 +14,11 @@ namespace rtype::engine {
 
 namespace {
 
+/** @returns Whether @p words are an `ensure` line, whatever its arguments. */
+bool isEnsureLine(std::span<const std::string> words) {
+  return !words.empty() && words.front() == ENSURE_COMMAND_NAME;
+}
+
 /** @returns The resource @p line names, @p words being its words.
  * @throws What ensuredResources() throws for that line. */
 std::string resourceOf(const std::string& line,
@@ -28,13 +33,7 @@ std::string resourceOf(const std::string& line,
 
 }  // namespace
 
-bool isEnsureLine(std::span<const std::string> words) {
-  return !words.empty() && words.front() == ENSURE_COMMAND_NAME;
-}
-
-HandOverRule ensureLineRule() {
-  return [](std::span<const std::string> words) { return isEnsureLine(words); };
-}
+HandOverRule ensureLineRule() { return isEnsureLine; }
 
 std::vector<std::string> ensuredResources(std::span<const std::string> lines) {
   std::vector<std::string> resources;

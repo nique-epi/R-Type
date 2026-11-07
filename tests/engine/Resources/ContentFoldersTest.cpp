@@ -23,9 +23,7 @@ using rtype::engine::topmostContentFile;
  */
 TEST(ContentFolders, AreTheAssetsAloneWhenNoResourceStarts) {
   const TemporaryFolder root;
-  const ResourcePlaces places{
-      .assetFolder = root.path() / TEST_ASSET_FOLDER,
-      .resourceFolder = root.path() / TEST_RESOURCE_FOLDER};
+  const ResourcePlaces places = placesIn(root);
 
   const std::vector<std::filesystem::path> folders =
       contentFoldersOf(places, {});
@@ -42,9 +40,7 @@ TEST(ContentFolders, LayADependencyBeforeTheResourceThatNeedsIt) {
   const TemporaryFolder root;
   root.write(CRIMSON_MANIFEST, MANIFEST_NEEDING_NOTHING);
   root.write(BOSS_MANIFEST, MANIFEST_NEEDING_CRIMSON);
-  const ResourcePlaces places{
-      .assetFolder = root.path() / TEST_ASSET_FOLDER,
-      .resourceFolder = root.path() / TEST_RESOURCE_FOLDER};
+  const ResourcePlaces places = placesIn(root);
 
   const std::vector<std::filesystem::path> folders =
       contentFoldersOf(places, textsOf(ONLY_THE_BOSS));
@@ -64,9 +60,7 @@ TEST(ContentFolders, LayAResourceOnceWhenTwoLinesBringIt) {
   const TemporaryFolder root;
   root.write(CRIMSON_MANIFEST, MANIFEST_NEEDING_NOTHING);
   root.write(BOSS_MANIFEST, MANIFEST_NEEDING_CRIMSON);
-  const ResourcePlaces places{
-      .assetFolder = root.path() / TEST_ASSET_FOLDER,
-      .resourceFolder = root.path() / TEST_RESOURCE_FOLDER};
+  const ResourcePlaces places = placesIn(root);
 
   const std::vector<std::filesystem::path> folders =
       contentFoldersOf(places, textsOf(THE_BOSS_THEN_CRIMSON));
@@ -82,9 +76,7 @@ TEST(ContentFolders, LayAResourceOnceWhenTwoLinesBringIt) {
  */
 TEST(ContentFolders, RefuseAResourceWithoutAManifest) {
   const TemporaryFolder root;
-  const ResourcePlaces places{
-      .assetFolder = root.path() / TEST_ASSET_FOLDER,
-      .resourceFolder = root.path() / TEST_RESOURCE_FOLDER};
+  const ResourcePlaces places = placesIn(root);
   const std::vector<std::string> names = textsOf(std::array{MISSING_RESOURCE});
 
   EXPECT_THROW(static_cast<void>(contentFoldersOf(places, names)),
@@ -100,9 +92,7 @@ TEST(ContentFolders, RefuseResourcesThatDependOnEachOther) {
   const TemporaryFolder root;
   root.write(HEN_MANIFEST, MANIFEST_NEEDING_THE_EGG);
   root.write(EGG_MANIFEST, MANIFEST_NEEDING_THE_HEN);
-  const ResourcePlaces places{
-      .assetFolder = root.path() / TEST_ASSET_FOLDER,
-      .resourceFolder = root.path() / TEST_RESOURCE_FOLDER};
+  const ResourcePlaces places = placesIn(root);
   const std::vector<std::string> names = textsOf(std::array{HEN_RESOURCE});
 
   EXPECT_THROW(static_cast<void>(contentFoldersOf(places, names)),

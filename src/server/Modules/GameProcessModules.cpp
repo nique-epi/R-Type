@@ -8,6 +8,7 @@
 #include <vector>
 #include "BuiltModuleConstants.hpp"
 #include "ContentFolders.hpp"
+#include "EnsureLines.hpp"
 #include "ExecutablePath.hpp"
 #include "GameLaunchOptions.hpp"
 #include "GamesSettings.hpp"
@@ -46,9 +47,10 @@ GamesSettings gameProcessGamesSettings(
 
 std::vector<std::unique_ptr<engine::IModule>> gameProcessModules(
     const GameLaunchOptions& launchOptions, StopRequest& stopRequest,
-    std::span<const std::string> resources) {
+    std::span<const std::string> handedOverLines) {
   const std::vector<std::filesystem::path> contentFolders =
-      engine::contentFoldersOf(engine::locateResourcePlaces(), resources);
+      engine::contentFoldersOf(engine::locateResourcePlaces(),
+                               engine::ensuredResources(handedOverLines));
   std::vector<std::unique_ptr<engine::IModule>> modules;
   modules.push_back(
       std::make_unique<ServerLoggerModule>(launchOptions.logOptions()));

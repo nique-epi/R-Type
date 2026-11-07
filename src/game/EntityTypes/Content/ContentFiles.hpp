@@ -20,8 +20,7 @@ namespace rtype::game {
  * @param contentFolders The assets folder, then the folder of each resource
  * started (see engine::contentFoldersOf()); a client lists its assets alone.
  * @returns The files, in the order of their paths.
- * @throws What sheetTextsInFolders() throws; DuplicateEntityTypeException when
- * two folders hold a sheet of the same name; engine::DataFileSyntaxException,
+ * @throws What sheetTextsInFolders() throws; engine::DataFileSyntaxException,
  * MissingDataFileKeyException, DataFileTableExpectedException or
  * DataFileTextExpectedException when a sheet names no sprite sheet;
  * SharedContentFileException when two folders hold the sprite sheet a sheet

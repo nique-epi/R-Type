@@ -1,8 +1,10 @@
 #include "ServerGamesModule.hpp"
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <random>
@@ -17,6 +19,7 @@
 #include "EngineException.hpp"
 #include "EntitySheets.hpp"
 #include "EntitySheetsFingerprint.hpp"
+#include "ErrorText.hpp"
 #include "EventBus.hpp"
 #include "FarewellSender.hpp"
 #include "GameInstance.hpp"
@@ -102,11 +105,11 @@ StateEncoding stateEncodingOf(const engine::SettingValue& setting) {
 void logEntitySheets(const logging::Logger& logger,
                      std::span<const std::filesystem::path> folders,
                      const game::EntitySheets& types) {
-  std::string shown;
-  for (const std::filesystem::path& folder : folders) {
-    shown += " " + logging::genericText(folder);
-  }
-  logger.info("entity sheets of", shown, ": ", types.all().size(), " types");
+  std::vector<std::string> shown;
+  std::ranges::transform(folders, std::back_inserter(shown),
+                         logging::genericText);
+  logger.info("entity sheets of ", engine::listText(shown), ": ",
+              types.all().size(), " types");
 }
 
 /**

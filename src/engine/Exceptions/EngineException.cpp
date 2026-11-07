@@ -12,21 +12,6 @@
 
 namespace rtype::engine {
 
-namespace {
-
-std::string joinedTexts(const std::vector<std::string>& texts) {
-  std::string joined;
-  for (const std::string& text : texts) {
-    if (!joined.empty()) {
-      joined += ", ";
-    }
-    joined += text;
-  }
-  return joined;
-}
-
-}  // namespace
-
 EngineException::EngineException(const std::string& message)
     : std::runtime_error(message) {}
 
@@ -124,7 +109,7 @@ UnknownExecutablePathException::UnknownExecutablePathException()
 AssetFolderNotFoundException::AssetFolderNotFoundException(
     const std::vector<std::string>& searchedFolders)
     : EngineException("No assets folder found, searched: " +
-                      joinedTexts(searchedFolders)) {}
+                      listText(searchedFolders)) {}
 
 UnreadableDataFileException::UnreadableDataFileException(
     const std::string& file)
@@ -216,7 +201,7 @@ ResourceNotFoundException::ResourceNotFoundException(const std::string& name,
 ResourceDependencyCycleException::ResourceDependencyCycleException(
     const std::vector<std::string>& chain)
     : EngineException("The resources depend on each other in a circle: " +
-                      joinedTexts(chain)) {}
+                      listText(chain)) {}
 
 ResourceDependenciesExpectedException::ResourceDependenciesExpectedException(
     const DataFilePlace& place)

@@ -7,9 +7,6 @@
 
 namespace rtype::engine {
 
-/** @returns Whether @p words are an `ensure` line, whatever its arguments. */
-[[nodiscard]] bool isEnsureLine(std::span<const std::string> words);
-
 /** @returns The rule that keeps the `ensure` lines of a configuration for
  * ensuredResources() instead of running them: a game reads which resources
  * it starts before it builds its modules. */

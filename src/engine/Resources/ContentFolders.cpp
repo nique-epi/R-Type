@@ -1,7 +1,6 @@
 #include "ContentFolders.hpp"
 #include <algorithm>
 #include <filesystem>
-#include <functional>
 #include <ranges>
 #include <span>
 #include <string>
@@ -22,16 +21,15 @@ namespace {
 /** @brief The resources a walk of the dependencies has met: those started, in
  * their order, and those it is inside of, from the first line down. */
 struct ResourceWalk {
-  std::reference_wrapper<const ResourcePlaces> places;
+  std::filesystem::path resourceFolder;
   std::vector<std::string> inside;
   std::vector<std::string> started;
-  std::vector<std::filesystem::path> folders;
 };
 
 /** @returns The manifest of the resource @p name.
  * @throws ResourceNotFoundException when its folder holds none. */
 ResourceManifest manifestOf(const ResourceWalk& walk, const std::string& name) {
-  const std::filesystem::path folder = walk.places.get().resourceFolder / name;
+  const std::filesystem::path folder = walk.resourceFolder / name;
   std::error_code error;
   if (!std::filesystem::is_regular_file(folder / RESOURCE_MANIFEST_FILE_NAME,
                                         error)) {
@@ -77,7 +75,6 @@ void enter(ResourceWalk& walk, const std::string& name,
 void lay(ResourceWalk& walk, const std::string& name) {
   walk.inside.pop_back();
   walk.started.push_back(name);
-  walk.folders.push_back(walk.places.get().resourceFolder / name);
 }
 
 /** @brief Starts @p name in @p walk, after the resources it depends on. */
@@ -109,14 +106,16 @@ ResourcePlaces locateResourcePlaces() {
 
 std::vector<std::filesystem::path> contentFoldersOf(
     const ResourcePlaces& places, std::span<const std::string> names) {
-  ResourceWalk walk{.places = places,
-                    .inside = {},
-                    .started = {},
-                    .folders = {places.assetFolder}};
+  ResourceWalk walk{
+      .resourceFolder = places.resourceFolder, .inside = {}, .started = {}};
   for (const std::string& name : names) {
     start(walk, name);
   }
-  return walk.folders;
+  std::vector<std::filesystem::path> folders{places.assetFolder};
+  for (const std::string& name : walk.started) {
+    folders.push_back(places.resourceFolder / name);
+  }
+  return folders;
 }
 
 std::filesystem::path topmostContentFile(

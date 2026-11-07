@@ -1,6 +1,8 @@
 #include "SheetTextReading.hpp"
 #include <filesystem>
+#include <set>
 #include <span>
+#include <string>
 #include <string_view>
 #include <system_error>
 #include <vector>
@@ -24,6 +26,17 @@ void addSheetTexts(std::span<const std::filesystem::path> files,
     texts.push_back(SheetText{.name = logging::genericText(file.stem()),
                               .source = engine::shownPath(file),
                               .text = engine::dataFileContent(file)});
+  }
+}
+
+/** @throws DuplicateEntityTypeException when two of @p texts share a name:
+ * two content folders hold a sheet of that name. */
+void refuseSharedNames(std::span<const SheetText> texts) {
+  std::set<std::string> names;
+  for (const SheetText& text : texts) {
+    if (!names.insert(text.name).second) {
+      throw DuplicateEntityTypeException(text.name);
+    }
   }
 }
 
@@ -52,12 +65,14 @@ std::vector<SheetText> sheetTextsInFolders(
   std::vector<SheetText> texts =
       sheetTextsIn(sheetFolderOf(contentFolders.front()));
   for (const std::filesystem::path& folder : contentFolders.subspan(1)) {
+    const std::filesystem::path sheets = sheetFolderOf(folder);
     std::error_code error;
-    if (std::filesystem::is_directory(sheetFolderOf(folder), error)) {
-      addSheetTexts(engine::dataFilesIn(sheetFolderOf(folder)), texts);
+    if (std::filesystem::is_directory(sheets, error)) {
+      addSheetTexts(engine::dataFilesIn(sheets), texts);
     }
   }
   checkSheetNames(texts);
+  refuseSharedNames(texts);
   return texts;
 }
 

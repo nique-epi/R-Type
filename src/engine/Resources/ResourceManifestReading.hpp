@@ -10,7 +10,7 @@ namespace rtype::engine {
  * strictly as the other data files: a key it does not know, a missing
  * description or a `depends` that is not a list of resource names stops the
  * read with the file, the line and the key.
- * @returns The manifest, named after the folder.
+ * @returns The manifest.
  * @throws engine::UnreadableDataFileException when the file cannot be read,
  * what parseDataFile(), refuseUnknownKeys() and textAt() throw,
  * ResourceDependenciesExpectedException, and InvalidResourceNameException for

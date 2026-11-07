@@ -23,7 +23,6 @@ target_link_libraries(rtype_server_modules
   PRIVATE
     rtype_engine_paths
     rtype_server_processes
-    rtype_game_entity_types
     rtype_server_constants
 )
 

@@ -15,7 +15,6 @@ target_link_libraries(rtype_engine_resources
     rtype_engine_command_interpreter
     rtype_engine_data_files
     rtype_engine_paths
-    rtype_logging
 )
 
 rtype_enable_warnings(rtype_engine_resources)

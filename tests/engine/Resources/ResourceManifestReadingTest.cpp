@@ -21,14 +21,13 @@ using rtype::engine::UnreadableDataFileException;
  * Then the manifest holds the name of the folder, the description and both
  * dependencies in their order
  */
-TEST(ResourceManifestReading, ReadsTheNameTheDescriptionAndTheDependencies) {
+TEST(ResourceManifestReading, ReadsTheDescriptionAndTheDependencies) {
   const TemporaryFolder root;
   root.write(TEST_MANIFEST, FULL_MANIFEST);
 
   const ResourceManifest manifest =
       readResourceManifest(root.path() / TEST_RESOURCE_NAME);
 
-  EXPECT_EQ(manifest.name, TEST_RESOURCE_NAME);
   EXPECT_EQ(manifest.description, FULL_MANIFEST_DESCRIPTION);
   EXPECT_EQ(manifest.dependencies, textsOf(FULL_MANIFEST_DEPENDENCIES));
 }

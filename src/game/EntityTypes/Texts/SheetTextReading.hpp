@@ -31,8 +31,10 @@ namespace rtype::game {
  * contentFolders is never empty: it starts with the assets folder.
  * @returns The texts, folder after folder, each in the order of its names,
  * checked by checkSheetNames() all together.
- * @throws What sheetTextsIn() throws for the first folder, and
- * engine::UnreadableDataFileException when a sheet of another cannot be read.
+ * @throws What sheetTextsIn() throws for the first folder,
+ * engine::UnreadableDataFileException when a sheet of another cannot be read,
+ * and DuplicateEntityTypeException when two folders hold a sheet of the same
+ * name: a resource adds sheets, it never replaces one.
  */
 [[nodiscard]] std::vector<SheetText> sheetTextsInFolders(
     std::span<const std::filesystem::path> contentFolders);
