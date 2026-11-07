@@ -3,6 +3,7 @@
 #include <vector>
 #include "Collision.hpp"
 #include "CollisionRules.hpp"
+#include "CollisionRulesFixtures.hpp"
 #include "CollisionScene.hpp"
 #include "CollisionSystem.hpp"
 #include "CollisionTestConstants.hpp"
@@ -22,47 +23,10 @@ using rtype::game::CollisionSystem;
 using rtype::game::EntityType;
 using rtype::game::MissileHit;
 using rtype::game::ShipContact;
-
-namespace {
-
-struct Recorded {
-  std::vector<MissileHit> missileHits;
-  std::vector<ShipContact> shipContacts;
-};
-
-void record(CollisionScene& scene, Recorded& recorded) {
-  scene.events.subscribe<MissileHit>([&recorded](const MissileHit& hit) {
-    recorded.missileHits.push_back(hit);
-  });
-  scene.events.subscribe<ShipContact>([&recorded](const ShipContact& contact) {
-    recorded.shipContacts.push_back(contact);
-  });
-}
-
-class CollisionRulesInAnyOrder : public ::testing::TestWithParam<bool> {
- protected:
-  [[nodiscard]] static Collision collisionOf(Entity entity, Entity other) {
-    return GetParam() ? Collision{.first = other, .second = entity}
-                      : Collision{.first = entity, .second = other};
-  }
-};
-
-void expectNoEventFor(EntityType firstType, EntityType secondType) {
-  CollisionScene scene;
-  const Entity first = scene.spawn(firstType, 0.0F, 0.0F);
-  const Entity second = scene.spawn(secondType, 0.0F, 0.0F);
-  const CollisionRules rules(scene.events, scene.components);
-  Recorded recorded;
-  record(scene, recorded);
-
-  scene.events.publish(Collision{.first = first, .second = second});
-  scene.events.dispatch();
-
-  EXPECT_TRUE(recorded.missileHits.empty());
-  EXPECT_TRUE(recorded.shipContacts.empty());
-}
-
-}  // namespace
+using rtype::game::testing::CollisionRulesInAnyOrder;
+using rtype::game::testing::expectNoEventFor;
+using rtype::game::testing::record;
+using rtype::game::testing::Recorded;
 
 /**
  * Given a player missile and an enemy
