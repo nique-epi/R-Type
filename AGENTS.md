@@ -144,6 +144,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-a-screen-pushed-over-others-leaves-them-running.md`
 - `fix/reasoning/fix-reasoning-a-sequence-asserts-its-starting-state.md`
 - `fix/reasoning/fix-reasoning-a-turn-is-counted-in-whole-frames.md`
+- `fix/reasoning/fix-reasoning-a-view-never-waits-on-a-message-it-can-do-without.md`
 - `fix/reasoning/fix-reasoning-an-error-type-is-not-a-diagnosis.md`
 - `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`
 - `fix/reasoning/fix-reasoning-bounded-contract-check-the-empty-state.md`
