@@ -46,6 +46,7 @@ The client and the server look for `assets/` next to their executable, then in t
 | `sprites/effects.png` | The effects of a match: the explosions of the Bydo and of the ship, the impact of a missile and the muzzle flashes of both missiles, each with its version without flash | Drawn for this project (animation proposal, options C), generated from the drafts of the proposal; not taken from the sprite set shipped with the subject |
 | `sprites/hud.png` | The sheet of the status band of a game: the lives of the four player colors, a life lost, the marker of each player, and the icons of the notices of a game: the door of a departure and the bars of a weak signal | Drawn for this project (HUD design system, proposal B; the two icons from the disconnect notices design system); not taken from the sprite set shipped with the subject |
 | `sprites/professor.png` | Professor Bydo, the guide of the help of the waiting room: the Bydo under a mortarboard, round glasses over its eye, two frames facing left, then the same two mirrored | Drawn for this project (help design system, version 2), from the Bydo of `sprites/entities.png`; not taken from the sprite set shipped with the subject |
+| `sprites/looks.png` | The items the ship wears in the hangar: eight hats, shades and a mustache, one cell of 16 × 16 each | Drawn for this project (design system "R-Type Hangar"); not taken from the sprite set shipped with the subject |
 | `sprites/leaderboard.png` | The sheet of the leaderboard: 32 frames of a banner in the wind, 52 × 99 pixels, then the guard of the court, 28 × 30, two frames, then mirrored | The silhouette and the weave of the banner come from the left red banner of `castle_tileset_part3.png`, [pixel art castle tileset](https://opengameart.org/content/pixel-art-castle-tileset) by rubberduck, CC0, recolored; its folds, trim, tassels, rod and emblem, and the guard, were drawn for this project |
 | `sprites/flight_log.png` | The flight log of the end screen: the front cover, the inside of the cover with the left page, the right half with its page, the label of the taunt, a tile of the shadow, the medal of the best pilot and the cross of QUIT | Drawn for this project (end screen design system, proposal A v2), generated from the code of the design with its seeds; the four markers copied from `sprites/hud.png`; not taken from the sprite set shipped with the subject |
 | `icons/phosphor/plugs_bold.png` | The unplugged plug of a pilot whose signal is lost, white on a square of 64 × 64 pixels | "plugs", bold weight, of Phosphor Icons, MIT License, copyright 2023 Phosphor Icons, license in `icons/phosphor/LICENSE.txt`; from `phosphor-icons/core` at tag `v2.0.8` (`assets/bold/plugs-bold.svg`), rendered to PNG and made white |
@@ -132,6 +133,12 @@ The rectangles are written once, in `src/client/Rendering/Interface/HudSpriteCon
 | The same frames mirrored, facing right, since the interface canvas cannot mirror an image | 2 | 24 × 28 | 30 |
 
 Each row shows its two frames in turn, 250 ms each, as the Bydo. The rectangles and the animations are written once, in `src/client/Rendering/Interface/ProfessorSpriteConstants.hpp`. `client_rendering_tests` checks them against the shipped file: every frame lies inside the sheet, shows a visible pixel and cuts no drawing, and the second row is the first mirrored. The sheet is listed in `titleAssets()` and `gameAssets()`.
+
+## The look sheet
+
+`sprites/looks.png` is 178 × 16 pixels: ten cells of 16 × 16 in a row, 2 pixels apart, in the order of `SHIP_LOOK_ITEM_NAMES`, each drawing against the top-left corner of its cell, transparent elsewhere. The hangar and the waiting room draw an item at the scale of the ship it sits on.
+
+The size of each drawing and where it sits on the ship are written once, in `src/client/Rendering/Interface/ShipLookSpriteConstants.hpp`. `client_rendering_tests` checks each drawing against the shipped file: it lies inside the sheet, shows a visible pixel and cuts no drawing. The sheet is listed in `titleAssets()` and `gameAssets()`.
 
 ## The leaderboard sheet
 
