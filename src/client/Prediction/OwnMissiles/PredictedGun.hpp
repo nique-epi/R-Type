@@ -1,9 +1,9 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
 #include <deque>
 #include <vector>
+#include "Gun.hpp"
 #include "PredictedCommand.hpp"
 #include "ShipGun.hpp"
 
@@ -11,20 +11,18 @@ namespace rtype::client {
 
 /**
  * @brief The gun of the own ship as the client predicts it: the count down of
- * WeaponSystem, run on the commands the client sends, one tick each. Each
- * command counts one tick off the gun, and fires when the gun is then ready
- * and the command holds shoot, which starts the interval again. The commands
- * are kept until the server confirms them, so a shot the server confirms puts
- * the gun back where the server had it and plays the commands after it again.
+ * WeaponSystem (countsDownToReady()), run on the commands the client sends, one
+ * tick each. Each command counts one tick off the gun, and fires when the gun
+ * is then ready and the command holds shoot, which starts the interval again.
+ * The commands are kept until the server confirms them, so a shot the server
+ * confirms puts the gun back where the server had it and plays the commands
+ * after it again.
  */
 class PredictedGun {
  public:
-  /** @brief Takes @p gun as the gun of the ships and restarts. */
+  /** @brief Takes @p gun as the gun of the ships, as the ship appeared: the
+   * first shot is firstShotTicks away, and no command is kept. */
   void arm(network::ShipGun gun);
-
-  /** @brief The ship appeared: the first shot is firstShotTicks away, and no
-   * command is kept. */
-  void restart();
 
   /** @returns Whether @p command fires, and keeps it. */
   [[nodiscard]] bool fires(const PredictedCommand& command);
@@ -44,8 +42,7 @@ class PredictedGun {
   /** @returns Whether one more tick with @p shooting fires. */
   bool countsDown(bool shooting);
 
-  network::ShipGun gun_{};
-  std::size_t ticksUntilReady_{0};
+  game::Gun countDown_{};
   std::deque<PredictedCommand> commands_;
 };
 

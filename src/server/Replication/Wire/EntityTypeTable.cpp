@@ -1,10 +1,11 @@
 #include "EntityTypeTable.hpp"
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <optional>
 #include <vector>
 #include "BehaviourConstants.hpp"
-#include "DirectionConstants.hpp"
+#include "BehaviourView.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheets.hpp"
 #include "EntitySideMapping.hpp"
@@ -12,9 +13,12 @@
 #include "EntityTypeConstants.hpp"
 #include "EntityTypeEntry.hpp"
 #include "GunSheet.hpp"
+#include "Intent.hpp"
 #include "MotionKind.hpp"
 #include "Position.hpp"
 #include "ShipGun.hpp"
+#include "SteadyMotion.hpp"
+#include "SteadyTravel.hpp"
 #include "StraightBehaviourConstants.hpp"
 
 namespace rtype::server {
@@ -43,12 +47,12 @@ std::optional<game::Position> straightVelocityOf(
       sheet.pilot->settings.size() <= game::HEADING_SETTING) {
     return std::nullopt;
   }
-  const auto heading =
-      static_cast<float>(sheet.pilot->settings[game::HEADING_SETTING]);
-  return game::Position{
-      .x = std::clamp(heading, -game::FULL_STEERING, game::FULL_STEERING) *
-           sheet.motion.topSpeed,
-      .y = 0.0F};
+  const game::Intent steered = sheet.pilot->behaviour.get().steer(
+      game::BehaviourView{.topSpeed = sheet.motion.topSpeed,
+                          .settings = sheet.pilot->settings});
+  return game::steadyTravel(
+      game::SteadyMotion{.topSpeed = sheet.motion.topSpeed}, steered.direction,
+      std::chrono::seconds{1});
 }
 
 }  // namespace

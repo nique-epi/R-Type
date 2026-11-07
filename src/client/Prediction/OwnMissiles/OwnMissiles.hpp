@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <span>
 #include <vector>
+#include "Bounds.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntitySpawned.hpp"
 #include "IOwnMissileListener.hpp"
@@ -71,9 +72,10 @@ class OwnMissiles final : public IOwnMissileListener {
   void ownMissileDestroyed(const network::EntityDestroyed& destroyed) override;
 
  private:
-  /** @brief Creates the missile of @p firingInput at @p start, with its shot
-   * and its muzzle flash; nothing when the session gives no look for it. */
-  void fire(std::uint32_t firingInput, game::Position start);
+  /** @returns The missile of @p firingInput, created at @p start with its
+   * shot and its muzzle flash; nullptr, and nothing created, when the session
+   * gives no look for it. */
+  OwnMissile* fire(std::uint32_t firingInput, game::Position start);
 
   /** @brief Puts every missile drawn where it flies at the newest command. */
   void place();
@@ -81,6 +83,7 @@ class OwnMissiles final : public IOwnMissileListener {
   OwnMissilesParts parts_;
   PredictedGun gun_;
   std::vector<OwnMissile> missiles_;
+  std::vector<engine::Bounds> enemyBoxes_;
   std::uint32_t newestInput_{0};
   bool active_{false};
 };

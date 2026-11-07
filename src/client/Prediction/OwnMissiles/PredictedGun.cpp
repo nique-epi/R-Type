@@ -1,18 +1,17 @@
 #include "PredictedGun.hpp"
 #include <cstdint>
 #include <vector>
+#include "CountsDownToReady.hpp"
+#include "Gun.hpp"
 #include "PredictedCommand.hpp"
 #include "ShipGun.hpp"
 
 namespace rtype::client {
 
 void PredictedGun::arm(network::ShipGun gun) {
-  gun_ = gun;
-  restart();
-}
-
-void PredictedGun::restart() {
-  ticksUntilReady_ = gun_.firstShotTicks;
+  countDown_ = game::Gun{.intervalTicks = gun.intervalTicks,
+                         .ticksUntilReady = gun.firstShotTicks,
+                         .projectileNumber = gun.projectileType};
   commands_.clear();
 }
 
@@ -22,7 +21,7 @@ bool PredictedGun::fires(const PredictedCommand& command) {
 }
 
 std::vector<PredictedCommand> PredictedGun::confirm(std::uint32_t firingInput) {
-  ticksUntilReady_ = gun_.intervalTicks;
+  countDown_.ticksUntilReady = countDown_.intervalTicks;
   std::vector<PredictedCommand> firing;
   for (const PredictedCommand& command : commands_) {
     if (command.inputNumber > firingInput && countsDown(command.shooting)) {
@@ -39,13 +38,10 @@ void PredictedGun::forgetUpTo(std::uint32_t acknowledged) {
 }
 
 bool PredictedGun::countsDown(bool shooting) {
-  if (ticksUntilReady_ > 0) {
-    --ticksUntilReady_;
-  }
-  if (ticksUntilReady_ != 0 || !shooting) {
+  if (!game::countsDownToReady(countDown_) || !shooting) {
     return false;
   }
-  ticksUntilReady_ = gun_.intervalTicks;
+  countDown_.ticksUntilReady = countDown_.intervalTicks;
   return true;
 }
 

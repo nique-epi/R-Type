@@ -9,6 +9,7 @@
 #include <vector>
 #include "AnimatedSprite.hpp"
 #include "Bounds.hpp"
+#include "BoundsOf.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
@@ -110,35 +111,28 @@ OwnMissile* unmatchedOf(std::vector<OwnMissile>& missiles,
 template <typename Predicate>
 void takeAwayIf(std::vector<OwnMissile>& missiles,
                 engine::ComponentRegistry& components, Predicate chosen) {
-  for (OwnMissile& missile : missiles) {
-    if (chosen(missile)) {
-      takeAway(components, missile);
+  std::erase_if(missiles, [&components, &chosen](OwnMissile& missile) {
+    if (!chosen(missile)) {
+      return false;
     }
-  }
-  std::erase_if(missiles, chosen);
+    takeAway(components, missile);
+    return true;
+  });
 }
 
-/** @returns Whether the box @p missile overlaps an enemy drawn on screen. */
-bool touchesAnEnemy(engine::ComponentRegistry& components,
-                    const engine::Bounds& missile) {
-  bool touches = false;
+/** @brief Fills @p boxes with the box of every enemy drawn on screen. */
+void collectEnemyBoxes(engine::ComponentRegistry& components,
+                       std::vector<engine::Bounds>& boxes) {
+  boxes.clear();
   components.forEach<game::EntityType, game::Position>(
-      [&components, &missile, &touches](engine::Entity entity,
-                                        const game::EntityType& side,
-                                        const game::Position& position) {
+      [&components, &boxes](engine::Entity entity, const game::EntityType& side,
+                            const game::Position& position) {
         const auto* const box = components.get<game::CollisionBox>(entity);
-        if (side != game::EntityType::Enemy || box == nullptr ||
-            !components.has<game::Sprite>(entity)) {
-          return;
+        if (side == game::EntityType::Enemy && box != nullptr &&
+            components.has<game::Sprite>(entity)) {
+          boxes.push_back(game::boundsOf(position, *box));
         }
-        touches =
-            touches ||
-            engine::overlaps(missile, engine::Bounds{.centerX = position.x,
-                                                     .centerY = position.y,
-                                                     .width = box->width,
-                                                     .height = box->height});
       });
-  return touches;
 }
 
 /** @returns The box of @p entity where it is drawn; nothing without one. */
@@ -149,10 +143,15 @@ std::optional<engine::Bounds> boundsOf(engine::ComponentRegistry& components,
   if (position == nullptr || box == nullptr) {
     return std::nullopt;
   }
-  return engine::Bounds{.centerX = position->x,
-                        .centerY = position->y,
-                        .width = box->width,
-                        .height = box->height};
+  return game::boundsOf(*position, *box);
+}
+
+/** @returns Whether @p missile overlaps one of @p enemies. */
+bool touchesAnEnemy(const engine::Bounds& missile,
+                    const std::vector<engine::Bounds>& enemies) {
+  return std::ranges::any_of(enemies, [&missile](const engine::Bounds& enemy) {
+    return engine::overlaps(missile, enemy);
+  });
 }
 
 }  // namespace
@@ -190,13 +189,19 @@ void OwnMissiles::acknowledge(std::uint32_t acknowledged) {
 
 void OwnMissiles::touchEnemies() {
   engine::ComponentRegistry& components = parts_.components.get();
+  if (std::ranges::none_of(missiles_, [](const OwnMissile& missile) {
+        return missile.entity.has_value();
+      })) {
+    return;
+  }
+  collectEnemyBoxes(components, enemyBoxes_);
   for (OwnMissile& missile : missiles_) {
     if (!missile.entity.has_value()) {
       continue;
     }
     const std::optional<engine::Bounds> bounds =
         boundsOf(components, *missile.entity);
-    if (bounds.has_value() && touchesAnEnemy(components, *bounds)) {
+    if (bounds.has_value() && touchesAnEnemy(*bounds, enemyBoxes_)) {
       parts_.feedback.effects.get().playExplosion(
           game::EntityType::PlayerMissile,
           game::Position{.x = bounds->centerX, .y = bounds->centerY});
@@ -207,10 +212,8 @@ void OwnMissiles::touchEnemies() {
 
 void OwnMissiles::setActive(bool active) {
   if (!active) {
-    for (OwnMissile& missile : missiles_) {
-      takeAway(parts_.components.get(), missile);
-    }
-    missiles_.clear();
+    takeAwayIf(missiles_, parts_.components.get(),
+               [](const OwnMissile&) { return true; });
   }
   active_ = active;
 }
@@ -222,10 +225,11 @@ bool OwnMissiles::predictsOwnMissiles() const {
 
 void OwnMissiles::ownMissileSpawned(const network::EntitySpawned& missile) {
   const game::Position serverStart{.x = missile.x, .y = missile.y};
-  if (unmatchedOf(missiles_, missile.firingInput) == nullptr) {
-    fire(missile.firingInput, serverStart);
+  OwnMissile* matched = unmatchedOf(missiles_, missile.firingInput);
+  if (matched == nullptr) {
+    matched = fire(missile.firingInput, serverStart);
   }
-  if (OwnMissile* const matched = unmatchedOf(missiles_, missile.firingInput)) {
+  if (matched != nullptr) {
     matched->serverId = missile.entityId;
     matched->start = serverStart;
   }
@@ -253,22 +257,17 @@ void OwnMissiles::ownMissileSpawned(const network::EntitySpawned& missile) {
 
 void OwnMissiles::ownMissileDestroyed(
     const network::EntityDestroyed& destroyed) {
-  const auto found =
-      std::ranges::find_if(missiles_, [&destroyed](const OwnMissile& missile) {
-        return missile.serverId == destroyed.entityId;
-      });
-  if (found == missiles_.end()) {
-    return;
-  }
-  takeAway(parts_.components.get(), *found);
-  missiles_.erase(found);
+  takeAwayIf(missiles_, parts_.components.get(),
+             [&destroyed](const OwnMissile& missile) {
+               return missile.serverId == destroyed.entityId;
+             });
 }
 
-void OwnMissiles::fire(std::uint32_t firingInput, game::Position start) {
+OwnMissile* OwnMissiles::fire(std::uint32_t firingInput, game::Position start) {
   const std::optional<EntityTypeLook> look =
       parts_.types.get().lookOf(parts_.types.get().shipGun().projectileType);
   if (!look.has_value()) {
-    return;
+    return nullptr;
   }
   OwnMissile missile{.firingInput = firingInput,
                      .start = start,
@@ -277,6 +276,7 @@ void OwnMissiles::fire(std::uint32_t firingInput, game::Position start) {
   missile.entity = drawnMissile(parts_, *look, missile);
   missiles_.push_back(missile);
   announce(parts_.feedback, parts_.components.get(), *missile.entity);
+  return &missiles_.back();
 }
 
 void OwnMissiles::place() {

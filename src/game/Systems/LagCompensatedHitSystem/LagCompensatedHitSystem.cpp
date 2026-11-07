@@ -1,15 +1,14 @@
 #include "LagCompensatedHitSystem.hpp"
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <optional>
 #include <vector>
 #include "Bounds.hpp"
+#include "BoundsOf.hpp"
 #include "CollisionBox.hpp"
 #include "CollisionConstants.hpp"
 #include "ComponentRegistry.hpp"
-#include "DirectionConstants.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
@@ -20,20 +19,13 @@
 #include "PastEnemy.hpp"
 #include "Position.hpp"
 #include "SteadyMotion.hpp"
+#include "SteadyTravel.hpp"
 #include "TimeConstants.hpp"
 #include "ViewDelay.hpp"
 
 namespace rtype::game {
 
 namespace {
-
-/** @returns The box @p box centered on @p position. */
-engine::Bounds boundsOf(const Position& position, const CollisionBox& box) {
-  return engine::Bounds{.centerX = position.x,
-                        .centerY = position.y,
-                        .width = box.width,
-                        .height = box.height};
-}
 
 /** @returns How far @p body moved along each axis during @p elapsed at its
  * steady speed; nothing for a body without SteadyMotion or Intent. */
@@ -44,13 +36,7 @@ Position travelOf(engine::ComponentRegistry& components, engine::Entity body,
   if (motion == nullptr || intent == nullptr) {
     return Position{};
   }
-  const float reach =
-      motion->topSpeed * std::chrono::duration<float>(elapsed).count();
-  return Position{
-      .x = std::clamp(intent->direction.x, -FULL_STEERING, FULL_STEERING) *
-           reach,
-      .y = std::clamp(intent->direction.y, -FULL_STEERING, FULL_STEERING) *
-           reach};
+  return steadyTravel(*motion, intent->direction, elapsed);
 }
 
 /** @returns @p now stretched back by @p travel, so it covers every place the

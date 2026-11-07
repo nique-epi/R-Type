@@ -11,6 +11,7 @@
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
+#include "CountsDownToReady.hpp"
 #include "EngineException.hpp"
 #include "Entity.hpp"
 #include "EntityDestruction.hpp"
@@ -51,17 +52,6 @@ struct ProjectileLaunch {
   std::optional<std::uint8_t> owner;
   std::uint32_t firingInput{network::NO_FIRING_INPUT};
 };
-
-/**
- * @brief Counts one tick off @p gun, when it has some left.
- * @returns Whether @p gun is ready to fire after that tick.
- */
-bool countsDownToReady(game::Gun& gun) {
-  if (gun.ticksUntilReady > 0) {
-    --gun.ticksUntilReady;
-  }
-  return gun.ticksUntilReady == 0;
-}
 
 /**
  * @returns The shot of the body @p body of @p components whose Gun is @p gun:
@@ -156,7 +146,7 @@ void WeaponSystem::collectShots() {
   components.forEach<game::Gun, game::Intent>(
       [this, &components](engine::Entity body, game::Gun& gun,
                           const game::Intent& intent) {
-        if (!countsDownToReady(gun) || !intent.shooting) {
+        if (!game::countsDownToReady(gun) || !intent.shooting) {
           return;
         }
         const std::optional<WeaponShot> shot = shotOf(components, body, gun);
