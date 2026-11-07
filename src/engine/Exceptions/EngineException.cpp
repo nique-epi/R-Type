@@ -1,4 +1,5 @@
 #include "EngineException.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <stdexcept>
@@ -13,13 +14,13 @@ namespace rtype::engine {
 
 namespace {
 
-std::string joinedFolders(const std::vector<std::string>& folders) {
+std::string joinedTexts(const std::vector<std::string>& texts) {
   std::string joined;
-  for (const std::string& folder : folders) {
+  for (const std::string& text : texts) {
     if (!joined.empty()) {
       joined += ", ";
     }
-    joined += folder;
+    joined += text;
   }
   return joined;
 }
@@ -123,7 +124,7 @@ UnknownExecutablePathException::UnknownExecutablePathException()
 AssetFolderNotFoundException::AssetFolderNotFoundException(
     const std::vector<std::string>& searchedFolders)
     : EngineException("No assets folder found, searched: " +
-                      joinedFolders(searchedFolders)) {}
+                      joinedTexts(searchedFolders)) {}
 
 UnreadableDataFileException::UnreadableDataFileException(
     const std::string& file)
@@ -197,5 +198,29 @@ InvalidPluginNameException::InvalidPluginNameException(const std::string& name)
 DuplicateModuleNameException::DuplicateModuleNameException(
     const std::string& name)
     : EngineException("Two modules are named \"" + name + "\"") {}
+
+InvalidEnsureLineException::InvalidEnsureLineException(const std::string& line)
+    : EngineException("\"" + line + "\" must be: ensure <resource name>") {}
+
+InvalidResourceNameException::InvalidResourceNameException(
+    const std::string& name, std::size_t longestName)
+    : EngineException("\"" + name + "\" is not a resource name: 1 to " +
+                      std::to_string(longestName) +
+                      " lowercase letters, digits, '-' and '_'") {}
+
+ResourceNotFoundException::ResourceNotFoundException(const std::string& name,
+                                                     const std::string& folder)
+    : EngineException("The resource \"" + name + "\" has no manifest in " +
+                      folder) {}
+
+ResourceDependencyCycleException::ResourceDependencyCycleException(
+    const std::vector<std::string>& chain)
+    : EngineException("The resources depend on each other in a circle: " +
+                      joinedTexts(chain)) {}
+
+ResourceDependenciesExpectedException::ResourceDependenciesExpectedException(
+    const DataFilePlace& place)
+    : EngineException(placeText(place) + ": " + place.key +
+                      " must be a list of resource names") {}
 
 }  // namespace rtype::engine

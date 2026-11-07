@@ -1,0 +1,1 @@
+target_sources(engine_tests PRIVATE ContentFoldersTest.cpp EnsureLinesTest.cpp ResourceFixtures.cpp ResourceManifestReadingTest.cpp)
