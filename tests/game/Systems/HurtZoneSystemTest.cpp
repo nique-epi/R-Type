@@ -8,11 +8,13 @@
 #include "HurtZoneSystemFixtures.hpp"
 #include "HurtZoneSystemTestConstants.hpp"
 #include "ShipContact.hpp"
+#include "ViewDelay.hpp"
 
 using rtype::engine::Entity;
 using rtype::game::CurrentAction;
 using rtype::game::EntityType;
 using rtype::game::ShipContact;
+using rtype::game::ViewDelay;
 using rtype::game::testing::A_SECOND_INTO_THE_PHASE;
 using rtype::game::testing::ALWAYS_HURTING_BOX;
 using rtype::game::testing::contactsOf;
@@ -262,4 +264,20 @@ TEST(HurtZoneSystem, ABoxWithoutEndHurtsToTheEndOfItsPhase) {
   scene.spawn(EntityType::Player, SHIP_INSIDE_THE_BOX_X, 0.0F);
 
   EXPECT_EQ(contactsOf(scene).size(), 1U);
+}
+
+/**
+ * Given a ship inside a box that always hurts, the ship carrying a ViewDelay
+ * When the hurt zones are tested
+ * Then it is not hurt here: LagCompensatedHitSystem tests that ship against
+ * the boxes its player saw
+ */
+TEST(HurtZoneSystem, LeavesACompensatedShipToTheLagSystem) {
+  CollisionScene scene;
+  enemyWith(scene, 0.0F, {ALWAYS_HURTING_BOX});
+  const Entity ship =
+      scene.spawn(EntityType::Player, SHIP_INSIDE_THE_BOX_X, 0.0F);
+  scene.components.add(ship, ViewDelay{.ticks = 0});
+
+  EXPECT_TRUE(contactsOf(scene).empty());
 }
