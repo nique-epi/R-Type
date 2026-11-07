@@ -159,18 +159,15 @@ void requireValidPlayerNumber(std::uint8_t playerNumber) {
 }
 
 void requireValidShipLook(const identifiers::ShipLook& look) {
-  if (!identifiers::isLookNumberOf(look.head,
-                                   identifiers::ShipLookSlot::Head)) {
-    throw InvalidFieldValueException(HEAD_FIELD, look.head);
-  }
-  if (!identifiers::isLookNumberOf(look.eyes,
-                                   identifiers::ShipLookSlot::Eyes)) {
-    throw InvalidFieldValueException(EYES_FIELD, look.eyes);
-  }
-  if (!identifiers::isLookNumberOf(look.face,
-                                   identifiers::ShipLookSlot::Face)) {
-    throw InvalidFieldValueException(FACE_FIELD, look.face);
-  }
+  const auto check = [](std::uint8_t number, identifiers::ShipLookSlot slot,
+                        std::string_view field) {
+    if (!identifiers::isLookNumberOf(number, slot)) {
+      throw InvalidFieldValueException(field, number);
+    }
+  };
+  check(look.head, identifiers::ShipLookSlot::Head, HEAD_FIELD);
+  check(look.eyes, identifiers::ShipLookSlot::Eyes, EYES_FIELD);
+  check(look.face, identifiers::ShipLookSlot::Face, FACE_FIELD);
 }
 
 void requireValidLookItem(std::uint8_t item) {

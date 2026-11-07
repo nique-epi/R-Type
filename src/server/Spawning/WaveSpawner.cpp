@@ -83,7 +83,7 @@ void WaveSpawner::onTick() {
       waveDirector_.advance(engine::SIMULATION_TICK_DURATION, enemiesInPlay());
   if (waveDirector_.waveNumber() != loggedWaveNumber_) {
     logCurrentWave();
-    if (loggedWaveNumber_ >= SECOND_WAVE && !lookItems_.empty()) {
+    if (waveDirector_.waveNumber() >= SECOND_WAVE && !lookItems_.empty()) {
       spawnLookItem();
     }
   }

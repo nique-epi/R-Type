@@ -20,9 +20,8 @@ namespace {
 identifiers::ShipLook lookOfPilotColor(
     std::span<const network::PlayerLook> looks, int pilotColor) {
   const int number = playerNumberOfPilotColor(pilotColor);
-  const auto pilot =
-      std::ranges::find(looks, number, &network::PlayerLook::playerNumber);
-  return pilot == looks.end() ? identifiers::ShipLook{} : pilot->look;
+  const identifiers::ShipLook* const found = network::findLook(looks, number);
+  return found == nullptr ? identifiers::ShipLook{} : *found;
 }
 
 }  // namespace

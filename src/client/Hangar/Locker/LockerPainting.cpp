@@ -149,11 +149,10 @@ void paintCellBack(IInterfaceCanvas& canvas, sf::IntRect cell) {
 void paintCellItem(IInterfaceCanvas& canvas, std::size_t slot,
                    LockerView view) {
   const sf::IntRect cell = lockerCellArea(slot);
-  const bool held = view.locker.items.test(slot);
-  if (held) {
+  if (view.locker.items.test(slot)) {
     paintLookIcon(canvas, slot, grownBy(cell, -CELL_ICON_INSET));
   }
-  if (held && wears(view.worn, slot)) {
+  if (view.locker.items.test(slot) && wears(view.worn, slot)) {
     const sf::Vector2i tag(
         cell.position.x + cell.size.x - WORN_TAG_INSET - WORN_TAG_SIZE.x,
         cell.position.y + WORN_TAG_INSET);

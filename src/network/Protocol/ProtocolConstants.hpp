@@ -521,9 +521,6 @@ static_assert(LARGEST_PLAYER_CHAT_LINE_SIZE <= ORDERED_PAYLOAD_LIMIT,
  */
 constexpr std::size_t SHIP_LOOK_WIRE_SIZE = 3 * UINT8_WIRE_SIZE;
 
-/** @brief The size of a ShipLookChoice payload: one ship look. */
-constexpr std::size_t SHIP_LOOK_CHOICE_PAYLOAD_SIZE = SHIP_LOOK_WIRE_SIZE;
-
 /**
  * @brief The largest PlayerLooks payload: the count, then a player number and
  * a ship look for each of MAXIMUM_PLAYERS players, 1 + 4 x 4 = 17 bytes.
@@ -534,9 +531,6 @@ constexpr std::size_t LARGEST_PLAYER_LOOKS_SIZE =
 
 static_assert(LARGEST_PLAYER_LOOKS_SIZE <= ORDERED_PAYLOAD_LIMIT,
               "a PlayerLooks always fits in an OrderedMessage");
-
-/** @brief The size of a LookItemWon payload: one item number. */
-constexpr std::size_t LOOK_ITEM_WON_PAYLOAD_SIZE = UINT8_WIRE_SIZE;
 
 /**
  * @brief The size of the largest datagram holding a ServerInformation: the

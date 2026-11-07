@@ -33,6 +33,14 @@ struct PlayerLooks {
 };
 
 /**
+ * @returns The look @p looks lists for the player numbered @p number, or
+ * nullptr when it does not list that player. The pointer stays valid as long
+ * as @p looks does.
+ */
+[[nodiscard]] const identifiers::ShipLook* findLook(
+    std::span<const PlayerLook> looks, std::uint8_t number);
+
+/**
  * @brief Writes the number of players, then a player number and a look for
  * each.
  * @throws TooManyPlayersException when more than MAXIMUM_PLAYERS are listed.

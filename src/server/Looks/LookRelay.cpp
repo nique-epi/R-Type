@@ -16,16 +16,6 @@
 
 namespace rtype::server {
 
-namespace {
-
-/** @returns Whether the player on @p seat may have a choice taken at @p tick.
- */
-bool isTakenAt(const LookSeat& seat, std::size_t tick) {
-  return tick >= seat.nextChoiceTick;
-}
-
-}  // namespace
-
 LookRelay::LookRelay(PlayerRoster& roster,
                      std::function<void(network::OutgoingDatagram)> send)
     : roster_(roster), send_(std::move(send)) {}
@@ -33,7 +23,7 @@ LookRelay::LookRelay(PlayerRoster& roster,
 void LookRelay::onChoice(ConnectedPlayer& player,
                          const network::ShipLookChoice& choice) {
   LookSeat& seat = seats_.at(seatIndexOf(player));
-  if (!isTakenAt(seat, ticks_)) {
+  if (ticks_ < seat.nextChoiceTick) {
     return;
   }
   seat.nextChoiceTick = ticks_ + TICKS_BETWEEN_LOOK_CHOICES;
@@ -57,6 +47,7 @@ void LookRelay::onTick() { ++ticks_; }
 
 network::EncodedMessage LookRelay::playerLooks() {
   network::PlayerLooks message;
+  message.players.reserve(network::MAXIMUM_PLAYERS);
   for (const ConnectedPlayer* const player : roster_.connected()) {
     message.players.push_back(
         network::PlayerLook{.playerNumber = player->playerNumber,

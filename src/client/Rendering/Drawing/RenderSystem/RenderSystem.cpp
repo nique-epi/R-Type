@@ -274,10 +274,12 @@ void RenderSystem::collectLooks(engine::ComponentRegistry& components) {
         const game::Position* const position =
             components.get<game::Position>(entity);
         const auto layerIndex = static_cast<std::size_t>(ship.layer);
+        if (position == nullptr || layerIndex >= drawCallsByLayer_.size()) {
+          return;
+        }
         const SpriteAppearance look =
             lookOf(components, entity, ship.frame.height);
-        if (position == nullptr || layerIndex >= drawCallsByLayer_.size() ||
-            look.shownRows.has_value() || look.rollAngle.has_value()) {
+        if (look.shownRows.has_value() || look.rollAngle.has_value()) {
           return;
         }
         for (std::size_t item = 0; item < identifiers::SHIP_LOOK_ITEM_COUNT;

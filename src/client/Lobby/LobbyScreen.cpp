@@ -205,9 +205,8 @@ LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot,
  * worn when it does not list that player. */
 ShipLook lookOf(std::span<const network::PlayerLook> looks,
                 std::uint8_t number) {
-  const auto found =
-      std::ranges::find(looks, number, &network::PlayerLook::playerNumber);
-  return found == looks.end() ? ShipLook{} : found->look;
+  const ShipLook* const found = network::findLook(looks, number);
+  return found == nullptr ? ShipLook{} : *found;
 }
 
 }  // namespace

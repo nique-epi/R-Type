@@ -22,9 +22,8 @@ namespace {
 /** @returns Whether @p looks shows @p look on the player numbered @p number. */
 bool looksShow(std::span<const network::PlayerLook> looks, std::uint8_t number,
                identifiers::ShipLook look) {
-  const auto own =
-      std::ranges::find(looks, number, &network::PlayerLook::playerNumber);
-  return own != looks.end() && own->look == look;
+  const identifiers::ShipLook* const own = network::findLook(looks, number);
+  return own != nullptr && *own == look;
 }
 
 }  // namespace

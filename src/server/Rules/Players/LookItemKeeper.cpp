@@ -71,6 +71,9 @@ LookItemKeeper::LookItemKeeper(LookItemKeeperParts parts)
 LookItemKeeper::~LookItemKeeper() { events_.unsubscribe(subscription_); }
 
 void LookItemKeeper::onTick() {
+  if (claims_.empty()) {
+    return;
+  }
   std::ranges::sort(claims_,
                     [](const LookItemClaim& left, const LookItemClaim& right) {
                       return std::pair{left.itemId, left.playerNumber} <

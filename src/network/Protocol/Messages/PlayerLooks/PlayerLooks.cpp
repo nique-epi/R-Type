@@ -1,4 +1,5 @@
 #include "PlayerLooks.hpp"
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -21,6 +22,13 @@ PlayerLook readPlayer(ByteReader& reader) {
 }
 
 }  // namespace
+
+const identifiers::ShipLook* findLook(std::span<const PlayerLook> looks,
+                                      std::uint8_t number) {
+  const auto found =
+      std::ranges::find(looks, number, &PlayerLook::playerNumber);
+  return found == looks.end() ? nullptr : &found->look;
+}
 
 void encodePayload(ByteWriter& writer, const PlayerLooks& message) {
   validate(message);

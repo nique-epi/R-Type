@@ -293,7 +293,9 @@ std::string lockerValue(const ShipLocker& locker) {
   std::string value;
   for (std::size_t item = 0; item < SHIP_LOOK_ITEM_COUNT; ++item) {
     if (locker.items.test(item)) {
-      value += value.empty() ? "" : std::string(1, LOCKER_ITEM_SEPARATOR);
+      if (!value.empty()) {
+        value += LOCKER_ITEM_SEPARATOR;
+      }
       value += SHIP_LOOK_ITEM_NAMES.at(item);
     }
   }

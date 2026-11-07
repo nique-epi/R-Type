@@ -163,12 +163,12 @@ void HangarScreen::choose() {
 
 void HangarScreen::repaint() {
   const ShipLook worn = settings_->settings().shipLook;
+  const ShipLocker& locker = settings_->settings().shipLocker;
   canvas_->clear();
   canvas_->write(HANGAR_LABEL, HANGAR_TITLE_ANCHOR, HANGAR_TITLE_STYLE);
   canvas_->fill(HANGAR_RULE, EDGE_BLUE);
-  paintLocker(*canvas_, LockerView{.chosen = chosen_,
-                                   .worn = worn,
-                                   .locker = settings_->settings().shipLocker});
+  paintLocker(*canvas_,
+              LockerView{.chosen = chosen_, .worn = worn, .locker = locker});
   paintDockWall(*canvas_, litBeaconOf(elapsed_, motion_));
   paintBlueprint(*canvas_, chosen_);
   paintDock(*canvas_, DockScene{.palette = palette_,
@@ -177,8 +177,7 @@ void HangarScreen::repaint() {
                                 .fitting = fitting_,
                                 .elapsed = elapsed_,
                                 .motion = motion_});
-  canvas_->write(statusOf(chosen_, worn, fitting_.has_value(),
-                          settings_->settings().shipLocker),
+  canvas_->write(statusOf(chosen_, worn, fitting_.has_value(), locker),
                  HANGAR_STATUS_ANCHOR, HANGAR_STATUS_STYLE);
   backChip_.paint(*canvas_);
   canvas_->display();
