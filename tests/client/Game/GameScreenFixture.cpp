@@ -39,7 +39,8 @@ GameScreenFixture::GameScreenFixture()
                               .sky = sky_,
                               .sounds = sounds_,
                               .entityTypes = entityTypes_,
-                              .result = result_},
+                              .result = result_,
+                              .chat = chat_},
               std::make_unique<RecordingEntityLayer>(layerRecord_),
               std::make_unique<RecordingInterfaceCanvas>(statusCanvas_));
         }

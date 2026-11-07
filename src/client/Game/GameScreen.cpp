@@ -11,6 +11,7 @@
 #include <variant>
 #include "ActionSet.hpp"
 #include "AnimationSystem.hpp"
+#include "ChatWindow.hpp"
 #include "EffectPreferences.hpp"
 #include "EffectSpawner.hpp"
 #include "EnemyAction.hpp"
@@ -52,6 +53,7 @@
 #include "ScreenId.hpp"
 #include "SpriteEffectSystem.hpp"
 #include "StatusBand.hpp"
+#include "StatusBandConstants.hpp"
 #include "TimeConstants.hpp"
 #include "WorldState.hpp"
 
@@ -107,7 +109,8 @@ GameScreen::GameScreen(GameScreenParts parts,
       result_(&parts.result.get()),
       playerNumber_(parts.connection.get().status().playerNumber),
       prediction_(playerNumber_),
-      sky_(&parts.sky.get()) {
+      sky_(&parts.sky.get()),
+      chat_(parts.chat.get(), parts.settings.get()) {
   systems_.add(std::make_unique<AnimationSystem>());
   systems_.add(std::make_unique<HitFlashSystem>());
   systems_.add(std::make_unique<SpriteEffectSystem>());
@@ -124,6 +127,10 @@ GameScreen::~GameScreen() {
 }
 
 void GameScreen::handleEvent(const sf::Event& event) {
+  if (chat_.handleEvent(event)) {
+    playerCommands_.releaseAll();
+    return;
+  }
   const auto* released = event.getIf<sf::Event::KeyReleased>();
   if (released != nullptr && released->code == OPTIONS_KEY) {
     playerCommands_.releaseAll();
@@ -235,7 +242,8 @@ void GameScreen::repaintStatusWhenChanged() {
       missionBannerAt(effects_.sinceStart()) != paintedBanner_ ||
       paintedPalette_ != playerPaletteOf(*settings_) ||
       departures_.revision() != paintedDepartures_ ||
-      silence_.isShown() != paintedSilence_) {
+      silence_.isShown() != paintedSilence_ || chat_.isShown() ||
+      paintedChat_) {
     repaintStatus();
   }
 }
@@ -248,12 +256,14 @@ void GameScreen::repaintStatus() {
   paintMissionBanner(*statusCanvas_, banner);
   departures_.paint(*statusCanvas_, palette);
   silence_.paint(*statusCanvas_);
+  chat_.paint(*statusCanvas_, palette, GAME_CHAT_BOTTOM);
   statusCanvas_->display();
   paintedStatusRevision_ = scoreBoard_.revision();
   paintedBanner_ = banner;
   paintedPalette_ = palette;
   paintedDepartures_ = departures_.revision();
   paintedSilence_ = silence_.isShown();
+  paintedChat_ = chat_.isShown();
 }
 
 ActionSet GameScreen::playerActions() const {

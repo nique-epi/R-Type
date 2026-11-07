@@ -53,7 +53,8 @@ std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context) {
                       .sky = context.sky.get(),
                       .sounds = soundsOf(context),
                       .entityTypes = context.services.entityTypes.get(),
-                      .result = context.gameResult.get()},
+                      .result = context.gameResult.get(),
+                      .chat = context.services.chat.get()},
       std::make_unique<EntityLayer>(context.services.assets.get()),
       interfaceCanvasOf(context));
 }

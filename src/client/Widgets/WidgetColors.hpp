@@ -61,6 +61,13 @@ constexpr sf::Color SELECTED_FIELD_BORDER_COLOR = HUD_CYAN;
 constexpr sf::Color SELECTED_FIELD_TEXT_COLOR = STAR_WHITE;
 constexpr sf::Color FIELD_CARET_COLOR = HUD_CYAN;
 
+/** @brief The chat: the text of a line of a pilot, a line the client writes
+ * itself, the label of its field, and the keys written beside it. */
+constexpr sf::Color CHAT_TEXT_COLOR = STAR_WHITE;
+constexpr sf::Color CHAT_NOTICE_COLOR = PALE_BLUE;
+constexpr sf::Color CHAT_LABEL_COLOR = SELECTED_FIELD_LABEL_COLOR;
+constexpr sf::Color CHAT_HINT_COLOR = PALE_BLUE;
+
 /**
  * @brief The lines that close a form: the description of the selected bar in
  * cyan, as on a page, then the status line in gold, as the label of a pressed

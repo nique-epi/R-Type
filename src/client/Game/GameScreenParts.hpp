@@ -2,6 +2,7 @@
 
 #include <functional>
 #include "GameResult.hpp"
+#include "IChatChannel.hpp"
 #include "IEntityMessageSource.hpp"
 #include "IEntityTypeSource.hpp"
 #include "IPlayerInputLink.hpp"
@@ -57,6 +58,8 @@ struct GameScreenParts {
   /** @brief Where the game writes how it ended, once the server ends it,
    * which must outlive the screen: the end screen reads it. */
   std::reference_wrapper<GameResult> result;
+  /** @brief The chat of the session, which must outlive the screen. */
+  std::reference_wrapper<IChatChannel> chat;
 };
 
 }  // namespace rtype::client

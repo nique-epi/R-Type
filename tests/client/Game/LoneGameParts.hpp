@@ -7,6 +7,7 @@
 #include "GameResult.hpp"
 #include "GameScreenParts.hpp"
 #include "PlayerSettings.hpp"
+#include "RecordingChatChannel.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingPlayerInputLink.hpp"
@@ -32,6 +33,7 @@ struct LoneGameParts {
   RecordingSoundPlayer sounds;
   FixedEntityTypeSource entityTypes;
   rtype::client::GameResult result;
+  RecordingChatChannel chat;
 
   /** @returns The parts of a game screen, borrowing these doubles. */
   [[nodiscard]] rtype::client::GameScreenParts parts();

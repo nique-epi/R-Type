@@ -8,6 +8,7 @@ target_sources(client_screen_tests PRIVATE PointerEvents.cpp)
 target_sources(client_interface_tests PRIVATE KeyChipFixture.cpp KeyChipTest.cpp MenuBuilderDialogRowsFixtures.cpp MenuBuilderDialogRowsTest.cpp MenuTest.cpp MenuFixture.cpp MenuWithAFieldFixture.cpp TabbedPanelMenuFixture.cpp MenuFixtures.cpp MenuBuilderTest.cpp TextFieldTest.cpp MenuPainting.cpp WindowSizeChartTest.cpp HangarBayTest.cpp HangarBayFixtures.cpp PointerEvents.cpp)
 target_sources(client_widget_piece_tests PRIVATE ItemListFixtures.cpp ItemListTest.cpp TabStripFixtures.cpp OutlineTest.cpp CheckBoxTest.cpp KeyCapTest.cpp TabStripTest.cpp GlowingCallPaintingFixtures.cpp GlowingCallPaintingTest.cpp)
 
+add_subdirectory(ChatWindow)
 add_subdirectory(FlightLog)
 add_subdirectory(RowControls)
 add_subdirectory(SectorMap)
