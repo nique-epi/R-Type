@@ -59,14 +59,32 @@ EntityType sideFrom(const engine::DataFileTable& gameplay) {
   return SIDES.at(engine::choiceAt(gameplay, SIDE_KEY, SIDE_NAMES));
 }
 
-/** @returns The box `[gameplay.hitbox]` describes. */
+/** @returns The value of @p key of @p box as a number of logical units. */
+float unitsAt(const engine::DataFileTable& box, std::string_view key,
+              engine::WholeNumberRange range) {
+  return static_cast<float>(engine::wholeNumberAt(box, key, range));
+}
+
+/** @returns The value of @p key of @p table in logical units, 0 when the
+ * table leaves it out. */
+float unitsOrZeroAt(const engine::DataFileTable& table, std::string_view key,
+                    engine::WholeNumberRange range) {
+  if (!table.table.get().contains(key)) {
+    return 0.0F;
+  }
+  return unitsAt(table, key, range);
+}
+
+/** @returns The box `[gameplay.hitbox]` describes, centered on the Position
+ * of the body unless it gives an offset. */
 CollisionBox hitboxFrom(const engine::DataFileTable& gameplay) {
   const engine::DataFileTable hitbox = engine::tableAt(gameplay, HITBOX_KEY);
   engine::refuseUnknownKeys(hitbox, HITBOX_KEYS);
-  return CollisionBox{.width = static_cast<float>(engine::wholeNumberAt(
-                          hitbox, WIDTH_KEY, HITBOX_SIDE_RANGE)),
-                      .height = static_cast<float>(engine::wholeNumberAt(
-                          hitbox, HEIGHT_KEY, HITBOX_SIDE_RANGE))};
+  return CollisionBox{
+      .width = unitsAt(hitbox, WIDTH_KEY, HITBOX_SIDE_RANGE),
+      .height = unitsAt(hitbox, HEIGHT_KEY, HITBOX_SIDE_RANGE),
+      .offsetX = unitsOrZeroAt(hitbox, OFFSET_X_KEY, HURT_BOX_OFFSET_RANGE),
+      .offsetY = unitsOrZeroAt(hitbox, OFFSET_Y_KEY, HURT_BOX_OFFSET_RANGE)};
 }
 
 /** @returns The motion `[gameplay.motion]` describes: a ship with its kind
@@ -258,12 +276,6 @@ HurtWindow windowFrom(const engine::DataFileTable& box,
   return window;
 }
 
-/** @returns The value of @p key of @p box as a number of logical units. */
-float unitsAt(const engine::DataFileTable& box, std::string_view key,
-              engine::WholeNumberRange range) {
-  return static_cast<float>(engine::wholeNumberAt(box, key, range));
-}
-
 /** @returns The box one table of `[[gameplay.hurt_zone.box]]` describes. */
 HurtBox hurtBoxFrom(const engine::DataFileTable& box) {
   engine::refuseUnknownKeys(box, HURT_BOX_KEYS);
@@ -362,8 +374,9 @@ void checkShipMotion(const EntitySheet& sheet,
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, MOTION_KEY), SHIP_MOTION_RULE);
   }
-  if (movesAsAShip && (sheet.hitbox.width != SHIP_WIDTH ||
-                       sheet.hitbox.height != SHIP_HEIGHT)) {
+  if (movesAsAShip &&
+      (sheet.hitbox.width != SHIP_WIDTH || sheet.hitbox.height != SHIP_HEIGHT ||
+       sheet.hitbox.offsetX != 0.0F || sheet.hitbox.offsetY != 0.0F)) {
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, HITBOX_KEY), SHIP_HITBOX_RULE);
   }

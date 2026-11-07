@@ -22,8 +22,8 @@ void CollisionSystem::update(engine::ComponentRegistry& components,
                                                     const CollisionBox& box) {
     candidates_.push_back(
         Candidate{.entity = entity,
-                  .bounds = engine::Bounds{.centerX = position.x,
-                                           .centerY = position.y,
+                  .bounds = engine::Bounds{.centerX = position.x + box.offsetX,
+                                           .centerY = position.y + box.offsetY,
                                            .width = box.width,
                                            .height = box.height}});
   });

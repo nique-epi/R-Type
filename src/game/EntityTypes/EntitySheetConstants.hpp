@@ -38,10 +38,14 @@ constexpr std::array GAMEPLAY_KEYS{
     HEALTH_KEY,  SCORE_KEY, GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
     FRAGILE_KEY, BURST_KEY};
 
-/** @brief The keys of `[gameplay.hitbox]`, in logical units. */
+/** @brief The keys of `[gameplay.hitbox]`, in logical units: its size, and
+ * where its center is from the Position of the body, 0 without them. */
 constexpr std::string_view WIDTH_KEY = "width";
 constexpr std::string_view HEIGHT_KEY = "height";
-constexpr std::array HITBOX_KEYS{WIDTH_KEY, HEIGHT_KEY};
+constexpr std::string_view OFFSET_X_KEY = "offset_x";
+constexpr std::string_view OFFSET_Y_KEY = "offset_y";
+constexpr std::array HITBOX_KEYS{WIDTH_KEY, HEIGHT_KEY, OFFSET_X_KEY,
+                                 OFFSET_Y_KEY};
 
 /** @brief The keys of `[gameplay.motion]`: a ship has a kind only, a steady
  * body its top speed too. */
@@ -74,8 +78,6 @@ constexpr std::array HURT_ZONE_KEYS{BOX_KEY};
 
 /** @brief The keys of a box of a hurt zone, in logical units; a box names the
  * attack and the phase it hurts in together, or neither. */
-constexpr std::string_view OFFSET_X_KEY = "offset_x";
-constexpr std::string_view OFFSET_Y_KEY = "offset_y";
 constexpr std::string_view ATTACK_KEY = "attack";
 constexpr std::string_view PHASE_KEY = "phase";
 /** @brief When a box hurts within its phase, in milliseconds into it. */

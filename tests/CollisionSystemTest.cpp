@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 #include "Collision.hpp"
+#include "CollisionBox.hpp"
 #include "CollisionScene.hpp"
 #include "CollisionSystem.hpp"
 #include "CollisionSystemFixtures.hpp"
@@ -10,6 +11,7 @@
 
 using rtype::engine::Collision;
 using rtype::engine::Entity;
+using rtype::game::CollisionBox;
 using rtype::game::CollisionSystem;
 using rtype::game::EntityType;
 using rtype::game::testing::updateAndCollect;
@@ -146,4 +148,46 @@ TEST(CollisionSystem, ReportsTheSamePairAgainOnTheNextUpdate) {
   updateAndCollect(scene, system);
 
   EXPECT_EQ(updateAndCollect(scene, system).size(), 1U);
+}
+
+/**
+ * Given a square whose box is centered three sides to the right of its
+ * Position, and a square on the center of that box
+ * When the collision system updates and the bus dispatches
+ * Then the pair is reported: a box collides where it is laid
+ */
+TEST(CollisionSystem, AMovedHitboxCollidesWhereItIsMoved) {
+  CollisionScene scene;
+  const Entity moved =
+      scene.spawnWithoutCollisionBox(EntityType::Enemy, 0.0F, 0.0F);
+  scene.components.add(moved, CollisionBox{.width = SQUARE_SIDE,
+                                           .height = SQUARE_SIDE,
+                                           .offsetX = MOVED_BOX_OFFSET_X});
+  const Entity other =
+      scene.spawn(EntityType::PlayerMissile, MOVED_BOX_OFFSET_X, 0.0F);
+  CollisionSystem system(scene.events);
+
+  const std::vector<Collision> received = updateAndCollect(scene, system);
+
+  ASSERT_EQ(received.size(), 1U);
+  EXPECT_TRUE(isPair(received.front(), moved, other));
+}
+
+/**
+ * Given a square whose box is centered three sides to the right of its
+ * Position, and a square on that Position
+ * When the collision system updates and the bus dispatches
+ * Then nothing is reported: the Position itself does not collide
+ */
+TEST(CollisionSystem, AMovedHitboxIsApartFromItsPosition) {
+  CollisionScene scene;
+  const Entity moved =
+      scene.spawnWithoutCollisionBox(EntityType::Enemy, 0.0F, 0.0F);
+  scene.components.add(moved, CollisionBox{.width = SQUARE_SIDE,
+                                           .height = SQUARE_SIDE,
+                                           .offsetX = MOVED_BOX_OFFSET_X});
+  scene.spawn(EntityType::PlayerMissile, 0.0F, 0.0F);
+  CollisionSystem system(scene.events);
+
+  EXPECT_TRUE(updateAndCollect(scene, system).empty());
 }
