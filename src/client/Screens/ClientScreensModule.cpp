@@ -29,6 +29,7 @@
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
+#include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
 #include "ProtocolConstants.hpp"
 #include "ScreenServices.hpp"
