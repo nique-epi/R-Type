@@ -1,4 +1,4 @@
-add_library(rtype_game_entity_types STATIC ContentFiles.cpp EntitySheetReader.cpp EntitySheets.cpp SheetTextReading.cpp)
+add_library(rtype_game_entity_types STATIC ContentFiles.cpp EntitySheetReader.cpp EntitySheets.cpp NumberedEntityTypes.cpp SheetTextReading.cpp)
 
 target_include_directories(rtype_game_entity_types PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

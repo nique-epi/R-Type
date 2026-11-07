@@ -22,6 +22,13 @@ class ClientException : public std::runtime_error {
   explicit ClientException(const std::string& message);
 };
 
+/** @brief A file of a content pack could not be written below the folder
+ * the client keeps packs in. */
+class ContentFileWriteException : public ClientException {
+ public:
+  explicit ContentFileWriteException(const std::string& file);
+};
+
 /** @brief A loading step ended with assets it could not load. */
 class AssetLoadingException : public ClientException {
  public:

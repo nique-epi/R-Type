@@ -1,5 +1,6 @@
 add_subdirectory(Transport)
 add_subdirectory(Session)
+add_subdirectory(ContentPack)
 add_subdirectory(EntityTypes)
 add_subdirectory(Handshake)
 add_subdirectory(WaitingRoom)
