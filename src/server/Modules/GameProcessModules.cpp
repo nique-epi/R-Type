@@ -2,10 +2,13 @@
 #include <filesystem>
 #include <memory>
 #include <optional>
+#include <span>
+#include <string>
+#include <utility>
 #include <vector>
-#include "AssetFolder.hpp"
 #include "BuiltModuleConstants.hpp"
-#include "EntitySheetConstants.hpp"
+#include "ContentFolders.hpp"
+#include "EnsureLines.hpp"
 #include "ExecutablePath.hpp"
 #include "GameLaunchOptions.hpp"
 #include "GamesSettings.hpp"
@@ -28,20 +31,26 @@ namespace rtype::server {
 
 namespace {
 
-/** @returns What the games module of a game process is built from: the waves
- * and the entity sheets of the assets folder. */
-GamesSettings gameProcessGamesSettings() {
-  return GamesSettings{
-      .seed = std::nullopt,
-      .wavesFile = engine::locateAssetFolder() / WAVE_FILE_IN_ASSETS,
-      .entitySheetsFolder =
-          engine::locateAssetFolder() / game::ENTITY_SHEET_FOLDER_IN_ASSETS};
+/** @returns What the games module of a game process is built from: the
+ * waves file of the last of @p contentFolders that holds one, and the entity
+ * sheets of all of them. */
+GamesSettings gameProcessGamesSettings(
+    std::vector<std::filesystem::path> contentFolders) {
+  std::filesystem::path wavesFile = engine::topmostContentFile(
+      contentFolders, std::filesystem::path{WAVE_FILE_IN_ASSETS});
+  return GamesSettings{.seed = std::nullopt,
+                       .wavesFile = std::move(wavesFile),
+                       .contentFolders = std::move(contentFolders)};
 }
 
 }  // namespace
 
 std::vector<std::unique_ptr<engine::IModule>> gameProcessModules(
-    const GameLaunchOptions& launchOptions, StopRequest& stopRequest) {
+    const GameLaunchOptions& launchOptions, StopRequest& stopRequest,
+    std::span<const std::string> handedOverLines) {
+  const std::vector<std::filesystem::path> contentFolders =
+      engine::contentFoldersOf(engine::locateResourcePlaces(),
+                               engine::ensuredResources(handedOverLines));
   std::vector<std::unique_ptr<engine::IModule>> modules;
   modules.push_back(
       std::make_unique<ServerLoggerModule>(launchOptions.logOptions()));
@@ -50,10 +59,10 @@ std::vector<std::unique_ptr<engine::IModule>> gameProcessModules(
       launchOptions.networkConditions()));
   modules.push_back(
       std::make_unique<ServerStorageModule>(engine::executableFolder()));
-  modules.push_back(
-      std::make_unique<ServerGamesModule>(gameProcessGamesSettings()));
-  modules.push_back(
-      std::make_unique<ServerLobbyModule>(launchOptions.supervisorLink().port));
+  modules.push_back(std::make_unique<ServerGamesModule>(
+      gameProcessGamesSettings(contentFolders)));
+  modules.push_back(std::make_unique<ServerLobbyModule>(
+      launchOptions.supervisorLink().port, contentFolders));
 #if RTYPE_MODULE_METRICS
   modules.push_back(std::make_unique<ServerMetricsModule>(
       std::make_shared<engine::SystemClock>(), launchOptions.trafficCsvFile()));

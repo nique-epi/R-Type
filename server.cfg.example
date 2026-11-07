@@ -68,6 +68,12 @@ set server-name "R-Type server"
 # plugin-folder plugins
 # plugin game-statistics
 
+# [games] Start a resource: the folder resources/<name>/ beside the assets
+# folder, whose sheets, sprite sheets and waves are laid over the assets; the
+# supervisor serves them in its content pack. A wrong line or a missing
+# resource stops the server.
+# ensure crimson-drifter
+
 # [games] The CSV file the game-statistics plugin writes a row per Bydo killed to, then
 # the total of each game, named after it: each game writes <name>_<its port><extension>,
 # so stats.csv gives stats_50123.csv to the game on port 50123. Refused unless the

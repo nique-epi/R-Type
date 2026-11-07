@@ -8,7 +8,9 @@
 #include <vector>
 #include "BoostProcessLauncher.hpp"
 #include "BuiltModuleConstants.hpp"
+#include "ContentFolders.hpp"
 #include "EngineException.hpp"
+#include "EnsureLines.hpp"
 #include "ExecutablePath.hpp"
 #include "GameLaunchSettings.hpp"
 #include "IModule.hpp"
@@ -67,7 +69,9 @@ std::vector<std::unique_ptr<engine::IModule>> supervisorModules(
   modules.push_back(std::make_unique<ServerNetworkModule>(
       network::DEFAULT_SERVER_PORT, stopRequest,
       launchOptions.networkConditions()));
-  modules.push_back(std::make_unique<ServerContentModule>());
+  modules.push_back(std::make_unique<ServerContentModule>(
+      engine::contentFoldersOf(engine::locateResourcePlaces(),
+                               engine::ensuredResources(gameLines))));
   modules.push_back(std::make_unique<ServerSupervisedGamesModule>(
       gameLaunchSettings(launchOptions, std::move(gameLines)),
       std::make_unique<BoostProcessLauncher>(),

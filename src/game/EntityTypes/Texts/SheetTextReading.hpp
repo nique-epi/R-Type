@@ -24,6 +24,22 @@ namespace rtype::game {
     const std::filesystem::path& folder);
 
 /**
+ * @brief Reads the sheets of every content folder, the assets first then
+ * each resource (see engine::contentFoldersOf()): the
+ * ENTITY_SHEET_FOLDER_IN_ASSETS of the first folder, as sheetTextsIn() does,
+ * then that of each other folder that has one; a resource may hold no sheet. @p
+ * contentFolders is never empty: it starts with the assets folder.
+ * @returns The texts, folder after folder, each in the order of its names,
+ * checked by checkSheetNames() all together.
+ * @throws What sheetTextsIn() throws for the first folder,
+ * engine::UnreadableDataFileException when a sheet of another cannot be read,
+ * and DuplicateEntityTypeException when two folders hold a sheet of the same
+ * name: a resource adds sheets, it never replaces one.
+ */
+[[nodiscard]] std::vector<SheetText> sheetTextsInFolders(
+    std::span<const std::filesystem::path> contentFolders);
+
+/**
  * @throws TooManyEntityTypesException when @p texts hold more than
  * MAXIMUM_ENTITY_TYPES sheets, and InvalidEntityTypeNameException, naming the
  * file, for a name other than 1 to MAXIMUM_ENTITY_TYPE_NAME_LENGTH bytes of

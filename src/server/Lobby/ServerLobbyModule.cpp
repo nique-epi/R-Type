@@ -1,10 +1,11 @@
 #include "ServerLobbyModule.hpp"
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
-#include "AssetFolder.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectionAcceptor.hpp"
 #include "ConnectionAcceptorParts.hpp"
@@ -23,8 +24,10 @@
 
 namespace rtype::server {
 
-ServerLobbyModule::ServerLobbyModule(std::uint16_t contentPort)
-    : contentPort_(contentPort) {}
+ServerLobbyModule::ServerLobbyModule(
+    std::uint16_t contentPort,
+    std::vector<std::filesystem::path> contentFolders)
+    : contentPort_(contentPort), contentFolders_(std::move(contentFolders)) {}
 
 std::string ServerLobbyModule::name() const {
   return std::string{LOBBY_MODULE_NAME};
@@ -39,7 +42,7 @@ void ServerLobbyModule::install(engine::InstallContext& context) {
   sender_ = &context.require<IDatagramSender>();
   admission_ = &context.require<IPlayerAdmission>();
   tickDatagrams_ = &context.require<TickDatagrams>();
-  content_ = contentAnnouncementOf(engine::locateAssetFolder(), contentPort_);
+  content_ = contentAnnouncementOf(contentFolders_, contentPort_);
   context.addWork(SIMULATION_STAGE,
                   [this]([[maybe_unused]] engine::Duration elapsed) {
                     answerConnectionRequests();
