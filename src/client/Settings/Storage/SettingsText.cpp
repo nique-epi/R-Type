@@ -227,6 +227,25 @@ std::optional<LineOutcome> applyLook(PlayerSettings& settings,
   return std::nullopt;
 }
 
+/** @returns What became of a switch, a slot of the ship or a key: applied,
+ * or left out with the reason; an unknown setting when the line names none of
+ * them. */
+LineOutcome applyFlagOrKey(PlayerSettings& settings, SettingLine setting) {
+  if (const std::optional<LineOutcome> outcome =
+          applySwitch(settings, setting)) {
+    return *outcome;
+  }
+  if (const std::optional<LineOutcome> outcome = applyLook(settings, setting)) {
+    return *outcome;
+  }
+  const std::optional<BoundAction> action =
+      valueNamed(setting.name, BOUND_ACTION_KEY_NAMES, BOUND_ACTIONS);
+  if (!action.has_value()) {
+    return LineOutcome::UnknownSetting;
+  }
+  return applyKey(settings, *action, setting.value);
+}
+
 /** @returns What became of a setting written into the settings: applied, or
  * left out with the reason. */
 LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
@@ -252,19 +271,7 @@ LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
     return assign(valueNamed(value, COLOR_MODE_VALUES, COLOR_MODES),
                   settings.colorMode);
   }
-  if (const std::optional<LineOutcome> outcome =
-          applySwitch(settings, setting)) {
-    return *outcome;
-  }
-  if (const std::optional<LineOutcome> outcome = applyLook(settings, setting)) {
-    return *outcome;
-  }
-  const std::optional<BoundAction> action =
-      valueNamed(name, BOUND_ACTION_KEY_NAMES, BOUND_ACTIONS);
-  if (!action.has_value()) {
-    return LineOutcome::UnknownSetting;
-  }
-  return applyKey(settings, *action, value);
+  return applyFlagOrKey(settings, setting);
 }
 
 LineOutcome applyLine(PlayerSettings& settings, std::string_view line) {
