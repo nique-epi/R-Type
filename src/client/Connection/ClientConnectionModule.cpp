@@ -6,7 +6,7 @@
 #include "AssetFolder.hpp"
 #include "ClientConstants.hpp"
 #include "ConnectionConstants.hpp"
-#include "ContentLoadingConstants.hpp"
+#include "ContentPackCacheConstants.hpp"
 #include "ContentPlaces.hpp"
 #include "ExecutablePath.hpp"
 #include "IGameCatalog.hpp"

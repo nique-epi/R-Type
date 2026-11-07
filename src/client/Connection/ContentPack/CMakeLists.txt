@@ -1,28 +1,20 @@
-find_package(httplib CONFIG REQUIRED)
+add_subdirectory(Download)
+add_subdirectory(Cache)
+add_subdirectory(Reading)
 
-add_library(rtype_client_content_pack STATIC
-  ContentLoading.cpp
-  ContentPackCache.cpp
-  ContentPackDownload.cpp
-  PackContentReading.cpp
-)
+add_library(rtype_client_content_pack STATIC ContentLoading.cpp)
 
 target_include_directories(rtype_client_content_pack PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(rtype_client_content_pack
   PUBLIC
-    rtype_client_entity_appearances
-    rtype_game_entity_types
+    rtype_client_content_pack_cache
+    rtype_client_content_pack_download
+    rtype_client_content_pack_reading
     rtype_identifiers
     rtype_network_content
   PRIVATE
-    httplib::httplib
-    rtype_engine_exceptions
-    rtype_logging
-    rtype_network_http
-    rtype_client_exceptions
-    rtype_engine_data_files
-    rtype_network_exceptions
+    rtype_network_constants
 )
 
 rtype_enable_warnings(rtype_client_content_pack)

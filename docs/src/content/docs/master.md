@@ -296,5 +296,5 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change what the games of a server are listed as | `listedStateOf()` in `ServersService.cpp` (`src/master/Servers/Services/`) and `GameListing` (`src/network/Master/Messages/`) |
 | Change what a game server tells of its games | `supervisedHostedGames()` and `supervisedMeasures()` (`src/server/SupervisedGames/SupervisedGamesReport.cpp`) |
 | Add a setting of the master | the `install()` of the module that reads it, `master.cfg.example` and the table above |
-| Change what an error answers | `problemDetailsText()` in `src/network/Http/HttpServer.cpp`, shared with the supervisor |
+| Change what an error answers | `problemDetailsText()` in `src/network/Http/Server/HttpServer.cpp`, shared with the supervisor |
 | Add a module | `src/master/<Name>/`, its line in `masterModules()` and its row in [the list of modules](/R-Type/project-layout/#the-list-of-modules) |

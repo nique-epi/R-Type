@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 #include "ByteText.hpp"
-#include "ContentLoadingConstants.hpp"
+#include "PackDownloadConstants.hpp"
 #include "HttpStatusConstants.hpp"
 #include "PackDownloadOutcome.hpp"
 #include "PackDownloadProgress.hpp"

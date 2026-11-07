@@ -616,7 +616,7 @@ The supervisor serves the content pack of the server, so a player who lacks its 
 - `start()` listens for HTTP on every IPv4 interface (`0.0.0.0`), on the TCP port of the number of the `port` setting, with a `network::HttpServer` (see [Network](/R-Type/network/#http-server-httpserver)), and logs `content pack <fingerprint> (<n> bytes) served on TCP port <port>`. When `port` is 0, the system choosing the UDP port, it logs `the port is chosen by the system: the content pack is not served`; when another program holds the TCP port, it logs the reason followed by `: the content pack is not served`. Either way the supervisor runs on, and a player who lacks the pack is told its download failed.
 - `stop()` stops listening once the downloads in progress are answered.
 
-`ContentPackDesk` answers `GET /api/packs/{fingerprint}` (`CONTENT_PACK_ROUTE`, `src/network/Content/ContentRouteConstants.hpp`) on the threads of the HTTP server: the pack with `ETag` for its own fingerprint, 404 for any other, so it never reads a path to find a file. Each address spends `PACK_REQUEST_RATE_LIMIT` (`ServerContentConstants.hpp`: 3 requests at once, then one every 10 s, 10 refused within a minute ban it for a minute), its port left out since each connection takes another; past it, a request gets 429. A request for a range of bytes gets 206 and those bytes, from the `HttpServer`.
+`ContentPackDesk` answers `GET /api/packs/{fingerprint}` (`CONTENT_PACK_ROUTE`, `src/network/Content/Delivery/ContentRouteConstants.hpp`) on the threads of the HTTP server: the pack with `ETag` for its own fingerprint, 404 for any other, so it never reads a path to find a file. Each address spends `PACK_REQUEST_RATE_LIMIT` (`ServerContentConstants.hpp`: 3 requests at once, then one every 10 s, 10 refused within a minute ban it for a minute), its port left out since each connection takes another; past it, a request gets 429. A request for a range of bytes gets 206 and those bytes, from the `HttpServer`.
 
 Each game process announces the pack in its acceptances: `ServerLobbyModule` is built with the port of its supervisor (`--supervisor`) and computes, when it installs, `contentAnnouncementOf(locateAssetFolder(), port)` (`ContentAnnouncementReading.hpp`), the function the supervisor's pack is encoded by, so the fingerprint and the size it announces are those of the pack served. A host who opens only the UDP port of the supervisor in a firewall or a router lets in only the players whose own assets, or cache, already hold the pack; the TCP port of the same number serves the others.
 
@@ -1336,7 +1336,7 @@ The supervised games module tells the job when the games change. At each tick, o
 | Send a datagram from the tick | `ServerApplication::queueDatagram()` |
 | Change how a connection request is answered | `ConnectionAcceptor::answer` in `src/server/Lobby/ConnectionAcceptor.cpp` |
 | Change how often an acceptance is repeated to a connected player | `CONNECTION_ACCEPTANCE_REPEAT_INTERVAL` in `src/server/Lobby/LobbyConstants.hpp` |
-| Change what the content pack holds | `game::contentFilesIn()` in `src/game/EntityTypes/ContentFiles.cpp`, then the [Protocol](/R-Type/protocol/#content-pack) page |
+| Change what the content pack holds | `game::contentFilesIn()` in `src/game/EntityTypes/Content/ContentFiles.cpp`, then the [Protocol](/R-Type/protocol/#content-pack) page |
 | Change how the supervisor serves the pack, or how often an address may ask | `ServerContentModule` and `ContentPackDesk` in `src/server/Content/`, `PACK_REQUEST_RATE_LIMIT` in `ServerContentConstants.hpp` |
 | Change what an acceptance announces | `contentAnnouncementOf()` in `src/server/Content/ContentAnnouncementReading.cpp`, `ServerLobbyModule` in `src/server/Lobby/` |
 | Change where a ship appears | `shipStartPosition` and `SHIP_START_X_RATIO` in `src/game/Spawning/` |
@@ -1345,7 +1345,7 @@ The supervised games module tells the job when the games change. At each tick, o
 | Change which actions of an input move the ship | `directionsOf` in `src/server/Rules/Players/ShipInput.cpp`, with the bit positions of `src/network/Protocol/ProtocolConstants.hpp` |
 | Change how many Bydos come, how often, or which sheets | `assets/waves/waves.toml`; see [Writing the waves file](/R-Type/waves-file/) |
 | Add a kind of enemy, or change one | its sheet in `assets/entities/`; see [Writing an entity sheet](/R-Type/entity-sheets/) and the [tutorial](/R-Type/tutorial-add-an-enemy-type/) |
-| Change how a sheet is read, its keys or their ranges | `gameplayOf()` and `EntitySheetConstants.hpp` in `src/game/EntityTypes/`, `EntitySheets` for the rules between sheets |
+| Change how a sheet is read, its keys or their ranges | `gameplayOf()` in `src/game/EntityTypes/Sheets/`, `EntitySheetConstants.hpp` in `src/game/EntityTypes/`, `EntitySheets` for the rules between sheets |
 | Change how an entity is made from its sheet | `World::spawn` in `src/game/World.cpp` |
 | Change how a wave follows the one before | `waveAfter` in `src/game/Waves/WaveProgression/WaveProgression.cpp` |
 | Change when the next wave starts | `WaveDirector::advance` in `src/game/Waves/WaveDirector/WaveDirector.cpp` |

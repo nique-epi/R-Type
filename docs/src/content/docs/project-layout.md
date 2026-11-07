@@ -205,7 +205,7 @@ src/client/
 │   ├── Session/         what crosses a session, in and out
 │   ├── Handshake/       the request to join a server and its state
 │   ├── EntityTypes/     the content of the session: its types and appearances
-│   ├── ContentPack/     the pack of a server: download and cache
+│   ├── ContentPack/     the pack of a server: download, cache and reading
 │   ├── WaitingRoom/     the waiting room until the game starts
 │   ├── Leaderboard/     the best scores of a server
 │   └── ServerList/      the servers and games of the master, pinged
