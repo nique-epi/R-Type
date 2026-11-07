@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
 #include "ShipLookConstants.hpp"
 
@@ -12,9 +13,10 @@ namespace rtype::client {
 constexpr std::size_t STARTER_TOP_HAT = 0;
 constexpr std::size_t STARTER_COOL_SHADES = 8;
 constexpr std::size_t STARTER_MUSTACHE = 9;
-constexpr unsigned long long STARTER_LOCKER_ITEMS =
-    (1ULL << STARTER_TOP_HAT) | (1ULL << STARTER_COOL_SHADES) |
-    (1ULL << STARTER_MUSTACHE);
+constexpr std::uint64_t STARTER_LOCKER_ITEMS =
+    (std::uint64_t{1} << STARTER_TOP_HAT) |
+    (std::uint64_t{1} << STARTER_COOL_SHADES) |
+    (std::uint64_t{1} << STARTER_MUSTACHE);
 
 static_assert(identifiers::SHIP_LOOK_ITEM_NAMES.at(STARTER_TOP_HAT) ==
                   std::string_view{"top_hat"},

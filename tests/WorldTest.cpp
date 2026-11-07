@@ -708,7 +708,7 @@ TEST(World, ALookItemCarriesItsItem) {
   const std::optional<rtype::game::LookItem> item =
       componentOf<rtype::game::LookItem>(world, networkId);
   ASSERT_TRUE(item.has_value());
-  EXPECT_EQ(item->number, 3U);
+  EXPECT_EQ(item.value_or(rtype::game::LookItem{}).number, 3U);
 }
 
 /**

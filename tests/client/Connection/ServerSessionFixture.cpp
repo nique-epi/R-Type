@@ -20,6 +20,7 @@
 #include "ServerSessionFixtures.hpp"
 #include "ServerSessionTestConstants.hpp"
 #include "SessionEntityTypesFixtures.hpp"
+#include "ShipLookExchange.hpp"
 #include "TimeConstants.hpp"
 #include "WaitingRoom.hpp"
 #include "WorldState.hpp"

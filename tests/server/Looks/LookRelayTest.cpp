@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 #include <vector>
-#include "ConnectedPlayer.hpp"
 #include "LookRelayFixture.hpp"
 #include "LookRelayTestConstants.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerLooks.hpp"
+#include "ProtocolConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ShipLook.hpp"
 

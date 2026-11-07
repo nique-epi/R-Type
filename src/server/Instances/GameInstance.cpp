@@ -28,6 +28,7 @@
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "SessionHooks.hpp"
+#include "ShipLookChoice.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
 

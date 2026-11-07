@@ -1,5 +1,5 @@
 #include "PilotShipLooks.hpp"
-#include <algorithm>
+#include <cstdint>
 #include <optional>
 #include <span>
 #include "ComponentRegistry.hpp"
@@ -19,7 +19,8 @@ namespace {
  * worn when it lists no pilot with its number. */
 identifiers::ShipLook lookOfPilotColor(
     std::span<const network::PlayerLook> looks, int pilotColor) {
-  const int number = playerNumberOfPilotColor(pilotColor);
+  const auto number =
+      static_cast<std::uint8_t>(playerNumberOfPilotColor(pilotColor));
   const identifiers::ShipLook* const found = network::findLook(looks, number);
   return found == nullptr ? identifiers::ShipLook{} : *found;
 }
@@ -35,7 +36,7 @@ void dressPilotShips(engine::ComponentRegistry& components,
       continue;
     }
     const identifiers::ShipLook look = lookOfPilotColor(looks, *pilotColor);
-    WornLook* const worn = components.get<WornLook>(ship);
+    auto* const worn = components.get<WornLook>(ship);
     if (worn == nullptr) {
       components.add(ship, WornLook{.look = look});
     } else {

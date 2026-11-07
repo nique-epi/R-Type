@@ -21,15 +21,24 @@ using rtype::game::Sprite;
 using rtype::game::SpriteFrame;
 using rtype::identifiers::ShipLook;
 
+namespace {
+
+/** @brief The frame of a ship: 32 by 16 pixels. */
+constexpr int SHIP_FRAME_WIDTH = 32;
+constexpr int SHIP_FRAME_HEIGHT = 16;
+
+}  // namespace
+
 Entity PilotShipLooksFixture::spawnShip(int pilotColor) {
   const Entity ship = entities_.create();
   components_.add(ship, Position{});
-  components_.add(
-      ship,
-      Sprite{
-          .assetId = "ship",
-          .frame = SpriteFrame{.left = 0, .top = 0, .width = 32, .height = 16},
-          .layer = Layer::Players});
+  components_.add(ship,
+                  Sprite{.assetId = "ship",
+                         .frame = SpriteFrame{.left = 0,
+                                              .top = 0,
+                                              .width = SHIP_FRAME_WIDTH,
+                                              .height = SHIP_FRAME_HEIGHT},
+                         .layer = Layer::Players});
   components_.add(ship, PilotShip{.color = pilotColor});
   return ship;
 }

@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <cstddef>
 #include "PlayerSettings.hpp"
 #include "RecordingSettingsStorage.hpp"
 #include "RecordingShipLookExchange.hpp"
@@ -11,7 +12,7 @@ namespace {
 
 /** @brief The number of the crown among the items: its place, 2, plus one. */
 constexpr unsigned char CROWN_NUMBER = 3;
-constexpr unsigned long long CROWN_PLACE = 2;
+constexpr std::size_t CROWN_PLACE = 2;
 
 }  // namespace
 

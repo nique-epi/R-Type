@@ -17,6 +17,8 @@
 #include "ScreenBuilding.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenRegistry.hpp"
+#include "SettingsService.hpp"
+#include "ShipLookExchange.hpp"
 #include "TimeConstants.hpp"
 #include "WonItems.hpp"
 

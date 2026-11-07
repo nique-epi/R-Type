@@ -1,7 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <cstddef>
-#include <vector>
+#include <cstdint>
 #include "ConnectionConstants.hpp"
 #include "GameStarted.hpp"
 #include "LookItemWon.hpp"
@@ -25,6 +25,8 @@ using testing::ShipLookExchangeFixture;
 namespace {
 
 constexpr ShipLook PARTY_HAT_LOOK{.head = 2};
+constexpr std::uint8_t FIRST_WON_ITEM = 3;
+constexpr std::uint8_t SECOND_WON_ITEM = 8;
 
 }  // namespace
 
@@ -144,11 +146,14 @@ TEST_F(ShipLookExchangeFixture, ForgetsTheLooksWhenTheSessionCloses) {
  */
 TEST_F(ShipLookExchangeFixture, KeepsTheWonItemsUntilTaken) {
   accept();
-  deliverInSession(network::LookItemWon{.item = 3}, FIRST_SEQUENCE);
-  deliverInSession(network::LookItemWon{.item = 8}, SECOND_SEQUENCE);
+  deliverInSession(network::LookItemWon{.item = FIRST_WON_ITEM},
+                   FIRST_SEQUENCE);
+  deliverInSession(network::LookItemWon{.item = SECOND_WON_ITEM},
+                   SECOND_SEQUENCE);
   update();
 
-  EXPECT_THAT(shipLooks().takeWonItems(), ElementsAre(3, 8));
+  EXPECT_THAT(shipLooks().takeWonItems(),
+              ElementsAre(FIRST_WON_ITEM, SECOND_WON_ITEM));
   EXPECT_THAT(shipLooks().takeWonItems(), IsEmpty());
 }
 

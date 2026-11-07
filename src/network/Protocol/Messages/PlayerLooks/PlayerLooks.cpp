@@ -6,6 +6,7 @@
 #include <type_traits>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
+#include "ShipLook.hpp"
 #include "WireTypes.hpp"
 
 namespace rtype::network {

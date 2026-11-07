@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 #include "ConnectedPlayer.hpp"

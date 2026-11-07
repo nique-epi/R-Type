@@ -8,6 +8,7 @@
 #include "ISessionOutbox.hpp"
 #include "IShipLookExchange.hpp"
 #include "IWaitingRoom.hpp"
+#include "LobbyState.hpp"
 #include "MessageDispatcher.hpp"
 #include "PlayerLooks.hpp"
 #include "ShipLook.hpp"

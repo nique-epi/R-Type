@@ -1,16 +1,15 @@
 #include "LookItemKeeper.hpp"
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <span>
 #include <utility>
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
-#include "EncodedMessage.hpp"
 #include "EntityDestruction.hpp"
 #include "EventBus.hpp"
 #include "LookItem.hpp"
+#include "LookItemKeeperParts.hpp"
 #include "LookItemTouched.hpp"
 #include "LookItemWon.hpp"
 #include "MessageDelivery.hpp"

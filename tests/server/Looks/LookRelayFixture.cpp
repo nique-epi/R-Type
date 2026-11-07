@@ -5,7 +5,6 @@
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
-#include "LookRelayTestConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerLooks.hpp"
 #include "SentDatagrams.hpp"

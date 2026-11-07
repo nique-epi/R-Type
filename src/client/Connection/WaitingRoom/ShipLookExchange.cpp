@@ -1,11 +1,11 @@
 #include "ShipLookExchange.hpp"
-#include <algorithm>
 #include <cstdint>
 #include <span>
 #include <utility>
 #include <vector>
 #include "ConnectionConstants.hpp"
 #include "ISessionOutbox.hpp"
+#include "IWaitingRoom.hpp"
 #include "LobbyState.hpp"
 #include "LookItemWon.hpp"
 #include "MessageDispatcher.hpp"

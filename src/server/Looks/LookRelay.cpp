@@ -1,5 +1,4 @@
 #include "LookRelay.hpp"
-#include <cstddef>
 #include <functional>
 #include <utility>
 #include "ConnectedPlayer.hpp"
@@ -11,6 +10,7 @@
 #include "OutgoingDatagram.hpp"
 #include "PlayerLooks.hpp"
 #include "PlayerRoster.hpp"
+#include "ProtocolConstants.hpp"
 #include "SeatIndex.hpp"
 #include "ShipLookChoice.hpp"
 

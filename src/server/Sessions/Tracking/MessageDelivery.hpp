@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include "ConnectedPlayer.hpp"
 #include "EncodedMessage.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"

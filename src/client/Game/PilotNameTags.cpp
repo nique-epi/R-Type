@@ -1,7 +1,5 @@
 #include "PilotNameTags.hpp"
 #include <algorithm>
-#include <array>
-#include <cstddef>
 #include <optional>
 #include <span>
 #include <string_view>
@@ -10,13 +8,11 @@
 #include "ComponentRegistry.hpp"
 #include "EffectTargets.hpp"
 #include "Entity.hpp"
-#include "EntitySpriteConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "Layer.hpp"
 #include "PilotColor.hpp"
 #include "PilotName.hpp"
 #include "PilotNameTagConstants.hpp"
-#include "PilotShip.hpp"
 #include "PilotShips.hpp"
 #include "PilotStatus.hpp"
 #include "PlayerPreferences.hpp"

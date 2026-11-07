@@ -16,6 +16,7 @@
 #include "JournalFile.hpp"
 #include "Logger.hpp"
 #include "PlayfieldConstants.hpp"
+#include "Position.hpp"
 #include "ServerException.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "SpawningConstants.hpp"

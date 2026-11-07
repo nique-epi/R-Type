@@ -24,6 +24,7 @@
 #include "ShipFlight.hpp"
 #include "ShipFlightConstants.hpp"
 #include "ShipLookConstants.hpp"
+#include "ShipLookSprite.hpp"
 #include "ShipLookSpriteConstants.hpp"
 #include "ShipLooks.hpp"
 #include "Sprite.hpp"
