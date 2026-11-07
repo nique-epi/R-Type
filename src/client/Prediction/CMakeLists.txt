@@ -1,24 +1,10 @@
-add_library(rtype_client_prediction STATIC
-  ArrivalReveal.cpp
-  InterpolationClock.cpp
-  OwnShip.cpp
-  OwnShipPredictor.cpp
-  PredictedShipPlacement.cpp
-  PositionInterpolation.cpp
-  ShipPrediction.cpp
-)
+add_subdirectory(Interpolation)
+add_subdirectory(OwnShip)
 
-target_include_directories(rtype_client_prediction PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(rtype_client_prediction INTERFACE)
 
 target_link_libraries(rtype_client_prediction
-  PUBLIC
-    rtype_client_connection_module
-    rtype_client_entities
-    rtype_engine
-    rtype_engine_time
-    rtype_game_components
-    rtype_game_ship_control
-    rtype_network_protocol
+  INTERFACE
+    rtype_client_prediction_interpolation
+    rtype_client_prediction_own_ship
 )
-
-rtype_enable_warnings(rtype_client_prediction)
