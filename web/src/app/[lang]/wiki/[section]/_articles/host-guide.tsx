@@ -18,8 +18,9 @@ const START_COMMAND = './r-type_server';
 
 /** The three steps that put a server on the map, and the button that makes the key. */
 export function HostGuide({ lang }: { lang: Locale }) {
-  const { host } = getDictionary(lang).pages.wikiPage;
-  const { configFile } = getDictionary(lang).pages.hostPage;
+  const { pages } = getDictionary(lang);
+  const { host } = pages.wikiPage;
+  const { configFile } = pages.hostPage;
 
   return (
     <Reveal className="grid gap-8">

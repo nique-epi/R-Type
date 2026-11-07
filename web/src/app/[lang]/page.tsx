@@ -12,7 +12,7 @@ import { Section } from '@/components/primitives/layout/section';
 import { Enemy } from '@/components/sprites/enemy';
 import { Professor } from '@/components/sprites/professor';
 import { Ship } from '@/components/sprites/ship';
-import { getLatestRelease } from '@/hooks/api';
+import { getLatestRelease, getServerList } from '@/hooks/api';
 import { format } from '@/i18n/format';
 import { getDictionary } from '@/i18n/get-dictionary';
 import { readLocale } from '@/i18n/read-locale';
@@ -43,6 +43,8 @@ export default async function HomePage({ params }: PageProps<'/[lang]'>) {
   const lang = await readLocale(params);
   const { pages, header, hero } = getDictionary(lang);
   const copy = pages.home;
+  // The free seats read the list of servers: ask it now, so it is not waited for behind GitHub.
+  void getServerList();
   const release = await getLatestRelease();
   const tileHrefs = [
     wikiPathOf(lang, 'enemies'),

@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+/** The most items one page of a list holds (`MAXIMUM_PAGE_SIZE` of the master). */
+export const MAXIMUM_PAGE_SIZE = 100;
+
 /**
  * The statuses the master gives a game server, in the order it applies them
  * (docs "Statuses of the game servers").

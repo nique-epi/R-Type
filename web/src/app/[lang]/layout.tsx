@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { AnnouncementBar } from '@/components/layout/announcement-bar';
 import { PageHeader } from '@/components/layout/page-header';
 import { SiteFooter } from '@/components/layout/site-footer';
@@ -9,6 +8,7 @@ import { format } from '@/i18n/format';
 import { formatDay } from '@/i18n/format-date';
 import { getDictionary } from '@/i18n/get-dictionary';
 import { isLocale, LOCALES } from '@/i18n/locales';
+import { readLocale } from '@/i18n/read-locale';
 import { FONT_VARIABLES } from '@/lib/fonts';
 import { pathOf } from '@/lib/site-paths';
 import '@/styles/globals.css';
@@ -41,15 +41,9 @@ export default async function LocaleLayout({
   children,
   params,
 }: LayoutProps<'/[lang]'>) {
-  const { lang } = await params;
-
-  if (!isLocale(lang)) {
-    notFound();
-  }
-
+  const lang = await readLocale(params);
   const { pages, header, footer } = getDictionary(lang);
   const release = await getLatestRelease();
-  const version = release?.version ?? '';
   const items = [
     { href: pathOf(lang, 'home'), label: pages.nav.home, exact: true },
     { href: pathOf(lang, 'download'), label: pages.nav.download },
@@ -71,7 +65,7 @@ export default async function LocaleLayout({
           >
             {release
               ? format(pages.site.announcement, {
-                  version,
+                  version: release.version,
                   date: formatDay(release.publishedAt, lang),
                 })
               : pages.site.announcementFallback}
@@ -82,7 +76,7 @@ export default async function LocaleLayout({
             downloadHref={pathOf(lang, 'download')}
             menuFootnote={
               release
-                ? format(pages.site.menuFootnote, { version })
+                ? format(pages.site.menuFootnote, { version: release.version })
                 : pages.site.menuFootnoteFallback
             }
             labels={header}
@@ -101,7 +95,7 @@ export default async function LocaleLayout({
             ]}
           >
             {release
-              ? format(pages.site.footer, { version })
+              ? format(pages.site.footer, { version: release.version })
               : pages.site.footerFallback}
           </SiteFooter>
         </SmoothScroll>

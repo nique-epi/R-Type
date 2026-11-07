@@ -44,14 +44,13 @@ export function DownloadSection({
   copy,
   labels,
 }: DownloadSectionProps) {
-  const [system, setSystem] = useState<System>('linux');
   const [detected, setDetected] = useState<System | null>(null);
+  const [picked, setPicked] = useState<System | null>(null);
   const [started, setStarted] = useState<string | null>(null);
+  const system = picked ?? detected ?? 'linux';
 
   useEffect(() => {
-    const found = detectSystem(navigator.userAgent);
-    setSystem(found);
-    setDetected(found);
+    setDetected(detectSystem(navigator.userAgent));
   }, []);
 
   const options = SYSTEMS.map(option => {
@@ -79,7 +78,7 @@ export function DownloadSection({
             options={options}
             system={system}
             onSystemChange={chosen => {
-              setSystem(chosen);
+              setPicked(chosen);
               setStarted(null);
             }}
             hint={system === detected ? copy.detected : undefined}

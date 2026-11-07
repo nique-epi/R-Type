@@ -1,20 +1,17 @@
 import { master } from '../../clients';
 import { type ApiResponse, handleApiError } from '../../helpers';
-import type { ListedServer } from '../../schemas';
-
-/** The most servers one page of the list holds (`MAXIMUM_PAGE_SIZE` of the master). */
-const PAGE_SIZE = 100;
+import { type ListedServer, MAXIMUM_PAGE_SIZE } from '../../schemas';
 
 /** The pages read at most, as the game client reads them (`MAXIMUM_LISTED_SERVER_PAGES`). */
 const MAXIMUM_PAGES = 10;
 
-/** Reads every page of `GET /api/servers`, up to `MAXIMUM_PAGES` of `PAGE_SIZE` servers. */
+/** Reads every page of `GET /api/servers`, up to `MAXIMUM_PAGES` of `MAXIMUM_PAGE_SIZE` servers. */
 export async function listServers(): Promise<ApiResponse<ListedServer[]>> {
   const servers: ListedServer[] = [];
 
   for (let page = 0; page < MAXIMUM_PAGES; page += 1) {
     const { data, error } = await master('@get/servers', {
-      query: { limit: PAGE_SIZE, offset: page * PAGE_SIZE },
+      query: { limit: MAXIMUM_PAGE_SIZE, offset: page * MAXIMUM_PAGE_SIZE },
     });
 
     if (error) {
@@ -23,7 +20,7 @@ export async function listServers(): Promise<ApiResponse<ListedServer[]>> {
 
     servers.push(...data.servers);
 
-    if (data.servers.length < PAGE_SIZE) {
+    if (data.servers.length < MAXIMUM_PAGE_SIZE) {
       break;
     }
   }

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { Notice } from '@/components/primitives/status/notice';
 import { SectorMapScreen } from '@/components/servers/sector-map-screen';
-import { getServerList } from '@/hooks/api';
+import { getMappedServerList } from '@/hooks/api';
 import { getDictionary } from '@/i18n/get-dictionary';
 import { readLocale } from '@/i18n/read-locale';
 
@@ -19,7 +19,7 @@ export default async function ServersPage({
   await connection();
   const lang = await readLocale(params);
   const dictionary = getDictionary(lang);
-  const { servers, source } = await getServerList();
+  const { servers, source } = await getMappedServerList();
 
   return (
     <main className="starfield relative overflow-hidden border-edge-blue border-b-2">

@@ -1,4 +1,4 @@
-/** A response of the master, as the tests stub `fetch` with it. */
+/** A JSON response, as the tests stub `fetch` with it for the master and GitHub. */
 export function answer(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
     status,

@@ -1,29 +1,7 @@
 import type { CountTemplates } from '@/i18n/format';
-import type { GameState, ServerStatus } from '@/lib/rtype/servers';
+import type { GameState } from '@/lib/rtype/servers';
 
-/** A game of a server, as the map lists it. */
-export type MapGame = {
-  pilots: number;
-  state: GameState;
-};
-
-/** A server on the map. */
-export type MapServer = {
-  id: string;
-  name: string;
-  status: ServerStatus;
-  /** "v0.1.0". */
-  version: string;
-  /** Whether its version matches the client's; an incompatible server is drawn hollow. */
-  compatible: boolean;
-  /** The number the master gave it; its bearing is drawn from it. */
-  number: number;
-  /** The round trip to it, in milliseconds: its distance from the planet. */
-  ping: number;
-  /** The most pilots it takes, in all its games. */
-  capacity: number;
-  games: readonly MapGame[];
-};
+export type { MapGame, MapServer } from '@/lib/rtype/servers';
 
 /** The seat the reader holds, if any. */
 export type HeldSeat = {

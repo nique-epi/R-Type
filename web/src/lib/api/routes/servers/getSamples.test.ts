@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { answer } from './answer';
+import { answer } from '@/test/responses';
 import { getSamples } from './getSamples';
 
 describe('getSamples', () => {
@@ -31,6 +31,6 @@ describe('getSamples', () => {
     ];
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(answer(200, { samples })));
 
-    expect(await getSamples(7)).toEqual({ data: samples, error: null });
+    expect(await getSamples(7, 100)).toEqual({ data: samples, error: null });
   });
 });

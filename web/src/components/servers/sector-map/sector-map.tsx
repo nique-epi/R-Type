@@ -12,6 +12,7 @@ import type { Locale } from '@/i18n/locales';
 import { gsap } from '@/lib/gsap';
 import { withoutAccents } from '@/lib/rtype/pixel-text';
 import { MAXIMUM_PILOTS_PER_GAME } from '@/lib/rtype/players';
+import { canJoin, pilotsOf } from '@/lib/rtype/server-seats';
 import { runShortcut, type Shortcuts } from '@/lib/shortcuts';
 import {
   angleOf,
@@ -25,14 +26,7 @@ import {
   viewOn,
   WHOLE_VIEW,
 } from './geometry';
-import {
-  canJoin,
-  cycleServer,
-  pilotsOf,
-  quickPlayTarget,
-  serversOnMap,
-  starLook,
-} from './rules';
+import { cycleServer, quickPlayTarget, serversOnMap, starLook } from './rules';
 import { type BubbleLine, SectorBubble } from './sector-bubble';
 import {
   PANEL_GAMES,

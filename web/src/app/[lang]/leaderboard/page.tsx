@@ -3,7 +3,7 @@ import { connection } from 'next/server';
 import { PageBody } from '@/components/layout/page-body';
 import { PageHero } from '@/components/layout/page-hero';
 import { RankingSection } from '@/components/ranking/ranking-section';
-import { getServerList } from '@/hooks/api';
+import { getServerNames } from '@/hooks/api';
 import { getDictionary } from '@/i18n/get-dictionary';
 import { readLocale } from '@/i18n/read-locale';
 
@@ -21,7 +21,7 @@ export default async function LeaderboardPage({
   const lang = await readLocale(params);
   const dictionary = getDictionary(lang);
   const copy = dictionary.pages.rankingPage;
-  const { servers } = await getServerList();
+  const servers = await getServerNames();
 
   return (
     <>
@@ -29,7 +29,7 @@ export default async function LeaderboardPage({
       <PageBody>
         <RankingSection
           locale={lang}
-          servers={servers.map(server => server.name)}
+          servers={servers}
           copy={copy}
           labels={dictionary.ranking}
         />

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import {
   createdServerSchema,
   gamesSchema,
+  MAXIMUM_PAGE_SIZE,
   newServerSchema,
   samplesSchema,
   serversPageSchema,
@@ -13,7 +14,7 @@ import {
 /** A page of a list: `limit` from 1 to 100, `offset` from 0. */
 const pageQuerySchema = z
   .object({
-    limit: z.number().int().min(1).max(100).optional(),
+    limit: z.number().int().min(1).max(MAXIMUM_PAGE_SIZE).optional(),
     offset: z.number().int().min(0).optional(),
   })
   .optional();

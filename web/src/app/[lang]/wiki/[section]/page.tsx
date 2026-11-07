@@ -7,11 +7,7 @@ import { getDictionary } from '@/i18n/get-dictionary';
 import { LOCALES } from '@/i18n/locales';
 import { readLocale } from '@/i18n/read-locale';
 import { wikiPathOf } from '@/lib/site-paths';
-import { Accessibility } from './_articles/accessibility';
-import { Enemies } from './_articles/enemies';
-import { HostGuide } from './_articles/host-guide';
-import { Keys } from './_articles/keys';
-import { isWikiSection, WIKI_SECTIONS } from './sections';
+import { isWikiSection, WIKI_ARTICLES, WIKI_SECTIONS } from './articles';
 
 export function generateStaticParams() {
   return LOCALES.flatMap(lang =>
@@ -40,6 +36,7 @@ export default async function WikiArticlePage({
     notFound();
   }
 
+  const Article = WIKI_ARTICLES[section];
   const dictionary = getDictionary(lang);
   const copy = dictionary.pages.wikiPage;
 
@@ -56,10 +53,7 @@ export default async function WikiArticlePage({
           }))}
         />
         <article className="grid min-w-0 flex-[999_1_560px] gap-8">
-          {section === 'keys' ? <Keys lang={lang} /> : null}
-          {section === 'enemies' ? <Enemies lang={lang} /> : null}
-          {section === 'accessibility' ? <Accessibility lang={lang} /> : null}
-          {section === 'host' ? <HostGuide lang={lang} /> : null}
+          <Article lang={lang} />
         </article>
       </PageMain>
     </>

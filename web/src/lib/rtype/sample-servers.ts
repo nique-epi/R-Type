@@ -1,4 +1,4 @@
-import type { MapServer } from '@/components/servers/sector-map/types';
+import type { MapServer } from './servers';
 
 /**
  * The servers shown while the master does not answer: the five of the

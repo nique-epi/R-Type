@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { answer, listedServer } from '@/lib/api/routes/servers/answer';
 import { RELEASE_V0_1_0 } from '@/lib/github/release.fixture';
-import { getServerList, getServerSheet } from './servers.hook';
+import { answer, listedServer } from '@/test/responses';
+import {
+  getMappedServerList,
+  getServerList,
+  getServerNames,
+  getServerSheet,
+} from './servers.hook';
 
 type Routes = Record<string, Response | Error>;
 
@@ -64,10 +69,19 @@ describe('getServerList', () => {
     expect(list.servers[1]?.games).toEqual([{ pilots: 2, state: 'waiting' }]);
   });
 
-  it('takes the ping of the last sample, and a distance of its own without one', async () => {
+  it('asks no sample of a server when the ping is not wanted', async () => {
     stubNetwork(masterRoutes());
 
-    const { servers } = await getServerList();
+    await getServerList();
+
+    const urls = vi.mocked(fetch).mock.calls.map(call => String(call[0]));
+    expect(urls.filter(url => url.includes('/samples'))).toEqual([]);
+  });
+
+  it('takes the ping of the last sample for the map, and a distance of its own without one', async () => {
+    stubNetwork(masterRoutes());
+
+    const { servers } = await getMappedServerList();
 
     expect(servers.find(server => server.id === '7')?.ping).toBe(42);
     expect(servers.find(server => server.id === '8')?.ping).toBe(75);
@@ -99,6 +113,26 @@ describe('getServerList', () => {
     });
 
     expect(await getServerList()).toEqual({ source: 'master', servers: [] });
+  });
+});
+
+describe('getServerNames', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('gives the names of the servers, busiest first, from the list alone', async () => {
+    stubNetwork(masterRoutes());
+
+    expect(await getServerNames()).toEqual(['Server 8', 'Server 7']);
+    const urls = vi.mocked(fetch).mock.calls.map(call => String(call[0]));
+    expect(urls.every(url => url.includes('/api/servers?'))).toBe(true);
+  });
+
+  it('gives the names of the examples when the master cannot be reached', async () => {
+    stubNetwork({ '/api/servers?limit=100&offset=0': new TypeError('down') });
+
+    expect(await getServerNames()).toContain('Nebula Lyon');
   });
 });
 
@@ -140,7 +174,6 @@ describe('getServerSheet', () => {
     expect(await getServerSheet('9')).toEqual({
       source: 'master',
       server: null,
-      id: '9',
       pilots: [],
       span: 0,
     });

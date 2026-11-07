@@ -1,15 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { answer } from '@/test/responses';
 import { createServerAction } from './actions';
 
 const KEY = `rtk_${'a'.repeat(64)}`;
-
-function answer(status: number, body: unknown) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
 
 describe('createServerAction', () => {
   afterEach(() => {

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { answer, listedServer } from './answer';
+import { answer, listedServer } from '@/test/responses';
 import { listServers } from './listServers';
 
 const FULL_PAGE = 100;

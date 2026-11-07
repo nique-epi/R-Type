@@ -4,6 +4,7 @@ import { format, formatCount } from '@/i18n/format';
 import type { Locale } from '@/i18n/locales';
 import type { PageCopy } from '@/i18n/page-copy';
 import { withoutAccents } from './pixel-text';
+import { PLAYER_NUMBERS } from './players';
 import { sampleScores } from './sample-scores';
 
 /** The scope and the filters of the leaderboard in force. */
@@ -26,7 +27,7 @@ export const FIRST_RANKING_CHOICE: RankingChoice = {
   pilots: 2,
 };
 
-const PILOT_OPTIONS = ['1', '2', '3', '4'];
+const PILOT_OPTIONS = PLAYER_NUMBERS.map(String);
 const YEAR = '26';
 const SERVER_SEED_STEP = 131;
 const PILOTS_SEED_STEP = 17;

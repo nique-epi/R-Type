@@ -8,6 +8,13 @@ import { healthEndpointsSchema, serversEndpointsSchema } from './endpoints';
 
 const MASTER_API_PREFIX = '/api';
 
+/**
+ * How long the site waits for the master to answer a request. A page reads
+ * the master several times at once, so one request that hangs would hold
+ * the page for ever.
+ */
+const MASTER_TIMEOUT_MILLISECONDS = 5000;
+
 const masterSchema = createSchema({
   ...healthEndpointsSchema,
   ...serversEndpointsSchema,
@@ -15,6 +22,11 @@ const masterSchema = createSchema({
 
 export const master = createFetch({
   baseURL: `${env.MASTER_URL}${MASTER_API_PREFIX}`,
+  customFetchImpl: (input, init) =>
+    fetch(input, {
+      ...init,
+      signal: AbortSignal.timeout(MASTER_TIMEOUT_MILLISECONDS),
+    }),
   schema: masterSchema,
   defaultError: problemSchema,
   catchAllError: true,

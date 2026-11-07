@@ -8,23 +8,21 @@ export type PaletteSectionProps = Pick<
   PalettePickerProps,
   'palettes' | 'labels'
 > & {
-  /** The palette chosen before the reader picks one. */
-  initial: string;
   /** "Palette choisie : {name}". */
   chosen: string;
 };
 
 /**
- * The palettes of the pilots and the name of the one picked. The pick is
+ * The palettes of the pilots, the first of them picked at first, and the name
+ * of the one picked. The pick is
  * only shown here: the palette of the game is set in its own options.
  */
 export function PaletteSection({
   palettes,
   labels,
-  initial,
   chosen,
 }: PaletteSectionProps) {
-  const [value, setValue] = useState(initial);
+  const [value, setValue] = useState(palettes[0]?.id ?? '');
   const name = palettes.find(palette => palette.id === value)?.label ?? '';
 
   return (

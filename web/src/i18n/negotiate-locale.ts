@@ -15,18 +15,19 @@ function weightOf(entry: string): number {
 
 /**
  * The language of the site that an `Accept-Language` header prefers: the
- * heaviest entry the site speaks, the first of them on a tie, French when
- * the header names none (or is absent).
+ * heaviest entry the site speaks, the first of them on a tie (the sort is
+ * stable), French when the header names none (or is absent).
  */
 export function negotiateLocale(acceptLanguage: string | null): Locale {
-  const entries = (acceptLanguage ?? '')
-    .split(',')
-    .map(entry => ({ language: languageOf(entry), weight: weightOf(entry) }))
-    .filter(entry => entry.weight > 0 && isLocale(entry.language));
-  const best = entries.reduce<(typeof entries)[number] | undefined>(
-    (kept, entry) => (kept && kept.weight >= entry.weight ? kept : entry),
-    undefined,
-  );
+  const spoken = (acceptLanguage ?? '').split(',').flatMap(entry => {
+    const language = languageOf(entry);
+    const weight = weightOf(entry);
 
-  return best && isLocale(best.language) ? best.language : DEFAULT_LOCALE;
+    return weight > 0 && isLocale(language) ? [{ language, weight }] : [];
+  });
+
+  return (
+    spoken.sort((first, second) => second.weight - first.weight)[0]?.language ??
+    DEFAULT_LOCALE
+  );
 }

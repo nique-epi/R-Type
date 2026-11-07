@@ -1,6 +1,5 @@
-import type { MapServer } from '@/components/servers/sector-map/types';
 import type { ListedServer, MasterGame, MasterStatus } from '@/lib/api/schemas';
-import type { GameState, ServerStatus } from './servers';
+import type { GameState, MapServer, ServerStatus } from './servers';
 
 /**
  * The round trip, in milliseconds, of a server that took no measure of it:

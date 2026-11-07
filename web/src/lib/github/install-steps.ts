@@ -24,15 +24,14 @@ export function installStepsFor(
     ];
   }
 
-  return system === 'windows'
-    ? [
-        download,
-        { title: words.install, text: words.installWindows },
-        { title: words.launch, text: words.launchWindows },
-      ]
-    : [
-        download,
-        { title: words.install, text: words.installMacos },
-        { title: words.launch, text: words.launchMacos },
-      ];
+  const [install, launch] =
+    system === 'windows'
+      ? [words.installWindows, words.launchWindows]
+      : [words.installMacos, words.launchMacos];
+
+  return [
+    download,
+    { title: words.install, text: install },
+    { title: words.launch, text: launch },
+  ];
 }

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { answer } from './answer';
+import { answer } from '@/test/responses';
 import { getStatuses } from './getStatuses';
 
 describe('getStatuses', () => {

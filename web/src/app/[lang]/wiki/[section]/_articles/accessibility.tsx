@@ -19,7 +19,6 @@ export function Accessibility({ lang }: { lang: Locale }) {
         <Lede>{accessibility.lede}</Lede>
       </div>
       <PaletteSection
-        initial="standard"
         chosen={accessibility.chosen}
         labels={dictionary.palette}
         palettes={PALETTE_IDS.map(id => ({

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { answer } from './answer';
+import { answer } from '@/test/responses';
 import { createServer } from './createServer';
 
 const KEY = `rtk_${'a'.repeat(64)}`;

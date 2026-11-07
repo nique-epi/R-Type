@@ -12,15 +12,16 @@ import { StatusBadge } from '@/components/primitives/status/status-badge';
 import { Heading } from '@/components/primitives/text/typography';
 import { GamesTable } from '@/components/servers/games-table';
 import { SamplesChart } from '@/components/servers/samples-chart/samples-chart';
-import { freeSeatsOf, pilotsOf } from '@/components/servers/sector-map/rules';
-import type { MapServer } from '@/components/servers/sector-map/types';
 import { getServerSheet } from '@/hooks/api';
 import { format } from '@/i18n/format';
 import { formatDuration } from '@/i18n/format-duration';
 import { getDictionary } from '@/i18n/get-dictionary';
+import type { PageCopy } from '@/i18n/page-copy';
 import { readLocale } from '@/i18n/read-locale';
 import { withoutAccents } from '@/lib/rtype/pixel-text';
 import { MAXIMUM_PILOTS_PER_GAME, PLAYER_NUMBERS } from '@/lib/rtype/players';
+import { freeSeatsOf, pilotsOf } from '@/lib/rtype/server-seats';
+import type { MapServer } from '@/lib/rtype/servers';
 import { pathOf } from '@/lib/site-paths';
 
 /** The value at the top of the chart when no server is busier than this. */
@@ -112,7 +113,7 @@ export default async function ServerPage({
       </PageHero>
       <PageBody>
         {server ? (
-          <ServerFigures lang={lang} server={server} />
+          <ServerFigures copy={copy} server={server} />
         ) : (
           <Notice title={copy.pendingTitle}>{copy.pending}</Notice>
         )}
@@ -162,14 +163,12 @@ export default async function ServerPage({
 
 /** The four figures of a server: its games, its pilots, its free seats, its version. */
 function ServerFigures({
-  lang,
+  copy,
   server,
 }: {
-  lang: ReturnType<typeof getDictionary>['locale'];
+  copy: PageCopy['serverPage'];
   server: MapServer;
 }) {
-  const copy = getDictionary(lang).pages.serverPage;
-
   return (
     <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6">
       <Stat

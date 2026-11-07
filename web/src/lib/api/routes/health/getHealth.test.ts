@@ -1,13 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { answer } from '@/test/responses';
 import { getHealth } from './getHealth';
-
-function answer(status: number, body: unknown) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
 
 describe('getHealth', () => {
   afterEach(() => {
@@ -23,6 +17,15 @@ describe('getHealth', () => {
     expect(String(fetch.mock.calls[0]?.[0])).toBe(
       'http://master.test:8080/api/health',
     );
+  });
+
+  it('gives the request a signal that stops it when the master hangs', async () => {
+    const fetch = vi.fn().mockResolvedValue(answer(200, { version: '0.1.0' }));
+    vi.stubGlobal('fetch', fetch);
+
+    await getHealth();
+
+    expect(fetch.mock.calls[0]?.[1].signal).toBeInstanceOf(AbortSignal);
   });
 
   it('returns the version the master answers', async () => {

@@ -1,11 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { answer } from '@/test/responses';
 import { fetchLatestRelease } from './latest-release';
 import { RELEASE_V0_1_0 } from './release.fixture';
-
-function answer(status: number, body: unknown) {
-  return new Response(JSON.stringify(body), { status });
-}
 
 describe('fetchLatestRelease', () => {
   afterEach(() => {
