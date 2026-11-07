@@ -753,7 +753,7 @@ The code of this repository applies the rules above, with the exceptions listed 
 - The client sends `LeaderboardRequest` from its leaderboard screen, and the server answers it.
 - The server answers a request with a valid cookie with the `ConnectionAccepted` of the player and the content pack of the game, at most once per 250 ms per player once accepted. The supervisor serves its pack over HTTP, and the client plays with its own sheets, a pack it kept or a pack it downloads, as [Content pack](#content-pack) describes.
 - The server limits the datagrams of each address and port, and of each player, on its network thread, as [A sender that sends too much](#a-sender-that-sends-too-much) says.
-- The server relays the chat lines as [Chat](#chat) describes; the client sends none yet.
+- The server relays the chat lines as [Chat](#chat) describes, and the client sends them so: one line at a time, again every 500 ms until it comes back, given up after 5 s.
 - The supervisor answers `ServerInformationRequest` as [Server information](#server-information) describes, and a game process does not. The server map of the client sends one to each server of this version the master lists, once per reading of the list (see [Client](/R-Type/client/#server-map-servermapscreen-iservercatalog-igamecatalog)).
 - The master sends `MasterProbe`, and the server keeps its token and sends it back in its heartbeat, as [Probe of the master](#probe-of-the-master) describes.
 
