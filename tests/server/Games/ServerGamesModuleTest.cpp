@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <utility>
@@ -206,4 +207,22 @@ TEST_F(ServerGamesFixture, AcceptsFullAsTheStateEncoding) {
             });
 
   EXPECT_TRUE(result.accepted);
+}
+
+/**
+ * Given the shipped assets and the example resource, whose waves send its
+ * crimson Drifter
+ * When the application starts with the waves of the resource
+ * Then the games start: the waves name a sheet the resource brings
+ */
+TEST_F(ServerGamesFixture, StartsWithTheSheetsAndTheWavesOfTheExampleResource) {
+  const std::filesystem::path resource =
+      std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} /
+      EXAMPLE_RESOURCE_FROM_THE_ASSETS;
+
+  EXPECT_NO_THROW(startWith(rtype::server::GamesSettings{
+      .seed = SOME_SEED,
+      .wavesFile = resource / WAVES_OF_THE_EXAMPLE_RESOURCE,
+      .contentFolders = {std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER},
+                         resource}}));
 }

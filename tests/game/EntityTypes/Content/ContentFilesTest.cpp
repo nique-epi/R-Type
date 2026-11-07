@@ -28,6 +28,9 @@ using rtype::game::testing::CRIMSON_PIXELS;
 using rtype::game::testing::CRIMSON_SHEET_FILE;
 using rtype::game::testing::CRIMSON_SPRITE_SHEET;
 using rtype::game::testing::DRIFTER_SHEET_FILE;
+using rtype::game::testing::EXAMPLE_RESOURCE;
+using rtype::game::testing::EXAMPLE_RESOURCE_SHEET;
+using rtype::game::testing::EXAMPLE_RESOURCE_SPRITES;
 using rtype::game::testing::FILES_OF_ONE_SHEET_AND_ITS_IMAGE;
 using rtype::game::testing::FILES_OF_THE_STACK;
 using rtype::game::testing::FILES_OF_TWO_SHEETS_AND_ONE_IMAGE;
@@ -219,4 +222,23 @@ TEST(ContentFiles, RefusesASpriteSheetTwoFoldersHold) {
 
   EXPECT_THROW(static_cast<void>(contentFilesIn(folders)),
                SharedContentFileException);
+}
+
+/**
+ * Given the shipped assets and the example resource beside them
+ * When the content of both is listed
+ * Then it holds the sheet of the crimson Drifter and its sprite sheet
+ */
+TEST(ContentFiles, HoldsTheSheetAndTheSpritesOfTheExampleResource) {
+  const std::array folders{
+      shippedAssetFolder(),
+      shippedAssetFolder().parent_path() / EXAMPLE_RESOURCE};
+
+  const std::vector<ContentFile> files = contentFilesIn(folders);
+
+  const auto holds = [&files](std::string_view path) {
+    return std::ranges::count(files, path, &ContentFile::path) == LISTED_ONCE;
+  };
+  EXPECT_TRUE(holds(EXAMPLE_RESOURCE_SHEET));
+  EXPECT_TRUE(holds(EXAMPLE_RESOURCE_SPRITES));
 }

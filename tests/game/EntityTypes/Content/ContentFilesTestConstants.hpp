@@ -68,4 +68,12 @@ constexpr std::string_view CRIMSON_PIXELS = "\x89PNG\r\n\x1a\ncrimson";
  * assets and one bringing its own. */
 constexpr std::size_t FILES_OF_THE_STACK = 5;
 
+/** @brief The example resource the repository ships, beside its assets, and
+ * the sheet and sprite sheet it brings. */
+constexpr std::string_view EXAMPLE_RESOURCE = "resources/crimson-drifter";
+constexpr std::string_view EXAMPLE_RESOURCE_SHEET =
+    "entities/crimson_drifter.toml";
+constexpr std::string_view EXAMPLE_RESOURCE_SPRITES =
+    "sprites/crimson-drifter/crimson_drifter.png";
+
 }  // namespace rtype::game::testing
