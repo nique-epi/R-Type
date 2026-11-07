@@ -203,3 +203,35 @@ TEST(BehaviourScripts, AsksNoChangeOfTheBodyWhenTheScriptReturnsNone) {
   EXPECT_FALSE(intent.resizesTo.has_value());
   EXPECT_FALSE(intent.topSpeedTo.has_value());
 }
+
+/**
+ * Given the Crimson Drifter of the example resource and a ship level with it
+ * When it steers
+ * Then it charges at its charge speed
+ */
+TEST(BehaviourScripts, TheExampleDrifterChargesAShipLevelWithIt) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  const BehaviourRegistry behaviours = exampleBehaviours(scripts);
+
+  const Intent intent =
+      steeringOf(behaviours, EXAMPLE_BEHAVIOUR, exampleViewWith(SHIP_LEVEL));
+
+  EXPECT_EQ(intent.topSpeedTo.value_or(0.0F), EXAMPLE_CHARGE_SPEED);
+}
+
+/**
+ * Given the Crimson Drifter of the example resource and a ship far below it
+ * When it steers
+ * Then it cruises at its cruise speed
+ */
+TEST(BehaviourScripts, TheExampleDrifterCruisesWhenNoShipIsLevel) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  const BehaviourRegistry behaviours = exampleBehaviours(scripts);
+
+  const Intent intent = steeringOf(behaviours, EXAMPLE_BEHAVIOUR,
+                                   exampleViewWith(SHIP_FAR_BELOW));
+
+  EXPECT_EQ(intent.topSpeedTo.value_or(0.0F), EXAMPLE_CRUISE_SPEED);
+}

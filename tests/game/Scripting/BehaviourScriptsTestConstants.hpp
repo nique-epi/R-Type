@@ -91,3 +91,16 @@ constexpr float ALL_ITS_HEALTH = 1.0F;
 constexpr float ENRAGED_WIDTH = 200.0F;
 constexpr float ENRAGED_HEIGHT = 100.0F;
 constexpr float ENRAGED_TOP_SPEED = 480.0F;
+
+/** @brief The example resource the repository ships, the behaviour its
+ * script registers, and the settings its sheet gives: within 96 units of its
+ * row, cruising at 360 units per second, charging at 720. */
+constexpr std::string_view EXAMPLE_RESOURCE_NAME = "crimson-drifter";
+constexpr std::string_view EXAMPLE_BEHAVIOUR = "crimson_charge";
+constexpr std::array<std::int64_t, 3> EXAMPLE_SETTINGS{96, 360, 720};
+constexpr float EXAMPLE_CRUISE_SPEED = 360.0F;
+constexpr float EXAMPLE_CHARGE_SPEED = 720.0F;
+
+/** @brief A ship level with the body, and a ship far below it. */
+constexpr rtype::game::Position SHIP_LEVEL{.x = 100.0F, .y = 540.0F};
+constexpr rtype::game::Position SHIP_FAR_BELOW{.x = 100.0F, .y = 900.0F};

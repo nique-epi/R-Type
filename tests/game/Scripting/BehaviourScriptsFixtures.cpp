@@ -1,9 +1,13 @@
 #include "BehaviourScriptsFixtures.hpp"
+#include <array>
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
 #include "BehaviourRegistry.hpp"
+#include "BehaviourScriptFiles.hpp"
+#include "BehaviourScripts.hpp"
 #include "BehaviourScriptsTestConstants.hpp"
 #include "BehaviourView.hpp"
 #include "IBehaviour.hpp"
@@ -47,5 +51,21 @@ rtype::game::BehaviourView viewWithHealth(float healthShare) {
   rtype::game::BehaviourView view =
       woundedViewAt(BODY_IN_THE_MIDDLE, SHIP_BELOW);
   view.healthShare = healthShare;
+  return view;
+}
+
+rtype::game::BehaviourRegistry exampleBehaviours(
+    rtype::game::BehaviourScripts& scripts) {
+  const std::array folders{
+      std::filesystem::path{RTYPE_SOURCE_RESOURCES_FOLDER} /
+      EXAMPLE_RESOURCE_NAME};
+  scripts.run(rtype::game::scriptSourcesIn(folders));
+  return scripts.behaviours();
+}
+
+rtype::game::BehaviourView exampleViewWith(rtype::game::Position nearestShip) {
+  rtype::game::BehaviourView view =
+      woundedViewAt(BODY_IN_THE_MIDDLE, nearestShip);
+  view.settings = EXAMPLE_SETTINGS;
   return view;
 }

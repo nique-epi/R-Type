@@ -4,6 +4,7 @@
 #include <string_view>
 #include <vector>
 #include "BehaviourRegistry.hpp"
+#include "BehaviourScripts.hpp"
 #include "BehaviourView.hpp"
 #include "Intent.hpp"
 #include "Position.hpp"
@@ -35,3 +36,12 @@ struct FailureLog {
 /** @returns The view woundedViewAt() gives, with @p healthShare of its health
  * left. */
 [[nodiscard]] rtype::game::BehaviourView viewWithHealth(float healthShare);
+
+/** @returns The behaviours of the example resource the repository ships. */
+[[nodiscard]] rtype::game::BehaviourRegistry exampleBehaviours(
+    rtype::game::BehaviourScripts& scripts);
+
+/** @returns A view of a body in the middle at the settings of the example
+ * sheet, with the ship @p nearestShip. */
+[[nodiscard]] rtype::game::BehaviourView exampleViewWith(
+    rtype::game::Position nearestShip);
