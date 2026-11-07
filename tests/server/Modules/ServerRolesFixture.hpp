@@ -35,6 +35,11 @@ class ServerRolesFixture : public ServerModuleFixture {
    * commented ones included. */
   [[nodiscard]] static std::set<std::string> exampleSettings();
 
+  /** @returns exampleSettings(), less the settings of the modules this build
+   * left out: their lines are refused, as the example says nothing of the
+   * build. */
+  [[nodiscard]] static std::set<std::string> exampleSettingsOfThisBuild();
+
  private:
   /** @brief Installs @p modules in an application whose configuration step
    * runs @p pluginLines, then refuses the start once the settings are

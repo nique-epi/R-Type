@@ -1,3 +1,7 @@
+if(NOT RTYPE_MODULE_MASTER_LINK)
+  return()
+endif()
+
 add_library(rtype_server_master_module STATIC
   HeartbeatJob.cpp
   MasterMessages.cpp

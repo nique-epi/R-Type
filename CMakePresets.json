@@ -27,6 +27,20 @@
         "ENABLE_SANITIZERS": "ON",
         "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/build-sanitize"
       }
+    },
+    {
+      "name": "modules-off",
+      "inherits": "test",
+      "binaryDir": "${sourceDir}/build-modules-off",
+      "cacheVariables": {
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/build-modules-off",
+        "RTYPE_MODULE_AUDIO": "OFF",
+        "RTYPE_MODULE_METRICS": "OFF",
+        "RTYPE_MODULE_MASTER_LINK": "OFF",
+        "RTYPE_MODULE_CHAT": "OFF",
+        "RTYPE_MODULE_PLUGINS": "OFF",
+        "RTYPE_MODULE_GAME_STATISTICS": "OFF"
+      }
     }
   ],
   "buildPresets": [
@@ -44,6 +58,11 @@
       "name": "sanitize",
       "inherits": "test",
       "configurePreset": "sanitize"
+    },
+    {
+      "name": "modules-off",
+      "inherits": "test",
+      "configurePreset": "modules-off"
     }
   ],
   "testPresets": [
@@ -59,6 +78,11 @@
       "name": "sanitize",
       "inherits": "test",
       "configurePreset": "sanitize"
+    },
+    {
+      "name": "modules-off",
+      "inherits": "test",
+      "configurePreset": "modules-off"
     }
   ],
   "packagePresets": [
@@ -121,10 +145,27 @@
         {
           "type": "test",
           "name": "sanitize"
-          }
-        ]
-      },
-      {
+        }
+      ]
+    },
+    {
+      "name": "modules-off",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "modules-off"
+        },
+        {
+          "type": "build",
+          "name": "modules-off"
+        },
+        {
+          "type": "test",
+          "name": "modules-off"
+        }
+      ]
+    },
+    {
       "name": "package",
       "steps": [
         {

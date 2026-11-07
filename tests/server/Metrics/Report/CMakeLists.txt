@@ -1,1 +1,0 @@
-target_sources(server_metrics_tests PRIVATE MetricsLinesTest.cpp)

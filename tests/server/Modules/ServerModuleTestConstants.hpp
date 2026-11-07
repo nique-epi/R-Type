@@ -10,6 +10,11 @@
 constexpr const char* PROBE_MODULE = "probe";
 constexpr const char* PORT_PROBE_MODULE = "port probe";
 
+/** @brief The lines that load the game-statistics plugin, as server.cfg
+ * writes them; a test that only reads lines needs no compiled plugin. */
+constexpr std::string_view PLUGIN_LINE = "plugin game-statistics";
+constexpr std::string_view PLUGIN_FOLDER_LINE = "plugin-folder plugins";
+
 /** @brief The database of a server a test starts, in a folder of the test. */
 constexpr std::string_view TEST_DATABASE_FILE = "results.db";
 

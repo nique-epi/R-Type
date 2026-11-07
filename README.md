@@ -75,6 +75,25 @@ The client and the server read their files from `assets/`, next to their executa
 
 If the repository was cloned without its submodules, run `git submodule update --init` first.
 
+### Build options
+
+Each optional module has a CMake option, on by default. Off, its folder is not compiled, its `Contract/` excepted, the list of its program does not name it, and the program starts without it:
+
+| Option | Leaves out | Without it |
+|---|---|---|
+| `RTYPE_MODULE_AUDIO` | the sound of the client | the client plays nothing, and `--no-sound` changes nothing |
+| `RTYPE_MODULE_METRICS` | the metrics of the client and of each game process | no report in the journal, and `--traffic-csv` writes no file |
+| `RTYPE_MODULE_MASTER_LINK` | the registration of the server with the master | the server never registers, and `set master-url` and `set master-key` are refused |
+| `RTYPE_MODULE_CHAT` | the chat of the games | a chat line reaches nobody |
+| `RTYPE_MODULE_PLUGINS` | the loading of plugins | `plugin` and `plugin-folder` are unknown commands |
+| `RTYPE_MODULE_GAME_STATISTICS` | the `game-statistics` plugin; off whenever `RTYPE_MODULE_PLUGINS` is | no `game-statistics` file in `plugins/` |
+
+```bash
+cmake --preset default -DRTYPE_MODULE_AUDIO=OFF
+```
+
+The configure ends with the list of the modules built and left out; `cmake --build build --parallel` then builds them. A line of `server.cfg` refused for a module left out is written to the journal at the `warn` level, and the program starts all the same.
+
 ### Packages
 
 ```bash
@@ -235,6 +254,12 @@ cmake --workflow --preset sanitize
 ```
 
 This builds everything in `build-sanitize/` with AddressSanitizer and UndefinedBehaviorSanitizer, then runs the tests; an error stops the test that caused it. It needs GCC or Clang, not MSVC, and LeakSanitizer reports leaks on Linux only. The Linux CI runs it, then starts `r-type_server --mode supervisor` with no player, so with no game running, stops it with SIGINT and requires exit code 0.
+
+```bash
+cmake --workflow --preset modules-off
+```
+
+This builds everything in `build-modules-off/` with every [build option](#build-options) off, then runs the tests: the tests of a module left out are not built, and a test that needs one is skipped. The Linux CI runs it, then starts and stops the supervisor in the same way.
 
 ```bash
 ./build/tests/malformed_datagrams --server 4242

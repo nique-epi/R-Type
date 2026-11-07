@@ -1,4 +1,9 @@
 add_subdirectory(Contract)
+
+if(NOT RTYPE_MODULE_AUDIO)
+  return()
+endif()
+
 add_subdirectory(Sounds)
 add_subdirectory(Music)
 

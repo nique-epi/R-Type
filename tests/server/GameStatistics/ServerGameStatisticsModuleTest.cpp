@@ -2,15 +2,26 @@
 #include <algorithm>
 #include <filesystem>
 #include <string>
+#include <vector>
 #include "EngineException.hpp"
 #include "ExecutablePath.hpp"
+#include "GameLaunchOptions.hpp"
+#include "GameProcessModulesFixture.hpp"
+#include "GameStatisticsFixtures.hpp"
 #include "LogLevel.hpp"
 #include "RecordedLine.hpp"
+#include "ServerConstants.hpp"
 #include "ServerGameStatisticsFixture.hpp"
 #include "ServerGameStatisticsModuleTestConstants.hpp"
+#include "ServerModuleTestConstants.hpp"
+#include "SettingLine.hpp"
+#include "TrafficFixtures.hpp"
 #include "TrafficTestConstants.hpp"
 
 using rtype::engine::ModuleStartFailedException;
+using rtype::network::testing::textOf;
+using rtype::server::CONFIGURATION_OPTION;
+using rtype::server::GameLaunchOptions;
 
 /**
  * Given the compiled plugin named in the configuration
@@ -212,4 +223,46 @@ TEST_F(ServerGameStatisticsFixture,
                                            rtype::logging::LogLevel::Warn;
                                   }),
             1);
+}
+
+/**
+ * Given a game process given a file of commands that loads the game statistics
+ * plugin, writing to a file of the folder it starts in
+ * When the application starts
+ * Then the file of its port holds the names of its columns: the game read the
+ * file it was given, and its modules provide what the plugin needs
+ */
+TEST_F(GameProcessModulesFixture,
+       LoadsTheGameStatisticsPluginOfTheFileItIsGiven) {
+  std::vector<std::string> lines = gameStatisticsPluginLines();
+  lines.push_back(rtype::engine::settingLine(STATISTICS_FILE_SETTING,
+                                             STATISTICS_FILE_NAME));
+  writeConfiguration(GAME_CONFIGURATION_FILE, lines);
+  const auto application = gameApplication(GameLaunchOptions::read(
+      gameArguments({CONFIGURATION_OPTION, GAME_CONFIGURATION_FILE})));
+
+  application->start();
+
+  EXPECT_EQ(textOf(statisticsFileOfPort(port())), STATISTICS_HEADER_LINE);
+  application->stop();
+}
+
+/**
+ * Given a server.cfg in the folder a game process starts in, which loads the
+ * game statistics plugin, and no file of commands given
+ * When the application starts
+ * Then no statistics file is written: a game reads only the file its
+ * supervisor gives it
+ */
+TEST_F(GameProcessModulesFixture, ReadsNoServerConfigurationOfItsFolder) {
+  std::vector<std::string> lines = gameStatisticsPluginLines();
+  lines.push_back(rtype::engine::settingLine(STATISTICS_FILE_SETTING,
+                                             STATISTICS_FILE_NAME));
+  writeConfiguration(rtype::server::SERVER_CONFIGURATION_FILE_NAME, lines);
+  const auto application = gameApplication(launchOptions());
+
+  application->start();
+
+  EXPECT_FALSE(std::filesystem::exists(statisticsFileOfPort(port())));
+  application->stop();
 }

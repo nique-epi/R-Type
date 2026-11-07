@@ -100,7 +100,7 @@ check_each_package_holds_only_its_program() {
   [ -d "$server_folder/assets/entities" ] ||
     fail "the server package has no assets/entities"
   [ -d "$server_folder/assets/sprites" ] ||
-    fail "the server package has no assets/sprites, which its content pack holds"
+    fail "the server package has no assets/sprites, which its content pack serves"
   [ ! -e "$(dirname "$client_program")/r-type_server$exe" ] ||
     fail "the client package also holds the server"
   [ ! -e "$client_folder/assets/waves" ] ||

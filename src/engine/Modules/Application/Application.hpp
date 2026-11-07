@@ -3,15 +3,18 @@
 #include <memory>
 #include <mutex>
 #include <vector>
+#include "BuiltModuleConstants.hpp"
 #include "CommandInterpreter.hpp"
 #include "ConfigurationRegistry.hpp"
 #include "ConfigurationStep.hpp"
 #include "IModule.hpp"
 #include "LoopStages.hpp"
 #include "ModuleSwitches.hpp"
-#include "PluginShelf.hpp"
 #include "ServiceRegistry.hpp"
 #include "TimeConstants.hpp"
+#if RTYPE_MODULE_PLUGINS
+#include "PluginShelf.hpp"
+#endif
 
 namespace rtype::engine {
 
@@ -38,9 +41,12 @@ namespace rtype::engine {
  * a plugin included, is never installed, never started, and provides no
  * service. Last, between the installs and the starts, with every command, the
  * settings the modules declared included; a `plugin` line already run does
- * nothing there. A module that uses another only when it is listed implements
- * IOptionalDependencies: that other module may be off or absent, and when it is
- * listed it must come first.
+ * nothing there. Without the plugins (RTYPE_MODULE_PLUGINS off), the first
+ * pass still runs, with no command, so the passes keep their order, and a
+ * `plugin` line is refused in the last pass as an unknown command. A module
+ * that uses another only when it is listed implements IOptionalDependencies:
+ * that other module may be off or absent, and when it is listed it must come
+ * first.
  */
 class Application {
  public:
@@ -51,8 +57,9 @@ class Application {
    * @throws NullModuleException if a module is null.
    * @throws MissingDependencyException if a dependency of a module is not
    * listed before it.
-   * @throws UnknownExecutablePathException if the system does not tell where
-   * the running executable is, so the plugin folder cannot be found.
+   * @throws UnknownExecutablePathException if the build has the plugins and
+   * the system does not tell where the running executable is, so the plugin
+   * folder cannot be found.
    */
   explicit Application(std::vector<std::unique_ptr<IModule>> modules);
 
@@ -69,8 +76,9 @@ class Application {
    * @throws NullModuleException if a module is null.
    * @throws MissingDependencyException if a dependency of a module is not
    * listed before it, or an optional dependency is listed after it.
-   * @throws UnknownExecutablePathException if the system does not tell where
-   * the running executable is, so the plugin folder cannot be found.
+   * @throws UnknownExecutablePathException if the build has the plugins and
+   * the system does not tell where the running executable is, so the plugin
+   * folder cannot be found.
    */
   Application(LoopStages stages, std::vector<std::unique_ptr<IModule>> modules,
               ConfigurationStep configure = {});
@@ -155,6 +163,7 @@ class Application {
   void installModules();
   void startModules();
 
+#if RTYPE_MODULE_PLUGINS
   /**
    * Declared first, so it is destroyed last: the libraries of the plugins close
    * after everything that may hold code of a plugin, the std::function of
@@ -162,6 +171,7 @@ class Application {
    * included.
    */
   PluginShelf plugins_;
+#endif
   LoopStages stages_;
   ServiceRegistry services_;
   std::vector<std::unique_ptr<IModule>> modules_;

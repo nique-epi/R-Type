@@ -1,5 +1,6 @@
 build/
 /build-sanitize/
+/build-modules-off/
 .cache/
 compile_commands.json
 Testing/

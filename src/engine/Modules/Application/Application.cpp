@@ -9,17 +9,20 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "BuiltModuleConstants.hpp"
 #include "CommandInterpreter.hpp"
 #include "ConfigurationStep.hpp"
 #include "EngineException.hpp"
-#include "ExecutablePath.hpp"
 #include "IModule.hpp"
 #include "IOptionalDependencies.hpp"
 #include "InstallContext.hpp"
 #include "LoopStages.hpp"
-#include "PluginConstants.hpp"
 #include "RequireNoNullModule.hpp"
 #include "TimeConstants.hpp"
+#if RTYPE_MODULE_PLUGINS
+#include "ExecutablePath.hpp"
+#include "PluginConstants.hpp"
+#endif
 
 namespace rtype::engine {
 
@@ -78,7 +81,10 @@ Application::Application(std::vector<std::unique_ptr<IModule>> modules)
 Application::Application(LoopStages stages,
                          std::vector<std::unique_ptr<IModule>> modules,
                          ConfigurationStep configure)
-    : plugins_(executableFolder() / DEFAULT_PLUGIN_FOLDER_NAME),
+    :
+#if RTYPE_MODULE_PLUGINS
+      plugins_(executableFolder() / DEFAULT_PLUGIN_FOLDER_NAME),
+#endif
       stages_(std::move(stages)),
       modules_(std::move(modules)),
       configure_(std::move(configure)) {
@@ -88,7 +94,9 @@ Application::Application(LoopStages stages,
   services_.provide(commands_);
   services_.provide(configuration_);
   switches_.registerCommand(commands_);
+#if RTYPE_MODULE_PLUGINS
   plugins_.registerCommands(commands_);
+#endif
 }
 
 Application::~Application() {
@@ -136,9 +144,13 @@ void Application::loadPlugins() {
     return;
   }
   CommandInterpreter pluginsOnly;
+#if RTYPE_MODULE_PLUGINS
   plugins_.registerCommands(pluginsOnly);
+#endif
   configure_(pluginsOnly);
+#if RTYPE_MODULE_PLUGINS
   addModules(plugins_.takeModules());
+#endif
 }
 
 void Application::addModules(std::vector<std::unique_ptr<IModule>> added) {

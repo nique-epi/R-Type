@@ -1,3 +1,7 @@
+if(NOT RTYPE_MODULE_PLUGINS)
+  return()
+endif()
+
 add_library(rtype_engine_plugin_shelf STATIC PluginShelf.cpp)
 
 target_include_directories(rtype_engine_plugin_shelf PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

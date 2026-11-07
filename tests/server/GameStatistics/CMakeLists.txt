@@ -1,3 +1,7 @@
+if(NOT RTYPE_MODULE_GAME_STATISTICS)
+  return()
+endif()
+
 # The plugin the tests load is the one the build puts next to the programs:
 # PluginFiles reads its folder from RTYPE_TEST_PLUGIN_FOLDER.
 target_sources(server_module_tests PRIVATE GameStatisticsFixtures.cpp ServerGameStatisticsFixture.cpp ServerGameStatisticsModuleTest.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/Plugins/PluginFiles.cpp)
