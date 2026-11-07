@@ -145,11 +145,41 @@ game::WaveCurve curveFrom(const DataFileTable& table) {
 
 /** @returns The waves the table of one difficulty describes, its enemies
  * checked against @p types. */
+/** @returns The names of the sheets of @p types that are bosses, for the
+ * errors. */
+std::vector<std::string> bossNamesOf(const game::EntitySheets& types) {
+  std::vector<std::string> names;
+  for (const game::EntitySheet& sheet : types.all()) {
+    if (sheet.boss.has_value()) {
+      names.push_back(sheet.name);
+    }
+  }
+  return names;
+}
+
+/** @returns The boss the table of one difficulty names; nothing without one.
+ * @throws engine::DataFileTextExpectedException when it is not a text, and
+ * UnknownBossException when it names no boss of @p types. */
+std::optional<std::string> bossFrom(const DataFileTable& table,
+                                    const game::EntitySheets& types) {
+  if (!table.table.get().contains(BOSS_KEY)) {
+    return std::nullopt;
+  }
+  std::string boss = engine::textAt(table, BOSS_KEY);
+  const std::vector<std::string> bosses = bossNamesOf(types);
+  if (std::ranges::find(bosses, boss) == bosses.end()) {
+    throw UnknownBossException(engine::placeOfKey(table, BOSS_KEY), boss,
+                               bosses);
+  }
+  return boss;
+}
+
 WavePlan planFrom(const DataFileTable& table, const game::EntitySheets& types) {
   engine::refuseUnknownKeys(table, WAVE_PLAN_KEYS);
   return WavePlan{
       .curve = curveFrom(table),
-      .enemies = enemiesFrom(EnemyList{.table = table, .types = types})};
+      .enemies = enemiesFrom(EnemyList{.table = table, .types = types}),
+      .boss = bossFrom(table, types)};
 }
 
 /** @returns The waves of every difficulty of the file whose root is @p root,

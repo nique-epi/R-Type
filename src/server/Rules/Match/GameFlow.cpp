@@ -6,6 +6,8 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include "BossStage.hpp"
+#include "BossStageParts.hpp"
 #include "CollisionRules.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
@@ -73,19 +75,21 @@ std::optional<std::string_view> reasonToLose(PlayerRoster& roster,
 
 /**
  * @returns How the game in progress played by @p roster in @p world, whose
- * Bydos come from @p spawner, ends now: lost when no player is left or none
- * of them has a life, otherwise won when the last wave of the level is over.
- * The loss comes first, so a game lost on the tick its last wave ends is
- * lost. Nothing when it goes on.
+ * level ends as @p stage says, ends now: lost when no player is left or none
+ * of them has a life, otherwise won once the level is cleared: its last wave
+ * over, and its boss, if it has one, gone with every other enemy. The loss
+ * comes first, so a game lost on the tick its level is cleared is lost.
+ * Nothing when it goes on.
  */
 std::optional<GameEnding> endingOf(PlayerRoster& roster, game::World& world,
-                                   const WaveSpawner& spawner) {
+                                   const BossStage& stage) {
   const std::optional<std::string_view> loss = reasonToLose(roster, world);
   if (loss.has_value()) {
     return GameEnding{.reason = *loss, .outcome = GameOutcome::Defeat};
   }
-  if (spawner.lastWaveFinished()) {
-    return GameEnding{.reason = LAST_WAVE_OVER_FINISH_REASON,
+  if (stage.levelCleared()) {
+    return GameEnding{.reason = stage.hasBoss() ? BOSS_DEFEATED_FINISH_REASON
+                                                : LAST_WAVE_OVER_FINISH_REASON,
                       .outcome = GameOutcome::Victory};
   }
   return std::nullopt;
@@ -104,6 +108,17 @@ void runWorldSystems(GameContext& game, game::World& world) {
 void moveTo(engine::EventBus& events, GameState& state, GameState next) {
   events.publish(GameStateChanged{.previous = std::exchange(state, next),
                                   .current = next});
+}
+
+/** @returns The boss stage of the level played in @p world. */
+std::unique_ptr<BossStage> bossStageFor(GameContext& game, game::World& world) {
+  return std::make_unique<BossStage>(
+      BossStageParts{.world = world,
+                     .roster = game.roster.get(),
+                     .send = game.send,
+                     .events = game.events.get(),
+                     .types = game.settings.types,
+                     .boss = game.settings.waves.boss});
 }
 
 /** @brief Writes that the game started, with how many players. */
@@ -193,6 +208,7 @@ void GameFlow::advanceState() {
       weaponSystem_->onTick();
       volleySystem_->onTick();
       waveSpawner_->onTick();
+      bossStage_->onTick(waveSpawner_->lastWaveFinished());
       lifeKeeper_->onTick();
       break;
     case GameState::Finished:
@@ -220,7 +236,7 @@ void GameFlow::finishIfOver() {
     return;
   }
   const std::optional<GameEnding> ending =
-      endingOf(game_.roster.get(), world(), *waveSpawner_);
+      endingOf(game_.roster.get(), world(), *bossStage_);
   if (!ending.has_value()) {
     return;
   }
@@ -240,6 +256,7 @@ void GameFlow::buildWorld() {
       waveSpawnerFor(game_, world, game_.settings.seed + worldsBuilt_);
   weaponSystem_ = weaponSystemFor(game_, world);
   volleySystem_ = volleySystemFor(game_, world);
+  bossStage_ = bossStageFor(game_, world);
   lifeKeeper_ = std::make_unique<LifeKeeper>(
       LifeKeeperParts{.events = game_.events.get(),
                       .world = world,

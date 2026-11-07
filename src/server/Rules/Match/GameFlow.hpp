@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include "BossStage.hpp"
 #include "CollisionRules.hpp"
 #include "DamageRules.hpp"
 #include "GameContext.hpp"
@@ -29,11 +30,13 @@ namespace rtype::server {
  * START_BARRIER_TICKS ticks went by (see StartBarrier), from InProgress to
  * Finished
  * when finish() is called, once no player is left in it, once no player left
- * in it has a life (the game is lost), or once the last wave of the level is
- * over (the game is won), and from Finished back to WaitingForPlayers after
- * FINISHED_STATE_TICKS ticks. Coming back to WaitingForPlayers builds a new
- * world: every player gets a new ship and its STARTING_LIVES back, is no longer
- * ready, and the tick is 0. The players stay connected.
+ * in it has a life (the game is lost), or once the level is cleared (the game
+ * is won): its last wave over, and the boss its difficulty names, if any, gone
+ * with every other enemy (see BossStage), and from Finished back to
+ * WaitingForPlayers after FINISHED_STATE_TICKS ticks. Coming back to
+ * WaitingForPlayers builds a new world: every player gets a new ship and its
+ * STARTING_LIVES back, is no longer ready, and the tick is 0. The players stay
+ * connected.
  *
  * The flow tells the players where the game stands, as the A session section
  * of the protocol page describes, through the IGameReplication it is given.
@@ -179,6 +182,7 @@ class GameFlow final : public IGameFlow {
   std::unique_ptr<WaveSpawner> waveSpawner_;
   std::unique_ptr<WeaponSystem> weaponSystem_;
   std::unique_ptr<VolleySystem> volleySystem_;
+  std::unique_ptr<BossStage> bossStage_;
   std::unique_ptr<game::CollisionRules> collisionRules_;
   std::unique_ptr<game::DamageRules> damageRules_;
   std::unique_ptr<LifeKeeper> lifeKeeper_;

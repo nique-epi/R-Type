@@ -78,5 +78,6 @@ constexpr std::string_view NO_LIFE_LEFT_FINISH_REASON =
     "no player has a life left";
 constexpr std::string_view LAST_WAVE_OVER_FINISH_REASON =
     "the last wave is over";
+constexpr std::string_view BOSS_DEFEATED_FINISH_REASON = "the boss is defeated";
 
 }  // namespace rtype::server
