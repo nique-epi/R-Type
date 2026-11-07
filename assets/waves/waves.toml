@@ -3,8 +3,8 @@
 # its executable, or one level above it, and stops with an error naming the
 # file, the line and the key when a key is missing, misspelt or out of its
 # range, or an enemy is unknown.
-# Every game plays the difficulty "normal" until the rules of a game can
-# choose another one.
+# A game is played at the difficulty its creator chose, "normal" by default.
+# A name is 1 to 16 bytes, and a file holds 16 difficulties at most.
 #
 # A difficulty is a table [difficulty.<name>] of:
 #   enemies                         the kinds its Bydos are, taken in turn and
