@@ -11,6 +11,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "AppliedInput.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DatagramCodec.hpp"
 #include "DebugJournal.hpp"
@@ -54,6 +55,7 @@ using game::testing::HELD_SECOND_DISTANCE;
 using game::testing::POSITION_TOLERANCE;
 using game::testing::ROLL_DISTANCE;
 using game::testing::ROLL_END_TICK;
+using rtype::server::AppliedInput;
 using testing::bydosAmong;
 using testing::bydosIn;
 using testing::ECHO_HELD_FOR;
@@ -1397,7 +1399,8 @@ TEST_F(GameInstanceInputTest, RecordsTheInputAppliedToTheShip) {
   const ConnectedPlayer* const connected =
       game().roster().find(playerEndpoint(FIRST_PLAYER));
   ASSERT_NE(connected, nullptr);
-  EXPECT_EQ(connected->appliedInputNumber, lastInputNumber(FIRST_PLAYER));
+  EXPECT_EQ(connected->appliedInput.value_or(AppliedInput{}).inputNumber,
+            lastInputNumber(FIRST_PLAYER));
 }
 
 /**
@@ -2060,12 +2063,12 @@ TEST_F(GameInstanceInputDelayTest, ConfirmsAnInputOnlyOnceItIsApplied) {
 
   deliver({FIRST_SENT});
   tick();
-  const std::optional<std::uint32_t> beforeTheDelay =
-      connected->appliedInputNumber;
+  const std::optional<AppliedInput> beforeTheDelay = connected->appliedInput;
   runTicks(INPUT_DELAY_TICKS);
 
   EXPECT_FALSE(beforeTheDelay.has_value());
-  EXPECT_EQ(connected->appliedInputNumber, lastInputNumber(FIRST_PLAYER));
+  EXPECT_EQ(connected->appliedInput.value_or(AppliedInput{}).inputNumber,
+            lastInputNumber(FIRST_PLAYER));
 }
 
 /**

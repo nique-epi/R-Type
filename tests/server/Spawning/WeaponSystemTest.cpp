@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <initializer_list>
 #include <vector>
+#include "AppliedInput.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EntityIdConstants.hpp"
 #include "EntitySheet.hpp"
@@ -20,6 +21,9 @@
 #include "TimeConstants.hpp"
 #include "WeaponSystemFixture.hpp"
 #include "WeaponSystemTestConstants.hpp"
+
+using rtype::network::NO_SHOWN_TICK;
+using rtype::server::AppliedInput;
 
 namespace rtype::server::testing {
 
@@ -95,7 +99,8 @@ TEST_F(ShipWeaponFixture, GivesTheMissileToThePlayerWhoFired) {
  */
 TEST_F(ShipWeaponFixture, NamesThePlayerAndTheInputThatFired) {
   ConnectedPlayer& player = connect(FIRST_PLAYER);
-  player.appliedInputNumber = SOME_APPLIED_INPUT;
+  player.appliedInput = AppliedInput{.inputNumber = SOME_APPLIED_INPUT,
+                                     .shownTick = NO_SHOWN_TICK};
 
   runTicksShooting(player, 1);
 

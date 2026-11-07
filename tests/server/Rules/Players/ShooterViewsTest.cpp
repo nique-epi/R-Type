@@ -1,11 +1,14 @@
 #include <gtest/gtest.h>
+#include "AppliedInput.hpp"
 #include "ProtocolConstants.hpp"
 #include "ShooterViewsFixture.hpp"
 #include "ShooterViewsTestConstants.hpp"
 
 using rtype::network::NO_SHOWN_TICK;
+using rtype::server::AppliedInput;
 using rtype::server::testing::FIVE_TICKS_BEHIND;
 using rtype::server::testing::PRESENT_TICK;
+using rtype::server::testing::SHOOTER_INPUT_NUMBER;
 using rtype::server::testing::ShooterViewsFixture;
 using rtype::server::testing::TICK_FIVE_BEFORE;
 
@@ -16,7 +19,8 @@ using rtype::server::testing::TICK_FIVE_BEFORE;
  * Then the missile is tested five ticks behind the present
  */
 TEST_F(ShooterViewsFixture, GivesAMissileTheTicksItsPlayerSawBehind) {
-  shooter().appliedShownTick = TICK_FIVE_BEFORE;
+  shooter().appliedInput = AppliedInput{.inputNumber = SHOOTER_INPUT_NUMBER,
+                                        .shownTick = TICK_FIVE_BEFORE};
 
   giveViewsAt(PRESENT_TICK);
 
@@ -29,7 +33,8 @@ TEST_F(ShooterViewsFixture, GivesAMissileTheTicksItsPlayerSawBehind) {
  * Then the missile is tested in the present
  */
 TEST_F(ShooterViewsFixture, TestsInThePresentBeforeTheFirstState) {
-  shooter().appliedShownTick = NO_SHOWN_TICK;
+  shooter().appliedInput = AppliedInput{.inputNumber = SHOOTER_INPUT_NUMBER,
+                                        .shownTick = NO_SHOWN_TICK};
 
   giveViewsAt(PRESENT_TICK);
 
@@ -43,7 +48,8 @@ TEST_F(ShooterViewsFixture, TestsInThePresentBeforeTheFirstState) {
  * Then the missile is tested in the present, never ahead of it
  */
 TEST_F(ShooterViewsFixture, NeverLooksAheadOfThePresent) {
-  shooter().appliedShownTick = PRESENT_TICK;
+  shooter().appliedInput = AppliedInput{.inputNumber = SHOOTER_INPUT_NUMBER,
+                                        .shownTick = PRESENT_TICK};
 
   giveViewsAt(PRESENT_TICK);
 

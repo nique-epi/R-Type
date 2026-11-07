@@ -62,8 +62,7 @@ std::vector<network::Endpoint> Departures::countSilentTicks() {
 void Departures::setAway(ConnectedPlayer& player) const {
   player.away = true;
   player.newestInputNumber.reset();
-  player.appliedInputNumber.reset();
-  player.appliedShownTick = network::NO_SHOWN_TICK;
+  player.appliedInput.reset();
   logger_.info("player ", static_cast<unsigned int>(player.playerNumber),
                " is away: nothing received from ", player.endpoint.address,
                " port ", player.endpoint.port, " for ",

@@ -12,6 +12,10 @@ constexpr std::uint32_t PRESENT_TICK = 100;
 constexpr std::uint32_t TICK_FIVE_BEFORE = 95;
 constexpr std::size_t FIVE_TICKS_BEHIND = 5;
 
+/** @brief The inputNumber of the input applied last to the ship of the
+ * player who fires. */
+constexpr std::uint32_t SHOOTER_INPUT_NUMBER = 41;
+
 /** @brief The session token of the player who fires. */
 constexpr std::uint64_t SHOOTER_SESSION_TOKEN = 0x5115'7E25;
 

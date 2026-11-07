@@ -94,10 +94,11 @@ std::optional<ProjectileLaunch> launchOf(const WeaponShot& shot,
     if (shooter == nullptr) {
       return std::nullopt;
     }
-    launch.author = ShotAuthor{
-        .owner = shooter->playerNumber,
-        .firingInput =
-            shooter->appliedInputNumber.value_or(network::NO_FIRING_INPUT)};
+    launch.author =
+        ShotAuthor{.owner = shooter->playerNumber,
+                   .firingInput = shooter->appliedInput.has_value()
+                                      ? shooter->appliedInput->inputNumber
+                                      : network::NO_FIRING_INPUT};
   }
   return launch;
 }

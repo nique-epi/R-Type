@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include "AppliedInput.hpp"
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "Entity.hpp"
@@ -18,11 +19,15 @@ namespace {
 /** @returns How many ticks before @p tick the client of @p player showed the
  * enemies; 0 when it showed none or a tick not before @p tick. */
 std::size_t ticksBehind(const ConnectedPlayer* player, std::uint32_t tick) {
-  if (player == nullptr || player->appliedShownTick == network::NO_SHOWN_TICK ||
-      player->appliedShownTick >= tick) {
+  if (player == nullptr) {
     return 0;
   }
-  return tick - player->appliedShownTick;
+  const std::uint32_t shown =
+      player->appliedInput.value_or(AppliedInput{}).shownTick;
+  if (shown == network::NO_SHOWN_TICK || shown >= tick) {
+    return 0;
+  }
+  return tick - shown;
 }
 
 /** @brief A missile of a player and the ViewDelay it gets. */

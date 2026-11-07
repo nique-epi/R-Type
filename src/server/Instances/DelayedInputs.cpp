@@ -1,6 +1,7 @@
 #include "DelayedInputs.hpp"
 #include <cstddef>
 #include <cstdint>
+#include "AppliedInput.hpp"
 #include "ConnectedPlayer.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
@@ -30,8 +31,8 @@ void DelayedInputs::release(PlayerRoster& roster, const InputSink& sink) {
     ConnectedPlayer* const player = roster.findByNumber(due.playerNumber);
     if (player != nullptr) {
       sink(*player, due.input);
-      player->appliedInputNumber = due.input.inputNumber;
-      player->appliedShownTick = due.input.shownTick;
+      player->appliedInput = AppliedInput{.inputNumber = due.input.inputNumber,
+                                          .shownTick = due.input.shownTick};
     }
   }
   ++currentTick_;
