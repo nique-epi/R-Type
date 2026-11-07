@@ -30,6 +30,7 @@ set port 4300
 | `module <name> on\|off` | server, client and master | Turns a module of the program on or off before the modules start. |
 | `plugin <name>` | server, client and master | Loads a plugin, a module built as a shared library, before the modules install. |
 | `plugin-folder <folder>` | server, client and master | Sets the folder the `plugin` lines read. |
+| `ensure <resource>` | server | Starts a resource: its sheets, sprite sheets and waves are laid over the assets. |
 
 No other command exists. The interpreter keeps a help text for each command, but nothing prints it yet. A module that registers a command in its `install()` makes it usable in the file with no other change.
 
@@ -87,6 +88,10 @@ A plugin that cannot be loaded does not refuse the line: it stops the program be
 
 `plugin-folder` takes exactly one word: a folder, read from the folder the program is started from when it is relative, like the file itself. It sets where the `plugin` lines look, and it comes before every `plugin` line: after one, a line that names another folder is refused, and a line that names the same folder again does nothing.
 
+### `ensure`
+
+`ensure` takes exactly one word: the name of a resource, 1 to 32 lowercase letters, digits, `-` and `_`. It starts the folder of that name in `resources/`, beside the assets folder, with the resources its manifest depends on before it; a resource named twice, or brought by another, starts once (see [Resources](/R-Type/server/#resources-ensure-lines)). It is a line of the games: the supervisor hands it to them, like `plugin`, and also reads it, to serve the content of the resources. Both read the `ensure` lines before they build their modules, so a line that names no resource or two, a name with another character, a missing resource, a manifest the reader refuses or dependencies in a circle stop the supervisor at start, with `supervisor stopped: <message>`. The client and the master have no such command.
+
 Modules of the supervisor:
 
 | Module | Needs | Does |
@@ -139,7 +144,7 @@ Turning off a module the program cannot run without is accepted when nothing tha
 
 ## What happens to a bad line
 
-A refused line never stops the program, with one exception: a `plugin` line that names a plugin that cannot be loaded (see [`plugin`](#plugin)). The reading goes on with the next line, and the program logs the refusal at the `warn` level once its journal is open, with the file and the line number. A line that comes from a launch option names the launch option instead of a file.
+A refused line never stops the program, with two exceptions: a `plugin` line that names a plugin that cannot be loaded (see [`plugin`](#plugin)), and a wrong `ensure` line (see [`ensure`](#ensure)). The reading goes on with the next line, and the program logs the refusal at the `warn` level once its journal is open, with the file and the line number. A line that comes from a launch option names the launch option instead of a file.
 
 | Cause | Message |
 |---|---|
@@ -163,6 +168,8 @@ The reasons:
 | `plugin` | `plugins load before the modules install` for a plugin not loaded yet, once the modules are listed |
 | `plugin-folder` | `expected: plugin-folder <folder>` when the number of words is not one |
 | `plugin-folder` | `plugin-folder comes before every plugin line` for another folder, after a `plugin` line |
+
+An `ensure` line is never refused: a wrong one stops the server before its modules are built (see [`ensure`](#ensure)).
 
 ## Where the settings come from
 

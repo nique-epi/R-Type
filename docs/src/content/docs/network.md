@@ -427,7 +427,7 @@ A route reads an `ApiRequest` (the body, the key of an `Authorization: Bearer` h
 
 ## Content pack: `encodeContentPack`, `decodeContentPack`
 
-`src/network/Content/` holds what a client and a supervisor share of the content pack, the file of sheets and sprite sheets a client downloads when it lacks the content of a server (see [Protocol](/R-Type/protocol/#content-pack)). It needs neither Asio nor the game: the files come as `identifiers::ContentFile`, a path and its bytes, which `game::contentFilesIn()` lists from an assets folder.
+`src/network/Content/` holds what a client and a supervisor share of the content pack, the file of sheets and sprite sheets a client downloads when it lacks the content of a server (see [Protocol](/R-Type/protocol/#content-pack)). It needs neither Asio nor the game: the files come as `identifiers::ContentFile`, a path and its bytes, which `game::contentFilesIn()` lists from the assets folder and the resources a server starts.
 
 - `encodeContentPack(files)` writes the pack; it throws when a path fails `isContentPath()`, the paths are not in strict order, there are more than `MAXIMUM_CONTENT_PACK_FILES` (64), or the pack would pass `MAXIMUM_CONTENT_PACK_BYTES` (8 MiB).
 - `decodeContentPack(pack)` reads one back, every count and size bounded before it is read, and throws an `InvalidContentPackException` for a pack the rules refuse, or `BufferUnderflowException` for one cut short.

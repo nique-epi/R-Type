@@ -1,6 +1,6 @@
 ---
 title: "Tutorial: publish a mod"
-description: A step-by-step tutorial that adds an entity sheet and its sprite sheet to a server, runs the supervisor that serves them, opens its ports, and reads what the players and the journals show while their clients download the content of the server.
+description: A step-by-step tutorial that adds a resource, an entity sheet with its sprite sheet and its waves, to a server, runs the supervisor that serves them, opens its ports, and reads what the players and the journals show while their clients download the content of the server.
 sidebar:
   label: "Tutorial: publish a mod"
 ---
@@ -11,12 +11,12 @@ The steps were not run for this page: every line of a journal and of a screen is
 
 ## What a mod is here
 
-A mod is data: the sheets of `assets/entities/` and the sprite sheets their `[appearance]` names (see [Writing an entity sheet](/R-Type/entity-sheets/)). When a player joins, the server announces the fingerprint of its **content pack**, one file that holds those sheets and sprite sheets. A client whose own `assets/` make the same pack plays at once; any other downloads the pack from the supervisor, over HTTP, on the TCP port of the same number as the UDP port, then draws the game with it. A behaviour, the code that steers a Bydo, never travels: a sheet can only name a behaviour the server already has.
+A mod is a **resource**: a folder of `resources/`, beside the assets, that holds entity sheets, the sprite sheets their `[appearance]` names, and waves if it wants its enemies sent (see [Writing an entity sheet](/R-Type/entity-sheets/) and [Resources](/R-Type/server/#resources-ensure-lines)). An `ensure` line of `server.cfg` starts it; the assets are never touched. When a player joins, the server announces the fingerprint of its **content pack**, one file that holds the sheets and sprite sheets of the assets and of the resources. A client whose own `assets/` make the same pack plays at once; any other downloads the pack from the supervisor, over HTTP, on the TCP port of the same number as the UDP port, then draws the game with it. A behaviour, the code that steers a Bydo, never travels: a sheet can only name a behaviour the server already has.
 
 | Step | You do | You see |
 |---|---|---|
-| 1 | Copy the build and its `assets/` into a folder of the server | nothing yet |
-| 2 | Add a sheet and its sprite sheet, and put the enemy in a wave | nothing yet |
+| 1 | Copy the build, its `assets/` and its `resources/` into a folder of the server | nothing yet |
+| 2 | Write a resource: a manifest, a sheet, its sprite sheet and waves | nothing yet |
 | 3 | Start the supervisor | its journal names the pack and the TCP port |
 | 4 | Open the UDP and the TCP port | the players reach both |
 | 5 | Join from a client of the plain game | `LOADING CONTENT`, then the waiting room |
@@ -24,39 +24,51 @@ A mod is data: the sheets of `assets/entities/` and the sprite sheets their `[ap
 
 ## Step 1: a folder for the server
 
-The supervisor reads the folder `assets/` next to its executable, or one level above it, whatever folder it is started from; its game processes run the same executable, so they read the same folder. Copy `r-type_server` and `assets/` into a folder of their own, so the mod never touches the assets of your checkout:
+The supervisor reads the folder `assets/` next to its executable, or one level above it, whatever folder it is started from, and the folder `resources/` beside that `assets/`; its game processes run the same executable, so they read the same folders. Copy `r-type_server`, `assets/` and `resources/` into a folder of their own:
 
 ```bash
 mkdir -p ~/rtype-mod
 cp r-type_server ~/rtype-mod/
-cp -R assets ~/rtype-mod/
+cp -R assets resources ~/rtype-mod/
 cd ~/rtype-mod
 ```
 
-## Step 2: add a sheet and its sprite sheet
+## Step 2: write a resource
 
-The example is a **Crimson Drifter**, a Drifter with sprites of its own. Copy the sheet of the Drifter and the sprite sheet it draws from:
+The repository ships one, `resources/crimson-drifter/`: a **Crimson Drifter**, a Drifter faster and sturdier, with sprites of its own. It is the model of this step:
 
-```bash
-cp assets/entities/drifter.toml assets/entities/crimson_drifter.toml
-mkdir -p assets/sprites/mods
-cp assets/sprites/entities.png assets/sprites/mods/crimson_drifter.png
+```
+resources/crimson-drifter/
+├── resource.toml                                  what the resource is
+├── entities/crimson_drifter.toml                  the sheet of the enemy
+├── sprites/crimson-drifter/crimson_drifter.png    its two idle frames, 24 × 24 pixels each
+└── waves/waves.toml                               the waves, with the enemy among those of normal
 ```
 
-Repaint the frames of the Drifter in `assets/sprites/mods/crimson_drifter.png` with an image editor, at the same place: the idle frames are 24 × 24 pixels, the first at x 0, y 72. Then point the sheet at it, in `assets/entities/crimson_drifter.toml`:
+`resource.toml` holds a `description`, one line the host reads, and may hold `depends`, the resources to start before this one:
+
+```toml
+description = "A crimson Drifter, faster and sturdier, in the waves of normal"
+```
+
+The sheet is a copy of `assets/entities/drifter.toml` whose `top_speed`, `[gameplay.health]` and `[gameplay.score]` changed, and whose `[appearance]` names the sprite sheet of the resource, at the top-left corner of its image:
 
 ```toml
 [appearance]
-sheet = "sprites/mods/crimson_drifter.png"
+sheet = "sprites/crimson-drifter/crimson_drifter.png"
 ```
 
-Every path of a pack follows the same rules, checked when the supervisor starts:
+A sheet gives a Bydo; a wave makes it appear. `waves/waves.toml` of the resource replaces the waves of the assets: it is a copy of `assets/waves/waves.toml` with `crimson_drifter` among the `enemies` of normal (see [Writing the waves file](/R-Type/waves-file/)). Then start the resource from `server.cfg`, in the folder the supervisor is started from:
 
-- the name of a sheet, `crimson_drifter`, is lowercase letters, digits and `_`, 24 characters at most, and a server holds at most 32 sheets;
+```
+ensure crimson-drifter
+```
+
+A resource adds content, it never replaces a sheet: a sheet or a sprite sheet that the assets or another resource already hold stops the supervisor. So keep the sprite sheets of a resource in a folder named after it (`sprites/crimson-drifter/`). Every path of a pack follows the same rules, checked when the supervisor starts:
+
+- the name of a sheet, `crimson_drifter`, is lowercase letters, digits and `_`, 24 characters at most, and a server holds at most 32 sheets, its assets and resources together;
 - the `sheet` path is 1 to 64 characters of lowercase letters, digits, `_`, `.`, `-` and `/`, with no empty folder name, `.` or `..`;
 - the pack holds at most 64 files and 8 MiB.
-
-A sheet gives a Bydo; a wave makes it appear. Add `crimson_drifter` to the `enemies` of a difficulty in `assets/waves/waves.toml`, the one your games play (see [Writing the waves file](/R-Type/waves-file/)). The waves file is read by the server only and is not part of the pack.
 
 ## Step 3: start the supervisor
 
@@ -71,7 +83,7 @@ Its journal, `r-type_server.log` next to the executable, says that it listens on
 [INFO ] [Server] - content pack <64 hexadecimal digits> (<size> bytes) served on TCP port 4242
 ```
 
-The 64 digits are the fingerprint of the pack, and the players will download `<size>` bytes. The supervisor reads the assets once, when it starts: stop it before you change a sheet or a sprite sheet, then start it again.
+The 64 digits are the fingerprint of the pack, and the players will download `<size>` bytes. The supervisor reads the assets and the resources once, when it starts: stop it before you change a sheet, a sprite sheet or a resource, then start it again.
 
 When a line reads `: the content pack is not served` instead, the supervisor runs, but only the players who already hold the pack can play:
 
@@ -138,3 +150,7 @@ Any change to a sheet or a sprite sheet of the server, a value of `[gameplay]` i
 | `Refused content pack: <n> files, more than a pack may hold` | more than 64 files: fewer sheets, or sheets that share a sprite sheet |
 | `Refused content pack: <n> bytes, more than a pack may hold` | the sprite sheets are too large for 8 MiB |
 | an error naming a line of `crimson_drifter.toml` | the sheet is invalid; the message names the line and the key (see [Writing an entity sheet](/R-Type/entity-sheets/#when-a-program-refuses-a-sheet)) |
+| `The resource "<name>" has no manifest in <folder>` | the `ensure` line names a folder of `resources/` that is missing or holds no `resource.toml` |
+| `The resources depend on each other in a circle: <names>` | the `depends` of the manifests make a circle |
+| `The content file <path> is in more than one folder: <folders>` | two folders hold the sprite sheet a sheet names: give the resource its own folder of sprites |
+| `Two entity sheets are named <name>` | the resource holds a sheet the assets or another resource already hold |
