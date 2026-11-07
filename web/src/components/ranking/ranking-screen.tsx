@@ -152,21 +152,22 @@ export function RankingScreen({
           animation={{ ...FLAG.animation, delay: -0.65 }}
           className="absolute top-0 left-210"
         />
-        <Sprite data-guard {...GUARD} className="absolute top-4 left-73" />
-        <Sprite
-          data-guard
-          {...GUARD}
-          frame={{ ...GUARD.frame, x: GUARD_FLIPPED_X }}
-          animation={{ ...GUARD.animation, delay: -0.125 }}
-          className="absolute top-4 left-153"
-        />
-        <GameText
-          data-ranking-title
-          outlined
-          className="absolute inset-x-0 top-9 text-center text-[32px] text-star-white leading-8"
-        >
-          {labels.title}
-        </GameText>
+        <div className="absolute inset-x-0 top-4 flex items-start justify-center gap-6">
+          <Sprite data-guard {...GUARD} />
+          <GameText
+            data-ranking-title
+            outlined
+            className="mt-5 text-center text-[32px] text-star-white leading-8"
+          >
+            {labels.title}
+          </GameText>
+          <Sprite
+            data-guard
+            {...GUARD}
+            frame={{ ...GUARD.frame, x: GUARD_FLIPPED_X }}
+            animation={{ ...GUARD.animation, delay: -0.125 }}
+          />
+        </div>
         <span className="absolute top-20 left-40 h-0.5 w-160 bg-edge-blue" />
 
         <button
@@ -261,7 +262,7 @@ export function RankingScreen({
         <GameText
           outlined
           face="small"
-          className="absolute top-115 left-40 max-w-95 text-pale-blue"
+          className="absolute top-122 left-40 max-w-190 text-pale-blue"
         >
           {summary}
         </GameText>
@@ -279,7 +280,7 @@ export function RankingScreen({
         {footnote ? (
           <GameText
             face="small"
-            className="absolute inset-x-0 top-127 text-center text-pale-blue"
+            className="absolute inset-x-0 top-130 text-center text-pale-blue"
           >
             {footnote}
           </GameText>
