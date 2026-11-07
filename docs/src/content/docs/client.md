@@ -883,7 +883,7 @@ A missing file is not an error and a refused line does not stop the client; the 
 
 | Option | Effect |
 |---|---|
-| `-h <address>` | The IPv4 address of the server, four numbers such as `127.0.0.1` (see [Network](/R-Type/network/#ports-and-addresses-written-as-text-portfromtext-ipv4addressfromtext)). Default: `DEFAULT_SERVER_ADDRESS` (`127.0.0.1`), a server on the same machine. Given, PLAY joins that server at once instead of opening the server map (`PlayStart::GivenServer`). |
+| `-h <address>` | The IPv4 address of the server, four numbers such as `127.0.0.1` (see [Network](/R-Type/network/#ports-and-addresses-written-as-text-portfromtext-ipv4addressfromtext)). Default: `DEFAULT_SERVER_ADDRESS` (`127.0.0.1`), a server on the same machine. Given, PLAY joins a server at once instead of opening the server map (`PlayStart::GivenServer`): that server, then the server of the last attempt once the player joined another (`ServerChoice::lastServer`). |
 | `-p <port>` | The UDP port of the server, from 1 to 65535. Default: `DEFAULT_SERVER_PORT` (4242). |
 | `-n <nickname>` | The nickname of the player, 1 to 16 bytes of UTF-8 without a control character (`MAXIMUM_NICKNAME_SIZE`, see [Protocol](/R-Type/protocol/#connection)). Default: `DEFAULT_NICKNAME` (`PILOT`). The connection screen leaves out the characters its field refuses. |
 | `--game <game>` | The game every attempt asks the server for (see [Protocol](/R-Type/protocol/#supervisor)): `new` (`NEW_GAME_VALUE`) opens a game of its own, which other players may join; a number from 1 to 65535 joins the game of that number, as the master lists it (`GAME 2` is 2). Default: any game with a free seat. It forces no setting. |

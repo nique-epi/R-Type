@@ -22,7 +22,8 @@ struct PlayerSettings;
  *
  * PLAY puts the server map over the title, which it hides, or, for a client
  * launched with `-h` (PlayStart::GivenServer), the connection screen that
- * joins that server at once; SETTINGS
+ * joins at once the server of the last attempt, that of `-h` before any;
+ * SETTINGS
  * puts the options over the title, which hide it; QUIT, or MENU_CANCEL_KEY,
  * puts the quit confirmation over it, which dims it. The title keeps its
  * selection under those screens, and its squadron goes on moving. The menu and

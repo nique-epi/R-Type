@@ -8,7 +8,8 @@ namespace rtype::client {
 enum class PlayStart : std::uint8_t {
   /** @brief The server map, which lists the servers of the master. */
   ServerMap,
-  /** @brief The server given at launch with `-h`, joined at once. */
+  /** @brief A server joined at once: the server of the last attempt, the one
+   * given at launch with `-h` before any. */
   GivenServer,
 };
 

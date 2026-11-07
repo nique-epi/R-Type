@@ -81,9 +81,10 @@ class LaunchOptions {
    * of the player, UTF-8, and the game it asks for. */
   [[nodiscard]] const ServerChoice& serverChoice() const;
 
-  /** @returns PlayStart::GivenServer when `-h` was given, so PLAY joins that
-   * server at once, PlayStart::ServerMap otherwise. `--set server-address`
-   * and client.cfg only fill the connection screen. */
+  /** @returns PlayStart::GivenServer when `-h` was given, so PLAY joins at
+   * once the server of the last attempt, that server before any,
+   * PlayStart::ServerMap otherwise. `--set server-address` and client.cfg only
+   * fill the connection screen. */
   [[nodiscard]] PlayStart playStart() const;
 
   /**
