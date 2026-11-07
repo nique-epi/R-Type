@@ -3,33 +3,16 @@
 #include "Collision.hpp"
 #include "CollisionScene.hpp"
 #include "CollisionSystem.hpp"
+#include "CollisionSystemFixtures.hpp"
 #include "CollisionTestConstants.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
-#include "TimeConstants.hpp"
 
 using rtype::engine::Collision;
 using rtype::engine::Entity;
-using rtype::engine::SIMULATION_TICK_DURATION;
 using rtype::game::CollisionSystem;
 using rtype::game::EntityType;
-
-namespace {
-
-std::vector<Collision> updateAndCollect(CollisionScene& scene,
-                                        CollisionSystem& system) {
-  std::vector<Collision> received;
-  const auto handle = scene.events.subscribe<Collision>(
-      [&received](const Collision& collision) {
-        received.push_back(collision);
-      });
-  system.update(scene.components, SIMULATION_TICK_DURATION);
-  scene.events.dispatch();
-  scene.events.unsubscribe(handle);
-  return received;
-}
-
-}  // namespace
+using rtype::game::testing::updateAndCollect;
 
 /**
  * Given two entities whose collision boxes overlap
