@@ -41,7 +41,8 @@ constexpr int DEFAULT_BOSS_HEALTH_PERCENT = 100;
 
 /**
  * @brief Every key the root of a waves file may hold, and every key a
- * difficulty may hold; all are required but `boss`. Any other key is refused,
+ * difficulty may hold; all are required but `boss` and
+ * `boss_health_percent`. Any other key is refused,
  * so a misspelt key never goes unnoticed.
  */
 constexpr std::array ROOT_KEYS{DIFFICULTY_TABLE_KEY};

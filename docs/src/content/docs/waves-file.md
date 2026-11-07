@@ -11,7 +11,7 @@ Only the server reads the file: each game process, once, when it starts, from `w
 
 ## A difficulty, key by key
 
-A difficulty is a table `[difficulty.<name>]` holding eight keys, and a ninth, `boss`, when its level ends with a boss:
+A difficulty is a table `[difficulty.<name>]` holding eight keys, a ninth, `boss`, when its level ends with a boss, and a tenth, `boss_health_percent`, to make that boss sturdier or frailer:
 
 ```toml
 [difficulty.normal]
@@ -37,8 +37,9 @@ boss = "bydo_tyrant"
 | `wave_pause_ms` | milliseconds | 0 to 60000 | the empty sky before each wave, the first one included |
 | `level_waves` | waves | 1 to 100 | how many waves the level holds: without a boss, the game is won once the last one is over (see [How the waves grow](#how-the-waves-grow)) |
 | `boss` | a name | the name of an entity sheet with a `[gameplay.boss]` table; may be left out | the boss that arrives once the last wave is over: the game is then won once it is destroyed and no enemy is left (see [The boss](#the-boss)) |
+| `boss_health_percent` | percent | 1 to 1000; 100 when left out | the health of its boss, in percent of the health its sheet gives once scaled for the players (see [The boss](#the-boss)) |
 
-Every key but `boss` is required, and any other key is refused, so a misspelt key stops the server instead of being ignored. Every number is a TOML integer: `2500`, never `2500.0` or `"2500"`. The keys and the ranges live in `src/server/Spawning/WaveFileConstants.hpp`; the names are those of the entity sheets.
+Every key but `boss` and `boss_health_percent` is required, and any other key is refused, so a misspelt key stops the server instead of being ignored. Every number is a TOML integer: `2500`, never `2500.0` or `"2500"`. The keys and the ranges live in `src/server/Spawning/WaveFileConstants.hpp`; the names are those of the entity sheets.
 
 ## How the waves grow
 
@@ -66,7 +67,7 @@ The Bydos take the names of the list in turn, and the turn carries on from one w
 
 ## The boss
 
-`boss` names a sheet that has a `[gameplay.boss]` table (see [Writing an entity sheet](/R-Type/entity-sheets/#gameplay-key-by-key)); the only one shipped is `bydo_tyrant`. On the tick the server finds the last wave over, it warns the players with a `BossStatus` (see [Protocol](/R-Type/protocol/#boss-status)), and the boss appears `BOSS_ARRIVAL_WARNING` (4400 ms) later, off screen past the right edge, on the middle row of the area of play. Its arrival shields it, then it fights. The game is won on the first tick after that which finds no enemy in the world: the boss, which never leaves by itself, and the Bydos its volleys brought. How the server runs it is in [Server and game](/R-Type/server/#boss-bossstage-and-bossphasesystem).
+`boss` names a sheet that has a `[gameplay.boss]` table (see [Writing an entity sheet](/R-Type/entity-sheets/#gameplay-key-by-key)); the only one shipped is `bydo_tyrant`. On the tick the server finds the last wave over, it warns the players with a `BossStatus` (see [Protocol](/R-Type/protocol/#boss-status)), and the boss appears `BOSS_ARRIVAL_WARNING` (4400 ms) later, off screen past the right edge, on the middle row of the area of play. Its arrival shields it, then it fights. When it appears, its health is the `health.points` of its sheet plus `BOSS_HEALTH_PER_EXTRA_PLAYER` (25 %) for each player connected past the first, then taken at `boss_health_percent`, each step rounded down, and the health it enrages below follows: the Tyrant has 240, 300, 360 and 420 points for one to four players at 100 %, and 312, 390, 468 and 546 in `hard`. The game is won on the first tick after that which finds no enemy in the world: the boss, which never leaves by itself, and the Bydos its volleys brought. How the server runs it is in [Server and game](/R-Type/server/#boss-bossstage-and-bossphasesystem).
 
 ## The shipped difficulties
 
@@ -81,8 +82,9 @@ The Bydos take the names of the list in turn, and the turn carries on from one w
 | `wave_pause_ms` | 5000 | 4000 | 3000 |
 | `level_waves` | 5 | 8 | 10 |
 | `boss` | none | `bydo_tyrant` | `bydo_tyrant` |
+| `boss_health_percent` | none | none: 100 | 130 |
 
-`easy` leans on the Drifter, which is easier to hit; `normal` adds one Voltjelly and one Reaper in six Bydos; `hard` leans on the Weaver, sends each of the four mobs once in eight Bydos and brings two more Bydos per wave. A wave ends only once its Bydos are gone, so the Voltjelly, twice as slow, makes its wave last longer, and the Reaper and the Bydomancer, which never leave by themselves, hold their wave until they are killed. `easy` ends once its last wave is over; `normal` and `hard` end with the Bydo Tyrant. No test pins these values: tuning them needs no rebuild and breaks no test.
+`easy` leans on the Drifter, which is easier to hit; `normal` adds one Voltjelly and one Reaper in six Bydos; `hard` leans on the Weaver, sends each of the four mobs once in eight Bydos and brings two more Bydos per wave. A wave ends only once its Bydos are gone, so the Voltjelly, twice as slow, makes its wave last longer, and the Reaper and the Bydomancer, which never leave by themselves, hold their wave until they are killed. `easy` ends once its last wave is over; `normal` and `hard` end with the Bydo Tyrant, 30 % sturdier in `hard`. No test pins these values: tuning them needs no rebuild and breaks no test.
 
 ## Designing a difficulty
 
@@ -96,7 +98,7 @@ The Bydos take the names of the list in turn, and the turn carries on from one w
 ./r-type_server --seed 42
 ```
 
-Then connect a client. The game process logs, in its journal `r-type_game_<n>.log`, the folder of the entity sheets and their count (`entity sheets /…/assets/entities: 15 types`), then the file it read, by its absolute path (`waves file /…/assets/waves/waves.toml: 3 difficulties`), the difficulty the games play and whether they are vanilla (`games play normal, not vanilla`, since a seed is set), then each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`). The seed fixes the heights of the Bydos, so the same file and the same seed replay the same game.
+Then connect a client. The game process logs, in its journal `r-type_game_<n>.log`, the folder of the entity sheets and their count (`entity sheets /…/assets/entities: 16 types`), then the file it read, by its absolute path (`waves file /…/assets/waves/waves.toml: 3 difficulties`), the difficulty the games play and whether they are vanilla (`games play normal, not vanilla`, since a seed is set), then each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`). The seed fixes the heights of the Bydos, so the same file and the same seed replay the same game.
 
 ## The shipped file and vanilla games
 

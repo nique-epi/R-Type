@@ -13,7 +13,7 @@ Both programs read the folder `entities` (`ENTITY_SHEET_FOLDER_IN_ASSETS`) of th
 
 - Every `.toml` file of the folder is a sheet; any other file, and every sub-folder, is left alone. The name of the file without `.toml` is the name of the type: `weaver.toml` is `weaver`.
 - A name is 1 to 24 bytes (`MAXIMUM_ENTITY_TYPE_NAME_LENGTH`) of lowercase letters `a` to `z`, digits and `_`, so a file has the same name on every system. A folder holds at most 32 sheets (`MAXIMUM_ENTITY_TYPES`) and at least one. Both limits and the check of a name (`isEntityTypeName()`) live in `src/identifiers/`, so a name the game accepts is one the table of the types can carry.
-- The server numbers the sheets from 1 in the order of their names. The fifteen sheets the game ships are `bydo_tyrant` (1), `bydomancer` (2), `drifter` (3), `drillback` (4), `enemy_missile` (5), `orb_shard` (6), `player_missile` (7), `reaper` (8), `rune_orb` (9), `ship` (10), `tyrant_missile` (11), `tyrant_spore` (12), `tyrant_spore_shard` (13), `voltjelly` (14) and `weaver` (15). These numbers name the types on the wire for as long as the server runs, and every player learns them when it is accepted (see [Protocol](/R-Type/protocol/#entity-types)), so a new sheet whose name sorts first renumbers the others without breaking anything.
+- The server numbers the sheets from 1 in the order of their names. The sixteen sheets the game ships are `bydo_tyrant` (1), `bydomancer` (2), `drifter` (3), `drillback` (4), `enemy_missile` (5), `orb_shard` (6), `player_missile` (7), `reaper` (8), `rune_orb` (9), `ship` (10), `tyrant_diver` (11), `tyrant_missile` (12), `tyrant_spore` (13), `tyrant_spore_shard` (14), `voltjelly` (15) and `weaver` (16). These numbers name the types on the wire for as long as the server runs, and every player learns them when it is accepted (see [Protocol](/R-Type/protocol/#entity-types)), so a new sheet whose name sorts first renumbers the others without breaking anything.
 - The server makes the ship of every player from the sheet named `ship` (`SHIP_SHEET_NAME`, `src/server/ServerConstants.hpp`): without it, it stops before its first game.
 
 ## `[gameplay]`, key by key
@@ -55,7 +55,7 @@ projectile = "enemy_missile"
 | `side` | | `player`, `enemy`, `player_missile`, `enemy_missile` | its `EntityType`: what it hits and what hits it (see [Collisions](/R-Type/server/#rules-collisionrules)), and the layer the client draws it in |
 | `pilot` | | `player`, or the name of a behaviour: `straight`, `weave`, `scatter`, `reaper`, `drillback`, `bydomancer`, `bydo_tyrant` | what writes its `Intent`: the input of its player, or that behaviour (see [Behaviours](#behaviours-and-their-settings)) |
 | `hitbox.width`, `hitbox.height` | logical units | 1 to 1024 | its `CollisionBox`, centered on its position |
-| `hitbox.offset_x`, `hitbox.offset_y` | logical units | -1024 to 1024; 0 when left out | where the center of its `CollisionBox` lies from its position, y growing downwards: the Bydo Tyrant is hit on its eye only |
+| `hitbox.offset_x`, `hitbox.offset_y` | logical units | -1024 to 1024; 0 when left out | where the center of its `CollisionBox` lies from its position, y growing downwards: the box of the Bydo Tyrant covers its body, 12 units right of and 4 below its center |
 | `motion.kind` | | `ship`, `steady` | how a direction moves it: the drift, roll and dash of a ship (`ShipMotion`), or its top speed times the direction (`SteadyMotion`) |
 | `motion.top_speed` | logical units per second | 1 to 4096; for `steady` only | its speed on each axis at a full direction |
 | `[gameplay.behaviour]` | | the settings its behaviour declares | the values its behaviour reads |
@@ -80,15 +80,18 @@ projectile = "enemy_missile"
 | `burst.after_ms` | milliseconds | 1 to 60000; missiles only | its `ShardBurst`: how long it lives before it bursts |
 | `burst.count` | shards | 1 to 8 | how many shards it bursts into, spread evenly around it from the diagonal up and to the right: 4 fly along the four diagonals |
 | `burst.shard` | | the name of a sheet of the same side | what it bursts into |
-| `volley` | | an array of tables, `[[gameplay.volley]]`; enemies only | bodies that appear at once as the enemy enters an action: a fan of missiles, a column of Bydos, a wall with a gap |
+| `volley` | | an array of tables, `[[gameplay.volley]]`; enemies only | bodies that appear at once as the enemy enters an action: a fan of missiles, a column of Bydos, a wall with a gap; an enemy among them stays harmless for 1 s first (see [Volleys](/R-Type/server/#volleys-volleysystem)) |
 | `volley.attack`, `volley.phase` | | as for a box, both required | the action that fires the volley, on the tick the enemy enters it |
 | `volley.body` | | the name of a sheet of side `enemy` or `enemy_missile` | what the volley is made of |
 | `volley.count` | bodies | 1 to 16 | how many bodies it holds, numbered from 0 |
 | `volley.offset_x`, `offset_y` | logical units | -1920 to 1920 | where body 0 starts from the position of the enemy, so a volley may be laid anywhere on the playfield |
 | `volley.step_x`, `step_y` | logical units | -1920 to 1920; 0 when left out | how far each body starts from the one before it |
-| `volley.spread_deg` | degrees | 0 to 360; 0 when left out | the fan of the headings: from left turned by -`spread_deg` / 2 for body 0 to +`spread_deg` / 2 for the last, evenly, a positive angle turning down |
+| `volley.heading_deg` | degrees | -80 to 80; 0 when left out | the heading of a volley of one body, and the middle of the fan of a spread: left turned by this angle, a positive angle turning down |
+| `volley.spread_deg` | degrees | 0 to 360; 0 when left out | the fan of the headings: from the heading turned by -`spread_deg` / 2 for body 0 to +`spread_deg` / 2 for the last, evenly |
 | `volley.distance` | logical units | 0 to 1024; 0 when left out | how far along its heading from its start a body appears; it steers from its start, so `scatter` flies it straight away from there |
 | `volley.gap_from`, `gap_count` | bodies | 0 to 15; 0 when left out | the bodies left out, from body `gap_from`, `gap_count` of them: the gap of a wall |
+| `volley.jitter_x`, `jitter_y` | logical units | 0 to 960; 0 when left out | how far the whole volley may move at random each time it fires, on each axis |
+| `volley.chance_percent` | percent | 1 to 100; 100 when left out | the chance the volley fires when its action starts, drawn each time, so two volleys of one action fire or not apart |
 | `boss.rage_below_percent` | percent | 1 to 99 | its `Boss`: it enrages once its health falls below its full health times this share, rounded down |
 | `boss.rage_attack` | | 0 to 255 | the attack it starts, in the phase `enraged`, when it enrages |
 | `boss.arrival_attack` | | 0 to 255 | the attack of its arrival: while it is in any phase of it, a hit takes nothing from it |
@@ -128,9 +131,9 @@ A behaviour is a named piece of C++ in `src/game/Behaviours/Movements/` (those t
 | `reaper` | to the point `reach` logical units to the right of the nearest ship, at its height; to the left without a ship. Within `align` units of that point on each axis and rested, it stops and swings attack 0 | `reach`, `align`, `rest_ms`, `signal_ms`, `strike_ms`, `recover_ms` |
 | `drillback` | to the left at `drift_speed`; left of `enter_x` and rested, it shakes (attack 0, signal), charges left at its top speed (strike), then is stunned (recover) | `drift_speed`, `enter_x`, `rest_ms`, `signal_ms`, `strike_ms`, `recover_ms` |
 | `bydomancer` | to the left until `stand_x`, then bobbing `bob` units around its row every `bob_period_ms`; once wounded it leaps `jump` units towards the middle of the area of play, once. Rested at its column it casts its orb (attack 0), and a ship within `nova_reach` makes it cast its nova (attack 1, a strike of `nova_ms`), once idle `nova_rest_ms` | `stand_x`, `jump`, `bob`, `bob_period_ms`, `rest_ms`, `signal_ms`, `strike_ms`, `recover_ms`, `nova_reach`, `nova_ms`, `nova_rest_ms` |
-| `bydo_tyrant` | arrives first (attack 0): slides on its row from where it appears to `rest_x` over `slide_ms` (signal), then roars `roar_ms` (strike). Then, rested `rest_ms`, it lashes its tentacles (attack 4, 14 enraged) at a ship within `melee_reach` of its melee point (`melee_x`, `melee_y` from its center), or takes the next attack of its rotation, picked by the count of the actions it ended: brood 3, burst 1, beam 2, burst 1 while calm; charge 18, burst 11, sweep 15, spores 16, beam 12, wall 17, brood 13 once enraged. It holds still `rage_ms` as it enrages, and its charge crosses the playfield to the left, then comes back from past the right edge. An enraged variant signals `rage_signal_percent` of the calm one | `rest_x`, `rest_ms`, `slide_ms`, `roar_ms`, `settle_ms`, `<attack>_signal_ms`, `<attack>_strike_ms` and `<attack>_recover_ms` for `burst`, `beam`, `brood`, `tentacle`, `sweep`, `spores`, `wall` and `charge`, `melee_x`, `melee_y`, `melee_reach`, `rage_ms`, `rage_signal_percent` |
+| `bydo_tyrant` | arrives first (attack 0): slides on its row from where it appears to `rest_x` over `slide_ms` (signal), then roars `roar_ms` (strike). Then, rested `rest_ms`, it lashes its tentacles (attack 4, 14 enraged) at a ship within `melee_reach` of its melee point (`melee_x`, `melee_y` from its center), or takes the next attack of its rotation, picked by the count of the actions it ended: brood 3, burst 1, beam 2, burst 1 while calm; charge 18, burst 11, sweep 15, spores 16, beam 12, wall 17, brood 13 once enraged. Between two attacks it drifts up or down, at 240 units per second at most and within 200 units of the row it arrived on, towards the row of the nearest ship and a row drawn from its count of actions in turn; before a brood, its spores or its wall, which are laid out from that row, it heads back to it. It holds still `rage_ms` as it enrages, and its charge crosses the playfield to the left, then, once its whole body left the screen, comes back on the same row from past the right edge. An enraged variant signals `rage_signal_percent` of the calm one | `rest_x`, `rest_ms`, `slide_ms`, `roar_ms`, `settle_ms`, `<attack>_signal_ms`, `<attack>_strike_ms` and `<attack>_recover_ms` for `burst`, `beam`, `brood`, `tentacle`, `sweep`, `spores`, `wall` and `charge`, `melee_x`, `melee_y`, `melee_reach`, `rage_ms`, `rage_signal_percent` |
 
-`straight` and `weave` want to fire at every tick, so a body fires as often as its gun allows; a body without a gun fires nothing. `scatter`, `reaper`, `drillback` and `bydo_tyrant` never fire: the missiles and Bydos of the Tyrant are the volleys of its sheet; `bydomancer` wants to fire during the strike of its orb only, so its gun, ready at once and waiting longer than a strike, fires one orb a cast. The settings of an attack are milliseconds (`rest_ms` 0 to 60000, `signal_ms` and `strike_ms` 1 to 60000, `recover_ms` 0 to 60000, 0 skipping the recover); the others are logical units. A behaviour that attacks steps through its phases with `ActionCycle` and starts an attack again once it has been idle `rest_ms` (see [Piloted bodies](/R-Type/server/#piloted-bodies-pilotsystem-and-playfieldexitsystem)). A weave needs a top speed of at least 2π × `amplitude` ÷ `period_ms`, 151 logical units per second for the Weaver: a slower body falls behind its weave. A new behaviour is a class implementing `IBehaviour`, added to `builtInBehaviours()`, as the [tutorial](/R-Type/tutorial-add-an-enemy-type/) shows.
+`straight`, `weave` and `scatter` want to fire at every tick, so a body fires as often as its gun allows; a body without a gun fires nothing, and no missile has one, so the diver of the Tyrant scatters and fires while a shard never fires. `reaper`, `drillback` and `bydo_tyrant` never fire: the missiles and Bydos of the Tyrant are the volleys of its sheet; `bydomancer` wants to fire during the strike of its orb only, so its gun, ready at once and waiting longer than a strike, fires one orb a cast. The settings of an attack are milliseconds (`rest_ms` 0 to 60000, `signal_ms` and `strike_ms` 1 to 60000, `recover_ms` 0 to 60000, 0 skipping the recover); the others are logical units. A behaviour that attacks steps through its phases with `ActionCycle` and starts an attack again once it has been idle `rest_ms` (see [Piloted bodies](/R-Type/server/#piloted-bodies-pilotsystem-and-playfieldexitsystem)). A weave needs a top speed of at least 2π × `amplitude` ÷ `period_ms`, 151 logical units per second for the Weaver: a slower body falls behind its weave. A new behaviour is a class implementing `IBehaviour`, added to `builtInBehaviours()`, as the [tutorial](/R-Type/tutorial-add-an-enemy-type/) shows.
 
 ## `[appearance]`, key by key
 
@@ -160,7 +163,7 @@ frame_ms = 250
 | `idle.frame_ms` | milliseconds | 1 to 60000 | how long each frame shows, in a loop |
 | `[appearance.enraged_idle]` | | the keys of `idle`; may be left out | the idle animation of an enemy once the server announced it enraged, which every attack that ends with `afterwards = "idle"` goes back to; the enemy keeps `idle` without it |
 
-Every key of `idle` is required, `enraged_idle` is the only optional table besides the attack animations, and any other key is refused. The keys and ranges live in `src/client/Rendering/Sprites/EntityAppearanceConstants.hpp`. A pixel of a sheet covers 4 × 4 logical units of the playfield, so a frame should be the hitbox divided by 4: 24 × 24 pixels for a box of 96 × 96. `EntityAppearances.EveryShippedSheetDrawsTheBoxTheServerHits` checks it for every shipped sheet whose boxes all hurt in an action only. A sheet with a box that always hurts, the Voltjelly and the Bydo Tyrant, draws a frame that holds its hitbox, offset included, and every such box instead: the Tyrant is drawn 128 × 128 pixels, 512 × 512 units, and hit on a box of 72 × 72 on its eye (`AFrameHoldsTheBoxesThatAlwaysHurt`). The side of the sheet, never its appearance, picks the layer the entity is drawn in (see [Client](/R-Type/client/#drawing-order-layer)). Whether the sprite sheet exists is checked when the game screen loads it, like any other asset.
+Every key of `idle` is required, `enraged_idle` is the only optional table besides the attack animations, and any other key is refused. The keys and ranges live in `src/client/Rendering/Sprites/EntityAppearanceConstants.hpp`. A pixel of a sheet covers 4 × 4 logical units of the playfield, so a frame should be the hitbox divided by 4: 24 × 24 pixels for a box of 96 × 96. `EntityAppearances.EveryShippedSheetDrawsTheBoxTheServerHits` checks it for every shipped sheet whose boxes all hurt in an action only. A sheet with a box that always hurts, the Voltjelly and the Bydo Tyrant, draws a frame that holds its hitbox, offset included, and every such box instead: the Tyrant is drawn 128 × 128 pixels, 512 × 512 units, and hit on a box of 440 × 488 that covers its body (`AFrameHoldsTheBoxesThatAlwaysHurt`). The side of the sheet, never its appearance, picks the layer the entity is drawn in (see [Client](/R-Type/client/#drawing-order-layer)). Whether the sprite sheet exists is checked when the game screen loads it, like any other asset.
 
 ### Attack animations
 
@@ -247,23 +250,24 @@ The mobs and their projectiles draw from a sheet of their own in `sprites/mobs/`
 | `burst` | none | none | none | none | after 1500 ms, 4 `orb_shard` | none |
 | `idle` | 40 × 40 (the bell 24 × 24), 4 frames of 120 ms | 24 × 24, 2 of 250 ms | 24 × 24, 2 of 200 ms | 24 × 24, 2 of 250 ms | 9 × 9, 2 of 120 ms | 5 × 5, 1 of 100 ms |
 
-The final boss and its projectiles: the Tyrant draws from `sprites/mobs/bydo_tyrant.png`, its spore too, and its missiles and the shards of a spore from `sprites/entities.png`, as the missile of a Bydo.
+The final boss, the diver it calls in and its projectiles: the Tyrant draws from `sprites/mobs/bydo_tyrant.png`, its spore too, its diver from the idle frames of `sprites/mobs/drillback.png`, and its missiles and the shards of a spore from `sprites/entities.png`, as the missile of a Bydo.
 
-| Key | `bydo_tyrant` | `tyrant_missile` | `tyrant_spore` | `tyrant_spore_shard` |
-|---|---|---|---|---|
-| `side` | `enemy` | `enemy_missile` | `enemy_missile` | `enemy_missile` |
-| `pilot` | `bydo_tyrant` | `scatter` | `straight`, `heading` -1 | `scatter` |
-| `hitbox` | 72 × 72, 76 units left of and 52 above its center: its eye | 32 × 32 | 36 × 36 | 32 × 32 |
-| `motion` | `steady`, 2500, fast enough for its charge | `steady`, 420 | `steady`, 1: a mine | `steady`, 300 |
-| `health` | 240 | none | none | none |
-| `score` | 10000 | none | none | none |
-| `boss` | enrages below 50 %, rage attack 9, arrival attack 0 | | | |
-| contact | it survives; its body hurts, two boxes, its tentacles a box in attacks 4 and 14, its beam in 2, 12 and 15, the last sweeping from -35 to 12 degrees over 1200 ms | | | |
-| `volley` | 5 `tyrant_missile` over 48 degrees in attack 1, 7 in attack 11; 3 `drifter` 120 units apart in attacks 3 and 13; 5 `tyrant_spore` on a diagonal in attack 16; a wall of 9 `drifter` with 2 left out in attack 17 | | | |
-| `burst` | | none | after 1100 ms, 4 `tyrant_spore_shard` | none |
-| `idle` | 128 × 128, 2 frames of 300 ms; enraged, 2 of 200 ms | 8 × 8, 2 of 120 ms | 9 × 9, 2 of 200 ms | 8 × 8, 2 of 120 ms |
+| Key | `bydo_tyrant` | `tyrant_diver` | `tyrant_missile` | `tyrant_spore` | `tyrant_spore_shard` |
+|---|---|---|---|---|---|
+| `side` | `enemy` | `enemy` | `enemy_missile` | `enemy_missile` | `enemy_missile` |
+| `pilot` | `bydo_tyrant` | `scatter` | `scatter` | `straight`, `heading` -1 | `scatter` |
+| `hitbox` | 440 × 488, 12 units right of and 4 below its center: its body | 96 × 96 | 32 × 32 | 36 × 36 | 32 × 32 |
+| `motion` | `steady`, 2500, fast enough for its charge | `steady`, 360 | `steady`, 420 | `steady`, 1: a mine | `steady`, 300 |
+| `health` | 240, scaled when it appears (see [Boss](/R-Type/server/#boss-bossstage-and-bossphasesystem)) | 2 | none | none | none |
+| `score` | 10000 | 150 | none | none | none |
+| `gun` | none | 1800 ms, first after 800 ms, `enemy_missile` | none | none | none |
+| `boss` | enrages below 50 %, rage attack 9, arrival attack 0 | | | | |
+| contact | it survives; its body hurts, two boxes, its tentacles a box in attacks 4 and 14, its beam in 2, 12 and 15, the last sweeping from -35 to 12 degrees over 1200 ms | | | | |
+| `volley` | 5 `tyrant_missile` over 48 degrees in attack 1, 7 in attack 11; a brood in front of it in attacks 3 and 13, one volley of one body each: a `weaver` always, then two `tyrant_diver` from the top and the bottom edges at 28 degrees, a `voltjelly`, a `reaper` and a `bydomancer`, each by its chance, 70, 70, 60, 40 and 30 % (90, 90, 80, 60 and 50 % enraged), and each moved at random by its jitter; 5 `tyrant_spore` on a diagonal in attack 16; a wall of 9 `drifter` with 2 left out in attack 17 | | | | |
+| `burst` | | none | none | after 1100 ms, 4 `tyrant_spore_shard` | none |
+| `idle` | 128 × 128, 2 frames of 300 ms; enraged, 2 of 200 ms | 24 × 24, the idle frames of the Drillback, 2 of 120 ms | 8 × 8, 2 of 120 ms | 9 × 9, 2 of 200 ms | 8 × 8, 2 of 120 ms |
 
-The values are **provisional** until gameplay tunes them; tuning them needs no rebuild. The Drifter and the Weaver share their frames, so the client draws both as the same Bydo. The settings of the behaviours are commented in each sheet.
+The values are **provisional** until gameplay tunes them; tuning them needs no rebuild. The Drifter and the Weaver share their frames, so the client draws both as the same Bydo; the diver of the Tyrant shares the idle frames of the Drillback, at a frame time of its own. The settings of the behaviours are commented in each sheet.
 
 ## The shipped sheets and vanilla games
 

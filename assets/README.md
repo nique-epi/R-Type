@@ -96,7 +96,7 @@ Each mob of `sprites/mobs/`, and the Bydo Tyrant, has a sheet of its own, laid o
 | `reaper.png` | 82 × 117 | idle: 2 × 24 × 24, 250 ms; scythe raised: 2 × 24 × 24, 200 ms; swing: 2 × 40 × 24, 70 ms, the body in the 24 pixels on the right; open: 1 × 24 × 24, 600 ms; bone: 4 × 13 × 13, 80 ms |
 | `voltjelly.png` | 166 × 40 | aura: 4 × 40 × 40, 120 ms; the bell, 24 × 24, at the center of each frame |
 
-The client tests check that the frame times of the idle rows are those of the table above, but for the Tyrant, whose times no test pins yet. The game screen loads every sheet an `[appearance]` names. The missiles of the Tyrant and the shards of its spores use the enemy missile of `sprites/entities.png`.
+The client tests check that the frame times of the idle rows are those of the table above, but for the Tyrant, whose times no test pins yet, and for its diver, `tyrant_diver`, which draws the idle row of `drillback.png` at 120 ms instead of 200. The game screen loads every sheet an `[appearance]` names. The missiles of the Tyrant and the shards of its spores use the enemy missile of `sprites/entities.png`.
 
 ## The effect sheet
 
