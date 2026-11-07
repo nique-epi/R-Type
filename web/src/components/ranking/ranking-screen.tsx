@@ -139,12 +139,7 @@ export function RankingScreen({
 
   return (
     <div ref={root}>
-      <GameScreen
-        aria-label={labels.screen}
-        onKeyDown={onKeyDown}
-        settle
-        className="starfield"
-      >
+      <GameScreen aria-label={labels.screen} onKeyDown={onKeyDown} settle>
         <Sprite data-flag {...FLAG} className="absolute top-0 left-4" />
         <Sprite
           data-flag
