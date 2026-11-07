@@ -684,6 +684,7 @@ TEST_F(ConnectionAcceptorFixture, AcceptsWithTheEntityTypesOfTheGame) {
   EXPECT_EQ(
       onlyMessageIn<network::ConnectionAccepted>(lastAnswer()).types,
       (std::vector<network::EntityTypeEntry>{
+          {.side = network::EntitySide::Enemy, .name = "bydo_tyrant"},
           {.side = network::EntitySide::Enemy, .name = "bydomancer"},
           {.side = network::EntitySide::Enemy, .name = "drifter"},
           {.side = network::EntitySide::Enemy, .name = "drillback"},
@@ -694,6 +695,10 @@ TEST_F(ConnectionAcceptorFixture, AcceptsWithTheEntityTypesOfTheGame) {
           {.side = network::EntitySide::Enemy, .name = "reaper"},
           {.side = network::EntitySide::EnemyMissile, .name = "rune_orb"},
           {.side = network::EntitySide::Player, .name = "ship"},
+          {.side = network::EntitySide::EnemyMissile, .name = "tyrant_missile"},
+          {.side = network::EntitySide::EnemyMissile, .name = "tyrant_spore"},
+          {.side = network::EntitySide::EnemyMissile,
+           .name = "tyrant_spore_shard"},
           {.side = network::EntitySide::Enemy, .name = "voltjelly"},
           {.side = network::EntitySide::Enemy, .name = "weaver"}}));
 }

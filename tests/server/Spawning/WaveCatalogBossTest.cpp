@@ -3,12 +3,14 @@
 #include <optional>
 #include <string>
 #include "BossStageTestConstants.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "WaveCatalog.hpp"
 #include "WaveCatalogBossFixtures.hpp"
 #include "WaveCatalogBossTestConstants.hpp"
 #include "WaveCatalogFixtures.hpp"
 #include "WaveCatalogTestConstants.hpp"
 
+using rtype::game::testing::BYDO_TYRANT_SHEET;
 using rtype::server::WaveCatalog;
 using rtype::server::testing::BOSS_KEY_IN_TESTS;
 using rtype::server::testing::calmFile;
@@ -16,6 +18,7 @@ using rtype::server::testing::calmFileWith;
 using rtype::server::testing::DRIFTER_AS_A_BOSS;
 using rtype::server::testing::errorReading;
 using rtype::server::testing::sheetsWithAWarlord;
+using rtype::server::testing::shippedCatalog;
 using rtype::server::testing::TEST_FILE_NAME;
 using rtype::server::testing::UNKNOWN_DRIFTER_BOSS_TEXT;
 using rtype::server::testing::WARLORD_AS_A_VALUE;
@@ -56,4 +59,15 @@ TEST(WaveCatalog, ReadsADifficultyWithoutBoss) {
 TEST(WaveCatalog, RefusesABossThatIsNoBoss) {
   EXPECT_THAT(errorReading(calmFileWith(BOSS_KEY_IN_TESTS, DRIFTER_AS_A_BOSS)),
               HasSubstr(UNKNOWN_DRIFTER_BOSS_TEXT));
+}
+
+/**
+ * Given the waves file the game ships
+ * When it is read
+ * Then the difficulty normal, which every game plays, ends with the Bydo
+ * Tyrant
+ */
+TEST(WaveCatalog, NormalEndsWithTheBydoTyrant) {
+  EXPECT_EQ(shippedCatalog().planOf("normal").boss,
+            std::optional<std::string>{BYDO_TYRANT_SHEET});
 }

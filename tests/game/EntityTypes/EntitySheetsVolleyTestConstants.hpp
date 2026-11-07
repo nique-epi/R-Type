@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <string_view>
 
 namespace rtype::game::testing {
@@ -62,5 +63,9 @@ offset_x = -100
 offset_y = 0
 [appearance]
 )";
+
+/** @brief The volleys of the shipped Bydo Tyrant: its calm and enraged
+ * bursts, its calm and enraged broods, its spores and its wall. */
+constexpr std::size_t VOLLEYS_OF_THE_TYRANT = 6;
 
 }  // namespace rtype::game::testing

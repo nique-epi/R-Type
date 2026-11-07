@@ -1,0 +1,571 @@
+# The entity type bydo_tyrant: the final boss, a giant Bydo with a skull. It
+# arrives once the last wave of a difficulty that names it is over, slides in
+# and roars, then bursts missiles, sweeps beams, lays Bydos and spores, lashes
+# its tentacles at a ship under its jaw, and enrages below half its health.
+# Only its eye takes a hit; its body destroys a ship that touches it.
+# [gameplay] is what the server gives an entity of this type, [appearance] how
+# the client draws it. Both programs read this file when they start, from
+# entities/bydo_tyrant.toml in the assets folder next to their executable, or
+# one level above it: the name of the file is the name of the type. Each one
+# reads only its own table, and stops with an error naming the file, the line
+# and the key when a key is missing, misspelt, out of its range, or does not
+# hold together with another key or another sheet. Every number is an integer:
+# 240, never 240.0. The keys are described on the page "Writing an entity
+# sheet" of the docs.
+
+[gameplay]
+side = "enemy"
+pilot = "bydo_tyrant"
+
+# Its only weak point is its eye: 18 by 18 sheet pixels, 19 pixels left of
+# and 13 above the center of its 128-pixel frame.
+[gameplay.hitbox]
+width = 72
+height = 72
+offset_x = -76
+offset_y = -52
+
+# Fast enough for its charge: 1936 units out in 800 ms.
+[gameplay.motion]
+kind = "steady"
+top_speed = 2500
+
+[gameplay.behaviour]
+rest_x = 1616
+rest_ms = 1000
+slide_ms = 1800
+roar_ms = 800
+settle_ms = 0
+burst_signal_ms = 600
+burst_strike_ms = 200
+burst_recover_ms = 300
+beam_signal_ms = 800
+beam_strike_ms = 600
+beam_recover_ms = 300
+brood_signal_ms = 800
+brood_strike_ms = 200
+brood_recover_ms = 300
+tentacle_signal_ms = 300
+tentacle_strike_ms = 400
+tentacle_recover_ms = 300
+# 40 sheet pixels (160 units) from its tentacles, plus their half height.
+melee_x = -136
+melee_y = 168
+melee_reach = 248
+rage_ms = 700
+rage_signal_percent = 70
+sweep_signal_ms = 560
+sweep_strike_ms = 1200
+sweep_recover_ms = 300
+spores_signal_ms = 560
+spores_strike_ms = 200
+spores_recover_ms = 300
+wall_signal_ms = 560
+wall_strike_ms = 200
+wall_recover_ms = 300
+charge_signal_ms = 700
+charge_strike_ms = 1600
+charge_recover_ms = 1000
+
+[gameplay.health]
+points = 240
+
+[gameplay.score]
+points = 10000
+
+[gameplay.boss]
+rage_below_percent = 50
+rage_attack = 9
+arrival_attack = 0
+
+[gameplay.survives_contact]
+
+# Burst: 5 missiles fanned over 48 degrees from the mouth; enraged, 7.
+[[gameplay.volley]]
+attack = 1
+phase = "strike"
+body = "tyrant_missile"
+count = 5
+offset_x = -124
+offset_y = 44
+spread_deg = 48
+distance = 8
+
+[[gameplay.volley]]
+attack = 11
+phase = "strike"
+body = "tyrant_missile"
+count = 7
+offset_x = -124
+offset_y = 44
+spread_deg = 48
+distance = 8
+
+# Brood: 3 Bydos out of the sacs, 120 units apart (rows 296, 416, 536).
+[[gameplay.volley]]
+attack = 3
+phase = "strike"
+body = "drifter"
+count = 3
+offset_x = 164
+offset_y = -196
+step_y = 120
+
+[[gameplay.volley]]
+attack = 13
+phase = "strike"
+body = "drifter"
+count = 3
+offset_x = 164
+offset_y = -196
+step_y = 120
+
+# Spores: 5 mines on a diagonal, (200,120) to (1400,840) at rest.
+[[gameplay.volley]]
+attack = 16
+phase = "strike"
+body = "tyrant_spore"
+count = 5
+offset_x = -1416
+offset_y = -372
+step_x = 300
+step_y = 180
+
+# Wall: 9 slots 108 units apart from row 60, the 2nd and 3rd left open.
+[[gameplay.volley]]
+attack = 17
+phase = "strike"
+body = "drifter"
+count = 9
+offset_x = -340
+offset_y = -432
+step_y = 108
+gap_from = 1
+gap_count = 2
+
+# Its body, always: a ship touching it is destroyed, a missile passes.
+[[gameplay.hurt_zone.box]]
+offset_x = 24
+offset_y = 0
+width = 352
+height = 400
+
+[[gameplay.hurt_zone.box]]
+offset_x = -120
+offset_y = 60
+width = 160
+height = 120
+
+# Tentacles, calm and enraged: 35 by 44 sheet pixels under its front.
+[[gameplay.hurt_zone.box]]
+offset_x = -136
+offset_y = 168
+width = 140
+height = 176
+attack = 4
+phase = "strike"
+
+[[gameplay.hurt_zone.box]]
+offset_x = -136
+offset_y = 168
+width = 140
+height = 176
+attack = 14
+phase = "strike"
+
+# Beam, calm and enraged: 13 sheet pixels thick, from the eye past the left edge.
+[[gameplay.hurt_zone.beam]]
+offset_x = -76
+offset_y = -52
+length = 1920
+thickness = 52
+from_deg = 0
+to_deg = 0
+attack = 2
+phase = "strike"
+
+[[gameplay.hurt_zone.beam]]
+offset_x = -76
+offset_y = -52
+length = 1920
+thickness = 52
+from_deg = 0
+to_deg = 0
+attack = 12
+phase = "strike"
+
+# Sweeping beam: from 35 degrees up to 12 down over 1.2 s.
+[[gameplay.hurt_zone.beam]]
+offset_x = -76
+offset_y = -52
+length = 1920
+thickness = 52
+from_deg = -35
+to_deg = 12
+attack = 15
+phase = "strike"
+from_ms = 0
+until_ms = 1200
+
+[appearance]
+sheet = "sprites/mobs/bydo_tyrant.png"
+
+[appearance.idle]
+left = 0
+top = 0
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 300
+
+[appearance.enraged_idle]
+left = 0
+top = 1040
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 200
+
+# 0 arrival: it slides in (idle, looping), then roars (mouth, 2 x 400 ms).
+[appearance.attack_0.signal]
+left = 0
+top = 0
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 300
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_0.strike]
+left = 0
+top = 130
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 400
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_1.signal]
+left = 0
+top = 130
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 150
+playback = "hold"
+afterwards = "stay"
+
+[appearance.attack_1.strike]
+left = 0
+top = 260
+width = 128
+height = 128
+frames = 1
+spacing = 2
+frame_ms = 200
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_2.signal]
+left = 0
+top = 390
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 120
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_2.strike]
+left = 0
+top = 520
+width = 128
+height = 128
+frames = 1
+spacing = 2
+frame_ms = 600
+playback = "hold"
+afterwards = "stay"
+
+[appearance.attack_2.recover]
+left = 0
+top = 130
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 150
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_3.signal]
+left = 0
+top = 650
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 200
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_3.strike]
+left = 0
+top = 650
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 100
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_4.signal]
+left = 0
+top = 390
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 150
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_4.strike]
+left = 0
+top = 780
+width = 128
+height = 128
+frames = 1
+spacing = 2
+frame_ms = 400
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_9.enraged]
+left = 0
+top = 910
+width = 128
+height = 128
+frames = 4
+spacing = 2
+frame_ms = 175
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_11.signal]
+left = 0
+top = 1170
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 105
+playback = "hold"
+afterwards = "stay"
+
+[appearance.attack_11.strike]
+left = 0
+top = 1300
+width = 128
+height = 128
+frames = 1
+spacing = 2
+frame_ms = 200
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_12.signal]
+left = 0
+top = 1430
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 120
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_12.strike]
+left = 0
+top = 1560
+width = 128
+height = 128
+frames = 1
+spacing = 2
+frame_ms = 600
+playback = "hold"
+afterwards = "stay"
+
+[appearance.attack_12.recover]
+left = 0
+top = 1170
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 150
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_13.signal]
+left = 0
+top = 1690
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 140
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_13.strike]
+left = 0
+top = 1690
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 100
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_14.signal]
+left = 0
+top = 1430
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 105
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_14.strike]
+left = 0
+top = 1820
+width = 128
+height = 128
+frames = 1
+spacing = 2
+frame_ms = 400
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_15.signal]
+left = 0
+top = 1430
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 120
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_15.strike]
+left = 0
+top = 1560
+width = 128
+height = 128
+frames = 1
+spacing = 2
+frame_ms = 1200
+playback = "hold"
+afterwards = "stay"
+
+[appearance.attack_15.recover]
+left = 0
+top = 1170
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 150
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_16.signal]
+left = 0
+top = 1690
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 140
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_16.strike]
+left = 0
+top = 1170
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 100
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_17.signal]
+left = 0
+top = 1690
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 140
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_17.strike]
+left = 0
+top = 1690
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 100
+playback = "once"
+afterwards = "idle"
+
+[appearance.attack_18.signal]
+left = 0
+top = 1430
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 60
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_18.strike]
+left = 0
+top = 1040
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 100
+playback = "loop"
+afterwards = "stay"
+
+[appearance.attack_18.recover]
+left = 0
+top = 1430
+width = 128
+height = 128
+frames = 2
+spacing = 2
+frame_ms = 500
+playback = "once"
+afterwards = "idle"

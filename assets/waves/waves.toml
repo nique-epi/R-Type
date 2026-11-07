@@ -22,7 +22,13 @@
 #   wave_pause_ms                   milliseconds of empty sky before each
 #                                   wave, 0 to 60000
 #   level_waves                     waves of the level: the game is won once
-#                                   the last of them is over, 1 to 100
+#                                   the last of them is over, or once its
+#                                   boss is down, 1 to 100
+#   boss                            optional: the name of a sheet of
+#                                   entities/ with a table [gameplay.boss],
+#                                   which arrives once the last wave is over;
+#                                   the game is then won once it is destroyed
+#                                   and no enemy is left
 # Numbers are integers: 2500, never 2500.0. A wave ends once every one of its
 # Bydos has appeared and none is left in the world, killed or gone on the
 # left; the pause before the next wave starts then.
@@ -46,6 +52,7 @@ spawn_interval_cut_per_wave_ms = 250
 shortest_spawn_interval_ms = 1000
 wave_pause_ms = 4000
 level_waves = 8
+boss = "bydo_tyrant"
 
 [difficulty.hard]
 enemies = ["weaver", "drifter", "reaper", "weaver", "drillback", "voltjelly", "weaver", "bydomancer"]
@@ -56,3 +63,4 @@ spawn_interval_cut_per_wave_ms = 250
 shortest_spawn_interval_ms = 500
 wave_pause_ms = 3000
 level_waves = 10
+boss = "bydo_tyrant"

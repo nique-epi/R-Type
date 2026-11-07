@@ -5,23 +5,30 @@
 #include "EntitySheets.hpp"
 #include "EntitySheetsTestConstants.hpp"
 #include "EntitySheetsVolleyTestConstants.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "GameException.hpp"
 #include "SheetText.hpp"
 #include "SheetTextFixtures.hpp"
+#include "ShippedEntitySheets.hpp"
+#include "VolleySheet.hpp"
 
 using rtype::engine::UnknownDataFileChoiceException;
 using rtype::game::EntitySheet;
 using rtype::game::EntitySheets;
 using rtype::game::InconsistentEntitySheetException;
 using rtype::game::SheetText;
+using rtype::game::VolleySheet;
 using rtype::game::testing::BROODER_NAME_IN_SHEET_TESTS;
 using rtype::game::testing::BROODER_OF_MINIONS_TEXT;
 using rtype::game::testing::BROODER_OF_PLAYER_MISSILES_TEXT;
+using rtype::game::testing::BYDO_TYRANT_SHEET;
 using rtype::game::testing::MINION_NAME_IN_SHEET_TESTS;
 using rtype::game::testing::MINION_SHEET_TEXT;
 using rtype::game::testing::PLAYER_MISSILE_NAME_IN_TESTS;
 using rtype::game::testing::PLAYER_MISSILE_SHEET_TEXT;
 using rtype::game::testing::sheetText;
+using rtype::game::testing::shippedEntitySheets;
+using rtype::game::testing::VOLLEYS_OF_THE_TYRANT;
 
 /**
  * Given the sheets of a brooder whose volley is made of minions, and of the
@@ -68,4 +75,20 @@ TEST(EntitySheets, RefusesAVolleyOfPlayerMissiles) {
 
   EXPECT_THROW(static_cast<void>(EntitySheets::fromTexts(texts)),
                InconsistentEntitySheetException);
+}
+
+/**
+ * Given the sheets the game ships
+ * When the sheet of the Bydo Tyrant is read
+ * Then it is a boss with its six volleys, each body numbered as a sheet
+ */
+TEST(EntitySheets, ShipsAReadableBydoTyrant) {
+  const EntitySheet& tyrant = shippedEntitySheets().named(BYDO_TYRANT_SHEET);
+
+  EXPECT_TRUE(tyrant.boss.has_value());
+  ASSERT_EQ(tyrant.volleys.size(), VOLLEYS_OF_THE_TYRANT);
+  for (const VolleySheet& volley : tyrant.volleys) {
+    EXPECT_EQ(shippedEntitySheets().numbered(volley.bodyNumber),
+              &shippedEntitySheets().named(volley.body));
+  }
 }
