@@ -21,7 +21,6 @@ target_link_libraries(rtype_server_games_module
     rtype_logging
     rtype_server_exceptions
     rtype_server_constants
-    rtype_server_chat_module
     rtype_server_instances
     rtype_server_replication_module
     rtype_server_results_module
@@ -34,5 +33,9 @@ target_link_libraries(rtype_server_games_module
     rtype_server_sessions_roster
     rtype_server_spawning
 )
+
+if(RTYPE_MODULE_CHAT)
+  target_link_libraries(rtype_server_games_module PUBLIC rtype_server_chat_module)
+endif()
 
 rtype_enable_warnings(rtype_server_games_module)

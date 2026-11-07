@@ -19,10 +19,12 @@ include(FeatureSummary)
 option(RTYPE_MODULE_AUDIO "Build the sound module of the client" ON)
 option(RTYPE_MODULE_METRICS "Build the metrics modules of the client and of the game processes" ON)
 option(RTYPE_MODULE_MASTER_LINK "Build the module that registers the server with the master" ON)
+option(RTYPE_MODULE_CHAT "Build the chat module of the games" ON)
 
 add_feature_info(audio RTYPE_MODULE_AUDIO "the sound of the client")
 add_feature_info(metrics RTYPE_MODULE_METRICS "the metrics of the client and of the game processes")
 add_feature_info(master-link RTYPE_MODULE_MASTER_LINK "the registration of the server with the master")
+add_feature_info(chat RTYPE_MODULE_CHAT "the chat of the games")
 
 if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})

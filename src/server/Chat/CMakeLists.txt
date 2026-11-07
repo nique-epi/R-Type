@@ -1,3 +1,7 @@
+if(NOT RTYPE_MODULE_CHAT)
+  return()
+endif()
+
 add_library(rtype_server_chat_module STATIC
   ChatModule.cpp
   ChatRelay.cpp
