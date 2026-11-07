@@ -131,7 +131,7 @@ A received datagram goes through these checks in order. No buffer is sized from 
 |---|---|
 | The datagram holds 25 to 1200 bytes | dropped |
 | `protocolId` is `RTYP` | dropped |
-| `version` is 12 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
+| `version` is 13 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
 | `COMPRESSED` is set | the server drops the datagram; the client decodes the body and clears the flag, or drops the datagram when it cannot (see [Compression](#compression)) |
 | `flags` has no bit but `ACKNOWLEDGES` and `GUARANTEED`, once `COMPRESSED` is cleared | dropped |
 | The message sizes add up exactly to the end of the datagram | dropped |
