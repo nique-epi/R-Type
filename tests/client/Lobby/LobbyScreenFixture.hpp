@@ -12,6 +12,7 @@
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "RecordingWaitingRoom.hpp"
+#include "ShipLook.hpp"
 
 /** @brief A waiting room alone, the local player accepted as player 1, with
  * a recording navigator, connection and canvas, and the bindings of a first
@@ -35,6 +36,9 @@ class LobbyScreenFixture : public ::testing::Test {
   [[nodiscard]] RecordingWaitingRoom& waitingRoom();
   [[nodiscard]] const InterfaceCanvasRecord& canvas() const;
   [[nodiscard]] rtype::client::LobbyScreen& screen();
+  /** @returns What the ship of the local player wears, as the settings
+   * would hold it; the room reads it at each frame. */
+  [[nodiscard]] rtype::client::ShipLook& look();
 
   /** @returns The sounds the waiting room played. */
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
@@ -46,5 +50,6 @@ class LobbyScreenFixture : public ::testing::Test {
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
   rtype::client::KeyBindings keys_;
+  rtype::client::ShipLook look_{};
   rtype::client::LobbyScreen screen_;
 };

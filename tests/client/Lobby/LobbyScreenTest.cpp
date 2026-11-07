@@ -9,6 +9,7 @@
 #include <vector>
 #include "BackgroundColorConstants.hpp"
 #include "GameScreenIdConstants.hpp"
+#include "HangarScreenIdConstants.hpp"
 #include "HelpWalkthroughConstants.hpp"
 #include "HelpWalkthroughTestConstants.hpp"
 #include "KeyPress.hpp"
@@ -29,6 +30,7 @@
 
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::GAME_SCREEN;
+using rtype::client::HANGAR_SCREEN;
 using rtype::client::HELP_STEPS;
 using rtype::client::LEADERBOARD_SCREEN;
 using rtype::client::PRESS_DURATION;
@@ -43,12 +45,16 @@ using rtype::client::testing::FIRST_BAY_NICKNAME;
 using rtype::client::testing::FIRST_STEP_WORD;
 using rtype::client::testing::HELP_CHIP_MIDDLE;
 using rtype::client::testing::LEADERBOARD_CHIP_MIDDLE;
+using rtype::client::testing::LOOK_SHEET;
 using rtype::client::testing::OTHER_NICKNAME;
 using rtype::client::testing::OTHER_NUMBER;
+using rtype::client::testing::OWN_BAY_MIDDLE;
 using rtype::client::testing::OWN_NICKNAME;
 using rtype::client::testing::OWN_NUMBER;
 using rtype::client::testing::READY_KEY;
+using rtype::client::testing::THIRD_BAY_MIDDLE;
 using rtype::client::testing::THIRD_BAY_NICKNAME;
+using rtype::client::testing::WEARS_TOP_HAT;
 using ::testing::Contains;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
@@ -490,4 +496,66 @@ TEST_F(LobbyScreenFixture, TheLeaderboardKeyIsIgnoredWhileTheHelpIsOpen) {
   tap(sf::Keyboard::Key::L, sf::Keyboard::Scan::L);
 
   EXPECT_THAT(navigator().calls(), IsEmpty());
+}
+
+/**
+ * Given the room listing the local player and another pilot
+ * When the bay of the local player is clicked
+ * Then the hangar opens over the room
+ */
+TEST_F(LobbyScreenFixture, AClickOnTheOwnBayOpensTheHangar) {
+  list({pilot(OWN_NUMBER, OWN_NICKNAME, false),
+        pilot(OTHER_NUMBER, OTHER_NICKNAME, false)});
+
+  screen().handleEvent(leftPress(OWN_BAY_MIDDLE));
+  screen().handleEvent(leftRelease(OWN_BAY_MIDDLE));
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = HANGAR_SCREEN}));
+}
+
+/**
+ * Given the room listing the local player and another pilot in the third bay
+ * When the bay of the other pilot is clicked
+ * Then nothing opens: only the own ship is dressed here
+ */
+TEST_F(LobbyScreenFixture, AClickOnAnotherBayOpensNothing) {
+  list({pilot(OWN_NUMBER, OWN_NICKNAME, false),
+        pilot(OTHER_NUMBER, OTHER_NICKNAME, false)});
+
+  screen().handleEvent(leftPress(THIRD_BAY_MIDDLE));
+  screen().handleEvent(leftRelease(THIRD_BAY_MIDDLE));
+
+  EXPECT_TRUE(navigator().calls().empty());
+}
+
+/**
+ * Given the room
+ * When G is pressed and released
+ * Then the hangar opens over the room
+ */
+TEST_F(LobbyScreenFixture, TheHangarKeyOpensTheHangar) {
+  list({pilot(OWN_NUMBER, OWN_NICKNAME, false)});
+
+  tap(sf::Keyboard::Key::G, sf::Keyboard::Scan::G);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = HANGAR_SCREEN}));
+}
+
+/**
+ * Given the room listing the local player, whose ship wears the top hat
+ * When a frame goes by
+ * Then its bay draws an item of the sheet of the items
+ */
+TEST_F(LobbyScreenFixture, TheOwnBayShowsWhatTheShipWears) {
+  look().head = WEARS_TOP_HAT;
+
+  list({pilot(OWN_NUMBER, OWN_NICKNAME, false)});
+
+  EXPECT_TRUE(std::ranges::any_of(
+      canvas().images,
+      [](const RecordedImage& image) { return image.assetId == LOOK_SHEET; }));
 }

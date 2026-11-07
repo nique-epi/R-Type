@@ -39,6 +39,7 @@ LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place)
                                .keys = keys_,
                                .keyName = nameInTheFile,
                                .palette = PLAYER_COLORS,
+                               .look = look_,
                                .motion = MotionPreference::Full,
                                .place = place},
               std::make_unique<RecordingInterfaceCanvas>(canvas_)) {
@@ -80,3 +81,5 @@ LobbyScreen& LobbyScreenFixture::screen() { return screen_; }
 const RecordingSoundPlayer& LobbyScreenFixture::sounds() const {
   return sounds_;
 }
+
+rtype::client::ShipLook& LobbyScreenFixture::look() { return look_; }

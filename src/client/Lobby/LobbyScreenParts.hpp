@@ -11,6 +11,7 @@
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayfieldMapping.hpp"
+#include "ShipLook.hpp"
 
 namespace rtype::client {
 
@@ -45,6 +46,10 @@ struct LobbyScreenParts {
   /** @brief The palette the ships and their bands are painted in: a
    * constant, so it outlives the screen. */
   std::reference_wrapper<const PlayerPalette> palette;
+  /** @brief What the ship of the local player wears, read from the settings
+   * at each frame, since the hangar pushed over the room changes it; it must
+   * outlive the screen. */
+  std::reference_wrapper<const ShipLook> look;
   /** @brief Whether the ships and the beacons may move. */
   MotionPreference motion{};
   /** @brief Where BACK leads: the connection screen below, or the title. */

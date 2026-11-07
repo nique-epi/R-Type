@@ -25,6 +25,12 @@ constexpr const char* CANCEL_READY_LABEL = "CANCEL READY";
 constexpr sf::Keyboard::Key LEADERBOARD_KEY = sf::Keyboard::Key::L;
 constexpr const char* LEADERBOARD_KEY_NAME = "L";
 
+/** @brief The chip that opens the hangar, beside RANKING, its key and what
+ * its keycap says; a click on the own bay opens the hangar too. */
+constexpr const char* HANGAR_LABEL = "HANGAR";
+constexpr sf::Keyboard::Key HANGAR_KEY = sf::Keyboard::Key::G;
+constexpr const char* HANGAR_KEY_NAME = "G";
+
 /** @brief Order of the main bar in the menu of the waiting room. */
 constexpr std::size_t READY_BUTTON = 0;
 

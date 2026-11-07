@@ -20,6 +20,7 @@
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayfieldMapping.hpp"
+#include "ShipLook.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -58,6 +59,10 @@ struct HangarBay;
  * once it starts, replaces both. Since only the screen on top receives events,
  * the chip first drops what the room held, as losing the focus does; otherwise
  * the room would never see the release of a key held down at that moment.
+ *
+ * HANGAR, a chip beside RANKING, HANGAR_KEY, or a click on the bay of the
+ * local player opens the hangar over the room the same way; the bay of the
+ * local player shows what its ship wears.
  */
 class LobbyScreen : public IScreen {
  public:
@@ -126,6 +131,8 @@ class LobbyScreen : public IScreen {
   Menu menu_;
   HelpWalkthrough help_;
   KeyChip leaderboardChip_;
+  const ShipLook* look_;
+  KeyChip hangarChip_;
 };
 
 }  // namespace rtype::client
