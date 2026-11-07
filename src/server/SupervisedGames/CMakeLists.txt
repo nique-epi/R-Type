@@ -10,6 +10,7 @@ add_subdirectory(Stopping)
 add_subdirectory(Status)
 
 add_library(rtype_server_supervised_games_module STATIC
+  MeasureMilliseconds.cpp
   ServerSupervisedGamesModule.cpp
   SupervisedGamesReport.cpp
   SupervisedGamesWatch.cpp
