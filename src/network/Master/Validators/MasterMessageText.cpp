@@ -236,12 +236,14 @@ std::uint8_t livesOf(const JsonField& game) {
                               .highest = HIGHEST_GAME_LIVES}));
 }
 
-/** @returns The difficulties @p message holds: 1 to MAXIMUM_DIFFICULTIES
- * distinct names, each following the rules of a nickname. */
-std::vector<std::string> difficultiesOf(const JsonField& message) {
+/** @returns The difficulties @p message holds: @p fewest to
+ * MAXIMUM_DIFFICULTIES distinct names, each following the rules of a
+ * nickname. */
+std::vector<std::string> difficultiesOf(const JsonField& message,
+                                        std::size_t fewest) {
   const JsonField field = memberOf(message, DIFFICULTIES_MEMBER);
   const std::size_t count = arraySizeOf(field, MAXIMUM_DIFFICULTIES);
-  if (count == 0) {
+  if (count < fewest) {
     refuse(field);
   }
   std::vector<std::string> names;
@@ -321,13 +323,17 @@ ListedGameState listedStateOf(const JsonField& field) {
 
 ListedGame listedGameOf(const JsonField& game) {
   requireObject(game);
-  return ListedGame{.number = gameNumberOf(game),
-                    .name = gameNameOf(game),
-                    .state = listedStateOf(memberOf(game, STATE_MEMBER)),
-                    .playerCount = static_cast<std::uint8_t>(integerOf(
-                        memberOf(game, PLAYER_COUNT_MEMBER),
-                        IntegerBounds{.lowest = MINIMUM_LISTED_PLAYERS,
-                                      .highest = MAXIMUM_PLAYERS}))};
+  return ListedGame{
+      .number = gameNumberOf(game),
+      .name = gameNameOf(game),
+      .state = listedStateOf(memberOf(game, STATE_MEMBER)),
+      .playerCount = static_cast<std::uint8_t>(
+          integerOf(memberOf(game, PLAYER_COUNT_MEMBER),
+                    IntegerBounds{.lowest = MINIMUM_LISTED_PLAYERS,
+                                  .highest = MAXIMUM_PLAYERS})),
+      .difficulty = nicknameOf(memberOf(game, DIFFICULTY_MEMBER)),
+      .lives = livesOf(game),
+      .friendlyFire = booleanOf(memberOf(game, FRIENDLY_FIRE_MEMBER))};
 }
 
 nlohmann::json listedGameDocument(const ListedGame& game) {
@@ -337,6 +343,9 @@ nlohmann::json listedGameDocument(const ListedGame& game) {
   document[STATE_MEMBER] =
       LISTED_GAME_STATE_TEXTS.at(static_cast<std::size_t>(game.state));
   document[PLAYER_COUNT_MEMBER] = game.playerCount;
+  document[DIFFICULTY_MEMBER] = game.difficulty;
+  document[LIVES_MEMBER] = game.lives;
+  document[FRIENDLY_FIRE_MEMBER] = game.friendlyFire;
   return document;
 }
 
@@ -624,14 +633,21 @@ std::string heartbeatText(const ServerHeartbeat& heartbeat) {
 ServerHeartbeat heartbeatFromText(std::string_view text) {
   const nlohmann::json document = parsedObject(text);
   const JsonField heartbeat = wholeMessage(document);
-  return ServerHeartbeat{.games = gamesOf(heartbeat),
-                         .difficulties = difficultiesOf(heartbeat),
-                         .measures = measuresOf(heartbeat),
-                         .probeToken = probeTokenOf(heartbeat)};
+  return ServerHeartbeat{
+      .games = gamesOf(heartbeat),
+      .difficulties = difficultiesOf(heartbeat, FEWEST_HEARTBEAT_DIFFICULTIES),
+      .measures = measuresOf(heartbeat),
+      .probeToken = probeTokenOf(heartbeat)};
 }
 
 std::string gameListingText(const GameListing& listing) {
-  return listingText(GAMES_MEMBER, listing.games, listedGameDocument);
+  nlohmann::json document;
+  document[GAMES_MEMBER] = nlohmann::json::array();
+  for (const ListedGame& game : listing.games) {
+    document[GAMES_MEMBER].push_back(listedGameDocument(game));
+  }
+  document[DIFFICULTIES_MEMBER] = listing.difficulties;
+  return textOf(document);
 }
 
 GameListing gameListingFromText(std::string_view text) {
@@ -639,6 +655,8 @@ GameListing gameListingFromText(std::string_view text) {
   const JsonField games = memberOf(wholeMessage(document), GAMES_MEMBER);
   const std::size_t count = arraySizeOf(games, MAXIMUM_HOSTED_GAMES);
   GameListing listing;
+  listing.difficulties =
+      difficultiesOf(wholeMessage(document), FEWEST_LISTED_DIFFICULTIES);
   listing.games.reserve(count);
   for (std::size_t index = 0; index < count; ++index) {
     listing.games.push_back(listedGameOf(elementOf(games, index)));

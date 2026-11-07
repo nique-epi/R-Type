@@ -88,7 +88,11 @@ GameListing parisGameListing() {
                 ListedGame{.number = PLAYING_GAME_NUMBER,
                            .name = std::string{PLAYING_GAME_NAME},
                            .state = ListedGameState::InGame,
-                           .playerCount = PLAYING_GAME_PLAYER_COUNT}}};
+                           .playerCount = PLAYING_GAME_PLAYER_COUNT,
+                           .difficulty = std::string{PARIS_HARD_DIFFICULTY},
+                           .lives = PARIS_PLAYING_GAME_LIVES,
+                           .friendlyFire = true}},
+      .difficulties = {PARIS_DIFFICULTIES.begin(), PARIS_DIFFICULTIES.end()}};
 }
 
 ServerListing parisServerListing() {

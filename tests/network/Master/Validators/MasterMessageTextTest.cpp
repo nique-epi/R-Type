@@ -55,6 +55,7 @@ using rtype::network::testing::DIFFICULTIES_POINTER;
 using rtype::network::testing::difficultyNames;
 using rtype::network::testing::EMPTY_GAME_NAME;
 using rtype::network::testing::FIFTH_PILOT;
+using rtype::network::testing::FIRST_GAME_DIFFICULTY_POINTER;
 using rtype::network::testing::FIRST_GAME_FIRST_PLAYER_POINTER;
 using rtype::network::testing::FIRST_GAME_FRIENDLY_FIRE_POINTER;
 using rtype::network::testing::FIRST_GAME_LIVES_POINTER;
@@ -144,6 +145,7 @@ using rtype::network::testing::serverListingTextWith;
 using rtype::network::testing::SERVERS_ABOVE_A_PAGE;
 using rtype::network::testing::SERVERS_OF_A_FULL_PAGE;
 using rtype::network::testing::SERVERS_POINTER;
+using rtype::network::testing::SEVENTEEN_BYTE_DIFFICULTY;
 using rtype::network::testing::SEVENTEEN_BYTE_NICKNAME;
 using rtype::network::testing::SHORT_KEY;
 using rtype::network::testing::THIRD_PILOT;
@@ -697,6 +699,28 @@ TEST(MasterMessageText, RefusesAListedStateOnlyAHeartbeatHas) {
   EXPECT_THAT(gameListingRefusal(
                   gameListingTextWith(FIRST_GAME_STATE_POINTER, PLAYING_STATE)),
               HasSubstr(quoted(FIRST_GAME_STATE_POINTER)));
+}
+
+/**
+ * Given a listing whose first game names a difficulty of 17 bytes
+ * When it is read
+ * Then the refusal names that difficulty: it follows the rules of a nickname
+ */
+TEST(MasterMessageText, RefusesAListedDifficultyTheProtocolCannotCarry) {
+  EXPECT_THAT(gameListingRefusal(gameListingTextWith(
+                  FIRST_GAME_DIFFICULTY_POINTER, SEVENTEEN_BYTE_DIFFICULTY)),
+              HasSubstr(quoted(FIRST_GAME_DIFFICULTY_POINTER)));
+}
+
+/**
+ * Given a listing whose difficulties are no list
+ * When it is read
+ * Then the refusal names the difficulties
+ */
+TEST(MasterMessageText, RefusesAListingWhoseDifficultiesAreNoList) {
+  EXPECT_THAT(gameListingRefusal(
+                  gameListingTextWith(DIFFICULTIES_POINTER, PARIS_DIFFICULTY)),
+              HasSubstr(quoted(DIFFICULTIES_POINTER)));
 }
 
 /**

@@ -29,6 +29,11 @@ constexpr std::string_view DIFFICULTY_MEMBER = "difficulty";
 constexpr std::string_view LIVES_MEMBER = "lives";
 constexpr std::string_view FRIENDLY_FIRE_MEMBER = "friendlyFire";
 constexpr std::string_view DIFFICULTIES_MEMBER = "difficulties";
+
+/** @brief The fewest difficulties a heartbeat names, and a list of games: a
+ * server always holds one, and a server that sent no heartbeat lists none. */
+constexpr std::size_t FEWEST_HEARTBEAT_DIFFICULTIES = 1;
+constexpr std::size_t FEWEST_LISTED_DIFFICULTIES = 0;
 constexpr std::string_view PLAYERS_MEMBER = "players";
 
 /** @brief The members of the measures of a heartbeat, in JSON. */

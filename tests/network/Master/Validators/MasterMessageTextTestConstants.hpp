@@ -73,6 +73,9 @@ constexpr std::array<std::string_view, 3> PARIS_DIFFICULTIES{"easy", "hard",
 constexpr std::string_view PARIS_HARD_DIFFICULTY = "hard";
 constexpr std::uint8_t PARIS_PLAYING_GAME_LIVES = 5;
 
+/** @brief A difficulty of 17 bytes, one past the longest a nickname may be. */
+constexpr std::string_view SEVENTEEN_BYTE_DIFFICULTY = "abcdefghijklmnopq";
+
 /** @brief Lives at the bounds of one byte: none, the most it holds, and one
  * past it, which a cut to one byte would read as none. */
 constexpr int NO_GAME_LIFE = 0;
@@ -135,8 +138,11 @@ constexpr std::string_view FIRST_GAME_PLAYER_COUNT_POINTER =
 
 /** @brief The listing of the games of "Paris 1", as the master writes it. */
 constexpr std::string_view PARIS_GAME_LISTING_TEXT =
-    R"({"games":[{"name":"GAME 1","number":1,"playerCount":1,"state":"waiting"},)"
-    R"({"name":"GAME 2","number":2,"playerCount":2,"state":"inGame"}]})";
+    R"({"difficulties":["easy","hard","normal"],)"
+    R"("games":[{"difficulty":"normal","friendlyFire":false,"lives":3,)"
+    R"("name":"GAME 1","number":1,"playerCount":1,"state":"waiting"},)"
+    R"({"difficulty":"hard","friendlyFire":true,"lives":5,)"
+    R"("name":"GAME 2","number":2,"playerCount":2,"state":"inGame"}]})";
 constexpr std::string_view FIRST_GAME_FIRST_PLAYER_POINTER =
     "/games/0/players/0";
 constexpr std::string_view FIRST_GAME_PLAYERS_POINTER = "/games/0/players";
@@ -144,6 +150,8 @@ constexpr std::string_view GAMES_POINTER = "/games";
 constexpr std::string_view DIFFICULTIES_POINTER = "/difficulties";
 constexpr std::string_view SECOND_DIFFICULTY_POINTER = "/difficulties/1";
 constexpr std::string_view FIRST_GAME_LIVES_POINTER = "/games/0/lives";
+constexpr std::string_view FIRST_GAME_DIFFICULTY_POINTER =
+    "/games/0/difficulty";
 constexpr std::string_view FIRST_GAME_FRIENDLY_FIRE_POINTER =
     "/games/0/friendlyFire";
 constexpr std::string_view TICK_P50_POINTER = "/measures/tickP50Milliseconds";
