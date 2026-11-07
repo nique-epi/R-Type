@@ -4,12 +4,13 @@ import { createFetch, createSchema } from '@better-fetch/fetch';
 import { env } from '@/config/server-env';
 
 import { problemSchema } from '../../schemas/master';
-import { healthEndpointsSchema } from './endpoints';
+import { healthEndpointsSchema, serversEndpointsSchema } from './endpoints';
 
 const MASTER_API_PREFIX = '/api';
 
 const masterSchema = createSchema({
   ...healthEndpointsSchema,
+  ...serversEndpointsSchema,
 });
 
 export const master = createFetch({
