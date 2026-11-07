@@ -242,7 +242,7 @@ bun run build
 bun run start
 ```
 
-The site is then on <http://localhost:3000>. The server reaches the master at `MASTER_URL` (`http://localhost:8080` by default); the browser only talks to the site. `bun run dev` serves the same pages while you edit them. `bun run lint`, `bun run typecheck` and `bun run test` are the checks of the `web` CI workflow.
+The site is then on <http://localhost:3000>, in French and English (`/fr`, `/en`). The server reaches the master at `MASTER_URL` (`http://localhost:8080` by default); the browser only talks to the site. The download page reads the latest release of `GITHUB_REPOSITORY` (`nique-epi/R-Type` by default); `GITHUB_TOKEN` is optional and raises the limit of the GitHub API. `bun run dev` serves the same pages while you edit them. `bun run lint`, `bun run typecheck` and `bun run test` are the checks of the `web` CI workflow.
 
 ## Tests
 

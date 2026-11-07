@@ -12,13 +12,13 @@ This page tells you where to look when you need to change something. It describe
 | Start and stop: `--mode master`, `master.cfg`, Ctrl-C and SIGTERM | Available | `src/server/main.cpp`, `src/master/LaunchOptions/` |
 | HTTP API under `/api`, every error in JSON | Available | `src/master/Http/` |
 | Database `r-type_master.db` | Available: servers, samples, changes of status | `src/master/Storage/` |
-| Creation of a game server and its key, `POST /api/servers` | Available; no page of the web site calls it yet | `src/master/Servers/` |
+| Creation of a game server and its key, `POST /api/servers` | Available; the hosting page of the web site calls it | `src/master/Servers/` |
 | Registration and heartbeats of the game servers | Available; sent by the module `master` of the game server | `src/master/Servers/`, `src/network/Master/`, `src/server/Master/` |
 | The client of the master, `MasterClient` | Available | `src/network/Master/Client/` |
 | The games of a server, for the client, `GET /api/servers/{id}/games` | Available | `src/master/Servers/`, `src/network/Master/` |
 | The statuses of the servers, their list and their history, `GET /api/servers` | Available; the route that puts a server in maintenance is not written | `src/master/Servers/`, `src/network/Master/` |
 | The probe of the UDP port of each game server, module `probe` | Available | `src/master/Probe/`, `src/master/Servers/`, `src/server/Master/` |
-| The web site, a Next.js server of its own that calls the API | Available: one page that shows whether the master answers, and the components of every page of the design, which no page uses yet | `web/` |
+| The web site, a Next.js server of its own that calls the API | Available: the pages of the design in French and English (home, download, sector map, a server, hosting, leaderboard, wiki, team); the leaderboard shows example scores | `web/` |
 | Administration, global leaderboard, accounts | Not yet written | |
 
 ## Starting the master
@@ -84,13 +84,32 @@ The storage starts before the HTTP API, so a database the master cannot open sto
 
 The web site is a program of its own: a Next.js server, in `web/` (see [Web site](/R-Type/technology-choices/#web-site-nextjs) for its tools). The browser only talks to that server, by default on port 3000; the server renders each page and calls the API of the master itself, at `MASTER_URL` (`http://localhost:8080` by default). The browser never calls the master, so the master needs no CORS, and the master serves its API only.
 
-- **Each request of a page asks the master again**: the home page is rendered at request time and asks `GET /api/health`, then renders again every 5 seconds while its tab is visible.
-- **A master that does not answer** is shown as "Unreachable"; the page itself keeps answering.
+- **Each request of a page that lists servers asks the master again**: the home page, the sector map, a server and the leaderboard are rendered at request time.
+- **A master that does not answer the list** gives the five example servers of the design (`SAMPLE_SERVERS`), and each page that shows them says they are examples. A master that answers an empty list gives an empty page: only silence gives examples.
 - **The client of the master is server-only** (`web/src/lib/api/`): its code and `MASTER_URL` never reach the browser.
+- **The download page reads the latest release of the GitHub repository** (`web/src/lib/github/`), `nique-epi/R-Type` unless `GITHUB_REPOSITORY` says otherwise: the version, the date, the size and the link of the installer of each system, and the last three entries of its notes. Next.js keeps the answer 10 minutes (`GITHUB_TOKEN` raises the 60 requests an hour per address the API gives without one). When GitHub does not answer, the pages show no version and link to the page of the releases.
+- **Every page lives under a language**, `/fr` or `/en`: `web/src/proxy.ts` sends a path with none to the language the browser prefers (`Accept-Language`), French when it names none the site speaks.
+
+### The pages of the site
+
+| Path under `/fr` or `/en` | Shows | Reads |
+|---|---|---|
+| `/` | the hero, the servers with free seats, the videos, the Bydos, the features, the notes of the latest release | the list of servers, the latest release |
+| `/download` | the installer of the system of the reader, its steps, the other files of the release | the latest release |
+| `/servers` | the sector map, read only: a seat is taken in the game, so the map has no Join and no quick play | the list of servers, each with its games and its last ping |
+| `/servers/{id}` | the games of a server, its figures and the pilots of its last 100 samples (the master keeps one sample a second, a page of the list holds 100); a server created and not registered yet shows a waiting notice | the list, `GET /api/servers/{id}/samples` |
+| `/servers/new` | the form that creates a server, then its key, shown once | `POST /api/servers`, through a server action |
+| `/leaderboard` | the leaderboard screen of the game, by server or for everyone | example scores: the master keeps none yet |
+| `/wiki/{keys,enemies,accessibility,host}` | the controls, the bestiary, the pilot palettes, the guide to host a server | nothing |
+| `/team` | the four members and their GitHub | nothing |
+
+- **The ping of a star** is the mean round trip of the players of its server at its last sample (`averagePingMilliseconds`), since the site cannot measure one from the browser. A server with no player has none, and is placed at `UNMEASURED_PING_MILLISECONDS` (75).
+- **The statuses of the master are folded to three**: `online` and `degraded` stay, `offline`, `unreachable` and `maintenance` are drawn offline, since none of them can be played on.
+- **The key of a server never leaves the page that created it**: the server action returns it to that page and logs nothing, and the hosting page refuses a name the form would not send (empty, or longer than 32 characters) without asking the master.
 
 ### The components of the site
 
-`web/src/components/` holds every component the design of the site needs: the home page, the downloads, the sector map, a server, hosting, the leaderboard, the wiki and the team. No page uses them yet. A component takes its data and its words as props and never calls the master, so a page reads the API, then hands the answer down.
+`web/src/components/` holds every component the design of the site needs: the home page, the downloads, the sector map, a server, hosting, the leaderboard, the wiki and the team. A component takes its data and its words as props and never calls the master, so a page reads the API, then hands the answer down.
 
 | Folder | Holds |
 |---|---|
@@ -130,7 +149,7 @@ The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, se
 
 ## Creating a game server: `POST /api/servers`
 
-A host creates its server on the web site, which calls `POST /api/servers` with the name players will read; no page of the web site makes it yet, so today the call is made by hand or by `MasterClient::createServer()`. The master answers 201, `Location: /api/servers/<id>`, and the server with its key:
+A host creates its server on the web site, whose hosting page calls `POST /api/servers` with the name players will read (a call can also be made by hand or by `MasterClient::createServer()`). The master answers 201, `Location: /api/servers/<id>`, and the server with its key:
 
 ```json
 {"id":7,"name":"Paris 1","key":"rtk_<64 hexadecimal digits>"}
@@ -320,7 +339,7 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change how often a game server beats | `MASTER_HEARTBEAT_INTERVAL` in `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master also reads to tell a silent server |
 | Change the size of a page of a list | `MINIMUM_PAGE_SIZE`, `DEFAULT_PAGE_SIZE` and `MAXIMUM_PAGE_SIZE` in `src/network/Master/Routes/MasterRouteConstants.hpp` |
 | Call the master from the game server | `MasterClient` (`src/network/Master/Client/`) |
-| Add a page to the web site | `web/src/app/`, its calls to the API in `web/src/lib/api/`, its sections in `web/src/components/` |
+| Add a page to the web site | `web/src/app/[lang]/`, its calls to the API in `web/src/lib/api/`, its sections in `web/src/components/`, its words in `web/src/i18n/dictionaries/` |
 | Change a color, a face or a size of the site | the tokens of `web/src/styles/globals.css` |
 | Add or change a word of the site | its label type in the component, then both `web/src/i18n/dictionaries/` |
 | Change what the games of a server are listed as | `listedStateOf()` in `ServersService.cpp` (`src/master/Servers/Services/`) and `GameListing` (`src/network/Master/Messages/`) |
