@@ -6,6 +6,7 @@
 #include <memory>
 #include <optional>
 #include <random>
+#include <span>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -37,6 +38,7 @@
 #include "RunningGame.hpp"
 #include "ServerConstants.hpp"
 #include "SettingValue.hpp"
+#include "SheetTextReading.hpp"
 #include "StateEncoding.hpp"
 #include "TextSettingDefinition.hpp"
 #include "TickDatagrams.hpp"
@@ -94,14 +96,17 @@ StateEncoding stateEncodingOf(const engine::SettingValue& setting) {
 }
 
 /**
- * @brief Writes in the journal the entity sheets read from @p folder, with the
- * count of their types.
+ * @brief Writes in the journal the content folders the entity sheets were
+ * read from, with the count of their types.
  */
 void logEntitySheets(const logging::Logger& logger,
-                     const std::filesystem::path& folder,
+                     std::span<const std::filesystem::path> folders,
                      const game::EntitySheets& types) {
-  logger.info("entity sheets ", logging::genericText(folder), ": ",
-              types.all().size(), " types");
+  std::string shown;
+  for (const std::filesystem::path& folder : folders) {
+    shown += " " + logging::genericText(folder);
+  }
+  logger.info("entity sheets of", shown, ": ", types.all().size(), " types");
 }
 
 /**
@@ -191,9 +196,10 @@ void ServerGamesModule::declareSettings(
 }
 
 void ServerGamesModule::start() {
-  const game::EntitySheets& types = types_.emplace(
-      game::EntitySheets::fromFolder(settings_.entitySheetsFolder));
-  logEntitySheets(logger_, settings_.entitySheetsFolder, types);
+  const game::EntitySheets& types =
+      types_.emplace(game::EntitySheets::fromTexts(
+          game::sheetTextsInFolders(settings_.contentFolders)));
+  logEntitySheets(logger_, settings_.contentFolders, types);
   runningGame_.keepEntityTypes(types);
   const WaveCatalog catalog = WaveCatalog::fromFile(settings_.wavesFile, types);
   logWavesFile(logger_, settings_.wavesFile, catalog);

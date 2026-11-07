@@ -42,7 +42,7 @@ constexpr std::uint64_t PLAYER_TOKEN_BASE = 0x1000;
 constexpr const char* MISSING_WAVES_FILE = "no/such/folder/waves.toml";
 
 /** @brief A folder of entity sheets that is not there. */
-constexpr const char* MISSING_ENTITY_SHEETS_FOLDER = "no/such/folder/entities";
+constexpr const char* MISSING_CONTENT_FOLDER = "no/such/folder";
 
 /** @brief The line of the journal that says the games are vanilla. */
 constexpr const char* VANILLA_GAMES_LINE = "games play normal, vanilla";

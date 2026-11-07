@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <filesystem>
 #include <functional>
@@ -10,26 +11,36 @@
 #include "ContentFilesTestConstants.hpp"
 #include "EngineException.hpp"
 #include "EntitySheet.hpp"
+#include "GameException.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "TemporaryFolder.hpp"
 
 using rtype::engine::MissingDataFileKeyException;
 using rtype::engine::UnreadableDataFileException;
 using rtype::game::contentFilesIn;
+using rtype::game::DuplicateEntityTypeException;
 using rtype::game::EntitySheet;
+using rtype::game::SharedContentFileException;
 using rtype::game::testing::ART_SPRITE_SHEET;
+using rtype::game::testing::ASSETS_OF_THE_STACK;
 using rtype::game::testing::BYDO_PIXELS;
+using rtype::game::testing::CRIMSON_PIXELS;
+using rtype::game::testing::CRIMSON_SHEET_FILE;
+using rtype::game::testing::CRIMSON_SPRITE_SHEET;
 using rtype::game::testing::DRIFTER_SHEET_FILE;
 using rtype::game::testing::FILES_OF_ONE_SHEET_AND_ITS_IMAGE;
+using rtype::game::testing::FILES_OF_THE_STACK;
 using rtype::game::testing::FILES_OF_TWO_SHEETS_AND_ONE_IMAGE;
 using rtype::game::testing::HUD_PIXELS;
 using rtype::game::testing::LISTED_ONCE;
+using rtype::game::testing::RESOURCE_OF_THE_STACK;
 using rtype::game::testing::SHARED_SPRITE_SHEET;
 using rtype::game::testing::SHEET_FILE_EXTENSION;
 using rtype::game::testing::SHEET_FOLDER_PREFIX;
 using rtype::game::testing::SHEET_NAMING_A_MISSING_IMAGE;
 using rtype::game::testing::SHEET_NAMING_THE_ART;
 using rtype::game::testing::SHEET_NAMING_THE_BYDOS;
+using rtype::game::testing::SHEET_NAMING_THE_CRIMSON_BYDOS;
 using rtype::game::testing::SHEET_WITHOUT_SPRITE_SHEET;
 using rtype::game::testing::SHIPPED_BYDOMANCER_SPRITES;
 using rtype::game::testing::SHIPPED_ENTITY_SPRITES;
@@ -51,7 +62,8 @@ TEST(ContentFiles, ListsTheSheetsAndTheSpriteSheetsTheyName) {
   assets.write(SHARED_SPRITE_SHEET, BYDO_PIXELS);
   assets.write(UNNAMED_SPRITE_SHEET, HUD_PIXELS);
 
-  const std::vector<ContentFile> files = contentFilesIn(assets.path());
+  const std::vector<ContentFile> files =
+      contentFilesIn(std::array{assets.path()});
 
   ASSERT_EQ(files.size(), FILES_OF_TWO_SHEETS_AND_ONE_IMAGE);
   EXPECT_EQ(files[0].path, DRIFTER_SHEET_FILE);
@@ -69,7 +81,8 @@ TEST(ContentFiles, CarriesTheBytesOfEachFile) {
   assets.write(DRIFTER_SHEET_FILE, SHEET_NAMING_THE_BYDOS);
   assets.write(SHARED_SPRITE_SHEET, BYDO_PIXELS);
 
-  const std::vector<ContentFile> files = contentFilesIn(assets.path());
+  const std::vector<ContentFile> files =
+      contentFilesIn(std::array{assets.path()});
 
   ASSERT_EQ(files.size(), FILES_OF_ONE_SHEET_AND_ITS_IMAGE);
   EXPECT_EQ(files[0].bytes, SHEET_NAMING_THE_BYDOS);
@@ -87,7 +100,8 @@ TEST(ContentFiles, OrdersTheFilesByPath) {
   assets.write(DRIFTER_SHEET_FILE, SHEET_NAMING_THE_ART);
   assets.write(ART_SPRITE_SHEET, BYDO_PIXELS);
 
-  const std::vector<ContentFile> files = contentFilesIn(assets.path());
+  const std::vector<ContentFile> files =
+      contentFilesIn(std::array{assets.path()});
 
   ASSERT_EQ(files.size(), FILES_OF_ONE_SHEET_AND_ITS_IMAGE);
   EXPECT_EQ(files[0].path, ART_SPRITE_SHEET);
@@ -103,7 +117,7 @@ TEST(ContentFiles, RefusesASpriteSheetTheFolderLacks) {
   const TemporaryFolder assets;
   assets.write(DRIFTER_SHEET_FILE, SHEET_NAMING_A_MISSING_IMAGE);
 
-  EXPECT_THROW(static_cast<void>(contentFilesIn(assets.path())),
+  EXPECT_THROW(static_cast<void>(contentFilesIn(std::array{assets.path()})),
                UnreadableDataFileException);
 }
 
@@ -116,7 +130,7 @@ TEST(ContentFiles, RefusesASheetWithoutSpriteSheet) {
   const TemporaryFolder assets;
   assets.write(DRIFTER_SHEET_FILE, SHEET_WITHOUT_SPRITE_SHEET);
 
-  EXPECT_THROW(static_cast<void>(contentFilesIn(assets.path())),
+  EXPECT_THROW(static_cast<void>(contentFilesIn(std::array{assets.path()})),
                MissingDataFileKeyException);
 }
 
@@ -127,7 +141,8 @@ TEST(ContentFiles, RefusesASheetWithoutSpriteSheet) {
  * sheet of the Bydomancer once though three sheets name it
  */
 TEST(ContentFiles, ListsEveryShippedSheetAndItsSprites) {
-  const std::vector<ContentFile> files = contentFilesIn(shippedAssetFolder());
+  const std::vector<ContentFile> files =
+      contentFilesIn(std::array{shippedAssetFolder()});
 
   const auto listed = [&files](const std::string& path) {
     return std::ranges::count(files, path, &ContentFile::path);
@@ -141,4 +156,67 @@ TEST(ContentFiles, ListsEveryShippedSheetAndItsSprites) {
   EXPECT_EQ(listed(std::string{SHIPPED_ENTITY_SPRITES}), LISTED_ONCE);
   EXPECT_EQ(listed(std::string{SHIPPED_BYDOMANCER_SPRITES}), LISTED_ONCE);
   EXPECT_TRUE(std::ranges::is_sorted(files, std::less{}, &ContentFile::path));
+}
+
+/**
+ * Given assets holding a sheet and its sprite sheet, and a resource holding a
+ * sheet that names that sprite sheet and a sheet that brings its own
+ * When the content of both folders is listed
+ * Then it holds the three sheets and both sprite sheets, each read from the
+ * folder that holds it
+ */
+TEST(ContentFiles, LaysTheSheetsOfAResourceOverTheAssets) {
+  const TemporaryFolder root;
+  const std::array folders{root.path() / ASSETS_OF_THE_STACK,
+                           root.path() / RESOURCE_OF_THE_STACK};
+  root.write(folders[0] / WEAVER_SHEET_FILE, SHEET_NAMING_THE_BYDOS);
+  root.write(folders[0] / SHARED_SPRITE_SHEET, BYDO_PIXELS);
+  root.write(folders[1] / DRIFTER_SHEET_FILE, SHEET_NAMING_THE_BYDOS);
+  root.write(folders[1] / CRIMSON_SHEET_FILE, SHEET_NAMING_THE_CRIMSON_BYDOS);
+  root.write(folders[1] / CRIMSON_SPRITE_SHEET, CRIMSON_PIXELS);
+
+  const std::vector<ContentFile> files = contentFilesIn(folders);
+
+  ASSERT_EQ(files.size(), FILES_OF_THE_STACK);
+  EXPECT_EQ(files[0].path, CRIMSON_SHEET_FILE);
+  EXPECT_EQ(files[1].path, DRIFTER_SHEET_FILE);
+  EXPECT_EQ(files[2].path, WEAVER_SHEET_FILE);
+  EXPECT_EQ(files[3].path, SHARED_SPRITE_SHEET);
+  EXPECT_EQ(files[3].bytes, BYDO_PIXELS);
+  EXPECT_EQ(files[4].path, CRIMSON_SPRITE_SHEET);
+  EXPECT_EQ(files[4].bytes, CRIMSON_PIXELS);
+}
+
+/**
+ * Given assets and a resource that both hold a sheet of the same name
+ * When the content of both folders is listed
+ * Then the listing is refused for the name
+ */
+TEST(ContentFiles, RefusesASheetTwoFoldersHold) {
+  const TemporaryFolder root;
+  const std::array folders{root.path() / ASSETS_OF_THE_STACK,
+                           root.path() / RESOURCE_OF_THE_STACK};
+  root.write(folders[0] / WEAVER_SHEET_FILE, SHEET_NAMING_THE_BYDOS);
+  root.write(folders[0] / SHARED_SPRITE_SHEET, BYDO_PIXELS);
+  root.write(folders[1] / WEAVER_SHEET_FILE, SHEET_NAMING_THE_BYDOS);
+
+  EXPECT_THROW(static_cast<void>(contentFilesIn(folders)),
+               DuplicateEntityTypeException);
+}
+
+/**
+ * Given assets and a resource that both hold the sprite sheet a sheet names
+ * When the content of both folders is listed
+ * Then the listing is refused for that sprite sheet
+ */
+TEST(ContentFiles, RefusesASpriteSheetTwoFoldersHold) {
+  const TemporaryFolder root;
+  const std::array folders{root.path() / ASSETS_OF_THE_STACK,
+                           root.path() / RESOURCE_OF_THE_STACK};
+  root.write(folders[0] / WEAVER_SHEET_FILE, SHEET_NAMING_THE_BYDOS);
+  root.write(folders[0] / SHARED_SPRITE_SHEET, BYDO_PIXELS);
+  root.write(folders[1] / SHARED_SPRITE_SHEET, CRIMSON_PIXELS);
+
+  EXPECT_THROW(static_cast<void>(contentFilesIn(folders)),
+               SharedContentFileException);
 }

@@ -2,9 +2,11 @@
 #include <algorithm>
 #include <filesystem>
 #include <functional>
+#include <iterator>
 #include <set>
 #include <span>
 #include <string>
+#include <system_error>
 #include <toml++/toml.hpp>
 #include <utility>
 #include <vector>
@@ -13,6 +15,7 @@
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "EntitySheetConstants.hpp"
+#include "GameException.hpp"
 #include "PathText.hpp"
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
@@ -33,6 +36,54 @@ std::string spriteSheetOf(const SheetText& sheet) {
   const engine::DataFileTable appearance =
       engine::tableAt(engine::rootOf(root, sheet.source), APPEARANCE_KEY);
   return engine::textAt(appearance, SPRITE_SHEET_KEY);
+}
+
+/** @returns The folders of @p contentFolders that hold @p path. */
+std::vector<std::filesystem::path> foldersHolding(
+    std::span<const std::filesystem::path> contentFolders,
+    const std::string& path) {
+  std::vector<std::filesystem::path> holders;
+  for (const std::filesystem::path& folder : contentFolders) {
+    std::error_code error;
+    if (std::filesystem::is_regular_file(folder / path, error)) {
+      holders.push_back(folder);
+    }
+  }
+  return holders;
+}
+
+/**
+ * @returns The bytes of the file at @p path in the one folder of
+ * @p contentFolders that holds it.
+ * @throws SharedContentFileException when several hold it, and
+ * engine::UnreadableDataFileException, naming it in the first folder, when
+ * none does.
+ */
+std::string contentOf(std::span<const std::filesystem::path> contentFolders,
+                      const std::string& path) {
+  const std::vector<std::filesystem::path> holders =
+      foldersHolding(contentFolders, path);
+  if (holders.size() > 1) {
+    std::vector<std::string> shown;
+    std::ranges::transform(holders, std::back_inserter(shown),
+                           [](const std::filesystem::path& folder) {
+                             return engine::shownPath(folder);
+                           });
+    throw SharedContentFileException(path, shown);
+  }
+  const std::filesystem::path folder =
+      holders.empty() ? contentFolders.front() : holders.front();
+  return engine::dataFileContent(folder / path);
+}
+
+/** @throws DuplicateEntityTypeException when two of @p sheets share a name. */
+void refuseSharedSheets(std::span<const SheetText> sheets) {
+  std::set<std::string> names;
+  for (const SheetText& sheet : sheets) {
+    if (!names.insert(sheet.name).second) {
+      throw DuplicateEntityTypeException(sheet.name);
+    }
+  }
 }
 
 }  // namespace
@@ -59,9 +110,9 @@ std::vector<SheetText> sheetTextsOf(
 }
 
 std::vector<identifiers::ContentFile> contentFilesIn(
-    const std::filesystem::path& assetFolder) {
-  std::vector<SheetText> sheets =
-      sheetTextsIn(assetFolder / ENTITY_SHEET_FOLDER_IN_ASSETS);
+    std::span<const std::filesystem::path> contentFolders) {
+  std::vector<SheetText> sheets = sheetTextsInFolders(contentFolders);
+  refuseSharedSheets(sheets);
   std::vector<identifiers::ContentFile> files;
   std::set<std::string> spriteSheets;
   for (SheetText& sheet : sheets) {
@@ -71,8 +122,7 @@ std::vector<identifiers::ContentFile> contentFilesIn(
   }
   for (const std::string& spriteSheet : spriteSheets) {
     files.push_back(identifiers::ContentFile{
-        .path = spriteSheet,
-        .bytes = engine::dataFileContent(assetFolder / spriteSheet)});
+        .path = spriteSheet, .bytes = contentOf(contentFolders, spriteSheet)});
   }
   std::ranges::sort(files, std::less{}, &identifiers::ContentFile::path);
   return files;

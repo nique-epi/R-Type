@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <span>
 #include <string_view>
+#include <system_error>
 #include <vector>
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
@@ -14,6 +15,26 @@
 
 namespace rtype::game {
 
+namespace {
+
+/** @brief Reads the sheets @p files, adding them to @p texts. */
+void addSheetTexts(std::span<const std::filesystem::path> files,
+                   std::vector<SheetText>& texts) {
+  for (const std::filesystem::path& file : files) {
+    texts.push_back(SheetText{.name = logging::genericText(file.stem()),
+                              .source = engine::shownPath(file),
+                              .text = engine::dataFileContent(file)});
+  }
+}
+
+/** @returns The sheet folder of @p contentFolder. */
+std::filesystem::path sheetFolderOf(
+    const std::filesystem::path& contentFolder) {
+  return contentFolder / ENTITY_SHEET_FOLDER_IN_ASSETS;
+}
+
+}  // namespace
+
 std::vector<SheetText> sheetTextsIn(const std::filesystem::path& folder) {
   const std::vector<std::filesystem::path> files = engine::dataFilesIn(folder);
   if (files.empty()) {
@@ -21,10 +42,20 @@ std::vector<SheetText> sheetTextsIn(const std::filesystem::path& folder) {
   }
   std::vector<SheetText> texts;
   texts.reserve(files.size());
-  for (const std::filesystem::path& file : files) {
-    texts.push_back(SheetText{.name = logging::genericText(file.stem()),
-                              .source = engine::shownPath(file),
-                              .text = engine::dataFileContent(file)});
+  addSheetTexts(files, texts);
+  checkSheetNames(texts);
+  return texts;
+}
+
+std::vector<SheetText> sheetTextsInFolders(
+    std::span<const std::filesystem::path> contentFolders) {
+  std::vector<SheetText> texts =
+      sheetTextsIn(sheetFolderOf(contentFolders.front()));
+  for (const std::filesystem::path& folder : contentFolders.subspan(1)) {
+    std::error_code error;
+    if (std::filesystem::is_directory(sheetFolderOf(folder), error)) {
+      addSheetTexts(engine::dataFilesIn(sheetFolderOf(folder)), texts);
+    }
   }
   checkSheetNames(texts);
   return texts;

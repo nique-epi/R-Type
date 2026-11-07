@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <optional>
+#include <vector>
 #include "ServerConstants.hpp"
 
 namespace rtype::server {
@@ -15,9 +16,10 @@ struct GamesSettings {
   std::optional<std::uint32_t> seed;
   /** @brief The waves file, read when the module starts. */
   std::filesystem::path wavesFile;
-  /** @brief The folder of the entity sheets, read when the module starts,
-   * before the waves file that names them. */
-  std::filesystem::path entitySheetsFolder;
+  /** @brief The content folders whose entity sheets the games play, the
+   * assets first then each resource started (see engine::contentFoldersOf()),
+   * read when the module starts, before the waves file that names them. */
+  std::vector<std::filesystem::path> contentFolders;
   /** @brief The world states each player of a game is sent per second, unless
    * the configuration sets another rate. */
   std::size_t statesPerSecond{DEFAULT_WORLD_STATES_PER_SECOND};

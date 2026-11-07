@@ -51,4 +51,21 @@ constexpr std::string_view SHIPPED_ENTITY_SPRITES = "sprites/entities.png";
 constexpr std::string_view SHIPPED_BYDOMANCER_SPRITES =
     "sprites/mobs/bydomancer.png";
 
+/** @brief Two content folders inside a temporary folder: the assets, and a
+ * resource laid over them. */
+constexpr std::string_view ASSETS_OF_THE_STACK = "assets";
+constexpr std::string_view RESOURCE_OF_THE_STACK = "resources/crimson";
+
+/** @brief A sheet of the resource, and the sprite sheet it brings. */
+constexpr std::string_view CRIMSON_SHEET_FILE = "entities/crimson.toml";
+constexpr std::string_view CRIMSON_SPRITE_SHEET = "sprites/crimson/bydos.png";
+constexpr std::string_view SHEET_NAMING_THE_CRIMSON_BYDOS =
+    "[gameplay]\n[appearance]\nsheet = \"sprites/crimson/bydos.png\"\n";
+constexpr std::string_view CRIMSON_PIXELS = "\x89PNG\r\n\x1a\ncrimson";
+
+/** @brief The files of a stack whose assets hold one sheet and its sprite
+ * sheet, and whose resource holds one sheet naming the sprite sheet of the
+ * assets and one bringing its own. */
+constexpr std::size_t FILES_OF_THE_STACK = 5;
+
 }  // namespace rtype::game::testing

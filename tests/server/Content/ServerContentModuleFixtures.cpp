@@ -1,7 +1,9 @@
 #include "ServerContentModuleFixtures.hpp"
 #include <httplib.h>
+#include <array>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <string>
 #include <vector>
 #include "AssetFolder.hpp"
@@ -13,8 +15,10 @@
 #include "ServerContentModuleTestConstants.hpp"
 
 std::string pathOfTheLocalPack() {
+  const std::array<std::filesystem::path, 1> contentFolders{
+      rtype::engine::locateAssetFolder()};
   const std::vector<rtype::identifiers::ContentFile> files =
-      rtype::game::contentFilesIn(rtype::engine::locateAssetFolder());
+      rtype::game::contentFilesIn(contentFolders);
   return rtype::network::contentPackPathOf(rtype::network::contentFingerprintOf(
       rtype::network::encodeContentPack(files)));
 }

@@ -31,7 +31,7 @@ TEST_F(ServerGamesFixture, FailsToStartNamingTheWavesFileWhenItCannotBeRead) {
     startWith(rtype::server::GamesSettings{
         .seed = SOME_SEED,
         .wavesFile = MISSING_WAVES_FILE,
-        .entitySheetsFolder = shippedWaves().entitySheetsFolder});
+        .contentFolders = shippedWaves().contentFolders});
     FAIL() << "the application started without a waves file";
   } catch (const ModuleStartFailedException& error) {
     const std::string text = error.what();
@@ -41,7 +41,7 @@ TEST_F(ServerGamesFixture, FailsToStartNamingTheWavesFileWhenItCannotBeRead) {
 }
 
 /**
- * Given a folder of entity sheets that does not exist, and the shipped waves
+ * Given a content folder that does not exist, and the shipped waves
  * file
  * When the application starts
  * Then start() fails with an error that names the games module and the folder
@@ -51,12 +51,12 @@ TEST_F(ServerGamesFixture, FailsToStartNamingTheSheetsFolderWhenItIsMissing) {
     startWith(rtype::server::GamesSettings{
         .seed = SOME_SEED,
         .wavesFile = shippedWaves().wavesFile,
-        .entitySheetsFolder = MISSING_ENTITY_SHEETS_FOLDER});
+        .contentFolders = {MISSING_CONTENT_FOLDER}});
     FAIL() << "the application started without entity sheets";
   } catch (const ModuleStartFailedException& error) {
     const std::string text = error.what();
     EXPECT_NE(text.find("games"), std::string::npos);
-    EXPECT_NE(text.find(MISSING_ENTITY_SHEETS_FOLDER), std::string::npos);
+    EXPECT_NE(text.find(MISSING_CONTENT_FOLDER), std::string::npos);
   }
 }
 

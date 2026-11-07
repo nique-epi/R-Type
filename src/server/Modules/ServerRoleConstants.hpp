@@ -4,6 +4,7 @@
 #include "BuiltModuleConstants.hpp"
 #include "ModuleConstants.hpp"
 #include "PluginConstants.hpp"
+#include "ResourceConstants.hpp"
 #include "ServerConstants.hpp"
 
 namespace rtype::server {
@@ -19,10 +20,12 @@ constexpr std::array GAME_SETTING_NAMES{
 
 /**
  * @brief The commands only a game process runs: the supervisor loads no
- * plugin, its games do.
+ * plugin, its games do. An `ensure` line goes to the games too; the supervisor
+ * reads it from their lines to serve the content of their resources.
  */
 constexpr std::array GAME_COMMAND_NAMES{engine::PLUGIN_COMMAND_NAME,
-                                        engine::PLUGIN_FOLDER_COMMAND_NAME};
+                                        engine::PLUGIN_FOLDER_COMMAND_NAME,
+                                        engine::ENSURE_COMMAND_NAME};
 
 /**
  * @brief The names of the modules supervisorModules() lists, in its order,

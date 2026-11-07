@@ -1,9 +1,10 @@
 #include "ServerContentModule.hpp"
 #include <cstdint>
+#include <filesystem>
 #include <string>
+#include <utility>
 #include <vector>
 #include "ApiRequest.hpp"
-#include "AssetFolder.hpp"
 #include "ContentFile.hpp"
 #include "ContentFiles.hpp"
 #include "ContentFingerprintText.hpp"
@@ -20,8 +21,10 @@
 
 namespace rtype::server {
 
-ServerContentModule::ServerContentModule()
-    : logger_(std::string{SERVER_LOGGER_NAME}),
+ServerContentModule::ServerContentModule(
+    std::vector<std::filesystem::path> contentFolders)
+    : contentFolders_(std::move(contentFolders)),
+      logger_(std::string{SERVER_LOGGER_NAME}),
       server_(std::string{SERVER_LOGGER_NAME},
               [this](const std::string& reason) {
                 logger_.error("the content pack is no longer served: ", reason);
@@ -38,7 +41,7 @@ std::vector<std::string> ServerContentModule::dependencies() const {
 void ServerContentModule::install(engine::InstallContext& context) {
   port_ = &context.require<IListeningPort>();
   const std::vector<identifiers::ContentFile> files =
-      game::contentFilesIn(engine::locateAssetFolder());
+      game::contentFilesIn(contentFolders_);
   desk_.emplace(network::encodeContentPack(files), clock_);
   server_.add(network::CONTENT_PACK_ROUTE.method,
               network::apiPathOf(network::CONTENT_PACK_ROUTE),
