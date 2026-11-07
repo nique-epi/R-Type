@@ -31,7 +31,8 @@ constexpr std::array GAME_COMMAND_NAMES{engine::PLUGIN_COMMAND_NAME,
  * @brief The names of the modules supervisorModules() lists, in its order,
  * known before they are built: the rule of the lines of the games needs them
  * to read the configuration the games module is built with. The master link
- * is among them only when the build compiled it (RTYPE_MODULE_MASTER_LINK).
+ * and the console are among them only when the build compiled them
+ * (RTYPE_MODULE_MASTER_LINK, RTYPE_MODULE_ADMIN_CONSOLE).
  */
 constexpr std::array SUPERVISOR_MODULE_NAMES{
     LOGGER_MODULE_NAME,           NETWORK_MODULE_NAME,
@@ -39,6 +40,9 @@ constexpr std::array SUPERVISOR_MODULE_NAMES{
     SUPERVISOR_LOBBY_MODULE_NAME, INFORMATION_MODULE_NAME,
 #if RTYPE_MODULE_MASTER_LINK
     MASTER_MODULE_NAME,
+#endif
+#if RTYPE_MODULE_ADMIN_CONSOLE
+    ADMIN_CONSOLE_MODULE_NAME,
 #endif
 };
 

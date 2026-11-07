@@ -27,6 +27,11 @@
 #if RTYPE_MODULE_MASTER_LINK
 #include "ServerMasterModule.hpp"
 #endif
+#if RTYPE_MODULE_ADMIN_CONSOLE
+#include "ServerAdminConsoleModule.hpp"
+#include "StandardInput.hpp"
+#include "StandardOutput.hpp"
+#endif
 
 namespace rtype::server {
 
@@ -75,6 +80,10 @@ std::vector<std::unique_ptr<engine::IModule>> supervisorModules(
   modules.push_back(std::make_unique<ServerInformationModule>());
 #if RTYPE_MODULE_MASTER_LINK
   modules.push_back(std::make_unique<ServerMasterModule>());
+#endif
+#if RTYPE_MODULE_ADMIN_CONSOLE
+  modules.push_back(std::make_unique<ServerAdminConsoleModule>(
+      std::make_unique<StandardInput>(), std::make_unique<StandardOutput>()));
 #endif
   return modules;
 }

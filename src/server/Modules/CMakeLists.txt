@@ -26,6 +26,9 @@ target_link_libraries(rtype_server_modules
     rtype_server_constants
 )
 
+if(RTYPE_MODULE_ADMIN_CONSOLE)
+  target_link_libraries(rtype_server_modules PUBLIC rtype_server_admin_console_module)
+endif()
 if(RTYPE_MODULE_MASTER_LINK)
   target_link_libraries(rtype_server_modules PUBLIC rtype_server_master_module)
 endif()

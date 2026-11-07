@@ -77,6 +77,11 @@ RejectionReport RejectionLedger::takeReport() {
       .forgottenSenders = std::exchange(forgottenSenders_, 0)};
 }
 
+std::size_t RejectionLedger::rejectedSinceStart() const {
+  const std::scoped_lock lock{mutex_};
+  return rejectedSinceStart_;
+}
+
 RejectedSender& RejectionLedger::placeOf(const network::Endpoint& sender) {
   std::size_t leastRecent = 0;
   for (std::size_t index = 0; index < senders_.size(); ++index) {

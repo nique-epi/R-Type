@@ -5,6 +5,11 @@
 #include <cstdint>
 #include <string_view>
 
+/** @brief A command of the administration console, and the line that turns it
+ * off, as server.cfg holds them. */
+constexpr std::string_view GAMES_LINE = "games";
+constexpr std::string_view CONSOLE_OFF_LINE = "module \"admin console\" off";
+
 /** @brief The names of the probe modules the tests list after the modules of
  * the server. */
 constexpr const char* PROBE_MODULE = "probe";
