@@ -74,6 +74,8 @@ A platform file such as `FineTimerResolutionWindows.cpp` is linted only by the C
    Run it with the clang-tidy version the CI job prints (20 today). Match every called function against their `CheckedFunctions` patterns, and read their `AllowCastToVoid`: in clang-tidy 20, `cert-err33-c` allows the cast and `bugprone-unused-return-value` does not. A pattern without an end anchor matches more than it names: `^::time` matches `::timeBeginPeriod` and `::timeEndPeriod`.
 3. **The CI is its verifier**: push, say in the report that this file is linted by the CI only, and follow the platform job until it is green, as `fix-process-follow-ci-after-opening-a-pr.md` requires. This is the exception named in points 1 and 4 of the first list. The CI runs on pull requests and on pushes to `main`, never on a feature branch pushed alone, so the user's go to publish the branch or open the pull request is still asked first.
 
+4. **A Win32 handle is never declared `const HANDLE`**: `HANDLE` is a typedef of `void*`, so `const` makes the pointer const, not the object, and `misc-misplaced-const` fails the Windows job, on the variable and again on each lambda that captures it by copy. Declare it `HANDLE reader = …;`, as `ChildBindingWindows.cpp` does; `.clang-tidy` asks no `const` on a pointer taken as a value. Before pushing such a file, `git grep -n 'const HANDLE' -- src` prints nothing.
+
 ### A finding the local clang-tidy does not report
 
 1. **The local run is not the CI's toolchain**: Homebrew clang-tidy 21 on libc++ here, clang-tidy 20 on libstdc++ on the CI. A file can be clean locally and fail on the CI: `cppcoreguidelines-pro-type-member-init` on `struct NavigatorCall { NavigatorRequest request; std::optional<ScreenId> screen; }` was reported by the CI only.

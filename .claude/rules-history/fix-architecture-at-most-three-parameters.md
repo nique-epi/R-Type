@@ -73,3 +73,7 @@ Yannis Lorang's review of pull request #103 asked for no struct inside a class. 
 ## Update (3 November 2026) — two neighbouring parameters of one type
 
 The traffic counters held `rowOf(std::string_view start, std::string_view message, const TrafficFigures& figures)` and `DiscardReport(const BoundedQueue&, const BoundedQueue&, DatagramSorter&)`: three parameters each, within the limit, and both compiled without a warning. The plan that held them had been formatted and compiled from standard input, which runs no clang-tidy, and the tidy gate then reported `bugprone-easily-swappable-parameters` on both. The fix took the struct the sorter already has for the same two queues (`DatagramSorter::Destinations`, named so they cannot be swapped) and turned `rowOf` into `figuresText(figures)`, the caller joining the columns.
+
+## Update (7 November 2026) — a new `…Parts` copies the shape of its neighbour
+
+`AdminConsoleParts`, written in the plan of the administration console, held seven `T&` and `const T&` members, and `AdminConsoleCommands` copies it into a member: point 4 forbids it, and every `…Parts` of the repository uses `std::reference_wrapper`. The simplification review found it after the code built and its tests passed; nothing checks the rule. The members became `std::reference_wrapper`, read with `.get()`.

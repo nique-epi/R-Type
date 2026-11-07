@@ -23,6 +23,11 @@ trigger: always_on
 1. **Before asserting that one thing lies left, right, above or below another** (the professor faces a part, a bubble sits under the bays), compute both positions with the constants of the code, and write the two numbers next to the assertion while writing it.
 2. **A side read from the picture of a whole screen is not a side relative to a moving piece**: "BACK is on the right of the room" says nothing of where BACK lies from a professor who also stands on the right.
 
+### A count a report keeps is read from the run, never from the line the test wrote
+
+1. **Before asserting a count a program keeps for itself** (the lines a configuration ran, the datagrams a ledger counted), list what else adds to it in that run: a launch option the fixture passes (`-p` runs a `set port` line), a pass that reads the file again. Then run the test once and read the value before writing the assertion.
+2. **Prefer the effect the requirement names over the count**: a line of `server.cfg` that ran is proven by what it wrote or changed, not by a counter that other lines also move.
+
 ## Example
 
 - ❌ **Before (wrong)**: brief → "two simulations with the same seed produce the same state at tick 100; write the test asserting it" — without checking (enemies shoot using `std::random_device`).

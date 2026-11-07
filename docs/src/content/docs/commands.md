@@ -30,8 +30,9 @@ set port 4300
 | `module <name> on\|off` | server, client and master | Turns a module of the program on or off before the modules start. |
 | `plugin <name>` | server, client and master | Loads a plugin, a module built as a shared library, before the modules install. |
 | `plugin-folder <folder>` | server, client and master | Sets the folder the `plugin` lines read. |
+| `games`, `players`, `close-game <place>`, `network`, `help` | the supervisor, while its `admin console` module is on | List the games and their pilots, stop a game, show the network figures, list the commands (see [Server](/R-Type/server/#administration-console-serveradminconsolemodule)). |
 
-No other command exists. The interpreter keeps a help text for each command, but nothing prints it yet. A module that registers a command in its `install()` makes it usable in the file with no other change.
+No other command exists. A module that registers a command in its `install()` makes it usable in the file with no other change: the commands of the console run from `server.cfg` as they do from the terminal, and write their answer to the standard output. `help` prints the help text the interpreter keeps for each command.
 
 ### `set`
 
@@ -99,6 +100,7 @@ Modules of the supervisor:
 | `supervisor lobby` | `network`, `supervised games` | Sends each player to a game, or starts one. |
 | `information` | `network`, `supervised games` | Answers the information requests. |
 | `master` | `network`, `supervised games`, `information` | Keeps the master told of the games. |
+| `admin console` | `logger`, `network`, `supervised games` | Reads commands from the terminal of the supervisor; its name holds a space, so the line is `module "admin console" off`. |
 
 Modules of a game process, which every `module` line on another name reaches:
 

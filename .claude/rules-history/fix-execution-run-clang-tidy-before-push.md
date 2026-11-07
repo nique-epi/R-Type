@@ -153,3 +153,7 @@ To meet `readability-qualified-auto`, reported by the local clang-tidy on libc++
 ## Update (7 November 2026) — int and size_t side by side
 
 `scaledBossHealth(int points, std::size_t players, int healthPercent)` was clean for the local clang-tidy 21 and failed `bugprone-easily-swappable-parameters` in the CI's clang-tidy 22. The three values became the struct `BossHealthScaling`.
+
+## Update (7 November 2026) — a const Win32 handle
+
+`StandardInputWindows.cpp`, the console input of the supervisor on Windows, declared `const HANDLE reader = callingThread();` and `const HANDLE input = ::GetStdHandle(STD_INPUT_HANDLE);`. No local run could lint the file; the `Clang-tidy (Windows-only files)` job reported `misc-misplaced-const` three times, the third on the copy of `reader` that a `std::stop_callback` lambda captures. The handles became plain `HANDLE` values, as in `ChildBindingWindows.cpp`, and the point added to the subsection on files the local machine cannot compile names the grep to run before the push.

@@ -287,6 +287,11 @@ void GameRegistry::terminateAll() {
 
 std::span<const SupervisedGame> GameRegistry::all() const { return games_; }
 
+const SupervisedGame* GameRegistry::findBySlot(std::uint16_t slot) const {
+  const auto found = std::ranges::find(games_, slot, &SupervisedGame::slot);
+  return found == games_.end() ? nullptr : &*found;
+}
+
 std::uint64_t GameRegistry::revision() const { return revision_; }
 
 }  // namespace rtype::server

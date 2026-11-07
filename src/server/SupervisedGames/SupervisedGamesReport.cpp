@@ -11,6 +11,7 @@
 #include "GameLifecycle.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
+#include "MeasureMilliseconds.hpp"
 #include "ProtocolConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerMeasures.hpp"
@@ -66,15 +67,6 @@ std::optional<std::uint32_t> higherOf(std::optional<std::uint32_t> highest,
     return measure;
   }
   return std::max(*highest, *measure);
-}
-
-/** @returns @p measure, in microseconds, in milliseconds with their
- * fraction; nothing for nothing. */
-std::optional<double> millisecondsOf(std::optional<std::uint32_t> measure) {
-  if (!measure.has_value()) {
-    return std::nullopt;
-  }
-  return engine::inMilliseconds(std::chrono::microseconds{*measure});
 }
 
 /** @returns The mean round trip of the players of @p games, each game weighed
