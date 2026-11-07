@@ -1,5 +1,4 @@
 #include "EnemyActionPlayerFixtures.hpp"
-#include <chrono>
 #include "ActionAnimation.hpp"
 #include "ActionKey.hpp"
 #include "EnemyActionPlayerTestConstants.hpp"
@@ -10,16 +9,6 @@
 #include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
-
-namespace {
-
-constexpr engine::Duration IDLE_FRAME_TIME = std::chrono::milliseconds(200);
-constexpr game::SpriteFrame FIRST_STRIKE_FRAME{
-    .left = 0, .top = 16, .width = 16, .height = 8};
-constexpr game::SpriteFrame SECOND_STRIKE_FRAME{
-    .left = 18, .top = 16, .width = 16, .height = 8};
-
-}  // namespace
 
 EntityAppearance appearanceWithAStrike() {
   return EntityAppearance{

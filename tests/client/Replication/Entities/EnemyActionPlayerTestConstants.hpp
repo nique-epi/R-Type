@@ -24,4 +24,11 @@ constexpr game::SpriteFrame IDLE_FRAME{
 constexpr engine::Duration STRIKE_FRAME_TIME = std::chrono::milliseconds(100);
 constexpr FrameAnchor STRIKE_ANCHOR{.x = -4, .y = 1};
 
+/** @brief How long the idle frame shows, and the two frames of the strike. */
+constexpr engine::Duration IDLE_FRAME_TIME = std::chrono::milliseconds(200);
+constexpr game::SpriteFrame FIRST_STRIKE_FRAME{
+    .left = 0, .top = 16, .width = 16, .height = 8};
+constexpr game::SpriteFrame SECOND_STRIKE_FRAME{
+    .left = 18, .top = 16, .width = 16, .height = 8};
+
 }  // namespace rtype::client::testing
