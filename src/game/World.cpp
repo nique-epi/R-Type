@@ -30,6 +30,7 @@
 #include "ScoreValue.hpp"
 #include "ShardBurst.hpp"
 #include "ShipMotion.hpp"
+#include "ShipPilot.hpp"
 #include "SteadyMotion.hpp"
 #include "SurvivesContact.hpp"
 #include "TimeConstants.hpp"
@@ -125,10 +126,24 @@ void addContactParts(engine::ComponentRegistry& components,
   }
 }
 
-/** @brief Gives the ship of a player its lives and no protection yet. */
-void addShipParts(engine::ComponentRegistry& components, engine::Entity ship) {
+/** @brief Gives the ship of a player its lives, no protection yet and, with
+ * @p pilot, the ShipPilot naming that player. */
+void addShipParts(engine::ComponentRegistry& components, engine::Entity ship,
+                  std::optional<std::uint8_t> pilot) {
   components.add(ship, Lives{.count = STARTING_LIVES});
   components.add(ship, Invulnerable{});
+  if (pilot.has_value()) {
+    components.add(ship, ShipPilot{.playerNumber = *pilot});
+  }
+}
+
+/** @brief Gives @p body, which a behaviour pilots, the MissileOwner naming
+ * @p owner, when it has one. */
+void addOwner(engine::ComponentRegistry& components, engine::Entity body,
+              std::optional<std::uint8_t> owner) {
+  if (owner.has_value()) {
+    components.add(body, MissileOwner{.playerNumber = *owner});
+  }
 }
 
 }  // namespace
@@ -153,11 +168,10 @@ std::uint32_t World::spawnFrom(const EntitySheet& sheet,
   addCombat(components_, start);
   addContactParts(components_, start);
   components_.add(start.body, NetworkIdentity{.networkId = networkId});
-  if (owner.has_value()) {
-    components_.add(start.body, MissileOwner{.playerNumber = *owner});
-  }
-  if (!sheet.pilot.has_value()) {
-    addShipParts(components_, start.body);
+  if (sheet.pilot.has_value()) {
+    addOwner(components_, start.body, owner);
+  } else {
+    addShipParts(components_, start.body, owner);
     shipByNetworkId_.bind(networkId, start.body);
   }
   return networkId;

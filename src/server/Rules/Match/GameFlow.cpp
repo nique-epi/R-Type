@@ -191,8 +191,8 @@ void GameFlow::finishIfOver() {
 void GameFlow::buildWorld() {
   game::World& world = worldSlot_.renew();
   replication_.onWorldBuilt(world);
-  collisionRules_ = std::make_unique<game::CollisionRules>(game_.events.get(),
-                                                           world.components());
+  collisionRules_ = std::make_unique<game::CollisionRules>(
+      game_.events.get(), world.components(), game_.settings.friendlyFire);
   damageRules_ = std::make_unique<game::DamageRules>(game_.events.get(),
                                                      world.components());
   waveSpawner_ = std::make_unique<WaveSpawner>(

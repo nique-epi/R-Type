@@ -5,14 +5,18 @@
 #include "EntityType.hpp"
 #include "EventBus.hpp"
 #include "MissileHit.hpp"
+#include "MissileOwner.hpp"
 #include "ShipContact.hpp"
+#include "ShipPilot.hpp"
 
 namespace rtype::game {
 
 CollisionRules::CollisionRules(engine::EventBus& events,
-                               engine::ComponentRegistry& components)
+                               engine::ComponentRegistry& components,
+                               bool friendlyFire)
     : events_(events),
       components_(components),
+      friendlyFire_(friendlyFire),
       subscription_(events.subscribe<engine::Collision>(
           [this](const engine::Collision& collision) {
             onCollision(collision);
@@ -40,12 +44,27 @@ void CollisionRules::publishIfRuleMatches(engine::Entity first,
       firstType == EntityType::PlayerMissile && secondType == EntityType::Enemy;
   const bool enemyMissileHitsPlayer =
       firstType == EntityType::EnemyMissile && secondType == EntityType::Player;
-  if (playerMissileHitsEnemy || enemyMissileHitsPlayer) {
+  const bool playerMissileHitsAnotherPilot =
+      firstType == EntityType::PlayerMissile &&
+      secondType == EntityType::Player && hitsAnotherPilot(first, second);
+  if (playerMissileHitsEnemy || enemyMissileHitsPlayer ||
+      playerMissileHitsAnotherPilot) {
     events_.publish(MissileHit{.missile = first, .target = second});
   } else if (firstType == EntityType::Player &&
              secondType == EntityType::Enemy) {
     events_.publish(ShipContact{.player = first, .enemy = second});
   }
+}
+
+bool CollisionRules::hitsAnotherPilot(engine::Entity missile,
+                                      engine::Entity ship) const {
+  if (!friendlyFire_) {
+    return false;
+  }
+  const auto* const owner = components_.get<MissileOwner>(missile);
+  const auto* const pilot = components_.get<ShipPilot>(ship);
+  return owner != nullptr && pilot != nullptr &&
+         owner->playerNumber != pilot->playerNumber;
 }
 
 }  // namespace rtype::game

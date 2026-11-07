@@ -49,8 +49,9 @@ class World {
    * side enemy.
    * A body no behaviour pilots is the ship of a player: it also gets
    * STARTING_LIVES Lives and no protection in its Invulnerable, and is listed
-   * as a ship. With @p owner, the entity gets a MissileOwner naming that
-   * player, so a kill is credited to it.
+   * as a ship; with @p owner, it gets a ShipPilot naming that player, so a
+   * missile of that player never hits it. Any other body given @p owner gets
+   * a MissileOwner naming that player, so a kill is credited to it.
    * @returns The network id the entity was given, never NO_ENTITY_ID.
    * @throws NetworkIdExhaustedException when every network id was given;
    * nothing is created then.

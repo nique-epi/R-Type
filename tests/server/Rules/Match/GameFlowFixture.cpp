@@ -1,6 +1,7 @@
 #include "GameFlowFixture.hpp"
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <cstdint>
 #include <initializer_list>
 #include <string>
 #include <utility>
@@ -8,6 +9,7 @@
 #include "ConnectedPlayer.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "EntityTypesTestConstants.hpp"
 #include "GameEnded.hpp"
 #include "GameFlow.hpp"
 #include "GameSettings.hpp"
@@ -18,27 +20,32 @@
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
+#include "Position.hpp"
 #include "RtypeSystems.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "Spawning/WavePlanFixtures.hpp"
 #include "WavePlan.hpp"
+#include "World.hpp"
 
 namespace rtype::server::testing {
 
 GameFlowFixture::GameFlowFixture() : GameFlowFixture(testWavePlan()) {}
 
 GameFlowFixture::GameFlowFixture(WavePlan waves)
+    : GameFlowFixture(
+          GameSettings{.seed = SOME_SEED,
+                       .waves = std::move(waves),
+                       .types = game::testing::shippedEntitySheets()}) {}
+
+GameFlowFixture::GameFlowFixture(GameSettings settings)
     : readyKeeper_(roster_, [] { return true; }),
       context_{.events = events_,
                .systems = systems_,
                .roster = roster_,
                .hooks = hooks_,
-               .settings =
-                   GameSettings{.seed = SOME_SEED,
-                                .waves = std::move(waves),
-                                .types = game::testing::shippedEntitySheets()},
+               .settings = std::move(settings),
                .send =
                    [this](network::OutgoingDatagram datagram) {
                      sent_.push_back(std::move(datagram));
@@ -124,5 +131,23 @@ const std::vector<GameStateChanged>& GameFlowFixture::changes() const {
 
 GameFlowOneWaveLevelFixture::GameFlowOneWaveLevelFixture()
     : GameFlowFixture(oneWaveLevelWavePlan()) {}
+
+GameFlowFriendlyFireFixture::GameFlowFriendlyFireFixture()
+    : GameFlowFixture(
+          GameSettings{.seed = SOME_SEED,
+                       .waves = testWavePlan(),
+                       .types = game::testing::shippedEntitySheets(),
+                       .friendlyFire = true}) {}
+
+void GameFlowFriendlyFireFixture::fireAt(const ConnectedPlayer& target,
+                                         std::uint8_t shooter) {
+  game::World& world = flow().world();
+  const game::Position* const ship = world.shipPositionOf(target.shipEntityId);
+  ASSERT_NE(ship, nullptr);
+  world.spawn(game::testing::shippedEntitySheets().named(
+                  game::testing::PLAYER_MISSILE_SHEET),
+              *ship, shooter);
+  tick();
+}
 
 }  // namespace rtype::server::testing
