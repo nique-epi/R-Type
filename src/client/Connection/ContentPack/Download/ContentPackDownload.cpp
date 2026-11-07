@@ -9,8 +9,8 @@
 #include <utility>
 #include <vector>
 #include "ByteText.hpp"
-#include "PackDownloadConstants.hpp"
 #include "HttpStatusConstants.hpp"
+#include "PackDownloadConstants.hpp"
 #include "PackDownloadOutcome.hpp"
 #include "PackDownloadProgress.hpp"
 #include "PackDownloadTarget.hpp"
