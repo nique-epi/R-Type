@@ -134,6 +134,7 @@ export const enPages: PageCopy = {
     },
     systems: { linux: 'Linux', windows: 'Windows', macos: 'macOS' },
     size: '{kind} · {size} MB',
+    otherSize: '{size} MB',
     stepsTitle: 'Install in three steps',
     steps: {
       download: 'Download',

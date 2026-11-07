@@ -136,6 +136,7 @@ export const frPages = {
     },
     systems: { linux: 'Linux', windows: 'Windows', macos: 'macOS' },
     size: '{kind} · {size} Mo',
+    otherSize: '{size} Mo',
     stepsTitle: 'Installer en trois etapes',
     steps: {
       download: 'Telecharger',
