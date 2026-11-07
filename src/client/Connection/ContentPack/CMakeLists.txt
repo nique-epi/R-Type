@@ -1,6 +1,7 @@
 find_package(httplib CONFIG REQUIRED)
 
 add_library(rtype_client_content_pack STATIC
+  ContentLoading.cpp
   ContentPackCache.cpp
   ContentPackDownload.cpp
   PackContentReading.cpp

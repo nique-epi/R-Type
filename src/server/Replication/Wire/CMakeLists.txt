@@ -1,8 +1,6 @@
 add_library(rtype_server_replication_wire STATIC
   EntitySpawnSender.cpp
   GameEventEncoder.cpp
-  EntitySideMapping.cpp
-  EntityTypeTable.cpp
 )
 
 target_include_directories(rtype_server_replication_wire PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

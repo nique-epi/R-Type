@@ -21,6 +21,7 @@ FakePackServer::FakePackServer(std::string path, std::string body)
 }
 
 FakePackServer::~FakePackServer() {
+  releaseTheAnswers();
   server_.stop();
   listener_.join();
 }
@@ -33,6 +34,19 @@ void FakePackServer::cutTheFirstAnswerAfter(std::size_t bytes) {
 void FakePackServer::answerEveryRequestWith(int status) {
   const std::scoped_lock lock{mutex_};
   status_ = status;
+}
+
+void FakePackServer::holdTheAnswers() {
+  const std::scoped_lock lock{mutex_};
+  held_ = true;
+}
+
+void FakePackServer::releaseTheAnswers() {
+  {
+    const std::scoped_lock lock{mutex_};
+    held_ = false;
+  }
+  released_.notify_all();
 }
 
 std::uint16_t FakePackServer::port() const {
@@ -51,7 +65,8 @@ std::optional<std::string> FakePackServer::lastRange() const {
 
 void FakePackServer::answer(const httplib::Request& request,
                             httplib::Response& response) {
-  const std::scoped_lock lock{mutex_};
+  std::unique_lock lock{mutex_};
+  released_.wait(lock, [this] { return !held_; });
   ++requests_;
   lastRange_ = request.has_header(RANGE_HEADER)
                    ? std::optional{request.get_header_value(RANGE_HEADER)}

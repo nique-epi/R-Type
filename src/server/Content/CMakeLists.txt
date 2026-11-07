@@ -1,4 +1,5 @@
 add_library(rtype_server_content_module STATIC
+  ContentAnnouncementReading.cpp
   ContentPackDesk.cpp
   ServerContentModule.cpp
 )

@@ -4,22 +4,25 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "AssetFolder.hpp"
 #include "ConnectionAccepted.hpp"
 #include "ConnectionRefused.hpp"
+#include "ContentAnnouncementReading.hpp"
 #include "Endpoint.hpp"
-#include "EntityTypeEntry.hpp"
 #include "GameState.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
 #include "ProtocolConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyFixture.hpp"
+#include "ServerLobbyTestConstants.hpp"
 
 using rtype::network::ConnectionAccepted;
 using rtype::network::ConnectionRefused;
 using rtype::network::MessageType;
 using rtype::network::RefusalReason;
 using rtype::server::GameState;
+using rtype::server::testing::GAME_PACK_PORT;
 using rtype::server::testing::holdsMessageOfType;
 using rtype::server::testing::onlyMessageIn;
 using rtype::server::testing::playerEndpoint;
@@ -99,12 +102,13 @@ TEST_F(ServerLobbyFixture, AcceptsAgainASeatedPlayerOfAFullGame) {
 }
 
 /**
- * Given a server whose game plays the sheets the game ships with
+ * Given a game process whose supervisor serves on a known port, on the assets
+ * next to it
  * When a player answers its challenge
- * Then its acceptance carries the five sheets the game is made from, in the
- * order of their names: the lobby hands the acceptor the table of the game
+ * Then its acceptance announces the pack of those assets, the one the
+ * supervisor serves from the same folder, on that port
  */
-TEST_F(ServerLobbyFixture, AcceptsWithTheEntityTypesOfTheGame) {
+TEST_F(ServerLobbyFixture, AcceptsWithTheContentOfItsAssets) {
   startWith(shippedWaves());
   runTick({}, {requestFrom(0)});
   const std::uint64_t cookie = challengeCookieOf(0);
@@ -118,13 +122,7 @@ TEST_F(ServerLobbyFixture, AcceptsWithTheEntityTypesOfTheGame) {
         return holdsMessageOfType(datagram, MessageType::ConnectionAccepted);
       });
   ASSERT_NE(acceptance, sent.end());
-  std::vector<std::string> names;
-  for (const rtype::network::EntityTypeEntry& entry :
-       onlyMessageIn<ConnectionAccepted>(*acceptance).types) {
-    names.push_back(entry.name);
-  }
-  EXPECT_EQ(names, (std::vector<std::string>{
-                       "bydomancer", "drifter", "drillback", "enemy_missile",
-                       "orb_shard", "player_missile", "reaper", "rune_orb",
-                       "ship", "voltjelly", "weaver"}));
+  EXPECT_EQ(onlyMessageIn<ConnectionAccepted>(*acceptance).content,
+            rtype::server::contentAnnouncementOf(
+                rtype::engine::locateAssetFolder(), GAME_PACK_PORT));
 }

@@ -9,6 +9,7 @@ target_include_directories(rtype_client_handshake PUBLIC ${CMAKE_CURRENT_SOURCE_
 target_link_libraries(rtype_client_handshake
   PUBLIC
     rtype_client_connection_entity_types
+    rtype_client_content_pack
     rtype_client_session
     rtype_engine_time
     rtype_logging

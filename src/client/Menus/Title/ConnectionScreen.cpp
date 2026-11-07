@@ -1,7 +1,6 @@
 #include "ConnectionScreen.hpp"
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
-#include <cctype>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -66,37 +65,15 @@ std::string refusalLine(const ConnectionStatus& status) {
   return versionRefusalLine(status.serverVersion);
 }
 
-/**
- * @returns @p name in capitals, cut to @p room characters, its last one
- * CUT_NAME_MARK, when it is longer; @p room is at least 2.
+/** @returns The status line of a content pack that downloads, as @p status
+ * reports it: the share received in whole percents, 0 for a pack of no byte.
  */
-std::string shownSheetName(std::string_view name, std::size_t room) {
-  std::string shown;
-  for (const char character : name) {
-    shown.push_back(
-        static_cast<char>(std::toupper(static_cast<unsigned char>(character))));
-  }
-  if (shown.size() > room) {
-    shown.resize(room - 1);
-    shown.push_back(CUT_NAME_MARK);
-  }
-  return shown;
-}
-
-/** @returns The status line of an acceptance whose table names sheets this
- * client lacks, as @p status reports it, within STATUS_LINE_CHARACTERS. */
-std::string missingSheetLine(const ConnectionStatus& status) {
-  const std::string others = status.otherMissingSheets == 0
-                                 ? std::string{}
-                                 : OTHER_MISSING_SHEETS_STATUS +
-                                       std::to_string(static_cast<unsigned int>(
-                                           status.otherMissingSheets));
-  const std::size_t room = STATUS_LINE_CHARACTERS -
-                           std::string_view{MISSING_SHEET_STATUS}.size() -
-                           others.size();
-  return MISSING_SHEET_STATUS +
-         shownSheetName(status.missingSheet.value_or(std::string{}), room) +
-         others;
+std::string loadingContentLine(const ConnectionStatus& status) {
+  const std::size_t percent =
+      status.contentSize == 0
+          ? 0
+          : (status.contentReceived * WHOLE_PERCENT) / status.contentSize;
+  return LOADING_CONTENT_STATUS + std::to_string(percent) + PERCENT_SIGN;
 }
 
 }  // namespace
@@ -216,8 +193,12 @@ std::string ConnectionScreen::statusLine(const ConnectionStatus& status) const {
       return refusalLine(status);
     case ConnectionPhase::Unreachable:
       return UNREACHABLE_STATUS;
-    case ConnectionPhase::MissingEntitySheet:
-      return missingSheetLine(status);
+    case ConnectionPhase::LoadingContent:
+      return loadingContentLine(status);
+    case ConnectionPhase::ContentDownloadFailed:
+      return PACK_DOWNLOAD_FAILED_STATUS;
+    case ConnectionPhase::ContentRefused:
+      return PACK_REFUSED_STATUS;
     case ConnectionPhase::Idle:
     case ConnectionPhase::Lost:
     case ConnectionPhase::Closed:

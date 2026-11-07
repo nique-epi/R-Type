@@ -1,10 +1,14 @@
 #include "Bot.hpp"
 #include <cstdint>
+#include <filesystem>
 #include <string_view>
+#include "AssetFolder.hpp"
 #include "BotReport.hpp"
+#include "BotSquadConstants.hpp"
 #include "BotStanding.hpp"
 #include "BotTraffic.hpp"
 #include "ConnectionRequest.hpp"
+#include "ContentPlaces.hpp"
 #include "Endpoint.hpp"
 #include "EntityMessage.hpp"
 #include "NetworkConditionsConstants.hpp"
@@ -24,14 +28,21 @@ BotTraffic trafficOf(client::NetworkThread& thread) {
       .wire = network::trafficTotalsOf(thread.wireTraffic().report())};
 }
 
-/** @returns true: a bot draws nothing, so it plays every entity type a
- * server sends. */
-bool drawsEveryType([[maybe_unused]] std::string_view name) { return true; }
+/** @returns Where a bot finds its own content, the assets folder next to it,
+ * and where it keeps the packs of servers: BOT_PACK_CACHE_FOLDER of the
+ * temporary folder of the system. A bot draws nothing, so its content has
+ * no appearance. */
+client::ContentPlaces botContentPlaces() {
+  return client::ContentPlaces{
+      .assetFolder = engine::locateAssetFolder(),
+      .cacheFolder =
+          std::filesystem::temp_directory_path() / BOT_PACK_CACHE_FOLDER};
+}
 
 }  // namespace
 
 Bot::Bot(std::uint32_t seed)
-    : connection_(network::PERFECT_NETWORK, drawsEveryType),
+    : connection_(network::PERFECT_NETWORK, botContentPlaces()),
       inputs_(seed, connection_.waitingRoom(), connection_.session()) {}
 
 void Bot::join(const network::Endpoint& server, std::string_view nickname) {

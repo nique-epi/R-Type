@@ -238,17 +238,6 @@ class InvalidServerTextException : public MalformedMessageException {
 };
 
 /**
- * @brief The name of an entity type is not one the protocol allows: empty,
- * longer than MAXIMUM_ENTITY_TYPE_NAME_LENGTH, or holding a byte other than a
- * lowercase letter, a digit or an underscore, read from a payload or about to
- * be written into one.
- */
-class InvalidTypeNameException : public MalformedMessageException {
- public:
-  explicit InvalidTypeNameException(std::size_t size);
-};
-
-/**
  * @brief A LeaderboardAnswer lists more rows than the protocol allows.
  */
 class TooManyLeaderboardRowsException : public MalformedMessageException {

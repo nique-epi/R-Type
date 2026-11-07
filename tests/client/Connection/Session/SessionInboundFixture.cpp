@@ -39,7 +39,7 @@ Reception SessionInboundFixture::receive(const network::PacketHeader& header) {
       .payload = network::DatagramCodec::encode(
           header,
           network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                      .types = drawnTypes()})});
+                                      .content = localAnnouncement()})});
 }
 
 std::size_t SessionInboundFixture::wrongTokenCount() const {

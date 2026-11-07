@@ -1,6 +1,7 @@
 #pragma once
 
 #include <httplib.h>
+#include <condition_variable>
 #include <cstddef>
 #include <cstdint>
 #include <mutex>
@@ -14,7 +15,9 @@
  *
  * It answers like the real one, a range included, and can be told to cut its
  * first answer after some bytes, closing the connection as a network that
- * drops it would, or to answer every request with another status.
+ * drops it would, to answer every request with another status, or to hold
+ * its answers until a test lets them go, so a download stays in progress for
+ * as long as the test needs.
  */
 class FakePackServer {
  public:
@@ -30,6 +33,12 @@ class FakePackServer {
 
   /** @brief Answers every request with @p status and no body. */
   void answerEveryRequestWith(int status);
+
+  /** @brief Holds every answer until releaseTheAnswers(). */
+  void holdTheAnswers();
+
+  /** @brief Lets every answer held, and every later one, go. */
+  void releaseTheAnswers();
 
   [[nodiscard]] std::uint16_t port() const;
 
@@ -48,6 +57,8 @@ class FakePackServer {
   std::optional<int> status_;
   std::size_t requests_{};
   std::optional<std::string> lastRange_;
+  bool held_{false};
+  std::condition_variable released_;
   httplib::Server server_;
   int port_{};
   std::thread listener_;

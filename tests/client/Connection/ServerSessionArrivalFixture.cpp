@@ -24,7 +24,7 @@ void ServerSessionArrivalFixture::openSession() {
       .payload = network::DatagramCodec::encode(
           header,
           network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                      .types = drawnTypes()})});
+                                      .content = localAnnouncement()})});
   update(engine::Duration::zero());
 }
 

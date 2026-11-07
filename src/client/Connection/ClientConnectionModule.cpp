@@ -1,11 +1,14 @@
 #include "ClientConnectionModule.hpp"
 #include <exception>
+#include <filesystem>
 #include <string>
-#include <string_view>
 #include <vector>
+#include "AssetFolder.hpp"
 #include "ClientConstants.hpp"
 #include "ConnectionConstants.hpp"
-#include "EntityAppearances.hpp"
+#include "ContentLoadingConstants.hpp"
+#include "ContentPlaces.hpp"
+#include "ExecutablePath.hpp"
 #include "IGameCatalog.hpp"
 #include "IServerCatalog.hpp"
 #include "InstallContext.hpp"
@@ -14,6 +17,7 @@
 #include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerListConstants.hpp"
+#include "SettingsFolder.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -31,15 +35,21 @@ network::MasterAccess clientMasterAccess() {
       .key = std::string{}};
 }
 
+/** @returns Where the client finds its own content, the assets folder, and
+ * where it keeps the packs of servers: PACK_CACHE_FOLDER_NAME of its settings
+ * folder, or of the folder of the executable when the system names none. */
+ContentPlaces clientContentPlaces() {
+  const std::filesystem::path settings =
+      settingsFolder().value_or(engine::executableFolder());
+  return ContentPlaces{.assetFolder = engine::locateAssetFolder(),
+                       .cacheFolder = settings / PACK_CACHE_FOLDER_NAME};
+}
+
 }  // namespace
 
 ClientConnectionModule::ClientConnectionModule(
     const network::NetworkConditions& conditions)
-    : connection_(conditions,
-                  [this](std::string_view name) {
-                    return appearances_ != nullptr &&
-                           appearances_->named(name) != nullptr;
-                  }),
+    : connection_(conditions, clientContentPlaces()),
       masterLink_(clientMasterAccess()),
       servers_(masterLink_, connection_.pings()),
       games_(masterLink_),
@@ -54,7 +64,6 @@ std::vector<std::string> ClientConnectionModule::dependencies() const {
 }
 
 void ClientConnectionModule::install(engine::InstallContext& context) {
-  appearances_ = &context.require<EntityAppearances>();
   connection_.provideParts(context);
   context.provide<IServerCatalog>(servers_);
   context.provide<IGameCatalog>(games_);
