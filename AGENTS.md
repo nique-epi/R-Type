@@ -168,6 +168,7 @@ Paths below are relative to `.claude/rules/`.
 **Execution (shell, git, build) — `fix/execution/`**
 - `fix/execution/fix-execution-a-cmake-loop-tests-the-length-of-its-list.md`
 - `fix/execution/fix-execution-a-script-reading-repository-text-names-its-encoding.md`
+- `fix/execution/fix-execution-a-setting-of-an-optional-module-is-tested-with-the-module-off.md`
 - `fix/execution/fix-execution-a-split-commit-carries-its-own-links.md`
 - `fix/execution/fix-execution-a-dll-exports-what-its-own-standard-compiled.md`
 - `fix/execution/fix-execution-a-static-library-reached-twice-on-the-link-line.md`
