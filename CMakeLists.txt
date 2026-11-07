@@ -163,7 +163,10 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets
   PATTERN waves EXCLUDE
   PATTERN compression EXCLUDE
 )
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/waves ${CMAKE_SOURCE_DIR}/assets/entities
+# The server reads the waves and the entity sheets, and its content module
+# serves the sprite sheets those sheets name (sprites/...) in the content
+# pack: the supervisor stops at its start when one of them is missing.
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/waves ${CMAKE_SOURCE_DIR}/assets/entities ${CMAKE_SOURCE_DIR}/assets/sprites
   DESTINATION assets COMPONENT server
 )
 
