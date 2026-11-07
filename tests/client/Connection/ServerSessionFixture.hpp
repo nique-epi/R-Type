@@ -8,6 +8,8 @@
 #include <vector>
 #include "ConnectionPhase.hpp"
 #include "ConnectionRequest.hpp"
+#include "ContentLoading.hpp"
+#include "ContentPackCache.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "EntityMessage.hpp"
@@ -113,12 +115,14 @@ class ServerSessionFixture : public ::testing::Test {
   EntityMessageQueue entityMessages_{dispatcher_, waitingRoom_, gameLoaded_};
   SimulatedClock clock_;
   RoundTripWatch roundTrips_{dispatcher_, clock_};
-  SessionEntityTypes entityTypes_{isDrawnInTheTests};
+  SessionEntityTypes entityTypes_{testLocalContent()};
+  ContentLoading content_{ContentPackCache{unusedCacheFolder()}};
   ServerSession session_{ServerSessionParts{
       .link = link_,
       .dispatcher = dispatcher_,
       .gameLoaded = gameLoaded_,
       .entityTypes = entityTypes_,
+      .content = content_,
       .observers = {waitingRoom_, entityMessages_, gameLoaded_, roundTrips_}}};
 };
 

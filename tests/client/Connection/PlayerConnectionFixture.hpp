@@ -1,6 +1,7 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include "EntityAppearances.hpp"
 #include "LoopStages.hpp"
 #include "PlayerConnection.hpp"
 #include "ServiceRegistry.hpp"
@@ -20,5 +21,6 @@ class PlayerConnectionFixture : public ::testing::Test {
  private:
   rtype::engine::ServiceRegistry services_;
   rtype::engine::LoopStages stages_;
+  rtype::client::EntityAppearances appearances_;
   rtype::client::PlayerConnection connection_;
 };

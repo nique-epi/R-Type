@@ -27,10 +27,11 @@ namespace {
  * `{"version":"<MASTER_VERSION>"}`. It reads nothing else, so it answers as
  * long as the HTTP server runs.
  */
-ApiResponse healthResponse([[maybe_unused]] const ApiRequest& request) {
+network::ApiResponse healthResponse(
+    [[maybe_unused]] const network::ApiRequest& request) {
   nlohmann::json health;
   health[VERSION_MEMBER] = MASTER_VERSION;
-  return ApiResponse{.status = OK_STATUS, .body = health.dump()};
+  return network::ApiResponse{.status = OK_STATUS, .body = health.dump()};
 }
 
 }  // namespace

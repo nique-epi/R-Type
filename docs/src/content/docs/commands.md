@@ -93,6 +93,7 @@ Modules of the supervisor:
 |---|---|---|
 | `logger` | nothing | Applies the logging options when it starts. |
 | `network` | `logger` | Owns the UDP socket and the network thread. |
+| `content` | `network` | Serves the content pack over HTTP, on the TCP port of the number of `port`. |
 | `supervised games` | `network` | Starts, follows and stops the game processes. |
 | `supervisor lobby` | `network`, `supervised games` | Sends each player to a game, or starts one. |
 | `information` | `network`, `supervised games` | Answers the information requests. |

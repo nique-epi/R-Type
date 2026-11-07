@@ -5,6 +5,7 @@ target_include_directories(rtype_network_protocol INTERFACE ${CMAKE_CURRENT_SOUR
 target_link_libraries(rtype_network_protocol
   INTERFACE
     rtype_identifiers
+    rtype_network_content
     rtype_network_serialization
     rtype_network_transport
 )

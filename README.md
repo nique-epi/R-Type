@@ -5,7 +5,7 @@ A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ 
 - **Platforms:** Linux (GCC or Clang), Windows (MSVC, Visual Studio 2022) and macOS (Apple Silicon). The CI builds and tests Linux and Windows on every pull request.
 - **Language and libraries:** C++20, SFML 3 on the client, standalone Asio on the server, GoogleTest for the tests.
 - **Programs:** `r-type_client` (window, sound, menus) and `r-type_server` (UDP on port 4242 by default). By default it is a supervisor that starts one process per game and sends each player to the game that has a place; `--mode server` hosts the games in one process, and `--mode master` runs the master, the program that lists game servers.
-- **Network:** every message of a game travels over UDP; the protocol is specified byte by byte in [the protocol RFC](https://nique-epi.github.io/R-Type/protocol/).
+- **Network:** every message of a game travels over UDP; a client that lacks the sheets of a server, a modded one for instance, downloads its content pack over HTTP first. The protocol is specified byte by byte in [the protocol RFC](https://nique-epi.github.io/R-Type/protocol/).
 
 The code is split into engine, game and network libraries; see [the architecture decision](docs/src/content/docs/architecture.md) and [the project layout](docs/src/content/docs/project-layout.md).
 
@@ -134,7 +134,7 @@ The release refuses a tag whose version is not the one of `project()`; change th
 ./r-type_server -p 4243
 ```
 
-The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on port 4242. It runs as a supervisor: it runs no game itself, and starts one `r-type_server --mode game` process per game, up to eight, sending each player to the game that has a place (see [the server page](https://nique-epi.github.io/R-Type/server/#the-three-roles-supervisor-game-and-master)). Each game writes its own journal, `r-type_game_<n>.log` next to the executable.
+The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on port 4242. It runs as a supervisor: it runs no game itself, and starts one `r-type_server --mode game` process per game, up to eight, sending each player to the game that has a place (see [the server page](https://nique-epi.github.io/R-Type/server/#the-three-roles-supervisor-game-and-master)). Each game writes its own journal, `r-type_game_<n>.log` next to the executable. The supervisor also serves its content pack, the entity sheets of its `assets/` and their sprite sheets, over HTTP on the TCP port of the same number (4243 here), so a player whose client has other sheets downloads them when it joins: a host behind a firewall or a router opens both the UDP and the TCP port (see [Tutorial: publish a mod](https://nique-epi.github.io/R-Type/tutorial-publish-a-mod/)).
 
 ```bash
 ./r-type_server --seed 42
@@ -291,7 +291,7 @@ The client, the server and the master write a timestamped journal, `r-type_clien
 
 The build option `-DLOG_LEVEL=<name>` removes the calls below a level from the binaries. See [the logging page](docs/src/content/docs/logging.md).
 
-The client reads `client.cfg` the same way, and `client.cfg.example` is its model (`set nickname`, `set server-address`, `set server-port`, `module <name> on|off`, and `--set` to force a setting). It keeps the player's settings in `settings.ini`: in `$XDG_CONFIG_HOME/r-type` (or `~/.config/r-type`) on Linux, `~/Library/Application Support/R-Type` on macOS, `%LOCALAPPDATA%\R-Type` on Windows. Its path is logged at launch; deleting it brings back the settings of a first launch.
+The client reads `client.cfg` the same way, and `client.cfg.example` is its model (`set nickname`, `set server-address`, `set server-port`, `module <name> on|off`, and `--set` to force a setting). It keeps the player's settings in `settings.ini`: in `$XDG_CONFIG_HOME/r-type` (or `~/.config/r-type`) on Linux, `~/Library/Application Support/R-Type` on macOS, `%LOCALAPPDATA%\R-Type` on Windows. Its path is logged at launch; deleting it brings back the settings of a first launch. The content packs of the servers it joined are kept next to it, in `content-packs/`, eight at most.
 
 ## Code style
 
@@ -309,7 +309,7 @@ cmake --build build --target format
 
 ## Documentation
 
-The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`. To add a module to the server or the client, start with the [Modules](https://nique-epi.github.io/R-Type/modules/) page and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/). Two more tutorials [add a network message](https://nique-epi.github.io/R-Type/tutorial-add-a-network-message/) and [run a server with several games](https://nique-epi.github.io/R-Type/tutorial-run-several-games/).
+The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`. To add a module to the server or the client, start with the [Modules](https://nique-epi.github.io/R-Type/modules/) page and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/). Three more tutorials [add a network message](https://nique-epi.github.io/R-Type/tutorial-add-a-network-message/), [run a server with several games](https://nique-epi.github.io/R-Type/tutorial-run-several-games/) and [publish a mod](https://nique-epi.github.io/R-Type/tutorial-publish-a-mod/).
 
 To preview it locally, with Node.js 22.12 or newer:
 

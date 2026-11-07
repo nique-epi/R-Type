@@ -1,5 +1,3 @@
-find_package(libhydrogen CONFIG REQUIRED CONFIGS hydrogen-config.cmake)
-
 add_library(rtype_master_servers_helpers STATIC
   ServerKey.cpp
   ServerStatusRule.cpp
@@ -11,7 +9,7 @@ target_link_libraries(rtype_master_servers_helpers
   PUBLIC
     rtype_master_servers_models
   PRIVATE
-    hydrogen::hydrogen
+    rtype_network_hashing
     rtype_engine_time
     rtype_network_master_validators
 )

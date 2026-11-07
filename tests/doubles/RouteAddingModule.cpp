@@ -24,9 +24,9 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
   context.require<rtype::master::MasterHttpServer>().add(
       rtype::network::MasterRoute{.method = rtype::network::RouteMethod::Get,
                                   .path = path_},
-      []([[maybe_unused]] const rtype::master::ApiRequest& request) {
-        return rtype::master::ApiResponse{.status = rtype::master::OK_STATUS,
-                                          .body = {}};
+      []([[maybe_unused]] const rtype::network::ApiRequest& request) {
+        return rtype::network::ApiResponse{.status = rtype::master::OK_STATUS,
+                                           .body = {}};
       });
 }
 

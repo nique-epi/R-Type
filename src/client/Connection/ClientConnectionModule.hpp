@@ -2,7 +2,6 @@
 
 #include <string>
 #include <vector>
-#include "EntityAppearances.hpp"
 #include "GameCatalog.hpp"
 #include "IModule.hpp"
 #include "InstallContext.hpp"
@@ -25,9 +24,11 @@ namespace rtype::client {
  * ping, and IGameCatalog, the games of one of them, read from the master by a
  * MasterLink of its own and updated in NETWORK_STAGE.
  *
- * install() requires the EntityAppearances of the assets module: an
- * acceptance whose table names a type none of them draws ends the attempt as
- * MissingEntitySheet. It provides those parts, over a socket still closed,
+ * Building it reads the content of the assets folder, the client's own, and
+ * keeps the packs of the servers it meets in PACK_CACHE_FOLDER_NAME of the
+ * settings folder. install() draws the client's own content with the
+ * EntityAppearances of the assets module. It provides those parts, over a
+ * socket still closed,
  * and adds to NETWORK_STAGE the work that reads what the server sent and sends
  * what is due. start() opens the socket on every IPv4 interface, on a port the
  * system picks, and starts the network thread, then the thread of the
@@ -61,7 +62,6 @@ class ClientConnectionModule final : public engine::IModule {
   void stop() override;
 
  private:
-  const EntityAppearances* appearances_{nullptr};
   PlayerConnection connection_;
   MasterLink masterLink_;
   ServerCatalog servers_;

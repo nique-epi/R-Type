@@ -39,6 +39,14 @@ std::string assetLoadingMessage(std::string_view assetFolder,
 ClientException::ClientException(const std::string& message)
     : std::runtime_error(message) {}
 
+ForeignSpriteSheetException::ForeignSpriteSheetException(
+    const std::string& sheet)
+    : ClientException("a sheet of the content pack names " + sheet +
+                      ", which the pack does not hold") {}
+
+ContentFileWriteException::ContentFileWriteException(const std::string& file)
+    : ClientException("cannot write the file of a content pack " + file) {}
+
 AssetLoadingException::AssetLoadingException(std::string_view assetFolder,
                                              const AssetProblems& problems)
     : ClientException(assetLoadingMessage(assetFolder, problems)) {}

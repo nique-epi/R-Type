@@ -52,7 +52,8 @@ std::vector<std::unique_ptr<engine::IModule>> gameProcessModules(
       std::make_unique<ServerStorageModule>(engine::executableFolder()));
   modules.push_back(
       std::make_unique<ServerGamesModule>(gameProcessGamesSettings()));
-  modules.push_back(std::make_unique<ServerLobbyModule>());
+  modules.push_back(
+      std::make_unique<ServerLobbyModule>(launchOptions.supervisorLink().port));
 #if RTYPE_MODULE_METRICS
   modules.push_back(std::make_unique<ServerMetricsModule>(
       std::make_shared<engine::SystemClock>(), launchOptions.trafficCsvFile()));

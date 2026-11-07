@@ -32,12 +32,23 @@ enum class ConnectionPhase : std::uint8_t {
    */
   Closed,
   /**
-   * @brief The server accepted the player, but the table of entity types of
-   * its acceptance names a type this client has no sheet for: the client left
-   * the session at once, telling the server as when the player leaves, so its
-   * seat is free again. missingSheet holds the first such name.
+   * @brief The server accepted the player and plays with another content
+   * than the client's own, which is not kept: the session holds its seat
+   * while the pack downloads, and contentReceived of contentSize bytes came.
    */
-  MissingEntitySheet,
+  LoadingContent,
+  /**
+   * @brief The pack of the server could not be downloaded: the client left
+   * the session, telling the server as when the player leaves, so its seat
+   * is free again.
+   */
+  ContentDownloadFailed,
+  /**
+   * @brief The pack of the server came, but is not the one it announced, or
+   * holds a sheet this client cannot read: it was never loaded, and the
+   * client left the session as for ContentDownloadFailed.
+   */
+  ContentRefused,
 };
 
 }  // namespace rtype::client

@@ -20,6 +20,16 @@ constexpr std::string_view GAMEPLAY_KEY = "gameplay";
 constexpr std::string_view APPEARANCE_KEY = "appearance";
 constexpr std::array SHEET_ROOT_KEYS{GAMEPLAY_KEY, APPEARANCE_KEY};
 
+/**
+ * @brief The key of `[appearance]` that names the sprite sheet of the type,
+ * relative to the assets folder, such as `sprites/entities.png`: the client
+ * draws from it, and a content pack carries the file it names.
+ */
+constexpr std::string_view SPRITE_SHEET_KEY = "sheet";
+
+/** @brief What separates the folders of a path inside the assets folder. */
+constexpr char ASSET_PATH_SEPARATOR = '/';
+
 /** @brief The keys of `[gameplay]`: two values, then one table each. */
 constexpr std::string_view SIDE_KEY = "side";
 constexpr std::string_view PILOT_KEY = "pilot";

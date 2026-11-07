@@ -25,15 +25,15 @@ rtype::master::MasterHttpServer& MasterHttpServerFixture::server() {
 
 void MasterHttpServerFixture::addTestRoute() {
   server_.add(TEST_GET_ROUTE,
-              []([[maybe_unused]] const rtype::master::ApiRequest& request) {
-                return rtype::master::ApiResponse{
+              []([[maybe_unused]] const rtype::network::ApiRequest& request) {
+                return rtype::network::ApiResponse{
                     .status = EXPECTED_OK,
                     .body = std::string{TEST_ROUTE_BODY}};
               });
 }
 
 void MasterHttpServerFixture::addEchoRoute() {
-  server_.add(TEST_PUT_ROUTE, [](const rtype::master::ApiRequest& request) {
+  server_.add(TEST_PUT_ROUTE, [](const rtype::network::ApiRequest& request) {
     nlohmann::json echo;
     echo[ECHO_BODY_MEMBER] = request.body;
     echo[ECHO_TOKEN_MEMBER] = request.bearerToken.has_value()
@@ -41,8 +41,8 @@ void MasterHttpServerFixture::addEchoRoute() {
                                   : nlohmann::json(nullptr);
     echo[ECHO_ADDRESS_MEMBER] = request.remoteAddress;
     echo[ECHO_QUERY_MEMBER] = request.queryParameters;
-    return rtype::master::ApiResponse{.status = EXPECTED_OK,
-                                      .body = echo.dump()};
+    return rtype::network::ApiResponse{.status = EXPECTED_OK,
+                                       .body = echo.dump()};
   });
 }
 

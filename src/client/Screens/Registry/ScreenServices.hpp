@@ -2,11 +2,11 @@
 
 #include <functional>
 #include "AssetLibrary.hpp"
-#include "EntityAppearances.hpp"
 #include "EntityMessageQueue.hpp"
 #include "GameWindow.hpp"
 #include "IAudioService.hpp"
 #include "IEntityTypeSource.hpp"
+#include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
@@ -35,9 +35,9 @@ struct ScreenServices {
   std::reference_wrapper<PlayerSettings> settings;
   std::reference_wrapper<SettingsService> settingsService;
   std::reference_wrapper<AssetLibrary> assets;
-  /** @brief The appearance of every entity sheet of the client: a game loads
-   * their sprite sheets. */
-  std::reference_wrapper<const EntityAppearances> appearances;
+  /** @brief The content of the session: a game loads the sprite sheets of
+   * its appearances. */
+  std::reference_wrapper<const IEntityTypeTable> entityTable;
   std::reference_wrapper<IAudioService> audio;
   std::reference_wrapper<GameWindow> window;
   std::reference_wrapper<ServerSession> connection;

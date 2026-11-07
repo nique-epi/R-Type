@@ -1,4 +1,3 @@
-find_package(httplib CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 
 add_library(rtype_master_http_module STATIC
@@ -13,13 +12,12 @@ target_link_libraries(rtype_master_http_module
     rtype_engine_commands
     rtype_engine_modules
     rtype_logging
+    rtype_network_http
     rtype_network_master_routes
     rtype_network_transport
   PRIVATE
-    httplib::httplib
     nlohmann_json::nlohmann_json
     rtype_master_constants
-    rtype_master_exceptions
     rtype_network_constants
 )
 

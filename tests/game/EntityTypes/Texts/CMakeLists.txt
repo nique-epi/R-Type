@@ -1,0 +1,1 @@
+target_sources(game_entity_types_tests PRIVATE SheetTextReadingTest.cpp)

@@ -1,0 +1,1 @@
+target_sources(client_content_pack_tests PRIVATE PackContentReadingTest.cpp)

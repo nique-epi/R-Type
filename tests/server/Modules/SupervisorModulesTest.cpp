@@ -48,6 +48,7 @@ TEST(SupervisorModules, ListsTheModulesOfTheSupervisor) {
   EXPECT_EQ(names, (std::vector<std::string>{
                        std::string{rtype::server::LOGGER_MODULE_NAME},
                        std::string{rtype::server::NETWORK_MODULE_NAME},
+                       std::string{rtype::server::CONTENT_MODULE_NAME},
                        std::string{rtype::server::SUPERVISED_GAMES_MODULE_NAME},
                        std::string{rtype::server::SUPERVISOR_LOBBY_MODULE_NAME},
                        std::string{rtype::server::INFORMATION_MODULE_NAME},

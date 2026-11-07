@@ -1,18 +1,24 @@
-add_library(rtype_game_entity_types STATIC EntitySheetReader.cpp EntitySheets.cpp SheetTextReading.cpp)
+add_library(rtype_game_entity_sheet_format INTERFACE)
 
-target_include_directories(rtype_game_entity_types PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(rtype_game_entity_sheet_format INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_game_entity_types
-  PUBLIC
-    rtype_engine_data_files
+target_link_libraries(rtype_game_entity_sheet_format
+  INTERFACE
+    rtype_engine_exceptions
     rtype_engine_time
-    rtype_game_behaviours
     rtype_game_components
-    rtype_game_exceptions
-  PRIVATE
-    rtype_identifiers
-    rtype_logging
-    rtype_game_ship_control_constants
 )
 
-rtype_enable_warnings(rtype_game_entity_types)
+add_subdirectory(Texts)
+add_subdirectory(Sheets)
+add_subdirectory(Content)
+
+add_library(rtype_game_entity_types INTERFACE)
+
+target_link_libraries(rtype_game_entity_types
+  INTERFACE
+    rtype_game_entity_sheet_texts
+    rtype_game_entity_sheets
+    rtype_game_entity_content
+    rtype_game_exceptions
+)
