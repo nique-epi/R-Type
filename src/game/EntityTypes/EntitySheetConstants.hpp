@@ -71,10 +71,12 @@ constexpr std::string_view COUNT_KEY = "count";
 constexpr std::string_view SHARD_KEY = "shard";
 constexpr std::array BURST_KEYS{AFTER_KEY, COUNT_KEY, SHARD_KEY};
 
-/** @brief The key of `[gameplay.hurt_zone]`: its boxes, an array of tables
- * `[[gameplay.hurt_zone.box]]`. */
+/** @brief The keys of `[gameplay.hurt_zone]`: its boxes, an array of tables
+ * `[[gameplay.hurt_zone.box]]`, and its beams, `[[gameplay.hurt_zone.beam]]`,
+ * which it may leave out. */
 constexpr std::string_view BOX_KEY = "box";
-constexpr std::array HURT_ZONE_KEYS{BOX_KEY};
+constexpr std::string_view BEAM_KEY = "beam";
+constexpr std::array HURT_ZONE_KEYS{BOX_KEY, BEAM_KEY};
 
 /** @brief The keys of a box of a hurt zone, in logical units; a box names the
  * attack and the phase it hurts in together, or neither. */
@@ -86,6 +88,21 @@ constexpr std::string_view UNTIL_KEY = "until_ms";
 constexpr std::array HURT_BOX_KEYS{OFFSET_X_KEY, OFFSET_Y_KEY, WIDTH_KEY,
                                    HEIGHT_KEY,   ATTACK_KEY,   PHASE_KEY,
                                    FROM_KEY,     UNTIL_KEY};
+
+/** @brief The keys of a beam of a hurt zone: its pivot, length and thickness
+ * in logical units, its angles in degrees from the left (a positive one turns
+ * it down), and the action it hurts in, required, with its window. */
+constexpr std::string_view LENGTH_KEY = "length";
+constexpr std::string_view THICKNESS_KEY = "thickness";
+constexpr std::string_view FROM_DEGREES_KEY = "from_deg";
+constexpr std::string_view TO_DEGREES_KEY = "to_deg";
+constexpr std::array HURT_BEAM_KEYS{
+    OFFSET_X_KEY,   OFFSET_Y_KEY, LENGTH_KEY, THICKNESS_KEY, FROM_DEGREES_KEY,
+    TO_DEGREES_KEY, ATTACK_KEY,   PHASE_KEY,  FROM_KEY,      UNTIL_KEY};
+constexpr engine::WholeNumberRange BEAM_LENGTH_RANGE{.lowest = 1,
+                                                     .highest = 4096};
+constexpr engine::WholeNumberRange BEAM_ANGLE_RANGE{.lowest = -180,
+                                                    .highest = 180};
 
 /** @brief `[gameplay.survives_contact]` is a marker: it holds no key. */
 constexpr std::array<std::string_view, 0> SURVIVES_CONTACT_KEYS{};
@@ -186,6 +203,9 @@ constexpr std::string_view HURT_BOX_TIMING_RULE =
     "only a box that names its attack and its phase hurts from or until a time";
 constexpr std::string_view HURT_BOX_WINDOW_RULE =
     "a box stops hurting after it starts: until_ms is above from_ms";
+constexpr std::string_view HURT_BEAM_SWEEP_RULE =
+    "a beam that sweeps (to_deg other than from_deg) names until_ms, the end "
+    "of its sweep";
 constexpr std::string_view PROJECTILE_SIDE_RULE =
     "a player fires missiles of a player, an enemy missiles of an enemy";
 

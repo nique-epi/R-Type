@@ -20,6 +20,7 @@
 #include "EntityType.hpp"
 #include "GameException.hpp"
 #include "GunSheet.hpp"
+#include "HurtBeam.hpp"
 #include "HurtBox.hpp"
 #include "HurtWindow.hpp"
 #include "HurtZone.hpp"
@@ -276,6 +277,27 @@ HurtWindow windowFrom(const engine::DataFileTable& box,
   return window;
 }
 
+/** @returns The beam one table of `[[gameplay.hurt_zone.beam]]` describes.
+ * @throws InconsistentEntitySheetException when it sweeps with no end. */
+HurtBeam hurtBeamFrom(const engine::DataFileTable& beam) {
+  engine::refuseUnknownKeys(beam, HURT_BEAM_KEYS);
+  const ActionKey activeIn = actionKeyAt(beam);
+  const HurtBeam read{
+      .offsetX = unitsAt(beam, OFFSET_X_KEY, HURT_BOX_OFFSET_RANGE),
+      .offsetY = unitsAt(beam, OFFSET_Y_KEY, HURT_BOX_OFFSET_RANGE),
+      .length = unitsAt(beam, LENGTH_KEY, BEAM_LENGTH_RANGE),
+      .thickness = unitsAt(beam, THICKNESS_KEY, HITBOX_SIDE_RANGE),
+      .fromDegrees = unitsAt(beam, FROM_DEGREES_KEY, BEAM_ANGLE_RANGE),
+      .toDegrees = unitsAt(beam, TO_DEGREES_KEY, BEAM_ANGLE_RANGE),
+      .activeIn = activeIn,
+      .window = windowFrom(beam, activeIn)};
+  if (read.fromDegrees != read.toDegrees && !read.window.until.has_value()) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(beam, TO_DEGREES_KEY), HURT_BEAM_SWEEP_RULE);
+  }
+  return read;
+}
+
 /** @returns The box one table of `[[gameplay.hurt_zone.box]]` describes. */
 HurtBox hurtBoxFrom(const engine::DataFileTable& box) {
   engine::refuseUnknownKeys(box, HURT_BOX_KEYS);
@@ -305,6 +327,12 @@ std::optional<HurtZone> hurtZoneFrom(const engine::DataFileTable& gameplay) {
   if (read.boxes.empty()) {
     throw InconsistentEntitySheetException(engine::placeOfKey(*zone, BOX_KEY),
                                            HURT_ZONE_BOXES_RULE);
+  }
+  if (zone->table.get().contains(BEAM_KEY)) {
+    for (const engine::DataFileTable& beam :
+         engine::tablesAt(*zone, BEAM_KEY)) {
+      read.beams.push_back(hurtBeamFrom(beam));
+    }
   }
   return read;
 }

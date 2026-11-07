@@ -1,6 +1,9 @@
 #pragma once
 
+#include <chrono>
+#include <cstdint>
 #include <string_view>
+#include "TimeConstants.hpp"
 
 namespace rtype::game::testing {
 
@@ -23,5 +26,37 @@ constexpr std::string_view MOVED_SHIP_HITBOX =
 constexpr std::string_view HITBOX_DOTTED_KEY = "gameplay.hitbox";
 constexpr std::string_view SHIP_HITBOX_RULE_TEXT =
     "a ship collides with the box shipAfter() keeps on screen";
+
+/** @brief A hurt zone of one box and the sweeping beam of the Bydo Tyrant:
+ * from (-124, 44), 1540 units long and 28 thick, turning from 35 degrees up
+ * to 12 degrees down over the first 1200 ms of the strike of attack 15. */
+constexpr std::string_view ZONE_WITH_A_SWEEPING_BEAM =
+    "[[gameplay.hurt_zone.box]]\noffset_x = 0\noffset_y = 0\nwidth = 40\n"
+    "height = 40\n\n"
+    "[[gameplay.hurt_zone.beam]]\noffset_x = -124\noffset_y = 44\n"
+    "length = 1540\nthickness = 28\nfrom_deg = -35\nto_deg = 12\n"
+    "attack = 15\nphase = \"strike\"\nuntil_ms = 1200\n";
+constexpr float SWEEPING_BEAM_OFFSET_X = -124.0F;
+constexpr float SWEEPING_BEAM_OFFSET_Y = 44.0F;
+constexpr float SWEEPING_BEAM_LENGTH = 1540.0F;
+constexpr float SWEEPING_BEAM_THICKNESS = 28.0F;
+constexpr float SWEEPING_BEAM_FROM_DEGREES = -35.0F;
+constexpr float SWEEPING_BEAM_TO_DEGREES = 12.0F;
+constexpr std::uint8_t SWEEPING_BEAM_ATTACK = 15;
+constexpr engine::Duration SWEEPING_BEAM_UNTIL =
+    std::chrono::milliseconds(1200);
+
+/** @brief The same zone whose beam sweeps with no end, and where and why it
+ * is refused. */
+constexpr std::string_view ZONE_WITH_AN_ENDLESS_SWEEP =
+    "[[gameplay.hurt_zone.box]]\noffset_x = 0\noffset_y = 0\nwidth = 40\n"
+    "height = 40\n\n"
+    "[[gameplay.hurt_zone.beam]]\noffset_x = -124\noffset_y = 44\n"
+    "length = 1540\nthickness = 28\nfrom_deg = -35\nto_deg = 12\n"
+    "attack = 15\nphase = \"strike\"\n";
+constexpr std::string_view TO_DEGREES_DOTTED_KEY =
+    "gameplay.hurt_zone.beam[0].to_deg";
+constexpr std::string_view SWEEP_RULE_TEXT =
+    "a beam that sweeps (to_deg other than from_deg) names until_ms";
 
 }  // namespace rtype::game::testing
