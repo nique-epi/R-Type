@@ -1,5 +1,6 @@
 import { PlayerSlots, type Seat } from '@/components/game/player-slots';
-import { Button } from '@/components/primitives/button';
+import { Button } from '@/components/primitives/actions/button';
+import { Tag } from '@/components/primitives/status/tag';
 import {
   Table,
   TableBody,
@@ -7,8 +8,7 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow,
-} from '@/components/primitives/table';
-import { Tag } from '@/components/primitives/tag';
+} from '@/components/primitives/surfaces/table';
 import type { GameState } from '@/lib/rtype/servers';
 
 /** A game of a server, its words already written. */

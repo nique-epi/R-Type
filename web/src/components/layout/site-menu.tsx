@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type * as React from 'react';
 import { useRef } from 'react';
-import { Button } from '@/components/primitives/button';
-import { Dialog } from '@/components/primitives/dialog';
-import { IconButton } from '@/components/primitives/icon-button';
-import { PixelIcon } from '@/components/primitives/pixel-icon';
+import { Button } from '@/components/primitives/actions/button';
+import { IconButton } from '@/components/primitives/actions/icon-button';
+import { PixelIcon } from '@/components/primitives/icons/pixel-icon';
+import { Dialog } from '@/components/primitives/surfaces/dialog';
 import { StarLayers } from '@/components/sky/star-layers';
 import { Logo } from '@/components/sprites/logo';
 import { Ship } from '@/components/sprites/ship';
@@ -128,7 +128,7 @@ export function SiteMenu({
                     onClick={close}
                     aria-current={current ? 'page' : undefined}
                     className={cn(
-                      'group/item relative -mx-4 flex items-center gap-3.5 rounded-lg px-4 py-3.5 font-pixel text-xl uppercase leading-7 no-underline transition-colors duration-200 hover:bg-deep-blue/55 hover:text-star-white focus-visible:bg-deep-blue/55 focus-visible:text-star-white max-md:text-base max-md:leading-6',
+                      'row-link group/item relative -mx-4 flex items-center gap-3.5 px-4 py-3.5 font-pixel text-xl uppercase leading-7 transition-colors duration-200 hover:bg-deep-blue/55 hover:text-star-white focus-visible:bg-deep-blue/55 focus-visible:text-star-white max-md:text-base max-md:leading-6',
                       current ? 'text-hud-cyan' : 'text-pale-blue',
                     )}
                   >

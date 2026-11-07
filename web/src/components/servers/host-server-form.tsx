@@ -3,10 +3,10 @@
 import type * as React from 'react';
 import { useState } from 'react';
 import { Reveal } from '@/components/motion/reveal';
-import { Button } from '@/components/primitives/button';
-import { Notice } from '@/components/primitives/notice';
-import { PanelTitle } from '@/components/primitives/panel';
-import { TextField } from '@/components/primitives/text-field';
+import { Button } from '@/components/primitives/actions/button';
+import { TextField } from '@/components/primitives/inputs/text-field';
+import { Notice } from '@/components/primitives/status/notice';
+import { PanelTitle } from '@/components/primitives/surfaces/panel';
 import { format } from '@/i18n/format';
 
 /** The longest name of a server the master takes. */

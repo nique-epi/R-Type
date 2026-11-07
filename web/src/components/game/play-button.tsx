@@ -3,7 +3,7 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import type * as React from 'react';
 import { useRef } from 'react';
-import { Triangle } from '@/components/primitives/triangle';
+import { Triangle } from '@/components/primitives/icons/triangle';
 import { Ship } from '@/components/sprites/ship';
 import { motionAllowed, useMotion } from '@/hooks/use-motion';
 import { gsap } from '@/lib/gsap';

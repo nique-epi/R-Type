@@ -2,6 +2,15 @@ import type * as React from 'react';
 import { cn } from '@/lib/utils';
 import type { SpriteFrame, SpriteSheet } from './sheets';
 
+/** Frames laid side by side on the sheet, played in a loop from the first one. */
+export type SpriteAnimation = {
+  frames: number;
+  /** Seconds of one loop. */
+  seconds: number;
+  /** Seconds before it starts; a negative delay starts it partway through. */
+  delay?: number;
+};
+
 export type SpriteProps = Omit<React.ComponentProps<'span'>, 'children'> & {
   sheet: SpriteSheet;
   frame: SpriteFrame;
@@ -11,6 +20,8 @@ export type SpriteProps = Omit<React.ComponentProps<'span'>, 'children'> & {
   narrowScale?: number;
   /** Names the sprite for a screen reader; without it, it is decoration. */
   label?: string;
+  /** Plays the frames to the right of `frame`, unless the reader asked for reduced motion. */
+  animation?: SpriteAnimation;
 };
 
 /**
@@ -24,6 +35,7 @@ export function Sprite({
   scale,
   narrowScale,
   label,
+  animation,
   className,
   style,
   ...props
@@ -38,6 +50,10 @@ export function Sprite({
     '--sprite-h': frame.height,
     '--sprite-scale': scale,
     '--sprite-scale-narrow': narrowScale,
+    '--sprite-frames': animation?.frames,
+    '--sprite-animation': animation
+      ? `sprite-frames ${animation.seconds}s steps(${animation.frames}) ${animation.delay ?? 0}s infinite`
+      : undefined,
   } as React.CSSProperties;
 
   return (

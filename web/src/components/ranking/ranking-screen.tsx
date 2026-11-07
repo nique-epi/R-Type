@@ -7,9 +7,12 @@ import { GameChip } from '@/components/game/game-chip';
 import { GameScreen } from '@/components/game/game-screen';
 import { GameText } from '@/components/game/game-text';
 import { CountUp } from '@/components/motion/count-up';
-import { Keycap } from '@/components/primitives/keycap';
+import { Keycap } from '@/components/primitives/text/keycap';
+import { SHEETS } from '@/components/sprites/sheets';
+import { Sprite } from '@/components/sprites/sprite';
 import { useMotion } from '@/hooks/use-motion';
 import { gsap } from '@/lib/gsap';
+import { runShortcut } from '@/lib/shortcuts';
 import { cn } from '@/lib/utils';
 import {
   type RankingFilter,
@@ -126,17 +129,12 @@ export function RankingScreen({
     if (filterOpen) {
       return;
     }
-    const actions: Readonly<Record<string, () => void>> = {
+    runShortcut(event, {
       q: () => onTabChange(0),
       e: () => onTabChange(1),
       f: () => setFilterOpen(true),
       escape: onBack,
-    };
-    const action = actions[event.key.toLowerCase()];
-    if (action) {
-      event.preventDefault();
-      action();
-    }
+    });
   }
 
   return (
@@ -147,21 +145,20 @@ export function RankingScreen({
         settle
         className="starfield"
       >
-        <span data-flag aria-hidden="true" className={cn(FLAG, 'left-4')} />
-        <span
+        <Sprite data-flag {...FLAG} className="absolute top-0 left-4" />
+        <Sprite
           data-flag
-          aria-hidden="true"
-          className={cn(FLAG, 'left-210 [animation-delay:-0.65s]')}
+          {...FLAG}
+          animation={{ ...FLAG.animation, delay: -0.65 }}
+          className="absolute top-0 left-210"
         />
-        <span
+        <Sprite data-guard {...GUARD} className="absolute top-4 left-73" />
+        <Sprite
           data-guard
-          aria-hidden="true"
-          className={cn(GUARD, 'left-73 animate-guard')}
-        />
-        <span
-          data-guard
-          aria-hidden="true"
-          className={cn(GUARD, 'left-153 animate-guard-flipped')}
+          {...GUARD}
+          frame={{ ...GUARD.frame, x: GUARD_FLIPPED_X }}
+          animation={{ ...GUARD.animation, delay: -0.125 }}
+          className="absolute top-4 left-153"
         />
         <GameText
           data-ranking-title
@@ -304,10 +301,21 @@ export function RankingScreen({
   );
 }
 
-/** A flag of the leaderboard sheet, 52 × 99 drawn at ×2, waving in 32 frames. */
-const FLAG =
-  'pixelated absolute top-0 h-[198px] w-26 bg-[url(/sprites/flag.png)] bg-no-repeat bg-size-[3328px_198px] animate-flag motion-reduce:animate-none';
+/** A flag of the leaderboard, 52 × 99 drawn at ×2, waving in 32 frames. */
+const FLAG = {
+  sheet: SHEETS.flag,
+  frame: { x: 0, y: 0, width: 52, height: 99 },
+  scale: 2,
+  animation: { frames: 32, seconds: 1.6 },
+};
 
-/** A guard of the leaderboard sheet, 28 × 30 drawn at ×2, stepping in place. */
-const GUARD =
-  'pixelated absolute top-4 h-15 w-14 bg-[url(/sprites/guard.png)] bg-no-repeat bg-size-[224px_60px] motion-reduce:animate-none';
+/** A guard of the leaderboard, 28 × 30 drawn at ×2, stepping in place in 2 frames. */
+const GUARD = {
+  sheet: SHEETS.guard,
+  frame: { x: 0, y: 0, width: 28, height: 30 },
+  scale: 2,
+  animation: { frames: 2, seconds: 0.5 },
+};
+
+/** guard.png holds two frames facing right, then the same two facing left. */
+const GUARD_FLIPPED_X = 56;

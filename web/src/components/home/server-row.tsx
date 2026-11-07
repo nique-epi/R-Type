@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type * as React from 'react';
-import { StatusBadge } from '@/components/primitives/status-badge';
-import { Triangle } from '@/components/primitives/triangle';
+import { Triangle } from '@/components/primitives/icons/triangle';
+import { StatusBadge } from '@/components/primitives/status/status-badge';
 import type { ServerStatus } from '@/lib/rtype/servers';
 
 export type ServerRowProps = {
@@ -29,7 +29,7 @@ export function ServerRow({
       href={href}
       aria-label={label}
       data-slot="server-row"
-      className="group/row grid w-full grid-cols-[minmax(0,1.4fr)_auto_minmax(0,1fr)_24px] items-center gap-6 rounded-lg px-6 py-5 text-left text-pale-blue no-underline transition-colors duration-250 hover:bg-deep-blue/45 focus-visible:bg-deep-blue/45 max-md:grid-cols-[1fr_auto] max-md:gap-x-4 max-md:gap-y-2"
+      className="row-link group/row grid w-full grid-cols-[minmax(0,1.4fr)_auto_minmax(0,1fr)_24px] items-center gap-6 px-6 py-5 text-left text-pale-blue max-md:grid-cols-[1fr_auto] max-md:gap-x-4 max-md:gap-y-2"
     >
       <span className="font-pixel text-base text-hud-cyan uppercase leading-6">
         {name}

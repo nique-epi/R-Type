@@ -2,8 +2,8 @@
 
 import type * as React from 'react';
 import { useRef } from 'react';
-import { Triangle } from '@/components/primitives/triangle';
-import { Heading } from '@/components/primitives/typography';
+import { Triangle } from '@/components/primitives/icons/triangle';
+import { Heading } from '@/components/primitives/text/typography';
 import { Planet } from '@/components/sky/planet';
 import { StarLayers } from '@/components/sky/star-layers';
 import { Logo } from '@/components/sprites/logo';

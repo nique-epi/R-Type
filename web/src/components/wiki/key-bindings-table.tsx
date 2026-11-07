@@ -1,4 +1,3 @@
-import { Keycap } from '@/components/primitives/keycap';
 import {
   Table,
   TableBody,
@@ -6,7 +5,8 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow,
-} from '@/components/primitives/table';
+} from '@/components/primitives/surfaces/table';
+import { Keycap } from '@/components/primitives/text/keycap';
 
 /** An action of the game and the keys that do it. */
 export type KeyBinding = {

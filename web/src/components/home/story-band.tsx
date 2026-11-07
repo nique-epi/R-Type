@@ -1,6 +1,6 @@
 import type * as React from 'react';
-import { Container } from '@/components/primitives/container';
-import { Heading, Lede } from '@/components/primitives/typography';
+import { Container } from '@/components/primitives/layout/container';
+import { Heading, Lede } from '@/components/primitives/text/typography';
 import { StarLayers } from '@/components/sky/star-layers';
 import { cn } from '@/lib/utils';
 

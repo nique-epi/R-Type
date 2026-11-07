@@ -12,6 +12,7 @@ import type { Locale } from '@/i18n/locales';
 import { gsap } from '@/lib/gsap';
 import { withoutAccents } from '@/lib/rtype/pixel-text';
 import { MAXIMUM_PILOTS_PER_GAME } from '@/lib/rtype/players';
+import { runShortcut, type Shortcuts } from '@/lib/shortcuts';
 import {
   angleOf,
   type Bearing,
@@ -205,7 +206,7 @@ export function SectorMap({
     }
   }
 
-  const shortcuts: Readonly<Record<string, () => void>> = {
+  const shortcuts: Shortcuts = {
     escape: back,
     q: quickPlay,
     l: onLeaderboard,
@@ -218,21 +219,18 @@ export function SectorMap({
       : {}),
   };
 
+  /** Enter and the arrows act only on the screen itself, never on a button inside it. */
+  const screenKeys: Shortcuts = {
+    enter: advance,
+    arrowright: () => cycle(1),
+    arrowdown: () => cycle(1),
+    arrowleft: () => cycle(-1),
+    arrowup: () => cycle(-1),
+  };
+
   function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     const onScreen = event.target === event.currentTarget;
-    const key = event.key.toLowerCase();
-    if (onScreen && key === 'enter') {
-      advance();
-    } else if (onScreen && (key === 'arrowright' || key === 'arrowdown')) {
-      cycle(1);
-    } else if (onScreen && (key === 'arrowleft' || key === 'arrowup')) {
-      cycle(-1);
-    } else if (shortcuts[key]) {
-      shortcuts[key]();
-    } else {
-      return;
-    }
-    event.preventDefault();
+    runShortcut(event, onScreen ? { ...shortcuts, ...screenKeys } : shortcuts);
   }
 
   useMotion(

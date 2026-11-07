@@ -1,6 +1,6 @@
 import type * as React from 'react';
 import { Parallax } from '@/components/motion/parallax';
-import { Heading } from '@/components/primitives/typography';
+import { Heading } from '@/components/primitives/text/typography';
 import { cn } from '@/lib/utils';
 
 export type FeatureRowProps = {

@@ -1,6 +1,10 @@
 'use client';
 
 import { useId } from 'react';
+import {
+  markedRowVariants,
+  SideMarker,
+} from '@/components/primitives/icons/side-marker';
 import { format } from '@/i18n/format';
 import { cn } from '@/lib/utils';
 
@@ -48,8 +52,8 @@ export function PalettePicker({
           <label
             key={palette.id}
             className={cn(
-              'relative flex w-full cursor-pointer flex-wrap items-center gap-4 py-2.5 pl-[22px] transition-colors duration-200 hover:text-star-white has-focus-visible:outline-2 has-focus-visible:outline-focus-ring has-focus-visible:outline-offset-2',
-              chosen ? 'text-hud-cyan' : 'text-pale-blue',
+              markedRowVariants({ marked: chosen }),
+              'cursor-pointer flex-wrap gap-4 has-focus-visible:outline-2 has-focus-visible:outline-focus-ring has-focus-visible:outline-offset-2',
             )}
           >
             <input
@@ -60,13 +64,7 @@ export function PalettePicker({
               onChange={() => onValueChange(palette.id)}
               className="sr-only"
             />
-            <span
-              aria-hidden="true"
-              className={cn(
-                'absolute top-1/2 left-0 -mt-1 size-2 bg-hud-cyan transition-transform duration-200',
-                chosen ? 'scale-100' : 'scale-0',
-              )}
-            />
+            <SideMarker shown={chosen} />
             <span className="w-40 small-caps">{palette.label}</span>
             {palette.colors.map((color, pilot) => (
               <span

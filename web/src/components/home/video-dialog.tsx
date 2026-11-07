@@ -2,9 +2,9 @@
 
 import type * as React from 'react';
 import { useRef } from 'react';
-import { Dialog } from '@/components/primitives/dialog';
-import { IconButton } from '@/components/primitives/icon-button';
-import { PixelIcon } from '@/components/primitives/pixel-icon';
+import { IconButton } from '@/components/primitives/actions/icon-button';
+import { PixelIcon } from '@/components/primitives/icons/pixel-icon';
+import { Dialog } from '@/components/primitives/surfaces/dialog';
 import { useMotion } from '@/hooks/use-motion';
 import { gsap } from '@/lib/gsap';
 

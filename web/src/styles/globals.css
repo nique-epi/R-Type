@@ -48,35 +48,6 @@
   --shadow-sunk: inset 2px 2px 0 #26305e, inset -2px -2px 0 #4a5aa8;
   --shadow-drop: 4px 4px 0 #0a0b1a;
   --shadow-float: 0 8px 32px rgb(10 11 26 / 45%);
-
-  --animate-flag: flag 1.6s steps(32) infinite;
-  --animate-guard: guard 0.5s steps(2) infinite;
-  --animate-guard-flipped: guard-flipped 0.5s steps(2) -0.125s infinite;
-
-  /* guard.png holds two frames facing right, then the same two facing left. */
-  @keyframes guard-flipped {
-    from {
-      background-position-x: -112px;
-    }
-    to {
-      background-position-x: -224px;
-    }
-  }
-
-  @keyframes flag {
-    to {
-      background-position-x: -3328px;
-    }
-  }
-
-  @keyframes guard {
-    from {
-      background-position-x: 0;
-    }
-    to {
-      background-position-x: -112px;
-    }
-  }
 }
 
 /*
@@ -150,6 +121,22 @@
   text-transform: uppercase;
 }
 
+/* A row of a list that is a link: rounded, lit in deep blue under the pointer or the focus. */
+@utility row-link {
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  transition: background-color 250ms;
+
+  &:hover,
+  &:focus-visible {
+    background-color: color-mix(
+      in oklab,
+      var(--color-deep-blue) 45%,
+      transparent
+    );
+  }
+}
+
 /* The text of a game screen, outlined in ink as the client outlines its labels. */
 @utility text-outline-ink {
   text-shadow:
@@ -212,10 +199,31 @@
     background-position: calc(var(--sprite-x) * var(--scale) * -1px)
       calc(var(--sprite-y) * var(--scale) * -1px);
     image-rendering: pixelated;
+    animation: var(--sprite-animation, none);
 
     @variant max-md {
       --scale: var(--sprite-scale-narrow, var(--sprite-scale));
     }
+  }
+}
+
+/* Steps a sprite through the frames to the right of its first one, as <Sprite animation> asks. */
+@keyframes sprite-frames {
+  from {
+    background-position-x: calc(var(--sprite-x) * var(--scale) * -1px);
+  }
+  to {
+    background-position-x: calc(
+      (var(--sprite-x) + var(--sprite-frames) * var(--sprite-w)) *
+      var(--scale) *
+      -1px
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sprite {
+    animation: none;
   }
 }
 

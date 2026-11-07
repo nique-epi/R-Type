@@ -3,8 +3,12 @@
 import type * as React from 'react';
 import { useRef } from 'react';
 import { TypeIn } from '@/components/motion/type-in';
-import { Container } from '@/components/primitives/container';
-import { Eyebrow, Heading, Lede } from '@/components/primitives/typography';
+import { Container } from '@/components/primitives/layout/container';
+import {
+  Eyebrow,
+  Heading,
+  Lede,
+} from '@/components/primitives/text/typography';
 import { Planet } from '@/components/sky/planet';
 import { StarLayers } from '@/components/sky/star-layers';
 import { useMotion } from '@/hooks/use-motion';

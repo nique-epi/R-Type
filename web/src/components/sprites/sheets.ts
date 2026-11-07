@@ -26,6 +26,8 @@ export const SHEETS = {
   drillback: { src: '/sprites/mobs/drillback.png', width: 102, height: 102 },
   bydomancer: { src: '/sprites/mobs/bydomancer.png', width: 127, height: 163 },
   professor: { src: '/sprites/professor.png', width: 50, height: 58 },
+  flag: { src: '/sprites/flag.png', width: 1664, height: 99 },
+  guard: { src: '/sprites/guard.png', width: 112, height: 30 },
 } as const satisfies Record<string, SpriteSheet>;
 
 /** The rows of the ships in entities.png: 16 pixels tall, 18 apart. */

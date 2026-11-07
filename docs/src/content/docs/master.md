@@ -94,7 +94,7 @@ The web site is a program of its own: a Next.js server, in `web/` (see [Web site
 
 | Folder | Holds |
 |---|---|
-| `primitives/` | the pieces with no data: `Button` and `ArrowLink` (a link when given an `href`, a button otherwise), `Tabs`, `TextField`, `Dialog` on the native `<dialog>`, `Table`, `StatusBadge`, `Tag` |
+| `primitives/` | the pieces with no data, one folder per kind: `actions/` (`Button` and `ArrowLink`, a link when given an `href`, a button otherwise), `inputs/` (`Tabs`, `TextField`), `status/` (`StatusBadge`, `Tag`), `surfaces/` (`Dialog` on the native `<dialog>`, `Table`), `text/`, `layout/`, `icons/` |
 | `motion/`, `sky/`, `sprites/` | the animations, the star layers and the planet, and `Sprite`, which draws one frame of a sheet of `web/public/sprites/` at a whole scale |
 | `layout/`, `game/` | the header, the menu, the footer and the hero of a page; a game screen of 960 × 540, which scales to the width it is given, with its frames and chips |
 | `home/`, `download/`, `servers/`, `ranking/`, `wiki/`, `team/` | the sections of each page, such as `SectorMap` and `RankingScreen` |

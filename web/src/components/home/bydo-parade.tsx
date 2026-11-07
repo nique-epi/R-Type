@@ -3,7 +3,11 @@
 import type * as React from 'react';
 import { useRef } from 'react';
 import { Float } from '@/components/motion/float';
-import { Eyebrow, Heading, Lede } from '@/components/primitives/typography';
+import {
+  Eyebrow,
+  Heading,
+  Lede,
+} from '@/components/primitives/text/typography';
 import { useMotion } from '@/hooks/use-motion';
 import { WIDE_SCREEN_QUERY } from '@/lib/breakpoints';
 import { gsap } from '@/lib/gsap';

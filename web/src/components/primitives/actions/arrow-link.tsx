@@ -1,6 +1,6 @@
+import { Triangle } from '@/components/primitives/icons/triangle';
 import { cn } from '@/lib/utils';
 import { Action, type ActionProps } from './action';
-import { Triangle } from './triangle';
 
 /**
  * A word in pixel capitals followed by an arrow that steps forward on hover:

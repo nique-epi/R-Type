@@ -1,5 +1,5 @@
 import type * as React from 'react';
-import { Keycap } from '@/components/primitives/keycap';
+import { Keycap } from '@/components/primitives/text/keycap';
 import { cn } from '@/lib/utils';
 
 export type GameChipProps = React.ComponentProps<'button'> & {

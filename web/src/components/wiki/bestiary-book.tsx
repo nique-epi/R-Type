@@ -2,8 +2,8 @@
 
 import type * as React from 'react';
 import { useRef, useState } from 'react';
-import { Button } from '@/components/primitives/button';
-import { Triangle } from '@/components/primitives/triangle';
+import { Button } from '@/components/primitives/actions/button';
+import { Triangle } from '@/components/primitives/icons/triangle';
 import { useMotion } from '@/hooks/use-motion';
 import { format } from '@/i18n/format';
 import { gsap } from '@/lib/gsap';

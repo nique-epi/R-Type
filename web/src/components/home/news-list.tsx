@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Triangle } from '@/components/primitives/triangle';
+import { Triangle } from '@/components/primitives/icons/triangle';
 
 export type NewsItem = {
   id: string;
@@ -17,7 +17,7 @@ export function NewsList({ items }: { items: readonly NewsItem[] }) {
         <li key={item.id}>
           <Link
             href={item.href}
-            className={`-mx-6 grid w-[calc(100%+48px)] grid-cols-[160px_minmax(0,1fr)_24px] items-center gap-6 rounded-lg px-6 py-[22px] text-left text-star-white no-underline transition-colors duration-250 hover:bg-deep-blue/45 focus-visible:bg-deep-blue/45 max-md:grid-cols-1 max-md:gap-2 ${index > 0 ? 'shadow-[inset_0_2px_0_rgb(38_48_94/60%)]' : ''}`}
+            className={`row-link -mx-6 grid w-[calc(100%+48px)] grid-cols-[160px_minmax(0,1fr)_24px] items-center gap-6 px-6 py-[22px] text-left text-star-white max-md:grid-cols-1 max-md:gap-2 ${index > 0 ? 'shadow-[inset_0_2px_0_rgb(38_48_94/60%)]' : ''}`}
           >
             <time className="small-caps text-pale-blue">{item.date}</time>
             <span className="text-lg leading-7">{item.text}</span>

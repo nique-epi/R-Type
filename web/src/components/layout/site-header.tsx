@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import type * as React from 'react';
 import { useState } from 'react';
-import { Button } from '@/components/primitives/button';
-import { IconButton } from '@/components/primitives/icon-button';
-import { PixelIcon } from '@/components/primitives/pixel-icon';
+import { Button } from '@/components/primitives/actions/button';
+import { IconButton } from '@/components/primitives/actions/icon-button';
+import { PixelIcon } from '@/components/primitives/icons/pixel-icon';
 import { Logo } from '@/components/sprites/logo';
 import type { NavItem } from './nav-item';
 import { SiteMenu, type SiteMenuLabels } from './site-menu';

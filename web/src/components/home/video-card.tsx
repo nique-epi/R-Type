@@ -1,5 +1,5 @@
 import type * as React from 'react';
-import { Triangle } from '@/components/primitives/triangle';
+import { Triangle } from '@/components/primitives/icons/triangle';
 import { cn } from '@/lib/utils';
 
 export type VideoCardProps = Omit<

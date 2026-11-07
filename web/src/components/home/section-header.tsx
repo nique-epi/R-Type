@@ -1,5 +1,5 @@
 import type * as React from 'react';
-import { Eyebrow, Heading } from '@/components/primitives/typography';
+import { Eyebrow, Heading } from '@/components/primitives/text/typography';
 import { cn } from '@/lib/utils';
 
 export type SectionHeaderProps = {

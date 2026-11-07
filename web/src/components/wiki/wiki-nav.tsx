@@ -1,5 +1,9 @@
 import Link from 'next/link';
 import type { NavItem } from '@/components/layout/nav-item';
+import {
+  markedRowVariants,
+  SideMarker,
+} from '@/components/primitives/icons/side-marker';
 import { cn } from '@/lib/utils';
 
 export type WikiNavProps = {
@@ -26,17 +30,11 @@ export function WikiNav({ items, current, 'aria-label': label }: WikiNavProps) {
                 href={item.href}
                 aria-current={shown ? 'page' : undefined}
                 className={cn(
-                  'group/side relative flex w-full items-center py-2.5 pl-[22px] font-pixel text-xs uppercase leading-4 no-underline transition-colors duration-200 hover:text-star-white max-md:w-auto',
-                  shown ? 'text-hud-cyan' : 'text-pale-blue',
+                  markedRowVariants({ marked: shown }),
+                  'font-pixel text-xs uppercase leading-4 no-underline max-md:w-auto',
                 )}
               >
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    'absolute top-1/2 left-0 -mt-1 size-2 bg-hud-cyan transition-transform duration-200',
-                    shown ? 'scale-100' : 'scale-0',
-                  )}
-                />
+                <SideMarker shown={shown} />
                 {item.label}
               </Link>
             </li>

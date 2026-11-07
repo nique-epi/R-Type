@@ -3,10 +3,10 @@
 import type * as React from 'react';
 import { useRef } from 'react';
 import { PlayButton } from '@/components/game/play-button';
-import { CodeBlock } from '@/components/primitives/code-block';
-import { PixelIcon } from '@/components/primitives/pixel-icon';
-import { ProgressBar } from '@/components/primitives/progress-bar';
-import { Tabs } from '@/components/primitives/tabs';
+import { PixelIcon } from '@/components/primitives/icons/pixel-icon';
+import { Tabs } from '@/components/primitives/inputs/tabs';
+import { ProgressBar } from '@/components/primitives/status/progress-bar';
+import { CodeBlock } from '@/components/primitives/text/code-block';
 import { useMotion } from '@/hooks/use-motion';
 import { gsap } from '@/lib/gsap';
 

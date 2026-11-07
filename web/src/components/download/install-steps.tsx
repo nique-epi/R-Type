@@ -1,4 +1,4 @@
-import { CodeBlock } from '@/components/primitives/code-block';
+import { CodeBlock } from '@/components/primitives/text/code-block';
 import { cn } from '@/lib/utils';
 
 export type InstallStep = {

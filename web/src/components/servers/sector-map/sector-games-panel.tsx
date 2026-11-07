@@ -1,5 +1,5 @@
-import { CutFrame } from '@/components/game/cut-frame';
 import { GameText } from '@/components/game/game-text';
+import { ScreenDialog } from '@/components/game/screen-dialog';
 import { cn } from '@/lib/utils';
 
 /** A game in the panel, its words already written. */
@@ -50,97 +50,93 @@ export function SectorGamesPanel({
   noGames,
 }: SectorGamesPanelProps) {
   return (
-    <>
-      <div aria-hidden="true" className="absolute inset-0 z-4 bg-sky/72" />
-      <CutFrame
-        data-games-panel
-        role="dialog"
-        aria-label={label}
-        className="absolute top-0 left-80 z-4 h-84 w-136 bg-hud-cyan"
-      >
-        <GameText className="absolute top-2.5 left-[18px] text-hud-cyan">
-          {title}
+    <ScreenDialog
+      data-games-panel
+      aria-label={label}
+      className="top-0 left-80 h-84 w-136 bg-hud-cyan"
+    >
+      <GameText className="absolute top-2.5 left-[18px] text-hud-cyan">
+        {title}
+      </GameText>
+      <span className="absolute top-[34px] left-[18px] h-0.5 w-126 bg-deep-blue" />
+      {games.length === 0 ? (
+        <GameText className="absolute inset-x-0 top-[74px] text-center text-pale-blue">
+          {noGames}
         </GameText>
-        <span className="absolute top-[34px] left-[18px] h-0.5 w-126 bg-deep-blue" />
-        {games.length === 0 ? (
-          <GameText className="absolute inset-x-0 top-[74px] text-center text-pale-blue">
-            {noGames}
+      ) : (
+        <>
+          <GameText
+            face="small"
+            className="absolute top-[46px] left-[22px] text-pale-blue"
+          >
+            {columns.game}
           </GameText>
-        ) : (
-          <>
-            <GameText
-              face="small"
-              className="absolute top-[46px] left-[22px] text-pale-blue"
-            >
-              {columns.game}
-            </GameText>
-            <GameText
-              face="small"
-              className="absolute top-[46px] left-[238px] text-pale-blue"
-            >
-              {columns.pilots}
-            </GameText>
-            <GameText
-              face="small"
-              className="absolute top-[46px] left-[350px] text-pale-blue"
-            >
-              {columns.state}
-            </GameText>
-            {games.slice(0, PANEL_GAMES).map((game, index) => {
-              const selected = index === chosen;
-              return (
-                <button
-                  // biome-ignore lint/suspicious/noArrayIndexKey: a game is listed by its place on its server.
-                  key={index}
-                  type="button"
-                  data-game-row
-                  aria-label={game['aria-label']}
-                  aria-pressed={selected}
-                  onClick={() => onPick(index)}
+          <GameText
+            face="small"
+            className="absolute top-[46px] left-[238px] text-pale-blue"
+          >
+            {columns.pilots}
+          </GameText>
+          <GameText
+            face="small"
+            className="absolute top-[46px] left-[350px] text-pale-blue"
+          >
+            {columns.state}
+          </GameText>
+          {games.slice(0, PANEL_GAMES).map((game, index) => {
+            const selected = index === chosen;
+            return (
+              <button
+                // biome-ignore lint/suspicious/noArrayIndexKey: a game is listed by its place on its server.
+                key={index}
+                type="button"
+                data-game-row
+                aria-label={game['aria-label']}
+                aria-pressed={selected}
+                onClick={() => onPick(index)}
+                className={cn(
+                  'absolute left-3.5 h-[26px] w-128 cursor-pointer text-left focus-visible:outline-offset-0',
+                  selected ? 'bg-edge-blue text-ink' : 'text-pale-blue',
+                )}
+                style={{ top: FIRST_ROW_TOP + index * ROW_STEP }}
+              >
+                <GameText as="span" className="absolute top-[5px] left-2">
+                  {game.name}
+                </GameText>
+                <GameText
+                  as="span"
                   className={cn(
-                    'absolute left-3.5 h-[26px] w-128 cursor-pointer text-left focus-visible:outline-offset-0',
-                    selected ? 'bg-edge-blue text-ink' : 'text-pale-blue',
+                    'absolute top-[5px] left-56',
+                    selected ? 'text-ink' : 'text-star-white',
                   )}
-                  style={{ top: FIRST_ROW_TOP + index * ROW_STEP }}
                 >
-                  <GameText as="span" className="absolute top-[5px] left-2">
-                    {game.name}
-                  </GameText>
-                  <GameText
-                    as="span"
-                    className={cn(
-                      'absolute top-[5px] left-56',
-                      selected ? 'text-ink' : 'text-star-white',
-                    )}
-                  >
-                    {game.pilots}
-                  </GameText>
-                  <GameText
-                    as="span"
-                    face="small"
-                    className={cn(
-                      'absolute top-[3px] left-84 bg-ink px-1.5 py-[3px]',
-                      game.joinable ? 'text-hud-cyan' : 'text-star-white',
-                    )}
-                  >
-                    {game.state}
-                  </GameText>
-                </button>
-              );
-            })}
-            <GameText
-              face="small"
-              role="status"
-              className={cn(
-                'absolute inset-x-[18px] top-[298px]',
-                DESCRIPTION_TONES[descriptionTone],
-              )}
-            >
-              {description}
-            </GameText>
-          </>
-        )}
-      </CutFrame>
-    </>
+                  {game.pilots}
+                </GameText>
+                <GameText
+                  as="span"
+                  face="small"
+                  className={cn(
+                    'absolute top-[3px] left-84 bg-ink px-1.5 py-[3px]',
+                    game.joinable ? 'text-hud-cyan' : 'text-star-white',
+                  )}
+                >
+                  {game.state}
+                </GameText>
+              </button>
+            );
+          })}
+          <GameText
+            face="small"
+            role="status"
+            className={cn(
+              'absolute inset-x-[18px] top-[298px]',
+              DESCRIPTION_TONES[descriptionTone],
+            )}
+          >
+            {description}
+          </GameText>
+        </>
+      )}
+    </ScreenDialog>
   );
 }

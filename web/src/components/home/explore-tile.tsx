@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type * as React from 'react';
-import { Triangle } from '@/components/primitives/triangle';
+import { Triangle } from '@/components/primitives/icons/triangle';
 
 export type ExploreTileProps = {
   href: string;
