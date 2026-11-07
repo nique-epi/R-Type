@@ -11,6 +11,7 @@
 #include "ConnectedPlayers.hpp"
 #include "DamageRules.hpp"
 #include "EntityIdConstants.hpp"
+#include "EventBus.hpp"
 #include "GameContext.hpp"
 #include "GameInstanceConstants.hpp"
 #include "GameOutcome.hpp"
@@ -97,6 +98,13 @@ void runWorldSystems(GameContext& game, game::World& world) {
   game.systems.get().run(world.components(), engine::SIMULATION_TICK_DURATION);
 }
 
+/** @brief Moves @p state to @p next and tells @p events so, with the state it
+ * left. */
+void changeState(GameState& state, GameState next, engine::EventBus& events) {
+  events.publish(GameStateChanged{.previous = std::exchange(state, next),
+                                  .current = next});
+}
+
 }  // namespace
 
 GameFlow::GameFlow(GameContext& game, WorldSlot& world,
@@ -127,9 +135,7 @@ void GameFlow::advanceState() {
   switch (state_) {
     case GameState::WaitingForPlayers:
       if (game_.everyPlayerIsReady()) {
-        game_.events.get().publish(GameStateChanged{
-            .previous = std::exchange(state_, GameState::Starting),
-            .current = GameState::Starting});
+        changeState(state_, GameState::Starting, game_.events.get());
         startBarrier_.open();
       } else {
         replication_.onWaitingTick();
@@ -137,9 +143,7 @@ void GameFlow::advanceState() {
       break;
     case GameState::Starting:
       if (startBarrier_.advance()) {
-        game_.events.get().publish(GameStateChanged{
-            .previous = std::exchange(state_, GameState::InProgress),
-            .current = GameState::InProgress});
+        changeState(state_, GameState::InProgress, game_.events.get());
         logger_.info("game started, players connected: ",
                      game_.roster.get().connected().size());
       }
@@ -155,9 +159,7 @@ void GameFlow::advanceState() {
       ++finishedTicks_;
       if (finishedTicks_ >= FINISHED_STATE_TICKS) {
         startNewWorld();
-        game_.events.get().publish(GameStateChanged{
-            .previous = std::exchange(state_, GameState::WaitingForPlayers),
-            .current = GameState::WaitingForPlayers});
+        changeState(state_, GameState::WaitingForPlayers, game_.events.get());
       } else {
         replication_.onFinishedTick();
       }
@@ -167,9 +169,7 @@ void GameFlow::advanceState() {
 
 void GameFlow::finish() {
   if (state_ == GameState::InProgress) {
-    game_.events.get().publish(
-        GameStateChanged{.previous = std::exchange(state_, GameState::Finished),
-                         .current = GameState::Finished});
+    changeState(state_, GameState::Finished, game_.events.get());
     finishedTicks_ = 0;
   }
 }

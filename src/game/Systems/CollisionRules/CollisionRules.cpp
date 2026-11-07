@@ -6,6 +6,7 @@
 #include "EventBus.hpp"
 #include "MissileHit.hpp"
 #include "ShipContact.hpp"
+#include "TypedEntity.hpp"
 
 namespace rtype::game {
 
@@ -26,25 +27,25 @@ void CollisionRules::onCollision(const engine::Collision& collision) {
   if (firstType == nullptr || secondType == nullptr) {
     return;
   }
-  publishIfRuleMatches(collision.first, *firstType, collision.second,
-                       *secondType);
-  publishIfRuleMatches(collision.second, *secondType, collision.first,
-                       *firstType);
+  const TypedEntity first{.entity = collision.first, .type = *firstType};
+  const TypedEntity second{.entity = collision.second, .type = *secondType};
+  publishIfRuleMatches(first, second);
+  publishIfRuleMatches(second, first);
 }
 
-void CollisionRules::publishIfRuleMatches(engine::Entity first,
-                                          EntityType firstType,
-                                          engine::Entity second,
-                                          EntityType secondType) {
-  const bool playerMissileHitsEnemy =
-      firstType == EntityType::PlayerMissile && secondType == EntityType::Enemy;
-  const bool enemyMissileHitsPlayer =
-      firstType == EntityType::EnemyMissile && secondType == EntityType::Player;
+void CollisionRules::publishIfRuleMatches(TypedEntity first,
+                                          TypedEntity second) {
+  const bool playerMissileHitsEnemy = first.type == EntityType::PlayerMissile &&
+                                      second.type == EntityType::Enemy;
+  const bool enemyMissileHitsPlayer = first.type == EntityType::EnemyMissile &&
+                                      second.type == EntityType::Player;
   if (playerMissileHitsEnemy || enemyMissileHitsPlayer) {
-    events_.publish(MissileHit{.missile = first, .target = second});
-  } else if (firstType == EntityType::Player &&
-             secondType == EntityType::Enemy) {
-    events_.publish(ShipContact{.player = first, .enemy = second});
+    events_.publish(
+        MissileHit{.missile = first.entity, .target = second.entity});
+  } else if (first.type == EntityType::Player &&
+             second.type == EntityType::Enemy) {
+    events_.publish(
+        ShipContact{.player = first.entity, .enemy = second.entity});
   }
 }
 

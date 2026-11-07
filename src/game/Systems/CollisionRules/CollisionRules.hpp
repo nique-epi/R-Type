@@ -4,6 +4,7 @@
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "SubscriptionHandle.hpp"
+#include "TypedEntity.hpp"
 
 namespace rtype::engine {
 
@@ -37,8 +38,7 @@ class CollisionRules {
 
  private:
   void onCollision(const engine::Collision& collision);
-  void publishIfRuleMatches(engine::Entity first, EntityType firstType,
-                            engine::Entity second, EntityType secondType);
+  void publishIfRuleMatches(TypedEntity first, TypedEntity second);
 
   engine::EventBus& events_;
   engine::ComponentRegistry& components_;
