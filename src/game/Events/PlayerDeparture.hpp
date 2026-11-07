@@ -7,11 +7,12 @@ namespace rtype::game {
 /**
  * @brief Why a player leaves the game: Left when the player said so, TimedOut
  * when nothing was heard from the player for too long, after a crash or a loss
- * of the network.
+ * of the network, Expelled when the host of the server expelled the player.
  */
 enum class DepartureCause : std::uint8_t {
   Left,
   TimedOut,
+  Expelled,
 };
 
 /**
