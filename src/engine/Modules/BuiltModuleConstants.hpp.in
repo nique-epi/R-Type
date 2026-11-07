@@ -1,0 +1,23 @@
+#pragma once
+
+/**
+ * @file
+ * @brief Which optional modules this build compiled, one per RTYPE_MODULE_*
+ * option of the root CMakeLists.txt. CMake writes this header into the build
+ * folder each time it configures: change an option, never the written file.
+ *
+ * Each macro is 1 when its module is compiled and 0 when it is left out, so
+ * a list of modules names a module only under `#if RTYPE_MODULE_<NAME>`, and
+ * the header of a module left out is never read. Each constant says the same
+ * to code that needs no `#if`, such as a test that skips when its module is
+ * absent.
+ */
+
+#cmakedefine01 RTYPE_MODULE_AUDIO
+
+namespace rtype::engine {
+
+/** @brief Whether the client holds its sound module, `audio`. */
+constexpr bool AUDIO_MODULE_BUILT = RTYPE_MODULE_AUDIO == 1;
+
+}  // namespace rtype::engine

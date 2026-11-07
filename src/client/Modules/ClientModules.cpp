@@ -2,8 +2,8 @@
 #include <memory>
 #include <vector>
 #include "AssetLoad.hpp"
+#include "BuiltModuleConstants.hpp"
 #include "ClientAssetsModule.hpp"
-#include "ClientAudioModule.hpp"
 #include "ClientConnectionModule.hpp"
 #include "ClientGameModule.hpp"
 #include "ClientLobbyModule.hpp"
@@ -19,6 +19,9 @@
 #include "LogLaunchOptions.hpp"
 #include "ScreenAssets.hpp"
 #include "SystemClock.hpp"
+#if RTYPE_MODULE_AUDIO
+#include "ClientAudioModule.hpp"
+#endif
 
 namespace rtype::client {
 
@@ -35,8 +38,10 @@ std::vector<std::unique_ptr<engine::IModule>> clientModules(
       launchOptions.networkConditions()));
   modules.push_back(std::make_unique<ClientMetricsModule>(
       std::make_shared<engine::SystemClock>(), launchOptions.trafficCsvFile()));
+#if RTYPE_MODULE_AUDIO
   modules.push_back(
       std::make_unique<ClientAudioModule>(launchOptions.audioMode()));
+#endif
   modules.push_back(
       std::make_unique<ClientScreensModule>(launchOptions.serverChoice()));
   modules.push_back(std::make_unique<ClientMenusModule>());

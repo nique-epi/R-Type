@@ -37,3 +37,7 @@ std::size_t ClientModulesFixture::positionOf(std::string_view name) {
       });
   return static_cast<std::size_t>(found - listed.begin());
 }
+
+bool ClientModulesFixture::lists(std::string_view name) {
+  return positionOf(name) < modules().size();
+}

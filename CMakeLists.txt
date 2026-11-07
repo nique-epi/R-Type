@@ -9,6 +9,17 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(BUILD_TESTS "Build unit tests" OFF)
 
+include(CMakeDependentOption)
+include(FeatureSummary)
+
+# One option per optional module. OFF leaves the folder of the module out of
+# the build, its Contract/ excepted, and its line out of the list of its
+# program. CMake writes the choices into BuiltModuleConstants.hpp, which the
+# lists of modules include (see src/engine/Modules/).
+option(RTYPE_MODULE_AUDIO "Build the sound module of the client" ON)
+
+add_feature_info(audio RTYPE_MODULE_AUDIO "the sound of the client")
+
 if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
@@ -341,6 +352,8 @@ rtype_forbid_links(rtype_server_replication_wire "SFML::" "asio::" "rtype_networ
 set(RTYPE_MASTER_FORBIDDEN_LINKS "SFML::" "asio::" "rtype_network_asio" "rtype_game" "rtype_client" "rtype_server")
 rtype_forbid_reachable_links(rtype_master_modules ${RTYPE_MASTER_FORBIDDEN_LINKS})
 rtype_forbid_reachable_links(rtype_master_launch_options ${RTYPE_MASTER_FORBIDDEN_LINKS})
+
+feature_summary(WHAT ENABLED_FEATURES DISABLED_FEATURES)
 
 if(BUILD_TESTS)
   enable_testing()
