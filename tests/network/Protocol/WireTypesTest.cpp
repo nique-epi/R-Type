@@ -11,7 +11,12 @@
 
 namespace rtype::network {
 
+using testing::ACCENTED_CAPITAL_NAME;
 using testing::ACCENTED_LETTER;
+using testing::ACCENTED_SMALL_NAME;
+using testing::ACE_IN_CAPITALS;
+using testing::ACE_IN_SMALL_LETTERS;
+using testing::ACER;
 using testing::BEYOND_RANGE_X;
 using testing::BEYOND_RANGE_Y;
 using testing::byteSequence;
@@ -260,6 +265,19 @@ TEST(WireTypes, RejectsATextHoldingALineFeedAsPrintable) {
  */
 TEST(WireTypes, RejectsIllFormedUtf8AsPrintable) {
   EXPECT_FALSE(isPrintableUtf8(ILL_FORMED_UTF8.front()));
+}
+
+/**
+ * Given a nickname in capitals and in small letters, a longer one, and a
+ * nickname that starts with an accented capital, in both cases
+ * When they are compared
+ * Then the ASCII letters match whatever their case, the accented ones only as
+ * they are, and a longer nickname is another one
+ */
+TEST(WireTypes, ComparesNicknamesWithoutTheCaseOfAsciiLetters) {
+  EXPECT_TRUE(sameNickname(ACE_IN_CAPITALS, ACE_IN_SMALL_LETTERS));
+  EXPECT_FALSE(sameNickname(ACCENTED_CAPITAL_NAME, ACCENTED_SMALL_NAME));
+  EXPECT_FALSE(sameNickname(ACE_IN_CAPITALS, ACER));
 }
 
 /**

@@ -110,6 +110,15 @@ bool isValidNickname(std::string_view nickname) {
          nickname.size() <= MAXIMUM_NICKNAME_SIZE && isPrintableUtf8(nickname);
 }
 
+bool sameNickname(std::string_view first, std::string_view second) {
+  const auto lowered = [](char letter) noexcept {
+    return letter >= 'A' && letter <= 'Z'
+               ? static_cast<char>(letter - 'A' + 'a')
+               : letter;
+  };
+  return std::ranges::equal(first, second, {}, lowered, lowered);
+}
+
 bool isValidBoundedText(std::string_view text, std::size_t maximumSize) {
   return !text.empty() && text.size() <= maximumSize && isPrintableUtf8(text);
 }

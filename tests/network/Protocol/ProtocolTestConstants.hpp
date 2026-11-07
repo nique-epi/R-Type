@@ -326,4 +326,16 @@ constexpr std::size_t DATAGRAM_PAYLOAD_LIMIT = 1175;
  */
 constexpr std::string_view FAILED_HANDLER_LINE_TEXT = "its handler threw";
 
+/**
+ * @brief One nickname in capitals and in small letters, a longer one, and a
+ * nickname that starts with an accented capital, in both cases: the ASCII
+ * letters name one pilot whatever their case, the accented ones only as they
+ * are.
+ */
+constexpr std::string_view ACE_IN_CAPITALS = "ACE";
+constexpr std::string_view ACE_IN_SMALL_LETTERS = "ace";
+constexpr std::string_view ACER = "ACER";
+constexpr std::string_view ACCENTED_CAPITAL_NAME = "\xC3\x89LAN";
+constexpr std::string_view ACCENTED_SMALL_NAME = "\xC3\xA9LAN";
+
 }  // namespace rtype::network::testing

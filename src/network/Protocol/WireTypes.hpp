@@ -78,6 +78,14 @@ float readCoordinate(ByteReader& reader);
 [[nodiscard]] bool isValidNickname(std::string_view nickname);
 
 /**
+ * @returns Whether @p first and @p second name one pilot: the same bytes, the
+ * ASCII letters compared without regard to case, so ACE and ace are one
+ * nickname and ÉLAN and éLAN are two.
+ */
+[[nodiscard]] bool sameNickname(std::string_view first,
+                                std::string_view second);
+
+/**
  * @returns Whether @p name is a name a game server may have: 1 to
  * MAXIMUM_SERVER_NAME_SIZE bytes of printable UTF-8 (isPrintableUtf8()).
  */
