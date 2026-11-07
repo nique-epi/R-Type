@@ -78,7 +78,7 @@ TEST(BossArrivalEffects, TheRumbleStopsWithTheWarning) {
  */
 TEST(BossArrivalEffects, AStepShakesTheCamera) {
   EffectScene scene;
-  BossArrivalEffects arrival(scene.effects().tools());
+  const BossArrivalEffects arrival(scene.effects().tools());
 
   arrival.advance(FIRST_STEP - ONE_TICK, FIRST_STEP);
 
@@ -95,7 +95,7 @@ TEST(BossArrivalEffects, WithFlashesReducedTheCameraStaysStill) {
   EffectScene scene;
   scene.advance(Duration::zero(),
                 EffectPreferences{.flashes = FlashPreference::Reduced});
-  BossArrivalEffects arrival(scene.effects().tools());
+  const BossArrivalEffects arrival(scene.effects().tools());
 
   arrival.advance(FIRST_STEP - ONE_TICK, FIRST_STEP);
 
@@ -111,7 +111,7 @@ TEST(BossArrivalEffects, TheRoarOpensTwoShockwavesAtTheMouthOfTheBoss) {
   EffectScene scene;
   const Entity boss = scene.bydoAt(ROARING_BOSS_CENTER);
   scene.components().add(boss, NetworkIdentity{.networkId = ROARING_BOSS_ID});
-  BossArrivalEffects arrival(scene.effects().tools());
+  const BossArrivalEffects arrival(scene.effects().tools());
 
   arrival.playRoar(ROARING_BOSS_ID);
 
@@ -130,7 +130,7 @@ TEST(BossArrivalEffects, TheRoarOpensTwoShockwavesAtTheMouthOfTheBoss) {
  */
 TEST(BossArrivalEffects, ARoarOfAnUnknownBossOpensNoShockwave) {
   EffectScene scene;
-  BossArrivalEffects arrival(scene.effects().tools());
+  const BossArrivalEffects arrival(scene.effects().tools());
 
   arrival.playRoar(UNKNOWN_BOSS_ID);
 
