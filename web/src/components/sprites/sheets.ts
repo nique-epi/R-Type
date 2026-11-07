@@ -76,6 +76,14 @@ export const ENEMY_SPRITES: Record<
   },
 };
 
+/**
+ * The whole scale that draws an enemy at most `pixels` wide: a sprite of
+ * 24 pixels at 216 is 9, one of 40 pixels is 5.
+ */
+export function enemyScaleFor(kind: EnemyKind, pixels: number): number {
+  return Math.max(1, Math.floor(pixels / ENEMY_SPRITES[kind].frame.width));
+}
+
 /** The professor of the help screens, first frame. */
 export const PROFESSOR_FRAME: SpriteFrame = {
   x: 0,

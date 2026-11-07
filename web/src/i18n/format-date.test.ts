@@ -15,4 +15,10 @@ describe('formatDay', () => {
     expect(formatDay('2026-11-06T23:59:59Z', 'fr')).toBe('6 novembre 2026');
     expect(formatDay('2026-11-07T00:00:00Z', 'fr')).toBe('7 novembre 2026');
   });
+
+  it('writes a short month for a list', () => {
+    expect(formatDay('2026-11-06T21:31:56Z', 'fr', 'short')).toBe(
+      '6 nov. 2026',
+    );
+  });
 });
