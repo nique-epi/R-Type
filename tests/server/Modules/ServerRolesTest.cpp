@@ -32,7 +32,7 @@ TEST_F(ServerRolesFixture, ASettingOfTheGamesIsDeclaredByTheGamesOnly) {
   const std::set<std::string> supervisor = supervisorSettings();
   const std::set<std::string> game = gameSettings();
 
-  for (const std::string& name : exampleSettings()) {
+  for (const std::string& name : exampleSettingsOfThisBuild()) {
     if (std::ranges::find(GAME_SETTING_NAMES, name) !=
         GAME_SETTING_NAMES.end()) {
       SCOPED_TRACE(name);
@@ -43,14 +43,15 @@ TEST_F(ServerRolesFixture, ASettingOfTheGamesIsDeclaredByTheGamesOnly) {
 }
 
 /**
- * Given the settings of server.cfg.example, and the modules of a supervisor
+ * Given the settings of server.cfg.example of the modules this build holds,
+ * and the modules of a supervisor
  * When each setting the catalogue does not give the games is looked for
  * Then the supervisor declares it, so the line it keeps is never refused
  */
 TEST_F(ServerRolesFixture, AnyOtherSettingOfTheExampleIsTheSupervisors) {
   const std::set<std::string> supervisor = supervisorSettings();
 
-  for (const std::string& name : exampleSettings()) {
+  for (const std::string& name : exampleSettingsOfThisBuild()) {
     if (std::ranges::find(GAME_SETTING_NAMES, name) ==
         GAME_SETTING_NAMES.end()) {
       SCOPED_TRACE(name);

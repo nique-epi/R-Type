@@ -1,1 +1,1 @@
-target_sources(client_audio_tests PRIVATE SilentAudioServiceTest.cpp)
+target_sources(client_null_audio_tests PRIVATE SilentAudioServiceTest.cpp)

@@ -1,12 +1,15 @@
 #include "RtypeGameModules.hpp"
 #include <memory>
 #include <vector>
-#include "ChatModule.hpp"
+#include "BuiltModuleConstants.hpp"
 #include "IGameModule.hpp"
 #include "IResultsArchive.hpp"
 #include "ReplicationModule.hpp"
 #include "ResultsModule.hpp"
 #include "RtypeRulesModule.hpp"
+#if RTYPE_MODULE_CHAT
+#include "ChatModule.hpp"
+#endif
 
 namespace rtype::server {
 
@@ -16,7 +19,9 @@ std::vector<std::unique_ptr<IGameModule>> rtypeGameModules(
   modules.push_back(std::make_unique<ReplicationModule>());
   modules.push_back(std::make_unique<RtypeRulesModule>());
   modules.push_back(std::make_unique<ResultsModule>(results));
+#if RTYPE_MODULE_CHAT
   modules.push_back(std::make_unique<ChatModule>());
+#endif
   return modules;
 }
 

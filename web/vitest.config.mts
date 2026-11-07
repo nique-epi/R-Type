@@ -14,6 +14,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    setupFiles: ['./src/test/match-media.ts'],
     env: {
       MASTER_URL: 'http://master.test:8080',
     },
