@@ -3,6 +3,8 @@
 #include <vector>
 #include "Collision.hpp"
 #include "CollisionRules.hpp"
+#include "CollisionRulesFixtures.hpp"
+#include "CollisionRulesOrderFixture.hpp"
 #include "CollisionScene.hpp"
 #include "CollisionSystem.hpp"
 #include "CollisionTestConstants.hpp"
@@ -23,58 +25,17 @@ using rtype::game::EntityType;
 using rtype::game::MissileHit;
 using rtype::game::ShipContact;
 
-namespace {
-
-struct Recorded {
-  std::vector<MissileHit> missileHits;
-  std::vector<ShipContact> shipContacts;
-};
-
-void record(CollisionScene& scene, Recorded& recorded) {
-  scene.events.subscribe<MissileHit>([&recorded](const MissileHit& hit) {
-    recorded.missileHits.push_back(hit);
-  });
-  scene.events.subscribe<ShipContact>([&recorded](const ShipContact& contact) {
-    recorded.shipContacts.push_back(contact);
-  });
-}
-
-class CollisionRulesInAnyOrder : public ::testing::TestWithParam<bool> {
- protected:
-  [[nodiscard]] static Collision collisionOf(Entity entity, Entity other) {
-    return GetParam() ? Collision{.first = other, .second = entity}
-                      : Collision{.first = entity, .second = other};
-  }
-};
-
-void expectNoEventFor(EntityType firstType, EntityType secondType) {
-  CollisionScene scene;
-  const Entity first = scene.spawn(firstType, 0.0F, 0.0F);
-  const Entity second = scene.spawn(secondType, 0.0F, 0.0F);
-  const CollisionRules rules(scene.events, scene.components);
-  Recorded recorded;
-  record(scene, recorded);
-
-  scene.events.publish(Collision{.first = first, .second = second});
-  scene.events.dispatch();
-
-  EXPECT_TRUE(recorded.missileHits.empty());
-  EXPECT_TRUE(recorded.shipContacts.empty());
-}
-
-}  // namespace
-
 /**
  * Given a player missile and an enemy
  * When a Collision names them, in either order
  * Then one MissileHit is published, with the missile and the enemy as target
  */
-TEST_P(CollisionRulesInAnyOrder, PlayerMissileHitsEnemy) {
+TEST_P(CollisionRulesOrderFixture, PlayerMissileHitsEnemy) {
   CollisionScene scene;
   const Entity missile = scene.spawn(EntityType::PlayerMissile, 0.0F, 0.0F);
   const Entity enemy = scene.spawn(EntityType::Enemy, 0.0F, 0.0F);
   const CollisionRules rules(scene.events, scene.components);
-  Recorded recorded;
+  RecordedCollisionEvents recorded;
   record(scene, recorded);
 
   scene.events.publish(collisionOf(missile, enemy));
@@ -90,12 +51,12 @@ TEST_P(CollisionRulesInAnyOrder, PlayerMissileHitsEnemy) {
  * When a Collision names them, in either order
  * Then one MissileHit is published, with the missile and the player as target
  */
-TEST_P(CollisionRulesInAnyOrder, EnemyMissileHitsPlayer) {
+TEST_P(CollisionRulesOrderFixture, EnemyMissileHitsPlayer) {
   CollisionScene scene;
   const Entity missile = scene.spawn(EntityType::EnemyMissile, 0.0F, 0.0F);
   const Entity player = scene.spawn(EntityType::Player, 0.0F, 0.0F);
   const CollisionRules rules(scene.events, scene.components);
-  Recorded recorded;
+  RecordedCollisionEvents recorded;
   record(scene, recorded);
 
   scene.events.publish(collisionOf(missile, player));
@@ -111,12 +72,12 @@ TEST_P(CollisionRulesInAnyOrder, EnemyMissileHitsPlayer) {
  * When a Collision names them, in either order
  * Then one ShipContact is published, naming the player and the enemy
  */
-TEST_P(CollisionRulesInAnyOrder, PlayerTouchesEnemy) {
+TEST_P(CollisionRulesOrderFixture, PlayerTouchesEnemy) {
   CollisionScene scene;
   const Entity player = scene.spawn(EntityType::Player, 0.0F, 0.0F);
   const Entity enemy = scene.spawn(EntityType::Enemy, 0.0F, 0.0F);
   const CollisionRules rules(scene.events, scene.components);
-  Recorded recorded;
+  RecordedCollisionEvents recorded;
   record(scene, recorded);
 
   scene.events.publish(collisionOf(player, enemy));
@@ -127,7 +88,7 @@ TEST_P(CollisionRulesInAnyOrder, PlayerTouchesEnemy) {
   EXPECT_TRUE(recorded.missileHits.empty());
 }
 
-INSTANTIATE_TEST_SUITE_P(BothOrders, CollisionRulesInAnyOrder,
+INSTANTIATE_TEST_SUITE_P(BothOrders, CollisionRulesOrderFixture,
                          ::testing::Bool());
 
 /**
@@ -185,7 +146,7 @@ TEST(CollisionRules, IgnoresAnEntityWithoutAType) {
   const Entity untyped = scene.entities.create();
   const Entity enemy = scene.spawn(EntityType::Enemy, 0.0F, 0.0F);
   const CollisionRules rules(scene.events, scene.components);
-  Recorded recorded;
+  RecordedCollisionEvents recorded;
   record(scene, recorded);
 
   scene.events.publish(Collision{.first = untyped, .second = enemy});
@@ -205,7 +166,7 @@ TEST(CollisionRules, IgnoresAnEntityDestroyedBeforeDelivery) {
   const Entity missile = scene.spawn(EntityType::PlayerMissile, 0.0F, 0.0F);
   const Entity enemy = scene.spawn(EntityType::Enemy, 0.0F, 0.0F);
   const CollisionRules rules(scene.events, scene.components);
-  Recorded recorded;
+  RecordedCollisionEvents recorded;
   record(scene, recorded);
   scene.events.publish(Collision{.first = missile, .second = enemy});
 
@@ -224,7 +185,7 @@ TEST(CollisionRules, StopsListeningWhenDestroyed) {
   CollisionScene scene;
   const Entity missile = scene.spawn(EntityType::PlayerMissile, 0.0F, 0.0F);
   const Entity enemy = scene.spawn(EntityType::Enemy, 0.0F, 0.0F);
-  Recorded recorded;
+  RecordedCollisionEvents recorded;
   record(scene, recorded);
   {
     const CollisionRules rules(scene.events, scene.components);
@@ -250,7 +211,7 @@ TEST(CollisionRules, ReportsAMissileHitInTheTickItHappens) {
   const CollisionRules rules(scene.events, scene.components);
   SystemScheduler scheduler;
   scheduler.add(std::make_unique<CollisionSystem>(scene.events));
-  Recorded recorded;
+  RecordedCollisionEvents recorded;
   record(scene, recorded);
 
   scheduler.run(scene.components, SIMULATION_TICK_DURATION);
