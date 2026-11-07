@@ -8,6 +8,7 @@
 #include "EntityTypeEntry.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
+#include "ShipGun.hpp"
 
 namespace rtype::server {
 
@@ -29,6 +30,9 @@ struct ConnectionAcceptorParts {
   /** @brief The entity types of the game, entry n - 1 for the type numbered
    * n, which every ConnectionAccepted carries (see entityTypeTableOf()). */
   std::vector<network::EntityTypeEntry> entityTypes;
+  /** @brief The gun of the ships, which every ConnectionAccepted carries after
+   * the types (see shipGunOf()). */
+  network::ShipGun shipGun{};
 };
 
 }  // namespace rtype::server

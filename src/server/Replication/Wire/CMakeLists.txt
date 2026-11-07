@@ -19,6 +19,8 @@ target_link_libraries(rtype_server_replication_wire
     rtype_network_protocol
     rtype_network_transport
     rtype_server_sessions_roster
+  PRIVATE
+    rtype_game_behaviours_paths
 )
 
 rtype_enable_warnings(rtype_server_replication_wire)

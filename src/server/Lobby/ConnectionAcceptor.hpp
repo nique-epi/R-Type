@@ -21,6 +21,7 @@
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "RequestReader.hpp"
+#include "ShipGun.hpp"
 #include "ThrottledLog.hpp"
 #include "TimeConstants.hpp"
 
@@ -122,6 +123,7 @@ class ConnectionAcceptor {
   std::function<void(const network::Endpoint&, std::uint64_t)> admit_;
   std::function<void(ConnectedPlayer&)> onPlayerJoined_;
   std::vector<network::EntityTypeEntry> entityTypes_;
+  network::ShipGun shipGun_;
   network::CookieIssuer cookies_;
   std::random_device random_;
   bool gameInProgress_{false};

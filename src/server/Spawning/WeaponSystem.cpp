@@ -23,12 +23,15 @@
 #include "EventBus.hpp"
 #include "Gun.hpp"
 #include "Intent.hpp"
+#include "MessageDelivery.hpp"
+#include "MessagePayload.hpp"
 #include "Muzzle.hpp"
 #include "NetworkIdentity.hpp"
 #include "PendingBurst.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "ProjectileStartPosition.hpp"
+#include "ProtocolConstants.hpp"
 #include "ShardBurst.hpp"
 #include "WeaponShot.hpp"
 #include "WeaponSystemConstants.hpp"
@@ -39,12 +42,14 @@ namespace rtype::server {
 
 namespace {
 
-/** @brief A projectile about to appear: its sheet, where it starts, and the
- * player it belongs to, for a missile of a player. */
+/** @brief A projectile about to appear: its sheet, where it starts, and, for
+ * a missile of a player, the player it belongs to and the inputNumber of the
+ * newest input applied to that player's ship. */
 struct ProjectileLaunch {
   std::reference_wrapper<const game::EntitySheet> sheet;
   game::Position start{};
   std::optional<std::uint8_t> owner;
+  std::uint32_t firingInput{network::NO_FIRING_INPUT};
 };
 
 /**
@@ -93,18 +98,21 @@ std::optional<ProjectileLaunch> launchOf(const WeaponShot& shot,
   if (sheet == nullptr) {
     return std::nullopt;
   }
-  std::optional<std::uint8_t> owner;
+  ProjectileLaunch launch{
+      .sheet = *sheet,
+      .start = game::projectileStartPosition(shot.muzzle, sheet->hitbox),
+      .owner = std::nullopt,
+      .firingInput = network::NO_FIRING_INPUT};
   if (sheet->side == game::EntityType::PlayerMissile) {
     const ConnectedPlayer* const shooter = roster.findByShip(shot.shooterId);
     if (shooter == nullptr) {
       return std::nullopt;
     }
-    owner = shooter->playerNumber;
+    launch.owner = shooter->playerNumber;
+    launch.firingInput =
+        shooter->appliedInputNumber.value_or(network::NO_FIRING_INPUT);
   }
-  return ProjectileLaunch{
-      .sheet = *sheet,
-      .start = game::projectileStartPosition(shot.muzzle, sheet->hitbox),
-      .owner = owner};
+  return launch;
 }
 
 /** @returns Where the shard @p index of @p pending appears and steers from:
@@ -175,10 +183,15 @@ std::optional<network::EntitySpawned> WeaponSystem::spawnProjectile(
   if (!launch.has_value()) {
     return std::nullopt;
   }
-  return spawnAt(
+  std::optional<network::EntitySpawned> spawned = spawnAt(
       launch->sheet.get(),
       game::BodyPlacement{.position = launch->start, .origin = launch->start},
       launch->owner);
+  if (spawned.has_value()) {
+    spawned->owner = launch->owner.value_or(network::NO_OWNER);
+    spawned->firingInput = launch->firingInput;
+  }
+  return spawned;
 }
 
 std::optional<network::EntitySpawned> WeaponSystem::spawnAt(
@@ -195,6 +208,11 @@ std::optional<network::EntitySpawned> WeaponSystem::spawnAt(
 }
 
 void WeaponSystem::announce(const network::EntitySpawned& projectile) {
+  if (projectile.owner != network::NO_OWNER) {
+    guaranteeToEveryPlayer(*roster_, send_,
+                           network::encodedMessage(projectile));
+    return;
+  }
   for (ConnectedPlayer* const player : roster_->connected()) {
     sendEntitySpawned(send_, *player, projectile);
   }

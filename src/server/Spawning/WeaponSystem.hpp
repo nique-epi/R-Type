@@ -38,9 +38,12 @@ namespace rtype::server {
  * A missile of a player belongs to the player whose ship fired it, so a kill is
  * credited to it; a ship that belongs to no connected player fires nothing.
  * Every connected player is sent an EntitySpawned for each projectile, as the
- * Entities section of the protocol page describes. When every network id was
- * given, no projectile appears, a warning is logged, and the Gun counts its
- * interval all the same.
+ * Entities section of the protocol page describes. The one of a missile of a
+ * player names that player and the inputNumber of the newest input applied to
+ * its ship, so that player's client can tell the missile it predicted, and is
+ * guaranteed (see the Own missiles section of the protocol page). When every
+ * network id was given, no projectile appears, a warning is logged, and the Gun
+ * counts its interval all the same.
  *
  * Then every projectile with a ShardBurst counts one tick down; one whose time
  * came is destroyed, announced on the event bus with an EntityDestruction
@@ -78,7 +81,8 @@ class WeaponSystem {
   void fire(const WeaponShot& shot);
 
   /**
-   * @returns The EntitySpawned of the projectile created for @p shot, or
+   * @returns The EntitySpawned of the projectile created for @p shot, naming
+   * its owner and its firing input for a missile of a player, or
    * nothing when every network id was given, which is logged, or when the
    * projectile is a missile of a player whose shooter belongs to no connected
    * player.
@@ -95,7 +99,8 @@ class WeaponSystem {
       const game::EntitySheet& sheet, game::BodyPlacement placement,
       std::optional<std::uint8_t> owner);
 
-  /** @brief Sends @p projectile to every connected player. */
+  /** @brief Sends @p projectile to every connected player: once, or as a
+   * guaranteed message for a missile of a player. */
   void announce(const network::EntitySpawned& projectile);
 
   /** @brief Counts the tick on every ShardBurst, and lists in bursts_ the

@@ -35,6 +35,7 @@
 #include "SentDatagrams.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShipGun.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
@@ -63,6 +64,10 @@ using testing::PLAYER_NICKNAME;
 using testing::playerEndpoint;
 using testing::REFUSAL_DATAGRAM_SIZE;
 using testing::REQUEST_TIME;
+using testing::SHIPPED_GUN_INTERVAL;
+using testing::SHIPPED_MISSILE_TYPE;
+using testing::SHIPPED_MISSILE_VELOCITY;
+using testing::SHIPPED_SHIP_TYPE;
 using testing::SHORTEST_NICKNAME;
 
 /**
@@ -676,26 +681,76 @@ TEST(ConnectionAcceptor, AnswersTheNextRequestAfterOneWhoseAnswerThrew) {
  * ships with
  * When it sends its request again with the cookie of the challenge
  * Then its acceptance lists every sheet in the order of its name, which is the
- * order of its number, with its side
+ * order of its number, with its side and its box
  */
 TEST_F(ConnectionAcceptorFixture, AcceptsWithTheEntityTypesOfTheGame) {
   connect(playerEndpoint(0));
 
-  EXPECT_EQ(
-      onlyMessageIn<network::ConnectionAccepted>(lastAnswer()).types,
-      (std::vector<network::EntityTypeEntry>{
-          {.side = network::EntitySide::Enemy, .name = "bydomancer"},
-          {.side = network::EntitySide::Enemy, .name = "drifter"},
-          {.side = network::EntitySide::Enemy, .name = "drillback"},
-          {.side = network::EntitySide::EnemyMissile, .name = "enemy_missile"},
-          {.side = network::EntitySide::EnemyMissile, .name = "orb_shard"},
-          {.side = network::EntitySide::PlayerMissile,
-           .name = "player_missile"},
-          {.side = network::EntitySide::Enemy, .name = "reaper"},
-          {.side = network::EntitySide::EnemyMissile, .name = "rune_orb"},
-          {.side = network::EntitySide::Player, .name = "ship"},
-          {.side = network::EntitySide::Enemy, .name = "voltjelly"},
-          {.side = network::EntitySide::Enemy, .name = "weaver"}}));
+  EXPECT_EQ(onlyMessageIn<network::ConnectionAccepted>(lastAnswer()).types,
+            (std::vector<network::EntityTypeEntry>{
+                {.side = network::EntitySide::Enemy,
+                 .name = "bydomancer",
+                 .hitboxWidth = 96,
+                 .hitboxHeight = 96},
+                {.side = network::EntitySide::Enemy,
+                 .name = "drifter",
+                 .hitboxWidth = 96,
+                 .hitboxHeight = 96},
+                {.side = network::EntitySide::Enemy,
+                 .name = "drillback",
+                 .hitboxWidth = 96,
+                 .hitboxHeight = 96},
+                {.side = network::EntitySide::EnemyMissile,
+                 .name = "enemy_missile",
+                 .hitboxWidth = 32,
+                 .hitboxHeight = 32},
+                {.side = network::EntitySide::EnemyMissile,
+                 .name = "orb_shard",
+                 .hitboxWidth = 20,
+                 .hitboxHeight = 20},
+                {.side = network::EntitySide::PlayerMissile,
+                 .name = "player_missile",
+                 .hitboxWidth = 64,
+                 .hitboxHeight = 24},
+                {.side = network::EntitySide::Enemy,
+                 .name = "reaper",
+                 .hitboxWidth = 96,
+                 .hitboxHeight = 96},
+                {.side = network::EntitySide::EnemyMissile,
+                 .name = "rune_orb",
+                 .hitboxWidth = 36,
+                 .hitboxHeight = 36},
+                {.side = network::EntitySide::Player,
+                 .name = "ship",
+                 .hitboxWidth = 128,
+                 .hitboxHeight = 64},
+                {.side = network::EntitySide::Enemy,
+                 .name = "voltjelly",
+                 .hitboxWidth = 96,
+                 .hitboxHeight = 96},
+                {.side = network::EntitySide::Enemy,
+                 .name = "weaver",
+                 .hitboxWidth = 96,
+                 .hitboxHeight = 96}}));
+}
+
+/**
+ * Given a sender that got a challenge, on a server of the sheets the game
+ * ships with
+ * When it sends its request again with the cookie of the challenge
+ * Then its acceptance carries the gun of ship, type 9, firing player_missile,
+ * type 6, every 20 ticks from the start at 960 units per second
+ */
+TEST_F(ConnectionAcceptorFixture, AcceptsWithTheGunOfTheShips) {
+  connect(playerEndpoint(0));
+
+  EXPECT_EQ(onlyMessageIn<network::ConnectionAccepted>(lastAnswer()).shipGun,
+            (network::ShipGun{.shipType = SHIPPED_SHIP_TYPE,
+                              .projectileType = SHIPPED_MISSILE_TYPE,
+                              .intervalTicks = SHIPPED_GUN_INTERVAL,
+                              .firstShotTicks = 0,
+                              .velocityX = SHIPPED_MISSILE_VELOCITY,
+                              .velocityY = 0.0F}));
 }
 
 /**

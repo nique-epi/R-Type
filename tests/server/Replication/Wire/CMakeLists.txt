@@ -1,1 +1,2 @@
-target_sources(server_replication_tests PRIVATE GameEventEncoderTest.cpp)
+target_sources(server_replication_tests PRIVATE GameEventEncoderTest.cpp EntityTypeTableTest.cpp)
+target_include_directories(server_replication_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
