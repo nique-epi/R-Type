@@ -4,7 +4,6 @@
 #include <string>
 #include <utility>
 #include "Anchor.hpp"
-#include "BackgroundConstants.hpp"
 #include "Caption.hpp"
 #include "ComponentRegistry.hpp"
 #include "DownedShip.hpp"
@@ -13,14 +12,13 @@
 #include "EffectTools.hpp"
 #include "Entity.hpp"
 #include "InterfaceColorConstants.hpp"
-#include "InterfaceConstants.hpp"
 #include "Layer.hpp"
 #include "Lifetime.hpp"
 #include "PilotShades.hpp"
 #include "Position.hpp"
-#include "RenderingConstants.hpp"
 #include "Shooter.hpp"
 #include "Sprite.hpp"
+#include "SpriteFrame.hpp"
 #include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 
@@ -40,16 +38,13 @@ Caption cueCaption(std::string text, sf::Color color) {
                  .visible = true};
 }
 
-/** @returns Where a cue stands over a sprite @p spriteHeight pixels tall
- * centered on @p center: across from its center, the middle of its line half a
+/** @returns Where a cue stands over a sprite drawn with @p frame, centered on
+ * @p center: across from its center, the middle of its line half a
  * line plus CUE_GAP pixels above the top of the sprite, since a caption is
  * centered on its place. */
-game::Position cuePlaceOver(game::Position center, int spriteHeight) {
-  const float rise =
-      ((static_cast<float>(spriteHeight + TEXT_LINE_HEIGHT) * HALF) +
-       static_cast<float>(CUE_GAP)) *
-      BACKGROUND_PIXEL_SIZE;
-  return game::Position{.x = center.x, .y = center.y - rise};
+game::Position cuePlaceOver(game::Position center, game::SpriteFrame frame) {
+  return game::Position{.x = center.x,
+                        .y = center.y - captionRiseOver(frame, CUE_GAP)};
 }
 
 }  // namespace
@@ -66,7 +61,7 @@ void SoundCues::showEnemyShot(game::Position missile) const {
   if (sprite == nullptr) {
     return;
   }
-  const game::Position place = cuePlaceOver(bydo->center, sprite->frame.height);
+  const game::Position place = cuePlaceOver(bydo->center, sprite->frame);
   const engine::Entity cue =
       addCue(cueCaption(SHOT_CUE_TEXT, WARNING_ORANGE), place, SHOT_CUE_LIFE);
   components.add(cue, Anchor{.entity = bydo->ship,
@@ -80,10 +75,10 @@ void SoundCues::showPilotHit(engine::Entity ship) const {
     return;
   }
   const PilotShades& shades = tools_.shades;
-  static_cast<void>(addCue(
-      cueCaption(pilotLabelOf(downed->pilotColor) + HIT_CUE_TEXT,
-                 pilotLightOf(shades.palette, downed->pilotColor)),
-      cuePlaceOver(downed->center, downed->sprite.frame.height), HIT_CUE_LIFE));
+  static_cast<void>(
+      addCue(cueCaption(pilotLabelOf(downed->pilotColor) + HIT_CUE_TEXT,
+                        pilotLightOf(shades.palette, downed->pilotColor)),
+             cuePlaceOver(downed->center, downed->sprite.frame), HIT_CUE_LIFE));
 }
 
 engine::Entity SoundCues::addCue(Caption caption, game::Position place,
