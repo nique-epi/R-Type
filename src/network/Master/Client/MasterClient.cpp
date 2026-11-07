@@ -67,14 +67,21 @@ void authorize(httplib::Request& request, const std::string& key) {
 
 /**
  * @returns A client of the master at @p url.
- * @throws InvalidMasterUrlException for a url cpp-httplib refuses.
+ * @throws InvalidMasterUrlException for a url cpp-httplib refuses: it throws
+ * for a scheme it does not speak, and builds a client with nothing inside,
+ * which is_valid() reports, for a port outside 1 to 65535.
  */
 std::unique_ptr<httplib::Client> clientOf(const std::string& url) {
+  std::unique_ptr<httplib::Client> client;
   try {
-    return std::make_unique<httplib::Client>(url);
+    client = std::make_unique<httplib::Client>(url);
   } catch (const std::invalid_argument&) {
     throw InvalidMasterUrlException(url);
   }
+  if (!client->is_valid()) {
+    throw InvalidMasterUrlException(url);
+  }
+  return client;
 }
 
 }  // namespace

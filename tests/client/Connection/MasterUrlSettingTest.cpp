@@ -6,6 +6,7 @@
 namespace rtype::client {
 
 using testing::MASTER_ON_THIS_MACHINE;
+using testing::PORT_ZERO_MASTER_URL;
 using testing::REMOTE_MASTER_URL;
 using testing::SECURE_MASTER_URL;
 
@@ -34,6 +35,16 @@ TEST(MasterUrlSetting, AcceptsTheUrlOfARemoteMaster) {
  */
 TEST(MasterUrlSetting, RefusesAnHttpsUrl) {
   EXPECT_THROW(requireMasterUrl(SECURE_MASTER_URL),
+               engine::CommandRefusedException);
+}
+
+/**
+ * Given a url whose port is 0, outside 1 to 65535
+ * When the setting checks it
+ * Then it is refused, and the client goes on with the master it had
+ */
+TEST(MasterUrlSetting, RefusesAPortOutsideTheRange) {
+  EXPECT_THROW(requireMasterUrl(PORT_ZERO_MASTER_URL),
                engine::CommandRefusedException);
 }
 
