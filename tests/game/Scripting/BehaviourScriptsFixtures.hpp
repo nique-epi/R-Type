@@ -31,3 +31,7 @@ struct FailureLog {
 [[nodiscard]] rtype::game::Intent steeringOf(
     const rtype::game::BehaviourRegistry& behaviours, std::string_view name,
     const rtype::game::BehaviourView& view);
+
+/** @returns The view woundedViewAt() gives, with @p healthShare of its health
+ * left. */
+[[nodiscard]] rtype::game::BehaviourView viewWithHealth(float healthShare);

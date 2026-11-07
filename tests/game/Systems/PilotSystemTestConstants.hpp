@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include "CollisionBox.hpp"
 #include "Health.hpp"
 #include "Position.hpp"
 
@@ -40,5 +41,12 @@ constexpr Health UNTOUCHED{.points = 3, .full = 3};
 
 /** @brief Where a behaviour of the tests makes its body jump. */
 constexpr Position JUMP_TARGET{.x = 640.0F, .y = 700.0F};
+
+/** @brief The collision box and the top speed a body starts with, and those
+ * its behaviour asks for. */
+constexpr CollisionBox STARTING_BOX{.width = 96.0F, .height = 96.0F};
+constexpr CollisionBox ASKED_BOX{.width = 200.0F, .height = 100.0F};
+constexpr float STARTING_TOP_SPEED = 240.0F;
+constexpr float ASKED_TOP_SPEED = 480.0F;
 
 }  // namespace rtype::game::testing

@@ -11,6 +11,7 @@
 #include <string_view>
 #include "ActionKey.hpp"
 #include "BehaviourView.hpp"
+#include "CollisionBox.hpp"
 #include "Direction.hpp"
 #include "DirectionConstants.hpp"
 #include "EnemyPhase.hpp"
@@ -132,6 +133,35 @@ std::optional<ActionKey> actionAt(lua_State* state, int table) {
   return action;
 }
 
+bool isPositiveFinite(double value) {
+  return std::isfinite(value) && value > 0.0;
+}
+
+std::optional<CollisionBox> boxAt(lua_State* state, int table) {
+  std::optional<CollisionBox> box;
+  if (lua_getfield(state, table, INTENT_COLLISION_BOX_KEY) == LUA_TTABLE) {
+    const int found = lua_absindex(state, -1);
+    const std::optional<double> width = numberAt(state, found, BOX_WIDTH_KEY);
+    const std::optional<double> height = numberAt(state, found, BOX_HEIGHT_KEY);
+    if (width.has_value() && height.has_value() && isPositiveFinite(*width) &&
+        isPositiveFinite(*height)) {
+      box = CollisionBox{.width = static_cast<float>(*width),
+                         .height = static_cast<float>(*height)};
+    }
+  }
+  lua_pop(state, 1);
+  return box;
+}
+
+std::optional<float> topSpeedAt(lua_State* state, int table) {
+  const std::optional<double> speed =
+      numberAt(state, table, INTENT_TOP_SPEED_KEY);
+  if (!speed.has_value() || !isPositiveFinite(*speed)) {
+    return std::nullopt;
+  }
+  return static_cast<float>(*speed);
+}
+
 }  // namespace
 
 void pushBehaviourView(lua_State* state, const BehaviourView& view,
@@ -152,6 +182,7 @@ void pushBehaviourView(lua_State* state, const BehaviourView& view,
   }
   lua_pushboolean(state, view.wounded ? 1 : 0);
   lua_setfield(state, -2, VIEW_WOUNDED_KEY);
+  setNumber(state, VIEW_HEALTH_KEY, view.healthShare);
 }
 
 Intent intentAt(lua_State* state, int index) {
@@ -170,6 +201,8 @@ Intent intentAt(lua_State* state, int index) {
   intent.startsAction = actionAt(state, table);
   intent.endsAction = flagAt(state, table, INTENT_ENDS_ACTION_KEY);
   intent.jumpsTo = pointAt(state, table, INTENT_JUMPS_TO_KEY);
+  intent.resizesTo = boxAt(state, table);
+  intent.topSpeedTo = topSpeedAt(state, table);
   return intent;
 }
 

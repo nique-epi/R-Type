@@ -71,3 +71,23 @@ constexpr std::string_view REGISTERS_WITHOUT_FUNCTION =
 
 /** @brief The name of the scripts of these tests. */
 constexpr std::string_view TEST_SCRIPT_NAME = "test/server/test.luau";
+
+/** @brief A script whose behaviour, under half its health, grows its box and
+ * doubles its speed. */
+constexpr std::string_view ENRAGING_SCRIPT = R"(
+behaviours.register("enraging", {}, function(view)
+  if view.health < 0.5 then
+    return {
+      collision_box = { width = 200, height = 100 },
+      top_speed = 480,
+    }
+  end
+  return {}
+end)
+)";
+constexpr std::string_view ENRAGING_BEHAVIOUR = "enraging";
+constexpr float A_QUARTER_OF_ITS_HEALTH = 0.25F;
+constexpr float ALL_ITS_HEALTH = 1.0F;
+constexpr float ENRAGED_WIDTH = 200.0F;
+constexpr float ENRAGED_HEIGHT = 100.0F;
+constexpr float ENRAGED_TOP_SPEED = 480.0F;

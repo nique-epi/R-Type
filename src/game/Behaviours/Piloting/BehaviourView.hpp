@@ -41,6 +41,9 @@ struct BehaviourView {
   /** @brief Whether the body has lost health points since it appeared;
    * false for a body without Health. */
   bool wounded{false};
+  /** @brief The share of its health points the body has left, 0 to 1; 1 for
+   * a body without Health. */
+  float healthShare{1.0F};
 };
 
 }  // namespace rtype::game

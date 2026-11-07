@@ -3,6 +3,7 @@
 #include "BehaviourScripts.hpp"
 #include "BehaviourScriptsFixtures.hpp"
 #include "BehaviourScriptsTestConstants.hpp"
+#include "CollisionBox.hpp"
 #include "EnemyPhase.hpp"
 #include "EngineException.hpp"
 #include "GameException.hpp"
@@ -145,4 +146,60 @@ TEST(BehaviourScripts, RefusesARegistrationWithoutAFunction) {
 
   EXPECT_THROW(scripts.run(scriptsOf(REGISTERS_WITHOUT_FUNCTION)),
                ScriptException);
+}
+
+/**
+ * Given a behaviour that, under half its health, asks for a larger box
+ * When it steers with a quarter of its health
+ * Then it asks for that box
+ */
+TEST(BehaviourScripts, ResizesTheBodyAsTheScriptAsks) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  scripts.run(scriptsOf(ENRAGING_SCRIPT));
+  const BehaviourRegistry behaviours = scripts.behaviours();
+
+  const Intent intent = steeringOf(behaviours, ENRAGING_BEHAVIOUR,
+                                   viewWithHealth(A_QUARTER_OF_ITS_HEALTH));
+
+  ASSERT_TRUE(intent.resizesTo.has_value());
+  EXPECT_EQ(intent.resizesTo.value_or(rtype::game::CollisionBox{}).width,
+            ENRAGED_WIDTH);
+  EXPECT_EQ(intent.resizesTo.value_or(rtype::game::CollisionBox{}).height,
+            ENRAGED_HEIGHT);
+}
+
+/**
+ * Given a behaviour that, under half its health, asks for twice its speed
+ * When it steers with a quarter of its health
+ * Then it asks for that speed
+ */
+TEST(BehaviourScripts, ChangesTheTopSpeedAsTheScriptAsks) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  scripts.run(scriptsOf(ENRAGING_SCRIPT));
+  const BehaviourRegistry behaviours = scripts.behaviours();
+
+  const Intent intent = steeringOf(behaviours, ENRAGING_BEHAVIOUR,
+                                   viewWithHealth(A_QUARTER_OF_ITS_HEALTH));
+
+  EXPECT_EQ(intent.topSpeedTo.value_or(0.0F), ENRAGED_TOP_SPEED);
+}
+
+/**
+ * Given the same behaviour with all its health
+ * When it steers
+ * Then it asks for no change of its body
+ */
+TEST(BehaviourScripts, AsksNoChangeOfTheBodyWhenTheScriptReturnsNone) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  scripts.run(scriptsOf(ENRAGING_SCRIPT));
+  const BehaviourRegistry behaviours = scripts.behaviours();
+
+  const Intent intent = steeringOf(behaviours, ENRAGING_BEHAVIOUR,
+                                   viewWithHealth(ALL_ITS_HEALTH));
+
+  EXPECT_FALSE(intent.resizesTo.has_value());
+  EXPECT_FALSE(intent.topSpeedTo.has_value());
 }

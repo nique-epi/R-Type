@@ -6,12 +6,14 @@
 #include "BehaviourConstants.hpp"
 #include "BehaviourTestConstants.hpp"
 #include "BehaviourView.hpp"
+#include "CollisionBox.hpp"
 #include "Entity.hpp"
 #include "Intent.hpp"
 #include "Pilot.hpp"
 #include "PilotSystemFixture.hpp"
 #include "PilotSystemTestConstants.hpp"
 #include "Position.hpp"
+#include "SteadyMotion.hpp"
 #include "TimeConstants.hpp"
 #include "ViewRecordingBehaviour.hpp"
 #include "WaveEntryPosition.hpp"
@@ -19,13 +21,17 @@
 using rtype::engine::Entity;
 using rtype::engine::SIMULATION_TICK_DURATION;
 using rtype::game::BehaviourView;
+using rtype::game::CollisionBox;
 using rtype::game::Intent;
 using rtype::game::Pilot;
 using rtype::game::Position;
+using rtype::game::SteadyMotion;
 using rtype::game::STRAIGHT_BEHAVIOUR_NAME;
 using rtype::game::waveEntryPosition;
 using rtype::game::WEAVE_BEHAVIOUR_NAME;
 using rtype::game::testing::ActionRequestingBehaviour;
+using rtype::game::testing::ASKED_BOX;
+using rtype::game::testing::ASKED_TOP_SPEED;
 using rtype::game::testing::BODY_START_X;
 using rtype::game::testing::DRIFTER_X_AFTER_A_SECOND;
 using rtype::game::testing::FAR_SHIP;
@@ -42,6 +48,8 @@ using rtype::game::testing::RIGHT_HEADING_SETTINGS;
 using rtype::game::testing::RIGHTWARD_X_AFTER_A_SECOND;
 using rtype::game::testing::ROW_START;
 using rtype::game::testing::ROW_Y;
+using rtype::game::testing::STARTING_BOX;
+using rtype::game::testing::STARTING_TOP_SPEED;
 using rtype::game::testing::TICKS_IN_QUARTER_PERIOD;
 using rtype::game::testing::UNTOUCHED;
 using rtype::game::testing::ViewRecordingBehaviour;
@@ -249,4 +257,41 @@ TEST_F(PilotSystemFixture, ABodyJumpsWhereItsBehaviourAsks) {
 
   EXPECT_EQ(positionOf(enemy).x, JUMP_TARGET.x);
   EXPECT_EQ(positionOf(enemy).y, JUMP_TARGET.y);
+}
+
+/**
+ * Given an enemy with a collision box whose behaviour asks for another box
+ * When the pilots run once
+ * Then the enemy has the box it asked for
+ */
+TEST_F(PilotSystemFixture, ABodyTakesTheCollisionBoxItsBehaviourAsks) {
+  const ActionRequestingBehaviour behaviour{
+      Intent{.steered = true, .resizesTo = ASKED_BOX}};
+  const Entity enemy = addEnemy(behaviour, WATCHING_ENEMY_NETWORK_ID);
+  components().add(enemy, STARTING_BOX);
+
+  run(SIMULATION_TICK_DURATION);
+
+  const CollisionBox* const box = components().get<CollisionBox>(enemy);
+  ASSERT_NE(box, nullptr);
+  EXPECT_EQ(box->width, ASKED_BOX.width);
+  EXPECT_EQ(box->height, ASKED_BOX.height);
+}
+
+/**
+ * Given an enemy with a top speed whose behaviour asks for another one
+ * When the pilots run once
+ * Then the enemy has the top speed it asked for
+ */
+TEST_F(PilotSystemFixture, ABodyTakesTheTopSpeedItsBehaviourAsks) {
+  const ActionRequestingBehaviour behaviour{
+      Intent{.steered = true, .topSpeedTo = ASKED_TOP_SPEED}};
+  const Entity enemy = addEnemy(behaviour, WATCHING_ENEMY_NETWORK_ID);
+  components().add(enemy, SteadyMotion{.topSpeed = STARTING_TOP_SPEED});
+
+  run(SIMULATION_TICK_DURATION);
+
+  const SteadyMotion* const motion = components().get<SteadyMotion>(enemy);
+  ASSERT_NE(motion, nullptr);
+  EXPECT_EQ(motion->topSpeed, ASKED_TOP_SPEED);
 }

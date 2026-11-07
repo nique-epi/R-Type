@@ -42,3 +42,10 @@ rtype::game::Intent steeringOf(const rtype::game::BehaviourRegistry& behaviours,
   const rtype::game::IBehaviour* const behaviour = behaviours.find(name);
   return behaviour == nullptr ? rtype::game::Intent{} : behaviour->steer(view);
 }
+
+rtype::game::BehaviourView viewWithHealth(float healthShare) {
+  rtype::game::BehaviourView view =
+      woundedViewAt(BODY_IN_THE_MIDDLE, SHIP_BELOW);
+  view.healthShare = healthShare;
+  return view;
+}

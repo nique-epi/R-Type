@@ -27,6 +27,7 @@ constexpr const char* VIEW_ACTION_KEY = "action";
 constexpr const char* VIEW_ACTION_AGE_KEY = "action_age_ms";
 constexpr const char* VIEW_NEAREST_SHIP_KEY = "nearest_ship";
 constexpr const char* VIEW_WOUNDED_KEY = "wounded";
+constexpr const char* VIEW_HEALTH_KEY = "health";
 
 /** @brief The keys of a point and of an action, in the view and the intent. */
 constexpr const char* POINT_X_KEY = "x";
@@ -40,6 +41,12 @@ constexpr const char* INTENT_SHOOTING_KEY = "shooting";
 constexpr const char* INTENT_STARTS_ACTION_KEY = "starts_action";
 constexpr const char* INTENT_ENDS_ACTION_KEY = "ends_action";
 constexpr const char* INTENT_JUMPS_TO_KEY = "jumps_to";
+constexpr const char* INTENT_COLLISION_BOX_KEY = "collision_box";
+constexpr const char* INTENT_TOP_SPEED_KEY = "top_speed";
+
+/** @brief The keys of a collision box in the intent. */
+constexpr const char* BOX_WIDTH_KEY = "width";
+constexpr const char* BOX_HEIGHT_KEY = "height";
 
 /** @brief The keys of a setting a script declares. */
 constexpr const char* SETTING_NAME_KEY = "name";
