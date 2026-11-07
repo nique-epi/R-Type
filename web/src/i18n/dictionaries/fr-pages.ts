@@ -23,8 +23,9 @@ export const frPages = {
     footer: 'R-Type · projet Epitech tek3 · v{version}',
     footerFallback: 'R-Type · projet Epitech tek3',
     hostServer: 'Heberger un serveur',
+    sampleTitle: 'Exemples',
     sampleServers:
-      'Exemples : le master ne répond pas, ces serveurs ne sont pas réels.',
+      'Le master ne répond pas : ces serveurs sont des exemples, pas de vrais serveurs.',
   },
   home: {
     eyebrow: 'Disponible maintenant · v{version}',
@@ -178,7 +179,7 @@ export const frPages = {
     gameName: 'Partie {number}',
     noGames: 'Aucune partie ouverte sur ce serveur.',
     pilotCount: 'Pilote {number}',
-    chartTitle: 'Pilotes, derniers relevés',
+    chartTitle: 'Pilotes, derniers releves',
     chartTitleSample: 'Pilotes sur 24 h',
     chartAria: 'Pilotes sur {name}, {since}',
     since: 'il y a {duration}',
@@ -191,6 +192,7 @@ export const frPages = {
     title: 'Heberger un serveur',
     lede: 'Un nom, une clé, et votre serveur rejoint la carte.',
     configFile: 'server.cfg',
+    errorTitle: 'Creation impossible',
     quota: 'Réessayez dans une heure au plus.',
     unreachable: 'Le master ne répond pas : réessayez dans un instant.',
     refused: 'Le master a refusé la création : réessayez avec un autre nom.',

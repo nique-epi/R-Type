@@ -21,8 +21,9 @@ export const enPages: PageCopy = {
     footer: 'R-Type · Epitech tek3 project · v{version}',
     footerFallback: 'R-Type · Epitech tek3 project',
     hostServer: 'Host a server',
+    sampleTitle: 'Examples',
     sampleServers:
-      'Examples: the master does not answer, these servers are not real.',
+      'The master does not answer: these servers are examples, not real servers.',
   },
   home: {
     eyebrow: 'Available now · v{version}',
@@ -189,6 +190,7 @@ export const enPages: PageCopy = {
     title: 'Host a server',
     lede: 'A name, a key, and your server joins the map.',
     configFile: 'server.cfg',
+    errorTitle: 'Creation failed',
     quota: 'Try again within an hour.',
     unreachable: 'The master does not answer: try again in a moment.',
     refused: 'The master refused the creation: try another name.',
