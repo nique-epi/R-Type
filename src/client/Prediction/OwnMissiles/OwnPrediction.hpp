@@ -25,8 +25,9 @@ class OwnPrediction {
   OwnPrediction(std::uint8_t playerNumber, OwnMissilesParts parts);
 
   /** @brief Sends and predicts the commands of @p elapsed (see
-   * OwnShipPredictor::advance()), and fires the missiles they fire once a
-   * state listed the ship: before, the ship has no place to fire from. */
+   * OwnShipPredictor::advance()), and fires the missiles they fire while a
+   * state lists the ship and the game is not over: without a ship, the
+   * server fires nothing. */
   void advance(engine::Duration elapsed, PlayerCommand command,
                IPlayerInputLink& link);
 
@@ -34,6 +35,11 @@ class OwnPrediction {
    * reconciles the ship, arms the gun again when the ship is a new one, and
    * gives up the shots the server left unanswered. */
   void apply(const network::WorldState& state);
+
+  /** @brief The game ended: no command fires a missile any more, and the
+   * missiles drawn stay where they are, as the server runs nothing once a
+   * game is over. */
+  void ceaseFire();
 
   /** @brief Stops predicting: forgets the ship and takes every missile away,
    * as when the player turns PREDICTION off. */
@@ -52,6 +58,7 @@ class OwnPrediction {
   std::uint8_t playerNumber_;
   OwnShipPredictor ship_;
   OwnMissiles missiles_;
+  bool firing_{true};
 };
 
 }  // namespace rtype::client

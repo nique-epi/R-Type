@@ -26,6 +26,19 @@ game::ShipDirections directionsOf(ActionSet held) {
                               .right = held.has(PlayerAction::Right)};
 }
 
+/** @returns The ship @p state lists for the player @p playerNumber,
+ * NO_ENTITY_ID once its ship was destroyed; nothing when it does not list the
+ * player. */
+std::optional<std::uint32_t> listedShipOf(const network::WorldState& state,
+                                          std::uint8_t playerNumber) {
+  const auto player = std::ranges::find(state.players, playerNumber,
+                                        &network::PlayerState::playerNumber);
+  if (player == state.players.end()) {
+    return std::nullopt;
+  }
+  return player->shipEntityId;
+}
+
 }  // namespace
 
 OwnShipPredictor::OwnShipPredictor(std::uint8_t playerNumber)
@@ -56,6 +69,13 @@ std::vector<PredictedCommand> OwnShipPredictor::advance(
 }
 
 void OwnShipPredictor::apply(const network::WorldState& state) {
+  const std::optional<std::uint32_t> listed =
+      listedShipOf(state, playerNumber_);
+  if (shipEntityId_.has_value() && listed.has_value() &&
+      *listed != *shipEntityId_) {
+    shipEntityId_.reset();
+    prediction_ = ShipPrediction{};
+  }
   const std::optional<OwnShip> own = ownShipOf(state, playerNumber_);
   if (!own.has_value()) {
     return;

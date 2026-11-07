@@ -40,9 +40,11 @@ class OwnShipPredictor {
                                         PlayerCommand command,
                                         IPlayerInputLink& link);
 
-  /** @brief Reads what @p state says of the ship of the player: starts the
-   * prediction, or reconciles it. Nothing when the state does not list the
-   * ship. */
+  /** @brief Reads what @p state says of the ship of the player: forgets the
+   * ship followed when the state lists the player with another ship or none,
+   * as once it was destroyed; then starts the prediction, or reconciles it.
+   * A part of a state that lists the player with the ship followed but not
+   * its entity changes nothing. */
   void apply(const network::WorldState& state);
 
   /** @brief Forgets the prediction and the time not yet counted, as when the

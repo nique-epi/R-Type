@@ -586,6 +586,30 @@ TEST(GameScreenPredictionTest, FiresNothingBeforeAStateListsTheShip) {
 }
 
 /**
+ * Given the game of player 1 with PREDICTION on, a state listing its ship
+ * applied, then the end of the game received
+ * When the player holds shoot for three ticks
+ * Then no shot plays: the server runs nothing once the game is over
+ */
+TEST(GameScreenPredictionTest, FiresNothingOnceTheGameEnded) {
+  LoneGameParts doubles;
+  doubles.connection.setStatus(ConnectionStatus{
+      .phase = ConnectionPhase::Accepted, .playerNumber = FIRST_PILOT});
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  doubles.entityMessages.queue(stateWithTheShipOfTheFirstPilot(APPLIED_TICK));
+  doubles.entityMessages.queue(rtype::network::GameEnded{});
+  game.update(THREE_TICKS);
+
+  game.handleEvent(
+      keyPress(sf::Keyboard::Key::Space, sf::Keyboard::Scan::Space));
+  game.update(THREE_TICKS);
+
+  EXPECT_THAT(doubles.sounds.played(),
+              ::testing::Not(Contains(PLAYER_SHOT_SOUND_ID)));
+}
+
+/**
  * Given the game with PREDICTION off
  * When a frame as long as three simulation ticks is updated
  * Then one input is sent, as the pacer says, the ship waiting for the server

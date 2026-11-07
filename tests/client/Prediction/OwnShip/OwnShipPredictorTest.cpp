@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <vector>
 #include "ActionSet.hpp"
+#include "EntityIdConstants.hpp"
 #include "OwnShipPredictor.hpp"
 #include "PlayerAction.hpp"
 #include "PlayerCommand.hpp"
@@ -29,6 +30,7 @@ using rtype::client::testing::stateWithShip;
 using rtype::client::testing::TICKS_OF_A_STALL;
 using rtype::engine::MAXIMUM_TICKS_PER_ADVANCE;
 using rtype::engine::SIMULATION_TICK_DURATION;
+using rtype::identifiers::NO_ENTITY_ID;
 using rtype::network::FIRST_INPUT_NUMBER;
 
 /**
@@ -164,6 +166,35 @@ TEST(OwnShipPredictor, FollowsTheNewShipOfAPlayerWhoCameBack) {
   predictor.apply(stateWithShip(OWN_PLAYER_NUMBER, NEWER_SHIP_ID, START, 0));
 
   EXPECT_EQ(predictor.shipEntityId(), NEWER_SHIP_ID);
+}
+
+/**
+ * Given a predictor that follows a ship
+ * When a state lists the player without a ship, as once it was destroyed
+ * Then it follows no ship
+ */
+TEST(OwnShipPredictor, ForgetsTheShipOnceThePlayerHasNone) {
+  OwnShipPredictor predictor(OWN_PLAYER_NUMBER);
+  predictor.apply(stateWithShip(OWN_PLAYER_NUMBER, OWN_SHIP_ID, START, 0));
+
+  predictor.apply(stateWithoutEntities(OWN_PLAYER_NUMBER, NO_ENTITY_ID));
+
+  EXPECT_FALSE(predictor.shipEntityId().has_value());
+}
+
+/**
+ * Given a predictor that follows a ship
+ * When a part of a state lists the player with that ship and no entity, as a
+ * state cut into several datagrams does
+ * Then it still follows the ship
+ */
+TEST(OwnShipPredictor, KeepsTheShipThroughAPartWithoutItsEntity) {
+  OwnShipPredictor predictor(OWN_PLAYER_NUMBER);
+  predictor.apply(stateWithShip(OWN_PLAYER_NUMBER, OWN_SHIP_ID, START, 0));
+
+  predictor.apply(stateWithoutEntities(OWN_PLAYER_NUMBER, OWN_SHIP_ID));
+
+  EXPECT_EQ(predictor.shipEntityId(), OWN_SHIP_ID);
 }
 
 /**

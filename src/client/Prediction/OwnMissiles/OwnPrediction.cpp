@@ -24,7 +24,7 @@ void OwnPrediction::advance(engine::Duration elapsed, PlayerCommand command,
   missiles_.setActive(true);
   const std::vector<PredictedCommand> commands =
       ship_.advance(elapsed, command, link);
-  if (ship_.shipEntityId().has_value()) {
+  if (firing_ && ship_.shipEntityId().has_value()) {
     missiles_.follow(commands);
   }
 }
@@ -39,6 +39,8 @@ void OwnPrediction::apply(const network::WorldState& state) {
     missiles_.acknowledge(own->acknowledgedInput);
   }
 }
+
+void OwnPrediction::ceaseFire() { firing_ = false; }
 
 void OwnPrediction::stop() {
   ship_.stop();

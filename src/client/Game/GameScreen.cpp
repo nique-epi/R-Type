@@ -240,6 +240,7 @@ void GameScreen::recordEnd(const network::GameEnded& ended) {
       .outcome = ended.outcome};
   worldSeen_ = true;
   endedAt_ = effects_.sinceStart();
+  prediction_.ceaseFire();
   silence_.stop();
 }
 
