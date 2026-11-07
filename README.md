@@ -84,6 +84,7 @@ Each optional module has a CMake option, on by default. Off, its folder is not c
 | `RTYPE_MODULE_AUDIO` | the sound of the client | the client plays nothing, and `--no-sound` changes nothing |
 | `RTYPE_MODULE_METRICS` | the metrics of the client and of each game process | no report in the journal, and `--traffic-csv` writes no file |
 | `RTYPE_MODULE_MASTER_LINK` | the registration of the server with the master | the server never registers, and `set master-url` and `set master-key` are refused |
+| `RTYPE_MODULE_ADMIN_CONSOLE` | the administration console of the supervisor | the supervisor reads nothing from its terminal, and `games`, `players`, `close-game`, `network` and `help` are unknown commands |
 | `RTYPE_MODULE_CHAT` | the chat of the games | a chat line reaches nobody |
 | `RTYPE_MODULE_PLUGINS` | the loading of plugins | `plugin` and `plugin-folder` are unknown commands |
 | `RTYPE_MODULE_GAME_STATISTICS` | the `game-statistics` plugin; off whenever `RTYPE_MODULE_PLUGINS` is | no `game-statistics` file in `plugins/` |
@@ -160,13 +161,19 @@ module lobby off
 ./r-type_server --state-rate 30
 ```
 
-Every player's input is held for the same few ticks before it moves the ship (3 ticks, 50 ms, by default); `--input-delay` changes it, from 0 to 30 ticks; any other delay than 3 makes the games not vanilla.
+The server sends each player 30 world states per second instead of 20, from 2 to 60: more states move the other ships more smoothly and use more bandwidth (about 350 bytes per state with four players and thirty entities, see [the server page](https://nique-epi.github.io/R-Type/server/)).
 
 ```bash
 ./r-type_server --input-delay 5
 ```
 
-The server sends each player 30 world states per second instead of 20, from 2 to 60: more states move the other ships more smoothly and use more bandwidth (about 350 bytes per state with four players and thirty entities, see [the server page](https://nique-epi.github.io/R-Type/server/)).
+Every player's input is held for the same few ticks before it moves the ship (3 ticks, 50 ms, by default); `--input-delay` changes it, from 0 to 30 ticks; any other delay than 3 makes the games not vanilla.
+
+```bash
+./r-type_server --boss
+```
+
+Every game starts at its boss, without the waves, to test the fight: the Bydo Tyrant appears 4.4 seconds after the game starts, and the ships never die. The games are not vanilla; `set start-at-boss 1` in `server.cfg` does the same.
 
 The server reads the waves of Bydos from `assets/waves/waves.toml`, in the `assets/` folder it finds next to its executable or in the folder above it. A missing or invalid file stops the game process with exit code 1, naming the file, the line and the key at fault in its journal, and the supervisor writes that the game crashed; the format is described in [Writing the waves file](https://nique-epi.github.io/R-Type/waves-file/). Both programs also read `assets/entities/`, one sheet per type of entity (the ship, the Bydos, the missiles), when they start, and stop the same way on an invalid sheet; the keys are described in [Writing an entity sheet](https://nique-epi.github.io/R-Type/entity-sheets/).
 

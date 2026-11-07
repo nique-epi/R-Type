@@ -74,11 +74,32 @@ A platform file such as `FineTimerResolutionWindows.cpp` is linted only by the C
    Run it with the clang-tidy version the CI job prints (20 today). Match every called function against their `CheckedFunctions` patterns, and read their `AllowCastToVoid`: in clang-tidy 20, `cert-err33-c` allows the cast and `bugprone-unused-return-value` does not. A pattern without an end anchor matches more than it names: `^::time` matches `::timeBeginPeriod` and `::timeEndPeriod`.
 3. **The CI is its verifier**: push, say in the report that this file is linted by the CI only, and follow the platform job until it is green, as `fix-process-follow-ci-after-opening-a-pr.md` requires. This is the exception named in points 1 and 4 of the first list. The CI runs on pull requests and on pushes to `main`, never on a feature branch pushed alone, so the user's go to publish the branch or open the pull request is still asked first.
 
+4. **A Win32 handle is never declared `const HANDLE`**: `HANDLE` is a typedef of `void*`, so `const` makes the pointer const, not the object, and `misc-misplaced-const` fails the Windows job, on the variable and again on each lambda that captures it by copy. Declare it `HANDLE reader = …;`, as `ChildBindingWindows.cpp` does; `.clang-tidy` asks no `const` on a pointer taken as a value. Before pushing such a file, `git grep -n 'const HANDLE' -- src` prints nothing.
+
 ### A finding the local clang-tidy does not report
 
 1. **The local run is not the CI's toolchain**: Homebrew clang-tidy 21 on libc++ here, clang-tidy 20 on libstdc++ on the CI. A file can be clean locally and fail on the CI: `cppcoreguidelines-pro-type-member-init` on `struct NavigatorCall { NavigatorRequest request; std::optional<ScreenId> screen; }` was reported by the CI only.
 2. **Give every data member of a built-in or enum type (`int`, `bool`, a pointer, an `enum class`) of a new struct or class a default member initializer** (`NavigatorRequest request{};`), so the member-init checks have nothing to report on either toolchain. Designated initializers still work on such an aggregate. A member of class type (`std::string`, `std::optional`) initializes itself: a `{}` on it is reported by `readability-redundant-member-init`.
-3. **When the CI reports what the local run did not**, fix it from the CI log (`gh api repos/<owner>/<repo>/actions/jobs/<job id>/logs` when `gh run view --log-failed` prints nothing), say in the report that the local run could not see it, and follow the job until it is green.
+3. **Before the first commit of a struct, search the headers of the branch for a built-in member without an initializer**, the one already there included when a member is added to an old struct:
+   ```bash
+   git diff --name-only origin/main...HEAD -- '*.hpp' | xargs git grep -n -P '^\s+(std::u?int\d+_t|int|float|double|bool|char|std::size_t) [a-z][A-Za-z]*;' --
+   ```
+   Every line printed gets `{}`. Calibrated on `src/engine/Collision/Bounds.hpp`, whose four `float` members it prints.
+4. **When the CI reports what the local run did not**, fix it from the CI log (`gh api repos/<owner>/<repo>/actions/jobs/<job id>/logs` when `gh run view --log-failed` prints nothing), say in the report that the local run could not see it, and follow the job until it is green.
+
+### The last lint before a push covers the whole branch, not the last commit
+
+1. **Before the push, lint the files of `git diff --name-only origin/main...HEAD`**, the list the CI lints, never the files of the last commit alone: a change in one file (a method made `const`, an include removed from a header) makes a finding in another file of the branch that the last commit does not touch.
+2. **After a merge of main, lint that list again**: the merge changes the base the list is taken from and the compile commands of moved files.
+
+### A qualifier clang-tidy asks for on an iterator holds only where the iterator is a pointer
+
+1. **`readability-qualified-auto` on `auto it = std::ranges::find(array, …)` comes from libc++, where the iterator of a `std::array` is a pointer.** In the standard library of MSVC it is a class (`std::_Array_const_iterator`), so `const auto* const it` does not compile there (`C3535`) and the Windows job fails.
+2. **Never answer that finding with `auto*` on an iterator.** Write a lookup that returns a pointer itself (`const T* found = findOf(…)`, a loop that returns `&candidate` or `nullptr`), so the type is the same with every standard library.
+
+### Adjacent parameters of different integer types are swappable for the CI
+
+1. **`bugprone-easily-swappable-parameters` of the CI's clang-tidy 22 reports adjacent `int` and `std::size_t` parameters** that the local clang-tidy 21 lets through. A new function taking two or three numbers in a row (`points`, `players`, `percent`) takes them as one struct with designated members instead (`BossHealthScaling`).
 
 ## Example
 

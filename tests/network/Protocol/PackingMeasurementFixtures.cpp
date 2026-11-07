@@ -68,6 +68,7 @@ std::vector<std::byte> unpackedPlayerInputBytes(const PlayerInput& input) {
   for (const std::uint8_t actions : input.earlierActions) {
     writeBitsAsBytes(writer, actions, PLAYER_ACTION_COUNT);
   }
+  writer.writeUint32(input.shownTick);
   return writer.bytes();
 }
 

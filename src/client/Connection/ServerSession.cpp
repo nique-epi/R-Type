@@ -124,12 +124,14 @@ void ServerSession::update(engine::Duration elapsed) {
   }
 }
 
-std::optional<std::uint32_t> ServerSession::sendPlayerInput(ActionSet held) {
+std::optional<std::uint32_t> ServerSession::sendPlayerInput(
+    ActionSet held, std::uint32_t shownTick) {
   if (status_.phase != ConnectionPhase::Accepted) {
     return std::nullopt;
   }
   gameLoaded_->sendWhenDue(outbox_);
-  const network::PlayerInput input = unconfirmedInputs_.add(held.bits());
+  const network::PlayerInput input =
+      unconfirmedInputs_.add(held.bits(), shownTick);
   sendMessage(outbox_, input);
   return input.inputNumber;
 }

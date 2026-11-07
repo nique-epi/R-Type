@@ -30,8 +30,9 @@ set port 4300
 | `module <name> on\|off` | server, client and master | Turns a module of the program on or off before the modules start. |
 | `plugin <name>` | server, client and master | Loads a plugin, a module built as a shared library, before the modules install. |
 | `plugin-folder <folder>` | server, client and master | Sets the folder the `plugin` lines read. |
+| `games`, `players`, `close-game <place>`, `network`, `help` | the supervisor, while its `admin console` module is on | List the games and their pilots, stop a game, show the network figures, list the commands (see [Server](/R-Type/server/#administration-console-serveradminconsolemodule)). |
 
-No other command exists. The interpreter keeps a help text for each command, but nothing prints it yet. A module that registers a command in its `install()` makes it usable in the file with no other change.
+No other command exists. A module that registers a command in its `install()` makes it usable in the file with no other change: the commands of the console run from `server.cfg` as they do from the terminal, and write their answer to the standard output. `help` prints the help text the interpreter keeps for each command.
 
 ### `set`
 
@@ -46,6 +47,7 @@ Server settings. Only the supervisor reads `server.cfg`: it runs the lines of it
 | `state-rate` | the games | 2 to 60 | 20 | The world states sent to each player per second. |
 | `state-encoding` | the games | `delta` or `full` | `delta` | How each world state is written: as the difference from the newest one the player acknowledged, or with every entity. `delta` also writes a state with every entity when the player acknowledged none, or when the newest it acknowledged is more than 60 ticks older (`MAXIMUM_REFERENCE_DISTANCE`). |
 | `input-delay` | the games | 0 to 30 | 3 | The ticks every player's input is held before it is applied. |
+| `start-at-boss` | the games | 0 or 1 | 0 | 1 starts every game at its boss, without the waves, with ships that never die; the games are then not vanilla. |
 | `database` | the supervisor | a path | empty | The SQLite file the leaderboard of the server is kept in, given to every game; empty for `r-type_server_<port>.db` next to the executable, with the port of the supervisor. |
 | `master-url` | the supervisor | `http://<host>[:<port>]` | empty | The master the server is listed on; empty to run alone. |
 | `master-key` | the supervisor | a key | empty | The key the master gave when the host created the server; empty to run alone. |
@@ -98,6 +100,7 @@ Modules of the supervisor:
 | `supervisor lobby` | `network`, `supervised games` | Sends each player to a game, or starts one. |
 | `information` | `network`, `supervised games` | Answers the information requests. |
 | `master` | `network`, `supervised games`, `information` | Keeps the master told of the games. |
+| `admin console` | `logger`, `network`, `supervised games` | Reads commands from the terminal of the supervisor; its name holds a space, so the line is `module "admin console" off`. |
 
 Modules of a game process, which every `module` line on another name reaches:
 
@@ -170,7 +173,7 @@ From the lowest priority to the highest:
 
 1. The default of the setting, written in the module that declares it.
 2. The file: `server.cfg`, `client.cfg` or `master.cfg`, in the folder the program is started from.
-3. The launch options. `-p`, `--seed`, `--state-rate`, `--input-delay` and `--database` on the supervisor, which hands the lines of the settings of the games to its games after the lines of the file, `-h`, `-p` and `-n` on the client, `-p` and `--database` on the master, and `--set <name>=<value>` on all three, are turned into `set` lines that run after the file. The last value given wins, so a launch option always wins over the file.
+3. The launch options. `-p`, `--seed`, `--state-rate`, `--input-delay`, `--boss` and `--database` on the supervisor, which hands the lines of the settings of the games to its games after the lines of the file, `-h`, `-p` and `-n` on the client, `-p` and `--database` on the master, and `--set <name>=<value>` on all three, are turned into `set` lines that run after the file. The last value given wins, so a launch option always wins over the file.
 
 A missing file is not an error: the defaults apply and the journal says `server.cfg not found, the defaults apply` (or `client.cfg`, `master.cfg`). The `info` lines are hidden at the default log level; start the program with `--log-level info` to see them.
 

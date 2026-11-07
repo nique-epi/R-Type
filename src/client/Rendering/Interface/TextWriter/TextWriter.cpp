@@ -1,10 +1,13 @@
 #include "TextWriter.hpp"
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Text.hpp>
+#include <SFML/Graphics/View.hpp>
 #include <SFML/System/String.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cmath>
+#include <optional>
 #include <string>
 #include <string_view>
 #include "AssetLibrary.hpp"
@@ -21,6 +24,18 @@
 namespace rtype::client {
 
 namespace {
+
+/** @returns The view of @p target, cut to the pixels of @p clip, which lie
+ * inside the target. */
+sf::View clippedViewOf(const sf::RenderTarget& target, sf::IntRect clip) {
+  sf::View view = target.getView();
+  const sf::Vector2f size(target.getSize());
+  const sf::Vector2f position(clip.position);
+  const sf::Vector2f extent(clip.size);
+  view.setScissor(sf::FloatRect({position.x / size.x, position.y / size.y},
+                                {extent.x / size.x, extent.y / size.y}));
+  return view;
+}
 
 /** @returns How wide a line is, in pixels: where a character after its last
  * would start. */
@@ -39,6 +54,11 @@ TextWriter::TextWriter(const AssetLibrary& library)
       crispText_(loadFragmentShader(CRISP_TEXT_SHADER, logger_)) {}
 
 void TextWriter::write(sf::RenderTarget& target, const TextLine& line) const {
+  std::optional<sf::View> whole;
+  if (line.style.clip.has_value()) {
+    whole = target.getView();
+    target.setView(clippedViewOf(target, *line.style.clip));
+  }
   sf::Text text = lineOf(line.text, line.style.font, line.style.scale);
   const sf::Vector2i position = positionOf(text, line);
   const sf::RenderStates states(crispText_.has_value() ? &*crispText_
@@ -55,6 +75,9 @@ void TextWriter::write(sf::RenderTarget& target, const TextLine& line) const {
   text.setFillColor(line.style.color);
   text.setPosition(sf::Vector2f(position));
   target.draw(text, states);
+  if (whole.has_value()) {
+    target.setView(*whole);
+  }
 }
 
 int TextWriter::width(std::string_view text, TextFont font) const {

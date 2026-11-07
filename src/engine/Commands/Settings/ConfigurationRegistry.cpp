@@ -1,11 +1,8 @@
 #include "ConfigurationRegistry.hpp"
-#include <charconv>
-#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <span>
 #include <string>
-#include <system_error>
 #include <utility>
 #include <vector>
 #include "CommandDefinition.hpp"
@@ -16,26 +13,11 @@
 #include "SettingCommandConstants.hpp"
 #include "SettingValue.hpp"
 #include "TextSettingDefinition.hpp"
+#include "WholeNumber.hpp"
 
 namespace rtype::engine {
 
 namespace {
-
-constexpr std::size_t SET_ARGUMENT_COUNT = 2;
-
-/**
- * @returns The whole number @p text is made of, digits only.
- * @throws CommandRefusedException when it is anything else, or too large.
- */
-std::int64_t wholeNumberFrom(const std::string& text) {
-  std::int64_t number = 0;
-  const char* const end = text.data() + text.size();
-  const auto [stop, error] = std::from_chars(text.data(), end, number);
-  if (text.empty() || error != std::errc{} || stop != end) {
-    throw CommandRefusedException("value '" + text + "' is not a whole number");
-  }
-  return number;
-}
 
 /**
  * @throws CommandRefusedException when @p number is outside the bounds of

@@ -47,7 +47,9 @@ class InputKeeper {
    * @brief Calls keepIfNewer() for each input @p message holds, the oldest
    * first, so an input lost on its way and repeated here reaches onNewerInput
    * once, in order, before the newest. An input the player already has changes
-   * nothing. Each input shown holds no earlierActions.
+   * nothing. Each input shown holds no earlierActions, and the shownTick of
+   * @p message: an earlier input is shown with the newest tick its client
+   * sent.
    */
   void keepNewerOf(const network::MessageOrigin& origin,
                    const network::PlayerInput& message);

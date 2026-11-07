@@ -28,7 +28,8 @@ void startEnemyAction(engine::EventBus& events,
                       const EnemyActionStart& start);
 
 /**
- * @brief Empties the CurrentAction of @p enemy: it is idle again, from now.
+ * @brief Empties the CurrentAction of @p enemy: it is idle again, from now,
+ * and counts one more ended action.
  * Nothing is published; the client returns to the idle animation by itself when
  * the last animation of an action ends.
  */

@@ -23,6 +23,15 @@ Animation idleAnimationOf(const EntityAppearance& appearance) {
                    .playback = Playback::Loop};
 }
 
+Animation enragedIdleAnimationOf(const EntityAppearance& appearance) {
+  if (appearance.enragedIdleFrames.empty()) {
+    return idleAnimationOf(appearance);
+  }
+  return Animation{.frames = appearance.enragedIdleFrames,
+                   .frameDuration = appearance.enragedIdleFrameDuration,
+                   .playback = Playback::Loop};
+}
+
 namespace {
 
 /** @returns The animation with its elapsed time set to the offset of a network

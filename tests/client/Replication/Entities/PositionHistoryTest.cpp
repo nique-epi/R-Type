@@ -17,6 +17,7 @@ using rtype::client::testing::HALFWAY_TICK;
 using rtype::client::testing::LATE_POSITION;
 using rtype::client::testing::LATE_TICK;
 using rtype::client::testing::NO_POSITION;
+using rtype::client::testing::OLDEST_KEPT_TICK;
 using rtype::client::testing::ONE_AND_A_HALF_TICKS_AHEAD_POSITION;
 using rtype::client::testing::ONE_AND_A_HALF_TICKS_AHEAD_TICK;
 using rtype::client::testing::SECOND_SAMPLE;
@@ -163,4 +164,32 @@ TEST(PositionHistory, OnlyKeepsTheNewestSamples) {
 
   ASSERT_TRUE(position.has_value());
   EXPECT_FLOAT_EQ(position.value_or(NO_POSITION).x, SECOND_SAMPLE_X);
+}
+
+/**
+ * Given a history that holds no sample
+ * When it is asked for the tick of its oldest sample
+ * Then it answers nothing
+ */
+TEST(PositionHistory, HasNoOldestTickWithoutASample) {
+  const PositionHistory history;
+
+  EXPECT_FALSE(history.oldestTick().has_value());
+}
+
+/**
+ * Given five samples recorded, at ticks 1 to 5
+ * When the history is asked for the tick of its oldest sample
+ * Then it answers tick 2: the sample of tick 1 was forgotten
+ */
+TEST(PositionHistory, GivesTheTickOfTheOldestSampleKept) {
+  PositionHistory history;
+  for (std::uint32_t tick = 1; tick <= FIFTH_TICK; ++tick) {
+    history.record(PositionSample{.tick = tick, .position = {}});
+  }
+
+  const auto oldest = history.oldestTick();
+
+  ASSERT_TRUE(oldest.has_value());
+  EXPECT_EQ(oldest.value_or(0), OLDEST_KEPT_TICK);
 }

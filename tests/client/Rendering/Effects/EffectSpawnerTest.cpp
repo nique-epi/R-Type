@@ -496,7 +496,7 @@ TEST(EffectSpawner, WithFlashesReducedAShipGoesDownWithoutFlashNorShake) {
   ASSERT_TRUE(picture.has_value());
   const Entity frozen = picture.value_or(Entity{});
   EXPECT_EQ(toneOf(scene.components(), frozen), SpriteTone::Shade);
-  EXPECT_EQ(scene.effects().cameraOffset(), sf::Vector2i());
+  EXPECT_EQ(scene.effects().tools().camera.get().offset(), sf::Vector2i());
   EXPECT_FALSE(anyParticleStartsWith(scene.components(), FLASH_COLOR));
 }
 

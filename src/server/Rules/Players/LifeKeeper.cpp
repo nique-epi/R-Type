@@ -1,4 +1,5 @@
 #include "LifeKeeper.hpp"
+#include <algorithm>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -150,12 +151,17 @@ void announceLifeLost(engine::EventBus& events, const logging::Logger& logger,
 }
 
 /** @brief Counts one tick of invulnerability down on every ship of
- * @p components that has some left. */
-void countInvulnerabilityDown(engine::ComponentRegistry& components) {
+ * @p components that has some left; keeps it at SHIELDED_SHIP_TICKS instead
+ * when @p shipsNeverDie. */
+void countInvulnerabilityDown(engine::ComponentRegistry& components,
+                              bool shipsNeverDie) {
   components.forEach<game::Invulnerable, game::Invulnerable>(
-      [](engine::Entity, game::Invulnerable& protection,
-         const game::Invulnerable&) {
-        if (protection.ticksLeft > 0) {
+      [shipsNeverDie](engine::Entity, game::Invulnerable& protection,
+                      const game::Invulnerable&) {
+        if (shipsNeverDie) {
+          protection.ticksLeft =
+              std::max(protection.ticksLeft, SHIELDED_SHIP_TICKS);
+        } else if (protection.ticksLeft > 0) {
           --protection.ticksLeft;
         }
       });
@@ -168,6 +174,7 @@ LifeKeeper::LifeKeeper(LifeKeeperParts parts)
       world_(parts.world),
       roster_(parts.roster),
       respawn_(std::move(parts.respawn)),
+      shipsNeverDie_(parts.shipsNeverDie),
       contactSubscription_(events_.subscribe<game::ShipContact>(
           [this](const game::ShipContact& contact) {
             onShipContact(contact);
@@ -182,7 +189,7 @@ LifeKeeper::~LifeKeeper() {
 }
 
 void LifeKeeper::onTick() {
-  countInvulnerabilityDown(world_.components());
+  countInvulnerabilityDown(world_.components(), shipsNeverDie_);
   for (ConnectedPlayer* const player : roster_.connected()) {
     countWaitDown(*player);
   }

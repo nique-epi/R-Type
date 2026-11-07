@@ -20,4 +20,12 @@ constexpr std::size_t UNLISTED_ENTITY_TICKS =
 static_assert(UNLISTED_ENTITY_TICKS >= 1,
               "UNLISTED_ENTITY_TIMEOUT must last at least one simulation tick");
 
+/**
+ * @brief The most missiles of its player a client keeps claimed: a ship fires
+ * at most 3 per second (20 ticks apart) and a missile crosses the playfield in
+ * 2 s, so 6 fly at once; 32 leaves room for missiles whose EntityDestroyed was
+ * lost.
+ */
+constexpr std::size_t CLAIMED_MISSILE_COUNT = 32;
+
 }  // namespace rtype::client
