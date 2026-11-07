@@ -25,7 +25,8 @@ using rtype::server::supervisorModules;
  * When its modules are listed
  * Then they are the journal, the network, the supervised games, the lobby
  * that sends the players to them, then the information and the master, which
- * read what the supervised games publish, in the order they start
+ * read what the supervised games publish, then the console, in the order
+ * they start
  */
 TEST(SupervisorModules, ListsTheModulesOfTheSupervisor) {
   StopRequest stopRequest;
@@ -46,7 +47,8 @@ TEST(SupervisorModules, ListsTheModulesOfTheSupervisor) {
                        std::string{rtype::server::SUPERVISED_GAMES_MODULE_NAME},
                        std::string{rtype::server::SUPERVISOR_LOBBY_MODULE_NAME},
                        std::string{rtype::server::INFORMATION_MODULE_NAME},
-                       std::string{rtype::server::MASTER_MODULE_NAME}}));
+                       std::string{rtype::server::MASTER_MODULE_NAME},
+                       std::string{rtype::server::ADMIN_CONSOLE_MODULE_NAME}}));
 }
 
 /**

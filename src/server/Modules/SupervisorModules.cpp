@@ -13,6 +13,7 @@
 #include "IModule.hpp"
 #include "LaunchOptions.hpp"
 #include "NetworkConstants.hpp"
+#include "ServerAdminConsoleModule.hpp"
 #include "ServerContentModule.hpp"
 #include "ServerInformationModule.hpp"
 #include "ServerLoggerModule.hpp"
@@ -20,6 +21,8 @@
 #include "ServerNetworkModule.hpp"
 #include "ServerSupervisedGamesModule.hpp"
 #include "ServerSupervisorLobbyModule.hpp"
+#include "StandardInput.hpp"
+#include "StandardOutput.hpp"
 #include "StopRequest.hpp"
 #include "TimeConstants.hpp"
 
@@ -67,6 +70,8 @@ std::vector<std::unique_ptr<engine::IModule>> supervisorModules(
   modules.push_back(std::make_unique<ServerSupervisorLobbyModule>());
   modules.push_back(std::make_unique<ServerInformationModule>());
   modules.push_back(std::make_unique<ServerMasterModule>());
+  modules.push_back(std::make_unique<ServerAdminConsoleModule>(
+      std::make_unique<StandardInput>(), std::make_unique<StandardOutput>()));
   return modules;
 }
 
