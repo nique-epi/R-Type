@@ -19,9 +19,12 @@ export type GameRow = {
   state: GameState;
   stateLabel: string;
   seats: readonly Seat[];
-  /** The word of the button: "Rejoindre", or "Votre place". */
-  actionLabel: string;
-  'aria-label': string;
+  /**
+   * The word of the button: "Rejoindre", or "Votre place". A table none of
+   * whose rows has one is read only: it has no action column.
+   */
+  actionLabel?: string;
+  'aria-label'?: string;
   /** Joins the game; a game that cannot be joined has none, and its button is off. */
   onJoin?: () => void;
 };
@@ -42,6 +45,8 @@ export function GamesTable({
   rows: readonly GameRow[];
   labels: GamesTableLabels;
 }) {
+  const withAction = rows.some(row => row.actionLabel !== undefined);
+
   return (
     <Table data-slot="games-table">
       <TableHead>
@@ -49,9 +54,11 @@ export function GamesTable({
           <TableHeaderCell>{labels.game}</TableHeaderCell>
           <TableHeaderCell>{labels.state}</TableHeaderCell>
           <TableHeaderCell>{labels.seats}</TableHeaderCell>
-          <TableHeaderCell>
-            <span className="sr-only">{labels.action}</span>
-          </TableHeaderCell>
+          {withAction ? (
+            <TableHeaderCell>
+              <span className="sr-only">{labels.action}</span>
+            </TableHeaderCell>
+          ) : null}
         </TableRow>
       </TableHead>
       <TableBody>
@@ -68,16 +75,20 @@ export function GamesTable({
                 freeLabel={labels.free}
               />
             </TableCell>
-            <TableCell className="text-right">
-              <Button
-                size="sm"
-                disabled={row.onJoin === undefined}
-                onClick={row.onJoin}
-                aria-label={row['aria-label']}
-              >
-                {row.actionLabel}
-              </Button>
-            </TableCell>
+            {withAction ? (
+              <TableCell className="text-right">
+                {row.actionLabel === undefined ? null : (
+                  <Button
+                    size="sm"
+                    disabled={row.onJoin === undefined}
+                    onClick={row.onJoin}
+                    aria-label={row['aria-label']}
+                  >
+                    {row.actionLabel}
+                  </Button>
+                )}
+              </TableCell>
+            ) : null}
           </TableRow>
         ))}
       </TableBody>

@@ -29,7 +29,7 @@ const FAR: MapServer = {
   games: [{ pilots: 1, state: 'waiting' }],
 };
 
-function renderMap() {
+function renderMap(readOnly = false) {
   const callbacks = {
     onJoin: vi.fn(),
     onLeave: vi.fn(),
@@ -44,6 +44,7 @@ function renderMap() {
       labels={fr.sectorMap}
       locale="fr"
       {...callbacks}
+      {...(readOnly ? { onJoin: undefined, onLeave: undefined } : {})}
     />,
   );
   const map = screen.getByRole('application', { name: fr.sectorMap.screen });
@@ -112,5 +113,44 @@ describe('SectorMap', () => {
     renderMap();
 
     expect(screen.getByText(/^2 SERVEURS - /)).toBeDefined();
+  });
+
+  describe('without a way to join', () => {
+    it('offers no quick play, and Q does nothing', () => {
+      const { press, callbacks } = renderMap(true);
+
+      press('q');
+
+      expect(screen.queryByText(fr.sectorMap.quickPlay)).toBeNull();
+      expect(callbacks.onJoin).not.toHaveBeenCalled();
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+
+    it('lists the games without a Join chip, and keeps the sheet, the games and Back', () => {
+      const { press } = renderMap(true);
+
+      press('Enter');
+      press('Enter');
+      press('Enter');
+
+      expect(
+        screen.getByRole('dialog', { name: 'Parties de Nebula Lyon' }),
+      ).toBeDefined();
+      expect(screen.queryByText(fr.sectorMap.join)).toBeNull();
+      expect(screen.queryByText(fr.sectorMap.leave)).toBeNull();
+      expect(screen.getByText(fr.sectorMap.sheet)).toBeDefined();
+      expect(screen.getByText(fr.sectorMap.back)).toBeDefined();
+    });
+
+    it('says nothing under the games about a join Enter cannot do', () => {
+      const { press } = renderMap(true);
+
+      press('Enter');
+      press('Enter');
+      press('Enter');
+      press('ArrowDown');
+
+      expect(screen.queryByText(/ENTRÉE POUR REJOINDRE/)).toBeNull();
+    });
   });
 });
