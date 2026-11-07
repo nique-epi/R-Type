@@ -50,9 +50,14 @@ using rtype::network::testing::CONFLICT_PROBLEM;
 using rtype::network::testing::createdServerRefusal;
 using rtype::network::testing::DEGRADED_STATUS_LISTING_TEXT;
 using rtype::network::testing::DEGRADED_TEXT;
+using rtype::network::testing::DIFFICULTIES_PAST_THE_MOST;
+using rtype::network::testing::DIFFICULTIES_POINTER;
+using rtype::network::testing::difficultyNames;
 using rtype::network::testing::EMPTY_GAME_NAME;
 using rtype::network::testing::FIFTH_PILOT;
 using rtype::network::testing::FIRST_GAME_FIRST_PLAYER_POINTER;
+using rtype::network::testing::FIRST_GAME_FRIENDLY_FIRE_POINTER;
+using rtype::network::testing::FIRST_GAME_LIVES_POINTER;
 using rtype::network::testing::FIRST_GAME_NAME_POINTER;
 using rtype::network::testing::FIRST_GAME_PLAYER_COUNT_POINTER;
 using rtype::network::testing::FIRST_GAME_PLAYERS_POINTER;
@@ -63,7 +68,9 @@ using rtype::network::testing::FIRST_SERVER_PROBE_SECRET_POINTER;
 using rtype::network::testing::FIRST_SERVER_STATUS_POINTER;
 using rtype::network::testing::FIVE_PLAYERS;
 using rtype::network::testing::FOURTH_PILOT;
+using rtype::network::testing::FRIENDLY_FIRE_AS_A_NUMBER;
 using rtype::network::testing::FULL_STATE;
+using rtype::network::testing::GAME_LIVES_PAST_A_BYTE;
 using rtype::network::testing::GAME_NAME_OF_17_BYTES;
 using rtype::network::testing::gameListingRefusal;
 using rtype::network::testing::gameListingTextOfGames;
@@ -85,16 +92,20 @@ using rtype::network::testing::LOWEST_KEPT_PROBE_SECRET;
 using rtype::network::testing::MAINTENANCE_TEXT;
 using rtype::network::testing::MAXIMUM_GAMES_POINTER;
 using rtype::network::testing::MAXIMUM_PLAYERS_PER_GAME_POINTER;
+using rtype::network::testing::MOST_DIFFICULTIES;
+using rtype::network::testing::MOST_GAME_LIVES_OF_A_BYTE;
 using rtype::network::testing::NAME_OF_32_BYTES;
 using rtype::network::testing::NAME_OF_33_BYTES;
 using rtype::network::testing::NAME_POINTER;
 using rtype::network::testing::NAME_WITH_LINE_FEED;
 using rtype::network::testing::NEGATIVE_MEASURE;
 using rtype::network::testing::NO_GAME;
+using rtype::network::testing::NO_GAME_LIFE;
 using rtype::network::testing::NO_SERVER_ID;
 using rtype::network::testing::NOT_JSON;
 using rtype::network::testing::OFFLINE_TEXT;
 using rtype::network::testing::ONLINE_TEXT;
+using rtype::network::testing::PARIS_DIFFICULTY;
 using rtype::network::testing::PARIS_GAME_LISTING_TEXT;
 using rtype::network::testing::PARIS_ID;
 using rtype::network::testing::PARIS_KEY;
@@ -124,6 +135,7 @@ using rtype::network::testing::registrationRefusal;
 using rtype::network::testing::registrationTextWith;
 using rtype::network::testing::registrationTextWithout;
 using rtype::network::testing::SAMPLE_DATE;
+using rtype::network::testing::SECOND_DIFFICULTY_POINTER;
 using rtype::network::testing::SECOND_GAME_NUMBER_POINTER;
 using rtype::network::testing::SECOND_PILOT;
 using rtype::network::testing::serverListingRefusal;
@@ -458,6 +470,92 @@ TEST(MasterMessageText, RefusesAPlayerWhoseNicknameIsTooLong) {
   EXPECT_THAT(heartbeatRefusal(heartbeatTextWith(
                   FIRST_GAME_FIRST_PLAYER_POINTER, SEVENTEEN_BYTE_NICKNAME)),
               HasSubstr(quoted(FIRST_GAME_FIRST_PLAYER_POINTER)));
+}
+
+/**
+ * Given the heartbeat of "Paris 1" without its difficulties
+ * When it is read
+ * Then the refusal names the difficulties
+ */
+TEST(MasterMessageText, RefusesAHeartbeatWithoutDifficulties) {
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWithout(DIFFICULTIES_POINTER)),
+              HasSubstr(quoted(DIFFICULTIES_POINTER)));
+}
+
+/**
+ * Given the heartbeat of "Paris 1" with no difficulty
+ * When it is read
+ * Then the refusal names the difficulties: a server has one at least
+ */
+TEST(MasterMessageText, RefusesAHeartbeatOfNoDifficulty) {
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWith(DIFFICULTIES_POINTER,
+                                                 nlohmann::json::array())),
+              HasSubstr(quoted(DIFFICULTIES_POINTER)));
+}
+
+/**
+ * Given the heartbeat of "Paris 1" naming the difficulty "normal" twice
+ * When it is read
+ * Then the refusal names the second one
+ */
+TEST(MasterMessageText, RefusesADifficultyNamedTwice) {
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWith(
+                  DIFFICULTIES_POINTER,
+                  nlohmann::json::array({PARIS_DIFFICULTY, PARIS_DIFFICULTY}))),
+              HasSubstr(quoted(SECOND_DIFFICULTY_POINTER)));
+}
+
+/**
+ * Given heartbeats of 16 difficulties, the most a server may hold, then 17
+ * When each is read
+ * Then the first is accepted and the refusal of the second names the
+ * difficulties
+ */
+TEST(MasterMessageText, RefusesMoreDifficultiesThanAServerMayHold) {
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWith(
+                  DIFFICULTIES_POINTER, difficultyNames(MOST_DIFFICULTIES))),
+              IsEmpty());
+  EXPECT_THAT(
+      heartbeatRefusal(heartbeatTextWith(
+          DIFFICULTIES_POINTER, difficultyNames(DIFFICULTIES_PAST_THE_MOST))),
+      HasSubstr(quoted(DIFFICULTIES_POINTER)));
+}
+
+/**
+ * Given a game that gives its players no life
+ * When the heartbeat is read
+ * Then the refusal names the lives of that game
+ */
+TEST(MasterMessageText, RefusesAGameOfNoLife) {
+  EXPECT_THAT(heartbeatRefusal(
+                  heartbeatTextWith(FIRST_GAME_LIVES_POINTER, NO_GAME_LIFE)),
+              HasSubstr(quoted(FIRST_GAME_LIVES_POINTER)));
+}
+
+/**
+ * Given a game of 255 lives, the most a byte holds, then one of 256, which a
+ * cut to one byte would read as none
+ * When each heartbeat is read
+ * Then the first is accepted and the refusal of the second names its lives
+ */
+TEST(MasterMessageText, RefusesMoreLivesThanAByteHolds) {
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWith(FIRST_GAME_LIVES_POINTER,
+                                                 MOST_GAME_LIVES_OF_A_BYTE)),
+              IsEmpty());
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWith(FIRST_GAME_LIVES_POINTER,
+                                                 GAME_LIVES_PAST_A_BYTE)),
+              HasSubstr(quoted(FIRST_GAME_LIVES_POINTER)));
+}
+
+/**
+ * Given a game whose friendly fire is the number 1
+ * When the heartbeat is read
+ * Then the refusal names its friendly fire: it is a boolean
+ */
+TEST(MasterMessageText, RefusesAFriendlyFireThatIsNoBoolean) {
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWith(
+                  FIRST_GAME_FRIENDLY_FIRE_POINTER, FRIENDLY_FIRE_AS_A_NUMBER)),
+              HasSubstr(quoted(FIRST_GAME_FRIENDLY_FIRE_POINTER)));
 }
 
 /**

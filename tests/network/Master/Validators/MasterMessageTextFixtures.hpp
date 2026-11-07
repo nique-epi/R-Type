@@ -69,6 +69,9 @@ namespace rtype::network::testing {
 /** @returns The heartbeat of "Paris 1" without the member at @p pointer. */
 [[nodiscard]] std::string heartbeatTextWithout(std::string_view pointer);
 
+/** @returns A JSON array of @p count distinct names of difficulties. */
+[[nodiscard]] nlohmann::json difficultyNames(std::size_t count);
+
 /**
  * @returns A heartbeat listing @p gameCount waiting games of no player,
  * numbered from 1, as JSON.

@@ -7,6 +7,7 @@
 #include "ConfigurationRegistry.hpp"
 #include "HeartbeatJob.hpp"
 #include "HeartbeatJobParts.hpp"
+#include "HostedDifficulties.hpp"
 #include "IListeningPort.hpp"
 #include "IModule.hpp"
 #include "IServerName.hpp"
@@ -62,6 +63,7 @@ class ServerMasterModule final : public engine::IModule {
   const IServerName* serverName_{nullptr};
   const IListeningPort* port_{nullptr};
   const LatestHostedGames* hostedGames_{nullptr};
+  const HostedDifficulties* difficulties_{nullptr};
   const LatestServerMeasures* measures_{nullptr};
   const TickDatagrams* tickDatagrams_{nullptr};
   engine::SystemClock clock_;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -64,6 +65,26 @@ constexpr std::string_view GAME_NAME_PREFIX = "GAME ";
 constexpr std::string_view WAITING_GAME_NAME = "GAME 1";
 constexpr std::string_view PLAYING_GAME_NAME = "GAME 2";
 constexpr std::string_view PARIS_DIFFICULTY = "normal";
+
+/** @brief The difficulties the Paris server announces, the one its playing
+ * game is played at, and the lives that game gives each player. */
+constexpr std::array<std::string_view, 3> PARIS_DIFFICULTIES{"easy", "hard",
+                                                             "normal"};
+constexpr std::string_view PARIS_HARD_DIFFICULTY = "hard";
+constexpr std::uint8_t PARIS_PLAYING_GAME_LIVES = 5;
+
+/** @brief Lives at the bounds of one byte: none, the most it holds, and one
+ * past it, which a cut to one byte would read as none. */
+constexpr int NO_GAME_LIFE = 0;
+constexpr int MOST_GAME_LIVES_OF_A_BYTE = 255;
+constexpr int GAME_LIVES_PAST_A_BYTE = 256;
+
+/** @brief A friendly fire written as a number instead of a boolean. */
+constexpr int FRIENDLY_FIRE_AS_A_NUMBER = 1;
+
+/** @brief The most difficulties a heartbeat may hold, then one more. */
+constexpr std::size_t MOST_DIFFICULTIES = 16;
+constexpr std::size_t DIFFICULTIES_PAST_THE_MOST = 17;
 constexpr std::uint8_t WAITING_GAME_PLAYER_COUNT = 1;
 constexpr std::uint8_t PLAYING_GAME_PLAYER_COUNT = 2;
 constexpr std::string_view FIRST_PILOT = "ACE";
@@ -120,6 +141,11 @@ constexpr std::string_view FIRST_GAME_FIRST_PLAYER_POINTER =
     "/games/0/players/0";
 constexpr std::string_view FIRST_GAME_PLAYERS_POINTER = "/games/0/players";
 constexpr std::string_view GAMES_POINTER = "/games";
+constexpr std::string_view DIFFICULTIES_POINTER = "/difficulties";
+constexpr std::string_view SECOND_DIFFICULTY_POINTER = "/difficulties/1";
+constexpr std::string_view FIRST_GAME_LIVES_POINTER = "/games/0/lives";
+constexpr std::string_view FIRST_GAME_FRIENDLY_FIRE_POINTER =
+    "/games/0/friendlyFire";
 constexpr std::string_view TICK_P50_POINTER = "/measures/tickP50Milliseconds";
 constexpr std::string_view LOSS_PERCENT_POINTER = "/measures/lossPercent";
 constexpr std::string_view AVERAGE_PING_POINTER =

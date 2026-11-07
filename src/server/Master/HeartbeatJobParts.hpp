@@ -2,6 +2,8 @@
 
 #include <cstdint>
 #include <functional>
+#include <string>
+#include <vector>
 #include "HeartbeatTimes.hpp"
 #include "LatestHostedGames.hpp"
 #include "LatestServerMeasures.hpp"
@@ -27,6 +29,9 @@ struct HeartbeatJobParts {
   /** @brief The games, which the job reads and waits on; they must outlive
    * it. */
   std::reference_wrapper<const LatestHostedGames> games;
+  /** @brief The difficulties the games may be played at, which every
+   * heartbeat carries; they do not change while the job runs. */
+  std::vector<std::string> difficulties;
   /** @brief The tokens of the probes of the master, which the job reads;
    * they must outlive it. */
   std::reference_wrapper<const concurrency::LatestValue<std::uint64_t>>

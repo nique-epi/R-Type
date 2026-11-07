@@ -365,6 +365,13 @@ constexpr std::size_t MINIMUM_NICKNAME_SIZE = 1;
 constexpr std::size_t MAXIMUM_NICKNAME_SIZE = 16;
 
 /**
+ * @brief The most difficulties a server may hold, so its heartbeat and the
+ * list of its games stay small: one per table of its waves file, the shipped
+ * file having three.
+ */
+constexpr std::size_t MAXIMUM_DIFFICULTIES = 16;
+
+/**
  * @brief The longest name of a server, in bytes of UTF-8, the master and the
  * ServerInformation of the server alike.
  */

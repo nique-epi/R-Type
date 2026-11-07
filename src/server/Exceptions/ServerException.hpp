@@ -39,6 +39,26 @@ class UnknownEnemyException : public ServerException {
                         const std::vector<std::string>& known);
 };
 
+/**
+ * @brief A table of difficulty whose name the protocol cannot carry: empty,
+ * longer than a nickname, or not printable UTF-8.
+ */
+class InvalidDifficultyNameException : public ServerException {
+ public:
+  explicit InvalidDifficultyNameException(const engine::DataFilePlace& place);
+};
+
+/**
+ * @brief A waves file with more tables of difficulty than a server may hold,
+ * network::MAXIMUM_DIFFICULTIES.
+ */
+class TooManyDifficultiesException : public ServerException {
+ public:
+  /** @param maximum The most difficulties a server may hold, in the message. */
+  TooManyDifficultiesException(const engine::DataFilePlace& place,
+                               std::size_t maximum);
+};
+
 /** @brief The waves file describes no difficulty of the name asked for. */
 class UnknownDifficultyException : public ServerException {
  public:

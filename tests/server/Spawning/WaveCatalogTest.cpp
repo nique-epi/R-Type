@@ -20,8 +20,10 @@ using rtype::engine::MissingDataFileKeyException;
 using rtype::engine::UnknownDataFileKeyException;
 using rtype::engine::UnreadableDataFileException;
 using rtype::game::testing::shippedEntitySheets;
+using rtype::server::InvalidDifficultyNameException;
 using rtype::server::InvalidEnemyListException;
 using rtype::server::OFFICIAL_WAVES_FINGERPRINT;
+using rtype::server::TooManyDifficultiesException;
 using rtype::server::UnknownDifficultyException;
 using rtype::server::UnknownEnemyException;
 using rtype::server::WaveCatalog;
@@ -30,13 +32,16 @@ using rtype::server::testing::A_MISSILE_AS_AN_ENEMY;
 using rtype::server::testing::CALM_CURVE;
 using rtype::server::testing::CALM_ENEMIES;
 using rtype::server::testing::calmFile;
+using rtype::server::testing::calmFileNamed;
 using rtype::server::testing::calmFileWith;
 using rtype::server::testing::calmFileWithout;
+using rtype::server::testing::DIFFICULTIES_PAST_THE_MOST_OF_A_FILE;
 using rtype::server::testing::EMPTY_FILE;
 using rtype::server::testing::ENEMY_OUTSIDE_A_LIST;
 using rtype::server::testing::errorReading;
 using rtype::server::testing::FEWEST_BYDOS;
 using rtype::server::testing::FEWEST_WAVES;
+using rtype::server::testing::fileOfDifficulties;
 using rtype::server::testing::FRACTION;
 using rtype::server::testing::INVALID_ENEMY_LIST_TEXT;
 using rtype::server::testing::LEVEL_THAT_IS_NOT_A_TABLE;
@@ -48,6 +53,7 @@ using rtype::server::testing::MISSING_PAUSE_TEXT;
 using rtype::server::testing::MISSPELT_KEY;
 using rtype::server::testing::MISSPELT_KEY_MESSAGE;
 using rtype::server::testing::MOST_BYDOS;
+using rtype::server::testing::MOST_DIFFICULTIES_OF_A_FILE;
 using rtype::server::testing::MOST_WAVES;
 using rtype::server::testing::NO_BYDO;
 using rtype::server::testing::NO_BYDO_MESSAGE;
@@ -59,9 +65,11 @@ using rtype::server::testing::NOT_A_TOML_VALUE;
 using rtype::server::testing::NUMBER_AS_AN_ENEMY;
 using rtype::server::testing::ONE_BYDO_TOO_MANY;
 using rtype::server::testing::ONE_WAVE_TOO_MANY;
+using rtype::server::testing::SEVENTEEN_BYTE_DIFFICULTY;
 using rtype::server::testing::shippedCatalog;
 using rtype::server::testing::SHORTEST_EQUAL_TO_THE_FIRST;
 using rtype::server::testing::SHORTEST_LONGER_THAN_THE_FIRST;
+using rtype::server::testing::SIXTEEN_BYTE_DIFFICULTY;
 using rtype::server::testing::STORM_CURVE;
 using rtype::server::testing::STORM_ENEMIES;
 using rtype::server::testing::STORM_TABLE;
@@ -213,6 +221,37 @@ TEST(WaveCatalog, RefusesALevelWithoutWavesOrWithOneTooMany) {
                    oneTooMany, TEST_FILE_NAME, shippedEntitySheets())),
                DataFileValueOutOfRangeException);
   EXPECT_EQ(errorReading(noWave), NO_WAVE_MESSAGE);
+}
+
+/**
+ * Given waves files whose one difficulty is named by 16 bytes, then by 17
+ * When each is read
+ * Then the first is read and the second is refused: the protocol carries a
+ * difficulty named by 16 bytes at most
+ */
+TEST(WaveCatalog, RefusesADifficultyNameTheProtocolCannotCarry) {
+  EXPECT_NO_THROW(static_cast<void>(
+      WaveCatalog::fromText(calmFileNamed(SIXTEEN_BYTE_DIFFICULTY),
+                            TEST_FILE_NAME, shippedEntitySheets())));
+  EXPECT_THROW(static_cast<void>(WaveCatalog::fromText(
+                   calmFileNamed(SEVENTEEN_BYTE_DIFFICULTY), TEST_FILE_NAME,
+                   shippedEntitySheets())),
+               InvalidDifficultyNameException);
+}
+
+/**
+ * Given waves files of 16 difficulties, the most a server may hold, then 17
+ * When each is read
+ * Then the first is read and the second is refused
+ */
+TEST(WaveCatalog, RefusesMoreDifficultiesThanAServerMayHold) {
+  EXPECT_NO_THROW(static_cast<void>(
+      WaveCatalog::fromText(fileOfDifficulties(MOST_DIFFICULTIES_OF_A_FILE),
+                            TEST_FILE_NAME, shippedEntitySheets())));
+  EXPECT_THROW(static_cast<void>(WaveCatalog::fromText(
+                   fileOfDifficulties(DIFFICULTIES_PAST_THE_MOST_OF_A_FILE),
+                   TEST_FILE_NAME, shippedEntitySheets())),
+               TooManyDifficultiesException);
 }
 
 /**

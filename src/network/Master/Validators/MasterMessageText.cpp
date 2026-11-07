@@ -218,6 +218,44 @@ HostedGameState stateOf(const JsonField& field) {
   return *state;
 }
 
+/** @returns Whether @p field holds true; it must hold a JSON boolean. */
+bool booleanOf(const JsonField& field) {
+  const nlohmann::json& value = field.value.get();
+  if (!value.is_boolean()) {
+    refuse(field);
+  }
+  return value.get<bool>();
+}
+
+/** @returns The lives @p game gives its players, LOWEST_GAME_LIVES to
+ * HIGHEST_GAME_LIVES. */
+std::uint8_t livesOf(const JsonField& game) {
+  return static_cast<std::uint8_t>(
+      integerOf(memberOf(game, LIVES_MEMBER),
+                IntegerBounds{.lowest = LOWEST_GAME_LIVES,
+                              .highest = HIGHEST_GAME_LIVES}));
+}
+
+/** @returns The difficulties @p message holds: 1 to MAXIMUM_DIFFICULTIES
+ * distinct names, each following the rules of a nickname. */
+std::vector<std::string> difficultiesOf(const JsonField& message) {
+  const JsonField field = memberOf(message, DIFFICULTIES_MEMBER);
+  const std::size_t count = arraySizeOf(field, MAXIMUM_DIFFICULTIES);
+  if (count == 0) {
+    refuse(field);
+  }
+  std::vector<std::string> names;
+  names.reserve(count);
+  for (std::size_t index = 0; index < count; ++index) {
+    std::string name = nicknameOf(elementOf(field, index));
+    if (std::ranges::find(names, name) != names.end()) {
+      refuse(elementOf(field, index));
+    }
+    names.push_back(std::move(name));
+  }
+  return names;
+}
+
 std::vector<std::string> playersOf(const JsonField& game) {
   const JsonField players = memberOf(game, PLAYERS_MEMBER);
   const std::size_t count = arraySizeOf(players, MAXIMUM_PLAYERS);
@@ -246,11 +284,14 @@ std::string gameNameOf(const JsonField& game) {
 
 HostedGame gameOf(const JsonField& game) {
   requireObject(game);
-  return HostedGame{.number = gameNumberOf(game),
-                    .name = gameNameOf(game),
-                    .state = stateOf(memberOf(game, STATE_MEMBER)),
-                    .difficulty = nicknameOf(memberOf(game, DIFFICULTY_MEMBER)),
-                    .players = playersOf(game)};
+  return HostedGame{
+      .number = gameNumberOf(game),
+      .name = gameNameOf(game),
+      .state = stateOf(memberOf(game, STATE_MEMBER)),
+      .difficulty = nicknameOf(memberOf(game, DIFFICULTY_MEMBER)),
+      .lives = livesOf(game),
+      .friendlyFire = booleanOf(memberOf(game, FRIENDLY_FIRE_MEMBER)),
+      .players = playersOf(game)};
 }
 
 /**
@@ -358,6 +399,8 @@ nlohmann::json gameDocument(const HostedGame& game) {
   document[STATE_MEMBER] =
       HOSTED_GAME_STATE_TEXTS.at(static_cast<std::size_t>(game.state));
   document[DIFFICULTY_MEMBER] = game.difficulty;
+  document[LIVES_MEMBER] = game.lives;
+  document[FRIENDLY_FIRE_MEMBER] = game.friendlyFire;
   document[PLAYERS_MEMBER] = game.players;
   return document;
 }
@@ -570,6 +613,7 @@ std::string heartbeatText(const ServerHeartbeat& heartbeat) {
   for (const HostedGame& game : heartbeat.games) {
     document[GAMES_MEMBER].push_back(gameDocument(game));
   }
+  document[DIFFICULTIES_MEMBER] = heartbeat.difficulties;
   document[MEASURES_MEMBER] = measuresDocument(heartbeat.measures);
   if (heartbeat.probeToken.has_value()) {
     document[PROBE_TOKEN_MEMBER] = *heartbeat.probeToken;
@@ -581,6 +625,7 @@ ServerHeartbeat heartbeatFromText(std::string_view text) {
   const nlohmann::json document = parsedObject(text);
   const JsonField heartbeat = wholeMessage(document);
   return ServerHeartbeat{.games = gamesOf(heartbeat),
+                         .difficulties = difficultiesOf(heartbeat),
                          .measures = measuresOf(heartbeat),
                          .probeToken = probeTokenOf(heartbeat)};
 }

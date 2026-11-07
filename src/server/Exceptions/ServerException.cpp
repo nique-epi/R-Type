@@ -27,6 +27,17 @@ UnknownEnemyException::UnknownEnemyException(
                       ": unknown enemy \"" + enemy +
                       "\"; known: " + engine::listText(known)) {}
 
+InvalidDifficultyNameException::InvalidDifficultyNameException(
+    const engine::DataFilePlace& place)
+    : ServerException(engine::placeText(place) + ": " + place.key +
+                      ": a difficulty is named by 1 to 16 printable bytes") {}
+
+TooManyDifficultiesException::TooManyDifficultiesException(
+    const engine::DataFilePlace& place, std::size_t maximum)
+    : ServerException(engine::placeText(place) + ": " + place.key +
+                      ": more than " + std::to_string(maximum) +
+                      " difficulties") {}
+
 UnknownDifficultyException::UnknownDifficultyException(
     const std::string& difficulty, const std::vector<std::string>& known)
     : ServerException(

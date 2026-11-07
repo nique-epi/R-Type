@@ -7,6 +7,7 @@
 #include <vector>
 #include "ConfigurationRegistry.hpp"
 #include "HeartbeatJobParts.hpp"
+#include "HostedDifficulties.hpp"
 #include "IListeningPort.hpp"
 #include "IServerName.hpp"
 #include "IncomingDatagram.hpp"
@@ -45,6 +46,7 @@ void ServerMasterModule::install(engine::InstallContext& context) {
   declareSettings(context.require<engine::ConfigurationRegistry>());
   port_ = &context.require<IListeningPort>();
   hostedGames_ = &context.require<LatestHostedGames>();
+  difficulties_ = &context.require<HostedDifficulties>();
   measures_ = &context.require<LatestServerMeasures>();
   serverName_ = &context.require<IServerName>();
   tickDatagrams_ = &context.require<TickDatagrams>();
@@ -86,6 +88,7 @@ std::optional<HeartbeatJobParts> ServerMasterModule::jobParts() const {
                                      MAXIMUM_RUNNING_GAMES),
                                  .probeSecret = probeSecret_},
       .games = *hostedGames_,
+      .difficulties = difficulties_->names(),
       .probeTokens = probeTokens_,
       .measures = measures_,
       .times = {}};

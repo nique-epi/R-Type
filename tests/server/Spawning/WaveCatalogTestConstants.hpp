@@ -2,6 +2,7 @@
 
 #include <array>
 #include <chrono>
+#include <cstddef>
 #include <string_view>
 #include <utility>
 #include "EntityTypesTestConstants.hpp"
@@ -12,6 +13,22 @@ namespace rtype::server::testing {
 
 /** @brief The name the tests give the waves file, which the errors show. */
 constexpr std::string_view TEST_FILE_NAME = "test.toml";
+
+/** @brief How a table of difficulty starts and ends its header. */
+constexpr std::string_view DIFFICULTY_HEADER_START = "[difficulty.";
+constexpr std::string_view DIFFICULTY_HEADER_END = "]";
+
+/** @brief Names of difficulties of 16 bytes, the longest the protocol
+ * carries, and of 17. */
+constexpr std::string_view SIXTEEN_BYTE_DIFFICULTY = "abcdefghijklmnop";
+constexpr std::string_view SEVENTEEN_BYTE_DIFFICULTY = "abcdefghijklmnopq";
+
+/** @brief The most difficulties a waves file may hold, then one more. */
+constexpr std::size_t MOST_DIFFICULTIES_OF_A_FILE = 16;
+constexpr std::size_t DIFFICULTIES_PAST_THE_MOST_OF_A_FILE = 17;
+
+/** @brief The start of the names a file of many difficulties gives them. */
+constexpr std::string_view NUMBERED_DIFFICULTY_PREFIX = "level";
 
 /** @brief A line that only holds a comment, so it changes no difficulty. */
 constexpr std::string_view A_COMMENT_LINE = "# a comment\n";

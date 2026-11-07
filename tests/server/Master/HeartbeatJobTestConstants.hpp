@@ -22,6 +22,10 @@ constexpr std::string_view PROBE_TOKEN_MEMBER_TEXT = "probeToken";
 /** @brief What every heartbeat the master keeps holds. */
 constexpr std::string_view GAMES_MEMBER_TEXT = "\"games\"";
 constexpr std::string_view LINKED_DIFFICULTY = "normal";
+
+/** @brief How a heartbeat writes the difficulties of the linked server. */
+constexpr std::string_view LINKED_DIFFICULTIES_TEXT =
+    "\"difficulties\":[\"normal\"]";
 constexpr std::uint16_t LINKED_GAME_NUMBER = 1;
 constexpr std::string_view LINKED_GAME_NAME = "GAME 1";
 

@@ -66,6 +66,7 @@ class HeartbeatJob {
   network::MasterClient client_;
   ServerIdentity identity_;
   const LatestHostedGames& games_;
+  std::vector<std::string> difficulties_;
   const concurrency::LatestValue<std::uint64_t>& probeTokens_;
   std::uint64_t sentTokenRevision_{0};
   const LatestServerMeasures* measures_;
