@@ -1,5 +1,6 @@
 add_library(rtype_client_title STATIC
   ConnectionScreen.cpp
+  EndpointForm.cpp
   DialogMenus.cpp
   IntroScreen.cpp
   TitleScreen.cpp
