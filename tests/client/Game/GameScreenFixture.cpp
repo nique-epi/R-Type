@@ -38,6 +38,7 @@ GameScreenFixture::GameScreenFixture()
                               .waitingRoom = waitingRoom_,
                               .sky = sky_,
                               .sounds = sounds_,
+                              .audio = audio_,
                               .entityTypes = entityTypes_,
                               .result = result_},
               std::make_unique<RecordingEntityLayer>(layerRecord_),

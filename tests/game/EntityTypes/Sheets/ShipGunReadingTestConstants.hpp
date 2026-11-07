@@ -6,10 +6,10 @@
 namespace rtype::game::testing {
 
 /** @brief The numbers of the shipped ship and its missile, in the order of
- * the names of the eleven shipped sheets: ship is the ninth, player_missile
- * the sixth. */
-constexpr std::uint8_t SHIPPED_SHIP_NUMBER = 9;
-constexpr std::uint8_t SHIPPED_PLAYER_MISSILE_NUMBER = 6;
+ * the names of the sixteen shipped sheets: ship is the tenth, player_missile
+ * the seventh. */
+constexpr std::uint8_t SHIPPED_SHIP_NUMBER = 10;
+constexpr std::uint8_t SHIPPED_PLAYER_MISSILE_NUMBER = 7;
 
 /** @brief The gun of the shipped ship: 333 ms between shots is 20 ticks, the
  * first shot at once, its missile flying right at 960 units per second. */

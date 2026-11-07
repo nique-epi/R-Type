@@ -20,6 +20,7 @@
 #include "Position.hpp"
 #include "SteadyMotion.hpp"
 #include "SteadyTravel.hpp"
+#include "Summoning.hpp"
 #include "TimeConstants.hpp"
 #include "ViewDelay.hpp"
 
@@ -102,7 +103,8 @@ void LagCompensatedHitSystem::recordEnemies(
       [&components, &enemies](engine::Entity entity, const EntityType& side,
                               const Position& position) {
         const auto* const box = components.get<CollisionBox>(entity);
-        if (side == EntityType::Enemy && box != nullptr) {
+        if (side == EntityType::Enemy && box != nullptr &&
+            !components.has<Summoning>(entity)) {
           enemies.push_back(
               PastEnemy{.entity = entity, .bounds = boundsOf(position, *box)});
         }

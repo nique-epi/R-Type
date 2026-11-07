@@ -6,6 +6,8 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include "BossStage.hpp"
+#include "BossStageParts.hpp"
 #include "CollisionRules.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
@@ -27,6 +29,8 @@
 #include "PlayerRoster.hpp"
 #include "ShooterViews.hpp"
 #include "TimeConstants.hpp"
+#include "VolleySystem.hpp"
+#include "VolleySystemParts.hpp"
 #include "WaveSpawner.hpp"
 #include "WaveSpawnerParts.hpp"
 #include "WeaponSystem.hpp"
@@ -72,19 +76,21 @@ std::optional<std::string_view> reasonToLose(PlayerRoster& roster,
 
 /**
  * @returns How the game in progress played by @p roster in @p world, whose
- * Bydos come from @p spawner, ends now: lost when no player is left or none
- * of them has a life, otherwise won when the last wave of the level is over.
- * The loss comes first, so a game lost on the tick its last wave ends is
- * lost. Nothing when it goes on.
+ * level ends as @p stage says, ends now: lost when no player is left or none
+ * of them has a life, otherwise won once the level is cleared: its last wave
+ * over, and its boss, if it has one, gone with every other enemy. The loss
+ * comes first, so a game lost on the tick its level is cleared is lost.
+ * Nothing when it goes on.
  */
 std::optional<GameEnding> endingOf(PlayerRoster& roster, game::World& world,
-                                   const WaveSpawner& spawner) {
+                                   const BossStage& stage) {
   const std::optional<std::string_view> loss = reasonToLose(roster, world);
   if (loss.has_value()) {
     return GameEnding{.reason = *loss, .outcome = GameOutcome::Defeat};
   }
-  if (spawner.lastWaveFinished()) {
-    return GameEnding{.reason = LAST_WAVE_OVER_FINISH_REASON,
+  if (stage.levelCleared()) {
+    return GameEnding{.reason = stage.hasBoss() ? BOSS_DEFEATED_FINISH_REASON
+                                                : LAST_WAVE_OVER_FINISH_REASON,
                       .outcome = GameOutcome::Victory};
   }
   return std::nullopt;
@@ -108,6 +114,69 @@ void runWorldSystems(GameContext& game, game::World& world,
 void changeState(GameState& state, GameState next, engine::EventBus& events) {
   events.publish(GameStateChanged{.previous = std::exchange(state, next),
                                   .current = next});
+}
+
+/** @returns The boss stage of the level played in @p world. */
+std::unique_ptr<BossStage> bossStageFor(GameContext& game, game::World& world) {
+  return std::make_unique<BossStage>(
+      BossStageParts{.world = world,
+                     .roster = game.roster.get(),
+                     .send = game.send,
+                     .events = game.events.get(),
+                     .types = game.settings.types,
+                     .boss = game.settings.waves.boss,
+                     .healthPercent = game.settings.waves.bossHealthPercent});
+}
+
+/** @brief Writes that the game started, with how many players. */
+void logStart(const logging::Logger& logger, PlayerRoster& roster) {
+  logger.info("game started, players connected: ", roster.connected().size());
+}
+
+/** @returns The spawner of the Bydos of @p world, its draws from @p seed. */
+std::unique_ptr<WaveSpawner> waveSpawnerFor(GameContext& game,
+                                            game::World& world,
+                                            std::uint32_t seed) {
+  return std::make_unique<WaveSpawner>(
+      WaveSpawnerParts{.world = world,
+                       .roster = game.roster.get(),
+                       .send = game.send,
+                       .seed = seed,
+                       .waves = game.settings.waves,
+                       .types = game.settings.types});
+}
+
+/** @returns The weapon system of the missiles of @p world. */
+std::unique_ptr<WeaponSystem> weaponSystemFor(GameContext& game,
+                                              game::World& world) {
+  return std::make_unique<WeaponSystem>(
+      WeaponSystemParts{.world = world,
+                        .roster = game.roster.get(),
+                        .send = game.send,
+                        .types = game.settings.types,
+                        .events = game.events.get()});
+}
+
+/** @returns The volley system of the enemies of @p world. */
+std::unique_ptr<VolleySystem> volleySystemFor(GameContext& game,
+                                              game::World& world) {
+  return std::make_unique<VolleySystem>(
+      VolleySystemParts{.world = world,
+                        .roster = game.roster.get(),
+                        .send = game.send,
+                        .types = game.settings.types,
+                        .seed = game.settings.seed});
+}
+
+/** @returns Whether the boss of the level may come at this tick, after
+ * moving @p waves on a tick: once the last wave is over, or at once, without
+ * any wave, in a game that @p startsAtBoss. */
+bool advanceTheWaves(WaveSpawner& waves, bool startsAtBoss) {
+  if (startsAtBoss) {
+    return true;
+  }
+  waves.onTick();
+  return waves.lastWaveFinished();
 }
 
 }  // namespace
@@ -139,35 +208,35 @@ void GameFlow::onTick() {
 void GameFlow::advanceState() {
   switch (state_) {
     case GameState::WaitingForPlayers:
-      if (game_.everyPlayerIsReady()) {
-        changeState(state_, GameState::Starting, game_.events.get());
-        startBarrier_.open();
-      } else {
+      if (!game_.everyPlayerIsReady()) {
         replication_.onWaitingTick();
+        break;
       }
+      changeState(state_, GameState::Starting, game_.events.get());
+      startBarrier_.open();
       break;
     case GameState::Starting:
       if (startBarrier_.advance()) {
         changeState(state_, GameState::InProgress, game_.events.get());
-        logger_.info("game started, players connected: ",
-                     game_.roster.get().connected().size());
+        logStart(logger_, game_.roster.get());
       }
       break;
     case GameState::InProgress:
       ++tick_;
       runWorldSystems(game_, world(), tick_);
       weaponSystem_->onTick();
-      waveSpawner_->onTick();
+      volleySystem_->onTick();
+      bossStage_->onTick(
+          advanceTheWaves(*waveSpawner_, game_.settings.startsAtBoss));
       lifeKeeper_->onTick();
       break;
     case GameState::Finished:
-      ++finishedTicks_;
-      if (finishedTicks_ >= FINISHED_STATE_TICKS) {
-        startNewWorld();
-        changeState(state_, GameState::WaitingForPlayers, game_.events.get());
-      } else {
+      if (++finishedTicks_ < FINISHED_STATE_TICKS) {
         replication_.onFinishedTick();
+        break;
       }
+      startNewWorld();
+      changeState(state_, GameState::WaitingForPlayers, game_.events.get());
       break;
   }
 }
@@ -184,7 +253,7 @@ void GameFlow::finishIfOver() {
     return;
   }
   const std::optional<GameEnding> ending =
-      endingOf(game_.roster.get(), world(), *waveSpawner_);
+      endingOf(game_.roster.get(), world(), *bossStage_);
   if (!ending.has_value()) {
     return;
   }
@@ -200,26 +269,20 @@ void GameFlow::buildWorld() {
                                                            world.components());
   damageRules_ = std::make_unique<game::DamageRules>(game_.events.get(),
                                                      world.components());
-  waveSpawner_ = std::make_unique<WaveSpawner>(
-      WaveSpawnerParts{.world = world,
-                       .roster = game_.roster.get(),
-                       .send = game_.send,
-                       .seed = game_.settings.seed + worldsBuilt_,
-                       .waves = game_.settings.waves,
-                       .types = game_.settings.types});
-  weaponSystem_ = std::make_unique<WeaponSystem>(
-      WeaponSystemParts{.world = world,
-                        .roster = game_.roster.get(),
-                        .send = game_.send,
-                        .types = game_.settings.types,
-                        .events = game_.events.get()});
+  waveSpawner_ =
+      waveSpawnerFor(game_, world, game_.settings.seed + worldsBuilt_);
+  weaponSystem_ = weaponSystemFor(game_, world);
+  volleySystem_ = volleySystemFor(game_, world);
+  bossStage_ = bossStageFor(game_, world);
   lifeKeeper_ = std::make_unique<LifeKeeper>(
       LifeKeeperParts{.events = game_.events.get(),
                       .world = world,
                       .roster = game_.roster.get(),
-                      .respawn = [this](ConnectedPlayer& player) {
-                        replication_.onPlayerJoined(player);
-                      }});
+                      .respawn =
+                          [this](ConnectedPlayer& player) {
+                            replication_.onPlayerJoined(player);
+                          },
+                      .shipsNeverDie = game_.settings.startsAtBoss});
 }
 
 void GameFlow::startNewWorld() {

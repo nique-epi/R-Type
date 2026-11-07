@@ -24,7 +24,8 @@ EntityAppearance appearancePlaying(const Animation& animation) {
       .sheet = ENTITY_SHEET_ID,
       .idleFrames = {animation.frames.begin(), animation.frames.end()},
       .idleFrameDuration = animation.frameDuration,
-      .actions = {}};
+      .actions = {},
+      .enragedIdleFrames = {}};
 }
 
 /** @returns The side of the type the double numbers @p number, or nothing

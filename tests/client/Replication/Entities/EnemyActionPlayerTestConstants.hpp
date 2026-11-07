@@ -24,4 +24,24 @@ constexpr game::SpriteFrame IDLE_FRAME{
 constexpr engine::Duration STRIKE_FRAME_TIME = std::chrono::milliseconds(100);
 constexpr FrameAnchor STRIKE_ANCHOR{.x = -4, .y = 1};
 
+/** @brief How long the idle frame shows, and the two frames of the strike. */
+constexpr engine::Duration IDLE_FRAME_TIME = std::chrono::milliseconds(200);
+constexpr game::SpriteFrame FIRST_STRIKE_FRAME{
+    .left = 0, .top = 16, .width = 16, .height = 8};
+constexpr game::SpriteFrame SECOND_STRIKE_FRAME{
+    .left = 18, .top = 16, .width = 16, .height = 8};
+
+/** @brief The rage of the enemy: its attack, its two frames held 100 ms
+ * each, and the idle frame it shows once enraged. */
+constexpr std::uint8_t RAGE_ATTACK = 9;
+constexpr engine::Duration RAGE_FRAME_TIME = std::chrono::milliseconds(100);
+constexpr int RAGE_FRAME_COUNT = 2;
+constexpr int STRIKE_FRAME_COUNT = 2;
+constexpr game::SpriteFrame FIRST_RAGE_FRAME{
+    .left = 0, .top = 24, .width = 16, .height = 8};
+constexpr game::SpriteFrame SECOND_RAGE_FRAME{
+    .left = 18, .top = 24, .width = 16, .height = 8};
+constexpr game::SpriteFrame ENRAGED_IDLE_FRAME{
+    .left = 10, .top = 0, .width = 8, .height = 8};
+
 }  // namespace rtype::client::testing

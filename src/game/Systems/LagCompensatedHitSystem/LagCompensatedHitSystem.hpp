@@ -41,7 +41,8 @@ class LagCompensatedHitSystem final : public engine::ISystem {
 
  private:
   /** @brief Records the box of every enemy of @p components as the newest
-   * tick, in place of the oldest one kept. */
+   * tick, in place of the oldest one kept; an enemy still summoning is left
+   * out, as CollisionSystem leaves it out. */
   void recordEnemies(engine::ComponentRegistry& components);
 
   /** @brief Forgets every box kept, and keeps @p components as the world they

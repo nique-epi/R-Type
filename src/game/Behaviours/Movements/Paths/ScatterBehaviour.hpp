@@ -14,7 +14,8 @@ namespace rtype::game {
  * speed: the shards of a burst appear a little away from the center of their
  * projectile (see World::spawnFrom) and each flies on along its own line. A
  * body still on that point flies left, the way of the missiles of an enemy.
- * It has no setting and fires nothing.
+ * It has no setting, and fires the Gun of its sheet when it has one: a
+ * diver of the Bydo Tyrant flies its heading and shoots on the way.
  */
 class ScatterBehaviour final : public IBehaviour {
  public:

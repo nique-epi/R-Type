@@ -7,6 +7,7 @@
 #include "EntityDestroyed.hpp"
 #include "EntityMessage.hpp"
 #include "EntityMessageQueueFixture.hpp"
+#include "EntityMessageQueueTestConstants.hpp"
 #include "EntityReplicatorTestConstants.hpp"
 #include "EntitySpawned.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
@@ -23,6 +24,7 @@
 namespace rtype::client {
 
 using testing::APPLIED_TICK;
+using testing::ARRIVING_BOSS_STATUS;
 using testing::BYDO_ID;
 using testing::damaged;
 using ::testing::ElementsAre;
@@ -292,6 +294,22 @@ TEST_F(EntityMessageQueueFixture, HandsOverEveryCopyOfAPlayerLeft) {
 
   EXPECT_THAT(drainedEntityMessages(),
               ElementsAre(EntityMessage{departure}, EntityMessage{departure}));
+}
+
+/**
+ * Given a game started in the session
+ * When a BossStatus arrives
+ * Then the connection hands it over
+ */
+TEST_F(EntityMessageQueueFixture, KeepsABossStatusOfAStartedGame) {
+  accept();
+  deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
+  deliverInSession(ARRIVING_BOSS_STATUS, SECOND_SEQUENCE);
+
+  update();
+
+  EXPECT_THAT(drainedEntityMessages(),
+              ElementsAre(EntityMessage{ARRIVING_BOSS_STATUS}));
 }
 
 }  // namespace rtype::client

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include "BossArrival.hpp"
+#include "BossHealthChanged.hpp"
 #include "EnemyActionStarted.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestruction.hpp"
@@ -51,6 +53,12 @@ class GameEventEncoder {
   /** @returns A PlayerLeft with the number of the player and why it left,
    * guaranteed. */
   [[nodiscard]] static EventMessage encode(const game::PlayerDeparture& event);
+  /** @returns A BossStatus of a boss arriving, guaranteed. */
+  [[nodiscard]] static EventMessage encode(const game::BossArrival& event);
+  /** @returns A BossStatus of the boss in play, guaranteed: Defeated with no
+   * point left, Enraged once enraged, Fighting otherwise. */
+  [[nodiscard]] static EventMessage encode(
+      const game::BossHealthChanged& event);
 
  private:
   [[nodiscard]] EventMessage encodeGameEvent(network::GameEventKind kind,

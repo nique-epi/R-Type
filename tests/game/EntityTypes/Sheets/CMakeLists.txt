@@ -1,2 +1,2 @@
-target_sources(game_entity_types_tests PRIVATE EntitySheetReaderTest.cpp EntitySheetReaderFixture.cpp EntitySheetContactTest.cpp EntitySheetContactFixtures.cpp EntitySheetFixtures.cpp EntitySheetsTest.cpp EntitySheetsFixtures.cpp ShipGunReadingTest.cpp)
+target_sources(game_entity_types_tests PRIVATE EntitySheetReaderTest.cpp EntitySheetReaderFixture.cpp EntitySheetContactTest.cpp EntitySheetContactFixtures.cpp EntitySheetFixtures.cpp EntitySheetsTest.cpp EntitySheetsFixtures.cpp EntitySheetBossTest.cpp EntitySheetsVolleyTest.cpp ShipGunReadingTest.cpp)
 target_include_directories(game_entity_types_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

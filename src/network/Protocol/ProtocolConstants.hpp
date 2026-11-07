@@ -583,6 +583,10 @@ constexpr std::string_view FREE_SEAT_COUNT_FIELD = "freeSeatCount";
 constexpr std::string_view GAME_VERSION_FIELD = "gameVersion";
 constexpr std::string_view SERVER_NAME_FIELD = "name";
 constexpr std::string_view MEASURES_FIELD = "measures";
+constexpr std::string_view BOSS_ENTITY_ID_FIELD = "bossEntityId";
+constexpr std::string_view HEALTH_FIELD = "health";
+constexpr std::string_view FULL_HEALTH_FIELD = "fullHealth";
+constexpr std::string_view STAGE_FIELD = "stage";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a

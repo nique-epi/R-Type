@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 #include "ActionSet.hpp"
+#include "BossLook.hpp"
+#include "BossPresentation.hpp"
 #include "ComponentRegistry.hpp"
 #include "DepartureFeed.hpp"
 #include "EffectSpawner.hpp"
@@ -159,8 +161,8 @@ class GameScreen : public IScreen {
   void repaintStatusWhenChanged();
 
   /** @brief Paints the status band from the score board, and the banner of
-   * the start of the game over it, and keeps what was painted. */
-  void repaintStatus();
+   * the start of the game and @p boss over it, and keeps what was painted. */
+  void repaintStatus(const BossLook& boss);
 
   /** @brief Ranks the pilots of the board by the scores of @p ended into the
    * result of the parts, and remembers when the game ended. */
@@ -181,6 +183,7 @@ class GameScreen : public IScreen {
   OwnPrediction prediction_;
   EntityReplicator replicator_;
   EnemyActionPlayer enemyActions_;
+  BossPresentation boss_;
   engine::SystemScheduler systems_;
   PlayerCommands playerCommands_;
   IPlayerInputLink* inputs_;
@@ -203,6 +206,7 @@ class GameScreen : public IScreen {
   SilenceWarning silence_;
   std::uint32_t paintedDepartures_{};
   bool paintedSilence_ = false;
+  BossLook paintedBoss_;
   bool worldSeen_ = false;
 };
 

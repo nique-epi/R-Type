@@ -23,7 +23,8 @@ HurtZone someHurtZone() {
                         .width = STRIKE_BOX_WIDTH,
                         .height = STRIKE_BOX_HEIGHT,
                         .activeIn = ActionKey{.attack = STRIKE_BOX_ATTACK,
-                                              .phase = EnemyPhase::Strike}}}};
+                                              .phase = EnemyPhase::Strike}}},
+      .beams = {}};
 }
 
 EntitySheet drifterWith(const std::optional<HurtZone>& zone, bool survives) {

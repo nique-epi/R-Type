@@ -33,6 +33,11 @@ class IAudioService {
    * unless it plays already or is about to. */
   virtual void playGameMusic() = 0;
 
+  /** @brief Stops the music of a game at once, without fade, and cancels the
+   * silence before it: playGameMusic() starts it again GAME_MUSIC_SILENCE
+   * later. The theme is left as it is. */
+  virtual void silenceMusic() = 0;
+
   /** @brief Reads the sounds and opens the music files, once the assets
    * folder is known; a music without file stays silent. */
   virtual void open() = 0;
