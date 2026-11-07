@@ -1,7 +1,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <vector>
-#include "BossStatus.hpp"
 #include "DeltaWorldState.hpp"
 #include "EnemyAction.hpp"
 #include "EntityAnnouncements.hpp"

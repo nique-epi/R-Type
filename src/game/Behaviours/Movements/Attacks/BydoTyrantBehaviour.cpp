@@ -35,7 +35,7 @@ float unitsSettingAt(const BehaviourView& view, std::size_t index) {
  * signal of an enraged variant shortened to `rage_signal_percent`; an attack
  * of no phase, which ends at once, for a number it does not know. */
 ActionTimings timingsOf(const BehaviourView& view, std::uint8_t attack) {
-  const auto found =
+  const auto* const found =
       std::ranges::find(TYRANT_ATTACKS, attack, &TyrantAttack::attack);
   if (found == TYRANT_ATTACKS.end()) {
     return ActionTimings{.attack = attack};

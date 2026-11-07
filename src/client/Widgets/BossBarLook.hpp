@@ -13,7 +13,7 @@ struct BossBarLook {
   BossGaugeLook phaseOne{};
   BossGaugeLook phaseTwo{};
   int flickerStep{};
-  std::optional<int> shatterMilliseconds{};
+  std::optional<int> shatterMilliseconds;
 
   bool operator==(const BossBarLook&) const = default;
 };

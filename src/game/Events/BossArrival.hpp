@@ -10,8 +10,8 @@ namespace rtype::game {
  * the players hear the warning before it appears, in milliseconds.
  */
 struct BossArrival {
-  std::uint8_t typeNumber;
-  std::uint32_t warningMilliseconds;
+  std::uint8_t typeNumber{};
+  std::uint32_t warningMilliseconds{};
 
   bool operator==(const BossArrival&) const = default;
 };

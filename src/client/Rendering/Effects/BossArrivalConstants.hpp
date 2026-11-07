@@ -4,6 +4,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <array>
 #include <chrono>
+#include <cstdint>
 #include "BackgroundColorConstants.hpp"
 #include "BackgroundConstants.hpp"
 #include "EffectColorConstants.hpp"

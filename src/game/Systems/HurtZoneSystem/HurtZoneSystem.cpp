@@ -112,7 +112,7 @@ void layActiveBeams(const HurtingEnemy& enemy, std::vector<BeamLine>& lines) {
 
 /** @returns Whether one of the beam @p lines overlaps @p ship. */
 bool isHurtByABeam(const std::vector<BeamLine>& lines, const ShipBounds& ship) {
-  return std::ranges::any_of(lines, [&](const BeamLine& line) {
+  return std::ranges::any_of(lines, [&](const BeamLine& line) noexcept {
     return beamOverlaps(line, ship.bounds);
   });
 }

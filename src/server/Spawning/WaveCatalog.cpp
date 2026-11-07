@@ -62,7 +62,7 @@ std::vector<std::string> enemyNamesOf(const game::EntitySheets& types) {
 /** @returns Whether @p types has a sheet named @p name of the side enemy. */
 bool namesAnEnemy(const game::EntitySheets& types, std::string_view name) {
   return std::ranges::any_of(
-      types.all(), [name](const game::EntitySheet& sheet) {
+      types.all(), [name](const game::EntitySheet& sheet) noexcept {
         return sheet.name == name && sheet.side == game::EntityType::Enemy;
       });
 }

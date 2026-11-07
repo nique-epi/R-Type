@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <chrono>
 #include <optional>
+#include <utility>
 #include "BossBarConstants.hpp"
 #include "BossBarLook.hpp"
 #include "BossColorConstants.hpp"
@@ -57,11 +58,11 @@ int shownPoints(int points, float share) {
 
 BossGaugeLook phaseOneOf(const BossFight& fight, int health, int lag) {
   const int lower = fight.fullHealth / BOSS_PHASE_COUNT;
-  return gaugeOf(
-      GaugePoints{.health = health - lower,
-                  .lag = lag - lower,
-                  .share = fight.fullHealth - lower},
-      fight.health > lower ? BossGaugeState::Active : BossGaugeState::Spent);
+  return gaugeOf(GaugePoints{.health = health - lower,
+                             .lag = lag - lower,
+                             .share = fight.fullHealth - lower},
+                 std::cmp_greater(fight.health, lower) ? BossGaugeState::Active
+                                                       : BossGaugeState::Spent);
 }
 
 BossGaugeLook phaseTwoOf(const BossFight& fight, int health, int lag) {
@@ -108,8 +109,8 @@ sf::IntRect innerOf(sf::IntRect gauge) {
   return {gauge.position + border, gauge.size - (border * SIDES_PER_AXIS)};
 }
 
-void paintPixel(IInterfaceCanvas& canvas, sf::Vector2i at, sf::Color color) {
-  canvas.fill(sf::IntRect(at, {1, 1}), color);
+void paintPixel(IInterfaceCanvas& canvas, sf::Vector2i point, sf::Color color) {
+  canvas.fill(sf::IntRect(point, {1, 1}), color);
 }
 
 void paintHatching(IInterfaceCanvas& canvas, sf::IntRect inner) {
@@ -164,14 +165,14 @@ void paintShards(IInterfaceCanvas& canvas, int milliseconds) {
   const int fall =
       static_cast<int>(static_cast<float>(BOSS_SHARD_FALL) * time * time);
   for (int shard = 0; shard < BOSS_GAUGE_SHARDS; ++shard) {
-    const auto drift = static_cast<int>(
-        static_cast<float>((shard % BOSS_SHARD_DRIFTS) -
-                           (BOSS_SHARD_DRIFTS / BOSS_GAUGE_COUNT)) *
-        BOSS_SHARD_DRIFT_PIXELS * time);
-    const sf::Vector2i at(
+    const int driftStep =
+        (shard % BOSS_SHARD_DRIFTS) - (BOSS_SHARD_DRIFTS / BOSS_GAUGE_COUNT);
+    const auto drift = static_cast<int>(static_cast<float>(driftStep) *
+                                        BOSS_SHARD_DRIFT_PIXELS * time);
+    const sf::Vector2i point(
         inner.position.x + ((shard * inner.size.x) / BOSS_GAUGE_SHARDS) + drift,
         inner.position.y + (shard % inner.size.y) + fall);
-    paintPixel(canvas, at,
+    paintPixel(canvas, point,
                shard % BOSS_GAUGE_COUNT == 0 ? BYDO_EYE_PINK : BOSS_LAG_COLOR);
   }
 }

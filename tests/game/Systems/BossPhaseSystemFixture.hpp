@@ -11,7 +11,6 @@
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
 #include "EventBus.hpp"
-#include "Health.hpp"
 
 namespace rtype::game::testing {
 

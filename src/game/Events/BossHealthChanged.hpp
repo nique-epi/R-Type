@@ -11,9 +11,9 @@ namespace rtype::game {
  * it enraged. A hit that kills it publishes 0 before its destruction.
  */
 struct BossHealthChanged {
-  std::uint32_t networkId;
-  std::uint16_t points;
-  std::uint16_t full;
+  std::uint32_t networkId{};
+  std::uint16_t points{};
+  std::uint16_t full{};
   bool enraged{false};
 
   bool operator==(const BossHealthChanged&) const = default;

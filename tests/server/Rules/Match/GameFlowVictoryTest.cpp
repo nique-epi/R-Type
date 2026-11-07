@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <vector>
-#include "ConnectedPlayer.hpp"
 #include "GameEnded.hpp"
 #include "GameFlowFixture.hpp"
 #include "GameFlowTestConstants.hpp"

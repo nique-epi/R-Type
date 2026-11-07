@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 #include "ActionKey.hpp"
 #include "EntitySheets.hpp"

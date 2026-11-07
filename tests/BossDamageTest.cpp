@@ -7,7 +7,6 @@
 #include "DamageRulesTestConstants.hpp"
 #include "DamageScene.hpp"
 #include "Entity.hpp"
-#include "EntityDestruction.hpp"
 #include "EntityType.hpp"
 #include "Health.hpp"
 #include "WorldTestConstants.hpp"

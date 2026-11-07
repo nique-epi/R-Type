@@ -96,10 +96,11 @@ void paintStripeRow(IInterfaceCanvas& canvas, const StripeRow& stripes) {
                      HAZARD_STRIPE_PERIOD;
   for (int start = stripes.left - offset; start < stripes.right;
        start += HAZARD_STRIPE_PERIOD) {
-    const int from = std::max(start, stripes.left);
-    const int to = std::min(start + HAZARD_STRIPE_WIDTH, stripes.right);
-    if (to > from) {
-      canvas.fill(sf::IntRect({from, stripes.row}, {to - from, 1}), HAZARD_RED);
+    const int left = std::max(start, stripes.left);
+    const int right = std::min(start + HAZARD_STRIPE_WIDTH, stripes.right);
+    if (right > left) {
+      canvas.fill(sf::IntRect({left, stripes.row}, {right - left, 1}),
+                  HAZARD_RED);
     }
   }
 }

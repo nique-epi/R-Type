@@ -9,6 +9,7 @@
 #include <vector>
 #include "Boss.hpp"
 #include "BossArrival.hpp"
+#include "BossStage.hpp"
 #include "BossStageParts.hpp"
 #include "BossStageTestConstants.hpp"
 #include "Entity.hpp"

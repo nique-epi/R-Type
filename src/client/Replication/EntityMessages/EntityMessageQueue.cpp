@@ -4,6 +4,7 @@
 #include <optional>
 #include <utility>
 #include <vector>
+#include "BossStatus.hpp"
 #include "DeltaWorldState.hpp"
 #include "EnemyAction.hpp"
 #include "EntityDestroyed.hpp"

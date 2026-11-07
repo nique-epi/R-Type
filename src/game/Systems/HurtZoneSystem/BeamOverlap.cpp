@@ -44,8 +44,9 @@ bool beamOverlaps(const BeamLine& beam, const engine::Bounds& box) {
   const std::array axes{Direction{.x = 1.0F, .y = 0.0F},
                         Direction{.x = 0.0F, .y = 1.0F}, beam.heading,
                         acrossOf(beam)};
-  return std::ranges::none_of(
-      axes, [&](const Direction& axis) { return separates(beam, box, axis); });
+  return std::ranges::none_of(axes, [&](const Direction& axis) noexcept {
+    return separates(beam, box, axis);
+  });
 }
 
 }  // namespace rtype::game

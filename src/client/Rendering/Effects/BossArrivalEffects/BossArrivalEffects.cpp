@@ -59,7 +59,7 @@ float rumbleTraumaAt(engine::Duration sinceArrival) {
 BossArrivalEffects::BossArrivalEffects(EffectTools tools) : tools_(tools) {}
 
 void BossArrivalEffects::advance(engine::Duration previous,
-                                 engine::Duration now) {
+                                 engine::Duration now) const {
   const FlashGate& gate = tools_.gate;
   CameraShake& camera = tools_.camera;
   gate.shake(camera, rumbleTraumaAt(now) - camera.trauma());
@@ -68,7 +68,7 @@ void BossArrivalEffects::advance(engine::Duration previous,
   }
 }
 
-void BossArrivalEffects::playRoar(std::uint32_t bossId) {
+void BossArrivalEffects::playRoar(std::uint32_t bossId) const {
   tools_.gate.get().shake(tools_.camera, BOSS_ROAR_TRAUMA);
   const std::optional<game::Position> mouth =
       mouthOf(tools_.components, bossId);

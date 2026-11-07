@@ -1,4 +1,3 @@
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Rect.hpp>
 #include <algorithm>
@@ -110,7 +109,7 @@ TEST(EdgePulse, TheTintIsStrongestOnTheEdge) {
 
   ASSERT_GE(record.fills.size(), 2U);
   const auto second =
-      std::ranges::find_if(record.fills, [](const RecordedFill& fill) {
+      std::ranges::find_if(record.fills, [](const RecordedFill& fill) noexcept {
         return fill.area.position.x == SECOND_STRIP_COLUMN;
       });
   ASSERT_NE(second, record.fills.end());

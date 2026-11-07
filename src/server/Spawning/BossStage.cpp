@@ -9,7 +9,6 @@
 #include "EnemyCount.hpp"
 #include "EngineException.hpp"
 #include "EntitySheet.hpp"
-#include "EntitySheets.hpp"
 #include "EntitySpawnSender.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityTypeNumber.hpp"

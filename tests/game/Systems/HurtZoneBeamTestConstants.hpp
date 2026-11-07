@@ -1,7 +1,6 @@
 #pragma once
 
 #include <chrono>
-#include <optional>
 #include "ActionKey.hpp"
 #include "EnemyPhase.hpp"
 #include "HurtBeam.hpp"

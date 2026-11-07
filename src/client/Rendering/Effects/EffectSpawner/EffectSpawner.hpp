@@ -1,6 +1,5 @@
 #pragma once
 
-#include <SFML/System/Vector2.hpp>
 #include <cstdint>
 #include "CameraShake.hpp"
 #include "EffectPreferences.hpp"

@@ -5,7 +5,6 @@
 #include "EnemyPhase.hpp"
 #include "EntityAppearance.hpp"
 #include "Playback.hpp"
-#include "SpriteFrame.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client::testing {

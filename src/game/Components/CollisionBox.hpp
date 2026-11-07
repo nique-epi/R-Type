@@ -12,8 +12,8 @@ namespace rtype::game {
  * Bydo Tyrant lays it on its eye, its only weak point.
  */
 struct CollisionBox {
-  float width;
-  float height;
+  float width{};
+  float height{};
   float offsetX{0.0F};
   float offsetY{0.0F};
 };

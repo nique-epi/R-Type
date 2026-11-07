@@ -34,12 +34,12 @@ class BossArrivalEffects {
   /** @brief Shakes the camera as the time since the Arriving status goes
    * from @p previous to @p now: keeps its trauma at rumbleTraumaAt() at
    * least, and adds BOSS_JOLT_TRAUMA when a step falls in between. */
-  void advance(engine::Duration previous, engine::Duration now);
+  void advance(engine::Duration previous, engine::Duration now) const;
 
   /** @brief Plays the roar of the boss of network id @p bossId:
    * BOSS_ROAR_TRAUMA, and the two shockwaves of the roar centered on its
    * mouth; no shockwave when the client has no such entity. */
-  void playRoar(std::uint32_t bossId);
+  void playRoar(std::uint32_t bossId) const;
 
  private:
   EffectTools tools_;

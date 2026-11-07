@@ -1,5 +1,4 @@
 #include "EffectSpawner.hpp"
-#include <SFML/System/Vector2.hpp>
 #include <cstdint>
 #include "ComponentRegistry.hpp"
 #include "EffectPreferences.hpp"

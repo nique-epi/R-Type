@@ -39,10 +39,11 @@ float roarShareAt(std::optional<engine::Duration> sinceRoar) {
   return 1.0F - shareOf(*sinceRoar, ROAR_EDGE_FLASH_TIME);
 }
 
-sf::Color edgeColorAt(std::uint8_t alpha, int depth) {
+sf::Color edgeColorAt(const EdgePulseLook& look, int depth) {
   const int remaining = EDGE_PULSE_DEPTH - depth;
-  return {HAZARD_RED.r, HAZARD_RED.g, HAZARD_RED.b,
-          static_cast<std::uint8_t>((alpha * remaining) / EDGE_PULSE_DEPTH)};
+  return {
+      HAZARD_RED.r, HAZARD_RED.g, HAZARD_RED.b,
+      static_cast<std::uint8_t>((look.alpha * remaining) / EDGE_PULSE_DEPTH)};
 }
 
 }  // namespace
@@ -65,7 +66,7 @@ void paintEdgePulse(IInterfaceCanvas& canvas, EdgePulseLook look) {
   }
   const sf::Vector2i size = ALERT_PLAYFIELD_AREA.size;
   for (int depth = 0; depth < EDGE_PULSE_DEPTH; depth += EDGE_PULSE_STEP) {
-    const sf::Color color = edgeColorAt(look.alpha, depth);
+    const sf::Color color = edgeColorAt(look, depth);
     if (color.a == 0) {
       continue;
     }
