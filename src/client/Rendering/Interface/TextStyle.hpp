@@ -23,8 +23,9 @@ enum class TextAlignment : std::uint8_t {
 
 /**
  * @brief How a line of text is written: its font, its color, whether it is
- * outlined in INK so it stays readable over the sky, which side its anchor
- * is on, and how large it is.
+ * outlined in INK, at the opacity of its color, so it stays readable over
+ * the sky and fades with its letters, which side its anchor is on, and how
+ * large it is.
  */
 struct TextStyle {
   TextFont font{};
