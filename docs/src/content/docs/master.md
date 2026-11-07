@@ -18,7 +18,7 @@ This page tells you where to look when you need to change something. It describe
 | The games of a server, for the client, `GET /api/servers/{id}/games` | Available | `src/master/Servers/`, `src/network/Master/` |
 | The statuses of the servers, their list and their history, `GET /api/servers` | Available; the route that puts a server in maintenance is not written | `src/master/Servers/`, `src/network/Master/` |
 | The probe of the UDP port of each game server, module `probe` | Available | `src/master/Probe/`, `src/master/Servers/`, `src/server/Master/` |
-| The web site, a Next.js server of its own that calls the API | Available: the skeleton, one page that shows whether the master answers | `web/` |
+| The web site, a Next.js server of its own that calls the API | Available: one page that shows whether the master answers, and the components of every page of the design, which no page uses yet | `web/` |
 | Administration, global leaderboard, accounts | Not yet written | |
 
 ## Starting the master
@@ -87,6 +87,34 @@ The web site is a program of its own: a Next.js server, in `web/` (see [Web site
 - **Each request of a page asks the master again**: the home page is rendered at request time and asks `GET /api/health`, then renders again every 5 seconds while its tab is visible.
 - **A master that does not answer** is shown as "Unreachable"; the page itself keeps answering.
 - **The client of the master is server-only** (`web/src/lib/api/`): its code and `MASTER_URL` never reach the browser.
+
+### The components of the site
+
+`web/src/components/` holds every component the design of the site needs: the home page, the downloads, the sector map, a server, hosting, the leaderboard, the wiki and the team. No page uses them yet. A component takes its data and its words as props and never calls the master, so a page reads the API, then hands the answer down.
+
+| Folder | Holds |
+|---|---|
+| `primitives/` | the pieces with no data: `Button` and `ArrowLink` (a link when given an `href`, a button otherwise), `Tabs`, `TextField`, `Dialog` on the native `<dialog>`, `Table`, `StatusBadge`, `Tag` |
+| `motion/`, `sky/`, `sprites/` | the animations, the star layers and the planet, and `Sprite`, which draws one frame of a sheet of `web/public/sprites/` at a whole scale |
+| `layout/`, `game/` | the header, the menu, the footer and the hero of a page; a game screen of 960 × 540, which scales to the width it is given, with its frames and chips |
+| `home/`, `download/`, `servers/`, `ranking/`, `wiki/`, `team/` | the sections of each page, such as `SectorMap` and `RankingScreen` |
+
+- **Every animation goes through `useMotion()`** (`web/src/hooks/`), which runs nothing when the system asks for reduced motion, so the page then shows each element in its final place. `SmoothScroll` drives Lenis from the ticker of GSAP, so ScrollTrigger reads the scroll the page draws.
+- **The words come from a dictionary**, French or English (`web/src/i18n/dictionaries/`), given by `getDictionary(locale)`. Each component names the words it needs in a label type, and `Dictionary` gathers them, so a word missing from a language fails the type check. A template holds `{name}` holes, filled by `format()`, or by `formatNodes()` when a word is set in bold.
+- **The colors are the palette of the client** (`SKY_COLOR`, `HUD_CYAN`…), as Tailwind tokens in `web/src/styles/globals.css`: `bg-sky`, `text-hud-cyan`. `md:` starts at 861px, where the layouts stop stacking.
+
+```tsx
+const words = getDictionary('fr');
+
+return (
+  <>
+    <StatusBadge status="degraded">{words.status.degraded}</StatusBadge>
+    <Button href="/download" variant="solid">
+      {words.header.download}
+    </Button>
+  </>
+);
+```
 
 ## The database: `MasterStorageModule`
 
@@ -292,7 +320,9 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change how often a game server beats | `MASTER_HEARTBEAT_INTERVAL` in `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master also reads to tell a silent server |
 | Change the size of a page of a list | `MINIMUM_PAGE_SIZE`, `DEFAULT_PAGE_SIZE` and `MAXIMUM_PAGE_SIZE` in `src/network/Master/Routes/MasterRouteConstants.hpp` |
 | Call the master from the game server | `MasterClient` (`src/network/Master/Client/`) |
-| Add a page to the web site | `web/src/app/`, its calls to the API in `web/src/lib/api/` |
+| Add a page to the web site | `web/src/app/`, its calls to the API in `web/src/lib/api/`, its sections in `web/src/components/` |
+| Change a color, a face or a size of the site | the tokens of `web/src/styles/globals.css` |
+| Add or change a word of the site | its label type in the component, then both `web/src/i18n/dictionaries/` |
 | Change what the games of a server are listed as | `listedStateOf()` in `ServersService.cpp` (`src/master/Servers/Services/`) and `GameListing` (`src/network/Master/Messages/`) |
 | Change what a game server tells of its games | `supervisedHostedGames()` and `supervisedMeasures()` (`src/server/SupervisedGames/SupervisedGamesReport.cpp`) |
 | Add a setting of the master | the `install()` of the module that reads it, `master.cfg.example` and the table above |
