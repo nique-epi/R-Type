@@ -10,7 +10,7 @@ import { wikiPathOf } from '@/lib/site-paths';
 /** How wide each Bydo is drawn on its panel, in pixels. */
 const PANEL_SPRITE_PIXELS = 216;
 
-/** The five Bydos of the game, one panel each, that slide sideways as the page scrolls. */
+/** The Bydos of the game, the boss last, one panel each, that slide sideways as the page scrolls. */
 export function Bydos({
   lang,
   version,

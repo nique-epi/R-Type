@@ -12,6 +12,10 @@ describe('enemyScaleFor', () => {
     expect(enemyScaleFor('voltjelly', 216)).toBe(5);
   });
 
+  it('scales the 128 pixel Tyrant to one pixel of the sheet per pixel in a panel', () => {
+    expect(enemyScaleFor('bydoTyrant', 216)).toBe(1);
+  });
+
   it('never draws an enemy smaller than its own pixels', () => {
     expect(enemyScaleFor('voltjelly', 10)).toBe(1);
   });

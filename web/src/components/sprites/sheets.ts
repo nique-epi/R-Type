@@ -25,6 +25,11 @@ export const SHEETS = {
   reaper: { src: '/sprites/mobs/reaper.png', width: 82, height: 117 },
   drillback: { src: '/sprites/mobs/drillback.png', width: 102, height: 102 },
   bydomancer: { src: '/sprites/mobs/bydomancer.png', width: 127, height: 163 },
+  bydoTyrant: {
+    src: '/sprites/mobs/bydo_tyrant.png',
+    width: 518,
+    height: 1959,
+  },
   professor: { src: '/sprites/professor.png', width: 50, height: 58 },
   flag: { src: '/sprites/flag.png', width: 1664, height: 99 },
   guard: { src: '/sprites/guard.png', width: 112, height: 30 },
@@ -38,13 +43,14 @@ export function shipFrame(player: PlayerNumber): SpriteFrame {
   return { x: 0, y: (player - 1) * SHIP_ROW_STEP, width: 32, height: 16 };
 }
 
-/** The enemies of version 0.1.0, as the wiki names them. */
+/** The enemies of the game, the boss last, as the wiki names them. */
 export const ENEMY_KINDS = [
   'bydo',
   'voltjelly',
   'reaper',
   'drillback',
   'bydomancer',
+  'bydoTyrant',
 ] as const;
 
 export type EnemyKind = (typeof ENEMY_KINDS)[number];
@@ -73,6 +79,10 @@ export const ENEMY_SPRITES: Record<
   bydomancer: {
     sheet: SHEETS.bydomancer,
     frame: { x: 0, y: 0, width: 24, height: 24 },
+  },
+  bydoTyrant: {
+    sheet: SHEETS.bydoTyrant,
+    frame: { x: 0, y: 0, width: 128, height: 128 },
   },
 };
 

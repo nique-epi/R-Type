@@ -47,8 +47,8 @@ export const enPages: PageCopy = {
       aria: 'The Bydos',
       eyebrow: 'Bestiary',
       title: 'The Bydos come in waves.',
-      lede: 'Five enemies in version {version}. Stay together.',
-      ledeFallback: 'Five enemies in this version. Stay together.',
+      lede: 'Six enemies in version {version}. Stay together.',
+      ledeFallback: 'Six enemies in this version. Stay together.',
       open: 'Open the bestiary',
       number: 'No. {number} / {total}',
     },
@@ -235,6 +235,10 @@ export const enPages: PageCopy = {
         bydomancer: {
           name: 'Bydomancer',
           text: 'A mage at the back of the field: casts runic orbs and a nova.',
+        },
+        bydoTyrant: {
+          name: 'Bydo Tyrant',
+          text: 'The boss of normal and hard games: it walks in after the last wave and roars. Below half its health it enrages, with beams, spore mines, a wall of Bydos and a charge across the screen.',
         },
       },
     },

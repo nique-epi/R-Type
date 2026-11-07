@@ -1,13 +1,16 @@
 import { Reveal } from '@/components/motion/reveal';
 import { Heading } from '@/components/primitives/text/typography';
 import { Enemy } from '@/components/sprites/enemy';
-import { ENEMY_KINDS } from '@/components/sprites/sheets';
+import { ENEMY_KINDS, enemyScaleFor } from '@/components/sprites/sheets';
 import { BestiaryBook } from '@/components/wiki/bestiary-book';
 import { format } from '@/i18n/format';
 import { getDictionary } from '@/i18n/get-dictionary';
 import type { Locale } from '@/i18n/locales';
 
-/** The five Bydos of the game in the flight log, one page each. */
+/** The width a Bydo is drawn at in its photo: a 24 pixel Bydo at ×3, the 128 pixel Tyrant at ×1. */
+const PHOTO_SPRITE_PIXELS = 72;
+
+/** The Bydos of the game, the boss last, in the flight log, one page each. */
 export function Enemies({ lang }: { lang: Locale }) {
   const dictionary = getDictionary(lang);
   const { enemies } = dictionary.pages.wikiPage;
@@ -32,6 +35,7 @@ export function Enemies({ lang }: { lang: Locale }) {
             sprite: (
               <Enemy
                 kind={kind}
+                scale={enemyScaleFor(kind, PHOTO_SPRITE_PIXELS)}
                 label={format(enemies.spriteAlt, { name: entry.name })}
               />
             ),

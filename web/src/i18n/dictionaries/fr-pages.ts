@@ -49,8 +49,8 @@ export const frPages = {
       aria: 'Les Bydos',
       eyebrow: 'Bestiaire',
       title: 'Les Bydos arrivent par vagues.',
-      lede: 'Cinq ennemis dans la version {version}. Restez groupés.',
-      ledeFallback: 'Cinq ennemis dans cette version. Restez groupés.',
+      lede: 'Six ennemis dans la version {version}. Restez groupés.',
+      ledeFallback: 'Six ennemis dans cette version. Restez groupés.',
       open: 'Ouvrir le bestiaire',
       number: 'N° {number} / {total}',
     },
@@ -237,6 +237,10 @@ export const frPages = {
         bydomancer: {
           name: 'Bydomancer',
           text: 'Mage au fond du champ : lance des orbes runiques et une nova.',
+        },
+        bydoTyrant: {
+          name: 'Bydo Tyrant',
+          text: 'Le boss des parties normales et difficiles : il entre après la dernière vague et rugit. Sous la moitié de sa vie, il se déchaîne : rayons, mines de spores, mur de Bydos et charge à travers l’écran.',
         },
       },
     },
