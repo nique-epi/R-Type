@@ -1,0 +1,5 @@
+add_library(rtype_network_byte_text STATIC ByteText.cpp)
+
+target_include_directories(rtype_network_byte_text PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+rtype_enable_warnings(rtype_network_byte_text)

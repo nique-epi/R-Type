@@ -5,6 +5,9 @@
 
 namespace rtype::game::testing {
 
+/** @returns The assets folder of the sources: assets/ of the repository. */
+[[nodiscard]] std::filesystem::path shippedAssetFolder();
+
 /** @returns The folder of the sheets the game ships with, in the sources:
  * assets/entities/ of the repository. */
 [[nodiscard]] std::filesystem::path shippedSheetFolder();

@@ -19,6 +19,7 @@ constexpr std::string_view MASTER_MODULE_NAME = "master";
 constexpr std::string_view SUPERVISOR_LINK_MODULE_NAME = "supervisor link";
 constexpr std::string_view SUPERVISED_GAMES_MODULE_NAME = "supervised games";
 constexpr std::string_view SUPERVISOR_LOBBY_MODULE_NAME = "supervisor lobby";
+constexpr std::string_view CONTENT_MODULE_NAME = "content";
 
 /**
  * @brief How many times the server sends each player its Disconnection when it

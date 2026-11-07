@@ -5,9 +5,9 @@
 #include <string>
 #include <string_view>
 #include "Endpoint.hpp"
-#include "MasterException.hpp"
 #include "MasterHttpServer.hpp"
 #include "NetworkConstants.hpp"
+#include "NetworkException.hpp"
 
 namespace {
 
@@ -36,7 +36,7 @@ bool httpPortIsFree(std::uint16_t port) {
   rtype::master::MasterHttpServer probe = quietHttpServer();
   try {
     static_cast<void>(probe.open(everyInterfaceOn(port)));
-  } catch (const rtype::master::HttpPortUnavailableException&) {
+  } catch (const rtype::network::HttpPortUnavailableException&) {
     return false;
   }
   probe.close();

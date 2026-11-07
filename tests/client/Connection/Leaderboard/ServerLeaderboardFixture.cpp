@@ -51,7 +51,7 @@ void ServerLeaderboardFixture::connectAndGetAccepted() {
       .payload = network::DatagramCodec::encode(
           header,
           network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                      .types = drawnTypes()})});
+                                      .content = localAnnouncement()})});
   update();
 }
 

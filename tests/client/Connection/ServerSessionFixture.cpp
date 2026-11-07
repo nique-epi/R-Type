@@ -46,7 +46,7 @@ void ServerSessionFixture::connectAndGetAccepted() {
   network::PacketHeader header;
   header.sessionToken = SESSION_TOKEN;
   deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                      .types = drawnTypes()},
+                                      .content = localAnnouncement()},
           server(), header);
   update();
 }
@@ -72,7 +72,7 @@ void ServerSessionFixture::accept() {
   connect();
   deliverInSession(
       network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                  .types = drawnTypes()},
+                                  .content = localAnnouncement()},
       ACCEPTANCE_SEQUENCE);
   update();
 }

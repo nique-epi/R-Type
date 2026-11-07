@@ -46,6 +46,7 @@
 #include "MissionStart.hpp"
 #include "OwnShip.hpp"
 #include "OwnShipPredictor.hpp"
+#include "PilotNameTags.hpp"
 #include "PlayerAction.hpp"
 #include "PlayerInputPacer.hpp"
 #include "PlayerLeft.hpp"
@@ -219,6 +220,7 @@ void GameScreen::update(engine::Duration elapsed) {
   if (settings_->clientPrediction) {
     placePredictedShip(prediction_, replicator_, components_);
   }
+  tagPilotShips(components_, scoreBoard_.pilots(), *settings_);
   askForTheEndWhenDue();
   moveSky(*sky_, effects_, preference);
   entityLayer_->paint(components_, cameraOffsetOf(effects_));

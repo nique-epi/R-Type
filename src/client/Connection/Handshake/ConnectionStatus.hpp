@@ -1,8 +1,7 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
-#include <optional>
-#include <string>
 #include "ConnectionPhase.hpp"
 #include "ConnectionRefused.hpp"
 
@@ -20,12 +19,10 @@ struct ConnectionStatus {
   /** @brief The protocol version the server writes in the header of its
    * answer; meaningful when refusal is IncompatibleVersion only. */
   std::uint8_t serverVersion{};
-  /** @brief The first name of the table of the acceptance this client has no
-   * sheet for; set when phase is MissingEntitySheet only. */
-  std::optional<std::string> missingSheet = std::nullopt;
-  /** @brief How many more names of that table it has no sheet for; 0 unless
-   * phase is MissingEntitySheet. */
-  std::uint8_t otherMissingSheets{};
+  /** @brief The bytes of the content pack received, and the bytes it holds;
+   * meaningful when phase is LoadingContent only. */
+  std::size_t contentReceived{};
+  std::size_t contentSize{};
 
   bool operator==(const ConnectionStatus&) const = default;
 };

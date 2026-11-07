@@ -105,6 +105,8 @@ constexpr const char* SOUND_CUES_LABEL = "SOUND CUES";
 constexpr const char* SOUND_CUES_DESCRIPTION = "> SOUNDS SHOWN ON SCREEN";
 constexpr const char* AUTO_FIRE_LABEL = "AUTO-FIRE";
 constexpr const char* AUTO_FIRE_DESCRIPTION = "> SHOOTS WITHOUT HOLDING";
+constexpr const char* PILOT_NAMES_LABEL = "PILOT NAMES";
+constexpr const char* PILOT_NAMES_DESCRIPTION = "> NICKNAMES OVER THE SHIPS";
 constexpr const char* PREDICTION_LABEL = "PREDICTION";
 constexpr const char* PREDICTION_DESCRIPTION = "> SHIP MOVES BEFORE THE SERVER";
 

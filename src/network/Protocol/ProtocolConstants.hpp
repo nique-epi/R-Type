@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <limits>
 #include <string_view>
+#include "ContentPackConstants.hpp"
 #include "EntityTypeConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "SerializationConstants.hpp"
@@ -19,7 +20,9 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 9 makes a
+ * @brief The version of the protocol this code speaks. Version 10 makes a
+ * ConnectionAccepted announce the content pack of the game in place of the
+ * table of its entity types, see the Version 10 section; version 9 makes a
  * ConnectionRequest name the game it asks for, and adds the refusals
  * GameNotFound and ServerFull, see the Version 9 section; version 8 makes a
  * GameStatus carry the nicknames of the players of its game and the measures
@@ -34,7 +37,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * frame, see the Compression section; version 3 adds the outcome of a game to
  * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 9;
+constexpr std::uint8_t PROTOCOL_VERSION = 10;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -438,18 +441,16 @@ static_assert(CONNECTION_REDIRECT_DATAGRAM_SIZE <=
               "request it answers");
 
 /**
- * @brief The size of the largest datagram holding a ConnectionAccepted: the
- * player number, the count, then MAXIMUM_ENTITY_TYPES types of a side and a
- * name of the longest length.
+ * @brief The size of the payload of a ConnectionAccepted: the player number,
+ * then the fingerprint, the size and the port of the content pack.
  */
-constexpr std::size_t LARGEST_CONNECTION_ACCEPTED_DATAGRAM_SIZE =
-    PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE + UINT8_WIRE_SIZE +
-    UINT8_WIRE_SIZE +
-    (identifiers::MAXIMUM_ENTITY_TYPES *
-     (UINT8_WIRE_SIZE + SHORT_STRING_PREFIX_SIZE +
-      identifiers::MAXIMUM_ENTITY_TYPE_NAME_LENGTH));
+constexpr std::size_t CONNECTION_ACCEPTED_PAYLOAD_SIZE =
+    UINT8_WIRE_SIZE + CONTENT_FINGERPRINT_BYTES + UINT32_WIRE_SIZE +
+    UINT16_WIRE_SIZE;
 
-static_assert(LARGEST_CONNECTION_ACCEPTED_DATAGRAM_SIZE <= MAX_DATAGRAM_SIZE,
+static_assert(PACKET_HEADER_SIZE + MESSAGE_PREFIX_SIZE +
+                      CONNECTION_ACCEPTED_PAYLOAD_SIZE <=
+                  MAX_DATAGRAM_SIZE,
               "a ConnectionAccepted always fits in one datagram");
 
 /**
@@ -555,8 +556,7 @@ constexpr std::string_view RANK_FIELD = "rank";
 constexpr std::string_view PART_INDEX_FIELD = "partIndex";
 constexpr std::string_view PART_COUNT_FIELD = "partCount";
 constexpr std::string_view BASE_DISTANCE_FIELD = "baseDistance";
-constexpr std::string_view TYPE_COUNT_FIELD = "typeCount";
-constexpr std::string_view SIDE_FIELD = "side";
+constexpr std::string_view CONTENT_SIZE_FIELD = "content.size";
 constexpr std::string_view NUMBER_FIELD = "number";
 constexpr std::string_view FIRST_KEPT_FIELD = "firstKept";
 constexpr std::string_view INNER_TYPE_FIELD = "innerType";

@@ -65,7 +65,7 @@ The storage starts before the HTTP API, so a database the master cannot open sto
 
 ## The HTTP API: `MasterHttpServer`
 
-`MasterHttpServer` (`src/master/Http/`) wraps cpp-httplib, which no other file of the master includes. Its routes sit under `/api`, answer `GET`, `POST` or `PUT`, and answer `application/json`; each is declared once, with its method and path, in `MasterRouteConstants.hpp` (`src/network/Master/Routes/`), which the master and `MasterClient` both read; they run on the threads of cpp-httplib, at least 8 of them, and must not block for long. A route reads an `ApiRequest`: the body, the key of an `Authorization: Bearer <key>` header (RFC 6750, the scheme in any case) and the address of the TCP peer. It answers an `ApiResponse`: a status, a body, the `detail` of a refusal and one header, such as `Location`.
+`MasterHttpServer` (`src/master/Http/`) holds a `network::HttpServer` (`src/network/Http/`, see [Network](/R-Type/network/#http-server-httpserver)), which wraps cpp-httplib and which the supervisor also uses to serve its content pack; no file of the master includes cpp-httplib. Its routes sit under `/api`, answer `GET`, `POST` or `PUT`, and answer `application/json`; each is declared once, with its method and path, in `MasterRouteConstants.hpp` (`src/network/Master/Routes/`), which the master and `MasterClient` both read; they run on the threads of cpp-httplib, at least 8 of them, and must not block for long. A route reads a `network::ApiRequest`: the body, the key of an `Authorization: Bearer <key>` header (RFC 6750, the scheme in any case) and the address of the TCP peer. It answers a `network::ApiResponse`: a status, a body, the `detail` of a refusal, one header, such as `Location`, and the media type of the body, `application/json` unless the route sets another.
 
 `GET /api/health` answers 200 with the version of the master, `MASTER_VERSION`:
 
@@ -267,9 +267,9 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
   context.require<rtype::master::MasterHttpServer>().add(
       rtype::network::MasterRoute{.method = rtype::network::RouteMethod::Get,
                                   .path = path_},
-      []([[maybe_unused]] const rtype::master::ApiRequest& request) {
-        return rtype::master::ApiResponse{.status = rtype::master::OK_STATUS,
-                                          .body = {}};
+      []([[maybe_unused]] const rtype::network::ApiRequest& request) {
+        return rtype::network::ApiResponse{.status = rtype::master::OK_STATUS,
+                                           .body = {}};
       });
 }
 ```
@@ -296,5 +296,5 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change what the games of a server are listed as | `listedStateOf()` in `ServersService.cpp` (`src/master/Servers/Services/`) and `GameListing` (`src/network/Master/Messages/`) |
 | Change what a game server tells of its games | `supervisedHostedGames()` and `supervisedMeasures()` (`src/server/SupervisedGames/SupervisedGamesReport.cpp`) |
 | Add a setting of the master | the `install()` of the module that reads it, `master.cfg.example` and the table above |
-| Change what an error answers | `problemDetailsText()` in `MasterHttpServer.cpp` |
+| Change what an error answers | `problemDetailsText()` in `src/network/Http/Server/HttpServer.cpp`, shared with the supervisor |
 | Add a module | `src/master/<Name>/`, its line in `masterModules()` and its row in [the list of modules](/R-Type/project-layout/#the-list-of-modules) |

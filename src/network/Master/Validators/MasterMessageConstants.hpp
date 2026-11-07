@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <limits>
 #include <string_view>
+#include "NetworkConstants.hpp"
 
 namespace rtype::network {
 
@@ -70,10 +71,9 @@ constexpr std::uint64_t HIGHEST_SERVER_ID =
  */
 constexpr std::string_view SERVER_KEY_PREFIX = "rtk_";
 constexpr std::size_t SERVER_KEY_BYTES = 32;
-constexpr std::size_t HEX_DIGITS_PER_BYTE = 2;
 constexpr std::size_t SERVER_KEY_SIZE =
     SERVER_KEY_PREFIX.size() + (SERVER_KEY_BYTES * HEX_DIGITS_PER_BYTE);
-constexpr std::string_view SERVER_KEY_DIGITS = "0123456789abcdef";
+constexpr std::string_view SERVER_KEY_DIGITS = LOWERCASE_HEX_DIGITS;
 
 /** @brief How each HostedGameState is written, in the order of the enum. */
 constexpr std::string_view WAITING_STATE_TEXT = "waiting";

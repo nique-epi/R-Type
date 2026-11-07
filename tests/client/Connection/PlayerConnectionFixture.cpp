@@ -1,24 +1,27 @@
 #include "PlayerConnectionFixture.hpp"
 #include <string>
-#include <string_view>
+#include "AssetFolder.hpp"
+#include "ContentPlaces.hpp"
+#include "EntityAppearances.hpp"
 #include "InstallContext.hpp"
 #include "NetworkConditionsConstants.hpp"
 #include "PlayerConnectionTestConstants.hpp"
 #include "ServiceRegistry.hpp"
-
-namespace {
-
-bool drawsEveryType([[maybe_unused]] std::string_view name) { return true; }
-
-}  // namespace
+#include "SessionEntityTypesFixtures.hpp"
 
 PlayerConnectionFixture::PlayerConnectionFixture()
     : stages_(SOME_LOOP_STAGES),
-      connection_(rtype::network::PERFECT_NETWORK, drawsEveryType) {}
+      appearances_(rtype::client::EntityAppearances::fromTexts({})),
+      connection_(
+          rtype::network::PERFECT_NETWORK,
+          rtype::client::ContentPlaces{
+              .assetFolder = rtype::engine::locateAssetFolder(),
+              .cacheFolder = rtype::client::testing::unusedCacheFolder()}) {}
 
 void PlayerConnectionFixture::provideTheParts() {
   rtype::engine::InstallContext context{std::string{PROVIDING_MODULE_NAME},
                                         services_, stages_};
+  context.provide(appearances_);
   connection_.provideParts(context);
 }
 
