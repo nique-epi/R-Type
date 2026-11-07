@@ -95,6 +95,10 @@ A platform file such as `FineTimerResolutionWindows.cpp` is linted only by the C
 1. **`readability-qualified-auto` on `auto it = std::ranges::find(array, …)` comes from libc++, where the iterator of a `std::array` is a pointer.** In the standard library of MSVC it is a class (`std::_Array_const_iterator`), so `const auto* const it` does not compile there (`C3535`) and the Windows job fails.
 2. **Never answer that finding with `auto*` on an iterator.** Write a lookup that returns a pointer itself (`const T* found = findOf(…)`, a loop that returns `&candidate` or `nullptr`), so the type is the same with every standard library.
 
+### Adjacent parameters of different integer types are swappable for the CI
+
+1. **`bugprone-easily-swappable-parameters` of the CI's clang-tidy 22 reports adjacent `int` and `std::size_t` parameters** that the local clang-tidy 21 lets through. A new function taking two or three numbers in a row (`points`, `players`, `percent`) takes them as one struct with designated members instead (`BossHealthScaling`).
+
 ## Example
 
 - ❌ **Before (wrong)**: 43 changed files linted, exit 0 everywhere, "clang-tidy clean" written in the context; every log started with `Error parsing .clang-tidy: Invalid argument` (two option keys twice), so only the default checks ran, and the CI had run the same way since the merge that doubled the keys.

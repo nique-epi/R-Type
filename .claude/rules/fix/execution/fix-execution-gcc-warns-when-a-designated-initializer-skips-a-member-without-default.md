@@ -29,6 +29,10 @@ Why: `-Wmissing-field-initializers` with warnings as errors failed the Linux job
 1. **Before removing a member of an aggregate, search its designator**: `git grep -n '\.<member> =' -- src tests`. Each hit that builds that type (not another type with a member of the same name) loses the line, and a test constant used only there goes with it.
 2. **Read every hit against the type it builds**: a name shared by the message and the struct the client keeps of it (`BossStatus::bossEntityId`, `BossFight::bossEntityId`) puts both in one list, and a hit of the struct reads as one of the message.
 
+### The GCC run covers every file that builds the aggregate, not the diff of the branch
+
+1. **Take the files to run `g++-16` on from the search of the first point**, every `.cpp` that builds the extended aggregate, never from `git diff --name-only origin/main...HEAD`: a fixture the branch never touched still builds it.
+
 ## Example
 
 - ❌ **Before (wrong)**: `ConnectedPlayer` gains `std::optional<std::uint16_t> newestReceivedSequence;` and `PlayerRoster::add` keeps `ConnectedPlayer{.playerNumber = …, .nextSequence = 0}` → `missing initializer for member ‘newestReceivedSequence’` on Linux.

@@ -31,3 +31,7 @@ See the core file of the same name in `.claude/rules/fix/execution/`.
 ## Update (7 November 2026) — A member removed
 
 A simplification pass removed `BossFight::bossEntityId`, which nothing read. The search `git grep -n 'bossEntityId'` listed `tests/client/Widgets/BossBarFixtures.cpp:14`, where `fightWith()` builds a `BossFight{.bossEntityId = BAR_BOSS_ID, …}`, among a dozen hits of the network message `BossStatus`, whose member has the same name; the hit was read as one of the message. The build stopped on `field designator 'bossEntityId' does not refer to any field in type 'rtype::client::BossFight'`. The fixture lost the line and `BAR_BOSS_ID`, used nowhere else.
+
+## Update (7 November 2026) — A file outside the diff
+
+The Homebrew GCC run was fed the `.cpp` files of the branch diff. `EntitySpritesFixtures.cpp`, untouched by the branch, built an `EntityAppearance` without the `enragedIdleFrames` the branch had added, and the Linux job of PR #260 failed on it. Feeding GCC every file the pattern of the rule finds for the aggregates the branch extended (36 files) shows that warning and no other.
