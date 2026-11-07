@@ -7,7 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/primitives/card';
+} from '@/components/primitives/surfaces/card';
 
 const STATUS_REFRESH_INTERVAL_MS = 5_000;
 
