@@ -2,6 +2,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <random>
@@ -11,11 +12,14 @@
 #include <variant>
 #include "ActionSet.hpp"
 #include "AnimationSystem.hpp"
+#include "DepartureFeed.hpp"
 #include "EffectPreferences.hpp"
 #include "EffectSpawner.hpp"
 #include "EnemyAction.hpp"
+#include "EnemyActionPlayer.hpp"
 #include "EntityFeedback.hpp"
 #include "EntityMessage.hpp"
+#include "EntityReplicator.hpp"
 #include "EntityReplicatorParts.hpp"
 #include "FinalRanking.hpp"
 #include "FlashPreference.hpp"
@@ -42,6 +46,7 @@
 #include "PlayerPreferences.hpp"
 #include "PositionInterpolation.hpp"
 #include "PredictedShipPlacement.hpp"
+#include "ScoreBoard.hpp"
 #include "ShipFlightSystem.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "GameScreenIdConstants.hpp"
@@ -78,6 +83,35 @@ void traceHeldActions(const logging::Logger& logger, const ActionSet& held,
   }
   logger.trace("actions held: ", static_cast<unsigned int>(held.bits()));
   traced = held.bits();
+}
+
+/** @brief Who the entity messages of the server go to, but the end of the
+ * game and the world states, which the screen follows itself. */
+struct EntityMessageRoutes {
+  std::reference_wrapper<EntityReplicator> replicator;
+  std::reference_wrapper<EnemyActionPlayer> enemyActions;
+  std::reference_wrapper<ScoreBoard> scoreBoard;
+  std::reference_wrapper<DepartureFeed> departures;
+};
+
+/** @brief Hands an entity message to whoever it goes to: a PlayerLeft to the
+ * board and the feed, an EnemyAction to the enemy it animates, anything else
+ * but GameEnded to the replicator. */
+void routeEntityMessage(const EntityMessageRoutes& routes,
+                        const EntityMessage& message) {
+  std::visit(
+      [&routes](const auto& announced) {
+        using Announced = std::decay_t<decltype(announced)>;
+        if constexpr (std::is_same_v<Announced, network::PlayerLeft>) {
+          routes.scoreBoard.get().apply(announced);
+          routes.departures.get().follow(routes.scoreBoard.get().pilots());
+        } else if constexpr (std::is_same_v<Announced, network::EnemyAction>) {
+          routes.enemyActions.get().apply(announced);
+        } else if constexpr (!std::is_same_v<Announced, network::GameEnded>) {
+          routes.replicator.get().apply(announced);
+        }
+      },
+      message);
 }
 
 }  // namespace
@@ -178,23 +212,15 @@ void GameScreen::applyEntityMessages() {
   if (!receivedEntityMessages_.empty()) {
     silence_.hear();
   }
+  const EntityMessageRoutes routes{.replicator = replicator_,
+                                   .enemyActions = enemyActions_,
+                                   .scoreBoard = scoreBoard_,
+                                   .departures = departures_};
   for (const EntityMessage& message : receivedEntityMessages_) {
-    std::visit(
-        [this](const auto& announced) {
-          using Announced = std::decay_t<decltype(announced)>;
-          if constexpr (std::is_same_v<Announced, network::GameEnded>) {
-            recordEnd(announced);
-          } else if constexpr (std::is_same_v<Announced, network::PlayerLeft>) {
-            scoreBoard_.apply(announced);
-            departures_.follow(scoreBoard_.pilots());
-          } else if constexpr (std::is_same_v<Announced,
-                                              network::EnemyAction>) {
-            enemyActions_.apply(announced);
-          } else {
-            replicator_.apply(announced);
-          }
-        },
-        message);
+    routeEntityMessage(routes, message);
+    if (const auto* ended = std::get_if<network::GameEnded>(&message)) {
+      recordEnd(*ended);
+    }
     if (const auto* state = std::get_if<network::WorldState>(&message)) {
       worldSeen_ = true;
       scoreBoard_.apply(*state);
