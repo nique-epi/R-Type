@@ -18,7 +18,7 @@ namespace rtype::game {
  * DataFileTextExpectedException when a sheet names no sprite sheet; and
  * engine::UnreadableDataFileException when a sprite sheet cannot be read.
  */
-[[nodiscard]] std::vector<ContentFile> contentFilesIn(
+[[nodiscard]] std::vector<identifiers::ContentFile> contentFilesIn(
     const std::filesystem::path& assetFolder);
 
 }  // namespace rtype::game

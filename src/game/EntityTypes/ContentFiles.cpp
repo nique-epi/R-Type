@@ -33,23 +33,23 @@ std::string spriteSheetOf(const SheetText& sheet) {
 
 }  // namespace
 
-std::vector<ContentFile> contentFilesIn(
+std::vector<identifiers::ContentFile> contentFilesIn(
     const std::filesystem::path& assetFolder) {
   const std::vector<SheetText> sheets =
       sheetTextsIn(assetFolder / ENTITY_SHEET_FOLDER_IN_ASSETS);
-  std::vector<ContentFile> files;
+  std::vector<identifiers::ContentFile> files;
   std::set<std::string> spriteSheets;
   for (const SheetText& sheet : sheets) {
-    files.push_back(
-        ContentFile{.path = sheetPathOf(sheet.name), .bytes = sheet.text});
+    files.push_back(identifiers::ContentFile{.path = sheetPathOf(sheet.name),
+                                             .bytes = sheet.text});
     spriteSheets.insert(spriteSheetOf(sheet));
   }
   for (const std::string& spriteSheet : spriteSheets) {
-    files.push_back(ContentFile{
+    files.push_back(identifiers::ContentFile{
         .path = spriteSheet,
         .bytes = engine::dataFileContent(assetFolder / spriteSheet)});
   }
-  std::ranges::sort(files, std::less{}, &ContentFile::path);
+  std::ranges::sort(files, std::less{}, &identifiers::ContentFile::path);
   return files;
 }
 

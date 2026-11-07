@@ -105,6 +105,54 @@ class StringTooLongException : public NetworkException {
 };
 
 /**
+ * @brief A content pack that breaks a rule of its format: what each subclass
+ * names. A client never loads such a pack.
+ */
+class InvalidContentPackException : public NetworkException {
+ public:
+  explicit InvalidContentPackException(const std::string& reason);
+};
+
+/** @brief A content pack larger than MAXIMUM_CONTENT_PACK_BYTES, or a file
+ * larger than a pack may be. */
+class ContentPackTooLargeException : public InvalidContentPackException {
+ public:
+  explicit ContentPackTooLargeException(std::size_t size);
+};
+
+/** @brief A content pack of another format than CONTENT_PACK_FORMAT_VERSION.
+ */
+class ContentPackVersionException : public InvalidContentPackException {
+ public:
+  explicit ContentPackVersionException(std::uint8_t version);
+};
+
+/** @brief A content pack of more than MAXIMUM_CONTENT_PACK_FILES files. */
+class TooManyContentFilesException : public InvalidContentPackException {
+ public:
+  explicit TooManyContentFilesException(std::size_t count);
+};
+
+/** @brief A path of a content pack that isContentPath() refuses. */
+class InvalidContentPathException : public InvalidContentPackException {
+ public:
+  explicit InvalidContentPathException(const std::string& path);
+};
+
+/** @brief A file of a content pack out of the order of the paths, or twice.
+ */
+class UnorderedContentFilesException : public InvalidContentPackException {
+ public:
+  explicit UnorderedContentFilesException(const std::string& path);
+};
+
+/** @brief Bytes left after the last file of a content pack. */
+class ContentPackTrailingBytesException : public InvalidContentPackException {
+ public:
+  explicit ContentPackTrailingBytesException(std::size_t count);
+};
+
+/**
  * @brief Bytes that cannot be a message: an announced count out of range, an
  * unknown value, or bytes left after the message.
  */

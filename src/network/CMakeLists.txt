@@ -24,6 +24,7 @@ add_subdirectory(Handshake)
 add_subdirectory(Statistics)
 add_subdirectory(Master)
 add_subdirectory(Http)
+add_subdirectory(Content)
 add_subdirectory(Compression)
 
 add_library(rtype_network INTERFACE)
@@ -51,5 +52,6 @@ target_link_libraries(rtype_network
     rtype_network_statistics
     rtype_network_master
     rtype_network_http
+    rtype_network_content
     rtype_network_compression
 )

@@ -15,7 +15,6 @@
 
 using rtype::engine::MissingDataFileKeyException;
 using rtype::engine::UnreadableDataFileException;
-using rtype::game::ContentFile;
 using rtype::game::contentFilesIn;
 using rtype::game::EntitySheet;
 using rtype::game::testing::ART_SPRITE_SHEET;
@@ -38,6 +37,7 @@ using rtype::game::testing::shippedAssetFolder;
 using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::UNNAMED_SPRITE_SHEET;
 using rtype::game::testing::WEAVER_SHEET_FILE;
+using rtype::identifiers::ContentFile;
 
 /**
  * Given two sheets naming one sprite sheet, and a sprite sheet no sheet names
