@@ -1,10 +1,48 @@
 # R-Type
 
-A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine.
+A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine. Up to four pilots fly together in a game against waves of Bydos; the server owns the game, the client draws it and sends the keys held. One server runs up to eight games at once. Epitech tek3 project.
 
-The client plays its theme in a loop, then the music of a game a second after a game starts, the sounds of the intro and of the game, and a click on the buttons of its menus. It opens on a second of black and an intro of 5.5 s set to the beats of the theme, which a key or a click skips, then on its title screen, over a scrolling starfield: PLAY opens the connection screen, then the game, RANKING opens the best scores of a server, SETTINGS opens the options (sound, keys, display mode and window size, accessibility), QUIT asks before closing the client; Escape during a game opens the options over it. The server listens for UDP datagrams on port 4242, or on the port given at launch: it answers each connection request with a challenge, an acceptance with a player number from 1 to 4, or a refusal when the game is full, and logs the datagrams of the players it admitted at the `debug` level.
+- **Platforms:** Linux (GCC or Clang), Windows (MSVC, Visual Studio 2022) and macOS (Apple Silicon). The CI builds and tests Linux and Windows on every pull request.
+- **Language and libraries:** C++20, SFML 3 on the client, standalone Asio on the server, GoogleTest for the tests.
+- **Programs:** `r-type_client` (window, sound, menus) and `r-type_server` (UDP on port 4242 by default). By default it is a supervisor that starts one process per game and sends each player to the game that has a place; `--mode server` hosts the games in one process, and `--mode master` runs the master, the program that lists game servers.
+- **Network:** every message of a game travels over UDP; a client that lacks the sheets of a server, a modded one for instance, downloads its content pack over HTTP first. The protocol is specified byte by byte in [the protocol RFC](https://nique-epi.github.io/R-Type/protocol/).
 
-The code is split into engine, game and network libraries; see [the architecture decision](docs/src/content/docs/architecture.md).
+The code is split into engine, game and network libraries; see [the architecture decision](docs/src/content/docs/architecture.md) and [the project layout](docs/src/content/docs/project-layout.md).
+
+## Quick start
+
+```bash
+git clone --recurse-submodules git@github.com:nique-epi/R-Type.git
+cd R-Type
+cmake --workflow --preset build
+./r-type_server
+./r-type_client
+```
+
+Run the last two commands in two terminals. In the client, PLAY opens the server map, which needs the master; to join a server directly, open the connection screen with D (ADDRESS) and press CONNECT. The sections below give the prerequisites for each system, every option, and a game of four.
+
+### A game of four players
+
+On the machine that hosts (its address on the network is `192.168.1.20` here):
+
+```bash
+./r-type_server -p 4242
+```
+
+On each of the four machines, or four terminals of one machine, with a different nickname:
+
+```bash
+./r-type_client -h 192.168.1.20 -p 4242 -n ACE
+./r-type_client -h 192.168.1.20 -p 4242 -n BLAZE
+./r-type_client -h 192.168.1.20 -p 4242 -n COMET
+./r-type_client -h 192.168.1.20 -p 4242 -n DASH
+```
+
+Each client starts with these values in its connection screen: from the title, PLAY then D (ADDRESS) opens it, and CONNECT joins. The supervisor sends the four pilots to the same game, where each gets a number from 1 to 4. A fifth player lands in a second game, and is refused only when the eight games are full. Once every connected pilot says it is ready in the waiting room, the game starts; the arrows move the ship and the space bar shoots, until the player changes the keys in SETTINGS. When it ends, the end screen ranks the four pilots.
+
+## Features
+
+The client opens on a second of black and an intro set to the beats of its theme, which a key or a click skips, then on its title screen over a scrolling starfield: PLAY opens the server map, then the game, RANKING opens the best scores of a server, SETTINGS opens the options (sound, keys, display mode and window size, accessibility), QUIT asks before closing the client; Escape during a game opens the options over it. It plays a theme, the sounds of the intro and of the game, and a click on its menus. The server answers each connection request with a challenge, an acceptance with a player number from 1 to 4, or a refusal when the game is full, and logs the datagrams of the players it admitted at the `debug` level.
 
 ## Requirements
 
@@ -29,9 +67,11 @@ cd R-Type
 cmake --workflow --preset build
 ```
 
+On Windows, run the same commands in a Developer PowerShell for Visual Studio 2022 (the "Desktop development with C++" workload); the binaries are then `Release\r-type_server.exe` and `Release\r-type_client.exe`, and `.\Release\r-type_server.exe` starts a server.
+
 The first configure builds every dependency and takes a few minutes. The `r-type_server` and `r-type_client` binaries are written at the repository root, or in `Release/` with the Visual Studio generator.
 
-The client and the server read their files from `assets/`, next to their executable or in the folder above it, wherever they are launched from. Each stops with exit code 1, naming both folders, when it finds neither.
+The client and the server read their files from `assets/`, next to their executable, in the folder above it, or in `Resources/` beside it for the macOS app, wherever they are launched from. Each stops with exit code 1, naming the three folders, when it finds none.
 
 If the repository was cloned without its submodules, run `git submodule update --init` first.
 
@@ -49,11 +89,13 @@ This builds in Release, then writes in `build/` one set of packages for the clie
 | Windows | `R-Type-client-<version>-win64.zip`, `R-Type-client-<version>-win64.exe` (installer) | `R-Type-server-<version>-win64.zip`, `R-Type-server-<version>-win64.exe` (installer) |
 | macOS | `R-Type-client-<version>-Darwin.dmg`, holding `R-Type.app` | `R-Type-server-<version>-Darwin.tar.gz` |
 
-Each package holds its program and the part of `assets/` it reads, in the folder above the executable (`bin/` and `assets/`; `usr/bin/` and `usr/assets/` in the AppImage; `Contents/MacOS/` and `Contents/assets/` in the app), so it starts from any folder. The version is the one of `project()` in `CMakeLists.txt`. The files that build the packages are in `packaging/`.
+Each package holds its program and the part of `assets/` it reads, where its executable finds them (`bin/` and `assets/`; `usr/bin/` and `usr/assets/` in the AppImage; `Contents/MacOS/` and `Contents/Resources/assets/` in the app, where Apple wants every file that is not code), so it starts from any folder. The version is the one of `project()` in `CMakeLists.txt`. The files that build the packages are in `packaging/`.
 
 - Linux: the programs need X11, OpenGL and udev from the distribution, and a glibc at least as recent as the one of the machine that built them (Ubuntu 24.04 on the CI). The AppImage needs FUSE, which most desktops have. Packaging the client on Linux needs [`appimagetool`](https://github.com/AppImage/appimagetool) on the `PATH`.
 - Windows: the installer of each program puts it in its own folder (`R-Type`, `R-Type Server`) with a Start menu shortcut and an uninstaller. Packaging needs [NSIS](https://nsis.sourceforge.io).
-- macOS: the app is built for Apple Silicon only and is not notarized: the first time, open it with right-click > Open.
+- macOS: the app is built for Apple Silicon only, with the hardened runtime. When `RTYPE_MACOS_SIGNING_IDENTITY` names a Developer ID Application identity of the keychain, the app and its disk image are signed with it; when `RTYPE_NOTARY_KEY` (the path of an App Store Connect API key, `.p8`), `RTYPE_NOTARY_KEY_ID` and `RTYPE_NOTARY_ISSUER` are set too, the disk image is sent to Apple's notary service and the ticket is stapled to it, so Gatekeeper opens it without a warning, even offline. Without an identity the app is signed without one, and macOS asks the player, the first time, to allow it in System Settings > Privacy & Security. The app may load plugins signed by another developer (`com.apple.security.cs.disable-library-validation`, in `packaging/r-type.entitlements`). The server archive is not signed.
+- The CI signs and notarizes the client when the repository holds the secrets `MACOS_CERTIFICATE_P12` (the Developer ID certificate and its key, as a base64 `.p12`), `MACOS_CERTIFICATE_PASSWORD`, `APPLE_API_KEY_P8` (the text of the `.p8`), `APPLE_API_KEY_ID` and `APPLE_API_ISSUER_ID`; the package check then requires Gatekeeper to accept the app. A pull request from a fork, which receives no secret, gets an app signed without an identity.
+- macOS disk image: it opens on a window drawn in the colors of the game, with the app on the left, the Applications folder on the right and an arrow between them: dragging the app onto the folder installs it. That window is two files of `packaging/disk-image/`, the background (`background.tiff`, at its normal and Retina sizes) and the `.DS_Store` that sizes the window and places the icons (`DS_Store`); `make_layout.py` draws and writes both, on macOS, with Python and the `pillow`, `ds_store` and `mac_alias` packages (`pip install pillow ds_store mac_alias`, then `python3 packaging/disk-image/make_layout.py`). The `.DS_Store` finds the background through the name of the volume, `R-Type`: changing `CPACK_DMG_VOLUME_NAME` means running the script again with the new name.
 
 The CI builds the packages of the three systems on every push to `main`, and on a pull request that changes `packaging/`, `assets/`, the root `CMakeLists.txt`, the presets, vcpkg or the workflows that build them, and keeps them 7 days as artifacts of the run (`packages-Linux`, `packages-Windows`, `packages-macOS`). Pushing a tag `v<version>` that matches the version of `project()` publishes them in a GitHub release, with notes listing the pull requests merged since the previous tag:
 
@@ -73,7 +115,7 @@ The release refuses a tag whose version is not the one of `project()`; change th
 ./r-type_server -p 4243
 ```
 
-The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on port 4242. It runs as a supervisor: it runs no game itself, and starts one `r-type_server --mode game` process per game, up to eight, sending each player to the game that has a place (see [the server page](https://nique-epi.github.io/R-Type/server/#the-three-roles-supervisor-game-and-master)). Each game writes its own journal, `r-type_game_<n>.log` next to the executable.
+The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on port 4242. It runs as a supervisor: it runs no game itself, and starts one `r-type_server --mode game` process per game, up to eight, sending each player to the game that has a place (see [the server page](https://nique-epi.github.io/R-Type/server/#the-three-roles-supervisor-game-and-master)). Each game writes its own journal, `r-type_game_<n>.log` next to the executable. The supervisor also serves its content pack, the entity sheets of its `assets/` and their sprite sheets, over HTTP on the TCP port of the same number (4243 here), so a player whose client has other sheets downloads them when it joins: a host behind a firewall or a router opens both the UDP and the TCP port (see [Tutorial: publish a mod](https://nique-epi.github.io/R-Type/tutorial-publish-a-mod/)).
 
 ```bash
 ./r-type_server --seed 42
@@ -150,6 +192,8 @@ The same binary runs the master in this mode: the program that lists the game se
 curl -X POST http://127.0.0.1:8080/api/servers -d '{"name":"Paris 1"}'
 ```
 
+After each heartbeat, the master sends a probe over UDP to the port the game server registered, and lists as unreachable a server whose port it cannot reach: that port must be open to the master, as it is to the players.
+
 Without `master-url` or `master-key`, a game server runs alone and is listed nowhere.
 
 - **Why HTTP:** the subject requires UDP for every message of a game and accepts TCP for other needs when it is justified. The master carries no message of a game, and the web administration the subject accepts needs HTTP in a browser, so one protocol serves the programs and the web site, readable with `curl`. A player still joins a server over UDP when the master is stopped.
@@ -198,9 +242,15 @@ Once the test preset is built, this sends the server running on port 4242 of the
 
 This has 32 players with no window join the server on port 4242 of the same machine and play for one minute, then prints the world states each one received per second; the journal of each game gives the duration of its ticks every 10 s. Bots that connect at once are sent to the first game before it reports its players, so the ones it cannot seat are refused (`GameFull`) instead of filling the other games. See [Network](https://nique-epi.github.io/R-Type/network/#load-test-bots-load_test_bots).
 
+```bash
+sh tests/tools/bandwidth/campaign.sh ./r-type_server ./build/tests/load_test_bots
+```
+
+This runs the bandwidth campaign: a server and four bots from the same seed, three runs of one minute for each scenario, and one Markdown row per scenario with what one client received and sent per second. The results and the method are in [Network measurements](https://nique-epi.github.io/R-Type/measurements/).
+
 ## Logging
 
-The client, the server and the master write a timestamped journal, `r-type_client.log`, `r-type_server.log` or `r-type_master.log` next to their executable, and show the same lines in the terminal; each game of the server writes its own, `r-type_game_<n>.log`, at the level given to the supervisor; the first line gives the absolute path of the journal. Installed in a folder they cannot write to, they write no journal and say so in the terminal. The level and the output are chosen at launch:
+The client, the server and the master write a timestamped journal, `r-type_client.log`, `r-type_server.log` or `r-type_master.log` next to their executable (the client on macOS in `~/Library/Logs`, so it never writes into the signed app), and show the same lines in the terminal; each game of the server writes its own, `r-type_game_<n>.log`, at the level given to the supervisor; the first line gives the absolute path of the journal. Installed in a folder they cannot write to, they write no journal and say so in the terminal. The level and the output are chosen at launch:
 
 ```bash
 ./r-type_server --log-level debug
@@ -216,7 +266,7 @@ The client, the server and the master write a timestamped journal, `r-type_clien
 
 The build option `-DLOG_LEVEL=<name>` removes the calls below a level from the binaries. See [the logging page](docs/src/content/docs/logging.md).
 
-The client reads `client.cfg` the same way, and `client.cfg.example` is its model (`set nickname`, `set server-address`, `set server-port`, `module <name> on|off`, and `--set` to force a setting). It keeps the player's settings in `settings.ini`: in `$XDG_CONFIG_HOME/r-type` (or `~/.config/r-type`) on Linux, `~/Library/Application Support/R-Type` on macOS, `%LOCALAPPDATA%\R-Type` on Windows. Its path is logged at launch; deleting it brings back the settings of a first launch.
+The client reads `client.cfg` the same way, and `client.cfg.example` is its model (`set nickname`, `set server-address`, `set server-port`, `module <name> on|off`, and `--set` to force a setting). It keeps the player's settings in `settings.ini`: in `$XDG_CONFIG_HOME/r-type` (or `~/.config/r-type`) on Linux, `~/Library/Application Support/R-Type` on macOS, `%LOCALAPPDATA%\R-Type` on Windows. Its path is logged at launch; deleting it brings back the settings of a first launch. The content packs of the servers it joined are kept next to it, in `content-packs/`, eight at most.
 
 ## Code style
 
@@ -234,7 +284,7 @@ cmake --build build --target format
 
 ## Documentation
 
-The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`. To add a module to the server or the client, start with the [Modules](https://nique-epi.github.io/R-Type/modules/) page and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/). Two more tutorials [add a network message](https://nique-epi.github.io/R-Type/tutorial-add-a-network-message/) and [run a server with several games](https://nique-epi.github.io/R-Type/tutorial-run-several-games/).
+The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`. To add a module to the server or the client, start with the [Modules](https://nique-epi.github.io/R-Type/modules/) page and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/). Three more tutorials [add a network message](https://nique-epi.github.io/R-Type/tutorial-add-a-network-message/), [run a server with several games](https://nique-epi.github.io/R-Type/tutorial-run-several-games/) and [publish a mod](https://nique-epi.github.io/R-Type/tutorial-publish-a-mod/).
 
 To preview it locally, with Node.js 22.12 or newer:
 
@@ -249,3 +299,22 @@ npm run dev
 ## Contributing
 
 How to branch, write a commit, write and test the code, open a pull request and know when a change is done is summed up in [the contributing guide](CONTRIBUTING.md).
+
+## Documentation and protocol
+
+- [Documentation site](https://nique-epi.github.io/R-Type/): architecture, engine, client, server, master, configuration and tutorials.
+- [Network protocol](https://nique-epi.github.io/R-Type/protocol/): the specification of every datagram and exchange, written as an RFC (MUST, SHOULD and MAY as in RFC 2119), enough to write another client or server.
+- [Contributing guide](CONTRIBUTING.md).
+
+## Authors
+
+Epitech tek3 team:
+
+- Yannis Lorang ([@Yannislrg](https://github.com/Yannislrg))
+- Loann Bideau ([@LoannBi](https://github.com/LoannBi))
+- Nolan Fribault ([@nolanfrb](https://github.com/nolanfrb))
+- Lukas ([@0rezh](https://github.com/0rezh))
+
+## License
+
+The code of this repository is released under the [MIT License](LICENSE). The assets keep the licences of their authors: see `assets/README.md` and the licence files in `assets/`.

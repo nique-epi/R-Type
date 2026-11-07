@@ -47,6 +47,7 @@ class DatagramSorterFixture : public ::testing::Test {
       connectionRequests_;
   rtype::concurrency::BoundedQueue<rtype::network::IncomingDatagram>
       informationRequests_;
+  rtype::concurrency::BoundedQueue<rtype::network::IncomingDatagram> probes_;
   SimulatedClock clock_;
   rtype::server::RejectionLedger rejections_;
   rtype::server::DatagramSorter sorter_;

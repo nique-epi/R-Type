@@ -46,13 +46,19 @@ class EntityAppearances {
   /**
    * @brief Reads the sheets @p sheets hold, each named by its name; the
    * errors name the file by its source.
+   * @param spriteFolder Where the sprite sheets the sheets name lie, when not
+   * in the assets folder: the folder a content pack was written to. Each
+   * appearance then names its sprite sheet by its whole path below it, which
+   * AssetLibrary::fileOf() keeps as it is, so a sheet of a pack never takes
+   * the texture of a local sheet of the same name.
    * @throws engine::DataFileSyntaxException, MissingDataFileKeyException,
    * UnknownDataFileKeyException, DataFileTableExpectedException,
    * DataFileTextExpectedException or DataFileValueOutOfRangeException when a
    * sheet is not as described above.
    */
   [[nodiscard]] static EntityAppearances fromTexts(
-      std::span<const game::SheetText> sheets);
+      std::span<const game::SheetText> sheets,
+      const std::filesystem::path& spriteFolder = {});
 
   /** @returns The appearance of the type @p name, or nullptr when no sheet
    * of that name was read. */

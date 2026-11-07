@@ -40,6 +40,11 @@ CREATE TRIGGER refuse_samples BEFORE INSERT ON heartbeat_samples
 BEGIN SELECT RAISE(ABORT, 'refused'); END
 )sql";
 
+/** @brief Takes the secret of every server away, as a server registered
+ * before the probes has none. */
+constexpr std::string_view FORGET_PROBE_SECRETS_STATEMENT =
+    "UPDATE servers SET probe_secret = NULL";
+
 /** @brief What the tests read of the tables, to check what was written. */
 constexpr std::string_view SAMPLE_COUNT_QUERY =
     "SELECT COUNT(*) FROM heartbeat_samples";

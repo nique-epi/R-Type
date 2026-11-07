@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
@@ -12,8 +13,12 @@
 #include "InstallContext.hpp"
 #include "LatestHostedGames.hpp"
 #include "LatestServerMeasures.hpp"
+#include "LatestValue.hpp"
 #include "Logger.hpp"
+#include "MasterProbeDesk.hpp"
 #include "SettingValue.hpp"
+#include "SystemClock.hpp"
+#include "TickDatagrams.hpp"
 
 namespace rtype::server {
 
@@ -49,6 +54,8 @@ class ServerMasterModule final : public engine::IModule {
   void declareSettings(engine::ConfigurationRegistry& configuration);
   /** @returns The parts of the job, or nothing when the server runs alone. */
   [[nodiscard]] std::optional<HeartbeatJobParts> jobParts() const;
+  /** @brief Keeps the token of the probes of this tick (SIMULATION_STAGE). */
+  void keepProbeTokens();
 
   const engine::SettingValue* urlSetting_{nullptr};
   const engine::SettingValue* keySetting_{nullptr};
@@ -56,6 +63,11 @@ class ServerMasterModule final : public engine::IModule {
   const IListeningPort* port_{nullptr};
   const LatestHostedGames* hostedGames_{nullptr};
   const LatestServerMeasures* measures_{nullptr};
+  const TickDatagrams* tickDatagrams_{nullptr};
+  engine::SystemClock clock_;
+  std::uint64_t probeSecret_;
+  concurrency::LatestValue<std::uint64_t> probeTokens_;
+  MasterProbeDesk probeDesk_;
   logging::Logger logger_;
   std::optional<HeartbeatJob> job_;
 };

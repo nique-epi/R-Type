@@ -12,19 +12,10 @@
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "ProtocolConstants.hpp"
+#include "SeatIndex.hpp"
 #include "SessionDatagram.hpp"
 
 namespace rtype::server {
-
-namespace {
-
-/** @returns The place of @p player in the table of waits, from 0. */
-std::size_t seatIndexOf(const ConnectedPlayer& player) {
-  return static_cast<std::size_t>(player.playerNumber -
-                                  network::FIRST_PLAYER_NUMBER);
-}
-
-}  // namespace
 
 LeaderboardDesk::LeaderboardDesk(
     PlayerRoster& roster, IResultsArchive& archive,

@@ -122,6 +122,10 @@ bool isValidGameVersion(std::string_view version) {
   return isValidBoundedText(version, MAXIMUM_GAME_VERSION_SIZE);
 }
 
+bool isValidChatText(std::string_view text) {
+  return isValidBoundedText(text, MAXIMUM_CHAT_TEXT_SIZE);
+}
+
 void requireValidNickname(std::string_view nickname) {
   if (!isValidNickname(nickname)) {
     throw InvalidNicknameException(nickname.size());

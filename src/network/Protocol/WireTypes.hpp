@@ -90,6 +90,13 @@ float readCoordinate(ByteReader& reader);
 [[nodiscard]] bool isValidGameVersion(std::string_view version);
 
 /**
+ * @returns Whether @p text is the text of a chat line the protocol accepts: 1
+ * to MAXIMUM_CHAT_TEXT_SIZE bytes of printable UTF-8 (isPrintableUtf8()), so a
+ * line written in a log line cannot start a line of its own.
+ */
+[[nodiscard]] bool isValidChatText(std::string_view text);
+
+/**
  * @brief Checks that @p nickname is one the protocol accepts, see
  * isValidNickname().
  * @throws InvalidNicknameException when it is not.

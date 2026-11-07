@@ -3,6 +3,7 @@ add_library(rtype_client_game_module STATIC
   EndScreen.cpp
   GameScreen.cpp
   HeldKey.cpp
+  PilotNameTags.cpp
 )
 
 target_include_directories(rtype_client_game_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -31,6 +32,7 @@ target_link_libraries(rtype_client_game_module
   PRIVATE
     rtype_client_animation_system
     rtype_client_constants
+    rtype_client_effect_targets
     rtype_client_end_choices
     rtype_client_entity_layer
     rtype_client_flight_log_painting
@@ -39,11 +41,14 @@ target_link_libraries(rtype_client_game_module
     rtype_client_hit_flash_system
     rtype_client_interface_pixel
     rtype_client_mission_start
+    rtype_client_pilot_color
+    rtype_client_pilot_name
     rtype_client_settings_values
     rtype_client_ship_flight_system
     rtype_client_sprite_effect_system
     rtype_client_status_band
     rtype_client_taunts
+    rtype_client_widget_text
 )
 
 rtype_enable_warnings(rtype_client_game_module)

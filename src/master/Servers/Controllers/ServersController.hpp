@@ -2,6 +2,7 @@
 
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
+#include "IProbeSender.hpp"
 #include "MasterDatabase.hpp"
 #include "ServersService.hpp"
 
@@ -17,58 +18,70 @@ namespace rtype::master {
  */
 class ServersController {
  public:
-  explicit ServersController(MasterDatabase& database);
+  /** @param probeSender Where the probes of the accepted heartbeats go; it
+   * must outlive the controller. */
+  ServersController(MasterDatabase& database, IProbeSender& probeSender);
 
   /**
    * @returns The answer of `POST /api/servers`: 201, `Location` naming the
    * server, and the server with its key, shown this once.
    */
-  [[nodiscard]] ApiResponse createServer(const ApiRequest& request);
+  [[nodiscard]] network::ApiResponse createServer(
+      const network::ApiRequest& request);
 
   /**
    * @returns The answer of `PUT /api/servers/me`: 200 and the server, its id
    * and its address included. A registration without an address gets the
    * address of the TCP peer.
    */
-  [[nodiscard]] ApiResponse replaceOwnServer(const ApiRequest& request);
+  [[nodiscard]] network::ApiResponse replaceOwnServer(
+      const network::ApiRequest& request);
 
   /**
    * @returns The answer of `PUT /api/servers/me/heartbeat`: 200 and the
    * orders of the admins waiting for the server, an empty list until there are
-   * orders.
+   * orders; 409 for a server that registered before the probes, which must
+   * register again. An accepted heartbeat makes the master send its server a
+   * probe (ServersService::probeFor()).
    */
-  [[nodiscard]] ApiResponse replaceOwnHeartbeat(const ApiRequest& request);
+  [[nodiscard]] network::ApiResponse replaceOwnHeartbeat(
+      const network::ApiRequest& request);
 
   /**
    * @returns The answer of `GET /api/servers/{id}/games`: 200 and the games of
    * the server, open to everyone; 404 for an id that names no server, or that
    * is no number.
    */
-  [[nodiscard]] ApiResponse listGames(const ApiRequest& request);
+  [[nodiscard]] network::ApiResponse listGames(
+      const network::ApiRequest& request);
 
   /**
    * @returns The answer of `GET /api/servers`: 200 and a page of the
    * registered servers by id, open to everyone; 400 when limit or offset is no
    * whole number within its bounds.
    */
-  [[nodiscard]] ApiResponse listServers(const ApiRequest& request);
+  [[nodiscard]] network::ApiResponse listServers(
+      const network::ApiRequest& request);
 
   /**
    * @returns The answer of `GET /api/servers/{id}/samples`: 200 and a page of
    * the samples of the server, newest first, open to everyone; 404 for an id
    * that names no server, 400 for a page out of its bounds.
    */
-  [[nodiscard]] ApiResponse listSamples(const ApiRequest& request);
+  [[nodiscard]] network::ApiResponse listSamples(
+      const network::ApiRequest& request);
 
   /**
    * @returns The answer of `GET /api/servers/{id}/statuses`: 200 and a
    * page of the statuses the server held, newest first, open to
    * everyone; 404 and 400 as listSamples().
    */
-  [[nodiscard]] ApiResponse listStatuses(const ApiRequest& request);
+  [[nodiscard]] network::ApiResponse listStatuses(
+      const network::ApiRequest& request);
 
  private:
   ServersService service_;
+  IProbeSender& probeSender_;
 };
 
 }  // namespace rtype::master

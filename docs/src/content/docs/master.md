@@ -16,7 +16,8 @@ This page tells you where to look when you need to change something. It describe
 | Registration and heartbeats of the game servers | Available; sent by the module `master` of the game server | `src/master/Servers/`, `src/network/Master/`, `src/server/Master/` |
 | The client of the master, `MasterClient` | Available | `src/network/Master/Client/` |
 | The games of a server, for the client, `GET /api/servers/{id}/games` | Available | `src/master/Servers/`, `src/network/Master/` |
-| The statuses of the servers, their list and their history, `GET /api/servers` | Available; the status `unreachable`, which needs a probe over UDP, and the route that puts a server in maintenance are not written | `src/master/Servers/`, `src/network/Master/` |
+| The statuses of the servers, their list and their history, `GET /api/servers` | Available; the route that puts a server in maintenance is not written | `src/master/Servers/`, `src/network/Master/` |
+| The probe of the UDP port of each game server, module `probe` | Available | `src/master/Probe/`, `src/master/Servers/`, `src/server/Master/` |
 | The web site, a Next.js server of its own that calls the API | Available: the skeleton, one page that shows whether the master answers | `web/` |
 | Administration, global leaderboard, accounts | Not yet written | |
 
@@ -56,14 +57,15 @@ The master reads `master.cfg`, in the folder it is started from, between the ins
 |---|---|---|---|
 | `logger` | `MasterLoggerModule` | nothing | the journal |
 | `storage` | `MasterStorageModule` | `logger` | the database, migrated |
+| `probe` | `MasterProbeModule` | `logger` | a UDP socket on a port the system picks, and ProbeWire, the thread that sends the probes on it |
 | `http` | `MasterHttpModule` | `logger` | the port, and the thread that listens on it |
-| `servers` | `ServersModule` | `logger`, `storage`, `http` | `StatusWatch`, the thread of `ServerStatusJob`; its routes run once `http` listens |
+| `servers` | `ServersModule` | `logger`, `storage`, `probe`, `http` | `StatusWatch`, the thread of `ServerStatusJob`; its routes run once `http` listens |
 
-The storage starts before the HTTP API, so a database the master cannot open stops it before its port opens, and the API stops before the database closes.
+The storage starts before the HTTP API, so a database the master cannot open stops it before its port opens, and the API stops before the database closes. The probes start before the HTTP API too, so a heartbeat a route accepts always has its probe sent, and they stop after the routes.
 
 ## The HTTP API: `MasterHttpServer`
 
-`MasterHttpServer` (`src/master/Http/`) wraps cpp-httplib, which no other file of the master includes. Its routes sit under `/api`, answer `GET`, `POST` or `PUT`, and answer `application/json`; each is declared once, with its method and path, in `MasterRouteConstants.hpp` (`src/network/Master/Routes/`), which the master and `MasterClient` both read; they run on the threads of cpp-httplib, at least 8 of them, and must not block for long. A route reads an `ApiRequest`: the body, the key of an `Authorization: Bearer <key>` header (RFC 6750, the scheme in any case) and the address of the TCP peer. It answers an `ApiResponse`: a status, a body, the `detail` of a refusal and one header, such as `Location`.
+`MasterHttpServer` (`src/master/Http/`) holds a `network::HttpServer` (`src/network/Http/`, see [Network](/R-Type/network/#http-server-httpserver)), which wraps cpp-httplib and which the supervisor also uses to serve its content pack; no file of the master includes cpp-httplib. Its routes sit under `/api`, answer `GET`, `POST` or `PUT`, and answer `application/json`; each is declared once, with its method and path, in `MasterRouteConstants.hpp` (`src/network/Master/Routes/`), which the master and `MasterClient` both read; they run on the threads of cpp-httplib, at least 8 of them, and must not block for long. A route reads a `network::ApiRequest`: the body, the key of an `Authorization: Bearer <key>` header (RFC 6750, the scheme in any case) and the address of the TCP peer. It answers a `network::ApiResponse`: a status, a body, the `detail` of a refusal, one header, such as `Location`, and the media type of the body, `application/json` unless the route sets another.
 
 `GET /api/health` answers 200 with the version of the master, `MASTER_VERSION`:
 
@@ -96,6 +98,7 @@ The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, se
 | 1 | `heartbeat_samples` | the measures of each heartbeat, at most one per server and per second, kept 7 days |
 | 2 | `servers` | the status computed last, whether an admin put the server in maintenance, and the games, players, tick p95 and loss of the last heartbeat, written with it so the list and the statuses parse no JSON; the upgrade of a file of version 1 reads them once from the last heartbeat it kept, and leaves them empty for a text that is no heartbeat |
 | 2 | `status_changes` | each change of status of each server, at most one per server and per second, kept 7 days |
+| 3 | `servers` | the secret each server registered with, which its probes carry, and the second of its last valid answer to a probe; both empty for a server registered before |
 
 ## Creating a game server: `POST /api/servers`
 
@@ -120,7 +123,7 @@ A game server is named by its key, sent as `Authorization: Bearer <key>`, never 
 |---|---|---|
 | `POST /api/servers` | creates a server and its key (see [Creating a game server](#creating-a-game-server-post-apiservers)) | 201, `Location: /api/servers/<id>` and the server with its key; 429 over the quota |
 | `PUT /api/servers/me` | replaces what the server of the key registered; the same body twice gives the same server | 200 and the server, its `id` included |
-| `PUT /api/servers/me/heartbeat` | replaces the last state of the server, and keeps a sample of its measures | 200 and `{"commands":[]}`, the orders of the admins waiting for the server, none until administration exists; 409 before the server registered |
+| `PUT /api/servers/me/heartbeat` | replaces the last state of the server, keeps a sample of its measures, records the answer to a probe it carries, and sends the server a probe (see [Probing the game servers](#probing-the-game-servers-masterprobemodule)) | 200 and `{"commands":[]}`, the orders of the admins waiting for the server, none until administration exists; 409 before the server registered, or for a server registered before the probes |
 | `GET /api/servers/{id}/games` | lists the games of the last heartbeat of the server `id`, to anyone (see [Listing the games of a server](#listing-the-games-of-a-server)) | 200 and the games; 404 for an id that names no server |
 | `GET /api/servers` | lists the registered servers, a page at a time, to anyone (see [Listing the servers and their history](#listing-the-servers-and-their-history)) | 200 and the servers; 400 for a page out of its bounds |
 | `GET /api/servers/{id}/samples` | lists the samples of the server `id`, newest first | 200 and the samples; 404 for an id that names no server, 400 for a page out of its bounds |
@@ -131,13 +134,13 @@ A registration is the state of a server that starts: it forgets the last heartbe
 The bodies are JSON, read and written by `rtype_network_master` (`src/network/Master/`), which `MasterClient` links to send them. A member it does not know is ignored, so a newer server still registers; a member missing, of another type or out of its bounds answers 400, whose `detail` names it by its JSON Pointer (RFC 6901), such as `/games/0/players/1`:
 
 ```json
-{"name":"Paris 1","udpPort":4242,"gameVersion":"0.4.0","protocolVersion":6,
- "maximumGames":8,"maximumPlayersPerGame":4}
+{"name":"Paris 1","udpPort":4242,"gameVersion":"0.4.0","protocolVersion":7,
+ "maximumGames":8,"maximumPlayersPerGame":4,"probeSecret":6510615555426900570}
 ```
 
 ```json
 {"games":[{"number":1,"name":"GAME 1","state":"waiting","difficulty":"normal","players":["ACE"]}],
- "measures":{"tickP50Milliseconds":1.5,"tickP95Milliseconds":4.25}}
+ "measures":{"tickP50Milliseconds":1.5,"tickP95Milliseconds":4.25},"probeToken":4242424242}
 ```
 
 | Member | Bounds |
@@ -149,6 +152,8 @@ The bodies are JSON, read and written by `rtype_network_master` (`src/network/Ma
 | `games` | as many as the server registered at most; numbers from 1 to its `maximumGames`, none twice |
 | `state` | `waiting`, `starting`, `playing`, `finished` or `full`; `full` means the game waits for players and every seat is taken, so it holds as many players as the server registered per game, and `waiting` holds fewer; the other states hold any number |
 | `difficulty`, `players` | nicknames of the protocol, 1 to 16 bytes; as many players as the server registered per game at most |
+| `probeSecret` | 1 to 9223372036854775807 (2^63 − 1, what a column `INTEGER` of SQLite holds); required in a registration, and never written in a list |
+| `probeToken` | optional, 1 to 18446744073709551615 (2^64 − 1): the token of the last probe, sent once |
 | `measures` | an object; each of `tickP50Milliseconds`, `tickP95Milliseconds`, `receivedBytesPerSecond`, `sentBytesPerSecond`, `lossPercent` (0 to 100) and `averagePingMilliseconds` is a number from 0, or left out when the server does not measure it, never sent as 0 |
 
 ## Listing the games of a server
@@ -186,13 +191,29 @@ The master gives each registered server a status, refreshed by `ServerStatusJob`
 |---|---|
 | `maintenance` | an admin took the server out of service, whatever it sends |
 | `offline` | the master heard nothing of it for `OFFLINE_SILENCE` (15 s, `MISSED_HEARTBEATS_BEFORE_OFFLINE` (3) heartbeats of `MASTER_HEARTBEAT_INTERVAL` (5 s)): no heartbeat for that long, or, while it sent none since it registered, no registration |
+| `unreachable` | heard in time, but no probe got a valid answer for `PROBE_ANSWER_SILENCE` (15 s), or none since it registered: its UDP port cannot be reached (see [Probing the game servers](#probing-the-game-servers-masterprobemodule)) |
 | `degraded` | heard in time, but the 95th percentile of its ticks reaches `DEGRADED_TICK_P95_MILLISECONDS` (one tick of the simulation, 16.67 ms) or its loss reaches `DEGRADED_LOSS_PERCENT` (5 %) |
 | `online` | heard in time and within both bounds; a measure the server does not take counts as within its bound |
 
 - **The bounds are provisional.** They are starting values, to set again once the bandwidth and lag measurements are done; code must read the constants. The game server sends no loss yet (see [Server](/R-Type/server/)), so it is judged on its ticks and its silence only.
-- **Timing.** Dates are kept to the second, so a server that stops beating is written offline 14 to 20 s after its last heartbeat. A server starts offline, the default of its column, and its first refresh after its registration writes it online. A server created on the web site and never registered is neither refreshed nor listed.
+- **Timing.** Dates are kept to the second, so a server that stops beating is written offline 14 to 20 s after its last heartbeat. A server starts offline, the default of its column; its first refresh after its registration writes it unreachable, and the first after a heartbeat that answers a probe online. A server created on the web site and never registered is neither refreshed nor listed.
 - **History.** Each change is kept in `status_changes` with its second, and written as the status of its server. A refresh reads the servers, keeps their changes and writes their statuses in one transaction, under the lock of the database: a heartbeat waits for the refresh to end, so no status is computed from a server heard again meanwhile, and a refresh that fails keeps no change and no status. A second change of a server in the same second replaces the first. Changes are kept `STATUS_CHANGE_RETENTION` (7 days, as long as the samples): each refresh erases the older ones, so a server whose status has not changed for 7 days has an empty history, while the list still gives its status. Each change is written in the journal at the `info` level: `server 7 is now offline`. A refresh that fails is written at the `error` level and tried again at the next one.
-- **Not written yet.** The status `unreachable`, for a server that does not answer 3 probes over UDP in a row, will come with the probe. Putting a server in maintenance has no route: `ServerStatusService::setMaintenance()` exists, and the administration will call it. A server at the edge of a bound changes status each time a heartbeat crosses it: no delay keeps it in place.
+- **Not written yet.** Putting a server in maintenance has no route: `ServerStatusService::setMaintenance()` exists, and the administration will call it. A server at the edge of a bound changes status each time a heartbeat crosses it: no delay keeps it in place.
+
+## Probing the game servers: `MasterProbeModule`
+
+A server can beat over HTTP while its UDP port, the one players join, is closed by a firewall or a box. The master checks that port with a probe over UDP, on the model of the master of DDNet, and lists as `unreachable` a server whose port does not answer:
+
+1. The server registers with a `probeSecret`, drawn once when it starts (`randomProbeSecret()`, `src/server/Master/`).
+2. After each heartbeat it accepts, the master sends a `MasterProbe` to the address and UDP port of the registration: that secret and a token (see [Protocol](/R-Type/protocol/#probe-of-the-master)).
+3. The server keeps the token of a probe that carries its secret, and sends it once, as `probeToken`, in its next heartbeat.
+4. A heartbeat whose token is valid records its second as the last answer of the server, in the same transaction as the heartbeat.
+
+- **The master keeps nothing per probe.** The token is the `CookieIssuer` of the handshake (see [Network](/R-Type/network/#connection-cookies-cookieissuer)) with `PROBE_TOKEN_WINDOWS`: windows of `MASTER_HEARTBEAT_INTERVAL` (5 s), `UNANSWERED_PROBES_BEFORE_UNREACHABLE` (3) of them accepted, so a token stays valid 10 to 14 s after it was issued. Its key is drawn when the master starts: a token issued before a restart is refused after it, so a server may be listed unreachable until a heartbeat brings back a token of the new key.
+- **The module `probe`** (`src/master/Probe/`), required, provides the `IProbeSender` the routes hand each probe to. It sends from a UDP socket bound to a port the system picks, which it never reads, on ProbeWire, a thread of its own (`NetworkContext::runUntilStopped()`). `ProbeThrottle` lets at most one probe a `PROBE_MINIMUM_GAP` (1 s) go to one address and port, so nobody who registers servers at the address of another makes that server ban the master.
+- **Timing.** A server that starts is unreachable until its first heartbeat after a probe, 5 to 10 s after it registered: its registration forgets its last answer, so no player joins it before the confirmation. A server whose port closes is written unreachable 15 to 20 s after the last heartbeat that brought back a valid token. One lost probe never changes the status; two in a row may, as two lost heartbeats may make a server offline.
+- **A server registered before the probes** has no secret: its heartbeat answers 409, so it registers again with one.
+- **What the master trusts.** The probe goes to the address of the registration, the one the server declared or the one its registration came from. A host may declare another address than its own: the master then sends 41 bytes there, at most once a second, fewer than the heartbeat that made it send them.
 
 ## Listing the servers and their history
 
@@ -246,9 +267,9 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
   context.require<rtype::master::MasterHttpServer>().add(
       rtype::network::MasterRoute{.method = rtype::network::RouteMethod::Get,
                                   .path = path_},
-      []([[maybe_unused]] const rtype::master::ApiRequest& request) {
-        return rtype::master::ApiResponse{.status = rtype::master::OK_STATUS,
-                                          .body = {}};
+      []([[maybe_unused]] const rtype::network::ApiRequest& request) {
+        return rtype::network::ApiResponse{.status = rtype::master::OK_STATUS,
+                                           .body = {}};
       });
 }
 ```
@@ -265,7 +286,8 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change what a creation, a registration or a heartbeat answers | `ServersController` (`src/master/Servers/Controllers/`) |
 | Change the quota of creations | `MAXIMUM_CREATIONS_PER_ADDRESS` and `CREATION_WINDOW` in `src/master/Servers/Services/ServersServiceConstants.hpp` |
 | Change how long samples and changes of status are kept | `SAMPLE_RETENTION` in `src/master/Servers/Repositories/ServersRepositoryConstants.hpp`; `STATUS_CHANGE_RETENTION` follows it |
-| Change when a server is offline or degraded | `OFFLINE_SILENCE`, `DEGRADED_TICK_P95_MILLISECONDS` and `DEGRADED_LOSS_PERCENT` in `src/master/Servers/Services/Helpers/ServerStatusRuleConstants.hpp`, and `statusOf()` next to them |
+| Change when a server is offline, unreachable or degraded | `OFFLINE_SILENCE`, `PROBE_ANSWER_SILENCE`, `DEGRADED_TICK_P95_MILLISECONDS` and `DEGRADED_LOSS_PERCENT` in `src/master/Servers/Services/Helpers/ServerStatusRuleConstants.hpp`, and `statusOf()` next to them |
+| Change how long a token of a probe lives, or how often a destination may be probed | `PROBE_TOKEN_WINDOWS` in `src/master/Servers/Services/ServersServiceConstants.hpp`; `PROBE_MINIMUM_GAP` in `src/master/Probe/ProbeConstants.hpp`, which follows `MINIMUM_NOTICE_GAP` in `src/network/Master/Validators/MasterMessageConstants.hpp` |
 | Change how often the statuses are refreshed | `STATUS_REFRESH_INTERVAL` in `src/master/Servers/Jobs/ServerStatusJobConstants.hpp` |
 | Change how often a game server beats | `MASTER_HEARTBEAT_INTERVAL` in `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master also reads to tell a silent server |
 | Change the size of a page of a list | `MINIMUM_PAGE_SIZE`, `DEFAULT_PAGE_SIZE` and `MAXIMUM_PAGE_SIZE` in `src/network/Master/Routes/MasterRouteConstants.hpp` |
@@ -274,5 +296,5 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change what the games of a server are listed as | `listedStateOf()` in `ServersService.cpp` (`src/master/Servers/Services/`) and `GameListing` (`src/network/Master/Messages/`) |
 | Change what a game server tells of its games | `supervisedHostedGames()` and `supervisedMeasures()` (`src/server/SupervisedGames/SupervisedGamesReport.cpp`) |
 | Add a setting of the master | the `install()` of the module that reads it, `master.cfg.example` and the table above |
-| Change what an error answers | `problemDetailsText()` in `MasterHttpServer.cpp` |
+| Change what an error answers | `problemDetailsText()` in `src/network/Http/Server/HttpServer.cpp`, shared with the supervisor |
 | Add a module | `src/master/<Name>/`, its line in `masterModules()` and its row in [the list of modules](/R-Type/project-layout/#the-list-of-modules) |

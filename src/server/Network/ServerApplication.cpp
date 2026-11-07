@@ -49,10 +49,12 @@ ServerApplication::ServerApplication(
       incoming_(INCOMING_DATAGRAM_QUEUE_CAPACITY),
       connectionRequests_(CONNECTION_REQUEST_QUEUE_CAPACITY),
       informationRequests_(INFORMATION_REQUEST_QUEUE_CAPACITY),
+      probes_(PROBE_QUEUE_CAPACITY),
       outgoing_(OUTGOING_DATAGRAM_QUEUE_CAPACITY),
       destinations_{.players = &incoming_,
                     .connectionRequests = &connectionRequests_,
-                    .informationRequests = &informationRequests_},
+                    .informationRequests = &informationRequests_,
+                    .probes = &probes_},
       sorter_(destinations_, rejections_, clock_),
       rejectionReporter_(rejections_),
       handleTick_(std::move(handleTick)) {}
@@ -139,10 +141,13 @@ void ServerApplication::simulateTick() {
   connectionRequests_.drainInto(receivedRequests_);
   receivedInformationRequests_.clear();
   informationRequests_.drainInto(receivedInformationRequests_);
+  receivedProbes_.clear();
+  probes_.drainInto(receivedProbes_);
   handleTick_(
       ReceivedDatagrams{.players = received_,
                         .connectionRequests = receivedRequests_,
-                        .informationRequests = receivedInformationRequests_});
+                        .informationRequests = receivedInformationRequests_,
+                        .probes = receivedProbes_});
   rejectionReporter_.countTick();
   network_.post([this] {
     if (relay_.has_value()) {

@@ -5,9 +5,12 @@
 
 namespace rtype::game::testing {
 
+std::filesystem::path shippedAssetFolder() {
+  return std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER};
+}
+
 std::filesystem::path shippedSheetFolder() {
-  return std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} /
-         ENTITY_SHEET_FOLDER_IN_ASSETS;
+  return shippedAssetFolder() / ENTITY_SHEET_FOLDER_IN_ASSETS;
 }
 
 const EntitySheets& shippedEntitySheets() {

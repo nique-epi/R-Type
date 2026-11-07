@@ -13,6 +13,7 @@
 #include "IModule.hpp"
 #include "LaunchOptions.hpp"
 #include "NetworkConstants.hpp"
+#include "ServerContentModule.hpp"
 #include "ServerInformationModule.hpp"
 #include "ServerLoggerModule.hpp"
 #include "ServerMasterModule.hpp"
@@ -58,6 +59,7 @@ std::vector<std::unique_ptr<engine::IModule>> supervisorModules(
   modules.push_back(std::make_unique<ServerNetworkModule>(
       network::DEFAULT_SERVER_PORT, stopRequest,
       launchOptions.networkConditions()));
+  modules.push_back(std::make_unique<ServerContentModule>());
   modules.push_back(std::make_unique<ServerSupervisedGamesModule>(
       gameLaunchSettings(launchOptions, std::move(gameLines)),
       std::make_unique<BoostProcessLauncher>(),

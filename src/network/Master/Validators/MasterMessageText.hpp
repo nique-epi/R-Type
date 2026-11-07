@@ -45,8 +45,9 @@ namespace rtype::network {
 
 /**
  * @returns @p registration as the JSON body of `PUT /api/servers/me`, its
- * address left out when it is empty. A text that is not UTF-8 is written with
- * U+FFFD in place of its bad bytes, so writing never throws.
+ * address left out when it is empty, its probeSecret included: the list of
+ * servers never writes it. A text that is not UTF-8 is written with U+FFFD in
+ * place of its bad bytes, so writing never throws.
  */
 [[nodiscard]] std::string registrationText(
     const ServerRegistration& registration);
@@ -59,7 +60,8 @@ namespace rtype::network {
  * empty, too long or not printable UTF-8, an address that is no IPv4 address,
  * a port outside LOWEST_PORT to HIGHEST_PORT, a number of games outside
  * MINIMUM_HOSTED_GAMES to MAXIMUM_HOSTED_GAMES or of players outside
- * MINIMUM_PLAYERS_PER_GAME to MAXIMUM_PLAYERS.
+ * MINIMUM_PLAYERS_PER_GAME to MAXIMUM_PLAYERS, a probeSecret outside
+ * LOWEST_PROBE_SECRET to HIGHEST_PROBE_SECRET.
  */
 [[nodiscard]] ServerRegistration registrationFromText(std::string_view text);
 
@@ -70,8 +72,8 @@ namespace rtype::network {
 [[nodiscard]] std::string heartbeatText(const ServerHeartbeat& heartbeat);
 
 /**
- * @returns The heartbeat a server sent as @p text; a member it does not know
- * is ignored.
+ * @returns The heartbeat a server sent as @p text, its probeToken empty when
+ * it carries none; a member it does not know is ignored.
  * @throws InvalidMasterMessageException naming the first member that is
  * missing, of another type or out of its bounds: more than
  * MAXIMUM_HOSTED_GAMES games, two games of one number, a number below
@@ -79,7 +81,8 @@ namespace rtype::network {
  * MAXIMUM_GAME_NAME_SIZE or not printable UTF-8, a state that is not one of
  * HOSTED_GAME_STATE_TEXTS, a difficulty or a player that is no valid nickname,
  * more than MAXIMUM_PLAYERS players in a game, a measure that is negative or
- * not a number, a loss above MAXIMUM_LOSS_PERCENT.
+ * not a number, a loss above MAXIMUM_LOSS_PERCENT, a probeToken outside
+ * LOWEST_PROBE_TOKEN to HIGHEST_PROBE_TOKEN.
  */
 [[nodiscard]] ServerHeartbeat heartbeatFromText(std::string_view text);
 
@@ -111,9 +114,10 @@ namespace rtype::network {
  * @returns The page of servers the master answered as @p text.
  * @throws InvalidMasterMessageException naming the first member missing, of
  * another type or out of its bounds: more than MAXIMUM_PAGE_SIZE servers, an id
- * below FIRST_SERVER_ID, a registration as registrationFromText() reads it, a
- * status that is not one of SERVER_STATUS_TEXTS, more than MAXIMUM_HOSTED_GAMES
- * games, more players than MAXIMUM_HOSTED_GAMES games of MAXIMUM_PLAYERS hold.
+ * below FIRST_SERVER_ID, a registration as registrationFromText() reads it but
+ * its probeSecret, which a list never holds, a status that is not one of
+ * SERVER_STATUS_TEXTS, more than MAXIMUM_HOSTED_GAMES games, more players than
+ * MAXIMUM_HOSTED_GAMES games of MAXIMUM_PLAYERS hold.
  */
 [[nodiscard]] ServerListing serverListingFromText(std::string_view text);
 

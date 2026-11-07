@@ -1,5 +1,6 @@
 add_subdirectory(Transport)
 add_subdirectory(Session)
+add_subdirectory(ContentPack)
 add_subdirectory(EntityTypes)
 add_subdirectory(Handshake)
 add_subdirectory(WaitingRoom)
@@ -18,6 +19,7 @@ target_include_directories(rtype_client_connection_module PUBLIC ${CMAKE_CURRENT
 target_link_libraries(rtype_client_connection_module
   PUBLIC
     rtype_client_connection_entity_types
+    rtype_client_content_pack
     rtype_client_connection_leaderboard
     rtype_client_entity_appearances
     rtype_client_entity_messages
@@ -39,6 +41,8 @@ target_link_libraries(rtype_client_connection_module
     rtype_network_transport
   PRIVATE
     rtype_client_constants
+    rtype_client_platform
+    rtype_engine_paths
     rtype_network_connection_refused
     rtype_network_constants
     rtype_network_disconnection

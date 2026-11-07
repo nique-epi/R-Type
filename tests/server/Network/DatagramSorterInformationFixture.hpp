@@ -13,8 +13,8 @@
 #include "ServerLobbyTestConstants.hpp"
 #include "SimulatedClock.hpp"
 
-/** @brief A sorter in front of three queues of the server's sizes, for the
- * tests that follow where the information requests go. */
+/** @brief A sorter in front of four queues of the server's sizes, for the
+ * tests that follow where the information requests and the probes go. */
 class DatagramSorterInformationFixture : public ::testing::Test {
  protected:
   DatagramSorterInformationFixture();
@@ -33,6 +33,7 @@ class DatagramSorterInformationFixture : public ::testing::Test {
   [[nodiscard]] std::vector<rtype::network::IncomingDatagram> drainRequests();
   [[nodiscard]] std::vector<rtype::network::IncomingDatagram>
   drainInformationRequests();
+  [[nodiscard]] std::vector<rtype::network::IncomingDatagram> drainProbes();
   [[nodiscard]] rtype::server::RejectionReport takeReport();
 
  private:
@@ -41,6 +42,7 @@ class DatagramSorterInformationFixture : public ::testing::Test {
       connectionRequests_;
   rtype::concurrency::BoundedQueue<rtype::network::IncomingDatagram>
       informationRequests_;
+  rtype::concurrency::BoundedQueue<rtype::network::IncomingDatagram> probes_;
   SimulatedClock clock_;
   rtype::server::RejectionLedger rejections_;
   rtype::server::DatagramSorter sorter_;

@@ -338,6 +338,12 @@ jobs:
     needs: packaging-changes
     if: needs.packaging-changes.outputs.changed == 'true'
     uses: ./.github/workflows/package.yaml
+    secrets:
+      MACOS_CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+      MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+      APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
 
   network-condition-scripts:
     name: Network condition scripts
@@ -349,7 +355,7 @@ jobs:
       - name: Lint the scripts
         run: |
           shellcheck --version
-          shellcheck --shell=sh --external-sources tests/tools/network-conditions/*.sh tests/tools/packaging/*.sh
+          shellcheck --shell=sh --external-sources tests/tools/network-conditions/*.sh tests/tools/packaging/*.sh tests/tools/bandwidth/*.sh
 
       - name: Load netem
         run: sudo modprobe sch_netem

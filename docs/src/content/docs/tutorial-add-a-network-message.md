@@ -38,10 +38,10 @@ Then play the forger: someone who forges an address, sends the message as often 
 
 `docs/src/content/docs/protocol.mdx` is the specification: a developer who follows it can write a client without reading the code. Write the message there first, using the words of the page (MUST, SHOULD, MAY as in RFC 2119), so the review of the pull request can compare the code with it.
 
-The next free number is 26 (`ServerInformation` holds 25), and a number never changes once given. Add a row to the table of [Client to server](/R-Type/protocol/#client-to-server):
+The next free number is 32 (`PlayerChatLine` holds 31), and a number never changes once given. Add a row to the table of [Client to server](/R-Type/protocol/#client-to-server):
 
 ```md
-| 26 | `Emote` | `kind` `u8`: 1 `Salute`, 2 `Taunt` | when the player asks for one, once |
+| 32 | `Emote` | `kind` `u8`: 1 `Salute`, 2 `Taunt` | when the player asks for one, once |
 ```
 
 To [Payload rules](/R-Type/protocol/#payload-rules), what a receiver must refuse. The page already says that an enumeration value not listed is invalid, so this row only names the field:
@@ -67,8 +67,8 @@ Finally, [Implementation status](/R-Type/protocol/#implementation-status) must n
 Add the value to `src/network/Protocol/MessageType.hpp`:
 
 ```cpp
-  ServerInformation = 25,
-  Emote = 26,
+  PlayerChatLine = 31,
+  Emote = 32,
 ```
 
 Add its name at the end of `MESSAGE_TYPE_NAMES` in `src/network/Statistics/Counting/MessageSlotConstants.hpp`, and name your value in the `static_assert` under it. Nothing fails if you forget the name alone: the traffic counters then count your message as `unknown`.
@@ -562,7 +562,7 @@ A pull request that changes the wire says so in its title, with `!` after the ty
 | The players must all see | The server sends it once to each player of the game with `sendToEveryPlayer` (`src/server/Sessions/Tracking/`), or guarantees it with `guaranteeToEveryPlayer` when its loss would show: see [Ordered messages](/R-Type/protocol/#ordered-messages) |
 | Must never be lost, or must always reflect the current state | From the server, guarantee it with `guaranteeToEveryPlayer`, it then reaches the client inside an `OrderedMessage`, in order and once (see [Ordered messages](/R-Type/protocol/#ordered-messages)); the client sends no guaranteed message yet. A state is repeated until the state message shows it, as `ReadyState` does with `LobbyState` |
 | Holds a list or a string | Check the count before anything is sized from it, as `LobbyState` does; a client must not make the server allocate in proportion to a value it controls |
-| An unknown sender may send | Read [Connection](/R-Type/protocol/#connection) first: `DatagramSorter` drops such a datagram before any queue, unless it holds a `ConnectionRequest` or a `ServerInformationRequest`, and an answer must never hold more bytes than the datagram it answers |
+| An unknown sender may send | Read [Connection](/R-Type/protocol/#connection) first: `DatagramSorter` drops such a datagram before any queue, unless it holds a `ConnectionRequest`, a `ServerInformationRequest` or a `MasterProbe`, and an answer must never hold more bytes than the datagram it answers |
 
 ## If it does not work
 

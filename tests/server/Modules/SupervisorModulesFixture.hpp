@@ -36,6 +36,9 @@ class SupervisorModulesFixture : public ServerModuleFixture {
   [[nodiscard]] std::unique_ptr<rtype::engine::Application> supervisor(
       const std::vector<std::string_view>& options);
 
+  /** @returns The port the supervisor is given, in UDP and in TCP. */
+  [[nodiscard]] std::uint16_t port() const;
+
   /** @returns What the configuration step of the supervisor did. */
   [[nodiscard]] const rtype::engine::ConfigurationReport& report() const;
 

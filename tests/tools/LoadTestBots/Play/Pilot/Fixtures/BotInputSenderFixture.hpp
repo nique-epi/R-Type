@@ -2,8 +2,10 @@
 
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <cstdint>
 #include "BotInputSender.hpp"
 #include "BotPilotTestConstants.hpp"
+#include "EntityMessage.hpp"
 #include "RecordingPlayerInputLink.hpp"
 #include "RecordingWaitingRoom.hpp"
 #include "TimeConstants.hpp"
@@ -24,6 +26,16 @@ class BotInputSenderFixture : public ::testing::Test {
       engine::Duration frame = engine::SIMULATION_TICK_DURATION);
 
   [[nodiscard]] const RecordingPlayerInputLink& link() const;
+
+  /** @brief Hands @p message to the sender for the bot of @p playerNumber
+   * (see BotInputSender::confirm()). */
+  void confirmFrom(const client::EntityMessage& message,
+                   std::uint8_t playerNumber);
+
+  /** @returns A world state listing the player @p playerNumber, whose input
+   * ACKNOWLEDGED_INPUT the server applied, and its ship SHIP_ENTITY_ID. */
+  [[nodiscard]] static client::EntityMessage stateAcknowledgingFor(
+      std::uint8_t playerNumber);
 
  private:
   RecordingWaitingRoom room_;

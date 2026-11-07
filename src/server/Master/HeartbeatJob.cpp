@@ -34,6 +34,7 @@ HeartbeatJob::HeartbeatJob(HeartbeatJobParts parts)
     : client_(std::move(parts.access)),
       identity_(std::move(parts.identity)),
       games_(parts.games),
+      probeTokens_(parts.probeTokens),
       measures_(parts.measures),
       times_(parts.times),
       logger_(std::string{SERVER_LOGGER_NAME}),
@@ -75,10 +76,13 @@ bool HeartbeatJob::registerServer() {
 }
 
 bool HeartbeatJob::sendHeartbeat() {
+  const std::uint64_t tokenRevision = probeTokens_.revision();
   try {
     client_.sendHeartbeat(
         heartbeatOf(games_.value().value_or(std::vector<network::HostedGame>{}),
-                    measures_ != nullptr ? measures_->value() : std::nullopt));
+                    measures_ != nullptr ? measures_->value() : std::nullopt,
+                    unsentProbeToken(tokenRevision)));
+    sentTokenRevision_ = tokenRevision;
     return true;
   } catch (const network::MasterRefusedException& refusal) {
     tell(refusal.what());
@@ -88,6 +92,14 @@ bool HeartbeatJob::sendHeartbeat() {
     tell(silence.what());
     return false;
   }
+}
+
+std::optional<std::uint64_t> HeartbeatJob::unsentProbeToken(
+    std::uint64_t revision) const {
+  if (revision <= sentTokenRevision_) {
+    return std::nullopt;
+  }
+  return probeTokens_.value();
 }
 
 void HeartbeatJob::tell(const std::string& problem) {

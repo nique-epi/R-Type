@@ -36,13 +36,16 @@ namespace rtype::server {
  * adds its work to the simulation stage after this one. The game reads real
  * time on the clock of the module for its Heartbeats.
  *
- * install() declares the `seed`, `state-rate` and `input-delay` settings and
- * provides RunningGame, and its bus as IGameEvents. start() reads the entity
- * sheets and the waves file, then creates the game with the values of the
- * settings, subscribing its rules and its broadcaster to the bus; the same
- * values decide whether the game is vanilla (see vanillaBreaches()). A
- * finished game waits for players again, so the game is never replaced. stop()
- * tells every player the server shuts down (see FarewellSender).
+ * install() declares the `seed`, `state-rate`, `state-encoding` and
+ * `input-delay` settings and provides RunningGame, and its bus as IGameEvents.
+ * start() reads the entity sheets and the waves file, then creates the game
+ * with the values of the settings, subscribing its rules and its broadcaster
+ * to the bus. vanillaBreaches() judges whether the game is vanilla from the
+ * fingerprints of the waves and of the entity sheets, the seed and the input
+ * delay; the state rate and the state encoding change how the states travel,
+ * not the game. A finished game waits for players again, so the game
+ * is never replaced. stop() tells every player the server shuts down (see
+ * FarewellSender).
  */
 class ServerGamesModule final : public engine::IModule {
  public:
@@ -90,6 +93,7 @@ class ServerGamesModule final : public engine::IModule {
   GamesSettings settings_;
   const engine::SettingValue* seedSetting_{nullptr};
   const engine::SettingValue* stateRateSetting_{nullptr};
+  const engine::SettingValue* stateEncodingSetting_{nullptr};
   const engine::SettingValue* inputDelaySetting_{nullptr};
   logging::Logger logger_;
   engine::SystemClock clock_;

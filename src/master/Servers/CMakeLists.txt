@@ -18,6 +18,7 @@ target_link_libraries(rtype_master_servers_module
   PRIVATE
     rtype_master_constants
     rtype_master_http_module
+    rtype_master_probe_module
     rtype_master_storage_module
     rtype_network_master_routes
 )

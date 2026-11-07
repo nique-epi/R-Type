@@ -12,6 +12,14 @@ constexpr std::string_view PUT_METHOD = "PUT";
 /** @brief The media type of every body a route reads or answers. */
 constexpr std::string_view JSON_CONTENT_TYPE = "application/json";
 
+/** @brief The media type of a body that is a file of bytes, such as a content
+ * pack (RFC 2046). */
+constexpr std::string_view OCTET_STREAM_CONTENT_TYPE =
+    "application/octet-stream";
+
+/** @brief The header that names the version of a body (RFC 9110). */
+constexpr std::string_view ETAG_HEADER = "ETag";
+
 /**
  * @brief The media type of an error, a problem document of RFC 9457, whose
  * `title` is the phrase of its status.

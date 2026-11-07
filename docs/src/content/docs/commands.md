@@ -44,6 +44,7 @@ Server settings. Only the supervisor reads `server.cfg`: it runs the lines of it
 | `port` | the supervisor | 1 to 65535 | 4242 | The UDP port the server listens on. |
 | `seed` | the games | 0 to 4294967295, or `none` | `none` | The seed of each game; `none` draws one at random. |
 | `state-rate` | the games | 2 to 60 | 20 | The world states sent to each player per second. |
+| `state-encoding` | the games | `delta` or `full` | `delta` | How each world state is written: as the difference from the newest one the player acknowledged, or with every entity. `delta` also writes a state with every entity when the player acknowledged none, or when the newest it acknowledged is more than 60 ticks older (`MAXIMUM_REFERENCE_DISTANCE`). |
 | `input-delay` | the games | 0 to 30 | 3 | The ticks every player's input is held before it is applied. |
 | `database` | the supervisor | a path | empty | The SQLite file the leaderboard of the server is kept in, given to every game; empty for `r-type_server_<port>.db` next to the executable, with the port of the supervisor. |
 | `master-url` | the supervisor | `http://<host>[:<port>]` | empty | The master the server is listed on; empty to run alone. |
@@ -92,6 +93,7 @@ Modules of the supervisor:
 |---|---|---|
 | `logger` | nothing | Applies the logging options when it starts. |
 | `network` | `logger` | Owns the UDP socket and the network thread. |
+| `content` | `network` | Serves the content pack over HTTP, on the TCP port of the number of `port`. |
 | `supervised games` | `network` | Starts, follows and stops the game processes. |
 | `supervisor lobby` | `network`, `supervised games` | Sends each player to a game, or starts one. |
 | `information` | `network`, `supervised games` | Answers the information requests. |
@@ -129,8 +131,9 @@ Master modules:
 |---|---|---|
 | `logger` | nothing | Applies the logging options when it starts. |
 | `storage` | `logger` | Opens the database of the master. |
+| `probe` | `logger` | Opens the UDP socket the probes of the game servers leave from. |
 | `http` | `logger` | Opens the port of the HTTP API. |
-| `servers` | `logger`, `storage`, `http` | Creates the game servers with their keys, and takes their registration and their heartbeats. |
+| `servers` | `logger`, `storage`, `probe`, `http` | Creates the game servers with their keys, takes their registration and their heartbeats, and probes their UDP port. |
 
 Turning off a module the program cannot run without is accepted when nothing that stays on needs it, and the program then does less. For example, `module lobby off` on the server leaves a server that accepts nobody. On the client, `menus`, `lobby` and `game` need `screens`, and `screens` needs five modules, so turning one of those off is refused until the modules that need it are off first.
 

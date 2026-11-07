@@ -7,16 +7,15 @@
 #include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "ConnectionAcceptorFixtures.hpp"
 #include "ConnectionAcceptorParts.hpp"
 #include "ConnectionChallenge.hpp"
 #include "Endpoint.hpp"
-#include "EntityTypeTable.hpp"
 #include "IncomingDatagram.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerDatagrams.hpp"
-#include "ShippedEntitySheets.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server::testing {
@@ -37,8 +36,7 @@ ConnectionAcceptorFixture::ConnectionAcceptorFixture()
               [this](ConnectedPlayer& player) {
                 joinedPlayers_.push_back(player.playerNumber);
               },
-          .entityTypes =
-              entityTypeTableOf(game::testing::shippedEntitySheets())}) {}
+          .content = gameContent()}) {}
 
 void ConnectionAcceptorFixture::receive(const network::Endpoint& sender,
                                         std::vector<std::byte> datagram,

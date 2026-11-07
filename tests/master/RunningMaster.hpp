@@ -4,8 +4,10 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include "Application.hpp"
 #include "ConfigurationReport.hpp"
+#include "CreatedServer.hpp"
 #include "JournalFile.hpp"
 #include "MasterDatabaseFile.hpp"
 
@@ -37,6 +39,11 @@ class RunningMaster {
    * keeps it, or nothing before the first one. */
   [[nodiscard]] std::optional<std::string> lastHeartbeatOf(
       std::int64_t serverId) const;
+
+  /** @returns The server named @p name, created on it as a host creates one,
+   * with its key. */
+  [[nodiscard]] rtype::network::CreatedServer createServer(
+      std::string_view name) const;
 
  private:
   JournalFile journal_;

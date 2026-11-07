@@ -327,6 +327,31 @@ TEST(RenderSystem, WritesACaptionInItsLayer) {
 }
 
 /**
+ * Given a caption on an entity, moved 12 units right and 56 units up
+ * When a frame is rendered
+ * Then its line is centered at the position of the entity moved by that offset
+ */
+TEST(RenderSystem, ACaptionIsWrittenAtItsOffset) {
+  Scene scene;
+  const Entity ship = scene.entities().create();
+  scene.components().add(ship, Position{.x = SHIP_X, .y = SHIP_Y});
+  scene.components().add(
+      ship, Caption{.text = "ACE",
+                    .style = {},
+                    .layer = Layer::Popups,
+                    .visible = true,
+                    .offset = {.x = CAPTION_OFFSET_X, .y = CAPTION_OFFSET_Y}});
+
+  scene.render();
+
+  ASSERT_EQ(scene.surface().written().size(), 1U);
+  EXPECT_EQ(scene.surface().written().front().center.x,
+            SHIP_X + CAPTION_OFFSET_X);
+  EXPECT_EQ(scene.surface().written().front().center.y,
+            SHIP_Y + CAPTION_OFFSET_Y);
+}
+
+/**
  * Given a figure hidden between two blinks
  * When a frame is rendered
  * Then nothing is written

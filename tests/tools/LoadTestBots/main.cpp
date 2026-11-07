@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <iomanip>
 #include <iostream>
@@ -14,6 +15,7 @@
 #include "BotLaunchOptions.hpp"
 #include "BotReport.hpp"
 #include "BotSquad.hpp"
+#include "BotTraffic.hpp"
 #include "ConnectionPhase.hpp"
 #include "FineTimerResolution.hpp"
 #include "LaunchArguments.hpp"
@@ -44,8 +46,12 @@ std::string_view phaseText(ConnectionPhase phase) {
       return "lost";
     case ConnectionPhase::Closed:
       return "closed by the server";
-    case ConnectionPhase::MissingEntitySheet:
-      return "left: missing entity sheet";
+    case ConnectionPhase::LoadingContent:
+      return "loading the content of the server";
+    case ConnectionPhase::ContentDownloadFailed:
+      return "left: content pack not downloaded";
+    case ConnectionPhase::ContentRefused:
+      return "left: content pack refused";
   }
   return "unknown";
 }
@@ -63,9 +69,42 @@ double secondsInGame(const BotReport& report) {
 
 /** @returns @p count per second of the game time of @p report; 0 before any
  * game. */
-double perSecondOfGame(std::size_t count, const BotReport& report) {
+double perSecondOfGame(std::uint64_t count, const BotReport& report) {
   const double seconds = secondsInGame(report);
   return seconds > 0.0 ? static_cast<double>(count) / seconds : 0.0;
+}
+
+/** @returns The entities a world state of @p report listed on average; 0
+ * before any state. */
+double entitiesPerState(const BotReport& report) {
+  return report.worldStates > 0 ? static_cast<double>(report.entitiesListed) /
+                                      static_cast<double>(report.worldStates)
+                                : 0.0;
+}
+
+/** @brief Prints the line of bot @p number: its phase, its games, its world
+ * states and inputs per second, the entities of a state, then what its socket
+ * received, decoded and as the network carried it, and sent per second of
+ * game. The client compresses nothing, so what it sent is read on the wire. */
+void printBotLine(std::size_t number, const BotReport& report) {
+  const rtype::tools::BotTraffic& traffic = report.trafficInGame;
+  std::cout << "bot " << number << ": " << phaseText(report.phase) << ", "
+            << report.gamesEnded << " games ended, " << report.worldStates
+            << " world states and " << report.inputsInGame << " inputs in "
+            << secondsInGame(report)
+            << " s of game: " << perSecondOfGame(report.worldStates, report)
+            << " and " << perSecondOfGame(report.inputsInGame, report)
+            << " per second, " << entitiesPerState(report)
+            << " entities per state; received "
+            << perSecondOfGame(traffic.plain.received.bytes, report)
+            << " B/s decoded and "
+            << perSecondOfGame(traffic.wire.received.bytes, report)
+            << " B/s on the network in "
+            << perSecondOfGame(traffic.wire.received.count, report)
+            << " datagrams/s, sent "
+            << perSecondOfGame(traffic.wire.sent.bytes, report) << " B/s in "
+            << perSecondOfGame(traffic.wire.sent.count, report)
+            << " datagrams/s\n";
 }
 
 /** @brief Prints what @p launch asked, one line per bot of @p reports, then
@@ -78,13 +117,7 @@ void printReport(const BotLaunch& launch, std::span<const BotReport> reports) {
             << std::fixed << std::setprecision(1);
   std::size_t number = 1;
   for (const BotReport& report : reports) {
-    std::cout << "bot " << number++ << ": " << phaseText(report.phase) << ", "
-              << report.gamesEnded << " games ended, " << report.worldStates
-              << " world states and " << report.inputsInGame << " inputs in "
-              << secondsInGame(report)
-              << " s of game: " << perSecondOfGame(report.worldStates, report)
-              << " and " << perSecondOfGame(report.inputsInGame, report)
-              << " per second\n";
+    printBotLine(number++, report);
   }
   std::cout << "in session at the end: " << inSessionCount(reports) << " of "
             << reports.size() << " bots\n";

@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include "CookieWindows.hpp"
 #include "SerializationConstants.hpp"
 
 namespace rtype::network {
@@ -56,5 +57,14 @@ constexpr std::uint64_t SIPHASH_FINALIZATION_MARK = 0xff;
  * windows. Provisional, see the protocol page.
  */
 constexpr std::chrono::seconds COOKIE_WINDOW_DURATION{10};
+
+/**
+ * @brief The windows of a connection cookie: COOKIE_WINDOW_DURATION each, the
+ * window it was issued in and the next one.
+ */
+constexpr std::uint64_t CONNECTION_COOKIE_ACCEPTED_WINDOWS = 2;
+constexpr CookieWindows CONNECTION_COOKIE_WINDOWS{
+    .duration = COOKIE_WINDOW_DURATION,
+    .accepted = CONNECTION_COOKIE_ACCEPTED_WINDOWS};
 
 }  // namespace rtype::network

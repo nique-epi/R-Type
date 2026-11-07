@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <thread>
 #include "KnownServer.hpp"
-#include "MasterMessageTextFixtures.hpp"
 #include "ServerStatus.hpp"
 #include "ServerStatusJobTestConstants.hpp"
 #include "ServersFixtures.hpp"
@@ -28,7 +27,7 @@ std::int64_t ServerStatusJobFixture::serverBeatingNow() {
   const rtype::master::KnownServer server =
       registeredParis(servers_, JOB_CREATOR_ADDRESS, now);
   static_cast<void>(servers_.replaceOwnHeartbeat(
-      server, rtype::network::testing::parisHeartbeat(), now));
+      server, answeringHeartbeat(servers_, server, now), now));
   return server.id;
 }
 

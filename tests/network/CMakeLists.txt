@@ -1,4 +1,5 @@
 add_subdirectory(Compression)
+add_subdirectory(Content)
 add_subdirectory(Handshake)
 add_subdirectory(Master)
 add_subdirectory(Protocol)

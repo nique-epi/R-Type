@@ -19,6 +19,7 @@ namespace rtype::client {
  * player picks a size: the window then opens at the largest one that fits. The
  * window opens windowed until the player picks another display mode.
  * clientPrediction is on: the ship moves before the server answers.
+ * pilotNames is on: the nickname of each pilot is written over its ship.
  */
 struct PlayerSettings {
   int musicVolume = DEFAULT_MUSIC_VOLUME;
@@ -32,6 +33,7 @@ struct PlayerSettings {
   bool soundCues = false;
   bool autoFire = false;
   bool clientPrediction = true;
+  bool pilotNames = true;
 
   bool operator==(const PlayerSettings& other) const = default;
 };

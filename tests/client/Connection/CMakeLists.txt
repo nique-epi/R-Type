@@ -1,5 +1,9 @@
-target_sources(client_connection_tests PRIVATE ServerSessionTest.cpp ServerSessionRedirectTest.cpp UnconfirmedInputsTest.cpp ServerSessionArrivalTest.cpp ServerSessionArrivalFixture.cpp ServerSessionFixture.cpp ServerSessionFixtures.cpp ServerSessionLogFixture.cpp ServerSessionEntityTypesTest.cpp ServerSessionEntityTypesFixture.cpp PlayerConnectionTest.cpp PlayerConnectionFixture.cpp)
+target_sources(client_connection_tests PRIVATE ServerSessionTest.cpp ServerSessionRedirectTest.cpp UnconfirmedInputsTest.cpp ServerSessionArrivalTest.cpp ServerSessionArrivalFixture.cpp ServerSessionFixture.cpp ServerSessionFixtures.cpp ServerSessionLogFixture.cpp ServerSessionContentTest.cpp ServerSessionContentFixture.cpp ContentPack/ContentPackTestFiles.cpp ContentPack/Download/ContentPackDownloadFixtures.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/FakePackServer.cpp PlayerConnectionTest.cpp PlayerConnectionFixture.cpp)
 
+target_include_directories(client_connection_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ContentPack ${CMAKE_CURRENT_SOURCE_DIR}/ContentPack/Download ${CMAKE_CURRENT_SOURCE_DIR}/EntityTypes)
+target_link_libraries(client_connection_tests PRIVATE httplib::httplib rtype_test_support)
+
+add_subdirectory(ContentPack)
 add_subdirectory(EntityTypes)
 add_subdirectory(Handshake)
 add_subdirectory(Leaderboard)

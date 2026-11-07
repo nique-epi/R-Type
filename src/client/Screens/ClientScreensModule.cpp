@@ -14,7 +14,6 @@
 #include "Endpoint.hpp"
 #include "EndpointText.hpp"
 #include "EngineException.hpp"
-#include "EntityAppearances.hpp"
 #include "EntityMessageQueue.hpp"
 #include "EntityTypeLooks.hpp"
 #include "EventListeners.hpp"
@@ -94,15 +93,14 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   settings_ = &context.require<PlayerSettings>();
   settingsService_ = &context.require<SettingsService>();
   assets_ = &context.require<AssetLibrary>();
-  appearances_ = &context.require<EntityAppearances>();
   audio_ = &chooseAudioService(context, silence_);
   window_ = &context.require<GameWindow>();
   connection_ = &context.require<ServerSession>();
   waitingRoom_ = &context.require<WaitingRoom>();
   entityMessages_ = &context.require<EntityMessageQueue>();
   leaderboard_ = &context.require<ServerLeaderboard>();
-  entityTypes_ = std::make_unique<EntityTypeLooks>(
-      context.require<IEntityTypeTable>(), *appearances_);
+  entityTable_ = &context.require<IEntityTypeTable>();
+  entityTypes_ = std::make_unique<EntityTypeLooks>(*entityTable_);
   serverTicks_ = &context.require<IServerTicks>();
   serverCatalog_ = &context.require<IServerCatalog>();
   gameCatalog_ = &context.require<IGameCatalog>();
@@ -155,7 +153,7 @@ void ClientScreensModule::start() {
           .settings = *settings_,
           .settingsService = *settingsService_,
           .assets = *assets_,
-          .appearances = *appearances_,
+          .entityTable = *entityTable_,
           .audio = *audio_,
           .window = *window_,
           .connection = *connection_,

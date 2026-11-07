@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "ByteWriter.hpp"
+#include "ContentAnnouncement.hpp"
 #include "DatagramCodec.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
@@ -34,6 +35,13 @@ std::size_t acceptancesAmong(
         return onlyMessageTypeOf(answer) ==
                network::MessageType::ConnectionAccepted;
       }));
+}
+
+network::ContentAnnouncement gameContent() {
+  network::ContentAnnouncement content{
+      .fingerprint = {}, .size = GAME_PACK_SIZE, .port = GAME_PACK_PORT};
+  content.fingerprint.bytes.fill(GAME_FINGERPRINT_BYTE);
+  return content;
 }
 
 }  // namespace rtype::server::testing

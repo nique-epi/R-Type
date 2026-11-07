@@ -26,6 +26,15 @@ class InvalidAddressException : public NetworkException {
 };
 
 /**
+ * @brief An HTTP server could not take its address and port: another program
+ * holds the port, or the address is none of the machine.
+ */
+class HttpPortUnavailableException : public NetworkException {
+ public:
+  HttpPortUnavailableException(const std::string& address, std::uint16_t port);
+};
+
+/**
  * @brief A text that should hold a port, from LOWEST_PORT to HIGHEST_PORT
  *        in decimal digits, and does not.
  */
@@ -96,6 +105,54 @@ class StringTooLongException : public NetworkException {
 };
 
 /**
+ * @brief A content pack that breaks a rule of its format: what each subclass
+ * names. A client never loads such a pack.
+ */
+class InvalidContentPackException : public NetworkException {
+ public:
+  explicit InvalidContentPackException(const std::string& reason);
+};
+
+/** @brief A content pack larger than MAXIMUM_CONTENT_PACK_BYTES, or a file
+ * larger than a pack may be. */
+class ContentPackTooLargeException : public InvalidContentPackException {
+ public:
+  explicit ContentPackTooLargeException(std::size_t size);
+};
+
+/** @brief A content pack of another format than CONTENT_PACK_FORMAT_VERSION.
+ */
+class ContentPackVersionException : public InvalidContentPackException {
+ public:
+  explicit ContentPackVersionException(std::uint8_t version);
+};
+
+/** @brief A content pack of more than MAXIMUM_CONTENT_PACK_FILES files. */
+class TooManyContentFilesException : public InvalidContentPackException {
+ public:
+  explicit TooManyContentFilesException(std::size_t count);
+};
+
+/** @brief A path of a content pack that isContentPath() refuses. */
+class InvalidContentPathException : public InvalidContentPackException {
+ public:
+  explicit InvalidContentPathException(const std::string& path);
+};
+
+/** @brief A file of a content pack out of the order of the paths, or twice.
+ */
+class UnorderedContentFilesException : public InvalidContentPackException {
+ public:
+  explicit UnorderedContentFilesException(const std::string& path);
+};
+
+/** @brief Bytes left after the last file of a content pack. */
+class ContentPackTrailingBytesException : public InvalidContentPackException {
+ public:
+  explicit ContentPackTrailingBytesException(std::size_t count);
+};
+
+/**
  * @brief Bytes that cannot be a message: an announced count out of range, an
  * unknown value, or bytes left after the message.
  */
@@ -160,6 +217,16 @@ class InvalidDifficultyException : public MalformedMessageException {
 };
 
 /**
+ * @brief The text of a chat line that is empty, longer than the protocol
+ * allows, not UTF-8, or holding a control character, read from a payload or
+ * about to be written into one.
+ */
+class InvalidChatTextException : public MalformedMessageException {
+ public:
+  explicit InvalidChatTextException(std::size_t size);
+};
+
+/**
  * @brief A server name or a game version that is empty, longer than the
  * protocol allows, not UTF-8, or holding a control character, read from a
  * ServerInformation or about to be written into one. The field is named as on
@@ -168,17 +235,6 @@ class InvalidDifficultyException : public MalformedMessageException {
 class InvalidServerTextException : public MalformedMessageException {
  public:
   InvalidServerTextException(std::string_view field, std::size_t size);
-};
-
-/**
- * @brief The name of an entity type is not one the protocol allows: empty,
- * longer than MAXIMUM_ENTITY_TYPE_NAME_LENGTH, or holding a byte other than a
- * lowercase letter, a digit or an underscore, read from a payload or about to
- * be written into one.
- */
-class InvalidTypeNameException : public MalformedMessageException {
- public:
-  explicit InvalidTypeNameException(std::size_t size);
 };
 
 /**

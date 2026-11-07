@@ -4,7 +4,9 @@
 #include <span>
 #include <utility>
 #include <vector>
+#include "ChatLine.hpp"
 #include "ConnectedPlayer.hpp"
+#include "DatagramReader.hpp"
 #include "Disconnection.hpp"
 #include "Endpoint.hpp"
 #include "GameLoaded.hpp"
@@ -16,6 +18,7 @@
 #include "IncomingDatagram.hpp"
 #include "LeaderboardRequest.hpp"
 #include "MessageDelivery.hpp"
+#include "MessageDispatcher.hpp"
 #include "MessageOrigin.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerDatagram.hpp"
@@ -28,6 +31,30 @@
 
 namespace rtype::server {
 
+namespace {
+
+/**
+ * @brief Reads @p datagram when @p reader takes it (see DatagramReader): the
+ * silence of its sender starts over, the player is no longer away, the
+ * guaranteed messages and the states its header acknowledges are dropped, then
+ * @p dispatcher hands its messages to their handlers.
+ */
+void readDatagram(DatagramReader& reader,
+                  network::MessageDispatcher& dispatcher,
+                  const network::IncomingDatagram& datagram) {
+  const std::optional<PlayerDatagram> readable = reader.read(datagram);
+  if (!readable.has_value()) {
+    return;
+  }
+  readable->player->ticksSinceReceived = 0;
+  readable->player->away = false;
+  readable->player->unacknowledged.acknowledge(readable->origin.header);
+  readable->player->sentStates.acknowledge(readable->origin.header);
+  dispatcher.dispatch(readable->origin, readable->messages);
+}
+
+}  // namespace
+
 GameSessions::GameSessions(GameSessionsParts parts)
     : send_(std::move(parts.send)),
       clock_(&parts.clock.get()),
@@ -36,11 +63,13 @@ GameSessions::GameSessions(GameSessionsParts parts)
       readyKeeper_(roster_, std::move(parts.readyAccepted)),
       inputKeeper_(roster_, std::move(parts.onNewerInput)),
       departures_(roster_, parts.events, std::move(parts.onClosing)),
-      onLeaderboardRequest_(std::move(parts.onLeaderboardRequest)) {
-  registerHandlers();
+      onLeaderboardRequest_(std::move(parts.onLeaderboardRequest)),
+      onChatLine_(std::move(parts.onChatLine)) {
+  registerSessionHandlers();
+  registerRequestHandlers();
 }
 
-void GameSessions::registerHandlers() {
+void GameSessions::registerSessionHandlers() {
   dispatcher_.registerHandler<network::ReadyState>(
       [this](const network::MessageOrigin& origin,
              const network::ReadyState& message) {
@@ -56,14 +85,6 @@ void GameSessions::registerHandlers() {
              const network::PlayerInput& input) {
         inputKeeper_.keepNewerOf(origin, input);
       });
-  dispatcher_.registerHandler<network::LeaderboardRequest>(
-      [this](const network::MessageOrigin& origin,
-             const network::LeaderboardRequest& request) {
-        const ConnectedPlayer* const player = roster_.find(origin.sender);
-        if (player != nullptr) {
-          onLeaderboardRequest_(*player, request);
-        }
-      });
   dispatcher_.registerHandler<network::Heartbeat>(
       [this](const network::MessageOrigin& origin,
              const network::Heartbeat& heartbeat) {
@@ -76,12 +97,31 @@ void GameSessions::registerHandlers() {
       });
 }
 
+void GameSessions::registerRequestHandlers() {
+  dispatcher_.registerHandler<network::LeaderboardRequest>(
+      [this](const network::MessageOrigin& origin,
+             const network::LeaderboardRequest& request) {
+        const ConnectedPlayer* const player = roster_.find(origin.sender);
+        if (player != nullptr) {
+          onLeaderboardRequest_(*player, request);
+        }
+      });
+  dispatcher_.registerHandler<network::ChatLine>(
+      [this](const network::MessageOrigin& origin,
+             const network::ChatLine& line) {
+        const ConnectedPlayer* const player = roster_.find(origin.sender);
+        if (player != nullptr) {
+          onChatLine_(*player, line);
+        }
+      });
+}
+
 PlayerRoster& GameSessions::roster() { return roster_; }
 
 void GameSessions::readDatagrams(
     std::span<const network::IncomingDatagram> datagrams) {
   for (const network::IncomingDatagram& datagram : datagrams) {
-    readDatagram(datagram);
+    readDatagram(reader_, dispatcher_, datagram);
   }
 }
 
@@ -113,18 +153,6 @@ network::PacketHeader GameSessions::nextSessionHeaderFor(
 
 std::vector<ConnectedPlayer> GameSessions::takeDepartedPlayers() {
   return departures_.takeDeparted();
-}
-
-void GameSessions::readDatagram(const network::IncomingDatagram& datagram) {
-  const std::optional<PlayerDatagram> readable = reader_.read(datagram);
-  if (!readable.has_value()) {
-    return;
-  }
-  readable->player->ticksSinceReceived = 0;
-  readable->player->away = false;
-  readable->player->unacknowledged.acknowledge(readable->origin.header);
-  readable->player->sentStates.acknowledge(readable->origin.header);
-  dispatcher_.dispatch(readable->origin, readable->messages);
 }
 
 }  // namespace rtype::server

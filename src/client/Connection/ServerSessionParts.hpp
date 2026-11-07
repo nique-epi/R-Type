@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <vector>
+#include "ContentLoading.hpp"
 #include "GameLoadedReminder.hpp"
 #include "IRoutedLink.hpp"
 #include "ISessionObserver.hpp"
@@ -29,9 +30,12 @@ struct ServerSessionParts {
   std::reference_wrapper<network::MessageDispatcher> dispatcher;
   /** @brief Sends the GameLoaded that goes before the inputs of a game. */
   std::reference_wrapper<GameLoadedReminder> gameLoaded;
-  /** @brief Judges the table of entity types of an acceptance, and keeps it
-   * for the session; the session forgets it when it closes. */
+  /** @brief The content the session plays with; the session comes back to
+   * the client's own when it closes. */
   std::reference_wrapper<SessionEntityTypes> entityTypes;
+  /** @brief Loads the pack of a server whose content is not the client's;
+   * the session stops it when it closes. */
+  std::reference_wrapper<ContentLoading> content;
   /** @brief The parts that follow the session, told when it opens, closes and
    * holds. */
   std::vector<std::reference_wrapper<ISessionObserver>> observers;

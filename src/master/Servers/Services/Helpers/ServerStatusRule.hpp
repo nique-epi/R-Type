@@ -10,7 +10,9 @@ namespace rtype::master {
  * @returns The status @p evidence gives a registered server at @p now, the
  * first that applies: Maintenance when an admin took it out of service;
  * Offline when it was silent for OFFLINE_SILENCE or more since its last
- * heartbeat, or since its registration while it sent none; Degraded when the
+ * heartbeat, or since its registration while it sent none; Unreachable when
+ * no probe got a valid answer for PROBE_ANSWER_SILENCE or more, or since it
+ * registered; Degraded when the
  * 95th percentile of its ticks or its loss reaches its bound; else Online, a
  * measure not taken counting as within its bound. The silence is counted in
  * whole seconds, as the dates are kept.

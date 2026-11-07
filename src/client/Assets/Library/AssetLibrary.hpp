@@ -25,7 +25,8 @@ class AssetLibrary {
 
   [[nodiscard]] const std::filesystem::path& folder() const;
 
-  /** @brief The file an asset id names in the folder. */
+  /** @brief The file an asset id names in the folder; an id that is a whole
+   * path, as the sprite sheets of a content pack are, names that file. */
   [[nodiscard]] std::filesystem::path fileOf(std::string_view assetId) const;
 
   /** @brief Loads an asset unless it is already loaded; music is only located,

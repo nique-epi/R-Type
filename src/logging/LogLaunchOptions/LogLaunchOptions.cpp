@@ -225,6 +225,12 @@ std::vector<std::string> LogLaunchOptions::forwardedArguments() const {
 }
 
 std::string LogLaunchOptions::usage(std::string_view defaultJournalName) {
+  return usageWithJournalAt(std::string(defaultJournalName) +
+                            std::string(NEXT_TO_THE_EXECUTABLE));
+}
+
+std::string LogLaunchOptions::usageWithJournalAt(
+    std::string_view defaultJournal) {
   std::string text = "Logging options:\n";
   appendUsageEntry(text, std::string(LEVEL_OPTION) + " <name>",
                    "Level: trace, debug, info, warn, error or silent. "
@@ -234,9 +240,8 @@ std::string LogLaunchOptions::usage(std::string_view defaultJournalName) {
                        std::string(INFO_NAME) + ".");
   appendUsageEntry(
       text, std::string(FILE_OPTION) + " <path>",
-      "Journal to append to. Default: " + std::string(defaultJournalName) +
-          " next to the executable, or none when that file cannot be"
-          " opened.");
+      "Journal to append to. Default: " + std::string(defaultJournal) +
+          ", or none when that file cannot be opened.");
   appendUsageEntry(text, NO_FILE_OPTION, "Write no journal.");
   appendUsageEntry(text, STDERR_OPTION,
                    "Write to standard error too. This is the default.");

@@ -26,5 +26,12 @@ VALUES ('Paris 1', 'fingerprint of a version 1 key', '198.51.100.7', :date,
 constexpr std::string_view VERSION_ONE_DATE_PARAMETER = ":date";
 constexpr std::string_view VERSION_ONE_HEARTBEAT_PARAMETER = ":heartbeat";
 
+/**
+ * @brief Records an answer to a probe at the last heartbeat of every server,
+ * as a master of this version records it for a heartbeat that answers one.
+ */
+constexpr std::string_view MARK_PROBE_ANSWERED_STATEMENT =
+    "UPDATE servers SET last_probe_answer_at = last_heartbeat_at";
+
 /** @brief A last heartbeat that is no JSON. */
 constexpr std::string_view UNREADABLE_HEARTBEAT = "not json";
