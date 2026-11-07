@@ -5,6 +5,7 @@
 #include <optional>
 #include <span>
 #include "LobbyState.hpp"
+#include "PilotDeparture.hpp"
 #include "PilotStatus.hpp"
 #include "PlayerLeft.hpp"
 #include "ProtocolConstants.hpp"
@@ -18,14 +19,6 @@ namespace {
 bool isPlayerNumber(std::uint8_t number) {
   return number >= network::FIRST_PLAYER_NUMBER &&
          static_cast<std::size_t>(number) <= network::MAXIMUM_PLAYERS;
-}
-
-/** @returns Whether a pilot has left the game for good, so no world state
- * changes its state any more. */
-bool hasLeft(const PilotStatus& pilot) {
-  return pilot.state == PilotState::Left ||
-         pilot.state == PilotState::SignalLost ||
-         pilot.state == PilotState::Expelled;
 }
 
 /** @returns The state a world state gives a pilot still in the game. */

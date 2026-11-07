@@ -15,6 +15,7 @@
 #include "ImagePlacement.hpp"
 #include "InterfaceConstants.hpp"
 #include "PilotColor.hpp"
+#include "PilotDeparture.hpp"
 #include "PilotName.hpp"
 #include "PilotStatus.hpp"
 #include "PlayerPalette.hpp"
@@ -33,13 +34,6 @@ struct LinePlace {
   sf::Vector2i topLeft;
   sf::Color nameColor;
 };
-
-/** @returns Whether a pilot left the game, lost its signal or was expelled. */
-bool hasLeft(const PilotStatus& pilot) {
-  return pilot.state == PilotState::Left ||
-         pilot.state == PilotState::SignalLost ||
-         pilot.state == PilotState::Expelled;
-}
 
 /** @returns The words after the name of a pilot who left in @p state: SIGNAL
  * LOST, WAS EXPELLED, or LEFT THE GAME. */

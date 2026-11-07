@@ -18,6 +18,7 @@
 #include "Outline.hpp"
 #include "PaddedScore.hpp"
 #include "PilotColor.hpp"
+#include "PilotDeparture.hpp"
 #include "PilotName.hpp"
 #include "PilotStatus.hpp"
 #include "PlayerPalette.hpp"
@@ -86,10 +87,7 @@ bool hasBay(const PilotStatus& pilot) {
 /** @returns Whether a pilot is gone from the game: out of lives, left,
  * dropped or expelled. */
 bool isGone(const PilotStatus& pilot) {
-  return pilot.state == PilotState::OutOfLives ||
-         pilot.state == PilotState::Left ||
-         pilot.state == PilotState::SignalLost ||
-         pilot.state == PilotState::Expelled;
+  return pilot.state == PilotState::OutOfLives || hasLeft(pilot);
 }
 
 /** @returns The left column of a bay, 0 to PLAYER_COLOR_COUNT - 1 from the
