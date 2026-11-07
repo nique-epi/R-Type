@@ -152,10 +152,21 @@ EntityReplicator::EntityReplicator(EntityReplicatorParts parts)
     : entities_(&parts.entities.get()),
       components_(&parts.components.get()),
       feedback_(parts.feedback),
-      types_(&parts.types.get()) {}
+      types_(&parts.types.get()),
+      claimedMissiles_(parts.ownPlayerNumber, parts.ownMissiles) {}
 
 void EntityReplicator::apply(const network::EntitySpawned& message) {
-  if (entityByNetworkId_.find(message.entityId).has_value()) {
+  const std::optional<engine::Entity> known =
+      entityByNetworkId_.find(message.entityId);
+  if (claimedMissiles_.claim(message)) {
+    if (known.has_value()) {
+      components_->destroy(*known);
+      entityByNetworkId_.unbind(message.entityId);
+      lastListedTicks_.forget(message.entityId);
+    }
+    return;
+  }
+  if (known.has_value()) {
     return;
   }
   if (const std::optional<engine::Entity> created =
@@ -180,6 +191,9 @@ void EntityReplicator::apply(const network::WorldState& state) {
 }
 
 void EntityReplicator::apply(const network::EntityDestroyed& message) {
+  if (claimedMissiles_.release(message)) {
+    return;
+  }
   const std::optional<engine::Entity> known =
       entityByNetworkId_.find(message.entityId);
   if (!known.has_value()) {
@@ -247,6 +261,9 @@ std::vector<engine::Entity> EntityReplicator::applyEntities(
     std::span<const network::EntityState> entities, std::uint32_t tick) {
   std::vector<engine::Entity> created;
   for (const network::EntityState& listed : entities) {
+    if (claimedMissiles_.holds(listed.entityId)) {
+      continue;
+    }
     const PositionSample sample{.tick = tick,
                                 .position = {.x = listed.x, .y = listed.y}};
     const std::optional<engine::Entity> known =

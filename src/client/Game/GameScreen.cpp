@@ -31,18 +31,20 @@
 #include "IPlayerInputLink.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISky.hpp"
+#include "InterpolationClock.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
 #include "MissionStart.hpp"
+#include "OwnMissilesParts.hpp"
+#include "OwnPrediction.hpp"
 #include "OwnShip.hpp"
-#include "OwnShipPredictor.hpp"
 #include "PlayerAction.hpp"
+#include "PlayerCommand.hpp"
 #include "PlayerInputPacer.hpp"
 #include "PlayerLeft.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayerPreferences.hpp"
 #include "PositionInterpolation.hpp"
-#include "PredictedShipPlacement.hpp"
 #include "ShipFlightSystem.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "GameScreenIdConstants.hpp"
@@ -81,6 +83,16 @@ void traceHeldActions(const logging::Logger& logger, const ActionSet& held,
   traced = held.bits();
 }
 
+/** @brief Puts the other entities at the tick @p clock shows, then reveals
+ * those that arrived (see placeInterpolatedPositions() and
+ * revealArrivedEntities()). */
+void showOtherEntities(const InterpolationClock& clock,
+                       engine::ComponentRegistry& components,
+                       const EntityFeedback& feedback) {
+  placeInterpolatedPositions(clock, components);
+  revealArrivedEntities(clock, components, feedback);
+}
+
 }  // namespace
 
 GameScreen::GameScreen(GameScreenParts parts,
@@ -92,10 +104,18 @@ GameScreen::GameScreen(GameScreenParts parts,
       settings_(&parts.settings.get()),
       effects_(entities_, components_, std::random_device{}()),
       feedback_(EntityFeedback{.effects = effects_, .sounds = parts.sounds}),
-      replicator_(EntityReplicatorParts{.entities = entities_,
-                                        .components = components_,
-                                        .feedback = feedback_,
-                                        .types = parts.entityTypes}),
+      prediction_(parts.connection.get().status().playerNumber,
+                  OwnMissilesParts{.entities = entities_,
+                                   .components = components_,
+                                   .feedback = feedback_,
+                                   .types = parts.entityTypes}),
+      replicator_(EntityReplicatorParts{
+          .entities = entities_,
+          .components = components_,
+          .feedback = feedback_,
+          .types = parts.entityTypes,
+          .ownPlayerNumber = parts.connection.get().status().playerNumber,
+          .ownMissiles = &prediction_.missiles()}),
       enemyActions_(components_),
       playerCommands_(true, parts.settings.get().keys),
       inputs_(&parts.inputs.get()),
@@ -105,7 +125,6 @@ GameScreen::GameScreen(GameScreenParts parts,
                   parts.connection.get().status().playerNumber),
       result_(&parts.result.get()),
       playerNumber_(parts.connection.get().status().playerNumber),
-      prediction_(playerNumber_),
       sky_(&parts.sky.get()) {
   systems_.add(std::make_unique<AnimationSystem>());
   systems_.add(std::make_unique<HitFlashSystem>());
@@ -140,16 +159,17 @@ void GameScreen::handleEvent(const sf::Event& event) {
 }
 
 void GameScreen::update(engine::Duration elapsed) {
-  const ActionSet held = playerActions();
+  const PlayerCommand command{.held = playerActions(),
+                              .shownTick = interpolationClock_.shownTick()};
   if (settings_->clientPrediction) {
-    prediction_.advance(elapsed, held, *inputs_);
+    prediction_.advance(elapsed, command, *inputs_);
   } else {
     prediction_.stop();
     if (inputPacer_.advance(elapsed)) {
-      std::ignore = inputs_->sendPlayerInput(held);
+      std::ignore = inputs_->sendPlayerInput(command.held, command.shownTick);
     }
   }
-  traceHeldActions(logger_, held, loggedActions_);
+  traceHeldActions(logger_, command.held, loggedActions_);
   systems_.run(components_, elapsed);
   interpolationClock_.follow(serverTicks_->serverTickNow());
   interpolationClock_.advance(elapsed);
@@ -163,10 +183,9 @@ void GameScreen::update(engine::Duration elapsed) {
   departures_.advance(elapsed);
   silence_.advance(sinceTheWorld);
   applyEntityMessages();
-  placeInterpolatedPositions(interpolationClock_, components_);
-  revealArrivedEntities(interpolationClock_, components_, feedback_);
+  showOtherEntities(interpolationClock_, components_, feedback_);
   if (settings_->clientPrediction) {
-    placePredictedShip(prediction_, replicator_, components_);
+    prediction_.place(replicator_, components_);
   }
   askForTheEndWhenDue();
   moveSky(*sky_, effects_, preference);

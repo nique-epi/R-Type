@@ -3,3 +3,4 @@ target_include_directories(client_prediction_tests PRIVATE ${RTYPE_TEST_SOURCE_D
 
 add_subdirectory(Interpolation)
 add_subdirectory(OwnShip)
+add_subdirectory(OwnMissiles)

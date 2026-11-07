@@ -3,11 +3,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <vector>
 #include "ActionSet.hpp"
 #include "IPlayerInputLink.hpp"
 #include "OwnShip.hpp"
 #include "PlayerAction.hpp"
+#include "PlayerCommand.hpp"
 #include "Position.hpp"
+#include "PredictedCommand.hpp"
 #include "ShipDirections.hpp"
 #include "TimeConstants.hpp"
 #include "WorldState.hpp"
@@ -28,8 +31,8 @@ game::ShipDirections directionsOf(ActionSet held) {
 OwnShipPredictor::OwnShipPredictor(std::uint8_t playerNumber)
     : playerNumber_(playerNumber) {}
 
-void OwnShipPredictor::advance(engine::Duration elapsed, ActionSet held,
-                               IPlayerInputLink& link) {
+std::vector<PredictedCommand> OwnShipPredictor::advance(
+    engine::Duration elapsed, PlayerCommand command, IPlayerInputLink& link) {
   uncounted_ += elapsed;
   const std::size_t counted = engine::wholeTicksIn(uncounted_);
   const std::size_t ticks =
@@ -38,12 +41,18 @@ void OwnShipPredictor::advance(engine::Duration elapsed, ActionSet held,
                    ? engine::Duration::zero()
                    : uncounted_ - engine::SIMULATION_TICK_DURATION *
                                       static_cast<engine::Duration::rep>(ticks);
+  std::vector<PredictedCommand> predicted;
   for (std::size_t tick = 0; tick < ticks; ++tick) {
     if (const std::optional<std::uint32_t> number =
-            link.sendPlayerInput(held)) {
-      prediction_.predict(directionsOf(held), *number);
+            link.sendPlayerInput(command.held, command.shownTick)) {
+      prediction_.predict(directionsOf(command.held), *number);
+      predicted.push_back(
+          PredictedCommand{.inputNumber = *number,
+                           .shooting = command.held.has(PlayerAction::Shoot),
+                           .shipAfter = prediction_.position()});
     }
   }
+  return predicted;
 }
 
 void OwnShipPredictor::apply(const network::WorldState& state) {

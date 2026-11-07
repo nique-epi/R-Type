@@ -1,0 +1,65 @@
+#include "OwnMissilesFixture.hpp"
+#include <cstdint>
+#include <vector>
+#include "ComponentRegistry.hpp"
+#include "Entity.hpp"
+#include "EntityType.hpp"
+#include "FixedEntityTypeSourceConstants.hpp"
+#include "OwnMissiles.hpp"
+#include "Position.hpp"
+#include "PredictedCommand.hpp"
+#include "RecordingSoundPlayer.hpp"
+#include "Sprite.hpp"
+
+namespace rtype::client::testing {
+
+OwnMissilesFixture::OwnMissilesFixture() {
+  missiles_.setActive(true);
+  missiles_.restart();
+}
+
+void OwnMissilesFixture::fireAt(std::uint32_t input, game::Position ship) {
+  const std::vector<PredictedCommand> commands{PredictedCommand{
+      .inputNumber = input, .shooting = true, .shipAfter = ship}};
+  missiles_.follow(commands);
+  newestInput_ = input;
+}
+
+void OwnMissilesFixture::holdNothingUpTo(std::uint32_t input) {
+  std::vector<PredictedCommand> commands;
+  for (std::uint32_t next = newestInput_ + 1; next <= input; ++next) {
+    commands.push_back(PredictedCommand{
+        .inputNumber = next, .shooting = false, .shipAfter = {}});
+  }
+  missiles_.follow(commands);
+  newestInput_ = input;
+}
+
+std::vector<game::Position> OwnMissilesFixture::drawnMissiles() {
+  std::vector<game::Position> drawn;
+  components_.forEach<game::EntityType, game::Position>(
+      [this, &drawn](engine::Entity entity, const game::EntityType& side,
+                     const game::Position& position) {
+        if (side == game::EntityType::PlayerMissile &&
+            components_.has<game::Sprite>(entity)) {
+          drawn.push_back(position);
+        }
+      });
+  return drawn;
+}
+
+void OwnMissilesFixture::enemyAt(game::Position position) {
+  const engine::Entity enemy = entities_.create();
+  components_.add(enemy, position);
+  components_.add(enemy, game::EntityType::Enemy);
+  components_.add(enemy, BYDO_BOX);
+  components_.add(enemy, game::Sprite{});
+}
+
+OwnMissiles& OwnMissilesFixture::missiles() { return missiles_; }
+
+const RecordingSoundPlayer& OwnMissilesFixture::sounds() const {
+  return sounds_;
+}
+
+}  // namespace rtype::client::testing

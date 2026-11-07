@@ -36,6 +36,7 @@ using rtype::client::testing::AFTER_THE_LAST_PLAYER;
 using rtype::client::testing::AN_EVENT_NUMBER;
 using rtype::client::testing::animatedEntityCount;
 using rtype::client::testing::announcedEntityCount;
+using rtype::client::testing::ANOTHER_PLAYER;
 using rtype::client::testing::APPLIED_TICK;
 using rtype::client::testing::BEFORE_THE_FIRST_PLAYER;
 using rtype::client::testing::boxOfThe;
@@ -68,6 +69,8 @@ using rtype::client::testing::NEWER_TICK;
 using rtype::client::testing::NO_HISTORY_POSITION;
 using rtype::client::testing::NUMBER_OF_NO_TYPE;
 using rtype::client::testing::OLDER_TICK;
+using rtype::client::testing::OWN_PLAYER;
+using rtype::client::testing::ownMissileSpawned;
 using rtype::client::testing::pilotColorOfThe;
 using rtype::client::testing::PLAYER_MISSILE_ID;
 using rtype::client::testing::PLAYER_MISSILE_POSITION;
@@ -898,4 +901,61 @@ TEST_F(EntityReplicatorFixture,
   EXPECT_THAT(
       drawnEntities(components()),
       ElementsAre(drawnAs(EntityType::Enemy, BYDO_ID, SECOND_POSITION)));
+}
+
+/**
+ * Given a replicator whose listener predicts the missiles of its player
+ * When an EntitySpawned announces a missile that player fired
+ * Then the replicator draws nothing of it and hands it to the listener
+ */
+TEST_F(EntityReplicatorFixture, LeavesAMissileOfItsPlayerToThePrediction) {
+  ownMissiles().predict(true);
+
+  replicator().apply(ownMissileSpawned(OWN_PLAYER));
+
+  EXPECT_EQ(announcedEntityCount(components()), 0U);
+  EXPECT_EQ(ownMissiles().spawned().size(), 1U);
+}
+
+/**
+ * Given a replicator whose listener predicts the missiles of its player
+ * When an EntitySpawned announces a missile another player fired
+ * Then the replicator creates it as any missile
+ */
+TEST_F(EntityReplicatorFixture, CreatesAMissileOfAnotherPlayer) {
+  ownMissiles().predict(true);
+
+  replicator().apply(ownMissileSpawned(ANOTHER_PLAYER));
+
+  EXPECT_EQ(announcedEntityCount(components()), 1U);
+  EXPECT_TRUE(ownMissiles().spawned().empty());
+}
+
+/**
+ * Given a replicator whose listener does not predict, PREDICTION off
+ * When an EntitySpawned announces a missile its player fired
+ * Then the replicator creates it as any missile
+ */
+TEST_F(EntityReplicatorFixture, CreatesItsOwnMissileWithoutPrediction) {
+  replicator().apply(ownMissileSpawned(OWN_PLAYER));
+
+  EXPECT_EQ(announcedEntityCount(components()), 1U);
+}
+
+/**
+ * Given a missile of its player the replicator left to the prediction
+ * When a WorldState lists it, then an EntityDestroyed removes it
+ * Then nothing is drawn of it, and the listener is told it was removed
+ */
+TEST_F(EntityReplicatorFixture, HandsTheRemovalOfAClaimedMissileOn) {
+  ownMissiles().predict(true);
+  replicator().apply(ownMissileSpawned(OWN_PLAYER));
+
+  replicator().apply(stateListing(
+      APPLIED_TICK, {listed(PLAYER_MISSILE_ID, PLAYER_MISSILE_TYPE_NUMBER,
+                            PLAYER_MISSILE_POSITION)}));
+  replicator().apply(removed(PLAYER_MISSILE_ID));
+
+  EXPECT_EQ(announcedEntityCount(components()), 0U);
+  EXPECT_EQ(ownMissiles().destroyed().size(), 1U);
 }

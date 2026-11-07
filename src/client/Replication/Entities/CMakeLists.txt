@@ -1,6 +1,7 @@
 add_library(rtype_client_entities STATIC
   EnemyActionPlayer.cpp
   EntityCues.cpp
+  ClaimedMissiles.cpp
   EntityReplicator.cpp
   EntityTypeLooks.cpp
   LastListedTicks.cpp

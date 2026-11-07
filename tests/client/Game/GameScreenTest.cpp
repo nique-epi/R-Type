@@ -9,6 +9,8 @@
 #include "BlankRenderTarget.hpp"
 #include "BoundAction.hpp"
 #include "ColorMode.hpp"
+#include "ConnectionPhase.hpp"
+#include "ConnectionStatus.hpp"
 #include "DepartureFeedTestConstants.hpp"
 #include "DrawJournal.hpp"
 #include "EffectConstants.hpp"
@@ -50,6 +52,8 @@
 using rtype::client::BoundAction;
 using rtype::client::BYDO_EXPLOSION_FRAME;
 using rtype::client::ColorMode;
+using rtype::client::ConnectionPhase;
+using rtype::client::ConnectionStatus;
 using rtype::client::END_SCREEN;
 using rtype::client::GAME_OPTIONS_SCREEN;
 using rtype::client::GameScreen;
@@ -536,6 +540,49 @@ TEST(GameScreenPredictionTest, SendsOneInputPerTickWhenItIsOn) {
   game.update(THREE_TICKS);
 
   EXPECT_EQ(doubles.inputs.sentActions().size(), INPUTS_IN_THREE_TICKS);
+}
+
+/**
+ * Given the game of player 1 with PREDICTION on, a state listing its ship
+ * applied
+ * When the player holds shoot for three ticks, the server having answered
+ * nothing yet
+ * Then the shot of a player plays at once: the client fired its own missile
+ */
+TEST(GameScreenPredictionTest, FiresItsOwnMissileBeforeTheServerAnswers) {
+  LoneGameParts doubles;
+  doubles.connection.setStatus(ConnectionStatus{
+      .phase = ConnectionPhase::Accepted, .playerNumber = FIRST_PILOT});
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  doubles.entityMessages.queue(stateWithTheShipOfTheFirstPilot(APPLIED_TICK));
+  game.update(THREE_TICKS);
+
+  game.handleEvent(
+      keyPress(sf::Keyboard::Key::Space, sf::Keyboard::Scan::Space));
+  game.update(THREE_TICKS);
+
+  EXPECT_THAT(doubles.sounds.played(), Contains(PLAYER_SHOT_SOUND_ID));
+}
+
+/**
+ * Given the game of player 1 with PREDICTION on, no state received yet
+ * When the player holds shoot for three ticks
+ * Then no shot plays: the ship has no place to fire from yet
+ */
+TEST(GameScreenPredictionTest, FiresNothingBeforeAStateListsTheShip) {
+  LoneGameParts doubles;
+  doubles.connection.setStatus(ConnectionStatus{
+      .phase = ConnectionPhase::Accepted, .playerNumber = FIRST_PILOT});
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+
+  game.handleEvent(
+      keyPress(sf::Keyboard::Key::Space, sf::Keyboard::Scan::Space));
+  game.update(THREE_TICKS);
+
+  EXPECT_THAT(doubles.sounds.played(),
+              ::testing::Not(Contains(PLAYER_SHOT_SOUND_ID)));
 }
 
 /**

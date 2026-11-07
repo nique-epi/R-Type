@@ -28,7 +28,7 @@
 #include "InterpolationClock.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
-#include "OwnShipPredictor.hpp"
+#include "OwnPrediction.hpp"
 #include "PlayerCommands.hpp"
 #include "PlayerInputPacer.hpp"
 #include "PlayerPalette.hpp"
@@ -174,6 +174,7 @@ class GameScreen : public IScreen {
   engine::ComponentRegistry components_{entities_};
   EffectSpawner effects_;
   EntityFeedback feedback_;
+  OwnPrediction prediction_;
   EntityReplicator replicator_;
   EnemyActionPlayer enemyActions_;
   engine::SystemScheduler systems_;
@@ -185,7 +186,6 @@ class GameScreen : public IScreen {
   ScoreBoard scoreBoard_;
   GameResult* result_;
   std::uint8_t playerNumber_;
-  OwnShipPredictor prediction_;
   InterpolationClock interpolationClock_;
   std::optional<engine::Duration> endedAt_;
   std::uint32_t paintedStatusRevision_{};

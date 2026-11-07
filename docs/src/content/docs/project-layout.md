@@ -231,6 +231,7 @@ src/client/
 │   └── Pilots/          scores and ranking of the pilots
 ├── Prediction/          own ship predicted, other ships interpolated
 │   ├── Interpolation/   the other entities shown between two states
+│   ├── OwnMissiles/     the own missiles fired at once and matched to the server
 │   └── OwnShip/         the own ship predicted and corrected
 ├── Input/               keyboard and gamepad to player input
 │   ├── Keys/            the keys, their names and their bindings
