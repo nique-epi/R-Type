@@ -199,7 +199,7 @@ jobs:
           xargs -0 -a "$RUNNER_TEMP/files-to-lint" "/c/Program Files/LLVM/bin/clang-tidy.exe" -p build --quiet
 
   build:
-    name: Build and test (${{ matrix.os }}${{ matrix.preset == 'sanitize' && ', sanitizers' || '' }})
+    name: Build and test (${{ matrix.os }}${{ matrix.preset == 'sanitize' && ', sanitizers' || matrix.preset == 'modules-off' && ', optional modules off' || '' }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
@@ -211,6 +211,11 @@ jobs:
             generator_arguments: ""
           - os: ubuntu-latest
             preset: sanitize
+            generator_arguments: ""
+          # Every RTYPE_MODULE_* option off: the build, the tests and the start
+          # of the supervisor without the optional modules.
+          - os: ubuntu-latest
+            preset: modules-off
             generator_arguments: ""
           - os: windows-latest
             preset: test
@@ -268,7 +273,7 @@ jobs:
           -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
 
       - name: Save vcpkg binary cache
-        if: steps.vcpkg-cache.outputs.cache-hit != 'true' && matrix.preset != 'sanitize'
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true' && matrix.preset == 'test'
         uses: actions/cache/save@v4
         with:
           path: ${{ runner.temp }}/vcpkg-cache
@@ -285,14 +290,14 @@ jobs:
       - name: Test
         run: ctest --preset ${{ matrix.preset }}
 
-      - name: Stop the supervisor under the sanitizers
-        if: matrix.preset == 'sanitize'
+      - name: Stop the supervisor
+        if: matrix.preset == 'sanitize' || matrix.preset == 'modules-off'
         timeout-minutes: 2
         shell: bash
         # Job control on, or bash starts the supervisor with SIGINT ignored.
         run: |
           set -m
-          ./build-sanitize/r-type_server --mode supervisor &
+          ./build-${{ matrix.preset }}/r-type_server --mode supervisor &
           supervisor=$!
           sleep 5
           kill -INT "$supervisor"
