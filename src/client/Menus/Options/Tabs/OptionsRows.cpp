@@ -20,6 +20,7 @@
 #include "SettingDefinitionConstants.hpp"
 #include "SettingsService.hpp"
 #include "Slider.hpp"
+#include "SliderLook.hpp"
 #include "Switch.hpp"
 #include "ValueBinding.hpp"
 #include "WindowConstants.hpp"
@@ -71,6 +72,19 @@ std::unique_ptr<RowControl> settingSwitch(SettingsService& service,
                &setting] { return service.settings().*setting.member; },
       .write = [&service, &setting](
                    bool switchedOn) { service.apply(setting, switchedOn); }});
+}
+
+std::unique_ptr<RowControl> chatSlider(SettingsService& service,
+                                       const Setting<int>& setting,
+                                       const SliderLook& look) {
+  return std::make_unique<Slider>(
+      look.range,
+      ValueBinding<int>{
+          .read = [&service,
+                   &setting] { return service.settings().*setting.member; },
+          .write = [&service,
+                    &setting](int value) { service.apply(setting, value); }},
+      [&service] { return !service.settings().chatShown; }, look.unit);
 }
 
 std::unique_ptr<RowControl> colorModeSelector(SettingsService& service) {

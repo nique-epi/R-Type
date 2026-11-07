@@ -16,6 +16,9 @@
 #include "KeyNames.hpp"
 #include "PixelSize.hpp"
 #include "PlayerSettings.hpp"
+#include "Setting.hpp"
+#include "SettingDefinitionConstants.hpp"
+#include "SettingRange.hpp"
 #include "SettingsConstants.hpp"
 #include "WindowConstants.hpp"
 
@@ -68,13 +71,16 @@ std::optional<int> integerOf(std::string_view text) {
   return value;
 }
 
-std::optional<int> volumeOf(std::string_view text) {
-  const std::optional<int> volume = integerOf(text);
-  if (!volume.has_value() || *volume < MINIMUM_VOLUME ||
-      *volume > MAXIMUM_VOLUME) {
+/** @returns The whole number @p text holds when @p range takes it, or nothing:
+ * an integer setting always has a range, so none takes nothing. */
+std::optional<int> integerIn(std::string_view text,
+                             const std::optional<SettingRange>& range) {
+  const std::optional<int> value = integerOf(text);
+  if (!value.has_value() || !range.has_value() || *value < range->minimum ||
+      *value > range->maximum) {
     return std::nullopt;
   }
-  return volume;
+  return value;
 }
 
 std::optional<bool> switchOf(std::string_view text) {
@@ -116,12 +122,12 @@ std::optional<Value> valueNamed(
   return std::nullopt;
 }
 
-template <typename Value, typename Setting>
-LineOutcome assign(std::optional<Value> parsed, Setting& setting) {
+template <typename Value, typename Field>
+LineOutcome assign(std::optional<Value> parsed, Field& field) {
   if (!parsed.has_value()) {
     return LineOutcome::InvalidValue;
   }
-  setting = *parsed;
+  field = *parsed;
   return LineOutcome::Applied;
 }
 
@@ -153,6 +159,40 @@ std::optional<SettingLine> settingLineOf(std::string_view line) {
                      .value = trimmed(line.substr(separator + 1))};
 }
 
+/** @brief An integer setting and its name in the file. */
+struct NamedNumber {
+  std::string_view name;
+  const Setting<int>* setting = nullptr;
+};
+
+/** @brief Every integer setting the file holds. */
+constexpr std::array NAMED_NUMBERS{
+    NamedNumber{.name = MUSIC_VOLUME_NAME, .setting = &MUSIC_VOLUME_SETTING},
+    NamedNumber{.name = EFFECTS_VOLUME_NAME,
+                .setting = &EFFECTS_VOLUME_SETTING},
+    NamedNumber{.name = CHAT_LETTERS_NAME, .setting = &CHAT_LETTERS_SETTING},
+    NamedNumber{.name = CHAT_CLOSED_LINES_NAME,
+                .setting = &CHAT_CLOSED_LINES_SETTING},
+    NamedNumber{.name = CHAT_OPEN_LINES_NAME,
+                .setting = &CHAT_OPEN_LINES_SETTING},
+    NamedNumber{.name = CHAT_SECONDS_NAME, .setting = &CHAT_SECONDS_SETTING},
+    NamedNumber{.name = CHAT_BACKGROUND_NAME,
+                .setting = &CHAT_BACKGROUND_SETTING},
+};
+
+/** @returns What became of an integer setting, or nothing when the line names
+ * another kind of setting. */
+std::optional<LineOutcome> applyNumber(PlayerSettings& settings,
+                                       SettingLine setting) {
+  for (const NamedNumber& number : NAMED_NUMBERS) {
+    if (setting.name == number.name) {
+      return assign(integerIn(setting.value, number.setting->range),
+                    settings.*number.setting->member);
+    }
+  }
+  return std::nullopt;
+}
+
 /** @returns What became of a setting that is an on or off switch, or nothing
  * when the line names another kind of setting. */
 std::optional<LineOutcome> applySwitch(PlayerSettings& settings,
@@ -176,6 +216,9 @@ std::optional<LineOutcome> applySwitch(PlayerSettings& settings,
   if (name == PILOT_NAMES_NAME) {
     return assign(switchOf(value), settings.pilotNames);
   }
+  if (name == CHAT_SHOWN_NAME) {
+    return assign(switchOf(value), settings.chatShown);
+  }
   return std::nullopt;
 }
 
@@ -187,11 +230,9 @@ LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
     return integerOf(value) == SETTINGS_VERSION ? LineOutcome::Applied
                                                 : LineOutcome::InvalidValue;
   }
-  if (name == MUSIC_VOLUME_NAME) {
-    return assign(volumeOf(value), settings.musicVolume);
-  }
-  if (name == EFFECTS_VOLUME_NAME) {
-    return assign(volumeOf(value), settings.effectsVolume);
+  if (const std::optional<LineOutcome> outcome =
+          applyNumber(settings, setting)) {
+    return *outcome;
   }
   if (name == WINDOW_SIZE_NAME) {
     return assign(windowSizeOf(value), settings.windowSize);
@@ -243,6 +284,18 @@ std::string ignoredLine(std::size_t number, LineOutcome outcome) {
   return text;
 }
 
+/** @brief Writes the lines of the settings of the chat. */
+void writeChat(std::string& text, const PlayerSettings& settings) {
+  writeLine(text, CHAT_SHOWN_NAME, switchValue(settings.chatShown));
+  writeLine(text, CHAT_LETTERS_NAME, std::to_string(settings.chatLetters));
+  writeLine(text, CHAT_CLOSED_LINES_NAME,
+            std::to_string(settings.chatClosedLines));
+  writeLine(text, CHAT_OPEN_LINES_NAME, std::to_string(settings.chatOpenLines));
+  writeLine(text, CHAT_SECONDS_NAME, std::to_string(settings.chatSeconds));
+  writeLine(text, CHAT_BACKGROUND_NAME,
+            std::to_string(settings.chatBackground));
+}
+
 }  // namespace
 
 std::string settingsText(const PlayerSettings& settings) {
@@ -271,6 +324,7 @@ std::string settingsText(const PlayerSettings& settings) {
   writeLine(text, CLIENT_PREDICTION_NAME,
             switchValue(settings.clientPrediction));
   writeLine(text, PILOT_NAMES_NAME, switchValue(settings.pilotNames));
+  writeChat(text, settings);
   return text;
 }
 
