@@ -3,6 +3,8 @@
 #include <gtest/gtest.h>
 #include <chrono>
 #include <optional>
+#include "ContentLoading.hpp"
+#include "ContentPackCache.hpp"
 #include "GameLoadedReminder.hpp"
 #include "Heartbeat.hpp"
 #include "MessageDispatcher.hpp"
@@ -47,11 +49,13 @@ class ServerSessionArrivalFixture : public ::testing::Test {
   GameLoadedReminder gameLoaded_;
   SimulatedClock clock_;
   RoundTripWatch roundTrips_{dispatcher_, clock_};
-  SessionEntityTypes entityTypes_{isDrawnInTheTests};
+  SessionEntityTypes entityTypes_{testLocalContent()};
+  ContentLoading content_{ContentPackCache{unusedCacheFolder()}};
   ServerSession session_{ServerSessionParts{.link = link_,
                                             .dispatcher = dispatcher_,
                                             .gameLoaded = gameLoaded_,
                                             .entityTypes = entityTypes_,
+                                            .content = content_,
                                             .observers = {roundTrips_}}};
 };
 

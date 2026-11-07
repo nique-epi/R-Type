@@ -1,5 +1,5 @@
 ---
-title: 'Network protocol: version 9'
+title: 'Network protocol: version 11'
 description: The datagrams the client and the server exchange over UDP, byte by byte, and what each side does when one is lost or cannot be read.
 sidebar:
   label: Protocol
@@ -11,7 +11,7 @@ This page is the specification of the protocol the client and the server speak: 
 
 ## Status of this document
 
-- This is version 9 of the protocol. It is the only version the code speaks; [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8) and [Version 9](#version-9) say what each changed from the version before, and what the rest of the second part of the project will change.
+- This is version 11 of the protocol. It is the only version the code speaks; [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10) and [Version 11](#version-11) say what each changed from the version before, and what the rest of the second part of the project will change.
 - The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
 - Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
 - Numbers are decimal unless written `0x`. A size is in bytes.
@@ -22,7 +22,7 @@ The client and the server exchange datagrams over UDP. A client asks to join, th
 
 ## Transport
 
-- Every message of the game travels over UDP; no TCP connection is opened.
+- Every message of the game travels over UDP. The one exception is the content pack of a server, a file a client that lacks it downloads over HTTP, on TCP, once it is accepted (see [Content pack](#content-pack)).
 - The server listens on one port. The client sends from any port, and the server answers to the address and port the datagram came from.
 - A datagram carries at most 1200 bytes of UDP payload. Every IPv6 link carries packets of 1280 bytes or more (RFC 8200, section 5); minus the 40-byte IPv6 header and the 8-byte UDP header, that leaves 1232 bytes, so 1200 keeps room for 32 bytes of IPv6 extension headers. QUIC relies on the same figure and expects it to pass on all IPv6 paths and on modern IPv4 paths (RFC 9000, section 14). A path with a smaller MTU, such as some VPNs and tunnels, may still fragment or drop a datagram; the protocol does not detect it.
 - A datagram is read on its own: no message is split across two datagrams.
@@ -78,7 +78,7 @@ Both changes together save 12 bytes on the 268 of the typical state, 4.5 %, befo
 
 ## Datagram
 
-A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 9.
+A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 11.
 
 <ByteLayout
   label="The 22-byte header: protocolId on bytes 0 to 3, version on byte 4, flags on byte 5, sessionToken on bytes 6 to 13, sequence on bytes 14 and 15, acknowledgedSequence on bytes 16 and 17, acknowledgementBits on bytes 18 to 21."
@@ -101,10 +101,10 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
   ]}
 />
 
-| Offset | Size | Field | In version 9 |
+| Offset | Size | Field | In version 11 |
 |---|---|---|---|
 | 0 | 4 | `protocolId` | `0x52545950`, `RTYP` in ASCII |
-| 4 | 1 | `version` | 9 |
+| 4 | 1 | `version` | 11 |
 | 5 | 1 | `flags` | `ACKNOWLEDGES` 0x01, `GUARANTEED` 0x02, `COMPRESSED` 0x04, every other bit 0 |
 | 6 | 8 | `sessionToken` | 0 until the connection is accepted, then the token given by the server |
 | 14 | 2 | `sequence` | number of the datagram for its sender |
@@ -131,7 +131,7 @@ A received datagram goes through these checks in order. No buffer is sized from 
 |---|---|
 | The datagram holds 25 to 1200 bytes | dropped |
 | `protocolId` is `RTYP` | dropped |
-| `version` is 9 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
+| `version` is 11 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
 | `COMPRESSED` is set | the server drops the datagram; the client decodes the body and clears the flag, or drops the datagram when it cannot (see [Compression](#compression)) |
 | `flags` has no bit but `ACKNOWLEDGES` and `GUARANTEED`, once `COMPRESSED` is cleared | dropped |
 | The message sizes add up exactly to the end of the datagram | dropped |
@@ -143,7 +143,7 @@ A received datagram goes through these checks in order. No buffer is sized from 
 
 The token is checked before the sequence, so a forged datagram never moves the counter. The server reads the acknowledgements of a datagram only once it passed every check above, so a forged or replayed datagram acknowledges nothing. A datagram dropped for its sequence is not heard from the peer: it does not restart the silence count of [A session](#a-session).
 
-The server measures the loss rate of each player from the gaps in `sequence`. Each datagram it accepts counts as received, and the sequences it skips over count as lost; every 100 datagrams counted, received or lost, it takes the share lost as the loss rate of that player and starts counting again. A datagram that arrives late and is dropped stays counted as lost. Nothing is added to the wire. The server never sends a sender that did not prove its address more bytes than the datagram it answers, so a forged source address cannot turn it into an amplifier: a `ConnectionRequest` holds at least 38 bytes, and every answer to a request without a valid cookie at most 33 (`ConnectionChallenge`). Only a request with a valid cookie gets a `ConnectionAccepted`, which may be larger (see [Connection](#connection)). A `ServerInformationRequest` is padded to 106 bytes, and its answer holds at most 106 (see [Server information](#server-information)); a `MasterProbe` gets no answer (see [Probe of the master](#probe-of-the-master)). A client that receives a datagram of another version decodes nothing in it. While it connects to the server that sent it, it ends the attempt and reports both version numbers to the player: its own, and the one at offset 4; within a session it drops it, so a datagram forged with the address of the server cannot end the session.
+The server measures the loss rate of each player from the gaps in `sequence`. Each datagram it accepts counts as received, and the sequences it skips over count as lost; every 100 datagrams counted, received or lost, it takes the share lost as the loss rate of that player and starts counting again. A datagram that arrives late and is dropped stays counted as lost. Nothing is added to the wire. The server never sends a sender that did not prove its address more bytes than the datagram it answers, so a forged source address cannot turn it into an amplifier: a `ConnectionRequest` holds at least 38 bytes, and every answer to a request without a valid cookie at most 33 (`ConnectionChallenge`). Only a request with a valid cookie gets a `ConnectionAccepted`, which is larger, 64 bytes (see [Connection](#connection)). A `ServerInformationRequest` is padded to 106 bytes, and its answer holds at most 106 (see [Server information](#server-information)); a `MasterProbe` gets no answer (see [Probe of the master](#probe-of-the-master)). A client that receives a datagram of another version decodes nothing in it. While it connects to the server that sent it, it ends the attempt and reports both version numbers to the player: its own, and the one at offset 4; within a session it drops it, so a datagram forged with the address of the server cannot end the session.
 
 ## Messages
 
@@ -168,7 +168,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 
 | Type | Message | Payload | Sent |
 |---|---|---|---|
-| 2 | `ConnectionAccepted` | `playerNumber` `u8` (1 to 4), `typeCount` `u8` (1 to 32), then per type `side` `u8`: 1 `Player`, 2 `Enemy`, 3 `PlayerMissile`, 4 `EnemyMissile`, `name` `string` (1 to 24 bytes), `hitboxWidth` `u16` and `hitboxHeight` `u16`, then the gun of the ships: `shipType` `u8`, `projectileType` `u8`, `intervalTicks` `u16`, `firstShotTicks` `u16`, `velocityX` `f32`, `velocityY` `f32`; see [Entity types](#entity-types) | in answer to a request with a valid cookie; its header carries the session token; to a connected player, again at most once per 250 ms |
+| 2 | `ConnectionAccepted` | `playerNumber` `u8` (1 to 4), then the content pack of the game: `fingerprint`, 32 bytes, `size` `u32` (0 to 8388608), `port` `u16` (0 when the supervisor serves none); see [Content pack](#content-pack) | in answer to a request with a valid cookie; its header carries the session token; to a connected player, again at most once per 250 ms |
 | 3 | `ConnectionRefused` | `reason` `u8`: 1 `GameFull`, 2 `GameInProgress`, 3 `IncompatibleVersion`, 4 `NicknameTaken`, 5 `GameNotFound`, 6 `ServerFull` | in answer to a request |
 | 4 | `Disconnection` | none | when the server shuts down, three times 50 ms apart |
 | 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32`, `ticks` `bool`, `tick` `u32` (see [Round trip](#round-trip) and [Clock of the server](#clock-of-the-server)) | every 500 ms, whatever else it sends; `ticks` is 1 only while a game is in progress |
@@ -197,7 +197,7 @@ A message is accepted only when its payload has exactly the size its fields add 
 | Message | Rule |
 |---|---|
 | `ConnectionRequest` | the nickname follows the rules of [Connection](#connection): 1 to 16 bytes of valid UTF-8, no control character; `kind` is 1 to 3; `number` is 1 to 65535 with `ExistingGame`, and 0 with `AnyGame` and `NewGame` |
-| `ConnectionAccepted` | `playerNumber` is 1 to 4; `typeCount` is 1 to 32, checked before any type is read; each `side` is 1 to 4; each `name` is 1 to 24 bytes of lowercase ASCII letters, digits and underscores; `shipType` and `projectileType` are 0 or a number of the table; when `projectileType` is not 0, `shipType` is not 0, names a type of side `Player`, `projectileType` names a type of side `PlayerMissile`, and `intervalTicks` is not 0; `velocityX` and `velocityY` are finite |
+| `ConnectionAccepted` | `playerNumber` is 1 to 4; `size` is 8388608 at most; the payload is 39 bytes |
 | `LobbyState` | at most 4 players, each `playerNumber` 1 to 4 and listed once, each nickname valid as above |
 | `GameEnded` | `outcome` is 1 or 2; at most 4 players, each `playerNumber` 1 to 4 and listed once |
 | `WorldState` | at most 4 players, each `playerNumber` 1 to 4 and listed once; `motion` follows [World state](#world-state) |
@@ -278,57 +278,78 @@ The server answers nothing over UDP. It keeps the token of a probe whose `secret
 
 ### Connection
 
-A connection takes two round trips, so that a forged address never gets a player slot. The client sends `ConnectionRequest` with `cookie` 0; the server answers `ConnectionChallenge` with a cookie and keeps nothing. The client sends its request again with that cookie, and only then does the server give a slot, a token and the [entity types](#entity-types) of the server. The cookie only reaches the real owner of the address, so whoever forges the address cannot send it back. A request with a wrong or expired cookie gets a new challenge; a refusal (`GameFull`, `GameInProgress`, `NicknameTaken`, `IncompatibleVersion`, `GameNotFound`, `ServerFull`) may be sent at once, since it reserves nothing.
+A connection takes two round trips, so that a forged address never gets a player slot. The client sends `ConnectionRequest` with `cookie` 0; the server answers `ConnectionChallenge` with a cookie and keeps nothing. The client sends its request again with that cookie, and only then does the server give a slot, a token and the [content pack](#content-pack) it plays with. The cookie only reaches the real owner of the address, so whoever forges the address cannot send it back. A request with a wrong or expired cookie gets a new challenge; a refusal (`GameFull`, `GameInProgress`, `NicknameTaken`, `IncompatibleVersion`, `GameNotFound`, `ServerFull`) may be sent at once, since it reserves nothing.
 
 How the server computes the cookie is its own business, as long as it keeps nothing per request and nobody can guess it: a keyed hash of the address, the port and the current 10-second window, with a secret drawn when the server starts, accepted during its window and the next one, does both.
 
-A player keeps the number given by `ConnectionAccepted` until it leaves; the number also picks the color of the player, so no color travels. The nickname travels only in `ConnectionRequest` and `LobbyState`, never during a game. Its limit is 16 bytes, not 16 characters: a letter without accent takes 1 byte, an accented letter 2 and some symbols up to 4, so each accent leaves room for one letter less. The text field of the client counts bytes and refuses a character that would not fit whole; the server drops a request whose nickname is empty, longer than 16 bytes, not valid UTF-8 or holds a control character, U+0000 to U+001F or U+007F, so a nickname can never start a line of its own in a log. The server answers a `ConnectionRequest` with a valid cookie from a sender it already accepted with the same `ConnectionAccepted` again, same number, same token and same table, at most once per 250 ms per player (half the 500 ms between two requests, so a request whose acceptance was lost is not held back because it crossed the network faster than the one before); the requests in between get nothing.
+A player keeps the number given by `ConnectionAccepted` until it leaves; the number also picks the color of the player, so no color travels. The nickname travels only in `ConnectionRequest` and `LobbyState`, never during a game. Its limit is 16 bytes, not 16 characters: a letter without accent takes 1 byte, an accented letter 2 and some symbols up to 4, so each accent leaves room for one letter less. The text field of the client counts bytes and refuses a character that would not fit whole; the server drops a request whose nickname is empty, longer than 16 bytes, not valid UTF-8 or holds a control character, U+0000 to U+001F or U+007F, so a nickname can never start a line of its own in a log. The server answers a `ConnectionRequest` with a valid cookie from a sender it already accepted with the same `ConnectionAccepted` again, same number, same token and same pack, at most once per 250 ms per player (half the 500 ms between two requests, so a request whose acceptance was lost is not held back because it crossed the network faster than the one before); the requests in between get nothing.
 
-A sender that did not prove its address, that is whose request carries no valid cookie, never gets more bytes than it sent: a challenge (33 bytes) is smaller than the smallest request (38), and so is a refusal (26). Only a request with a valid cookie gets a `ConnectionAccepted`, which carries the table of the entity types and may reach 1001 bytes: the cookie went to the address the request came from, so the acceptance goes to an address that proved it receives the datagrams of the server. QUIC lifts its own limit on what it sends an address once it has validated that address the same way (RFC 9000, section 8). Whoever sees the traffic of a player and replays its cookie gets at most four acceptances per second sent to that player, for the 20 s at most that the cookie stays valid.
+A sender that did not prove its address, that is whose request carries no valid cookie, never gets more bytes than it sent: a challenge (33 bytes) is smaller than the smallest request (38), and so is a refusal (26). Only a request with a valid cookie gets a `ConnectionAccepted`, which takes 64 bytes: the cookie went to the address the request came from, so the acceptance goes to an address that proved it receives the datagrams of the server. QUIC lifts its own limit on what it sends an address once it has validated that address the same way (RFC 9000, section 8). Whoever sees the traffic of a player and replays its cookie gets at most four acceptances per second sent to that player, for the 20 s at most that the cookie stays valid.
 
 A nickname is unique on the server: a request whose nickname a player already holds is refused with `NicknameTaken`, before the cookie is checked. Letters of the ASCII alphabet compare without regard to case (`Ace` and `ACE` are the same nickname), every other byte compares as it is, so `É` and `é` are two nicknames. A player whose seat is held (see [A session](#a-session)) still holds its nickname; it is free again once the seat is. A sender already accepted is not refused as a duplicate of itself.
 
 ### Entity types
 
-A type is named by the sheet it is read from (`assets/entities/drifter.toml` is `drifter`, see [Writing an entity sheet](/R-Type/entity-sheets/)), never by a number fixed in the code. The server numbers the sheets it loaded in the order of their names, from 1, and keeps those numbers while it runs; `ConnectionAccepted` lists them, and `EntitySpawned`, `WorldState` and `DeltaWorldState` carry them. The number of a type is its place in that list: the first entry is type 1, and 0 names no type. The side says what an entity of that type is, so a receiver knows who it hits and how to draw it without the gameplay of the sheet. The box is the `[gameplay.hitbox]` of the sheet, in whole logical units, so a client can tell where its own missile touches (see [Own missiles](#own-missiles)).
+A type is named by the sheet it is read from (`assets/entities/drifter.toml` is `drifter`, see [Writing an entity sheet](/R-Type/entity-sheets/)), never by a number fixed in the code. The types of a server are the sheets of its [content pack](#content-pack), numbered in the order of their names, from 1; the server keeps those numbers while it runs, and `EntitySpawned`, `WorldState` and `DeltaWorldState` carry them. The first sheet is type 1, and 0 names no type. A client numbers the sheets of the pack the same way, and reads from each its `side` and its `[gameplay.hitbox]` (in `[gameplay]`) and its `[appearance]`, so it knows what an entity is, who it hits, where its own missile touches it and how to draw it, without the rest of the gameplay of the sheet. A number past the last sheet names nothing the client can draw: the client creates nothing for it.
 
-The gun that follows the types describes the gun of the ships of the players: the type of the ships, the type of what they fire, the ticks between two shots and before the first one, and the velocity of the missile, in logical units per second. A `projectileType` of 0 says the client may not predict the missile: the ships fire nothing, or what they fire is not a missile of a player piloted by `straight`, so its path is not a straight line at a steady speed; the velocity is then 0 on both axes.
+### Content pack
 
-The payload of the `ConnectionAccepted` of player 1 on a server of five sheets, `drifter`, `enemy_missile`, `player_missile`, `ship` and `weaver`, the sheets the game shipped before its mobs, byte by byte:
+The content of a server is what a client needs to draw the games it runs: every sheet of the `entities` folder of its assets, and every sprite sheet their `[appearance]` names (`sheet`), each kept once however many sheets name it. The server hands it over as one file, the content pack, named by its fingerprint. `ConnectionAccepted` announces the pack of the game in three fields:
+
+| Field | Holds |
+|---|---|
+| `fingerprint` | the hash of every byte of the pack (below) |
+| `size` | the bytes of the pack, 8388608 (8 MiB) at most; an acceptance that announces more is invalid |
+| `port` | the TCP port the supervisor of the game serves the pack on, at the address the player joined; 0 when it serves none |
+
+The payload of the `ConnectionAccepted` of player 1, byte by byte:
 
 | Bytes | Field | Value |
 |---|---|---|
 | 0 | `playerNumber` | 1 |
-| 1 | `typeCount` | 5 |
-| 2 | `side` of type 1 | 2 (`Enemy`) |
-| 3 to 10 | `name` of type 1 | 7, then `drifter` |
-| 11 to 14 | box of type 1 | 96, 96 |
-| 15 | `side` of type 2 | 4 (`EnemyMissile`) |
-| 16 to 29 | `name` of type 2 | 13, then `enemy_missile` |
-| 30 to 33 | box of type 2 | 32, 32 |
-| 34 | `side` of type 3 | 3 (`PlayerMissile`) |
-| 35 to 49 | `name` of type 3 | 14, then `player_missile` |
-| 50 to 53 | box of type 3 | 64, 24 |
-| 54 | `side` of type 4 | 1 (`Player`) |
-| 55 to 59 | `name` of type 4 | 4, then `ship` |
-| 60 to 63 | box of type 4 | 128, 64 |
-| 64 | `side` of type 5 | 2 (`Enemy`) |
-| 65 to 71 | `name` of type 5 | 6, then `weaver` |
-| 72 to 75 | box of type 5 | 96, 96 |
-| 76 | `shipType` | 4 (`ship`) |
-| 77 | `projectileType` | 3 (`player_missile`) |
-| 78 to 79 | `intervalTicks` | 20 (333 ms) |
-| 80 to 81 | `firstShotTicks` | 0 |
-| 82 to 85 | `velocityX` | 960.0 |
-| 86 to 89 | `velocityY` | 0.0 |
+| 1 to 32 | `fingerprint` | the 32 bytes of the fingerprint |
+| 33 to 36 | `size` | the size of the pack |
+| 37 and 38 | `port` | the port of the pack |
 
-With its header and its message prefix, that acceptance takes 115 bytes. The largest one takes 22 + 3 + 1 + 1 + 32 × (1 + 1 + 24 + 2 + 2) + 14 = 1001 bytes, so it always fits one datagram.
+With its header and its message prefix, an acceptance takes 22 + 3 + 39 = 64 bytes, whatever the content of the server.
 
-A player who is accepted holds the table: the request the client sends again every 500 ms until it is answered delivers it as it delivers the acceptance, so no session can reach the waiting room without it. The client keeps the table of the first acceptance of its session; a repeated acceptance changes nothing. A client that has no sheet for a name of the table opens no session: it sends its `Disconnection` with the token of that acceptance, three times, as when a player leaves, so the server frees the seat at once, and it tells the player (see [Joining fails](#joining-fails)). A number a state carries that the table does not hold, past its last entry, names nothing the client can draw: the client creates nothing for it.
+A client whose own assets make a pack of the same fingerprint plays at once with its own sheets. Any other client loads the pack of the server first: from its cache when it kept that pack, else by downloading it from the supervisor over HTTP (see [Downloading a pack](#downloading-a-pack)). Its session is open while the pack downloads: it holds its seat, sends its `Heartbeat`s, and shows in the waiting room of the others as a player not ready, so their game does not start without it. It plays once the pack has the announced size and fingerprint and its sheets can be read. Otherwise, or when `port` is 0 and no pack is kept, it sends its `Disconnection` three times with the token of the acceptance, as when a player leaves, so the server frees the seat at once, and it tells the player (see [Joining fails](#joining-fails)). A repeated acceptance changes nothing: the client loads the pack of the first one.
 
-Alternative considered: a request and an answer of their own once the session opens. It keeps `ConnectionAccepted` small, but needs two messages, a desk on the server and a watch on the client, and a game could start before the answer arrived.
+The pack, as fields in the encoding of this page:
 
-Alternative considered: a hash of the name in each entity instead of a table. It needs nothing at the connection, but two names can give the same hash, and the side of a type would have no place to travel.
+| Field | Encoding | Holds |
+|---|---|---|
+| `format` | `u8` | 1 |
+| `fileCount` | `u16` | 0 to 64 |
+| then, per file, `path` | `string` | 1 to 64 bytes |
+| `size` | `u32` | the bytes of the file |
+| `bytes` | `size` bytes | the file, as it is on the disk |
+
+- The files come in the strict order of their paths, byte by byte, so a path appears once, and the same assets always make the same pack and the same fingerprint.
+- A path is relative to the assets folder, such as `entities/drifter.toml` or `sprites/mobs/reaper.png`: 1 to 64 characters of `a` to `z`, `0` to `9`, `_`, `.`, `/` and `-`, made of names separated by `/`, none of them empty, `.` or `..`, so a client that writes a file of a pack below a folder of its own never writes outside it.
+- A file whose path is `entities/<name>.toml` is a sheet; every other file is a sprite sheet the sheets name.
+- A pack holds at most 64 files and 8388608 bytes once encoded.
+- The `sheet` of every `[appearance]` of a pack names a file of that same pack: a client refuses a pack whose sheet names any other file.
+- A reader refuses a pack larger than 8388608 bytes before reading it, and checks each count and each size against what remains before it copies a byte, so a pack never makes it read past the end or allocate more than the pack holds. It also refuses a pack of another `format`, one cut short, one with bytes after its last file, and one whose files break a rule above.
+
+The fingerprint is the 32-byte hash of every byte of the encoded pack by `hydro_hash_hash()` of libhydrogen, without a key, in the context `rtpack01`. A path or a file name writes it as 64 lowercase hexadecimal digits. The content the game ships, 11 sheets and 5 sprite sheets, makes a pack of 26270 bytes.
+
+#### Downloading a pack
+
+A supervisor serves the pack of its assets folder over HTTP, on TCP, on every IPv4 interface, on the port of the same number as its UDP port. Its game processes run the same executable, so they read the same assets folder, and announce that pack and that port. A supervisor whose UDP port the system chooses serves no pack; one that cannot listen on the TCP port, held by another program, serves none either, while its games still announce the port, so a client that lacks the pack fails its download.
+
+`GET /api/packs/{fingerprint}`, the fingerprint in lowercase hexadecimal, is open to everyone:
+
+| Request | Answer |
+|---|---|
+| The fingerprint of the pack of the supervisor | 200, the pack as `application/octet-stream`, with the header `ETag` holding the fingerprint in quotes |
+| The same, with a `Range` header | 206 and those bytes only |
+| Any other fingerprint | 404, a problem document (RFC 9457) |
+| More requests than the address may make | 429, a problem document, and nothing of the pack |
+
+An address, whatever its port, may make 3 requests at once, then one every 10 s; 10 refused within a minute ban it for a minute. The pack is encoded once, when the supervisor starts, so what a request costs never depends on what it sends. TCP proves the address of the client before any byte of the pack goes out, so the route adds no amplification.
+
+The client connects to the address the player joined, never to an address a datagram names, and to the `port` of the acceptance. A try that is cut asks again for the bytes from where it stopped (`Range: bytes=<received>-`, RFC 9110), 3 tries in all; each try waits at most 5 s to connect, then 5 s for each read or write. An answer of another status than 200 or 206, or more bytes than `size`, ends the download at once; a 200 to a resumed try starts the pack again. The client checks the size and the fingerprint of what came before it decodes it.
 
 ### Inputs
 
@@ -398,7 +419,7 @@ Measured on October 24, 2026, before `acknowledgedInput` added 4 bytes per playe
 
 `entityId` is given by the server, unique during a game, and never 0. A `u16` would wrap after about 22 minutes at 50 new entities per second, hence 32 bits.
 
-`entityType` is the number of a type in the table of the `ConnectionAccepted` of the session (see [Entity types](#entity-types)). A `WorldState` or a `DeltaWorldState` may carry any number from 1 to 255: a state is read the same in every session, and what a number names is for the client to look up. An entity of type 0, which no type has, is skipped: it is left out of the state, and the other entities of the same `WorldState` are read. An entity takes 9 bytes whatever its type, so the next one starts where it should. A new kind of entity is a new sheet, and changes nothing on this page.
+`entityType` is the number of a sheet of the content pack of the session (see [Entity types](#entity-types)). A `WorldState` or a `DeltaWorldState` may carry any number from 1 to 255: a state is read the same in every session, and what a number names is for the client to look up. An entity of type 0, which no type has, is skipped: it is left out of the state, and the other entities of the same `WorldState` are read. An entity takes 9 bytes whatever its type, so the next one starts where it should. A new kind of entity is a new sheet, and changes nothing on this page.
 
 ### Delta world state
 
@@ -454,7 +475,7 @@ A client draws its own ship ahead of the server (it predicts it), and the other 
 - The server guarantees the `EntitySpawned` of a missile of a player, on the ordered channel (see [Ordered messages](#ordered-messages)), so the client always learns which input fired it. The others are sent once, as before.
 - A client matches a missile it fired to the `EntitySpawned` whose `owner` is its own player number and whose `firingInput` is the input it fired with. What it draws of that missile, and when it gives up a shot the server did not make, is the business of the client (see [Client](/R-Type/client/)).
 
-The gun of the acceptance gives the client what it needs to fire as the server does: the ticks between two shots and before the first one, and the velocity of the missile (see [Entity types](#entity-types)).
+The client reads what it needs to fire as the server does from the sheets of the content it plays (see [Entity types](#entity-types)): the first ship of side `player` with a gun, the ticks between two shots and before the first one, and the velocity of its missile, in logical units per second. It predicts a missile only when that missile is of side `player_missile`, moves steadily and is piloted by `straight`, since only then is its path a straight line it can draw; otherwise, or when the sheets name a behaviour the client does not know (a pilot only a plugin of the server has), it predicts nothing and draws the missiles of its player as the server sends them.
 
 Each `PlayerInput` says which tick the client shows the other entities at (`shownTick`). The server tests a missile of that player against the enemies as they were at that tick, so a missile hits what its player saw it hit; the server goes back at most 200 ms, and never hits an enemy that is already destroyed (see [Server](/R-Type/server/#lag-compensation-of-the-shots)). A client may claim any tick: the bound caps how far in the past it may make the server look, as every lag compensation does.
 
@@ -471,7 +492,7 @@ sequenceDiagram
   C->>S: ConnectionRequest (cookie 0)
   S->>C: ConnectionChallenge (cookie)
   C->>S: ConnectionRequest (cookie)
-  S->>C: ConnectionAccepted (entity types)
+  S->>C: ConnectionAccepted (content pack)
   S->>C: LobbyState (repeated)
   C->>S: ReadyState
   S->>C: GameStarted
@@ -528,7 +549,7 @@ This section gathers what each side does when something goes wrong, from a datag
 | A message of a type that only the other side receives, such as `ConnectionAccepted` reaching the server or `PlayerInput` reaching a client | skips that message, as if its type were unknown | nothing |
 | A payload of the wrong size, or a value out of range: a `bool` other than 0 or 1, an enumeration value not listed, a bit 5 to 7 set in `actions`, a bit 6 or 7 set in `motion`, a nickname that is empty, longer than 16 bytes, not UTF-8 or holding a control character (U+0000 to U+001F, U+007F) | drops that message; the other messages of the datagram are read | nothing, even to a `ConnectionRequest` dropped this way |
 | An entity of type 0 in a `WorldState` or a `DeltaWorldState` | skips that entity and reads the next one (see [World state](#world-state)) | nothing |
-| An `EntitySpawned` or an entity of a state whose type the table of the session does not hold | the client creates nothing for it (see [Entity types](#entity-types)) | nothing |
+| An `EntitySpawned` or an entity of a state whose type is past the last sheet of the pack of the session | the client creates nothing for it (see [Entity types](#entity-types)) | nothing |
 
 ### Supervisor
 
@@ -594,7 +615,9 @@ A message that is valid but means nothing in the current state of its receiver c
 | `ConnectionRefused` (`GameNotFound`), from a supervisor: the request named a game it does not run | stops sending requests | that no such game exists |
 | `ConnectionRefused` (`ServerFull`), from a supervisor: 8 games run, and none has a seat for an `AnyGame`, or a `NewGame` needs a ninth | stops sending requests | that the server is full |
 | `ConnectionRefused` (`IncompatibleVersion`) | stops sending requests | both version numbers |
-| `ConnectionAccepted` whose table names a type the client has no sheet for | opens no session, sends its `Disconnection` three times with the token of the acceptance, and stops sending requests | the first such name, and how many more |
+| `ConnectionAccepted` of a pack the client neither has nor keeps, from a supervisor that serves none (`port` 0) | opens no session, sends its `Disconnection` three times with the token of the acceptance, and stops sending requests | that the download of the pack failed |
+| The download of the pack fails: nothing listens on the TCP port, the tries are cut 3 times, or an answer of another status or larger than announced | leaves the session, sending its `Disconnection` three times | that the download of the pack failed |
+| The pack came, but has another size or fingerprint than announced, or holds a sheet the client cannot read | leaves the session the same way, and keeps nothing of the pack | that the pack was refused |
 | A request the server drops, such as one with an invalid nickname | gets no answer, so it ends as unreachable after 5 s | that the server is unreachable |
 
 ### A peer disappears
@@ -636,7 +659,7 @@ Only the messages of [Ordered messages](#ordered-messages) are sent again until 
 
 | Lost message | Corrected by | Within |
 |---|---|---|
-| `ConnectionRequest`, or its answer, the table of the entity types included | the client sends the request again, the server answers it again, an acceptance at most once per 250 ms | 500 ms |
+| `ConnectionRequest`, or its answer, the announcement of the content pack included | the client sends the request again, the server answers it again, an acceptance at most once per 250 ms | 500 ms |
 | `ReadyState` | sent again while `LobbyState` shows another value | 500 ms |
 | `LobbyState`, `GameEnded` | the next one | 500 ms |
 | `WorldState`, `DeltaWorldState` | the next one; a delta lost is not a reference, so the next is written against an older acknowledged state, or in full after a second without one | 50 ms at the default 20 per second, one rate-th of a second at any other |
@@ -726,7 +749,11 @@ Version 9 lets a player create or join a game: `ConnectionRequest` carries `kind
 
 ## Version 10
 
-Version 10 lets a client predict its own missiles (see [Own missiles](#own-missiles)): each type of `ConnectionAccepted` carries its box, `hitboxWidth` and `hitboxHeight`, the acceptance ends with the gun of the ships, `EntitySpawned` ends with `owner` and `firingInput`, and `PlayerInput` ends with `shownTick`. The layout of the three messages changes, so a receiver of version 9 would read the box of the first type as the side of the second, which is why `version` became 10. The largest acceptance grows from 859 to 1001 bytes, still sent only to a sender that proved its address, and an `EntitySpawned` from 9 to 14 bytes. The server now guarantees the `EntitySpawned` of a missile of a player; the others are still sent once.
+Version 10 makes `ConnectionAccepted` announce the content pack of the game, its fingerprint, size and port, in place of the table of its entity types (see [Content pack](#content-pack)), and adds the route of the pack, over HTTP. The types are still the sheets numbered from 1 in the order of their names, so `EntitySpawned`, `WorldState` and `DeltaWorldState` keep their layout and their meaning; what changes is where a client finds the sheets: in its own assets, its cache or the pack of the server, so a server with sheets the client lacks no longer turns it away. An acceptance now takes 64 bytes whatever the content, where it took up to 859. The layout of `ConnectionAccepted` changes, so `version` became 10, and the server answers a client of version 9 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same.
+
+## Version 11
+
+Version 11 lets a client predict its own missiles (see [Own missiles](#own-missiles)): `EntitySpawned` ends with `owner` and `firingInput`, and `PlayerInput` ends with `shownTick`. The layout of both messages changes, so `version` became 11, and the server answers a client of version 10 with `ConnectionRefused` (`IncompatibleVersion`). `ConnectionAccepted` keeps the layout of version 10: the client reads the box of each type and the gun of the ships from the sheets of the content it plays, as it already read their side. An `EntitySpawned` grows from 9 to 14 bytes, and a `PlayerInput` by 4. The server now guarantees the `EntitySpawned` of a missile of a player; the others are still sent once.
 
 ## Implementation status
 
@@ -741,7 +768,7 @@ The code of this repository applies the rules above, with the exceptions listed 
 - Each side sends a `Heartbeat` every 500 ms and measures the round trip from its echo, and the server sends each player `RoundTrips` after each of its `Heartbeat`s, as [Round trip](#round-trip) describes; the `Heartbeat` of the server also carries its tick during a game, as [Clock of the server](#clock-of-the-server) describes. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
 
 - The client sends `LeaderboardRequest` from its leaderboard screen, and the server answers it.
-- The server answers a request with a valid cookie with the `ConnectionAccepted` of the player and the table of its entity types, at most once per 250 ms per player once accepted; the client keeps the table of its first acceptance, and leaves a server whose table names a type it has no sheet for.
+- The server answers a request with a valid cookie with the `ConnectionAccepted` of the player and the content pack of the game, at most once per 250 ms per player once accepted. The supervisor serves its pack over HTTP, and the client plays with its own sheets, a pack it kept or a pack it downloads, as [Content pack](#content-pack) describes.
 - The server limits the datagrams of each address and port, and of each player, on its network thread, as [A sender that sends too much](#a-sender-that-sends-too-much) says.
 - The server relays the chat lines as [Chat](#chat) describes; the client sends none yet.
 - The supervisor answers `ServerInformationRequest` as [Server information](#server-information) describes, and a game process does not. The server map of the client sends one to each server of this version the master lists, once per reading of the list (see [Client](/R-Type/client/#server-map-servermapscreen-iservercatalog-igamecatalog)).

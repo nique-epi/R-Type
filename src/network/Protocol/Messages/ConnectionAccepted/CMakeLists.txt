@@ -4,6 +4,7 @@ target_include_directories(rtype_network_connection_accepted PUBLIC ${CMAKE_CURR
 
 target_link_libraries(rtype_network_connection_accepted
   PUBLIC
+    rtype_network_content
     rtype_network_protocol
   PRIVATE
     rtype_network_wire_types

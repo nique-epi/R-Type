@@ -8,6 +8,7 @@
 #include "ConnectionPhase.hpp"
 #include "ConnectionRequest.hpp"
 #include "ConnectionStatus.hpp"
+#include "ContentLoading.hpp"
 #include "Endpoint.hpp"
 #include "GameLoadedReminder.hpp"
 #include "HandshakeAnswers.hpp"
@@ -39,12 +40,13 @@ namespace rtype::client {
  *
  * connect() sends a ConnectionRequest at once; a ConnectionAccepted or a
  * ConnectionRefused ends the attempt, and no request is sent any more. The
- * acceptance carries the table of the entity types of the server: the session
- * keeps it until it closes (see SessionEntityTypes), and an acceptance whose
- * table names a type this client cannot draw opens no session, sends its
- * Disconnection and ends the attempt as MissingEntitySheet (see
- * HandshakeAnswers). An attempt that got none of these within
- * CONNECTION_ATTEMPT_TIMEOUT gives up as Unreachable.
+ * acceptance announces the content of the server: the session plays with the
+ * client's own when it is the same, else with the pack of the server, loaded
+ * from the cache or downloaded while the session is LoadingContent and holds
+ * its seat, heartbeats going out as when Accepted (see HandshakeAnswers). A
+ * pack that cannot be loaded leaves the session, its Disconnection sent, as
+ * ContentDownloadFailed or ContentRefused. An attempt that got none of these
+ * within CONNECTION_ATTEMPT_TIMEOUT gives up as Unreachable.
  *
  * Once accepted, the session keeps the token of the acceptance and writes it
  * into every datagram it sends. While the attempt is Accepted,
@@ -140,6 +142,7 @@ class ServerSession final : public IServerConnection, public IPlayerInputLink {
   network::MessageDispatcher* dispatcher_;
   GameLoadedReminder* gameLoaded_;
   SessionEntityTypes* entityTypes_;
+  ContentLoading* content_;
   logging::Logger logger_;
   ConnectionStatus status_;
   HandshakeAnswers answers_;

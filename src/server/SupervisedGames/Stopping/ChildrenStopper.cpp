@@ -1,19 +1,13 @@
 #include "ChildrenStopper.hpp"
 #include <cstddef>
 #include <iterator>
-#include <string>
 #include <utility>
 #include <vector>
-#include "DatagramCodec.hpp"
-#include "Disconnection.hpp"
-#include "Endpoint.hpp"
 #include "ExitedGame.hpp"
 #include "GameRegistry.hpp"
 #include "IDatagramSender.hpp"
 #include "ModuleConstants.hpp"
-#include "NetworkConstants.hpp"
-#include "OutgoingDatagram.hpp"
-#include "PacketHeader.hpp"
+#include "StopOrder.hpp"
 #include "StopPause.hpp"
 #include "SupervisedGame.hpp"
 #include "SupervisedGamesConstants.hpp"
@@ -54,14 +48,7 @@ std::vector<ExitedGame> ChildrenStopper::stopAll(GameRegistry& registry) {
 
 void ChildrenStopper::queueStopOrders(const GameRegistry& registry) {
   for (const SupervisedGame& game : registry.all()) {
-    sender_->queueDatagram(network::OutgoingDatagram{
-        .destination =
-            network::Endpoint{
-                .address = std::string{network::LOOPBACK_IPV4_ADDRESS},
-                .port = game.port},
-        .payload = network::DatagramCodec::encode(
-            network::PacketHeader{.sessionToken = game.linkToken},
-            network::Disconnection{})});
+    sender_->queueDatagram(stopOrderTo(game));
   }
 }
 

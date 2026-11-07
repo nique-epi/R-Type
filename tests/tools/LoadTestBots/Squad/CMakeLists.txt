@@ -10,6 +10,8 @@ target_link_libraries(rtype_tools_load_test_bots_squad
   PUBLIC
     rtype_tools_load_test_bots_launch
     rtype_tools_load_test_bots_play
+  PRIVATE
+    rtype_engine_paths
 )
 
 rtype_enable_warnings(rtype_tools_load_test_bots_squad)

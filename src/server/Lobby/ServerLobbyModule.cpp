@@ -4,13 +4,12 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "AssetFolder.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectionAcceptor.hpp"
 #include "ConnectionAcceptorParts.hpp"
+#include "ContentAnnouncementReading.hpp"
 #include "Endpoint.hpp"
-#include "EntitySheets.hpp"
-#include "EntityTypeEntry.hpp"
-#include "EntityTypeTable.hpp"
 #include "GameInstance.hpp"
 #include "GameState.hpp"
 #include "IDatagramSender.hpp"
@@ -19,35 +18,13 @@
 #include "ModuleConstants.hpp"
 #include "RunningGame.hpp"
 #include "ServerConstants.hpp"
-#include "ShipGun.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
 
-namespace {
-
-/** @returns The table of the entity types @p types holds, or an empty one
- * when the games module kept none, which only happens before it created the
- * game, so no acceptor reads it. */
-std::vector<network::EntityTypeEntry> entityTypeTableOrNone(
-    const game::EntitySheets* types) {
-  if (types == nullptr) {
-    return {};
-  }
-  return entityTypeTableOf(*types);
-}
-
-/** @returns The gun of the ships of @p types, or one that predicts nothing
- * when the games module kept no types (see entityTypeTableOrNone()). */
-network::ShipGun shipGunOrNone(const game::EntitySheets* types) {
-  if (types == nullptr) {
-    return network::ShipGun{};
-  }
-  return shipGunOf(*types);
-}
-
-}  // namespace
+ServerLobbyModule::ServerLobbyModule(std::uint16_t contentPort)
+    : contentPort_(contentPort) {}
 
 std::string ServerLobbyModule::name() const {
   return std::string{LOBBY_MODULE_NAME};
@@ -62,6 +39,7 @@ void ServerLobbyModule::install(engine::InstallContext& context) {
   sender_ = &context.require<IDatagramSender>();
   admission_ = &context.require<IPlayerAdmission>();
   tickDatagrams_ = &context.require<TickDatagrams>();
+  content_ = contentAnnouncementOf(engine::locateAssetFolder(), contentPort_);
   context.addWork(SIMULATION_STAGE,
                   [this]([[maybe_unused]] engine::Duration elapsed) {
                     answerConnectionRequests();
@@ -83,8 +61,7 @@ void ServerLobbyModule::start() {
           [seating](ConnectedPlayer& player) {
             seating->onPlayerJoined(player);
           },
-      .entityTypes = entityTypeTableOrNone(runningGame_->entityTypes()),
-      .shipGun = shipGunOrNone(runningGame_->entityTypes())});
+      .content = content_});
 }
 
 void ServerLobbyModule::stop() { acceptor_.reset(); }

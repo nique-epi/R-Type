@@ -115,4 +115,10 @@ constexpr std::string_view TRAFFIC_CSV_USAGE =
     "File the traffic of the program goes to, by peer and by message type, as "
     "totals since the launch; it is emptied at launch. Default: no file.";
 
+/** @brief The digits a byte takes in hexadecimal. */
+constexpr std::size_t HEX_DIGITS_PER_BYTE = 2;
+
+/** @brief The digits of lowercase hexadecimal, each at its value. */
+constexpr std::string_view LOWERCASE_HEX_DIGITS = "0123456789abcdef";
+
 }  // namespace rtype::network

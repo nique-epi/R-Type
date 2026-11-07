@@ -22,7 +22,7 @@ struct Caption;
 
 /**
  * @brief Draws every entity that has a Position and a Sprite, and writes
- * every visible Caption, layer by layer.
+ * every visible Caption at its offset from the Position, layer by layer.
  *
  * Besides these, it reads how the effects change the drawing of an entity:
  * its HitFlash for its tone, its Invulnerability for a dithered picture and,

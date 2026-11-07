@@ -8,7 +8,7 @@
 
 namespace rtype::client {
 
-std::vector<PredictedCommand> PredictedGun::arm(network::ShipGun gun,
+std::vector<PredictedCommand> PredictedGun::arm(game::ShipGun gun,
                                                 std::uint32_t acknowledged) {
   countDown_ = game::Gun{.intervalTicks = gun.intervalTicks,
                          .ticksUntilReady = gun.firstShotTicks,

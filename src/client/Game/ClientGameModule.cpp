@@ -26,9 +26,10 @@ namespace rtype::client {
 namespace {
 
 /** @returns The assets of a game, with the sprite sheet of every entity
- * appearance of the client (see withEntitySheets()). */
+ * appearance of the content of the session (see withEntitySheets()). */
 AssetList gameAssetsOf(const ScreenContext& context) {
-  return withEntitySheets(gameAssets(), context.services.appearances.get());
+  return withEntitySheets(gameAssets(),
+                          context.services.entityTable.get().appearances());
 }
 
 /** @returns The loading screen of gameAssetsOf() while some are not loaded,

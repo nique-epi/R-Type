@@ -1,8 +1,6 @@
 add_library(rtype_server_replication_wire STATIC
   EntitySpawnSender.cpp
   GameEventEncoder.cpp
-  EntitySideMapping.cpp
-  EntityTypeTable.cpp
 )
 
 target_include_directories(rtype_server_replication_wire PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -19,8 +17,6 @@ target_link_libraries(rtype_server_replication_wire
     rtype_network_protocol
     rtype_network_transport
     rtype_server_sessions_roster
-  PRIVATE
-    rtype_game_behaviours_paths
 )
 
 rtype_enable_warnings(rtype_server_replication_wire)

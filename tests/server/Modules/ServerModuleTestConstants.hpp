@@ -5,10 +5,20 @@
 #include <cstdint>
 #include <string_view>
 
+/** @brief A command of the administration console, and the line that turns it
+ * off, as server.cfg holds them. */
+constexpr std::string_view GAMES_LINE = "games";
+constexpr std::string_view CONSOLE_OFF_LINE = "module \"admin console\" off";
+
 /** @brief The names of the probe modules the tests list after the modules of
  * the server. */
 constexpr const char* PROBE_MODULE = "probe";
 constexpr const char* PORT_PROBE_MODULE = "port probe";
+
+/** @brief The lines that load the game-statistics plugin, as server.cfg
+ * writes them; a test that only reads lines needs no compiled plugin. */
+constexpr std::string_view PLUGIN_LINE = "plugin game-statistics";
+constexpr std::string_view PLUGIN_FOLDER_LINE = "plugin-folder plugins";
 
 /** @brief The database of a server a test starts, in a folder of the test. */
 constexpr std::string_view TEST_DATABASE_FILE = "results.db";

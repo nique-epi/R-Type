@@ -56,9 +56,22 @@ TEST(SettingsTextTest, EveryChangedSettingReadsBack) {
   settings.soundCues = true;
   settings.autoFire = true;
   settings.clientPrediction = false;
+  settings.pilotNames = false;
 
   EXPECT_EQ(readSettingsText(settingsText(settings), PlayerSettings{}).settings,
             settings);
+}
+
+/**
+ * Given a file written before the pilot names existed, prediction off
+ * When it is read over the settings of a first launch
+ * Then prediction is off as the file says, and the pilot names are shown
+ */
+TEST(SettingsTextTest, AFileWithoutPilotNamesShowsThem) {
+  const auto reading =
+      readSettingsText("client_prediction=off\n", PlayerSettings{});
+  EXPECT_TRUE(reading.settings.pilotNames);
+  EXPECT_FALSE(reading.settings.clientPrediction);
 }
 
 /**

@@ -9,7 +9,7 @@ namespace rtype::client::testing {
 
 /** @brief The looks of a table of two types, LOOKED_UP_TYPE_NAME, an enemy,
  * then TYPE_WITHOUT_APPEARANCE_NAME, an enemy too, joined with the appearance
- * of the first alone, the table judged by a client that draws every type. */
+ * of the first alone: the client's own content of the session. */
 class EntityTypeLooksFixture : public ::testing::Test {
  protected:
   EntityTypeLooksFixture();
@@ -19,9 +19,9 @@ class EntityTypeLooksFixture : public ::testing::Test {
   [[nodiscard]] const EntityAppearances& appearances() const;
 
  private:
-  SessionEntityTypes table_;
   EntityAppearances appearances_;
-  EntityTypeLooks looks_{table_, appearances_};
+  SessionEntityTypes table_;
+  EntityTypeLooks looks_{table_};
 };
 
 }  // namespace rtype::client::testing

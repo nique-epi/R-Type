@@ -17,14 +17,15 @@
 #include "MasterHttpServerTestConstants.hpp"
 #include "MasterTestConstants.hpp"
 #include "NetworkConstants.hpp"
+#include "NetworkException.hpp"
 
-using rtype::master::ApiRequest;
-using rtype::master::ApiResponse;
-using rtype::master::HttpHeader;
-using rtype::master::HttpPortUnavailableException;
 using rtype::master::MasterException;
 using rtype::master::MasterHttpServer;
+using rtype::network::ApiRequest;
+using rtype::network::ApiResponse;
 using rtype::network::Endpoint;
+using rtype::network::HttpHeader;
+using rtype::network::HttpPortUnavailableException;
 using rtype::network::LOOPBACK_IPV4_ADDRESS;
 
 /**

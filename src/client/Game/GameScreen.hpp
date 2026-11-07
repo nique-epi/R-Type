@@ -109,6 +109,10 @@ struct PlayerSettings;
  * change in the options applies at once. The server keeps its own rate of
  * fire, so the ship fires no faster than with the shoot key held.
  *
+ * Each update writes the name of every pilot over its ship once the ships are
+ * placed, hidden while PILOT NAMES is off (see tagPilotShips()); the setting
+ * is read at each update too.
+ *
  * Once the server ends the game, the screen ranks its pilots into the result
  * of the parts, then asks for the end screen in place of every screen
  * END_SCREEN_DELAY later on the clock of the game, once; the game goes on

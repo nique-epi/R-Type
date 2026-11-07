@@ -23,6 +23,7 @@
 #include "EntityAppearanceConstants.hpp"
 #include "EntitySheetConstants.hpp"
 #include "FrameAnchor.hpp"
+#include "PathText.hpp"
 #include "SheetRow.hpp"
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
@@ -192,10 +193,15 @@ EntityAppearances EntityAppearances::fromFolder(
 }
 
 EntityAppearances EntityAppearances::fromTexts(
-    std::span<const game::SheetText> sheets) {
+    std::span<const game::SheetText> sheets,
+    const std::filesystem::path& spriteFolder) {
   AppearancesByName appearances;
   for (const game::SheetText& sheet : sheets) {
-    appearances.emplace(sheet.name, appearanceIn(sheet.text, sheet.source));
+    EntityAppearance appearance = appearanceIn(sheet.text, sheet.source);
+    if (!spriteFolder.empty()) {
+      appearance.sheet = logging::genericText(spriteFolder / appearance.sheet);
+    }
+    appearances.emplace(sheet.name, std::move(appearance));
   }
   return EntityAppearances{std::move(appearances)};
 }

@@ -26,3 +26,7 @@ See the rule file of the same name in `.claude/rules/code-style/`: the `Constant
 
 - ❌ **Before (wrong)**: `src/client/Rendering/Effects/EffectColors.hpp`, twenty colors and ramps, included by `EffectSpawner.cpp`.
 - ✅ **After (right)**: `src/client/Rendering/Effects/EffectColorConstants.hpp`, the include of `EffectSpawner.cpp` and the two paths of `client.md` updated in the same commit.
+
+## Update (7 November 2026) — the code of a plan goes through point 5
+
+The plan of the administration console put six constants in `.cpp` blocks: `WAKE_BYTE` in the anonymous namespace of `StandardInputPosix.cpp`, and `NO_GAME_TEXT`, `NO_PILOT_TEXT`, `NO_MEASURE_TEXT`, `MICROSECONDS_PER_MILLISECOND` and `MEASURE_DECIMALS` in that of `ConsoleTexts.cpp`. The plan was approved that way; the files written from it were caught by a grep of `^constexpr` in the new `.cpp` files, before the first build, and the constants moved to `AdminConsoleConstants.hpp`. The point added makes the grep run on the plan's code, before it is shown.

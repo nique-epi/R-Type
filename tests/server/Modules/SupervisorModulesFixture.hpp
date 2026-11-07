@@ -8,6 +8,7 @@
 #include <vector>
 #include "Application.hpp"
 #include "ConfigurationReport.hpp"
+#include "IModule.hpp"
 #include "ServerInformation.hpp"
 #include "ServerModuleFixture.hpp"
 #include "StopRequest.hpp"
@@ -35,6 +36,15 @@ class SupervisorModulesFixture : public ServerModuleFixture {
    * journal, reading the server.cfg of the test. Start it once. */
   [[nodiscard]] std::unique_ptr<rtype::engine::Application> supervisor(
       const std::vector<std::string_view>& options);
+
+  /** @returns The supervisor of supervisor(@p options), its last module, the
+   * console, replaced by @p console. Start it once. */
+  [[nodiscard]] std::unique_ptr<rtype::engine::Application> supervisor(
+      const std::vector<std::string_view>& options,
+      std::unique_ptr<rtype::engine::IModule> console);
+
+  /** @returns The port the supervisor is given, in UDP and in TCP. */
+  [[nodiscard]] std::uint16_t port() const;
 
   /** @returns What the configuration step of the supervisor did. */
   [[nodiscard]] const rtype::engine::ConfigurationReport& report() const;

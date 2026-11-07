@@ -1,19 +1,24 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <cstddef>
 #include <string>
 #include <string_view>
 #include <vector>
-#include "GameStatisticsFixtures.hpp"
+#include "BuiltModuleConstants.hpp"
+#include "IModule.hpp"
 #include "LaunchOptions.hpp"
 #include "ModuleConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerInformation.hpp"
+#include "ServerModuleTestConstants.hpp"
 #include "ServerRoleConstants.hpp"
 #include "StopRequest.hpp"
 #include "SupervisorModules.hpp"
 #include "SupervisorModulesFixture.hpp"
 #include "SupervisorModulesTestConstants.hpp"
 
+using rtype::engine::ADMIN_CONSOLE_MODULE_BUILT;
+using rtype::engine::MASTER_LINK_MODULE_BUILT;
 using rtype::server::LaunchOptions;
 using rtype::server::STATE_RATE_OPTION;
 using rtype::server::StopRequest;
@@ -21,13 +26,18 @@ using rtype::server::SUPERVISOR_MODULE_NAMES;
 using rtype::server::supervisorModules;
 
 /**
- * Given the launch options of a supervisor with no argument
+ * Given the launch options of a supervisor with no argument, in a build that
+ * compiled the master link and the console
  * When its modules are listed
  * Then they are the journal, the network, the supervised games, the lobby
  * that sends the players to them, then the information and the master, which
- * read what the supervised games publish, in the order they start
+ * read what the supervised games publish, then the console, in the order
+ * they start
  */
 TEST(SupervisorModules, ListsTheModulesOfTheSupervisor) {
+  if (!MASTER_LINK_MODULE_BUILT || !ADMIN_CONSOLE_MODULE_BUILT) {
+    GTEST_SKIP() << "the build leaves the master link or the console out";
+  }
   StopRequest stopRequest;
   const LaunchOptions options =
       LaunchOptions::read(std::vector<std::string_view>{});
@@ -42,10 +52,30 @@ TEST(SupervisorModules, ListsTheModulesOfTheSupervisor) {
   EXPECT_EQ(names, (std::vector<std::string>{
                        std::string{rtype::server::LOGGER_MODULE_NAME},
                        std::string{rtype::server::NETWORK_MODULE_NAME},
+                       std::string{rtype::server::CONTENT_MODULE_NAME},
                        std::string{rtype::server::SUPERVISED_GAMES_MODULE_NAME},
                        std::string{rtype::server::SUPERVISOR_LOBBY_MODULE_NAME},
                        std::string{rtype::server::INFORMATION_MODULE_NAME},
-                       std::string{rtype::server::MASTER_MODULE_NAME}}));
+                       std::string{rtype::server::MASTER_MODULE_NAME},
+                       std::string{rtype::server::ADMIN_CONSOLE_MODULE_NAME}}));
+}
+
+/**
+ * Given the launch options of a supervisor, in a build with or without the
+ * console
+ * When its modules are listed
+ * Then the console is among them exactly when the build compiled it
+ */
+TEST(SupervisorModules, ListsTheConsoleOnlyWhenItIsBuilt) {
+  StopRequest stopRequest;
+  const auto modules = supervisorModules(
+      LaunchOptions::read(std::vector<std::string_view>{}), stopRequest, {});
+
+  const bool listed =
+      std::ranges::find(modules, rtype::server::ADMIN_CONSOLE_MODULE_NAME,
+                        &rtype::engine::IModule::name) != modules.end();
+
+  EXPECT_EQ(listed, ADMIN_CONSOLE_MODULE_BUILT);
 }
 
 /**
@@ -73,13 +103,15 @@ TEST(SupervisorModules, TheRuleKnowsEveryModuleOfTheSupervisor) {
  * Then it starts, refuses no line, and keeps both plugin lines for its games
  */
 TEST_F(SupervisorModulesFixture, LeavesThePluginLinesToItsGames) {
-  writeConfiguration(gameStatisticsPluginLines());
+  const std::vector<std::string> pluginLines{std::string{PLUGIN_FOLDER_LINE},
+                                             std::string{PLUGIN_LINE}};
+  writeConfiguration(pluginLines);
   const auto application = supervisor({});
 
   EXPECT_NO_THROW(application->start());
 
   EXPECT_TRUE(report().refusals.empty());
-  EXPECT_EQ(report().handedOverLines, gameStatisticsPluginLines());
+  EXPECT_EQ(report().handedOverLines, pluginLines);
   application->stop();
 }
 
@@ -91,7 +123,8 @@ TEST_F(SupervisorModulesFixture, LeavesThePluginLinesToItsGames) {
  * first, in their order, and nothing else
  */
 TEST_F(SupervisorModulesFixture, WritesTheGameLinesForItsGames) {
-  std::vector<std::string> lines = gameStatisticsPluginLines();
+  std::vector<std::string> lines{std::string{PLUGIN_FOLDER_LINE},
+                                 std::string{PLUGIN_LINE}};
   lines.emplace_back(LOBBY_OFF_LINE);
   lines.emplace_back(SEED_SEVEN_LINE);
   writeConfiguration(lines);
@@ -125,20 +158,61 @@ TEST_F(SupervisorModulesFixture, RefusesALineThatBelongsToNobody) {
 }
 
 /**
- * Given a server.cfg that sets server-name, master-url, master-key and
- * database, the settings the supervisor owns
+ * Given a server.cfg that sets server-name and database, settings the
+ * supervisor owns
  * When the supervisor starts
  * Then it refuses none of them and hands none to its games
  */
 TEST_F(SupervisorModulesFixture, KeepsTheLinesOfTheSettingsItOwns) {
   writeConfiguration(
-      {std::string{SERVER_NAME_LINE}, std::string{MASTER_URL_LINE},
-       std::string{MASTER_KEY_LINE}, std::string{DATABASE_LINE}});
+      {std::string{SERVER_NAME_LINE}, std::string{DATABASE_LINE}});
   const auto application = supervisor({});
 
   application->start();
 
   EXPECT_TRUE(report().refusals.empty());
+  EXPECT_TRUE(report().handedOverLines.empty());
+  application->stop();
+}
+
+/**
+ * Given a server.cfg that sets master-url and master-key, in a build that
+ * compiled the master link, which declares them
+ * When the supervisor starts
+ * Then it refuses neither and hands neither to its games
+ */
+TEST_F(SupervisorModulesFixture, KeepsTheLinesOfTheMasterSettings) {
+  if (!MASTER_LINK_MODULE_BUILT) {
+    GTEST_SKIP() << "the build leaves the master link out";
+  }
+  writeConfiguration(
+      {std::string{MASTER_URL_LINE}, std::string{MASTER_KEY_LINE}});
+  const auto application = supervisor({});
+
+  application->start();
+
+  EXPECT_TRUE(report().refusals.empty());
+  EXPECT_TRUE(report().handedOverLines.empty());
+  application->stop();
+}
+
+/**
+ * Given a server.cfg that sets master-url and master-key, in a build that left
+ * the master link out, so nothing declares them
+ * When the supervisor starts
+ * Then it starts, refuses both lines, and hands neither to its games
+ */
+TEST_F(SupervisorModulesFixture, RefusesTheMasterSettingsWithoutTheMasterLink) {
+  if (MASTER_LINK_MODULE_BUILT) {
+    GTEST_SKIP() << "the build has the master link";
+  }
+  writeConfiguration(
+      {std::string{MASTER_URL_LINE}, std::string{MASTER_KEY_LINE}});
+  const auto application = supervisor({});
+
+  EXPECT_NO_THROW(application->start());
+
+  EXPECT_EQ(report().refusals.size(), 2U);
   EXPECT_TRUE(report().handedOverLines.empty());
   application->stop();
 }

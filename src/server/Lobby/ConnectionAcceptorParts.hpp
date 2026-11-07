@@ -2,13 +2,11 @@
 
 #include <cstdint>
 #include <functional>
-#include <vector>
 #include "ConnectedPlayer.hpp"
+#include "ContentAnnouncement.hpp"
 #include "Endpoint.hpp"
-#include "EntityTypeEntry.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
-#include "ShipGun.hpp"
 
 namespace rtype::server {
 
@@ -27,12 +25,9 @@ struct ConnectionAcceptorParts {
    * sent the acceptance; not when an acceptance is repeated. Empty to call
    * nothing. */
   std::function<void(ConnectedPlayer&)> onPlayerJoined;
-  /** @brief The entity types of the game, entry n - 1 for the type numbered
-   * n, which every ConnectionAccepted carries (see entityTypeTableOf()). */
-  std::vector<network::EntityTypeEntry> entityTypes;
-  /** @brief The gun of the ships, which every ConnectionAccepted carries after
-   * the types (see shipGunOf()). */
-  network::ShipGun shipGun{};
+  /** @brief The content the game plays with, which every ConnectionAccepted
+   * announces (see contentAnnouncementOf()). */
+  network::ContentAnnouncement content;
 };
 
 }  // namespace rtype::server

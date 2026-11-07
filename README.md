@@ -5,7 +5,7 @@ A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ 
 - **Platforms:** Linux (GCC or Clang), Windows (MSVC, Visual Studio 2022) and macOS (Apple Silicon). The CI builds and tests Linux and Windows on every pull request.
 - **Language and libraries:** C++20, SFML 3 on the client, standalone Asio on the server, GoogleTest for the tests.
 - **Programs:** `r-type_client` (window, sound, menus) and `r-type_server` (UDP on port 4242 by default). By default it is a supervisor that starts one process per game and sends each player to the game that has a place; `--mode server` hosts the games in one process, and `--mode master` runs the master, the program that lists game servers.
-- **Network:** every message of a game travels over UDP; the protocol is specified byte by byte in [the protocol RFC](https://nique-epi.github.io/R-Type/protocol/).
+- **Network:** every message of a game travels over UDP; a client that lacks the sheets of a server, a modded one for instance, downloads its content pack over HTTP first. The protocol is specified byte by byte in [the protocol RFC](https://nique-epi.github.io/R-Type/protocol/).
 
 The code is split into engine, game and network libraries; see [the architecture decision](docs/src/content/docs/architecture.md) and [the project layout](docs/src/content/docs/project-layout.md).
 
@@ -75,6 +75,26 @@ The client and the server read their files from `assets/`, next to their executa
 
 If the repository was cloned without its submodules, run `git submodule update --init` first.
 
+### Build options
+
+Each optional module has a CMake option, on by default. Off, its folder is not compiled, its `Contract/` excepted, the list of its program does not name it, and the program starts without it:
+
+| Option | Leaves out | Without it |
+|---|---|---|
+| `RTYPE_MODULE_AUDIO` | the sound of the client | the client plays nothing, and `--no-sound` changes nothing |
+| `RTYPE_MODULE_METRICS` | the metrics of the client and of each game process | no report in the journal, and `--traffic-csv` writes no file |
+| `RTYPE_MODULE_MASTER_LINK` | the registration of the server with the master | the server never registers, and `set master-url` and `set master-key` are refused |
+| `RTYPE_MODULE_ADMIN_CONSOLE` | the administration console of the supervisor | the supervisor reads nothing from its terminal, and `games`, `players`, `close-game`, `network` and `help` are unknown commands |
+| `RTYPE_MODULE_CHAT` | the chat of the games | a chat line reaches nobody |
+| `RTYPE_MODULE_PLUGINS` | the loading of plugins | `plugin` and `plugin-folder` are unknown commands |
+| `RTYPE_MODULE_GAME_STATISTICS` | the `game-statistics` plugin; off whenever `RTYPE_MODULE_PLUGINS` is | no `game-statistics` file in `plugins/` |
+
+```bash
+cmake --preset default -DRTYPE_MODULE_AUDIO=OFF
+```
+
+The configure ends with the list of the modules built and left out; `cmake --build build --parallel` then builds them. A line of `server.cfg` refused for a module left out is written to the journal at the `warn` level, and the program starts all the same.
+
 ### Packages
 
 ```bash
@@ -115,7 +135,7 @@ The release refuses a tag whose version is not the one of `project()`; change th
 ./r-type_server -p 4243
 ```
 
-The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on port 4242. It runs as a supervisor: it runs no game itself, and starts one `r-type_server --mode game` process per game, up to eight, sending each player to the game that has a place (see [the server page](https://nique-epi.github.io/R-Type/server/#the-three-roles-supervisor-game-and-master)). Each game writes its own journal, `r-type_game_<n>.log` next to the executable.
+The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on port 4242. It runs as a supervisor: it runs no game itself, and starts one `r-type_server --mode game` process per game, up to eight, sending each player to the game that has a place (see [the server page](https://nique-epi.github.io/R-Type/server/#the-three-roles-supervisor-game-and-master)). Each game writes its own journal, `r-type_game_<n>.log` next to the executable. The supervisor also serves its content pack, the entity sheets of its `assets/` and their sprite sheets, over HTTP on the TCP port of the same number (4243 here), so a player whose client has other sheets downloads them when it joins: a host behind a firewall or a router opens both the UDP and the TCP port (see [Tutorial: publish a mod](https://nique-epi.github.io/R-Type/tutorial-publish-a-mod/)).
 
 ```bash
 ./r-type_server --seed 42
@@ -231,6 +251,12 @@ cmake --workflow --preset sanitize
 This builds everything in `build-sanitize/` with AddressSanitizer and UndefinedBehaviorSanitizer, then runs the tests; an error stops the test that caused it. It needs GCC or Clang, not MSVC, and LeakSanitizer reports leaks on Linux only. The Linux CI runs it, then starts `r-type_server --mode supervisor` with no player, so with no game running, stops it with SIGINT and requires exit code 0.
 
 ```bash
+cmake --workflow --preset modules-off
+```
+
+This builds everything in `build-modules-off/` with every [build option](#build-options) off, then runs the tests: the tests of a module left out are not built, and a test that needs one is skipped. The Linux CI runs it, then starts and stops the supervisor in the same way.
+
+```bash
 ./build/tests/malformed_datagrams --server 4242
 ```
 
@@ -266,7 +292,7 @@ The client, the server and the master write a timestamped journal, `r-type_clien
 
 The build option `-DLOG_LEVEL=<name>` removes the calls below a level from the binaries. See [the logging page](docs/src/content/docs/logging.md).
 
-The client reads `client.cfg` the same way, and `client.cfg.example` is its model (`set nickname`, `set server-address`, `set server-port`, `module <name> on|off`, and `--set` to force a setting). It keeps the player's settings in `settings.ini`: in `$XDG_CONFIG_HOME/r-type` (or `~/.config/r-type`) on Linux, `~/Library/Application Support/R-Type` on macOS, `%LOCALAPPDATA%\R-Type` on Windows. Its path is logged at launch; deleting it brings back the settings of a first launch.
+The client reads `client.cfg` the same way, and `client.cfg.example` is its model (`set nickname`, `set server-address`, `set server-port`, `module <name> on|off`, and `--set` to force a setting). It keeps the player's settings in `settings.ini`: in `$XDG_CONFIG_HOME/r-type` (or `~/.config/r-type`) on Linux, `~/Library/Application Support/R-Type` on macOS, `%LOCALAPPDATA%\R-Type` on Windows. Its path is logged at launch; deleting it brings back the settings of a first launch. The content packs of the servers it joined are kept next to it, in `content-packs/`, eight at most.
 
 ## Code style
 
@@ -284,7 +310,7 @@ cmake --build build --target format
 
 ## Documentation
 
-The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`. To add a module to the server or the client, start with the [Modules](https://nique-epi.github.io/R-Type/modules/) page and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/). Two more tutorials [add a network message](https://nique-epi.github.io/R-Type/tutorial-add-a-network-message/) and [run a server with several games](https://nique-epi.github.io/R-Type/tutorial-run-several-games/).
+The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`. To add a module to the server or the client, start with the [Modules](https://nique-epi.github.io/R-Type/modules/) page and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/). Three more tutorials [add a network message](https://nique-epi.github.io/R-Type/tutorial-add-a-network-message/), [run a server with several games](https://nique-epi.github.io/R-Type/tutorial-run-several-games/) and [publish a mod](https://nique-epi.github.io/R-Type/tutorial-publish-a-mod/).
 
 To preview it locally, with Node.js 22.12 or newer:
 

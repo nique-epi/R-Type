@@ -1,1 +1,1 @@
-target_sources(server_module_tests PRIVATE RunningGameFixture.cpp RunningGameTest.cpp PlayerDatagramsTest.cpp FarewellSenderTest.cpp GamePlayers.cpp ServerGamesFixture.cpp ServerGamesModuleTest.cpp GamePlacementTest.cpp VanillaBreachesTest.cpp EntitySheetsFingerprintTest.cpp)
+target_sources(server_module_tests PRIVATE RtypeGameModulesTest.cpp RunningGameFixture.cpp RunningGameTest.cpp PlayerDatagramsTest.cpp FarewellSenderTest.cpp GamePlayers.cpp ServerGamesFixture.cpp ServerGamesModuleTest.cpp GamePlacementTest.cpp VanillaBreachesTest.cpp EntitySheetsFingerprintTest.cpp)

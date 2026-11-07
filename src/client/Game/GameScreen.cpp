@@ -38,6 +38,8 @@
 #include "OwnMissilesParts.hpp"
 #include "OwnPrediction.hpp"
 #include "OwnShip.hpp"
+#include "OwnShipPredictor.hpp"
+#include "PilotNameTags.hpp"
 #include "PlayerAction.hpp"
 #include "PlayerCommand.hpp"
 #include "PlayerInputPacer.hpp"
@@ -187,6 +189,7 @@ void GameScreen::update(engine::Duration elapsed) {
   if (settings_->clientPrediction) {
     prediction_.place(replicator_, components_);
   }
+  tagPilotShips(components_, scoreBoard_.pilots(), *settings_);
   askForTheEndWhenDue();
   moveSky(*sky_, effects_, preference);
   entityLayer_->paint(components_, effects_.cameraOffset());

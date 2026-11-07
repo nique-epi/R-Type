@@ -95,8 +95,8 @@ std::optional<EntityTypeLook> FixedEntityTypeSource::lookOf(
                         .hitbox = boxOfSide(*side)};
 }
 
-rtype::network::ShipGun FixedEntityTypeSource::shipGun() const {
-  return rtype::network::ShipGun{
+rtype::game::ShipGun FixedEntityTypeSource::shipGun() const {
+  return rtype::game::ShipGun{
       .shipType = rtype::client::testing::SHIP_TYPE_NUMBER,
       .projectileType = rtype::client::testing::PLAYER_MISSILE_TYPE_NUMBER,
       .intervalTicks = rtype::client::testing::SHIP_GUN_INTERVAL_TICKS,

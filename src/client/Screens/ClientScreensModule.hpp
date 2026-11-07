@@ -7,13 +7,13 @@
 #include "ClientScreens.hpp"
 #include "ConfigurationRegistry.hpp"
 #include "Endpoint.hpp"
-#include "EntityAppearances.hpp"
 #include "EntityMessageQueue.hpp"
 #include "EntityTypeLooks.hpp"
 #include "EventListeners.hpp"
 #include "FrameLoop.hpp"
 #include "GameWindow.hpp"
 #include "IAudioService.hpp"
+#include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
 #include "IModule.hpp"
 #include "IOptionalDependencies.hpp"
@@ -107,7 +107,7 @@ class ClientScreensModule final : public engine::IModule,
   PlayerSettings* settings_{nullptr};
   SettingsService* settingsService_{nullptr};
   AssetLibrary* assets_{nullptr};
-  const EntityAppearances* appearances_{nullptr};
+  const IEntityTypeTable* entityTable_{nullptr};
   SilentAudioService silence_;
   IAudioService* audio_{nullptr};
   GameWindow* window_{nullptr};

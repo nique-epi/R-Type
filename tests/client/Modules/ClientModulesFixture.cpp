@@ -37,3 +37,8 @@ std::size_t ClientModulesFixture::positionOf(std::string_view name) {
       });
   return static_cast<std::size_t>(found - listed.begin());
 }
+
+bool ClientModulesFixture::lists(std::string_view name) {
+  const std::vector<std::unique_ptr<IModule>> listed = modules();
+  return std::ranges::find(listed, name, &IModule::name) != listed.end();
+}

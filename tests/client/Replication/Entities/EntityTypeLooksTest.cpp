@@ -33,7 +33,7 @@ TEST_F(EntityTypeLooksFixture, GivesTheSideTheTableGivesTheType) {
 }
 
 /**
- * Given a table whose first type has a box of 96 by 48
+ * Given the client's own content, whose first type has a box of 96 by 48
  * When the look of number 1 is asked for
  * Then it carries that box
  */
@@ -49,7 +49,7 @@ TEST_F(EntityTypeLooksFixture, GivesTheBoxTheTableGivesTheType) {
 }
 
 /**
- * Given a table kept with the gun of its ships
+ * Given the client's own content, with the gun of its ships
  * When the gun is asked of the looks
  * Then it is the gun of the table
  */

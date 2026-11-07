@@ -76,6 +76,7 @@ void ServerNetworkModule::install(engine::InstallContext& context) {
   context.provide(tickDatagrams_);
   context.provide<IListeningPort>(*this);
   context.provide(server_->traffic());
+  context.provide(server_->rejections());
 }
 
 void ServerNetworkModule::start() {

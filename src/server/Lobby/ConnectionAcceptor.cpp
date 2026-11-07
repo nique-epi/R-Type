@@ -67,8 +67,7 @@ ConnectionAcceptor::ConnectionAcceptor(ConnectionAcceptorParts parts)
       send_(std::move(parts.send)),
       admit_(std::move(parts.admit)),
       onPlayerJoined_(std::move(parts.onPlayerJoined)),
-      entityTypes_(std::move(parts.entityTypes)),
-      shipGun_(parts.shipGun),
+      content_(parts.content),
       logger_(std::string{LOBBY_LOGGER_NAME}) {}
 
 void ConnectionAcceptor::receive(
@@ -139,8 +138,7 @@ void ConnectionAcceptor::accept(ConnectedPlayer& player, engine::Duration now) {
   player.lastAcceptedAt = now;
   send_(sessionDatagram(
       player, network::ConnectionAccepted{.playerNumber = player.playerNumber,
-                                          .types = entityTypes_,
-                                          .shipGun = shipGun_}));
+                                          .content = content_}));
 }
 
 void ConnectionAcceptor::challenge(const network::Endpoint& sender,

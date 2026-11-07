@@ -10,6 +10,7 @@
 #include "SentDatagrams.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyModule.hpp"
+#include "ServerLobbyTestConstants.hpp"
 
 using rtype::server::testing::onlyMessageIn;
 using rtype::server::testing::playerEndpoint;
@@ -18,7 +19,8 @@ using rtype::server::testing::sentTo;
 std::vector<std::unique_ptr<rtype::engine::IModule>>
 ServerLobbyFixture::modulesAfterTheGames() const {
   std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
-  modules.push_back(std::make_unique<rtype::server::ServerLobbyModule>());
+  modules.push_back(std::make_unique<rtype::server::ServerLobbyModule>(
+      rtype::server::testing::GAME_PACK_PORT));
   return modules;
 }
 

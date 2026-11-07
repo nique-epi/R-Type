@@ -3,14 +3,10 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include "ConnectionAccepted.hpp"
 #include "Endpoint.hpp"
-#include "EntitySide.hpp"
-#include "EntityTypeEntry.hpp"
 #include "MessageDispatcher.hpp"
 #include "MessageFrame.hpp"
 #include "MessageOrigin.hpp"
-#include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "NetworkConstants.hpp"
 #include "ProtocolFixtures.hpp"
@@ -24,12 +20,6 @@ MessageOrigin someOrigin() {
       .sender = Endpoint{.address = std::string{LOOPBACK_IPV4_ADDRESS},
                          .port = SOME_SENDER_PORT},
       .header = someSessionHeader()};
-}
-
-std::vector<std::byte> acceptanceOfPlayerOne() {
-  return encodeMessage(ConnectionAccepted{
-      .playerNumber = 1,
-      .types = {EntityTypeEntry{.side = EntitySide::Enemy, .name = "a"}}});
 }
 
 MessageFrame frameOf(MessageType type, const std::vector<std::byte>& payload) {
