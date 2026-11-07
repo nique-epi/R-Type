@@ -53,6 +53,7 @@ PilotState stateAfter(network::DepartureReason reason) {
     case network::DepartureReason::TimedOut:
       return PilotState::SignalLost;
     case network::DepartureReason::Left:
+    case network::DepartureReason::Expelled:
       break;
   }
   return PilotState::Left;

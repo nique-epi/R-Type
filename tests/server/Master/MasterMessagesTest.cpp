@@ -31,7 +31,7 @@ using rtype::server::testing::PROBE_TOKEN_OF_A_HEARTBEAT;
 /**
  * Given a server named, on a port, hosting eight games
  * When its registration is written
- * Then it carries them, protocol 8, four players a game and no address
+ * Then it carries them, protocol 12, four players a game and no address
  */
 TEST(MasterMessages, TheRegistrationTellsWhatTheServerIs) {
   const ServerRegistration registration =

@@ -11,12 +11,13 @@ namespace rtype::network {
 
 /**
  * @brief How a player left: Left when it said so, TimedOut when the server
- * heard nothing from it for 5 s. The values are the ones of the protocol
- * page.
+ * heard nothing from it for 5 s, Expelled when the host of the server
+ * expelled it. The values are the ones of the protocol page.
  */
 enum class DepartureReason : std::uint8_t {
   Left = 1,
   TimedOut = 2,
+  Expelled = 3,
 };
 
 /**
