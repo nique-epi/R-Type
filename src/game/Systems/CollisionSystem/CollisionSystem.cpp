@@ -1,6 +1,6 @@
 #include "CollisionSystem.hpp"
 #include <cstddef>
-#include "Bounds.hpp"
+#include "BoundsOf.hpp"
 #include "Collision.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
@@ -21,11 +21,7 @@ void CollisionSystem::update(engine::ComponentRegistry& components,
                                                     const Position& position,
                                                     const CollisionBox& box) {
     candidates_.push_back(
-        Candidate{.entity = entity,
-                  .bounds = engine::Bounds{.centerX = position.x,
-                                           .centerY = position.y,
-                                           .width = box.width,
-                                           .height = box.height}});
+        Candidate{.entity = entity, .bounds = boundsOf(position, box)});
   });
   for (std::size_t first = 0; first < candidates_.size(); ++first) {
     for (std::size_t second = first + 1; second < candidates_.size();

@@ -6,14 +6,17 @@
 
 namespace rtype::client {
 
-network::PlayerInput UnconfirmedInputs::add(std::uint8_t actions) {
+network::PlayerInput UnconfirmedInputs::add(std::uint8_t actions,
+                                            std::uint32_t shownTick) {
   const std::uint32_t number = nextNumber_++;
   kept_.push_back(actions);
   if (kept_.size() > network::MAXIMUM_REPEATED_INPUTS + 1) {
     kept_.pop_front();
   }
-  network::PlayerInput message{
-      .inputNumber = number, .actions = actions, .earlierActions = {}};
+  network::PlayerInput message{.inputNumber = number,
+                               .actions = actions,
+                               .earlierActions = {},
+                               .shownTick = shownTick};
   message.earlierActions.reserve(kept_.size() - 1);
   for (std::size_t back = 1; back < kept_.size(); ++back) {
     message.earlierActions.push_back(kept_[kept_.size() - 1 - back]);

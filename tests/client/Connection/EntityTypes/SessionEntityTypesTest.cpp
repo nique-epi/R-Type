@@ -8,6 +8,7 @@
 #include "SessionEntityTypes.hpp"
 #include "SessionEntityTypesFixtures.hpp"
 #include "SessionEntityTypesTestConstants.hpp"
+#include "ShipGun.hpp"
 #include "TemporaryFolder.hpp"
 
 namespace rtype::client {
@@ -18,6 +19,7 @@ using testing::DRAWN_SHIP_NAME;
 using testing::FIRST_TYPE_NUMBER;
 using testing::LANCER_TYPE;
 using testing::lancerFiles;
+using testing::LOCAL_SHIP_GUN;
 using testing::SECOND_TYPE_NUMBER;
 using testing::testLocalContent;
 using testing::THIRD_TYPE_NUMBER;
@@ -96,6 +98,46 @@ TEST(SessionEntityTypes, ComesBackToItsOwnTypesOnceForgotten) {
   ASSERT_NE(entry, nullptr);
   EXPECT_EQ(entry->name, DRAWN_ENEMY_NAME);
   EXPECT_EQ(table.appearances().named(LANCER_TYPE), nullptr);
+}
+
+/**
+ * Given the client's own content, whose ship has a gun
+ * When the gun of the ships is asked
+ * Then it is the gun of that content
+ */
+TEST(SessionEntityTypes, ArmsTheShipsWithTheGunOfItsOwnContent) {
+  const SessionEntityTypes table{testLocalContent()};
+
+  EXPECT_EQ(table.shipGun(), LOCAL_SHIP_GUN);
+}
+
+/**
+ * Given a session that plays the pack of a server, of one Bydo and no ship
+ * When the gun of the ships is asked
+ * Then it is the gun of the pack, which predicts nothing
+ */
+TEST(SessionEntityTypes, ArmsTheShipsWithTheGunOfThePackItPlays) {
+  const TemporaryFolder folder;
+  SessionEntityTypes table{testLocalContent()};
+
+  table.use(packContentOf(lancerFiles(), folder.path()));
+
+  EXPECT_EQ(table.shipGun(), game::ShipGun{});
+}
+
+/**
+ * Given a session that played the pack of a server
+ * When the session is forgotten
+ * Then the ships have the gun of the client's own content again
+ */
+TEST(SessionEntityTypes, ComesBackToItsOwnGunOnceForgotten) {
+  const TemporaryFolder folder;
+  SessionEntityTypes table{testLocalContent()};
+  table.use(packContentOf(lancerFiles(), folder.path()));
+
+  table.forget();
+
+  EXPECT_EQ(table.shipGun(), LOCAL_SHIP_GUN);
 }
 
 }  // namespace rtype::client

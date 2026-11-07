@@ -52,6 +52,7 @@ void encodePayload(ByteWriter& writer, const PlayerInput& message) {
   for (const std::uint8_t actions : message.earlierActions) {
     writer.writeUint8(actions);
   }
+  writer.writeUint32(message.shownTick);
 }
 
 PlayerInput decodePayload(
@@ -60,13 +61,15 @@ PlayerInput decodePayload(
   ByteReader reader{payload};
   PlayerInput message{.inputNumber = reader.readUint32(),
                       .actions = reader.readUint8(),
-                      .earlierActions = {}};
+                      .earlierActions = {},
+                      .shownTick = NO_SHOWN_TICK};
   const std::uint8_t earlierCount = reader.readUint8();
   requireValidEarlierCount(message.inputNumber, earlierCount);
   message.earlierActions.reserve(earlierCount);
   for (std::uint8_t index = 0; index < earlierCount; ++index) {
     message.earlierActions.push_back(reader.readUint8());
   }
+  message.shownTick = reader.readUint32();
   requireFullyRead(reader);
   validate(message);
   return message;

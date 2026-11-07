@@ -8,7 +8,7 @@ namespace rtype::client {
 /**
  * @returns The content of @p assetFolder, as a server whose assets are the
  * same announces it: the fingerprint of the pack game::contentFilesIn() lists
- * there, and the types of its sheets.
+ * there, the types of its sheets and the gun of its ships.
  * @throws What game::contentFilesIn(), network::encodeContentPack() and
  * game::numberedEntityTypesOf() throw.
  */

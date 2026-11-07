@@ -10,6 +10,7 @@
 #include "DepartureFeed.hpp"
 #include "EffectSpawner.hpp"
 #include "EnemyActionPlayer.hpp"
+#include "EntityFeedback.hpp"
 #include "EntityMessage.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityReplicator.hpp"
@@ -27,7 +28,7 @@
 #include "InterpolationClock.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
-#include "OwnShipPredictor.hpp"
+#include "OwnPrediction.hpp"
 #include "PlayerCommands.hpp"
 #include "PlayerInputPacer.hpp"
 #include "PlayerPalette.hpp"
@@ -36,6 +37,7 @@
 #include "SilenceWarning.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
+#include "WorldState.hpp"
 
 namespace rtype::client {
 
@@ -147,6 +149,11 @@ class GameScreen : public IScreen {
    * world state among them. */
   void applyEntityMessages();
 
+  /** @brief Hands @p state, applied by the replicator already, to the score
+   * board, the interpolation clock, the inputs awaiting confirmation and the
+   * prediction of the own ship. */
+  void applyWorldState(const network::WorldState& state);
+
   /** @brief Repaints the status band when a pilot, the banner or the palette
    * the player chose changed since it was last painted. */
   void repaintStatusWhenChanged();
@@ -170,6 +177,8 @@ class GameScreen : public IScreen {
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
   EffectSpawner effects_;
+  EntityFeedback feedback_;
+  OwnPrediction prediction_;
   EntityReplicator replicator_;
   EnemyActionPlayer enemyActions_;
   engine::SystemScheduler systems_;
@@ -181,7 +190,6 @@ class GameScreen : public IScreen {
   ScoreBoard scoreBoard_;
   GameResult* result_;
   std::uint8_t playerNumber_;
-  OwnShipPredictor prediction_;
   InterpolationClock interpolationClock_;
   std::optional<engine::Duration> endedAt_;
   std::uint32_t paintedStatusRevision_{};

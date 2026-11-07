@@ -12,7 +12,6 @@
 #include "BehaviourSetting.hpp"
 #include "BehaviourView.hpp"
 #include "BurstSheet.hpp"
-#include "CollisionBox.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "EntitySheet.hpp"
@@ -56,16 +55,6 @@ engine::DataFileTable gameplayTableOf(const engine::DataFileTable& root) {
 /** @returns The side `[gameplay]` names. */
 EntityType sideFrom(const engine::DataFileTable& gameplay) {
   return SIDES.at(engine::choiceAt(gameplay, SIDE_KEY, SIDE_NAMES));
-}
-
-/** @returns The box `[gameplay.hitbox]` describes. */
-CollisionBox hitboxFrom(const engine::DataFileTable& gameplay) {
-  const engine::DataFileTable hitbox = engine::tableAt(gameplay, HITBOX_KEY);
-  engine::refuseUnknownKeys(hitbox, HITBOX_KEYS);
-  return CollisionBox{.width = static_cast<float>(engine::wholeNumberAt(
-                          hitbox, WIDTH_KEY, HITBOX_SIDE_RANGE)),
-                      .height = static_cast<float>(engine::wholeNumberAt(
-                          hitbox, HEIGHT_KEY, HITBOX_SIDE_RANGE))};
 }
 
 /** @returns The motion `[gameplay.motion]` describes: a ship with its kind
@@ -445,7 +434,7 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .name = sheet.name,
       .number = 0,
       .side = sideFrom(gameplay),
-      .hitbox = hitboxFrom(gameplay),
+      .hitbox = hitboxOf(gameplay),
       .motion = motionFrom(gameplay),
       .pilot = pilotFrom(gameplay, behaviours),
       .health = pointsIn<int>(gameplay, HEALTH_KEY, HEALTH_RANGE),

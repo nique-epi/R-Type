@@ -3,6 +3,7 @@
 #include <span>
 #include <string_view>
 #include <vector>
+#include "CollisionBox.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "EntitySheetConstants.hpp"
@@ -52,6 +53,15 @@ engine::DataFileTable sheetTableOf(const engine::DataFileTable& root,
     }
   }
   return engine::tableAt(root, key);
+}
+
+CollisionBox hitboxOf(const engine::DataFileTable& gameplay) {
+  const engine::DataFileTable hitbox = engine::tableAt(gameplay, HITBOX_KEY);
+  engine::refuseUnknownKeys(hitbox, HITBOX_KEYS);
+  return CollisionBox{.width = static_cast<float>(engine::wholeNumberAt(
+                          hitbox, WIDTH_KEY, HITBOX_SIDE_RANGE)),
+                      .height = static_cast<float>(engine::wholeNumberAt(
+                          hitbox, HEIGHT_KEY, HITBOX_SIDE_RANGE))};
 }
 
 }  // namespace rtype::game

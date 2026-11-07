@@ -1,0 +1,2 @@
+target_sources(client_prediction_tests PRIVATE ShipPredictionTest.cpp OwnShipTest.cpp OwnShipPredictorTest.cpp PredictionFixtures.cpp)
+target_include_directories(client_prediction_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

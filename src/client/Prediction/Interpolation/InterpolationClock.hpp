@@ -48,6 +48,11 @@ class InterpolationClock {
   /** @returns The tick to show, fractional; nothing before the first state. */
   [[nodiscard]] std::optional<double> renderTick() const;
 
+  /** @returns The whole tick shown, as a PlayerInput carries it:
+   * NO_SHOWN_TICK before the first state, and for a tick shown before tick 1.
+   */
+  [[nodiscard]] std::uint32_t shownTick() const;
+
  private:
   /** @returns The tick the delay is counted back from: the tick of the server
    * less the worst lateness measured, or the newest tick received when either

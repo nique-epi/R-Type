@@ -1,4 +1,4 @@
-add_library(rtype_game_entity_sheets STATIC EntitySheetReader.cpp EntitySheets.cpp)
+add_library(rtype_game_entity_sheets STATIC EntitySheetReader.cpp EntitySheets.cpp ShipGunReading.cpp)
 
 target_include_directories(rtype_game_entity_sheets PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -10,6 +10,7 @@ target_link_libraries(rtype_game_entity_sheets
     rtype_game_entity_sheet_format
     rtype_game_entity_sheet_texts
   PRIVATE
+    rtype_engine_exceptions
     rtype_engine_time
     rtype_game_exceptions
     rtype_game_ship_control_constants

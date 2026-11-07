@@ -4,6 +4,7 @@
 #include "ConnectionPhase.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityReplicatorTestConstants.hpp"
+#include "FixedEntityTypeSourceConstants.hpp"
 #include "GameEnded.hpp"
 #include "GameScreenTestConstants.hpp"
 #include "LobbyState.hpp"
@@ -12,7 +13,10 @@
 #include "WorldState.hpp"
 
 using rtype::client::ConnectionPhase;
+using rtype::client::testing::listed;
 using rtype::client::testing::SHIP_ID;
+using rtype::client::testing::SHIP_POSITION;
+using rtype::client::testing::SHIP_TYPE_NUMBER;
 using rtype::client::testing::stateListingPlayers;
 using rtype::network::GameEnded;
 using rtype::network::LobbyPlayer;
@@ -41,6 +45,12 @@ WorldState stateScoringTheFirstPilot(std::uint32_t tick) {
                                                 .lives = PILOT_LIVES,
                                                 .score = PILOT_SCORE,
                                                 .invulnerable = false}});
+}
+
+WorldState stateWithTheShipOfTheFirstPilot(std::uint32_t tick) {
+  WorldState state = stateScoringTheFirstPilot(tick);
+  state.entities.push_back(listed(SHIP_ID, SHIP_TYPE_NUMBER, SHIP_POSITION));
+  return state;
 }
 
 GameEnded endOfThreePilots(rtype::network::WireGameOutcome outcome) {

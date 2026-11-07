@@ -3,6 +3,7 @@
 #include <vector>
 #include "InputRedundancyTestConstants.hpp"
 #include "PlayerInput.hpp"
+#include "ProtocolConstants.hpp"
 #include "SessionsFixtures.hpp"
 
 namespace rtype::server::testing {
@@ -21,7 +22,8 @@ void InputRedundancyFixture::sendInputs(std::uint32_t count) {
 
 void InputRedundancyFixture::sendInput(std::uint32_t number) {
   const network::PlayerInput message =
-      sender_.add(static_cast<std::uint8_t>(number & ACTION_BITS_MASK));
+      sender_.add(static_cast<std::uint8_t>(number & ACTION_BITS_MASK),
+                  network::NO_SHOWN_TICK);
   if (!loss_.losesNext()) {
     keeper_.keepNewerOf(originOf(0), message);
   }
