@@ -11,7 +11,7 @@ The steps were not run for this page: every line of a journal and of a screen is
 
 ## What a mod is here
 
-A mod is a **resource**: a folder of `resources/`, beside the assets, that holds entity sheets, the sprite sheets their `[appearance]` names, and waves if it wants its enemies sent (see [Writing an entity sheet](/R-Type/entity-sheets/) and [Resources](/R-Type/server/#resources-ensure-lines)). An `ensure` line of `server.cfg` starts it; the assets are never touched. When a player joins, the server announces the fingerprint of its **content pack**, one file that holds the sheets and sprite sheets of the assets and of the resources. A client whose own `assets/` make the same pack plays at once; any other downloads the pack from the supervisor, over HTTP, on the TCP port of the same number as the UDP port, then draws the game with it. A behaviour, the code that steers a Bydo, never travels: a sheet can only name a behaviour the server already has.
+A mod is a **resource**: a folder of `resources/`, beside the assets, that holds entity sheets, the sprite sheets their `[appearance]` names, and waves if it wants its enemies sent (see [Writing an entity sheet](/R-Type/entity-sheets/) and [Resources](/R-Type/server/#resources-ensure-lines)). An `ensure` line of `server.cfg` starts it; the assets are never touched. When a player joins, the server announces the fingerprint of its **content pack**, one file that holds the sheets and sprite sheets of the assets and of the resources. A client whose own `assets/` make the same pack plays at once; any other downloads the pack from the supervisor, over HTTP, on the TCP port of the same number as the UDP port, then draws the game with it. A behaviour, the code that steers a Bydo, never travels: a sheet names a behaviour the server has, built in or registered by a Luau script of a resource, and the scripts run on the server only (see [Scripting in Luau](/R-Type/scripting/)).
 
 | Step | You do | You see |
 |---|---|---|
@@ -35,12 +35,13 @@ cd ~/rtype-mod
 
 ## Step 2: write a resource
 
-The repository ships one, `resources/crimson-drifter/`: a **Crimson Drifter**, a Drifter faster and sturdier, with sprites of its own. It is the model of this step:
+The repository ships one, `resources/crimson-drifter/`: a **Crimson Drifter**, a Drifter that charges the ships level with it, steered by a Luau script, with sprites of its own. It is the model of this step:
 
 ```
 resources/crimson-drifter/
 ├── resource.toml                                  what the resource is
 ├── entities/crimson_drifter.toml                  the sheet of the enemy
+├── server/charge.luau                             the behaviour that steers it, in Luau
 ├── sprites/crimson-drifter/crimson_drifter.png    its two idle frames, 24 × 24 pixels each
 └── waves/waves.toml                               the waves, with the enemy among those of normal
 ```
@@ -48,10 +49,10 @@ resources/crimson-drifter/
 `resource.toml` holds a `description`, one line the host reads, and may hold `depends`, the resources to start before this one:
 
 ```toml
-description = "A crimson Drifter, faster and sturdier, in the waves of normal"
+description = "A crimson Drifter that charges the ships level with it, steered by a Luau script"
 ```
 
-The sheet is a copy of `assets/entities/drifter.toml` whose `top_speed`, `[gameplay.health]` and `[gameplay.score]` changed, and whose `[appearance]` names the sprite sheet of the resource, at the top-left corner of its image:
+The sheet is a copy of `assets/entities/drifter.toml` whose `[gameplay.health]` and `[gameplay.score]` changed, whose `pilot` names `crimson_charge`, the behaviour `server/charge.luau` registers, with its three settings in `[gameplay.behaviour]` (see [Scripting in Luau](/R-Type/scripting/)), and whose `[appearance]` names the sprite sheet of the resource, at the top-left corner of its image:
 
 ```toml
 [appearance]

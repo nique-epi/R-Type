@@ -1,5 +1,5 @@
-# The resource crimson-drifter: a faster, sturdier Drifter with sprites of its
+# The resource crimson-drifter: a Drifter steered by a Luau script, with sprites of its
 # own, and the waves that send it. A server starts it with the line
 # `ensure crimson-drifter` of its server.cfg. The keys are described on the
 # page "Write a resource" of the docs.
-description = "A crimson Drifter, faster and sturdier, in the waves of normal"
+description = "A crimson Drifter that charges the ships level with it, steered by a Luau script"

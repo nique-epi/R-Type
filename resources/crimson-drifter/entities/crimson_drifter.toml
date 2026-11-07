@@ -1,12 +1,13 @@
 # The entity type crimson_drifter, brought by the resource crimson-drifter: a
-# Drifter that crosses the playfield faster, takes more hits and is worth more.
+# Drifter that charges a ship level with it, steered by the script
+# server/charge.luau, takes more hits and is worth more.
 # Only the server reads [gameplay]; a client draws [appearance] from the
 # content pack the supervisor serves. The keys are described on the page
 # "Writing an entity sheet" of the docs.
 
 [gameplay]
 side = "enemy"
-pilot = "straight"
+pilot = "crimson_charge"
 
 [gameplay.hitbox]
 width = 96
@@ -16,8 +17,12 @@ height = 96
 kind = "steady"
 top_speed = 360
 
+# The settings of server/charge.luau: it charges a ship within 96 units of
+# its row at 720 units per second, and cruises at 360 otherwise.
 [gameplay.behaviour]
-heading = -1
+align_range = 96
+cruise_speed = 360
+charge_speed = 720
 
 [gameplay.health]
 points = 5

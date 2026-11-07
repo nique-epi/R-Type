@@ -3,6 +3,7 @@
 #include <optional>
 #include <span>
 #include "BehaviourView.hpp"
+#include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
 #include "EnemyActionStart.hpp"
@@ -60,11 +61,31 @@ bool isWounded(const Health* health) {
   return health != nullptr && health->points < health->full;
 }
 
-/** @brief Moves @p position where @p intent asks the body to jump, if it
- * asks. */
-void jumpAsAsked(Position& position, const Intent& intent) {
-  if (intent.jumpsTo.has_value()) {
-    position = *intent.jumpsTo;
+/** @returns The share of its health points @p health has left, 1 without
+ * one. */
+float healthShareOf(const Health* health) {
+  if (health == nullptr || health->full <= 0) {
+    return 1.0F;
+  }
+  return static_cast<float>(health->points) / static_cast<float>(health->full);
+}
+
+/** @brief Applies to @p body what @p intent asks of its body: a jump to a
+ * position, a collision box, a top speed; each only when asked and when the
+ * body has the component. */
+void reshapeAsAsked(engine::ComponentRegistry& components, engine::Entity body,
+                    const Intent& intent) {
+  auto* const position = components.get<Position>(body);
+  if (intent.jumpsTo.has_value() && position != nullptr) {
+    *position = *intent.jumpsTo;
+  }
+  auto* const box = components.get<CollisionBox>(body);
+  if (intent.resizesTo.has_value() && box != nullptr) {
+    *box = *intent.resizesTo;
+  }
+  auto* const motion = components.get<SteadyMotion>(body);
+  if (intent.topSpeedTo.has_value() && motion != nullptr) {
+    motion->topSpeed = *intent.topSpeedTo;
   }
 }
 
@@ -118,9 +139,10 @@ void PilotSystem::update(engine::ComponentRegistry& components,
             .actionAge =
                 current == nullptr ? engine::Duration::zero() : current->since,
             .nearestShip = nearestOf(ships_, *position),
-            .wounded = isWounded(components.get<Health>(body))});
+            .wounded = isWounded(components.get<Health>(body)),
+            .healthShare = healthShareOf(components.get<Health>(body))});
         passOnActionOf(components, body, intent);
-        jumpAsAsked(*position, intent);
+        reshapeAsAsked(components, body, intent);
       });
 }
 

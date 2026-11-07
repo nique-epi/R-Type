@@ -141,9 +141,13 @@ EntitySheets EntitySheets::fromFolder(const std::filesystem::path& folder) {
 }
 
 EntitySheets EntitySheets::fromTexts(std::span<const SheetText> texts) {
+  return fromTexts(texts, builtInBehaviours());
+}
+
+EntitySheets EntitySheets::fromTexts(std::span<const SheetText> texts,
+                                     BehaviourRegistry behaviours) {
   checkSheetNames(texts);
   std::vector<SheetText> sorted = sortedByName(texts);
-  BehaviourRegistry behaviours = builtInBehaviours();
   std::vector<EntitySheet> sheets = numberedSheets(sorted, behaviours);
   checkProjectiles(sheets);
   numberProjectiles(sheets);

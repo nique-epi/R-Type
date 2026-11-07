@@ -51,7 +51,7 @@ The client opens on a second of black and an intro set to the beats of its theme
 - Git
 - For the web site only: bun 1.3 and Node.js 22.12 or newer
 
-Third-party libraries (SFML, Asio, toml++, SQLiteCpp, GoogleTest) are built by [vcpkg](https://vcpkg.io), pinned as a Git submodule and bootstrapped automatically on the first configure.
+Third-party libraries (SFML, Asio, toml++, SQLiteCpp, Luau, GoogleTest) are built by [vcpkg](https://vcpkg.io), pinned as a Git submodule and bootstrapped automatically on the first configure.
 
 On Linux, SFML and vcpkg need a few system packages. On Ubuntu:
 
