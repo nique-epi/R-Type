@@ -18,6 +18,7 @@ enum class SettingId : std::uint8_t {
   AutoFire,
   ClientPrediction,
   PilotNames,
+  Master,
 };
 
 }  // namespace rtype::client

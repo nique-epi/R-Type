@@ -7,6 +7,7 @@
 #include "KeyPress.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "MotionPreference.hpp"
+#include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -23,12 +24,14 @@
 #include "TitleScreenTestConstants.hpp"
 
 using rtype::client::CLICK_SOUND_ID;
+using rtype::client::CONNECTION_TO_CHOSEN_SERVER_SCREEN;
 using rtype::client::ENTITY_SHEET_ID;
 using rtype::client::LEADERBOARD_SCREEN;
 using rtype::client::LOGO_ID;
 using rtype::client::MotionPreference;
 using rtype::client::OPTIONS_SCREEN;
 using rtype::client::PlayerSettings;
+using rtype::client::PlayStart;
 using rtype::client::QUIT_CONFIRMATION_SCREEN;
 using rtype::client::SERVER_MAP_SCREEN;
 using rtype::client::SquadronStart;
@@ -91,6 +94,22 @@ TEST_F(TitleScreenFixture, PlayOpensTheServerMap) {
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
                                         .screen = SERVER_MAP_SCREEN}));
+}
+
+/**
+ * Given the title of a client launched with -h, PLAY selected
+ * When Enter is pressed and released, and the press lasts
+ * Then the connection to the server given at launch is asked for, not the map
+ */
+TEST_F(TitleScreenFixture, PlayJoinsTheServerGivenAtLaunch) {
+  reopenWith(PlayStart::GivenServer);
+
+  choose(sf::Keyboard::Key::Enter);
+
+  EXPECT_THAT(
+      navigator().calls(),
+      ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                .screen = CONNECTION_TO_CHOSEN_SERVER_SCREEN}));
 }
 
 /**

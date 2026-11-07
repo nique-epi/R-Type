@@ -29,6 +29,9 @@ class ConnectionLostInTheStackFixture : public ::testing::Test {
   /** @brief Gives an event to the screen on top. */
   void sendAnEvent();
 
+  /** @brief Removes the screen on top, as its BACK does. */
+  void closeTheTopScreen();
+
   /** @returns What happened to the recording screens since the answer. */
   [[nodiscard]] const std::vector<JournalEntry>& journal() const;
 

@@ -1,6 +1,7 @@
 add_library(rtype_client_server_list STATIC
   GameCatalog.cpp
   MasterLink.cpp
+  MasterUrl.cpp
   ServerCatalog.cpp
   ServerPingProbe.cpp
 )

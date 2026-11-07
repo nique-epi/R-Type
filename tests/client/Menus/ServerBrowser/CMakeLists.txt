@@ -3,6 +3,7 @@ target_sources(client_screen_tests PRIVATE
   ServerMapScreenFixture.cpp
   ServerMapScreenFixtures.cpp
   ServerMapScreenTest.cpp
+  ${RTYPE_TEST_SOURCE_DIR}/doubles/FixedMasterAddress.cpp
   ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingGameCatalog.cpp
   ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingServerCatalog.cpp
 )

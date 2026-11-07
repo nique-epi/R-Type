@@ -54,11 +54,13 @@ constexpr std::string_view CLIENT_CONFIGURATION_FILE_NAME = "client.cfg";
 constexpr std::string_view NICKNAME_SETTING_NAME = "nickname";
 constexpr std::string_view SERVER_ADDRESS_SETTING_NAME = "server-address";
 constexpr std::string_view SERVER_PORT_SETTING_NAME = "server-port";
+/** @brief The master the server map reads, `http://<host>[:<port>]`. */
+constexpr std::string_view MASTER_URL_SETTING_NAME = "master-url";
 
 /** @brief Every setting of the client, in the order its usage lists them. */
-constexpr std::array CLIENT_SETTING_NAMES{NICKNAME_SETTING_NAME,
-                                          SERVER_ADDRESS_SETTING_NAME,
-                                          SERVER_PORT_SETTING_NAME};
+constexpr std::array CLIENT_SETTING_NAMES{
+    NICKNAME_SETTING_NAME, SERVER_ADDRESS_SETTING_NAME,
+    SERVER_PORT_SETTING_NAME, MASTER_URL_SETTING_NAME};
 
 /**
  * @brief Launch option that starts the client without sound.

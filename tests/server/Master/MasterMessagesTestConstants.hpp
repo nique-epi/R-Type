@@ -10,6 +10,8 @@ constexpr std::string_view LINKED_SERVER_NAME = "Paris 1";
 constexpr std::uint16_t LINKED_SERVER_PORT = 4242;
 constexpr std::uint16_t LINKED_SERVER_GAMES = 8;
 constexpr std::uint64_t LINKED_SERVER_PROBE_SECRET = 0x0FED'CBA9'8765'4321;
+/** @brief The address the server declares with public-address. */
+constexpr std::string_view LINKED_SERVER_PUBLIC_ADDRESS = "203.0.113.20";
 
 /** @brief The bounds of a probe secret the master accepts: 1 to 2^63 - 1,
  * what a column INTEGER of SQLite holds. */

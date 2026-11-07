@@ -14,6 +14,9 @@ constexpr std::string_view UNREGISTERED_DETAIL_TEXT =
 /** @brief A url of the master over TLS, which the client does not speak. */
 constexpr std::string_view HTTPS_MASTER_URL = "https://master.example.org";
 
+/** @brief A url of the master whose port is past 65535. */
+constexpr std::string_view PORT_TOO_HIGH_MASTER_URL = "http://127.0.0.1:99999";
+
 /** @brief An id no server of the tests has. */
 constexpr std::int64_t UNKNOWN_ID = 999;
 
