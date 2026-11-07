@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -165,11 +166,14 @@ struct NamedNumber {
   const Setting<int>* setting = nullptr;
 };
 
-/** @brief Every integer setting the file holds. */
-constexpr std::array NAMED_NUMBERS{
+/** @brief The integer settings of the file: the volumes, written first, and
+ * those of the chat, written last. */
+constexpr std::array VOLUME_NUMBERS{
     NamedNumber{.name = MUSIC_VOLUME_NAME, .setting = &MUSIC_VOLUME_SETTING},
     NamedNumber{.name = EFFECTS_VOLUME_NAME,
                 .setting = &EFFECTS_VOLUME_SETTING},
+};
+constexpr std::array CHAT_NUMBERS{
     NamedNumber{.name = CHAT_LETTERS_NAME, .setting = &CHAT_LETTERS_SETTING},
     NamedNumber{.name = CHAT_CLOSED_LINES_NAME,
                 .setting = &CHAT_CLOSED_LINES_SETTING},
@@ -184,10 +188,14 @@ constexpr std::array NAMED_NUMBERS{
  * another kind of setting. */
 std::optional<LineOutcome> applyNumber(PlayerSettings& settings,
                                        SettingLine setting) {
-  for (const NamedNumber& number : NAMED_NUMBERS) {
-    if (setting.name == number.name) {
-      return assign(integerIn(setting.value, number.setting->range),
-                    settings.*number.setting->member);
+  for (const std::span<const NamedNumber> numbers :
+       {std::span<const NamedNumber>(VOLUME_NUMBERS),
+        std::span<const NamedNumber>(CHAT_NUMBERS)}) {
+    for (const NamedNumber& number : numbers) {
+      if (setting.name == number.name) {
+        return assign(integerIn(setting.value, number.setting->range),
+                      settings.*number.setting->member);
+      }
     }
   }
   return std::nullopt;
@@ -287,13 +295,10 @@ std::string ignoredLine(std::size_t number, LineOutcome outcome) {
 /** @brief Writes the lines of the settings of the chat. */
 void writeChat(std::string& text, const PlayerSettings& settings) {
   writeLine(text, CHAT_SHOWN_NAME, switchValue(settings.chatShown));
-  writeLine(text, CHAT_LETTERS_NAME, std::to_string(settings.chatLetters));
-  writeLine(text, CHAT_CLOSED_LINES_NAME,
-            std::to_string(settings.chatClosedLines));
-  writeLine(text, CHAT_OPEN_LINES_NAME, std::to_string(settings.chatOpenLines));
-  writeLine(text, CHAT_SECONDS_NAME, std::to_string(settings.chatSeconds));
-  writeLine(text, CHAT_BACKGROUND_NAME,
-            std::to_string(settings.chatBackground));
+  for (const NamedNumber& number : CHAT_NUMBERS) {
+    writeLine(text, number.name,
+              std::to_string(settings.*number.setting->member));
+  }
 }
 
 }  // namespace

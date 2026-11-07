@@ -11,6 +11,7 @@ target_link_libraries(rtype_client_chat_window
     rtype_client_text_field
     rtype_client_widgets
   PRIVATE
+    rtype_client_easing
     rtype_client_input_keys
     rtype_client_pilot_color
     rtype_client_pilot_name

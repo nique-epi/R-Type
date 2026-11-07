@@ -46,6 +46,7 @@
 #include "PredictedShipPlacement.hpp"
 #include "ShipFlightSystem.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
+#include "GameNoticeConstants.hpp"
 #include "GameScreenIdConstants.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PlayerSettings.hpp"
@@ -53,7 +54,6 @@
 #include "ScreenId.hpp"
 #include "SpriteEffectSystem.hpp"
 #include "StatusBand.hpp"
-#include "StatusBandConstants.hpp"
 #include "TimeConstants.hpp"
 #include "WorldState.hpp"
 

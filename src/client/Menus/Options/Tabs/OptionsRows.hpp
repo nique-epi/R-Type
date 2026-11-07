@@ -36,9 +36,9 @@ template <std::size_t Count>
 [[nodiscard]] std::unique_ptr<RowControl> settingSwitch(
     SettingsService& service, const Setting<bool>& setting);
 
-/** @returns The slider of an integer setting of the chat, read as @p look
- * says and dimmed while the chat is hidden; it reads and changes @p setting
- * through @p service. */
+/** @returns The slider of an integer setting of the chat, over the range of
+ * @p setting by the step of @p look, dimmed while the chat is hidden; it reads
+ * and changes @p setting through @p service. */
 [[nodiscard]] std::unique_ptr<RowControl> chatSlider(
     SettingsService& service, const Setting<int>& setting,
     const SliderLook& look);

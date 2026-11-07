@@ -83,7 +83,7 @@ Menu soundTab(const OptionsTabsParts& parts) {
 Menu controlsTab(const OptionsTabsParts& parts, OptionsRowHandles& handles) {
   SettingsService& service = parts.service.get();
   MenuBuilder builder = tabbedPanel(parts, CONTROLS_TAB);
-  for (std::size_t row = 0; row < CONTROLS_KEY_ROWS; ++row) {
+  for (std::size_t row = 0; row < OPEN_CHAT_ACTION; ++row) {
     std::unique_ptr<KeySlot> slot =
         keySlot(service, parts.keyName, BOUND_ACTIONS[row]);
     handles.keySlots[row] = slot.get();
@@ -148,11 +148,10 @@ Menu chatTab(const OptionsTabsParts& parts, OptionsRowHandles& handles) {
            chatSlider(service, CHAT_LETTERS_SETTING, CHAT_LETTERS_LOOK))
       .row({.label = CHAT_CLOSED_LINES_LABEL,
             .description = CHAT_CLOSED_LINES_DESCRIPTION},
-           chatSlider(service, CHAT_CLOSED_LINES_SETTING,
-                      CHAT_CLOSED_LINES_LOOK))
+           chatSlider(service, CHAT_CLOSED_LINES_SETTING, CHAT_LINES_LOOK))
       .row({.label = CHAT_OPEN_LINES_LABEL,
             .description = CHAT_OPEN_LINES_DESCRIPTION},
-           chatSlider(service, CHAT_OPEN_LINES_SETTING, CHAT_OPEN_LINES_LOOK))
+           chatSlider(service, CHAT_OPEN_LINES_SETTING, CHAT_LINES_LOOK))
       .row({.label = CHAT_SECONDS_LABEL,
             .description = CHAT_SECONDS_DESCRIPTION},
            chatSlider(service, CHAT_SECONDS_SETTING, CHAT_SECONDS_LOOK))

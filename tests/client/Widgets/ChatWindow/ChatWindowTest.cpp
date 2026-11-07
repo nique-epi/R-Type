@@ -4,10 +4,10 @@
 #include <string>
 #include <string_view>
 #include "BoundAction.hpp"
+#include "ChatChannelConstants.hpp"
 #include "ChatEntry.hpp"
 #include "ChatWindowFixture.hpp"
 #include "ChatWindowTestConstants.hpp"
-#include "ConnectionConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "KeyPress.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -36,9 +36,7 @@ using rtype::client::testing::MORE_AFTER_SCROLL;
 using rtype::client::testing::MORE_BEFORE_SCROLL;
 using rtype::client::testing::NARROW_LETTERS;
 using rtype::client::testing::NEWEST_SHOWN_FIRST;
-using rtype::client::testing::NOVA;
 using rtype::client::testing::NOVA_HEAD;
-using rtype::client::testing::NOVA_NUMBER;
 using rtype::client::testing::NUMBERED_LINES;
 using rtype::client::testing::OLDEST_OF_FOUR;
 using rtype::client::testing::OLDEST_SHOWN_OF_FOUR;
@@ -194,10 +192,7 @@ TEST_F(ChatWindowFixture, ClosedItShowsTheNewestLinesOutlined) {
  * Then the line is gone, and the chat paints nothing
  */
 TEST_F(ChatWindowFixture, ALineOlderThanItsTimeIsGone) {
-  channel().receive(ChatEntry{.playerNumber = NOVA_NUMBER,
-                              .nickname = std::string{NOVA},
-                              .text = std::string{SHORT_LINE},
-                              .age = GONE});
+  receiveNovaLine(SHORT_LINE, GONE);
 
   EXPECT_EQ(writingOf(painted(), SHORT_LINE), nullptr);
   EXPECT_FALSE(chat().isShown());
@@ -209,10 +204,7 @@ TEST_F(ChatWindowFixture, ALineOlderThanItsTimeIsGone) {
  * Then its letters are written at half their alpha
  */
 TEST_F(ChatWindowFixture, ALineFadesOverItsLastSecond) {
-  channel().receive(ChatEntry{.playerNumber = NOVA_NUMBER,
-                              .nickname = std::string{NOVA},
-                              .text = std::string{SHORT_LINE},
-                              .age = HALF_FADED});
+  receiveNovaLine(SHORT_LINE, HALF_FADED);
 
   const RecordedWriting* writing = writingOf(painted(), SHORT_LINE);
 
@@ -243,10 +235,7 @@ TEST_F(ChatWindowFixture, OpenTheLayerHasTheOpacityOfTheSetting) {
  */
 TEST_F(ChatWindowFixture, ALongLineWrapsAtTheLetterCount) {
   settings().chatLetters = NARROW_LETTERS;
-  channel().receive(ChatEntry{.playerNumber = NOVA_NUMBER,
-                              .nickname = std::string{NOVA},
-                              .text = std::string{LONG_LINE},
-                              .age = {}});
+  receiveNovaLine(LONG_LINE, {});
 
   const InterfaceCanvasRecord& record = painted();
 

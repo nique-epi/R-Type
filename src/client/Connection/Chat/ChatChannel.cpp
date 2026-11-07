@@ -5,9 +5,9 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include "ChatChannelConstants.hpp"
 #include "ChatEntry.hpp"
 #include "ChatLine.hpp"
-#include "ConnectionConstants.hpp"
 #include "ISessionOutbox.hpp"
 #include "IWaitingRoom.hpp"
 #include "LobbyState.hpp"
@@ -18,6 +18,18 @@
 #include "WireTypes.hpp"
 
 namespace rtype::client {
+
+namespace {
+
+/** @returns A line the client writes itself, saying @p text. */
+ChatEntry clientLine(std::string_view text) {
+  return ChatEntry{.playerNumber = CLIENT_WRITER,
+                   .nickname = {},
+                   .text = std::string{text},
+                   .age = {}};
+}
+
+}  // namespace
 
 ChatChannel::ChatChannel(network::MessageDispatcher& dispatcher,
                          const IWaitingRoom& room)
@@ -32,10 +44,7 @@ bool ChatChannel::send(std::string_view text) {
     return false;
   }
   if (waiting_.size() >= CHAT_LINES_WAITING) {
-    keep(ChatEntry{.playerNumber = CLIENT_WRITER,
-                   .nickname = {},
-                   .text = std::string{CHAT_QUEUE_FULL_TEXT},
-                   .age = {}});
+    keep(clientLine(CHAT_QUEUE_FULL_TEXT));
     return false;
   }
   waiting_.emplace_back(text);
@@ -106,10 +115,7 @@ void ChatChannel::followLineInFlight(engine::Duration elapsed) {
   sinceFirstSent_ += elapsed;
   if (sinceFirstSent_ >= CHAT_GIVE_UP_TIME) {
     inFlight_.reset();
-    keep(ChatEntry{.playerNumber = CLIENT_WRITER,
-                   .nickname = {},
-                   .text = std::string{UNANSWERED_CHAT_TEXT},
-                   .age = {}});
+    keep(clientLine(UNANSWERED_CHAT_TEXT));
     sendNextLine();
   } else if (sinceSent_ >= CHAT_LINE_INTERVAL) {
     sendMessage(*outbox_, *inFlight_);

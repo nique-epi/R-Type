@@ -2,13 +2,12 @@
 #include <gtest/gtest.h>
 #include <cstdint>
 #include <string>
+#include "ChatChannelConstants.hpp"
 #include "ChatChannelFixture.hpp"
 #include "ChatChannelTestConstants.hpp"
 #include "ChatEntry.hpp"
 #include "ChatLine.hpp"
-#include "ConnectionConstants.hpp"
 #include "LobbyState.hpp"
-#include "PlayerChatLine.hpp"
 #include "ServerSessionTestConstants.hpp"
 
 namespace rtype::client {
@@ -91,9 +90,7 @@ TEST_F(ChatChannelFixture, TheLineRelayedBackEndsItsCopies) {
   connectAndGetAccepted();
   ASSERT_TRUE(chat().send(FIRST_TEXT));
 
-  relay(network::PlayerChatLine{
-      .line = {.lineNumber = FIRST_LINE, .text = std::string{FIRST_TEXT}},
-      .playerNumber = ACCEPTED_PLAYER_NUMBER});
+  relayLine(FIRST_LINE, FIRST_TEXT, ACCEPTED_PLAYER_NUMBER);
   update(CHAT_INTERVAL);
 
   EXPECT_EQ(sentLines().size(), 1U);
@@ -112,9 +109,7 @@ TEST_F(ChatChannelFixture, ASecondLineWaitsForTheFirst) {
   ASSERT_TRUE(chat().send(SECOND_TEXT));
   EXPECT_EQ(sentLines().size(), 1U);
 
-  relay(network::PlayerChatLine{
-      .line = {.lineNumber = FIRST_LINE, .text = std::string{FIRST_TEXT}},
-      .playerNumber = ACCEPTED_PLAYER_NUMBER});
+  relayLine(FIRST_LINE, FIRST_TEXT, ACCEPTED_PLAYER_NUMBER);
 
   ASSERT_EQ(sentLines().size(), 2U);
   EXPECT_EQ(sentLines().back(),
@@ -168,9 +163,7 @@ TEST_F(ChatChannelFixture, ARelayedLineIsNamedByTheWaitingRoom) {
                                                .ready = false,
                                                .nickname = std::string{NOVA}}});
 
-  relay(network::PlayerChatLine{
-      .line = {.lineNumber = NOVA_LINE, .text = std::string{SECOND_TEXT}},
-      .playerNumber = NOVA_NUMBER});
+  relayLine(NOVA_LINE, SECOND_TEXT, NOVA_NUMBER);
 
   EXPECT_THAT(chat().entries(),
               ElementsAre(ChatEntry{.playerNumber = NOVA_NUMBER,
@@ -187,10 +180,8 @@ TEST_F(ChatChannelFixture, ARelayedLineIsNamedByTheWaitingRoom) {
 TEST_F(ChatChannelFixture, TheChatKeepsThirtyTwoLines) {
   connectAndGetAccepted();
   for (int line = 1; line <= LINES_PAST_THE_LIMIT; ++line) {
-    relay(network::PlayerChatLine{
-        .line = {.lineNumber = static_cast<std::uint16_t>(line),
-                 .text = "line " + std::to_string(line)},
-        .playerNumber = NOVA_NUMBER});
+    relayLine(static_cast<std::uint16_t>(line), "line " + std::to_string(line),
+              NOVA_NUMBER);
   }
 
   ASSERT_EQ(chat().entries().size(), LINES_KEPT);
@@ -204,9 +195,7 @@ TEST_F(ChatChannelFixture, TheChatKeepsThirtyTwoLines) {
  */
 TEST_F(ChatChannelFixture, LinesAgeWithTheSession) {
   connectAndGetAccepted();
-  relay(network::PlayerChatLine{
-      .line = {.lineNumber = NOVA_LINE, .text = std::string{SECOND_TEXT}},
-      .playerNumber = NOVA_NUMBER});
+  relayLine(NOVA_LINE, SECOND_TEXT, NOVA_NUMBER);
 
   update(CHAT_INTERVAL);
 
@@ -221,9 +210,7 @@ TEST_F(ChatChannelFixture, LinesAgeWithTheSession) {
  */
 TEST_F(ChatChannelFixture, TheEndOfTheSessionForgetsTheChat) {
   connectAndGetAccepted();
-  relay(network::PlayerChatLine{
-      .line = {.lineNumber = NOVA_LINE, .text = std::string{SECOND_TEXT}},
-      .playerNumber = NOVA_NUMBER});
+  relayLine(NOVA_LINE, SECOND_TEXT, NOVA_NUMBER);
 
   chat().sessionClosed();
 

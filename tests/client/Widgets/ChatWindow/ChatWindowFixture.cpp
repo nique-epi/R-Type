@@ -10,6 +10,7 @@
 #include "PlayerSettings.hpp"
 #include "RecordingChatChannel.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "TimeConstants.hpp"
 
 using rtype::client::ChatEntry;
 using rtype::client::ChatWindow;
@@ -41,13 +42,17 @@ void ChatWindowFixture::openChat() {
   chat_.handleEvent(keyRelease(sf::Keyboard::Key::T, CHAT_KEY));
 }
 
+void ChatWindowFixture::receiveNovaLine(std::string_view text,
+                                        rtype::engine::Duration age) {
+  channel_.receive(ChatEntry{.playerNumber = NOVA_NUMBER,
+                             .nickname = std::string{NOVA},
+                             .text = std::string{text},
+                             .age = age});
+}
+
 void ChatWindowFixture::receiveNumberedLines(int count) {
   for (int line = 1; line <= count; ++line) {
-    channel_.receive(
-        ChatEntry{.playerNumber = NOVA_NUMBER,
-                  .nickname = std::string{NOVA},
-                  .text = std::string{LINE_PREFIX} + std::to_string(line),
-                  .age = {}});
+    receiveNovaLine(std::string{LINE_PREFIX} + std::to_string(line), {});
   }
 }
 

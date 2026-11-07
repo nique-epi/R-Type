@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <cstdint>
+#include <string_view>
 #include <vector>
 #include "ChatChannel.hpp"
 #include "ChatLine.hpp"
@@ -9,7 +10,6 @@
 #include "ContentPackCache.hpp"
 #include "GameLoadedReminder.hpp"
 #include "MessageDispatcher.hpp"
-#include "PlayerChatLine.hpp"
 #include "RecordingDatagramLink.hpp"
 #include "RecordingWaitingRoom.hpp"
 #include "ServerSession.hpp"
@@ -32,9 +32,10 @@ class ChatChannelFixture : public ::testing::Test {
   /** @brief Runs one frame of the network stage. */
   void update(engine::Duration elapsed = engine::Duration::zero());
 
-  /** @brief The server relays @p relayed, in a datagram of the next sequence,
-   * then a frame goes by. */
-  void relay(const network::PlayerChatLine& relayed);
+  /** @brief The server relays line @p lineNumber of @p playerNumber, saying
+   * @p text, in a datagram of the next sequence, then a frame goes by. */
+  void relayLine(std::uint16_t lineNumber, std::string_view text,
+                 std::uint8_t playerNumber);
 
   [[nodiscard]] ChatChannel& chat();
   [[nodiscard]] RecordingWaitingRoom& room();

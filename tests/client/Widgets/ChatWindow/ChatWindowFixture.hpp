@@ -7,6 +7,7 @@
 #include "PlayerSettings.hpp"
 #include "RecordingChatChannel.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "TimeConstants.hpp"
 
 /** @brief A chat over a recording channel, with the settings of a first
  * launch, painted on a recording canvas. */
@@ -22,6 +23,9 @@ class ChatWindowFixture : public ::testing::Test {
   /** @brief Opens the chat with its key, as the keyboard does: the press, the
    * letter it types, the release. */
   void openChat();
+
+  /** @brief Receives a line of NOVA saying @p text, @p age old. */
+  void receiveNovaLine(std::string_view text, rtype::engine::Duration age);
 
   /** @brief Receives @p count lines of NOVA, "line 1" to "line <count>". */
   void receiveNumberedLines(int count);

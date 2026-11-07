@@ -29,11 +29,6 @@ constexpr sf::IntRect STATUS_BAND_AREA(
     {0, INTERFACE_AREA.size.y - STATUS_BAND_ROWS},
     {INTERFACE_AREA.size.x, STATUS_BAND_ROWS});
 
-/** @brief The row the lines of the chat end on during a game: CHAT_BAND_GAP
- * above the status band. */
-constexpr int CHAT_BAND_GAP = 4;
-constexpr int GAME_CHAT_BOTTOM = STATUS_BAND_AREA.position.y - CHAT_BAND_GAP;
-
 /**
  * @brief The bays of the band, one per player color, left to right from
  * player 1: STATUS_BAY_WIDTH wide and STATUS_BAY_GAP apart, the first

@@ -10,10 +10,11 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "ChatChannelConstants.hpp"
 #include "ChatEntry.hpp"
 #include "ChatView.hpp"
 #include "ChatWindowConstants.hpp"
-#include "ConnectionConstants.hpp"
+#include "Easing.hpp"
 #include "FieldText.hpp"
 #include "FieldTextPainting.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -89,25 +90,33 @@ sf::Color nameColorOf(const ChatEntry& entry, const PlayerPalette& palette) {
                              : CHAT_NOTICE_COLOR;
 }
 
-/** @returns The lines of @p entry on screen, its name split off the first. */
-std::vector<ChatRow> rowsOf(const ChatEntry& entry, const ChatView& view) {
+/** @returns The whole line of @p entry: its head, then its text. */
+std::string lineOf(const ChatEntry& entry) {
+  return headOf(entry) + entry.text;
+}
+
+/** @brief Adds the lines of @p entry on screen to @p rows, its name split off
+ * the first. */
+void addRowsOf(const ChatEntry& entry, const ChatView& view,
+               std::vector<ChatRow>& rows) {
   const std::string head = headOf(entry);
   const std::string line = head + entry.text;
+  const sf::Color name = nameColorOf(entry, view.palette);
   const sf::Color body =
       entry.playerNumber == CLIENT_WRITER ? CHAT_NOTICE_COLOR : CHAT_TEXT_COLOR;
-  std::vector<ChatRow> rows;
+  const std::size_t first = rows.size();
   for (const std::string_view piece : wrapped(
            line, static_cast<std::size_t>(view.settings.get().chatLetters))) {
     rows.push_back(ChatRow{.head = {},
                            .body = std::string{piece},
-                           .headColor = nameColorOf(entry, view.palette),
+                           .headColor = name,
                            .bodyColor = body,
                            .age = entry.age});
   }
-  const std::size_t named = std::min(head.size(), rows.front().body.size());
-  rows.front().head = rows.front().body.substr(0, named);
-  rows.front().body.erase(0, named);
-  return rows;
+  ChatRow& named = rows[first];
+  const std::size_t headShown = std::min(head.size(), named.body.size());
+  named.head = named.body.substr(0, headShown);
+  named.body.erase(0, headShown);
 }
 
 /** @returns The lines of every entry the view shows: all of them while the
@@ -116,8 +125,7 @@ std::vector<ChatRow> rowsOf(const ChatView& view) {
   std::vector<ChatRow> rows;
   for (const ChatEntry& entry : view.entries) {
     if (view.draft.has_value() || isShownClosed(entry, view.settings)) {
-      std::vector<ChatRow> lines = rowsOf(entry, view);
-      rows.insert(rows.end(), lines.begin(), lines.end());
+      addRowsOf(entry, view, rows);
     }
   }
   return rows;
@@ -133,16 +141,11 @@ int rowTop(int bottom, int fromBottom) {
 /** @returns The alpha of a line @p age old: opaque, then fading to nothing
  * over the last CHAT_FADE_TIME of chatSeconds. */
 std::uint8_t alphaOf(engine::Duration age, const PlayerSettings& settings) {
-  const engine::Duration left =
-      std::chrono::seconds(settings.chatSeconds) - age;
-  if (left >= CHAT_FADE_TIME) {
-    return OPAQUE_ALPHA;
-  }
-  if (left <= engine::Duration::zero()) {
-    return 0;
-  }
-  return static_cast<std::uint8_t>(OPAQUE_ALPHA * left.count() /
-                                   CHAT_FADE_TIME.count());
+  const float faded = progressBetween(
+      age, std::chrono::seconds(settings.chatSeconds) - CHAT_FADE_TIME,
+      CHAT_FADE_TIME);
+  return static_cast<std::uint8_t>(static_cast<float>(OPAQUE_ALPHA) *
+                                   (1.0F - faded));
 }
 
 /** @returns @p color at @p alpha. */
@@ -237,8 +240,8 @@ void paintLabel(IInterfaceCanvas& canvas, sf::IntRect field, int top) {
   }
 }
 
-void paintOpen(IInterfaceCanvas& canvas, const ChatView& view,
-               std::string_view draft) {
+void paintOpen(IInterfaceCanvas& canvas, const ChatView& view) {
+  const std::string_view draft = view.draft.value_or(std::string_view{});
   canvas.fill(INTERFACE_AREA,
               withAlpha(DIM_LAYER_COLOR,
                         static_cast<std::uint8_t>(
@@ -265,7 +268,7 @@ void paintChat(IInterfaceCanvas& canvas, const ChatView& view) {
     return;
   }
   if (view.draft.has_value()) {
-    paintOpen(canvas, view, *view.draft);
+    paintOpen(canvas, view);
     return;
   }
   paintClosed(canvas, view);
@@ -274,9 +277,7 @@ void paintChat(IInterfaceCanvas& canvas, const ChatView& view) {
 int chatLineCount(std::span<const ChatEntry> entries, int letters) {
   std::size_t lines = 0;
   for (const ChatEntry& entry : entries) {
-    lines +=
-        wrapped(headOf(entry) + entry.text, static_cast<std::size_t>(letters))
-            .size();
+    lines += wrapped(lineOf(entry), static_cast<std::size_t>(letters)).size();
   }
   return static_cast<int>(lines);
 }

@@ -18,6 +18,8 @@
 #include "RowControl.hpp"
 #include "Setting.hpp"
 #include "SettingDefinitionConstants.hpp"
+#include "SettingRange.hpp"
+#include "SettingsConstants.hpp"
 #include "SettingsService.hpp"
 #include "Slider.hpp"
 #include "SliderLook.hpp"
@@ -51,39 +53,42 @@ std::optional<std::string> imposedSizeText(const WindowLayout& layout) {
   return windowSizeText(*imposed);
 }
 
+/** @returns What reads @p setting through @p service and changes it
+ * there. */
+template <typename Value>
+ValueBinding<Value> bindingOf(SettingsService& service,
+                              const Setting<Value>& setting) {
+  return ValueBinding<Value>{
+      .read = [&service,
+               &setting] { return service.settings().*setting.member; },
+      .write = [&service,
+                &setting](Value value) { service.apply(setting, value); }};
+}
+
 }  // namespace
 
 std::unique_ptr<RowControl> volumeSlider(SettingsService& service,
                                          const Setting<int>& volume) {
   return std::make_unique<Slider>(
-      VOLUME_RANGE,
-      ValueBinding<int>{
-          .read = [&service,
-                   &volume] { return service.settings().*volume.member; },
-          .write = [&service,
-                    &volume](int value) { service.apply(volume, value); }},
+      VOLUME_RANGE, bindingOf(service, volume),
       [&service] { return service.settings().muted; }, PERCENT_UNIT);
 }
 
 std::unique_ptr<RowControl> settingSwitch(SettingsService& service,
                                           const Setting<bool>& setting) {
-  return std::make_unique<Switch>(ValueBinding<bool>{
-      .read = [&service,
-               &setting] { return service.settings().*setting.member; },
-      .write = [&service, &setting](
-                   bool switchedOn) { service.apply(setting, switchedOn); }});
+  return std::make_unique<Switch>(bindingOf(service, setting));
 }
 
 std::unique_ptr<RowControl> chatSlider(SettingsService& service,
                                        const Setting<int>& setting,
                                        const SliderLook& look) {
+  const SettingRange range = setting.range.value_or(SettingRange{});
   return std::make_unique<Slider>(
-      look.range,
-      ValueBinding<int>{
-          .read = [&service,
-                   &setting] { return service.settings().*setting.member; },
-          .write = [&service,
-                    &setting](int value) { service.apply(setting, value); }},
+      Slider::Range{.minimum = range.minimum,
+                    .maximum = range.maximum,
+                    .step = look.step,
+                    .pageSteps = CHAT_PAGE_STEPS},
+      bindingOf(service, setting),
       [&service] { return !service.settings().chatShown; }, look.unit);
 }
 

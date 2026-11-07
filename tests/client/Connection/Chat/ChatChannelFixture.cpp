@@ -1,4 +1,7 @@
 #include "ChatChannelFixture.hpp"
+#include <cstdint>
+#include <string>
+#include <string_view>
 #include <vector>
 #include "ChatChannel.hpp"
 #include "ChatLine.hpp"
@@ -33,14 +36,17 @@ void ChatChannelFixture::update(engine::Duration elapsed) {
   session_.update(elapsed);
 }
 
-void ChatChannelFixture::relay(const network::PlayerChatLine& relayed) {
-  network::PacketHeader header;
-  header.sessionToken = SESSION_TOKEN;
-  header.sequence = nextSequence_;
+void ChatChannelFixture::relayLine(std::uint16_t lineNumber,
+                                   std::string_view text,
+                                   std::uint8_t playerNumber) {
+  const network::PlayerChatLine relayed{
+      .line = {.lineNumber = lineNumber, .text = std::string{text}},
+      .playerNumber = playerNumber};
+  link_.deliver(
+      network::IncomingDatagram{.sender = server(),
+                                .payload = network::DatagramCodec::encode(
+                                    sessionHeader(nextSequence_), relayed)});
   ++nextSequence_;
-  link_.deliver(network::IncomingDatagram{
-      .sender = server(),
-      .payload = network::DatagramCodec::encode(header, relayed)});
   update();
 }
 

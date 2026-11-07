@@ -7,9 +7,9 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "ChatChannelConstants.hpp"
 #include "ChatEntry.hpp"
 #include "ChatLine.hpp"
-#include "ConnectionConstants.hpp"
 #include "IChatChannel.hpp"
 #include "ISessionObserver.hpp"
 #include "ISessionOutbox.hpp"

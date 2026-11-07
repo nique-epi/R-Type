@@ -40,8 +40,7 @@ constexpr std::size_t CHAT_KEY_ROW = 1;
  * CHAT, which CHAT lists: CONTROLS already holds the eight rows of a panel. */
 constexpr std::size_t OPEN_CHAT_ACTION =
     static_cast<std::size_t>(BoundAction::OpenChat);
-constexpr std::size_t CONTROLS_KEY_ROWS = BOUND_ACTION_COUNT - 1;
-static_assert(OPEN_CHAT_ACTION == CONTROLS_KEY_ROWS,
+static_assert(OPEN_CHAT_ACTION == BOUND_ACTION_COUNT - 1,
               "OPEN CHAT is the last bound action");
 
 /** @brief How a description starts. */
@@ -139,38 +138,12 @@ constexpr const char* CHAT_SECONDS_DESCRIPTION =
 constexpr const char* CHAT_BACKGROUND_LABEL = "BACKGROUND";
 constexpr const char* CHAT_BACKGROUND_DESCRIPTION =
     "> DARKENS THE GAME WHILE YOU TYPE";
-constexpr const char* NO_UNIT = "";
 constexpr const char* SECONDS_UNIT = "S";
-constexpr SliderLook CHAT_LETTERS_LOOK{
-    .range = {.minimum = MINIMUM_CHAT_LETTERS,
-              .maximum = MAXIMUM_CHAT_LETTERS,
-              .step = CHAT_LETTERS_STEP,
-              .pageSteps = CHAT_PAGE_STEPS},
-    .unit = NO_UNIT};
-constexpr SliderLook CHAT_CLOSED_LINES_LOOK{
-    .range = {.minimum = MINIMUM_CHAT_CLOSED_LINES,
-              .maximum = MAXIMUM_CHAT_CLOSED_LINES,
-              .step = CHAT_SETTING_STEP,
-              .pageSteps = CHAT_PAGE_STEPS},
-    .unit = NO_UNIT};
-constexpr SliderLook CHAT_OPEN_LINES_LOOK{
-    .range = {.minimum = MINIMUM_CHAT_OPEN_LINES,
-              .maximum = MAXIMUM_CHAT_OPEN_LINES,
-              .step = CHAT_SETTING_STEP,
-              .pageSteps = CHAT_PAGE_STEPS},
-    .unit = NO_UNIT};
-constexpr SliderLook CHAT_SECONDS_LOOK{
-    .range = {.minimum = MINIMUM_CHAT_SECONDS,
-              .maximum = MAXIMUM_CHAT_SECONDS,
-              .step = CHAT_SETTING_STEP,
-              .pageSteps = CHAT_PAGE_STEPS},
-    .unit = SECONDS_UNIT};
-constexpr SliderLook CHAT_BACKGROUND_LOOK{
-    .range = {.minimum = MINIMUM_CHAT_BACKGROUND,
-              .maximum = MAXIMUM_CHAT_BACKGROUND,
-              .step = CHAT_BACKGROUND_STEP,
-              .pageSteps = CHAT_PAGE_STEPS},
-    .unit = PERCENT_UNIT};
+constexpr SliderLook CHAT_LETTERS_LOOK{.step = CHAT_LETTERS_STEP};
+constexpr SliderLook CHAT_LINES_LOOK{};
+constexpr SliderLook CHAT_SECONDS_LOOK{.unit = SECONDS_UNIT};
+constexpr SliderLook CHAT_BACKGROUND_LOOK{.step = CHAT_BACKGROUND_STEP,
+                                          .unit = PERCENT_UNIT};
 
 /** @brief BACK, and the stamp written after a save, SAVED for
  * SAVED_STAMP_DURATION, NOT SAVED until the next save. */
