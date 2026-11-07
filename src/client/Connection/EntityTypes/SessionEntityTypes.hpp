@@ -7,6 +7,7 @@
 #include "DrawableTypeCheck.hpp"
 #include "EntityTypeEntry.hpp"
 #include "IEntityTypeTable.hpp"
+#include "ShipGun.hpp"
 
 namespace rtype::client {
 
@@ -31,8 +32,10 @@ class SessionEntityTypes final : public IEntityTypeTable {
   [[nodiscard]] std::vector<std::string> undrawableNamesOf(
       std::span<const network::EntityTypeEntry> types) const;
 
-  /** @brief Keeps @p types as the table of the session, in place of any. */
-  void keep(std::vector<network::EntityTypeEntry> types);
+  /** @brief Keeps @p types as the table of the session and @p gun as the gun
+   * of its ships, in place of any. */
+  void keep(std::vector<network::EntityTypeEntry> types,
+            network::ShipGun gun = network::ShipGun{});
 
   /** @brief Forgets the table: the session closed. */
   void forget();
@@ -40,9 +43,12 @@ class SessionEntityTypes final : public IEntityTypeTable {
   [[nodiscard]] const network::EntityTypeEntry* entryNumbered(
       std::uint8_t number) const override;
 
+  [[nodiscard]] network::ShipGun shipGun() const override;
+
  private:
   DrawableTypeCheck drawable_;
   std::vector<network::EntityTypeEntry> types_;
+  network::ShipGun gun_;
 };
 
 }  // namespace rtype::client

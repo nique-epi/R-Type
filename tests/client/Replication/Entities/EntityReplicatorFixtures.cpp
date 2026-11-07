@@ -6,6 +6,7 @@
 #include <ostream>
 #include <vector>
 #include "AnimatedSprite.hpp"
+#include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectConstants.hpp"
 #include "Entity.hpp"
@@ -178,6 +179,19 @@ std::optional<game::Position> historyPositionAt(
         position = history.at(tick);
       });
   return position;
+}
+
+std::optional<game::CollisionBox> boxOfThe(
+    engine::ComponentRegistry& components, game::EntityType type) {
+  std::optional<game::CollisionBox> found;
+  components.forEach<game::CollisionBox, game::EntityType>(
+      [&found, type](engine::Entity, const game::CollisionBox& box,
+                     const game::EntityType& side) {
+        if (side == type) {
+          found = box;
+        }
+      });
+  return found;
 }
 
 }  // namespace rtype::client::testing

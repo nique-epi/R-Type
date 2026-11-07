@@ -15,12 +15,13 @@
 #include "ServerSessionFixtures.hpp"
 #include "ServerSessionTestConstants.hpp"
 #include "SessionEntityTypes.hpp"
+#include "ShipGun.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
 
 void ServerSessionEntityTypesFixture::connectAndGetAcceptedWith(
-    std::vector<network::EntityTypeEntry> types) {
+    std::vector<network::EntityTypeEntry> types, network::ShipGun gun) {
   session_.connect(server(), NICKNAME, rtype::network::ANY_GAME_CHOICE);
   network::PacketHeader header;
   header.sessionToken = SESSION_TOKEN;
@@ -29,7 +30,8 @@ void ServerSessionEntityTypesFixture::connectAndGetAcceptedWith(
       .payload = network::DatagramCodec::encode(
           header,
           network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                      .types = std::move(types)})});
+                                      .types = std::move(types),
+                                      .shipGun = gun})});
   update();
 }
 

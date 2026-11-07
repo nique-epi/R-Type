@@ -1,6 +1,7 @@
 #include "EntityTypeLooks.hpp"
 #include <cstdint>
 #include <optional>
+#include "CollisionBox.hpp"
 #include "EntityAppearance.hpp"
 #include "EntityAppearances.hpp"
 #include "EntitySide.hpp"
@@ -8,6 +9,7 @@
 #include "EntityTypeEntry.hpp"
 #include "EntityTypeLook.hpp"
 #include "IEntityTypeTable.hpp"
+#include "ShipGun.hpp"
 
 namespace rtype::client {
 
@@ -49,7 +51,12 @@ std::optional<EntityTypeLook> EntityTypeLooks::lookOf(
     return std::nullopt;
   }
   return EntityTypeLook{.side = gameSideOf(entry->side),
-                        .appearance = *appearance};
+                        .appearance = *appearance,
+                        .hitbox = game::CollisionBox{
+                            .width = static_cast<float>(entry->hitboxWidth),
+                            .height = static_cast<float>(entry->hitboxHeight)}};
 }
+
+network::ShipGun EntityTypeLooks::shipGun() const { return table_->shipGun(); }
 
 }  // namespace rtype::client

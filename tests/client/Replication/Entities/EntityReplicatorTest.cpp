@@ -2,9 +2,11 @@
 #include <gtest/gtest.h>
 #include <SFML/Graphics/Color.hpp>
 #include <cstddef>
+#include <optional>
 #include <vector>
 #include "AllEntityTypes.hpp"
 #include "AppearanceReference.hpp"
+#include "CollisionBox.hpp"
 #include "EffectConstants.hpp"
 #include "Entity.hpp"
 #include "EntityAnnouncements.hpp"
@@ -36,6 +38,8 @@ using rtype::client::testing::animatedEntityCount;
 using rtype::client::testing::announcedEntityCount;
 using rtype::client::testing::APPLIED_TICK;
 using rtype::client::testing::BEFORE_THE_FIRST_PLAYER;
+using rtype::client::testing::boxOfThe;
+using rtype::client::testing::BYDO_BOX;
 using rtype::client::testing::BYDO_ID;
 using rtype::client::testing::BYDO_POSITION;
 using rtype::client::testing::damaged;
@@ -88,6 +92,7 @@ using rtype::client::testing::TICK_BETWEEN_THE_LISTINGS;
 using rtype::client::testing::UNANNOUNCED_ID;
 using rtype::client::testing::WEAVER_TYPE_NUMBER;
 using rtype::engine::Entity;
+using rtype::game::CollisionBox;
 using rtype::game::EntityType;
 using rtype::game::NetworkIdentity;
 using rtype::identifiers::NO_ENTITY_ID;
@@ -145,6 +150,21 @@ TEST_F(EntityReplicatorFixture, DrawsAShipAndABydoAndHoldsTheMissilesBack) {
       drawnEntities(components()),
       UnorderedElementsAre(drawnAs(EntityType::Player, SHIP_ID, SHIP_POSITION),
                            drawnAs(EntityType::Enemy, BYDO_ID, BYDO_POSITION)));
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When a Bydo is announced
+ * Then it carries the box the table gives its type, 96 by 96
+ */
+TEST_F(EntityReplicatorFixture, GivesAnEntityTheBoxOfItsType) {
+  replicator().apply(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, BYDO_POSITION));
+
+  const std::optional<CollisionBox> box =
+      boxOfThe(components(), EntityType::Enemy);
+  ASSERT_TRUE(box.has_value());
+  EXPECT_FLOAT_EQ(box.value_or(CollisionBox{}).width, BYDO_BOX.width);
+  EXPECT_FLOAT_EQ(box.value_or(CollisionBox{}).height, BYDO_BOX.height);
 }
 
 /**

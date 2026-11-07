@@ -221,6 +221,7 @@ std::optional<engine::Entity> EntityReplicator::create(
       look->side, game::Position{.x = announced.x, .y = announced.y},
       animatedSpriteOf(look->appearance.get(), look->side, announced.entityId));
   components_->add(entity, game::NetworkIdentity{announced.entityId});
+  components_->add(entity, look->hitbox);
   components_->add(entity, AppearanceReference{&look->appearance.get()});
   entityByNetworkId_.bind(announced.entityId, entity);
   return entity;

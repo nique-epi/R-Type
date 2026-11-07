@@ -7,6 +7,7 @@
 #include <ostream>
 #include <string>
 #include <vector>
+#include "CollisionBox.hpp"
 #include "EntityType.hpp"
 #include "Layer.hpp"
 #include "Position.hpp"
@@ -110,5 +111,10 @@ DrawnEntity effectAt(game::SpriteFrame firstFrame, game::Position position);
  * @p tick, nothing when no entity has one. */
 [[nodiscard]] std::optional<game::Position> historyPositionAt(
     engine::ComponentRegistry& components, double tick);
+
+/** @returns The box of the only entity of that type, nothing when it has
+ * none or there is no such entity. */
+[[nodiscard]] std::optional<game::CollisionBox> boxOfThe(
+    engine::ComponentRegistry& components, game::EntityType type);
 
 }  // namespace rtype::client::testing

@@ -72,7 +72,7 @@ void HandshakeAnswers::openSession(
     const network::ConnectionAccepted& accepted) const {
   parts_.status.get() = {.phase = ConnectionPhase::Accepted,
                          .playerNumber = accepted.playerNumber};
-  parts_.entityTypes.get().keep(accepted.types);
+  parts_.entityTypes.get().keep(accepted.types, accepted.shipGun);
   parts_.outbox.get().openSession(origin.header.sessionToken);
   parts_.inbound.get().open(origin.header);
   parts_.observers.get().opened(
