@@ -1,6 +1,7 @@
 #include "MasterMessageText.hpp"
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -15,7 +16,11 @@
 #include "CreatedServer.hpp"
 #include "DatedStatus.hpp"
 #include "EndpointText.hpp"
+#include "FinishedGame.hpp"
+#include "FinishedGamePlayer.hpp"
 #include "GameListing.hpp"
+#include "GlobalLeaderboard.hpp"
+#include "GlobalLeaderboardRow.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
 #include "ListedGame.hpp"
@@ -381,19 +386,26 @@ nlohmann::json measuresDocument(const ServerMeasures& measures) {
 }
 
 /**
- * @returns The text of an object whose one member, @p member, lists each of
- * @p items as @p documentOf writes it: the shape of every list the master
- * answers.
+ * @returns An object whose one member, @p member, lists each of @p items as
+ * @p documentOf writes it: the shape of every list the master answers.
  */
 template <typename Item, typename Document>
-std::string listingText(std::string_view member, const std::vector<Item>& items,
-                        Document documentOf) {
+nlohmann::json listingDocument(std::string_view member,
+                               const std::vector<Item>& items,
+                               Document documentOf) {
   nlohmann::json document;
   document[member] = nlohmann::json::array();
   for (const Item& item : items) {
     document[member].push_back(documentOf(item));
   }
-  return textOf(document);
+  return document;
+}
+
+/** @returns The text of listingDocument(). */
+template <typename Item, typename Document>
+std::string listingText(std::string_view member, const std::vector<Item>& items,
+                        Document documentOf) {
+  return textOf(listingDocument(member, items, documentOf));
 }
 
 /** @returns The members of @p registration, its address left out when it is
@@ -503,16 +515,129 @@ std::string serverKeyOf(const JsonField& field) {
   return key;
 }
 
+/** @returns Whether every character of @p text is one of @p digits. */
+bool isMadeOf(std::string_view text, std::string_view digits) {
+  return std::ranges::all_of(text, [digits](char digit) {
+    return std::ranges::find(digits, digit) != digits.end();
+  });
+}
+
+/** @returns Whether @p field holds true; it must hold a JSON boolean. */
+bool booleanOf(const JsonField& field) {
+  const nlohmann::json& value = field.value.get();
+  if (!value.is_boolean()) {
+    refuse(field);
+  }
+  return value.get<bool>();
+}
+
+/** @returns The date the game @p game ended. */
+std::chrono::sys_seconds playedAtOf(const JsonField& game) {
+  const std::uint64_t seconds = integerOf(
+      memberOf(game, PLAYED_AT_MEMBER),
+      IntegerBounds{.lowest = EARLIEST_PLAYED_AT, .highest = LATEST_PLAYED_AT});
+  return std::chrono::sys_seconds{
+      std::chrono::seconds{static_cast<std::int64_t>(seconds)}};
+}
+
+/** @returns The account of @p player, nothing for a guest. */
+std::optional<std::string> accountIdOf(const JsonField& player) {
+  const std::optional<JsonField> account =
+      optionalMemberOf(player, ACCOUNT_ID_MEMBER);
+  if (!account.has_value()) {
+    return std::nullopt;
+  }
+  return boundedTextOf(*account, MAXIMUM_ACCOUNT_ID_SIZE);
+}
+
+FinishedGamePlayer finishedGamePlayerOf(const JsonField& player) {
+  requireObject(player);
+  return FinishedGamePlayer{
+      .nickname = nicknameOf(memberOf(player, NICKNAME_MEMBER)),
+      .accountId = accountIdOf(player),
+      .score = static_cast<std::uint32_t>(integerOf(
+          memberOf(player, SCORE_MEMBER),
+          IntegerBounds{.lowest = LOWEST_SCORE, .highest = HIGHEST_SCORE}))};
+}
+
+std::vector<FinishedGamePlayer> finishedGamePlayersOf(const JsonField& game) {
+  const JsonField players = memberOf(game, PLAYERS_MEMBER);
+  const std::size_t count = arraySizeOf(players, MAXIMUM_PLAYERS);
+  if (count < FEWEST_FINISHED_GAME_PLAYERS) {
+    refuse(players);
+  }
+  std::vector<FinishedGamePlayer> read;
+  read.reserve(count);
+  for (std::size_t index = 0; index < count; ++index) {
+    read.push_back(finishedGamePlayerOf(elementOf(players, index)));
+  }
+  return read;
+}
+
+nlohmann::json finishedGamePlayerDocument(const FinishedGamePlayer& player) {
+  nlohmann::json document;
+  document[NICKNAME_MEMBER] = player.nickname;
+  if (player.accountId.has_value()) {
+    document[ACCOUNT_ID_MEMBER] = *player.accountId;
+  }
+  document[SCORE_MEMBER] = player.score;
+  return document;
+}
+
+nlohmann::json globalLeaderboardRowDocument(const GlobalLeaderboardRow& row) {
+  nlohmann::json document;
+  document[RANK_MEMBER] = row.rank;
+  document[NICKNAME_MEMBER] = row.nickname;
+  document[SCORE_MEMBER] = row.score;
+  document[PLAYED_AT_MEMBER] = row.playedAt.time_since_epoch().count();
+  document[SERVER_ID_MEMBER] = row.serverId;
+  document[SERVER_NAME_MEMBER] = row.serverName;
+  return document;
+}
+
 }  // namespace
 
 bool isWellFormedServerKey(std::string_view text) {
   return text.size() == SERVER_KEY_SIZE &&
          text.starts_with(SERVER_KEY_PREFIX) &&
-         std::ranges::all_of(
-             text.substr(SERVER_KEY_PREFIX.size()), [](char digit) {
-               return std::ranges::find(SERVER_KEY_DIGITS, digit) !=
-                      SERVER_KEY_DIGITS.end();
-             });
+         isMadeOf(text.substr(SERVER_KEY_PREFIX.size()), SERVER_KEY_DIGITS);
+}
+
+bool isWellFormedGameId(std::string_view text) {
+  return text.size() == GAME_ID_SIZE && isMadeOf(text, GAME_ID_DIGITS);
+}
+
+std::string finishedGameText(const FinishedGame& game) {
+  nlohmann::json document =
+      listingDocument(PLAYERS_MEMBER, game.players, finishedGamePlayerDocument);
+  document[PLAYED_AT_MEMBER] = game.playedAt.time_since_epoch().count();
+  document[DIFFICULTY_MEMBER] = game.difficulty;
+  document[PLAYER_COUNT_MEMBER] = game.playerCount;
+  document[VANILLA_MEMBER] = game.vanilla;
+  return textOf(document);
+}
+
+FinishedGame finishedGameFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  const JsonField game = wholeMessage(document);
+  return FinishedGame{
+      .playedAt = playedAtOf(game),
+      .difficulty = nicknameOf(memberOf(game, DIFFICULTY_MEMBER)),
+      .playerCount = static_cast<std::uint8_t>(
+          integerOf(memberOf(game, PLAYER_COUNT_MEMBER),
+                    IntegerBounds{.lowest = MINIMUM_PLAYERS_PER_GAME,
+                                  .highest = MAXIMUM_PLAYERS})),
+      .vanilla = booleanOf(memberOf(game, VANILLA_MEMBER)),
+      .players = finishedGamePlayersOf(game)};
+}
+
+std::string globalLeaderboardText(const GlobalLeaderboard& leaderboard) {
+  nlohmann::json document = listingDocument(SCORES_MEMBER, leaderboard.scores,
+                                            globalLeaderboardRowDocument);
+  if (leaderboard.player.has_value()) {
+    document[PLAYER_MEMBER] = globalLeaderboardRowDocument(*leaderboard.player);
+  }
+  return textOf(document);
 }
 
 std::string serverCreationText(const ServerCreation& creation) {

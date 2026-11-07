@@ -6,7 +6,11 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "FinishedGame.hpp"
+#include "FinishedGamePlayer.hpp"
 #include "GameListing.hpp"
+#include "GlobalLeaderboard.hpp"
+#include "GlobalLeaderboardRow.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
 #include "ListedGame.hpp"
@@ -215,6 +219,63 @@ std::string createdServerRefusal(std::string_view text) {
 std::string heartbeatRefusal(std::string_view text) {
   try {
     static_cast<void>(heartbeatFromText(text));
+  } catch (const InvalidMasterMessageException& refusal) {
+    return refusal.what();
+  }
+  return {};
+}
+
+FinishedGame parisFinishedGame() {
+  return FinishedGame{
+      .playedAt = FINISHED_GAME_DATE,
+      .difficulty = std::string{PARIS_DIFFICULTY},
+      .playerCount = PLAYING_GAME_PLAYER_COUNT,
+      .vanilla = true,
+      .players = {
+          FinishedGamePlayer{.nickname = std::string{FIRST_PILOT},
+                             .accountId = std::nullopt,
+                             .score = FIRST_PILOT_SCORE},
+          FinishedGamePlayer{.nickname = std::string{SECOND_PILOT},
+                             .accountId = std::string{SECOND_PILOT_ACCOUNT},
+                             .score = SECOND_PILOT_SCORE}}};
+}
+
+std::string finishedGameTextWith(std::string_view pointer,
+                                 const nlohmann::json& value) {
+  return withValueAt(finishedGameText(parisFinishedGame()), pointer, value);
+}
+
+std::string finishedGameTextOfPlayers(std::size_t playerCount) {
+  FinishedGame game = parisFinishedGame();
+  game.players.clear();
+  for (std::size_t index = 0; index < playerCount; ++index) {
+    game.players.push_back(
+        FinishedGamePlayer{.nickname = std::string{FIVE_PILOTS.at(index)},
+                           .accountId = std::nullopt,
+                           .score = FIRST_PILOT_SCORE});
+  }
+  return finishedGameText(game);
+}
+
+GlobalLeaderboard parisLeaderboard() {
+  return GlobalLeaderboard{
+      .scores = {GlobalLeaderboardRow{.rank = FIRST_RANK,
+                                      .nickname = std::string{FIRST_PILOT},
+                                      .score = FIRST_PILOT_SCORE,
+                                      .playedAt = FINISHED_GAME_DATE,
+                                      .serverId = PARIS_ID,
+                                      .serverName = std::string{PARIS_NAME}}},
+      .player = GlobalLeaderboardRow{.rank = SECOND_RANK,
+                                     .nickname = std::string{SECOND_PILOT},
+                                     .score = SECOND_PILOT_SCORE,
+                                     .playedAt = FINISHED_GAME_DATE,
+                                     .serverId = PARIS_ID,
+                                     .serverName = std::string{PARIS_NAME}}};
+}
+
+std::string finishedGameRefusal(std::string_view text) {
+  try {
+    static_cast<void>(finishedGameFromText(text));
   } catch (const InvalidMasterMessageException& refusal) {
     return refusal.what();
   }

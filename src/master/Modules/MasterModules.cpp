@@ -4,6 +4,7 @@
 #include "ExecutablePath.hpp"
 #include "FailureReport.hpp"
 #include "IModule.hpp"
+#include "LeaderboardModule.hpp"
 #include "LogLaunchOptions.hpp"
 #include "MasterHttpModule.hpp"
 #include "MasterLoggerModule.hpp"
@@ -23,6 +24,7 @@ std::vector<std::unique_ptr<engine::IModule>> masterModules(
   modules.push_back(std::make_unique<MasterProbeModule>());
   modules.push_back(std::make_unique<MasterHttpModule>(onFailure));
   modules.push_back(std::make_unique<ServersModule>());
+  modules.push_back(std::make_unique<LeaderboardModule>());
   return modules;
 }
 

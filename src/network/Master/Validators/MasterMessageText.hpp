@@ -4,7 +4,9 @@
 #include <string>
 #include <string_view>
 #include "CreatedServer.hpp"
+#include "FinishedGame.hpp"
 #include "GameListing.hpp"
+#include "GlobalLeaderboard.hpp"
 #include "SampleListing.hpp"
 #include "ServerCreation.hpp"
 #include "ServerHeartbeat.hpp"
@@ -128,6 +130,36 @@ namespace rtype::network {
 /** @returns @p listing as the JSON answer of
  * `GET /api/servers/{id}/statuses`. */
 [[nodiscard]] std::string statusListingText(const StatusListing& listing);
+
+/**
+ * @returns Whether @p text has the shape of the id of a game a server draws:
+ * GAME_ID_SIZE lowercase hexadecimal digits.
+ */
+[[nodiscard]] bool isWellFormedGameId(std::string_view text);
+
+/** @returns @p game as the JSON body of
+ * `PUT /api/servers/me/results/{gameId}`, the accountId of a guest left out. */
+[[nodiscard]] std::string finishedGameText(const FinishedGame& game);
+
+/**
+ * @returns The finished game a server sent as @p text; a member it does not
+ * know is ignored. A game that was not vanilla reads as any other: the master
+ * refuses it after reading it.
+ * @throws InvalidMasterMessageException naming the first member that is
+ * missing, of another type or out of its bounds: a playedAt outside
+ * EARLIEST_PLAYED_AT to LATEST_PLAYED_AT, a difficulty or a nickname that is no
+ * valid nickname, a playerCount outside MINIMUM_PLAYERS_PER_GAME to
+ * MAXIMUM_PLAYERS, a vanilla that is no boolean, fewer than
+ * FEWEST_FINISHED_GAME_PLAYERS or more than MAXIMUM_PLAYERS players, an
+ * accountId that is empty, longer than MAXIMUM_ACCOUNT_ID_SIZE or not printable
+ * UTF-8, a score above HIGHEST_SCORE.
+ */
+[[nodiscard]] FinishedGame finishedGameFromText(std::string_view text);
+
+/** @returns @p leaderboard as the JSON answer of `GET /api/leaderboard`, its
+ * player left out when it has none, written as registrationText() writes. */
+[[nodiscard]] std::string globalLeaderboardText(
+    const GlobalLeaderboard& leaderboard);
 
 /**
  * @returns The `detail` of the problem document (RFC 9457) @p text holds, or

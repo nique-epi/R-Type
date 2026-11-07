@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -198,5 +199,61 @@ constexpr std::string_view PARIS_SAMPLE_LISTING_TEXT =
 /** @brief A change to degraded, as the master writes it. */
 constexpr std::string_view DEGRADED_STATUS_LISTING_TEXT =
     R"({"statuses":[{"since":1800000000,"status":"degraded"}]})";
+
+/**
+ * @brief The game "Paris 1" reports: two players, ACE as a guest and
+ * BYDO_HUNTER under an account, ended at FINISHED_GAME_DATE.
+ */
+constexpr std::chrono::sys_seconds FINISHED_GAME_DATE{
+    std::chrono::seconds{1'800'000'100}};
+constexpr std::uint32_t FIRST_PILOT_SCORE = 12'000;
+constexpr std::uint32_t SECOND_PILOT_SCORE = 800;
+constexpr std::string_view SECOND_PILOT_ACCOUNT = "account-42";
+
+/** @brief The id "Paris 1" drew for that game, and texts shaped almost like
+ * one: uppercase, one digit short, one digit more. */
+constexpr std::string_view PARIS_GAME_ID = "0123456789abcdef0123456789abcdef";
+constexpr std::string_view UPPERCASE_GAME_ID =
+    "0123456789ABCDEF0123456789ABCDEF";
+constexpr std::string_view SHORT_GAME_ID = "0123456789abcdef0123456789abcde";
+constexpr std::string_view LONG_GAME_ID = "0123456789abcdef0123456789abcdef0";
+
+/** @brief The highest score a server keeps, 2^32 - 1, and one more. */
+constexpr std::uint64_t HIGHEST_KEPT_SCORE = 4'294'967'295U;
+constexpr std::uint64_t SCORE_ABOVE_ITS_RANGE = 4'294'967'296U;
+
+/** @brief Accounts just outside the bounds of an id: empty, and 65 bytes. */
+constexpr std::string_view EMPTY_ACCOUNT_ID{};
+constexpr std::string_view ACCOUNT_ID_OF_65_BYTES =
+    "abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz012";
+
+/** @brief Games of no player, and the five pilots of a game of one too many.
+ */
+constexpr std::uint64_t NO_PLAYERS = 0;
+constexpr std::size_t PLAYERS_OF_A_FULL_GAME = 4;
+constexpr std::array<std::string_view, 5> FIVE_PILOTS{
+    FIRST_PILOT, SECOND_PILOT, THIRD_PILOT, FOURTH_PILOT, FIFTH_PILOT};
+
+/** @brief A boolean written as text, where JSON must hold a boolean. */
+constexpr std::string_view VANILLA_AS_TEXT = "true";
+
+/** @brief The members of a finished game the tests break. */
+constexpr std::string_view VANILLA_POINTER = "/vanilla";
+constexpr std::string_view PLAYERS_POINTER = "/players";
+constexpr std::string_view PLAYER_COUNT_POINTER = "/playerCount";
+constexpr std::string_view FIRST_PLAYER_SCORE_POINTER = "/players/0/score";
+constexpr std::string_view SECOND_PLAYER_ACCOUNT_POINTER =
+    "/players/1/accountId";
+
+/** @brief A page of a leaderboard with ACE first and BYDO_HUNTER asked for,
+ * as the master writes it. */
+constexpr std::int64_t FIRST_RANK = 1;
+constexpr std::int64_t SECOND_RANK = 2;
+constexpr std::string_view PARIS_LEADERBOARD_TEXT =
+    R"({"player":{"nickname":"BYDO_HUNTER","playedAt":1800000100,"rank":2,)"
+    R"("score":800,"serverId":7,"serverName":"Paris 1"},)"
+    R"("scores":[{"nickname":"ACE","playedAt":1800000100,"rank":1,)"
+    R"("score":12000,"serverId":7,"serverName":"Paris 1"}]})";
+constexpr std::string_view EMPTY_LEADERBOARD_TEXT = R"({"scores":[]})";
 
 }  // namespace rtype::network::testing
