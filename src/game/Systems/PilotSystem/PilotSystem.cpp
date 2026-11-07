@@ -3,6 +3,7 @@
 #include <optional>
 #include <span>
 #include "BehaviourView.hpp"
+#include "Boss.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
 #include "EnemyActionStart.hpp"
@@ -59,6 +60,9 @@ std::optional<Position> nearestOf(std::span<const Position> ships,
 bool isWounded(const Health* health) {
   return health != nullptr && health->points < health->full;
 }
+
+/** @returns Whether @p boss enraged; false for a body that is no boss. */
+bool isEnraged(const Boss* boss) { return boss != nullptr && boss->enraged; }
 
 /** @brief Moves @p position where @p intent asks the body to jump, if it
  * asks. */
@@ -118,7 +122,9 @@ void PilotSystem::update(engine::ComponentRegistry& components,
             .actionAge =
                 current == nullptr ? engine::Duration::zero() : current->since,
             .nearestShip = nearestOf(ships_, *position),
-            .wounded = isWounded(components.get<Health>(body))});
+            .wounded = isWounded(components.get<Health>(body)),
+            .enraged = isEnraged(components.get<Boss>(body)),
+            .actionsEnded = current == nullptr ? 0U : current->ended});
         passOnActionOf(components, body, intent);
         jumpAsAsked(*position, intent);
       });

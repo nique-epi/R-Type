@@ -34,10 +34,11 @@ constexpr std::string_view SURVIVES_CONTACT_KEY = "survives_contact";
 constexpr std::string_view FRAGILE_KEY = "fragile";
 constexpr std::string_view BURST_KEY = "burst";
 constexpr std::string_view VOLLEY_KEY = "volley";
+constexpr std::string_view BOSS_KEY = "boss";
 constexpr std::array GAMEPLAY_KEYS{
     SIDE_KEY,    PILOT_KEY, HITBOX_KEY, MOTION_KEY,    BEHAVIOUR_KEY,
     HEALTH_KEY,  SCORE_KEY, GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
-    FRAGILE_KEY, BURST_KEY, VOLLEY_KEY};
+    FRAGILE_KEY, BURST_KEY, VOLLEY_KEY, BOSS_KEY};
 
 /** @brief The keys of `[gameplay.hitbox]`, in logical units: its size, and
  * where its center is from the Position of the body, 0 without them. */
@@ -131,6 +132,16 @@ constexpr engine::WholeNumberRange VOLLEY_DISTANCE_RANGE{.lowest = 0,
                                                          .highest = 1024};
 constexpr engine::WholeNumberRange VOLLEY_GAP_RANGE{.lowest = 0, .highest = 15};
 
+/** @brief The keys of `[gameplay.boss]`, all required: the percentage of its
+ * full health it enrages below, and the attacks of its rage and its arrival. */
+constexpr std::string_view RAGE_BELOW_PERCENT_KEY = "rage_below_percent";
+constexpr std::string_view RAGE_ATTACK_KEY = "rage_attack";
+constexpr std::string_view ARRIVAL_ATTACK_KEY = "arrival_attack";
+constexpr std::array BOSS_KEYS{RAGE_BELOW_PERCENT_KEY, RAGE_ATTACK_KEY,
+                               ARRIVAL_ATTACK_KEY};
+constexpr engine::WholeNumberRange RAGE_PERCENT_RANGE{.lowest = 1,
+                                                      .highest = 99};
+
 /** @brief `[gameplay.survives_contact]` is a marker: it holds no key. */
 constexpr std::array<std::string_view, 0> SURVIVES_CONTACT_KEYS{};
 
@@ -209,6 +220,10 @@ constexpr std::string_view SHIP_HITBOX_RULE =
 constexpr std::string_view MISSILE_GUN_RULE = "a missile has no gun";
 constexpr std::string_view BURST_SIDE_RULE =
     "only a missile bursts into shards";
+constexpr std::string_view BOSS_SIDE_RULE =
+    "only a body of side enemy is a boss";
+constexpr std::string_view BOSS_HEALTH_RULE =
+    "a boss has health, which its bar shows and its rage reads";
 constexpr std::string_view VOLLEY_SIDE_RULE =
     "only a body of side enemy fires volleys";
 constexpr std::string_view VOLLEY_GAP_RULE =

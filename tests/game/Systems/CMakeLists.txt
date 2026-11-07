@@ -1,1 +1,1 @@
-target_sources(game_tests PRIVATE PilotSystemTest.cpp PilotSystemActionTest.cpp PilotSystemFixture.cpp HurtZoneSystemTest.cpp HurtZoneSystemFixtures.cpp HurtZoneBeamTest.cpp BeamOverlapTest.cpp)
+target_sources(game_tests PRIVATE PilotSystemTest.cpp PilotSystemActionTest.cpp PilotSystemFixture.cpp HurtZoneSystemTest.cpp HurtZoneSystemFixtures.cpp HurtZoneBeamTest.cpp BeamOverlapTest.cpp BossPhaseSystemTest.cpp BossPhaseSystemFixture.cpp)

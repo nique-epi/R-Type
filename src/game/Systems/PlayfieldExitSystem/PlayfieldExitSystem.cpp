@@ -1,4 +1,5 @@
 #include "PlayfieldExitSystem.hpp"
+#include "Boss.hpp"
 #include "CollisionBox.hpp"
 #include "CollisionConstants.hpp"
 #include "ComponentRegistry.hpp"
@@ -99,6 +100,9 @@ void PlayfieldExitSystem::update(engine::ComponentRegistry& components,
   components.forEach<Position, EntityType>(
       [this, &components](engine::Entity entity, const Position& position,
                           const EntityType& type) {
+        if (components.get<Boss>(entity) != nullptr) {
+          return;
+        }
         if (!hasLeftThePlayfield(type, position,
                                  missileExitOf(components, entity, type))) {
           return;

@@ -11,6 +11,7 @@
 #include "BehaviourRegistry.hpp"
 #include "BehaviourSetting.hpp"
 #include "BehaviourView.hpp"
+#include "BossSheet.hpp"
 #include "BurstSheet.hpp"
 #include "CollisionBox.hpp"
 #include "DataFileReading.hpp"
@@ -338,6 +339,23 @@ std::optional<HurtZone> hurtZoneFrom(const engine::DataFileTable& gameplay) {
   return read;
 }
 
+/** @returns The boss `[gameplay.boss]` describes; nothing without it. */
+std::optional<BossSheet> bossFrom(const engine::DataFileTable& gameplay) {
+  const std::optional<engine::DataFileTable> boss =
+      engine::optionalTableAt(gameplay, BOSS_KEY);
+  if (!boss.has_value()) {
+    return std::nullopt;
+  }
+  engine::refuseUnknownKeys(*boss, BOSS_KEYS);
+  return BossSheet{
+      .rageBelowPercent = static_cast<int>(engine::wholeNumberAt(
+          *boss, RAGE_BELOW_PERCENT_KEY, RAGE_PERCENT_RANGE)),
+      .rageAttack = static_cast<std::uint8_t>(
+          engine::wholeNumberAt(*boss, RAGE_ATTACK_KEY, ATTACK_NUMBER_RANGE)),
+      .arrivalAttack = static_cast<std::uint8_t>(engine::wholeNumberAt(
+          *boss, ARRIVAL_ATTACK_KEY, ATTACK_NUMBER_RANGE))};
+}
+
 /** @returns Whether the sheet holds the marker table
  * `[gameplay.survives_contact]`. */
 bool survivesContactFrom(const engine::DataFileTable& gameplay) {
@@ -383,6 +401,20 @@ void checkContactPartsBelongToAnEnemy(const EntitySheet& sheet,
   if (!sheet.volleys.empty()) {
     throw InconsistentEntitySheetException(
         engine::placeOfKey(gameplay, VOLLEY_KEY), VOLLEY_SIDE_RULE);
+  }
+  if (sheet.boss.has_value()) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, BOSS_KEY), BOSS_SIDE_RULE);
+  }
+}
+
+/** @throws InconsistentEntitySheetException when @p sheet is a boss without
+ * health. */
+void checkBossHasHealth(const EntitySheet& sheet,
+                        const engine::DataFileTable& gameplay) {
+  if (sheet.boss.has_value() && !sheet.health.has_value()) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, BOSS_KEY), BOSS_HEALTH_RULE);
   }
 }
 
@@ -493,12 +525,14 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .survivesContact = survivesContactFrom(gameplay),
       .fragileIn = fragileFrom(gameplay),
       .burst = burstFrom(gameplay),
-      .volleys = volleysFrom(gameplay)};
+      .volleys = volleysFrom(gameplay),
+      .boss = bossFrom(gameplay)};
   checkPilotMatchesSide(read, gameplay);
   checkShipMotion(read, gameplay);
   checkWhatItFires(read, gameplay);
   checkMissileFliesTowardsItsEdge(read, gameplay);
   checkContactPartsBelongToAnEnemy(read, gameplay);
+  checkBossHasHealth(read, gameplay);
   return read;
 }
 

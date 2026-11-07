@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <string>
 #include "ActionKey.hpp"
+#include "BossSheet.hpp"
 #include "EnemyPhase.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheetBossTestConstants.hpp"
@@ -13,17 +14,26 @@
 #include "VolleySheet.hpp"
 
 using rtype::game::ActionKey;
+using rtype::game::BossSheet;
 using rtype::game::EnemyPhase;
 using rtype::game::EntitySheet;
 using rtype::game::HurtBeam;
 using rtype::game::HurtZone;
 using rtype::game::VolleySheet;
 using rtype::game::testing::APPEARANCE;
+using rtype::game::testing::BOSS_DOTTED_KEY;
+using rtype::game::testing::BOSS_HEALTH_RULE_TEXT;
+using rtype::game::testing::BOSS_RAGE_BELOW_PERCENT;
+using rtype::game::testing::BOSS_SIDE_RULE_TEXT;
+using rtype::game::testing::BOSS_TABLE;
+using rtype::game::testing::BOSS_TABLE_ARRIVAL_ATTACK;
+using rtype::game::testing::BOSS_TABLE_RAGE_ATTACK;
 using rtype::game::testing::BYDO_HITBOX;
 using rtype::game::testing::ENEMY_GAMEPLAY;
 using rtype::game::testing::ENEMY_MISSILE_GAMEPLAY;
 using rtype::game::testing::EntitySheetReaderFixture;
 using rtype::game::testing::GAP_COUNT_DOTTED_KEY;
+using rtype::game::testing::HEALTH_TABLE;
 using rtype::game::testing::HITBOX_DOTTED_KEY;
 using rtype::game::testing::LEFT_HEADING_TABLE;
 using rtype::game::testing::MOVED_HITBOX;
@@ -219,4 +229,50 @@ TEST_F(EntitySheetReaderFixture, RefusesAVolleyOfAMissile) {
 
   EXPECT_THAT(message, HasSubstr(VOLLEY_DOTTED_KEY));
   EXPECT_THAT(message, HasSubstr(VOLLEY_SIDE_RULE_TEXT));
+}
+
+/**
+ * Given the sheet of an enemy with health and a boss table
+ * When its gameplay is read
+ * Then it is a boss that enrages below 50 % into attack 9, arriving in
+ * attack 0
+ */
+TEST_F(EntitySheetReaderFixture, ReadsTheBossTable) {
+  const EntitySheet sheet =
+      read({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION, LEFT_HEADING_TABLE,
+            HEALTH_TABLE, BOSS_TABLE, APPEARANCE});
+
+  ASSERT_TRUE(sheet.boss.has_value());
+  const BossSheet boss = sheet.boss.value_or(BossSheet{});
+  EXPECT_EQ(boss.rageBelowPercent, BOSS_RAGE_BELOW_PERCENT);
+  EXPECT_EQ(boss.rageAttack, BOSS_TABLE_RAGE_ATTACK);
+  EXPECT_EQ(boss.arrivalAttack, BOSS_TABLE_ARRIVAL_ATTACK);
+}
+
+/**
+ * Given the sheet of a missile of an enemy with a boss table
+ * When its gameplay is read
+ * Then it is refused at the boss table: only an enemy is a boss
+ */
+TEST_F(EntitySheetReaderFixture, RefusesABossOfAnotherSide) {
+  const std::string message =
+      refusalOf({ENEMY_MISSILE_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION,
+                 LEFT_HEADING_TABLE, HEALTH_TABLE, BOSS_TABLE, APPEARANCE});
+
+  EXPECT_THAT(message, HasSubstr(BOSS_DOTTED_KEY));
+  EXPECT_THAT(message, HasSubstr(BOSS_SIDE_RULE_TEXT));
+}
+
+/**
+ * Given the sheet of an enemy with a boss table and no health
+ * When its gameplay is read
+ * Then it is refused at the boss table: a boss has health
+ */
+TEST_F(EntitySheetReaderFixture, RefusesABossWithoutHealth) {
+  const std::string message =
+      refusalOf({ENEMY_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION, LEFT_HEADING_TABLE,
+                 BOSS_TABLE, APPEARANCE});
+
+  EXPECT_THAT(message, HasSubstr(BOSS_DOTTED_KEY));
+  EXPECT_THAT(message, HasSubstr(BOSS_HEALTH_RULE_TEXT));
 }

@@ -4,6 +4,7 @@
 #include <functional>
 #include <optional>
 #include "BodyPlacement.hpp"
+#include "Boss.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
@@ -24,6 +25,7 @@
 #include "MotionSheet.hpp"
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdentity.hpp"
+#include "PercentConstants.hpp"
 #include "Pilot.hpp"
 #include "PilotSheet.hpp"
 #include "Position.hpp"
@@ -125,6 +127,21 @@ void addContactParts(engine::ComponentRegistry& components,
   }
 }
 
+/** @brief Gives @p start its Boss when its sheet makes it one: its rage
+ * threshold is its full health times the percentage of the sheet. */
+void addBoss(engine::ComponentRegistry& components, const BodyStart& start) {
+  const EntitySheet& sheet = start.sheet.get();
+  if (!sheet.boss.has_value() || !sheet.health.has_value()) {
+    return;
+  }
+  components.add(
+      start.body,
+      Boss{.rageBelowPoints =
+               *sheet.health * sheet.boss->rageBelowPercent / WHOLE_PERCENT,
+           .rageAttack = sheet.boss->rageAttack,
+           .arrivalAttack = sheet.boss->arrivalAttack});
+}
+
 /** @brief Gives the ship of a player its lives and no protection yet. */
 void addShipParts(engine::ComponentRegistry& components, engine::Entity ship) {
   components.add(ship, Lives{.count = STARTING_LIVES});
@@ -152,6 +169,7 @@ std::uint32_t World::spawnFrom(const EntitySheet& sheet,
   addPilot(components_, start);
   addCombat(components_, start);
   addContactParts(components_, start);
+  addBoss(components_, start);
   components_.add(start.body, NetworkIdentity{.networkId = networkId});
   if (owner.has_value()) {
     components_.add(start.body, MissileOwner{.playerNumber = *owner});

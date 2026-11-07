@@ -99,4 +99,18 @@ constexpr std::string_view VOLLEY_DOTTED_KEY = "gameplay.volley";
 constexpr std::string_view VOLLEY_SIDE_RULE_TEXT =
     "only a body of side enemy fires volleys";
 
+/** @brief The table of a boss: it enrages below half its health into its
+ * attack 9, and arrives in its attack 0; and where and why a boss table is
+ * refused. */
+constexpr std::string_view BOSS_TABLE =
+    "[gameplay.boss]\nrage_below_percent = 50\nrage_attack = 9\n"
+    "arrival_attack = 0\n";
+constexpr int BOSS_RAGE_BELOW_PERCENT = 50;
+constexpr std::uint8_t BOSS_TABLE_RAGE_ATTACK = 9;
+constexpr std::uint8_t BOSS_TABLE_ARRIVAL_ATTACK = 0;
+constexpr std::string_view BOSS_DOTTED_KEY = "gameplay.boss";
+constexpr std::string_view BOSS_SIDE_RULE_TEXT =
+    "only a body of side enemy is a boss";
+constexpr std::string_view BOSS_HEALTH_RULE_TEXT = "a boss has health";
+
 }  // namespace rtype::game::testing

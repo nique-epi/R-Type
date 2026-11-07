@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "ActionKey.hpp"
+#include "BossSheet.hpp"
 #include "BurstSheet.hpp"
 #include "CollisionBox.hpp"
 #include "EntityType.hpp"
@@ -59,6 +60,8 @@ struct EntitySheet {
   /** @brief The volleys it fires as it enters some of its actions, in the
    * order of the file; empty for a body that fires none. */
   std::vector<VolleySheet> volleys;
+  /** @brief What makes it a boss; nothing for any other body. */
+  std::optional<BossSheet> boss{std::nullopt};
 };
 
 }  // namespace rtype::game
