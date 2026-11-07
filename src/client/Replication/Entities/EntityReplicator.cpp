@@ -36,6 +36,7 @@
 #include "ShipFlight.hpp"
 #include "SoundConstants.hpp"
 #include "SummonConstants.hpp"
+#include "TimeConstants.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::client {

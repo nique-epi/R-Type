@@ -259,7 +259,7 @@ constexpr std::uint32_t TYRANT_DRIFT_TURNS = 2;
  * times a Knuth multiplier), stretched over both sides of the row it arrived
  * on: TYRANT_DRIFT_SIDES times the share, less one, from -1 to 1. */
 constexpr std::uint32_t TYRANT_DRIFT_DRAW_MULTIPLIER = 2654435761U;
-constexpr int TYRANT_DRIFT_DRAW_SHIFT = 16;
+constexpr std::uint32_t TYRANT_DRIFT_DRAW_SHIFT = 16;
 constexpr float TYRANT_DRIFT_SIDES = 2.0F;
 
 /** @brief Every attack of the Tyrant and where its timings are. */

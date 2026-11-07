@@ -9,7 +9,6 @@
 #include "BossStage.hpp"
 #include "BossStageParts.hpp"
 #include "CollisionRules.hpp"
-#include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
 #include "DamageRules.hpp"
@@ -21,7 +20,6 @@
 #include "GameState.hpp"
 #include "GameStateChanged.hpp"
 #include "IGameReplication.hpp"
-#include "Invulnerable.hpp"
 #include "LifeKeeper.hpp"
 #include "LifeKeeperParts.hpp"
 #include "LivesConstants.hpp"
@@ -164,15 +162,15 @@ std::unique_ptr<VolleySystem> volleySystemFor(GameContext& game,
                         .seed = game.settings.seed});
 }
 
-/** @brief Keeps every ship of @p components invulnerable for
- * SHIELDED_SHIP_TICKS more ticks: a game started at its boss is a test of the
- * fight, its pilots never die. */
-void keepShipsShielded(engine::ComponentRegistry& components) {
-  components.forEach<game::Invulnerable, game::Invulnerable>(
-      [](engine::Entity, game::Invulnerable& protection, game::Invulnerable&) {
-        protection.ticksLeft =
-            std::max(protection.ticksLeft, SHIELDED_SHIP_TICKS);
-      });
+/** @returns Whether the boss of the level may come at this tick, after
+ * moving @p waves on a tick: once the last wave is over, or at once, without
+ * any wave, in a game that @p startsAtBoss. */
+bool advanceTheWaves(WaveSpawner& waves, bool startsAtBoss) {
+  if (startsAtBoss) {
+    return true;
+  }
+  waves.onTick();
+  return waves.lastWaveFinished();
 }
 
 }  // namespace
@@ -222,13 +220,8 @@ void GameFlow::advanceState() {
       runWorldSystems(game_, world());
       weaponSystem_->onTick();
       volleySystem_->onTick();
-      if (game_.settings.startsAtBoss) {
-        keepShipsShielded(world().components());
-        bossStage_->onTick(true);
-      } else {
-        waveSpawner_->onTick();
-        bossStage_->onTick(waveSpawner_->lastWaveFinished());
-      }
+      bossStage_->onTick(
+          advanceTheWaves(*waveSpawner_, game_.settings.startsAtBoss));
       lifeKeeper_->onTick();
       break;
     case GameState::Finished:
@@ -281,9 +274,11 @@ void GameFlow::buildWorld() {
       LifeKeeperParts{.events = game_.events.get(),
                       .world = world,
                       .roster = game_.roster.get(),
-                      .respawn = [this](ConnectedPlayer& player) {
-                        replication_.onPlayerJoined(player);
-                      }});
+                      .respawn =
+                          [this](ConnectedPlayer& player) {
+                            replication_.onPlayerJoined(player);
+                          },
+                      .shipsNeverDie = game_.settings.startsAtBoss});
 }
 
 void GameFlow::startNewWorld() {

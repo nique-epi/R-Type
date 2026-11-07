@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 #include <optional>
 #include "BossStageParts.hpp"
 #include "EntitySheet.hpp"

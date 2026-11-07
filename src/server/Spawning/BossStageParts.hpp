@@ -6,6 +6,7 @@
 #include "EntitySheets.hpp"
 #include "EntitySpawnSender.hpp"
 #include "EventBus.hpp"
+#include "PercentConstants.hpp"
 #include "World.hpp"
 
 namespace rtype::server {
@@ -29,7 +30,7 @@ struct BossStageParts {
   std::optional<std::string> boss;
   /** @brief The health of the boss in percent of its sheet, for the
    * difficulty (WavePlan::bossHealthPercent). */
-  int healthPercent{100};
+  int healthPercent{game::WHOLE_PERCENT};
 };
 
 }  // namespace rtype::server

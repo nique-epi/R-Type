@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "PercentConstants.hpp"
 #include "WaveCurve.hpp"
 
 namespace rtype::server {
@@ -20,7 +21,7 @@ struct WavePlan {
   std::optional<std::string> boss{std::nullopt};
   /** @brief The health of the boss in percent of what its sheet gives,
    * before the players scale it (see BossStage). */
-  int bossHealthPercent{100};
+  int bossHealthPercent{game::WHOLE_PERCENT};
 
   bool operator==(const WavePlan&) const = default;
 };

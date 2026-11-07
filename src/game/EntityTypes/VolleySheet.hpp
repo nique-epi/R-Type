@@ -4,6 +4,7 @@
 #include <string>
 #include "ActionKey.hpp"
 #include "DataFilePlace.hpp"
+#include "PercentConstants.hpp"
 
 namespace rtype::game {
 
@@ -40,7 +41,7 @@ struct VolleySheet {
   std::uint8_t gapCount{0};
   /** @brief The chance it fires when `on` starts, in percent: 100 fires
    * it every time (see VolleySystem). */
-  std::uint8_t chancePercent{100};
+  std::uint8_t chancePercent{WHOLE_PERCENT};
   /** @brief The name of the sheet of its bodies, as the file writes it. */
   std::string body;
   /** @brief The number of that sheet; 0 until EntitySheets checked that it

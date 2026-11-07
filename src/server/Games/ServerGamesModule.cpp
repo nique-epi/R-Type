@@ -128,6 +128,19 @@ void logHowGamesPlay(const logging::Logger& logger, std::string_view difficulty,
   }
 }
 
+/** @returns The setting START_AT_BOSS_SETTING_NAME, declared in
+ * @p configuration: 1 starts every game at its boss, 0 (the default) plays
+ * the waves. */
+const engine::SettingValue& declareStartAtBoss(
+    engine::ConfigurationRegistry& configuration) {
+  return configuration.declareInteger(engine::IntegerSettingDefinition{
+      .name = std::string{START_AT_BOSS_SETTING_NAME},
+      .defaultValue = 0,
+      .lowest = 0,
+      .highest = 1,
+      .help = "1 starts every game at its boss, without the waves"});
+}
+
 }  // namespace
 
 ServerGamesModule::ServerGamesModule(GamesSettings settings)
@@ -188,13 +201,7 @@ void ServerGamesModule::declareSettings(
           .lowest = LOWEST_INPUT_DELAY_TICKS,
           .highest = HIGHEST_INPUT_DELAY_TICKS,
           .help = "Ticks every player's input is held before it is applied"});
-  startAtBossSetting_ =
-      &configuration.declareInteger(engine::IntegerSettingDefinition{
-          .name = std::string{START_AT_BOSS_SETTING_NAME},
-          .defaultValue = 0,
-          .lowest = 0,
-          .highest = 1,
-          .help = "1 starts every game at its boss, without the waves"});
+  startAtBossSetting_ = &declareStartAtBoss(configuration);
 }
 
 void ServerGamesModule::start() {
