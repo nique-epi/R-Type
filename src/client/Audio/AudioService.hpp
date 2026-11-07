@@ -42,6 +42,7 @@ class AudioService final : public IAudioService {
   [[nodiscard]] IMusicPlayer& theme() override;
   void playTheme() override;
   void playGameMusic() override;
+  void silenceMusic() override;
   /** @throws AssetLoadingException naming every sound of ALL_SOUND_IDS that
    * could not be read. */
   void open() override;

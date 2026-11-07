@@ -8,6 +8,7 @@
 #include "FixedEntityTypeSource.hpp"
 #include "GameResult.hpp"
 #include "PlayerSettings.hpp"
+#include "RecordingAudioService.hpp"
 #include "RecordingEntityLayer.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingPlayerInputLink.hpp"
@@ -62,6 +63,7 @@ class GameScreenFixture : public ::testing::Test {
   DrawJournal drawJournal_;
   RecordingSky sky_;
   RecordingSoundPlayer sounds_;
+  RecordingAudioService audio_{sounds_};
   FixedEntityTypeSource entityTypes_;
   rtype::client::GameResult result_;
   rtype::client::ScreenStack screens_;

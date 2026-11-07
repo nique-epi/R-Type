@@ -1,5 +1,6 @@
 #include "GameScreen.hpp"
 #include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
 #include <cstdint>
 #include <functional>
@@ -12,6 +13,11 @@
 #include <variant>
 #include "ActionSet.hpp"
 #include "AnimationSystem.hpp"
+#include "BossBar.hpp"
+#include "BossBarConstants.hpp"
+#include "BossLook.hpp"
+#include "BossPresentation.hpp"
+#include "BossStatus.hpp"
 #include "DepartureFeed.hpp"
 #include "EffectPreferences.hpp"
 #include "EffectSpawner.hpp"
@@ -64,15 +70,20 @@ namespace rtype::client {
 
 namespace {
 
+/** @returns How many pixels of the canvas the sky and the entities are drawn
+ * away from their place: the camera shake, (0, 0) at rest. */
+sf::Vector2i cameraOffsetOf(EffectSpawner& effects) {
+  return effects.tools().camera.get().offset();
+}
+
 /** @brief Sets the speed of the stars and the shake of the sky for the time
  * since the start of the game: the warp of MISSION START with flashes, their
  * own speed without. */
-void moveSky(ISky& sky, const EffectSpawner& effects,
-             FlashPreference preference) {
+void moveSky(ISky& sky, EffectSpawner& effects, FlashPreference preference) {
   sky.setSpeedFactor(preference == FlashPreference::Full
                          ? warpSpeedFactorAt(effects.sinceStart())
                          : 1.0F);
-  sky.setOffset(effects.cameraOffset());
+  sky.setOffset(cameraOffsetOf(effects));
 }
 
 /** @brief Writes the actions @p held at the trace level when they are not the
@@ -91,13 +102,14 @@ void traceHeldActions(const logging::Logger& logger, const ActionSet& held,
 struct EntityMessageRoutes {
   std::reference_wrapper<EntityReplicator> replicator;
   std::reference_wrapper<EnemyActionPlayer> enemyActions;
+  std::reference_wrapper<BossPresentation> boss;
   std::reference_wrapper<ScoreBoard> scoreBoard;
   std::reference_wrapper<DepartureFeed> departures;
 };
 
 /** @brief Hands an entity message to whoever it goes to: a PlayerLeft to the
- * board and the feed, an EnemyAction to the enemy it animates, anything else
- * but GameEnded to the replicator. */
+ * board and the feed, an EnemyAction to the enemy it animates and to the boss,
+ * a BossStatus to the boss, anything else but GameEnded to the replicator. */
 void routeEntityMessage(const EntityMessageRoutes& routes,
                         const EntityMessage& message) {
   std::visit(
@@ -108,6 +120,9 @@ void routeEntityMessage(const EntityMessageRoutes& routes,
           routes.departures.get().follow(routes.scoreBoard.get().pilots());
         } else if constexpr (std::is_same_v<Announced, network::EnemyAction>) {
           routes.enemyActions.get().apply(announced);
+          routes.boss.get().apply(announced);
+        } else if constexpr (std::is_same_v<Announced, network::BossStatus>) {
+          routes.boss.get().apply(announced);
         } else if constexpr (!std::is_same_v<Announced, network::GameEnded>) {
           routes.replicator.get().apply(announced);
         }
@@ -132,6 +147,7 @@ GameScreen::GameScreen(GameScreenParts parts,
               EntityFeedback{.effects = effects_, .sounds = parts.sounds},
           .types = parts.entityTypes}),
       enemyActions_(components_),
+      boss_(effects_.tools(), parts.sounds, parts.audio),
       playerCommands_(true, parts.settings.get().keys),
       inputs_(&parts.inputs.get()),
       entityMessageSource_(&parts.entityMessages.get()),
@@ -148,7 +164,7 @@ GameScreen::GameScreen(GameScreenParts parts,
   systems_.add(std::make_unique<GroundEffectSystem>());
   systems_.add(std::make_unique<ShipFlightSystem>());
   moveSky(*sky_, effects_, flashPreferenceOf(*settings_));
-  entityLayer_->paint(components_, effects_.cameraOffset());
+  entityLayer_->paint(components_, cameraOffsetOf(effects_));
   repaintStatus();
 }
 
@@ -197,6 +213,7 @@ void GameScreen::update(engine::Duration elapsed) {
                                      .soundCues = settings_->soundCues});
   departures_.advance(elapsed);
   silence_.advance(sinceTheWorld);
+  boss_.advance(elapsed);
   applyEntityMessages();
   placeInterpolatedPositions(interpolationClock_, components_);
   if (settings_->clientPrediction) {
@@ -204,7 +221,7 @@ void GameScreen::update(engine::Duration elapsed) {
   }
   askForTheEndWhenDue();
   moveSky(*sky_, effects_, preference);
-  entityLayer_->paint(components_, effects_.cameraOffset());
+  entityLayer_->paint(components_, cameraOffsetOf(effects_));
   repaintStatusWhenChanged();
 }
 
@@ -215,6 +232,7 @@ void GameScreen::applyEntityMessages() {
   }
   const EntityMessageRoutes routes{.replicator = replicator_,
                                    .enemyActions = enemyActions_,
+                                   .boss = boss_,
                                    .scoreBoard = scoreBoard_,
                                    .departures = departures_};
   for (const EntityMessage& message : receivedEntityMessages_) {
@@ -244,6 +262,7 @@ void GameScreen::recordEnd(const network::GameEnded& ended) {
   worldSeen_ = true;
   endedAt_ = effects_.sinceStart();
   silence_.stop();
+  boss_.endGame();
 }
 
 void GameScreen::askForTheEndWhenDue() {
@@ -260,7 +279,8 @@ void GameScreen::repaintStatusWhenChanged() {
       missionBannerAt(effects_.sinceStart()) != paintedBanner_ ||
       paintedPalette_ != playerPaletteOf(*settings_) ||
       departures_.revision() != paintedDepartures_ ||
-      silence_.isShown() != paintedSilence_) {
+      silence_.isShown() != paintedSilence_ ||
+      boss_.look(flashPreferenceOf(*settings_)) != paintedBoss_) {
     repaintStatus();
   }
 }
@@ -268,10 +288,15 @@ void GameScreen::repaintStatusWhenChanged() {
 void GameScreen::repaintStatus() {
   const MissionBannerLook banner = missionBannerAt(effects_.sinceStart());
   const PlayerPalette& palette = playerPaletteOf(*settings_);
+  const BossLook boss = boss_.look(flashPreferenceOf(*settings_));
   statusCanvas_->clear();
+  paintBossAlert(*statusCanvas_, boss);
   paintStatusBand(*statusCanvas_, scoreBoard_.pilots(), palette);
   paintMissionBanner(*statusCanvas_, banner);
-  departures_.paint(*statusCanvas_, palette, DEPARTURE_FEED_TOP_LEFT);
+  paintBossBar(*statusCanvas_, boss.bar);
+  departures_.paint(
+      *statusCanvas_, palette,
+      boss.bar.shown ? DEPARTURE_FEED_UNDER_BOSS_BAR : DEPARTURE_FEED_TOP_LEFT);
   silence_.paint(*statusCanvas_);
   statusCanvas_->display();
   paintedStatusRevision_ = scoreBoard_.revision();
@@ -279,6 +304,7 @@ void GameScreen::repaintStatus() {
   paintedPalette_ = palette;
   paintedDepartures_ = departures_.revision();
   paintedSilence_ = silence_.isShown();
+  paintedBoss_ = boss;
 }
 
 ActionSet GameScreen::playerActions() const {

@@ -1011,3 +1011,63 @@ TEST_F(GameScreenFixture, NoWarningOnceTheGameEnded) {
 
   EXPECT_EQ(writingOf(statusCanvas(), WARNING_WORDS), nullptr);
 }
+
+/**
+ * Given the game
+ * When the boss stage starts and a second passes
+ * Then the word of the WARNING screen is painted
+ */
+TEST_F(GameScreenFixture, PaintsTheWarningWhenTheBossStageStarts) {
+  entityMessages().queue(BOSS_ARRIVING);
+  screens().update(ONE_FRAME);
+
+  screens().update(ONE_SECOND);
+
+  EXPECT_NE(writingOf(statusCanvas(), WARNING_WORD_ON_SCREEN), nullptr);
+}
+
+/**
+ * Given the game
+ * When the first status of the fight of the boss arrives and a frame passes
+ * Then its bar is painted, with its name
+ */
+TEST_F(GameScreenFixture, PaintsTheBossBarOnceTheBossFights) {
+  entityMessages().queue(BOSS_FIGHTING_UNHARMED);
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_NE(writingOf(statusCanvas(), BOSS_NAME_ON_THE_BAR), nullptr);
+}
+
+/**
+ * Given the bar of a boss filled
+ * When a status with fewer points arrives and a frame passes
+ * Then the status is painted again
+ */
+TEST_F(GameScreenFixture, RepaintsTheStatusWhenTheBossLosesPoints) {
+  entityMessages().queue(BOSS_FIGHTING_UNHARMED);
+  screens().update(ONE_FRAME);
+  screens().update(ONE_SECOND);
+  const int displays = statusCanvas().displayCount;
+  entityMessages().queue(BOSS_FIGHTING_HIT);
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_GT(statusCanvas().displayCount, displays);
+}
+
+/**
+ * Given the bar of a boss filled, its points unchanged
+ * When a frame passes
+ * Then the status is not painted again
+ */
+TEST_F(GameScreenFixture, TheStatusIsNotRepaintedWhenTheBossLookDoesNotChange) {
+  entityMessages().queue(BOSS_FIGHTING_UNHARMED);
+  screens().update(ONE_FRAME);
+  screens().update(ONE_SECOND);
+  const int displays = statusCanvas().displayCount;
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_EQ(statusCanvas().displayCount, displays);
+}

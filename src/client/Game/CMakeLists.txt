@@ -1,4 +1,5 @@
 add_library(rtype_client_game_module STATIC
+  BossPresentation.cpp
   ClientGameModule.cpp
   EndScreen.cpp
   GameScreen.cpp
@@ -11,9 +12,13 @@ target_link_libraries(rtype_client_game_module
   PUBLIC
     SFML::Graphics
     SFML::Window
+    rtype_client_audio_contract_service
+    rtype_client_boss_arrival_effects
+    rtype_client_boss_bar
     rtype_client_connection_module
     rtype_client_departure_feed
     rtype_client_drawing
+    rtype_client_edge_pulse
     rtype_client_flight_log_interfaces
     rtype_client_handshake
     rtype_client_input
@@ -24,6 +29,7 @@ target_link_libraries(rtype_client_game_module
     rtype_client_screens_module
     rtype_client_silence_warning
     rtype_client_waiting_room
+    rtype_client_warning_banner
     rtype_client_window_display
     rtype_engine
     rtype_engine_modules

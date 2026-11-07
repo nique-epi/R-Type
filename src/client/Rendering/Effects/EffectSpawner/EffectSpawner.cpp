@@ -97,7 +97,7 @@ void EffectSpawner::noteScore(int pilotColor, std::uint32_t score) {
   gains_.noteScore(pilotColor, score);
 }
 
-sf::Vector2i EffectSpawner::cameraOffset() const { return camera_.offset(); }
+EffectTools EffectSpawner::tools() { return tools_; }
 
 engine::Duration EffectSpawner::sinceStart() const {
   return pilots_.sinceStart();

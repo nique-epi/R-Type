@@ -51,7 +51,7 @@ namespace rtype::client {
  * an effect already playing keeps its version.
  *
  * advance() moves on what counts time: the game calls it every frame, before
- * applying the messages of the frame. Every other method but cameraOffset()
+ * applying the messages of the frame. Every other method but tools()
  * and sinceStart() adds components, so none may be called during a forEach
  * of the registry. The registries must outlive the spawner. Its families
  * hold references to its members, so it is never copied nor moved.
@@ -113,9 +113,12 @@ class EffectSpawner {
    * GainFigures). */
   void noteScore(int pilotColor, std::uint32_t score);
 
-  /** @returns How many pixels of the canvas the sky and the entities are
-   * drawn away from their place: the camera shake, (0, 0) at rest. */
-  [[nodiscard]] sf::Vector2i cameraOffset() const;
+  /** @returns The tools every family plays with, for a family the game holds
+   * outside the spawner (BossArrivalEffects): the same registries, flash
+   * gate, pixel effects, shades, and camera shake, whose offset() is how many
+   * pixels of the canvas the sky and the entities are drawn away from their
+   * place, (0, 0) at rest. */
+  [[nodiscard]] EffectTools tools();
 
   /** @returns The time advance() moved on since the spawner was built: the
    * time since the start of the game. */

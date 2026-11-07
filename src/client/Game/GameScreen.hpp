@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 #include "ActionSet.hpp"
+#include "BossLook.hpp"
+#include "BossPresentation.hpp"
 #include "ComponentRegistry.hpp"
 #include "DepartureFeed.hpp"
 #include "EffectSpawner.hpp"
@@ -168,6 +170,7 @@ class GameScreen : public IScreen {
   EffectSpawner effects_;
   EntityReplicator replicator_;
   EnemyActionPlayer enemyActions_;
+  BossPresentation boss_;
   engine::SystemScheduler systems_;
   PlayerCommands playerCommands_;
   IPlayerInputLink* inputs_;
@@ -191,6 +194,7 @@ class GameScreen : public IScreen {
   SilenceWarning silence_;
   std::uint32_t paintedDepartures_{};
   bool paintedSilence_ = false;
+  BossLook paintedBoss_;
   bool worldSeen_ = false;
 };
 

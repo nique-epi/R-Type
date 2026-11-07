@@ -25,6 +25,10 @@ class Soundtrack {
    * later, unless it plays already or is about to. */
   void playGameMusic();
 
+  /** @brief Stops the music of a game at once and cancels the silence before
+   * it; the theme is left as it is. */
+  void silenceMusic();
+
   /** @brief Moves the silence before the music of a game on by
    * @p elapsed, and starts that music once the silence is over. */
   void advance(engine::Duration elapsed);

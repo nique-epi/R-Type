@@ -7,6 +7,7 @@
 #include "GameResult.hpp"
 #include "GameScreenParts.hpp"
 #include "PlayerSettings.hpp"
+#include "RecordingAudioService.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingPlayerInputLink.hpp"
@@ -30,6 +31,7 @@ struct LoneGameParts {
   InterfaceCanvasRecord statusCanvas;
   RecordingSky sky;
   RecordingSoundPlayer sounds;
+  RecordingAudioService audio{sounds};
   FixedEntityTypeSource entityTypes;
   rtype::client::GameResult result;
 
