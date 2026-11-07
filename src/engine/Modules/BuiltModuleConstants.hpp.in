@@ -15,6 +15,7 @@
 
 #cmakedefine01 RTYPE_MODULE_AUDIO
 #cmakedefine01 RTYPE_MODULE_METRICS
+#cmakedefine01 RTYPE_MODULE_MASTER_LINK
 
 namespace rtype::engine {
 
@@ -23,5 +24,8 @@ constexpr bool AUDIO_MODULE_BUILT = RTYPE_MODULE_AUDIO == 1;
 /** @brief Whether the client and each game process hold their `metrics`
  * module. */
 constexpr bool METRICS_MODULE_BUILT = RTYPE_MODULE_METRICS == 1;
+/** @brief Whether the supervisor holds its `master` module, which registers
+ * the server with the master. */
+constexpr bool MASTER_LINK_MODULE_BUILT = RTYPE_MODULE_MASTER_LINK == 1;
 
 }  // namespace rtype::engine

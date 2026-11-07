@@ -18,9 +18,11 @@ include(FeatureSummary)
 # lists of modules include (see src/engine/Modules/).
 option(RTYPE_MODULE_AUDIO "Build the sound module of the client" ON)
 option(RTYPE_MODULE_METRICS "Build the metrics modules of the client and of the game processes" ON)
+option(RTYPE_MODULE_MASTER_LINK "Build the module that registers the server with the master" ON)
 
 add_feature_info(audio RTYPE_MODULE_AUDIO "the sound of the client")
 add_feature_info(metrics RTYPE_MODULE_METRICS "the metrics of the client and of the game processes")
+add_feature_info(master-link RTYPE_MODULE_MASTER_LINK "the registration of the server with the master")
 
 if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})

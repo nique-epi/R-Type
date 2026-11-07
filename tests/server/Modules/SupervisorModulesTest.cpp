@@ -1,9 +1,13 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <cstddef>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
+#include "BuiltModuleConstants.hpp"
 #include "GameStatisticsFixtures.hpp"
+#include "IModule.hpp"
 #include "LaunchOptions.hpp"
 #include "ModuleConstants.hpp"
 #include "ServerConstants.hpp"
@@ -14,6 +18,7 @@
 #include "SupervisorModulesFixture.hpp"
 #include "SupervisorModulesTestConstants.hpp"
 
+using rtype::engine::MASTER_LINK_MODULE_BUILT;
 using rtype::server::LaunchOptions;
 using rtype::server::STATE_RATE_OPTION;
 using rtype::server::StopRequest;
@@ -21,13 +26,17 @@ using rtype::server::SUPERVISOR_MODULE_NAMES;
 using rtype::server::supervisorModules;
 
 /**
- * Given the launch options of a supervisor with no argument
+ * Given the launch options of a supervisor with no argument, in a build that
+ * compiled the master link
  * When its modules are listed
  * Then they are the journal, the network, the supervised games, the lobby
  * that sends the players to them, then the information and the master, which
  * read what the supervised games publish, in the order they start
  */
 TEST(SupervisorModules, ListsTheModulesOfTheSupervisor) {
+  if (!MASTER_LINK_MODULE_BUILT) {
+    GTEST_SKIP();
+  }
   StopRequest stopRequest;
   const LaunchOptions options =
       LaunchOptions::read(std::vector<std::string_view>{});
@@ -46,6 +55,25 @@ TEST(SupervisorModules, ListsTheModulesOfTheSupervisor) {
                        std::string{rtype::server::SUPERVISOR_LOBBY_MODULE_NAME},
                        std::string{rtype::server::INFORMATION_MODULE_NAME},
                        std::string{rtype::server::MASTER_MODULE_NAME}}));
+}
+
+/**
+ * Given the launch options of a supervisor, in a build with or without the
+ * master link
+ * When its modules are listed
+ * Then the master is among them exactly when the build compiled it
+ */
+TEST(SupervisorModules, ListsTheMasterLinkOnlyWhenItIsBuilt) {
+  StopRequest stopRequest;
+  const auto modules = supervisorModules(
+      LaunchOptions::read(std::vector<std::string_view>{}), stopRequest, {});
+
+  const bool listed = std::ranges::any_of(
+      modules, [](const std::unique_ptr<rtype::engine::IModule>& module) {
+        return module->name() == rtype::server::MASTER_MODULE_NAME;
+      });
+
+  EXPECT_EQ(listed, MASTER_LINK_MODULE_BUILT);
 }
 
 /**
@@ -125,15 +153,35 @@ TEST_F(SupervisorModulesFixture, RefusesALineThatBelongsToNobody) {
 }
 
 /**
- * Given a server.cfg that sets server-name, master-url, master-key and
- * database, the settings the supervisor owns
+ * Given a server.cfg that sets server-name and database, settings the
+ * supervisor owns
  * When the supervisor starts
  * Then it refuses none of them and hands none to its games
  */
 TEST_F(SupervisorModulesFixture, KeepsTheLinesOfTheSettingsItOwns) {
   writeConfiguration(
-      {std::string{SERVER_NAME_LINE}, std::string{MASTER_URL_LINE},
-       std::string{MASTER_KEY_LINE}, std::string{DATABASE_LINE}});
+      {std::string{SERVER_NAME_LINE}, std::string{DATABASE_LINE}});
+  const auto application = supervisor({});
+
+  application->start();
+
+  EXPECT_TRUE(report().refusals.empty());
+  EXPECT_TRUE(report().handedOverLines.empty());
+  application->stop();
+}
+
+/**
+ * Given a server.cfg that sets master-url and master-key, in a build that
+ * compiled the master link, which declares them
+ * When the supervisor starts
+ * Then it refuses neither and hands neither to its games
+ */
+TEST_F(SupervisorModulesFixture, KeepsTheLinesOfTheMasterSettings) {
+  if (!MASTER_LINK_MODULE_BUILT) {
+    GTEST_SKIP();
+  }
+  writeConfiguration(
+      {std::string{MASTER_URL_LINE}, std::string{MASTER_KEY_LINE}});
   const auto application = supervisor({});
 
   application->start();

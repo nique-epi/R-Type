@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 #include "Application.hpp"
+#include "BuiltModuleConstants.hpp"
 #include "CommandInterpreter.hpp"
 #include "CommandLine.hpp"
 #include "CommandResult.hpp"
@@ -62,6 +63,15 @@ std::set<std::string> ServerRolesFixture::exampleSettings() {
     if (words.size() > 1 && words.front() == rtype::engine::SET_COMMAND_NAME) {
       names.insert(words[1]);
     }
+  }
+  return names;
+}
+
+std::set<std::string> ServerRolesFixture::exampleSettingsOfThisBuild() {
+  std::set<std::string> names = exampleSettings();
+  if (!rtype::engine::MASTER_LINK_MODULE_BUILT) {
+    names.erase(std::string{rtype::server::MASTER_URL_SETTING_NAME});
+    names.erase(std::string{rtype::server::MASTER_KEY_SETTING_NAME});
   }
   return names;
 }
