@@ -20,10 +20,11 @@
 namespace rtype::client {
 
 /**
- * @brief The screen PLAY opens over the title, and JOIN A SERVER over the
- * leaderboard, which it hides: the address, the port and the nickname to join a
- * server with, CONNECT and BACK, then a status line that tells how the attempt
- * stands.
+ * @brief The screen ADDRESS opens over the server map, PLAY over the title for
+ * a client launched with `-h`, RETRY over the map after a lost game, and JOIN
+ * A SERVER over the leaderboard, which it hides: the address, the port and the
+ * nickname to join a server with, CONNECT and BACK, then a status line that
+ * tells how the attempt stands.
  *
  * Building it drops any earlier attempt, so it always starts from no attempt.
  * Its fields start with the nickname of the ServerChoice and, for

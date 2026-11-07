@@ -34,7 +34,7 @@ constexpr ScreenId CONNECTION_LOST_SCREEN{"connection lost"};
 constexpr ScreenId QUIT_CONFIRMATION_SCREEN{"quit confirmation"};
 
 /** @brief The server to join and the nickname to join it with, then how the
- * attempt stands, pushed over the title. */
+ * attempt stands, pushed by ADDRESS over the server map. */
 constexpr ScreenId CONNECTION_SCREEN{"connection"};
 
 /** @brief The same screen, pushed over the leaderboard: once the server
@@ -52,7 +52,7 @@ constexpr ScreenId CONNECTION_TO_CHOSEN_SERVER_SCREEN{
 constexpr ScreenId CONNECTION_AGAIN_SCREEN{"connection again"};
 
 /** @brief The map of the servers the master lists, with their games, pushed
- * over the title by PLAY. */
+ * over the title by PLAY, or by RETRY under CONNECTION_AGAIN_SCREEN. */
 constexpr ScreenId SERVER_MAP_SCREEN{"server map"};
 
 /** @brief The best scores of a server, pushed over the title or the waiting

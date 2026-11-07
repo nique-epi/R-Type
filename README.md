@@ -19,7 +19,7 @@ cmake --workflow --preset build
 ./r-type_client
 ```
 
-Run the last two commands in two terminals. In the client, PLAY opens the server map, which needs the master; to join a server directly, open the connection screen with D (ADDRESS) and press CONNECT. The sections below give the prerequisites for each system, every option, and a game of four.
+Run the last two commands in two terminals. In the client, PLAY opens the server map, which needs the master; to join a server directly, launch the client with `-h <address>`, so PLAY joins it at once, or open the connection screen with D (ADDRESS) and press CONNECT. The sections below give the prerequisites for each system, every option, and a game of four.
 
 ### A game of four players
 

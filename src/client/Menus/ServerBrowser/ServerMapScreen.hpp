@@ -24,7 +24,8 @@
 namespace rtype::client {
 
 /**
- * @brief The map of the servers PLAY opens over the title, as the mockup C1
+ * @brief The map of the servers PLAY opens over the title, and RETRY under the
+ * connection screen of a lost game, as the mockup C1
  * v13 draws it: the planet of the player cut by the left edge, each server the
  * master lists standing past it by its ping, the chosen one framed with its
  * bubble.
