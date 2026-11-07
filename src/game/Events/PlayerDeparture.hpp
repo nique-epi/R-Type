@@ -20,8 +20,8 @@ enum class DepartureCause : std::uint8_t {
  * the one of the protocol, 1 to 4; the next player to join may take it.
  */
 struct PlayerDeparture {
-  std::uint8_t playerNumber;
-  DepartureCause cause;
+  std::uint8_t playerNumber{};
+  DepartureCause cause{DepartureCause::Left};
 
   bool operator==(const PlayerDeparture&) const = default;
 };

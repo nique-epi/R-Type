@@ -28,8 +28,8 @@ enum class DepartureReason : std::uint8_t {
 struct PlayerLeft {
   static constexpr MessageType TYPE = MessageType::PlayerLeft;
 
-  std::uint8_t playerNumber;
-  DepartureReason reason;
+  std::uint8_t playerNumber{};
+  DepartureReason reason{DepartureReason::Left};
 
   bool operator==(const PlayerLeft&) const = default;
 };
