@@ -12,7 +12,8 @@ namespace rtype::server {
  * `<program> --mode game -p <port> --supervisor <port> --link-token <token>
  * --database <database> --log-file
  * <folder>/r-type_game_<number>.log --configuration
- * <folder>/r-type_games_<supervisor port>.cfg`, where <database> is
+ * <folder>/r-type_games_<supervisor port>.cfg --difficulty <name> --lives
+ * <count> --friendly-fire <0|1>`, the rules of the launch, where <database> is
  * @p databaseSetting, the database setting of the supervisor, or
  * <folder>/r-type_server_<supervisor port>.db while it is empty; then the
  * forwarded arguments of @p settings, so a `--no-log-file` among them wins over

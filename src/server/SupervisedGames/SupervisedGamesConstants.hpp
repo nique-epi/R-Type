@@ -6,6 +6,9 @@
 
 namespace rtype::server {
 
+/** @brief What separates two names of difficulties in a line of the journal. */
+constexpr std::string_view DIFFICULTY_SEPARATOR = ", ";
+
 /** @brief How long a game process may take to send its first status before the
  * supervisor kills it. */
 constexpr engine::Duration GAME_START_TIMEOUT = std::chrono::seconds(10);

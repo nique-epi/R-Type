@@ -10,6 +10,7 @@ target_include_directories(rtype_server_supervised_games_launch PUBLIC ${CMAKE_C
 target_link_libraries(rtype_server_supervised_games_launch
   PUBLIC
     rtype_logging
+    rtype_network_connection_request
     rtype_server_network_module
     rtype_server_processes
     rtype_server_supervised_games_registry

@@ -6,6 +6,7 @@
 #include "GameConfigurationFile.hpp"
 #include "GameLaunch.hpp"
 #include "GameLaunchSettings.hpp"
+#include "GameRules.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LoggingConstants.hpp"
 #include "NetworkConstants.hpp"
@@ -45,6 +46,15 @@ std::string trafficFileOf(const std::filesystem::path& given,
       .string();
 }
 
+/** @brief Adds the options of @p rules to the arguments of @p command. */
+void addRuleOptions(ProcessCommand& command, const network::GameRules& rules) {
+  addOption(command, DIFFICULTY_OPTION, rules.difficulty);
+  addOption(command, LIVES_OPTION, std::to_string(rules.lives));
+  addOption(command, FRIENDLY_FIRE_OPTION,
+            std::to_string(rules.friendlyFire ? FRIENDLY_FIRE_ON
+                                              : FRIENDLY_FIRE_OFF));
+}
+
 }  // namespace
 
 ProcessCommand gameCommand(const GameLaunchSettings& settings,
@@ -64,6 +74,7 @@ ProcessCommand gameCommand(const GameLaunchSettings& settings,
   addOption(
       command, CONFIGURATION_OPTION,
       gameConfigurationFileOf(settings.folder, launch.supervisorPort).string());
+  addRuleOptions(command, launch.rules);
   command.arguments.insert(command.arguments.end(),
                            settings.forwardedArguments.begin(),
                            settings.forwardedArguments.end());

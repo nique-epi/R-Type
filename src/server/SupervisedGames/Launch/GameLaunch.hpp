@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "GameRules.hpp"
 
 namespace rtype::server {
 
@@ -12,6 +13,8 @@ struct GameLaunch {
   /** @brief The port of the supervisor, which the game talks to. */
   std::uint16_t supervisorPort{};
   std::uint64_t linkToken{};
+  /** @brief The rules the game is played by, as its creator chose them. */
+  network::GameRules rules{network::defaultGameRules()};
 };
 
 }  // namespace rtype::server

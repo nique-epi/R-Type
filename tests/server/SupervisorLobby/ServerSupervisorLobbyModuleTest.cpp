@@ -4,11 +4,13 @@
 #include "ConnectionRedirect.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
+#include "GameRules.hpp"
 #include "GameStatus.hpp"
 #include "IncomingDatagram.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
 #include "SentDatagrams.hpp"
+#include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerSupervisedGamesFixture.hpp"
 #include "SupervisedGamesFixtures.hpp"
@@ -17,10 +19,14 @@
 
 using rtype::network::ConnectionRedirect;
 using rtype::network::ConnectionRefused;
+using rtype::network::GameRules;
 using rtype::network::GameStatusState;
 using rtype::network::IncomingDatagram;
 using rtype::network::NEW_GAME_CHOICE;
 using rtype::network::RefusalReason;
+using rtype::server::DIFFICULTY_OPTION;
+using rtype::server::FRIENDLY_FIRE_OPTION;
+using rtype::server::LIVES_OPTION;
 using rtype::server::testing::onlyMessageIn;
 using rtype::server::testing::sentTo;
 
@@ -233,4 +239,75 @@ TEST_F(ServerSupervisedGamesFixture,
   const auto answers = sentTo(network().sender().sent(), supervisedPlayer(0));
   EXPECT_EQ(onlyMessageIn<ConnectionRefused>(answers.back()).reason,
             RefusalReason::GameNotFound);
+}
+
+/**
+ * Given a supervisor that read the shipped waves file
+ * When a player asks for a new game of the difficulty "nightmare", which the
+ * file has no table for
+ * Then it is refused as UnknownDifficulty and no game process starts
+ */
+TEST_F(ServerSupervisedGamesFixture, RefusesANewGameOfADifficultyItHasNot) {
+  startSupervisor();
+  GameRules rules = chosenRules();
+  rules.difficulty = std::string{UNKNOWN_DIFFICULTY};
+
+  askForAPlaceAs(0, NEW_GAME_CHOICE, rules);
+
+  EXPECT_TRUE(launcher().commands().empty());
+  const auto answers = sentTo(network().sender().sent(), supervisedPlayer(0));
+  EXPECT_EQ(onlyMessageIn<ConnectionRefused>(answers.back()).reason,
+            RefusalReason::UnknownDifficulty);
+}
+
+/**
+ * Given a supervisor with no game
+ * When a player asks for a new game of ten lives, one past the most
+ * Then it is refused as LivesOutOfRange and no game process starts
+ */
+TEST_F(ServerSupervisedGamesFixture, RefusesANewGameOfTooManyLives) {
+  startSupervisor();
+  GameRules rules = chosenRules();
+  rules.lives = LIVES_PAST_THE_MOST;
+
+  askForAPlaceAs(0, NEW_GAME_CHOICE, rules);
+
+  EXPECT_TRUE(launcher().commands().empty());
+  const auto answers = sentTo(network().sender().sent(), supervisedPlayer(0));
+  EXPECT_EQ(onlyMessageIn<ConnectionRefused>(answers.back()).reason,
+            RefusalReason::LivesOutOfRange);
+}
+
+/**
+ * Given a supervisor with no game
+ * When a player asks for a new game of the difficulty "hard", five lives and
+ * friendly fire
+ * Then the game process starts with those rules
+ */
+TEST_F(ServerSupervisedGamesFixture, StartsANewGameWithTheRulesOfItsCreator) {
+  startSupervisor();
+
+  askForAPlaceAs(0, NEW_GAME_CHOICE, chosenRules());
+
+  ASSERT_EQ(launcher().commands().size(), 1U);
+  const auto& command = launcher().commands().front();
+  EXPECT_EQ(argumentAfter(command, DIFFICULTY_OPTION), CHOSEN_DIFFICULTY);
+  EXPECT_EQ(argumentAfter(command, LIVES_OPTION), CHOSEN_LIVES_ARGUMENT);
+  EXPECT_EQ(argumentAfter(command, FRIENDLY_FIRE_OPTION),
+            FRIENDLY_FIRE_ON_ARGUMENT);
+}
+
+/**
+ * Given a supervisor with no game
+ * When a player asks for any game
+ * Then the game process starts with the default difficulty
+ */
+TEST_F(ServerSupervisedGamesFixture, StartsAnyGameWithTheDefaultRules) {
+  startSupervisor();
+
+  askForAPlaceAs(0);
+
+  ASSERT_EQ(launcher().commands().size(), 1U);
+  EXPECT_EQ(argumentAfter(launcher().commands().front(), DIFFICULTY_OPTION),
+            SHIPPED_DEFAULT_DIFFICULTY);
 }

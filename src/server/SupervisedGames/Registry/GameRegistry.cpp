@@ -14,6 +14,7 @@
 #include "GameOpening.hpp"
 #include "GamePlace.hpp"
 #include "GamePlacement.hpp"
+#include "GameRules.hpp"
 #include "GameState.hpp"
 #include "GameStatus.hpp"
 #include "GameVacancy.hpp"
@@ -69,9 +70,18 @@ std::optional<std::size_t> gameHolding(const std::vector<SupervisedGame>& games,
   return std::nullopt;
 }
 
+/** @returns The state and the seats of @p game for a player who takes any
+ * game: a game played by other rules than the default ones counts as full,
+ * since that player never chose them. */
+GameVacancy vacancyForAnyGame(const SupervisedGame& game) {
+  GameVacancy vacancy = vacancyOf(game);
+  vacancy.full = vacancy.full || game.rules != network::defaultGameRules();
+  return vacancy;
+}
+
 /** @returns The index of the game of @p games the player of @p sender goes
- * to: the one that holds its seat, else the first with a free seat; nothing
- * when none fits. */
+ * to: the one that holds its seat, else the first played by the default rules
+ * with a free seat; nothing when none fits. */
 std::optional<std::size_t> gameFor(const std::vector<SupervisedGame>& games,
                                    const network::Endpoint& sender) {
   if (const std::optional<std::size_t> held = gameHolding(games, sender)) {
@@ -80,7 +90,7 @@ std::optional<std::size_t> gameFor(const std::vector<SupervisedGame>& games,
   std::vector<GameVacancy> vacancies;
   vacancies.reserve(games.size());
   for (const SupervisedGame& game : games) {
-    vacancies.push_back(vacancyOf(game));
+    vacancies.push_back(vacancyForAnyGame(game));
   }
   return firstJoinableGame(vacancies);
 }
@@ -203,6 +213,7 @@ void GameRegistry::open(GameOpening opening) {
                                   .newestSequence = std::nullopt,
                                   .reservations = {},
                                   .creator = std::move(opening.creator),
+                                  .rules = std::move(opening.rules),
                                   .process = std::move(opening.process)});
   ++revision_;
 }

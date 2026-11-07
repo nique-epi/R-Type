@@ -8,6 +8,7 @@
 #include "GameLaunchSettings.hpp"
 #include "GameRegistry.hpp"
 #include "GameSpawner.hpp"
+#include "HostedDifficulties.hpp"
 #include "IDatagramSender.hpp"
 #include "IListeningPort.hpp"
 #include "IModule.hpp"
@@ -70,8 +71,13 @@ class ServerSupervisedGamesModule final : public engine::IModule {
   void install(engine::InstallContext& context) override;
 
   /**
-   * @brief Writes GameLaunchSettings::gameLines to the file of
+   * @brief Reads the waves file of the games and keeps the names of its
+   * difficulties, then writes GameLaunchSettings::gameLines to the file of
    * commands of the games, replacing it.
+   * @throws ServerException, game::GameException or engine::EngineException
+   * (or a class derived from one) when the entity sheets or the waves file
+   * cannot be read: the supervisor then stops, rather than open games that
+   * could not start.
    * @throws GameConfigurationWriteException when the file cannot be written:
    * the supervisor then stops, as it does when its journal or a database
    * cannot be opened, rather than run games without the lines meant for them.
@@ -91,6 +97,7 @@ class ServerSupervisedGamesModule final : public engine::IModule {
   std::unique_ptr<IProcessLauncher> launcher_;
   StopPause pause_;
   GameRegistry registry_;
+  HostedDifficulties difficulties_;
   SupervisedGamesWatch watch_{registry_};
   std::optional<GameSpawner> spawner_;
   logging::Logger logger_;

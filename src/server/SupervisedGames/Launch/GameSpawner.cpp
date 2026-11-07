@@ -11,6 +11,7 @@
 #include "GameCommand.hpp"
 #include "GameLaunch.hpp"
 #include "GameOpening.hpp"
+#include "GameRules.hpp"
 #include "GameSpawnerParts.hpp"
 #include "IChildProcess.hpp"
 #include "NetworkConstants.hpp"
@@ -21,14 +22,16 @@ namespace rtype::server {
 GameSpawner::GameSpawner(GameSpawnerParts parts)
     : parts_(std::move(parts)), logger_(std::string{SUPERVISOR_LOGGER_NAME}) {}
 
-bool GameSpawner::openGame(std::optional<network::Endpoint> creator) {
+bool GameSpawner::openGame(std::optional<network::Endpoint> creator,
+                           network::GameRules rules) {
   const std::uint32_t number = nextNumber_;
   try {
     const GameLaunch launch{
         .number = number,
         .port = parts_.freePort(),
         .supervisorPort = parts_.supervisorPort.get().listeningPort(),
-        .linkToken = drawLinkToken()};
+        .linkToken = drawLinkToken(),
+        .rules = std::move(rules)};
     std::unique_ptr<IChildProcess> process =
         parts_.launcher.get().launch(gameCommand(parts_.settings.get(), launch,
                                                  parts_.database.get().text()));
@@ -36,6 +39,7 @@ bool GameSpawner::openGame(std::optional<network::Endpoint> creator) {
                                            .port = launch.port,
                                            .linkToken = launch.linkToken,
                                            .creator = std::move(creator),
+                                           .rules = launch.rules,
                                            .process = std::move(process)});
     parts_.admission.get().admit(
         network::Endpoint{

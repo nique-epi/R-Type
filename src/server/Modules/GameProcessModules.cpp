@@ -3,10 +3,9 @@
 #include <memory>
 #include <optional>
 #include <vector>
-#include "AssetFolder.hpp"
 #include "BuiltModuleConstants.hpp"
-#include "EntitySheetConstants.hpp"
 #include "ExecutablePath.hpp"
+#include "GameAssetPaths.hpp"
 #include "GameLaunchOptions.hpp"
 #include "GamesSettings.hpp"
 #include "IModule.hpp"
@@ -31,11 +30,9 @@ namespace {
 /** @returns What the games module of a game process is built from: the waves
  * and the entity sheets of the assets folder. */
 GamesSettings gameProcessGamesSettings() {
-  return GamesSettings{
-      .seed = std::nullopt,
-      .wavesFile = engine::locateAssetFolder() / WAVE_FILE_IN_ASSETS,
-      .entitySheetsFolder =
-          engine::locateAssetFolder() / game::ENTITY_SHEET_FOLDER_IN_ASSETS};
+  return GamesSettings{.seed = std::nullopt,
+                       .wavesFile = wavesFileInAssets(),
+                       .entitySheetsFolder = entitySheetsFolderInAssets()};
 }
 
 }  // namespace
