@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <vector>
 #include "BoundAction.hpp"
+#include "Endpoint.hpp"
 #include "ISettingsListener.hpp"
 #include "ISettingsStorage.hpp"
 #include "KeyBindings.hpp"
@@ -88,6 +89,9 @@ template bool SettingsService::apply<DisplayMode>(const Setting<DisplayMode>&,
                                                   DisplayMode);
 template bool SettingsService::apply<std::optional<PixelSize>>(
     const Setting<std::optional<PixelSize>>&, std::optional<PixelSize>);
+template bool SettingsService::apply<std::optional<network::Endpoint>>(
+    const Setting<std::optional<network::Endpoint>>&,
+    std::optional<network::Endpoint>);
 
 void SettingsService::bindKey(BoundAction action, sf::Keyboard::Scancode key) {
   settings_->keys.bind(action, key);

@@ -12,8 +12,11 @@
 #include <system_error>
 #include "BoundAction.hpp"
 #include "ColorMode.hpp"
+#include "Endpoint.hpp"
+#include "EndpointText.hpp"
 #include "InputConstants.hpp"
 #include "KeyNames.hpp"
+#include "NetworkException.hpp"
 #include "PixelSize.hpp"
 #include "PlayerSettings.hpp"
 #include "SettingsConstants.hpp"
@@ -46,6 +49,10 @@ std::string_view switchValue(bool switchedOn) {
 std::string windowSizeValue(PixelSize size) {
   return std::to_string(size.width) + WINDOW_SIZE_VALUE_SEPARATOR +
          std::to_string(size.height);
+}
+
+std::string masterValue(const network::Endpoint& master) {
+  return master.address + MASTER_VALUE_SEPARATOR + std::to_string(master.port);
 }
 
 std::string_view trimmed(std::string_view text) {
@@ -100,6 +107,22 @@ std::optional<PixelSize> windowSizeOf(std::string_view text) {
   }
   return PixelSize{.width = static_cast<unsigned int>(*width),
                    .height = static_cast<unsigned int>(*height)};
+}
+
+/** @returns The master @p text names as <IPv4 address>:<port>; nothing for
+ * any other text, a host name included. */
+std::optional<network::Endpoint> masterOf(std::string_view text) {
+  const std::size_t separator = text.rfind(MASTER_VALUE_SEPARATOR);
+  if (separator == std::string_view::npos) {
+    return std::nullopt;
+  }
+  try {
+    return network::Endpoint{
+        .address = network::ipv4AddressFromText(text.substr(0, separator)),
+        .port = network::portFromText(text.substr(separator + 1))};
+  } catch (const network::NetworkException&) {
+    return std::nullopt;
+  }
 }
 
 /** @returns The value placed in its list as this text is placed in the list of
@@ -181,6 +204,29 @@ std::optional<LineOutcome> applySwitch(PlayerSettings& settings,
 
 /** @returns What became of a setting written into the settings: applied, or
  * left out with the reason. */
+/** @brief Applies @p setting when it names a setting written as a word or a
+ * pair: the window size, the display and color modes, or the master.
+ * @returns What became of the line, nothing for any other name. */
+std::optional<LineOutcome> applyValue(PlayerSettings& settings,
+                                      SettingLine setting) {
+  const auto [name, value] = setting;
+  if (name == WINDOW_SIZE_NAME) {
+    return assign(windowSizeOf(value), settings.windowSize);
+  }
+  if (name == DISPLAY_MODE_NAME) {
+    return assign(valueNamed(value, DISPLAY_MODE_VALUES, DISPLAY_MODES),
+                  settings.displayMode);
+  }
+  if (name == COLOR_MODE_NAME) {
+    return assign(valueNamed(value, COLOR_MODE_VALUES, COLOR_MODES),
+                  settings.colorMode);
+  }
+  if (name == MASTER_NAME) {
+    return assign(masterOf(value), settings.master);
+  }
+  return std::nullopt;
+}
+
 LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
   const auto [name, value] = setting;
   if (name == SETTINGS_VERSION_NAME) {
@@ -193,16 +239,9 @@ LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
   if (name == EFFECTS_VOLUME_NAME) {
     return assign(volumeOf(value), settings.effectsVolume);
   }
-  if (name == WINDOW_SIZE_NAME) {
-    return assign(windowSizeOf(value), settings.windowSize);
-  }
-  if (name == DISPLAY_MODE_NAME) {
-    return assign(valueNamed(value, DISPLAY_MODE_VALUES, DISPLAY_MODES),
-                  settings.displayMode);
-  }
-  if (name == COLOR_MODE_NAME) {
-    return assign(valueNamed(value, COLOR_MODE_VALUES, COLOR_MODES),
-                  settings.colorMode);
+  if (const std::optional<LineOutcome> outcome =
+          applyValue(settings, setting)) {
+    return *outcome;
   }
   if (const std::optional<LineOutcome> outcome =
           applySwitch(settings, setting)) {
@@ -271,6 +310,9 @@ std::string settingsText(const PlayerSettings& settings) {
   writeLine(text, CLIENT_PREDICTION_NAME,
             switchValue(settings.clientPrediction));
   writeLine(text, PILOT_NAMES_NAME, switchValue(settings.pilotNames));
+  if (settings.master.has_value()) {
+    writeLine(text, MASTER_NAME, masterValue(*settings.master));
+  }
   return text;
 }
 

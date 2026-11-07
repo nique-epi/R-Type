@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+#include <string_view>
 #include "PixelSize.hpp"
 
 namespace rtype::client::testing {
@@ -30,6 +32,14 @@ constexpr int ANY_VOLUME = 40;
 constexpr int CHANGED_MUSIC_VOLUME = 35;
 constexpr int CHANGED_EFFECTS_VOLUME = 5;
 constexpr PixelSize SMALLER_WINDOW{.width = 1280, .height = 720};
+
+/** @brief A master the player chose, and the line settings.ini keeps it on. */
+constexpr std::string_view CHOSEN_MASTER_ADDRESS = "10.0.0.2";
+constexpr std::uint16_t CHOSEN_MASTER_PORT = 8080;
+constexpr const char* CHOSEN_MASTER_LINE = "master=10.0.0.2:8080";
+
+/** @brief A master named by host: the line is left out. */
+constexpr const char* HOST_NAME_MASTER_LINE = "master=master.example.org:8080";
 
 /** @brief The music volume of a first launch, and the lowest and the highest
  * volumes a file may hold. */

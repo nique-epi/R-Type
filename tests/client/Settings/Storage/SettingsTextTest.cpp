@@ -6,6 +6,7 @@
 #include "BoundAction.hpp"
 #include "ColorMode.hpp"
 #include "DisplayMode.hpp"
+#include "Endpoint.hpp"
 #include "PlayerSettings.hpp"
 #include "SettingsText.hpp"
 #include "SettingsTextTestConstants.hpp"
@@ -19,14 +20,19 @@ using rtype::client::settingsText;
 using rtype::client::testing::ANY_VOLUME;
 using rtype::client::testing::CHANGED_EFFECTS_VOLUME;
 using rtype::client::testing::CHANGED_MUSIC_VOLUME;
+using rtype::client::testing::CHOSEN_MASTER_ADDRESS;
+using rtype::client::testing::CHOSEN_MASTER_LINE;
+using rtype::client::testing::CHOSEN_MASTER_PORT;
 using rtype::client::testing::FIRST_LAUNCH_FILE;
 using rtype::client::testing::FIRST_LAUNCH_MUSIC_VOLUME;
 using rtype::client::testing::FIRST_LINE_WITHOUT_SEPARATOR;
 using rtype::client::testing::HIGHEST_VOLUME;
+using rtype::client::testing::HOST_NAME_MASTER_LINE;
 using rtype::client::testing::INVALID_FIRST_LINE;
 using rtype::client::testing::LOWEST_VOLUME;
 using rtype::client::testing::SMALLER_WINDOW;
 using rtype::client::testing::UNKNOWN_FIRST_LINE;
+using rtype::network::Endpoint;
 using Scan = sf::Keyboard::Scan;
 
 /**
@@ -57,9 +63,37 @@ TEST(SettingsTextTest, EveryChangedSettingReadsBack) {
   settings.autoFire = true;
   settings.clientPrediction = false;
   settings.pilotNames = false;
+  settings.master = Endpoint{.address = std::string{CHOSEN_MASTER_ADDRESS},
+                             .port = CHOSEN_MASTER_PORT};
 
   EXPECT_EQ(readSettingsText(settingsText(settings), PlayerSettings{}).settings,
             settings);
+}
+
+/**
+ * Given the line a chosen master is kept on
+ * When it is read over the settings of a first launch
+ * Then the master is that address and that port
+ */
+TEST(SettingsTextTest, AMasterReadsBackAsItsAddressAndPort) {
+  const auto reading = readSettingsText(CHOSEN_MASTER_LINE, PlayerSettings{});
+
+  EXPECT_EQ(reading.settings.master.value_or(Endpoint{}),
+            (Endpoint{.address = std::string{CHOSEN_MASTER_ADDRESS},
+                      .port = CHOSEN_MASTER_PORT}));
+}
+
+/**
+ * Given a master line that names a host, not an IPv4 address
+ * When it is read
+ * Then no master is taken, and the line is listed as invalid
+ */
+TEST(SettingsTextTest, AMasterWithAHostNameIsLeftOut) {
+  const auto reading =
+      readSettingsText(HOST_NAME_MASTER_LINE, PlayerSettings{});
+
+  EXPECT_FALSE(reading.settings.master.has_value());
+  EXPECT_EQ(reading.ignoredLines, std::vector<std::string>{INVALID_FIRST_LINE});
 }
 
 /**
