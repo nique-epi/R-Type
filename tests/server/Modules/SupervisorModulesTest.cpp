@@ -173,6 +173,27 @@ TEST_F(SupervisorModulesFixture, KeepsTheLinesOfTheMasterSettings) {
 }
 
 /**
+ * Given a server.cfg that sets master-url and master-key, in a build that left
+ * the master link out, so nothing declares them
+ * When the supervisor starts
+ * Then it starts, refuses both lines, and hands neither to its games
+ */
+TEST_F(SupervisorModulesFixture, RefusesTheMasterSettingsWithoutTheMasterLink) {
+  if (MASTER_LINK_MODULE_BUILT) {
+    GTEST_SKIP() << "the build has the master link";
+  }
+  writeConfiguration(
+      {std::string{MASTER_URL_LINE}, std::string{MASTER_KEY_LINE}});
+  const auto application = supervisor({});
+
+  EXPECT_NO_THROW(application->start());
+
+  EXPECT_EQ(report().refusals.size(), 2U);
+  EXPECT_TRUE(report().handedOverLines.empty());
+  application->stop();
+}
+
+/**
  * Given a supervisor that runs no game yet, built from its real list of
  * modules
  * When a stranger asks for its information
