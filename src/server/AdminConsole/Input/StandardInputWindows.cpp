@@ -42,7 +42,7 @@ HANDLE callingThread() {
  */
 std::optional<std::size_t> readOnce(HANDLE input, std::span<char> buffer,
                                     const std::stop_token& stop) {
-  const HANDLE reader = callingThread();
+  HANDLE reader = callingThread();
   if (reader == nullptr) {
     return std::nullopt;
   }
@@ -77,7 +77,7 @@ std::optional<std::size_t> readOnce(HANDLE input, std::span<char> buffer,
 
 std::optional<std::size_t> StandardInput::read(std::span<char> buffer,
                                                const std::stop_token& stop) {
-  const HANDLE input = ::GetStdHandle(STD_INPUT_HANDLE);
+  HANDLE input = ::GetStdHandle(STD_INPUT_HANDLE);
   if (input == nullptr || input == INVALID_HANDLE_VALUE) {
     return std::nullopt;
   }
