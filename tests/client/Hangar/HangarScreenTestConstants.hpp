@@ -23,6 +23,10 @@ constexpr sf::IntRect TOP_HAT_IN_THE_SHEET{{0, 0}, {14, 10}};
 /** @brief The scale the ship of the hangar is drawn at: four times. */
 constexpr int SHIP_SCALE_OF_THE_HANGAR = 4;
 constexpr std::string_view LOOK_SHEET = "sprites/looks.png";
+constexpr std::string_view LOCKED_STATUS_TEXT =
+    "LOCKED: PICK IT UP IN A MISSION";
+constexpr int CROWN_ICON_LEFT_ON_THE_SHEET = 36;
+constexpr const char* LOOK_SHEET_ID = "sprites/looks.png";
 constexpr std::string_view PARTY_HAT_STATUS = "PARTY HAT - ENTER: WEAR";
 
 }  // namespace rtype::client::testing

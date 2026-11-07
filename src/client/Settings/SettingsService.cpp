@@ -12,6 +12,7 @@
 #include "SettingDefinitionConstants.hpp"
 #include "SettingId.hpp"
 #include "SettingRange.hpp"
+#include "ShipLook.hpp"
 
 namespace rtype::client {
 
@@ -95,6 +96,8 @@ template bool SettingsService::apply<std::optional<network::Endpoint>>(
     const std::optional<network::Endpoint>&);
 template bool SettingsService::apply<ShipLook>(const Setting<ShipLook>&,
                                                const ShipLook&);
+template bool SettingsService::apply<ShipLocker>(const Setting<ShipLocker>&,
+                                                 const ShipLocker&);
 
 void SettingsService::bindKey(BoundAction action, sf::Keyboard::Scancode key) {
   settings_->keys.bind(action, key);

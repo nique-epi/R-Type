@@ -23,6 +23,7 @@
 #include "SettingRange.hpp"
 #include "SettingsConstants.hpp"
 #include "SettingsTextConstants.hpp"
+#include "ShipLocker.hpp"
 #include "ShipLookConstants.hpp"
 #include "ShipLookNumbers.hpp"
 #include "ShipLookSlot.hpp"
@@ -265,6 +266,51 @@ std::optional<LineOutcome> applyLook(PlayerSettings& settings,
   return std::nullopt;
 }
 
+/** @returns The locker the value @p text of the file describes: the items it
+ * names, separated by LOCKER_ITEM_SEPARATOR; a name no item has is skipped,
+ * and EMPTY_LOCKER_VALUE names none. */
+ShipLocker lockerNamed(std::string_view text) {
+  ShipLocker locker;
+  locker.items.reset();
+  std::size_t start = 0;
+  while (start <= text.size()) {
+    const std::size_t end =
+        std::min(text.find(LOCKER_ITEM_SEPARATOR, start), text.size());
+    const std::string_view name = text.substr(start, end - start);
+    for (std::size_t item = 0; item < SHIP_LOOK_ITEM_COUNT; ++item) {
+      if (SHIP_LOOK_ITEM_NAMES.at(item) == name) {
+        locker.items.set(item);
+      }
+    }
+    start = end + 1;
+  }
+  return locker;
+}
+
+/** @returns The value of the locker in the file: the names of the items it
+ * holds, in the order of the catalog, or EMPTY_LOCKER_VALUE. */
+std::string lockerValue(const ShipLocker& locker) {
+  std::string value;
+  for (std::size_t item = 0; item < SHIP_LOOK_ITEM_COUNT; ++item) {
+    if (locker.items.test(item)) {
+      value += value.empty() ? "" : std::string(1, LOCKER_ITEM_SEPARATOR);
+      value += SHIP_LOOK_ITEM_NAMES.at(item);
+    }
+  }
+  return value.empty() ? std::string{EMPTY_LOCKER_VALUE} : value;
+}
+
+/** @returns Applied when the line is the locker, nothing when it names
+ * another setting. */
+std::optional<LineOutcome> applyLocker(PlayerSettings& settings,
+                                       SettingLine setting) {
+  if (setting.name != SHIP_LOCKER_NAME) {
+    return std::nullopt;
+  }
+  settings.shipLocker = lockerNamed(setting.value);
+  return LineOutcome::Applied;
+}
+
 /** @brief Applies @p setting when it names a setting written as a word or a
  * pair: the window size, the display and color modes, or the master.
  * @returns What became of the line, nothing for any other name. */
@@ -307,6 +353,10 @@ LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
     return *outcome;
   }
   if (const std::optional<LineOutcome> outcome = applyLook(settings, setting)) {
+    return *outcome;
+  }
+  if (const std::optional<LineOutcome> outcome =
+          applyLocker(settings, setting)) {
     return *outcome;
   }
   const std::optional<BoundAction> action =
@@ -388,6 +438,7 @@ std::string settingsText(const PlayerSettings& settings) {
   if (settings.master.has_value()) {
     writeLine(text, MASTER_NAME, network::endpointText(*settings.master));
   }
+  writeLine(text, SHIP_LOCKER_NAME, lockerValue(settings.shipLocker));
   return text;
 }
 

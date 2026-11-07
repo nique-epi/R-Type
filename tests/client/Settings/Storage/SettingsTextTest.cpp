@@ -320,3 +320,71 @@ TEST(SettingsTextTest, NoneTakesTheItemOff) {
   EXPECT_EQ(readSettingsText(BARE_HEAD_FILE, defaults).settings.shipLook.head,
             WEARS_NOTHING);
 }
+
+/**
+ * Given the settings of a first launch
+ * When they are read
+ * Then the locker holds the starter kit: the top hat, the cool shades and the
+ * mustache, and no other item
+ */
+TEST(SettingsTextTest, AFirstLaunchHoldsTheStarterKit) {
+  const PlayerSettings settings;
+
+  EXPECT_EQ(settings.shipLocker.items.count(), 3U);
+  EXPECT_TRUE(settings.shipLocker.items.test(0));
+  EXPECT_TRUE(settings.shipLocker.items.test(8));
+  EXPECT_TRUE(settings.shipLocker.items.test(9));
+}
+
+/**
+ * Given a locker holding the top hat, the crown, the shades and the mustache
+ * When the settings are written
+ * Then the line lists the items by their names, in the order of the catalog
+ */
+TEST(SettingsTextTest, TheLockerIsWrittenByItsItemNames) {
+  PlayerSettings settings;
+  settings.shipLocker.items.set(2);
+
+  EXPECT_NE(settingsText(settings).find(
+                "ship_locker=top_hat,crown,cool_shades,mustache\n"),
+            std::string::npos);
+}
+
+/**
+ * Given a file whose locker line names the crown and the shades
+ * When it is read
+ * Then the locker holds those two items alone
+ */
+TEST(SettingsTextTest, TheLockerReadsBackByItsNames) {
+  const rtype::client::SettingsReading reading =
+      readSettingsText("ship_locker=crown,cool_shades\n", PlayerSettings{});
+
+  EXPECT_EQ(reading.settings.shipLocker.items.count(), 2U);
+  EXPECT_TRUE(reading.settings.shipLocker.items.test(2));
+  EXPECT_TRUE(reading.settings.shipLocker.items.test(8));
+}
+
+/**
+ * Given a locker line that names the crown and an item no one knows
+ * When it is read
+ * Then the crown is in the locker and the unknown name is skipped
+ */
+TEST(SettingsTextTest, AnUnknownNameInTheLockerIsSkipped) {
+  const rtype::client::SettingsReading reading =
+      readSettingsText("ship_locker=crown,tiara\n", PlayerSettings{});
+
+  EXPECT_EQ(reading.settings.shipLocker.items.count(), 1U);
+  EXPECT_TRUE(reading.settings.shipLocker.items.test(2));
+}
+
+/**
+ * Given a locker line holding none
+ * When it is read
+ * Then the locker is empty
+ */
+TEST(SettingsTextTest, NoneIsAnEmptyLocker) {
+  const rtype::client::SettingsReading reading =
+      readSettingsText("ship_locker=none\n", PlayerSettings{});
+
+  EXPECT_TRUE(reading.settings.shipLocker.items.none());
+}

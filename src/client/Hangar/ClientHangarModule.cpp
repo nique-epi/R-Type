@@ -2,6 +2,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "ClientConstants.hpp"
 #include "ConnectionPhase.hpp"
 #include "ConnectionStatus.hpp"
 #include "HangarScreen.hpp"
@@ -16,6 +17,8 @@
 #include "ScreenBuilding.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenRegistry.hpp"
+#include "TimeConstants.hpp"
+#include "WonItems.hpp"
 
 namespace rtype::client {
 
@@ -49,11 +52,18 @@ std::string ClientHangarModule::name() const {
 }
 
 std::vector<std::string> ClientHangarModule::dependencies() const {
-  return {std::string{SCREENS_MODULE_NAME}};
+  return {std::string{SCREENS_MODULE_NAME}, std::string{CONNECTION_MODULE_NAME},
+          std::string{SETTINGS_MODULE_NAME}};
 }
 
 void ClientHangarModule::install(engine::InstallContext& context) {
   context.require<ScreenRegistry>().add(HANGAR_SCREEN, buildHangarScreen);
+  shipLooks_ = &context.require<ShipLookExchange>();
+  settings_ = &context.require<SettingsService>();
+  context.addWork(UPDATE_STAGE,
+                  [this]([[maybe_unused]] engine::Duration elapsed) {
+                    storeWonItems(*shipLooks_, *settings_);
+                  });
 }
 
 void ClientHangarModule::start() {}

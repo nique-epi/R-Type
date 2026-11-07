@@ -25,6 +25,8 @@ HangarScreenFixture::HangarScreenFixture(MotionPreference motion)
                             .motion = motion},
           std::make_unique<RecordingInterfaceCanvas>(painting_))) {}
 
+void HangarScreenFixture::holdEveryItem() { settings_.shipLocker.items.set(); }
+
 void HangarScreenFixture::press(sf::Keyboard::Key key) {
   screen_->handleEvent(sf::Event::KeyPressed{.code = key});
   screen_->handleEvent(sf::Event::KeyReleased{.code = key});

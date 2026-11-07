@@ -37,7 +37,8 @@ constexpr const char* FIRST_LAUNCH_FILE =
     "chat_background=70\n"
     "ship_head=none\n"
     "ship_eyes=none\n"
-    "ship_face=none\n";
+    "ship_face=none\n"
+    "ship_locker=top_hat,cool_shades,mustache\n";
 
 /** @brief The ship wearing the crown, the third item of the locker, and the
  * shades, the ninth: what a slot holds is the place of its item plus one. */
