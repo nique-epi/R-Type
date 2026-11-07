@@ -163,7 +163,10 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets
   PATTERN waves EXCLUDE
   PATTERN compression EXCLUDE
 )
+# The server reads its waves and its sheets, and serves the content pack of
+# those sheets, which holds the sprite sheets they name.
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/waves ${CMAKE_SOURCE_DIR}/assets/entities
+  ${CMAKE_SOURCE_DIR}/assets/sprites
   DESTINATION assets COMPONENT server
 )
 
