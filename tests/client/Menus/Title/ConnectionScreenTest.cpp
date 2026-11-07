@@ -36,10 +36,12 @@ using rtype::client::GAME_IN_PROGRESS_STATUS;
 using rtype::client::GAME_NOT_FOUND_STATUS;
 using rtype::client::INVALID_ADDRESS_STATUS;
 using rtype::client::INVALID_PORT_STATUS;
+using rtype::client::LIVES_OUT_OF_RANGE_STATUS;
 using rtype::client::LOBBY_SCREEN;
 using rtype::client::MISSING_NICKNAME_STATUS;
 using rtype::client::NICKNAME_TAKEN_STATUS;
 using rtype::client::SERVER_FULL_STATUS;
+using rtype::client::UNKNOWN_DIFFICULTY_STATUS;
 using rtype::client::UNREACHABLE_STATUS;
 using rtype::client::testing::ACCEPTED_AS_FIRST_PLAYER;
 using rtype::client::testing::CANCEL;
@@ -412,11 +414,15 @@ INSTANTIATE_TEST_SUITE_P(
                       std::tuple(RefusalReason::GameNotFound,
                                  std::string_view(GAME_NOT_FOUND_STATUS)),
                       std::tuple(RefusalReason::ServerFull,
-                                 std::string_view(SERVER_FULL_STATUS))));
+                                 std::string_view(SERVER_FULL_STATUS)),
+                      std::tuple(RefusalReason::UnknownDifficulty,
+                                 std::string_view(UNKNOWN_DIFFICULTY_STATUS)),
+                      std::tuple(RefusalReason::LivesOutOfRange,
+                                 std::string_view(LIVES_OUT_OF_RANGE_STATUS))));
 
 /**
- * Given an attempt a server of protocol version 11 refused as
- * IncompatibleVersion, the client speaking version 10
+ * Given an attempt a server of protocol version 12 refused as
+ * IncompatibleVersion, the client speaking version 11
  * When a frame goes by
  * Then the status line names both versions, the client's first
  */
@@ -425,7 +431,7 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
-  EXPECT_NE(writingOf(canvas(), "REFUSED: V10, SERVER V11"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "REFUSED: V11, SERVER V12"), nullptr);
 }
 
 /**

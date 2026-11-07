@@ -21,6 +21,8 @@ bool isListed(RefusalReason reason) {
     case RefusalReason::NicknameTaken:
     case RefusalReason::GameNotFound:
     case RefusalReason::ServerFull:
+    case RefusalReason::UnknownDifficulty:
+    case RefusalReason::LivesOutOfRange:
       return true;
   }
   return false;

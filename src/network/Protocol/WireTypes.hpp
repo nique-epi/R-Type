@@ -104,6 +104,13 @@ float readCoordinate(ByteReader& reader);
 void requireValidNickname(std::string_view nickname);
 
 /**
+ * @brief Checks that @p difficulty is a name of a difficulty the protocol
+ * carries: it follows the rules of a nickname (isValidNickname()).
+ * @throws InvalidDifficultyException when it does not.
+ */
+void requireValidDifficulty(std::string_view difficulty);
+
+/**
  * @brief Checks that @p playerNumber is the number of a player of a game,
  * FIRST_PLAYER_NUMBER to MAXIMUM_PLAYERS.
  * @throws InvalidFieldValueException naming playerNumber when it is not.

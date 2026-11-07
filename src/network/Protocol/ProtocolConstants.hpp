@@ -20,7 +20,10 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 10 makes a
+ * @brief The version of the protocol this code speaks. Version 11 makes a
+ * ConnectionRequest for a NewGame carry the rules of that game, and adds the
+ * refusals UnknownDifficulty and LivesOutOfRange, see the Version 11 section;
+ * version 10 makes a
  * ConnectionAccepted announce the content pack of the game in place of the
  * table of its entity types, see the Version 10 section; version 9 makes a
  * ConnectionRequest name the game it asks for, and adds the refusals
@@ -37,7 +40,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * frame, see the Compression section; version 3 adds the outcome of a game to
  * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 10;
+constexpr std::uint8_t PROTOCOL_VERSION = 11;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -558,6 +561,7 @@ constexpr std::string_view PART_COUNT_FIELD = "partCount";
 constexpr std::string_view BASE_DISTANCE_FIELD = "baseDistance";
 constexpr std::string_view CONTENT_SIZE_FIELD = "content.size";
 constexpr std::string_view NUMBER_FIELD = "number";
+constexpr std::string_view RULES_FIELD = "rules";
 constexpr std::string_view FIRST_KEPT_FIELD = "firstKept";
 constexpr std::string_view INNER_TYPE_FIELD = "innerType";
 constexpr std::string_view CARRIED_PAYLOAD_SIZE_FIELD = "carriedPayloadSize";

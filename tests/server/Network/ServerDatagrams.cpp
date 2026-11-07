@@ -52,7 +52,8 @@ std::vector<std::byte> requestDatagramFor(
       rtype::network::ConnectionRequest{
           .cookie = cookie,
           .nickname = std::string{rtype::server::testing::PLAYER_NICKNAME},
-          .game = game});
+          .game = game,
+          .rules = rtype::network::defaultRulesFor(game)});
 }
 
 std::vector<std::byte> requestDatagramOf(const std::string& nickname,
