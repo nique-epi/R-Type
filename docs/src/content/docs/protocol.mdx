@@ -55,7 +55,7 @@ Every field takes the smallest whole number of bytes its values need, and flags 
 | Payload | Packed | Unpacked | Saved |
 |---|---|---|---|
 | Typical world state | 268 bytes (6 + 16 per player + 9 per entity) | 376 bytes (6 + 21 per player + 13 per entity) | 108 bytes, 28.7 % |
-| `PlayerInput` with 5 repeats | 11 bytes | 35 bytes | 24 bytes, 68.6 % |
+| `PlayerInput` with 5 repeats | 15 bytes | 39 bytes | 24 bytes, 61.5 % |
 
 At 20 states and 60 inputs per second, that is 2160 bytes per second less to each client and 1440 less from it, before compression. The unpacked form is never sent: it exists only to give the figure. The test prints both sizes:
 
@@ -157,7 +157,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 4 | `Disconnection` | none | when the player closes the client, three times 50 ms apart |
 | 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32`, `ticks` `bool` (always 0), `tick` `u32` (always 0) (see [Round trip](#round-trip) and [Clock of the server](#clock-of-the-server)) | every 500 ms, whatever else it sends; the client also 40 ms after accepting a datagram that holds guaranteed messages when nothing else was sent |
 | 6 | `ReadyState` | `ready` `bool` | when the player changes it, and again while `LobbyState` shows another value |
-| 9 | `PlayerInput` | `inputNumber` `u32`, `actions` `u8`, `earlierCount` `u8`, then `earlierCount` times `actions` `u8` | 60 times per second during a game |
+| 9 | `PlayerInput` | `inputNumber` `u32`, `actions` `u8`, `earlierCount` `u8`, then `earlierCount` times `actions` `u8`, then `shownTick` `u32` | 60 times per second during a game |
 | 17 | `GameLoaded` | none | with a `PlayerInput`, at most every 100 ms, from the first one after `GameStarted` until the first state (`WorldState` or `DeltaWorldState`) arrives |
 | 18 | `LeaderboardRequest` | `playerCount` `u8` (1 to 4), `difficulty` `string` | when the player opens or changes a leaderboard, then every 500 ms until an answer; the client gives up after 5 s |
 | 24 | `ServerInformationRequest` | `sentAt` `u32`, then `padding`, 77 bytes of 0 (see [Server information](#server-information)) | by anyone, outside any session, to learn what a server is and its round trip: a client that lists the servers |
@@ -332,7 +332,7 @@ Alternative considered: a hash of the name in each entity instead of a table. It
 
 ### Inputs
 
-`actions` holds one bit per action, bit 0 being the least significant: 0 up, 1 down, 2 left, 3 right, 4 shoot. Bits 5 to 7 are 0, otherwise the message is invalid. A `PlayerInput` is sent even when no key is held (`actions` is 0). `inputNumber` starts at 1 and grows by 1 for each input sent.
+`actions` holds one bit per action, bit 0 being the least significant: 0 up, 1 down, 2 left, 3 right, 4 shoot. Bits 5 to 7 are 0, otherwise the message is invalid. A `PlayerInput` is sent even when no key is held (`actions` is 0). `inputNumber` starts at 1 and grows by 1 for each input sent. `shownTick` is the tick of the server the client draws the other entities at when it sends the input, 0 before its first state: the server tests the missiles of that player against the enemies where the player saw them (see [Own missiles](#own-missiles)).
 
 A `PlayerInput` also repeats the inputs the server has not confirmed, so the loss of one datagram loses no input. `actions` is the newest input, numbered `inputNumber`; the `earlierCount` actions after it are those of the inputs numbered `inputNumber - 1`, `inputNumber - 2` and so on, newest first. `earlierCount` is at most 15 (`MAXIMUM_REPEATED_INPUTS`, **provisional**: 250 ms at 60 inputs per second, the time between two `WorldState` that confirm inputs plus a round trip, to be revised once measured on a real network) and never reaches below input 1: a message that announces more, or whose earliest input would be numbered 0 or less, is invalid. A sender repeats every input it sent that the server did not confirm, up to that limit; the server confirms an input in `acknowledgedInput` of `WorldState` (see [World state](#world-state)), which is the newest input it applied, so a client forgets the inputs numbered up to that value. Before any confirmation arrives, a sender repeats the 15 inputs before the newest.
 
@@ -455,6 +455,8 @@ A client draws its own ship ahead of the server (it predicts it), and the other 
 - A client matches a missile it fired to the `EntitySpawned` whose `owner` is its own player number and whose `firingInput` is the input it fired with. What it draws of that missile, and when it gives up a shot the server did not make, is the business of the client (see [Client](/R-Type/client/)).
 
 The gun of the acceptance gives the client what it needs to fire as the server does: the ticks between two shots and before the first one, and the velocity of the missile (see [Entity types](#entity-types)).
+
+Each `PlayerInput` says which tick the client shows the other entities at (`shownTick`). The server tests a missile of that player against the enemies as they were at that tick, so a missile hits what its player saw it hit; the server goes back at most 200 ms, and never hits an enemy that is already destroyed (see [Server](/R-Type/server/#lag-compensation-of-the-shots)). A client may claim any tick: the bound caps how far in the past it may make the server look, as every lag compensation does.
 
 ## A session
 
@@ -724,7 +726,7 @@ Version 9 lets a player create or join a game: `ConnectionRequest` carries `kind
 
 ## Version 10
 
-Version 10 lets a client predict its own missiles (see [Own missiles](#own-missiles)): each type of `ConnectionAccepted` carries its box, `hitboxWidth` and `hitboxHeight`, the acceptance ends with the gun of the ships, and `EntitySpawned` ends with `owner` and `firingInput`. The layout of both messages changes, so a receiver of version 9 would read the box of the first type as the side of the second, which is why `version` became 10. The largest acceptance grows from 859 to 1001 bytes, still sent only to a sender that proved its address, and an `EntitySpawned` from 9 to 14 bytes. The server now guarantees the `EntitySpawned` of a missile of a player; the others are still sent once.
+Version 10 lets a client predict its own missiles (see [Own missiles](#own-missiles)): each type of `ConnectionAccepted` carries its box, `hitboxWidth` and `hitboxHeight`, the acceptance ends with the gun of the ships, `EntitySpawned` ends with `owner` and `firingInput`, and `PlayerInput` ends with `shownTick`. The layout of the three messages changes, so a receiver of version 9 would read the box of the first type as the side of the second, which is why `version` became 10. The largest acceptance grows from 859 to 1001 bytes, still sent only to a sender that proved its address, and an `EntitySpawned` from 9 to 14 bytes. The server now guarantees the `EntitySpawned` of a missile of a player; the others are still sent once.
 
 ## Implementation status
 

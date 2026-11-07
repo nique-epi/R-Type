@@ -39,20 +39,23 @@ using testing::OWNER_AND_INPUT_BYTE_COUNT;
 using testing::PLAYER_NUMBER_ABOVE_THE_LAST;
 using testing::REPEATED_INPUT_LIMIT;
 using testing::SECOND_PLAYER_NUMBER;
+using testing::SHOWN_TICK_BYTE_COUNT;
 using testing::SMALLEST_WIRE_COORDINATE;
 using testing::SOME_EVENT_NUMBER;
 using testing::SOME_FIRING_INPUT;
 using testing::SOME_INPUT_NUMBER;
+using testing::SOME_SHOWN_TICK;
 using testing::UP_AND_SHOOT;
 
 /**
  * Given input number 0x01020304 with up and shoot held
  * When the PlayerInput is encoded
- * Then the payload is the number on four bytes, the byte 11, then 0 earlier
- * actions
+ * Then the payload is the number on four bytes, the byte 11, 0 earlier
+ * actions, then no shown tick on four bytes
  */
 TEST(PlayerInput, EncodesTheInputNumberThenTheActions) {
-  const auto expected = byteSequence({0x01, 0x02, 0x03, 0x04, 0x11, 0x00});
+  const auto expected = byteSequence(
+      {0x01, 0x02, 0x03, 0x04, 0x11, 0x00, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_EQ(encodeMessage(PlayerInput{.inputNumber = SOME_INPUT_NUMBER,
                                       .actions = UP_AND_SHOOT,
@@ -92,7 +95,8 @@ TEST(PlayerInput, DecodesWhatItEncoded) {
  * Then it is accepted with no action
  */
 TEST(PlayerInput, AcceptsAnInputWithNoKeyHeld) {
-  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x01, 0x00, 0x00});
+  const auto bytes = byteSequence(
+      {0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_EQ(decodeMessage<PlayerInput>(bytes).actions, 0);
 }
@@ -104,8 +108,10 @@ TEST(PlayerInput, AcceptsAnInputWithNoKeyHeld) {
  * Then each is refused
  */
 TEST(PlayerInput, RefusesToReadABitAboveTheActions) {
-  const auto firstBitAbove = byteSequence({0x00, 0x00, 0x00, 0x01, 0x20, 0x00});
-  const auto lastBit = byteSequence({0x00, 0x00, 0x00, 0x01, 0x80, 0x00});
+  const auto firstBitAbove = byteSequence(
+      {0x00, 0x00, 0x00, 0x01, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00});
+  const auto lastBit = byteSequence(
+      {0x00, 0x00, 0x00, 0x01, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<PlayerInput>(firstBitAbove),
                InvalidFieldValueException);
@@ -139,14 +145,35 @@ TEST(PlayerInput, RefusesAnInputCutShort) {
 }
 
 /**
- * Given a whole input, with no earlier action, followed by one more byte
+ * Given a whole input, with no earlier action and its shown tick, followed by
+ * one more byte
  * When it is decoded
  * Then a TrailingBytesException is raised
  */
-TEST(PlayerInput, RefusesBytesAfterTheEarlierActions) {
-  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00});
+TEST(PlayerInput, RefusesBytesAfterTheShownTick) {
+  const auto bytes = byteSequence(
+      {0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<PlayerInput>(bytes), TrailingBytesException);
+}
+
+/**
+ * Given input 1 sent while its client shows tick 300
+ * When the PlayerInput is encoded then decoded
+ * Then its last four bytes are 300, and the decoded input shows tick 300
+ */
+TEST(PlayerInput, EndsWithTheTickItsClientShows) {
+  const PlayerInput input{.inputNumber = 1,
+                          .actions = 0,
+                          .earlierActions = {},
+                          .shownTick = SOME_SHOWN_TICK};
+
+  const std::vector<std::byte> payload = encodeMessage(input);
+
+  EXPECT_EQ(std::vector<std::byte>(payload.end() - SHOWN_TICK_BYTE_COUNT,
+                                   payload.end()),
+            byteSequence({0x00, 0x00, 0x01, 0x2C}));
+  EXPECT_EQ(decodeMessage<PlayerInput>(payload).shownTick, SOME_SHOWN_TICK);
 }
 
 /**
@@ -155,8 +182,8 @@ TEST(PlayerInput, RefusesBytesAfterTheEarlierActions) {
  * Then the count 2 and the earlier actions follow, the one just before first
  */
 TEST(PlayerInput, EncodesTheEarlierActionsAfterTheirCount) {
-  const auto expected =
-      byteSequence({0x01, 0x02, 0x03, 0x04, 0x11, 0x02, 0x01, 0x04});
+  const auto expected = byteSequence(
+      {0x01, 0x02, 0x03, 0x04, 0x11, 0x02, 0x01, 0x04, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_EQ(encodeMessage(PlayerInput{.inputNumber = SOME_INPUT_NUMBER,
                                       .actions = UP_AND_SHOOT,
@@ -232,7 +259,8 @@ TEST(PlayerInput, RefusesEarlierActionsBelowTheFirstInput) {
  * Then it is accepted with that action
  */
 TEST(PlayerInput, AcceptsEarlierActionsDownToTheFirstInput) {
-  const auto bytes = byteSequence({0x00, 0x00, 0x00, 0x02, 0x00, 0x01, 0x04});
+  const auto bytes = byteSequence(
+      {0x00, 0x00, 0x00, 0x02, 0x00, 0x01, 0x04, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_EQ(decodeMessage<PlayerInput>(bytes).earlierActions,
             std::vector<std::uint8_t>{0x04});
@@ -256,7 +284,8 @@ TEST(PlayerInput, RefusesEarlierActionsCutShort) {
  * Then an InvalidFieldValueException is raised
  */
 TEST(PlayerInput, RefusesABitAboveTheActionsInAnEarlierAction) {
-  const auto bytes = byteSequence({0x01, 0x02, 0x03, 0x04, 0x00, 0x01, 0x20});
+  const auto bytes = byteSequence(
+      {0x01, 0x02, 0x03, 0x04, 0x00, 0x01, 0x20, 0x00, 0x00, 0x00, 0x00});
 
   EXPECT_THROW((void)decodeMessage<PlayerInput>(bytes),
                InvalidFieldValueException);

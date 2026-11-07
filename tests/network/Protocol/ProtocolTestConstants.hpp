@@ -160,6 +160,11 @@ constexpr std::uint8_t PLAYER_NUMBER_ABOVE_THE_LAST = 5;
 constexpr std::uint32_t SOME_FIRING_INPUT = 300;
 constexpr std::size_t OWNER_AND_INPUT_BYTE_COUNT = 5;
 
+/** @brief A tick a client shows in the example input, 300, and the bytes it
+ * takes at the end of a PlayerInput. */
+constexpr std::uint32_t SOME_SHOWN_TICK = 300;
+constexpr std::size_t SHOWN_TICK_BYTE_COUNT = 4;
+
 /**
  * @brief Type numbers of the examples of the tests, as their byte layouts
  * write them: 3 for the example entity, 1 for the example ship, 4 for an

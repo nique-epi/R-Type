@@ -21,8 +21,10 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 /**
  * @brief The version of the protocol this code speaks. Version 10 gives each
  * type of ConnectionAccepted its box and the acceptance the gun of the ships,
- * and makes EntitySpawned name the player and the input that fired a missile,
- * so a client can predict its own missiles, see the Version 10 section;
+ * makes EntitySpawned name the player and the input that fired a missile, and
+ * PlayerInput the tick its client shows, so a client can predict its own
+ * missiles and the server test them where the player saw the enemies, see the
+ * Version 10 section;
  * version 9 makes a
  * ConnectionRequest name the game it asks for, and adds the refusals
  * GameNotFound and ServerFull, see the Version 9 section; version 8 makes a
@@ -543,6 +545,9 @@ constexpr std::uint8_t NO_OWNER = 0;
 
 /** @brief The firingInput of an EntitySpawned that no input fired. */
 constexpr std::uint32_t NO_FIRING_INPUT = 0;
+
+/** @brief The shownTick of a PlayerInput sent before the first state. */
+constexpr std::uint32_t NO_SHOWN_TICK = 0;
 
 /**
  * @brief The names of the fields a refused message is reported by, as the
