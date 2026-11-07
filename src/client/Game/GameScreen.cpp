@@ -61,7 +61,6 @@
 #include "ScoreBoard.hpp"
 #include "ShipFlightSystem.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
-#include "GameNoticeConstants.hpp"
 #include "GameScreenIdConstants.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PlayerSettings.hpp"
