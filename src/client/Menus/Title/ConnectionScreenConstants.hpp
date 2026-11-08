@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <string_view>
 #include "InterfaceConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "ProtocolConstants.hpp"
@@ -68,8 +69,11 @@ constexpr const char* GAME_IN_PROGRESS_STATUS = "REFUSED: GAME IN PROGRESS";
 constexpr const char* NICKNAME_TAKEN_STATUS = "REFUSED: CALLSIGN TAKEN";
 constexpr const char* GAME_NOT_FOUND_STATUS = "REFUSED: NO SUCH GAME";
 constexpr const char* SERVER_FULL_STATUS = "REFUSED: SERVER FULL";
-constexpr const char* UNKNOWN_DIFFICULTY_STATUS = "REFUSED: NO SUCH DIFFICULTY";
-constexpr const char* LIVES_OUT_OF_RANGE_STATUS = "REFUSED: LIVES OUT OF RANGE";
+constexpr const char* UNKNOWN_DIFFICULTY_STATUS = "REFUSED: BAD DIFFICULTY";
+/** @brief The refusal of lives out of bounds, then the fewest lives a server
+ * accepts, LIVES_BOUNDS_SEPARATOR and the most it accepts. */
+constexpr const char* LIVES_REFUSED_STATUS = "REFUSED: LIVES ";
+constexpr const char* LIVES_BOUNDS_SEPARATOR = " TO ";
 constexpr const char* INCOMPATIBLE_VERSION_STATUS = "REFUSED: V";
 constexpr const char* SERVER_VERSION_STATUS = ", SERVER V";
 constexpr const char* UNREACHABLE_STATUS = "SERVER UNREACHABLE";
@@ -98,6 +102,18 @@ constexpr const char* PACK_REFUSED_STATUS = "PACK REFUSED";
 constexpr std::size_t STATUS_LINE_CHARACTERS = static_cast<std::size_t>(
     (FORM_WIDTH - (SIDES_PER_AXIS * FORM_HEADING_OFFSET.x)) /
     REGULAR_FONT_ADVANCE);
+
+static_assert(std::string_view(UNKNOWN_DIFFICULTY_STATUS).size() <=
+                  STATUS_LINE_CHARACTERS,
+              "the refusal of a difficulty fits its status line");
+static_assert(std::string_view(LIVES_REFUSED_STATUS).size() +
+                      std::string_view(LIVES_BOUNDS_SEPARATOR).size() +
+                      static_cast<std::size_t>(
+                          SIDES_PER_AXIS *
+                          (std::numeric_limits<std::uint8_t>::digits10 + 1)) <=
+                  STATUS_LINE_CHARACTERS,
+              "the refusal of lives fits its status line, with two bounds of "
+              "three digits");
 
 /**
  * @brief How long the connection screen shows that the server accepted the

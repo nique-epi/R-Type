@@ -62,4 +62,9 @@ constexpr std::size_t PACK_SIZE = 150'000;
 constexpr std::size_t NOTHING_RECEIVED = 0;
 constexpr std::size_t HALF_RECEIVED = 75'000;
 
+/** @brief The status lines the two refusals of the rules of a new game must
+ * read, as a player sees them: the bounds of the lives written out. */
+constexpr std::string_view BAD_DIFFICULTY_REFUSAL = "REFUSED: BAD DIFFICULTY";
+constexpr std::string_view LIVES_BOUNDS_REFUSAL = "REFUSED: LIVES 1 TO 9";
+
 }  // namespace rtype::client::testing

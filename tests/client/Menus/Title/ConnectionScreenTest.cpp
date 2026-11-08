@@ -37,14 +37,13 @@ using rtype::client::GAME_IN_PROGRESS_STATUS;
 using rtype::client::GAME_NOT_FOUND_STATUS;
 using rtype::client::INVALID_ADDRESS_STATUS;
 using rtype::client::INVALID_PORT_STATUS;
-using rtype::client::LIVES_OUT_OF_RANGE_STATUS;
 using rtype::client::LOBBY_SCREEN;
 using rtype::client::MISSING_NICKNAME_STATUS;
 using rtype::client::NICKNAME_TAKEN_STATUS;
 using rtype::client::SERVER_FULL_STATUS;
-using rtype::client::UNKNOWN_DIFFICULTY_STATUS;
 using rtype::client::UNREACHABLE_STATUS;
 using rtype::client::testing::ACCEPTED_AS_FIRST_PLAYER;
+using rtype::client::testing::BAD_DIFFICULTY_REFUSAL;
 using rtype::client::testing::CANCEL;
 using rtype::client::testing::HALF_RECEIVED;
 using rtype::client::testing::LAST_ADDRESS_NUMBER_TEXT;
@@ -53,6 +52,7 @@ using rtype::client::testing::LAUNCH_GAME;
 using rtype::client::testing::LAUNCH_NICKNAME;
 using rtype::client::testing::LAUNCH_PORT;
 using rtype::client::testing::LAUNCH_PORT_TEXT;
+using rtype::client::testing::LIVES_BOUNDS_REFUSAL;
 using rtype::client::testing::MAP_ADDRESS;
 using rtype::client::testing::MAP_PORT;
 using rtype::client::testing::NEXT_PROTOCOL_VERSION;
@@ -408,20 +408,18 @@ TEST_F(ConnectionScreenFixture, BackPlaysTheClick) {
 
 INSTANTIATE_TEST_SUITE_P(
     EveryReasonButTheVersion, ConnectionRefusalFixture,
-    ::testing::Values(std::tuple(RefusalReason::GameFull,
-                                 std::string_view(GAME_FULL_STATUS)),
-                      std::tuple(RefusalReason::GameInProgress,
-                                 std::string_view(GAME_IN_PROGRESS_STATUS)),
-                      std::tuple(RefusalReason::NicknameTaken,
-                                 std::string_view(NICKNAME_TAKEN_STATUS)),
-                      std::tuple(RefusalReason::GameNotFound,
-                                 std::string_view(GAME_NOT_FOUND_STATUS)),
-                      std::tuple(RefusalReason::ServerFull,
-                                 std::string_view(SERVER_FULL_STATUS)),
-                      std::tuple(RefusalReason::UnknownDifficulty,
-                                 std::string_view(UNKNOWN_DIFFICULTY_STATUS)),
-                      std::tuple(RefusalReason::LivesOutOfRange,
-                                 std::string_view(LIVES_OUT_OF_RANGE_STATUS))));
+    ::testing::Values(
+        std::tuple(RefusalReason::GameFull, std::string_view(GAME_FULL_STATUS)),
+        std::tuple(RefusalReason::GameInProgress,
+                   std::string_view(GAME_IN_PROGRESS_STATUS)),
+        std::tuple(RefusalReason::NicknameTaken,
+                   std::string_view(NICKNAME_TAKEN_STATUS)),
+        std::tuple(RefusalReason::GameNotFound,
+                   std::string_view(GAME_NOT_FOUND_STATUS)),
+        std::tuple(RefusalReason::ServerFull,
+                   std::string_view(SERVER_FULL_STATUS)),
+        std::tuple(RefusalReason::UnknownDifficulty, BAD_DIFFICULTY_REFUSAL),
+        std::tuple(RefusalReason::LivesOutOfRange, LIVES_BOUNDS_REFUSAL)));
 
 /**
  * Given an attempt a server of protocol version 13 refused as

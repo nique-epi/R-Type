@@ -18,6 +18,7 @@
 #include "Endpoint.hpp"
 #include "EndpointForm.hpp"
 #include "EndpointReading.hpp"
+#include "GameRuleConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
@@ -46,6 +47,13 @@ std::string versionRefusalLine(std::uint8_t serverVersion) {
          std::to_string(static_cast<unsigned int>(serverVersion));
 }
 
+/** @returns The status line of a refusal of lives out of bounds: the bounds
+ * a server accepts. */
+std::string livesRefusalLine() {
+  return LIVES_REFUSED_STATUS + std::to_string(identifiers::LOWEST_LIVES) +
+         LIVES_BOUNDS_SEPARATOR + std::to_string(identifiers::HIGHEST_LIVES);
+}
+
 /** @returns The status line of the refusal @p status reports. */
 std::string refusalLine(const ConnectionStatus& status) {
   switch (status.refusal) {
@@ -62,7 +70,7 @@ std::string refusalLine(const ConnectionStatus& status) {
     case network::RefusalReason::UnknownDifficulty:
       return UNKNOWN_DIFFICULTY_STATUS;
     case network::RefusalReason::LivesOutOfRange:
-      return LIVES_OUT_OF_RANGE_STATUS;
+      return livesRefusalLine();
     case network::RefusalReason::IncompatibleVersion:
       break;
   }
