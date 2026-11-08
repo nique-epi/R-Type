@@ -280,7 +280,7 @@ pre code{overflow-wrap:normal}
 <h4>Modules optionnels à la compilation</h4>
 <p class="pitch">Chaque module optionnel a une option CMake ; désactivé, son dossier n'est pas compilé et le programme démarre sans lui.</p>
 <p class="refs">PR #258 · README § Build options</p>
-<div class="block b-where"><div class="label">Où</div><p>Options <code>RTYPE_MODULE_AUDIO</code>, <code>_METRICS</code>, <code>_MASTER_LINK</code>, <code>_ADMIN_CONSOLE</code>, <code>_CHAT</code>, <code>_PLUGINS</code>, <code>_GAME_STATISTICS</code>. Seul le sous-dossier <code>Contract/</code> d'un module (ses interfaces) reste compilé.</p></div>
+<div class="block b-where"><div class="label">Où</div><p>Options <code>RTYPE_MODULE_AUDIO</code>, <code>_METRICS</code>, <code>_DEBUG</code> (le lagomètre, F3), <code>_MASTER_LINK</code>, <code>_ADMIN_CONSOLE</code>, <code>_CHAT</code>, <code>_PLUGINS</code>, <code>_GAME_STATISTICS</code>. Seul le sous-dossier <code>Contract/</code> d'un module (ses interfaces) reste compilé.</p></div>
 <div class="block b-how"><div class="label">Comment</div><p>Off : le dossier n'est pas ajouté, la liste de modules du programme ne le nomme pas, ses commandes de config sont refusées avec un <code>warn</code>. Le configure affiche la liste des modules construits/exclus. La CI compile et teste cette configuration.</p></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt>Contract</dt><dd>Interfaces publiques d'un module, que les autres utilisent sans dépendre de son implémentation.</dd></dl></div>
 <div class="block b-logic"><div class="label">Logique</div><p>Le sujet demande un moteur qui ne prend pas plus de place que nécessaire : choisir ce qui est compilé, lié ou chargé est la modularité demandée.</p></div>
