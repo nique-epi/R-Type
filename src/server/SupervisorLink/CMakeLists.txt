@@ -1,7 +1,6 @@
 add_library(rtype_server_supervisor_link_module STATIC
   GameProcessWatch.cpp
   LatestStatusMeasures.cpp
-  PlayerExpeller.cpp
   ServerSupervisorLinkModule.cpp
   SupervisorOrders.cpp
 )
