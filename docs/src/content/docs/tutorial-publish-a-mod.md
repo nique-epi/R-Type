@@ -7,7 +7,7 @@ sidebar:
 
 This tutorial publishes a mod: a server that plays with an entity sheet the game does not ship, which every player gets without installing anything. It writes no code. The mechanism behind it is in [Content pack](/R-Type/protocol/#content-pack) and in [Server](/R-Type/server/#content-pack-servercontentmodule-contentpackdesk).
 
-The steps were not run for this page: every line of a journal and of a screen is read from the code (`ServerContentModule.cpp`, `HandshakeAnswers.cpp`, `ConnectionScreenConstants.hpp`), with the variable parts in angle brackets. You need the project built (see the [README](https://github.com/nique-epi/R-Type#readme)).
+The steps were not run for this page: every line of a journal and of a screen is read from the code (`ServerContentModule.cpp`, `HandshakeAnswers.cpp`, `ConnectionScreenConstants.hpp`), with the variable parts in angle brackets. You need the project built (see [Build from source](/R-Type/getting-started/build/)).
 
 ## What a mod is here
 
@@ -43,7 +43,7 @@ resources/crimson-drifter/
 ├── entities/crimson_drifter.toml                  the sheet of the enemy
 ├── server/charge.luau                             the behaviour that steers it, in Luau
 ├── sprites/crimson-drifter/crimson_drifter.png    its two idle frames, 24 × 24 pixels each
-└── waves/waves.toml                               the waves, with the enemy among those of normal
+└── waves/waves.toml                               the enemies of normal, the enemy among them
 ```
 
 `resource.toml` holds a `description`, one line the host reads, and may hold `depends`, the resources to start before this one:
@@ -59,7 +59,14 @@ The sheet is a copy of `assets/entities/drifter.toml` whose `[gameplay.health]` 
 sheet = "sprites/crimson-drifter/crimson_drifter.png"
 ```
 
-A sheet gives a Bydo; a wave makes it appear. `waves/waves.toml` of the resource replaces the waves of the assets: it is a copy of `assets/waves/waves.toml` with `crimson_drifter` among the `enemies` of normal (see [Writing the waves file](/R-Type/waves-file/)). Then start the resource from `server.cfg`, in the folder the supervisor is started from:
+A sheet gives a Bydo; a wave makes it appear. `waves/waves.toml` of the resource is laid over the waves of the assets and holds only what it changes: the `enemies` of normal, with `crimson_drifter` among them. Every other key of normal, its boss and its look items included, and the other difficulties stay those of the assets (see [Writing the waves file](/R-Type/waves-file/#waves-of-a-resource)):
+
+```toml
+[difficulty.normal]
+enemies = ["drifter", "weaver", "crimson_drifter", "voltjelly", "weaver", "reaper", "crimson_drifter"]
+```
+
+Then start the resource from `server.cfg`, in the folder the supervisor is started from:
 
 ```
 ensure crimson-drifter

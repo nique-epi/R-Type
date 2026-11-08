@@ -11,7 +11,7 @@ The enemy is the **Zigzagger**: a Bydo that goes down, up and back to its row tw
 
 ## Before you start
 
-You need a built checkout (see the [README](https://github.com/nique-epi/R-Type#readme) and [CONTRIBUTING.md](https://github.com/nique-epi/R-Type/blob/main/CONTRIBUTING.md)) and a branch of your own started from `origin/main`. Check that the tests pass before you change anything, so a red test later is yours:
+You need a built checkout (see [Build from source](/R-Type/getting-started/build/) and [CONTRIBUTING.md](https://github.com/nique-epi/R-Type/blob/main/CONTRIBUTING.md)) and a branch of your own started from `origin/main`. Check that the tests pass before you change anything, so a red test later is yours:
 
 ```bash
 cmake --workflow --preset test

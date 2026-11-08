@@ -33,6 +33,10 @@ constexpr ScreenId CONNECTION_LOST_SCREEN{"connection lost"};
  * title. */
 constexpr ScreenId QUIT_CONFIRMATION_SCREEN{"quit confirmation"};
 
+/** @brief The question asked before leaving a game for the title, pushed by
+ * QUIT over the options of the game. */
+constexpr ScreenId LEAVE_GAME_CONFIRMATION_SCREEN{"leave game confirmation"};
+
 /** @brief The server to join and the nickname to join it with, then how the
  * attempt stands, pushed by ADDRESS over the server map. */
 constexpr ScreenId CONNECTION_SCREEN{"connection"};
@@ -42,11 +46,16 @@ constexpr ScreenId CONNECTION_SCREEN{"connection"};
 constexpr ScreenId CONNECTION_FOR_LEADERBOARD_SCREEN{
     "connection for the leaderboard"};
 
-/** @brief The same screen, which starts its attempt as it opens: pushed over
- * the server map with the server the map chose, or by PLAY over the title for
- * a client launched with `-h`. */
+/** @brief The same screen, which starts its attempt as it opens: pushed by
+ * PLAY over the title for a client launched with `-h`. */
 constexpr ScreenId CONNECTION_TO_CHOSEN_SERVER_SCREEN{
     "connection to the chosen server"};
+
+/** @brief The same screen with the nickname alone, pushed over the server map
+ * with the server and the game the map chose: the master listed the server,
+ * so the player types no address. */
+constexpr ScreenId CONNECTION_TO_MAP_SERVER_SCREEN{
+    "connection to a server of the map"};
 
 /** @brief The same screen, pushed by RETRY over the server map: its fields
  * start with the server of the lost game, and the player confirms them. */
@@ -59,10 +68,6 @@ constexpr ScreenId NEW_GAME_SCREEN{"new game"};
 /** @brief The map of the servers the master lists, with their games, pushed
  * over the title by PLAY, or by RETRY under CONNECTION_AGAIN_SCREEN. */
 constexpr ScreenId SERVER_MAP_SCREEN{"server map"};
-
-/** @brief The address and the port of the master the server map reads,
- * pushed by MASTER over the server map. */
-constexpr ScreenId MASTER_SCREEN{"master"};
 
 /** @brief The best scores of a server, pushed over the title or the waiting
  * room. */

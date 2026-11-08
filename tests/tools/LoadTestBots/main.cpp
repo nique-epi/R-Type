@@ -48,8 +48,6 @@ std::string_view phaseText(ConnectionPhase phase) {
       return "closed by the server";
     case ConnectionPhase::Expelled:
       return "expelled by the host";
-    case ConnectionPhase::Banned:
-      return "banned by the host";
     case ConnectionPhase::LoadingContent:
       return "loading the content of the server";
     case ConnectionPhase::ContentDownloadFailed:

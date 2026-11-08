@@ -1,5 +1,6 @@
 #include "WaveCatalog.hpp"
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -16,18 +17,19 @@
 #include <vector>
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
+#include "DifficultyLayers.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheets.hpp"
 #include "EntityType.hpp"
-#include "ProtocolConstants.hpp"
 #include "ServerException.hpp"
 #include "SipHash.hpp"
+#include "TimeConstants.hpp"
 #include "Wave.hpp"
 #include "WaveCurve.hpp"
 #include "WaveFileConstants.hpp"
+#include "WaveFileText.hpp"
 #include "WavePlan.hpp"
 #include "WholeNumberRange.hpp"
-#include "WireTypes.hpp"
 
 namespace rtype::server {
 
@@ -42,11 +44,26 @@ bool countFits(std::size_t count, engine::WholeNumberRange range) {
   return signedCount >= range.lowest && signedCount <= range.highest;
 }
 
-/** @returns The count @p key of @p table holds; throws as
- * engine::wholeNumberAt(). */
-std::size_t countAt(const DataFileTable& table, std::string_view key,
+/** @returns The integer @p key holds in the layer of @p layers that gives it;
+ * throws as engine::wholeNumberAt(). */
+std::int64_t wholeNumberOf(const DifficultyLayers& layers, std::string_view key,
+                           engine::WholeNumberRange range) {
+  return engine::wholeNumberAt(layerHolding(layers, key), key, range);
+}
+
+/** @returns The count @p key holds in the layer of @p layers that gives it;
+ * throws as engine::wholeNumberAt(). */
+std::size_t countOf(const DifficultyLayers& layers, std::string_view key,
                     engine::WholeNumberRange range) {
-  return static_cast<std::size_t>(engine::wholeNumberAt(table, key, range));
+  return static_cast<std::size_t>(wholeNumberOf(layers, key, range));
+}
+
+/** @returns The duration @p key holds in the layer of @p layers that gives
+ * it; throws as engine::millisecondsAt(). */
+engine::Duration millisecondsOf(const DifficultyLayers& layers,
+                                std::string_view key,
+                                engine::WholeNumberRange range) {
+  return engine::millisecondsAt(layerHolding(layers, key), key, range);
 }
 
 /** @returns The names of the sheets of @p types of the side enemy, in the
@@ -189,34 +206,31 @@ std::vector<std::string> lookItemsFrom(const EnemyList& list) {
 }
 
 /**
- * @returns How the waves of the table of one difficulty grow, every key
- * checked.
+ * @returns How the waves of one difficulty grow, every key read from the
+ * layer of @p layers that gives it and checked.
  */
-game::WaveCurve curveFrom(const DataFileTable& table) {
-  const std::int64_t firstIntervalMilliseconds = engine::wholeNumberAt(
-      table, FIRST_SPAWN_INTERVAL_KEY, SPAWN_INTERVAL_RANGE);
+game::WaveCurve curveFrom(const DifficultyLayers& layers) {
+  const std::int64_t firstIntervalMilliseconds =
+      wholeNumberOf(layers, FIRST_SPAWN_INTERVAL_KEY, SPAWN_INTERVAL_RANGE);
   const engine::WholeNumberRange shortestIntervalRange{
       .lowest = SPAWN_INTERVAL_RANGE.lowest,
       .highest = firstIntervalMilliseconds};
   return game::WaveCurve{
       .firstWave =
-          game::Wave{.entityCount = countAt(table, FIRST_WAVE_BYDOS_KEY,
+          game::Wave{.entityCount = countOf(layers, FIRST_WAVE_BYDOS_KEY,
                                             FIRST_WAVE_BYDOS_RANGE),
                      .spawnInterval =
                          std::chrono::milliseconds{firstIntervalMilliseconds}},
       .entitiesAddedPerWave =
-          countAt(table, BYDOS_ADDED_PER_WAVE_KEY, BYDOS_ADDED_PER_WAVE_RANGE),
-      .spawnIntervalCutPerWave = engine::millisecondsAt(
-          table, SPAWN_INTERVAL_CUT_KEY, SPAWN_INTERVAL_CUT_RANGE),
-      .shortestSpawnInterval = engine::millisecondsAt(
-          table, SHORTEST_SPAWN_INTERVAL_KEY, shortestIntervalRange),
-      .wavePause =
-          engine::millisecondsAt(table, WAVE_PAUSE_KEY, WAVE_PAUSE_RANGE),
-      .levelWaves = countAt(table, LEVEL_WAVES_KEY, LEVEL_WAVES_RANGE)};
+          countOf(layers, BYDOS_ADDED_PER_WAVE_KEY, BYDOS_ADDED_PER_WAVE_RANGE),
+      .spawnIntervalCutPerWave = millisecondsOf(layers, SPAWN_INTERVAL_CUT_KEY,
+                                                SPAWN_INTERVAL_CUT_RANGE),
+      .shortestSpawnInterval = millisecondsOf(
+          layers, SHORTEST_SPAWN_INTERVAL_KEY, shortestIntervalRange),
+      .wavePause = millisecondsOf(layers, WAVE_PAUSE_KEY, WAVE_PAUSE_RANGE),
+      .levelWaves = countOf(layers, LEVEL_WAVES_KEY, LEVEL_WAVES_RANGE)};
 }
 
-/** @returns The waves the table of one difficulty describes, its enemies
- * checked against @p types. */
 /** @returns The names of the sheets of @p types that are bosses, for the
  * errors. */
 std::vector<std::string> bossNamesOf(const game::EntitySheets& types) {
@@ -256,54 +270,56 @@ int bossHealthPercentFrom(const DataFileTable& table) {
                                                 BOSS_HEALTH_PERCENT_RANGE));
 }
 
-WavePlan planFrom(const DataFileTable& table, const game::EntitySheets& types) {
-  engine::refuseUnknownKeys(table, WAVE_PLAN_KEYS);
-  const EnemyList list{.table = table, .types = types};
-  return WavePlan{.curve = curveFrom(table),
-                  .enemies = enemiesFrom(list),
-                  .boss = bossFrom(table, types),
-                  .bossHealthPercent = bossHealthPercentFrom(table),
-                  .lookItems = lookItemsFrom(list)};
+/** @returns The waves one difficulty describes, each key read from the
+ * layer of @p layers that gives it, its enemies checked against @p types. */
+WavePlan planFrom(const DifficultyLayers& layers,
+                  const game::EntitySheets& types) {
+  return WavePlan{
+      .curve = curveFrom(layers),
+      .enemies = enemiesFrom(EnemyList{
+          .table = layerHolding(layers, ENEMIES_KEY), .types = types}),
+      .boss = bossFrom(layerHolding(layers, BOSS_KEY), types),
+      .bossHealthPercent =
+          bossHealthPercentFrom(layerHolding(layers, BOSS_HEALTH_PERCENT_KEY)),
+      .lookItems = lookItemsFrom(EnemyList{
+          .table = layerHolding(layers, LOOK_ITEMS_KEY), .types = types})};
 }
 
-/** @throws InvalidDifficultyNameException, at the table, when the protocol
- * cannot carry @p name, a table of @p levels: the rules of a nickname. */
-void requireDifficultyName(const DataFileTable& levels, std::string_view name) {
-  if (!network::isValidNickname(name)) {
-    throw InvalidDifficultyNameException(
-        engine::placeOfKey(levels, name),
-        engine::WholeNumberRange{
-            .lowest = static_cast<std::int64_t>(network::MINIMUM_NICKNAME_SIZE),
-            .highest =
-                static_cast<std::int64_t>(network::MAXIMUM_NICKNAME_SIZE)});
-  }
-}
-
-/** @throws TooManyDifficultiesException, at the table of difficulties of
- * @p root, when @p count exceeds network::MAXIMUM_DIFFICULTIES. */
-void requireFewDifficulties(const DataFileTable& root, std::size_t count) {
-  if (count > network::MAXIMUM_DIFFICULTIES) {
-    throw TooManyDifficultiesException(
-        engine::placeOfKey(root, DIFFICULTY_TABLE_KEY),
-        network::MAXIMUM_DIFFICULTIES);
-  }
-}
-
-/** @returns The waves of every difficulty of the file whose root is @p root,
- * their enemies checked against @p types. */
-PlansByDifficulty plansFrom(const DataFileTable& root,
+/** @returns The waves of every difficulty of @p laid, their enemies checked
+ * against @p types. */
+PlansByDifficulty plansFrom(const LayersByDifficulty& laid,
                             const game::EntitySheets& types) {
-  engine::refuseUnknownKeys(root, ROOT_KEYS);
-  const DataFileTable levels = engine::tableAt(root, DIFFICULTY_TABLE_KEY);
-  requireFewDifficulties(root, levels.table.get().size());
   PlansByDifficulty plans;
-  for (auto&& entry : levels.table.get()) {
-    const std::string_view name = entry.first.str();
-    requireDifficultyName(levels, name);
-    plans.emplace(std::string{name},
-                  planFrom(engine::tableAt(levels, name), types));
+  for (const auto& [name, layers] : laid) {
+    plans.emplace(name, planFrom(layers, types));
   }
   return plans;
+}
+
+/** @returns The root table of each of @p files, in their order.
+ * @throws engine::DataFileSyntaxException, naming the file at fault, when one
+ * is not TOML. */
+std::vector<toml::table> rootsOf(std::span<const WaveFileText> files) {
+  std::vector<toml::table> roots;
+  roots.reserve(files.size());
+  for (const WaveFileText& file : files) {
+    roots.push_back(engine::parseDataFile(file.text, file.source));
+  }
+  return roots;
+}
+
+/** @returns SipHash-2-4 of the texts of @p files joined by
+ * WAVE_FILE_SEPARATOR, under WAVES_FINGERPRINT_KEY. */
+std::uint64_t fingerprintOf(std::span<const WaveFileText> files) {
+  std::string laid;
+  for (std::size_t index = 0; index < files.size(); ++index) {
+    if (index > 0) {
+      laid += WAVE_FILE_SEPARATOR;
+    }
+    laid += files[index].text;
+  }
+  return network::sipHash(WAVES_FINGERPRINT_KEY,
+                          std::as_bytes(std::span{laid}));
 }
 
 }  // namespace
@@ -311,16 +327,32 @@ PlansByDifficulty plansFrom(const DataFileTable& root,
 WaveCatalog WaveCatalog::fromText(std::string_view text,
                                   std::string_view source,
                                   const game::EntitySheets& types) {
-  const toml::table root = engine::parseDataFile(text, source);
-  return WaveCatalog{
-      plansFrom(engine::rootOf(root, source), types),
-      network::sipHash(WAVES_FINGERPRINT_KEY, std::as_bytes(std::span{text}))};
+  const std::array files{
+      WaveFileText{.text = std::string{text}, .source = std::string{source}}};
+  return fromTexts(files, types);
 }
 
-WaveCatalog WaveCatalog::fromFile(const std::filesystem::path& file,
-                                  const game::EntitySheets& types) {
-  return fromText(engine::dataFileContent(file), engine::shownPath(file),
-                  types);
+WaveCatalog WaveCatalog::fromTexts(std::span<const WaveFileText> files,
+                                   const game::EntitySheets& types) {
+  const std::vector<toml::table> roots = rootsOf(files);
+  std::vector<DataFileTable> layers;
+  layers.reserve(roots.size());
+  for (std::size_t index = 0; index < roots.size(); ++index) {
+    layers.push_back(engine::rootOf(roots[index], files[index].source));
+  }
+  return WaveCatalog{plansFrom(difficultyLayersOf(layers), types),
+                     fingerprintOf(files)};
+}
+
+WaveCatalog WaveCatalog::fromFiles(std::span<const std::filesystem::path> files,
+                                   const game::EntitySheets& types) {
+  std::vector<WaveFileText> texts;
+  texts.reserve(files.size());
+  for (const std::filesystem::path& file : files) {
+    texts.push_back(WaveFileText{.text = engine::dataFileContent(file),
+                                 .source = engine::shownPath(file)});
+  }
+  return fromTexts(texts, types);
 }
 
 const WavePlan& WaveCatalog::planOf(std::string_view difficulty) const {

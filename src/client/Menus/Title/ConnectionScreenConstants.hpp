@@ -14,10 +14,12 @@
 namespace rtype::client {
 
 /**
- * @brief Texts of the connection screen: its heading, then the label and the
- * description of each bar, in their order.
+ * @brief Texts of the connection screen: its heading, the one of a screen that
+ * asks only for the nickname, then the label and the description of each bar,
+ * in their order.
  */
 constexpr const char* CONNECTION_HEADING = "DIRECT CONNECT";
+constexpr const char* JOIN_SERVER_HEADING = "JOIN THE SERVER";
 constexpr const char* ADDRESS_LABEL = "ADDRESS";
 constexpr const char* ADDRESS_DESCRIPTION = "> IPV4 ADDRESS OF THE SERVER";
 constexpr const char* PORT_LABEL = "PORT";
@@ -27,10 +29,12 @@ constexpr const char* NICKNAME_DESCRIPTION = "> CHOOSE YOUR CALLSIGN";
 constexpr const char* CONNECT_LABEL = "CONNECT";
 constexpr const char* CONNECT_DESCRIPTION = "> JOIN THE GAME";
 
-/** @brief Order of each field in the menu of the connection screen. */
+/** @brief Order of each field in the menu of the connection screen, and of
+ * the nickname in a screen that asks for it alone. */
 constexpr std::size_t ADDRESS_ENTRY = 0;
 constexpr std::size_t PORT_ENTRY = 1;
 constexpr std::size_t NICKNAME_ENTRY = 2;
+constexpr std::size_t NICKNAME_ALONE_ENTRY = 0;
 
 /**
  * @brief Largest text of each field, in bytes: an IPv4 address of four numbers
@@ -74,7 +78,6 @@ constexpr const char* UNKNOWN_DIFFICULTY_STATUS = "REFUSED: BAD DIFFICULTY";
  * accepts, LIVES_BOUNDS_SEPARATOR and the most it accepts. */
 constexpr const char* LIVES_REFUSED_STATUS = "REFUSED: LIVES ";
 constexpr const char* LIVES_BOUNDS_SEPARATOR = " TO ";
-constexpr const char* BANNED_STATUS = "REFUSED: BANNED";
 constexpr const char* INCOMPATIBLE_VERSION_STATUS = "REFUSED: V";
 constexpr const char* SERVER_VERSION_STATUS = ", SERVER V";
 constexpr const char* UNREACHABLE_STATUS = "SERVER UNREACHABLE";
@@ -97,7 +100,7 @@ constexpr const char* PACK_REFUSED_STATUS = "PACK REFUSED";
  * @brief The characters a status line of the form holds: the width of the
  * form less its margin on both sides, 240 - 2 x 16 = 208 pixels, over the 8
  * pixels a character of the regular font takes, so 26. The refusal of a
- * version, REFUSED: V14, SERVER V15, takes 24, and 26 for versions of three
+ * version, REFUSED: V15, SERVER V16, takes 24, and 26 for versions of three
  * digits.
  */
 constexpr std::size_t STATUS_LINE_CHARACTERS = static_cast<std::size_t>(

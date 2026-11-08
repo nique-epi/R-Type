@@ -2,14 +2,19 @@
 #include <boost/process/v2/process.hpp>
 #include <boost/system/detail/error_code.hpp>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <utility>
+#include <vector>
+#include "ChildOutputRelay.hpp"
 #include "ProcessExit.hpp"
 
 namespace rtype::server {
 
-BoostChildProcess::BoostChildProcess(boost::process::v2::process process)
-    : process_(std::move(process)) {}
+BoostChildProcess::BoostChildProcess(
+    boost::process::v2::process process,
+    std::vector<std::unique_ptr<ChildOutputRelay>> relays)
+    : process_(std::move(process)), relays_(std::move(relays)) {}
 
 BoostChildProcess::~BoostChildProcess() {
   boost::system::error_code ignored;

@@ -20,7 +20,6 @@ using rtype::network::ServerMeasures;
 using rtype::network::TrafficTotals;
 using rtype::server::GameLifecycle;
 using rtype::server::gameLinesOf;
-using rtype::server::lengthText;
 using rtype::server::measuresLineOf;
 using rtype::server::networkLinesOf;
 using rtype::server::playerLinesOf;
@@ -138,26 +137,4 @@ TEST(ConsoleTexts, CountsTheRejectedDatagrams) {
 
   ASSERT_EQ(lines.size(), 2U);
   EXPECT_EQ(lines[1], SEVEN_REJECTED_LINE);
-}
-
-/**
- * Given a length of thirty minutes, of two hours and of seven days
- * When each is written
- * Then each names its one unit
- */
-TEST(ConsoleTexts, WritesALengthOfOneUnit) {
-  EXPECT_EQ(lengthText(THIRTY_MINUTES_LENGTH), THIRTY_MINUTES_TEXT);
-  EXPECT_EQ(lengthText(TWO_HOURS_LENGTH), TWO_HOURS_TEXT);
-  EXPECT_EQ(lengthText(SEVEN_DAYS_LENGTH), SEVEN_DAYS_TEXT);
-}
-
-/**
- * Given a day and a minute, and 1 h 58 min 1 s
- * When each is written
- * Then the units that are not zero are named, and the part of a minute counts
- * as a whole minute
- */
-TEST(ConsoleTexts, WritesTheUnitsThatAreNotZeroRoundedUpToTheMinute) {
-  EXPECT_EQ(lengthText(A_DAY_AND_A_MINUTE_LENGTH), A_DAY_AND_A_MINUTE_TEXT);
-  EXPECT_EQ(lengthText(ALMOST_TWO_HOURS_LENGTH), ALMOST_TWO_HOURS_TEXT);
 }

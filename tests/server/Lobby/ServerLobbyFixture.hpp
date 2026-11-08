@@ -4,8 +4,6 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include "Ban.hpp"
-#include "BanProbeModule.hpp"
 #include "IModule.hpp"
 #include "IncomingDatagram.hpp"
 #include "ServerGamesFixture.hpp"
@@ -29,11 +27,4 @@ class ServerLobbyFixture : public ServerGamesFixture {
   /** @brief Runs one tick in which the player at @p index, already seated,
    * says it is ready. */
   void sayReady(std::size_t index);
-
-  /** @brief Publishes @p bans, as the storage module does once it read them
-   * from the file of the server. */
-  void publishBans(std::vector<rtype::server::Ban> bans);
-
- private:
-  mutable BanProbeModule* banProbe_{nullptr};
 };

@@ -1,4 +1,5 @@
 import type { PlayerNumber } from '@/lib/rtype/players';
+import { LOOK_ITEMS, type LookItem } from '@/lib/rtype/ship-looks';
 
 /** A sprite sheet of the game, served from public/sprites/, in its own pixels. */
 export type SpriteSheet = {
@@ -33,6 +34,7 @@ export const SHEETS = {
   professor: { src: '/sprites/professor.png', width: 50, height: 58 },
   flag: { src: '/sprites/flag.png', width: 1664, height: 99 },
   guard: { src: '/sprites/guard.png', width: 112, height: 30 },
+  looks: { src: '/sprites/looks.png', width: 178, height: 16 },
 } as const satisfies Record<string, SpriteSheet>;
 
 /** The rows of the ships in entities.png: 16 pixels tall, 18 apart. */
@@ -101,3 +103,46 @@ export const PROFESSOR_FRAME: SpriteFrame = {
   width: 25,
   height: 29,
 };
+
+/** An item on looks.png, and where its top-left pixel sits on the 32 × 16 ship. */
+export type LookItemSprite = {
+  frame: SpriteFrame;
+  mount: { x: number; y: number };
+};
+
+/** The cells of looks.png: 16 pixels wide, 18 apart, each item against the top-left corner of its cell. */
+const LOOK_CELL_STEP = 18;
+
+/** The size of each item and its place on the ship, copied from SHIP_LOOK_SPRITES (ShipLookSpriteConstants.hpp). */
+const LOOK_ITEM_PLACES: Record<
+  LookItem,
+  { width: number; height: number; x: number; y: number }
+> = {
+  topHat: { width: 14, height: 10, x: 9, y: -7 },
+  partyHat: { width: 12, height: 11, x: 10, y: -8 },
+  crown: { width: 12, height: 8, x: 10, y: -5 },
+  propellerCap: { width: 12, height: 8, x: 10, y: -5 },
+  cowboyHat: { width: 14, height: 8, x: 9, y: -5 },
+  vikingHelmet: { width: 14, height: 9, x: 9, y: -6 },
+  wizardHat: { width: 12, height: 12, x: 10, y: -9 },
+  chefToque: { width: 12, height: 9, x: 10, y: -6 },
+  coolShades: { width: 10, height: 3, x: 17, y: 5 },
+  mustache: { width: 12, height: 5, x: 20, y: 9 },
+};
+
+/** The frame of an item on looks.png and where it sits on the ship. */
+export function lookItemSprite(item: LookItem): LookItemSprite {
+  const { width, height, x, y } = LOOK_ITEM_PLACES[item];
+  return {
+    frame: {
+      x: LOOK_ITEMS.indexOf(item) * LOOK_CELL_STEP,
+      y: 0,
+      width,
+      height,
+    },
+    mount: { x, y },
+  };
+}
+
+/** How far the tallest hat rises over the ship, in pixels of the sheet: the wizard hat. */
+export const LOOK_HEADROOM = 9;

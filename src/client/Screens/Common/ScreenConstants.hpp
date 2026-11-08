@@ -30,9 +30,10 @@ constexpr std::string_view INTRO_LOGGER_NAME = "Intro";
 
 /**
  * @brief Texts of the title screen. The copyright sign is written as its two
- * UTF-8 bytes, so every compiler stores the same text.
+ * UTF-8 bytes, so every compiler stores the same text. The version line is
+ * GAME_VERSION_TEXT, which CMake writes from project() into
+ * ClientVersionConstants.hpp.
  */
-constexpr const char* GAME_VERSION_TEXT = "VER 0.1";
 constexpr const char* TITLE_SUBTITLE = "4-PLAYER ONLINE CO-OP";
 constexpr const char* PLAY_LABEL = "PLAY";
 constexpr const char* PLAY_DESCRIPTION = "> JOIN A SERVER, FIGHT";
@@ -57,7 +58,6 @@ constexpr const char* CONNECTION_LOST_HEADING = "CONNECTION LOST";
 constexpr const char* SILENT_SERVER_MESSAGE = "THE SERVER STOPPED ANSWERING.";
 constexpr const char* CLOSED_SERVER_MESSAGE = "THE SERVER SHUT DOWN.";
 constexpr const char* EXPELLED_MESSAGE = "THE HOST EXPELLED YOU.";
-constexpr const char* BANNED_MESSAGE = "THE HOST BANNED YOU.";
 constexpr const char* RETRY_LABEL = "RETRY";
 constexpr const char* OK_LABEL = "OK";
 

@@ -50,7 +50,8 @@ constexpr const char* MISSING_WAVES_FILE = "no/such/folder/waves.toml";
 constexpr const char* MISSING_CONTENT_FOLDER = "no/such/folder";
 
 /** @brief The example resource the repository ships beside its assets, from
- * the assets folder, and the waves file it brings in place of theirs. */
+ * the assets folder, and the waves file it lays over theirs, at the same place
+ * in its own folder. */
 constexpr const char* EXAMPLE_RESOURCE_FROM_THE_ASSETS =
     "../resources/crimson-drifter";
 constexpr const char* WAVES_OF_THE_EXAMPLE_RESOURCE = "waves/waves.toml";

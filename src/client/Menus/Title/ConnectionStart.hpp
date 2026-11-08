@@ -13,9 +13,11 @@ enum class ConnectionStart : std::uint8_t {
    * of the last attempt: the form RETRY opens after a lost game. */
   LastAttemptOnConfirm,
   /** @brief As soon as it is built, with the server of the last attempt, or
-   * the server the form remembers before any: the server map chose it, or
-   * `-h` named it. */
+   * the server the form remembers before any: `-h` named it. */
   AtOnce,
+  /** @brief Once the player confirms the nickname, the only field, with the
+   * server of the last attempt: the server map chose it. */
+  NicknameOnConfirm,
 };
 
 }  // namespace rtype::client

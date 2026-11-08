@@ -72,8 +72,6 @@ std::string refusalLine(const ConnectionStatus& status) {
       return UNKNOWN_DIFFICULTY_STATUS;
     case network::RefusalReason::LivesOutOfRange:
       return livesRefusalLine();
-    case network::RefusalReason::Banned:
-      return BANNED_STATUS;
     case network::RefusalReason::IncompatibleVersion:
       break;
   }
@@ -102,11 +100,35 @@ network::Endpoint shownServerOf(const ServerChoice& choice,
   return choice.lastServer.value_or(choice.server);
 }
 
-/** @returns The game a screen asks for: the game given at launch for a form
- * that remembers its server, the game of the last attempt otherwise, the game
- * given at launch before any. */
-GameRequest requestOf(const ServerChoice& choice, bool remembersServer) {
-  if (remembersServer || !choice.lastRequest.has_value()) {
+/** @returns Whether an attempt of a screen started by @p start writes the
+ * server the form remembers: only ConnectionStart::OnConfirm does. */
+bool remembersServer(ConnectionStart start) {
+  return start == ConnectionStart::OnConfirm;
+}
+
+/** @returns Whether a screen started by @p start shows the ADDRESS and PORT
+ * fields: all but ConnectionStart::NicknameOnConfirm do. */
+bool asksServer(ConnectionStart start) {
+  return start != ConnectionStart::NicknameOnConfirm;
+}
+
+/** @returns The server an attempt goes to: the one the ADDRESS and PORT
+ * fields of @p menu name when the screen asks for it, the server it shows
+ * otherwise, the one the server map wrote. */
+EndpointReading serverOf(const Menu& menu, const ServerChoice& choice,
+                         ConnectionStart start) {
+  if (asksServer(start)) {
+    return readEndpoint(menu);
+  }
+  return EndpointReading{.endpoint = shownServerOf(choice, start),
+                         .problem = {}};
+}
+
+/** @returns The game a screen started by @p start asks for: the game given at
+ * launch for a form that remembers its server, the game of the last attempt
+ * otherwise, the game given at launch before any. */
+GameRequest requestOf(const ServerChoice& choice, ConnectionStart start) {
+  if (remembersServer(start) || !choice.lastRequest.has_value()) {
     return gameRequestFor(choice.game);
   }
   return *choice.lastRequest;
@@ -120,7 +142,7 @@ ConnectionScreen::ConnectionScreen(ConnectionScreenParts parts,
       connection_(&parts.connection.get()),
       choice_(&parts.choice.get()),
       goal_(parts.goal),
-      remembersServer_(parts.start == ConnectionStart::OnConfirm),
+      start_(parts.start),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       menu_(buildMenu(parts.sounds.get(),
@@ -153,8 +175,12 @@ Menu ConnectionScreen::buildMenu(ISoundPlayer& sounds,
                                  const network::Endpoint& shown) {
   const std::function<void()> connectAction = [this] { connect(); };
   MenuBuilder builder(MenuBuilder::Frame::Form, &sounds);
-  builder.heading(CONNECTION_HEADING);
-  return addEndpointFields(builder, shown, connectAction)
+  builder.heading(asksServer(start_) ? CONNECTION_HEADING
+                                     : JOIN_SERVER_HEADING);
+  if (asksServer(start_)) {
+    addEndpointFields(builder, shown, connectAction);
+  }
+  return builder
       .textField({.label = NICKNAME_LABEL, .description = NICKNAME_DESCRIPTION},
                  TextField(choice_->nickname, NICKNAME_FIELD_SIZE,
                            TextField::Characters::Printable),
@@ -169,21 +195,22 @@ void ConnectionScreen::connect() {
   connection_->cancel();
   acceptedFor_ = engine::Duration::zero();
   goalReached_ = false;
-  const EndpointReading reading = readEndpoint(menu_);
+  const EndpointReading reading = serverOf(menu_, *choice_, start_);
   fieldProblem_ = reading.problem;
   if (!reading.endpoint.has_value()) {
     return;
   }
   const network::Endpoint& server = *reading.endpoint;
-  const std::string_view nickname = menu_.fieldText(NICKNAME_ENTRY);
+  const std::string_view nickname = menu_.fieldText(
+      asksServer(start_) ? NICKNAME_ENTRY : NICKNAME_ALONE_ENTRY);
   if (!network::isValidNickname(nickname)) {
     fieldProblem_ = MISSING_NICKNAME_STATUS;
     return;
   }
-  const GameRequest request = requestOf(*choice_, remembersServer_);
+  const GameRequest request = requestOf(*choice_, start_);
   choice_->lastServer = server;
   choice_->lastRequest = request;
-  if (remembersServer_) {
+  if (remembersServer(start_)) {
     choice_->server = server;
   }
   choice_->nickname = std::string(nickname);
@@ -235,7 +262,6 @@ std::string ConnectionScreen::statusLine(const ConnectionStatus& status) const {
     case ConnectionPhase::Lost:
     case ConnectionPhase::Closed:
     case ConnectionPhase::Expelled:
-    case ConnectionPhase::Banned:
       break;
   }
   return {};

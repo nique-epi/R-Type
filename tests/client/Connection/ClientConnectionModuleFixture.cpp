@@ -2,7 +2,6 @@
 #include <array>
 #include <chrono>
 #include <memory>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -24,12 +23,9 @@
 #include "LoopStages.hpp"
 #include "NetworkConditionsConstants.hpp"
 #include "NetworkConstants.hpp"
-#include "PlayerSettings.hpp"
-#include "PlayerSettingsModule.hpp"
 #include "RunningMaster.hpp"
 #include "ServerCatalogFindingModule.hpp"
 #include "ServerListPhase.hpp"
-#include "SettingDefinitionConstants.hpp"
 
 namespace rtype::client::testing {
 
@@ -39,16 +35,12 @@ void ClientConnectionModuleFixture::TearDown() {
   }
 }
 
-void ClientConnectionModuleFixture::startWith(const std::string& line,
-                                              const PlayerSettings& settings) {
+void ClientConnectionModuleFixture::startWith(const std::string& line) {
   const std::array<std::string_view, 1> quiet{logging::NO_STDERR_OPTION};
-  auto settingsModule = std::make_unique<PlayerSettingsModule>(settings);
-  settings_ = settingsModule.get();
   std::vector<std::unique_ptr<engine::IModule>> modules;
   modules.push_back(std::make_unique<ClientLoggerModule>(
       logOptionsOf(quiet, journal_.path())));
   modules.push_back(std::make_unique<EntityAppearancesModule>());
-  modules.push_back(std::move(settingsModule));
   modules.push_back(
       std::make_unique<ClientConnectionModule>(network::PERFECT_NETWORK));
   modules.push_back(std::make_unique<ServerCatalogFindingModule>(catalog_));
@@ -72,12 +64,6 @@ ServerListPhase ClientConnectionModuleFixture::phaseSoon(
     std::this_thread::sleep_for(LISTING_POLL_STEP);
   }
   return catalog_->snapshot().phase;
-}
-
-void ClientConnectionModuleFixture::chooseMaster(
-    const network::Endpoint& master) {
-  static_cast<void>(settings_->service().apply(
-      MASTER_SETTING, std::optional<network::Endpoint>{master}));
 }
 
 network::Endpoint ClientConnectionModuleFixture::masterEndpoint() const {

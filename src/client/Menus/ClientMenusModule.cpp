@@ -19,8 +19,7 @@
 #include "LeaderboardScreenParts.hpp"
 #include "LeaderboardTab.hpp"
 #include "LocalizedKeyName.hpp"
-#include "MasterScreen.hpp"
-#include "MasterScreenParts.hpp"
+#include "MasterLeaderboard.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "ModuleConstants.hpp"
 #include "NewGameDialog.hpp"
@@ -97,6 +96,13 @@ std::unique_ptr<IScreen> buildQuitConfirmationScreen(
                                                       soundsOf(context)));
 }
 
+std::unique_ptr<IScreen> buildLeaveGameConfirmationScreen(
+    const ScreenContext& context) {
+  return dialogScreenOf(context, leaveGameConfirmationMenu(
+                                     context.navigator.get(), soundsOf(context),
+                                     context.services.connection.get()));
+}
+
 std::unique_ptr<IScreen> buildConnectionLostScreen(
     const ScreenContext& context) {
   return dialogScreenOf(
@@ -127,7 +133,6 @@ std::unique_ptr<IScreen> buildServerMapScreen(const ScreenContext& context) {
                            .servers = context.services.serverCatalog.get(),
                            .games = context.services.gameCatalog.get(),
                            .choice = context.serverChoice.get(),
-                           .master = context.services.masterAddress.get(),
                            .playfieldPointAt = playfieldMappingOf(context),
                            .motion = motionPreference()},
       interfaceCanvasOf(context));
@@ -145,20 +150,12 @@ std::unique_ptr<IScreen> buildNewGameScreen(const ScreenContext& context) {
                                      .difficulties = games.difficulties}));
 }
 
-/** @returns The form of the master the server map reads. */
-std::unique_ptr<IScreen> buildMasterScreen(const ScreenContext& context) {
-  return std::make_unique<MasterScreen>(
-      MasterScreenParts{.navigator = context.navigator.get(),
-                        .sounds = soundsOf(context),
-                        .settings = context.services.settingsService.get(),
-                        .master = context.services.masterAddress.get(),
-                        .playfieldPointAt = playfieldMappingOf(context)},
-      interfaceCanvasOf(context));
-}
-
-/** @returns The leaderboard, opened on the filter the waiting room calls for.
+/** @returns The leaderboard, opened on the filter the waiting room calls for;
+ * its GLOBAL tab reads the master, with the row of the nickname of the choice.
  */
 std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
+  MasterLeaderboard& global = context.services.globalLeaderboard.get();
+  global.namePlayer(context.serverChoice.get().nickname);
   return std::make_unique<LeaderboardScreen>(
       LeaderboardScreenParts{
           .navigator = context.navigator.get(),
@@ -167,7 +164,8 @@ std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
           .tabs = {LeaderboardTab{
                        .label = SERVER_TAB_LABEL,
                        .source = &context.services.leaderboard.get()},
-                   LeaderboardTab{.label = GLOBAL_TAB_LABEL}},
+                   LeaderboardTab{.label = GLOBAL_TAB_LABEL,
+                                  .source = &global}},
           .choice = openingChoiceOf(
               context.services.waitingRoom.get().lobbyPlayers().size()),
           .playfieldPointAt = playfieldMappingOf(context),
@@ -176,8 +174,9 @@ std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
       interfaceCanvasOf(context));
 }
 
-/** @brief Adds to @p registry the four connection screens: the form, the one
- * for the leaderboard, the one that joins at once and the one RETRY opens. */
+/** @brief Adds to @p registry the five connection screens: the form, the one
+ * for the leaderboard, the one that joins at once, the one that asks only for
+ * the nickname to join a server of the map, and the one RETRY opens. */
 void addConnectionScreens(ScreenRegistry& registry) {
   registry.add(CONNECTION_SCREEN, [](const ScreenContext& screens) {
     return buildConnectionScreen(screens, ConnectionGoal::WaitingRoom);
@@ -190,6 +189,11 @@ void addConnectionScreens(ScreenRegistry& registry) {
       CONNECTION_TO_CHOSEN_SERVER_SCREEN, [](const ScreenContext& screens) {
         return buildConnectionScreen(screens, ConnectionGoal::WaitingRoom,
                                      ConnectionStart::AtOnce);
+      });
+  registry.add(
+      CONNECTION_TO_MAP_SERVER_SCREEN, [](const ScreenContext& screens) {
+        return buildConnectionScreen(screens, ConnectionGoal::WaitingRoom,
+                                     ConnectionStart::NicknameOnConfirm);
       });
   registry.add(CONNECTION_AGAIN_SCREEN, [](const ScreenContext& screens) {
     return buildConnectionScreen(screens, ConnectionGoal::WaitingRoom,
@@ -224,10 +228,11 @@ void ClientMenusModule::install(engine::InstallContext& context) {
     return buildOptionsScreen(screens, OptionsPlace::OverGame);
   });
   registry.add(QUIT_CONFIRMATION_SCREEN, buildQuitConfirmationScreen);
+  registry.add(LEAVE_GAME_CONFIRMATION_SCREEN,
+               buildLeaveGameConfirmationScreen);
   addConnectionScreens(registry);
   registry.add(SERVER_MAP_SCREEN, buildServerMapScreen);
   registry.add(NEW_GAME_SCREEN, buildNewGameScreen);
-  registry.add(MASTER_SCREEN, buildMasterScreen);
   registry.add(LEADERBOARD_SCREEN, buildLeaderboardScreen);
   registry.add(CONNECTION_LOST_SCREEN, buildConnectionLostScreen);
 }

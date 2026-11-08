@@ -192,20 +192,6 @@ TEST(ScoreBoard, AnExpelledPilotIsExpelled) {
 }
 
 /**
- * Given a board of three pilots
- * When player 3 leaves because the host banned it
- * Then player 3 is banned
- */
-TEST(ScoreBoard, ABannedPilotIsBanned) {
-  ScoreBoard board = scoreBoardOfThree();
-
-  board.apply(PlayerLeft{.playerNumber = PLAYER_THREE,
-                         .reason = DepartureReason::Banned});
-
-  EXPECT_EQ(board.pilots().back().state, PilotState::Banned);
-}
-
-/**
  * Given a board where player 1 has left
  * When a newer world state still lists player 1
  * Then player 1 is still gone, with the score of that state

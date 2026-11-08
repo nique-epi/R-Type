@@ -11,6 +11,7 @@ import { Bydos } from './bydos';
 import { Explore } from './explore';
 import { Features } from './features';
 import { FreeSeats } from './free-seats';
+import { Hangar } from './hangar';
 import { Hero } from './hero';
 import { News } from './news';
 import { OpenSource } from './open-source';
@@ -29,6 +30,7 @@ export async function HomeBlocks({ lang }: { lang: Locale }) {
       <FreeSeats lang={lang} />
       <Bydos lang={lang} version={release?.version} />
       <Features lang={lang} />
+      <Hangar lang={lang} />
       <StoryBand
         figure={<Professor scale={3} />}
         titleId="story-title"

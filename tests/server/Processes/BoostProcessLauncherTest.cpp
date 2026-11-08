@@ -1,3 +1,4 @@
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <cstdint>
 #include <memory>
@@ -10,6 +11,7 @@
 #include "ProcessExit.hpp"
 #include "ProcessFixtures.hpp"
 #include "ProcessTestConstants.hpp"
+#include "RecordingStandardError.hpp"
 #include "ServerException.hpp"
 
 using rtype::server::BoostProcessLauncher;
@@ -17,6 +19,7 @@ using rtype::server::IChildProcess;
 using rtype::server::ProcessCommand;
 using rtype::server::ProcessExit;
 using rtype::server::ProcessLaunchException;
+using ::testing::UnorderedElementsAre;
 
 /**
  * Given a program that ends at once with the exit code 7
@@ -83,6 +86,26 @@ TEST(BoostProcessLauncher, DestroyingAChildKillsTheProcessThatRuns) {
   child.reset();
 
   EXPECT_TRUE(waitForProcessToEnd(processId, PROCESS_WAIT));
+}
+
+/**
+ * Given a program that writes a line on its standard output and another on
+ * its standard error, then ends
+ * When the launcher starts it, and the child is destroyed once it ended
+ * Then the standard error of this process received both lines
+ */
+TEST(BoostProcessLauncher, RelaysBothOutputsOfTheChild) {
+  const RecordingStandardError standardError;
+  BoostProcessLauncher launcher;
+  std::unique_ptr<IChildProcess> child = launcher.launch(ProcessCommand{
+      .program = RTYPE_TEST_CHILD, .arguments = {std::string{PRINT_COMMAND}}});
+
+  ASSERT_TRUE(waitForExit(*child, PROCESS_WAIT).has_value());
+  child.reset();
+
+  EXPECT_THAT(standardError.lines(),
+              UnorderedElementsAre(std::string{CHILD_OUTPUT_LINE},
+                                   std::string{CHILD_ERROR_LINE}));
 }
 
 /**

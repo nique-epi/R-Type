@@ -3,6 +3,7 @@
 #include "CreatedServer.hpp"
 #include "FinishedGame.hpp"
 #include "GameListing.hpp"
+#include "GlobalLeaderboard.hpp"
 #include "HttpPortProbe.hpp"
 #include "MasterAccess.hpp"
 #include "MasterClient.hpp"
@@ -20,6 +21,7 @@
 using rtype::network::CreatedServer;
 using rtype::network::FinishedGame;
 using rtype::network::GameListing;
+using rtype::network::GlobalLeaderboard;
 using rtype::network::InvalidMasterUrlException;
 using rtype::network::isWellFormedServerKey;
 using rtype::network::MasterAccess;
@@ -116,6 +118,23 @@ TEST_F(MasterClientFixture, AResultSentAgainIsAcceptedAndKeptOnce) {
       client.sendResult(std::string{PARIS_GAME_ID}, parisFinishedGame()));
 
   EXPECT_EQ(master().keptPlayersOf(PARIS_GAME_ID), PLAYERS_OF_THE_PARIS_GAME);
+}
+
+/**
+ * Given a server that sent the result of a vanilla game of ACE and BYDO_HUNTER
+ * When a client with no key reads the leaderboard of that game, naming
+ * BYDO_HUNTER
+ * Then it gets both rows, best first, and the row of BYDO_HUNTER
+ */
+TEST_F(MasterClientFixture, AClientReadsTheLeaderboardOfTheMaster) {
+  const CreatedServer paris = createdParis();
+  clientWith(paris.key).sendResult(std::string{PARIS_GAME_ID},
+                                   parisFinishedGame());
+
+  const GlobalLeaderboard read =
+      clientWith(std::string{}).readLeaderboard(parisGameLeaderboardQuery());
+
+  EXPECT_EQ(read, parisGameLeaderboardOf(paris));
 }
 
 /**

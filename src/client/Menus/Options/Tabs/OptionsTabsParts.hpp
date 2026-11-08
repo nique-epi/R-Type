@@ -13,8 +13,8 @@ namespace rtype::client {
 
 /**
  * @brief What the tabs of the options are built from: the services their rows
- * read and change, and what the screen does when a tab is asked for, BACK is
- * pressed or a reset must be confirmed. The service, the sounds and the
+ * read and change, and what the screen does when a tab is asked for, BACK or
+ * QUIT is pressed or a reset must be confirmed. The service, the sounds and the
  * window must outlive the tabs.
  *
  * A std::reference_wrapper has no default constructor, so this struct is
@@ -36,6 +36,8 @@ struct OptionsTabsParts {
   std::function<void(std::size_t)> openTab;
   /** @brief Called when BACK is pressed. */
   std::function<void()> close;
+  /** @brief Called when QUIT, shown over a game only, is pressed. */
+  std::function<void()> leaveGame;
   /** @brief Called with a question and the reset to run if it is answered YES.
    */
   std::function<void(const std::string&, const std::function<void()>&)>

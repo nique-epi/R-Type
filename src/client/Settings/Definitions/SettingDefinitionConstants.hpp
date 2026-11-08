@@ -4,7 +4,6 @@
 #include <optional>
 #include "ColorMode.hpp"
 #include "DisplayMode.hpp"
-#include "Endpoint.hpp"
 #include "PixelSize.hpp"
 #include "PlayerSettings.hpp"
 #include "Setting.hpp"
@@ -101,11 +100,6 @@ constexpr Setting<int> CHAT_BACKGROUND_SETTING{
     .id = SettingId::ChatBackground,
     .range = CHAT_BACKGROUND_RANGE};
 
-constexpr Setting<std::optional<network::Endpoint>> MASTER_SETTING{
-    .member = &PlayerSettings::master,
-    .id = SettingId::Master,
-    .range = std::nullopt};
-
 constexpr Setting<ShipLocker> SHIP_LOCKER_SETTING{
     .member = &PlayerSettings::shipLocker,
     .id = SettingId::ShipLocker,
@@ -131,7 +125,6 @@ constexpr std::array ALL_SETTING_IDS{
     SettingId::ChatOpenLines,
     SettingId::ChatSeconds,
     SettingId::ChatBackground,
-    SettingId::Master,
     SettingId::ShipLook,
     SettingId::ShipLocker,
 };

@@ -20,6 +20,7 @@ target_link_libraries(rtype_client_options_tabs
   PRIVATE
     SFML::Window
     rtype_client_choice_selector
+    rtype_client_common_screens
     rtype_client_dropdown
     rtype_client_key_slot
     rtype_client_link_text

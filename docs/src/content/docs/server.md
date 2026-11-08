@@ -140,7 +140,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Text chat in the waiting room and during a match (`ChatLine`, `PlayerChatLine`), one line a second per player, 127 bytes at most | Available; the client sends and shows them (see [Client](/R-Type/client/#chat-chatchannel-chatwindow)) | `src/server/Chat/` |
 | Game statistics: a CSV row per Bydo killed and the total of each game, written by a plugin | Available, loaded by `plugin game-statistics` | `src/server/GameStatistics/` |
 | Master mode: `--mode master` runs the master instead of the supervisor | Available (see [Master](/R-Type/master/)) | `src/server/LaunchOptions/`, `src/master/` |
-| Administration console of the supervisor: the games and their pilots, closing a game, expelling and banning a pilot, the traffic, the rejected datagrams and the measures of the games | Available | `src/server/AdminConsole/`, `src/server/BanBook/` |
+| Administration console of the supervisor: the games and their pilots, closing a game, expelling a pilot, the traffic, the rejected datagrams and the measures of the games | Available | `src/server/AdminConsole/` |
 | Master link: registration, heartbeats and the results of vanilla games | Available, from the supervisor, one registration for all its games; admin orders and bans not yet written (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
 | Components (`Position`, `SteadyMotion`, `CollisionBox`, `Health`, `EntityType`, `EntityTypeNumber`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Entity sheets: every entity made from the sheet of its type, the sheets read at launch | Available: the ship, the Bydos, the Bydo Tyrant and their missiles (see [Writing an entity sheet](/R-Type/entity-sheets/#the-shipped-sheets)) | `assets/entities/`, `src/game/EntityTypes/`, `src/game/World.cpp` |
@@ -166,7 +166,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 |---|---|---|---|
 | Launch options | `LaunchOptions` | `GameLaunchOptions` | `MasterLaunchOptions` (see [Master](/R-Type/master/)) |
 | Reads | `server.cfg`, whole; runs its own lines and keeps the lines of its games | only the file given after `--configuration`; none without it | `master.cfg` |
-| Modules | `supervisorModules()`: logger, network, content, supervised games, bans, supervisor lobby, information, master, admin console | `gameProcessModules()`: logger, network, storage, games (one game), lobby, metrics, supervisor link, and the plugins its file loads | `masterModules()` |
+| Modules | `supervisorModules()`: logger, network, content, supervised games, supervisor lobby, information, master, admin console | `gameProcessModules()`: logger, network, storage, games (one game), lobby, metrics, supervisor link, and the plugins its file loads | `masterModules()` |
 | Settings it owns | `port`, `database`, `server-name`, `master-url`, `master-key`, `public-address` | `seed`, `state-rate`, `state-encoding`, `input-delay`, `start-at-boss`, and those of its plugins; its `port` and `database` come from its command line | those of `master.cfg` |
 | Talks to the master | yes, one registration for all its games | never | |
 | Answers information requests | yes | never | |
@@ -214,7 +214,7 @@ The host only starts the supervisor and the master. `--mode game` is the command
 | `--database <file>` | The leaderboard file of the supervisor. |
 | `--log-file <file>` | `r-type_game_<n>.log` next to the executable. |
 | `--configuration <file>` | The file of commands the game reads, `r-type_games_<port>.cfg` next to the executable with the port of the supervisor; no file without it. |
-| `--traffic-csv <file>`, the simulator and logging options | As for the supervisor. The supervisor gives each game its own `--log-file`, then the logging options it shares (`--log-level`, `--no-log-file`, `--no-log-stderr`, see `LogLaunchOptions::forwardedArguments()`), then the five values of its simulated network, then `--traffic-csv` with the file of that game when it was given one. A `--no-log-file` comes after the journal of the game, so the last one wins and the game writes none either. |
+| `--traffic-csv <file>`, the simulator and logging options | As for the supervisor. The supervisor gives each game its own `--log-file`, then the logging options it shares (`--log-level`, `--no-log-file`, `--no-log-stderr`, `--log-color`, see `LogLaunchOptions::forwardedArguments()`), and `--log-color` when its own journal is in colour, then the five values of its simulated network, then `--traffic-csv` with the file of that game when it was given one. A `--no-log-file` comes after the journal of the game, so the last one wins and the game writes none either. |
 | `--difficulty <name>`, `--lives <count>`, `--friendly-fire <0\|1>` | The rules of the game, as its creator chose them (see [Rules of a game](#rules-of-a-game)). |
 
 `-p`, `--database`, `--difficulty`, `--lives` and `--friendly-fire` force the settings `port`, `database`, `difficulty`, `lives` and `friendly-fire`, after the file of `--configuration`.
@@ -362,9 +362,9 @@ module lobby off
 |---|---|---|
 | `logger` | applies the logging options when it starts, logs "server starting" and "server stopped"; provides the journal as an `ILogJournal`, so a plugin logs where the lines of the game go | `src/server/Logger/` |
 | `network` | declares the `port` setting; owns the `ServerApplication`: binds the socket and runs it on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission`, `TickDatagrams` (the datagrams of the tick), `IListeningPort` (the port of the `port` setting), `network::TrafficCounters` and the `RejectionLedger` | `src/server/Network/` |
-| `storage` | declares the `database` setting; opens the SQLite file and starts the thread that owns it when it starts, finishes what waits and closes the file when it stops; provides `IResultsArchive`; reads the bans of that file again every second on a thread of its own (`BanWatch`) and provides them as `LatestBans` (see [Banning a pilot](#banning-a-pilot)) | `src/server/Storage/` |
+| `storage` | declares the `database` setting; opens the SQLite file and starts the thread that owns it when it starts, finishes what waits and closes the file when it stops; provides `IResultsArchive` | `src/server/Storage/` |
 | `games` | declares the `seed`, `state-rate`, `state-encoding`, `input-delay` and `start-at-boss` settings, and the rules of its game, `difficulty`, `lives` and `friendly-fire` (`GameRuleSettings`); the one game of the process and its `EventBus`; reads the waves file when it starts and judges whether its game is vanilla; provides `RunningGame` and `IGameEvents` (the bus of the game, for a module listed after it or a plugin) | `src/server/Games/` |
-| `lobby` | one `ConnectionAcceptor`, built on the roster of the game; reads the content of the assets and of the resources when it installs, which every acceptance announces with the port of the supervisor; refuses a banned pilot and expels a seated one once the `LatestBans` of the storage module name it (see [Banning a pilot](#banning-a-pilot)) | `src/server/Lobby/` |
+| `lobby` | one `ConnectionAcceptor`, built on the roster of the game; reads the content of the assets and of the resources when it installs, which every acceptance announces with the port of the supervisor | `src/server/Lobby/` |
 | `metrics` | measures the ticks and the systems of the game, and writes a report to the journal every `TICKS_PER_REPORT` ticks; writes the traffic of the socket; provides `LatestMetrics` | `src/server/Metrics/` |
 | `supervisor link` | sends the supervisor a `GameStatus` every second and when it changes, with the measures of `LatestMetrics` when the metrics module is on; asks the process to stop when the supervisor does or is gone, and expels the pilots an `ExpulsionOrder` of the supervisor names (see [Expelling a pilot](#expelling-a-pilot)) | `src/server/SupervisorLink/` |
 
@@ -378,11 +378,10 @@ A plugin joins the end of that list when a `plugin` line of its file loads it, a
 | `network` | as in a game, on the port of the supervisor | `src/server/Network/` |
 | `content` | reads the sheets and the sprite sheets of the assets and of the resources and encodes the content pack when it installs; serves it over HTTP on the TCP port of the number of `port` when it starts (see [Content pack](#content-pack-servercontentmodule-contentpackdesk)) | `src/server/Content/` |
 | `supervised games` | declares the `database` setting, which it gives every game; reads the difficulties of the waves file of its content folders (see [Resources](#resources-ensure-lines)) and writes the file of commands of the games when it starts; starts, follows and stops the game processes (`GameRegistry`); provides `IServerOccupancy`, `LatestHostedGames`, `LatestServerMeasures`, `HostedDifficulties` and `IResultsFile`, the file of that setting | `src/server/SupervisedGames/` |
-| `bans` | required; provides the `BanBook`, the bans of the file `IResultsFile` names, which it reads when it starts if that file exists, and which the first ban creates otherwise (see [Banning a pilot](#banning-a-pilot)) | `src/server/BanBook/` |
-| `supervisor lobby` | answers the connection requests: refuses a banned pilot once its cookie is valid, refuses the rules of a new game it does not accept, sends each player to a game, or starts one | `src/server/SupervisorLobby/` |
+| `supervisor lobby` | answers the connection requests: refuses the rules of a new game it does not accept, sends each player to a game, or starts one | `src/server/SupervisorLobby/` |
 | `information` | declares the `server-name` setting; answers the information requests with what `IServerOccupancy` counts; provides `IServerName` | `src/server/Information/` |
 | `master` | declares the `master-url`, `master-key` and `public-address` settings, and registers the name `IServerName` gives; keeps the master told of the games, and sends the vanilla results of the file `IResultsFile` names, on a thread of its own, MasterLink, when both a url and a key are set | `src/server/Master/` |
-| `admin console` | registers `games`, `players`, `close-game`, `kick`, `ban`, `unban`, `bans`, `network` and `help` in the interpreter; reads the terminal on a thread of its own, AdminConsole, from its start to its stop, and runs the lines typed at each tick (see [Administration console](#administration-console-serveradminconsolemodule)) | `src/server/AdminConsole/` |
+| `admin console` | registers `games`, `players`, `close-game`, `kick`, `network` and `help` in the interpreter; reads the terminal on a thread of its own, AdminConsole, from its start to its stop, and runs the lines typed at each tick (see [Administration console](#administration-console-serveradminconsolemodule)) | `src/server/AdminConsole/` |
 
 The supervisor loads no plugin: a `plugin` line goes to its games (see [Configuration](#configuration-servercfg)).
 
@@ -404,7 +403,7 @@ Sending a player to a game that has a place is the work of the supervisor: `firs
 
 The game runs on the simulation thread of its process, and the network thread is the only other one that handles datagrams during a game, so nothing needs a lock. An exception a system of the game throws stops its process only (one a message handler throws only drops that message, see [Threads](#threads-serverapplication)); the supervisor and the other games go on.
 
-The waves file is read when the games module starts, after the logger module started, so a missing or wrong file stops the start of the game process with an error that names the games module, the file, the line and the key, and the line "waves file …" reaches the journal of that game. The supervisor reads no waves file: the error shows when a game starts, with the first player.
+The waves files are read when the games module starts, after the logger module started, so a missing or wrong file stops the start of the game process with an error that names the games module, the file, the line and the key, and the line "waves files …" reaches the journal of that game. The supervisor reads the same files when it starts (see [Rules of a game](#rules-of-a-game)), so a wrong file stops it before it opens any game.
 
 ### Supervisor and game processes
 
@@ -432,7 +431,7 @@ The supervisor does not see inside a game: `GameRegistry` (`src/server/Supervise
 
 The player who creates a game chooses its difficulty, the lives of each player and friendly fire, in its `NewGame` (see [Supervisor](/R-Type/protocol/#supervisor) on the protocol page). The rules are fixed when the game opens and apply to that game only; a game opened for an `AnyGame` gets the default ones, `network::defaultGameRules()`: `normal`, `STARTING_LIVES` (3), no friendly fire.
 
-1. The supervised games module reads the entity sheets and the waves file when it starts, and keeps the names of its tables in `HostedDifficulties`. A file the server cannot read stops the supervisor there, before it opens any game.
+1. The supervised games module reads the entity sheets and the waves files when it starts, and keeps the names of their tables in `HostedDifficulties`. A file the server cannot read stops the supervisor there, before it opens any game.
 2. `ServerSupervisorLobbyModule` asks `refusalOf()` (`src/server/SupervisorLobby/`) before it places a `NewGame`: `UnknownDifficulty` for a difficulty the file has no table for, then `LivesOutOfRange` for lives out of `LOWEST_LIVES` to `HIGHEST_LIVES` (1 to 9, **provisional**). Nothing is opened then.
 3. `GameSpawner::openGame()` keeps the rules in the `SupervisedGame` and gives them to the process: `gameCommand()` writes `--difficulty`, `--lives` and `--friendly-fire`.
 4. The games module of the process reads them as settings (`GameRuleSettings`, `src/server/Games/`) into `GameSettings`: the game plays the waves of that difficulty, each player gets those lives when it joins and with each new world, and the deaths of its results count from them.
@@ -474,7 +473,7 @@ On Linux the "parent" is the thread that started the child, so the supervisor st
 
 ### Administration console: `ServerAdminConsoleModule`
 
-The supervisor reads commands from the terminal it was started in. The `admin console` module (`src/server/AdminConsole/`) registers nine commands in the interpreter of the supervisor, the one `server.cfg` is read with, so a line does the same typed in the terminal or written in `server.cfg`:
+The supervisor reads commands from the terminal it was started in. The `admin console` module (`src/server/AdminConsole/`) registers six commands in the interpreter of the supervisor, the one `server.cfg` is read with, so a line does the same typed in the terminal or written in `server.cfg`:
 
 | Command | Answer |
 |---|---|
@@ -482,20 +481,28 @@ The supervisor reads commands from the terminal it was started in. The `admin co
 | `players` | the nicknames of the pilots of each game, by place |
 | `close-game <place>` | sends the game in that place the order the supervisor sends its games when it stops, `FAREWELL_COPIES` (3) copies of a `Disconnection` under its link token; the game tells its pilots and ends, and `games` lists it until its process ended. Refused when no game holds the place |
 | `kick <nickname>` | sends each game whose last status names that pilot, the case of the ASCII letters aside, `FAREWELL_COPIES` (3) copies of an `ExpulsionOrder` under its link token, and writes `<nickname> told to leave game <number> in place <place>` for each (see [Expelling a pilot](#expelling-a-pilot)). Nicknames are unique in a game, not on the server, so a pilot of that nickname in two games leaves both. Refused, sending nothing, without exactly one nickname the protocol accepts, or when no game names that pilot |
-| `ban <nickname\|address> [<length>]` | bans the target until the end of the length, `30m`, `2h` or `7d` (1 to `MAXIMUM_BAN_COUNT`, 9999, minutes, hours or days), or for good without one, and writes `nickname ACE banned for 2 h`; a ban of the same target, the case of the ASCII letters aside, is replaced (see [Banning a pilot](#banning-a-pilot)). A word that reads as an IPv4 address is an address, any other a nickname, so `01.2.3.4` is a nickname. Refused, banning nothing, when the word is neither, the length cannot be read, or the file refuses the ban |
-| `unban <nickname\|address>` | lifts the ban of that target and writes `nickname ace unbanned`; refused when no ban names it |
-| `bans` | one line per ban in force, with the time it has left rounded up to the minute (`nickname ACE, 1 h 59 min left`) or `for good`; `no ban` without one |
 | `network` | what crossed the socket of the supervisor since the module installed, the datagrams the network thread rejected since the start (`RejectionLedger::rejectedSinceStart()`, which takes nothing from the report of the journal), then the measures of the games the heartbeats carry to the master |
 | `help` | one line per command of the supervisor, with its arguments |
 
-The answers go to the standard output and the journal to the standard error, so the two never mix when the journal is redirected. A refused line is answered with the reason the interpreter gives, `unknown command 'gmaes' in line 'gmaes'` for instance.
+Without the prompt, the answers go to the standard output and the journal to the standard error, so the two never mix when the journal is redirected; with it, both are written above the prompt (see [The prompt](#the-prompt-terminalscreen)). A refused line is answered with the reason the interpreter gives, `unknown command 'gmaes' in line 'gmaes'` for instance.
+
+#### The prompt: `TerminalScreen`
+
+When the input, the output and the error of the supervisor are one terminal it holds the foreground of, the console writes `admin console ready: type help to list the commands`, then shows the prompt `> `, and keeps the line being typed itself. `StandardTerminal` (`src/server/AdminConsole/Terminal/`) turns the echo and the line editing of the terminal off, as the tty console of ioquake3 does: `ICANON` and `ECHO` off, `VMIN` 1, `VTIME` 0 on Linux and macOS; `ENABLE_LINE_INPUT` and `ENABLE_ECHO_INPUT` off, `ENABLE_VIRTUAL_TERMINAL_PROCESSING` on, and the code pages of the console set to UTF-8, on Windows. The three streams must be one terminal (the same device on Linux and macOS). Ctrl+C still stops the supervisor, and the stop gives the terminal its modes back, also when the prompt cannot be shown.
+
+`LineEditor` (`Typing/`) applies each key: text up to `MAXIMUM_CONSOLE_LINE_LENGTH` (1024 bytes), whole UTF-8 characters only, past which a key is refused and not shown; Backspace and Delete erase a whole UTF-8 character and draw the line again, so a combining or wide character shows as it is kept; Enter (`\r`, `\n`, or both) ends the line. The arrows, the other function keys, Tab and Ctrl+D are dropped. `TerminalScreen` writes every other line above the prompt: it erases the row (`\r\x1b[K`), writes the line, then the prompt and the typed text again, under one lock, so the reader of the keyboard, the simulation thread, the journal and the relays of the games may call it at once. The journal reaches it through `logging::setStandardErrorWriter()` (see [Logging](/R-Type/logging/#standard-error-and-the-admin-console)), and the answers through `ConsoleAnswers`, which writes on the standard output again once the console stops.
+
+A game process writes into two pipes the supervisor reads, one for its standard output and one for its standard error (`ChildOutputRelay`, `src/server/Processes/`), never into the terminal itself, and reads the null device as its standard input, so its lines pass above the prompt too and it never takes a key of the console, with their colours: the supervisor gives the games `--log-color` when its own journal is in colour. A line of a game longer than `MAXIMUM_CHILD_LINE_LENGTH` (4096 bytes) is cut there. The order between the standard output and the standard error of a game is not kept; its journal writes on the standard error only.
+
+A typed line wider than the terminal wraps, and only its last row is erased before a line is written above it. The relay of a game ends when every holder of its pipe closed it: a process a game started and left running would keep it open, and the supervisor would wait for it when that game ends; no game starts one today. A supervisor that crashes leaves its terminal without echo: `reset` brings it back.
 
 The commands read the registry of the games, which only the simulation thread touches, so the thread `AdminConsole` (`ConsoleReader`) only reads: it hands each line to the simulation thread through a `BoundedQueue` of `CONSOLE_LINE_CAPACITY` (64) lines, and the module runs them at the next tick, in their order. A `\r` before the end of a line is removed, and a line longer than `MAXIMUM_CONSOLE_LINE_LENGTH` (1024 bytes) is dropped whole, never cut. The stop wakes the read: on Linux and macOS, `select()` waits on the input and on a pipe the stop writes to (`poll()` does not work on a terminal under macOS); on Windows, the stop cancels `ReadFile()` with `CancelSynchronousIo()`, a file the Windows job of the CI only checks.
 
 | Situation | The console |
 |---|---|
-| No terminal (`< /dev/null`, a service, the CI) | runs the last line, writes `the console input ended` in the journal and reads nothing more; the server goes on |
-| The supervisor runs in the background of a shell (`&`) | is not suspended: `SIGTTIN` is ignored during a read, so the read fails and is tried again every `CONSOLE_BACKGROUND_WAIT` (500 ms), until `fg` |
+| No terminal (`< /dev/null`, a service, the CI) | shows no prompt; runs the last line, writes `the console input ended` in the journal and reads nothing more; the server goes on |
+| Standard output or standard error redirected (`2> server.err`) | shows no prompt, and reads the terminal line by line; the journal and the lines of the games go where standard error goes |
+| The supervisor runs in the background of a shell (`&`) | shows no prompt, and is not suspended: `SIGTTIN` is ignored during a read, so the read fails and is tried again every `CONSOLE_BACKGROUND_WAIT` (500 ms), until `fg` |
 | `module "admin console" off` in `server.cfg` | is never installed: no thread, and its commands are unknown |
 | The build sets `RTYPE_MODULE_ADMIN_CONSOLE` off | is not compiled, and the supervisor lists no such module |
 
@@ -506,33 +513,12 @@ The supervisor knows the nicknames of the pilots of a game, from its statuses, b
 | Tick | Where | What happens |
 |---|---|---|
 | N | supervisor | `kick ace` sends 3 `ExpulsionOrder` to each game whose status names `ACE` |
-| N' | game process | the supervisor link reads the orders (`holdsStopOrder()` and `expulsionIn()`, `SupervisorOrders.hpp`); `PlayerExpeller` sends each pilot of that nickname not expelled yet 3 `Expulsion` in its session, then sets `ConnectedPlayer::expulsion` to the reason, so the later copies of the order find nobody left to tell |
-| N' + 1 | game process | `Departures::closeSilentSessions()` closes the sessions of the expelled pilots first, with the cause of their reason, `Expelled` here: the seat is free, and the others get `PlayerLeft` (`Expelled`), guaranteed |
+| N' | game process | the supervisor link reads the orders (`holdsStopOrder()` and `expulsionIn()`, `SupervisorOrders.hpp`); `PlayerExpeller` sends each pilot of that nickname not expelled yet 3 `Expulsion` in its session, then sets `ConnectedPlayer::expelled`, so the later copies of the order find nobody left to tell |
+| N' + 1 | game process | `Departures::closeSilentSessions()` closes the sessions of the expelled pilots first, with the cause `Expelled`: the seat is free, and the others get `PlayerLeft` (`Expelled`), guaranteed |
 
 The `Expulsion` copies are queued before the mark, so they always leave under the session of the pilot, the lesson ioquake3 learnt in r1038. Until the next tick the pilot still counts for the ready rule, as a silent pilot does, for at most one tick (16.7 ms). An expulsion bans nobody: the pilot may join again at once.
 
-#### Banning a pilot
-
-A ban bars a nickname, the case of the ASCII letters aside (`network::nicknameKey()`), or an IPv4 address, for good or until a second (`Ban`, `BanList`, `src/server/Bans/`). The bans live in the table `bans` of the file of the server, the one the supervisor and every game share (see [The file](#the-file-resultsdatabase)), so they outlive a restart and a game started later has them at once. The supervisor writes them; each game reads them again.
-
-| When | Where | What happens |
-|---|---|---|
-| T | supervisor | `ban ace 2h` writes the row of `ace` in `bans` (`BansDatabase::save()`, which replaces a row of the same target), then the copy of the `BanBook` in memory |
-| T + at most 1 s | each game process | `BanWatch`, on a thread and a connection of its own, reads the bans in force every `BAN_REREAD_INTERVAL` (1 s) and publishes them in `LatestBans`; a read the file refuses keeps the bans read before |
-| next tick | each game process | the lobby module sees a newer revision of `LatestBans` and expels every seated pilot a ban names, as [Expelling a pilot](#expelling-a-pilot) does, with the reason `Banned`: 3 `Expulsion` (`Banned`), then `PlayerLeft` (`Banned`) to the others |
-| a new request | supervisor, or a game asked directly | the supervisor lobby refuses `ConnectionRefused` (`Banned`) once the cookie is valid, so a forged address learns nothing of the bans; a game refuses it before the cookie, like its other refusals: the 26 bytes of the refusal are fewer than the 38 of the smallest request |
-
-The client of a banned pilot shows `THE HOST BANNED YOU.`, and the status band of the others `BANNED` (see [Client](/R-Type/client/#departures-and-a-silent-server-departurefeed-silencewarning)). A ban ends on its second, `expires_at`: from then the supervisor lets the pilot in, and a game at its next read.
-
-| Column of `bans` | Holds |
-|---|---|
-| `kind` | `nickname` or `address` |
-| `target` | The nickname, compared with `NOCASE`, or the address as `network::ipv4AddressFromText()` writes it; with `kind`, the key of the table |
-| `banned_at`, `expires_at` | When the ban started and ends, in seconds since 1970 UTC; `expires_at` is empty for a ban for good |
-
-The `bans` module opens the file at its start only when the file exists, and creates it at the first ban otherwise, so a supervisor that runs alone and bans nobody creates no file. The table is the third migration of `SERVER_MIGRATIONS`, after the two of the results.
-
-A game process that no longer reads its datagrams does not stop on `close-game`, expels nobody on `kick`, and stays in `games`.
+The console bans nobody: an expelled pilot may join again at once. A game process that no longer reads its datagrams does not stop on `close-game`, expels nobody on `kick`, and stays in `games`.
 
 ### Stopping: Ctrl-C and SIGTERM
 
@@ -671,7 +657,7 @@ worldStateSender.onTick(tick, world.components());
 
 `ConnectionAcceptor` (`src/server/Lobby/`) answers the connection requests the sorter set aside for each tick, at most `CONNECTION_REQUEST_QUEUE_CAPACITY` (16), as the [Protocol](/R-Type/protocol/#connection) describes, and `PlayerRoster` (`src/server/Sessions/Roster/`) holds the players it let in: at most `MAXIMUM_PLAYERS` (4), each a `ConnectedPlayer` with its number, nickname, address and port, session token, next sequence, ship id, score, newest input, and the ticks since the game last read one of its datagrams and since the server last sent it a `Heartbeat`. A new player takes the lowest free number, so the first four are 1 to 4 in the order they joined. `remove(endpoint)` frees the seat and the number of a player whose session closed; the next player to join takes the lowest free number again.
 
-A datagram of this protocol with another version is answered with `ConnectionRefused` (`IncompatibleVersion`) in a header of this version (`PROTOCOL_VERSION`, 14), whatever it holds, when it holds at least `CONNECTION_REFUSED_DATAGRAM_SIZE` (26) bytes, the size of that refusal, so the answer is never larger than the datagram; a shorter one gets nothing. Any other datagram is read only when its header is of this protocol and version and its message sizes add up; only its first `ConnectionRequest` is answered, so one datagram never gets more than one answer, and every other message is ignored. A request is answered by the first row that applies:
+A datagram of this protocol with another version is answered with `ConnectionRefused` (`IncompatibleVersion`) in a header of this version (`PROTOCOL_VERSION`, 15), whatever it holds, when it holds at least `CONNECTION_REFUSED_DATAGRAM_SIZE` (26) bytes, the size of that refusal, so the answer is never larger than the datagram; a shorter one gets nothing. Any other datagram is read only when its header is of this protocol and version and its message sizes add up; only its first `ConnectionRequest` is answered, so one datagram never gets more than one answer, and every other message is ignored. A request is answered by the first row that applies:
 
 | The request comes… | Answer |
 |---|---|
@@ -700,12 +686,12 @@ A resource is content a host adds to the server without touching its assets or r
 | `resource.toml` | `description`, a text; `depends`, the resources started before it, optional | the supervisor and the games |
 | `entities/*.toml` | entity sheets, as in the assets | the games, and the content pack |
 | `sprites/…` | the sprite sheets its sheets name | the content pack |
-| `waves/waves.toml` | waves that replace those of the assets | the games |
+| `waves/waves.toml` | waves laid over those of the assets, key by key | the supervisor and the games |
 | `server/*.luau` | scripts that register behaviours (see [Scripting in Luau](/R-Type/scripting/)) | the games, never the client |
 
 `engine::ensuredResources()` (`src/engine/Resources/EnsureLines.hpp`) reads the names of the `ensure` lines, and `engine::contentFoldersOf()` (`ContentFolders.hpp`) lays them: the assets folder first, then each resource after the resources it depends on, each once; a resource without a manifest or a circle of dependencies is refused. The supervisor reads the lines it hands to its games (`supervisorModules()`), a game process the lines of its file (`runGame()` in `src/server/main.cpp`, which keeps them out of its interpreter with `ensureLineRule()`), both before they build their modules, so the supervisor serves the content its games play.
 
-Over those folders, `game::sheetTextsInFolders()` reads the sheets of every folder, `game::contentFilesIn()` lists the sheets and the sprite sheets of the pack, and `engine::topmostContentFile()` takes the waves file of the last folder that holds one. A sheet two folders hold, or a sprite sheet two folders hold, stops the start: a resource adds, it never overrides a sheet. The games of a resource that brings a sheet or waves are not vanilla (see [Vanilla games](#vanilla-games-vanillabreaches)). `resources/crimson-drifter/` is the example the repository ships: a Drifter steered by a Luau script that charges the ships level with it, its sprite sheet and the waves of normal that send it.
+Over those folders, `game::sheetTextsInFolders()` reads the sheets of every folder, `game::contentFilesIn()` lists the sheets and the sprite sheets of the pack, and `engine::contentFilesOf()` lists the waves file of every folder that holds one, in their order, for `WaveCatalog::fromFiles()` to lay each over the ones before it (see [Writing the waves file](/R-Type/waves-file/#waves-of-a-resource)). A sheet two folders hold, or a sprite sheet two folders hold, stops the start: a resource adds, it never overrides a sheet. The games of a resource that brings a sheet or waves are not vanilla (see [Vanilla games](#vanilla-games-vanillabreaches)). `resources/crimson-drifter/` is the example the repository ships: a Drifter steered by a Luau script that charges the ships level with it, its sprite sheet, and a waves file that gives only the enemies of normal, so the rest of the waves stays that of the assets.
 
 ## Content pack: `ServerContentModule`, `ContentPackDesk`
 
@@ -1045,7 +1031,7 @@ Each tick of a game in progress, `GameFlow` makes the ships of away players want
 
 ## Waves file: `WaveCatalog`
 
-`WaveCatalog` (`src/server/Spawning/`, built into `rtype_server_spawning`) reads the waves of each difficulty from a TOML file, with the strict reading of `src/engine/DataFiles/` (see [Engine](/R-Type/engine/#data-files-datafilereading)), which the client also uses for the appearance of the entity sheets. Only the server links `rtype_server_spawning`, so no client target can read the levels. `gameProcessModules()` hands the games module `WAVE_FILE_IN_ASSETS` (`waves/waves.toml`) in the `assets/` folder that `locateAssetFolder()` finds next to the executable or one level above it, whatever folder the server was started in (see [Engine](/R-Type/engine/#files-next-to-the-executable-locateassetfolder)). When the games module starts, it reads the entity sheets first, then that file, takes the `WavePlan` of the difficulty of its rules (`normal` by default) and gives it to the game in its `GameSettings`, with the seed and the sheets. A `WavePlan` holds a `WaveCurve`, the names of the enemy sheets its Bydos take in turn, and the name of its boss, when the difficulty has a `boss`.
+`WaveCatalog` (`src/server/Spawning/`, built into `rtype_server_spawning`) reads the waves of each difficulty from a TOML file, with the strict reading of `src/engine/DataFiles/` (see [Engine](/R-Type/engine/#data-files-datafilereading)), which the client also uses for the appearance of the entity sheets. Only the server links `rtype_server_spawning`, so no client target can read the levels. `gameProcessModules()` hands the games module the waves files of its content folders (`wavesFilesOf()`, `src/server/Modules/GameAssetPaths.hpp`): `WAVE_FILE_IN_ASSETS` (`waves/waves.toml`) in the `assets/` folder that `locateAssetFolder()` finds next to the executable or one level above it, whatever folder the server was started in (see [Engine](/R-Type/engine/#files-next-to-the-executable-locateassetfolder)), then in each resource that holds one. When the games module starts, it reads the entity sheets first, then those files, each laid over the ones before it (see [Writing the waves file](/R-Type/waves-file/#waves-of-a-resource)), takes the `WavePlan` of the difficulty of its rules (`normal` by default) and gives it to the game in its `GameSettings`, with the seed and the sheets. A `WavePlan` holds a `WaveCurve`, the names of the enemy sheets its Bydos take in turn, and the name of its boss, when the difficulty has a `boss`.
 
 Every key, value and enemy name of every difficulty is checked: an enemy names a sheet of side `enemy`, a look item (`look_items`, optional) a sheet of side `look_item`, and a boss a sheet with a `[gameplay.boss]` table. The first error throws an `engine::EngineException` (`src/engine/Exceptions/`) for a key, a value or the syntax, or a `ServerException` (`src/server/Exceptions/`) for the list of enemies or of look items, the boss (`UnknownBossException`), a missing difficulty, a difficulty named by more than 16 bytes or more than `MAXIMUM_DIFFICULTIES` (16) of them, naming the file, the line and the column, and the dotted name of the key; the game process prints it after `game stopped:` and exits with code 1, and the supervisor writes in its journal that the game crashed. The format, the ranges, the shipped difficulties and every error are in [Writing the waves file](/R-Type/waves-file/).
 
@@ -1054,11 +1040,10 @@ const rtype::game::EntitySheets sheets =
     rtype::game::EntitySheets::fromFolder(
         rtype::engine::locateAssetFolder() /
         rtype::game::ENTITY_SHEET_FOLDER_IN_ASSETS);
+const std::array wavesFiles{rtype::engine::locateAssetFolder() /
+                             rtype::server::WAVE_FILE_IN_ASSETS};
 const rtype::server::WaveCatalog catalog =
-    rtype::server::WaveCatalog::fromFile(
-        rtype::engine::locateAssetFolder() /
-            rtype::server::WAVE_FILE_IN_ASSETS,
-        sheets);
+    rtype::server::WaveCatalog::fromFiles(wavesFiles, sheets);
 rtype::server::WavePlan waves =
     catalog.planOf(rtype::identifiers::DEFAULT_DIFFICULTY);
 ```
@@ -1305,7 +1290,7 @@ The games module judges its game once, when it starts, since the values it reads
 
 | Rule | Broken when |
 |---|---|
-| The shipped waves file | `WaveCatalog::fingerprint()`, SipHash-2-4 of the bytes of the file, is not `OFFICIAL_WAVES_FINGERPRINT`: any change of the file, a comment or a line ending included |
+| The shipped waves file | `WaveCatalog::fingerprint()`, SipHash-2-4 of the bytes of the waves files, joined by `WAVE_FILE_SEPARATOR` when a resource lays one over the assets, is not `OFFICIAL_WAVES_FINGERPRINT`: any change of the file, a comment or a line ending included, or a waves file of a resource |
 | The shipped entity sheets | `entitySheetsFingerprint()`, SipHash-2-4 of the name and the bytes of each sheet in the order of their names, is not `OFFICIAL_ENTITY_SHEETS_FINGERPRINT`: any change, addition or removal of a sheet, a comment or a line ending included (see [Writing an entity sheet](/R-Type/entity-sheets/#the-shipped-sheets-and-vanilla-games)) |
 | No seed | a seed is set, even 0, since a seed lets the Bydos of every game be known in advance |
 | The default input delay | `input-delay` is not `DEFAULT_INPUT_DELAY_TICKS` (3) |
@@ -1368,7 +1353,7 @@ The table is `STRICT`: SQLite refuses a value it cannot store in the declared ty
 
 The view `player_statistics` adds up the rows of each player, every difficulty together: `games_played`, `best_score`, `total_score` and `deaths`, under the account identifier when there is one and under the nickname otherwise. It holds no data of its own, so it cannot disagree with the rows. Nothing in the game reads it yet.
 
-`openDatabaseFile()` (`rtype_storage`, `src/storage/`) opens every connection: a write-ahead log, `synchronous` FULL, then the migrations the file does not hold, each committed with its number in `PRAGMA user_version`. A change adds a line to `SERVER_MIGRATIONS` (`ServerMigrationsConstants.hpp`), never edits one: the supervisor and every game open the file with that list, and a program with a shorter one refuses the file. The file of a server is the setting `database` (`set database <file>` in `server.cfg`, or `--database <file>`); while it is empty, it is `r-type_server_<port>.db` next to the executable, the port being the one the network module gives through `IListeningPort`, or 4242 when no module gives one. A file that cannot be opened, cannot use a write-ahead log (a network file system) or was written by a newer program stops the start with an error that names it.
+`openDatabaseFile()` (`rtype_storage`, `src/storage/`) opens every connection: a write-ahead log, `synchronous` FULL, then the migrations the file does not hold, each committed with its number in `PRAGMA user_version`. A change adds a line to `SERVER_MIGRATIONS` (`ServerMigrationsConstants.hpp`), never edits one: the supervisor and every game open the file with that list, and a program with a shorter one refuses the file. The first two make the results; the third made the table of the bans of the console, and the fourth drops it, now that the console bans nobody, so a file that already holds the table still opens. The file of a server is the setting `database` (`set database <file>` in `server.cfg`, or `--database <file>`); while it is empty, it is `r-type_server_<port>.db` next to the executable, the port being the one the network module gives through `IListeningPort`, or 4242 when no module gives one. A file that cannot be opened, cannot use a write-ahead log (a network file system) or was written by a newer program stops the start with an error that names it.
 
 - Every game of a supervisor opens the same file, and two games can start within a millisecond of each other on a file that does not exist yet. Each opening waits for the others, up to `DATABASE_BUSY_TIMEOUT_MILLISECONDS` (5 s): SQLite refuses the switch to the write-ahead log at once, without waiting, while another connection holds the lock it needs, so `openDatabaseFile()` asks again every `WAL_SWITCH_RETRY_PAUSE` (10 ms) until that delay ends. Each migration reads the version of the file inside its own write transaction, so a migration another game applied in the meantime is never applied twice. A file already in a write-ahead log and migrated is opened without taking any write lock.
 - A process killed loses no committed game; a test saves a game and ends its process at once. What still waits in a queue is lost, at most one `STORAGE_POLL_INTERVAL` of work.
@@ -1377,7 +1362,7 @@ The view `player_statistics` adds up the rows of each player, every difficulty t
 
 ### The storage thread: `ResultsArchive`
 
-`ResultsArchive` (`src/server/Storage/Archive/`) owns the connection of a game process that keeps the results, on a thread of its own, so a game never waits for the disk: a commit can last longer than a tick. `IResultsArchive::record()` and `ask()` push to a `BoundedQueue` and return at once. Every `STORAGE_POLL_INTERVAL` (20 ms), the thread saves the results that wait, then answers the requests that wait. It takes the requests off their queue first, so a request made after a result always reads that result.
+`ResultsArchive` (`src/server/Storage/Archive/`) owns the only connection of a game process, on a thread of its own, so a game never waits for the disk: a commit can last longer than a tick. `IResultsArchive::record()` and `ask()` push to a `BoundedQueue` and return at once. Every `STORAGE_POLL_INTERVAL` (20 ms), the thread saves the results that wait, then answers the requests that wait. It takes the requests off their queue first, so a request made after a result always reads that result.
 
 - Results and requests have a queue each, `WAITING_RESULTS_CAPACITY` and `WAITING_ASKS_CAPACITY` (64 each), so a flood of requests never pushes a result out. A full queue discards its oldest message, and the journal reports a result lost that way. These sizes and the interval are **provisional**: code must read the constants.
 - An error on one result or one request is logged under `Storage`, and the next one is handled: a full disk costs results, not games.
@@ -1513,7 +1498,6 @@ The supervised games module tells the job when the games change. At each tick, o
 | Change what makes a game vanilla | `vanillaBreaches()` in `src/server/Games/VanillaBreaches.cpp`, the values it judges in `HostedRules`; its reasons, `OFFICIAL_WAVES_FINGERPRINT` and `OFFICIAL_ENTITY_SHEETS_FINGERPRINT` in `src/server/ServerConstants.hpp` |
 | Change which results go to the master, how many after a heartbeat, or what a refusal does | `ResultsCourier` and `ServerMasterConstants.hpp` in `src/server/Master/`; the games it reads, `UNSENT_GAMES_QUERY` in `src/server/Storage/Database/ResultsDatabaseConstants.hpp` |
 | Change the tables of the results, or a query | A new line of `SERVER_MIGRATIONS` (`ServerMigrationsConstants.hpp`), the migration and `LEADERBOARD_QUERY` in `src/server/Storage/Database/ResultsDatabaseConstants.hpp` |
-| Change how a ban is written, read or compared | `BanList` in `src/server/Bans/`, `BansDatabaseConstants.hpp` in `src/server/Storage/Database/`; how often a game reads them, `BAN_REREAD_INTERVAL` in `src/server/Storage/Archive/ArchiveConstants.hpp` |
 | Change how often a player may chat, or how long a line is | `CHAT_LINE_INTERVAL` in `src/server/Chat/ChatConstants.hpp`, `MAXIMUM_CHAT_TEXT_SIZE` in `src/network/Protocol/ProtocolConstants.hpp` |
 | Change how often a player may choose a look | `LOOK_CHOICE_INTERVAL` in `src/server/Looks/LooksConstants.hpp` |
 | Change who wins a look item, or when | `LookItemKeeper` in `src/server/Rules/Players/` |

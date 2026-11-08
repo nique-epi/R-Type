@@ -228,7 +228,6 @@ TEST_F(SettingsServiceFixture, RestoringTakesTheSettingsAndTellsEveryOne) {
                                     SettingId::ChatOpenLines,
                                     SettingId::ChatSeconds,
                                     SettingId::ChatBackground,
-                                    SettingId::Master,
                                     SettingId::ShipLook,
                                     SettingId::ShipLocker}));
 }

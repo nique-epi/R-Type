@@ -8,7 +8,6 @@ target_link_libraries(rtype_server_modules
     rtype_engine_commands
     rtype_engine_resources
     rtype_logging
-    rtype_server_ban_book_module
     rtype_server_games_module
     rtype_server_content_module
     rtype_server_information_module
@@ -28,7 +27,7 @@ target_link_libraries(rtype_server_modules
 )
 
 if(RTYPE_MODULE_ADMIN_CONSOLE)
-  target_link_libraries(rtype_server_modules PUBLIC rtype_server_admin_console_module)
+  target_link_libraries(rtype_server_modules PUBLIC rtype_server_admin_console_module rtype_server_admin_console_terminal)
 endif()
 if(RTYPE_MODULE_MASTER_LINK)
   target_link_libraries(rtype_server_modules PUBLIC rtype_server_master_module)

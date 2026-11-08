@@ -1,3 +1,4 @@
-add_library(rtype_server_admin_console_output STATIC StandardOutput.cpp)
+add_library(rtype_server_admin_console_output STATIC ConsoleAnswers.cpp StandardOutput.cpp)
 target_include_directories(rtype_server_admin_console_output PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(rtype_server_admin_console_output PUBLIC rtype_server_admin_console_typing)
 rtype_enable_warnings(rtype_server_admin_console_output)

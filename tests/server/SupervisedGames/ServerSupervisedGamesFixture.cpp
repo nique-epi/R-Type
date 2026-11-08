@@ -25,7 +25,6 @@
 #include "RecordingNetworkModule.hpp"
 #include "RecordingProcessLauncher.hpp"
 #include "SentDatagrams.hpp"
-#include "ServerBanBookModule.hpp"
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLoggerModule.hpp"
@@ -58,11 +57,10 @@ void ServerSupervisedGamesFixture::startSupervisor(
               .folder = folder_.path(),
               .gameLines = std::move(gameLines),
               .forwardedArguments = {},
-              .wavesFile = std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} /
-                           rtype::server::WAVE_FILE_IN_ASSETS,
+              .wavesFiles = {std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} /
+                             rtype::server::WAVE_FILE_IN_ASSETS},
               .contentFolders = {rtype::game::testing::shippedAssetFolder()}},
           std::move(launcher), [](rtype::engine::Duration) {}));
-  modules.push_back(std::make_unique<rtype::server::ServerBanBookModule>());
   modules.push_back(
       std::make_unique<rtype::server::ServerSupervisorLobbyModule>());
   application_ = std::make_unique<rtype::engine::Application>(

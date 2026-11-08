@@ -2,13 +2,15 @@
 
 #include <filesystem>
 #include <span>
+#include <vector>
 
 namespace rtype::server {
 
-/** @returns The waves file the games play: WAVE_FILE_IN_ASSETS of the last of
- * @p contentFolders that holds one (see engine::topmostContentFile()), so a
- * resource replaces the waves of the assets. */
-[[nodiscard]] std::filesystem::path wavesFileOf(
+/** @returns The waves files the games play: WAVE_FILE_IN_ASSETS of each of
+ * @p contentFolders that holds one, in their order (see
+ * engine::contentFilesOf()), so a resource lays its waves over those of the
+ * assets. */
+[[nodiscard]] std::vector<std::filesystem::path> wavesFilesOf(
     std::span<const std::filesystem::path> contentFolders);
 
 }  // namespace rtype::server

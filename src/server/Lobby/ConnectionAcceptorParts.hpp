@@ -5,7 +5,6 @@
 #include "ConnectedPlayer.hpp"
 #include "ContentAnnouncement.hpp"
 #include "Endpoint.hpp"
-#include "LatestBans.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
 
@@ -29,9 +28,6 @@ struct ConnectionAcceptorParts {
   /** @brief The content the game plays with, which every ConnectionAccepted
    * announces (see contentAnnouncementOf()). */
   network::ContentAnnouncement content;
-  /** @brief The bans the game read last; nullptr to bar nobody, when the
-   * storage module is not listed. It must outlive the acceptor. */
-  const LatestBans* bans{nullptr};
 };
 
 }  // namespace rtype::server

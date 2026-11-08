@@ -3,7 +3,6 @@ add_library(rtype_client_title STATIC
   EndpointForm.cpp
   DialogMenus.cpp
   IntroScreen.cpp
-  MasterScreen.cpp
   TitleScreen.cpp
 )
 

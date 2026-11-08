@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "GlobalLeaderboardQuery.hpp"
 
 namespace rtype::client {
 
@@ -15,6 +16,9 @@ struct MasterAsks {
   std::uint64_t gameAsk{};
   /** @brief The server whose games gameAsk asks for. */
   std::int64_t gameServerId{};
+  std::uint64_t leaderboardAsk{};
+  /** @brief The leaderboard leaderboardAsk asks for. */
+  network::GlobalLeaderboardQuery leaderboardQuery;
 };
 
 }  // namespace rtype::client

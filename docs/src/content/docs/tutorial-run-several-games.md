@@ -5,7 +5,7 @@ description: A step-by-step tutorial that runs one supervisor, fills a first gam
 
 This tutorial runs one `r-type_server`, the supervisor, fills a first game until the next player gets a game of its own, and reads what happened in the journals. It writes no code. The reasoning behind what you will see is in [Supervisor and game processes](/R-Type/server/#supervisor-and-game-processes).
 
-The commands of steps 1 and 2 were run on 6 November 2026 before this page was written, and their lines come from the journals of that run; the players were `load_test_bots` (see [Network](/R-Type/network/#load-test-bots-load_test_bots)) rather than client windows. The other steps were not run for this page: what they say is read from the code. You need the project built (see the [README](https://github.com/nique-epi/R-Type#readme)).
+The commands of steps 1 and 2 were run on 6 November 2026 before this page was written, and their lines come from the journals of that run; the players were `load_test_bots` (see [Network](/R-Type/network/#load-test-bots-load_test_bots)) rather than client windows. The other steps were not run for this page: what they say is read from the code. You need the project built (see [Build from source](/R-Type/getting-started/build/)).
 
 The server has **no dashboard yet**: the journals are the only way to see its games, one for the supervisor and one per game. A supervisor that has a `master-url` and a `master-key` tells the master its games, and `GET /api/servers/{id}/games` lists them (see [Master](/R-Type/master/#listing-the-games-of-a-server)).
 

@@ -21,11 +21,11 @@ ServerLeaderboard::ServerLeaderboard(network::MessageDispatcher& dispatcher) {
 void ServerLeaderboard::ask(const network::LeaderboardRequest& request) {
   asked_ = request;
   if (outbox_ == nullptr) {
-    become(LeaderboardPhase::NotOnServer);
+    enterPhase(page_, LeaderboardPhase::NotOnServer);
     return;
   }
   sinceAsked_ = engine::Duration::zero();
-  become(LeaderboardPhase::Asking);
+  enterPhase(page_, LeaderboardPhase::Asking);
   sendRequest(request);
 }
 
@@ -40,13 +40,13 @@ void ServerLeaderboard::sessionOpened(
   if (asked_.has_value()) {
     sinceAsked_ = engine::Duration::zero();
     sinceRequest_ = LEADERBOARD_ASK_INTERVAL;
-    become(LeaderboardPhase::Asking);
+    enterPhase(page_, LeaderboardPhase::Asking);
   }
 }
 
 void ServerLeaderboard::sessionClosed() {
   outbox_ = nullptr;
-  become(LeaderboardPhase::NotOnServer);
+  enterPhase(page_, LeaderboardPhase::NotOnServer);
 }
 
 void ServerLeaderboard::sessionHeld(engine::Duration elapsed) {
@@ -56,7 +56,7 @@ void ServerLeaderboard::sessionHeld(engine::Duration elapsed) {
   sinceAsked_ += elapsed;
   sinceRequest_ += elapsed;
   if (sinceAsked_ >= LEADERBOARD_GIVE_UP_TIME) {
-    become(LeaderboardPhase::NoAnswer);
+    enterPhase(page_, LeaderboardPhase::NoAnswer);
   } else if (sinceRequest_ >= LEADERBOARD_ASK_INTERVAL) {
     sendRequest(*asked_);
   }
@@ -67,7 +67,7 @@ void ServerLeaderboard::receive(const network::LeaderboardAnswer& answer) {
       answer.asked != *asked_) {
     return;
   }
-  become(LeaderboardPhase::Answered);
+  enterPhase(page_, LeaderboardPhase::Answered);
   page_.rows = answer.rows;
   page_.ownRow = answer.ownRow;
 }
@@ -76,13 +76,6 @@ void ServerLeaderboard::sendRequest(
     const network::LeaderboardRequest& request) {
   sendMessage(*outbox_, request);
   sinceRequest_ = engine::Duration::zero();
-}
-
-void ServerLeaderboard::become(LeaderboardPhase phase) {
-  page_.rows.clear();
-  page_.ownRow.reset();
-  page_.phase = phase;
-  ++page_.revision;
 }
 
 }  // namespace rtype::client

@@ -1,1 +1,1 @@
-target_sources(client_connection_tests PRIVATE ServerLeaderboardFixture.cpp ServerLeaderboardTest.cpp)
+target_sources(client_connection_tests PRIVATE MasterLeaderboardFixture.cpp MasterLeaderboardTest.cpp ServerLeaderboardFixture.cpp ServerLeaderboardTest.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingMasterLeaderboardReads.cpp)

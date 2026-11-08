@@ -1,6 +1,5 @@
 #include "ServerSupervisorLinkModule.hpp"
 #include <algorithm>
-#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -10,8 +9,6 @@
 #include "ConnectedPlayers.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
-#include "Expulsion.hpp"
-#include "ExpulsionRule.hpp"
 #include "GameInstance.hpp"
 #include "GameState.hpp"
 #include "GameStatus.hpp"
@@ -33,7 +30,6 @@
 #include "SupervisorOrders.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
-#include "WireTypes.hpp"
 
 namespace rtype::server {
 
@@ -152,16 +148,7 @@ void ServerSupervisorLinkModule::readSupervisorDatagrams() {
     }
     const std::optional<std::string> nickname = expulsionIn(datagram.payload);
     if (nickname.has_value()) {
-      const std::string key = network::nicknameKey(*nickname);
-      expeller_.expel(
-          std::bind_front(&IDatagramSender::queueDatagram, sender_),
-          runningGame_->game().roster(),
-          ExpulsionRule{.chosen =
-                            [&key](const ConnectedPlayer& player) {
-                              return network::nicknameKey(player.nickname) ==
-                                     key;
-                            },
-                        .reason = network::ExpulsionReason::ByTheHost});
+      expeller_.expel(*sender_, runningGame_->game().roster(), *nickname);
     }
   }
 }

@@ -23,11 +23,11 @@
 #include "GameWindow.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
-#include "IMasterAddress.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
+#include "MasterLeaderboard.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
@@ -107,13 +107,13 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   shipLooks_ = &context.require<ShipLookExchange>();
   entityMessages_ = &context.require<EntityMessageQueue>();
   leaderboard_ = &context.require<ServerLeaderboard>();
+  globalLeaderboard_ = &context.require<MasterLeaderboard>();
   chat_ = &context.require<ChatChannel>();
   entityTable_ = &context.require<IEntityTypeTable>();
   entityTypes_ = std::make_unique<EntityTypeLooks>(*entityTable_);
   serverTicks_ = &context.require<IServerTicks>();
   serverCatalog_ = &context.require<IServerCatalog>();
   gameCatalog_ = &context.require<IGameCatalog>();
-  masterAddress_ = &context.require<IMasterAddress>();
   loop_ = &context.require<FrameLoop>();
   listeners_ = &context.require<EventListeners>();
   declareSettings(context.require<engine::ConfigurationRegistry>());
@@ -152,36 +152,39 @@ network::Endpoint ClientScreensModule::configuredServer() const {
           portSetting_->integer().value_or(launch_.server.port))};
 }
 
+ScreenServices ClientScreensModule::services(
+    const network::Endpoint& server) const {
+  return ScreenServices{
+      .settings = *settings_,
+      .settingsService = *settingsService_,
+      .assets = *assets_,
+      .entityTable = *entityTable_,
+      .audio = *audio_,
+      .window = *window_,
+      .connection = *connection_,
+      .waitingRoom = *waitingRoom_,
+      .shipLooks = *shipLooks_,
+      .entityMessages = *entityMessages_,
+      .leaderboard = *leaderboard_,
+      .globalLeaderboard = *globalLeaderboard_,
+      .chat = *chat_,
+      .entityTypes = *entityTypes_,
+      .serverTicks = *serverTicks_,
+      .serverCatalog = *serverCatalog_,
+      .gameCatalog = *gameCatalog_,
+      .choice = ServerChoice{.server = server,
+                             .nickname = nicknameSetting_->text(),
+                             .game = launch_.game},
+      .playStart = playStart_};
+}
+
 void ClientScreensModule::start() {
   const network::Endpoint server = configuredServer();
   logger_.info("server: ", server.address, " port ", server.port);
   if (audio_ == &silence_) {
     logger_.info("no sound module: the client runs without sound");
   }
-  screens_ = std::make_unique<ClientScreens>(
-      ScreenServices{
-          .settings = *settings_,
-          .settingsService = *settingsService_,
-          .assets = *assets_,
-          .entityTable = *entityTable_,
-          .audio = *audio_,
-          .window = *window_,
-          .connection = *connection_,
-          .waitingRoom = *waitingRoom_,
-          .shipLooks = *shipLooks_,
-          .entityMessages = *entityMessages_,
-          .leaderboard = *leaderboard_,
-          .chat = *chat_,
-          .entityTypes = *entityTypes_,
-          .serverTicks = *serverTicks_,
-          .serverCatalog = *serverCatalog_,
-          .gameCatalog = *gameCatalog_,
-          .masterAddress = *masterAddress_,
-          .choice = ServerChoice{.server = server,
-                                 .nickname = nicknameSetting_->text(),
-                                 .game = launch_.game},
-          .playStart = playStart_},
-      registry_);
+  screens_ = std::make_unique<ClientScreens>(services(server), registry_);
   listenerHandle_ = listeners_->add([this](const sf::Event& event) {
     screens_->handleEvent(event);
     return EventUse::Kept;

@@ -5,7 +5,7 @@ description: A step-by-step tutorial that adds a message to the protocol, from i
 
 This tutorial adds a message to the protocol: an **emote**, a salute or a taunt that a player sends to the server. It is small on purpose. It goes through every place a real message touches, in the order you will meet them, starting with the specification, because the code answers to that page and not the other way round. The concepts behind each step are on the [Network](/R-Type/network/#messages-srcnetworkprotocolmessages) page.
 
-Every file below was built and its tests were run on a copy of the repository before this page was written. You need the project to build (see the [README](https://github.com/nique-epi/R-Type#readme)) and a branch of your own started from `origin/main`. `Emote` is an example: do not merge it.
+Every file below was built and its tests were run on a copy of the repository before this page was written. You need the project to build (see [Build from source](/R-Type/getting-started/build/)) and a branch of your own started from `origin/main`. `Emote` is an example: do not merge it.
 
 The tutorial ends at the handler on the server. Nothing in the client sends an emote and nothing shows one; [What to change for other cases](#what-to-change-for-other-cases) says where those go.
 

@@ -10,11 +10,11 @@
 #include "ResourcePlaces.hpp"
 #include "TemporaryFolder.hpp"
 
+using rtype::engine::contentFilesOf;
 using rtype::engine::contentFoldersOf;
 using rtype::engine::ResourceDependencyCycleException;
 using rtype::engine::ResourceNotFoundException;
 using rtype::engine::ResourcePlaces;
-using rtype::engine::topmostContentFile;
 
 /**
  * Given no resource to start
@@ -101,31 +101,46 @@ TEST(ContentFolders, RefuseResourcesThatDependOnEachOther) {
 
 /**
  * Given assets and a resource that both hold the waves file
- * When the topmost waves file is asked for
- * Then it is the file of the resource
+ * When the waves files are asked for
+ * Then both are given, the file of the assets first
  */
-TEST(ContentFolders, TheTopmostFileIsTheOneOfTheLastFolderThatHoldsIt) {
+TEST(ContentFolders, EveryFolderThatHoldsTheFileGivesItInTheirOrder) {
   const TemporaryFolder root;
   const std::array folders{root.path() / TEST_ASSET_FOLDER,
                            root.path() / TEST_RESOURCE_FOLDER};
-  root.write(folders[0] / REPLACEABLE_FILE, WAVES_OF_THE_ASSETS);
-  root.write(folders[1] / REPLACEABLE_FILE, WAVES_OF_THE_RESOURCE);
+  root.write(folders[0] / LAYERED_FILE, WAVES_OF_THE_ASSETS);
+  root.write(folders[1] / LAYERED_FILE, WAVES_OF_THE_RESOURCE);
 
-  EXPECT_EQ(topmostContentFile(folders, REPLACEABLE_FILE),
-            folders[1] / REPLACEABLE_FILE);
+  EXPECT_EQ(
+      contentFilesOf(folders, LAYERED_FILE),
+      (std::vector{folders[0] / LAYERED_FILE, folders[1] / LAYERED_FILE}));
 }
 
 /**
  * Given assets that hold the waves file and a resource that does not
- * When the topmost waves file is asked for
- * Then it is the file of the assets
+ * When the waves files are asked for
+ * Then the file of the assets is the only one
  */
-TEST(ContentFolders, TheTopmostFileIsTheOneOfTheAssetsWhenNoResourceHoldsIt) {
+TEST(ContentFolders, AFolderWithoutTheFileGivesNone) {
   const TemporaryFolder root;
   const std::array folders{root.path() / TEST_ASSET_FOLDER,
                            root.path() / TEST_RESOURCE_FOLDER};
-  root.write(folders[0] / REPLACEABLE_FILE, WAVES_OF_THE_ASSETS);
+  root.write(folders[0] / LAYERED_FILE, WAVES_OF_THE_ASSETS);
 
-  EXPECT_EQ(topmostContentFile(folders, REPLACEABLE_FILE),
-            folders[0] / REPLACEABLE_FILE);
+  EXPECT_EQ(contentFilesOf(folders, LAYERED_FILE),
+            std::vector{folders[0] / LAYERED_FILE});
+}
+
+/**
+ * Given assets and a resource, neither of which holds the waves file
+ * When the waves files are asked for
+ * Then the file of the assets is given alone, for its reader to name it
+ */
+TEST(ContentFolders, TheFileOfTheAssetsIsGivenWhenNoFolderHoldsIt) {
+  const TemporaryFolder root;
+  const std::array folders{root.path() / TEST_ASSET_FOLDER,
+                           root.path() / TEST_RESOURCE_FOLDER};
+
+  EXPECT_EQ(contentFilesOf(folders, LAYERED_FILE),
+            std::vector{folders[0] / LAYERED_FILE});
 }

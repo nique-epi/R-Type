@@ -1,0 +1,21 @@
+#pragma once
+
+#include <cstdint>
+#include <optional>
+#include <string>
+
+namespace rtype::network {
+
+/** @brief What a reader of `GET /api/leaderboard` asks for: the leaderboard
+ * of one difficulty and one number of players on every server, its first
+ * `limit` rows, and the row of `player` when it names one. */
+struct GlobalLeaderboardQuery {
+  std::string difficulty;
+  std::uint8_t playerCount{};
+  std::optional<std::string> player = std::nullopt;
+  std::int64_t limit{};
+
+  bool operator==(const GlobalLeaderboardQuery&) const = default;
+};
+
+}  // namespace rtype::network

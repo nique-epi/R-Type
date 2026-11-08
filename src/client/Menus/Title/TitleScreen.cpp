@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <utility>
+#include "ClientVersionConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
 #include "Menu.hpp"

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { enemyScaleFor } from './sheets';
+import { enemyScaleFor, lookItemSprite } from './sheets';
 
 describe('enemyScaleFor', () => {
   it('scales a 24 pixel enemy to a whole number of pixels within the width', () => {
@@ -18,5 +18,20 @@ describe('enemyScaleFor', () => {
 
   it('never draws an enemy smaller than its own pixels', () => {
     expect(enemyScaleFor('voltjelly', 10)).toBe(1);
+  });
+});
+
+describe('lookItemSprite', () => {
+  it('reads the crown from the third cell of looks.png, 18 pixels apart', () => {
+    expect(lookItemSprite('crown').frame).toEqual({
+      x: 36,
+      y: 0,
+      width: 12,
+      height: 8,
+    });
+  });
+
+  it('sits the mustache under the nose of the ship, as the client does', () => {
+    expect(lookItemSprite('mustache').mount).toEqual({ x: 20, y: 9 });
   });
 });

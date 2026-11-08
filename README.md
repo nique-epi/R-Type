@@ -86,7 +86,7 @@ Each optional module has a CMake option, on by default. Off, its folder is not c
 | `RTYPE_MODULE_AUDIO` | the sound of the client | the client plays nothing, and `--no-sound` changes nothing |
 | `RTYPE_MODULE_METRICS` | the metrics of the client and of each game process | no report in the journal, and `--traffic-csv` writes no file |
 | `RTYPE_MODULE_MASTER_LINK` | the registration of the server with the master | the server never registers, and `set master-url`, `set master-key` and `set public-address` are refused |
-| `RTYPE_MODULE_ADMIN_CONSOLE` | the administration console of the supervisor | the supervisor reads nothing from its terminal, and `games`, `players`, `close-game`, `kick`, `ban`, `unban`, `bans`, `network` and `help` are unknown commands |
+| `RTYPE_MODULE_ADMIN_CONSOLE` | the administration console of the supervisor | the supervisor reads nothing from its terminal, and `games`, `players`, `close-game`, `kick`, `network` and `help` are unknown commands |
 | `RTYPE_MODULE_CHAT` | the chat of the games | a chat line reaches nobody |
 | `RTYPE_MODULE_PLUGINS` | the loading of plugins | `plugin` and `plugin-folder` are unknown commands |
 | `RTYPE_MODULE_GAME_STATISTICS` | the `game-statistics` plugin; off whenever `RTYPE_MODULE_PLUGINS` is | no `game-statistics` file in `plugins/` |
@@ -183,7 +183,7 @@ The server reads the waves of Bydos from `assets/waves/waves.toml`, in the `asse
 ./r-type_client -h 192.168.1.20 -p 4243 -n ACE
 ```
 
-Without `-h`, PLAY opens the server map: the servers the master lists, `http://127.0.0.1:8080` unless `set master-url` (in `client.cfg`, or `--set master-url=<url>`) names another, or the player chose another with MASTER (M) on the map, which `settings.ini` keeps, around the planet of the player by the ping the client measures, and the games of each; Enter or a click joins one. Start the master and a server registered with it first (see [the master page](https://nique-epi.github.io/R-Type/master/)): without the master, the map shows `MASTER UNREACHABLE`.
+Without `-h`, PLAY opens the server map: the servers the master lists, `http://127.0.0.1:8080` unless `set master-url` (in `client.cfg`, or `--set master-url=<url>`) names another, around the planet of the player by the ping the client measures, and the games of each; Enter or a click joins one, asking only for the callsign. The GLOBAL tab of the leaderboard reads the same master. Start the master and a server registered with it first (see [the master page](https://nique-epi.github.io/R-Type/master/)): without the master, the map shows `MASTER UNREACHABLE`.
 
 The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default, and the nickname of the player, `PILOT` by default; the connection screen, which D (ADDRESS) opens from the map, starts with them. CONNECT on that screen joins any server, without the master: without a server, the screen shows `SERVER UNREACHABLE` after 5 seconds.
 
@@ -297,6 +297,7 @@ The client, the server and the master write a timestamped journal, `r-type_clien
 | `--no-log-file` | Do not write a journal |
 | `--log-stderr` | Write to standard error too (default) |
 | `--no-log-stderr` | Do not write to standard error |
+| `--log-color` | Write standard error in colour, even when it is no terminal |
 
 The build option `-DLOG_LEVEL=<name>` removes the calls below a level from the binaries. See [the logging page](docs/src/content/docs/logging.md).
 
@@ -318,7 +319,7 @@ cmake --build build --target format
 
 ## Documentation
 
-The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`. To add a module to the server or the client, start with the [Modules](https://nique-epi.github.io/R-Type/modules/) page and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/). Three more tutorials [add a network message](https://nique-epi.github.io/R-Type/tutorial-add-a-network-message/), [run a server with several games](https://nique-epi.github.io/R-Type/tutorial-run-several-games/) and [publish a mod](https://nique-epi.github.io/R-Type/tutorial-publish-a-mod/).
+The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`. Its [Getting started](https://nique-epi.github.io/R-Type/getting-started/build/) section walks through these steps, from the download to the tests. To add a module to the server or the client, start with the [Modules](https://nique-epi.github.io/R-Type/modules/) page and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/). Three more tutorials [add a network message](https://nique-epi.github.io/R-Type/tutorial-add-a-network-message/), [run a server with several games](https://nique-epi.github.io/R-Type/tutorial-run-several-games/) and [publish a mod](https://nique-epi.github.io/R-Type/tutorial-publish-a-mod/).
 
 To preview it locally, with Node.js 22.12 or newer:
 

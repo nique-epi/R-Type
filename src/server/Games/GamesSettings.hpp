@@ -14,11 +14,12 @@ struct GamesSettings {
   /** @brief The seed the random draws of the game start from, unless
    * the configuration sets another; a seed drawn at random when empty. */
   std::optional<std::uint32_t> seed;
-  /** @brief The waves file, read when the module starts. */
-  std::filesystem::path wavesFile;
+  /** @brief The waves files, read when the module starts, each laid over the
+   * ones before it (see WaveCatalog::fromFiles()). */
+  std::vector<std::filesystem::path> wavesFiles;
   /** @brief The content folders whose entity sheets the games play, the
    * assets first then each resource started (see engine::contentFoldersOf()),
-   * read when the module starts, before the waves file that names them. */
+   * read when the module starts, before the waves files that name them. */
   std::vector<std::filesystem::path> contentFolders;
   /** @brief The world states each player of a game is sent per second, unless
    * the configuration sets another rate. */

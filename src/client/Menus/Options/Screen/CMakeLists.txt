@@ -23,6 +23,7 @@ target_link_libraries(rtype_client_options_screen
     rtype_client_common_screens
     rtype_client_dropdown
     rtype_client_menu_builder
+    rtype_client_screens_module
     rtype_client_window_size_chart
 )
 

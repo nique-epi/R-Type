@@ -662,6 +662,25 @@ nlohmann::json globalLeaderboardRowDocument(const GlobalLeaderboardRow& row) {
   return document;
 }
 
+GlobalLeaderboardRow globalLeaderboardRowOf(const JsonField& row) {
+  requireObject(row);
+  return GlobalLeaderboardRow{
+      .rank = static_cast<std::int64_t>(integerOf(
+          memberOf(row, RANK_MEMBER),
+          IntegerBounds{.lowest = LOWEST_RANK, .highest = HIGHEST_RANK})),
+      .nickname = nicknameOf(memberOf(row, NICKNAME_MEMBER)),
+      .score = static_cast<std::uint32_t>(integerOf(
+          memberOf(row, SCORE_MEMBER),
+          IntegerBounds{.lowest = LOWEST_SCORE, .highest = HIGHEST_SCORE})),
+      .playedAt = playedAtOf(row),
+      .serverId = static_cast<std::int64_t>(
+          integerOf(memberOf(row, SERVER_ID_MEMBER),
+                    IntegerBounds{.lowest = FIRST_SERVER_ID,
+                                  .highest = HIGHEST_SERVER_ID})),
+      .serverName = boundedTextOf(memberOf(row, SERVER_NAME_MEMBER),
+                                  MAXIMUM_SERVER_NAME_SIZE)};
+}
+
 }  // namespace
 
 bool isWellFormedServerKey(std::string_view text) {
@@ -706,6 +725,24 @@ std::string globalLeaderboardText(const GlobalLeaderboard& leaderboard) {
     document[PLAYER_MEMBER] = globalLeaderboardRowDocument(*leaderboard.player);
   }
   return textOf(document);
+}
+
+GlobalLeaderboard globalLeaderboardFromText(std::string_view text) {
+  const nlohmann::json document = parsedObject(text);
+  const JsonField leaderboard = wholeMessage(document);
+  const JsonField scores = memberOf(leaderboard, SCORES_MEMBER);
+  const std::size_t count =
+      arraySizeOf(scores, static_cast<std::size_t>(MAXIMUM_PAGE_SIZE));
+  GlobalLeaderboard read;
+  read.scores.reserve(count);
+  for (std::size_t index = 0; index < count; ++index) {
+    read.scores.push_back(globalLeaderboardRowOf(elementOf(scores, index)));
+  }
+  if (const std::optional<JsonField> player =
+          optionalMemberOf(leaderboard, PLAYER_MEMBER)) {
+    read.player = globalLeaderboardRowOf(*player);
+  }
+  return read;
 }
 
 std::string serverCreationText(const ServerCreation& creation) {

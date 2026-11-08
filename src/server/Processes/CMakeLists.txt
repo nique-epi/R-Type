@@ -9,6 +9,8 @@ endif()
 add_library(rtype_server_processes STATIC
   BoostChildProcess.cpp
   BoostProcessLauncher.cpp
+  ChildOutputLines.cpp
+  ChildOutputRelay.cpp
   ${RTYPE_CHILD_BINDING_SOURCE}
 )
 
@@ -26,6 +28,7 @@ target_link_libraries(rtype_server_processes
   PUBLIC
     Boost::process
   PRIVATE
+    rtype_logging
     rtype_server_exceptions
 )
 

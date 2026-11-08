@@ -48,8 +48,6 @@ PilotState stateAfter(network::DepartureReason reason) {
       return PilotState::SignalLost;
     case network::DepartureReason::Expelled:
       return PilotState::Expelled;
-    case network::DepartureReason::Banned:
-      return PilotState::Banned;
     case network::DepartureReason::Left:
       break;
   }
