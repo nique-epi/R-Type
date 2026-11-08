@@ -25,7 +25,10 @@ namespace rtype::client {
  * RETRY over the map after a lost game, and JOIN A SERVER over the
  * leaderboard, which it hides: the address, the port and the
  * nickname to join a server with, CONNECT and BACK, then a status line that
- * tells how the attempt stands.
+ * tells how the attempt stands. Joining a server or a new game of the map, it
+ * asks only for the nickname, under JOIN_SERVER_HEADING: the server is the
+ * one of the last attempt, which the map wrote (ConnectionStart::
+ * NicknameOnConfirm).
  *
  * Building it drops any earlier attempt, so it always starts from no attempt.
  * Its fields start with the nickname of the ServerChoice and, for
@@ -96,6 +99,9 @@ class ConnectionScreen : public IScreen {
   /** @brief Whether an attempt writes the server the form remembers: only a
    * screen started on ConnectionStart::OnConfirm does. */
   bool remembersServer_{};
+  /** @brief Whether the form shows the ADDRESS and PORT fields: all but a
+   * screen started on ConnectionStart::NicknameOnConfirm do. */
+  bool asksServer_{};
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   std::string_view fieldProblem_;

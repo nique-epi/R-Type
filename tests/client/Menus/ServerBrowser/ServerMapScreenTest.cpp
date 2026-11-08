@@ -22,7 +22,7 @@
 
 using rtype::client::Ambience;
 using rtype::client::CONNECTION_SCREEN;
-using rtype::client::CONNECTION_TO_CHOSEN_SERVER_SCREEN;
+using rtype::client::CONNECTION_TO_MAP_SERVER_SCREEN;
 using rtype::client::GameRequest;
 using rtype::client::HANGAR_SCREEN;
 using rtype::client::LEADERBOARD_SCREEN;
@@ -197,7 +197,7 @@ TEST_F(ServerMapScreenFixture, EnterOnAWaitingGameJoinsItsServer) {
   EXPECT_THAT(
       navigator().calls(),
       ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                .screen = CONNECTION_TO_CHOSEN_SERVER_SCREEN}));
+                                .screen = CONNECTION_TO_MAP_SERVER_SCREEN}));
 }
 
 /**

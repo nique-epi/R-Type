@@ -102,6 +102,18 @@ network::Endpoint shownServerOf(const ServerChoice& choice,
   return choice.lastServer.value_or(choice.server);
 }
 
+/** @returns The server an attempt goes to: the one the ADDRESS and PORT
+ * fields of @p menu name when @p asksServer, the server of the last attempt
+ * of @p choice otherwise, as the server map wrote it. */
+EndpointReading serverOf(const Menu& menu, const ServerChoice& choice,
+                         bool asksServer) {
+  if (asksServer) {
+    return readEndpoint(menu);
+  }
+  return EndpointReading{.endpoint = choice.lastServer.value_or(choice.server),
+                         .problem = {}};
+}
+
 /** @returns The game a screen asks for: the game given at launch for a form
  * that remembers its server, the game of the last attempt otherwise, the game
  * given at launch before any. */
@@ -121,6 +133,7 @@ ConnectionScreen::ConnectionScreen(ConnectionScreenParts parts,
       choice_(&parts.choice.get()),
       goal_(parts.goal),
       remembersServer_(parts.start == ConnectionStart::OnConfirm),
+      asksServer_(parts.start != ConnectionStart::NicknameOnConfirm),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       menu_(buildMenu(parts.sounds.get(),
@@ -153,8 +166,11 @@ Menu ConnectionScreen::buildMenu(ISoundPlayer& sounds,
                                  const network::Endpoint& shown) {
   const std::function<void()> connectAction = [this] { connect(); };
   MenuBuilder builder(MenuBuilder::Frame::Form, &sounds);
-  builder.heading(CONNECTION_HEADING);
-  return addEndpointFields(builder, shown, connectAction)
+  builder.heading(asksServer_ ? CONNECTION_HEADING : JOIN_SERVER_HEADING);
+  if (asksServer_) {
+    addEndpointFields(builder, shown, connectAction);
+  }
+  return builder
       .textField({.label = NICKNAME_LABEL, .description = NICKNAME_DESCRIPTION},
                  TextField(choice_->nickname, NICKNAME_FIELD_SIZE,
                            TextField::Characters::Printable),
@@ -169,13 +185,14 @@ void ConnectionScreen::connect() {
   connection_->cancel();
   acceptedFor_ = engine::Duration::zero();
   goalReached_ = false;
-  const EndpointReading reading = readEndpoint(menu_);
+  const EndpointReading reading = serverOf(menu_, *choice_, asksServer_);
   fieldProblem_ = reading.problem;
   if (!reading.endpoint.has_value()) {
     return;
   }
   const network::Endpoint& server = *reading.endpoint;
-  const std::string_view nickname = menu_.fieldText(NICKNAME_ENTRY);
+  const std::string_view nickname =
+      menu_.fieldText(asksServer_ ? NICKNAME_ENTRY : NICKNAME_ALONE_ENTRY);
   if (!network::isValidNickname(nickname)) {
     fieldProblem_ = MISSING_NICKNAME_STATUS;
     return;

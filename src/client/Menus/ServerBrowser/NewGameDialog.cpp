@@ -130,7 +130,7 @@ Menu newGameMenu(NewGameMenuParts parts) {
                 choice.lastServer = server;
                 choice.lastRequest = GameRequest{
                     .game = network::NEW_GAME_CHOICE, .rules = draft->rules};
-                navigator.push(CONNECTION_TO_CHOSEN_SERVER_SCREEN);
+                navigator.push(CONNECTION_TO_MAP_SERVER_SCREEN);
               })
       .build();
 }

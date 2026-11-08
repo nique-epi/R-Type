@@ -38,14 +38,14 @@ namespace rtype::client {
  * MENU_CONFIRM_KEY opens the panel of its games, read from the master, and on
  * a waiting game joins it, on + NEW GAME pushes NEW_GAME_SCREEN over the map.
  * Joining puts the server and the game in the ServerChoice and pushes
- * CONNECTION_TO_CHOSEN_SERVER_SCREEN, which connects at once and opens the
- * waiting room: a game of the panel is asked for by its number, with the
- * rules the master lists for it. The chips: QUICK PLAY joins any game of the
- * server of this version with the lowest ping, RANKING opens the leaderboard,
- * ADDRESS the connection form, BACK goes one stage back, then closes the map.
- * The hangar star of the whole map, or HANGAR_KEY, pushes HANGAR_SCREEN.
- * The master the map reads, the one the `master-url` setting names, is
- * written on the right of the title.
+ * CONNECTION_TO_MAP_SERVER_SCREEN, which asks only for the nickname, then
+ * connects and opens the waiting room: a game of the panel is asked for by its
+ * number, with the rules the master lists for it. The chips: QUICK PLAY joins
+ * any game of the server of this version with the lowest ping, RANKING opens
+ * the leaderboard, ADDRESS the connection form, BACK goes one stage back, then
+ * closes the map. The hangar star of the whole map, or HANGAR_KEY, pushes
+ * HANGAR_SCREEN. The master the map reads, the one the `master-url` setting
+ * names, is written on the right of the title.
  *
  * The list is read when the map opens, again every
  * SERVER_LIST_REFRESH_INTERVAL and on REFRESH_KEY. A key that changes the map

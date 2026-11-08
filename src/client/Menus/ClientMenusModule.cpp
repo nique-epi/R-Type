@@ -163,8 +163,9 @@ std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
       interfaceCanvasOf(context));
 }
 
-/** @brief Adds to @p registry the four connection screens: the form, the one
- * for the leaderboard, the one that joins at once and the one RETRY opens. */
+/** @brief Adds to @p registry the five connection screens: the form, the one
+ * for the leaderboard, the one that joins at once, the one that asks only for
+ * the nickname to join a server of the map, and the one RETRY opens. */
 void addConnectionScreens(ScreenRegistry& registry) {
   registry.add(CONNECTION_SCREEN, [](const ScreenContext& screens) {
     return buildConnectionScreen(screens, ConnectionGoal::WaitingRoom);
@@ -177,6 +178,11 @@ void addConnectionScreens(ScreenRegistry& registry) {
       CONNECTION_TO_CHOSEN_SERVER_SCREEN, [](const ScreenContext& screens) {
         return buildConnectionScreen(screens, ConnectionGoal::WaitingRoom,
                                      ConnectionStart::AtOnce);
+      });
+  registry.add(
+      CONNECTION_TO_MAP_SERVER_SCREEN, [](const ScreenContext& screens) {
+        return buildConnectionScreen(screens, ConnectionGoal::WaitingRoom,
+                                     ConnectionStart::NicknameOnConfirm);
       });
   registry.add(CONNECTION_AGAIN_SCREEN, [](const ScreenContext& screens) {
     return buildConnectionScreen(screens, ConnectionGoal::WaitingRoom,

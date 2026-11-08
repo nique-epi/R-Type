@@ -390,7 +390,7 @@ void ServerMapScreen::join(const ServerRow& server,
   heldKey_.reset();
   choice_->lastServer = server.endpoint;
   choice_->lastRequest = request;
-  navigator_->push(CONNECTION_TO_CHOSEN_SERVER_SCREEN);
+  navigator_->push(CONNECTION_TO_MAP_SERVER_SCREEN);
 }
 
 void ServerMapScreen::repaint() {

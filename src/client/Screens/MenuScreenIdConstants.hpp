@@ -42,11 +42,16 @@ constexpr ScreenId CONNECTION_SCREEN{"connection"};
 constexpr ScreenId CONNECTION_FOR_LEADERBOARD_SCREEN{
     "connection for the leaderboard"};
 
-/** @brief The same screen, which starts its attempt as it opens: pushed over
- * the server map with the server the map chose, or by PLAY over the title for
- * a client launched with `-h`. */
+/** @brief The same screen, which starts its attempt as it opens: pushed by
+ * PLAY over the title for a client launched with `-h`. */
 constexpr ScreenId CONNECTION_TO_CHOSEN_SERVER_SCREEN{
     "connection to the chosen server"};
+
+/** @brief The same screen with the nickname alone, pushed over the server map
+ * with the server and the game the map chose: the master listed the server,
+ * so the player types no address. */
+constexpr ScreenId CONNECTION_TO_MAP_SERVER_SCREEN{
+    "connection to a server of the map"};
 
 /** @brief The same screen, pushed by RETRY over the server map: its fields
  * start with the server of the lost game, and the player confirms them. */
