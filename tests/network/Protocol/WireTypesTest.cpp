@@ -9,31 +9,39 @@
 #include "WireTypes.hpp"
 #include "WorldStateFixtures.hpp"
 
-namespace rtype::network {
-namespace {
-
-using testing::ACCENTED_LETTER;
-using testing::BEYOND_RANGE_X;
-using testing::BEYOND_RANGE_Y;
-using testing::byteSequence;
-using testing::EXAMPLE_Y;
-using testing::FOUR_ROCKETS;
-using testing::ILL_FORMED_UTF8;
-using testing::LARGEST_WIRE_COORDINATE;
-using testing::MINUS_ONE_UNIT;
-using testing::NEAREST_EIGHTH_OF_UNROUNDED_X;
-using testing::NICKNAME_WITH_DELETE;
-using testing::NICKNAME_WITH_LINE_FEED;
-using testing::NICKNAME_WITH_NULL_BYTES;
-using testing::NICKNAME_WITH_SPACE;
-using testing::NICKNAME_WITH_TILDE;
-using testing::NICKNAME_WITH_UNIT_SEPARATOR;
-using testing::ONE_BYTE_NICKNAME;
-using testing::SEVENTEEN_BYTE_NICKNAME;
-using testing::SIXTEEN_BYTE_NICKNAME;
-using testing::SMALLEST_WIRE_COORDINATE;
-using testing::UNROUNDED_X;
-using testing::WELL_FORMED_UTF8_AT_THE_EDGES;
+using rtype::network::ByteReader;
+using rtype::network::ByteWriter;
+using rtype::network::InvalidBoolException;
+using rtype::network::InvalidCoordinateException;
+using rtype::network::isPrintableUtf8;
+using rtype::network::isValidNickname;
+using rtype::network::isValidUtf8;
+using rtype::network::readBool;
+using rtype::network::readCoordinate;
+using rtype::network::writeBool;
+using rtype::network::writeCoordinate;
+using rtype::network::testing::ACCENTED_LETTER;
+using rtype::network::testing::BEYOND_RANGE_X;
+using rtype::network::testing::BEYOND_RANGE_Y;
+using rtype::network::testing::byteSequence;
+using rtype::network::testing::EXAMPLE_Y;
+using rtype::network::testing::FOUR_ROCKETS;
+using rtype::network::testing::ILL_FORMED_UTF8;
+using rtype::network::testing::LARGEST_WIRE_COORDINATE;
+using rtype::network::testing::MINUS_ONE_UNIT;
+using rtype::network::testing::NEAREST_EIGHTH_OF_UNROUNDED_X;
+using rtype::network::testing::NICKNAME_WITH_DELETE;
+using rtype::network::testing::NICKNAME_WITH_LINE_FEED;
+using rtype::network::testing::NICKNAME_WITH_NULL_BYTES;
+using rtype::network::testing::NICKNAME_WITH_SPACE;
+using rtype::network::testing::NICKNAME_WITH_TILDE;
+using rtype::network::testing::NICKNAME_WITH_UNIT_SEPARATOR;
+using rtype::network::testing::ONE_BYTE_NICKNAME;
+using rtype::network::testing::SEVENTEEN_BYTE_NICKNAME;
+using rtype::network::testing::SIXTEEN_BYTE_NICKNAME;
+using rtype::network::testing::SMALLEST_WIRE_COORDINATE;
+using rtype::network::testing::UNROUNDED_X;
+using rtype::network::testing::WELL_FORMED_UTF8_AT_THE_EDGES;
 
 /**
  * Given the value true
@@ -371,6 +379,3 @@ TEST(WireTypes, AcceptsANicknameHoldingATilde) {
 TEST(WireTypes, RejectsANicknameHoldingTheDeleteCharacter) {
   EXPECT_FALSE(isValidNickname(NICKNAME_WITH_DELETE));
 }
-
-}  // namespace
-}  // namespace rtype::network
