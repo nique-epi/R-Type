@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <cstddef>
 #include <string_view>
 
 namespace rtype::server {
@@ -19,6 +20,21 @@ constexpr std::chrono::milliseconds REGISTRATION_RETRY{5'000};
  */
 constexpr int UNKNOWN_KEY_STATUS = 401;
 constexpr int UNREGISTERED_SERVER_STATUS = 409;
+
+/**
+ * @brief The waiting results MasterLink sends after a heartbeat, the oldest
+ * first; the others go after the next one. Provisional: a few milliseconds
+ * each on a local network, so a backlog of days never holds the next heartbeat
+ * back by more than a fraction of network::MINIMUM_NOTICE_GAP.
+ */
+constexpr std::size_t MAXIMUM_RESULTS_PER_ROUND = 16;
+
+/**
+ * @brief The status of a result the master refuses for good: a game it never
+ * keeps, whatever the number of tries (not vanilla, or a member out of its
+ * bounds). Every other refusal may not last, so the result waits.
+ */
+constexpr int FOR_GOOD_REFUSAL_STATUS = 400;
 
 /** @brief Why a datagram of the queue of probes is dropped, as its lines say.
  */

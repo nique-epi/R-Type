@@ -3,4 +3,7 @@ target_compile_definitions(server_module_tests PRIVATE RTYPE_SOURCE_SERVER_CONFI
 
 target_sources(server_module_tests PRIVATE SupervisorWithMasterFixture.cpp ${RTYPE_TEST_SOURCE_DIR}/master/RunningMaster.cpp ${RTYPE_TEST_SOURCE_DIR}/master/MasterDatabaseFile.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/HttpPortProbe.cpp)
 target_include_directories(server_module_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/master)
+
+target_sources(server_module_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/server/Storage/Database/ResultsFileFixtures.cpp)
+target_include_directories(server_module_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/server/Storage/Database)
 target_link_libraries(server_module_tests PRIVATE rtype_master_modules rtype_master_storage_module rtype_master_http_module rtype_master_constants rtype_network_master_client httplib::httplib)

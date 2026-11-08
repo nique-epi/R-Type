@@ -12,6 +12,7 @@
 #include "LatestValue.hpp"
 #include "Logger.hpp"
 #include "MasterClient.hpp"
+#include "ResultsCourier.hpp"
 #include "ServerIdentity.hpp"
 
 namespace rtype::server {
@@ -22,6 +23,10 @@ namespace rtype::server {
  * heartbeat each time the games change, at most one per noticeGap, and every
  * interval when nothing changes: it sleeps on the list of games until a newer
  * one or the end of the interval, so an idle server wakes once per interval.
+ *
+ * After each heartbeat the master took, it sends the vanilla games the master
+ * has not answered (see ResultsCourier), so a master that was down gets them
+ * once it is back.
  *
  * It never touches a game: it reads the list and the measures the supervised
  * games module publishes. A
@@ -62,6 +67,8 @@ class HeartbeatJob {
       std::uint64_t revision) const;
 
   network::MasterClient client_;
+  LastProblem problems_;
+  ResultsCourier courier_;
   ServerIdentity identity_;
   const LatestHostedGames& games_;
   const concurrency::LatestValue<std::uint64_t>& probeTokens_;
@@ -69,7 +76,6 @@ class HeartbeatJob {
   const LatestServerMeasures* measures_;
   HeartbeatTimes times_;
   logging::Logger logger_;
-  LastProblem problems_;
   std::jthread masterLink_;
 };
 

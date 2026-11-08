@@ -61,6 +61,14 @@ constexpr std::string_view BROADCAST_PUBLIC_ADDRESS_LINE =
 /** @brief A server created on the master, and the address it declares there
  * with public-address, which is not the address its requests come from. */
 constexpr std::string_view LISTED_SERVER_NAME = "Paris 1";
+
+/** @brief A pilot of a vanilla game saved in the file of results a test
+ * starts the supervisor with, when it ended, and the one row the master keeps
+ * of it. */
+constexpr std::string_view SAVED_PILOT = "ACE";
+constexpr std::chrono::sys_seconds SAVED_GAME_END{
+    std::chrono::seconds{1'800'000'000}};
+constexpr int ROW_OF_THE_SAVED_PILOT = 1;
 constexpr std::string_view DECLARED_PUBLIC_ADDRESS = "203.0.113.20";
 
 /** @brief How long a test waits for the supervisor to register with the

@@ -7,6 +7,7 @@ add_library(rtype_server_master_module STATIC
   LastProblem.cpp
   MasterMessages.cpp
   MasterProbeDesk.cpp
+  ResultsCourier.cpp
   ServerMasterModule.cpp
 )
 
@@ -26,8 +27,10 @@ target_link_libraries(rtype_server_master_module
     rtype_server_information_module
     rtype_server_supervised_games_module
     rtype_server_network_module
+    rtype_server_storage_database
   PRIVATE
     rtype_concurrency_interruptible_sleep
+    rtype_logging_path_text
     rtype_network_constants
     rtype_network_exceptions
     rtype_network_transport

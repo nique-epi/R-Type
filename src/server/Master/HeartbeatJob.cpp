@@ -32,6 +32,7 @@ std::chrono::milliseconds untilTheGapEnds(
 
 HeartbeatJob::HeartbeatJob(HeartbeatJobParts parts)
     : client_(std::move(parts.access)),
+      courier_(std::move(parts.resultsFile), client_, problems_),
       identity_(std::move(parts.identity)),
       games_(parts.games),
       probeTokens_(parts.probeTokens),
@@ -54,7 +55,11 @@ void HeartbeatJob::run(const std::stop_token& stop) {
     seen = games_.revision();
     registered = sendHeartbeat();
     const auto sentAt = std::chrono::steady_clock::now();
-    if (games_.waitForNewer(seen, times_.interval, stop) > seen) {
+    if (registered) {
+      courier_.sendWaitingResults(stop);
+    }
+    if (games_.waitForNewer(seen, untilTheGapEnds(sentAt, times_.interval),
+                            stop) > seen) {
       concurrency::sleepUnlessStopped(
           stop, untilTheGapEnds(sentAt, times_.noticeGap));
     }

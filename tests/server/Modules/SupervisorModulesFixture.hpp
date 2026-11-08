@@ -46,6 +46,10 @@ class SupervisorModulesFixture : public ServerModuleFixture {
   /** @returns The port the supervisor is given, in UDP and in TCP. */
   [[nodiscard]] std::uint16_t port() const;
 
+  /** @returns A file of results in the folder of the test, for --database;
+   * it does not exist until something opens it. */
+  [[nodiscard]] std::filesystem::path resultsFile() const;
+
   /** @returns What the configuration step of the supervisor did. */
   [[nodiscard]] const rtype::engine::ConfigurationReport& report() const;
 
