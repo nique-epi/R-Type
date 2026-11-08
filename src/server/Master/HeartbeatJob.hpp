@@ -1,7 +1,9 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <optional>
+#include <random>
 #include <stop_token>
 #include <string>
 #include <thread>
@@ -15,6 +17,7 @@
 #include "Logger.hpp"
 #include "MasterClient.hpp"
 #include "ResultsCourier.hpp"
+#include "RetryBackoff.hpp"
 #include "ServerIdentity.hpp"
 
 namespace rtype::server {
@@ -33,8 +36,10 @@ namespace rtype::server {
  * It never touches a game: it reads the list and the measures the supervised
  * games module publishes. A
  * master that refuses or does not answer is written in the journal once, not
- * at each try; the job registers again after times.retry, then goes on, so
- * the games play whatever the master does. MasterLink starts with the job and
+ * at each try; the job registers again after a wait RetryBackoff draws, which
+ * grows from times.retry to times.maximumRetry while the master stays away,
+ * then goes on, so the games play whatever the master does. MasterLink starts
+ * with the job and
  * stops, its call in progress ended within the timeouts of MasterClient, when
  * the job is destroyed.
  */
@@ -67,6 +72,9 @@ class HeartbeatJob {
    */
   [[nodiscard]] std::optional<std::uint64_t> unsentProbeToken(
       std::uint64_t revision) const;
+  /** @returns The wait before the next registration, its share of the ceiling
+   * of backoff_ drawn from drawer_. */
+  [[nodiscard]] std::chrono::milliseconds nextRetryWait();
 
   network::MasterClient client_;
   LastProblem problems_;
@@ -78,6 +86,8 @@ class HeartbeatJob {
   std::uint64_t sentTokenRevision_{0};
   const LatestServerMeasures* measures_;
   HeartbeatTimes times_;
+  RetryBackoff backoff_;
+  std::mt19937 drawer_;
   logging::Logger logger_;
   std::jthread masterLink_;
 };

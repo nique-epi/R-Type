@@ -8,6 +8,7 @@ add_library(rtype_server_master_module STATIC
   MasterMessages.cpp
   MasterProbeDesk.cpp
   ResultsCourier.cpp
+  RetryBackoff.cpp
   ServerMasterModule.cpp
 )
 

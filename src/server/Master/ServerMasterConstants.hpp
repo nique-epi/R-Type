@@ -8,12 +8,22 @@
 namespace rtype::server {
 
 /**
- * @brief How long the server waits before it registers again after a refusal
- * or a master that does not answer. The least time between two heartbeats,
- * network::MINIMUM_NOTICE_GAP, and how often it sends one when nothing
- * changes, network::MASTER_HEARTBEAT_INTERVAL, are read by the master too.
+ * @brief The longest wait before the server registers again after the first
+ * refusal, or the first time the master does not answer (see RetryBackoff).
+ * The least time between two heartbeats, network::MINIMUM_NOTICE_GAP, and how
+ * often it sends one when nothing changes, network::MASTER_HEARTBEAT_INTERVAL,
+ * are read by the master too.
  */
 constexpr std::chrono::milliseconds REGISTRATION_RETRY{5'000};
+
+/**
+ * @brief The longest wait between two registrations, however long the master
+ * stays away: a server back within a minute of its master, at worst.
+ */
+constexpr std::chrono::milliseconds MAXIMUM_REGISTRATION_RETRY{60'000};
+
+/** @brief How much the longest wait grows after each failed registration. */
+constexpr int RETRY_GROWTH = 2;
 
 /**
  * @brief The statuses after which the server registers again: the master does
