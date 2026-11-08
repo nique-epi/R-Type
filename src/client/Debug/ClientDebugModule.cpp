@@ -8,7 +8,7 @@
 #include "ClientConstants.hpp"
 #include "EventListeners.hpp"
 #include "GameWindow.hpp"
-#include "IPlayerRoundTrips.hpp"
+#include "IOwnRoundTrip.hpp"
 #include "ISessionArrivals.hpp"
 #include "InstallContext.hpp"
 #include "InterfaceCanvas.hpp"
@@ -17,10 +17,9 @@
 #include "LagometerReading.hpp"
 #include "ModuleConstants.hpp"
 #include "PlayerSettings.hpp"
-#include "ServerSession.hpp"
 #include "TimeConstants.hpp"
 #include "TrafficCounters.hpp"
-#include "TrafficReport.hpp"
+#include "TrafficTotals.hpp"
 
 namespace rtype::client {
 
@@ -38,8 +37,7 @@ void ClientDebugModule::install(engine::InstallContext& context) {
   settings_ = &context.require<PlayerSettings>();
   window_ = &context.require<GameWindow>();
   listeners_ = &context.require<EventListeners>();
-  session_ = &context.require<ServerSession>();
-  roundTrips_ = &context.require<IPlayerRoundTrips>();
+  roundTrip_ = &context.require<IOwnRoundTrip>();
   arrivals_ = &context.require<ISessionArrivals>();
   traffic_ = &context.require<network::TrafficCounters>();
   context.addWork(UPDATE_STAGE, [this](engine::Duration elapsed) {
@@ -62,14 +60,19 @@ void ClientDebugModule::stop() {
 }
 
 LagometerReading ClientDebugModule::readingOf(engine::Duration elapsed) const {
-  const network::TrafficReport traffic = traffic_->report();
-  return LagometerReading{
-      .frame = elapsed,
-      .figures = roundTrips_->roundTripOf(session_->status().playerNumber),
-      .newestRoundTrip = roundTrips_->newestOwnRoundTrip(),
-      .arrivals = arrivals_->arrivals(),
-      .bytesReceived = traffic.others.received.datagrams.bytes,
-      .bytesSent = traffic.others.sent.datagrams.bytes};
+  LagometerReading reading{.frame = elapsed,
+                           .figures = roundTrip_->ownFigures(),
+                           .newestRoundTrip = roundTrip_->newestOwnRoundTrip(),
+                           .arrivals = arrivals_->arrivals(),
+                           .bytesReceived = 0,
+                           .bytesSent = 0};
+  if (lagometer_.readsTrafficAfter(elapsed)) {
+    const network::TrafficTotals traffic =
+        network::trafficTotalsOf(traffic_->report());
+    reading.bytesReceived = traffic.received.bytes;
+    reading.bytesSent = traffic.sent.bytes;
+  }
+  return reading;
 }
 
 void ClientDebugModule::draw() {
@@ -78,12 +81,22 @@ void ClientDebugModule::draw() {
   }
   const LagometerLook look{.scale = settings_->lagometerScale,
                            .fillPercent = settings_->lagometerBackground};
+  repaintWhenChanged(look);
+  sf::RenderTarget& target = window_->renderTarget();
+  canvas_->show(target);
+  target.draw(curve_);
+}
+
+void ClientDebugModule::repaintWhenChanged(LagometerLook look) {
+  if (paintedRevision_ == lagometer_.revision() && paintedLook_ == look) {
+    return;
+  }
   canvas_->clear();
   paintLagometerPanel(*canvas_, lagometer_, look);
   canvas_->display();
-  sf::RenderTarget& target = window_->renderTarget();
-  canvas_->show(target);
-  target.draw(lagometerCurve(lagometer_, look.scale));
+  curve_ = lagometerCurve(lagometer_, look.scale);
+  paintedRevision_ = lagometer_.revision();
+  paintedLook_ = look;
 }
 
 }  // namespace rtype::client

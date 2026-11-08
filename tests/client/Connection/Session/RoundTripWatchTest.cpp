@@ -502,4 +502,27 @@ TEST_F(RoundTripWatchFixture, ForgetsTheNewestRoundTripWhenTheSessionCloses) {
   EXPECT_FALSE(watch().newestOwnRoundTrip().has_value());
 }
 
+/**
+ * Given a session that sent its first Heartbeat at 4 s
+ * When the echo of it, held 2 ms by the server, arrives at 4.05 s
+ * Then the own figures are a round trip of 48 ms, read without the number of
+ * the player
+ */
+TEST_F(RoundTripWatchFixture, GivesItsOwnFiguresWithoutItsPlayerNumber) {
+  advanceClock(CLOCK_WHEN_THE_SESSION_OPENS);
+  openSession();
+  hold(ONE_HEARTBEAT_INTERVAL);
+  deliver(
+      network::Heartbeat{
+          .sentAt = SERVER_HEARTBEAT_SENT_AT,
+          .echo = network::HeartbeatEcho{.sentAt = FIRST_HEARTBEAT_SENT_AT,
+                                         .heldFor = HELD_BY_THE_SERVER}},
+      ECHO_ARRIVAL);
+
+  EXPECT_EQ(watch().ownFigures(), watch().roundTripOf(OWN_PLAYER_NUMBER));
+  EXPECT_EQ(
+      watch().ownFigures().value_or(network::RoundTripFigures{}).roundTrip,
+      OWN_ROUND_TRIP);
+}
+
 }  // namespace rtype::client

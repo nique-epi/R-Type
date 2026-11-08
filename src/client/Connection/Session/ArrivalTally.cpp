@@ -6,9 +6,7 @@ namespace rtype::client {
 
 void ArrivalTally::countAccepted(std::uint16_t distance) {
   ++arrivals_.accepted;
-  if (distance > 1) {
-    arrivals_.missed += distance - 1U;
-  }
+  arrivals_.missed += distance - 1U;
 }
 
 SessionArrivals ArrivalTally::arrivals() const { return arrivals_; }

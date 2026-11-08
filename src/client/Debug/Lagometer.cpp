@@ -31,7 +31,10 @@ void Lagometer::update(const LagometerReading& reading) {
     bytesReceivedAtPeriod_ = reading.bytesReceived;
     bytesSentAtPeriod_ = reading.bytesSent;
   }
-  figures_.roundTrip = reading.figures;
+  if (figures_.roundTrip != reading.figures) {
+    figures_.roundTrip = reading.figures;
+    ++revision_;
+  }
   addPoint(reading);
   countFrame(reading);
 }
@@ -40,7 +43,15 @@ const LagometerFigures& Lagometer::figures() const { return figures_; }
 
 const std::deque<LagometerPoint>& Lagometer::points() const { return points_; }
 
-std::chrono::milliseconds Lagometer::scaleTop() const {
+std::chrono::milliseconds Lagometer::scaleTop() const { return scaleTop_; }
+
+std::uint64_t Lagometer::revision() const { return revision_; }
+
+bool Lagometer::readsTrafficAfter(engine::Duration frame) const {
+  return !started_ || sincePeriod_ + frame >= LAGOMETER_FIGURES_PERIOD;
+}
+
+std::chrono::milliseconds Lagometer::topOverThePoints() const {
   std::chrono::microseconds highest{0};
   for (const LagometerPoint& point : points_) {
     highest = std::max(highest, point.roundTrip);
@@ -67,6 +78,8 @@ void Lagometer::addPoint(const LagometerReading& reading) {
     points_.pop_front();
   }
   figures_.lossPercent = lossPercent();
+  scaleTop_ = topOverThePoints();
+  ++revision_;
 }
 
 void Lagometer::countFrame(const LagometerReading& reading) {
@@ -80,6 +93,7 @@ void Lagometer::countFrame(const LagometerReading& reading) {
       perSecond(reading.bytesReceived - bytesReceivedAtPeriod_, sincePeriod_);
   figures_.bytesSentPerSecond =
       perSecond(reading.bytesSent - bytesSentAtPeriod_, sincePeriod_);
+  ++revision_;
   sincePeriod_ = engine::Duration::zero();
   framesInPeriod_ = 0;
   bytesReceivedAtPeriod_ = reading.bytesReceived;

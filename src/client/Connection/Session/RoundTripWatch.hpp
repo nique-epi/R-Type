@@ -5,6 +5,7 @@
 #include <vector>
 #include "Heartbeat.hpp"
 #include "IClock.hpp"
+#include "IOwnRoundTrip.hpp"
 #include "IPlayerRoundTrips.hpp"
 #include "IServerClock.hpp"
 #include "IServerTicks.hpp"
@@ -46,6 +47,7 @@ namespace rtype::client {
  */
 class RoundTripWatch final : public ISessionObserver,
                              public IPlayerRoundTrips,
+                             public IOwnRoundTrip,
                              public IServerTicks {
  public:
   /**
@@ -67,6 +69,8 @@ class RoundTripWatch final : public ISessionObserver,
   void sessionHeld(engine::Duration elapsed) override;
   [[nodiscard]] std::optional<network::RoundTripFigures> roundTripOf(
       std::uint8_t playerNumber) const override;
+  [[nodiscard]] std::optional<network::RoundTripFigures> ownFigures()
+      const override;
   [[nodiscard]] std::optional<RoundTripSample> newestOwnRoundTrip()
       const override;
 

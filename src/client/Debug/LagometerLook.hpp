@@ -7,6 +7,8 @@ namespace rtype::client {
 struct LagometerLook {
   int scale{1};
   int fillPercent{0};
+
+  bool operator==(const LagometerLook&) const = default;
 };
 
 }  // namespace rtype::client

@@ -75,7 +75,8 @@ class PlayerConnection {
    * @brief Provides to the modules installed after the one installing it the
    * parts of this connection: the ServerSession, the WaitingRoom, the
    * ShipLookExchange, the EntityMessageQueue, the ServerLeaderboard, the
-   * ChatChannel, the RoundTripWatch as IPlayerRoundTrips and as IServerTicks,
+   * ChatChannel, the RoundTripWatch as IPlayerRoundTrips, IServerTicks and
+   * IOwnRoundTrip,
    * the ArrivalTally of the session as ISessionArrivals,
    * the IEntityTypeTable and the TrafficCounters of the socket. They must
    * outlive every module that requires them. The ServerPingProbe is reached

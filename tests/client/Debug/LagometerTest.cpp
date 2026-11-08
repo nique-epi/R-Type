@@ -26,6 +26,7 @@ using testing::frameReading;
 using testing::FRAMES_IN_A_SECOND;
 using testing::JUST_ABOVE_THE_LOWEST_TOP;
 using testing::MISSED_SINCE_BEFORE;
+using testing::NINETEEN_MILLISECONDS;
 using testing::OLDEST_KEPT_ROUND_TRIP;
 using testing::ONE_PAST_THE_CURVE;
 using testing::sampleReading;
@@ -180,6 +181,63 @@ TEST(Lagometer, CountsTheBytesReceivedSinceTheFirstFrame) {
 
   EXPECT_EQ(lagometer.figures().bytesReceivedPerSecond.value_or(0),
             BYTES_IN_THAT_SECOND);
+}
+
+/**
+ * Given a lagometer that took the first round trip
+ * When the next frame reads that round trip again
+ * Then its revision stays: nothing it shows changed
+ */
+TEST(Lagometer, KeepsItsRevisionWhileNothingChanges) {
+  Lagometer lagometer;
+  lagometer.update(sampleReading(FIRST_SAMPLE, SessionArrivals{}));
+  const std::uint64_t revision = lagometer.revision();
+
+  lagometer.update(sampleReading(FIRST_SAMPLE, SessionArrivals{}));
+
+  EXPECT_EQ(lagometer.revision(), revision);
+}
+
+/**
+ * Given a lagometer that took the first round trip
+ * When a new round trip comes
+ * Then its revision grows
+ */
+TEST(Lagometer, ANewPointChangesTheRevision) {
+  Lagometer lagometer;
+  lagometer.update(sampleReading(RoundTripSample{}, SessionArrivals{}));
+  const std::uint64_t revision = lagometer.revision();
+
+  lagometer.update(sampleReading(FIRST_SAMPLE, SessionArrivals{}));
+
+  EXPECT_GT(lagometer.revision(), revision);
+}
+
+/**
+ * Given a lagometer that counted 49 frames of 20 ms
+ * When it is asked whether the traffic is read after one frame of 19 ms, then
+ * of 20 ms
+ * Then not after 19 ms, short of the second, and after 20 ms, which ends it
+ */
+TEST(Lagometer, ReadsTheTrafficOnlyWhenThePeriodEnds) {
+  Lagometer lagometer;
+  for (std::size_t frame = 1; frame < FRAMES_IN_A_SECOND; ++frame) {
+    lagometer.update(frameReading(TWENTY_MILLISECONDS));
+  }
+
+  EXPECT_FALSE(lagometer.readsTrafficAfter(NINETEEN_MILLISECONDS));
+  EXPECT_TRUE(lagometer.readsTrafficAfter(TWENTY_MILLISECONDS));
+}
+
+/**
+ * Given a lagometer that read nothing yet
+ * When it is asked whether the traffic is read after a frame of no time
+ * Then it is: the first frame sets where the counting starts
+ */
+TEST(Lagometer, ReadsTheTrafficOfTheFirstFrame) {
+  const Lagometer lagometer;
+
+  EXPECT_TRUE(lagometer.readsTrafficAfter(std::chrono::milliseconds::zero()));
 }
 
 }  // namespace rtype::client

@@ -76,11 +76,12 @@ void RoundTripWatch::follow(const network::MessageOrigin& origin,
                             const network::Heartbeat& heartbeat) {
   const std::optional<std::chrono::microseconds> roundTrip =
       meter_.receive(heartbeat, origin.receivedAt);
-  if (roundTrip.has_value()) {
-    ++measured_;
-    newestOwn_ = RoundTripSample{.number = measured_, .roundTrip = *roundTrip};
+  if (!roundTrip.has_value()) {
+    return;
   }
-  if (roundTrip.has_value() && heartbeat.tick.has_value()) {
+  ++measured_;
+  newestOwn_ = RoundTripSample{.number = measured_, .roundTrip = *roundTrip};
+  if (heartbeat.tick.has_value()) {
     serverClock_.add(engine::ClockSample{.receivedAt = origin.receivedAt,
                                          .roundTrip = *roundTrip,
                                          .tick = *heartbeat.tick});
@@ -96,6 +97,10 @@ std::optional<network::RoundTripFigures> RoundTripWatch::roundTripOf(
     return meter_.figures();
   }
   return reportedRoundTripOf(playerNumber);
+}
+
+std::optional<network::RoundTripFigures> RoundTripWatch::ownFigures() const {
+  return roundTripOf(ownPlayerNumber_);
 }
 
 std::optional<RoundTripSample> RoundTripWatch::newestOwnRoundTrip() const {

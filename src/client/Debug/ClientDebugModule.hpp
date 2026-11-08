@@ -1,21 +1,25 @@
 #pragma once
 
+#include <SFML/Graphics/PrimitiveType.hpp>
+#include <SFML/Graphics/VertexArray.hpp>
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 #include "AssetLibrary.hpp"
 #include "EventListeners.hpp"
 #include "GameWindow.hpp"
 #include "IModule.hpp"
-#include "IPlayerRoundTrips.hpp"
+#include "IOwnRoundTrip.hpp"
 #include "ISessionArrivals.hpp"
 #include "InstallContext.hpp"
 #include "InterfaceCanvas.hpp"
 #include "Lagometer.hpp"
+#include "LagometerLook.hpp"
 #include "LagometerReading.hpp"
 #include "LagometerToggle.hpp"
 #include "PlayerSettings.hpp"
-#include "ServerSession.hpp"
 #include "SubscriptionHandle.hpp"
 #include "TimeConstants.hpp"
 #include "TrafficCounters.hpp"
@@ -30,7 +34,10 @@ namespace rtype::client {
  * lagometerCurve()).
  *
  * It reads what it shows each frame in UPDATE_STAGE, shown or not, so the
- * curve already holds the recent round trips when LAGOMETER_KEY shows it.
+ * curve already holds the recent round trips when LAGOMETER_KEY shows it; the
+ * traffic, whose copy takes the lock of the network thread, only when a
+ * period of its figures ends. The panel is painted and the curve built again
+ * only when they changed.
  * It draws in RENDER_STAGE, after the screens, which it is listed after: the
  * panel on an interface picture of its own, then the curve at the resolution
  * of the window. Its listener of the window events, added in start(), hears
@@ -61,18 +68,25 @@ class ClientDebugModule final : public engine::IModule {
   /** @brief Draws the panel, then the curve, while the lagometer is shown. */
   void draw();
 
+  /** @brief Paints the panel and builds the curve again when what the
+   * lagometer shows, or how the player set it to look, changed since the
+   * last time. */
+  void repaintWhenChanged(LagometerLook look);
+
   const AssetLibrary* assets_{nullptr};
   const PlayerSettings* settings_{nullptr};
   GameWindow* window_{nullptr};
   EventListeners* listeners_{nullptr};
-  const ServerSession* session_{nullptr};
-  const IPlayerRoundTrips* roundTrips_{nullptr};
+  const IOwnRoundTrip* roundTrip_{nullptr};
   const ISessionArrivals* arrivals_{nullptr};
   const network::TrafficCounters* traffic_{nullptr};
   std::unique_ptr<InterfaceCanvas> canvas_;
   engine::SubscriptionHandle listening_{};
   LagometerToggle toggle_;
   Lagometer lagometer_;
+  std::optional<std::uint64_t> paintedRevision_;
+  LagometerLook paintedLook_;
+  sf::VertexArray curve_{sf::PrimitiveType::Lines};
 };
 
 }  // namespace rtype::client

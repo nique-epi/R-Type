@@ -35,6 +35,8 @@ constexpr std::chrono::milliseconds DOUBLED_TOP{100};
 
 /** @brief Frames of 20 ms: 50 of them make one second, 49 fall short. */
 constexpr std::chrono::milliseconds TWENTY_MILLISECONDS{20};
+/** @brief A frame 1 ms short of ending the second after 49 frames of 20 ms. */
+constexpr std::chrono::milliseconds NINETEEN_MILLISECONDS{19};
 constexpr std::size_t FRAMES_IN_A_SECOND = 50;
 constexpr std::uint64_t FIFTY_FRAMES_PER_SECOND = 50;
 

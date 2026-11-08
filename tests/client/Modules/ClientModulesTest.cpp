@@ -5,10 +5,12 @@
 #include "ModuleConstants.hpp"
 
 using rtype::client::AUDIO_MODULE_NAME;
+using rtype::client::DEBUG_MODULE_NAME;
 using rtype::client::METRICS_MODULE_NAME;
 using rtype::client::SCREENS_MODULE_NAME;
 using rtype::engine::Application;
 using rtype::engine::AUDIO_MODULE_BUILT;
+using rtype::engine::DEBUG_MODULE_BUILT;
 using rtype::engine::METRICS_MODULE_BUILT;
 
 /**
@@ -50,4 +52,13 @@ TEST_F(ClientModulesFixture, ListsTheSoundOnlyWhenItIsBuilt) {
  */
 TEST_F(ClientModulesFixture, ListsTheMetricsOnlyWhenTheyAreBuilt) {
   EXPECT_EQ(lists(METRICS_MODULE_NAME), METRICS_MODULE_BUILT);
+}
+
+/**
+ * Given the modules of the client, in a build with or without the debug module
+ * When they are listed
+ * Then the lagometer is among them exactly when the build compiled it
+ */
+TEST_F(ClientModulesFixture, ListsTheDebugModuleOnlyWhenItIsBuilt) {
+  EXPECT_EQ(lists(DEBUG_MODULE_NAME), DEBUG_MODULE_BUILT);
 }

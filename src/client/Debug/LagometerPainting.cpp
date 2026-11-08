@@ -18,6 +18,7 @@
 #include "LagometerLook.hpp"
 #include "LagometerPoint.hpp"
 #include "LagometerText.hpp"
+#include "Outline.hpp"
 #include "TextStyle.hpp"
 
 namespace rtype::client {
@@ -118,24 +119,15 @@ TextStyle panelTextStyle(int scale) {
                    .clip = std::nullopt};
 }
 
-/** @brief Paints the fill and the border of the panel. */
+/** @brief Paints the fill of the panel and its one-pixel border. */
 void paintFrame(IInterfaceCanvas& canvas, LagometerLook look) {
   const sf::Vector2i size = LAGOMETER_SIZE * look.scale;
-  const int border = LAGOMETER_BORDER_WIDTH * look.scale;
   sf::Color fill = LAGOMETER_FILL;
   fill.a = static_cast<std::uint8_t>(LAGOMETER_OPAQUE_ALPHA * look.fillPercent /
                                      static_cast<int>(PERCENT));
-  canvas.fill(sf::IntRect(LAGOMETER_TOP_LEFT, size), fill);
-  canvas.fill(sf::IntRect(LAGOMETER_TOP_LEFT, {size.x, border}),
-              LAGOMETER_BORDER);
-  canvas.fill(sf::IntRect(LAGOMETER_TOP_LEFT + sf::Vector2i{0, size.y - border},
-                          {size.x, border}),
-              LAGOMETER_BORDER);
-  canvas.fill(sf::IntRect(LAGOMETER_TOP_LEFT, {border, size.y}),
-              LAGOMETER_BORDER);
-  canvas.fill(sf::IntRect(LAGOMETER_TOP_LEFT + sf::Vector2i{size.x - border, 0},
-                          {border, size.y}),
-              LAGOMETER_BORDER);
+  const sf::IntRect area(LAGOMETER_TOP_LEFT, size);
+  canvas.fill(area, fill);
+  Outline(area, Outline::Line::Solid).paint(canvas, LAGOMETER_BORDER);
 }
 
 /** @brief Writes the top of the scale and its half on the right of the
@@ -144,8 +136,7 @@ void paintScaleLabels(IInterfaceCanvas& canvas, const Lagometer& lagometer,
                       int scale) {
   const sf::Vector2i labelLeft =
       LAGOMETER_TOP_LEFT +
-      (sf::Vector2i{LAGOMETER_SIZE.x - LAGOMETER_MARGIN -
-                        LAGOMETER_SCALE_LABEL_WIDTH + LAGOMETER_MARGIN,
+      (sf::Vector2i{LAGOMETER_SIZE.x - LAGOMETER_SCALE_LABEL_WIDTH,
                     LAGOMETER_CURVE_TOP} *
        scale);
   const std::chrono::milliseconds top = lagometer.scaleTop();

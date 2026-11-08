@@ -41,7 +41,6 @@ constexpr sf::Vector2i LAGOMETER_TOP_LEFT{4, 4};
 constexpr sf::Vector2i LAGOMETER_SIZE{112, 72};
 constexpr int LAGOMETER_MARGIN = 4;
 constexpr int LAGOMETER_LINE_STEP = 10;
-constexpr int LAGOMETER_BORDER_WIDTH = 1;
 constexpr int LAGOMETER_TEXT_LINE_COUNT = 3;
 
 /** @brief The curve: the rows of the panel it covers, below the text, and the

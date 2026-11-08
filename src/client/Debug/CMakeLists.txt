@@ -30,6 +30,7 @@ target_link_libraries(rtype_client_debug_module
     rtype_network_statistics
   PRIVATE
     rtype_client_background
+    rtype_client_outline
     rtype_client_constants
 )
 
