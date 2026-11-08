@@ -3,6 +3,7 @@
 #include <optional>
 #include "Heartbeat.hpp"
 #include "RoundTripFigures.hpp"
+#include "RoundTripSample.hpp"
 #include "RoundTripWatchFixture.hpp"
 #include "RoundTripWatchTestConstants.hpp"
 #include "RoundTrips.hpp"
@@ -26,6 +27,10 @@ using testing::REPORTED_PLAYER_NUMBER;
 using testing::REPORTED_ROUND_TRIP;
 using testing::REPORTED_ROUND_TRIP_DURATION;
 using testing::RoundTripWatchFixture;
+using testing::SECOND_ECHO_ARRIVAL;
+using testing::SECOND_HEARTBEAT_SENT_AT;
+using testing::SECOND_OWN_ROUND_TRIP;
+using testing::SECOND_SAMPLE_NUMBER;
 using testing::SENT_AT_A_FRAME_AFTER_THE_OPENING;
 using testing::SERVER_HEARTBEAT_ARRIVAL;
 using testing::SERVER_HEARTBEAT_SENT_AT;
@@ -443,6 +448,58 @@ TEST_F(RoundTripWatchFixture, IgnoresAReportWithoutASession) {
   openSession();
 
   EXPECT_FALSE(watch().roundTripOf(REPORTED_PLAYER_NUMBER).has_value());
+}
+
+/**
+ * Given a session that measured a round trip of 48 ms
+ * When the echo of its second Heartbeat gives a round trip of 128 ms
+ * Then the newest round trip is the second one, 128 ms as measured, not the
+ * smoothed 58 ms
+ */
+TEST_F(RoundTripWatchFixture, KeepsTheNewestRoundTripAsMeasured) {
+  advanceClock(CLOCK_WHEN_THE_SESSION_OPENS);
+  openSession();
+  hold(ONE_HEARTBEAT_INTERVAL);
+  deliver(
+      network::Heartbeat{
+          .sentAt = SERVER_HEARTBEAT_SENT_AT,
+          .echo = network::HeartbeatEcho{.sentAt = FIRST_HEARTBEAT_SENT_AT,
+                                         .heldFor = HELD_BY_THE_SERVER}},
+      ECHO_ARRIVAL);
+  hold(ONE_HEARTBEAT_INTERVAL);
+
+  deliver(
+      network::Heartbeat{
+          .sentAt = SERVER_HEARTBEAT_SENT_AT,
+          .echo = network::HeartbeatEcho{.sentAt = SECOND_HEARTBEAT_SENT_AT,
+                                         .heldFor = HELD_BY_THE_SERVER}},
+      SECOND_ECHO_ARRIVAL);
+
+  EXPECT_EQ(watch().newestOwnRoundTrip(),
+            (RoundTripSample{.number = SECOND_SAMPLE_NUMBER,
+                             .roundTrip = SECOND_OWN_ROUND_TRIP}));
+}
+
+/**
+ * Given a session that measured nothing yet
+ * When the newest round trip is asked
+ * Then there is none
+ */
+TEST_F(RoundTripWatchFixture, KeepsNoRoundTripBeforeAnEcho) {
+  openSession();
+
+  EXPECT_FALSE(watch().newestOwnRoundTrip().has_value());
+}
+
+/**
+ * Given a session that measured a round trip, closed, then a new one opened
+ * When the newest round trip is asked
+ * Then there is none: it was measured with the server before
+ */
+TEST_F(RoundTripWatchFixture, ForgetsTheNewestRoundTripWhenTheSessionCloses) {
+  reopenAfterAMeasuredRoundTrip();
+
+  EXPECT_FALSE(watch().newestOwnRoundTrip().has_value());
 }
 
 }  // namespace rtype::client

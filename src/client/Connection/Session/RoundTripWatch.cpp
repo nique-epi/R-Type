@@ -14,6 +14,7 @@
 #include "ProtocolConstants.hpp"
 #include "RoundTripFigures.hpp"
 #include "RoundTripMeter.hpp"
+#include "RoundTripSample.hpp"
 #include "RoundTripWire.hpp"
 #include "RoundTrips.hpp"
 #include "TimeConstants.hpp"
@@ -50,6 +51,7 @@ void RoundTripWatch::sessionClosed() {
   meter_ = network::RoundTripMeter{};
   serverClock_.reset();
   reported_.clear();
+  newestOwn_.reset();
 }
 
 void RoundTripWatch::sessionHeld(engine::Duration elapsed) {
@@ -74,6 +76,10 @@ void RoundTripWatch::follow(const network::MessageOrigin& origin,
                             const network::Heartbeat& heartbeat) {
   const std::optional<std::chrono::microseconds> roundTrip =
       meter_.receive(heartbeat, origin.receivedAt);
+  if (roundTrip.has_value()) {
+    ++measured_;
+    newestOwn_ = RoundTripSample{.number = measured_, .roundTrip = *roundTrip};
+  }
   if (roundTrip.has_value() && heartbeat.tick.has_value()) {
     serverClock_.add(engine::ClockSample{.receivedAt = origin.receivedAt,
                                          .roundTrip = *roundTrip,
@@ -90,6 +96,10 @@ std::optional<network::RoundTripFigures> RoundTripWatch::roundTripOf(
     return meter_.figures();
   }
   return reportedRoundTripOf(playerNumber);
+}
+
+std::optional<RoundTripSample> RoundTripWatch::newestOwnRoundTrip() const {
+  return newestOwn_;
 }
 
 std::optional<network::RoundTripFigures> RoundTripWatch::reportedRoundTripOf(
