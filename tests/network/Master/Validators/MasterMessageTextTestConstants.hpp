@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -64,6 +65,29 @@ constexpr std::string_view GAME_NAME_PREFIX = "GAME ";
 constexpr std::string_view WAITING_GAME_NAME = "GAME 1";
 constexpr std::string_view PLAYING_GAME_NAME = "GAME 2";
 constexpr std::string_view PARIS_DIFFICULTY = "normal";
+
+/** @brief The difficulties the Paris server announces, the one its playing
+ * game is played at, and the lives that game gives each player. */
+constexpr std::array<std::string_view, 3> PARIS_DIFFICULTIES{"easy", "hard",
+                                                             "normal"};
+constexpr std::string_view PARIS_HARD_DIFFICULTY = "hard";
+constexpr std::uint8_t PARIS_PLAYING_GAME_LIVES = 5;
+
+/** @brief A difficulty of 17 bytes, one past the longest a nickname may be. */
+constexpr std::string_view SEVENTEEN_BYTE_DIFFICULTY = "abcdefghijklmnopq";
+
+/** @brief Lives at the bounds of one byte: none, the most it holds, and one
+ * past it, which a cut to one byte would read as none. */
+constexpr int NO_GAME_LIFE = 0;
+constexpr int MOST_GAME_LIVES_OF_A_BYTE = 255;
+constexpr int GAME_LIVES_PAST_A_BYTE = 256;
+
+/** @brief A friendly fire written as a number instead of a boolean. */
+constexpr int FRIENDLY_FIRE_AS_A_NUMBER = 1;
+
+/** @brief The most difficulties a heartbeat may hold, then one more. */
+constexpr std::size_t MOST_DIFFICULTIES = 16;
+constexpr std::size_t DIFFICULTIES_PAST_THE_MOST = 17;
 constexpr std::uint8_t WAITING_GAME_PLAYER_COUNT = 1;
 constexpr std::uint8_t PLAYING_GAME_PLAYER_COUNT = 2;
 constexpr std::string_view FIRST_PILOT = "ACE";
@@ -114,12 +138,22 @@ constexpr std::string_view FIRST_GAME_PLAYER_COUNT_POINTER =
 
 /** @brief The listing of the games of "Paris 1", as the master writes it. */
 constexpr std::string_view PARIS_GAME_LISTING_TEXT =
-    R"({"games":[{"name":"GAME 1","number":1,"playerCount":1,"state":"waiting"},)"
-    R"({"name":"GAME 2","number":2,"playerCount":2,"state":"inGame"}]})";
+    R"({"difficulties":["easy","hard","normal"],)"
+    R"("games":[{"difficulty":"normal","friendlyFire":false,"lives":3,)"
+    R"("name":"GAME 1","number":1,"playerCount":1,"state":"waiting"},)"
+    R"({"difficulty":"hard","friendlyFire":true,"lives":5,)"
+    R"("name":"GAME 2","number":2,"playerCount":2,"state":"inGame"}]})";
 constexpr std::string_view FIRST_GAME_FIRST_PLAYER_POINTER =
     "/games/0/players/0";
 constexpr std::string_view FIRST_GAME_PLAYERS_POINTER = "/games/0/players";
 constexpr std::string_view GAMES_POINTER = "/games";
+constexpr std::string_view DIFFICULTIES_POINTER = "/difficulties";
+constexpr std::string_view SECOND_DIFFICULTY_POINTER = "/difficulties/1";
+constexpr std::string_view FIRST_GAME_LIVES_POINTER = "/games/0/lives";
+constexpr std::string_view FIRST_GAME_DIFFICULTY_POINTER =
+    "/games/0/difficulty";
+constexpr std::string_view FIRST_GAME_FRIENDLY_FIRE_POINTER =
+    "/games/0/friendlyFire";
 constexpr std::string_view TICK_P50_POINTER = "/measures/tickP50Milliseconds";
 constexpr std::string_view LOSS_PERCENT_POINTER = "/measures/lossPercent";
 constexpr std::string_view AVERAGE_PING_POINTER =
@@ -198,5 +232,68 @@ constexpr std::string_view PARIS_SAMPLE_LISTING_TEXT =
 /** @brief A change to degraded, as the master writes it. */
 constexpr std::string_view DEGRADED_STATUS_LISTING_TEXT =
     R"({"statuses":[{"since":1800000000,"status":"degraded"}]})";
+
+/**
+ * @brief The game "Paris 1" reports: two players, ACE as a guest and
+ * BYDO_HUNTER under an account, ended at FINISHED_GAME_DATE.
+ */
+constexpr std::chrono::sys_seconds FINISHED_GAME_DATE{
+    std::chrono::seconds{1'800'000'100}};
+constexpr std::uint32_t FIRST_PILOT_SCORE = 12'000;
+constexpr std::uint32_t SECOND_PILOT_SCORE = 800;
+constexpr std::string_view SECOND_PILOT_ACCOUNT = "account-42";
+
+/** @brief The id "Paris 1" drew for that game, and texts shaped almost like
+ * one: uppercase, one digit short, one digit more. */
+constexpr std::string_view PARIS_GAME_ID = "0123456789abcdef0123456789abcdef";
+constexpr std::string_view UPPERCASE_GAME_ID =
+    "0123456789ABCDEF0123456789ABCDEF";
+constexpr std::string_view SHORT_GAME_ID = "0123456789abcdef0123456789abcde";
+constexpr std::string_view LONG_GAME_ID = "0123456789abcdef0123456789abcdef0";
+
+/** @brief The highest score a server keeps, 2^32 - 1, and one more. */
+constexpr std::uint64_t HIGHEST_KEPT_SCORE = 4'294'967'295U;
+constexpr std::uint64_t SCORE_ABOVE_ITS_RANGE = 4'294'967'296U;
+
+/** @brief Accounts just outside the bounds of an id: empty, and 65 bytes. */
+constexpr std::string_view EMPTY_ACCOUNT_ID{};
+constexpr std::string_view ACCOUNT_ID_OF_65_BYTES =
+    "abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz012";
+
+/** @brief Games of no player, and the five pilots of a game of one too many.
+ */
+constexpr std::uint64_t NO_PLAYERS = 0;
+constexpr std::size_t PLAYERS_OF_A_FULL_GAME = 4;
+constexpr std::array<std::string_view, 5> FIVE_PILOTS{
+    FIRST_PILOT, SECOND_PILOT, THIRD_PILOT, FOURTH_PILOT, FIFTH_PILOT};
+
+/** @brief A game that started with one player, and ACE written in small
+ * letters, the same nickname for a game server. */
+constexpr std::uint64_t ONE_PLAYER_AT_THE_START = 1;
+constexpr std::string_view FIRST_PILOT_IN_SMALL_LETTERS = "ace";
+constexpr std::string_view SECOND_PLAYER_NICKNAME_POINTER =
+    "/players/1/nickname";
+
+/** @brief A boolean written as text, where JSON must hold a boolean. */
+constexpr std::string_view VANILLA_AS_TEXT = "true";
+
+/** @brief The members of a finished game the tests break. */
+constexpr std::string_view VANILLA_POINTER = "/vanilla";
+constexpr std::string_view PLAYERS_POINTER = "/players";
+constexpr std::string_view PLAYER_COUNT_POINTER = "/playerCount";
+constexpr std::string_view FIRST_PLAYER_SCORE_POINTER = "/players/0/score";
+constexpr std::string_view SECOND_PLAYER_ACCOUNT_POINTER =
+    "/players/1/accountId";
+
+/** @brief A page of a leaderboard with ACE first and BYDO_HUNTER asked for,
+ * as the master writes it. */
+constexpr std::int64_t FIRST_RANK = 1;
+constexpr std::int64_t SECOND_RANK = 2;
+constexpr std::string_view PARIS_LEADERBOARD_TEXT =
+    R"({"player":{"nickname":"BYDO_HUNTER","playedAt":1800000100,"rank":2,)"
+    R"("score":800,"serverId":7,"serverName":"Paris 1"},)"
+    R"("scores":[{"nickname":"ACE","playedAt":1800000100,"rank":1,)"
+    R"("score":12000,"serverId":7,"serverName":"Paris 1"}]})";
+constexpr std::string_view EMPTY_LEADERBOARD_TEXT = R"({"scores":[]})";
 
 }  // namespace rtype::network::testing

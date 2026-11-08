@@ -1,6 +1,7 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include <cstdint>
 #include <vector>
 #include "Collision.hpp"
 #include "CollisionScene.hpp"
@@ -21,8 +22,16 @@ struct Recorded {
  * of @p scene; @p recorded must outlive the dispatches. */
 void record(CollisionScene& scene, Recorded& recorded);
 
+/** @returns A player missile of @p scene at the origin, fired by the player
+ * numbered @p owner. */
+engine::Entity spawnMissileOf(CollisionScene& scene, std::uint8_t owner);
+
+/** @returns The ship of a player in @p scene at the origin, flown by the
+ * player numbered @p pilot. */
+engine::Entity spawnShipFlownBy(CollisionScene& scene, std::uint8_t pilot);
+
 /** @brief Checks that a Collision of an entity of @p firstType and one of
- * @p secondType gives no event. */
+ * @p secondType gives no event, friendly fire off. */
 void expectNoEventFor(EntityType firstType, EntityType secondType);
 
 /** @brief The tests run with a Collision naming its entities in one order,

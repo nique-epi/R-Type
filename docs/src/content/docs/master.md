@@ -19,7 +19,8 @@ This page tells you where to look when you need to change something. It describe
 | The statuses of the servers, their list and their history, `GET /api/servers` | Available; the route that puts a server in maintenance is not written | `src/master/Servers/`, `src/network/Master/` |
 | The probe of the UDP port of each game server, module `probe` | Available | `src/master/Probe/`, `src/master/Servers/`, `src/server/Master/` |
 | The web site, a Next.js server of its own that calls the API | Available: one page that shows whether the master answers, and the components of every page of the design, which no page uses yet | `web/` |
-| Administration, global leaderboard, accounts | Not yet written | |
+| The results of the games and the global leaderboard, `PUT /api/servers/me/results/{gameId}` and `GET /api/leaderboard` | Available; a game server sends its vanilla games after its heartbeats | `src/master/Leaderboard/`, `src/network/Master/` |
+| Administration, accounts | Not yet written | |
 
 ## Starting the master
 
@@ -60,6 +61,7 @@ The master reads `master.cfg`, in the folder it is started from, between the ins
 | `probe` | `MasterProbeModule` | `logger` | a UDP socket on a port the system picks, and ProbeWire, the thread that sends the probes on it |
 | `http` | `MasterHttpModule` | `logger` | the port, and the thread that listens on it |
 | `servers` | `ServersModule` | `logger`, `storage`, `probe`, `http` | `StatusWatch`, the thread of `ServerStatusJob`; its routes run once `http` listens |
+| `leaderboard` | `LeaderboardModule` | `storage`, `http`, `servers` | nothing; its routes run once `http` listens |
 
 The storage starts before the HTTP API, so a database the master cannot open stops it before its port opens, and the API stops before the database closes. The probes start before the HTTP API too, so a heartbeat a route accepts always has its probe sent, and they stop after the routes.
 
@@ -118,7 +120,7 @@ return (
 
 ## The database: `MasterStorageModule`
 
-The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, see [Project layout](/R-Type/project-layout/#storage)): write-ahead log, foreign keys on, and the migrations of `MASTER_MIGRATIONS` (`src/master/Storage/MasterStorageConstants.hpp`) the file does not hold yet. A file it cannot open, or one written by a newer master, stops the start with an error naming the file. It provides the connection as a `MasterDatabase`, which the threads of the HTTP server share behind one lock: a request holds it for a few statements of one row each.
+The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, see [Project layout](/R-Type/project-layout/#storage)): write-ahead log, foreign keys on, and the migrations of `MASTER_MIGRATIONS` (`src/master/Storage/MasterStorageConstants.hpp`) the file does not hold yet. A file it cannot open, or one written by a newer master, stops the start with an error naming the file. It provides the connection as a `MasterDatabase`, which the threads of the HTTP server share behind one lock: most requests hold it for a few statements of one row each, and a read of the leaderboard holds it while it ranks every row of one difficulty and one number of players, so heartbeats wait behind it (see [The global leaderboard](#the-global-leaderboard-leaderboardmodule)).
 
 | Version | Table | Holds |
 |---|---|---|
@@ -127,6 +129,7 @@ The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, se
 | 2 | `servers` | the status computed last, whether an admin put the server in maintenance, and the games, players, tick p95 and loss of the last heartbeat, written with it so the list and the statuses parse no JSON; the upgrade of a file of version 1 reads them once from the last heartbeat it kept, and leaves them empty for a text that is no heartbeat |
 | 2 | `status_changes` | each change of status of each server, at most one per server and per second, kept 7 days |
 | 3 | `servers` | the secret each server registered with, which its probes carry, and the second of its last valid answer to a probe; both empty for a server registered before |
+| 4 | `game_results` | a row per player of each vanilla game a server reported: its server, the id of the game, the nickname, the account, the score, the date, the difficulty and the number of players; the key is the server, the game and the nickname, compared without case |
 
 ## Creating a game server: `POST /api/servers`
 
@@ -152,6 +155,7 @@ A game server is named by its key, sent as `Authorization: Bearer <key>`, never 
 | `POST /api/servers` | creates a server and its key (see [Creating a game server](#creating-a-game-server-post-apiservers)) | 201, `Location: /api/servers/<id>` and the server with its key; 429 over the quota |
 | `PUT /api/servers/me` | replaces what the server of the key registered; the same body twice gives the same server | 200 and the server, its `id` included |
 | `PUT /api/servers/me/heartbeat` | replaces the last state of the server, keeps a sample of its measures, records the answer to a probe it carries, and sends the server a probe (see [Probing the game servers](#probing-the-game-servers-masterprobemodule)) | 200 and `{"commands":[]}`, the orders of the admins waiting for the server, none until administration exists; 409 before the server registered, or for a server registered before the probes |
+| `PUT /api/servers/me/results/{gameId}` | keeps the result of a vanilla game of the server (see [The global leaderboard](#the-global-leaderboard-leaderboardmodule)), answered by the module `leaderboard` | 204; 400 for a game that was not vanilla |
 | `GET /api/servers/{id}/games` | lists the games of the last heartbeat of the server `id`, to anyone (see [Listing the games of a server](#listing-the-games-of-a-server)) | 200 and the games; 404 for an id that names no server |
 | `GET /api/servers` | lists the registered servers, a page at a time, to anyone (see [Listing the servers and their history](#listing-the-servers-and-their-history)) | 200 and the servers; 400 for a page out of its bounds |
 | `GET /api/servers/{id}/samples` | lists the samples of the server `id`, newest first | 200 and the samples; 404 for an id that names no server, 400 for a page out of its bounds |
@@ -167,7 +171,9 @@ The bodies are JSON, read and written by `rtype_network_master` (`src/network/Ma
 ```
 
 ```json
-{"games":[{"number":1,"name":"GAME 1","state":"waiting","difficulty":"normal","players":["ACE"]}],
+{"games":[{"number":1,"name":"GAME 1","state":"waiting","difficulty":"normal","lives":3,
+            "friendlyFire":false,"players":["ACE"]}],
+ "difficulties":["easy","hard","normal"],
  "measures":{"tickP50Milliseconds":1.5,"tickP95Milliseconds":4.25},"probeToken":4242424242}
 ```
 
@@ -180,20 +186,25 @@ The bodies are JSON, read and written by `rtype_network_master` (`src/network/Ma
 | `games` | as many as the server registered at most; numbers from 1 to its `maximumGames`, none twice |
 | `state` | `waiting`, `starting`, `playing`, `finished` or `full`; `full` means the game waits for players and every seat is taken, so it holds as many players as the server registered per game, and `waiting` holds fewer; the other states hold any number |
 | `difficulty`, `players` | nicknames of the protocol, 1 to 16 bytes; as many players as the server registered per game at most |
+| `lives`, `friendlyFire` | the rules of a game: 1 to 255 lives (`LOWEST_GAME_LIVES`, `HIGHEST_GAME_LIVES`, what one byte holds; a server accepts fewer when a game is created), and a boolean |
+| `difficulties` | the tables of the waves file of the server, the difficulties a new game may be played at: 1 to `MAXIMUM_DIFFICULTIES` (16) nicknames of the protocol, none twice |
 | `probeSecret` | 1 to 9223372036854775807 (2^63 − 1, what a column `INTEGER` of SQLite holds); required in a registration, and never written in a list |
 | `probeToken` | optional, 1 to 18446744073709551615 (2^64 − 1): the token of the last probe, sent once |
 | `measures` | an object; each of `tickP50Milliseconds`, `tickP95Milliseconds`, `receivedBytesPerSecond`, `sentBytesPerSecond`, `lossPercent` (0 to 100) and `averagePingMilliseconds` is a number from 0, or left out when the server does not measure it, never sent as 0 |
 
 ## Listing the games of a server
 
-`GET /api/servers/{id}/games` answers, to anyone, the games of the last heartbeat of a server, so a player who picked a server can choose a game in it. The `id` is the one the creation answered. A server that registered and sent no heartbeat since lists no game: `{"games":[]}`, since a registration forgets the last heartbeat. An `id` that is no number, or that no server has, answers 404.
+`GET /api/servers/{id}/games` answers, to anyone, the games of the last heartbeat of a server, so a player who picked a server can choose a game in it. The `id` is the one the creation answered. A server that registered and sent no heartbeat since lists no game and no difficulty: `{"difficulties":[],"games":[]}`, since a registration forgets the last heartbeat. An `id` that is no number, or that no server has, answers 404.
 
 ```json
-{"games":[{"number":1,"name":"GAME 1","state":"waiting","playerCount":1},
-          {"number":2,"name":"GAME 2","state":"inGame","playerCount":2}]}
+{"difficulties":["easy","hard","normal"],
+ "games":[{"number":1,"name":"GAME 1","state":"waiting","playerCount":1,
+            "difficulty":"normal","lives":3,"friendlyFire":false},
+           {"number":2,"name":"GAME 2","state":"inGame","playerCount":2,
+            "difficulty":"hard","lives":5,"friendlyFire":true}]}
 ```
 
-The answer never holds a nickname, a difficulty or a measure: those stay in the heartbeat. The state of a game is the one of its heartbeat, folded to the three a player picks from:
+Each game carries its rules, so a player sees them before it joins, and `difficulties` gives the ones a new game of that server may be played at, so a client offers only those. The answer never holds a nickname or a measure: those stay in the heartbeat. The state of a game is the one of its heartbeat, folded to the three a player picks from:
 
 | Heartbeat | Listed as |
 |---|---|
@@ -209,7 +220,7 @@ Three things the route does not do:
 - **It does not age the list.** The games are those of the last heartbeat kept, whatever its date: a server that stopped sending heartbeats keeps listing its games as it last described them, until it registers again. Its status in [the list of the servers](#listing-the-servers-and-their-history) says whether it still beats.
 - **It does not hide a heartbeat it can no longer read.** A last heartbeat stored in a form the master no longer reads (for instance one stored before `name` became a member of a game) makes `ServersService::gameListingOf()` throw `InvalidMasterMessageException`. The controller does not catch it, so the exception handler of the HTTP server answers 500 and writes the reason in the journal. The next heartbeat of the server replaces the stored one.
 
-The master and the game servers are deployed together: a game of a heartbeat must carry its `name`, and a master that reads this version refuses with 400 the heartbeat of a server that does not write it.
+The master and the game servers are deployed together: a game of a heartbeat must carry its `name`, its `lives` and its `friendlyFire`, and the heartbeat its `difficulties`; a master that reads this version refuses with 400 the heartbeat of a server that does not write them.
 
 ## Statuses of the game servers: `ServerStatusJob`
 
@@ -266,6 +277,36 @@ Three routes read what the master keeps, to anyone, a page at a time. `GET /api/
 - **A read** of the list is one SQL statement, and a read of a history two: one checks that the server exists, then one reads the page. Both read plain columns, so no heartbeat is parsed. SQLite steps through the rows an `offset` skips, so a page deep in 7 days of samples costs more than the first one.
 - `MasterClient::listServers()` reads the list for the server map of the game client (see [The client of the master](#the-client-of-the-master-masterclient)); the histories have no function yet.
 
+## The global leaderboard: `LeaderboardModule`
+
+The leaderboard module (`src/master/Leaderboard/`) gathers the results of every server, so a player can measure up to the players of all servers. A game server reports each vanilla game that ended, after its heartbeats, until the master keeps it (see [Server](/R-Type/server/#link-with-the-master-servermastermodule)), and anyone reads the leaderboard, one difficulty and one number of players at a time: two difficulties never mix.
+
+| Route | Does | Answers |
+|---|---|---|
+| `PUT /api/servers/me/results/{gameId}` | keeps a row per player of the game the server of the key drew `gameId` for, in table `game_results` | 204; 401 without a valid key; 400 for an id that is not 32 lowercase hexadecimal digits (`GAME_ID_SIZE`), a body out of its bounds, or a game that was not vanilla |
+| `GET /api/leaderboard?difficulty=normal&playerCount=2` | the best score of each player, by rank, a page at a time, to anyone; `server=<id>` reads one server, `player=<nickname>` adds the row of that player | 200; 400 when `difficulty` or `playerCount` is missing, or a parameter is out of its bounds |
+
+```json
+{"playedAt":1800000000,"difficulty":"normal","playerCount":2,"vanilla":true,
+ "players":[{"nickname":"ACE","score":12000},{"nickname":"R9","accountId":"account-42","score":800}]}
+```
+
+The answer to `GET /api/leaderboard?difficulty=normal&playerCount=2&limit=1&player=R9`, when this game is the only one of that leaderboard:
+
+```json
+{"scores":[{"rank":1,"nickname":"ACE","score":12000,"playedAt":1800000000,"serverId":7,"serverName":"Paris 1"}],
+ "player":{"rank":2,"nickname":"R9","score":800,"playedAt":1800000000,"serverId":7,"serverName":"Paris 1"}}
+```
+
+- **The route is a `PUT` on the id the server drew**, since the server, not the master, names the game. A game is kept whole and once per server: a result sent again changes nothing, even with other players or scores, and answers 204 as the first time, so a server may send again whatever it is not sure arrived. A second send never replaces or completes the first.
+- **The master keeps vanilla games only**: a body with `"vanilla":false` answers 400, and a game that is not vanilla stays in the leaderboard of its server. The master cannot check a score: it trusts the server an admin gave a key to.
+- **A row keeps its server**, so `server=<id>` reads one server, each row of the answer names the server of its game, and the rows of a server can be erased with it.
+- **One player, one row**: an account is one player under any nickname, its id compared as written; a guest is one player per nickname, whatever the server. Nicknames are compared as a game server compares them (`nicknameKey()`, SQLite's `NOCASE`): ASCII letters without case, every other character as it is, so `ACE` and `ace` are one guest, `ÉLODIE` and `élodie` two. Among the rows of a player, its best score counts, the earliest game first when two are equal. Equal scores share a rank, and the next rank skips them (1, 1, 3).
+- **`player`** names a nickname, compared the same way; the row of the player who played under it in any game of that leaderboard comes in `player` wherever it ranks, under the nickname of its best score, and `player` is left out when it names no one with a score there. A page is `limit` and `offset`, as for [the list of the servers](#listing-the-servers-and-their-history).
+- **Bounds of a result**: `playedAt` in seconds since 1970 UTC, from 0 to 2^63 − 1; `difficulty` and each `nickname`, nicknames of the protocol; `playerCount`, the players when the game started, 1 to `MAXIMUM_PLAYERS` (4); 1 to 4 `players`, no more than `playerCount`, since a game server lets nobody in once a game runs, and no nickname twice; `accountId`, left out for a guest, else 1 to `MAXIMUM_ACCOUNT_ID_SIZE` (64) bytes of printable UTF-8; `score`, 0 to 2^32 − 1, what a game server keeps.
+
+The key of a result is checked by the `ServersService` the servers module provides, which tells the server of a key; the controller reuses the reading of a request the servers module writes (`RouteAnswers.hpp`, `src/master/Servers/Controllers/`).
+
 ## The client of the master: `MasterClient`
 
 `MasterClient` (`rtype_network_master_client`, `src/network/Master/Client/`) is what a game server and, to read the games of a server, the game client call: one function per route, each sending the message of its route with the key of `MasterAccess` as Bearer, when it has one.
@@ -275,6 +316,7 @@ rtype::network::MasterClient master{rtype::network::MasterAccess{
     .url = "http://master.example.org:8080", .key = masterKey}};
 master.registerServer(registration);
 master.sendHeartbeat(heartbeat);
+master.sendResult(gameId, finishedGame);  // PUT /api/servers/me/results/{gameId}
 
 rtype::network::ServerListing servers = master.listServers();  // no key needed
 rtype::network::GameListing listing = master.listGames(serverId);
@@ -317,6 +359,7 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change when a server is offline, unreachable or degraded | `OFFLINE_SILENCE`, `PROBE_ANSWER_SILENCE`, `DEGRADED_TICK_P95_MILLISECONDS` and `DEGRADED_LOSS_PERCENT` in `src/master/Servers/Services/Helpers/ServerStatusRuleConstants.hpp`, and `statusOf()` next to them |
 | Change how long a token of a probe lives, or how often a destination may be probed | `PROBE_TOKEN_WINDOWS` in `src/master/Servers/Services/ServersServiceConstants.hpp`; `PROBE_MINIMUM_GAP` in `src/master/Probe/ProbeConstants.hpp`, which follows `MINIMUM_NOTICE_GAP` in `src/network/Master/Validators/MasterMessageConstants.hpp` |
 | Change how often the statuses are refreshed | `STATUS_REFRESH_INTERVAL` in `src/master/Servers/Jobs/ServerStatusJobConstants.hpp` |
+| Change what a result holds, or how the leaderboard ranks | `finishedGameFromText()` and `MasterMessageConstants.hpp` in `src/network/Master/Validators/`; `LEADERBOARD_QUERY` in `src/master/Leaderboard/Repositories/LeaderboardRepositoryConstants.hpp` |
 | Change how often a game server beats | `MASTER_HEARTBEAT_INTERVAL` in `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master also reads to tell a silent server |
 | Change the size of a page of a list | `MINIMUM_PAGE_SIZE`, `DEFAULT_PAGE_SIZE` and `MAXIMUM_PAGE_SIZE` in `src/network/Master/Routes/MasterRouteConstants.hpp` |
 | Call the master from the game server | `MasterClient` (`src/network/Master/Client/`) |

@@ -1,14 +1,17 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <cstddef>
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <vector>
 #include "BuiltModuleConstants.hpp"
 #include "CreatedServer.hpp"
 #include "IModule.hpp"
+#include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"
 #include "ModuleConstants.hpp"
+#include "ResultsFileFixtures.hpp"
 #include "ServerConstants.hpp"
 #include "ServerInformation.hpp"
 #include "ServerModuleTestConstants.hpp"
@@ -21,12 +24,15 @@
 #include "SupervisorWithMasterFixture.hpp"
 
 using rtype::engine::ADMIN_CONSOLE_MODULE_BUILT;
+using rtype::engine::DATABASE_OPTION;
 using rtype::engine::MASTER_LINK_MODULE_BUILT;
 using rtype::server::LaunchOptions;
 using rtype::server::STATE_RATE_OPTION;
 using rtype::server::StopRequest;
 using rtype::server::SUPERVISOR_MODULE_NAMES;
 using rtype::server::supervisorModules;
+using rtype::server::testing::saveResultIn;
+using rtype::server::testing::vanillaGameOf;
 
 /**
  * Given the launch options of a supervisor with no argument, in a build that
@@ -342,4 +348,48 @@ TEST_F(SupervisorWithMasterFixture, TheMasterListsTheDeclaredAddress) {
   EXPECT_EQ(listedAddressSoon(created.id).value_or(std::string{}),
             DECLARED_PUBLIC_ADDRESS);
   application->stop();
+}
+
+/**
+ * Given a master, a server created on it, a file of results holding a vanilla
+ * game, and a server.cfg that names that master and its key
+ * When the supervisor, started with that file, registers
+ * Then the master keeps the row of the pilot of that game
+ */
+TEST_F(SupervisorWithMasterFixture, SendsTheVanillaGamesOfItsFileOfResults) {
+  if (!MASTER_LINK_MODULE_BUILT) {
+    GTEST_SKIP() << "the build leaves the master link out";
+  }
+  const rtype::network::CreatedServer created =
+      master().createServer(LISTED_SERVER_NAME);
+  const std::string game =
+      saveResultIn(resultsFile(), vanillaGameOf(SAVED_PILOT, SAVED_GAME_END));
+  writeConfiguration(
+      {rtype::engine::settingLine(rtype::server::MASTER_URL_SETTING_NAME,
+                                  master().url()),
+       rtype::engine::settingLine(rtype::server::MASTER_KEY_SETTING_NAME,
+                                  created.key)});
+  const std::string file = resultsFile().string();
+  const auto application = supervisor({DATABASE_OPTION, file});
+  application->start();
+
+  EXPECT_TRUE(masterSoonKeeps(game, ROW_OF_THE_SAVED_PILOT));
+  application->stop();
+}
+
+/**
+ * Given a server.cfg that names no master, and a file of results that does not
+ * exist
+ * When the supervisor, started with that file, runs then stops
+ * Then the file still does not exist: a supervisor that runs alone opens
+ * nothing
+ */
+TEST_F(SupervisorModulesFixture, ASupervisorThatRunsAloneOpensNoFileOfResults) {
+  const std::string file = resultsFile().string();
+  const auto application = supervisor({DATABASE_OPTION, file});
+
+  application->start();
+  application->stop();
+
+  EXPECT_FALSE(std::filesystem::exists(resultsFile()));
 }

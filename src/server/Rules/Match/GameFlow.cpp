@@ -22,7 +22,6 @@
 #include "IGameReplication.hpp"
 #include "LifeKeeper.hpp"
 #include "LifeKeeperParts.hpp"
-#include "LivesConstants.hpp"
 #include "Logger.hpp"
 #include "PlayerController.hpp"
 #include "PlayerLives.hpp"
@@ -265,8 +264,9 @@ void GameFlow::finishIfOver() {
 void GameFlow::buildWorld() {
   game::World& world = worldSlot_.renew();
   replication_.onWorldBuilt(world);
-  collisionRules_ = std::make_unique<game::CollisionRules>(game_.events.get(),
-                                                           world.components());
+  collisionRules_ = std::make_unique<game::CollisionRules>(
+      game_.events.get(), world.components(),
+      game_.settings.rules.friendlyFire);
   damageRules_ = std::make_unique<game::DamageRules>(game_.events.get(),
                                                      world.components());
   waveSpawner_ =
@@ -293,7 +293,7 @@ void GameFlow::startNewWorld() {
   for (ConnectedPlayer* const player : game_.roster.get().connected()) {
     player->ready = false;
     player->score = 0;
-    player->livesWithoutShip = game::STARTING_LIVES;
+    player->livesWithoutShip = game_.settings.rules.lives;
     player->ticksUntilRespawn = 0;
     player->shipEntityId = identifiers::NO_ENTITY_ID;
     replication_.onPlayerJoined(*player);

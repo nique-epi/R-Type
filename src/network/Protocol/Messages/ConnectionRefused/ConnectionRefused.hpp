@@ -22,6 +22,12 @@ enum class RefusalReason : std::uint8_t {
   GameNotFound = 5,
   /** @brief The server runs as many games as it may, and none has a seat. */
   ServerFull = 6,
+  /** @brief The rules of a NewGame name a difficulty the server does not
+   * have. */
+  UnknownDifficulty = 7,
+  /** @brief The rules of a NewGame give each player fewer lives than the
+   * server allows, or more. */
+  LivesOutOfRange = 8,
 };
 
 /**

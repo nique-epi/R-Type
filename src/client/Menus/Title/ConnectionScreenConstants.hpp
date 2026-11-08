@@ -68,6 +68,8 @@ constexpr const char* GAME_IN_PROGRESS_STATUS = "REFUSED: GAME IN PROGRESS";
 constexpr const char* NICKNAME_TAKEN_STATUS = "REFUSED: CALLSIGN TAKEN";
 constexpr const char* GAME_NOT_FOUND_STATUS = "REFUSED: NO SUCH GAME";
 constexpr const char* SERVER_FULL_STATUS = "REFUSED: SERVER FULL";
+constexpr const char* UNKNOWN_DIFFICULTY_STATUS = "REFUSED: NO SUCH DIFFICULTY";
+constexpr const char* LIVES_OUT_OF_RANGE_STATUS = "REFUSED: LIVES OUT OF RANGE";
 constexpr const char* INCOMPATIBLE_VERSION_STATUS = "REFUSED: V";
 constexpr const char* SERVER_VERSION_STATUS = ", SERVER V";
 constexpr const char* UNREACHABLE_STATUS = "SERVER UNREACHABLE";
@@ -90,7 +92,7 @@ constexpr const char* PACK_REFUSED_STATUS = "PACK REFUSED";
  * @brief The characters a status line of the form holds: the width of the
  * form less its margin on both sides, 240 - 2 x 16 = 208 pixels, over the 8
  * pixels a character of the regular font takes, so 26. The refusal of a
- * version, REFUSED: V11, SERVER V12, takes 24, and 26 for versions of three
+ * version, REFUSED: V13, SERVER V14, takes 24, and 26 for versions of three
  * digits.
  */
 constexpr std::size_t STATUS_LINE_CHARACTERS = static_cast<std::size_t>(

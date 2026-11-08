@@ -17,15 +17,13 @@
 #include "HttpHeader.hpp"
 #include "IProbeSender.hpp"
 #include "KnownServer.hpp"
-#include "MasterDatabase.hpp"
-#include "MasterHttpConstants.hpp"
 #include "MasterMessageConstants.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterRouteConstants.hpp"
 #include "MasterRoutePath.hpp"
-#include "NetworkException.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PageRequest.hpp"
+#include "RouteAnswers.hpp"
 #include "ServerRecord.hpp"
 #include "ServerRegistration.hpp"
 #include "ServersControllerConstants.hpp"
@@ -39,21 +37,6 @@ namespace {
 std::chrono::sys_seconds now() {
   return std::chrono::floor<std::chrono::seconds>(
       std::chrono::system_clock::now());
-}
-
-network::ApiResponse refusal(int status, std::string_view detail) {
-  return network::ApiResponse{
-      .status = status, .body = {}, .detail = std::string{detail}};
-}
-
-network::ApiResponse unauthorizedResponse() {
-  return network::ApiResponse{
-      .status = UNAUTHORIZED_STATUS,
-      .body = {},
-      .detail = std::string{UNKNOWN_KEY_DETAIL},
-      .header =
-          network::HttpHeader{.name = std::string{WWW_AUTHENTICATE_HEADER},
-                              .value = std::string{network::BEARER_SCHEME}}};
 }
 
 /** @returns The id the path of @p request names, nothing when it is no id. */
@@ -70,66 +53,6 @@ std::optional<std::int64_t> serverIdOf(const network::ApiRequest& request) {
     return std::nullopt;
   }
   return static_cast<std::int64_t>(*serverId);
-}
-
-/** @brief The values a parameter of a query may take, and the one it takes
- * when the request leaves it out. */
-struct QueryBounds {
-  std::int64_t lowest{};
-  std::int64_t highest{};
-  std::int64_t absent{};
-};
-
-/**
- * @returns The parameter @p name of the query of @p request: bounds.absent
- * when the request leaves it out, nothing when it is no whole number from
- * bounds.lowest to bounds.highest.
- */
-std::optional<std::int64_t> queryNumberOf(const network::ApiRequest& request,
-                                          std::string_view name,
-                                          QueryBounds bounds) {
-  const auto parameter = request.queryParameters.find(std::string{name});
-  if (parameter == request.queryParameters.end()) {
-    return bounds.absent;
-  }
-  const std::optional<std::uint64_t> number =
-      network::wholeNumberIn<std::uint64_t>(parameter->second);
-  if (!number.has_value() || std::cmp_less(*number, bounds.lowest) ||
-      std::cmp_greater(*number, bounds.highest)) {
-    return std::nullopt;
-  }
-  return static_cast<std::int64_t>(*number);
-}
-
-/** @returns The page the query of @p request asks for, nothing when its limit
- * or its offset is out of its bounds. */
-std::optional<PageRequest> pageOf(const network::ApiRequest& request) {
-  const std::optional<std::int64_t> limit =
-      queryNumberOf(request, network::LIMIT_QUERY_PARAMETER,
-                    QueryBounds{.lowest = network::MINIMUM_PAGE_SIZE,
-                                .highest = network::MAXIMUM_PAGE_SIZE,
-                                .absent = network::DEFAULT_PAGE_SIZE});
-  const std::optional<std::int64_t> offset =
-      queryNumberOf(request, network::OFFSET_QUERY_PARAMETER,
-                    QueryBounds{.lowest = network::FIRST_PAGE_OFFSET,
-                                .highest = network::HIGHEST_PAGE_OFFSET,
-                                .absent = network::FIRST_PAGE_OFFSET});
-  if (!limit.has_value() || !offset.has_value()) {
-    return std::nullopt;
-  }
-  return PageRequest{.limit = *limit, .offset = *offset};
-}
-
-/** @returns The answer of a page out of its bounds: 400, whose detail gives
- * the bounds. */
-network::ApiResponse invalidPageRefusal() {
-  return refusal(BAD_REQUEST_STATUS,
-                 std::string{INVALID_LIMIT_DETAIL_START} +
-                     std::to_string(network::MINIMUM_PAGE_SIZE) +
-                     std::string{DETAIL_RANGE_JOIN} +
-                     std::to_string(network::MAXIMUM_PAGE_SIZE) +
-                     std::string{INVALID_OFFSET_DETAIL_START} +
-                     std::to_string(network::FIRST_PAGE_OFFSET));
 }
 
 /**
@@ -154,33 +77,6 @@ network::ApiResponse answerOfServerPage(const network::ApiRequest& request,
     return refusal(NOT_FOUND_STATUS, UNKNOWN_SERVER_DETAIL);
   }
   return network::ApiResponse{.status = OK_STATUS, .body = write(*listing)};
-}
-
-/** @returns What @p answer gives, or 400 naming the member it refused. */
-template <typename Answer>
-network::ApiResponse answerOrRefuse(Answer answer) {
-  try {
-    return answer();
-  } catch (const network::InvalidMasterMessageException& invalid) {
-    return refusal(BAD_REQUEST_STATUS, invalid.what());
-  }
-}
-
-/**
- * @returns What @p answer gives for the server of the key of @p request: 401
- * when no server has that key, checked before the body is read, or 400 naming
- * the member @p answer refused.
- */
-template <typename Answer>
-network::ApiResponse answerAsServerOfKey(ServersService& service,
-                                         const network::ApiRequest& request,
-                                         Answer answer) {
-  const std::optional<KnownServer> server =
-      service.serverOfKey(request.bearerToken.value_or(std::string{}));
-  if (!server.has_value()) {
-    return unauthorizedResponse();
-  }
-  return answerOrRefuse([&answer, &server] { return answer(*server); });
 }
 
 network::ApiResponse createdResponse(const network::CreatedServer& created) {
@@ -220,9 +116,9 @@ network::ApiResponse heartbeatAnswer() {
 
 }  // namespace
 
-ServersController::ServersController(MasterDatabase& database,
+ServersController::ServersController(ServersService& service,
                                      IProbeSender& probeSender)
-    : service_(database), probeSender_(probeSender) {}
+    : service_(service), probeSender_(probeSender) {}
 
 network::ApiResponse ServersController::createServer(
     const network::ApiRequest& request) {

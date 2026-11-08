@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include "CreatedServer.hpp"
+#include "FinishedGame.hpp"
 #include "GameListing.hpp"
 #include "MasterAccess.hpp"
 #include "MasterClientConstants.hpp"
@@ -109,6 +110,14 @@ void MasterClient::registerServer(const ServerRegistration& registration) {
 void MasterClient::sendHeartbeat(const ServerHeartbeat& heartbeat) {
   static_cast<void>(
       answerOf(REPLACE_OWN_HEARTBEAT_ROUTE, heartbeatText(heartbeat)));
+}
+
+void MasterClient::sendResult(const std::string& gameId,
+                              const FinishedGame& game) {
+  httplib::Request request =
+      requestOf(KEEP_OWN_RESULT_ROUTE, finishedGameText(game));
+  request.path = gamePathOf(KEEP_OWN_RESULT_ROUTE, gameId);
+  static_cast<void>(send(std::move(request)));
 }
 
 GameListing MasterClient::listGames(std::int64_t serverId) {

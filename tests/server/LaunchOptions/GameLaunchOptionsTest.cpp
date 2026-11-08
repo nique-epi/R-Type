@@ -21,8 +21,11 @@ using rtype::engine::PORT_OPTION;
 using rtype::engine::UnknownLaunchArgumentException;
 using rtype::network::InvalidPortException;
 using rtype::server::CONFIGURATION_OPTION;
+using rtype::server::DIFFICULTY_OPTION;
+using rtype::server::FRIENDLY_FIRE_OPTION;
 using rtype::server::GameLaunchOptions;
 using rtype::server::LINK_TOKEN_OPTION;
+using rtype::server::LIVES_OPTION;
 using rtype::server::MissingSupervisorLinkException;
 using rtype::server::SEED_OPTION;
 using rtype::server::SUPERVISOR_OPTION;
@@ -57,6 +60,24 @@ TEST(GameLaunchOptions, PortAndDatabaseForceTheirSettings) {
 
   EXPECT_EQ(options.forcedLines(),
             (Lines{std::string(PORT_LINE), std::string(DATABASE_LINE)}));
+}
+
+/**
+ * Given the three options of the rules of a game beside the supervisor link
+ * When the launch options of a game are read
+ * Then the difficulty, the lives and the friendly fire are forced, in the
+ * order given
+ */
+TEST(GameLaunchOptions, RuleOptionsForceTheirSettings) {
+  const GameLaunchOptions options = GameLaunchOptions::read(
+      GameArguments{SUPERVISOR_OPTION, SUPERVISOR_PORT_TEXT, LINK_TOKEN_OPTION,
+                    LINK_TOKEN_TEXT, DIFFICULTY_OPTION,
+                    HARD_DIFFICULTY_ARGUMENT, LIVES_OPTION, FIVE_LIVES_ARGUMENT,
+                    FRIENDLY_FIRE_OPTION, FRIENDLY_FIRE_ON_ARGUMENT});
+
+  EXPECT_EQ(options.forcedLines(), (Lines{std::string(HARD_DIFFICULTY_LINE),
+                                          std::string(FIVE_LIVES_LINE),
+                                          std::string(FRIENDLY_FIRE_ON_LINE)}));
 }
 
 /**
@@ -170,6 +191,7 @@ TEST(GameLaunchOptions, UsageNamesItsOptions) {
 
   for (const std::string_view option :
        {PORT_OPTION, SUPERVISOR_OPTION, LINK_TOKEN_OPTION, DATABASE_OPTION,
+        DIFFICULTY_OPTION, LIVES_OPTION, FRIENDLY_FIRE_OPTION,
         CONFIGURATION_OPTION, HELP_OPTION}) {
     SCOPED_TRACE(option);
     EXPECT_NE(usage.find("\n  " + std::string(option)), std::string::npos);

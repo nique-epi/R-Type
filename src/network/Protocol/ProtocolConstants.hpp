@@ -20,7 +20,12 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 11 makes
+ * @brief The version of the protocol this code speaks. Version 13 adds the
+ * expulsion of a player: ExpulsionOrder from the supervisor to a game,
+ * Expulsion to the player and the departure reason Expelled, see the Version
+ * 13 section; version 12 makes a ConnectionRequest for a NewGame carry the
+ * rules of that game, and adds the refusals UnknownDifficulty and
+ * LivesOutOfRange, see the Version 12 section; version 11 makes
  * EntitySpawned name the player and the input that fired a missile, and
  * PlayerInput the tick its client shows, so a client can predict its own
  * missiles and the server test them where the player saw the enemies, see
@@ -41,7 +46,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * frame, see the Compression section; version 3 adds the outcome of a game to
  * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 11;
+constexpr std::uint8_t PROTOCOL_VERSION = 13;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -366,6 +371,13 @@ constexpr std::size_t MINIMUM_NICKNAME_SIZE = 1;
 constexpr std::size_t MAXIMUM_NICKNAME_SIZE = 16;
 
 /**
+ * @brief The most difficulties a server may hold, so its heartbeat and the
+ * list of its games stay small: one per table of its waves file, the shipped
+ * file having three.
+ */
+constexpr std::size_t MAXIMUM_DIFFICULTIES = 16;
+
+/**
  * @brief The longest name of a server, in bytes of UTF-8, the master and the
  * ServerInformation of the server alike.
  */
@@ -572,6 +584,7 @@ constexpr std::string_view BASE_DISTANCE_FIELD = "baseDistance";
 constexpr std::string_view CONTENT_SIZE_FIELD = "content.size";
 constexpr std::string_view OWNER_FIELD = "owner";
 constexpr std::string_view NUMBER_FIELD = "number";
+constexpr std::string_view RULES_FIELD = "rules";
 constexpr std::string_view FIRST_KEPT_FIELD = "firstKept";
 constexpr std::string_view INNER_TYPE_FIELD = "innerType";
 constexpr std::string_view CARRIED_PAYLOAD_SIZE_FIELD = "carriedPayloadSize";

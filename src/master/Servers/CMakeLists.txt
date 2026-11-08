@@ -15,6 +15,7 @@ target_link_libraries(rtype_master_servers_module
     rtype_engine_modules
     rtype_master_servers_controllers
     rtype_master_servers_jobs
+    rtype_master_servers_services
   PRIVATE
     rtype_master_constants
     rtype_master_http_module

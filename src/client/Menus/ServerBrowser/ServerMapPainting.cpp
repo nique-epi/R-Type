@@ -23,6 +23,7 @@
 #include "ServerCompatibility.hpp"
 #include "ServerListPhase.hpp"
 #include "ServerMapChoice.hpp"
+#include "ServerMapLook.hpp"
 #include "ServerMapScreenConstants.hpp"
 #include "ServerMapStage.hpp"
 #include "ServerRow.hpp"

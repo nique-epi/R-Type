@@ -3,6 +3,9 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "FinishedGame.hpp"
+#include "FinishedGamePlayer.hpp"
+#include "GameResult.hpp"
 #include "MasterMessages.hpp"
 #include "MasterMessagesTestConstants.hpp"
 #include "ServerHeartbeat.hpp"
@@ -10,16 +13,27 @@
 #include "ServerMeasures.hpp"
 #include "ServerRegistration.hpp"
 
+using rtype::network::FinishedGame;
+using rtype::network::FinishedGamePlayer;
 using rtype::network::ServerHeartbeat;
 using rtype::network::ServerMeasures;
 using rtype::network::ServerRegistration;
+using rtype::server::finishedGameOf;
+using rtype::server::GameResult;
 using rtype::server::heartbeatOf;
+using rtype::server::PlayerResult;
 using rtype::server::randomProbeSecret;
 using rtype::server::registrationOf;
 using rtype::server::ServerIdentity;
 using rtype::server::testing::ANNOUNCED_PLAYERS_PER_GAME;
 using rtype::server::testing::ANNOUNCED_PROTOCOL_VERSION;
 using rtype::server::testing::CARRIED_MEDIAN_TICK_MILLISECONDS;
+using rtype::server::testing::ENDED_GAME_DATE;
+using rtype::server::testing::ENDED_GAME_DIFFICULTY;
+using rtype::server::testing::ENDED_GAME_PLAYERS;
+using rtype::server::testing::LEADING_PILOT;
+using rtype::server::testing::LEADING_PILOT_DEATHS;
+using rtype::server::testing::LEADING_PILOT_SCORE;
 using rtype::server::testing::LINKED_SERVER_GAMES;
 using rtype::server::testing::LINKED_SERVER_NAME;
 using rtype::server::testing::LINKED_SERVER_PORT;
@@ -28,11 +42,14 @@ using rtype::server::testing::LINKED_SERVER_PUBLIC_ADDRESS;
 using rtype::server::testing::PROBE_SECRET_CEILING;
 using rtype::server::testing::PROBE_SECRET_FLOOR;
 using rtype::server::testing::PROBE_TOKEN_OF_A_HEARTBEAT;
+using rtype::server::testing::TRAILING_PILOT;
+using rtype::server::testing::TRAILING_PILOT_DEATHS;
+using rtype::server::testing::TRAILING_PILOT_SCORE;
 
 /**
  * Given a server named, on a port, hosting eight games
  * When its registration is written
- * Then it carries them, protocol 8, four players a game and no address
+ * Then it carries them, protocol 12, four players a game and no address
  */
 TEST(MasterMessages, TheRegistrationTellsWhatTheServerIs) {
   const ServerRegistration registration =
@@ -130,4 +147,38 @@ TEST(MasterMessages, AHeartbeatCarriesTheTokenItIsGiven) {
       heartbeatOf({}, std::nullopt, PROBE_TOKEN_OF_A_HEARTBEAT);
 
   EXPECT_EQ(heartbeat.probeToken, PROBE_TOKEN_OF_A_HEARTBEAT);
+}
+
+/**
+ * Given a vanilla game of two pilots that ended
+ * When its result is written for the master
+ * Then it carries its date, difficulty, players at the start, that it was
+ * vanilla, and each pilot as a guest with its score, without the deaths
+ */
+TEST(MasterMessages, TheResultOfAGameIsWhatTheMasterKeeps) {
+  const FinishedGame game = finishedGameOf(GameResult{
+      .difficulty = std::string{ENDED_GAME_DIFFICULTY},
+      .playerCount = ENDED_GAME_PLAYERS,
+      .endedAt = ENDED_GAME_DATE,
+      .players = {PlayerResult{.nickname = std::string{LEADING_PILOT},
+                               .score = LEADING_PILOT_SCORE,
+                               .deaths = LEADING_PILOT_DEATHS},
+                  PlayerResult{.nickname = std::string{TRAILING_PILOT},
+                               .score = TRAILING_PILOT_SCORE,
+                               .deaths = TRAILING_PILOT_DEATHS}},
+      .vanilla = true});
+
+  EXPECT_EQ(game,
+            (FinishedGame{
+                .playedAt = ENDED_GAME_DATE,
+                .difficulty = std::string{ENDED_GAME_DIFFICULTY},
+                .playerCount = ENDED_GAME_PLAYERS,
+                .vanilla = true,
+                .players = {
+                    FinishedGamePlayer{.nickname = std::string{LEADING_PILOT},
+                                       .accountId = std::nullopt,
+                                       .score = LEADING_PILOT_SCORE},
+                    FinishedGamePlayer{.nickname = std::string{TRAILING_PILOT},
+                                       .accountId = std::nullopt,
+                                       .score = TRAILING_PILOT_SCORE}}}));
 }

@@ -8,6 +8,8 @@ add_subdirectory(Disconnection)
 add_subdirectory(EnemyAction)
 add_subdirectory(EntityDestroyed)
 add_subdirectory(EntitySpawned)
+add_subdirectory(Expulsion)
+add_subdirectory(ExpulsionOrder)
 add_subdirectory(GameEnded)
 add_subdirectory(GameEvent)
 add_subdirectory(GameLoaded)
@@ -44,6 +46,8 @@ target_link_libraries(rtype_network_messages
     rtype_network_enemy_action
     rtype_network_entity_destroyed
     rtype_network_entity_spawned
+    rtype_network_expulsion
+    rtype_network_expulsion_order
     rtype_network_game_ended
     rtype_network_game_event
     rtype_network_game_loaded

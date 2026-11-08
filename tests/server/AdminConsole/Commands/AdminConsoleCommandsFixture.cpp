@@ -3,8 +3,10 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "AdminConsoleCommandsTestConstants.hpp"
 #include "AdminConsoleParts.hpp"
 #include "CommandResult.hpp"
+#include "GameStatus.hpp"
 #include "OutgoingDatagram.hpp"
 #include "RecordingChildState.hpp"
 #include "RejectionsFixtures.hpp"
@@ -30,6 +32,12 @@ rtype::engine::CommandResult AdminConsoleCommandsFixture::run(
 void AdminConsoleCommandsFixture::openGameThree() {
   registry_.open(
       openingOf(GAME_THREE, std::make_shared<RecordingChildState>()));
+}
+
+void AdminConsoleCommandsFixture::openGameThreeWithItsPilots() {
+  openReporting(registry_, GAME_THREE,
+                statusWithPlayers(rtype::network::GameStatusState::InProgress,
+                                  REPORTED_PILOT_COUNT));
 }
 
 void AdminConsoleCommandsFixture::rejectTwoDatagrams() {

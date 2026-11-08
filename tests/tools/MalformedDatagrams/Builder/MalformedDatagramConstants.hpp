@@ -46,10 +46,10 @@ constexpr std::uint64_t NO_COOKIE = 0;
 
 /**
  * @brief The smallest type byte an UnknownType message carries: one above
- * BossStatus, the highest type on the protocol page.
+ * Expulsion, the highest type on the protocol page.
  */
 constexpr std::uint8_t FIRST_UNKNOWN_MESSAGE_TYPE =
-    static_cast<std::uint8_t>(network::MessageType::BossStatus) + 1;
+    static_cast<std::uint8_t>(network::MessageType::Expulsion) + 1;
 
 /**
  * @brief The most bytes the payload of an UnknownType message holds.

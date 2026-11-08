@@ -21,6 +21,10 @@ namespace rtype::server::testing {
 [[nodiscard]] GameResult normalGame(std::vector<PlayerResult> players,
                                     std::chrono::sys_seconds endedAt);
 
+/** @returns normalGame(@p players, @p endedAt), vanilla. */
+[[nodiscard]] GameResult vanillaGame(std::vector<PlayerResult> players,
+                                     std::chrono::sys_seconds endedAt);
+
 /** @returns A request for the leaderboard of normalGame(). */
 [[nodiscard]] network::LeaderboardRequest normalBoard();
 

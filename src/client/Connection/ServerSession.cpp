@@ -14,6 +14,7 @@
 #include "ConnectionStatus.hpp"
 #include "Disconnection.hpp"
 #include "Endpoint.hpp"
+#include "Expulsion.hpp"
 #include "HandshakeAnswersParts.hpp"
 #include "ISessionOutbox.hpp"
 #include "IncomingDatagram.hpp"
@@ -75,6 +76,12 @@ ServerSession::ServerSession(ServerSessionParts parts)
       [this](const network::MessageOrigin&, const network::Disconnection&) {
         if (holdsASession(status_.phase)) {
           giveUp(ConnectionPhase::Closed);
+        }
+      });
+  dispatcher_->registerHandler<network::Expulsion>(
+      [this](const network::MessageOrigin&, const network::Expulsion&) {
+        if (holdsASession(status_.phase)) {
+          giveUp(ConnectionPhase::Expelled);
         }
       });
 }
@@ -160,9 +167,11 @@ void ServerSession::readReceived() {
 void ServerSession::giveUp(ConnectionPhase ending) {
   status_ = {.phase = ending};
   forgetSession();
-  if (ending == ConnectionPhase::Closed) {
-    logger_.warn("closed by ", outbox_.server().address, " port ",
-                 outbox_.server().port);
+  if (ending == ConnectionPhase::Closed ||
+      ending == ConnectionPhase::Expelled) {
+    logger_.warn(
+        ending == ConnectionPhase::Expelled ? "expelled by " : "closed by ",
+        outbox_.server().address, " port ", outbox_.server().port);
     return;
   }
   const std::chrono::seconds silence =

@@ -6,6 +6,8 @@
 #include "ConnectedPlayer.hpp"
 #include "GameResult.hpp"
 #include "GameResultKeeperTestConstants.hpp"
+#include "GameRuleConstants.hpp"
+#include "GameRules.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "GameStateChanged.hpp"
@@ -20,7 +22,11 @@ GameResultKeeperFixture::GameResultKeeperFixture()
     : keeper_(roster_, archive_,
               GameSettings{.waves = {},
                            .types = game::testing::shippedEntitySheets(),
-                           .difficulty = std::string{KEEPER_DIFFICULTY},
+                           .rules =
+                               network::GameRules{
+                                   .difficulty = std::string{KEEPER_DIFFICULTY},
+                                   .lives = identifiers::DEFAULT_LIVES,
+                                   .friendlyFire = false},
                            .vanilla = true}) {}
 
 ConnectedPlayer& GameResultKeeperFixture::seat(std::size_t index) {

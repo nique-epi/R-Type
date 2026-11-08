@@ -41,6 +41,8 @@ enum class MessageType : std::uint8_t {
   ChatLine = 30,
   PlayerChatLine = 31,
   BossStatus = 32,
+  ExpulsionOrder = 33,
+  Expulsion = 34,
 };
 
 }  // namespace rtype::network

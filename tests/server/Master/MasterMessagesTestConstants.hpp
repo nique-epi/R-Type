@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <string_view>
 
@@ -22,8 +23,21 @@ constexpr std::uint64_t PROBE_SECRET_CEILING = 9'223'372'036'854'775'807;
 constexpr std::uint64_t PROBE_TOKEN_OF_A_HEARTBEAT = 0x1357'9BDF'2468'ACE0;
 
 /** @brief What the server announces of the protocol and of its games. */
-constexpr std::uint8_t ANNOUNCED_PROTOCOL_VERSION = 11;
+constexpr std::uint8_t ANNOUNCED_PROTOCOL_VERSION = 13;
 constexpr std::uint8_t ANNOUNCED_PLAYERS_PER_GAME = 4;
+
+/** @brief A game that ended: its date, difficulty and players at the start,
+ * and its two pilots with their score and deaths. */
+constexpr std::chrono::sys_seconds ENDED_GAME_DATE{
+    std::chrono::seconds{1'800'000'000}};
+constexpr std::string_view ENDED_GAME_DIFFICULTY = "hard";
+constexpr std::uint8_t ENDED_GAME_PLAYERS = 2;
+constexpr std::string_view LEADING_PILOT = "ACE";
+constexpr std::uint32_t LEADING_PILOT_SCORE = 12'000;
+constexpr std::uint32_t LEADING_PILOT_DEATHS = 1;
+constexpr std::string_view TRAILING_PILOT = "R9";
+constexpr std::uint32_t TRAILING_PILOT_SCORE = 800;
+constexpr std::uint32_t TRAILING_PILOT_DEATHS = 3;
 
 /** @brief A median tick a heartbeat carries, in milliseconds. */
 constexpr double CARRIED_MEDIAN_TICK_MILLISECONDS = 2.5;

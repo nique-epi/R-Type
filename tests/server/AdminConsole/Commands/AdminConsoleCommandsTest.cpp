@@ -6,7 +6,9 @@
 #include "AdminConsoleCommandsFixture.hpp"
 #include "AdminConsoleCommandsTestConstants.hpp"
 #include "AdminConsoleTestConstants.hpp"
+#include "CommandResult.hpp"
 #include "EngineException.hpp"
+#include "ExpulsionOrder.hpp"
 #include "MessageType.hpp"
 #include "ModuleConstants.hpp"
 #include "OutgoingDatagram.hpp"
@@ -16,9 +18,11 @@
 #include "SupervisedGamesTestConstants.hpp"
 
 using rtype::engine::DuplicateCommandException;
+using rtype::network::ExpulsionOrder;
 using rtype::network::MessageType;
 using rtype::network::OutgoingDatagram;
 using rtype::server::testing::headerOf;
+using rtype::server::testing::onlyMessageIn;
 using rtype::server::testing::onlyMessageTypeOf;
 
 /**
@@ -53,6 +57,96 @@ TEST_F(AdminConsoleCommandsFixture, SaysWhichGameWasToldToStop) {
   EXPECT_EQ(
       lines(),
       (std::vector<std::string>{std::string{GAME_THREE_TOLD_TO_STOP_LINE}}));
+}
+
+/**
+ * Given game 3 in place 1, which reports PILOT1
+ * When "kick pilot1" runs
+ * Then the game gets FAREWELL_COPIES datagrams under its link token, on its
+ * port, each holding one ExpulsionOrder of the nickname as typed
+ */
+TEST_F(AdminConsoleCommandsFixture, SendsTheGameOfThePilotItsExpulsionOrders) {
+  openGameThreeWithItsPilots();
+
+  EXPECT_TRUE(run(KICK_FIRST_PILOT_LINE).accepted);
+
+  ASSERT_EQ(sent().size(), rtype::server::FAREWELL_COPIES);
+  for (const OutgoingDatagram& datagram : sent()) {
+    EXPECT_EQ(datagram.destination, loopbackOn(portOfGame(GAME_THREE)));
+    EXPECT_EQ(headerOf(datagram).sessionToken, tokenOfGame(GAME_THREE));
+    EXPECT_EQ(onlyMessageIn<ExpulsionOrder>(datagram).nickname,
+              KICKED_NICKNAME);
+  }
+}
+
+/**
+ * Given game 3 in place 1, which reports PILOT1
+ * When "kick pilot1" runs
+ * Then the output says the pilot was told to leave game 3 in place 1
+ */
+TEST_F(AdminConsoleCommandsFixture, SaysWhichGameThePilotWasToldToLeave) {
+  openGameThreeWithItsPilots();
+
+  EXPECT_TRUE(run(KICK_FIRST_PILOT_LINE).accepted);
+
+  EXPECT_EQ(lines(), std::vector<std::string>{
+                         std::string{PILOT_ONE_TOLD_TO_LEAVE_LINE}});
+}
+
+/**
+ * Given game 3 in place 1, which reports PILOT1
+ * When "kick NOBODY" runs
+ * Then the line is refused and nothing is sent
+ */
+TEST_F(AdminConsoleCommandsFixture, RefusesAPilotNoGameHolds) {
+  openGameThreeWithItsPilots();
+
+  EXPECT_FALSE(run(KICK_NOBODY_LINE).accepted);
+
+  EXPECT_TRUE(sent().empty());
+}
+
+/**
+ * Given game 3 in place 1, which reports PILOT1
+ * When "kick" runs without a nickname
+ * Then the line is refused and nothing is sent
+ */
+TEST_F(AdminConsoleCommandsFixture, RefusesKickWithoutANickname) {
+  openGameThreeWithItsPilots();
+
+  EXPECT_FALSE(run(KICK_WITHOUT_NICKNAME_LINE).accepted);
+
+  EXPECT_TRUE(sent().empty());
+}
+
+/**
+ * Given game 3 in place 1, which reports PILOT1
+ * When "kick PILOT1 PILOT2" runs, naming two nicknames
+ * Then the line is refused and nothing is sent
+ */
+TEST_F(AdminConsoleCommandsFixture, RefusesTwoNicknames) {
+  openGameThreeWithItsPilots();
+
+  EXPECT_FALSE(run(KICK_TWO_NICKNAMES_LINE).accepted);
+
+  EXPECT_TRUE(sent().empty());
+}
+
+/**
+ * Given game 3 in place 1, which reports PILOT1
+ * When kick names 17 bytes, one past the longest nickname
+ * Then the line is refused because it names no nickname, not because no game
+ * holds that pilot, and nothing is sent
+ */
+TEST_F(AdminConsoleCommandsFixture, RefusesWhatIsNotANickname) {
+  openGameThreeWithItsPilots();
+
+  const rtype::engine::CommandResult result = run(KICK_TOO_LONG_NICKNAME_LINE);
+
+  EXPECT_FALSE(result.accepted);
+  EXPECT_NE(result.message.find(NOT_A_NICKNAME_REASON), std::string::npos)
+      << result.message;
+  EXPECT_TRUE(sent().empty());
 }
 
 /**

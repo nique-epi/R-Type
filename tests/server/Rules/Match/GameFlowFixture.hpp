@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <cstdint>
 #include <initializer_list>
 #include <vector>
 #include "ConnectedPlayer.hpp"
@@ -11,6 +12,7 @@
 #include "GameEnded.hpp"
 #include "GameFlow.hpp"
 #include "GameReplication.hpp"
+#include "GameSettings.hpp"
 #include "GameStateChanged.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
@@ -37,6 +39,9 @@ class GameFlowFixture : public ::testing::Test {
   /** @brief A game flow whose Bydos come in @p waves, of the sheets @p types,
    * which must outlive the fixture. */
   GameFlowFixture(WavePlan waves, const game::EntitySheets& types);
+
+  /** @brief A game flow set up with @p settings. */
+  explicit GameFlowFixture(GameSettings settings);
 
  protected:
   /** @brief Connects the player at @p index and gives it a ship. */
@@ -88,6 +93,20 @@ class GameFlowFixture : public ::testing::Test {
 class GameFlowOneWaveLevelFixture : public GameFlowFixture {
  public:
   GameFlowOneWaveLevelFixture();
+};
+
+/**
+ * @brief A game flow whose rules turn friendly fire on, and a way to put a
+ * missile of one player on the ship of another.
+ */
+class GameFlowFriendlyFireFixture : public GameFlowFixture {
+ public:
+  GameFlowFriendlyFireFixture();
+
+ protected:
+  /** @brief Puts a missile of the player numbered @p shooter on the ship of
+   * @p target, then runs the tick that finds them touching. */
+  void fireAt(const ConnectedPlayer& target, std::uint8_t shooter);
 };
 
 }  // namespace rtype::server::testing

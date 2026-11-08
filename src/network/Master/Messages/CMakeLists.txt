@@ -1,3 +1,5 @@
 add_library(rtype_network_master_messages INTERFACE)
 
 target_include_directories(rtype_network_master_messages INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_network_master_messages INTERFACE rtype_identifiers)

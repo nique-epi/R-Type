@@ -56,5 +56,9 @@ constexpr std::string_view CLOSE_GAME_COMMAND_NAME = "close-game";
 constexpr std::string_view CLOSE_GAME_ARGUMENTS = "<place>";
 constexpr std::string_view NETWORK_COMMAND_NAME = "network";
 constexpr std::string_view HELP_COMMAND_NAME = "help";
+constexpr std::string_view KICK_COMMAND_NAME = "kick";
+
+/** @brief The argument of kick, as its help and its refusal show it. */
+constexpr std::string_view KICK_ARGUMENTS = "<nickname>";
 
 }  // namespace rtype::server

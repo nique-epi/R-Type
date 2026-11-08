@@ -15,6 +15,8 @@ rtype::network::MasterClient MasterClientFixture::clientWith(
       rtype::network::MasterAccess{.url = master_.url(), .key = key}};
 }
 
+const RunningMaster& MasterClientFixture::master() const { return master_; }
+
 rtype::network::CreatedServer MasterClientFixture::createdParis() const {
   return clientWith(std::string{})
       .createServer(rtype::network::ServerCreation{

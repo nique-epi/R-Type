@@ -54,6 +54,7 @@ class GameResultKeeper {
   PlayerRoster& roster_;
   IResultsArchive& archive_;
   std::string difficulty_;
+  std::uint8_t lives_{0};
   bool vanilla_{false};
   GameState state_{GameState::WaitingForPlayers};
   std::uint8_t playersAtStart_{0};
