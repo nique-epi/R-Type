@@ -13,6 +13,7 @@
 #include "RecordingNavigator.hpp"
 #include "RecordingPlayerInputLink.hpp"
 #include "RecordingServerConnection.hpp"
+#include "RecordingShipLookExchange.hpp"
 #include "RecordingSky.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "RecordingWaitingRoom.hpp"
@@ -29,6 +30,7 @@ struct LoneGameParts {
   FakeServerTicks serverTicks;
   RecordingServerConnection connection;
   RecordingWaitingRoom waitingRoom;
+  RecordingShipLookExchange shipLooks;
   InterfaceCanvasRecord statusCanvas;
   RecordingSky sky;
   RecordingSoundPlayer sounds;

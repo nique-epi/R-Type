@@ -50,6 +50,7 @@ std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context) {
                       .serverTicks = context.services.serverTicks.get(),
                       .connection = connection,
                       .waitingRoom = context.services.waitingRoom.get(),
+                      .shipLooks = context.services.shipLooks.get(),
                       .sky = context.sky.get(),
                       .sounds = soundsOf(context),
                       .audio = context.services.audio.get(),

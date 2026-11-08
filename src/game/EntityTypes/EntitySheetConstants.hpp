@@ -46,10 +46,11 @@ constexpr std::string_view FRAGILE_KEY = "fragile";
 constexpr std::string_view BURST_KEY = "burst";
 constexpr std::string_view VOLLEY_KEY = "volley";
 constexpr std::string_view BOSS_KEY = "boss";
+constexpr std::string_view LOOK_ITEM_KEY = "look_item";
 constexpr std::array GAMEPLAY_KEYS{
     SIDE_KEY,    PILOT_KEY, HITBOX_KEY, MOTION_KEY,    BEHAVIOUR_KEY,
     HEALTH_KEY,  SCORE_KEY, GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
-    FRAGILE_KEY, BURST_KEY, VOLLEY_KEY, BOSS_KEY};
+    FRAGILE_KEY, BURST_KEY, VOLLEY_KEY, BOSS_KEY,      LOOK_ITEM_KEY};
 
 /** @brief The keys of `[gameplay.hitbox]`, in logical units: its size, and
  * where its center is from the Position of the body, 0 without them. */
@@ -196,9 +197,11 @@ constexpr std::string_view PLAYER_PILOT_NAME = "player";
  * order. */
 constexpr std::array SIDE_NAMES{
     std::string_view{"player"}, std::string_view{"enemy"},
-    std::string_view{"player_missile"}, std::string_view{"enemy_missile"}};
+    std::string_view{"player_missile"}, std::string_view{"enemy_missile"},
+    std::string_view{"look_item"}};
 constexpr std::array SIDES{EntityType::Player, EntityType::Enemy,
-                           EntityType::PlayerMissile, EntityType::EnemyMissile};
+                           EntityType::PlayerMissile, EntityType::EnemyMissile,
+                           EntityType::LookItem};
 static_assert(SIDE_NAMES.size() == SIDES.size(), "one name per side");
 
 /** @brief The motions a sheet may name, and the MotionKind of each. */
@@ -284,6 +287,10 @@ constexpr std::string_view HURT_BOX_WINDOW_RULE =
 constexpr std::string_view HURT_BEAM_SWEEP_RULE =
     "a beam that sweeps (to_deg other than from_deg) names until_ms, the end "
     "of its sweep";
+constexpr std::string_view LOOK_ITEM_SIDE_RULE =
+    "look_item is given by a sheet of side look_item, and only by it";
+constexpr std::string_view LOOK_ITEM_HEADING_RULE =
+    "a look item flies to the left, where the playfield removes it";
 constexpr std::string_view PROJECTILE_SIDE_RULE =
     "a player fires missiles of a player, an enemy missiles of an enemy";
 

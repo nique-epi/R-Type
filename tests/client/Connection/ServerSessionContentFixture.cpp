@@ -8,7 +8,6 @@
 #include <vector>
 #include "ConnectionAccepted.hpp"
 #include "ConnectionPhase.hpp"
-#include "ConnectionRequest.hpp"
 #include "ContentAnnouncement.hpp"
 #include "ContentPackRoute.hpp"
 #include "ContentPackTestFiles.hpp"
@@ -16,6 +15,7 @@
 #include "Disconnection.hpp"
 #include "Endpoint.hpp"
 #include "FakePackServer.hpp"
+#include "GameRequest.hpp"
 #include "IncomingDatagram.hpp"
 #include "NetworkConstants.hpp"
 #include "OutgoingDatagram.hpp"
@@ -38,7 +38,7 @@ network::Endpoint ServerSessionContentFixture::loopbackServer() {
 
 void ServerSessionContentFixture::connectAndGetAcceptedWith(
     const network::ContentAnnouncement& content) {
-  session_.connect(loopbackServer(), NICKNAME, rtype::network::ANY_GAME_CHOICE);
+  session_.connect(loopbackServer(), NICKNAME, GameRequest{});
   network::PacketHeader header;
   header.sessionToken = SESSION_TOKEN;
   link_.deliver(network::IncomingDatagram{

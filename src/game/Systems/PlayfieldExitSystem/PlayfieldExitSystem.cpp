@@ -56,14 +56,16 @@ bool hasFlownOut(const Position& position, const MissileExit& exit) {
 
 /**
  * @returns Whether an entity of @p type at @p position went out of the
- * playfield for good: an enemy more than ENEMY_EXIT_MARGIN beyond the left
- * edge, a missile wholly beyond an edge it flies towards (see hasFlownOut()),
- * with the box and the heading @p exit gives it. A ship never is.
+ * playfield for good: an enemy or a look item more than ENEMY_EXIT_MARGIN
+ * beyond the left edge, a missile wholly beyond an edge it flies towards (see
+ * hasFlownOut()), with the box and the heading @p exit gives it. A ship never
+ * is.
  */
 bool hasLeftThePlayfield(EntityType type, const Position& position,
                          const MissileExit& exit) {
   switch (type) {
     case EntityType::Enemy:
+    case EntityType::LookItem:
       return position.x < -ENEMY_EXIT_MARGIN;
     case EntityType::PlayerMissile:
     case EntityType::EnemyMissile:

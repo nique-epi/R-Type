@@ -1,10 +1,15 @@
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <optional>
+#include <string>
 #include "ConnectionChallenge.hpp"
 #include "ConnectionPhase.hpp"
 #include "ConnectionRedirect.hpp"
 #include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
+#include "GameRequest.hpp"
+#include "GameRules.hpp"
+#include "GameRulesTestConstants.hpp"
 #include "ServerSessionFixture.hpp"
 #include "ServerSessionFixtures.hpp"
 #include "ServerSessionRedirectTestConstants.hpp"
@@ -12,6 +17,8 @@
 
 namespace rtype::client {
 
+using rtype::testing::CHOSEN_DIFFICULTY;
+using rtype::testing::CHOSEN_LIVES;
 using testing::AFTER_THE_REDIRECT;
 using testing::BEFORE_THE_REDIRECT;
 using testing::CHALLENGE_COOKIE;
@@ -141,7 +148,7 @@ TEST_F(ServerSessionFixture, SendsTheGameItAsksFor) {
   const network::GameChoice game{.kind = network::GameChoiceKind::ExistingGame,
                                  .number = NAMED_GAME_NUMBER};
 
-  connect(game);
+  connect(GameRequest{.game = game, .rules = std::nullopt});
 
   EXPECT_EQ(lastRequest().game, game);
 }
@@ -152,13 +159,39 @@ TEST_F(ServerSessionFixture, SendsTheGameItAsksFor) {
  * Then the request it sends there still asks for a new game
  */
 TEST_F(ServerSessionFixture, KeepsTheGameItAsksForAfterARedirect) {
-  connect(network::NEW_GAME_CHOICE);
+  connect(GameRequest{.game = network::NEW_GAME_CHOICE, .rules = std::nullopt});
 
   deliver(network::ConnectionRedirect{.port = GAME_PORT});
   update();
 
   EXPECT_EQ(sent().back().destination.port, GAME_PORT);
   EXPECT_EQ(lastRequest().game, network::NEW_GAME_CHOICE);
+}
+
+/**
+ * Given a connection with no attempt
+ * When it connects asking for a new game with rules the player chose
+ * Then the request it sends carries those rules
+ */
+TEST_F(ServerSessionFixture, SendsTheRulesOfTheNewGameItAsksFor) {
+  const network::GameRules chosen{.difficulty = std::string(CHOSEN_DIFFICULTY),
+                                  .lives = CHOSEN_LIVES,
+                                  .friendlyFire = true};
+
+  connect(GameRequest{.game = network::NEW_GAME_CHOICE, .rules = chosen});
+
+  EXPECT_EQ(lastRequest().rules, chosen);
+}
+
+/**
+ * Given a connection with no attempt
+ * When it connects asking for any game, whose rules it knows
+ * Then the request it sends carries no rules
+ */
+TEST_F(ServerSessionFixture, SendsNoRulesForAnyGame) {
+  connect(gameRequestFor(network::ANY_GAME_CHOICE));
+
+  EXPECT_FALSE(lastRequest().rules.has_value());
 }
 
 }  // namespace rtype::client

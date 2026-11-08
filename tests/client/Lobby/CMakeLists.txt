@@ -1,1 +1,1 @@
-target_sources(client_screen_tests PRIVATE LobbyScreenTest.cpp LobbyScreenFixture.cpp LobbyScreenFixtures.cpp LobbyAfterGameFixture.cpp)
+target_sources(client_screen_tests PRIVATE LobbyScreenTest.cpp LobbyScreenFixture.cpp LobbyScreenFixtures.cpp LobbyAfterGameFixture.cpp LobbyRulesFixture.cpp)

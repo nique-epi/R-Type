@@ -1,1 +1,1 @@
-target_sources(client_connection_tests PRIVATE SessionLossWatchTest.cpp)
+target_sources(client_connection_tests PRIVATE GameRequestTest.cpp GameRulesLineTest.cpp SessionLossWatchTest.cpp)

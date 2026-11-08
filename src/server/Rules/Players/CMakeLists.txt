@@ -1,5 +1,6 @@
 add_library(rtype_server_rules_players STATIC
   LifeKeeper.cpp
+  LookItemKeeper.cpp
   PlayerController.cpp
   PlayerLives.cpp
   ScoreKeeper.cpp
@@ -24,7 +25,9 @@ target_link_libraries(rtype_server_rules_players
     rtype_server_sessions_roster
   PRIVATE
     rtype_identifiers
+    rtype_network_look_item_won
     rtype_network_protocol
+    rtype_server_sessions_tracking
 )
 
 rtype_enable_warnings(rtype_server_rules_players)

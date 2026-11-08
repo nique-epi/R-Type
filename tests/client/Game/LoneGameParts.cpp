@@ -16,6 +16,7 @@ GameScreenParts LoneGameParts::parts() {
                          .serverTicks = serverTicks,
                          .connection = connection,
                          .waitingRoom = waitingRoom,
+                         .shipLooks = shipLooks,
                          .sky = sky,
                          .sounds = sounds,
                          .audio = audio,

@@ -35,7 +35,6 @@ constexpr const char* FILTER_KEY_NAME = "F";
 constexpr const char* JOIN_LABEL = "JOIN A SERVER";
 
 /** @brief Texts of the filter dialog. */
-constexpr const char* DIFFICULTY_ROW_LABEL = "DIFFICULTY";
 constexpr const char* PILOTS_ROW_LABEL = "PILOTS";
 constexpr const char* APPLY_LABEL = "APPLY";
 

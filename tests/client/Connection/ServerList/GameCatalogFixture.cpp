@@ -5,6 +5,7 @@
 #include "GameCatalogTestConstants.hpp"
 #include "GameListing.hpp"
 #include "GameRow.hpp"
+#include "GameRulesTestConstants.hpp"
 #include "ListedGame.hpp"
 #include "ListedGameState.hpp"
 #include "RecordingMasterReads.hpp"
@@ -31,6 +32,21 @@ network::GameListing GameCatalogFixture::twoGames(
                                     .state = second,
                                     .playerCount = TWO_PILOTS}},
       .difficulties = {}};
+}
+
+network::GameListing GameCatalogFixture::aHardGame() {
+  return network::GameListing{
+      .games = {network::ListedGame{
+          .number = FIRST_GAME_NUMBER,
+          .name = std::string{FIRST_GAME_NAME},
+          .state = network::ListedGameState::Waiting,
+          .playerCount = TWO_PILOTS,
+          .difficulty = std::string{rtype::testing::CHOSEN_DIFFICULTY},
+          .lives = rtype::testing::CHOSEN_LIVES,
+          .friendlyFire = true}},
+      .difficulties = {std::string{rtype::testing::EASY_DIFFICULTY},
+                       std::string{rtype::testing::NORMAL_DIFFICULTY},
+                       std::string{rtype::testing::VETERAN_DIFFICULTY}}};
 }
 
 GameRow GameCatalogFixture::gameIn(network::ListedGameState state) {

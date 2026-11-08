@@ -12,8 +12,12 @@
 #include "RecordingRowControl.hpp"
 
 using rtype::client::Menu;
+using rtype::client::testing::BACK_UNDER_THREE_ROWS;
+using rtype::client::testing::BACK_UNDER_TWO_ROWS;
 using rtype::client::testing::FIRST_ROW_LABEL;
+using rtype::client::testing::HEADING_OVER_THREE_ROWS;
 using rtype::client::testing::SECOND_ROW_LABEL;
+using rtype::client::testing::THIRD_ROW_LABEL;
 
 /**
  * Given a dialog holding two rows
@@ -28,6 +32,54 @@ TEST(MenuBuilderDialogRows, RowsStandUnderTheHeading) {
 
   EXPECT_EQ(anchorOf(painting, "FIRST"), FIRST_ROW_LABEL);
   EXPECT_EQ(anchorOf(painting, "SECOND"), SECOND_ROW_LABEL);
+}
+
+/**
+ * Given a dialog holding two rows
+ * When it is painted
+ * Then its buttons stand where the filter of the leaderboard put them: the
+ * panel does not grow for two rows
+ */
+TEST(MenuBuilderDialogRows, TwoRowsKeepTheButtonsOfTheFilter) {
+  RowControlRecord first;
+  RowControlRecord second;
+  const InterfaceCanvasRecord painting =
+      paintingOf(dialogWithRows(first, second));
+
+  EXPECT_EQ(anchorOf(painting, "BACK"), BACK_UNDER_TWO_ROWS);
+}
+
+/**
+ * Given a dialog holding three rows
+ * When it is painted
+ * Then its panel grows by a row and stays centered: the heading rises
+ */
+TEST(MenuBuilderDialogRows, AThirdRowCentersATallerPanel) {
+  const InterfaceCanvasRecord painting = threeRowDialogPainting();
+
+  EXPECT_EQ(anchorOf(painting, "FILTER"), HEADING_OVER_THREE_ROWS);
+}
+
+/**
+ * Given a dialog holding three rows
+ * When it is painted
+ * Then its third row stands one pitch under the second
+ */
+TEST(MenuBuilderDialogRows, AThirdRowStandsUnderTheSecond) {
+  const InterfaceCanvasRecord painting = threeRowDialogPainting();
+
+  EXPECT_EQ(anchorOf(painting, "THIRD"), THIRD_ROW_LABEL);
+}
+
+/**
+ * Given a dialog holding three rows
+ * When it is painted
+ * Then its buttons stand under the third row
+ */
+TEST(MenuBuilderDialogRows, AThirdRowLowersTheButtons) {
+  const InterfaceCanvasRecord painting = threeRowDialogPainting();
+
+  EXPECT_EQ(anchorOf(painting, "BACK"), BACK_UNDER_THREE_ROWS);
 }
 
 /**

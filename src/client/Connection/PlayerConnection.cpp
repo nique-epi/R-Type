@@ -35,6 +35,7 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions,
       router_(network_),
       orderedInbox_(dispatcher_),
       waitingRoom_(dispatcher_, gameLoaded_),
+      shipLooks_(dispatcher_, waitingRoom_),
       entityMessages_(dispatcher_, waitingRoom_, gameLoaded_),
       roundTrips_(dispatcher_, clock_),
       leaderboard_(dispatcher_),
@@ -47,8 +48,8 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions,
           .gameLoaded = gameLoaded_,
           .entityTypes = entityTypes_,
           .content = content_,
-          .observers = {waitingRoom_, entityMessages_, gameLoaded_, roundTrips_,
-                        leaderboard_, chat_, orderedInbox_}}),
+          .observers = {waitingRoom_, shipLooks_, entityMessages_, gameLoaded_,
+                        roundTrips_, leaderboard_, chat_, orderedInbox_}}),
       pings_(router_.addRoute(), clock_) {}
 
 void PlayerConnection::update(engine::Duration elapsed) {
@@ -67,6 +68,7 @@ void PlayerConnection::provideParts(engine::InstallContext& context) {
   entityTypes_.drawLocalWith(context.require<EntityAppearances>());
   context.provide(session_);
   context.provide(waitingRoom_);
+  context.provide(shipLooks_);
   context.provide(entityMessages_);
   context.provide(leaderboard_);
   context.provide(chat_);

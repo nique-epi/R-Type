@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
+#include <algorithm>
 #include <optional>
 #include <vector>
 #include "FittingTimelineConstants.hpp"
@@ -12,7 +13,10 @@
 
 using rtype::client::FITTING_DURATION;
 using rtype::client::testing::CROWN_CELL_MIDDLE;
+using rtype::client::testing::CROWN_ICON_LEFT_ON_THE_SHEET;
 using rtype::client::testing::HangarScreenFixture;
+using rtype::client::testing::LOCKED_STATUS_TEXT;
+using rtype::client::testing::LOOK_SHEET_ID;
 using rtype::client::testing::lookImagesAtShipScale;
 using rtype::client::testing::PARTY_HAT_STATUS;
 using rtype::client::testing::ReducedMotionHangarFixture;
@@ -28,6 +32,7 @@ using Key = sf::Keyboard::Key;
  * Then the party hat is chosen, as its status line says
  */
 TEST_F(HangarScreenFixture, RightChoosesTheNextItem) {
+  holdEveryItem();
   press(Key::Right);
 
   EXPECT_NE(writingOf(painting(), PARTY_HAT_STATUS), nullptr);
@@ -142,7 +147,51 @@ TEST_F(HangarScreenFixture, EscapeLeavesTheHangar) {
  * Then the ship wears the crown
  */
 TEST_F(HangarScreenFixture, AClickOnACellWearsItsItem) {
+  holdEveryItem();
   clickAt(CROWN_CELL_MIDDLE);
 
   EXPECT_EQ(settings().shipLook.head, WEARS_CROWN);
+}
+
+/**
+ * Given a hangar with the starter kit, the crown chosen
+ * When Enter is pressed
+ * Then the ship wears nothing, nothing is saved and no click plays
+ */
+TEST_F(HangarScreenFixture, ALockedItemIsNotWorn) {
+  press(Key::Right);
+  press(Key::Right);
+
+  press(Key::Enter);
+
+  EXPECT_EQ(settings().shipLook.head, 0);
+  EXPECT_TRUE(storage().saves().empty());
+}
+
+/**
+ * Given a hangar with the starter kit
+ * When it is painted
+ * Then no icon of the crown, a locked item, is drawn on the sheet of the
+ * looks: its cell stays empty
+ */
+TEST_F(HangarScreenFixture, ALockedCellShowsNoIcon) {
+  update(rtype::engine::Duration::zero());
+
+  EXPECT_FALSE(
+      std::ranges::any_of(painting().images, [](const RecordedImage& image) {
+        return image.assetId == LOOK_SHEET_ID &&
+               image.source.position.x == CROWN_ICON_LEFT_ON_THE_SHEET;
+      }));
+}
+
+/**
+ * Given a hangar with the starter kit, the crown chosen
+ * When it is painted
+ * Then the status line says the item is locked and how to get it
+ */
+TEST_F(HangarScreenFixture, TheStatusOfALockedItemSaysHowToGetIt) {
+  press(Key::Right);
+  press(Key::Right);
+
+  EXPECT_NE(writingOf(painting(), LOCKED_STATUS_TEXT), nullptr);
 }

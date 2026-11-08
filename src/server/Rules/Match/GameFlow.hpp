@@ -13,6 +13,7 @@
 #include "IHitArbitration.hpp"
 #include "LifeKeeper.hpp"
 #include "Logger.hpp"
+#include "LookItemKeeper.hpp"
 #include "StartBarrier.hpp"
 #include "VolleySystem.hpp"
 #include "WaveSpawner.hpp"
@@ -190,6 +191,7 @@ class GameFlow final : public IGameFlow {
   std::unique_ptr<game::CollisionRules> collisionRules_;
   std::unique_ptr<game::DamageRules> damageRules_;
   std::unique_ptr<LifeKeeper> lifeKeeper_;
+  std::unique_ptr<LookItemKeeper> lookItemKeeper_;
   StartBarrier startBarrier_;
   std::unique_ptr<IHitArbitration> hitArbitration_;
   GameState state_{GameState::WaitingForPlayers};

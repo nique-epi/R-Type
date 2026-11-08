@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace rtype::client {
+namespace rtype::identifiers {
 
 /**
  * @brief The items the ship of the player wears, one per slot: a slot holds
@@ -17,4 +17,4 @@ struct ShipLook {
   bool operator==(const ShipLook& other) const = default;
 };
 
-}  // namespace rtype::client
+}  // namespace rtype::identifiers

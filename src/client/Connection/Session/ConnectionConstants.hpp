@@ -13,6 +13,12 @@ namespace rtype::client {
 constexpr std::chrono::milliseconds READY_STATE_INTERVAL{500};
 
 /**
+ * @brief Time between two ShipLookChoice while no PlayerLooks lists the look
+ * the player chose on its ship. Provisional, see the protocol page.
+ */
+constexpr std::chrono::milliseconds SHIP_LOOK_CHOICE_INTERVAL{500};
+
+/**
  * @brief Time between two LeaderboardRequest while no answer came, the time
  * after which a server answers the same player again; and how long the client
  * asks before it gives up. As the protocol page writes them.

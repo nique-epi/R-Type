@@ -11,20 +11,24 @@ namespace rtype::client {
 
 /**
  * @brief The panel of the games of the chosen server, over the map dimmed:
- * GAME_ROWS_SHOWN rows at a time, the chosen row highlighted, the list
- * scrolled so the chosen row stays shown, and a line that says what ENTER
- * does with it: join a waiting game, or why the others cannot be joined.
- * A new list keeps the chosen game by its number, the first one otherwise.
+ * once the master answered, + NEW GAME first, then the games; GAME_ROWS_SHOWN
+ * rows at a time, the chosen row highlighted, the list scrolled so the chosen
+ * row stays shown, and a line that says what ENTER does with it: set the rules
+ * of a new game, join a waiting game, named with its rules, or why the others
+ * cannot be joined. It opens on + NEW GAME; a new list keeps the chosen game
+ * by its number, + NEW GAME otherwise.
  */
 class GamePanel {
  public:
   /** @brief Shows @p games, those of the server named @p serverName. */
   void show(const GameListSnapshot& games, std::string serverName);
-  /** @brief Chooses the game @p step rows down, or up when negative, within
+  /** @brief Chooses the row @p step rows down, or up when negative, within
    * the list. */
   void move(int step);
   /** @returns The chosen game, when it can be joined. */
   [[nodiscard]] std::optional<GameRow> joinable() const;
+  /** @returns Whether the chosen row is + NEW GAME. */
+  [[nodiscard]] bool newGameChosen() const;
   void paint(IInterfaceCanvas& canvas) const;
 
  private:
@@ -32,6 +36,12 @@ class GamePanel {
   void paintRows(IInterfaceCanvas& canvas) const;
   /** @brief Paints the line under the rows, about the chosen game. */
   void paintDescription(IInterfaceCanvas& canvas) const;
+  /** @returns The rows the panel holds: + NEW GAME once the master answered,
+   * then the games. */
+  [[nodiscard]] std::size_t entryCount() const;
+  /** @returns The game on row @p entry, which lives as long as the list
+   * shown; nothing for + NEW GAME or past the last row. */
+  [[nodiscard]] const GameRow* gameAt(std::size_t entry) const;
 
   GameListSnapshot games_;
   std::string serverName_;

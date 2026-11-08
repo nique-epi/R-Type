@@ -4,6 +4,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include "ChatWindow.hpp"
 #include "HelpWalkthrough.hpp"
@@ -11,6 +12,7 @@
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
+#include "IShipLookExchange.hpp"
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
 #include "KeyChip.hpp"
@@ -122,6 +124,7 @@ class LobbyScreen : public IScreen {
   IScreenNavigator* navigator_{};
   IServerConnection* connection_{};
   IWaitingRoom* waitingRoom_{};
+  IShipLookExchange* shipLooks_{};
   ISoundPlayer* sounds_{};
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
@@ -129,13 +132,16 @@ class LobbyScreen : public IScreen {
   std::reference_wrapper<const PlayerPalette> palette_;
   MotionPreference motion_{};
   LobbyPlace place_{};
+  /** @brief The rules of the game in words, written on the row of the
+   * heading; nothing when the client does not know them. */
+  std::optional<std::string> rulesLine_;
   engine::Duration elapsed_{};
   bool readyKeyHeld_ = false;
   bool gameAsked_ = false;
   Menu menu_;
   HelpWalkthrough help_;
   KeyChip leaderboardChip_;
-  const ShipLook* look_;
+  const identifiers::ShipLook* look_;
   KeyChip hangarChip_;
   ChatWindow chat_;
 };

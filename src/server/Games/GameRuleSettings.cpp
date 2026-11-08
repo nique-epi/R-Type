@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <string>
 #include "ConfigurationRegistry.hpp"
+#include "GameRuleConstants.hpp"
 #include "GameRules.hpp"
 #include "IntegerSettingDefinition.hpp"
 #include "ServerConstants.hpp"
@@ -20,8 +21,8 @@ void GameRuleSettings::declare(engine::ConfigurationRegistry& configuration) {
   lives_ = &configuration.declareInteger(engine::IntegerSettingDefinition{
       .name = std::string{LIVES_SETTING_NAME},
       .defaultValue = defaults.lives,
-      .lowest = LOWEST_LIVES,
-      .highest = HIGHEST_LIVES,
+      .lowest = identifiers::LOWEST_LIVES,
+      .highest = identifiers::HIGHEST_LIVES,
       .help = "Lives each player starts the game with",
       .allowsNone = false});
   friendlyFire_ =

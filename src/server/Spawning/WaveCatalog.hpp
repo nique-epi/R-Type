@@ -34,8 +34,9 @@ class WaveCatalog {
    * @throws engine::MissingDataFileKeyException,
    * engine::UnknownDataFileKeyException,
    * engine::DataFileTableExpectedException,
-   * engine::DataFileValueOutOfRangeException, InvalidEnemyListException or
-   * UnknownEnemyException when it does not describe the difficulties as
+   * engine::DataFileValueOutOfRangeException, InvalidEnemyListException,
+   * UnknownEnemyException, InvalidLookItemListException or
+   * UnknownLookItemException when it does not describe the difficulties as
    * above.
    */
   [[nodiscard]] static WaveCatalog fromText(std::string_view text,

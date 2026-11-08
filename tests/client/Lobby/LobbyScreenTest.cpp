@@ -4,16 +4,20 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
 #include <cstddef>
+#include <iterator>
 #include <optional>
 #include <string>
 #include <vector>
 #include "BackgroundColorConstants.hpp"
+#include "GameRules.hpp"
+#include "GameRulesTestConstants.hpp"
 #include "GameScreenIdConstants.hpp"
 #include "HangarScreenIdConstants.hpp"
 #include "HelpWalkthroughConstants.hpp"
 #include "HelpWalkthroughTestConstants.hpp"
 #include "KeyPress.hpp"
 #include "LobbyAfterGameFixture.hpp"
+#include "LobbyRulesFixture.hpp"
 #include "LobbyScreen.hpp"
 #include "LobbyScreenFixture.hpp"
 #include "LobbyScreenFixtures.hpp"
@@ -25,6 +29,7 @@
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenTestConstants.hpp"
+#include "ServerConnectionRequest.hpp"
 #include "SoundConstants.hpp"
 #include "WidgetConstants.hpp"
 
@@ -55,9 +60,15 @@ using rtype::client::testing::OWN_BAY_MIDDLE;
 using rtype::client::testing::OWN_NICKNAME;
 using rtype::client::testing::OWN_NUMBER;
 using rtype::client::testing::READY_KEY;
+using rtype::client::testing::RULES_FRIENDLY_FIRE_WORDS;
+using rtype::client::testing::RULES_LINE_TOP;
 using rtype::client::testing::THIRD_BAY_MIDDLE;
 using rtype::client::testing::THIRD_BAY_NICKNAME;
 using rtype::client::testing::WEARS_TOP_HAT;
+using rtype::network::GameRules;
+using rtype::testing::CHOSEN_DIFFICULTY;
+using rtype::testing::CHOSEN_LIVES;
+using rtype::testing::HARD_RULES_LINE;
 using ::testing::Contains;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
@@ -281,7 +292,7 @@ TEST_F(LobbyAfterGameFixture, BackLeavesForTheTitle) {
 
   ASSERT_FALSE(connection().calls().empty());
   EXPECT_EQ(connection().calls().back().request,
-            ServerConnectionCall::Request::Cancel);
+            ServerConnectionRequest::Cancel);
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
                                         .screen = TITLE_SCREEN}));
@@ -297,7 +308,7 @@ TEST_F(LobbyScreenFixture, EscapeLeavesTheServer) {
 
   ASSERT_FALSE(connection().calls().empty());
   EXPECT_EQ(connection().calls().back().request,
-            ServerConnectionCall::Request::Cancel);
+            ServerConnectionRequest::Cancel);
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
                                         .screen = std::nullopt}));
@@ -593,4 +604,77 @@ TEST_F(LobbyScreenFixture, EnterSendsTheLineAndPressesNoBar) {
 
   EXPECT_THAT(chat().sent(), ElementsAre(std::string{CHAT_LINE}));
   EXPECT_THAT(readyRequests(), IsEmpty());
+}
+
+/**
+ * Given a waiting room for a game played hard, with five lives and friendly
+ * fire on
+ * When a frame goes by
+ * Then the room writes those rules on the row of the heading, their baseline
+ * on its baseline
+ */
+TEST_F(LobbyRulesFixture, TheRulesStandOnTheRowOfTheHeading) {
+  open(GameRules{.difficulty = std::string(CHOSEN_DIFFICULTY),
+                 .lives = CHOSEN_LIVES,
+                 .friendlyFire = true});
+
+  const RecordedWriting* rules =
+      writingOf(canvas(), std::string(HARD_RULES_LINE));
+  ASSERT_NE(rules, nullptr);
+  EXPECT_EQ(rules->anchor.y, RULES_LINE_TOP);
+}
+
+/**
+ * Given a waiting room for a game named at launch, whose rules the client
+ * does not know
+ * When a frame goes by
+ * Then the room writes no rules, rather than rules it would guess
+ */
+TEST_F(LobbyRulesFixture, AnUnknownGameShowsNoRules) {
+  open(std::nullopt);
+
+  EXPECT_TRUE(std::ranges::none_of(
+      canvas().writings, [](const RecordedWriting& writing) noexcept {
+        return writing.text.find(RULES_FRIENDLY_FIRE_WORDS) !=
+               std::string::npos;
+      }));
+}
+
+/**
+ * Given the room listing the local player, who wears nothing, and the pilot of
+ * the third bay, which the server shows wearing the top hat
+ * When a frame goes by
+ * Then one item of the sheet of the items is drawn, and it lies inside the
+ * third bay: that bay spans 244 to 346 interface pixels across, the first one
+ * 24 to 126
+ */
+TEST_F(LobbyScreenFixture, AnotherBayShowsTheLookItsPilotWears) {
+  shipLooks().setPlayerLooks(
+      {{.playerNumber = OTHER_NUMBER,
+        .look = rtype::identifiers::ShipLook{.head = WEARS_TOP_HAT}}});
+
+  list({pilot(OWN_NUMBER, OWN_NICKNAME, false),
+        pilot(OTHER_NUMBER, OTHER_NICKNAME, false)});
+
+  std::vector<RecordedImage> items;
+  std::ranges::copy_if(
+      canvas().images, std::back_inserter(items),
+      [](const RecordedImage& image) { return image.assetId == LOOK_SHEET; });
+  ASSERT_EQ(items.size(), 1U);
+  EXPECT_GT(items.front().topLeft.x, 244);
+  EXPECT_LT(items.front().topLeft.x, 346);
+}
+
+/**
+ * Given the room, whose settings say the ship wears the top hat
+ * When one frame goes by
+ * Then the exchange was asked to choose that look
+ */
+TEST_F(LobbyScreenFixture, TheLobbySendsTheLookOfTheSettings) {
+  look().head = WEARS_TOP_HAT;
+
+  list({pilot(OWN_NUMBER, OWN_NICKNAME, false)});
+
+  EXPECT_EQ(shipLooks().chosenLooks().back(),
+            (rtype::identifiers::ShipLook{.head = WEARS_TOP_HAT}));
 }

@@ -33,6 +33,8 @@
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
 #include "ShipControlConstants.hpp"
+#include "ShipLookConstants.hpp"
+#include "ShipLookNumbers.hpp"
 #include "TimeConstants.hpp"
 #include "VolleySheetReading.hpp"
 #include "WholeNumberRange.hpp"
@@ -355,6 +357,18 @@ std::optional<ActionKey> fragileFrom(const engine::DataFileTable& gameplay) {
   return actionKeyAt(*fragile);
 }
 
+/** @returns The number of the item `look_item` names in the catalog of ship
+ * looks; nothing without the key.
+ * @throws engine::UnknownDataFileChoiceException when it names no item. */
+std::optional<std::uint8_t> lookItemFrom(
+    const engine::DataFileTable& gameplay) {
+  if (!gameplay.table.get().contains(LOOK_ITEM_KEY)) {
+    return std::nullopt;
+  }
+  return identifiers::lookNumberOf(engine::choiceAt(
+      gameplay, LOOK_ITEM_KEY, identifiers::SHIP_LOOK_ITEM_NAMES));
+}
+
 /** @throws InconsistentEntitySheetException when @p sheet has a hurt zone,
  * survives a contact or is fragile and its side is not enemy. */
 void checkContactPartsBelongToAnEnemy(const EntitySheet& sheet,
@@ -424,6 +438,16 @@ void checkShipMotion(const EntitySheet& sheet,
   }
 }
 
+/** @throws InconsistentEntitySheetException when a sheet of side look_item
+ * gives no item, or another side gives one. */
+void checkLookItemMatchesSide(const EntitySheet& sheet,
+                              const engine::DataFileTable& gameplay) {
+  if (sheet.lookItem.has_value() != (sheet.side == EntityType::LookItem)) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, SIDE_KEY), LOOK_ITEM_SIDE_RULE);
+  }
+}
+
 /** @returns Whether @p side is the side of a missile, of a player or of an
  * enemy. */
 bool isAMissile(EntityType side) {
@@ -481,6 +505,20 @@ void checkMissileFliesTowardsItsEdge(const EntitySheet& sheet,
   }
 }
 
+/** @throws InconsistentEntitySheetException when the pilot of a look item does
+ * not steer it, on its first tick, to the left: such an item that nobody picks
+ * up would stay for the rest of the game. */
+void checkLookItemFliesLeft(const EntitySheet& sheet,
+                            const engine::DataFileTable& gameplay) {
+  if (sheet.side != EntityType::LookItem || !sheet.pilot.has_value()) {
+    return;
+  }
+  if (firstHorizontalSteeringOf(*sheet.pilot, sheet.motion) >= 0.0F) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, PILOT_KEY), LOOK_ITEM_HEADING_RULE);
+  }
+}
+
 }  // namespace
 
 EntitySheet gameplayOf(const SheetText& sheet,
@@ -503,13 +541,16 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .fragileIn = fragileFrom(gameplay),
       .burst = burstFrom(gameplay),
       .volleys = volleysFrom(gameplay),
-      .boss = bossFrom(gameplay)};
+      .boss = bossFrom(gameplay),
+      .lookItem = lookItemFrom(gameplay)};
   checkPilotMatchesSide(read, gameplay);
   checkShipMotion(read, gameplay);
   checkWhatItFires(read, gameplay);
   checkMissileFliesTowardsItsEdge(read, gameplay);
   checkContactPartsBelongToAnEnemy(read, gameplay);
   checkBossHasHealth(read, gameplay);
+  checkLookItemMatchesSide(read, gameplay);
+  checkLookItemFliesLeft(read, gameplay);
   return read;
 }
 

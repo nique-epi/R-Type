@@ -3,6 +3,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <algorithm>
 #include <cstddef>
@@ -14,6 +15,8 @@
 #include <utility>
 #include "BoundAction.hpp"
 #include "ChatWindow.hpp"
+#include "GameRules.hpp"
+#include "GameRulesLine.hpp"
 #include "GameScreenIdConstants.hpp"
 #include "HangarBay.hpp"
 #include "HangarBayConstants.hpp"
@@ -24,6 +27,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
+#include "IShipLookExchange.hpp"
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
 #include "InterfaceConstants.hpp"
@@ -38,16 +42,20 @@
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PilotColor.hpp"
+#include "PlayerLooks.hpp"
 #include "PlayfieldMapping.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
 #include "ShipLook.hpp"
 #include "SoundConstants.hpp"
+#include "TextStyle.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetStyles.hpp"
 
 namespace rtype::client {
+
+using identifiers::ShipLook;
 
 namespace {
 
@@ -91,6 +99,51 @@ std::string statusLine(std::span<const network::LobbyPlayer> players,
     return YOU_NOT_READY_STATUS;
   }
   return waiting->nickname + PILOT_NOT_READY_STATUS;
+}
+
+/** @returns Whether @p event presses (true) or releases (false) @p key;
+ * nothing for any other event. */
+std::optional<bool> readyKeyDownOf(const sf::Event& event,
+                                   sf::Keyboard::Scancode key) {
+  if (const auto* pressed = event.getIf<sf::Event::KeyPressed>();
+      pressed != nullptr && pressed->scancode == key) {
+    return true;
+  }
+  if (const auto* released = event.getIf<sf::Event::KeyReleased>();
+      released != nullptr && released->scancode == key) {
+    return false;
+  }
+  return std::nullopt;
+}
+
+/** @brief Tells each of @p widgets that the events stop reaching it, so none
+ * waits for a release or stays drawn pressed. */
+template <typename... Widgets>
+void dropHeldInput(const PlayfieldMapping& pointAt, Widgets&... widgets) {
+  (static_cast<void>(widgets.handleEvent(sf::Event::FocusLost{}, pointAt)),
+   ...);
+}
+
+/** @returns The line of @p rules, written once when the room is built;
+ * nothing when the client does not know the rules. */
+std::optional<std::string> rulesLineIfKnown(
+    const std::optional<network::GameRules>& rules) {
+  if (!rules.has_value()) {
+    return std::nullopt;
+  }
+  return rulesLineOf(*rules);
+}
+
+/** @returns Where the rules of the game are written: centered between the end
+ * of the heading and the start of the count of @p pilots, both measured as
+ * they are written, on the row of the heading. */
+sf::Vector2i rulesAnchorOf(const IInterfaceCanvas& canvas,
+                           const std::string& pilots) {
+  const int headingEnd =
+      SAFE_MARGIN + canvas.textWidth(LOBBY_HEADING, TextFont::Regular);
+  const int pilotsStart =
+      PILOT_COUNT_ANCHOR.x - canvas.textWidth(pilots, PILOT_COUNT_STYLE.font);
+  return {(headingEnd + pilotsStart) / SIDES_PER_AXIS, GAME_RULES_TOP};
 }
 
 /** @returns How many pilots the waiting room lists, in words. */
@@ -197,6 +250,14 @@ LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot,
           .back = backChipArea()};
 }
 
+/** @returns The look @p looks shows on the player numbered @p number; nothing
+ * worn when it does not list that player. */
+ShipLook lookOf(std::span<const network::PlayerLook> looks,
+                std::uint8_t number) {
+  const ShipLook* const found = network::findLook(looks, number);
+  return found == nullptr ? ShipLook{} : *found;
+}
+
 }  // namespace
 
 LobbyScreen::LobbyScreen(LobbyScreenParts parts,
@@ -204,6 +265,7 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
     : navigator_(&parts.navigator.get()),
       connection_(&parts.connection.get()),
       waitingRoom_(&parts.waitingRoom.get()),
+      shipLooks_(&parts.shipLooks.get()),
       sounds_(&parts.sounds.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
@@ -211,6 +273,7 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
       palette_(parts.palette),
       motion_(parts.motion),
       place_(parts.place),
+      rulesLine_(rulesLineIfKnown(parts.rules)),
       menu_(buildMenu(parts.keyName(readyKey_))),
       help_(HelpWalkthroughParts{.sounds = parts.sounds,
                                  .keys = parts.keys,
@@ -245,29 +308,20 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
 
 void LobbyScreen::handleEvent(const sf::Event& event) {
   if (!chat_.isOpen() && help_.handleEvent(event, playfieldPointAt_)) {
-    leaderboardChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
-    hangarChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+    dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_);
     return;
   }
   if (chat_.handleEvent(event)) {
     readyKeyHeld_ = false;
-    leaderboardChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
-    hangarChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
-    menu_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+    dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_, menu_);
     return;
   }
-  if (const auto* pressed = event.getIf<sf::Event::KeyPressed>();
-      pressed != nullptr && pressed->scancode == readyKey_) {
-    if (!readyKeyHeld_) {
-      readyKeyHeld_ = true;
+  if (const std::optional<bool> down = readyKeyDownOf(event, readyKey_)) {
+    if (*down && !readyKeyHeld_) {
       sounds_->play(CLICK_SOUND_ID);
       toggleReady();
     }
-    return;
-  }
-  if (const auto* released = event.getIf<sf::Event::KeyReleased>();
-      released != nullptr && released->scancode == readyKey_) {
-    readyKeyHeld_ = false;
+    readyKeyHeld_ = *down;
     return;
   }
   readyKeyHeld_ = readyKeyHeld_ && !event.is<sf::Event::FocusLost>();
@@ -278,9 +332,7 @@ void LobbyScreen::handleEvent(const sf::Event& event) {
   if (clicksInside(event, ownBayAreaIn(menu_, *waitingRoom_, *connection_),
                    playfieldPointAt_)) {
     readyKeyHeld_ = false;
-    leaderboardChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
-    hangarChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
-    menu_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+    dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_, menu_);
     navigator_->push(HANGAR_SCREEN);
     return;
   }
@@ -295,6 +347,7 @@ void LobbyScreen::update(engine::Duration elapsed) {
     gameAsked_ = true;
     navigator_->replaceAll(GAME_SCREEN);
   }
+  shipLooks_->chooseLook(*look_);
   repaint();
 }
 
@@ -350,8 +403,12 @@ void LobbyScreen::repaint() {
   if (!help_.showsGame()) {
     menu_.paint(*canvas_);
     paintBays();
-    canvas_->write(pilotCount(players.size()), PILOT_COUNT_ANCHOR,
-                   PILOT_COUNT_STYLE);
+    const std::string pilots = pilotCount(players.size());
+    canvas_->write(pilots, PILOT_COUNT_ANCHOR, PILOT_COUNT_STYLE);
+    if (rulesLine_.has_value()) {
+      canvas_->write(*rulesLine_, rulesAnchorOf(*canvas_, pilots),
+                     GAME_RULES_STYLE);
+    }
     leaderboardChip_.paint(*canvas_);
     hangarChip_.paint(*canvas_);
   }
@@ -394,7 +451,9 @@ BayPilot LobbyScreen::pilotOf(const network::LobbyPlayer& player) const {
   return {.nickname = player.nickname,
           .readiness = readinessOf(player, requested),
           .isLocalPlayer = isLocalPlayer,
-          .look = isLocalPlayer ? *look_ : ShipLook{}};
+          .look = isLocalPlayer
+                      ? *look_
+                      : lookOf(shipLooks_->playerLooks(), player.playerNumber)};
 }
 
 }  // namespace rtype::client

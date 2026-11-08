@@ -13,6 +13,9 @@
 #include <vector>
 #include "BarState.hpp"
 #include "Button.hpp"
+#include "ConnectionRequest.hpp"
+#include "GameRequest.hpp"
+#include "GameRow.hpp"
 #include "HangarScreenIdConstants.hpp"
 #include "HangarStar.hpp"
 #include "IGameCatalog.hpp"
@@ -197,6 +200,15 @@ void zoomWithWheel(ServerMapChoice& map, float delta) {
   }
 }
 
+/** @returns The request that joins @p game, with the rules the master lists
+ * for it. */
+GameRequest requestToJoin(const GameRow& game) {
+  return GameRequest{
+      .game = network::GameChoice{.kind = network::GameChoiceKind::ExistingGame,
+                                  .number = game.number},
+      .rules = game.rules};
+}
+
 KeyChipParts quickPlayChipParts(std::function<void()> action,
                                 ISoundPlayer& sounds) {
   return KeyChipParts{.text = quickPlayText(),
@@ -258,7 +270,7 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
           [this] {
             if (const std::optional<ServerRow> server =
                     quickPlayServerOf(map_.servers())) {
-              join(*server);
+              join(*server, gameRequestFor(network::ANY_GAME_CHOICE));
             }
           },
           parts.sounds)),
@@ -373,8 +385,11 @@ void ServerMapScreen::confirm() {
     case ServerMapStage::Games:
       break;
   }
-  if (panel_.joinable().has_value()) {
-    join(*chosen);
+  if (panel_.newGameChosen()) {
+    heldKey_.reset();
+    navigator_->push(NEW_GAME_SCREEN);
+  } else if (const std::optional<GameRow> game = panel_.joinable()) {
+    join(*chosen, requestToJoin(*game));
   }
 }
 
@@ -393,9 +408,11 @@ void ServerMapScreen::refresh() {
   }
 }
 
-void ServerMapScreen::join(const ServerRow& server) {
+void ServerMapScreen::join(const ServerRow& server,
+                           const GameRequest& request) {
   heldKey_.reset();
   choice_->lastServer = server.endpoint;
+  choice_->lastRequest = request;
   navigator_->push(CONNECTION_TO_CHOSEN_SERVER_SCREEN);
 }
 

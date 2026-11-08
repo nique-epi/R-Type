@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace rtype::client {
+namespace rtype::identifiers {
 
 /** @brief Where an item sits on the ship; a slot wears one item at most. */
 enum class ShipLookSlot : std::uint8_t {
@@ -11,4 +11,4 @@ enum class ShipLookSlot : std::uint8_t {
   Face,
 };
 
-}  // namespace rtype::client
+}  // namespace rtype::identifiers

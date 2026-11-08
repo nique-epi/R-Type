@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
-#include "GameRuleConstants.hpp"
 #include "StateEncoding.hpp"
 #include "TimeConstants.hpp"
 
@@ -155,7 +154,7 @@ constexpr std::string_view SHIP_SHEET_NAME = "ship";
  * are not vanilla. A test fails when the shipped file changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x9bc19feade051edb;
+constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x03d17e5028bb4b87;
 
 /**
  * @brief The fingerprint of the entity sheets the game ships, as
@@ -163,7 +162,7 @@ constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x9bc19feade051edb;
  * are not vanilla. A test fails when a shipped sheet changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0xbd9b5f8cbd08efef;
+constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0xe8132fd77ea4dac9;
 
 /**
  * @brief Why the games of a server are not vanilla, as the lines of its journal
@@ -375,17 +374,6 @@ constexpr std::string_view FRIENDLY_FIRE_SETTING_NAME = "friendly-fire";
 constexpr std::string_view DIFFICULTY_OPTION = "--difficulty";
 constexpr std::string_view LIVES_OPTION = "--lives";
 constexpr std::string_view FRIENDLY_FIRE_OPTION = "--friendly-fire";
-
-/**
- * @brief The fewest and the most lives the creator of a game may give each
- * player. Provisional, until gameplay tunes them.
- */
-constexpr std::uint8_t LOWEST_LIVES = 1;
-constexpr std::uint8_t HIGHEST_LIVES = 9;
-
-static_assert(identifiers::DEFAULT_LIVES >= LOWEST_LIVES &&
-                  identifiers::DEFAULT_LIVES <= HIGHEST_LIVES,
-              "the default lives must be a count the rules accept");
 
 /**
  * @brief The values of FRIENDLY_FIRE_SETTING_NAME and FRIENDLY_FIRE_OPTION:

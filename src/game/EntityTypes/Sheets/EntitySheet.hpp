@@ -62,6 +62,10 @@ struct EntitySheet {
   std::vector<VolleySheet> volleys;
   /** @brief What makes it a boss; nothing for any other body. */
   std::optional<BossSheet> boss{std::nullopt};
+  /** @brief The item of the locker it gives, as its number in the catalog of
+   * ship looks (the position of its name plus one); nothing for a body of
+   * another side than look_item. */
+  std::optional<std::uint8_t> lookItem{std::nullopt};
 };
 
 }  // namespace rtype::game

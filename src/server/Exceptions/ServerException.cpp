@@ -46,6 +46,19 @@ UnknownBossException::UnknownBossException(
                       ": unknown boss \"" + boss +
                       "\"; known: " + engine::listText(known)) {}
 
+InvalidLookItemListException::InvalidLookItemListException(
+    const engine::DataFilePlace& place, engine::WholeNumberRange length)
+    : ServerException(engine::placeText(place) + ": " + place.key +
+                      " must be a list of " + engine::rangeText(length) +
+                      " look item names") {}
+
+UnknownLookItemException::UnknownLookItemException(
+    const engine::DataFilePlace& place, const std::string& item,
+    const std::vector<std::string>& known)
+    : ServerException(engine::placeText(place) + ": " + place.key +
+                      ": unknown look item \"" + item +
+                      "\"; known: " + engine::listText(known)) {}
+
 UnknownDifficultyException::UnknownDifficultyException(
     const std::string& difficulty, const std::vector<std::string>& known)
     : ServerException(

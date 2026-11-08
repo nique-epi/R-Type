@@ -34,6 +34,7 @@
 #include "PlayerDeparture.hpp"
 #include "PlayerInput.hpp"
 #include "PlayerLeft.hpp"
+#include "PlayerLooks.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
@@ -43,6 +44,7 @@
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "ServerTestConstants.hpp"
+#include "ShipLook.hpp"
 #include "TimeConstants.hpp"
 #include "UnreliableNetwork.hpp"
 #include "ViewDelay.hpp"
@@ -249,6 +251,50 @@ TEST_F(GameInstanceTest, IgnoresAReadyStateWhileInProgress) {
 }
 
 /**
+ * Given a game in progress
+ * When a player sends a ShipLookChoice
+ * Then no PlayerLooks goes out: the looks are chosen in the waiting room
+ */
+TEST_F(GameInstanceTest, IgnoresAShipLookChoiceWhileInProgress) {
+  startGameWithOnePlayer();
+  const std::size_t before =
+      ofType(network::MessageType::PlayerLooks, sentTo(FIRST_PLAYER)).size();
+  sendLook({.player = FIRST_PLAYER,
+            .look = identifiers::ShipLook{.head = 1},
+            .sequence = SECOND_SEQUENCE});
+
+  tick();
+
+  EXPECT_EQ(
+      ofType(network::MessageType::PlayerLooks, sentTo(FIRST_PLAYER)).size(),
+      before);
+}
+
+/**
+ * Given a game that waits for players, with one player
+ * When that player sends a ShipLookChoice for the party hat
+ * Then the player is sent a PlayerLooks listing it with the party hat
+ */
+TEST_F(GameInstanceTest, SharesAShipLookChoiceInTheWaitingRoom) {
+  join(FIRST_PLAYER);
+  sendLook({.player = FIRST_PLAYER,
+            .look = identifiers::ShipLook{.head = 2},
+            .sequence = FIRST_SEQUENCE});
+
+  tick();
+
+  const std::vector<network::OutgoingDatagram> looks =
+      ofType(network::MessageType::PlayerLooks, sentTo(FIRST_PLAYER));
+  ASSERT_FALSE(looks.empty());
+  const std::vector<network::PlayerLooks> listed =
+      testing::messagesIn<network::PlayerLooks>(looks.back());
+  ASSERT_EQ(listed.size(), 1U);
+  ASSERT_EQ(listed.front().players.size(), 1U);
+  EXPECT_EQ(listed.front().players.front().look,
+            (identifiers::ShipLook{.head = 2}));
+}
+
+/**
  * Given a game in progress with one player
  * When that player times out
  * Then the game is finished
@@ -415,9 +461,10 @@ TEST_F(GameInstanceTest, TheSecondWaveComesAPauseAfterTheFirstIsGone) {
 }
 
 /**
- * Given one connected player, sent the EntitySpawned of its ship
+ * Given one connected player, sent the EntitySpawned of its ship and the
+ * looks of the players
  * When the header of the next datagram to its address is asked for
- * Then it carries the session token of the player and its next sequence, 1,
+ * Then it carries the session token of the player and its next sequence, 2,
  * which then moves on by one
  */
 TEST_F(GameInstanceTest, GivesTheNextSessionHeaderOfAPlayer) {
@@ -427,8 +474,8 @@ TEST_F(GameInstanceTest, GivesTheNextSessionHeaderOfAPlayer) {
       game().nextSessionHeaderFor(playerEndpoint(FIRST_PLAYER));
 
   EXPECT_EQ(header.sessionToken, testing::SESSION_TOKEN);
-  EXPECT_EQ(header.sequence, 1);
-  EXPECT_EQ(player.nextSequence, 2);
+  EXPECT_EQ(header.sequence, 2);
+  EXPECT_EQ(player.nextSequence, 3);
 }
 
 /**
@@ -450,7 +497,8 @@ TEST_F(GameInstanceTest, SendsTheRoomToAWaitingPlayer) {
 }
 
 /**
- * Given one connected player, sent the EntitySpawned of its ship
+ * Given one connected player, sent the EntitySpawned of its ship and the looks
+ * of the players
  * When the player says ready, loads the game and the ticks run
  * Then the player is sent GameStarted, then a WorldState
  */
@@ -465,6 +513,7 @@ TEST_F(GameInstanceTest, SendsGameStartedBeforeTheFirstWorldState) {
 
   EXPECT_EQ(messageTypesOf(sentTo(FIRST_PLAYER)),
             (std::vector{network::MessageType::EntitySpawned,
+                         network::MessageType::PlayerLooks,
                          network::MessageType::GameStarted,
                          network::MessageType::DeltaWorldState}));
 }
@@ -493,7 +542,8 @@ TEST_F(GameInstanceTest, SendsTheWorldStatesUnderTheTokenOfThePlayer) {
 }
 
 /**
- * Given one connected player, sent the EntitySpawned of its ship
+ * Given one connected player, sent the EntitySpawned of its ship and the
+ * looks of the players
  * When it waits one tick, says ready, loads the game, and the game runs until
  * its second WorldState
  * Then the datagrams it was sent, whatever their message, carry the sequences
@@ -512,6 +562,7 @@ TEST_F(GameInstanceTest, NumbersEveryDatagramToAPlayerFromOneCounter) {
   const std::vector<network::OutgoingDatagram> toPlayer = sentTo(FIRST_PLAYER);
   ASSERT_EQ(messageTypesOf(toPlayer),
             (std::vector{network::MessageType::EntitySpawned,
+                         network::MessageType::PlayerLooks,
                          network::MessageType::LobbyState,
                          network::MessageType::GameStarted,
                          network::MessageType::DeltaWorldState,

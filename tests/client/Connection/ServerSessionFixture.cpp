@@ -11,6 +11,7 @@
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "EntityMessage.hpp"
+#include "GameRequest.hpp"
 #include "IncomingDatagram.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
@@ -20,6 +21,7 @@
 #include "ServerSessionFixtures.hpp"
 #include "ServerSessionTestConstants.hpp"
 #include "SessionEntityTypesFixtures.hpp"
+#include "ShipLookExchange.hpp"
 #include "TimeConstants.hpp"
 #include "WaitingRoom.hpp"
 #include "WorldState.hpp"
@@ -27,8 +29,8 @@
 
 namespace rtype::client::testing {
 
-void ServerSessionFixture::connect(const network::GameChoice& game) {
-  session_.connect(server(), NICKNAME, game);
+void ServerSessionFixture::connect(const GameRequest& request) {
+  session_.connect(server(), NICKNAME, request);
 }
 
 void ServerSessionFixture::deliverBytes(std::vector<std::byte> datagram) {
@@ -58,6 +60,8 @@ ConnectionPhase ServerSessionFixture::phase() const {
 ServerSession& ServerSessionFixture::session() { return session_; }
 
 WaitingRoom& ServerSessionFixture::waitingRoom() { return waitingRoom_; }
+
+ShipLookExchange& ServerSessionFixture::shipLooks() { return shipLooks_; }
 
 const std::vector<network::OutgoingDatagram>& ServerSessionFixture::sent()
     const {

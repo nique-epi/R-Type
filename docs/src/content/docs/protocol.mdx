@@ -131,7 +131,7 @@ A received datagram goes through these checks in order. No buffer is sized from 
 |---|---|
 | The datagram holds 25 to 1200 bytes | dropped |
 | `protocolId` is `RTYP` | dropped |
-| `version` is 12 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
+| `version` is 13 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
 | `COMPRESSED` is set | the server drops the datagram; the client decodes the body and clears the flag, or drops the datagram when it cannot (see [Compression](#compression)) |
 | `flags` has no bit but `ACKNOWLEDGES` and `GUARANTEED`, once `COMPRESSED` is cleared | dropped |
 | The message sizes add up exactly to the end of the datagram | dropped |
@@ -163,6 +163,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 24 | `ServerInformationRequest` | `sentAt` `u32`, then `padding`, 77 bytes of 0 (see [Server information](#server-information)) | by anyone, outside any session, to learn what a server is and its round trip: a client that lists the servers |
 | 29 | `MasterProbe` | `secret` `u64`, `token` `u64` (see [Probe of the master](#probe-of-the-master)) | by the master, outside any session, to the registered address and UDP port of a game server, after each heartbeat it accepts, at most once a second |
 | 30 | `ChatLine` | `lineNumber` `u16`, `text` `string` (1 to 127 bytes) | when the player sends a line, then every 500 ms until the `PlayerChatLine` of that number comes back; one line at a time; the client gives up after 5 s (see [Chat](#chat)) |
+| 35 | `ShipLookChoice` | `head` `u8`, `eyes` `u8`, `face` `u8`: 0 for nothing, else the number of the item (see [Ship looks](#ship-looks)) | when the player changes its look in the waiting room, then every 500 ms until a `PlayerLooks` shows it |
 
 ### Server to client
 
@@ -185,12 +186,14 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 20 | `DeltaWorldState` | see [Delta world state](#delta-world-state) | during a game, as many times per second as the server was told to (20 by default, from 2 to 60) |
 | 21 | `RoundTrips` | `playerCount` `u8`, then per player `playerNumber` `u8`, `roundTrip` `u32`, `jitter` `u32`, in microseconds | right after each `Heartbeat` of the server (see [Round trip](#round-trip)) |
 | 22 | `EnemyAction` | `entityId` `u32`, `attack` `u8`, `phase` `u8`: 1 `Signal`, 2 `Strike`, 3 `Recover`, 4 `Enraged` | when an enemy enters a step of one of its attacks, guaranteed and ordered (see [Ordered messages](#ordered-messages)) |
-| 23 | `OrderedMessage` | `number` `u16`, `firstKept` `u16`, `innerType` `u8`, then the payload of the carried message to the end | carries `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine` and `BossStatus` (see [Ordered messages](#ordered-messages)) |
+| 23 | `OrderedMessage` | `number` `u16`, `firstKept` `u16`, `innerType` `u8`, then the payload of the carried message to the end | carries `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine`, `BossStatus`, `PlayerLooks` and `LookItemWon` (see [Ordered messages](#ordered-messages)) |
 | 25 | `ServerInformation` | `sentAt` `u32`, `heldFor` `u32`, `protocolVersion` `u8`, `gameVersion` `string`, `name` `string`, `playerCount` `u16`, `gameCount` `u16`, `freeSeatCount` `u16` | in answer to a `ServerInformationRequest`, to its sender, outside any session (see [Server information](#server-information)) |
 | 26 | `ConnectionRedirect` | `port` `u16` (1 to 65535) | from a supervisor only, in answer to a request with a valid cookie, once a game that has a place reported; the player asks again at that port of the same address (see [Supervisor](#supervisor)) |
 | 31 | `PlayerChatLine` | `lineNumber` `u16`, `text` `string` (1 to 127 bytes), `playerNumber` `u8` (1 to 4) | to every player of the game, its writer included, once for each new line the server takes, guaranteed and ordered (see [Chat](#chat)) |
 | 32 | `BossStatus` | `bossEntityId` `u32`, `health` `u16`, `fullHealth` `u16`, `stage` `u8`: 1 `Arriving`, 2 `Fighting`, 3 `Enraged`, 4 `Defeated` | when the last wave of a level with a boss is over, when the fight starts, at each hit that takes points from the boss, when it enrages and when it dies, guaranteed and ordered (see [Boss status](#boss-status)) |
 | 34 | `Expulsion` | `reason` `u8`: 1 `ByTheHost`, 2 `Banned` | to a player of a game process, in its session, when the supervisor orders its expulsion (`ByTheHost`) or a ban of the server names it (`Banned`): three in a row, then the session closes at the next tick (see [A peer disappears](#a-peer-disappears)) |
+| 36 | `PlayerLooks` | `playerCount` `u8` (0 to 4), then per player `playerNumber` `u8` (1 to 4), `head` `u8`, `eyes` `u8`, `face` `u8` | to every player when a player changes its look and when a player arrives, to one player alone when it sends its look unchanged, guaranteed and ordered (see [Ship looks](#ship-looks)) |
+| 37 | `LookItemWon` | `item` `u8` (1 to 10) | to the player who picked up a look item, alone, guaranteed and ordered (see [Ship looks](#ship-looks)) |
 
 ### Payload rules
 
@@ -215,6 +218,8 @@ A message is accepted only when its payload has exactly the size its fields add 
 | `LeaderboardAnswer` | as `LeaderboardRequest` for its first two fields; at most 10 rows; each `rank` is at least 1 and each nickname is valid |
 | `ServerInformationRequest` | the payload is 81 bytes: `sentAt`, then 77 bytes of 0; a shorter or longer one, or a byte of `padding` other than 0, is invalid |
 | `ChatLine`, `PlayerChatLine` | `text` is 1 to 127 bytes of valid UTF-8, no control character; `PlayerChatLine` names a `playerNumber` of 1 to 4 |
+| `ShipLookChoice`, `PlayerLooks` | each look byte is 0 or the number of an item of its slot: `head` 0 to 8, `eyes` 0 or 9, `face` 0 or 10; `PlayerLooks` has at most 4 players, each `playerNumber` 1 to 4 and listed once |
+| `LookItemWon` | `item` is 1 to 10 |
 | `ServerInformation` | `gameVersion` and `name` are 1 to 32 bytes of valid UTF-8, no control character; `playerCount` is at most 4 times `gameCount`, and `playerCount` plus `freeSeatCount` too |
 | `ExpulsionOrder` | the nickname follows the rules of a nickname: 1 to 16 bytes of valid UTF-8, no control character |
 | `Expulsion` | `reason` is in the table of its message; the payload is 1 byte |
@@ -243,6 +248,19 @@ A player chats in any state of the game: in the waiting room, during a match and
 Alternative considered: a guaranteed channel from the client to the server. It would spare the number and the copies, but the server would have to acknowledge, which it never does, so it changes both programs for one message; the number of a line costs 2 bytes.
 
 Alternative considered: a bucket of lines, as Source keeps (4 lines at once, then one every 3 s). It lets a player send a burst, but it is a second mechanism next to the interval the leaderboard already uses.
+
+### Ship looks
+
+A player dresses its ship in the hangar with items of a locker of 10: 8 for the head (numbers 1 to 8), the shades for the eyes (9) and the mustache for the face (10). A look is three bytes, one per slot, 0 for a slot that wears nothing. The server shows the look of every player to every player, in the waiting room and in the game.
+
+- **Choosing.** The server reads a `ShipLookChoice` only from a player with a session, and only while the game takes the choices of the waiting room, as it does a `ReadyState`; one sent during a game is ignored. The value is absolute, never a change.
+- **Sending again.** The client to server direction has no guaranteed channel, so a client MUST send its look again every 500 ms until a `PlayerLooks` lists its own `playerNumber` with that look, and sends nothing once the game started.
+- **Copies.** A look equal to the one the server keeps for the player is a copy: the server answers it to its sender alone, so a client whose confirmation was lost still gets it, and writes to no other player. A changed look goes to every player.
+- **Rate.** The server takes at most one `ShipLookChoice` per player every 100 ms (6 ticks). A choice sooner is ignored and not kept, so its next copy goes through.
+- **Arrival.** The server sends a `PlayerLooks` to every player each time a player arrives, so a newcomer sees the others and the others see its empty look. A seat freed by a departure forgets its look, so the next player on it wears nothing.
+- **Winning.** A look item is an entity whose sheet has the side `look_item`. When a ship touches it, the server records the touch, and at the start of the next tick it gives the item to the lowest `playerNumber` among the pilots who touched it and still fly the ship that touched it, removes it (`EntityDestroyed`, `Removed`) and sends that player alone a `LookItemWon`. An item no such pilot is left for stays. The client keeps the number in its locker.
+
+Alternative considered: a `GameEvent` kind for the item won. It needs no new type, but a decoder refuses a kind it does not know, so an older client would count the whole message malformed, and the numbers of the events are global to a game.
 
 ### Server information
 
@@ -589,7 +607,7 @@ A player says which game it wants in every `ConnectionRequest` it sends, the one
 | `NewGame` | refuses with `UnknownDifficulty` when its waves file has no table of that `difficulty`, then with `LivesOutOfRange` when `lives` is not 1 to 9; else sends the player to the game its own `NewGame` opened, while that game waits for players and the player still holds its seat there or nobody else came, so a request repeated every 500 ms opens one game; else starts a game while fewer than 8 run; else refuses with `ServerFull` |
 | `ExistingGame` | refuses with `GameNotFound` when no game has that number, with `GameInProgress` when it is in progress or finished, then with `GameFull` when it has no free seat and none held for the player; else sends the player to it, whatever its rules |
 
-The rules of a game are fixed when it is opened, and apply to that game only. The default rules are the difficulty `normal`, 3 lives and no friendly fire; a client that lets its player choose none sends them with its `NewGame`. The difficulties a supervisor accepts are the tables of its waves file, which it reads when it starts and lists to the master with the rules of each game (see [Master](/R-Type/master/#listing-the-games-of-a-server)). The lives are **provisional**, 1 to 9 (`LOWEST_LIVES`, `HIGHEST_LIVES` in `src/server/ServerConstants.hpp`), until gameplay tunes them. Friendly fire lets a missile of a player cost another player a life, never the player who fired it.
+The rules of a game are fixed when it is opened, and apply to that game only. The default rules are the difficulty `normal`, 3 lives and no friendly fire; a client that lets its player choose none sends them with its `NewGame`. The difficulties a supervisor accepts are the tables of its waves file, which it reads when it starts and lists to the master with the rules of each game (see [Master](/R-Type/master/#listing-the-games-of-a-server)). The lives are **provisional**, 1 to 9 (`LOWEST_LIVES`, `HIGHEST_LIVES` in `src/identifiers/GameRuleConstants.hpp`), until gameplay tunes them. Friendly fire lets a missile of a player cost another player a life, never the player who fired it.
 
 A game opened for a `NewGame` belongs to nobody: any player may join it, by its number, or with `AnyGame` when it is played by the default rules, and it starts as every game does, when all its connected players are ready (see [A session](#a-session)). Leaving a game is the `Disconnection` the player sends three times (see [A peer disappears](#a-peer-disappears)): nothing else is needed, and a game nobody joined ends on its own. The supervisor does no matchmaking: it never weighs players, pings or levels, it only fills seats in order. A game process reads the choice and the rules of a request and ignores them, since the supervisor already chose its game and gave it its rules.
 
@@ -621,6 +639,7 @@ A message that is valid but means nothing in the current state of its receiver c
 | `WorldState` with a `tick` lower than the last one applied | it arrived late | ignores it (see [World state](#world-state)) |
 | `EntitySpawned` naming an entity the client has; `EntityDestroyed` or `EntityDamaged` naming one it does not have | a copy, or a `WorldState` came first | changes nothing |
 | A `ChatLine` whose number is not newer than the last line relayed for that player, or less than 1 s after it | a copy, or a flood | ignores it (see [Chat](#chat)) |
+| A `ShipLookChoice` less than 100 ms after the last one taken, or during a game | a copy, a flood, or a late message | ignores it (see [Ship looks](#ship-looks)) |
 | A second copy of an `OrderedMessage` (same `number`) | the acknowledgement of a datagram that held it was lost, so it was sent again (see [Ordered messages](#ordered-messages)) | ignored: the number was handled |
 
 ### Joining fails
@@ -661,7 +680,7 @@ The programs handle every case above. In a game, a `PlayerLeft` marks its pilot 
 
 ## Ordered messages
 
-`EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine` and `BossStatus` change the screen once, and no state message repeats what they show, so they are guaranteed and ordered: their sender sends them again until they are acknowledged, and their receiver handles them in the order they were given, so a player never dies on the screen before the hit that killed it. In this version only the server sends them, and only the client acknowledges them.
+`EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine`, `BossStatus`, `PlayerLooks` and `LookItemWon` change the screen once, and no state message repeats what they show, so they are guaranteed and ordered: their sender sends them again until they are acknowledged, and their receiver handles them in the order they were given, so a player never dies on the screen before the hit that killed it. In this version only the server sends them, and only the client acknowledges them.
 
 - **Acknowledging.** Within a session, every datagram a side sends MUST acknowledge the datagrams it accepted from its peer, with `ACKNOWLEDGES`, `acknowledgedSequence` and `acknowledgementBits` (see [Datagram](#datagram)). A side that accepts a datagram with `GUARANTEED` set SHOULD send a `Heartbeat` to carry the acknowledgement when 40 ms (`ACKNOWLEDGEMENT_DELAY`) pass with nothing else sent; during a game the next `PlayerInput` carries it first.
 - **Numbering.** The server sends each of these messages to each player inside an `OrderedMessage` (type 23): `number` (`u16`), `firstKept` (`u16`), `innerType` (`u8`), then the payload of the message it carries, to the end of the payload. The numbers of a player start at 1 (`FIRST_ORDERED_NUMBER`) and grow by 1 for each message given to that player, wrapping from 65535 to 0. A receiver MUST refuse an `OrderedMessage` that carries an `OrderedMessage`, whose `firstKept` is later than its `number`, or whose carried payload is over 1170 bytes (`ORDERED_PAYLOAD_LIMIT`). The envelope adds 5 bytes to a message.
@@ -694,12 +713,13 @@ Only the messages of [Ordered messages](#ordered-messages) are sent again until 
 | `PlayerInput` | the next input, which repeats it until the server confirms it | 17 ms |
 | `Heartbeat` | the next one, whose echo measures the round trip again | 500 ms |
 | `ChatLine` | the next copy | 500 ms |
+| `ShipLookChoice` | the next copy, sent until a `PlayerLooks` shows the look | 500 ms |
 | `RoundTrips` | the next one | 500 ms |
 | `ServerInformationRequest`, or its answer | not corrected by the protocol: the asker asks again when it chooses, and one ping is missing until then | — |
 | `MasterProbe` | not corrected: the next heartbeat carries no token, and the master sends another probe after it | two lost in a row may list the server unreachable until a probe gets through |
 | `EntitySpawned` of a ship, a Bydo or a missile of an enemy | the next `WorldState` creates the entity, with its appearance effect | 50 ms at 20 per second |
 | `EntitySpawned` of a missile of a player | the next send, since it is guaranteed (see [Own missiles](#own-missiles)) | 116.7 ms |
-| `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine`, `BossStatus` | the next send | 116.7 ms |
+| `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine`, `BossStatus`, `PlayerLooks`, `LookItemWon` | the next send | 116.7 ms |
 | `Disconnection`, `Expulsion`, `ExpulsionOrder` | the next copy | 50 ms for a `Disconnection`, none for the others, sent in a row |
 | all three copies of `Disconnection` | the session times out: the others get `PlayerLeft` (`TimedOut`) instead of (`Left`) | 20 s |
 | all three copies of `Expulsion` | the game still closes the session; the client keeps it until 20 s without a datagram of the server, then says the connection is lost | 20 s |
@@ -707,6 +727,8 @@ Only the messages of [Ordered messages](#ordered-messages) are sent again until 
 | every send of an `EntityDestroyed`, 9 in 1 s | the entity is removed once no `WorldState` has listed it for 900 ms up to a closed tick, without explosion | 950 ms at 20 per second |
 | every send of an `EnemyAction` | not corrected: the enemy keeps its idle animation for that step; its position and health stay right through the state messages | — |
 | every send of a `GameEvent` or a `PlayerLeft` | not corrected: the sound, effect or message on screen is missed; lives, scores and players stay right through the state messages | — |
+| every send of a `PlayerLooks` | not corrected: the look of a pilot is missed until the next `PlayerLooks`; the client sends its own look again until one shows it | — |
+| every send of a `LookItemWon` | not corrected: the item is gone from the sky and not in the locker | — |
 | every send of a `PlayerChatLine` | not corrected: that player misses the line; when it is the writer, it sends the line again until it gives up after 5 s, and the server ignores those copies | — |
 | every send of a `BossStatus` | the next `BossStatus`, which holds the whole state: a lost `Arriving` shows no warning, and the fight shows from its first status that arrives; a lost `Defeated` has none after it, so the client keeps the last health until the game screen closes | the next hit, rage or death of the boss |
 
@@ -811,6 +833,8 @@ Version 9 lets a player create or join a game: `ConnectionRequest` carries `kind
 
 `ChatLine` and `PlayerChatLine` (types 30 and 31) did not change `version`: a peer that does not know them skips them, and the ordered channel hands a `PlayerChatLine` over to a client without the chat, which skips it, so the order of the channel holds.
 
+`ShipLookChoice`, `PlayerLooks` and `LookItemWon` (types 35 to 37) did not change `version`: a peer that does not know them skips them. One consequence the version does not catch: an older client that downloads a content pack with a sheet of the side `look_item` cannot read it, so it cannot join a server that ships look items. Both programs are built from the same repository, so this is written here and not worked around.
+
 ## Version 10
 
 Version 10 makes `ConnectionAccepted` announce the content pack of the game, its fingerprint, size and port, in place of the table of its entity types (see [Content pack](#content-pack)), and adds the route of the pack, over HTTP. The types are still the sheets numbered from 1 in the order of their names, so `EntitySpawned`, `WorldState` and `DeltaWorldState` keep their layout and their meaning; what changes is where a client finds the sheets: in its own assets, its cache or the pack of the server, so a server with sheets the client lacks no longer turns it away. An acceptance now takes 64 bytes whatever the content, where it took up to 859. The layout of `ConnectionAccepted` changes, so `version` became 10, and the server answers a client of version 9 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same.
@@ -843,17 +867,18 @@ The code of this repository applies the rules above, with the exceptions listed 
 - `src/network` holds the pieces: the socket in `Transport` drops a datagram over 1200 bytes (see [Network](/R-Type/network/)), `Serialization` encodes integers and strings, and `Protocol` holds the header and every message of this page, each checked as listed here. A `WorldState` without players is accepted while the game has none (see [Network](/R-Type/network/#world-state-worldstatecodec)).
 - Both programs drop a datagram whose header is not of this protocol and version, or whose message sizes do not add up. The server drops on its network thread every datagram that is neither a connection request, an information request nor from a player it admitted, answers the requests as [Connection](#connection) and [Server information](#server-information) describe, and answers a datagram of another version from an unknown sender with `ConnectionRefused` (`IncompatibleVersion`). The client reads only the server it contacts.
 - Within a session, each side writes the session token and its next sequence into every datagram it sends: the server in its acceptances, the `EntitySpawned` of the ships, the Bydos and the missiles, `LobbyState`, `GameStarted`, `DeltaWorldState`, the game events, `GameEnded`, `LeaderboardAnswer`, `Heartbeat`, `RoundTrips` and `Disconnection`; the client in its inputs, `ReadyState`, `GameLoaded`, `LeaderboardRequest`, `Heartbeat` and `Disconnection`. Each also acknowledges there the datagrams it accepted, except the client in its `Disconnection`, sent once the session is closed.
-- The server sends `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine` and `BossStatus` as [Ordered messages](#ordered-messages) describes, and reads the acknowledgements of every datagram of a player it accepts. The client hands them over in order, and sends a `Heartbeat` 40 ms after a datagram that holds guaranteed messages when nothing else went out.
+- The server sends `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine`, `BossStatus`, `PlayerLooks` and `LookItemWon` as [Ordered messages](#ordered-messages) describes, and reads the acknowledgements of every datagram of a player it accepts. The client hands them over in order, and sends a `Heartbeat` 40 ms after a datagram that holds guaranteed messages when nothing else went out.
 - The server checks the token of every datagram from the address of a player it admitted, on its network thread before any queue, and the sequence of every datagram it reads from a player, so a duplicate or a late one is dropped whatever its message. The client checks the token, then the sequence, of every datagram of the server.
 - Each side sends a `Heartbeat` every 500 ms and measures the round trip from its echo, and the server sends each player `RoundTrips` after each of its `Heartbeat`s, as [Round trip](#round-trip) describes; the `Heartbeat` of the server also carries its tick during a game, as [Clock of the server](#clock-of-the-server) describes. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
 
 - The client sends `LeaderboardRequest` from its leaderboard screen, and the server answers it.
-- The supervisor checks the rules of a `NewGame` and opens its game with them. The client sends the default rules with every `NewGame`: no screen lets the player choose others yet.
+- The supervisor checks the rules of a `NewGame` and opens its game with them. The creator of a game chooses its rules in the new game dialog of the server map, among the difficulties the master lists for that server (see [Client](/R-Type/client/#new-game-newgamemenu)); a client launched with `--game new` sends the default rules.
 - The server sends `BossStatus` in the games whose difficulty names a boss, as [Boss status](#boss-status) describes, and the client shows the warning and the bar of the boss from it (see [Client](/R-Type/client/#boss-bosspresentation-bossbarat)).
 - The server answers a request with a valid cookie with the `ConnectionAccepted` of the player and the content pack of the game, at most once per 250 ms per player once accepted. The supervisor serves its pack over HTTP, and the client plays with its own sheets, a pack it kept or a pack it downloads, as [Content pack](#content-pack) describes.
 - The server limits the datagrams of each address and port, and of each player, on its network thread, as [A sender that sends too much](#a-sender-that-sends-too-much) says.
 - The server relays the chat lines as [Chat](#chat) describes, and the client sends them so: one line at a time, again every 500 ms until it comes back, given up after 5 s.
 - The supervisor sends `ExpulsionOrder` from its `kick` command, a game expels as [A peer disappears](#a-peer-disappears) describes, and the client ends its session at an `Expulsion`.
+- The server shares the looks and gives the look items as [Ship looks](#ship-looks) describes, and the client sends its look from the waiting room and keeps the items won.
 - The supervisor bans from its `ban` command; its lobby and every game refuse a banned pilot, and a game expels one it holds, as [A peer disappears](#a-peer-disappears) describes.
 - The supervisor answers `ServerInformationRequest` as [Server information](#server-information) describes, and a game process does not. The server map of the client sends one to each server of this version the master lists, once per reading of the list (see [Client](/R-Type/client/#server-map-servermapscreen-iservercatalog-igamecatalog)).
 - The master sends `MasterProbe`, and the server keeps its token and sends it back in its heartbeat, as [Probe of the master](#probe-of-the-master) describes.

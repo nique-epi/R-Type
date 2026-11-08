@@ -6,6 +6,7 @@
 #include "CollisionScene.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "LookItemTouched.hpp"
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
 #include "ShipContact.hpp"
@@ -20,6 +21,10 @@ void record(CollisionScene& scene, Recorded& recorded) {
   scene.events.subscribe<ShipContact>([&recorded](const ShipContact& contact) {
     recorded.shipContacts.push_back(contact);
   });
+  scene.events.subscribe<LookItemTouched>(
+      [&recorded](const LookItemTouched& touched) {
+        recorded.lookItemTouches.push_back(touched);
+      });
 }
 
 engine::Entity spawnMissileOf(CollisionScene& scene, std::uint8_t owner) {
@@ -48,6 +53,7 @@ void expectNoEventFor(EntityType firstType, EntityType secondType) {
 
   EXPECT_TRUE(recorded.missileHits.empty());
   EXPECT_TRUE(recorded.shipContacts.empty());
+  EXPECT_TRUE(recorded.lookItemTouches.empty());
 }
 
 engine::Collision CollisionRulesInAnyOrder::collisionOf(engine::Entity entity,

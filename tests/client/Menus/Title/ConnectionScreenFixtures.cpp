@@ -5,6 +5,7 @@
 #include "Endpoint.hpp"
 #include "RecordingServerConnection.hpp"
 #include "ServerChoice.hpp"
+#include "ServerConnectionRequest.hpp"
 
 using rtype::client::ServerChoice;
 using rtype::client::testing::LAUNCH_ADDRESS;
@@ -17,7 +18,7 @@ std::vector<ServerConnectionCall> connectAttemptsOf(
     const RecordingServerConnection& connection) {
   std::vector<ServerConnectionCall> connects;
   for (const ServerConnectionCall& call : connection.calls()) {
-    if (call.request == ServerConnectionCall::Request::Connect) {
+    if (call.request == ServerConnectionRequest::Connect) {
       connects.push_back(call);
     }
   }
