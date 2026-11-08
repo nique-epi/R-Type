@@ -6,6 +6,7 @@ target_link_libraries(rtype_client_launch_options
   PUBLIC
     rtype_client_audio_contract_service
     rtype_client_exceptions
+    rtype_client_handshake
     rtype_engine_commands
     rtype_engine_launch_arguments
     rtype_logging

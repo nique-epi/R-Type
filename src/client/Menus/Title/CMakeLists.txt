@@ -33,6 +33,7 @@ target_link_libraries(rtype_client_title
     rtype_client_intro_timeline
     rtype_client_menu_builder
     rtype_client_text_field
+    rtype_identifiers
     rtype_network_transport
     rtype_network_wire_types
 )

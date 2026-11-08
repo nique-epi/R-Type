@@ -1,6 +1,8 @@
 #pragma once
 
 #include <functional>
+#include <optional>
+#include "GameRules.hpp"
 #include "IChatChannel.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
@@ -65,6 +67,9 @@ struct LobbyScreenParts {
   /** @brief The settings of the player, which must outlive the screen: the
    * chat reads its key and its look there. */
   std::reference_wrapper<const PlayerSettings> settings;
+  /** @brief The rules of the game the player waits for, written on the row
+   * of the heading; nothing when the client does not know them. */
+  std::optional<network::GameRules> rules = std::nullopt;
 };
 
 }  // namespace rtype::client

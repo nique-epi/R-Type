@@ -11,6 +11,7 @@
 #include "ConnectionPhase.hpp"
 #include "ConnectionRefusalFixture.hpp"
 #include "ConnectionRefused.hpp"
+#include "ConnectionRequest.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenChoiceFixture.hpp"
 #include "ConnectionScreenConstants.hpp"
@@ -19,12 +20,15 @@
 #include "ConnectionScreenTestConstants.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
+#include "GameRules.hpp"
+#include "GameRulesTestConstants.hpp"
 #include "LobbyScreenIdConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenTestConstants.hpp"
+#include "ServerConnectionRequest.hpp"
 #include "ServerSessionTestConstants.hpp"
 #include "SoundConstants.hpp"
 
@@ -38,14 +42,13 @@ using rtype::client::GAME_IN_PROGRESS_STATUS;
 using rtype::client::GAME_NOT_FOUND_STATUS;
 using rtype::client::INVALID_ADDRESS_STATUS;
 using rtype::client::INVALID_PORT_STATUS;
-using rtype::client::LIVES_OUT_OF_RANGE_STATUS;
 using rtype::client::LOBBY_SCREEN;
 using rtype::client::MISSING_NICKNAME_STATUS;
 using rtype::client::NICKNAME_TAKEN_STATUS;
 using rtype::client::SERVER_FULL_STATUS;
-using rtype::client::UNKNOWN_DIFFICULTY_STATUS;
 using rtype::client::UNREACHABLE_STATUS;
 using rtype::client::testing::ACCEPTED_AS_FIRST_PLAYER;
+using rtype::client::testing::BAD_DIFFICULTY_REFUSAL;
 using rtype::client::testing::CANCEL;
 using rtype::client::testing::HALF_RECEIVED;
 using rtype::client::testing::LAST_ADDRESS_NUMBER_TEXT;
@@ -54,6 +57,7 @@ using rtype::client::testing::LAUNCH_GAME;
 using rtype::client::testing::LAUNCH_NICKNAME;
 using rtype::client::testing::LAUNCH_PORT;
 using rtype::client::testing::LAUNCH_PORT_TEXT;
+using rtype::client::testing::LIVES_BOUNDS_REFUSAL;
 using rtype::client::testing::MAP_ADDRESS;
 using rtype::client::testing::MAP_PORT;
 using rtype::client::testing::NEXT_PROTOCOL_VERSION;
@@ -66,7 +70,11 @@ using rtype::client::testing::TYPED_NICKNAME;
 using rtype::client::testing::TYPED_NICKNAME_TEXT;
 using rtype::client::testing::TYPED_PORT;
 using rtype::client::testing::TYPED_PORT_TEXT;
+using rtype::network::GameRules;
+using rtype::network::NEW_GAME_CHOICE;
 using rtype::network::RefusalReason;
+using rtype::testing::CHOSEN_DIFFICULTY;
+using rtype::testing::CHOSEN_LIVES;
 using ::testing::Contains;
 using ::testing::ElementsAre;
 using ::testing::Field;
@@ -104,7 +112,7 @@ TEST_F(ConnectionScreenFixture, EnterConnectsWithTheValuesOfTheFields) {
 
   EXPECT_THAT(connectAttemptsOf(connection()),
               ElementsAre(ServerConnectionCall{
-                  .request = ServerConnectionCall::Request::Connect,
+                  .request = ServerConnectionRequest::Connect,
                   .server = {.address = std::string(LAUNCH_ADDRESS),
                              .port = LAUNCH_PORT},
                   .nickname = std::string(LAUNCH_NICKNAME),
@@ -419,10 +427,8 @@ INSTANTIATE_TEST_SUITE_P(
                    std::string_view(GAME_NOT_FOUND_STATUS)),
         std::tuple(RefusalReason::ServerFull,
                    std::string_view(SERVER_FULL_STATUS)),
-        std::tuple(RefusalReason::UnknownDifficulty,
-                   std::string_view(UNKNOWN_DIFFICULTY_STATUS)),
-        std::tuple(RefusalReason::LivesOutOfRange,
-                   std::string_view(LIVES_OUT_OF_RANGE_STATUS)),
+        std::tuple(RefusalReason::UnknownDifficulty, BAD_DIFFICULTY_REFUSAL),
+        std::tuple(RefusalReason::LivesOutOfRange, LIVES_BOUNDS_REFUSAL),
         std::tuple(RefusalReason::Banned, std::string_view(BANNED_STATUS))));
 
 /**
@@ -453,7 +459,7 @@ TEST_F(ConnectionScreenChoiceFixture, ANewScreenStartsWithTheLastAttempt) {
 
   EXPECT_EQ(
       connectAttemptsOf(connection()).back(),
-      (ServerConnectionCall{.request = ServerConnectionCall::Request::Connect,
+      (ServerConnectionCall{.request = ServerConnectionRequest::Connect,
                             .server = {.address = std::string(LAUNCH_ADDRESS),
                                        .port = LAUNCH_PORT},
                             .nickname = std::string(TYPED_NICKNAME),
@@ -472,7 +478,7 @@ TEST_F(ConnectionScreenChoiceFixture, AScreenOpenedAtOnceConnectsToTheChoice) {
   ASSERT_FALSE(connectAttemptsOf(connection()).empty());
   EXPECT_EQ(
       connectAttemptsOf(connection()).back(),
-      (ServerConnectionCall{.request = ServerConnectionCall::Request::Connect,
+      (ServerConnectionCall{.request = ServerConnectionRequest::Connect,
                             .server = {.address = std::string(LAUNCH_ADDRESS),
                                        .port = LAUNCH_PORT},
                             .nickname = std::string(LAUNCH_NICKNAME),
@@ -494,10 +500,51 @@ TEST_F(ConnectionScreenChoiceFixture,
   EXPECT_EQ(
       connectAttemptsOf(connection()).back(),
       (ServerConnectionCall{
-          .request = ServerConnectionCall::Request::Connect,
+          .request = ServerConnectionRequest::Connect,
           .server = {.address = std::string(MAP_ADDRESS), .port = MAP_PORT},
           .nickname = std::string(LAUNCH_NICKNAME),
           .game = LAUNCH_GAME}));
+}
+
+/**
+ * Given a new game the map chose, with rules the player picked
+ * When a connection screen opens to connect at once, as CREATE opens it
+ * Then the attempt asks the server the map chose for a new game with those
+ * rules
+ */
+TEST_F(ConnectionScreenChoiceFixture,
+       AScreenOpenedAtOnceAsksForTheNewGameTheMapChose) {
+  chooseANewGameOnTheMap();
+
+  reopenConnectingAtOnce();
+
+  ASSERT_FALSE(connectAttemptsOf(connection()).empty());
+  EXPECT_EQ(
+      connectAttemptsOf(connection()).back(),
+      (ServerConnectionCall{
+          .request = ServerConnectionRequest::Connect,
+          .server = {.address = std::string(MAP_ADDRESS), .port = MAP_PORT},
+          .nickname = std::string(LAUNCH_NICKNAME),
+          .game = NEW_GAME_CHOICE,
+          .rules = GameRules{.difficulty = std::string(CHOSEN_DIFFICULTY),
+                             .lives = CHOSEN_LIVES,
+                             .friendlyFire = true}}));
+}
+
+/**
+ * Given an attempt at once for a new game the map chose
+ * When the form opens again and Enter is chosen
+ * Then the form asks for the game given at launch, never the new game
+ */
+TEST_F(ConnectionScreenChoiceFixture,
+       TheFormAfterANewGameAsksForTheLaunchGame) {
+  chooseANewGameOnTheMap();
+  reopenConnectingAtOnce();
+
+  reopen();
+  chooseEnter();
+
+  EXPECT_EQ(connectAttemptsOf(connection()).back().game, LAUNCH_GAME);
 }
 
 /**
@@ -516,7 +563,7 @@ TEST_F(ConnectionScreenChoiceFixture,
 
   EXPECT_EQ(
       connectAttemptsOf(connection()).back(),
-      (ServerConnectionCall{.request = ServerConnectionCall::Request::Connect,
+      (ServerConnectionCall{.request = ServerConnectionRequest::Connect,
                             .server = {.address = std::string(LAUNCH_ADDRESS),
                                        .port = LAUNCH_PORT},
                             .nickname = std::string(LAUNCH_NICKNAME),
@@ -553,7 +600,7 @@ TEST_F(ConnectionScreenChoiceFixture, ARetryFormStartsWithTheLastAttempt) {
   EXPECT_EQ(
       connectAttemptsOf(connection()).back(),
       (ServerConnectionCall{
-          .request = ServerConnectionCall::Request::Connect,
+          .request = ServerConnectionRequest::Connect,
           .server = {.address = std::string(MAP_ADDRESS), .port = MAP_PORT},
           .nickname = std::string(LAUNCH_NICKNAME),
           .game = LAUNCH_GAME}));

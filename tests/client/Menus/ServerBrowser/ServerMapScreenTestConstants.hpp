@@ -64,6 +64,16 @@ constexpr std::string_view MAP_MASTER_TEXT = "10.0.0.2:8080";
 /** @brief Seven games, one more than the panel shows at once. */
 constexpr std::size_t SEVEN_GAMES = 7;
 constexpr std::uint16_t SEVENTH_GAME_NUMBER = 7;
-constexpr int SIX_ROWS_DOWN = 6;
+/** @brief The rows down from + NEW GAME to the seventh game, and to the game
+ * in progress of Lyon, under its waiting game. */
+constexpr int SEVEN_ROWS_DOWN = 7;
+constexpr int PLAYING_GAME_ROW = 2;
+
+/** @brief The lines under the rows a player must read: on + NEW GAME, and on
+ * the waiting game of Lyon, played by the default rules. */
+constexpr std::string_view NEW_GAME_LINE =
+    "+ NEW GAME: ENTER TO SET ITS RULES.";
+constexpr std::string_view WAITING_GAME_LINE =
+    "ALPHA WING, NORMAL, 3 LIVES, FRIENDLY FIRE OFF: ENTER TO JOIN.";
 
 }  // namespace rtype::client::testing

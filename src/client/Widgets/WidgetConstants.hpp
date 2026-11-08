@@ -187,6 +187,10 @@ constexpr const char* LOCAL_PLAYER_TAG = "YOU";
 /** @brief Label of the button that closes a menu, the same in every menu. */
 constexpr const char* BACK_LABEL = "BACK";
 
+/** @brief Label of the row that picks the difficulty of a game, in the filter
+ * of the leaderboard and in the new game dialog. */
+constexpr const char* DIFFICULTY_ROW_LABEL = "DIFFICULTY";
+
 /**
  * @brief Tabbed panel: the heading and its rule as on a page, a strip of tabs
  * under the rule, the panel of rows right under the tabs, the bars in a row
@@ -225,24 +229,20 @@ constexpr int SPACE_ABOVE_PANEL_ILLUSTRATION = 10;
 
 /**
  * @brief The rows a dialog may hold in place of a message: DIALOG_ROWS_TOP down
- * its panel, DIALOG_ROW_INSET in from its sides, DIALOG_ROW_CAPACITY at most;
- * its buttons then stand lower than under a message. As on the picture of the
- * filter of the leaderboard the team chose.
+ * its panel, DIALOG_ROW_INSET in from its sides, DIALOG_ROW_PITCH apart,
+ * DIALOG_ROW_CAPACITY at most. Its buttons then stand ROW_GAP under the last
+ * row, and its panel ends DIALOG_MARGIN_UNDER_BUTTONS under them: two rows
+ * give the 272 x 96 of the picture of the filter of the leaderboard, three the
+ * 272 x 114 of the picture of the new game dialog.
  */
 constexpr int DIALOG_ROWS_TOP = 28;
 constexpr int DIALOG_ROW_INSET = 8;
-constexpr int DIALOG_ROW_CAPACITY = 2;
+constexpr int DIALOG_ROW_CAPACITY = 3;
 constexpr sf::Vector2i DIALOG_ROW_SIZE(DIALOG_SIZE.x -
                                            (SIDES_PER_AXIS * DIALOG_ROW_INSET),
                                        ROW_SIZE.y);
-constexpr int DIALOG_BUTTONS_TOP_UNDER_ROWS = 66;
-static_assert(DIALOG_ROWS_TOP + (DIALOG_ROW_CAPACITY * DIALOG_ROW_SIZE.y) +
-                      ROW_GAP <=
-                  DIALOG_BUTTONS_TOP_UNDER_ROWS,
-              "the rows of a dialog end above its buttons");
-static_assert(DIALOG_BUTTONS_TOP_UNDER_ROWS + DIALOG_BUTTON_SIZE.y <
-                  DIALOG_SIZE.y,
-              "the buttons under the rows of a dialog stay in its panel");
+constexpr int DIALOG_ROW_PITCH = DIALOG_ROW_SIZE.y + ROW_GAP;
+constexpr int DIALOG_MARGIN_UNDER_BUTTONS = 10;
 
 /** @brief Every control of a row: its height, the gap between its parts, the
  * row of its text. */

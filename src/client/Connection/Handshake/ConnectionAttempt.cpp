@@ -4,6 +4,7 @@
 #include <string_view>
 #include "AttemptProgress.hpp"
 #include "ConnectionRequest.hpp"
+#include "GameRequest.hpp"
 #include "ISessionOutbox.hpp"
 #include "ProtocolConstants.hpp"
 #include "TimeConstants.hpp"
@@ -11,20 +12,20 @@
 namespace rtype::client {
 
 void ConnectionAttempt::begin(std::string_view nickname,
-                              const network::GameChoice& game) {
+                              const GameRequest& request) {
   nickname_ = nickname;
-  game_ = game;
+  request_ = request;
   cookie_ = 0;
   redirected_ = false;
   sinceBegin_ = engine::Duration::zero();
 }
 
 void ConnectionAttempt::sendRequest(ISessionOutbox& outbox) {
-  sendMessage(outbox, network::ConnectionRequest{
-                          .cookie = cookie_,
-                          .nickname = nickname_,
-                          .game = game_,
-                          .rules = network::defaultRulesFor(game_)});
+  sendMessage(outbox,
+              network::ConnectionRequest{.cookie = cookie_,
+                                         .nickname = nickname_,
+                                         .game = request_.game,
+                                         .rules = rulesSentFor(request_)});
   sinceRequest_ = engine::Duration::zero();
 }
 

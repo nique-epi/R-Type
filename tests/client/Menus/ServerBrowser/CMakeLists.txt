@@ -1,5 +1,7 @@
 target_sources(client_screen_tests PRIVATE
   GamePanelTest.cpp
+  NewGameDialogFixture.cpp
+  NewGameDialogTest.cpp
   ServerMapScreenFixture.cpp
   ServerMapScreenFixtures.cpp
   ServerMapScreenTest.cpp

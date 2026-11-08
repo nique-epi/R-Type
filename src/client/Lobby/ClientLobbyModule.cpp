@@ -1,7 +1,9 @@
 #include "ClientLobbyModule.hpp"
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
+#include "GameRules.hpp"
 #include "IScreen.hpp"
 #include "InstallContext.hpp"
 #include "LobbyPlace.hpp"
@@ -15,10 +17,21 @@
 #include "ScreenBuilding.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenRegistry.hpp"
+#include "ServerChoice.hpp"
 
 namespace rtype::client {
 
 namespace {
+
+/** @returns The rules of the game of the last attempt, when the client knows
+ * them. */
+std::optional<network::GameRules> rulesOfLastAttempt(
+    const ServerChoice& choice) {
+  if (!choice.lastRequest.has_value()) {
+    return std::nullopt;
+  }
+  return choice.lastRequest->rules;
+}
 
 /** @returns The waiting room, its READY key read from the bindings of the
  * player when it is built. */
@@ -39,7 +52,8 @@ std::unique_ptr<IScreen> buildLobbyScreen(const ScreenContext& context,
                        .motion = motionPreference(),
                        .place = place,
                        .chat = context.services.chat.get(),
-                       .settings = settings},
+                       .settings = settings,
+                       .rules = rulesOfLastAttempt(context.serverChoice.get())},
       interfaceCanvasOf(context));
 }
 
