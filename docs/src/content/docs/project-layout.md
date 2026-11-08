@@ -222,7 +222,7 @@ src/client/
 │   ├── Common/          the screens every module may show
 │   └── Registry/        where modules add their screens
 ├── Menus/               the screens before a server
-│   ├── ServerBrowser/   the server map and the games of a server
+│   ├── ServerBrowser/   the server map, the games of a server and the new game dialog
 │   ├── Leaderboard/     the leaderboard of a server and its filter
 │   ├── Title/           intro, title, connection screen, dialogs
 │   └── Options/         the options and their pieces
