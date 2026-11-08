@@ -8,6 +8,7 @@ The master (see [Master](/R-Type/master/)) runs on one small AWS machine, descri
 | Part | State | Where |
 |---|---|---|
 | The machine, its address, its network rules and the role of the deployments, in Terraform | Available; not applied to an account yet | `infra/terraform/` |
+| The script that sets everything up once: bucket, Terraform, variables, environment, DNS wait | Available; not run yet | `infra/bootstrap.sh` |
 | The script that installs a release and goes back when the master does not answer | Available | `infra/master/deploy.sh` |
 | The workflow that runs the script, on every release or by hand | Available | `.github/workflows/deploy-master.yaml`, called by `release.yaml` |
 | The check of the Terraform files and of the scripts, on a pull request | Available | `.github/workflows/infra.yaml` |
@@ -51,7 +52,7 @@ Going back after the database was migrated is not guaranteed: the new master mig
 
 ## Setting it up once
 
-A member of the team does this once, with their own AWS, GitHub and Vercel accounts; nothing here runs by itself. The steps are in the [README of `infra/`](https://github.com/nique-epi/R-Type/blob/main/infra/README.md), in this order:
+A member of the team does this once, with their own AWS, GitHub and Vercel accounts; nothing here runs by itself. `infra/bootstrap.sh --domain <domain> --bucket <bucket>` runs steps 1 to 4 below and waits for the A record of step 2 (`--deploy <tag>` also does step 5); it asks for the AWS account and for the Terraform plan first, and running it again skips what is done. It leaves the address of the master in Vercel, the game servers and the client to you. The steps are in the [README of `infra/`](https://github.com/nique-epi/R-Type/blob/main/infra/README.md), in this order:
 
 1. Create the S3 bucket of the Terraform state, then `terraform init`, `plan` and `apply` from `infra/terraform/`, with `master_domain` set to the domain of the master.
 2. At the DNS provider of that domain, point an `A` record at the `master_public_ip` output.

@@ -5,6 +5,7 @@ This folder puts the master (`r-type_server --mode master`) on a small AWS machi
 | Path | What it is |
 |---|---|
 | `terraform/` | the machine, its address, its network rules and the role the deployments use, described with Terraform |
+| `bootstrap.sh` | the script that does the whole setup below in one run, from your computer |
 | `master/deploy.sh` | the script that installs a release on the machine, goes back when the master does not answer, and puts Caddy in front of it for HTTPS |
 | `../.github/workflows/deploy-master.yaml` | the workflow that runs the script, on every release or by hand |
 | `../.github/workflows/infra.yaml` | the check of these files on a pull request |
@@ -27,7 +28,19 @@ Nothing here runs by itself the first time: a member of the team sets it up once
 - The right to create an environment in the repository settings.
 - A Vercel project for the web site, if the site must read the master.
 
-## Setting it up, in this order
+## Setting it up with one script
+
+From the root of the repository, with the tools of the list above installed and logged in:
+
+```bash
+infra/bootstrap.sh --domain <domain of the master> --bucket rtype-tfstate-<suffix>
+```
+
+It asks which AWS account and repository it is about, creates the bucket, applies Terraform after you read the plan, sets the four variables, creates the environment `production` with you as its required reviewer, then waits for the A record of the domain (it prints the address to give it) and polls until it answers, for up to 30 minutes. `--deploy v0.3.0` also starts `deploy-master` for that release once the record answers, and `--yes` skips the two questions. Every step first looks at what exists, so after a failure you run the same command again. It does not publish a release, and it does not set the address in Vercel, the game servers or the client (step 6 below).
+
+## Setting it up by hand, in this order
+
+The steps the script runs, one by one.
 
 Run the commands from `infra/terraform/`, with the name `rtype-tfstate-<suffix>` replaced by a bucket name of your choice: it must be unique in the world.
 
