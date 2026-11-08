@@ -7,7 +7,6 @@
 #include "AmbienceScope.hpp"
 #include "ColoredPixel.hpp"
 #include "GamePanel.hpp"
-#include "GameRequest.hpp"
 #include "IGameCatalog.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
@@ -20,7 +19,6 @@
 #include "ServerChoice.hpp"
 #include "ServerMapChoice.hpp"
 #include "ServerMapScreenParts.hpp"
-#include "ServerRow.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -79,9 +77,6 @@ class ServerMapScreen : public IScreen {
   /** @brief Reads the list again, and the games of the chosen server when
    * their panel is open. */
   void refresh();
-  /** @brief Puts @p server and @p request in the ServerChoice and opens the
-   * connection to it. */
-  void join(const ServerRow& server, const GameRequest& request);
   void repaint();
 
   IScreenNavigator* navigator_;

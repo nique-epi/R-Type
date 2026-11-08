@@ -1,4 +1,5 @@
 add_library(rtype_client_menus_server_browser STATIC
+  ChosenGameConnection.cpp
   GamePanel.cpp
   HangarStar.cpp
   NewGameDialog.cpp

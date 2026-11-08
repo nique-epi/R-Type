@@ -14,6 +14,8 @@
 #include "Ambience.hpp"
 #include "BarState.hpp"
 #include "Button.hpp"
+#include "ChosenGame.hpp"
+#include "ChosenGameConnection.hpp"
 #include "ConnectionRequest.hpp"
 #include "GameRequest.hpp"
 #include "GameRow.hpp"
@@ -113,16 +115,17 @@ std::optional<MapDirection> directionOf(sf::Keyboard::Key key) {
   }
 }
 
-/** @returns The server of this version with the lowest ping: the first one of
- * a list sorted by ping. */
-std::optional<ServerRow> quickPlayServerOf(
+/** @returns Any game of the server of this version with the lowest ping: the
+ * first one of a list sorted by ping. */
+std::optional<ChosenGame> quickPlayGameOf(
     const std::vector<ServerRow>& servers) {
   const auto found = std::ranges::find(servers, ServerCompatibility::Compatible,
                                        &ServerRow::compatibility);
   if (found == servers.end()) {
     return std::nullopt;
   }
-  return *found;
+  return ChosenGame{.server = found->endpoint,
+                    .request = gameRequestFor(network::ANY_GAME_CHOICE)};
 }
 
 /** @returns Whether a server of @p servers is of this version. */
@@ -246,9 +249,10 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
       motion_(parts.motion),
       quickPlayChip_(quickPlayChipParts(
           [this] {
-            if (const std::optional<ServerRow> server =
-                    quickPlayServerOf(map_.servers())) {
-              join(*server, gameRequestFor(network::ANY_GAME_CHOICE));
+            if (const std::optional<ChosenGame> game =
+                    quickPlayGameOf(map_.servers())) {
+              heldKey_.reset();
+              openConnectionTo(*choice_, *game, *navigator_);
             }
           },
           parts.sounds)),
@@ -364,7 +368,11 @@ void ServerMapScreen::confirm() {
     heldKey_.reset();
     navigator_->push(NEW_GAME_SCREEN);
   } else if (const std::optional<GameRow> game = panel_.joinable()) {
-    join(*chosen, requestToJoin(*game));
+    heldKey_.reset();
+    openConnectionTo(
+        *choice_,
+        ChosenGame{.server = chosen->endpoint, .request = requestToJoin(*game)},
+        *navigator_);
   }
 }
 
@@ -381,14 +389,6 @@ void ServerMapScreen::refresh() {
   if (map_.stage() == ServerMapStage::Games && chosen.has_value()) {
     games_->ask(*chosen);
   }
-}
-
-void ServerMapScreen::join(const ServerRow& server,
-                           const GameRequest& request) {
-  heldKey_.reset();
-  choice_->lastServer = server.endpoint;
-  choice_->lastRequest = request;
-  navigator_->push(CONNECTION_TO_MAP_SERVER_SCREEN);
 }
 
 void ServerMapScreen::repaint() {

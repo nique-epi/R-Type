@@ -97,9 +97,10 @@ TEST_F(NewGameDialogFixture, CreateAsksForANewGameWithTheChosenRules) {
 /**
  * Given the dialog, CREATE chosen
  * When CREATE is pressed
- * Then the connection to the chosen server opens over the dialog
+ * Then the dialog closes, then the connection to the chosen server opens over
+ * the map, so going back from it never shows the dialog again
  */
-TEST_F(NewGameDialogFixture, CreateOpensTheConnectionOverTheDialog) {
+TEST_F(NewGameDialogFixture, CreateClosesTheDialogBeforeTheConnectionOpens) {
   open({std::string(NORMAL_DIFFICULTY)});
   for (int row = 0; row < ROWS_DOWN_TO_CREATE; ++row) {
     choose(sf::Keyboard::Key::Down);
@@ -109,7 +110,9 @@ TEST_F(NewGameDialogFixture, CreateOpensTheConnectionOverTheDialog) {
 
   EXPECT_THAT(
       navigator().calls(),
-      ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+      ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
+                                .screen = std::nullopt},
+                  NavigatorCall{.request = NavigatorRequest::Push,
                                 .screen = CONNECTION_TO_MAP_SERVER_SCREEN}));
 }
 
