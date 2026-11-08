@@ -2,13 +2,12 @@ import type { DownloadPanelLabels } from '@/components/download/download-panel';
 import type { SiteHeaderLabels } from '@/components/layout/site-header';
 import type { RankingScreenLabels } from '@/components/ranking/ranking-screen';
 import type { GamesTableLabels } from '@/components/servers/games-table';
-import type { HostServerFormLabels } from '@/components/servers/host-server-form';
 import type { SectorMapLabels } from '@/components/servers/sector-map/types';
-import type { ServerKeyPanelLabels } from '@/components/servers/server-key-panel';
 import type { BestiaryBookLabels } from '@/components/wiki/bestiary-book';
 import type { PalettePickerProps } from '@/components/wiki/palette-picker';
 import type { GameState, ServerStatus } from '@/lib/rtype/servers';
 import type { Locale } from './locales';
+import type { PageCopy } from './page-copy';
 
 /**
  * The fixed words of the components, in one language. Each component names
@@ -20,19 +19,15 @@ export type Dictionary = {
   status: Record<ServerStatus, string>;
   gameState: Record<GameState, string>;
   header: SiteHeaderLabels;
-  footer: { navigation: string };
-  hero: { scrollCue: string };
-  video: { close: string; comingSoon: string; watch: string };
   download: DownloadPanelLabels;
   gamesTable: GamesTableLabels;
   chart: { now: string; period: string };
   sectorMap: SectorMapLabels;
-  hostForm: HostServerFormLabels;
-  serverKey: ServerKeyPanelLabels;
   ranking: RankingScreenLabels;
   bestiary: BestiaryBookLabels;
   palette: PalettePickerProps['labels'];
   keyBindings: { key: string; action: string };
   wiki: { navigation: string };
   team: { github: string };
+  pages: PageCopy;
 };

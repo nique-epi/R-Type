@@ -4,16 +4,32 @@ import { createFetch, createSchema } from '@better-fetch/fetch';
 import { env } from '@/config/server-env';
 
 import { problemSchema } from '../../schemas/master';
-import { healthEndpointsSchema } from './endpoints';
+import {
+  leaderboardEndpointsSchema,
+  serversEndpointsSchema,
+} from './endpoints';
 
 const MASTER_API_PREFIX = '/api';
 
+/**
+ * How long the site waits for the master to answer a request. A page reads
+ * the master several times at once, so one request that hangs would hold
+ * the page for ever.
+ */
+const MASTER_TIMEOUT_MILLISECONDS = 5000;
+
 const masterSchema = createSchema({
-  ...healthEndpointsSchema,
+  ...leaderboardEndpointsSchema,
+  ...serversEndpointsSchema,
 });
 
 export const master = createFetch({
   baseURL: `${env.MASTER_URL}${MASTER_API_PREFIX}`,
+  customFetchImpl: (input, init) =>
+    fetch(input, {
+      ...init,
+      signal: AbortSignal.timeout(MASTER_TIMEOUT_MILLISECONDS),
+    }),
   schema: masterSchema,
   defaultError: problemSchema,
   catchAllError: true,
