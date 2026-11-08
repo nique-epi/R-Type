@@ -34,3 +34,5 @@ Calibration: on `origin/main` at `edf3388`, `git ls-files -- '*/EncodedMessage.h
 **Root cause.** The rule searched file names, and a type is not always alone in a header of its name: a message often declares its row next to it.
 
 **Rule added.** Search the type name itself in `src/` and `tests/`, and the name of a free function at namespace scope, before declaring them; choose a name that says what sets the new type apart.
+
+**Revised the same day, after a review.** The first commands used `-P` (PCRE, missing from some builds of git), missed a type written with an attribute (`struct [[nodiscard]] Result`), left out untracked files, and searched free functions in headers only. The search is now portable, includes untracked files, reads attributes, says which lines are a clash (a forward declaration of the same type is not), and covers sources for free functions.

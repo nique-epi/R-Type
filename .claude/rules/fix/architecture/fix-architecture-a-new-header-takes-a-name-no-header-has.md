@@ -19,11 +19,16 @@ Calibration: on `origin/main` at `edf3388`, `git ls-files -- '*/EncodedMessage.h
 
 Why: the master's `rtype::network::LeaderboardRow`, in a header of its own, took the name of the struct `LeaderboardAnswer.hpp` already declares in the same namespace with other members; both programs link the two, which breaks the one-definition rule, and no build reports it, since each file sees one of them.
 
-1. **Before declaring a struct, a class or an enum, search its name in the whole repository**, not only its file name: `git grep -n -P '^(struct|class|enum class|union) <Name>\b' -- src tests` must print nothing. A type that shares a header with others (a message and its row, a struct beside its function) is found only this way.
-2. **The same holds for a free function at namespace scope** in a header: `git grep -n -P '\b<function>\(' -- 'src/*.hpp'`.
-3. **When the name is taken in the same namespace, choose another one**, named after what sets the new type apart (`GlobalLeaderboardRow`, the row of the master's leaderboard).
+1. **Before declaring a struct, a class or an enum, search its name**, not only its file name, with untracked files included and without PCRE (`-w` and `-E` work in every build of git):
+   ```bash
+   git grep -n --untracked -w -E '(struct|class|union|enum( class)?)( \[\[[a-z_]+\]\])* <Name>' -- src tests
+   ```
+   The C++ of the repository lives in `src/` and `tests/` only. A type that shares a header with others (a message and its row, a struct beside its function) is found only this way.
+2. **Read each line it prints**: a definition of a type of that name in the same namespace is a clash; a forward declaration of that same type, or a type of another namespace, is not.
+3. **The same holds for a free function at namespace scope**, in headers and sources alike, since a `.cpp` may define one no header declares: `git grep -n --untracked -w '<function>' -- src`. A definition in an anonymous namespace, or `static`, is local to its file and does not clash.
+4. **When the name is taken in the same namespace, choose another one**, named after what sets the new type apart (`GlobalLeaderboardRow`, the row of the master's leaderboard).
 
-Calibration: on `cdc75d8c`, `git grep -n -P '^(struct|class|enum class|union) LeaderboardRow\b' HEAD -- src tests` prints `LeaderboardAnswer.hpp:17`.
+Calibration: on `cdc75d8c`, the type search with `cdc75d8c` in place of `--untracked` prints `LeaderboardAnswer.hpp:17` for `LeaderboardRow`; on a file holding `struct [[nodiscard]] Result {`, `class Result;` and `struct Results {`, it prints the first two lines only (`git grep --no-index`).
 
 ## Example
 
