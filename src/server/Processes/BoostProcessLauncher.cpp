@@ -1,6 +1,5 @@
 #include "BoostProcessLauncher.hpp"
 #include <array>
-#include <boost/asio/io_context.hpp>
 #include <boost/asio/readable_pipe.hpp>
 #include <boost/process/v2/process.hpp>
 #include <boost/process/v2/stdio.hpp>
@@ -24,6 +23,7 @@ namespace {
 std::vector<std::unique_ptr<ChildOutputRelay>> relaysOf(
     std::array<boost::asio::readable_pipe, CHILD_OUTPUTS>& pipes) {
   std::vector<std::unique_ptr<ChildOutputRelay>> relays;
+  relays.reserve(pipes.size());
   for (boost::asio::readable_pipe& pipe : pipes) {
     relays.push_back(std::make_unique<ChildOutputRelay>(std::move(pipe)));
   }
@@ -42,9 +42,9 @@ std::unique_ptr<IChildProcess> BoostProcessLauncher::launch(
     std::array<boost::asio::readable_pipe, CHILD_OUTPUTS> pipes{
         boost::asio::readable_pipe{context_},
         boost::asio::readable_pipe{context_}};
-    boost::process::v2::process process =
-        startProcess(command, boost::process::v2::process_stdio{
-                                  .in = {}, .out = pipes[0], .err = pipes[1]});
+    boost::process::v2::process process = startProcess(
+        command, boost::process::v2::process_stdio{
+                     .in = nullptr, .out = pipes[0], .err = pipes[1]});
     binding_.bind(process);
     return std::make_unique<BoostChildProcess>(std::move(process),
                                                relaysOf(pipes));

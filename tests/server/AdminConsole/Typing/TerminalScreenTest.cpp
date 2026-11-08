@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
+#include "AdminConsoleTestConstants.hpp"
 #include "RecordingTerminal.hpp"
+#include "ServerModuleTestConstants.hpp"
 #include "TerminalScreen.hpp"
 #include "TerminalScreenTestConstants.hpp"
 
@@ -18,7 +20,7 @@ TEST(TerminalScreen, OpensWithTheReadyLineAndThePrompt) {
 
   screen.open();
 
-  EXPECT_EQ(terminal.written(), OPENING);
+  EXPECT_EQ(terminal.written(), READY_LINE_AND_PROMPT);
 }
 
 /**
@@ -31,11 +33,11 @@ TEST(TerminalScreen, WritesALineAboveTheTypedText) {
   RecordingTerminal terminal{true};
   TerminalScreen screen{terminal};
   screen.open();
-  static_cast<void>(screen.feed(SCREEN_HALF_OF_GAMES));
+  static_cast<void>(screen.feed(GAM_TYPED));
 
-  screen.writeAbove(JOURNAL_LINE);
+  screen.writeAbove(GAME_PROCESS_LINE);
 
-  EXPECT_TRUE(terminal.written().ends_with(JOURNAL_LINE_ABOVE_GAM));
+  EXPECT_TRUE(terminal.written().ends_with(GAME_LINE_ABOVE_GAM));
 }
 
 /**
@@ -47,8 +49,8 @@ TEST(TerminalScreen, HandsTheLinesTyped) {
   RecordingTerminal terminal{true};
   TerminalScreen screen{terminal};
 
-  EXPECT_EQ(screen.feed(SCREEN_GAMES_ENDED).lines,
-            std::vector<std::string>{std::string{SCREEN_GAMES}});
+  EXPECT_EQ(screen.feed(GAMES_ENTERED).lines,
+            std::vector<std::string>{std::string{GAMES_LINE}});
 }
 
 /**

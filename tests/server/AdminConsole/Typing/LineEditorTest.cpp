@@ -1,9 +1,12 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
+#include "AdminConsoleTestConstants.hpp"
+#include "ConsoleLineSplitterTestConstants.hpp"
 #include "LineEdit.hpp"
 #include "LineEditor.hpp"
 #include "LineEditorTestConstants.hpp"
+#include "ServerModuleTestConstants.hpp"
 
 using rtype::server::LineEdit;
 using rtype::server::LineEditor;
@@ -16,9 +19,9 @@ using rtype::server::LineEditor;
 TEST(LineEditor, EchoesWhatIsTyped) {
   LineEditor editor;
 
-  const LineEdit edit = editor.feed(HALF_OF_GAMES);
+  const LineEdit edit = editor.feed(GAM_TYPED);
 
-  EXPECT_EQ(edit.echo, HALF_OF_GAMES);
+  EXPECT_EQ(edit.echo, GAM_TYPED);
   EXPECT_TRUE(edit.chunk.lines.empty());
 }
 
@@ -30,10 +33,10 @@ TEST(LineEditor, EchoesWhatIsTyped) {
 TEST(LineEditor, EndsALineOnCarriageReturn) {
   LineEditor editor;
 
-  const LineEdit edit = editor.feed(GAMES_AND_CARRIAGE_RETURN);
+  const LineEdit edit = editor.feed(GAMES_ENTERED);
 
   EXPECT_EQ(edit.chunk.lines,
-            std::vector<std::string>{std::string{GAMES_TYPED}});
+            std::vector<std::string>{std::string{GAMES_LINE}});
   EXPECT_TRUE(edit.echo.ends_with(NEW_ROW_AND_PROMPT));
 }
 
@@ -44,7 +47,7 @@ TEST(LineEditor, EndsALineOnCarriageReturn) {
  */
 TEST(LineEditor, CountsCarriageReturnAndNewLineOnce) {
   LineEditor editor;
-  static_cast<void>(editor.feed(GAMES_AND_CARRIAGE_RETURN));
+  static_cast<void>(editor.feed(GAMES_ENTERED));
 
   const LineEdit edit = editor.feed(NEW_LINE_ALONE);
 
@@ -60,7 +63,7 @@ TEST(LineEditor, EndsALineOnNewLine) {
   LineEditor editor;
 
   EXPECT_EQ(editor.feed(GAMES_AND_NEW_LINE).chunk.lines,
-            std::vector<std::string>{std::string{GAMES_TYPED}});
+            std::vector<std::string>{std::string{GAMES_LINE}});
 }
 
 /**
@@ -74,7 +77,7 @@ TEST(LineEditor, ErasesTheLastCharacter) {
 
   const LineEdit edit = editor.feed(DELETE_KEY);
 
-  EXPECT_EQ(editor.typed(), HALF_OF_GAMES);
+  EXPECT_EQ(editor.typed(), GAM_TYPED);
   EXPECT_EQ(edit.echo, ERASED_CHARACTER);
 }
 
@@ -113,7 +116,7 @@ TEST(LineEditor, DropsTheSequenceOfAnArrow) {
 
   static_cast<void>(editor.feed(GAMES_WITH_AN_UP_ARROW));
 
-  EXPECT_EQ(editor.typed(), GAMES_TYPED);
+  EXPECT_EQ(editor.typed(), GAMES_LINE);
 }
 
 /**
@@ -138,9 +141,9 @@ TEST(LineEditor, KeepsALineAtTheLimit) {
   LineEditor editor;
 
   static_cast<void>(
-      editor.feed(std::string(LONGEST_TYPED_LINE, TYPED_FILLING)));
+      editor.feed(std::string(LONGEST_LINE_LENGTH, TYPED_FILLING)));
 
-  EXPECT_EQ(editor.typed().size(), LONGEST_TYPED_LINE);
+  EXPECT_EQ(editor.typed().size(), LONGEST_LINE_LENGTH);
 }
 
 /**
@@ -151,11 +154,11 @@ TEST(LineEditor, KeepsALineAtTheLimit) {
 TEST(LineEditor, RefusesTheByteAfterTheLimit) {
   LineEditor editor;
   static_cast<void>(
-      editor.feed(std::string(LONGEST_TYPED_LINE, TYPED_FILLING)));
+      editor.feed(std::string(LONGEST_LINE_LENGTH, TYPED_FILLING)));
 
   const LineEdit edit = editor.feed(G_KEY);
 
-  EXPECT_EQ(editor.typed().size(), LONGEST_TYPED_LINE);
+  EXPECT_EQ(editor.typed().size(), LONGEST_LINE_LENGTH);
   EXPECT_TRUE(edit.echo.empty());
 }
 

@@ -19,11 +19,11 @@ using rtype::logging::writeStandardErrorLine;
  * logger and the text
  */
 TEST_F(LoggerStandardErrorFixture, AJournalLineReachesTheWriter) {
-  const RecordingStandardError standardError;
+  const RecordingStandardError recorded;
 
   Logger{std::string{STANDARD_ERROR_LOGGER_NAME}}.error(DISK_FULL_TEXT);
 
-  const std::vector<std::string> lines = standardError.lines();
+  const std::vector<std::string> lines = recorded.lines();
   ASSERT_EQ(lines.size(), 1U);
   EXPECT_NE(lines.front().find(DISK_FULL_LINE_END), std::string::npos);
 }
@@ -34,12 +34,11 @@ TEST_F(LoggerStandardErrorFixture, AJournalLineReachesTheWriter) {
  * Then the writer receives that line as it is
  */
 TEST_F(LoggerStandardErrorFixture, AnotherLineReachesTheWriterAsItIs) {
-  const RecordingStandardError standardError;
+  const RecordingStandardError recorded;
 
   writeStandardErrorLine(GAME_LINE);
 
-  EXPECT_EQ(standardError.lines(),
-            std::vector<std::string>{std::string{GAME_LINE}});
+  EXPECT_EQ(recorded.lines(), std::vector<std::string>{std::string{GAME_LINE}});
 }
 
 /**
@@ -49,13 +48,13 @@ TEST_F(LoggerStandardErrorFixture, AnotherLineReachesTheWriterAsItIs) {
  */
 TEST_F(LoggerStandardErrorFixture,
        LinesGoBackToStandardErrorOnceTheWriterLeft) {
-  std::optional<RecordingStandardError> standardError;
-  standardError.emplace();
-  standardError.reset();
+  {
+    const RecordingStandardError recorded;
+  }
 
   Logger{std::string{STANDARD_ERROR_LOGGER_NAME}}.error(DISK_FULL_TEXT);
 
-  EXPECT_NE(standardErrorStream().find(DISK_FULL_LINE_END), std::string::npos);
+  EXPECT_NE(standardError().find(DISK_FULL_LINE_END), std::string::npos);
 }
 
 /**
@@ -64,11 +63,11 @@ TEST_F(LoggerStandardErrorFixture,
  * Then std::cerr receives nothing
  */
 TEST_F(LoggerStandardErrorFixture, AWriterTakesTheLinesFromStandardError) {
-  const RecordingStandardError standardError;
+  const RecordingStandardError recorded;
 
   Logger{std::string{STANDARD_ERROR_LOGGER_NAME}}.error(DISK_FULL_TEXT);
 
-  EXPECT_TRUE(standardErrorStream().empty());
+  EXPECT_TRUE(standardError().empty());
 }
 
 /**
@@ -80,11 +79,11 @@ TEST_F(LoggerStandardErrorFixture, AWriterTakesTheLinesFromStandardError) {
 TEST_F(LoggerStandardErrorFixture, ForcedColourWrapsTheLine) {
   Logger::setOutput(LogOutput{
       .toStderr = true, .filePath = std::nullopt, .forceColor = true});
-  const RecordingStandardError standardError;
+  const RecordingStandardError recorded;
 
   Logger{std::string{STANDARD_ERROR_LOGGER_NAME}}.error(DISK_FULL_TEXT);
 
-  const std::vector<std::string> lines = standardError.lines();
+  const std::vector<std::string> lines = recorded.lines();
   ASSERT_EQ(lines.size(), 1U);
   EXPECT_TRUE(lines.front().starts_with(ERROR_COLOR_START));
   EXPECT_TRUE(lines.front().ends_with(DEFAULT_COLOR));

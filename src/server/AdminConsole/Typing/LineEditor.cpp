@@ -45,8 +45,7 @@ LineEdit LineEditor::feed(std::span<const char> bytes) {
 ConsoleChunk LineEditor::finish() {
   ConsoleChunk chunk;
   if (!typed_.empty()) {
-    chunk.lines.push_back(std::move(typed_));
-    typed_.clear();
+    chunk.lines.push_back(std::exchange(typed_, {}));
   }
   return chunk;
 }
@@ -91,8 +90,7 @@ void LineEditor::read(char byte, LineEdit& edit) {
 }
 
 void LineEditor::endLine(LineEdit& edit) {
-  edit.chunk.lines.push_back(std::move(typed_));
-  typed_.clear();
+  edit.chunk.lines.push_back(std::exchange(typed_, {}));
   edit.echo += ROW_END;
   edit.echo += CONSOLE_PROMPT;
 }

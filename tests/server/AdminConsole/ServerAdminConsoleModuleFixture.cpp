@@ -1,5 +1,6 @@
 #include "ServerAdminConsoleModuleFixture.hpp"
 #include <chrono>
+#include <functional>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -45,25 +46,31 @@ ServerAdminConsoleModuleFixture::supervisorOn(
 
 std::vector<std::string> ServerAdminConsoleModuleFixture::answerOf(
     const rtype::engine::Application& application) const {
-  const auto deadline = std::chrono::steady_clock::now() + WAIT_FOR_THREADS;
-  while (output_->lines().empty() &&
-         std::chrono::steady_clock::now() < deadline) {
-    application.runStages(rtype::engine::SIMULATION_TICK_DURATION);
-    std::this_thread::sleep_for(CONSOLE_LOOK_INTERVAL);
-  }
+  runUntil(application, [this] { return !output_->lines().empty(); });
   return output_->lines();
 }
 
 std::string ServerAdminConsoleModuleFixture::terminalShowing(
     const rtype::engine::Application& application,
     std::string_view text) const {
+  runUntil(application, [this, text] {
+    return terminal_->written().find(text) != std::string::npos;
+  });
+  return terminal_->written();
+}
+
+std::string ServerAdminConsoleModuleFixture::terminalWritten() const {
+  return terminal_->written();
+}
+
+void ServerAdminConsoleModuleFixture::runUntil(
+    const rtype::engine::Application& application,
+    const std::function<bool()>& done) {
   const auto deadline = std::chrono::steady_clock::now() + WAIT_FOR_THREADS;
-  while (terminal_->written().find(text) == std::string::npos &&
-         std::chrono::steady_clock::now() < deadline) {
+  while (!done() && std::chrono::steady_clock::now() < deadline) {
     application.runStages(rtype::engine::SIMULATION_TICK_DURATION);
     std::this_thread::sleep_for(CONSOLE_LOOK_INTERVAL);
   }
-  return terminal_->written();
 }
 
 bool ServerAdminConsoleModuleFixture::terminalInTypingMode() const {

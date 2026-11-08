@@ -8,10 +8,10 @@ namespace rtype::server {
 
 /**
  * @brief Relays what a child process writes on one of its outputs to the
- * standard error of this process, line by line, through
- * logging::writeStandardErrorLine(), on a thread it owns. The admin console
- * then writes each line above the line being typed, where a child that wrote
- * to the terminal itself would cut it.
+ * standard error of this process, through logging::writeStandardErrorLine(), on
+ * a thread it owns: the lines each read completes, as one text. The admin
+ * console then writes each line above the line being typed, where a child that
+ * wrote to the terminal itself would cut it.
  *
  * The thread reads until the child closes its end of the pipe, when it ends or
  * is killed, and the relay joins it when destroyed: destroy it once the child

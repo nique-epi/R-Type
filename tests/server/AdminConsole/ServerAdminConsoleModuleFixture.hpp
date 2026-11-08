@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -30,10 +31,13 @@ class ServerAdminConsoleModuleFixture : public SupervisorModulesFixture {
 
   /** @returns All the terminal received, once it holds @p text, running ticks
    * of @p application meanwhile; what it holds after WAIT_FOR_THREADS
-   * otherwise. Runs no tick when it already holds @p text. */
+   * otherwise. */
   [[nodiscard]] std::string terminalShowing(
       const rtype::engine::Application& application,
       std::string_view text) const;
+
+  /** @returns All the terminal received so far, running no tick. */
+  [[nodiscard]] std::string terminalWritten() const;
 
   /** @returns Whether the terminal is in typing mode now. */
   [[nodiscard]] bool terminalInTypingMode() const;
@@ -46,6 +50,11 @@ class ServerAdminConsoleModuleFixture : public SupervisorModulesFixture {
   [[nodiscard]] std::unique_ptr<rtype::engine::Application> supervisorOn(
       std::vector<std::string> chunks,
       std::unique_ptr<RecordingTerminal> terminal);
+
+  /** @brief Runs ticks of @p application until @p done says so, or
+   * WAIT_FOR_THREADS passed. */
+  static void runUntil(const rtype::engine::Application& application,
+                       const std::function<bool()>& done);
 
   ScriptedConsoleInput* input_{nullptr};
   RecordingConsoleOutput* output_{nullptr};

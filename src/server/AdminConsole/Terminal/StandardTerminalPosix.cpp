@@ -4,10 +4,8 @@
 #include <termios.h>
 #include <unistd.h>
 #include <csignal>
-#include <iostream>
 #include <memory>
 #include <optional>
-#include <string_view>
 #include "AdminConsoleConstants.hpp"
 #include "SavedTerminalModes.hpp"
 #include "StandardTerminal.hpp"
@@ -42,10 +40,6 @@ termios typingModesOf(termios modes) {
 
 }  // namespace
 
-StandardTerminal::StandardTerminal() = default;
-
-StandardTerminal::~StandardTerminal() { leaveTypingMode(); }
-
 bool StandardTerminal::enterTypingMode() {
   const std::optional<termios> modes = foregroundModes();
   if (!modes.has_value()) {
@@ -70,10 +64,6 @@ void StandardTerminal::leaveTypingMode() {
     static_cast<void>(std::signal(SIGTTOU, previous));
   }
   saved_.reset();
-}
-
-void StandardTerminal::write(std::string_view text) {
-  std::cout << text << std::flush;
 }
 
 }  // namespace rtype::server

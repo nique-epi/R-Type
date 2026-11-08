@@ -1,8 +1,6 @@
 #include <windows.h>
-#include <iostream>
 #include <memory>
 #include <optional>
-#include <string_view>
 #include "SavedTerminalModes.hpp"
 #include "StandardTerminal.hpp"
 
@@ -37,10 +35,6 @@ std::optional<SavedTerminalModes> consoleModes() {
 
 }  // namespace
 
-StandardTerminal::StandardTerminal() = default;
-
-StandardTerminal::~StandardTerminal() { leaveTypingMode(); }
-
 bool StandardTerminal::enterTypingMode() {
   const std::optional<SavedTerminalModes> modes = consoleModes();
   if (!modes.has_value()) {
@@ -72,10 +66,6 @@ void StandardTerminal::leaveTypingMode() {
   static_cast<void>(
       ::SetConsoleMode(::GetStdHandle(STD_OUTPUT_HANDLE), saved_->output));
   saved_.reset();
-}
-
-void StandardTerminal::write(std::string_view text) {
-  std::cout << text << std::flush;
 }
 
 }  // namespace rtype::server

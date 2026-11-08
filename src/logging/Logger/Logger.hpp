@@ -194,7 +194,8 @@ void setStandardErrorWriter(std::function<void(std::string_view)> writer);
 /**
  * @brief Writes @p line, without its end, to standard error, through the writer
  * of setStandardErrorWriter() when one is set: a line that does not come from
- * this journal, such as a line a game process wrote.
+ * this journal, such as a line a game process wrote. @p line may hold several
+ * lines, one end of line between two.
  */
 void writeStandardErrorLine(std::string_view line);
 

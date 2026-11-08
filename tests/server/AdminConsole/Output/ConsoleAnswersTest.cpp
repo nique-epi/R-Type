@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
+#include "AdminConsoleTestConstants.hpp"
 #include "ConsoleAnswers.hpp"
-#include "ConsoleAnswersTestConstants.hpp"
 #include "RecordingConsoleOutput.hpp"
 #include "RecordingTerminal.hpp"
 #include "TerminalScreen.hpp"
@@ -19,9 +19,10 @@ TEST(ConsoleAnswers, AnswersOnTheOutputWithoutAScreen) {
   RecordingConsoleOutput output;
   ConsoleAnswers answers{output};
 
-  answers.write(ANSWER);
+  answers.write(NO_GAME_LINE);
 
-  EXPECT_EQ(output.lines(), std::vector<std::string>{std::string{ANSWER}});
+  EXPECT_EQ(output.lines(),
+            std::vector<std::string>{std::string{NO_GAME_LINE}});
 }
 
 /**
@@ -36,9 +37,9 @@ TEST(ConsoleAnswers, AnswersAboveThePromptOnAScreen) {
   ConsoleAnswers answers{output};
   answers.showOn(&screen);
 
-  answers.write(ANSWER);
+  answers.write(NO_GAME_LINE);
 
-  EXPECT_EQ(terminal.written(), ANSWER_ABOVE_THE_PROMPT);
+  EXPECT_EQ(terminal.written(), NO_GAME_ABOVE_THE_PROMPT);
   EXPECT_TRUE(output.lines().empty());
 }
 
@@ -55,8 +56,9 @@ TEST(ConsoleAnswers, AnswersOnTheOutputAgainOnceTheScreenIsGone) {
   answers.showOn(&screen);
   answers.showOn(nullptr);
 
-  answers.write(ANSWER);
+  answers.write(NO_GAME_LINE);
 
-  EXPECT_EQ(output.lines(), std::vector<std::string>{std::string{ANSWER}});
+  EXPECT_EQ(output.lines(),
+            std::vector<std::string>{std::string{NO_GAME_LINE}});
   EXPECT_TRUE(terminal.written().empty());
 }

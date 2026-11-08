@@ -2,7 +2,7 @@
 #include <array>
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/readable_pipe.hpp>
-#include <boost/system/error_code.hpp>
+#include <boost/system/detail/error_code.hpp>
 #include <cstddef>
 #include <optional>
 #include <span>
@@ -16,10 +16,19 @@ namespace rtype::server {
 
 namespace {
 
+/** @brief Writes @p lines to standard error as one text, one end of line
+ * between two, so a burst of lines takes the lock of the journal and reaches
+ * the terminal once. */
 void writeLines(const std::vector<std::string>& lines) {
-  for (const std::string& line : lines) {
-    logging::writeStandardErrorLine(line);
+  if (lines.empty()) {
+    return;
   }
+  std::string text = lines.front();
+  for (const std::string& line : std::span{lines}.subspan(1)) {
+    text += CHILD_LINE_END;
+    text += line;
+  }
+  logging::writeStandardErrorLine(text);
 }
 
 }  // namespace

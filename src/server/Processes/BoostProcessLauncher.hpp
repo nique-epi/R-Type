@@ -17,7 +17,8 @@ namespace rtype::server {
  * children are polled (see BoostChildProcess). The standard output and error
  * of each child go to two pipes, each read by a ChildOutputRelay on a thread
  * of its own, which writes their lines to the standard error of this process;
- * its standard input is inherited. The launcher must outlive its children.
+ * its standard input is the null device, so no child reads the terminal of
+ * the admin console. The launcher must outlive its children.
  *
  * Start every child from the same long-lived thread (the simulation thread of
  * the supervisor): on Linux a child dies when the thread that started it ends.

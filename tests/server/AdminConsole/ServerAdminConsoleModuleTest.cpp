@@ -166,8 +166,7 @@ TEST_F(ServerAdminConsoleModuleFixture, WritesNothingOnTheTerminalOnceStopped) {
 
   writeStandardErrorLine(GAME_PROCESS_LINE);
 
-  EXPECT_EQ(terminalShowing(*application, "").find(GAME_PROCESS_LINE),
-            std::string::npos);
+  EXPECT_EQ(terminalWritten().find(GAME_PROCESS_LINE), std::string::npos);
 }
 
 /**
@@ -181,5 +180,5 @@ TEST_F(ServerAdminConsoleModuleFixture, ShowsNoPromptWithoutATerminal) {
 
   application->stop();
 
-  EXPECT_TRUE(terminalShowing(*application, "").empty());
+  EXPECT_TRUE(terminalWritten().empty());
 }
