@@ -1,1 +1,1 @@
-target_sources(client_rendering_tests PRIVATE EntityAppearancesTest.cpp EntityAppearanceActionsTest.cpp EntityAppearanceEnragedTest.cpp EntityAppearancesFixtures.cpp)
+target_sources(client_rendering_tests PRIVATE EntityAppearancesTest.cpp EntityAppearanceActionsTest.cpp EntityAppearanceEnragedTest.cpp EntityAppearanceDeathTest.cpp EntityAppearancesFixtures.cpp)

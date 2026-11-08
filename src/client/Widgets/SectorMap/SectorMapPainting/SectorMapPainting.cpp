@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -12,22 +13,29 @@
 #include "BoxCorners.hpp"
 #include "ColoredPixel.hpp"
 #include "CutCornerBox.hpp"
+#include "EntitySprites.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "ImagePlacement.hpp"
 #include "InterfaceColorConstants.hpp"
 #include "LabelSide.hpp"
 #include "MapView.hpp"
 #include "MiniMap.hpp"
+#include "MotionPreference.hpp"
 #include "Outline.hpp"
 #include "PlanetPose.hpp"
 #include "RingedPlanet.hpp"
 #include "SectorLayout.hpp"
 #include "SectorMapConstants.hpp"
 #include "SectorMapPaintingConstants.hpp"
+#include "SectorMapSpriteConstants.hpp"
 #include "ServerTooltip.hpp"
+#include "SpriteFrame.hpp"
 #include "StarLook.hpp"
 #include "StarMark.hpp"
 #include "StarName.hpp"
 #include "TextStyle.hpp"
+#include "TextureArea.hpp"
+#include "TimeConstants.hpp"
 #include "TooltipLine.hpp"
 
 namespace rtype::client {
@@ -80,19 +88,22 @@ void paintRingLabel(IInterfaceCanvas& canvas, int milliseconds,
       TextStyle{.font = TextFont::Small, .color = BLUE});
 }
 
-sf::Color starColorOf(const StarLook& look) {
-  if (look.incompatible || look.playerCount == 0) {
-    return BLUE;
+/** @returns The frames of the planet of a server that looks like @p look:
+ * dark and still for another version, ringed in orange when slow, else
+ * larger with more pilots. */
+std::span<const game::SpriteFrame> planetFramesOf(const StarLook& look) {
+  if (look.incompatible) {
+    return OTHER_VERSION_PLANET_FRAMES;
   }
-  return look.slow ? WARNING_ORANGE : STAR_WHITE;
-}
-
-/** @brief Paints a cross at @p point whose arms reach @p reach pixels from it,
- * one pixel each side of its centre line. */
-void paintCross(IInterfaceCanvas& canvas, sf::Vector2i point, int reach,
-                sf::Color color) {
-  canvas.fill({{point.x - 1, point.y - reach}, {3, (2 * reach) + 1}}, color);
-  canvas.fill({{point.x - reach, point.y - 1}, {(2 * reach) + 1, 3}}, color);
+  if (look.slow) {
+    return SLOW_PLANET_FRAMES;
+  }
+  if (look.playerCount > CROWDED_SERVER_PILOTS) {
+    return LARGE_PLANET_FRAMES;
+  }
+  return look.playerCount > 0
+             ? std::span<const game::SpriteFrame>{MEDIUM_PLANET_FRAMES}
+             : SMALL_PLANET_FRAMES;
 }
 
 /** @returns @p length of the map, in pixels of @p map. */
@@ -147,6 +158,14 @@ sf::Color nameColorOf(const StarName& name) {
 
 }  // namespace
 
+std::size_t planetTurnAfter(engine::Duration elapsed, MotionPreference motion) {
+  if (motion == MotionPreference::Reduced) {
+    return 0;
+  }
+  return static_cast<std::size_t>(elapsed / PLANET_TURN_FRAME_TIME) %
+         PLANET_TURN_FRAME_COUNT;
+}
+
 std::vector<ColoredPixel> sectorPlanetPixels(PlanetPose pose) {
   return ringedPlanetPixels(pose, innerMap());
 }
@@ -182,23 +201,14 @@ void paintStar(IInterfaceCanvas& canvas, const StarMark& star) {
   if (!shown.contains(star.point)) {
     return;
   }
-  const sf::Color color = starColorOf(star.look);
-  if (star.look.incompatible) {
-    const int half = INCOMPATIBLE_STAR_SIZE / 2;
-    Outline({star.point - sf::Vector2i{half, half},
-             {INCOMPATIBLE_STAR_SIZE, INCOMPATIBLE_STAR_SIZE}},
-            Outline::Line::Solid)
-        .paint(canvas, color);
-  } else if (star.look.playerCount > CROWDED_SERVER_PILOTS) {
-    paintCross(canvas, star.point, CROWDED_STAR_CROSS_REACH, color);
-  } else if (star.look.playerCount > 0) {
-    paintCross(canvas, star.point, STAR_CROSS_REACH, color);
-  } else {
-    const int half = EMPTY_STAR_SIZE / 2;
-    canvas.fill({star.point - sf::Vector2i{half, half},
-                 {EMPTY_STAR_SIZE, EMPTY_STAR_SIZE}},
-                color);
-  }
+  const std::span<const game::SpriteFrame> frames = planetFramesOf(star.look);
+  const game::SpriteFrame frame = frames[star.turn % frames.size()];
+  canvas.drawImage(
+      TextureArea{.assetId = SECTOR_MAP_SHEET_ID,
+                  .rectangle = rectangleOf(frame)},
+      ImagePlacement{.topLeft = star.point - sf::Vector2i{frame.width / 2,
+                                                          frame.height / 2}},
+      SECTOR_MAP_AREA);
 }
 
 void paintChosenStar(IInterfaceCanvas& canvas, sf::Vector2i point) {

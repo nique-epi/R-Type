@@ -23,6 +23,7 @@
 #include "ServerCompatibility.hpp"
 #include "ServerListPhase.hpp"
 #include "ServerMapChoice.hpp"
+#include "ServerMapLook.hpp"
 #include "ServerMapScreenConstants.hpp"
 #include "ServerMapStage.hpp"
 #include "ServerRow.hpp"
@@ -130,11 +131,13 @@ void paintNames(IInterfaceCanvas& canvas, const ServerMapChoice& choice,
   }
 }
 
-void paintStars(IInterfaceCanvas& canvas, const ServerMapChoice& choice) {
+void paintStars(IInterfaceCanvas& canvas, const ServerMapChoice& choice,
+                std::size_t turn) {
   const std::vector<sf::Vector2i> stars = starPointsOf(choice);
   for (std::size_t index = 0; index < stars.size(); ++index) {
     paintStar(canvas, StarMark{.point = stars[index],
-                               .look = lookOf(choice.servers()[index])});
+                               .look = lookOf(choice.servers()[index]),
+                               .turn = turn});
   }
 }
 
@@ -250,12 +253,12 @@ PlanetPose planetPoseIn(const MapView& view, PlanetPose turned) {
 }
 
 void paintServerMap(IInterfaceCanvas& canvas, const ServerMapChoice& choice,
-                    bool chosenShown) {
+                    ServerMapLook look) {
   const MapView view = choice.view();
   paintPingRings(canvas, view);
-  paintStars(canvas, choice);
+  paintStars(canvas, choice, look.turn);
   const bool zoomedIn = choice.stage() != ServerMapStage::ZoomedOut;
-  paintNamesAndBubble(canvas, choice, chosenShown || zoomedIn);
+  paintNamesAndBubble(canvas, choice, look.chosenShown || zoomedIn);
   if (zoomedIn) {
     paintMiniMap(canvas, miniMapOf(choice));
   }

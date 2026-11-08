@@ -10,7 +10,7 @@ The client renders with SFML, the server talks over the network with Asio (the r
 
 ## Decision
 
-The code is split into three libraries with one-way dependencies, and the game objects are organized as an **ECS** (Entity Component System).
+The code is split into three libraries with one-way dependencies, and the game objects are organized as an **ECS** (Entity Component System). The [Overview](/R-Type/overview/) draws the layers, the threads, the processes and the life of a module.
 
 ```
 r-type_client -> rtype_client_modules -> SFML

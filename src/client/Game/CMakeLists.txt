@@ -60,7 +60,6 @@ target_link_libraries(rtype_client_game_module
     rtype_client_sprite_effect_system
     rtype_client_status_band
     rtype_client_taunts
-    rtype_client_widget_text
 )
 
 rtype_enable_warnings(rtype_client_game_module)

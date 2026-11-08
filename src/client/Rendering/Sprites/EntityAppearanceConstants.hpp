@@ -20,10 +20,14 @@ constexpr std::string_view IDLE_TABLE_KEY = "idle";
 constexpr std::string_view ATTACK_TABLE_PREFIX = "attack_";
 constexpr std::array APPEARANCE_KEYS{SHEET_KEY, IDLE_TABLE_KEY};
 
-/** @brief The optional keys of `[appearance]`: `enraged_idle`, the idle
- * animation of an enemy once enraged, read like `idle` (IDLE_KEYS). */
+/** @brief The optional keys of `[appearance]`, each read like `idle`
+ * (IDLE_KEYS): `enraged_idle`, the idle animation of an enemy once enraged,
+ * and `death`, the death played instead of the Bydo explosion, whose version
+ * without flash lies in the row right under it. */
 constexpr std::string_view ENRAGED_IDLE_TABLE_KEY = "enraged_idle";
-constexpr std::array OPTIONAL_APPEARANCE_KEYS{ENRAGED_IDLE_TABLE_KEY};
+constexpr std::string_view DEATH_TABLE_KEY = "death";
+constexpr std::array OPTIONAL_APPEARANCE_KEYS{ENRAGED_IDLE_TABLE_KEY,
+                                              DEATH_TABLE_KEY};
 
 /**
  * @brief The keys of `[appearance.idle]`: the first frame, in pixels of the

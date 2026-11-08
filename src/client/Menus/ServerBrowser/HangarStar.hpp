@@ -9,8 +9,9 @@ namespace rtype::client {
  * STAR_PICK_REACH of HANGAR_STAR_POINT, as a server star. */
 [[nodiscard]] bool hangarStarAt(sf::Vector2i pixel);
 
-/** @brief Paints the hangar star and its name; with @p shown, the corners of
- * a chosen star and its bubble too. */
+/** @brief Paints the hangar star, a golden house centered on
+ * HANGAR_STAR_POINT, and its name; with @p shown, the corners of a chosen star
+ * and its bubble too. */
 void paintHangarStar(IInterfaceCanvas& canvas, bool shown);
 
 }  // namespace rtype::client

@@ -23,7 +23,6 @@
 #include "Sprite.hpp"
 #include "SpriteFrame.hpp"
 #include "TextStyle.hpp"
-#include "WidgetText.hpp"
 
 namespace rtype::client {
 
@@ -49,13 +48,14 @@ float outlinedHalfOf(int pixels) {
 
 /**
  * @returns The name tag of @p pilot: its name as the status band shows it
- * (see pilotNameOf()), in the regular font, outlined so the sky never touches
- * a letter, in the Popups layer, centered on its ship until tagPilotShips()
- * moves it, its color and visibility set by tagPilotShips().
+ * (see pilotNameOf()), in the small font so it does not hide the playfield,
+ * outlined so the sky never touches a letter, in the Popups layer, centered
+ * on its ship until tagPilotShips() moves it, its color and visibility set by
+ * tagPilotShips().
  */
 Caption nameTagOf(const PilotStatus& pilot) {
   return Caption{.text = pilotNameOf(pilot.nickname, pilot.playerNumber),
-                 .style = TextStyle{.font = TextFont::Regular,
+                 .style = TextStyle{.font = TextFont::Small,
                                     .color = {},
                                     .outlined = true,
                                     .alignment = TextAlignment::Center},
@@ -69,7 +69,8 @@ game::Position nameTagOffsetOf(game::Position ship, game::SpriteFrame frame,
                                std::string_view text) {
   const float rise = captionRiseOver(frame, NAME_TAG_GAP);
   const float halfLine = outlinedHalfOf(TEXT_LINE_HEIGHT);
-  const float halfWidth = outlinedHalfOf(regularTextWidth(text));
+  const float halfWidth =
+      outlinedHalfOf(static_cast<int>(text.size()) * NAME_TAG_PIXELS_PER_BYTE);
   const float center =
       std::min(std::max(ship.x, halfWidth), game::PLAYFIELD_WIDTH - halfWidth);
   const bool fitsAbove = ship.y - rise - halfLine >= 0.0F;

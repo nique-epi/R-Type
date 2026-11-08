@@ -19,6 +19,7 @@
 #include "ScreenAssetsFixtures.hpp"
 #include "ScreenAssetsTestConstants.hpp"
 #include "ScreenConstants.hpp"
+#include "SectorMapSpriteConstants.hpp"
 #include "ShipLookSpriteConstants.hpp"
 
 using rtype::client::AssetLibrary;
@@ -37,6 +38,7 @@ using rtype::client::LOGO_SIZE;
 using rtype::client::PLUG_ICON_ID;
 using rtype::client::PROFESSOR_SHEET_ID;
 using rtype::client::REGULAR_FONT_ID;
+using rtype::client::SECTOR_MAP_SHEET_ID;
 using rtype::client::SHIP_LOOK_SHEET_ID;
 using rtype::client::SMALL_FONT_ID;
 using rtype::client::titleAssets;
@@ -183,14 +185,15 @@ TEST(ScreenAssets, AGameKeepsEveryTextureOfTheTitle) {
 /**
  * Given the assets of the intro
  * When their textures are listed
- * Then they hold those of the title, which follows it, and the effect sheet
- * of its explosions
+ * Then they hold those of the title, which follows it, the sheet of the map
+ * of the servers, and the effect sheet of its explosions
  */
 TEST(ScreenAssets, TheIntroLoadsTheTitleAndTheEffectSheet) {
   EXPECT_THAT(introAssets().textures,
               UnorderedElementsAre(LOGO_ID, ENTITY_SHEET_ID, HUD_SHEET_ID,
                                    PROFESSOR_SHEET_ID, LEADERBOARD_SHEET_ID,
-                                   SHIP_LOOK_SHEET_ID, EFFECT_SHEET_ID));
+                                   SHIP_LOOK_SHEET_ID, SECTOR_MAP_SHEET_ID,
+                                   EFFECT_SHEET_ID));
 }
 
 /**

@@ -25,7 +25,9 @@ EntityAppearance appearancePlaying(const Animation& animation) {
       .idleFrames = {animation.frames.begin(), animation.frames.end()},
       .idleFrameDuration = animation.frameDuration,
       .actions = {},
-      .enragedIdleFrames = {}};
+      .enragedIdleFrames = {},
+      .deathFrames = {},
+      .deathFramesWithoutFlash = {}};
 }
 
 /** @returns The side of the type the double numbers @p number, or nothing

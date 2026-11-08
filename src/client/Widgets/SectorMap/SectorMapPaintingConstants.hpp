@@ -18,14 +18,10 @@ inline constexpr int RING_LABEL_LEFT_MARGIN = 4;
 inline constexpr std::string_view PING_UNIT_SUFFIX = " MS";
 
 /** @brief A star is drawn only this far inside the edges of the map, and its
- * glyph grows with its pilots: a dot, a cross, a large cross above
- * CROWDED_SERVER_PILOTS. */
+ * planet grows with its pilots: small with none, medium with a few, large
+ * above CROWDED_SERVER_PILOTS (see SectorMapSpriteConstants.hpp). */
 inline constexpr int STAR_MARGIN = 3;
 inline constexpr int CROWDED_SERVER_PILOTS = 10;
-inline constexpr int EMPTY_STAR_SIZE = 3;
-inline constexpr int INCOMPATIBLE_STAR_SIZE = 5;
-inline constexpr int STAR_CROSS_REACH = 2;
-inline constexpr int CROWDED_STAR_CROSS_REACH = 3;
 
 /** @brief The corners round the chosen star: a box STAR_CORNERS_SIZE wide
  * centred on it, strokes STAR_CORNER_LENGTH long. */

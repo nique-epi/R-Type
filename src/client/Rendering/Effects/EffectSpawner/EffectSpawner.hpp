@@ -27,6 +27,8 @@ class EntityRegistry;
 
 namespace rtype::client {
 
+struct EntityAppearance;
+
 /**
  * @brief Plays the effects of a game on a ladder of intensity: a shot (T0), a
  * hit (T1), a Bydo destroyed (T2), every fifth kill of a chain (T3), a ship
@@ -81,8 +83,12 @@ class EffectSpawner {
    * missile and three sparks towards its shooter, the three fireballs of a
    * ship alone (playShipDown() plays the whole of T4). A value outside
    * EntityType plays nothing.
+   * @param appearance The appearance of an enemy killed, whose sheet may draw
+   * its own death; nullptr, for any other entity or one without a sheet,
+   * plays the Bydo explosion for an enemy.
    */
-  void playExplosion(game::EntityType type, game::Position center);
+  void playExplosion(game::EntityType type, game::Position center,
+                     const EntityAppearance* appearance = nullptr);
 
   /** @brief Plays T4 for a ship destroyed (see KillEffects::playShipDown()),
    * and the cue of its pilot hit while the sound cues show. Call it before the

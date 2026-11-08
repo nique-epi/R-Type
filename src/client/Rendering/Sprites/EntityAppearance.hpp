@@ -12,7 +12,8 @@ namespace rtype::client {
  * @brief How the entities of one type look, as the `[appearance]` table of
  * its sheet describes it: the sprite sheet they are drawn from, the frames of
  * their idle animation, side by side in one row of that sheet, how long each
- * frame shows, and the animation of each phase of each attack they have.
+ * frame shows, the animation of each phase of each attack they have, and
+ * their death when the sheet draws one.
  *
  * An Animation views idleFrames and the frames of an action, so an appearance
  * outlives every entity that plays it: EntityAppearances holds them for as long
@@ -33,6 +34,14 @@ struct EntityAppearance {
   std::vector<game::SpriteFrame> enragedIdleFrames;
   /** @brief How long each enraged idle frame shows. */
   engine::Duration enragedIdleFrameDuration{};
+  /** @brief The frames of the death, played once instead of the Bydo
+   * explosion; none when the sheet has no `[appearance.death]`. */
+  std::vector<game::SpriteFrame> deathFrames;
+  /** @brief The same death without flash, for REDUCE FLASHES: the row right
+   * under deathFrames, frame for frame. */
+  std::vector<game::SpriteFrame> deathFramesWithoutFlash;
+  /** @brief How long each frame of the death shows. */
+  engine::Duration deathFrameDuration{};
 };
 
 }  // namespace rtype::client

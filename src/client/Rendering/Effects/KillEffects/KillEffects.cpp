@@ -7,12 +7,14 @@
 #include "CameraShakeConstants.hpp"
 #include "ComponentRegistry.hpp"
 #include "DownedShip.hpp"
+#include "EffectAnimations.hpp"
 #include "EffectColorConstants.hpp"
 #include "EffectConstants.hpp"
 #include "EffectTargets.hpp"
 #include "EffectTierConstants.hpp"
 #include "EffectTools.hpp"
 #include "Entity.hpp"
+#include "EntityAppearance.hpp"
 #include "FlashGate.hpp"
 #include "FlashLoan.hpp"
 #include "GainFigures.hpp"
@@ -24,6 +26,7 @@
 #include "PilotDebrisRamps.hpp"
 #include "PilotShades.hpp"
 #include "PixelEffects.hpp"
+#include "Playback.hpp"
 #include "Position.hpp"
 #include "RenderingConstants.hpp"
 #include "SheetEffect.hpp"
@@ -73,6 +76,28 @@ Nudge vibrationOf(engine::Duration hold) {
       .duration = std::chrono::duration_cast<engine::Duration>(hold * HALF)};
 }
 
+/** @returns The explosion of a kill: the death the sheet of the victim draws,
+ * in that sheet, or @p bydoExplosion when @p appearance draws none. The
+ * animations view the frames of the appearance, which outlives the effect. */
+std::optional<engine::Entity> spawnKillExplosion(
+    const EffectTools& tools, const EntityAppearance* appearance,
+    const SheetEffect& bydoExplosion) {
+  if (appearance == nullptr || appearance->deathFrames.empty()) {
+    return spawnSheetEffect(tools, bydoExplosion);
+  }
+  const EffectAnimations death{
+      .standard = {.frames = appearance->deathFrames,
+                   .frameDuration = appearance->deathFrameDuration,
+                   .playback = Playback::Once},
+      .withoutFlash = {.frames = appearance->deathFramesWithoutFlash,
+                       .frameDuration = appearance->deathFrameDuration,
+                       .playback = Playback::Once}};
+  SheetEffect effect = bydoExplosion;
+  effect.animations = &death;
+  effect.sheet = appearance->sheet;
+  return spawnSheetEffect(tools, effect);
+}
+
 }  // namespace
 
 KillEffects::KillEffects(EffectTools tools, GainFigures& gains)
@@ -82,18 +107,20 @@ void KillEffects::advance(engine::Duration elapsed) {
   killChain_.advance(elapsed);
 }
 
-void KillEffects::playKill(game::Position center) {
+void KillEffects::playKill(game::Position center,
+                           const EntityAppearance* appearance) {
   const FlashGate& gate = tools_.gate;
   PixelEffects& pixels = tools_.pixels;
   const bool bigCatch = killChain_.noteKill();
   const KillTier& tier = bigCatch ? BIG_CATCH_TIER : KILL_TIER;
-  const std::optional<engine::Entity> explosion = spawnSheetEffect(
-      tools_, SheetEffect{.animations = &BYDO_EXPLOSION,
-                          .center = center,
-                          .hold = tier.hold,
-                          .flash = {.area = BYDO_EXPLOSION_FLASH_AREA,
-                                    .remaining = tier.hold +
-                                                 BYDO_EXPLOSION_FRAME_TIME}});
+  const std::optional<engine::Entity> explosion = spawnKillExplosion(
+      tools_, appearance,
+      SheetEffect{
+          .animations = &BYDO_EXPLOSION,
+          .center = center,
+          .hold = tier.hold,
+          .flash = {.area = BYDO_EXPLOSION_FLASH_AREA,
+                    .remaining = tier.hold + BYDO_EXPLOSION_FRAME_TIME}});
   if (explosion.has_value()) {
     gate.nudge(tools_.components, *explosion, vibrationOf(tier.hold));
   }

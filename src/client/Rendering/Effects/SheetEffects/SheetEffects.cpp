@@ -1,9 +1,9 @@
 #include "SheetEffects.hpp"
 #include <optional>
+#include <string>
 #include "Animation.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectAnimations.hpp"
-#include "EffectConstants.hpp"
 #include "EffectTools.hpp"
 #include "Entity.hpp"
 #include "FlashGate.hpp"
@@ -38,7 +38,7 @@ std::optional<engine::Entity> addSheetEntity(const EffectTools& tools,
   engine::ComponentRegistry& components = tools.components;
   const engine::Entity entity = tools.entities.get().create();
   components.add(entity, effect.center);
-  components.add(entity, game::Sprite{.assetId = EFFECT_SHEET_ID,
+  components.add(entity, game::Sprite{.assetId = std::string(effect.sheet),
                                       .frame = *firstFrame,
                                       .layer = game::Layer::Effects});
   components.add(

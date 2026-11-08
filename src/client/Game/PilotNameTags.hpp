@@ -19,7 +19,9 @@ namespace rtype::client {
  *
  * @param ship The center of the ship.
  * @param frame The frame the ship is drawn with.
- * @param text The UTF-8 line of the tag, written in the regular font: at most
+ * @param text The UTF-8 line of the tag, written in the small font. Its width
+ * is taken as NAME_TAG_PIXELS_PER_BYTE per byte, which no line of the small
+ * font exceeds, so the line stays whole: at most
  * PLAYFIELD_WIDTH / BACKGROUND_PIXEL_SIZE pixels wide.
  */
 [[nodiscard]] game::Position nameTagOffsetOf(game::Position ship,

@@ -431,38 +431,7 @@ A new module is written directly in its own folder, `src/<program>/<Name>/`, cla
 
 ## A key press, from one screen to another
 
-Player A holds the Up arrow and player B sees A's ship move. Each step happens in one place.
-
-This is the path the design aims for; the server half and the prediction of the own ship run today. The inputs of client A reach its game, each tick of a game in progress moves the ships by their `Intent` with `ShipControl` in `MovementSystem`, and the world state goes to every player 20 times per second by default, as many as the host chose with `--state-rate`. Client A moves its ship at once with `ShipControl`, one input per tick, and when a world state confirms an input at a position far from the predicted one it restarts from the server position and replays the inputs after it (`client/Prediction`, with PREDICTION on); the other entities are interpolated (`client/Replication`, `client/Prediction`): both clients draw them two state intervals in the past, 100 ms at the default rate, between two world states. `network/Sessions` and `network/Snapshots` do not exist either: the session token is checked by `DatagramSorter` and the sequence by `DatagramReader`, both in `src/server/`, and the world state is written by `WorldStateCodec` and `DeltaWorldStateCodec` in `network/Protocol`, as the difference from the last state a player acknowledged (`SentStates` keeps what was sent in `server/Sessions/Roster/`, `WorldStateAssembler` rebuilds it in `client/Replication/EntityMessages/`).
-
-```mermaid
-sequenceDiagram
-  accTitle: A key press, from client A to client B
-  accDescr: Client A moves its ship at once and sends its inputs to the server network thread, which queues them for the game thread. The game thread runs a tick and hands a snapshot to the network thread, which sends it to client A, who corrects its ship, and to client B, who draws the ship of A.
-  participant A as Client A
-  participant N as Server network thread
-  participant G as Server game thread
-  participant B as Client B
-  Note over A: moves its ship at once
-  A->>N: inputs
-  N->>G: queue
-  Note over G: tick
-  G->>N: snapshot
-  N->>A: snapshot
-  Note over A: corrects its ship
-  N->>B: snapshot
-  Note over B: draws A's ship
-```
-
-| In the diagram | What happens | Where |
-|---|---|---|
-| moves its ship at once | The key becomes a player input; the ship moves without waiting for the server | `client/Input`, `client/Prediction`, `game/ShipControl` |
-| inputs | The last inputs not yet confirmed are sent | `client/Connection`, `network/Protocol` |
-| queue | Token and sequence checked, input queued for A's game | `network/Sessions`, `server/Instances` |
-| tick | Ship control, then the systems | `game/ShipControl`, `game/Systems` |
-| snapshot | The world is sent to every player, 20 times per second by default, as the difference from the last state it acknowledged | `server/Replication`, `network/Protocol` |
-| corrects its ship | A restarts from the server position and replays its newer inputs | `client/Prediction` |
-| draws A's ship | B shows A's ship two state intervals in the past (100 ms at the default rate, more after a late state), between two states | `client/Replication`, `client/Prediction` |
+The path of an action from the key of one player to the screen of the others, with the folder of each step, is drawn on [Overview](/R-Type/overview/#a-key-press-from-one-screen-to-another).
 
 ## Moves from today's code
 
