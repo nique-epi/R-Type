@@ -39,4 +39,4 @@ jobs:
       - name: Lint the scripts
         run: |
           shellcheck --version
-          shellcheck --shell=sh --external-sources infra/master/deploy.sh infra/terraform/user-data.sh
+          shellcheck --shell=sh --external-sources infra/bootstrap.sh infra/master/deploy.sh infra/terraform/user-data.sh
