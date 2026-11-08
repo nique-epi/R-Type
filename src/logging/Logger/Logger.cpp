@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <mutex>
@@ -38,6 +39,8 @@ struct Sinks {
   std::mutex mutex;
   std::ofstream file;
   bool toStderr{true};
+  bool forceColor{false};
+  std::function<void(std::string_view)> standardError;
 };
 
 Sinks& sinks() {
@@ -183,6 +186,27 @@ std::string formatTimestamp() {
   return out.str();
 }
 
+/** @brief Writes @p line to standard error through the writer of
+ * @p destination, or to std::cerr; the caller holds the lock of
+ * @p destination. */
+void writeToStandardError(const Sinks& destination, std::string_view line) {
+  if (destination.standardError) {
+    destination.standardError(line);
+    return;
+  }
+  std::cerr << line << '\n';
+}
+
+/** @returns @p text as standard error shows it: between the colour of
+ * @p level and ANSI_RESET when colour is on. */
+std::string standardErrorText(const Sinks& destination, LogLevel level,
+                              const std::string& text) {
+  if (!destination.forceColor && !colorEnabled()) {
+    return text;
+  }
+  return std::string{ansiForLevel(level)} + text + std::string{ANSI_RESET};
+}
+
 void emitLine(LogLevel level, std::string_view name, std::string_view body) {
   Sinks& destination = sinks();
   const std::lock_guard<std::mutex> lock(destination.mutex);
@@ -195,11 +219,8 @@ void emitLine(LogLevel level, std::string_view name, std::string_view body) {
     destination.file.flush();
   }
   if (destination.toStderr) {
-    if (colorEnabled()) {
-      std::cerr << ansiForLevel(level) << text << ANSI_RESET << '\n';
-    } else {
-      std::cerr << text << '\n';
-    }
+    writeToStandardError(destination,
+                         standardErrorText(destination, level, text));
   }
 }
 
@@ -255,11 +276,26 @@ void Logger::setOutput(const LogOutput& output) {
   destination.file.close();
   destination.file = std::move(file);
   destination.toStderr = output.toStderr;
+  destination.forceColor = output.forceColor;
 }
 
 void writeLogLine(const LogRecord& record) {
   emitLine(record.level, record.loggerName, record.body);
 }
+
+void setStandardErrorWriter(std::function<void(std::string_view)> writer) {
+  Sinks& destination = sinks();
+  const std::lock_guard<std::mutex> lock(destination.mutex);
+  destination.standardError = std::move(writer);
+}
+
+void writeStandardErrorLine(std::string_view line) {
+  Sinks& destination = sinks();
+  const std::lock_guard<std::mutex> lock(destination.mutex);
+  writeToStandardError(destination, line);
+}
+
+bool isStandardErrorColored() { return colorEnabled(); }
 
 void Logger::writeLine(LogLevel candidate, std::string_view body) const {
   if (journal_ != nullptr) {

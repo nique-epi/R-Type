@@ -87,10 +87,11 @@ The client and the server read the same options:
 | Option | Effect |
 |---|---|
 | `--log-level <name>` | The level: `trace`, `debug`, `info`, `warn`, `error` or `silent`, in any case. |
-| `--log-file <path>` | The journal. The default is `r-type_server.log` or `r-type_client.log` next to the executable, whatever folder the program was started in, except the client on macOS, whose default is `r-type_client.log` in `~/Library/Logs` (`journalFolder()`, `src/client/Platform/`), where Console shows it and where it never modifies the signed app; or none when that file cannot be opened. The supervisor gives each game process `--log-file r-type_game_<n>.log`, next to the executable, then the logging options of its own launch that the games share (`LogLaunchOptions::forwardedArguments()`): `--log-level` when it was given one, `--no-log-file` when it writes no journal, which wins over the journal of the game since it comes after it, and `--no-log-stderr`. A game process is started with the environment of the supervisor, since the launcher sets none of its own, so without `--log-level` both read the same `RT_LOG_LEVEL`. A relative path given after `--log-file` is read from the folder the program was started in. |
+| `--log-file <path>` | The journal. The default is `r-type_server.log` or `r-type_client.log` next to the executable, whatever folder the program was started in, except the client on macOS, whose default is `r-type_client.log` in `~/Library/Logs` (`journalFolder()`, `src/client/Platform/`), where Console shows it and where it never modifies the signed app; or none when that file cannot be opened. The supervisor gives each game process `--log-file r-type_game_<n>.log`, next to the executable, then the logging options of its own launch that the games share (`LogLaunchOptions::forwardedArguments()`): `--log-level` when it was given one, `--no-log-file` when it writes no journal, which wins over the journal of the game since it comes after it, `--no-log-stderr` and `--log-color`; then `--log-color` when its own standard error is in colour, since a game writes into a pipe the supervisor relays (see [Server](/R-Type/server/#the-prompt-terminalscreen)). A game process is started with the environment of the supervisor, since the launcher sets none of its own, so without `--log-level` both read the same `RT_LOG_LEVEL`. A relative path given after `--log-file` is read from the folder the program was started in. |
 | `--no-log-file` | No journal. |
 | `--log-stderr` | Write to standard error too. This is the default. |
 | `--no-log-stderr` | Nothing on standard error. |
+| `--log-color` | Standard error in colour, even when it is no terminal. Without it, colour is on only when standard error is a terminal and neither `NO_COLOR` nor `RT_LOG_NO_COLOR` is set. |
 
 Without options, every line goes both to the journal and to standard error, so a program launched from a terminal shows its lines there. The first line, at the `info` level under the name `Logging`, gives the absolute path of the journal (`journal: /home/player/r-type/r-type_server.log`), or says `no journal file`.
 
@@ -158,6 +159,10 @@ sequenceDiagram
 ## Threads
 
 A line is written under a single lock, and its timestamp is read under that lock, so the lines of a file are in the order of the clock and never interleave. The run-time level is an atomic. A test writes 200 lines from 4 threads and checks that every line is whole and that each one appears exactly once; with the lock removed, that test crashes.
+
+## Standard error and the admin console
+
+`setStandardErrorWriter()` (`Logger.hpp`) hands every line meant for standard error, without its end, to a function instead of `std::cerr`, and an empty function gives standard error back. `writeStandardErrorLine()` writes a line that comes from no journal the same way: the line a game process wrote, which the supervisor relays (`ChildOutputRelay`). The admin console of the supervisor sets the writer while it shows its prompt, so every line goes above the line being typed (see [Server](/R-Type/server/#the-prompt-terminalscreen)). The writer runs under the lock of the lines, so it never writes to the journal itself. The journal file is never handed to it.
 
 ## Cost
 

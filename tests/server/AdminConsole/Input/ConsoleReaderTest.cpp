@@ -4,6 +4,7 @@
 #include "AdminConsoleConstants.hpp"
 #include "AdminConsoleTestConstants.hpp"
 #include "BoundedQueue.hpp"
+#include "ConsoleLineSplitter.hpp"
 #include "ConsoleReader.hpp"
 #include "ConsoleReaderFixtures.hpp"
 #include "ConsoleReaderTestConstants.hpp"
@@ -12,6 +13,7 @@
 
 using rtype::concurrency::BoundedQueue;
 using rtype::server::CONSOLE_LINE_CAPACITY;
+using rtype::server::ConsoleLineSplitter;
 using rtype::server::ConsoleReader;
 
 /**
@@ -25,8 +27,9 @@ TEST(ConsoleReader, HandsEachTypedLineToTheQueue) {
       {std::string{GAMES_AND_HALF_OF_PLAYERS}, std::string{REST_OF_PLAYERS}},
       false};
   BoundedQueue<std::string> lines{CONSOLE_LINE_CAPACITY};
+  ConsoleLineSplitter splitter;
 
-  const ConsoleReader reader{input, lines};
+  const ConsoleReader reader{input, splitter, lines};
 
   EXPECT_EQ(linesWithin(lines, 2),
             (std::vector<std::string>{std::string{GAMES_LINE},
@@ -41,8 +44,9 @@ TEST(ConsoleReader, HandsEachTypedLineToTheQueue) {
 TEST(ConsoleReader, HandsTheLastLineWhenTheInputEnds) {
   ScriptedConsoleInput input{{std::string{NETWORK_LINE}}, true};
   BoundedQueue<std::string> lines{CONSOLE_LINE_CAPACITY};
+  ConsoleLineSplitter splitter;
 
-  const ConsoleReader reader{input, lines};
+  const ConsoleReader reader{input, splitter, lines};
 
   EXPECT_EQ(linesWithin(lines, 1),
             (std::vector<std::string>{std::string{NETWORK_LINE}}));
@@ -57,8 +61,9 @@ TEST(ConsoleReader, HandsTheLastLineWhenTheInputEnds) {
 TEST(ConsoleReader, WakesTheWaitingReadWhenDestroyed) {
   ScriptedConsoleInput input{{std::string{GAMES_ENDED}}, false};
   BoundedQueue<std::string> lines{CONSOLE_LINE_CAPACITY};
+  ConsoleLineSplitter splitter;
   {
-    const ConsoleReader reader{input, lines};
+    const ConsoleReader reader{input, splitter, lines};
     ASSERT_EQ(linesWithin(lines, 1).size(), 1U);
   }
 

@@ -1,3 +1,4 @@
 target_sources(master_tests PRIVATE LogLaunchOptionsFixtures.cpp)
 target_sources(logging_tests PRIVATE LogLaunchOptionsTest.cpp LogLaunchOptionsFixture.cpp LogLaunchOptionsFixtures.cpp ThrottledLogTest.cpp ThrottledLogFixture.cpp PathTextTest.cpp)
+target_include_directories(logging_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 add_subdirectory(Logger)

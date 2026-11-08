@@ -26,6 +26,44 @@ constexpr std::size_t MAXIMUM_CONSOLE_LINE_LENGTH = 1024;
 constexpr char LINE_END = '\n';
 constexpr char CARRIAGE_RETURN = '\r';
 
+/** @brief What the console shows where the administrator types. */
+constexpr std::string_view CONSOLE_PROMPT = "> ";
+
+/** @brief The line the console writes once it reads a terminal. */
+constexpr std::string_view CONSOLE_READY_TEXT =
+    "admin console ready: type help to list the commands";
+
+/** @brief Takes the cursor back to the start of its row and erases the row,
+ * before a line is written above the prompt (VT100 "erase in line"). */
+constexpr std::string_view ERASE_ROW = "\r\x1b[K";
+
+/** @brief Ends a row of the terminal and takes the cursor back to its first
+ * column, whether or not the terminal turns "\n" into "\r\n" itself
+ * (ONLCR). */
+constexpr std::string_view ROW_END = "\r\n";
+
+/** @brief The keys the line editor reads apart from the text. */
+constexpr char ESCAPE = '\x1b';
+constexpr char BACKSPACE = '\b';
+constexpr char DELETE_CHARACTER = '\x7f';
+constexpr char FIRST_PRINTABLE = ' ';
+
+/** @brief The bytes after ESCAPE that open the sequence of an arrow or a
+ * function key, and the range of the byte that ends it (ECMA-48). */
+constexpr char CONTROL_SEQUENCE_OPENER = '[';
+constexpr char FUNCTION_SEQUENCE_OPENER = 'O';
+constexpr char FIRST_FINAL_BYTE = '@';
+constexpr char LAST_FINAL_BYTE = '~';
+
+/** @brief The two top bits of a byte that continues a UTF-8 character. */
+constexpr unsigned char UTF8_TOP_BITS = 0xC0;
+constexpr unsigned char UTF8_CONTINUATION = 0x80;
+
+/** @brief How a read of a terminal in typing mode returns: as soon as one byte
+ * came (VMIN), with no timer (VTIME). */
+constexpr unsigned char TYPING_MINIMUM_BYTES = 1;
+constexpr unsigned char TYPING_TIMEOUT = 0;
+
 /** @brief How long the console waits before it reads again when the system
  * refuses the read because the supervisor runs in the background of a
  * shell. */

@@ -14,6 +14,7 @@ constexpr std::string_view FILE_OPTION = "--log-file";
 constexpr std::string_view NO_FILE_OPTION = "--no-log-file";
 constexpr std::string_view STDERR_OPTION = "--log-stderr";
 constexpr std::string_view NO_STDERR_OPTION = "--no-log-stderr";
+constexpr std::string_view COLOR_OPTION = "--log-color";
 constexpr std::string_view LOG_OPTION_PREFIX = "--log-";
 constexpr std::string_view NO_LOG_OPTION_PREFIX = "--no-log-";
 

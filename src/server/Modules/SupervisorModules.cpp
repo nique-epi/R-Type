@@ -16,6 +16,8 @@
 #include "GameLaunchSettings.hpp"
 #include "IModule.hpp"
 #include "LaunchOptions.hpp"
+#include "Logger.hpp"
+#include "LoggingConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerContentModule.hpp"
 #include "ServerInformationModule.hpp"
@@ -32,11 +34,24 @@
 #include "ServerAdminConsoleModule.hpp"
 #include "StandardInput.hpp"
 #include "StandardOutput.hpp"
+#include "StandardTerminal.hpp"
 #endif
 
 namespace rtype::server {
 
 namespace {
+
+/** @returns The arguments @p launchOptions hand the games, and
+ * logging::COLOR_OPTION when this journal writes in colour on its own: a game
+ * writes into a pipe the supervisor relays (see ChildOutputRelay), which is no
+ * terminal, so it would write none. */
+std::vector<std::string> gameArgumentsOf(const LaunchOptions& launchOptions) {
+  std::vector<std::string> arguments = launchOptions.gameArguments();
+  if (logging::isStandardErrorColored()) {
+    arguments.emplace_back(logging::COLOR_OPTION);
+  }
+  return arguments;
+}
 
 /**
  * @returns What every game process is started with: this executable, the
@@ -53,13 +68,14 @@ GameLaunchSettings gameLaunchSettings(
   if (!program.has_value()) {
     throw engine::UnknownExecutablePathException();
   }
-  return GameLaunchSettings{.program = *program,
-                            .folder = engine::executableFolder(),
-                            .gameLines = std::move(gameLines),
-                            .forwardedArguments = launchOptions.gameArguments(),
-                            .wavesFiles = wavesFilesOf(contentFolders),
-                            .contentFolders = std::move(contentFolders),
-                            .trafficCsvFile = launchOptions.trafficCsvFile()};
+  return GameLaunchSettings{
+      .program = *program,
+      .folder = engine::executableFolder(),
+      .gameLines = std::move(gameLines),
+      .forwardedArguments = gameArgumentsOf(launchOptions),
+      .wavesFiles = wavesFilesOf(contentFolders),
+      .contentFolders = std::move(contentFolders),
+      .trafficCsvFile = launchOptions.trafficCsvFile()};
 }
 
 }  // namespace
@@ -88,7 +104,8 @@ std::vector<std::unique_ptr<engine::IModule>> supervisorModules(
 #endif
 #if RTYPE_MODULE_ADMIN_CONSOLE
   modules.push_back(std::make_unique<ServerAdminConsoleModule>(
-      std::make_unique<StandardInput>(), std::make_unique<StandardOutput>()));
+      std::make_unique<StandardInput>(), std::make_unique<StandardOutput>(),
+      std::make_unique<StandardTerminal>()));
 #endif
   return modules;
 }

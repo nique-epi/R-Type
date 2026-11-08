@@ -52,6 +52,11 @@ void recordNoStderr(LogLaunchSettings& settings,
   settings.output.toStderr = false;
 }
 
+void recordColor(LogLaunchSettings& settings,
+                 [[maybe_unused]] std::string_view value) {
+  settings.output.forceColor = true;
+}
+
 std::optional<LaunchOption> findLaunchOption(std::string_view argument) {
   constexpr std::array launchOptions{
       LaunchOption{
@@ -65,6 +70,8 @@ std::optional<LaunchOption> findLaunchOption(std::string_view argument) {
       LaunchOption{.name = NO_STDERR_OPTION,
                    .takesValue = false,
                    .record = recordNoStderr},
+      LaunchOption{
+          .name = COLOR_OPTION, .takesValue = false, .record = recordColor},
   };
   for (const LaunchOption& option : launchOptions) {
     if (option.name == argument) {
@@ -163,7 +170,8 @@ LogOutput applyOutput(const LogLaunchSettings& settings) {
     }
   }
   const LogOutput withoutJournal{.toStderr = settings.output.toStderr,
-                                 .filePath = std::nullopt};
+                                 .filePath = std::nullopt,
+                                 .forceColor = settings.output.forceColor};
   Logger::setOutput(withoutJournal);
   return withoutJournal;
 }
@@ -221,6 +229,9 @@ std::vector<std::string> LogLaunchOptions::forwardedArguments() const {
   if (!settings_.output.toStderr) {
     arguments.emplace_back(NO_STDERR_OPTION);
   }
+  if (settings_.output.forceColor) {
+    arguments.emplace_back(COLOR_OPTION);
+  }
   return arguments;
 }
 
@@ -246,6 +257,9 @@ std::string LogLaunchOptions::usageWithJournalAt(
   appendUsageEntry(text, STDERR_OPTION,
                    "Write to standard error too. This is the default.");
   appendUsageEntry(text, NO_STDERR_OPTION, "Write nothing to standard error.");
+  appendUsageEntry(
+      text, COLOR_OPTION,
+      "Write standard error in colour, even when it is no terminal.");
   return text;
 }
 

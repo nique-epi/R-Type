@@ -36,6 +36,7 @@
 
 #include <chrono>
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -54,6 +55,10 @@ namespace rtype::logging {
 struct LogOutput {
   bool toStderr{true};
   std::optional<std::filesystem::path> filePath;
+  /** @brief Colour on standard error even when it is no terminal:
+   * `--log-color`, which the supervisor gives a game whose standard error it
+   * relays. */
+  bool forceColor{false};
 };
 
 class Logger {
@@ -176,6 +181,28 @@ class Logger {
  * levels are written.
  */
 void writeLogLine(const LogRecord& record);
+
+/**
+ * @brief Hands every line this copy of the library writes to standard error to
+ * @p writer, without its end, instead of std::cerr; an empty @p writer writes
+ * them to std::cerr again. The writer runs under the lock of the sinks, so it
+ * must never write to the journal itself. The admin console of the supervisor
+ * uses it to keep the line being typed under the lines of the journal.
+ */
+void setStandardErrorWriter(std::function<void(std::string_view)> writer);
+
+/**
+ * @brief Writes @p line, without its end, to standard error, through the writer
+ * of setStandardErrorWriter() when one is set: a line that does not come from
+ * this journal, such as a line a game process wrote. @p line may hold several
+ * lines, one end of line between two.
+ */
+void writeStandardErrorLine(std::string_view line);
+
+/** @returns Whether this process writes its journal in colour on its own:
+ * standard error is a terminal, and neither NO_COLOR nor RT_LOG_NO_COLOR is
+ * set (Windows: never). */
+[[nodiscard]] bool isStandardErrorColored();
 
 /**
  * @returns The first name Logger::parseLevel() reads as @p level: trace,

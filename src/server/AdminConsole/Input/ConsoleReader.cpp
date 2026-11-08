@@ -10,13 +10,15 @@
 #include "BoundedQueue.hpp"
 #include "ConsoleChunk.hpp"
 #include "IConsoleInput.hpp"
+#include "ILineCutter.hpp"
 
 namespace rtype::server {
 
-ConsoleReader::ConsoleReader(IConsoleInput& input,
+ConsoleReader::ConsoleReader(IConsoleInput& input, ILineCutter& cutter,
                              concurrency::BoundedQueue<std::string>& lines)
     : input_(&input),
       lines_(&lines),
+      cutter_(&cutter),
       logger_(std::string{ADMIN_CONSOLE_LOGGER_NAME}),
       console_([this](const std::stop_token& stop) { run(stop); }) {}
 
@@ -24,13 +26,13 @@ void ConsoleReader::run(const std::stop_token& stop) {
   std::array<char, CONSOLE_READ_SIZE> buffer{};
   std::optional<std::size_t> received = input_->read(buffer, stop);
   while (received.has_value()) {
-    handOver(splitter_.feed(std::span<const char>{buffer}.first(*received)));
+    handOver(cutter_->feed(std::span<const char>{buffer}.first(*received)));
     received = input_->read(buffer, stop);
   }
   if (stop.stop_requested()) {
     return;
   }
-  handOver(splitter_.finish());
+  handOver(cutter_->finish());
   logger_.info("the console input ended: no command is read from it any more");
 }
 
