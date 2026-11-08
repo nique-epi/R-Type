@@ -29,6 +29,7 @@ using rtype::client::LEADERBOARD_SCREEN;
 using rtype::client::NEW_GAME_SCREEN;
 using rtype::client::ServerListPhase;
 using rtype::client::ServerListSnapshot;
+using rtype::client::testing::COLUMN_HEADINGS_ON_THE_PANEL;
 using rtype::client::testing::HANGAR_HOUSE_ON_THE_MAP;
 using rtype::client::testing::HANGAR_HOUSE_SOURCE;
 using rtype::client::testing::HANGAR_STAR_HINT_LINE;
@@ -37,10 +38,12 @@ using rtype::client::testing::LYON_SERVER_ADDRESS;
 using rtype::client::testing::LYON_SERVER_ID;
 using rtype::client::testing::lyonGames;
 using rtype::client::testing::MAP_SHEET;
+using rtype::client::testing::NEW_GAME_ROW_ON_THE_PANEL;
 using rtype::client::testing::ONE_FRAME;
 using rtype::client::testing::ONE_PLANET_TURN_FRAME;
 using rtype::client::testing::PARIS_SERVER_ID;
 using rtype::client::testing::parisOnTheWholeMap;
+using rtype::client::testing::PLAYING_GAME_ROW_ON_THE_PANEL;
 using rtype::client::testing::readyList;
 using rtype::client::testing::REFRESH_INTERVAL;
 using rtype::client::testing::ServerMapScreenFixture;
@@ -48,6 +51,7 @@ using rtype::client::testing::SHORT_OF_THE_REFRESH;
 using rtype::client::testing::showsTheMiniMap;
 using rtype::client::testing::UNREACHABLE_MASTER;
 using rtype::client::testing::WAITING_GAME_NUMBER;
+using rtype::client::testing::WAITING_GAME_ROW_ON_THE_PANEL;
 using rtype::network::ANY_GAME_CHOICE;
 using rtype::network::defaultGameRules;
 using rtype::network::Endpoint;
@@ -218,6 +222,98 @@ TEST_F(ServerMapScreenFixture, EnterOnAWaitingGameAsksForThatGame) {
       (GameRequest{.game = GameChoice{.kind = GameChoiceKind::ExistingGame,
                                       .number = WAITING_GAME_NUMBER},
                    .rules = defaultGameRules()}));
+}
+
+/**
+ * Given the panel of the games of Lyon open
+ * When the left button is pressed on + NEW GAME
+ * Then the new game dialog opens over the map, as Enter on it opens it
+ */
+TEST_F(ServerMapScreenFixture, AClickOnNewGameOpensTheNewGameDialog) {
+  openOn(readyList());
+  games().show(lyonGames());
+  press(sf::Keyboard::Key::Enter);
+  press(sf::Keyboard::Key::Enter);
+
+  pointAt(NEW_GAME_ROW_ON_THE_PANEL, true);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = NEW_GAME_SCREEN}));
+}
+
+/**
+ * Given the panel of the games of Lyon open, + NEW GAME chosen
+ * When the left button is pressed on its waiting game
+ * Then the choice asks for that game, and the connection to Lyon opens
+ */
+TEST_F(ServerMapScreenFixture, AClickOnAWaitingGameJoinsIt) {
+  openOn(readyList());
+  games().show(lyonGames());
+  press(sf::Keyboard::Key::Enter);
+  press(sf::Keyboard::Key::Enter);
+
+  pointAt(WAITING_GAME_ROW_ON_THE_PANEL, true);
+
+  EXPECT_EQ(choice().lastRequest.value_or(GameRequest{}).game,
+            (GameChoice{.kind = GameChoiceKind::ExistingGame,
+                        .number = WAITING_GAME_NUMBER}));
+  EXPECT_THAT(
+      navigator().calls(),
+      ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                .screen = CONNECTION_TO_MAP_SERVER_SCREEN}));
+}
+
+/**
+ * Given the panel of the games of Lyon open
+ * When the left button is pressed on its game in progress
+ * Then nothing opens and the choice keeps no attempt, as Enter on it does
+ */
+TEST_F(ServerMapScreenFixture, AClickOnAGameInProgressJoinsNothing) {
+  openOn(readyList());
+  games().show(lyonGames());
+  press(sf::Keyboard::Key::Enter);
+  press(sf::Keyboard::Key::Enter);
+
+  pointAt(PLAYING_GAME_ROW_ON_THE_PANEL, true);
+
+  EXPECT_FALSE(choice().lastServer.has_value());
+  EXPECT_TRUE(navigator().calls().empty());
+}
+
+/**
+ * Given the panel of the games of Lyon open, + NEW GAME chosen
+ * When the pointer moves over its waiting game, then Enter is pressed
+ * Then the waiting game is joined: the pointer chose its row
+ */
+TEST_F(ServerMapScreenFixture, ThePointerOverARowOfThePanelChoosesIt) {
+  openOn(readyList());
+  games().show(lyonGames());
+  press(sf::Keyboard::Key::Enter);
+  press(sf::Keyboard::Key::Enter);
+  pointAt(WAITING_GAME_ROW_ON_THE_PANEL, false);
+
+  press(sf::Keyboard::Key::Enter);
+
+  EXPECT_EQ(choice().lastRequest.value_or(GameRequest{}).game,
+            (GameChoice{.kind = GameChoiceKind::ExistingGame,
+                        .number = WAITING_GAME_NUMBER}));
+}
+
+/**
+ * Given the panel of the games of Lyon open, + NEW GAME chosen
+ * When the left button is pressed on the headings of its columns
+ * Then nothing opens: only a row acts
+ */
+TEST_F(ServerMapScreenFixture, AClickOnTheColumnHeadingsActsOnNothing) {
+  openOn(readyList());
+  games().show(lyonGames());
+  press(sf::Keyboard::Key::Enter);
+  press(sf::Keyboard::Key::Enter);
+
+  pointAt(COLUMN_HEADINGS_ON_THE_PANEL, true);
+
+  EXPECT_TRUE(navigator().calls().empty());
 }
 
 /**

@@ -278,17 +278,14 @@ void ServerMapScreen::handleEvent(const sf::Event& event) {
   } else if (const auto* moved = event.getIf<sf::Event::MouseMoved>()) {
     const sf::Vector2i pixel =
         interfacePixelAt(playfieldPointAt_(moved->position));
+    if (map_.stage() == ServerMapStage::Games) {
+      static_cast<void>(panel_.chooseAt(pixel));
+    }
     hangarShown_ = hangarStarShownAt(map_, pixel);
     chosenShown_ = !hangarShown_ && map_.chooseAt(pixel);
   } else if (const auto* click = event.getIf<sf::Event::MouseButtonPressed>();
              click != nullptr && click->button == sf::Mouse::Button::Left) {
-    const sf::Vector2i pixel =
-        interfacePixelAt(playfieldPointAt_(click->position));
-    if (hangarStarShownAt(map_, pixel)) {
-      openHangar(heldKey_, *navigator_);
-    } else if (map_.chooseAt(pixel)) {
-      openGamesOf(map_, *games_);
-    }
+    pointerPressed(interfacePixelAt(playfieldPointAt_(click->position)));
   } else if (const auto* wheel = event.getIf<sf::Event::MouseWheelScrolled>()) {
     zoomWithWheel(map_, wheel->delta);
   }
@@ -373,6 +370,18 @@ void ServerMapScreen::confirm() {
         *choice_,
         ChosenGame{.server = chosen->endpoint, .request = requestToJoin(*game)},
         *navigator_);
+  }
+}
+
+void ServerMapScreen::pointerPressed(sf::Vector2i pixel) {
+  if (map_.stage() == ServerMapStage::Games) {
+    if (panel_.chooseAt(pixel)) {
+      confirm();
+    }
+  } else if (hangarStarShownAt(map_, pixel)) {
+    openHangar(heldKey_, *navigator_);
+  } else if (map_.chooseAt(pixel)) {
+    openGamesOf(map_, *games_);
   }
 }
 

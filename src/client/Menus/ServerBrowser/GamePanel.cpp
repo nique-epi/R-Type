@@ -66,6 +66,22 @@ sf::Vector2i inPanel(int across, int down) {
   return GAME_PANEL_AREA.position + sf::Vector2i{across, down};
 }
 
+/** @returns Where the text of the row @p shown rows under the first one shown
+ * stands, down from the top of the panel. */
+int rowTopOf(std::size_t shown) {
+  return GAME_PANEL_FIRST_ROW + (static_cast<int>(shown) * GAME_ROW_PITCH);
+}
+
+/** @returns The band of the row @p shown rows under the first one shown, which
+ * the pointer chooses it in: as wide as its highlight, and as tall as the
+ * pitch of the rows, so no click falls between two rows. */
+sf::IntRect rowBandOf(std::size_t shown) {
+  return {
+      inPanel(GAME_ROW_HIGHLIGHT_LEFT,
+              rowTopOf(shown) - GAME_ROW_HIGHLIGHT_RISE),
+      {GAME_PANEL_AREA.size.x - (2 * GAME_ROW_HIGHLIGHT_LEFT), GAME_ROW_PITCH}};
+}
+
 /** @returns The words the panel shows in place of its games, or nothing when
  * it has games to show. */
 std::optional<const char*> messageOf(ServerListPhase phase) {
@@ -183,6 +199,17 @@ std::optional<GameRow> GamePanel::joinable() const {
   return *game;
 }
 
+bool GamePanel::chooseAt(sf::Vector2i pixel) {
+  const std::size_t last = std::min(entryCount(), first_ + GAME_ROWS_SHOWN);
+  for (std::size_t entry = first_; entry < last; ++entry) {
+    if (rowBandOf(entry - first_).contains(pixel)) {
+      chosen_ = entry;
+      return true;
+    }
+  }
+  return false;
+}
+
 bool GamePanel::newGameChosen() const {
   return newGameRowsOf(games_) > 0 && chosen_ == 0;
 }
@@ -216,10 +243,8 @@ void GamePanel::paintRows(IInterfaceCanvas& canvas) const {
   paintColumnHeadings(canvas);
   const std::size_t last = std::min(entryCount(), first_ + GAME_ROWS_SHOWN);
   for (std::size_t entry = first_; entry < last; ++entry) {
-    const GameRowPlace place{
-        .top = GAME_PANEL_FIRST_ROW +
-               (static_cast<int>(entry - first_) * GAME_ROW_PITCH),
-        .chosen = entry == chosen_};
+    const GameRowPlace place{.top = rowTopOf(entry - first_),
+                             .chosen = entry == chosen_};
     if (const GameRow* game = gameAt(entry)) {
       paintGameRow(canvas, *game, place);
     } else {

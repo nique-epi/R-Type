@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
 #include <optional>
@@ -34,6 +35,8 @@ namespace rtype::client {
  * MENU_CONFIRM_KEY, or the wheel up, zooms on the chosen server; once zoomed,
  * MENU_CONFIRM_KEY opens the panel of its games, read from the master, and on
  * a waiting game joins it, on + NEW GAME pushes NEW_GAME_SCREEN over the map.
+ * On the panel, the pointer chooses the row it lies over, and a click on a
+ * row acts on it as MENU_CONFIRM_KEY does.
  * Joining puts the server and the game in the ServerChoice and pushes
  * CONNECTION_TO_MAP_SERVER_SCREEN, which asks only for the nickname, then
  * connects and opens the waiting room: a game of the panel is asked for by its
@@ -72,6 +75,11 @@ class ServerMapScreen : public IScreen {
   /** @brief Goes one stage deeper, joins the chosen waiting game, or opens
    * the new game dialog on + NEW GAME. */
   void confirm();
+  /** @brief Acts on a click at @p pixel of the interface: on the panel of the
+   * games, chooses the row under it and acts on it as MENU_CONFIRM_KEY does;
+   * elsewhere, opens the hangar from its star, or the games of the server
+   * whose star it is. */
+  void pointerPressed(sf::Vector2i pixel);
   /** @brief Goes one stage back, or closes the map from the whole map. */
   void stepBack();
   /** @brief Reads the list again, and the games of the chosen server when

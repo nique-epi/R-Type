@@ -65,6 +65,15 @@ constexpr std::uint16_t SEVENTH_GAME_NUMBER = 7;
 constexpr int SEVEN_ROWS_DOWN = 7;
 constexpr int PLAYING_GAME_ROW = 2;
 
+/** @brief Pixels of the panel of the games of Lyon, which lies from (184, 52),
+ * its first row 37 pixels under its top and its rows 15 pixels apart: on
+ * + NEW GAME, on the waiting game, on the game in progress, and on the
+ * headings of its columns, 24 pixels under its top, above every row. */
+constexpr sf::Vector2i NEW_GAME_ROW_ON_THE_PANEL{220, 89};
+constexpr sf::Vector2i WAITING_GAME_ROW_ON_THE_PANEL{220, 104};
+constexpr sf::Vector2i PLAYING_GAME_ROW_ON_THE_PANEL{220, 119};
+constexpr sf::Vector2i COLUMN_HEADINGS_ON_THE_PANEL{220, 76};
+
 /** @brief The lines under the rows a player must read: on + NEW GAME, and on
  * the waiting game of Lyon, played by the default rules. */
 constexpr std::string_view NEW_GAME_LINE =
