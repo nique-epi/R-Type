@@ -45,7 +45,8 @@ export default defineConfig({
             addEventListener('resize', makeScrollablesFocusable);`,
         },
       ],
-      plugins: [starlightLinksValidator()],
+      // The Doxygen reference is copied from public/api/ and is not a page.
+      plugins: [starlightLinksValidator({ exclude: ['/R-Type/api/**'] })],
     }),
   ],
 });
