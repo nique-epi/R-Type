@@ -18,7 +18,9 @@ constexpr std::chrono::milliseconds REGISTRATION_RETRY{5'000};
 
 /**
  * @brief The longest wait between two registrations, however long the master
- * stays away: a server back within a minute of its master, at worst.
+ * stays away. It bounds the wait only: a registration under way when the
+ * master comes back first runs to its end, within the timeouts of
+ * network::MasterClient.
  */
 constexpr std::chrono::milliseconds MAXIMUM_REGISTRATION_RETRY{60'000};
 
