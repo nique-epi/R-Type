@@ -1,0 +1,15 @@
+#pragma once
+
+/**
+ * @file
+ * @brief The version of the client, the one of project() in the root
+ * CMakeLists.txt. CMake writes this header into the build folder each time it
+ * configures: change project(), never the written file.
+ */
+
+namespace rtype::client {
+
+/** @brief Small line at the top of the title screen, naming the version. */
+constexpr const char* GAME_VERSION_TEXT = "VER @PROJECT_VERSION@";
+
+}  // namespace rtype::client

@@ -3,7 +3,9 @@ add_library(rtype_client_common_screens STATIC
   LoadingScreen.cpp
 )
 
-target_include_directories(rtype_client_common_screens PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+configure_file(ClientVersionConstants.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/ClientVersionConstants.hpp @ONLY)
+
+target_include_directories(rtype_client_common_screens PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(rtype_client_common_screens
   PUBLIC
