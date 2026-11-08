@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <functional>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <string>
@@ -159,6 +160,39 @@ PanelCursor placeRowsAndBarsOf(Menu::Content& content,
     }
   }
   return cursor;
+}
+
+/** @brief Takes out of @p bars every bar asked for after the cancel button: a
+ * tabbed panel lays them against the right end of its panel.
+ * @returns Those bars, in the order they were asked for. */
+std::vector<PendingButton> barsAfterCancel(
+    std::vector<PendingButton>& bars, std::optional<std::size_t> cancelButton) {
+  std::vector<PendingButton> trailing;
+  if (!cancelButton.has_value() || *cancelButton + 1 >= bars.size()) {
+    return trailing;
+  }
+  const auto first =
+      bars.begin() + static_cast<std::ptrdiff_t>(*cancelButton + 1);
+  trailing.assign(std::make_move_iterator(first),
+                  std::make_move_iterator(bars.end()));
+  bars.erase(first, bars.end());
+  return trailing;
+}
+
+/** @brief Places @p bars in a row under the panel of rows, the last one ending
+ * at the right end of the panel. */
+void placeBarsAtPanelEnd(Menu::Content& content,
+                         std::vector<PendingButton>& bars) {
+  const int rowWidth = barRowWidth(static_cast<int>(bars.size()),
+                                   PANEL_BAR_SIZE, SPACE_BESIDE_PANEL_BARS);
+  int barLeft = ROWS_PANEL_TOP_LEFT.x + ROWS_PANEL_SIZE.x - rowWidth;
+  for (PendingButton& pending : bars) {
+    content.buttons.emplace_back(
+        std::move(pending.text),
+        sf::IntRect({barLeft, PANEL_BARS_TOP}, PANEL_BAR_SIZE),
+        std::move(pending.action), std::move(pending.field));
+    barLeft += PANEL_BAR_SIZE.x + SPACE_BESIDE_PANEL_BARS;
+  }
 }
 
 /** @returns How many of @p bars are rows. */
@@ -444,13 +478,17 @@ void MenuBuilder::placeRowsPanel(Menu::Content& content) {
 }
 
 PanelCursor MenuBuilder::placeRowsAndBars(Menu::Content& content) {
-  return placeRowsAndBarsOf(
-      content, buttons_,
-      RowsAndBars{.firstRow = FIRST_ROW_TOP_LEFT,
-                  .rowSize = ROW_SIZE,
-                  .firstBar = {SAFE_MARGIN, PANEL_BARS_TOP},
-                  .barSize = PANEL_BAR_SIZE,
-                  .barGap = SPACE_BESIDE_PANEL_BARS});
+  std::vector<PendingButton> trailing =
+      barsAfterCancel(buttons_, cancelButton_);
+  const PanelCursor end =
+      placeRowsAndBarsOf(content, buttons_,
+                         RowsAndBars{.firstRow = FIRST_ROW_TOP_LEFT,
+                                     .rowSize = ROW_SIZE,
+                                     .firstBar = {SAFE_MARGIN, PANEL_BARS_TOP},
+                                     .barSize = PANEL_BAR_SIZE,
+                                     .barGap = SPACE_BESIDE_PANEL_BARS});
+  placeBarsAtPanelEnd(content, trailing);
+  return end;
 }
 
 void MenuBuilder::placeDescriptionAndIllustration(Menu::Content& content,
