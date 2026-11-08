@@ -25,13 +25,13 @@ struct GameLaunchSettings {
    * as they are (see LaunchOptions::gameArguments()): the logging options it
    * shares and the network simulated. */
   std::vector<std::string> forwardedArguments;
-  /** @brief The waves file the games read, which the supervisor reads too
-   * when it starts, for the names of the difficulties its games may be played
-   * at. */
-  std::filesystem::path wavesFile;
+  /** @brief The waves files the games read, each laid over the ones before
+   * it, which the supervisor reads too when it starts, for the names of the
+   * difficulties its games may be played at. */
+  std::vector<std::filesystem::path> wavesFiles;
   /** @brief The content folders the games are made from, the assets first
    * then each resource their `ensure` lines start (see
-   * engine::contentFoldersOf()): the waves file names its enemies among their
+   * engine::contentFoldersOf()): the waves files name their enemies among their
    * entity sheets. */
   std::vector<std::filesystem::path> contentFolders;
   /** @brief The file given to the supervisor after `--traffic-csv`, which

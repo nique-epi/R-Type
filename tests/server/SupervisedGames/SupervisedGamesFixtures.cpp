@@ -126,7 +126,7 @@ rtype::server::GameLaunchSettings settingsOf(
       .folder = FOLDER_FOR_TESTS,
       .gameLines = {},
       .forwardedArguments = supervisor.gameArguments(),
-      .wavesFile = {},
+      .wavesFiles = {},
       .contentFolders = {},
       .trafficCsvFile = supervisor.trafficCsvFile()};
 }

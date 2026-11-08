@@ -41,8 +41,8 @@ constexpr std::array<std::string_view, 2> THE_BOSS_THEN_CRIMSON{
 /** @brief The folders laid for the boss: the assets, crimson, the boss. */
 constexpr std::size_t FOLDERS_FOR_THE_BOSS = 3;
 
-/** @brief A file the assets hold, that a resource may replace, and what each
- * copy holds. */
-constexpr std::string_view REPLACEABLE_FILE = "waves/waves.toml";
+/** @brief A file the assets hold, that a resource may lay over them, and
+ * what each copy holds. */
+constexpr std::string_view LAYERED_FILE = "waves/waves.toml";
 constexpr std::string_view WAVES_OF_THE_ASSETS = "[difficulty.normal]\n";
 constexpr std::string_view WAVES_OF_THE_RESOURCE = "[difficulty.crimson]\n";

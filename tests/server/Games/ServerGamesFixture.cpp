@@ -68,8 +68,8 @@ ServerGamesFixture::modulesAfterTheGames() const {
 rtype::server::GamesSettings ServerGamesFixture::shippedWaves() {
   return rtype::server::GamesSettings{
       .seed = SOME_SEED,
-      .wavesFile = std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} / "waves" /
-                   "waves.toml",
+      .wavesFiles = {std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} /
+                     "waves" / "waves.toml"},
       .contentFolders = {rtype::game::testing::shippedAssetFolder()}};
 }
 

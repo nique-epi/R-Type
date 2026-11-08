@@ -32,13 +32,12 @@ namespace rtype::server {
 namespace {
 
 /** @returns What the games module of a game process is built from: the
- * waves file of the last of @p contentFolders that holds one, and the entity
- * sheets of all of them. */
+ * waves files and the entity sheets of @p contentFolders. */
 GamesSettings gameProcessGamesSettings(
     std::vector<std::filesystem::path> contentFolders) {
-  std::filesystem::path wavesFile = wavesFileOf(contentFolders);
+  std::vector<std::filesystem::path> wavesFiles = wavesFilesOf(contentFolders);
   return GamesSettings{.seed = std::nullopt,
-                       .wavesFile = std::move(wavesFile),
+                       .wavesFiles = std::move(wavesFiles),
                        .contentFolders = std::move(contentFolders)};
 }
 

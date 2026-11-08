@@ -40,7 +40,7 @@ namespace rtype::server {
  *
  * install() declares the `seed`, `state-rate`, `state-encoding` and
  * `input-delay` settings and provides RunningGame, and its bus as IGameEvents.
- * start() reads the entity sheets and the waves file, then creates the game
+ * start() reads the entity sheets and the waves files, then creates the game
  * with the values of the settings, subscribing its rules and its broadcaster
  * to the bus. vanillaBreaches() judges whether the game is vanilla from the
  * fingerprints of the waves and of the entity sheets, the seed and the input
@@ -64,7 +64,7 @@ class ServerGamesModule final : public engine::IModule {
   void install(engine::InstallContext& context) override;
 
   /**
-   * @brief Reads the entity sheets, then the waves file, and creates the
+   * @brief Reads the entity sheets, then the waves files, and creates the
    * game. With a seed, the game starts from it, so it can be played again;
    * without one, it draws its own. The journal says the folder of the sheets
    * and their count, the difficulty the game plays and whether it is vanilla,
@@ -72,8 +72,8 @@ class ServerGamesModule final : public engine::IModule {
    * module is destroyed, after its game.
    * @throws ServerException, game::GameException or engine::EngineException
    * (or a class derived from one) naming the file, the line and the key when a
-   * sheet or the waves file cannot be read or does not describe what the
-   * server expects, or when the waves file has no table for the difficulty
+   * sheet or a waves file cannot be read or does not describe what the
+   * server expects, or when the waves files have no table for the difficulty
    * the game is set to.
    */
   void start() override;

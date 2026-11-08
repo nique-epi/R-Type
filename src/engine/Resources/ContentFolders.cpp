@@ -118,17 +118,20 @@ std::vector<std::filesystem::path> contentFoldersOf(
   return folders;
 }
 
-std::filesystem::path topmostContentFile(
+std::vector<std::filesystem::path> contentFilesOf(
     std::span<const std::filesystem::path> contentFolders,
     const std::filesystem::path& relativeFile) {
-  for (const std::filesystem::path& folder :
-       contentFolders | std::views::reverse) {
+  std::vector<std::filesystem::path> files;
+  for (const std::filesystem::path& folder : contentFolders) {
     std::error_code error;
     if (std::filesystem::is_regular_file(folder / relativeFile, error)) {
-      return folder / relativeFile;
+      files.push_back(folder / relativeFile);
     }
   }
-  return contentFolders.front() / relativeFile;
+  if (files.empty()) {
+    files.push_back(contentFolders.front() / relativeFile);
+  }
+  return files;
 }
 
 }  // namespace rtype::engine

@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <array>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -529,7 +530,8 @@ TEST(WaveCatalog, AMissingFileIsNamedByItsAbsolutePath) {
                                std::filesystem::absolute(file).generic_string();
 
   try {
-    static_cast<void>(WaveCatalog::fromFile(file, shippedEntitySheets()));
+    static_cast<void>(
+        WaveCatalog::fromFiles(std::array{file}, shippedEntitySheets()));
     ADD_FAILURE() << "the missing file was read";
   } catch (const UnreadableDataFileException& error) {
     EXPECT_EQ(std::string{error.what()}, expected);
@@ -547,7 +549,8 @@ TEST(WaveCatalog, AMissingFileInANonAnsiFolderIsNamedInUtf8) {
       folder.path() / rtype::testing::NON_ANSI_FOLDER_NAME / "waves.toml";
 
   try {
-    static_cast<void>(WaveCatalog::fromFile(file, shippedEntitySheets()));
+    static_cast<void>(
+        WaveCatalog::fromFiles(std::array{file}, shippedEntitySheets()));
     ADD_FAILURE() << "the missing file was read";
   } catch (const UnreadableDataFileException& error) {
     EXPECT_NE(
