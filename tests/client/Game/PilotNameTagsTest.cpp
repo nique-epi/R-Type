@@ -11,11 +11,13 @@
 #include "PilotNameTagsTestConstants.hpp"
 #include "PlayerPaletteConstants.hpp"
 #include "Position.hpp"
+#include "TextStyle.hpp"
 
 using rtype::client::Caption;
 using rtype::client::ColorMode;
 using rtype::client::nameTagOffsetOf;
 using rtype::client::PLAYER_COLORS;
+using rtype::client::TextFont;
 using rtype::client::TRITANOPIA_PLAYER_PALETTE;
 using rtype::engine::Entity;
 using rtype::game::Layer;
@@ -72,10 +74,28 @@ TEST(PilotNameTags, ATagStaysWholeNearTheSides) {
 }
 
 /**
+ * Given ships at x 64 and 1856, each tagged with a name of 8 characters of 2
+ * bytes, which the small font may draw up to 10 pixels wide each
+ * When the offsets of their tags are asked
+ * Then the tags move in by 196 units, as for 16 characters of ASCII, so the
+ * line stays whole within the playfield
+ */
+TEST(PilotNameTags, ANameOutsideAsciiStaysWholeNearTheSides) {
+  const auto offsetAt = [](float shipX) {
+    return nameTagOffsetOf({.x = shipX, .y = MIDDLE_OF_THE_PLAYFIELD.y},
+                           SHIP_FRAME, LONGEST_NAME_OUTSIDE_ASCII)
+        .x;
+  };
+
+  EXPECT_EQ(offsetAt(SHIP_AT_THE_LEFT_EDGE), MOVE_IN_FROM_THE_LEFT_EDGE);
+  EXPECT_EQ(offsetAt(SHIP_AT_THE_RIGHT_EDGE), MOVE_IN_FROM_THE_RIGHT_EDGE);
+}
+
+/**
  * Given the ship of pilot 2, ACE, PILOT NAMES on as at a first launch
  * When the ships are tagged
- * Then the ship carries ACE, shown, outlined, in the light shade of color 1, in
- * the Popups layer, 56 units above it
+ * Then the ship carries ACE, shown, outlined, in the small font, in the light
+ * shade of color 1, in the Popups layer, 56 units above it
  */
 TEST_F(PilotNameTagsFixture, AShipCarriesTheNameOfItsPilot) {
   const Entity ship = spawnShip(SECOND_PILOT_COLOR, MIDDLE_OF_THE_PLAYFIELD);
@@ -89,6 +109,7 @@ TEST_F(PilotNameTagsFixture, AShipCarriesTheNameOfItsPilot) {
   EXPECT_EQ(shown.text, SECOND_PILOT_NAME);
   EXPECT_TRUE(shown.visible);
   EXPECT_TRUE(shown.style.outlined);
+  EXPECT_EQ(shown.style.font, TextFont::Small);
   EXPECT_EQ(shown.style.color, PLAYER_COLORS.at(SECOND_PILOT_COLOR).light);
   EXPECT_EQ(shown.layer, Layer::Popups);
   EXPECT_EQ(shown.offset.y, -RISE_OVER_THE_SHIP);

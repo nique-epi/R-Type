@@ -1088,8 +1088,8 @@ The status canvas also tells when a teammate leaves. `DepartureFeed` (`rtype_cli
 
 While PILOT NAMES is on (`PlayerSettings::pilotNames`, on at first), the name of each pilot is written over its ship, the local player's included, as the status band names it: its nickname, or P and its number when the waiting room never named it. `tagPilotShips()` (`src/client/Game/PilotNameTags.hpp`) does it at each update of the game screen, once the ships are placed and before the entities are painted, so a change in the options shows at the next frame.
 
-- The name is a `Caption` of the ship itself, in the regular font, outlined, in the light shade the palette of the color mode gives the pilot, in the `Popups` layer. `RenderSystem` writes it from where it draws the ship, so the name moves with the ship in the same frame and goes with it.
-- It stands `NAME_TAG_GAP` (2) pixels over the top of the ship. When the line would leave the top of the playfield, it goes as far under the ship; near the left or the right side, it moves in until the whole line fits.
+- The name is a `Caption` of the ship itself, in the small font, outlined, in the light shade the palette of the color mode gives the pilot, in the `Popups` layer. `RenderSystem` writes it from where it draws the ship, so the name moves with the ship in the same frame and goes with it.
+- It stands `NAME_TAG_GAP` (2) pixels over the top of the ship. When the line would leave the top of the playfield, it goes as far under the ship; near the left or the right side, it moves in until the whole line fits, its width taken as `NAME_TAG_PIXELS_PER_BYTE` (8) pixels per byte, which no line of the small font exceeds.
 - A ship whose pilot the `ScoreBoard` does not list gets no name.
 
 `client_screen_tests` checks the place, the name, the color and the setting.
