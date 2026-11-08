@@ -2,6 +2,7 @@
 
 #include <array>
 #include <string_view>
+#include "BansDatabaseConstants.hpp"
 #include "ResultsDatabaseConstants.hpp"
 
 namespace rtype::server {
@@ -10,7 +11,7 @@ namespace rtype::server {
  * that opens it, the supervisor and each game: a change adds one, never edits
  * one, and a process with a shorter list refuses the file (see
  * storage::openDatabaseFile()). */
-constexpr std::array<std::string_view, 2> SERVER_MIGRATIONS{
-    RESULTS_TABLE_MIGRATION, UNSENT_GAMES_MIGRATION};
+constexpr std::array<std::string_view, 3> SERVER_MIGRATIONS{
+    RESULTS_TABLE_MIGRATION, UNSENT_GAMES_MIGRATION, BANS_TABLE_MIGRATION};
 
 }  // namespace rtype::server

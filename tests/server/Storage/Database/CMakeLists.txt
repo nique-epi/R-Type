@@ -1,1 +1,1 @@
-target_sources(server_storage_tests PRIVATE ResultsDatabaseTest.cpp ResultsDatabaseFixture.cpp UnsentGamesTest.cpp)
+target_sources(server_storage_tests PRIVATE BansDatabaseTest.cpp BansDatabaseFixture.cpp ResultsDatabaseTest.cpp ResultsDatabaseFixture.cpp UnsentGamesTest.cpp)
