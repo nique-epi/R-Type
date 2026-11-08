@@ -5,6 +5,7 @@
 #include "KeyPress.hpp"
 #include "MotionPreference.hpp"
 #include "PointerEvents.hpp"
+#include "RecordingAudioService.hpp"
 #include "RecordingGameCatalog.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -23,6 +24,7 @@ void ServerMapScreenFixture::openOn(const ServerListSnapshot& list) {
   screen_ = std::make_unique<ServerMapScreen>(
       ServerMapScreenParts{.navigator = navigator_,
                            .sounds = sounds_,
+                           .audio = audio_,
                            .servers = servers_,
                            .games = games_,
                            .choice = choice_,
@@ -65,6 +67,10 @@ RecordingGameCatalog& ServerMapScreenFixture::games() { return games_; }
 
 const RecordingNavigator& ServerMapScreenFixture::navigator() const {
   return navigator_;
+}
+
+const RecordingAudioService& ServerMapScreenFixture::audio() const {
+  return audio_;
 }
 
 const ServerChoice& ServerMapScreenFixture::choice() const { return choice_; }

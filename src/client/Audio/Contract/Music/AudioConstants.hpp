@@ -66,6 +66,36 @@ constexpr MusicTrack GAME_TRACK{.assetId = GAME_MUSIC_ID,
 constexpr engine::Duration GAME_MUSIC_SILENCE = std::chrono::seconds(1);
 
 /**
+ * @brief Asset id of the music of the Bydo Tyrant, played in a loop from
+ * BOSS_ALARM_DURATION after the boss arrives until the game ends. It carries
+ * the screen like the music of a game, at the full MUSIC volume.
+ */
+constexpr const char* BOSS_MUSIC_ID = "music/boss_theme.mp3";
+constexpr MusicTrack BOSS_TRACK{.assetId = BOSS_MUSIC_ID};
+
+/** @brief How long the alarm of the boss plays (8.232 s): the music of the
+ * boss starts when it ends. */
+constexpr engine::Duration BOSS_ALARM_DURATION =
+    std::chrono::milliseconds(8232);
+
+/**
+ * @brief The ambiences, played in a loop over the whole file under the theme:
+ * deep space on the server map, a garage in the hangar. They only color the
+ * theme, so they play at 0.25 of the MUSIC volume on the map, and in the hangar
+ * the garage at 0.40 with a crowd talking under it at 0.50 (its file is louder,
+ * so it is heard a little under the garage).
+ */
+constexpr float SPACE_AMBIENCE_GAIN = 0.25F;
+constexpr float HANGAR_AMBIENCE_GAIN = 0.40F;
+constexpr float CROWD_AMBIENCE_GAIN = 0.50F;
+constexpr MusicTrack SPACE_AMBIENCE_TRACK{.assetId = "music/space_ambience.mp3",
+                                          .gain = SPACE_AMBIENCE_GAIN};
+constexpr MusicTrack HANGAR_AMBIENCE_TRACK{
+    .assetId = "music/hangar_ambience.mp3", .gain = HANGAR_AMBIENCE_GAIN};
+constexpr MusicTrack CROWD_AMBIENCE_TRACK{.assetId = "music/hangar_crowd.flac",
+                                          .gain = CROWD_AMBIENCE_GAIN};
+
+/**
  * @brief How the time of the intro follows the position of the music, which
  * moves by one audio block at a time (about 10 ms in SFML 3.0.2): each frame
  * closes elapsed / MUSIC_CATCH_UP_TIME of the gap, a tenth of it for a frame

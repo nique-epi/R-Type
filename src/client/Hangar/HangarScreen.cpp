@@ -9,6 +9,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include "Ambience.hpp"
 #include "Button.hpp"
 #include "DockPainting.hpp"
 #include "DockScene.hpp"
@@ -71,6 +72,7 @@ std::string statusOf(std::size_t item, ShipLook worn, bool fitting,
 HangarScreen::HangarScreen(HangarScreenParts parts,
                            std::unique_ptr<IInterfaceCanvas> canvas)
     : navigator_(&parts.navigator.get()),
+      ambience_(parts.audio.get(), Ambience::Hangar),
       sounds_(&parts.sounds.get()),
       settings_(&parts.settings.get()),
       canvas_(std::move(canvas)),
@@ -158,6 +160,7 @@ void HangarScreen::choose() {
       settings_->apply(SHIP_LOOK_SETTING, wearing(worn, chosen_)));
   if (motion_ == MotionPreference::Full) {
     fitting_ = FittingRun{.item = chosen_, .started = elapsed_, .before = worn};
+    sounds_->play(ROBOT_ARM_SOUND_ID);
   }
 }
 

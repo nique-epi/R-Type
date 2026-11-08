@@ -1,4 +1,5 @@
 add_library(rtype_client_audio_contract_service STATIC
+  AmbienceScope.cpp
   SilentAudioService.cpp
 )
 

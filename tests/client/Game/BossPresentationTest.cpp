@@ -9,6 +9,7 @@
 #include "MusicCall.hpp"
 #include "SoundConstants.hpp"
 
+using rtype::client::BOSS_ALARM_SOUND_ID;
 using rtype::client::BossLook;
 using rtype::client::BYDO_GROWL_SOUND_ID;
 using rtype::client::FlashPreference;
@@ -28,26 +29,59 @@ TEST_F(BossPresentationFixture, TheLookIsEmptyBeforeAnyArrival) {
 /**
  * Given the music of a game playing
  * When the boss stage starts
- * Then the music is silenced
+ * Then the music of the game is silenced before the music of the boss is
+ * asked for
  */
 TEST_F(BossPresentationFixture, TheArrivalSilencesTheMusic) {
   presentation().apply(PRESENTED_BOSS_ARRIVING);
 
-  EXPECT_EQ(audio().musicCalls(), std::vector<MusicCall>{MusicCall::Silence});
+  ASSERT_GE(audio().musicCalls().size(), 1U);
+  EXPECT_EQ(audio().musicCalls().front(), MusicCall::Silence);
 }
 
 /**
- * Given the boss arriving, the music silenced
- * When the first status of its fight arrives
- * Then the music of the game is played again
+ * Given a presentation told nothing
+ * When the boss starts to arrive
+ * Then the alarm plays once, and the music of the boss is asked for after
+ * the music of the game is silenced
  */
-TEST_F(BossPresentationFixture, TheFightBringsTheMusicBack) {
+TEST_F(BossPresentationFixture, TheArrivalPlaysTheAlarmThenAsksForBossMusic) {
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+
+  EXPECT_EQ(sounds().played(), std::vector<std::string>{BOSS_ALARM_SOUND_ID});
+  EXPECT_EQ(audio().musicCalls(),
+            (std::vector<MusicCall>{MusicCall::Silence, MusicCall::BossMusic}));
+}
+
+/**
+ * Given the boss arriving, its music asked for
+ * When the first status of its fight arrives
+ * Then the music of the game does not come back: the boss keeps its music
+ */
+TEST_F(BossPresentationFixture, TheFightKeepsTheMusicOfTheBoss) {
   presentation().apply(PRESENTED_BOSS_ARRIVING);
 
   presentation().apply(PRESENTED_BOSS_FIGHTING);
 
   EXPECT_EQ(audio().musicCalls(),
-            (std::vector<MusicCall>{MusicCall::Silence, MusicCall::GameMusic}));
+            (std::vector<MusicCall>{MusicCall::Silence, MusicCall::BossMusic}));
+}
+
+/**
+ * Given the boss fighting, its music playing
+ * When the game ends
+ * Then the music of the game is played again
+ */
+TEST_F(BossPresentationFixture, AGameEndedAfterTheFightBringsTheMusicBack) {
+  presentation().apply(PRESENTED_BOSS_ARRIVING);
+  presentation().apply(PRESENTED_BOSS_FIGHTING);
+
+  presentation().endGame();
+
+  EXPECT_EQ(audio().musicCalls(),
+            (std::vector<MusicCall>{MusicCall::Silence, MusicCall::BossMusic,
+                                    MusicCall::GameMusic}));
 }
 
 /**
@@ -61,7 +95,8 @@ TEST_F(BossPresentationFixture, AGameEndedDuringTheArrivalBringsTheMusicBack) {
   presentation().endGame();
 
   EXPECT_EQ(audio().musicCalls(),
-            (std::vector<MusicCall>{MusicCall::Silence, MusicCall::GameMusic}));
+            (std::vector<MusicCall>{MusicCall::Silence, MusicCall::BossMusic,
+                                    MusicCall::GameMusic}));
 }
 
 /**
@@ -74,7 +109,7 @@ TEST_F(BossPresentationFixture, EachStepPlaysItsSound) {
 
   presentation().advance(TO_THE_FIRST_STEP);
 
-  EXPECT_EQ(sounds().played(), std::vector<std::string>{HEAVY_IMPACT_SOUND_ID});
+  EXPECT_THAT(sounds().played(), Contains(std::string{HEAVY_IMPACT_SOUND_ID}));
 }
 
 /**

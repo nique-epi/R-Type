@@ -39,6 +39,7 @@ std::unique_ptr<IScreen> buildHangarScreen(const ScreenContext& context) {
       HangarScreenParts{
           .navigator = context.navigator.get(),
           .sounds = soundsOf(context),
+          .audio = context.services.audio.get(),
           .settings = context.services.settingsService.get(),
           .playfieldPointAt = playfieldMappingOf(context),
           .palette = playerPaletteOf(context.services.settings.get()),
