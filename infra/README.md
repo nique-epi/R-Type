@@ -154,7 +154,7 @@ The players and the hosts need a release of the game that speaks HTTPS: an older
 
 | Symptom | Cause to look at |
 |---|---|
-| `Not authorized to perform sts:AssumeRoleWithWebIdentity` | the `production` environment does not exist or the job does not use it; or GitHub changed the `sub` claim of the token and the condition in `terraform/github.tf` no longer matches it. Print the claim of the failing job and compare |
+| `Not authorized to perform sts:AssumeRoleWithWebIdentity` | the `production` environment does not exist or the job does not use it; or the `sub` claim of the token does not start with `github_subject_prefix`. A repository with immutable subjects names its owner and itself by their ids (`repo:<owner>@<id>/<repo>@<id>`): `gh api repos/<owner>/<repo>/actions/oidc/customization/sub` prints the prefix, which `bootstrap.sh` reads and gives to Terraform |
 | The job stops at "Run the deployment on the instance" with an invalid instance | `MASTER_INSTANCE_ID` is missing or belongs to another account or region |
 | The instance is not listed by `describe-instance-information` | the SSM agent is not running on the image, or the instance has no outbound access; look at the system log of the instance in the console |
 | The script prints "the master of X does not answer" and "went back to ..." | the new release does not start: read its log with `journalctl -u rtype-master` |
