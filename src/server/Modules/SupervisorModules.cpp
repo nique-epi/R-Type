@@ -16,6 +16,8 @@
 #include "GameLaunchSettings.hpp"
 #include "IModule.hpp"
 #include "LaunchOptions.hpp"
+#include "Logger.hpp"
+#include "LoggingConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerBanBookModule.hpp"
 #include "ServerContentModule.hpp"
@@ -39,6 +41,18 @@ namespace rtype::server {
 
 namespace {
 
+/** @returns The arguments @p launchOptions hand the games, and
+ * logging::COLOR_OPTION when this journal writes in colour on its own: a game
+ * writes into a pipe the supervisor relays (see ChildOutputRelay), which is no
+ * terminal, so it would write none. */
+std::vector<std::string> gameArgumentsOf(const LaunchOptions& launchOptions) {
+  std::vector<std::string> arguments = launchOptions.gameArguments();
+  if (logging::isStandardErrorColored()) {
+    arguments.emplace_back(logging::COLOR_OPTION);
+  }
+  return arguments;
+}
+
 /**
  * @returns What every game process is started with: this executable, the
  * folder next to it, @p gameLines, the lines of its file of commands, and what
@@ -54,13 +68,14 @@ GameLaunchSettings gameLaunchSettings(
   if (!program.has_value()) {
     throw engine::UnknownExecutablePathException();
   }
-  return GameLaunchSettings{.program = *program,
-                            .folder = engine::executableFolder(),
-                            .gameLines = std::move(gameLines),
-                            .forwardedArguments = launchOptions.gameArguments(),
-                            .wavesFile = wavesFileOf(contentFolders),
-                            .contentFolders = std::move(contentFolders),
-                            .trafficCsvFile = launchOptions.trafficCsvFile()};
+  return GameLaunchSettings{
+      .program = *program,
+      .folder = engine::executableFolder(),
+      .gameLines = std::move(gameLines),
+      .forwardedArguments = gameArgumentsOf(launchOptions),
+      .wavesFile = wavesFileOf(contentFolders),
+      .contentFolders = std::move(contentFolders),
+      .trafficCsvFile = launchOptions.trafficCsvFile()};
 }
 
 }  // namespace
