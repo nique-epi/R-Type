@@ -297,6 +297,7 @@ The client, the server and the master write a timestamped journal, `r-type_clien
 | `--no-log-file` | Do not write a journal |
 | `--log-stderr` | Write to standard error too (default) |
 | `--no-log-stderr` | Do not write to standard error |
+| `--log-color` | Write standard error in colour, even when it is no terminal |
 
 The build option `-DLOG_LEVEL=<name>` removes the calls below a level from the binaries. See [the logging page](docs/src/content/docs/logging.md).
 

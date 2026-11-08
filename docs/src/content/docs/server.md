@@ -214,7 +214,7 @@ The host only starts the supervisor and the master. `--mode game` is the command
 | `--database <file>` | The leaderboard file of the supervisor. |
 | `--log-file <file>` | `r-type_game_<n>.log` next to the executable. |
 | `--configuration <file>` | The file of commands the game reads, `r-type_games_<port>.cfg` next to the executable with the port of the supervisor; no file without it. |
-| `--traffic-csv <file>`, the simulator and logging options | As for the supervisor. The supervisor gives each game its own `--log-file`, then the logging options it shares (`--log-level`, `--no-log-file`, `--no-log-stderr`, see `LogLaunchOptions::forwardedArguments()`), then the five values of its simulated network, then `--traffic-csv` with the file of that game when it was given one. A `--no-log-file` comes after the journal of the game, so the last one wins and the game writes none either. |
+| `--traffic-csv <file>`, the simulator and logging options | As for the supervisor. The supervisor gives each game its own `--log-file`, then the logging options it shares (`--log-level`, `--no-log-file`, `--no-log-stderr`, `--log-color`, see `LogLaunchOptions::forwardedArguments()`), and `--log-color` when its own journal is in colour, then the five values of its simulated network, then `--traffic-csv` with the file of that game when it was given one. A `--no-log-file` comes after the journal of the game, so the last one wins and the game writes none either. |
 | `--difficulty <name>`, `--lives <count>`, `--friendly-fire <0\|1>` | The rules of the game, as its creator chose them (see [Rules of a game](#rules-of-a-game)). |
 
 `-p`, `--database`, `--difficulty`, `--lives` and `--friendly-fire` force the settings `port`, `database`, `difficulty`, `lives` and `friendly-fire`, after the file of `--configuration`.
@@ -488,14 +488,25 @@ The supervisor reads commands from the terminal it was started in. The `admin co
 | `network` | what crossed the socket of the supervisor since the module installed, the datagrams the network thread rejected since the start (`RejectionLedger::rejectedSinceStart()`, which takes nothing from the report of the journal), then the measures of the games the heartbeats carry to the master |
 | `help` | one line per command of the supervisor, with its arguments |
 
-The answers go to the standard output and the journal to the standard error, so the two never mix when the journal is redirected. A refused line is answered with the reason the interpreter gives, `unknown command 'gmaes' in line 'gmaes'` for instance.
+Without the prompt, the answers go to the standard output and the journal to the standard error, so the two never mix when the journal is redirected; with it, both are written above the prompt (see [The prompt](#the-prompt-terminalscreen)). A refused line is answered with the reason the interpreter gives, `unknown command 'gmaes' in line 'gmaes'` for instance.
+
+#### The prompt: `TerminalScreen`
+
+When the input, the output and the error of the supervisor are one terminal it holds the foreground of, the console writes `admin console ready: type help to list the commands`, then shows the prompt `> `, and keeps the line being typed itself. `StandardTerminal` (`src/server/AdminConsole/Terminal/`) turns the echo and the line editing of the terminal off, as the tty console of ioquake3 does: `ICANON` and `ECHO` off, `VMIN` 1, `VTIME` 0 on Linux and macOS; `ENABLE_LINE_INPUT` and `ENABLE_ECHO_INPUT` off, and `ENABLE_VIRTUAL_TERMINAL_PROCESSING` on, on Windows. Ctrl+C still stops the supervisor, and the stop gives the terminal its modes back.
+
+`LineEditor` (`Typing/`) applies each key: text up to `MAXIMUM_CONSOLE_LINE_LENGTH` (1024 bytes), past which a key is refused and not shown; Backspace and Delete erase a whole UTF-8 character; Enter (`\r`, `\n`, or both) ends the line. The arrows, the other function keys, Tab and Ctrl+D are dropped. `TerminalScreen` writes every other line above the prompt: it erases the row (`\r\x1b[K`), writes the line, then the prompt and the typed text again, under one lock, so the reader of the keyboard, the simulation thread, the journal and the relays of the games may call it at once. The journal reaches it through `logging::setStandardErrorWriter()` (see [Logging](/R-Type/logging/#standard-error-and-the-admin-console)), and the answers through `ConsoleAnswers`, which writes on the standard output again once the console stops.
+
+A game process writes into two pipes the supervisor reads, one for its standard output and one for its standard error (`ChildOutputRelay`, `src/server/Processes/`), never into the terminal itself, and reads the null device as its standard input, so its lines pass above the prompt too and it never takes a key of the console, with their colours: the supervisor gives the games `--log-color` when its own journal is in colour. A line of a game longer than `MAXIMUM_CHILD_LINE_LENGTH` (4096 bytes) is cut there. The order between the standard output and the standard error of a game is not kept; its journal writes on the standard error only.
+
+A typed line wider than the terminal wraps, and only its last row is erased before a line is written above it. A supervisor that crashes leaves its terminal without echo: `reset` brings it back.
 
 The commands read the registry of the games, which only the simulation thread touches, so the thread `AdminConsole` (`ConsoleReader`) only reads: it hands each line to the simulation thread through a `BoundedQueue` of `CONSOLE_LINE_CAPACITY` (64) lines, and the module runs them at the next tick, in their order. A `\r` before the end of a line is removed, and a line longer than `MAXIMUM_CONSOLE_LINE_LENGTH` (1024 bytes) is dropped whole, never cut. The stop wakes the read: on Linux and macOS, `select()` waits on the input and on a pipe the stop writes to (`poll()` does not work on a terminal under macOS); on Windows, the stop cancels `ReadFile()` with `CancelSynchronousIo()`, a file the Windows job of the CI only checks.
 
 | Situation | The console |
 |---|---|
-| No terminal (`< /dev/null`, a service, the CI) | runs the last line, writes `the console input ended` in the journal and reads nothing more; the server goes on |
-| The supervisor runs in the background of a shell (`&`) | is not suspended: `SIGTTIN` is ignored during a read, so the read fails and is tried again every `CONSOLE_BACKGROUND_WAIT` (500 ms), until `fg` |
+| No terminal (`< /dev/null`, a service, the CI) | shows no prompt; runs the last line, writes `the console input ended` in the journal and reads nothing more; the server goes on |
+| Standard output or standard error redirected (`2> server.err`) | shows no prompt, and reads the terminal line by line; the journal and the lines of the games go where standard error goes |
+| The supervisor runs in the background of a shell (`&`) | shows no prompt, and is not suspended: `SIGTTIN` is ignored during a read, so the read fails and is tried again every `CONSOLE_BACKGROUND_WAIT` (500 ms), until `fg` |
 | `module "admin console" off` in `server.cfg` | is never installed: no thread, and its commands are unknown |
 | The build sets `RTYPE_MODULE_ADMIN_CONSOLE` off | is not compiled, and the supervisor lists no such module |
 
