@@ -36,9 +36,10 @@ namespace rtype::server {
  * It never touches a game: it reads the list and the measures the supervised
  * games module publishes. A
  * master that refuses or does not answer is written in the journal once, not
- * at each try; the job registers again after a wait RetryBackoff draws, which
- * grows from times.retry to times.maximumRetry while the master stays away,
- * then goes on, so the games play whatever the master does. MasterLink starts
+ * at each try; the job registers again after a wait RetryBackoff draws under a
+ * ceiling, which starts at the shorter of times.retry and times.maximumRetry
+ * and doubles up to times.maximumRetry while the master stays away, then goes
+ * on, so the games play whatever the master does. MasterLink starts
  * with the job and
  * stops, its call in progress ended within the timeouts of MasterClient, when
  * the job is destroyed.
