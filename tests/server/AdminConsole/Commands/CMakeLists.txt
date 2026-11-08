@@ -1,3 +1,3 @@
-target_sources(server_module_tests PRIVATE AdminConsoleCommandsFixture.cpp AdminConsoleCommandsTest.cpp ConsoleTextsTest.cpp)
+target_sources(server_module_tests PRIVATE AdminConsoleCommandsFixture.cpp AdminConsoleCommandsTest.cpp BanCommandsFixture.cpp BanCommandsTest.cpp BanWordsTest.cpp ConsoleTextsTest.cpp)
 
 target_include_directories(server_module_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

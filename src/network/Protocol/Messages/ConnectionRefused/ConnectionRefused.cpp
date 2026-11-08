@@ -23,6 +23,7 @@ bool isListed(RefusalReason reason) {
     case RefusalReason::ServerFull:
     case RefusalReason::UnknownDifficulty:
     case RefusalReason::LivesOutOfRange:
+    case RefusalReason::Banned:
       return true;
   }
   return false;

@@ -17,6 +17,7 @@
 #include "PathText.hpp"
 #include "ProtocolConstants.hpp"
 #include "ResultsDatabaseConstants.hpp"
+#include "ServerMigrationsConstants.hpp"
 #include "UnsentGame.hpp"
 
 namespace rtype::server {
@@ -82,7 +83,7 @@ void markGame(SQLite::Statement& update, const std::string& gameId,
 
 ResultsDatabase::ResultsDatabase(const std::filesystem::path& file)
     : database_(storage::openDatabaseFile(logging::genericText(file),
-                                          RESULTS_MIGRATIONS)) {}
+                                          SERVER_MIGRATIONS)) {}
 
 std::string ResultsDatabase::save(const GameResult& result) {
   SQLite::Transaction transaction{database_,

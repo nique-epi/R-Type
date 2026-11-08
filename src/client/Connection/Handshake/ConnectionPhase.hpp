@@ -38,6 +38,12 @@ enum class ConnectionPhase : std::uint8_t {
    */
   Expelled,
   /**
+   * @brief The server said within the session that the host banned the
+   * player: an Expulsion of the reason Banned carrying the token of the
+   * session arrived, and the client closed the session without answering.
+   */
+  Banned,
+  /**
    * @brief The server accepted the player and plays with another content
    * than the client's own, which is not kept: the session holds its seat
    * while the pack downloads, and contentReceived of contentSize bytes came.

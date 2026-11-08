@@ -1,21 +1,23 @@
 #pragma once
 
 #include <filesystem>
+#include <memory>
 #include <string>
 #include <vector>
-#include "IListeningPort.hpp"
+#include "BanWatch.hpp"
+#include "DatabaseLocation.hpp"
 #include "IModule.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
 #include "ResultsArchive.hpp"
-#include "SettingValue.hpp"
 
 namespace rtype::server {
 
 /**
  * @brief The module that keeps what the games leave: it opens the database of
  * the server when it starts, finishes what waits and closes it when it stops,
- * and provides IResultsArchive.
+ * and provides IResultsArchive. It also reads the bans of that file again
+ * every second (see BanWatch), and provides them as LatestBans.
  *
  * install() declares the `database` setting. While it is empty, the file is
  * `r-type_server_<port>.db` in the default folder, the port being the one the
@@ -37,28 +39,28 @@ class ServerStorageModule final : public engine::IModule {
   [[nodiscard]] std::vector<std::string> dependencies() const override;
 
   /**
-   * @brief Declares the `database` setting, requires the IListeningPort and
-   * provides the IResultsArchive; opens nothing.
+   * @brief Declares the `database` setting, requires the IListeningPort, and
+   * provides the IResultsArchive and the LatestBans; opens nothing.
    */
   void install(engine::InstallContext& context) override;
 
   /**
-   * @brief Opens the database and starts the storage thread.
+   * @brief Opens the database, starts the storage thread, reads the bans and
+   * starts the thread that reads them again.
    * @throws storage::StorageException when the file cannot be opened, which
-   * stops the start of the server with an error naming the file.
+   * stops the start of the server with an error naming the file; the storage
+   * thread is stopped first when only the bans failed.
    */
   void start() override;
 
   void stop() override;
 
  private:
-  [[nodiscard]] std::filesystem::path databaseFile() const;
-
   std::filesystem::path defaultFolder_;
-  const engine::SettingValue* databaseSetting_{nullptr};
-  const IListeningPort* listeningPort_{nullptr};
+  std::unique_ptr<DatabaseLocation> location_;
   logging::Logger logger_;
   ResultsArchive archive_;
+  BanWatch banWatch_;
 };
 
 }  // namespace rtype::server

@@ -18,6 +18,8 @@ enum class DepartureReason : std::uint8_t {
   Left = 1,
   TimedOut = 2,
   Expelled = 3,
+  /** @brief The host banned the player. */
+  Banned = 4,
 };
 
 /**
