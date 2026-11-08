@@ -24,6 +24,10 @@ constexpr std::size_t WAITING_ASKS_CAPACITY = 64;
  * an answer waits for it, on a screen a player opens by hand. */
 constexpr std::chrono::milliseconds STORAGE_POLL_INTERVAL{20};
 
+/** @brief How often BanWatch reads the bans of the file again: a ban the
+ * supervisor writes bars the pilots of a game at most this long after. */
+constexpr std::chrono::seconds BAN_REREAD_INTERVAL{1};
+
 /** @brief Logger name the storage writes its log lines under. */
 constexpr std::string_view STORAGE_LOGGER_NAME = "Storage";
 

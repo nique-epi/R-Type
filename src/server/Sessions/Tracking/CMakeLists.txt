@@ -4,6 +4,7 @@ add_library(rtype_server_sessions_tracking STATIC
   Heartbeats.cpp
   InputKeeper.cpp
   MessageDelivery.cpp
+  PlayerExpeller.cpp
   ReadyKeeper.cpp
 )
 
@@ -23,6 +24,7 @@ target_link_libraries(rtype_server_sessions_tracking
     rtype_network_transport
     rtype_server_sessions_roster
   PRIVATE
+    rtype_server_constants
     rtype_network_constants
     rtype_network_datagram_codec
     rtype_network_exceptions

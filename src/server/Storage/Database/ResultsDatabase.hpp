@@ -15,7 +15,8 @@ namespace rtype::server {
 
 /**
  * @brief The file of this server: a row per player and per finished game, and
- * what is read from them. The only place of the server that holds SQL.
+ * what is read from them. With BansDatabase, the only place of the server
+ * that holds SQL.
  *
  * A leaderboard reads one difficulty and one number of players, so two
  * difficulties never mix. Every value reaches SQLite as a bound parameter, so a

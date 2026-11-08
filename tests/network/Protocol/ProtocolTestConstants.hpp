@@ -103,17 +103,17 @@ constexpr std::uint16_t SOME_SEQUENCE = 0x0A0B;
  * the transport sees and bit 3 is unknown, so no header above the transport
  * holds either.
  */
-constexpr std::uint8_t SOME_OTHER_VERSION = 14;
+constexpr std::uint8_t SOME_OTHER_VERSION = 15;
 constexpr std::uint32_t SOME_OTHER_PROTOCOL_ID = 0x52545951;
 constexpr std::uint8_t SOME_FLAGS = 0x0C;
 constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
 constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;
 
 /**
- * @brief The 22 bytes of a default header: RTYP, version 13, then zeros.
+ * @brief The 22 bytes of a default header: RTYP, version 14, then zeros.
  */
 constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
-    {0x52, 0x54, 0x59, 0x50, 0x0D, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    {0x52, 0x54, 0x59, 0x50, 0x0E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
 /**
@@ -187,10 +187,10 @@ constexpr std::uint8_t NO_TYPE_NUMBER = 0;
 constexpr std::uint8_t LARGEST_TYPE_NUMBER = 255;
 
 /**
- * @brief Refusal reasons just outside the values 1 to 8 of the protocol page.
+ * @brief Refusal reasons just outside the values 1 to 9 of the protocol page.
  */
 constexpr std::uint8_t REFUSAL_REASON_BELOW_THE_FIRST = 0;
-constexpr std::uint8_t REFUSAL_REASON_ABOVE_THE_LAST = 9;
+constexpr std::uint8_t REFUSAL_REASON_ABOVE_THE_LAST = 10;
 
 /**
  * @brief Rules of a new game other than the default ones: the difficulty

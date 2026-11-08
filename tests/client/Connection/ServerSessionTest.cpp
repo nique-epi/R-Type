@@ -1288,6 +1288,22 @@ TEST_F(ServerSessionFixture, AnExpulsionOfTheServerExpelsTheSession) {
 
 /**
  * Given a session the server opened
+ * When the server sends an Expulsion of the reason Banned in the session
+ * Then the session ends as banned
+ */
+TEST_F(ServerSessionFixture, ABanOfTheServerBansTheSession) {
+  accept();
+  deliverInSession(
+      network::Expulsion{.reason = network::ExpulsionReason::Banned},
+      FIRST_SEQUENCE);
+
+  update();
+
+  EXPECT_EQ(phase(), ConnectionPhase::Banned);
+}
+
+/**
+ * Given a session the server opened
  * When a Disconnection arrives with another session token
  * Then the session holds: only the server of the session may close it
  */

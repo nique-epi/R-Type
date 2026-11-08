@@ -50,6 +50,7 @@ constexpr std::size_t DEPARTURE_NAME_LETTERS = 10;
 constexpr int DEPARTURE_WORD_GAP = 6;
 constexpr const char* LEFT_THE_GAME_TEXT = "LEFT THE GAME";
 constexpr const char* WAS_EXPELLED_TEXT = "WAS EXPELLED";
+constexpr const char* WAS_BANNED_TEXT = "WAS BANNED";
 constexpr sf::Color DEPARTURE_WORD_COLOR = GONE_TEXT_COLOR;
 
 /**
