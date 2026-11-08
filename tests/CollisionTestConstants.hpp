@@ -1,5 +1,14 @@
 #pragma once
 
+#include <cstdint>
+
+/**
+ * @brief The numbers of two players, one who fires and one whose ship is
+ * fired at.
+ */
+constexpr std::uint8_t FIRING_PLAYER_NUMBER = 1;
+constexpr std::uint8_t OTHER_PLAYER_NUMBER = 2;
+
 /**
  * @brief Width and height of the square every collision test starts from.
  */

@@ -1,4 +1,4 @@
-add_library(rtype_server_supervisor_lobby_module STATIC ServerSupervisorLobbyModule.cpp)
+add_library(rtype_server_supervisor_lobby_module STATIC RulesRefusal.cpp ServerSupervisorLobbyModule.cpp)
 
 target_include_directories(rtype_server_supervisor_lobby_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

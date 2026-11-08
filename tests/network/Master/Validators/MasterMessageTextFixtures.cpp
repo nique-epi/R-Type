@@ -69,9 +69,12 @@ ServerHeartbeat parisHeartbeat() {
                 HostedGame{.number = PLAYING_GAME_NUMBER,
                            .name = std::string{PLAYING_GAME_NAME},
                            .state = HostedGameState::Playing,
-                           .difficulty = std::string{PARIS_DIFFICULTY},
+                           .difficulty = std::string{PARIS_HARD_DIFFICULTY},
+                           .lives = PARIS_PLAYING_GAME_LIVES,
+                           .friendlyFire = true,
                            .players = {std::string{SECOND_PILOT},
                                        std::string{THIRD_PILOT}}}},
+      .difficulties = {PARIS_DIFFICULTIES.begin(), PARIS_DIFFICULTIES.end()},
       .measures = ServerMeasures{.tickP50Milliseconds = PARIS_TICK_P50,
                                  .tickP95Milliseconds = PARIS_TICK_P95,
                                  .receivedBytesPerSecond = PARIS_RECEIVED_BYTES,
@@ -89,7 +92,11 @@ GameListing parisGameListing() {
                 ListedGame{.number = PLAYING_GAME_NUMBER,
                            .name = std::string{PLAYING_GAME_NAME},
                            .state = ListedGameState::InGame,
-                           .playerCount = PLAYING_GAME_PLAYER_COUNT}}};
+                           .playerCount = PLAYING_GAME_PLAYER_COUNT,
+                           .difficulty = std::string{PARIS_HARD_DIFFICULTY},
+                           .lives = PARIS_PLAYING_GAME_LIVES,
+                           .friendlyFire = true}},
+      .difficulties = {PARIS_DIFFICULTIES.begin(), PARIS_DIFFICULTIES.end()}};
 }
 
 ServerListing parisServerListing() {
@@ -185,6 +192,14 @@ std::string heartbeatTextWithout(std::string_view pointer) {
   return withoutValueAt(heartbeatText(parisHeartbeat()), pointer);
 }
 
+nlohmann::json difficultyNames(std::size_t count) {
+  nlohmann::json names = nlohmann::json::array();
+  for (std::size_t index = 0; index < count; ++index) {
+    names.push_back(std::string{GAME_NAME_PREFIX} + std::to_string(index));
+  }
+  return names;
+}
+
 std::string heartbeatTextOfGames(std::size_t gameCount) {
   ServerHeartbeat heartbeat;
   for (std::size_t index = 0; index < gameCount; ++index) {
@@ -195,6 +210,7 @@ std::string heartbeatTextOfGames(std::size_t gameCount) {
         .difficulty = std::string{PARIS_DIFFICULTY},
         .players = {}});
   }
+  heartbeat.difficulties = {std::string{PARIS_DIFFICULTY}};
   return heartbeatText(heartbeat);
 }
 

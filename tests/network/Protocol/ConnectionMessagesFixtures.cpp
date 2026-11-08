@@ -1,8 +1,10 @@
 #include "ConnectionMessagesFixtures.hpp"
 #include <cstdint>
 #include <string>
+#include <utility>
 #include "ByteWriter.hpp"
 #include "ConnectionRequest.hpp"
+#include "GameRules.hpp"
 #include "ProtocolTestConstants.hpp"
 
 namespace rtype::network::testing {
@@ -15,7 +17,20 @@ ConnectionRequest smallestRequest() {
 ConnectionRequest requestFor(const GameChoice& game) {
   return ConnectionRequest{.cookie = SOME_COOKIE,
                            .nickname = std::string{ONE_BYTE_NICKNAME},
-                           .game = game};
+                           .game = game,
+                           .rules = defaultRulesFor(game)};
+}
+
+ConnectionRequest newGameRequestWith(GameRules rules) {
+  ConnectionRequest request = requestFor(NEW_GAME_CHOICE);
+  request.rules = std::move(rules);
+  return request;
+}
+
+GameRules hardRulesWithFriendlyFire() {
+  return GameRules{.difficulty = std::string{HARD_DIFFICULTY},
+                   .lives = FIVE_LIVES,
+                   .friendlyFire = true};
 }
 
 void writeAnyGameChoice(ByteWriter& writer) {

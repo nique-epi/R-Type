@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "GameRuleConstants.hpp"
 #include "HostedGameState.hpp"
 
 namespace rtype::network {
@@ -16,6 +17,10 @@ struct HostedGame {
   HostedGameState state{HostedGameState::Waiting};
   /** @brief The name of the difficulty it is played in. */
   std::string difficulty;
+  /** @brief The lives each of its players starts with. */
+  std::uint8_t lives{identifiers::DEFAULT_LIVES};
+  /** @brief Whether a missile of a player costs another player a life. */
+  bool friendlyFire{false};
   /** @brief The nickname of each player in it, MAXIMUM_PLAYERS at most. */
   std::vector<std::string> players;
 

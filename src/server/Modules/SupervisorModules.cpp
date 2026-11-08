@@ -10,6 +10,7 @@
 #include "BuiltModuleConstants.hpp"
 #include "EngineException.hpp"
 #include "ExecutablePath.hpp"
+#include "GameAssetPaths.hpp"
 #include "GameLaunchSettings.hpp"
 #include "IModule.hpp"
 #include "LaunchOptions.hpp"
@@ -53,6 +54,8 @@ GameLaunchSettings gameLaunchSettings(const LaunchOptions& launchOptions,
                             .folder = engine::executableFolder(),
                             .gameLines = std::move(gameLines),
                             .forwardedArguments = launchOptions.gameArguments(),
+                            .wavesFile = wavesFileInAssets(),
+                            .entitySheetsFolder = entitySheetsFolderInAssets(),
                             .trafficCsvFile = launchOptions.trafficCsvFile()};
 }
 

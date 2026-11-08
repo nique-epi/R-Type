@@ -18,10 +18,16 @@ constexpr std::string_view KNOWN_SETTINGS_SEPARATOR = ", ";
 constexpr std::string_view COMMENT_PREFIX_CHARACTERS = "# ";
 
 /** @brief The settings the supervisor gives each game on its command line,
- * and not through the lines of server.cfg: its own port and its own
- * database. */
+ * and not through the lines of server.cfg, that the supervisor declares too:
+ * its own port and its own database. */
 constexpr std::array<std::string_view, 2> SETTINGS_A_GAME_IS_LAUNCHED_WITH{
     "database", "port"};
+
+/** @brief The rules of a game, which the supervisor gives the game on its
+ * command line and never declares: the difficulty, the friendly fire and the
+ * lives its creator chose. */
+constexpr std::array<std::string_view, 3> RULES_A_GAME_IS_LAUNCHED_WITH{
+    "difficulty", "friendly-fire", "lives"};
 
 /** @brief A setting server.cfg.example only shows commented out, since it is
  * refused unless the game-statistics plugin is loaded. */

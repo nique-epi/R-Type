@@ -26,6 +26,14 @@ constexpr std::string_view MEASURES_MEMBER = "measures";
 constexpr std::string_view NUMBER_MEMBER = "number";
 constexpr std::string_view STATE_MEMBER = "state";
 constexpr std::string_view DIFFICULTY_MEMBER = "difficulty";
+constexpr std::string_view LIVES_MEMBER = "lives";
+constexpr std::string_view FRIENDLY_FIRE_MEMBER = "friendlyFire";
+constexpr std::string_view DIFFICULTIES_MEMBER = "difficulties";
+
+/** @brief The fewest difficulties a heartbeat names, and a list of games: a
+ * server always holds one, and a server that sent no heartbeat lists none. */
+constexpr std::size_t FEWEST_HEARTBEAT_DIFFICULTIES = 1;
+constexpr std::size_t FEWEST_LISTED_DIFFICULTIES = 0;
 constexpr std::string_view PLAYERS_MEMBER = "players";
 
 /** @brief The members of the measures of a heartbeat, in JSON. */
@@ -117,6 +125,13 @@ constexpr std::string_view STATUSES_MEMBER = "statuses";
 
 /** @brief The member of a listed game that counts its players. */
 constexpr std::string_view PLAYER_COUNT_MEMBER = "playerCount";
+
+/** @brief The fewest and the most lives a hosted or listed game may give its
+ * players: what one byte holds, above 0. A server checks its own, narrower
+ * bounds when a game is created. */
+constexpr std::uint64_t LOWEST_GAME_LIVES = 1;
+constexpr std::uint64_t HIGHEST_GAME_LIVES =
+    std::numeric_limits<std::uint8_t>::max();
 
 /** @brief The fewest players a listed game may hold. */
 constexpr std::uint64_t MINIMUM_LISTED_PLAYERS = 0;

@@ -3,6 +3,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include "GameRules.hpp"
 #include "GameSpawnerFixture.hpp"
 #include "NetworkConstants.hpp"
 #include "SupervisedGamesFixtures.hpp"
@@ -15,7 +16,8 @@
  * and the network admits that port on the loopback under the game's token
  */
 TEST_F(GameSpawnerFixture, StartsTheProcessRegistersTheGameAndAdmitsIt) {
-  const bool opened = spawner().openGame(std::nullopt);
+  const bool opened =
+      spawner().openGame(std::nullopt, rtype::network::defaultGameRules());
 
   EXPECT_TRUE(opened);
   ASSERT_EQ(launcher().commands().size(), 1U);
@@ -33,7 +35,8 @@ TEST_F(GameSpawnerFixture, StartsTheProcessRegistersTheGameAndAdmitsIt) {
  * Then it carries the link token the command gave the game
  */
 TEST_F(GameSpawnerFixture, AdmitsTheGameUnderTheTokenOfItsCommand) {
-  EXPECT_TRUE(spawner().openGame(std::nullopt));
+  EXPECT_TRUE(
+      spawner().openGame(std::nullopt, rtype::network::defaultGameRules()));
 
   EXPECT_EQ(std::to_string(admission().admitted().front().sessionToken),
             argumentAfter(launcher().commands().front(), "--link-token"));
@@ -45,7 +48,8 @@ TEST_F(GameSpawnerFixture, AdmitsTheGameUnderTheTokenOfItsCommand) {
  * Then the command tells the game that supervisor port
  */
 TEST_F(GameSpawnerFixture, TellsTheGameThePortOfTheSupervisor) {
-  EXPECT_TRUE(spawner().openGame(std::nullopt));
+  EXPECT_TRUE(
+      spawner().openGame(std::nullopt, rtype::network::defaultGameRules()));
 
   EXPECT_EQ(argumentAfter(launcher().commands().front(), "--supervisor"),
             std::to_string(rtype::network::DEFAULT_SERVER_PORT));
@@ -57,9 +61,11 @@ TEST_F(GameSpawnerFixture, TellsTheGameThePortOfTheSupervisor) {
  * Then the second game has the journal of game 1 and a token of its own
  */
 TEST_F(GameSpawnerFixture, NumbersTheGamesInTheOrderItOpensThem) {
-  EXPECT_TRUE(spawner().openGame(std::nullopt));
+  EXPECT_TRUE(
+      spawner().openGame(std::nullopt, rtype::network::defaultGameRules()));
 
-  EXPECT_TRUE(spawner().openGame(std::nullopt));
+  EXPECT_TRUE(
+      spawner().openGame(std::nullopt, rtype::network::defaultGameRules()));
 
   EXPECT_NE(argumentAfter(launcher().commands().back(), "--log-file")
                 .find("r-type_game_1.log"),
@@ -77,12 +83,14 @@ TEST_F(GameSpawnerFixture, NumbersTheGamesInTheOrderItOpensThem) {
 TEST_F(GameSpawnerFixture, GoesOnWhenAProcessCannotStart) {
   launcher().failNextLaunch();
 
-  const bool opened = spawner().openGame(std::nullopt);
+  const bool opened =
+      spawner().openGame(std::nullopt, rtype::network::defaultGameRules());
 
   EXPECT_FALSE(opened);
   EXPECT_TRUE(registry().all().empty());
   EXPECT_TRUE(admission().admitted().empty());
-  EXPECT_TRUE(spawner().openGame(std::nullopt));
+  EXPECT_TRUE(
+      spawner().openGame(std::nullopt, rtype::network::defaultGameRules()));
   EXPECT_NE(argumentAfter(launcher().commands().front(), "--log-file")
                 .find("r-type_game_0.log"),
             std::string::npos);
@@ -96,6 +104,7 @@ TEST_F(GameSpawnerFixture, GoesOnWhenAProcessCannotStart) {
 TEST_F(GameSpawnerFixture, GoesOnWhenNoPortIsFree) {
   useFreePort([]() -> std::uint16_t { throw std::runtime_error("none"); });
 
-  EXPECT_FALSE(spawner().openGame(std::nullopt));
+  EXPECT_FALSE(
+      spawner().openGame(std::nullopt, rtype::network::defaultGameRules()));
   EXPECT_TRUE(launcher().commands().empty());
 }

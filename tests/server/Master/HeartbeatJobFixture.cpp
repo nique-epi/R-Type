@@ -49,6 +49,7 @@ void HeartbeatJobFixture::startJob(HeartbeatTimes times) {
                                  .maximumGames = LINKED_GAMES,
                                  .probeSecret = LINKED_PROBE_SECRET},
       .games = games_,
+      .difficulties = {std::string{LINKED_DIFFICULTY}},
       .probeTokens = probeTokens_,
       .measures = nullptr,
       .times = times,

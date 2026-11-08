@@ -7,6 +7,7 @@
 #include <vector>
 #include "Endpoint.hpp"
 #include "GameLifecycle.hpp"
+#include "GameRules.hpp"
 #include "GameStatusMeasures.hpp"
 #include "IChildProcess.hpp"
 #include "SeatReservations.hpp"
@@ -47,6 +48,10 @@ struct SupervisedGame {
    * for a player who took any game. A new game asked for again by its creator
    * goes to it while nobody else joined it (see GameRegistry::placeFor()). */
   std::optional<network::Endpoint> creator;
+  /** @brief The rules the game is played by. A player who takes any game is
+   * only sent to a game played by the default rules (see
+   * GameRegistry::placeFor()). */
+  network::GameRules rules{network::defaultGameRules()};
   std::unique_ptr<IChildProcess> process;
 };
 

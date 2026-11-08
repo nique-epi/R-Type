@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
 #include <string_view>
 #include "WaveCatalog.hpp"
@@ -18,6 +19,12 @@ namespace rtype::server::testing {
  */
 [[nodiscard]] std::string calmFileWith(std::string_view key,
                                        std::string_view value);
+
+/** @returns calmFile() with its table named @p name instead of calm. */
+[[nodiscard]] std::string calmFileNamed(std::string_view name);
+
+/** @returns A waves file of @p count tables like calm, named level0 onwards. */
+[[nodiscard]] std::string fileOfDifficulties(std::size_t count);
 
 /** @returns calmFile() without the line of @p key. */
 [[nodiscard]] std::string calmFileWithout(std::string_view key);

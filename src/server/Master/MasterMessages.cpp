@@ -45,6 +45,7 @@ network::ServerHeartbeat heartbeatOf(
     std::optional<std::uint64_t> probeToken) {
   return network::ServerHeartbeat{
       .games = std::move(games),
+      .difficulties = {},
       .measures = measures.value_or(network::ServerMeasures{}),
       .probeToken = probeToken};
 }

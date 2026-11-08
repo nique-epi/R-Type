@@ -2,10 +2,12 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
 #include <type_traits>
 #include "ByteWriter.hpp"
+#include "GameRules.hpp"
 #include "MessageType.hpp"
 #include "ProtocolConstants.hpp"
 
@@ -45,10 +47,18 @@ constexpr GameChoice NEW_GAME_CHOICE{.kind = GameChoiceKind::NewGame,
                                      .number = UNUSED_GAME_NUMBER};
 
 /**
+ * @returns The rules a request for @p game carries when its player chose none:
+ * defaultGameRules() for a NewGame, nothing for any other choice, which carries
+ * no rules.
+ */
+[[nodiscard]] std::optional<GameRules> defaultRulesFor(const GameChoice& game);
+
+/**
  * @brief What a client sends to join a game, every 500 ms until it gets an
  * answer: the cookie of the server's challenge, 0 until it has one, the
- * nickname of the player and the game it asks for. A game process reads the
- * choice and ignores it: the supervisor already chose its game.
+ * nickname of the player, the game it asks for and, for a NewGame, the rules of
+ * that game. A game process reads the choice and the rules and ignores them:
+ * the supervisor already chose its game and gave it its rules.
  */
 struct ConnectionRequest {
   static constexpr MessageType TYPE = MessageType::ConnectionRequest;
@@ -56,18 +66,24 @@ struct ConnectionRequest {
   std::uint64_t cookie;
   std::string nickname;
   GameChoice game{ANY_GAME_CHOICE};
+  /** @brief The rules of the game a NewGame opens; empty for every other
+   * choice. */
+  std::optional<GameRules> rules = std::nullopt;
 
   bool operator==(const ConnectionRequest&) const = default;
 };
 
 /**
  * @brief Writes the cookie, the nickname with its length, then the kind and
- * the number of the game.
+ * the number of the game; for a NewGame, then its difficulty with its length,
+ * its lives and its friendly fire.
  * @throws InvalidNicknameException when the nickname is empty, longer than
  * MAXIMUM_NICKNAME_SIZE or not UTF-8; nothing is written then.
  * @throws InvalidFieldValueException when the kind is not one of
- * GameChoiceKind, or the number does not fit it (see GameChoice); nothing is
- * written then.
+ * GameChoiceKind, the number does not fit it (see GameChoice), or rules come
+ * with any choice but NewGame, or none with it; nothing is written then.
+ * @throws InvalidDifficultyException when the difficulty of the rules breaks
+ * the rules of a nickname; nothing is written then.
  */
 void encodePayload(ByteWriter& writer, const ConnectionRequest& message);
 
@@ -78,7 +94,11 @@ void encodePayload(ByteWriter& writer, const ConnectionRequest& message);
  * MAXIMUM_NICKNAME_SIZE or not UTF-8.
  * @throws InvalidFieldValueException when the kind or the number of the game
  * is invalid, as for encodePayload().
- * @throws TrailingBytesException when bytes follow the number of the game.
+ * @throws InvalidDifficultyException when the difficulty of a NewGame breaks
+ * the rules of a nickname.
+ * @throws InvalidBoolException when the friendly fire of a NewGame is neither 0
+ * nor 1.
+ * @throws TrailingBytesException when bytes follow the last field.
  */
 [[nodiscard]] ConnectionRequest decodePayload(
     std::span<const std::byte> payload,
