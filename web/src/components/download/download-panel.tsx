@@ -6,7 +6,6 @@ import { PlayButton } from '@/components/game/play-button';
 import { PixelIcon } from '@/components/primitives/icons/pixel-icon';
 import { Tabs } from '@/components/primitives/inputs/tabs';
 import { ProgressBar } from '@/components/primitives/status/progress-bar';
-import { CodeBlock } from '@/components/primitives/text/code-block';
 import { useMotion } from '@/hooks/use-motion';
 import { gsap } from '@/lib/gsap';
 
@@ -99,7 +98,9 @@ export function DownloadPanel<System extends string>({
           {chosen.name}
         </h2>
         <p className="m-0 small-caps text-pale-blue">{chosen.details}</p>
-        <CodeBlock>{chosen.file}</CodeBlock>
+        <p className="m-0 font-body font-medium text-sm text-star-white leading-[22px]">
+          {chosen.file}
+        </p>
       </div>
       <div className="flex flex-wrap items-center gap-6">
         <PlayButton
