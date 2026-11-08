@@ -48,4 +48,8 @@ constexpr std::string_view DEFAULT_SERVER_JOURNAL_TEXT =
 constexpr std::string_view UNOPENED_JOURNAL_LINE_START =
     "cannot open the journal ";
 
+/** @brief How a terminal is told to write in yellow, the colour of a warning
+ * (ANSI SGR 33). */
+constexpr std::string_view WARNING_COLOR_START = "\x1b[33m";
+
 }  // namespace rtype::logging::testing

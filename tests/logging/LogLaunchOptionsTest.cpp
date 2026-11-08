@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -19,6 +20,7 @@
 #include "NonAnsiFolderTestConstants.hpp"
 #include "TemporaryFolder.hpp"
 
+using rtype::logging::COLOR_OPTION;
 using rtype::logging::FILE_OPTION;
 using rtype::logging::InvalidLogOptionException;
 using rtype::logging::LEVEL_OPTION;
@@ -51,6 +53,7 @@ using rtype::logging::testing::SHOWN_LINE;
 using rtype::logging::testing::STILL_ON_STDERR_LINE;
 using rtype::logging::testing::UNOPENED_JOURNAL_LINE_START;
 using rtype::logging::testing::UNUSED_JOURNAL;
+using rtype::logging::testing::WARNING_COLOR_START;
 using rtype::testing::NON_ANSI_FOLDER_BYTES;
 using rtype::testing::NON_ANSI_FOLDER_NAME;
 
@@ -222,6 +225,32 @@ TEST_F(LogLaunchOptionsFixture, NoFileOptionWritesToStandardErrorOnly) {
 
   EXPECT_FALSE(std::filesystem::exists(journal.path()));
   EXPECT_NE(standardError().find(SHOWN_LINE), std::string::npos);
+}
+
+/**
+ * Given the colour option and no journal, standard error being no terminal
+ * When the options are applied and a warning is logged
+ * Then standard error shows the line in the colour of a warning
+ */
+TEST_F(LogLaunchOptionsFixture, ColourOptionColoursStandardError) {
+  logOptionsOf(Arguments{NO_FILE_OPTION, COLOR_OPTION}, UNUSED_JOURNAL).apply();
+  Logger(std::string(LAUNCH_LOGGER_NAME)).warn(SHOWN_LINE);
+
+  EXPECT_NE(standardError().find(std::string(WARNING_COLOR_START)),
+            std::string::npos);
+}
+
+/**
+ * Given the colour option and a default journal that cannot be opened
+ * When the options are applied and a warning is logged
+ * Then standard error, written alone, keeps the colour
+ */
+TEST_F(LogLaunchOptionsFixture, ColourOptionSurvivesAnUnopenableJournal) {
+  logOptionsOf(Arguments{COLOR_OPTION}, MISSING_JOURNAL).apply();
+  Logger(std::string(LAUNCH_LOGGER_NAME)).warn(SHOWN_LINE);
+
+  EXPECT_NE(standardError().find(std::string(WARNING_COLOR_START)),
+            std::string::npos);
 }
 
 /**
@@ -495,6 +524,31 @@ TEST_F(LogLaunchOptionsFixture,
 }
 
 /**
+ * Given the colour option
+ * When the options a started process shares are asked for
+ * Then the colour option is among them
+ */
+TEST(LogLaunchOptionsForwarding, ForwardsTheColourOption) {
+  const std::vector<std::string> forwarded =
+      logOptionsOf(Arguments{COLOR_OPTION}, UNUSED_JOURNAL)
+          .forwardedArguments();
+
+  EXPECT_NE(std::ranges::find(forwarded, COLOR_OPTION), forwarded.end());
+}
+
+/**
+ * Given no logging option
+ * When the options a started process shares are asked for
+ * Then the colour option is not among them
+ */
+TEST(LogLaunchOptionsForwarding, ForwardsNoColourUnlessAsked) {
+  const std::vector<std::string> forwarded =
+      logOptionsOf(Arguments{}, UNUSED_JOURNAL).forwardedArguments();
+
+  EXPECT_EQ(std::ranges::find(forwarded, COLOR_OPTION), forwarded.end());
+}
+
+/**
  * Given the logging options
  * When their usage is built
  * Then each option starts a line of it
@@ -504,7 +558,7 @@ TEST(LogLaunchOptionsUsage, NamesEveryLoggingOption) {
 
   for (const std::string_view option :
        {LEVEL_OPTION, FILE_OPTION, NO_FILE_OPTION, STDERR_OPTION,
-        NO_STDERR_OPTION}) {
+        NO_STDERR_OPTION, COLOR_OPTION}) {
     SCOPED_TRACE(option);
     EXPECT_NE(usage.find(std::string(OPTION_LINE_START) + std::string(option)),
               std::string::npos);

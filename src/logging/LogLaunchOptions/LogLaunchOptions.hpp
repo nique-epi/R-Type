@@ -29,7 +29,7 @@ class LogLaunchOptions {
   /**
    * @brief Reads the logging option @p arguments starts with, if it is one:
    *        `--log-level <name>`, `--log-file <path>`, `--no-log-file`,
-   *        `--log-stderr` or `--no-log-stderr`.
+   *        `--log-stderr`, `--no-log-stderr` or `--log-color`.
    *
    * The value of `--log-level` or `--log-file` is the argument after it, even
    * when it looks like an option. A program reads its arguments once, in
@@ -70,8 +70,9 @@ class LogLaunchOptions {
   /**
    * @returns The options that give a process this program starts the choices
    *          of these options it shares: `--log-level <name>` when a level
-   *          was given, `--no-log-file` when no journal is written, and
-   *          `--no-log-stderr` when standard error is off; none for a launch
+   *          was given, `--no-log-file` when no journal is written,
+   *          `--no-log-stderr` when standard error is off, and `--log-color`
+   *          when colour was asked for; none for a launch
    *          that gives no logging option. The journal file is the caller's,
    *          given before them so a `--no-log-file` wins over it.
    */
