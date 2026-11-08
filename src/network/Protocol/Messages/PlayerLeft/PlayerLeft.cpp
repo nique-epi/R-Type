@@ -18,7 +18,6 @@ bool isListed(DepartureReason reason) {
     case DepartureReason::Left:
     case DepartureReason::TimedOut:
     case DepartureReason::Expelled:
-    case DepartureReason::Banned:
       return true;
   }
   return false;

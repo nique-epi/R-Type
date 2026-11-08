@@ -40,8 +40,8 @@ TEST(GameLineRule, KeepsTheOtherLinesForTheSupervisor) {
   const auto rule = gameLineRule(SUPERVISOR_MODULE_NAMES);
 
   for (const std::string_view line :
-       {NETWORK_OFF_LINE, BANS_OFF_LINE, SET_PORT_LINE, SET_UNKNOWN_LINE,
-        BARE_MODULE_LINE, GAMES_LINE}) {
+       {NETWORK_OFF_LINE, SET_PORT_LINE, SET_UNKNOWN_LINE, BARE_MODULE_LINE,
+        GAMES_LINE}) {
     SCOPED_TRACE(line);
     EXPECT_FALSE(rule(splitCommandLine(line)));
   }

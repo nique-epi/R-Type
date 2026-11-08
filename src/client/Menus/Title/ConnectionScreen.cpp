@@ -72,8 +72,6 @@ std::string refusalLine(const ConnectionStatus& status) {
       return UNKNOWN_DIFFICULTY_STATUS;
     case network::RefusalReason::LivesOutOfRange:
       return livesRefusalLine();
-    case network::RefusalReason::Banned:
-      return BANNED_STATUS;
     case network::RefusalReason::IncompatibleVersion:
       break;
   }
@@ -235,7 +233,6 @@ std::string ConnectionScreen::statusLine(const ConnectionStatus& status) const {
     case ConnectionPhase::Lost:
     case ConnectionPhase::Closed:
     case ConnectionPhase::Expelled:
-    case ConnectionPhase::Banned:
       break;
   }
   return {};

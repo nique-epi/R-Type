@@ -16,7 +16,6 @@ namespace {
 bool isListed(ExpulsionReason reason) {
   switch (reason) {
     case ExpulsionReason::ByTheHost:
-    case ExpulsionReason::Banned:
       return true;
   }
   return false;

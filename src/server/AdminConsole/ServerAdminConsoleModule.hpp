@@ -6,7 +6,6 @@
 #include <vector>
 #include "AdminConsoleCommands.hpp"
 #include "AdminConsoleConstants.hpp"
-#include "BanCommands.hpp"
 #include "BoundedQueue.hpp"
 #include "CommandInterpreter.hpp"
 #include "ConsoleReader.hpp"
@@ -40,8 +39,8 @@ class ServerAdminConsoleModule final : public engine::IModule {
 
   /**
    * @brief Registers the commands and adds the work of the tick.
-   * @throws MissingServiceException when the network, the supervised games or
-   * the bans module did not provide what the commands read.
+   * @throws MissingServiceException when the network or the supervised games
+   * module did not provide what the commands read.
    */
   void install(engine::InstallContext& context) override;
 
@@ -61,7 +60,6 @@ class ServerAdminConsoleModule final : public engine::IModule {
   std::vector<std::string> typed_;
   const engine::CommandInterpreter* interpreter_{nullptr};
   std::optional<AdminConsoleCommands> commands_;
-  std::optional<BanCommands> banCommands_;
   std::optional<ConsoleReader> reader_;
 };
 

@@ -10,7 +10,6 @@
 #include "IListeningPort.hpp"
 #include "IResultsArchive.hpp"
 #include "InstallContext.hpp"
-#include "LatestBans.hpp"
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
 #include "ServerConstants.hpp"
@@ -51,24 +50,14 @@ void ServerStorageModule::install(engine::InstallContext& context) {
       declareDatabase(context.require<engine::ConfigurationRegistry>()),
       defaultFolder_, context.require<IListeningPort>());
   context.provide<IResultsArchive>(archive_);
-  context.provide<LatestBans>(banWatch_.bans());
 }
 
 void ServerStorageModule::start() {
   const std::filesystem::path file = location_->file();
   archive_.open(file);
-  try {
-    banWatch_.open(file);
-  } catch (...) {
-    archive_.close();
-    throw;
-  }
   logger_.info("results database ", logging::genericText(file));
 }
 
-void ServerStorageModule::stop() {
-  banWatch_.close();
-  archive_.close();
-}
+void ServerStorageModule::stop() { archive_.close(); }
 
 }  // namespace rtype::server
