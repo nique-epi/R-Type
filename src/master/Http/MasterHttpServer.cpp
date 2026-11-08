@@ -5,6 +5,7 @@
 #include "ApiHandler.hpp"
 #include "Endpoint.hpp"
 #include "FailureReport.hpp"
+#include "ForwardedAddress.hpp"
 #include "MasterConstants.hpp"
 #include "MasterRoute.hpp"
 #include "MasterRoutePath.hpp"
@@ -12,7 +13,8 @@
 namespace rtype::master {
 
 MasterHttpServer::MasterHttpServer(FailureReport onFailure)
-    : server_(std::string{MASTER_LOGGER_NAME}, std::move(onFailure)) {}
+    : server_(std::string{MASTER_LOGGER_NAME}, std::move(onFailure),
+              network::ForwardedAddress::TrustedFromLoopback) {}
 
 void MasterHttpServer::add(network::MasterRoute route,
                            network::ApiHandler handler) {

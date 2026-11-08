@@ -16,13 +16,16 @@
 #include "ApiHandler.hpp"
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
+#include "ClientAddress.hpp"
 #include "Endpoint.hpp"
+#include "ForwardedAddress.hpp"
 #include "HttpServerConstants.hpp"
 #include "HttpStatusConstants.hpp"
 #include "ListeningLoss.hpp"
 #include "MasterHttpConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
+#include "PeerAddresses.hpp"
 #include "RouteMethod.hpp"
 
 // NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks,clang-analyzer-unix.BlockInCriticalSection)
@@ -124,11 +127,16 @@ std::unordered_map<std::string, std::string> queryParametersOf(
   return parameters;
 }
 
-ApiRequest apiRequestOf(const httplib::Request& request) {
+ApiRequest apiRequestOf(const httplib::Request& request,
+                        ForwardedAddress forwarded) {
   return ApiRequest{.body = request.body,
                     .bearerToken = bearerTokenIn(request.get_header_value(
                         std::string{AUTHORIZATION_HEADER})),
-                    .remoteAddress = request.remote_addr,
+                    .remoteAddress = clientAddressOf(
+                        PeerAddresses{.peer = request.remote_addr,
+                                      .forwardedFor = request.get_header_value(
+                                          std::string{FORWARDED_FOR_HEADER})},
+                        forwarded),
                     .pathParameters = request.path_params,
                     .queryParameters = queryParametersOf(request)};
 }
@@ -155,10 +163,11 @@ void writeReply(ApiResponse reply, httplib::Response& response) {
   response.set_content(std::move(reply.body), std::string{reply.contentType});
 }
 
-httplib::Server::Handler handlerOf(ApiHandler route) {
-  return [answer = std::move(route)](const httplib::Request& request,
-                                     httplib::Response& response) {
-    writeReply(answer(apiRequestOf(request)), response);
+httplib::Server::Handler handlerOf(ApiHandler route,
+                                   ForwardedAddress forwarded) {
+  return [answer = std::move(route), forwarded](const httplib::Request& request,
+                                                httplib::Response& response) {
+    writeReply(answer(apiRequestOf(request, forwarded)), response);
   };
 }
 
@@ -175,9 +184,11 @@ std::string reasonOf(const std::exception_ptr& error) {
 
 }  // namespace
 
-HttpServer::HttpServer(const std::string& loggerName, ListeningLoss onLoss)
+HttpServer::HttpServer(const std::string& loggerName, ListeningLoss onLoss,
+                       ForwardedAddress forwarded)
     : server_(std::make_unique<httplib::Server>()),
       onLoss_(std::move(onLoss)),
+      forwarded_(forwarded),
       logger_(loggerName) {
   server_->set_socket_options(claimPortAlone);
   server_->set_payload_max_length(MAX_REQUEST_BODY_BYTES);
@@ -198,13 +209,13 @@ void HttpServer::add(RouteMethod method, const std::string& path,
                      ApiHandler handler) {
   switch (method) {
     case RouteMethod::Get:
-      server_->Get(path, handlerOf(std::move(handler)));
+      server_->Get(path, handlerOf(std::move(handler), forwarded_));
       return;
     case RouteMethod::Post:
-      server_->Post(path, handlerOf(std::move(handler)));
+      server_->Post(path, handlerOf(std::move(handler), forwarded_));
       return;
     case RouteMethod::Put:
-      server_->Put(path, handlerOf(std::move(handler)));
+      server_->Put(path, handlerOf(std::move(handler), forwarded_));
       return;
   }
 }

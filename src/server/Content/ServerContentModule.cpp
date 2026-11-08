@@ -11,6 +11,7 @@
 #include "ContentPack.hpp"
 #include "ContentRouteConstants.hpp"
 #include "Endpoint.hpp"
+#include "ForwardedAddress.hpp"
 #include "IListeningPort.hpp"
 #include "InstallContext.hpp"
 #include "MasterRoutePath.hpp"
@@ -25,10 +26,12 @@ ServerContentModule::ServerContentModule(
     std::vector<std::filesystem::path> contentFolders)
     : contentFolders_(std::move(contentFolders)),
       logger_(std::string{SERVER_LOGGER_NAME}),
-      server_(std::string{SERVER_LOGGER_NAME},
-              [this](const std::string& reason) {
-                logger_.error("the content pack is no longer served: ", reason);
-              }) {}
+      server_(
+          std::string{SERVER_LOGGER_NAME},
+          [this](const std::string& reason) {
+            logger_.error("the content pack is no longer served: ", reason);
+          },
+          network::ForwardedAddress::Ignored) {}
 
 std::string ServerContentModule::name() const {
   return std::string{CONTENT_MODULE_NAME};

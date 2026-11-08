@@ -20,6 +20,17 @@ constexpr std::size_t MAX_REQUEST_BODY_BYTES = std::size_t{64} * 1024;
 constexpr std::string_view LISTENING_LOST_TEXT =
     "the HTTP server stopped listening";
 
+/** @brief The header a reverse proxy names the client of a request in. */
+constexpr std::string_view FORWARDED_FOR_HEADER = "X-Forwarded-For";
+
+/** @brief What separates two addresses of FORWARDED_FOR_HEADER, the last one
+ * written by the proxy nearest the server. */
+constexpr char FORWARDED_ADDRESS_SEPARATOR = ',';
+
+/** @brief The blanks a proxy may write around an address of
+ * FORWARDED_FOR_HEADER. */
+constexpr std::string_view FORWARDED_ADDRESS_BLANKS = " \t";
+
 /** @brief What the journal says of an exception that is no std::exception. */
 constexpr std::string_view UNKNOWN_ERROR_TEXT = "unknown error";
 

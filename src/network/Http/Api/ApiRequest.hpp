@@ -16,8 +16,8 @@ struct ApiRequest {
    */
   std::optional<std::string> bearerToken = std::nullopt;
   /**
-   * @brief The IPv4 address of the TCP peer, never one an `X-Forwarded-For`
-   * header names.
+   * @brief The IPv4 address of the client: the TCP peer, or the one a proxy
+   * on the machine names, as clientAddressOf() reads it.
    */
   std::string remoteAddress;
   /**
