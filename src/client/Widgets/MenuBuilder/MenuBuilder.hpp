@@ -42,7 +42,9 @@ class ISoundPlayer;
  *
  * A tabbed panel is the heading and its rule as on a page, its tabs under the
  * rule, the panel of its rows under the tabs, then its bars in a row under the
- * panel and the line describing the selected bar or row on their right. Its
+ * panel and the line describing the selected bar or row on their right; the
+ * bars asked for after the cancel button end at the right end of the panel
+ * instead, the line on their left. Its rows are asked for before its bars. Its
  * illustration sits in the panel under the rows, its notice in the top-right
  * corner, its status line at the end of the rule. Left and right step the
  * value of the selected row.

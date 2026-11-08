@@ -97,6 +97,13 @@ std::unique_ptr<IScreen> buildQuitConfirmationScreen(
                                                       soundsOf(context)));
 }
 
+std::unique_ptr<IScreen> buildLeaveGameConfirmationScreen(
+    const ScreenContext& context) {
+  return dialogScreenOf(context, leaveGameConfirmationMenu(
+                                     context.navigator.get(), soundsOf(context),
+                                     context.services.connection.get()));
+}
+
 std::unique_ptr<IScreen> buildConnectionLostScreen(
     const ScreenContext& context) {
   return dialogScreenOf(
@@ -224,6 +231,8 @@ void ClientMenusModule::install(engine::InstallContext& context) {
     return buildOptionsScreen(screens, OptionsPlace::OverGame);
   });
   registry.add(QUIT_CONFIRMATION_SCREEN, buildQuitConfirmationScreen);
+  registry.add(LEAVE_GAME_CONFIRMATION_SCREEN,
+               buildLeaveGameConfirmationScreen);
   addConnectionScreens(registry);
   registry.add(SERVER_MAP_SCREEN, buildServerMapScreen);
   registry.add(NEW_GAME_SCREEN, buildNewGameScreen);

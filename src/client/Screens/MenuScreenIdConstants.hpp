@@ -33,6 +33,10 @@ constexpr ScreenId CONNECTION_LOST_SCREEN{"connection lost"};
  * title. */
 constexpr ScreenId QUIT_CONFIRMATION_SCREEN{"quit confirmation"};
 
+/** @brief The question asked before leaving a game for the title, pushed by
+ * QUIT over the options of the game. */
+constexpr ScreenId LEAVE_GAME_CONFIRMATION_SCREEN{"leave game confirmation"};
+
 /** @brief The server to join and the nickname to join it with, then how the
  * attempt stands, pushed by ADDRESS over the server map. */
 constexpr ScreenId CONNECTION_SCREEN{"connection"};

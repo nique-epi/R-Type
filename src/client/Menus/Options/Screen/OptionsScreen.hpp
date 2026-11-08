@@ -35,7 +35,8 @@ namespace rtype::client {
  * shows the size of the screen, and the chart of the sizes is not drawn.
  *
  * Over the title, the options hide it. Over a game, which goes on, they dim it
- * and say so in the top-right corner.
+ * and say so in the top-right corner, and QUIT, at the right end of the row of
+ * BACK, asks whether to leave the game for the title.
  */
 class OptionsScreen : public IScreen {
  public:
@@ -54,6 +55,10 @@ class OptionsScreen : public IScreen {
   void save();
 
   void close();
+
+  /** @brief Saves what is not saved yet, then asks whether to leave the game.
+   */
+  void leaveGame();
 
   /** @brief Writes the descriptions that follow the state of the rows, on
    * every tab, and the stamp, on the open tab. */

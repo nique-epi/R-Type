@@ -13,6 +13,7 @@
 #include "IScreenNavigator.hpp"
 #include "ISizableWindow.hpp"
 #include "Menu.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "OptionsPlace.hpp"
 #include "OptionsScreenParts.hpp"
 #include "OptionsTabs.hpp"
@@ -42,6 +43,7 @@ OptionsScreen::OptionsScreen(OptionsScreenParts parts,
           .keyName = std::move(parts.keyName),
           .openTab = [this](std::size_t tab) { tabs_.openTab(tab); },
           .close = [this] { close(); },
+          .leaveGame = [this] { leaveGame(); },
           .askToReset =
               [this](const std::string& question,
                      const std::function<void()>& reset) {
@@ -94,6 +96,11 @@ void OptionsScreen::save() {
 void OptionsScreen::close() {
   save();
   navigator_->pop();
+}
+
+void OptionsScreen::leaveGame() {
+  save();
+  navigator_->push(LEAVE_GAME_CONFIRMATION_SCREEN);
 }
 
 void OptionsScreen::refresh() {

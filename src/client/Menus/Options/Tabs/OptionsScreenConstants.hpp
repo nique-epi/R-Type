@@ -148,6 +148,9 @@ constexpr SliderLook CHAT_BACKGROUND_LOOK{.step = CHAT_BACKGROUND_STEP,
 /** @brief BACK, and the stamp written after a save, SAVED for
  * SAVED_STAMP_DURATION, NOT SAVED until the next save. */
 constexpr const char* BACK_DESCRIPTION = "> CLOSES THE OPTIONS. ESC DOES TOO";
+
+/** @brief Description of QUIT, on the options over a game. */
+constexpr const char* QUIT_GAME_DESCRIPTION = "> LEAVES THE GAME";
 constexpr const char* SAVED_STAMP = "SAVED";
 constexpr const char* NOT_SAVED_STAMP = "NOT SAVED";
 constexpr engine::Duration SAVED_STAMP_DURATION = std::chrono::seconds(1);

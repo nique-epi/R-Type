@@ -1,6 +1,7 @@
 #include "DialogMenus.hpp"
 #include "ConnectionPhase.hpp"
 #include "IScreenNavigator.hpp"
+#include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
@@ -42,6 +43,21 @@ Menu quitConfirmationMenu(IScreenNavigator& navigator, ISoundPlayer& sounds) {
       .message(QUIT_QUESTION)
       .cancelButton({.label = NO_LABEL}, [&navigator] { navigator.pop(); })
       .button({.label = YES_LABEL}, [&navigator] { navigator.closeAll(); })
+      .build();
+}
+
+Menu leaveGameConfirmationMenu(IScreenNavigator& navigator,
+                               ISoundPlayer& sounds,
+                               IServerConnection& connection) {
+  return MenuBuilder(MenuBuilder::Frame::Dialog, &sounds)
+      .heading(CONFIRM_HEADING)
+      .message(QUIT_QUESTION)
+      .cancelButton({.label = NO_LABEL}, [&navigator] { navigator.pop(); })
+      .button({.label = YES_LABEL},
+              [&navigator, &connection] {
+                connection.cancel();
+                navigator.replaceAll(TITLE_SCREEN);
+              })
       .build();
 }
 

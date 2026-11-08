@@ -7,6 +7,7 @@
 #include "DialogScreen.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
+#include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
 
 /** @brief A dialog of the client alone in its screen, with a recording
@@ -19,7 +20,13 @@ class DialogMenusFixture : public ::testing::Test {
   /** @brief Opens the dialog of a session ended this way. */
   void openConnectionLost(rtype::client::ConnectionPhase ending);
 
+  /** @brief Opens the question asked before leaving a game for the title. */
+  void openLeaveGameConfirmation();
+
   [[nodiscard]] const RecordingNavigator& navigator() const;
+
+  /** @returns What the dialog asked of the session. */
+  [[nodiscard]] const RecordingServerConnection& connection() const;
 
   /** @returns What the dialog painted. */
   [[nodiscard]] const InterfaceCanvasRecord& canvas() const;
@@ -40,5 +47,6 @@ class DialogMenusFixture : public ::testing::Test {
   RecordingNavigator navigator_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
+  RecordingServerConnection connection_;
   std::unique_ptr<rtype::client::DialogScreen> dialog_;
 };
