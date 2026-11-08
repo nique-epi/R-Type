@@ -1,14 +1,14 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <vector>
-#include "IListeningPort.hpp"
+#include "DatabaseLocation.hpp"
 #include "IModule.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
 #include "ResultsArchive.hpp"
-#include "SettingValue.hpp"
 
 namespace rtype::server {
 
@@ -37,7 +37,7 @@ class ServerStorageModule final : public engine::IModule {
   [[nodiscard]] std::vector<std::string> dependencies() const override;
 
   /**
-   * @brief Declares the `database` setting, requires the IListeningPort and
+   * @brief Declares the `database` setting, requires the IListeningPort, and
    * provides the IResultsArchive; opens nothing.
    */
   void install(engine::InstallContext& context) override;
@@ -52,11 +52,8 @@ class ServerStorageModule final : public engine::IModule {
   void stop() override;
 
  private:
-  [[nodiscard]] std::filesystem::path databaseFile() const;
-
   std::filesystem::path defaultFolder_;
-  const engine::SettingValue* databaseSetting_{nullptr};
-  const IListeningPort* listeningPort_{nullptr};
+  std::optional<DatabaseLocation> location_;
   logging::Logger logger_;
   ResultsArchive archive_;
 };
