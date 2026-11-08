@@ -4,13 +4,13 @@
 #include "LagCompensatedHitSystemTestConstants.hpp"
 
 using rtype::engine::Entity;
+using rtype::game::testing::FAR_CLAIM_TICKS_BEHIND;
 using rtype::game::testing::FIVE_TICKS_BEHIND;
+using rtype::game::testing::KEPT_TICKS_BEHIND;
 using rtype::game::testing::LagCompensatedHitSystemFixture;
-using rtype::game::testing::THIRTEEN_TICKS_BEHIND;
+using rtype::game::testing::PAST_THE_KEPT_TICKS_BEHIND;
 using rtype::game::testing::TICKS_GONE_AFTER;
 using rtype::game::testing::TICKS_GONE_BEFORE;
-using rtype::game::testing::TWELVE_TICKS_BEHIND;
-using rtype::game::testing::TWENTY_TICKS_BEHIND;
 using rtype::game::testing::WHERE_THE_ENEMY_WENT;
 using rtype::game::testing::WHERE_THE_PLAYER_SAW_THE_ENEMY;
 
@@ -85,18 +85,17 @@ TEST_F(LagCompensatedHitSystemFixture, AMissileNeverHitsAnEnemyDestroyedSince) {
 
 /**
  * Given an enemy that stood at a place for one tick, then went higher for
- * eleven ticks
- * When a missile reaches that place, its player twelve ticks behind
- * Then it hits the enemy: twelve ticks, 200 ms, is the most the server looks
- * back, and it does
+ * as many ticks as the system keeps, less one
+ * When a missile reaches that place, its player that many ticks behind
+ * Then it hits the enemy: the system looks as far back as it keeps
  */
-TEST_F(LagCompensatedHitSystemFixture, LooksBackTwelveTicks) {
+TEST_F(LagCompensatedHitSystemFixture, LooksBackAsFarAsItKeeps) {
   const Entity enemy = enemyAt(WHERE_THE_PLAYER_SAW_THE_ENEMY);
   runTick();
   move(enemy, WHERE_THE_ENEMY_WENT);
-  runTicks(TWELVE_TICKS_BEHIND - 1);
+  runTicks(KEPT_TICKS_BEHIND - 1);
   static_cast<void>(
-      missileAt(WHERE_THE_PLAYER_SAW_THE_ENEMY, TWELVE_TICKS_BEHIND));
+      missileAt(WHERE_THE_PLAYER_SAW_THE_ENEMY, KEPT_TICKS_BEHIND));
 
   runTick();
 
@@ -104,19 +103,19 @@ TEST_F(LagCompensatedHitSystemFixture, LooksBackTwelveTicks) {
 }
 
 /**
- * Given an enemy that stood at a place for one tick, then went higher for
- * twelve ticks
- * When a missile reaches that place, its player thirteen ticks behind
- * Then it hits nothing: the server looks back twelve ticks, where the enemy
- * had already left
+ * Given an enemy that stood at a place for one tick, then went higher for as
+ * many ticks as the system keeps
+ * When a missile reaches that place, its player one tick further behind
+ * Then it hits nothing: the system looks back as far as it keeps, where the
+ * enemy had already left
  */
-TEST_F(LagCompensatedHitSystemFixture, LooksBackNoMoreThanTwelveTicks) {
+TEST_F(LagCompensatedHitSystemFixture, LooksBackNoFurtherThanItKeeps) {
   const Entity enemy = enemyAt(WHERE_THE_PLAYER_SAW_THE_ENEMY);
   runTick();
   move(enemy, WHERE_THE_ENEMY_WENT);
-  runTicks(TWELVE_TICKS_BEHIND);
+  runTicks(KEPT_TICKS_BEHIND);
   static_cast<void>(
-      missileAt(WHERE_THE_PLAYER_SAW_THE_ENEMY, THIRTEEN_TICKS_BEHIND));
+      missileAt(WHERE_THE_PLAYER_SAW_THE_ENEMY, PAST_THE_KEPT_TICKS_BEHIND));
 
   runTick();
 
@@ -124,14 +123,15 @@ TEST_F(LagCompensatedHitSystemFixture, LooksBackNoMoreThanTwelveTicks) {
 }
 
 /**
- * Given an enemy gone for five ticks, then at a place for one tick, then gone
- * again for six ticks
- * When a missile reaches that place, its player claiming to be twenty ticks
- * behind
- * Then it hits nothing: the server looks back twelve ticks at most, whatever
- * the client claims
+ * Given an enemy gone for as many ticks as the system keeps, then at a place
+ * for one tick, then gone again for six ticks
+ * When a missile reaches that place, its player claiming to be eight ticks
+ * further behind than the system keeps
+ * Then it hits nothing: the system looks back as far as it keeps at most,
+ * whatever the client claims
  */
-TEST_F(LagCompensatedHitSystemFixture, AClaimFarInThePastLooksBackTwelveTicks) {
+TEST_F(LagCompensatedHitSystemFixture,
+       AClaimFarInThePastLooksBackAsFarAsItKeeps) {
   const Entity enemy = enemyAt(WHERE_THE_ENEMY_WENT);
   runTicks(TICKS_GONE_BEFORE);
   move(enemy, WHERE_THE_PLAYER_SAW_THE_ENEMY);
@@ -139,7 +139,7 @@ TEST_F(LagCompensatedHitSystemFixture, AClaimFarInThePastLooksBackTwelveTicks) {
   move(enemy, WHERE_THE_ENEMY_WENT);
   runTicks(TICKS_GONE_AFTER);
   static_cast<void>(
-      missileAt(WHERE_THE_PLAYER_SAW_THE_ENEMY, TWENTY_TICKS_BEHIND));
+      missileAt(WHERE_THE_PLAYER_SAW_THE_ENEMY, FAR_CLAIM_TICKS_BEHIND));
 
   runTick();
 

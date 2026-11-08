@@ -18,15 +18,26 @@ export type GameScreenProps = Omit<React.ComponentProps<'div'>, 'role'> & {
   'aria-label': string;
   /** Also fit the height of the window, as the full-page sector map does. */
   fitHeight?: boolean;
+  /** Grow past the size of the picture to fill the box, for a fullscreen screen. */
+  upscale?: boolean;
   /** Settle into place, tilted then flat, as it scrolls to the middle of the window. */
   settle?: boolean;
 };
 
-/** The scale that fits the screen in a box of that width (and that height, if given). */
-export function fittingScale(width: number, height?: number): number {
+/**
+ * The scale that fits the screen in a box of that width (and that height, if
+ * given). It never grows past the 960 × 540 of the picture unless `upscale`
+ * says the box may be larger, as a screen shown fullscreen on a wall display.
+ */
+export function fittingScale(
+  width: number,
+  height?: number,
+  upscale = false,
+): number {
   const across = width / GAME_SCREEN_WIDTH;
   const down = height === undefined ? across : height / GAME_SCREEN_HEIGHT;
-  return Math.max(MINIMUM_SCALE, Math.min(1, across, down));
+  const fitting = Math.min(across, down);
+  return Math.max(MINIMUM_SCALE, upscale ? fitting : Math.min(1, fitting));
 }
 
 /**
@@ -37,6 +48,7 @@ export function fittingScale(width: number, height?: number): number {
  */
 export function GameScreen({
   fitHeight = false,
+  upscale = false,
   settle = false,
   className,
   children,
@@ -59,6 +71,7 @@ export function GameScreen({
         fittingScale(
           element.clientWidth,
           fitHeight ? window.innerHeight - top : undefined,
+          upscale,
         ),
       );
     }
@@ -66,7 +79,7 @@ export function GameScreen({
     const observer = new ResizeObserver(measure);
     observer.observe(element);
     return () => observer.disconnect();
-  }, [fitHeight]);
+  }, [fitHeight, upscale]);
 
   useMotion(
     () => {

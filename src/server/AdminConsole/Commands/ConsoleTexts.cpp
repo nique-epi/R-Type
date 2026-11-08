@@ -1,6 +1,7 @@
 #include "ConsoleTexts.hpp"
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <iomanip>
 #include <ios>
 #include <optional>
@@ -10,6 +11,9 @@
 #include <string_view>
 #include <vector>
 #include "AdminConsoleConstants.hpp"
+#include "Ban.hpp"
+#include "BanKind.hpp"
+#include "BanTarget.hpp"
 #include "GameLifecycle.hpp"
 #include "MeasureMilliseconds.hpp"
 #include "NameList.hpp"
@@ -72,6 +76,14 @@ std::vector<std::string> linesOf(std::span<const SupervisedGame> games,
   return lines;
 }
 
+/** @returns " <count><unit>" when @p count is not zero; nothing otherwise. */
+std::string unitText(std::int64_t count, std::string_view unit) {
+  if (count == 0) {
+    return {};
+  }
+  return " " + std::to_string(count) + std::string{unit};
+}
+
 }  // namespace
 
 std::vector<std::string> gameLinesOf(std::span<const SupervisedGame> games) {
@@ -91,6 +103,41 @@ std::string closingLineOf(const SupervisedGame& game) {
 std::string kickLineOf(const SupervisedGame& game, std::string_view nickname) {
   return std::string{nickname} + " told to leave game " +
          std::to_string(game.number) + " in place " + std::to_string(game.slot);
+}
+
+std::string banTargetText(const BanTarget& target) {
+  const std::string_view word = target.kind == BanKind::Address
+                                    ? ADDRESS_TARGET_WORD
+                                    : NICKNAME_TARGET_WORD;
+  return std::string{word} + " " + target.text;
+}
+
+std::string lengthText(std::chrono::seconds length) {
+  const std::int64_t minutes =
+      std::chrono::ceil<std::chrono::minutes>(length).count();
+  const std::int64_t minutesPerHour = BAN_HOUR / BAN_MINUTE;
+  const std::int64_t minutesPerDay = BAN_DAY / BAN_MINUTE;
+  const std::string text =
+      unitText(minutes / minutesPerDay, DAYS_UNIT_TEXT) +
+      unitText(minutes % minutesPerDay / minutesPerHour, HOURS_UNIT_TEXT) +
+      unitText(minutes % minutesPerHour, MINUTES_UNIT_TEXT);
+  return text.empty() ? text : text.substr(1);
+}
+
+std::string banLineOf(const Ban& ban) {
+  const std::string target = banTargetText(ban.target);
+  if (!ban.expiresAt.has_value()) {
+    return target + " banned for good";
+  }
+  return target + " banned for " + lengthText(*ban.expiresAt - ban.bannedAt);
+}
+
+std::string standingBanLineOf(const Ban& ban, std::chrono::sys_seconds now) {
+  const std::string target = banTargetText(ban.target);
+  if (!ban.expiresAt.has_value()) {
+    return target + ", for good";
+  }
+  return target + ", " + lengthText(*ban.expiresAt - now) + " left";
 }
 
 std::vector<std::string> networkLinesOf(const network::TrafficTotals& traffic,

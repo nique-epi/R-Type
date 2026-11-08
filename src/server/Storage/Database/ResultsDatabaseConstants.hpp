@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <string_view>
 
 namespace rtype::server {
@@ -59,11 +58,6 @@ CREATE INDEX game_results_not_sent
   ON game_results (played_at, game_id)
   WHERE vanilla = 1 AND sent_at IS NULL AND refused_at IS NULL;
 )sql";
-
-/** @brief The versions of the file, in order: a change adds one, never edits
- * one. */
-constexpr std::array<std::string_view, 2> RESULTS_MIGRATIONS{
-    RESULTS_TABLE_MIGRATION, UNSENT_GAMES_MIGRATION};
 
 /** @brief Draws the identifier of a game, as the SQLite documentation advises
  * for a globally unique identifier. */

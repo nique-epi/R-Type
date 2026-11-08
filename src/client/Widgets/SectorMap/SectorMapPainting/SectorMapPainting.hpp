@@ -2,17 +2,27 @@
 
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <cstddef>
 #include <vector>
 #include "ColoredPixel.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "MapView.hpp"
 #include "MiniMap.hpp"
+#include "MotionPreference.hpp"
 #include "PlanetPose.hpp"
 #include "ServerTooltip.hpp"
 #include "StarMark.hpp"
 #include "StarName.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
+
+/** @returns How far the planets of the servers have turned after
+ * @p elapsed, in frames, as StarMark::turn takes it: one more every
+ * PLANET_TURN_FRAME_TIME, back to the first after PLANET_TURN_FRAME_COUNT;
+ * always the first while @p motion is MotionPreference::Reduced. */
+[[nodiscard]] std::size_t planetTurnAfter(engine::Duration elapsed,
+                                          MotionPreference motion);
 
 /** @returns The pixels of the planet and its ring in @p pose, inside the map
  * only, for IInterfaceCanvas::plot(). */
@@ -26,8 +36,8 @@ namespace rtype::client {
  * is room. */
 void paintPingRings(IInterfaceCanvas& canvas, const MapView& view);
 
-/** @brief Paints the glyph of @p star, as the mockup draws it: hollow and blue
- * for another version, orange when slow, blue when empty, white otherwise,
+/** @brief Paints the planet of @p star, centered on it, on the frame of its
+ * turn: dark and still for another version, ringed in orange when slow, else
  * larger with more pilots. A star near an edge of the map is not painted. */
 void paintStar(IInterfaceCanvas& canvas, const StarMark& star);
 

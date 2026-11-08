@@ -1,5 +1,5 @@
 ---
-title: 'Network protocol: version 13'
+title: 'Network protocol: version 14'
 description: The datagrams the client and the server exchange over UDP, byte by byte, and what each side does when one is lost or cannot be read.
 sidebar:
   label: Protocol
@@ -11,7 +11,7 @@ This page is the specification of the protocol the client and the server speak: 
 
 ## Status of this document
 
-- This is version 13 of the protocol. It is the only version the code speaks. [Versions and compatibility](#versions-and-compatibility) says when the version changes and what two programs of different versions do; [Version 2](#version-2), [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11), [Version 12](#version-12) and [Version 13](#version-13) say what each changed from the version before, and what the rest of the second part of the project will change.
+- This is version 14 of the protocol. It is the only version the code speaks. [Versions and compatibility](#versions-and-compatibility) says when the version changes and what two programs of different versions do; [Version 2](#version-2), [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11), [Version 12](#version-12), [Version 13](#version-13) and [Version 14](#version-14) say what each changed from the version before, and what the rest of the second part of the project will change.
 - The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
 - Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
 - Numbers are decimal unless written `0x`. A size is in bytes.
@@ -78,7 +78,7 @@ Both changes together save 12 bytes on the 268 of the typical state, 4.5 %, befo
 
 ## Datagram
 
-A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 13.
+A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 14.
 
 <ByteLayout
   label="The 22-byte header: protocolId on bytes 0 to 3, version on byte 4, flags on byte 5, sessionToken on bytes 6 to 13, sequence on bytes 14 and 15, acknowledgedSequence on bytes 16 and 17, acknowledgementBits on bytes 18 to 21."
@@ -101,7 +101,7 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
   ]}
 />
 
-| Offset | Size | Field | In version 13 |
+| Offset | Size | Field | In version 14 |
 |---|---|---|---|
 | 0 | 4 | `protocolId` | `0x52545950`, `RTYP` in ASCII |
 | 4 | 1 | `version` | 12 |
@@ -169,7 +169,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | Type | Message | Payload | Sent |
 |---|---|---|---|
 | 2 | `ConnectionAccepted` | `playerNumber` `u8` (1 to 4), then the content pack of the game: `fingerprint`, 32 bytes, `size` `u32` (0 to 8388608), `port` `u16` (0 when the supervisor serves none); see [Content pack](#content-pack) | in answer to a request with a valid cookie; its header carries the session token; to a connected player, again at most once per 250 ms |
-| 3 | `ConnectionRefused` | `reason` `u8`: 1 `GameFull`, 2 `GameInProgress`, 3 `IncompatibleVersion`, 4 `NicknameTaken`, 5 `GameNotFound`, 6 `ServerFull`, 7 `UnknownDifficulty`, 8 `LivesOutOfRange` | in answer to a request |
+| 3 | `ConnectionRefused` | `reason` `u8`: 1 `GameFull`, 2 `GameInProgress`, 3 `IncompatibleVersion`, 4 `NicknameTaken`, 5 `GameNotFound`, 6 `ServerFull`, 7 `UnknownDifficulty`, 8 `LivesOutOfRange`, 9 `Banned` | in answer to a request |
 | 4 | `Disconnection` | none | when the server shuts down, three times 50 ms apart |
 | 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32`, `ticks` `bool`, `tick` `u32` (see [Round trip](#round-trip) and [Clock of the server](#clock-of-the-server)) | every 500 ms, whatever else it sends; `ticks` is 1 only while a game is in progress |
 | 7 | `LobbyState` | `playerCount` `u8`, then per player `playerNumber` `u8`, `ready` `bool`, `nickname` `string` | on every change, and at least every 500 ms while no game runs |
@@ -178,7 +178,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 11 | `EntitySpawned` | `entityId` `u32`, `entityType` `u8` (a number of the [entity types](#entity-types)), `position`, `owner` `u8` (0 to 4), `firingInput` `u32`; see [Own missiles](#own-missiles) | when an entity appears; the ship of a player, when the player is accepted; the ship of a player again, when it comes back after a hit; a Bydo, every time one appears; a missile, every time one is fired |
 | 12 | `EntityDestroyed` | `entityId` `u32`, `reason` `u8`: 1 `Killed` (explosion), 2 `Removed` (no effect) | when an entity disappears, guaranteed and ordered (see [Ordered messages](#ordered-messages)) |
 | 13 | `GameEvent` | `eventNumber` `u16`, `kind` `u8`, `playerNumber` `u8`, `entityId` `u32` | see [Game events](#game-events), guaranteed and ordered |
-| 14 | `PlayerLeft` | `playerNumber` `u8`, `reason` `u8`: 1 `Left`, 2 `TimedOut`, 3 `Expelled` | to the other players, when one leaves, times out or is expelled, guaranteed and ordered |
+| 14 | `PlayerLeft` | `playerNumber` `u8`, `reason` `u8`: 1 `Left`, 2 `TimedOut`, 3 `Expelled`, 4 `Banned` | to the other players, when one leaves, times out, is expelled or is banned, guaranteed and ordered |
 | 15 | `GameEnded` | `outcome` `u8`: 1 `Victory`, 2 `Defeat`, then `playerCount` `u8`, then per player `playerNumber` `u8`, `score` `u32` | when the game ends: `Victory` once the players cleared the level, its last wave over and its boss, when it has one, destroyed with every other enemy, `Defeat` when no player has a life left; then every 500 ms until the server waits for players again |
 | 16 | `ConnectionChallenge` | `cookie` `u64` | in answer to a request without a valid cookie |
 | 19 | `LeaderboardAnswer` | `playerCount` `u8`, `difficulty` `string`, `rowCount` `u8` (0 to 10), then per row `rank` `u32`, `score` `u32`, `playedAt` `i64` (seconds since 1970 UTC), `nickname` `string`; then `hasOwnRow` `bool`, followed by one row when true | in answer to a request, to the player who sent it, at most once per 500 ms per player |
@@ -190,7 +190,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 26 | `ConnectionRedirect` | `port` `u16` (1 to 65535) | from a supervisor only, in answer to a request with a valid cookie, once a game that has a place reported; the player asks again at that port of the same address (see [Supervisor](#supervisor)) |
 | 31 | `PlayerChatLine` | `lineNumber` `u16`, `text` `string` (1 to 127 bytes), `playerNumber` `u8` (1 to 4) | to every player of the game, its writer included, once for each new line the server takes, guaranteed and ordered (see [Chat](#chat)) |
 | 32 | `BossStatus` | `bossEntityId` `u32`, `health` `u16`, `fullHealth` `u16`, `stage` `u8`: 1 `Arriving`, 2 `Fighting`, 3 `Enraged`, 4 `Defeated` | when the last wave of a level with a boss is over, when the fight starts, at each hit that takes points from the boss, when it enrages and when it dies, guaranteed and ordered (see [Boss status](#boss-status)) |
-| 34 | `Expulsion` | `reason` `u8`: 1 `ByTheHost` | to a player of a game process, in its session, when the supervisor orders its expulsion: three in a row, then the session closes at the next tick (see [A peer disappears](#a-peer-disappears)) |
+| 34 | `Expulsion` | `reason` `u8`: 1 `ByTheHost`, 2 `Banned` | to a player of a game process, in its session, when the supervisor orders its expulsion (`ByTheHost`) or a ban of the server names it (`Banned`): three in a row, then the session closes at the next tick (see [A peer disappears](#a-peer-disappears)) |
 
 ### Payload rules
 
@@ -283,7 +283,7 @@ The server answers nothing over UDP. It keeps the token of a probe whose `secret
 
 ### Connection
 
-A connection takes two round trips, so that a forged address never gets a player slot. The client sends `ConnectionRequest` with `cookie` 0; the server answers `ConnectionChallenge` with a cookie and keeps nothing. The client sends its request again with that cookie, and only then does the server give a slot, a token and the [content pack](#content-pack) it plays with. The cookie only reaches the real owner of the address, so whoever forges the address cannot send it back. A request with a wrong or expired cookie gets a new challenge; a refusal (`GameFull`, `GameInProgress`, `NicknameTaken`, `IncompatibleVersion`, `GameNotFound`, `ServerFull`, `UnknownDifficulty`, `LivesOutOfRange`) may be sent at once, since it reserves nothing.
+A connection takes two round trips, so that a forged address never gets a player slot. The client sends `ConnectionRequest` with `cookie` 0; the server answers `ConnectionChallenge` with a cookie and keeps nothing. The client sends its request again with that cookie, and only then does the server give a slot, a token and the [content pack](#content-pack) it plays with. The cookie only reaches the real owner of the address, so whoever forges the address cannot send it back. A request with a wrong or expired cookie gets a new challenge; a refusal (`GameFull`, `GameInProgress`, `NicknameTaken`, `IncompatibleVersion`, `GameNotFound`, `ServerFull`, `UnknownDifficulty`, `LivesOutOfRange`, `Banned`) may be sent at once, since it reserves nothing. A game process refuses a banned nickname or address with `Banned` before the cookie is checked, like its other refusals; a supervisor only once the cookie is valid, so a forged address learns nothing of the bans.
 
 How the server computes the cookie is its own business, as long as it keeps nothing per request and nobody can guess it: a keyed hash of the address, the port and the current 10-second window, with a secret drawn when the server starts, accepted during its window and the next one, does both.
 
@@ -636,6 +636,7 @@ A message that is valid but means nothing in the current state of its receiver c
 | `ConnectionRefused` (`ServerFull`), from a supervisor: 8 games run, and none has a seat for an `AnyGame`, or a `NewGame` needs a ninth | stops sending requests | that the server is full |
 | `ConnectionRefused` (`UnknownDifficulty`), from a supervisor: the `NewGame` names a difficulty its waves file has no table for | stops sending requests | that no such difficulty exists |
 | `ConnectionRefused` (`LivesOutOfRange`), from a supervisor: the `NewGame` gives fewer than 1 or more than 9 lives | stops sending requests | that the lives are out of range |
+| `ConnectionRefused` (`Banned`): the host banned the nickname or the address | stops sending requests | that it is banned |
 | `ConnectionRefused` (`IncompatibleVersion`) | stops sending requests | both version numbers |
 | `ConnectionAccepted` of a pack the client neither has nor keeps, from a supervisor that serves none (`port` 0) | opens no session, sends its `Disconnection` three times with the token of the acceptance, and stops sending requests | that the download of the pack failed |
 | The download of the pack fails: nothing listens on the TCP port, the tries are cut 3 times, or an answer of another status or larger than announced | leaves the session, sending its `Disconnection` three times | that the download of the pack failed |
@@ -651,6 +652,7 @@ A message that is valid but means nothing in the current state of its receiver c
 | The client crashes, is killed, or stays silent for 20 s | the server, after 5 s without a datagram carrying the token of that player, then 15 s more | the session closes and the ship is removed; the other players get `PlayerLeft` (`TimedOut`) |
 | The server shuts down | each client, from the `Disconnection`, sent three times | the client closes the session at once and tells the player that the server closed it |
 | The host expels a player | the game process, from the `ExpulsionOrder` of its supervisor; then the player, from the `Expulsion`, sent three times | the player closes the session at once and tells the player that the host expelled it; the game closes the session at its next tick, the others get `PlayerLeft` (`Expelled`). The player may join again: an expulsion bans nobody |
+| The host bans a player | each game process, within 1 s, from the bans it reads again in the file of the server; then the player, from the `Expulsion` (`Banned`), sent three times | as for an expulsion, the player told that the host banned it, and the others get `PlayerLeft` (`Banned`); a request of that nickname or address is refused with `Banned` until the ban ends |
 | The server crashes, is killed or loses the network | each client, after 20 s without a datagram from the server | the client closes the session and tells the player that the connection is lost |
 
 A player that comes back after its session closed, 20 s after its last datagram, connects again from the first request, as an unknown sender, and gets a new session token.
@@ -743,7 +745,7 @@ A program speaks one version of the protocol, the number at offset 4 of every da
 | A field that keeps its place and changes its meaning | the acknowledgement fields of the header, written as 0 before (version 2); `entityType` read from a table (version 6) |
 | A flag or an encoding of the body a receiver of the version before cannot read | `COMPRESSED` (version 4) |
 | A message that already exists moved into an envelope | `EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` inside `OrderedMessage` (version 7) |
-| A new value of an enumeration of a message that already exists | a receiver of the version before drops the whole message as out of range (see [Payload rules](#payload-rules)): `ConnectionRefused` gains `GameNotFound` and `ServerFull` (version 9); `PlayerLeft` gains `Expelled` (version 13) |
+| A new value of an enumeration of a message that already exists | a receiver of the version before drops the whole message as out of range (see [Payload rules](#payload-rules)): `ConnectionRefused` gains `GameNotFound` and `ServerFull` (version 9); `PlayerLeft` gains `Expelled` (version 13); `ConnectionRefused`, `Expulsion` and `PlayerLeft` gain `Banned` (version 14) |
 
 A message between a game process and its supervisor counts too: `GameStatus` gained the nicknames and the measures in version 8.
 
@@ -829,6 +831,10 @@ Version 13 adds the expulsion of a player: `ExpulsionOrder` (type 33) from the s
 
 A game reads an `ExpulsionOrder` only from its supervisor, at the loopback address and the port its link names, under the link token, checked on the network thread like the token of a player; a datagram of any other sender holding one is never read. A client reads an `Expulsion` only in its session, after the token and the sequence. Neither message is answered.
 
+## Version 14
+
+Version 14 adds the ban of a player: the reason `Banned` of `ConnectionRefused` (9), of `Expulsion` (2) and of `PlayerLeft` (4) (see [Joining fails](#joining-fails) and [A peer disappears](#a-peer-disappears)). A client of version 13 would refuse a `PlayerLeft` of reason 4 as an invalid value, and that message is guaranteed, so `version` became 14, and the server answers a client of version 13 with `ConnectionRefused` (`IncompatibleVersion`). No message is added: the supervisor writes its bans to the file of the server, which its games read again every second (see [Server](/R-Type/server/#banning-a-pilot)). The layout of the header and of every message is the same.
+
 ## Implementation status
 
 The code of this repository applies the rules above, with the exceptions listed at the end of this section.
@@ -848,6 +854,7 @@ The code of this repository applies the rules above, with the exceptions listed 
 - The server limits the datagrams of each address and port, and of each player, on its network thread, as [A sender that sends too much](#a-sender-that-sends-too-much) says.
 - The server relays the chat lines as [Chat](#chat) describes, and the client sends them so: one line at a time, again every 500 ms until it comes back, given up after 5 s.
 - The supervisor sends `ExpulsionOrder` from its `kick` command, a game expels as [A peer disappears](#a-peer-disappears) describes, and the client ends its session at an `Expulsion`.
+- The supervisor bans from its `ban` command; its lobby and every game refuse a banned pilot, and a game expels one it holds, as [A peer disappears](#a-peer-disappears) describes.
 - The supervisor answers `ServerInformationRequest` as [Server information](#server-information) describes, and a game process does not. The server map of the client sends one to each server of this version the master lists, once per reading of the list (see [Client](/R-Type/client/#server-map-servermapscreen-iservercatalog-igamecatalog)).
 - The master sends `MasterProbe`, and the server keeps its token and sends it back in its heartbeat, as [Probe of the master](#probe-of-the-master) describes.
 

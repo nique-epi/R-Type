@@ -1,4 +1,4 @@
-add_library(rtype_game_hurt_zone_system STATIC HurtZoneSystem.cpp BeamOverlap.cpp)
+add_library(rtype_game_hurt_zone_system STATIC HurtZoneSystem.cpp ActiveHurtsLaying.cpp BeamOverlap.cpp)
 
 target_include_directories(rtype_game_hurt_zone_system PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

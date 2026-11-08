@@ -1,4 +1,5 @@
 import type { Dictionary } from '../dictionary';
+import { frPages } from './fr-pages';
 
 /** The words of the mockup. Lines drawn in Press Start 2P carry no accent: it has no glyph for them. */
 export const fr: Dictionary = {
@@ -14,19 +15,11 @@ export const fr: Dictionary = {
     logo: 'R-Type',
     download: 'Telecharger',
   },
-  footer: { navigation: 'Pied de page' },
-  hero: { scrollCue: 'Défilez' },
-  video: {
-    close: 'Fermer la vidéo',
-    comingSoon: '[Vidéo à venir]',
-    watch: 'Regarder',
-  },
   download: { systems: 'Système', progress: 'Progression du téléchargement' },
   gamesTable: {
     game: 'Partie',
     state: 'Etat',
     seats: 'Places',
-    action: 'Action',
     free: 'Libre',
   },
   chart: { now: 'maintenant', period: 'Période' },
@@ -63,7 +56,6 @@ export const fr: Dictionary = {
     sheet: 'Fiche',
     back: 'Retour',
     leaderboard: 'Classement',
-    host: 'Heberger',
     keys: {
       quickPlay: 'Q',
       join: 'Entree',
@@ -71,31 +63,7 @@ export const fr: Dictionary = {
       sheet: 'I',
       back: 'Echap',
       leaderboard: 'L',
-      host: 'H',
     },
-  },
-  hostForm: {
-    title: 'Nouveau serveur',
-    name: 'Nom du serveur',
-    placeholder: 'Nebula Lyon',
-    counter: '{length} / {maximum}',
-    nameRequired: 'Donnez un nom au serveur',
-    withoutAccountTitle: 'Sans compte',
-    withoutAccount: "5 serveurs par heure. La clé ne s'affiche qu'une fois.",
-    quotaTitle: 'Quota atteint',
-    submit: 'Creer le serveur',
-    cancel: 'Annuler',
-  },
-  serverKey: {
-    title: 'Cle du serveur',
-    created: 'Le serveur {name} est créé. Copiez sa clé maintenant :',
-    pasteIn: 'Puis collez-la dans le {file} du serveur :',
-    copy: 'Copier la cle',
-    copied: 'Copiee',
-    notCopiedYet: 'Elle ne sera plus affichée.',
-    copiedLine: 'Clé copiée dans le presse-papiers.',
-    copyFailed:
-      'Copie refusée par le navigateur : sélectionnez la clé à la main.',
   },
   ranking: {
     screen:
@@ -106,7 +74,15 @@ export const fr: Dictionary = {
     nextTab: 'Onglet suivant',
     filterButton: 'Filtre',
     back: 'Retour',
-    keys: { previousTab: 'Q', nextTab: 'E', filter: 'F', back: 'Echap' },
+    fullscreen: 'Plein écran',
+    exitFullscreen: 'Quitter le plein écran',
+    keys: {
+      previousTab: 'Q',
+      nextTab: 'E',
+      filter: 'F',
+      fullscreen: 'Z',
+      back: 'Echap',
+    },
     filter: {
       title: 'Filtre',
       back: 'Retour',
@@ -119,8 +95,6 @@ export const fr: Dictionary = {
     book: 'Bestiaire',
     roleDescription: 'livre',
     title: 'Bestiaire',
-    leftPage: 'Page de gauche',
-    rightPage: 'Page de droite',
     sheet: 'Fiche',
     contents: 'Sommaire',
     previous: 'Page precedente',
@@ -131,4 +105,5 @@ export const fr: Dictionary = {
   keyBindings: { key: 'Touche', action: 'Action' },
   wiki: { navigation: 'Wiki' },
   team: { github: 'GitHub {handle}' },
+  pages: frPages,
 };

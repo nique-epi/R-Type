@@ -124,6 +124,10 @@ std::optional<StatusWord> goneWordOf(PilotState state) {
       return StatusWord{.text = EXPELLED_TEXT,
                         .font = TextFont::Small,
                         .color = GONE_TEXT_COLOR};
+    case PilotState::Banned:
+      return StatusWord{.text = BANNED_TEXT,
+                        .font = TextFont::Small,
+                        .color = GONE_TEXT_COLOR};
     case PilotState::OutOfLives:
       return StatusWord{.text = OUT_TEXT,
                         .font = TextFont::Regular,
@@ -295,6 +299,7 @@ void paintLives(IInterfaceCanvas& canvas, const PilotStatus& pilot,
       return;
     case PilotState::Left:
     case PilotState::Expelled:
+    case PilotState::Banned:
       return;
     case PilotState::Flying:
     case PilotState::Respawning:

@@ -10,6 +10,7 @@
 #include "Position.hpp"
 #include "ProtocolConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShipDirections.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server::testing {
@@ -148,6 +149,12 @@ constexpr std::size_t SECOND_WAVE_BEGUN_TICKS =
 constexpr std::uint8_t HOLDS_NOTHING = 0x00;
 constexpr std::uint8_t HOLDS_UP = 0x01;
 constexpr std::uint8_t HOLDS_DOWN = 0x02;
+
+/** @brief Down, nothing, down and nothing, as directions: a double press of
+ * down. */
+constexpr std::array<game::ShipDirections, 4> DOUBLE_PRESS_OF_DOWN{
+    game::ShipDirections{.down = true}, game::ShipDirections{},
+    game::ShipDirections{.down = true}, game::ShipDirections{}};
 constexpr std::uint8_t HOLDS_LEFT = 0x04;
 constexpr std::uint8_t HOLDS_RIGHT = 0x08;
 constexpr std::uint8_t HOLDS_SHOOT = 0x10;

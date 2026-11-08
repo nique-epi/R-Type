@@ -20,8 +20,9 @@
 
 /** @brief The base of the tests of the supervisor modules: the logger module, a
  * network module that records, the supervised games module on a launcher that
- * records, writing its files in a folder of the test, and the supervisor lobby
- * after it, all started. */
+ * records, writing its files in a folder of the test, the bans module, which
+ * reads the server file of that folder, and the supervisor lobby after it, all
+ * started. */
 class ServerSupervisedGamesFixture : public ServerModuleFixture {
  protected:
   /** @brief Builds the modules listed above, with @p gameLines as the lines

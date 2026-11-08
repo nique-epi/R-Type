@@ -7,6 +7,7 @@
 #include "Caption.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
+#include "EntityAppearance.hpp"
 #include "HitFlash.hpp"
 #include "Position.hpp"
 #include "Sprite.hpp"
@@ -88,3 +89,7 @@ template <typename Component>
 /** @returns The flash of an entity, or nothing when it has none. */
 [[nodiscard]] const rtype::client::HitFlash* flashOf(
     rtype::engine::ComponentRegistry& components, rtype::engine::Entity entity);
+
+/** @returns The appearance of an enemy whose sheet, MOB_SHEET_ID, draws its
+ * own death: one frame, MOB_DEATH_FRAME, and its version without flash. */
+[[nodiscard]] rtype::client::EntityAppearance appearanceWithADeath();

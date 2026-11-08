@@ -2,10 +2,15 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
 #include <utility>
 #include <vector>
+#include "BanFixtures.hpp"
+#include "BanKind.hpp"
+#include "BanTestConstants.hpp"
+#include "BanningAcceptorFixture.hpp"
 #include "ByteWriter.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectionAccepted.hpp"
@@ -39,14 +44,20 @@ using testing::A_FIFTH_OF_A_SECOND_LATER;
 using testing::A_TENTH_OF_A_SECOND_LATER;
 using testing::ACCEPTANCE_REPEAT_TIME;
 using testing::acceptancesAmong;
+using testing::BANNED_NICKNAME;
+using testing::BANNED_NICKNAME_IN_SMALL_LETTERS;
+using testing::BanningAcceptorFixture;
+using testing::banOf;
 using testing::ConnectionAcceptorFixture;
 using testing::COOKIE_EXPIRED_TIME;
 using testing::DROPPED_DATAGRAM_LINE_TEXT;
 using testing::DROPPED_TOGETHER_COUNT;
 using testing::emptyNicknameRequestDatagram;
+using testing::FREE_NICKNAME;
 using testing::gameContent;
 using testing::JUST_AFTER_THE_REPEAT;
 using testing::JUST_BEFORE_THE_REPEAT;
+using testing::LONG_AGO;
 using testing::NEXT_ACCEPTANCE_REPEAT_TIME;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::nicknameOf;
@@ -789,6 +800,61 @@ TEST(ConnectionAcceptor, ChallengesWithNoMoreBytesWhateverTheTable) {
 
   ASSERT_EQ(answers.size(), 1U);
   EXPECT_LE(answers.front().payload.size(), request.payload.size());
+}
+
+/**
+ * Given a ban for good of ACE
+ * When a sender asks for ace, without a cookie
+ * Then it is refused as banned at once, not challenged: a refusal reserves
+ * nothing and is smaller than the request
+ */
+TEST_F(BanningAcceptorFixture, RefusesABannedNicknameBeforeTheCookie) {
+  publish({banOf(BanKind::Nickname, BANNED_NICKNAME, std::nullopt)});
+
+  request(playerEndpoint(0), std::string{BANNED_NICKNAME_IN_SMALL_LETTERS});
+
+  EXPECT_EQ(onlyMessageIn<network::ConnectionRefused>(lastAnswer()).reason,
+            network::RefusalReason::Banned);
+}
+
+/**
+ * Given a ban for good of the address a sender sends from
+ * When it asks for a nickname no ban names
+ * Then it is refused as banned
+ */
+TEST_F(BanningAcceptorFixture, RefusesABannedAddress) {
+  publish({banOf(BanKind::Address, playerEndpoint(0).address, std::nullopt)});
+
+  request(playerEndpoint(0), std::string{FREE_NICKNAME});
+
+  EXPECT_EQ(onlyMessageIn<network::ConnectionRefused>(lastAnswer()).reason,
+            network::RefusalReason::Banned);
+}
+
+/**
+ * Given a ban of ACE that ended long ago
+ * When a sender asks for ACE, without a cookie
+ * Then it is challenged, as a sender no ban bars
+ */
+TEST_F(BanningAcceptorFixture, ChallengesANicknameWhoseBanEnded) {
+  publish({banOf(BanKind::Nickname, BANNED_NICKNAME, LONG_AGO)});
+
+  request(playerEndpoint(0), std::string{BANNED_NICKNAME});
+
+  EXPECT_EQ(onlyMessageTypeOf(lastAnswer()),
+            network::MessageType::ConnectionChallenge);
+}
+
+/**
+ * Given no ban published yet
+ * When a sender asks for ACE, without a cookie
+ * Then it is challenged
+ */
+TEST_F(BanningAcceptorFixture, ChallengesEveryoneBeforeTheFirstBans) {
+  request(playerEndpoint(0), std::string{BANNED_NICKNAME});
+
+  EXPECT_EQ(onlyMessageTypeOf(lastAnswer()),
+            network::MessageType::ConnectionChallenge);
 }
 
 }  // namespace rtype::server

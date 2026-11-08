@@ -6,7 +6,9 @@
 #include "Anchor.hpp"
 #include "Caption.hpp"
 #include "ComponentRegistry.hpp"
+#include "EffectSpawnerTestConstants.hpp"
 #include "Entity.hpp"
+#include "EntityAppearance.hpp"
 #include "HitFlash.hpp"
 #include "Invulnerability.hpp"
 #include "Layer.hpp"
@@ -22,6 +24,7 @@
 
 using rtype::client::Anchor;
 using rtype::client::Caption;
+using rtype::client::EntityAppearance;
 using rtype::client::HitFlash;
 using rtype::client::Invulnerability;
 using rtype::client::Lifetime;
@@ -138,4 +141,16 @@ Position positionOf(ComponentRegistry& components, Entity entity) {
 
 const HitFlash* flashOf(ComponentRegistry& components, Entity entity) {
   return components.get<HitFlash>(entity);
+}
+
+EntityAppearance appearanceWithADeath() {
+  return EntityAppearance{
+      .sheet = MOB_SHEET_ID,
+      .idleFrames = {},
+      .idleFrameDuration = MOB_DEATH_FRAME_TIME,
+      .actions = {},
+      .enragedIdleFrames = {},
+      .deathFrames = {MOB_DEATH_FRAME},
+      .deathFramesWithoutFlash = {MOB_DEATH_WITHOUT_FLASH_FRAME},
+      .deathFrameDuration = MOB_DEATH_FRAME_TIME};
 }

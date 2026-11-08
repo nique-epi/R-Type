@@ -12,6 +12,7 @@ import type { Locale } from '@/i18n/locales';
 import { gsap } from '@/lib/gsap';
 import { withoutAccents } from '@/lib/rtype/pixel-text';
 import { MAXIMUM_PILOTS_PER_GAME } from '@/lib/rtype/players';
+import { canJoin, pilotsOf } from '@/lib/rtype/server-seats';
 import { runShortcut, type Shortcuts } from '@/lib/shortcuts';
 import {
   angleOf,
@@ -25,14 +26,7 @@ import {
   viewOn,
   WHOLE_VIEW,
 } from './geometry';
-import {
-  canJoin,
-  cycleServer,
-  pilotsOf,
-  quickPlayTarget,
-  serversOnMap,
-  starLook,
-} from './rules';
+import { cycleServer, quickPlayTarget, serversOnMap, starLook } from './rules';
 import { type BubbleLine, SectorBubble } from './sector-bubble';
 import {
   PANEL_GAMES,
@@ -48,11 +42,15 @@ export type SectorMapProps = {
   servers: readonly MapServer[];
   /** The seat the reader holds, so the map shows it and offers to leave it. */
   held?: HeldSeat | null;
-  onJoin: (serverId: string, gameIndex: number) => void;
-  onLeave: () => void;
+  /**
+   * Joins a game. Without it the map only shows the servers and their games:
+   * it offers no quick play, no Join and no seat to leave.
+   */
+  onJoin?: (serverId: string, gameIndex: number) => void;
+  /** Leaves the seat held; without it the map offers no way to leave it. */
+  onLeave?: () => void;
   onOpenServer: (serverId: string) => void;
   onLeaderboard: () => void;
-  onHost: () => void;
   /** Escape on the whole sky: leave the map. */
   onExit: () => void;
   labels: SectorMapLabels;
@@ -68,7 +66,8 @@ function bearingOf(server: MapServer): Bearing {
  * the servers around it, further away the higher their ping. A click or
  * Enter on a star zooms on it, then lists its games; Escape steps back.
  * The arrows move between servers (between games once listed), Q joins the
- * nearest free seat, L and H open the leaderboard and the hosting form.
+ * nearest free seat, L and H open the leaderboard and the hosting form. A map
+ * given no `onJoin` is read only: Q and Join are gone.
  */
 export function SectorMap({
   servers,
@@ -77,7 +76,6 @@ export function SectorMap({
   onLeave,
   onOpenServer,
   onLeaderboard,
-  onHost,
   onExit,
   labels,
   locale,
@@ -115,7 +113,8 @@ export function SectorMap({
     chosen !== null &&
     chosenGame !== undefined &&
     canJoin(chosen, chosenGame) &&
-    held === null;
+    held === null &&
+    onJoin !== undefined;
 
   function showGames(server: MapServer) {
     setChosenId(server.id);
@@ -125,7 +124,7 @@ export function SectorMap({
 
   function joinChosen() {
     if (chosen && canJoinChosen) {
-      onJoin(chosen.id, gameIndex);
+      onJoin?.(chosen.id, gameIndex);
     }
   }
 
@@ -199,7 +198,7 @@ export function SectorMap({
       return;
     }
     const target = quickPlayTarget(servers);
-    if (target) {
+    if (target && onJoin) {
       showGames(target.server);
       setGameIndex(target.gameIndex);
       onJoin(target.server.id, target.gameIndex);
@@ -208,13 +207,12 @@ export function SectorMap({
 
   const shortcuts: Shortcuts = {
     escape: back,
-    q: quickPlay,
+    ...(onJoin ? { q: quickPlay } : {}),
     l: onLeaderboard,
-    h: onHost,
     ...(stage === 'games' && chosen
       ? {
           i: () => onOpenServer(chosen.id),
-          ...(heldHere ? { x: onLeave } : {}),
+          ...(heldHere && onLeave ? { x: onLeave } : {}),
         }
       : {}),
   };
@@ -344,6 +342,7 @@ export function SectorMap({
         aria-label={labels.screen}
         onKeyDown={onKeyDown}
         fitHeight
+        upscale
         className="starfield"
       >
         <GameText outlined className="absolute top-12 left-12 text-hud-cyan">
@@ -415,29 +414,37 @@ export function SectorMap({
                 pilots: labels.columnPilots,
                 state: labels.columnState,
               }}
-              games={chosen.games.map((game, index) =>
-                panelGame(chosen, game, index, labels),
-              )}
+              games={chosen.games.map((game, index) => ({
+                ...panelGame(chosen, game, index, labels),
+                joinable: onJoin !== undefined && canJoin(chosen, game),
+              }))}
               chosen={gameIndex}
               onPick={pickGame}
-              {...gameDescription(chosen, gameIndex, held, labels)}
+              {...(onJoin
+                ? gameDescription(chosen, gameIndex, held, labels)
+                : { description: '', descriptionTone: 'plain' as const })}
               noGames={labels.noGames}
             />
           ) : null}
         </div>
 
         <div className="absolute top-113 right-12 left-12 flex justify-between gap-4">
-          <GameChip shortcut={labels.keys.quickPlay} onClick={quickPlay}>
-            {labels.quickPlay}
-          </GameChip>
+          {onJoin ? (
+            <GameChip shortcut={labels.keys.quickPlay} onClick={quickPlay}>
+              {labels.quickPlay}
+            </GameChip>
+          ) : (
+            <span />
+          )}
           <div className="flex gap-4">
             {stage === 'games' && chosen ? (
               <>
-                {heldHere ? (
+                {heldHere && onLeave ? (
                   <GameChip shortcut={labels.keys.leave} onClick={onLeave}>
                     {labels.leave}
                   </GameChip>
-                ) : (
+                ) : null}
+                {!heldHere && onJoin ? (
                   <GameChip
                     shortcut={labels.keys.join}
                     disabled={!canJoinChosen}
@@ -445,7 +452,7 @@ export function SectorMap({
                   >
                     {labels.join}
                   </GameChip>
-                )}
+                ) : null}
                 <GameChip
                   shortcut={labels.keys.sheet}
                   onClick={() => onOpenServer(chosen.id)}
@@ -454,17 +461,12 @@ export function SectorMap({
                 </GameChip>
               </>
             ) : (
-              <>
-                <GameChip
-                  shortcut={labels.keys.leaderboard}
-                  onClick={onLeaderboard}
-                >
-                  {labels.leaderboard}
-                </GameChip>
-                <GameChip shortcut={labels.keys.host} onClick={onHost}>
-                  {labels.host}
-                </GameChip>
-              </>
+              <GameChip
+                shortcut={labels.keys.leaderboard}
+                onClick={onLeaderboard}
+              >
+                {labels.leaderboard}
+              </GameChip>
             )}
             <GameChip shortcut={labels.keys.back} onClick={back}>
               {labels.back}

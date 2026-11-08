@@ -3,14 +3,20 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <vector>
 #include "AssetFolder.hpp"
+#include "BanFixtures.hpp"
+#include "BanKind.hpp"
+#include "BanTestConstants.hpp"
 #include "ConnectionAccepted.hpp"
 #include "ConnectionRefused.hpp"
 #include "ContentAnnouncementReading.hpp"
 #include "Endpoint.hpp"
+#include "Expulsion.hpp"
 #include "GameState.hpp"
 #include "MessageType.hpp"
+#include "ModuleConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "ProtocolConstants.hpp"
 #include "SentDatagrams.hpp"
@@ -19,9 +25,15 @@
 
 using rtype::network::ConnectionAccepted;
 using rtype::network::ConnectionRefused;
+using rtype::network::Expulsion;
+using rtype::network::ExpulsionReason;
 using rtype::network::MessageType;
 using rtype::network::RefusalReason;
+using rtype::server::BanKind;
+using rtype::server::FAREWELL_COPIES;
 using rtype::server::GameState;
+using rtype::server::testing::BANNED_NICKNAME;
+using rtype::server::testing::banOf;
 using rtype::server::testing::GAME_PACK_PORT;
 using rtype::server::testing::holdsMessageOfType;
 using rtype::server::testing::onlyMessageIn;
@@ -126,4 +138,41 @@ TEST_F(ServerLobbyFixture, AcceptsWithTheContentOfItsAssets) {
       onlyMessageIn<ConnectionAccepted>(*acceptance).content,
       rtype::server::contentAnnouncementOf(
           std::array{rtype::engine::locateAssetFolder()}, GAME_PACK_PORT));
+}
+
+/**
+ * Given a game with one seated pilot, ace
+ * When the storage module publishes a ban for good of ACE and a tick runs
+ * Then the pilot gets FAREWELL_COPIES Expulsion datagrams of the reason Banned
+ */
+TEST_F(ServerLobbyFixture, ExpelsASeatedPilotOnceItsBanIsPublished) {
+  startWith(shippedWaves());
+  join(0);
+
+  publishBans({banOf(BanKind::Nickname, BANNED_NICKNAME, std::nullopt)});
+  runTick({});
+
+  EXPECT_EQ(datagramsTo(0, MessageType::Expulsion), FAREWELL_COPIES);
+  EXPECT_EQ(onlyMessageIn<Expulsion>(
+                sentTo(network().sender().sent(), playerEndpoint(0)).back())
+                .reason,
+            ExpulsionReason::Banned);
+}
+
+/**
+ * Given bans published and a tick run since
+ * When a pilot the bans bar is seated without going through the lobby, then a
+ * tick runs while no newer bans were published
+ * Then that pilot gets no Expulsion: the bans are applied to the seated pilots
+ * once per revision, and a newcomer is judged when it asks to join
+ */
+TEST_F(ServerLobbyFixture, ExpelsNobodyWhenTheBansDidNotChange) {
+  startWith(shippedWaves());
+  publishBans({banOf(BanKind::Nickname, BANNED_NICKNAME, std::nullopt)});
+  runTick({});
+  join(1);
+
+  runTick({});
+
+  EXPECT_EQ(datagramsTo(1, MessageType::Expulsion), 0U);
 }

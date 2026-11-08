@@ -8,6 +8,7 @@ target_link_libraries(rtype_client_sector_map_painting
   PRIVATE
     rtype_client_box_corners
     rtype_client_cut_corner_box
+    rtype_client_entity_sprites
     rtype_client_outline
     rtype_client_ringed_planet
     rtype_client_sector_layout

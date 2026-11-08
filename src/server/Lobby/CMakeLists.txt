@@ -20,7 +20,9 @@ target_link_libraries(rtype_server_lobby_module
     rtype_server_games_module
     rtype_server_network_module
     rtype_server_replication_wire
+    rtype_server_bans
     rtype_server_sessions_roster
+    rtype_server_sessions_tracking
   PRIVATE
     rtype_network_connection_challenge
     rtype_network_datagram_codec

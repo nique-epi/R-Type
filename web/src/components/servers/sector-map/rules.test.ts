@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
-
-import {
-  canJoin,
-  cycleServer,
-  quickPlayTarget,
-  serversOnMap,
-  starLook,
-} from './rules';
-import type { MapServer } from './types';
+import type { MapServer } from '@/lib/rtype/servers';
+import { cycleServer, quickPlayTarget, serversOnMap, starLook } from './rules';
 
 function server(overrides: Partial<MapServer>): MapServer {
   return {
@@ -23,22 +16,6 @@ function server(overrides: Partial<MapServer>): MapServer {
     ...overrides,
   };
 }
-
-describe('canJoin', () => {
-  const online = server({});
-
-  it('lets a pilot into a waiting game with a free seat', () => {
-    expect(canJoin(online, { pilots: 3, state: 'waiting' })).toBe(true);
-  });
-
-  it('refuses a game of four pilots, one in play, and any game of an offline server', () => {
-    expect(canJoin(online, { pilots: 4, state: 'waiting' })).toBe(false);
-    expect(canJoin(online, { pilots: 1, state: 'playing' })).toBe(false);
-    expect(
-      canJoin(server({ status: 'offline' }), { pilots: 1, state: 'waiting' }),
-    ).toBe(false);
-  });
-});
 
 describe('starLook', () => {
   it('draws a server of another version hollow and dim, whatever its pilots', () => {

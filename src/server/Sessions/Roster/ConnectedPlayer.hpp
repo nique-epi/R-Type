@@ -8,6 +8,7 @@
 #include "ArrivalLedger.hpp"
 #include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
+#include "Expulsion.hpp"
 #include "LivesConstants.hpp"
 #include "RoundTripMeter.hpp"
 #include "SentStates.hpp"
@@ -86,10 +87,10 @@ struct ConnectedPlayer {
    * and lives are kept, its input number is cleared and it does not count for
    * the ready check. The next datagram read from the player clears it. */
   bool away{false};
-  /** @brief Whether the host expelled the player: it was told so (see
-   * PlayerExpeller), and its session closes at the next
-   * Departures::closeSilentSessions(), with the cause Expelled. */
-  bool expelled{false};
+  /** @brief Why the host expelled the player, once it was told so (see
+   * PlayerExpeller); its session closes at the next
+   * Departures::closeSilentSessions(), with the cause of that reason. */
+  std::optional<network::ExpulsionReason> expulsion = std::nullopt;
   /** @brief The real time since the server last sent the player a Heartbeat,
    * added at the start of each tick, a stall of the server included, since
    * the client waits in real time: the next Heartbeat goes out once it reaches

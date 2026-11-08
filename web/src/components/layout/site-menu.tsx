@@ -120,7 +120,7 @@ export function SiteMenu({
         <nav aria-label={labels.navigation} className="relative">
           <ul className="m-0 grid list-none p-0">
             {items.map(item => {
-              const current = isCurrent(item.href, pathname);
+              const current = isCurrent(item.href, pathname, item.exact);
               return (
                 <li key={item.href} data-menu-item>
                   <Link

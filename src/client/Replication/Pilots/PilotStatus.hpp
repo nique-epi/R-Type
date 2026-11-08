@@ -20,6 +20,8 @@ enum class PilotState : std::uint8_t {
   SignalLost,
   /** @brief Expelled by the host of the server. */
   Expelled,
+  /** @brief Banned by the host of the server. */
+  Banned,
 };
 
 /** @brief One pilot of the game: what the status band shows of it. */
