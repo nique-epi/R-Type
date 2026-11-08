@@ -114,7 +114,7 @@ pre code{overflow-wrap:normal}
 <header class="hero">
   <h1>R-Type — documentation des features</h1>
   <p>Remake réseau multijoueur de R-Type sur un moteur C++20 maison. Projet Epitech tek3.</p>
-  <p>État : <code>main</code> à jour au 8 novembre 2026 (commit <code>c9d10513</code>).</p>
+  <p>État : <code>main</code> à jour au 8 novembre 2026 (commit <code>6958bb34</code>).</p>
   <div class="legend">
     <span class="tag t-where">Où</span><span class="tag t-how">Comment</span><span class="tag t-terms">Termes</span><span class="tag t-logic">Logique</span>
   </div>
@@ -258,7 +258,7 @@ pre code{overflow-wrap:normal}
 <article class="feature" id="f-cmake">
 <h4>CMake + vcpkg + presets</h4>
 <p class="pitch">Une seule commande (<code>cmake --workflow --preset build</code>) installe les dépendances et compile, sur les trois OS.</p>
-<p class="refs">PR #1, #10, #195, #213 · doc : <code>technology-choices.md</code>, README § Build</p>
+<p class="refs">PR #1, #10, #195, #213, #292 · doc : <code>technology-choices.md</code>, README § Build</p>
 <div class="block b-where"><div class="label">Où</div><p><code>CMakeLists.txt</code> racine (+ un par dossier), <code>CMakePresets.json</code>, <code>vcpkg.json</code>, sous-module <code>vcpkg/</code>.</p></div>
 <div class="block b-how"><div class="label">Comment</div>
 <table><tr><th>Preset</th><th>Rôle</th></tr>
@@ -267,7 +267,7 @@ pre code{overflow-wrap:normal}
 <tr><td><code>sanitize</code></td><td>tests sous AddressSanitizer + UndefinedBehaviorSanitizer</td></tr>
 <tr><td><code>modules-off</code></td><td>tests avec tous les modules optionnels désactivés</td></tr>
 <tr><td><code>package</code></td><td>Release + paquets CPack</td></tr></table>
-<p>Dépendances (vcpkg, versions figées par <code>builtin-baseline</code>) : SFML 3.0.2 (window/graphics/audio), Asio 1.32 standalone, toml++, SQLiteCpp, zstd, libhydrogen, cpp-httplib, nlohmann-json, Boost.Process, GoogleTest. Chaque nouvelle cible appelle <code>rtype_enable_warnings()</code> (warnings = erreurs).</p></div>
+<p>Dépendances (vcpkg, versions figées par <code>builtin-baseline</code>) : SFML 3.0.2 (window/graphics/audio), Asio 1.32 standalone, toml++, SQLiteCpp, zstd, libhydrogen, cpp-httplib (avec sa feature <code>openssl</code>, pour HTTPS ; trouvée une seule fois dans le <code>CMakeLists.txt</code> racine), nlohmann-json, Boost.Process, GoogleTest. Chaque nouvelle cible appelle <code>rtype_enable_warnings()</code> (warnings = erreurs).</p></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms">
 <dt>vcpkg</dt><dd>Gestionnaire de paquets C++ de Microsoft ; <code>vcpkg.json</code> = manifeste des dépendances.</dd>
 <dt>Toolchain file</dt><dd>Fichier CMake qui branche vcpkg pour que <code>find_package</code> trouve les libs installées.</dd>
@@ -334,14 +334,14 @@ pre code{overflow-wrap:normal}
 <article class="feature" id="f-packaging">
 <h4>Paquets et releases (CPack)</h4>
 <p class="pitch">Un paquet client et un paquet serveur par OS, publiés automatiquement sur un tag de version.</p>
-<p class="refs">PR #189, #203, #239, #252, #253, #259, #283 · README § Packages</p>
+<p class="refs">PR #189, #203, #239, #252, #253, #259, #283, #291 · README § Packages</p>
 <div class="block b-where"><div class="label">Où</div><p><code>packaging/</code> (CPack, AppImage, NSIS, <code>r-type.entitlements</code>, <code>disk-image/</code>), workflows <code>package.yaml</code>, <code>release.yaml</code>.</p></div>
 <div class="block b-how"><div class="label">Comment</div>
 <table><tr><th>OS</th><th>Client</th><th>Serveur</th></tr>
 <tr><td>Linux</td><td>.tar.gz, .AppImage</td><td>.tar.gz</td></tr>
 <tr><td>Windows</td><td>.zip, installeur NSIS .exe</td><td>.zip, installeur .exe</td></tr>
 <tr><td>macOS</td><td>.dmg avec <code>R-Type.app</code> (Apple Silicon), signé et notarisé</td><td>.tar.gz</td></tr></table>
-<p>Chaque paquet embarque la partie de <code>assets/</code> qu'il lit. Le projet est en version 0.2.0 : un tag <code>v0.2.0</code> doit correspondre à <code>project(VERSION)</code> du <code>CMakeLists.txt</code> racine, sinon la release est refusée. Le master lit aussi sa version de là : CMake écrit <code>MasterVersionConstants.hpp</code> depuis <code>MasterVersionConstants.hpp.in</code>, et <code>GET /api/health</code> répond <code>{"version":"0.2.0"}</code> ; les notes listent les PR fusionnées depuis le tag précédent. Le DMG s'ouvre sur une fenêtre dessinée aux couleurs du jeu (glisser l'app vers Applications).</p></div>
+<p>Chaque paquet embarque la partie de <code>assets/</code> qu'il lit. Le projet est en version 0.2.0 : un tag <code>v0.2.0</code> doit correspondre à <code>project(VERSION)</code> du <code>CMakeLists.txt</code> racine, sinon la release est refusée. Le master et le client lisent aussi leur version de là : CMake écrit <code>MasterVersionConstants.hpp</code> et <code>ClientVersionConstants.hpp</code> depuis leur <code>.hpp.in</code> (<code>configure_file</code>) ; <code>GET /api/health</code> répond <code>{"version":"0.2.0"}</code> et l'écran titre affiche <code>VER 0.2.0</code> ; les notes listent les PR fusionnées depuis le tag précédent. Le DMG s'ouvre sur une fenêtre dessinée aux couleurs du jeu (glisser l'app vers Applications).</p></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms">
 <dt>CPack</dt><dd>Module de CMake qui génère des archives et installeurs.</dd>
 <dt>AppImage</dt><dd>Exécutable Linux autonome qui contient l'appli et ses fichiers.</dd>
@@ -352,27 +352,31 @@ pre code{overflow-wrap:normal}
 
 <article class="feature" id="f-deploy-master">
 <h4>Déploiement du master sur AWS</h4>
-<p class="pitch">À chaque release publiée (après approbation humaine), le master est installé sur une machine AWS, avec retour arrière automatique.</p>
-<p class="refs">PR #282 · doc : <code>deploy-master.md</code>, <code>infra/README.md</code></p>
-<div class="block b-where"><div class="label">Où</div><p><code>infra/terraform/</code> (infrastructure), <code>infra/master/deploy.sh</code>, <code>.github/workflows/deploy-master.yaml</code> (appelé par <code>release.yaml</code>), <code>.github/workflows/infra.yaml</code>.</p></div>
+<p class="pitch">À chaque release publiée (après approbation humaine), le master est installé sur une machine AWS, derrière HTTPS, avec retour arrière automatique.</p>
+<p class="refs">PR #282, #292, #295 · doc : <code>deploy-master.md</code>, <code>infra/README.md</code></p>
+<div class="block b-where"><div class="label">Où</div><p><code>infra/bootstrap.sh</code> (mise en place initiale), <code>infra/terraform/</code> (infrastructure), <code>infra/master/deploy.sh</code>, <code>.github/workflows/deploy-master.yaml</code> (appelé par <code>release.yaml</code>), <code>.github/workflows/infra.yaml</code>.</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
-<li>Terraform décrit une instance <code>t3.medium</code> Ubuntu 24.04 (sans SSH, pilotée par SSM), une Elastic IP, un security group qui n'ouvre que le port 8080, et le rôle IAM que GitHub assume via OIDC (état Terraform dans un bucket S3).</li>
+<li>Terraform décrit une instance <code>t3.medium</code> Ubuntu 24.04 (sans SSH, pilotée par SSM), une Elastic IP, un security group qui n'ouvre que les ports 80 et 443 (le 8080 n'est plus ouvert), et le rôle IAM que GitHub assume via OIDC (état Terraform dans un bucket S3).</li>
 <li>Le workflow attend l'approbation de l'environnement GitHub <code>production</code>, assume le rôle AWS, envoie <code>deploy.sh</code> via SSM Run Command.</li>
-<li><code>deploy.sh</code> télécharge le paquet serveur de la release, l'installe, redémarre le service <code>rtype-master</code>, attend <code>GET /api/health</code> et revient à la version précédente si le master ne répond pas.</li>
-<li>Le site web (Vercel) pointe dessus via <code>MASTER_URL</code>.</li></ul></div>
+<li><code>deploy.sh</code> télécharge le paquet serveur de la release, l'installe, redémarre le service <code>rtype-master</code>, attend <code>GET /api/health</code> et revient à la version précédente si le master ne répond pas. Il installe ensuite <b>Caddy</b> devant le master : Caddy écoute en HTTPS avec un certificat Let's Encrypt qu'il renouvelle seul, et transmet au master qui écoute en HTTP sur <code>127.0.0.1:8080</code>.</li>
+<li>Il faut donc un nom de domaine (<code>master_domain</code> dans Terraform, un enregistrement A vers l'IP) : Let's Encrypt ne signe pas de certificat pour une IP seule. <code>MASTER_URL</code> vaut <code>https://&lt;domaine&gt;</code> ; le site web (Vercel), les serveurs et le client pointent dessus.</li>
+<li><code>infra/bootstrap.sh --domain … --bucket …</code> fait la mise en place une seule fois : bucket S3 de l'état, <code>terraform apply</code> après un oui, variables du dépôt, environnement <code>production</code>, attente du DNS, puis déploiement avec <code>--deploy &lt;tag&gt;</code>. Chaque étape vérifie ce qui existe déjà : après un échec, on relance la même commande.</li></ul></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms">
 <dt>Terraform</dt><dd>Outil d'Infrastructure as Code : l'infra est décrite dans des fichiers versionnés.</dd>
 <dt>OIDC</dt><dd>GitHub obtient un jeton temporaire d'AWS : aucune clé AWS stockée.</dd>
 <dt>SSM</dt><dd>AWS Systems Manager : exécuter un script sur la machine sans SSH.</dd>
-<dt>Elastic IP</dt><dd>Adresse IP publique fixe, conservée entre redémarrages.</dd></dl></div>
-<div class="block b-logic"><div class="label">Logique</div><p>Coût faible (~37 $/mois estimés), aucune clé longue durée, un humain valide chaque mise en production, et un déploiement raté se répare tout seul.</p></div>
+<dt>Elastic IP</dt><dd>Adresse IP publique fixe, conservée entre redémarrages.</dd>
+<dt>Reverse proxy (Caddy)</dt><dd>Serveur placé devant une application : il reçoit les connexions (ici en HTTPS) et les transmet à l'application.</dd>
+<dt>Let's Encrypt</dt><dd>Autorité de certification gratuite et automatisée.</dd>
+<dt>Idempotent (script)</dt><dd>Relancer le script ne refait pas ce qui existe déjà.</dd></dl></div>
+<div class="block b-logic"><div class="label">Logique</div><p>Coût faible (~37 $/mois estimés), aucune clé longue durée, un humain valide chaque mise en production, et un déploiement raté se répare tout seul. HTTPS sans écrire de code TLS dans le master : c'est le reverse proxy qui le porte, comme prévu dès le choix de HTTP.</p></div>
 </article>
 
 <article class="feature" id="f-docsite">
 <h4>Site de documentation et référence des classes</h4>
 <p class="pitch">Un site Starlight (Astro) déployé sur GitHub Pages, plus une référence Doxygen générée.</p>
-<p class="refs">PR #5, #163, #280 · <code>docs/</code></p>
-<div class="block b-where"><div class="label">Où</div><p><code>docs/src/content/docs/*.md</code> (pages), <code>docs/astro.config.mjs</code>, <code>docs/Doxyfile</code>, workflow <code>docs.yaml</code>. Pages notables : architecture, protocole (spec complète), serveur, client, master, tutoriels (ajouter un ennemi, un message réseau, écrire un module, publier un mod, plusieurs parties).</p></div>
+<p class="refs">PR #5, #163, #280, #293 · <code>docs/</code></p>
+<div class="block b-where"><div class="label">Où</div><p><code>docs/src/content/docs/*.md</code> (pages), <code>docs/astro.config.mjs</code>, <code>docs/Doxyfile</code>, workflow <code>docs.yaml</code>. Section <b>Getting started</b> (<code>getting-started/</code> : télécharger, compiler, jouer, tester) ; page d'accueil <code>index.mdx</code> qui présente le jeu et renvoie vers rtype.app ; barre latérale groupée par thème (Getting started, Understand the project, Subsystems, Modding and content, Tutorials, Reference, Operations). Pages notables : architecture, protocole (spec complète), serveur, client, master, tutoriels (ajouter un ennemi, un message réseau, écrire un module, publier un mod, plusieurs parties).</p></div>
 <div class="block b-how"><div class="label">Comment</div><p>Les diagrammes sont en Mermaid ; le site a été rendu accessible aux lecteurs d'écran et au clavier. La CI génère Doxygen puis le site et publie les deux.</p></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms">
 <dt>Starlight</dt><dd>Thème de documentation pour Astro (générateur de site statique).</dd>
@@ -1376,15 +1380,17 @@ for (tick in ticks) {
 <article class="feature" id="f-masterlink">
 <h4>Lien avec le master</h4>
 <p class="pitch">Le superviseur s'enregistre auprès du master, lui envoie ses parties et ses mesures, puis les résultats vanilla.</p>
-<p class="refs">PR #210, #217, #218, #245, #276 · doc : <code>server.md</code> § Link with the master</p>
-<div class="block b-where"><div class="label">Où</div><p><code>src/server/Master/</code> : <code>HeartbeatJob</code> (thread MasterLink), <code>ResultsCourier</code>, <code>MasterProbeDesk</code> ; client HTTP <code>MasterClient</code> (<code>src/network/Master/</code>).</p></div>
+<p class="refs">PR #210, #217, #218, #245, #276, #292, #296 · doc : <code>server.md</code> § Link with the master</p>
+<div class="block b-where"><div class="label">Où</div><p><code>src/server/Master/</code> : <code>HeartbeatJob</code> (thread MasterLink), <code>RetryBackoff</code>, <code>ResultsCourier</code>, <code>MasterProbeDesk</code> ; client HTTP <code>MasterClient</code> (<code>src/network/Master/</code>).</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
 <li>Avec <code>master-url</code> + <code>master-key</code> : enregistrement (nom, port, versions, capacité, secret de sonde), puis heartbeat à chaque changement (≥ 1 s d'écart) et périodiquement.</li>
 <li>Après chaque heartbeat accepté : jusqu'à 16 résultats vanilla envoyés (<code>PUT /api/servers/me/results/{gameId}</code>, idempotent).</li>
 <li>Le master sonde le port UDP (<code>MasterProbe</code>) ; le jeton reçu revient dans le heartbeat suivant (prouve que le port est joignable).</li>
-<li>Master injoignable : logué une fois, nouvel essai toutes les 5 s ; le jeu n'attend jamais.</li></ul></div>
-<div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt>Idempotent</dt><dd>Envoyer deux fois donne le même résultat : un résultat renvoyé ne compte pas double.</dd></dl></div>
-<div class="block b-logic"><div class="label">Logique</div><p>Un seul enregistrement pour toutes les parties du superviseur ; sans master, le serveur fonctionne seul.</p></div>
+<li>Master injoignable : logué une fois, puis nouvel essai après une attente tirée au hasard entre 0 et un plafond ; le plafond part de 5 s et double à chaque échec, jusqu'à 60 s (<code>MAXIMUM_REGISTRATION_RETRY</code>), et revient à 5 s dès qu'un enregistrement passe. Le jeu n'attend jamais.</li>
+<li><code>master-url</code> accepte <code>http://</code> et <code>https://</code> ; en HTTPS, <code>MasterClient</code> vérifie le certificat avec les autorités du système.</li></ul></div>
+<div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt>Idempotent</dt><dd>Envoyer deux fois donne le même résultat : un résultat renvoyé ne compte pas double.</dd>
+<dt>Exponential backoff + full jitter</dt><dd>Attendre de plus en plus longtemps entre deux essais ratés, d'une durée tirée au hasard sous un plafond qui double (méthode décrite par Marc Brooker sur le blog AWS).</dd></dl></div>
+<div class="block b-logic"><div class="label">Logique</div><p>Un seul enregistrement pour toutes les parties du superviseur ; sans master, le serveur fonctionne seul. Le hasard évite que tous les serveurs qui ont perdu le même master le rappellent dans la même seconde quand il revient. Prix : un serveur peut mettre jusqu'à 60 s à réapparaître dans la liste.</p></div>
 </article>
 
 <article class="feature" id="f-servermetrics">
@@ -1405,19 +1411,21 @@ for (tick in ticks) {
 <article class="feature" id="f-master-arch">
 <h4>Le master : un mode du binaire serveur, en HTTP</h4>
 <p class="pitch">Une API REST JSON sur HTTP/TCP, construite avec les mêmes modules, config et journal que le serveur.</p>
-<p class="refs">PR #202, #212 · doc : <code>master.md</code>, <code>architecture.md</code> § Master</p>
+<p class="refs">PR #202, #212, #292 · doc : <code>master.md</code>, <code>architecture.md</code> § Master</p>
 <div class="block b-where"><div class="label">Où</div><p><code>src/master/</code> : <code>Modules/</code> (<code>masterModules()</code>), <code>Http/</code> (<code>MasterHttpServer</code> sur <code>network::HttpServer</code> = cpp-httplib), <code>Storage/</code>, <code>Servers/</code>, <code>Probe/</code>, <code>Leaderboard/</code>. Config : <code>master.cfg</code> (port 8080, database). Messages JSON : <code>src/network/Master/</code> (nlohmann-json).</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
 <li>Modules dans l'ordre : logger, storage (SQLite <code>r-type_master.db</code>), probe, http, servers, leaderboard. Pas de boucle de ticks : les threads HTTP répondent.</li>
 <li>Toute erreur ≥ 400 = document RFC 9457 (<code>application/problem+json</code>) ; corps &gt; 64 Kio refusé (413) ; une route qui lève → 500 sans fuite de détail.</li>
 <li>Routes RESTful : ressources au pluriel, méthode = action, l'appelant désigné par sa clé (<code>/api/servers/me</code>), jamais par un id dans le chemin.</li>
-<li><code>rtype_forbid_reachable_links</code> interdit au master de lier SFML, le jeu ou le code serveur.</li></ul></div>
+<li><code>rtype_forbid_reachable_links</code> interdit au master de lier SFML, le jeu ou le code serveur.</li>
+<li>En production, HTTPS est porté par Caddy sur la même machine : toutes les requêtes arrivent donc de <code>127.0.0.1</code>. Le master lit alors la dernière adresse de <code>X-Forwarded-For</code>, et seulement quand le pair TCP est <code>127.0.0.1</code> (<code>ForwardedAddress::TrustedFromLoopback</code>, <code>clientAddressOf()</code> dans <code>src/network/Http/Server/</code>). Le serveur de content packs du superviseur garde le pair TCP (<code>Ignored</code>).</li></ul></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms">
+<dt><code>X-Forwarded-For</code></dt><dd>En-tête où un proxy écrit l'adresse du vrai client ; Caddy efface celui qu'envoie le client avant d'écrire le sien.</dd>
 <dt>REST</dt><dd>Style d'API où les URL désignent des ressources et les méthodes HTTP (GET, POST, PUT, DELETE) les actions.</dd>
 <dt>RFC 9457</dt><dd>Format standard JSON des erreurs HTTP (« problem details »).</dd>
 <dt>IDOR</dt><dd>Faille où changer un id dans l'URL donne accès à la ressource d'un autre ; évitée avec <code>/me</code>.</dd>
 <dt>Idempotent (PUT)</dt><dd>Renvoyer la même requête donne le même état.</dd></dl></div>
-<div class="block b-logic"><div class="label">Logique</div><p>HTTP plutôt qu'un protocole maison : le navigateur (site web) ne parle que HTTP, <code>curl</code> suffit pour tester, un reverse proxy ajoute HTTPS sans code. Le sujet autorise TCP pour ce qui n'est pas « en jeu ». Un mode du binaire serveur plutôt qu'un 3e binaire : le sujet ne liste que deux binaires (comme DDNet qui enregistre ses serveurs en HTTP).</p></div>
+<div class="block b-logic"><div class="label">Logique</div><p>HTTP plutôt qu'un protocole maison : le navigateur (site web) ne parle que HTTP, <code>curl</code> suffit pour tester, un reverse proxy ajoute HTTPS sans code (c'est ce que fait Caddy en production). Ne faire confiance à <code>X-Forwarded-For</code> que depuis la boucle locale : un client distant ne peut pas se faire passer pour une autre adresse, et le quota de créations par adresse reste juste. Le sujet autorise TCP pour ce qui n'est pas « en jeu ». Un mode du binaire serveur plutôt qu'un 3e binaire : le sujet ne liste que deux binaires (comme DDNet qui enregistre ses serveurs en HTTP).</p></div>
 </article>
 
 <article class="feature" id="f-master-keys">
@@ -1469,12 +1477,13 @@ for (tick in ticks) {
 <article class="feature" id="f-global-leaderboard">
 <h4>Classement global</h4>
 <p class="pitch">Les résultats des parties vanilla de tous les serveurs forment un classement commun.</p>
-<p class="refs">PR #275, #276 · doc : <code>master.md</code> § The global leaderboard</p>
-<div class="block b-where"><div class="label">Où</div><p><code>LeaderboardModule</code> (<code>src/master/Leaderboard/</code>), table <code>game_results</code> (migration 4) ; côté serveur <code>ResultsCourier</code>.</p></div>
+<p class="refs">PR #275, #276, #289 · doc : <code>master.md</code> § The global leaderboard, <code>client.md</code> § Leaderboard</p>
+<div class="block b-where"><div class="label">Où</div><p><code>LeaderboardModule</code> (<code>src/master/Leaderboard/</code>), table <code>game_results</code> (migration 4) ; côté serveur <code>ResultsCourier</code> ; côté client <code>MasterLeaderboard</code>, <code>MasterClient::readLeaderboard()</code>.</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
 <li><code>PUT /api/servers/me/results/{gameId}</code> (id de 32 hex tiré par le serveur) : gardé une seule fois par serveur (renvoyer ne change rien) ; partie non vanilla → 400.</li>
 <li><code>GET /api/leaderboard?difficulty=normal&amp;playerCount=2[&amp;server=7][&amp;player=ACE]</code> : meilleur score de chaque joueur, par rang, paginé, + la ligne du joueur demandé.</li>
-<li>Pseudos comparés sans casse ASCII (comme le serveur de jeu).</li></ul></div>
+<li>Pseudos comparés sans casse ASCII (comme le serveur de jeu).</li>
+<li>L'onglet GLOBAL du client lit cette route, avec la ligne du pseudo de la dernière connexion.</li></ul></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt>Vanilla</dt><dd>Partie jouée avec le contenu et les règles d'origine, donc comparable entre serveurs.</dd></dl></div>
 <div class="block b-logic"><div class="label">Logique</div><p>Le master ne peut pas vérifier un score : il fait confiance au serveur à qui une clé a été donnée. Comparer des parties moddées n'aurait pas de sens.</p></div>
 </article>
@@ -1482,12 +1491,13 @@ for (tick in ticks) {
 <article class="feature" id="f-website">
 <h4>Site web (Next.js)</h4>
 <p class="pitch">Un site bilingue qui présente le jeu, le téléchargement, la carte des serveurs, le classement et un wiki.</p>
-<p class="refs">PR #238, #251, #264, #273 · doc : <code>master.md</code> § The web site, <code>technology-choices.md</code> § Web site</p>
+<p class="refs">PR #238, #251, #264, #273, #290 · doc : <code>master.md</code> § The web site, <code>technology-choices.md</code> § Web site</p>
 <div class="block b-where"><div class="label">Où</div><p><code>web/</code> : Next.js (App Router, TypeScript), bun, Biome, Tailwind + shadcn, GSAP + Lenis. <code>web/src/lib/api/</code> (client du master, côté serveur uniquement), <code>web/src/components/</code>, <code>web/src/i18n/dictionaries/</code>. Déployé sur Vercel.</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
 <li>Pages sous <code>/fr</code> ou <code>/en</code> : accueil, <code>/download</code> (dernière release GitHub), <code>/servers</code> (carte des secteurs), <code>/servers/{id}</code>, <code>/leaderboard</code>, <code>/wiki/…</code> (touches, ennemis, accessibilité, héberger), <code>/team</code>.</li>
 <li>Le serveur Next appelle le master (<code>MASTER_URL</code>) : le navigateur ne parle qu'au site (pas de CORS, secrets côté serveur).</li>
 <li>Master muet → 5 serveurs d'exemple, signalés comme tels.</li>
+<li>Section « Dress your ship » de l'accueil : un vaisseau ramasse une couronne (timeline GSAP, figée sur l'état final en mouvement réduit), puis le casier liste les 10 objets du hangar et comment les gagner (kit de départ, toute mission, mission normal/hard), d'après <code>look_items</code> de <code>waves.toml</code> (<code>ship-looks.ts</code>, <code>hangar-locker.tsx</code>). L'icône du site est le R de l'icône du jeu.</li>
 <li>Animations via <code>useMotion()</code> qui respecte « réduire les animations » ; couleurs = palette du client.</li></ul></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms">
 <dt>SSR</dt><dd>Server-Side Rendering : la page est construite sur le serveur à chaque requête.</dd>
@@ -1629,13 +1639,15 @@ for (tick in ticks) {
 <article class="feature" id="f-servermap">
 <h4>Carte des serveurs (sector map) et nouvelle partie</h4>
 <p class="pitch">Les serveurs listés par le master sont des étoiles placées selon leur ping autour de la planète du joueur.</p>
-<p class="refs">PR #240, #267, #277, #278 · doc : <code>client.md</code> § Server map, New game</p>
-<div class="block b-where"><div class="label">Où</div><p><code>ServerMapScreen</code>, <code>GamePanel</code>, <code>newGameMenu()</code> (<code>src/client/Menus/ServerBrowser/</code>), <code>IServerCatalog</code>, <code>IGameCatalog</code>, <code>ServerPingProbe</code> (<code>src/client/Connection/ServerList/</code>), <code>MasterChoice</code>.</p></div>
+<p class="refs">PR #240, #267, #277, #278, #289, #294 · doc : <code>client.md</code> § Server map, New game</p>
+<div class="block b-where"><div class="label">Où</div><p><code>ServerMapScreen</code>, <code>GamePanel</code>, <code>newGameMenu()</code>, <code>openConnectionTo()</code> (<code>ChosenGameConnection</code>), <code>SessionEndWatch</code> (<code>src/client/Menus/ServerBrowser/</code>), <code>IServerCatalog</code>, <code>IGameCatalog</code>, <code>ServerPingProbe</code> (<code>src/client/Connection/ServerList/</code>), <code>MasterLink</code>.</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
 <li>Liste lue sur un thread dédié (le rendu n'attend jamais), rafraîchie toutes les 15 s ou avec R ; anneaux à 25, 75, 150, 225 ms.</li>
-<li>Choisir un serveur ouvre le panneau de ses parties (avec leurs règles) + « NEW GAME » (difficulté, vies, tir ami).</li>
+<li>Choisir un serveur ouvre le panneau de ses parties (avec leurs règles) + « NEW GAME » (difficulté, vies, tir ami). Le pointeur choisit la ligne qu'il survole, un clic agit comme Entrée.</li>
+<li>Rejoindre ou créer une partie ne demande que le pseudo : le master a déjà donné l'adresse et le port (<code>CONNECTION_TO_MAP_SERVER_SCREEN</code>). CREATE ferme le dialogue avant d'ouvrir la connexion, donc BACK revient toujours à la carte.</li>
+<li>De retour d'un serveur, la carte relit la liste 2 s plus tard (<code>GAMES_RECHECK_DELAY</code>), pour ne plus compter le joueur qui vient de partir.</li>
 <li>Q = quick play (partie du serveur au plus petit ping), L = classement, D = connexion par adresse.</li>
-<li>Le joueur choisit son master (sauvegardé) ; sans master local le client reste utilisable.</li>
+<li>Le master est celui de <code>master-url</code> dans <code>client.cfg</code> : plus de choix du master à l'écran. Sans master, le client reste utilisable (ADDRESS, <code>-h</code>).</li>
 <li>Serveurs dessinés en planètes ; étoile « hangar » pour habiller son vaisseau.</li></ul></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt>Server browser</dt><dd>Liste de serveurs publics, ici sous forme de carte.</dd></dl></div>
 <div class="block b-logic"><div class="label">Logique</div><p>Rendre visible la qualité de connexion avant de rejoindre.</p></div>
@@ -1644,10 +1656,10 @@ for (tick in ticks) {
 <article class="feature" id="f-connection-client">
 <h4>Connexion, session et téléchargement du contenu</h4>
 <p class="pitch">Le client se connecte, suit une redirection vers la partie, télécharge le content pack si besoin, puis entre en salle d'attente.</p>
-<p class="refs">PR #74, #77, #157, #256 · doc : <code>client.md</code> § Connection screen, Joining a server, Content packs</p>
+<p class="refs">PR #74, #77, #157, #256, #289 · doc : <code>client.md</code> § Connection screen, Joining a server, Content packs</p>
 <div class="block b-where"><div class="label">Où</div><p><code>ConnectionScreen</code> (<code>src/client/Menus/Title/</code>), <code>ServerSession</code>, <code>PlayerConnection</code>, <code>Handshake/</code>, <code>ContentPack/</code> (<code>ContentLoading</code>, <code>ContentPackDownload</code>, <code>ContentPackCache</code>), <code>SessionEntityTypes</code>, <code>Transport/</code> (<code>NetworkThread</code>, <code>DatagramRouter</code>) dans <code>src/client/Connection/</code>.</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
-<li>Formulaire adresse / port / pseudo ; « SERVER UNREACHABLE » après 5 s sans réponse.</li>
+<li>Formulaire adresse / port / pseudo (ADDRESS), ou pseudo seul quand on vient de la carte ; « SERVER UNREACHABLE » après 5 s sans réponse.</li>
 <li>Si le fingerprint annoncé ne correspond pas à son contenu : cache, sinon téléchargement HTTP (reprise possible), pendant que la session garde le siège.</li>
 <li><code>NetworkThread</code> : socket sur son propre thread, files de 256 entrées / 64 sorties. <code>DatagramRouter</code> : plusieurs lecteurs pour une seule socket (session, pings).</li>
 <li>Perte de connexion (20 s sans datagramme) : retour au titre avec un dialogue « NO SIGNAL ».</li></ul></div>
@@ -1682,9 +1694,9 @@ for (tick in ticks) {
 <article class="feature" id="f-leaderboard-client">
 <h4>Écran de classement</h4>
 <p class="pitch">Les 10 meilleurs scores d'un serveur (onglet SERVER) ou de tous (GLOBAL), filtrables.</p>
-<p class="refs">PR #184 · doc : <code>client.md</code> § Leaderboard</p>
-<div class="block b-where"><div class="label">Où</div><p><code>LeaderboardScreen</code>, <code>LeaderboardFilterDialog</code> (<code>src/client/Menus/Leaderboard/</code>), <code>ILeaderboardSource</code>, <code>ServerLeaderboard</code> (<code>src/client/Connection/Leaderboard/</code>).</p></div>
-<div class="block b-how"><div class="label">Comment</div><p>Rang, pilote, score, date ; top 3 en or/argent/bronze ; sa propre ligne même hors top 10. Filtre difficulté × nombre de pilotes ; réappliquer le même filtre n'envoie rien. <code>ask()</code> ne bloque jamais. Bannières et gardes animés.</p></div>
+<p class="refs">PR #184, #289 · doc : <code>client.md</code> § Leaderboard</p>
+<div class="block b-where"><div class="label">Où</div><p><code>LeaderboardScreen</code>, <code>LeaderboardFilterDialog</code> (<code>src/client/Menus/Leaderboard/</code>), <code>ILeaderboardSource</code>, <code>ServerLeaderboard</code> (onglet SERVER), <code>MasterLeaderboard</code> (onglet GLOBAL) (<code>src/client/Connection/Leaderboard/</code>).</p></div>
+<div class="block b-how"><div class="label">Comment</div><p>Rang, pilote, score, date ; top 3 en or/argent/bronze ; sa propre ligne même hors top 10. Filtre difficulté × nombre de pilotes ; réappliquer le même filtre n'envoie rien. <code>ask()</code> ne bloque jamais : l'onglet GLOBAL demande au master via <code>MasterLink</code> depuis la boucle de rendu, ne garde que la réponse de la dernière demande, et affiche <code>OutOfReach</code> si le master ne répond pas ; ASKING s'affiche pendant une demande. Bannières et gardes animés.</p></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt>Source</dt><dd>Interface qui fournit les lignes (serveur ou master), l'écran ne sait pas d'où.</dd></dl></div>
 <div class="block b-logic"><div class="label">Logique</div><p>Le classement s'ouvre aussi depuis le titre : on rejoint alors un serveur juste pour le lire, puis on revient.</p></div>
 </article>
@@ -1704,13 +1716,13 @@ for (tick in ticks) {
 <article class="feature" id="f-options">
 <h4>Options et réglages sauvegardés</h4>
 <p class="pitch">Cinq onglets de réglages, appliqués immédiatement et sauvegardés dans un fichier texte.</p>
-<p class="refs">PR #78, #152 · doc : <code>client.md</code> § Options, Settings</p>
+<p class="refs">PR #78, #152, #291 · doc : <code>client.md</code> § Options, Settings</p>
 <div class="block b-where"><div class="label">Où</div><p><code>OptionsScreen</code> (<code>src/client/Menus/Options/</code>), <code>PlayerSettings</code>, <code>SettingsService</code>, <code>SettingsFile</code> (<code>src/client/Settings/</code>), <code>settingsFolder()</code> (<code>src/client/Platform/</code>). Config : <code>client.cfg</code>.</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
 <li>Onglets : affichage (mode, taille + schéma à l'échelle), son, contrôles, accessibilité, jeu (prédiction, noms des pilotes, chat…).</li>
 <li>Tout passe par <code>SettingsService</code> : valide la valeur, notifie les écouteurs (son, fenêtre…), marque à sauvegarder.</li>
 <li>Fichier <code>settings.ini</code> en <code>nom=valeur</code>, lisible à la main, dans le dossier utilisateur du système.</li>
-<li>Escape en jeu ouvre les options : le jeu continue, assombri (« THE GAME GOES ON »).</li></ul></div>
+<li>Escape en jeu ouvre les options : le jeu continue, assombri (« THE GAME GOES ON »). QUIT, au bout de la rangée de BACK, ouvre la confirmation (<code>leaveGameConfirmationMenu()</code>) ; YES ferme la session (le serveur est prévenu) et revient au titre.</li></ul></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt>Observer</dt><dd>Patron où des écouteurs sont prévenus d'un changement.</dd></dl></div>
 <div class="block b-logic"><div class="label">Logique</div><p>Un seul chemin de modification : impossible d'oublier de sauvegarder ou de prévenir un module.</p></div>
 </article>
