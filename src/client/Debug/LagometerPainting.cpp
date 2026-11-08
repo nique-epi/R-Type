@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <optional>
 #include <string>
 #include "BackgroundConstants.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -55,18 +56,26 @@ CurveArea curveAreaAt(int scale) {
       .bottom = top + playfieldLength(LAGOMETER_CURVE_HEIGHT, scale)};
 }
 
-/** @brief Adds a line from @p from to @p to, in @p color. */
-void addLine(sf::VertexArray& lines, sf::Vector2f from, sf::Vector2f to,
-             sf::Color color) {
-  lines.append(sf::Vertex{.position = from, .color = color});
-  lines.append(sf::Vertex{.position = to, .color = color});
+/** @brief One line of the curve, in coordinates of the playfield. */
+struct CurveSegment {
+  sf::Vector2f start;
+  sf::Vector2f end;
+  sf::Color color;
+};
+
+/** @brief Adds @p segment to @p lines. */
+void addLine(sf::VertexArray& lines, const CurveSegment& segment) {
+  lines.append(sf::Vertex{.position = segment.start, .color = segment.color});
+  lines.append(sf::Vertex{.position = segment.end, .color = segment.color});
 }
 
 /** @brief Adds the lines of the scale: at 0, half the top, and the top. */
 void addScaleLines(sf::VertexArray& lines, const CurveArea& area) {
   const float middle = (area.top + area.bottom) / 2.0F;
   for (const float row : {area.bottom, middle, area.top}) {
-    addLine(lines, {area.left, row}, {area.right, row}, LAGOMETER_SCALE_LINE);
+    addLine(lines, CurveSegment{.start = {area.left, row},
+                                .end = {area.right, row},
+                                .color = LAGOMETER_SCALE_LINE});
   }
 }
 
@@ -95,17 +104,20 @@ void addPoints(sf::VertexArray& lines, const CurveArea& area,
   const std::chrono::milliseconds top = lagometer.scaleTop();
   for (std::size_t index = 0; index < points.size(); ++index) {
     if (points[index].missed > 0) {
-      const float x = pointX(area, index, points.size());
-      addLine(lines, {x, area.top}, {x, area.bottom}, LOSS_RED);
+      const float across = pointX(area, index, points.size());
+      addLine(lines, CurveSegment{.start = {across, area.top},
+                                  .end = {across, area.bottom},
+                                  .color = LOSS_RED});
     }
   }
   for (std::size_t index = 1; index < points.size(); ++index) {
-    addLine(lines,
-            {pointX(area, index - 1, points.size()),
-             pointY(area, points[index - 1].roundTrip, top)},
-            {pointX(area, index, points.size()),
-             pointY(area, points[index].roundTrip, top)},
-            LAGOMETER_CURVE);
+    addLine(
+        lines,
+        CurveSegment{.start = {pointX(area, index - 1, points.size()),
+                               pointY(area, points[index - 1].roundTrip, top)},
+                     .end = {pointX(area, index, points.size()),
+                             pointY(area, points[index].roundTrip, top)},
+                     .color = LAGOMETER_CURVE});
   }
 }
 
