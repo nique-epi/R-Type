@@ -3,6 +3,7 @@ target_sources(client_connection_tests PRIVATE ServerSessionTest.cpp ServerSessi
 target_include_directories(client_connection_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ContentPack ${CMAKE_CURRENT_SOURCE_DIR}/ContentPack/Download ${CMAKE_CURRENT_SOURCE_DIR}/EntityTypes)
 target_link_libraries(client_connection_tests PRIVATE httplib::httplib rtype_test_support)
 
+add_subdirectory(Chat)
 add_subdirectory(ContentPack)
 add_subdirectory(EntityTypes)
 add_subdirectory(Handshake)

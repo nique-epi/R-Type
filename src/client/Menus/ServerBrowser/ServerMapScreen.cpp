@@ -1,6 +1,7 @@
 #include "ServerMapScreen.hpp"
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
@@ -12,8 +13,11 @@
 #include <vector>
 #include "BarState.hpp"
 #include "Button.hpp"
+#include "HangarScreenIdConstants.hpp"
+#include "HangarStar.hpp"
 #include "IGameCatalog.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "InterfacePixel.hpp"
 #include "KeyChip.hpp"
@@ -168,6 +172,30 @@ void openGamesOf(ServerMapChoice& map, IGameCatalog& games) {
   }
 }
 
+/** @returns Whether @p pixel picks the hangar star: only the whole map
+ * shows it. */
+bool hangarStarShownAt(const ServerMapChoice& map, sf::Vector2i pixel) {
+  return map.stage() == ServerMapStage::ZoomedOut && hangarStarAt(pixel);
+}
+
+/** @brief Lets go of @p heldKey, then pushes the hangar over the map: the
+ * release of that key goes to the hangar. */
+void openHangar(std::optional<sf::Keyboard::Key>& heldKey,
+                IScreenNavigator& navigator) {
+  heldKey.reset();
+  navigator.push(HANGAR_SCREEN);
+}
+
+/** @brief Zooms in when the wheel turns up over the whole map, out when it
+ * turns down over the zoomed map. */
+void zoomWithWheel(ServerMapChoice& map, float delta) {
+  if (delta > 0.0F && map.stage() == ServerMapStage::ZoomedOut) {
+    map.deeper();
+  } else if (delta < 0.0F && map.stage() == ServerMapStage::ZoomedIn) {
+    static_cast<void>(map.shallower());
+  }
+}
+
 KeyChipParts quickPlayChipParts(std::function<void()> action,
                                 ISoundPlayer& sounds) {
   return KeyChipParts{.text = quickPlayText(),
@@ -256,20 +284,21 @@ void ServerMapScreen::handleEvent(const sf::Event& event) {
              event.is<sf::Event::FocusLost>()) {
     heldKey_.reset();
   } else if (const auto* moved = event.getIf<sf::Event::MouseMoved>()) {
-    chosenShown_ =
-        map_.chooseAt(interfacePixelAt(playfieldPointAt_(moved->position)));
+    const sf::Vector2i pixel =
+        interfacePixelAt(playfieldPointAt_(moved->position));
+    hangarShown_ = hangarStarShownAt(map_, pixel);
+    chosenShown_ = !hangarShown_ && map_.chooseAt(pixel);
   } else if (const auto* click = event.getIf<sf::Event::MouseButtonPressed>();
-             click != nullptr && click->button == sf::Mouse::Button::Left &&
-             map_.chooseAt(
-                 interfacePixelAt(playfieldPointAt_(click->position)))) {
-    openGamesOf(map_, *games_);
-  } else if (const auto* wheel = event.getIf<sf::Event::MouseWheelScrolled>()) {
-    if (wheel->delta > 0.0F && map_.stage() == ServerMapStage::ZoomedOut) {
-      map_.deeper();
-    } else if (wheel->delta < 0.0F &&
-               map_.stage() == ServerMapStage::ZoomedIn) {
-      static_cast<void>(map_.shallower());
+             click != nullptr && click->button == sf::Mouse::Button::Left) {
+    const sf::Vector2i pixel =
+        interfacePixelAt(playfieldPointAt_(click->position));
+    if (hangarStarShownAt(map_, pixel)) {
+      openHangar(heldKey_, *navigator_);
+    } else if (map_.chooseAt(pixel)) {
+      openGamesOf(map_, *games_);
     }
+  } else if (const auto* wheel = event.getIf<sf::Event::MouseWheelScrolled>()) {
+    zoomWithWheel(map_, wheel->delta);
   }
 }
 
@@ -310,6 +339,10 @@ void ServerMapScreen::keyPressed(const sf::Event::KeyPressed& key) {
       map_.stage() != ServerMapStage::Games) {
     map_.moveByPing(key.shift ? -1 : 1);
     chosenShown_ = true;
+    return;
+  }
+  if (key.code == HANGAR_KEY) {
+    openHangar(heldKey_, *navigator_);
     return;
   }
   if ((key.code != MENU_CONFIRM_KEY && key.code != REFRESH_KEY) ||
@@ -384,6 +417,9 @@ void ServerMapScreen::repaint() {
     }
   } else {
     paintServerMapMessage(*canvas_, phase);
+  }
+  if (map_.stage() == ServerMapStage::ZoomedOut) {
+    paintHangarStar(*canvas_, hangarShown_ && !chosenShown_);
   }
   quickPlayChip_.paint(*canvas_);
   rankingChip_.paint(*canvas_);

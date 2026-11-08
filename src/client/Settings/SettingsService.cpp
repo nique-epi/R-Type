@@ -91,6 +91,8 @@ template bool SettingsService::apply<std::optional<PixelSize>>(
 template bool SettingsService::apply<std::optional<network::Endpoint>>(
     const Setting<std::optional<network::Endpoint>>&,
     const std::optional<network::Endpoint>&);
+template bool SettingsService::apply<ShipLook>(const Setting<ShipLook>&,
+                                               const ShipLook&);
 
 void SettingsService::bindKey(BoundAction action, sf::Keyboard::Scancode key) {
   settings_->keys.bind(action, key);

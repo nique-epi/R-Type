@@ -21,6 +21,35 @@ constexpr int DEFAULT_MUSIC_VOLUME = 70;
 constexpr int DEFAULT_EFFECTS_VOLUME = 80;
 
 /**
+ * @brief The chat: the letters of one of its lines, the lines it shows while
+ * closed and while open, the seconds a line stays while it is closed, and the
+ * opacity of the layer laid under the open chat, in percent. For each, its
+ * range, the step one press moves its slider by, and its value at a first
+ * launch. A line starts at SAFE_MARGIN and a letter is 8 pixels wide, so 33
+ * letters end 12 pixels before the HELP chip of the waiting room; a fourth
+ * closed line would reach the status line of the waiting room.
+ */
+constexpr int MINIMUM_CHAT_LETTERS = 12;
+constexpr int MAXIMUM_CHAT_LETTERS = 33;
+constexpr int CHAT_LETTERS_STEP = 3;
+constexpr int DEFAULT_CHAT_LETTERS = 33;
+constexpr int MINIMUM_CHAT_CLOSED_LINES = 1;
+constexpr int MAXIMUM_CHAT_CLOSED_LINES = 3;
+constexpr int DEFAULT_CHAT_CLOSED_LINES = 3;
+constexpr int MINIMUM_CHAT_OPEN_LINES = 4;
+constexpr int MAXIMUM_CHAT_OPEN_LINES = 16;
+constexpr int DEFAULT_CHAT_OPEN_LINES = 8;
+constexpr int MINIMUM_CHAT_SECONDS = 2;
+constexpr int MAXIMUM_CHAT_SECONDS = 20;
+constexpr int DEFAULT_CHAT_SECONDS = 8;
+constexpr int MINIMUM_CHAT_BACKGROUND = 0;
+constexpr int MAXIMUM_CHAT_BACKGROUND = 100;
+constexpr int CHAT_BACKGROUND_STEP = 5;
+constexpr int DEFAULT_CHAT_BACKGROUND = 70;
+constexpr int CHAT_SETTING_STEP = 1;
+constexpr int CHAT_PAGE_STEPS = 4;
+
+/**
  * @brief The settings file, in the settings folder; the file written next to
  * it, then renamed over it, so a save cut short never leaves half a file; and
  * the largest file read, in bytes (a full file holds about 300).
@@ -55,13 +84,27 @@ constexpr std::string_view SOUND_CUES_NAME = "sound_cues";
 constexpr std::string_view AUTO_FIRE_NAME = "auto_fire";
 constexpr std::string_view CLIENT_PREDICTION_NAME = "client_prediction";
 constexpr std::string_view PILOT_NAMES_NAME = "pilot_names";
+constexpr std::string_view CHAT_SHOWN_NAME = "chat_shown";
+constexpr std::string_view CHAT_LETTERS_NAME = "chat_letters";
+constexpr std::string_view CHAT_CLOSED_LINES_NAME = "chat_closed_lines";
+constexpr std::string_view CHAT_OPEN_LINES_NAME = "chat_open_lines";
+constexpr std::string_view CHAT_SECONDS_NAME = "chat_seconds";
+constexpr std::string_view CHAT_BACKGROUND_NAME = "chat_background";
 constexpr std::string_view MASTER_NAME = "master";
+
+constexpr std::string_view SHIP_HEAD_NAME = "ship_head";
+constexpr std::string_view SHIP_EYES_NAME = "ship_eyes";
+constexpr std::string_view SHIP_FACE_NAME = "ship_face";
+
+/** @brief The value of a slot of the ship that wears nothing. */
+constexpr std::string_view NO_LOOK_ITEM_VALUE = "none";
 
 /** @brief Names of the keys of the bound actions, in the order of
  * BOUND_ACTIONS. */
 constexpr std::array<std::string_view, BOUND_ACTION_COUNT>
     BOUND_ACTION_KEY_NAMES{"key_move_up",    "key_move_down", "key_move_left",
-                           "key_move_right", "key_shoot",     "key_ready"};
+                           "key_move_right", "key_shoot",     "key_ready",
+                           "key_open_chat"};
 
 /** @brief Values of a switch; of the display modes, in the order of
  * DISPLAY_MODES; of the color modes, in the order of COLOR_MODES; and what

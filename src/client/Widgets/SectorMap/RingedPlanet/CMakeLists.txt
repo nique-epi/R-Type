@@ -7,6 +7,9 @@ target_link_libraries(rtype_client_ringed_planet
     rtype_client_background
     rtype_client_sector_map_interfaces
     rtype_engine_time
+  PRIVATE
+    rtype_client_pixel_shapes
+    rtype_client_rendering_interfaces
 )
 
 rtype_enable_warnings(rtype_client_ringed_planet)

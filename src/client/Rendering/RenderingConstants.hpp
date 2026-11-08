@@ -12,6 +12,8 @@ constexpr std::size_t LAYER_COUNT =
     static_cast<std::size_t>(game::Layer::Interface) + 1;
 
 constexpr float HALF = 0.5F;
+/** @brief What a size is divided by to centre a picture on another. */
+constexpr int HALF_DIVISOR = 2;
 constexpr std::string_view RENDERING_LOGGER_NAME = "Rendering";
 
 /** @brief An invulnerable ship shows its sprite, then its dithered picture,

@@ -139,10 +139,12 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-a-detour-comes-back-to-where-it-started.md`
 - `fix/reasoning/fix-reasoning-a-guard-after-the-write-is-only-an-alarm.md`
 - `fix/reasoning/fix-reasoning-a-library-may-fail-without-throwing.md`
+- `fix/reasoning/fix-reasoning-a-second-connection-of-a-test-waits-like-the-first.md`
 - `fix/reasoning/fix-reasoning-a-pointer-is-read-in-the-grid-it-is-compared-with.md`
 - `fix/reasoning/fix-reasoning-a-sanitizer-sees-only-what-leaves-the-allocation.md`
 - `fix/reasoning/fix-reasoning-a-session-opened-to-read-holds-a-seat.md`
 - `fix/reasoning/fix-reasoning-a-key-held-down-repeats-its-press.md`
+- `fix/reasoning/fix-reasoning-a-new-highlight-is-cleared-by-every-path-that-sets-another.md`
 - `fix/reasoning/fix-reasoning-a-screen-pushed-over-others-leaves-them-running.md`
 - `fix/reasoning/fix-reasoning-a-sequence-asserts-its-starting-state.md`
 - `fix/reasoning/fix-reasoning-a-turn-is-counted-in-whole-frames.md`
