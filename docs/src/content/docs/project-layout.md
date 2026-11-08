@@ -275,7 +275,7 @@ Every folder of this tree exists today; some of what the comments name is not wr
 
 ### Master
 
-`src/master` holds the master, the program `r-type_server --mode master` runs: it lists the game servers and their games, records their heartbeats, and will run the administration; the web site of `web/` calls its API from a server of its own. Its folders are libraries, and only the server binary links them, so the master never links SFML, `rtype_game` or the code of the server, and reaches Asio only behind the network targets that hide it. Today it creates the game servers with their keys, takes their registration and their heartbeats, probes their UDP port, keeps the status of each, lists the registered servers, and the games, the samples and the statuses of a server, and answers `GET /api/health` (see [Master](/R-Type/master/)).
+`src/master` holds the master, the program `r-type_server --mode master` runs: it lists the game servers and their games, records their heartbeats, and will run the administration; the web site of `web/` calls its API from a server of its own. Its folders are libraries, and only the server binary links them, so the master never links SFML, `rtype_game` or the code of the server, and reaches Asio only behind the network targets that hide it. Today it creates the game servers with their keys, takes their registration and their heartbeats, probes their UDP port, keeps the status of each, lists the registered servers, and the games, the samples and the statuses of a server, keeps the results of the vanilla games of every server and ranks them in a global leaderboard, and answers `GET /api/health` (see [Master](/R-Type/master/)).
 
 ```
 src/master/
@@ -285,18 +285,23 @@ src/master/
 ├── Http/             the module http: the routes of the master on the HTTP server of src/network/Http/, GET /api/health
 ├── Probe/            the module probe: the UDP socket that sends the probes, on ProbeWire, at most one a second per destination
 ├── Servers/          the module servers: creation and key, registration, heartbeats, statuses, the lists
-│   ├── Controllers/  ServersController: reads each route, writes its answer
+│   ├── Controllers/  ServersController: reads each route, writes its answer; RouteAnswers, the reading every controller shares
 │   ├── Services/     ServersService, ServerStatusService: the rules; Helpers/, the key and the status rule
 │   ├── Repositories/ the only SQL: ServerRepository, HeartbeatSampleRepository, StatusChangeRepository
 │   ├── Models/       the plain structs the layers hand each other
 │   └── Jobs/         ServerStatusJob: refreshes the statuses on a thread of its own
+├── Leaderboard/      the module leaderboard: the results of the vanilla games, the global leaderboard
+│   ├── Controllers/  LeaderboardController
+│   ├── Services/     LeaderboardService: only a vanilla game is kept
+│   ├── Repositories/ GameResultRepository: the table game_results and the ranking
+│   └── Models/       ServerGameResult, LeaderboardQuery
 ├── Modules/          masterModules(), the list of the modules
 ├── Administration/   bans, kicks, maintenance, audit log: being written
 ├── Matchmaking/      a server chosen to create a game: being written
 └── Accounts/         optional, with Tickets/: being written
 ```
 
-`LaunchOptions/`, `Logger/`, `Storage/`, `Http/`, `Probe/`, `Servers/` and `Modules/` exist; the others are being written. A folder of a feature is laid out like a module of a web backend: its module class at the root, then one sub-folder per role, as `Servers/` shows.
+`LaunchOptions/`, `Logger/`, `Storage/`, `Http/`, `Probe/`, `Servers/`, `Leaderboard/` and `Modules/` exist; the others are being written. A folder of a feature is laid out like a module of a web backend: its module class at the root, then one sub-folder per role, as `Servers/` shows.
 
 ### Tests, web site, assets
 
@@ -351,6 +356,7 @@ This list describes the code as it is today. A pull request that adds, removes o
 | `probe` | `MasterProbeModule` | `src/master/Probe/` | required |
 | `http` | `MasterHttpModule` | `src/master/Http/` | required |
 | `servers` | `ServersModule` | `src/master/Servers/` | required |
+| `leaderboard` | `LeaderboardModule` | `src/master/Leaderboard/` | required |
 
 | Module of the client | Class | Folder | Kind |
 |---|---|---|---|

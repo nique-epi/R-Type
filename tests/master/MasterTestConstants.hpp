@@ -6,6 +6,7 @@
 /** @brief The statuses the routes of the master answer in the tests. */
 constexpr int EXPECTED_OK = 200;
 constexpr int EXPECTED_CREATED = 201;
+constexpr int EXPECTED_NO_CONTENT = 204;
 constexpr int EXPECTED_BAD_REQUEST = 400;
 constexpr int EXPECTED_UNAUTHORIZED = 401;
 constexpr int EXPECTED_NOT_FOUND = 404;

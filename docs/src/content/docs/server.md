@@ -1222,7 +1222,7 @@ Every game that ends leaves a row per player in the SQLite file of its server, a
 
 ### Vanilla games: `vanillaBreaches`
 
-A game is vanilla when it is played by the rules the game ships with, so that its scores compare with those of any other server. Only vanilla games are meant for a leaderboard that gathers every server; nothing sends results there yet, and a game that is not vanilla stays on the leaderboard of its own server like any other.
+A game is vanilla when it is played by the rules the game ships with, so that its scores compare with those of any other server. Only vanilla games are meant for the leaderboard of the master, which gathers every server (see [Master](/R-Type/master/#the-global-leaderboard-leaderboardmodule)); no server sends its results there yet, and a game that is not vanilla stays on the leaderboard of its own server like any other.
 
 The games module judges its game once, when it starts, since the values it reads are fixed from then on. `vanillaBreaches()` (`src/server/Games/`) gives one reason per rule broken, and an empty list for vanilla games:
 

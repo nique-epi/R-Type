@@ -13,6 +13,7 @@
 #include "EntityIdConstants.hpp"
 #include "ProtocolConstants.hpp"
 #include "RoundTripMeter.hpp"
+#include "WireTypes.hpp"
 
 namespace rtype::server {
 
@@ -75,15 +76,10 @@ std::size_t PlayerRoster::occupiedSeatCount() const {
 }
 
 bool PlayerRoster::hasNickname(std::string_view nickname) const {
-  const auto lowered = [](char letter) noexcept {
-    return letter >= 'A' && letter <= 'Z'
-               ? static_cast<char>(letter - 'A' + 'a')
-               : letter;
-  };
+  const std::string key = network::nicknameKey(nickname);
   return std::ranges::any_of(
-      seats_, [&](const std::optional<ConnectedPlayer>& seat) noexcept {
-        return seat.has_value() && std::ranges::equal(seat->nickname, nickname,
-                                                      {}, lowered, lowered);
+      seats_, [&key](const std::optional<ConnectedPlayer>& seat) {
+        return seat.has_value() && network::nicknameKey(seat->nickname) == key;
       });
 }
 

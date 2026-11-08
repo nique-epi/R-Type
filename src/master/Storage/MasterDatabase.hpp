@@ -15,10 +15,11 @@ namespace rtype::master {
  * @brief The connection to the database of the master, shared by the threads
  * of the HTTP server: one request uses it at a time, behind its lock.
  *
- * SQLite allows one writer at a time anyway, and a request of the master holds
+ * SQLite allows one writer at a time anyway. Most requests of the master hold
  * the lock for a few statements of one row each, so the threads queue for
- * microseconds. The storage module opens it when it starts and closes it when
- * it stops.
+ * microseconds; a read of the leaderboard holds it while it ranks every row of
+ * one difficulty and one number of players (GameResultRepository). The
+ * storage module opens it when it starts and closes it when it stops.
  */
 class MasterDatabase {
  public:

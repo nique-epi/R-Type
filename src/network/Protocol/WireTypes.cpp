@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <string>
 #include <string_view>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
@@ -108,6 +109,16 @@ bool isPrintableUtf8(std::string_view text) {
 bool isValidNickname(std::string_view nickname) {
   return nickname.size() >= MINIMUM_NICKNAME_SIZE &&
          nickname.size() <= MAXIMUM_NICKNAME_SIZE && isPrintableUtf8(nickname);
+}
+
+std::string nicknameKey(std::string_view nickname) {
+  std::string key{nickname};
+  for (char& letter : key) {
+    if (letter >= 'A' && letter <= 'Z') {
+      letter = static_cast<char>(letter - 'A' + 'a');
+    }
+  }
+  return key;
 }
 
 bool isValidBoundedText(std::string_view text, std::size_t maximumSize) {
