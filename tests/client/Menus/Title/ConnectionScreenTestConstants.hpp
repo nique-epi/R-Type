@@ -7,6 +7,7 @@
 #include "ConnectionRequest.hpp"
 #include "ConnectionStatus.hpp"
 #include "RecordingServerConnection.hpp"
+#include "ServerConnectionRequest.hpp"
 
 namespace rtype::client::testing {
 
@@ -52,9 +53,7 @@ constexpr ConnectionStatus ACCEPTED_AS_FIRST_PLAYER{
 /** @brief The cancel the screen sends when it is built, before any request of
  * a test. */
 const ServerConnectionCall CANCEL{
-    .request = ServerConnectionCall::Request::Cancel,
-    .server = {},
-    .nickname = {}};
+    .request = ServerConnectionRequest::Cancel, .server = {}, .nickname = {}};
 
 /** @brief A content pack of 150 000 bytes, nothing of it received, then
  * half of it, then all of it. */

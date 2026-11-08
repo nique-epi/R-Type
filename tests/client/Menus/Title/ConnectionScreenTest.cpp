@@ -28,6 +28,7 @@
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenTestConstants.hpp"
+#include "ServerConnectionRequest.hpp"
 #include "ServerSessionTestConstants.hpp"
 #include "SoundConstants.hpp"
 
@@ -110,7 +111,7 @@ TEST_F(ConnectionScreenFixture, EnterConnectsWithTheValuesOfTheFields) {
 
   EXPECT_THAT(connectAttemptsOf(connection()),
               ElementsAre(ServerConnectionCall{
-                  .request = ServerConnectionCall::Request::Connect,
+                  .request = ServerConnectionRequest::Connect,
                   .server = {.address = std::string(LAUNCH_ADDRESS),
                              .port = LAUNCH_PORT},
                   .nickname = std::string(LAUNCH_NICKNAME),
@@ -456,7 +457,7 @@ TEST_F(ConnectionScreenChoiceFixture, ANewScreenStartsWithTheLastAttempt) {
 
   EXPECT_EQ(
       connectAttemptsOf(connection()).back(),
-      (ServerConnectionCall{.request = ServerConnectionCall::Request::Connect,
+      (ServerConnectionCall{.request = ServerConnectionRequest::Connect,
                             .server = {.address = std::string(LAUNCH_ADDRESS),
                                        .port = LAUNCH_PORT},
                             .nickname = std::string(TYPED_NICKNAME),
@@ -475,7 +476,7 @@ TEST_F(ConnectionScreenChoiceFixture, AScreenOpenedAtOnceConnectsToTheChoice) {
   ASSERT_FALSE(connectAttemptsOf(connection()).empty());
   EXPECT_EQ(
       connectAttemptsOf(connection()).back(),
-      (ServerConnectionCall{.request = ServerConnectionCall::Request::Connect,
+      (ServerConnectionCall{.request = ServerConnectionRequest::Connect,
                             .server = {.address = std::string(LAUNCH_ADDRESS),
                                        .port = LAUNCH_PORT},
                             .nickname = std::string(LAUNCH_NICKNAME),
@@ -497,7 +498,7 @@ TEST_F(ConnectionScreenChoiceFixture,
   EXPECT_EQ(
       connectAttemptsOf(connection()).back(),
       (ServerConnectionCall{
-          .request = ServerConnectionCall::Request::Connect,
+          .request = ServerConnectionRequest::Connect,
           .server = {.address = std::string(MAP_ADDRESS), .port = MAP_PORT},
           .nickname = std::string(LAUNCH_NICKNAME),
           .game = LAUNCH_GAME}));
@@ -519,7 +520,7 @@ TEST_F(ConnectionScreenChoiceFixture,
   EXPECT_EQ(
       connectAttemptsOf(connection()).back(),
       (ServerConnectionCall{
-          .request = ServerConnectionCall::Request::Connect,
+          .request = ServerConnectionRequest::Connect,
           .server = {.address = std::string(MAP_ADDRESS), .port = MAP_PORT},
           .nickname = std::string(LAUNCH_NICKNAME),
           .game = NEW_GAME_CHOICE,
@@ -560,7 +561,7 @@ TEST_F(ConnectionScreenChoiceFixture,
 
   EXPECT_EQ(
       connectAttemptsOf(connection()).back(),
-      (ServerConnectionCall{.request = ServerConnectionCall::Request::Connect,
+      (ServerConnectionCall{.request = ServerConnectionRequest::Connect,
                             .server = {.address = std::string(LAUNCH_ADDRESS),
                                        .port = LAUNCH_PORT},
                             .nickname = std::string(LAUNCH_NICKNAME),
@@ -597,7 +598,7 @@ TEST_F(ConnectionScreenChoiceFixture, ARetryFormStartsWithTheLastAttempt) {
   EXPECT_EQ(
       connectAttemptsOf(connection()).back(),
       (ServerConnectionCall{
-          .request = ServerConnectionCall::Request::Connect,
+          .request = ServerConnectionRequest::Connect,
           .server = {.address = std::string(MAP_ADDRESS), .port = MAP_PORT},
           .nickname = std::string(LAUNCH_NICKNAME),
           .game = LAUNCH_GAME}));

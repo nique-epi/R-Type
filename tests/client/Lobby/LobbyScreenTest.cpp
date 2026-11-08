@@ -28,6 +28,7 @@
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenTestConstants.hpp"
+#include "ServerConnectionRequest.hpp"
 #include "SoundConstants.hpp"
 #include "WidgetConstants.hpp"
 
@@ -290,7 +291,7 @@ TEST_F(LobbyAfterGameFixture, BackLeavesForTheTitle) {
 
   ASSERT_FALSE(connection().calls().empty());
   EXPECT_EQ(connection().calls().back().request,
-            ServerConnectionCall::Request::Cancel);
+            ServerConnectionRequest::Cancel);
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
                                         .screen = TITLE_SCREEN}));
@@ -306,7 +307,7 @@ TEST_F(LobbyScreenFixture, EscapeLeavesTheServer) {
 
   ASSERT_FALSE(connection().calls().empty());
   EXPECT_EQ(connection().calls().back().request,
-            ServerConnectionCall::Request::Cancel);
+            ServerConnectionRequest::Cancel);
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
                                         .screen = std::nullopt}));

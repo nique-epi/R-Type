@@ -8,10 +8,11 @@
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
 #include "GameRequest.hpp"
+#include "ServerConnectionRequest.hpp"
 
 void PrintTo(const ServerConnectionCall& call, std::ostream* output) {
   *output << "request " << static_cast<int>(call.request);
-  if (call.request == ServerConnectionCall::Request::Connect) {
+  if (call.request == ServerConnectionRequest::Connect) {
     *output << " to " << call.server.address << " port " << call.server.port
             << " as " << call.nickname << " for game kind "
             << static_cast<int>(call.game.kind) << " number "
@@ -27,7 +28,7 @@ void PrintTo(const ServerConnectionCall& call, std::ostream* output) {
 void RecordingServerConnection::connect(
     const rtype::network::Endpoint& server, std::string_view nickname,
     const rtype::client::GameRequest& request) {
-  calls_.push_back({.request = ServerConnectionCall::Request::Connect,
+  calls_.push_back({.request = ServerConnectionRequest::Connect,
                     .server = server,
                     .nickname = std::string(nickname),
                     .game = request.game,
@@ -35,7 +36,7 @@ void RecordingServerConnection::connect(
 }
 
 void RecordingServerConnection::cancel() {
-  calls_.push_back({.request = ServerConnectionCall::Request::Cancel,
+  calls_.push_back({.request = ServerConnectionRequest::Cancel,
                     .server = {},
                     .nickname = {},
                     .game = rtype::network::ANY_GAME_CHOICE,

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdint>
 #include <optional>
 #include <ostream>
 #include <string>
@@ -12,16 +11,12 @@
 #include "GameRequest.hpp"
 #include "GameRules.hpp"
 #include "IServerConnection.hpp"
+#include "ServerConnectionRequest.hpp"
 
 /** @brief What a screen asked of the connection: to start an attempt, with its
  * server, its nickname, its game and the rules it sends, or to drop it. */
 struct ServerConnectionCall {
-  enum class Request : std::uint8_t {
-    Connect,
-    Cancel,
-  };
-
-  Request request{};
+  ServerConnectionRequest request{};
   rtype::network::Endpoint server;
   std::string nickname;
   rtype::network::GameChoice game{rtype::network::ANY_GAME_CHOICE};
