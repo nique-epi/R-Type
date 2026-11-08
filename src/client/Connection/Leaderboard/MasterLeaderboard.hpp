@@ -41,14 +41,11 @@ class MasterLeaderboard final : public ILeaderboardSource {
   /** @brief Shows the rows of @p leaderboard and the row of its player. */
   void show(const network::GlobalLeaderboard& leaderboard);
 
-  /** @brief Changes the phase, under a new revision, and empties the rows: only
-   * a reading, which fills them after this, shows any. */
-  void become(LeaderboardPhase phase);
-
   IMasterLeaderboardReads* master_;
   std::optional<std::string> player_;
-  std::uint64_t asked_{};
-  bool waiting_ = false;
+  /** @brief The number of the ask whose reading the page waits for; nothing
+   * once it came, or once the screen stopped asking. */
+  std::optional<std::uint64_t> asked_;
   LeaderboardPage page_{.phase = LeaderboardPhase::Asking, .rows = {}};
 };
 

@@ -32,11 +32,8 @@ namespace rtype::client {
  *
  * Building it opens nothing; start() builds the client of the master, which
  * checks its url, and starts the thread, which owns it; stop() ends the thread,
- * a call in progress ended within the timeouts of MasterClient. retarget()
- * names another master while the thread runs, without waiting for it: the
- * thread builds the client of that master before it serves the next ask, and a
- * call in progress ends on the master it began with, its reading answering an
- * older ask. The asks, the master and the readings are safe from both threads.
+ * a call in progress ended within the timeouts of MasterClient. The asks and
+ * the readings are safe from both threads.
  */
 class MasterLink final : public IMasterReads, public IMasterLeaderboardReads {
  public:
@@ -52,10 +49,6 @@ class MasterLink final : public IMasterReads, public IMasterLeaderboardReads {
    * `http://<host>[:<port>]`; the thread does not start then. */
   void start(network::MasterAccess access);
 
-  /** @brief Names the master the thread reads from its next ask on; a url
-   * MasterClient refuses leaves it on the master it had. */
-  void retarget(network::MasterAccess access);
-
   /** @brief Ends the thread, and with it its client. */
   void stop();
 
@@ -69,16 +62,14 @@ class MasterLink final : public IMasterReads, public IMasterLeaderboardReads {
       const override;
 
  private:
-  /** @brief The loop of MasterLink: waits for a newer ask, serves it with
-   * @p client, or with the client of a master retarget() named since. */
+  /** @brief The loop of MasterLink: waits for a newer ask, and serves it with
+   * @p client. */
   void run(const std::stop_token& stop,
            std::unique_ptr<network::MasterClient> client);
 
   MasterAsks asked_;
   concurrency::LatestValue<MasterAsks> asks_;
   MasterReadings readings_;
-  /** @brief The master the thread reads, newest first. */
-  concurrency::LatestValue<network::MasterAccess> access_;
   std::jthread thread_;
 };
 

@@ -42,11 +42,10 @@ void MasterLeaderboard::ask(const network::LeaderboardRequest& request) {
       .playerCount = request.playerCount,
       .player = player_,
       .limit = static_cast<std::int64_t>(network::MAXIMUM_LEADERBOARD_ROWS)});
-  waiting_ = true;
-  become(LeaderboardPhase::Asking);
+  enterPhase(page_, LeaderboardPhase::Asking);
 }
 
-void MasterLeaderboard::stopAsking() noexcept { waiting_ = false; }
+void MasterLeaderboard::stopAsking() noexcept { asked_.reset(); }
 
 const LeaderboardPage& MasterLeaderboard::page() const { return page_; }
 
@@ -57,34 +56,30 @@ void MasterLeaderboard::namePlayer(const std::string& nickname) {
 }
 
 void MasterLeaderboard::update() {
-  const std::optional<GlobalLeaderboardReading> reading =
-      master_->leaderboard();
-  if (!waiting_ || !reading.has_value() || reading->ask != asked_) {
+  if (!asked_.has_value()) {
     return;
   }
-  waiting_ = false;
+  const std::optional<GlobalLeaderboardReading> reading =
+      master_->leaderboard();
+  if (!reading.has_value() || reading->ask != *asked_) {
+    return;
+  }
+  asked_.reset();
   if (reading->leaderboard.has_value()) {
     show(*reading->leaderboard);
   } else {
-    become(LeaderboardPhase::OutOfReach);
+    enterPhase(page_, LeaderboardPhase::OutOfReach);
   }
 }
 
 void MasterLeaderboard::show(const network::GlobalLeaderboard& leaderboard) {
-  become(LeaderboardPhase::Answered);
+  enterPhase(page_, LeaderboardPhase::Answered);
   for (const network::GlobalLeaderboardRow& row : leaderboard.scores) {
     page_.rows.push_back(rowOf(row));
   }
   if (leaderboard.player.has_value()) {
     page_.ownRow = rowOf(*leaderboard.player);
   }
-}
-
-void MasterLeaderboard::become(LeaderboardPhase phase) {
-  page_.rows.clear();
-  page_.ownRow.reset();
-  page_.phase = phase;
-  ++page_.revision;
 }
 
 }  // namespace rtype::client

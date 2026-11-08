@@ -1,4 +1,5 @@
 add_library(rtype_client_connection_leaderboard STATIC
+  LeaderboardPage.cpp
   MasterLeaderboard.cpp
   ServerLeaderboard.cpp
 )

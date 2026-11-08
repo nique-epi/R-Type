@@ -5,6 +5,7 @@
 #include <string_view>
 #include "ConnectionGoal.hpp"
 #include "ConnectionScreenParts.hpp"
+#include "ConnectionStart.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -96,12 +97,10 @@ class ConnectionScreen : public IScreen {
   IServerConnection* connection_{};
   ServerChoice* choice_{};
   ConnectionGoal goal_;
-  /** @brief Whether an attempt writes the server the form remembers: only a
-   * screen started on ConnectionStart::OnConfirm does. */
-  bool remembersServer_{};
-  /** @brief Whether the form shows the ADDRESS and PORT fields: all but a
-   * screen started on ConnectionStart::NicknameOnConfirm do. */
-  bool asksServer_{};
+  /** @brief When the attempt starts, which also decides whether the form
+   * shows the ADDRESS and PORT fields and whether an attempt writes the server
+   * the form remembers. */
+  ConnectionStart start_{};
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   std::string_view fieldProblem_;

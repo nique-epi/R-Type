@@ -45,9 +45,6 @@ class ServerLeaderboard final : public ILeaderboardSource,
  private:
   void receive(const network::LeaderboardAnswer& answer);
   void sendRequest(const network::LeaderboardRequest& request);
-  /** @brief Changes the phase, under a new revision, and empties the rows: only
-   * an answer, which fills them after this, shows any. */
-  void become(LeaderboardPhase phase);
 
   ISessionOutbox* outbox_{nullptr};
   std::optional<network::LeaderboardRequest> asked_;

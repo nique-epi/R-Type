@@ -21,4 +21,8 @@ struct LeaderboardPage {
   std::uint32_t revision{};
 };
 
+/** @brief Puts @p page in @p phase, under a new revision, and empties its rows:
+ * only an answer, which fills them after this, shows any. */
+void enterPhase(LeaderboardPage& page, LeaderboardPhase phase);
+
 }  // namespace rtype::client
