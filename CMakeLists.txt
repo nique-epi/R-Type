@@ -127,6 +127,11 @@ endif()
 # position-independent.
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# cpp-httplib and the OpenSSL it speaks TLS with are found once, for every
+# folder below: a folder that finds them again gets its own copy of their
+# targets, and a program linking two copies lists libssl and libcrypto twice.
+find_package(httplib CONFIG REQUIRED)
+
 add_subdirectory(src)
 
 # The archives and the AppImage hold bin/ and assets/ side by side, the macOS

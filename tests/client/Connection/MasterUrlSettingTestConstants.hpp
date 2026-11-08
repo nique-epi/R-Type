@@ -12,8 +12,12 @@ constexpr std::string_view MASTER_ON_THIS_MACHINE = "http://127.0.0.1:8080";
  * `master-url`. */
 constexpr std::string_view REMOTE_MASTER_URL = "http://203.0.113.5:8080";
 
-/** @brief A master behind TLS, which the client cannot call. */
+/** @brief A master behind TLS, as the deployed master is reached. */
 constexpr std::string_view SECURE_MASTER_URL = "https://master.example.org";
+
+/** @brief A master named with a scheme cpp-httplib does not speak. */
+constexpr std::string_view UNKNOWN_SCHEME_MASTER_URL =
+    "ftp://master.example.org";
 
 /** @brief A master on port 0, which no server listens on. */
 constexpr std::string_view PORT_ZERO_MASTER_URL = "http://127.0.0.1:0";

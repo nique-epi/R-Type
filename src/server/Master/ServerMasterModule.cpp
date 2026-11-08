@@ -105,7 +105,7 @@ void ServerMasterModule::declareSettings(
   urlSetting_ = &configuration.declareText(engine::TextSettingDefinition{
       .name = std::string{MASTER_URL_SETTING_NAME},
       .defaultValue = {},
-      .help = "http://<host>[:<port>] of the master; empty to run alone",
+      .help = "http(s)://<host>[:<port>] of the master; empty to run alone",
       .validate = {}});
   keySetting_ = &configuration.declareText(engine::TextSettingDefinition{
       .name = std::string{MASTER_KEY_SETTING_NAME},

@@ -378,9 +378,8 @@ class MasterRefusedException : public NetworkException {
 };
 
 /**
- * @brief A url of the master the client cannot call: not `http://<host>`,
- * with an optional port. HTTPS is refused too, since cpp-httplib is built
- * without TLS.
+ * @brief A url of the master the client cannot call: not
+ * `http(s)://<host>`, with an optional port from 1 to 65535.
  */
 class InvalidMasterUrlException : public NetworkException {
  public:

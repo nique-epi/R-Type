@@ -44,7 +44,7 @@ class MasterLink final : public IMasterReads {
 
   /** @brief Starts the thread on the master @p access names.
    * @throws network::InvalidMasterUrlException when the url is not
-   * `http://<host>[:<port>]`; the thread does not start then. */
+   * `http(s)://<host>[:<port>]`; the thread does not start then. */
   void start(network::MasterAccess access);
 
   /** @brief Names the master the thread reads from its next ask on; a url

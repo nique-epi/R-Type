@@ -1,5 +1,3 @@
-find_package(httplib CONFIG REQUIRED)
-
 add_library(rtype_client_content_pack_download STATIC ContentPackDownload.cpp)
 
 target_include_directories(rtype_client_content_pack_download PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

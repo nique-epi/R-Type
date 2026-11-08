@@ -8,7 +8,7 @@ namespace rtype::network {
 struct MasterAccess {
   /**
    * @brief Where the master answers, as cpp-httplib reads it:
-   * `http://<host>:<port>`.
+   * `http(s)://<host>[:<port>]`.
    */
   std::string url;
   /**

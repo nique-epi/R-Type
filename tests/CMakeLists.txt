@@ -1,6 +1,5 @@
 find_package(GTest CONFIG REQUIRED)
 find_package(SFML 3 COMPONENTS Graphics Audio CONFIG REQUIRED)
-find_package(httplib CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 
 include(GoogleTest)

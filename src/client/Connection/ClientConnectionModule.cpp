@@ -66,8 +66,8 @@ void ClientConnectionModule::install(engine::InstallContext& context) {
           engine::TextSettingDefinition{
               .name = std::string{MASTER_URL_SETTING_NAME},
               .defaultValue = defaultMasterUrl(),
-              .help =
-                  "http://<host>[:<port>] of the master the server map reads",
+              .help = "http(s)://<host>[:<port>] of the master the server map "
+                      "reads",
               .validate = requireMasterUrl});
   settingsService_ = &context.require<SettingsService>();
   masterChoice_ = std::make_unique<MasterChoice>(

@@ -1,4 +1,3 @@
-find_package(httplib CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 
 add_library(rtype_network_http_server STATIC HttpServer.cpp)

@@ -9,7 +9,7 @@ class IMasterAddress {
  public:
   virtual ~IMasterAddress() = default;
 
-  /** @returns Its url, `http://<host>[:<port>]`. */
+  /** @returns Its url, `http(s)://<host>[:<port>]`. */
   [[nodiscard]] virtual std::string url() const = 0;
 };
 

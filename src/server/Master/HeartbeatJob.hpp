@@ -41,7 +41,7 @@ namespace rtype::server {
 class HeartbeatJob {
  public:
   /** @throws network::InvalidMasterUrlException when the url of @p parts is
-   * not `http://<host>[:<port>]`; MasterLink does not start then. */
+   * not `http(s)://<host>[:<port>]`; MasterLink does not start then. */
   explicit HeartbeatJob(HeartbeatJobParts parts);
 
   HeartbeatJob(const HeartbeatJob&) = delete;
