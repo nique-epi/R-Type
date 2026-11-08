@@ -102,9 +102,9 @@ go_to_infra() {
 
 # Terraform reads TF_VAR_<name> for every command, import included.
 export_terraform_variables() {
-  export TF_VAR_master_domain=$domain
-  export TF_VAR_region=$region
-  export TF_VAR_github_repository=$repository
+  export TF_VAR_master_domain="$domain"
+  export TF_VAR_region="$region"
+  export TF_VAR_github_repository="$repository"
 }
 
 check_accounts() {
