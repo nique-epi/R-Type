@@ -4,6 +4,7 @@ endif()
 
 add_library(rtype_server_master_module STATIC
   HeartbeatJob.cpp
+  LastProblem.cpp
   MasterMessages.cpp
   MasterProbeDesk.cpp
   ServerMasterModule.cpp

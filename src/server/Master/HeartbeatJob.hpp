@@ -3,10 +3,10 @@
 #include <cstdint>
 #include <optional>
 #include <stop_token>
-#include <string>
 #include <thread>
 #include "HeartbeatJobParts.hpp"
 #include "HeartbeatTimes.hpp"
+#include "LastProblem.hpp"
 #include "LatestHostedGames.hpp"
 #include "LatestServerMeasures.hpp"
 #include "LatestValue.hpp"
@@ -51,8 +51,6 @@ class HeartbeatJob {
    * when the master did not answer, or no longer knows the key or the
    * registration. */
   [[nodiscard]] bool sendHeartbeat();
-  /** @brief Writes @p problem in the journal unless it was the last one. */
-  void tell(const std::string& problem);
   /**
    * @returns The newest token of a probe when @p revision, read before it, is
    * above the revision of the last heartbeat sent; nothing otherwise. A token
@@ -71,7 +69,7 @@ class HeartbeatJob {
   const LatestServerMeasures* measures_;
   HeartbeatTimes times_;
   logging::Logger logger_;
-  std::string lastProblem_;
+  LastProblem problems_;
   std::jthread masterLink_;
 };
 
