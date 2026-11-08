@@ -154,7 +154,7 @@ constexpr std::string_view SHIP_SHEET_NAME = "ship";
  * are not vanilla. A test fails when the shipped file changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x9bc19feade051edb;
+constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x03d17e5028bb4b87;
 
 /**
  * @brief The fingerprint of the entity sheets the game ships, as
@@ -162,7 +162,7 @@ constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x9bc19feade051edb;
  * are not vanilla. A test fails when a shipped sheet changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0x9f3ae7bdf1f815e1;
+constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0xe8132fd77ea4dac9;
 
 /**
  * @brief Why the games of a server are not vanilla, as the lines of its journal
@@ -343,6 +343,14 @@ constexpr std::size_t LOWEST_INPUT_DELAY_TICKS = 0;
  */
 constexpr std::size_t HIGHEST_INPUT_DELAY_TICKS =
     engine::SIMULATION_TICKS_PER_SECOND / 2;
+
+/**
+ * @brief Ticks past its delay an input of a player may wait before the server
+ * applies two inputs of that player in one tick to catch up: 100 ms. The
+ * server applies one input of each player per tick, so a player whose inputs
+ * come faster than the ticks would otherwise lag further and further.
+ */
+constexpr std::size_t INPUT_CATCH_UP_TICKS = 6;
 
 static_assert(DEFAULT_INPUT_DELAY_TICKS >= LOWEST_INPUT_DELAY_TICKS &&
                   DEFAULT_INPUT_DELAY_TICKS <= HIGHEST_INPUT_DELAY_TICKS,

@@ -4,13 +4,17 @@
 #include <vector>
 #include "IModule.hpp"
 #include "InstallContext.hpp"
+#include "SettingsService.hpp"
+#include "ShipLookExchange.hpp"
 
 namespace rtype::client {
 
 /**
  * @brief The module of the hangar: install() adds HANGAR_SCREEN to the
  * ScreenRegistry, built with the ship color of the session when a server
- * accepted the player. It opens nothing, so start() and stop() do nothing.
+ * accepted the player, and addWork() puts in the locker, each frame, the items
+ * the server says the player won. It opens nothing, so start() and stop() do
+ * nothing.
  */
 class ClientHangarModule final : public engine::IModule {
  public:
@@ -24,6 +28,10 @@ class ClientHangarModule final : public engine::IModule {
   void install(engine::InstallContext& context) override;
   void start() override;
   void stop() override;
+
+ private:
+  ShipLookExchange* shipLooks_{nullptr};
+  SettingsService* settings_{nullptr};
 };
 
 }  // namespace rtype::client

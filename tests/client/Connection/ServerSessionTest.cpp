@@ -16,6 +16,7 @@
 #include "Disconnection.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityReplicatorTestConstants.hpp"
+#include "Expulsion.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
 #include "GameLoaded.hpp"
 #include "GameStarted.hpp"
@@ -1267,6 +1268,38 @@ TEST_F(ServerSessionFixture, ADisconnectionOfTheServerClosesTheSession) {
   update();
 
   EXPECT_EQ(phase(), ConnectionPhase::Closed);
+}
+
+/**
+ * Given a session the server opened
+ * When the server sends an Expulsion in the session
+ * Then the session ends as expelled
+ */
+TEST_F(ServerSessionFixture, AnExpulsionOfTheServerExpelsTheSession) {
+  accept();
+  deliverInSession(
+      network::Expulsion{.reason = network::ExpulsionReason::ByTheHost},
+      FIRST_SEQUENCE);
+
+  update();
+
+  EXPECT_EQ(phase(), ConnectionPhase::Expelled);
+}
+
+/**
+ * Given a session the server opened
+ * When the server sends an Expulsion of the reason Banned in the session
+ * Then the session ends as banned
+ */
+TEST_F(ServerSessionFixture, ABanOfTheServerBansTheSession) {
+  accept();
+  deliverInSession(
+      network::Expulsion{.reason = network::ExpulsionReason::Banned},
+      FIRST_SEQUENCE);
+
+  update();
+
+  EXPECT_EQ(phase(), ConnectionPhase::Banned);
 }
 
 /**

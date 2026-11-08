@@ -35,6 +35,7 @@
 #include "ServerCompatibility.hpp"
 #include "ServerListPhase.hpp"
 #include "ServerMapChoice.hpp"
+#include "ServerMapLook.hpp"
 #include "ServerMapPainting.hpp"
 #include "ServerMapScreenConstants.hpp"
 #include "ServerMapScreenParts.hpp"
@@ -428,7 +429,9 @@ void ServerMapScreen::repaint() {
       planetPose_ = pose;
     }
     canvas_->plot(planetPixels_);
-    paintServerMap(*canvas_, map_, chosenShown_);
+    paintServerMap(*canvas_, map_,
+                   ServerMapLook{.chosenShown = chosenShown_,
+                                 .turn = planetTurnAfter(elapsed_, motion_)});
     if (map_.stage() == ServerMapStage::Games) {
       panel_.paint(*canvas_);
     }

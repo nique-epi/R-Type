@@ -10,6 +10,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
+#include "RecordingShipLookExchange.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "RecordingWaitingRoom.hpp"
 #include "ShipLook.hpp"
@@ -30,10 +31,11 @@ class LobbyRulesFixture : public ::testing::Test {
   RecordingNavigator navigator_;
   RecordingServerConnection connection_;
   RecordingWaitingRoom waitingRoom_;
+  RecordingShipLookExchange shipLooks_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
   rtype::client::PlayerSettings settings_;
   RecordingChatChannel chat_;
-  rtype::client::ShipLook look_{};
+  rtype::identifiers::ShipLook look_{};
   std::unique_ptr<rtype::client::LobbyScreen> screen_;
 };

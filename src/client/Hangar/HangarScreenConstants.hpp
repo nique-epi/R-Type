@@ -20,6 +20,9 @@ constexpr TextStyle HANGAR_STATUS_STYLE{.font = TextFont::Small,
                                         .color = PAGE_TEXT_COLOR};
 constexpr const char* WEAR_HINT = " - ENTER: WEAR";
 constexpr const char* TAKE_OFF_HINT = " - ENTER: TAKE OFF";
+
+/** @brief The status line of an item the player does not hold yet. */
+constexpr const char* LOCKED_STATUS = "LOCKED: PICK IT UP IN A MISSION";
 constexpr const char* FITTING_HINT = " - FITTING...";
 
 }  // namespace rtype::client

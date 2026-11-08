@@ -11,7 +11,7 @@ Only the server reads the file: the supervisor and each game process, once, when
 
 ## A difficulty, key by key
 
-A difficulty is a table `[difficulty.<name>]` holding eight keys, a ninth, `boss`, when its level ends with a boss, and a tenth, `boss_health_percent`, to make that boss sturdier or frailer:
+A difficulty is a table `[difficulty.<name>]` holding eight keys, a ninth, `boss`, when its level ends with a boss, a tenth, `boss_health_percent`, to make that boss sturdier or frailer, and an eleventh, `look_items`, that may be left out:
 
 ```toml
 [difficulty.normal]
@@ -29,6 +29,7 @@ boss = "bydo_tyrant"
 | Key | Unit | Accepted | What it changes |
 |---|---|---|---|
 | `enemies` | names | a list of 1 to 100 names | the entity sheets the Bydos are made from, in turn (see [Enemies](#enemies)) |
+| `look_items` | names | a list of 0 to 100 names; may be left out | the look items its waves bring, in turn (see [Look items](#look-items)) |
 | `first_wave_bydos` | Bydos | 1 to 100 | how many Bydos the first wave holds |
 | `bydos_added_per_wave` | Bydos | 0 to 100 | how many more each next wave holds |
 | `first_spawn_interval_ms` | milliseconds | 1 to 60000 | the time between two Bydos of the first wave |
@@ -39,7 +40,7 @@ boss = "bydo_tyrant"
 | `boss` | a name | the name of an entity sheet with a `[gameplay.boss]` table; may be left out | the boss that arrives once the last wave is over: the game is then won once it is destroyed and no enemy is left (see [The boss](#the-boss)) |
 | `boss_health_percent` | percent | 1 to 1000; 100 when left out | the health of its boss, in percent of the health its sheet gives once scaled for the players (see [The boss](#the-boss)) |
 
-Every key but `boss` and `boss_health_percent` is required, and any other key is refused, so a misspelt key stops the server instead of being ignored. Every number is a TOML integer: `2500`, never `2500.0` or `"2500"`. The keys and the ranges live in `src/server/Spawning/WaveFileConstants.hpp`; the names are those of the entity sheets.
+Every key but `boss`, `boss_health_percent` and `look_items` is required, and any other key is refused, so a misspelt key stops the server instead of being ignored. Every number is a TOML integer: `2500`, never `2500.0` or `"2500"`. The keys and the ranges live in `src/server/Spawning/WaveFileConstants.hpp`; the names are those of the entity sheets.
 
 ## How the waves grow
 
@@ -68,12 +69,16 @@ The Bydos take the names of the list in turn, and the turn carries on from one w
 ## The boss
 
 `boss` names a sheet that has a `[gameplay.boss]` table (see [Writing an entity sheet](/R-Type/entity-sheets/#gameplay-key-by-key)); the only one shipped is `bydo_tyrant`. On the tick the server finds the last wave over, it warns the players with a `BossStatus` (see [Protocol](/R-Type/protocol/#boss-status)), and the boss appears `BOSS_ARRIVAL_WARNING` (4400 ms) later, off screen past the right edge, on the middle row of the area of play. Its arrival shields it, then it fights. When it appears, its health is the `health.points` of its sheet plus `BOSS_HEALTH_PER_EXTRA_PLAYER` (25 %) for each player connected past the first, then taken at `boss_health_percent`, each step rounded down, and the health it enrages below follows: the Tyrant has 240, 300, 360 and 420 points for one to four players at 100 %, and 312, 390, 468 and 546 in `hard`. The game is won on the first tick after that which finds no enemy in the world: the boss, which never leaves by itself, and the Bydos its volleys brought. How the server runs it is in [Server and game](/R-Type/server/#boss-bossstage-and-bossphasesystem).
+## Look items
+
+A name of `look_items` is the name of an entity sheet of side `look_item` (see [Writing an entity sheet](/R-Type/entity-sheets/)): an item of the locker of the hangar that floats to the left and goes to the pilot whose ship touches it first. From the second wave, one item enters at the middle of the right edge as the wave begins, that is when its pause starts, taking the names in turn. It is not a Bydo: it never holds a wave open, and it draws no number from the random generator, so the Bydos of a seed keep their heights. A difficulty without the key, or with an empty list, brings none. The shipped items are `look_party_hat`, `look_crown`, `look_propeller_cap`, `look_cowboy_hat`, `look_viking_helmet`, `look_wizard_hat` and `look_chef_toque`.
 
 ## The shipped difficulties
 
 | Key | `easy` | `normal` | `hard` |
 |---|---|---|---|
 | `enemies` | `drifter`, `drifter`, `weaver` | `drifter`, `weaver`, `drifter`, `voltjelly`, `weaver`, `reaper` | `weaver`, `drifter`, `reaper`, `weaver`, `drillback`, `voltjelly`, `weaver`, `bydomancer` |
+| `look_items` | `look_crown`, `look_party_hat`, `look_cowboy_hat`, `look_propeller_cap` | the seven shipped items, `look_crown` first | the seven shipped items, `look_crown` first |
 | `first_wave_bydos` | 2 | 3 | 4 |
 | `bydos_added_per_wave` | 1 | 1 | 2 |
 | `first_spawn_interval_ms` | 2500 | 2000 | 1500 |
@@ -118,6 +123,8 @@ A game process reads the whole file, every difficulty included, when it starts, 
 | a value out of its range (`first_wave_bydos = 0`) | `…/waves.toml:38:20: difficulty.normal.first_wave_bydos must be an integer from 1 to 100` |
 | a number that is not an integer (`2000.0`) | `…/waves.toml:40:27: difficulty.normal.first_spawn_interval_ms must be an integer from 1 to 60000` |
 | an empty list of enemies | `…/waves.toml:37:11: difficulty.normal.enemies must be a list of 1 to 100 enemy names` |
+| a look item that is a Bydo (`"weaver"` in `look_items`) | `…/waves.toml:<line>:<column>: difficulty.normal.look_items: unknown look item "weaver"; known: look_chef_toque, look_cowboy_hat, …` |
+| a list of more than 100 look items | `…/waves.toml:<line>:<column>: difficulty.normal.look_items must be a list of 0 to 100 look item names` |
 | an enemy the server has no sheet for (`"bos"`) | `…/waves.toml:37:23: difficulty.normal.enemies: unknown enemy "bos"; known: drifter, weaver` |
 | a sheet that is not of side `enemy` (`"ship"` in `easy`) | `…/waves.toml:30:12: difficulty.easy.enemies: unknown enemy "ship"; known: drifter, weaver` |
 | no `normal` difficulty | `no difficulty normal in the waves file, which describes: easy, hard, medium` |

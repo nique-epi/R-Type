@@ -16,7 +16,9 @@ const EntityAppearance& testAppearance() {
       .idleFrames = {TEST_IDLE_FRAMES.begin(), TEST_IDLE_FRAMES.end()},
       .idleFrameDuration = TEST_FRAME_TIME,
       .actions = {},
-      .enragedIdleFrames = {}};
+      .enragedIdleFrames = {},
+      .deathFrames = {},
+      .deathFramesWithoutFlash = {}};
   return appearance;
 }
 

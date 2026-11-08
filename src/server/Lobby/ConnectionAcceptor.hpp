@@ -14,6 +14,7 @@
 #include "CookieIssuer.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
+#include "LatestBans.hpp"
 #include "LobbyConstants.hpp"
 #include "Logger.hpp"
 #include "NetworkConstants.hpp"
@@ -46,6 +47,8 @@ namespace rtype::server {
  *   ConnectionAccepted again, same number, same session token and same content
  *   pack, once CONNECTION_ACCEPTANCE_REPEAT_INTERVAL passed since
  *   the previous acceptance of that player, and nothing before;
+ * - when a ban the game read last bars the nickname or the address of the
+ *   sender: ConnectionRefused (Banned);
  * - while a game is in progress: ConnectionRefused (GameInProgress);
  * - when MAXIMUM_PLAYERS players are connected: ConnectionRefused (GameFull);
  * - when a player holds a seat under the same nickname, away or not, letters
@@ -112,6 +115,10 @@ class ConnectionAcceptor {
   void accept(ConnectedPlayer& player, engine::Duration now);
   void challenge(const network::Endpoint& sender, engine::Duration now);
   void refuse(const network::Endpoint& sender, network::RefusalReason reason);
+  /** @returns Whether a ban the game read last bars @p nickname or the address
+   * of @p sender now; false without bans. */
+  [[nodiscard]] bool isBanned(const network::Endpoint& sender,
+                              const std::string& nickname) const;
 
   /** @returns A session token drawn at random, never 0. */
   [[nodiscard]] std::uint64_t drawSessionToken();
@@ -123,6 +130,7 @@ class ConnectionAcceptor {
   network::ContentAnnouncement content_;
   network::CookieIssuer cookies_;
   std::random_device random_;
+  const LatestBans* bans_;
   bool gameInProgress_{false};
   logging::Logger logger_;
   RequestReader<network::ConnectionRequest> requests_{

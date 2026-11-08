@@ -32,6 +32,8 @@ void ReadyKeeper::apply(const network::MessageOrigin& origin,
   }
 }
 
+bool ReadyKeeper::acceptsRoomChoices() const { return readyAccepted_(); }
+
 bool ReadyKeeper::everyPlayerIsReady() {
   const ConnectedPlayers players = roster_.connected();
   const auto isPresent = [](const ConnectedPlayer* player) {

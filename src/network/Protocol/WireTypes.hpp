@@ -10,6 +10,7 @@
 #include "ByteWriter.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
+#include "ShipLook.hpp"
 
 namespace rtype::network {
 
@@ -124,6 +125,37 @@ void requireValidDifficulty(std::string_view difficulty);
  * @throws InvalidFieldValueException naming playerNumber when it is not.
  */
 void requireValidPlayerNumber(std::uint8_t playerNumber);
+
+/**
+ * @brief Writes @p look as three bytes: head, eyes, face.
+ * @throws InvalidFieldValueException naming head, eyes or face when a slot
+ * holds a number it may not (see requireValidShipLook()); nothing is written
+ * then.
+ */
+void writeShipLook(ByteWriter& writer, const identifiers::ShipLook& look);
+
+/**
+ * @brief Reads three bytes as a ship look, each checked by
+ * requireValidShipLook().
+ * @throws BufferUnderflowException when fewer than three bytes remain.
+ * @throws InvalidFieldValueException naming head, eyes or face when a byte is
+ * not a number its slot may hold.
+ */
+[[nodiscard]] identifiers::ShipLook readShipLook(ByteReader& reader);
+
+/**
+ * @brief Checks that each slot of @p look holds nothing or an item of that
+ * slot (see identifiers::isLookNumberOf()).
+ * @throws InvalidFieldValueException naming the first slot that does not.
+ */
+void requireValidShipLook(const identifiers::ShipLook& look);
+
+/**
+ * @brief Checks that @p item is the number of an item of the catalog, 1 to
+ * SHIP_LOOK_ITEM_COUNT.
+ * @throws InvalidFieldValueException naming item when it is not.
+ */
+void requireValidLookItem(std::uint8_t item);
 
 /**
  * @brief Checks that a payload was read to its end.

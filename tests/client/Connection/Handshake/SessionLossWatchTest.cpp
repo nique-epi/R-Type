@@ -34,6 +34,30 @@ TEST(SessionLossWatch, TellsAClosedSession) {
 }
 
 /**
+ * Given an accepted session the watch saw
+ * When the status turns Expelled
+ * Then the watch tells the end
+ */
+TEST(SessionLossWatch, TellsAnExpelledSession) {
+  SessionLossWatch watch;
+  ASSERT_FALSE(watch.endsTheSession({.phase = ConnectionPhase::Accepted}));
+
+  EXPECT_TRUE(watch.endsTheSession({.phase = ConnectionPhase::Expelled}));
+}
+
+/**
+ * Given an accepted session the watch saw
+ * When the status turns Banned
+ * Then the watch tells the end
+ */
+TEST(SessionLossWatch, TellsABannedSession) {
+  SessionLossWatch watch;
+  ASSERT_FALSE(watch.endsTheSession({.phase = ConnectionPhase::Accepted}));
+
+  EXPECT_TRUE(watch.endsTheSession({.phase = ConnectionPhase::Banned}));
+}
+
+/**
  * Given an attempt in progress
  * When the attempt gives up as Unreachable
  * Then no session ended: the connection screen says so itself

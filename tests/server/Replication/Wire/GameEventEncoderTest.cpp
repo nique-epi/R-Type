@@ -203,6 +203,39 @@ TEST(GameEventEncoderTest, EncodesADepartureWithItsReason) {
 
 /**
  * Given an encoder
+ * When a player the host expelled is encoded
+ * Then the message is a guaranteed PlayerLeft with the reason Expelled
+ */
+TEST(GameEventEncoderTest, EncodesAnExpulsionWithTheReasonExpelled) {
+  const EventMessage expelled = GameEventEncoder::encode(
+      game::PlayerDeparture{.playerNumber = SECOND_PLAYER_NUMBER,
+                            .cause = game::DepartureCause::Expelled});
+
+  EXPECT_TRUE(expelled.guaranteed);
+  EXPECT_EQ(
+      network::decodeMessage<network::PlayerLeft>(expelled.message.payload),
+      (network::PlayerLeft{.playerNumber = SECOND_PLAYER_NUMBER,
+                           .reason = network::DepartureReason::Expelled}));
+}
+
+/**
+ * Given an encoder
+ * When a player the host banned is encoded
+ * Then the message is a guaranteed PlayerLeft with the reason Banned
+ */
+TEST(GameEventEncoderTest, EncodesABanWithTheReasonBanned) {
+  const EventMessage banned = GameEventEncoder::encode(
+      game::PlayerDeparture{.playerNumber = SECOND_PLAYER_NUMBER,
+                            .cause = game::DepartureCause::Banned});
+
+  EXPECT_TRUE(banned.guaranteed);
+  EXPECT_EQ(network::decodeMessage<network::PlayerLeft>(banned.message.payload),
+            (network::PlayerLeft{.playerNumber = SECOND_PLAYER_NUMBER,
+                                 .reason = network::DepartureReason::Banned}));
+}
+
+/**
+ * Given an encoder
  * When 65537 game events are encoded
  * Then the numbers run 1 to 65535, then 0, then 1
  */

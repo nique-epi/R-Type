@@ -4,6 +4,7 @@
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
+#include "LookItemTouched.hpp"
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
 #include "ShipContact.hpp"
@@ -46,7 +47,8 @@ void CollisionRules::publishIfRuleMatches(TypedEntity striker,
       !components_.has<ViewDelay>(striker.entity);
   const bool enemyMissileHitsPlayer =
       striker.type == EntityType::EnemyMissile &&
-      struck.type == EntityType::Player;
+      struck.type == EntityType::Player &&
+      !components_.has<ViewDelay>(struck.entity);
   const bool playerMissileHitsAnotherPilot =
       striker.type == EntityType::PlayerMissile &&
       struck.type == EntityType::Player &&
@@ -57,9 +59,14 @@ void CollisionRules::publishIfRuleMatches(TypedEntity striker,
     events_.publish(
         MissileHit{.missile = striker.entity, .target = struck.entity});
   } else if (striker.type == EntityType::Player &&
-             struck.type == EntityType::Enemy) {
+             struck.type == EntityType::Enemy &&
+             !components_.has<ViewDelay>(striker.entity)) {
     events_.publish(
         ShipContact{.player = striker.entity, .enemy = struck.entity});
+  } else if (striker.type == EntityType::Player &&
+             struck.type == EntityType::LookItem) {
+    events_.publish(
+        LookItemTouched{.ship = striker.entity, .item = struck.entity});
   }
 }
 

@@ -11,7 +11,7 @@ namespace rtype::client {
 struct FittingRun {
   std::size_t item{};
   engine::Duration started{};
-  ShipLook before;
+  identifiers::ShipLook before;
 };
 
 }  // namespace rtype::client

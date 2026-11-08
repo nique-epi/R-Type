@@ -47,6 +47,7 @@ target_link_libraries(rtype_client_screens_module
   PRIVATE
     rtype_client_asset_loading
     rtype_client_constants
+    rtype_client_sector_map_interfaces
     rtype_client_sprites
     rtype_engine_exceptions
     rtype_network_constants

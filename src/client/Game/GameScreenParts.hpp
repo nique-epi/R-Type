@@ -10,6 +10,7 @@
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
 #include "IServerTicks.hpp"
+#include "IShipLookExchange.hpp"
 #include "ISky.hpp"
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
@@ -46,6 +47,9 @@ struct GameScreenParts {
   /** @brief The waiting room of that session: its players, read when the
    * screen is built. */
   std::reference_wrapper<const IWaitingRoom> waitingRoom;
+  /** @brief The looks of the pilots, which must outlive the screen: their
+   * ships wear them, read at each update. */
+  std::reference_wrapper<const IShipLookExchange> shipLooks;
   /** @brief The sky behind the screens, which must outlive the screen: its
    * stars speed up at the start of the game, and it shakes with the
    * camera. */

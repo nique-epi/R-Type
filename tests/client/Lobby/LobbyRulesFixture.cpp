@@ -32,6 +32,7 @@ void LobbyRulesFixture::open(std::optional<GameRules> rules) {
                        .sounds = sounds_,
                        .connection = connection_,
                        .waitingRoom = waitingRoom_,
+                       .shipLooks = shipLooks_,
                        .playfieldPointAt = samePlayfieldPoint,
                        .keys = settings_.keys,
                        .keyName = nameInTheFile,

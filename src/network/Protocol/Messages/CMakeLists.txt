@@ -8,6 +8,8 @@ add_subdirectory(Disconnection)
 add_subdirectory(EnemyAction)
 add_subdirectory(EntityDestroyed)
 add_subdirectory(EntitySpawned)
+add_subdirectory(Expulsion)
+add_subdirectory(ExpulsionOrder)
 add_subdirectory(GameEnded)
 add_subdirectory(GameEvent)
 add_subdirectory(GameLoaded)
@@ -18,16 +20,19 @@ add_subdirectory(Heartbeat)
 add_subdirectory(LeaderboardAnswer)
 add_subdirectory(LeaderboardRequest)
 add_subdirectory(LobbyState)
+add_subdirectory(LookItemWon)
 add_subdirectory(MasterProbe)
 add_subdirectory(OrderedMessage)
 add_subdirectory(PlayerChatLine)
 add_subdirectory(BossStatus)
 add_subdirectory(PlayerInput)
 add_subdirectory(PlayerLeft)
+add_subdirectory(PlayerLooks)
 add_subdirectory(ReadyState)
 add_subdirectory(RoundTrips)
 add_subdirectory(ServerInformation)
 add_subdirectory(ServerInformationRequest)
+add_subdirectory(ShipLookChoice)
 
 add_library(rtype_network_messages INTERFACE)
 
@@ -44,6 +49,8 @@ target_link_libraries(rtype_network_messages
     rtype_network_enemy_action
     rtype_network_entity_destroyed
     rtype_network_entity_spawned
+    rtype_network_expulsion
+    rtype_network_expulsion_order
     rtype_network_game_ended
     rtype_network_game_event
     rtype_network_game_loaded
@@ -54,13 +61,16 @@ target_link_libraries(rtype_network_messages
     rtype_network_leaderboard_answer
     rtype_network_leaderboard_request
     rtype_network_lobby_state
+    rtype_network_look_item_won
     rtype_network_master_probe
     rtype_network_ordered_message
     rtype_network_player_chat_line
     rtype_network_player_input
     rtype_network_player_left
+    rtype_network_player_looks
     rtype_network_ready_state
     rtype_network_round_trips
     rtype_network_server_information
     rtype_network_server_information_request
+    rtype_network_ship_look_choice
 )

@@ -6,6 +6,7 @@
 #include "ConnectedPlayer.hpp"
 #include "DeparturesFixture.hpp"
 #include "Endpoint.hpp"
+#include "Expulsion.hpp"
 #include "PlayerDeparture.hpp"
 #include "ProtocolConstants.hpp"
 #include "SentDatagrams.hpp"
@@ -152,6 +153,38 @@ TEST_F(DeparturesFixture, RemovesTheShipBeforeAnnouncingTheDeparture) {
   EXPECT_EQ(steps(),
             (std::vector<ClosingStep>{ClosingStep::ShipRemoved,
                                       ClosingStep::DepartureAnnounced}));
+}
+
+/**
+ * Given a player the host expelled, heard from in this tick
+ * When the silent sessions are closed
+ * Then its session closes, and its departure is announced as Expelled
+ */
+TEST_F(DeparturesFixture, ClosesAnExpelledSessionAsExpelled) {
+  const network::Endpoint endpoint = player().endpoint;
+  player().expulsion = network::ExpulsionReason::ByTheHost;
+
+  departures().closeSilentSessions();
+
+  EXPECT_EQ(roster().find(endpoint), nullptr);
+  ASSERT_EQ(announced().size(), 1U);
+  EXPECT_EQ(announced().front().cause, game::DepartureCause::Expelled);
+}
+
+/**
+ * Given a player the host banned, heard from in this tick
+ * When the silent sessions are closed
+ * Then its session closes, and its departure is announced as Banned
+ */
+TEST_F(DeparturesFixture, ClosesABannedSessionAsBanned) {
+  const network::Endpoint endpoint = player().endpoint;
+  player().expulsion = network::ExpulsionReason::Banned;
+
+  departures().closeSilentSessions();
+
+  EXPECT_EQ(roster().find(endpoint), nullptr);
+  ASSERT_EQ(announced().size(), 1U);
+  EXPECT_EQ(announced().front().cause, game::DepartureCause::Banned);
 }
 
 }  // namespace rtype::server

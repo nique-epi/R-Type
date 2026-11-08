@@ -6,6 +6,7 @@
 #include "IChatChannel.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerConnection.hpp"
+#include "IShipLookExchange.hpp"
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
 #include "KeyBindings.hpp"
@@ -39,6 +40,9 @@ struct LobbyScreenParts {
   std::reference_wrapper<IServerConnection> connection;
   /** @brief The room the screen reads and drives, which must outlive it. */
   std::reference_wrapper<IWaitingRoom> waitingRoom;
+  /** @brief Where the screen sends the look of the player and reads the look
+   * of every pilot, which must outlive it. */
+  std::reference_wrapper<IShipLookExchange> shipLooks;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
   /** @brief The keys the player chose, read when the screen is built: READY
@@ -53,7 +57,7 @@ struct LobbyScreenParts {
   /** @brief What the ship of the local player wears, read from the settings
    * at each frame, since the hangar pushed over the room changes it; it must
    * outlive the screen. */
-  std::reference_wrapper<const ShipLook> look;
+  std::reference_wrapper<const identifiers::ShipLook> look;
   /** @brief Whether the ships and the beacons may move. */
   MotionPreference motion{};
   /** @brief Where BACK leads: the connection screen below, or the title. */

@@ -21,6 +21,14 @@
 
 namespace rtype::client {
 
+using identifiers::lookIndexOf;
+using identifiers::lookNumberOf;
+using identifiers::NO_SHIP_LOOK_ITEM;
+using identifiers::SHIP_LOOK_ITEM_COUNT;
+using identifiers::SHIP_LOOK_ITEM_SLOTS;
+using identifiers::ShipLook;
+using identifiers::ShipLookSlot;
+
 namespace {
 
 /** @returns The slot of @p look that @p slot names. */

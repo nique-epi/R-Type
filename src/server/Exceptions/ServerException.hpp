@@ -70,6 +70,27 @@ class UnknownBossException : public ServerException {
                        const std::vector<std::string>& known);
 };
 
+/**
+ * @brief The look items of a difficulty are not a list of names, or hold more
+ * names than @p length allows.
+ */
+class InvalidLookItemListException : public ServerException {
+ public:
+  InvalidLookItemListException(const engine::DataFilePlace& place,
+                               engine::WholeNumberRange length);
+};
+
+/**
+ * @brief The look items of a difficulty name a sheet that is no look item.
+ */
+class UnknownLookItemException : public ServerException {
+ public:
+  /** @param known The names of the sheets of side look_item, in the message. */
+  UnknownLookItemException(const engine::DataFilePlace& place,
+                           const std::string& item,
+                           const std::vector<std::string>& known);
+};
+
 /** @brief The waves file describes no difficulty of the name asked for. */
 class UnknownDifficultyException : public ServerException {
  public:

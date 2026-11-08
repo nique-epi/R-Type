@@ -51,6 +51,19 @@ std::vector<std::reference_wrapper<const game::EntitySheet>> enemySheetsOf(
   return sheets;
 }
 
+/** @returns The sheets of @p types the look items of @p waves name, in their
+ * order; none when @p waves names none.
+ * @throws game::UnknownEntityTypeException for a name of no sheet. */
+std::vector<std::reference_wrapper<const game::EntitySheet>> lookItemSheetsOf(
+    const WavePlan& waves, const game::EntitySheets& types) {
+  std::vector<std::reference_wrapper<const game::EntitySheet>> sheets;
+  sheets.reserve(waves.lookItems.size());
+  for (const std::string& name : waves.lookItems) {
+    sheets.emplace_back(types.named(name));
+  }
+  return sheets;
+}
+
 }  // namespace
 
 WaveSpawner::WaveSpawner(WaveSpawnerParts parts)
@@ -60,6 +73,7 @@ WaveSpawner::WaveSpawner(WaveSpawnerParts parts)
       logger_(std::string{WAVE_SPAWNER_LOGGER_NAME}),
       random_(parts.seed),
       enemies_(enemySheetsOf(parts.waves, parts.types.get())),
+      lookItems_(lookItemSheetsOf(parts.waves, parts.types.get())),
       waveDirector_(parts.waves.curve) {
   logger_.info("wave spawning starts from the seed ", parts.seed);
 }
@@ -69,6 +83,9 @@ void WaveSpawner::onTick() {
       waveDirector_.advance(engine::SIMULATION_TICK_DURATION, enemiesInPlay());
   if (waveDirector_.waveNumber() != loggedWaveNumber_) {
     logCurrentWave();
+    if (waveDirector_.waveNumber() >= SECOND_WAVE && !lookItems_.empty()) {
+      spawnLookItem();
+    }
   }
   for (std::size_t enemy = 0; enemy < enemiesDue; ++enemy) {
     spawnOne();
@@ -82,11 +99,24 @@ bool WaveSpawner::lastWaveFinished() const {
 void WaveSpawner::spawnOne() {
   const game::Position position = nextPosition();
   const game::EntitySheet& sheet = nextEnemy();
-  const std::optional<std::uint32_t> networkId = createEnemy(sheet, position);
+  const std::optional<std::uint32_t> networkId = createEntity(sheet, position);
   if (!networkId.has_value()) {
     return;
   }
   ++spawnedCount_;
+  announce(sheet, *networkId, position);
+}
+
+void WaveSpawner::spawnLookItem() {
+  const game::EntitySheet& sheet =
+      lookItems_[lookItemsSpawned_ % lookItems_.size()];
+  const game::Position position =
+      game::waveEntryPosition(LOOK_ITEM_ENTRY_HEIGHT);
+  const std::optional<std::uint32_t> networkId = createEntity(sheet, position);
+  if (!networkId.has_value()) {
+    return;
+  }
+  ++lookItemsSpawned_;
   announce(sheet, *networkId, position);
 }
 
@@ -100,12 +130,12 @@ const game::EntitySheet& WaveSpawner::nextEnemy() const {
   return enemies_[spawnedCount_ % enemies_.size()];
 }
 
-std::optional<std::uint32_t> WaveSpawner::createEnemy(
+std::optional<std::uint32_t> WaveSpawner::createEntity(
     const game::EntitySheet& sheet, game::Position position) {
   try {
     return world_->spawn(sheet, position);
   } catch (const engine::NetworkIdExhaustedException&) {
-    logger_.warn("no enemy appears: every network id was given");
+    logger_.warn("nothing appears: every network id was given");
     return std::nullopt;
   }
 }

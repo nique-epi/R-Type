@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include "BanBook.hpp"
 #include "ConnectionRequest.hpp"
 #include "CookieIssuer.hpp"
 #include "GameRegistry.hpp"
@@ -38,7 +39,9 @@ namespace rtype::server {
  * it sends to a game, or makes wait for one, the player whose request opened a
  * game included, so a burst of requests fills a game and opens the next
  * instead of sending a fifth player to a game of four. A request of another
- * protocol version is refused as the games refuse it.
+ * protocol version is refused as the games refuse it. A valid request whose
+ * nickname or address a ban of the BanBook bars is refused Banned: after the
+ * cookie, so a forged address cannot learn what the bans hold.
  *
  * Its work is in the simulation stage, after the supervised games module's.
  */
@@ -49,7 +52,7 @@ class ServerSupervisorLobbyModule final : public engine::IModule {
 
   /**
    * @throws MissingServiceException when no module provided the registry, the
-   * spawner, the sender or the datagrams of the tick.
+   * spawner, the sender, the datagrams of the tick or the bans.
    */
   void install(engine::InstallContext& context) override;
 
@@ -70,6 +73,7 @@ class ServerSupervisorLobbyModule final : public engine::IModule {
   GameSpawner* spawner_{nullptr};
   IDatagramSender* sender_{nullptr};
   TickDatagrams* tickDatagrams_{nullptr};
+  const BanBook* bans_{nullptr};
 };
 
 }  // namespace rtype::server

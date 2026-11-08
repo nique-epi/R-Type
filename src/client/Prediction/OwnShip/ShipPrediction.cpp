@@ -25,16 +25,26 @@ game::MovingShip oneTickLater(game::MovingShip ship, game::HeldChange change) {
 
 }  // namespace
 
-void ShipPrediction::restart(game::Position start) {
+void ShipPrediction::restart(game::Position start, std::uint32_t acknowledged) {
   started_ = true;
   current_ = game::MovingShip{.position = start, .motion = {}};
-  lastHeld_ = {};
-  pending_.clear();
+  dropBefore(acknowledged + 1);
+  if (pending_.empty()) {
+    lastHeld_ = {};
+    return;
+  }
+  replayFrom(0, current_);
+  lastHeld_ = pending_.back().held;
 }
 
 void ShipPrediction::predict(game::ShipDirections held,
                              std::uint32_t inputNumber) {
   if (!started_) {
+    if (pending_.size() == KEPT_COMMANDS_BEFORE_A_SHIP) {
+      pending_.pop_front();
+    }
+    pending_.push_back(
+        PendingCommand{.inputNumber = inputNumber, .held = held, .after = {}});
     return;
   }
   current_ =
@@ -75,9 +85,14 @@ void ShipPrediction::dropBefore(std::uint32_t inputNumber) {
 
 void ShipPrediction::replayAfterFront(game::MovingShip restart) {
   pending_.front().after = restart;
-  game::MovingShip replayed = restart;
-  game::ShipDirections before = pending_.front().held;
-  for (std::size_t index = 1; index < pending_.size(); ++index) {
+  replayFrom(1, restart);
+}
+
+void ShipPrediction::replayFrom(std::size_t first, game::MovingShip from) {
+  game::MovingShip replayed = from;
+  game::ShipDirections before =
+      first > 0 ? pending_[first - 1].held : pending_[first].held;
+  for (std::size_t index = first; index < pending_.size(); ++index) {
     PendingCommand& command = pending_[index];
     replayed = oneTickLater(
         replayed, game::HeldChange{.before = before,

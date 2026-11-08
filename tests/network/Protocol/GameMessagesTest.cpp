@@ -705,27 +705,32 @@ TEST(PlayerLeft, EncodesTheNumberThenTheReason) {
 }
 
 /**
- * Given the reasons 1 and 2
+ * Given the reasons 1, 2, 3 and 4
  * When each payload is decoded
- * Then they give Left and TimedOut
+ * Then they give Left, TimedOut, Expelled and Banned
  */
-TEST(PlayerLeft, DecodesBothReasonsOfTheProtocolPage) {
+TEST(PlayerLeft, DecodesTheFourReasonsOfTheProtocolPage) {
   const auto left = byteSequence({0x01, 0x01});
   const auto timedOut = byteSequence({0x01, 0x02});
+  const auto expelled = byteSequence({0x01, 0x03});
+  const auto banned = byteSequence({0x01, 0x04});
 
   EXPECT_EQ(decodeMessage<PlayerLeft>(left).reason, DepartureReason::Left);
   EXPECT_EQ(decodeMessage<PlayerLeft>(timedOut).reason,
             DepartureReason::TimedOut);
+  EXPECT_EQ(decodeMessage<PlayerLeft>(expelled).reason,
+            DepartureReason::Expelled);
+  EXPECT_EQ(decodeMessage<PlayerLeft>(banned).reason, DepartureReason::Banned);
 }
 
 /**
- * Given the reasons 0 and 3, just outside the reasons of the protocol page
+ * Given the reasons 0 and 5, just outside the reasons of the protocol page
  * When each payload is decoded
  * Then each is refused
  */
 TEST(PlayerLeft, RefusesToReadAReasonOutsideTheList) {
   const auto belowTheFirst = byteSequence({0x01, 0x00});
-  const auto aboveTheLast = byteSequence({0x01, 0x03});
+  const auto aboveTheLast = byteSequence({0x01, 0x05});
 
   EXPECT_THROW((void)decodeMessage<PlayerLeft>(belowTheFirst),
                InvalidFieldValueException);

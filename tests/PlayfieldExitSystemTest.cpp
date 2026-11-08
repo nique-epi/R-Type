@@ -45,6 +45,23 @@ TEST_F(PlayfieldExitSystemFixture, RemovesAnEnemyPastTheLeftEdge) {
 }
 
 /**
+ * Given a look item 65 units past the left edge
+ * When the system runs
+ * Then the item is gone and its removal was announced under its network id
+ */
+TEST_F(PlayfieldExitSystemFixture, ALookItemPastTheLeftMarginIsRemoved) {
+  const Entity item = add(EntityType::LookItem, JUST_PAST_THE_MARGIN_X);
+
+  updateAndDispatch();
+
+  EXPECT_FALSE(entities().isAlive(item));
+  ASSERT_EQ(received().size(), 1U);
+  EXPECT_EQ(received().front(),
+            (EntityDestruction{.networkId = EXITING_NETWORK_ID,
+                               .cause = DestructionCause::Removed}));
+}
+
+/**
  * Given an enemy exactly 64 units past the left edge
  * When the system runs
  * Then it is still in the world and nothing was announced

@@ -7,6 +7,7 @@
 #include "KeyBindings.hpp"
 #include "PixelSize.hpp"
 #include "SettingsConstants.hpp"
+#include "ShipLocker.hpp"
 #include "ShipLook.hpp"
 
 namespace rtype::client {
@@ -28,6 +29,7 @@ namespace rtype::client {
  * line shows while the chat is closed. chatBackground: the opacity of the
  * layer under the open chat, in percent.
  * shipLook wears nothing: the player dresses the ship in the hangar.
+ * shipLocker holds the starter kit: the other items are won in a game.
  */
 struct PlayerSettings {
   int musicVolume = DEFAULT_MUSIC_VOLUME;
@@ -51,7 +53,8 @@ struct PlayerSettings {
   /** @brief The master the player chose on the server map; nothing lets the
    * master-url setting choose. */
   std::optional<network::Endpoint> master = std::nullopt;
-  ShipLook shipLook;
+  identifiers::ShipLook shipLook;
+  ShipLocker shipLocker;
 
   bool operator==(const PlayerSettings& other) const = default;
 };

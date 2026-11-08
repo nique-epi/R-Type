@@ -49,6 +49,21 @@ TEST_F(MessageDeliveryFixture, GuaranteesAMessageToEveryPlayerAtOnce) {
 }
 
 /**
+ * Given two players
+ * When a message is guaranteed to the first one alone
+ * Then the first player gets it at once, in a datagram that says it holds
+ * guaranteed messages, and the second gets nothing
+ */
+TEST_F(MessageDeliveryFixture, GuaranteeToPlayerSendsToThatPlayerAlone) {
+  guaranteeToOne(FIRST_PLAYER, playerLeftMessage());
+
+  ASSERT_EQ(sentTo(FIRST_PLAYER).size(), 1U);
+  EXPECT_EQ(headerOf(sentTo(FIRST_PLAYER).front()).flags,
+            PROTOCOL_GUARANTEED_FLAG);
+  EXPECT_TRUE(sentTo(SECOND_PLAYER).empty());
+}
+
+/**
  * Given a message guaranteed to two players who acknowledge nothing
  * When one tick less than TICKS_BEFORE_A_RESEND ends
  * Then it was not sent again

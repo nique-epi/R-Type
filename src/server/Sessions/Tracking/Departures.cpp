@@ -8,6 +8,7 @@
 #include "ConnectedPlayers.hpp"
 #include "Endpoint.hpp"
 #include "EventBus.hpp"
+#include "Expulsion.hpp"
 #include "Logger.hpp"
 #include "PlayerDeparture.hpp"
 #include "PlayerRoster.hpp"
@@ -15,6 +16,22 @@
 #include "SessionConstants.hpp"
 
 namespace rtype::server {
+
+namespace {
+
+/** @returns The cause a player leaves with when the host expelled it for
+ * @p reason. */
+game::DepartureCause causeOf(network::ExpulsionReason reason) {
+  switch (reason) {
+    case network::ExpulsionReason::Banned:
+      return game::DepartureCause::Banned;
+    case network::ExpulsionReason::ByTheHost:
+      break;
+  }
+  return game::DepartureCause::Expelled;
+}
+
+}  // namespace
 
 Departures::Departures(PlayerRoster& roster, engine::EventBus& events,
                        std::function<void(const ConnectedPlayer&)> onClosing)
@@ -35,6 +52,9 @@ void Departures::close(const network::Endpoint& player,
 }
 
 void Departures::closeSilentSessions() {
+  for (const auto& [player, cause] : expelledPlayers()) {
+    close(player, cause);
+  }
   for (const network::Endpoint& player : countSilentTicks()) {
     close(player, game::DepartureCause::TimedOut);
   }
@@ -42,6 +62,17 @@ void Departures::closeSilentSessions() {
 
 std::vector<ConnectedPlayer> Departures::takeDeparted() {
   return std::exchange(departed_, {});
+}
+
+std::vector<std::pair<network::Endpoint, game::DepartureCause>>
+Departures::expelledPlayers() {
+  std::vector<std::pair<network::Endpoint, game::DepartureCause>> expelled;
+  for (const ConnectedPlayer* const player : roster_.connected()) {
+    if (player->expulsion.has_value()) {
+      expelled.emplace_back(player->endpoint, causeOf(*player->expulsion));
+    }
+  }
+  return expelled;
 }
 
 std::vector<network::Endpoint> Departures::countSilentTicks() {
@@ -80,10 +111,21 @@ void Departures::announce(const ConnectedPlayer& player,
 void Departures::logDeparture(const ConnectedPlayer& player,
                               game::DepartureCause cause) const {
   const auto playerNumber = static_cast<unsigned int>(player.playerNumber);
-  if (cause == game::DepartureCause::Left) {
-    logger_.info("player ", playerNumber, " left from ",
-                 player.endpoint.address, " port ", player.endpoint.port);
-    return;
+  switch (cause) {
+    case game::DepartureCause::Left:
+      logger_.info("player ", playerNumber, " left from ",
+                   player.endpoint.address, " port ", player.endpoint.port);
+      return;
+    case game::DepartureCause::Expelled:
+      logger_.info("player ", playerNumber, " expelled by the host from ",
+                   player.endpoint.address, " port ", player.endpoint.port);
+      return;
+    case game::DepartureCause::Banned:
+      logger_.info("player ", playerNumber, " banned by the host from ",
+                   player.endpoint.address, " port ", player.endpoint.port);
+      return;
+    case game::DepartureCause::TimedOut:
+      break;
   }
   logger_.info("player ", playerNumber, " timed out: nothing received from ",
                player.endpoint.address, " port ", player.endpoint.port, " for ",

@@ -13,6 +13,7 @@
 #include "ConnectionStatus.hpp"
 #include "Disconnection.hpp"
 #include "Endpoint.hpp"
+#include "Expulsion.hpp"
 #include "GameRequest.hpp"
 #include "HandshakeAnswersParts.hpp"
 #include "ISessionOutbox.hpp"
@@ -35,6 +36,30 @@ namespace {
 bool holdsASession(ConnectionPhase phase) {
   return phase == ConnectionPhase::Accepted ||
          phase == ConnectionPhase::LoadingContent;
+}
+
+/** @returns How the journal says that the server ended the session of
+ * @p ending, or nullptr when the server did not end it itself. */
+const char* serverEndingWordsOf(ConnectionPhase ending) {
+  switch (ending) {
+    case ConnectionPhase::Closed:
+      return "closed by ";
+    case ConnectionPhase::Expelled:
+      return "expelled by ";
+    case ConnectionPhase::Banned:
+      return "banned by ";
+    case ConnectionPhase::Idle:
+    case ConnectionPhase::Connecting:
+    case ConnectionPhase::Accepted:
+    case ConnectionPhase::Refused:
+    case ConnectionPhase::Unreachable:
+    case ConnectionPhase::Lost:
+    case ConnectionPhase::LoadingContent:
+    case ConnectionPhase::ContentDownloadFailed:
+    case ConnectionPhase::ContentRefused:
+      break;
+  }
+  return nullptr;
 }
 
 /** @returns The status of an attempt the server of @p serverVersion refuses,
@@ -75,6 +100,15 @@ ServerSession::ServerSession(ServerSessionParts parts)
       [this](const network::MessageOrigin&, const network::Disconnection&) {
         if (holdsASession(status_.phase)) {
           giveUp(ConnectionPhase::Closed);
+        }
+      });
+  dispatcher_->registerHandler<network::Expulsion>(
+      [this](const network::MessageOrigin&,
+             const network::Expulsion& expulsion) {
+        if (holdsASession(status_.phase)) {
+          giveUp(expulsion.reason == network::ExpulsionReason::Banned
+                     ? ConnectionPhase::Banned
+                     : ConnectionPhase::Expelled);
         }
       });
 }
@@ -160,8 +194,8 @@ void ServerSession::readReceived() {
 void ServerSession::giveUp(ConnectionPhase ending) {
   status_ = {.phase = ending};
   forgetSession();
-  if (ending == ConnectionPhase::Closed) {
-    logger_.warn("closed by ", outbox_.server().address, " port ",
+  if (const char* const words = serverEndingWordsOf(ending)) {
+    logger_.warn(words, outbox_.server().address, " port ",
                  outbox_.server().port);
     return;
   }

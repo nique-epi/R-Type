@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include "ConnectedPlayer.hpp"
 #include "EncodedMessage.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
@@ -16,6 +17,18 @@ namespace rtype::server {
  */
 void sendToEveryPlayer(
     PlayerRoster& roster,
+    const std::function<void(network::OutgoingDatagram)>& send,
+    const network::EncodedMessage& message);
+
+/**
+ * @brief Gives @p message to @p player alone as a guaranteed message, then
+ * sends it its guaranteed messages due, @p message among them, at once.
+ * @param send Called for each datagram to send; must not be empty.
+ * @throws DatagramTooLargeException when @p message does not fit a datagram
+ * alone; the player does not get it then.
+ */
+void guaranteeToPlayer(
+    ConnectedPlayer& player,
     const std::function<void(network::OutgoingDatagram)>& send,
     const network::EncodedMessage& message);
 

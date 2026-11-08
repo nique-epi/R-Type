@@ -1,5 +1,6 @@
 add_library(rtype_client_pilots STATIC
   FinalRanking.cpp
+  PilotDeparture.cpp
   ScoreBoard.cpp
 )
 

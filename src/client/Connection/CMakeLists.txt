@@ -52,6 +52,7 @@ target_link_libraries(rtype_client_connection_module
     rtype_network_connection_refused
     rtype_network_constants
     rtype_network_disconnection
+    rtype_network_expulsion
 )
 
 rtype_enable_warnings(rtype_client_connection_module)

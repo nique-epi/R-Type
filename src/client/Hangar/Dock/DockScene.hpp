@@ -22,7 +22,7 @@ namespace rtype::client {
 struct DockScene {
   std::reference_wrapper<const PlayerPalette> palette;
   int shipColor{};
-  ShipLook worn;
+  identifiers::ShipLook worn;
   std::optional<FittingRun> fitting;
   engine::Duration elapsed{};
   MotionPreference motion{};

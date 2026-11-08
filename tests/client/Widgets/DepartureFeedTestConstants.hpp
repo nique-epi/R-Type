@@ -20,6 +20,8 @@ constexpr std::string_view LONG_NAME = "CAPTAIN_STARDUST";
 constexpr std::string_view LONG_NAME_CUT = "CAPTAIN_ST";
 constexpr std::string_view FEED_LEFT_WORDS = "LEFT THE GAME";
 constexpr std::string_view FEED_LOST_WORDS = "SIGNAL LOST";
+constexpr std::string_view FEED_EXPELLED_WORDS = "WAS EXPELLED";
+constexpr std::string_view FEED_BANNED_WORDS = "WAS BANNED";
 constexpr std::size_t MOST_LINES = 3;
 constexpr rtype::engine::Duration LINE_TIME = std::chrono::seconds(5);
 

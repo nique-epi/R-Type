@@ -4,10 +4,10 @@
 #include <utility>
 #include <vector>
 #include "ExitedGame.hpp"
+#include "GameOrders.hpp"
 #include "GameRegistry.hpp"
 #include "IDatagramSender.hpp"
 #include "ModuleConstants.hpp"
-#include "StopOrder.hpp"
 #include "StopPause.hpp"
 #include "SupervisedGame.hpp"
 #include "SupervisedGamesConstants.hpp"

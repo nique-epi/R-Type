@@ -56,6 +56,8 @@ constexpr const char* YES_LABEL = "YES";
 constexpr const char* CONNECTION_LOST_HEADING = "CONNECTION LOST";
 constexpr const char* SILENT_SERVER_MESSAGE = "THE SERVER STOPPED ANSWERING.";
 constexpr const char* CLOSED_SERVER_MESSAGE = "THE SERVER SHUT DOWN.";
+constexpr const char* EXPELLED_MESSAGE = "THE HOST EXPELLED YOU.";
+constexpr const char* BANNED_MESSAGE = "THE HOST BANNED YOU.";
 constexpr const char* RETRY_LABEL = "RETRY";
 constexpr const char* OK_LABEL = "OK";
 

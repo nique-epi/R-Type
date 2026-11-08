@@ -20,6 +20,7 @@
 #include "PacketHeader.hpp"
 #include "PlayerRoster.hpp"
 #include "ReadyKeeper.hpp"
+#include "ShipLookChoice.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
@@ -85,9 +86,10 @@ class GameSessions {
    */
   void readDatagrams(std::span<const network::IncomingDatagram> datagrams);
 
-  /** @brief Closes the session of every player not heard from for
-   * SESSION_TIMEOUT_TICKS ticks, and counts one more tick of silence for each
-   * player it does not close. */
+  /** @brief Closes the session of every player the host expelled and of every
+   * player not heard from for SESSION_CLOSING_TICKS ticks, and counts one more
+   * tick of silence for each player it does not close (see
+   * Departures::closeSilentSessions()). */
   void closeSilentSessions();
 
   /** @returns Whether at least one player is connected and every connected
@@ -126,10 +128,11 @@ class GameSessions {
   void registerSessionHandlers();
 
   /** @brief Tells the dispatcher what handles each request of a player, a
-   * LeaderboardRequest or a ChatLine, which goes to its part with the player
-   * who sent it. A datagram may hold a Disconnection before a request, which
-   * frees the seat: the request of an address with no seat any more goes
-   * nowhere. */
+   * LeaderboardRequest, a ChatLine or a ShipLookChoice, which goes to its part
+   * with the player who sent it; a ShipLookChoice only while the game takes
+   * the choices of the waiting room. A datagram may hold a Disconnection before
+   * a request, which frees the seat: the request of an address with no seat any
+   * more goes nowhere. */
   void registerRequestHandlers();
 
   std::function<void(network::OutgoingDatagram)> send_;
@@ -145,6 +148,8 @@ class GameSessions {
       onLeaderboardRequest_;
   std::function<void(const ConnectedPlayer&, const network::ChatLine&)>
       onChatLine_;
+  std::function<void(ConnectedPlayer&, const network::ShipLookChoice&)>
+      onShipLookChoice_;
   network::MessageDispatcher dispatcher_;
 };
 

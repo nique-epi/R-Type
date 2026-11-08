@@ -8,6 +8,7 @@ import {
   placeOf,
   reachOf,
   ringLabelLeft,
+  ringPoints,
   spreadOf,
   toMapPixels,
   viewOn,
@@ -99,5 +100,19 @@ describe('ringLabelLeft', () => {
     }).x;
 
     expect(ringLabelLeft(25, WHOLE_VIEW) ?? 0).toBeGreaterThan(planetEdge);
+  });
+});
+
+describe('ringPoints', () => {
+  it('writes every coordinate to hundredths of a pixel at most, so the page hydrates as it was rendered', () => {
+    const coordinates = ringPoints(75, WHOLE_VIEW)
+      .split(/[ ,]/)
+      .map(coordinate => coordinate.split('.')[1]?.length ?? 0);
+
+    expect(Math.max(...coordinates)).toBeLessThanOrEqual(2);
+  });
+
+  it('draws one point every three degrees from the top to the bottom of the map', () => {
+    expect(ringPoints(25, WHOLE_VIEW).split(' ')).toHaveLength(61);
   });
 });

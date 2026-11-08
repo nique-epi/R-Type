@@ -22,7 +22,9 @@ EntityAppearance appearanceWithAStrike() {
           .playback = Playback::Hold,
           .returnsToIdle = true,
           .anchor = STRIKE_ANCHOR}},
-      .enragedIdleFrames = {}};
+      .enragedIdleFrames = {},
+      .deathFrames = {},
+      .deathFramesWithoutFlash = {}};
 }
 
 EntityAppearance appearanceWithARage() {

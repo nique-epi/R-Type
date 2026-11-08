@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <chrono>
 #include <cstddef>
@@ -41,6 +42,15 @@ constexpr std::chrono::milliseconds ONE_FRAME{16};
  * and the line of its bubble that tells how to open it. */
 constexpr sf::Vector2i HANGAR_STAR_ON_THE_MAP{84, 64};
 constexpr std::string_view HANGAR_STAR_HINT_LINE = "CLICK OR G: OPEN";
+
+/** @brief The house the hangar star is drawn as, 9 pixels at top 47 of the
+ * sheet of the map, and where it lands: centered on (84, 64), from (80, 60). */
+constexpr std::string_view MAP_SHEET = "sprites/sector_map.png";
+constexpr sf::IntRect HANGAR_HOUSE_SOURCE{{0, 47}, {9, 9}};
+constexpr sf::Vector2i HANGAR_HOUSE_ON_THE_MAP{80, 60};
+
+/** @brief One frame of the turn of a planet. */
+constexpr std::chrono::milliseconds ONE_PLANET_TURN_FRAME{150};
 constexpr std::chrono::seconds REFRESH_INTERVAL{15};
 constexpr std::chrono::seconds SHORT_OF_THE_REFRESH{14};
 

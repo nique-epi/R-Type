@@ -35,6 +35,11 @@ void MessageDeliveryFixture::guarantee(const network::EncodedMessage& message) {
   guaranteeToEveryPlayer(roster_, send_, message);
 }
 
+void MessageDeliveryFixture::guaranteeToOne(
+    std::size_t index, const network::EncodedMessage& message) {
+  guaranteeToPlayer(*roster_.find(playerEndpoint(index)), send_, message);
+}
+
 void MessageDeliveryFixture::endTicks(std::size_t count) {
   for (std::size_t tick = 0; tick < count; ++tick) {
     ageGuaranteedMessages(roster_, engine::SIMULATION_TICK_DURATION);

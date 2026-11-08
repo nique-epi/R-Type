@@ -15,6 +15,7 @@
 #include "WidgetConstants.hpp"
 #include "WidgetText.hpp"
 
+using rtype::client::BANNED_MESSAGE;
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::CLOSED_SERVER_MESSAGE;
 using rtype::client::CONNECTION_AGAIN_SCREEN;
@@ -22,6 +23,7 @@ using rtype::client::CONNECTION_LOST_HEADING;
 using rtype::client::ConnectionPhase;
 using rtype::client::DIALOG_MESSAGE_OFFSET;
 using rtype::client::DIALOG_SIZE;
+using rtype::client::EXPELLED_MESSAGE;
 using rtype::client::regularTextWidth;
 using rtype::client::SERVER_MAP_SCREEN;
 using rtype::client::SIDES_PER_AXIS;
@@ -115,7 +117,31 @@ TEST_F(DialogMenusFixture, AClosedServerShutDown) {
 }
 
 /**
- * Given either reason of the connection lost dialog
+ * Given the dialog of a session the host expelled
+ * When it opens
+ * Then it says the connection is lost and the host expelled the player
+ */
+TEST_F(DialogMenusFixture, AnExpelledPilotIsToldTheHostExpelledIt) {
+  openConnectionLost(ConnectionPhase::Expelled);
+
+  EXPECT_NE(writingOf(canvas(), CONNECTION_LOST_HEADING), nullptr);
+  EXPECT_NE(writingOf(canvas(), "THE HOST EXPELLED YOU."), nullptr);
+}
+
+/**
+ * Given the dialog of a session the host banned
+ * When it opens
+ * Then it says the connection is lost and the host banned the player
+ */
+TEST_F(DialogMenusFixture, ABannedPilotIsToldTheHostBannedIt) {
+  openConnectionLost(ConnectionPhase::Banned);
+
+  EXPECT_NE(writingOf(canvas(), CONNECTION_LOST_HEADING), nullptr);
+  EXPECT_NE(writingOf(canvas(), "THE HOST BANNED YOU."), nullptr);
+}
+
+/**
+ * Given each reason of the connection lost dialog
  * When its width is compared with the panel of a dialog
  * Then it stays inside the panel, its margin kept on both sides
  */
@@ -125,6 +151,8 @@ TEST(DialogMenus, TheReasonsOfALostConnectionFitTheirPanel) {
 
   EXPECT_LE(regularTextWidth(SILENT_SERVER_MESSAGE), widestLine);
   EXPECT_LE(regularTextWidth(CLOSED_SERVER_MESSAGE), widestLine);
+  EXPECT_LE(regularTextWidth(EXPELLED_MESSAGE), widestLine);
+  EXPECT_LE(regularTextWidth(BANNED_MESSAGE), widestLine);
 }
 
 /**

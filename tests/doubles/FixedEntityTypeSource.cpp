@@ -25,7 +25,9 @@ EntityAppearance appearancePlaying(const Animation& animation) {
       .idleFrames = {animation.frames.begin(), animation.frames.end()},
       .idleFrameDuration = animation.frameDuration,
       .actions = {},
-      .enragedIdleFrames = {}};
+      .enragedIdleFrames = {},
+      .deathFrames = {},
+      .deathFramesWithoutFlash = {}};
 }
 
 /** @returns The side of the type the double numbers @p number, or nothing
@@ -41,6 +43,8 @@ std::optional<EntityType> sideNumbered(std::uint8_t number) {
       return EntityType::PlayerMissile;
     case rtype::client::testing::SHIP_TYPE_NUMBER:
       return EntityType::Player;
+    case rtype::client::testing::LOOK_ITEM_TYPE_NUMBER:
+      return EntityType::LookItem;
     default:
       return std::nullopt;
   }
@@ -56,6 +60,7 @@ rtype::game::CollisionBox boxOfSide(EntityType side) {
     case EntityType::EnemyMissile:
       return rtype::client::testing::ENEMY_MISSILE_BOX;
     case EntityType::Enemy:
+    case EntityType::LookItem:
       return rtype::client::testing::BYDO_BOX;
   }
   return rtype::client::testing::BYDO_BOX;
@@ -80,6 +85,7 @@ const EntityAppearance& appearanceOfSide(EntityType side) {
     case EntityType::EnemyMissile:
       return enemyMissile;
     case EntityType::Enemy:
+    case EntityType::LookItem:
       break;
   }
   return bydo;

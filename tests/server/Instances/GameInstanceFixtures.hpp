@@ -28,6 +28,8 @@
 #include "RecordingResultsArchive.hpp"
 #include "RtypeRulesModule.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShipDirections.hpp"
+#include "ShipLook.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
 #include "UnreliableNetwork.hpp"
@@ -36,12 +38,30 @@
 
 namespace rtype::server::testing {
 
+/**
+ * @returns Where a ship at rest at @p start is after the inputs @p held, one a
+ * tick and numbered from 1, then @p idleTicks ticks holding nothing: what the
+ * server gives for inputs it applies one a tick, and what the client predicts,
+ * both running the movement code of ShipControl.
+ */
+[[nodiscard]] game::Position movedOneInputPerTick(
+    game::Position start, std::span<const game::ShipDirections> held,
+    std::size_t idleTicks);
+
 /** @brief A ReadyState sent by a player, with the header it travels under. */
 struct SentReadyState {
   std::size_t player{};
   bool ready{};
   std::uint16_t sequence{};
   std::uint64_t sessionToken{SESSION_TOKEN};
+};
+
+/** @brief A ShipLookChoice sent by a player, with the sequence of its
+ * header. */
+struct SentShipLook {
+  std::size_t player{};
+  identifiers::ShipLook look;
+  std::uint16_t sequence{};
 };
 
 /** @brief A GameLoaded sent by a player, with the sequence of its header. */
@@ -138,6 +158,10 @@ class GameInstanceTest : public ::testing::Test {
 
   /** @brief Queues the ReadyState described by @p sent for the next tick. */
   void sendReady(const SentReadyState& sent);
+
+  /** @brief Queues the ShipLookChoice described by @p sent for the next
+   * tick. */
+  void sendLook(const SentShipLook& sent);
 
   /** @brief Queues the GameLoaded described by @p sent for the next tick,
    * under the session token of its player. */

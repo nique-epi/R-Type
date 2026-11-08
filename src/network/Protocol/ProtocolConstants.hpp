@@ -20,15 +20,19 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 12 makes a
+ * @brief The version of the protocol this code speaks. Version 14 adds the
+ * ban: RefusalReason, ExpulsionReason and DepartureReason Banned, see the
+ * Version 14 section; version 13 adds the expulsion of a player: ExpulsionOrder
+ * from the supervisor to a game, Expulsion to the player and the departure
+ * reason Expelled, see the Version 13 section; version 12 makes a
  * ConnectionRequest for a NewGame carry the rules of that game, and adds the
  * refusals UnknownDifficulty and LivesOutOfRange, see the Version 12 section;
  * version 11 makes EntitySpawned name the player and the input that fired a
- * missile, and PlayerInput the tick its client shows, so a client can
- * predict its own missiles and the server test them where the player saw the
- * enemies, see the Version 11 section; version 10 makes a
- * ConnectionAccepted announce the content pack of the game in place of the
- * table of its entity types, see the Version 10 section; version 9 makes a
+ * missile, and PlayerInput the tick its client shows, so a client can predict
+ * its own missiles and the server test them where the player saw the enemies,
+ * see the Version 11 section; version 10 makes a ConnectionAccepted announce
+ * the content pack of the game in place of the table of its entity types, see
+ * the Version 10 section; version 9 makes a
  * ConnectionRequest name the game it asks for, and adds the refusals
  * GameNotFound and ServerFull, see the Version 9 section; version 8 makes a
  * GameStatus carry the nicknames of the players of its game and the measures
@@ -43,7 +47,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * frame, see the Compression section; version 3 adds the outcome of a game to
  * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 12;
+constexpr std::uint8_t PROTOCOL_VERSION = 14;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -514,6 +518,22 @@ static_assert(LARGEST_PLAYER_CHAT_LINE_SIZE <= ORDERED_PAYLOAD_LIMIT,
               "a PlayerChatLine always fits in an OrderedMessage");
 
 /**
+ * @brief The size of a ship look on the wire: head, eyes, face, one byte each.
+ */
+constexpr std::size_t SHIP_LOOK_WIRE_SIZE = 3 * UINT8_WIRE_SIZE;
+
+/**
+ * @brief The largest PlayerLooks payload: the count, then a player number and
+ * a ship look for each of MAXIMUM_PLAYERS players, 1 + 4 x 4 = 17 bytes.
+ */
+constexpr std::size_t LARGEST_PLAYER_LOOKS_SIZE =
+    UINT8_WIRE_SIZE +
+    (MAXIMUM_PLAYERS * (UINT8_WIRE_SIZE + SHIP_LOOK_WIRE_SIZE));
+
+static_assert(LARGEST_PLAYER_LOOKS_SIZE <= ORDERED_PAYLOAD_LIMIT,
+              "a PlayerLooks always fits in an OrderedMessage");
+
+/**
  * @brief The size of the largest datagram holding a ServerInformation: the
  * echo of the request (sentAt, heldFor), the protocol version, the longest
  * game version and server name, then the counts of players, games and free
@@ -562,6 +582,10 @@ constexpr std::uint32_t NO_SHOWN_TICK = 0;
  * protocol page writes them.
  */
 constexpr std::string_view PLAYER_NUMBER_FIELD = "playerNumber";
+constexpr std::string_view HEAD_FIELD = "head";
+constexpr std::string_view EYES_FIELD = "eyes";
+constexpr std::string_view FACE_FIELD = "face";
+constexpr std::string_view ITEM_FIELD = "item";
 constexpr std::string_view ENTITY_ID_FIELD = "entityId";
 constexpr std::string_view ENTITY_TYPE_FIELD = "entityType";
 constexpr std::string_view REASON_FIELD = "reason";

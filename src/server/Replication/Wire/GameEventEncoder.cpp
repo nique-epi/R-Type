@@ -43,6 +43,10 @@ network::DepartureReason toWireReason(game::DepartureCause cause) {
       return network::DepartureReason::Left;
     case game::DepartureCause::TimedOut:
       return network::DepartureReason::TimedOut;
+    case game::DepartureCause::Expelled:
+      return network::DepartureReason::Expelled;
+    case game::DepartureCause::Banned:
+      return network::DepartureReason::Banned;
   }
   return network::DepartureReason::TimedOut;
 }

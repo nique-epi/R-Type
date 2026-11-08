@@ -9,13 +9,14 @@ namespace rtype::game {
  *
  * Attached as a component like Position or CollisionBox. A missile records the
  * side that fired it, because a player missile and an enemy missile do not
- * hit the same targets.
+ * hit the same targets. A look item is the item of the locker a ship picks up.
  */
 enum class EntityType : std::uint8_t {
   Player,
   Enemy,
   PlayerMissile,
   EnemyMissile,
+  LookItem,
 };
 
 }  // namespace rtype::game

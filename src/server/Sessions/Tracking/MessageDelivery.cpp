@@ -45,13 +45,20 @@ void sendToEveryPlayer(
   }
 }
 
+void guaranteeToPlayer(
+    ConnectedPlayer& player,
+    const std::function<void(network::OutgoingDatagram)>& send,
+    const network::EncodedMessage& message) {
+  player.unacknowledged.add(message);
+  sendDueGuaranteedMessages(player, send);
+}
+
 void guaranteeToEveryPlayer(
     PlayerRoster& roster,
     const std::function<void(network::OutgoingDatagram)>& send,
     const network::EncodedMessage& message) {
   for (ConnectedPlayer* const player : roster.connected()) {
-    player->unacknowledged.add(message);
-    sendDueGuaranteedMessages(*player, send);
+    guaranteeToPlayer(*player, send, message);
   }
 }
 

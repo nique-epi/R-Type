@@ -21,6 +21,7 @@
 #include "ServerSessionFixtures.hpp"
 #include "ServerSessionTestConstants.hpp"
 #include "SessionEntityTypesFixtures.hpp"
+#include "ShipLookExchange.hpp"
 #include "TimeConstants.hpp"
 #include "WaitingRoom.hpp"
 #include "WorldState.hpp"
@@ -59,6 +60,8 @@ ConnectionPhase ServerSessionFixture::phase() const {
 ServerSession& ServerSessionFixture::session() { return session_; }
 
 WaitingRoom& ServerSessionFixture::waitingRoom() { return waitingRoom_; }
+
+ShipLookExchange& ServerSessionFixture::shipLooks() { return shipLooks_; }
 
 const std::vector<network::OutgoingDatagram>& ServerSessionFixture::sent()
     const {

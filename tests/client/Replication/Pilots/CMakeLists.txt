@@ -1,1 +1,1 @@
-target_sources(client_replication_tests PRIVATE ScoreBoardTest.cpp FinalRankingTest.cpp FinalRankingFixtures.cpp)
+target_sources(client_replication_tests PRIVATE PilotDepartureTest.cpp ScoreBoardTest.cpp ScoreBoardFixtures.cpp FinalRankingTest.cpp FinalRankingFixtures.cpp)

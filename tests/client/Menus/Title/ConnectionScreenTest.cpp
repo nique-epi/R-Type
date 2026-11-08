@@ -33,6 +33,7 @@
 #include "SoundConstants.hpp"
 
 using rtype::client::ACCEPTED_STATUS_DURATION;
+using rtype::client::BANNED_STATUS;
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::CONNECTING_STATUS;
 using rtype::client::ConnectionPhase;
@@ -427,11 +428,12 @@ INSTANTIATE_TEST_SUITE_P(
         std::tuple(RefusalReason::ServerFull,
                    std::string_view(SERVER_FULL_STATUS)),
         std::tuple(RefusalReason::UnknownDifficulty, BAD_DIFFICULTY_REFUSAL),
-        std::tuple(RefusalReason::LivesOutOfRange, LIVES_BOUNDS_REFUSAL)));
+        std::tuple(RefusalReason::LivesOutOfRange, LIVES_BOUNDS_REFUSAL),
+        std::tuple(RefusalReason::Banned, std::string_view(BANNED_STATUS))));
 
 /**
- * Given an attempt a server of protocol version 13 refused as
- * IncompatibleVersion, the client speaking version 12
+ * Given an attempt a server of protocol version 15 refused as
+ * IncompatibleVersion, the client speaking version 14
  * When a frame goes by
  * Then the status line names both versions, the client's first
  */
@@ -440,7 +442,7 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
-  EXPECT_NE(writingOf(canvas(), "REFUSED: V12, SERVER V13"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "REFUSED: V14, SERVER V15"), nullptr);
 }
 
 /**

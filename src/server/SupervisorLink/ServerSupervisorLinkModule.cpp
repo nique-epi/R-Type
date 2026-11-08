@@ -1,8 +1,7 @@
 #include "ServerSupervisorLinkModule.hpp"
 #include <algorithm>
-#include <cstddef>
+#include <functional>
 #include <optional>
-#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -11,6 +10,8 @@
 #include "ConnectedPlayers.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
+#include "Expulsion.hpp"
+#include "ExpulsionRule.hpp"
 #include "GameInstance.hpp"
 #include "GameState.hpp"
 #include "GameStatus.hpp"
@@ -20,7 +21,6 @@
 #include "InstallContext.hpp"
 #include "LatestMetrics.hpp"
 #include "LatestStatusMeasures.hpp"
-#include "MessageType.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "OutgoingDatagram.hpp"
@@ -30,8 +30,10 @@
 #include "StopRequest.hpp"
 #include "SupervisorLink.hpp"
 #include "SupervisorLinkConstants.hpp"
+#include "SupervisorOrders.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
+#include "WireTypes.hpp"
 
 namespace rtype::server {
 
@@ -79,14 +81,6 @@ network::GameStatus namingPlayers(network::GameStatus status,
     status.nicknames.push_back(player->nickname);
   }
   return status;
-}
-
-/** @returns Whether @p datagram holds a Disconnection. */
-bool holdsDisconnection(std::span<const std::byte> datagram) {
-  const std::optional<network::DatagramCodec::MessageTypes> types =
-      network::DatagramCodec::messageTypes(datagram);
-  return types.has_value() && types->test(static_cast<std::size_t>(
-                                  network::MessageType::Disconnection));
 }
 
 }  // namespace
@@ -153,8 +147,21 @@ void ServerSupervisorLinkModule::readSupervisorDatagrams() {
       continue;
     }
     watch_.heardSupervisor();
-    if (holdsDisconnection(datagram.payload)) {
+    if (holdsStopOrder(datagram.payload)) {
       askToStop(SUPERVISOR_ORDER_REASON);
+    }
+    const std::optional<std::string> nickname = expulsionIn(datagram.payload);
+    if (nickname.has_value()) {
+      const std::string key = network::nicknameKey(*nickname);
+      expeller_.expel(
+          std::bind_front(&IDatagramSender::queueDatagram, sender_),
+          runningGame_->game().roster(),
+          ExpulsionRule{.chosen =
+                            [&key](const ConnectedPlayer& player) {
+                              return network::nicknameKey(player.nickname) ==
+                                     key;
+                            },
+                        .reason = network::ExpulsionReason::ByTheHost});
     }
   }
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string_view>
 
 namespace rtype::game::testing {
@@ -21,6 +22,21 @@ constexpr std::string_view MISSILE_GAMEPLAY =
     "[gameplay]\nside = \"player_missile\"\npilot = \"straight\"\n";
 constexpr std::string_view ENEMY_MISSILE_GAMEPLAY =
     "[gameplay]\nside = \"enemy_missile\"\npilot = \"straight\"\n";
+constexpr std::string_view LOOK_ITEM_GAMEPLAY =
+    "[gameplay]\nside = \"look_item\"\nlook_item = \"crown\"\n"
+    "pilot = \"straight\"\n";
+constexpr std::string_view LOOK_ITEM_GAMEPLAY_WITHOUT_ITEM =
+    "[gameplay]\nside = \"look_item\"\npilot = \"straight\"\n";
+constexpr std::string_view LOOK_ITEM_OF_AN_UNKNOWN_NAME =
+    "[gameplay]\nside = \"look_item\"\nlook_item = \"tiara\"\n"
+    "pilot = \"straight\"\n";
+constexpr std::string_view ENEMY_GAMEPLAY_WITH_AN_ITEM =
+    "[gameplay]\nside = \"enemy\"\nlook_item = \"crown\"\n"
+    "pilot = \"straight\"\n";
+
+/** @brief The number of the crown among the items of the locker: its place,
+ * 2, plus one. */
+constexpr std::uint8_t CROWN_NUMBER = 3;
 constexpr std::string_view WEAVING_MISSILE_GAMEPLAY =
     "[gameplay]\nside = \"player_missile\"\npilot = \"weave\"\n";
 constexpr std::string_view GAMEPLAY_WITHOUT_SIDE =

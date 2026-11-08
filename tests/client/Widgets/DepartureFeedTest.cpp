@@ -164,6 +164,32 @@ TEST(DepartureFeed, ALostSignalDrawsThePlugOfTheBand) {
 }
 
 /**
+ * Given a feed with the line of NOVA, whom the host expelled
+ * When it is painted
+ * Then WAS EXPELLED is written after the name, and no plug is drawn
+ */
+TEST(DepartureFeed, AnExpelledPilotWasExpelled) {
+  const InterfaceCanvasRecord record =
+      feedPaintingOf(pilotIn(NOVA_NUMBER, NOVA, PilotState::Expelled));
+
+  EXPECT_NE(writingOf(record, FEED_EXPELLED_WORDS), nullptr);
+  EXPECT_TRUE(record.smoothImages.empty());
+}
+
+/**
+ * Given a feed with the line of NOVA, whom the host banned
+ * When it is painted
+ * Then WAS BANNED is written after the name, and no plug is drawn
+ */
+TEST(DepartureFeed, ABannedPilotWasBanned) {
+  const InterfaceCanvasRecord record =
+      feedPaintingOf(pilotIn(NOVA_NUMBER, NOVA, PilotState::Banned));
+
+  EXPECT_NE(writingOf(record, FEED_BANNED_WORDS), nullptr);
+  EXPECT_TRUE(record.smoothImages.empty());
+}
+
+/**
  * Given a feed with the line of a pilot whose nickname has sixteen letters
  * When it is painted
  * Then its first ten letters are written

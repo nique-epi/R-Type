@@ -65,6 +65,15 @@ constexpr game::WaveCurve CALM_CURVE{
 constexpr std::array CALM_ENEMIES{game::testing::DRIFTER_SHEET,
                                   game::testing::WEAVER_SHEET};
 
+/** @brief The look items of calm, as the value of its look_items line gives
+ * them; the weaver, which is an enemy, stands among the look items of another
+ * file. */
+constexpr std::string_view CALM_LOOK_ITEMS_VALUE =
+    R"(["look_crown", "look_party_hat"])";
+constexpr std::array CALM_LOOK_ITEMS{game::testing::LOOK_CROWN_SHEET,
+                                     game::testing::LOOK_PARTY_HAT_SHEET};
+constexpr std::string_view AN_ENEMY_AS_A_LOOK_ITEM = R"(["weaver"])";
+
 /** @brief A difficulty storm, written before calm in a file, and its waves. */
 constexpr std::string_view STORM_TABLE = R"([difficulty.storm]
 first_wave_bydos = 4

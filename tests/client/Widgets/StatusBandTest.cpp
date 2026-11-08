@@ -470,6 +470,38 @@ TEST(StatusBand, ALostSignalShowsTheUnpluggedPlug) {
 }
 
 /**
+ * Given player 1, whom the host expelled
+ * When the band is painted
+ * Then EXPELLED ends its first row, and neither a plug nor a life is drawn
+ */
+TEST(StatusBand, AnExpelledPilotSaysExpelled) {
+  PilotStatus pilot = flying(PLAYER_ONE, THREE_LIVES);
+  pilot.state = PilotState::Expelled;
+
+  const InterfaceCanvasRecord record = bandPaintingOf({pilot});
+
+  EXPECT_EQ(anchorOf(record, "EXPELLED"), FIRST_SMALL_WORD_END);
+  EXPECT_THAT(record.smoothImages, IsEmpty());
+  EXPECT_THAT(imagesOf(record, FIRST_LIFE_SOURCE), IsEmpty());
+}
+
+/**
+ * Given player 1, whom the host banned
+ * When the band is painted
+ * Then BANNED ends its first row, and neither a plug nor a life is drawn
+ */
+TEST(StatusBand, ABannedPilotSaysBanned) {
+  PilotStatus pilot = flying(PLAYER_ONE, THREE_LIVES);
+  pilot.state = PilotState::Banned;
+
+  const InterfaceCanvasRecord record = bandPaintingOf({pilot});
+
+  EXPECT_EQ(anchorOf(record, "BANNED"), FIRST_SMALL_WORD_END);
+  EXPECT_THAT(record.smoothImages, IsEmpty());
+  EXPECT_THAT(imagesOf(record, FIRST_LIFE_SOURCE), IsEmpty());
+}
+
+/**
  * Given pilots numbered 0 and 5, one step outside each bound of the bays
  * When the band is painted
  * Then neither is painted

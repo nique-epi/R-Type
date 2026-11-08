@@ -20,6 +20,7 @@
 #include "Invulnerable.hpp"
 #include "Lives.hpp"
 #include "LivesConstants.hpp"
+#include "LookItem.hpp"
 #include "MissileOwner.hpp"
 #include "MotionKind.hpp"
 #include "MotionSheet.hpp"
@@ -109,7 +110,8 @@ void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
 
 /** @brief Gives @p start the parts that decide what its contact with a ship
  * does: the CurrentAction of an enemy, then the HurtZone and the
- * SurvivesContact and the Fragile its sheet declares. */
+ * SurvivesContact and the Fragile its sheet declares, and the LookItem of a
+ * look item. */
 void addContactParts(engine::ComponentRegistry& components,
                      const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
@@ -124,6 +126,9 @@ void addContactParts(engine::ComponentRegistry& components,
   }
   if (sheet.fragileIn.has_value()) {
     components.add(start.body, Fragile{.in = *sheet.fragileIn});
+  }
+  if (sheet.lookItem.has_value()) {
+    components.add(start.body, LookItem{.number = *sheet.lookItem});
   }
 }
 
