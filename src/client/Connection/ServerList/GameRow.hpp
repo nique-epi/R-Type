@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include "GameRules.hpp"
 #include "ListedGameState.hpp"
 
 namespace rtype::client {
@@ -15,6 +16,8 @@ struct GameRow {
   std::uint8_t playerCount{};
   /** @brief The players a game of its server takes at most. */
   std::uint8_t maximumPlayers{};
+  /** @brief The rules the game is played by, as the master lists them. */
+  network::GameRules rules{network::defaultGameRules()};
 
   bool operator==(const GameRow&) const = default;
 };

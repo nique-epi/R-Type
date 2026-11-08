@@ -12,6 +12,7 @@ target_link_libraries(rtype_client_server_list
   PUBLIC
     rtype_client_transport
     rtype_concurrency_latest_value
+    rtype_network_connection_request
     rtype_engine_time
     rtype_network_master_client
     rtype_network_master_messages

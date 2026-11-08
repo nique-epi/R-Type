@@ -8,6 +8,7 @@
 #include "GameListSnapshot.hpp"
 #include "GameListing.hpp"
 #include "GameRow.hpp"
+#include "GameRules.hpp"
 #include "IMasterReads.hpp"
 #include "ListedGame.hpp"
 #include "ListedGameState.hpp"
@@ -27,6 +28,13 @@ bool comesBefore(const GameRow& first, const GameRow& second) {
   return first.number < second.number;
 }
 
+/** @returns The rules @p game is played by, as the master lists them. */
+network::GameRules rulesOf(const network::ListedGame& game) {
+  return network::GameRules{.difficulty = game.difficulty,
+                            .lives = game.lives,
+                            .friendlyFire = game.friendlyFire};
+}
+
 /** @returns The rows of the games of @p listing, in the order of the panel. */
 std::vector<GameRow> rowsOf(const network::GameListing& listing,
                             std::uint8_t maximumPlayers) {
@@ -37,7 +45,8 @@ std::vector<GameRow> rowsOf(const network::GameListing& listing,
                            .name = game.name,
                            .state = game.state,
                            .playerCount = game.playerCount,
-                           .maximumPlayers = maximumPlayers});
+                           .maximumPlayers = maximumPlayers,
+                           .rules = rulesOf(game)});
   }
   std::ranges::sort(rows, comesBefore);
   return rows;
@@ -54,8 +63,8 @@ GameCatalog::GameCatalog(IMasterReads& master) : master_(&master) {}
 void GameCatalog::ask(const ServerRow& server) {
   asked_ = master_->askGames(server.id);
   maximumPlayers_ = server.maximumPlayersPerGame;
-  snapshot_ =
-      GameListSnapshot{.phase = ServerListPhase::Searching, .games = {}};
+  snapshot_ = GameListSnapshot{
+      .phase = ServerListPhase::Searching, .games = {}, .difficulties = {}};
 }
 
 const GameListSnapshot& GameCatalog::snapshot() const { return snapshot_; }
@@ -68,13 +77,15 @@ void GameCatalog::update() {
   taken_ = asked_;
   if (!reading->listing.has_value()) {
     snapshot_ = GameListSnapshot{.phase = ServerListPhase::MasterUnreachable,
-                                 .games = {}};
+                                 .games = {},
+                                 .difficulties = {}};
     return;
   }
   std::vector<GameRow> rows = rowsOf(*reading->listing, maximumPlayers_);
   snapshot_ = GameListSnapshot{
       .phase = rows.empty() ? ServerListPhase::Empty : ServerListPhase::Ready,
-      .games = std::move(rows)};
+      .games = std::move(rows),
+      .difficulties = reading->listing->difficulties};
 }
 
 }  // namespace rtype::client
