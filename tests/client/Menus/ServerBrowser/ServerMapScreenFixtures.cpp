@@ -73,7 +73,8 @@ GameListSnapshot lyonGames() {
       .phase = ServerListPhase::Ready,
       .games = {gameOf(WAITING_GAME_NUMBER, network::ListedGameState::Waiting),
                 gameOf(PLAYING_GAME_NUMBER, network::ListedGameState::InGame)},
-      .difficulties = {}};
+      .difficulties = {},
+      .server = {}};
 }
 
 sf::Vector2i parisOnTheWholeMap() {
@@ -91,8 +92,10 @@ bool showsTheMiniMap(const InterfaceCanvasRecord& painting) {
 }
 
 GameListSnapshot waitingGames(std::size_t count) {
-  GameListSnapshot games{
-      .phase = ServerListPhase::Ready, .games = {}, .difficulties = {}};
+  GameListSnapshot games{.phase = ServerListPhase::Ready,
+                         .games = {},
+                         .difficulties = {},
+                         .server = {}};
   for (std::size_t index = 0; index < count; ++index) {
     games.games.push_back(gameOf(static_cast<std::uint16_t>(index + 1),
                                  network::ListedGameState::Waiting));

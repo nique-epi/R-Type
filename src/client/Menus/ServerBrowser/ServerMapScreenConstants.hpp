@@ -125,6 +125,15 @@ constexpr const char* JOINABLE_DESCRIPTION = ": ENTER TO JOIN.";
 constexpr const char* IN_GAME_DESCRIPTION = " IS IN GAME: IT CANNOT BE JOINED.";
 constexpr const char* FULL_DESCRIPTION = " IS FULL: IT CANNOT BE JOINED.";
 constexpr const char* NO_GAME_TITLE = "NO GAME YET";
+
+/** @brief The row that opens a new game, first in the panel once the master
+ * answered: its label, the line that says what ENTER does, and the row of the
+ * message under it when the server has no game. */
+constexpr const char* NEW_GAME_ROW_LABEL = "+ NEW GAME";
+constexpr const char* NEW_GAME_DESCRIPTION =
+    "+ NEW GAME: ENTER TO SET ITS RULES.";
+constexpr int GAME_PANEL_EMPTY_MESSAGE_ROW =
+    GAME_PANEL_FIRST_ROW + (2 * GAME_ROW_PITCH);
 constexpr const char* SEARCHING_GAMES_TITLE = "ASKING THE MASTER...";
 
 }  // namespace rtype::client

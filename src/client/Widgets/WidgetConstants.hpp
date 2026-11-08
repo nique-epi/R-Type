@@ -187,6 +187,10 @@ constexpr const char* LOCAL_PLAYER_TAG = "YOU";
 /** @brief Label of the button that closes a menu, the same in every menu. */
 constexpr const char* BACK_LABEL = "BACK";
 
+/** @brief Label of the row that picks the difficulty of a game, in the filter
+ * of the leaderboard and in the new game dialog. */
+constexpr const char* DIFFICULTY_ROW_LABEL = "DIFFICULTY";
+
 /**
  * @brief Tabbed panel: the heading and its rule as on a page, a strip of tabs
  * under the rule, the panel of rows right under the tabs, the bars in a row

@@ -6,6 +6,7 @@
 #include <vector>
 #include "ColoredPixel.hpp"
 #include "GamePanel.hpp"
+#include "GameRequest.hpp"
 #include "IGameCatalog.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IMasterAddress.hpp"
@@ -34,10 +35,11 @@ namespace rtype::client {
  * The arrows choose the star they point at, Tab the next server by ping.
  * MENU_CONFIRM_KEY, or the wheel up, zooms on the chosen server; once zoomed,
  * MENU_CONFIRM_KEY opens the panel of its games, read from the master, and on
- * a waiting game joins it. Joining puts the server in the ServerChoice and
- * pushes CONNECTION_TO_CHOSEN_SERVER_SCREEN, which connects at once and opens
- * the waiting room; the server places the player in its first waiting game,
- * since the protocol names no game yet. The chips: QUICK PLAY joins the
+ * a waiting game joins it, on + NEW GAME pushes NEW_GAME_SCREEN over the map.
+ * Joining puts the server and the game in the ServerChoice and pushes
+ * CONNECTION_TO_CHOSEN_SERVER_SCREEN, which connects at once and opens the
+ * waiting room: a game of the panel is asked for by its number, with the
+ * rules the master lists for it. The chips: QUICK PLAY joins any game of the
  * server of this version with the lowest ping, RANKING opens the leaderboard,
  * ADDRESS the connection form, BACK goes one stage back, then closes the map.
  * The hangar star of the whole map, or HANGAR_KEY, pushes HANGAR_SCREEN.
@@ -70,16 +72,17 @@ class ServerMapScreen : public IScreen {
   /** @brief Moves the choice with an arrow or Tab; confirms or refreshes once
    * per hold. */
   void keyPressed(const sf::Event::KeyPressed& key);
-  /** @brief Goes one stage deeper, or joins the chosen waiting game. */
+  /** @brief Goes one stage deeper, joins the chosen waiting game, or opens
+   * the new game dialog on + NEW GAME. */
   void confirm();
   /** @brief Goes one stage back, or closes the map from the whole map. */
   void stepBack();
   /** @brief Reads the list again, and the games of the chosen server when
    * their panel is open. */
   void refresh();
-  /** @brief Puts @p server in the ServerChoice and opens the connection to
-   * it. */
-  void join(const ServerRow& server);
+  /** @brief Puts @p server and @p request in the ServerChoice and opens the
+   * connection to it. */
+  void join(const ServerRow& server, const GameRequest& request);
   void repaint();
 
   IScreenNavigator* navigator_;

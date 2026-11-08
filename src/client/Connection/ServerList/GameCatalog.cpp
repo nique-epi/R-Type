@@ -63,8 +63,10 @@ GameCatalog::GameCatalog(IMasterReads& master) : master_(&master) {}
 void GameCatalog::ask(const ServerRow& server) {
   asked_ = master_->askGames(server.id);
   maximumPlayers_ = server.maximumPlayersPerGame;
-  snapshot_ = GameListSnapshot{
-      .phase = ServerListPhase::Searching, .games = {}, .difficulties = {}};
+  snapshot_ = GameListSnapshot{.phase = ServerListPhase::Searching,
+                               .games = {},
+                               .difficulties = {},
+                               .server = server.endpoint};
 }
 
 const GameListSnapshot& GameCatalog::snapshot() const { return snapshot_; }
@@ -78,14 +80,16 @@ void GameCatalog::update() {
   if (!reading->listing.has_value()) {
     snapshot_ = GameListSnapshot{.phase = ServerListPhase::MasterUnreachable,
                                  .games = {},
-                                 .difficulties = {}};
+                                 .difficulties = {},
+                                 .server = snapshot_.server};
     return;
   }
   std::vector<GameRow> rows = rowsOf(*reading->listing, maximumPlayers_);
   snapshot_ = GameListSnapshot{
       .phase = rows.empty() ? ServerListPhase::Empty : ServerListPhase::Ready,
       .games = std::move(rows),
-      .difficulties = reading->listing->difficulties};
+      .difficulties = reading->listing->difficulties,
+      .server = snapshot_.server};
 }
 
 }  // namespace rtype::client

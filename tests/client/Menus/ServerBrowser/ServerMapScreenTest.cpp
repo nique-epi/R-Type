@@ -4,7 +4,10 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
+#include "GameRequest.hpp"
+#include "GameRules.hpp"
 #include "HangarScreenIdConstants.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -17,9 +20,11 @@
 
 using rtype::client::CONNECTION_SCREEN;
 using rtype::client::CONNECTION_TO_CHOSEN_SERVER_SCREEN;
+using rtype::client::GameRequest;
 using rtype::client::HANGAR_SCREEN;
 using rtype::client::LEADERBOARD_SCREEN;
 using rtype::client::MASTER_SCREEN;
+using rtype::client::NEW_GAME_SCREEN;
 using rtype::client::ServerListPhase;
 using rtype::client::ServerListSnapshot;
 using rtype::client::testing::HANGAR_STAR_HINT_LINE;
@@ -37,7 +42,12 @@ using rtype::client::testing::ServerMapScreenFixture;
 using rtype::client::testing::SHORT_OF_THE_REFRESH;
 using rtype::client::testing::showsTheMiniMap;
 using rtype::client::testing::UNREACHABLE_MASTER;
+using rtype::client::testing::WAITING_GAME_NUMBER;
+using rtype::network::ANY_GAME_CHOICE;
+using rtype::network::defaultGameRules;
 using rtype::network::Endpoint;
+using rtype::network::GameChoice;
+using rtype::network::GameChoiceKind;
 using ::testing::ElementsAre;
 
 /**
@@ -161,6 +171,7 @@ TEST_F(ServerMapScreenFixture, EnterOnAWaitingGameJoinsItsServer) {
   games().show(lyonGames());
   press(sf::Keyboard::Key::Enter);
   press(sf::Keyboard::Key::Enter);
+  press(sf::Keyboard::Key::Down);
 
   press(sf::Keyboard::Key::Enter);
 
@@ -173,6 +184,47 @@ TEST_F(ServerMapScreenFixture, EnterOnAWaitingGameJoinsItsServer) {
 }
 
 /**
+ * Given the panel of the games of Lyon, its waiting game chosen
+ * When Enter is pressed
+ * Then the choice asks for that game by its number, with its rules
+ */
+TEST_F(ServerMapScreenFixture, EnterOnAWaitingGameAsksForThatGame) {
+  openOn(readyList());
+  games().show(lyonGames());
+  press(sf::Keyboard::Key::Enter);
+  press(sf::Keyboard::Key::Enter);
+  press(sf::Keyboard::Key::Down);
+
+  press(sf::Keyboard::Key::Enter);
+
+  EXPECT_EQ(
+      choice().lastRequest,
+      (GameRequest{.game = GameChoice{.kind = GameChoiceKind::ExistingGame,
+                                      .number = WAITING_GAME_NUMBER},
+                   .rules = defaultGameRules()}));
+}
+
+/**
+ * Given the panel of the games of Lyon, + NEW GAME chosen
+ * When Enter is pressed
+ * Then the new game dialog opens over the map, and the choice keeps its last
+ * attempt: the dialog writes the server and the game together, on CREATE
+ */
+TEST_F(ServerMapScreenFixture, EnterOnNewGameOpensTheNewGameDialog) {
+  openOn(readyList());
+  games().show(lyonGames());
+  press(sf::Keyboard::Key::Enter);
+  press(sf::Keyboard::Key::Enter);
+
+  press(sf::Keyboard::Key::Enter);
+
+  EXPECT_FALSE(choice().lastServer.has_value());
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = NEW_GAME_SCREEN}));
+}
+
+/**
  * Given the panel of the games of Lyon, the game in progress chosen
  * When Enter is pressed
  * Then nothing is joined
@@ -182,6 +234,7 @@ TEST_F(ServerMapScreenFixture, EnterOnAGameInProgressJoinsNothing) {
   games().show(lyonGames());
   press(sf::Keyboard::Key::Enter);
   press(sf::Keyboard::Key::Enter);
+  press(sf::Keyboard::Key::Down);
   press(sf::Keyboard::Key::Down);
 
   press(sf::Keyboard::Key::Enter);
@@ -231,6 +284,21 @@ TEST_F(ServerMapScreenFixture, QuickPlayJoinsTheNearestServerOfThisVersion) {
 
   EXPECT_EQ(choice().lastServer.value_or(Endpoint{}).address,
             std::string{LYON_SERVER_ADDRESS});
+}
+
+/**
+ * Given the whole map
+ * When Q joins Lyon
+ * Then the choice asks for any game, played by the default rules: the only
+ * games a server places such a player in
+ */
+TEST_F(ServerMapScreenFixture, QuickPlayAsksForAnyGame) {
+  openOn(readyList());
+
+  press(sf::Keyboard::Key::Q);
+
+  EXPECT_EQ(choice().lastRequest, (GameRequest{.game = ANY_GAME_CHOICE,
+                                               .rules = defaultGameRules()}));
 }
 
 /**

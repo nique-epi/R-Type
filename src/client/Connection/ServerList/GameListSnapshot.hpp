@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include "Endpoint.hpp"
 #include "GameRow.hpp"
 #include "ServerListPhase.hpp"
 
@@ -17,6 +18,8 @@ struct GameListSnapshot {
    * the master lists them; empty unless phase is Ready or Empty, and for a
    * server that listed none. */
   std::vector<std::string> difficulties;
+  /** @brief The server these games are of, as the catalog asked for them. */
+  network::Endpoint server;
 
   bool operator==(const GameListSnapshot&) const = default;
 };

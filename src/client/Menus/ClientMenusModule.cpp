@@ -8,6 +8,7 @@
 #include "ConnectionScreenParts.hpp"
 #include "ConnectionStart.hpp"
 #include "DialogMenus.hpp"
+#include "GameListSnapshot.hpp"
 #include "IScreen.hpp"
 #include "InstallContext.hpp"
 #include "IntroScreen.hpp"
@@ -22,6 +23,8 @@
 #include "MasterScreenParts.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "ModuleConstants.hpp"
+#include "NewGameDialog.hpp"
+#include "NewGameMenuParts.hpp"
 #include "OptionsPlace.hpp"
 #include "OptionsScreen.hpp"
 #include "OptionsScreenParts.hpp"
@@ -129,6 +132,18 @@ std::unique_ptr<IScreen> buildServerMapScreen(const ScreenContext& context) {
       interfaceCanvasOf(context));
 }
 
+/** @returns The new game dialog, offering the difficulties of the server
+ * whose games the map listed last. */
+std::unique_ptr<IScreen> buildNewGameScreen(const ScreenContext& context) {
+  const GameListSnapshot& games = context.services.gameCatalog.get().snapshot();
+  return dialogScreenOf(context, newGameMenu(NewGameMenuParts{
+                                     .navigator = context.navigator.get(),
+                                     .sounds = soundsOf(context),
+                                     .choice = context.serverChoice.get(),
+                                     .server = games.server,
+                                     .difficulties = games.difficulties}));
+}
+
 /** @returns The form of the master the server map reads. */
 std::unique_ptr<IScreen> buildMasterScreen(const ScreenContext& context) {
   return std::make_unique<MasterScreen>(
@@ -210,6 +225,7 @@ void ClientMenusModule::install(engine::InstallContext& context) {
   registry.add(QUIT_CONFIRMATION_SCREEN, buildQuitConfirmationScreen);
   addConnectionScreens(registry);
   registry.add(SERVER_MAP_SCREEN, buildServerMapScreen);
+  registry.add(NEW_GAME_SCREEN, buildNewGameScreen);
   registry.add(MASTER_SCREEN, buildMasterScreen);
   registry.add(LEADERBOARD_SCREEN, buildLeaderboardScreen);
   registry.add(CONNECTION_LOST_SCREEN, buildConnectionLostScreen);
