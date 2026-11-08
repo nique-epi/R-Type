@@ -1,7 +1,6 @@
 #include <windows.h>
 #include <memory>
 #include <optional>
-#include <utility>
 #include "SavedTerminalModes.hpp"
 #include "StandardTerminal.hpp"
 
@@ -37,12 +36,20 @@ std::optional<SavedTerminalModes> consoleModes() {
                             .outputCodePage = ::GetConsoleOutputCP()};
 }
 
-/** @brief Makes the console read and write UTF-8, so the line editor erases a
- * whole character whatever the code page of the console was; a console that
- * refuses keeps its code page. */
-void readAndWriteUtf8() {
-  static_cast<void>(::SetConsoleCP(CP_UTF8));
-  static_cast<void>(::SetConsoleOutputCP(CP_UTF8));
+/** @returns Whether the console now writes VT sequences, reads each key as it
+ * is pressed without echo, and reads and writes UTF-8, so the line editor
+ * erases a whole character whatever the code page of the console was; part of
+ * it may be done when false. */
+bool switchToTyping(const SavedTerminalModes& modes) {
+  return ::SetConsoleMode(::GetStdHandle(STD_OUTPUT_HANDLE),
+                          modes.output | ENABLE_VIRTUAL_TERMINAL_PROCESSING) !=
+             FALSE &&
+         ::SetConsoleMode(
+             ::GetStdHandle(STD_INPUT_HANDLE),
+             modes.input & ~static_cast<DWORD>(ENABLE_LINE_INPUT |
+                                               ENABLE_ECHO_INPUT)) != FALSE &&
+         ::SetConsoleCP(CP_UTF8) != FALSE &&
+         ::SetConsoleOutputCP(CP_UTF8) != FALSE;
 }
 
 }  // namespace
@@ -52,22 +59,11 @@ bool StandardTerminal::enterTypingMode() {
   if (!modes.has_value()) {
     return false;
   }
-  auto saved = std::make_unique<SavedTerminalModes>(*modes);
-  HANDLE output = ::GetStdHandle(STD_OUTPUT_HANDLE);
-  if (::SetConsoleMode(output,
-                       modes->output | ENABLE_VIRTUAL_TERMINAL_PROCESSING) ==
-      FALSE) {
+  saved_ = std::make_unique<SavedTerminalModes>(*modes);
+  if (!switchToTyping(*modes)) {
+    leaveTypingMode();
     return false;
   }
-  if (::SetConsoleMode(::GetStdHandle(STD_INPUT_HANDLE),
-                       modes->input & ~static_cast<DWORD>(ENABLE_LINE_INPUT |
-                                                          ENABLE_ECHO_INPUT)) ==
-      FALSE) {
-    static_cast<void>(::SetConsoleMode(output, modes->output));
-    return false;
-  }
-  readAndWriteUtf8();
-  saved_ = std::move(saved);
   return true;
 }
 

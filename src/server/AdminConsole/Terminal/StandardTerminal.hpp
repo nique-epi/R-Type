@@ -23,8 +23,9 @@ struct SavedTerminalModes;
  * input, keeping ENABLE_PROCESSED_INPUT for Ctrl+C, and
  * ENABLE_VIRTUAL_TERMINAL_PROCESSING on for the output, which the erase of a
  * row needs, and makes the console read and write UTF-8 (code page 65001)
- * until the modes are given back. That file is checked by the Windows job of
- * the CI only.
+ * until the modes are given back; a console that refuses any of it gets back
+ * all it had, and the console stays in line mode. That file is checked by the
+ * Windows job of the CI only.
  *
  * It enters typing mode only when the input, the output and the error are
  * one terminal (the same device on Linux and macOS).
