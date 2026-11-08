@@ -102,6 +102,10 @@ void Departures::logDeparture(const ConnectedPlayer& player,
       logger_.info("player ", playerNumber, " expelled by the host from ",
                    player.endpoint.address, " port ", player.endpoint.port);
       return;
+    case game::DepartureCause::Banned:
+      logger_.info("player ", playerNumber, " banned by the host from ",
+                   player.endpoint.address, " port ", player.endpoint.port);
+      return;
     case game::DepartureCause::TimedOut:
       break;
   }

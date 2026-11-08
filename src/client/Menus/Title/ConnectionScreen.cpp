@@ -64,6 +64,7 @@ std::string refusalLine(const ConnectionStatus& status) {
     case network::RefusalReason::LivesOutOfRange:
       return LIVES_OUT_OF_RANGE_STATUS;
     case network::RefusalReason::IncompatibleVersion:
+    case network::RefusalReason::Banned:
       break;
   }
   return versionRefusalLine(status.serverVersion);

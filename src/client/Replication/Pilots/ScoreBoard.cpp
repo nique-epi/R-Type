@@ -49,6 +49,7 @@ PilotState stateAfter(network::DepartureReason reason) {
     case network::DepartureReason::Expelled:
       return PilotState::Expelled;
     case network::DepartureReason::Left:
+    case network::DepartureReason::Banned:
       break;
   }
   return PilotState::Left;
