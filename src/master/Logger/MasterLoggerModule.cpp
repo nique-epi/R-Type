@@ -6,6 +6,7 @@
 #include "LogLaunchOptions.hpp"
 #include "MasterConstants.hpp"
 #include "MasterModuleConstants.hpp"
+#include "MasterVersionConstants.hpp"
 
 namespace rtype::master {
 

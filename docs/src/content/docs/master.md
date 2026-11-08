@@ -69,10 +69,10 @@ The storage starts before the HTTP API, so a database the master cannot open sto
 
 `MasterHttpServer` (`src/master/Http/`) holds a `network::HttpServer` (`src/network/Http/`, see [Network](/R-Type/network/#http-server-httpserver)), which wraps cpp-httplib and which the supervisor also uses to serve its content pack; no file of the master includes cpp-httplib. Its routes sit under `/api`, answer `GET`, `POST` or `PUT`, and answer `application/json`; each is declared once, with its method and path, in `MasterRouteConstants.hpp` (`src/network/Master/Routes/`), which the master and `MasterClient` both read; they run on the threads of cpp-httplib, at least 8 of them, and must not block for long. A route reads a `network::ApiRequest`: the body, the key of an `Authorization: Bearer <key>` header (RFC 6750, the scheme in any case) and the address of the TCP peer. It answers a `network::ApiResponse`: a status, a body, the `detail` of a refusal, one header, such as `Location`, and the media type of the body, `application/json` unless the route sets another.
 
-`GET /api/health` answers 200 with the version of the master, `MASTER_VERSION`:
+`GET /api/health` answers 200 with the version of the master, `MASTER_VERSION`, the version of `project()` in the root `CMakeLists.txt`:
 
 ```json
-{"version":"0.1.0"}
+{"version":"0.2.0"}
 ```
 
 - **Errors:** an answer of 400 or more without a body gets a problem document of RFC 9457, `application/problem+json`, whose `title` is the phrase of its status, with the `detail` of the route when it gives one: `{"status":404,"title":"Not Found"}` for a path no route answers.

@@ -18,9 +18,6 @@ constexpr std::array<std::string_view, 0> MASTER_LOOP_STAGES{};
  */
 constexpr std::string_view MASTER_PROGRAM_NAME = "r-type_server --mode master";
 
-/** @brief The version of the master, which GET /api/health answers with. */
-constexpr std::string_view MASTER_VERSION = "0.1.0";
-
 /** @brief The logger every line of the master is written with. */
 constexpr std::string_view MASTER_LOGGER_NAME = "Master";
 
