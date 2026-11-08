@@ -2,7 +2,8 @@ name: deploy-master
 
 # Deploys the server package of a release to the master instance of AWS:
 # the instance downloads the package from the release, the workflow only
-# sends it infra/master/deploy.sh through SSM. Called by the release workflow
+# sends it infra/master/deploy.sh through SSM, with the domain of MASTER_URL
+# that Caddy answers HTTPS for. Called by the release workflow
 # on every tag, and run by hand to redeploy or to go back to an older tag.
 on:
   workflow_call:
@@ -38,6 +39,7 @@ jobs:
     env:
       TAG: ${{ inputs.tag }}
       INSTANCE_ID: ${{ vars.MASTER_INSTANCE_ID }}
+      MASTER_URL: ${{ vars.MASTER_URL }}
     steps:
       - uses: actions/checkout@v5
 
@@ -48,6 +50,15 @@ jobs:
             exit 1
           fi
 
+      - name: Read the domain of the master
+        run: |
+          domain=${MASTER_URL#https://}
+          if [ "$domain" = "$MASTER_URL" ] || ! printf '%s' "$domain" | grep -Eq '^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$'; then
+            echo "MASTER_URL must be https://<domain>, with no port or path: $MASTER_URL"
+            exit 1
+          fi
+          echo "DOMAIN=$domain" >> "$GITHUB_ENV"
+
       - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
@@ -56,7 +67,7 @@ jobs:
       - name: Run the deployment on the instance
         run: |
           version=${TAG#v}
-          { printf 'VERSION=%s\n' "$version"; cat infra/master/deploy.sh; } > "$RUNNER_TEMP/script.sh"
+          { printf 'VERSION=%s\nDOMAIN=%s\n' "$version" "$DOMAIN"; cat infra/master/deploy.sh; } > "$RUNNER_TEMP/script.sh"
           jq -n --rawfile script "$RUNNER_TEMP/script.sh" '{commands: [$script]}' > "$RUNNER_TEMP/parameters.json"
           command_id=$(aws ssm send-command \
             --instance-ids "$INSTANCE_ID" \
@@ -73,10 +84,9 @@ jobs:
           printf '%s' "$invocation" | jq -r .StandardErrorContent >&2
           printf '%s' "$invocation" | jq -e '.Status == "Success"' > /dev/null
 
+      # The first deployment waits for Let's Encrypt to issue the certificate.
       - name: Check the master from the outside
-        env:
-          MASTER_URL: ${{ vars.MASTER_URL }}
         run: >-
           curl --fail --silent --show-error
-          --retry 5 --retry-delay 3 --retry-connrefused
+          --retry 12 --retry-delay 5 --retry-all-errors
           "$MASTER_URL/api/health"
