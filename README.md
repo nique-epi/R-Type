@@ -1,5 +1,7 @@
 # R-Type
 
+**Web site:** <https://rtype.app>
+
 A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine. Up to four pilots fly together in a game against waves of Bydos; the server owns the game, the client draws it and sends the keys held. One server runs up to eight games at once. Epitech tek3 project.
 
 - **Platforms:** Linux (GCC or Clang), Windows (MSVC, Visual Studio 2022) and macOS (Apple Silicon). The CI builds and tests Linux and Windows on every pull request.
