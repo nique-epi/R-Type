@@ -9,8 +9,10 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingScreen.hpp"
+#include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenConstants.hpp"
+#include "ServerConnectionRequest.hpp"
 #include "SoundConstants.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetText.hpp"
@@ -30,6 +32,7 @@ using rtype::client::SIDES_PER_AXIS;
 using rtype::client::SILENT_SERVER_MESSAGE;
 using rtype::client::TITLE_SCREEN;
 using ::testing::ElementsAre;
+using ::testing::IsEmpty;
 
 /**
  * Given the quit confirmation just opened
@@ -60,6 +63,85 @@ TEST_F(DialogMenusFixture, EscapeAnswersNoOnTheQuitConfirmation) {
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
                                         .screen = std::nullopt}));
+}
+
+/**
+ * Given the question asked before leaving a game, just opened
+ * When Enter is pressed and released, and the press lasts
+ * Then NO answers: the dialog asks to close itself, back to the options
+ */
+TEST_F(DialogMenusFixture, NoIsChosenAtFirstOnTheLeaveGameConfirmation) {
+  openLeaveGameConfirmation();
+
+  tap(sf::Keyboard::Key::Enter);
+  letThePressLast();
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
+                                        .screen = std::nullopt}));
+}
+
+/**
+ * Given the question asked before leaving a game, just opened
+ * When NO is answered with Enter
+ * Then the session is left as it is
+ */
+TEST_F(DialogMenusFixture, NoKeepsTheSessionOfTheGame) {
+  openLeaveGameConfirmation();
+
+  tap(sf::Keyboard::Key::Enter);
+  letThePressLast();
+
+  EXPECT_THAT(connection().calls(), IsEmpty());
+}
+
+/**
+ * Given the question asked before leaving a game, just opened
+ * When Escape is pressed and released
+ * Then NO answers at once
+ */
+TEST_F(DialogMenusFixture, EscapeAnswersNoOnTheLeaveGameConfirmation) {
+  openLeaveGameConfirmation();
+
+  tap(sf::Keyboard::Key::Escape);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
+                                        .screen = std::nullopt}));
+}
+
+/**
+ * Given the question asked before leaving a game, NO selected
+ * When the right arrow selects YES and Enter activates it
+ * Then the session is left, which tells the server
+ */
+TEST_F(DialogMenusFixture, YesLeavesTheSessionOfTheGame) {
+  openLeaveGameConfirmation();
+
+  press(sf::Keyboard::Key::Right);
+  tap(sf::Keyboard::Key::Enter);
+  letThePressLast();
+
+  ASSERT_EQ(connection().calls().size(), 1U);
+  EXPECT_EQ(connection().calls().front().request,
+            ServerConnectionRequest::Cancel);
+}
+
+/**
+ * Given the question asked before leaving a game, NO selected
+ * When the right arrow selects YES and Enter activates it
+ * Then the title is asked in place of every screen
+ */
+TEST_F(DialogMenusFixture, YesPutsTheTitleInPlaceOfTheGame) {
+  openLeaveGameConfirmation();
+
+  press(sf::Keyboard::Key::Right);
+  tap(sf::Keyboard::Key::Enter);
+  letThePressLast();
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::ReplaceAll,
+                                        .screen = TITLE_SCREEN}));
 }
 
 /**

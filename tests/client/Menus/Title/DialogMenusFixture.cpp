@@ -8,6 +8,7 @@
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
+#include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "ScreenInputs.hpp"
 #include "WidgetConstants.hpp"
@@ -15,6 +16,7 @@
 using rtype::client::connectionLostMenu;
 using rtype::client::ConnectionPhase;
 using rtype::client::DialogScreen;
+using rtype::client::leaveGameConfirmationMenu;
 using rtype::client::PRESS_DURATION;
 using rtype::client::quitConfirmationMenu;
 
@@ -30,8 +32,18 @@ void DialogMenusFixture::openConnectionLost(ConnectionPhase ending) {
       std::make_unique<RecordingInterfaceCanvas>(canvas_));
 }
 
+void DialogMenusFixture::openLeaveGameConfirmation() {
+  dialog_ = std::make_unique<DialogScreen>(
+      leaveGameConfirmationMenu(navigator_, sounds_, connection_),
+      samePlayfieldPoint, std::make_unique<RecordingInterfaceCanvas>(canvas_));
+}
+
 const RecordingNavigator& DialogMenusFixture::navigator() const {
   return navigator_;
+}
+
+const RecordingServerConnection& DialogMenusFixture::connection() const {
+  return connection_;
 }
 
 const InterfaceCanvasRecord& DialogMenusFixture::canvas() const {

@@ -2,6 +2,7 @@
 
 #include "ConnectionPhase.hpp"
 #include "IScreenNavigator.hpp"
+#include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
 #include "Menu.hpp"
 
@@ -17,6 +18,21 @@ namespace rtype::client {
  */
 [[nodiscard]] Menu quitConfirmationMenu(IScreenNavigator& navigator,
                                         ISoundPlayer& sounds);
+
+/**
+ * @returns The question asked before leaving a game for the title, for a
+ * DialogScreen over the options of the game: NO is selected at first, and
+ * MENU_CANCEL_KEY answers it too: both close the dialog, back to the options.
+ * YES leaves the session, which tells the server, and puts the title in place
+ * of every screen.
+ *
+ * @param navigator Screens around the dialog, which must outlive it.
+ * @param sounds Plays the click of its buttons, and must outlive it.
+ * @param connection The session left, which must outlive the dialog.
+ */
+[[nodiscard]] Menu leaveGameConfirmationMenu(IScreenNavigator& navigator,
+                                             ISoundPlayer& sounds,
+                                             IServerConnection& connection);
 
 /**
  * @returns What tells the player the session with the server ended, for a
