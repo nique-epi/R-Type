@@ -107,6 +107,8 @@ Then connect a client. The game process logs, in its journal `r-type_game_<n>.lo
 
 ## The shipped file and vanilla games
 
+A resource started by an `ensure` line may hold its own `waves/waves.toml`: the server then reads the waves of the last resource laid that holds one, instead of those of the assets, and the enemies it names may be the sheets the resource brings (see [Resources](/R-Type/server/#resources-ensure-lines)). The file is read with the same rules.
+
 A changed waves file makes the games of the server not vanilla: the server recognizes the shipped file by its fingerprint, SipHash-2-4 of its bytes, so a comment or a line ending counts as a change (see [Vanilla games](/R-Type/server/#vanilla-games-vanillabreaches)). Their scores stay on the leaderboard of that server. `.gitattributes` keeps the file in LF on every checkout, Windows included.
 
 When the shipped file itself changes, `OFFICIAL_WAVES_FINGERPRINT` in `src/server/ServerConstants.hpp` changes with it: `WaveCatalog.TheShippedFileHasTheOfficialFingerprint` fails until it does, and its failure prints, in decimal, the fingerprint the file now has.

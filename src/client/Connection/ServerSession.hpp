@@ -6,11 +6,11 @@
 #include "ActionSet.hpp"
 #include "ConnectionAttempt.hpp"
 #include "ConnectionPhase.hpp"
-#include "ConnectionRequest.hpp"
 #include "ConnectionStatus.hpp"
 #include "ContentLoading.hpp"
 #include "Endpoint.hpp"
 #include "GameLoadedReminder.hpp"
+#include "GameRequest.hpp"
 #include "HandshakeAnswers.hpp"
 #include "IPlayerInputLink.hpp"
 #include "IServerConnection.hpp"
@@ -90,7 +90,7 @@ class ServerSession final : public IServerConnection, public IPlayerInputLink {
    * dropped then.
    */
   void connect(const network::Endpoint& server, std::string_view nickname,
-               const network::GameChoice& game) override;
+               const GameRequest& request) override;
   void cancel() override;
   [[nodiscard]] ConnectionStatus status() const override;
 

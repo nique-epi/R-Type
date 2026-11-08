@@ -10,19 +10,24 @@
 namespace rtype::game {
 
 /**
- * @brief Lists the content of @p assetFolder a client needs to draw what a
- * server plays: every sheet of ENTITY_SHEET_FOLDER_IN_ASSETS, and the sprite
- * sheet each one names under SPRITE_SHEET_KEY, read once however many sheets
- * name it. The server and the client list it the same way, so the same
- * folders give the same files.
+ * @brief Lists the content of @p contentFolders a client needs to draw what a
+ * server plays: every sheet of their ENTITY_SHEET_FOLDER_IN_ASSETS (see
+ * sheetTextsInFolders()), and the sprite sheet each one names under
+ * SPRITE_SHEET_KEY, read once however many sheets name it, from the one
+ * folder that holds it. The folders are laid over each other, so a sheet of a
+ * resource may name a sprite sheet of the assets. The server and the client
+ * list it the same way, so the same folders give the same files.
+ * @param contentFolders The assets folder, then the folder of each resource
+ * started (see engine::contentFoldersOf()); a client lists its assets alone.
  * @returns The files, in the order of their paths.
- * @throws What sheetTextsIn() throws; engine::DataFileSyntaxException,
+ * @throws What sheetTextsInFolders() throws; engine::DataFileSyntaxException,
  * MissingDataFileKeyException, DataFileTableExpectedException or
- * DataFileTextExpectedException when a sheet names no sprite sheet; and
- * engine::UnreadableDataFileException when a sprite sheet cannot be read.
+ * DataFileTextExpectedException when a sheet names no sprite sheet;
+ * SharedContentFileException when two folders hold the sprite sheet a sheet
+ * names; and engine::UnreadableDataFileException when none does.
  */
 [[nodiscard]] std::vector<identifiers::ContentFile> contentFilesIn(
-    const std::filesystem::path& assetFolder);
+    std::span<const std::filesystem::path> contentFolders);
 
 /** @returns Whether @p path names a sheet: a `.toml` file right in
  * ENTITY_SHEET_FOLDER_IN_ASSETS, as contentFilesIn() lists it. */

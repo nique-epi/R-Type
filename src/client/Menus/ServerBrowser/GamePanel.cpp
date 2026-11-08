@@ -13,6 +13,8 @@
 #include "GameCatalog.hpp"
 #include "GameListSnapshot.hpp"
 #include "GameRow.hpp"
+#include "GameRulesLine.hpp"
+#include "GameRulesLineConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InkTag.hpp"
 #include "InterfaceColorConstants.hpp"
@@ -38,22 +40,34 @@ const char* stateWordOf(network::ListedGameState state) {
   return FULL_WORD;
 }
 
-/** @returns The line that says what ENTER does with @p game. */
+/** @returns The line that says what ENTER does with @p game: a waiting game
+ * names its rules before ENTER joins it. */
 std::string descriptionOf(const GameRow& game) {
   if (isJoinable(game)) {
-    return game.name + JOINABLE_DESCRIPTION;
+    return game.name + RULES_SEPARATOR + rulesLineOf(game.rules) +
+           JOINABLE_DESCRIPTION;
   }
   return game.name + (game.state == network::ListedGameState::InGame
                           ? IN_GAME_DESCRIPTION
                           : FULL_DESCRIPTION);
 }
 
+/** @returns The rows + NEW GAME takes before the games of @p games: one once
+ * the master listed them, even none, since it then listed the difficulties of
+ * the server; none before. */
+std::size_t newGameRowsOf(const GameListSnapshot& games) {
+  return games.phase == ServerListPhase::Ready ||
+                 games.phase == ServerListPhase::Empty
+             ? 1
+             : 0;
+}
+
 sf::Vector2i inPanel(int across, int down) {
   return GAME_PANEL_AREA.position + sf::Vector2i{across, down};
 }
 
-/** @returns The words the panel shows in place of its rows, or nothing when
- * it has rows to show. */
+/** @returns The words the panel shows in place of its games, or nothing when
+ * it has games to show. */
 std::optional<const char*> messageOf(ServerListPhase phase) {
   switch (phase) {
     case ServerListPhase::Searching:
@@ -84,16 +98,21 @@ struct GameRowPlace {
   bool chosen{};
 };
 
+/** @brief Paints the highlight of the chosen row, whose text stands at
+ * @p top. */
+void paintRowHighlight(IInterfaceCanvas& canvas, int top) {
+  canvas.fill({inPanel(GAME_ROW_HIGHLIGHT_LEFT, top - GAME_ROW_HIGHLIGHT_RISE),
+               {GAME_PANEL_AREA.size.x - (2 * GAME_ROW_HIGHLIGHT_LEFT),
+                GAME_ROW_HIGHLIGHT_HEIGHT}},
+              EDGE_BLUE);
+}
+
 /** @brief Paints @p game on its row: its name, its pilots of its seats, and
  * its state as a word on ink; the chosen row on a highlight, in ink. */
 void paintGameRow(IInterfaceCanvas& canvas, const GameRow& game,
                   GameRowPlace place) {
   if (place.chosen) {
-    canvas.fill(
-        {inPanel(GAME_ROW_HIGHLIGHT_LEFT, place.top - GAME_ROW_HIGHLIGHT_RISE),
-         {GAME_PANEL_AREA.size.x - (2 * GAME_ROW_HIGHLIGHT_LEFT),
-          GAME_ROW_HIGHLIGHT_HEIGHT}},
-        EDGE_BLUE);
+    paintRowHighlight(canvas, place.top);
   }
   canvas.write(game.name, inPanel(GAME_NAME_COLUMN, place.top),
                TextStyle{.font = TextFont::Regular,
@@ -109,33 +128,44 @@ void paintGameRow(IInterfaceCanvas& canvas, const GameRow& game,
                      .wordColor = isJoinable(game) ? HUD_CYAN : STAR_GOLD});
 }
 
+/** @brief Paints + NEW GAME on its row, in cyan, or in ink on the highlight
+ * when it is chosen. */
+void paintNewGameRow(IInterfaceCanvas& canvas, GameRowPlace place) {
+  if (place.chosen) {
+    paintRowHighlight(canvas, place.top);
+  }
+  canvas.write(NEW_GAME_ROW_LABEL, inPanel(GAME_NAME_COLUMN, place.top),
+               TextStyle{.font = TextFont::Regular,
+                         .color = place.chosen ? INK : HUD_CYAN});
+}
+
 }  // namespace
 
 void GamePanel::show(const GameListSnapshot& games, std::string serverName) {
+  const GameRow* chosenGame = gameAt(chosen_);
   const std::optional<std::uint16_t> before =
-      chosen_ < games_.games.size()
-          ? std::optional{games_.games[chosen_].number}
-          : std::nullopt;
+      chosenGame != nullptr ? std::optional{chosenGame->number} : std::nullopt;
   games_ = games;
   serverName_ = std::move(serverName);
   chosen_ = 0;
   if (before.has_value()) {
     const auto still =
         std::ranges::find(games_.games, *before, &GameRow::number);
-    chosen_ = still == games_.games.end()
-                  ? 0
-                  : static_cast<std::size_t>(still - games_.games.begin());
+    if (still != games_.games.end()) {
+      chosen_ = static_cast<std::size_t>(still - games_.games.begin()) +
+                newGameRowsOf(games_);
+    }
   }
   move(0);
 }
 
 void GamePanel::move(int step) {
-  if (games_.games.empty()) {
+  if (entryCount() == 0) {
     chosen_ = 0;
     first_ = 0;
     return;
   }
-  const auto last = static_cast<std::int64_t>(games_.games.size()) - 1;
+  const auto last = static_cast<std::int64_t>(entryCount()) - 1;
   chosen_ = static_cast<std::size_t>(std::clamp(
       static_cast<std::int64_t>(chosen_) + step, std::int64_t{0}, last));
   if (chosen_ < first_) {
@@ -146,10 +176,15 @@ void GamePanel::move(int step) {
 }
 
 std::optional<GameRow> GamePanel::joinable() const {
-  if (chosen_ >= games_.games.size() || !isJoinable(games_.games[chosen_])) {
+  const GameRow* game = gameAt(chosen_);
+  if (game == nullptr || !isJoinable(*game)) {
     return std::nullopt;
   }
-  return games_.games[chosen_];
+  return *game;
+}
+
+bool GamePanel::newGameChosen() const {
+  return newGameRowsOf(games_) > 0 && chosen_ == 0;
 }
 
 void GamePanel::paint(IInterfaceCanvas& canvas) const {
@@ -161,40 +196,57 @@ void GamePanel::paint(IInterfaceCanvas& canvas) const {
   canvas.fill({inPanel(GAME_PANEL_PADDING, GAME_PANEL_RULE_TOP),
                {GAME_PANEL_AREA.size.x - (2 * GAME_PANEL_PADDING), 1}},
               DEEP_BLUE);
+  const bool offersNewGame = newGameRowsOf(games_) > 0;
+  if (offersNewGame) {
+    paintRows(canvas);
+    paintDescription(canvas);
+  }
   if (const std::optional<const char*> message = messageOf(games_.phase)) {
     canvas.write(*message,
-                 inPanel(GAME_PANEL_AREA.size.x / 2, GAME_PANEL_FIRST_ROW),
+                 inPanel(GAME_PANEL_AREA.size.x / 2,
+                         offersNewGame ? GAME_PANEL_EMPTY_MESSAGE_ROW
+                                       : GAME_PANEL_FIRST_ROW),
                  TextStyle{.font = TextFont::Regular,
                            .color = PALE_BLUE,
                            .alignment = TextAlignment::Center});
-    return;
   }
-  paintRows(canvas);
-  paintDescription(canvas);
 }
 
 void GamePanel::paintRows(IInterfaceCanvas& canvas) const {
   paintColumnHeadings(canvas);
-  const std::size_t last =
-      std::min(games_.games.size(), first_ + GAME_ROWS_SHOWN);
-  for (std::size_t index = first_; index < last; ++index) {
-    paintGameRow(
-        canvas, games_.games[index],
-        GameRowPlace{.top = GAME_PANEL_FIRST_ROW +
-                            (static_cast<int>(index - first_) * GAME_ROW_PITCH),
-                     .chosen = index == chosen_});
+  const std::size_t last = std::min(entryCount(), first_ + GAME_ROWS_SHOWN);
+  for (std::size_t entry = first_; entry < last; ++entry) {
+    const GameRowPlace place{
+        .top = GAME_PANEL_FIRST_ROW +
+               (static_cast<int>(entry - first_) * GAME_ROW_PITCH),
+        .chosen = entry == chosen_};
+    if (const GameRow* game = gameAt(entry)) {
+      paintGameRow(canvas, *game, place);
+    } else {
+      paintNewGameRow(canvas, place);
+    }
   }
 }
 
 void GamePanel::paintDescription(IInterfaceCanvas& canvas) const {
-  if (chosen_ >= games_.games.size()) {
-    return;
-  }
-  const GameRow& game = games_.games[chosen_];
-  canvas.write(descriptionOf(game),
+  const GameRow* game = gameAt(chosen_);
+  const bool enterActs = game == nullptr || isJoinable(*game);
+  canvas.write(game != nullptr ? descriptionOf(*game) : NEW_GAME_DESCRIPTION,
                inPanel(GAME_PANEL_PADDING, GAME_PANEL_DESCRIPTION_TOP),
                TextStyle{.font = TextFont::Small,
-                         .color = isJoinable(game) ? HUD_CYAN : PALE_BLUE});
+                         .color = enterActs ? HUD_CYAN : PALE_BLUE});
+}
+
+std::size_t GamePanel::entryCount() const {
+  return games_.games.size() + newGameRowsOf(games_);
+}
+
+const GameRow* GamePanel::gameAt(std::size_t entry) const {
+  const std::size_t offset = newGameRowsOf(games_);
+  if (entry < offset || entry - offset >= games_.games.size()) {
+    return nullptr;
+  }
+  return &games_.games[entry - offset];
 }
 
 }  // namespace rtype::client

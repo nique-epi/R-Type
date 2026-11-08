@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 #include "DataFilePlace.hpp"
 
 namespace rtype::game {
@@ -111,6 +112,15 @@ class InconsistentEntitySheetException : public GameException {
  public:
   InconsistentEntitySheetException(const engine::DataFilePlace& place,
                                    std::string_view rule);
+};
+
+/** @brief Two content folders, the assets or a resource, hold a file at the
+ * same path, so the content would not say which one a sheet names. */
+class SharedContentFileException : public GameException {
+ public:
+  /** @param folders The folders that hold it, as the errors show them. */
+  SharedContentFileException(const std::string& path,
+                             const std::vector<std::string>& folders);
 };
 
 }  // namespace rtype::game

@@ -1,6 +1,7 @@
 add_library(rtype_client_menus_server_browser STATIC
   GamePanel.cpp
   HangarStar.cpp
+  NewGameDialog.cpp
   ServerMapChoice.cpp
   ServerMapPainting.cpp
   ServerMapScreen.cpp
@@ -17,6 +18,7 @@ target_link_libraries(rtype_client_menus_server_browser
     rtype_client_audio_contract_sounds
     rtype_client_interface
     rtype_client_key_chip
+    rtype_client_menu
     rtype_client_screens_module
     rtype_client_sector_map_interfaces
     rtype_client_server_list
@@ -26,6 +28,7 @@ target_link_libraries(rtype_client_menus_server_browser
     rtype_engine_time
   PRIVATE
     rtype_client_button
+    rtype_client_choice_selector
     rtype_client_cut_corner_box
     rtype_client_entity_sprites
     rtype_client_ink_tag
@@ -33,8 +36,11 @@ target_link_libraries(rtype_client_menus_server_browser
     rtype_client_label_placement
     rtype_client_menu_builder
     rtype_client_ringed_planet
+    rtype_client_row_control
     rtype_client_sector_layout
     rtype_client_sector_map_painting
+    rtype_client_switch
+    rtype_identifiers
 )
 
 rtype_enable_warnings(rtype_client_menus_server_browser)

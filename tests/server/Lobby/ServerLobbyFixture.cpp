@@ -2,9 +2,11 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <utility>
 #include <vector>
+#include "AssetFolder.hpp"
 #include "Ban.hpp"
 #include "BanList.hpp"
 #include "BanProbeModule.hpp"
@@ -25,7 +27,8 @@ std::vector<std::unique_ptr<rtype::engine::IModule>>
 ServerLobbyFixture::modulesAfterTheGames() const {
   std::vector<std::unique_ptr<rtype::engine::IModule>> modules;
   modules.push_back(std::make_unique<rtype::server::ServerLobbyModule>(
-      rtype::server::testing::GAME_PACK_PORT));
+      rtype::server::testing::GAME_PACK_PORT,
+      std::vector<std::filesystem::path>{rtype::engine::locateAssetFolder()}));
   auto probe = std::make_unique<BanProbeModule>();
   banProbe_ = probe.get();
   modules.push_back(std::move(probe));

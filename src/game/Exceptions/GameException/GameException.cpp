@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 #include "DataFilePlace.hpp"
 #include "ErrorText.hpp"
 
@@ -60,5 +61,11 @@ InconsistentEntitySheetException::InconsistentEntitySheetException(
     const engine::DataFilePlace& place, std::string_view rule)
     : GameException(engine::placeText(place) + ": " + place.key + ": " +
                     std::string(rule)) {}
+
+SharedContentFileException::SharedContentFileException(
+    const std::string& path, const std::vector<std::string>& folders)
+    : GameException(
+          "The content file " + path +
+          " is in more than one folder: " + engine::listText(folders)) {}
 
 }  // namespace rtype::game

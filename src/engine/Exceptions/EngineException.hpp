@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <stdexcept>
@@ -330,6 +331,41 @@ class InvalidPluginNameException : public EngineException {
 class DuplicateModuleNameException : public EngineException {
  public:
   explicit DuplicateModuleNameException(const std::string& name);
+};
+
+/** @brief An `ensure` line is not `ensure <name>`. */
+class InvalidEnsureLineException : public EngineException {
+ public:
+  explicit InvalidEnsureLineException(const std::string& line);
+};
+
+/** @brief A resource is named with other characters than lowercase letters,
+ * digits, '-' and '_', or is too long. */
+class InvalidResourceNameException : public EngineException {
+ public:
+  InvalidResourceNameException(const std::string& name,
+                               std::size_t longestName);
+};
+
+/** @brief A started resource has no folder, or its folder no manifest. */
+class ResourceNotFoundException : public EngineException {
+ public:
+  /** @param folder The folder of the resource, as the errors show it. */
+  ResourceNotFoundException(const std::string& name, const std::string& folder);
+};
+
+/** @brief The resources depend on each other in a circle. */
+class ResourceDependencyCycleException : public EngineException {
+ public:
+  /** @param chain The resources from the first of the circle back to it. */
+  explicit ResourceDependencyCycleException(
+      const std::vector<std::string>& chain);
+};
+
+/** @brief The `depends` key of a manifest is not a list of resource names. */
+class ResourceDependenciesExpectedException : public EngineException {
+ public:
+  explicit ResourceDependenciesExpectedException(const DataFilePlace& place);
 };
 
 }  // namespace rtype::engine

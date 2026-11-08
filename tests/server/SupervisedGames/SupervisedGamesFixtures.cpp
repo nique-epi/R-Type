@@ -127,7 +127,7 @@ rtype::server::GameLaunchSettings settingsOf(
       .gameLines = {},
       .forwardedArguments = supervisor.gameArguments(),
       .wavesFile = {},
-      .entitySheetsFolder = {},
+      .contentFolders = {},
       .trafficCsvFile = supervisor.trafficCsvFile()};
 }
 

@@ -4,6 +4,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include "ChatWindow.hpp"
 #include "HelpWalkthrough.hpp"
@@ -131,6 +132,9 @@ class LobbyScreen : public IScreen {
   std::reference_wrapper<const PlayerPalette> palette_;
   MotionPreference motion_{};
   LobbyPlace place_{};
+  /** @brief The rules of the game in words, written on the row of the
+   * heading; nothing when the client does not know them. */
+  std::optional<std::string> rulesLine_;
   engine::Duration elapsed_{};
   bool readyKeyHeld_ = false;
   bool gameAsked_ = false;

@@ -15,6 +15,7 @@
 #include "ConfigurationReport.hpp"
 #include "ConfigurationSource.hpp"
 #include "ConfigurationStep.hpp"
+#include "EnsureLines.hpp"
 #include "GameLaunchOptions.hpp"
 #include "GameLineRule.hpp"
 #include "GameProcessModules.hpp"
@@ -127,7 +128,8 @@ std::optional<Options> launchOptionsOrUsage(
 /**
  * @brief Runs a game process with @p options, or prints its usage. The game
  * reads the file its supervisor gave after `--configuration`, and no file
- * without it.
+ * without it. Its `ensure` lines are read before its modules are built, which
+ * lay the content of those resources over the assets.
  * @returns the exit code of the game.
  */
 int runGame(std::span<const std::string_view> options) {
@@ -136,18 +138,21 @@ int runGame(std::span<const std::string_view> options) {
   if (!launchOptions.has_value()) {
     return 0;
   }
+  const rtype::engine::ConfigurationSource configuration{
+      .file =
+          launchOptions->configurationFile().value_or(std::filesystem::path{}),
+      .forcedLines = launchOptions->forcedLines(),
+      .handOver = rtype::engine::ensureLineRule()};
   return runUntilStopped(ProgramRun{
       .label = rtype::server::GAME_MODE_NAME,
       .loggerName = rtype::server::SERVER_LOGGER_NAME,
-      .configuration =
-          rtype::engine::ConfigurationSource{
-              .file = launchOptions->configurationFile().value_or(
-                  std::filesystem::path{}),
-              .forcedLines = launchOptions->forcedLines(),
-              .handOver = {}},
+      .configuration = configuration,
       .stages = rtype::server::SERVER_LOOP_STAGES,
-      .modules = [&launchOptions](rtype::server::StopRequest& stopRequest) {
-        return rtype::server::gameProcessModules(*launchOptions, stopRequest);
+      .modules = [&launchOptions,
+                  &configuration](rtype::server::StopRequest& stopRequest) {
+        return rtype::server::gameProcessModules(
+            *launchOptions, stopRequest,
+            rtype::engine::handedOverLines(configuration));
       }});
 }
 

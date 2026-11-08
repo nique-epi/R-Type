@@ -37,6 +37,7 @@
 #include "ServerConstants.hpp"
 #include "ServerDatabaseFile.hpp"
 #include "SettingValue.hpp"
+#include "SheetTextReading.hpp"
 #include "StopPause.hpp"
 #include "SupervisedGame.hpp"
 #include "SupervisedGamesConstants.hpp"
@@ -56,11 +57,13 @@ network::Endpoint loopbackEndpoint(std::uint16_t port) {
 }
 
 /** @returns The names of the difficulties of the waves file of @p settings,
- * read with the entity sheets it names its enemies among.
- * @throws what EntitySheets::fromFolder() and WaveCatalog::fromFile() throw. */
+ * read with the entity sheets of its content folders, which it names its
+ * enemies among.
+ * @throws what sheetTextsInFolders(), EntitySheets::fromTexts() and
+ * WaveCatalog::fromFile() throw. */
 std::vector<std::string> difficultyNamesOf(const GameLaunchSettings& settings) {
-  const game::EntitySheets types =
-      game::EntitySheets::fromFolder(settings.entitySheetsFolder);
+  const game::EntitySheets types = game::EntitySheets::fromTexts(
+      game::sheetTextsInFolders(settings.contentFolders));
   return WaveCatalog::fromFile(settings.wavesFile, types).difficulties();
 }
 

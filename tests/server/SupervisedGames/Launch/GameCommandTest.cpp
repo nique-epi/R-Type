@@ -38,7 +38,7 @@ TEST(GameCommand, GivesTheGameItsPortItsSupervisorItsTokenAndItsFiles) {
                          .gameLines = {},
                          .forwardedArguments = {},
                          .wavesFile = {},
-                         .entitySheetsFolder = {}},
+                         .contentFolders = {}},
       GameLaunch{
           .number = 3, .port = 50123, .supervisorPort = 4242, .linkToken = 99},
       NO_DATABASE_SETTING);
@@ -103,7 +103,7 @@ TEST(GameCommand, GivesTheGameTheDatabaseOfTheSupervisor) {
                                      .gameLines = {},
                                      .forwardedArguments = {},
                                      .wavesFile = {},
-                                     .entitySheetsFolder = {}},
+                                     .contentFolders = {}},
                   GameLaunch{.number = 0,
                              .port = FIRST_GAME_PORT,
                              .supervisorPort = FIRST_SUPERVISED_PLAYER_PORT,
@@ -128,7 +128,7 @@ TEST(GameCommand, GivesEachGameATrafficFileOfItsOwn) {
           .gameLines = {},
           .forwardedArguments = {},
           .wavesFile = {},
-          .entitySheetsFolder = {},
+          .contentFolders = {},
           .trafficCsvFile =
               std::filesystem::path{TRAFFIC_FILE_OF_THE_SUPERVISOR}},
       GameLaunch{.number = GAME_THREE,

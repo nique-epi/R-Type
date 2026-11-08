@@ -56,6 +56,21 @@ constexpr TextStyle PILOT_COUNT_STYLE{.font = TextFont::Regular,
                                       .alignment = TextAlignment::Right};
 
 /**
+ * @brief The rules of the game, in small print on the row of the heading,
+ * centered between the end of the heading and the start of the count of
+ * pilots, their baseline on the baseline of both. Measured in Silkscreen at
+ * 8 px, the longest line, a name of 16 capitals, 9 LIVES and FRIENDLY FIRE OFF,
+ * is 251 px wide; between WAITING ROOM (ends at x 120) and 4 PILOTS (starts at
+ * x 392) lie 272.
+ */
+constexpr int GAME_RULES_TOP =
+    SAFE_MARGIN + REGULAR_FONT_BASELINE_ROW - SMALL_FONT_BASELINE_ROW;
+constexpr TextStyle GAME_RULES_STYLE{.font = TextFont::Small,
+                                     .color = PAGE_TEXT_COLOR,
+                                     .outlined = true,
+                                     .alignment = TextAlignment::Center};
+
+/**
  * @brief The status line under the main bar: every listed pilot ready; the
  * local player the only one not ready; another pilot the only one, after its
  * nickname; several pilots not ready, after their number. It never counts

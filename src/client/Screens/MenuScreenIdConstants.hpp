@@ -52,6 +52,10 @@ constexpr ScreenId CONNECTION_TO_CHOSEN_SERVER_SCREEN{
  * start with the server of the lost game, and the player confirms them. */
 constexpr ScreenId CONNECTION_AGAIN_SCREEN{"connection again"};
 
+/** @brief The dialog that sets the rules of a new game, pushed over the
+ * server map by + NEW GAME of the panel of the games of a server. */
+constexpr ScreenId NEW_GAME_SCREEN{"new game"};
+
 /** @brief The map of the servers the master lists, with their games, pushed
  * over the title by PLAY, or by RETRY under CONNECTION_AGAIN_SCREEN. */
 constexpr ScreenId SERVER_MAP_SCREEN{"server map"};

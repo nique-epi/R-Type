@@ -17,6 +17,7 @@
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
 #include "ScreenTestConstants.hpp"
+#include "ServerConnectionRequest.hpp"
 #include "WidgetConstants.hpp"
 
 using rtype::client::CONNECTION_FOR_LEADERBOARD_SCREEN;
@@ -357,7 +358,7 @@ TEST_F(LeaderboardScreenFixture, BackLeavesAServerJoinedFromHere) {
 
   EXPECT_THAT(connection().calls(),
               ElementsAre(Field(&ServerConnectionCall::request,
-                                ServerConnectionCall::Request::Cancel)));
+                                ServerConnectionRequest::Cancel)));
   EXPECT_THAT(navigator().calls().back(),
               (NavigatorCall{.request = NavigatorRequest::Pop,
                              .screen = std::nullopt}));

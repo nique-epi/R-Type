@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <vector>
@@ -19,7 +20,7 @@ namespace rtype::server {
  * sheets they name, at network::CONTENT_PACK_ROUTE, so a client that lacks
  * them downloads them before it plays.
  *
- * install() reads the assets folder and encodes the pack once. start()
+ * install() reads the content folders and encodes the pack once. start()
  * listens for HTTP on every IPv4 interface and on the TCP port of the number
  * the players reach the server by in UDP. When that port is taken, or the
  * system chooses the UDP port, the server runs without serving the pack and
@@ -28,13 +29,16 @@ namespace rtype::server {
  */
 class ServerContentModule final : public engine::IModule {
  public:
-  ServerContentModule();
+  /** @param contentFolders The folders the pack is made of, the assets first
+   * then each resource the games start (see engine::contentFoldersOf()). */
+  explicit ServerContentModule(
+      std::vector<std::filesystem::path> contentFolders);
 
   [[nodiscard]] std::string name() const override;
   [[nodiscard]] std::vector<std::string> dependencies() const override;
 
   /**
-   * @brief Reads the content of the assets folder, encodes the pack and adds
+   * @brief Reads the content of the content folders, encodes the pack and adds
    * its route; opens nothing.
    * @throws What game::contentFilesIn() and network::encodeContentPack()
    * throw, when the content cannot be read or would make no valid pack.
@@ -48,6 +52,7 @@ class ServerContentModule final : public engine::IModule {
   void stop() override;
 
  private:
+  std::vector<std::filesystem::path> contentFolders_;
   engine::SystemClock clock_;
   logging::Logger logger_;
   network::HttpServer server_;

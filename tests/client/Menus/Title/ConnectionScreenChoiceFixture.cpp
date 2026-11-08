@@ -4,12 +4,16 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include "ConnectionRequest.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenFixtures.hpp"
 #include "ConnectionScreenParts.hpp"
 #include "ConnectionScreenTestConstants.hpp"
 #include "ConnectionStart.hpp"
 #include "Endpoint.hpp"
+#include "GameRequest.hpp"
+#include "GameRules.hpp"
+#include "GameRulesTestConstants.hpp"
 #include "KeyPress.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -20,11 +24,15 @@
 using rtype::client::ConnectionScreen;
 using rtype::client::ConnectionScreenParts;
 using rtype::client::ConnectionStart;
+using rtype::client::GameRequest;
 using rtype::client::PRESS_DURATION;
 using rtype::client::testing::LAUNCH_NICKNAME;
 using rtype::client::testing::MAP_ADDRESS;
 using rtype::client::testing::MAP_PORT;
 using rtype::network::Endpoint;
+using rtype::network::GameRules;
+using rtype::testing::CHOSEN_DIFFICULTY;
+using rtype::testing::CHOSEN_LIVES;
 
 ConnectionScreenChoiceFixture::ConnectionScreenChoiceFixture()
     : choice_(launchChoice()) {
@@ -60,6 +68,15 @@ void ConnectionScreenChoiceFixture::reopenForARetry() {
 void ConnectionScreenChoiceFixture::chooseOnTheMap() {
   choice_.lastServer =
       Endpoint{.address = std::string(MAP_ADDRESS), .port = MAP_PORT};
+}
+
+void ConnectionScreenChoiceFixture::chooseANewGameOnTheMap() {
+  chooseOnTheMap();
+  choice_.lastRequest = GameRequest{
+      .game = rtype::network::NEW_GAME_CHOICE,
+      .rules = GameRules{.difficulty = std::string(CHOSEN_DIFFICULTY),
+                         .lives = CHOSEN_LIVES,
+                         .friendlyFire = true}};
 }
 
 void ConnectionScreenChoiceFixture::openWith(ConnectionStart start) {

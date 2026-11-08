@@ -70,7 +70,7 @@ rtype::server::GamesSettings ServerGamesFixture::shippedWaves() {
       .seed = SOME_SEED,
       .wavesFile = std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} / "waves" /
                    "waves.toml",
-      .entitySheetsFolder = rtype::game::testing::shippedSheetFolder()};
+      .contentFolders = {rtype::game::testing::shippedAssetFolder()}};
 }
 
 ConnectedPlayer& ServerGamesFixture::join(std::size_t index) {

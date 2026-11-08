@@ -17,7 +17,6 @@ target_link_libraries(rtype_server_content_module
     rtype_network_http
     rtype_server_network_module
   PRIVATE
-    rtype_engine_paths
     rtype_game_entity_types
     rtype_network_constants
     rtype_network_exceptions

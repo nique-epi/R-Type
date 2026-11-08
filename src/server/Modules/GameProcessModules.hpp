@@ -1,6 +1,8 @@
 #pragma once
 
 #include <memory>
+#include <span>
+#include <string>
 #include <vector>
 #include "GameLaunchOptions.hpp"
 #include "IModule.hpp"
@@ -20,10 +22,16 @@ namespace rtype::server {
  * @param stopRequest Told by the network module when the game fails, and by
  * the link when the supervisor asks it to stop or is gone; it must outlive the
  * modules.
+ * @param handedOverLines The lines of its configuration kept for it before
+ * the modules are built (see engine::ensureLineRule()): the resources their
+ * `ensure` lines start (see engine::ensuredResources()) are laid over the
+ * assets (see engine::contentFoldersOf()).
  * @throws EngineException when the system does not tell where the executable
- * is, or no assets folder lies next to it or in the folder above.
+ * is, no assets folder lies next to it or in the folder above, or a resource
+ * cannot be started.
  */
 [[nodiscard]] std::vector<std::unique_ptr<engine::IModule>> gameProcessModules(
-    const GameLaunchOptions& launchOptions, StopRequest& stopRequest);
+    const GameLaunchOptions& launchOptions, StopRequest& stopRequest,
+    std::span<const std::string> handedOverLines = {});
 
 }  // namespace rtype::server

@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -133,9 +134,10 @@ TEST_F(ServerLobbyFixture, AcceptsWithTheContentOfItsAssets) {
         return holdsMessageOfType(datagram, MessageType::ConnectionAccepted);
       });
   ASSERT_NE(acceptance, sent.end());
-  EXPECT_EQ(onlyMessageIn<ConnectionAccepted>(*acceptance).content,
-            rtype::server::contentAnnouncementOf(
-                rtype::engine::locateAssetFolder(), GAME_PACK_PORT));
+  EXPECT_EQ(
+      onlyMessageIn<ConnectionAccepted>(*acceptance).content,
+      rtype::server::contentAnnouncementOf(
+          std::array{rtype::engine::locateAssetFolder()}, GAME_PACK_PORT));
 }
 
 /**

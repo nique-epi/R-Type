@@ -1,9 +1,13 @@
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <optional>
+#include <string>
 #include "GameCatalog.hpp"
 #include "GameCatalogFixture.hpp"
 #include "GameCatalogTestConstants.hpp"
 #include "GameListing.hpp"
+#include "GameRules.hpp"
+#include "GameRulesTestConstants.hpp"
 #include "ListedGameState.hpp"
 #include "ServerListPhase.hpp"
 
@@ -17,7 +21,14 @@ using rtype::client::testing::PLAYERS_PER_GAME_OF_THE_SERVER;
 using rtype::client::testing::SECOND_GAME_NUMBER;
 using rtype::client::testing::SECOND_SERVER_ID;
 using rtype::network::GameListing;
+using rtype::network::GameRules;
 using rtype::network::ListedGameState;
+using rtype::testing::CHOSEN_DIFFICULTY;
+using rtype::testing::CHOSEN_LIVES;
+using rtype::testing::EASY_DIFFICULTY;
+using rtype::testing::NORMAL_DIFFICULTY;
+using rtype::testing::VETERAN_DIFFICULTY;
+using ::testing::ElementsAre;
 
 /**
  * Given a catalog that asked for the games of a server
@@ -118,6 +129,54 @@ TEST_F(GameCatalogFixture, IsEmptyForAServerWithNoGame) {
   catalog().update();
 
   EXPECT_EQ(catalog().snapshot().phase, ServerListPhase::Empty);
+}
+
+/**
+ * Given a server that lists the difficulties easy, normal and veteran
+ * When the catalog takes its games
+ * Then it keeps those difficulties, in that order
+ */
+TEST_F(GameCatalogFixture, KeepsTheDifficultiesOfTheServer) {
+  catalog().ask(serverOf(FIRST_SERVER_ID));
+  master().answerGames(FIRST_GAME_ASK, aHardGame());
+  catalog().update();
+
+  EXPECT_THAT(
+      catalog().snapshot().difficulties,
+      ElementsAre(EASY_DIFFICULTY, NORMAL_DIFFICULTY, VETERAN_DIFFICULTY));
+}
+
+/**
+ * Given a server with no game that lists its difficulties
+ * When the catalog takes its games
+ * Then it keeps those difficulties, so a new game can be opened there
+ */
+TEST_F(GameCatalogFixture, KeepsTheDifficultiesOfAServerWithNoGame) {
+  catalog().ask(serverOf(FIRST_SERVER_ID));
+  GameListing noGame = aHardGame();
+  noGame.games.clear();
+  master().answerGames(FIRST_GAME_ASK, noGame);
+  catalog().update();
+
+  ASSERT_EQ(catalog().snapshot().phase, ServerListPhase::Empty);
+  EXPECT_EQ(catalog().snapshot().difficulties.size(), 3U);
+}
+
+/**
+ * Given a game played hard, with five lives and friendly fire on
+ * When the catalog takes it
+ * Then its row is played by those rules
+ */
+TEST_F(GameCatalogFixture, GivesEachGameItsRules) {
+  catalog().ask(serverOf(FIRST_SERVER_ID));
+  master().answerGames(FIRST_GAME_ASK, aHardGame());
+  catalog().update();
+
+  ASSERT_EQ(catalog().snapshot().games.size(), 1U);
+  EXPECT_EQ(catalog().snapshot().games.front().rules,
+            (GameRules{.difficulty = std::string{CHOSEN_DIFFICULTY},
+                       .lives = CHOSEN_LIVES,
+                       .friendlyFire = true}));
 }
 
 /**
