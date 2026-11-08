@@ -57,7 +57,7 @@ echo 'MASTER_URL=http://localhost:8081' > web/.env.local
 
 | Variable            | Default                 | Role                                                             |
 | ------------------- | ----------------------- | ---------------------------------------------------------------- |
-| `MASTER_URL`        | `http://localhost:8080` | where the Next.js server reaches the master                      |
+| `MASTER_URL`        | `https://master.rtype.app` | where the Next.js server reaches the master                      |
 | `GITHUB_REPOSITORY` | `nique-epi/R-Type`      | the repository whose latest release the download page reads      |
 | `GITHUB_TOKEN`      | none                    | raises the GitHub API limit from 60 requests an hour per address |
 

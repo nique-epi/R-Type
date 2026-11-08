@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const DEFAULT_MASTER_URL = 'http://localhost:8080';
+const DEFAULT_MASTER_URL = 'https://master.rtype.app';
 const DEFAULT_GITHUB_REPOSITORY = 'nique-epi/R-Type';
 
 const envSchema = z.object({

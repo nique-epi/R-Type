@@ -56,6 +56,9 @@ constexpr std::string_view SERVER_ADDRESS_SETTING_NAME = "server-address";
 constexpr std::string_view SERVER_PORT_SETTING_NAME = "server-port";
 /** @brief The master the server map reads, `http(s)://<host>[:<port>]`. */
 constexpr std::string_view MASTER_URL_SETTING_NAME = "master-url";
+/** @brief The master the server map reads when no setting names another: the
+ * public master of the game. */
+constexpr std::string_view DEFAULT_MASTER_URL = "https://master.rtype.app";
 
 /** @brief Every setting of the client, in the order its usage lists them. */
 constexpr std::array CLIENT_SETTING_NAMES{

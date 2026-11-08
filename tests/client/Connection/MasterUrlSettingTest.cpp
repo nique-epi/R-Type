@@ -5,8 +5,8 @@
 
 namespace rtype::client {
 
-using testing::MASTER_ON_THIS_MACHINE;
 using testing::PORT_ZERO_MASTER_URL;
+using testing::PUBLIC_MASTER_URL;
 using testing::REMOTE_MASTER_URL;
 using testing::SECURE_MASTER_URL;
 using testing::UNKNOWN_SCHEME_MASTER_URL;
@@ -14,10 +14,10 @@ using testing::UNKNOWN_SCHEME_MASTER_URL;
 /**
  * Given no setting that names a master
  * When the client asks for the master it reads by default
- * Then it is the master on this machine, on the default port of a master
+ * Then it is the public master of the game, over HTTPS
  */
-TEST(MasterUrlSetting, TheDefaultIsTheMasterOnThisMachine) {
-  EXPECT_EQ(defaultMasterUrl(), MASTER_ON_THIS_MACHINE);
+TEST(MasterUrlSetting, TheDefaultIsThePublicMaster) {
+  EXPECT_EQ(defaultMasterUrl(), PUBLIC_MASTER_URL);
 }
 
 /**

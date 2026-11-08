@@ -85,7 +85,7 @@ The storage starts before the HTTP API, so a database the master cannot open sto
 
 ## The web site
 
-The web site is a program of its own: a Next.js server, in `web/` (see [Web site](/R-Type/technology-choices/#web-site-nextjs) for its tools). The browser only talks to that server, by default on port 3000; the server renders each page and calls the API of the master itself, at `MASTER_URL` (`http://localhost:8080` by default). The browser never calls the master, so the master needs no CORS, and the master serves its API only.
+The web site is a program of its own: a Next.js server, in `web/` (see [Web site](/R-Type/technology-choices/#web-site-nextjs) for its tools). The browser only talks to that server, by default on port 3000; the server renders each page and calls the API of the master itself, at `MASTER_URL` (`https://master.rtype.app` by default). The browser never calls the master, so the master needs no CORS, and the master serves its API only.
 
 - **Each request of a page that lists servers asks the master again**: the home page, the sector map, a server and the leaderboard are rendered at request time.
 - **A master that does not answer the list** gives the five example servers of the design (`SAMPLE_SERVERS`), and each page that shows them says they are examples. A master that answers an empty list gives an empty page: only silence gives examples.
