@@ -5,7 +5,7 @@ description: A step-by-step tutorial that adds a module to the server, from its 
 
 This tutorial adds a module to the server: a **tick report** that counts the ticks the server runs and writes the count in its journal every ten seconds. It is small on purpose. It touches every place a real module touches, in the order you will meet them, and nothing in it needs knowledge of the game. The concepts behind each step are on the [Modules](/R-Type/modules/) page.
 
-Every file below was built and its tests were run on a copy of the repository before this page was written. You need the project to build (see the [README](https://github.com/nique-epi/R-Type#readme)) and a branch of your own started from `origin/main`.
+Every file below was built and its tests were run on a copy of the repository before this page was written. You need the project to build (see [Build from source](/R-Type/getting-started/build/)) and a branch of your own started from `origin/main`.
 
 ## What you will have at the end
 

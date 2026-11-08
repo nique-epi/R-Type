@@ -318,7 +318,7 @@ cmake --build build --target format
 
 ## Documentation
 
-The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`. To add a module to the server or the client, start with the [Modules](https://nique-epi.github.io/R-Type/modules/) page and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/). Three more tutorials [add a network message](https://nique-epi.github.io/R-Type/tutorial-add-a-network-message/), [run a server with several games](https://nique-epi.github.io/R-Type/tutorial-run-several-games/) and [publish a mod](https://nique-epi.github.io/R-Type/tutorial-publish-a-mod/).
+The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`. Its [Getting started](https://nique-epi.github.io/R-Type/getting-started/build/) section walks through these steps, from the download to the tests. To add a module to the server or the client, start with the [Modules](https://nique-epi.github.io/R-Type/modules/) page and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/). Three more tutorials [add a network message](https://nique-epi.github.io/R-Type/tutorial-add-a-network-message/), [run a server with several games](https://nique-epi.github.io/R-Type/tutorial-run-several-games/) and [publish a mod](https://nique-epi.github.io/R-Type/tutorial-publish-a-mod/).
 
 To preview it locally, with Node.js 22.12 or newer:
 
