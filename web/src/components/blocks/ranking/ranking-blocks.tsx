@@ -1,3 +1,7 @@
+import {
+  AutoRefresh,
+  LEADERBOARD_REFRESH_SECONDS,
+} from '@/components/layout/auto-refresh';
 import { PageBody } from '@/components/layout/page-body';
 import { PageHero } from '@/components/layout/page-hero';
 import { RankingSection } from '@/components/ranking/ranking-section';
@@ -31,6 +35,7 @@ export async function RankingBlocks({
 
   return (
     <div className="relative isolate">
+      <AutoRefresh seconds={LEADERBOARD_REFRESH_SECONDS} />
       <StarLayers className="-z-10" />
       <PageHero eyebrow={copy.eyebrow} title={copy.title} lede={copy.lede} />
       <PageBody>

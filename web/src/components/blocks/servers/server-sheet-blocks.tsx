@@ -1,4 +1,8 @@
 import Link from 'next/link';
+import {
+  AutoRefresh,
+  SERVER_SHEET_REFRESH_SECONDS,
+} from '@/components/layout/auto-refresh';
 import { PageBody } from '@/components/layout/page-body';
 import { PageHero } from '@/components/layout/page-hero';
 import { Notice } from '@/components/primitives/status/notice';
@@ -31,6 +35,7 @@ export function ServerSheetBlocks({
 
   return (
     <>
+      <AutoRefresh seconds={SERVER_SHEET_REFRESH_SECONDS} />
       <PageHero
         eyebrow={
           <>

@@ -206,6 +206,7 @@ the server then reads the master again. So a leaderboard can be shared by its li
 
 - **GitHub**: [`lib/github/latest-release.ts`](src/lib/github/latest-release.ts) reads the latest release, kept 10 minutes by Next.js (`revalidate`), with a timeout.
 - **Pages that always ask again**: the home, the servers and the leaderboard call `await connection()`, so they are rendered at each request, not at build time.
+- **Pages that follow the master**: [`AutoRefresh`](src/components/layout/auto-refresh.tsx) (`router.refresh()` on an interval) makes the page read its data again without a reload: every 15 s for the map and the home page, 10 s for the sheet of a server, 30 s for the leaderboard. What the reader picked in a client component (a star, a filter) stays; a tab that is not on screen waits and reads again when it is shown. Each refresh costs the master the reads of the page, so the intervals are constants of that file.
 
 ## Components
 

@@ -1,3 +1,7 @@
+import {
+  AutoRefresh,
+  SERVERS_REFRESH_SECONDS,
+} from '@/components/layout/auto-refresh';
 import { Notice } from '@/components/primitives/status/notice';
 import { SectorMapScreen } from '@/components/servers/sector-map-screen';
 import { getMappedServerList } from '@/hooks/api';
@@ -11,6 +15,7 @@ export async function SectorMapBlocks({ lang }: { lang: Locale }) {
 
   return (
     <main className="starfield relative overflow-hidden">
+      <AutoRefresh seconds={SERVERS_REFRESH_SECONDS} />
       <h1 className="sr-only">{dictionary.pages.serversPage.title}</h1>
       <SectorMapScreen
         servers={servers}

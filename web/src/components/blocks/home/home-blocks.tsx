@@ -1,4 +1,8 @@
 import { StoryBand } from '@/components/home/story-band';
+import {
+  AutoRefresh,
+  SERVERS_REFRESH_SECONDS,
+} from '@/components/layout/auto-refresh';
 import { Professor } from '@/components/sprites/professor';
 import { getLatestRelease, getServerList } from '@/hooks/api';
 import { getDictionary } from '@/i18n/get-dictionary';
@@ -20,6 +24,7 @@ export async function HomeBlocks({ lang }: { lang: Locale }) {
 
   return (
     <main>
+      <AutoRefresh seconds={SERVERS_REFRESH_SECONDS} />
       <Hero lang={lang} version={release?.version} />
       <FreeSeats lang={lang} />
       <Bydos lang={lang} version={release?.version} />
