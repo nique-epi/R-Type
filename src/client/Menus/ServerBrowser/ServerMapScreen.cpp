@@ -27,7 +27,6 @@
 #include "KeyChip.hpp"
 #include "KeyChipParts.hpp"
 #include "MapDirection.hpp"
-#include "MasterUrl.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PlanetPose.hpp"
@@ -242,7 +241,6 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
       servers_(&parts.servers.get()),
       games_(&parts.games.get()),
       choice_(&parts.choice.get()),
-      master_(&parts.master.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       motion_(parts.motion),
@@ -397,7 +395,6 @@ void ServerMapScreen::repaint() {
   canvas_->clear();
   const ServerListPhase phase = servers_->snapshot().phase;
   paintServerMapHeader(*canvas_, map_.servers().size());
-  paintMasterAddress(*canvas_, masterTextOf(master_->url()));
   if (phase == ServerListPhase::Ready) {
     const PlanetPose pose = planetPoseIn(
         map_.view(), turnedPlanet(PlanetPose{}, elapsed_, motion_));

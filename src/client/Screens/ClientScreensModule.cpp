@@ -23,7 +23,6 @@
 #include "GameWindow.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
-#include "IMasterAddress.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
 #include "InstallContext.hpp"
@@ -115,7 +114,6 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   serverTicks_ = &context.require<IServerTicks>();
   serverCatalog_ = &context.require<IServerCatalog>();
   gameCatalog_ = &context.require<IGameCatalog>();
-  masterAddress_ = &context.require<IMasterAddress>();
   loop_ = &context.require<FrameLoop>();
   listeners_ = &context.require<EventListeners>();
   declareSettings(context.require<engine::ConfigurationRegistry>());
@@ -174,7 +172,6 @@ ScreenServices ClientScreensModule::services(
       .serverTicks = *serverTicks_,
       .serverCatalog = *serverCatalog_,
       .gameCatalog = *gameCatalog_,
-      .masterAddress = *masterAddress_,
       .choice = ServerChoice{.server = server,
                              .nickname = nicknameSetting_->text(),
                              .game = launch_.game},

@@ -87,10 +87,6 @@ constexpr const char* HANGAR_STAR_DETAIL = "LOCKER AND SHIP";
 constexpr const char* HANGAR_STAR_HINT_START = "CLICK OR ";
 constexpr const char* HANGAR_STAR_HINT_END = ": OPEN";
 
-/** @brief Where the master read is written, on the right of the title,
- * ending at the right edge of the chips. */
-constexpr sf::Vector2i MASTER_ADDRESS_ANCHOR{SERVER_MAP_CHIPS_RIGHT, 40};
-
 /** @brief The panel of the games of a server, over the map dimmed: its area,
  * its title, the count of its games, its rule, its columns, its rows, and the
  * line under them that says what ENTER does. */

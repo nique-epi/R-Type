@@ -10,7 +10,6 @@
 #include "GameRequest.hpp"
 #include "IGameCatalog.hpp"
 #include "IInterfaceCanvas.hpp"
-#include "IMasterAddress.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerCatalog.hpp"
@@ -44,8 +43,7 @@ namespace rtype::client {
  * any game of the server of this version with the lowest ping, RANKING opens
  * the leaderboard, ADDRESS the connection form, BACK goes one stage back, then
  * closes the map. The hangar star of the whole map, or HANGAR_KEY, pushes
- * HANGAR_SCREEN. The master the map reads, the one the `master-url` setting
- * names, is written on the right of the title.
+ * HANGAR_SCREEN.
  *
  * The list is read when the map opens, again every
  * SERVER_LIST_REFRESH_INTERVAL and on REFRESH_KEY. A key that changes the map
@@ -91,7 +89,6 @@ class ServerMapScreen : public IScreen {
   IServerCatalog* servers_;
   IGameCatalog* games_;
   ServerChoice* choice_;
-  const IMasterAddress* master_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   MotionPreference motion_;

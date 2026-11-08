@@ -28,7 +28,6 @@ void ServerMapScreenFixture::openOn(const ServerListSnapshot& list) {
                            .servers = servers_,
                            .games = games_,
                            .choice = choice_,
-                           .master = master_,
                            .playfieldPointAt = samePlayfieldPoint,
                            .motion = MotionPreference::Reduced},
       std::make_unique<RecordingInterfaceCanvas>(painting_));

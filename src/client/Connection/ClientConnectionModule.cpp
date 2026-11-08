@@ -1,19 +1,16 @@
 #include "ClientConnectionModule.hpp"
 #include <exception>
 #include <filesystem>
-#include <memory>
 #include <string>
 #include <vector>
 #include "AssetFolder.hpp"
 #include "ClientConstants.hpp"
 #include "ConfigurationRegistry.hpp"
-#include "ConfiguredMaster.hpp"
 #include "ConnectionConstants.hpp"
 #include "ContentPackCacheConstants.hpp"
 #include "ContentPlaces.hpp"
 #include "ExecutablePath.hpp"
 #include "IGameCatalog.hpp"
-#include "IMasterAddress.hpp"
 #include "IServerCatalog.hpp"
 #include "InstallContext.hpp"
 #include "MasterAccess.hpp"
@@ -67,10 +64,9 @@ void ClientConnectionModule::install(engine::InstallContext& context) {
               .help =
                   "http://<host>[:<port>] of the master the server map reads",
               .validate = requireMasterUrl});
-  master_ = std::make_unique<ConfiguredMaster>(masterUrl);
+  masterUrl_ = &masterUrl;
   connection_.provideParts(context);
   context.provide<IServerCatalog>(servers_);
-  context.provide<IMasterAddress>(*master_);
   context.provide<IGameCatalog>(games_);
   context.provide(globalLeaderboard_);
   context.addWork(NETWORK_STAGE, [this](engine::Duration elapsed) {
@@ -85,7 +81,7 @@ void ClientConnectionModule::start() {
   connection_.network().open();
   try {
     masterLink_.start(
-        network::MasterAccess{.url = master_->url(), .key = std::string{}});
+        network::MasterAccess{.url = masterUrl_->text(), .key = std::string{}});
   } catch (const std::exception&) {
     connection_.network().close();
     throw;

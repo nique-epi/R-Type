@@ -16,7 +16,6 @@
 #include "IAudioService.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
-#include "IMasterAddress.hpp"
 #include "IModule.hpp"
 #include "IOptionalDependencies.hpp"
 #include "IServerCatalog.hpp"
@@ -134,7 +133,6 @@ class ClientScreensModule final : public engine::IModule,
   const IServerTicks* serverTicks_{nullptr};
   IServerCatalog* serverCatalog_{nullptr};
   IGameCatalog* gameCatalog_{nullptr};
-  const IMasterAddress* masterAddress_{nullptr};
   FrameLoop* loop_{nullptr};
   EventListeners* listeners_{nullptr};
   /** @brief Declared before screens_, which keep a reference to it. */

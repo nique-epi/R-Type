@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <string_view>
 #include "IInterfaceCanvas.hpp"
 #include "MapView.hpp"
 #include "PlanetPose.hpp"
@@ -14,10 +13,6 @@ namespace rtype::client {
 /** @brief Writes the title of the map and the line under it, which counts
  * @p serverCount servers. */
 void paintServerMapHeader(IInterfaceCanvas& canvas, std::size_t serverCount);
-
-/** @brief Writes @p master, the master the map reads as a player reads it,
- * on the right of the title, ending at the right edge of the chips. */
-void paintMasterAddress(IInterfaceCanvas& canvas, std::string_view master);
 
 /** @brief Writes, in the middle of the map, what it shows instead of servers
  * in @p phase: searching, none online, or the master unreachable; nothing

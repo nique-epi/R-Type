@@ -9,7 +9,6 @@
 #include "IEntityTypeSource.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
-#include "IMasterAddress.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
 #include "MasterLeaderboard.hpp"
@@ -63,8 +62,6 @@ struct ScreenServices {
    * one of them, for the server map. */
   std::reference_wrapper<IServerCatalog> serverCatalog;
   std::reference_wrapper<IGameCatalog> gameCatalog;
-  /** @brief The master the server map reads, written on the map. */
-  std::reference_wrapper<const IMasterAddress> masterAddress;
   /** @brief The server, the nickname and the game the first connection
    * screen starts with. */
   ServerChoice choice;

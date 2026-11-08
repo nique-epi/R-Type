@@ -10,7 +10,6 @@ add_subdirectory(ServerList)
 
 add_library(rtype_client_connection_module STATIC
   ClientConnectionModule.cpp
-  ConfiguredMaster.cpp
   MasterUrlSetting.cpp
   PlayerConnection.cpp
   ServerSession.cpp

@@ -1,9 +1,7 @@
 #pragma once
 
-#include <memory>
 #include <string>
 #include <vector>
-#include "ConfiguredMaster.hpp"
 #include "GameCatalog.hpp"
 #include "IModule.hpp"
 #include "InstallContext.hpp"
@@ -13,6 +11,7 @@
 #include "NetworkConditions.hpp"
 #include "PlayerConnection.hpp"
 #include "ServerCatalog.hpp"
+#include "SettingValue.hpp"
 
 namespace rtype::client {
 
@@ -27,8 +26,8 @@ namespace rtype::client {
  * ping, and IGameCatalog, the games of one of them, read from the master by a
  * MasterLink of its own and updated in NETWORK_STAGE; the MasterLeaderboard,
  * the leaderboard of the master, read by the same MasterLink and updated in
- * NETWORK_STAGE too; and IMasterAddress, the master they are read from, the
- * one the `master-url` setting names.
+ * NETWORK_STAGE too. They all read the master the `master-url` setting
+ * names.
  *
  * Building it reads the content of the assets folder, the client's own, and
  * keeps the packs of the servers it meets in PACK_CACHE_FOLDER_NAME of the
@@ -73,8 +72,8 @@ class ClientConnectionModule final : public engine::IModule {
   PlayerConnection connection_;
   MasterLink masterLink_;
   ServerCatalog servers_;
-  /** @brief Built by install(), once master-url is declared. */
-  std::unique_ptr<ConfiguredMaster> master_;
+  /** @brief The master-url setting, declared by install(). */
+  const engine::SettingValue* masterUrl_{nullptr};
   GameCatalog games_;
   MasterLeaderboard globalLeaderboard_;
   logging::Logger logger_;
