@@ -114,7 +114,7 @@ pre code{overflow-wrap:normal}
 <header class="hero">
   <h1>R-Type — documentation des features</h1>
   <p>Remake réseau multijoueur de R-Type sur un moteur C++20 maison. Projet Epitech tek3.</p>
-  <p>État : <code>main</code> à jour au 8 novembre 2026 (commit <code>6684ecd9</code>).</p>
+  <p>État : <code>main</code> à jour au 8 novembre 2026 (commit <code>c9d10513</code>).</p>
   <div class="legend">
     <span class="tag t-where">Où</span><span class="tag t-how">Comment</span><span class="tag t-terms">Termes</span><span class="tag t-logic">Logique</span>
   </div>
@@ -334,14 +334,14 @@ pre code{overflow-wrap:normal}
 <article class="feature" id="f-packaging">
 <h4>Paquets et releases (CPack)</h4>
 <p class="pitch">Un paquet client et un paquet serveur par OS, publiés automatiquement sur un tag de version.</p>
-<p class="refs">PR #189, #203, #239, #252, #253, #259 · README § Packages</p>
+<p class="refs">PR #189, #203, #239, #252, #253, #259, #283 · README § Packages</p>
 <div class="block b-where"><div class="label">Où</div><p><code>packaging/</code> (CPack, AppImage, NSIS, <code>r-type.entitlements</code>, <code>disk-image/</code>), workflows <code>package.yaml</code>, <code>release.yaml</code>.</p></div>
 <div class="block b-how"><div class="label">Comment</div>
 <table><tr><th>OS</th><th>Client</th><th>Serveur</th></tr>
 <tr><td>Linux</td><td>.tar.gz, .AppImage</td><td>.tar.gz</td></tr>
 <tr><td>Windows</td><td>.zip, installeur NSIS .exe</td><td>.zip, installeur .exe</td></tr>
 <tr><td>macOS</td><td>.dmg avec <code>R-Type.app</code> (Apple Silicon), signé et notarisé</td><td>.tar.gz</td></tr></table>
-<p>Chaque paquet embarque la partie de <code>assets/</code> qu'il lit. Un tag <code>v0.1.0</code> doit correspondre à <code>project(VERSION)</code>, sinon la release est refusée ; les notes listent les PR fusionnées depuis le tag précédent. Le DMG s'ouvre sur une fenêtre dessinée aux couleurs du jeu (glisser l'app vers Applications).</p></div>
+<p>Chaque paquet embarque la partie de <code>assets/</code> qu'il lit. Le projet est en version 0.2.0 : un tag <code>v0.2.0</code> doit correspondre à <code>project(VERSION)</code> du <code>CMakeLists.txt</code> racine, sinon la release est refusée. Le master lit aussi sa version de là : CMake écrit <code>MasterVersionConstants.hpp</code> depuis <code>MasterVersionConstants.hpp.in</code>, et <code>GET /api/health</code> répond <code>{"version":"0.2.0"}</code> ; les notes listent les PR fusionnées depuis le tag précédent. Le DMG s'ouvre sur une fenêtre dessinée aux couleurs du jeu (glisser l'app vers Applications).</p></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms">
 <dt>CPack</dt><dd>Module de CMake qui génère des archives et installeurs.</dd>
 <dt>AppImage</dt><dd>Exécutable Linux autonome qui contient l'appli et ses fichiers.</dd>
@@ -594,7 +594,7 @@ for (tick in ticks) {
 <article class="feature" id="f-logger">
 <h4>Logger partagé, horodaté et thread-safe</h4>
 <p class="pitch">Client et serveur écrivent le même format de ligne, en UTC, sans jamais mélanger les lignes de deux threads.</p>
-<p class="refs">PR #29, #95 · doc : <code>logging.md</code></p>
+<p class="refs">PR #29, #95, #288 · doc : <code>logging.md</code></p>
 <div class="block b-where"><div class="label">Où</div><p><code>src/logging/</code> (<code>rtype_logging</code>) : <code>Logger</code>, <code>ScopedTimer</code>, <code>LogLaunchOptions</code>, <code>ILogJournal</code>.</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
 <li>Chaque classe possède un <code>Logger{"Nom"}</code> : <code>logger_.info("port ", port)</code>. Ligne : <code>[2026-10-06T14:03:21.159Z] [INFO ] [Server] - message</code>.</li>
@@ -602,7 +602,8 @@ for (tick in ticks) {
 <li><b>Double filtre</b> : à la compilation (<code>LOG_LEVEL</code> CMake + <code>if constexpr</code> : un appel sous le niveau ne génère aucun code) et à l'exécution (niveau atomique vérifié <i>avant</i> de formater).</li>
 <li>Une ligne est écrite sous un seul verrou ; journal ouvert en ajout et vidé après chaque ligne (complet même après un crash).</li>
 <li><code>scope("label")</code> renvoie un <code>ScopedTimer</code> qui logue la durée à sa destruction.</li>
-<li>Options : <code>--log-level</code>, <code>--log-file</code>, <code>--no-log-file</code>, <code>--(no-)log-stderr</code>, variable <code>RT_LOG_LEVEL</code>. Couleurs en terminal (jamais dans le fichier ni sur Windows).</li>
+<li>Options : <code>--log-level</code>, <code>--log-file</code>, <code>--no-log-file</code>, <code>--(no-)log-stderr</code>, variable <code>RT_LOG_LEVEL</code>. Couleurs en terminal (jamais dans le fichier ni sur Windows) ; <code>--log-color</code> les force même hors terminal (le superviseur le passe à ses parties, dont il relaie les lignes).</li>
+<li><code>setStandardErrorWriter()</code> remplace <code>std::cerr</code> par une fonction : la console d'admin s'en sert pour écrire chaque ligne du journal au-dessus de son invite.</li>
 <li>Plugins : <code>ILogJournal</code> permet à un plugin (qui a sa propre copie du logger) d'écrire dans le journal du programme.</li></ul></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms">
 <dt><code>if constexpr</code></dt><dd>Condition évaluée à la compilation : la branche fausse n'existe pas dans le binaire.</dd>
@@ -681,7 +682,7 @@ for (tick in ticks) {
 
 <!-- SECTION:network -->
 <section class="category" id="network"><h2>5. Réseau et protocole</h2>
-<p class="intro">La bibliothèque <code>rtype_network</code> (<code>src/network/</code>) et le protocole binaire maison sur UDP (version 14, spécifiée octet par octet dans <code>protocol.mdx</code>). Les sessions et la réplication sont écrites dans chaque programme, au-dessus de cette lib.</p>
+<p class="intro">La bibliothèque <code>rtype_network</code> (<code>src/network/</code>) et le protocole binaire maison sur UDP (version 15, spécifiée octet par octet dans <code>protocol.mdx</code>). Les sessions et la réplication sont écrites dans chaque programme, au-dessus de cette lib.</p>
 
 <h3 class="subcat">5.1 Transport</h3>
 
@@ -753,7 +754,7 @@ for (tick in ticks) {
 <ol><li>Client → <code>ConnectionRequest</code> (cookie 0, pseudo, type de partie).</li>
 <li>Serveur → <code>ConnectionChallenge</code> avec cookie = SipHash(clé secrète, adresse, port, fenêtre de 10 s). Il ne garde rien.</li>
 <li>Client → même requête avec le cookie.</li>
-<li>Serveur vérifie le cookie (fenêtre courante ou précédente) → <code>ConnectionAccepted</code> : numéro de joueur (1-4, qui donne aussi la couleur), jeton de session aléatoire, annonce du content pack. Ou <code>ConnectionRefused</code> (GameFull, NicknameTaken, Banned…).</li></ol>
+<li>Serveur vérifie le cookie (fenêtre courante ou précédente) → <code>ConnectionAccepted</code> : numéro de joueur (1-4, qui donne aussi la couleur), jeton de session aléatoire, annonce du content pack. Ou <code>ConnectionRefused</code> (GameFull, NicknameTaken…).</li></ol>
 <p>Pseudo unique sur le serveur (ASCII insensible à la casse).</p></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms">
 <dt>Cookie sans état</dt><dd>Valeur calculable par le serveur seul (hash à clé), qu'il n'a pas besoin de stocker. Même idée que les SYN cookies de TCP.</dd>
@@ -1123,15 +1124,17 @@ for (tick in ticks) {
 <article class="feature" id="f-waves">
 <h4>Vagues d'ennemis et fichier de difficultés</h4>
 <p class="pitch">Les ennemis arrivent par vagues de difficulté croissante, décrites par difficulté dans un fichier TOML.</p>
-<p class="refs">PR #87, #91, #118 · doc : <code>waves-file.md</code>, <code>server.md</code> § Waves</p>
-<div class="block b-where"><div class="label">Où</div><p><code>assets/waves/waves.toml</code>. <code>WaveDirector</code> + <code>WaveCurve</code> (<code>src/game/Waves/</code>, quand), <code>WaveSpawner</code> + <code>WaveCatalog</code> (<code>src/server/Spawning/</code>, où et quoi), <code>waveEntryPosition()</code>.</p></div>
+<p class="refs">PR #87, #91, #118, #286 · doc : <code>waves-file.md</code> (dont § Waves of a resource), <code>server.md</code> § Waves</p>
+<div class="block b-where"><div class="label">Où</div><p><code>assets/waves/waves.toml</code>. <code>WaveDirector</code> + <code>WaveCurve</code> (<code>src/game/Waves/</code>, quand), <code>WaveSpawner</code> + <code>WaveCatalog</code> + <code>DifficultyLayers</code> (<code>src/server/Spawning/</code>, où et quoi), <code>waveEntryPosition()</code>, <code>contentFilesOf()</code> (<code>src/engine/Resources/</code>).</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
 <li>Par difficulté (<code>easy</code>, <code>normal</code>, <code>hard</code>) : liste d'ennemis tirés à tour de rôle, taille de la 1re vague, ennemis ajoutés par vague, intervalle d'apparition (qui diminue), pause entre vagues, nombre de vagues du niveau (5, 8, 10), boss éventuel, objets d'apparence.</li>
 <li>Les ennemis d'une vague sont planifiés par <code>TimerScheduler</code> ; la vague suivante attend qu'il ne reste plus aucun ennemi.</li>
 <li>Apparition hors écran à droite, à une hauteur aléatoire (<code>std::mt19937</code>, graine logguée : <code>--seed 42</code> rejoue la même partie).</li>
-<li>Dès la 2e vague, un objet d'apparence (chapeau…) traverse l'écran.</li></ul></div>
-<div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt>Graine (seed)</dt><dd>Valeur initiale d'un générateur pseudo-aléatoire : même graine, mêmes tirages.</dd></dl></div>
-<div class="block b-logic"><div class="label">Logique</div><p>Le <code>WaveDirector</code> ne connaît ni monde ni fichier ni réseau : on lui dit combien d'ennemis restent, il répond combien doivent apparaître. Testable seul et réutilisable.</p></div>
+<li>Dès la 2e vague, un objet d'apparence (chapeau…) traverse l'écran.</li>
+<li><b>Superposition</b> : le serveur lit le <code>waves.toml</code> des assets puis celui de chaque ressource, dans l'ordre où elles sont posées. Chaque clé d'une difficulté vient du dernier fichier qui la donne ; une clé absente garde la valeur d'avant, une liste (<code>enemies</code>, <code>look_items</code>) est remplacée entière, une difficulté nouvelle est ajoutée (16 au plus). Une erreur nomme le fichier et la ligne de la valeur fautive.</li></ul></div>
+<div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt>Graine (seed)</dt><dd>Valeur initiale d'un générateur pseudo-aléatoire : même graine, mêmes tirages.</dd>
+<dt>Superposition (layering)</dt><dd>Lire plusieurs fichiers de config dans l'ordre, le dernier qui donne une clé l'emporte (comme les couches d'un mod).</dd></dl></div>
+<div class="block b-logic"><div class="label">Logique</div><p>Le <code>WaveDirector</code> ne connaît ni monde ni fichier ni réseau : on lui dit combien d'ennemis restent, il répond combien doivent apparaître. Testable seul et réutilisable. La superposition évite qu'un mod qui change une difficulté doive recopier toutes les autres et perde ce que les assets gagnent ensuite (le boss, par exemple). Limite : une ressource ne peut pas retirer une clé.</p></div>
 </article>
 
 <article class="feature" id="f-enemies">
@@ -1159,7 +1162,7 @@ for (tick in ticks) {
 <p class="refs">PR #216, #260 · doc : <code>server.md</code> § Boss, <code>client.md</code> § Boss</p>
 <div class="block b-where"><div class="label">Où</div><p><code>BossStage</code> (<code>src/server/Spawning/</code>), <code>BossPhaseSystem</code> (<code>src/game/Systems/</code>), composant <code>Boss</code>, comportement <code>BydoTyrantBehaviour</code>, fiche <code>bydo_tyrant.toml</code>. Client : <code>BossPresentation</code>, <code>BossTracker</code>, barre de vie.</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
-<li>Fin de la dernière vague → <code>BossStatus Arriving</code> (écran WARNING chez le client) → apparition après 264 ticks.</li>
+<li>Fin de la dernière vague → <code>BossStatus Arriving</code> (écran WARNING chez le client, la musique de partie s'arrête et une alarme sonne ; la musique du boss démarre à la fin de l'alarme, 8,232 s plus tard) → apparition après 264 ticks.</li>
 <li>Invulnérable pendant son arrivée ; 240 PV, +25 % par joueur supplémentaire, × <code>boss_health_percent</code> de la difficulté.</li>
 <li>Enragé sous 50 % : attaques renforcées. Attaques en rotation : éventail de missiles, couvée de mobs, mines qui éclatent, mur de Drifters, rayon balayant, coups de tentacules au corps-à-corps, charge traversant l'écran.</li>
 <li>Chaque coup envoie un <code>BossStatus</code> garanti (barre de vie). Niveau gagné quand plus aucun ennemi ne reste.</li>
@@ -1220,7 +1223,7 @@ for (tick in ticks) {
 <article class="feature" id="f-supervisor">
 <h4>Superviseur et processus de jeu</h4>
 <p class="pitch">Le superviseur n'héberge aucune partie : il en lance jusqu'à 8, place les joueurs et les redirige.</p>
-<p class="refs">PR #148, #237, #242, #248, #249, #250 · doc : <code>server.md</code> § Supervisor and game processes</p>
+<p class="refs">PR #148, #237, #242, #248, #249, #250, #288 · doc : <code>server.md</code> § Supervisor and game processes</p>
 <div class="block b-where"><div class="label">Où</div><p><code>src/server/main.cpp</code> (<code>--mode</code>), <code>SupervisedGames/</code> (<code>GameRegistry</code>, <code>SeatReservations</code>, <code>GameSpawner</code>, <code>SupervisedGamesReport</code>), <code>SupervisorLobby/</code>, <code>SupervisorLink/</code> (côté partie), <code>Processes/</code> (<code>IProcessLauncher</code>, Boost.Process v2), <code>Modules/</code> (<code>supervisorModules()</code>, <code>gameProcessModules()</code>).</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
 <li>Le superviseur répond aux requêtes de connexion (cookie), choisit une partie avec <code>GameRegistry::placeFor()</code> : rediriger (<code>ConnectionRedirect</code> + port), attendre, ouvrir un nouveau processus, ou refuser (<code>ServerFull</code>, <code>GameFull</code>…).</li>
@@ -1228,7 +1231,8 @@ for (tick in ticks) {
 <li>Chaque partie envoie un <code>GameStatus</code> chaque seconde (état, pseudos, mesures) ; le superviseur l'acquitte.</li>
 <li><code>SeatReservations</code> : un siège est réservé 3 s pour chaque joueur redirigé, pour qu'une rafale de 5 joueurs ouvre bien une 2e partie.</li>
 <li>Une partie s'arrête seule si le superviseur se tait 5 s, si elle est vide 10 s, ou si personne ne vient en 30 s. Si le superviseur meurt : <code>PR_SET_PDEATHSIG</code> (Linux), job object (Windows), délai de silence (macOS).</li>
-<li>Le jeton de lien (64 bits aléatoires) authentifie superviseur ↔ partie.</li></ul></div>
+<li>Le jeton de lien (64 bits aléatoires) authentifie superviseur ↔ partie.</li>
+<li>Sorties des parties : chaque enfant reçoit deux tubes (sortie et erreur standard) et le périphérique nul comme entrée, pour ne jamais lire les touches de la console. <code>ChildOutputRelay</code> lit chaque tube dans un thread, <code>ChildOutputLines</code> découpe en lignes (coupées à 4096 octets), et le superviseur les écrit dans son propre journal.</li></ul></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms">
 <dt>Processus enfant</dt><dd>Programme lancé par un autre ; ici une partie = un processus isolé.</dd>
 <dt>Job object</dt><dd>Mécanisme Windows qui tue les enfants quand le parent disparaît.</dd></dl></div>
@@ -1306,32 +1310,35 @@ for (tick in ticks) {
 <article class="feature" id="f-adminconsole">
 <h4>Console d'administration</h4>
 <p class="pitch">L'hébergeur tape des commandes dans le terminal du superviseur.</p>
-<p class="refs">PR #261 · doc : <code>server.md</code> § Administration console</p>
-<div class="block b-where"><div class="label">Où</div><p><code>src/server/AdminConsole/</code> : <code>ConsoleReader</code> (thread AdminConsole), <code>AdminConsoleCommands</code>, <code>BanCommands</code>.</p></div>
+<p class="refs">PR #261, #287, #288 · doc : <code>server.md</code> § Administration console, The prompt</p>
+<div class="block b-where"><div class="label">Où</div><p><code>src/server/AdminConsole/</code> : <code>ConsoleReader</code> (thread AdminConsole), <code>AdminConsoleCommands</code>, <code>ITerminal</code> + <code>Terminal/StandardTerminal</code> (mode du terminal, POSIX et Windows), <code>Typing/LineEditor</code> et <code>Typing/TerminalScreen</code> (ligne tapée et invite), <code>Output/ConsoleAnswers</code>.</p></div>
 <div class="block b-how"><div class="label">Comment</div>
 <table><tr><th>Commande</th><th>Effet</th></tr>
 <tr><td><code>games</code>, <code>players</code></td><td>liste des parties (état, pilotes, port, ping) / des pilotes</td></tr>
 <tr><td><code>close-game &lt;place&gt;</code></td><td>ferme une partie</td></tr>
 <tr><td><code>kick &lt;pseudo&gt;</code></td><td>expulse un pilote</td></tr>
-<tr><td><code>ban</code>, <code>unban</code>, <code>bans</code></td><td>gestion des bannissements</td></tr>
 <tr><td><code>network</code></td><td>trafic, rejets, mesures</td></tr>
 <tr><td><code>help</code></td><td>aide</td></tr></table>
-<p>Le thread console ne fait que lire : il passe chaque ligne au thread de simulation par une <code>BoundedQueue</code> (64 lignes, 1024 octets max par ligne). Réponses sur stdout, journal sur stderr. Sans terminal, la console s'arrête proprement.</p></div>
-<div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt><code>select()</code> + pipe</dt><dd>Attente simultanée sur l'entrée et sur un tube que l'arrêt écrit, pour réveiller la lecture.</dd></dl></div>
-<div class="block b-logic"><div class="label">Logique</div><p>Le registre des parties n'est touché que par le thread de simulation : pas de verrou à ajouter.</p></div>
+<p>Le thread console ne fait que lire : il passe chaque ligne au thread de simulation par une <code>BoundedQueue</code> (64 lignes, 1024 octets max par ligne). Au démarrage elle écrit <code>admin console ready: type help to list the commands</code>.</p>
+<p><b>Invite <code>&gt; </code></b> : quand l'entrée, la sortie et l'erreur du superviseur sont un même terminal dont il a le premier plan, la console passe le terminal en mode non canonique sans écho (<code>ICANON</code> et <code>ECHO</code> coupés, <code>ISIG</code> gardé pour Ctrl+C ; sous Windows <code>ENABLE_LINE_INPUT</code>/<code>ENABLE_ECHO_INPUT</code> coupés). Elle garde elle-même la ligne tapée (<code>LineEditor</code> : Entrée, Retour arrière par caractère UTF-8 entier, 1024 octets max). Toute autre ligne (journal, lignes des parties, réponses) passe par <code>TerminalScreen::writeAbove()</code> : effacer la ligne, écrire, redessiner l'invite et le texte tapé, sous un seul verrou. Entrée redirigée depuis un fichier ou un tube : ni invite ni mode brut. Le mode du terminal est rendu dans <code>stop()</code>.</p></div>
+<div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt><code>select()</code> + pipe</dt><dd>Attente simultanée sur l'entrée et sur un tube que l'arrêt écrit, pour réveiller la lecture.</dd>
+<dt>Mode canonique</dt><dd>Mode par défaut d'un terminal : il garde la ligne et affiche les touches lui-même, et ne donne la ligne au programme qu'à l'Entrée. Hors de ce mode, le programme reçoit chaque touche.</dd>
+<dt>termios</dt><dd>API POSIX qui règle le mode d'un terminal (Linux, macOS).</dd></dl></div>
+<div class="block b-logic"><div class="label">Logique</div><p>Le registre des parties n'est touché que par le thread de simulation : pas de verrou à ajouter. En mode canonique, le journal du superviseur et ceux des parties écrivaient au milieu de la commande en cours ; gérer la ligne soi-même est l'approche de la console tty d'ioquake3 (<code>CON_Hide</code>/<code>CON_Show</code>) et de <code>printAbove()</code> de JLine. Limites connues : une ligne plus large que le terminal n'est effacée que sur sa dernière rangée ; un superviseur qui plante laisse le terminal sans écho (<code>reset</code>).</p></div>
 </article>
 
 <article class="feature" id="f-kickban">
-<h4>Expulsion et bannissement</h4>
-<p class="pitch">Expulser un pilote d'une partie, ou bannir un pseudo / une adresse IPv4, temporairement ou définitivement.</p>
-<p class="refs">PR #271, #281 · doc : <code>server.md</code> § Expelling a pilot, Banning a pilot</p>
-<div class="block b-where"><div class="label">Où</div><p><code>PlayerExpeller</code>, <code>SupervisorOrders.hpp</code> (partie), <code>src/server/Bans/</code> (<code>Ban</code>, <code>BanList</code>, <code>LatestBans</code>), <code>BanBook/</code>, <code>Storage/</code> (<code>BanWatch</code>, table <code>bans</code>).</p></div>
+<h4>Expulsion d'un pilote (sans bannissement)</h4>
+<p class="pitch">L'hébergeur expulse un pilote d'une partie en cours ; il n'existe pas de bannissement depuis la console.</p>
+<p class="refs">PR #271, #281, #287 · doc : <code>server.md</code> § Expelling a pilot, <code>protocol.mdx</code> § Version 15</p>
+<div class="block b-where"><div class="label">Où</div><p><code>PlayerExpeller</code> (<code>src/server/SupervisorLink/</code>), <code>SupervisorOrders.hpp</code> (partie), <code>ConnectedPlayer::expelled</code> ; migration 4 de <code>SERVER_MIGRATIONS</code> (<code>DROP TABLE bans</code>).</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
 <li><b>kick</b> : le superviseur envoie 3 <code>ExpulsionOrder</code> aux parties qui ont ce pilote ; la partie envoie 3 <code>Expulsion</code> au joueur, ferme sa session au tick suivant, les autres reçoivent <code>PlayerLeft (Expelled)</code>. Pas de ban : il peut revenir.</li>
-<li><b>ban</b> : <code>ban ace 2h</code> écrit une ligne dans la table SQLite <code>bans</code> (partagée par le superviseur et toutes les parties) ; chaque partie la relit toutes les secondes et expulse les pilotes visés (<code>Banned</code>) ; toute nouvelle requête est refusée (<code>ConnectionRefused Banned</code>).</li>
-<li>Le client banni affiche « THE HOST BANNED YOU. ».</li></ul></div>
-<div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt>Durée de ban</dt><dd><code>30m</code>, <code>2h</code>, <code>7d</code>, ou définitif sans durée ; stocké en <code>expires_at</code>.</dd></dl></div>
-<div class="block b-logic"><div class="label">Logique</div><p>Le superviseur connaît les pseudos, pas les adresses : c'est la partie qui expulse. Les bans survivent à un redémarrage. Le refus d'un banni n'est envoyé qu'après un cookie valide, pour ne rien révéler à une adresse forgée.</p></div>
+<li>Le client expulsé affiche « THE HOST EXPELLED YOU. » et peut rejoindre aussitôt.</li>
+<li>Les bans de console (<code>ban</code>, <code>unban</code>, <code>bans</code>, table <code>bans</code>) ont existé puis ont été retirés : la version 15 du protocole rend invalide la raison <code>Banned</code> de <code>ConnectionRefused</code>, <code>Expulsion</code> et <code>PlayerLeft</code>, et la migration 4 supprime la table d'un ancien fichier.</li>
+<li>Restent : les bans temporaires de la limitation de débit (10 s, contre le flood).</li></ul></div>
+<div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt>Expulsion (kick)</dt><dd>Fermer la session d'un joueur sans lui interdire de revenir.</dd></dl></div>
+<div class="block b-logic"><div class="label">Logique</div><p>Le superviseur connaît les pseudos, pas les adresses : c'est la partie qui expulse. Pas de ban, car le projet n'a pas de comptes joueurs : bannir un pseudo se contourne en changeant de pseudo, et bannir une adresse bloque aussi tous les joueurs derrière la même box. Expulser n'a besoin d'aucune identité : on vise une session en cours.</p></div>
 </article>
 
 <h3 class="subcat">7.4 Social et résultats</h3>
@@ -1664,7 +1671,7 @@ for (tick in ticks) {
 <p class="refs">PR #102, #122, #146, #216 · doc : <code>client.md</code> § Status band, Boss, End screen, Lost connection</p>
 <div class="block b-where"><div class="label">Où</div><p><code>GameScreen</code>, <code>BossPresentation</code>, <code>EndScreen</code> (<code>src/client/Game/</code>), <code>ScoreBoard</code>, <code>FinalRanking</code> (<code>src/client/Replication/Pilots/</code>), <code>paintStatusBand</code>, <code>DepartureFeed</code>, <code>SilenceWarning</code>.</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
-<li>Bande : par pilote, couleur + forme (triangle, carré, cercle, étoile), pseudo, score, 3 emplacements de vies (perdues en fantôme), un mot d'état (<code>YOU</code>, <code>LAST LIFE</code>, <code>RESPAWN</code>, <code>BANNED</code>).</li>
+<li>Bande : par pilote, couleur + forme (triangle, carré, cercle, étoile), pseudo, score, 3 emplacements de vies (perdues en fantôme), un mot d'état (<code>YOU</code>, <code>LAST LIFE</code>, <code>RESPAWN</code>…).</li>
 <li>Boss : écran WARNING, barre de vie qui suit chaque <code>BossStatus</code> (la barre ne dépend pas du message Arriving).</li>
 <li>Fin : classement des pilotes en polaroïds, VICTORY / DEFEAT ; rejouer ramène en salle d'attente.</li>
 <li>Serveur silencieux : avertissement ; départs annoncés.</li></ul></div>
@@ -1710,12 +1717,19 @@ for (tick in ticks) {
 
 <article class="feature" id="f-audio">
 <h4>Son et musique</h4>
-<p class="pitch">Effets sonores, thème du titre et musique de partie, avec volumes séparés.</p>
-<p class="refs">PR #113, #116, #117, #150, #205 · doc : <code>client.md</code> § Sounds and music</p>
-<div class="block b-where"><div class="label">Où</div><p><code>src/client/Audio/</code> : <code>IAudioService</code>, <code>AudioService</code>, <code>SoundPlayer</code>, <code>SoundBank</code>, <code>MusicPlayer</code>, <code>Soundtrack</code>, <code>SilentAudioService</code>.</p></div>
-<div class="block b-how"><div class="label">Comment</div><p><code>Soundtrack</code> bascule du thème à la musique de partie ; clic sur boutons et onglets ; sons déclenchés par les messages du serveur. <code>--no-sound</code> fournit un service silencieux (objets nuls).</p></div>
-<div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt>Null Object</dt><dd>Implémentation qui ne fait rien, pour éviter des <code>if (audio)</code> partout.</dd></dl></div>
-<div class="block b-logic"><div class="label">Logique</div><p>Le client marche sans carte son ni module audio.</p></div>
+<p class="pitch">Effets sonores, thème du titre, musique de partie et du boss, ambiances, avec volumes séparés.</p>
+<p class="refs">PR #113, #116, #117, #150, #205, #284 · doc : <code>client.md</code> § Sounds and music</p>
+<div class="block b-where"><div class="label">Où</div><p><code>src/client/Audio/</code> : <code>IAudioService</code>, <code>AudioService</code>, <code>SoundPlayer</code>, <code>SoundBank</code>, <code>MusicPlayer</code>, <code>Soundtrack</code>, <code>MusicTrack</code>, <code>AmbienceScope</code>, <code>SilentAudioService</code>.</p></div>
+<div class="block b-how"><div class="label">Comment</div><ul>
+<li><code>Soundtrack</code> choisit la musique : thème du titre, musique de partie (après 1 s de silence), ou musique du boss, qui attend la fin de l'alarme (<code>playBossMusic()</code>) et joue jusqu'à la fin de la partie.</li>
+<li>Ambiances : sous le thème, la carte des serveurs joue l'espace, le hangar un garage et une foule qui parle. <code>AmbienceScope</code> tient une ambiance tant que l'écran vit et remet la précédente à sa destruction (le hangar fermé rend l'espace à la carte).</li>
+<li>Chaque <code>MusicTrack</code> a un <code>gain</code> appliqué au volume MUSIC : 1 pour les musiques, 0,25 espace, 0,40 garage, 0,50 foule. Les curseurs et MUTE ALL du joueur restent maîtres.</li>
+<li>Clic sur boutons et onglets, bras robot du hangar quand il pose un objet (jamais en mouvement réduit, qui n'affiche pas de bras), sons déclenchés par les messages du serveur ; 16 sons au plus en même temps.</li>
+<li><code>--no-sound</code> fournit un service silencieux (objets nuls).</li></ul></div>
+<div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt>Null Object</dt><dd>Implémentation qui ne fait rien, pour éviter des <code>if (audio)</code> partout.</dd>
+<dt>Gain</dt><dd>Multiplicateur de volume propre à une piste, pour équilibrer des fichiers plus ou moins forts.</dd>
+<dt>Portée (scope)</dt><dd>Objet qui pose un état à sa construction et remet l'ancien à sa destruction (RAII).</dd></dl></div>
+<div class="block b-logic"><div class="label">Logique</div><p>Le client marche sans carte son ni module audio. Lier l'ambiance à la vie de l'écran évite qu'un écran oublie de l'arrêter : il n'y a rien à appeler en sortant.</p></div>
 </article>
 
 <article class="feature" id="f-accessibility">
@@ -1788,12 +1802,12 @@ for (tick in ticks) {
 <article class="feature" id="f-resources">
 <h4>Ressources (<code>ensure</code>) : contenu ajouté par l'hébergeur</h4>
 <p class="pitch">Un dossier de <code>resources/</code> ajoute des fiches, des sprites, des vagues et des scripts, superposé aux assets.</p>
-<p class="refs">PR #262, #265 · doc : <code>server.md</code> § Resources, <code>commands.md</code> § ensure, <code>tutorial-publish-a-mod.md</code></p>
+<p class="refs">PR #262, #265, #286 · doc : <code>server.md</code> § Resources, <code>waves-file.md</code> § Waves of a resource, <code>commands.md</code> § ensure, <code>tutorial-publish-a-mod.md</code></p>
 <div class="block b-where"><div class="label">Où</div><p><code>src/engine/Resources/</code> (<code>EnsureLines.hpp</code>, <code>ContentFolders.hpp</code>), <code>game::contentFilesIn()</code>. Exemple livré : <code>resources/crimson-drifter/</code>.</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
 <li><code>ensure crimson-drifter</code> dans <code>server.cfg</code>. Une ressource contient <code>resource.toml</code> (description, <code>depends</code>), <code>entities/</code>, <code>sprites/</code>, <code>waves/waves.toml</code>, <code>server/*.luau</code>.</li>
 <li>Ordre : assets, puis chaque ressource après ses dépendances ; cycle refusé.</li>
-<li>Une ressource ajoute, jamais ne remplace une fiche (doublon = arrêt) ; ses vagues remplacent celles des assets.</li>
+<li>Une ressource ajoute, jamais ne remplace une fiche (doublon = arrêt) ; son <code>waves.toml</code> se superpose clé par clé à celui des assets (voir Vagues). L'exemple <code>crimson-drifter</code> ne change que les ennemis de <code>normal</code>.</li>
 <li>Une partie avec une ressource n'est plus vanilla.</li></ul></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt>Mod</dt><dd>Modification du contenu du jeu par un tiers ; ici sans écrire de C++.</dd></dl></div>
 <div class="block b-logic"><div class="label">Logique</div><p>Inspiré des ressources de FiveM (<code>ensure</code>) : l'hébergeur ajoute du contenu sans toucher au jeu.</p></div>
