@@ -11,8 +11,9 @@ namespace rtype::server {
 
 /**
  * @returns Each of @p games as the master lists it, by place: its number is
- * its place, its name GAME_NAME_PREFIX and the place, its difficulty
- * DEFAULT_DIFFICULTY, its players the nicknames of its newest status. A game
+ * its place, its name GAME_NAME_PREFIX and the place, its difficulty, its
+ * lives and its friendly fire those of its rules, its players the nicknames of
+ * its newest status. A game
  * still starting is Waiting; a game that waits for players is Full once they
  * take every seat.
  */

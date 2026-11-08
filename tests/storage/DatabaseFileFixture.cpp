@@ -8,6 +8,7 @@
 #include <thread>
 #include "DatabaseFile.hpp"
 #include "DatabaseFileTestConstants.hpp"
+#include "StorageConstants.hpp"
 #include "TemporaryFolder.hpp"
 
 std::string DatabaseFileFixture::file() const {
@@ -28,7 +29,8 @@ int DatabaseFileFixture::numberFrom(SQLite::Database& database,
 SQLite::Database DatabaseFileFixture::openWhileAnotherConnectionWrites(
     std::span<const std::string_view> migrations,
     std::string_view write) const {
-  SQLite::Database other{file(), rtype::storage::readWriteOrCreate()};
+  SQLite::Database other{file(), rtype::storage::readWriteOrCreate(),
+                         rtype::storage::DATABASE_BUSY_TIMEOUT_MILLISECONDS};
   other.exec(std::string{rtype::storage::testing::BEGIN_IMMEDIATE});
   other.exec(std::string{write});
   std::future<SQLite::Database> opening =

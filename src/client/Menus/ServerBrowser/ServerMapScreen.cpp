@@ -1,6 +1,7 @@
 #include "ServerMapScreen.hpp"
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
@@ -12,13 +13,17 @@
 #include <vector>
 #include "BarState.hpp"
 #include "Button.hpp"
+#include "HangarScreenIdConstants.hpp"
+#include "HangarStar.hpp"
 #include "IGameCatalog.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "InterfacePixel.hpp"
 #include "KeyChip.hpp"
 #include "KeyChipParts.hpp"
 #include "MapDirection.hpp"
+#include "MasterUrl.hpp"
 #include "MenuBuilder.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "PlanetPose.hpp"
@@ -51,6 +56,10 @@ Button::Text addressText() {
   return {.label = ADDRESS_LABEL, .keyName = ADDRESS_KEY_NAME};
 }
 
+Button::Text masterText() {
+  return {.label = MASTER_LABEL, .keyName = MASTER_KEY_NAME};
+}
+
 Button::Text backText() {
   return {.label = BACK_LABEL, .keyName = CANCEL_KEY_NAME};
 }
@@ -79,6 +88,15 @@ sf::IntRect addressChipArea() {
 
 sf::IntRect rankingChipArea() {
   return chipAreaLeftOf(rankingText(), addressChipArea());
+}
+
+/** @returns Where MASTER lies: on the right of the title, apart from the
+ * chips that act on the servers. */
+sf::IntRect masterChipArea() {
+  sf::IntRect area =
+      MenuBuilder::chipArea(masterText(), SERVER_MAP_CHIPS_RIGHT);
+  area.position.y = MASTER_CHIP_TOP;
+  return area;
 }
 
 /** @returns Where QUICK PLAY lies: alone on the left, the main action. */
@@ -154,6 +172,30 @@ void openGamesOf(ServerMapChoice& map, IGameCatalog& games) {
   }
 }
 
+/** @returns Whether @p pixel picks the hangar star: only the whole map
+ * shows it. */
+bool hangarStarShownAt(const ServerMapChoice& map, sf::Vector2i pixel) {
+  return map.stage() == ServerMapStage::ZoomedOut && hangarStarAt(pixel);
+}
+
+/** @brief Lets go of @p heldKey, then pushes the hangar over the map: the
+ * release of that key goes to the hangar. */
+void openHangar(std::optional<sf::Keyboard::Key>& heldKey,
+                IScreenNavigator& navigator) {
+  heldKey.reset();
+  navigator.push(HANGAR_SCREEN);
+}
+
+/** @brief Zooms in when the wheel turns up over the whole map, out when it
+ * turns down over the zoomed map. */
+void zoomWithWheel(ServerMapChoice& map, float delta) {
+  if (delta > 0.0F && map.stage() == ServerMapStage::ZoomedOut) {
+    map.deeper();
+  } else if (delta < 0.0F && map.stage() == ServerMapStage::ZoomedIn) {
+    static_cast<void>(map.shallower());
+  }
+}
+
 KeyChipParts quickPlayChipParts(std::function<void()> action,
                                 ISoundPlayer& sounds) {
   return KeyChipParts{.text = quickPlayText(),
@@ -182,6 +224,15 @@ KeyChipParts addressChipParts(std::function<void()> action,
                       .sounds = sounds};
 }
 
+KeyChipParts masterChipParts(std::function<void()> action,
+                             ISoundPlayer& sounds) {
+  return KeyChipParts{.text = masterText(),
+                      .area = masterChipArea(),
+                      .key = MASTER_KEY,
+                      .action = std::move(action),
+                      .sounds = sounds};
+}
+
 KeyChipParts backChipParts(std::function<void()> action, ISoundPlayer& sounds) {
   return KeyChipParts{.text = backText(),
                       .area = backChipArea(),
@@ -198,6 +249,7 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
       servers_(&parts.servers.get()),
       games_(&parts.games.get()),
       choice_(&parts.choice.get()),
+      master_(&parts.master.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       motion_(parts.motion),
@@ -213,6 +265,8 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
           [this] { navigator_->push(LEADERBOARD_SCREEN); }, parts.sounds)),
       addressChip_(addressChipParts(
           [this] { navigator_->push(CONNECTION_SCREEN); }, parts.sounds)),
+      masterChip_(masterChipParts([this] { navigator_->push(MASTER_SCREEN); },
+                                  parts.sounds)),
       backChip_(backChipParts([this] { stepBack(); }, parts.sounds)) {
   servers_->refresh();
   repaint();
@@ -222,6 +276,7 @@ void ServerMapScreen::handleEvent(const sf::Event& event) {
   quickPlayChip_.handleEvent(event, playfieldPointAt_);
   rankingChip_.handleEvent(event, playfieldPointAt_);
   addressChip_.handleEvent(event, playfieldPointAt_);
+  masterChip_.handleEvent(event, playfieldPointAt_);
   backChip_.handleEvent(event, playfieldPointAt_);
   if (const auto* pressed = event.getIf<sf::Event::KeyPressed>()) {
     keyPressed(*pressed);
@@ -229,20 +284,21 @@ void ServerMapScreen::handleEvent(const sf::Event& event) {
              event.is<sf::Event::FocusLost>()) {
     heldKey_.reset();
   } else if (const auto* moved = event.getIf<sf::Event::MouseMoved>()) {
-    chosenShown_ =
-        map_.chooseAt(interfacePixelAt(playfieldPointAt_(moved->position)));
+    const sf::Vector2i pixel =
+        interfacePixelAt(playfieldPointAt_(moved->position));
+    hangarShown_ = hangarStarShownAt(map_, pixel);
+    chosenShown_ = !hangarShown_ && map_.chooseAt(pixel);
   } else if (const auto* click = event.getIf<sf::Event::MouseButtonPressed>();
-             click != nullptr && click->button == sf::Mouse::Button::Left &&
-             map_.chooseAt(
-                 interfacePixelAt(playfieldPointAt_(click->position)))) {
-    openGamesOf(map_, *games_);
-  } else if (const auto* wheel = event.getIf<sf::Event::MouseWheelScrolled>()) {
-    if (wheel->delta > 0.0F && map_.stage() == ServerMapStage::ZoomedOut) {
-      map_.deeper();
-    } else if (wheel->delta < 0.0F &&
-               map_.stage() == ServerMapStage::ZoomedIn) {
-      static_cast<void>(map_.shallower());
+             click != nullptr && click->button == sf::Mouse::Button::Left) {
+    const sf::Vector2i pixel =
+        interfacePixelAt(playfieldPointAt_(click->position));
+    if (hangarStarShownAt(map_, pixel)) {
+      openHangar(heldKey_, *navigator_);
+    } else if (map_.chooseAt(pixel)) {
+      openGamesOf(map_, *games_);
     }
+  } else if (const auto* wheel = event.getIf<sf::Event::MouseWheelScrolled>()) {
+    zoomWithWheel(map_, wheel->delta);
   }
 }
 
@@ -283,6 +339,10 @@ void ServerMapScreen::keyPressed(const sf::Event::KeyPressed& key) {
       map_.stage() != ServerMapStage::Games) {
     map_.moveByPing(key.shift ? -1 : 1);
     chosenShown_ = true;
+    return;
+  }
+  if (key.code == HANGAR_KEY) {
+    openHangar(heldKey_, *navigator_);
     return;
   }
   if ((key.code != MENU_CONFIRM_KEY && key.code != REFRESH_KEY) ||
@@ -334,7 +394,7 @@ void ServerMapScreen::refresh() {
 
 void ServerMapScreen::join(const ServerRow& server) {
   heldKey_.reset();
-  choice_->server = server.endpoint;
+  choice_->lastServer = server.endpoint;
   navigator_->push(CONNECTION_TO_CHOSEN_SERVER_SCREEN);
 }
 
@@ -342,6 +402,7 @@ void ServerMapScreen::repaint() {
   canvas_->clear();
   const ServerListPhase phase = servers_->snapshot().phase;
   paintServerMapHeader(*canvas_, map_.servers().size());
+  paintMasterAddress(*canvas_, masterTextOf(master_->url()));
   if (phase == ServerListPhase::Ready) {
     const PlanetPose pose = planetPoseIn(
         map_.view(), turnedPlanet(PlanetPose{}, elapsed_, motion_));
@@ -357,9 +418,13 @@ void ServerMapScreen::repaint() {
   } else {
     paintServerMapMessage(*canvas_, phase);
   }
+  if (map_.stage() == ServerMapStage::ZoomedOut) {
+    paintHangarStar(*canvas_, hangarShown_ && !chosenShown_);
+  }
   quickPlayChip_.paint(*canvas_);
   rankingChip_.paint(*canvas_);
   addressChip_.paint(*canvas_);
+  masterChip_.paint(*canvas_);
   backChip_.paint(*canvas_);
   canvas_->display();
 }

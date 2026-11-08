@@ -1,5 +1,5 @@
 #include "HurtZoneSystem.hpp"
-#include <algorithm>
+#include "ActiveHurtsLaying.hpp"
 #include "BoundsOf.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
@@ -7,14 +7,12 @@
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
-#include "HurtBox.hpp"
-#include "HurtBoxBounds.hpp"
 #include "HurtZone.hpp"
-#include "HurtsNow.hpp"
-#include "Overlaps.hpp"
+#include "HurtingEnemy.hpp"
 #include "Position.hpp"
 #include "ShipBounds.hpp"
 #include "ShipContact.hpp"
+#include "Summoning.hpp"
 #include "TimeConstants.hpp"
 #include "ViewDelay.hpp"
 
@@ -37,21 +35,23 @@ void HurtZoneSystem::collectShips(engine::ComponentRegistry& components) {
 }
 
 void HurtZoneSystem::publishContacts(engine::ComponentRegistry& components) {
-  components.forEach<HurtZone, Position>([this, &components](
-                                             engine::Entity enemy,
-                                             const HurtZone& zone,
-                                             const Position& position) {
-    const CurrentAction* const current = components.get<CurrentAction>(enemy);
-    for (const ShipBounds& ship : ships_) {
-      if (std::ranges::any_of(zone.boxes, [current, &position,
-                                           &ship](const HurtBox& box) {
-            return hurtsNow(box, current) &&
-                   engine::overlaps(hurtBoxBounds(box, position), ship.bounds);
-          })) {
-        events_.publish(ShipContact{.player = ship.entity, .enemy = enemy});
-      }
-    }
-  });
+  components.forEach<HurtZone, Position>(
+      [this, &components](engine::Entity enemy, const HurtZone& zone,
+                          const Position& position) {
+        if (components.has<Summoning>(enemy)) {
+          return;
+        }
+        const HurtingEnemy hurting{
+            .zone = zone,
+            .position = position,
+            .current = components.get<CurrentAction>(enemy)};
+        layActiveHurts(hurting, hurts_);
+        for (const ShipBounds& ship : ships_) {
+          if (hurtsBounds(hurts_, ship.bounds)) {
+            events_.publish(ShipContact{.player = ship.entity, .enemy = enemy});
+          }
+        }
+      });
 }
 
 void HurtZoneSystem::update(engine::ComponentRegistry& components,

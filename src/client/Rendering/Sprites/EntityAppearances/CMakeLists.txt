@@ -8,6 +8,8 @@ target_link_libraries(rtype_client_entity_appearances
     rtype_engine_time
     rtype_game_components
     rtype_game_entity_types
+  PRIVATE
+    rtype_logging
 )
 
 rtype_enable_warnings(rtype_client_entity_appearances)

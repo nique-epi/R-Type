@@ -57,7 +57,9 @@ class RtypeRulesModule final : public IGameModule {
 
  private:
   /** @brief Adds the functions the rules run when a player joins, leaves or
-   * sends an input to the hooks of the game. */
+   * sends an input to the hooks of the game. A player who joins gets the lives
+   * of the rules of the game before its ship is given, since a new world is
+   * built before the first player comes. */
   void addSessionHooks();
 
   /** @brief Removes the ship of @p departed from the world, when it has one,

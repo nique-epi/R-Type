@@ -14,6 +14,7 @@
 #include "ConnectionStatus.hpp"
 #include "Disconnection.hpp"
 #include "Endpoint.hpp"
+#include "Expulsion.hpp"
 #include "HandshakeAnswersParts.hpp"
 #include "ISessionOutbox.hpp"
 #include "IncomingDatagram.hpp"
@@ -29,6 +30,13 @@
 namespace rtype::client {
 
 namespace {
+
+/** @returns Whether a session holds a seat on the server in @p phase: once
+ * accepted, while its content loads too. */
+bool holdsASession(ConnectionPhase phase) {
+  return phase == ConnectionPhase::Accepted ||
+         phase == ConnectionPhase::LoadingContent;
+}
 
 /** @returns The status of an attempt the server of @p serverVersion refuses,
  * and logs both versions. */
@@ -52,6 +60,7 @@ ServerSession::ServerSession(ServerSessionParts parts)
       dispatcher_(&parts.dispatcher.get()),
       gameLoaded_(&parts.gameLoaded.get()),
       entityTypes_(&parts.entityTypes.get()),
+      content_(&parts.content.get()),
       logger_(std::string{CONNECTION_LOGGER_NAME}),
       answers_(HandshakeAnswersParts{.dispatcher = parts.dispatcher,
                                      .status = status_,
@@ -61,11 +70,18 @@ ServerSession::ServerSession(ServerSessionParts parts)
                                      .observers = observers_,
                                      .departure = departure_,
                                      .entityTypes = parts.entityTypes,
+                                     .content = parts.content,
                                      .logger = logger_}) {
   dispatcher_->registerHandler<network::Disconnection>(
       [this](const network::MessageOrigin&, const network::Disconnection&) {
-        if (status_.phase == ConnectionPhase::Accepted) {
+        if (holdsASession(status_.phase)) {
           giveUp(ConnectionPhase::Closed);
+        }
+      });
+  dispatcher_->registerHandler<network::Expulsion>(
+      [this](const network::MessageOrigin&, const network::Expulsion&) {
+        if (holdsASession(status_.phase)) {
+          giveUp(ConnectionPhase::Expelled);
         }
       });
 }
@@ -84,7 +100,7 @@ void ServerSession::connect(const network::Endpoint& server,
 }
 
 void ServerSession::cancel() {
-  if (status_.phase == ConnectionPhase::Accepted) {
+  if (holdsASession(status_.phase)) {
     departure_.leave(outbox_);
   }
   status_ = {};
@@ -97,13 +113,18 @@ void ServerSession::update(engine::Duration elapsed) {
   inbound_.advance(elapsed);
   readReceived();
   departure_.update(elapsed);
-  if (status_.phase == ConnectionPhase::Accepted) {
+  if (holdsASession(status_.phase)) {
     if (inbound_.isSilentTooLong()) {
       giveUp(ConnectionPhase::Lost);
       return;
     }
     outbox_.advance(elapsed);
     observers_.held(elapsed);
+    if (status_.phase == ConnectionPhase::LoadingContent &&
+        answers_.followContent()) {
+      departure_.leave(outbox_);
+      forgetSession();
+    }
   } else if (status_.phase == ConnectionPhase::Connecting &&
              attempt_.advance(elapsed, outbox_) == AttemptProgress::TimedOut) {
     giveUp(ConnectionPhase::Unreachable);
@@ -146,9 +167,11 @@ void ServerSession::readReceived() {
 void ServerSession::giveUp(ConnectionPhase ending) {
   status_ = {.phase = ending};
   forgetSession();
-  if (ending == ConnectionPhase::Closed) {
-    logger_.warn("closed by ", outbox_.server().address, " port ",
-                 outbox_.server().port);
+  if (ending == ConnectionPhase::Closed ||
+      ending == ConnectionPhase::Expelled) {
+    logger_.warn(
+        ending == ConnectionPhase::Expelled ? "expelled by " : "closed by ",
+        outbox_.server().address, " port ", outbox_.server().port);
     return;
   }
   const std::chrono::seconds silence =
@@ -162,6 +185,7 @@ void ServerSession::forgetSession() {
   outbox_.closeSession();
   inbound_.close();
   entityTypes_->forget();
+  content_->cancel();
   observers_.closed();
 }
 

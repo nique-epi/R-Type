@@ -46,8 +46,14 @@ std::string_view phaseText(ConnectionPhase phase) {
       return "lost";
     case ConnectionPhase::Closed:
       return "closed by the server";
-    case ConnectionPhase::MissingEntitySheet:
-      return "left: missing entity sheet";
+    case ConnectionPhase::Expelled:
+      return "expelled by the host";
+    case ConnectionPhase::LoadingContent:
+      return "loading the content of the server";
+    case ConnectionPhase::ContentDownloadFailed:
+      return "left: content pack not downloaded";
+    case ConnectionPhase::ContentRefused:
+      return "left: content pack refused";
   }
   return "unknown";
 }

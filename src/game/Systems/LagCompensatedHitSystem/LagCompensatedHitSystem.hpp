@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstddef>
+#include "ActiveHurts.hpp"
 #include "ComponentRegistry.hpp"
 #include "EventBus.hpp"
 #include "ISystem.hpp"
@@ -56,12 +57,14 @@ class LagCompensatedHitSystem final : public engine::ISystem {
   void testPlayerMissiles(engine::ComponentRegistry& components,
                           engine::Duration elapsed);
 
-  /** @brief Tests every ship that carries a ViewDelay against the boxes its
-   * player saw. */
+  /** @brief Tests every ship that carries a ViewDelay against the boxes and
+   * the beams its player saw. */
   void testShips(engine::ComponentRegistry& components);
 
-  /** @brief Records the boxes of the enemies of @p components as the newest
-   * tick, in place of the oldest one kept. */
+  /** @brief Records the boxes and the beams of the enemies of @p components
+   * as the newest tick, in place of the oldest one kept; an enemy still
+   * summoning is left out, as CollisionSystem and HurtZoneSystem leave it
+   * out. */
   void recordEnemies(engine::ComponentRegistry& components);
 
   /** @brief Forgets every box kept, and keeps @p components as the world they
@@ -78,6 +81,7 @@ class LagCompensatedHitSystem final : public engine::ISystem {
   std::size_t newest_{0};
   std::size_t recorded_{0};
   const engine::ComponentRegistry* world_{nullptr};
+  ActiveHurts hurts_;
 };
 
 }  // namespace rtype::game

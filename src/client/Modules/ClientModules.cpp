@@ -2,14 +2,14 @@
 #include <memory>
 #include <vector>
 #include "AssetLoad.hpp"
+#include "BuiltModuleConstants.hpp"
 #include "ClientAssetsModule.hpp"
-#include "ClientAudioModule.hpp"
 #include "ClientConnectionModule.hpp"
 #include "ClientGameModule.hpp"
+#include "ClientHangarModule.hpp"
 #include "ClientLobbyModule.hpp"
 #include "ClientLoggerModule.hpp"
 #include "ClientMenusModule.hpp"
-#include "ClientMetricsModule.hpp"
 #include "ClientScreensModule.hpp"
 #include "ClientSettingsModule.hpp"
 #include "ClientWindowModule.hpp"
@@ -18,7 +18,13 @@
 #include "LaunchOptions.hpp"
 #include "LogLaunchOptions.hpp"
 #include "ScreenAssets.hpp"
+#if RTYPE_MODULE_AUDIO
+#include "ClientAudioModule.hpp"
+#endif
+#if RTYPE_MODULE_METRICS
+#include "ClientMetricsModule.hpp"
 #include "SystemClock.hpp"
+#endif
 
 namespace rtype::client {
 
@@ -33,14 +39,19 @@ std::vector<std::unique_ptr<engine::IModule>> clientModules(
   modules.push_back(std::make_unique<ClientWindowModule>(loop));
   modules.push_back(std::make_unique<ClientConnectionModule>(
       launchOptions.networkConditions()));
+#if RTYPE_MODULE_METRICS
   modules.push_back(std::make_unique<ClientMetricsModule>(
       std::make_shared<engine::SystemClock>(), launchOptions.trafficCsvFile()));
+#endif
+#if RTYPE_MODULE_AUDIO
   modules.push_back(
       std::make_unique<ClientAudioModule>(launchOptions.audioMode()));
-  modules.push_back(
-      std::make_unique<ClientScreensModule>(launchOptions.serverChoice()));
+#endif
+  modules.push_back(std::make_unique<ClientScreensModule>(
+      launchOptions.serverChoice(), launchOptions.playStart()));
   modules.push_back(std::make_unique<ClientMenusModule>());
   modules.push_back(std::make_unique<ClientLobbyModule>());
+  modules.push_back(std::make_unique<ClientHangarModule>());
   modules.push_back(std::make_unique<ClientGameModule>());
   return modules;
 }

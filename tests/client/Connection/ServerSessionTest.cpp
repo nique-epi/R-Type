@@ -16,6 +16,7 @@
 #include "Disconnection.hpp"
 #include "EntityAnnouncements.hpp"
 #include "EntityReplicatorTestConstants.hpp"
+#include "Expulsion.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
 #include "GameLoaded.hpp"
 #include "GameStarted.hpp"
@@ -43,12 +44,12 @@ using testing::ACCEPTED_PLAYER_NUMBER;
 using testing::APPLIED_TICK;
 using testing::BITS_OF_THE_FIRST_AND_THE_ACCEPTANCE;
 using testing::CHALLENGE_COOKIE;
-using testing::drawnTypes;
 using testing::FIRST_POSITION;
 using testing::FIRST_SEQUENCE;
 using testing::guaranteedSessionHeader;
 using testing::holds;
 using testing::listed;
+using testing::localAnnouncement;
 using testing::LOST_SERVER_LINE_TEXT;
 using testing::NEXT_PROTOCOL_VERSION;
 using testing::NICKNAME;
@@ -208,7 +209,7 @@ TEST_F(ServerSessionFixture, IsAcceptedWithThePlayerNumberOfTheServer) {
   network::PacketHeader header;
   header.sessionToken = SESSION_TOKEN;
   deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                      .types = drawnTypes()},
+                                      .content = localAnnouncement()},
           server(), header);
 
   update();
@@ -244,7 +245,7 @@ TEST_F(ServerSessionFixture, IsRefusedWithTheReasonOfTheServer) {
 TEST_F(ServerSessionFixture, SendsNoRequestOnceAccepted) {
   connect();
   deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                      .types = drawnTypes()});
+                                      .content = localAnnouncement()});
   update();
 
   update(2 * CONNECTION_REQUEST_INTERVAL);
@@ -319,7 +320,7 @@ TEST_F(ServerSessionFixture, IgnoresATruncatedDatagram) {
   std::vector<std::byte> datagram = network::DatagramCodec::encode(
       network::PacketHeader{},
       network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                  .types = drawnTypes()});
+                                  .content = localAnnouncement()});
   datagram.pop_back();
   deliverBytes(std::move(datagram));
 
@@ -339,7 +340,7 @@ TEST_F(ServerSessionFixture, IsRefusedByAnAnswerOfAnotherVersion) {
   network::PacketHeader header;
   header.version = NEXT_PROTOCOL_VERSION;
   deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                      .types = drawnTypes()},
+                                      .content = localAnnouncement()},
           server(), header);
 
   update();
@@ -412,7 +413,7 @@ TEST_F(ServerSessionFixture, IgnoresALateAnswerOnceCancelled) {
   connect();
   session().cancel();
   deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                      .types = drawnTypes()});
+                                      .content = localAnnouncement()});
 
   update();
 
@@ -431,7 +432,7 @@ TEST_F(ServerSessionFixture, StartsANewAttemptWithoutStaleAnswers) {
       network::ConnectionRefused{.reason = network::RefusalReason::GameFull});
   update();
   deliver(network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                      .types = drawnTypes()});
+                                      .content = localAnnouncement()});
 
   connect();
   update();
@@ -1032,7 +1033,7 @@ TEST_F(ServerSessionFixture, KeepsASessionOpenedAfterAnIdleWait) {
   update(PROTOCOL_REQUEST_INTERVAL);
   deliverInSession(
       network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                  .types = drawnTypes()},
+                                  .content = localAnnouncement()},
       ACCEPTANCE_SEQUENCE);
   update();
 
@@ -1054,7 +1055,7 @@ TEST_F(ServerSessionFixture, KeepsASessionOpenedAfterALostOne) {
   update(PROTOCOL_REQUEST_INTERVAL);
   deliverInSession(
       network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                  .types = drawnTypes()},
+                                  .content = localAnnouncement()},
       ACCEPTANCE_SEQUENCE);
   update();
 
@@ -1106,7 +1107,7 @@ TEST_F(ServerSessionFixture, StaysLostWhenALateAcceptanceArrives) {
 
   deliverInSession(
       network::ConnectionAccepted{.playerNumber = ACCEPTED_PLAYER_NUMBER,
-                                  .types = drawnTypes()},
+                                  .content = localAnnouncement()},
       FIRST_SEQUENCE);
   update();
 
@@ -1267,6 +1268,22 @@ TEST_F(ServerSessionFixture, ADisconnectionOfTheServerClosesTheSession) {
   update();
 
   EXPECT_EQ(phase(), ConnectionPhase::Closed);
+}
+
+/**
+ * Given a session the server opened
+ * When the server sends an Expulsion in the session
+ * Then the session ends as expelled
+ */
+TEST_F(ServerSessionFixture, AnExpulsionOfTheServerExpelsTheSession) {
+  accept();
+  deliverInSession(
+      network::Expulsion{.reason = network::ExpulsionReason::ByTheHost},
+      FIRST_SEQUENCE);
+
+  update();
+
+  EXPECT_EQ(phase(), ConnectionPhase::Expelled);
 }
 
 /**

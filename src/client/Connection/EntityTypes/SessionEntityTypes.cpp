@@ -1,51 +1,60 @@
 #include "SessionEntityTypes.hpp"
 #include <cstddef>
 #include <cstdint>
-#include <span>
-#include <string>
 #include <utility>
 #include <vector>
-#include "DrawableTypeCheck.hpp"
+#include "ContentFingerprint.hpp"
+#include "EntityAppearances.hpp"
 #include "EntityTypeConstants.hpp"
-#include "EntityTypeEntry.hpp"
+#include "LocalContent.hpp"
+#include "NumberedEntityType.hpp"
+#include "PackContent.hpp"
 #include "ShipGun.hpp"
 
 namespace rtype::client {
 
-SessionEntityTypes::SessionEntityTypes(DrawableTypeCheck drawable)
-    : drawable_(std::move(drawable)) {}
+SessionEntityTypes::SessionEntityTypes(LocalContent local)
+    : none_(EntityAppearances::fromTexts({})), local_(std::move(local)) {}
 
-std::vector<std::string> SessionEntityTypes::undrawableNamesOf(
-    std::span<const network::EntityTypeEntry> types) const {
-  std::vector<std::string> names;
-  for (const network::EntityTypeEntry& entry : types) {
-    if (!drawable_(entry.name)) {
-      names.push_back(entry.name);
-    }
-  }
-  return names;
+void SessionEntityTypes::drawLocalWith(const EntityAppearances& appearances) {
+  localAppearances_ = &appearances;
 }
 
-void SessionEntityTypes::keep(std::vector<network::EntityTypeEntry> types,
-                              network::ShipGun gun) {
-  types_ = std::move(types);
-  gun_ = gun;
+const network::ContentFingerprint& SessionEntityTypes::localFingerprint()
+    const {
+  return local_.fingerprint;
 }
 
-void SessionEntityTypes::forget() {
-  types_.clear();
-  gun_ = network::ShipGun{};
+void SessionEntityTypes::use(PackContent pack) {
+  pack_ = std::move(pack);
+  playsThePack_ = true;
 }
 
-network::ShipGun SessionEntityTypes::shipGun() const { return gun_; }
+void SessionEntityTypes::forget() { playsThePack_ = false; }
 
-const network::EntityTypeEntry* SessionEntityTypes::entryNumbered(
+const game::NumberedEntityType* SessionEntityTypes::entryNumbered(
     std::uint8_t number) const {
+  const std::vector<game::NumberedEntityType>& numbered = types();
   if (number == identifiers::NO_ENTITY_TYPE ||
-      static_cast<std::size_t>(number) > types_.size()) {
+      static_cast<std::size_t>(number) > numbered.size()) {
     return nullptr;
   }
-  return &types_[static_cast<std::size_t>(number) - 1];
+  return &numbered[static_cast<std::size_t>(number) - 1];
+}
+
+const EntityAppearances& SessionEntityTypes::appearances() const {
+  if (playsThePack_ && pack_.has_value()) {
+    return pack_->appearances;
+  }
+  return localAppearances_ != nullptr ? *localAppearances_ : none_;
+}
+
+game::ShipGun SessionEntityTypes::shipGun() const {
+  return playsThePack_ && pack_.has_value() ? pack_->gun : local_.gun;
+}
+
+const std::vector<game::NumberedEntityType>& SessionEntityTypes::types() const {
+  return playsThePack_ && pack_.has_value() ? pack_->types : local_.types;
 }
 
 }  // namespace rtype::client

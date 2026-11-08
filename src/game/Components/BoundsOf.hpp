@@ -7,11 +7,11 @@
 namespace rtype::game {
 
 /** @returns The rectangle of @p box laid on an entity at @p position, centered
- * on it as CollisionBox says. */
+ * on it moved by the offset of the box, as CollisionBox says. */
 constexpr engine::Bounds boundsOf(const Position& position,
                                   const CollisionBox& box) {
-  return engine::Bounds{.centerX = position.x,
-                        .centerY = position.y,
+  return engine::Bounds{.centerX = position.x + box.offsetX,
+                        .centerY = position.y + box.offsetY,
                         .width = box.width,
                         .height = box.height};
 }

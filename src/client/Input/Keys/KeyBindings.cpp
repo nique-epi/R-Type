@@ -54,6 +54,7 @@ std::optional<PlayerAction> KeyBindings::playerActionOf(BoundAction action) {
     case BoundAction::Shoot:
       return PlayerAction::Shoot;
     case BoundAction::Ready:
+    case BoundAction::OpenChat:
       break;
   }
   return std::nullopt;

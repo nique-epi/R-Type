@@ -10,5 +10,6 @@ constexpr std::string_view STORAGE_MODULE_NAME = "storage";
 constexpr std::string_view PROBE_MODULE_NAME = "probe";
 constexpr std::string_view HTTP_MODULE_NAME = "http";
 constexpr std::string_view SERVERS_MODULE_NAME = "servers";
+constexpr std::string_view LEADERBOARD_MODULE_NAME = "leaderboard";
 
 }  // namespace rtype::master

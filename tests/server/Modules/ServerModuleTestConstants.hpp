@@ -5,10 +5,20 @@
 #include <cstdint>
 #include <string_view>
 
+/** @brief A command of the administration console, and the line that turns it
+ * off, as server.cfg holds them. */
+constexpr std::string_view GAMES_LINE = "games";
+constexpr std::string_view CONSOLE_OFF_LINE = "module \"admin console\" off";
+
 /** @brief The names of the probe modules the tests list after the modules of
  * the server. */
 constexpr const char* PROBE_MODULE = "probe";
 constexpr const char* PORT_PROBE_MODULE = "port probe";
+
+/** @brief The lines that load the game-statistics plugin, as server.cfg
+ * writes them; a test that only reads lines needs no compiled plugin. */
+constexpr std::string_view PLUGIN_LINE = "plugin game-statistics";
+constexpr std::string_view PLUGIN_FOLDER_LINE = "plugin-folder plugins";
 
 /** @brief The database of a server a test starts, in a folder of the test. */
 constexpr std::string_view TEST_DATABASE_FILE = "results.db";
@@ -39,8 +49,24 @@ constexpr const char* MISSING_WAVES_FILE = "no/such/folder/waves.toml";
 /** @brief A folder of entity sheets that is not there. */
 constexpr const char* MISSING_ENTITY_SHEETS_FOLDER = "no/such/folder/entities";
 
-/** @brief The line of the journal that says the games are vanilla. */
-constexpr const char* VANILLA_GAMES_LINE = "games play normal, vanilla";
+/** @brief Lines that set the rules of the game: the difficulty "hard", five
+ * lives, friendly fire on; and a difficulty the shipped waves file has no
+ * table for. */
+constexpr std::string_view SET_HARD_GAME_LINE = "set difficulty hard";
+constexpr std::string_view SET_FIVE_LIVES_GAME_LINE = "set lives 5";
+constexpr std::string_view SET_FRIENDLY_FIRE_GAME_LINE = "set friendly-fire 1";
+constexpr std::string_view SET_UNKNOWN_DIFFICULTY_LINE =
+    "set difficulty nightmare";
+
+/** @brief The line of the journal that says the game plays those rules, and is
+ * not vanilla. */
+constexpr const char* RULED_GAMES_LINE =
+    "games play hard, 5 lives, friendly fire on, not vanilla";
+
+/** @brief The line of the journal that says the game plays the default rules
+ * and is vanilla. */
+constexpr const char* VANILLA_GAMES_LINE =
+    "games play normal, 3 lives, friendly fire off, vanilla";
 
 /** @brief How long the client of a test waits for the answer of the server to a
  * request, and for the farewell that follows the stop. */

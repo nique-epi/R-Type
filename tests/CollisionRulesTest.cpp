@@ -29,6 +29,8 @@ using rtype::game::testing::CollisionRulesInAnyOrder;
 using rtype::game::testing::expectNoEventFor;
 using rtype::game::testing::record;
 using rtype::game::testing::Recorded;
+using rtype::game::testing::spawnMissileOf;
+using rtype::game::testing::spawnShipFlownBy;
 
 /**
  * Given a player missile and an enemy
@@ -91,6 +93,26 @@ TEST_P(CollisionRulesInAnyOrder, PlayerTouchesEnemy) {
   EXPECT_EQ(recorded.shipContacts, (std::vector<ShipContact>{ShipContact{
                                        .player = player, .enemy = enemy}}));
   EXPECT_TRUE(recorded.missileHits.empty());
+}
+
+/**
+ * Given friendly fire on, a missile of one player and the ship of another
+ * When a Collision names them, in either order
+ * Then one MissileHit is published, with the missile and the ship as target
+ */
+TEST_P(CollisionRulesInAnyOrder, MissileHitsAnotherPilotWithFriendlyFire) {
+  CollisionScene scene;
+  const Entity missile = spawnMissileOf(scene, FIRING_PLAYER_NUMBER);
+  const Entity ship = spawnShipFlownBy(scene, OTHER_PLAYER_NUMBER);
+  const CollisionRules rules(scene.events, scene.components, true);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(collisionOf(missile, ship));
+  scene.events.dispatch();
+
+  EXPECT_EQ(recorded.missileHits, (std::vector<MissileHit>{MissileHit{
+                                      .missile = missile, .target = ship}}));
 }
 
 /**
@@ -158,6 +180,63 @@ TEST_P(CollisionRulesInAnyOrder, LeavesACompensatedShipContactToTheLagSystem) {
 
 INSTANTIATE_TEST_SUITE_P(BothOrders, CollisionRulesInAnyOrder,
                          ::testing::Bool());
+
+/**
+ * Given friendly fire on, a missile of a player and the ship that player flies
+ * When a Collision names them
+ * Then nothing is published: a pilot never hits itself
+ */
+TEST(CollisionRules, MissileNeverHitsItsOwnPilot) {
+  CollisionScene scene;
+  const Entity missile = spawnMissileOf(scene, FIRING_PLAYER_NUMBER);
+  const Entity ship = spawnShipFlownBy(scene, FIRING_PLAYER_NUMBER);
+  const CollisionRules rules(scene.events, scene.components, true);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(Collision{.first = missile, .second = ship});
+  scene.events.dispatch();
+
+  EXPECT_TRUE(recorded.missileHits.empty());
+}
+
+/**
+ * Given friendly fire off, a missile of one player and the ship of another
+ * When a Collision names them
+ * Then nothing is published: the missile crosses the ship
+ */
+TEST(CollisionRules, MissileCrossesAnotherPilotWithoutFriendlyFire) {
+  CollisionScene scene;
+  const Entity missile = spawnMissileOf(scene, FIRING_PLAYER_NUMBER);
+  const Entity ship = spawnShipFlownBy(scene, OTHER_PLAYER_NUMBER);
+  const CollisionRules rules(scene.events, scene.components, false);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(Collision{.first = missile, .second = ship});
+  scene.events.dispatch();
+
+  EXPECT_TRUE(recorded.missileHits.empty());
+}
+
+/**
+ * Given friendly fire on, a player missile of no player and a ship of a pilot
+ * When a Collision names them
+ * Then nothing is published: no player fired it
+ */
+TEST(CollisionRules, MissileOfNoPlayerNeverHitsAPilot) {
+  CollisionScene scene;
+  const Entity missile = scene.spawn(EntityType::PlayerMissile, 0.0F, 0.0F);
+  const Entity ship = spawnShipFlownBy(scene, OTHER_PLAYER_NUMBER);
+  const CollisionRules rules(scene.events, scene.components, true);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(Collision{.first = missile, .second = ship});
+  scene.events.dispatch();
+
+  EXPECT_TRUE(recorded.missileHits.empty());
+}
 
 /**
  * Given a player missile and a player

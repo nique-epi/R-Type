@@ -10,6 +10,8 @@
 #include "ConfigurationRegistry.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
+#include "EntitySheets.hpp"
+#include "ErrorText.hpp"
 #include "ExitedGame.hpp"
 #include "FreeUdpPort.hpp"
 #include "GameConfigurationFile.hpp"
@@ -22,6 +24,7 @@
 #include "IListeningPort.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IProcessLauncher.hpp"
+#include "IResultsFile.hpp"
 #include "IServerOccupancy.hpp"
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
@@ -32,6 +35,7 @@
 #include "PathText.hpp"
 #include "ReceivedStatus.hpp"
 #include "ServerConstants.hpp"
+#include "ServerDatabaseFile.hpp"
 #include "SettingValue.hpp"
 #include "StopPause.hpp"
 #include "SupervisedGame.hpp"
@@ -39,6 +43,7 @@
 #include "TextSettingDefinition.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
+#include "WaveCatalog.hpp"
 
 namespace rtype::server {
 
@@ -48,6 +53,15 @@ namespace {
 network::Endpoint loopbackEndpoint(std::uint16_t port) {
   return network::Endpoint{
       .address = std::string{network::LOOPBACK_IPV4_ADDRESS}, .port = port};
+}
+
+/** @returns The names of the difficulties of the waves file of @p settings,
+ * read with the entity sheets it names its enemies among.
+ * @throws what EntitySheets::fromFolder() and WaveCatalog::fromFile() throw. */
+std::vector<std::string> difficultyNamesOf(const GameLaunchSettings& settings) {
+  const game::EntitySheets types =
+      game::EntitySheets::fromFolder(settings.entitySheetsFolder);
+  return WaveCatalog::fromFile(settings.wavesFile, types).difficulties();
 }
 
 /** @returns The database setting, declared in @p configuration. */
@@ -94,8 +108,10 @@ void ServerSupervisedGamesModule::install(engine::InstallContext& context) {
                                     .database = *database_,
                                     .freePort = freeUdpPort});
   context.provide(registry_);
+  context.provide(difficulties_);
   context.provide(*spawner_);
   context.provide<IServerOccupancy>(watch_);
+  context.provide<IResultsFile>(*this);
   context.provide(watch_.hostedGames());
   context.provide(watch_.measures());
   context.addWork(SIMULATION_STAGE, [this](engine::Duration elapsed) {
@@ -104,6 +120,9 @@ void ServerSupervisedGamesModule::install(engine::InstallContext& context) {
 }
 
 void ServerSupervisedGamesModule::start() {
+  difficulties_.keep(difficultyNamesOf(settings_));
+  logger_.info("difficulties of the games: ",
+               engine::listText(difficulties_.names()));
   const std::filesystem::path file = gameConfigurationFileOf(
       settings_.folder, listeningPort_->listeningPort());
   writeGameConfiguration(file, settings_.gameLines);
@@ -115,6 +134,11 @@ void ServerSupervisedGamesModule::start() {
 void ServerSupervisedGamesModule::stop() {
   ChildrenStopper stopper{*sender_, pause_};
   reportExits(stopper.stopAll(registry_));
+}
+
+std::filesystem::path ServerSupervisedGamesModule::resultsFile() const {
+  return databaseFileOf(database_->text(), settings_.folder,
+                        listeningPort_->listeningPort());
 }
 
 void ServerSupervisedGamesModule::superviseGames(engine::Duration elapsed) {

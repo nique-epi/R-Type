@@ -8,12 +8,12 @@ namespace rtype::client::testing {
 
 /** @brief The gun of the shipped ship: one shot every 20 ticks, the first at
  * once. */
-constexpr network::ShipGun READY_GUN{.shipType = 4,
-                                     .projectileType = 3,
-                                     .intervalTicks = 20,
-                                     .firstShotTicks = 0,
-                                     .velocityX = 960.0F,
-                                     .velocityY = 0.0F};
+constexpr game::ShipGun READY_GUN{.shipType = 4,
+                                  .projectileType = 3,
+                                  .intervalTicks = 20,
+                                  .firstShotTicks = 0,
+                                  .velocityX = 960.0F,
+                                  .velocityY = 0.0F};
 
 /** @brief Commands held for 41 ticks fire on the first, the 21st and the
  * 41st; the server fired on the third. */

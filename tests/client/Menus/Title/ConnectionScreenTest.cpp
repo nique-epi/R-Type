@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -36,29 +37,30 @@ using rtype::client::GAME_IN_PROGRESS_STATUS;
 using rtype::client::GAME_NOT_FOUND_STATUS;
 using rtype::client::INVALID_ADDRESS_STATUS;
 using rtype::client::INVALID_PORT_STATUS;
+using rtype::client::LIVES_OUT_OF_RANGE_STATUS;
 using rtype::client::LOBBY_SCREEN;
 using rtype::client::MISSING_NICKNAME_STATUS;
 using rtype::client::NICKNAME_TAKEN_STATUS;
 using rtype::client::SERVER_FULL_STATUS;
+using rtype::client::UNKNOWN_DIFFICULTY_STATUS;
 using rtype::client::UNREACHABLE_STATUS;
 using rtype::client::testing::ACCEPTED_AS_FIRST_PLAYER;
 using rtype::client::testing::CANCEL;
+using rtype::client::testing::HALF_RECEIVED;
 using rtype::client::testing::LAST_ADDRESS_NUMBER_TEXT;
 using rtype::client::testing::LAUNCH_ADDRESS;
 using rtype::client::testing::LAUNCH_GAME;
 using rtype::client::testing::LAUNCH_NICKNAME;
 using rtype::client::testing::LAUNCH_PORT;
 using rtype::client::testing::LAUNCH_PORT_TEXT;
-using rtype::client::testing::LONGEST_MISSING_SHEET;
-using rtype::client::testing::LONGEST_SHIPPED_MISSING_SHEET;
-using rtype::client::testing::MOST_OTHER_MISSING_SHEETS;
+using rtype::client::testing::MAP_ADDRESS;
+using rtype::client::testing::MAP_PORT;
 using rtype::client::testing::NEXT_PROTOCOL_VERSION;
 using rtype::client::testing::NO_NICKNAME_TEXT;
+using rtype::client::testing::NOTHING_RECEIVED;
+using rtype::client::testing::PACK_SIZE;
 using rtype::client::testing::PORT_ZERO_TEXT;
-using rtype::client::testing::SHORT_MISSING_SHEET;
-using rtype::client::testing::SHORTER_MISSING_SHEET;
 using rtype::client::testing::THIRD_PLAYER;
-using rtype::client::testing::TWO_OTHER_MISSING_SHEETS;
 using rtype::client::testing::TYPED_NICKNAME;
 using rtype::client::testing::TYPED_NICKNAME_TEXT;
 using rtype::client::testing::TYPED_PORT;
@@ -415,11 +417,15 @@ INSTANTIATE_TEST_SUITE_P(
                       std::tuple(RefusalReason::GameNotFound,
                                  std::string_view(GAME_NOT_FOUND_STATUS)),
                       std::tuple(RefusalReason::ServerFull,
-                                 std::string_view(SERVER_FULL_STATUS))));
+                                 std::string_view(SERVER_FULL_STATUS)),
+                      std::tuple(RefusalReason::UnknownDifficulty,
+                                 std::string_view(UNKNOWN_DIFFICULTY_STATUS)),
+                      std::tuple(RefusalReason::LivesOutOfRange,
+                                 std::string_view(LIVES_OUT_OF_RANGE_STATUS))));
 
 /**
- * Given an attempt a server of protocol version 11 refused as
- * IncompatibleVersion, the client speaking version 10
+ * Given an attempt a server of protocol version 14 refused as
+ * IncompatibleVersion, the client speaking version 13
  * When a frame goes by
  * Then the status line names both versions, the client's first
  */
@@ -428,7 +434,7 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
-  EXPECT_NE(writingOf(canvas(), "REFUSED: YOU V10, SERVER V11"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "REFUSED: V13, SERVER V14"), nullptr);
 }
 
 /**
@@ -472,6 +478,86 @@ TEST_F(ConnectionScreenChoiceFixture, AScreenOpenedAtOnceConnectsToTheChoice) {
 }
 
 /**
+ * Given a server the map chose, other than the launch one
+ * When a connection screen opens to connect at once, as the map opens it
+ * Then the attempt goes out to the server the map chose
+ */
+TEST_F(ConnectionScreenChoiceFixture,
+       AScreenOpenedAtOnceJoinsTheServerTheMapChose) {
+  chooseOnTheMap();
+
+  reopenConnectingAtOnce();
+
+  ASSERT_FALSE(connectAttemptsOf(connection()).empty());
+  EXPECT_EQ(
+      connectAttemptsOf(connection()).back(),
+      (ServerConnectionCall{
+          .request = ServerConnectionCall::Request::Connect,
+          .server = {.address = std::string(MAP_ADDRESS), .port = MAP_PORT},
+          .nickname = std::string(LAUNCH_NICKNAME),
+          .game = LAUNCH_GAME}));
+}
+
+/**
+ * Given an attempt at once to the server the map chose
+ * When the form opens again and Enter is chosen
+ * Then the attempt goes out to the launch server: the map leaves the server
+ * the form remembers as it was
+ */
+TEST_F(ConnectionScreenChoiceFixture,
+       TheFormAfterAMapAttemptKeepsTheTypedServer) {
+  chooseOnTheMap();
+  reopenConnectingAtOnce();
+
+  reopen();
+  chooseEnter();
+
+  EXPECT_EQ(
+      connectAttemptsOf(connection()).back(),
+      (ServerConnectionCall{.request = ServerConnectionCall::Request::Connect,
+                            .server = {.address = std::string(LAUNCH_ADDRESS),
+                                       .port = LAUNCH_PORT},
+                            .nickname = std::string(LAUNCH_NICKNAME),
+                            .game = LAUNCH_GAME}));
+}
+
+/**
+ * Given an attempt at once to the server the map chose, then a lost game
+ * When the form RETRY opens appears
+ * Then no attempt goes out until Enter is chosen
+ */
+TEST_F(ConnectionScreenChoiceFixture, ARetryFormWaitsForEnter) {
+  chooseOnTheMap();
+  reopenConnectingAtOnce();
+  const std::size_t attemptsBefore = connectAttemptsOf(connection()).size();
+
+  reopenForARetry();
+
+  EXPECT_EQ(connectAttemptsOf(connection()).size(), attemptsBefore);
+}
+
+/**
+ * Given an attempt at once to the server the map chose, then a lost game
+ * When the form RETRY opens appears and Enter is chosen
+ * Then the attempt goes out to the server of the lost game
+ */
+TEST_F(ConnectionScreenChoiceFixture, ARetryFormStartsWithTheLastAttempt) {
+  chooseOnTheMap();
+  reopenConnectingAtOnce();
+
+  reopenForARetry();
+  chooseEnter();
+
+  EXPECT_EQ(
+      connectAttemptsOf(connection()).back(),
+      (ServerConnectionCall{
+          .request = ServerConnectionCall::Request::Connect,
+          .server = {.address = std::string(MAP_ADDRESS), .port = MAP_PORT},
+          .nickname = std::string(LAUNCH_NICKNAME),
+          .game = LAUNCH_GAME}));
+}
+
+/**
  * Given a connection screen whose nickname field was emptied, then Enter
  * chosen, which the empty nickname refuses
  * When a new connection screen opens and Enter is chosen
@@ -488,81 +574,58 @@ TEST_F(ConnectionScreenChoiceFixture, AnAttemptTheFieldsRefuseKeepsTheChoice) {
 }
 
 /**
- * Given an attempt whose acceptance named a sheet this client lacks
+ * Given a session whose pack downloads, half of it received
  * When the connection screen shows it
- * Then the status line names the sheet, in capitals
+ * Then the status line says the share received
  */
-TEST_F(ConnectionScreenFixture, AMissingSheetIsNamedOnTheStatusLine) {
-  show({.phase = ConnectionPhase::MissingEntitySheet,
-        .missingSheet = std::string{SHORT_MISSING_SHEET}});
+TEST_F(ConnectionScreenFixture, TheLoadingShowsTheShareReceived) {
+  show({.phase = ConnectionPhase::LoadingContent,
+        .contentReceived = HALF_RECEIVED,
+        .contentSize = PACK_SIZE});
 
-  EXPECT_NE(writingOf(canvas(), "NO SHEET: VOLTJELLY"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "LOADING CONTENT 50%"), nullptr);
 }
 
 /**
- * Given an acceptance that named three sheets this client lacks
- * When the connection screen shows it
- * Then the status line names the first one and counts the two others
+ * Given a session whose pack starts downloading, then one received whole
+ * When the connection screen shows each
+ * Then the lines say 0 and 100 percents, both within the form
  */
-TEST_F(ConnectionScreenFixture, TheOtherMissingSheetsAreCounted) {
-  show({.phase = ConnectionPhase::MissingEntitySheet,
-        .missingSheet = std::string{SHORTER_MISSING_SHEET},
-        .otherMissingSheets = TWO_OTHER_MISSING_SHEETS});
+TEST_F(ConnectionScreenFixture, TheLoadingRunsFromZeroToAHundred) {
+  show({.phase = ConnectionPhase::LoadingContent,
+        .contentReceived = NOTHING_RECEIVED,
+        .contentSize = PACK_SIZE});
+  EXPECT_NE(writingOf(canvas(), "LOADING CONTENT 0%"), nullptr);
 
-  EXPECT_NE(writingOf(canvas(), "NO SHEET: REAPER +2"), nullptr);
+  show({.phase = ConnectionPhase::LoadingContent,
+        .contentReceived = PACK_SIZE,
+        .contentSize = PACK_SIZE});
+  EXPECT_NE(writingOf(canvas(), "LOADING CONTENT 100%"), nullptr);
 }
 
 /**
- * Given a missing sheet named player_missile, the longest name of a shipped
- * sheet, 14 characters, where the 26 of a status line leave 16 after
- * NO SHEET:
- * When the connection screen shows it
- * Then the whole name is on the line
+ * Given an attempt left because the pack of the server could not be
+ * downloaded, then one left because the pack was refused
+ * When the connection screen shows each
+ * Then the status line says why
  */
-TEST_F(ConnectionScreenFixture, TheLongestShippedSheetNameIsShownWhole) {
-  show({.phase = ConnectionPhase::MissingEntitySheet,
-        .missingSheet = std::string{LONGEST_SHIPPED_MISSING_SHEET}});
+TEST_F(ConnectionScreenFixture, SaysWhyThePackOfTheServerIsNotPlayed) {
+  show({.phase = ConnectionPhase::ContentDownloadFailed});
+  EXPECT_NE(writingOf(canvas(), "PACK DOWNLOAD FAILED"), nullptr);
 
-  EXPECT_NE(writingOf(canvas(), "NO SHEET: PLAYER_MISSILE"), nullptr);
+  show({.phase = ConnectionPhase::ContentRefused});
+  EXPECT_NE(writingOf(canvas(), "PACK REFUSED"), nullptr);
 }
 
 /**
- * Given a missing sheet of 24 bytes, the longest name, where the 26
- * characters of a status line leave 16 after NO SHEET:
- * When the connection screen shows it
- * Then the name is cut to 15 characters and a dot, 26 in all
- */
-TEST_F(ConnectionScreenFixture, ANameTooLongForTheLineIsCut) {
-  show({.phase = ConnectionPhase::MissingEntitySheet,
-        .missingSheet = std::string{LONGEST_MISSING_SHEET}});
-
-  EXPECT_NE(writingOf(canvas(), "NO SHEET: ABCDEFGHIJKLMNO."), nullptr);
-}
-
-/**
- * Given a missing sheet of 24 bytes, the longest name, and 31 others, the most
- * a table names
- * When the connection screen shows it
- * Then the line still holds 26 characters: 10 for NO SHEET:, 4 for +31, and
- * 12 for the name, cut to 11 and a dot
- */
-TEST_F(ConnectionScreenFixture, TheLongestMissingSheetLineFitsTheForm) {
-  show({.phase = ConnectionPhase::MissingEntitySheet,
-        .missingSheet = std::string{LONGEST_MISSING_SHEET},
-        .otherMissingSheets = MOST_OTHER_MISSING_SHEETS});
-
-  EXPECT_NE(writingOf(canvas(), "NO SHEET: ABCDEFGHIJK. +31"), nullptr);
-}
-
-/**
- * Given an attempt from the title whose acceptance named a sheet this client
- * lacks
+ * Given an attempt from the title whose pack still downloads
  * When frames go by past the time an acceptance shows
- * Then no waiting room opens: the player reads the line and leaves
+ * Then no waiting room opens before the content is loaded
  */
-TEST_F(ConnectionScreenFixture, AMissingSheetOpensNoWaitingRoom) {
-  show({.phase = ConnectionPhase::MissingEntitySheet,
-        .missingSheet = std::string{SHORT_MISSING_SHEET}});
+TEST_F(ConnectionScreenFixture, ALoadingOpensNoWaitingRoom) {
+  show({.phase = ConnectionPhase::LoadingContent,
+        .contentReceived = HALF_RECEIVED,
+        .contentSize = PACK_SIZE});
 
   screen().update(ACCEPTED_STATUS_DURATION);
 
@@ -570,15 +633,13 @@ TEST_F(ConnectionScreenFixture, AMissingSheetOpensNoWaitingRoom) {
 }
 
 /**
- * Given an attempt from the leaderboard whose acceptance named a sheet this
- * client lacks
+ * Given an attempt from the leaderboard whose pack could not be downloaded
  * When frames go by past the time an acceptance shows
  * Then the screen stays: the leaderboard below gets no session to read
  */
 TEST_F(ConnectionForTheScreenBelowFixture,
-       AMissingSheetKeepsTheScreenOfTheLeaderboardOpen) {
-  show({.phase = ConnectionPhase::MissingEntitySheet,
-        .missingSheet = std::string{SHORT_MISSING_SHEET}});
+       AFailedDownloadKeepsTheScreenOfTheLeaderboardOpen) {
+  show({.phase = ConnectionPhase::ContentDownloadFailed});
 
   screen().update(ACCEPTED_STATUS_DURATION);
 

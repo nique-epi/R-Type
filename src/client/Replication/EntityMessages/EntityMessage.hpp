@@ -1,6 +1,7 @@
 #pragma once
 
 #include <variant>
+#include "BossStatus.hpp"
 #include "EnemyAction.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntitySpawned.hpp"
@@ -17,12 +18,12 @@ namespace rtype::client {
  * an entity disappears, something happens to an entity or a player (the first
  * copy of a GameEvent only), a player left the game (every copy of
  * PlayerLeft that arrives), an enemy enters a step of an attack (the first
- * copy of each EnemyAction only), or the game is over, with every score (the
- * first copy of GameEnded only).
+ * copy of each EnemyAction only), the game is over, with every score (the
+ * first copy of GameEnded only), or the state of the boss (every BossStatus).
  */
-using EntityMessage =
-    std::variant<network::EntitySpawned, network::WorldState,
-                 network::EntityDestroyed, network::GameEvent,
-                 network::PlayerLeft, network::GameEnded, network::EnemyAction>;
+using EntityMessage = std::variant<network::EntitySpawned, network::WorldState,
+                                   network::EntityDestroyed, network::GameEvent,
+                                   network::PlayerLeft, network::GameEnded,
+                                   network::EnemyAction, network::BossStatus>;
 
 }  // namespace rtype::client

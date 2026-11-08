@@ -22,6 +22,20 @@ class ClientException : public std::runtime_error {
   explicit ClientException(const std::string& message);
 };
 
+/** @brief A sheet of a content pack names a sprite sheet the pack does not
+ * hold: a path outside its folder, or a file it left out. */
+class ForeignSpriteSheetException : public ClientException {
+ public:
+  explicit ForeignSpriteSheetException(const std::string& sheet);
+};
+
+/** @brief A file of a content pack could not be written below the folder
+ * the client keeps packs in. */
+class ContentFileWriteException : public ClientException {
+ public:
+  explicit ContentFileWriteException(const std::string& file);
+};
+
 /** @brief A loading step ended with assets it could not load. */
 class AssetLoadingException : public ClientException {
  public:

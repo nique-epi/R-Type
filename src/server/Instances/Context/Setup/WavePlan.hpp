@@ -1,7 +1,9 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
+#include "PercentConstants.hpp"
 #include "WaveCurve.hpp"
 
 namespace rtype::server {
@@ -14,6 +16,12 @@ namespace rtype::server {
 struct WavePlan {
   game::WaveCurve curve;
   std::vector<std::string> enemies;
+  /** @brief The sheet of the boss that comes once the last wave is over;
+   * nothing for a level the last wave ends. */
+  std::optional<std::string> boss{std::nullopt};
+  /** @brief The health of the boss in percent of what its sheet gives,
+   * before the players scale it (see BossStage). */
+  int bossHealthPercent{game::WHOLE_PERCENT};
 
   bool operator==(const WavePlan&) const = default;
 };

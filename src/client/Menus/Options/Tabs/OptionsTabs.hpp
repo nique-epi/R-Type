@@ -13,8 +13,8 @@ namespace rtype::client {
 class Dropdown;
 
 /**
- * @brief The four tabs of the options, SOUND, CONTROLS, DISPLAY and ACCESS,
- * each a panel of rows over BACK, and the one that is open.
+ * @brief The five tabs of the options, SOUND, CONTROLS, DISPLAY, ACCESS and
+ * CHAT, each a panel of rows over BACK, and the one that is open.
  *
  * The rows read and change the settings through the SettingsService. The
  * descriptions follow the state of the rows: the keys of an open list, a key

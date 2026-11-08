@@ -27,6 +27,7 @@
 #include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "PathText.hpp"
+#include "PlayStart.hpp"
 #include "ProtocolConstants.hpp"
 #include "ServerChoice.hpp"
 #include "SettingLine.hpp"
@@ -51,6 +52,7 @@ engine::LaunchOption addressOption(LaunchValues& values) {
         values.choice.server.address = network::ipv4AddressFromText(address);
         values.forcedLines.push_back(engine::settingLine(
             SERVER_ADDRESS_SETTING_NAME, values.choice.server.address));
+        values.playStart = PlayStart::GivenServer;
       }};
 }
 
@@ -192,6 +194,7 @@ LaunchOptions LaunchOptions::read(std::span<const std::string_view> arguments) {
                                .port = network::DEFAULT_SERVER_PORT},
                        .nickname = std::string(DEFAULT_NICKNAME),
                        .game = network::ANY_GAME_CHOICE},
+      .playStart = PlayStart::ServerMap,
       .audioMode = AudioMode::Enabled,
       .trafficCsvFile = std::nullopt,
       .forcedLines = {},
@@ -234,6 +237,8 @@ std::string LaunchOptions::usage() {
 const ServerChoice& LaunchOptions::serverChoice() const {
   return values_.choice;
 }
+
+PlayStart LaunchOptions::playStart() const { return values_.playStart; }
 
 const std::vector<std::string>& LaunchOptions::forcedLines() const {
   return values_.forcedLines;

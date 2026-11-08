@@ -26,7 +26,7 @@ class IEntityTypeSource {
 
   /** @returns The gun of the ships of the session; one that predicts nothing
    * outside a session. */
-  [[nodiscard]] virtual network::ShipGun shipGun() const = 0;
+  [[nodiscard]] virtual game::ShipGun shipGun() const = 0;
 };
 
 }  // namespace rtype::client

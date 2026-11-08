@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <string_view>
+#include "EntitySheetConstants.hpp"
 #include "Playback.hpp"
 #include "WholeNumberRange.hpp"
 
@@ -14,10 +15,15 @@ namespace rtype::client {
  * refused, but `attack_<n>`, the table of the attack numbered n, which is
  * optional: ATTACK_TABLE_PREFIX followed by a number of ATTACK_NUMBER_RANGE.
  */
-constexpr std::string_view SHEET_KEY = "sheet";
+constexpr std::string_view SHEET_KEY = game::SPRITE_SHEET_KEY;
 constexpr std::string_view IDLE_TABLE_KEY = "idle";
 constexpr std::string_view ATTACK_TABLE_PREFIX = "attack_";
 constexpr std::array APPEARANCE_KEYS{SHEET_KEY, IDLE_TABLE_KEY};
+
+/** @brief The optional keys of `[appearance]`: `enraged_idle`, the idle
+ * animation of an enemy once enraged, read like `idle` (IDLE_KEYS). */
+constexpr std::string_view ENRAGED_IDLE_TABLE_KEY = "enraged_idle";
+constexpr std::array OPTIONAL_APPEARANCE_KEYS{ENRAGED_IDLE_TABLE_KEY};
 
 /**
  * @brief The keys of `[appearance.idle]`: the first frame, in pixels of the

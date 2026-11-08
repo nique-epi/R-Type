@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
 #include "ConnectionPhase.hpp"
@@ -14,6 +15,10 @@ namespace rtype::client::testing {
 constexpr std::string_view LAUNCH_ADDRESS = "192.168.1.20";
 constexpr std::uint16_t LAUNCH_PORT = 4243;
 constexpr std::u32string_view LAUNCH_PORT_TEXT = U"4243";
+
+/** @brief The server the server map chose, other than the launch one. */
+constexpr std::string_view MAP_ADDRESS = "203.0.113.9";
+constexpr std::uint16_t MAP_PORT = 4300;
 constexpr std::string_view LAUNCH_NICKNAME = "ACE";
 
 /** @brief The game the launch options asked for: game 2 of the server. */
@@ -51,18 +56,10 @@ const ServerConnectionCall CANCEL{
     .server = {},
     .nickname = {}};
 
-/** @brief Names of sheets a server plays and this client lacks: two short
- * ones, the longest name of a shipped sheet, which the status line holds whole
- * after MISSING_SHEET_STATUS, and one of the 24 bytes the protocol allows at
- * most, which it does not. */
-constexpr std::string_view SHORT_MISSING_SHEET = "voltjelly";
-constexpr std::string_view SHORTER_MISSING_SHEET = "reaper";
-constexpr std::string_view LONGEST_SHIPPED_MISSING_SHEET = "player_missile";
-constexpr std::string_view LONGEST_MISSING_SHEET = "abcdefghijklmnopqrstuvwx";
-
-/** @brief How many other sheets are missing: two, and the 31 a table of the
- * 32 types the protocol allows can name besides the first. */
-constexpr std::uint8_t TWO_OTHER_MISSING_SHEETS = 2;
-constexpr std::uint8_t MOST_OTHER_MISSING_SHEETS = 31;
+/** @brief A content pack of 150 000 bytes, nothing of it received, then
+ * half of it, then all of it. */
+constexpr std::size_t PACK_SIZE = 150'000;
+constexpr std::size_t NOTHING_RECEIVED = 0;
+constexpr std::size_t HALF_RECEIVED = 75'000;
 
 }  // namespace rtype::client::testing

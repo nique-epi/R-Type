@@ -25,24 +25,33 @@ namespace rtype::client {
  * A master that does not answer, refuses or writes what cannot be read gives a
  * reading with no listing, so the list says so instead of waiting for ever.
  *
- * Building it opens nothing; start() builds the client and the thread, stop()
- * ends the thread, a call in progress ended within the timeouts of
- * MasterClient. The asks and the readings are safe from both threads.
+ * Building it opens nothing; start() builds the client of the master, which
+ * checks its url, and starts the thread, which owns it; stop() ends the thread,
+ * a call in progress ended within the timeouts of MasterClient. retarget()
+ * names another master while the thread runs, without waiting for it: the
+ * thread builds the client of that master before it serves the next ask, and a
+ * call in progress ends on the master it began with, its reading answering an
+ * older ask. The asks, the master and the readings are safe from both threads.
  */
 class MasterLink final : public IMasterReads {
  public:
-  explicit MasterLink(network::MasterAccess access);
+  MasterLink() = default;
   ~MasterLink() override = default;
   MasterLink(const MasterLink&) = delete;
   MasterLink& operator=(const MasterLink&) = delete;
   MasterLink(MasterLink&&) = delete;
   MasterLink& operator=(MasterLink&&) = delete;
 
-  /** @throws network::InvalidMasterUrlException when the url is not
+  /** @brief Starts the thread on the master @p access names.
+   * @throws network::InvalidMasterUrlException when the url is not
    * `http://<host>[:<port>]`; the thread does not start then. */
-  void start();
+  void start(network::MasterAccess access);
 
-  /** @brief Ends the thread, then forgets the client. */
+  /** @brief Names the master the thread reads from its next ask on; a url
+   * MasterClient refuses leaves it on the master it had. */
+  void retarget(network::MasterAccess access);
+
+  /** @brief Ends the thread, and with it its client. */
   void stop();
 
   std::uint64_t askServers() override;
@@ -51,18 +60,21 @@ class MasterLink final : public IMasterReads {
   [[nodiscard]] std::optional<GameListReading> games() const override;
 
  private:
-  /** @brief The loop of MasterLink: waits for a newer ask, serves it. */
-  void run(const std::stop_token& stop);
-  /** @brief Serves each kind of @p asks newer than @p served, then marks it
-   * served. */
-  void serve(const MasterAsks& asks, MasterAsks& served);
+  /** @brief The loop of MasterLink: waits for a newer ask, serves it with
+   * @p client, or with the client of a master retarget() named since. */
+  void run(const std::stop_token& stop,
+           std::unique_ptr<network::MasterClient> client);
+  /** @brief Serves each kind of @p asks newer than @p served with @p client,
+   * then marks it served. */
+  void serve(network::MasterClient& client, const MasterAsks& asks,
+             MasterAsks& served);
 
-  network::MasterAccess access_;
   MasterAsks asked_;
   concurrency::LatestValue<MasterAsks> asks_;
   concurrency::LatestValue<ServerListReading> servers_;
   concurrency::LatestValue<GameListReading> games_;
-  std::unique_ptr<network::MasterClient> client_;
+  /** @brief The master the thread reads, newest first. */
+  concurrency::LatestValue<network::MasterAccess> access_;
   std::jthread thread_;
 };
 

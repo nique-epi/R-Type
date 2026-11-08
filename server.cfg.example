@@ -28,6 +28,10 @@ set state-encoding delta
 # [games] The ticks every player's input is held before it is applied, from 0 to 30.
 set input-delay 3
 
+# [games] 1 starts every game at its boss, without the waves, to test the fight:
+# the ships never die, and the game is never vanilla. 0 plays the waves.
+set start-at-boss 0
+
 # [supervisor] The SQLite file the leaderboard of this server is kept in, on a local disk;
 # a name with a space goes in quotes. Empty: r-type_server_<port>.db next to
 # the executable, with the port above.
@@ -40,21 +44,29 @@ set database ""
 set master-url ""
 set master-key ""
 
+# [supervisor] The IPv4 address players reach this server at, which the master
+# lists. Empty: the master lists the address the registration comes from,
+# 127.0.0.1 when the master runs on this machine. 0.0.0.0, a 127.x.x.x address
+# and 255.255.255.255 are refused: no player reaches the server there.
+set public-address ""
+
 # [supervisor] The name players read in the list of servers and in the answer to an
 # information request, 1 to 32 bytes.
 set server-name "R-Type server"
 
 # [supervisor or games] Turn a module off (it is never installed, provides no
 # service and runs no work). A module the supervisor has (logger, network,
-# supervised games, supervisor lobby, information, master) is turned off in
-# the supervisor; any other name goes to the games. Refused when a module
-# that stays on depends on it: in the supervisor, supervised games needs
-# network, supervisor lobby needs network and supervised games, information
-# needs network and supervised games, master needs network, supervised games
-# and information; in a game, storage needs network, games needs network and
-# storage, lobby needs network and games, metrics needs games and network, the
-# game-statistics plugin needs network and games once loaded; all need
-# logger.
+# content, supervised games, supervisor lobby, information, master,
+# "admin console") is turned off in the supervisor; any other name goes to the
+# games. Refused when a
+# module that stays on depends on it: in the supervisor, content needs
+# network, supervised games needs network, supervisor lobby needs network and
+# supervised games, information needs network and supervised games, master
+# needs network, supervised games and information, admin console needs network
+# and supervised games; in a game, storage needs
+# network, games needs network and storage, lobby needs network and games,
+# metrics needs games and network, the game-statistics plugin needs network
+# and games once loaded; all need logger.
 # module lobby off
 
 # [games] Load a plugin: <name>.so (Linux, macOS) or <name>.dll (Windows), built by the

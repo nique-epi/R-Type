@@ -6,6 +6,7 @@
 #include "BehaviourConstants.hpp"
 #include "BehaviourTestConstants.hpp"
 #include "BehaviourView.hpp"
+#include "CurrentAction.hpp"
 #include "Entity.hpp"
 #include "Intent.hpp"
 #include "Pilot.hpp"
@@ -19,6 +20,7 @@
 using rtype::engine::Entity;
 using rtype::engine::SIMULATION_TICK_DURATION;
 using rtype::game::BehaviourView;
+using rtype::game::CurrentAction;
 using rtype::game::Intent;
 using rtype::game::Pilot;
 using rtype::game::Position;
@@ -28,6 +30,7 @@ using rtype::game::WEAVE_BEHAVIOUR_NAME;
 using rtype::game::testing::ActionRequestingBehaviour;
 using rtype::game::testing::BODY_START_X;
 using rtype::game::testing::DRIFTER_X_AFTER_A_SECOND;
+using rtype::game::testing::ENRAGED_BOSS;
 using rtype::game::testing::FAR_SHIP;
 using rtype::game::testing::HALF_PERIOD;
 using rtype::game::testing::HEIGHT_TOLERANCE_UNITS;
@@ -42,6 +45,7 @@ using rtype::game::testing::RIGHT_HEADING_SETTINGS;
 using rtype::game::testing::RIGHTWARD_X_AFTER_A_SECOND;
 using rtype::game::testing::ROW_START;
 using rtype::game::testing::ROW_Y;
+using rtype::game::testing::THREE_ENDED_ACTIONS;
 using rtype::game::testing::TICKS_IN_QUARTER_PERIOD;
 using rtype::game::testing::UNTOUCHED;
 using rtype::game::testing::ViewRecordingBehaviour;
@@ -249,4 +253,38 @@ TEST_F(PilotSystemFixture, ABodyJumpsWhereItsBehaviourAsks) {
 
   EXPECT_EQ(positionOf(enemy).x, JUMP_TARGET.x);
   EXPECT_EQ(positionOf(enemy).y, JUMP_TARGET.y);
+}
+
+/**
+ * Given an enemy that is a boss that enraged
+ * When the pilots run once
+ * Then its behaviour sees it enraged
+ */
+TEST_F(PilotSystemFixture, HandsAnEnragedBossItsRage) {
+  std::optional<BehaviourView> seen;
+  const ViewRecordingBehaviour behaviour{seen};
+  const Entity enemy = addEnemy(behaviour, WATCHING_ENEMY_NETWORK_ID);
+  components().add(enemy, ENRAGED_BOSS);
+
+  run(SIMULATION_TICK_DURATION);
+
+  ASSERT_TRUE(seen.has_value());
+  EXPECT_TRUE(seen.value_or(BehaviourView{}).enraged);
+}
+
+/**
+ * Given an enemy that has ended three actions
+ * When the pilots run once
+ * Then its behaviour sees the three actions it ended
+ */
+TEST_F(PilotSystemFixture, HandsTheBehaviourTheActionsItEnded) {
+  std::optional<BehaviourView> seen;
+  const ViewRecordingBehaviour behaviour{seen};
+  const Entity enemy = addEnemy(behaviour, WATCHING_ENEMY_NETWORK_ID);
+  components().get<CurrentAction>(enemy)->ended = THREE_ENDED_ACTIONS;
+
+  run(SIMULATION_TICK_DURATION);
+
+  ASSERT_TRUE(seen.has_value());
+  EXPECT_EQ(seen.value_or(BehaviourView{}).actionsEnded, THREE_ENDED_ACTIONS);
 }

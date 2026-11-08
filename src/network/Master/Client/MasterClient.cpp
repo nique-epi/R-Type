@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include "CreatedServer.hpp"
+#include "FinishedGame.hpp"
 #include "GameListing.hpp"
 #include "MasterAccess.hpp"
 #include "MasterClientConstants.hpp"
@@ -67,14 +68,21 @@ void authorize(httplib::Request& request, const std::string& key) {
 
 /**
  * @returns A client of the master at @p url.
- * @throws InvalidMasterUrlException for a url cpp-httplib refuses.
+ * @throws InvalidMasterUrlException for a url cpp-httplib refuses: it throws
+ * for a scheme it does not speak, and builds a client with nothing inside,
+ * which is_valid() reports, for a port outside 1 to 65535.
  */
 std::unique_ptr<httplib::Client> clientOf(const std::string& url) {
+  std::unique_ptr<httplib::Client> client;
   try {
-    return std::make_unique<httplib::Client>(url);
+    client = std::make_unique<httplib::Client>(url);
   } catch (const std::invalid_argument&) {
     throw InvalidMasterUrlException(url);
   }
+  if (!client->is_valid()) {
+    throw InvalidMasterUrlException(url);
+  }
+  return client;
 }
 
 }  // namespace
@@ -102,6 +110,14 @@ void MasterClient::registerServer(const ServerRegistration& registration) {
 void MasterClient::sendHeartbeat(const ServerHeartbeat& heartbeat) {
   static_cast<void>(
       answerOf(REPLACE_OWN_HEARTBEAT_ROUTE, heartbeatText(heartbeat)));
+}
+
+void MasterClient::sendResult(const std::string& gameId,
+                              const FinishedGame& game) {
+  httplib::Request request =
+      requestOf(KEEP_OWN_RESULT_ROUTE, finishedGameText(game));
+  request.path = gamePathOf(KEEP_OWN_RESULT_ROUTE, gameId);
+  static_cast<void>(send(std::move(request)));
 }
 
 GameListing MasterClient::listGames(std::int64_t serverId) {

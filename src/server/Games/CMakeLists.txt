@@ -1,5 +1,6 @@
 add_library(rtype_server_games_module STATIC
   FarewellSender.cpp
+  GameRuleSettings.cpp
   GamePlacement.cpp
   RunningGame.cpp
   PlayerDatagrams.cpp
@@ -21,18 +22,22 @@ target_link_libraries(rtype_server_games_module
     rtype_logging
     rtype_server_exceptions
     rtype_server_constants
-    rtype_server_chat_module
     rtype_server_instances
     rtype_server_replication_module
     rtype_server_results_module
     rtype_server_rules_module
     rtype_server_storage_module
     rtype_server_network_module
+    rtype_network_connection_request
   PRIVATE
     rtype_network_disconnection
     rtype_network_handshake_cookies
     rtype_server_sessions_roster
     rtype_server_spawning
 )
+
+if(RTYPE_MODULE_CHAT)
+  target_link_libraries(rtype_server_games_module PUBLIC rtype_server_chat_module)
+endif()
 
 rtype_enable_warnings(rtype_server_games_module)

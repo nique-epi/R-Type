@@ -26,5 +26,5 @@ class FixedEntityTypeSource final : public rtype::client::IEntityTypeSource {
   [[nodiscard]] std::optional<rtype::client::EntityTypeLook> lookOf(
       std::uint8_t number) const override;
 
-  [[nodiscard]] rtype::network::ShipGun shipGun() const override;
+  [[nodiscard]] rtype::game::ShipGun shipGun() const override;
 };

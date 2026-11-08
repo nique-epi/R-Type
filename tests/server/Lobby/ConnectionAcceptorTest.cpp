@@ -9,8 +9,6 @@
 #include "ByteWriter.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectionAccepted.hpp"
-#include "ConnectionAcceptedFixtures.hpp"
-#include "ConnectionAcceptedTestConstants.hpp"
 #include "ConnectionAcceptor.hpp"
 #include "ConnectionAcceptorFixture.hpp"
 #include "ConnectionAcceptorFixtures.hpp"
@@ -20,8 +18,6 @@
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
-#include "EntitySide.hpp"
-#include "EntityTypeEntry.hpp"
 #include "IncomingDatagram.hpp"
 #include "MessageType.hpp"
 #include "NetworkConstants.hpp"
@@ -35,14 +31,10 @@
 #include "SentDatagrams.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
-#include "ShipGun.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::server {
 
-using network::testing::acceptanceWithEnemyTypes;
-using network::testing::LONGEST_TYPE_NAME;
-using network::testing::MOST_TYPES_ON_THE_PROTOCOL_PAGE;
 using testing::A_FIFTH_OF_A_SECOND_LATER;
 using testing::A_TENTH_OF_A_SECOND_LATER;
 using testing::ACCEPTANCE_REPEAT_TIME;
@@ -52,6 +44,7 @@ using testing::COOKIE_EXPIRED_TIME;
 using testing::DROPPED_DATAGRAM_LINE_TEXT;
 using testing::DROPPED_TOGETHER_COUNT;
 using testing::emptyNicknameRequestDatagram;
+using testing::gameContent;
 using testing::JUST_AFTER_THE_REPEAT;
 using testing::JUST_BEFORE_THE_REPEAT;
 using testing::NEXT_ACCEPTANCE_REPEAT_TIME;
@@ -64,10 +57,6 @@ using testing::PLAYER_NICKNAME;
 using testing::playerEndpoint;
 using testing::REFUSAL_DATAGRAM_SIZE;
 using testing::REQUEST_TIME;
-using testing::SHIPPED_GUN_INTERVAL;
-using testing::SHIPPED_MISSILE_TYPE;
-using testing::SHIPPED_MISSILE_VELOCITY;
-using testing::SHIPPED_SHIP_TYPE;
 using testing::SHORTEST_NICKNAME;
 
 /**
@@ -654,9 +643,7 @@ TEST(ConnectionAcceptor, AnswersTheNextRequestAfterOneWhoseAnswerThrew) {
       .admit = [](const network::Endpoint&, std::uint64_t) {},
       .onPlayerJoined =
           [](ConnectedPlayer&) { throw network::InvalidCoordinateException(); },
-      .entityTypes = acceptanceWithEnemyTypes(MOST_TYPES_ON_THE_PROTOCOL_PAGE,
-                                              LONGEST_TYPE_NAME)
-                         .types}};
+      .content = gameContent()}};
   const network::IncomingDatagram firstRequest{.sender = playerEndpoint(0),
                                                .payload = requestDatagram(0)};
   acceptor.receive(std::span{&firstRequest, 1}, REQUEST_TIME);
@@ -677,80 +664,15 @@ TEST(ConnectionAcceptor, AnswersTheNextRequestAfterOneWhoseAnswerThrew) {
 }
 
 /**
- * Given a sender that got a challenge, on a server of the sheets the game
- * ships with
+ * Given a sender that got a challenge, on a game of a known content
  * When it sends its request again with the cookie of the challenge
- * Then its acceptance lists every sheet in the order of its name, which is the
- * order of its number, with its side and its box
+ * Then its acceptance announces that content: its fingerprint, size and port
  */
-TEST_F(ConnectionAcceptorFixture, AcceptsWithTheEntityTypesOfTheGame) {
+TEST_F(ConnectionAcceptorFixture, AcceptsWithTheContentOfTheGame) {
   connect(playerEndpoint(0));
 
-  EXPECT_EQ(onlyMessageIn<network::ConnectionAccepted>(lastAnswer()).types,
-            (std::vector<network::EntityTypeEntry>{
-                {.side = network::EntitySide::Enemy,
-                 .name = "bydomancer",
-                 .hitboxWidth = 96,
-                 .hitboxHeight = 96},
-                {.side = network::EntitySide::Enemy,
-                 .name = "drifter",
-                 .hitboxWidth = 96,
-                 .hitboxHeight = 96},
-                {.side = network::EntitySide::Enemy,
-                 .name = "drillback",
-                 .hitboxWidth = 96,
-                 .hitboxHeight = 96},
-                {.side = network::EntitySide::EnemyMissile,
-                 .name = "enemy_missile",
-                 .hitboxWidth = 32,
-                 .hitboxHeight = 32},
-                {.side = network::EntitySide::EnemyMissile,
-                 .name = "orb_shard",
-                 .hitboxWidth = 20,
-                 .hitboxHeight = 20},
-                {.side = network::EntitySide::PlayerMissile,
-                 .name = "player_missile",
-                 .hitboxWidth = 64,
-                 .hitboxHeight = 24},
-                {.side = network::EntitySide::Enemy,
-                 .name = "reaper",
-                 .hitboxWidth = 96,
-                 .hitboxHeight = 96},
-                {.side = network::EntitySide::EnemyMissile,
-                 .name = "rune_orb",
-                 .hitboxWidth = 36,
-                 .hitboxHeight = 36},
-                {.side = network::EntitySide::Player,
-                 .name = "ship",
-                 .hitboxWidth = 128,
-                 .hitboxHeight = 64},
-                {.side = network::EntitySide::Enemy,
-                 .name = "voltjelly",
-                 .hitboxWidth = 96,
-                 .hitboxHeight = 96},
-                {.side = network::EntitySide::Enemy,
-                 .name = "weaver",
-                 .hitboxWidth = 96,
-                 .hitboxHeight = 96}}));
-}
-
-/**
- * Given a sender that got a challenge, on a server of the sheets the game
- * ships with
- * When it sends its request again with the cookie of the challenge
- * Then its acceptance carries the gun of ship, type 9, firing player_missile,
- * type 6, every 20 ticks from the start at 960 units per second
- */
-TEST_F(ConnectionAcceptorFixture, AcceptsWithTheGunOfTheShips) {
-  connect(playerEndpoint(0));
-
-  EXPECT_EQ(onlyMessageIn<network::ConnectionAccepted>(lastAnswer()).shipGun,
-            (network::ShipGun{.shipType = SHIPPED_SHIP_TYPE,
-                              .projectileType = SHIPPED_MISSILE_TYPE,
-                              .intervalTicks = SHIPPED_GUN_INTERVAL,
-                              .firstShotTicks = 0,
-                              .velocityX = SHIPPED_MISSILE_VELOCITY,
-                              .velocityY = 0.0F}));
+  EXPECT_EQ(onlyMessageIn<network::ConnectionAccepted>(lastAnswer()).content,
+            gameContent());
 }
 
 /**
@@ -809,17 +731,17 @@ TEST_F(ConnectionAcceptorFixture, CountsTheIntervalFromTheLastAcceptance) {
 /**
  * Given a connected player accepted again 250 ms later
  * When its two acceptances are compared
- * Then both carry the same table of entity types
+ * Then both announce the same content
  */
-TEST_F(ConnectionAcceptorFixture, RepeatsTheSameTableOfEntityTypes) {
+TEST_F(ConnectionAcceptorFixture, RepeatsTheSameContent) {
   connect(playerEndpoint(0));
   const network::OutgoingDatagram first = lastAnswer();
 
   connect(playerEndpoint(0), std::string{PLAYER_NICKNAME},
           ACCEPTANCE_REPEAT_TIME);
 
-  EXPECT_EQ(onlyMessageIn<network::ConnectionAccepted>(lastAnswer()).types,
-            onlyMessageIn<network::ConnectionAccepted>(first).types);
+  EXPECT_EQ(onlyMessageIn<network::ConnectionAccepted>(lastAnswer()).content,
+            onlyMessageIn<network::ConnectionAccepted>(first).content);
 }
 
 /**
@@ -855,9 +777,7 @@ TEST(ConnectionAcceptor, ChallengesWithNoMoreBytesWhateverTheTable) {
           },
       .admit = [](const network::Endpoint&, std::uint64_t) {},
       .onPlayerJoined = {},
-      .entityTypes = acceptanceWithEnemyTypes(MOST_TYPES_ON_THE_PROTOCOL_PAGE,
-                                              LONGEST_TYPE_NAME)
-                         .types}};
+      .content = gameContent()}};
   const network::IncomingDatagram request{
       .sender = playerEndpoint(0),
       .payload = network::DatagramCodec::encode(

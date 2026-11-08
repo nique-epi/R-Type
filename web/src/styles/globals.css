@@ -1,64 +1,245 @@
 @import "tailwindcss";
+@import "lenis/dist/lenis.css";
 
-@custom-variant dark (@media (prefers-color-scheme: dark));
+/*
+ * The colors, faces and depths of the R-Type web site, taken from the design
+ * system of the site (R-Type Web): the palette of the game client, its two
+ * pixel faces and one reading face. The site has one theme, the night sky.
+ *
+ * The palette is named after the constants of the client (SKY_COLOR,
+ * PALE_BLUE, HUD_CYAN...), and the components write it directly. Beside it,
+ * the status markers and the focus ring have a role of their own, and the
+ * shadcn names the earlier primitives read (background, card...) point at
+ * the palette.
+ */
+@theme {
+  /* The mockup stacks its layouts below 861px: md: starts there. */
+  --breakpoint-md: 53.8125rem;
+
+  --color-sky: #0b0d1f;
+  --color-ink: #0a0b1a;
+  --color-deep-blue: #26305e;
+  --color-blue: #4a5aa8;
+  --color-pale-blue: #8fa2e6;
+  --color-star-white: #eef1ff;
+  --color-star-gold: #ffd38a;
+  --color-hud-cyan: #7fe6ff;
+  --color-edge-blue: #1fa3c9;
+  --color-warning-orange: #ffb36b;
+  --color-bronze: #c2702e;
+  --color-paper: #fffbe8;
+
+  --color-player-blue: #1fa3c9;
+  --color-player-light-blue: #7fe6ff;
+  --color-player-dark-blue: #0f5a73;
+  --color-player-pink: #d94a8c;
+  --color-player-light-pink: #ffa3cf;
+  --color-player-dark-pink: #7a1f4d;
+  --color-player-green: #7ec23a;
+  --color-player-light-green: #d2ff8a;
+  --color-player-dark-green: #3d6b1a;
+  --color-player-orange: #e09a2a;
+  --color-player-light-orange: #ffd38b;
+  --color-player-dark-orange: #7a4a10;
+
+  --color-planet-2: #3b2d5c;
+  --color-ring-front: #c9a77a;
+
+  --shadow-sunk: inset 2px 2px 0 #26305e, inset -2px -2px 0 #4a5aa8;
+  --shadow-drop: 4px 4px 0 #0a0b1a;
+  --shadow-float: 0 8px 32px rgb(10 11 26 / 45%);
+}
+
+/*
+ * A lit chip of a game screen: hovered, focused from the keyboard, or the
+ * chosen one. `lit:` styles the chip, `lit-inside:` the pieces right inside it.
+ */
+@custom-variant lit (
+  &:is(:enabled:hover, :enabled:focus-visible, [data-selected])
+);
+@custom-variant lit-inside (
+  :is(button:enabled:hover, button:enabled:focus-visible, button[data-selected])
+    > &
+);
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-heading: var(--font-sans);
-  --color-ring: var(--ring);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-online: var(--online);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-}
+  --font-pixel: var(--font-press-start), monospace;
+  --font-small: var(--font-silkscreen), monospace;
+  --font-body: var(--font-plex-mono), ui-monospace, monospace;
+  --font-sans: var(--font-plex-mono), ui-monospace, monospace;
+  --font-heading: var(--font-press-start), monospace;
 
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --muted-foreground: oklch(0.5 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --online: oklch(0.527 0.154 150.069);
-  --border: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --radius: 0.625rem;
-}
+  --color-focus-ring: var(--color-star-white);
+  --color-status-online: var(--color-player-green);
+  --color-status-degraded: var(--color-star-gold);
+  --color-status-offline: var(--color-blue);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --muted-foreground: oklch(0.75 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --online: oklch(0.792 0.209 151.711);
-    --border: oklch(1 0 0 / 10%);
-    --ring: oklch(0.556 0 0);
-  }
+  --color-background: var(--color-sky);
+  --color-foreground: var(--color-pale-blue);
+  --color-card: var(--color-ink);
+  --color-card-foreground: var(--color-pale-blue);
+  --color-primary: var(--color-star-white);
+  --color-primary-foreground: var(--color-ink);
+  --color-muted-foreground: var(--color-pale-blue);
+  --color-destructive: var(--color-warning-orange);
+  --color-online: var(--color-player-green);
+  --color-border: var(--color-edge-blue);
+  --color-ring: var(--color-star-white);
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
+
   html {
-    @apply font-sans;
+    @apply bg-sky font-body text-pale-blue;
+    -webkit-font-smoothing: none;
   }
+
+  body {
+    @apply bg-sky text-base leading-[26px];
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-focus-ring;
+  }
+}
+
+/* A sprite or a sky layer is drawn at a whole scale, its pixels never blurred. */
+@utility pixelated {
+  image-rendering: pixelated;
+}
+
+/* The small pixel face, 16px on its own line, in capitals: versions, captions, labels. */
+@utility small-caps {
+  font-family: var(--font-small);
+  font-size: 16px;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+
+/* A row of a list that is a link: rounded, lit in deep blue under the pointer or the focus. */
+@utility row-link {
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  transition: background-color 250ms;
+
+  &:hover,
+  &:focus-visible {
+    background-color: color-mix(
+      in oklab,
+      var(--color-deep-blue) 45%,
+      transparent
+    );
+  }
+}
+
+/* The text of a game screen, outlined in ink as the client outlines its labels. */
+@utility text-outline-ink {
+  text-shadow:
+    2px 0 var(--color-ink),
+    -2px 0 var(--color-ink),
+    0 2px var(--color-ink),
+    0 -2px var(--color-ink),
+    2px 2px var(--color-ink),
+    -2px -2px var(--color-ink),
+    2px -2px var(--color-ink),
+    -2px 2px var(--color-ink);
+}
+
+/*
+ * The cut corners of the frames of the game client: `cut-8` cuts the four
+ * corners 8 pixels deep, `cut-top-6` only the two top ones, 6 pixels deep.
+ */
+@utility cut-* {
+  --cut: calc(--value(integer) * 1px);
+  clip-path: polygon(
+    var(--cut) 0,
+    calc(100% - var(--cut)) 0,
+    100% var(--cut),
+    100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%,
+    var(--cut) 100%,
+    0 calc(100% - var(--cut)),
+    0 var(--cut)
+  );
+}
+
+@utility cut-top-* {
+  --cut: calc(--value(integer) * 1px);
+  clip-path: polygon(
+    var(--cut) 0,
+    calc(100% - var(--cut)) 0,
+    100% var(--cut),
+    100% 100%,
+    0 100%,
+    0 var(--cut)
+  );
+}
+
+/*
+ * A frame of a sprite sheet at a whole scale. <Sprite> sets the frame and the
+ * sheet in pixels of the sheet; --sprite-scale-narrow, when set, replaces the
+ * scale on narrow screens.
+ */
+@layer components {
+  .sprite {
+    --scale: var(--sprite-scale);
+    display: inline-block;
+    flex: none;
+    width: calc(var(--sprite-w) * var(--scale) * 1px);
+    height: calc(var(--sprite-h) * var(--scale) * 1px);
+    background-image: var(--sprite-sheet);
+    background-repeat: no-repeat;
+    background-size: calc(var(--sheet-w) * var(--scale) * 1px)
+      calc(var(--sheet-h) * var(--scale) * 1px);
+    background-position: calc(var(--sprite-x) * var(--scale) * -1px)
+      calc(var(--sprite-y) * var(--scale) * -1px);
+    image-rendering: pixelated;
+    animation: var(--sprite-animation, none);
+
+    @variant max-md {
+      --scale: var(--sprite-scale-narrow, var(--sprite-scale));
+    }
+  }
+}
+
+/* Steps a sprite through the frames to the right of its first one, as <Sprite animation> asks. */
+@keyframes sprite-frames {
+  from {
+    background-position-x: calc(var(--sprite-x) * var(--scale) * -1px);
+  }
+  to {
+    background-position-x: calc(
+      (var(--sprite-x) + var(--sprite-frames) * var(--sprite-w)) *
+      var(--scale) *
+      -1px
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sprite {
+    animation: none;
+  }
+}
+
+/* The night sky drawn in CSS, for a box too small for the star layers. */
+@utility starfield {
+  background-color: var(--color-sky);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' shape-rendering='crispEdges'%3E%3Crect x='12' y='20' width='4' height='4' fill='%23eef1ff'/%3E%3Crect x='70' y='8' width='2' height='2' fill='%238fa2e6'/%3E%3Crect x='140' y='36' width='2' height='2' fill='%234a5aa8'/%3E%3Crect x='170' y='90' width='4' height='4' fill='%23ffd38a'/%3E%3Crect x='96' y='118' width='2' height='2' fill='%238fa2e6'/%3E%3Crect x='30' y='150' width='2' height='2' fill='%234a5aa8'/%3E%3Crect x='120' y='170' width='2' height='2' fill='%23eef1ff'/%3E%3Crect x='56' y='84' width='2' height='2' fill='%2326305e'/%3E%3C/svg%3E");
+}
+
+/* Old newsprint: the cream of a page with a fine grain and a halftone of dots, for the pages of the bestiary. */
+@utility newsprint {
+  background-color: var(--color-paper);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.27 0 0 0 0 0.12 0 0 0 0.22 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(rgb(40 30 10 / 9%) 0.7px, transparent 0.9px);
+  background-size:
+    160px 160px,
+    4px 4px;
 }

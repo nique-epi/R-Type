@@ -21,9 +21,9 @@ namespace rtype::client {
 /**
  * @returns What tells the player the session with the server ended, for a
  * DialogScreen over the title: RETRY is selected at first, and closes the
- * dialog to open the connection screen over the title, its fields those of the
- * lost game. OK, which MENU_CANCEL_KEY answers too, closes the dialog and
- * leaves the title.
+ * dialog to open the server map over the title and CONNECTION_AGAIN_SCREEN over
+ * the map, its fields those of the lost game, so BACK leads to the map. OK,
+ * which MENU_CANCEL_KEY answers too, closes the dialog and leaves the title.
  *
  * @param navigator Screens around the dialog, which must outlive it.
  * @param sounds Plays the click of its buttons, and must outlive it.

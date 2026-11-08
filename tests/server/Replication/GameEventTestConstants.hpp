@@ -34,4 +34,12 @@ constexpr float NOT_A_NUMBER = std::numeric_limits<float>::quiet_NaN();
 constexpr std::uint32_t UNASSIGNED_NETWORK_ID = 0;
 constexpr std::uint8_t PLAYER_NUMBER_OUTSIDE_THE_GAME = 0;
 
+/** @brief The boss of the encoder tests: network id 31, sheet 3, 200 of its
+ * 240 points left, and the warning of its arrival. */
+constexpr std::uint32_t BOSS_NETWORK_ID = 31;
+constexpr std::uint8_t BOSS_TYPE_NUMBER = 3;
+constexpr std::uint16_t BOSS_POINTS_LEFT = 200;
+constexpr std::uint16_t BOSS_FULL_POINTS = 240;
+constexpr std::uint32_t BOSS_WARNING_MILLISECONDS = 4400;
+
 }  // namespace rtype::server::testing

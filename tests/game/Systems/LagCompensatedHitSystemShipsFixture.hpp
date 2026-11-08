@@ -33,6 +33,10 @@ class LagCompensatedHitSystemShipsFixture : public ::testing::Test {
    * the time, and no body to run into. */
   engine::Entity hurtZoneAt(Position position);
 
+  /** @returns An enemy at @p position in the strike of its beam attack, whose
+   * HurtZone holds LEFTWARD_BEAM and no box, and no body to run into. */
+  engine::Entity beamAt(Position position);
+
   /** @brief Puts @p entity at @p position. */
   void move(engine::Entity entity, Position position);
 

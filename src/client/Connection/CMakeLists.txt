@@ -1,13 +1,17 @@
 add_subdirectory(Transport)
 add_subdirectory(Session)
+add_subdirectory(ContentPack)
 add_subdirectory(EntityTypes)
 add_subdirectory(Handshake)
 add_subdirectory(WaitingRoom)
 add_subdirectory(Leaderboard)
+add_subdirectory(Chat)
 add_subdirectory(ServerList)
 
 add_library(rtype_client_connection_module STATIC
   ClientConnectionModule.cpp
+  MasterChoice.cpp
+  MasterUrlSetting.cpp
   PlayerConnection.cpp
   ServerSession.cpp
   UnconfirmedInputs.cpp
@@ -17,7 +21,9 @@ target_include_directories(rtype_client_connection_module PUBLIC ${CMAKE_CURRENT
 
 target_link_libraries(rtype_client_connection_module
   PUBLIC
+    rtype_client_connection_chat
     rtype_client_connection_entity_types
+    rtype_client_content_pack
     rtype_client_connection_leaderboard
     rtype_client_entity_appearances
     rtype_client_entity_messages
@@ -25,8 +31,10 @@ target_link_libraries(rtype_client_connection_module
     rtype_client_input_commands
     rtype_client_server_list
     rtype_client_session
+    rtype_client_settings_module
     rtype_client_transport
     rtype_client_waiting_room
+    rtype_engine_command_settings
     rtype_engine_install_context
     rtype_engine_modules
     rtype_engine_system_clock
@@ -39,9 +47,12 @@ target_link_libraries(rtype_client_connection_module
     rtype_network_transport
   PRIVATE
     rtype_client_constants
+    rtype_client_platform
+    rtype_engine_paths
     rtype_network_connection_refused
     rtype_network_constants
     rtype_network_disconnection
+    rtype_network_expulsion
 )
 
 rtype_enable_warnings(rtype_client_connection_module)

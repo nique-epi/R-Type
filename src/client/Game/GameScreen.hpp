@@ -6,6 +6,9 @@
 #include <string>
 #include <vector>
 #include "ActionSet.hpp"
+#include "BossLook.hpp"
+#include "BossPresentation.hpp"
+#include "ChatWindow.hpp"
 #include "ComponentRegistry.hpp"
 #include "DepartureFeed.hpp"
 #include "EffectSpawner.hpp"
@@ -109,10 +112,18 @@ struct PlayerSettings;
  * change in the options applies at once. The server keeps its own rate of
  * fire, so the ship fires no faster than with the shoot key held.
  *
+ * Each update writes the name of every pilot over its ship once the ships are
+ * placed, hidden while PILOT NAMES is off (see tagPilotShips()); the setting
+ * is read at each update too.
+ *
  * Once the server ends the game, the screen ranks its pilots into the result
  * of the parts, then asks for the end screen in place of every screen
  * END_SCREEN_DELAY later on the clock of the game, once; the game goes on
  * meanwhile, so the last explosion plays.
+ *
+ * The chat of the session shows over the playfield (ChatWindow), on the status
+ * picture, repainted at each update while it shows; while it is open it takes
+ * every key, the ship holds nothing, and its ESC opens no options.
  */
 class GameScreen : public IScreen {
  public:
@@ -155,8 +166,8 @@ class GameScreen : public IScreen {
   void repaintStatusWhenChanged();
 
   /** @brief Paints the status band from the score board, and the banner of
-   * the start of the game over it, and keeps what was painted. */
-  void repaintStatus();
+   * the start of the game and @p boss over it, and keeps what was painted. */
+  void repaintStatus(const BossLook& boss);
 
   /** @brief Ranks the pilots of the board by the scores of @p ended into the
    * result of the parts, and remembers when the game ended. */
@@ -177,6 +188,7 @@ class GameScreen : public IScreen {
   OwnPrediction prediction_;
   EntityReplicator replicator_;
   EnemyActionPlayer enemyActions_;
+  BossPresentation boss_;
   engine::SystemScheduler systems_;
   PlayerCommands playerCommands_;
   IPlayerInputLink* inputs_;
@@ -197,8 +209,11 @@ class GameScreen : public IScreen {
   std::optional<PlayerPalette> paintedPalette_;
   DepartureFeed departures_;
   SilenceWarning silence_;
+  ChatWindow chat_;
   std::uint32_t paintedDepartures_{};
   bool paintedSilence_ = false;
+  bool paintedChat_ = false;
+  BossLook paintedBoss_;
   bool worldSeen_ = false;
 };
 

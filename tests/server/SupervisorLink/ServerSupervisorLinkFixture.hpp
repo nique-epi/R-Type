@@ -63,6 +63,9 @@ class ServerSupervisorLinkFixture : public ServerGamesFixture {
   /** @returns The GameStatus datagrams sent to the supervisor so far. */
   [[nodiscard]] std::vector<rtype::network::OutgoingDatagram> statuses();
 
+  /** @returns Whether the player at @p index holds a seat of the game. */
+  [[nodiscard]] bool isSeated(std::size_t index);
+
  private:
   mutable rtype::server::StopRequest stopRequest_;
   std::vector<std::future<void>> waiting_;

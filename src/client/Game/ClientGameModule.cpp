@@ -26,9 +26,10 @@ namespace rtype::client {
 namespace {
 
 /** @returns The assets of a game, with the sprite sheet of every entity
- * appearance of the client (see withEntitySheets()). */
+ * appearance of the content of the session (see withEntitySheets()). */
 AssetList gameAssetsOf(const ScreenContext& context) {
-  return withEntitySheets(gameAssets(), context.services.appearances.get());
+  return withEntitySheets(gameAssets(),
+                          context.services.entityTable.get().appearances());
 }
 
 /** @returns The loading screen of gameAssetsOf() while some are not loaded,
@@ -51,8 +52,10 @@ std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context) {
                       .waitingRoom = context.services.waitingRoom.get(),
                       .sky = context.sky.get(),
                       .sounds = soundsOf(context),
+                      .audio = context.services.audio.get(),
                       .entityTypes = context.services.entityTypes.get(),
-                      .result = context.gameResult.get()},
+                      .result = context.gameResult.get(),
+                      .chat = context.services.chat.get()},
       std::make_unique<EntityLayer>(context.services.assets.get()),
       interfaceCanvasOf(context));
 }

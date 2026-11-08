@@ -177,9 +177,13 @@ The other stages are `inputs` and `outputs` (`SERVER_LOOP_STAGES`, `src/server/S
 
 ## Step 3: declare its library
 
-A folder holds one `CMakeLists.txt` and declares one library. `src/server/TickReport/CMakeLists.txt`, written on the model of the one in `src/server/Lobby/`:
+A folder holds one `CMakeLists.txt` and declares one library. `src/server/TickReport/CMakeLists.txt`, written on the model of the one in `src/server/Lobby/`, with the first lines of an optional module: its option, declared in step 4, decides whether the folder builds anything:
 
 ```cmake
+if(NOT RTYPE_MODULE_TICK_REPORT)
+  return()
+endif()
+
 add_library(rtype_server_tick_report_module STATIC ServerTickReportModule.cpp)
 
 target_include_directories(rtype_server_tick_report_module PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -208,34 +212,61 @@ add_subdirectory(Modules)
 
 ## Step 4: put it in the list of a game process
 
-`gameProcessModules()` in `src/server/Modules/GameProcessModules.cpp` is the one place that lists the modules of a game process; `supervisorModules()`, next to it, lists those of the supervisor, and a module added there is also named in `SUPERVISOR_MODULE_NAMES` (`ServerRoleConstants.hpp`). Add the include, and the line before the metrics module, so that its measure of a tick covers your work:
+`gameProcessModules()` in `src/server/Modules/GameProcessModules.cpp` is the one place that lists the modules of a game process; `supervisorModules()`, next to it, lists those of the supervisor, and a module added there is also named in `SUPERVISOR_MODULE_NAMES` (`ServerRoleConstants.hpp`). Add the include, and the line before the metrics module, so that its measure of a tick covers your work, both under the option of the module, as the metrics are:
 
 ```cpp
-#include "ServerNetworkModule.hpp"
+#if RTYPE_MODULE_TICK_REPORT
 #include "ServerTickReportModule.hpp"
+#endif
 ```
 
 ```cpp
-  modules.push_back(std::make_unique<ServerLobbyModule>());
+  modules.push_back(
+      std::make_unique<ServerLobbyModule>(launchOptions.supervisorLink().port));
+#if RTYPE_MODULE_TICK_REPORT
   modules.push_back(std::make_unique<ServerTickReportModule>());
+#endif
+#if RTYPE_MODULE_METRICS
   modules.push_back(std::make_unique<ServerMetricsModule>(
       std::make_shared<engine::SystemClock>(), launchOptions.trafficCsvFile()));
+#endif
   modules.push_back(std::make_unique<ServerSupervisorLinkModule>(
       launchOptions.supervisorLink(), stopRequest));
   return modules;
 ```
 
-The module is only linked if its library is in the `CMakeLists.txt` of that folder. In `src/server/Modules/CMakeLists.txt`, add it to the `PUBLIC` libraries of `rtype_server_modules`, in alphabetical order:
+The module is only linked if its library is linked by the `CMakeLists.txt` of that folder, and only when the build has it. In `src/server/Modules/CMakeLists.txt`, next to the blocks of the master link and the metrics:
 
 ```cmake
-    rtype_server_platform
-    rtype_server_tick_report_module
+if(RTYPE_MODULE_TICK_REPORT)
+  target_link_libraries(rtype_server_modules PUBLIC rtype_server_tick_report_module)
+endif()
 ```
+
+The tick report is optional, so it gets its option, as every optional module does (see [Modules](/R-Type/modules/#turning-a-module-on-or-off)). In the root `CMakeLists.txt`, after the other options:
+
+```cmake
+option(RTYPE_MODULE_TICK_REPORT "Build the tick report module of the game processes" ON)
+add_feature_info(tick-report RTYPE_MODULE_TICK_REPORT "the tick report of the game processes")
+```
+
+In `src/engine/Modules/BuiltModuleConstants.hpp.in`, the macro the list reads, after the other `#cmakedefine01` lines, and the constant a test reads, after the other constants:
+
+```cpp
+#cmakedefine01 RTYPE_MODULE_TICK_REPORT
+```
+
+```cpp
+/** @brief Whether each game process holds its `tick-report` module. */
+constexpr bool TICK_REPORT_MODULE_BUILT = RTYPE_MODULE_TICK_REPORT == 1;
+```
+
+In `CMakePresets.json`, add `"RTYPE_MODULE_TICK_REPORT": "OFF"` to the `cacheVariables` of the `modules-off` preset, so the CI also builds without it.
 
 Every new module also adds its row to [the list of modules](/R-Type/project-layout/#the-list-of-modules), in the same pull request. In the table of a game process, after `lobby`:
 
 ```markdown
-| `tick-report` | `ServerTickReportModule` | `src/server/TickReport/` | optional |
+| `tick-report` | `ServerTickReportModule` | `src/server/TickReport/` | optional, `RTYPE_MODULE_TICK_REPORT` |
 ```
 
 Build the server now:
@@ -257,6 +288,34 @@ First, the existing test that lists the modules. In `tests/server/Modules/GamePr
                 std::string{rtype::server::TICK_REPORT_MODULE_NAME},
                 std::string{rtype::server::METRICS_MODULE_NAME},
                 std::string{rtype::server::SUPERVISOR_LINK_MODULE_NAME}}));
+```
+
+That list holds every optional module, so the test runs only in a build that has them all. Its first lines already skip it without the metrics; skip it without the tick report too, with `using rtype::engine::TICK_REPORT_MODULE_BUILT;` next to the `using` of the metrics:
+
+```cpp
+  if (!METRICS_MODULE_BUILT || !TICK_REPORT_MODULE_BUILT) {
+    GTEST_SKIP() << "the build leaves the metrics or the tick report out";
+  }
+```
+
+Then say what the option does, on the model of `ListsTheMetricsOnlyWhenTheyAreBuilt` in the same file: the module is listed exactly when the build has it. This test runs in both builds, so the `test` preset checks that the module is there and the `modules-off` preset that it is not:
+
+```cpp
+/**
+ * Given the modules of a game process, in a build with or without the tick
+ * report
+ * When they are listed
+ * Then the tick report is among them exactly when the build compiled it
+ */
+TEST_F(GameProcessModulesFixture, ListsTheTickReportOnlyWhenItIsBuilt) {
+  const auto modules = gameProcessModules(launchOptions(), stopRequest());
+
+  const bool listed =
+      std::ranges::find(modules, rtype::server::TICK_REPORT_MODULE_NAME,
+                        &rtype::engine::IModule::name) != modules.end();
+
+  EXPECT_EQ(listed, TICK_REPORT_MODULE_BUILT);
+}
 ```
 
 Then the tests of the module. A `…Test.cpp` holds only its tests: its constants and its fixture are files of their own, as in `tests/server/Lobby/` (`ServerLobbyFixture.{hpp,cpp}` and `ServerLobbyModuleTest.cpp`). A module is tested inside a real `Application`, with the modules it depends on; `ServerModuleFixture` gives the logger options that write to a journal of the test only.
@@ -434,7 +493,7 @@ TEST_F(ServerTickReportFixture, IsRefusedWhenTheLoggerIsNotListedBeforeIt) {
 
 `Application::runStages()` is what the server's network thread calls once per tick, so a test that calls it three times plays three ticks without a socket or a clock.
 
-Register both `.cpp` files in a `tests/server/TickReport/CMakeLists.txt` of their own, `target_sources(server_module_tests PRIVATE ServerTickReportFixture.cpp ServerTickReportModuleTest.cpp)`, and add `add_subdirectory(TickReport)` to `tests/server/CMakeLists.txt`, where `server_module_tests` is declared. Its include folders come from `rtype_server_modules`, which links your library `PUBLIC`.
+Register both `.cpp` files in a `tests/server/TickReport/CMakeLists.txt` of their own, which starts with the same `if(NOT RTYPE_MODULE_TICK_REPORT) return() endif()` as the folder it tests, then `target_sources(server_module_tests PRIVATE ServerTickReportFixture.cpp ServerTickReportModuleTest.cpp)`, and add `add_subdirectory(TickReport)` to `tests/server/CMakeLists.txt`, where `server_module_tests` is declared. Its include folders come from `rtype_server_modules`, which links your library `PUBLIC`.
 
 Run the tests of the module:
 

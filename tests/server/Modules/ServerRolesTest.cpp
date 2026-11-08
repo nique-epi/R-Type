@@ -32,7 +32,7 @@ TEST_F(ServerRolesFixture, ASettingOfTheGamesIsDeclaredByTheGamesOnly) {
   const std::set<std::string> supervisor = supervisorSettings();
   const std::set<std::string> game = gameSettings();
 
-  for (const std::string& name : exampleSettings()) {
+  for (const std::string& name : exampleSettingsOfThisBuild()) {
     if (std::ranges::find(GAME_SETTING_NAMES, name) !=
         GAME_SETTING_NAMES.end()) {
       SCOPED_TRACE(name);
@@ -43,14 +43,15 @@ TEST_F(ServerRolesFixture, ASettingOfTheGamesIsDeclaredByTheGamesOnly) {
 }
 
 /**
- * Given the settings of server.cfg.example, and the modules of a supervisor
+ * Given the settings of server.cfg.example of the modules this build holds,
+ * and the modules of a supervisor
  * When each setting the catalogue does not give the games is looked for
  * Then the supervisor declares it, so the line it keeps is never refused
  */
 TEST_F(ServerRolesFixture, AnyOtherSettingOfTheExampleIsTheSupervisors) {
   const std::set<std::string> supervisor = supervisorSettings();
 
-  for (const std::string& name : exampleSettings()) {
+  for (const std::string& name : exampleSettingsOfThisBuild()) {
     if (std::ranges::find(GAME_SETTING_NAMES, name) ==
         GAME_SETTING_NAMES.end()) {
       SCOPED_TRACE(name);
@@ -63,7 +64,8 @@ TEST_F(ServerRolesFixture, AnyOtherSettingOfTheExampleIsTheSupervisors) {
  * Given the modules of a game process, its plugin loaded
  * When the settings they declare are listed
  * Then each one is either named by the catalogue, so its line reaches the
- * games, or one the supervisor gives the game on its command line
+ * games, or one the supervisor gives the game on its command line, a rule of
+ * the game included
  */
 TEST_F(ServerRolesFixture, AGameDeclaresOnlyWhatReachesItsProcess) {
   for (const std::string& name : gameSettings()) {
@@ -71,7 +73,9 @@ TEST_F(ServerRolesFixture, AGameDeclaresOnlyWhatReachesItsProcess) {
     EXPECT_TRUE(std::ranges::find(GAME_SETTING_NAMES, name) !=
                     GAME_SETTING_NAMES.end() ||
                 std::ranges::find(SETTINGS_A_GAME_IS_LAUNCHED_WITH, name) !=
-                    SETTINGS_A_GAME_IS_LAUNCHED_WITH.end());
+                    SETTINGS_A_GAME_IS_LAUNCHED_WITH.end() ||
+                std::ranges::find(RULES_A_GAME_IS_LAUNCHED_WITH, name) !=
+                    RULES_A_GAME_IS_LAUNCHED_WITH.end());
   }
 }
 

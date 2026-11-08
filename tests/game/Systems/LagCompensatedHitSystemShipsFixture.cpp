@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <vector>
 #include "ComponentRegistry.hpp"
+#include "CurrentAction.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "HurtZone.hpp"
@@ -45,7 +46,16 @@ engine::Entity LagCompensatedHitSystemShipsFixture::hurtZoneAt(
   const engine::Entity enemy = entities_.create();
   components_.add(enemy, position);
   components_.add(enemy, EntityType::Enemy);
-  components_.add(enemy, HurtZone{.boxes = {ALWAYS_HURTING_BOX}});
+  components_.add(enemy, HurtZone{.boxes = {ALWAYS_HURTING_BOX}, .beams = {}});
+  return enemy;
+}
+
+engine::Entity LagCompensatedHitSystemShipsFixture::beamAt(Position position) {
+  const engine::Entity enemy = entities_.create();
+  components_.add(enemy, position);
+  components_.add(enemy, EntityType::Enemy);
+  components_.add(enemy, HurtZone{.boxes = {}, .beams = {LEFTWARD_BEAM}});
+  components_.add(enemy, CurrentAction{.key = BEAM_ATTACK_STRIKE});
   return enemy;
 }
 

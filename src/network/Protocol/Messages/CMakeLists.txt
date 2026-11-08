@@ -8,6 +8,8 @@ add_subdirectory(Disconnection)
 add_subdirectory(EnemyAction)
 add_subdirectory(EntityDestroyed)
 add_subdirectory(EntitySpawned)
+add_subdirectory(Expulsion)
+add_subdirectory(ExpulsionOrder)
 add_subdirectory(GameEnded)
 add_subdirectory(GameEvent)
 add_subdirectory(GameLoaded)
@@ -21,6 +23,7 @@ add_subdirectory(LobbyState)
 add_subdirectory(MasterProbe)
 add_subdirectory(OrderedMessage)
 add_subdirectory(PlayerChatLine)
+add_subdirectory(BossStatus)
 add_subdirectory(PlayerInput)
 add_subdirectory(PlayerLeft)
 add_subdirectory(ReadyState)
@@ -33,6 +36,7 @@ add_library(rtype_network_messages INTERFACE)
 target_link_libraries(rtype_network_messages
   INTERFACE
     rtype_network_chat_line
+    rtype_network_boss_status
     rtype_network_connection_accepted
     rtype_network_connection_challenge
     rtype_network_connection_redirect
@@ -42,6 +46,8 @@ target_link_libraries(rtype_network_messages
     rtype_network_enemy_action
     rtype_network_entity_destroyed
     rtype_network_entity_spawned
+    rtype_network_expulsion
+    rtype_network_expulsion_order
     rtype_network_game_ended
     rtype_network_game_event
     rtype_network_game_loaded

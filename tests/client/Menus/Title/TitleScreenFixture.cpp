@@ -3,6 +3,7 @@
 #include <memory>
 #include "KeyPress.hpp"
 #include "MotionPreference.hpp"
+#include "PlayStart.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -13,18 +14,25 @@
 #include "WidgetConstants.hpp"
 
 using rtype::client::MotionPreference;
+using rtype::client::PlayStart;
 using rtype::client::PRESS_DURATION;
 using rtype::client::TitleScreen;
 using rtype::client::TitleScreenParts;
 
-TitleScreenFixture::TitleScreenFixture()
-    : title_(TitleScreenParts{.navigator = navigator_,
-                              .sounds = sounds_,
-                              .settings = settings_,
-                              .playfieldPointAt = samePlayfieldPoint,
-                              .motion = MotionPreference::Full,
-                              .seed = rtype::client::testing::TITLE_SEED},
-             std::make_unique<RecordingInterfaceCanvas>(canvas_)) {}
+TitleScreenFixture::TitleScreenFixture() { reopenWith(PlayStart::ServerMap); }
+
+void TitleScreenFixture::reopenWith(PlayStart playStart) {
+  title_.reset();
+  title_ = std::make_unique<TitleScreen>(
+      TitleScreenParts{.navigator = navigator_,
+                       .sounds = sounds_,
+                       .settings = settings_,
+                       .playfieldPointAt = samePlayfieldPoint,
+                       .motion = MotionPreference::Full,
+                       .seed = rtype::client::testing::TITLE_SEED,
+                       .playStart = playStart},
+      std::make_unique<RecordingInterfaceCanvas>(canvas_));
+}
 
 const RecordingNavigator& TitleScreenFixture::navigator() const {
   return navigator_;
@@ -34,12 +42,12 @@ const InterfaceCanvasRecord& TitleScreenFixture::canvas() const {
   return canvas_;
 }
 
-TitleScreen& TitleScreenFixture::title() { return title_; }
+TitleScreen& TitleScreenFixture::title() { return *title_; }
 
 void TitleScreenFixture::choose(sf::Keyboard::Key key) {
-  title_.handleEvent(keyPress(key));
-  title_.handleEvent(keyRelease(key));
-  title_.update(PRESS_DURATION);
+  title_->handleEvent(keyPress(key));
+  title_->handleEvent(keyRelease(key));
+  title_->update(PRESS_DURATION);
 }
 
 const RecordingSoundPlayer& TitleScreenFixture::sounds() const {

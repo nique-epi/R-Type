@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "ActiveHurts.hpp"
 #include "ISystem.hpp"
 #include "ShipBounds.hpp"
 #include "TimeConstants.hpp"
@@ -24,8 +25,8 @@ namespace rtype::game {
  * and enemy and update, however many boxes overlap. Only ships (EntityType
  * Player with a Position and a CollisionBox) are hurt, and not a ship that
  * carries a ViewDelay: LagCompensatedHitSystem tests that one against the
- * boxes its player saw. What the contact costs
- * is not decided here: LifeKeeper does. The events are only queued: the loop
+ * boxes and beams its player saw. What the contact costs is not decided here:
+ * LifeKeeper does. The events are only queued: the loop
  * must call EventBus::dispatch() after the systems. The bus must outlive the
  * system.
  */
@@ -46,6 +47,7 @@ class HurtZoneSystem final : public engine::ISystem {
 
   engine::EventBus& events_;
   std::vector<ShipBounds> ships_;
+  ActiveHurts hurts_;
 };
 
 }  // namespace rtype::game

@@ -1,62 +1,33 @@
 #include "EntityTypeLooks.hpp"
 #include <cstdint>
 #include <optional>
-#include "CollisionBox.hpp"
 #include "EntityAppearance.hpp"
 #include "EntityAppearances.hpp"
-#include "EntitySide.hpp"
-#include "EntityType.hpp"
-#include "EntityTypeEntry.hpp"
 #include "EntityTypeLook.hpp"
 #include "IEntityTypeTable.hpp"
+#include "NumberedEntityType.hpp"
 #include "ShipGun.hpp"
 
 namespace rtype::client {
 
-namespace {
-
-/**
- * @returns The side of the game a side of the wire names. The reader of
- * ConnectionAccepted refuses any other value, so the last return is never
- * reached.
- */
-game::EntityType gameSideOf(network::EntitySide side) {
-  switch (side) {
-    case network::EntitySide::Player:
-      return game::EntityType::Player;
-    case network::EntitySide::Enemy:
-      return game::EntityType::Enemy;
-    case network::EntitySide::PlayerMissile:
-      return game::EntityType::PlayerMissile;
-    case network::EntitySide::EnemyMissile:
-      return game::EntityType::EnemyMissile;
-  }
-  return game::EntityType::Enemy;
-}
-
-}  // namespace
-
-EntityTypeLooks::EntityTypeLooks(const IEntityTypeTable& table,
-                                 const EntityAppearances& appearances)
-    : table_(&table), appearances_(&appearances) {}
+EntityTypeLooks::EntityTypeLooks(const IEntityTypeTable& table)
+    : table_(&table) {}
 
 std::optional<EntityTypeLook> EntityTypeLooks::lookOf(
     std::uint8_t number) const {
-  const network::EntityTypeEntry* const entry = table_->entryNumbered(number);
+  const game::NumberedEntityType* const entry = table_->entryNumbered(number);
   if (entry == nullptr) {
     return std::nullopt;
   }
-  const EntityAppearance* const appearance = appearances_->named(entry->name);
+  const EntityAppearance* const appearance =
+      table_->appearances().named(entry->name);
   if (appearance == nullptr) {
     return std::nullopt;
   }
-  return EntityTypeLook{.side = gameSideOf(entry->side),
-                        .appearance = *appearance,
-                        .hitbox = game::CollisionBox{
-                            .width = static_cast<float>(entry->hitboxWidth),
-                            .height = static_cast<float>(entry->hitboxHeight)}};
+  return EntityTypeLook{
+      .side = entry->side, .appearance = *appearance, .hitbox = entry->hitbox};
 }
 
-network::ShipGun EntityTypeLooks::shipGun() const { return table_->shipGun(); }
+game::ShipGun EntityTypeLooks::shipGun() const { return table_->shipGun(); }
 
 }  // namespace rtype::client

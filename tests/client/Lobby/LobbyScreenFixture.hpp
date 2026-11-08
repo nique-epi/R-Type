@@ -3,15 +3,17 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
 #include <vector>
-#include "KeyBindings.hpp"
 #include "LobbyPlace.hpp"
 #include "LobbyScreen.hpp"
 #include "LobbyState.hpp"
+#include "PlayerSettings.hpp"
+#include "RecordingChatChannel.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "RecordingWaitingRoom.hpp"
+#include "ShipLook.hpp"
 
 /** @brief A waiting room alone, the local player accepted as player 1, with
  * a recording navigator, connection and canvas, and the bindings of a first
@@ -35,9 +37,15 @@ class LobbyScreenFixture : public ::testing::Test {
   [[nodiscard]] RecordingWaitingRoom& waitingRoom();
   [[nodiscard]] const InterfaceCanvasRecord& canvas() const;
   [[nodiscard]] rtype::client::LobbyScreen& screen();
+  /** @returns What the ship of the local player wears, as the settings
+   * would hold it; the room reads it at each frame. */
+  [[nodiscard]] rtype::client::ShipLook& look();
 
   /** @returns The sounds the waiting room played. */
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
+
+  /** @returns The chat of the session, and what the room sent to it. */
+  [[nodiscard]] const RecordingChatChannel& chat() const;
 
  private:
   RecordingNavigator navigator_;
@@ -45,6 +53,8 @@ class LobbyScreenFixture : public ::testing::Test {
   RecordingWaitingRoom waitingRoom_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
-  rtype::client::KeyBindings keys_;
+  rtype::client::PlayerSettings settings_;
+  RecordingChatChannel chat_;
+  rtype::client::ShipLook look_{};
   rtype::client::LobbyScreen screen_;
 };

@@ -9,6 +9,7 @@
 #include "AwaitedArrival.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
+#include "EffectTools.hpp"
 #include "Entity.hpp"
 #include "EntityCues.hpp"
 #include "EntityDestroyed.hpp"
@@ -20,18 +21,23 @@
 #include "EntitySprites.hpp"
 #include "EntityType.hpp"
 #include "EntityTypeLook.hpp"
+#include "FlashGate.hpp"
 #include "GameEvent.hpp"
 #include "IEntityTypeSource.hpp"
 #include "ISoundPlayer.hpp"
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdentity.hpp"
 #include "PilotShip.hpp"
+#include "PixelEffects.hpp"
 #include "Position.hpp"
 #include "PositionHistory.hpp"
 #include "PositionSample.hpp"
 #include "ProtocolConstants.hpp"
+#include "Reveal.hpp"
 #include "ShipFlight.hpp"
 #include "SoundConstants.hpp"
+#include "SummonConstants.hpp"
+#include "TimeConstants.hpp"
 #include "WorldState.hpp"
 
 namespace rtype::client {
@@ -130,6 +136,27 @@ void announceUnlessAwaited(const EntityFeedback& feedback,
   }
 }
 
+/** @brief Warns of the arrival of the summoned @p enemy, which an
+ * EntitySpawned announced inside the playfield while the server keeps it
+ * harmless; an entity first seen in a world state is never warned of, since
+ * it may already take part:
+ * SUMMON_RINGS rings where it appears, SUMMON_RING_PERIOD apart, and a Reveal
+ * over SUMMON_WARNING_TIME, behind a leading line while effects may flash. */
+void warnOfTheSummoning(const EffectTools& tools,
+                        engine::ComponentRegistry& components,
+                        engine::Entity enemy) {
+  const game::Position center = *components.get<game::Position>(enemy);
+  for (int ring = 0; ring < SUMMON_RINGS; ++ring) {
+    tools.pixels.get().wave({.shape = SUMMON_RING,
+                             .center = center,
+                             .colors = SUMMON_RING_RAMP,
+                             .delay = SUMMON_RING_PERIOD * ring});
+  }
+  components.add(enemy, Reveal{.age = engine::Duration::zero(),
+                               .duration = SUMMON_WARNING_TIME,
+                               .leadingLine = tools.gate.get().flashes()});
+}
+
 /** @returns The ship a network id names, or nothing when the client has no
  * entity of that id or it is no ship. */
 std::optional<engine::Entity> shipOf(
@@ -174,6 +201,12 @@ void EntityReplicator::apply(const network::EntitySpawned& message) {
       created.has_value()) {
     lastListedTicks_.appeared(message.entityId);
     announceUnlessAwaited(feedback_, *components_, *created);
+    const auto* const type = components_->get<game::EntityType>(*created);
+    if (type != nullptr && *type == game::EntityType::Enemy &&
+        isSummonedAt(game::Position{.x = message.x, .y = message.y})) {
+      warnOfTheSummoning(feedback_.effects.get().tools(), *components_,
+                         *created);
+    }
   }
 }
 

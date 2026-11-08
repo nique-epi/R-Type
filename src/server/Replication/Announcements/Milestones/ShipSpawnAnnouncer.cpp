@@ -38,7 +38,8 @@ void ShipSpawnAnnouncer::onPlayerJoined(ConnectedPlayer& player) {
 void ShipSpawnAnnouncer::giveShipTo(ConnectedPlayer& player) {
   player.shipEntityId = world_->spawn(
       ship_.get(),
-      game::shipStartPosition(player.playerNumber, network::MAXIMUM_PLAYERS));
+      game::shipStartPosition(player.playerNumber, network::MAXIMUM_PLAYERS),
+      player.playerNumber);
   auto* const lives = world_->shipComponentOf<game::Lives>(player.shipEntityId);
   if (lives != nullptr) {
     lives->count = player.livesWithoutShip;

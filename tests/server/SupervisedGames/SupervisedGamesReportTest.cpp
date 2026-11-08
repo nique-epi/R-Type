@@ -44,6 +44,24 @@ TEST(SupervisedGamesReport, ListsAGameThatStartsAsWaiting) {
 }
 
 /**
+ * Given a game whose creator chose the difficulty "hard", five lives and
+ * friendly fire
+ * When the master list is written
+ * Then the game carries those rules
+ */
+TEST(SupervisedGamesReport, ListsTheRulesOfAGame) {
+  std::vector<SupervisedGame> games;
+  games.push_back(supervisedGameIn(FIRST_PLACE, GameLifecycle::Starting, 0));
+  games.front().rules = chosenRules();
+
+  const HostedGame hosted = supervisedHostedGames(games).front();
+
+  EXPECT_EQ(hosted.difficulty, CHOSEN_DIFFICULTY);
+  EXPECT_EQ(hosted.lives, CHOSEN_LIVES);
+  EXPECT_TRUE(hosted.friendlyFire);
+}
+
+/**
  * Given a game that waits for players and holds four
  * When the master list is written
  * Then it is full, and names its four players

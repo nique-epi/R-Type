@@ -1097,3 +1097,99 @@ TEST_F(GameScreenFixture, NoWarningOnceTheGameEnded) {
 
   EXPECT_EQ(writingOf(statusCanvas(), WARNING_WORDS), nullptr);
 }
+
+/**
+ * Given the game, prediction off, UP held
+ * When T opens the chat and a frame goes by
+ * Then the input sent holds nothing: the ship stops while the player types
+ */
+TEST(GameScreenInputsTest, OpeningTheChatReleasesTheShip) {
+  LoneGameParts doubles;
+  doubles.settings.clientPrediction = false;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
+  game.handleEvent(keyPress(sf::Keyboard::Key::T, sf::Keyboard::Scan::T));
+
+  game.update(ONE_FRAME);
+
+  EXPECT_THAT(doubles.inputs.sentActions(), ElementsAre(NOTHING_HELD));
+}
+
+/**
+ * Given the open chat in a game
+ * When ESC is pressed then released
+ * Then the chat closes and no options open over the game
+ */
+TEST(GameScreenInputsTest, EscapeClosingTheChatOpensNoOptions) {
+  LoneGameParts doubles;
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  game.handleEvent(keyPress(sf::Keyboard::Key::T, sf::Keyboard::Scan::T));
+  game.handleEvent(keyRelease(sf::Keyboard::Key::T, sf::Keyboard::Scan::T));
+
+  game.handleEvent(keyPress(OPTIONS_KEY, sf::Keyboard::Scan::Escape));
+  game.handleEvent(keyRelease(OPTIONS_KEY, sf::Keyboard::Scan::Escape));
+
+  EXPECT_THAT(doubles.navigator.calls(), IsEmpty());
+}
+
+/**
+ * Given the game
+ * When the boss stage starts and a second passes
+ * Then the word of the WARNING screen is painted
+ */
+TEST_F(GameScreenFixture, PaintsTheWarningWhenTheBossStageStarts) {
+  entityMessages().queue(BOSS_ARRIVING);
+  screens().update(ONE_FRAME);
+
+  screens().update(ONE_SECOND);
+
+  EXPECT_NE(writingOf(statusCanvas(), WARNING_WORD_ON_SCREEN), nullptr);
+}
+
+/**
+ * Given the game
+ * When the first status of the fight of the boss arrives and a frame passes
+ * Then its bar is painted, with its name
+ */
+TEST_F(GameScreenFixture, PaintsTheBossBarOnceTheBossFights) {
+  entityMessages().queue(BOSS_FIGHTING_UNHARMED);
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_NE(writingOf(statusCanvas(), BOSS_NAME_ON_THE_BAR), nullptr);
+}
+
+/**
+ * Given the bar of a boss filled
+ * When a status with fewer points arrives and a frame passes
+ * Then the status is painted again
+ */
+TEST_F(GameScreenFixture, RepaintsTheStatusWhenTheBossLosesPoints) {
+  entityMessages().queue(BOSS_FIGHTING_UNHARMED);
+  screens().update(ONE_FRAME);
+  screens().update(ONE_SECOND);
+  const int displays = statusCanvas().displayCount;
+  entityMessages().queue(BOSS_FIGHTING_HIT);
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_GT(statusCanvas().displayCount, displays);
+}
+
+/**
+ * Given the bar of a boss filled, its points unchanged
+ * When a frame passes
+ * Then the status is not painted again
+ */
+TEST_F(GameScreenFixture, TheStatusIsNotRepaintedWhenTheBossLookDoesNotChange) {
+  entityMessages().queue(BOSS_FIGHTING_UNHARMED);
+  screens().update(ONE_FRAME);
+  screens().update(ONE_SECOND);
+  const int displays = statusCanvas().displayCount;
+
+  screens().update(ONE_FRAME);
+
+  EXPECT_EQ(statusCanvas().displayCount, displays);
+}

@@ -4,6 +4,8 @@
 #include "LagCompensatedHitSystemShipsTestConstants.hpp"
 
 using rtype::engine::Entity;
+using rtype::game::testing::BEAM_ENEMY_AT;
+using rtype::game::testing::BEAM_ENEMY_HIGHER;
 using rtype::game::testing::LagCompensatedHitSystemShipsFixture;
 using rtype::game::testing::SHIP_FIVE_TICKS_BEHIND;
 using rtype::game::testing::TICKS_AT_THE_FIRST_PLACE;
@@ -88,4 +90,44 @@ TEST_F(LagCompensatedHitSystemShipsFixture,
   ASSERT_EQ(contacts().size(), 1U);
   EXPECT_EQ(contacts().front().player, ship);
   EXPECT_EQ(contacts().front().enemy, enemy);
+}
+
+/**
+ * Given an enemy whose beam lay on the line of the ship for one tick, then
+ * passed 200 units higher for five ticks
+ * When the ship is tested, its player five ticks behind
+ * Then the ship touches that enemy: its player saw the beam on it
+ */
+TEST_F(LagCompensatedHitSystemShipsFixture,
+       AShipIsHurtByABeamWhereItsPlayerSawIt) {
+  const Entity enemy = beamAt(BEAM_ENEMY_AT);
+  runTicks(TICKS_AT_THE_FIRST_PLACE);
+  move(enemy, BEAM_ENEMY_HIGHER);
+  runTicks(TICKS_AT_THE_SECOND_PLACE - 1);
+
+  const Entity ship = shipAt(WHERE_THE_SHIP_IS, SHIP_FIVE_TICKS_BEHIND);
+  runTicks(1);
+
+  ASSERT_EQ(contacts().size(), 1U);
+  EXPECT_EQ(contacts().front().player, ship);
+  EXPECT_EQ(contacts().front().enemy, enemy);
+}
+
+/**
+ * Given an enemy whose beam passed 200 units above the ship for one tick,
+ * then lay on its line for five ticks
+ * When the ship is tested, its player five ticks behind
+ * Then nothing touches the ship: its player saw the beam pass above it
+ */
+TEST_F(LagCompensatedHitSystemShipsFixture,
+       ABeamItsPlayerSawPassAboveSparesTheShip) {
+  const Entity enemy = beamAt(BEAM_ENEMY_HIGHER);
+  runTicks(TICKS_AT_THE_FIRST_PLACE);
+  move(enemy, BEAM_ENEMY_AT);
+  runTicks(TICKS_AT_THE_SECOND_PLACE - 1);
+
+  static_cast<void>(shipAt(WHERE_THE_SHIP_IS, SHIP_FIVE_TICKS_BEHIND));
+  runTicks(1);
+
+  EXPECT_TRUE(contacts().empty());
 }

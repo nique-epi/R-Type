@@ -1,11 +1,13 @@
 # R-Type
 
+**Web site:** <https://rtype.app>
+
 A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine. Up to four pilots fly together in a game against waves of Bydos; the server owns the game, the client draws it and sends the keys held. One server runs up to eight games at once. Epitech tek3 project.
 
 - **Platforms:** Linux (GCC or Clang), Windows (MSVC, Visual Studio 2022) and macOS (Apple Silicon). The CI builds and tests Linux and Windows on every pull request.
 - **Language and libraries:** C++20, SFML 3 on the client, standalone Asio on the server, GoogleTest for the tests.
 - **Programs:** `r-type_client` (window, sound, menus) and `r-type_server` (UDP on port 4242 by default). By default it is a supervisor that starts one process per game and sends each player to the game that has a place; `--mode server` hosts the games in one process, and `--mode master` runs the master, the program that lists game servers.
-- **Network:** every message of a game travels over UDP; the protocol is specified byte by byte in [the protocol RFC](https://nique-epi.github.io/R-Type/protocol/).
+- **Network:** every message of a game travels over UDP; a client that lacks the sheets of a server, a modded one for instance, downloads its content pack over HTTP first. The protocol is specified byte by byte in [the protocol RFC](https://nique-epi.github.io/R-Type/protocol/).
 
 The code is split into engine, game and network libraries; see [the architecture decision](docs/src/content/docs/architecture.md) and [the project layout](docs/src/content/docs/project-layout.md).
 
@@ -19,7 +21,7 @@ cmake --workflow --preset build
 ./r-type_client
 ```
 
-Run the last two commands in two terminals. In the client, PLAY opens the server map, which needs the master; to join a server directly, open the connection screen with D (ADDRESS) and press CONNECT. The sections below give the prerequisites for each system, every option, and a game of four.
+Run the last two commands in two terminals. In the client, PLAY opens the server map, which needs the master; to join a server directly, launch the client with `-h <address>`, so PLAY joins it at once, or open the connection screen with D (ADDRESS) and press CONNECT. The sections below give the prerequisites for each system, every option, and a game of four.
 
 ### A game of four players
 
@@ -38,11 +40,11 @@ On each of the four machines, or four terminals of one machine, with a different
 ./r-type_client -h 192.168.1.20 -p 4242 -n DASH
 ```
 
-Each client starts with these values in its connection screen: from the title, PLAY then D (ADDRESS) opens it, and CONNECT joins. The supervisor sends the four pilots to the same game, where each gets a number from 1 to 4. A fifth player lands in a second game, and is refused only when the eight games are full. Once every connected pilot says it is ready in the waiting room, the game starts; the arrows move the ship and the space bar shoots, until the player changes the keys in SETTINGS. When it ends, the end screen ranks the four pilots.
+Each client is given its server with `-h`, so PLAY on the title joins it at once, its connection screen filled with these values; without `-h`, PLAY opens the server map, and D (ADDRESS) there opens the connection screen, where CONNECT joins. The supervisor sends the four pilots to the same game, where each gets a number from 1 to 4. A fifth player lands in a second game, and is refused only when the eight games are full. Once every connected pilot says it is ready in the waiting room, the game starts; the arrows move the ship and the space bar shoots, until the player changes the keys in SETTINGS. When it ends, the end screen ranks the four pilots.
 
 ## Features
 
-The client opens on a second of black and an intro set to the beats of its theme, which a key or a click skips, then on its title screen over a scrolling starfield: PLAY opens the server map, then the game, RANKING opens the best scores of a server, SETTINGS opens the options (sound, keys, display mode and window size, accessibility), QUIT asks before closing the client; Escape during a game opens the options over it. It plays a theme, the sounds of the intro and of the game, and a click on its menus. The server answers each connection request with a challenge, an acceptance with a player number from 1 to 4, or a refusal when the game is full, and logs the datagrams of the players it admitted at the `debug` level.
+The client opens on a second of black and an intro set to the beats of its theme, which a key or a click skips, then on its title screen over a scrolling starfield: PLAY opens the server map, then the game, RANKING opens the best scores of a server, SETTINGS opens the options (sound, keys, display mode and window size, accessibility), QUIT asks before closing the client; the hangar, opened from the server map or from the own bay of the waiting room, dresses the ship with one of ten items, set on it by robotic arms; Escape during a game opens the options over it. It plays a theme, the sounds of the intro and of the game, and a click on its menus. The server answers each connection request with a challenge, an acceptance with a player number from 1 to 4, or a refusal when the game is full, and logs the datagrams of the players it admitted at the `debug` level.
 
 ## Requirements
 
@@ -74,6 +76,26 @@ The first configure builds every dependency and takes a few minutes. The `r-type
 The client and the server read their files from `assets/`, next to their executable, in the folder above it, or in `Resources/` beside it for the macOS app, wherever they are launched from. Each stops with exit code 1, naming the three folders, when it finds none.
 
 If the repository was cloned without its submodules, run `git submodule update --init` first.
+
+### Build options
+
+Each optional module has a CMake option, on by default. Off, its folder is not compiled, its `Contract/` excepted, the list of its program does not name it, and the program starts without it:
+
+| Option | Leaves out | Without it |
+|---|---|---|
+| `RTYPE_MODULE_AUDIO` | the sound of the client | the client plays nothing, and `--no-sound` changes nothing |
+| `RTYPE_MODULE_METRICS` | the metrics of the client and of each game process | no report in the journal, and `--traffic-csv` writes no file |
+| `RTYPE_MODULE_MASTER_LINK` | the registration of the server with the master | the server never registers, and `set master-url`, `set master-key` and `set public-address` are refused |
+| `RTYPE_MODULE_ADMIN_CONSOLE` | the administration console of the supervisor | the supervisor reads nothing from its terminal, and `games`, `players`, `close-game`, `kick`, `network` and `help` are unknown commands |
+| `RTYPE_MODULE_CHAT` | the chat of the games | a chat line reaches nobody |
+| `RTYPE_MODULE_PLUGINS` | the loading of plugins | `plugin` and `plugin-folder` are unknown commands |
+| `RTYPE_MODULE_GAME_STATISTICS` | the `game-statistics` plugin; off whenever `RTYPE_MODULE_PLUGINS` is | no `game-statistics` file in `plugins/` |
+
+```bash
+cmake --preset default -DRTYPE_MODULE_AUDIO=OFF
+```
+
+The configure ends with the list of the modules built and left out; `cmake --build build --parallel` then builds them. A line of `server.cfg` refused for a module left out is written to the journal at the `warn` level, and the program starts all the same.
 
 ### Packages
 
@@ -115,7 +137,7 @@ The release refuses a tag whose version is not the one of `project()`; change th
 ./r-type_server -p 4243
 ```
 
-The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on port 4242. It runs as a supervisor: it runs no game itself, and starts one `r-type_server --mode game` process per game, up to eight, sending each player to the game that has a place (see [the server page](https://nique-epi.github.io/R-Type/server/#the-three-roles-supervisor-game-and-master)). Each game writes its own journal, `r-type_game_<n>.log` next to the executable.
+The server listens on UDP port 4243 of every IPv4 interface; without `-p`, on port 4242. It runs as a supervisor: it runs no game itself, and starts one `r-type_server --mode game` process per game, up to eight, sending each player to the game that has a place (see [the server page](https://nique-epi.github.io/R-Type/server/#the-three-roles-supervisor-game-and-master)). Each game writes its own journal, `r-type_game_<n>.log` next to the executable. The supervisor also serves its content pack, the entity sheets of its `assets/` and their sprite sheets, over HTTP on the TCP port of the same number (4243 here), so a player whose client has other sheets downloads them when it joins: a host behind a firewall or a router opens both the UDP and the TCP port (see [Tutorial: publish a mod](https://nique-epi.github.io/R-Type/tutorial-publish-a-mod/)).
 
 ```bash
 ./r-type_server --seed 42
@@ -141,13 +163,19 @@ module lobby off
 ./r-type_server --state-rate 30
 ```
 
-Every player's input is held for the same few ticks before it moves the ship (3 ticks, 50 ms, by default); `--input-delay` changes it, from 0 to 30 ticks; any other delay than 3 makes the games not vanilla.
+The server sends each player 30 world states per second instead of 20, from 2 to 60: more states move the other ships more smoothly and use more bandwidth (about 350 bytes per state with four players and thirty entities, see [the server page](https://nique-epi.github.io/R-Type/server/)).
 
 ```bash
 ./r-type_server --input-delay 5
 ```
 
-The server sends each player 30 world states per second instead of 20, from 2 to 60: more states move the other ships more smoothly and use more bandwidth (about 350 bytes per state with four players and thirty entities, see [the server page](https://nique-epi.github.io/R-Type/server/)).
+Every player's input is held for the same few ticks before it moves the ship (3 ticks, 50 ms, by default); `--input-delay` changes it, from 0 to 30 ticks; any other delay than 3 makes the games not vanilla.
+
+```bash
+./r-type_server --boss
+```
+
+Every game starts at its boss, without the waves, to test the fight: the Bydo Tyrant appears 4.4 seconds after the game starts, and the ships never die. The games are not vanilla; `set start-at-boss 1` in `server.cfg` does the same.
 
 The server reads the waves of Bydos from `assets/waves/waves.toml`, in the `assets/` folder it finds next to its executable or in the folder above it. A missing or invalid file stops the game process with exit code 1, naming the file, the line and the key at fault in its journal, and the supervisor writes that the game crashed; the format is described in [Writing the waves file](https://nique-epi.github.io/R-Type/waves-file/). Both programs also read `assets/entities/`, one sheet per type of entity (the ship, the Bydos, the missiles), when they start, and stop the same way on an invalid sheet; the keys are described in [Writing an entity sheet](https://nique-epi.github.io/R-Type/entity-sheets/).
 
@@ -155,7 +183,7 @@ The server reads the waves of Bydos from `assets/waves/waves.toml`, in the `asse
 ./r-type_client -h 192.168.1.20 -p 4243 -n ACE
 ```
 
-PLAY opens the server map: the servers the master at `http://127.0.0.1:8080` lists, around the planet of the player by the ping the client measures, and the games of each; Enter or a click joins one. Start the master and a server registered with it first (see [the master page](https://nique-epi.github.io/R-Type/master/)): without the master, the map shows `MASTER UNREACHABLE`.
+Without `-h`, PLAY opens the server map: the servers the master lists, `http://127.0.0.1:8080` unless `set master-url` (in `client.cfg`, or `--set master-url=<url>`) names another, or the player chose another with MASTER (M) on the map, which `settings.ini` keeps, around the planet of the player by the ping the client measures, and the games of each; Enter or a click joins one. Start the master and a server registered with it first (see [the master page](https://nique-epi.github.io/R-Type/master/)): without the master, the map shows `MASTER UNREACHABLE`.
 
 The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default, and the nickname of the player, `PILOT` by default; the connection screen, which D (ADDRESS) opens from the map, starts with them. CONNECT on that screen joins any server, without the master: without a server, the screen shows `SERVER UNREACHABLE` after 5 seconds.
 
@@ -194,7 +222,7 @@ curl -X POST http://127.0.0.1:8080/api/servers -d '{"name":"Paris 1"}'
 
 After each heartbeat, the master sends a probe over UDP to the port the game server registered, and lists as unreachable a server whose port it cannot reach: that port must be open to the master, as it is to the players.
 
-Without `master-url` or `master-key`, a game server runs alone and is listed nowhere.
+Without `master-url` or `master-key`, a game server runs alone and is listed nowhere. A supervisor on the machine of the master sets `public-address` to the address players reach it at, or the master lists it at `127.0.0.1`.
 
 - **Why HTTP:** the subject requires UDP for every message of a game and accepts TCP for other needs when it is justified. The master carries no message of a game, and the web administration the subject accepts needs HTTP in a browser, so one protocol serves the programs and the web site, readable with `curl`. A player still joins a server over UDP when the master is stopped.
 - **Why a mode and not a third binary:** the subject lists two binaries, `r-type_server` and `r-type_client`. The master ships inside the first and reuses its stop on Ctrl-C, its configuration file and its journal; it still runs as a process of its own, so a master that stops stops no game.
@@ -216,7 +244,7 @@ bun run build
 bun run start
 ```
 
-The site is then on <http://localhost:3000>. The server reaches the master at `MASTER_URL` (`http://localhost:8080` by default); the browser only talks to the site. `bun run dev` serves the same pages while you edit them. `bun run lint`, `bun run typecheck` and `bun run test` are the checks of the `web` CI workflow.
+The site is then on <http://localhost:3000>, in French and English (`/fr`, `/en`). The server reaches the master at `MASTER_URL` (`http://localhost:8080` by default); the browser only talks to the site. The download page reads the latest release of `GITHUB_REPOSITORY` (`nique-epi/R-Type` by default); `GITHUB_TOKEN` is optional and raises the limit of the GitHub API. `bun run dev` serves the same pages while you edit them. `bun run lint`, `bun run typecheck` and `bun run test` are the checks of the `web` CI workflow.
 
 ## Tests
 
@@ -229,6 +257,12 @@ cmake --workflow --preset sanitize
 ```
 
 This builds everything in `build-sanitize/` with AddressSanitizer and UndefinedBehaviorSanitizer, then runs the tests; an error stops the test that caused it. It needs GCC or Clang, not MSVC, and LeakSanitizer reports leaks on Linux only. The Linux CI runs it, then starts `r-type_server --mode supervisor` with no player, so with no game running, stops it with SIGINT and requires exit code 0.
+
+```bash
+cmake --workflow --preset modules-off
+```
+
+This builds everything in `build-modules-off/` with every [build option](#build-options) off, then runs the tests: the tests of a module left out are not built, and a test that needs one is skipped. The Linux CI runs it, then starts and stops the supervisor in the same way.
 
 ```bash
 ./build/tests/malformed_datagrams --server 4242
@@ -266,7 +300,7 @@ The client, the server and the master write a timestamped journal, `r-type_clien
 
 The build option `-DLOG_LEVEL=<name>` removes the calls below a level from the binaries. See [the logging page](docs/src/content/docs/logging.md).
 
-The client reads `client.cfg` the same way, and `client.cfg.example` is its model (`set nickname`, `set server-address`, `set server-port`, `module <name> on|off`, and `--set` to force a setting). It keeps the player's settings in `settings.ini`: in `$XDG_CONFIG_HOME/r-type` (or `~/.config/r-type`) on Linux, `~/Library/Application Support/R-Type` on macOS, `%LOCALAPPDATA%\R-Type` on Windows. Its path is logged at launch; deleting it brings back the settings of a first launch.
+The client reads `client.cfg` the same way, and `client.cfg.example` is its model (`set nickname`, `set server-address`, `set server-port`, `set master-url`, `module <name> on|off`, and `--set` to force a setting). It keeps the player's settings in `settings.ini`: in `$XDG_CONFIG_HOME/r-type` (or `~/.config/r-type`) on Linux, `~/Library/Application Support/R-Type` on macOS, `%LOCALAPPDATA%\R-Type` on Windows. Its path is logged at launch; deleting it brings back the settings of a first launch. The content packs of the servers it joined are kept next to it, in `content-packs/`, eight at most.
 
 ## Code style
 
@@ -284,7 +318,7 @@ cmake --build build --target format
 
 ## Documentation
 
-The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`. To add a module to the server or the client, start with the [Modules](https://nique-epi.github.io/R-Type/modules/) page and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/). Two more tutorials [add a network message](https://nique-epi.github.io/R-Type/tutorial-add-a-network-message/) and [run a server with several games](https://nique-epi.github.io/R-Type/tutorial-run-several-games/).
+The documentation site is built with [Starlight](https://starlight.astro.build) and published at <https://nique-epi.github.io/R-Type/>. Each page is a Markdown file in `docs/src/content/docs/`. To add a module to the server or the client, start with the [Modules](https://nique-epi.github.io/R-Type/modules/) page and the [tutorial](https://nique-epi.github.io/R-Type/tutorial-write-a-module/). Three more tutorials [add a network message](https://nique-epi.github.io/R-Type/tutorial-add-a-network-message/), [run a server with several games](https://nique-epi.github.io/R-Type/tutorial-run-several-games/) and [publish a mod](https://nique-epi.github.io/R-Type/tutorial-publish-a-mod/).
 
 To preview it locally, with Node.js 22.12 or newer:
 

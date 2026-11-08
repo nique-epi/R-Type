@@ -1,53 +1,37 @@
 #include "ConnectionAcceptedFixtures.hpp"
 #include <cstddef>
 #include <cstdint>
-#include <string>
-#include <string_view>
 #include <vector>
 #include "ConnectionAccepted.hpp"
 #include "ConnectionAcceptedTestConstants.hpp"
-#include "EntitySide.hpp"
-#include "EntityTypeEntry.hpp"
-#include "ShipGun.hpp"
+#include "ContentAnnouncement.hpp"
+#include "ContentFingerprint.hpp"
 
 namespace rtype::network::testing {
 
-ConnectionAccepted acceptanceWithEnemyTypes(std::size_t count,
-                                            std::string_view name) {
-  ConnectionAccepted acceptance{
-      .playerNumber = FIRST_PLAYER_BYTE, .types = {}, .shipGun = {}};
-  acceptance.types.assign(count, EntityTypeEntry{.side = EntitySide::Enemy,
-                                                 .name = std::string{name}});
-  return acceptance;
-}
-
-std::vector<std::byte> oneTypeAcceptancePayload(std::uint8_t side,
-                                                std::string_view name) {
-  std::vector<std::byte> payload{
-      std::byte{FIRST_PLAYER_BYTE}, static_cast<std::byte>(ONE_TYPE),
-      std::byte{side}, static_cast<std::byte>(name.size())};
-  for (const char character : name) {
-    payload.push_back(static_cast<std::byte>(character));
+ConnectionAccepted acceptanceOfAPackOf(std::uint32_t size) {
+  ContentFingerprint fingerprint;
+  for (std::size_t index = 0; index < fingerprint.bytes.size(); ++index) {
+    fingerprint.bytes[index] = static_cast<std::byte>(index);
   }
-  payload.insert(payload.end(), NO_BOX_BYTE_COUNT, std::byte{0});
-  payload.insert(payload.end(), NO_GUN_BYTE_COUNT, std::byte{0});
-  return payload;
-}
-
-std::vector<std::byte> acceptancePayloadOfPlayer(std::uint8_t playerNumber) {
-  std::vector<std::byte> payload =
-      oneTypeAcceptancePayload(ENEMY_SIDE_BYTE, SHORTEST_TYPE_NAME);
-  payload.front() = std::byte{playerNumber};
-  return payload;
-}
-
-ConnectionAccepted acceptanceWithGun(ShipGun gun) {
   return ConnectionAccepted{
       .playerNumber = FIRST_PLAYER_BYTE,
-      .types = {EntityTypeEntry{.side = EntitySide::Player, .name = "ship"},
-                EntityTypeEntry{.side = EntitySide::PlayerMissile,
-                                .name = "player_missile"}},
-      .shipGun = gun};
+      .content = ContentAnnouncement{
+          .fingerprint = fingerprint, .size = size, .port = SOME_PACK_PORT}};
+}
+
+std::vector<std::byte> payloadOnTheProtocolPage() {
+  std::vector<std::byte> payload{std::byte{FIRST_PLAYER_BYTE}};
+  for (std::size_t index = 0; index < ContentFingerprint{}.bytes.size();
+       ++index) {
+    payload.push_back(static_cast<std::byte>(index));
+  }
+  for (const std::uint8_t value :
+       {SIZE_FIRST_BYTE, SIZE_SECOND_BYTE, SIZE_THIRD_BYTE, SIZE_FOURTH_BYTE,
+        PORT_FIRST_BYTE, PORT_SECOND_BYTE}) {
+    payload.push_back(std::byte{value});
+  }
+  return payload;
 }
 
 }  // namespace rtype::network::testing

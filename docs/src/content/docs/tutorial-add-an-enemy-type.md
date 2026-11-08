@@ -21,7 +21,7 @@ cmake --workflow --preset test
 
 A Bydo is an **entity** (a number) that carries **components** (small structs of data): where it is, how fast it goes, which behaviour pilots it, how many points it is worth. **Systems** (classes with an `update`) read and write components; they never know which enemy they act on. A type of entity is not C++ but a **sheet**, a TOML file of `assets/entities/` that lists the components an entity of that type starts with and how it looks (see [Writing an entity sheet](/R-Type/entity-sheets/)). So a new enemy is a new sheet, and sometimes a new **behaviour**, the named piece of code that decides where the Bydo goes.
 
-The server owns the game. It creates the Bydos, moves them and tells each client about them, by the name of their sheet; the client draws each one with the appearance of its own sheet of that name (see [Architecture](/R-Type/architecture/#entity-types) and [Server and game](/R-Type/server/)).
+The server owns the game. It creates the Bydos, moves them and tells each client about them, by the name of their sheet; the client draws each one with the appearance of the sheet of that name, its own or the one the content pack of the server carries (see [Architecture](/R-Type/architecture/#entity-types) and [Server and game](/R-Type/server/)).
 
 | Step | What you add | Where |
 |---|---|---|
@@ -37,6 +37,8 @@ How a sheet reaches the world: each game process of the server reads every sheet
 An enemy that an existing behaviour already moves needs no C++ at all: a Weaver twice as fast is a sheet with `pilot = "weave"` and `period_ms = 1000`. Skip step 1 then. The Zigzagger follows a path no behaviour draws yet, so it needs one.
 
 An enemy that attacks, announcing a blow before it lands it, steps through the phases of its attack with `ActionCycle` (`src/game/Behaviours/Movements/Attacks/ActionCycle.hpp`), timed by settings of its sheet, and its sheet animates each phase and times the boxes that hurt (see [Writing an entity sheet](/R-Type/entity-sheets/#attack-animations)). `ReaperBehaviour.cpp` is the shortest example: a file of 74 lines for an enemy that hunts the nearest ship, raises its scythe, swings and stays open.
+
+An enemy that sends several missiles or Bydos at once, as it enters an attack, needs no gun: each `[[gameplay.volley]]` of its sheet lays a fan, a column or a wall of bodies (see [Writing an entity sheet](/R-Type/entity-sheets/#gameplay-key-by-key)). A boss is an enemy whose sheet has a `[gameplay.boss]` table and that a difficulty names with its `boss` key (see [Writing the waves file](/R-Type/waves-file/#the-boss)); the Bydo Tyrant, `assets/entities/bydo_tyrant.toml` and `src/game/Behaviours/Movements/Attacks/BydoTyrantBehaviour.cpp`, is the example.
 
 ## Step 1: a new behaviour
 
@@ -347,9 +349,9 @@ cmake --workflow --preset build
 ./r-type_client
 ```
 
-In the client, press PLAY, then D (ADDRESS) on the server map, then CONNECT on the connection screen (the server is at `127.0.0.1`, port 4242, by default), press ready in the waiting room, and wait for the first wave. The supervisor starts a game process for you, which logs in its journal, `r-type_game_<n>.log` next to the executable, the sheets it read when it starts (`entity sheets /…/assets/entities: 6 types`). Each Bydo goes left while it dips and rises every second, 48 units each way, and shooting one adds 300 points to your score. The same journal gives the wave as it starts (`wave 1: 3 Bydos, one every 2000 ms`).
+In the client, press PLAY, then D (ADDRESS) on the server map, then CONNECT on the connection screen (the server is at `127.0.0.1`, port 4242, by default), press ready in the waiting room, and wait for the first wave. The supervisor starts a game process for you, which logs in its journal, `r-type_game_<n>.log` next to the executable, the sheets it read when it starts (`entity sheets /…/assets/entities: 16 types`). Each Bydo goes left while it dips and rises every second, 48 units each way, and shooting one adds 300 points to your score. The same journal gives the wave as it starts (`wave 1: 3 Bydos, one every 2000 ms`).
 
-What to look at, and why: **the client needed no change**. When it accepts the player, the server sends the side and the name of every sheet it loaded, `zigzagger` included, then names each entity by the number of its sheet. The client finds the `[appearance]` of its own `zigzagger.toml`, which it read from the same `assets/` folder, and draws each Zigzagger with it; the behaviour and the gameplay never leave the server. A client whose `assets/entities/` has no `zigzagger.toml`, an older build for instance, cannot draw the type: it leaves the server at once and shows `NO SHEET: ZIGZAGGER` on its connection screen.
+What to look at, and why: **the client needed no change**. When it accepts the player, the server announces the content pack of its supervisor: every sheet of `assets/entities/`, `zigzagger.toml` included, and the sprite sheets they name, then names each entity by the number of its sheet. This client read the same `assets/` folder, so its own pack has the same fingerprint and it plays at once, drawing each Zigzagger with the `[appearance]` of its own `zigzagger.toml`; the behaviour and the rest of the gameplay never leave the server. A client whose `assets/` differ, an older build for instance, downloads the pack of the server while its connection screen shows `LOADING CONTENT` and a percentage, then draws the Zigzagger from the sheet of the pack (see [Tutorial: publish a mod](/R-Type/tutorial-publish-a-mod/)).
 
 ## Step 6: document it
 
@@ -377,5 +379,6 @@ cd docs && npm ci && npm run build
 | The server stops with `gameplay.behaviour.amplitude must be an integer from 0 to 48` | the amplitude is larger than `ENEMY_PATTERN_ROOM`: it would leave the area of play |
 | The server or the client stops at start with an error naming a line of `zigzagger.toml` | the sheet is invalid; the message names the line and the key (see [Writing an entity sheet](/R-Type/entity-sheets/#when-a-program-refuses-a-sheet)) |
 | `EntitySheetsFingerprint.TheShippedSheetsHaveTheOfficialFingerprint` fails | the shipped sheets changed: give `OFFICIAL_ENTITY_SHEETS_FINGERPRINT` the value the failure prints |
-| The connection screen shows `NO SHEET: ZIGZAGGER` | the client reads an `assets/` folder without the sheet |
+| The connection screen shows `PACK DOWNLOAD FAILED` | the client reads an `assets/` folder other than the server's, and cannot download the pack: the TCP port of the supervisor, of the same number as its UDP port, is closed or held by another program (the journal of the supervisor says `the content pack is not served`) |
+| The supervisor stops at start with `Refused content pack: "…" may not name a file` | the `sheet` of `zigzagger.toml` names a path with an uppercase letter, a space or `..`: a path of a content pack holds lowercase letters, digits, `_`, `.`, `-` and `/` only |
 | The Bydos move but do not zigzag | the enemy is not in the `enemies` list of the difficulty you play (`normal`) |

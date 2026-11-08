@@ -15,7 +15,8 @@ const EntityAppearance& testAppearance() {
       .sheet = std::string{TEST_SHEET_ID},
       .idleFrames = {TEST_IDLE_FRAMES.begin(), TEST_IDLE_FRAMES.end()},
       .idleFrameDuration = TEST_FRAME_TIME,
-      .actions = {}};
+      .actions = {},
+      .enragedIdleFrames = {}};
   return appearance;
 }
 

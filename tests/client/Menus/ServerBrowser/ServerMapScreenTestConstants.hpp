@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/System/Vector2.hpp>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -35,11 +36,20 @@ constexpr std::uint8_t TWO_PILOTS = 2;
 /** @brief A frame, the time after which the map reads the list again on its
  * own (15 s), and a time short of it. */
 constexpr std::chrono::milliseconds ONE_FRAME{16};
+
+/** @brief Where the hangar star stands on the whole map, close to the planet,
+ * and the line of its bubble that tells how to open it. */
+constexpr sf::Vector2i HANGAR_STAR_ON_THE_MAP{84, 64};
+constexpr std::string_view HANGAR_STAR_HINT_LINE = "CLICK OR G: OPEN";
 constexpr std::chrono::seconds REFRESH_INTERVAL{15};
 constexpr std::chrono::seconds SHORT_OF_THE_REFRESH{14};
 
 /** @brief The words the map writes when the master is unreachable. */
 constexpr std::string_view UNREACHABLE_MASTER = "MASTER UNREACHABLE";
+
+/** @brief The master the map reads, as its url and as the map writes it. */
+constexpr std::string_view MAP_MASTER_URL = "http://10.0.0.2:8080";
+constexpr std::string_view MAP_MASTER_TEXT = "10.0.0.2:8080";
 
 /** @brief Seven games, one more than the panel shows at once. */
 constexpr std::size_t SEVEN_GAMES = 7;

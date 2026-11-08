@@ -15,6 +15,13 @@ NetworkException::NetworkException(const std::string& message)
 InvalidAddressException::InvalidAddressException(const std::string& address)
     : NetworkException("Not an IP address: " + address) {}
 
+HttpPortUnavailableException::HttpPortUnavailableException(
+    const std::string& address, std::uint16_t port)
+    : NetworkException("cannot listen for HTTP on " + address + " port " +
+                       std::to_string(port) +
+                       ": another program holds the port, or the address is "
+                       "not one of this machine") {}
+
 InvalidPortException::InvalidPortException(const std::string& text)
     : NetworkException(
           "Invalid port \"" + text + "\": expected a number from " +
@@ -57,6 +64,36 @@ StringTooLongException::StringTooLongException(std::size_t length,
     : NetworkException("String of " + std::to_string(length) +
                        " byte(s) exceeds the maximum of " +
                        std::to_string(maximumLength)) {}
+
+InvalidContentPackException::InvalidContentPackException(
+    const std::string& reason)
+    : NetworkException("Refused content pack: " + reason) {}
+
+ContentPackTooLargeException::ContentPackTooLargeException(std::size_t size)
+    : InvalidContentPackException(std::to_string(size) +
+                                  " bytes, more than a pack may hold") {}
+
+ContentPackVersionException::ContentPackVersionException(std::uint8_t version)
+    : InvalidContentPackException("format " + std::to_string(version) +
+                                  ", which this program does not read") {}
+
+TooManyContentFilesException::TooManyContentFilesException(std::size_t count)
+    : InvalidContentPackException(std::to_string(count) +
+                                  " files, more than a pack may hold") {}
+
+InvalidContentPathException::InvalidContentPathException(
+    const std::string& path)
+    : InvalidContentPackException("\"" + path + "\" may not name a file") {}
+
+UnorderedContentFilesException::UnorderedContentFilesException(
+    const std::string& path)
+    : InvalidContentPackException(
+          "\"" + path + "\" is out of the order of the paths, or twice") {}
+
+ContentPackTrailingBytesException::ContentPackTrailingBytesException(
+    std::size_t count)
+    : InvalidContentPackException(std::to_string(count) +
+                                  " bytes after the last file") {}
 
 MalformedMessageException::MalformedMessageException(const std::string& reason)
     : NetworkException("Malformed message: " + reason) {}
@@ -112,11 +149,6 @@ InvalidServerTextException::InvalidServerTextException(std::string_view field,
                                 std::to_string(size) +
                                 " byte(s) is empty, too long, not UTF-8 or "
                                 "holds a control character") {}
-
-InvalidTypeNameException::InvalidTypeNameException(std::size_t size)
-    : MalformedMessageException("a type name of " + std::to_string(size) +
-                                " byte(s) is empty, too long, or holds "
-                                "another byte than a-z, 0-9 and _") {}
 
 TooManyLeaderboardRowsException::TooManyLeaderboardRowsException(
     std::size_t rowCount, std::size_t maximumCount)

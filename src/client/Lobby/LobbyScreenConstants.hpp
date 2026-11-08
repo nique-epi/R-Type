@@ -66,4 +66,8 @@ constexpr const char* YOU_NOT_READY_STATUS = "YOU ARE NOT READY";
 constexpr const char* PILOT_NOT_READY_STATUS = " IS NOT READY";
 constexpr const char* PILOTS_NOT_READY_STATUS = " PILOTS NOT READY";
 
+/** @brief The row the lines of the chat end on: the bottom of the HELP and
+ * BACK chips, SAFE_MARGIN above the bottom of the picture. */
+constexpr int LOBBY_CHAT_BOTTOM = INTERFACE_AREA.size.y - SAFE_MARGIN;
+
 }  // namespace rtype::client

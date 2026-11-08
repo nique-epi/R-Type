@@ -43,8 +43,9 @@ struct ConnectedPlayer {
    * new world is built. */
   std::uint32_t score{0};
   /** @brief The lives the player has while it has no ship, the next ship
-   * included: game::STARTING_LIVES when it joins and when a new world is
-   * built, one less each time its ship is destroyed. At 0 the player has no
+   * included: game::STARTING_LIVES when it is seated, the lives of the rules
+   * of the game once it joined and when a new world is built, one less each
+   * time its ship is destroyed. At 0 the player has no
    * ship and watches. While the player has a ship, the Lives component of the
    * ship holds the lives instead, and this field keeps the value the ship was
    * given. */
@@ -85,6 +86,10 @@ struct ConnectedPlayer {
    * and lives are kept, its input number is cleared and it does not count for
    * the ready check. The next datagram read from the player clears it. */
   bool away{false};
+  /** @brief Whether the host expelled the player: it was told so (see
+   * PlayerExpeller), and its session closes at the next
+   * Departures::closeSilentSessions(), with the cause Expelled. */
+  bool expelled{false};
   /** @brief The real time since the server last sent the player a Heartbeat,
    * added at the start of each tick, a stall of the server included, since
    * the client waits in real time: the next Heartbeat goes out once it reaches

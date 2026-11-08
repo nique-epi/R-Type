@@ -36,6 +36,11 @@ Why: a review flagged a seven-parameter constructor. The C++ Core Guidelines set
 2. **Take the struct that already groups them** (`DatagramQueues`), **or give the helper one value only and let the caller join the rest**: `start + messageTypeText(type) + figuresText(figures)`, not `rowOf(start, message, figures)`.
 3. **A check of a plan's code by compiling it does not run tidy**: run the tidy gate on the code as soon as it is written, before calling a commit done.
 
+### A new `…Parts` copies the shape of the `…Parts` next to it
+
+1. **Before writing the members of a new `…Parts`, open one that exists** (`GameSpawnerParts.hpp`): every dependency it does not own is a `std::reference_wrapper`, never a `T&` or `const T&` member, since the struct is copied into the class that takes it (point 4).
+2. **A plan that shows a `…Parts` is checked against point 4 before it is shown**: `grep -n -E '^  (const )?[A-Za-z:<>]+& [a-z]' <the struct>` prints nothing.
+
 ## Example
 
 - ❌ **Before (wrong)**:

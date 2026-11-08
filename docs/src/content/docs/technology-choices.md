@@ -78,7 +78,7 @@ Alternative considered: Conan. Its binary packages and its profiles give finer c
 
 ## Build: CMake
 
-CMake 4.2 or newer builds the project with C++20 and the presets `default` (Release) and `test` (Debug with the tests). The CI builds with GCC on Linux and MSVC on Windows.
+CMake 4.2 or newer builds the project with C++20 and the presets `default` (Release), `test` (Debug with the tests), `sanitize` (the tests under AddressSanitizer and UndefinedBehaviorSanitizer) and `modules-off` (the tests with every optional module left out). The CI builds with GCC on Linux and MSVC on Windows.
 
 | | CMake | Meson | Bazel |
 |---|---|---|---|
@@ -95,7 +95,7 @@ Alternative considered: Meson. Its language is easier to read and it configures 
 
 ## Web site: Next.js
 
-The web site shows the game servers to the team and the players: today a page that says whether the master answers, then the list of the servers, the leaderboard and the administration. It is a program of its own beside the master, which serves its API only. The site uses the tools of the other web projects of the team: Next.js with the App Router and TypeScript, bun to install and run, Biome to lint and format, Tailwind and shadcn for the look.
+The web site shows the game to the team and the players: the download, the servers and their games, the leaderboard (the best players the master keeps) and the wiki; the administration is not written yet. It is a program of its own beside the master, which serves its API only. The site uses the tools of the other web projects of the team: Next.js with the App Router and TypeScript, bun to install and run, Biome to lint and format, Tailwind and shadcn for the look, with class-variance-authority for the variants of a component, and GSAP for the animations, Lenis smoothing the scroll from the ticker of GSAP: a component animates through the `useGSAP()` hook of `@gsap/react`, which undoes its animations when the component goes, and the plugins (`ScrollTrigger` today) are registered once in `web/src/lib/gsap/`, which every component imports from. GSAP is under GreenSock's "no charge" license, which covers its plugins too. Lenis is under MIT, class-variance-authority under Apache 2.0.
 
 | | Next.js server | React with Vite | Astro |
 |---|---|---|---|

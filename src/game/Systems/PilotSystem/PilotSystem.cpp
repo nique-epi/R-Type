@@ -3,6 +3,7 @@
 #include <optional>
 #include <span>
 #include "BehaviourView.hpp"
+#include "Boss.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
 #include "EnemyActionStart.hpp"
@@ -15,6 +16,7 @@
 #include "Pilot.hpp"
 #include "Position.hpp"
 #include "SteadyMotion.hpp"
+#include "Summoning.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game {
@@ -60,6 +62,9 @@ bool isWounded(const Health* health) {
   return health != nullptr && health->points < health->full;
 }
 
+/** @returns Whether @p boss enraged; false for a body that is no boss. */
+bool isEnraged(const Boss* boss) { return boss != nullptr && boss->enraged; }
+
 /** @brief Moves @p position where @p intent asks the body to jump, if it
  * asks. */
 void jumpAsAsked(Position& position, const Intent& intent) {
@@ -104,6 +109,10 @@ void PilotSystem::update(engine::ComponentRegistry& components,
         if (position == nullptr) {
           return;
         }
+        if (components.has<Summoning>(body)) {
+          intent = Intent{};
+          return;
+        }
         pilot.age += elapsed;
         const CurrentAction* const current =
             tickedActionOf(components, body, elapsed);
@@ -118,7 +127,9 @@ void PilotSystem::update(engine::ComponentRegistry& components,
             .actionAge =
                 current == nullptr ? engine::Duration::zero() : current->since,
             .nearestShip = nearestOf(ships_, *position),
-            .wounded = isWounded(components.get<Health>(body))});
+            .wounded = isWounded(components.get<Health>(body)),
+            .enraged = isEnraged(components.get<Boss>(body)),
+            .actionsEnded = current == nullptr ? 0U : current->ended});
         passOnActionOf(components, body, intent);
         jumpAsAsked(*position, intent);
       });

@@ -1,5 +1,6 @@
 build/
 /build-sanitize/
+/build-modules-off/
 .cache/
 compile_commands.json
 Testing/
@@ -21,3 +22,4 @@ node_modules/
 /docs/dist/
 /docs/.astro/
 /plugins/
+/docs/public/api/

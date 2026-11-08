@@ -1,4 +1,4 @@
-add_library(rtype_server_spawning STATIC WaveSpawner.cpp WaveCatalog.cpp WeaponSystem.cpp)
+add_library(rtype_server_spawning STATIC WaveSpawner.cpp WaveCatalog.cpp WeaponSystem.cpp VolleySystem.cpp BossStage.cpp)
 
 target_include_directories(rtype_server_spawning PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -19,6 +19,8 @@ target_link_libraries(rtype_server_spawning
   PRIVATE
     rtype_engine_data_files
     rtype_network_handshake
+    rtype_network_protocol
+    rtype_network_wire_types
 )
 
 rtype_enable_warnings(rtype_server_spawning)

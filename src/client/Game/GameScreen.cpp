@@ -1,7 +1,9 @@
 #include "GameScreen.hpp"
 #include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <random>
@@ -12,15 +14,25 @@
 #include "ActionSet.hpp"
 #include "AnimationSystem.hpp"
 #include "ArrivalReveal.hpp"
+#include "BossBar.hpp"
+#include "BossBarConstants.hpp"
+#include "BossLook.hpp"
+#include "BossPresentation.hpp"
+#include "BossStatus.hpp"
+#include "ChatWindow.hpp"
+#include "DepartureFeed.hpp"
 #include "EffectPreferences.hpp"
 #include "EffectSpawner.hpp"
 #include "EnemyAction.hpp"
+#include "EnemyActionPlayer.hpp"
 #include "EntityFeedback.hpp"
 #include "EntityMessage.hpp"
+#include "EntityReplicator.hpp"
 #include "EntityReplicatorParts.hpp"
 #include "FinalRanking.hpp"
 #include "FlashPreference.hpp"
 #include "GameEnded.hpp"
+#include "GameNoticeConstants.hpp"
 #include "GameResult.hpp"
 #include "GameScreenParts.hpp"
 #include "GroundEffectSystem.hpp"
@@ -38,6 +50,7 @@
 #include "OwnMissilesParts.hpp"
 #include "OwnPrediction.hpp"
 #include "OwnShip.hpp"
+#include "PilotNameTags.hpp"
 #include "PlayerAction.hpp"
 #include "PlayerCommand.hpp"
 #include "PlayerInputPacer.hpp"
@@ -45,6 +58,7 @@
 #include "PlayerPalette.hpp"
 #include "PlayerPreferences.hpp"
 #include "PositionInterpolation.hpp"
+#include "ScoreBoard.hpp"
 #include "ShipFlightSystem.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "GameScreenIdConstants.hpp"
@@ -61,15 +75,20 @@ namespace rtype::client {
 
 namespace {
 
+/** @returns How many pixels of the canvas the sky and the entities are drawn
+ * away from their place: the camera shake, (0, 0) at rest. */
+sf::Vector2i cameraOffsetOf(EffectSpawner& effects) {
+  return effects.tools().camera.get().offset();
+}
+
 /** @brief Sets the speed of the stars and the shake of the sky for the time
  * since the start of the game: the warp of MISSION START with flashes, their
  * own speed without. */
-void moveSky(ISky& sky, const EffectSpawner& effects,
-             FlashPreference preference) {
+void moveSky(ISky& sky, EffectSpawner& effects, FlashPreference preference) {
   sky.setSpeedFactor(preference == FlashPreference::Full
                          ? warpSpeedFactorAt(effects.sinceStart())
                          : 1.0F);
-  sky.setOffset(effects.cameraOffset());
+  sky.setOffset(cameraOffsetOf(effects));
 }
 
 /** @brief Writes the actions @p held at the trace level when they are not the
@@ -81,6 +100,39 @@ void traceHeldActions(const logging::Logger& logger, const ActionSet& held,
   }
   logger.trace("actions held: ", static_cast<unsigned int>(held.bits()));
   traced = held.bits();
+}
+
+/** @brief Who the entity messages of the server go to, but the end of the
+ * game and the world states, which the screen follows itself. */
+struct EntityMessageRoutes {
+  std::reference_wrapper<EntityReplicator> replicator;
+  std::reference_wrapper<EnemyActionPlayer> enemyActions;
+  std::reference_wrapper<BossPresentation> boss;
+  std::reference_wrapper<ScoreBoard> scoreBoard;
+  std::reference_wrapper<DepartureFeed> departures;
+};
+
+/** @brief Hands an entity message to whoever it goes to: a PlayerLeft to the
+ * board and the feed, an EnemyAction to the enemy it animates and to the boss,
+ * a BossStatus to the boss, anything else but GameEnded to the replicator. */
+void routeEntityMessage(const EntityMessageRoutes& routes,
+                        const EntityMessage& message) {
+  std::visit(
+      [&routes](const auto& announced) {
+        using Announced = std::decay_t<decltype(announced)>;
+        if constexpr (std::is_same_v<Announced, network::PlayerLeft>) {
+          routes.scoreBoard.get().apply(announced);
+          routes.departures.get().follow(routes.scoreBoard.get().pilots());
+        } else if constexpr (std::is_same_v<Announced, network::EnemyAction>) {
+          routes.enemyActions.get().apply(announced);
+          routes.boss.get().apply(announced);
+        } else if constexpr (std::is_same_v<Announced, network::BossStatus>) {
+          routes.boss.get().apply(announced);
+        } else if constexpr (!std::is_same_v<Announced, network::GameEnded>) {
+          routes.replicator.get().apply(announced);
+        }
+      },
+      message);
 }
 
 /** @brief Puts the other entities at the tick @p clock shows, then reveals
@@ -117,6 +169,7 @@ GameScreen::GameScreen(GameScreenParts parts,
           .ownPlayerNumber = parts.connection.get().status().playerNumber,
           .ownMissiles = &prediction_.missiles()}),
       enemyActions_(components_),
+      boss_(effects_.tools(), parts.sounds, parts.audio),
       playerCommands_(true, parts.settings.get().keys),
       inputs_(&parts.inputs.get()),
       entityMessageSource_(&parts.entityMessages.get()),
@@ -125,15 +178,16 @@ GameScreen::GameScreen(GameScreenParts parts,
                   parts.connection.get().status().playerNumber),
       result_(&parts.result.get()),
       playerNumber_(parts.connection.get().status().playerNumber),
-      sky_(&parts.sky.get()) {
+      sky_(&parts.sky.get()),
+      chat_(parts.chat.get(), parts.settings.get()) {
   systems_.add(std::make_unique<AnimationSystem>());
   systems_.add(std::make_unique<HitFlashSystem>());
   systems_.add(std::make_unique<SpriteEffectSystem>());
   systems_.add(std::make_unique<GroundEffectSystem>());
   systems_.add(std::make_unique<ShipFlightSystem>());
   moveSky(*sky_, effects_, flashPreferenceOf(*settings_));
-  entityLayer_->paint(components_, effects_.cameraOffset());
-  repaintStatus();
+  entityLayer_->paint(components_, cameraOffsetOf(effects_));
+  repaintStatus(boss_.look(flashPreferenceOf(*settings_)));
 }
 
 GameScreen::~GameScreen() {
@@ -142,6 +196,10 @@ GameScreen::~GameScreen() {
 }
 
 void GameScreen::handleEvent(const sf::Event& event) {
+  if (chat_.handleEvent(event)) {
+    playerCommands_.releaseAll();
+    return;
+  }
   const auto* released = event.getIf<sf::Event::KeyReleased>();
   if (released != nullptr && released->code == OPTIONS_KEY) {
     playerCommands_.releaseAll();
@@ -182,14 +240,16 @@ void GameScreen::update(engine::Duration elapsed) {
                                      .soundCues = settings_->soundCues});
   departures_.advance(elapsed);
   silence_.advance(sinceTheWorld);
+  boss_.advance(elapsed);
   applyEntityMessages();
   showOtherEntities(interpolationClock_, components_, feedback_);
   if (settings_->clientPrediction) {
     prediction_.place(replicator_, components_);
   }
+  tagPilotShips(components_, scoreBoard_.pilots(), *settings_);
   askForTheEndWhenDue();
   moveSky(*sky_, effects_, preference);
-  entityLayer_->paint(components_, effects_.cameraOffset());
+  entityLayer_->paint(components_, cameraOffsetOf(effects_));
   repaintStatusWhenChanged();
 }
 
@@ -198,23 +258,16 @@ void GameScreen::applyEntityMessages() {
   if (!receivedEntityMessages_.empty()) {
     silence_.hear();
   }
+  const EntityMessageRoutes routes{.replicator = replicator_,
+                                   .enemyActions = enemyActions_,
+                                   .boss = boss_,
+                                   .scoreBoard = scoreBoard_,
+                                   .departures = departures_};
   for (const EntityMessage& message : receivedEntityMessages_) {
-    std::visit(
-        [this](const auto& announced) {
-          using Announced = std::decay_t<decltype(announced)>;
-          if constexpr (std::is_same_v<Announced, network::GameEnded>) {
-            recordEnd(announced);
-          } else if constexpr (std::is_same_v<Announced, network::PlayerLeft>) {
-            scoreBoard_.apply(announced);
-            departures_.follow(scoreBoard_.pilots());
-          } else if constexpr (std::is_same_v<Announced,
-                                              network::EnemyAction>) {
-            enemyActions_.apply(announced);
-          } else {
-            replicator_.apply(announced);
-          }
-        },
-        message);
+    routeEntityMessage(routes, message);
+    if (const auto* ended = std::get_if<network::GameEnded>(&message)) {
+      recordEnd(*ended);
+    }
     if (const auto* state = std::get_if<network::WorldState>(&message)) {
       applyWorldState(*state);
     }
@@ -242,6 +295,7 @@ void GameScreen::recordEnd(const network::GameEnded& ended) {
   endedAt_ = effects_.sinceStart();
   prediction_.ceaseFire();
   silence_.stop();
+  boss_.endGame();
 }
 
 void GameScreen::askForTheEndWhenDue() {
@@ -254,29 +308,38 @@ void GameScreen::askForTheEndWhenDue() {
 }
 
 void GameScreen::repaintStatusWhenChanged() {
+  const BossLook boss = boss_.look(flashPreferenceOf(*settings_));
   if (scoreBoard_.revision() != paintedStatusRevision_ ||
       missionBannerAt(effects_.sinceStart()) != paintedBanner_ ||
       paintedPalette_ != playerPaletteOf(*settings_) ||
       departures_.revision() != paintedDepartures_ ||
-      silence_.isShown() != paintedSilence_) {
-    repaintStatus();
+      silence_.isShown() != paintedSilence_ || boss != paintedBoss_ ||
+      chat_.isShown() || paintedChat_) {
+    repaintStatus(boss);
   }
 }
 
-void GameScreen::repaintStatus() {
+void GameScreen::repaintStatus(const BossLook& boss) {
   const MissionBannerLook banner = missionBannerAt(effects_.sinceStart());
   const PlayerPalette& palette = playerPaletteOf(*settings_);
   statusCanvas_->clear();
+  paintBossAlert(*statusCanvas_, boss);
   paintStatusBand(*statusCanvas_, scoreBoard_.pilots(), palette);
   paintMissionBanner(*statusCanvas_, banner);
-  departures_.paint(*statusCanvas_, palette);
+  paintBossBar(*statusCanvas_, boss.bar);
+  departures_.paint(
+      *statusCanvas_, palette,
+      boss.bar.shown ? DEPARTURE_FEED_UNDER_BOSS_BAR : DEPARTURE_FEED_TOP_LEFT);
   silence_.paint(*statusCanvas_);
+  chat_.paint(*statusCanvas_, palette, GAME_CHAT_BOTTOM);
   statusCanvas_->display();
   paintedStatusRevision_ = scoreBoard_.revision();
   paintedBanner_ = banner;
   paintedPalette_ = palette;
   paintedDepartures_ = departures_.revision();
   paintedSilence_ = silence_.isShown();
+  paintedChat_ = chat_.isShown();
+  paintedBoss_ = boss;
 }
 
 ActionSet GameScreen::playerActions() const {

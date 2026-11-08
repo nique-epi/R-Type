@@ -28,7 +28,7 @@ class PredictedGun {
    * @returns The commands after @p acknowledged that fire then, oldest first:
    * the client sent them before it knew the ship, the server fires them.
    */
-  [[nodiscard]] std::vector<PredictedCommand> arm(network::ShipGun gun,
+  [[nodiscard]] std::vector<PredictedCommand> arm(game::ShipGun gun,
                                                   std::uint32_t acknowledged);
 
   /** @returns Whether @p command fires, and keeps it. */

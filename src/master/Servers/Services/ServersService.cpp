@@ -115,7 +115,10 @@ network::ListedGame listedGameOf(const network::HostedGame& game) {
       .number = game.number,
       .name = game.name,
       .state = listedStateOf(game.state),
-      .playerCount = static_cast<std::uint8_t>(game.players.size())};
+      .playerCount = static_cast<std::uint8_t>(game.players.size()),
+      .difficulty = game.difficulty,
+      .lives = game.lives,
+      .friendlyFire = game.friendlyFire};
 }
 
 }  // namespace
@@ -208,6 +211,7 @@ std::optional<network::GameListing> ServersService::gameListingOf(
     for (const network::HostedGame& game : last->heartbeat->games) {
       listing.games.push_back(listedGameOf(game));
     }
+    listing.difficulties = last->heartbeat->difficulties;
   }
   return listing;
 }

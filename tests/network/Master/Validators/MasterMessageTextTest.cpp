@@ -1,5 +1,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <cstdint>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
@@ -7,6 +8,7 @@
 #include <string_view>
 #include "CreatedServer.hpp"
 #include "DatedStatus.hpp"
+#include "GlobalLeaderboard.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterMessageTextFixtures.hpp"
 #include "MasterMessageTextTestConstants.hpp"
@@ -22,10 +24,15 @@ using rtype::network::CreatedServer;
 using rtype::network::createdServerFromText;
 using rtype::network::createdServerText;
 using rtype::network::DatedStatus;
+using rtype::network::finishedGameFromText;
+using rtype::network::finishedGameText;
 using rtype::network::gameListingFromText;
 using rtype::network::gameListingText;
+using rtype::network::GlobalLeaderboard;
+using rtype::network::globalLeaderboardText;
 using rtype::network::heartbeatFromText;
 using rtype::network::heartbeatText;
+using rtype::network::isWellFormedGameId;
 using rtype::network::isWellFormedServerKey;
 using rtype::network::problemDetailOf;
 using rtype::network::registrationFromText;
@@ -43,6 +50,7 @@ using rtype::network::ServerStatus;
 using rtype::network::serverStatusOf;
 using rtype::network::StatusListing;
 using rtype::network::statusListingText;
+using rtype::network::testing::ACCOUNT_ID_OF_65_BYTES;
 using rtype::network::testing::ADDRESS_POINTER;
 using rtype::network::testing::AVERAGE_PING_POINTER;
 using rtype::network::testing::CONFLICT_DETAIL;
@@ -50,20 +58,35 @@ using rtype::network::testing::CONFLICT_PROBLEM;
 using rtype::network::testing::createdServerRefusal;
 using rtype::network::testing::DEGRADED_STATUS_LISTING_TEXT;
 using rtype::network::testing::DEGRADED_TEXT;
+using rtype::network::testing::DIFFICULTIES_PAST_THE_MOST;
+using rtype::network::testing::DIFFICULTIES_POINTER;
+using rtype::network::testing::difficultyNames;
+using rtype::network::testing::EMPTY_ACCOUNT_ID;
 using rtype::network::testing::EMPTY_GAME_NAME;
+using rtype::network::testing::EMPTY_LEADERBOARD_TEXT;
 using rtype::network::testing::FIFTH_PILOT;
+using rtype::network::testing::finishedGameRefusal;
+using rtype::network::testing::finishedGameTextOfPlayers;
+using rtype::network::testing::finishedGameTextWith;
+using rtype::network::testing::FIRST_GAME_DIFFICULTY_POINTER;
 using rtype::network::testing::FIRST_GAME_FIRST_PLAYER_POINTER;
+using rtype::network::testing::FIRST_GAME_FRIENDLY_FIRE_POINTER;
+using rtype::network::testing::FIRST_GAME_LIVES_POINTER;
 using rtype::network::testing::FIRST_GAME_NAME_POINTER;
 using rtype::network::testing::FIRST_GAME_PLAYER_COUNT_POINTER;
 using rtype::network::testing::FIRST_GAME_PLAYERS_POINTER;
 using rtype::network::testing::FIRST_GAME_STATE_POINTER;
 using rtype::network::testing::FIRST_PILOT;
+using rtype::network::testing::FIRST_PILOT_IN_SMALL_LETTERS;
+using rtype::network::testing::FIRST_PLAYER_SCORE_POINTER;
 using rtype::network::testing::FIRST_SERVER_ID_POINTER;
 using rtype::network::testing::FIRST_SERVER_PROBE_SECRET_POINTER;
 using rtype::network::testing::FIRST_SERVER_STATUS_POINTER;
 using rtype::network::testing::FIVE_PLAYERS;
 using rtype::network::testing::FOURTH_PILOT;
+using rtype::network::testing::FRIENDLY_FIRE_AS_A_NUMBER;
 using rtype::network::testing::FULL_STATE;
+using rtype::network::testing::GAME_LIVES_PAST_A_BYTE;
 using rtype::network::testing::GAME_NAME_OF_17_BYTES;
 using rtype::network::testing::gameListingRefusal;
 using rtype::network::testing::gameListingTextOfGames;
@@ -75,40 +98,55 @@ using rtype::network::testing::heartbeatTextOfGames;
 using rtype::network::testing::heartbeatTextWith;
 using rtype::network::testing::heartbeatTextWithout;
 using rtype::network::testing::HIGHEST_KEPT_PROBE_SECRET;
+using rtype::network::testing::HIGHEST_KEPT_SCORE;
 using rtype::network::testing::HOST_NAME_ADDRESS;
 using rtype::network::testing::KEY_POINTER;
 using rtype::network::testing::KEY_WITHOUT_PREFIX;
 using rtype::network::testing::LARGEST_PROBE_TOKEN;
+using rtype::network::testing::LONG_GAME_ID;
 using rtype::network::testing::LOSS_ABOVE_ALL;
 using rtype::network::testing::LOSS_PERCENT_POINTER;
 using rtype::network::testing::LOWEST_KEPT_PROBE_SECRET;
 using rtype::network::testing::MAINTENANCE_TEXT;
 using rtype::network::testing::MAXIMUM_GAMES_POINTER;
 using rtype::network::testing::MAXIMUM_PLAYERS_PER_GAME_POINTER;
+using rtype::network::testing::MOST_DIFFICULTIES;
+using rtype::network::testing::MOST_GAME_LIVES_OF_A_BYTE;
 using rtype::network::testing::NAME_OF_32_BYTES;
 using rtype::network::testing::NAME_OF_33_BYTES;
 using rtype::network::testing::NAME_POINTER;
 using rtype::network::testing::NAME_WITH_LINE_FEED;
 using rtype::network::testing::NEGATIVE_MEASURE;
 using rtype::network::testing::NO_GAME;
+using rtype::network::testing::NO_GAME_LIFE;
+using rtype::network::testing::NO_PLAYERS;
 using rtype::network::testing::NO_SERVER_ID;
 using rtype::network::testing::NOT_JSON;
 using rtype::network::testing::OFFLINE_TEXT;
+using rtype::network::testing::ONE_PLAYER_AT_THE_START;
 using rtype::network::testing::ONLINE_TEXT;
+using rtype::network::testing::PARIS_DIFFICULTY;
+using rtype::network::testing::PARIS_GAME_ID;
 using rtype::network::testing::PARIS_GAME_LISTING_TEXT;
 using rtype::network::testing::PARIS_ID;
 using rtype::network::testing::PARIS_KEY;
+using rtype::network::testing::PARIS_LEADERBOARD_TEXT;
 using rtype::network::testing::PARIS_NAME;
 using rtype::network::testing::PARIS_PROBE_SECRET;
 using rtype::network::testing::PARIS_SAMPLE_LISTING_TEXT;
 using rtype::network::testing::PARIS_SERVER_LISTING_TEXT;
+using rtype::network::testing::parisFinishedGame;
 using rtype::network::testing::parisGameListing;
 using rtype::network::testing::parisHeartbeat;
+using rtype::network::testing::parisLeaderboard;
 using rtype::network::testing::parisRegistration;
 using rtype::network::testing::parisSampleListing;
 using rtype::network::testing::parisServerListing;
 using rtype::network::testing::PAUSED_STATE;
 using rtype::network::testing::PLAIN_TEXT_ERROR;
+using rtype::network::testing::PLAYER_COUNT_POINTER;
+using rtype::network::testing::PLAYERS_OF_A_FULL_GAME;
+using rtype::network::testing::PLAYERS_POINTER;
 using rtype::network::testing::PLAYING_STATE;
 using rtype::network::testing::PORT_ABOVE_THE_RANGE;
 using rtype::network::testing::PORT_AS_TEXT;
@@ -124,15 +162,21 @@ using rtype::network::testing::registrationRefusal;
 using rtype::network::testing::registrationTextWith;
 using rtype::network::testing::registrationTextWithout;
 using rtype::network::testing::SAMPLE_DATE;
+using rtype::network::testing::SCORE_ABOVE_ITS_RANGE;
+using rtype::network::testing::SECOND_DIFFICULTY_POINTER;
 using rtype::network::testing::SECOND_GAME_NUMBER_POINTER;
 using rtype::network::testing::SECOND_PILOT;
+using rtype::network::testing::SECOND_PLAYER_ACCOUNT_POINTER;
+using rtype::network::testing::SECOND_PLAYER_NICKNAME_POINTER;
 using rtype::network::testing::serverListingRefusal;
 using rtype::network::testing::serverListingTextOfServers;
 using rtype::network::testing::serverListingTextWith;
 using rtype::network::testing::SERVERS_ABOVE_A_PAGE;
 using rtype::network::testing::SERVERS_OF_A_FULL_PAGE;
 using rtype::network::testing::SERVERS_POINTER;
+using rtype::network::testing::SEVENTEEN_BYTE_DIFFICULTY;
 using rtype::network::testing::SEVENTEEN_BYTE_NICKNAME;
+using rtype::network::testing::SHORT_GAME_ID;
 using rtype::network::testing::SHORT_KEY;
 using rtype::network::testing::THIRD_PILOT;
 using rtype::network::testing::TICK_P50_POINTER;
@@ -141,7 +185,10 @@ using rtype::network::testing::UNKNOWN_MEMBER_POINTER;
 using rtype::network::testing::UNKNOWN_MEMBER_VALUE;
 using rtype::network::testing::UNKNOWN_STATUS_TEXT;
 using rtype::network::testing::UNREACHABLE_TEXT;
+using rtype::network::testing::UPPERCASE_GAME_ID;
 using rtype::network::testing::UPPERCASE_KEY;
+using rtype::network::testing::VANILLA_AS_TEXT;
+using rtype::network::testing::VANILLA_POINTER;
 using rtype::network::testing::WAITING_GAME_NUMBER;
 using ::testing::HasSubstr;
 using ::testing::IsEmpty;
@@ -461,6 +508,92 @@ TEST(MasterMessageText, RefusesAPlayerWhoseNicknameIsTooLong) {
 }
 
 /**
+ * Given the heartbeat of "Paris 1" without its difficulties
+ * When it is read
+ * Then the refusal names the difficulties
+ */
+TEST(MasterMessageText, RefusesAHeartbeatWithoutDifficulties) {
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWithout(DIFFICULTIES_POINTER)),
+              HasSubstr(quoted(DIFFICULTIES_POINTER)));
+}
+
+/**
+ * Given the heartbeat of "Paris 1" with no difficulty
+ * When it is read
+ * Then the refusal names the difficulties: a server has one at least
+ */
+TEST(MasterMessageText, RefusesAHeartbeatOfNoDifficulty) {
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWith(DIFFICULTIES_POINTER,
+                                                 nlohmann::json::array())),
+              HasSubstr(quoted(DIFFICULTIES_POINTER)));
+}
+
+/**
+ * Given the heartbeat of "Paris 1" naming the difficulty "normal" twice
+ * When it is read
+ * Then the refusal names the second one
+ */
+TEST(MasterMessageText, RefusesADifficultyNamedTwice) {
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWith(
+                  DIFFICULTIES_POINTER,
+                  nlohmann::json::array({PARIS_DIFFICULTY, PARIS_DIFFICULTY}))),
+              HasSubstr(quoted(SECOND_DIFFICULTY_POINTER)));
+}
+
+/**
+ * Given heartbeats of 16 difficulties, the most a server may hold, then 17
+ * When each is read
+ * Then the first is accepted and the refusal of the second names the
+ * difficulties
+ */
+TEST(MasterMessageText, RefusesMoreDifficultiesThanAServerMayHold) {
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWith(
+                  DIFFICULTIES_POINTER, difficultyNames(MOST_DIFFICULTIES))),
+              IsEmpty());
+  EXPECT_THAT(
+      heartbeatRefusal(heartbeatTextWith(
+          DIFFICULTIES_POINTER, difficultyNames(DIFFICULTIES_PAST_THE_MOST))),
+      HasSubstr(quoted(DIFFICULTIES_POINTER)));
+}
+
+/**
+ * Given a game that gives its players no life
+ * When the heartbeat is read
+ * Then the refusal names the lives of that game
+ */
+TEST(MasterMessageText, RefusesAGameOfNoLife) {
+  EXPECT_THAT(heartbeatRefusal(
+                  heartbeatTextWith(FIRST_GAME_LIVES_POINTER, NO_GAME_LIFE)),
+              HasSubstr(quoted(FIRST_GAME_LIVES_POINTER)));
+}
+
+/**
+ * Given a game of 255 lives, the most a byte holds, then one of 256, which a
+ * cut to one byte would read as none
+ * When each heartbeat is read
+ * Then the first is accepted and the refusal of the second names its lives
+ */
+TEST(MasterMessageText, RefusesMoreLivesThanAByteHolds) {
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWith(FIRST_GAME_LIVES_POINTER,
+                                                 MOST_GAME_LIVES_OF_A_BYTE)),
+              IsEmpty());
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWith(FIRST_GAME_LIVES_POINTER,
+                                                 GAME_LIVES_PAST_A_BYTE)),
+              HasSubstr(quoted(FIRST_GAME_LIVES_POINTER)));
+}
+
+/**
+ * Given a game whose friendly fire is the number 1
+ * When the heartbeat is read
+ * Then the refusal names its friendly fire: it is a boolean
+ */
+TEST(MasterMessageText, RefusesAFriendlyFireThatIsNoBoolean) {
+  EXPECT_THAT(heartbeatRefusal(heartbeatTextWith(
+                  FIRST_GAME_FRIENDLY_FIRE_POINTER, FRIENDLY_FIRE_AS_A_NUMBER)),
+              HasSubstr(quoted(FIRST_GAME_FRIENDLY_FIRE_POINTER)));
+}
+
+/**
  * Given a game of four players, the most a game takes, then one of five
  * When each heartbeat is read
  * Then the first is accepted and the second refusal names the players
@@ -599,6 +732,28 @@ TEST(MasterMessageText, RefusesAListedStateOnlyAHeartbeatHas) {
   EXPECT_THAT(gameListingRefusal(
                   gameListingTextWith(FIRST_GAME_STATE_POINTER, PLAYING_STATE)),
               HasSubstr(quoted(FIRST_GAME_STATE_POINTER)));
+}
+
+/**
+ * Given a listing whose first game names a difficulty of 17 bytes
+ * When it is read
+ * Then the refusal names that difficulty: it follows the rules of a nickname
+ */
+TEST(MasterMessageText, RefusesAListedDifficultyTheProtocolCannotCarry) {
+  EXPECT_THAT(gameListingRefusal(gameListingTextWith(
+                  FIRST_GAME_DIFFICULTY_POINTER, SEVENTEEN_BYTE_DIFFICULTY)),
+              HasSubstr(quoted(FIRST_GAME_DIFFICULTY_POINTER)));
+}
+
+/**
+ * Given a listing whose difficulties are no list
+ * When it is read
+ * Then the refusal names the difficulties
+ */
+TEST(MasterMessageText, RefusesAListingWhoseDifficultiesAreNoList) {
+  EXPECT_THAT(gameListingRefusal(
+                  gameListingTextWith(DIFFICULTIES_POINTER, PARIS_DIFFICULTY)),
+              HasSubstr(quoted(DIFFICULTIES_POINTER)));
 }
 
 /**
@@ -753,4 +908,176 @@ TEST(MasterMessageText, WritesAStatusWithItsDate) {
 
   EXPECT_EQ(nlohmann::json::parse(statusListingText(listing)),
             nlohmann::json::parse(DEGRADED_STATUS_LISTING_TEXT));
+}
+
+/**
+ * Given the game "Paris 1" reports, a guest and a player with an account
+ * When it is written, then read
+ * Then it is the game written, the guest still without an account
+ */
+TEST(MasterMessageText, ReadsBackAWrittenFinishedGame) {
+  EXPECT_EQ(finishedGameFromText(finishedGameText(parisFinishedGame())),
+            parisFinishedGame());
+}
+
+/**
+ * Given the game "Paris 1" reports, marked not vanilla
+ * When it is read
+ * Then it reads as a game that was not vanilla, for the master to refuse
+ */
+TEST(MasterMessageText, ReadsAGameThatWasNotVanilla) {
+  EXPECT_FALSE(
+      finishedGameFromText(finishedGameTextWith(VANILLA_POINTER, false))
+          .vanilla);
+}
+
+/**
+ * Given a game whose vanilla is written as text
+ * When it is read
+ * Then the refusal names vanilla
+ */
+TEST(MasterMessageText, RefusesAVanillaWrittenAsText) {
+  EXPECT_THAT(finishedGameRefusal(
+                  finishedGameTextWith(VANILLA_POINTER, VANILLA_AS_TEXT)),
+              HasSubstr(quoted(VANILLA_POINTER)));
+}
+
+/**
+ * Given a game of four players, the most a game takes
+ * When it is read
+ * Then it is accepted
+ */
+TEST(MasterMessageText, AcceptsAFinishedGameOfFourPlayers) {
+  EXPECT_EQ(
+      finishedGameRefusal(finishedGameTextOfPlayers(PLAYERS_OF_A_FULL_GAME)),
+      std::string{});
+}
+
+/**
+ * Given a game of no player, and a game of five
+ * When each is read
+ * Then each refusal names the players
+ */
+TEST(MasterMessageText, RefusesAFinishedGameOfNoPlayerOrOfFive) {
+  for (const std::uint64_t playerCount : {NO_PLAYERS, FIVE_PLAYERS}) {
+    SCOPED_TRACE(playerCount);
+    EXPECT_THAT(finishedGameRefusal(finishedGameTextOfPlayers(playerCount)),
+                HasSubstr(quoted(PLAYERS_POINTER)));
+  }
+}
+
+/**
+ * Given a game that started with no player, and one with five
+ * When each is read
+ * Then each refusal names the number of players
+ */
+TEST(MasterMessageText, RefusesANumberOfPlayersNoGameHas) {
+  for (const std::uint64_t playerCount : {NO_PLAYERS, FIVE_PLAYERS}) {
+    SCOPED_TRACE(playerCount);
+    EXPECT_THAT(finishedGameRefusal(
+                    finishedGameTextWith(PLAYER_COUNT_POINTER, playerCount)),
+                HasSubstr(quoted(PLAYER_COUNT_POINTER)));
+  }
+}
+
+/**
+ * Given a game of two players that started with one
+ * When it is read
+ * Then the refusal names the players, since nobody joins a running game
+ */
+TEST(MasterMessageText, RefusesMorePlayersThanStartedTheGame) {
+  EXPECT_THAT(finishedGameRefusal(finishedGameTextWith(
+                  PLAYER_COUNT_POINTER, ONE_PLAYER_AT_THE_START)),
+              HasSubstr(quoted(PLAYERS_POINTER)));
+}
+
+/**
+ * Given a game whose second player is ACE written in small letters
+ * When it is read
+ * Then the refusal names that nickname, which a game server takes for ACE
+ */
+TEST(MasterMessageText, RefusesOneNicknameTwiceInAGame) {
+  EXPECT_THAT(
+      finishedGameRefusal(finishedGameTextWith(SECOND_PLAYER_NICKNAME_POINTER,
+                                               FIRST_PILOT_IN_SMALL_LETTERS)),
+      HasSubstr(quoted(SECOND_PLAYER_NICKNAME_POINTER)));
+}
+
+/**
+ * Given a first player scoring 2^32 - 1, the most a server keeps
+ * When the game is read
+ * Then it is accepted
+ */
+TEST(MasterMessageText, AcceptsTheHighestScoreAServerKeeps) {
+  EXPECT_EQ(finishedGameRefusal(finishedGameTextWith(FIRST_PLAYER_SCORE_POINTER,
+                                                     HIGHEST_KEPT_SCORE)),
+            std::string{});
+}
+
+/**
+ * Given a first player scoring 2^32, one more than a server keeps
+ * When the game is read
+ * Then the refusal names that score
+ */
+TEST(MasterMessageText, RefusesAScoreAboveWhatAServerKeeps) {
+  EXPECT_THAT(finishedGameRefusal(finishedGameTextWith(
+                  FIRST_PLAYER_SCORE_POINTER, SCORE_ABOVE_ITS_RANGE)),
+              HasSubstr(quoted(FIRST_PLAYER_SCORE_POINTER)));
+}
+
+/**
+ * Given a second player whose account is empty, then 65 bytes long
+ * When each game is read
+ * Then each refusal names that account
+ */
+TEST(MasterMessageText, RefusesAnAccountIdEmptyOrTooLong) {
+  for (const std::string_view account :
+       {EMPTY_ACCOUNT_ID, ACCOUNT_ID_OF_65_BYTES}) {
+    SCOPED_TRACE(account);
+    EXPECT_THAT(finishedGameRefusal(finishedGameTextWith(
+                    SECOND_PLAYER_ACCOUNT_POINTER, account)),
+                HasSubstr(quoted(SECOND_PLAYER_ACCOUNT_POINTER)));
+  }
+}
+
+/**
+ * Given the id "Paris 1" drew for a game
+ * When it is checked
+ * Then it is well formed
+ */
+TEST(MasterMessageText, AcceptsAGameIdOfTheShapeAServerDraws) {
+  EXPECT_TRUE(isWellFormedGameId(PARIS_GAME_ID));
+}
+
+/**
+ * Given ids of a game in uppercase, one digit short and one digit more
+ * When each is checked
+ * Then none is well formed
+ */
+TEST(MasterMessageText, RefusesAGameIdShapedAlmostRight) {
+  for (const std::string_view gameId :
+       {UPPERCASE_GAME_ID, SHORT_GAME_ID, LONG_GAME_ID}) {
+    SCOPED_TRACE(gameId);
+    EXPECT_FALSE(isWellFormedGameId(gameId));
+  }
+}
+
+/**
+ * Given a page of a leaderboard with ACE first, and BYDO_HUNTER asked for
+ * When it is written
+ * Then each row holds its rank, nickname, score, date, server and name
+ */
+TEST(MasterMessageText, WritesALeaderboardAsTheMasterDocuments) {
+  EXPECT_EQ(nlohmann::json::parse(globalLeaderboardText(parisLeaderboard())),
+            nlohmann::json::parse(PARIS_LEADERBOARD_TEXT));
+}
+
+/**
+ * Given an empty leaderboard that names no player
+ * When it is written
+ * Then it holds an empty list of scores and no player
+ */
+TEST(MasterMessageText, LeavesOutThePlayerOfALeaderboardThatNamesNone) {
+  EXPECT_EQ(nlohmann::json::parse(globalLeaderboardText(GlobalLeaderboard{})),
+            nlohmann::json::parse(EMPTY_LEADERBOARD_TEXT));
 }

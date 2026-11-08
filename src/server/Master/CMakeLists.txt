@@ -1,7 +1,13 @@
+if(NOT RTYPE_MODULE_MASTER_LINK)
+  return()
+endif()
+
 add_library(rtype_server_master_module STATIC
   HeartbeatJob.cpp
+  LastProblem.cpp
   MasterMessages.cpp
   MasterProbeDesk.cpp
+  ResultsCourier.cpp
   ServerMasterModule.cpp
 )
 
@@ -14,6 +20,7 @@ target_link_libraries(rtype_server_master_module
     rtype_engine_modules
     rtype_engine_time
     rtype_logging
+    rtype_network_http_api
     rtype_network_master_client
     rtype_network_master_messages
     rtype_network_master_probe
@@ -21,10 +28,13 @@ target_link_libraries(rtype_server_master_module
     rtype_server_information_module
     rtype_server_supervised_games_module
     rtype_server_network_module
+    rtype_server_storage_database
   PRIVATE
     rtype_concurrency_interruptible_sleep
+    rtype_logging_path_text
     rtype_network_constants
     rtype_network_exceptions
+    rtype_network_transport
     rtype_server_constants
 )
 

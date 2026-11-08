@@ -7,13 +7,16 @@
 #include "PlayerSettings.hpp"
 #include "SettingDefinitionConstants.hpp"
 #include "SettingId.hpp"
+#include "SettingsConstants.hpp"
 #include "SettingsServiceFixture.hpp"
 #include "SettingsServiceTestConstants.hpp"
 
 using rtype::client::AUTO_FIRE_SETTING;
 using rtype::client::BoundAction;
+using rtype::client::CHAT_LETTERS_SETTING;
 using rtype::client::COLOR_MODE_SETTING;
 using rtype::client::ColorMode;
+using rtype::client::DEFAULT_CHAT_LETTERS;
 using rtype::client::DISPLAY_MODE_SETTING;
 using rtype::client::DisplayMode;
 using rtype::client::EFFECTS_VOLUME_SETTING;
@@ -206,13 +209,27 @@ TEST_F(SettingsServiceFixture, RestoringTakesTheSettingsAndTellsEveryOne) {
   service().restore(kept);
 
   EXPECT_EQ(settings(), kept);
-  EXPECT_EQ(
-      listener().changes(),
-      (std::vector<SettingId>{
-          SettingId::MusicVolume, SettingId::EffectsVolume, SettingId::Muted,
-          SettingId::WindowSize, SettingId::DisplayMode, SettingId::Keys,
-          SettingId::ColorMode, SettingId::ReduceFlashes, SettingId::SoundCues,
-          SettingId::AutoFire, SettingId::ClientPrediction}));
+  EXPECT_EQ(listener().changes(),
+            (std::vector<SettingId>{SettingId::MusicVolume,
+                                    SettingId::EffectsVolume,
+                                    SettingId::Muted,
+                                    SettingId::WindowSize,
+                                    SettingId::DisplayMode,
+                                    SettingId::Keys,
+                                    SettingId::ColorMode,
+                                    SettingId::ReduceFlashes,
+                                    SettingId::SoundCues,
+                                    SettingId::AutoFire,
+                                    SettingId::ClientPrediction,
+                                    SettingId::PilotNames,
+                                    SettingId::ChatShown,
+                                    SettingId::ChatLetters,
+                                    SettingId::ChatClosedLines,
+                                    SettingId::ChatOpenLines,
+                                    SettingId::ChatSeconds,
+                                    SettingId::ChatBackground,
+                                    SettingId::Master,
+                                    SettingId::ShipLook}));
 }
 
 /**
@@ -242,4 +259,15 @@ TEST_F(SettingsServiceFixture, AnUnsubscribedListenerIsToldNothing) {
 
   EXPECT_TRUE(applied);
   EXPECT_TRUE(listener().changes().empty());
+}
+
+/**
+ * Given a service over the settings of a first launch
+ * When the letters of the chat are set one past the widest line
+ * Then the change is refused and the line keeps its 33 letters
+ */
+TEST_F(SettingsServiceFixture, ALineWiderThanTheChatIsRefused) {
+  EXPECT_FALSE(service().apply(CHAT_LETTERS_SETTING, TOO_MANY_CHAT_LETTERS));
+
+  EXPECT_EQ(settings().chatLetters, DEFAULT_CHAT_LETTERS);
 }

@@ -24,7 +24,8 @@ EntityAppearance appearancePlaying(const Animation& animation) {
       .sheet = ENTITY_SHEET_ID,
       .idleFrames = {animation.frames.begin(), animation.frames.end()},
       .idleFrameDuration = animation.frameDuration,
-      .actions = {}};
+      .actions = {},
+      .enragedIdleFrames = {}};
 }
 
 /** @returns The side of the type the double numbers @p number, or nothing
@@ -95,8 +96,8 @@ std::optional<EntityTypeLook> FixedEntityTypeSource::lookOf(
                         .hitbox = boxOfSide(*side)};
 }
 
-rtype::network::ShipGun FixedEntityTypeSource::shipGun() const {
-  return rtype::network::ShipGun{
+rtype::game::ShipGun FixedEntityTypeSource::shipGun() const {
+  return rtype::game::ShipGun{
       .shipType = rtype::client::testing::SHIP_TYPE_NUMBER,
       .projectileType = rtype::client::testing::PLAYER_MISSILE_TYPE_NUMBER,
       .intervalTicks = rtype::client::testing::SHIP_GUN_INTERVAL_TICKS,

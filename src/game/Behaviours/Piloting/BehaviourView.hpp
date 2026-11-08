@@ -41,6 +41,12 @@ struct BehaviourView {
   /** @brief Whether the body has lost health points since it appeared;
    * false for a body without Health. */
   bool wounded{false};
+  /** @brief Whether the body is a Boss that enraged (see BossPhaseSystem);
+   * false for any other body. */
+  bool enraged{false};
+  /** @brief How many actions the body has ended since it appeared
+   * (CurrentAction::ended); 0 for a body without CurrentAction. */
+  std::uint32_t actionsEnded{0};
 };
 
 }  // namespace rtype::game

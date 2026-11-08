@@ -17,6 +17,15 @@ enum class SettingId : std::uint8_t {
   SoundCues,
   AutoFire,
   ClientPrediction,
+  PilotNames,
+  ChatShown,
+  ChatLetters,
+  ChatClosedLines,
+  ChatOpenLines,
+  ChatSeconds,
+  ChatBackground,
+  Master,
+  ShipLook,
 };
 
 }  // namespace rtype::client

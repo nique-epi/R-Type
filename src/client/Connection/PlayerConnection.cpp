@@ -1,15 +1,17 @@
 #include "PlayerConnection.hpp"
 #include <string>
 #include <thread>
-#include <utility>
 #include "ConnectionConstants.hpp"
-#include "DrawableTypeCheck.hpp"
+#include "ContentPackCache.hpp"
+#include "ContentPlaces.hpp"
 #include "Endpoint.hpp"
+#include "EntityAppearances.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IPlayerRoundTrips.hpp"
 #include "IServerPingProbe.hpp"
 #include "IServerTicks.hpp"
 #include "InstallContext.hpp"
+#include "LocalContentReading.hpp"
 #include "NetworkConditions.hpp"
 #include "NetworkConstants.hpp"
 #include "ServerSessionParts.hpp"
@@ -28,7 +30,7 @@ network::Endpoint anyInterfaceAnyPort() {
 }  // namespace
 
 PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions,
-                                   DrawableTypeCheck drawable)
+                                   const ContentPlaces& places)
     : network_(anyInterfaceAnyPort(), conditions),
       router_(network_),
       orderedInbox_(dispatcher_),
@@ -36,14 +38,17 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions,
       entityMessages_(dispatcher_, waitingRoom_, gameLoaded_),
       roundTrips_(dispatcher_, clock_),
       leaderboard_(dispatcher_),
-      entityTypes_(std::move(drawable)),
+      chat_(dispatcher_, waitingRoom_),
+      entityTypes_(localContentOf(places.assetFolder)),
+      content_(ContentPackCache{places.cacheFolder}),
       session_(ServerSessionParts{
           .link = router_.addRoute(),
           .dispatcher = dispatcher_,
           .gameLoaded = gameLoaded_,
           .entityTypes = entityTypes_,
+          .content = content_,
           .observers = {waitingRoom_, entityMessages_, gameLoaded_, roundTrips_,
-                        leaderboard_, orderedInbox_}}),
+                        leaderboard_, chat_, orderedInbox_}}),
       pings_(router_.addRoute(), clock_) {}
 
 void PlayerConnection::update(engine::Duration elapsed) {
@@ -59,10 +64,12 @@ void PlayerConnection::leave() {
 }
 
 void PlayerConnection::provideParts(engine::InstallContext& context) {
+  entityTypes_.drawLocalWith(context.require<EntityAppearances>());
   context.provide(session_);
   context.provide(waitingRoom_);
   context.provide(entityMessages_);
   context.provide(leaderboard_);
+  context.provide(chat_);
   context.provide<IPlayerRoundTrips>(roundTrips_);
   context.provide<IServerTicks>(roundTrips_);
   context.provide<IEntityTypeTable>(entityTypes_);

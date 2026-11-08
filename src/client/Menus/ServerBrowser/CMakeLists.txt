@@ -1,5 +1,6 @@
 add_library(rtype_client_menus_server_browser STATIC
   GamePanel.cpp
+  HangarStar.cpp
   ServerMapChoice.cpp
   ServerMapPainting.cpp
   ServerMapScreen.cpp
@@ -29,6 +30,7 @@ target_link_libraries(rtype_client_menus_server_browser
     rtype_client_interface_pixel
     rtype_client_label_placement
     rtype_client_menu_builder
+    rtype_client_pixel_circle
     rtype_client_ringed_planet
     rtype_client_sector_layout
     rtype_client_sector_map_painting

@@ -1,6 +1,9 @@
 #include "GameEventEncoder.hpp"
 #include <cstdint>
 #include <utility>
+#include "BossArrival.hpp"
+#include "BossHealthChanged.hpp"
+#include "BossStatus.hpp"
 #include "EncodedMessage.hpp"
 #include "EnemyAction.hpp"
 #include "EnemyActionStarted.hpp"
@@ -40,6 +43,8 @@ network::DepartureReason toWireReason(game::DepartureCause cause) {
       return network::DepartureReason::Left;
     case game::DepartureCause::TimedOut:
       return network::DepartureReason::TimedOut;
+    case game::DepartureCause::Expelled:
+      return network::DepartureReason::Expelled;
   }
   return network::DepartureReason::TimedOut;
 }
@@ -81,6 +86,28 @@ EventMessage GameEventEncoder::encode(const game::EnemyActionStarted& event) {
                                      .attack = event.attack,
                                      .phase = toWirePhase(event.phase)};
   return EventMessage{.message = network::encodedMessage(message),
+                      .guaranteed = true};
+}
+
+EventMessage GameEventEncoder::encode(
+    [[maybe_unused]] const game::BossArrival& event) {
+  return EventMessage{.message = network::encodedMessage(network::BossStatus{
+                          .stage = network::BossStage::Arriving}),
+                      .guaranteed = true};
+}
+
+EventMessage GameEventEncoder::encode(const game::BossHealthChanged& event) {
+  network::BossStage stage = network::BossStage::Fighting;
+  if (event.points == 0) {
+    stage = network::BossStage::Defeated;
+  } else if (event.enraged) {
+    stage = network::BossStage::Enraged;
+  }
+  return EventMessage{.message = network::encodedMessage(
+                          network::BossStatus{.bossEntityId = event.networkId,
+                                              .health = event.points,
+                                              .fullHealth = event.full,
+                                              .stage = stage}),
                       .guaranteed = true};
 }
 

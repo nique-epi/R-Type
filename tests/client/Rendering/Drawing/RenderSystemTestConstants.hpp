@@ -15,6 +15,11 @@ constexpr float SPAWN_Y = 2.0F;
 constexpr float SHIP_X = 40.0F;
 constexpr float SHIP_Y = 25.0F;
 
+/** @brief How far a caption is moved from its entity: right and up, so a
+ * line written at the Position itself fails both axes. */
+constexpr float CAPTION_OFFSET_X = 12.0F;
+constexpr float CAPTION_OFFSET_Y = -56.0F;
+
 /** @brief Gameplay values an entity may carry, which drawing ignores. */
 constexpr float SPEED = 5.0F;
 constexpr float BOX_SIZE = 9.0F;

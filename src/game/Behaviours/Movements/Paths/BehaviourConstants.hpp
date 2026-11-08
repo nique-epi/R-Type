@@ -17,6 +17,7 @@ constexpr std::string_view SCATTER_BEHAVIOUR_NAME = "scatter";
 constexpr std::string_view REAPER_BEHAVIOUR_NAME = "reaper";
 constexpr std::string_view DRILLBACK_BEHAVIOUR_NAME = "drillback";
 constexpr std::string_view BYDOMANCER_BEHAVIOUR_NAME = "bydomancer";
+constexpr std::string_view BYDO_TYRANT_BEHAVIOUR_NAME = "bydo_tyrant";
 
 /** @brief The horizontal share a behaviour writes to cross the playfield
  * towards the ships, at the full speed of its body. */

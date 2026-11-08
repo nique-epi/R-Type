@@ -82,6 +82,12 @@ constexpr unsigned int IPV4_ADDRESS_PART_MAXIMUM =
 constexpr char IPV4_ADDRESS_SEPARATOR = '.';
 
 /**
+ * @brief Character between the address and the port of an endpoint written
+ * as text, as in "127.0.0.1:4242".
+ */
+constexpr char ENDPOINT_PORT_SEPARATOR = ':';
+
+/**
  * @brief Logger name the network classes write their log lines under.
  */
 constexpr std::string_view NETWORK_LOGGER_NAME = "Network";
@@ -114,5 +120,11 @@ constexpr std::string_view TRAFFIC_CSV_OPTION_WITH_VALUE =
 constexpr std::string_view TRAFFIC_CSV_USAGE =
     "File the traffic of the program goes to, by peer and by message type, as "
     "totals since the launch; it is emptied at launch. Default: no file.";
+
+/** @brief The digits a byte takes in hexadecimal. */
+constexpr std::size_t HEX_DIGITS_PER_BYTE = 2;
+
+/** @brief The digits of lowercase hexadecimal, each at its value. */
+constexpr std::string_view LOWERCASE_HEX_DIGITS = "0123456789abcdef";
 
 }  // namespace rtype::network

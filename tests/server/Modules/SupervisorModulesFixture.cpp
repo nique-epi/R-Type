@@ -1,6 +1,7 @@
 #include "SupervisorModulesFixture.hpp"
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -18,6 +19,7 @@
 #include "Endpoint.hpp"
 #include "ExecutablePath.hpp"
 #include "GameLineRule.hpp"
+#include "IModule.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"
 #include "LoggingConstants.hpp"
@@ -27,6 +29,7 @@
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerInformation.hpp"
+#include "ServerModuleTestConstants.hpp"
 #include "ServerRoleConstants.hpp"
 #include "SupervisorModules.hpp"
 #include "SupervisorModulesTestConstants.hpp"
@@ -51,6 +54,13 @@ void SupervisorModulesFixture::writeConfiguration(
 std::unique_ptr<rtype::engine::Application>
 SupervisorModulesFixture::supervisor(
     const std::vector<std::string_view>& options) {
+  return supervisor(options, nullptr);
+}
+
+std::unique_ptr<rtype::engine::Application>
+SupervisorModulesFixture::supervisor(
+    const std::vector<std::string_view>& options,
+    std::unique_ptr<rtype::engine::IModule> console) {
   std::vector<std::string_view> arguments{
       rtype::engine::PORT_OPTION, portText_, rtype::logging::FILE_OPTION,
       journalText_, rtype::logging::NO_STDERR_OPTION};
@@ -65,10 +75,19 @@ SupervisorModulesFixture::supervisor(
   auto modules = rtype::server::supervisorModules(
       launchOptions, stopRequest_,
       rtype::engine::handedOverLines(configuration));
+  if (console != nullptr) {
+    modules.back() = std::move(console);
+  }
   auto step = rtype::engine::configurationStep(configuration, report_);
   return std::make_unique<rtype::engine::Application>(
       rtype::engine::LoopStages(rtype::server::SERVER_LOOP_STAGES),
       std::move(modules), std::move(step));
+}
+
+std::uint16_t SupervisorModulesFixture::port() const { return port_; }
+
+std::filesystem::path SupervisorModulesFixture::resultsFile() const {
+  return folder_.path() / TEST_DATABASE_FILE;
 }
 
 const rtype::engine::ConfigurationReport& SupervisorModulesFixture::report()

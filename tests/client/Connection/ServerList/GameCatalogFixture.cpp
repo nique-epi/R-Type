@@ -29,7 +29,8 @@ network::GameListing GameCatalogFixture::twoGames(
                 network::ListedGame{.number = SECOND_GAME_NUMBER,
                                     .name = std::string{SECOND_GAME_NAME},
                                     .state = second,
-                                    .playerCount = TWO_PILOTS}}};
+                                    .playerCount = TWO_PILOTS}},
+      .difficulties = {}};
 }
 
 GameRow GameCatalogFixture::gameIn(network::ListedGameState state) {
