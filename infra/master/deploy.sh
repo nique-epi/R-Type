@@ -5,33 +5,39 @@
 # first line VERSION=<x.y.z>.
 set -eu
 
-: "${VERSION:?VERSION is not set}"
-case $VERSION in
-  '' | *[!0-9.]*)
-    echo "invalid version: $VERSION" >&2
-    exit 1
-    ;;
-esac
-
 repository=nique-epi/R-Type
 port=8080
 releases=/opt/rtype/releases
 current=/opt/rtype/current
-name=R-Type-server-$VERSION-Linux
-url=https://github.com/$repository/releases/download/v$VERSION/$name.tar.gz
 
-previous=$(readlink "$current" 2>/dev/null || true)
+# The version comes from a tag: it is never used before it is checked.
+require_version() {
+  : "${VERSION:?VERSION is not set}"
+  case $VERSION in
+    '' | *[!0-9.]*)
+      echo "invalid version: $VERSION" >&2
+      exit 1
+      ;;
+  esac
+}
 
-# Download and unpack first: a missing release stops here, the service untouched.
-if [ ! -d "$releases/$name" ]; then
+# Downloads and unpacks a release next to the others. A missing release stops
+# here, before anything changed on the machine.
+unpack_release() {
+  name=$1
+  if [ -d "$releases/$name" ]; then
+    return 0
+  fi
+  url=https://github.com/$repository/releases/download/v$VERSION/$name.tar.gz
   work=$(mktemp -d)
   trap 'rm -rf "$work"' EXIT
   curl --fail --silent --show-error --location "$url" --output "$work/server.tar.gz"
   tar -xzf "$work/server.tar.gz" -C "$work"
   mv "$work/$name" "$releases/$name"
-fi
+}
 
-cat > /etc/systemd/system/rtype-master.service <<UNIT
+install_service() {
+  cat > /etc/systemd/system/rtype-master.service <<UNIT
 [Unit]
 Description=R-Type master
 After=network-online.target
@@ -52,39 +58,64 @@ PrivateTmp=true
 [Install]
 WantedBy=multi-user.target
 UNIT
+  systemctl daemon-reload
+  systemctl enable rtype-master
+}
 
-systemctl daemon-reload
-systemctl enable rtype-master
+# Runs the master on the release folder it is given.
+run_release() {
+  ln -sfn "$1" "$current"
+  systemctl restart rtype-master
+}
 
-ln -sfn "$releases/$name" "$current"
-systemctl restart rtype-master
+# Succeeds as soon as the master answers on the machine itself, so a failure
+# here comes from the master and not from the network in front of it.
+wait_until_healthy() {
+  for _ in $(seq 1 20); do
+    if curl --fail --silent "http://127.0.0.1:$port/api/health" > /dev/null; then
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
+}
 
-healthy=0
-for _ in $(seq 1 20); do
-  if curl --fail --silent "http://127.0.0.1:$port/api/health" > /dev/null; then
-    healthy=1
-    break
-  fi
-  sleep 1
-done
-
-if [ "$healthy" -ne 1 ]; then
-  echo "the master of $VERSION does not answer" >&2
+# Shows why the new release did not answer, then runs the previous one again.
+roll_back() {
   journalctl -u rtype-master --no-pager -n 30 >&2 || true
-  if [ -n "$previous" ]; then
-    ln -sfn "$previous" "$current"
-    systemctl restart rtype-master
-    echo "went back to $previous" >&2
+  if [ -n "$1" ]; then
+    run_release "$1"
+    echo "went back to $1" >&2
   fi
-  exit 1
-fi
+}
 
-# Keep the release in use and the previous one.
-for release in "$releases"/*/; do
-  release=${release%/}
-  if [ "$release" != "$releases/$name" ] && [ "$release" != "$previous" ]; then
-    rm -rf "$release"
+# Keeps the release in use and the previous one.
+prune_releases() {
+  for release in "$releases"/*/; do
+    release=${release%/}
+    if [ "$release" != "$1" ] && [ "$release" != "$2" ]; then
+      rm -rf "$release"
+    fi
+  done
+}
+
+main() {
+  require_version
+  name=R-Type-server-$VERSION-Linux
+  previous=$(readlink "$current" 2>/dev/null || true)
+
+  unpack_release "$name"
+  install_service
+  run_release "$releases/$name"
+
+  if ! wait_until_healthy; then
+    echo "the master of $VERSION does not answer" >&2
+    roll_back "$previous"
+    exit 1
   fi
-done
 
-echo "the master runs $VERSION"
+  prune_releases "$releases/$name" "$previous"
+  echo "the master runs $VERSION"
+}
+
+main
