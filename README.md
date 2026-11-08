@@ -183,7 +183,7 @@ The server reads the waves of Bydos from `assets/waves/waves.toml`, in the `asse
 ./r-type_client -h 192.168.1.20 -p 4243 -n ACE
 ```
 
-Without `-h`, PLAY opens the server map: the servers the master lists, `http://127.0.0.1:8080` unless `set master-url` (in `client.cfg`, or `--set master-url=<url>`) names another, around the planet of the player by the ping the client measures, and the games of each; Enter or a click joins one, asking only for the callsign. The GLOBAL tab of the leaderboard reads the same master. Start the master and a server registered with it first (see [the master page](https://nique-epi.github.io/R-Type/master/)): without the master, the map shows `MASTER UNREACHABLE`.
+Without `-h`, PLAY opens the server map: the servers the master lists, `https://master.rtype.app` unless `set master-url` (in `client.cfg`, or `--set master-url=<url>`) names another, around the planet of the player by the ping the client measures, and the games of each; Enter or a click joins one, asking only for the callsign. The GLOBAL tab of the leaderboard reads the same master. Start the master and a server registered with it first (see [the master page](https://nique-epi.github.io/R-Type/master/)): without the master, the map shows `MASTER UNREACHABLE`.
 
 The client is given the IPv4 address and the port of the server, `127.0.0.1` and 4242 by default, and the nickname of the player, `PILOT` by default; the connection screen, which D (ADDRESS) opens from the map, starts with them. CONNECT on that screen joins any server, without the master: without a server, the screen shows `SERVER UNREACHABLE` after 5 seconds.
 
@@ -244,7 +244,7 @@ bun run build
 bun run start
 ```
 
-The site is then on <http://localhost:3000>, in French and English (`/fr`, `/en`). The server reaches the master at `MASTER_URL` (`http://localhost:8080` by default); the browser only talks to the site. The download page reads the latest release of `GITHUB_REPOSITORY` (`nique-epi/R-Type` by default); `GITHUB_TOKEN` is optional and raises the limit of the GitHub API. `bun run dev` serves the same pages while you edit them. `bun run lint`, `bun run typecheck` and `bun run test` are the checks of the `web` CI workflow.
+The site is then on <http://localhost:3000>, in French and English (`/fr`, `/en`). The server reaches the master at `MASTER_URL` (`https://master.rtype.app` by default); the browser only talks to the site. The download page reads the latest release of `GITHUB_REPOSITORY` (`nique-epi/R-Type` by default); `GITHUB_TOKEN` is optional and raises the limit of the GitHub API. `bun run dev` serves the same pages while you edit them. `bun run lint`, `bun run typecheck` and `bun run test` are the checks of the `web` CI workflow.
 
 ## Tests
 

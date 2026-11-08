@@ -63,7 +63,7 @@ Client settings:
 | `nickname` | 1 to 16 bytes of UTF-8, with no control character | `PILOT` | The nickname the connection screen starts with. |
 | `server-address` | an IPv4 address written as four numbers | `127.0.0.1` | The address the connection screen starts with. A host name is refused. |
 | `server-port` | 1 to 65535 | 4242 | The port the connection screen starts with. |
-| `master-url` | `http(s)://<host>[:<port>]` | `http://127.0.0.1:8080` | The master the server map reads its servers from, until the player chooses one on the map (MASTER), which `settings.ini` keeps and which wins over this setting. Another scheme is refused. |
+| `master-url` | `http(s)://<host>[:<port>]` | `https://master.rtype.app` | The master the server map reads its servers from, until the player chooses one on the map (MASTER), which `settings.ini` keeps and which wins over this setting. Another scheme is refused. |
 
 The settings of the connection screen only change what it offers first: the player can still edit the fields.
 
