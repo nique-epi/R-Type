@@ -342,6 +342,7 @@ export function SectorMap({
         aria-label={labels.screen}
         onKeyDown={onKeyDown}
         fitHeight
+        upscale
         className="starfield"
       >
         <GameText outlined className="absolute top-12 left-12 text-hud-cyan">

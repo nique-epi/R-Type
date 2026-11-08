@@ -4,13 +4,13 @@ import { getMappedServerList } from '@/hooks/api';
 import { getDictionary } from '@/i18n/get-dictionary';
 import type { Locale } from '@/i18n/locales';
 
-/** The sector map of the servers, full width, with a notice when they are examples. */
+/** The sector map of the servers, as large as the window lets it be, with a notice when they are examples. */
 export async function SectorMapBlocks({ lang }: { lang: Locale }) {
   const dictionary = getDictionary(lang);
   const { servers, source } = await getMappedServerList();
 
   return (
-    <main className="starfield relative overflow-hidden border-edge-blue border-b-2">
+    <main className="starfield relative overflow-hidden">
       <h1 className="sr-only">{dictionary.pages.serversPage.title}</h1>
       <SectorMapScreen
         servers={servers}
