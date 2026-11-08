@@ -3,6 +3,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <algorithm>
 #include <cstddef>
@@ -94,6 +95,29 @@ std::string statusLine(std::span<const network::LobbyPlayer> players,
     return YOU_NOT_READY_STATUS;
   }
   return waiting->nickname + PILOT_NOT_READY_STATUS;
+}
+
+/** @returns Whether @p event presses (true) or releases (false) @p key;
+ * nothing for any other event. */
+std::optional<bool> readyKeyDownOf(const sf::Event& event,
+                                   sf::Keyboard::Scancode key) {
+  if (const auto* pressed = event.getIf<sf::Event::KeyPressed>();
+      pressed != nullptr && pressed->scancode == key) {
+    return true;
+  }
+  if (const auto* released = event.getIf<sf::Event::KeyReleased>();
+      released != nullptr && released->scancode == key) {
+    return false;
+  }
+  return std::nullopt;
+}
+
+/** @brief Tells each of @p widgets that the events stop reaching it, so none
+ * waits for a release or stays drawn pressed. */
+template <typename... Widgets>
+void dropHeldInput(const PlayfieldMapping& pointAt, Widgets&... widgets) {
+  (static_cast<void>(widgets.handleEvent(sf::Event::FocusLost{}, pointAt)),
+   ...);
 }
 
 /** @returns The line of @p rules, written once when the room is built;
@@ -271,29 +295,20 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
 
 void LobbyScreen::handleEvent(const sf::Event& event) {
   if (!chat_.isOpen() && help_.handleEvent(event, playfieldPointAt_)) {
-    leaderboardChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
-    hangarChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+    dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_);
     return;
   }
   if (chat_.handleEvent(event)) {
     readyKeyHeld_ = false;
-    leaderboardChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
-    hangarChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
-    menu_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+    dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_, menu_);
     return;
   }
-  if (const auto* pressed = event.getIf<sf::Event::KeyPressed>();
-      pressed != nullptr && pressed->scancode == readyKey_) {
-    if (!readyKeyHeld_) {
-      readyKeyHeld_ = true;
+  if (const std::optional<bool> down = readyKeyDownOf(event, readyKey_)) {
+    if (*down && !readyKeyHeld_) {
       sounds_->play(CLICK_SOUND_ID);
       toggleReady();
     }
-    return;
-  }
-  if (const auto* released = event.getIf<sf::Event::KeyReleased>();
-      released != nullptr && released->scancode == readyKey_) {
-    readyKeyHeld_ = false;
+    readyKeyHeld_ = *down;
     return;
   }
   readyKeyHeld_ = readyKeyHeld_ && !event.is<sf::Event::FocusLost>();
@@ -304,9 +319,7 @@ void LobbyScreen::handleEvent(const sf::Event& event) {
   if (clicksInside(event, ownBayAreaIn(menu_, *waitingRoom_, *connection_),
                    playfieldPointAt_)) {
     readyKeyHeld_ = false;
-    leaderboardChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
-    hangarChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
-    menu_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+    dropHeldInput(playfieldPointAt_, leaderboardChip_, hangarChip_, menu_);
     navigator_->push(HANGAR_SCREEN);
     return;
   }
