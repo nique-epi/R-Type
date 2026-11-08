@@ -38,12 +38,10 @@ constexpr std::string_view CONSOLE_READY_TEXT =
  * before a line is written above the prompt (VT100 "erase in line"). */
 constexpr std::string_view ERASE_ROW = "\r\x1b[K";
 
-/** @brief Erases the character left of the cursor, as a terminal echoes a
- * backspace. */
-constexpr std::string_view ERASE_CHARACTER = "\b \b";
-
-/** @brief Ends a row of the terminal. */
-constexpr std::string_view ROW_END = "\n";
+/** @brief Ends a row of the terminal and takes the cursor back to its first
+ * column, whether or not the terminal turns "\n" into "\r\n" itself
+ * (ONLCR). */
+constexpr std::string_view ROW_END = "\r\n";
 
 /** @brief The keys the line editor reads apart from the text. */
 constexpr char ESCAPE = '\x1b';

@@ -1,6 +1,7 @@
 #include "ChildOutputRelay.hpp"
 #include <array>
 #include <boost/asio/buffer.hpp>
+#include <boost/asio/error.hpp>
 #include <boost/asio/readable_pipe.hpp>
 #include <boost/system/detail/error_code.hpp>
 #include <cstddef>
@@ -40,7 +41,7 @@ void ChildOutputRelay::run() {
   std::array<char, CHILD_OUTPUT_READ_SIZE> buffer{};
   boost::system::error_code error;
   std::size_t count = pipe_.read_some(boost::asio::buffer(buffer), error);
-  while (!error) {
+  while (!error || error == boost::asio::error::interrupted) {
     writeLines(lines_.feed(std::span<const char>{buffer}.first(count)));
     count = pipe_.read_some(boost::asio::buffer(buffer), error);
   }

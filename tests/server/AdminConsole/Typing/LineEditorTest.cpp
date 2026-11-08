@@ -69,7 +69,7 @@ TEST(LineEditor, EndsALineOnNewLine) {
 /**
  * Given "gamx" typed
  * When Delete is pressed
- * Then the line holds "gam", and the terminal is told to erase one character
+ * Then the line holds "gam", and the row of the prompt is drawn again with it
  */
 TEST(LineEditor, ErasesTheLastCharacter) {
   LineEditor editor;
@@ -78,7 +78,7 @@ TEST(LineEditor, ErasesTheLastCharacter) {
   const LineEdit edit = editor.feed(DELETE_KEY);
 
   EXPECT_EQ(editor.typed(), GAM_TYPED);
-  EXPECT_EQ(edit.echo, ERASED_CHARACTER);
+  EXPECT_EQ(edit.echo, REDRAWN_GAM);
 }
 
 /**
@@ -93,6 +93,20 @@ TEST(LineEditor, ErasesAWholeUtf8Character) {
   static_cast<void>(editor.feed(BACKSPACE_KEY));
 
   EXPECT_EQ(editor.typed(), CAFE_WITHOUT_ITS_E);
+}
+
+/**
+ * Given an "e" and a combining acute accent typed, one column on screen
+ * When Backspace is pressed
+ * Then the accent goes, and the row is drawn again with the "e" kept
+ */
+TEST(LineEditor, DrawsTheLineAgainAfterAnErase) {
+  LineEditor editor;
+  static_cast<void>(editor.feed(E_WITH_A_COMBINING_ACUTE));
+
+  const LineEdit edit = editor.feed(BACKSPACE_KEY);
+
+  EXPECT_EQ(edit.echo, REDRAWN_E);
 }
 
 /**
@@ -159,6 +173,22 @@ TEST(LineEditor, RefusesTheByteAfterTheLimit) {
   const LineEdit edit = editor.feed(G_KEY);
 
   EXPECT_EQ(editor.typed().size(), LONGEST_LINE_LENGTH);
+  EXPECT_TRUE(edit.echo.empty());
+}
+
+/**
+ * Given a line one byte short of the longest line
+ * When a character of two bytes is typed
+ * Then the line refuses it whole, and the terminal shows nothing
+ */
+TEST(LineEditor, RefusesACharacterThatWouldPassTheLimit) {
+  LineEditor editor;
+  static_cast<void>(
+      editor.feed(std::string(LONGEST_LINE_LENGTH - 1, TYPED_FILLING)));
+
+  const LineEdit edit = editor.feed(TWO_BYTE_CHARACTER);
+
+  EXPECT_EQ(editor.typed().size(), LONGEST_LINE_LENGTH - 1);
   EXPECT_TRUE(edit.echo.empty());
 }
 

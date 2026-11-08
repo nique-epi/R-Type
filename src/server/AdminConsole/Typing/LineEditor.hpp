@@ -13,11 +13,13 @@ namespace rtype::server {
  * line editing are off (see ITerminal::enterTypingMode()), as the tty console
  * of ioquake3 keeps its field.
  *
- * Text is kept up to MAXIMUM_CONSOLE_LINE_LENGTH bytes; past it a byte is
- * refused and not shown, so a line is never dropped. Enter, '\r' or '\n', the
- * pair "\r\n" counting once, ends the line, even empty, as the line splitter
- * does. Backspace and Delete erase the last character, a whole UTF-8
- * character, shown as one column. An arrow or a function key (ESCAPE, '[' or
+ * Text is kept up to MAXIMUM_CONSOLE_LINE_LENGTH bytes, whole UTF-8
+ * characters only: a character that would pass the limit is refused and not
+ * shown, so a line is never dropped nor cut inside a character. Enter, '\r'
+ * or '\n', the pair "\r\n" counting once, ends the line, even empty, as the
+ * line splitter does. Backspace and Delete erase the last character, a whole
+ * UTF-8 character, and draw the line again, so a combining or wide character
+ * shows as it is kept. An arrow or a function key (ESCAPE, '[' or
  * 'O', then bytes up to a final byte) and the other control characters, Tab
  * and Ctrl+D included, are dropped.
  */
@@ -46,6 +48,7 @@ class LineEditor {
   std::string typed_;
   EscapeState escape_{EscapeState::None};
   bool afterCarriageReturn_{false};
+  bool refusingCharacter_{false};
 };
 
 }  // namespace rtype::server

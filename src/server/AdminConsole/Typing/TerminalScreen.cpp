@@ -11,6 +11,24 @@
 
 namespace rtype::server {
 
+namespace {
+
+/** @returns @p line with ROW_END in place of each end of line it holds, so the
+ * lines of a game relayed at once start at the first column too. */
+std::string rowsOf(std::string_view line) {
+  std::string rows;
+  for (const char character : line) {
+    if (character == LINE_END) {
+      rows += ROW_END;
+    } else {
+      rows += character;
+    }
+  }
+  return rows;
+}
+
+}  // namespace
+
 TerminalScreen::TerminalScreen(ITerminal& terminal) : terminal_(&terminal) {}
 
 void TerminalScreen::open() {
@@ -34,7 +52,7 @@ ConsoleChunk TerminalScreen::finish() {
 void TerminalScreen::writeAbove(std::string_view line) {
   const std::lock_guard<std::mutex> lock(mutex_);
   std::string text{ERASE_ROW};
-  text += line;
+  text += rowsOf(line);
   text += ROW_END;
   text += CONSOLE_PROMPT;
   text += editor_.typed();

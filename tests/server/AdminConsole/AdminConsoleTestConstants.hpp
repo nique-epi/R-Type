@@ -18,16 +18,16 @@ constexpr std::string_view NO_MEASURE_LINE = "games: no measure yet";
 constexpr std::chrono::milliseconds CONSOLE_LOOK_INTERVAL{1};
 
 /** @brief What a console at a terminal shows as it starts: its ready line, a
- * new row, and the prompt "> ". */
+ * new row from its first column ("\r\n"), and the prompt "> ". */
 constexpr std::string_view READY_LINE_AND_PROMPT =
-    "admin console ready: type help to list the commands\n> ";
+    "admin console ready: type help to list the commands\r\n> ";
 
 /** @brief "games" ended by the Enter of a terminal, and its answer written
  * above the prompt: the row erased (VT100 "\r\x1b[K"), the answer, a new row
  * and the prompt. */
 constexpr std::string_view GAMES_ENTERED = "games\r";
 constexpr std::string_view NO_GAME_ABOVE_THE_PROMPT =
-    "\r\x1b[Kno game runs\n> ";
+    "\r\x1b[Kno game runs\r\n> ";
 
 /** @brief "gam" typed at a terminal, never ended. */
 constexpr std::string_view GAM_TYPED = "gam";
@@ -37,4 +37,4 @@ constexpr std::string_view GAM_TYPED = "gam";
 constexpr std::string_view GAME_PROCESS_LINE =
     "[INFO ] [Game] - game 1 started";
 constexpr std::string_view GAME_LINE_ABOVE_GAM =
-    "\r\x1b[K[INFO ] [Game] - game 1 started\n> gam";
+    "\r\x1b[K[INFO ] [Game] - game 1 started\r\n> gam";

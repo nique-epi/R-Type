@@ -68,10 +68,10 @@ void ServerAdminConsoleModule::install(engine::InstallContext& context) {
 }
 
 void ServerAdminConsoleModule::start() {
-  if (terminal_->enterTypingMode()) {
-    showScreen();
-  }
   try {
+    if (terminal_->enterTypingMode()) {
+      showScreen();
+    }
     reader_.emplace(*input_, lineCutter(), lines_);
   } catch (...) {
     hideScreen();
@@ -104,14 +104,15 @@ void ServerAdminConsoleModule::showScreen() {
 }
 
 void ServerAdminConsoleModule::hideScreen() {
-  if (!screen_.has_value()) {
-    return;
+  if (screen_.has_value()) {
+    logging::setStandardErrorWriter({});
+    answers_.showOn(nullptr);
   }
-  logging::setStandardErrorWriter({});
-  answers_.showOn(nullptr);
-  screen_->close();
-  screen_.reset();
   terminal_->leaveTypingMode();
+  if (screen_.has_value()) {
+    screen_->close();
+    screen_.reset();
+  }
 }
 
 ILineCutter& ServerAdminConsoleModule::lineCutter() {

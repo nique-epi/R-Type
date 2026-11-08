@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <memory>
 #include <optional>
+#include <utility>
 #include "SavedTerminalModes.hpp"
 #include "StandardTerminal.hpp"
 
@@ -30,7 +31,18 @@ std::optional<SavedTerminalModes> consoleModes() {
       !consoleModeOf(::GetStdHandle(STD_ERROR_HANDLE)).has_value()) {
     return std::nullopt;
   }
-  return SavedTerminalModes{.input = *input, .output = *output};
+  return SavedTerminalModes{.input = *input,
+                            .output = *output,
+                            .inputCodePage = ::GetConsoleCP(),
+                            .outputCodePage = ::GetConsoleOutputCP()};
+}
+
+/** @brief Makes the console read and write UTF-8, so the line editor erases a
+ * whole character whatever the code page of the console was; a console that
+ * refuses keeps its code page. */
+void readAndWriteUtf8() {
+  static_cast<void>(::SetConsoleCP(CP_UTF8));
+  static_cast<void>(::SetConsoleOutputCP(CP_UTF8));
 }
 
 }  // namespace
@@ -40,6 +52,7 @@ bool StandardTerminal::enterTypingMode() {
   if (!modes.has_value()) {
     return false;
   }
+  auto saved = std::make_unique<SavedTerminalModes>(*modes);
   HANDLE output = ::GetStdHandle(STD_OUTPUT_HANDLE);
   if (::SetConsoleMode(output,
                        modes->output | ENABLE_VIRTUAL_TERMINAL_PROCESSING) ==
@@ -53,7 +66,8 @@ bool StandardTerminal::enterTypingMode() {
     static_cast<void>(::SetConsoleMode(output, modes->output));
     return false;
   }
-  saved_ = std::make_unique<SavedTerminalModes>(*modes);
+  readAndWriteUtf8();
+  saved_ = std::move(saved);
   return true;
 }
 
@@ -65,6 +79,8 @@ void StandardTerminal::leaveTypingMode() {
       ::SetConsoleMode(::GetStdHandle(STD_INPUT_HANDLE), saved_->input));
   static_cast<void>(
       ::SetConsoleMode(::GetStdHandle(STD_OUTPUT_HANDLE), saved_->output));
+  static_cast<void>(::SetConsoleCP(saved_->inputCodePage));
+  static_cast<void>(::SetConsoleOutputCP(saved_->outputCodePage));
   saved_.reset();
 }
 

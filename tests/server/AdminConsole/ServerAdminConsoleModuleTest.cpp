@@ -1,12 +1,17 @@
 #include <gtest/gtest.h>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include "AdminConsoleTestConstants.hpp"
+#include "EngineException.hpp"
 #include "Logger.hpp"
 #include "ServerAdminConsoleModuleFixture.hpp"
 #include "ServerAdminConsoleModuleTestConstants.hpp"
 #include "ServerModuleTestConstants.hpp"
+#include "ThrowingTerminal.hpp"
 
+using rtype::engine::ModuleStartFailedException;
 using rtype::logging::writeStandardErrorLine;
 
 /**
@@ -181,4 +186,20 @@ TEST_F(ServerAdminConsoleModuleFixture, ShowsNoPromptWithoutATerminal) {
   application->stop();
 
   EXPECT_TRUE(terminalWritten().empty());
+}
+
+/**
+ * Given a supervisor whose console runs at a terminal that cannot be written
+ * When it starts
+ * Then the start fails, and the terminal left typing mode
+ */
+TEST_F(ServerAdminConsoleModuleFixture,
+       GivesTheTerminalBackWhenThePromptCannotBeShown) {
+  auto terminal = std::make_unique<ThrowingTerminal>();
+  const ThrowingTerminal& failing = *terminal;
+  const auto application = supervisorOn({}, std::move(terminal));
+
+  EXPECT_THROW(application->start(), ModuleStartFailedException);
+
+  EXPECT_FALSE(failing.inTypingMode());
 }

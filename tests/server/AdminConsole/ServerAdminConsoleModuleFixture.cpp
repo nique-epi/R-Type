@@ -9,6 +9,7 @@
 #include <vector>
 #include "AdminConsoleTestConstants.hpp"
 #include "Application.hpp"
+#include "ITerminal.hpp"
 #include "RecordingConsoleOutput.hpp"
 #include "RecordingTerminal.hpp"
 #include "ScriptedConsoleInput.hpp"
@@ -19,26 +20,27 @@
 std::unique_ptr<rtype::engine::Application>
 ServerAdminConsoleModuleFixture::supervisorTyping(
     std::vector<std::string> chunks) {
-  return supervisorOn(std::move(chunks),
-                      std::make_unique<RecordingTerminal>(false));
+  auto terminal = std::make_unique<RecordingTerminal>(false);
+  terminal_ = terminal.get();
+  return supervisorOn(std::move(chunks), std::move(terminal));
 }
 
 std::unique_ptr<rtype::engine::Application>
 ServerAdminConsoleModuleFixture::supervisorAtATerminal(
     std::vector<std::string> chunks) {
-  return supervisorOn(std::move(chunks),
-                      std::make_unique<RecordingTerminal>(true));
+  auto terminal = std::make_unique<RecordingTerminal>(true);
+  terminal_ = terminal.get();
+  return supervisorOn(std::move(chunks), std::move(terminal));
 }
 
 std::unique_ptr<rtype::engine::Application>
 ServerAdminConsoleModuleFixture::supervisorOn(
     std::vector<std::string> chunks,
-    std::unique_ptr<RecordingTerminal> terminal) {
+    std::unique_ptr<rtype::server::ITerminal> terminal) {
   auto input = std::make_unique<ScriptedConsoleInput>(std::move(chunks), false);
   auto output = std::make_unique<RecordingConsoleOutput>();
   input_ = input.get();
   output_ = output.get();
-  terminal_ = terminal.get();
   return supervisor(
       {}, std::make_unique<rtype::server::ServerAdminConsoleModule>(
               std::move(input), std::move(output), std::move(terminal)));

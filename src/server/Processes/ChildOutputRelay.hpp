@@ -14,7 +14,8 @@ namespace rtype::server {
  * wrote to the terminal itself would cut it.
  *
  * The thread reads until the child closes its end of the pipe, when it ends or
- * is killed, and the relay joins it when destroyed: destroy it once the child
+ * is killed, a read a signal interrupted being tried again, and the relay
+ * joins it when destroyed: destroy it once the child
  * ended or was killed, as BoostChildProcess does. The reads never stop: a full
  * pipe would block a child that writes a lot. The io_context of the pipe must
  * outlive the relay.

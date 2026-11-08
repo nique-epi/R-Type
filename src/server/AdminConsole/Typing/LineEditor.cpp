@@ -1,4 +1,7 @@
 #include "LineEditor.hpp"
+#include <algorithm>
+#include <bit>
+#include <cstddef>
 #include <span>
 #include <string>
 #include <utility>
@@ -23,6 +26,13 @@ bool isText(char byte) {
 bool continuesCharacter(char byte) {
   return (static_cast<unsigned char>(byte) & UTF8_TOP_BITS) ==
          UTF8_CONTINUATION;
+}
+
+/** @returns The bytes of the UTF-8 character @p lead starts: its leading one
+ * bits, 2 to 4 for a lead byte, and 1 for an ASCII byte. */
+std::size_t characterLength(char lead) {
+  return static_cast<std::size_t>(
+      std::max(1, std::countl_one(static_cast<unsigned char>(lead))));
 }
 
 /** @returns Whether @p byte ends the sequence of a key. */
@@ -103,11 +113,17 @@ void LineEditor::erase(LineEdit& edit) {
     typed_.pop_back();
   }
   typed_.pop_back();
-  edit.echo += ERASE_CHARACTER;
+  edit.echo += ERASE_ROW;
+  edit.echo += CONSOLE_PROMPT;
+  edit.echo += typed_;
 }
 
 void LineEditor::keep(char byte, LineEdit& edit) {
-  if (typed_.size() >= MAXIMUM_CONSOLE_LINE_LENGTH) {
+  if (!continuesCharacter(byte)) {
+    refusingCharacter_ =
+        typed_.size() + characterLength(byte) > MAXIMUM_CONSOLE_LINE_LENGTH;
+  }
+  if (refusingCharacter_ || typed_.size() >= MAXIMUM_CONSOLE_LINE_LENGTH) {
     return;
   }
   typed_.push_back(byte);

@@ -22,7 +22,12 @@ struct SavedTerminalModes;
  * On Windows, it turns ENABLE_LINE_INPUT and ENABLE_ECHO_INPUT off on the
  * input, keeping ENABLE_PROCESSED_INPUT for Ctrl+C, and
  * ENABLE_VIRTUAL_TERMINAL_PROCESSING on for the output, which the erase of a
- * row needs. That file is checked by the Windows job of the CI only.
+ * row needs, and makes the console read and write UTF-8 (code page 65001)
+ * until the modes are given back. That file is checked by the Windows job of
+ * the CI only.
+ *
+ * It enters typing mode only when the input, the output and the error are
+ * one terminal (the same device on Linux and macOS).
  *
  * The destructor gives the modes back too. A supervisor that crashes leaves
  * its terminal without echo: `reset` brings it back.

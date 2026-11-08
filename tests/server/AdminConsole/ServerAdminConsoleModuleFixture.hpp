@@ -6,6 +6,7 @@
 #include <string_view>
 #include <vector>
 #include "Application.hpp"
+#include "ITerminal.hpp"
 #include "RecordingConsoleOutput.hpp"
 #include "RecordingTerminal.hpp"
 #include "ScriptedConsoleInput.hpp"
@@ -45,12 +46,13 @@ class ServerAdminConsoleModuleFixture : public SupervisorModulesFixture {
   /** @returns Whether the read of the console was woken by the stop. */
   [[nodiscard]] bool consoleWokeOnStop() const;
 
- private:
-  /** @returns The supervisor whose console hands @p chunks, on @p terminal. */
+  /** @returns The supervisor whose console hands @p chunks, on @p terminal,
+   * which the terminal reads of the fixture do not follow. */
   [[nodiscard]] std::unique_ptr<rtype::engine::Application> supervisorOn(
       std::vector<std::string> chunks,
-      std::unique_ptr<RecordingTerminal> terminal);
+      std::unique_ptr<rtype::server::ITerminal> terminal);
 
+ private:
   /** @brief Runs ticks of @p application until @p done says so, or
    * WAIT_FOR_THREADS passed. */
   static void runUntil(const rtype::engine::Application& application,

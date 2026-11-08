@@ -42,6 +42,21 @@ TEST(TerminalScreen, WritesALineAboveTheTypedText) {
 
 /**
  * Given an open screen
+ * When two lines, one end of line between them, are written above
+ * Then each starts a row from its first column, the prompt under them
+ */
+TEST(TerminalScreen, StartsEachLineAboveOnItsOwnRow) {
+  RecordingTerminal terminal{true};
+  TerminalScreen screen{terminal};
+  screen.open();
+
+  screen.writeAbove(TWO_GAME_LINES);
+
+  EXPECT_TRUE(terminal.written().ends_with(TWO_GAME_ROWS));
+}
+
+/**
+ * Given an open screen
  * When "games" and Enter are typed
  * Then the screen hands the line "games"
  */

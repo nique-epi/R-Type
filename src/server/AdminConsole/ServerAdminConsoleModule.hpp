@@ -75,8 +75,9 @@ class ServerAdminConsoleModule final : public engine::IModule {
   /** @brief Builds the screen, shows it, and routes the journal and the
    * answers to it. */
   void showScreen();
-  /** @brief Undoes showScreen(), and gives the terminal its modes back;
-   * nothing without a screen. */
+  /** @brief Undoes showScreen(), and gives the terminal its modes back,
+   * before it erases the prompt, so a write that fails leaves the terminal
+   * as it found it. */
   void hideScreen();
   /** @returns The screen when there is one, the line splitter otherwise. */
   ILineCutter& lineCutter();

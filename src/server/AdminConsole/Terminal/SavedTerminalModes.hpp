@@ -14,6 +14,8 @@ struct SavedTerminalModes {
 #ifdef _WIN32
   DWORD input{};
   DWORD output{};
+  UINT inputCodePage{};
+  UINT outputCodePage{};
 #else
   termios input{};
 #endif
