@@ -33,12 +33,13 @@ namespace rtype::engine {
     const ResourcePlaces& places, std::span<const std::string> names);
 
 /**
- * @returns The file @p relativeFile of the last of @p contentFolders that
- * holds it, so a resource replaces a file of the assets or of a resource laid
- * before it; the file in the first folder when none holds it, for the error
- * of its reader to name it. @p contentFolders is never empty.
+ * @returns The file @p relativeFile of each of @p contentFolders that holds
+ * it, in the order of the folders, so its reader lays a resource over the
+ * assets and over the resources laid before it; the file in the first folder
+ * alone when none holds it, for the error of its reader to name it.
+ * @p contentFolders is never empty.
  */
-[[nodiscard]] std::filesystem::path topmostContentFile(
+[[nodiscard]] std::vector<std::filesystem::path> contentFilesOf(
     std::span<const std::filesystem::path> contentFolders,
     const std::filesystem::path& relativeFile);
 

@@ -56,15 +56,15 @@ network::Endpoint loopbackEndpoint(std::uint16_t port) {
       .address = std::string{network::LOOPBACK_IPV4_ADDRESS}, .port = port};
 }
 
-/** @returns The names of the difficulties of the waves file of @p settings,
- * read with the entity sheets of its content folders, which it names its
+/** @returns The names of the difficulties of the waves files of @p settings,
+ * read with the entity sheets of its content folders, which they name their
  * enemies among.
  * @throws what sheetTextsInFolders(), EntitySheets::fromTexts() and
- * WaveCatalog::fromFile() throw. */
+ * WaveCatalog::fromFiles() throw. */
 std::vector<std::string> difficultyNamesOf(const GameLaunchSettings& settings) {
   const game::EntitySheets types = game::EntitySheets::fromTexts(
       game::sheetTextsInFolders(settings.contentFolders));
-  return WaveCatalog::fromFile(settings.wavesFile, types).difficulties();
+  return WaveCatalog::fromFiles(settings.wavesFiles, types).difficulties();
 }
 
 /** @returns The database setting, declared in @p configuration. */

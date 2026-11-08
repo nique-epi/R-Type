@@ -99,6 +99,15 @@ StateEncoding stateEncodingOf(const engine::SettingValue& setting) {
                                                     : StateEncoding::Delta;
 }
 
+/** @returns @p paths in the generic form, separated as engine::listText()
+ * separates them, for the journal. */
+std::string pathsText(std::span<const std::filesystem::path> paths) {
+  std::vector<std::string> shown;
+  std::ranges::transform(paths, std::back_inserter(shown),
+                         logging::genericText);
+  return engine::listText(shown);
+}
+
 /**
  * @brief Writes in the journal the content folders the entity sheets were
  * read from, with the count of their types.
@@ -106,21 +115,18 @@ StateEncoding stateEncodingOf(const engine::SettingValue& setting) {
 void logEntitySheets(const logging::Logger& logger,
                      std::span<const std::filesystem::path> folders,
                      const game::EntitySheets& types) {
-  std::vector<std::string> shown;
-  std::ranges::transform(folders, std::back_inserter(shown),
-                         logging::genericText);
-  logger.info("entity sheets of ", engine::listText(shown), ": ",
-              types.all().size(), " types");
+  logger.info("entity sheets of ", pathsText(folders), ": ", types.all().size(),
+              " types");
 }
 
 /**
- * @brief Writes in the journal the waves file at @p file, read as @p catalog,
- * with the count of the difficulties it describes.
+ * @brief Writes in the journal the waves files at @p files, read as
+ * @p catalog, with the count of the difficulties they describe.
  */
-void logWavesFile(const logging::Logger& logger,
-                  const std::filesystem::path& file,
-                  const WaveCatalog& catalog) {
-  logger.info("waves file ", logging::genericText(file), ": ",
+void logWavesFiles(const logging::Logger& logger,
+                   std::span<const std::filesystem::path> files,
+                   const WaveCatalog& catalog) {
+  logger.info("waves files ", pathsText(files), ": ",
               catalog.difficulties().size(), " difficulties");
 }
 
@@ -223,8 +229,9 @@ void ServerGamesModule::start() {
           game::sheetTextsInFolders(settings_.contentFolders)));
   logEntitySheets(logger_, settings_.contentFolders, types);
   runningGame_.keepEntityTypes(types);
-  const WaveCatalog catalog = WaveCatalog::fromFile(settings_.wavesFile, types);
-  logWavesFile(logger_, settings_.wavesFile, catalog);
+  const WaveCatalog catalog =
+      WaveCatalog::fromFiles(settings_.wavesFiles, types);
+  logWavesFiles(logger_, settings_.wavesFiles, catalog);
   const std::optional<std::uint32_t> seed = seedOf(*seedSetting_);
   runningGame_.host(createGame(settingsOf(catalog, types, seed)));
 }

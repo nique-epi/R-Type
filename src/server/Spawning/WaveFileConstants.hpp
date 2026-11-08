@@ -101,6 +101,13 @@ constexpr engine::WholeNumberRange LEVEL_WAVES_RANGE{
     .lowest = 1, .highest = MOST_WAVES_IN_A_LEVEL};
 
 /**
+ * @brief What WaveCatalog::fingerprint() puts between the texts of two waves
+ * files laid one over the other: a NUL, which no TOML text holds, so two
+ * different sets of files never join into the same text.
+ */
+constexpr char WAVE_FILE_SEPARATOR = '\0';
+
+/**
  * @brief The key WaveCatalog::fingerprint() hashes a waves file under. Anyone
  * may know it: the fingerprint tells two files apart, it keeps no secret.
  */

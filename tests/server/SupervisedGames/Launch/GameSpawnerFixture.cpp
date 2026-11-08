@@ -20,7 +20,7 @@ GameSpawnerFixture::GameSpawnerFixture()
                 .folder = FOLDER_FOR_TESTS,
                 .gameLines = {},
                 .forwardedArguments = {},
-                .wavesFile = {},
+                .wavesFiles = {},
                 .contentFolders = {}},
       database_(
           &configuration_.declareText(rtype::engine::TextSettingDefinition{
