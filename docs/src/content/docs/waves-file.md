@@ -7,7 +7,7 @@ sidebar:
 
 The waves file, `assets/waves/waves.toml`, describes the waves of Bydos of each difficulty. This page is for whoever tunes them: it gives the keys, what each one does to a game, how to check a design and how to read the error the server prints, without opening the C++.
 
-Only the server reads the file: the supervisor and each game process, once, when they start, from `waves/waves.toml` in the `assets/` folder next to its executable, or one level above it, where the Visual Studio generator writes `Release/`. The folder the server is started from plays no part. The supervisor reads it for the names of its difficulties, which it accepts in a new game and lists to the master; a game process reads it for the waves of the difficulty of its game. A client never reads it; it only draws the Bydos the server announces. The server reads the [entity sheets](/R-Type/entity-sheets/) first, since the file names its enemies among them. An invalid file stops the supervisor when it starts, before it opens any game. A game is played at the difficulty its creator chose, `normal` (`DEFAULT_DIFFICULTY` in `src/identifiers/GameRuleConstants.hpp`) by default; no client screen lets the player choose another one yet. The name of a difficulty is 1 to 16 bytes of printable UTF-8, since the protocol carries it, and a file holds at most `MAXIMUM_DIFFICULTIES` (16). A difficulty may end its level with a boss, the sheet its `boss` key names. The file cannot describe a scripted list of waves or a background per wave: neither exists yet. How the server runs the waves is in [Server and game](/R-Type/server/#waves-of-bydos-wavedirector).
+Only the server reads the file: the supervisor and each game process, once, when they start, from `waves/waves.toml` in the `assets/` folder next to its executable, or one level above it, where the Visual Studio generator writes `Release/`; a resource may lay a waves file of its own over it (see [Waves of a resource](#waves-of-a-resource)). The folder the server is started from plays no part. The supervisor reads it for the names of its difficulties, which it accepts in a new game and lists to the master; a game process reads it for the waves of the difficulty of its game. A client never reads it; it only draws the Bydos the server announces. The server reads the [entity sheets](/R-Type/entity-sheets/) first, since the file names its enemies among them. An invalid file stops the supervisor when it starts, before it opens any game. A game is played at the difficulty its creator chose, `normal` (`DEFAULT_DIFFICULTY` in `src/identifiers/GameRuleConstants.hpp`) by default; no client screen lets the player choose another one yet. The name of a difficulty is 1 to 16 bytes of printable UTF-8, since the protocol carries it, and a file holds at most `MAXIMUM_DIFFICULTIES` (16). A difficulty may end its level with a boss, the sheet its `boss` key names. The file cannot describe a scripted list of waves or a background per wave: neither exists yet. How the server runs the waves is in [Server and game](/R-Type/server/#waves-of-bydos-wavedirector).
 
 ## A difficulty, key by key
 
@@ -103,13 +103,32 @@ A name of `look_items` is the name of an entity sheet of side `look_item` (see [
 ./r-type_server --seed 42
 ```
 
-Then connect a client. The game process logs, in its journal `r-type_game_<n>.log`, the folder of the entity sheets and their count (`entity sheets /…/assets/entities: 16 types`), then the file it read, by its absolute path (`waves file /…/assets/waves/waves.toml: 3 difficulties`), the difficulty the games play and whether they are vanilla (`games play normal, not vanilla`, since a seed is set), then each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`). The seed fixes the heights of the Bydos, so the same file and the same seed replay the same game.
+Then connect a client. The game process logs, in its journal `r-type_game_<n>.log`, the folder of the entity sheets and their count (`entity sheets /…/assets/entities: 16 types`), then the waves files it read, by their absolute path, the assets first (`waves files /…/assets/waves/waves.toml: 3 difficulties`), the difficulty the games play and whether they are vanilla (`games play normal, not vanilla`, since a seed is set), then each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`). The seed fixes the heights of the Bydos, so the same file and the same seed replay the same game.
+
+## Waves of a resource
+
+A resource started by an `ensure` line may hold its own `waves/waves.toml` (see [Resources](/R-Type/server/#resources-ensure-lines)), which changes only what it names: the server reads the file of the assets, then the file of each resource in the order the resources are laid, and lays each one over the files before it, difficulty by difficulty (`WaveCatalog::fromFiles()`, `src/server/Spawning/`).
+
+- A key the file gives replaces the same key of that difficulty.
+- A key it leaves out keeps the value of the files before it, so a file that only gives `boss` changes the boss and nothing else.
+- A difficulty only it names is added; the files that name it must give every required key between them.
+- A list, `enemies` or `look_items`, is replaced whole, never appended to: give the whole list. `look_items = []` takes the look items away.
+- A key cannot be removed: a resource cannot take the boss away from a difficulty of the assets.
+
+Each file is checked on its own for its keys and the names of its difficulties, so a misspelt key names the file that holds it. The values are checked once the files are laid, each at the file and the line it comes from: a `shortest_spawn_interval_ms` of the assets is refused at its own line when a resource lowers `first_spawn_interval_ms` under it. The files together hold at most `MAXIMUM_DIFFICULTIES` (16) difficulties, and the enemies they name may be the sheets the resources bring.
+
+The waves of `resources/crimson-drifter/`, the example the repository ships, give the enemies of normal alone:
+
+```toml
+[difficulty.normal]
+enemies = ["drifter", "weaver", "crimson_drifter", "voltjelly", "weaver", "reaper", "crimson_drifter"]
+```
+
+With it, normal sends two crimson Drifters in seven Bydos and keeps the curve, the look items and the Bydo Tyrant of the assets; easy and hard stay those of the assets.
 
 ## The shipped file and vanilla games
 
-A resource started by an `ensure` line may hold its own `waves/waves.toml`: the server then reads the waves of the last resource laid that holds one, instead of those of the assets, and the enemies it names may be the sheets the resource brings (see [Resources](/R-Type/server/#resources-ensure-lines)). The file is read with the same rules.
-
-A changed waves file makes the games of the server not vanilla: the server recognizes the shipped file by its fingerprint, SipHash-2-4 of its bytes, so a comment or a line ending counts as a change (see [Vanilla games](/R-Type/server/#vanilla-games-vanillabreaches)). Their scores stay on the leaderboard of that server. `.gitattributes` keeps the file in LF on every checkout, Windows included.
+A changed waves file, or a waves file a resource lays over it, makes the games of the server not vanilla: the server recognizes the shipped file by its fingerprint, SipHash-2-4 of its bytes, so a comment or a line ending counts as a change (see [Vanilla games](/R-Type/server/#vanilla-games-vanillabreaches)). With a resource, the fingerprint is taken over the files joined by a NUL byte (`WAVE_FILE_SEPARATOR`), which no TOML text holds. Their scores stay on the leaderboard of that server. `.gitattributes` keeps the file in LF on every checkout, Windows included.
 
 When the shipped file itself changes, `OFFICIAL_WAVES_FINGERPRINT` in `src/server/ServerConstants.hpp` changes with it: `WaveCatalog.TheShippedFileHasTheOfficialFingerprint` fails until it does, and its failure prints, in decimal, the fingerprint the file now has.
 
