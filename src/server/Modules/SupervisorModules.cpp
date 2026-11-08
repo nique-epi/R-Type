@@ -35,6 +35,7 @@
 #include "ServerAdminConsoleModule.hpp"
 #include "StandardInput.hpp"
 #include "StandardOutput.hpp"
+#include "StandardTerminal.hpp"
 #endif
 
 namespace rtype::server {
@@ -105,7 +106,8 @@ std::vector<std::unique_ptr<engine::IModule>> supervisorModules(
 #endif
 #if RTYPE_MODULE_ADMIN_CONSOLE
   modules.push_back(std::make_unique<ServerAdminConsoleModule>(
-      std::make_unique<StandardInput>(), std::make_unique<StandardOutput>()));
+      std::make_unique<StandardInput>(), std::make_unique<StandardOutput>(),
+      std::make_unique<StandardTerminal>()));
 #endif
   return modules;
 }

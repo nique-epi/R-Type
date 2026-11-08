@@ -6,6 +6,8 @@ add_library(rtype_server_admin_console_constants INTERFACE)
 target_include_directories(rtype_server_admin_console_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(Input)
+add_subdirectory(Terminal)
+add_subdirectory(Typing)
 add_subdirectory(Output)
 add_subdirectory(Commands)
 
@@ -20,8 +22,10 @@ target_link_libraries(rtype_server_admin_console_module
     rtype_server_admin_console_constants
     rtype_server_admin_console_input
     rtype_server_admin_console_output
+    rtype_server_admin_console_typing
   PRIVATE
     rtype_engine_time
+    rtype_logging
     rtype_server_constants
     rtype_server_network_module
     rtype_server_supervised_games_module

@@ -1,0 +1,4 @@
+add_library(rtype_server_admin_console_typing STATIC LineEditor.cpp TerminalScreen.cpp)
+target_include_directories(rtype_server_admin_console_typing PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(rtype_server_admin_console_typing PUBLIC rtype_server_admin_console_constants rtype_server_admin_console_input)
+rtype_enable_warnings(rtype_server_admin_console_typing)
