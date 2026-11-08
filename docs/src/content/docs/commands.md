@@ -30,7 +30,7 @@ set port 4300
 | `module <name> on\|off` | server, client and master | Turns a module of the program on or off before the modules start. |
 | `plugin <name>` | server, client and master | Loads a plugin, a module built as a shared library, before the modules install. |
 | `plugin-folder <folder>` | server, client and master | Sets the folder the `plugin` lines read. |
-| `games`, `players`, `close-game <place>`, `kick <nickname>`, `network`, `help` | the supervisor, while its `admin console` module is on | List the games and their pilots, stop a game, expel a pilot, show the network figures, list the commands (see [Server](/R-Type/server/#administration-console-serveradminconsolemodule)). |
+| `games`, `players`, `close-game <place>`, `kick <nickname>`, `ban <nickname\|address> [<length>]`, `unban <nickname\|address>`, `bans`, `network`, `help` | the supervisor, while its `admin console` module is on | List the games and their pilots, stop a game, expel a pilot, ban or unban a nickname or an address, list the bans, show the network figures, list the commands (see [Server](/R-Type/server/#administration-console-serveradminconsolemodule)). |
 
 No other command exists. A module that registers a command in its `install()` makes it usable in the file with no other change: the commands of the console run from `server.cfg` as they do from the terminal, and write their answer to the standard output. `help` prints the help text the interpreter keeps for each command.
 
@@ -99,10 +99,11 @@ Modules of the supervisor:
 | `network` | `logger` | Owns the UDP socket and the network thread. |
 | `content` | `network` | Serves the content pack over HTTP, on the TCP port of the number of `port`. |
 | `supervised games` | `network` | Starts, follows and stops the game processes. |
-| `supervisor lobby` | `network`, `supervised games` | Sends each player to a game, or starts one. |
+| `bans` | `logger`, `supervised games` | Keeps the bans of the server file and its copy in memory. |
+| `supervisor lobby` | `network`, `supervised games`, `bans` | Sends each player to a game, or starts one; refuses a banned pilot. |
 | `information` | `network`, `supervised games` | Answers the information requests. |
 | `master` | `network`, `supervised games`, `information` | Keeps the master told of the games. |
-| `admin console` | `logger`, `network`, `supervised games` | Reads commands from the terminal of the supervisor; its name holds a space, so the line is `module "admin console" off`. |
+| `admin console` | `logger`, `network`, `supervised games`, `bans` | Reads commands from the terminal of the supervisor; its name holds a space, so the line is `module "admin console" off`. |
 
 Modules of a game process, which every `module` line on another name reaches:
 
@@ -110,9 +111,9 @@ Modules of a game process, which every `module` line on another name reaches:
 |---|---|---|
 | `logger` | nothing | Applies the logging options when it starts; provides the journal a plugin writes to. |
 | `network` | `logger` | Owns the UDP socket and the network thread. |
-| `storage` | `logger`, `network` | Opens the database of the leaderboard. |
+| `storage` | `logger`, `network` | Opens the database of the leaderboard, and reads the bans again every second. |
 | `games` | `network`, `storage` | Hosts the game. |
-| `lobby` | `network`, `games` | Answers the connection requests of the players. |
+| `lobby` | `network`, `games` | Answers the connection requests of the players; refuses and expels the banned ones when `storage` is on. |
 | `metrics` | `games`, `network` | Measures the ticks and writes a report to the journal. |
 | `supervisor link` | `network`, `games` | Reports the game to the supervisor; uses `metrics` when it is on. |
 | `game-statistics` | `logger`, `network`, `games` | A plugin, loaded by `plugin game-statistics`: writes a row per Bydo killed and the total of each game to a CSV file (see [Server](/R-Type/server/#game-statistics-servergamestatisticsmodule)). |

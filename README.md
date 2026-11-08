@@ -86,7 +86,7 @@ Each optional module has a CMake option, on by default. Off, its folder is not c
 | `RTYPE_MODULE_AUDIO` | the sound of the client | the client plays nothing, and `--no-sound` changes nothing |
 | `RTYPE_MODULE_METRICS` | the metrics of the client and of each game process | no report in the journal, and `--traffic-csv` writes no file |
 | `RTYPE_MODULE_MASTER_LINK` | the registration of the server with the master | the server never registers, and `set master-url`, `set master-key` and `set public-address` are refused |
-| `RTYPE_MODULE_ADMIN_CONSOLE` | the administration console of the supervisor | the supervisor reads nothing from its terminal, and `games`, `players`, `close-game`, `kick`, `network` and `help` are unknown commands |
+| `RTYPE_MODULE_ADMIN_CONSOLE` | the administration console of the supervisor | the supervisor reads nothing from its terminal, and `games`, `players`, `close-game`, `kick`, `ban`, `unban`, `bans`, `network` and `help` are unknown commands |
 | `RTYPE_MODULE_CHAT` | the chat of the games | a chat line reaches nobody |
 | `RTYPE_MODULE_PLUGINS` | the loading of plugins | `plugin` and `plugin-folder` are unknown commands |
 | `RTYPE_MODULE_GAME_STATISTICS` | the `game-statistics` plugin; off whenever `RTYPE_MODULE_PLUGINS` is | no `game-statistics` file in `plugins/` |
