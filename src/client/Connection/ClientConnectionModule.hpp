@@ -8,6 +8,7 @@
 #include "IModule.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
+#include "MasterLeaderboard.hpp"
 #include "MasterLink.hpp"
 #include "NetworkConditions.hpp"
 #include "PlayerConnection.hpp"
@@ -24,8 +25,10 @@ namespace rtype::client {
  * It also provides the network::TrafficCounters of its socket, and the lists
  * of the server map: IServerCatalog, the servers the master lists with their
  * ping, and IGameCatalog, the games of one of them, read from the master by a
- * MasterLink of its own and updated in NETWORK_STAGE; and IMasterAddress, the
- * master they are read from, the one the `master-url` setting names.
+ * MasterLink of its own and updated in NETWORK_STAGE; the MasterLeaderboard,
+ * the leaderboard of the master, read by the same MasterLink and updated in
+ * NETWORK_STAGE too; and IMasterAddress, the master they are read from, the
+ * one the `master-url` setting names.
  *
  * Building it reads the content of the assets folder, the client's own, and
  * keeps the packs of the servers it meets in PACK_CACHE_FOLDER_NAME of the
@@ -73,6 +76,7 @@ class ClientConnectionModule final : public engine::IModule {
   /** @brief Built by install(), once master-url is declared. */
   std::unique_ptr<ConfiguredMaster> master_;
   GameCatalog games_;
+  MasterLeaderboard globalLeaderboard_;
   logging::Logger logger_;
 };
 

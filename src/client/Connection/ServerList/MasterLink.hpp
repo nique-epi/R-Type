@@ -6,17 +6,22 @@
 #include <stop_token>
 #include <thread>
 #include "GameListReading.hpp"
+#include "GlobalLeaderboardQuery.hpp"
+#include "GlobalLeaderboardReading.hpp"
+#include "IMasterLeaderboardReads.hpp"
 #include "IMasterReads.hpp"
 #include "LatestValue.hpp"
 #include "MasterAccess.hpp"
 #include "MasterAsks.hpp"
 #include "MasterClient.hpp"
+#include "MasterReadings.hpp"
 #include "ServerListReading.hpp"
 
 namespace rtype::client {
 
 /**
- * @brief The reads of the master on a thread of their own, MasterLink:
+ * @brief The reads of the master on a thread of their own, MasterLink, the
+ * servers and their games, and the leaderboard:
  * MasterClient blocks for as long as HTTP takes, MASTER_TRANSFER_TIMEOUT at
  * most per call, and the frame loop must never wait on it.
  *
@@ -33,7 +38,7 @@ namespace rtype::client {
  * call in progress ends on the master it began with, its reading answering an
  * older ask. The asks, the master and the readings are safe from both threads.
  */
-class MasterLink final : public IMasterReads {
+class MasterLink final : public IMasterReads, public IMasterLeaderboardReads {
  public:
   MasterLink() = default;
   ~MasterLink() override = default;
@@ -58,21 +63,20 @@ class MasterLink final : public IMasterReads {
   std::uint64_t askGames(std::int64_t serverId) override;
   [[nodiscard]] std::optional<ServerListReading> servers() const override;
   [[nodiscard]] std::optional<GameListReading> games() const override;
+  std::uint64_t askLeaderboard(
+      const network::GlobalLeaderboardQuery& query) override;
+  [[nodiscard]] std::optional<GlobalLeaderboardReading> leaderboard()
+      const override;
 
  private:
   /** @brief The loop of MasterLink: waits for a newer ask, serves it with
    * @p client, or with the client of a master retarget() named since. */
   void run(const std::stop_token& stop,
            std::unique_ptr<network::MasterClient> client);
-  /** @brief Serves each kind of @p asks newer than @p served with @p client,
-   * then marks it served. */
-  void serve(network::MasterClient& client, const MasterAsks& asks,
-             MasterAsks& served);
 
   MasterAsks asked_;
   concurrency::LatestValue<MasterAsks> asks_;
-  concurrency::LatestValue<ServerListReading> servers_;
-  concurrency::LatestValue<GameListReading> games_;
+  MasterReadings readings_;
   /** @brief The master the thread reads, newest first. */
   concurrency::LatestValue<network::MasterAccess> access_;
   std::jthread thread_;

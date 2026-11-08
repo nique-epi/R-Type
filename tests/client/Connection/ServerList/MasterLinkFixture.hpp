@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include "CreatedServer.hpp"
+#include "GlobalLeaderboardReading.hpp"
 #include "MasterLink.hpp"
 #include "RunningMaster.hpp"
 #include "ServerListReading.hpp"
@@ -24,6 +25,11 @@ class MasterLinkFixture : public ::testing::Test {
   /** @returns The reading of the ask for servers numbered @p ask, once the
    * link published it within READING_DEADLINE; nothing otherwise. */
   [[nodiscard]] std::optional<ServerListReading> serversSoon(
+      std::uint64_t ask) const;
+
+  /** @returns The reading of the ask for the leaderboard numbered @p ask, once
+   * the link published it within READING_DEADLINE; nothing otherwise. */
+  [[nodiscard]] std::optional<GlobalLeaderboardReading> leaderboardSoon(
       std::uint64_t ask) const;
 
   [[nodiscard]] RunningMaster& master();

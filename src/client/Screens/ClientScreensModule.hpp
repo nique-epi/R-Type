@@ -23,6 +23,7 @@
 #include "IServerTicks.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
+#include "MasterLeaderboard.hpp"
 #include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenRegistry.hpp"
@@ -122,6 +123,7 @@ class ClientScreensModule final : public engine::IModule,
   ShipLookExchange* shipLooks_{nullptr};
   EntityMessageQueue* entityMessages_{nullptr};
   ServerLeaderboard* leaderboard_{nullptr};
+  MasterLeaderboard* globalLeaderboard_{nullptr};
   ChatChannel* chat_{nullptr};
   std::unique_ptr<EntityTypeLooks> entityTypes_;
   const IServerTicks* serverTicks_{nullptr};

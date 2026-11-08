@@ -28,6 +28,7 @@
 #include "IServerTicks.hpp"
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
+#include "MasterLeaderboard.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
@@ -107,6 +108,7 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   shipLooks_ = &context.require<ShipLookExchange>();
   entityMessages_ = &context.require<EntityMessageQueue>();
   leaderboard_ = &context.require<ServerLeaderboard>();
+  globalLeaderboard_ = &context.require<MasterLeaderboard>();
   chat_ = &context.require<ChatChannel>();
   entityTable_ = &context.require<IEntityTypeTable>();
   entityTypes_ = std::make_unique<EntityTypeLooks>(*entityTable_);
@@ -171,6 +173,7 @@ void ClientScreensModule::start() {
           .shipLooks = *shipLooks_,
           .entityMessages = *entityMessages_,
           .leaderboard = *leaderboard_,
+          .globalLeaderboard = *globalLeaderboard_,
           .chat = *chat_,
           .entityTypes = *entityTypes_,
           .serverTicks = *serverTicks_,

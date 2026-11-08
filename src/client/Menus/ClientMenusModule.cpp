@@ -19,6 +19,7 @@
 #include "LeaderboardScreenParts.hpp"
 #include "LeaderboardTab.hpp"
 #include "LocalizedKeyName.hpp"
+#include "MasterLeaderboard.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "ModuleConstants.hpp"
 #include "NewGameDialog.hpp"
@@ -143,9 +144,12 @@ std::unique_ptr<IScreen> buildNewGameScreen(const ScreenContext& context) {
                                      .difficulties = games.difficulties}));
 }
 
-/** @returns The leaderboard, opened on the filter the waiting room calls for.
+/** @returns The leaderboard, opened on the filter the waiting room calls for;
+ * its GLOBAL tab reads the master, with the row of the nickname of the choice.
  */
 std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
+  MasterLeaderboard& global = context.services.globalLeaderboard.get();
+  global.namePlayer(context.serverChoice.get().nickname);
   return std::make_unique<LeaderboardScreen>(
       LeaderboardScreenParts{
           .navigator = context.navigator.get(),
@@ -154,7 +158,8 @@ std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
           .tabs = {LeaderboardTab{
                        .label = SERVER_TAB_LABEL,
                        .source = &context.services.leaderboard.get()},
-                   LeaderboardTab{.label = GLOBAL_TAB_LABEL}},
+                   LeaderboardTab{.label = GLOBAL_TAB_LABEL,
+                                  .source = &global}},
           .choice = openingChoiceOf(
               context.services.waitingRoom.get().lobbyPlayers().size()),
           .playfieldPointAt = playfieldMappingOf(context),

@@ -17,6 +17,7 @@
 #include "IServerCatalog.hpp"
 #include "InstallContext.hpp"
 #include "MasterAccess.hpp"
+#include "MasterLeaderboard.hpp"
 #include "MasterUrlSetting.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConditions.hpp"
@@ -46,6 +47,7 @@ ClientConnectionModule::ClientConnectionModule(
     : connection_(conditions, clientContentPlaces()),
       servers_(masterLink_, connection_.pings()),
       games_(masterLink_),
+      globalLeaderboard_(masterLink_),
       logger_(std::string{CONNECTION_LOGGER_NAME}) {}
 
 std::string ClientConnectionModule::name() const {
@@ -70,10 +72,12 @@ void ClientConnectionModule::install(engine::InstallContext& context) {
   context.provide<IServerCatalog>(servers_);
   context.provide<IMasterAddress>(*master_);
   context.provide<IGameCatalog>(games_);
+  context.provide(globalLeaderboard_);
   context.addWork(NETWORK_STAGE, [this](engine::Duration elapsed) {
     connection_.update(elapsed);
     servers_.update(elapsed);
     games_.update();
+    globalLeaderboard_.update();
   });
 }
 

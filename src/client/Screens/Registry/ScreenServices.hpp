@@ -12,6 +12,7 @@
 #include "IMasterAddress.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
+#include "MasterLeaderboard.hpp"
 #include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
 #include "ServerChoice.hpp"
@@ -49,6 +50,8 @@ struct ScreenServices {
   std::reference_wrapper<ShipLookExchange> shipLooks;
   std::reference_wrapper<EntityMessageQueue> entityMessages;
   std::reference_wrapper<ServerLeaderboard> leaderboard;
+  /** @brief The leaderboard of the master, every server together. */
+  std::reference_wrapper<MasterLeaderboard> globalLeaderboard;
   /** @brief The chat of the session, shown by the waiting room and the
    * game. */
   std::reference_wrapper<ChatChannel> chat;
@@ -60,7 +63,7 @@ struct ScreenServices {
    * one of them, for the server map. */
   std::reference_wrapper<IServerCatalog> serverCatalog;
   std::reference_wrapper<IGameCatalog> gameCatalog;
-  /** @brief The master the server map reads, which its chip MASTER names. */
+  /** @brief The master the server map reads, written on the map. */
   std::reference_wrapper<const IMasterAddress> masterAddress;
   /** @brief The server, the nickname and the game the first connection
    * screen starts with. */

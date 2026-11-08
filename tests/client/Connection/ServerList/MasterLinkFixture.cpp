@@ -5,6 +5,7 @@
 #include <string>
 #include <thread>
 #include "CreatedServer.hpp"
+#include "GlobalLeaderboardReading.hpp"
 #include "MasterAccess.hpp"
 #include "MasterClient.hpp"
 #include "MasterLink.hpp"
@@ -48,6 +49,19 @@ std::optional<ServerListReading> MasterLinkFixture::serversSoon(
   const auto deadline = std::chrono::steady_clock::now() + READING_DEADLINE;
   while (std::chrono::steady_clock::now() < deadline) {
     const std::optional<ServerListReading> reading = link_.servers();
+    if (reading.has_value() && reading->ask == ask) {
+      return reading;
+    }
+    std::this_thread::sleep_for(POLL_STEP);
+  }
+  return std::nullopt;
+}
+
+std::optional<GlobalLeaderboardReading> MasterLinkFixture::leaderboardSoon(
+    std::uint64_t ask) const {
+  const auto deadline = std::chrono::steady_clock::now() + READING_DEADLINE;
+  while (std::chrono::steady_clock::now() < deadline) {
+    const std::optional<GlobalLeaderboardReading> reading = link_.leaderboard();
     if (reading.has_value() && reading->ask == ask) {
       return reading;
     }
