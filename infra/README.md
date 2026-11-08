@@ -4,8 +4,8 @@ This folder puts the master (`r-type_server --mode master`) on a small AWS machi
 
 | Path | What it is |
 |---|---|
-| `terraform/` | the machine, its address, its network rule and the role the deployments use, described with Terraform |
-| `master/deploy.sh` | the script that installs a release on the machine and goes back when the master does not answer |
+| `terraform/` | the machine, its address, its network rules and the role the deployments use, described with Terraform |
+| `master/deploy.sh` | the script that installs a release on the machine, goes back when the master does not answer, and puts Caddy in front of it for HTTPS |
 | `../.github/workflows/deploy-master.yaml` | the workflow that runs the script, on every release or by hand |
 | `../.github/workflows/infra.yaml` | the check of these files on a pull request |
 
@@ -14,12 +14,14 @@ Nothing here runs by itself the first time: a member of the team sets it up once
 ## What you get
 
 - One `t3.medium` instance (x86, 2 vCPU, 4 GiB of memory, Ubuntu 24.04, 8 GiB disk) with an Elastic IP that does not change, about 37 USD a month (an estimate from public prices, not measured). Its CPU runs on credits in "standard" mode: it is slowed down when the credits are gone and never billed more.
-- One open port, 8080, the HTTP API of the master. There is no SSH and no key pair: the machine is reached through AWS Systems Manager (SSM).
+- Two open ports: 443, the HTTPS API of the master through Caddy, and 80, which only serves the certificate challenges of Let's Encrypt and sends the rest to HTTPS. The master listens on 8080, which no rule opens: only Caddy, on the machine, reaches it. There is no SSH and no key pair: the machine is reached through AWS Systems Manager (SSM).
+- A certificate of Let's Encrypt for the domain of the master, which Caddy gets at the first deployment and renews by itself.
 - A deployment on every release (`v*` tag), after a person approves it in GitHub. No AWS key is stored in the repository or in GitHub: the workflow gets a short-lived token from GitHub (OpenID Connect) and trades it for a role.
 
 ## What you need
 
 - An AWS account, and the AWS CLI logged in to it (`aws sts get-caller-identity` answers).
+- A domain name whose DNS you can change, for the master (`master_domain`, such as `master.example.org`). Let's Encrypt gives no certificate for a bare IP address.
 - Terraform 1.10 or later (`terraform version`).
 - The GitHub CLI logged in to the repository with the right to write its variables (`gh auth status`), or the same rights in the web interface.
 - The right to create an environment in the repository settings.
@@ -46,11 +48,13 @@ The bucket keeps the Terraform state, so every member of the team can apply from
 
 ```bash
 terraform init -backend-config="bucket=rtype-tfstate-<suffix>" -backend-config="region=eu-west-1"
-terraform plan
-terraform apply
+terraform plan -var master_domain=<domain of the master>
+terraform apply -var master_domain=<domain of the master>
 ```
 
-Read the plan before the `apply`: it must only create resources (11 of them, plus the reads of the default network and of the Ubuntu image), never destroy one. Terraform creates the instance, its address, its network rule, the role of the instance, the identity provider of GitHub and the role of the deployments.
+The domain can also go in a `terraform.tfvars` file next to the `.tf` files (`master_domain = "master.example.org"`), so it is not typed each time. Read the plan before the `apply`: it must only create resources (12 of them, plus the reads of the default network and of the Ubuntu image), never destroy one. Terraform creates the instance, its address, its network rules, the role of the instance, the identity provider of GitHub and the role of the deployments.
+
+On an infrastructure applied before HTTPS, the plan replaces the rule of port 8080 by the rules of ports 80 and 443: one resource destroyed, two created. That rule is the only one it may destroy.
 
 An AWS account has one identity provider per URL. If the account already has the one of GitHub (`token.actions.githubusercontent.com`), the `apply` fails; import it instead of creating it:
 
@@ -59,7 +63,17 @@ terraform import aws_iam_openid_connect_provider.github \
   arn:aws:iam::<account id>:oidc-provider/token.actions.githubusercontent.com
 ```
 
-The Elastic IP cannot be destroyed (`prevent_destroy`): the game servers, the client and the web site all hold its address. To delete it on purpose, remove that block first.
+The Elastic IP cannot be destroyed (`prevent_destroy`): the A record of the domain points at it. To delete it on purpose, remove that block first.
+
+### 2b. The A record of the domain
+
+At the DNS provider of the domain, create an `A` record for `master_domain` pointing at `terraform output -raw master_public_ip`. Let's Encrypt checks that the domain reaches the machine before it signs the certificate, so the first deployment fails until the record answers:
+
+```bash
+dig +short <domain of the master>
+```
+
+must print the address of the output.
 
 ### 3. The variables of the repository
 
@@ -70,7 +84,7 @@ Create them in Settings, Secrets and variables, Actions, tab **Variables** (not 
 | `AWS_REGION` | `eu-west-1`, the `region` of `terraform/variables.tf` | `deploy-master.yaml`, to log in to AWS | the job stops at the login step |
 | `AWS_DEPLOY_ROLE_ARN` | `terraform output -raw deploy_role_arn` | `deploy-master.yaml`, the role to assume | the job stops at the login step |
 | `MASTER_INSTANCE_ID` | `terraform output -raw instance_id` | `deploy-master.yaml`, the only instance the script is sent to | the job stops when it sends the script |
-| `MASTER_URL` | `terraform output -raw master_url` (`http://<Elastic IP>:8080`) | `deploy-master.yaml`, the check from outside after a deployment | the check fails, although the master may be running |
+| `MASTER_URL` | `terraform output -raw master_url` (`https://<master_domain>`, with no port and no path) | `deploy-master.yaml`: the domain Caddy answers for, and the check from outside after a deployment | the job stops before it sends the script |
 
 ```bash
 gh variable set AWS_REGION --body eu-west-1
@@ -99,7 +113,7 @@ aws ssm describe-instance-information
 curl "$(terraform output -raw master_url)/api/health"
 ```
 
-The first command must list the instance as `Online`; the second must answer `{"version":"0.1.0"}`. After that, every release is deployed on its own, after the approval.
+The first command must list the instance as `Online`; the second must answer `{"version":"0.1.0"}`, over HTTPS. The release deployed must be one whose package speaks HTTPS to the master; the script only installs Caddy, whatever the release. After that, every release is deployed on its own, after the approval.
 
 ### 6. The address of the master, where it is read
 
@@ -111,7 +125,7 @@ Give the `master_url` output to everything that talks to the master:
 | The game servers | `master-url` in `server.cfg` | put the same address |
 | The client | `master-url`, or the master chosen in the game | put the same address |
 
-If the Elastic IP is ever replaced, change these three places and `MASTER_URL` of the repository together.
+The players and the hosts need a release of the game that speaks HTTPS: an older client or game server refuses an `https://` address. If the Elastic IP is ever replaced, only the A record changes: everything else holds the domain.
 
 ## Day to day
 
@@ -132,12 +146,14 @@ If the Elastic IP is ever replaced, change these three places and `MASTER_URL` o
 | The instance is not listed by `describe-instance-information` | the SSM agent is not running on the image, or the instance has no outbound access; look at the system log of the instance in the console |
 | The script prints "the master of X does not answer" and "went back to ..." | the new release does not start: read its log with `journalctl -u rtype-master` |
 | The script fails on the download | the release `v<X>` does not exist, or has no `R-Type-server-<X>-Linux.tar.gz` |
-| The check from outside fails but the script succeeded | `MASTER_URL` is wrong, or port 8080 is blocked between the runner and the machine |
+| The job stops at "Read the domain of the master" | `MASTER_URL` is not `https://<domain>`: no `http://`, no port, no path |
+| The script fails at `caddy validate` or Caddy does not start | read `journalctl -u caddy` on the machine |
+| The check from outside fails but the script succeeded | the A record does not point at the Elastic IP yet, or Let's Encrypt refused the certificate: `journalctl -u caddy` says which; ports 80 and 443 must be open |
 | Going back does not restore the master | the new master migrated the database, and the older one cannot read the newer schema |
 
 ## Limits
 
-- **The API is not encrypted.** The key of a game server travels in an `Authorization: Bearer` header over plain HTTP, because the HTTP library is built without TLS. HTTPS needs a change of the build, a certificate and a domain name.
+- **HTTPS ends at Caddy.** Between Caddy and the master, on the machine itself, requests go in plain HTTP to 127.0.0.1:8080. The master reads the address of each client in the `X-Forwarded-For` header Caddy writes, and trusts that header only from 127.0.0.1.
 - **One machine, one database, no backup.** A restart cuts the master for a few seconds; the games in progress go on, since no datagram of a game goes through the master.
 - **The role of the deployments runs any script on the machine**, because SSM's `AWS-RunShellScript` does. The role reaches only that machine, and only from the approved environment.
 - **The first deployment has not run yet**, and the return to the previous release when the master does not answer has not been tested end to end.

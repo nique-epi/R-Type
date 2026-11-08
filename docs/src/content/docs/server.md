@@ -334,7 +334,7 @@ A line of the games is not run by the supervisor, in none of the three passes of
 | `set input-delay <ticks>` | For the games: the ticks every player's input is held before it is applied, from 0 to 30. Default: 3. |
 | `set start-at-boss 0\|1` | For the games: 1 starts every game at its boss, without the waves, with ships that never die, and makes the games not vanilla; 0 plays the waves. Default: 0. `--boss` sets it to 1. |
 | `set database <file>` | The SQLite file the leaderboard of this server is kept in, on a local disk; a name with a space goes in quotes. Default: empty, which keeps it in `r-type_server_<port>.db` next to the executable, with the port of `set port`. Declared by the supervised games module, which starts every game with this file. |
-| `set master-url <url>` | The master the supervisor lists this server on, `http://<host>[:<port>]`. Default: empty, and the server runs alone (see [Link with the master](#link-with-the-master-servermastermodule)). |
+| `set master-url <url>` | The master the supervisor lists this server on, `http(s)://<host>[:<port>]`. Default: empty, and the server runs alone (see [Link with the master](#link-with-the-master-servermastermodule)). |
 | `set master-key <key>` | The key the master gave when the host created this server on it. Default: empty, and the server runs alone. Never committed: only `server.cfg.example` is, with an empty key. |
 | `set public-address <address>` | The IPv4 address players reach this server at, which the master lists. Default: empty, and the master lists the address the registration comes from, `127.0.0.1` when the master runs on the same machine. A host name is refused, and so are the addresses no player reaches the server at: `0.0.0.0`, a loopback `127.x.x.x` and `255.255.255.255`. |
 | `set server-name <name>` | The name players read in the list of servers and in the answer to an information request, 1 to 32 bytes of printable UTF-8. Declared by the information module. Default: `R-Type server`. |
@@ -1477,7 +1477,7 @@ The master probes the UDP port of the supervisor after each heartbeat (see [Mast
 
 The supervised games module tells the job when the games change. At each tick, once it read the statuses and the exits of the games, its `SupervisedGamesWatch` builds the list of the games from the newest `GameStatus` of each, numbered by place (`supervisedHostedGames()`), and the measures (`supervisedMeasures()`), and publishes each in `LatestHostedGames` and `LatestServerMeasures`, `LatestValue`s the job waits on, only when it changed. The job never reads a game itself.
 
-- Without `master-url` or `master-key` the server runs alone, as the journal says, and MasterLink does not start. A url that is not `http://<host>[:<port>]`, an `https://` one included, is logged as an error and the server runs alone too: `MasterClient` speaks plain HTTP only, so the key crosses the network in clear and the master stays on a local network for now.
+- Without `master-url` or `master-key` the server runs alone, as the journal says, and MasterLink does not start. A url that is not `http(s)://<host>[:<port>]` is logged as an error and the server runs alone too. Over `http://` the key crosses the network in clear, so a master on the Internet is named with `https://`.
 - A port chosen by the system (`-p 0`) is not told to the master, since the module cannot know it.
 - `module master off` turns the link off, and the results wait in the file until it is on again. The admin orders, the global bans and a last heartbeat when the server stops are not sent yet.
 

@@ -68,7 +68,7 @@ The storage starts before the HTTP API, so a database the master cannot open sto
 
 ## The HTTP API: `MasterHttpServer`
 
-`MasterHttpServer` (`src/master/Http/`) holds a `network::HttpServer` (`src/network/Http/`, see [Network](/R-Type/network/#http-server-httpserver)), which wraps cpp-httplib and which the supervisor also uses to serve its content pack; no file of the master includes cpp-httplib. Its routes sit under `/api`, answer `GET`, `POST` or `PUT`, and answer `application/json`; each is declared once, with its method and path, in `MasterRouteConstants.hpp` (`src/network/Master/Routes/`), which the master and `MasterClient` both read; they run on the threads of cpp-httplib, at least 8 of them, and must not block for long. A route reads a `network::ApiRequest`: the body, the key of an `Authorization: Bearer <key>` header (RFC 6750, the scheme in any case) and the address of the TCP peer. It answers a `network::ApiResponse`: a status, a body, the `detail` of a refusal, one header, such as `Location`, and the media type of the body, `application/json` unless the route sets another.
+`MasterHttpServer` (`src/master/Http/`) holds a `network::HttpServer` (`src/network/Http/`, see [Network](/R-Type/network/#http-server-httpserver)), which wraps cpp-httplib and which the supervisor also uses to serve its content pack; no file of the master includes cpp-httplib. Its routes sit under `/api`, answer `GET`, `POST` or `PUT`, and answer `application/json`; each is declared once, with its method and path, in `MasterRouteConstants.hpp` (`src/network/Master/Routes/`), which the master and `MasterClient` both read; they run on the threads of cpp-httplib, at least 8 of them, and must not block for long. A route reads a `network::ApiRequest`: the body, the key of an `Authorization: Bearer <key>` header (RFC 6750, the scheme in any case) and the address of the client. It answers a `network::ApiResponse`: a status, a body, the `detail` of a refusal, one header, such as `Location`, and the media type of the body, `application/json` unless the route sets another.
 
 `GET /api/health` answers 200 with the version of the master, `MASTER_VERSION`, the version of `project()` in the root `CMakeLists.txt`:
 
@@ -77,11 +77,11 @@ The storage starts before the HTTP API, so a database the master cannot open sto
 ```
 
 - **Errors:** an answer of 400 or more without a body gets a problem document of RFC 9457, `application/problem+json`, whose `title` is the phrase of its status, with the `detail` of the route when it gives one: `{"status":404,"title":"Not Found"}` for a path no route answers.
-- **The address of the peer** is the one of the TCP connection, never one an `X-Forwarded-For` header names: no proxy is trusted.
+- **The address of the client** is the one of the TCP connection, except for a request from `127.0.0.1`, the reverse proxy on the machine: its client is the last address of its `X-Forwarded-For` header, the one the proxy saw (`clientAddressOf()`, `src/network/Http/Server/`). A client that reaches the master from elsewhere cannot name another address, and Caddy drops the `X-Forwarded-For` a client sends before it writes its own. The supervisor serves its content pack with the same server, and reads the TCP peer only.
 - **A route that throws** answers 500, and its reason goes to the journal only, never to the client.
 - **A body over 64 KiB** (`MAX_REQUEST_BODY_BYTES`) sent to a route answers 413 without being kept whole; cpp-httplib would keep up to 100 MiB. A path no route answers gets 404 without its body being read.
 - **One master per port:** by default cpp-httplib sets `SO_REUSEPORT`, which lets a second program bind the port of the first with no error. The master sets `SO_REUSEADDR` instead (`SO_EXCLUSIVEADDRUSE` on Windows), so a second master on the same port stops at its start, with an error naming the port.
-- **No encryption:** the master listens in plain HTTP on every IPv4 interface (`ANY_IPV4_ADDRESS`), for a local network. On the Internet, a reverse proxy such as Caddy or nginx in front of it must add HTTPS.
+- **No encryption of its own:** the master listens in plain HTTP on every IPv4 interface (`ANY_IPV4_ADDRESS`), for a local network. On the Internet, Caddy in front of it answers HTTPS, as the deployment on AWS does (see [Deploying the master](/R-Type/deploy-master/)).
 
 ## The web site
 
@@ -333,7 +333,7 @@ The key of a result is checked by the `ServersService` the servers module provid
 
 ```cpp
 rtype::network::MasterClient master{rtype::network::MasterAccess{
-    .url = "http://master.example.org:8080", .key = masterKey}};
+    .url = "https://master.example.org", .key = masterKey}};
 master.registerServer(registration);
 master.sendHeartbeat(heartbeat);
 master.sendResult(gameId, finishedGame);  // PUT /api/servers/me/results/{gameId}
@@ -346,7 +346,7 @@ rtype::network::GameListing listing = master.listGames(serverId);
 
 - **Every call waits for its answer**, `MASTER_CONNECTION_TIMEOUT` (5 s) to connect, then `MASTER_TRANSFER_TIMEOUT` (5 s) for each read and write, so it is made away from the game loop. Two threads never call the same client together.
 - **An error status** throws `MasterRefusedException`: `status()` and the `detail` of the problem document. **No answer** throws `MasterUnreachableException`.
-- **Plain HTTP only:** cpp-httplib is built without TLS, so an `https://` url throws `InvalidMasterUrlException`, and the key crosses the network in clear. The master and its game servers must stay on a local network until the client speaks HTTPS.
+- **HTTP or HTTPS:** cpp-httplib is built with OpenSSL, so the url is `http://` or `https://`; any other scheme, or a port outside 1 to 65535, throws `InvalidMasterUrlException`. Over HTTPS, the certificate of the master must be signed, for its host, by a root the system trusts (the Keychain on macOS, the store of Windows, `/etc/ssl` on Linux); an `http://` url sends the key in clear.
 
 ## Adding a route
 
