@@ -670,25 +670,13 @@ TEST(ConnectionRefused, DecodesTheRefusalsOfTheRulesOfANewGame) {
 }
 
 /**
- * Given the payload 09
- * When it is decoded
- * Then it gives Banned, the refusal of a pilot the host banned
- */
-TEST(ConnectionRefused, DecodesTheRefusalOfABan) {
-  const auto banned = byteSequence({0x09});
-
-  EXPECT_EQ(decodeMessage<ConnectionRefused>(banned).reason,
-            RefusalReason::Banned);
-}
-
-/**
- * Given the payloads 00 and 10, just outside the reasons of the protocol page
+ * Given the payloads 00 and 09, just outside the reasons of the protocol page
  * When each is decoded
  * Then each is refused
  */
 TEST(ConnectionRefused, RefusesToReadAReasonOutsideTheList) {
   const auto belowTheFirst = byteSequence({0x00});
-  const auto aboveTheLast = byteSequence({0x0A});
+  const auto aboveTheLast = byteSequence({0x09});
 
   EXPECT_THROW((void)decodeMessage<ConnectionRefused>(belowTheFirst),
                InvalidFieldValueException);

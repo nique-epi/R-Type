@@ -17,15 +17,13 @@ TEST(Expulsion, EncodesTheReason) {
 }
 
 /**
- * Given the payloads 01 and 02
- * When each is decoded
- * Then they give an expulsion by the host and a ban
+ * Given the payload 01
+ * When it is decoded
+ * Then it is an expulsion by the host
  */
-TEST(Expulsion, DecodesBothReasonsOfTheProtocolPage) {
+TEST(Expulsion, DecodesTheReasonOfTheProtocolPage) {
   EXPECT_EQ(decodeMessage<Expulsion>(byteSequence({0x01})).reason,
             ExpulsionReason::ByTheHost);
-  EXPECT_EQ(decodeMessage<Expulsion>(byteSequence({0x02})).reason,
-            ExpulsionReason::Banned);
 }
 
 /**
@@ -40,13 +38,13 @@ TEST(Expulsion, RefusesTheReasonBelowTheFirst) {
 }
 
 /**
- * Given the reason 3, just above the last of the protocol page
+ * Given the reason 2, just above the last of the protocol page
  * When it is decoded
  * Then it is refused
  */
 TEST(Expulsion, RefusesTheReasonAboveTheLast) {
   EXPECT_THROW(
-      static_cast<void>(decodeMessage<Expulsion>(byteSequence({0x03}))),
+      static_cast<void>(decodeMessage<Expulsion>(byteSequence({0x02}))),
       InvalidFieldValueException);
 }
 

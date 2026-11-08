@@ -19,7 +19,6 @@
 #include "Logger.hpp"
 #include "LoggingConstants.hpp"
 #include "NetworkConstants.hpp"
-#include "ServerBanBookModule.hpp"
 #include "ServerContentModule.hpp"
 #include "ServerInformationModule.hpp"
 #include "ServerLoggerModule.hpp"
@@ -98,7 +97,6 @@ std::vector<std::unique_ptr<engine::IModule>> supervisorModules(
       gameLaunchSettings(launchOptions, std::move(gameLines), contentFolders),
       std::make_unique<BoostProcessLauncher>(),
       [](engine::Duration pause) { std::this_thread::sleep_for(pause); }));
-  modules.push_back(std::make_unique<ServerBanBookModule>());
   modules.push_back(std::make_unique<ServerSupervisorLobbyModule>());
   modules.push_back(std::make_unique<ServerInformationModule>());
 #if RTYPE_MODULE_MASTER_LINK

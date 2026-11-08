@@ -28,8 +28,6 @@ enum class RefusalReason : std::uint8_t {
   /** @brief The rules of a NewGame give each player fewer lives than the
    * server allows, or more. */
   LivesOutOfRange = 8,
-  /** @brief The host banned the nickname or the address of the player. */
-  Banned = 9,
 };
 
 /**

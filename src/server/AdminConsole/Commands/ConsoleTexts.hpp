@@ -7,8 +7,6 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include "Ban.hpp"
-#include "BanTarget.hpp"
 #include "ServerMeasures.hpp"
 #include "SupervisedGame.hpp"
 #include "TrafficTotals.hpp"
@@ -37,23 +35,6 @@ namespace rtype::server {
  * @p nickname. */
 [[nodiscard]] std::string kickLineOf(const SupervisedGame& game,
                                      std::string_view nickname);
-
-/** @returns "nickname <text>" or "address <text>": how the console names
- * @p target. */
-[[nodiscard]] std::string banTargetText(const BanTarget& target);
-
-/** @returns @p length rounded up to the minute, as the days, hours and
- * minutes of it that are not zero: "30 min", "2 h", "1 h 59 min", "7 d". */
-[[nodiscard]] std::string lengthText(std::chrono::seconds length);
-
-/** @returns The line ban writes once it banned: "<target> banned for
- * <length>", or "<target> banned for good". */
-[[nodiscard]] std::string banLineOf(const Ban& ban);
-
-/** @returns The line bans writes for @p ban, in force at @p now: "<target>,
- * <time left> left", or "<target>, for good". */
-[[nodiscard]] std::string standingBanLineOf(const Ban& ban,
-                                            std::chrono::sys_seconds now);
 
 /**
  * @returns What crossed the socket of the supervisor over @p elapsed (see

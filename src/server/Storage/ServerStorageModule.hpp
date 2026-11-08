@@ -4,7 +4,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "BanWatch.hpp"
 #include "DatabaseLocation.hpp"
 #include "IModule.hpp"
 #include "InstallContext.hpp"
@@ -16,8 +15,7 @@ namespace rtype::server {
 /**
  * @brief The module that keeps what the games leave: it opens the database of
  * the server when it starts, finishes what waits and closes it when it stops,
- * and provides IResultsArchive. It also reads the bans of that file again
- * every second (see BanWatch), and provides them as LatestBans.
+ * and provides IResultsArchive.
  *
  * install() declares the `database` setting. While it is empty, the file is
  * `r-type_server_<port>.db` in the default folder, the port being the one the
@@ -39,17 +37,15 @@ class ServerStorageModule final : public engine::IModule {
   [[nodiscard]] std::vector<std::string> dependencies() const override;
 
   /**
-   * @brief Declares the `database` setting, requires the IListeningPort, and
-   * provides the IResultsArchive and the LatestBans; opens nothing.
+   * @brief Declares the `database` setting, requires the IListeningPort and
+   * provides the IResultsArchive; opens nothing.
    */
   void install(engine::InstallContext& context) override;
 
   /**
-   * @brief Opens the database, starts the storage thread, reads the bans and
-   * starts the thread that reads them again.
+   * @brief Opens the database and starts the storage thread.
    * @throws storage::StorageException when the file cannot be opened, which
-   * stops the start of the server with an error naming the file; the storage
-   * thread is stopped first when only the bans failed.
+   * stops the start of the server with an error naming the file.
    */
   void start() override;
 
@@ -60,7 +56,6 @@ class ServerStorageModule final : public engine::IModule {
   std::unique_ptr<DatabaseLocation> location_;
   logging::Logger logger_;
   ResultsArchive archive_;
-  BanWatch banWatch_;
 };
 
 }  // namespace rtype::server

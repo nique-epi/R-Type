@@ -13,16 +13,13 @@ namespace rtype::client {
 namespace {
 
 /** @returns Why the session of @p ending ended, as the dialog says it: the
- * server shut down, the host expelled or banned the player, or the server went
- * silent. */
+ * server shut down, the host expelled the player, or the server went silent. */
 const char* lossMessageOf(ConnectionPhase ending) {
   switch (ending) {
     case ConnectionPhase::Closed:
       return CLOSED_SERVER_MESSAGE;
     case ConnectionPhase::Expelled:
       return EXPELLED_MESSAGE;
-    case ConnectionPhase::Banned:
-      return BANNED_MESSAGE;
     case ConnectionPhase::Idle:
     case ConnectionPhase::Connecting:
     case ConnectionPhase::Accepted:

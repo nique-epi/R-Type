@@ -2,7 +2,6 @@
 
 #include <chrono>
 #include <cstddef>
-#include <cstdint>
 #include <string_view>
 
 namespace rtype::server {
@@ -99,38 +98,5 @@ constexpr std::string_view KICK_COMMAND_NAME = "kick";
 
 /** @brief The argument of kick, as its help and its refusal show it. */
 constexpr std::string_view KICK_ARGUMENTS = "<nickname>";
-
-/** @brief The names of the commands of the bans, and their arguments as their
- * help and their refusals show them. */
-constexpr std::string_view BAN_COMMAND_NAME = "ban";
-constexpr std::string_view BAN_ARGUMENTS = "<nickname|address> [<length>]";
-constexpr std::string_view UNBAN_COMMAND_NAME = "unban";
-constexpr std::string_view UNBAN_ARGUMENTS = "<nickname|address>";
-constexpr std::string_view BANS_COMMAND_NAME = "bans";
-
-/** @brief What bans writes when no ban is in force. */
-constexpr std::string_view NO_BAN_TEXT = "no ban";
-
-/** @brief How the console names the target of a ban. */
-constexpr std::string_view NICKNAME_TARGET_WORD = "nickname";
-constexpr std::string_view ADDRESS_TARGET_WORD = "address";
-
-/** @brief The letters a length of ban ends with, and what each stands for: 30m,
- * 2h, 7d. */
-constexpr char MINUTE_LETTER = 'm';
-constexpr char HOUR_LETTER = 'h';
-constexpr char DAY_LETTER = 'd';
-constexpr std::chrono::seconds BAN_MINUTE = std::chrono::minutes{1};
-constexpr std::chrono::seconds BAN_HOUR = std::chrono::hours{1};
-constexpr std::chrono::seconds BAN_DAY = std::chrono::days{1};
-
-/** @brief The largest count of a length, before its letter: 9999 days are
- * about 27 years, far from the limits of std::chrono::sys_seconds. */
-constexpr std::uint32_t MAXIMUM_BAN_COUNT = 9999;
-
-/** @brief How the console writes the days, hours and minutes of a length. */
-constexpr std::string_view DAYS_UNIT_TEXT = " d";
-constexpr std::string_view HOURS_UNIT_TEXT = " h";
-constexpr std::string_view MINUTES_UNIT_TEXT = " min";
 
 }  // namespace rtype::server

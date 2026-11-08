@@ -1,12 +1,6 @@
 #include <gtest/gtest.h>
 #include <cstddef>
-#include <filesystem>
-#include <optional>
 #include <string>
-#include "BanFixtures.hpp"
-#include "BanKind.hpp"
-#include "BanTestConstants.hpp"
-#include "BansDatabase.hpp"
 #include "ConnectionRedirect.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
@@ -30,13 +24,9 @@ using rtype::network::GameStatusState;
 using rtype::network::IncomingDatagram;
 using rtype::network::NEW_GAME_CHOICE;
 using rtype::network::RefusalReason;
-using rtype::server::BanKind;
-using rtype::server::BansDatabase;
 using rtype::server::DIFFICULTY_OPTION;
 using rtype::server::FRIENDLY_FIRE_OPTION;
 using rtype::server::LIVES_OPTION;
-using rtype::server::testing::banOf;
-using rtype::server::testing::LONG_AGO;
 using rtype::server::testing::onlyMessageIn;
 using rtype::server::testing::sentTo;
 
@@ -320,40 +310,4 @@ TEST_F(ServerSupervisedGamesFixture, StartsAnyGameWithTheDefaultRules) {
   ASSERT_EQ(launcher().commands().size(), 1U);
   EXPECT_EQ(argumentAfter(launcher().commands().front(), DIFFICULTY_OPTION),
             SHIPPED_DEFAULT_DIFFICULTY);
-}
-
-/**
- * Given a ban for good of the address of the players, in the server file
- * before the supervisor starts
- * When a player of that address asks for a place, then sends its cookie back
- * Then it gets a challenge first, then ConnectionRefused Banned, and no game
- * starts
- */
-TEST_F(ServerSupervisedGamesFixture, RefusesABannedPilotAfterItsCookie) {
-  BansDatabase{gameConfigurationFile().parent_path() / SERVER_FILE_OF_PORT_4242}
-      .save(banOf(BanKind::Address, SUPERVISED_PLAYER_ADDRESS, std::nullopt));
-  startSupervisor();
-
-  askForAPlaceAs(0);
-
-  const auto answers = sentTo(network().sender().sent(), supervisedPlayer(0));
-  EXPECT_EQ(onlyMessageIn<ConnectionRefused>(answers.back()).reason,
-            RefusalReason::Banned);
-  EXPECT_TRUE(launcher().commands().empty());
-}
-
-/**
- * Given a ban of the address of the players that ended long ago, in the
- * server file before the supervisor starts
- * When a player of that address asks for a place with its cookie
- * Then a game starts for it
- */
-TEST_F(ServerSupervisedGamesFixture, StartsAGameForAPilotWhoseBanEnded) {
-  BansDatabase{gameConfigurationFile().parent_path() / SERVER_FILE_OF_PORT_4242}
-      .save(banOf(BanKind::Address, SUPERVISED_PLAYER_ADDRESS, LONG_AGO));
-  startSupervisor();
-
-  askForAPlaceAs(0);
-
-  EXPECT_EQ(launcher().commands().size(), 1U);
 }

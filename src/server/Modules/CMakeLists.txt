@@ -8,7 +8,6 @@ target_link_libraries(rtype_server_modules
     rtype_engine_commands
     rtype_engine_resources
     rtype_logging
-    rtype_server_ban_book_module
     rtype_server_games_module
     rtype_server_content_module
     rtype_server_information_module
