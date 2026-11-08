@@ -1,4 +1,5 @@
 #include "LocalContentReading.hpp"
+#include <array>
 #include <cstddef>
 #include <filesystem>
 #include <vector>
@@ -13,8 +14,9 @@
 namespace rtype::client {
 
 LocalContent localContentOf(const std::filesystem::path& assetFolder) {
+  const std::array<std::filesystem::path, 1> contentFolders{assetFolder};
   const std::vector<identifiers::ContentFile> files =
-      game::contentFilesIn(assetFolder);
+      game::contentFilesIn(contentFolders);
   const std::vector<std::byte> pack = network::encodeContentPack(files);
   const std::vector<game::SheetText> sheets =
       game::sheetTextsOf(files, assetFolder);

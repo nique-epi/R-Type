@@ -60,7 +60,7 @@ void ServerSupervisedGamesFixture::startSupervisor(
               .forwardedArguments = {},
               .wavesFile = std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} /
                            rtype::server::WAVE_FILE_IN_ASSETS,
-              .entitySheetsFolder = rtype::game::testing::shippedSheetFolder()},
+              .contentFolders = {rtype::game::testing::shippedAssetFolder()}},
           std::move(launcher), [](rtype::engine::Duration) {}));
   modules.push_back(std::make_unique<rtype::server::ServerBanBookModule>());
   modules.push_back(

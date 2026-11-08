@@ -21,7 +21,7 @@ GameSpawnerFixture::GameSpawnerFixture()
                 .gameLines = {},
                 .forwardedArguments = {},
                 .wavesFile = {},
-                .entitySheetsFolder = {}},
+                .contentFolders = {}},
       database_(
           &configuration_.declareText(rtype::engine::TextSettingDefinition{
               .name = std::string{rtype::server::DATABASE_SETTING_NAME},

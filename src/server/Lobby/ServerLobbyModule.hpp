@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -34,7 +35,7 @@ namespace rtype::server {
  * answered in a tick is refused by the state the game just reached. The
  * acceptor needs the roster of the game, which exists only once the games
  * module started, so start() builds it. Every acceptance announces the
- * content pack of the assets folder, read once while it installs, served by
+ * content pack of the content folders, read once while it installs, served by
  * the supervisor on the TCP port it is built with.
  *
  * It keeps the banned pilots out with the LatestBans of the storage module,
@@ -46,15 +47,18 @@ class ServerLobbyModule final : public engine::IModule,
                                 public engine::IOptionalDependencies {
  public:
   /** @param contentPort The TCP port the supervisor serves the content pack
-   * on: the number of its UDP port. */
-  explicit ServerLobbyModule(std::uint16_t contentPort);
+   * on: the number of its UDP port.
+   * @param contentFolders The folders the pack is made of, the assets first
+   * then each resource started (see engine::contentFoldersOf()). */
+  ServerLobbyModule(std::uint16_t contentPort,
+                    std::vector<std::filesystem::path> contentFolders);
 
   [[nodiscard]] std::string name() const override;
   [[nodiscard]] std::vector<std::string> dependencies() const override;
   [[nodiscard]] std::vector<std::string> optionalDependencies() const override;
 
   /**
-   * @brief Reads the content of the assets folder into the announcement.
+   * @brief Reads the content of the content folders into the announcement.
    * @throws MissingServiceException when no module provided the games, the
    * sender, the admission or the datagrams of the tick, and what
    * contentAnnouncementOf() throws.
@@ -77,6 +81,7 @@ class ServerLobbyModule final : public engine::IModule,
 
   engine::SystemClock clock_;
   std::uint16_t contentPort_;
+  std::vector<std::filesystem::path> contentFolders_;
   network::ContentAnnouncement content_;
   RunningGame* runningGame_{nullptr};
   IDatagramSender* sender_{nullptr};

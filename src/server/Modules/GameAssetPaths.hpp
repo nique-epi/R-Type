@@ -1,15 +1,14 @@
 #pragma once
 
 #include <filesystem>
+#include <span>
 
 namespace rtype::server {
 
-/** @returns The waves file the games play, WAVE_FILE_IN_ASSETS in the assets
- * folder locateAssetFolder() finds next to the executable. */
-[[nodiscard]] std::filesystem::path wavesFileInAssets();
-
-/** @returns The folder of the entity sheets the games are made from,
- * ENTITY_SHEET_FOLDER_IN_ASSETS in the same assets folder. */
-[[nodiscard]] std::filesystem::path entitySheetsFolderInAssets();
+/** @returns The waves file the games play: WAVE_FILE_IN_ASSETS of the last of
+ * @p contentFolders that holds one (see engine::topmostContentFile()), so a
+ * resource replaces the waves of the assets. */
+[[nodiscard]] std::filesystem::path wavesFileOf(
+    std::span<const std::filesystem::path> contentFolders);
 
 }  // namespace rtype::server

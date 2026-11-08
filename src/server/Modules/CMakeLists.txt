@@ -6,6 +6,7 @@ target_link_libraries(rtype_server_modules
   PUBLIC
     rtype_engine_application
     rtype_engine_commands
+    rtype_engine_resources
     rtype_logging
     rtype_server_ban_book_module
     rtype_server_games_module
@@ -23,7 +24,6 @@ target_link_libraries(rtype_server_modules
   PRIVATE
     rtype_engine_paths
     rtype_server_processes
-    rtype_game_entity_types
     rtype_server_constants
 )
 

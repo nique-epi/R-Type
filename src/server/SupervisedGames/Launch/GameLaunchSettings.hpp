@@ -29,9 +29,11 @@ struct GameLaunchSettings {
    * when it starts, for the names of the difficulties its games may be played
    * at. */
   std::filesystem::path wavesFile;
-  /** @brief The folder of the entity sheets the games are made from, which
-   * the waves file names its enemies among. */
-  std::filesystem::path entitySheetsFolder;
+  /** @brief The content folders the games are made from, the assets first
+   * then each resource their `ensure` lines start (see
+   * engine::contentFoldersOf()): the waves file names its enemies among their
+   * entity sheets. */
+  std::vector<std::filesystem::path> contentFolders;
   /** @brief The file given to the supervisor after `--traffic-csv`, which
    * names the traffic file of each game; nothing: the games write none. */
   std::optional<std::filesystem::path> trafficCsvFile = std::nullopt;

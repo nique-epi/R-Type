@@ -24,7 +24,6 @@ target_link_libraries(rtype_server_lobby_module
     rtype_server_sessions_roster
     rtype_server_sessions_tracking
   PRIVATE
-    rtype_engine_paths
     rtype_network_connection_challenge
     rtype_network_datagram_codec
     rtype_network_exceptions

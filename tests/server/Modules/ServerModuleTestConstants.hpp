@@ -46,8 +46,14 @@ constexpr std::uint64_t PLAYER_TOKEN_BASE = 0x1000;
 /** @brief A waves file that is not there. */
 constexpr const char* MISSING_WAVES_FILE = "no/such/folder/waves.toml";
 
-/** @brief A folder of entity sheets that is not there. */
-constexpr const char* MISSING_ENTITY_SHEETS_FOLDER = "no/such/folder/entities";
+/** @brief A content folder that is not there. */
+constexpr const char* MISSING_CONTENT_FOLDER = "no/such/folder";
+
+/** @brief The example resource the repository ships beside its assets, from
+ * the assets folder, and the waves file it brings in place of theirs. */
+constexpr const char* EXAMPLE_RESOURCE_FROM_THE_ASSETS =
+    "../resources/crimson-drifter";
+constexpr const char* WAVES_OF_THE_EXAMPLE_RESOURCE = "waves/waves.toml";
 
 /** @brief Lines that set the rules of the game: the difficulty "hard", five
  * lives, friendly fire on; and a difficulty the shipped waves file has no
