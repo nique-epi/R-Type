@@ -8,12 +8,15 @@
 #include <string>
 #include <vector>
 #include "BackgroundColorConstants.hpp"
+#include "GameRules.hpp"
+#include "GameRulesTestConstants.hpp"
 #include "GameScreenIdConstants.hpp"
 #include "HangarScreenIdConstants.hpp"
 #include "HelpWalkthroughConstants.hpp"
 #include "HelpWalkthroughTestConstants.hpp"
 #include "KeyPress.hpp"
 #include "LobbyAfterGameFixture.hpp"
+#include "LobbyRulesFixture.hpp"
 #include "LobbyScreen.hpp"
 #include "LobbyScreenFixture.hpp"
 #include "LobbyScreenFixtures.hpp"
@@ -55,9 +58,15 @@ using rtype::client::testing::OWN_BAY_MIDDLE;
 using rtype::client::testing::OWN_NICKNAME;
 using rtype::client::testing::OWN_NUMBER;
 using rtype::client::testing::READY_KEY;
+using rtype::client::testing::RULES_FRIENDLY_FIRE_WORDS;
+using rtype::client::testing::RULES_LINE_TOP;
 using rtype::client::testing::THIRD_BAY_MIDDLE;
 using rtype::client::testing::THIRD_BAY_NICKNAME;
 using rtype::client::testing::WEARS_TOP_HAT;
+using rtype::network::GameRules;
+using rtype::testing::CHOSEN_DIFFICULTY;
+using rtype::testing::CHOSEN_LIVES;
+using rtype::testing::HARD_RULES_LINE;
 using ::testing::Contains;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
@@ -593,4 +602,38 @@ TEST_F(LobbyScreenFixture, EnterSendsTheLineAndPressesNoBar) {
 
   EXPECT_THAT(chat().sent(), ElementsAre(std::string{CHAT_LINE}));
   EXPECT_THAT(readyRequests(), IsEmpty());
+}
+
+/**
+ * Given a waiting room for a game played hard, with five lives and friendly
+ * fire on
+ * When a frame goes by
+ * Then the room writes those rules on the row of the heading, their baseline
+ * on its baseline
+ */
+TEST_F(LobbyRulesFixture, TheRulesStandOnTheRowOfTheHeading) {
+  open(GameRules{.difficulty = std::string(CHOSEN_DIFFICULTY),
+                 .lives = CHOSEN_LIVES,
+                 .friendlyFire = true});
+
+  const RecordedWriting* rules =
+      writingOf(canvas(), std::string(HARD_RULES_LINE));
+  ASSERT_NE(rules, nullptr);
+  EXPECT_EQ(rules->anchor.y, RULES_LINE_TOP);
+}
+
+/**
+ * Given a waiting room for a game named at launch, whose rules the client
+ * does not know
+ * When a frame goes by
+ * Then the room writes no rules, rather than rules it would guess
+ */
+TEST_F(LobbyRulesFixture, AnUnknownGameShowsNoRules) {
+  open(std::nullopt);
+
+  EXPECT_TRUE(std::ranges::none_of(
+      canvas().writings, [](const RecordedWriting& writing) noexcept {
+        return writing.text.find(RULES_FRIENDLY_FIRE_WORDS) !=
+               std::string::npos;
+      }));
 }

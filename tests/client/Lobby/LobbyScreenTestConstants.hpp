@@ -11,6 +11,12 @@ namespace rtype::client::testing {
 
 /** @brief The local player, and another one in the third bay. */
 constexpr std::uint8_t OWN_NUMBER = 1;
+
+/** @brief The words every rules line holds, and the row the line stands on:
+ * the heading at SAFE_MARGIN 24, its baseline 8 down, the baseline of the
+ * small font 7 down, so 25. */
+constexpr std::string_view RULES_FRIENDLY_FIRE_WORDS = "FRIENDLY FIRE";
+constexpr int RULES_LINE_TOP = 25;
 constexpr std::uint8_t OTHER_NUMBER = 3;
 constexpr const char* OWN_NICKNAME = "ACE";
 constexpr const char* OTHER_NICKNAME = "CAPTAIN_STARDUST";
