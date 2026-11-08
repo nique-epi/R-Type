@@ -4,6 +4,7 @@ target_include_directories(rtype_client_sector_map_interfaces INTERFACE ${CMAKE_
 
 target_link_libraries(rtype_client_sector_map_interfaces
   INTERFACE
+    rtype_client_sprites
     rtype_client_widgets
 )
 

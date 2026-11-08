@@ -26,11 +26,11 @@ target_link_libraries(rtype_client_menus_server_browser
   PRIVATE
     rtype_client_button
     rtype_client_cut_corner_box
+    rtype_client_entity_sprites
     rtype_client_ink_tag
     rtype_client_interface_pixel
     rtype_client_label_placement
     rtype_client_menu_builder
-    rtype_client_pixel_circle
     rtype_client_ringed_planet
     rtype_client_sector_layout
     rtype_client_sector_map_painting
