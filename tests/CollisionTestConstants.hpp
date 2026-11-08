@@ -53,3 +53,9 @@ constexpr float EDGE_OFFSET = 5.0F;
  * each other, on one axis.
  */
 constexpr float FAR_DISTANCE = 100.0F;
+
+/**
+ * @brief How far to the right of its Position a moved square box is centered:
+ * three sides, so it is apart from a square on that Position.
+ */
+constexpr float MOVED_BOX_OFFSET_X = 30.0F;

@@ -107,6 +107,13 @@ constexpr std::string_view AWKWARD_NICKNAME_LINE =
 constexpr std::string_view ASSIGNMENT_ARGUMENT = "nickname=ACE";
 
 /**
+ * @brief The value of `--set` that names the address of the server, as `-h`
+ * does, without making PLAY join it.
+ */
+constexpr std::string_view ADDRESS_ASSIGNMENT_ARGUMENT =
+    "server-address=192.168.1.20";
+
+/**
  * @brief Values of the set option that are refused.
  */
 constexpr std::string_view ASSIGNMENT_WITHOUT_MARK = "nickname";

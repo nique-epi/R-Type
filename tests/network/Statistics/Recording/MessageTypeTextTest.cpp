@@ -58,6 +58,7 @@ TEST(MessageTypeText, EveryLaterMessageHasItsName) {
   EXPECT_EQ(textOf(MessageType::GameStatusAcknowledged),
             "GameStatusAcknowledged");
   EXPECT_EQ(textOf(MessageType::MasterProbe), "MasterProbe");
+  EXPECT_EQ(textOf(MessageType::BossStatus), "BossStatus");
   EXPECT_EQ(textOf(MessageType::ServerInformationRequest),
             "ServerInformationRequest");
   EXPECT_EQ(textOf(MessageType::ServerInformation), "ServerInformation");

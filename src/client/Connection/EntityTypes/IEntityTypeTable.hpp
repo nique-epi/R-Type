@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "EntityAppearances.hpp"
 #include "NumberedEntityType.hpp"
+#include "ShipGun.hpp"
 
 namespace rtype::client {
 
@@ -30,6 +31,13 @@ class IEntityTypeTable {
    * once, never keep the reference past the session.
    */
   [[nodiscard]] virtual const EntityAppearances& appearances() const = 0;
+
+  /**
+   * @returns The gun of the ships of the content of the session, read from
+   * its sheets (game::shipGunOrNoneOf()); one that predicts nothing when
+   * they name behaviours this client does not know.
+   */
+  [[nodiscard]] virtual game::ShipGun shipGun() const = 0;
 };
 
 }  // namespace rtype::client

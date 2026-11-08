@@ -78,5 +78,11 @@ constexpr std::string_view NO_LIFE_LEFT_FINISH_REASON =
     "no player has a life left";
 constexpr std::string_view LAST_WAVE_OVER_FINISH_REASON =
     "the last wave is over";
+constexpr std::string_view BOSS_DEFEATED_FINISH_REASON = "the boss is defeated";
+
+/** @brief In a game started at its boss, the ticks of invulnerability each
+ * ship is kept at, at every tick: more than the one tick LifeKeeper takes
+ * off, so the ship never loses it. */
+constexpr std::size_t SHIELDED_SHIP_TICKS = 2;
 
 }  // namespace rtype::server

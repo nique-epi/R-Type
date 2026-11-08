@@ -22,6 +22,8 @@ struct HostedRules {
   /** @brief The rules of the game: its lives and its friendly fire count;
    * every difficulty of the shipped waves file is vanilla. */
   network::GameRules gameRules{network::defaultGameRules()};
+  /** @brief Whether every game starts at its boss (`--boss`). */
+  bool startsAtBoss{false};
 };
 
 }  // namespace rtype::server

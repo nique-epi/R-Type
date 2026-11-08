@@ -99,6 +99,7 @@ class LifeKeeper {
   game::World& world_;
   PlayerRoster& roster_;
   std::function<void(ConnectedPlayer&)> respawn_;
+  bool shipsNeverDie_;
   engine::SubscriptionHandle contactSubscription_;
   engine::SubscriptionHandle hitSubscription_;
   logging::Logger logger_;

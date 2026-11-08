@@ -2,6 +2,7 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "InputKeeper.hpp"
+#include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "SessionsFixtures.hpp"
 #include "SessionsTestConstants.hpp"
@@ -9,6 +10,7 @@
 namespace rtype::server {
 
 using testing::addPlayer;
+using testing::CLIENT_SHOWN_TICK;
 using testing::FOURTH_ACTIONS;
 using testing::ignoreInput;
 using testing::inputNumbered;
@@ -93,6 +95,51 @@ TEST(InputKeeper, IgnoresAnInputNumberedLikeTheNewest) {
                      inputNumbered(SOME_INPUT_NUMBER, OTHER_ACTIONS));
 
   EXPECT_EQ(player.newestInputNumber, SOME_INPUT_NUMBER);
+}
+
+/**
+ * Given a player who sent no input yet
+ * When an input arrives whose client showed tick 300
+ * Then the game is shown that input with tick 300, the tick its missiles are
+ * tested against
+ */
+TEST(InputKeeper, ShowsTheGameTheTickItsClientShowed) {
+  PlayerRoster roster;
+  addPlayer(roster);
+  std::vector<ShownInput> shown;
+  InputKeeper keeper(roster, recorderOf(shown));
+  network::PlayerInput message =
+      inputRepeating(SOME_INPUT_NUMBER, SOME_ACTIONS, {});
+  message.shownTick = CLIENT_SHOWN_TICK;
+
+  keeper.keepNewerOf(originOf(0), message);
+
+  ASSERT_EQ(shown.size(), 1U);
+  EXPECT_EQ(shown.front().input.shownTick, CLIENT_SHOWN_TICK);
+}
+
+/**
+ * Given a player whose newest input is numbered 100
+ * When input 102 arrives, repeating input 101, its client showing tick 300
+ * Then the game is shown input 101 with tick 300 too: the newest tick its
+ * client sent with it
+ */
+TEST(InputKeeper, ShowsARecoveredInputTheTickOfItsMessage) {
+  PlayerRoster roster;
+  addPlayer(roster);
+  std::vector<ShownInput> shown;
+  InputKeeper keeper(roster, recorderOf(shown));
+  keeper.keepIfNewer(originOf(0),
+                     inputNumbered(SOME_INPUT_NUMBER, SOME_ACTIONS));
+  network::PlayerInput message =
+      inputRepeating(SECOND_NEWER_INPUT_NUMBER, THIRD_ACTIONS, {OTHER_ACTIONS});
+  message.shownTick = CLIENT_SHOWN_TICK;
+
+  keeper.keepNewerOf(originOf(0), message);
+
+  ASSERT_EQ(shown.size(), 3U);
+  EXPECT_EQ(shown[1].input.inputNumber, NEWER_INPUT_NUMBER);
+  EXPECT_EQ(shown[1].input.shownTick, CLIENT_SHOWN_TICK);
 }
 
 /**

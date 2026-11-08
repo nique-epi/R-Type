@@ -8,6 +8,7 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "Entity.hpp"
+#include "EntitySheets.hpp"
 #include "EntityType.hpp"
 #include "EntityTypesTestConstants.hpp"
 #include "GameEnded.hpp"
@@ -36,10 +37,12 @@ namespace rtype::server::testing {
 GameFlowFixture::GameFlowFixture() : GameFlowFixture(testWavePlan()) {}
 
 GameFlowFixture::GameFlowFixture(WavePlan waves)
-    : GameFlowFixture(
-          GameSettings{.seed = SOME_SEED,
-                       .waves = std::move(waves),
-                       .types = game::testing::shippedEntitySheets()}) {}
+    : GameFlowFixture(std::move(waves), game::testing::shippedEntitySheets()) {}
+
+GameFlowFixture::GameFlowFixture(WavePlan waves,
+                                 const game::EntitySheets& types)
+    : GameFlowFixture(GameSettings{
+          .seed = SOME_SEED, .waves = std::move(waves), .types = types}) {}
 
 GameFlowFixture::GameFlowFixture(GameSettings settings)
     : readyKeeper_(roster_, [] { return true; }),

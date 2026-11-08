@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "Endpoint.hpp"
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "WholeNumberText.hpp"
@@ -54,6 +55,24 @@ std::string ipv4AddressFromText(std::string_view text) {
     throw InvalidIpv4AddressException(std::string(text));
   }
   return std::string(text);
+}
+
+std::string endpointText(const Endpoint& endpoint) {
+  return endpoint.address + ENDPOINT_PORT_SEPARATOR +
+         std::to_string(endpoint.port);
+}
+
+std::optional<Endpoint> endpointFromText(std::string_view text) {
+  const std::size_t separator = text.rfind(ENDPOINT_PORT_SEPARATOR);
+  if (separator == std::string_view::npos) {
+    return std::nullopt;
+  }
+  try {
+    return Endpoint{.address = ipv4AddressFromText(text.substr(0, separator)),
+                    .port = portFromText(text.substr(separator + 1))};
+  } catch (const NetworkException&) {
+    return std::nullopt;
+  }
 }
 
 }  // namespace rtype::network

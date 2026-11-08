@@ -12,6 +12,7 @@ target_link_libraries(rtype_client_settings_storage
   PRIVATE
     SFML::Window
     rtype_client_input_keys
+    rtype_client_settings_definitions
 )
 
 rtype_enable_warnings(rtype_client_settings_storage)

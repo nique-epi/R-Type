@@ -40,6 +40,9 @@ constexpr double BEFORE_EVERY_SAMPLE_TICK = 0.0;
 /** @brief Where the second of the five samples lies: the first is forgotten. */
 constexpr float SECOND_SAMPLE_X = 2.0F * 10.0F;
 constexpr float UNITS_PER_SAMPLE_TICK = 10.0F;
+/** @brief The tick of the oldest of the five samples kept: tick 1 is
+ * forgotten. */
+constexpr std::uint32_t OLDEST_KEPT_TICK = 2;
 
 static_assert(HISTORY_SAMPLES == 4,
               "OnlyTheNewestSamplesAreKept records one sample more than are "

@@ -4,6 +4,8 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
+#include <string>
+#include "FixedMasterAddress.hpp"
 #include "RecordingGameCatalog.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -12,6 +14,7 @@
 #include "ServerChoice.hpp"
 #include "ServerListSnapshot.hpp"
 #include "ServerMapScreen.hpp"
+#include "ServerMapScreenTestConstants.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
@@ -45,6 +48,7 @@ class ServerMapScreenFixture : public ::testing::Test {
   RecordingServerCatalog servers_;
   RecordingGameCatalog games_;
   ServerChoice choice_;
+  FixedMasterAddress master_{std::string{MAP_MASTER_URL}};
   InterfaceCanvasRecord painting_;
   std::unique_ptr<ServerMapScreen> screen_;
 };

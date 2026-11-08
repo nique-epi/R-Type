@@ -27,4 +27,16 @@ constexpr std::string_view NO_MASTER_PROBE_DROP_REASON =
 constexpr std::string_view WRONG_PROBE_SECRET_DROP_REASON =
     "its probe carries another secret than the one this server registered with";
 
+/** @brief The addresses public-address refuses, since no player reaches this
+ * server at them: the start of every loopback address (127.0.0.0/8), and the
+ * broadcast address. network::ANY_IPV4_ADDRESS is refused too. */
+constexpr std::string_view LOOPBACK_IPV4_PREFIX = "127.";
+constexpr std::string_view BROADCAST_IPV4_ADDRESS = "255.255.255.255";
+
+/** @brief Why public-address refuses one of those addresses, after the
+ * address. */
+constexpr std::string_view UNREACHABLE_PUBLIC_ADDRESS_REASON =
+    " is no address a player reaches this server at; leave public-address "
+    "empty to let the master take the address it is called from";
+
 }  // namespace rtype::server

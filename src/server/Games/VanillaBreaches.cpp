@@ -27,6 +27,9 @@ std::vector<std::string_view> vanillaBreaches(const HostedRules& rules) {
   if (rules.gameRules.friendlyFire) {
     breaches.push_back(FRIENDLY_FIRE_BREACH);
   }
+  if (rules.startsAtBoss) {
+    breaches.push_back(STARTS_AT_BOSS_BREACH);
+  }
   return breaches;
 }
 

@@ -41,9 +41,15 @@ constexpr int MUSIC_DEFAULT = 70;
 constexpr int MUSIC_ONE_STEP_UP = 75;
 constexpr int QUIET_MUSIC = 10;
 
-/** @brief The four tabs, the longest holding eight rows. */
+/** @brief The five tabs, the longest holding eight rows. */
 constexpr std::size_t ROWS_IN_THE_LONGEST_TAB = 8;
-constexpr int TABS = 4;
+constexpr int TABS = 5;
+
+/** @brief The tabs to move by from SOUND to reach CHAT, and two labels of
+ * its rows. */
+constexpr int CHAT_TAB_PRESSES = 4;
+constexpr std::string_view OPEN_CHAT_LABEL_TEXT = "OPEN CHAT";
+constexpr std::string_view LINE_WIDTH_LABEL_TEXT = "LINE WIDTH";
 
 /** @brief SAVED shows for a second; NOT SAVED is still there ten seconds
  * after a failed save. */

@@ -61,6 +61,15 @@ class TooManyDifficultiesException : public ServerException {
                                std::size_t maximum);
 };
 
+/** @brief A difficulty names as its boss a sheet that is no boss. */
+class UnknownBossException : public ServerException {
+ public:
+  /** @param known The bosses the server knows, in the message. */
+  UnknownBossException(const engine::DataFilePlace& place,
+                       const std::string& boss,
+                       const std::vector<std::string>& known);
+};
+
 /** @brief The waves file describes no difficulty of the name asked for. */
 class UnknownDifficultyException : public ServerException {
  public:

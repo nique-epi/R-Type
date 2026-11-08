@@ -39,6 +39,13 @@ TooManyDifficultiesException::TooManyDifficultiesException(
                       ": more than " + std::to_string(maximum) +
                       " difficulties") {}
 
+UnknownBossException::UnknownBossException(
+    const engine::DataFilePlace& place, const std::string& boss,
+    const std::vector<std::string>& known)
+    : ServerException(engine::placeText(place) + ": " + place.key +
+                      ": unknown boss \"" + boss +
+                      "\"; known: " + engine::listText(known)) {}
+
 UnknownDifficultyException::UnknownDifficultyException(
     const std::string& difficulty, const std::vector<std::string>& known)
     : ServerException(

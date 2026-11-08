@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -14,6 +15,7 @@
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "GameLaunchSettings.hpp"
+#include "GameRules.hpp"
 #include "GameStatus.hpp"
 #include "IModule.hpp"
 #include "IncomingDatagram.hpp"

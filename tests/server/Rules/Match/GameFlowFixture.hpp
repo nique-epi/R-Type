@@ -6,11 +6,13 @@
 #include <initializer_list>
 #include <vector>
 #include "ConnectedPlayer.hpp"
+#include "EntitySheets.hpp"
 #include "EventBus.hpp"
 #include "GameContext.hpp"
 #include "GameEnded.hpp"
 #include "GameFlow.hpp"
 #include "GameReplication.hpp"
+#include "GameSettings.hpp"
 #include "GameStateChanged.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PlayerRoster.hpp"
@@ -34,6 +36,9 @@ class GameFlowFixture : public ::testing::Test {
 
   /** @brief A game flow whose Bydos come in @p waves. */
   explicit GameFlowFixture(WavePlan waves);
+  /** @brief A game flow whose Bydos come in @p waves, of the sheets @p types,
+   * which must outlive the fixture. */
+  GameFlowFixture(WavePlan waves, const game::EntitySheets& types);
 
   /** @brief A game flow set up with @p settings. */
   explicit GameFlowFixture(GameSettings settings);

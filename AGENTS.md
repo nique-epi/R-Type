@@ -75,6 +75,7 @@ Paths below are relative to `.claude/rules/`.
 - `architecture/architecture-hpp-declarations-cpp-definitions.md`
 - `architecture/architecture-pure-virtual-interfaces.md`
 - `architecture/fix-architecture-a-class-the-tests-build-opens-no-opengl-context.md`
+- `architecture/fix-architecture-a-component-is-added-after-its-query-returns.md`
 - `architecture/fix-architecture-a-destructor-calls-nothing-that-may-throw.md`
 - `architecture/fix-architecture-a-function-does-one-kind-of-step.md`
 - `architecture/fix-architecture-a-module-declares-the-modules-it-reads.md`
@@ -137,13 +138,17 @@ Paths below are relative to `.claude/rules/`.
 **Reasoning — `fix/reasoning/`**
 - `fix/reasoning/fix-reasoning-a-detour-comes-back-to-where-it-started.md`
 - `fix/reasoning/fix-reasoning-a-guard-after-the-write-is-only-an-alarm.md`
+- `fix/reasoning/fix-reasoning-a-library-may-fail-without-throwing.md`
+- `fix/reasoning/fix-reasoning-a-second-connection-of-a-test-waits-like-the-first.md`
 - `fix/reasoning/fix-reasoning-a-pointer-is-read-in-the-grid-it-is-compared-with.md`
 - `fix/reasoning/fix-reasoning-a-sanitizer-sees-only-what-leaves-the-allocation.md`
 - `fix/reasoning/fix-reasoning-a-session-opened-to-read-holds-a-seat.md`
 - `fix/reasoning/fix-reasoning-a-key-held-down-repeats-its-press.md`
+- `fix/reasoning/fix-reasoning-a-new-highlight-is-cleared-by-every-path-that-sets-another.md`
 - `fix/reasoning/fix-reasoning-a-screen-pushed-over-others-leaves-them-running.md`
 - `fix/reasoning/fix-reasoning-a-sequence-asserts-its-starting-state.md`
 - `fix/reasoning/fix-reasoning-a-turn-is-counted-in-whole-frames.md`
+- `fix/reasoning/fix-reasoning-a-view-never-waits-on-a-message-it-can-do-without.md`
 - `fix/reasoning/fix-reasoning-an-error-type-is-not-a-diagnosis.md`
 - `fix/reasoning/fix-reasoning-an-exception-to-a-check-is-read-as-the-forger.md`
 - `fix/reasoning/fix-reasoning-bounded-contract-check-the-empty-state.md`
@@ -167,6 +172,7 @@ Paths below are relative to `.claude/rules/`.
 **Execution (shell, git, build) — `fix/execution/`**
 - `fix/execution/fix-execution-a-cmake-loop-tests-the-length-of-its-list.md`
 - `fix/execution/fix-execution-a-script-reading-repository-text-names-its-encoding.md`
+- `fix/execution/fix-execution-a-setting-of-an-optional-module-is-tested-with-the-module-off.md`
 - `fix/execution/fix-execution-a-split-commit-carries-its-own-links.md`
 - `fix/execution/fix-execution-a-dll-exports-what-its-own-standard-compiled.md`
 - `fix/execution/fix-execution-a-static-library-reached-twice-on-the-link-line.md`

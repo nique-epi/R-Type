@@ -20,10 +20,13 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 11 makes a
+ * @brief The version of the protocol this code speaks. Version 12 makes a
  * ConnectionRequest for a NewGame carry the rules of that game, and adds the
- * refusals UnknownDifficulty and LivesOutOfRange, see the Version 11 section;
- * version 10 makes a
+ * refusals UnknownDifficulty and LivesOutOfRange, see the Version 12 section;
+ * version 11 makes EntitySpawned name the player and the input that fired a
+ * missile, and PlayerInput the tick its client shows, so a client can
+ * predict its own missiles and the server test them where the player saw the
+ * enemies, see the Version 11 section; version 10 makes a
  * ConnectionAccepted announce the content pack of the game in place of the
  * table of its entity types, see the Version 10 section; version 9 makes a
  * ConnectionRequest name the game it asks for, and adds the refusals
@@ -40,7 +43,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * frame, see the Compression section; version 3 adds the outcome of a game to
  * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 11;
+constexpr std::uint8_t PROTOCOL_VERSION = 12;
 
 /**
  * @brief The session token of a datagram sent before the connection is
@@ -545,6 +548,15 @@ constexpr std::size_t SERVER_INFORMATION_REQUEST_PADDING_SIZE =
  */
 constexpr std::uint8_t PADDING_BYTE = 0;
 
+/** @brief The owner of an EntitySpawned that no player fired. */
+constexpr std::uint8_t NO_OWNER = 0;
+
+/** @brief The firingInput of an EntitySpawned that no input fired. */
+constexpr std::uint32_t NO_FIRING_INPUT = 0;
+
+/** @brief The shownTick of a PlayerInput sent before the first state. */
+constexpr std::uint32_t NO_SHOWN_TICK = 0;
+
 /**
  * @brief The names of the fields a refused message is reported by, as the
  * protocol page writes them.
@@ -567,6 +579,7 @@ constexpr std::string_view PART_INDEX_FIELD = "partIndex";
 constexpr std::string_view PART_COUNT_FIELD = "partCount";
 constexpr std::string_view BASE_DISTANCE_FIELD = "baseDistance";
 constexpr std::string_view CONTENT_SIZE_FIELD = "content.size";
+constexpr std::string_view OWNER_FIELD = "owner";
 constexpr std::string_view NUMBER_FIELD = "number";
 constexpr std::string_view RULES_FIELD = "rules";
 constexpr std::string_view FIRST_KEPT_FIELD = "firstKept";
@@ -580,6 +593,10 @@ constexpr std::string_view FREE_SEAT_COUNT_FIELD = "freeSeatCount";
 constexpr std::string_view GAME_VERSION_FIELD = "gameVersion";
 constexpr std::string_view SERVER_NAME_FIELD = "name";
 constexpr std::string_view MEASURES_FIELD = "measures";
+constexpr std::string_view BOSS_ENTITY_ID_FIELD = "bossEntityId";
+constexpr std::string_view HEALTH_FIELD = "health";
+constexpr std::string_view FULL_HEALTH_FIELD = "fullHealth";
+constexpr std::string_view STAGE_FIELD = "stage";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a

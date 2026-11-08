@@ -105,7 +105,8 @@ class ServerSession final : public IServerConnection, public IPlayerInputLink {
    */
   void update(engine::Duration elapsed);
 
-  std::optional<std::uint32_t> sendPlayerInput(ActionSet held) override;
+  std::optional<std::uint32_t> sendPlayerInput(
+      ActionSet held, std::uint32_t shownTick) override;
   void confirmInputsUpTo(std::uint32_t acknowledged) override;
 
   /**

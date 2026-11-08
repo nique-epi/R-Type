@@ -1,6 +1,7 @@
 #include "ServerDatagrams.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 #include "ConnectionRequest.hpp"
@@ -8,6 +9,7 @@
 #include "Disconnection.hpp"
 #include "EncodedMessage.hpp"
 #include "Endpoint.hpp"
+#include "GameRules.hpp"
 #include "Heartbeat.hpp"
 #include "MasterProbe.hpp"
 #include "MessagePayload.hpp"

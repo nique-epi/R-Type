@@ -26,7 +26,7 @@ std::uint64_t randomProbeSecret() {
 network::ServerRegistration registrationOf(const ServerIdentity& identity) {
   return network::ServerRegistration{
       .name = identity.name,
-      .address = std::nullopt,
+      .address = identity.address,
       .udpPort = identity.udpPort,
       .gameVersion = std::string{SERVER_GAME_VERSION},
       .protocolVersion = network::PROTOCOL_VERSION,

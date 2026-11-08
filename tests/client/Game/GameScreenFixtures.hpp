@@ -16,6 +16,10 @@ void seatThreePilots(RecordingServerConnection& connection,
  * score and lives, and no entity. */
 rtype::network::WorldState stateScoringTheFirstPilot(std::uint32_t tick);
 
+/** @returns The state of stateScoringTheFirstPilot(), listing its ship SHIP_ID
+ * at SHIP_POSITION too. */
+rtype::network::WorldState stateWithTheShipOfTheFirstPilot(std::uint32_t tick);
+
 /** @returns The end of a game of the three pilots of seatThreePilots(), with
  * the scores FIRST_PILOT_FINAL, SECOND_PILOT_FINAL and THIRD_PILOT_FINAL. */
 [[nodiscard]] rtype::network::GameEnded endOfThreePilots(

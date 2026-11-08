@@ -182,3 +182,19 @@ TEST_F(PilotSystemFixture, AnEndedActionStartsTheIdleClockAtZero) {
 
   EXPECT_EQ(components().get<CurrentAction>(enemy)->since, Duration::zero());
 }
+
+/**
+ * Given an enemy in the strike of attack 3 whose behaviour ends its action
+ * When the pilots run once
+ * Then the enemy has ended one action
+ */
+TEST_F(PilotSystemFixture, EndingAnActionCountsIt) {
+  const ActionRequestingBehaviour behaviour{Intent{.endsAction = true}};
+  const Entity enemy = addEnemy(behaviour, SOME_ENEMY_NETWORK_ID);
+  components().get<CurrentAction>(enemy)->key = STRIKE_OF_ATTACK_THREE;
+
+  run(SIMULATION_TICK_DURATION);
+
+  ASSERT_NE(components().get<CurrentAction>(enemy), nullptr);
+  EXPECT_EQ(components().get<CurrentAction>(enemy)->ended, 1U);
+}

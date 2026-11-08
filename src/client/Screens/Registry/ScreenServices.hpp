@@ -2,14 +2,17 @@
 
 #include <functional>
 #include "AssetLibrary.hpp"
+#include "ChatChannel.hpp"
 #include "EntityMessageQueue.hpp"
 #include "GameWindow.hpp"
 #include "IAudioService.hpp"
 #include "IEntityTypeSource.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
+#include "IMasterAddress.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
+#include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
 #include "ServerChoice.hpp"
 #include "ServerLeaderboard.hpp"
@@ -44,6 +47,9 @@ struct ScreenServices {
   std::reference_wrapper<WaitingRoom> waitingRoom;
   std::reference_wrapper<EntityMessageQueue> entityMessages;
   std::reference_wrapper<ServerLeaderboard> leaderboard;
+  /** @brief The chat of the session, shown by the waiting room and the
+   * game. */
+  std::reference_wrapper<ChatChannel> chat;
   /** @brief What the entity type numbers of the server mean, for the
    * replicator of a game. */
   std::reference_wrapper<const IEntityTypeSource> entityTypes;
@@ -52,9 +58,13 @@ struct ScreenServices {
    * one of them, for the server map. */
   std::reference_wrapper<IServerCatalog> serverCatalog;
   std::reference_wrapper<IGameCatalog> gameCatalog;
+  /** @brief The master the server map reads, which its chip MASTER names. */
+  std::reference_wrapper<const IMasterAddress> masterAddress;
   /** @brief The server, the nickname and the game the first connection
    * screen starts with. */
   ServerChoice choice;
+  /** @brief Where PLAY leads from the title. */
+  PlayStart playStart{};
 };
 
 }  // namespace rtype::client

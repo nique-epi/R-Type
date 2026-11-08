@@ -10,6 +10,7 @@
 #include "LaunchValues.hpp"
 #include "LogLaunchOptions.hpp"
 #include "NetworkConditions.hpp"
+#include "PlayStart.hpp"
 #include "ServerChoice.hpp"
 #include "SimulatorLaunchOptions.hpp"
 
@@ -45,7 +46,8 @@ class LaunchOptions {
    * is network::ANY_GAME_CHOICE, without `--no-sound` the
    * client makes sound, and without a logging option the journal is
    * CLIENT_LOG_FILE_NAME in journalFolder(), or next to the executable when
-   * that gives none. The last of each option wins.
+   * that gives none. `-h` also makes PLAY join that server at once (see
+   * playStart()). The last of each option wins.
    *
    * @throws engine::UnknownExecutablePathException when the default journal
    *         goes next to the executable and the system does not tell where
@@ -78,6 +80,12 @@ class LaunchOptions {
   /** @returns the address and the port of the server to join, the nickname
    * of the player, UTF-8, and the game it asks for. */
   [[nodiscard]] const ServerChoice& serverChoice() const;
+
+  /** @returns PlayStart::GivenServer when `-h` was given, so PLAY joins at
+   * once the server of the last attempt, that server before any,
+   * PlayStart::ServerMap otherwise. `--set server-address` and client.cfg only
+   * fill the connection screen. */
+  [[nodiscard]] PlayStart playStart() const;
 
   /**
    * @returns The lines of the command `set` the launch options force, in the

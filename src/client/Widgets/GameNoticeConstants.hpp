@@ -16,6 +16,10 @@ namespace rtype::client {
  * playfield. */
 constexpr int NOTICE_EDGE = 4;
 
+/** @brief The row the lines of the chat end on during a game: NOTICE_EDGE
+ * above the status band. */
+constexpr int GAME_CHAT_BOTTOM = STATUS_BAND_AREA.position.y - NOTICE_EDGE;
+
 /**
  * @brief The feed of departures, from DEPARTURE_FEED_TOP_LEFT: a line per
  * pilot gone, the newest at the top, DEPARTURE_FEED_LINES at most, each

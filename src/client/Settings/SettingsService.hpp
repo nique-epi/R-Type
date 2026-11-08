@@ -46,7 +46,7 @@ class SettingsService {
    * ends included, changes nothing and tells nobody.
    */
   template <typename Value>
-  bool apply(const Setting<Value>& setting, Value value);
+  bool apply(const Setting<Value>& setting, const Value& value);
 
   void bindKey(BoundAction action, sf::Keyboard::Scancode key);
 

@@ -544,7 +544,7 @@ TEST_F(ServerSessionFixture, ConnectingAgainLeavesTheSessionFirst) {
 TEST_F(ServerSessionFixture, SendsNoInputBeforeTheServerAccepts) {
   connect();
 
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
   EXPECT_EQ(sent().size(), 1);
 }
@@ -557,7 +557,7 @@ TEST_F(ServerSessionFixture, SendsNoInputBeforeTheServerAccepts) {
 TEST_F(ServerSessionFixture, SendsTheFirstInputOnceAccepted) {
   connectAndGetAccepted();
 
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
   ASSERT_EQ(sent().size(), 2);
   EXPECT_EQ(sent().back().destination, server());
@@ -575,7 +575,7 @@ TEST_F(ServerSessionFixture, SendsTheFirstInputOnceAccepted) {
 TEST_F(ServerSessionFixture, InputsCarryTheSessionTokenOfTheAcceptance) {
   connectAndGetAccepted();
 
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
   EXPECT_EQ(lastHeader().sessionToken, SESSION_TOKEN);
 }
@@ -587,9 +587,9 @@ TEST_F(ServerSessionFixture, InputsCarryTheSessionTokenOfTheAcceptance) {
  */
 TEST_F(ServerSessionFixture, NumbersEachInputAfterThePreviousOne) {
   connectAndGetAccepted();
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
   EXPECT_EQ(lastInput().inputNumber, PROTOCOL_FIRST_INPUT_NUMBER + 1);
 }
@@ -602,10 +602,10 @@ TEST_F(ServerSessionFixture, NumbersEachInputAfterThePreviousOne) {
  */
 TEST_F(ServerSessionFixture, RepeatsTheInputsTheServerDidNotConfirm) {
   connectAndGetAccepted();
-  session().sendPlayerInput(upHeld());
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
   EXPECT_EQ(lastInput().earlierActions.size(), 2U);
 }
@@ -618,12 +618,12 @@ TEST_F(ServerSessionFixture, RepeatsTheInputsTheServerDidNotConfirm) {
  */
 TEST_F(ServerSessionFixture, StopsRepeatingTheInputsTheServerConfirmed) {
   connectAndGetAccepted();
-  session().sendPlayerInput(upHeld());
-  session().sendPlayerInput(upHeld());
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
   session().confirmInputsUpTo(PROTOCOL_FIRST_INPUT_NUMBER + 1);
 
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
   EXPECT_EQ(lastInput().earlierActions.size(), 1U);
 }
@@ -636,7 +636,7 @@ TEST_F(ServerSessionFixture, StopsRepeatingTheInputsTheServerConfirmed) {
 TEST_F(ServerSessionFixture, InputsTakeTheSequenceAfterTheRequests) {
   connectAndGetAccepted();
 
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
   EXPECT_EQ(lastHeader().sequence, 1);
 }
@@ -661,11 +661,11 @@ TEST_F(ServerSessionFixture, ANewAttemptDropsTheTokenOfTheOldSession) {
  */
 TEST_F(ServerSessionFixture, ANewSessionNumbersItsInputsFromOne) {
   connectAndGetAccepted();
-  session().sendPlayerInput(upHeld());
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
   connectAndGetAccepted();
 
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
   EXPECT_EQ(lastInput().inputNumber, PROTOCOL_FIRST_INPUT_NUMBER);
 }
@@ -681,7 +681,7 @@ TEST_F(ServerSessionFixture, SendsNoInputOnceRefused) {
       network::ConnectionRefused{.reason = network::RefusalReason::GameFull});
   update();
 
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
   EXPECT_EQ(sent().size(), 1);
 }
@@ -696,7 +696,7 @@ TEST_F(ServerSessionFixture, SendsNoInputOnceCancelled) {
   connectAndGetAccepted();
   session().cancel();
 
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
   EXPECT_EQ(sentCountOf<network::PlayerInput>(), 0U);
 }
@@ -765,7 +765,7 @@ TEST_F(ServerSessionFixture, TheHeartbeatTakesTheSequenceAfterTheRequest) {
 TEST_F(ServerSessionFixture, AnInputSentDoesNotDelayTheHeartbeat) {
   accept();
   update(PROTOCOL_HEARTBEAT_INTERVAL / 2);
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
   update(PROTOCOL_HEARTBEAT_INTERVAL / 2);
 
@@ -1128,7 +1128,7 @@ TEST_F(ServerSessionFixture, SendsNothingToAServerThatComesBack) {
 
   deliverWorldStateInSession(stateListing(APPLIED_TICK, {}), SECOND_SEQUENCE);
   update();
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
   update(PROTOCOL_HEARTBEAT_INTERVAL);
 
   EXPECT_EQ(sent().size(), sentWhenLost);
@@ -1182,7 +1182,7 @@ TEST_F(ServerSessionFixture, TellsTheServerTheGameIsLoadedWithTheFirstInput) {
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
   update();
 
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
   EXPECT_EQ(sentCountOf<network::GameLoaded>(), 1U);
   EXPECT_TRUE(holds<network::PlayerInput>(sent().back()));
@@ -1197,7 +1197,7 @@ TEST_F(ServerSessionFixture, TellsTheServerTheGameIsLoadedWithTheFirstInput) {
 TEST_F(ServerSessionFixture, SendsNoGameLoadedBeforeTheGameStarted) {
   connectAndGetAccepted();
 
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
   EXPECT_EQ(sentCountOf<network::GameLoaded>(), 0U);
 }
@@ -1211,11 +1211,11 @@ TEST_F(ServerSessionFixture, StopsSendingGameLoadedOnceTheWorldArrives) {
   connectAndGetAccepted();
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
   update();
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
   deliverWorldStateInSession(stateListing(APPLIED_TICK, {}), SECOND_SEQUENCE);
   update();
 
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
   EXPECT_EQ(sentCountOf<network::GameLoaded>(), 1U);
 }
@@ -1230,10 +1230,10 @@ TEST_F(ServerSessionFixture, RepeatsGameLoadedUntilTheWorldArrives) {
   connectAndGetAccepted();
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
   update();
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
   update(GAME_LOADED_INTERVAL);
 
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
   EXPECT_EQ(sentCountOf<network::GameLoaded>(), 2U);
 }
@@ -1248,9 +1248,9 @@ TEST_F(ServerSessionFixture, SendsGameLoadedOnceEveryInterval) {
   connectAndGetAccepted();
   deliverInSession(network::GameStarted{}, FIRST_SEQUENCE);
   update();
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
 
   EXPECT_EQ(sentCountOf<network::GameLoaded>(), 1U);
 }
@@ -1408,7 +1408,7 @@ TEST_F(ServerSessionFixture, LetsAnInputCarryTheAcknowledgement) {
           guaranteedSessionHeader(FIRST_SEQUENCE));
   update();
 
-  session().sendPlayerInput(upHeld());
+  session().sendPlayerInput(upHeld(), network::NO_SHOWN_TICK);
   update(PROTOCOL_ACKNOWLEDGEMENT_DELAY);
 
   EXPECT_EQ(sentCountOf<network::Heartbeat>(), heartbeatsBefore);

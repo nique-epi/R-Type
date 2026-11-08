@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
 #include "EnemyPhase.hpp"
 #include "EntityType.hpp"
@@ -43,15 +44,21 @@ constexpr std::string_view HURT_ZONE_KEY = "hurt_zone";
 constexpr std::string_view SURVIVES_CONTACT_KEY = "survives_contact";
 constexpr std::string_view FRAGILE_KEY = "fragile";
 constexpr std::string_view BURST_KEY = "burst";
+constexpr std::string_view VOLLEY_KEY = "volley";
+constexpr std::string_view BOSS_KEY = "boss";
 constexpr std::array GAMEPLAY_KEYS{
     SIDE_KEY,    PILOT_KEY, HITBOX_KEY, MOTION_KEY,    BEHAVIOUR_KEY,
     HEALTH_KEY,  SCORE_KEY, GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
-    FRAGILE_KEY, BURST_KEY};
+    FRAGILE_KEY, BURST_KEY, VOLLEY_KEY, BOSS_KEY};
 
-/** @brief The keys of `[gameplay.hitbox]`, in logical units. */
+/** @brief The keys of `[gameplay.hitbox]`, in logical units: its size, and
+ * where its center is from the Position of the body, 0 without them. */
 constexpr std::string_view WIDTH_KEY = "width";
 constexpr std::string_view HEIGHT_KEY = "height";
-constexpr std::array HITBOX_KEYS{WIDTH_KEY, HEIGHT_KEY};
+constexpr std::string_view OFFSET_X_KEY = "offset_x";
+constexpr std::string_view OFFSET_Y_KEY = "offset_y";
+constexpr std::array HITBOX_KEYS{WIDTH_KEY, HEIGHT_KEY, OFFSET_X_KEY,
+                                 OFFSET_Y_KEY};
 
 /** @brief The keys of `[gameplay.motion]`: a ship has a kind only, a steady
  * body its top speed too. */
@@ -77,15 +84,15 @@ constexpr std::string_view COUNT_KEY = "count";
 constexpr std::string_view SHARD_KEY = "shard";
 constexpr std::array BURST_KEYS{AFTER_KEY, COUNT_KEY, SHARD_KEY};
 
-/** @brief The key of `[gameplay.hurt_zone]`: its boxes, an array of tables
- * `[[gameplay.hurt_zone.box]]`. */
+/** @brief The keys of `[gameplay.hurt_zone]`: its boxes, an array of tables
+ * `[[gameplay.hurt_zone.box]]`, and its beams, `[[gameplay.hurt_zone.beam]]`,
+ * which it may leave out. */
 constexpr std::string_view BOX_KEY = "box";
-constexpr std::array HURT_ZONE_KEYS{BOX_KEY};
+constexpr std::string_view BEAM_KEY = "beam";
+constexpr std::array HURT_ZONE_KEYS{BOX_KEY, BEAM_KEY};
 
 /** @brief The keys of a box of a hurt zone, in logical units; a box names the
  * attack and the phase it hurts in together, or neither. */
-constexpr std::string_view OFFSET_X_KEY = "offset_x";
-constexpr std::string_view OFFSET_Y_KEY = "offset_y";
 constexpr std::string_view ATTACK_KEY = "attack";
 constexpr std::string_view PHASE_KEY = "phase";
 /** @brief When a box hurts within its phase, in milliseconds into it. */
@@ -94,6 +101,76 @@ constexpr std::string_view UNTIL_KEY = "until_ms";
 constexpr std::array HURT_BOX_KEYS{OFFSET_X_KEY, OFFSET_Y_KEY, WIDTH_KEY,
                                    HEIGHT_KEY,   ATTACK_KEY,   PHASE_KEY,
                                    FROM_KEY,     UNTIL_KEY};
+
+/** @brief The keys of a beam of a hurt zone: its pivot, length and thickness
+ * in logical units, its angles in degrees from the left (a positive one turns
+ * it down), and the action it hurts in, required, with its window. */
+constexpr std::string_view LENGTH_KEY = "length";
+constexpr std::string_view THICKNESS_KEY = "thickness";
+constexpr std::string_view FROM_DEGREES_KEY = "from_deg";
+constexpr std::string_view TO_DEGREES_KEY = "to_deg";
+constexpr std::array HURT_BEAM_KEYS{
+    OFFSET_X_KEY,   OFFSET_Y_KEY, LENGTH_KEY, THICKNESS_KEY, FROM_DEGREES_KEY,
+    TO_DEGREES_KEY, ATTACK_KEY,   PHASE_KEY,  FROM_KEY,      UNTIL_KEY};
+constexpr engine::WholeNumberRange BEAM_LENGTH_RANGE{.lowest = 1,
+                                                     .highest = 4096};
+constexpr engine::WholeNumberRange BEAM_ANGLE_RANGE{.lowest = -180,
+                                                    .highest = 180};
+
+/** @brief The keys of a volley, `[[gameplay.volley]]`: the action it is
+ * fired on, the sheet and the count of its bodies and where it starts,
+ * required; its step, spread (degrees), distance and gap, 0 without them. */
+constexpr std::string_view BODY_KEY = "body";
+constexpr std::string_view STEP_X_KEY = "step_x";
+constexpr std::string_view STEP_Y_KEY = "step_y";
+constexpr std::string_view SPREAD_KEY = "spread_deg";
+constexpr std::string_view DISTANCE_KEY = "distance";
+constexpr std::string_view GAP_FROM_KEY = "gap_from";
+constexpr std::string_view GAP_COUNT_KEY = "gap_count";
+/** @brief The chance a volley fires when its action starts, in percent,
+ * from 1 to 100; 100 when the table leaves it out. */
+constexpr std::string_view CHANCE_KEY = "chance_percent";
+/** @brief The heading of a volley of one body, or the middle of the fan
+ * of a spread, in degrees from the left, a positive angle turning down;
+ * 0 when left out. */
+constexpr std::string_view HEADING_KEY = "heading_deg";
+constexpr engine::WholeNumberRange VOLLEY_HEADING_RANGE{.lowest = -80,
+                                                        .highest = 80};
+/** @brief How far the start of a volley may move at random each time it
+ * fires, on each axis, in units; 0 when left out. */
+constexpr std::string_view JITTER_X_KEY = "jitter_x";
+constexpr std::string_view JITTER_Y_KEY = "jitter_y";
+constexpr engine::WholeNumberRange VOLLEY_JITTER_RANGE{.lowest = 0,
+                                                       .highest = 960};
+constexpr engine::WholeNumberRange VOLLEY_CHANCE_RANGE{.lowest = 1,
+                                                       .highest = 100};
+constexpr std::uint8_t VOLLEY_SURE_CHANCE = 100;
+constexpr std::array VOLLEY_KEYS{
+    ATTACK_KEY,   PHASE_KEY,    BODY_KEY,     COUNT_KEY,
+    OFFSET_X_KEY, OFFSET_Y_KEY, STEP_X_KEY,   STEP_Y_KEY,
+    SPREAD_KEY,   DISTANCE_KEY, GAP_FROM_KEY, GAP_COUNT_KEY,
+    CHANCE_KEY,   HEADING_KEY,  JITTER_X_KEY, JITTER_Y_KEY};
+constexpr engine::WholeNumberRange VOLLEY_COUNT_RANGE{.lowest = 1,
+                                                      .highest = 16};
+/** @brief A volley may start anywhere on the playfield from its enemy: a
+ * spore mine is laid across it. */
+constexpr engine::WholeNumberRange VOLLEY_OFFSET_RANGE{.lowest = -1920,
+                                                       .highest = 1920};
+constexpr engine::WholeNumberRange VOLLEY_SPREAD_RANGE{.lowest = 0,
+                                                       .highest = 360};
+constexpr engine::WholeNumberRange VOLLEY_DISTANCE_RANGE{.lowest = 0,
+                                                         .highest = 1024};
+constexpr engine::WholeNumberRange VOLLEY_GAP_RANGE{.lowest = 0, .highest = 15};
+
+/** @brief The keys of `[gameplay.boss]`, all required: the percentage of its
+ * full health it enrages below, and the attacks of its rage and its arrival. */
+constexpr std::string_view RAGE_BELOW_PERCENT_KEY = "rage_below_percent";
+constexpr std::string_view RAGE_ATTACK_KEY = "rage_attack";
+constexpr std::string_view ARRIVAL_ATTACK_KEY = "arrival_attack";
+constexpr std::array BOSS_KEYS{RAGE_BELOW_PERCENT_KEY, RAGE_ATTACK_KEY,
+                               ARRIVAL_ATTACK_KEY};
+constexpr engine::WholeNumberRange RAGE_PERCENT_RANGE{.lowest = 1,
+                                                      .highest = 99};
 
 /** @brief `[gameplay.survives_contact]` is a marker: it holds no key. */
 constexpr std::array<std::string_view, 0> SURVIVES_CONTACT_KEYS{};
@@ -173,6 +250,16 @@ constexpr std::string_view SHIP_HITBOX_RULE =
 constexpr std::string_view MISSILE_GUN_RULE = "a missile has no gun";
 constexpr std::string_view BURST_SIDE_RULE =
     "only a missile bursts into shards";
+constexpr std::string_view BOSS_SIDE_RULE =
+    "only a body of side enemy is a boss";
+constexpr std::string_view BOSS_HEALTH_RULE =
+    "a boss has health, which its bar shows and its rage reads";
+constexpr std::string_view VOLLEY_SIDE_RULE =
+    "only a body of side enemy fires volleys";
+constexpr std::string_view VOLLEY_GAP_RULE =
+    "a gap leaves at least one body of the volley: gap_count is below count";
+constexpr std::string_view VOLLEY_BODY_SIDE_RULE =
+    "a volley is made of enemies or of missiles of an enemy";
 constexpr std::string_view SHARD_SIDE_RULE =
     "a missile bursts into missiles of its own side";
 constexpr std::string_view BEHAVIOUR_TABLE_RULE =
@@ -194,6 +281,9 @@ constexpr std::string_view HURT_BOX_TIMING_RULE =
     "only a box that names its attack and its phase hurts from or until a time";
 constexpr std::string_view HURT_BOX_WINDOW_RULE =
     "a box stops hurting after it starts: until_ms is above from_ms";
+constexpr std::string_view HURT_BEAM_SWEEP_RULE =
+    "a beam that sweeps (to_deg other than from_deg) names until_ms, the end "
+    "of its sweep";
 constexpr std::string_view PROJECTILE_SIDE_RULE =
     "a player fires missiles of a player, an enemy missiles of an enemy";
 
