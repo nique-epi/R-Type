@@ -120,7 +120,7 @@ return (
 
 ## The database: `MasterStorageModule`
 
-The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, see [Project layout](/R-Type/project-layout/#storage)): write-ahead log, foreign keys on, and the migrations of `MASTER_MIGRATIONS` (`src/master/Storage/MasterStorageConstants.hpp`) the file does not hold yet. A file it cannot open, or one written by a newer master, stops the start with an error naming the file. It provides the connection as a `MasterDatabase`, which the threads of the HTTP server share behind one lock: a request holds it for a few statements of one row each.
+The storage module opens its file with `rtype_storage` (`openDatabaseFile()`, see [Project layout](/R-Type/project-layout/#storage)): write-ahead log, foreign keys on, and the migrations of `MASTER_MIGRATIONS` (`src/master/Storage/MasterStorageConstants.hpp`) the file does not hold yet. A file it cannot open, or one written by a newer master, stops the start with an error naming the file. It provides the connection as a `MasterDatabase`, which the threads of the HTTP server share behind one lock: most requests hold it for a few statements of one row each, and a read of the leaderboard holds it while it ranks every row of one difficulty and one number of players, so heartbeats wait behind it (see [The global leaderboard](#the-global-leaderboard-leaderboardmodule)).
 
 | Version | Table | Holds |
 |---|---|---|
@@ -284,17 +284,19 @@ The leaderboard module (`src/master/Leaderboard/`) gathers the results of every 
  "players":[{"nickname":"ACE","score":12000},{"nickname":"R9","accountId":"account-42","score":800}]}
 ```
 
+The answer to `GET /api/leaderboard?difficulty=normal&playerCount=2&limit=1&player=R9`, when this game is the only one of that leaderboard:
+
 ```json
 {"scores":[{"rank":1,"nickname":"ACE","score":12000,"playedAt":1800000000,"serverId":7,"serverName":"Paris 1"}],
  "player":{"rank":2,"nickname":"R9","score":800,"playedAt":1800000000,"serverId":7,"serverName":"Paris 1"}}
 ```
 
-- **The route is a `PUT` on the id the server drew**, since the server, not the master, names the game. A row of the same server, game and nickname is kept once: a result sent again changes nothing and answers 204 as the first time, so a server may send again whatever it is not sure arrived. A second send never replaces the first.
+- **The route is a `PUT` on the id the server drew**, since the server, not the master, names the game. A game is kept whole and once per server: a result sent again changes nothing, even with other players or scores, and answers 204 as the first time, so a server may send again whatever it is not sure arrived. A second send never replaces or completes the first.
 - **The master keeps vanilla games only**: a body with `"vanilla":false` answers 400, and a game that is not vanilla stays in the leaderboard of its server. The master cannot check a score: it trusts the server an admin gave a key to.
 - **A row keeps its server**, so `server=<id>` reads one server, each row of the answer names the server of its game, and the rows of a server can be erased with it.
-- **One player, one row**: an account is one player under any nickname, a guest one player per nickname (compared without case, as a game server compares them), whatever the server. Among the rows of a player, its best score counts, the earliest game first when two are equal. Equal scores share a rank, and the next rank skips them (1, 1, 3).
-- **`player`** names a nickname, compared without case; its row comes in `player` wherever it ranks, and `player` is left out when it names no one with a score there. A page is `limit` and `offset`, as for [the list of the servers](#listing-the-servers-and-their-history).
-- **Bounds of a result**: `playedAt` in seconds since 1970 UTC, from 0 to 2^63 − 1; `difficulty` and each `nickname`, nicknames of the protocol; `playerCount`, the players when the game started, 1 to `MAXIMUM_PLAYERS` (4); 1 to 4 `players`; `accountId`, left out for a guest, else 1 to `MAXIMUM_ACCOUNT_ID_SIZE` (64) bytes of printable UTF-8; `score`, 0 to 2^32 − 1, what a game server keeps.
+- **One player, one row**: an account is one player under any nickname, its id compared as written; a guest is one player per nickname, whatever the server. Nicknames are compared as a game server compares them (`nicknameKey()`, SQLite's `NOCASE`): ASCII letters without case, every other character as it is, so `ACE` and `ace` are one guest, `ÉLODIE` and `élodie` two. Among the rows of a player, its best score counts, the earliest game first when two are equal. Equal scores share a rank, and the next rank skips them (1, 1, 3).
+- **`player`** names a nickname, compared the same way; the row of the player who played under it in any game of that leaderboard comes in `player` wherever it ranks, under the nickname of its best score, and `player` is left out when it names no one with a score there. A page is `limit` and `offset`, as for [the list of the servers](#listing-the-servers-and-their-history).
+- **Bounds of a result**: `playedAt` in seconds since 1970 UTC, from 0 to 2^63 − 1; `difficulty` and each `nickname`, nicknames of the protocol; `playerCount`, the players when the game started, 1 to `MAXIMUM_PLAYERS` (4); 1 to 4 `players`, no more than `playerCount`, since a game server lets nobody in once a game runs, and no nickname twice; `accountId`, left out for a guest, else 1 to `MAXIMUM_ACCOUNT_ID_SIZE` (64) bytes of printable UTF-8; `score`, 0 to 2^32 − 1, what a game server keeps.
 
 The key of a result is checked by the `ServersService` the servers module provides, which tells the server of a key; the controller reuses the reading of a request the servers module writes (`RouteAnswers.hpp`, `src/master/Servers/Controllers/`).
 
