@@ -1,6 +1,8 @@
 add_library(rtype_master_constants INTERFACE)
 
-target_include_directories(rtype_master_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+configure_file(MasterVersionConstants.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/MasterVersionConstants.hpp @ONLY)
+
+target_include_directories(rtype_master_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 add_subdirectory(Exceptions)
 add_subdirectory(LaunchOptions)

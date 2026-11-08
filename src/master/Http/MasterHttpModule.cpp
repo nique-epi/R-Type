@@ -16,6 +16,7 @@
 #include "MasterConstants.hpp"
 #include "MasterModuleConstants.hpp"
 #include "MasterRouteConstants.hpp"
+#include "MasterVersionConstants.hpp"
 #include "NetworkConstants.hpp"
 
 namespace rtype::master {
