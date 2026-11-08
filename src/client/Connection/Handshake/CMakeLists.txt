@@ -1,5 +1,6 @@
 add_library(rtype_client_handshake STATIC
   ConnectionAttempt.cpp
+  GameRequest.cpp
   HandshakeAnswers.cpp
   SessionLossWatch.cpp
 )

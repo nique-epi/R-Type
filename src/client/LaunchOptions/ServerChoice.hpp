@@ -4,14 +4,16 @@
 #include <string>
 #include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
+#include "GameRequest.hpp"
 
 namespace rtype::client {
 
 /**
  * @brief The server, the nickname and the game a connection screen starts
  * with: those given at launch, then those of the last attempt the player
- * started, so a lost game is joined again with one key. The screen has no
- * field for the game: every attempt asks for the game given at launch.
+ * started, so a lost game is joined again with one key. The form has no field
+ * for the game: it asks for the game given at launch, while a screen the
+ * server map opens asks for the game the map chose.
  */
 struct ServerChoice {
   /** @brief The server the form opened by ADDRESS or JOIN A SERVER starts
@@ -24,6 +26,10 @@ struct ServerChoice {
    * nothing before the first. A screen that connects at once starts with
    * it, and so does the form RETRY opens after a lost game. */
   std::optional<network::Endpoint> lastServer = std::nullopt;
+  /** @brief The game of the last attempt, whichever screen started it, with
+   * its rules when known; nothing before the first. A screen that starts with
+   * lastServer asks for it, and the waiting room shows its rules. */
+  std::optional<GameRequest> lastRequest = std::nullopt;
 };
 
 }  // namespace rtype::client

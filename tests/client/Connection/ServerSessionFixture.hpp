@@ -15,6 +15,7 @@
 #include "EntityMessage.hpp"
 #include "EntityMessageQueue.hpp"
 #include "GameLoadedReminder.hpp"
+#include "GameRequest.hpp"
 #include "IncomingDatagram.hpp"
 #include "MessageDispatcher.hpp"
 #include "OutgoingDatagram.hpp"
@@ -40,7 +41,7 @@ namespace rtype::client::testing {
 class ServerSessionFixture : public ::testing::Test {
  protected:
   /** @brief Starts an attempt to server() as NICKNAME, asking for @p game. */
-  void connect(const network::GameChoice& game = network::ANY_GAME_CHOICE);
+  void connect(const GameRequest& request = GameRequest{});
 
   /** @brief Delivers a datagram holding @p message, as @p sender sent it. */
   template <typename Message>

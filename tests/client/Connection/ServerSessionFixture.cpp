@@ -11,6 +11,7 @@
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "EntityMessage.hpp"
+#include "GameRequest.hpp"
 #include "IncomingDatagram.hpp"
 #include "MessageType.hpp"
 #include "OutgoingDatagram.hpp"
@@ -27,8 +28,8 @@
 
 namespace rtype::client::testing {
 
-void ServerSessionFixture::connect(const network::GameChoice& game) {
-  session_.connect(server(), NICKNAME, game);
+void ServerSessionFixture::connect(const GameRequest& request) {
+  session_.connect(server(), NICKNAME, request);
 }
 
 void ServerSessionFixture::deliverBytes(std::vector<std::byte> datagram) {

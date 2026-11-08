@@ -18,6 +18,7 @@
 #include "Endpoint.hpp"
 #include "EndpointForm.hpp"
 #include "EndpointReading.hpp"
+#include "GameRequest.hpp"
 #include "GameRuleConstants.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreenNavigator.hpp"
@@ -99,6 +100,16 @@ network::Endpoint shownServerOf(const ServerChoice& choice,
   return choice.lastServer.value_or(choice.server);
 }
 
+/** @returns The game a screen asks for: the game given at launch for a form
+ * that remembers its server, the game of the last attempt otherwise, the game
+ * given at launch before any. */
+GameRequest requestOf(const ServerChoice& choice, bool remembersServer) {
+  if (remembersServer || !choice.lastRequest.has_value()) {
+    return gameRequestFor(choice.game);
+  }
+  return *choice.lastRequest;
+}
+
 }  // namespace
 
 ConnectionScreen::ConnectionScreen(ConnectionScreenParts parts,
@@ -167,12 +178,14 @@ void ConnectionScreen::connect() {
     fieldProblem_ = MISSING_NICKNAME_STATUS;
     return;
   }
+  const GameRequest request = requestOf(*choice_, remembersServer_);
   choice_->lastServer = server;
+  choice_->lastRequest = request;
   if (remembersServer_) {
     choice_->server = server;
   }
   choice_->nickname = std::string(nickname);
-  connection_->connect(server, nickname, choice_->game);
+  connection_->connect(server, nickname, request);
 }
 
 void ConnectionScreen::leave() {

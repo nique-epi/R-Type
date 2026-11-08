@@ -11,6 +11,7 @@
 #include "ConnectionPhase.hpp"
 #include "ConnectionRefusalFixture.hpp"
 #include "ConnectionRefused.hpp"
+#include "ConnectionRequest.hpp"
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenChoiceFixture.hpp"
 #include "ConnectionScreenConstants.hpp"
@@ -19,6 +20,8 @@
 #include "ConnectionScreenTestConstants.hpp"
 #include "ConnectionStatus.hpp"
 #include "Endpoint.hpp"
+#include "GameRules.hpp"
+#include "GameRulesTestConstants.hpp"
 #include "LobbyScreenIdConstants.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -65,7 +68,11 @@ using rtype::client::testing::TYPED_NICKNAME;
 using rtype::client::testing::TYPED_NICKNAME_TEXT;
 using rtype::client::testing::TYPED_PORT;
 using rtype::client::testing::TYPED_PORT_TEXT;
+using rtype::network::GameRules;
+using rtype::network::NEW_GAME_CHOICE;
 using rtype::network::RefusalReason;
+using rtype::testing::CHOSEN_DIFFICULTY;
+using rtype::testing::CHOSEN_LIVES;
 using ::testing::Contains;
 using ::testing::ElementsAre;
 using ::testing::Field;
@@ -494,6 +501,47 @@ TEST_F(ConnectionScreenChoiceFixture,
           .server = {.address = std::string(MAP_ADDRESS), .port = MAP_PORT},
           .nickname = std::string(LAUNCH_NICKNAME),
           .game = LAUNCH_GAME}));
+}
+
+/**
+ * Given a new game the map chose, with rules the player picked
+ * When a connection screen opens to connect at once, as CREATE opens it
+ * Then the attempt asks the server the map chose for a new game with those
+ * rules
+ */
+TEST_F(ConnectionScreenChoiceFixture,
+       AScreenOpenedAtOnceAsksForTheNewGameTheMapChose) {
+  chooseANewGameOnTheMap();
+
+  reopenConnectingAtOnce();
+
+  ASSERT_FALSE(connectAttemptsOf(connection()).empty());
+  EXPECT_EQ(
+      connectAttemptsOf(connection()).back(),
+      (ServerConnectionCall{
+          .request = ServerConnectionCall::Request::Connect,
+          .server = {.address = std::string(MAP_ADDRESS), .port = MAP_PORT},
+          .nickname = std::string(LAUNCH_NICKNAME),
+          .game = NEW_GAME_CHOICE,
+          .rules = GameRules{.difficulty = std::string(CHOSEN_DIFFICULTY),
+                             .lives = CHOSEN_LIVES,
+                             .friendlyFire = true}}));
+}
+
+/**
+ * Given an attempt at once for a new game the map chose
+ * When the form opens again and Enter is chosen
+ * Then the form asks for the game given at launch, never the new game
+ */
+TEST_F(ConnectionScreenChoiceFixture,
+       TheFormAfterANewGameAsksForTheLaunchGame) {
+  chooseANewGameOnTheMap();
+  reopenConnectingAtOnce();
+
+  reopen();
+  chooseEnter();
+
+  EXPECT_EQ(connectAttemptsOf(connection()).back().game, LAUNCH_GAME);
 }
 
 /**

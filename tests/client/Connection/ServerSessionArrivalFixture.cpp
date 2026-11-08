@@ -2,8 +2,8 @@
 #include <chrono>
 #include <optional>
 #include "ConnectionAccepted.hpp"
-#include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
+#include "GameRequest.hpp"
 #include "Heartbeat.hpp"
 #include "IncomingDatagram.hpp"
 #include "PacketHeader.hpp"
@@ -16,7 +16,7 @@
 namespace rtype::client::testing {
 
 void ServerSessionArrivalFixture::openSession() {
-  session_.connect(server(), NICKNAME, rtype::network::ANY_GAME_CHOICE);
+  session_.connect(server(), NICKNAME, GameRequest{});
   network::PacketHeader header;
   header.sessionToken = SESSION_TOKEN;
   link_.deliver(network::IncomingDatagram{

@@ -10,10 +10,10 @@
 #include "ConnectionConstants.hpp"
 #include "ConnectionPhase.hpp"
 #include "ConnectionRefused.hpp"
-#include "ConnectionRequest.hpp"
 #include "ConnectionStatus.hpp"
 #include "Disconnection.hpp"
 #include "Endpoint.hpp"
+#include "GameRequest.hpp"
 #include "HandshakeAnswersParts.hpp"
 #include "ISessionOutbox.hpp"
 #include "IncomingDatagram.hpp"
@@ -81,11 +81,11 @@ ServerSession::ServerSession(ServerSessionParts parts)
 
 void ServerSession::connect(const network::Endpoint& server,
                             std::string_view nickname,
-                            const network::GameChoice& game) {
+                            const GameRequest& request) {
   cancel();
   inbound_.listenTo(server);
   outbox_.aim(server);
-  attempt_.begin(nickname, game);
+  attempt_.begin(nickname, request);
   unconfirmedInputs_.clear();
   attempt_.sendRequest(outbox_);
   status_ = {.phase = ConnectionPhase::Connecting};
