@@ -20,6 +20,7 @@ This page tells you where to look when you need to change something. It describe
 | The probe of the UDP port of each game server, module `probe` | Available | `src/master/Probe/`, `src/master/Servers/`, `src/server/Master/` |
 | The web site, a Next.js server of its own that calls the API | Available: the pages of the design in French and English (home, download, sector map, a server, leaderboard, wiki, team); the leaderboard reads `GET /api/leaderboard` | `web/` |
 | The results of the games and the global leaderboard, `PUT /api/servers/me/results/{gameId}` and `GET /api/leaderboard` | Available; a game server sends its vanilla games after its heartbeats | `src/master/Leaderboard/`, `src/network/Master/` |
+| The master on AWS, installed from each release | Available; see [Deploying the master](/R-Type/deploy-master/) | `infra/`, `.github/workflows/deploy-master.yaml` |
 | Administration, accounts | Not yet written | |
 
 ## Starting the master
@@ -382,6 +383,7 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change how often a game server beats | `MASTER_HEARTBEAT_INTERVAL` in `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master also reads to tell a silent server |
 | Change the size of a page of a list | `MINIMUM_PAGE_SIZE`, `DEFAULT_PAGE_SIZE` and `MAXIMUM_PAGE_SIZE` in `src/network/Master/Routes/MasterRouteConstants.hpp` |
 | Call the master from the game server | `MasterClient` (`src/network/Master/Client/`) |
+| Change where or how the master is deployed | [Deploying the master](/R-Type/deploy-master/#where-to-intervene) |
 | Add a page to the web site | `web/src/app/[lang]/` for its path, its title and its language, then a block in `web/src/components/blocks/` that builds it; its calls to the API in `web/src/lib/api/`, its words in `web/src/i18n/dictionaries/` |
 | Change a color, a face or a size of the site | the tokens of `web/src/styles/globals.css` |
 | Add or change a word of the site | its label type in the component, then both `web/src/i18n/dictionaries/` |
