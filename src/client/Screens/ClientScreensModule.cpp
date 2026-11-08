@@ -154,37 +154,40 @@ network::Endpoint ClientScreensModule::configuredServer() const {
           portSetting_->integer().value_or(launch_.server.port))};
 }
 
+ScreenServices ClientScreensModule::services(
+    const network::Endpoint& server) const {
+  return ScreenServices{
+      .settings = *settings_,
+      .settingsService = *settingsService_,
+      .assets = *assets_,
+      .entityTable = *entityTable_,
+      .audio = *audio_,
+      .window = *window_,
+      .connection = *connection_,
+      .waitingRoom = *waitingRoom_,
+      .shipLooks = *shipLooks_,
+      .entityMessages = *entityMessages_,
+      .leaderboard = *leaderboard_,
+      .globalLeaderboard = *globalLeaderboard_,
+      .chat = *chat_,
+      .entityTypes = *entityTypes_,
+      .serverTicks = *serverTicks_,
+      .serverCatalog = *serverCatalog_,
+      .gameCatalog = *gameCatalog_,
+      .masterAddress = *masterAddress_,
+      .choice = ServerChoice{.server = server,
+                             .nickname = nicknameSetting_->text(),
+                             .game = launch_.game},
+      .playStart = playStart_};
+}
+
 void ClientScreensModule::start() {
   const network::Endpoint server = configuredServer();
   logger_.info("server: ", server.address, " port ", server.port);
   if (audio_ == &silence_) {
     logger_.info("no sound module: the client runs without sound");
   }
-  screens_ = std::make_unique<ClientScreens>(
-      ScreenServices{
-          .settings = *settings_,
-          .settingsService = *settingsService_,
-          .assets = *assets_,
-          .entityTable = *entityTable_,
-          .audio = *audio_,
-          .window = *window_,
-          .connection = *connection_,
-          .waitingRoom = *waitingRoom_,
-          .shipLooks = *shipLooks_,
-          .entityMessages = *entityMessages_,
-          .leaderboard = *leaderboard_,
-          .globalLeaderboard = *globalLeaderboard_,
-          .chat = *chat_,
-          .entityTypes = *entityTypes_,
-          .serverTicks = *serverTicks_,
-          .serverCatalog = *serverCatalog_,
-          .gameCatalog = *gameCatalog_,
-          .masterAddress = *masterAddress_,
-          .choice = ServerChoice{.server = server,
-                                 .nickname = nicknameSetting_->text(),
-                                 .game = launch_.game},
-          .playStart = playStart_},
-      registry_);
+  screens_ = std::make_unique<ClientScreens>(services(server), registry_);
   listenerHandle_ = listeners_->add([this](const sf::Event& event) {
     screens_->handleEvent(event);
     return EventUse::Kept;

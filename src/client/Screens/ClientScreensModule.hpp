@@ -27,6 +27,7 @@
 #include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenRegistry.hpp"
+#include "ScreenServices.hpp"
 #include "ServerChoice.hpp"
 #include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
@@ -104,6 +105,10 @@ class ClientScreensModule final : public engine::IModule,
   /** @returns The server the settings hold, which the connection screen
    * starts with. */
   [[nodiscard]] network::Endpoint configuredServer() const;
+  /** @returns What the screens are built from: the services install() found,
+   * and a choice that starts with @p server, the nickname setting and the game
+   * given at launch. */
+  [[nodiscard]] ScreenServices services(const network::Endpoint& server) const;
 
   ServerChoice launch_;
   PlayStart playStart_;
