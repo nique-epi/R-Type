@@ -8,8 +8,11 @@
 #include "ContentAnnouncement.hpp"
 #include "IDatagramSender.hpp"
 #include "IModule.hpp"
+#include "IOptionalDependencies.hpp"
 #include "IPlayerAdmission.hpp"
 #include "InstallContext.hpp"
+#include "LatestBans.hpp"
+#include "PlayerExpeller.hpp"
 #include "RunningGame.hpp"
 #include "SystemClock.hpp"
 #include "TickDatagrams.hpp"
@@ -33,8 +36,14 @@ namespace rtype::server {
  * module started, so start() builds it. Every acceptance announces the
  * content pack of the assets folder, read once while it installs, served by
  * the supervisor on the TCP port it is built with.
+ *
+ * It keeps the banned pilots out with the LatestBans of the storage module,
+ * which it works without: a banned newcomer is refused (Banned), and each
+ * time the storage module publishes newer bans, every seated pilot they bar
+ * is expelled for the reason Banned (see PlayerExpeller).
  */
-class ServerLobbyModule final : public engine::IModule {
+class ServerLobbyModule final : public engine::IModule,
+                                public engine::IOptionalDependencies {
  public:
   /** @param contentPort The TCP port the supervisor serves the content pack
    * on: the number of its UDP port. */
@@ -42,6 +51,7 @@ class ServerLobbyModule final : public engine::IModule {
 
   [[nodiscard]] std::string name() const override;
   [[nodiscard]] std::vector<std::string> dependencies() const override;
+  [[nodiscard]] std::vector<std::string> optionalDependencies() const override;
 
   /**
    * @brief Reads the content of the assets folder into the announcement.
@@ -61,6 +71,9 @@ class ServerLobbyModule final : public engine::IModule {
 
  private:
   void answerConnectionRequests();
+  /** @brief Expels the seated pilots the bans bar, once per revision of the
+   * bans the storage module published. */
+  void expelBannedPilots();
 
   engine::SystemClock clock_;
   std::uint16_t contentPort_;
@@ -70,6 +83,9 @@ class ServerLobbyModule final : public engine::IModule {
   IPlayerAdmission* admission_{nullptr};
   TickDatagrams* tickDatagrams_{nullptr};
   std::unique_ptr<ConnectionAcceptor> acceptor_;
+  const LatestBans* bans_{nullptr};
+  std::uint64_t seenBans_{0};
+  PlayerExpeller expeller_;
 };
 
 }  // namespace rtype::server

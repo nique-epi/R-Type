@@ -1,17 +1,18 @@
 #include "ServerStorageModule.hpp"
 #include <filesystem>
-#include <optional>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+#include "ArchiveConstants.hpp"
 #include "ConfigurationRegistry.hpp"
 #include "DatabaseLocation.hpp"
 #include "IListeningPort.hpp"
 #include "IResultsArchive.hpp"
 #include "InstallContext.hpp"
+#include "LatestBans.hpp"
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
-#include "ResultsArchiveConstants.hpp"
 #include "ServerConstants.hpp"
 #include "SettingValue.hpp"
 #include "TextSettingDefinition.hpp"
@@ -46,18 +47,28 @@ std::vector<std::string> ServerStorageModule::dependencies() const {
 }
 
 void ServerStorageModule::install(engine::InstallContext& context) {
-  location_.emplace(
+  location_ = std::make_unique<DatabaseLocation>(
       declareDatabase(context.require<engine::ConfigurationRegistry>()),
       defaultFolder_, context.require<IListeningPort>());
   context.provide<IResultsArchive>(archive_);
+  context.provide<LatestBans>(banWatch_.bans());
 }
 
 void ServerStorageModule::start() {
   const std::filesystem::path file = location_->file();
   archive_.open(file);
+  try {
+    banWatch_.open(file);
+  } catch (...) {
+    archive_.close();
+    throw;
+  }
   logger_.info("results database ", logging::genericText(file));
 }
 
-void ServerStorageModule::stop() { archive_.close(); }
+void ServerStorageModule::stop() {
+  banWatch_.close();
+  archive_.close();
+}
 
 }  // namespace rtype::server

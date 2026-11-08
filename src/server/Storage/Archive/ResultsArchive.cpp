@@ -7,11 +7,11 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include "ArchiveConstants.hpp"
 #include "GameResult.hpp"
 #include "LeaderboardAsk.hpp"
 #include "LeaderboardReply.hpp"
 #include "MessagePayload.hpp"
-#include "ResultsArchiveConstants.hpp"
 #include "ResultsDatabase.hpp"
 
 namespace rtype::server {

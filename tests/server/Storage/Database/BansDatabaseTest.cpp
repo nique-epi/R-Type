@@ -5,6 +5,7 @@
 #include <string_view>
 #include <vector>
 #include "Ban.hpp"
+#include "BanFixtures.hpp"
 #include "BanKind.hpp"
 #include "BanTarget.hpp"
 #include "BanTestConstants.hpp"

@@ -21,6 +21,8 @@ constexpr std::chrono::sys_seconds BAN_MOMENT{
 constexpr std::chrono::sys_seconds HOUR_BAN_END =
     BAN_MOMENT + std::chrono::hours{1};
 constexpr std::chrono::seconds ONE_SECOND{1};
+/** @brief A ban that ended long before any test runs. */
+constexpr std::chrono::sys_seconds LONG_AGO{std::chrono::seconds{1}};
 /** @brief Long after every ban of an hour ended: a ban for good still bars. */
 constexpr std::chrono::sys_seconds LONG_AFTER =
     BAN_MOMENT + std::chrono::years{10};
