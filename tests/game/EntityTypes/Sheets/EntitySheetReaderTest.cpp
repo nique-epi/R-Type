@@ -26,9 +26,11 @@ using rtype::game::WEAVE_BEHAVIOUR_NAME;
 using rtype::game::testing::APPEARANCE;
 using rtype::game::testing::APPEARANCE_AS_A_NUMBER;
 using rtype::game::testing::BYDO_HITBOX;
+using rtype::game::testing::CROWN_NUMBER;
 using rtype::game::testing::EMPTY_BEHAVIOUR_TABLE;
 using rtype::game::testing::EMPTY_HITBOX;
 using rtype::game::testing::ENEMY_GAMEPLAY;
+using rtype::game::testing::ENEMY_GAMEPLAY_WITH_AN_ITEM;
 using rtype::game::testing::ENEMY_GUN;
 using rtype::game::testing::ENEMY_MISSILE_GAMEPLAY;
 using rtype::game::testing::ENEMY_MISSILE_SHEET;
@@ -46,6 +48,9 @@ using rtype::game::testing::HEALTH_TABLE;
 using rtype::game::testing::HITBOX_WITHOUT_HEIGHT;
 using rtype::game::testing::intervalTicksOf;
 using rtype::game::testing::LEFT_HEADING_TABLE;
+using rtype::game::testing::LOOK_ITEM_GAMEPLAY;
+using rtype::game::testing::LOOK_ITEM_GAMEPLAY_WITHOUT_ITEM;
+using rtype::game::testing::LOOK_ITEM_OF_AN_UNKNOWN_NAME;
 using rtype::game::testing::MISSILE_GAMEPLAY;
 using rtype::game::testing::MISSILE_HEADING_RULE_TEXT;
 using rtype::game::testing::NARROW_SHIP_HITBOX;
@@ -724,4 +729,67 @@ TEST_F(EntitySheetReaderFixture, AMissileFlyingAwayNamesThePilotAndTheRule) {
 
   EXPECT_THAT(message, HasSubstr(PILOT_DOTTED_KEY));
   EXPECT_THAT(message, HasSubstr(MISSILE_HEADING_RULE_TEXT));
+}
+
+/**
+ * Given a sheet of side look_item that names the crown, steered to the left
+ * When its gameplay is read
+ * Then it gives the number of the crown, 3: its place in the catalog, 2, plus
+ * one
+ */
+TEST_F(EntitySheetReaderFixture, ReadsTheItemOfALookItem) {
+  const EntitySheet sheet =
+      read({LOOK_ITEM_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION, LEFT_HEADING_TABLE,
+            APPEARANCE});
+
+  EXPECT_EQ(sheet.side, EntityType::LookItem);
+  EXPECT_EQ(sheet.lookItem, CROWN_NUMBER);
+}
+
+/**
+ * Given a sheet of side look_item that names no item
+ * When its gameplay is read
+ * Then it is refused
+ */
+TEST_F(EntitySheetReaderFixture, RefusesALookItemWithoutItsItem) {
+  EXPECT_THROW(
+      static_cast<void>(read({LOOK_ITEM_GAMEPLAY_WITHOUT_ITEM, BYDO_HITBOX,
+                              STEADY_MOTION, LEFT_HEADING_TABLE, APPEARANCE})),
+      InconsistentEntitySheetException);
+}
+
+/**
+ * Given a sheet of side enemy that names an item
+ * When its gameplay is read
+ * Then it is refused: only a look item gives one
+ */
+TEST_F(EntitySheetReaderFixture, RefusesAnItemOnAnotherSide) {
+  EXPECT_THROW(
+      static_cast<void>(read({ENEMY_GAMEPLAY_WITH_AN_ITEM, BYDO_HITBOX,
+                              STEADY_MOTION, LEFT_HEADING_TABLE, APPEARANCE})),
+      InconsistentEntitySheetException);
+}
+
+/**
+ * Given a sheet of side look_item that names an item of no catalog
+ * When its gameplay is read
+ * Then it is refused, the choice listing the items it knows
+ */
+TEST_F(EntitySheetReaderFixture, RefusesAnUnknownItem) {
+  EXPECT_THROW(
+      static_cast<void>(read({LOOK_ITEM_OF_AN_UNKNOWN_NAME, BYDO_HITBOX,
+                              STEADY_MOTION, LEFT_HEADING_TABLE, APPEARANCE})),
+      UnknownDataFileChoiceException);
+}
+
+/**
+ * Given a look item whose straight heading is 1
+ * When its gameplay is read
+ * Then it is refused: it would fly right, and only the left edge removes it
+ */
+TEST_F(EntitySheetReaderFixture, RefusesALookItemFlyingRight) {
+  EXPECT_THROW(
+      static_cast<void>(read({LOOK_ITEM_GAMEPLAY, BYDO_HITBOX, STEADY_MOTION,
+                              RIGHT_HEADING_TABLE, APPEARANCE})),
+      InconsistentEntitySheetException);
 }

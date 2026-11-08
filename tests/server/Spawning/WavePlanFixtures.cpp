@@ -20,14 +20,22 @@ std::vector<std::string> namesOf(std::span<const std::string_view> enemies) {
 
 WavePlan wavePlanOf(std::span<const std::string_view> enemies) {
   return WavePlan{.curve = game::testing::TEST_WAVE_CURVE,
-                  .enemies = namesOf(enemies)};
+                  .enemies = namesOf(enemies),
+                  .lookItems = {}};
+}
+
+WavePlan wavePlanWithLookItems(std::span<const std::string_view> lookItems) {
+  return WavePlan{.curve = game::testing::TEST_WAVE_CURVE,
+                  .enemies = namesOf(TEST_ENEMY_CYCLE),
+                  .lookItems = namesOf(lookItems)};
 }
 
 WavePlan testWavePlan() { return wavePlanOf(TEST_ENEMY_CYCLE); }
 
 WavePlan oneWaveLevelWavePlan() {
   return WavePlan{.curve = game::testing::ONE_WAVE_LEVEL_CURVE,
-                  .enemies = namesOf(TEST_ENEMY_CYCLE)};
+                  .enemies = namesOf(TEST_ENEMY_CYCLE),
+                  .lookItems = {}};
 }
 
 }  // namespace rtype::server::testing

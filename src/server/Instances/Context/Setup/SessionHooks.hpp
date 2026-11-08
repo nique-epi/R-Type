@@ -6,6 +6,7 @@
 #include "ConnectedPlayer.hpp"
 #include "LeaderboardRequest.hpp"
 #include "PlayerInput.hpp"
+#include "ShipLookChoice.hpp"
 
 namespace rtype::server {
 
@@ -42,6 +43,11 @@ struct SessionHooks {
   std::vector<
       std::function<void(const ConnectedPlayer&, const network::ChatLine&)>>
       chatLineSent;
+  /** @brief Called with a player and each ShipLookChoice it sends in the
+   * waiting room, copies included, for a module to share it. */
+  std::vector<
+      std::function<void(ConnectedPlayer&, const network::ShipLookChoice&)>>
+      shipLookChosen;
 };
 
 }  // namespace rtype::server

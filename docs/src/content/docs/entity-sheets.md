@@ -13,7 +13,7 @@ Both programs read the folder `entities` (`ENTITY_SHEET_FOLDER_IN_ASSETS`) of th
 
 - Every `.toml` file of the folder is a sheet; any other file, and every sub-folder, is left alone. The name of the file without `.toml` is the name of the type: `weaver.toml` is `weaver`.
 - A name is 1 to 24 bytes (`MAXIMUM_ENTITY_TYPE_NAME_LENGTH`) of lowercase letters `a` to `z`, digits and `_`, so a file has the same name on every system. A folder holds at most 32 sheets (`MAXIMUM_ENTITY_TYPES`) and at least one. Both limits and the check of a name (`isEntityTypeName()`) live in `src/identifiers/`, so a name the game accepts is one the table of the types can carry.
-- The server numbers the sheets from 1 in the order of their names. The sixteen sheets the game ships are `bydo_tyrant` (1), `bydomancer` (2), `drifter` (3), `drillback` (4), `enemy_missile` (5), `orb_shard` (6), `player_missile` (7), `reaper` (8), `rune_orb` (9), `ship` (10), `tyrant_diver` (11), `tyrant_missile` (12), `tyrant_spore` (13), `tyrant_spore_shard` (14), `voltjelly` (15) and `weaver` (16). These numbers name the types on the wire for as long as the server runs, and every player learns them when it is accepted (see [Protocol](/R-Type/protocol/#entity-types)), so a new sheet whose name sorts first renumbers the others without breaking anything.
+- The server numbers the sheets from 1 in the order of their names. The twenty-three sheets the game ships are `bydo_tyrant` (1), `bydomancer` (2), `drifter` (3), `drillback` (4), `enemy_missile` (5), the seven look items `look_chef_toque` (6) to `look_wizard_hat` (12) in the order of their names, `orb_shard` (13), `player_missile` (14), `reaper` (15), `rune_orb` (16), `ship` (17), `tyrant_diver` (18), `tyrant_missile` (19), `tyrant_spore` (20), `tyrant_spore_shard` (21), `voltjelly` (22) and `weaver` (23). These numbers name the types on the wire for as long as the server runs, and every player learns them when it is accepted (see [Protocol](/R-Type/protocol/#entity-types)), so a new sheet whose name sorts first renumbers the others without breaking anything.
 - The server makes the ship of every player from the sheet named `ship` (`SHIP_SHEET_NAME`, `src/server/ServerConstants.hpp`): without it, it stops before its first game.
 
 ## `[gameplay]`, key by key
@@ -52,7 +52,7 @@ projectile = "enemy_missile"
 
 | Key | Unit | Accepted | What it gives the entity |
 |---|---|---|---|
-| `side` | | `player`, `enemy`, `player_missile`, `enemy_missile` | its `EntityType`: what it hits and what hits it (see [Collisions](/R-Type/server/#rules-collisionrules)), and the layer the client draws it in |
+| `side` | | `player`, `enemy`, `player_missile`, `enemy_missile`, `look_item` | its `EntityType`: what it hits and what hits it (see [Collisions](/R-Type/server/#rules-collisionrules)), and the layer the client draws it in (a `look_item` is drawn in the layer of the Bydos) |
 | `pilot` | | `player`, or the name of a behaviour: `straight`, `weave`, `scatter`, `reaper`, `drillback`, `bydomancer`, `bydo_tyrant` | what writes its `Intent`: the input of its player, or that behaviour (see [Behaviours](#behaviours-and-their-settings)) |
 | `hitbox.width`, `hitbox.height` | logical units | 1 to 1024 | its `CollisionBox`, centered on its position |
 | `hitbox.offset_x`, `hitbox.offset_y` | logical units | -1024 to 1024; 0 when left out | where the center of its `CollisionBox` lies from its position, y growing downwards: the box of the Bydo Tyrant covers its body, 12 units right of and 4 below its center |
@@ -95,6 +95,7 @@ projectile = "enemy_missile"
 | `boss.rage_below_percent` | percent | 1 to 99 | its `Boss`: it enrages once its health falls below its full health times this share, rounded down |
 | `boss.rage_attack` | | 0 to 255 | the attack it starts, in the phase `enraged`, when it enrages |
 | `boss.arrival_attack` | | 0 to 255 | the attack of its arrival: while it is in any phase of it, a hit takes nothing from it |
+| `look_item` | | the name of an item of the locker: `top_hat`, `party_hat`, `crown`, `propeller_cap`, `cowboy_hat`, `viking_helmet`, `wizard_hat`, `chef_toque`, `cool_shades`, `mustache`; for side `look_item` only | its `LookItem`: the item the pilot whose ship touches the body wins for the locker of the hangar (see [Ship looks](/R-Type/server/#look-items-lookitemkeeper)) |
 
 - `side`, `pilot`, `hitbox` and `motion` are required; the tables `behaviour`, `health`, `score`, `gun`, `hurt_zone`, `survives_contact`, `fragile`, `burst`, `volley` and `boss` may be left out. The three keys of `boss` are required in it. A body without `health` takes no damage: a missile that hits it still disappears, and a ship pays a hit with a life instead (see [Lives](/R-Type/server/#lives-lifekeeper)). A body without `score` earns nothing, without `gun` fires nothing.
 - Any other key is refused, so a misspelt key stops the program instead of being ignored. Every number is a TOML integer: `240`, never `240.0` or `"240"`.
@@ -116,6 +117,7 @@ A sheet whose keys are each valid is refused when it does not hold together:
 - A volley is made of a sheet of the folder of side `enemy` or `enemy_missile`, and its gap leaves at least one body: `gap_count` is below `count`.
 - A beam that sweeps, `to_deg` other than `from_deg`, names `until_ms`, the end of its sweep; a beam without `until_ms` keeps `from_deg`.
 - Only a missile has a `burst`, and it bursts into missiles of its own side, of a sheet of the folder.
+- A body of side `look_item` names its item with `look_item`, and no other side does. On its first tick the pilot of a look item steers it to the left, the edge that removes it, so an item nobody picks up does not stay for the rest of the game. Its hitbox is the size it is drawn at, as for every shipped sheet.
 - A box names its `attack` and its `phase` together, or neither; a box that names neither has no `from_ms` or `until_ms`, and `until_ms` is above `from_ms`. An `attack` is a number the sheet gives its own attacks: the code knows no attack by name.
 - The waves file names enemies among the sheets of side `enemy`, and the boss of a difficulty among the sheets that have a `boss` (see [Writing the waves file](/R-Type/waves-file/#enemies)).
 
@@ -270,6 +272,20 @@ The final boss, the diver it calls in and its projectiles: the Tyrant draws from
 | `idle` | 128 × 128, 2 frames of 300 ms; enraged, 2 of 200 ms | 24 × 24, the idle frames of the Drillback, 2 of 120 ms | 8 × 8, 2 of 120 ms | 9 × 9, 2 of 200 ms | 8 × 8, 2 of 120 ms |
 
 The values are **provisional** until gameplay tunes them; tuning them needs no rebuild. The Drifter and the Weaver share their frames, so the client draws both as the same Bydo; the diver of the Tyrant shares the idle frames of the Drillback, at a frame time of its own. The settings of the behaviours are commented in each sheet.
+
+The seven look items are bodies of side `look_item` that float to the left, `steady` at 240 units per second, piloted by `straight` with `heading` -1, with no health, score or gun. They draw from `sprites/looks.png`, one frame each:
+
+| Sheet | `look_item` | Hitbox | Frame on the sheet |
+|---|---|---|---|
+| `look_party_hat` | `party_hat` | 48 × 44 | 12 × 11 at 18 |
+| `look_crown` | `crown` | 48 × 32 | 12 × 8 at 36 |
+| `look_propeller_cap` | `propeller_cap` | 48 × 32 | 12 × 8 at 54 |
+| `look_cowboy_hat` | `cowboy_hat` | 56 × 32 | 14 × 8 at 72 |
+| `look_viking_helmet` | `viking_helmet` | 56 × 36 | 14 × 9 at 90 |
+| `look_wizard_hat` | `wizard_hat` | 48 × 48 | 12 × 12 at 108 |
+| `look_chef_toque` | `chef_toque` | 48 × 36 | 12 × 9 at 126 |
+
+The top hat, the cool shades and the mustache are in the locker from the first launch and have no sheet.
 
 ## The shipped sheets and vanilla games
 

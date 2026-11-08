@@ -1,0 +1,2 @@
+rtype_add_test(NAME server_looks_tests SOURCES LookRelayTest.cpp LookRelayFixture.cpp LIBS rtype_server_looks_module rtype_network_player_looks server_test_datagrams)
+target_include_directories(server_looks_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/server)

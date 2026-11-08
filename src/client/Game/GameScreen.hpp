@@ -27,6 +27,7 @@
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerTicks.hpp"
+#include "IShipLookExchange.hpp"
 #include "ISky.hpp"
 #include "InterpolationClock.hpp"
 #include "Logger.hpp"
@@ -194,6 +195,7 @@ class GameScreen : public IScreen {
   IPlayerInputLink* inputs_;
   IEntityMessageSource* entityMessageSource_;
   const IServerTicks* serverTicks_;
+  const IShipLookExchange* shipLooks_;
   std::vector<EntityMessage> receivedEntityMessages_;
   ScoreBoard scoreBoard_;
   GameResult* result_;

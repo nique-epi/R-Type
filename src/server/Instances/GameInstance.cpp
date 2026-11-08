@@ -28,6 +28,7 @@
 #include "PlayerInput.hpp"
 #include "PlayerRoster.hpp"
 #include "SessionHooks.hpp"
+#include "ShipLookChoice.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
 
@@ -77,6 +78,11 @@ GameSessionsParts sessionPartsOf(const GameInstanceParts& parts,
       .onChatLine =
           [own](const ConnectedPlayer& player, const network::ChatLine& line) {
             callAll(own.hooks.get().chatLineSent, player, line);
+          },
+      .onShipLookChoice =
+          [own](ConnectedPlayer& player,
+                const network::ShipLookChoice& choice) {
+            callAll(own.hooks.get().shipLookChosen, player, choice);
           }};
 }
 

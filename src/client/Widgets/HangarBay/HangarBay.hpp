@@ -27,7 +27,7 @@ struct BayPilot {
   std::string_view nickname;
   BayReadiness readiness = BayReadiness::NotReady;
   bool isLocalPlayer = false;
-  ShipLook look{};
+  identifiers::ShipLook look{};
 };
 
 /**

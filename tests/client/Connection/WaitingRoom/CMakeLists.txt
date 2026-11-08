@@ -1,1 +1,1 @@
-target_sources(client_connection_tests PRIVATE WaitingRoomTest.cpp)
+target_sources(client_connection_tests PRIVATE WaitingRoomTest.cpp ShipLookExchangeTest.cpp)

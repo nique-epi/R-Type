@@ -11,6 +11,7 @@
 #include "SettingId.hpp"
 #include "SettingRange.hpp"
 #include "SettingsConstants.hpp"
+#include "ShipLocker.hpp"
 #include "ShipLook.hpp"
 
 namespace rtype::client {
@@ -59,7 +60,7 @@ constexpr Setting<bool> PILOT_NAMES_SETTING{
     .member = &PlayerSettings::pilotNames,
     .id = SettingId::PilotNames,
     .range = std::nullopt};
-constexpr Setting<ShipLook> SHIP_LOOK_SETTING{
+constexpr Setting<identifiers::ShipLook> SHIP_LOOK_SETTING{
     .member = &PlayerSettings::shipLook,
     .id = SettingId::ShipLook,
     .range = std::nullopt};
@@ -105,6 +106,11 @@ constexpr Setting<std::optional<network::Endpoint>> MASTER_SETTING{
     .id = SettingId::Master,
     .range = std::nullopt};
 
+constexpr Setting<ShipLocker> SHIP_LOCKER_SETTING{
+    .member = &PlayerSettings::shipLocker,
+    .id = SettingId::ShipLocker,
+    .range = std::nullopt};
+
 /** @brief Every setting a listener can be told about. */
 constexpr std::array ALL_SETTING_IDS{
     SettingId::MusicVolume,
@@ -127,6 +133,7 @@ constexpr std::array ALL_SETTING_IDS{
     SettingId::ChatBackground,
     SettingId::Master,
     SettingId::ShipLook,
+    SettingId::ShipLocker,
 };
 
 }  // namespace rtype::client

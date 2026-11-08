@@ -518,6 +518,22 @@ static_assert(LARGEST_PLAYER_CHAT_LINE_SIZE <= ORDERED_PAYLOAD_LIMIT,
               "a PlayerChatLine always fits in an OrderedMessage");
 
 /**
+ * @brief The size of a ship look on the wire: head, eyes, face, one byte each.
+ */
+constexpr std::size_t SHIP_LOOK_WIRE_SIZE = 3 * UINT8_WIRE_SIZE;
+
+/**
+ * @brief The largest PlayerLooks payload: the count, then a player number and
+ * a ship look for each of MAXIMUM_PLAYERS players, 1 + 4 x 4 = 17 bytes.
+ */
+constexpr std::size_t LARGEST_PLAYER_LOOKS_SIZE =
+    UINT8_WIRE_SIZE +
+    (MAXIMUM_PLAYERS * (UINT8_WIRE_SIZE + SHIP_LOOK_WIRE_SIZE));
+
+static_assert(LARGEST_PLAYER_LOOKS_SIZE <= ORDERED_PAYLOAD_LIMIT,
+              "a PlayerLooks always fits in an OrderedMessage");
+
+/**
  * @brief The size of the largest datagram holding a ServerInformation: the
  * echo of the request (sentAt, heldFor), the protocol version, the longest
  * game version and server name, then the counts of players, games and free
@@ -566,6 +582,10 @@ constexpr std::uint32_t NO_SHOWN_TICK = 0;
  * protocol page writes them.
  */
 constexpr std::string_view PLAYER_NUMBER_FIELD = "playerNumber";
+constexpr std::string_view HEAD_FIELD = "head";
+constexpr std::string_view EYES_FIELD = "eyes";
+constexpr std::string_view FACE_FIELD = "face";
+constexpr std::string_view ITEM_FIELD = "item";
 constexpr std::string_view ENTITY_ID_FIELD = "entityId";
 constexpr std::string_view ENTITY_TYPE_FIELD = "entityType";
 constexpr std::string_view REASON_FIELD = "reason";

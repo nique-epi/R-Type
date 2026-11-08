@@ -29,6 +29,7 @@
 #include "RtypeRulesModule.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "ShipDirections.hpp"
+#include "ShipLook.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
 #include "UnreliableNetwork.hpp"
@@ -53,6 +54,14 @@ struct SentReadyState {
   bool ready{};
   std::uint16_t sequence{};
   std::uint64_t sessionToken{SESSION_TOKEN};
+};
+
+/** @brief A ShipLookChoice sent by a player, with the sequence of its
+ * header. */
+struct SentShipLook {
+  std::size_t player{};
+  identifiers::ShipLook look;
+  std::uint16_t sequence{};
 };
 
 /** @brief A GameLoaded sent by a player, with the sequence of its header. */
@@ -149,6 +158,10 @@ class GameInstanceTest : public ::testing::Test {
 
   /** @brief Queues the ReadyState described by @p sent for the next tick. */
   void sendReady(const SentReadyState& sent);
+
+  /** @brief Queues the ShipLookChoice described by @p sent for the next
+   * tick. */
+  void sendLook(const SentShipLook& sent);
 
   /** @brief Queues the GameLoaded described by @p sent for the next tick,
    * under the session token of its player. */

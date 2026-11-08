@@ -31,6 +31,8 @@ class HangarScreenFixture : public ::testing::Test {
    * runs a frame. */
   void clickAt(sf::Vector2i pixel);
   void update(engine::Duration elapsed);
+  /** @brief Puts every item of the catalog in the locker of the player. */
+  void holdEveryItem();
 
   [[nodiscard]] const PlayerSettings& settings() const;
   [[nodiscard]] const RecordingSettingsStorage& storage() const;

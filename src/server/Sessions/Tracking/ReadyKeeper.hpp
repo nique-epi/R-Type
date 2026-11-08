@@ -47,6 +47,10 @@ class ReadyKeeper {
    */
   [[nodiscard]] bool everyPlayerIsReady();
 
+  /** @returns Whether the game takes the choices of the waiting room right
+   * now: a ReadyState, a ShipLookChoice. */
+  [[nodiscard]] bool acceptsRoomChoices() const;
+
  private:
   PlayerRoster& roster_;
   std::function<bool()> readyAccepted_;

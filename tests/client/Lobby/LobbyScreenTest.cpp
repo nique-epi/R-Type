@@ -4,6 +4,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
 #include <cstddef>
+#include <iterator>
 #include <optional>
 #include <string>
 #include <vector>
@@ -593,4 +594,43 @@ TEST_F(LobbyScreenFixture, EnterSendsTheLineAndPressesNoBar) {
 
   EXPECT_THAT(chat().sent(), ElementsAre(std::string{CHAT_LINE}));
   EXPECT_THAT(readyRequests(), IsEmpty());
+}
+
+/**
+ * Given the room listing the local player, who wears nothing, and the pilot of
+ * the third bay, which the server shows wearing the top hat
+ * When a frame goes by
+ * Then one item of the sheet of the items is drawn, and it lies inside the
+ * third bay: that bay spans 244 to 346 interface pixels across, the first one
+ * 24 to 126
+ */
+TEST_F(LobbyScreenFixture, AnotherBayShowsTheLookItsPilotWears) {
+  shipLooks().setPlayerLooks(
+      {{.playerNumber = OTHER_NUMBER,
+        .look = rtype::identifiers::ShipLook{.head = WEARS_TOP_HAT}}});
+
+  list({pilot(OWN_NUMBER, OWN_NICKNAME, false),
+        pilot(OTHER_NUMBER, OTHER_NICKNAME, false)});
+
+  std::vector<RecordedImage> items;
+  std::ranges::copy_if(
+      canvas().images, std::back_inserter(items),
+      [](const RecordedImage& image) { return image.assetId == LOOK_SHEET; });
+  ASSERT_EQ(items.size(), 1U);
+  EXPECT_GT(items.front().topLeft.x, 244);
+  EXPECT_LT(items.front().topLeft.x, 346);
+}
+
+/**
+ * Given the room, whose settings say the ship wears the top hat
+ * When one frame goes by
+ * Then the exchange was asked to choose that look
+ */
+TEST_F(LobbyScreenFixture, TheLobbySendsTheLookOfTheSettings) {
+  look().head = WEARS_TOP_HAT;
+
+  list({pilot(OWN_NUMBER, OWN_NICKNAME, false)});
+
+  EXPECT_EQ(shipLooks().chosenLooks().back(),
+            (rtype::identifiers::ShipLook{.head = WEARS_TOP_HAT}));
 }

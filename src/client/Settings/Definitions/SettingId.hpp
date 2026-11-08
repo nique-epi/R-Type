@@ -26,6 +26,7 @@ enum class SettingId : std::uint8_t {
   ChatBackground,
   Master,
   ShipLook,
+  ShipLocker,
 };
 
 }  // namespace rtype::client

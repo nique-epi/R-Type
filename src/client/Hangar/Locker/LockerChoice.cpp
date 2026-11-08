@@ -9,6 +9,8 @@
 
 namespace rtype::client {
 
+using identifiers::SHIP_LOOK_ITEM_COUNT;
+
 namespace {
 
 /** @returns @p wanted when it holds an item, else @p current. */

@@ -17,6 +17,7 @@
 #include "ServerPingProbe.hpp"
 #include "ServerSession.hpp"
 #include "SessionEntityTypes.hpp"
+#include "ShipLookExchange.hpp"
 #include "SystemClock.hpp"
 #include "TimeConstants.hpp"
 #include "WaitingRoom.hpp"
@@ -72,13 +73,12 @@ class PlayerConnection {
   /**
    * @brief Provides to the modules installed after the one installing it the
    * parts of this connection: the ServerSession, the WaitingRoom, the
-   * EntityMessageQueue, the ServerLeaderboard, the ChatChannel, the
-   * RoundTripWatch as
-   * IPlayerRoundTrips and as IServerTicks, the IEntityTypeTable and the
-   * TrafficCounters of the socket. They must outlive every module that
-   * requires them. The ServerPingProbe is reached through pings(). The
-   * client's own content is drawn with the EntityAppearances of the assets
-   * module from then on.
+   * ShipLookExchange, the EntityMessageQueue, the ServerLeaderboard, the
+   * ChatChannel, the RoundTripWatch as IPlayerRoundTrips and as IServerTicks,
+   * the IEntityTypeTable and the TrafficCounters of the socket. They must
+   * outlive every module that requires them. The ServerPingProbe is reached
+   * through pings(). The client's own content is drawn with the
+   * EntityAppearances of the assets module from then on.
    * @throws MissingServiceException when no module provided the
    * EntityAppearances.
    */
@@ -104,6 +104,7 @@ class PlayerConnection {
   OrderedInbox orderedInbox_;
   GameLoadedReminder gameLoaded_;
   WaitingRoom waitingRoom_;
+  ShipLookExchange shipLooks_;
   EntityMessageQueue entityMessages_;
   engine::SystemClock clock_;
   RoundTripWatch roundTrips_;

@@ -103,7 +103,7 @@ The rules play while a game is `InProgress`. What needs only entities lives in `
 | [Shooting](#shooting-weaponsystem) | A ship fires a missile every 333 ms (20 ticks) while shoot is held, a Bydo every 1500 ms (90 ticks): the gun of their [sheet](/R-Type/entity-sheets/) | `src/server/Spawning/`, `assets/entities/` |
 | [Bydos](#waves-of-bydos-wavedirector) | They come in waves read from `assets/waves/waves.toml`; the next wave waits until none is left, and after the last wave of the level comes the boss its difficulty names, if any | `src/game/Waves/`, `src/server/Spawning/` |
 | [Boss](#boss-bossstage-and-bossphasesystem) | The Bydo Tyrant arrives 4400 ms after the last wave of `normal` and `hard`, takes no hit during its arrival, has more health with more players, enrages below half its health, and is hit anywhere on its body | `src/server/Spawning/`, `src/game/Systems/BossPhaseSystem/`, `assets/entities/bydo_tyrant.toml` |
-| [Contacts](#rules-collisionrules) | Three pairs count: a missile of a player and a Bydo, a missile of a Bydo and a ship, a ship and a Bydo; with friendly fire, a missile of a player and the ship of another player too | `src/game/Systems/CollisionRules/` |
+| [Contacts](#rules-collisionrules) | Four pairs count: a missile of a player and a Bydo, a missile of a Bydo and a ship, a ship and a Bydo, a ship and a look item; with friendly fire, a missile of a player and the ship of another player too | `src/game/Systems/CollisionRules/` |
 | [Damage](#damage-damagerules) | A missile takes `MISSILE_DAMAGE` (1) from a Bydo, which has the health of its sheet (3) | `src/game/Systems/DamageRules/`, `assets/entities/` |
 | [Score](#damage-damagerules) | The player whose missile destroys a Bydo earns the score of its sheet: 100 for a Drifter, 200 for a Weaver | `assets/entities/`, `src/server/Rules/Players/` |
 | [Lives](#lives-lifekeeper) | A player has the lives of the rules of its game, `STARTING_LIVES` (3) by default; a hit on its ship costs one, and a new ship comes after `RESPAWN_DELAY` (1 s) and cannot be hit for `INVULNERABILITY_DURATION` (2 s) | `src/server/Rules/Players/` |
@@ -795,13 +795,14 @@ A game installs modules instead of building the rules of R-Type itself, so a rul
 - A tick runs three stages, in order: `GAME_INPUT_STAGE` counts the time since the previous tick for the heartbeats and the guaranteed messages, reads the datagrams and closes the silent sessions, `GAME_SIMULATION_STAGE` runs what the modules added, `GAME_OUTPUT_STAGE` sends the guaranteed messages due again, then the heartbeats.
 - One module must provide `IGameFlow` (`state()`, `tick()`, `finish()`); the game answers its own functions through it.
 - `RtypeRulesModule` builds its `GameFlow` in `install()`, which opens nothing, and `start()` calls `GameFlow::begin()`, which builds the first world and subscribes the rules to the bus. Until then the flow answers as a game that waits for players at tick 0. `stop()` destroys the flow, then the `ScoreKeeper`, which give their subscriptions back to the bus.
-- What happens to a player goes through `SessionHooks` (`src/server/Instances/Context/Setup/SessionHooks.hpp`), in the `GameContext`: five lists of functions, `joined`, `closing`, `newerInput`, `leaderboardRequested` and `chatLineSent`. A module adds its functions in `start()`, and the game calls them in the order of the modules, so any module can follow a player joining, a session closing or an input being kept, without a change to `GameInstance`. The lists are not emptied by `stop()`: the game is destroyed right after its modules stop and calls no hook in between.
+- What happens to a player goes through `SessionHooks` (`src/server/Instances/Context/Setup/SessionHooks.hpp`), in the `GameContext`: six lists of functions, `joined`, `closing`, `newerInput`, `leaderboardRequested`, `chatLineSent` and `shipLookChosen`. A module adds its functions in `start()`, and the game calls them in the order of the modules, so any module can follow a player joining, a session closing or an input being kept, without a change to `GameInstance`. The lists are not emptied by `stop()`: the game is destroyed right after its modules stop and calls no hook in between.
 
 | Module (`rtypeGameModules()`, in this order) | Provides | Holds |
 |---|---|---|
 | `ReplicationModule` (`src/server/Replication/`) | `IGameReplication` | `GameReplication` (the world state sender and the announcers of the room, the ships and the end of a game) and the `GameEventBroadcaster`, subscribed when the module starts |
 | `RtypeRulesModule` (`src/server/Rules/`) | `IGameFlow` | the world of the game (its `WorldSlot`), the systems of the world, the `GameFlow` with its rules, and the `ScoreKeeper` |
 | `ResultsModule` (`src/server/Results/`) | nothing | `GameResultKeeper` and `LeaderboardDesk` (see [Results and leaderboard](#results-and-leaderboard-resultsmodule-resultsarchive)) |
+| `LooksModule` (`src/server/Looks/`) | nothing | `LookRelay` (see [Ship looks](#ship-looks-looksmodule-lookrelay)) |
 | `ChatModule` (`src/server/Chat/`), optional | nothing | `ChatRelay` (see [Chat](#chat-chatmodule-chatrelay)) |
 
 `GameFlow` tells the players what happens through `IGameReplication`, never through the announcers: each call sends what it has to before it returns, so the order of the datagrams to a player is the order of the calls. The bus cannot carry these calls, because it delivers an event at the end of the tick, while creating a ship must set `ConnectedPlayer::shipEntityId` at once.
@@ -978,6 +979,7 @@ events.dispatch();
 `MessageDelivery.hpp` (`src/server/Sessions/Tracking/`) sends a message to every player of a roster, each datagram under the next session header of its player, as [Protocol](/R-Type/protocol/#ordered-messages) describes:
 
 - `sendToEveryPlayer(roster, send, message)` sends it once.
+- `guaranteeToPlayer(player, send, message)` does the same for one player alone, for a message only that player needs (a look answered to its sender, an item won).
 - `guaranteeToEveryPlayer(roster, send, message)` gives it to the `ConnectedPlayer::unacknowledged` of each player (an `UnacknowledgedMessages`, which numbers it for the ordered channel of that player, see [Network](/R-Type/network/#guaranteed-messages-srcnetworkreliability)), then sends each player its guaranteed messages due at once, in a datagram with `GUARANTEED_FLAG` set. A message too large for a datagram alone throws `DatagramTooLargeException` before any player gets it.
 - `ageGuaranteedMessages(roster, elapsed)` makes them older by the real time since the previous tick started, when a tick starts, as the time since a player was sent a datagram is counted (see [Silent players](#silent-players-heartbeats-and-timeouts)): a stall of the server ages them too, since the client waits in real time.
 - `resendGuaranteedMessages(roster, send)` sends each player the ones due again, in as few datagrams as they fit, at the end of the tick, before the heartbeats.
@@ -991,6 +993,7 @@ events.dispatch();
 
 - `waveEntryPosition(randomUnit)` (`src/game/Spawning/`) says where: `ENEMY_SPAWN_MARGIN` (64 logical units) past the right edge of the playfield, so the Bydo is off screen, and at a height from `ENEMY_ROW_MARGIN` (112) to `PLAY_AREA_HEIGHT` (984) minus that margin, 872. The margin is `ENEMY_SPAWN_VERTICAL_MARGIN` (64), more than half of the height of a Bydo, and the room a Bydo may move on its pattern, `ENEMY_PATTERN_ROOM` (48), so even at the bottom of a wave a Bydo stays above the status band every client draws along the bottom of the playfield (see [Architecture](/R-Type/architecture/#coordinate-system)). A draw of 0 gives the highest row; a draw from 0 up to, but not including, 1 is accepted, anything else (1 included, or not a number) throws `InvalidRandomUnitException`. The margins are **provisional**: chosen before a Bydo had a size, they are wider than half of its 96 units, so a Bydo still appears and leaves off screen.
 - `World::spawn(sheet, position)` makes the Bydo from the sheet the wave plan names (see [Writing an entity sheet](/R-Type/entity-sheets/)): with the shipped sheets, a `Position`, a `SteadyMotion` of 240 units per second, a `Pilot` holding the behaviour of its sheet and its settings, `EntityType::Enemy`, its `Health`, its `ScoreValue`, its `Gun`, its `EntityTypeNumber`, a `NetworkIdentity` and a `CollisionBox` of 96 × 96 logical units, its 24 × 24 pixels of the entity sheet (a client test compares the two). The spawner gives the Bydos the sheets the wave plan lists, in turn, the turn carrying on from one wave to the next (`drifter` then `weaver` with `normal`), and draws nothing for it, so a seed still gives the same heights. A plan without enemies throws `EmptyEnemyCycleException`, and one that names a sheet the server does not have `UnknownEntityTypeException`. See [Piloted bodies](#piloted-bodies-pilotsystem-and-playfieldexitsystem).
+- From the second wave, `spawnLookItem()` also creates a look item of the plan (`look_items`, taken in turn) at the middle of the right edge (`LOOK_ITEM_ENTRY_HEIGHT`, 0.5) in the tick the director moves to the new wave, that is when the pause before it starts. It draws nothing from the generator and is not counted among the enemies, so it never holds a wave open.
 - Every connected player is sent an `EntitySpawned` (the number of the sheet of the Bydo, the position), in its own datagram, like the ship of a player. Both use `sendEntitySpawned` (`src/server/Replication/Wire/EntitySpawnSender.hpp`). With no player connected, the Bydo appears and nothing is sent. When every network id was given, the spawn is skipped and a warning is logged.
 - The generator is a `std::mt19937` started from a seed. The spawner logs it at the `info` level under `WaveSpawner` when it is built (`wave spawning starts from the seed 42`), so the same seed gives the same heights in the same order. `GameFlow` gives each world the seed of the game plus the number of worlds built before it, so one seed replays every game of a session; without `--seed`, the game draws it from `std::random_device`. The line goes to the journal of the game, `r-type_game_<n>.log`. The spawner also logs each wave at the start of the pause before it (`wave 2: 4 Bydos, one every 1750 ms`).
 
@@ -1028,7 +1031,7 @@ Each tick of a game in progress, `GameFlow` makes the ships of away players want
 
 `WaveCatalog` (`src/server/Spawning/`, built into `rtype_server_spawning`) reads the waves of each difficulty from a TOML file, with the strict reading of `src/engine/DataFiles/` (see [Engine](/R-Type/engine/#data-files-datafilereading)), which the client also uses for the appearance of the entity sheets. Only the server links `rtype_server_spawning`, so no client target can read the levels. `gameProcessModules()` hands the games module `WAVE_FILE_IN_ASSETS` (`waves/waves.toml`) in the `assets/` folder that `locateAssetFolder()` finds next to the executable or one level above it, whatever folder the server was started in (see [Engine](/R-Type/engine/#files-next-to-the-executable-locateassetfolder)). When the games module starts, it reads the entity sheets first, then that file, takes the `WavePlan` of the difficulty of its rules (`normal` by default) and gives it to the game in its `GameSettings`, with the seed and the sheets. A `WavePlan` holds a `WaveCurve`, the names of the enemy sheets its Bydos take in turn, and the name of its boss, when the difficulty has a `boss`.
 
-Every key, value and enemy name of every difficulty is checked: an enemy names a sheet of side `enemy`, and a boss a sheet with a `[gameplay.boss]` table. The first error throws an `engine::EngineException` (`src/engine/Exceptions/`) for a key, a value or the syntax, or a `ServerException` (`src/server/Exceptions/`) for the list of enemies, the boss (`UnknownBossException`), a missing difficulty, a difficulty named by more than 16 bytes or more than `MAXIMUM_DIFFICULTIES` (16) of them, naming the file, the line and the column, and the dotted name of the key; the game process prints it after `game stopped:` and exits with code 1, and the supervisor writes in its journal that the game crashed. The format, the ranges, the shipped difficulties and every error are in [Writing the waves file](/R-Type/waves-file/).
+Every key, value and enemy name of every difficulty is checked: an enemy names a sheet of side `enemy`, a look item (`look_items`, optional) a sheet of side `look_item`, and a boss a sheet with a `[gameplay.boss]` table. The first error throws an `engine::EngineException` (`src/engine/Exceptions/`) for a key, a value or the syntax, or a `ServerException` (`src/server/Exceptions/`) for the list of enemies or of look items, the boss (`UnknownBossException`), a missing difficulty, a difficulty named by more than 16 bytes or more than `MAXIMUM_DIFFICULTIES` (16) of them, naming the file, the line and the column, and the dotted name of the key; the game process prints it after `game stopped:` and exits with code 1, and the supervisor writes in its journal that the game crashed. The format, the ranges, the shipped difficulties and every error are in [Writing the waves file](/R-Type/waves-file/).
 
 ```cpp
 const rtype::game::EntitySheets sheets =
@@ -1158,17 +1161,18 @@ A collision takes two steps, in two classes. The first finds what overlaps; the 
 
 ### Rules: `CollisionRules`
 
-`CollisionRules` (`src/game/Systems/CollisionRules/`) subscribes to `Collision` when it is created and unsubscribes when it is destroyed. For each `Collision` it reads the `EntityType` of both entities, in whichever order they come, and publishes a game event for three pairs only:
+`CollisionRules` (`src/game/Systems/CollisionRules/`) subscribes to `Collision` when it is created and unsubscribes when it is destroyed. For each `Collision` it reads the `EntityType` of both entities, in whichever order they come, and publishes a game event for four pairs only:
 
 | Pair | Published |
 |---|---|
 | `PlayerMissile` and `Enemy` | `MissileHit{missile, target}`, the target being the enemy |
 | `EnemyMissile` and `Player` | `MissileHit{missile, target}`, the target being the player |
 | `Player` and `Enemy` | `ShipContact{player, enemy}` |
+| `Player` and `LookItem` | `LookItemTouched{ship, item}` |
 
 With friendly fire on, the third argument of its constructor, a fourth pair counts: `PlayerMissile` and `Player` publish `MissileHit{missile, target}` when the `MissileOwner` of the missile and the `ShipPilot` of the ship name two players. A missile never hits the ship of the player who fired it. `World::spawn` gives a ship the `ShipPilot` of the player it is spawned for. Every other pair is ignored: without friendly fire a player missile does not hurt a player, two enemies do not hurt each other, two missiles do not stop each other. An entity without an `EntityType`, or destroyed between the moment the `Collision` was published and the moment it is delivered, is ignored too.
 
-The events are structs in `src/game/Events/`. `MissileHit` and `ShipContact` say that a contact happened; what it costs is decided by [`DamageRules`](#damage-damagerules) for a `MissileHit`, and by [`LifeKeeper`](#lives-lifekeeper) for a `ShipContact` and for a `MissileHit` whose target is a ship.
+The events are structs in `src/game/Events/`. `MissileHit`, `ShipContact` and `LookItemTouched` say that a contact happened; what it costs is decided by [`DamageRules`](#damage-damagerules) for a `MissileHit`, and by [`LifeKeeper`](#lives-lifekeeper) for a `ShipContact` and for a `MissileHit` whose target is a ship.
 
 ```cpp
 rtype::engine::EventBus events;
@@ -1387,6 +1391,26 @@ The client sends the request from its leaderboard screen (see [Client](/R-Type/c
 
 The client neither sends nor shows a line yet.
 
+## Ship looks: `LooksModule`, `LookRelay`
+
+`LooksModule` (`src/server/Looks/`, always built) shares the look of each player with every player (see [Protocol](/R-Type/protocol/#ship-looks)). `GameSessions` hands it each `ShipLookChoice` through the `shipLookChosen` hook, only while the game takes the choices of the waiting room (`ReadyKeeper::acceptsRoomChoices()`, the test a `ReadyState` passes too).
+
+- `LookRelay` keeps one `LookSeat` per seat: the look and the first tick it may choose again. A changed look goes to every player as a guaranteed `PlayerLooks`; a look equal to the one kept is a copy, answered to its sender alone with `guaranteeToPlayer`.
+- A player gets at most one choice taken per `TICKS_BETWEEN_LOOK_CHOICES` ticks (6, `LOOK_CHOICE_INTERVAL` 100 ms), counted by the relay. A choice sooner is ignored and not kept.
+- Every player gets the looks again each time a player joins (`joined` hook), so a newcomer sees the others.
+- The look and the wait of a seat are cleared when its session closes, so the next player on the seat wears nothing.
+- A number the catalog does not know, or of another slot, is dropped when the message is read (`isLookNumberOf()`, `src/identifiers/ShipLookNumbers.hpp`).
+
+### Look items: `LookItemKeeper`
+
+A look item is an entity of the side `look_item` (see [Writing an entity sheet](/R-Type/entity-sheets/)); the waves bring them (see [Writing the waves file](/R-Type/waves-file/)). `LookItemKeeper` (`src/server/Rules/Players/`, built by `GameFlow` with the other rules of a world) gives each one to a single pilot:
+
+1. `CollisionRules` publishes a `LookItemTouched` for each ship that touches an item; the keeper records the claim (the item, its number, the player and the ship).
+2. At the start of the next tick, before the world systems run, `onTick()` groups the claims by item and gives it to the lowest player number among those that still fly the ship that touched it (`ConnectedPlayer::shipEntityId`): a ship destroyed in the same tick lost the claim.
+3. The item is destroyed, an `EntityDestruction` (`Removed`) is published, and the winner alone is sent a guaranteed `LookItemWon`.
+
+So an item disappears one tick (16.7 ms) after the contact, and two ships that touch it together never both win. An item no pilot can win stays in the world until the playfield removes it past the left edge.
+
 ## Game statistics: `ServerGameStatisticsModule`
 
 The `game-statistics` plugin (`src/server/GameStatistics/`) writes the statistics of the games to a CSV file, so a host balances the waves from real games. It is a shared library, not a module of `gameProcessModules()`: a game behaves the same without it, and a `plugin game-statistics` line of `server.cfg` loads it in every game process, never in the supervisor (see [Write a plugin](/R-Type/modules/#write-a-plugin)). It needs `logger`, `network` and `games`, and follows the game through `IGameEvents`, the bus of the game the `games` module provides, so it holds none of the code of the game.
@@ -1474,6 +1498,8 @@ The supervised games module tells the job when the games change. At each tick, o
 | Change the tables of the results, or a query | A new line of `SERVER_MIGRATIONS` (`ServerMigrationsConstants.hpp`), the migration and `LEADERBOARD_QUERY` in `src/server/Storage/Database/ResultsDatabaseConstants.hpp` |
 | Change how a ban is written, read or compared | `BanList` in `src/server/Bans/`, `BansDatabaseConstants.hpp` in `src/server/Storage/Database/`; how often a game reads them, `BAN_REREAD_INTERVAL` in `src/server/Storage/Archive/ArchiveConstants.hpp` |
 | Change how often a player may chat, or how long a line is | `CHAT_LINE_INTERVAL` in `src/server/Chat/ChatConstants.hpp`, `MAXIMUM_CHAT_TEXT_SIZE` in `src/network/Protocol/ProtocolConstants.hpp` |
+| Change how often a player may choose a look | `LOOK_CHOICE_INTERVAL` in `src/server/Looks/LooksConstants.hpp` |
+| Change who wins a look item, or when | `LookItemKeeper` in `src/server/Rules/Players/` |
 | Change how often a player is answered | `LEADERBOARD_ANSWER_INTERVAL` in `src/server/Instances/Context/Setup/GameInstanceConstants.hpp` |
 | Change how every SQLite connection is opened | `openDatabaseFile()` in `src/storage/DatabaseFile.cpp` |
 | Send a datagram to a player during a session | `sessionDatagram` in `src/server/Sessions/Roster/SessionDatagram.hpp`, then the send function of the game |
@@ -1550,7 +1576,7 @@ The supervised games module tells the job when the games change. At each tick, o
 | Test code that receives datagrams late, twice or never | `tests/doubles/UnreliableNetwork.hpp` |
 | Test the whole server | `tests/server/Network/ServerApplicationTest.cpp`: a client on the loopback address, and a tick handler that records or throws |
 | Change which pairs of entities matter | `CollisionRules::publishIfRuleMatches` in `src/game/Systems/CollisionRules/CollisionRules.cpp` |
-| React to a hit or a contact | `subscribe<MissileHit>` or `subscribe<ShipContact>` on the `EventBus`; the structs are in `src/game/Events/` |
+| React to a hit or a contact | `subscribe<MissileHit>`, `subscribe<ShipContact>` or `subscribe<LookItemTouched>` on the `EventBus`; the structs are in `src/game/Events/` |
 | Change when two boxes count as overlapping | `overlaps` in `src/engine/Collision/Overlaps.hpp` |
 | Change how entities move | `MovementSystem` in `src/game/Systems/MovementSystem/`; the ships move through `ShipControl` in `src/game/ShipControl/` instead |
 | Add a component type | A new struct in `src/game/Components/` |

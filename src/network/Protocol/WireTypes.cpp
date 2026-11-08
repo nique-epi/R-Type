@@ -10,6 +10,9 @@
 #include "ByteWriter.hpp"
 #include "NetworkException.hpp"
 #include "ProtocolConstants.hpp"
+#include "ShipLook.hpp"
+#include "ShipLookNumbers.hpp"
+#include "ShipLookSlot.hpp"
 #include "Utf8Constants.hpp"
 
 namespace rtype::network {
@@ -153,6 +156,39 @@ void requireValidPlayerNumber(std::uint8_t playerNumber) {
   if (playerNumber < FIRST_PLAYER_NUMBER || playerNumber > MAXIMUM_PLAYERS) {
     throw InvalidFieldValueException(PLAYER_NUMBER_FIELD, playerNumber);
   }
+}
+
+void requireValidShipLook(const identifiers::ShipLook& look) {
+  const auto check = [](std::uint8_t number, identifiers::ShipLookSlot slot,
+                        std::string_view field) {
+    if (!identifiers::isLookNumberOf(number, slot)) {
+      throw InvalidFieldValueException(field, number);
+    }
+  };
+  check(look.head, identifiers::ShipLookSlot::Head, HEAD_FIELD);
+  check(look.eyes, identifiers::ShipLookSlot::Eyes, EYES_FIELD);
+  check(look.face, identifiers::ShipLookSlot::Face, FACE_FIELD);
+}
+
+void requireValidLookItem(std::uint8_t item) {
+  if (!identifiers::isLookItemNumber(item)) {
+    throw InvalidFieldValueException(ITEM_FIELD, item);
+  }
+}
+
+void writeShipLook(ByteWriter& writer, const identifiers::ShipLook& look) {
+  requireValidShipLook(look);
+  writer.writeUint8(look.head);
+  writer.writeUint8(look.eyes);
+  writer.writeUint8(look.face);
+}
+
+identifiers::ShipLook readShipLook(ByteReader& reader) {
+  const identifiers::ShipLook look{.head = reader.readUint8(),
+                                   .eyes = reader.readUint8(),
+                                   .face = reader.readUint8()};
+  requireValidShipLook(look);
+  return look;
 }
 
 void requireFullyRead(const ByteReader& reader) {

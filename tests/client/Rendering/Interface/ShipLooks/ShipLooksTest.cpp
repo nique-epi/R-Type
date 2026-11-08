@@ -8,7 +8,6 @@
 #include "ShipLooksTestConstants.hpp"
 
 using rtype::client::paintShipLook;
-using rtype::client::ShipLook;
 using rtype::client::wearing;
 using rtype::client::wears;
 using rtype::client::without;
@@ -26,6 +25,7 @@ using rtype::client::testing::WEARS_NOTHING;
 using rtype::client::testing::WEARS_PARTY_HAT;
 using rtype::client::testing::WEARS_SHADES;
 using rtype::client::testing::WEARS_TOP_HAT;
+using rtype::identifiers::ShipLook;
 using ::testing::ElementsAre;
 
 /**

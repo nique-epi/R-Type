@@ -39,6 +39,7 @@
 #include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
 #include "SettingsService.hpp"
+#include "ShipLookExchange.hpp"
 #include "TextSettingDefinition.hpp"
 #include "TimeConstants.hpp"
 #include "WaitingRoom.hpp"
@@ -103,6 +104,7 @@ void ClientScreensModule::install(engine::InstallContext& context) {
   window_ = &context.require<GameWindow>();
   connection_ = &context.require<ServerSession>();
   waitingRoom_ = &context.require<WaitingRoom>();
+  shipLooks_ = &context.require<ShipLookExchange>();
   entityMessages_ = &context.require<EntityMessageQueue>();
   leaderboard_ = &context.require<ServerLeaderboard>();
   chat_ = &context.require<ChatChannel>();
@@ -166,6 +168,7 @@ void ClientScreensModule::start() {
           .window = *window_,
           .connection = *connection_,
           .waitingRoom = *waitingRoom_,
+          .shipLooks = *shipLooks_,
           .entityMessages = *entityMessages_,
           .leaderboard = *leaderboard_,
           .chat = *chat_,

@@ -26,11 +26,15 @@ using rtype::server::OFFICIAL_WAVES_FINGERPRINT;
 using rtype::server::TooManyDifficultiesException;
 using rtype::server::UnknownDifficultyException;
 using rtype::server::UnknownEnemyException;
+using rtype::server::UnknownLookItemException;
 using rtype::server::WaveCatalog;
 using rtype::server::testing::A_COMMENT_LINE;
 using rtype::server::testing::A_MISSILE_AS_AN_ENEMY;
+using rtype::server::testing::AN_ENEMY_AS_A_LOOK_ITEM;
 using rtype::server::testing::CALM_CURVE;
 using rtype::server::testing::CALM_ENEMIES;
+using rtype::server::testing::CALM_LOOK_ITEMS;
+using rtype::server::testing::CALM_LOOK_ITEMS_VALUE;
 using rtype::server::testing::calmFile;
 using rtype::server::testing::calmFileNamed;
 using rtype::server::testing::calmFileWith;
@@ -109,6 +113,46 @@ TEST(WaveCatalog, ReadsTheEnemiesOfEachDifficultyInOrder) {
   EXPECT_TRUE(std::ranges::equal(catalog.planOf("calm").enemies, CALM_ENEMIES));
   EXPECT_TRUE(
       std::ranges::equal(catalog.planOf("storm").enemies, STORM_ENEMIES));
+}
+
+/**
+ * Given a waves file whose calm lists the crown and the party hat as look
+ * items
+ * When it is read
+ * Then the look items of calm are those two, in order
+ */
+TEST(WaveCatalog, ReadsTheLookItemsOfADifficulty) {
+  const WaveCatalog catalog =
+      WaveCatalog::fromText(calmFileWith("look_items", CALM_LOOK_ITEMS_VALUE),
+                            TEST_FILE_NAME, shippedEntitySheets());
+
+  EXPECT_TRUE(
+      std::ranges::equal(catalog.planOf("calm").lookItems, CALM_LOOK_ITEMS));
+}
+
+/**
+ * Given a waves file whose calm has no look_items
+ * When it is read
+ * Then calm has no look item
+ */
+TEST(WaveCatalog, ADifficultyWithoutLookItemsHasNone) {
+  const WaveCatalog catalog =
+      WaveCatalog::fromText(calmFile(), TEST_FILE_NAME, shippedEntitySheets());
+
+  EXPECT_TRUE(catalog.planOf("calm").lookItems.empty());
+}
+
+/**
+ * Given a waves file whose look items of calm name the weaver, an enemy
+ * When it is read
+ * Then an UnknownLookItemException is thrown: only a look item sheet counts
+ */
+TEST(WaveCatalog, RefusesAnEnemyAmongTheLookItems) {
+  const std::string text = calmFileWith("look_items", AN_ENEMY_AS_A_LOOK_ITEM);
+
+  EXPECT_THROW(static_cast<void>(WaveCatalog::fromText(text, TEST_FILE_NAME,
+                                                       shippedEntitySheets())),
+               UnknownLookItemException);
 }
 
 /**

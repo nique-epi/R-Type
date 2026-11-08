@@ -28,7 +28,9 @@ struct Caption;
  * its HitFlash for its tone, its Invulnerability for a dithered picture and,
  * with a PilotShip, an outline, its Nudge for a few pixels of offset, the
  * anchor of its SpriteAnimation for the pixels its frame hangs away, its
- * Reveal for the rows a ship arriving shows. Whatever else an entity carries
+ * Reveal for the rows a ship arriving shows. A ship with a WornLook has the
+ * items it wears drawn over it, in its layer, with its tone and its outline,
+ * but not while it arrives or rolls. Whatever else an entity carries
  * (health, damage) is invisible to it. Inside a layer, entities are drawn by
  * ascending entity index, so the same registry always gives the same
  * sequence. An entity whose layer is not one of the drawing layers is not
@@ -49,6 +51,11 @@ class RenderSystem {
   /** @brief Adds a draw call for every entity that has a Position and a
    * visible Caption of a drawing layer. */
   void collectCaptions(engine::ComponentRegistry& components);
+
+  /** @brief Adds, in the layer of each ship that has a WornLook, a draw call
+   * for each item it wears, over the ship, with the tone and the outline of
+   * the ship; none while the ship arrives (Reveal) or rolls. */
+  void collectLooks(engine::ComponentRegistry& components);
 
   /** @returns How the effects on an entity change its drawing, for a frame
    * @p frameHeight rows tall. */

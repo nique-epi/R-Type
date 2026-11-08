@@ -25,12 +25,14 @@
 #include "RenderingConstants.hpp"
 #include "Reveal.hpp"
 #include "Scene.hpp"
+#include "ShipLook.hpp"
 #include "Sprite.hpp"
 #include "SpriteAnimation.hpp"
 #include "SpriteFrame.hpp"
 #include "SpriteTone.hpp"
 #include "SteadyMotion.hpp"
 #include "TimeConstants.hpp"
+#include "WornLook.hpp"
 
 using rtype::client::Animation;
 using rtype::client::Caption;
@@ -675,4 +677,129 @@ TEST(RenderSystem, ASteadyInvulnerabilityWithoutOutlineDrawsNone) {
   ASSERT_EQ(scene.surface().drawn().size(), 1U);
   EXPECT_EQ(scene.surface().drawn().front().tone, SpriteTone::Ghost);
   EXPECT_FALSE(scene.surface().drawn().front().outline.has_value());
+}
+
+namespace {
+
+/** @brief The top hat on the head of a ship drawn with the whole 16 x 16 frame
+ * of the scene at (SPAWN_X, SPAWN_Y): its drawing is 14 x 10 pixels at the
+ * top-left of the first cell of the sheet; its top-left corner lies at 9
+ * pixels right and 7 up of the corner of the ship, so its center lies
+ * (9 + 14 / 2 - 16 / 2) = 8 pixels right and (-7 + 10 / 2 - 16 / 2) = 10
+ * pixels up of the center of the ship, one pixel being 4 logical units: 32
+ * right, 40 up. */
+constexpr rtype::game::SpriteFrame TOP_HAT_FRAME{
+    .left = 0, .top = 0, .width = 14, .height = 10};
+constexpr float TOP_HAT_CENTER_X = SPAWN_X + 32.0F;
+constexpr float TOP_HAT_CENTER_Y = SPAWN_Y - 40.0F;
+constexpr const char* LOOK_SHEET = "sprites/looks.png";
+
+/** @returns The look of a ship that wears the top hat. */
+rtype::client::WornLook wearingTheTopHat() {
+  return rtype::client::WornLook{.look =
+                                     rtype::identifiers::ShipLook{.head = 1}};
+}
+
+}  // namespace
+
+/**
+ * Given a ship wearing the top hat
+ * When a frame is rendered
+ * Then the ship is drawn, then the top hat over it, cut from the sheet of the
+ * looks and centered 8 pixels right and 10 up of the ship
+ */
+TEST(RenderSystem, AWornItemIsDrawnOverItsShip) {
+  Scene scene;
+  const Entity ship = scene.spawn("ship", Layer::Players);
+  scene.components().add(ship, wearingTheTopHat());
+
+  scene.render();
+
+  const std::vector<DrawnImage>& drawn = scene.surface().drawn();
+  ASSERT_EQ(drawn.size(), 2U);
+  EXPECT_EQ(drawn[0].assetId, "ship");
+  EXPECT_EQ(drawn[1].assetId, LOOK_SHEET);
+  EXPECT_EQ(drawn[1].frame, TOP_HAT_FRAME);
+  EXPECT_EQ(drawn[1].center.x, TOP_HAT_CENTER_X);
+  EXPECT_EQ(drawn[1].center.y, TOP_HAT_CENTER_Y);
+}
+
+/**
+ * Given two ships of the same layer, the first one, with the lower entity
+ * index, wearing the top hat
+ * When a frame is rendered
+ * Then its top hat is drawn right after it and before the second ship
+ */
+TEST(RenderSystem, AWornItemStaysRightAfterItsShip) {
+  Scene scene;
+  const Entity first = scene.spawn("first-ship", Layer::Players);
+  scene.spawn("second-ship", Layer::Players);
+  scene.components().add(first, wearingTheTopHat());
+
+  scene.render();
+
+  EXPECT_EQ(
+      scene.surface().assetIds(),
+      (std::vector<std::string>{"first-ship", LOOK_SHEET, "second-ship"}));
+}
+
+/**
+ * Given a steady invulnerable ship, outlined, wearing the top hat
+ * When a frame is rendered
+ * Then the top hat is dithered and outlined as the ship is
+ */
+TEST(RenderSystem, AWornItemTakesTheToneOfAnInvulnerableShip) {
+  Scene scene;
+  const Entity ship = scene.spawn("ship", Layer::Players);
+  scene.components().add(ship, wearingTheTopHat());
+  scene.components().add(
+      ship, Invulnerability{.elapsed = Duration::zero(),
+                            .steady = true,
+                            .outline = PINK_LIGHT_OF_THE_SECOND_PILOT});
+
+  scene.render();
+
+  const std::vector<DrawnImage>& drawn = scene.surface().drawn();
+  ASSERT_EQ(drawn.size(), 2U);
+  EXPECT_EQ(drawn[1].assetId, LOOK_SHEET);
+  EXPECT_EQ(drawn[1].tone, SpriteTone::Ghost);
+  EXPECT_EQ(drawn[1].outline, PINK_LIGHT_OF_THE_SECOND_PILOT);
+}
+
+/**
+ * Given a ship halfway through its roll, wearing the top hat
+ * When a frame is rendered
+ * Then no top hat is drawn: only the rows of the ship
+ */
+TEST(RenderSystem, NoItemIsDrawnWhileTheShipRolls) {
+  Scene scene;
+  const Entity ship = scene.spawn("ship", Layer::Players);
+  scene.components().add(ship, wearingTheTopHat());
+  scene.components().add(ship, halfwayRollingFlight());
+
+  scene.render();
+
+  const std::vector<std::string> ids = scene.surface().assetIds();
+  EXPECT_EQ(std::ranges::count(ids, std::string{LOOK_SHEET}), 0);
+  EXPECT_FALSE(ids.empty());
+}
+
+/**
+ * Given a ship at three quarters of its arrival, wearing the top hat
+ * When a frame is rendered
+ * Then no top hat is drawn: only the rows of the ship it has revealed
+ */
+TEST(RenderSystem, NoItemIsDrawnWhileTheShipArrives) {
+  Scene scene;
+  const Entity ship = scene.spawn("ship", Layer::Players);
+  scene.components().add(ship, wearingTheTopHat());
+  scene.components().add(ship, Reveal{.age = THREE_QUARTERS_OF_A_REVEAL,
+                                      .duration = A_REVEAL,
+                                      .leadingLine = false});
+
+  scene.render();
+
+  const std::vector<std::string> ids = scene.surface().assetIds();
+  EXPECT_EQ(std::ranges::count(ids, std::string{LOOK_SHEET}), 0);
+  EXPECT_FALSE(ids.empty());
 }

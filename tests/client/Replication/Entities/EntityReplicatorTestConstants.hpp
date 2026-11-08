@@ -15,6 +15,7 @@ constexpr std::uint32_t BYDO_ID = 9;
 constexpr std::uint32_t ENEMY_MISSILE_ID = 10;
 constexpr std::uint32_t UNANNOUNCED_ID = 11;
 constexpr std::uint32_t SECOND_BYDO_ID = 12;
+constexpr std::uint32_t LOOK_ITEM_ID = 13;
 
 /**
  * @brief Where a message first puts an entity in the tests, then where a later

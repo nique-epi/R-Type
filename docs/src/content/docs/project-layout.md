@@ -99,7 +99,7 @@ src/engine/
 
 ### Identifiers
 
-`src/identifiers` builds `rtype_identifiers`: the values the engine and the wire must agree on. **Never** code with a state or a dependency: it holds constants, and the `constexpr` checks made of them alone, so it stays a header-only target that links nothing else of the repository. The engine, which hands out entity ids, and `rtype_network`, which carries them, read the same value from it. `EntityIdConstants.hpp` holds `NO_ENTITY_ID` (0), the entity id no entity has (see [Engine](/R-Type/engine/#network-identifiers)); `EntityTypeConstants.hpp` holds `NO_ENTITY_TYPE` (0), the most entity types and the sizes and bytes of a type name, and `EntityTypeName.hpp` holds `isEntityTypeName()`, so the game, which reads the sheets, and the protocol, which carries their names, refuse the same names.
+`src/identifiers` builds `rtype_identifiers`: the values the engine and the wire must agree on. **Never** code with a state or a dependency: it holds constants, and the `constexpr` checks made of them alone, so it stays a header-only target that links nothing else of the repository. The engine, which hands out entity ids, and `rtype_network`, which carries them, read the same value from it. `EntityIdConstants.hpp` holds `NO_ENTITY_ID` (0), the entity id no entity has (see [Engine](/R-Type/engine/#network-identifiers)); `EntityTypeConstants.hpp` holds `NO_ENTITY_TYPE` (0), the most entity types and the sizes and bytes of a type name, and `EntityTypeName.hpp` holds `isEntityTypeName()`, so the game, which reads the sheets, and the protocol, which carries their names, refuse the same names. `ShipLook.hpp`, `ShipLookSlot.hpp`, `ShipLookConstants.hpp` and `ShipLookNumbers.hpp` hold the items a ship wears, their slots and their numbers, which the settings, the entity sheets and the protocol share.
 
 ### Game
 
@@ -171,6 +171,7 @@ src/server/
 ├── LaunchOptions/    the options of the supervisor and of a game process: port, seed, database, link to the supervisor
 ├── Results/          the results module: what each game leaves, and the leaderboard requests
 ├── Chat/             the chat module of a game: relays the lines of its players, one a second each
+├── Looks/            the looks module of a game: shares the look of each player with every player
 ├── Processes/        starting child processes behind an interface (Boost.Process v2), and tying their life to the program that started them
 ├── SupervisedGames/  the supervisor's games module: Registry/, what it knows of each game process and the seats held in them; Launch/, starting one and the file of commands of the games; Stopping/, the orders the supervisor sends a game (stop, expel) and ending them all; Status/, reading what a game reports; at the root, what the supervisor tells of them (report, watch)
 ├── SupervisorLobby/  the supervisor's lobby module: challenge, redirect or refuse a player
@@ -208,7 +209,7 @@ src/client/
 │   ├── Handshake/       the request to join a server and its state
 │   ├── EntityTypes/     the content of the session: its types and appearances
 │   ├── ContentPack/     the pack of a server: download, cache and reading
-│   ├── WaitingRoom/     the waiting room until the game starts
+│   ├── WaitingRoom/     the waiting room until the game starts, and the looks it carries
 │   ├── Leaderboard/     the best scores of a server
 │   ├── Chat/            the chat of a session, sent and received
 │   └── ServerList/      the servers and games of the master, pinged
@@ -231,7 +232,7 @@ src/client/
 │       ├── Screen/      the options screen and its dialogs
 │       └── Tabs/        the tabs and their rows
 ├── Lobby/               the waiting room
-├── Hangar/              the hangar: the ship and what it wears
+├── Hangar/              the hangar: the ship, what it wears, and the items won
 │   ├── Locker/          the locker of the items and its metal
 │   └── Dock/            the bay, the arms and the fitting of an item
 ├── Game/                the game and the end screen
@@ -350,6 +351,7 @@ This list describes the code as it is today. A pull request that adds, removes o
 | `replication` | `ReplicationModule` | `src/server/Replication/` | required |
 | `rtype rules` | `RtypeRulesModule` | `src/server/Rules/` | required |
 | `results` | `ResultsModule` | `src/server/Results/` | required |
+| `looks` | `LooksModule` | `src/server/Looks/` | required |
 | `chat` | `ChatModule` | `src/server/Chat/` | optional, `RTYPE_MODULE_CHAT` |
 
 | Module of the master | Class | Folder | Kind |

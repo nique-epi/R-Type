@@ -51,6 +51,7 @@
 #include "OwnPrediction.hpp"
 #include "OwnShip.hpp"
 #include "PilotNameTags.hpp"
+#include "PilotShipLooks.hpp"
 #include "PlayerAction.hpp"
 #include "PlayerCommand.hpp"
 #include "PlayerInputPacer.hpp"
@@ -174,6 +175,7 @@ GameScreen::GameScreen(GameScreenParts parts,
       inputs_(&parts.inputs.get()),
       entityMessageSource_(&parts.entityMessages.get()),
       serverTicks_(&parts.serverTicks.get()),
+      shipLooks_(&parts.shipLooks.get()),
       scoreBoard_(parts.waitingRoom.get().lobbyPlayers(),
                   parts.connection.get().status().playerNumber),
       result_(&parts.result.get()),
@@ -247,6 +249,7 @@ void GameScreen::update(engine::Duration elapsed) {
     prediction_.place(replicator_, components_);
   }
   tagPilotShips(components_, scoreBoard_.pilots(), *settings_);
+  dressPilotShips(components_, shipLooks_->playerLooks());
   askForTheEndWhenDue();
   moveSky(*sky_, effects_, preference);
   entityLayer_->paint(components_, cameraOffsetOf(effects_));

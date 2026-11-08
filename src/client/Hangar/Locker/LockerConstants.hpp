@@ -27,7 +27,7 @@ constexpr std::size_t LOCKER_COLUMN_COUNT =
     static_cast<std::size_t>(LOCKER_COLUMNS);
 constexpr std::size_t LOCKER_SLOT_COUNT =
     LOCKER_COLUMN_COUNT * static_cast<std::size_t>(LOCKER_ROWS);
-static_assert(SHIP_LOOK_ITEM_COUNT <= LOCKER_SLOT_COUNT,
+static_assert(identifiers::SHIP_LOOK_ITEM_COUNT <= LOCKER_SLOT_COUNT,
               "every item has a cell of the locker");
 
 /** @brief The seeds of the strokes of the locker and of its plate, so they
