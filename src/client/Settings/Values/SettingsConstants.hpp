@@ -47,6 +47,18 @@ constexpr int MAXIMUM_CHAT_BACKGROUND = 100;
 constexpr int CHAT_BACKGROUND_STEP = 5;
 constexpr int DEFAULT_CHAT_BACKGROUND = 70;
 constexpr int CHAT_SETTING_STEP = 1;
+
+/**
+ * @brief The lagometer: how many times larger than its smallest it is drawn,
+ * and the opacity of the panel behind its text and its curve, in percent.
+ */
+constexpr int MINIMUM_LAGOMETER_SCALE = 1;
+constexpr int MAXIMUM_LAGOMETER_SCALE = 3;
+constexpr int DEFAULT_LAGOMETER_SCALE = 1;
+constexpr int MINIMUM_LAGOMETER_BACKGROUND = 0;
+constexpr int MAXIMUM_LAGOMETER_BACKGROUND = 100;
+constexpr int LAGOMETER_BACKGROUND_STEP = 5;
+constexpr int DEFAULT_LAGOMETER_BACKGROUND = 70;
 constexpr int CHAT_PAGE_STEPS = 4;
 
 /**
@@ -90,6 +102,8 @@ constexpr std::string_view CHAT_CLOSED_LINES_NAME = "chat_closed_lines";
 constexpr std::string_view CHAT_OPEN_LINES_NAME = "chat_open_lines";
 constexpr std::string_view CHAT_SECONDS_NAME = "chat_seconds";
 constexpr std::string_view CHAT_BACKGROUND_NAME = "chat_background";
+constexpr std::string_view LAGOMETER_SCALE_NAME = "lagometer_scale";
+constexpr std::string_view LAGOMETER_BACKGROUND_NAME = "lagometer_background";
 
 constexpr std::string_view SHIP_HEAD_NAME = "ship_head";
 constexpr std::string_view SHIP_EYES_NAME = "ship_eyes";

@@ -34,6 +34,8 @@ constexpr const char* FIRST_LAUNCH_FILE =
     "chat_open_lines=8\n"
     "chat_seconds=8\n"
     "chat_background=70\n"
+    "lagometer_scale=1\n"
+    "lagometer_background=70\n"
     "ship_head=none\n"
     "ship_eyes=none\n"
     "ship_face=none\n"
@@ -66,6 +68,15 @@ constexpr const char* CHAT_PAST_ITS_RANGES_FILE =
     "chat_seconds=1\n"
     "chat_background=101\n";
 constexpr std::size_t CHAT_LINES_PAST_THEIR_RANGES = 5;
+
+/** @brief Lagometer settings changed from a first launch, on a step of their
+ * slider; and a file whose lagometer values each lie one past their range. */
+constexpr int CHANGED_LAGOMETER_SCALE = 2;
+constexpr int CHANGED_LAGOMETER_BACKGROUND = 35;
+constexpr const char* LAGOMETER_PAST_ITS_RANGES_FILE =
+    "lagometer_scale=4\n"
+    "lagometer_background=101\n";
+constexpr std::size_t LAGOMETER_LINES_PAST_THEIR_RANGES = 2;
 
 constexpr int ANY_VOLUME = 40;
 constexpr int CHANGED_MUSIC_VOLUME = 35;

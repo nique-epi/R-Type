@@ -100,6 +100,21 @@ constexpr Setting<int> CHAT_BACKGROUND_SETTING{
     .id = SettingId::ChatBackground,
     .range = CHAT_BACKGROUND_RANGE};
 
+/** @brief The ranges and the settings of the lagometer. */
+constexpr SettingRange LAGOMETER_SCALE_RANGE{
+    .minimum = MINIMUM_LAGOMETER_SCALE, .maximum = MAXIMUM_LAGOMETER_SCALE};
+constexpr SettingRange LAGOMETER_BACKGROUND_RANGE{
+    .minimum = MINIMUM_LAGOMETER_BACKGROUND,
+    .maximum = MAXIMUM_LAGOMETER_BACKGROUND};
+constexpr Setting<int> LAGOMETER_SCALE_SETTING{
+    .member = &PlayerSettings::lagometerScale,
+    .id = SettingId::LagometerScale,
+    .range = LAGOMETER_SCALE_RANGE};
+constexpr Setting<int> LAGOMETER_BACKGROUND_SETTING{
+    .member = &PlayerSettings::lagometerBackground,
+    .id = SettingId::LagometerBackground,
+    .range = LAGOMETER_BACKGROUND_RANGE};
+
 constexpr Setting<ShipLocker> SHIP_LOCKER_SETTING{
     .member = &PlayerSettings::shipLocker,
     .id = SettingId::ShipLocker,
@@ -125,6 +140,8 @@ constexpr std::array ALL_SETTING_IDS{
     SettingId::ChatOpenLines,
     SettingId::ChatSeconds,
     SettingId::ChatBackground,
+    SettingId::LagometerScale,
+    SettingId::LagometerBackground,
     SettingId::ShipLook,
     SettingId::ShipLocker,
 };

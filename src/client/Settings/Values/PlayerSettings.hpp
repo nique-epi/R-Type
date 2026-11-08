@@ -27,6 +27,8 @@ namespace rtype::client {
  * chat, and its lines while closed and while open. chatSeconds: how long a
  * line shows while the chat is closed. chatBackground: the opacity of the
  * layer under the open chat, in percent.
+ * lagometerScale: how many times larger than its smallest the lagometer is
+ * drawn. lagometerBackground: the opacity of its panel, in percent.
  * shipLook wears nothing: the player dresses the ship in the hangar.
  * shipLocker holds the starter kit: the other items are won in a game.
  */
@@ -49,6 +51,8 @@ struct PlayerSettings {
   int chatOpenLines = DEFAULT_CHAT_OPEN_LINES;
   int chatSeconds = DEFAULT_CHAT_SECONDS;
   int chatBackground = DEFAULT_CHAT_BACKGROUND;
+  int lagometerScale = DEFAULT_LAGOMETER_SCALE;
+  int lagometerBackground = DEFAULT_LAGOMETER_BACKGROUND;
   identifiers::ShipLook shipLook;
   ShipLocker shipLocker;
 

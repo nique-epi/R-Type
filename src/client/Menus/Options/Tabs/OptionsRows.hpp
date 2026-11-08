@@ -43,6 +43,12 @@ template <std::size_t Count>
     SettingsService& service, const Setting<int>& setting,
     const SliderLook& look);
 
+/** @returns The slider of the integer @p setting, which reads and changes it
+ * through @p service, moved as @p look says, never dimmed. */
+[[nodiscard]] std::unique_ptr<RowControl> settingSlider(
+    SettingsService& service, const Setting<int>& setting,
+    const SliderLook& look);
+
 /** @returns The selector of the color mode, which reads and changes it through
  * @p service. */
 [[nodiscard]] std::unique_ptr<RowControl> colorModeSelector(
