@@ -15,6 +15,7 @@ target_link_libraries(rtype_client_lobby_module
     rtype_client_key_chip
     rtype_client_menu
     rtype_client_screens_module
+    rtype_client_settings_values
     rtype_client_waiting_room
     rtype_client_window_display
     rtype_engine_modules
@@ -22,6 +23,7 @@ target_link_libraries(rtype_client_lobby_module
     rtype_client_constants
     rtype_client_hangar_bay
     rtype_client_input_keys
+    rtype_client_interface_pixel
     rtype_client_menu_builder
     rtype_client_pilot_color
     rtype_network_protocol

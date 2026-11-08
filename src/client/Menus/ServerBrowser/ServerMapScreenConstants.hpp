@@ -77,6 +77,16 @@ constexpr const char* ADDRESS_LABEL = "ADDRESS";
 constexpr const char* ADDRESS_KEY_NAME = "D";
 constexpr sf::Keyboard::Key ADDRESS_KEY = sf::Keyboard::Key::D;
 
+/** @brief The hangar star: where it stands on the whole map, close to the
+ * planet, where no server stands (servers start past the reach of the planet
+ * and its ring, 120 pixels from its centre); its size; and its bubble,
+ * whose hint names HANGAR_KEY_NAME between its start and its end. */
+constexpr sf::Vector2i HANGAR_STAR_POINT{84, 64};
+constexpr int HANGAR_STAR_RADIUS = 3;
+constexpr const char* HANGAR_STAR_DETAIL = "LOCKER AND SHIP";
+constexpr const char* HANGAR_STAR_HINT_START = "CLICK OR ";
+constexpr const char* HANGAR_STAR_HINT_END = ": OPEN";
+
 /** @brief The chip that opens the form of the master, on the right of the
  * title, and where the master read is written under it, ending at its right
  * edge. */

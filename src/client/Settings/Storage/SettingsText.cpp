@@ -23,6 +23,9 @@
 #include "SettingRange.hpp"
 #include "SettingsConstants.hpp"
 #include "SettingsTextConstants.hpp"
+#include "ShipLookConstants.hpp"
+#include "ShipLookNumbers.hpp"
+#include "ShipLookSlot.hpp"
 #include "WindowConstants.hpp"
 
 namespace rtype::client {
@@ -208,6 +211,52 @@ std::optional<LineOutcome> applySwitch(PlayerSettings& settings,
   return std::nullopt;
 }
 
+/** @returns The value of a slot of the ship in the file: the name of its
+ * item, or NO_LOOK_ITEM_VALUE. */
+std::string_view lookItemValue(std::uint8_t item) {
+  if (item == NO_SHIP_LOOK_ITEM) {
+    return NO_LOOK_ITEM_VALUE;
+  }
+  return SHIP_LOOK_ITEM_NAMES.at(lookIndexOf(item));
+}
+
+/** @returns What a slot of the ship holds for @p text: NO_SHIP_LOOK_ITEM for
+ * NO_LOOK_ITEM_VALUE, the item of that name when it sits in @p slot, nothing
+ * otherwise. */
+std::optional<std::uint8_t> lookItemOf(std::string_view text,
+                                       ShipLookSlot slot) {
+  if (text == NO_LOOK_ITEM_VALUE) {
+    return NO_SHIP_LOOK_ITEM;
+  }
+  for (std::size_t item = 0; item < SHIP_LOOK_ITEM_COUNT; ++item) {
+    if (SHIP_LOOK_ITEM_NAMES.at(item) == text &&
+        SHIP_LOOK_ITEM_SLOTS.at(item) == slot) {
+      return lookNumberOf(item);
+    }
+  }
+  return std::nullopt;
+}
+
+/** @returns What became of a slot of the ship, or nothing when the line names
+ * another setting. */
+std::optional<LineOutcome> applyLook(PlayerSettings& settings,
+                                     SettingLine setting) {
+  const auto [name, value] = setting;
+  if (name == SHIP_HEAD_NAME) {
+    return assign(lookItemOf(value, ShipLookSlot::Head),
+                  settings.shipLook.head);
+  }
+  if (name == SHIP_EYES_NAME) {
+    return assign(lookItemOf(value, ShipLookSlot::Eyes),
+                  settings.shipLook.eyes);
+  }
+  if (name == SHIP_FACE_NAME) {
+    return assign(lookItemOf(value, ShipLookSlot::Face),
+                  settings.shipLook.face);
+  }
+  return std::nullopt;
+}
+
 /** @brief Applies @p setting when it names a setting written as a word or a
  * pair: the window size, the display and color modes, or the master.
  * @returns What became of the line, nothing for any other name. */
@@ -247,6 +296,9 @@ LineOutcome applySetting(PlayerSettings& settings, SettingLine setting) {
   }
   if (const std::optional<LineOutcome> outcome =
           applySwitch(settings, setting)) {
+    return *outcome;
+  }
+  if (const std::optional<LineOutcome> outcome = applyLook(settings, setting)) {
     return *outcome;
   }
   const std::optional<BoundAction> action =
@@ -322,6 +374,9 @@ std::string settingsText(const PlayerSettings& settings) {
             switchValue(settings.clientPrediction));
   writeLine(text, PILOT_NAMES_NAME, switchValue(settings.pilotNames));
   writeChat(text, settings);
+  writeLine(text, SHIP_HEAD_NAME, lookItemValue(settings.shipLook.head));
+  writeLine(text, SHIP_EYES_NAME, lookItemValue(settings.shipLook.eyes));
+  writeLine(text, SHIP_FACE_NAME, lookItemValue(settings.shipLook.face));
   if (settings.master.has_value()) {
     writeLine(text, MASTER_NAME, network::endpointText(*settings.master));
   }

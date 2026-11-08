@@ -229,6 +229,9 @@ src/client/
 │       ├── Screen/      the options screen and its dialogs
 │       └── Tabs/        the tabs and their rows
 ├── Lobby/               the waiting room
+├── Hangar/              the hangar: the ship and what it wears
+│   ├── Locker/          the locker of the items and its metal
+│   └── Dock/            the bay, the arms and the fitting of an item
 ├── Game/                the game and the end screen
 ├── Application/         the screen stack and the interfaces of a screen
 ├── Replication/         what the server announces, applied to the game
@@ -361,6 +364,7 @@ This list describes the code as it is today. A pull request that adds, removes o
 | `screens` | `ClientScreensModule` | `src/client/Screens/` | required |
 | `menus` | `ClientMenusModule` | `src/client/Menus/` | required |
 | `lobby` | `ClientLobbyModule` | `src/client/Lobby/` | required |
+| `hangar` | `ClientHangarModule` | `src/client/Hangar/` | required |
 | `game` | `ClientGameModule` | `src/client/Game/` | required |
 
 Each module class sits in its folder with the code it owns, and `Modules/` keeps only the list of the program.

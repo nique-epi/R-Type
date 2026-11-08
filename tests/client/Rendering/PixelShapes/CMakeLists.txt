@@ -1,0 +1,3 @@
+target_sources(client_ramp_and_circle_tests PRIVATE PixelShapesFixtures.cpp PixelShapesTest.cpp)
+target_include_directories(client_ramp_and_circle_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(client_ramp_and_circle_tests PRIVATE rtype_client_pixel_shapes)

@@ -34,7 +34,23 @@ constexpr const char* FIRST_LAUNCH_FILE =
     "chat_closed_lines=3\n"
     "chat_open_lines=8\n"
     "chat_seconds=8\n"
-    "chat_background=70\n";
+    "chat_background=70\n"
+    "ship_head=none\n"
+    "ship_eyes=none\n"
+    "ship_face=none\n";
+
+/** @brief The ship wearing the crown, the third item of the locker, and the
+ * shades, the ninth: what a slot holds is the place of its item plus one. */
+constexpr std::uint8_t WEARS_CROWN = 3;
+constexpr std::uint8_t WEARS_SHADES = 9;
+constexpr std::uint8_t WEARS_NOTHING = 0;
+constexpr const char* CROWN_LINE = "ship_head=crown\n";
+constexpr const char* CROWN_AND_SHADES_FILE =
+    "ship_head=crown\n"
+    "ship_eyes=cool_shades\n";
+/** @brief The shades named on the head, a slot they never take. */
+constexpr const char* SHADES_ON_THE_HEAD_FILE = "ship_head=cool_shades\n";
+constexpr const char* BARE_HEAD_FILE = "ship_head=none\n";
 
 /** @brief Chat settings changed from a first launch, all on a step of their
  * slider; and a file whose chat values each lie one past their range. */

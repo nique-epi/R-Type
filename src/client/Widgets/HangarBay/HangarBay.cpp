@@ -8,17 +8,17 @@
 #include <string_view>
 #include "CutCornerBox.hpp"
 #include "EntitySpriteConstants.hpp"
-#include "EntitySprites.hpp"
 #include "HangarBayConstants.hpp"
 #include "IInterfaceCanvas.hpp"
-#include "ImagePlacement.hpp"
 #include "MotionPreference.hpp"
+#include "PilotShipPicture.hpp"
 #include "PlayerNumberLabel.hpp"
-#include "PlayerShading.hpp"
+#include "ShipLooks.hpp"
+#include "ShipPicture.hpp"
+#include "ShipPlacement.hpp"
 #include "SpriteFrame.hpp"
 #include "SunkBox.hpp"
 #include "TextStyle.hpp"
-#include "TextureArea.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"
 #include "WidgetText.hpp"
@@ -84,17 +84,15 @@ TextStyle nicknameRowStyle(sf::Color color) {
           .alignment = TextAlignment::Center};
 }
 
-/** @returns The frame of the ship of a color: its engines running while the
- * pilot is ready and the interface may move, its first frame otherwise. */
-game::SpriteFrame shipFrameOf(int color, BayReadiness readiness,
-                              BayMotion motion) {
+/** @returns The frame of the ship, in the row of the first color: its
+ * engines running while the pilot is ready and the interface may move, its
+ * first frame otherwise. */
+game::SpriteFrame shipFrameOf(BayReadiness readiness, BayMotion motion) {
   const bool enginesRun = motion.preference == MotionPreference::Full &&
                           readiness == BayReadiness::Ready;
-  const game::SpriteFrame frame =
-      enginesRun ? PLAYER_SHIP_ANIMATION.frameAt(motion.elapsed)
-                       .value_or(PLAYER_SHIP_FRAME)
-                 : PLAYER_SHIP_FRAME;
-  return inPlayerColorRow(frame, color);
+  return enginesRun ? PLAYER_SHIP_ANIMATION.frameAt(motion.elapsed)
+                          .value_or(PLAYER_SHIP_FRAME)
+                    : PLAYER_SHIP_FRAME;
 }
 
 /** @returns The beacon lit after motion.elapsed, from left to right for
@@ -143,21 +141,25 @@ void paintColorBand(IInterfaceCanvas& canvas, const HangarBay& bay) {
 }
 
 /** @brief Draws a ship frame BAY_SHIP_SCALE times its size, centered on the
- * bay and cut to it, in the shades of the palette. */
+ * bay and cut to it, in the row of its color and the shades of the palette,
+ * then what its pilot wears. */
 void paintShip(IInterfaceCanvas& canvas, const HangarBay& bay,
                game::SpriteFrame frame) {
   const int shipWidth = frame.width * BAY_SHIP_SCALE;
-  const sf::Vector2i shipTopLeft(
-      bay.topLeft.x + ((HANGAR_BAY_SIZE.x - shipWidth) / SIDES_PER_AXIS),
-      bay.topLeft.y + BAY_SHIP_TOP);
-  canvas.drawImage(
-      TextureArea{.assetId = ENTITY_SHEET_ID, .rectangle = rectangleOf(frame)},
-      ImagePlacement{
-          .topLeft = shipTopLeft,
-          .scale = BAY_SHIP_SCALE,
-          .recolor = shadingOf(bay.palette, static_cast<std::size_t>(bay.color))
-                         .recolor},
-      {bay.topLeft, HANGAR_BAY_SIZE});
+  const ShipPlacement ship{
+      .topLeft = sf::Vector2i(
+          bay.topLeft.x + ((HANGAR_BAY_SIZE.x - shipWidth) / SIDES_PER_AXIS),
+          bay.topLeft.y + BAY_SHIP_TOP),
+      .scale = BAY_SHIP_SCALE,
+      .visibleArea = {bay.topLeft, HANGAR_BAY_SIZE}};
+  paintPilotShip(
+      canvas,
+      PilotShipPicture{
+          .frame = frame, .color = bay.color, .palette = bay.palette},
+      ship);
+  if (bay.pilot.has_value()) {
+    paintShipLook(canvas, bay.pilot->look, ship);
+  }
 }
 
 /** @brief Writes the nickname of a pilot, centered on its row. */
@@ -250,8 +252,7 @@ void paintHangarBay(IInterfaceCanvas& canvas, const HangarBay& bay,
   paintPlayerNumber(canvas, bay);
   if (bay.pilot.has_value()) {
     paintPilot(canvas, bay, *bay.pilot);
-    paintShip(canvas, bay,
-              shipFrameOf(bay.color, bay.pilot->readiness, motion));
+    paintShip(canvas, bay, shipFrameOf(bay.pilot->readiness, motion));
   } else {
     paintOpenBay(canvas, bay.topLeft, motion);
   }
