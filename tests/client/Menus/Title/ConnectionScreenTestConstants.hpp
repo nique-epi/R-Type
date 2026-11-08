@@ -36,6 +36,11 @@ constexpr std::u32string_view TYPED_NICKNAME_TEXT = U"NOVA";
 constexpr std::string_view TYPED_NICKNAME = "NOVA";
 constexpr std::u32string_view NO_NICKNAME_TEXT{};
 
+/** @brief The labels of the address field and of the nickname field, as the
+ * player reads them. */
+constexpr std::string_view ADDRESS_FIELD_LABEL = "ADDRESS";
+constexpr std::string_view NICKNAME_FIELD_LABEL = "PILOT";
+
 /** @brief A port one below the lowest port. */
 constexpr std::u32string_view PORT_ZERO_TEXT = U"0";
 

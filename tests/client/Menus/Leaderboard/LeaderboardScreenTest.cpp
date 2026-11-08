@@ -25,8 +25,10 @@ using rtype::client::LEADERBOARD_SHEET_ID;
 using rtype::client::LeaderboardPhase;
 using rtype::client::PRESS_DURATION;
 using rtype::client::testing::BANNER_FRAME;
+using rtype::client::testing::CENTERED_ASKING_ANCHOR;
 using rtype::client::testing::FIRST_NAME;
 using rtype::client::testing::LEFT_BANNER;
+using rtype::client::testing::NEUTRAL_ASKING_TEXT;
 using rtype::client::testing::ON_THE_BACK_CHIP;
 using rtype::client::testing::ON_THE_SECOND_TAB;
 using rtype::client::testing::RIGHT_BANNER;
@@ -241,12 +243,26 @@ TEST_F(LeaderboardScreenFixture, APlayerWithoutAScoreIsTold) {
 /**
  * Given a source still asking
  * When the screen updates
- * Then it says it is asking
+ * Then it says it is asking, naming neither a server nor the master: the
+ * GLOBAL tab asks the master
  */
 TEST_F(LeaderboardScreenFixture, AskingIsSaid) {
   show(pageIn(LeaderboardPhase::Asking));
 
-  EXPECT_NE(writingOf(canvas(), "ASKING THE SERVER"), nullptr);
+  EXPECT_NE(writingOf(canvas(), NEUTRAL_ASKING_TEXT), nullptr);
+}
+
+/**
+ * Given a source still asking
+ * When the screen updates
+ * Then the line starts where it and its three dots are centered on the panel
+ */
+TEST_F(LeaderboardScreenFixture, TheAskingLineIsCenteredWithItsDots) {
+  show(pageIn(LeaderboardPhase::Asking));
+
+  const RecordedWriting* asking = writingOf(canvas(), NEUTRAL_ASKING_TEXT);
+  ASSERT_NE(asking, nullptr);
+  EXPECT_EQ(asking->anchor, CENTERED_ASKING_ANCHOR);
 }
 
 /**

@@ -91,9 +91,6 @@ template bool SettingsService::apply<DisplayMode>(const Setting<DisplayMode>&,
                                                   const DisplayMode&);
 template bool SettingsService::apply<std::optional<PixelSize>>(
     const Setting<std::optional<PixelSize>>&, const std::optional<PixelSize>&);
-template bool SettingsService::apply<std::optional<network::Endpoint>>(
-    const Setting<std::optional<network::Endpoint>>&,
-    const std::optional<network::Endpoint>&);
 template bool SettingsService::apply<ShipLook>(const Setting<ShipLook>&,
                                                const ShipLook&);
 template bool SettingsService::apply<ShipLocker>(const Setting<ShipLocker>&,

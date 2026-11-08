@@ -3,7 +3,6 @@
 #include <optional>
 #include "ColorMode.hpp"
 #include "DisplayMode.hpp"
-#include "Endpoint.hpp"
 #include "KeyBindings.hpp"
 #include "PixelSize.hpp"
 #include "SettingsConstants.hpp"
@@ -50,9 +49,6 @@ struct PlayerSettings {
   int chatOpenLines = DEFAULT_CHAT_OPEN_LINES;
   int chatSeconds = DEFAULT_CHAT_SECONDS;
   int chatBackground = DEFAULT_CHAT_BACKGROUND;
-  /** @brief The master the player chose on the server map; nothing lets the
-   * master-url setting choose. */
-  std::optional<network::Endpoint> master = std::nullopt;
   identifiers::ShipLook shipLook;
   ShipLocker shipLocker;
 

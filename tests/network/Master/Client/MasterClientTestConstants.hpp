@@ -24,5 +24,8 @@ constexpr std::string_view PORT_TOO_HIGH_MASTER_URL = "http://127.0.0.1:99999";
 /** @brief An id no server of the tests has. */
 constexpr std::int64_t UNKNOWN_ID = 999;
 
+/** @brief The rows a test asks of a leaderboard: more than any test keeps. */
+constexpr std::int64_t LEADERBOARD_ROWS_ASKED = 10;
+
 /** @brief A status that tells no refusal was caught. */
 constexpr int NO_REFUSAL = 0;

@@ -16,16 +16,17 @@
 #include "IAudioService.hpp"
 #include "IEntityTypeTable.hpp"
 #include "IGameCatalog.hpp"
-#include "IMasterAddress.hpp"
 #include "IModule.hpp"
 #include "IOptionalDependencies.hpp"
 #include "IServerCatalog.hpp"
 #include "IServerTicks.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
+#include "MasterLeaderboard.hpp"
 #include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
 #include "ScreenRegistry.hpp"
+#include "ScreenServices.hpp"
 #include "ServerChoice.hpp"
 #include "ServerLeaderboard.hpp"
 #include "ServerSession.hpp"
@@ -103,6 +104,10 @@ class ClientScreensModule final : public engine::IModule,
   /** @returns The server the settings hold, which the connection screen
    * starts with. */
   [[nodiscard]] network::Endpoint configuredServer() const;
+  /** @returns What the screens are built from: the services install() found,
+   * and a choice that starts with @p server, the nickname setting and the game
+   * given at launch. */
+  [[nodiscard]] ScreenServices services(const network::Endpoint& server) const;
 
   ServerChoice launch_;
   PlayStart playStart_;
@@ -122,12 +127,12 @@ class ClientScreensModule final : public engine::IModule,
   ShipLookExchange* shipLooks_{nullptr};
   EntityMessageQueue* entityMessages_{nullptr};
   ServerLeaderboard* leaderboard_{nullptr};
+  MasterLeaderboard* globalLeaderboard_{nullptr};
   ChatChannel* chat_{nullptr};
   std::unique_ptr<EntityTypeLooks> entityTypes_;
   const IServerTicks* serverTicks_{nullptr};
   IServerCatalog* serverCatalog_{nullptr};
   IGameCatalog* gameCatalog_{nullptr};
-  const IMasterAddress* masterAddress_{nullptr};
   FrameLoop* loop_{nullptr};
   EventListeners* listeners_{nullptr};
   /** @brief Declared before screens_, which keep a reference to it. */

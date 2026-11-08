@@ -19,6 +19,7 @@
 #include "ConnectionScreenFixtures.hpp"
 #include "ConnectionScreenTestConstants.hpp"
 #include "ConnectionStatus.hpp"
+#include "ConnectionToMapServerFixture.hpp"
 #include "Endpoint.hpp"
 #include "GameRules.hpp"
 #include "GameRulesTestConstants.hpp"
@@ -47,6 +48,7 @@ using rtype::client::NICKNAME_TAKEN_STATUS;
 using rtype::client::SERVER_FULL_STATUS;
 using rtype::client::UNREACHABLE_STATUS;
 using rtype::client::testing::ACCEPTED_AS_FIRST_PLAYER;
+using rtype::client::testing::ADDRESS_FIELD_LABEL;
 using rtype::client::testing::BAD_DIFFICULTY_REFUSAL;
 using rtype::client::testing::CANCEL;
 using rtype::client::testing::HALF_RECEIVED;
@@ -60,6 +62,7 @@ using rtype::client::testing::LIVES_BOUNDS_REFUSAL;
 using rtype::client::testing::MAP_ADDRESS;
 using rtype::client::testing::MAP_PORT;
 using rtype::client::testing::NEXT_PROTOCOL_VERSION;
+using rtype::client::testing::NICKNAME_FIELD_LABEL;
 using rtype::client::testing::NO_NICKNAME_TEXT;
 using rtype::client::testing::NOTHING_RECEIVED;
 using rtype::client::testing::PACK_SIZE;
@@ -691,4 +694,81 @@ TEST_F(ConnectionForTheScreenBelowFixture,
   screen().update(ACCEPTED_STATUS_DURATION);
 
   EXPECT_THAT(navigator().calls(), IsEmpty());
+}
+
+/**
+ * Given the server map chose a server
+ * When the screen the map opens is painted
+ * Then it shows the nickname field and no address field: the master listed
+ * the server, so the player types no address
+ */
+TEST_F(ConnectionToMapServerFixture, AsksOnlyForTheNickname) {
+  ASSERT_NE(writingOf(canvas(), NICKNAME_FIELD_LABEL), nullptr);
+
+  EXPECT_EQ(writingOf(canvas(), ADDRESS_FIELD_LABEL), nullptr);
+}
+
+/**
+ * Given the server map chose a server
+ * When the screen the map opens appears
+ * Then no attempt goes out before the player confirms the nickname
+ */
+TEST_F(ConnectionToMapServerFixture, WaitsForTheNicknameBeforeConnecting) {
+  EXPECT_TRUE(connectAttemptsOf(connection()).empty());
+}
+
+/**
+ * Given the screen the map opens, NOVA typed in its only field
+ * When Enter is chosen
+ * Then the attempt goes out as NOVA to the server the map chose, for the game
+ * of the launch values
+ */
+TEST_F(ConnectionToMapServerFixture, JoinsTheServerOfTheMapAsTheTypedPilot) {
+  typeNickname(TYPED_NICKNAME_TEXT);
+
+  chooseEnter();
+
+  EXPECT_EQ(
+      connectAttemptsOf(connection()),
+      (std::vector<ServerConnectionCall>{ServerConnectionCall{
+          .request = ServerConnectionRequest::Connect,
+          .server = {.address = std::string(MAP_ADDRESS), .port = MAP_PORT},
+          .nickname = std::string(TYPED_NICKNAME),
+          .game = LAUNCH_GAME}}));
+}
+
+/**
+ * Given a new game the new game dialog chose on the map, with its rules
+ * When the nickname is confirmed
+ * Then the attempt asks the server of the map for that new game
+ */
+TEST_F(ConnectionToMapServerFixture, AsksForTheNewGameTheMapChose) {
+  chooseANewGame();
+
+  chooseEnter();
+
+  EXPECT_EQ(
+      connectAttemptsOf(connection()),
+      (std::vector<ServerConnectionCall>{ServerConnectionCall{
+          .request = ServerConnectionRequest::Connect,
+          .server = {.address = std::string(MAP_ADDRESS), .port = MAP_PORT},
+          .nickname = std::string(LAUNCH_NICKNAME),
+          .game = NEW_GAME_CHOICE,
+          .rules = GameRules{.difficulty = std::string(CHOSEN_DIFFICULTY),
+                             .lives = CHOSEN_LIVES,
+                             .friendlyFire = true}}}));
+}
+
+/**
+ * Given the screen the map opens, its nickname field emptied
+ * When Enter is chosen
+ * Then no attempt goes out, and the status line asks for a callsign
+ */
+TEST_F(ConnectionToMapServerFixture, AnEmptyNicknameIsNamed) {
+  typeNickname(NO_NICKNAME_TEXT);
+
+  chooseEnter();
+
+  EXPECT_TRUE(connectAttemptsOf(connection()).empty());
+  EXPECT_NE(writingOf(canvas(), MISSING_NICKNAME_STATUS), nullptr);
 }

@@ -14,10 +14,12 @@
 namespace rtype::client {
 
 /**
- * @brief Texts of the connection screen: its heading, then the label and the
- * description of each bar, in their order.
+ * @brief Texts of the connection screen: its heading, the one of a screen that
+ * asks only for the nickname, then the label and the description of each bar,
+ * in their order.
  */
 constexpr const char* CONNECTION_HEADING = "DIRECT CONNECT";
+constexpr const char* JOIN_SERVER_HEADING = "JOIN THE SERVER";
 constexpr const char* ADDRESS_LABEL = "ADDRESS";
 constexpr const char* ADDRESS_DESCRIPTION = "> IPV4 ADDRESS OF THE SERVER";
 constexpr const char* PORT_LABEL = "PORT";
@@ -27,10 +29,12 @@ constexpr const char* NICKNAME_DESCRIPTION = "> CHOOSE YOUR CALLSIGN";
 constexpr const char* CONNECT_LABEL = "CONNECT";
 constexpr const char* CONNECT_DESCRIPTION = "> JOIN THE GAME";
 
-/** @brief Order of each field in the menu of the connection screen. */
+/** @brief Order of each field in the menu of the connection screen, and of
+ * the nickname in a screen that asks for it alone. */
 constexpr std::size_t ADDRESS_ENTRY = 0;
 constexpr std::size_t PORT_ENTRY = 1;
 constexpr std::size_t NICKNAME_ENTRY = 2;
+constexpr std::size_t NICKNAME_ALONE_ENTRY = 0;
 
 /**
  * @brief Largest text of each field, in bytes: an IPv4 address of four numbers

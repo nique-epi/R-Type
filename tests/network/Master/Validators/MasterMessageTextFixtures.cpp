@@ -290,6 +290,15 @@ GlobalLeaderboard parisLeaderboard() {
                                      .serverName = std::string{PARIS_NAME}}};
 }
 
+std::string globalLeaderboardRefusal(std::string_view text) {
+  try {
+    static_cast<void>(globalLeaderboardFromText(text));
+  } catch (const InvalidMasterMessageException& refusal) {
+    return refusal.what();
+  }
+  return {};
+}
+
 std::string finishedGameRefusal(std::string_view text) {
   try {
     static_cast<void>(finishedGameFromText(text));

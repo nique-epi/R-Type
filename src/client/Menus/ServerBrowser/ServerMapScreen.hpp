@@ -10,7 +10,6 @@
 #include "GameRequest.hpp"
 #include "IGameCatalog.hpp"
 #include "IInterfaceCanvas.hpp"
-#include "IMasterAddress.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerCatalog.hpp"
@@ -38,14 +37,13 @@ namespace rtype::client {
  * MENU_CONFIRM_KEY opens the panel of its games, read from the master, and on
  * a waiting game joins it, on + NEW GAME pushes NEW_GAME_SCREEN over the map.
  * Joining puts the server and the game in the ServerChoice and pushes
- * CONNECTION_TO_CHOSEN_SERVER_SCREEN, which connects at once and opens the
- * waiting room: a game of the panel is asked for by its number, with the
- * rules the master lists for it. The chips: QUICK PLAY joins any game of the
- * server of this version with the lowest ping, RANKING opens the leaderboard,
- * ADDRESS the connection form, BACK goes one stage back, then closes the map.
- * The hangar star of the whole map, or HANGAR_KEY, pushes HANGAR_SCREEN.
- * MASTER, on the right of the title, opens the form of the master the map
- * reads, which is written under it.
+ * CONNECTION_TO_MAP_SERVER_SCREEN, which asks only for the nickname, then
+ * connects and opens the waiting room: a game of the panel is asked for by its
+ * number, with the rules the master lists for it. The chips: QUICK PLAY joins
+ * any game of the server of this version with the lowest ping, RANKING opens
+ * the leaderboard, ADDRESS the connection form, BACK goes one stage back, then
+ * closes the map. The hangar star of the whole map, or HANGAR_KEY, pushes
+ * HANGAR_SCREEN.
  *
  * The list is read when the map opens, again every
  * SERVER_LIST_REFRESH_INTERVAL and on REFRESH_KEY. A key that changes the map
@@ -91,7 +89,6 @@ class ServerMapScreen : public IScreen {
   IServerCatalog* servers_;
   IGameCatalog* games_;
   ServerChoice* choice_;
-  const IMasterAddress* master_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   MotionPreference motion_;
@@ -100,7 +97,6 @@ class ServerMapScreen : public IScreen {
   KeyChip quickPlayChip_;
   KeyChip rankingChip_;
   KeyChip addressChip_;
-  KeyChip masterChip_;
   KeyChip backChip_;
   engine::Duration elapsed_{};
   engine::Duration sinceRefresh_{};

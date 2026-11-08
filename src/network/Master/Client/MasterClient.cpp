@@ -8,6 +8,8 @@
 #include "CreatedServer.hpp"
 #include "FinishedGame.hpp"
 #include "GameListing.hpp"
+#include "GlobalLeaderboard.hpp"
+#include "GlobalLeaderboardQuery.hpp"
 #include "MasterAccess.hpp"
 #include "MasterClientConstants.hpp"
 #include "MasterHttpConstants.hpp"
@@ -55,6 +57,20 @@ std::string serverPagePathOf(std::int64_t offset) {
          std::string{QUERY_PARAMETER_SEPARATOR} +
          std::string{OFFSET_QUERY_PARAMETER} +
          std::string{QUERY_VALUE_SEPARATOR} + std::to_string(offset);
+}
+
+/** @returns The query of @p query, which cpp-httplib encodes after the path:
+ * `difficulty`, `playerCount`, `limit`, then `player` when it names one. */
+httplib::Params leaderboardParamsOf(const GlobalLeaderboardQuery& query) {
+  httplib::Params params{
+      {std::string{DIFFICULTY_QUERY_PARAMETER}, query.difficulty},
+      {std::string{PLAYER_COUNT_QUERY_PARAMETER},
+       std::to_string(static_cast<unsigned int>(query.playerCount))},
+      {std::string{LIMIT_QUERY_PARAMETER}, std::to_string(query.limit)}};
+  if (query.player.has_value()) {
+    params.emplace(std::string{PLAYER_QUERY_PARAMETER}, *query.player);
+  }
+  return params;
 }
 
 /** @brief Sends @p key as Bearer with @p request, unless it is empty. */
@@ -138,6 +154,14 @@ ServerListing MasterClient::listServers() {
     }
   }
   return every;
+}
+
+GlobalLeaderboard MasterClient::readLeaderboard(
+    const GlobalLeaderboardQuery& query) {
+  httplib::Request request =
+      readRequestOf(READ_LEADERBOARD_ROUTE, apiPathOf(READ_LEADERBOARD_ROUTE));
+  request.params = leaderboardParamsOf(query);
+  return globalLeaderboardFromText(send(std::move(request)));
 }
 
 std::string MasterClient::answerOf(MasterRoute route, const std::string& body) {

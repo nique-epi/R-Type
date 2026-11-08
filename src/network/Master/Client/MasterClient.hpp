@@ -6,6 +6,8 @@
 #include "CreatedServer.hpp"
 #include "FinishedGame.hpp"
 #include "GameListing.hpp"
+#include "GlobalLeaderboard.hpp"
+#include "GlobalLeaderboardQuery.hpp"
 #include "MasterAccess.hpp"
 #include "MasterRoute.hpp"
 #include "ServerCreation.hpp"
@@ -98,6 +100,17 @@ class MasterClient {
    * calls do; InvalidMasterMessageException for a page it cannot read.
    */
   [[nodiscard]] ServerListing listServers();
+
+  /**
+   * @returns The first rows of the leaderboard @p query asks for, and the row
+   * of its player when it names one, `GET /api/leaderboard`; the route reads
+   * no key.
+   * @throws MasterRefusedException with status 400 for a query out of the
+   * bounds of the route; InvalidMasterMessageException for an answer that is
+   * no leaderboard.
+   */
+  [[nodiscard]] GlobalLeaderboard readLeaderboard(
+      const GlobalLeaderboardQuery& query);
 
  private:
   /** @returns The body the master answered to @p body sent on @p route. */

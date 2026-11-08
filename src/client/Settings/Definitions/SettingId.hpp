@@ -24,7 +24,6 @@ enum class SettingId : std::uint8_t {
   ChatOpenLines,
   ChatSeconds,
   ChatBackground,
-  Master,
   ShipLook,
   ShipLocker,
 };

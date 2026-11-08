@@ -126,6 +126,10 @@ namespace rtype::network::testing {
  */
 [[nodiscard]] GlobalLeaderboard parisLeaderboard();
 
+/** @returns What globalLeaderboardFromText() says when it refuses @p text, or
+ * an empty text when it accepts it. */
+[[nodiscard]] std::string globalLeaderboardRefusal(std::string_view text);
+
 /** @returns What finishedGameFromText() says when it refuses @p text, or an
  * empty text when it accepts it. */
 [[nodiscard]] std::string finishedGameRefusal(std::string_view text);

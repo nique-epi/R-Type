@@ -13,7 +13,7 @@ namespace rtype::client {
  * on the default rules, at the first difficulty of the server when it has no
  * DEFAULT_DIFFICULTY. CREATE puts the server and a NewGame with those rules
  * in the last attempt of the choice, together, and pushes
- * CONNECTION_TO_CHOSEN_SERVER_SCREEN over
+ * CONNECTION_TO_MAP_SERVER_SCREEN over
  * the dialog, so BACK there, after a refusal, comes back to it; BACK, which
  * MENU_CANCEL_KEY answers too, closes it.
  */

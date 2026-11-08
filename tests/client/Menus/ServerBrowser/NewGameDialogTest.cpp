@@ -13,7 +13,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 
-using rtype::client::CONNECTION_TO_CHOSEN_SERVER_SCREEN;
+using rtype::client::CONNECTION_TO_MAP_SERVER_SCREEN;
 using rtype::client::GameRequest;
 using rtype::client::testing::EASY_SHOWN;
 using rtype::client::testing::LIVES_AT_THE_FEWEST;
@@ -110,7 +110,7 @@ TEST_F(NewGameDialogFixture, CreateOpensTheConnectionOverTheDialog) {
   EXPECT_THAT(
       navigator().calls(),
       ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                .screen = CONNECTION_TO_CHOSEN_SERVER_SCREEN}));
+                                .screen = CONNECTION_TO_MAP_SERVER_SCREEN}));
 }
 
 /**

@@ -15,6 +15,12 @@ constexpr std::uint16_t LINKED_SERVER_MAXIMUM_GAMES = 8;
 constexpr std::uint8_t LINKED_SERVER_PLAYERS_PER_GAME = 4;
 constexpr std::uint64_t LINKED_SERVER_PROBE_SECRET = 0x0A0B'0C0D'0E0F'1011;
 
+/** @brief A leaderboard the tests ask for, which no game filled: two pilots
+ * in normal, its first ten rows. */
+constexpr std::string_view EMPTY_LEADERBOARD_DIFFICULTY = "normal";
+constexpr std::uint8_t EMPTY_LEADERBOARD_PILOTS = 2;
+constexpr std::int64_t EMPTY_LEADERBOARD_ROWS = 10;
+
 /** @brief How long a test waits for the thread of the link to read, longer
  * than the timeouts of MasterClient, and how often it looks. */
 constexpr std::chrono::seconds READING_DEADLINE{12};
