@@ -8,8 +8,10 @@ import { GameScreen } from '@/components/game/game-screen';
 import { GameText } from '@/components/game/game-text';
 import { CountUp } from '@/components/motion/count-up';
 import { Keycap } from '@/components/primitives/text/keycap';
+import { StarLayers } from '@/components/sky/star-layers';
 import { SHEETS } from '@/components/sprites/sheets';
 import { Sprite } from '@/components/sprites/sprite';
+import { useFullscreen } from '@/hooks/use-fullscreen';
 import { useMotion } from '@/hooks/use-motion';
 import { gsap } from '@/lib/gsap';
 import { runShortcut } from '@/lib/shortcuts';
@@ -37,7 +39,16 @@ export type RankingScreenLabels = {
   nextTab: string;
   filterButton: string;
   back: string;
-  keys: { previousTab: string; nextTab: string; filter: string; back: string };
+  /** The chip that shows the screen fullscreen, then the one that leaves it. */
+  fullscreen: string;
+  exitFullscreen: string;
+  keys: {
+    previousTab: string;
+    nextTab: string;
+    filter: string;
+    fullscreen: string;
+    back: string;
+  };
   filter: RankingFilterLabels;
 };
 
@@ -88,6 +99,7 @@ export function RankingScreen({
   const root = useRef<HTMLDivElement>(null);
   const first = useRef(true);
   const [filterOpen, setFilterOpen] = useState(false);
+  const fullscreen = useFullscreen(root);
 
   useMotion(
     () => {
@@ -133,13 +145,27 @@ export function RankingScreen({
       q: () => onTabChange(0),
       e: () => onTabChange(1),
       f: () => setFilterOpen(true),
+      z: fullscreen.toggle,
       escape: onBack,
     });
   }
 
   return (
-    <div ref={root}>
-      <GameScreen aria-label={labels.screen} onKeyDown={onKeyDown} settle>
+    <div
+      ref={root}
+      className={cn(
+        fullscreen.active &&
+          'relative isolate grid h-screen place-items-center bg-sky',
+      )}
+    >
+      {fullscreen.active ? <StarLayers className="-z-10" /> : null}
+      <GameScreen
+        aria-label={labels.screen}
+        onKeyDown={onKeyDown}
+        fitHeight={fullscreen.active}
+        upscale={fullscreen.active}
+        settle
+      >
         <Sprite data-flag {...FLAG} className="absolute top-0 left-4" />
         <Sprite
           data-flag
@@ -215,7 +241,7 @@ export function RankingScreen({
             <div
               key={row.rank}
               data-ranking-row
-              className="absolute left-6 grid w-148 grid-cols-[48px_1fr_150px_116px] items-center gap-x-5"
+              className="absolute left-6 grid w-148 grid-cols-[48px_minmax(0,1fr)_150px_116px] items-center gap-x-5"
               style={{ top: ROW_TOP + index * ROW_STEP }}
             >
               <GameText
@@ -227,7 +253,7 @@ export function RankingScreen({
               >
                 {row.rank}
               </GameText>
-              <GameText as="span" className="whitespace-nowrap text-star-white">
+              <GameText as="span" className="truncate text-star-white">
                 {row.name}
               </GameText>
               <GameText as="span" className="text-right text-star-white">
@@ -267,6 +293,12 @@ export function RankingScreen({
             onClick={() => setFilterOpen(true)}
           >
             {labels.filterButton}
+          </GameChip>
+          <GameChip
+            shortcut={labels.keys.fullscreen}
+            onClick={fullscreen.toggle}
+          >
+            {fullscreen.active ? labels.exitFullscreen : labels.fullscreen}
           </GameChip>
           <GameChip shortcut={labels.keys.back} onClick={onBack}>
             {labels.back}

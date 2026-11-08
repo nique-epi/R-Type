@@ -10,7 +10,6 @@ describe('pathOf', () => {
 
   it('writes the other pages under their language', () => {
     expect(pathOf('en', 'servers')).toBe('/en/servers');
-    expect(pathOf('fr', 'hostServer')).toBe('/fr/servers/new');
     expect(pathOf('fr', 'ranking')).toBe('/fr/leaderboard');
   });
 });

@@ -5,7 +5,6 @@ const PAGE_PATHS = {
   home: '',
   download: '/download',
   servers: '/servers',
-  hostServer: '/servers/new',
   ranking: '/leaderboard',
   wiki: '/wiki',
   team: '/team',

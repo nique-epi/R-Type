@@ -2,6 +2,7 @@ import { DownloadSection } from '@/components/download/download-section';
 import { PageBody } from '@/components/layout/page-body';
 import { PageHero } from '@/components/layout/page-hero';
 import { PanelTitle } from '@/components/primitives/surfaces/panel';
+import { StarLayers } from '@/components/sky/star-layers';
 import { getLatestRelease } from '@/hooks/api';
 import { format } from '@/i18n/format';
 import { formatDay } from '@/i18n/format-date';
@@ -10,7 +11,7 @@ import { getDictionary } from '@/i18n/get-dictionary';
 import type { Locale } from '@/i18n/locales';
 import { releasesPageUrl } from '@/lib/github/latest-release';
 
-/** The download page under its hero: the installer of the reader's system, its steps, the notes and the other files of the latest release. */
+/** The download page under its hero, on a sky of drifting stars that fills the whole page: the installer of the reader's system, its steps, the notes and the other files of the latest release. */
 export async function DownloadBlocks({ lang }: { lang: Locale }) {
   const dictionary = getDictionary(lang);
   const copy = dictionary.pages.downloadPage;
@@ -18,7 +19,8 @@ export async function DownloadBlocks({ lang }: { lang: Locale }) {
   const releasesUrl = releasesPageUrl();
 
   return (
-    <>
+    <div className="relative isolate">
+      <StarLayers className="-z-10" />
       <PageHero
         eyebrow={
           release
@@ -95,6 +97,6 @@ export async function DownloadBlocks({ lang }: { lang: Locale }) {
           </ul>
         </section>
       </PageBody>
-    </>
+    </div>
   );
 }

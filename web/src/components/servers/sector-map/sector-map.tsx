@@ -51,7 +51,6 @@ export type SectorMapProps = {
   onLeave?: () => void;
   onOpenServer: (serverId: string) => void;
   onLeaderboard: () => void;
-  onHost: () => void;
   /** Escape on the whole sky: leave the map. */
   onExit: () => void;
   labels: SectorMapLabels;
@@ -77,7 +76,6 @@ export function SectorMap({
   onLeave,
   onOpenServer,
   onLeaderboard,
-  onHost,
   onExit,
   labels,
   locale,
@@ -211,7 +209,6 @@ export function SectorMap({
     escape: back,
     ...(onJoin ? { q: quickPlay } : {}),
     l: onLeaderboard,
-    h: onHost,
     ...(stage === 'games' && chosen
       ? {
           i: () => onOpenServer(chosen.id),
@@ -469,9 +466,6 @@ export function SectorMap({
                   onClick={onLeaderboard}
                 >
                   {labels.leaderboard}
-                </GameChip>
-                <GameChip shortcut={labels.keys.host} onClick={onHost}>
-                  {labels.host}
                 </GameChip>
               </>
             )}

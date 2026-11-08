@@ -35,7 +35,6 @@ function renderMap(readOnly = false) {
     onLeave: vi.fn(),
     onOpenServer: vi.fn(),
     onLeaderboard: vi.fn(),
-    onHost: vi.fn(),
     onExit: vi.fn(),
   };
   render(

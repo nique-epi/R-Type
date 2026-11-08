@@ -1,6 +1,5 @@
 import { AnnouncementBar } from '@/components/layout/announcement-bar';
 import { PageHeader } from '@/components/layout/page-header';
-import { SiteFooter } from '@/components/layout/site-footer';
 import { SmoothScroll } from '@/components/motion/smooth-scroll';
 import { getLatestRelease } from '@/hooks/api';
 import { format } from '@/i18n/format';
@@ -11,7 +10,7 @@ import { pathOf } from '@/lib/site-paths';
 
 /**
  * What every page sits in: the announcement of the latest release, the
- * header with its menu, the page, the footer, and the smooth scroll of the
+ * header with its menu, the page, and the smooth scroll of the
  * whole.
  */
 export async function SiteShell({
@@ -21,7 +20,7 @@ export async function SiteShell({
   lang: Locale;
   children: React.ReactNode;
 }) {
-  const { pages, header, footer } = getDictionary(lang);
+  const { pages, header } = getDictionary(lang);
   const release = await getLatestRelease();
   const items = [
     { href: pathOf(lang, 'home'), label: pages.nav.home, exact: true },
@@ -59,22 +58,6 @@ export async function SiteShell({
         labels={header}
       />
       <div className="flex-1">{children}</div>
-      <SiteFooter
-        aria-label={footer.navigation}
-        links={[
-          { href: pathOf(lang, 'download'), label: pages.nav.download },
-          { href: pathOf(lang, 'servers'), label: pages.nav.servers },
-          { href: pathOf(lang, 'wiki'), label: pages.nav.wiki },
-          {
-            href: pathOf(lang, 'hostServer'),
-            label: pages.site.hostServer,
-          },
-        ]}
-      >
-        {release
-          ? format(pages.site.footer, { version: release.version })
-          : pages.site.footerFallback}
-      </SiteFooter>
     </SmoothScroll>
   );
 }

@@ -22,7 +22,7 @@ export function Features({ lang }: { lang: Locale }) {
     },
     {
       copy: hosting,
-      href: pathOf(lang, 'hostServer'),
+      href: wikiPathOf(lang, 'host'),
       fill: 'bg-player-dark-blue',
       art: <Enemy kind="bydo" scale={6} />,
     },

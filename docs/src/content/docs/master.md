@@ -98,7 +98,6 @@ The web site is a program of its own: a Next.js server, in `web/` (see [Web site
 | `/download` | the installer of the system of the reader, its steps, the other files of the release | the latest release |
 | `/servers` | the sector map, read only: a seat is taken in the game, so the map has no Join and no quick play | the list of servers, each with its games and its last ping |
 | `/servers/{id}` | the games of a server, its figures and the pilots of its last 100 samples (the master keeps one sample a second, a page of the list holds 100); a server created and not registered yet shows a waiting notice | the list, `GET /api/servers/{id}/samples` |
-| `/servers/new` | the form that creates a server, then its key, shown once | `POST /api/servers`, through a server action |
 | `/leaderboard` | the leaderboard screen of the game, by server or for everyone | example scores: the master keeps none yet |
 | `/wiki/{keys,enemies,accessibility,host}` | the controls, the bestiary, the pilot palettes, the guide to host a server | nothing |
 | `/team` | the four members and their GitHub | nothing |
@@ -115,7 +114,7 @@ The web site is a program of its own: a Next.js server, in `web/` (see [Web site
 |---|---|
 | `primitives/` | the pieces with no data, one folder per kind: `actions/` (`Button` and `ArrowLink`, a link when given an `href`, a button otherwise), `inputs/` (`Tabs`, `TextField`), `status/` (`StatusBadge`, `Tag`), `surfaces/` (`Dialog` on the native `<dialog>`, `Table`), `text/`, `layout/`, `icons/` |
 | `motion/`, `sky/`, `sprites/` | the animations, the star layers and the planet, and `Sprite`, which draws one frame of a sheet of `web/public/sprites/` at a whole scale |
-| `layout/`, `game/` | the header, the menu, the footer and the hero of a page; a game screen of 960 × 540, which scales to the width it is given, with its frames and chips |
+| `layout/`, `game/` | the header, the menu and the hero of a page; a game screen of 960 × 540, which scales to the width it is given, with its frames and chips |
 | `home/`, `download/`, `servers/`, `ranking/`, `wiki/`, `team/` | the sections of each page, such as `SectorMap` and `RankingScreen` |
 | `blocks/` | the bigger pieces a page is made of, built from the ones above: a block reads its own words (`getDictionary()`) and its own data (`web/src/hooks/api/`), so a page calls it with a language and nothing else; one folder per page (`blocks/home/`, `blocks/servers/`…), and `blocks/shell/` for what every page sits in |
 

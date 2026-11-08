@@ -18,9 +18,6 @@ export const enPages: PageCopy = {
     releaseNotes: 'Release notes',
     menuFootnote: 'v{version} · Linux · Windows · macOS',
     menuFootnoteFallback: 'Linux · Windows · macOS',
-    footer: 'R-Type · Epitech tek3 project · v{version}',
-    footerFallback: 'R-Type · Epitech tek3 project',
-    hostServer: 'Host a server',
     sampleTitle: 'Examples',
     sampleServers:
       'The master does not answer: these servers are examples, not real servers.',
@@ -163,18 +160,6 @@ export const enPages: PageCopy = {
     durationHours: '{count} h',
     durationSeconds: '{count} s',
   },
-  hostPage: {
-    eyebrow: 'Servers',
-    title: 'Host a server',
-    lede: 'A name, a key, and your server joins the map.',
-    configFile: 'server.cfg',
-    errorTitle: 'Creation failed',
-    quota: 'Try again within an hour.',
-    unreachable: 'The master does not answer: try again in a moment.',
-    refused: 'The master refused the creation: try another name.',
-    openServer: 'See the server',
-    another: 'New server',
-  },
   rankingPage: {
     eyebrow: 'Scores',
     title: 'Leaderboard',
@@ -255,10 +240,10 @@ export const enPages: PageCopy = {
     },
     host: {
       title: 'Host guide',
+      configFile: 'server.cfg',
       createKey: 'Create a key.',
       pasteKey: 'Paste it in {file}:',
       launch: 'Start the server:',
-      button: 'Host a server',
     },
   },
   teamPage: {

@@ -20,9 +20,6 @@ export const frPages = {
     releaseNotes: 'Notes de version',
     menuFootnote: 'v{version} · Linux · Windows · macOS',
     menuFootnoteFallback: 'Linux · Windows · macOS',
-    footer: 'R-Type · projet Epitech tek3 · v{version}',
-    footerFallback: 'R-Type · projet Epitech tek3',
-    hostServer: 'Heberger un serveur',
     sampleTitle: 'Exemples',
     sampleServers:
       'Le master ne répond pas : ces serveurs sont des exemples, pas de vrais serveurs.',
@@ -165,18 +162,6 @@ export const frPages = {
     durationHours: '{count} h',
     durationSeconds: '{count} s',
   },
-  hostPage: {
-    eyebrow: 'Serveurs',
-    title: 'Heberger un serveur',
-    lede: 'Un nom, une clé, et votre serveur rejoint la carte.',
-    configFile: 'server.cfg',
-    errorTitle: 'Creation impossible',
-    quota: 'Réessayez dans une heure au plus.',
-    unreachable: 'Le master ne répond pas : réessayez dans un instant.',
-    refused: 'Le master a refusé la création : réessayez avec un autre nom.',
-    openServer: 'Voir le serveur',
-    another: 'Nouveau serveur',
-  },
   rankingPage: {
     eyebrow: 'Scores',
     title: 'Classement',
@@ -257,10 +242,10 @@ export const frPages = {
     },
     host: {
       title: 'Guide hote',
+      configFile: 'server.cfg',
       createKey: 'Créez une clé.',
       pasteKey: 'Collez-la dans {file} :',
       launch: 'Lancez le serveur :',
-      button: 'Heberger un serveur',
     },
   },
   teamPage: {

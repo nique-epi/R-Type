@@ -33,7 +33,7 @@ export function Hero({
   /** The version of the latest release; nothing when it could not be read. */
   version: string | undefined;
 }) {
-  const { pages, header, hero } = getDictionary(lang);
+  const { pages, header } = getDictionary(lang);
   const copy = pages.home;
 
   return (
@@ -53,7 +53,6 @@ export function Hero({
             <Button href={pathOf(lang, 'download')}>{copy.download}</Button>
           </>
         }
-        scrollCue={hero.scrollCue}
         tagline={copy.taglineLines.flatMap((line, index) =>
           index === 0 ? [line] : [<br key={line} />, line],
         )}
