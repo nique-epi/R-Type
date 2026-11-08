@@ -1,6 +1,6 @@
 import type { InstallStep } from '@/components/download/install-steps';
 import type { PageCopy } from '@/i18n/page-copy';
-import type { System } from './release';
+import type { System } from './systems';
 
 type StepWords = PageCopy['downloadPage']['steps'];
 

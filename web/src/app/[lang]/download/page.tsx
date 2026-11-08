@@ -1,13 +1,12 @@
 import type { Metadata } from 'next';
 import { DownloadBlocks } from '@/components/blocks/download/download-blocks';
-import { getDictionary } from '@/i18n/get-dictionary';
+import { titleMetadata } from '@/i18n/page-metadata';
 import { readLocale } from '@/i18n/read-locale';
 
-export async function generateMetadata({
+export function generateMetadata({
   params,
 }: PageProps<'/[lang]/download'>): Promise<Metadata> {
-  const lang = await readLocale(params);
-  return { title: getDictionary(lang).pages.downloadPage.title };
+  return titleMetadata(params, 'downloadPage');
 }
 
 export default async function DownloadPage({

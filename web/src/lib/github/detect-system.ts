@@ -1,4 +1,4 @@
-import type { System } from './release';
+import type { System } from './systems';
 
 /** The system a browser runs on, read from its user agent; Linux when it names no other. */
 export function detectSystem(userAgent: string): System {

@@ -57,6 +57,11 @@ function firstOf(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
+/** Whether an address asks for the first tab, which needs the list of servers to know which one. */
+export function asksForAServer(search: RankingSearch): boolean {
+  return firstOf(search.scope) === 'server';
+}
+
 /** Whether the first tab reads a server of the list. */
 function readsAServer(choice: RankingChoice): boolean {
   return choice.scope === 'server' && choice.serverId !== null;
@@ -88,7 +93,7 @@ export function rankingChoiceOf(
     pilots: validPilots ? pilots : FIRST_RANKING_CHOICE.pilots,
   };
 
-  return firstOf(search.scope) === 'server' && server
+  return asksForAServer(search) && server
     ? { scope: 'server', serverId: server.id, ...common }
     : { scope: 'global', serverId: null, ...common };
 }

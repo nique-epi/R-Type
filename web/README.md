@@ -82,7 +82,6 @@ committed.
 | **StPageFlip** (`page-flip`)                                   | the page that turns in the bestiary                                                           | [`src/components/wiki/bestiary-book.tsx`](src/components/wiki/bestiary-book.tsx), [`src/types/page-flip.d.ts`](src/types/page-flip.d.ts) |
 | **zod**                                                        | the shape of what the master and the environment send, checked at run time                    | `src/lib/api/schemas/`, `src/config/env.config.ts`                                                                                       |
 | **@better-fetch/fetch**                                        | the typed client of the master                                                                | [`src/lib/api/clients/master/`](src/lib/api/clients/master/index.ts)                                                                     |
-| **lucide-react**                                               | icons                                                                                         | `src/components/primitives/icons/`                                                                                                       |
 | **server-only**                                                | makes the build fail if a client component imports a server module                            | the top of every file in `src/hooks/api/`, `src/lib/api/`, `src/config/server-env.ts`                                                    |
 | **Biome**                                                      | linter and formatter (single quotes, two spaces, organized imports)                           | `biome.json`                                                                                                                             |
 | **Vitest**, **Testing Library**, **jsdom**                     | the tests                                                                                     | `vitest.config.mts`, `src/test/`                                                                                                         |
@@ -120,7 +119,7 @@ A test sits **beside the file it tests** (`ranking-view.ts`, `ranking-view.test.
 | Folder or file                       | Holds                                                                                                                                                                                                          |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`lib/api/`](src/lib/api/)           | the client of the master: `clients/` (the fetch client and its list of routes), `schemas/` (zod), `routes/` (one function per route), `helpers/` (error mapping). One entry point: `api` in `lib/api/index.ts` |
-| [`lib/github/`](src/lib/github/)     | the latest GitHub release: reading it, finding the installer of the reader's system, the install steps                                                                                                         |
+| [`lib/github/`](src/lib/github/)     | the latest GitHub release: reading it, finding the installer of the reader's system, the install steps (`systems.ts` lists the systems apart from the zod schema, so the browser never loads zod for it) |
 | [`lib/gsap/`](src/lib/gsap/index.ts) | GSAP, registered once, and the media query of reduced motion                                                                                                                                                   |
 | [`lib/rtype/`](src/lib/rtype/)       | what the site knows of the game: servers and their seats, players, palettes, the ranking choice, the team, the example servers                                                                                 |
 | `lib/site-paths.ts`                  | the path of each page in each language (`pathOf(locale, 'ranking')`)                                                                                                                                           |
@@ -158,7 +157,7 @@ There are two kinds of text, both typed so a language that misses a line fails t
 | **The words of the pages** (titles, ledes, paragraphs)                        | `i18n/dictionaries/fr-pages.ts`, `en-pages.ts`; the type is `PageCopy`, the shape of the French copy ([`i18n/page-copy.ts`](src/i18n/page-copy.ts))                  | `getDictionary(lang).pages` |
 
 To add a language, add it to `LOCALES` in [`i18n/locales.ts`](src/i18n/locales.ts) and write its two dictionaries.
-The files `format*.ts` format counts, dates, sizes and durations for a language, and `format-nodes.tsx` puts React nodes inside a sentence (`{file}` becomes a `<strong>`).
+The files `format*.ts` format counts, dates, sizes and durations for a language, and `format-nodes.tsx` puts React nodes inside a sentence (`{file}` becomes a `<strong>`). `page-metadata.ts` gives a page its tab title from its copy.
 
 ## How data reaches a page
 

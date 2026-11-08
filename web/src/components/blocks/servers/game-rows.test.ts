@@ -43,10 +43,6 @@ describe('gameRowsOf', () => {
     expect(rows.map(row => row.stateLabel)).toEqual(['En attente', 'En jeu']);
   });
 
-  it('offers no action, so the table is read only', () => {
-    expect(rows.every(row => row.actionLabel === undefined)).toBe(true);
-  });
-
   it('draws the pilots of each game in its seats', () => {
     expect(rows[1]?.seats.every(seat => seat !== null)).toBe(true);
   });

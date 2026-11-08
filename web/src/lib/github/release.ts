@@ -1,9 +1,6 @@
 import { z } from 'zod';
 
-/** The systems the client is packaged for. */
-export const SYSTEMS = ['linux', 'windows', 'macos'] as const;
-
-export type System = (typeof SYSTEMS)[number];
+import { SYSTEMS, type System } from './systems';
 
 /** The file a player installs the client from, on each system. */
 const CLIENT_FILE_PATTERNS: Record<System, RegExp> = {

@@ -5,8 +5,8 @@ import type * as React from 'react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/primitives/actions/button';
 import { Triangle } from '@/components/primitives/icons/triangle';
+import { motionAllowed } from '@/hooks/use-motion';
 import { format } from '@/i18n/format';
-import { MOTION_ALLOWED } from '@/lib/gsap';
 import { cn } from '@/lib/utils';
 
 /** An enemy of the bestiary: one spread of the book. */
@@ -25,8 +25,6 @@ export type BestiaryBookLabels = {
   /** What a screen reader calls the element: "livre". */
   roleDescription: string;
   title: string;
-  leftPage: string;
-  rightPage: string;
   sheet: string;
   contents: string;
   previous: string;
@@ -93,7 +91,7 @@ export function BestiaryBook({
       mobileScrollSupport: false,
       disableFlipByClick: true,
       showPageCorners: true,
-      flippingTime: window.matchMedia(MOTION_ALLOWED).matches
+      flippingTime: motionAllowed()
         ? TURN_MILLISECONDS
         : NO_MOTION_MILLISECONDS,
     });
@@ -140,7 +138,6 @@ export function BestiaryBook({
     };
   }, []);
 
-  const last = entries.length - 1;
   return (
     <div data-slot="bestiary-book" className="grid gap-6">
       <section
@@ -156,7 +153,7 @@ export function BestiaryBook({
           )}
         />
         <div ref={source} hidden>
-          {entries.map(entry => (
+          {entries.map((entry, index) => (
             <Fragment key={entry.id}>
               <div className={cn('page', PAGE, LEFT_PAGE)}>
                 <div className={PAGE_CONTENT}>
@@ -168,7 +165,7 @@ export function BestiaryBook({
                   <RightPageContent
                     entry={entry}
                     entries={entries}
-                    current={entries.indexOf(entry)}
+                    current={index}
                     labels={labels}
                   />
                 </div>
@@ -202,7 +199,7 @@ export function BestiaryBook({
         </span>
         <Button
           size="sm"
-          disabled={entryIndex === last}
+          disabled={entryIndex === entries.length - 1}
           onClick={() => book.current?.flipNext()}
         >
           {labels.next}

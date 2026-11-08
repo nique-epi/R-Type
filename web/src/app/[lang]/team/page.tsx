@@ -1,13 +1,12 @@
 import type { Metadata } from 'next';
 import { TeamBlocks } from '@/components/blocks/team/team-blocks';
-import { getDictionary } from '@/i18n/get-dictionary';
+import { titleMetadata } from '@/i18n/page-metadata';
 import { readLocale } from '@/i18n/read-locale';
 
-export async function generateMetadata({
+export function generateMetadata({
   params,
 }: PageProps<'/[lang]/team'>): Promise<Metadata> {
-  const lang = await readLocale(params);
-  return { title: getDictionary(lang).pages.teamPage.title };
+  return titleMetadata(params, 'teamPage');
 }
 
 export default async function TeamPage({ params }: PageProps<'/[lang]/team'>) {

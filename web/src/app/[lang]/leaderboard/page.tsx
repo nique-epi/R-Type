@@ -1,14 +1,13 @@
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { RankingBlocks } from '@/components/blocks/ranking/ranking-blocks';
-import { getDictionary } from '@/i18n/get-dictionary';
+import { titleMetadata } from '@/i18n/page-metadata';
 import { readLocale } from '@/i18n/read-locale';
 
-export async function generateMetadata({
+export function generateMetadata({
   params,
 }: PageProps<'/[lang]/leaderboard'>): Promise<Metadata> {
-  const lang = await readLocale(params);
-  return { title: getDictionary(lang).pages.rankingPage.title };
+  return titleMetadata(params, 'rankingPage');
 }
 
 export default async function LeaderboardPage({

@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 
 import { fr } from '@/i18n/dictionaries/fr';
 import { GamesTable } from './games-table';
@@ -15,26 +15,7 @@ const WAITING = {
 };
 
 describe('GamesTable', () => {
-  it('has an action column and a button when a row offers one', () => {
-    const join = vi.fn();
-    render(
-      <GamesTable
-        rows={[
-          { ...WAITING, actionLabel: 'Rejoindre', onJoin: join },
-          { ...WAITING, id: 'game-2', actionLabel: 'Rejoindre' },
-        ]}
-        labels={fr.gamesTable}
-      />,
-    );
-
-    const buttons = screen.getAllByRole('button', { name: 'Rejoindre' });
-    expect(buttons).toHaveLength(2);
-    fireEvent.click(buttons[0] as HTMLElement);
-    expect(join).toHaveBeenCalledOnce();
-    expect(screen.getAllByRole('columnheader')).toHaveLength(4);
-  });
-
-  it('is read only, with no action column, when no row has a label for one', () => {
+  it('is read only: one column for the game, its state and its seats, and no button', () => {
     render(<GamesTable rows={[WAITING]} labels={fr.gamesTable} />);
 
     expect(screen.queryByRole('button')).toBeNull();

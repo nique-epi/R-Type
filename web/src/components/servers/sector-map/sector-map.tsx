@@ -461,14 +461,12 @@ export function SectorMap({
                 </GameChip>
               </>
             ) : (
-              <>
-                <GameChip
-                  shortcut={labels.keys.leaderboard}
-                  onClick={onLeaderboard}
-                >
-                  {labels.leaderboard}
-                </GameChip>
-              </>
+              <GameChip
+                shortcut={labels.keys.leaderboard}
+                onClick={onLeaderboard}
+              >
+                {labels.leaderboard}
+              </GameChip>
             )}
             <GameChip shortcut={labels.keys.back} onClick={back}>
               {labels.back}

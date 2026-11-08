@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { frPages } from '@/i18n/dictionaries/fr-pages';
 import {
+  asksForAServer,
   FIRST_RANKING_CHOICE,
   rankingChoiceAfter,
   rankingChoiceOf,
@@ -67,6 +68,14 @@ describe('rankingChoiceOf', () => {
     expect(
       rankingChoiceOf({ difficulty: ['easy', 'hard'] }, SERVERS).difficulty,
     ).toBe('easy');
+  });
+});
+
+describe('asksForAServer', () => {
+  it('is true only for an address that names the first tab', () => {
+    expect(asksForAServer({ scope: 'server' })).toBe(true);
+    expect(asksForAServer({ scope: 'global' })).toBe(false);
+    expect(asksForAServer({})).toBe(false);
   });
 });
 

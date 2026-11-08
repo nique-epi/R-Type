@@ -157,38 +157,47 @@ async function neverRegistered(serverId: number): Promise<boolean> {
 }
 
 /**
- * Reads one server: its line of the list, and its newest samples, asked at
- * the same time as the list. Nothing when no server has this id. A server
- * just created, which the list does not hold until it registers, is a sheet
- * with no server.
+ * Reads one server: its line of the list, the games of that server alone,
+ * and its newest samples, asked at the same time as the list. Nothing when
+ * no server has this id. A server just created, which the list does not
+ * hold until it registers, is a sheet with no server.
  */
 export const getServerSheet = cache(
   async (id: string): Promise<ServerSheet | null> => {
     const serverId = Number(id);
-    const [{ source, servers }, samples] = await Promise.all([
-      getServerList(),
+    const [listing, release, samples] = await Promise.all([
+      api.servers.listServers(),
+      getLatestRelease(),
       Number.isInteger(serverId)
         ? api.servers.getSamples(serverId, MAXIMUM_PAGE_SIZE)
         : null,
     ]);
-    const known = servers.find(server => server.id === id) ?? null;
 
-    if (source === 'sample') {
-      return known ? sampleSheet(known) : null;
+    if (listing.error) {
+      const example = SAMPLE_SERVERS.find(server => server.id === id);
+      return example ? sampleSheet(example) : null;
     }
     if (samples === null) {
       return null;
     }
-    if (!known) {
+
+    const listed = busiestFirst(listing.data).find(
+      server => String(server.id) === id,
+    );
+    if (!listed) {
       return (await neverRegistered(serverId))
-        ? { source, server: null, pilots: [], span: 0 }
+        ? { source: 'master', server: null, pilots: [], span: 0 }
         : null;
     }
 
     const kept = samples.error ? [] : samples.data;
     return {
-      source,
-      server: known,
+      source: 'master',
+      server: mapServerOf(
+        listed,
+        await detailsOf(listed, false),
+        release?.version,
+      ),
       pilots: pilotsOfSamples(kept),
       span: spanOf(kept),
     };

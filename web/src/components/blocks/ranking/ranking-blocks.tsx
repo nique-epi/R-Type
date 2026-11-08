@@ -10,10 +10,31 @@ import { getRanking, getRankingServers } from '@/hooks/api';
 import { getDictionary } from '@/i18n/get-dictionary';
 import type { Locale } from '@/i18n/locales';
 import {
+  asksForAServer,
   type RankingSearch,
   rankingChoiceOf,
   rankingRowsOf,
 } from '@/lib/rtype/ranking-view';
+
+/**
+ * Reads the servers the filters offer and the leaderboard of the choice in
+ * the address. The two reads go out together unless the address asks for a
+ * server: only then does the choice wait for the list.
+ */
+async function readRanking(search: RankingSearch) {
+  if (asksForAServer(search)) {
+    const servers = await getRankingServers();
+    const choice = rankingChoiceOf(search, servers);
+    return { servers, choice, ranking: await getRanking(choice) };
+  }
+
+  const choice = rankingChoiceOf(search, []);
+  const [servers, ranking] = await Promise.all([
+    getRankingServers(),
+    getRanking(choice),
+  ]);
+  return { servers, choice, ranking };
+}
 
 /**
  * The leaderboard page under its hero, on a sky of drifting stars that fills
@@ -29,9 +50,7 @@ export async function RankingBlocks({
 }) {
   const dictionary = getDictionary(lang);
   const copy = dictionary.pages.rankingPage;
-  const servers = await getRankingServers();
-  const choice = rankingChoiceOf(search, servers);
-  const ranking = await getRanking(choice);
+  const { servers, choice, ranking } = await readRanking(search);
 
   return (
     <div className="relative isolate">

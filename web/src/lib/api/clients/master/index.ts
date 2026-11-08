@@ -5,7 +5,6 @@ import { env } from '@/config/server-env';
 
 import { problemSchema } from '../../schemas/master';
 import {
-  healthEndpointsSchema,
   leaderboardEndpointsSchema,
   serversEndpointsSchema,
 } from './endpoints';
@@ -20,7 +19,6 @@ const MASTER_API_PREFIX = '/api';
 const MASTER_TIMEOUT_MILLISECONDS = 5000;
 
 const masterSchema = createSchema({
-  ...healthEndpointsSchema,
   ...leaderboardEndpointsSchema,
   ...serversEndpointsSchema,
 });
