@@ -3,6 +3,7 @@
 #include <span>
 #include <string>
 #include "ConsoleChunk.hpp"
+#include "ILineCutter.hpp"
 
 namespace rtype::server {
 
@@ -14,15 +15,15 @@ namespace rtype::server {
  * is another command. What it keeps between two calls is never longer than
  * that.
  */
-class ConsoleLineSplitter {
+class ConsoleLineSplitter final : public ILineCutter {
  public:
   /** @returns The lines @p bytes completes, the text kept from the previous
    * calls in front of the first one. */
-  [[nodiscard]] ConsoleChunk feed(std::span<const char> bytes);
+  [[nodiscard]] ConsoleChunk feed(std::span<const char> bytes) override;
 
   /** @returns The text after the last end of line, as a last line, when the
    * input ended without one; no line when nothing is left. */
-  [[nodiscard]] ConsoleChunk finish();
+  [[nodiscard]] ConsoleChunk finish() override;
 
  private:
   /** @brief Adds @p character to the line being read; drops that line once

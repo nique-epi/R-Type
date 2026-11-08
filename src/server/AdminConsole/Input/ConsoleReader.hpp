@@ -5,8 +5,8 @@
 #include <thread>
 #include "BoundedQueue.hpp"
 #include "ConsoleChunk.hpp"
-#include "ConsoleLineSplitter.hpp"
 #include "IConsoleInput.hpp"
+#include "ILineCutter.hpp"
 #include "Logger.hpp"
 
 namespace rtype::server {
@@ -25,9 +25,11 @@ namespace rtype::server {
 class ConsoleReader {
  public:
   /** @param input What the thread reads; it must outlive the reader.
+   * @param cutter What turns the bytes read into lines; it must outlive the
+   * reader, and only its thread calls it.
    * @param lines Where the thread hands the lines; it must outlive the
    * reader. */
-  ConsoleReader(IConsoleInput& input,
+  ConsoleReader(IConsoleInput& input, ILineCutter& cutter,
                 concurrency::BoundedQueue<std::string>& lines);
 
   ConsoleReader(const ConsoleReader&) = delete;
@@ -44,7 +46,7 @@ class ConsoleReader {
 
   IConsoleInput* input_;
   concurrency::BoundedQueue<std::string>* lines_;
-  ConsoleLineSplitter splitter_;
+  ILineCutter* cutter_;
   logging::Logger logger_;
   std::jthread console_;
 };

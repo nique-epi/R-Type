@@ -9,6 +9,7 @@
 #include "BanCommands.hpp"
 #include "BoundedQueue.hpp"
 #include "CommandInterpreter.hpp"
+#include "ConsoleLineSplitter.hpp"
 #include "ConsoleReader.hpp"
 #include "IConsoleInput.hpp"
 #include "IConsoleOutput.hpp"
@@ -57,6 +58,7 @@ class ServerAdminConsoleModule final : public engine::IModule {
 
   std::unique_ptr<IConsoleInput> input_;
   std::unique_ptr<IConsoleOutput> output_;
+  ConsoleLineSplitter splitter_;
   concurrency::BoundedQueue<std::string> lines_{CONSOLE_LINE_CAPACITY};
   std::vector<std::string> typed_;
   const engine::CommandInterpreter* interpreter_{nullptr};

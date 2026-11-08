@@ -59,7 +59,9 @@ void ServerAdminConsoleModule::install(engine::InstallContext& context) {
       [this]([[maybe_unused]] engine::Duration elapsed) { runTypedLines(); });
 }
 
-void ServerAdminConsoleModule::start() { reader_.emplace(*input_, lines_); }
+void ServerAdminConsoleModule::start() {
+  reader_.emplace(*input_, splitter_, lines_);
+}
 
 void ServerAdminConsoleModule::stop() { reader_.reset(); }
 
