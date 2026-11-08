@@ -63,3 +63,15 @@ jobs:
           --title "R-Type $GITHUB_REF_NAME"
           --generate-notes
           --verify-tag
+
+  # Waits for the approval of the "production" environment, then installs the
+  # server package of the release on the master instance of AWS.
+  deploy-master:
+    name: Deploy the master
+    needs: publish
+    uses: ./.github/workflows/deploy-master.yaml
+    with:
+      tag: ${{ github.ref_name }}
+    permissions:
+      contents: read
+      id-token: write

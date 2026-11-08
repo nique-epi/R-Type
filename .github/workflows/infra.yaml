@@ -1,0 +1,42 @@
+name: infra
+
+# Checks the Terraform files and the scripts of the master instance. It needs
+# no AWS credentials: the backend is left out.
+on:
+  push:
+    branches:
+      - "main"
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra.yaml"
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra.yaml"
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Format, validate and lint the infrastructure
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v4
+
+      - name: Check the format
+        run: terraform fmt -check -recursive infra/terraform
+
+      - name: Validate
+        working-directory: infra/terraform
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+      - name: Lint the scripts
+        run: |
+          shellcheck --version
+          shellcheck --shell=sh --external-sources infra/master/deploy.sh infra/terraform/user-data.sh

@@ -20,6 +20,7 @@ This page tells you where to look when you need to change something. It describe
 | The probe of the UDP port of each game server, module `probe` | Available | `src/master/Probe/`, `src/master/Servers/`, `src/server/Master/` |
 | The web site, a Next.js server of its own that calls the API | Available: the pages of the design in French and English (home, download, sector map, a server, leaderboard, wiki, team); the leaderboard reads `GET /api/leaderboard` | `web/` |
 | The results of the games and the global leaderboard, `PUT /api/servers/me/results/{gameId}` and `GET /api/leaderboard` | Available; a game server sends its vanilla games after its heartbeats | `src/master/Leaderboard/`, `src/network/Master/` |
+| The master on AWS, installed from each release | Available; see [Deploying the master](/R-Type/deploy-master/) | `infra/`, `.github/workflows/deploy-master.yaml` |
 | Administration, accounts | Not yet written | |
 
 ## Starting the master
@@ -69,10 +70,10 @@ The storage starts before the HTTP API, so a database the master cannot open sto
 
 `MasterHttpServer` (`src/master/Http/`) holds a `network::HttpServer` (`src/network/Http/`, see [Network](/R-Type/network/#http-server-httpserver)), which wraps cpp-httplib and which the supervisor also uses to serve its content pack; no file of the master includes cpp-httplib. Its routes sit under `/api`, answer `GET`, `POST` or `PUT`, and answer `application/json`; each is declared once, with its method and path, in `MasterRouteConstants.hpp` (`src/network/Master/Routes/`), which the master and `MasterClient` both read; they run on the threads of cpp-httplib, at least 8 of them, and must not block for long. A route reads a `network::ApiRequest`: the body, the key of an `Authorization: Bearer <key>` header (RFC 6750, the scheme in any case) and the address of the TCP peer. It answers a `network::ApiResponse`: a status, a body, the `detail` of a refusal, one header, such as `Location`, and the media type of the body, `application/json` unless the route sets another.
 
-`GET /api/health` answers 200 with the version of the master, `MASTER_VERSION`:
+`GET /api/health` answers 200 with the version of the master, `MASTER_VERSION`, the version of `project()` in the root `CMakeLists.txt`:
 
 ```json
-{"version":"0.1.0"}
+{"version":"0.2.0"}
 ```
 
 - **Errors:** an answer of 400 or more without a body gets a problem document of RFC 9457, `application/problem+json`, whose `title` is the phrase of its status, with the `detail` of the route when it gives one: `{"status":404,"title":"Not Found"}` for a path no route answers.
@@ -382,6 +383,7 @@ void RouteAddingModule::install(rtype::engine::InstallContext& context) {
 | Change how often a game server beats | `MASTER_HEARTBEAT_INTERVAL` in `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master also reads to tell a silent server |
 | Change the size of a page of a list | `MINIMUM_PAGE_SIZE`, `DEFAULT_PAGE_SIZE` and `MAXIMUM_PAGE_SIZE` in `src/network/Master/Routes/MasterRouteConstants.hpp` |
 | Call the master from the game server | `MasterClient` (`src/network/Master/Client/`) |
+| Change where or how the master is deployed | [Deploying the master](/R-Type/deploy-master/#where-to-intervene) |
 | Add a page to the web site | `web/src/app/[lang]/` for its path, its title and its language, then a block in `web/src/components/blocks/` that builds it; its calls to the API in `web/src/lib/api/`, its words in `web/src/i18n/dictionaries/` |
 | Change a color, a face or a size of the site | the tokens of `web/src/styles/globals.css` |
 | Add or change a word of the site | its label type in the component, then both `web/src/i18n/dictionaries/` |
