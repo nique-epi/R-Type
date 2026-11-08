@@ -10,7 +10,9 @@
 #include "EndpointText.hpp"
 #include "EngineException.hpp"
 #include "HeartbeatJobParts.hpp"
+#include "HostedDifficulties.hpp"
 #include "IListeningPort.hpp"
+#include "IResultsFile.hpp"
 #include "IServerName.hpp"
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
@@ -88,8 +90,10 @@ void ServerMasterModule::install(engine::InstallContext& context) {
   declareSettings(context.require<engine::ConfigurationRegistry>());
   port_ = &context.require<IListeningPort>();
   hostedGames_ = &context.require<LatestHostedGames>();
+  difficulties_ = &context.require<HostedDifficulties>();
   measures_ = &context.require<LatestServerMeasures>();
   serverName_ = &context.require<IServerName>();
+  resultsFile_ = &context.require<IResultsFile>();
   tickDatagrams_ = &context.require<TickDatagrams>();
   context.addWork(
       SIMULATION_STAGE,
@@ -138,9 +142,11 @@ std::optional<HeartbeatJobParts> ServerMasterModule::jobParts() const {
               .probeSecret = probeSecret_,
               .address = declaredAddressOf(publicAddressSetting_->text())},
       .games = *hostedGames_,
+      .difficulties = difficulties_->names(),
       .probeTokens = probeTokens_,
       .measures = measures_,
-      .times = {}};
+      .times = {},
+      .resultsFile = resultsFile_->resultsFile()};
 }
 
 void ServerMasterModule::start() {

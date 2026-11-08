@@ -76,10 +76,10 @@ std::size_t PlayerRoster::occupiedSeatCount() const {
 }
 
 bool PlayerRoster::hasNickname(std::string_view nickname) const {
+  const std::string key = network::nicknameKey(nickname);
   return std::ranges::any_of(
-      seats_, [nickname](const std::optional<ConnectedPlayer>& seat) {
-        return seat.has_value() &&
-               network::sameNickname(seat->nickname, nickname);
+      seats_, [&key](const std::optional<ConnectedPlayer>& seat) {
+        return seat.has_value() && network::nicknameKey(seat->nickname) == key;
       });
 }
 

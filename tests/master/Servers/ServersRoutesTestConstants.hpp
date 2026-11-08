@@ -21,9 +21,12 @@ constexpr std::string_view NEGATIVE_SERVER_ID = "-1";
 
 /** @brief The games of "Paris 1" as the route lists them. */
 constexpr std::string_view PARIS_GAMES_BODY =
-    R"({"games":[{"name":"GAME 1","number":1,"playerCount":1,"state":"waiting"},)"
-    R"({"name":"GAME 2","number":2,"playerCount":2,"state":"inGame"}]})";
-constexpr std::string_view NO_GAMES_BODY = R"({"games":[]})";
+    R"({"difficulties":["easy","hard","normal"],)"
+    R"("games":[{"difficulty":"normal","friendlyFire":false,"lives":3,)"
+    R"("name":"GAME 1","number":1,"playerCount":1,"state":"waiting"},)"
+    R"({"difficulty":"hard","friendlyFire":true,"lives":5,)"
+    R"("name":"GAME 2","number":2,"playerCount":2,"state":"inGame"}]})";
+constexpr std::string_view NO_GAMES_BODY = R"({"difficulties":[],"games":[]})";
 
 /** @brief The parts of the history of a server, after its id. */
 constexpr std::string_view SAMPLES_PATH_SUFFIX = "/samples";

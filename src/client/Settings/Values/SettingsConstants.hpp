@@ -92,6 +92,13 @@ constexpr std::string_view CHAT_SECONDS_NAME = "chat_seconds";
 constexpr std::string_view CHAT_BACKGROUND_NAME = "chat_background";
 constexpr std::string_view MASTER_NAME = "master";
 
+constexpr std::string_view SHIP_HEAD_NAME = "ship_head";
+constexpr std::string_view SHIP_EYES_NAME = "ship_eyes";
+constexpr std::string_view SHIP_FACE_NAME = "ship_face";
+
+/** @brief The value of a slot of the ship that wears nothing. */
+constexpr std::string_view NO_LOOK_ITEM_VALUE = "none";
+
 /** @brief Names of the keys of the bound actions, in the order of
  * BOUND_ACTIONS. */
 constexpr std::array<std::string_view, BOUND_ACTION_COUNT>

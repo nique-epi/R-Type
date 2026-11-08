@@ -1,5 +1,5 @@
 ---
-title: 'Network protocol: version 12'
+title: 'Network protocol: version 13'
 description: The datagrams the client and the server exchange over UDP, byte by byte, and what each side does when one is lost or cannot be read.
 sidebar:
   label: Protocol
@@ -11,7 +11,7 @@ This page is the specification of the protocol the client and the server speak: 
 
 ## Status of this document
 
-- This is version 12 of the protocol. It is the only version the code speaks. [Versions and compatibility](#versions-and-compatibility) says when the version changes and what two programs of different versions do; [Version 2](#version-2), [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11) and [Version 12](#version-12) say what each changed from the version before, and what the rest of the second part of the project will change.
+- This is version 13 of the protocol. It is the only version the code speaks. [Versions and compatibility](#versions-and-compatibility) says when the version changes and what two programs of different versions do; [Version 2](#version-2), [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11), [Version 12](#version-12) and [Version 13](#version-13) say what each changed from the version before, and what the rest of the second part of the project will change.
 - The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
 - Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
 - Numbers are decimal unless written `0x`. A size is in bytes.
@@ -78,7 +78,7 @@ Both changes together save 12 bytes on the 268 of the typical state, 4.5 %, befo
 
 ## Datagram
 
-A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 12.
+A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 13.
 
 <ByteLayout
   label="The 22-byte header: protocolId on bytes 0 to 3, version on byte 4, flags on byte 5, sessionToken on bytes 6 to 13, sequence on bytes 14 and 15, acknowledgedSequence on bytes 16 and 17, acknowledgementBits on bytes 18 to 21."
@@ -101,7 +101,7 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
   ]}
 />
 
-| Offset | Size | Field | In version 12 |
+| Offset | Size | Field | In version 13 |
 |---|---|---|---|
 | 0 | 4 | `protocolId` | `0x52545950`, `RTYP` in ASCII |
 | 4 | 1 | `version` | 12 |
@@ -131,7 +131,7 @@ A received datagram goes through these checks in order. No buffer is sized from 
 |---|---|
 | The datagram holds 25 to 1200 bytes | dropped |
 | `protocolId` is `RTYP` | dropped |
-| `version` is 11 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
+| `version` is 12 | dropped; the server answers an unknown sender with `ConnectionRefused` (`IncompatibleVersion`) if the datagram holds at least 26 bytes |
 | `COMPRESSED` is set | the server drops the datagram; the client decodes the body and clears the flag, or drops the datagram when it cannot (see [Compression](#compression)) |
 | `flags` has no bit but `ACKNOWLEDGES` and `GUARANTEED`, once `COMPRESSED` is cleared | dropped |
 | The message sizes add up exactly to the end of the datagram | dropped |
@@ -153,7 +153,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 
 | Type | Message | Payload | Sent |
 |---|---|---|---|
-| 1 | `ConnectionRequest` | `cookie` `u64` (0 until the server gives one), `nickname` `string` (1 to 16 bytes), `kind` `u8`: 1 `AnyGame`, 2 `ExistingGame`, 3 `NewGame`, then `number` `u16`, the game asked for (see [Supervisor](#supervisor)) | every 500 ms until an answer; the client gives up after 5 s |
+| 1 | `ConnectionRequest` | `cookie` `u64` (0 until the server gives one), `nickname` `string` (1 to 16 bytes), `kind` `u8`: 1 `AnyGame`, 2 `ExistingGame`, 3 `NewGame`, then `number` `u16`, the game asked for; with `NewGame` only, then the rules of that game: `difficulty` `string` (1 to 16 bytes), `lives` `u8`, `friendlyFire` `bool` (see [Supervisor](#supervisor)) | every 500 ms until an answer; the client gives up after 5 s |
 | 4 | `Disconnection` | none | when the player closes the client, three times 50 ms apart |
 | 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32`, `ticks` `bool` (always 0), `tick` `u32` (always 0) (see [Round trip](#round-trip) and [Clock of the server](#clock-of-the-server)) | every 500 ms, whatever else it sends; the client also 40 ms after accepting a datagram that holds guaranteed messages when nothing else was sent |
 | 6 | `ReadyState` | `ready` `bool` | when the player changes it, and again while `LobbyState` shows another value |
@@ -169,7 +169,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | Type | Message | Payload | Sent |
 |---|---|---|---|
 | 2 | `ConnectionAccepted` | `playerNumber` `u8` (1 to 4), then the content pack of the game: `fingerprint`, 32 bytes, `size` `u32` (0 to 8388608), `port` `u16` (0 when the supervisor serves none); see [Content pack](#content-pack) | in answer to a request with a valid cookie; its header carries the session token; to a connected player, again at most once per 250 ms |
-| 3 | `ConnectionRefused` | `reason` `u8`: 1 `GameFull`, 2 `GameInProgress`, 3 `IncompatibleVersion`, 4 `NicknameTaken`, 5 `GameNotFound`, 6 `ServerFull` | in answer to a request |
+| 3 | `ConnectionRefused` | `reason` `u8`: 1 `GameFull`, 2 `GameInProgress`, 3 `IncompatibleVersion`, 4 `NicknameTaken`, 5 `GameNotFound`, 6 `ServerFull`, 7 `UnknownDifficulty`, 8 `LivesOutOfRange` | in answer to a request |
 | 4 | `Disconnection` | none | when the server shuts down, three times 50 ms apart |
 | 5 | `Heartbeat` | `sentAt` `u32`, `echoes` `bool`, `echo.sentAt` `u32`, `echo.heldFor` `u32`, `ticks` `bool`, `tick` `u32` (see [Round trip](#round-trip) and [Clock of the server](#clock-of-the-server)) | every 500 ms, whatever else it sends; `ticks` is 1 only while a game is in progress |
 | 7 | `LobbyState` | `playerCount` `u8`, then per player `playerNumber` `u8`, `ready` `bool`, `nickname` `string` | on every change, and at least every 500 ms while no game runs |
@@ -198,7 +198,7 @@ A message is accepted only when its payload has exactly the size its fields add 
 
 | Message | Rule |
 |---|---|
-| `ConnectionRequest` | the nickname follows the rules of [Connection](#connection): 1 to 16 bytes of valid UTF-8, no control character; `kind` is 1 to 3; `number` is 1 to 65535 with `ExistingGame`, and 0 with `AnyGame` and `NewGame` |
+| `ConnectionRequest` | the nickname follows the rules of [Connection](#connection): 1 to 16 bytes of valid UTF-8, no control character; `kind` is 1 to 3; `number` is 1 to 65535 with `ExistingGame`, and 0 with `AnyGame` and `NewGame`; the rules follow `number` with `NewGame` and with no other kind; their `difficulty` follows the rules of a nickname. Any `lives` byte is read: the supervisor refuses those it does not accept (see [Supervisor](#supervisor)) |
 | `ConnectionAccepted` | `playerNumber` is 1 to 4; `size` is 8388608 at most; the payload is 39 bytes |
 | `LobbyState` | at most 4 players, each `playerNumber` 1 to 4 and listed once, each nickname valid as above |
 | `GameEnded` | `outcome` is 1 or 2; at most 4 players, each `playerNumber` 1 to 4 and listed once |
@@ -283,7 +283,7 @@ The server answers nothing over UDP. It keeps the token of a probe whose `secret
 
 ### Connection
 
-A connection takes two round trips, so that a forged address never gets a player slot. The client sends `ConnectionRequest` with `cookie` 0; the server answers `ConnectionChallenge` with a cookie and keeps nothing. The client sends its request again with that cookie, and only then does the server give a slot, a token and the [content pack](#content-pack) it plays with. The cookie only reaches the real owner of the address, so whoever forges the address cannot send it back. A request with a wrong or expired cookie gets a new challenge; a refusal (`GameFull`, `GameInProgress`, `NicknameTaken`, `IncompatibleVersion`, `GameNotFound`, `ServerFull`) may be sent at once, since it reserves nothing.
+A connection takes two round trips, so that a forged address never gets a player slot. The client sends `ConnectionRequest` with `cookie` 0; the server answers `ConnectionChallenge` with a cookie and keeps nothing. The client sends its request again with that cookie, and only then does the server give a slot, a token and the [content pack](#content-pack) it plays with. The cookie only reaches the real owner of the address, so whoever forges the address cannot send it back. A request with a wrong or expired cookie gets a new challenge; a refusal (`GameFull`, `GameInProgress`, `NicknameTaken`, `IncompatibleVersion`, `GameNotFound`, `ServerFull`, `UnknownDifficulty`, `LivesOutOfRange`) may be sent at once, since it reserves nothing.
 
 How the server computes the cookie is its own business, as long as it keeps nothing per request and nobody can guess it: a keyed hash of the address, the port and the current 10-second window, with a secret drawn when the server starts, accepted during its window and the next one, does both.
 
@@ -585,11 +585,13 @@ A player says which game it wants in every `ConnectionRequest` it sends, the one
 
 | The request asks for | The supervisor |
 |---|---|
-| `AnyGame` | sends the player to the game that already holds its seat, else to the first game that waits for players and has a free seat, a game opened for a `NewGame` included; else starts a game while fewer than 8 run; else refuses with `ServerFull` |
-| `NewGame` | sends the player to the game its own `NewGame` opened, while that game waits for players and the player still holds its seat there or nobody else came, so a request repeated every 500 ms opens one game; else starts a game while fewer than 8 run; else refuses with `ServerFull` |
-| `ExistingGame` | refuses with `GameNotFound` when no game has that number, with `GameInProgress` when it is in progress or finished, then with `GameFull` when it has no free seat and none held for the player; else sends the player to it |
+| `AnyGame` | sends the player to the game that already holds its seat, else to the first game played by the default rules that waits for players and has a free seat, a game opened for a `NewGame` of the default rules included; else starts a game of the default rules while fewer than 8 run; else refuses with `ServerFull` |
+| `NewGame` | refuses with `UnknownDifficulty` when its waves file has no table of that `difficulty`, then with `LivesOutOfRange` when `lives` is not 1 to 9; else sends the player to the game its own `NewGame` opened, while that game waits for players and the player still holds its seat there or nobody else came, so a request repeated every 500 ms opens one game; else starts a game while fewer than 8 run; else refuses with `ServerFull` |
+| `ExistingGame` | refuses with `GameNotFound` when no game has that number, with `GameInProgress` when it is in progress or finished, then with `GameFull` when it has no free seat and none held for the player; else sends the player to it, whatever its rules |
 
-A game opened for a `NewGame` belongs to nobody: any player may join it, and it starts as every game does, when all its connected players are ready (see [A session](#a-session)). Leaving a game is the `Disconnection` the player sends three times (see [A peer disappears](#a-peer-disappears)): nothing else is needed, and a game nobody joined ends on its own. The supervisor does no matchmaking: it never weighs players, pings or levels, it only fills seats in order. A game process reads the choice of a request and ignores it, since the supervisor already chose its game.
+The rules of a game are fixed when it is opened, and apply to that game only. The default rules are the difficulty `normal`, 3 lives and no friendly fire; a client that lets its player choose none sends them with its `NewGame`. The difficulties a supervisor accepts are the tables of its waves file, which it reads when it starts and lists to the master with the rules of each game (see [Master](/R-Type/master/#listing-the-games-of-a-server)). The lives are **provisional**, 1 to 9 (`LOWEST_LIVES`, `HIGHEST_LIVES` in `src/server/ServerConstants.hpp`), until gameplay tunes them. Friendly fire lets a missile of a player cost another player a life, never the player who fired it.
+
+A game opened for a `NewGame` belongs to nobody: any player may join it, by its number, or with `AnyGame` when it is played by the default rules, and it starts as every game does, when all its connected players are ready (see [A session](#a-session)). Leaving a game is the `Disconnection` the player sends three times (see [A peer disappears](#a-peer-disappears)): nothing else is needed, and a game nobody joined ends on its own. The supervisor does no matchmaking: it never weighs players, pings or levels, it only fills seats in order. A game process reads the choice and the rules of a request and ignores them, since the supervisor already chose its game and gave it its rules.
 
 A client that receives a `ConnectionRedirect` while it connects, and only the first one of an attempt, to a port other than the one it uses, sends its next request to that port with the cookie back at 0: the game draws its own cookies. The 5 s of the attempt do not restart. In any other state it ignores the message. Between the supervisor and a game process, the header carries the link token as `sessionToken`, and `sequence` orders the statuses.
 
@@ -632,6 +634,8 @@ A message that is valid but means nothing in the current state of its receiver c
 | `ConnectionRefused` (`NicknameTaken`) | stops sending requests | that the callsign is taken |
 | `ConnectionRefused` (`GameNotFound`), from a supervisor: the request named a game it does not run | stops sending requests | that no such game exists |
 | `ConnectionRefused` (`ServerFull`), from a supervisor: 8 games run, and none has a seat for an `AnyGame`, or a `NewGame` needs a ninth | stops sending requests | that the server is full |
+| `ConnectionRefused` (`UnknownDifficulty`), from a supervisor: the `NewGame` names a difficulty its waves file has no table for | stops sending requests | that no such difficulty exists |
+| `ConnectionRefused` (`LivesOutOfRange`), from a supervisor: the `NewGame` gives fewer than 1 or more than 9 lives | stops sending requests | that the lives are out of range |
 | `ConnectionRefused` (`IncompatibleVersion`) | stops sending requests | both version numbers |
 | `ConnectionAccepted` of a pack the client neither has nor keeps, from a supervisor that serves none (`port` 0) | opens no session, sends its `Disconnection` three times with the token of the acceptance, and stops sending requests | that the download of the pack failed |
 | The download of the pack fails: nothing listens on the TCP port, the tries are cut 3 times, or an answer of another status or larger than announced | leaves the session, sending its `Disconnection` three times | that the download of the pack failed |
@@ -721,7 +725,7 @@ On the games captured while the dictionary was trained, the datagram of the serv
 
 ## Versions and compatibility
 
-A program speaks one version of the protocol, the number at offset 4 of every datagram it sends. This section says what stays the same in every version, which changes give the protocol a new number, and what two programs of different versions do when they meet. The sections after it apply these rules to each version, from version 2 to version 12.
+A program speaks one version of the protocol, the number at offset 4 of every datagram it sends. This section says what stays the same in every version, which changes give the protocol a new number, and what two programs of different versions do when they meet. The sections after it apply these rules to each version, from version 2 to version 13.
 
 ### What never changes
 
@@ -735,11 +739,11 @@ A program speaks one version of the protocol, the number at offset 4 of every da
 
 | Change | Example |
 |---|---|
-| A field added to, removed from or moved in the header or a message that already exists | `GameEnded` gains `outcome` before `playerCount` (version 3); `PlayerInput` repeats earlier inputs (version 5); `ConnectionRequest` gains `kind` and `number` (version 9); `ConnectionAccepted` announces the content pack (version 10); `EntitySpawned` gains `owner` and `firingInput`, `PlayerInput` gains `shownTick` (version 11) |
+| A field added to, removed from or moved in the header or a message that already exists | `GameEnded` gains `outcome` before `playerCount` (version 3); `PlayerInput` repeats earlier inputs (version 5); `ConnectionRequest` gains `kind` and `number` (version 9); `ConnectionAccepted` announces the content pack (version 10); `EntitySpawned` gains `owner` and `firingInput`, `PlayerInput` gains `shownTick` (version 11); `ConnectionRequest` of kind `NewGame` gains `difficulty`, `lives` and `friendlyFire` (version 12) |
 | A field that keeps its place and changes its meaning | the acknowledgement fields of the header, written as 0 before (version 2); `entityType` read from a table (version 6) |
 | A flag or an encoding of the body a receiver of the version before cannot read | `COMPRESSED` (version 4) |
 | A message that already exists moved into an envelope | `EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` inside `OrderedMessage` (version 7) |
-| A new value of an enumeration of a message that already exists | a receiver of the version before drops the whole message as out of range (see [Payload rules](#payload-rules)): `ConnectionRefused` gains `GameNotFound` and `ServerFull` (version 9); `PlayerLeft` gains `Expelled` (version 12) |
+| A new value of an enumeration of a message that already exists | a receiver of the version before drops the whole message as out of range (see [Payload rules](#payload-rules)): `ConnectionRefused` gains `GameNotFound` and `ServerFull` (version 9); `PlayerLeft` gains `Expelled` (version 13) |
 
 A message between a game process and its supervisor counts too: `GameStatus` gained the nicknames and the measures in version 8.
 
@@ -817,7 +821,11 @@ Version 11 lets a client predict its own missiles (see [Own missiles](#own-missi
 
 ## Version 12
 
-Version 12 adds the expulsion of a player: `ExpulsionOrder` (type 33) from the supervisor to a game process, `Expulsion` (type 34) from the game to the player, and the departure reason `Expelled` (3) of `PlayerLeft` (see [Supervisor](#supervisor) and [A peer disappears](#a-peer-disappears)). A client of version 11 would refuse a `PlayerLeft` of reason 3 as an invalid value, and that message is guaranteed, so `version` became 12, and the server answers a client of version 11 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same.
+Version 12 lets the player who creates a game choose its rules: a `ConnectionRequest` of kind `NewGame` carries `difficulty`, `lives` and `friendlyFire` after `number`, and `ConnectionRefused` gains `UnknownDifficulty` (7) and `LivesOutOfRange` (8) (see [Supervisor](#supervisor)). A request of any other kind keeps its bytes, so the smallest request still takes 38 bytes and no answer to a sender that did not prove its address grows. A server of version 11 would refuse a `NewGame` of version 12 as having bytes after its number, so `version` became 12, and the server answers a client of version 11 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same.
+
+## Version 13
+
+Version 13 adds the expulsion of a player: `ExpulsionOrder` (type 33) from the supervisor to a game process, `Expulsion` (type 34) from the game to the player, and the departure reason `Expelled` (3) of `PlayerLeft` (see [Supervisor](#supervisor) and [A peer disappears](#a-peer-disappears)). A client of version 12 would refuse a `PlayerLeft` of reason 3 as an invalid value, and that message is guaranteed, so `version` became 13, and the server answers a client of version 12 with `ConnectionRefused` (`IncompatibleVersion`). The layout of the header and of every other message is the same.
 
 A game reads an `ExpulsionOrder` only from its supervisor, at the loopback address and the port its link names, under the link token, checked on the network thread like the token of a player; a datagram of any other sender holding one is never read. A client reads an `Expulsion` only in its session, after the token and the sequence. Neither message is answered.
 
@@ -834,6 +842,7 @@ The code of this repository applies the rules above, with the exceptions listed 
 - Each side sends a `Heartbeat` every 500 ms and measures the round trip from its echo, and the server sends each player `RoundTrips` after each of its `Heartbeat`s, as [Round trip](#round-trip) describes; the `Heartbeat` of the server also carries its tick during a game, as [Clock of the server](#clock-of-the-server) describes. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
 
 - The client sends `LeaderboardRequest` from its leaderboard screen, and the server answers it.
+- The supervisor checks the rules of a `NewGame` and opens its game with them. The client sends the default rules with every `NewGame`: no screen lets the player choose others yet.
 - The server sends `BossStatus` in the games whose difficulty names a boss, as [Boss status](#boss-status) describes, and the client shows the warning and the bar of the boss from it (see [Client](/R-Type/client/#boss-bosspresentation-bossbarat)).
 - The server answers a request with a valid cookie with the `ConnectionAccepted` of the player and the content pack of the game, at most once per 250 ms per player once accepted. The supervisor serves its pack over HTTP, and the client plays with its own sheets, a pack it kept or a pack it downloads, as [Content pack](#content-pack) describes.
 - The server limits the datagrams of each address and port, and of each player, on its network thread, as [A sender that sends too much](#a-sender-that-sends-too-much) says.

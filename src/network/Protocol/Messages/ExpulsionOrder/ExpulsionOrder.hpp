@@ -11,7 +11,7 @@ namespace rtype::network {
 
 /**
  * @brief The supervisor orders a game process to expel the players of that
- * nickname (see sameNickname()), under the link token of the game. Not
+ * nickname (see nicknameKey()), under the link token of the game. Not
  * guaranteed: the supervisor sends it FAREWELL_COPIES times, and a copy that
  * finds no player of that nickname left does nothing.
  */

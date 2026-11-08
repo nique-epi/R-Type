@@ -23,7 +23,7 @@ class PlayerExpeller {
   PlayerExpeller();
 
   /** @brief Expels every player of @p roster named @p nickname (see
-   * network::sameNickname()) and not expelled yet, its Expulsion queued on
+   * network::nicknameKey()) and not expelled yet, its Expulsion queued on
    * @p sender. */
   void expel(IDatagramSender& sender, PlayerRoster& roster,
              std::string_view nickname) const;

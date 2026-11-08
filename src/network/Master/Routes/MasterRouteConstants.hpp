@@ -53,6 +53,33 @@ constexpr MasterRoute LIST_SERVER_SAMPLES_ROUTE{.method = RouteMethod::Get,
 constexpr MasterRoute LIST_SERVER_STATUSES_ROUTE{
     .method = RouteMethod::Get, .path = "/servers/:id/statuses"};
 
+/** @brief The parameter of a path that names a game of a server. */
+constexpr std::string_view GAME_ID_PATH_PARAMETER = "gameId";
+
+/**
+ * @brief Keeps the result of a vanilla game of the server of the key, named in
+ * the path by the id the server drew; a game the master already keeps stays
+ * as it was, so a server may send a result again safely.
+ */
+constexpr MasterRoute KEEP_OWN_RESULT_ROUTE{
+    .method = RouteMethod::Put, .path = "/servers/me/results/:gameId"};
+
+/**
+ * @brief The best score of each player for one difficulty and one number of
+ * players, on every server or on one, a page at a time, with the row of a
+ * player the query names; open to everyone.
+ */
+constexpr MasterRoute READ_LEADERBOARD_ROUTE{.method = RouteMethod::Get,
+                                             .path = "/leaderboard"};
+
+/** @brief The parameters of the query of the leaderboard:
+ * `?difficulty=normal&playerCount=2`, then `server=7` and `player=ACE`, both
+ * optional. */
+constexpr std::string_view DIFFICULTY_QUERY_PARAMETER = "difficulty";
+constexpr std::string_view PLAYER_COUNT_QUERY_PARAMETER = "playerCount";
+constexpr std::string_view SERVER_QUERY_PARAMETER = "server";
+constexpr std::string_view PLAYER_QUERY_PARAMETER = "player";
+
 /**
  * @brief The parameters of the query of a list, `?limit=50&offset=0`, and
  * their bounds: a page holds MINIMUM_PAGE_SIZE to MAXIMUM_PAGE_SIZE items,

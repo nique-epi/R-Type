@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <string>
 #include "EntitySheets.hpp"
+#include "GameRules.hpp"
 #include "ServerConstants.hpp"
 #include "StateEncoding.hpp"
 #include "WavePlan.hpp"
@@ -15,7 +15,8 @@ namespace rtype::server {
  * @brief What one game is set up with: the seed its random draws start from,
  * the waves of its difficulty, the entity sheets its entities are made from,
  * the world states it sends per second and how it writes them, the ticks it
- * holds each input, the name of its difficulty and whether it is vanilla.
+ * holds each input, its rules (the name of its difficulty, the lives of each
+ * player, friendly fire) and whether it is vanilla.
  */
 struct GameSettings {
   std::uint32_t seed{};
@@ -26,9 +27,11 @@ struct GameSettings {
   std::size_t statesPerSecond{DEFAULT_WORLD_STATES_PER_SECOND};
   StateEncoding stateEncoding{DEFAULT_STATE_ENCODING};
   std::size_t inputDelayTicks{DEFAULT_INPUT_DELAY_TICKS};
-  /** @brief The name the results of the game are filed under; waves holds the
-   * waves of that difficulty, not its name. */
-  std::string difficulty{DEFAULT_DIFFICULTY};
+  /** @brief The rules its creator chose: the difficulty the results are filed
+   * under (waves holds the waves of that difficulty, not its name), the lives
+   * each player starts with and gets back with each new world, and friendly
+   * fire. */
+  network::GameRules rules{network::defaultGameRules()};
   /** @brief Whether the game is played by the rules the game ships with (see
    * vanillaBreaches()): only the results of a vanilla game may leave this
    * server. */

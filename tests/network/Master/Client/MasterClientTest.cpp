@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <string>
 #include "CreatedServer.hpp"
+#include "FinishedGame.hpp"
 #include "GameListing.hpp"
 #include "HttpPortProbe.hpp"
 #include "MasterAccess.hpp"
@@ -9,6 +10,7 @@
 #include "MasterClientTestConstants.hpp"
 #include "MasterMessageText.hpp"
 #include "MasterMessageTextFixtures.hpp"
+#include "MasterMessageTextTestConstants.hpp"
 #include "MasterTestConstants.hpp"
 #include "NetworkException.hpp"
 #include "RunningMaster.hpp"
@@ -16,6 +18,7 @@
 #include "ServerListing.hpp"
 
 using rtype::network::CreatedServer;
+using rtype::network::FinishedGame;
 using rtype::network::GameListing;
 using rtype::network::InvalidMasterUrlException;
 using rtype::network::isWellFormedServerKey;
@@ -25,6 +28,8 @@ using rtype::network::MasterRefusedException;
 using rtype::network::MasterUnreachableException;
 using rtype::network::ServerCreation;
 using rtype::network::ServerListing;
+using rtype::network::testing::PARIS_GAME_ID;
+using rtype::network::testing::parisFinishedGame;
 using rtype::network::testing::parisGameListing;
 using rtype::network::testing::parisHeartbeat;
 using rtype::network::testing::parisRegistration;
@@ -82,6 +87,53 @@ TEST_F(MasterClientFixture, AHeartbeatBeforeTheRegistrationIsRefusedWith409) {
   EXPECT_EQ(refusal.status(), EXPECTED_CONFLICT_STATUS);
   EXPECT_NE(std::string{refusal.what()}.find(UNREGISTERED_DETAIL_TEXT),
             std::string::npos);
+}
+
+/**
+ * Given a created server
+ * When a client with its key sends the result of a vanilla game of two
+ * players
+ * Then the master keeps a row for each player of that game
+ */
+TEST_F(MasterClientFixture, AServerSendsTheResultOfAGame) {
+  MasterClient client = clientWith(createdParis().key);
+
+  client.sendResult(std::string{PARIS_GAME_ID}, parisFinishedGame());
+
+  EXPECT_EQ(master().keptPlayersOf(PARIS_GAME_ID), PLAYERS_OF_THE_PARIS_GAME);
+}
+
+/**
+ * Given a created server whose result the master already keeps
+ * When the client sends that result again
+ * Then the master accepts it again, and still keeps one row per player
+ */
+TEST_F(MasterClientFixture, AResultSentAgainIsAcceptedAndKeptOnce) {
+  MasterClient client = clientWith(createdParis().key);
+  client.sendResult(std::string{PARIS_GAME_ID}, parisFinishedGame());
+
+  EXPECT_NO_THROW(
+      client.sendResult(std::string{PARIS_GAME_ID}, parisFinishedGame()));
+
+  EXPECT_EQ(master().keptPlayersOf(PARIS_GAME_ID), PLAYERS_OF_THE_PARIS_GAME);
+}
+
+/**
+ * Given a created server
+ * When a client with its key sends the result of a game that is not vanilla
+ * Then the master refuses it with 400 and keeps nothing of it
+ */
+TEST_F(MasterClientFixture, AGameThatIsNotVanillaIsRefusedWith400) {
+  MasterClient client = clientWith(createdParis().key);
+  FinishedGame modded = parisFinishedGame();
+  modded.vanilla = false;
+
+  const MasterRefusedException refusal = refusalOf([&client, &modded] {
+    client.sendResult(std::string{PARIS_GAME_ID}, modded);
+  });
+
+  EXPECT_EQ(refusal.status(), EXPECTED_BAD_REQUEST_STATUS);
+  EXPECT_EQ(master().keptPlayersOf(PARIS_GAME_ID), 0);
 }
 
 /**

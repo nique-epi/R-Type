@@ -12,6 +12,7 @@
 #include "ConnectionRequest.hpp"
 #include "DatagramCodec.hpp"
 #include "Disconnection.hpp"
+#include "GameRules.hpp"
 #include "Heartbeat.hpp"
 #include "MessagePayload.hpp"
 #include "NetworkException.hpp"
@@ -29,12 +30,15 @@ using testing::ECHOED_SENT_AT;
 using testing::FIRST_NAMED_GAME;
 using testing::FIRST_PLAYER_JITTER;
 using testing::FIRST_PLAYER_ROUND_TRIP;
+using testing::FIVE_LIVES;
 using testing::FOUR_ROCKETS;
 using testing::GAME_KIND_ABOVE_THE_LAST;
 using testing::GAME_KIND_BELOW_THE_FIRST;
+using testing::hardRulesWithFriendlyFire;
 using testing::HEARTBEAT_SENT_AT;
 using testing::HEARTBEAT_TICK;
 using testing::LAST_NAMED_GAME;
+using testing::newGameRequestWith;
 using testing::NICKNAME_WITH_LINE_FEED;
 using testing::NO_NAMED_GAME;
 using testing::ONE_BYTE_NICKNAME;
@@ -44,6 +48,7 @@ using testing::SECOND_PLAYER_JITTER;
 using testing::SECOND_PLAYER_NUMBER;
 using testing::SECOND_PLAYER_ROUND_TRIP;
 using testing::SEVENTEEN_BYTE_NICKNAME;
+using testing::SIXTEEN_BYTE_NICKNAME;
 using testing::SMALLEST_REQUEST_DATAGRAM_SIZE_ON_THE_PAGE;
 using testing::smallestRequest;
 using testing::SOME_COOKIE;
@@ -261,6 +266,128 @@ TEST(ConnectionRequest, EncodesTheKindThenTheNumberOfTheGame) {
   EXPECT_EQ(encodeMessage(requestFor(GameChoice{
                 .kind = GameChoiceKind::ExistingGame, .number = 0x0102})),
             expected);
+}
+
+/**
+ * Given a request for a new game in "hard", with five lives and friendly fire
+ * When it is encoded
+ * Then the payload ends with the kind 3, the number 0 on two bytes, the length
+ * 4 and "hard", then the lives 5 and the friendly fire 1
+ */
+TEST(ConnectionRequest, EncodesTheRulesAfterTheNumberOfANewGame) {
+  const auto expected = byteSequence({0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                                      0x08, 0x01, 0x41, 0x03, 0x00, 0x00, 0x04,
+                                      0x68, 0x61, 0x72, 0x64, 0x05, 0x01});
+
+  EXPECT_EQ(encodeMessage(newGameRequestWith(hardRulesWithFriendlyFire())),
+            expected);
+}
+
+/**
+ * Given a request for a new game whose rules differ from the default ones on
+ * every field
+ * When it is encoded then decoded
+ * Then the decoded request carries the same rules
+ */
+TEST(ConnectionRequest, CarriesTheRulesOfANewGame) {
+  const ConnectionRequest request =
+      newGameRequestWith(hardRulesWithFriendlyFire());
+
+  EXPECT_EQ(decodeMessage<ConnectionRequest>(encodeMessage(request)), request);
+}
+
+/**
+ * Given a request for a new game whose difficulty is 16 bytes long, the
+ * longest a nickname may be
+ * When it is encoded then decoded
+ * Then the decoded request carries that difficulty
+ */
+TEST(ConnectionRequest, CarriesADifficultyOfSixteenBytes) {
+  const ConnectionRequest request = newGameRequestWith(
+      GameRules{.difficulty = std::string{SIXTEEN_BYTE_NICKNAME},
+                .lives = FIVE_LIVES,
+                .friendlyFire = false});
+
+  EXPECT_EQ(decodeMessage<ConnectionRequest>(encodeMessage(request)), request);
+}
+
+/**
+ * Given a request for a new game whose difficulty is 17 bytes long
+ * When it is encoded
+ * Then an InvalidDifficultyException is raised
+ */
+TEST(ConnectionRequest, RefusesToWriteADifficultyOfSeventeenBytes) {
+  const ConnectionRequest request = newGameRequestWith(
+      GameRules{.difficulty = std::string{SEVENTEEN_BYTE_NICKNAME},
+                .lives = FIVE_LIVES,
+                .friendlyFire = false});
+
+  EXPECT_THROW((void)encodeMessage(request), InvalidDifficultyException);
+}
+
+/**
+ * Given a request for a new game that carries no rules
+ * When it is encoded
+ * Then an InvalidFieldValueException is raised: a new game always has rules
+ */
+TEST(ConnectionRequest, RefusesToWriteANewGameWithoutRules) {
+  ConnectionRequest request = requestFor(NEW_GAME_CHOICE);
+  request.rules = std::nullopt;
+
+  EXPECT_THROW((void)encodeMessage(request), InvalidFieldValueException);
+}
+
+/**
+ * Given a request for any game that carries rules
+ * When it is encoded
+ * Then an InvalidFieldValueException is raised: only a new game has rules
+ */
+TEST(ConnectionRequest, RefusesToWriteRulesWithAnyGame) {
+  ConnectionRequest request = requestFor(ANY_GAME_CHOICE);
+  request.rules = hardRulesWithFriendlyFire();
+
+  EXPECT_THROW((void)encodeMessage(request), InvalidFieldValueException);
+}
+
+/**
+ * Given a payload for a new game whose friendly fire is the byte 2
+ * When it is decoded
+ * Then an InvalidBoolException is raised: friendly fire is 0 or 1
+ */
+TEST(ConnectionRequest, RefusesToReadAFriendlyFireOfTwo) {
+  const auto bytes = byteSequence({0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                                   0x08, 0x01, 0x41, 0x03, 0x00, 0x00, 0x04,
+                                   0x68, 0x61, 0x72, 0x64, 0x05, 0x02});
+
+  EXPECT_THROW((void)decodeMessage<ConnectionRequest>(bytes),
+               InvalidBoolException);
+}
+
+/**
+ * Given a payload for a new game whose difficulty is empty
+ * When it is decoded
+ * Then an InvalidDifficultyException is raised
+ */
+TEST(ConnectionRequest, RefusesToReadAnEmptyDifficulty) {
+  const auto bytes =
+      byteSequence({0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x41,
+                    0x03, 0x00, 0x00, 0x00, 0x03, 0x00});
+
+  EXPECT_THROW((void)decodeMessage<ConnectionRequest>(bytes),
+               InvalidDifficultyException);
+}
+
+/**
+ * Given a payload for a new game that ends after the number of the game
+ * When it is decoded
+ * Then a BufferUnderflowException is raised: the rules are missing
+ */
+TEST(ConnectionRequest, RefusesToReadANewGameWithoutItsRules) {
+  const auto bytes = byteSequence({0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                                   0x08, 0x01, 0x41, 0x03, 0x00, 0x00});
+
+  EXPECT_THROW((void)decodeMessage<ConnectionRequest>(bytes),
+               BufferUnderflowException);
 }
 
 /**
@@ -527,13 +654,29 @@ TEST(ConnectionRefused, DecodesEveryReasonOfTheProtocolPage) {
 }
 
 /**
- * Given the payloads 00 and 07, just outside the reasons of the protocol page
+ * Given the payloads 07 and 08
+ * When each is decoded
+ * Then they give UnknownDifficulty and LivesOutOfRange, the refusals of the
+ * rules of a new game
+ */
+TEST(ConnectionRefused, DecodesTheRefusalsOfTheRulesOfANewGame) {
+  const auto unknownDifficulty = byteSequence({0x07});
+  const auto livesOutOfRange = byteSequence({0x08});
+
+  EXPECT_EQ(decodeMessage<ConnectionRefused>(unknownDifficulty).reason,
+            RefusalReason::UnknownDifficulty);
+  EXPECT_EQ(decodeMessage<ConnectionRefused>(livesOutOfRange).reason,
+            RefusalReason::LivesOutOfRange);
+}
+
+/**
+ * Given the payloads 00 and 09, just outside the reasons of the protocol page
  * When each is decoded
  * Then each is refused
  */
 TEST(ConnectionRefused, RefusesToReadAReasonOutsideTheList) {
   const auto belowTheFirst = byteSequence({0x00});
-  const auto aboveTheLast = byteSequence({0x07});
+  const auto aboveTheLast = byteSequence({0x09});
 
   EXPECT_THROW((void)decodeMessage<ConnectionRefused>(belowTheFirst),
                InvalidFieldValueException);

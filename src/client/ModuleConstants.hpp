@@ -16,6 +16,7 @@ constexpr std::string_view AUDIO_MODULE_NAME = "audio";
 constexpr std::string_view SCREENS_MODULE_NAME = "screens";
 constexpr std::string_view MENUS_MODULE_NAME = "menus";
 constexpr std::string_view LOBBY_MODULE_NAME = "lobby";
+constexpr std::string_view HANGAR_MODULE_NAME = "hangar";
 constexpr std::string_view GAME_MODULE_NAME = "game";
 
 }  // namespace rtype::client

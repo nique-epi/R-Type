@@ -47,7 +47,7 @@ class AdminConsoleCommands {
   void closeGame(std::span<const std::string> words) const;
   /** @brief Sends FAREWELL_COPIES orders to expel the nickname @p words names
    * to each game that holds a pilot of that nickname (see
-   * network::sameNickname()), and writes a line for each.
+   * network::nicknameKey()), and writes a line for each.
    * @throws engine::CommandRefusedException when @p words is not one
    * nickname, or no game holds a pilot of that nickname; nothing is sent
    * then. */

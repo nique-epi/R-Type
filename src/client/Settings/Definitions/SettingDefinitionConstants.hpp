@@ -11,6 +11,7 @@
 #include "SettingId.hpp"
 #include "SettingRange.hpp"
 #include "SettingsConstants.hpp"
+#include "ShipLook.hpp"
 
 namespace rtype::client {
 
@@ -57,6 +58,10 @@ constexpr Setting<bool> CLIENT_PREDICTION_SETTING{
 constexpr Setting<bool> PILOT_NAMES_SETTING{
     .member = &PlayerSettings::pilotNames,
     .id = SettingId::PilotNames,
+    .range = std::nullopt};
+constexpr Setting<ShipLook> SHIP_LOOK_SETTING{
+    .member = &PlayerSettings::shipLook,
+    .id = SettingId::ShipLook,
     .range = std::nullopt};
 
 /** @brief The ranges of the integer settings of the chat. */
@@ -121,6 +126,7 @@ constexpr std::array ALL_SETTING_IDS{
     SettingId::ChatSeconds,
     SettingId::ChatBackground,
     SettingId::Master,
+    SettingId::ShipLook,
 };
 
 }  // namespace rtype::client

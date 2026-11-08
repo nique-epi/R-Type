@@ -59,6 +59,10 @@ std::string refusalLine(const ConnectionStatus& status) {
       return GAME_NOT_FOUND_STATUS;
     case network::RefusalReason::ServerFull:
       return SERVER_FULL_STATUS;
+    case network::RefusalReason::UnknownDifficulty:
+      return UNKNOWN_DIFFICULTY_STATUS;
+    case network::RefusalReason::LivesOutOfRange:
+      return LIVES_OUT_OF_RANGE_STATUS;
     case network::RefusalReason::IncompatibleVersion:
       break;
   }

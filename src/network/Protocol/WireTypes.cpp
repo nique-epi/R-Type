@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <string>
 #include <string_view>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
@@ -110,13 +111,14 @@ bool isValidNickname(std::string_view nickname) {
          nickname.size() <= MAXIMUM_NICKNAME_SIZE && isPrintableUtf8(nickname);
 }
 
-bool sameNickname(std::string_view first, std::string_view second) {
-  const auto lowered = [](char letter) noexcept {
-    return letter >= 'A' && letter <= 'Z'
-               ? static_cast<char>(letter - 'A' + 'a')
-               : letter;
-  };
-  return std::ranges::equal(first, second, {}, lowered, lowered);
+std::string nicknameKey(std::string_view nickname) {
+  std::string key{nickname};
+  for (char& letter : key) {
+    if (letter >= 'A' && letter <= 'Z') {
+      letter = static_cast<char>(letter - 'A' + 'a');
+    }
+  }
+  return key;
 }
 
 bool isValidBoundedText(std::string_view text, std::size_t maximumSize) {
@@ -138,6 +140,12 @@ bool isValidChatText(std::string_view text) {
 void requireValidNickname(std::string_view nickname) {
   if (!isValidNickname(nickname)) {
     throw InvalidNicknameException(nickname.size());
+  }
+}
+
+void requireValidDifficulty(std::string_view difficulty) {
+  if (!isValidNickname(difficulty)) {
+    throw InvalidDifficultyException(difficulty.size());
   }
 }
 

@@ -4,6 +4,7 @@
 #include <vector>
 #include "EndpointText.hpp"
 #include "ForcedSetting.hpp"
+#include "GameRuleConstants.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOption.hpp"
@@ -29,6 +30,44 @@ engine::LaunchOption databaseOption(std::vector<std::string>& forcedLines) {
       engine::ForcedSetting{.option = engine::DATABASE_OPTION,
                             .setting = DATABASE_SETTING_NAME},
       forcedLines);
+}
+
+engine::LaunchOption difficultyOption(std::vector<std::string>& forcedLines) {
+  return engine::settingOption(
+      engine::ForcedSetting{.option = DIFFICULTY_OPTION,
+                            .setting = DIFFICULTY_SETTING_NAME},
+      forcedLines);
+}
+
+engine::LaunchOption livesOption(std::vector<std::string>& forcedLines) {
+  return engine::settingOption(
+      engine::ForcedSetting{.option = LIVES_OPTION,
+                            .setting = LIVES_SETTING_NAME},
+      forcedLines);
+}
+
+engine::LaunchOption friendlyFireOption(std::vector<std::string>& forcedLines) {
+  return engine::settingOption(
+      engine::ForcedSetting{.option = FRIENDLY_FIRE_OPTION,
+                            .setting = FRIENDLY_FIRE_SETTING_NAME},
+      forcedLines);
+}
+
+std::string ruleOptionEntries() {
+  std::string text = engine::usageEntry(
+      std::string(DIFFICULTY_OPTION) + " <name>",
+      "Difficulty of the game, a table of the waves file. Default: " +
+          std::string(identifiers::DEFAULT_DIFFICULTY) + ".");
+  text += engine::usageEntry(
+      std::string(LIVES_OPTION) + " <count>",
+      "Lives each player starts with, from " + std::to_string(LOWEST_LIVES) +
+          " to " + std::to_string(HIGHEST_LIVES) +
+          ". Default: " + std::to_string(identifiers::DEFAULT_LIVES) + ".");
+  text += engine::usageEntry(
+      std::string(FRIENDLY_FIRE_OPTION) + " <0|1>",
+      "1 when a missile of a player costs another player a life. Default: " +
+          std::to_string(FRIENDLY_FIRE_OFF) + ".");
+  return text;
 }
 
 std::string portOptionEntry() {

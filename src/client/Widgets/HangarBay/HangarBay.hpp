@@ -8,6 +8,7 @@
 #include "IInterfaceCanvas.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerPalette.hpp"
+#include "ShipLook.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -21,11 +22,12 @@ enum class BayReadiness : std::uint8_t {
   NotReadyAsked,
 };
 
-/** @brief The pilot who took a bay. */
+/** @brief The pilot who took a bay, and the items its ship wears. */
 struct BayPilot {
   std::string_view nickname;
   BayReadiness readiness = BayReadiness::NotReady;
   bool isLocalPlayer = false;
+  ShipLook look{};
 };
 
 /**

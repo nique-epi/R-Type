@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include "CreatedServer.hpp"
+#include "FinishedGame.hpp"
 #include "GameListing.hpp"
 #include "MasterAccess.hpp"
 #include "MasterRoute.hpp"
@@ -68,6 +69,17 @@ class MasterClient {
    * `PUT /api/servers/me/heartbeat`, once it registered.
    */
   void sendHeartbeat(const ServerHeartbeat& heartbeat);
+
+  /**
+   * @brief Sends @p game, which the server of the key drew @p gameId for,
+   * `PUT /api/servers/me/results/{gameId}`. The master keeps a game once:
+   * sending one it already keeps answers as the first time, so a result is
+   * sent again safely.
+   * @throws MasterRefusedException with status 400 for a game the master never
+   * keeps: not vanilla, an id that is not GAME_ID_SIZE lowercase hexadecimal
+   * digits, or a member out of its bounds.
+   */
+  void sendResult(const std::string& gameId, const FinishedGame& game);
 
   /**
    * @brief Reads the games the server @p serverId hosts,

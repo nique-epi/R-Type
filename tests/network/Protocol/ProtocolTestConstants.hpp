@@ -42,6 +42,15 @@ constexpr std::string_view NICKNAME_WITH_LINE_FEED = "Ace\nBoss";
 constexpr std::array NICKNAME_WITH_NULL_BYTES{'P', 'i', 'l', 'o', 't', '\0'};
 constexpr std::string_view NICKNAME_WITH_UNIT_SEPARATOR = "Pilot\x1F";
 constexpr std::string_view NICKNAME_WITH_SPACE = "Ace Pilot";
+
+/**
+ * @brief Nicknames and the form they are compared in (nicknameKey()): the
+ * ASCII letters lowered, an accented capital left as it is.
+ */
+constexpr std::string_view MIXED_CASE_NICKNAME = "ACE_Pilot9";
+constexpr std::string_view MIXED_CASE_NICKNAME_KEY = "ace_pilot9";
+constexpr std::string_view ACCENTED_CAPITAL_NICKNAME = "\u00c9LODIE";
+constexpr std::string_view ACCENTED_CAPITAL_NICKNAME_KEY = "\u00c9lodie";
 constexpr std::string_view NICKNAME_WITH_TILDE = "Ace~Pilot";
 constexpr std::string_view NICKNAME_WITH_DELETE = "Pilot\x7F";
 
@@ -94,17 +103,17 @@ constexpr std::uint16_t SOME_SEQUENCE = 0x0A0B;
  * the transport sees and bit 3 is unknown, so no header above the transport
  * holds either.
  */
-constexpr std::uint8_t SOME_OTHER_VERSION = 13;
+constexpr std::uint8_t SOME_OTHER_VERSION = 14;
 constexpr std::uint32_t SOME_OTHER_PROTOCOL_ID = 0x52545951;
 constexpr std::uint8_t SOME_FLAGS = 0x0C;
 constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
 constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;
 
 /**
- * @brief The 22 bytes of a default header: RTYP, version 12, then zeros.
+ * @brief The 22 bytes of a default header: RTYP, version 13, then zeros.
  */
 constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
-    {0x52, 0x54, 0x59, 0x50, 0x0C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    {0x52, 0x54, 0x59, 0x50, 0x0D, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
 /**
@@ -178,10 +187,17 @@ constexpr std::uint8_t NO_TYPE_NUMBER = 0;
 constexpr std::uint8_t LARGEST_TYPE_NUMBER = 255;
 
 /**
- * @brief Refusal reasons just outside the values 1 to 6 of the protocol page.
+ * @brief Refusal reasons just outside the values 1 to 8 of the protocol page.
  */
 constexpr std::uint8_t REFUSAL_REASON_BELOW_THE_FIRST = 0;
-constexpr std::uint8_t REFUSAL_REASON_ABOVE_THE_LAST = 7;
+constexpr std::uint8_t REFUSAL_REASON_ABOVE_THE_LAST = 9;
+
+/**
+ * @brief Rules of a new game other than the default ones: the difficulty
+ * "hard", a table of the waves file every server ships, and five lives.
+ */
+constexpr std::string_view HARD_DIFFICULTY = "hard";
+constexpr std::uint8_t FIVE_LIVES = 5;
 
 /**
  * @brief The byte of AnyGame on the protocol page, and the two values just
@@ -326,16 +342,7 @@ constexpr std::size_t DATAGRAM_PAYLOAD_LIMIT = 1175;
  */
 constexpr std::string_view FAILED_HANDLER_LINE_TEXT = "its handler threw";
 
-/**
- * @brief One nickname in capitals and in small letters, a longer one, and a
- * nickname that starts with an accented capital, in both cases: the ASCII
- * letters name one pilot whatever their case, the accented ones only as they
- * are.
- */
+/** @brief A nickname an ExpulsionOrder names. */
 constexpr std::string_view ACE_IN_CAPITALS = "ACE";
-constexpr std::string_view ACE_IN_SMALL_LETTERS = "ace";
-constexpr std::string_view ACER = "ACER";
-constexpr std::string_view ACCENTED_CAPITAL_NAME = "\xC3\x89LAN";
-constexpr std::string_view ACCENTED_SMALL_NAME = "\xC3\xA9LAN";
 
 }  // namespace rtype::network::testing

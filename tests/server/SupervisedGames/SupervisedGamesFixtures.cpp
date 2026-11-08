@@ -15,6 +15,7 @@
 #include "GameLifecycle.hpp"
 #include "GameOpening.hpp"
 #include "GameRegistry.hpp"
+#include "GameRules.hpp"
 #include "GameStatus.hpp"
 #include "LaunchOptions.hpp"
 #include "NetworkConstants.hpp"
@@ -125,7 +126,15 @@ rtype::server::GameLaunchSettings settingsOf(
       .folder = FOLDER_FOR_TESTS,
       .gameLines = {},
       .forwardedArguments = supervisor.gameArguments(),
+      .wavesFile = {},
+      .entitySheetsFolder = {},
       .trafficCsvFile = supervisor.trafficCsvFile()};
+}
+
+rtype::network::GameRules chosenRules() {
+  return rtype::network::GameRules{.difficulty = std::string{CHOSEN_DIFFICULTY},
+                                   .lives = CHOSEN_LIVES,
+                                   .friendlyFire = true};
 }
 
 rtype::server::GameLaunch launchOfGameThree() {

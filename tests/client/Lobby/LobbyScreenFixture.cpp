@@ -21,6 +21,7 @@
 #include "RecordingSoundPlayer.hpp"
 #include "RecordingWaitingRoom.hpp"
 #include "ScreenTestConstants.hpp"
+#include "ShipLook.hpp"
 
 using rtype::client::ConnectionPhase;
 using rtype::client::LobbyPlace;
@@ -40,6 +41,7 @@ LobbyScreenFixture::LobbyScreenFixture(LobbyPlace place)
                                .keys = settings_.keys,
                                .keyName = nameInTheFile,
                                .palette = PLAYER_COLORS,
+                               .look = look_,
                                .motion = MotionPreference::Full,
                                .place = place,
                                .chat = chat_,
@@ -85,3 +87,4 @@ const RecordingSoundPlayer& LobbyScreenFixture::sounds() const {
 }
 
 const RecordingChatChannel& LobbyScreenFixture::chat() const { return chat_; }
+rtype::client::ShipLook& LobbyScreenFixture::look() { return look_; }

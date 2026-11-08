@@ -26,6 +26,15 @@ namespace rtype::network {
 [[nodiscard]] std::string serverPathOf(MasterRoute route,
                                        std::int64_t serverId);
 
+/**
+ * @returns The path a client calls @p route by when its path names the game
+ * @p gameId: `/api/servers/me/results/<id>` for KEEP_OWN_RESULT_ROUTE. The id
+ * is written as it comes; the master refuses one that is not GAME_ID_SIZE
+ * lowercase hexadecimal digits.
+ */
+[[nodiscard]] std::string gamePathOf(MasterRoute route,
+                                     std::string_view gameId);
+
 /** @returns How HTTP names @p method: GET_METHOD, POST_METHOD or PUT_METHOD. */
 [[nodiscard]] std::string_view methodNameOf(RouteMethod method);
 

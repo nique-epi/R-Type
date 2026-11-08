@@ -12,6 +12,9 @@ namespace rtype::server {
 struct GameVacancy {
   GameState state{GameState::WaitingForPlayers};
   bool full{false};
+  /** @brief Whether a player who takes any game may be sent to it: false for
+   * a game whose creator chose other rules than the default ones. */
+  bool takesAnyPlayer{true};
 };
 
 }  // namespace rtype::server

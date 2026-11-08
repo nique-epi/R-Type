@@ -88,10 +88,10 @@ const std::string& nicknameNamedBy(std::span<const std::string> words) {
 
 /** @returns Whether @p game holds a pilot named @p nickname. */
 bool holdsPilot(const SupervisedGame& game, const std::string& nickname) {
-  return std::ranges::any_of(game.nicknames,
-                             [&nickname](const std::string& pilot) {
-                               return network::sameNickname(pilot, nickname);
-                             });
+  const std::string key = network::nicknameKey(nickname);
+  return std::ranges::any_of(game.nicknames, [&key](const std::string& pilot) {
+    return network::nicknameKey(pilot) == key;
+  });
 }
 
 /** @returns The games of @p games that hold a pilot named @p nickname.

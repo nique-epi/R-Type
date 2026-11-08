@@ -17,9 +17,9 @@ PlayerExpeller::PlayerExpeller() : logger_(std::string{SERVER_LOGGER_NAME}) {}
 
 void PlayerExpeller::expel(IDatagramSender& sender, PlayerRoster& roster,
                            std::string_view nickname) const {
+  const std::string key = network::nicknameKey(nickname);
   for (ConnectedPlayer* const player : roster.connected()) {
-    if (!player->expelled &&
-        network::sameNickname(player->nickname, nickname)) {
+    if (!player->expelled && network::nicknameKey(player->nickname) == key) {
       tellExpelled(sender, *player);
     }
   }

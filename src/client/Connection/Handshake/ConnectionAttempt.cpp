@@ -20,9 +20,11 @@ void ConnectionAttempt::begin(std::string_view nickname,
 }
 
 void ConnectionAttempt::sendRequest(ISessionOutbox& outbox) {
-  sendMessage(outbox,
-              network::ConnectionRequest{
-                  .cookie = cookie_, .nickname = nickname_, .game = game_});
+  sendMessage(outbox, network::ConnectionRequest{
+                          .cookie = cookie_,
+                          .nickname = nickname_,
+                          .game = game_,
+                          .rules = network::defaultRulesFor(game_)});
   sinceRequest_ = engine::Duration::zero();
 }
 

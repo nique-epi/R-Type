@@ -13,6 +13,7 @@
 #include "LeaderboardSpriteConstants.hpp"
 #include "ProfessorSpriteConstants.hpp"
 #include "ScreenConstants.hpp"
+#include "ShipLookSpriteConstants.hpp"
 
 namespace rtype::client {
 
@@ -35,7 +36,8 @@ AssetList interfaceAssets() {
 
 AssetList titleAssets() {
   return AssetList{.textures = {LOGO_ID, ENTITY_SHEET_ID, HUD_SHEET_ID,
-                                PROFESSOR_SHEET_ID, LEADERBOARD_SHEET_ID}};
+                                PROFESSOR_SHEET_ID, LEADERBOARD_SHEET_ID,
+                                SHIP_LOOK_SHEET_ID}};
 }
 
 AssetList gameAssets() {
