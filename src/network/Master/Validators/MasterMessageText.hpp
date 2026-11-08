@@ -163,6 +163,19 @@ namespace rtype::network {
     const GlobalLeaderboard& leaderboard);
 
 /**
+ * @returns The leaderboard @p text holds, as globalLeaderboardText() writes
+ * it.
+ * @throws InvalidMasterMessageException naming the JSON Pointer of the first
+ * member it refuses: no `scores` array, more than MAXIMUM_PAGE_SIZE rows, a
+ * rank below LOWEST_RANK, a nickname the protocol refuses, a score above
+ * HIGHEST_SCORE, a date before EARLIEST_PLAYED_AT, a server id below
+ * FIRST_SERVER_ID or a server name that is empty or longer than
+ * MAXIMUM_SERVER_NAME_SIZE.
+ */
+[[nodiscard]] GlobalLeaderboard globalLeaderboardFromText(
+    std::string_view text);
+
+/**
  * @returns The `detail` of the problem document (RFC 9457) @p text holds, or
  * an empty text when @p text is no JSON object or has no `detail` text.
  */

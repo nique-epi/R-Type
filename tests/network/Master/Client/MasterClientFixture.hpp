@@ -4,6 +4,8 @@
 #include <functional>
 #include <string>
 #include "CreatedServer.hpp"
+#include "GlobalLeaderboard.hpp"
+#include "GlobalLeaderboardQuery.hpp"
 #include "MasterClient.hpp"
 #include "NetworkException.hpp"
 #include "RunningMaster.hpp"
@@ -19,6 +21,16 @@ class MasterClientFixture : public ::testing::Test {
 
   /** @returns The server "Paris 1", created through a client with no key. */
   [[nodiscard]] rtype::network::CreatedServer createdParis() const;
+
+  /** @returns The query of the leaderboard the game of parisFinishedGame()
+   * counts in, BYDO_HUNTER named as its player. */
+  [[nodiscard]] static rtype::network::GlobalLeaderboardQuery
+  parisGameLeaderboardQuery();
+
+  /** @returns That leaderboard once @p paris sent the game alone: ACE first,
+   * BYDO_HUNTER second and as the player asked for. */
+  [[nodiscard]] static rtype::network::GlobalLeaderboard parisGameLeaderboardOf(
+      const rtype::network::CreatedServer& paris);
 
   /**
    * @returns The MasterRefusedException @p call throws, or a refusal of

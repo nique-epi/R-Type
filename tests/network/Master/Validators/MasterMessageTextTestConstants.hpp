@@ -296,4 +296,11 @@ constexpr std::string_view PARIS_LEADERBOARD_TEXT =
     R"("score":12000,"serverId":7,"serverName":"Paris 1"}]})";
 constexpr std::string_view EMPTY_LEADERBOARD_TEXT = R"({"scores":[]})";
 
+/** @brief A leaderboard whose first row has the rank 0, which no row has, and
+ * where a refusal points at it. */
+constexpr std::string_view RANK_ZERO_LEADERBOARD_TEXT =
+    R"({"scores":[{"nickname":"ACE","playedAt":1800000100,"rank":0,)"
+    R"("score":12000,"serverId":7,"serverName":"Paris 1"}]})";
+constexpr std::string_view FIRST_SCORE_RANK_POINTER = "/scores/0/rank";
+
 }  // namespace rtype::network::testing

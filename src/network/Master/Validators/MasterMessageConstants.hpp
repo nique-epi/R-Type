@@ -143,6 +143,12 @@ constexpr std::string_view NICKNAME_MEMBER = "nickname";
 constexpr std::string_view ACCOUNT_ID_MEMBER = "accountId";
 constexpr std::string_view SCORE_MEMBER = "score";
 
+/** @brief The bounds of the rank of a row of a leaderboard: 1 for the best
+ * score, at most one rank per player kept, whom a column INTEGER of SQLite
+ * counts. */
+constexpr std::uint64_t LOWEST_RANK = 1;
+constexpr std::uint64_t HIGHEST_RANK = std::numeric_limits<std::int64_t>::max();
+
 /** @brief The members of a leaderboard and of each of its rows. */
 constexpr std::string_view SCORES_MEMBER = "scores";
 constexpr std::string_view PLAYER_MEMBER = "player";

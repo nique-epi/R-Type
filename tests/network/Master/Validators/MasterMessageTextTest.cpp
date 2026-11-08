@@ -29,6 +29,7 @@ using rtype::network::finishedGameText;
 using rtype::network::gameListingFromText;
 using rtype::network::gameListingText;
 using rtype::network::GlobalLeaderboard;
+using rtype::network::globalLeaderboardFromText;
 using rtype::network::globalLeaderboardText;
 using rtype::network::heartbeatFromText;
 using rtype::network::heartbeatText;
@@ -79,6 +80,7 @@ using rtype::network::testing::FIRST_GAME_STATE_POINTER;
 using rtype::network::testing::FIRST_PILOT;
 using rtype::network::testing::FIRST_PILOT_IN_SMALL_LETTERS;
 using rtype::network::testing::FIRST_PLAYER_SCORE_POINTER;
+using rtype::network::testing::FIRST_SCORE_RANK_POINTER;
 using rtype::network::testing::FIRST_SERVER_ID_POINTER;
 using rtype::network::testing::FIRST_SERVER_PROBE_SECRET_POINTER;
 using rtype::network::testing::FIRST_SERVER_STATUS_POINTER;
@@ -93,6 +95,7 @@ using rtype::network::testing::gameListingTextOfGames;
 using rtype::network::testing::gameListingTextWith;
 using rtype::network::testing::GAMES_ABOVE_THE_MOST;
 using rtype::network::testing::GAMES_POINTER;
+using rtype::network::testing::globalLeaderboardRefusal;
 using rtype::network::testing::heartbeatRefusal;
 using rtype::network::testing::heartbeatTextOfGames;
 using rtype::network::testing::heartbeatTextWith;
@@ -158,6 +161,7 @@ using rtype::network::testing::PROBE_TOKEN_OF_ZERO;
 using rtype::network::testing::PROBE_TOKEN_POINTER;
 using rtype::network::testing::quoted;
 using rtype::network::testing::QUOTED_WHOLE_MESSAGE;
+using rtype::network::testing::RANK_ZERO_LEADERBOARD_TEXT;
 using rtype::network::testing::registrationRefusal;
 using rtype::network::testing::registrationTextWith;
 using rtype::network::testing::registrationTextWithout;
@@ -1080,4 +1084,35 @@ TEST(MasterMessageText, WritesALeaderboardAsTheMasterDocuments) {
 TEST(MasterMessageText, LeavesOutThePlayerOfALeaderboardThatNamesNone) {
   EXPECT_EQ(nlohmann::json::parse(globalLeaderboardText(GlobalLeaderboard{})),
             nlohmann::json::parse(EMPTY_LEADERBOARD_TEXT));
+}
+
+/**
+ * Given the leaderboard of the master as the master documents it, ACE first
+ * and BYDO_HUNTER asked for
+ * When a client reads it
+ * Then it gets the same rows and the same player
+ */
+TEST(MasterMessageText, ReadsALeaderboardAsTheMasterDocuments) {
+  EXPECT_EQ(globalLeaderboardFromText(PARIS_LEADERBOARD_TEXT),
+            parisLeaderboard());
+}
+
+/**
+ * Given a leaderboard that names no player
+ * When a client reads it
+ * Then it has no row of a player
+ */
+TEST(MasterMessageText, ReadsALeaderboardThatNamesNoPlayer) {
+  EXPECT_EQ(globalLeaderboardFromText(EMPTY_LEADERBOARD_TEXT),
+            GlobalLeaderboard{});
+}
+
+/**
+ * Given a leaderboard whose first row has the rank 0
+ * When a client reads it
+ * Then the refusal names that rank: ranks start at 1
+ */
+TEST(MasterMessageText, RefusesALeaderboardRowOfRankZero) {
+  EXPECT_THAT(globalLeaderboardRefusal(RANK_ZERO_LEADERBOARD_TEXT),
+              HasSubstr(quoted(FIRST_SCORE_RANK_POINTER)));
 }
