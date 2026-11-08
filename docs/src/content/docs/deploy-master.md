@@ -47,38 +47,15 @@ Going back after the database was migrated is not guaranteed: the new master mig
 
 ## Setting it up once
 
-A member of the team does this with their own AWS account. Nothing here runs by itself.
+A member of the team does this once, with their own AWS, GitHub and Vercel accounts; nothing here runs by itself. The steps are in the [README of `infra/`](https://github.com/nique-epi/R-Type/blob/main/infra/README.md), in this order:
 
-```bash
-aws s3api create-bucket --bucket rtype-tfstate-<suffix> --region eu-west-1 \
-  --create-bucket-configuration LocationConstraint=eu-west-1
-aws s3api put-bucket-versioning --bucket rtype-tfstate-<suffix> \
-  --versioning-configuration Status=Enabled
-```
+1. Create the S3 bucket of the Terraform state, then `terraform init`, `plan` and `apply` from `infra/terraform/`.
+2. Create the four variables of the repository from the outputs of Terraform: `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN`, `MASTER_INSTANCE_ID` and `MASTER_URL`. They are variables, not secrets: no secret is needed in GitHub.
+3. Create the environment `production` with at least one required reviewer: the deployment waits for it, and the AWS role trusts only that environment.
+4. Run `deploy-master` by hand with the tag of an existing release, and check that the instance is `Online` in SSM and that `GET /api/health` answers.
+5. Give the `master_url` output to the web site, the game servers and the client.
 
-This bucket keeps the Terraform state, so the whole team can apply; its name is unique in the world. Then, from `infra/terraform/`:
-
-```bash
-terraform init -backend-config="bucket=rtype-tfstate-<suffix>" -backend-config="region=eu-west-1"
-terraform plan
-terraform apply
-```
-
-Terraform creates the instance, its address, its network rule, the role of the instance, the identity provider of GitHub and the role of the deployments. An account has one identity provider per URL: if it already has the one of GitHub, import it with `terraform import` instead of creating it.
-
-Then give the outputs to the repository, create the environment and run the first deployment:
-
-```bash
-gh variable set AWS_REGION --body eu-west-1
-gh variable set MASTER_INSTANCE_ID --body "$(terraform output -raw instance_id)"
-gh variable set AWS_DEPLOY_ROLE_ARN --body "$(terraform output -raw deploy_role_arn)"
-gh variable set MASTER_URL --body "$(terraform output -raw master_url)"
-```
-
-1. In the repository settings, create the environment `production` and name at least one required reviewer.
-2. Run `deploy-master` by hand with the tag of an existing release.
-3. Check the instance with `aws ssm describe-instance-information`: it must be listed as `Online`. When it is not, the SSM agent is missing from the image.
-4. Put the `master_url` output in the `master-url` setting of the game servers and of the client.
+The README also lists the symptoms of each step that goes wrong.
 
 ## Giving the address to the web site
 
