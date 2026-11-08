@@ -5,6 +5,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <chrono>
 #include <cstddef>
+#include "MasterMessageConstants.hpp"
 
 namespace rtype::client {
 
@@ -35,6 +36,13 @@ constexpr int MESSAGE_LINE_PITCH = 16;
  * it at once. */
 constexpr std::chrono::seconds SERVER_LIST_REFRESH_INTERVAL{15};
 constexpr sf::Keyboard::Key REFRESH_KEY = sf::Keyboard::Key::R;
+
+/** @brief How long after the player came back from a server the list is read
+ * again: twice network::MINIMUM_NOTICE_GAP, the least time between two
+ * heartbeats that tell the master the games changed, so a player who left is
+ * no longer counted, unless the master or the server is slow. */
+constexpr std::chrono::milliseconds GAMES_RECHECK_DELAY =
+    2 * network::MINIMUM_NOTICE_GAP;
 
 /** @brief Where a server of another version stands, since it gives no ping:
  * on the farthest ring. */

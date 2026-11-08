@@ -9,6 +9,7 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerCatalog.hpp"
+#include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
 #include "ServerChoice.hpp"
 #include "ServerListSnapshot.hpp"
@@ -48,6 +49,7 @@ class ServerMapScreenFixture : public ::testing::Test {
   RecordingServerCatalog servers_;
   RecordingGameCatalog games_;
   ServerChoice choice_;
+  RecordingServerConnection connection_;
   InterfaceCanvasRecord painting_;
   std::unique_ptr<ServerMapScreen> screen_;
 };

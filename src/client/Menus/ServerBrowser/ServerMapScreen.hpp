@@ -20,6 +20,7 @@
 #include "ServerChoice.hpp"
 #include "ServerMapChoice.hpp"
 #include "ServerMapScreenParts.hpp"
+#include "SessionEndWatch.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
@@ -47,8 +48,9 @@ namespace rtype::client {
  * HANGAR_SCREEN.
  *
  * The list is read when the map opens, again every
- * SERVER_LIST_REFRESH_INTERVAL and on REFRESH_KEY. A key that changes the map
- * acts once per hold.
+ * SERVER_LIST_REFRESH_INTERVAL, on REFRESH_KEY, and GAMES_RECHECK_DELAY after
+ * the player came back from a server (SessionEndWatch). A key that changes the
+ * map acts once per hold.
  */
 class ServerMapScreen : public IScreen {
  public:
@@ -97,6 +99,7 @@ class ServerMapScreen : public IScreen {
   MotionPreference motion_;
   ServerMapChoice map_;
   GamePanel panel_;
+  SessionEndWatch sessionEnd_;
   KeyChip quickPlayChip_;
   KeyChip rankingChip_;
   KeyChip addressChip_;

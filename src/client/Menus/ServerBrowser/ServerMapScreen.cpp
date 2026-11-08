@@ -247,6 +247,7 @@ ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       motion_(parts.motion),
+      sessionEnd_(parts.connection.get()),
       quickPlayChip_(quickPlayChipParts(
           [this] {
             if (const std::optional<ChosenGame> game =
@@ -294,7 +295,8 @@ void ServerMapScreen::handleEvent(const sf::Event& event) {
 void ServerMapScreen::update(engine::Duration elapsed) {
   elapsed_ += elapsed;
   sinceRefresh_ += elapsed;
-  if (sinceRefresh_ >= SERVER_LIST_REFRESH_INTERVAL) {
+  const bool cameBack = sessionEnd_.recheckDue(elapsed);
+  if (sinceRefresh_ >= SERVER_LIST_REFRESH_INTERVAL || cameBack) {
     refresh();
   }
   if (servers_->snapshot().servers != map_.servers()) {
