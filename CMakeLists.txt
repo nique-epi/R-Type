@@ -18,6 +18,7 @@ include(FeatureSummary)
 # lists of modules include (see src/engine/Modules/).
 option(RTYPE_MODULE_AUDIO "Build the sound module of the client" ON)
 option(RTYPE_MODULE_METRICS "Build the metrics modules of the client and of the game processes" ON)
+option(RTYPE_MODULE_DEBUG "Build the debug module of the client: the lagometer" ON)
 option(RTYPE_MODULE_MASTER_LINK "Build the module that registers the server with the master" ON)
 option(RTYPE_MODULE_ADMIN_CONSOLE "Build the administration console of the supervisor" ON)
 option(RTYPE_MODULE_CHAT "Build the chat module of the games" ON)
@@ -26,6 +27,7 @@ cmake_dependent_option(RTYPE_MODULE_GAME_STATISTICS "Build the game-statistics p
 
 add_feature_info(audio RTYPE_MODULE_AUDIO "the sound of the client")
 add_feature_info(metrics RTYPE_MODULE_METRICS "the metrics of the client and of the game processes")
+add_feature_info(debug RTYPE_MODULE_DEBUG "the lagometer of the client")
 add_feature_info(master-link RTYPE_MODULE_MASTER_LINK "the registration of the server with the master")
 add_feature_info(admin-console RTYPE_MODULE_ADMIN_CONSOLE "the administration console of the supervisor")
 add_feature_info(chat RTYPE_MODULE_CHAT "the chat of the games")

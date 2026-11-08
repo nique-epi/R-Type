@@ -1,0 +1,83 @@
+#pragma once
+
+#include <SFML/Graphics/Color.hpp>
+#include <SFML/System/Vector2.hpp>
+#include <SFML/Window/Keyboard.hpp>
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
+#include "InterfaceColorConstants.hpp"
+
+namespace rtype::client {
+
+/** @brief The key that shows and hides the lagometer, on every screen. */
+constexpr sf::Keyboard::Scancode LAGOMETER_KEY = sf::Keyboard::Scan::F3;
+
+/** @brief The round trips the curve keeps: 30 s at the two Heartbeats a
+ * second of the protocol. */
+constexpr std::size_t LAGOMETER_POINT_COUNT = 60;
+
+/** @brief How often the frames per second and the traffic are counted again:
+ * each figure is the mean over that second. */
+constexpr std::chrono::seconds LAGOMETER_FIGURES_PERIOD{1};
+
+/** @brief The lowest top of the scale of the curve; the top doubles until it
+ * is above the highest round trip shown. */
+constexpr std::chrono::milliseconds LOWEST_LAGOMETER_SCALE_TOP{50};
+
+/** @brief Percent, and the multiplier a share is written in percent with. */
+constexpr std::uint64_t PERCENT = 100;
+
+/** @brief Bytes in a kilobyte, as the traffic lines write it. */
+constexpr std::uint64_t BYTES_PER_KILOBYTE = 1000;
+
+/**
+ * @brief Where the panel lies on the interface picture at a scale of 1, in
+ * pixels: its top-left corner, its size, the margin inside its border, and
+ * the rows of its three lines of text. Each is multiplied by the scale.
+ */
+constexpr sf::Vector2i LAGOMETER_TOP_LEFT{4, 4};
+constexpr sf::Vector2i LAGOMETER_SIZE{112, 72};
+constexpr int LAGOMETER_MARGIN = 4;
+constexpr int LAGOMETER_LINE_STEP = 10;
+constexpr int LAGOMETER_BORDER_WIDTH = 1;
+constexpr int LAGOMETER_TEXT_LINE_COUNT = 3;
+
+/** @brief The curve: the rows of the panel it covers, below the text, and the
+ * width the labels of the scale take on its right. */
+constexpr int LAGOMETER_CURVE_TOP = 36;
+constexpr int LAGOMETER_CURVE_HEIGHT = 32;
+constexpr int LAGOMETER_SCALE_LABEL_WIDTH = 24;
+
+/** @brief Full opacity of a color, from which the fill of the panel takes the
+ * share the player set. */
+constexpr std::uint8_t LAGOMETER_OPAQUE_ALPHA = 255;
+
+/** @brief Red of a lost datagram on the curve. */
+constexpr sf::Color LOSS_RED(226, 75, 74);
+
+/** @brief The colors of the panel: its fill, its border, its text, the curve
+ * and the lines of its scale. */
+constexpr sf::Color LAGOMETER_FILL = INK;
+constexpr sf::Color LAGOMETER_BORDER = EDGE_BLUE;
+constexpr sf::Color LAGOMETER_TEXT = HUD_CYAN;
+constexpr sf::Color LAGOMETER_CURVE = PLAYER_GREEN;
+constexpr sf::Color LAGOMETER_SCALE_LINE = PLAYER_DARK_BLUE;
+
+/** @brief What the lines of the panel say before their figure is known. */
+constexpr std::string_view NO_FIGURE_TEXT = "--";
+
+/** @brief The words of the three lines of the panel, around their figures:
+ * PING 42 MS JIT 3, LOSS 2% FPS 60, IN 12 OUT 4 KB/S. */
+constexpr std::string_view PING_WORD = "PING ";
+constexpr std::string_view JITTER_WORD = " JIT ";
+constexpr std::string_view MILLISECONDS_WORD = " MS";
+constexpr std::string_view LOSS_WORD = "LOSS ";
+constexpr std::string_view PERCENT_WORD = "%";
+constexpr std::string_view FRAMES_WORD = " FPS ";
+constexpr std::string_view RECEIVED_WORD = "IN ";
+constexpr std::string_view SENT_WORD = " OUT ";
+constexpr std::string_view KILOBYTES_WORD = " KB/S";
+
+}  // namespace rtype::client
