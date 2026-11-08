@@ -24,3 +24,15 @@ Calibration: on `origin/main` at `edf3388`, `git ls-files -- '*/EncodedMessage.h
 
 - ❌ Before (wrong): `src/network/Protocol/EncodedMessage.hpp` created in the first commit, the server's `EncodedMessage.hpp` removed only in the third → the server and its tests stop building from the first commit on.
 - ✅ After (right): a `refactor` commit renames the server's struct `EventMessage` in `EventMessage.hpp` first; `git ls-files -- '*/EncodedMessage.hpp'` prints nothing; then the network `EncodedMessage.hpp` is added.
+
+## Update (2026-11-07) — a type name shared within a namespace
+
+**Context.** The global leaderboard of the master added the messages of its two routes in `src/network/Master/Messages/`, one header per struct, among them `LeaderboardRow.hpp`.
+
+**Mistake.** `git ls-files -- '*/LeaderboardRow.hpp'` printed nothing, so the name looked free. The struct `rtype::network::LeaderboardRow` already existed inside `src/network/Protocol/Messages/LeaderboardAnswer/LeaderboardAnswer.hpp`, with other members (a `uint32_t` rank, an `int64_t` date, no server). `r-type_client` and `r-type_server` link both `rtype_network_leaderboard_answer` and the master validators, so the programs held two classes of one name: a violation of the one-definition rule, which the build, the tests and the local clang-tidy all let through. A reuse review found it by reading the links.
+
+**Root cause.** The rule searched file names, and a type is not always alone in a header of its name: a message often declares its row next to it.
+
+**Rule added.** Search the type name itself in `src/` and `tests/`, and the name of a free function at namespace scope, before declaring them; choose a name that says what sets the new type apart.
+
+**Revised the same day, after a review.** The first commands used `-P` (PCRE, missing from some builds of git), missed a type written with an attribute (`struct [[nodiscard]] Result`), left out untracked files, and searched free functions in headers only. The search is now portable, includes untracked files, reads attributes, says which lines are a clash (a forward declaration of the same type is not), and covers sources for free functions.

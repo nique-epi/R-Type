@@ -24,6 +24,7 @@
 #include "IListeningPort.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IProcessLauncher.hpp"
+#include "IResultsFile.hpp"
 #include "IServerOccupancy.hpp"
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
@@ -34,6 +35,7 @@
 #include "PathText.hpp"
 #include "ReceivedStatus.hpp"
 #include "ServerConstants.hpp"
+#include "ServerDatabaseFile.hpp"
 #include "SettingValue.hpp"
 #include "StopPause.hpp"
 #include "SupervisedGame.hpp"
@@ -109,6 +111,7 @@ void ServerSupervisedGamesModule::install(engine::InstallContext& context) {
   context.provide(difficulties_);
   context.provide(*spawner_);
   context.provide<IServerOccupancy>(watch_);
+  context.provide<IResultsFile>(*this);
   context.provide(watch_.hostedGames());
   context.provide(watch_.measures());
   context.addWork(SIMULATION_STAGE, [this](engine::Duration elapsed) {
@@ -131,6 +134,11 @@ void ServerSupervisedGamesModule::start() {
 void ServerSupervisedGamesModule::stop() {
   ChildrenStopper stopper{*sender_, pause_};
   reportExits(stopper.stopAll(registry_));
+}
+
+std::filesystem::path ServerSupervisedGamesModule::resultsFile() const {
+  return databaseFileOf(database_->text(), settings_.folder,
+                        listeningPort_->listeningPort());
 }
 
 void ServerSupervisedGamesModule::superviseGames(engine::Duration elapsed) {

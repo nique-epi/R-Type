@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <string>
 #include <vector>
@@ -40,6 +41,9 @@ struct HeartbeatJobParts {
    * or nothing published yet: the heartbeat carries no measure. */
   const LatestServerMeasures* measures{nullptr};
   HeartbeatTimes times{};
+  /** @brief The file of the results of the games, whose vanilla games the job
+   * sends after each heartbeat (see ResultsCourier). */
+  std::filesystem::path resultsFile;
 };
 
 }  // namespace rtype::server

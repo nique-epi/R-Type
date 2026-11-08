@@ -42,6 +42,15 @@ constexpr std::string_view NICKNAME_WITH_LINE_FEED = "Ace\nBoss";
 constexpr std::array NICKNAME_WITH_NULL_BYTES{'P', 'i', 'l', 'o', 't', '\0'};
 constexpr std::string_view NICKNAME_WITH_UNIT_SEPARATOR = "Pilot\x1F";
 constexpr std::string_view NICKNAME_WITH_SPACE = "Ace Pilot";
+
+/**
+ * @brief Nicknames and the form they are compared in (nicknameKey()): the
+ * ASCII letters lowered, an accented capital left as it is.
+ */
+constexpr std::string_view MIXED_CASE_NICKNAME = "ACE_Pilot9";
+constexpr std::string_view MIXED_CASE_NICKNAME_KEY = "ace_pilot9";
+constexpr std::string_view ACCENTED_CAPITAL_NICKNAME = "\u00c9LODIE";
+constexpr std::string_view ACCENTED_CAPITAL_NICKNAME_KEY = "\u00c9lodie";
 constexpr std::string_view NICKNAME_WITH_TILDE = "Ace~Pilot";
 constexpr std::string_view NICKNAME_WITH_DELETE = "Pilot\x7F";
 

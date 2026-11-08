@@ -136,6 +136,46 @@ constexpr std::uint64_t HIGHEST_GAME_LIVES =
 /** @brief The fewest players a listed game may hold. */
 constexpr std::uint64_t MINIMUM_LISTED_PLAYERS = 0;
 
+/** @brief The members of a finished game and of each of its players. */
+constexpr std::string_view PLAYED_AT_MEMBER = "playedAt";
+constexpr std::string_view VANILLA_MEMBER = "vanilla";
+constexpr std::string_view NICKNAME_MEMBER = "nickname";
+constexpr std::string_view ACCOUNT_ID_MEMBER = "accountId";
+constexpr std::string_view SCORE_MEMBER = "score";
+
+/** @brief The members of a leaderboard and of each of its rows. */
+constexpr std::string_view SCORES_MEMBER = "scores";
+constexpr std::string_view PLAYER_MEMBER = "player";
+constexpr std::string_view RANK_MEMBER = "rank";
+constexpr std::string_view SERVER_ID_MEMBER = "serverId";
+constexpr std::string_view SERVER_NAME_MEMBER = "serverName";
+
+/**
+ * @brief The id of a game a server draws, `lower(hex(randomblob(16)))` in
+ * SQLite: GAME_ID_BYTES random bytes in lowercase hexadecimal, GAME_ID_SIZE
+ * characters.
+ */
+constexpr std::size_t GAME_ID_BYTES = 16;
+constexpr std::size_t GAME_ID_SIZE = GAME_ID_BYTES * HEX_DIGITS_PER_BYTE;
+constexpr std::string_view GAME_ID_DIGITS = LOWERCASE_HEX_DIGITS;
+
+/** @brief The longest id of an account, in bytes of printable UTF-8. */
+constexpr std::size_t MAXIMUM_ACCOUNT_ID_SIZE = 64;
+
+/** @brief The bounds of a score, what a server keeps of one (32 bits). */
+constexpr std::uint64_t LOWEST_SCORE = 0;
+constexpr std::uint64_t HIGHEST_SCORE =
+    std::numeric_limits<std::uint32_t>::max();
+
+/** @brief The bounds of the date a game ended, in seconds since 1970 UTC: what
+ * a column INTEGER of SQLite holds. */
+constexpr std::uint64_t EARLIEST_PLAYED_AT = 0;
+constexpr std::uint64_t LATEST_PLAYED_AT =
+    std::numeric_limits<std::int64_t>::max();
+
+/** @brief The fewest players a finished game names. */
+constexpr std::size_t FEWEST_FINISHED_GAME_PLAYERS = 1;
+
 /** @brief The longest name of a game, in bytes of UTF-8. */
 constexpr std::size_t MAXIMUM_GAME_NAME_SIZE = 16;
 

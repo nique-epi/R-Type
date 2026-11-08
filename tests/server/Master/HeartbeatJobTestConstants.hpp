@@ -45,6 +45,20 @@ constexpr HeartbeatTimes SLOW_INTERVAL_TIMES{
 constexpr std::chrono::milliseconds NOTICE_DEADLINE{5'000};
 constexpr std::chrono::milliseconds POLL_STEP{10};
 
+/** @brief The file of results of the games, in the folder of the test. */
+constexpr std::string_view LINKED_RESULTS_FILE = "results.db";
+
+/** @brief When the games the tests save ended, one after the other. A game
+ * of no player at its start is one the master refuses for good: it keeps 1 to
+ * 4. */
+constexpr std::chrono::sys_seconds GAME_END{
+    std::chrono::seconds{1'800'000'000}};
+constexpr std::chrono::sys_seconds LATER_GAME_END =
+    GAME_END + std::chrono::minutes{1};
+constexpr std::uint8_t NO_PILOT_AT_THE_START = 0;
+constexpr int ONE_ROW = 1;
+constexpr int NO_ROW = 0;
+
 /** @brief How long a test leaves the job facing a stopped master. */
 constexpr std::chrono::milliseconds MASTER_DOWN_TIME{300};
 

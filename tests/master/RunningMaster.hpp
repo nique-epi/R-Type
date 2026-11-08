@@ -40,6 +40,10 @@ class RunningMaster {
   [[nodiscard]] std::optional<std::string> lastHeartbeatOf(
       std::int64_t serverId) const;
 
+  /** @returns How many rows of the game @p gameId the master keeps in its
+   * global leaderboard: one per player once a server sent it, none before. */
+  [[nodiscard]] int keptPlayersOf(std::string_view gameId) const;
+
   /** @returns The server named @p name, created on it as a host creates one,
    * with its key. */
   [[nodiscard]] rtype::network::CreatedServer createServer(
