@@ -75,15 +75,3 @@ export type StatusChange = z.infer<typeof statusChangeSchema>;
 export const statusesSchema = z.object({
   statuses: z.array(statusChangeSchema),
 });
-
-/** What a host sends to create a server. */
-export const newServerSchema = z.object({ name: z.string() });
-
-/** The answer of the creation: the key is shown this once. */
-export const createdServerSchema = z.object({
-  id: z.number().int(),
-  name: z.string(),
-  key: z.string(),
-});
-
-export type CreatedServer = z.infer<typeof createdServerSchema>;

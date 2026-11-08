@@ -47,19 +47,19 @@ master and tell the site where it is:
 echo 'MASTER_URL=http://localhost:8081' > web/.env.local
 ```
 
-| Command | Does |
-|---|---|
-| `bun run dev` | Next.js in development, with hot reload |
-| `bun run build` / `bun run start` | production build, then the production server |
-| `bun run lint` | Biome: lint and formatting check (`bun run lint:fix` fixes, `bun run format` formats) |
-| `bun run typecheck` | `next typegen` (types of the routes), then `tsc --noEmit` |
-| `bun run test` | Vitest, once |
+| Command                           | Does                                                                                  |
+| --------------------------------- | ------------------------------------------------------------------------------------- |
+| `bun run dev`                     | Next.js in development, with hot reload                                               |
+| `bun run build` / `bun run start` | production build, then the production server                                          |
+| `bun run lint`                    | Biome: lint and formatting check (`bun run lint:fix` fixes, `bun run format` formats) |
+| `bun run typecheck`               | `next typegen` (types of the routes), then `tsc --noEmit`                             |
+| `bun run test`                    | Vitest, once                                                                          |
 
-| Variable | Default | Role |
-|---|---|---|
-| `MASTER_URL` | `http://localhost:8080` | where the Next.js server reaches the master |
-| `GITHUB_REPOSITORY` | `nique-epi/R-Type` | the repository whose latest release the download page reads |
-| `GITHUB_TOKEN` | none | raises the GitHub API limit from 60 requests an hour per address |
+| Variable            | Default                 | Role                                                             |
+| ------------------- | ----------------------- | ---------------------------------------------------------------- |
+| `MASTER_URL`        | `http://localhost:8080` | where the Next.js server reaches the master                      |
+| `GITHUB_REPOSITORY` | `nique-epi/R-Type`      | the repository whose latest release the download page reads      |
+| `GITHUB_TOKEN`      | none                    | raises the GitHub API limit from 60 requests an hour per address |
 
 The variables are read and checked once, in [`src/config/env.config.ts`](src/config/env.config.ts),
 which `next.config.ts` runs at start: a wrong value stops the site with a
@@ -70,23 +70,23 @@ committed.
 
 ## The libraries
 
-| Library | Role | Where to look |
-|---|---|---|
-| **Next.js 16** (App Router) | pages, routing, server rendering, fonts, the redirect by language | `src/app/`, `src/proxy.ts`, `next.config.ts` |
-| **React 19** with the **React Compiler** | components; the compiler memoizes, so there is no `useMemo` or `useCallback` to write by hand | `next.config.ts` (`reactCompiler: true`) |
-| **TypeScript** (strict, `noUncheckedIndexedAccess`) | types; the alias `@/` means `src/` | `tsconfig.json` |
-| **Tailwind CSS 4** | styling through utility classes; the design tokens live in the CSS, not in a config file | [`src/styles/globals.css`](src/styles/globals.css) |
-| **class-variance-authority** (`cva`) and **`cn`** | the variants of a component, and the merge of class names | `src/components/primitives/`, [`src/lib/utils.ts`](src/lib/utils.ts) |
-| **GSAP** with **`@gsap/react`** and its `ScrollTrigger` plugin | every animation driven by code | [`src/lib/gsap/index.ts`](src/lib/gsap/index.ts), [`src/hooks/use-motion.ts`](src/hooks/use-motion.ts) |
-| **Lenis** | the smooth scroll of the whole page | [`src/components/motion/smooth-scroll.tsx`](src/components/motion/smooth-scroll.tsx) |
-| **StPageFlip** (`page-flip`) | the page that turns in the bestiary | [`src/components/wiki/bestiary-book.tsx`](src/components/wiki/bestiary-book.tsx), [`src/types/page-flip.d.ts`](src/types/page-flip.d.ts) |
-| **zod** | the shape of what the master and the environment send, checked at run time | `src/lib/api/schemas/`, `src/config/env.config.ts` |
-| **@better-fetch/fetch** | the typed client of the master | [`src/lib/api/clients/master/`](src/lib/api/clients/master/index.ts) |
-| **lucide-react** | icons | `src/components/primitives/icons/` |
-| **server-only** | makes the build fail if a client component imports a server module | the top of every file in `src/hooks/api/`, `src/lib/api/`, `src/config/server-env.ts` |
-| **Biome** | linter and formatter (single quotes, two spaces, organized imports) | `biome.json` |
-| **Vitest**, **Testing Library**, **jsdom** | the tests | `vitest.config.mts`, `src/test/` |
-| **bun** | installs the packages and runs the scripts (`packageManager` in `package.json`) | `bun.lock` |
+| Library                                                        | Role                                                                                          | Where to look                                                                                                                            |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Next.js 16** (App Router)                                    | pages, routing, server rendering, fonts, the redirect by language                             | `src/app/`, `src/proxy.ts`, `next.config.ts`                                                                                             |
+| **React 19** with the **React Compiler**                       | components; the compiler memoizes, so there is no `useMemo` or `useCallback` to write by hand | `next.config.ts` (`reactCompiler: true`)                                                                                                 |
+| **TypeScript** (strict, `noUncheckedIndexedAccess`)            | types; the alias `@/` means `src/`                                                            | `tsconfig.json`                                                                                                                          |
+| **Tailwind CSS 4**                                             | styling through utility classes; the design tokens live in the CSS, not in a config file      | [`src/styles/globals.css`](src/styles/globals.css)                                                                                       |
+| **class-variance-authority** (`cva`) and **`cn`**              | the variants of a component, and the merge of class names                                     | `src/components/primitives/`, [`src/lib/utils.ts`](src/lib/utils.ts)                                                                     |
+| **GSAP** with **`@gsap/react`** and its `ScrollTrigger` plugin | every animation driven by code                                                                | [`src/lib/gsap/index.ts`](src/lib/gsap/index.ts), [`src/hooks/use-motion.ts`](src/hooks/use-motion.ts)                                   |
+| **Lenis**                                                      | the smooth scroll of the whole page                                                           | [`src/components/motion/smooth-scroll.tsx`](src/components/motion/smooth-scroll.tsx)                                                     |
+| **StPageFlip** (`page-flip`)                                   | the page that turns in the bestiary                                                           | [`src/components/wiki/bestiary-book.tsx`](src/components/wiki/bestiary-book.tsx), [`src/types/page-flip.d.ts`](src/types/page-flip.d.ts) |
+| **zod**                                                        | the shape of what the master and the environment send, checked at run time                    | `src/lib/api/schemas/`, `src/config/env.config.ts`                                                                                       |
+| **@better-fetch/fetch**                                        | the typed client of the master                                                                | [`src/lib/api/clients/master/`](src/lib/api/clients/master/index.ts)                                                                     |
+| **lucide-react**                                               | icons                                                                                         | `src/components/primitives/icons/`                                                                                                       |
+| **server-only**                                                | makes the build fail if a client component imports a server module                            | the top of every file in `src/hooks/api/`, `src/lib/api/`, `src/config/server-env.ts`                                                    |
+| **Biome**                                                      | linter and formatter (single quotes, two spaces, organized imports)                           | `biome.json`                                                                                                                             |
+| **Vitest**, **Testing Library**, **jsdom**                     | the tests                                                                                     | `vitest.config.mts`, `src/test/`                                                                                                         |
+| **bun**                                                        | installs the packages and runs the scripts (`packageManager` in `package.json`)               | `bun.lock`                                                                                                                               |
 
 `components.json` is the configuration of **shadcn**: the site follows its
 conventions (a `primitives/` folder of small components, `cva` variants, a
@@ -117,45 +117,45 @@ A test sits **beside the file it tests** (`ranking-view.ts`, `ranking-view.test.
 
 ### `src/lib/`: no JSX
 
-| Folder or file | Holds |
-|---|---|
-| [`lib/api/`](src/lib/api/) | the client of the master: `clients/` (the fetch client and its list of routes), `schemas/` (zod), `routes/` (one function per route), `helpers/` (error mapping). One entry point: `api` in `lib/api/index.ts` |
-| [`lib/github/`](src/lib/github/) | the latest GitHub release: reading it, finding the installer of the reader's system, the install steps |
-| [`lib/gsap/`](src/lib/gsap/index.ts) | GSAP, registered once, and the media query of reduced motion |
-| [`lib/rtype/`](src/lib/rtype/) | what the site knows of the game: servers and their seats, players, palettes, the ranking choice, the team, the example servers |
-| `lib/site-paths.ts` | the path of each page in each language (`pathOf(locale, 'ranking')`) |
-| `lib/fonts.ts` | the three fonts, loaded once |
-| `lib/shortcuts.ts` | `runShortcut()`: the keys of a screen of the game (Q, E, F, Escape...) |
-| `lib/breakpoints.ts`, `lib/utils.ts` | the wide-screen query, the `cn` helper |
+| Folder or file                       | Holds                                                                                                                                                                                                          |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`lib/api/`](src/lib/api/)           | the client of the master: `clients/` (the fetch client and its list of routes), `schemas/` (zod), `routes/` (one function per route), `helpers/` (error mapping). One entry point: `api` in `lib/api/index.ts` |
+| [`lib/github/`](src/lib/github/)     | the latest GitHub release: reading it, finding the installer of the reader's system, the install steps                                                                                                         |
+| [`lib/gsap/`](src/lib/gsap/index.ts) | GSAP, registered once, and the media query of reduced motion                                                                                                                                                   |
+| [`lib/rtype/`](src/lib/rtype/)       | what the site knows of the game: servers and their seats, players, palettes, the ranking choice, the team, the example servers                                                                                 |
+| `lib/site-paths.ts`                  | the path of each page in each language (`pathOf(locale, 'ranking')`)                                                                                                                                           |
+| `lib/fonts.ts`                       | the three fonts, loaded once                                                                                                                                                                                   |
+| `lib/shortcuts.ts`                   | `runShortcut()`: the keys of a screen of the game (Q, E, F, Escape...)                                                                                                                                         |
+| `lib/breakpoints.ts`, `lib/utils.ts` | the wide-screen query, the `cn` helper                                                                                                                                                                         |
 
 ## Pages, languages and routing
 
 Every page lives under `app/[lang]/`, `lang` being `fr` (the default) or `en`.
 
-| Route | File | Reads |
-|---|---|---|
-| `/` | `app/[lang]/page.tsx` | the servers with free seats, the latest release |
-| `/download` | `download/page.tsx` | the latest release (GitHub) |
-| `/servers` | `servers/page.tsx` | the servers, their games and their ping (the sector map) |
-| `/servers/[id]` | `servers/[id]/page.tsx` | one server, its games and its last 100 samples |
-| `/leaderboard` | `leaderboard/page.tsx` | the leaderboard; the scope and filters are in the query of the address |
-| `/wiki`, `/wiki/[section]` | `wiki/` | nothing; `/wiki` redirects to the first article |
-| `/team` | `team/page.tsx` | nothing |
-| anything else | `[...rest]/page.tsx`, `not-found.tsx` | a 404 drawn inside the layout of the site |
+| Route                      | File                                  | Reads                                                                  |
+| -------------------------- | ------------------------------------- | ---------------------------------------------------------------------- |
+| `/`                        | `app/[lang]/page.tsx`                 | the servers with free seats, the latest release                        |
+| `/download`                | `download/page.tsx`                   | the latest release (GitHub)                                            |
+| `/servers`                 | `servers/page.tsx`                    | the servers, their games and their ping (the sector map)               |
+| `/servers/[id]`            | `servers/[id]/page.tsx`               | one server, its games and its last 100 samples                         |
+| `/leaderboard`             | `leaderboard/page.tsx`                | the leaderboard; the scope and filters are in the query of the address |
+| `/wiki`, `/wiki/[section]` | `wiki/`                               | nothing; `/wiki` redirects to the first article                        |
+| `/team`                    | `team/page.tsx`                       | nothing                                                                |
+| anything else              | `[...rest]/page.tsx`, `not-found.tsx` | a 404 drawn inside the layout of the site                              |
 
 - **The language.** [`src/proxy.ts`](src/proxy.ts) redirects a path with no language to the one the browser prefers (`Accept-Language`), French when none matches. [`app/[lang]/layout.tsx`](src/app/[lang]/layout.tsx) sets `<html lang>`, the fonts and the shell of the site.
 - **The shell.** [`components/blocks/shell/site-shell.tsx`](src/components/blocks/shell/site-shell.tsx): the announcement bar, the header and its menu, the page, and the smooth scroll.
 - **The paths** are never written by hand: `pathOf()`, `serverPathOf()` and `wikiPathOf()` in [`lib/site-paths.ts`](src/lib/site-paths.ts).
-- **A page is thin**: it reads `params` and the query, then hands them to a *block* (see [Components](#components)).
+- **A page is thin**: it reads `params` and the query, then hands them to a _block_ (see [Components](#components)).
 
 ### The words (`src/i18n/`)
 
 There are two kinds of text, both typed so a language that misses a line fails to compile:
 
-| What | Where | Used by |
-|---|---|---|
-| **The words of the components** (labels of a table, of a button, of a screen) | `i18n/dictionaries/fr.ts`, `en.ts`; the type is `Dictionary` in [`i18n/dictionary.ts`](src/i18n/dictionary.ts), assembled from the label type each component exports | `getDictionary(lang)` |
-| **The words of the pages** (titles, ledes, paragraphs) | `i18n/dictionaries/fr-pages.ts`, `en-pages.ts`; the type is `PageCopy`, the shape of the French copy ([`i18n/page-copy.ts`](src/i18n/page-copy.ts)) | `getDictionary(lang).pages` |
+| What                                                                          | Where                                                                                                                                                                | Used by                     |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| **The words of the components** (labels of a table, of a button, of a screen) | `i18n/dictionaries/fr.ts`, `en.ts`; the type is `Dictionary` in [`i18n/dictionary.ts`](src/i18n/dictionary.ts), assembled from the label type each component exports | `getDictionary(lang)`       |
+| **The words of the pages** (titles, ledes, paragraphs)                        | `i18n/dictionaries/fr-pages.ts`, `en-pages.ts`; the type is `PageCopy`, the shape of the French copy ([`i18n/page-copy.ts`](src/i18n/page-copy.ts))                  | `getDictionary(lang).pages` |
 
 To add a language, add it to `LOCALES` in [`i18n/locales.ts`](src/i18n/locales.ts) and write its two dictionaries.
 The files `format*.ts` format counts, dates, sizes and durations for a language, and `format-nodes.tsx` puts React nodes inside a sentence (`{file}` becomes a `<strong>`).
@@ -172,13 +172,13 @@ flowchart LR
   Api --> Master["master"]
 ```
 
-| Step | Does | Example |
-|---|---|---|
-| **Page** | reads `params` and `searchParams`, picks the block | [`app/[lang]/leaderboard/page.tsx`](src/app/[lang]/leaderboard/page.tsx) |
-| **Block** | an async server component: asks the hooks for the data, composes the components, hands the data down as props | [`components/blocks/ranking/ranking-blocks.tsx`](src/components/blocks/ranking/ranking-blocks.tsx) |
-| **Hook** (`hooks/api/`) | turns the answer of a route into what the page shows, memoized per request with React `cache()` | [`hooks/api/master/leaderboard.hook.ts`](src/hooks/api/master/leaderboard.hook.ts), [`servers.hook.ts`](src/hooks/api/master/servers.hook.ts) |
-| **Route** (`lib/api/routes/`) | one function per route of the master; returns `{ data, error: null }` or `{ data: null, error: code }`, **never throws** | [`getLeaderboard.ts`](src/lib/api/routes/leaderboard/getLeaderboard.ts) |
-| **Client and schema** | the typed list of the routes (`clients/master/endpoints/`) and the zod shape of each answer (`schemas/master/`): an answer that does not match the schema is an error, not a crash | [`clients/master/index.ts`](src/lib/api/clients/master/index.ts) |
+| Step                          | Does                                                                                                                                                                               | Example                                                                                                                                       |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Page**                      | reads `params` and `searchParams`, picks the block                                                                                                                                 | [`app/[lang]/leaderboard/page.tsx`](src/app/[lang]/leaderboard/page.tsx)                                                                      |
+| **Block**                     | an async server component: asks the hooks for the data, composes the components, hands the data down as props                                                                      | [`components/blocks/ranking/ranking-blocks.tsx`](src/components/blocks/ranking/ranking-blocks.tsx)                                            |
+| **Hook** (`hooks/api/`)       | turns the answer of a route into what the page shows, memoized per request with React `cache()`                                                                                    | [`hooks/api/master/leaderboard.hook.ts`](src/hooks/api/master/leaderboard.hook.ts), [`servers.hook.ts`](src/hooks/api/master/servers.hook.ts) |
+| **Route** (`lib/api/routes/`) | one function per route of the master; returns `{ data, error: null }` or `{ data: null, error: code }`, **never throws**                                                           | [`getLeaderboard.ts`](src/lib/api/routes/leaderboard/getLeaderboard.ts)                                                                       |
+| **Client and schema**         | the typed list of the routes (`clients/master/endpoints/`) and the zod shape of each answer (`schemas/master/`): an answer that does not match the schema is an error, not a crash | [`clients/master/index.ts`](src/lib/api/clients/master/index.ts)                                                                              |
 
 The client has a 5 second timeout, so a master that hangs cannot hold a page.
 Errors are mapped to a short list of codes (`BAD_REQUEST`, `NOT_FOUND`,
@@ -188,11 +188,11 @@ Errors are mapped to a short list of codes (`BAD_REQUEST`, `NOT_FOUND`,
 
 A hook never lets a failed read reach the page as an exception:
 
-| Page | When the master does not answer |
-|---|---|
+| Page                      | When the master does not answer                                                                                              |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | servers, sector map, home | the example servers of [`lib/rtype/sample-servers.ts`](src/lib/rtype/sample-servers.ts), and the page says they are examples |
-| leaderboard | an empty list and the line « The master does not answer »; the *Server* tab is disabled, since there is no server to read |
-| a server sheet | the page of an unknown server (404), or a waiting notice for a server created and not registered yet |
+| leaderboard               | an empty list and the line « The master does not answer »; the _Server_ tab is disabled, since there is no server to read    |
+| a server sheet            | the page of an unknown server (404), or a waiting notice for a server created and not registered yet                         |
 
 ### The leaderboard: the state lives in the address
 
@@ -212,16 +212,16 @@ the server then reads the master again. So a leaderboard can be shared by its li
 `src/components/` is split by **how reusable** a folder is, from the most
 general to the most specific:
 
-| Folder | Holds | Knows about the master? |
-|---|---|---|
-| [`primitives/`](src/components/primitives/) | the small building blocks of the design system: buttons, text, panels, tabs, dialogs, badges, layout containers | no |
-| [`game/`](src/components/game/) | the look of the game client, in the page: `GameScreen` and the pieces that draw on it | no |
-| [`sprites/`](src/components/sprites/) | drawing a frame of a sprite sheet of the game | no |
-| [`sky/`](src/components/sky/) | the night sky: the layers of stars, the planet | no |
-| [`motion/`](src/components/motion/) | the animation wrappers (see [Animations](#animations)) | no |
-| [`layout/`](src/components/layout/) | the header, the menu, the announcement bar, the hero and the body of an inner page | no |
-| `download/`, `home/`, `ranking/`, `servers/`, `team/`, `wiki/` | the components of one page: each takes its **data and words as props** | no |
-| [`blocks/`](src/components/blocks/) | one folder per page; each block is an **async server component** that reads the data and assembles the components above | **yes**, through the hooks |
+| Folder                                                         | Holds                                                                                                                   | Knows about the master?    |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| [`primitives/`](src/components/primitives/)                    | the small building blocks of the design system: buttons, text, panels, tabs, dialogs, badges, layout containers         | no                         |
+| [`game/`](src/components/game/)                                | the look of the game client, in the page: `GameScreen` and the pieces that draw on it                                   | no                         |
+| [`sprites/`](src/components/sprites/)                          | drawing a frame of a sprite sheet of the game                                                                           | no                         |
+| [`sky/`](src/components/sky/)                                  | the night sky: the layers of stars, the planet                                                                          | no                         |
+| [`motion/`](src/components/motion/)                            | the animation wrappers (see [Animations](#animations))                                                                  | no                         |
+| [`layout/`](src/components/layout/)                            | the header, the menu, the announcement bar, the hero and the body of an inner page                                      | no                         |
+| `download/`, `home/`, `ranking/`, `servers/`, `team/`, `wiki/` | the components of one page: each takes its **data and words as props**                                                  | no                         |
+| [`blocks/`](src/components/blocks/)                            | one folder per page; each block is an **async server component** that reads the data and assembles the components above | **yes**, through the hooks |
 
 **The rule:** a component outside `blocks/` never calls the master. It takes
 its data and its words as props, so it can be tested alone and reused. Only
@@ -232,15 +232,15 @@ a block reads the data, then hands it down.
 Hand-written, in the style of shadcn. Each is a function with `cva` variants
 and a `data-slot` attribute, and merges the class names it is given with `cn()`.
 
-| Folder | Components |
-|---|---|
-| `actions/` | `Button` (outline or solid pill; a link when given an `href`), `Action`, `ArrowLink`, `IconButton` |
-| `layout/` | `Container`, `Section`, `PageMain` |
-| `text/` | `Heading`, `Eyebrow`, `Lede` (typography), `Keycap`, `CodeBlock` |
-| `surfaces/` | `Panel`, `Table`, `Dialog` |
-| `status/` | `StatusBadge`, `Notice`, `ProgressBar`, `Stat`, `Tag` |
-| `inputs/` | `Tabs`, `TextField` |
-| `icons/` | `Triangle`, `PixelIcon`, `SideMarker` |
+| Folder      | Components                                                                                         |
+| ----------- | -------------------------------------------------------------------------------------------------- |
+| `actions/`  | `Button` (outline or solid pill; a link when given an `href`), `Action`, `ArrowLink`, `IconButton` |
+| `layout/`   | `Container`, `Section`, `PageMain`                                                                 |
+| `text/`     | `Heading`, `Eyebrow`, `Lede` (typography), `Keycap`, `CodeBlock`                                   |
+| `surfaces/` | `Panel`, `Table`, `Dialog`                                                                         |
+| `status/`   | `StatusBadge`, `Notice`, `ProgressBar`, `Stat`, `Tag`                                              |
+| `inputs/`   | `Tabs`                                                                                             |
+| `icons/`    | `Triangle`, `PixelIcon`, `SideMarker`                                                              |
 
 ### `game/`: the screens of the game, in the page
 
@@ -249,13 +249,13 @@ that with [`GameScreen`](src/components/game/game-screen.tsx): a **960 × 540**
 canvas whose children are laid out in pixels of the game, and that scales
 down to the width it is given (`fittingScale()`). It takes the focus, so the keys of the game work.
 
-| Component | Role |
-|---|---|
-| `GameScreen` | the 960 × 540 canvas; options `fitHeight` (also fit the height), `upscale` (grow past 960 × 540, for the fullscreen leaderboard) and `settle` (tilts flat as it scrolls into the middle) |
-| `GameText` | text in the pixel fonts, in pixels of the game |
-| `GameChip` | a button with its key (`FILTER [F]`) |
-| `CutFrame`, `ScreenCorners` | the cut-corner frames of the screens |
-| `ScreenDialog`, `PlayerSlots`, `PlayButton` | a dialog over the screen, the four seats of a game, the PLAY button |
+| Component                                   | Role                                                                                                                                                                                     |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GameScreen`                                | the 960 × 540 canvas; options `fitHeight` (also fit the height), `upscale` (grow past 960 × 540, for the fullscreen leaderboard) and `settle` (tilts flat as it scrolls into the middle) |
+| `GameText`                                  | text in the pixel fonts, in pixels of the game                                                                                                                                           |
+| `GameChip`                                  | a button with its key (`FILTER [F]`)                                                                                                                                                     |
+| `CutFrame`, `ScreenCorners`                 | the cut-corner frames of the screens                                                                                                                                                     |
+| `ScreenDialog`, `PlayerSlots`, `PlayButton` | a dialog over the screen, the four seats of a game, the PLAY button                                                                                                                      |
 
 The screens built on it are [`ranking/ranking-screen.tsx`](src/components/ranking/ranking-screen.tsx)
 (the leaderboard) and [`servers/sector-map/`](src/components/servers/sector-map/sector-map.tsx) (the map of the servers).
@@ -286,7 +286,7 @@ first.
 Everything is in [`src/styles/globals.css`](src/styles/globals.css) (Tailwind 4: the tokens are CSS, not a config file):
 
 - **Colors** (`@theme`): the palette of the game (`sky`, `ink`, `star-white`, `hud-cyan`, `edge-blue`, `player-*`...), usable as `bg-sky`, `text-pale-blue`. The names shadcn expects (`background`, `primary`...) point to them.
-- **Fonts**: *Press Start 2P* for titles and the pixel look (`font-pixel`), *Silkscreen* for small captions (`font-small`) and *IBM Plex Mono* for reading (`font-body`). They are loaded once in [`lib/fonts.ts`](src/lib/fonts.ts); the two pixel fonts are the ones the game uses.
+- **Fonts**: _Press Start 2P_ for titles and the pixel look (`font-pixel`), _Silkscreen_ for small captions (`font-small`) and _IBM Plex Mono_ for reading (`font-body`). They are loaded once in [`lib/fonts.ts`](src/lib/fonts.ts); the two pixel fonts are the ones the game uses.
 - **Breakpoint**: `md` is **861 px** (`53.8125rem`), where the layouts of the mockup stop stacking. `lib/breakpoints.ts` mirrors it for scripts.
 - **Utilities written for the site**: `pixelated` (crisp pixels), `small-caps`, `cut-*` and `cut-top-*` (cut corners), `text-outline-ink`, `row-link`, `starfield` (a night sky in CSS, for a box too small for `StarLayers`) and `newsprint` (the paper of the bestiary).
 - **Sprite animation** keyframes: see [Animations](#animations).
@@ -295,11 +295,11 @@ Everything is in [`src/styles/globals.css`](src/styles/globals.css) (Tailwind 4:
 
 Three kinds of animation, each with one home:
 
-| Kind | Tool | Where |
-|---|---|---|
-| Animations written in code: reveal on scroll, parallax, counters, hero, stars | **GSAP** | `lib/gsap/`, `hooks/use-motion.ts`, `components/motion/`, and the components named below |
-| Frames of a sprite sheet | **CSS** `@keyframes` | `components/sprites/sprite.tsx`, `@keyframes sprite-frames` in `globals.css` |
-| The smooth scroll, and the page that turns | **Lenis**, **StPageFlip** | `components/motion/smooth-scroll.tsx`, `components/wiki/bestiary-book.tsx` |
+| Kind                                                                          | Tool                      | Where                                                                                    |
+| ----------------------------------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------- |
+| Animations written in code: reveal on scroll, parallax, counters, hero, stars | **GSAP**                  | `lib/gsap/`, `hooks/use-motion.ts`, `components/motion/`, and the components named below |
+| Frames of a sprite sheet                                                      | **CSS** `@keyframes`      | `components/sprites/sprite.tsx`, `@keyframes sprite-frames` in `globals.css`             |
+| The smooth scroll, and the page that turns                                    | **Lenis**, **StPageFlip** | `components/motion/smooth-scroll.tsx`, `components/wiki/bestiary-book.tsx`               |
 
 ### The one rule: reduced motion
 
@@ -307,34 +307,33 @@ A reader whose system asks for **reduced motion** (`prefers-reduced-motion: redu
 
 - [`lib/gsap/index.ts`](src/lib/gsap/index.ts) registers `useGSAP` and `ScrollTrigger` **once**, and exports `MOTION_ALLOWED`, the media query. **Every component imports GSAP from `@/lib/gsap`, never from `gsap`.**
 - [`hooks/use-motion.ts`](src/hooks/use-motion.ts): **`useMotion(() => { ... }, { scope, dependencies, query })`** is the way to animate. It wraps `useGSAP()` (which reverts the animation when the component goes) and runs the function **only when motion is allowed**. `scope` limits the selectors you write to the descendants of an element, `dependencies` reruns it when a value changes, `query` adds a media query such as a wide screen. `motionAllowed()` answers the same question for an animation that an event handler starts later.
-- The markup is always written in its **final** state, and the animation goes *from* somewhere (`gsap.from`, `gsap.fromTo`): without script or without motion, the page is complete.
+- The markup is always written in its **final** state, and the animation goes _from_ somewhere (`gsap.from`, `gsap.fromTo`): without script or without motion, the page is complete.
 
 ### The wrappers in `components/motion/`
 
-| Component | Does | File |
-|---|---|---|
-| `Reveal` | its children rise into view as they scroll in, staggered; `PageBody` uses it for every inner page | [`reveal.tsx`](src/components/motion/reveal.tsx) |
-| `Parallax` | drifts against the scroll, as if deeper than the page | [`parallax.tsx`](src/components/motion/parallax.tsx) |
-| `Float` | hovers up and down for as long as it is on the page | [`float.tsx`](src/components/motion/float.tsx) |
-| `CountUp` | a number that climbs from 0 to its value; the page renders the real value, so it reads right to a screen reader | [`count-up.tsx`](src/components/motion/count-up.tsx) |
-| `TypeIn` | a line that writes itself in, in whole steps, like the HUD of the game | [`type-in.tsx`](src/components/motion/type-in.tsx) |
-| `ScrambleText` | text that appears scrambled then settles letter by letter (no page uses it today) | [`scramble-text.tsx`](src/components/motion/scramble-text.tsx) |
+| Component      | Does                                                                                                                                  | File                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `Reveal`       | its children rise into view as they scroll in, staggered; `PageBody` uses it for every inner page                                     | [`reveal.tsx`](src/components/motion/reveal.tsx)               |
+| `Parallax`     | drifts against the scroll, as if deeper than the page                                                                                 | [`parallax.tsx`](src/components/motion/parallax.tsx)           |
+| `Float`        | hovers up and down for as long as it is on the page                                                                                   | [`float.tsx`](src/components/motion/float.tsx)                 |
+| `CountUp`      | a number that climbs from 0 to its value; the page renders the real value, so it reads right to a screen reader                       | [`count-up.tsx`](src/components/motion/count-up.tsx)           |
+| `TypeIn`       | a line that writes itself in, in whole steps, like the HUD of the game                                                                | [`type-in.tsx`](src/components/motion/type-in.tsx)             |
 | `SmoothScroll` | the smooth scroll (Lenis), driven by the GSAP ticker so `ScrollTrigger` reads the position the page draws; mounted once, in the shell | [`smooth-scroll.tsx`](src/components/motion/smooth-scroll.tsx) |
 
 [`hooks/use-scroll-lock.ts`](src/hooks/use-scroll-lock.ts) stops the page from scrolling under a dialog, with Lenis when it runs and the native scroll otherwise.
 
 ### Animations inside components
 
-| What | File |
-|---|---|
-| The hero of the home page: the logo, the ships, the planet that crosses the screen | [`components/home/home-hero.tsx`](src/components/home/home-hero.tsx) |
-| The hero of an inner page: the title rises and fades while the sky and the planet drift at their own depth (a scrubbed `ScrollTrigger`) | [`components/layout/page-hero.tsx`](src/components/layout/page-hero.tsx) |
-| The sky: each layer of stars is a tween that never ends, at the speed of the game | [`components/sky/star-layers.tsx`](src/components/sky/star-layers.tsx) |
-| A screen of the game that tilts flat as it scrolls to the middle (`settle`) | [`components/game/game-screen.tsx`](src/components/game/game-screen.tsx) |
-| The leaderboard: the title drops, the flags fall, the rows slide in and their scores count up | [`components/ranking/ranking-screen.tsx`](src/components/ranking/ranking-screen.tsx) |
-| The strip of Bydos on the home page | [`components/home/bydo-parade.tsx`](src/components/home/bydo-parade.tsx), [`gallery-strip.tsx`](src/components/home/gallery-strip.tsx) |
-| The menu that opens, the download button and its art, the sector map, the chart of a server | `layout/site-menu.tsx`, `download/download-panel.tsx`, `download/download-art.tsx`, `servers/sector-map/sector-map.tsx`, `servers/samples-chart/samples-chart.tsx` |
-| **The page that turns** | [`components/wiki/bestiary-book.tsx`](src/components/wiki/bestiary-book.tsx) |
+| What                                                                                                                                    | File                                                                                                                                                               |
+| --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The hero of the home page: the logo, the ships, the planet that crosses the screen                                                      | [`components/home/home-hero.tsx`](src/components/home/home-hero.tsx)                                                                                               |
+| The hero of an inner page: the title rises and fades while the sky and the planet drift at their own depth (a scrubbed `ScrollTrigger`) | [`components/layout/page-hero.tsx`](src/components/layout/page-hero.tsx)                                                                                           |
+| The sky: each layer of stars is a tween that never ends, at the speed of the game                                                       | [`components/sky/star-layers.tsx`](src/components/sky/star-layers.tsx)                                                                                             |
+| A screen of the game that tilts flat as it scrolls to the middle (`settle`)                                                             | [`components/game/game-screen.tsx`](src/components/game/game-screen.tsx)                                                                                           |
+| The leaderboard: the title drops, the flags fall, the rows slide in and their scores count up                                           | [`components/ranking/ranking-screen.tsx`](src/components/ranking/ranking-screen.tsx)                                                                               |
+| The strip of Bydos on the home page                                                                                                     | [`components/home/bydo-parade.tsx`](src/components/home/bydo-parade.tsx), [`gallery-strip.tsx`](src/components/home/gallery-strip.tsx)                             |
+| The menu that opens, the download button and its art, the sector map, the chart of a server                                             | `layout/site-menu.tsx`, `download/download-panel.tsx`, `download/download-art.tsx`, `servers/sector-map/sector-map.tsx`, `servers/samples-chart/samples-chart.tsx` |
+| **The page that turns**                                                                                                                 | [`components/wiki/bestiary-book.tsx`](src/components/wiki/bestiary-book.tsx)                                                                                       |
 
 ### Frames of a sprite
 
@@ -350,7 +349,7 @@ buttons or the contents. The file explains its own constraints; in short:
 
 - StPageFlip **moves** the elements it is given into its own, which React would then lose. So React draws the pages once, hidden, and the book is built from **copies** of them (`cloneNode`). A click on the contents is heard on the book itself (`data-turn-to`), so the copies need no handler.
 - The library resizes the pages to a fixed ratio, not to their content. Each page is drawn at 420 × 460 and **scaled** to the width the library gives it (`--page-scale`, set on an inner element because the library rewrites the `style` of the page).
-- The book is one page below a width of about 680 px (the library's *portrait* mode), two pages above it; a `ResizeObserver` tells the library when its container changes.
+- The book is one page below a width of about 680 px (the library's _portrait_ mode), two pages above it; a `ResizeObserver` tells the library when its container changes.
 - The package ships no types: the few members the site uses are declared in [`src/types/page-flip.d.ts`](src/types/page-flip.d.ts).
 - The paper look is the `newsprint` utility of `globals.css`.
 
@@ -360,7 +359,7 @@ buttons or the contents. The file explains its own constraints; in short:
 2. Otherwise, in a client component (`'use client'`), write the animation in `useMotion(() => { gsap.from(...) }, { scope: ref })`, with the markup in its final state.
 3. Import `gsap` from `@/lib/gsap`, never from `gsap`.
 4. A scroll-driven animation uses `ScrollTrigger`, also from `@/lib/gsap`.
-5. Check the page with *reduce motion* turned on in your system: everything must be there, in place.
+5. Check the page with _reduce motion_ turned on in your system: everything must be there, in place.
 
 ## Tests, lint and CI
 
@@ -371,14 +370,14 @@ buttons or the contents. The file explains its own constraints; in short:
 
 ## Where does a new thing go?
 
-| You want to... | Put it in |
-|---|---|
-| add a page | `app/[lang]/<route>/page.tsx` (thin), a block in `components/blocks/<page>/`, a path in `lib/site-paths.ts`, its words in the two `*-pages.ts` dictionaries |
-| read a new route of the master | the shape in `lib/api/schemas/master/`, the route in `lib/api/clients/master/endpoints/`, a function in `lib/api/routes/<group>/` with its test, a hook in `hooks/api/master/` |
-| add a small reusable piece (a button, a badge) | `components/primitives/<kind>/`, with `cva` variants and `cn()` |
-| draw something of the game client | `components/game/` (on a `GameScreen`) or `components/sprites/` |
-| add a component of a page | `components/<page>/`: it takes its data and words as props |
-| add a word | the label type of the component, then `i18n/dictionaries/fr.ts` and `en.ts` (or `*-pages.ts` for a page) |
-| add a color or a utility | `src/styles/globals.css` |
-| animate something | [Adding an animation](#adding-an-animation) |
-| add an environment variable | `src/config/env.config.ts` (zod), `.env.example`, this README |
+| You want to...                                 | Put it in                                                                                                                                                                      |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| add a page                                     | `app/[lang]/<route>/page.tsx` (thin), a block in `components/blocks/<page>/`, a path in `lib/site-paths.ts`, its words in the two `*-pages.ts` dictionaries                    |
+| read a new route of the master                 | the shape in `lib/api/schemas/master/`, the route in `lib/api/clients/master/endpoints/`, a function in `lib/api/routes/<group>/` with its test, a hook in `hooks/api/master/` |
+| add a small reusable piece (a button, a badge) | `components/primitives/<kind>/`, with `cva` variants and `cn()`                                                                                                                |
+| draw something of the game client              | `components/game/` (on a `GameScreen`) or `components/sprites/`                                                                                                                |
+| add a component of a page                      | `components/<page>/`: it takes its data and words as props                                                                                                                     |
+| add a word                                     | the label type of the component, then `i18n/dictionaries/fr.ts` and `en.ts` (or `*-pages.ts` for a page)                                                                       |
+| add a color or a utility                       | `src/styles/globals.css`                                                                                                                                                       |
+| animate something                              | [Adding an animation](#adding-an-animation)                                                                                                                                    |
+| add an environment variable                    | `src/config/env.config.ts` (zod), `.env.example`, this README                                                                                                                  |
