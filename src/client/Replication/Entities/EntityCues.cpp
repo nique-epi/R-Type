@@ -1,6 +1,7 @@
 #include "EntityCues.hpp"
 #include <optional>
 #include <string_view>
+#include "AppearanceReference.hpp"
 #include "AwaitedArrival.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
@@ -46,6 +47,15 @@ std::optional<std::string_view> explosionSoundOf(game::EntityType type) {
   return std::nullopt;
 }
 
+/** @returns The appearance of the type of @p entity, whose sheet may draw
+ * its death, or nullptr for an entity created without a sheet. */
+const EntityAppearance* appearanceOf(engine::ComponentRegistry& components,
+                                     engine::Entity entity) {
+  const AppearanceReference* reference =
+      components.get<AppearanceReference>(entity);
+  return reference == nullptr ? nullptr : reference->appearance;
+}
+
 /** @brief Plays the sound, when there is one. */
 void playSound(ISoundPlayer& sounds, std::optional<std::string_view> soundId) {
   if (soundId.has_value()) {
@@ -83,7 +93,8 @@ void explode(const EntityFeedback& feedback,
     feedback.effects.get().playShipDown(entity);
     return;
   }
-  feedback.effects.get().playExplosion(*type, *position);
+  feedback.effects.get().playExplosion(*type, *position,
+                                       appearanceOf(components, entity));
 }
 
 }  // namespace rtype::client

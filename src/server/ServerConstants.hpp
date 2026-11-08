@@ -168,7 +168,7 @@ constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0xb0cab21382ab4b1e;
  * are not vanilla. A test fails when a shipped sheet changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0x9f3ae7bdf1f815e1;
+constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0xbd9b5f8cbd08efef;
 
 /**
  * @brief Why the games of a server are not vanilla, as the lines of its journal

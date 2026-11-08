@@ -10,6 +10,7 @@
 namespace rtype::client {
 
 class GainFigures;
+struct EntityAppearance;
 
 /**
  * @brief Plays the destructions: a Bydo destroyed (T2), every fifth kill of a
@@ -35,8 +36,12 @@ class KillEffects {
    * BIG_CATCH_HOLD longer while it vibrates, then its drops burst, and at T3
    * a shockwave opens and the camera shakes. The kill waits for the gain of
    * score that makes its figure (see GainFigures).
+   * @param appearance The appearance of the victim: its explosion is the
+   * death its sheet draws (`[appearance.death]`), from that sheet; with no
+   * appearance, or one that draws no death, the Bydo explosion. The drops,
+   * shockwave, shake and gain are the same for every enemy.
    */
-  void playKill(game::Position center);
+  void playKill(game::Position center, const EntityAppearance* appearance);
 
   /** @brief Plays the three fireballs of a ship, alone: playShipDown() plays
    * the whole of T4. */

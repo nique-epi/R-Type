@@ -98,3 +98,14 @@ spacing = 2
 frame_ms = 225
 playback = "once"
 afterwards = "idle"
+
+# The death, 48 by 48 pixels centered on the body, played once instead of the
+# Bydo explosion; the row right under it holds the same death without flash.
+[appearance.death]
+left = 0
+top = 104
+width = 48
+height = 48
+frames = 6
+spacing = 2
+frame_ms = 70
