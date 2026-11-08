@@ -15,6 +15,7 @@ target_link_libraries(rtype_client_kill_effects
     rtype_client_pixel_effects
     rtype_client_sheet_effects
     rtype_client_sprite_effect_interfaces
+    rtype_client_sprites
 )
 
 rtype_enable_warnings(rtype_client_kill_effects)

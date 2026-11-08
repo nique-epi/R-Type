@@ -29,6 +29,7 @@
 #include "SoundConstants.hpp"
 
 using rtype::client::ACCEPTED_STATUS_DURATION;
+using rtype::client::BANNED_STATUS;
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::CONNECTING_STATUS;
 using rtype::client::ConnectionPhase;
@@ -408,24 +409,25 @@ TEST_F(ConnectionScreenFixture, BackPlaysTheClick) {
 
 INSTANTIATE_TEST_SUITE_P(
     EveryReasonButTheVersion, ConnectionRefusalFixture,
-    ::testing::Values(std::tuple(RefusalReason::GameFull,
-                                 std::string_view(GAME_FULL_STATUS)),
-                      std::tuple(RefusalReason::GameInProgress,
-                                 std::string_view(GAME_IN_PROGRESS_STATUS)),
-                      std::tuple(RefusalReason::NicknameTaken,
-                                 std::string_view(NICKNAME_TAKEN_STATUS)),
-                      std::tuple(RefusalReason::GameNotFound,
-                                 std::string_view(GAME_NOT_FOUND_STATUS)),
-                      std::tuple(RefusalReason::ServerFull,
-                                 std::string_view(SERVER_FULL_STATUS)),
-                      std::tuple(RefusalReason::UnknownDifficulty,
-                                 std::string_view(UNKNOWN_DIFFICULTY_STATUS)),
-                      std::tuple(RefusalReason::LivesOutOfRange,
-                                 std::string_view(LIVES_OUT_OF_RANGE_STATUS))));
+    ::testing::Values(
+        std::tuple(RefusalReason::GameFull, std::string_view(GAME_FULL_STATUS)),
+        std::tuple(RefusalReason::GameInProgress,
+                   std::string_view(GAME_IN_PROGRESS_STATUS)),
+        std::tuple(RefusalReason::NicknameTaken,
+                   std::string_view(NICKNAME_TAKEN_STATUS)),
+        std::tuple(RefusalReason::GameNotFound,
+                   std::string_view(GAME_NOT_FOUND_STATUS)),
+        std::tuple(RefusalReason::ServerFull,
+                   std::string_view(SERVER_FULL_STATUS)),
+        std::tuple(RefusalReason::UnknownDifficulty,
+                   std::string_view(UNKNOWN_DIFFICULTY_STATUS)),
+        std::tuple(RefusalReason::LivesOutOfRange,
+                   std::string_view(LIVES_OUT_OF_RANGE_STATUS)),
+        std::tuple(RefusalReason::Banned, std::string_view(BANNED_STATUS))));
 
 /**
- * Given an attempt a server of protocol version 14 refused as
- * IncompatibleVersion, the client speaking version 13
+ * Given an attempt a server of protocol version 15 refused as
+ * IncompatibleVersion, the client speaking version 14
  * When a frame goes by
  * Then the status line names both versions, the client's first
  */
@@ -434,7 +436,7 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
-  EXPECT_NE(writingOf(canvas(), "REFUSED: V13, SERVER V14"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "REFUSED: V14, SERVER V15"), nullptr);
 }
 
 /**

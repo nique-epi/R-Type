@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
@@ -37,10 +38,34 @@ constexpr std::uint16_t NO_PILOT = 0;
 constexpr std::uint16_t FEW_PILOTS = 3;
 constexpr std::uint16_t CROWD_OF_PILOTS = 14;
 
-/** @brief The cells an empty star lights, a cross, and a large cross. */
-constexpr std::size_t EMPTY_STAR_PIXELS = 9;
-constexpr std::size_t CROSS_PIXELS = 21;
-constexpr std::size_t LARGE_CROSS_PIXELS = 33;
+/** @brief The sheet of the map, and the rectangle of the first frame of each
+ * planet in it, from the top, rows 2 pixels apart: a small planet of 5 pixels
+ * at top 0, a medium one of 7 at top 7, a large one of 9 at top 16, the slow
+ * one of 9 at top 27, the one of another version of 7 at top 38; and the
+ * house of the hangar, 9 pixels at top 47. */
+constexpr std::string_view MAP_SHEET = "sprites/sector_map.png";
+constexpr sf::IntRect SMALL_PLANET_SOURCE{{0, 0}, {5, 5}};
+constexpr sf::IntRect MEDIUM_PLANET_SOURCE{{0, 7}, {7, 7}};
+constexpr sf::IntRect LARGE_PLANET_SOURCE{{0, 16}, {9, 9}};
+constexpr sf::IntRect SLOW_PLANET_SOURCE{{0, 27}, {9, 9}};
+constexpr sf::IntRect OTHER_VERSION_PLANET_SOURCE{{0, 38}, {7, 7}};
+
+/** @brief The fourth frame of the medium planet, three frames of 7 pixels
+ * and 2 between them to the right: at left 27. */
+constexpr std::size_t FOURTH_TURN = 3;
+constexpr sf::IntRect MEDIUM_PLANET_FOURTH_SOURCE{{27, 7}, {7, 7}};
+
+/** @brief Where a medium planet centered on MIDDLE_STAR (200, 130) starts:
+ * 3 pixels up and to the left, half of its 7 pixels. */
+constexpr sf::Vector2i MEDIUM_PLANET_AT_THE_MIDDLE{197, 127};
+
+/** @brief Times of the turn of the planets, 150 ms a frame and 8 frames a
+ * turn: the second frame starts at 150 ms, the last ends 1 ns before 1200
+ * ms, and a whole turn is 1200 ms. */
+constexpr std::chrono::milliseconds ONE_TURN_FRAME{150};
+constexpr std::chrono::nanoseconds JUST_BEFORE_A_WHOLE_TURN{1'199'999'999};
+constexpr std::chrono::milliseconds A_WHOLE_TURN{1200};
+constexpr std::size_t LAST_TURN = 7;
 
 /** @brief A star near the top edge of the map (y 52), closer than the margin
  * of 3 pixels. */

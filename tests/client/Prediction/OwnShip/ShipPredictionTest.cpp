@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <cstdint>
 #include "PredictionFixtures.hpp"
 #include "PredictionTestConstants.hpp"
 #include "ShipControl.hpp"
@@ -28,7 +29,7 @@ using rtype::client::testing::TWO_COMMANDS;
  */
 TEST(ShipPrediction, MovesTheShipAtOnceWhenAKeyIsHeld) {
   ShipPrediction prediction;
-  prediction.restart(START);
+  prediction.restart(START, OLDER_THAN_ANY_KEPT_COMMAND);
 
   prediction.predict(HOLDING_RIGHT, FIRST_COMMAND);
 
@@ -61,7 +62,7 @@ TEST(ShipPrediction, PredictsNothingBeforeItStarts) {
  */
 TEST(ShipPrediction, KeepsItsPositionWhenTheServerIsWithinTheTolerance) {
   ShipPrediction prediction;
-  prediction.restart(START);
+  prediction.restart(START, OLDER_THAN_ANY_KEPT_COMMAND);
   prediction.predict(HOLDING_RIGHT, FIRST_COMMAND);
   prediction.predict(HOLDING_RIGHT, SECOND_COMMAND);
   prediction.predict(HOLDING_RIGHT, THIRD_COMMAND);
@@ -85,7 +86,7 @@ TEST(ShipPrediction, KeepsItsPositionWhenTheServerIsWithinTheTolerance) {
  */
 TEST(ShipPrediction, TakesTheServerBackAndReplaysTheCommandsAfterTheConfirmed) {
   ShipPrediction prediction;
-  prediction.restart(START);
+  prediction.restart(START, OLDER_THAN_ANY_KEPT_COMMAND);
   prediction.predict(HOLDING_RIGHT, FIRST_COMMAND);
   prediction.predict(HOLDING_RIGHT, SECOND_COMMAND);
   prediction.predict(HOLDING_RIGHT, THIRD_COMMAND);
@@ -111,7 +112,7 @@ TEST(ShipPrediction, TakesTheServerBackAndReplaysTheCommandsAfterTheConfirmed) {
  */
 TEST(ShipPrediction, IgnoresAConfirmationOlderThanTheCommandsItKept) {
   ShipPrediction prediction;
-  prediction.restart(START);
+  prediction.restart(START, OLDER_THAN_ANY_KEPT_COMMAND);
   prediction.predict(HOLDING_RIGHT, FIRST_COMMAND);
   prediction.predict(HOLDING_RIGHT, SECOND_COMMAND);
   prediction.predict(HOLDING_RIGHT, THIRD_COMMAND);
@@ -135,7 +136,7 @@ TEST(ShipPrediction, IgnoresAConfirmationOlderThanTheCommandsItKept) {
  */
 TEST(ShipPrediction, IgnoresAnAcknowledgementOfZero) {
   ShipPrediction prediction;
-  prediction.restart(START);
+  prediction.restart(START, OLDER_THAN_ANY_KEPT_COMMAND);
   prediction.predict(HOLDING_RIGHT, FIRST_COMMAND);
   const rtype::game::Position predicted = prediction.position();
 
@@ -152,7 +153,7 @@ TEST(ShipPrediction, IgnoresAnAcknowledgementOfZero) {
  */
 TEST(ShipPrediction, ReconcilesNothingWhenNoCommandIsPending) {
   ShipPrediction prediction;
-  prediction.restart(START);
+  prediction.restart(START, OLDER_THAN_ANY_KEPT_COMMAND);
 
   prediction.reconcile(shiftedRight(START, BEYOND_THE_TOLERANCE),
                        FIRST_COMMAND);
@@ -162,14 +163,16 @@ TEST(ShipPrediction, ReconcilesNothingWhenNoCommandIsPending) {
 
 /**
  * Given a command predicted, then the prediction restarted from the start
+ * once the server applied that command
  * When the server confirms that command
- * Then the ship stays at the start: the restart forgot the command
+ * Then the ship stays at the start: the restart forgot the command the server
+ * applied
  */
-TEST(ShipPrediction, ForgetsTheCommandsWhenItRestarts) {
+TEST(ShipPrediction, ForgetsTheCommandsTheServerAppliedWhenItRestarts) {
   ShipPrediction prediction;
-  prediction.restart(START);
+  prediction.restart(START, OLDER_THAN_ANY_KEPT_COMMAND);
   prediction.predict(HOLDING_RIGHT, FIRST_COMMAND);
-  prediction.restart(START);
+  prediction.restart(START, FIRST_COMMAND);
 
   prediction.reconcile(shiftedRight(START, BEYOND_THE_TOLERANCE),
                        FIRST_COMMAND);
@@ -185,15 +188,36 @@ TEST(ShipPrediction, ForgetsTheCommandsWhenItRestarts) {
  */
 TEST(ShipPrediction, RollsOnADoubleTapLikeTheServer) {
   ShipPrediction rolled;
-  rolled.restart(START);
+  rolled.restart(START, OLDER_THAN_ANY_KEPT_COMMAND);
   rolled.predict(HOLDING_DOWN, FIRST_COMMAND);
   rolled.predict(HOLDING_NOTHING, SECOND_COMMAND);
   rolled.predict(HOLDING_DOWN, THIRD_COMMAND);
   ShipPrediction slow;
-  slow.restart(START);
+  slow.restart(START, OLDER_THAN_ANY_KEPT_COMMAND);
   slow.predict(HOLDING_DOWN, FIRST_COMMAND);
   slow.predict(HOLDING_NOTHING, SECOND_COMMAND);
   slow.predict(HOLDING_DOWN, COMMAND_AFTER_THE_DOUBLE_TAP_WINDOW);
 
   EXPECT_GT(rolled.position().y, slow.position().y);
+}
+
+/**
+ * Given a prediction never started, which predicted three commands holding
+ * right
+ * When it restarts at rest at START, the server having applied command 1
+ * Then the ship is where commands 2 and 3 take it from START: the server
+ * applies them to the new ship too
+ */
+TEST(ShipPrediction, ARestartPlaysTheCommandsTheServerDidNotApplyYet) {
+  ShipPrediction prediction;
+  prediction.predict(HOLDING_RIGHT, FIRST_COMMAND);
+  prediction.predict(HOLDING_RIGHT, SECOND_COMMAND);
+  prediction.predict(HOLDING_RIGHT, THIRD_COMMAND);
+
+  prediction.restart(START, FIRST_COMMAND);
+
+  const rtype::game::MovingShip server = shipAfterCommands(
+      HOLDING_RIGHT, static_cast<std::uint32_t>(TWO_COMMANDS));
+  EXPECT_FLOAT_EQ(prediction.position().x, server.position.x);
+  EXPECT_FLOAT_EQ(prediction.position().y, server.position.y);
 }

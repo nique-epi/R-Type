@@ -123,6 +123,15 @@ export function toMapPixels(point: Point): Point {
   return { x: (point.x - MAP_ORIGIN.x) * 2, y: (point.y - MAP_ORIGIN.y) * 2 };
 }
 
+/**
+ * A coordinate to hundredths of a pixel. The sine and the cosine of the
+ * server and of the browser differ in their last digits, and a line written
+ * with them differs between the page rendered and the page hydrated.
+ */
+function roundedForMarkup(value: number): number {
+  return Number(value.toFixed(2));
+}
+
 /** The dashed line of a ping, from the top of the map to its bottom, in map pixels. */
 export function ringPoints(ping: number, view: View): string {
   const points: string[] = [];
@@ -133,7 +142,7 @@ export function ringPoints(ping: number, view: View): string {
       x: view.cx + distance * Math.cos(direction),
       y: view.cy + distance * Math.sin(direction),
     });
-    points.push(`${point.x},${point.y}`);
+    points.push(`${roundedForMarkup(point.x)},${roundedForMarkup(point.y)}`);
   }
   return points.join(' ');
 }

@@ -2,7 +2,6 @@
 
 import type * as React from 'react';
 import { useRef } from 'react';
-import { Triangle } from '@/components/primitives/icons/triangle';
 import { Heading } from '@/components/primitives/text/typography';
 import { Planet } from '@/components/sky/planet';
 import { StarLayers } from '@/components/sky/star-layers';
@@ -32,7 +31,6 @@ export type HomeHeroProps = {
   logoAlt: string;
   /** The buttons under the logo: JOUER, TELECHARGER. */
   actions: React.ReactNode;
-  scrollCue: React.ReactNode;
   /** The line that rises as the hero scrolls: "Quatre pilotes. Une vague de Bydos." */
   tagline: React.ReactNode;
   /** The facts at the foot of the hero: players, systems. */
@@ -50,7 +48,6 @@ export function HomeHero({
   eyebrow,
   logoAlt,
   actions,
-  scrollCue,
   tagline,
   facts,
   'aria-label': label,
@@ -74,13 +71,6 @@ export function HomeHero({
         ease: 'power2.out',
         stagger: 0.06,
         delay: 0.6,
-      });
-      gsap.to('[data-scroll-cue]', {
-        y: 6,
-        duration: 0.6,
-        ease: 'sine.inOut',
-        repeat: -1,
-        yoyo: true,
       });
 
       const planet =
@@ -228,15 +218,6 @@ export function HomeHero({
             >
               {actions}
             </div>
-            <span
-              data-logo-part
-              className="mt-6 inline-flex items-center gap-2.5 small-caps text-pale-blue"
-            >
-              <span data-scroll-cue className="inline-flex">
-                <Triangle direction="down" />
-              </span>
-              {scrollCue}
-            </span>
           </div>
         </div>
         <Heading

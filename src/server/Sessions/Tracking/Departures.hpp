@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <utility>
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "Endpoint.hpp"
@@ -68,8 +69,10 @@ class Departures {
   [[nodiscard]] std::vector<ConnectedPlayer> takeDeparted();
 
  private:
-  /** @returns The addresses of the players the host expelled. */
-  [[nodiscard]] std::vector<network::Endpoint> expelledPlayers();
+  /** @returns The addresses of the players the host expelled, each with the
+   * cause it leaves with. */
+  [[nodiscard]] std::vector<std::pair<network::Endpoint, game::DepartureCause>>
+  expelledPlayers();
 
   /** @returns The addresses of the players not heard from for
    * SESSION_CLOSING_TICKS ticks; counts one more

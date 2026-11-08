@@ -16,6 +16,8 @@ export type SiteHeaderLabels = SiteMenuLabels & {
 };
 
 export type SiteHeaderProps = {
+  /** Where the logo leads: the home page, `/` by default. */
+  homeHref?: string;
   /** Where the reader is, beside the logo: "Serveurs". Hidden on a phone. */
   crumb?: React.ReactNode;
   items: readonly NavItem[];
@@ -30,6 +32,7 @@ export type SiteHeaderProps = {
  * button that opens the menu.
  */
 export function SiteHeader({
+  homeHref = '/',
   crumb,
   items,
   downloadHref,
@@ -44,7 +47,7 @@ export function SiteHeader({
         data-slot="site-header"
         className="sticky top-3 z-20 mx-4 mt-3 flex items-center gap-4 rounded-full bg-sky/88 py-2.5 pr-3 pl-7 shadow-float backdrop-blur-md max-md:mx-2 max-md:mt-2 max-md:py-2 max-md:pr-2 max-md:pl-5"
       >
-        <Link href="/" aria-label={labels.home} className="block">
+        <Link href={homeHref} aria-label={labels.home} className="block">
           <Logo alt="" priority />
         </Link>
         {crumb ? (

@@ -27,6 +27,11 @@ constexpr float HIGHEST_Y_WITHOUT_ROOM_ABOVE = 75.0F;
  * 65 pixels or 260 units each side of its center with the outline. */
 constexpr const char* LONGEST_NAME = "SIXTEEN_LETTERS!";
 
+/** @brief A name of 8 characters of 2 bytes each, 16 bytes as LONGEST_NAME:
+ * a character outside ASCII may be as wide as 10 pixels in the small font, so
+ * the tag keeps the room of 8 pixels per byte and moves in as far. */
+constexpr const char* LONGEST_NAME_OUTSIDE_ASCII = "ÉÉÉÉÉÉÉÉ";
+
 /** @brief Ships near the sides, and how far the tag of LONGEST_NAME moves in
  * for each: 260 - 64, 260 - 259, none at 260, 1660 - 1856. */
 constexpr float SHIP_AT_THE_LEFT_EDGE = 64.0F;

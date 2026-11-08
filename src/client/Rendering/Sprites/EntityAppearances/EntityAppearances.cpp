@@ -180,6 +180,26 @@ void readEnragedIdle(const engine::DataFileTable& appearance,
       engine::millisecondsAt(*enraged, FRAME_TIME_KEY, FRAME_TIME_RANGE);
 }
 
+/** @brief Reads `[appearance.death]` into @p look, every key checked, and
+ * the row right under its frames as its version without flash; leaves
+ * @p look without death frames when the table is left out. */
+void readDeath(const engine::DataFileTable& appearance,
+               EntityAppearance& look) {
+  const std::optional<engine::DataFileTable> death =
+      engine::optionalTableAt(appearance, DEATH_TABLE_KEY);
+  if (!death.has_value()) {
+    return;
+  }
+  engine::refuseUnknownKeys(*death, IDLE_KEYS);
+  look.deathFrames = framesOf(*death);
+  const int spacing = pixelsAt(*death, FRAME_SPACING_KEY, FRAME_SPACING_RANGE);
+  for (const game::SpriteFrame& frame : look.deathFrames) {
+    look.deathFramesWithoutFlash.push_back(frameUnder(frame, spacing));
+  }
+  look.deathFrameDuration =
+      engine::millisecondsAt(*death, FRAME_TIME_KEY, FRAME_TIME_RANGE);
+}
+
 /** @returns The appearance the `[appearance]` table @p appearance
  * describes, every key checked. */
 EntityAppearance appearanceFrom(const engine::DataFileTable& appearance) {
@@ -192,8 +212,11 @@ EntityAppearance appearanceFrom(const engine::DataFileTable& appearance) {
                         .idleFrameDuration = engine::millisecondsAt(
                             idle, FRAME_TIME_KEY, FRAME_TIME_RANGE),
                         .actions = std::move(actions),
-                        .enragedIdleFrames = {}};
+                        .enragedIdleFrames = {},
+                        .deathFrames = {},
+                        .deathFramesWithoutFlash = {}};
   readEnragedIdle(appearance, look);
+  readDeath(appearance, look);
   return look;
 }
 

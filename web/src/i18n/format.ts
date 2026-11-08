@@ -33,14 +33,25 @@ function pluralRulesOf(locale: Locale): Intl.PluralRules {
 export type CountTemplates = Readonly<{ one: string; other: string }>;
 
 /**
- * Picks the singular or the plural template by the plural rule of the locale
- * (French says "0 pilote", English "0 pilots"), then fills it.
+ * The singular or the plural template of a count, by the plural rule of the
+ * locale (French says "0 pilote", English "0 pilots"), left unfilled so a
+ * caller can set the number in a node of its own.
  */
+export function selectCountTemplate(
+  count: number,
+  templates: CountTemplates,
+  locale: Locale,
+): string {
+  return pluralRulesOf(locale).select(count) === 'one'
+    ? templates.one
+    : templates.other;
+}
+
+/** Picks the template of a count with `selectCountTemplate()`, then fills it. */
 export function formatCount(
   count: number,
   templates: CountTemplates,
   locale: Locale,
 ): string {
-  const rule = pluralRulesOf(locale).select(count);
-  return format(rule === 'one' ? templates.one : templates.other, { count });
+  return format(selectCountTemplate(count, templates, locale), { count });
 }

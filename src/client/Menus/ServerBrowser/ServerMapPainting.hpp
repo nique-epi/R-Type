@@ -7,6 +7,7 @@
 #include "PlanetPose.hpp"
 #include "ServerListPhase.hpp"
 #include "ServerMapChoice.hpp"
+#include "ServerMapLook.hpp"
 
 namespace rtype::client {
 
@@ -29,13 +30,14 @@ void paintServerMapMessage(IInterfaceCanvas& canvas, ServerListPhase phase);
 
 /**
  * @brief Paints the map as @p choice sees it, as the mockup draws it, over the
- * planet the caller plotted: the rings of ping, every server, the names that
- * find a free side and the minimap while zoomed in.
+ * planet the caller plotted: the rings of ping, the planet of every server on
+ * the frame of @p look.turn, the names that find a free side and the minimap
+ * while zoomed in.
  * The corners and the bubble of the chosen server are painted while zoomed
- * in, and on the whole map only when @p chosenShown: the pointer is over it,
- * or a key chose it.
+ * in, and on the whole map only when @p look.chosenShown: the pointer is over
+ * it, or a key chose it.
  */
 void paintServerMap(IInterfaceCanvas& canvas, const ServerMapChoice& choice,
-                    bool chosenShown);
+                    ServerMapLook look);
 
 }  // namespace rtype::client

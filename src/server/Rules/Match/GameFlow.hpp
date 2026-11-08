@@ -10,6 +10,7 @@
 #include "GameState.hpp"
 #include "IGameFlow.hpp"
 #include "IGameReplication.hpp"
+#include "IHitArbitration.hpp"
 #include "LifeKeeper.hpp"
 #include "Logger.hpp"
 #include "StartBarrier.hpp"
@@ -53,7 +54,10 @@ namespace rtype::server {
  * every GAME_ENDED_INTERVAL until the game waits for players again; no
  * WorldState goes out meanwhile.
  *
- * While the game is in progress, each tick first makes the ship of every away
+ * While the game is in progress, each tick first gives the ViewDelay of the
+ * hit arbitration of the game, FavorThePlayers for now: the missiles and the
+ * ships of the players are tested where their players saw the enemies (see
+ * LagCompensatedHitSystem). It then makes the ship of every away
  * player want nothing (see silenceAwayShips), while the Intent of the ship of
  * a player is its last input (see steerShipByInput), then runs the systems of
  * the world (PilotSystem, which lets the behaviour of every Bydo write its
@@ -187,6 +191,7 @@ class GameFlow final : public IGameFlow {
   std::unique_ptr<game::DamageRules> damageRules_;
   std::unique_ptr<LifeKeeper> lifeKeeper_;
   StartBarrier startBarrier_;
+  std::unique_ptr<IHitArbitration> hitArbitration_;
   GameState state_{GameState::WaitingForPlayers};
   std::uint32_t worldsBuilt_{0};
   std::uint32_t tick_{0};

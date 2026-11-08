@@ -1,6 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
+#include <algorithm>
 #include <optional>
 #include <string>
 #include <vector>
@@ -22,13 +23,17 @@ using rtype::client::LEADERBOARD_SCREEN;
 using rtype::client::MASTER_SCREEN;
 using rtype::client::ServerListPhase;
 using rtype::client::ServerListSnapshot;
+using rtype::client::testing::HANGAR_HOUSE_ON_THE_MAP;
+using rtype::client::testing::HANGAR_HOUSE_SOURCE;
 using rtype::client::testing::HANGAR_STAR_HINT_LINE;
 using rtype::client::testing::HANGAR_STAR_ON_THE_MAP;
 using rtype::client::testing::LYON_SERVER_ADDRESS;
 using rtype::client::testing::LYON_SERVER_ID;
 using rtype::client::testing::lyonGames;
 using rtype::client::testing::MAP_MASTER_TEXT;
+using rtype::client::testing::MAP_SHEET;
 using rtype::client::testing::ONE_FRAME;
+using rtype::client::testing::ONE_PLANET_TURN_FRAME;
 using rtype::client::testing::PARIS_SERVER_ID;
 using rtype::client::testing::parisOnTheWholeMap;
 using rtype::client::testing::readyList;
@@ -403,4 +408,41 @@ TEST_F(ServerMapScreenFixture, AnArrowHidesTheBubbleOfTheHangar) {
   press(sf::Keyboard::Key::Right);
 
   EXPECT_EQ(writingOf(painting(), HANGAR_STAR_HINT_LINE), nullptr);
+}
+
+/**
+ * Given the map
+ * When it is painted
+ * Then the hangar star is the golden house of the sheet of the map, centered
+ * where the star stands
+ */
+TEST_F(ServerMapScreenFixture, TheHangarStarIsDrawnAsAHouse) {
+  openOn(readyList());
+
+  EXPECT_TRUE(
+      std::ranges::any_of(painting().images, [](const RecordedImage& image) {
+        return image.assetId == MAP_SHEET &&
+               image.source == HANGAR_HOUSE_SOURCE &&
+               image.topLeft == HANGAR_HOUSE_ON_THE_MAP;
+      }));
+}
+
+/**
+ * Given the map, for a player who asked for less motion
+ * When the time of a frame of the turn of a planet passes
+ * Then every planet still shows the first frame of its row
+ */
+TEST_F(ServerMapScreenFixture, WithLessMotionThePlanetsStandStill) {
+  openOn(readyList());
+
+  update(ONE_PLANET_TURN_FRAME);
+
+  ASSERT_TRUE(std::ranges::any_of(
+      painting().images,
+      [](const RecordedImage& image) { return image.assetId == MAP_SHEET; }));
+  for (const RecordedImage& image : painting().images) {
+    if (image.assetId == MAP_SHEET) {
+      EXPECT_EQ(image.source.position.x, 0);
+    }
+  }
 }

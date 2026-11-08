@@ -2,18 +2,19 @@
 #include <SFML/System/Vector2.hpp>
 #include <span>
 #include <string>
-#include <vector>
-#include "BackgroundColorConstants.hpp"
-#include "ColoredPixel.hpp"
+#include "EntitySprites.hpp"
 #include "HangarScreenIdConstants.hpp"
 #include "IInterfaceCanvas.hpp"
+#include "ImagePlacement.hpp"
 #include "LabelSide.hpp"
-#include "PixelCircle.hpp"
+#include "SectorMapConstants.hpp"
 #include "SectorMapPainting.hpp"
+#include "SectorMapSpriteConstants.hpp"
 #include "ServerMapScreenConstants.hpp"
 #include "ServerTooltip.hpp"
 #include "StarName.hpp"
 #include "StarNavigation.hpp"
+#include "TextureArea.hpp"
 #include "WidgetColors.hpp"
 
 namespace rtype::client {
@@ -23,13 +24,13 @@ bool hangarStarAt(sf::Vector2i pixel) {
 }
 
 void paintHangarStar(IInterfaceCanvas& canvas, bool shown) {
-  std::vector<ColoredPixel> pixels;
-  for (const sf::Vector2i offset : circleOf(HANGAR_STAR_RADIUS)) {
-    pixels.push_back(
-        {.position = HANGAR_STAR_POINT + offset, .color = STAR_GOLD});
-  }
-  pixels.push_back({.position = HANGAR_STAR_POINT, .color = STAR_WHITE});
-  canvas.plot(pixels);
+  canvas.drawImage(
+      TextureArea{.assetId = SECTOR_MAP_SHEET_ID,
+                  .rectangle = rectangleOf(HANGAR_HOUSE_FRAME)},
+      ImagePlacement{.topLeft = HANGAR_STAR_POINT -
+                                sf::Vector2i{HANGAR_HOUSE_SIZE / 2,
+                                             HANGAR_HOUSE_SIZE / 2}},
+      SECTOR_MAP_AREA);
   paintStarName(canvas, StarName{.point = HANGAR_STAR_POINT,
                                  .name = HANGAR_LABEL,
                                  .side = LabelSide::Right,
