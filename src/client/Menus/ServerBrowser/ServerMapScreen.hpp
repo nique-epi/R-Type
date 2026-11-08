@@ -44,8 +44,8 @@ namespace rtype::client {
  * server of this version with the lowest ping, RANKING opens the leaderboard,
  * ADDRESS the connection form, BACK goes one stage back, then closes the map.
  * The hangar star of the whole map, or HANGAR_KEY, pushes HANGAR_SCREEN.
- * MASTER, on the right of the title, opens the form of the master the map
- * reads, which is written under it.
+ * The master the map reads, the one the `master-url` setting names, is
+ * written on the right of the title.
  *
  * The list is read when the map opens, again every
  * SERVER_LIST_REFRESH_INTERVAL and on REFRESH_KEY. A key that changes the map
@@ -100,7 +100,6 @@ class ServerMapScreen : public IScreen {
   KeyChip quickPlayChip_;
   KeyChip rankingChip_;
   KeyChip addressChip_;
-  KeyChip masterChip_;
   KeyChip backChip_;
   engine::Duration elapsed_{};
   engine::Duration sinceRefresh_{};

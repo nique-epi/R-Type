@@ -13,7 +13,6 @@
 #include <system_error>
 #include "BoundAction.hpp"
 #include "ColorMode.hpp"
-#include "EndpointText.hpp"
 #include "InputConstants.hpp"
 #include "KeyNames.hpp"
 #include "NamedNumber.hpp"
@@ -314,7 +313,7 @@ std::optional<LineOutcome> applyLocker(PlayerSettings& settings,
 }
 
 /** @brief Applies @p setting when it names a setting written as a word or a
- * pair: the window size, the display and color modes, or the master.
+ * pair: the window size, the display and the color modes.
  * @returns What became of the line, nothing for any other name. */
 std::optional<LineOutcome> applyValue(PlayerSettings& settings,
                                       SettingLine setting) {
@@ -329,9 +328,6 @@ std::optional<LineOutcome> applyValue(PlayerSettings& settings,
   if (name == COLOR_MODE_NAME) {
     return assign(valueNamed(value, COLOR_MODE_VALUES, COLOR_MODES),
                   settings.colorMode);
-  }
-  if (name == MASTER_NAME) {
-    return assign(network::endpointFromText(value), settings.master);
   }
   return std::nullopt;
 }
@@ -437,9 +433,6 @@ std::string settingsText(const PlayerSettings& settings) {
   writeLine(text, SHIP_HEAD_NAME, lookItemValue(settings.shipLook.head));
   writeLine(text, SHIP_EYES_NAME, lookItemValue(settings.shipLook.eyes));
   writeLine(text, SHIP_FACE_NAME, lookItemValue(settings.shipLook.face));
-  if (settings.master.has_value()) {
-    writeLine(text, MASTER_NAME, network::endpointText(*settings.master));
-  }
   writeLine(text, SHIP_LOCKER_NAME, lockerValue(settings.shipLocker));
   return text;
 }

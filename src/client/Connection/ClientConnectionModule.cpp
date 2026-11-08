@@ -7,6 +7,7 @@
 #include "AssetFolder.hpp"
 #include "ClientConstants.hpp"
 #include "ConfigurationRegistry.hpp"
+#include "ConfiguredMaster.hpp"
 #include "ConnectionConstants.hpp"
 #include "ContentPackCacheConstants.hpp"
 #include "ContentPlaces.hpp"
@@ -16,15 +17,11 @@
 #include "IServerCatalog.hpp"
 #include "InstallContext.hpp"
 #include "MasterAccess.hpp"
-#include "MasterChoice.hpp"
-#include "MasterChoiceParts.hpp"
 #include "MasterUrlSetting.hpp"
 #include "ModuleConstants.hpp"
 #include "NetworkConditions.hpp"
-#include "PlayerSettings.hpp"
 #include "SettingValue.hpp"
 #include "SettingsFolder.hpp"
-#include "SettingsService.hpp"
 #include "TextSettingDefinition.hpp"
 #include "TimeConstants.hpp"
 
@@ -56,8 +53,7 @@ std::string ClientConnectionModule::name() const {
 }
 
 std::vector<std::string> ClientConnectionModule::dependencies() const {
-  return {std::string{LOGGER_MODULE_NAME}, std::string{ASSETS_MODULE_NAME},
-          std::string{SETTINGS_MODULE_NAME}};
+  return {std::string{LOGGER_MODULE_NAME}, std::string{ASSETS_MODULE_NAME}};
 }
 
 void ClientConnectionModule::install(engine::InstallContext& context) {
@@ -69,15 +65,10 @@ void ClientConnectionModule::install(engine::InstallContext& context) {
               .help =
                   "http://<host>[:<port>] of the master the server map reads",
               .validate = requireMasterUrl});
-  settingsService_ = &context.require<SettingsService>();
-  masterChoice_ = std::make_unique<MasterChoice>(
-      MasterChoiceParts{.settings = context.require<PlayerSettings>(),
-                        .masterUrl = masterUrl,
-                        .link = masterLink_,
-                        .servers = servers_});
+  master_ = std::make_unique<ConfiguredMaster>(masterUrl);
   connection_.provideParts(context);
   context.provide<IServerCatalog>(servers_);
-  context.provide<IMasterAddress>(*masterChoice_);
+  context.provide<IMasterAddress>(*master_);
   context.provide<IGameCatalog>(games_);
   context.addWork(NETWORK_STAGE, [this](engine::Duration elapsed) {
     connection_.update(elapsed);
@@ -89,17 +80,15 @@ void ClientConnectionModule::install(engine::InstallContext& context) {
 void ClientConnectionModule::start() {
   connection_.network().open();
   try {
-    masterLink_.start(network::MasterAccess{.url = masterChoice_->url(),
-                                            .key = std::string{}});
+    masterLink_.start(
+        network::MasterAccess{.url = master_->url(), .key = std::string{}});
   } catch (const std::exception&) {
     connection_.network().close();
     throw;
   }
-  settingsService_->subscribe(*masterChoice_);
 }
 
 void ClientConnectionModule::stop() {
-  settingsService_->unsubscribe(*masterChoice_);
   masterLink_.stop();
   try {
     connection_.leave();

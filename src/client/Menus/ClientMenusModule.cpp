@@ -19,8 +19,6 @@
 #include "LeaderboardScreenParts.hpp"
 #include "LeaderboardTab.hpp"
 #include "LocalizedKeyName.hpp"
-#include "MasterScreen.hpp"
-#include "MasterScreenParts.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "ModuleConstants.hpp"
 #include "NewGameDialog.hpp"
@@ -145,17 +143,6 @@ std::unique_ptr<IScreen> buildNewGameScreen(const ScreenContext& context) {
                                      .difficulties = games.difficulties}));
 }
 
-/** @returns The form of the master the server map reads. */
-std::unique_ptr<IScreen> buildMasterScreen(const ScreenContext& context) {
-  return std::make_unique<MasterScreen>(
-      MasterScreenParts{.navigator = context.navigator.get(),
-                        .sounds = soundsOf(context),
-                        .settings = context.services.settingsService.get(),
-                        .master = context.services.masterAddress.get(),
-                        .playfieldPointAt = playfieldMappingOf(context)},
-      interfaceCanvasOf(context));
-}
-
 /** @returns The leaderboard, opened on the filter the waiting room calls for.
  */
 std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
@@ -227,7 +214,6 @@ void ClientMenusModule::install(engine::InstallContext& context) {
   addConnectionScreens(registry);
   registry.add(SERVER_MAP_SCREEN, buildServerMapScreen);
   registry.add(NEW_GAME_SCREEN, buildNewGameScreen);
-  registry.add(MASTER_SCREEN, buildMasterScreen);
   registry.add(LEADERBOARD_SCREEN, buildLeaderboardScreen);
   registry.add(CONNECTION_LOST_SCREEN, buildConnectionLostScreen);
 }

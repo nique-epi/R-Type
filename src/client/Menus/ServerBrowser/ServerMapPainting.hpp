@@ -16,7 +16,7 @@ namespace rtype::client {
 void paintServerMapHeader(IInterfaceCanvas& canvas, std::size_t serverCount);
 
 /** @brief Writes @p master, the master the map reads as a player reads it,
- * under the chip MASTER, ending at its right edge. */
+ * on the right of the title, ending at the right edge of the chips. */
 void paintMasterAddress(IInterfaceCanvas& canvas, std::string_view master);
 
 /** @brief Writes, in the middle of the map, what it shows instead of servers

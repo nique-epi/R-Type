@@ -10,7 +10,7 @@ add_subdirectory(ServerList)
 
 add_library(rtype_client_connection_module STATIC
   ClientConnectionModule.cpp
-  MasterChoice.cpp
+  ConfiguredMaster.cpp
   MasterUrlSetting.cpp
   PlayerConnection.cpp
   ServerSession.cpp
@@ -31,7 +31,6 @@ target_link_libraries(rtype_client_connection_module
     rtype_client_input_commands
     rtype_client_server_list
     rtype_client_session
-    rtype_client_settings_module
     rtype_client_transport
     rtype_client_waiting_room
     rtype_engine_command_settings

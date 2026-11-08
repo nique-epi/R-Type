@@ -26,7 +26,6 @@ using rtype::client::CONNECTION_TO_CHOSEN_SERVER_SCREEN;
 using rtype::client::GameRequest;
 using rtype::client::HANGAR_SCREEN;
 using rtype::client::LEADERBOARD_SCREEN;
-using rtype::client::MASTER_SCREEN;
 using rtype::client::NEW_GAME_SCREEN;
 using rtype::client::ServerListPhase;
 using rtype::client::ServerListSnapshot;
@@ -376,22 +375,6 @@ TEST_F(ServerMapScreenFixture, AddressOpensTheFormEvenWithoutAMaster) {
   EXPECT_THAT(navigator().calls(),
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
                                         .screen = CONNECTION_SCREEN}));
-}
-
-/**
- * Given the map, its master not answering
- * When M is pressed and released
- * Then the form of the master opens over it
- */
-TEST_F(ServerMapScreenFixture, MasterOpensTheMasterForm) {
-  openOn(ServerListSnapshot{.phase = ServerListPhase::MasterUnreachable,
-                            .servers = {}});
-
-  press(sf::Keyboard::Key::M);
-
-  EXPECT_THAT(navigator().calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = MASTER_SCREEN}));
 }
 
 /**
