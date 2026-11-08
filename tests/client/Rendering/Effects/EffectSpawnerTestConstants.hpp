@@ -1,9 +1,11 @@
 #pragma once
 
 #include <SFML/Graphics/Color.hpp>
+#include <chrono>
 #include <cstddef>
 #include "Position.hpp"
 #include "SpriteFrame.hpp"
+#include "TimeConstants.hpp"
 
 /** @brief Where the entities of the tests die, and where the scene puts the
  * targets it makes. */
@@ -47,3 +49,14 @@ constexpr sf::Color LIGHT_ORANGE_OF_THE_ENEMY_MISSILE{255, 179, 107};
 
 /** @brief How many speed lines a ship arriving at the start draws behind it. */
 constexpr std::size_t SPEED_LINE_COUNT = 4;
+
+/** @brief The sheet of an enemy that draws its own death, the first frame of
+ * that death, 48 by 48 pixels at (0, 119), and of its version without flash in
+ * the row right under it, 48 + 2 pixels lower; each frame shows 70 ms. */
+constexpr const char* MOB_SHEET_ID = "sprites/mobs/reaper.png";
+constexpr rtype::game::SpriteFrame MOB_DEATH_FRAME{
+    .left = 0, .top = 119, .width = 48, .height = 48};
+constexpr rtype::game::SpriteFrame MOB_DEATH_WITHOUT_FLASH_FRAME{
+    .left = 0, .top = 169, .width = 48, .height = 48};
+constexpr rtype::engine::Duration MOB_DEATH_FRAME_TIME =
+    std::chrono::milliseconds(70);

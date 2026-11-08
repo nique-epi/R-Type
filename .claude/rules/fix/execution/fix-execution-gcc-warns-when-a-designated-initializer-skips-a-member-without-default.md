@@ -33,6 +33,11 @@ Why: `-Wmissing-field-initializers` with warnings as errors failed the Linux job
 
 1. **Take the files to run `g++-16` on from the search of the first point**, every `.cpp` that builds the extended aggregate, never from `git diff --name-only origin/main...HEAD`: a fixture the branch never touched still builds it.
 
+### The search finds a named variable too
+
+1. **An aggregate is also built as a named variable**: `static const Type name{.member = …}`, which a search for `Type{` misses. Search both shapes in one command: `git grep -n -E 'Type( [A-Za-z_]+)?\{' -- src tests`.
+2. Calibration: on the branch that added the deaths of the enemies, `git grep -n -E 'EntityAppearance( [A-Za-z_]+)?\{' -- src tests` lists five constructions, `EntitySpritesFixtures.cpp:14` (`static const EntityAppearance appearance{`) among them; `git grep -n 'EntityAppearance{'` lists that one neither.
+
 ## Example
 
 - ❌ **Before (wrong)**: `ConnectedPlayer` gains `std::optional<std::uint16_t> newestReceivedSequence;` and `PlayerRoster::add` keeps `ConnectedPlayer{.playerNumber = …, .nextSequence = 0}` → `missing initializer for member ‘newestReceivedSequence’` on Linux.

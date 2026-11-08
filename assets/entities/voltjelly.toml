@@ -100,3 +100,14 @@ height = 40
 frames = 4
 spacing = 2
 frame_ms = 120
+
+# The death, 48 by 48 pixels centered on the body, played once instead of the
+# Bydo explosion; the row right under it holds the same death without flash.
+[appearance.death]
+left = 0
+top = 42
+width = 48
+height = 48
+frames = 6
+spacing = 2
+frame_ms = 70
