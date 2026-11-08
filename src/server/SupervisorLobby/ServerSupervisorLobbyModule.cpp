@@ -2,10 +2,14 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "BanBook.hpp"
+#include "BanCandidate.hpp"
+#include "BanList.hpp"
 #include "ConnectionChallenge.hpp"
 #include "ConnectionRedirect.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
+#include "CurrentSecond.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "GamePlace.hpp"
@@ -71,6 +75,14 @@ std::optional<GamePlace> refusedRulesOf(
   return GamePlace{.kind = PlaceKind::Refuse, .refusal = *refusal};
 }
 
+/** @returns Whether a ban of @p bans bars the nickname or the address of
+ * @p request now. */
+bool isBarred(const BanList& bans, const SeatRequest& request) {
+  return bans.barring(BanCandidate{.nickname = request.nickname,
+                                   .address = request.sender.address,
+                                   .at = currentSecond()}) != nullptr;
+}
+
 }  // namespace
 
 std::string ServerSupervisorLobbyModule::name() const {
@@ -79,7 +91,8 @@ std::string ServerSupervisorLobbyModule::name() const {
 
 std::vector<std::string> ServerSupervisorLobbyModule::dependencies() const {
   return {std::string{NETWORK_MODULE_NAME},
-          std::string{SUPERVISED_GAMES_MODULE_NAME}};
+          std::string{SUPERVISED_GAMES_MODULE_NAME},
+          std::string{BANS_MODULE_NAME}};
 }
 
 void ServerSupervisorLobbyModule::install(engine::InstallContext& context) {
@@ -88,6 +101,7 @@ void ServerSupervisorLobbyModule::install(engine::InstallContext& context) {
   spawner_ = &context.require<GameSpawner>();
   sender_ = &context.require<IDatagramSender>();
   tickDatagrams_ = &context.require<TickDatagrams>();
+  bans_ = &context.require<BanBook>();
   context.addWork(SIMULATION_STAGE,
                   [this]([[maybe_unused]] engine::Duration elapsed) {
                     answerConnectionRequests();
@@ -127,9 +141,15 @@ void ServerSupervisorLobbyModule::answer(
                              .cookie = cookies_.issue(datagram.sender, now)}));
     return;
   }
-  answerValidRequest(
-      SeatRequest{.sender = datagram.sender, .nickname = request->nickname},
-      *request);
+  const SeatRequest seat{.sender = datagram.sender,
+                         .nickname = request->nickname};
+  if (isBarred(bans_->list(), seat)) {
+    sender_->queueDatagram(datagramTo(
+        datagram.sender,
+        network::ConnectionRefused{.reason = network::RefusalReason::Banned}));
+    return;
+  }
+  answerValidRequest(seat, *request);
 }
 
 void ServerSupervisorLobbyModule::refuseAnotherVersion(

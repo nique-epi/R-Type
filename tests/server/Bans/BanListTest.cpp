@@ -178,3 +178,25 @@ TEST(BanList, ANicknameBanNamesNoAddress) {
                                       .at = BAN_MOMENT}),
             nullptr);
 }
+
+/**
+ * Given a ban of an hour of ACE and a ban for good of an address
+ * When the bans in force are asked one second before the end of the hour, then
+ * at its end
+ * Then both are in force first, and the ban for good alone at the end
+ */
+TEST(BanList, ListsTheBansInForceAtAMoment) {
+  const Ban hour{.target = BanTarget{.kind = BanKind::Nickname,
+                                     .text = std::string{BANNED_NICKNAME}},
+                 .bannedAt = BAN_MOMENT,
+                 .expiresAt = HOUR_BAN_END};
+  const Ban forGood{.target = BanTarget{.kind = BanKind::Address,
+                                        .text = std::string{BANNED_ADDRESS}},
+                    .bannedAt = BAN_MOMENT,
+                    .expiresAt = std::nullopt};
+  const BanList bans{{hour, forGood}};
+
+  EXPECT_EQ(bans.inForceAt(HOUR_BAN_END - ONE_SECOND),
+            (std::vector{hour, forGood}));
+  EXPECT_EQ(bans.inForceAt(HOUR_BAN_END), (std::vector{forGood}));
+}

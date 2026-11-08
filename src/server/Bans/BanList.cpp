@@ -61,4 +61,14 @@ bool BanList::remove(const BanTarget& target) {
 
 const std::vector<Ban>& BanList::bans() const { return bans_; }
 
+std::vector<Ban> BanList::inForceAt(std::chrono::sys_seconds at) const {
+  std::vector<Ban> standing;
+  for (const Ban& ban : bans_) {
+    if (inForce(ban, at)) {
+      standing.push_back(ban);
+    }
+  }
+  return standing;
+}
+
 }  // namespace rtype::server

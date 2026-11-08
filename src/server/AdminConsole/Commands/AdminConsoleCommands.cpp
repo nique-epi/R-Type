@@ -13,6 +13,7 @@
 #include "AdminConsoleParts.hpp"
 #include "CommandDefinition.hpp"
 #include "CommandInterpreter.hpp"
+#include "CommandWords.hpp"
 #include "ConsoleTexts.hpp"
 #include "EngineException.hpp"
 #include "ExpulsionOrder.hpp"
@@ -29,14 +30,6 @@
 namespace rtype::server {
 
 namespace {
-
-/** @throws engine::CommandRefusedException when @p words is not empty. */
-void requireNoWord(std::span<const std::string> words,
-                   std::string_view command) {
-  if (!words.empty()) {
-    throw engine::CommandRefusedException("expected: " + std::string{command});
-  }
-}
 
 /** @returns The game of @p games in the place @p words names.
  * @throws engine::CommandRefusedException when @p words is not one whole

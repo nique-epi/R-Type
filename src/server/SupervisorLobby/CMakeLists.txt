@@ -10,6 +10,7 @@ target_link_libraries(rtype_server_supervisor_lobby_module
     rtype_network_connection_request
     rtype_network_handshake_cookies
     rtype_network_transport
+    rtype_server_ban_book_module
     rtype_server_network_module
     rtype_server_supervised_games_module
   PRIVATE

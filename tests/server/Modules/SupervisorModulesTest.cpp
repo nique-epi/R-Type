@@ -38,10 +38,10 @@ using rtype::server::testing::vanillaGameOf;
  * Given the launch options of a supervisor with no argument, in a build that
  * compiled the master link and the console
  * When its modules are listed
- * Then they are the journal, the network, the supervised games, the lobby
- * that sends the players to them, then the information and the master, which
- * read what the supervised games publish, then the console, in the order
- * they start
+ * Then they are the journal, the network, the supervised games, the bans, the
+ * lobby that sends the players to the games, then the information and the
+ * master, which read what the supervised games publish, then the console, in
+ * the order they start
  */
 TEST(SupervisorModules, ListsTheModulesOfTheSupervisor) {
   if (!MASTER_LINK_MODULE_BUILT || !ADMIN_CONSOLE_MODULE_BUILT) {
@@ -63,6 +63,7 @@ TEST(SupervisorModules, ListsTheModulesOfTheSupervisor) {
                        std::string{rtype::server::NETWORK_MODULE_NAME},
                        std::string{rtype::server::CONTENT_MODULE_NAME},
                        std::string{rtype::server::SUPERVISED_GAMES_MODULE_NAME},
+                       std::string{rtype::server::BANS_MODULE_NAME},
                        std::string{rtype::server::SUPERVISOR_LOBBY_MODULE_NAME},
                        std::string{rtype::server::INFORMATION_MODULE_NAME},
                        std::string{rtype::server::MASTER_MODULE_NAME},

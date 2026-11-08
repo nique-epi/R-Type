@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
@@ -30,3 +31,18 @@ constexpr std::string_view TWO_MEASURES_LINE =
 constexpr std::size_t SEVEN_REJECTED = 7;
 constexpr std::string_view SEVEN_REJECTED_LINE =
     "rejected since the start: 7 datagrams";
+
+/** @brief Lengths the console writes, and their texts: each unit alone, two
+ * units, and a part of a minute, which rounds up. */
+constexpr std::chrono::seconds THIRTY_MINUTES_LENGTH = std::chrono::minutes{30};
+constexpr std::string_view THIRTY_MINUTES_TEXT = "30 min";
+constexpr std::chrono::seconds TWO_HOURS_LENGTH = std::chrono::hours{2};
+constexpr std::string_view TWO_HOURS_TEXT = "2 h";
+constexpr std::chrono::seconds SEVEN_DAYS_LENGTH = std::chrono::days{7};
+constexpr std::string_view SEVEN_DAYS_TEXT = "7 d";
+constexpr std::chrono::seconds A_DAY_AND_A_MINUTE_LENGTH =
+    std::chrono::days{1} + std::chrono::minutes{1};
+constexpr std::string_view A_DAY_AND_A_MINUTE_TEXT = "1 d 1 min";
+constexpr std::chrono::seconds ALMOST_TWO_HOURS_LENGTH =
+    std::chrono::hours{1} + std::chrono::minutes{58} + std::chrono::seconds{1};
+constexpr std::string_view ALMOST_TWO_HOURS_TEXT = "1 h 59 min";

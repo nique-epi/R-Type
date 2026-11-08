@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <vector>
 #include "Ban.hpp"
 #include "BanCandidate.hpp"
@@ -28,6 +29,9 @@ class BanList {
   bool remove(const BanTarget& target);
 
   [[nodiscard]] const std::vector<Ban>& bans() const;
+
+  /** @returns The bans that have not ended at @p at, in the order of bans(). */
+  [[nodiscard]] std::vector<Ban> inForceAt(std::chrono::sys_seconds at) const;
 
  private:
   std::vector<Ban> bans_;
