@@ -35,13 +35,16 @@ constexpr std::string_view SECOND_PILOT_NAME = "R9";
 
 /** @brief Delays short enough for a test, and an interval no test waits for,
  * so a heartbeat seen within NOTICE_DEADLINE was sent for a change. */
-constexpr HeartbeatTimes FAST_TIMES{.interval = std::chrono::milliseconds{100},
-                                    .noticeGap = std::chrono::milliseconds{10},
-                                    .retry = std::chrono::milliseconds{50}};
+constexpr HeartbeatTimes FAST_TIMES{
+    .interval = std::chrono::milliseconds{100},
+    .noticeGap = std::chrono::milliseconds{10},
+    .retry = std::chrono::milliseconds{50},
+    .maximumRetry = std::chrono::milliseconds{200}};
 constexpr HeartbeatTimes SLOW_INTERVAL_TIMES{
     .interval = std::chrono::milliseconds{30'000},
     .noticeGap = std::chrono::milliseconds{10},
-    .retry = std::chrono::milliseconds{50}};
+    .retry = std::chrono::milliseconds{50},
+    .maximumRetry = std::chrono::milliseconds{200}};
 constexpr std::chrono::milliseconds NOTICE_DEADLINE{5'000};
 constexpr std::chrono::milliseconds POLL_STEP{10};
 

@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdint>
 #include <optional>
+#include <random>
 #include <stop_token>
 #include <string>
 #include <utility>
@@ -40,6 +41,8 @@ HeartbeatJob::HeartbeatJob(HeartbeatJobParts parts)
       probeTokens_(parts.probeTokens),
       measures_(parts.measures),
       times_(parts.times),
+      backoff_(parts.times),
+      drawer_(std::random_device{}()),
       logger_(std::string{SERVER_LOGGER_NAME}),
       masterLink_([this](const std::stop_token& stop) { run(stop); }) {}
 
@@ -50,7 +53,7 @@ void HeartbeatJob::run(const std::stop_token& stop) {
     if (!registered) {
       registered = registerServer();
       if (!registered) {
-        concurrency::sleepUnlessStopped(stop, times_.retry);
+        concurrency::sleepUnlessStopped(stop, nextRetryWait());
         continue;
       }
     }
@@ -73,6 +76,7 @@ bool HeartbeatJob::registerServer() {
     client_.registerServer(registrationOf(identity_));
     logger_.info("registered with the master as ", identity_.name);
     problems_.forget();
+    backoff_.reset();
     return true;
   } catch (const network::MasterRefusedException& refusal) {
     problems_.tell(refusal.what());
@@ -109,6 +113,11 @@ std::optional<std::uint64_t> HeartbeatJob::unsentProbeToken(
     return std::nullopt;
   }
   return probeTokens_.value();
+}
+
+std::chrono::milliseconds HeartbeatJob::nextRetryWait() {
+  std::uniform_real_distribution<double> share{0.0, 1.0};
+  return backoff_.nextWait(share(drawer_));
 }
 
 }  // namespace rtype::server
