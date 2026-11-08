@@ -32,6 +32,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Doxygen
+        working-directory: .
+        run: sudo apt-get update && sudo apt-get install --yes doxygen graphviz
+
+      - name: Generate the class reference
+        run: doxygen Doxyfile
+
       - name: Build the site
         run: npm run build
 

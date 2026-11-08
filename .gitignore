@@ -22,3 +22,4 @@ node_modules/
 /docs/dist/
 /docs/.astro/
 /plugins/
+/docs/public/api/

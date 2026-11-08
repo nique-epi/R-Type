@@ -28,6 +28,7 @@
 #include "RecordingResultsArchive.hpp"
 #include "RtypeRulesModule.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShipDirections.hpp"
 #include "ShipLook.hpp"
 #include "SimulatedClock.hpp"
 #include "TimeConstants.hpp"
@@ -36,6 +37,16 @@
 #include "WorldState.hpp"
 
 namespace rtype::server::testing {
+
+/**
+ * @returns Where a ship at rest at @p start is after the inputs @p held, one a
+ * tick and numbered from 1, then @p idleTicks ticks holding nothing: what the
+ * server gives for inputs it applies one a tick, and what the client predicts,
+ * both running the movement code of ShipControl.
+ */
+[[nodiscard]] game::Position movedOneInputPerTick(
+    game::Position start, std::span<const game::ShipDirections> held,
+    std::size_t idleTicks);
 
 /** @brief A ReadyState sent by a player, with the header it travels under. */
 struct SentReadyState {

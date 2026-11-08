@@ -1,4 +1,5 @@
 import type { Dictionary } from '../dictionary';
+import { enPages } from './en-pages';
 
 /** The words of the mockup in English, laid out like the French ones. */
 export const en: Dictionary = {
@@ -14,19 +15,11 @@ export const en: Dictionary = {
     logo: 'R-Type',
     download: 'Download',
   },
-  footer: { navigation: 'Footer' },
-  hero: { scrollCue: 'Scroll' },
-  video: {
-    close: 'Close the video',
-    comingSoon: '[Video coming soon]',
-    watch: 'Watch',
-  },
   download: { systems: 'System', progress: 'Download progress' },
   gamesTable: {
     game: 'Game',
     state: 'State',
     seats: 'Seats',
-    action: 'Action',
     free: 'Free',
   },
   chart: { now: 'now', period: 'Period' },
@@ -63,7 +56,6 @@ export const en: Dictionary = {
     sheet: 'Details',
     back: 'Back',
     leaderboard: 'Leaderboard',
-    host: 'Host',
     keys: {
       quickPlay: 'Q',
       join: 'Enter',
@@ -71,30 +63,7 @@ export const en: Dictionary = {
       sheet: 'I',
       back: 'Esc',
       leaderboard: 'L',
-      host: 'H',
     },
-  },
-  hostForm: {
-    title: 'New server',
-    name: 'Server name',
-    placeholder: 'Nebula Lyon',
-    counter: '{length} / {maximum}',
-    nameRequired: 'Give the server a name',
-    withoutAccountTitle: 'No account',
-    withoutAccount: '5 servers an hour. The key is shown only once.',
-    quotaTitle: 'Quota reached',
-    submit: 'Create the server',
-    cancel: 'Cancel',
-  },
-  serverKey: {
-    title: 'Server key',
-    created: 'The server {name} is created. Copy its key now:',
-    pasteIn: 'Then paste it in the {file} of the server:',
-    copy: 'Copy the key',
-    copied: 'Copied',
-    notCopiedYet: 'It will not be shown again.',
-    copiedLine: 'Key copied to the clipboard.',
-    copyFailed: 'The browser refused the copy: select the key by hand.',
   },
   ranking: {
     screen:
@@ -105,7 +74,15 @@ export const en: Dictionary = {
     nextTab: 'Next tab',
     filterButton: 'Filter',
     back: 'Back',
-    keys: { previousTab: 'Q', nextTab: 'E', filter: 'F', back: 'Esc' },
+    fullscreen: 'Fullscreen',
+    exitFullscreen: 'Exit fullscreen',
+    keys: {
+      previousTab: 'Q',
+      nextTab: 'E',
+      filter: 'F',
+      fullscreen: 'Z',
+      back: 'Esc',
+    },
     filter: {
       title: 'Filter',
       back: 'Back',
@@ -118,8 +95,6 @@ export const en: Dictionary = {
     book: 'Bestiary',
     roleDescription: 'book',
     title: 'Bestiary',
-    leftPage: 'Left page',
-    rightPage: 'Right page',
     sheet: 'Sheet',
     contents: 'Contents',
     previous: 'Previous page',
@@ -130,4 +105,5 @@ export const en: Dictionary = {
   keyBindings: { key: 'Key', action: 'Action' },
   wiki: { navigation: 'Wiki' },
   team: { github: 'GitHub {handle}' },
+  pages: enPages,
 };

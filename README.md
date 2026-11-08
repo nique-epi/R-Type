@@ -1,5 +1,7 @@
 # R-Type
 
+**Web site:** <https://rtype.app>
+
 A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine. Up to four pilots fly together in a game against waves of Bydos; the server owns the game, the client draws it and sends the keys held. One server runs up to eight games at once. Epitech tek3 project.
 
 - **Platforms:** Linux (GCC or Clang), Windows (MSVC, Visual Studio 2022) and macOS (Apple Silicon). The CI builds and tests Linux and Windows on every pull request.
@@ -242,7 +244,7 @@ bun run build
 bun run start
 ```
 
-The site is then on <http://localhost:3000>. The server reaches the master at `MASTER_URL` (`http://localhost:8080` by default); the browser only talks to the site. `bun run dev` serves the same pages while you edit them. `bun run lint`, `bun run typecheck` and `bun run test` are the checks of the `web` CI workflow.
+The site is then on <http://localhost:3000>, in French and English (`/fr`, `/en`). The server reaches the master at `MASTER_URL` (`http://localhost:8080` by default); the browser only talks to the site. The download page reads the latest release of `GITHUB_REPOSITORY` (`nique-epi/R-Type` by default); `GITHUB_TOKEN` is optional and raises the limit of the GitHub API. `bun run dev` serves the same pages while you edit them. `bun run lint`, `bun run typecheck` and `bun run test` are the checks of the `web` CI workflow.
 
 ## Tests
 

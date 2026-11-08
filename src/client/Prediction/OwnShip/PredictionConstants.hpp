@@ -15,6 +15,12 @@ constexpr float TICK_DISTANCE =
     game::SHIP_SPEED *
     std::chrono::duration<float>(engine::SIMULATION_TICK_DURATION).count();
 
+/** @brief The commands a prediction keeps while the player has no ship, for
+ * the next ship to play the ones the server applies to it: two seconds, far
+ * more than a round trip and the input delay. */
+constexpr std::size_t KEPT_COMMANDS_BEFORE_A_SHIP =
+    2 * engine::SIMULATION_TICKS_PER_SECOND;
+
 /** @brief How many ticks of distance the prediction tolerates between the
  * ship it predicted after a command and the position the server confirms for
  * that command: one tick is explained by the repeated directions, the second

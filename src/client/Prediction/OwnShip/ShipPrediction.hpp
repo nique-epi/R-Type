@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <deque>
 #include "Position.hpp"
@@ -34,11 +35,14 @@ struct PendingCommand {
 class ShipPrediction {
  public:
   /** @brief Starts predicting from @p start, a ship at rest at the position
-   * of the server, and forgets every pending command. */
-  void restart(game::Position start);
+   * the server gave it once it applied the command @p acknowledged, then plays
+   * the commands kept after it again: the server applies them to that ship
+   * too, so the prediction stays as far ahead of the server as before. */
+  void restart(game::Position start, std::uint32_t acknowledged);
 
   /** @brief Moves the ship one tick holding @p held, as the command
-   * @p inputNumber, and keeps the command. Nothing before restart(). */
+   * @p inputNumber, and keeps the command. Before restart(), only keeps it,
+   * at most KEPT_COMMANDS_BEFORE_A_SHIP of them, for restart() to play. */
   void predict(game::ShipDirections held, std::uint32_t inputNumber);
 
   /** @brief Takes into account the server putting the ship at @p server after
@@ -52,6 +56,12 @@ class ShipPrediction {
  private:
   void dropBefore(std::uint32_t inputNumber);
   void replayAfterFront(game::MovingShip restart);
+
+  /** @brief Plays the pending commands from the one at @p first again, from
+   * @p from, each one tick, and keeps where each leaves the ship. The first
+   * one follows the command before it, or itself when there is none: a key
+   * held through a respawn presses nothing, as on the server. */
+  void replayFrom(std::size_t first, game::MovingShip from);
 
   bool started_{false};
   game::MovingShip current_{};

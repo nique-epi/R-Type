@@ -1,5 +1,5 @@
-import { MAXIMUM_PILOTS_PER_GAME } from '@/lib/rtype/players';
-import type { MapGame, MapServer } from './types';
+import { canJoin, pilotsOf } from '@/lib/rtype/server-seats';
+import type { MapServer } from '@/lib/rtype/servers';
 
 /** A server with more pilots than this is drawn as a crowd. */
 const CROWD_PILOTS = 10;
@@ -9,20 +9,6 @@ export type StarMark = 'cross' | 'crowd' | 'empty' | 'off';
 
 /** The color of a star, by the token it is drawn in. */
 export type StarTone = 'lit' | 'slow' | 'dim';
-
-/** The pilots of a server, in all its games. */
-export function pilotsOf(server: MapServer): number {
-  return server.games.reduce((sum, game) => sum + game.pilots, 0);
-}
-
-/** A game can be joined when its server answers, it waits for its pilots and a seat is free. */
-export function canJoin(server: MapServer, game: MapGame): boolean {
-  return (
-    server.status !== 'offline' &&
-    game.state === 'waiting' &&
-    game.pilots < MAXIMUM_PILOTS_PER_GAME
-  );
-}
 
 /** How a star is drawn: hollow when its version differs, a crowd past ten pilots. */
 export function starLook(server: MapServer): {

@@ -1,5 +1,4 @@
 import { PlayerSlots, type Seat } from '@/components/game/player-slots';
-import { Button } from '@/components/primitives/actions/button';
 import { Tag } from '@/components/primitives/status/tag';
 import {
   Table,
@@ -19,22 +18,16 @@ export type GameRow = {
   state: GameState;
   stateLabel: string;
   seats: readonly Seat[];
-  /** The word of the button: "Rejoindre", or "Votre place". */
-  actionLabel: string;
-  'aria-label': string;
-  /** Joins the game; a game that cannot be joined has none, and its button is off. */
-  onJoin?: () => void;
 };
 
 export type GamesTableLabels = {
   game: string;
   state: string;
   seats: string;
-  action: string;
   free: string;
 };
 
-/** The games of a server: their state, their seats, and the button to join one. */
+/** The games of a server: their state and their seats. Read only: a seat is taken from the game. */
 export function GamesTable({
   rows,
   labels,
@@ -49,9 +42,6 @@ export function GamesTable({
           <TableHeaderCell>{labels.game}</TableHeaderCell>
           <TableHeaderCell>{labels.state}</TableHeaderCell>
           <TableHeaderCell>{labels.seats}</TableHeaderCell>
-          <TableHeaderCell>
-            <span className="sr-only">{labels.action}</span>
-          </TableHeaderCell>
         </TableRow>
       </TableHead>
       <TableBody>
@@ -67,16 +57,6 @@ export function GamesTable({
                 size="sm"
                 freeLabel={labels.free}
               />
-            </TableCell>
-            <TableCell className="text-right">
-              <Button
-                size="sm"
-                disabled={row.onJoin === undefined}
-                onClick={row.onJoin}
-                aria-label={row['aria-label']}
-              >
-                {row.actionLabel}
-              </Button>
             </TableCell>
           </TableRow>
         ))}

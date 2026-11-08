@@ -139,6 +139,48 @@ TEST_P(CollisionRulesInAnyOrder, LeavesACompensatedMissileToTheLagSystem) {
 }
 
 /**
+ * Given an enemy missile and a ship that carries a ViewDelay
+ * When a Collision names them, in either order
+ * Then no MissileHit is published: LagCompensatedHitSystem tests that ship
+ * where its player saw the enemies
+ */
+TEST_P(CollisionRulesInAnyOrder, LeavesACompensatedShipHitToTheLagSystem) {
+  CollisionScene scene;
+  const Entity missile = scene.spawn(EntityType::EnemyMissile, 0.0F, 0.0F);
+  const Entity player = scene.spawn(EntityType::Player, 0.0F, 0.0F);
+  scene.components.add(player, ViewDelay{.ticks = 0});
+  const CollisionRules rules(scene.events, scene.components);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(collisionOf(missile, player));
+  scene.events.dispatch();
+
+  EXPECT_TRUE(recorded.missileHits.empty());
+}
+
+/**
+ * Given a ship that carries a ViewDelay and an enemy
+ * When a Collision names them, in either order
+ * Then no ShipContact is published: LagCompensatedHitSystem tests that ship
+ * where its player saw the enemies
+ */
+TEST_P(CollisionRulesInAnyOrder, LeavesACompensatedShipContactToTheLagSystem) {
+  CollisionScene scene;
+  const Entity player = scene.spawn(EntityType::Player, 0.0F, 0.0F);
+  scene.components.add(player, ViewDelay{.ticks = 0});
+  const Entity enemy = scene.spawn(EntityType::Enemy, 0.0F, 0.0F);
+  const CollisionRules rules(scene.events, scene.components);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(collisionOf(player, enemy));
+  scene.events.dispatch();
+
+  EXPECT_TRUE(recorded.shipContacts.empty());
+}
+
+/**
  * Given a player and a look item
  * When a Collision names them, in either order
  * Then one LookItemTouched is published, naming the ship and the item

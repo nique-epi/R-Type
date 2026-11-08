@@ -82,7 +82,7 @@ void OwnShipPredictor::apply(const network::WorldState& state) {
   }
   if (shipEntityId_ != own->shipEntityId) {
     shipEntityId_ = own->shipEntityId;
-    prediction_.restart(own->position);
+    prediction_.restart(own->position, own->acknowledgedInput);
     return;
   }
   prediction_.reconcile(own->position, own->acknowledgedInput);
