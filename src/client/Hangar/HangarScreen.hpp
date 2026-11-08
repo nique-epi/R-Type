@@ -6,6 +6,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include "AmbienceScope.hpp"
 #include "FittingRun.hpp"
 #include "HangarScreenParts.hpp"
 #include "IInterfaceCanvas.hpp"
@@ -60,6 +61,7 @@ class HangarScreen : public IScreen {
   void repaint();
 
   IScreenNavigator* navigator_;
+  AmbienceScope ambience_;
   ISoundPlayer* sounds_;
   SettingsService* settings_;
   std::unique_ptr<IInterfaceCanvas> canvas_;

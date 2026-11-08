@@ -1,9 +1,12 @@
 #include <gtest/gtest.h>
+#include <chrono>
+#include "AudioConstants.hpp"
 #include "AudioTestConstants.hpp"
 #include "FakeMusicPlayer.hpp"
 #include "Soundtrack.hpp"
 #include "SoundtrackParts.hpp"
 
+using rtype::client::BOSS_ALARM_DURATION;
 using rtype::client::Soundtrack;
 using rtype::client::SoundtrackParts;
 using rtype::client::testing::LONGER_THAN_THE_SILENCE;
@@ -20,8 +23,9 @@ using rtype::client::testing::THE_WHOLE_SILENCE;
 TEST(Soundtrack, AGameStopsTheTheme) {
   FakeMusicPlayer theme;
   FakeMusicPlayer gameMusic;
-  Soundtrack soundtrack(
-      SoundtrackParts{.theme = theme, .gameMusic = gameMusic});
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
   theme.start();
 
   soundtrack.playGameMusic();
@@ -37,8 +41,9 @@ TEST(Soundtrack, AGameStopsTheTheme) {
 TEST(Soundtrack, TheMusicOfAGameWaitsForTheSilence) {
   FakeMusicPlayer theme;
   FakeMusicPlayer gameMusic;
-  Soundtrack soundtrack(
-      SoundtrackParts{.theme = theme, .gameMusic = gameMusic});
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
   soundtrack.playGameMusic();
 
   soundtrack.advance(MOST_OF_THE_SILENCE);
@@ -54,8 +59,9 @@ TEST(Soundtrack, TheMusicOfAGameWaitsForTheSilence) {
 TEST(Soundtrack, TheMusicOfAGameStartsAfterASecondOfSilence) {
   FakeMusicPlayer theme;
   FakeMusicPlayer gameMusic;
-  Soundtrack soundtrack(
-      SoundtrackParts{.theme = theme, .gameMusic = gameMusic});
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
   soundtrack.playGameMusic();
 
   soundtrack.advance(THE_WHOLE_SILENCE);
@@ -72,8 +78,9 @@ TEST(Soundtrack, TheMusicOfAGameStartsAfterASecondOfSilence) {
 TEST(Soundtrack, AskingForTheGameAgainKeepsTheSilenceGoing) {
   FakeMusicPlayer theme;
   FakeMusicPlayer gameMusic;
-  Soundtrack soundtrack(
-      SoundtrackParts{.theme = theme, .gameMusic = gameMusic});
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
   soundtrack.playGameMusic();
   soundtrack.advance(PART_OF_THE_SILENCE);
 
@@ -91,8 +98,9 @@ TEST(Soundtrack, AskingForTheGameAgainKeepsTheSilenceGoing) {
 TEST(Soundtrack, ATitleStopsTheMusicOfTheGame) {
   FakeMusicPlayer theme;
   FakeMusicPlayer gameMusic;
-  Soundtrack soundtrack(
-      SoundtrackParts{.theme = theme, .gameMusic = gameMusic});
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
   soundtrack.playGameMusic();
   soundtrack.advance(THE_WHOLE_SILENCE);
 
@@ -109,8 +117,9 @@ TEST(Soundtrack, ATitleStopsTheMusicOfTheGame) {
 TEST(Soundtrack, ATitleBringsTheThemeBack) {
   FakeMusicPlayer theme;
   FakeMusicPlayer gameMusic;
-  Soundtrack soundtrack(
-      SoundtrackParts{.theme = theme, .gameMusic = gameMusic});
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
   soundtrack.playGameMusic();
   soundtrack.advance(THE_WHOLE_SILENCE);
 
@@ -127,8 +136,9 @@ TEST(Soundtrack, ATitleBringsTheThemeBack) {
 TEST(Soundtrack, LeavingDuringTheSilenceCancelsTheMusicOfTheGame) {
   FakeMusicPlayer theme;
   FakeMusicPlayer gameMusic;
-  Soundtrack soundtrack(
-      SoundtrackParts{.theme = theme, .gameMusic = gameMusic});
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
   soundtrack.playGameMusic();
   soundtrack.playTheme();
 
@@ -145,8 +155,9 @@ TEST(Soundtrack, LeavingDuringTheSilenceCancelsTheMusicOfTheGame) {
 TEST(Soundtrack, SilencingStopsTheMusicOfAGameAtOnce) {
   FakeMusicPlayer theme;
   FakeMusicPlayer gameMusic;
-  Soundtrack soundtrack(
-      SoundtrackParts{.theme = theme, .gameMusic = gameMusic});
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
   soundtrack.playGameMusic();
   soundtrack.advance(LONGER_THAN_THE_SILENCE);
 
@@ -163,8 +174,9 @@ TEST(Soundtrack, SilencingStopsTheMusicOfAGameAtOnce) {
 TEST(Soundtrack, SilencingCancelsTheMusicAboutToStart) {
   FakeMusicPlayer theme;
   FakeMusicPlayer gameMusic;
-  Soundtrack soundtrack(
-      SoundtrackParts{.theme = theme, .gameMusic = gameMusic});
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
   soundtrack.playGameMusic();
   soundtrack.advance(PART_OF_THE_SILENCE);
 
@@ -182,8 +194,9 @@ TEST(Soundtrack, SilencingCancelsTheMusicAboutToStart) {
 TEST(Soundtrack, TheMusicOfAGameComesBackAfterBeingSilenced) {
   FakeMusicPlayer theme;
   FakeMusicPlayer gameMusic;
-  Soundtrack soundtrack(
-      SoundtrackParts{.theme = theme, .gameMusic = gameMusic});
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
   soundtrack.playGameMusic();
   soundtrack.advance(LONGER_THAN_THE_SILENCE);
   soundtrack.silenceMusic();
@@ -192,4 +205,83 @@ TEST(Soundtrack, TheMusicOfAGameComesBackAfterBeingSilenced) {
   soundtrack.advance(THE_WHOLE_SILENCE);
 
   EXPECT_TRUE(gameMusic.playingOffset().has_value());
+}
+
+/**
+ * Given the music of a game playing
+ * When the music of the boss is asked for
+ * Then the music of the game and the theme stop at once, and the boss waits
+ * for its alarm
+ */
+TEST(Soundtrack, TheMusicOfTheBossWaitsForTheAlarm) {
+  FakeMusicPlayer theme;
+  FakeMusicPlayer gameMusic;
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
+  soundtrack.playGameMusic();
+  soundtrack.advance(THE_WHOLE_SILENCE);
+
+  soundtrack.playBossMusic();
+  soundtrack.advance(BOSS_ALARM_DURATION - std::chrono::milliseconds(1));
+
+  EXPECT_FALSE(gameMusic.playingOffset().has_value());
+  EXPECT_FALSE(theme.playingOffset().has_value());
+  EXPECT_FALSE(bossMusic.playingOffset().has_value());
+}
+
+/**
+ * Given the music of the boss asked for
+ * When the whole alarm has played
+ * Then the music of the boss starts
+ */
+TEST(Soundtrack, TheMusicOfTheBossStartsWhenTheAlarmEnds) {
+  FakeMusicPlayer theme;
+  FakeMusicPlayer gameMusic;
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
+  soundtrack.playBossMusic();
+
+  soundtrack.advance(BOSS_ALARM_DURATION);
+
+  EXPECT_TRUE(bossMusic.playingOffset().has_value());
+}
+
+/**
+ * Given the music of the boss playing
+ * When a game starts again
+ * Then the music of the boss stops
+ */
+TEST(Soundtrack, AGameStopsTheMusicOfTheBoss) {
+  FakeMusicPlayer theme;
+  FakeMusicPlayer gameMusic;
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
+  soundtrack.playBossMusic();
+  soundtrack.advance(BOSS_ALARM_DURATION);
+
+  soundtrack.playGameMusic();
+
+  EXPECT_FALSE(bossMusic.playingOffset().has_value());
+}
+
+/**
+ * Given the music of the boss asked for, its alarm still playing
+ * When a title screen asks for the theme
+ * Then the music of the boss never starts
+ */
+TEST(Soundtrack, LeavingDuringTheAlarmCancelsTheMusicOfTheBoss) {
+  FakeMusicPlayer theme;
+  FakeMusicPlayer gameMusic;
+  FakeMusicPlayer bossMusic;
+  Soundtrack soundtrack(SoundtrackParts{
+      .theme = theme, .gameMusic = gameMusic, .bossMusic = bossMusic});
+  soundtrack.playBossMusic();
+  soundtrack.playTheme();
+
+  soundtrack.advance(BOSS_ALARM_DURATION);
+
+  EXPECT_FALSE(bossMusic.playingOffset().has_value());
 }

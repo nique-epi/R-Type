@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include "IAudioService.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "MotionPreference.hpp"
@@ -23,6 +24,9 @@ struct HangarScreenParts {
   std::reference_wrapper<IScreenNavigator> navigator;
   /** @brief Plays the click of the locker, which must outlive the screen. */
   std::reference_wrapper<ISoundPlayer> sounds;
+  /** @brief Plays the garage ambience under the theme while the hangar
+   * lives; it must outlive the screen. */
+  std::reference_wrapper<IAudioService> audio;
   /** @brief Holds and saves what the ship wears; it must outlive the screen.
    */
   std::reference_wrapper<SettingsService> settings;

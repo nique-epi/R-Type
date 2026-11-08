@@ -120,6 +120,7 @@ std::unique_ptr<IScreen> buildServerMapScreen(const ScreenContext& context) {
   return std::make_unique<ServerMapScreen>(
       ServerMapScreenParts{.navigator = context.navigator.get(),
                            .sounds = soundsOf(context),
+                           .audio = context.services.audio.get(),
                            .servers = context.services.serverCatalog.get(),
                            .games = context.services.gameCatalog.get(),
                            .choice = context.serverChoice.get(),

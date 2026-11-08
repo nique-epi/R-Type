@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include "IAudioService.hpp"
 #include "IGameCatalog.hpp"
 #include "IMasterAddress.hpp"
 #include "IScreenNavigator.hpp"
@@ -26,6 +27,9 @@ struct ServerMapScreenParts {
   std::reference_wrapper<IScreenNavigator> navigator;
   /** @brief Plays the click of the chips, which must outlive the screen. */
   std::reference_wrapper<ISoundPlayer> sounds;
+  /** @brief Plays the space ambience under the theme while the map lives;
+   * it must outlive the screen. */
+  std::reference_wrapper<IAudioService> audio;
   /** @brief The servers to show, and the games of the chosen one; they must
    * outlive the screen. */
   std::reference_wrapper<IServerCatalog> servers;

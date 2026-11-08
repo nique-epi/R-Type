@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <vector>
+#include "Ambience.hpp"
 #include "FakeMusicPlayer.hpp"
 #include "IAudioService.hpp"
 #include "IMusicPlayer.hpp"
@@ -24,6 +25,9 @@ class RecordingAudioService final : public rtype::client::IAudioService {
   void playTheme() override;
   void playGameMusic() override;
   void silenceMusic() override;
+  void playBossMusic() override;
+  void setAmbience(rtype::client::Ambience ambience) override;
+  [[nodiscard]] rtype::client::Ambience ambience() const override;
   void open() override;
   void update(rtype::engine::Duration elapsed) override;
 
@@ -34,4 +38,5 @@ class RecordingAudioService final : public rtype::client::IAudioService {
   std::reference_wrapper<rtype::client::ISoundPlayer> sounds_;
   FakeMusicPlayer theme_;
   std::vector<MusicCall> musicCalls_;
+  rtype::client::Ambience ambience_{rtype::client::Ambience::None};
 };

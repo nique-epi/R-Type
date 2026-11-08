@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <vector>
+#include "AmbienceScope.hpp"
 #include "ColoredPixel.hpp"
 #include "GamePanel.hpp"
 #include "IGameCatalog.hpp"
@@ -83,6 +84,7 @@ class ServerMapScreen : public IScreen {
   void repaint();
 
   IScreenNavigator* navigator_;
+  AmbienceScope ambience_;
   IServerCatalog* servers_;
   IGameCatalog* games_;
   ServerChoice* choice_;
