@@ -13,7 +13,7 @@ Nothing here runs by itself the first time: a member of the team sets it up once
 
 ## What you get
 
-- One `t3.nano` instance (x86, Ubuntu 24.04, 8 GiB disk) with an Elastic IP that does not change, about 8 to 9 USD a month (an estimate from public prices, not measured).
+- One `t3.medium` instance (x86, 2 vCPU, 4 GiB of memory, Ubuntu 24.04, 8 GiB disk) with an Elastic IP that does not change, about 37 USD a month (an estimate from public prices, not measured). Its CPU runs on credits in "standard" mode: it is slowed down when the credits are gone and never billed more.
 - One open port, 8080, the HTTP API of the master. There is no SSH and no key pair: the machine is reached through AWS Systems Manager (SSM).
 - A deployment on every release (`v*` tag), after a person approves it in GitHub. No AWS key is stored in the repository or in GitHub: the workflow gets a short-lived token from GitHub (OpenID Connect) and trades it for a role.
 
@@ -121,7 +121,7 @@ If the Elastic IP is ever replaced, change these three places and `MASTER_URL` o
 | Deploy an older release, or redeploy | Actions, `deploy-master`, Run workflow, with its tag |
 | Read the log of the master | `aws ssm start-session --target <instance id>` (it needs the Session Manager plugin of the AWS CLI), then `journalctl -u rtype-master` |
 | Change the size of the machine | `instance_type` in `terraform/variables.tf`, then `terraform apply` |
-| Check the memory of the machine | on the machine, `free -m`: below about 100 MiB free, use `t3.micro` |
+| Check the memory and the CPU of the machine | on the machine, `free -m`; the credits left are `CPUCreditBalance` in CloudWatch: a balance that stays near 0 means the CPU is slowed down, so use a bigger machine |
 
 ## When it does not work
 

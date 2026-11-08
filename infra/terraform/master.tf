@@ -39,6 +39,13 @@ resource "aws_instance" "master" {
     http_tokens = "required"
   }
 
+  # A t3 machine runs in "unlimited" mode by default and bills the CPU it uses
+  # past its credits. "standard" slows the CPU down instead, so the bill is the
+  # price of the instance and nothing more.
+  credit_specification {
+    cpu_credits = "standard"
+  }
+
   root_block_device {
     volume_size = 8
     volume_type = "gp3"

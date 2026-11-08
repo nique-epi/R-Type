@@ -15,13 +15,13 @@ The master (see [Master](/R-Type/master/)) runs on one small AWS machine, descri
 
 ## What runs on AWS
 
-- **One instance**, `t3.nano` (an x86 machine with 512 MiB of memory; `instance_type` in `variables.tf`) running Ubuntu 24.04, with an 8 GiB disk. The package of a release is built on Ubuntu 22.04 for x86, and its C library must be at least that of the build, so a machine with an older one, such as Amazon Linux 2023, cannot run it.
+- **One instance**, `t3.medium` (an x86 machine with 2 vCPU and 4 GiB of memory; `instance_type` in `variables.tf`) running Ubuntu 24.04, with an 8 GiB disk. The package of a release is built on Ubuntu 22.04 for x86, and its C library must be at least that of the build, so a machine with an older one, such as Amazon Linux 2023, cannot run it.
 - **One address that does not change**, an Elastic IP (`aws_eip.master`). The game servers, the client and the web site hold it, so Terraform refuses to destroy it (`prevent_destroy`).
 - **One open port**, 8080 (`master_port`), the HTTP API of the master, from anywhere. There is no SSH and no key pair: the machine is reached through AWS Systems Manager (SSM), which needs no open port.
 - **One systemd service**, `rtype-master`, which runs `r-type_server --mode master -p 8080` as the user `rtype`, with the database in `/var/lib/rtype/r-type_master.db`. It writes no journal file; its lines go to `journalctl -u rtype-master`. The port in the unit and `master_port` must stay equal.
-- **A swap file of 1 GiB**, because 512 MiB is tight for Ubuntu and the master. This size is **provisional**: measure the free memory of the running master with `free -m`, and raise `instance_type` to `t3.micro` if less than about 100 MiB remains.
+- **A CPU on credits.** A `t3` machine earns CPU credits at a baseline of 20% of each vCPU and spends them when it works harder. The instance is set to `cpu_credits = "standard"`: once the credits are gone, the CPU is slowed down, and the bill never exceeds the price of the instance. The master is an HTTP API on a SQLite file, which stays far below that baseline. A machine whose CPU never slows down (`c7i-flex.large`, `c5.large`) costs about twice as much.
 
-The cost is an estimate from public prices, **not measured**: about 8 to 9 USD a month, mostly the machine and its public IPv4 address.
+The size is **provisional**: measure the free memory with `free -m` and the credits left (`CPUCreditBalance` in CloudWatch) on the running master before keeping it. The cost is an estimate from public prices, **not measured**: about 37 USD a month, of which about 33 for the machine.
 
 ## The deployment: `deploy-master`
 
