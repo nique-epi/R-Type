@@ -11,11 +11,11 @@ namespace rtype::client {
  * DEFAULT_DIFFICULTY alone when it listed none; a row for the lives of every
  * pilot, LOWEST_LIVES to HIGHEST_LIVES; a switch for friendly fire. It opens
  * on the default rules, at the first difficulty of the server when it has no
- * DEFAULT_DIFFICULTY. CREATE puts the server and a NewGame with those rules
- * in the last attempt of the choice, together, and pushes
- * CONNECTION_TO_MAP_SERVER_SCREEN over
- * the dialog, so BACK there, after a refusal, comes back to it; BACK, which
- * MENU_CANCEL_KEY answers too, closes it.
+ * DEFAULT_DIFFICULTY. CREATE closes the dialog, then opens the connection to
+ * the server for a NewGame with those rules, as joining a game of the map does
+ * (openConnectionTo): BACK from the connection screen comes back to the map,
+ * after a refusal too, never to the dialog. BACK, which MENU_CANCEL_KEY answers
+ * too, closes it.
  */
 [[nodiscard]] Menu newGameMenu(NewGameMenuParts parts);
 

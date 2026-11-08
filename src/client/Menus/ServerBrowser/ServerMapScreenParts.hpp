@@ -5,6 +5,7 @@
 #include "IGameCatalog.hpp"
 #include "IScreenNavigator.hpp"
 #include "IServerCatalog.hpp"
+#include "IServerConnection.hpp"
 #include "ISoundPlayer.hpp"
 #include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
@@ -36,6 +37,10 @@ struct ServerMapScreenParts {
   /** @brief Where the server a player joins goes, with the nickname the
    * connection screen joins with; it must outlive the screen. */
   std::reference_wrapper<ServerChoice> choice;
+  /** @brief The connection the player joins servers with, watched so the
+   * games are read again once the player came back; it must outlive the
+   * screen. */
+  std::reference_wrapper<const IServerConnection> connection;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
   /** @brief Whether the planet turns. */

@@ -8,6 +8,8 @@
 #include <utility>
 #include <vector>
 #include "ChoiceSelector.hpp"
+#include "ChosenGame.hpp"
+#include "ChosenGameConnection.hpp"
 #include "ConnectionRequest.hpp"
 #include "GameRequest.hpp"
 #include "GameRuleConstants.hpp"
@@ -16,7 +18,6 @@
 #include "IScreenNavigator.hpp"
 #include "Menu.hpp"
 #include "MenuBuilder.hpp"
-#include "MenuScreenIdConstants.hpp"
 #include "NewGameDialogConstants.hpp"
 #include "NewGameMenuParts.hpp"
 #include "RowControl.hpp"
@@ -127,10 +128,14 @@ Menu newGameMenu(NewGameMenuParts parts) {
       .cancelButton({.label = BACK_LABEL}, [&navigator] { navigator.pop(); })
       .button({.label = CREATE_LABEL},
               [draft, server = parts.server, &choice, &navigator] {
-                choice.lastServer = server;
-                choice.lastRequest = GameRequest{
-                    .game = network::NEW_GAME_CHOICE, .rules = draft->rules};
-                navigator.push(CONNECTION_TO_MAP_SERVER_SCREEN);
+                navigator.pop();
+                openConnectionTo(
+                    choice,
+                    ChosenGame{
+                        .server = server,
+                        .request = GameRequest{.game = network::NEW_GAME_CHOICE,
+                                               .rules = draft->rules}},
+                    navigator);
               })
       .build();
 }

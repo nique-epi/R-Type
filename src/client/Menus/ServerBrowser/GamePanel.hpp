@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/System/Vector2.hpp>
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -15,8 +16,8 @@ namespace rtype::client {
  * rows at a time, the chosen row highlighted, the list scrolled so the chosen
  * row stays shown, and a line that says what ENTER does with it: set the rules
  * of a new game, join a waiting game, named with its rules, or why the others
- * cannot be joined. It opens on + NEW GAME; a new list keeps the chosen game
- * by its number, + NEW GAME otherwise.
+ * cannot be joined. The pointer chooses the row it lies over. It opens on + NEW
+ * GAME; a new list keeps the chosen game by its number, + NEW GAME otherwise.
  */
 class GamePanel {
  public:
@@ -27,6 +28,9 @@ class GamePanel {
   void move(int step);
   /** @returns The chosen game, when it can be joined. */
   [[nodiscard]] std::optional<GameRow> joinable() const;
+  /** @brief Chooses the row shown under @p pixel, a pixel of the interface.
+   * @returns Whether a row lies there; nothing changes when none does. */
+  bool chooseAt(sf::Vector2i pixel);
   /** @returns Whether the chosen row is + NEW GAME. */
   [[nodiscard]] bool newGameChosen() const;
   void paint(IInterfaceCanvas& canvas) const;
