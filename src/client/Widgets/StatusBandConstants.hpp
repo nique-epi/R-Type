@@ -115,6 +115,7 @@ constexpr const char* LAST_LIFE_TEXT = "LAST LIFE";
 constexpr const char* RESPAWN_TEXT = "RESPAWN";
 constexpr const char* LEFT_GAME_TEXT = "LEFT";
 constexpr const char* SIGNAL_LOST_TEXT = "SIGNAL LOST";
+constexpr const char* EXPELLED_TEXT = "EXPELLED";
 
 /** @brief Colors of the band. A pilot gone from the game, out of lives, left
  * or dropped, has its chip, its name and its score dimmed. */

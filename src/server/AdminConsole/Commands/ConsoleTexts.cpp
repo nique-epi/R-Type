@@ -88,6 +88,11 @@ std::string closingLineOf(const SupervisedGame& game) {
          " told to stop: it leaves the list once its process ended";
 }
 
+std::string kickLineOf(const SupervisedGame& game, std::string_view nickname) {
+  return std::string{nickname} + " told to leave game " +
+         std::to_string(game.number) + " in place " + std::to_string(game.slot);
+}
+
 std::vector<std::string> networkLinesOf(const network::TrafficTotals& traffic,
                                         std::chrono::nanoseconds elapsed,
                                         std::size_t rejected) {

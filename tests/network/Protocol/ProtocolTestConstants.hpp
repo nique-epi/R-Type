@@ -103,17 +103,17 @@ constexpr std::uint16_t SOME_SEQUENCE = 0x0A0B;
  * the transport sees and bit 3 is unknown, so no header above the transport
  * holds either.
  */
-constexpr std::uint8_t SOME_OTHER_VERSION = 13;
+constexpr std::uint8_t SOME_OTHER_VERSION = 14;
 constexpr std::uint32_t SOME_OTHER_PROTOCOL_ID = 0x52545951;
 constexpr std::uint8_t SOME_FLAGS = 0x0C;
 constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
 constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;
 
 /**
- * @brief The 22 bytes of a default header: RTYP, version 12, then zeros.
+ * @brief The 22 bytes of a default header: RTYP, version 13, then zeros.
  */
 constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
-    {0x52, 0x54, 0x59, 0x50, 0x0C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    {0x52, 0x54, 0x59, 0x50, 0x0D, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
 /**
@@ -304,12 +304,12 @@ constexpr std::uint16_t SOME_SENDER_PORT = 50000;
 /**
  * @brief Message type bytes no message has: the byte before the first type,
  * the byte after the last, and the largest byte. The byte after the last is
- * read from the name of the last message, MessageType::BossStatus:
+ * read from the name of the last message, MessageType::Expulsion:
  * a message added after it needs this line to follow.
  */
 constexpr std::uint8_t TYPE_BELOW_THE_FIRST = 0;
 constexpr std::uint8_t TYPE_ABOVE_THE_LAST =
-    static_cast<std::uint8_t>(MessageType::BossStatus) + 1;
+    static_cast<std::uint8_t>(MessageType::Expulsion) + 1;
 constexpr std::uint8_t LARGEST_TYPE_BYTE = 255;
 
 /**
@@ -341,5 +341,8 @@ constexpr std::size_t DATAGRAM_PAYLOAD_LIMIT = 1175;
  * @brief Words of the log line about a message whose handler threw.
  */
 constexpr std::string_view FAILED_HANDLER_LINE_TEXT = "its handler threw";
+
+/** @brief A nickname an ExpulsionOrder names. */
+constexpr std::string_view ACE_IN_CAPITALS = "ACE";
 
 }  // namespace rtype::network::testing

@@ -17,6 +17,7 @@ bool isListed(DepartureReason reason) {
   switch (reason) {
     case DepartureReason::Left:
     case DepartureReason::TimedOut:
+    case DepartureReason::Expelled:
       return true;
   }
   return false;

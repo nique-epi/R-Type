@@ -20,15 +20,18 @@ constexpr std::size_t INT16_WIRE_SIZE = sizeof(std::int16_t);
 constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
 
 /**
- * @brief The version of the protocol this code speaks. Version 12 makes a
- * ConnectionRequest for a NewGame carry the rules of that game, and adds the
- * refusals UnknownDifficulty and LivesOutOfRange, see the Version 12 section;
- * version 11 makes EntitySpawned name the player and the input that fired a
- * missile, and PlayerInput the tick its client shows, so a client can
- * predict its own missiles and the server test them where the player saw the
- * enemies, see the Version 11 section; version 10 makes a
- * ConnectionAccepted announce the content pack of the game in place of the
- * table of its entity types, see the Version 10 section; version 9 makes a
+ * @brief The version of the protocol this code speaks. Version 13 adds the
+ * expulsion of a player: ExpulsionOrder from the supervisor to a game,
+ * Expulsion to the player and the departure reason Expelled, see the Version
+ * 13 section; version 12 makes a ConnectionRequest for a NewGame carry the
+ * rules of that game, and adds the refusals UnknownDifficulty and
+ * LivesOutOfRange, see the Version 12 section; version 11 makes
+ * EntitySpawned name the player and the input that fired a missile, and
+ * PlayerInput the tick its client shows, so a client can predict its own
+ * missiles and the server test them where the player saw the enemies, see
+ * the Version 11 section; version 10 makes a ConnectionAccepted announce the
+ * content pack of the game in place of the table of its entity types, see
+ * the Version 10 section; version 9 makes a
  * ConnectionRequest name the game it asks for, and adds the refusals
  * GameNotFound and ServerFull, see the Version 9 section; version 8 makes a
  * GameStatus carry the nicknames of the players of its game and the measures
@@ -43,7 +46,7 @@ constexpr std::uint32_t PROTOCOL_ID = 0x52545950;
  * frame, see the Compression section; version 3 adds the outcome of a game to
  * GameEnded, see the Version 3 section.
  */
-constexpr std::uint8_t PROTOCOL_VERSION = 12;
+constexpr std::uint8_t PROTOCOL_VERSION = 13;
 
 /**
  * @brief The session token of a datagram sent before the connection is

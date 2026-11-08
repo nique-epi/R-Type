@@ -4,17 +4,23 @@
 #include <vector>
 #include "ConnectedPlayer.hpp"
 #include "Disconnection.hpp"
+#include "ExpulsionOrder.hpp"
 #include "GameStatus.hpp"
 #include "Heartbeat.hpp"
+#include "MessageType.hpp"
+#include "ModuleConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerSupervisorLinkFixture.hpp"
 #include "SupervisorLinkTestConstants.hpp"
 #include "TimeConstants.hpp"
 
 using rtype::network::Disconnection;
+using rtype::network::ExpulsionOrder;
 using rtype::network::GameStatus;
 using rtype::network::GameStatusState;
 using rtype::network::Heartbeat;
+using rtype::network::MessageType;
+using rtype::server::FAREWELL_COPIES;
 using rtype::server::testing::onlyMessageIn;
 
 /**
@@ -165,4 +171,56 @@ TEST_F(ServerSupervisorLinkFixture, AdmitsTheSupervisorWhenItStarts) {
   ASSERT_EQ(network().admission().admitted().size(), 1U);
   EXPECT_EQ(network().admission().admitted().front().player, supervisor());
   EXPECT_EQ(network().admission().admitted().front().sessionToken, LINK_TOKEN);
+}
+
+/**
+ * Given a game process with one pilot seated
+ * When the supervisor orders its expulsion twice in one tick, its nickname in
+ * capitals
+ * Then the pilot gets FAREWELL_COPIES Expulsion datagrams, once
+ */
+TEST_F(ServerSupervisorLinkFixture, TellsThePilotTheSupervisorExpels) {
+  startWith(shippedWaves());
+  join(EXPELLED_PILOT_INDEX);
+  const ExpulsionOrder order{.nickname =
+                                 std::string{SEATED_NICKNAME_IN_CAPITALS}};
+
+  runTick({fromSupervisor(order), fromSupervisor(order)});
+
+  EXPECT_EQ(datagramsTo(EXPELLED_PILOT_INDEX, MessageType::Expulsion),
+            FAREWELL_COPIES);
+}
+
+/**
+ * Given a pilot the supervisor ordered expelled, still seated in that tick
+ * When the next tick runs
+ * Then its seat is free
+ */
+TEST_F(ServerSupervisorLinkFixture,
+       ClosesTheSessionOfTheExpelledPilotAtTheNextTick) {
+  startWith(shippedWaves());
+  join(EXPELLED_PILOT_INDEX);
+  supervisorSays(
+      ExpulsionOrder{.nickname = std::string{SEATED_NICKNAME_IN_CAPITALS}});
+  ASSERT_TRUE(isSeated(EXPELLED_PILOT_INDEX));
+
+  runTick({});
+
+  EXPECT_FALSE(isSeated(EXPELLED_PILOT_INDEX));
+}
+
+/**
+ * Given a game process with one pilot seated
+ * When the supervisor orders the expulsion of a nickname no pilot has
+ * Then nothing is sent to the pilot, and its seat is kept at the next tick
+ */
+TEST_F(ServerSupervisorLinkFixture, ExpelsNobodyForAnotherNickname) {
+  startWith(shippedWaves());
+  join(EXPELLED_PILOT_INDEX);
+
+  supervisorSays(ExpulsionOrder{.nickname = std::string{NICKNAME_NOBODY_HAS}});
+  runTick({});
+
+  EXPECT_EQ(datagramsTo(EXPELLED_PILOT_INDEX, MessageType::Expulsion), 0U);
+  EXPECT_TRUE(isSeated(EXPELLED_PILOT_INDEX));
 }
