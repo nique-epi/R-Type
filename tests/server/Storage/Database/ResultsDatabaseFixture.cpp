@@ -27,6 +27,13 @@ GameResult normalGame(std::vector<PlayerResult> players,
                     .players = std::move(players)};
 }
 
+GameResult vanillaGame(std::vector<PlayerResult> players,
+                       std::chrono::sys_seconds endedAt) {
+  GameResult vanilla = normalGame(std::move(players), endedAt);
+  vanilla.vanilla = true;
+  return vanilla;
+}
+
 network::LeaderboardRequest normalBoard() {
   return network::LeaderboardRequest{.playerCount = TWO_PLAYERS,
                                      .difficulty = std::string{NORMAL}};

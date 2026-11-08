@@ -3,10 +3,13 @@
 #include <SQLiteCpp/Database.h>
 #include <SQLiteCpp/Statement.h>
 #include <SQLiteCpp/Transaction.h>
+#include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <vector>
 #include "DatabaseFile.hpp"
 #include "GameResult.hpp"
 #include "LeaderboardAnswer.hpp"
@@ -14,6 +17,7 @@
 #include "PathText.hpp"
 #include "ProtocolConstants.hpp"
 #include "ResultsDatabaseConstants.hpp"
+#include "UnsentGame.hpp"
 
 namespace rtype::server {
 
@@ -44,24 +48,56 @@ network::LeaderboardRow rowOf(const SQLite::Statement& query) {
       .nickname = query.getColumn(NICKNAME_COLUMN).getString()};
 }
 
+/** @returns The game of the row @p query is on, without its players. */
+UnsentGame unsentGameOf(const SQLite::Statement& query) {
+  return UnsentGame{
+      .gameId = query.getColumn(GAME_ID_COLUMN).getString(),
+      .result = GameResult{
+          .difficulty = query.getColumn(DIFFICULTY_COLUMN).getString(),
+          .playerCount = static_cast<std::uint8_t>(
+              query.getColumn(PLAYER_COUNT_COLUMN).getUInt()),
+          .endedAt = std::chrono::sys_seconds{std::chrono::seconds{
+              query.getColumn(PLAYED_AT_COLUMN).getInt64()}},
+          .players = {},
+          .vanilla = true}};
+}
+
+/** @returns The player of the row @p query is on. */
+PlayerResult playerOf(const SQLite::Statement& query) {
+  return PlayerResult{.nickname = query.getColumn(NICKNAME_COLUMN).getString(),
+                      .score = query.getColumn(SCORE_COLUMN).getUInt(),
+                      .deaths = query.getColumn(DEATHS_COLUMN).getUInt()};
+}
+
+/** @brief Writes @p answeredAt on every row of @p gameId with @p update. */
+void markGame(SQLite::Statement& update, const std::string& gameId,
+              std::chrono::sys_seconds answeredAt) {
+  update.bind(GAME_ID_PARAMETER, gameId);
+  update.bind(ANSWERED_AT_PARAMETER,
+              static_cast<std::int64_t>(answeredAt.time_since_epoch().count()));
+  update.exec();
+}
+
 }  // namespace
 
 ResultsDatabase::ResultsDatabase(const std::filesystem::path& file)
     : database_(storage::openDatabaseFile(logging::genericText(file),
                                           RESULTS_MIGRATIONS)) {}
 
-void ResultsDatabase::save(const GameResult& result) {
+std::string ResultsDatabase::save(const GameResult& result) {
   SQLite::Transaction transaction{database_,
                                   SQLite::TransactionBehavior::IMMEDIATE};
   SQLite::Statement insert{database_, std::string{INSERT_RESULT_STATEMENT}};
-  bindGame(insert, result,
-           database_.execAndGet(std::string{NEW_GAME_ID_QUERY}).getString());
+  const std::string gameId =
+      database_.execAndGet(std::string{NEW_GAME_ID_QUERY}).getString();
+  bindGame(insert, result, gameId);
   for (const PlayerResult& player : result.players) {
     bindPlayer(insert, player);
     insert.exec();
     insert.reset();
   }
   transaction.commit();
+  return gameId;
 }
 
 network::LeaderboardAnswer ResultsDatabase::leaderboard(
@@ -85,6 +121,33 @@ network::LeaderboardAnswer ResultsDatabase::leaderboard(
     }
   }
   return answer;
+}
+
+std::vector<UnsentGame> ResultsDatabase::unsentVanillaGames(
+    std::size_t gameLimit) const {
+  SQLite::Statement query{database_, std::string{UNSENT_GAMES_QUERY}};
+  query.bind(GAME_LIMIT_PARAMETER, static_cast<std::int64_t>(gameLimit));
+  std::vector<UnsentGame> games;
+  while (query.executeStep()) {
+    if (games.empty() ||
+        games.back().gameId != query.getColumn(GAME_ID_COLUMN).getString()) {
+      games.push_back(unsentGameOf(query));
+    }
+    games.back().result.players.push_back(playerOf(query));
+  }
+  return games;
+}
+
+void ResultsDatabase::markSent(const std::string& gameId,
+                               std::chrono::sys_seconds sentAt) {
+  SQLite::Statement update{database_, std::string{MARK_SENT_STATEMENT}};
+  markGame(update, gameId, sentAt);
+}
+
+void ResultsDatabase::markRefused(const std::string& gameId,
+                                  std::chrono::sys_seconds refusedAt) {
+  SQLite::Statement update{database_, std::string{MARK_REFUSED_STATEMENT}};
+  markGame(update, gameId, refusedAt);
 }
 
 }  // namespace rtype::server

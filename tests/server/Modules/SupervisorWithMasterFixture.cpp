@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <thread>
 #include "ListedServer.hpp"
 #include "MasterAccess.hpp"
@@ -31,4 +32,17 @@ std::optional<std::string> SupervisorWithMasterFixture::listedAddressSoon(
     std::this_thread::sleep_for(LISTING_WAIT_STEP);
   }
   return std::nullopt;
+}
+
+bool SupervisorWithMasterFixture::masterSoonKeeps(std::string_view gameId,
+                                                  int rows) const {
+  const auto deadline =
+      std::chrono::steady_clock::now() + REGISTRATION_DEADLINE;
+  while (std::chrono::steady_clock::now() < deadline) {
+    if (master_.keptPlayersOf(gameId) == rows) {
+      return true;
+    }
+    std::this_thread::sleep_for(LISTING_WAIT_STEP);
+  }
+  return false;
 }

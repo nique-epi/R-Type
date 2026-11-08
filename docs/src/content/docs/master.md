@@ -19,7 +19,7 @@ This page tells you where to look when you need to change something. It describe
 | The statuses of the servers, their list and their history, `GET /api/servers` | Available; the route that puts a server in maintenance is not written | `src/master/Servers/`, `src/network/Master/` |
 | The probe of the UDP port of each game server, module `probe` | Available | `src/master/Probe/`, `src/master/Servers/`, `src/server/Master/` |
 | The web site, a Next.js server of its own that calls the API | Available: one page that shows whether the master answers, and the components of every page of the design, which no page uses yet | `web/` |
-| The results of the games and the global leaderboard, `PUT /api/servers/me/results/{gameId}` and `GET /api/leaderboard` | Available; no game server sends its results yet | `src/master/Leaderboard/`, `src/network/Master/` |
+| The results of the games and the global leaderboard, `PUT /api/servers/me/results/{gameId}` and `GET /api/leaderboard` | Available; a game server sends its vanilla games after its heartbeats | `src/master/Leaderboard/`, `src/network/Master/` |
 | Administration, accounts | Not yet written | |
 
 ## Starting the master
@@ -272,7 +272,7 @@ Three routes read what the master keeps, to anyone, a page at a time. `GET /api/
 
 ## The global leaderboard: `LeaderboardModule`
 
-The leaderboard module (`src/master/Leaderboard/`) gathers the results of every server, so a player can measure up to the players of all servers. A game server is meant to report each vanilla game that ended (see [Server](/R-Type/server/#results-and-leaderboard-resultsmodule-resultsarchive)), and anyone reads the leaderboard, one difficulty and one number of players at a time: two difficulties never mix. No game server sends its results yet.
+The leaderboard module (`src/master/Leaderboard/`) gathers the results of every server, so a player can measure up to the players of all servers. A game server reports each vanilla game that ended, after its heartbeats, until the master keeps it (see [Server](/R-Type/server/#link-with-the-master-servermastermodule)), and anyone reads the leaderboard, one difficulty and one number of players at a time: two difficulties never mix.
 
 | Route | Does | Answers |
 |---|---|---|
@@ -309,6 +309,7 @@ rtype::network::MasterClient master{rtype::network::MasterAccess{
     .url = "http://master.example.org:8080", .key = masterKey}};
 master.registerServer(registration);
 master.sendHeartbeat(heartbeat);
+master.sendResult(gameId, finishedGame);  // PUT /api/servers/me/results/{gameId}
 
 rtype::network::ServerListing servers = master.listServers();  // no key needed
 rtype::network::GameListing listing = master.listGames(serverId);

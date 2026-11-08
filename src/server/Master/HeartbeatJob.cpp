@@ -32,6 +32,7 @@ std::chrono::milliseconds untilTheGapEnds(
 
 HeartbeatJob::HeartbeatJob(HeartbeatJobParts parts)
     : client_(std::move(parts.access)),
+      courier_(std::move(parts.resultsFile), client_, problems_),
       identity_(std::move(parts.identity)),
       games_(parts.games),
       probeTokens_(parts.probeTokens),
@@ -54,7 +55,11 @@ void HeartbeatJob::run(const std::stop_token& stop) {
     seen = games_.revision();
     registered = sendHeartbeat();
     const auto sentAt = std::chrono::steady_clock::now();
-    if (games_.waitForNewer(seen, times_.interval, stop) > seen) {
+    if (registered) {
+      courier_.sendWaitingResults(stop);
+    }
+    if (games_.waitForNewer(seen, untilTheGapEnds(sentAt, times_.interval),
+                            stop) > seen) {
       concurrency::sleepUnlessStopped(
           stop, untilTheGapEnds(sentAt, times_.noticeGap));
     }
@@ -65,12 +70,12 @@ bool HeartbeatJob::registerServer() {
   try {
     client_.registerServer(registrationOf(identity_));
     logger_.info("registered with the master as ", identity_.name);
-    lastProblem_.clear();
+    problems_.forget();
     return true;
   } catch (const network::MasterRefusedException& refusal) {
-    tell(refusal.what());
+    problems_.tell(refusal.what());
   } catch (const network::MasterUnreachableException& silence) {
-    tell(silence.what());
+    problems_.tell(silence.what());
   }
   return false;
 }
@@ -85,11 +90,11 @@ bool HeartbeatJob::sendHeartbeat() {
     sentTokenRevision_ = tokenRevision;
     return true;
   } catch (const network::MasterRefusedException& refusal) {
-    tell(refusal.what());
+    problems_.tell(refusal.what());
     return refusal.status() != UNKNOWN_KEY_STATUS &&
            refusal.status() != UNREGISTERED_SERVER_STATUS;
   } catch (const network::MasterUnreachableException& silence) {
-    tell(silence.what());
+    problems_.tell(silence.what());
     return false;
   }
 }
@@ -100,14 +105,6 @@ std::optional<std::uint64_t> HeartbeatJob::unsentProbeToken(
     return std::nullopt;
   }
   return probeTokens_.value();
-}
-
-void HeartbeatJob::tell(const std::string& problem) {
-  if (problem == lastProblem_) {
-    return;
-  }
-  lastProblem_ = problem;
-  logger_.warn(problem);
 }
 
 }  // namespace rtype::server
