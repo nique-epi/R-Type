@@ -5,9 +5,9 @@ variable "region" {
 }
 
 variable "instance_type" {
-  description = "The instance type: an x86 machine, since the package of a release is x86; t3.medium has 2 vCPU and 4 GiB."
+  description = "The instance type: an x86 machine, since the package of a release is x86, and one the free plan of AWS may launch; t3.small has 2 vCPU and 2 GiB."
   type        = string
-  default     = "t3.medium"
+  default     = "t3.small"
 }
 
 variable "github_repository" {
