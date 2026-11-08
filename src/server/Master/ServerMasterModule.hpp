@@ -38,7 +38,7 @@ namespace rtype::server {
  * Without master-url or master-key the server runs alone and MasterLink, the
  * thread of the job, does not start and the file of results is never opened,
  * as when master-url is not
- * `http://<host>[:<port>]` or the port the players use is chosen by the
+ * `http(s)://<host>[:<port>]` or the port the players use is chosen by the
  * system.
  */
 class ServerMasterModule final : public engine::IModule {

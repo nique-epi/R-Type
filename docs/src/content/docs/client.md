@@ -957,7 +957,7 @@ The client reads `client.cfg`, in the folder it is started from, between the ins
 | `set nickname <nickname>` | The nickname the connection screen starts with, 1 to 16 bytes of UTF-8. Default: `PILOT`. Quote it when it holds a space. |
 | `set server-address <address>` | The IPv4 address the connection screen starts with. Default: `127.0.0.1`. |
 | `set server-port <port>` | The UDP port the connection screen starts with, from 1 to 65535. Default: 4242. |
-| `set master-url <url>` | The master the server map and the global leaderboard read, `http://<host>[:<port>]`. Default: `http://127.0.0.1:8080`. An `https://` url is refused. |
+| `set master-url <url>` | The master the server map and the global leaderboard read, `http(s)://<host>[:<port>]`. Default: `http://127.0.0.1:8080`. Another scheme is refused. |
 
 A missing file is not an error and a refused line does not stop the client; the journal says so at the `info` and `warn` levels. The screens module reads the settings of the connection screen when it starts, so those lines only change what the connection screen offers first; the connection module reads `master-url` when it starts. `client.cfg.example`, at the root of the repository, lists every setting with its default; it is not read by the client: copy it to `client.cfg`.
 

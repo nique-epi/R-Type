@@ -9,6 +9,7 @@ using testing::MASTER_ON_THIS_MACHINE;
 using testing::PORT_ZERO_MASTER_URL;
 using testing::REMOTE_MASTER_URL;
 using testing::SECURE_MASTER_URL;
+using testing::UNKNOWN_SCHEME_MASTER_URL;
 
 /**
  * Given no setting that names a master
@@ -29,12 +30,21 @@ TEST(MasterUrlSetting, AcceptsTheUrlOfARemoteMaster) {
 }
 
 /**
- * Given an https url, which the client cannot call
+ * Given the https url of a master behind TLS
  * When the setting checks it
- * Then it is refused, so the master it had stays
+ * Then it is kept
  */
-TEST(MasterUrlSetting, RefusesAnHttpsUrl) {
-  EXPECT_THROW(requireMasterUrl(SECURE_MASTER_URL),
+TEST(MasterUrlSetting, AcceptsAnHttpsUrl) {
+  EXPECT_NO_THROW(requireMasterUrl(SECURE_MASTER_URL));
+}
+
+/**
+ * Given a url whose scheme is neither http nor https
+ * When the setting checks it
+ * Then it is refused, and the client goes on with the master it had
+ */
+TEST(MasterUrlSetting, RefusesAnotherScheme) {
+  EXPECT_THROW(requireMasterUrl(UNKNOWN_SCHEME_MASTER_URL),
                engine::CommandRefusedException);
 }
 

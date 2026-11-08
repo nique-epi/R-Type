@@ -170,14 +170,13 @@ TEST_F(MasterClientFixture, AMasterThatDoesNotListenIsUnreachable) {
 }
 
 /**
- * Given a url of the master over HTTPS
+ * Given the https url of a master behind TLS
  * When a client is built for it
- * Then it throws InvalidMasterUrlException, since it speaks no TLS
+ * Then it is built, and speaks TLS to that master
  */
-TEST(MasterClient, AnHttpsUrlIsRefused) {
-  EXPECT_THROW(MasterClient(MasterAccess{.url = std::string{HTTPS_MASTER_URL},
-                                         .key = std::string{}}),
-               InvalidMasterUrlException);
+TEST(MasterClient, AnHttpsUrlBuildsAClient) {
+  EXPECT_NO_THROW(MasterClient(MasterAccess{
+      .url = std::string{HTTPS_MASTER_URL}, .key = std::string{}}));
 }
 
 /**

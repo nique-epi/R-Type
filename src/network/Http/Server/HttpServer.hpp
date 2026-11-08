@@ -6,6 +6,7 @@
 #include <thread>
 #include "ApiHandler.hpp"
 #include "Endpoint.hpp"
+#include "ForwardedAddress.hpp"
 #include "ListeningLoss.hpp"
 #include "Logger.hpp"
 #include "RouteMethod.hpp"
@@ -29,7 +30,8 @@ namespace rtype::network {
  * MAX_REQUEST_BODY_BYTES sent to a route gets 413. A route that throws gets
  * 500, and only the journal reads why. A success to a request for a range of
  * bytes (a resumed download) gets 206 and those bytes only. No other socket
- * may listen on the port while the server holds it.
+ * may listen on the port while the server holds it. The address a route
+ * reads is the one clientAddressOf() gives for its ForwardedAddress.
  */
 class HttpServer {
  public:
@@ -37,8 +39,11 @@ class HttpServer {
    * @param loggerName The logger the journal lines of the server go to.
    * @param onLoss Told when the server stops listening without close() asking
    * for it.
+   * @param forwarded Whether a route reads the client a proxy on the machine
+   * names.
    */
-  HttpServer(const std::string& loggerName, ListeningLoss onLoss);
+  HttpServer(const std::string& loggerName, ListeningLoss onLoss,
+             ForwardedAddress forwarded);
 
   /** @brief Stops listening, so the thread of open() ends; never throws. */
   ~HttpServer();
@@ -80,6 +85,7 @@ class HttpServer {
 
   std::unique_ptr<httplib::Server> server_;
   ListeningLoss onLoss_;
+  ForwardedAddress forwarded_;
   logging::Logger logger_;
   std::jthread listener_;
 };

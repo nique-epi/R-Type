@@ -15,7 +15,7 @@ constexpr int PLAYERS_OF_THE_PARIS_GAME = 2;
 constexpr std::string_view UNREGISTERED_DETAIL_TEXT =
     "PUT /api/servers/me first";
 
-/** @brief A url of the master over TLS, which the client does not speak. */
+/** @brief A url of the master over TLS, as the deployed master is reached. */
 constexpr std::string_view HTTPS_MASTER_URL = "https://master.example.org";
 
 /** @brief A url of the master whose port is past 65535. */

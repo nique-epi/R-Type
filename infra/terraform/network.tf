@@ -8,12 +8,24 @@ resource "aws_security_group" "master" {
   vpc_id      = data.aws_vpc.default.id
 }
 
-resource "aws_vpc_security_group_ingress_rule" "api" {
+# Caddy answers HTTPS on 443 and forwards to the master on the machine; the
+# port of the master itself is open to nobody. Port 80 serves the challenges
+# of Let's Encrypt and sends any other request to HTTPS.
+resource "aws_vpc_security_group_ingress_rule" "https" {
   security_group_id = aws_security_group.master.id
-  description       = "HTTP API of the master"
+  description       = "HTTPS API of the master, through Caddy"
   ip_protocol       = "tcp"
-  from_port         = var.master_port
-  to_port           = var.master_port
+  from_port         = 443
+  to_port           = 443
+  cidr_ipv4         = "0.0.0.0/0"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "http" {
+  security_group_id = aws_security_group.master.id
+  description       = "Certificate challenges and the redirect to HTTPS"
+  ip_protocol       = "tcp"
+  from_port         = 80
+  to_port           = 80
   cidr_ipv4         = "0.0.0.0/0"
 }
 

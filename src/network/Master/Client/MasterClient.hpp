@@ -39,8 +39,9 @@ class MasterClient {
  public:
   /**
    * @throws InvalidMasterUrlException when the url of @p access is not
-   * `http://<host>[:<port>]`: an `https://` url is refused while cpp-httplib
-   * is built without TLS, and so is a port outside 1 to 65535.
+   * `http(s)://<host>[:<port>]`, or its port is outside 1 to 65535. An
+   * `https://` master is trusted only with a certificate the roots of the
+   * system sign for its host.
    */
   explicit MasterClient(MasterAccess access);
   ~MasterClient();

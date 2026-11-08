@@ -17,7 +17,17 @@ variable "github_repository" {
 }
 
 variable "master_port" {
-  description = "The TCP port of the HTTP API of the master."
+  description = "The TCP port the master listens on behind Caddy, reached from the machine only."
   type        = number
   default     = 8080
+}
+
+variable "master_domain" {
+  description = "The domain name of the master, such as master.example.org: its A record points at the Elastic IP, and Caddy gets its certificate from Let's Encrypt for it."
+  type        = string
+
+  validation {
+    condition     = can(regex("^([a-z0-9]([a-z0-9-]*[a-z0-9])?\\.)+[a-z]{2,}$", var.master_domain))
+    error_message = "master_domain must be a domain name in lowercase, such as master.example.org."
+  }
 }

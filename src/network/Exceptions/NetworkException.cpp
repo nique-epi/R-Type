@@ -212,7 +212,7 @@ int MasterRefusedException::status() const { return status_; }
 
 InvalidMasterUrlException::InvalidMasterUrlException(const std::string& url)
     : NetworkException("no master can be called at \"" + url +
-                       "\": expected http://<host>[:<port>]") {}
+                       "\": expected http(s)://<host>[:<port>]") {}
 
 MasterUnreachableException::MasterUnreachableException(
     const std::string& reason)

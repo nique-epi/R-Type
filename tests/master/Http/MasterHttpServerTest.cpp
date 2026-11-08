@@ -227,18 +227,36 @@ TEST_F(MasterHttpServerFixture, ARouteReadsNoTokenOutsideTheBearerScheme) {
 }
 
 /**
- * Given a route of an open server
- * When a client on the loopback names another address in X-Forwarded-For
- * Then the route reads the loopback, the address of the TCP peer
+ * Given a route of an open server, called through a proxy on its machine
+ * When the proxy names in X-Forwarded-For an address the client sent, then
+ * the one it saw
+ * Then the route reads the address the proxy saw
  */
-TEST_F(MasterHttpServerFixture,
-       ARouteReadsTheAddressOfThePeerNotAForwardedOne) {
+TEST_F(MasterHttpServerFixture, ARouteReadsTheClientTheProxyOnItsMachineSaw) {
   addEchoRoute();
   openServer();
 
   const httplib::Result answer =
       put(TEST_ROUTE_URL, httplib::Headers{{std::string{FORWARDED_FOR_HEADER},
-                                            std::string{FORGED_ADDRESS}}});
+                                            std::string{FORWARDED_CHAIN}}});
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(nlohmann::json::parse(answer->body)
+                .at(ECHO_ADDRESS_MEMBER)
+                .get<std::string>(),
+            ADDRESS_THE_PROXY_SAW);
+}
+
+/**
+ * Given a route of an open server
+ * When a client on its machine calls it without X-Forwarded-For
+ * Then the route reads the loopback, the address of the TCP peer
+ */
+TEST_F(MasterHttpServerFixture, ARouteReadsThePeerWhenNoProxyNamesAClient) {
+  addEchoRoute();
+  openServer();
+
+  const httplib::Result answer = put(TEST_ROUTE_URL, httplib::Headers{});
 
   ASSERT_TRUE(answer);
   EXPECT_EQ(nlohmann::json::parse(answer->body)

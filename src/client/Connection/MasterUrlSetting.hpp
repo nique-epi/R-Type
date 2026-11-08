@@ -12,8 +12,9 @@ namespace rtype::client {
 
 /**
  * @brief Refuses a url network::MasterClient cannot call: a scheme other than
- * `http://`, or a port outside 1 to 65535. As cpp-httplib reads it, a url with
- * no scheme is an `http` one, and what follows the port is never read.
+ * `http://` or `https://`, or a port outside 1 to 65535. As cpp-httplib reads
+ * it, a url with no scheme is an `http` one, and what follows the port is never
+ * read.
  * @throws engine::CommandRefusedException naming @p url.
  */
 void requireMasterUrl(std::string_view url);

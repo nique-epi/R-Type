@@ -41,10 +41,14 @@ constexpr std::string_view BASIC_AUTHORIZATION = "Basic 4f2a9c";
 constexpr std::string_view SHORT_AUTHORIZATION = "Bear";
 constexpr std::string_view BARE_BEARER_AUTHORIZATION = "Bearer";
 
-/** @brief A header that names another client than the TCP peer (the
- * loopback). */
+/**
+ * @brief The header a proxy names the client in, and what it holds when the
+ * client sent two addresses and the proxy appended the one it saw, last.
+ */
 constexpr std::string_view FORWARDED_FOR_HEADER = "X-Forwarded-For";
-constexpr std::string_view FORGED_ADDRESS = "203.0.113.9";
+constexpr std::string_view FORWARDED_CHAIN =
+    "198.51.100.4, 198.51.100.5, 203.0.113.9";
+constexpr std::string_view ADDRESS_THE_PROXY_SAW = "203.0.113.9";
 
 /** @brief What a refusal of a test route tells the client. */
 constexpr std::string_view BAD_REQUEST_DETAIL = "the name is empty";

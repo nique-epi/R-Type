@@ -46,7 +46,7 @@ class MasterLink final : public IMasterReads, public IMasterLeaderboardReads {
 
   /** @brief Starts the thread on the master @p access names.
    * @throws network::InvalidMasterUrlException when the url is not
-   * `http://<host>[:<port>]`; the thread does not start then. */
+   * `http(s)://<host>[:<port>]`; the thread does not start then. */
   void start(network::MasterAccess access);
 
   /** @brief Ends the thread, and with it its client. */

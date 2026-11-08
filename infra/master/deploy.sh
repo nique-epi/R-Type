@@ -1,8 +1,10 @@
 #!/bin/sh
 # Installs the server package of a release on the master instance and
 # restarts the master on it; goes back to the previous release when the new
-# one does not answer. The workflow runs it through SSM Run Command, after a
-# first line VERSION=<x.y.z>.
+# one does not answer. Caddy answers HTTPS for DOMAIN in front of it, with a
+# certificate of Let's Encrypt it renews by itself. The workflow runs it
+# through SSM Run Command, after the lines VERSION=<x.y.z> and
+# DOMAIN=<name of the master>.
 set -eu
 
 repository=nique-epi/R-Type
@@ -19,6 +21,35 @@ require_version() {
       exit 1
       ;;
   esac
+}
+
+# The domain comes from a variable of the repository: it is never written in
+# the configuration of Caddy before it is checked.
+require_domain() {
+  : "${DOMAIN:?DOMAIN is not set}"
+  if ! printf '%s' "$DOMAIN" | grep -Eq '^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$'; then
+    echo "invalid domain: $DOMAIN" >&2
+    exit 1
+  fi
+}
+
+# Installs Caddy from Ubuntu once, then has it answer HTTPS for DOMAIN and
+# forward every request to the master on the machine. Caddy writes the
+# address it saw in X-Forwarded-For and drops the one a client sent, which is
+# the address the master reads.
+install_proxy() {
+  if ! command -v caddy > /dev/null; then
+    apt-get update -q
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -q caddy
+  fi
+  cat > /etc/caddy/Caddyfile <<CADDY
+$DOMAIN {
+	reverse_proxy 127.0.0.1:$port
+}
+CADDY
+  caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+  systemctl enable caddy
+  systemctl reload-or-restart caddy
 }
 
 # Downloads and unpacks a release next to the others. A missing release stops
@@ -101,6 +132,7 @@ prune_releases() {
 
 main() {
   require_version
+  require_domain
   name=R-Type-server-$VERSION-Linux
   previous=$(readlink "$current" 2>/dev/null || true)
 
@@ -115,7 +147,8 @@ main() {
   fi
 
   prune_releases "$releases/$name" "$previous"
-  echo "the master runs $VERSION"
+  install_proxy
+  echo "the master runs $VERSION behind https://$DOMAIN"
 }
 
 main

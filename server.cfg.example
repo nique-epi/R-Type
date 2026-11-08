@@ -38,7 +38,7 @@ set start-at-boss 0
 set database ""
 
 # [supervisor] The master this server is listed on (r-type_server --mode master), as
-# http://<host>[:<port>], and the key the master gave when the host created the
+# http(s)://<host>[:<port>], and the key the master gave when the host created the
 # server on it. Either one empty: the server runs alone and is listed nowhere.
 # Never commit a real key.
 set master-url ""
