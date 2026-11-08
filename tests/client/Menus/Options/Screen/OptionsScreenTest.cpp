@@ -10,6 +10,7 @@
 #include "FakeSizableWindow.hpp"
 #include "GameOptionsScreenFixture.hpp"
 #include "InterfaceColorConstants.hpp"
+#include "MenuScreenIdConstants.hpp"
 #include "OptionsScreen.hpp"
 #include "OptionsScreenFixture.hpp"
 #include "OptionsScreenFixtures.hpp"
@@ -41,6 +42,7 @@ using rtype::client::testing::CONTROLS_TAB;
 using rtype::client::testing::DESCRIPTION_LEFT;
 using rtype::client::testing::DESCRIPTION_RIGHT;
 using rtype::client::testing::DESKTOP_SIZE_TEXT;
+using rtype::client::testing::DOWN_PRESSES_TO_QUIT;
 using rtype::client::testing::INDEX_OF_1280_BY_720;
 using rtype::client::testing::LARGEST_FIT;
 using rtype::client::testing::LINE_WIDTH_LABEL_TEXT;
@@ -51,6 +53,7 @@ using rtype::client::testing::MUSIC_TRACK_START;
 using rtype::client::testing::OPEN_CHAT_LABEL_TEXT;
 using rtype::client::testing::OPEN_LIST_LEFT;
 using rtype::client::testing::QUIET_MUSIC;
+using rtype::client::testing::QUIT_LABEL_OVER_A_GAME;
 using rtype::client::testing::ROWS_IN_THE_LONGEST_TAB;
 using rtype::client::testing::SAVED_ANCHOR;
 using rtype::client::testing::SAVED_STAMP_TIME;
@@ -422,6 +425,44 @@ TEST_F(OptionsScreenFixture, EscapeClosesTheOptions) {
   EXPECT_THAT(navigator().calls(),
               ::testing::ElementsAre(NavigatorCall{
                   .request = NavigatorRequest::Pop, .screen = std::nullopt}));
+}
+
+/**
+ * Given the options over the title
+ * When they are painted
+ * Then no QUIT is written: there is no game to leave
+ */
+TEST_F(OptionsScreenFixture, OverTheTitleNoQuitIsWritten) {
+  EXPECT_EQ(writingOf(canvas(), "QUIT"), nullptr);
+}
+
+/**
+ * Given the options over a game
+ * When they are painted
+ * Then QUIT is written at (388, 230), its bar ending at the right end of the
+ * panel, x 456
+ */
+TEST_F(GameOptionsScreenFixture, OverAGameQuitEndsAtTheRightOfThePanel) {
+  EXPECT_EQ(anchorOf(canvas(), "QUIT"), QUIT_LABEL_OVER_A_GAME);
+}
+
+/**
+ * Given the options over a game, MUSIC selected
+ * When Down reaches QUIT, past the four rows of SOUND and BACK, and Enter
+ * presses it
+ * Then the question asked before leaving the game is pushed over the options
+ */
+TEST_F(GameOptionsScreenFixture, QuitAsksWhetherToLeaveTheGame) {
+  for (int step = 0; step < DOWN_PRESSES_TO_QUIT; ++step) {
+    tap(Key::Down);
+  }
+
+  tap(Key::Enter);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{
+                  .request = NavigatorRequest::Push,
+                  .screen = rtype::client::LEAVE_GAME_CONFIRMATION_SCREEN}));
 }
 
 /**

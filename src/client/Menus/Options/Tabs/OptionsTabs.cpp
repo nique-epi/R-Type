@@ -20,6 +20,7 @@
 #include "OptionsTabsParts.hpp"
 #include "PlayerSettings.hpp"
 #include "RowControl.hpp"
+#include "ScreenConstants.hpp"
 #include "SettingDefinitionConstants.hpp"
 #include "SettingsConstants.hpp"
 #include "SettingsService.hpp"
@@ -47,12 +48,16 @@ MenuBuilder tabbedPanel(const OptionsTabsParts& parts, std::size_t tab) {
   return builder;
 }
 
-/** @returns The menu of @p builder with BACK under its rows. */
+/** @returns The menu of @p builder with BACK under its rows and, over a game,
+ * QUIT at the right end of the row of BACK. */
 Menu withBack(const OptionsTabsParts& parts, MenuBuilder& builder) {
-  return builder
-      .cancelButton({.label = BACK_LABEL, .description = BACK_DESCRIPTION},
-                    parts.close)
-      .build();
+  builder.cancelButton({.label = BACK_LABEL, .description = BACK_DESCRIPTION},
+                       parts.close);
+  if (parts.place == OptionsPlace::OverGame) {
+    builder.button({.label = QUIT_LABEL, .description = QUIT_GAME_DESCRIPTION},
+                   parts.leaveGame);
+  }
+  return builder.build();
 }
 
 /** @returns The link that asks @p question and runs @p reset on YES. */
