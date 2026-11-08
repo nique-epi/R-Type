@@ -14,6 +14,8 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include "BehaviourScriptFiles.hpp"
+#include "BehaviourScripts.hpp"
 #include "ConfigurationRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EngineException.hpp"
@@ -224,9 +226,13 @@ void ServerGamesModule::declareSettings(
 }
 
 void ServerGamesModule::start() {
+  scripts_ = std::make_unique<game::BehaviourScripts>(
+      [this](const std::string& message) { logger_.warn(message); });
+  scripts_->run(game::scriptSourcesIn(settings_.contentFolders));
   const game::EntitySheets& types =
       types_.emplace(game::EntitySheets::fromTexts(
-          game::sheetTextsInFolders(settings_.contentFolders)));
+          game::sheetTextsInFolders(settings_.contentFolders),
+          scripts_->behaviours()));
   logEntitySheets(logger_, settings_.contentFolders, types);
   runningGame_.keepEntityTypes(types);
   const WaveCatalog catalog =

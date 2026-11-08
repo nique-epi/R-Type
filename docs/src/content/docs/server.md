@@ -701,10 +701,11 @@ A resource is content a host adds to the server without touching its assets or r
 | `entities/*.toml` | entity sheets, as in the assets | the games, and the content pack |
 | `sprites/…` | the sprite sheets its sheets name | the content pack |
 | `waves/waves.toml` | waves laid over those of the assets, key by key | the supervisor and the games |
+| `server/*.luau` | scripts that register behaviours (see [Scripting in Luau](/R-Type/scripting/)) | the games, never the client |
 
 `engine::ensuredResources()` (`src/engine/Resources/EnsureLines.hpp`) reads the names of the `ensure` lines, and `engine::contentFoldersOf()` (`ContentFolders.hpp`) lays them: the assets folder first, then each resource after the resources it depends on, each once; a resource without a manifest or a circle of dependencies is refused. The supervisor reads the lines it hands to its games (`supervisorModules()`), a game process the lines of its file (`runGame()` in `src/server/main.cpp`, which keeps them out of its interpreter with `ensureLineRule()`), both before they build their modules, so the supervisor serves the content its games play.
 
-Over those folders, `game::sheetTextsInFolders()` reads the sheets of every folder, `game::contentFilesIn()` lists the sheets and the sprite sheets of the pack, and `engine::contentFilesOf()` lists the waves file of every folder that holds one, in their order, for `WaveCatalog::fromFiles()` to lay each over the ones before it (see [Writing the waves file](/R-Type/waves-file/#waves-of-a-resource)). A sheet two folders hold, or a sprite sheet two folders hold, stops the start: a resource adds, it never overrides a sheet. The games of a resource that brings a sheet or waves are not vanilla (see [Vanilla games](#vanilla-games-vanillabreaches)). `resources/crimson-drifter/` is the example the repository ships: a faster, sturdier Drifter, its sprite sheet, and a waves file that gives only the enemies of normal, so the rest of the waves stays that of the assets.
+Over those folders, `game::sheetTextsInFolders()` reads the sheets of every folder, `game::contentFilesIn()` lists the sheets and the sprite sheets of the pack, and `engine::contentFilesOf()` lists the waves file of every folder that holds one, in their order, for `WaveCatalog::fromFiles()` to lay each over the ones before it (see [Writing the waves file](/R-Type/waves-file/#waves-of-a-resource)). A sheet two folders hold, or a sprite sheet two folders hold, stops the start: a resource adds, it never overrides a sheet. The games of a resource that brings a sheet or waves are not vanilla (see [Vanilla games](#vanilla-games-vanillabreaches)). `resources/crimson-drifter/` is the example the repository ships: a Drifter steered by a Luau script that charges the ships level with it, its sprite sheet, and a waves file that gives only the enemies of normal, so the rest of the waves stays that of the assets.
 
 ## Content pack: `ServerContentModule`, `ContentPackDesk`
 
@@ -1053,11 +1054,10 @@ const rtype::game::EntitySheets sheets =
     rtype::game::EntitySheets::fromFolder(
         rtype::engine::locateAssetFolder() /
         rtype::game::ENTITY_SHEET_FOLDER_IN_ASSETS);
+const std::array wavesFiles{rtype::engine::locateAssetFolder() /
+                             rtype::server::WAVE_FILE_IN_ASSETS};
 const rtype::server::WaveCatalog catalog =
-    rtype::server::WaveCatalog::fromFile(
-        rtype::engine::locateAssetFolder() /
-            rtype::server::WAVE_FILE_IN_ASSETS,
-        sheets);
+    rtype::server::WaveCatalog::fromFiles(wavesFiles, sheets);
 rtype::server::WavePlan waves =
     catalog.planOf(rtype::identifiers::DEFAULT_DIFFICULTY);
 ```

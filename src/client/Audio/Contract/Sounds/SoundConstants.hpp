@@ -28,6 +28,11 @@ constexpr const char* HIT_SOUND_ID = "sounds/epidemic/hit.flac";
 constexpr const char* PLAYER_HIT_SOUND_ID = "sounds/kenney/player_hit.ogg";
 constexpr const char* CLICK_SOUND_ID = "sounds/kenney/click.ogg";
 
+/** @brief The alarm of the Bydo Tyrant's arrival, and the robot arm of the
+ * hangar (see assets/README.md). */
+constexpr const char* BOSS_ALARM_SOUND_ID = "sounds/boss_alarm.mp3";
+constexpr const char* ROBOT_ARM_SOUND_ID = "sounds/robot_arm.flac";
+
 /** @brief Every sound of the client, loaded at launch with the interface
  * assets. */
 constexpr std::array ALL_SOUND_IDS{
@@ -35,6 +40,7 @@ constexpr std::array ALL_SOUND_IDS{
     PLAYER_SHOT_SOUND_ID,   SMALL_EXPLOSION_SOUND_ID, HEAVY_IMPACT_SOUND_ID,
     ENTRY_WHOOSH_SOUND_ID,  CHARGE_SOUND_ID,          BEAM_SOUND_ID,
     BIG_EXPLOSION_SOUND_ID, BOOST_SOUND_ID,           LOGO_IMPACT_SOUND_ID,
-    HIT_SOUND_ID,           PLAYER_HIT_SOUND_ID,      CLICK_SOUND_ID};
+    HIT_SOUND_ID,           PLAYER_HIT_SOUND_ID,      CLICK_SOUND_ID,
+    BOSS_ALARM_SOUND_ID,    ROBOT_ARM_SOUND_ID};
 
 }  // namespace rtype::client

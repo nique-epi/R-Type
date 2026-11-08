@@ -1,8 +1,11 @@
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
 #include <optional>
+#include <string>
 #include <vector>
+#include "Ambience.hpp"
 #include "FittingTimelineConstants.hpp"
 #include "HangarScreenFixture.hpp"
 #include "HangarScreenFixtures.hpp"
@@ -10,8 +13,11 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "ReducedMotionHangarFixture.hpp"
+#include "SoundConstants.hpp"
 
+using rtype::client::Ambience;
 using rtype::client::FITTING_DURATION;
+using rtype::client::ROBOT_ARM_SOUND_ID;
 using rtype::client::testing::CROWN_CELL_MIDDLE;
 using rtype::client::testing::CROWN_ICON_LEFT_ON_THE_SHEET;
 using rtype::client::testing::HangarScreenFixture;
@@ -24,6 +30,8 @@ using rtype::client::testing::TOP_HAT_IN_THE_SHEET;
 using rtype::client::testing::WEARS_CROWN;
 using rtype::client::testing::WEARS_NOTHING;
 using rtype::client::testing::WEARS_TOP_HAT;
+using ::testing::Contains;
+using ::testing::Not;
 using Key = sf::Keyboard::Key;
 
 /**
@@ -78,6 +86,38 @@ TEST_F(HangarScreenFixture, EnterDuringAFittingChangesNothing) {
   press(Key::Enter);
 
   EXPECT_EQ(settings().shipLook.head, WEARS_TOP_HAT);
+}
+
+/**
+ * Given a hangar
+ * When it opens
+ * Then the garage ambience plays under the theme
+ */
+TEST_F(HangarScreenFixture, OpensWithTheGarageAmbience) {
+  EXPECT_EQ(audio().ambience(), Ambience::Hangar);
+}
+
+/**
+ * Given a hangar with an item in the locker
+ * When Enter asks for it and an arm starts to fit it
+ * Then the sound of the robot arm plays
+ */
+TEST_F(HangarScreenFixture, AnArmFittingAnItemPlaysTheRobotArm) {
+  press(Key::Enter);
+
+  EXPECT_THAT(sounds().played(), Contains(std::string{ROBOT_ARM_SOUND_ID}));
+}
+
+/**
+ * Given a hangar under reduced motion
+ * When Enter wears an item, no arm moving
+ * Then the robot arm stays silent
+ */
+TEST_F(ReducedMotionHangarFixture, NoArmNoRobotArmSound) {
+  press(Key::Enter);
+
+  EXPECT_THAT(sounds().played(),
+              Not(Contains(std::string{ROBOT_ARM_SOUND_ID})));
 }
 
 /**

@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "Ambience.hpp"
 #include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
 #include "GameRequest.hpp"
@@ -19,6 +20,7 @@
 #include "ServerMapScreenFixtures.hpp"
 #include "ServerMapScreenTestConstants.hpp"
 
+using rtype::client::Ambience;
 using rtype::client::CONNECTION_SCREEN;
 using rtype::client::CONNECTION_TO_CHOSEN_SERVER_SCREEN;
 using rtype::client::GameRequest;
@@ -64,6 +66,17 @@ TEST_F(ServerMapScreenFixture, ReadsTheListAsItOpens) {
   openOn(readyList());
 
   EXPECT_EQ(servers().refreshCount(), 1U);
+}
+
+/**
+ * Given a map
+ * When it opens
+ * Then the space ambience plays under the theme
+ */
+TEST_F(ServerMapScreenFixture, OpensWithTheSpaceAmbience) {
+  openOn(readyList());
+
+  EXPECT_EQ(audio().ambience(), Ambience::Space);
 }
 
 /**

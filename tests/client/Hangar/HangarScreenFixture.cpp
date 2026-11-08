@@ -1,11 +1,19 @@
 #include "HangarScreenFixture.hpp"
+#include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <SFML/Window/Keyboard.hpp>
 #include <memory>
+#include "HangarScreen.hpp"
 #include "HangarScreenParts.hpp"
 #include "HangarScreenTestConstants.hpp"
 #include "InterfaceColorConstants.hpp"
+#include "MotionPreference.hpp"
 #include "PointerEvents.hpp"
+#include "RecordingAudioService.hpp"
 #include "RecordingInterfaceCanvas.hpp"
+#include "RecordingNavigator.hpp"
+#include "RecordingSettingsStorage.hpp"
+#include "RecordingSoundPlayer.hpp"
 #include "ScreenTestConstants.hpp"
 
 namespace rtype::client::testing {
@@ -18,6 +26,7 @@ HangarScreenFixture::HangarScreenFixture(MotionPreference motion)
       screen_(std::make_unique<HangarScreen>(
           HangarScreenParts{.navigator = navigator_,
                             .sounds = sounds_,
+                            .audio = audio_,
                             .settings = service_,
                             .playfieldPointAt = samePlayfieldPoint,
                             .palette = PLAYER_COLORS,
@@ -58,6 +67,14 @@ const RecordingSettingsStorage& HangarScreenFixture::storage() const {
 
 const RecordingNavigator& HangarScreenFixture::navigator() const {
   return navigator_;
+}
+
+const RecordingSoundPlayer& HangarScreenFixture::sounds() const {
+  return sounds_;
+}
+
+const RecordingAudioService& HangarScreenFixture::audio() const {
+  return audio_;
 }
 
 const InterfaceCanvasRecord& HangarScreenFixture::painting() const {

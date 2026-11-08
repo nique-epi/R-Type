@@ -41,7 +41,9 @@ void MusicPlayer::start() {
   if (!opened_ || music_.getStatus() == sf::SoundSource::Status::Playing) {
     return;
   }
-  music_.setLoopPoints(loopOf(track_));
+  if (track_.loopLength > engine::Duration::zero()) {
+    music_.setLoopPoints(loopOf(track_));
+  }
   music_.setLooping(true);
   applyVolume();
   music_.play();
@@ -81,7 +83,7 @@ void MusicPlayer::open(AssetLibrary& library) {
 }
 
 void MusicPlayer::applyVolume() {
-  music_.setVolume(musicVolumeOf(settings_->settings()));
+  music_.setVolume(musicVolumeOf(settings_->settings()) * track_.gain);
 }
 
 }  // namespace rtype::client

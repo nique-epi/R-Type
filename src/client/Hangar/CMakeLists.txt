@@ -13,6 +13,7 @@ target_link_libraries(rtype_client_hangar_module
   PUBLIC
     SFML::Graphics
     SFML::Window
+    rtype_client_audio_contract_service
     rtype_client_hangar_dock
     rtype_client_hangar_locker
     rtype_client_interface

@@ -9,8 +9,8 @@
 #include "ChildrenStopper.hpp"
 #include "ConfigurationRegistry.hpp"
 #include "DatagramCodec.hpp"
+#include "DifficultyNames.hpp"
 #include "Endpoint.hpp"
-#include "EntitySheets.hpp"
 #include "ErrorText.hpp"
 #include "ExitedGame.hpp"
 #include "FreeUdpPort.hpp"
@@ -37,14 +37,12 @@
 #include "ServerConstants.hpp"
 #include "ServerDatabaseFile.hpp"
 #include "SettingValue.hpp"
-#include "SheetTextReading.hpp"
 #include "StopPause.hpp"
 #include "SupervisedGame.hpp"
 #include "SupervisedGamesConstants.hpp"
 #include "TextSettingDefinition.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
-#include "WaveCatalog.hpp"
 
 namespace rtype::server {
 
@@ -54,17 +52,6 @@ namespace {
 network::Endpoint loopbackEndpoint(std::uint16_t port) {
   return network::Endpoint{
       .address = std::string{network::LOOPBACK_IPV4_ADDRESS}, .port = port};
-}
-
-/** @returns The names of the difficulties of the waves files of @p settings,
- * read with the entity sheets of its content folders, which they name their
- * enemies among.
- * @throws what sheetTextsInFolders(), EntitySheets::fromTexts() and
- * WaveCatalog::fromFiles() throw. */
-std::vector<std::string> difficultyNamesOf(const GameLaunchSettings& settings) {
-  const game::EntitySheets types = game::EntitySheets::fromTexts(
-      game::sheetTextsInFolders(settings.contentFolders));
-  return WaveCatalog::fromFiles(settings.wavesFiles, types).difficulties();
 }
 
 /** @returns The database setting, declared in @p configuration. */

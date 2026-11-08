@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Ambience.hpp"
 #include "AssetLibrary.hpp"
 #include "IAudioService.hpp"
 #include "IMusicPlayer.hpp"
@@ -15,9 +16,10 @@ namespace rtype::client {
 
 /**
  * @brief The audio service of a client with sound: the bank of the sounds,
- * played on SOUND_VOICE_LIMIT voices for the whole client, the theme and the
- * music of a game, and the Soundtrack that switches between them. Their
- * volumes follow the settings service, which tells them when one changes.
+ * played on SOUND_VOICE_LIMIT voices for the whole client, the theme, the music
+ * of a game and the music of the boss, the Soundtrack that switches between
+ * them, and the ambiences that play under the theme. Their volumes follow the
+ * settings service, which tells them when one changes.
  *
  * Building it reads no file: open() reads the sounds and opens the music
  * files, as the window opens in open().
@@ -43,6 +45,9 @@ class AudioService final : public IAudioService {
   void playTheme() override;
   void playGameMusic() override;
   void silenceMusic() override;
+  void playBossMusic() override;
+  void setAmbience(Ambience ambience) override;
+  [[nodiscard]] Ambience ambience() const override;
   /** @throws AssetLoadingException naming every sound of ALL_SOUND_IDS that
    * could not be read. */
   void open() override;
@@ -55,6 +60,11 @@ class AudioService final : public IAudioService {
   SoundPlayer sounds_;
   MusicPlayer theme_;
   MusicPlayer gameMusic_;
+  MusicPlayer bossMusic_;
+  MusicPlayer spaceAmbience_;
+  MusicPlayer hangarAmbience_;
+  MusicPlayer crowdAmbience_;
+  Ambience ambience_{Ambience::None};
   Soundtrack soundtrack_;
 };
 

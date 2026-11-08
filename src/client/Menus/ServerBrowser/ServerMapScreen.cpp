@@ -11,6 +11,7 @@
 #include <optional>
 #include <utility>
 #include <vector>
+#include "Ambience.hpp"
 #include "BarState.hpp"
 #include "Button.hpp"
 #include "ConnectionRequest.hpp"
@@ -259,6 +260,7 @@ KeyChipParts backChipParts(std::function<void()> action, ISoundPlayer& sounds) {
 ServerMapScreen::ServerMapScreen(ServerMapScreenParts parts,
                                  std::unique_ptr<IInterfaceCanvas> canvas)
     : navigator_(&parts.navigator.get()),
+      ambience_(parts.audio.get(), Ambience::Space),
       servers_(&parts.servers.get()),
       games_(&parts.games.get()),
       choice_(&parts.choice.get()),
