@@ -5,6 +5,7 @@
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "MotionPreference.hpp"
+#include "PlayStart.hpp"
 #include "PlayfieldMapping.hpp"
 #include "SquadronStart.hpp"
 
@@ -39,6 +40,9 @@ struct TitleScreenParts {
   /** @brief SquadronStart::InPlace opens the title on its squadron in place,
    * as the intro leaves it. */
   SquadronStart squadronStart{};
+  /** @brief PlayStart::GivenServer makes PLAY join the server given at launch
+   * at once, instead of opening the server map. */
+  PlayStart playStart{};
 };
 
 }  // namespace rtype::client

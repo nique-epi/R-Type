@@ -2,6 +2,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include "BossArrival.hpp"
+#include "BossHealthChanged.hpp"
+#include "BossStatus.hpp"
 #include "EnemyAction.hpp"
 #include "EnemyActionStarted.hpp"
 #include "EnemyPhase.hpp"
@@ -200,6 +203,23 @@ TEST(GameEventEncoderTest, EncodesADepartureWithItsReason) {
 
 /**
  * Given an encoder
+ * When a player the host expelled is encoded
+ * Then the message is a guaranteed PlayerLeft with the reason Expelled
+ */
+TEST(GameEventEncoderTest, EncodesAnExpulsionWithTheReasonExpelled) {
+  const EventMessage expelled = GameEventEncoder::encode(
+      game::PlayerDeparture{.playerNumber = SECOND_PLAYER_NUMBER,
+                            .cause = game::DepartureCause::Expelled});
+
+  EXPECT_TRUE(expelled.guaranteed);
+  EXPECT_EQ(
+      network::decodeMessage<network::PlayerLeft>(expelled.message.payload),
+      (network::PlayerLeft{.playerNumber = SECOND_PLAYER_NUMBER,
+                           .reason = network::DepartureReason::Expelled}));
+}
+
+/**
+ * Given an encoder
  * When 65537 game events are encoded
  * Then the numbers run 1 to 65535, then 0, then 1
  */
@@ -240,6 +260,79 @@ TEST(GameEventEncoderTest, KeepsTheEventNumberWhenAnEventIsRefused) {
   EXPECT_EQ(network::decodeMessage<network::GameEvent>(next.message.payload)
                 .eventNumber,
             FIRST_EVENT_NUMBER);
+}
+
+/**
+ * Given the arrival of a boss
+ * When it is encoded
+ * Then it is a guaranteed BossStatus that says the boss arrives, naming no
+ * entity yet
+ */
+TEST(GameEventEncoderTest, EncodesTheArrivalOfTheBoss) {
+  const EventMessage message = GameEventEncoder::encode(
+      game::BossArrival{.typeNumber = BOSS_TYPE_NUMBER,
+                        .warningMilliseconds = BOSS_WARNING_MILLISECONDS});
+
+  EXPECT_EQ(message.message.type, network::MessageType::BossStatus);
+  EXPECT_TRUE(message.guaranteed);
+  EXPECT_EQ(
+      network::decodeMessage<network::BossStatus>(message.message.payload),
+      (network::BossStatus{.stage = network::BossStage::Arriving}));
+}
+
+/**
+ * Given a calm boss hit down to 200 of its 240 points
+ * When its health is encoded
+ * Then it is a guaranteed BossStatus of a boss fighting with that health
+ */
+TEST(GameEventEncoderTest, EncodesAHitBossAsFighting) {
+  const EventMessage message = GameEventEncoder::encode(
+      game::BossHealthChanged{.networkId = BOSS_NETWORK_ID,
+                              .points = BOSS_POINTS_LEFT,
+                              .full = BOSS_FULL_POINTS,
+                              .enraged = false});
+
+  EXPECT_TRUE(message.guaranteed);
+  EXPECT_EQ(
+      network::decodeMessage<network::BossStatus>(message.message.payload),
+      (network::BossStatus{.bossEntityId = BOSS_NETWORK_ID,
+                           .health = BOSS_POINTS_LEFT,
+                           .fullHealth = BOSS_FULL_POINTS,
+                           .stage = network::BossStage::Fighting}));
+}
+
+/**
+ * Given an enraged boss with 200 of its 240 points
+ * When its health is encoded
+ * Then the BossStatus says the boss is enraged
+ */
+TEST(GameEventEncoderTest, EncodesAnEnragedBossAsEnraged) {
+  const EventMessage message = GameEventEncoder::encode(
+      game::BossHealthChanged{.networkId = BOSS_NETWORK_ID,
+                              .points = BOSS_POINTS_LEFT,
+                              .full = BOSS_FULL_POINTS,
+                              .enraged = true});
+
+  EXPECT_EQ(network::decodeMessage<network::BossStatus>(message.message.payload)
+                .stage,
+            network::BossStage::Enraged);
+}
+
+/**
+ * Given an enraged boss with no point left
+ * When its health is encoded
+ * Then the BossStatus says the boss is defeated
+ */
+TEST(GameEventEncoderTest, EncodesADeadBossAsDefeated) {
+  const EventMessage message = GameEventEncoder::encode(
+      game::BossHealthChanged{.networkId = BOSS_NETWORK_ID,
+                              .points = 0,
+                              .full = BOSS_FULL_POINTS,
+                              .enraged = true});
+
+  EXPECT_EQ(network::decodeMessage<network::BossStatus>(message.message.payload)
+                .stage,
+            network::BossStage::Defeated);
 }
 
 }  // namespace rtype::server::testing

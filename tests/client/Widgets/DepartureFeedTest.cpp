@@ -1,10 +1,14 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <SFML/System/Vector2.hpp>
 #include <cstdint>
+#include <optional>
 #include <vector>
+#include "BossBarConstants.hpp"
 #include "DepartureFeed.hpp"
 #include "DepartureFeedFixtures.hpp"
 #include "DepartureFeedTestConstants.hpp"
+#include "GameNoticeConstants.hpp"
 #include "PilotStatus.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "StatusBandTestConstants.hpp"
@@ -12,6 +16,7 @@
 
 using rtype::client::DepartureFeed;
 using rtype::client::PilotState;
+using rtype::client::PilotStatus;
 using rtype::client::testing::PLUG_ICON;
 using testing::AllOf;
 using testing::Contains;
@@ -159,6 +164,19 @@ TEST(DepartureFeed, ALostSignalDrawsThePlugOfTheBand) {
 }
 
 /**
+ * Given a feed with the line of NOVA, whom the host expelled
+ * When it is painted
+ * Then WAS EXPELLED is written after the name, and no plug is drawn
+ */
+TEST(DepartureFeed, AnExpelledPilotWasExpelled) {
+  const InterfaceCanvasRecord record =
+      feedPaintingOf(pilotIn(NOVA_NUMBER, NOVA, PilotState::Expelled));
+
+  EXPECT_NE(writingOf(record, FEED_EXPELLED_WORDS), nullptr);
+  EXPECT_TRUE(record.smoothImages.empty());
+}
+
+/**
  * Given a feed with the line of a pilot whose nickname has sixteen letters
  * When it is painted
  * Then its first ten letters are written
@@ -202,4 +220,26 @@ TEST(DepartureFeed, TheWordsShareTheRowOfTheName) {
   const RecordedWriting* words = writingOf(record, FEED_LOST_WORDS);
   ASSERT_NE(words, nullptr);
   EXPECT_EQ(words->anchor.y, FIRST_NAME_ANCHOR.y);
+}
+
+/**
+ * Given a pilot who left
+ * When the feed paints from the corner under the bar of a boss
+ * Then the name is written as far down and right of that corner as it is
+ * of the top left corner
+ */
+TEST(DepartureFeed, PaintsUnderTheBossBarFromTheGivenCorner) {
+  const PilotStatus pilot = pilotIn(NOVA_NUMBER, NOVA, PilotState::Left);
+
+  const std::optional<sf::Vector2i> atTheTop =
+      anchorOf(feedPaintingOf(pilot), NOVA);
+  const std::optional<sf::Vector2i> underTheBar = anchorOf(
+      feedPaintingFrom(pilot, rtype::client::DEPARTURE_FEED_UNDER_BOSS_BAR),
+      NOVA);
+
+  ASSERT_TRUE(atTheTop.has_value() && underTheBar.has_value());
+  EXPECT_EQ(
+      underTheBar.value_or(sf::Vector2i{}) - atTheTop.value_or(sf::Vector2i{}),
+      rtype::client::DEPARTURE_FEED_UNDER_BOSS_BAR -
+          rtype::client::DEPARTURE_FEED_TOP_LEFT);
 }

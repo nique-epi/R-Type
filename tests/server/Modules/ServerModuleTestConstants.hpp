@@ -55,8 +55,24 @@ constexpr const char* EXAMPLE_RESOURCE_FROM_THE_ASSETS =
     "../resources/crimson-drifter";
 constexpr const char* WAVES_OF_THE_EXAMPLE_RESOURCE = "waves/waves.toml";
 
-/** @brief The line of the journal that says the games are vanilla. */
-constexpr const char* VANILLA_GAMES_LINE = "games play normal, vanilla";
+/** @brief Lines that set the rules of the game: the difficulty "hard", five
+ * lives, friendly fire on; and a difficulty the shipped waves file has no
+ * table for. */
+constexpr std::string_view SET_HARD_GAME_LINE = "set difficulty hard";
+constexpr std::string_view SET_FIVE_LIVES_GAME_LINE = "set lives 5";
+constexpr std::string_view SET_FRIENDLY_FIRE_GAME_LINE = "set friendly-fire 1";
+constexpr std::string_view SET_UNKNOWN_DIFFICULTY_LINE =
+    "set difficulty nightmare";
+
+/** @brief The line of the journal that says the game plays those rules, and is
+ * not vanilla. */
+constexpr const char* RULED_GAMES_LINE =
+    "games play hard, 5 lives, friendly fire on, not vanilla";
+
+/** @brief The line of the journal that says the game plays the default rules
+ * and is vanilla. */
+constexpr const char* VANILLA_GAMES_LINE =
+    "games play normal, 3 lives, friendly fire off, vanilla";
 
 /** @brief How long the client of a test waits for the answer of the server to a
  * request, and for the farewell that follows the stop. */

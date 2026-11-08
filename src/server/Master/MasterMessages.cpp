@@ -5,6 +5,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "FinishedGame.hpp"
+#include "FinishedGamePlayer.hpp"
+#include "GameResult.hpp"
 #include "HostedGame.hpp"
 #include "InformationConstants.hpp"
 #include "MasterMessageConstants.hpp"
@@ -26,7 +29,7 @@ std::uint64_t randomProbeSecret() {
 network::ServerRegistration registrationOf(const ServerIdentity& identity) {
   return network::ServerRegistration{
       .name = identity.name,
-      .address = std::nullopt,
+      .address = identity.address,
       .udpPort = identity.udpPort,
       .gameVersion = std::string{SERVER_GAME_VERSION},
       .protocolVersion = network::PROTOCOL_VERSION,
@@ -42,8 +45,24 @@ network::ServerHeartbeat heartbeatOf(
     std::optional<std::uint64_t> probeToken) {
   return network::ServerHeartbeat{
       .games = std::move(games),
+      .difficulties = {},
       .measures = measures.value_or(network::ServerMeasures{}),
       .probeToken = probeToken};
+}
+
+network::FinishedGame finishedGameOf(const GameResult& result) {
+  std::vector<network::FinishedGamePlayer> players;
+  players.reserve(result.players.size());
+  for (const PlayerResult& player : result.players) {
+    players.push_back(network::FinishedGamePlayer{.nickname = player.nickname,
+                                                  .accountId = std::nullopt,
+                                                  .score = player.score});
+  }
+  return network::FinishedGame{.playedAt = result.endedAt,
+                               .difficulty = result.difficulty,
+                               .playerCount = result.playerCount,
+                               .vanilla = result.vanilla,
+                               .players = std::move(players)};
 }
 
 }  // namespace rtype::server

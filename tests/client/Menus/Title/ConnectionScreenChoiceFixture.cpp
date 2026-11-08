@@ -2,12 +2,14 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <cstddef>
 #include <memory>
+#include <string>
 #include <string_view>
 #include "ConnectionScreen.hpp"
 #include "ConnectionScreenFixtures.hpp"
 #include "ConnectionScreenParts.hpp"
 #include "ConnectionScreenTestConstants.hpp"
 #include "ConnectionStart.hpp"
+#include "Endpoint.hpp"
 #include "KeyPress.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -20,6 +22,9 @@ using rtype::client::ConnectionScreenParts;
 using rtype::client::ConnectionStart;
 using rtype::client::PRESS_DURATION;
 using rtype::client::testing::LAUNCH_NICKNAME;
+using rtype::client::testing::MAP_ADDRESS;
+using rtype::client::testing::MAP_PORT;
+using rtype::network::Endpoint;
 
 ConnectionScreenChoiceFixture::ConnectionScreenChoiceFixture()
     : choice_(launchChoice()) {
@@ -41,17 +46,23 @@ void ConnectionScreenChoiceFixture::connectAs(std::u32string_view nickname) {
 }
 
 void ConnectionScreenChoiceFixture::reopen() {
-  screen_.reset();
-  screen_ = std::make_unique<ConnectionScreen>(
-      ConnectionScreenParts{.navigator = navigator_,
-                            .sounds = sounds_,
-                            .connection = connection_,
-                            .playfieldPointAt = samePlayfieldPoint,
-                            .choice = choice_},
-      std::make_unique<RecordingInterfaceCanvas>(canvas_));
+  openWith(ConnectionStart::OnConfirm);
 }
 
 void ConnectionScreenChoiceFixture::reopenConnectingAtOnce() {
+  openWith(ConnectionStart::AtOnce);
+}
+
+void ConnectionScreenChoiceFixture::reopenForARetry() {
+  openWith(ConnectionStart::LastAttemptOnConfirm);
+}
+
+void ConnectionScreenChoiceFixture::chooseOnTheMap() {
+  choice_.lastServer =
+      Endpoint{.address = std::string(MAP_ADDRESS), .port = MAP_PORT};
+}
+
+void ConnectionScreenChoiceFixture::openWith(ConnectionStart start) {
   screen_.reset();
   screen_ = std::make_unique<ConnectionScreen>(
       ConnectionScreenParts{.navigator = navigator_,
@@ -59,7 +70,7 @@ void ConnectionScreenChoiceFixture::reopenConnectingAtOnce() {
                             .connection = connection_,
                             .playfieldPointAt = samePlayfieldPoint,
                             .choice = choice_,
-                            .start = ConnectionStart::AtOnce},
+                            .start = start},
       std::make_unique<RecordingInterfaceCanvas>(canvas_));
 }
 

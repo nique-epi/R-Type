@@ -78,6 +78,7 @@ std::set<std::string> ServerRolesFixture::exampleSettingsOfThisBuild() {
   if (!rtype::engine::MASTER_LINK_MODULE_BUILT) {
     names.erase(std::string{rtype::server::MASTER_URL_SETTING_NAME});
     names.erase(std::string{rtype::server::MASTER_KEY_SETTING_NAME});
+    names.erase(std::string{rtype::server::PUBLIC_ADDRESS_SETTING_NAME});
   }
   if (!rtype::engine::GAME_STATISTICS_MODULE_BUILT) {
     names.erase(std::string{rtype::server::GAME_STATISTICS_FILE_SETTING_NAME});

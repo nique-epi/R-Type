@@ -3,7 +3,6 @@
 #include "ApiRequest.hpp"
 #include "ApiResponse.hpp"
 #include "IProbeSender.hpp"
-#include "MasterDatabase.hpp"
 #include "ServersService.hpp"
 
 namespace rtype::master {
@@ -18,9 +17,13 @@ namespace rtype::master {
  */
 class ServersController {
  public:
-  /** @param probeSender Where the probes of the accepted heartbeats go; it
-   * must outlive the controller. */
-  ServersController(MasterDatabase& database, IProbeSender& probeSender);
+  /**
+   * @param service Applies the rules of the servers; it must outlive the
+   * controller.
+   * @param probeSender Where the probes of the accepted heartbeats go; it
+   * must outlive the controller.
+   */
+  ServersController(ServersService& service, IProbeSender& probeSender);
 
   /**
    * @returns The answer of `POST /api/servers`: 201, `Location` naming the
@@ -80,7 +83,7 @@ class ServersController {
       const network::ApiRequest& request);
 
  private:
-  ServersService service_;
+  ServersService& service_;
   IProbeSender& probeSender_;
 };
 

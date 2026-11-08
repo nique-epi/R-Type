@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include "GameRuleConstants.hpp"
 #include "StateEncoding.hpp"
 #include "TimeConstants.hpp"
 
@@ -30,9 +31,13 @@ constexpr std::string_view SEED_SETTING_NAME = "seed";
 constexpr std::string_view STATE_RATE_SETTING_NAME = "state-rate";
 constexpr std::string_view STATE_ENCODING_SETTING_NAME = "state-encoding";
 constexpr std::string_view INPUT_DELAY_SETTING_NAME = "input-delay";
+/** @brief The setting that starts every game at its boss, without the
+ * waves: 1 to skip them, 0 (the default) to play them. */
+constexpr std::string_view START_AT_BOSS_SETTING_NAME = "start-at-boss";
 constexpr std::string_view DATABASE_SETTING_NAME = "database";
 constexpr std::string_view MASTER_URL_SETTING_NAME = "master-url";
 constexpr std::string_view MASTER_KEY_SETTING_NAME = "master-key";
+constexpr std::string_view PUBLIC_ADDRESS_SETTING_NAME = "public-address";
 constexpr std::string_view SERVER_NAME_SETTING_NAME = "server-name";
 
 /**
@@ -47,8 +52,9 @@ constexpr std::string_view GAME_STATISTICS_FILE_SETTING_NAME =
 constexpr std::array SERVER_SETTING_NAMES{
     PORT_SETTING_NAME,        SEED_SETTING_NAME,
     STATE_RATE_SETTING_NAME,  STATE_ENCODING_SETTING_NAME,
-    INPUT_DELAY_SETTING_NAME, DATABASE_SETTING_NAME,
-    MASTER_URL_SETTING_NAME,  MASTER_KEY_SETTING_NAME,
+    INPUT_DELAY_SETTING_NAME, START_AT_BOSS_SETTING_NAME,
+    DATABASE_SETTING_NAME,    MASTER_URL_SETTING_NAME,
+    MASTER_KEY_SETTING_NAME,  PUBLIC_ADDRESS_SETTING_NAME,
     SERVER_NAME_SETTING_NAME};
 
 /**
@@ -96,6 +102,12 @@ constexpr std::size_t MAXIMUM_RUNNING_GAMES = 8;
 constexpr std::string_view SEED_OPTION = "--seed";
 
 /**
+ * @brief Launch option that starts every game at its boss, without the
+ * waves: it forces START_AT_BOSS_SETTING_NAME to 1.
+ */
+constexpr std::string_view START_AT_BOSS_OPTION = "--boss";
+
+/**
  * @brief The name of game n, from 1, is this prefix and n: the name the master
  * lists it by, until a game is named by the player who creates it.
  */
@@ -138,18 +150,12 @@ constexpr std::string_view WAVE_FILE_IN_ASSETS = "waves/waves.toml";
 constexpr std::string_view SHIP_SHEET_NAME = "ship";
 
 /**
- * @brief The difficulty every game is played at, until the rules of a game can
- * choose another one.
- */
-constexpr std::string_view DEFAULT_DIFFICULTY = "normal";
-
-/**
  * @brief The fingerprint of the waves file the game ships, as
  * WaveCatalog::fingerprint() gives it: games read from a file with another one
  * are not vanilla. A test fails when the shipped file changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0xb24313373fca8ebe;
+constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0x9bc19feade051edb;
 
 /**
  * @brief The fingerprint of the entity sheets the game ships, as
@@ -157,7 +163,7 @@ constexpr std::uint64_t OFFICIAL_WAVES_FINGERPRINT = 0xb24313373fca8ebe;
  * are not vanilla. A test fails when a shipped sheet changes and this does
  * not.
  */
-constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0x3229e00c80961ffc;
+constexpr std::uint64_t OFFICIAL_ENTITY_SHEETS_FINGERPRINT = 0x9f3ae7bdf1f815e1;
 
 /**
  * @brief Why the games of a server are not vanilla, as the lines of its journal
@@ -171,6 +177,11 @@ constexpr std::string_view IMPOSED_SEED_BREACH =
     "a seed is set, so the waves can be known in advance";
 constexpr std::string_view CHANGED_INPUT_DELAY_BREACH =
     "the input delay is not the default one";
+constexpr std::string_view CHANGED_LIVES_BREACH =
+    "the players do not start with the default lives";
+constexpr std::string_view FRIENDLY_FIRE_BREACH = "friendly fire is on";
+constexpr std::string_view STARTS_AT_BOSS_BREACH =
+    "every game starts at its boss and its ships never die";
 
 /**
  * @brief Launch option followed by the program the binary runs:
@@ -337,6 +348,43 @@ constexpr std::size_t HIGHEST_INPUT_DELAY_TICKS =
 static_assert(DEFAULT_INPUT_DELAY_TICKS >= LOWEST_INPUT_DELAY_TICKS &&
                   DEFAULT_INPUT_DELAY_TICKS <= HIGHEST_INPUT_DELAY_TICKS,
               "the default input delay must be one the option accepts");
+
+/**
+ * @brief The names the rules of a game go by in `set`. A game process declares
+ * them; its supervisor forces the rules the creator of the game chose with
+ * DIFFICULTY_OPTION, LIVES_OPTION and FRIENDLY_FIRE_OPTION. They are no
+ * settings of the supervisor, so a line of server.cfg cannot set them: a rule
+ * belongs to one game, never to every game of a server.
+ */
+constexpr std::string_view DIFFICULTY_SETTING_NAME = "difficulty";
+constexpr std::string_view LIVES_SETTING_NAME = "lives";
+constexpr std::string_view FRIENDLY_FIRE_SETTING_NAME = "friendly-fire";
+
+/**
+ * @brief Launch options of a game process, each followed by a rule of its game
+ * and forced as the setting of the same name.
+ */
+constexpr std::string_view DIFFICULTY_OPTION = "--difficulty";
+constexpr std::string_view LIVES_OPTION = "--lives";
+constexpr std::string_view FRIENDLY_FIRE_OPTION = "--friendly-fire";
+
+/**
+ * @brief The fewest and the most lives the creator of a game may give each
+ * player. Provisional, until gameplay tunes them.
+ */
+constexpr std::uint8_t LOWEST_LIVES = 1;
+constexpr std::uint8_t HIGHEST_LIVES = 9;
+
+static_assert(identifiers::DEFAULT_LIVES >= LOWEST_LIVES &&
+                  identifiers::DEFAULT_LIVES <= HIGHEST_LIVES,
+              "the default lives must be a count the rules accept");
+
+/**
+ * @brief The values of FRIENDLY_FIRE_SETTING_NAME and FRIENDLY_FIRE_OPTION:
+ * off, then on.
+ */
+constexpr std::int64_t FRIENDLY_FIRE_OFF = 0;
+constexpr std::int64_t FRIENDLY_FIRE_ON = 1;
 
 static_assert(DEFAULT_WORLD_STATES_PER_SECOND >=
                       LOWEST_WORLD_STATES_PER_SECOND &&

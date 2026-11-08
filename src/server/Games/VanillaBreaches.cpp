@@ -1,6 +1,7 @@
 #include "VanillaBreaches.hpp"
 #include <string_view>
 #include <vector>
+#include "GameRuleConstants.hpp"
 #include "HostedRules.hpp"
 #include "ServerConstants.hpp"
 
@@ -19,6 +20,15 @@ std::vector<std::string_view> vanillaBreaches(const HostedRules& rules) {
   }
   if (rules.inputDelayTicks != DEFAULT_INPUT_DELAY_TICKS) {
     breaches.push_back(CHANGED_INPUT_DELAY_BREACH);
+  }
+  if (rules.gameRules.lives != identifiers::DEFAULT_LIVES) {
+    breaches.push_back(CHANGED_LIVES_BREACH);
+  }
+  if (rules.gameRules.friendlyFire) {
+    breaches.push_back(FRIENDLY_FIRE_BREACH);
+  }
+  if (rules.startsAtBoss) {
+    breaches.push_back(STARTS_AT_BOSS_BREACH);
   }
   return breaches;
 }

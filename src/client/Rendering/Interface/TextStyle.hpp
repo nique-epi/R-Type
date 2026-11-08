@@ -1,7 +1,9 @@
 #pragma once
 
 #include <SFML/Graphics/Color.hpp>
+#include <SFML/Graphics/Rect.hpp>
 #include <cstdint>
+#include <optional>
 #include "InterfaceConstants.hpp"
 
 namespace rtype::client {
@@ -23,8 +25,9 @@ enum class TextAlignment : std::uint8_t {
 
 /**
  * @brief How a line of text is written: its font, its color, whether it is
- * outlined in INK so it stays readable over the sky, which side its anchor
- * is on, and how large it is.
+ * outlined in INK, at the opacity of its color, so it stays readable over
+ * the sky and fades with its letters, which side its anchor is on, and how
+ * large it is.
  */
 struct TextStyle {
   TextFont font{};
@@ -35,6 +38,11 @@ struct TextStyle {
    * is drawn at that many times TEXT_CHARACTER_SIZE; the outline stays one
    * pixel wide. */
   int scale = NATIVE_SCALE;
+  /** @brief The only pixels of the picture the line may paint, inside the
+   * picture; none paints wherever the line falls. A line written in bands,
+   * each in its own color or shifted, is written once per band, each clipped
+   * to its rows. */
+  std::optional<sf::IntRect> clip = std::nullopt;
 };
 
 }  // namespace rtype::client

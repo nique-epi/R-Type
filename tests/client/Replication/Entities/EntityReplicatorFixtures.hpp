@@ -7,6 +7,8 @@
 #include <ostream>
 #include <string>
 #include <vector>
+#include "CollisionBox.hpp"
+#include "EntitySpawned.hpp"
 #include "EntityType.hpp"
 #include "Layer.hpp"
 #include "Position.hpp"
@@ -110,5 +112,14 @@ DrawnEntity effectAt(game::SpriteFrame firstFrame, game::Position position);
  * @p tick, nothing when no entity has one. */
 [[nodiscard]] std::optional<game::Position> historyPositionAt(
     engine::ComponentRegistry& components, double tick);
+
+/** @returns The box of the only entity of that type, nothing when it has
+ * none or there is no such entity. */
+[[nodiscard]] std::optional<game::CollisionBox> boxOfThe(
+    engine::ComponentRegistry& components, game::EntityType type);
+
+/** @returns The EntitySpawned of the player missile PLAYER_MISSILE_ID at
+ * PLAYER_MISSILE_POSITION, fired by player @p owner with SOME_FIRING_INPUT. */
+[[nodiscard]] network::EntitySpawned ownMissileSpawned(std::uint8_t owner);
 
 }  // namespace rtype::client::testing

@@ -7,11 +7,14 @@
 #include <vector>
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
+#include "GameInstance.hpp"
 #include "IModule.hpp"
 #include "MessageType.hpp"
 #include "NetworkConstants.hpp"
 #include "OutgoingDatagram.hpp"
+#include "PlayerRoster.hpp"
 #include "RecordingNetworkModule.hpp"
+#include "SentDatagrams.hpp"
 #include "ServerSupervisorLinkModule.hpp"
 #include "SupervisorLink.hpp"
 #include "SupervisorLinkTestConstants.hpp"
@@ -69,4 +72,9 @@ ServerSupervisorLinkFixture::statuses() {
     }
   }
   return found;
+}
+
+bool ServerSupervisorLinkFixture::isSeated(std::size_t index) {
+  return probe().runningGame()->game().roster().find(
+             rtype::server::testing::playerEndpoint(index)) != nullptr;
 }

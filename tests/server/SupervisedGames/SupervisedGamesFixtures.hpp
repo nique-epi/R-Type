@@ -14,6 +14,7 @@
 #include "GameLifecycle.hpp"
 #include "GameOpening.hpp"
 #include "GameRegistry.hpp"
+#include "GameRules.hpp"
 #include "GameStatus.hpp"
 #include "LaunchOptions.hpp"
 #include "ProcessCommand.hpp"
@@ -64,6 +65,10 @@ void openReporting(rtype::server::GameRegistry& registry, std::uint32_t number,
  * supervisedPlayer(@p index) and asks for PILOT<index + 1>, so the first four
  * are the nicknames of SUPERVISED_NICKNAMES. */
 [[nodiscard]] rtype::server::SeatRequest seatRequestOf(std::size_t index);
+
+/** @returns The rules a creator chose in the tests: CHOSEN_DIFFICULTY,
+ * CHOSEN_LIVES and friendly fire on. */
+[[nodiscard]] rtype::network::GameRules chosenRules();
 
 /** @returns Where the game on @p port listens, on the loopback. */
 [[nodiscard]] rtype::network::Endpoint loopbackOn(std::uint16_t port);

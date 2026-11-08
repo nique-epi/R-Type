@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <optional>
 #include <string_view>
 #include "BackgroundConstants.hpp"
 #include "CollisionBox.hpp"
@@ -52,6 +53,19 @@ bool holds(rtype::game::SpriteFrame frame,
                           rtype::client::BACKGROUND_PIXEL_SIZE &&
          box.height <= static_cast<float>(frame.height) *
                            rtype::client::BACKGROUND_PIXEL_SIZE;
+}
+
+bool hitsAnOffsetBox(const rtype::game::EntitySheet& sheet) {
+  return sheet.hitbox.offsetX != 0.0F || sheet.hitbox.offsetY != 0.0F;
+}
+
+bool holdsTheHitbox(rtype::game::SpriteFrame frame,
+                    const rtype::game::CollisionBox& box) {
+  return holds(frame, rtype::game::HurtBox{.offsetX = box.offsetX,
+                                           .offsetY = box.offsetY,
+                                           .width = box.width,
+                                           .height = box.height,
+                                           .activeIn = std::nullopt});
 }
 
 bool holds(rtype::game::SpriteFrame frame, const rtype::game::HurtBox& box) {

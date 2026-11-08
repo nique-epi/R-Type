@@ -38,6 +38,7 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions,
       entityMessages_(dispatcher_, waitingRoom_, gameLoaded_),
       roundTrips_(dispatcher_, clock_),
       leaderboard_(dispatcher_),
+      chat_(dispatcher_, waitingRoom_),
       entityTypes_(localContentOf(places.assetFolder)),
       content_(ContentPackCache{places.cacheFolder}),
       session_(ServerSessionParts{
@@ -47,7 +48,7 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions,
           .entityTypes = entityTypes_,
           .content = content_,
           .observers = {waitingRoom_, entityMessages_, gameLoaded_, roundTrips_,
-                        leaderboard_, orderedInbox_}}),
+                        leaderboard_, chat_, orderedInbox_}}),
       pings_(router_.addRoute(), clock_) {}
 
 void PlayerConnection::update(engine::Duration elapsed) {
@@ -68,6 +69,7 @@ void PlayerConnection::provideParts(engine::InstallContext& context) {
   context.provide(waitingRoom_);
   context.provide(entityMessages_);
   context.provide(leaderboard_);
+  context.provide(chat_);
   context.provide<IPlayerRoundTrips>(roundTrips_);
   context.provide<IServerTicks>(roundTrips_);
   context.provide<IEntityTypeTable>(entityTypes_);

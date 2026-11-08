@@ -57,6 +57,7 @@ game::World& RtypeRulesModule::world() { return world_.current(); }
 void RtypeRulesModule::addSessionHooks() {
   SessionHooks& hooks = game_->hooks;
   hooks.joined.emplace_back([this](ConnectedPlayer& player) {
+    player.livesWithoutShip = game_->settings.rules.lives;
     replication_->onPlayerJoined(player);
   });
   hooks.closing.emplace_back(

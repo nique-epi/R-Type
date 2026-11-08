@@ -19,6 +19,7 @@
 #include "EntitySheet.hpp"
 #include "EntitySheets.hpp"
 #include "EntityType.hpp"
+#include "ProtocolConstants.hpp"
 #include "ServerException.hpp"
 #include "SipHash.hpp"
 #include "Wave.hpp"
@@ -26,6 +27,7 @@
 #include "WaveFileConstants.hpp"
 #include "WavePlan.hpp"
 #include "WholeNumberRange.hpp"
+#include "WireTypes.hpp"
 
 namespace rtype::server {
 
@@ -62,7 +64,7 @@ std::vector<std::string> enemyNamesOf(const game::EntitySheets& types) {
 /** @returns Whether @p types has a sheet named @p name of the side enemy. */
 bool namesAnEnemy(const game::EntitySheets& types, std::string_view name) {
   return std::ranges::any_of(
-      types.all(), [name](const game::EntitySheet& sheet) {
+      types.all(), [name](const game::EntitySheet& sheet) noexcept {
         return sheet.name == name && sheet.side == game::EntityType::Enemy;
       });
 }
@@ -145,11 +147,75 @@ game::WaveCurve curveFrom(const DataFileTable& table) {
 
 /** @returns The waves the table of one difficulty describes, its enemies
  * checked against @p types. */
+/** @returns The names of the sheets of @p types that are bosses, for the
+ * errors. */
+std::vector<std::string> bossNamesOf(const game::EntitySheets& types) {
+  std::vector<std::string> names;
+  for (const game::EntitySheet& sheet : types.all()) {
+    if (sheet.boss.has_value()) {
+      names.push_back(sheet.name);
+    }
+  }
+  return names;
+}
+
+/** @returns The boss the table of one difficulty names; nothing without one.
+ * @throws engine::DataFileTextExpectedException when it is not a text, and
+ * UnknownBossException when it names no boss of @p types. */
+std::optional<std::string> bossFrom(const DataFileTable& table,
+                                    const game::EntitySheets& types) {
+  if (!table.table.get().contains(BOSS_KEY)) {
+    return std::nullopt;
+  }
+  std::string boss = engine::textAt(table, BOSS_KEY);
+  const std::vector<std::string> bosses = bossNamesOf(types);
+  if (std::ranges::find(bosses, boss) == bosses.end()) {
+    throw UnknownBossException(engine::placeOfKey(table, BOSS_KEY), boss,
+                               bosses);
+  }
+  return boss;
+}
+
+/** @returns The health percent of the boss the table of one difficulty
+ * gives, DEFAULT_BOSS_HEALTH_PERCENT when it gives none. */
+int bossHealthPercentFrom(const DataFileTable& table) {
+  if (!table.table.get().contains(BOSS_HEALTH_PERCENT_KEY)) {
+    return DEFAULT_BOSS_HEALTH_PERCENT;
+  }
+  return static_cast<int>(engine::wholeNumberAt(table, BOSS_HEALTH_PERCENT_KEY,
+                                                BOSS_HEALTH_PERCENT_RANGE));
+}
+
 WavePlan planFrom(const DataFileTable& table, const game::EntitySheets& types) {
   engine::refuseUnknownKeys(table, WAVE_PLAN_KEYS);
   return WavePlan{
       .curve = curveFrom(table),
-      .enemies = enemiesFrom(EnemyList{.table = table, .types = types})};
+      .enemies = enemiesFrom(EnemyList{.table = table, .types = types}),
+      .boss = bossFrom(table, types),
+      .bossHealthPercent = bossHealthPercentFrom(table)};
+}
+
+/** @throws InvalidDifficultyNameException, at the table, when the protocol
+ * cannot carry @p name, a table of @p levels: the rules of a nickname. */
+void requireDifficultyName(const DataFileTable& levels, std::string_view name) {
+  if (!network::isValidNickname(name)) {
+    throw InvalidDifficultyNameException(
+        engine::placeOfKey(levels, name),
+        engine::WholeNumberRange{
+            .lowest = static_cast<std::int64_t>(network::MINIMUM_NICKNAME_SIZE),
+            .highest =
+                static_cast<std::int64_t>(network::MAXIMUM_NICKNAME_SIZE)});
+  }
+}
+
+/** @throws TooManyDifficultiesException, at the table of difficulties of
+ * @p root, when @p count exceeds network::MAXIMUM_DIFFICULTIES. */
+void requireFewDifficulties(const DataFileTable& root, std::size_t count) {
+  if (count > network::MAXIMUM_DIFFICULTIES) {
+    throw TooManyDifficultiesException(
+        engine::placeOfKey(root, DIFFICULTY_TABLE_KEY),
+        network::MAXIMUM_DIFFICULTIES);
+  }
 }
 
 /** @returns The waves of every difficulty of the file whose root is @p root,
@@ -158,9 +224,11 @@ PlansByDifficulty plansFrom(const DataFileTable& root,
                             const game::EntitySheets& types) {
   engine::refuseUnknownKeys(root, ROOT_KEYS);
   const DataFileTable levels = engine::tableAt(root, DIFFICULTY_TABLE_KEY);
+  requireFewDifficulties(root, levels.table.get().size());
   PlansByDifficulty plans;
   for (auto&& entry : levels.table.get()) {
     const std::string_view name = entry.first.str();
+    requireDifficultyName(levels, name);
     plans.emplace(std::string{name},
                   planFrom(engine::tableAt(levels, name), types));
   }

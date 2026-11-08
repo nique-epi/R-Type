@@ -10,11 +10,11 @@
 #include "ContentFolders.hpp"
 #include "EnsureLines.hpp"
 #include "ExecutablePath.hpp"
+#include "GameAssetPaths.hpp"
 #include "GameLaunchOptions.hpp"
 #include "GamesSettings.hpp"
 #include "IModule.hpp"
 #include "NetworkConstants.hpp"
-#include "ServerConstants.hpp"
 #include "ServerGamesModule.hpp"
 #include "ServerLobbyModule.hpp"
 #include "ServerLoggerModule.hpp"
@@ -36,8 +36,7 @@ namespace {
  * sheets of all of them. */
 GamesSettings gameProcessGamesSettings(
     std::vector<std::filesystem::path> contentFolders) {
-  std::filesystem::path wavesFile = engine::topmostContentFile(
-      contentFolders, std::filesystem::path{WAVE_FILE_IN_ASSETS});
+  std::filesystem::path wavesFile = wavesFileOf(contentFolders);
   return GamesSettings{.seed = std::nullopt,
                        .wavesFile = std::move(wavesFile),
                        .contentFolders = std::move(contentFolders)};

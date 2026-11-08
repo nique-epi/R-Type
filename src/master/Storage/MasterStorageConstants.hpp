@@ -119,11 +119,47 @@ ALTER TABLE servers ADD COLUMN last_probe_answer_at INTEGER;
 )sql";
 
 /**
+ * @brief The fourth version: a row per player of each vanilla game a server
+ * reported, which the global leaderboard reads.
+ *
+ * A row keeps its server, so the leaderboard of one server reads its rows
+ * alone, and the rows of a server can be erased with it. Its key is the
+ * server, the id of the game the server drew and the nickname, compared with
+ * NOCASE as a game server compares them (PlayerRoster::hasNickname()): a
+ * result sent again adds no row. account_id is null for a guest. The table
+ * has no rowid, as heartbeat_samples.
+ *
+ * The index serves a leaderboard, which reads one difficulty and one number
+ * of players, and holds every column the ranking reads (server_id comes with
+ * the primary key), so a read never goes back to the table: unlike the
+ * single-column indexes of the other tables, it covers its query. The ranking
+ * sorts by player before it sorts by score, so an index on the score alone was
+ * slower than none.
+ */
+constexpr std::string_view RESULTS_MIGRATION = R"sql(
+CREATE TABLE game_results (
+  server_id    INTEGER NOT NULL REFERENCES servers (id),
+  game_id      TEXT    NOT NULL,
+  nickname     TEXT    NOT NULL COLLATE NOCASE,
+  account_id   TEXT,
+  score        INTEGER NOT NULL,
+  played_at    INTEGER NOT NULL,
+  difficulty   TEXT    NOT NULL,
+  player_count INTEGER NOT NULL,
+  PRIMARY KEY (server_id, game_id, nickname)
+) STRICT, WITHOUT ROWID;
+
+CREATE INDEX game_results_of_a_leaderboard
+  ON game_results (difficulty, player_count, account_id, nickname, score,
+                   played_at);
+)sql";
+
+/**
  * @brief The migrations of the database of the master, in order:
  * MASTER_MIGRATIONS[0] is version 1. A change adds a migration at the end and
  * never edits one a master already applied.
  */
-constexpr std::array<std::string_view, 3> MASTER_MIGRATIONS{
-    SERVERS_MIGRATION, STATUSES_MIGRATION, PROBES_MIGRATION};
+constexpr std::array<std::string_view, 4> MASTER_MIGRATIONS{
+    SERVERS_MIGRATION, STATUSES_MIGRATION, PROBES_MIGRATION, RESULTS_MIGRATION};
 
 }  // namespace rtype::master

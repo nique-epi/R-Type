@@ -1,8 +1,10 @@
 #include "HurtZoneSystemFixtures.hpp"
 #include <vector>
 #include "CollisionScene.hpp"
+#include "CurrentAction.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
+#include "HurtBeam.hpp"
 #include "HurtBox.hpp"
 #include "HurtZone.hpp"
 #include "HurtZoneSystem.hpp"
@@ -26,7 +28,16 @@ engine::Entity enemyWith(CollisionScene& scene, float centerX,
                          const std::vector<HurtBox>& boxes) {
   const engine::Entity enemy =
       scene.spawnWithoutCollisionBox(EntityType::Enemy, centerX, 0.0F);
-  scene.components.add(enemy, HurtZone{.boxes = boxes});
+  scene.components.add(enemy, HurtZone{.boxes = boxes, .beams = {}});
+  return enemy;
+}
+
+engine::Entity enemyWithBeam(CollisionScene& scene, const HurtBeam& beam,
+                             const CurrentAction& current) {
+  const engine::Entity enemy =
+      scene.spawnWithoutCollisionBox(EntityType::Enemy, 0.0F, 0.0F);
+  scene.components.add(enemy, HurtZone{.boxes = {}, .beams = {beam}});
+  scene.components.add(enemy, current);
   return enemy;
 }
 

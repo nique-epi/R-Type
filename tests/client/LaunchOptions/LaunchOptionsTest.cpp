@@ -21,6 +21,7 @@
 #include "NetworkConstants.hpp"
 #include "NetworkException.hpp"
 #include "NetworkSimulatorTestConstants.hpp"
+#include "PlayStart.hpp"
 #include "SimulatorLaunchOptions.hpp"
 #include "TrafficFileTestConstants.hpp"
 
@@ -33,6 +34,7 @@ using rtype::client::InvalidNicknameOptionException;
 using rtype::client::LaunchOptions;
 using rtype::client::NICKNAME_OPTION;
 using rtype::client::NO_SOUND_OPTION;
+using rtype::client::PlayStart;
 using rtype::engine::HELP_OPTION;
 using rtype::engine::InvalidLaunchOptionValueException;
 using rtype::engine::MissingLaunchOptionValueException;
@@ -680,4 +682,39 @@ TEST(ClientLaunchOptions, GameWordIsRejected) {
   EXPECT_THROW(static_cast<void>(LaunchOptions::read(
                    Arguments{GAME_OPTION, WORD_GAME_ARGUMENT})),
                InvalidGameOptionException);
+}
+
+/**
+ * Given -h and an address
+ * When the launch options are read
+ * Then PLAY joins the server given at launch
+ */
+TEST(ClientLaunchOptions, AnAddressMakesPlayJoinIt) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{ADDRESS_OPTION, ADDRESS_ARGUMENT});
+
+  EXPECT_EQ(options.playStart(), PlayStart::GivenServer);
+}
+
+/**
+ * Given no option at all
+ * When the launch options are read
+ * Then PLAY opens the server map
+ */
+TEST(ClientLaunchOptions, WithoutAnAddressPlayOpensTheMap) {
+  const LaunchOptions options = LaunchOptions::read(Arguments{});
+
+  EXPECT_EQ(options.playStart(), PlayStart::ServerMap);
+}
+
+/**
+ * Given the address of the server given through --set, not -h
+ * When the launch options are read
+ * Then PLAY still opens the server map: only -h names the server to join
+ */
+TEST(ClientLaunchOptions, AnAddressGivenWithSetKeepsTheMap) {
+  const LaunchOptions options =
+      LaunchOptions::read(Arguments{SET_OPTION, ADDRESS_ASSIGNMENT_ARGUMENT});
+
+  EXPECT_EQ(options.playStart(), PlayStart::ServerMap);
 }

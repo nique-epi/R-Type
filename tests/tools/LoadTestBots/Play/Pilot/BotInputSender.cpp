@@ -6,6 +6,7 @@
 #include "IPlayerInputLink.hpp"
 #include "IWaitingRoom.hpp"
 #include "OwnShip.hpp"
+#include "ProtocolConstants.hpp"
 #include "TimeConstants.hpp"
 #include "WorldState.hpp"
 
@@ -24,7 +25,7 @@ bool BotInputSender::advance(engine::Duration elapsed) {
   if (!pacer_.advance(elapsed)) {
     return false;
   }
-  return link_->sendPlayerInput(held).has_value();
+  return link_->sendPlayerInput(held, network::NO_SHOWN_TICK).has_value();
 }
 
 void BotInputSender::confirm(const client::EntityMessage& message,

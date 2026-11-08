@@ -4,6 +4,7 @@
 #include <span>
 #include <string_view>
 #include <vector>
+#include "CollisionBox.hpp"
 #include "DataFileTable.hpp"
 #include "SheetText.hpp"
 
@@ -27,8 +28,9 @@ namespace rtype::game {
  * @brief Reads the sheets of every content folder, the assets first then
  * each resource (see engine::contentFoldersOf()): the
  * ENTITY_SHEET_FOLDER_IN_ASSETS of the first folder, as sheetTextsIn() does,
- * then that of each other folder that has one; a resource may hold no sheet. @p
- * contentFolders is never empty: it starts with the assets folder.
+ * then that of each other folder that has one; a resource may hold no sheet.
+ * @p contentFolders starts with the assets folder; none throws
+ * NoEntitySheetException.
  * @returns The texts, folder after folder, each in the order of its names,
  * checked by checkSheetNames() all together.
  * @throws What sheetTextsIn() throws for the first folder,
@@ -61,5 +63,16 @@ void checkSheetNames(std::span<const SheetText> texts);
  */
 [[nodiscard]] engine::DataFileTable sheetTableOf(
     const engine::DataFileTable& root, std::string_view key);
+
+/**
+ * @returns The box `[gameplay.hitbox]` of @p gameplay describes, in logical
+ * units. The server collides its entities with it, the client tests its own
+ * missiles against it, so both read it the same way.
+ * @throws engine::MissingDataFileKeyException or
+ * DataFileTableExpectedException when the table is missing or is not one;
+ * UnknownDataFileKeyException for a key other than HITBOX_KEYS; and what
+ * engine::wholeNumberAt() throws for a side outside HITBOX_SIDE_RANGE.
+ */
+[[nodiscard]] CollisionBox hitboxOf(const engine::DataFileTable& gameplay);
 
 }  // namespace rtype::game

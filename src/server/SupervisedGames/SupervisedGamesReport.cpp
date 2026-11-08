@@ -52,7 +52,9 @@ network::HostedGame hostedGameOf(const SupervisedGame& game) {
       .number = game.slot,
       .name = std::string{GAME_NAME_PREFIX} + std::to_string(game.slot),
       .state = hostedStateOf(game),
-      .difficulty = std::string{DEFAULT_DIFFICULTY},
+      .difficulty = game.rules.difficulty,
+      .lives = game.rules.lives,
+      .friendlyFire = game.rules.friendlyFire,
       .players = game.nicknames};
 }
 

@@ -7,6 +7,7 @@
 #include <vector>
 #include "ByteWriter.hpp"
 #include "MessageType.hpp"
+#include "ProtocolConstants.hpp"
 
 namespace rtype::network {
 
@@ -18,6 +19,10 @@ namespace rtype::network {
  * down, left, right, shoot. earlierActions holds the actions of the inputs
  * numbered inputNumber - 1, inputNumber - 2 and so on, newest first, at most
  * MAXIMUM_REPEATED_INPUTS of them and none below FIRST_INPUT_NUMBER.
+ * shownTick is the tick of the server the client draws the other entities at
+ * when it sends the input, NO_SHOWN_TICK before its first state, so the
+ * server can test the missiles of that player against the enemies where the
+ * player saw them (see the Own missiles section of the protocol page).
  */
 struct PlayerInput {
   static constexpr MessageType TYPE = MessageType::PlayerInput;
@@ -25,13 +30,14 @@ struct PlayerInput {
   std::uint32_t inputNumber{};
   std::uint8_t actions{};
   std::vector<std::uint8_t> earlierActions;
+  std::uint32_t shownTick{NO_SHOWN_TICK};
 
   bool operator==(const PlayerInput&) const = default;
 };
 
 /**
  * @brief Writes the input number, the actions, the number of earlier actions,
- * then the earlier actions.
+ * the earlier actions, then the shown tick.
  * @throws InvalidFieldValueException when a bit above PLAYER_ACTION_COUNT is
  * set in an action, when there are more than MAXIMUM_REPEATED_INPUTS earlier
  * actions, or when they reach below FIRST_INPUT_NUMBER; nothing is written
@@ -45,7 +51,7 @@ void encodePayload(ByteWriter& writer, const PlayerInput& message);
  * @throws InvalidFieldValueException when a bit above PLAYER_ACTION_COUNT is
  * set in an action, or the number of earlier actions is above
  * MAXIMUM_REPEATED_INPUTS or reaches below FIRST_INPUT_NUMBER.
- * @throws TrailingBytesException when bytes follow the earlier actions.
+ * @throws TrailingBytesException when bytes follow the shown tick.
  */
 [[nodiscard]] PlayerInput decodePayload(std::span<const std::byte> payload,
                                         std::type_identity<PlayerInput> type);

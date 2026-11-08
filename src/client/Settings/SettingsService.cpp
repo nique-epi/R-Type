@@ -26,7 +26,7 @@ bool isInRange(const std::optional<SettingRange>& range, int value) {
 
 /** @returns Whether @p setting accepts @p value: only an int has a range. */
 template <typename Value>
-bool accepts(const Setting<Value>& setting, Value value) {
+bool accepts(const Setting<Value>& setting, const Value& value) {
   if constexpr (std::is_same_v<Value, int>) {
     return isInRange(setting.range, value);
   } else {
@@ -71,7 +71,7 @@ void SettingsService::restore(const PlayerSettings& kept) {
 }
 
 template <typename Value>
-bool SettingsService::apply(const Setting<Value>& setting, Value value) {
+bool SettingsService::apply(const Setting<Value>& setting, const Value& value) {
   if (!accepts(setting, value)) {
     return false;
   }
@@ -80,14 +80,19 @@ bool SettingsService::apply(const Setting<Value>& setting, Value value) {
   return true;
 }
 
-template bool SettingsService::apply<int>(const Setting<int>&, int);
-template bool SettingsService::apply<bool>(const Setting<bool>&, bool);
+template bool SettingsService::apply<int>(const Setting<int>&, const int&);
+template bool SettingsService::apply<bool>(const Setting<bool>&, const bool&);
 template bool SettingsService::apply<ColorMode>(const Setting<ColorMode>&,
-                                                ColorMode);
+                                                const ColorMode&);
 template bool SettingsService::apply<DisplayMode>(const Setting<DisplayMode>&,
-                                                  DisplayMode);
+                                                  const DisplayMode&);
 template bool SettingsService::apply<std::optional<PixelSize>>(
-    const Setting<std::optional<PixelSize>>&, std::optional<PixelSize>);
+    const Setting<std::optional<PixelSize>>&, const std::optional<PixelSize>&);
+template bool SettingsService::apply<std::optional<network::Endpoint>>(
+    const Setting<std::optional<network::Endpoint>>&,
+    const std::optional<network::Endpoint>&);
+template bool SettingsService::apply<ShipLook>(const Setting<ShipLook>&,
+                                               const ShipLook&);
 
 void SettingsService::bindKey(BoundAction action, sf::Keyboard::Scancode key) {
   settings_->keys.bind(action, key);

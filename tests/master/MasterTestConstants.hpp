@@ -6,6 +6,7 @@
 /** @brief The statuses the routes of the master answer in the tests. */
 constexpr int EXPECTED_OK = 200;
 constexpr int EXPECTED_CREATED = 201;
+constexpr int EXPECTED_NO_CONTENT = 204;
 constexpr int EXPECTED_BAD_REQUEST = 400;
 constexpr int EXPECTED_UNAUTHORIZED = 401;
 constexpr int EXPECTED_NOT_FOUND = 404;
@@ -37,6 +38,11 @@ constexpr std::string_view LAST_HEARTBEAT_OF_SERVER_QUERY =
     "SELECT last_heartbeat FROM servers WHERE id = :id";
 constexpr std::string_view SERVER_ID_PARAMETER_NAME = ":id";
 constexpr int LAST_HEARTBEAT_COLUMN = 0;
+
+/** @brief How a test counts the rows the master keeps of a game. */
+constexpr std::string_view KEPT_PLAYERS_OF_GAME_QUERY =
+    "SELECT COUNT(*) FROM game_results WHERE game_id = :game_id";
+constexpr std::string_view GAME_ID_PARAMETER_NAME = ":game_id";
 
 /** @brief The servers one address may create in an hour. */
 constexpr std::size_t CREATIONS_PER_HOUR = 5;

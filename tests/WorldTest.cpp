@@ -21,6 +21,7 @@
 #include "Pilot.hpp"
 #include "Position.hpp"
 #include "ScoreValue.hpp"
+#include "ShipPilot.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "SteadyMotion.hpp"
 #include "TimeConstants.hpp"
@@ -532,6 +533,25 @@ TEST(World, SpawnedMissileBelongsToTheOwnerGiven) {
       componentOf<rtype::game::MissileOwner>(world, networkId);
   ASSERT_TRUE(owner.has_value());
   EXPECT_EQ(owner.value_or(rtype::game::MissileOwner{}).playerNumber,
+            SECOND_PLAYER_NUMBER);
+}
+
+/**
+ * Given an empty world
+ * When the ship of the second player is spawned with that player as owner
+ * Then the ship is flown by the second player
+ */
+TEST(World, SpawnedShipIsFlownByTheOwnerGiven) {
+  rtype::game::World world;
+
+  const std::uint32_t networkId = world.spawn(
+      shippedEntitySheets().named(SHIP_SHEET),
+      rtype::game::Position{.x = SOME_X, .y = SOME_Y}, SECOND_PLAYER_NUMBER);
+
+  const std::optional<rtype::game::ShipPilot> pilot =
+      componentOf<rtype::game::ShipPilot>(world, networkId);
+  ASSERT_TRUE(pilot.has_value());
+  EXPECT_EQ(pilot.value_or(rtype::game::ShipPilot{}).playerNumber,
             SECOND_PLAYER_NUMBER);
 }
 

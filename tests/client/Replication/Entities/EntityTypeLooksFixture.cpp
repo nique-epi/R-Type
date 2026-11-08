@@ -1,6 +1,7 @@
 #include "EntityTypeLooksFixture.hpp"
 #include <array>
 #include <string>
+#include "CollisionBox.hpp"
 #include "EntityAppearances.hpp"
 #include "EntityType.hpp"
 #include "EntityTypeLooks.hpp"
@@ -21,16 +22,21 @@ EntityAppearances lookedUpAppearance() {
 }
 
 /** @returns The client's own content of these tests: LOOKED_UP_TYPE_NAME,
- * then TYPE_WITHOUT_APPEARANCE_NAME, both enemies. */
+ * with its box, then TYPE_WITHOUT_APPEARANCE_NAME, both enemies, and the gun
+ * LOOKED_UP_SHIP_GUN. */
 LocalContent twoEnemies() {
   return LocalContent{
       .fingerprint = {},
-      .types = {
-          game::NumberedEntityType{.name = std::string{LOOKED_UP_TYPE_NAME},
-                                   .side = game::EntityType::Enemy},
-          game::NumberedEntityType{
-              .name = std::string{TYPE_WITHOUT_APPEARANCE_NAME},
-              .side = game::EntityType::Enemy}}};
+      .types = {game::NumberedEntityType{
+                    .name = std::string{LOOKED_UP_TYPE_NAME},
+                    .side = game::EntityType::Enemy,
+                    .hitbox =
+                        game::CollisionBox{.width = LOOKED_UP_BOX_WIDTH,
+                                           .height = LOOKED_UP_BOX_HEIGHT}},
+                game::NumberedEntityType{
+                    .name = std::string{TYPE_WITHOUT_APPEARANCE_NAME},
+                    .side = game::EntityType::Enemy}},
+      .gun = LOOKED_UP_SHIP_GUN};
 }
 
 }  // namespace

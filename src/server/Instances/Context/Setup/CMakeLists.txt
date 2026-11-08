@@ -9,6 +9,7 @@ target_link_libraries(rtype_server_instances_context_setup
     rtype_game_entity_types
     rtype_game_waves
     rtype_network_chat_line
+    rtype_network_connection_request
     rtype_network_player_input
     rtype_network_transport
     rtype_server_constants

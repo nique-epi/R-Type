@@ -6,10 +6,14 @@
 #include <string>
 #include <vector>
 #include "ActionSet.hpp"
+#include "BossLook.hpp"
+#include "BossPresentation.hpp"
+#include "ChatWindow.hpp"
 #include "ComponentRegistry.hpp"
 #include "DepartureFeed.hpp"
 #include "EffectSpawner.hpp"
 #include "EnemyActionPlayer.hpp"
+#include "EntityFeedback.hpp"
 #include "EntityMessage.hpp"
 #include "EntityRegistry.hpp"
 #include "EntityReplicator.hpp"
@@ -27,7 +31,7 @@
 #include "InterpolationClock.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
-#include "OwnShipPredictor.hpp"
+#include "OwnPrediction.hpp"
 #include "PlayerCommands.hpp"
 #include "PlayerInputPacer.hpp"
 #include "PlayerPalette.hpp"
@@ -36,6 +40,7 @@
 #include "SilenceWarning.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
+#include "WorldState.hpp"
 
 namespace rtype::client {
 
@@ -115,6 +120,10 @@ struct PlayerSettings;
  * of the parts, then asks for the end screen in place of every screen
  * END_SCREEN_DELAY later on the clock of the game, once; the game goes on
  * meanwhile, so the last explosion plays.
+ *
+ * The chat of the session shows over the playfield (ChatWindow), on the status
+ * picture, repainted at each update while it shows; while it is open it takes
+ * every key, the ship holds nothing, and its ESC opens no options.
  */
 class GameScreen : public IScreen {
  public:
@@ -147,13 +156,18 @@ class GameScreen : public IScreen {
    * world state among them. */
   void applyEntityMessages();
 
+  /** @brief Hands @p state, applied by the replicator already, to the score
+   * board, the interpolation clock, the inputs awaiting confirmation and the
+   * prediction of the own ship. */
+  void applyWorldState(const network::WorldState& state);
+
   /** @brief Repaints the status band when a pilot, the banner or the palette
    * the player chose changed since it was last painted. */
   void repaintStatusWhenChanged();
 
   /** @brief Paints the status band from the score board, and the banner of
-   * the start of the game over it, and keeps what was painted. */
-  void repaintStatus();
+   * the start of the game and @p boss over it, and keeps what was painted. */
+  void repaintStatus(const BossLook& boss);
 
   /** @brief Ranks the pilots of the board by the scores of @p ended into the
    * result of the parts, and remembers when the game ended. */
@@ -170,8 +184,11 @@ class GameScreen : public IScreen {
   engine::EntityRegistry entities_;
   engine::ComponentRegistry components_{entities_};
   EffectSpawner effects_;
+  EntityFeedback feedback_;
+  OwnPrediction prediction_;
   EntityReplicator replicator_;
   EnemyActionPlayer enemyActions_;
+  BossPresentation boss_;
   engine::SystemScheduler systems_;
   PlayerCommands playerCommands_;
   IPlayerInputLink* inputs_;
@@ -181,7 +198,6 @@ class GameScreen : public IScreen {
   ScoreBoard scoreBoard_;
   GameResult* result_;
   std::uint8_t playerNumber_;
-  OwnShipPredictor prediction_;
   InterpolationClock interpolationClock_;
   std::optional<engine::Duration> endedAt_;
   std::uint32_t paintedStatusRevision_{};
@@ -193,8 +209,11 @@ class GameScreen : public IScreen {
   std::optional<PlayerPalette> paintedPalette_;
   DepartureFeed departures_;
   SilenceWarning silence_;
+  ChatWindow chat_;
   std::uint32_t paintedDepartures_{};
   bool paintedSilence_ = false;
+  bool paintedChat_ = false;
+  BossLook paintedBoss_;
   bool worldSeen_ = false;
 };
 

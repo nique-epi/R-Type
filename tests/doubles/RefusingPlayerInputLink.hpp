@@ -13,7 +13,7 @@ class RefusingPlayerInputLink : public rtype::client::IPlayerInputLink {
  public:
   /** @returns Nothing: no input is sent. */
   std::optional<std::uint32_t> sendPlayerInput(
-      rtype::client::ActionSet held) override;
+      rtype::client::ActionSet held, std::uint32_t shownTick) override;
 
   /** Does nothing: no input was sent, so none is kept. */
   void confirmInputsUpTo(std::uint32_t acknowledged) override;

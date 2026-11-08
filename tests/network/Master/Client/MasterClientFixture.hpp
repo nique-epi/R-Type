@@ -15,6 +15,8 @@ class MasterClientFixture : public ::testing::Test {
   [[nodiscard]] rtype::network::MasterClient clientWith(
       const std::string& key) const;
 
+  [[nodiscard]] const RunningMaster& master() const;
+
   /** @returns The server "Paris 1", created through a client with no key. */
   [[nodiscard]] rtype::network::CreatedServer createdParis() const;
 

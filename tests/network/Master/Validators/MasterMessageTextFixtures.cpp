@@ -6,7 +6,11 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "FinishedGame.hpp"
+#include "FinishedGamePlayer.hpp"
 #include "GameListing.hpp"
+#include "GlobalLeaderboard.hpp"
+#include "GlobalLeaderboardRow.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
 #include "ListedGame.hpp"
@@ -65,9 +69,12 @@ ServerHeartbeat parisHeartbeat() {
                 HostedGame{.number = PLAYING_GAME_NUMBER,
                            .name = std::string{PLAYING_GAME_NAME},
                            .state = HostedGameState::Playing,
-                           .difficulty = std::string{PARIS_DIFFICULTY},
+                           .difficulty = std::string{PARIS_HARD_DIFFICULTY},
+                           .lives = PARIS_PLAYING_GAME_LIVES,
+                           .friendlyFire = true,
                            .players = {std::string{SECOND_PILOT},
                                        std::string{THIRD_PILOT}}}},
+      .difficulties = {PARIS_DIFFICULTIES.begin(), PARIS_DIFFICULTIES.end()},
       .measures = ServerMeasures{.tickP50Milliseconds = PARIS_TICK_P50,
                                  .tickP95Milliseconds = PARIS_TICK_P95,
                                  .receivedBytesPerSecond = PARIS_RECEIVED_BYTES,
@@ -85,7 +92,11 @@ GameListing parisGameListing() {
                 ListedGame{.number = PLAYING_GAME_NUMBER,
                            .name = std::string{PLAYING_GAME_NAME},
                            .state = ListedGameState::InGame,
-                           .playerCount = PLAYING_GAME_PLAYER_COUNT}}};
+                           .playerCount = PLAYING_GAME_PLAYER_COUNT,
+                           .difficulty = std::string{PARIS_HARD_DIFFICULTY},
+                           .lives = PARIS_PLAYING_GAME_LIVES,
+                           .friendlyFire = true}},
+      .difficulties = {PARIS_DIFFICULTIES.begin(), PARIS_DIFFICULTIES.end()}};
 }
 
 ServerListing parisServerListing() {
@@ -181,6 +192,14 @@ std::string heartbeatTextWithout(std::string_view pointer) {
   return withoutValueAt(heartbeatText(parisHeartbeat()), pointer);
 }
 
+nlohmann::json difficultyNames(std::size_t count) {
+  nlohmann::json names = nlohmann::json::array();
+  for (std::size_t index = 0; index < count; ++index) {
+    names.push_back(std::string{GAME_NAME_PREFIX} + std::to_string(index));
+  }
+  return names;
+}
+
 std::string heartbeatTextOfGames(std::size_t gameCount) {
   ServerHeartbeat heartbeat;
   for (std::size_t index = 0; index < gameCount; ++index) {
@@ -191,6 +210,7 @@ std::string heartbeatTextOfGames(std::size_t gameCount) {
         .difficulty = std::string{PARIS_DIFFICULTY},
         .players = {}});
   }
+  heartbeat.difficulties = {std::string{PARIS_DIFFICULTY}};
   return heartbeatText(heartbeat);
 }
 
@@ -215,6 +235,64 @@ std::string createdServerRefusal(std::string_view text) {
 std::string heartbeatRefusal(std::string_view text) {
   try {
     static_cast<void>(heartbeatFromText(text));
+  } catch (const InvalidMasterMessageException& refusal) {
+    return refusal.what();
+  }
+  return {};
+}
+
+FinishedGame parisFinishedGame() {
+  return FinishedGame{
+      .playedAt = FINISHED_GAME_DATE,
+      .difficulty = std::string{PARIS_DIFFICULTY},
+      .playerCount = PLAYING_GAME_PLAYER_COUNT,
+      .vanilla = true,
+      .players = {
+          FinishedGamePlayer{.nickname = std::string{FIRST_PILOT},
+                             .accountId = std::nullopt,
+                             .score = FIRST_PILOT_SCORE},
+          FinishedGamePlayer{.nickname = std::string{SECOND_PILOT},
+                             .accountId = std::string{SECOND_PILOT_ACCOUNT},
+                             .score = SECOND_PILOT_SCORE}}};
+}
+
+std::string finishedGameTextWith(std::string_view pointer,
+                                 const nlohmann::json& value) {
+  return withValueAt(finishedGameText(parisFinishedGame()), pointer, value);
+}
+
+std::string finishedGameTextOfPlayers(std::size_t playerCount) {
+  FinishedGame game = parisFinishedGame();
+  game.playerCount = static_cast<std::uint8_t>(PLAYERS_OF_A_FULL_GAME);
+  game.players.clear();
+  for (std::size_t index = 0; index < playerCount; ++index) {
+    game.players.push_back(
+        FinishedGamePlayer{.nickname = std::string{FIVE_PILOTS.at(index)},
+                           .accountId = std::nullopt,
+                           .score = FIRST_PILOT_SCORE});
+  }
+  return finishedGameText(game);
+}
+
+GlobalLeaderboard parisLeaderboard() {
+  return GlobalLeaderboard{
+      .scores = {GlobalLeaderboardRow{.rank = FIRST_RANK,
+                                      .nickname = std::string{FIRST_PILOT},
+                                      .score = FIRST_PILOT_SCORE,
+                                      .playedAt = FINISHED_GAME_DATE,
+                                      .serverId = PARIS_ID,
+                                      .serverName = std::string{PARIS_NAME}}},
+      .player = GlobalLeaderboardRow{.rank = SECOND_RANK,
+                                     .nickname = std::string{SECOND_PILOT},
+                                     .score = SECOND_PILOT_SCORE,
+                                     .playedAt = FINISHED_GAME_DATE,
+                                     .serverId = PARIS_ID,
+                                     .serverName = std::string{PARIS_NAME}}};
+}
+
+std::string finishedGameRefusal(std::string_view text) {
+  try {
+    static_cast<void>(finishedGameFromText(text));
   } catch (const InvalidMasterMessageException& refusal) {
     return refusal.what();
   }

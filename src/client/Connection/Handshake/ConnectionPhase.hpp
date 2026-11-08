@@ -32,6 +32,12 @@ enum class ConnectionPhase : std::uint8_t {
    */
   Closed,
   /**
+   * @brief The server said within the session that the host expelled the
+   * player: an Expulsion carrying the token of the session arrived, and the
+   * client closed the session without answering.
+   */
+  Expelled,
+  /**
    * @brief The server accepted the player and plays with another content
    * than the client's own, which is not kept: the session holds its seat
    * while the pack downloads, and contentReceived of contentSize bytes came.

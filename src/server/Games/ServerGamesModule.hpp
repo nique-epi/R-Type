@@ -8,6 +8,7 @@
 #include "ConfigurationRegistry.hpp"
 #include "EntitySheets.hpp"
 #include "GameInstance.hpp"
+#include "GameRuleSettings.hpp"
 #include "GameSettings.hpp"
 #include "GamesSettings.hpp"
 #include "IDatagramSender.hpp"
@@ -71,7 +72,8 @@ class ServerGamesModule final : public engine::IModule {
    * @throws ServerException, game::GameException or engine::EngineException
    * (or a class derived from one) naming the file, the line and the key when a
    * sheet or the waves file cannot be read or does not describe what the
-   * server expects, or when the waves file has no DEFAULT_DIFFICULTY.
+   * server expects, or when the waves file has no table for the difficulty
+   * the game is set to.
    */
   void start() override;
 
@@ -82,10 +84,10 @@ class ServerGamesModule final : public engine::IModule {
   [[nodiscard]] std::unique_ptr<GameInstance> createGame(GameSettings settings);
   void declareSettings(engine::ConfigurationRegistry& configuration);
   void playGame();
-  /** @returns The settings of the game, from the waves of @p catalog at
-   * DEFAULT_DIFFICULTY and the sheets @p types, which must outlive the game,
-   * starting from @p seed, or from a seed drawn at random without one; logs
-   * how the game plays, judged with @p seed. */
+  /** @returns The settings of the game, from its rules, the waves of @p
+   * catalog at the difficulty of the rules and the sheets @p types, which must
+   * outlive the game, starting from @p seed, or from a seed drawn at random
+   * without one; logs how the game plays, judged with @p seed. */
   [[nodiscard]] GameSettings settingsOf(const WaveCatalog& catalog,
                                         const game::EntitySheets& types,
                                         std::optional<std::uint32_t> seed);
@@ -95,6 +97,8 @@ class ServerGamesModule final : public engine::IModule {
   const engine::SettingValue* stateRateSetting_{nullptr};
   const engine::SettingValue* stateEncodingSetting_{nullptr};
   const engine::SettingValue* inputDelaySetting_{nullptr};
+  GameRuleSettings ruleSettings_;
+  const engine::SettingValue* startAtBossSetting_{nullptr};
   logging::Logger logger_;
   engine::SystemClock clock_;
   std::optional<game::EntitySheets> types_;

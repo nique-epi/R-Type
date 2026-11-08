@@ -16,6 +16,7 @@
 #include "PackContent.hpp"
 #include "PathText.hpp"
 #include "SheetText.hpp"
+#include "ShipGunReading.hpp"
 
 namespace rtype::client {
 
@@ -80,7 +81,8 @@ PackContent packContentOf(std::span<const identifiers::ContentFile> files,
     }
   }
   return PackContent{.appearances = std::move(appearances),
-                     .types = game::numberedEntityTypesOf(sheets)};
+                     .types = game::numberedEntityTypesOf(sheets),
+                     .gun = game::shipGunOrNoneOf(sheets)};
 }
 
 }  // namespace rtype::client

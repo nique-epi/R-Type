@@ -18,6 +18,7 @@
 #include "Outline.hpp"
 #include "PaddedScore.hpp"
 #include "PilotColor.hpp"
+#include "PilotDeparture.hpp"
 #include "PilotName.hpp"
 #include "PilotStatus.hpp"
 #include "PlayerPalette.hpp"
@@ -83,12 +84,10 @@ bool hasBay(const PilotStatus& pilot) {
   return colorOf(pilot) >= 0 && colorOf(pilot) < PLAYER_COLOR_COUNT;
 }
 
-/** @returns Whether a pilot is gone from the game: out of lives, left, or
- * dropped. */
+/** @returns Whether a pilot is gone from the game: out of lives, left,
+ * dropped or expelled. */
 bool isGone(const PilotStatus& pilot) {
-  return pilot.state == PilotState::OutOfLives ||
-         pilot.state == PilotState::Left ||
-         pilot.state == PilotState::SignalLost;
+  return pilot.state == PilotState::OutOfLives || hasLeft(pilot);
 }
 
 /** @returns The left column of a bay, 0 to PLAYER_COLOR_COUNT - 1 from the
@@ -109,8 +108,8 @@ PilotBay pilotBayOf(const PilotStatus& pilot, const PlayerPalette& palette) {
           .shading = shadingOf(palette, colorIndexOf(pilot))};
 }
 
-/** @returns The word of a pilot gone from the game: LEFT, SIGNAL LOST or
- * OUT; nothing for a pilot still flying. */
+/** @returns The word of a pilot gone from the game: LEFT, SIGNAL LOST,
+ * EXPELLED or OUT; nothing for a pilot still flying. */
 std::optional<StatusWord> goneWordOf(PilotState state) {
   switch (state) {
     case PilotState::Left:
@@ -119,6 +118,10 @@ std::optional<StatusWord> goneWordOf(PilotState state) {
                         .color = GONE_TEXT_COLOR};
     case PilotState::SignalLost:
       return StatusWord{.text = SIGNAL_LOST_TEXT,
+                        .font = TextFont::Small,
+                        .color = GONE_TEXT_COLOR};
+    case PilotState::Expelled:
+      return StatusWord{.text = EXPELLED_TEXT,
                         .font = TextFont::Small,
                         .color = GONE_TEXT_COLOR};
     case PilotState::OutOfLives:
@@ -279,9 +282,9 @@ void paintLifeCount(IInterfaceCanvas& canvas, const LifeCount& count) {
 }
 
 /** @brief Paints the left of the second row of a pilot: the unplugged plug
- * once its signal is lost, nothing once it left or while its lives are
- * unknown, otherwise its count of lives, every life lost once it has none
- * left. */
+ * once its signal is lost, nothing once it left or was expelled or while its
+ * lives are unknown, otherwise its count of lives, every life lost once it has
+ * none left. */
 void paintLives(IInterfaceCanvas& canvas, const PilotStatus& pilot,
                 const PilotBay& bay) {
   const sf::Vector2i topLeft = bay.topLeft + STATUS_LIVES_TOP_LEFT;
@@ -291,6 +294,7 @@ void paintLives(IInterfaceCanvas& canvas, const PilotStatus& pilot,
                              GONE_TEXT_COLOR);
       return;
     case PilotState::Left:
+    case PilotState::Expelled:
       return;
     case PilotState::Flying:
     case PilotState::Respawning:

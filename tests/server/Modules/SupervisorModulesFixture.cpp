@@ -29,6 +29,7 @@
 #include "ServerConstants.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerInformation.hpp"
+#include "ServerModuleTestConstants.hpp"
 #include "ServerRoleConstants.hpp"
 #include "SupervisorModules.hpp"
 #include "SupervisorModulesTestConstants.hpp"
@@ -84,6 +85,10 @@ SupervisorModulesFixture::supervisor(
 }
 
 std::uint16_t SupervisorModulesFixture::port() const { return port_; }
+
+std::filesystem::path SupervisorModulesFixture::resultsFile() const {
+  return folder_.path() / TEST_DATABASE_FILE;
+}
 
 const rtype::engine::ConfigurationReport& SupervisorModulesFixture::report()
     const {

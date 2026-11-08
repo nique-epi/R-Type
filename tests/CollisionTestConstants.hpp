@@ -1,5 +1,14 @@
 #pragma once
 
+#include <cstdint>
+
+/**
+ * @brief The numbers of two players, one who fires and one whose ship is
+ * fired at.
+ */
+constexpr std::uint8_t FIRING_PLAYER_NUMBER = 1;
+constexpr std::uint8_t OTHER_PLAYER_NUMBER = 2;
+
 /**
  * @brief Width and height of the square every collision test starts from.
  */
@@ -44,3 +53,9 @@ constexpr float EDGE_OFFSET = 5.0F;
  * each other, on one axis.
  */
 constexpr float FAR_DISTANCE = 100.0F;
+
+/**
+ * @brief How far to the right of its Position a moved square box is centered:
+ * three sides, so it is apart from a square on that Position.
+ */
+constexpr float MOVED_BOX_OFFSET_X = 30.0F;

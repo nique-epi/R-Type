@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include "AppliedInput.hpp"
 #include "ArrivalLedger.hpp"
 #include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
@@ -42,8 +43,9 @@ struct ConnectedPlayer {
    * new world is built. */
   std::uint32_t score{0};
   /** @brief The lives the player has while it has no ship, the next ship
-   * included: game::STARTING_LIVES when it joins and when a new world is
-   * built, one less each time its ship is destroyed. At 0 the player has no
+   * included: game::STARTING_LIVES when it is seated, the lives of the rules
+   * of the game once it joined and when a new world is built, one less each
+   * time its ship is destroyed. At 0 the player has no
    * ship and watches. While the player has a ship, the Lives component of the
    * ship holds the lives instead, and this field keeps the value the ship was
    * given. */
@@ -67,15 +69,14 @@ struct ConnectedPlayer {
    * arrives. The input itself is held by the Intent of the ship of the player.
    * InputKeeper keeps it. */
   std::optional<std::uint32_t> newestInputNumber;
-  /** @brief The inputNumber of the newest input applied to the ship of the
-   * player, which the world state confirms to its client; empty until one is
-   * applied and cleared with newestInputNumber. An input is applied when the
-   * hooks of the game see it, so this number never runs ahead of the ship, as
-   * newestInputNumber does when inputs are held before they are applied.
-   * It also tells an input that follows earlier ones from the first of the
+  /** @brief The newest input applied to the ship of the player; empty until
+   * one is applied and cleared with newestInputNumber. An input is applied when
+   * the hooks of the game see it, so this number never runs ahead of the ship,
+   * as newestInputNumber does when inputs are held before they are applied. It
+   * also tells an input that follows earlier ones from the first of the
    * session, which newestInputNumber cannot, since it runs ahead by the input
    * delay. DelayedInputs keeps it. */
-  std::optional<std::uint32_t> appliedInputNumber;
+  std::optional<AppliedInput> appliedInput;
   /** @brief Ticks the game ran since it last read a datagram of the player;
    * the player is away once it reaches SESSION_TIMEOUT_TICKS, and the session
    * closes once it reaches SESSION_CLOSING_TICKS.
@@ -85,6 +86,10 @@ struct ConnectedPlayer {
    * and lives are kept, its input number is cleared and it does not count for
    * the ready check. The next datagram read from the player clears it. */
   bool away{false};
+  /** @brief Whether the host expelled the player: it was told so (see
+   * PlayerExpeller), and its session closes at the next
+   * Departures::closeSilentSessions(), with the cause Expelled. */
+  bool expelled{false};
   /** @brief The real time since the server last sent the player a Heartbeat,
    * added at the start of each tick, a stall of the server included, since
    * the client waits in real time: the next Heartbeat goes out once it reaches

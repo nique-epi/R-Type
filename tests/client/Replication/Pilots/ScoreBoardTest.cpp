@@ -1,14 +1,13 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <cstddef>
 #include <cstdint>
 #include <optional>
-#include <vector>
 #include "EntityAnnouncements.hpp"
-#include "LobbyState.hpp"
 #include "PilotStatus.hpp"
 #include "PlayerLeft.hpp"
 #include "ScoreBoard.hpp"
+#include "ScoreBoardFixtures.hpp"
+#include "ScoreBoardTestConstants.hpp"
 #include "WorldState.hpp"
 #include "WorldStateFilterTestConstants.hpp"
 
@@ -20,54 +19,11 @@ using rtype::client::testing::NEWER_TICK;
 using rtype::client::testing::OLDER_TICK;
 using rtype::client::testing::stateListingPlayers;
 using rtype::network::DepartureReason;
-using rtype::network::LobbyPlayer;
 using rtype::network::PlayerLeft;
 using rtype::network::PlayerState;
 using ::testing::ElementsAre;
 using ::testing::Field;
 using ::testing::IsEmpty;
-
-namespace {
-
-constexpr std::uint8_t PLAYER_ONE = 1;
-constexpr std::uint8_t PLAYER_TWO = 2;
-constexpr std::uint8_t PLAYER_THREE = 3;
-constexpr std::uint8_t PLAYER_FOUR = 4;
-constexpr std::uint8_t NO_PLAYER = 0;
-constexpr std::uint8_t PAST_THE_LAST_PLAYER = 5;
-constexpr std::uint8_t LOCAL_NUMBER = PLAYER_TWO;
-constexpr std::uint32_t SCORE = 12400;
-constexpr std::uint8_t LIVES = 3;
-constexpr std::uint8_t LAST_LIFE = 1;
-constexpr std::uint8_t NO_LIFE = 0;
-constexpr std::size_t PILOTS_OF_FOUR = 4;
-
-/** @returns A player of the waiting room with this nickname, not ready. */
-LobbyPlayer waiting(std::uint8_t number, const char* nickname) {
-  return LobbyPlayer{
-      .playerNumber = number, .ready = false, .nickname = nickname};
-}
-
-/** @returns A player listed by a world state with these lives, its ship
- * flying. */
-PlayerState listedPlayer(std::uint8_t number, std::uint8_t lives) {
-  return PlayerState{.playerNumber = number,
-                     .shipEntityId = 0,
-                     .lives = lives,
-                     .score = SCORE,
-                     .invulnerable = false};
-}
-
-/** @returns A board started from the waiting room of players 3, 1 and 2,
- * this client being player 2. */
-ScoreBoard boardOfThree() {
-  const std::vector<LobbyPlayer> room{waiting(PLAYER_THREE, "KAI"),
-                                      waiting(PLAYER_ONE, "ACE"),
-                                      waiting(PLAYER_TWO, "NOVA")};
-  return {room, LOCAL_NUMBER};
-}
-
-}  // namespace
 
 /**
  * Given a waiting room listing players 3, 1 and 2
@@ -75,7 +31,7 @@ ScoreBoard boardOfThree() {
  * Then it holds the three pilots in the order of their numbers
  */
 TEST(ScoreBoard, SeatsThePlayersOfTheWaitingRoomInNumberOrder) {
-  const ScoreBoard board = boardOfThree();
+  const ScoreBoard board = scoreBoardOfThree();
 
   EXPECT_THAT(board.pilots(),
               ElementsAre(Field(&PilotStatus::playerNumber, PLAYER_ONE),
@@ -89,7 +45,7 @@ TEST(ScoreBoard, SeatsThePlayersOfTheWaitingRoomInNumberOrder) {
  * Then each pilot keeps its nickname
  */
 TEST(ScoreBoard, KeepsTheNicknamesOfTheWaitingRoom) {
-  const ScoreBoard board = boardOfThree();
+  const ScoreBoard board = scoreBoardOfThree();
 
   EXPECT_THAT(board.pilots(),
               ElementsAre(Field(&PilotStatus::nickname, "ACE"),
@@ -103,7 +59,7 @@ TEST(ScoreBoard, KeepsTheNicknamesOfTheWaitingRoom) {
  * Then its score is 0, its lives unknown, it flies, and it is not this client
  */
 TEST(ScoreBoard, APilotStartsWithNothingKnown) {
-  const ScoreBoard board = boardOfThree();
+  const ScoreBoard board = scoreBoardOfThree();
 
   EXPECT_EQ(board.pilots().front(), (PilotStatus{.playerNumber = PLAYER_ONE,
                                                  .nickname = "ACE",
@@ -119,7 +75,7 @@ TEST(ScoreBoard, APilotStartsWithNothingKnown) {
  * Then player 2, and it alone, is the local player
  */
 TEST(ScoreBoard, TagsTheLocalPlayer) {
-  const ScoreBoard board = boardOfThree();
+  const ScoreBoard board = scoreBoardOfThree();
 
   EXPECT_THAT(board.pilots(),
               ElementsAre(Field(&PilotStatus::isLocalPlayer, false),
@@ -133,7 +89,7 @@ TEST(ScoreBoard, TagsTheLocalPlayer) {
  * Then player 1 has that score and those lives
  */
 TEST(ScoreBoard, AWorldStateSetsTheScoreAndTheLives) {
-  ScoreBoard board = boardOfThree();
+  ScoreBoard board = scoreBoardOfThree();
 
   board.apply(
       stateListingPlayers(APPLIED_TICK, {listedPlayer(PLAYER_ONE, LIVES)}));
@@ -148,7 +104,7 @@ TEST(ScoreBoard, AWorldStateSetsTheScoreAndTheLives) {
  * Then player 1 still has 1 life
  */
 TEST(ScoreBoard, AnOlderWorldStateIsIgnored) {
-  ScoreBoard board = boardOfThree();
+  ScoreBoard board = scoreBoardOfThree();
   board.apply(
       stateListingPlayers(APPLIED_TICK, {listedPlayer(PLAYER_ONE, LAST_LIFE)}));
 
@@ -164,7 +120,7 @@ TEST(ScoreBoard, AnOlderWorldStateIsIgnored) {
  * Then player 1 is respawning
  */
 TEST(ScoreBoard, AnInvulnerablePilotIsRespawning) {
-  ScoreBoard board = boardOfThree();
+  ScoreBoard board = scoreBoardOfThree();
   PlayerState respawned = listedPlayer(PLAYER_ONE, LIVES);
   respawned.invulnerable = true;
 
@@ -179,7 +135,7 @@ TEST(ScoreBoard, AnInvulnerablePilotIsRespawning) {
  * Then player 1 is out of lives
  */
 TEST(ScoreBoard, NoLifeLeftIsOutOfLives) {
-  ScoreBoard board = boardOfThree();
+  ScoreBoard board = scoreBoardOfThree();
 
   board.apply(
       stateListingPlayers(APPLIED_TICK, {listedPlayer(PLAYER_ONE, NO_LIFE)}));
@@ -193,7 +149,7 @@ TEST(ScoreBoard, NoLifeLeftIsOutOfLives) {
  * Then player 4 is seated last, with its score
  */
 TEST(ScoreBoard, APlayerMissingFromTheWaitingRoomIsSeated) {
-  ScoreBoard board = boardOfThree();
+  ScoreBoard board = scoreBoardOfThree();
 
   board.apply(
       stateListingPlayers(APPLIED_TICK, {listedPlayer(PLAYER_FOUR, LIVES)}));
@@ -210,7 +166,7 @@ TEST(ScoreBoard, APlayerMissingFromTheWaitingRoomIsSeated) {
  * Then player 3 has left and player 1 has lost its signal
  */
 TEST(ScoreBoard, ADepartureSaysHowThePilotLeft) {
-  ScoreBoard board = boardOfThree();
+  ScoreBoard board = scoreBoardOfThree();
 
   board.apply(PlayerLeft{.playerNumber = PLAYER_THREE,
                          .reason = DepartureReason::Left});
@@ -222,12 +178,26 @@ TEST(ScoreBoard, ADepartureSaysHowThePilotLeft) {
 }
 
 /**
+ * Given a board of three pilots
+ * When player 3 leaves because the host expelled it
+ * Then player 3 is expelled
+ */
+TEST(ScoreBoard, AnExpelledPilotIsExpelled) {
+  ScoreBoard board = scoreBoardOfThree();
+
+  board.apply(PlayerLeft{.playerNumber = PLAYER_THREE,
+                         .reason = DepartureReason::Expelled});
+
+  EXPECT_EQ(board.pilots().back().state, PilotState::Expelled);
+}
+
+/**
  * Given a board where player 1 has left
  * When a newer world state still lists player 1
  * Then player 1 is still gone, with the score of that state
  */
 TEST(ScoreBoard, ALaterStateDoesNotBringBackAPilotWhoLeft) {
-  ScoreBoard board = boardOfThree();
+  ScoreBoard board = scoreBoardOfThree();
   board.apply(
       PlayerLeft{.playerNumber = PLAYER_ONE, .reason = DepartureReason::Left});
 
@@ -262,7 +232,7 @@ TEST(ScoreBoard, ANumberOutsideOneToFourIsIgnored) {
  * Then the revision moves
  */
 TEST(ScoreBoard, AChangeMovesTheRevision) {
-  ScoreBoard board = boardOfThree();
+  ScoreBoard board = scoreBoardOfThree();
   const std::uint32_t before = board.revision();
 
   board.apply(
@@ -277,7 +247,7 @@ TEST(ScoreBoard, AChangeMovesTheRevision) {
  * Then the revision stays, so nothing is repainted
  */
 TEST(ScoreBoard, AStateThatChangesNothingKeepsTheRevision) {
-  ScoreBoard board = boardOfThree();
+  ScoreBoard board = scoreBoardOfThree();
   board.apply(
       stateListingPlayers(APPLIED_TICK, {listedPlayer(PLAYER_ONE, LIVES)}));
   const std::uint32_t before = board.revision();

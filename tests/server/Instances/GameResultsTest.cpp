@@ -5,13 +5,13 @@
 #include "GameInstanceTestConstants.hpp"
 #include "GameResult.hpp"
 #include "GameResultsFixtures.hpp"
+#include "GameRuleConstants.hpp"
 #include "GameState.hpp"
 #include "LeaderboardSamples.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "Replication/Announcements/Milestones/GameEndAnnouncerTestConstants.hpp"
 #include "SentDatagrams.hpp"
-#include "ServerConstants.hpp"
 
 namespace rtype::server::testing {
 
@@ -29,7 +29,7 @@ TEST_F(GameInstanceLivesFixture, RecordsTheScoresGameEndedAnnounces) {
 
   ASSERT_EQ(results().results().size(), 1U);
   const GameResult result = results().results().front();
-  EXPECT_EQ(result.difficulty, DEFAULT_DIFFICULTY);
+  EXPECT_EQ(result.difficulty, rtype::identifiers::DEFAULT_DIFFICULTY);
   EXPECT_EQ(result.playerCount, 2U);
   ASSERT_EQ(result.players.size(), 2U);
   EXPECT_EQ(result.players.at(0).score, FIRST_PLAYER_FINAL_SCORE);

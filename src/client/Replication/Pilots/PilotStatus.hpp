@@ -18,6 +18,8 @@ enum class PilotState : std::uint8_t {
   Left,
   /** @brief Dropped by the server, which stopped hearing from it. */
   SignalLost,
+  /** @brief Expelled by the host of the server. */
+  Expelled,
 };
 
 /** @brief One pilot of the game: what the status band shows of it. */

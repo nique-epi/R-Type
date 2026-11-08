@@ -17,6 +17,7 @@ class SilentAudioService final : public IAudioService {
   [[nodiscard]] IMusicPlayer& theme() override;
   void playTheme() override;
   void playGameMusic() override;
+  void silenceMusic() override;
   void open() override;
   void update(engine::Duration elapsed) override;
 

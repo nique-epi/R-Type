@@ -18,7 +18,10 @@ class DatabaseFileFixture : public ::testing::Test {
   /**
    * @brief Opens file() with @p migrations while another connection holds a
    * write transaction on it, in which it ran @p write, and commits it
-   * WRITE_HELD_FOR later.
+   * WRITE_HELD_FOR later. The other connection waits for a lock like every
+   * connection of the project: its commit needs the opening to let go of its
+   * read lock, which can take a moment, and without that wait the commit fails
+   * with "database is locked" while the opening retries until its timeout.
    * @returns The connection openDatabaseFile() gave; what it threw, rethrown.
    */
   [[nodiscard]] SQLite::Database openWhileAnotherConnectionWrites(

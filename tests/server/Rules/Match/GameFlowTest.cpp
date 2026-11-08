@@ -5,9 +5,11 @@
 #include "EntityIdConstants.hpp"
 #include "GameFlowFixture.hpp"
 #include "GameInstanceConstants.hpp"
+#include "GameRuleConstants.hpp"
 #include "GameState.hpp"
 #include "GameStateChanged.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
+#include "PlayerLives.hpp"
 #include "PlayerRoster.hpp"
 #include "SentDatagrams.hpp"
 #include "Spawning/WaveSpawnerTestConstants.hpp"
@@ -21,6 +23,7 @@ using rtype::server::START_BARRIER_TICKS;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::FOURTH_PLAYER;
 using rtype::server::testing::GameFlowFixture;
+using rtype::server::testing::GameFlowFriendlyFireFixture;
 using rtype::server::testing::playerEndpoint;
 using rtype::server::testing::SECOND_PLAYER;
 using rtype::server::testing::SOME_TICKS;
@@ -471,4 +474,35 @@ TEST_F(GameFlowFixture, AnnouncesAStateOnceWhileTheGameStaysInIt) {
   runTicks(FINISHED_STATE_TICKS - 1);
 
   EXPECT_EQ(changes().size(), 3U);
+}
+
+/**
+ * Given a game whose rules turn friendly fire on, with two players in it
+ * When a missile of the first player reaches the ship of the second
+ * Then the second player loses a life
+ */
+TEST_F(GameFlowFriendlyFireFixture, AMissileOfAnotherPilotCostsALife) {
+  startGameWith({FIRST_PLAYER, SECOND_PLAYER});
+  const ConnectedPlayer& shooter = *roster().find(playerEndpoint(FIRST_PLAYER));
+  const ConnectedPlayer& target = *roster().find(playerEndpoint(SECOND_PLAYER));
+
+  fireAt(target, shooter.playerNumber);
+
+  EXPECT_EQ(rtype::server::livesOf(flow().world(), target),
+            rtype::identifiers::DEFAULT_LIVES - 1);
+}
+
+/**
+ * Given a game whose rules turn friendly fire on, with one player in it
+ * When a missile of that player reaches its own ship
+ * Then the player keeps every life: a pilot never hits itself
+ */
+TEST_F(GameFlowFriendlyFireFixture, AMissileNeverCostsItsOwnPilotALife) {
+  startGameWith({FIRST_PLAYER});
+  const ConnectedPlayer& pilot = *roster().find(playerEndpoint(FIRST_PLAYER));
+
+  fireAt(pilot, pilot.playerNumber);
+
+  EXPECT_EQ(rtype::server::livesOf(flow().world(), pilot),
+            rtype::identifiers::DEFAULT_LIVES);
 }

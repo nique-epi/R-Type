@@ -8,6 +8,7 @@
 #include "MasterDatabase.hpp"
 #include "ServerStatusJob.hpp"
 #include "ServersController.hpp"
+#include "ServersService.hpp"
 
 namespace rtype::master {
 
@@ -19,7 +20,8 @@ namespace rtype::master {
  * in the tables `servers`, `heartbeat_samples` and `status_changes`.
  *
  * install() adds the routes to the MasterHttpServer; they read the database
- * only once the HTTP module listens, after the storage opened it. start()
+ * only once the HTTP module listens, after the storage opened it. It provides
+ * the ServersService, which tells another module the server of a key. start()
  * starts the ServerStatusJob, on its thread StatusWatch.
  */
 class ServersModule final : public engine::IModule {
@@ -27,7 +29,8 @@ class ServersModule final : public engine::IModule {
   [[nodiscard]] std::string name() const override;
   [[nodiscard]] std::vector<std::string> dependencies() const override;
 
-  /** @brief Adds the routes of the game servers; opens nothing. */
+  /** @brief Adds the routes of the game servers and provides the
+   * ServersService; opens nothing. */
   void install(engine::InstallContext& context) override;
 
   /** @brief Starts StatusWatch, which refreshes the statuses at once, then
@@ -39,6 +42,7 @@ class ServersModule final : public engine::IModule {
 
  private:
   MasterDatabase* database_{nullptr};
+  std::optional<ServersService> service_;
   std::optional<ServersController> controller_;
   std::optional<ServerStatusJob> statusJob_;
 };
