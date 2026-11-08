@@ -9,6 +9,7 @@
 #include "ArchiveConstants.hpp"
 #include "BanList.hpp"
 #include "BansDatabase.hpp"
+#include "CurrentSecond.hpp"
 #include "LatestBans.hpp"
 
 namespace rtype::server {
@@ -40,9 +41,7 @@ void BanWatch::run(const std::stop_token& stop, const BansDatabase& database) {
 
 void BanWatch::readAgain(const BansDatabase& database) {
   try {
-    bans_.publish(
-        BanList{database.inForce(std::chrono::floor<std::chrono::seconds>(
-            std::chrono::system_clock::now()))});
+    bans_.publish(BanList{database.inForce(currentSecond())});
   } catch (const SQLite::Exception& error) {
     logger_.warn("bans not read again, the ones read before stay: ",
                  error.what());

@@ -12,6 +12,7 @@
 #include "ConnectionAcceptor.hpp"
 #include "ConnectionAcceptorParts.hpp"
 #include "ContentAnnouncementReading.hpp"
+#include "CurrentSecond.hpp"
 #include "Endpoint.hpp"
 #include "Expulsion.hpp"
 #include "ExpulsionRule.hpp"
@@ -94,8 +95,7 @@ void ServerLobbyModule::expelBannedPilots() {
   }
   seenBans_ = bans_->revision();
   const BanList bans = bans_->value().value_or(BanList{});
-  const auto now = std::chrono::floor<std::chrono::seconds>(
-      std::chrono::system_clock::now());
+  const std::chrono::sys_seconds now = currentSecond();
   expeller_.expel(
       std::bind_front(&IDatagramSender::queueDatagram, sender_),
       runningGame_->game().roster(),

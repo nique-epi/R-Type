@@ -1,5 +1,4 @@
 #include "ConnectionAcceptor.hpp"
-#include <chrono>
 #include <cstdint>
 #include <exception>
 #include <limits>
@@ -17,6 +16,7 @@
 #include "ConnectionChallenge.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
+#include "CurrentSecond.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
@@ -185,11 +185,9 @@ bool ConnectionAcceptor::isBanned(const network::Endpoint& sender,
   }
   const std::optional<BanList> bans = bans_->value();
   return bans.has_value() &&
-         bans->barring(
-             BanCandidate{.nickname = nickname,
-                          .address = sender.address,
-                          .at = std::chrono::floor<std::chrono::seconds>(
-                              std::chrono::system_clock::now())}) != nullptr;
+         bans->barring(BanCandidate{.nickname = nickname,
+                                    .address = sender.address,
+                                    .at = currentSecond()}) != nullptr;
 }
 
 }  // namespace rtype::server
