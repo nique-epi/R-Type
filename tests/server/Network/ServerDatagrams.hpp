@@ -2,10 +2,12 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 #include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
+#include "GameRules.hpp"
 #include "Heartbeat.hpp"
 #include "PacketHeader.hpp"
 #include "PlayerInput.hpp"
@@ -20,9 +22,11 @@
     std::uint64_t cookie, const rtype::network::PacketHeader& header = {});
 
 /** @returns A datagram holding a ConnectionRequest that carries @p cookie and
- * asks for @p game, as PLAYER_NICKNAME. */
+ * asks for @p game, as PLAYER_NICKNAME, with @p rules; without them, with the
+ * rules a client sends for @p game when its player chose none. */
 [[nodiscard]] std::vector<std::byte> requestDatagramFor(
-    const rtype::network::GameChoice& game, std::uint64_t cookie);
+    const rtype::network::GameChoice& game, std::uint64_t cookie,
+    const std::optional<rtype::network::GameRules>& rules = std::nullopt);
 
 /** @returns A datagram holding a ConnectionRequest that carries @p cookie and
  * asks for @p nickname. */

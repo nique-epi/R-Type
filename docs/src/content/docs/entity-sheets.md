@@ -48,7 +48,7 @@ first_shot_ms = 1500
 projectile = "enemy_missile"
 ```
 
-`World::spawn(sheet, position, owner)` (`src/game/World.hpp`) makes every entity of the game from its sheet, with the components below, an `Intent` and a `NetworkIdentity`. A body no behaviour pilots is the ship of a player: it also gets `STARTING_LIVES` (3) lives.
+`World::spawn(sheet, position, owner)` (`src/game/World.hpp`) makes every entity of the game from its sheet, with the components below, an `Intent` and a `NetworkIdentity`. A body no behaviour pilots is the ship of a player: it also gets `STARTING_LIVES` (3) lives, which the server replaces with the lives of the rules of its game, and, with `owner`, a `ShipPilot` naming that player, so its own missiles never hit it. Any other body given `owner` gets a `MissileOwner`, so its kills are credited to that player.
 
 | Key | Unit | Accepted | What it gives the entity |
 |---|---|---|---|

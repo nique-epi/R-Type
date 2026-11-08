@@ -120,3 +120,22 @@ constexpr std::string_view GAME_LINES_TEXT =
  * that names none. */
 constexpr std::string_view DATABASE_OF_THE_SUPERVISOR = "some/leaderboard.db";
 constexpr std::string_view NO_DATABASE_SETTING{};
+
+/** @brief Rules a creator chose in the tests, other than the default ones on
+ * every field: the difficulty "hard", five lives and friendly fire on; and the
+ * arguments a game is launched with for them. */
+constexpr std::string_view CHOSEN_DIFFICULTY = "hard";
+constexpr std::uint8_t CHOSEN_LIVES = 5;
+constexpr std::string_view CHOSEN_LIVES_ARGUMENT = "5";
+constexpr std::string_view FRIENDLY_FIRE_ON_ARGUMENT = "1";
+
+/** @brief The difficulties of the shipped waves file, in the order a
+ * WaveCatalog lists them, the one a game plays by default, and a difficulty it
+ * has no table for. */
+constexpr std::array<std::string_view, 3> SHIPPED_DIFFICULTIES{"easy", "hard",
+                                                               "normal"};
+constexpr std::string_view SHIPPED_DEFAULT_DIFFICULTY = "normal";
+constexpr std::string_view UNKNOWN_DIFFICULTY = "nightmare";
+
+/** @brief Lives one past the most a game accepts. */
+constexpr std::uint8_t LIVES_PAST_THE_MOST = 10;

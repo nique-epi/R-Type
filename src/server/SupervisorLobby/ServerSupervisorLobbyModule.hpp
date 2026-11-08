@@ -6,6 +6,7 @@
 #include "CookieIssuer.hpp"
 #include "GameRegistry.hpp"
 #include "GameSpawner.hpp"
+#include "HostedDifficulties.hpp"
 #include "IDatagramSender.hpp"
 #include "IModule.hpp"
 #include "IncomingDatagram.hpp"
@@ -28,8 +29,12 @@ namespace rtype::server {
  * asks again every CONNECTION_REQUEST_INTERVAL), to a new game when it needs
  * one and fewer than MAXIMUM_RUNNING_GAMES run, and refused with the reason
  * the registry gives otherwise (ServerFull, GameNotFound, GameInProgress,
- * GameFull). A game opened for a NewGame remembers its sender, so the request
- * it repeats opens no second game. The registry holds a seat for each player
+ * GameFull). A NewGame whose rules name a difficulty the waves file does not
+ * hold, or lives out of LOWEST_LIVES to HIGHEST_LIVES, is refused first
+ * (UnknownDifficulty, LivesOutOfRange), and nothing is opened. A game opened
+ * for a NewGame remembers its sender and is played by its rules, so the
+ * request it repeats opens no second game; a game opened for any game is
+ * played by the default rules. The registry holds a seat for each player
  * it sends to a game, or makes wait for one, the player whose request opened a
  * game included, so a burst of requests fills a game and opens the next
  * instead of sending a fifth player to a game of four. A request of another
@@ -56,11 +61,12 @@ class ServerSupervisorLobbyModule final : public engine::IModule {
   void answer(const network::IncomingDatagram& datagram, engine::Duration now);
   void refuseAnotherVersion(const network::IncomingDatagram& datagram);
   void answerValidRequest(const SeatRequest& request,
-                          const network::GameChoice& game);
+                          const network::ConnectionRequest& message);
 
   engine::SystemClock clock_;
   network::CookieIssuer cookies_;
   GameRegistry* registry_{nullptr};
+  const HostedDifficulties* difficulties_{nullptr};
   GameSpawner* spawner_{nullptr};
   IDatagramSender* sender_{nullptr};
   TickDatagrams* tickDatagrams_{nullptr};

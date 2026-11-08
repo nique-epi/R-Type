@@ -17,9 +17,7 @@ void requireValid(const LeaderboardRequest& message) {
       message.playerCount > MAXIMUM_PLAYERS) {
     throw InvalidFieldValueException(PLAYER_COUNT_FIELD, message.playerCount);
   }
-  if (!isValidNickname(message.difficulty)) {
-    throw InvalidDifficultyException(message.difficulty.size());
-  }
+  requireValidDifficulty(message.difficulty);
 }
 
 }  // namespace

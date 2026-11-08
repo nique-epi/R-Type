@@ -3,7 +3,9 @@
 #include <cstdint>
 #include <optional>
 #include <stop_token>
+#include <string>
 #include <thread>
+#include <vector>
 #include "HeartbeatJobParts.hpp"
 #include "HeartbeatTimes.hpp"
 #include "LastProblem.hpp"
@@ -71,6 +73,7 @@ class HeartbeatJob {
   ResultsCourier courier_;
   ServerIdentity identity_;
   const LatestHostedGames& games_;
+  std::vector<std::string> difficulties_;
   const concurrency::LatestValue<std::uint64_t>& probeTokens_;
   std::uint64_t sentTokenRevision_{0};
   const LatestServerMeasures* measures_;

@@ -43,8 +43,9 @@ struct ConnectedPlayer {
    * new world is built. */
   std::uint32_t score{0};
   /** @brief The lives the player has while it has no ship, the next ship
-   * included: game::STARTING_LIVES when it joins and when a new world is
-   * built, one less each time its ship is destroyed. At 0 the player has no
+   * included: game::STARTING_LIVES when it is seated, the lives of the rules
+   * of the game once it joined and when a new world is built, one less each
+   * time its ship is destroyed. At 0 the player has no
    * ship and watches. While the player has a ship, the Lives component of the
    * ship holds the lives instead, and this field keeps the value the ship was
    * given. */

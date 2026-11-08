@@ -7,6 +7,7 @@
 #include "GameResultKeeper.hpp"
 #include "GameResultKeeperFixture.hpp"
 #include "GameResultKeeperTestConstants.hpp"
+#include "GameRules.hpp"
 #include "GameSettings.hpp"
 #include "GameState.hpp"
 #include "GameStateChanged.hpp"
@@ -94,6 +95,42 @@ TEST(GameResultKeeper, SaysTheResultOfAGameThatIsNotVanillaIsNot) {
 
   ASSERT_EQ(archive.results().size(), 1U);
   EXPECT_FALSE(archive.results().front().vanilla);
+}
+
+/**
+ * Given a game whose rules give five lives, and a player with two left
+ * When the game finishes
+ * Then the player died three times: its deaths count from the lives of the
+ * rules, not from the default lives
+ */
+TEST(GameResultKeeper, CountsDeathsFromTheLivesOfTheRules) {
+  PlayerRoster roster;
+  RecordingResultsArchive archive;
+  GameResultKeeper keeper{
+      roster, archive,
+      GameSettings{.waves = {},
+                   .types = game::testing::shippedEntitySheets(),
+                   .rules = network::GameRules{
+                       .difficulty = std::string{KEEPER_DIFFICULTY},
+                       .lives = FIVE_LIVES_OF_THE_RULES,
+                       .friendlyFire = false}}};
+  ConnectedPlayer* const player =
+      roster.add(playerEndpoint(FIRST_PLAYER),
+                 std::string{NICKNAMES.at(FIRST_PLAYER)}, SESSION_TOKEN);
+  ASSERT_NE(player, nullptr);
+  keeper.onStateChanged(
+      GameStateChanged{.previous = GameState::WaitingForPlayers,
+                       .current = GameState::Starting});
+  keeper.onStateChanged(GameStateChanged{.previous = GameState::Starting,
+                                         .current = GameState::InProgress});
+  player->livesWithoutShip = TWO_LIVES_LEFT;
+
+  keeper.onStateChanged(GameStateChanged{.previous = GameState::InProgress,
+                                         .current = GameState::Finished});
+
+  ASSERT_EQ(archive.results().size(), 1U);
+  ASSERT_EQ(archive.results().front().players.size(), 1U);
+  EXPECT_EQ(archive.results().front().players.front().deaths, THREE_LIVES_LOST);
 }
 
 /**

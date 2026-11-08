@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include "GameRuleConstants.hpp"
 #include "ServerConstants.hpp"
 
 namespace rtype::server::testing {
@@ -20,5 +21,9 @@ constexpr std::uint32_t ZERO_SEED = 0;
 /** @brief An input delay one tick on each side of the default one. */
 constexpr std::size_t ONE_TICK_SHORTER_DELAY = DEFAULT_INPUT_DELAY_TICKS - 1;
 constexpr std::size_t ONE_TICK_LONGER_DELAY = DEFAULT_INPUT_DELAY_TICKS + 1;
+
+/** @brief Lives one on each side of the default lives. */
+constexpr std::uint8_t ONE_LIFE_FEWER = identifiers::DEFAULT_LIVES - 1;
+constexpr std::uint8_t ONE_LIFE_MORE = identifiers::DEFAULT_LIVES + 1;
 
 }  // namespace rtype::server::testing

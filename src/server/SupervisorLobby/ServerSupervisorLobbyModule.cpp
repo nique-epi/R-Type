@@ -10,7 +10,9 @@
 #include "Endpoint.hpp"
 #include "GamePlace.hpp"
 #include "GameRegistry.hpp"
+#include "GameRules.hpp"
 #include "GameSpawner.hpp"
+#include "HostedDifficulties.hpp"
 #include "IDatagramSender.hpp"
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
@@ -22,6 +24,7 @@
 #include "PlaceKind.hpp"
 #include "ProtocolConstants.hpp"
 #include "RequestReading.hpp"
+#include "RulesRefusal.hpp"
 #include "SeatRequest.hpp"
 #include "ServerConstants.hpp"
 #include "TickDatagrams.hpp"
@@ -51,6 +54,23 @@ std::optional<network::Endpoint> creatorOf(const SeatRequest& request,
   return std::nullopt;
 }
 
+/** @returns The refusal of @p message, when it opens a game with rules
+ * @p difficulties or the bounds of the lives refuse (see refusalOf());
+ * nothing otherwise, a request of any other choice included. */
+std::optional<GamePlace> refusedRulesOf(
+    const network::ConnectionRequest& message,
+    const HostedDifficulties& difficulties) {
+  if (!message.rules.has_value()) {
+    return std::nullopt;
+  }
+  const std::optional<network::RefusalReason> refusal =
+      refusalOf(*message.rules, difficulties);
+  if (!refusal.has_value()) {
+    return std::nullopt;
+  }
+  return GamePlace{.kind = PlaceKind::Refuse, .refusal = *refusal};
+}
+
 }  // namespace
 
 std::string ServerSupervisorLobbyModule::name() const {
@@ -64,6 +84,7 @@ std::vector<std::string> ServerSupervisorLobbyModule::dependencies() const {
 
 void ServerSupervisorLobbyModule::install(engine::InstallContext& context) {
   registry_ = &context.require<GameRegistry>();
+  difficulties_ = &context.require<HostedDifficulties>();
   spawner_ = &context.require<GameSpawner>();
   sender_ = &context.require<IDatagramSender>();
   tickDatagrams_ = &context.require<TickDatagrams>();
@@ -108,7 +129,7 @@ void ServerSupervisorLobbyModule::answer(
   }
   answerValidRequest(
       SeatRequest{.sender = datagram.sender, .nickname = request->nickname},
-      request->game);
+      *request);
 }
 
 void ServerSupervisorLobbyModule::refuseAnotherVersion(
@@ -123,8 +144,12 @@ void ServerSupervisorLobbyModule::refuseAnotherVersion(
 }
 
 void ServerSupervisorLobbyModule::answerValidRequest(
-    const SeatRequest& request, const network::GameChoice& game) {
-  const GamePlace place = registry_->placeFor(request, game);
+    const SeatRequest& request, const network::ConnectionRequest& message) {
+  const network::GameChoice& game = message.game;
+  const std::optional<GamePlace> refused =
+      refusedRulesOf(message, *difficulties_);
+  const GamePlace place =
+      refused.has_value() ? *refused : registry_->placeFor(request, game);
   switch (place.kind) {
     case PlaceKind::Redirect:
       sender_->queueDatagram(datagramTo(
@@ -133,7 +158,9 @@ void ServerSupervisorLobbyModule::answerValidRequest(
     case PlaceKind::Wait:
       break;
     case PlaceKind::Open:
-      if (spawner_->openGame(creatorOf(request, game))) {
+      if (spawner_->openGame(
+              creatorOf(request, game),
+              message.rules.value_or(network::defaultGameRules()))) {
         static_cast<void>(registry_->placeFor(request, game));
       }
       break;

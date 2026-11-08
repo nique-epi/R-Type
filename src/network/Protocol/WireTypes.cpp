@@ -143,6 +143,12 @@ void requireValidNickname(std::string_view nickname) {
   }
 }
 
+void requireValidDifficulty(std::string_view difficulty) {
+  if (!isValidNickname(difficulty)) {
+    throw InvalidDifficultyException(difficulty.size());
+  }
+}
+
 void requireValidPlayerNumber(std::uint8_t playerNumber) {
   if (playerNumber < FIRST_PLAYER_NUMBER || playerNumber > MAXIMUM_PLAYERS) {
     throw InvalidFieldValueException(PLAYER_NUMBER_FIELD, playerNumber);

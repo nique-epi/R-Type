@@ -13,6 +13,7 @@
 #include "MasterMessages.hpp"
 #include "NetworkException.hpp"
 #include "ServerConstants.hpp"
+#include "ServerHeartbeat.hpp"
 #include "ServerMasterConstants.hpp"
 
 namespace rtype::server {
@@ -35,6 +36,7 @@ HeartbeatJob::HeartbeatJob(HeartbeatJobParts parts)
       courier_(std::move(parts.resultsFile), client_, problems_),
       identity_(std::move(parts.identity)),
       games_(parts.games),
+      difficulties_(std::move(parts.difficulties)),
       probeTokens_(parts.probeTokens),
       measures_(parts.measures),
       times_(parts.times),
@@ -83,10 +85,12 @@ bool HeartbeatJob::registerServer() {
 bool HeartbeatJob::sendHeartbeat() {
   const std::uint64_t tokenRevision = probeTokens_.revision();
   try {
-    client_.sendHeartbeat(
+    network::ServerHeartbeat heartbeat =
         heartbeatOf(games_.value().value_or(std::vector<network::HostedGame>{}),
                     measures_ != nullptr ? measures_->value() : std::nullopt,
-                    unsentProbeToken(tokenRevision)));
+                    unsentProbeToken(tokenRevision));
+    heartbeat.difficulties = difficulties_;
+    client_.sendHeartbeat(heartbeat);
     sentTokenRevision_ = tokenRevision;
     return true;
   } catch (const network::MasterRefusedException& refusal) {

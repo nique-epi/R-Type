@@ -10,6 +10,8 @@
 #include "ConfigurationRegistry.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
+#include "EntitySheets.hpp"
+#include "ErrorText.hpp"
 #include "ExitedGame.hpp"
 #include "FreeUdpPort.hpp"
 #include "GameConfigurationFile.hpp"
@@ -41,6 +43,7 @@
 #include "TextSettingDefinition.hpp"
 #include "TickDatagrams.hpp"
 #include "TimeConstants.hpp"
+#include "WaveCatalog.hpp"
 
 namespace rtype::server {
 
@@ -50,6 +53,15 @@ namespace {
 network::Endpoint loopbackEndpoint(std::uint16_t port) {
   return network::Endpoint{
       .address = std::string{network::LOOPBACK_IPV4_ADDRESS}, .port = port};
+}
+
+/** @returns The names of the difficulties of the waves file of @p settings,
+ * read with the entity sheets it names its enemies among.
+ * @throws what EntitySheets::fromFolder() and WaveCatalog::fromFile() throw. */
+std::vector<std::string> difficultyNamesOf(const GameLaunchSettings& settings) {
+  const game::EntitySheets types =
+      game::EntitySheets::fromFolder(settings.entitySheetsFolder);
+  return WaveCatalog::fromFile(settings.wavesFile, types).difficulties();
 }
 
 /** @returns The database setting, declared in @p configuration. */
@@ -96,6 +108,7 @@ void ServerSupervisedGamesModule::install(engine::InstallContext& context) {
                                     .database = *database_,
                                     .freePort = freeUdpPort});
   context.provide(registry_);
+  context.provide(difficulties_);
   context.provide(*spawner_);
   context.provide<IServerOccupancy>(watch_);
   context.provide<IResultsFile>(*this);
@@ -107,6 +120,9 @@ void ServerSupervisedGamesModule::install(engine::InstallContext& context) {
 }
 
 void ServerSupervisedGamesModule::start() {
+  difficulties_.keep(difficultyNamesOf(settings_));
+  logger_.info("difficulties of the games: ",
+               engine::listText(difficulties_.names()));
   const std::filesystem::path file = gameConfigurationFileOf(
       settings_.folder, listeningPort_->listeningPort());
   writeGameConfiguration(file, settings_.gameLines);
