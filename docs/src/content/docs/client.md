@@ -658,7 +658,7 @@ Reaching a server from the title keeps the player on this screen: JOIN A SERVER 
 
 | Phase of the page (`LeaderboardPhase`) | The panel shows |
 |---|---|
-| `Asking` | ASKING THE SERVER, a dot more every `ASKING_DOT_TIME` (300 ms) |
+| `Asking` | ASKING, a dot more every `ASKING_DOT_TIME` (300 ms), whichever source asks |
 | `Answered` | the rows; without any, NO SCORE IN THIS MODE YET |
 | `NoAnswer` | NO ANSWER FROM THE SERVER, APPLY A FILTER TO ASK AGAIN |
 | `NotOnServer` | NOT ON A SERVER and the bar JOIN A SERVER; FILTER is disabled |

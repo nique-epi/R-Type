@@ -11,6 +11,7 @@
 #include <string_view>
 #include "BackgroundColorConstants.hpp"
 #include "FireColorConstants.hpp"
+#include "InterfaceConstants.hpp"
 #include "ItemListColumn.hpp"
 #include "ItemListLayout.hpp"
 #include "LeaderboardFigure.hpp"
@@ -147,7 +148,9 @@ constexpr LeaderboardMessage NO_ANSWER_MESSAGE{
 constexpr LeaderboardMessage OUT_OF_REACH_MESSAGE{
     .line = "THE MASTER IS OUT OF REACH",
     .detail = "THE SERVER TAB STILL WORKS"};
-constexpr const char* ASKING_TEXT = "ASKING THE SERVER";
+/** @brief What the panel says while its source asks: a server or the master,
+ * so it names neither. */
+constexpr std::string_view ASKING_TEXT = "ASKING";
 constexpr const char* NO_OWN_SCORE_TEXT = "YOU HAVE NO SCORE IN THIS MODE YET";
 
 /** @brief A dot more after ASKING_TEXT each ASKING_DOT_TIME, up to three, then
@@ -156,10 +159,16 @@ constexpr engine::Duration ASKING_DOT_TIME = std::chrono::milliseconds(300);
 constexpr int ASKING_DOT_STEPS = 4;
 
 /** @brief Where the panel writes them: its line and its small print, centered;
- * ASKING_TEXT from a fixed left, so its dots never move it. */
+ * ASKING_TEXT from a fixed left, so its dots never move it, chosen so the text
+ * with its three dots is centered: 9 characters of 8 pixels from x 204. */
 constexpr sf::Vector2i MESSAGE_LINE_ANCHOR(240, 130);
 constexpr sf::Vector2i MESSAGE_DETAIL_ANCHOR(240, 144);
-constexpr sf::Vector2i ASKING_ANCHOR(160, 138);
+constexpr int ASKING_TOP = 138;
+constexpr sf::Vector2i ASKING_ANCHOR(
+    MESSAGE_LINE_ANCHOR.x -
+        (static_cast<int>(ASKING_TEXT.size() + ASKING_DOT_STEPS - 1) *
+         REGULAR_FONT_ADVANCE / 2),
+    ASKING_TOP);
 constexpr sf::Color MESSAGE_LINE_COLOR = STAR_WHITE;
 constexpr sf::Color MESSAGE_DETAIL_COLOR = PALE_BLUE;
 
