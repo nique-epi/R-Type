@@ -4,6 +4,7 @@
 #include <vector>
 #include "Ban.hpp"
 #include "BanCandidate.hpp"
+#include "BanFixtures.hpp"
 #include "BanKind.hpp"
 #include "BanList.hpp"
 #include "BanTarget.hpp"
@@ -18,6 +19,7 @@ using rtype::server::testing::BAN_MOMENT;
 using rtype::server::testing::BANNED_ADDRESS;
 using rtype::server::testing::BANNED_NICKNAME;
 using rtype::server::testing::BANNED_NICKNAME_IN_SMALL_LETTERS;
+using rtype::server::testing::banOf;
 using rtype::server::testing::FREE_ADDRESS;
 using rtype::server::testing::FREE_NICKNAME;
 using rtype::server::testing::HOUR_BAN_END;
@@ -32,16 +34,12 @@ using rtype::server::testing::ONE_SECOND;
  */
 TEST(BanList, BarsTheNicknameWhateverTheCaseOfItsLetters) {
   const BanList bans{
-      std::vector{Ban{.target = BanTarget{.kind = BanKind::Nickname,
-                                          .text = std::string{BANNED_NICKNAME}},
-                      .bannedAt = BAN_MOMENT,
-                      .expiresAt = std::nullopt}}};
+      std::vector{banOf(BanKind::Nickname, BANNED_NICKNAME, std::nullopt)}};
 
-  EXPECT_NE(
-      bans.barring(BanCandidate{.nickname = BANNED_NICKNAME_IN_SMALL_LETTERS,
-                                .address = FREE_ADDRESS,
-                                .at = BAN_MOMENT}),
-      nullptr);
+  EXPECT_TRUE(
+      bans.bars(BanCandidate{.nickname = BANNED_NICKNAME_IN_SMALL_LETTERS,
+                             .address = FREE_ADDRESS,
+                             .at = BAN_MOMENT}));
 }
 
 /**
@@ -51,15 +49,10 @@ TEST(BanList, BarsTheNicknameWhateverTheCaseOfItsLetters) {
  */
 TEST(BanList, BarsTheAddress) {
   const BanList bans{
-      std::vector{Ban{.target = BanTarget{.kind = BanKind::Address,
-                                          .text = std::string{BANNED_ADDRESS}},
-                      .bannedAt = BAN_MOMENT,
-                      .expiresAt = std::nullopt}}};
+      std::vector{banOf(BanKind::Address, BANNED_ADDRESS, std::nullopt)}};
 
-  EXPECT_NE(bans.barring(BanCandidate{.nickname = FREE_NICKNAME,
-                                      .address = BANNED_ADDRESS,
-                                      .at = BAN_MOMENT}),
-            nullptr);
+  EXPECT_TRUE(bans.bars(BanCandidate{
+      .nickname = FREE_NICKNAME, .address = BANNED_ADDRESS, .at = BAN_MOMENT}));
 }
 
 /**
@@ -69,15 +62,10 @@ TEST(BanList, BarsTheAddress) {
  */
 TEST(BanList, LetsAnotherAddressThrough) {
   const BanList bans{
-      std::vector{Ban{.target = BanTarget{.kind = BanKind::Address,
-                                          .text = std::string{BANNED_ADDRESS}},
-                      .bannedAt = BAN_MOMENT,
-                      .expiresAt = std::nullopt}}};
+      std::vector{banOf(BanKind::Address, BANNED_ADDRESS, std::nullopt)}};
 
-  EXPECT_EQ(bans.barring(BanCandidate{.nickname = FREE_NICKNAME,
-                                      .address = FREE_ADDRESS,
-                                      .at = BAN_MOMENT}),
-            nullptr);
+  EXPECT_FALSE(bans.bars(BanCandidate{
+      .nickname = FREE_NICKNAME, .address = FREE_ADDRESS, .at = BAN_MOMENT}));
 }
 
 /**
@@ -87,19 +75,14 @@ TEST(BanList, LetsAnotherAddressThrough) {
  */
 TEST(BanList, ABanEndsAtItsEnd) {
   const BanList bans{
-      std::vector{Ban{.target = BanTarget{.kind = BanKind::Nickname,
-                                          .text = std::string{BANNED_NICKNAME}},
-                      .bannedAt = BAN_MOMENT,
-                      .expiresAt = HOUR_BAN_END}}};
+      std::vector{banOf(BanKind::Nickname, BANNED_NICKNAME, HOUR_BAN_END)}};
 
-  EXPECT_NE(bans.barring(BanCandidate{.nickname = BANNED_NICKNAME,
+  EXPECT_TRUE(bans.bars(BanCandidate{.nickname = BANNED_NICKNAME,
+                                     .address = FREE_ADDRESS,
+                                     .at = HOUR_BAN_END - ONE_SECOND}));
+  EXPECT_FALSE(bans.bars(BanCandidate{.nickname = BANNED_NICKNAME,
                                       .address = FREE_ADDRESS,
-                                      .at = HOUR_BAN_END - ONE_SECOND}),
-            nullptr);
-  EXPECT_EQ(bans.barring(BanCandidate{.nickname = BANNED_NICKNAME,
-                                      .address = FREE_ADDRESS,
-                                      .at = HOUR_BAN_END}),
-            nullptr);
+                                      .at = HOUR_BAN_END}));
 }
 
 /**
@@ -109,15 +92,10 @@ TEST(BanList, ABanEndsAtItsEnd) {
  */
 TEST(BanList, ABanForGoodNeverEnds) {
   const BanList bans{
-      std::vector{Ban{.target = BanTarget{.kind = BanKind::Nickname,
-                                          .text = std::string{BANNED_NICKNAME}},
-                      .bannedAt = BAN_MOMENT,
-                      .expiresAt = std::nullopt}}};
+      std::vector{banOf(BanKind::Nickname, BANNED_NICKNAME, std::nullopt)}};
 
-  EXPECT_NE(bans.barring(BanCandidate{.nickname = BANNED_NICKNAME,
-                                      .address = FREE_ADDRESS,
-                                      .at = LONG_AFTER}),
-            nullptr);
+  EXPECT_TRUE(bans.bars(BanCandidate{
+      .nickname = BANNED_NICKNAME, .address = FREE_ADDRESS, .at = LONG_AFTER}));
 }
 
 /**
@@ -127,17 +105,10 @@ TEST(BanList, ABanForGoodNeverEnds) {
  */
 TEST(BanList, PutReplacesTheBanOfTheSameTarget) {
   BanList bans{
-      std::vector{Ban{.target = BanTarget{.kind = BanKind::Nickname,
-                                          .text = std::string{BANNED_NICKNAME}},
-                      .bannedAt = BAN_MOMENT,
-                      .expiresAt = HOUR_BAN_END}}};
+      std::vector{banOf(BanKind::Nickname, BANNED_NICKNAME, HOUR_BAN_END)}};
 
   bans.put(
-      Ban{.target =
-              BanTarget{.kind = BanKind::Nickname,
-                        .text = std::string{BANNED_NICKNAME_IN_SMALL_LETTERS}},
-          .bannedAt = BAN_MOMENT,
-          .expiresAt = std::nullopt});
+      banOf(BanKind::Nickname, BANNED_NICKNAME_IN_SMALL_LETTERS, std::nullopt));
 
   ASSERT_EQ(bans.bans().size(), 1U);
   EXPECT_FALSE(bans.bans().front().expiresAt.has_value());
@@ -150,10 +121,7 @@ TEST(BanList, PutReplacesTheBanOfTheSameTarget) {
  */
 TEST(BanList, RemoveSaysWhetherABanWasThere) {
   BanList bans{
-      std::vector{Ban{.target = BanTarget{.kind = BanKind::Nickname,
-                                          .text = std::string{BANNED_NICKNAME}},
-                      .bannedAt = BAN_MOMENT,
-                      .expiresAt = std::nullopt}}};
+      std::vector{banOf(BanKind::Nickname, BANNED_NICKNAME, std::nullopt)}};
   const BanTarget target{.kind = BanKind::Nickname,
                          .text = std::string{BANNED_NICKNAME_IN_SMALL_LETTERS}};
 
@@ -168,15 +136,10 @@ TEST(BanList, RemoveSaysWhetherABanWasThere) {
  */
 TEST(BanList, ANicknameBanNamesNoAddress) {
   const BanList bans{
-      std::vector{Ban{.target = BanTarget{.kind = BanKind::Nickname,
-                                          .text = std::string{BANNED_ADDRESS}},
-                      .bannedAt = BAN_MOMENT,
-                      .expiresAt = std::nullopt}}};
+      std::vector{banOf(BanKind::Nickname, BANNED_ADDRESS, std::nullopt)}};
 
-  EXPECT_EQ(bans.barring(BanCandidate{.nickname = FREE_NICKNAME,
-                                      .address = BANNED_ADDRESS,
-                                      .at = BAN_MOMENT}),
-            nullptr);
+  EXPECT_FALSE(bans.bars(BanCandidate{
+      .nickname = FREE_NICKNAME, .address = BANNED_ADDRESS, .at = BAN_MOMENT}));
 }
 
 /**
@@ -186,14 +149,8 @@ TEST(BanList, ANicknameBanNamesNoAddress) {
  * Then both are in force first, and the ban for good alone at the end
  */
 TEST(BanList, ListsTheBansInForceAtAMoment) {
-  const Ban hour{.target = BanTarget{.kind = BanKind::Nickname,
-                                     .text = std::string{BANNED_NICKNAME}},
-                 .bannedAt = BAN_MOMENT,
-                 .expiresAt = HOUR_BAN_END};
-  const Ban forGood{.target = BanTarget{.kind = BanKind::Address,
-                                        .text = std::string{BANNED_ADDRESS}},
-                    .bannedAt = BAN_MOMENT,
-                    .expiresAt = std::nullopt};
+  const Ban hour = banOf(BanKind::Nickname, BANNED_NICKNAME, HOUR_BAN_END);
+  const Ban forGood = banOf(BanKind::Address, BANNED_ADDRESS, std::nullopt);
   const BanList bans{{hour, forGood}};
 
   EXPECT_EQ(bans.inForceAt(HOUR_BAN_END - ONE_SECOND),

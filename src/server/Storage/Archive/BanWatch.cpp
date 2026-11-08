@@ -1,15 +1,17 @@
 #include "BanWatch.hpp"
 #include <SQLiteCpp/Exception.h>
-#include <chrono>
 #include <filesystem>
 #include <stop_token>
 #include <string>
 #include <thread>
 #include <utility>
+#include <vector>
 #include "ArchiveConstants.hpp"
+#include "Ban.hpp"
 #include "BanList.hpp"
 #include "BansDatabase.hpp"
 #include "CurrentSecond.hpp"
+#include "InterruptibleSleep.hpp"
 #include "LatestBans.hpp"
 
 namespace rtype::server {
@@ -29,19 +31,20 @@ void BanWatch::close() { worker_ = std::jthread{}; }
 LatestBans& BanWatch::bans() { return bans_; }
 
 void BanWatch::run(const std::stop_token& stop, const BansDatabase& database) {
-  auto lastRead = std::chrono::steady_clock::now();
+  concurrency::sleepUnlessStopped(stop, BAN_REREAD_INTERVAL);
   while (!stop.stop_requested()) {
-    std::this_thread::sleep_for(STORAGE_POLL_INTERVAL);
-    if (std::chrono::steady_clock::now() - lastRead >= BAN_REREAD_INTERVAL) {
-      lastRead = std::chrono::steady_clock::now();
-      readAgain(database);
-    }
+    readAgain(database);
+    concurrency::sleepUnlessStopped(stop, BAN_REREAD_INTERVAL);
   }
 }
 
 void BanWatch::readAgain(const BansDatabase& database) {
   try {
-    bans_.publish(BanList{database.inForce(currentSecond())});
+    std::vector<Ban> standing = database.inForce(currentSecond());
+    if (published_ != standing) {
+      published_ = standing;
+      bans_.publish(BanList{std::move(standing)});
+    }
   } catch (const SQLite::Exception& error) {
     logger_.warn("bans not read again, the ones read before stay: ",
                  error.what());

@@ -78,9 +78,9 @@ std::optional<GamePlace> refusedRulesOf(
 /** @returns Whether a ban of @p bans bars the nickname or the address of
  * @p request now. */
 bool isBarred(const BanList& bans, const SeatRequest& request) {
-  return bans.barring(BanCandidate{.nickname = request.nickname,
-                                   .address = request.sender.address,
-                                   .at = currentSecond()}) != nullptr;
+  return bans.bars(BanCandidate{.nickname = request.nickname,
+                                .address = request.sender.address,
+                                .at = currentSecond()});
 }
 
 }  // namespace

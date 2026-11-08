@@ -1,8 +1,11 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 #include <stop_token>
 #include <thread>
+#include <vector>
+#include "Ban.hpp"
 #include "BansDatabase.hpp"
 #include "LatestBans.hpp"
 #include "Logger.hpp"
@@ -12,9 +15,10 @@ namespace rtype::server {
 /**
  * @brief Reads the bans in force from the file of the server again every
  * BAN_REREAD_INTERVAL, on a thread and a connection of its own, and publishes
- * them in LatestBans. A failed read keeps the bans read before, and is logged.
- * open() reads once before it returns, so the lobby has the bans from the
- * first tick on.
+ * them in LatestBans when they changed, so its revision moves only on a change.
+ * A failed read keeps the bans read before, and is logged. open() reads and
+ * publishes once before it returns, so the lobby has the bans from the first
+ * tick on.
  */
 class BanWatch {
  public:
@@ -34,6 +38,9 @@ class BanWatch {
   void readAgain(const BansDatabase& database);
 
   LatestBans bans_;
+  /** @brief The bans published last; nothing before the first read. Only
+   * open(), then the thread, touch it. */
+  std::optional<std::vector<Ban>> published_;
   logging::Logger logger_;
   std::jthread worker_;
 };

@@ -6,7 +6,6 @@
 #include <functional>
 #include <span>
 #include <string>
-#include <string_view>
 #include <utility>
 #include <vector>
 #include "AdminConsoleConstants.hpp"
@@ -37,9 +36,7 @@ namespace {
 const SupervisedGame& gameNamedBy(std::span<const std::string> words,
                                   const GameRegistry& games) {
   if (words.size() != 1) {
-    throw engine::CommandRefusedException(
-        "expected: " + std::string{CLOSE_GAME_COMMAND_NAME} + " " +
-        std::string{CLOSE_GAME_ARGUMENTS});
+    throw usageRefusal(CLOSE_GAME_COMMAND_NAME, CLOSE_GAME_ARGUMENTS);
   }
   const std::int64_t place = engine::wholeNumberFrom(words.front());
   const SupervisedGame* const game =
@@ -68,9 +65,7 @@ void queueCopies(IDatagramSender& sender,
  * protocol accepts. */
 const std::string& nicknameNamedBy(std::span<const std::string> words) {
   if (words.size() != 1) {
-    throw engine::CommandRefusedException(
-        "expected: " + std::string{KICK_COMMAND_NAME} + " " +
-        std::string{KICK_ARGUMENTS});
+    throw usageRefusal(KICK_COMMAND_NAME, KICK_ARGUMENTS);
   }
   if (!network::isValidNickname(words.front())) {
     throw engine::CommandRefusedException("'" + words.front() +

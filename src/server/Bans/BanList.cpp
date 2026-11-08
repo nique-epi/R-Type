@@ -1,4 +1,5 @@
 #include "BanList.hpp"
+#include <algorithm>
 #include <chrono>
 #include <utility>
 #include <vector>
@@ -30,22 +31,19 @@ bool names(const Ban& ban, const BanCandidate& candidate) {
              : ban.target.text == candidate.address;
 }
 
-/** @returns Whether @p ban has not ended at @p at. */
-bool inForce(const Ban& ban, std::chrono::sys_seconds at) {
-  return !ban.expiresAt.has_value() || *ban.expiresAt > at;
+/** @returns Whether @p ban has not ended at @p moment. */
+bool inForce(const Ban& ban, std::chrono::sys_seconds moment) {
+  return !ban.expiresAt.has_value() || *ban.expiresAt > moment;
 }
 
 }  // namespace
 
 BanList::BanList(std::vector<Ban> bans) : bans_(std::move(bans)) {}
 
-const Ban* BanList::barring(const BanCandidate& candidate) const {
-  for (const Ban& ban : bans_) {
-    if (inForce(ban, candidate.at) && names(ban, candidate)) {
-      return &ban;
-    }
-  }
-  return nullptr;
+bool BanList::bars(const BanCandidate& candidate) const {
+  return std::ranges::any_of(bans_, [&candidate](const Ban& ban) {
+    return inForce(ban, candidate.at) && names(ban, candidate);
+  });
 }
 
 void BanList::put(Ban ban) {
@@ -61,10 +59,10 @@ bool BanList::remove(const BanTarget& target) {
 
 const std::vector<Ban>& BanList::bans() const { return bans_; }
 
-std::vector<Ban> BanList::inForceAt(std::chrono::sys_seconds at) const {
+std::vector<Ban> BanList::inForceAt(std::chrono::sys_seconds moment) const {
   std::vector<Ban> standing;
   for (const Ban& ban : bans_) {
-    if (inForce(ban, at)) {
+    if (inForce(ban, moment)) {
       standing.push_back(ban);
     }
   }

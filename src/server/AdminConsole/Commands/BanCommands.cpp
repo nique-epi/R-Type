@@ -4,12 +4,10 @@
 #include <optional>
 #include <span>
 #include <string>
-#include <string_view>
 #include <utility>
 #include <vector>
 #include "AdminConsoleConstants.hpp"
 #include "Ban.hpp"
-#include "BanBook.hpp"
 #include "BanCommandsParts.hpp"
 #include "BanTarget.hpp"
 #include "BanWords.hpp"
@@ -22,14 +20,6 @@
 namespace rtype::server {
 
 namespace {
-
-/** @returns "expected: <name> <arguments>", the refusal of a line with the
- * wrong words. */
-engine::CommandRefusedException usageRefusal(std::string_view name,
-                                             std::string_view arguments) {
-  return engine::CommandRefusedException("expected: " + std::string{name} +
-                                         " " + std::string{arguments});
-}
 
 /** @returns The target @p word names.
  * @throws engine::CommandRefusedException when it names none. */

@@ -16,10 +16,9 @@ class BanList {
  public:
   explicit BanList(std::vector<Ban> bans = {});
 
-  /** @returns The ban that bars @p candidate at its moment: a ban that has
-   * not ended and names its nickname or its address; nullptr when none does.
-   */
-  [[nodiscard]] const Ban* barring(const BanCandidate& candidate) const;
+  /** @returns Whether a ban that has not ended at the moment of @p candidate
+   * names its nickname or its address. */
+  [[nodiscard]] bool bars(const BanCandidate& candidate) const;
 
   /** @brief Adds @p ban, in place of the ban of the same target when there is
    * one. */
@@ -30,8 +29,10 @@ class BanList {
 
   [[nodiscard]] const std::vector<Ban>& bans() const;
 
-  /** @returns The bans that have not ended at @p at, in the order of bans(). */
-  [[nodiscard]] std::vector<Ban> inForceAt(std::chrono::sys_seconds at) const;
+  /** @returns The bans that have not ended at @p moment, in the order of
+   * bans(). */
+  [[nodiscard]] std::vector<Ban> inForceAt(
+      std::chrono::sys_seconds moment) const;
 
  private:
   std::vector<Ban> bans_;

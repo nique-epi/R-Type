@@ -2,21 +2,19 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include "Ban.hpp"
 #include "BanCommandsFixture.hpp"
 #include "BanCommandsTestConstants.hpp"
+#include "BanFixtures.hpp"
 #include "BanKind.hpp"
-#include "BanTarget.hpp"
 #include "BanTestConstants.hpp"
 #include "BansDatabase.hpp"
 
-using rtype::server::Ban;
 using rtype::server::BanKind;
 using rtype::server::BansDatabase;
-using rtype::server::BanTarget;
 using rtype::server::testing::BAN_MOMENT;
 using rtype::server::testing::BANNED_ADDRESS;
 using rtype::server::testing::BANNED_NICKNAME;
+using rtype::server::testing::banOf;
 
 /**
  * Given the ban commands with no ban
@@ -28,11 +26,8 @@ TEST_F(BanCommandsFixture, BansANicknameForALength) {
   EXPECT_TRUE(run(BAN_ACE_FOR_TWO_HOURS_LINE).accepted);
 
   EXPECT_EQ(book().list().bans(),
-            (std::vector{
-                Ban{.target = BanTarget{.kind = BanKind::Nickname,
-                                        .text = std::string{BANNED_NICKNAME}},
-                    .bannedAt = BAN_MOMENT,
-                    .expiresAt = BAN_MOMENT + TWO_HOURS_OF_BAN}}));
+            (std::vector{banOf(BanKind::Nickname, BANNED_NICKNAME,
+                               BAN_MOMENT + TWO_HOURS_OF_BAN)}));
   EXPECT_EQ(lines(), std::vector{std::string{ACE_BANNED_FOR_TWO_HOURS}});
 }
 
@@ -46,10 +41,7 @@ TEST_F(BanCommandsFixture, BansAnAddressForGood) {
 
   EXPECT_EQ(
       book().list().bans(),
-      (std::vector{Ban{.target = BanTarget{.kind = BanKind::Address,
-                                           .text = std::string{BANNED_ADDRESS}},
-                       .bannedAt = BAN_MOMENT,
-                       .expiresAt = std::nullopt}}));
+      (std::vector{banOf(BanKind::Address, BANNED_ADDRESS, std::nullopt)}));
   EXPECT_EQ(lines(), std::vector{std::string{ADDRESS_BANNED_FOR_GOOD}});
 }
 

@@ -56,4 +56,24 @@ TEST_F(BansDatabaseFixture, AWatchPublishesABanWrittenAfterItOpened) {
   watch.close();
 }
 
+/**
+ * Given a watch open on a file that holds a ban for good of ACE
+ * When the watch reads the file again, twice, and finds the same ban
+ * Then it publishes nothing more: the revision the lobby follows only moves
+ * when the bans change
+ */
+TEST_F(BansDatabaseFixture, AWatchPublishesNothingWhenTheBansDidNotChange) {
+  BansDatabase{file()}.save(
+      banOf(BanKind::Nickname, BANNED_NICKNAME, std::nullopt));
+  BanWatch watch;
+  watch.open(file());
+  const std::uint64_t opened = watch.bans().revision();
+
+  const std::uint64_t after = watch.bans().waitForNewer(
+      opened, TWO_REREADS_AND_A_HALF, std::stop_token{});
+
+  EXPECT_EQ(after, opened);
+  watch.close();
+}
+
 }  // namespace rtype::server::testing

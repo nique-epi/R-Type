@@ -55,9 +55,6 @@ void ServerLobbyModule::install(engine::InstallContext& context) {
   context.addWork(SIMULATION_STAGE,
                   [this]([[maybe_unused]] engine::Duration elapsed) {
                     answerConnectionRequests();
-                  });
-  context.addWork(SIMULATION_STAGE,
-                  [this]([[maybe_unused]] engine::Duration elapsed) {
                     expelBannedPilots();
                   });
 }
@@ -101,10 +98,10 @@ void ServerLobbyModule::expelBannedPilots() {
       runningGame_->game().roster(),
       ExpulsionRule{.chosen =
                         [&bans, now](const ConnectedPlayer& player) {
-                          return bans.barring(BanCandidate{
-                                     .nickname = player.nickname,
-                                     .address = player.endpoint.address,
-                                     .at = now}) != nullptr;
+                          return bans.bars(
+                              BanCandidate{.nickname = player.nickname,
+                                           .address = player.endpoint.address,
+                                           .at = now});
                         },
                     .reason = network::ExpulsionReason::Banned});
 }

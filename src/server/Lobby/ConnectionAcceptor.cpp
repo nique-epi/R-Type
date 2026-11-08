@@ -184,10 +184,9 @@ bool ConnectionAcceptor::isBanned(const network::Endpoint& sender,
     return false;
   }
   const std::optional<BanList> bans = bans_->value();
-  return bans.has_value() &&
-         bans->barring(BanCandidate{.nickname = nickname,
-                                    .address = sender.address,
-                                    .at = currentSecond()}) != nullptr;
+  return bans.has_value() && bans->bars(BanCandidate{.nickname = nickname,
+                                                     .address = sender.address,
+                                                     .at = currentSecond()});
 }
 
 }  // namespace rtype::server

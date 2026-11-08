@@ -15,7 +15,7 @@ namespace rtype::server {
  * a copy in memory, which the lobby of the supervisor and the console read
  * without touching the disk. Every change is written to the file first, then
  * to the copy, so a write the file refuses leaves both as they were. A ban
- * that ends stays in the copy until the next start; BanList::barring() no
+ * that ends stays in the copy until the next start; BanList::bars() no
  * longer counts it.
  *
  * The file is opened only when it exists or when the first ban is written,

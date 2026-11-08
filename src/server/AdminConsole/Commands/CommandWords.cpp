@@ -6,6 +6,12 @@
 
 namespace rtype::server {
 
+engine::CommandRefusedException usageRefusal(std::string_view name,
+                                             std::string_view arguments) {
+  return engine::CommandRefusedException("expected: " + std::string{name} +
+                                         " " + std::string{arguments});
+}
+
 void requireNoWord(std::span<const std::string> words,
                    std::string_view command) {
   if (!words.empty()) {
