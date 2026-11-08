@@ -37,7 +37,7 @@ TEST(GameCommand, GivesTheGameItsPortItsSupervisorItsTokenAndItsFiles) {
                          .folder = FOLDER_FOR_TESTS,
                          .gameLines = {},
                          .forwardedArguments = {},
-                         .wavesFile = {},
+                         .wavesFiles = {},
                          .contentFolders = {}},
       GameLaunch{
           .number = 3, .port = 50123, .supervisorPort = 4242, .linkToken = 99},
@@ -102,7 +102,7 @@ TEST(GameCommand, GivesTheGameTheDatabaseOfTheSupervisor) {
                                      .folder = FOLDER_FOR_TESTS,
                                      .gameLines = {},
                                      .forwardedArguments = {},
-                                     .wavesFile = {},
+                                     .wavesFiles = {},
                                      .contentFolders = {}},
                   GameLaunch{.number = 0,
                              .port = FIRST_GAME_PORT,
@@ -127,7 +127,7 @@ TEST(GameCommand, GivesEachGameATrafficFileOfItsOwn) {
           .folder = FOLDER_FOR_TESTS,
           .gameLines = {},
           .forwardedArguments = {},
-          .wavesFile = {},
+          .wavesFiles = {},
           .contentFolders = {},
           .trafficCsvFile =
               std::filesystem::path{TRAFFIC_FILE_OF_THE_SUPERVISOR}},

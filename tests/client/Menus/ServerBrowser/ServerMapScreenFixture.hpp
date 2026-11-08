@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include "FixedMasterAddress.hpp"
+#include "RecordingAudioService.hpp"
 #include "RecordingGameCatalog.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -39,12 +40,14 @@ class ServerMapScreenFixture : public ::testing::Test {
   [[nodiscard]] RecordingServerCatalog& servers();
   [[nodiscard]] RecordingGameCatalog& games();
   [[nodiscard]] const RecordingNavigator& navigator() const;
+  [[nodiscard]] const RecordingAudioService& audio() const;
   [[nodiscard]] const ServerChoice& choice() const;
   [[nodiscard]] const InterfaceCanvasRecord& painting() const;
 
  private:
   RecordingNavigator navigator_;
   RecordingSoundPlayer sounds_;
+  RecordingAudioService audio_{sounds_};
   RecordingServerCatalog servers_;
   RecordingGameCatalog games_;
   ServerChoice choice_;

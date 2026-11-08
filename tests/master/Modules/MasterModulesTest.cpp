@@ -10,10 +10,10 @@
 #include "EngineException.hpp"
 #include "HttpPortProbe.hpp"
 #include "IModule.hpp"
-#include "MasterConstants.hpp"
 #include "MasterModulesFixture.hpp"
 #include "MasterModulesTestConstants.hpp"
 #include "MasterTestConstants.hpp"
+#include "MasterVersionConstants.hpp"
 #include "RouteAddingModule.hpp"
 
 using rtype::engine::IModule;

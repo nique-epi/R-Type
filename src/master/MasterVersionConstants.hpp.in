@@ -1,0 +1,17 @@
+#pragma once
+
+/**
+ * @file
+ * @brief The version of the master, the one of project() in the root
+ * CMakeLists.txt. CMake writes this header into the build folder each time it
+ * configures: change project(), never the written file.
+ */
+
+#include <string_view>
+
+namespace rtype::master {
+
+/** @brief The version of the master, which GET /api/health answers with. */
+constexpr std::string_view MASTER_VERSION = "@PROJECT_VERSION@";
+
+}  // namespace rtype::master

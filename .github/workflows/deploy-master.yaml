@@ -1,0 +1,82 @@
+name: deploy-master
+
+# Deploys the server package of a release to the master instance of AWS:
+# the instance downloads the package from the release, the workflow only
+# sends it infra/master/deploy.sh through SSM. Called by the release workflow
+# on every tag, and run by hand to redeploy or to go back to an older tag.
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: The release to deploy, such as v0.1.0
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The release to deploy, such as v0.1.0
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-master
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.tag }} to the master
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The AWS role only trusts this environment, which asks for an approval.
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      TAG: ${{ inputs.tag }}
+      INSTANCE_ID: ${{ vars.MASTER_INSTANCE_ID }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check the tag
+        run: |
+          if ! printf '%s' "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "not a version tag: $TAG"
+            exit 1
+          fi
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Run the deployment on the instance
+        run: |
+          version=${TAG#v}
+          { printf 'VERSION=%s\n' "$version"; cat infra/master/deploy.sh; } > "$RUNNER_TEMP/script.sh"
+          jq -n --rawfile script "$RUNNER_TEMP/script.sh" '{commands: [$script]}' > "$RUNNER_TEMP/parameters.json"
+          command_id=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript \
+            --parameters "file://$RUNNER_TEMP/parameters.json" \
+            --timeout-seconds 300 \
+            --query Command.CommandId --output text)
+          # The invocation can take a moment to exist after send-command.
+          sleep 3
+          aws ssm wait command-executed --command-id "$command_id" --instance-id "$INSTANCE_ID" || true
+          invocation=$(aws ssm get-command-invocation \
+            --command-id "$command_id" --instance-id "$INSTANCE_ID" --output json)
+          printf '%s' "$invocation" | jq -r .StandardOutputContent
+          printf '%s' "$invocation" | jq -r .StandardErrorContent >&2
+          printf '%s' "$invocation" | jq -e '.Status == "Success"' > /dev/null
+
+      - name: Check the master from the outside
+        env:
+          MASTER_URL: ${{ vars.MASTER_URL }}
+        run: >-
+          curl --fail --silent --show-error
+          --retry 5 --retry-delay 3 --retry-connrefused
+          "$MASTER_URL/api/health"

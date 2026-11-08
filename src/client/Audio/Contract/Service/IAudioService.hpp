@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Ambience.hpp"
 #include "IMusicPlayer.hpp"
 #include "ISoundPlayer.hpp"
 #include "TimeConstants.hpp"
@@ -37,6 +38,18 @@ class IAudioService {
    * silence before it: playGameMusic() starts it again GAME_MUSIC_SILENCE
    * later. The theme is left as it is. */
   virtual void silenceMusic() = 0;
+
+  /** @brief Stops the music of a game and the theme, and starts the music of
+   * the boss BOSS_ALARM_DURATION later, unless it plays already or is about
+   * to. playTheme() and playGameMusic() stop it. */
+  virtual void playBossMusic() = 0;
+
+  /** @brief Plays @p ambience under the theme, and stops the one that
+   * played; Ambience::None leaves only the music. */
+  virtual void setAmbience(Ambience ambience) = 0;
+
+  /** @returns The ambience that plays now. */
+  [[nodiscard]] virtual Ambience ambience() const = 0;
 
   /** @brief Reads the sounds and opens the music files, once the assets
    * folder is known; a music without file stays silent. */

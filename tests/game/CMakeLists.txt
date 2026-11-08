@@ -1,5 +1,6 @@
 add_subdirectory(Behaviours)
 add_subdirectory(EntityTypes)
+add_subdirectory(Scripting)
 add_subdirectory(ShipControl)
 add_subdirectory(Spawning)
 add_subdirectory(Systems)

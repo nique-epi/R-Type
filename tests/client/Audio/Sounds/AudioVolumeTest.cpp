@@ -1,15 +1,21 @@
 #include <gtest/gtest.h>
+#include "AudioConstants.hpp"
 #include "AudioTestConstants.hpp"
 #include "AudioVolume.hpp"
 #include "PlayerSettings.hpp"
 #include "SettingId.hpp"
 
+using rtype::client::BOSS_TRACK;
 using rtype::client::changesEffectsVolume;
 using rtype::client::changesMusicVolume;
+using rtype::client::CROWD_AMBIENCE_TRACK;
 using rtype::client::effectsVolumeOf;
+using rtype::client::HANGAR_AMBIENCE_TRACK;
 using rtype::client::musicVolumeOf;
 using rtype::client::PlayerSettings;
 using rtype::client::SettingId;
+using rtype::client::SPACE_AMBIENCE_TRACK;
+using rtype::client::THEME_TRACK;
 using rtype::client::testing::A_MUSIC_VOLUME;
 using rtype::client::testing::AN_EFFECTS_VOLUME;
 
@@ -83,4 +89,23 @@ TEST(AudioVolume, OnlyTheEffectsVolumeAndMuteAllMoveTheSounds) {
   EXPECT_TRUE(changesEffectsVolume(SettingId::Muted));
   EXPECT_FALSE(changesEffectsVolume(SettingId::MusicVolume));
   EXPECT_FALSE(changesEffectsVolume(SettingId::AutoFire));
+}
+
+/**
+ * Given the musics that carry a screen and the ambiences that play under
+ * the theme
+ * When the gain of each against the MUSIC volume is read
+ * Then the musics play at the full volume, the space at 0.25, the garage at
+ * 0.40 and the crowd of the hangar at 0.50
+ */
+TEST(AudioVolume, AmbiencesPlayUnderTheMusicsThatCarryAScreen) {
+  constexpr float FULL = 1.0F;
+  constexpr float A_QUARTER = 0.25F;
+  constexpr float FORTY_HUNDREDTHS = 0.40F;
+  constexpr float HALF = 0.50F;
+  EXPECT_FLOAT_EQ(THEME_TRACK.gain, FULL);
+  EXPECT_FLOAT_EQ(BOSS_TRACK.gain, FULL);
+  EXPECT_FLOAT_EQ(SPACE_AMBIENCE_TRACK.gain, A_QUARTER);
+  EXPECT_FLOAT_EQ(HANGAR_AMBIENCE_TRACK.gain, FORTY_HUNDREDTHS);
+  EXPECT_FLOAT_EQ(CROWD_AMBIENCE_TRACK.gain, HALF);
 }

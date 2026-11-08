@@ -53,7 +53,7 @@ The client opens on a second of black and an intro set to the beats of its theme
 - Git
 - For the web site only: bun 1.3 and Node.js 22.12 or newer
 
-Third-party libraries (SFML, Asio, toml++, SQLiteCpp, GoogleTest) are built by [vcpkg](https://vcpkg.io), pinned as a Git submodule and bootstrapped automatically on the first configure.
+Third-party libraries (SFML, Asio, toml++, SQLiteCpp, Luau, GoogleTest) are built by [vcpkg](https://vcpkg.io), pinned as a Git submodule and bootstrapped automatically on the first configure.
 
 On Linux, SFML and vcpkg need a few system packages. On Ubuntu:
 
@@ -122,11 +122,11 @@ Each package holds its program and the part of `assets/` it reads, where its exe
 The CI builds the packages of the three systems on every push to `main`, and on a pull request that changes `packaging/`, `assets/`, the root `CMakeLists.txt`, the presets, vcpkg or the workflows that build them, and keeps them 7 days as artifacts of the run (`packages-Linux`, `packages-Windows`, `packages-macOS`). Pushing a tag `v<version>` that matches the version of `project()` publishes them in a GitHub release, with notes listing the pull requests merged since the previous tag:
 
 ```bash
-git tag v0.1.0
+git tag v0.2.0
 ```
 
 ```bash
-git push origin v0.1.0
+git push origin v0.2.0
 ```
 
 The release refuses a tag whose version is not the one of `project()`; change the version in a pull request first. `assets/README.md` says the licence of the Epidemic Sound files is not confirmed for a public release.
@@ -214,7 +214,7 @@ The client and every game process write what crosses their socket to the journal
 ./r-type_server --mode master -p 8080
 ```
 
-The same binary runs the master in this mode: the program that lists the game servers for the players, with the status of each, and will take the orders of an admin. `--mode` comes before every other option. Today it answers an HTTP API under `/api` on TCP port 8080 of every IPv4 interface (`curl http://127.0.0.1:8080/api/health` answers `{"version":"0.1.0"}`), keeps its data in `r-type_master.db` next to the executable, and reads `master.cfg`, modelled by `master.cfg.example` (see [the master page](https://nique-epi.github.io/R-Type/master/)). A host creates its game server with `POST /api/servers`, which answers the key of that server once; the master keeps only a hash of it. The host writes the key in the `server.cfg` of the game server, as `master-key` next to `master-url`, and the supervisor then registers once for all its games with `PUT /api/servers/me` and sends its heartbeat with `PUT /api/servers/me/heartbeat`, through `MasterClient`; a game process never talks to the master:
+The same binary runs the master in this mode: the program that lists the game servers for the players, with the status of each, and will take the orders of an admin. `--mode` comes before every other option. Today it answers an HTTP API under `/api` on TCP port 8080 of every IPv4 interface (`curl http://127.0.0.1:8080/api/health` answers `{"version":"0.2.0"}`), keeps its data in `r-type_master.db` next to the executable, and reads `master.cfg`, modelled by `master.cfg.example` (see [the master page](https://nique-epi.github.io/R-Type/master/)). A host creates its game server with `POST /api/servers`, which answers the key of that server once; the master keeps only a hash of it. The host writes the key in the `server.cfg` of the game server, as `master-key` next to `master-url`, and the supervisor then registers once for all its games with `PUT /api/servers/me` and sends its heartbeat with `PUT /api/servers/me/heartbeat`, through `MasterClient`; a game process never talks to the master:
 
 ```bash
 curl -X POST http://127.0.0.1:8080/api/servers -d '{"name":"Paris 1"}'

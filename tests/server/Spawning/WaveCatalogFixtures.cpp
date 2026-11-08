@@ -1,5 +1,6 @@
 #include "WaveCatalogFixtures.hpp"
 #include <gtest/gtest.h>
+#include <array>
 #include <cstddef>
 #include <filesystem>
 #include <stdexcept>
@@ -76,9 +77,9 @@ std::string errorReading(std::string_view text) {
 }
 
 WaveCatalog shippedCatalog() {
-  return WaveCatalog::fromFile(
-      std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} / WAVE_FILE_IN_ASSETS,
-      game::testing::shippedEntitySheets());
+  const std::array files{std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} /
+                         WAVE_FILE_IN_ASSETS};
+  return WaveCatalog::fromFiles(files, game::testing::shippedEntitySheets());
 }
 
 std::string withCrlfLineEndings(std::string_view text) {

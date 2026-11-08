@@ -19,6 +19,7 @@ target_link_libraries(rtype_server_games_module
     rtype_engine_event_bus
     rtype_engine_time
     rtype_game_entity_types
+    rtype_game_scripting
     rtype_logging
     rtype_server_exceptions
     rtype_server_constants

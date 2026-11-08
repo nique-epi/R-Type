@@ -12,6 +12,10 @@ struct MusicTrack {
   engine::Duration loopStart{};
   engine::Duration loopLength{};
   engine::Duration firstBeat{};
+  /** @brief How loud the track plays against the MUSIC volume of the player,
+   * from 0 to 1: 1 for a music that carries the screen, less for one that
+   * plays under another. */
+  float gain{1.0F};
 };
 
 }  // namespace rtype::client

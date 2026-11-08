@@ -55,6 +55,15 @@ class EntitySheets {
   [[nodiscard]] static EntitySheets fromTexts(std::span<const SheetText> texts);
 
   /**
+   * @brief Reads the sheets of @p texts as the other fromTexts() does, their
+   * pilots naming the behaviours of @p behaviours (the built-in ones and those
+   * the server scripts registered, see BehaviourScripts), which it keeps.
+   * @throws What the other fromTexts() throws.
+   */
+  [[nodiscard]] static EntitySheets fromTexts(std::span<const SheetText> texts,
+                                              BehaviourRegistry behaviours);
+
+  /**
    * @returns The sheet named @p name.
    * @throws UnknownEntityTypeException when none is; the message lists them.
    */

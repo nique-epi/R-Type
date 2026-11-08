@@ -31,7 +31,7 @@ TEST_F(ServerGamesFixture, FailsToStartNamingTheWavesFileWhenItCannotBeRead) {
   try {
     startWith(rtype::server::GamesSettings{
         .seed = SOME_SEED,
-        .wavesFile = MISSING_WAVES_FILE,
+        .wavesFiles = {MISSING_WAVES_FILE},
         .contentFolders = shippedWaves().contentFolders});
     FAIL() << "the application started without a waves file";
   } catch (const ModuleStartFailedException& error) {
@@ -51,7 +51,7 @@ TEST_F(ServerGamesFixture, FailsToStartNamingTheSheetsFolderWhenItIsMissing) {
   try {
     startWith(rtype::server::GamesSettings{
         .seed = SOME_SEED,
-        .wavesFile = shippedWaves().wavesFile,
+        .wavesFiles = shippedWaves().wavesFiles,
         .contentFolders = {MISSING_CONTENT_FOLDER}});
     FAIL() << "the application started without entity sheets";
   } catch (const ModuleStartFailedException& error) {
@@ -247,7 +247,8 @@ TEST_F(ServerGamesFixture, AcceptsFullAsTheStateEncoding) {
 /**
  * Given the shipped assets and the example resource, whose waves send its
  * crimson Drifter
- * When the application starts with the waves of the resource
+ * When the application starts with the waves of the resource laid over those
+ * of the assets
  * Then the games start: the waves name a sheet the resource brings
  */
 TEST_F(ServerGamesFixture, StartsWithTheSheetsAndTheWavesOfTheExampleResource) {
@@ -257,7 +258,9 @@ TEST_F(ServerGamesFixture, StartsWithTheSheetsAndTheWavesOfTheExampleResource) {
 
   EXPECT_NO_THROW(startWith(rtype::server::GamesSettings{
       .seed = SOME_SEED,
-      .wavesFile = resource / WAVES_OF_THE_EXAMPLE_RESOURCE,
+      .wavesFiles = {std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} /
+                         WAVES_OF_THE_EXAMPLE_RESOURCE,
+                     resource / WAVES_OF_THE_EXAMPLE_RESOURCE},
       .contentFolders = {std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER},
                          resource}}));
 }

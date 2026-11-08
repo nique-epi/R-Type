@@ -16,6 +16,7 @@
 #include "ISoundPlayer.hpp"
 #include "InterfacePixel.hpp"
 #include "Position.hpp"
+#include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
 #include "WarningBanner.hpp"
 #include "WatchOut.hpp"
@@ -112,14 +113,16 @@ BossLook BossPresentation::look(FlashPreference preference) const {
 }
 
 void BossPresentation::followMusic() {
-  const bool silence = !gameEnded_ && isArriving(tracker_, now_);
-  if (silence == musicSilenced_) {
+  const bool arriving = !gameEnded_ && isArriving(tracker_, now_);
+  if (arriving && !bossMusicStarted_) {
+    bossMusicStarted_ = true;
+    audio_->silenceMusic();
+    sounds_->play(BOSS_ALARM_SOUND_ID);
+    audio_->playBossMusic();
     return;
   }
-  musicSilenced_ = silence;
-  if (silence) {
-    audio_->silenceMusic();
-  } else {
+  if (gameEnded_ && bossMusicStarted_) {
+    bossMusicStarted_ = false;
     audio_->playGameMusic();
   }
 }

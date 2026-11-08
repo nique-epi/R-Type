@@ -1,5 +1,6 @@
 #include "RecordingAudioService.hpp"
 #include <vector>
+#include "Ambience.hpp"
 #include "IMusicPlayer.hpp"
 #include "ISoundPlayer.hpp"
 #include "MusicCall.hpp"
@@ -25,6 +26,18 @@ void RecordingAudioService::playGameMusic() {
 
 void RecordingAudioService::silenceMusic() {
   musicCalls_.push_back(MusicCall::Silence);
+}
+
+void RecordingAudioService::playBossMusic() {
+  musicCalls_.push_back(MusicCall::BossMusic);
+}
+
+void RecordingAudioService::setAmbience(rtype::client::Ambience ambience) {
+  ambience_ = ambience;
+}
+
+rtype::client::Ambience RecordingAudioService::ambience() const {
+  return ambience_;
 }
 
 void RecordingAudioService::open() {}

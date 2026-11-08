@@ -404,7 +404,7 @@ Sending a player to a game that has a place is the work of the supervisor: `firs
 
 The game runs on the simulation thread of its process, and the network thread is the only other one that handles datagrams during a game, so nothing needs a lock. An exception a system of the game throws stops its process only (one a message handler throws only drops that message, see [Threads](#threads-serverapplication)); the supervisor and the other games go on.
 
-The waves file is read when the games module starts, after the logger module started, so a missing or wrong file stops the start of the game process with an error that names the games module, the file, the line and the key, and the line "waves file …" reaches the journal of that game. The supervisor reads no waves file: the error shows when a game starts, with the first player.
+The waves files are read when the games module starts, after the logger module started, so a missing or wrong file stops the start of the game process with an error that names the games module, the file, the line and the key, and the line "waves files …" reaches the journal of that game. The supervisor reads the same files when it starts (see [Rules of a game](#rules-of-a-game)), so a wrong file stops it before it opens any game.
 
 ### Supervisor and game processes
 
@@ -432,7 +432,7 @@ The supervisor does not see inside a game: `GameRegistry` (`src/server/Supervise
 
 The player who creates a game chooses its difficulty, the lives of each player and friendly fire, in its `NewGame` (see [Supervisor](/R-Type/protocol/#supervisor) on the protocol page). The rules are fixed when the game opens and apply to that game only; a game opened for an `AnyGame` gets the default ones, `network::defaultGameRules()`: `normal`, `STARTING_LIVES` (3), no friendly fire.
 
-1. The supervised games module reads the entity sheets and the waves file when it starts, and keeps the names of its tables in `HostedDifficulties`. A file the server cannot read stops the supervisor there, before it opens any game.
+1. The supervised games module reads the entity sheets and the waves files when it starts, and keeps the names of their tables in `HostedDifficulties`. A file the server cannot read stops the supervisor there, before it opens any game.
 2. `ServerSupervisorLobbyModule` asks `refusalOf()` (`src/server/SupervisorLobby/`) before it places a `NewGame`: `UnknownDifficulty` for a difficulty the file has no table for, then `LivesOutOfRange` for lives out of `LOWEST_LIVES` to `HIGHEST_LIVES` (1 to 9, **provisional**). Nothing is opened then.
 3. `GameSpawner::openGame()` keeps the rules in the `SupervisedGame` and gives them to the process: `gameCommand()` writes `--difficulty`, `--lives` and `--friendly-fire`.
 4. The games module of the process reads them as settings (`GameRuleSettings`, `src/server/Games/`) into `GameSettings`: the game plays the waves of that difficulty, each player gets those lives when it joins and with each new world, and the deaths of its results count from them.
@@ -711,11 +711,12 @@ A resource is content a host adds to the server without touching its assets or r
 | `resource.toml` | `description`, a text; `depends`, the resources started before it, optional | the supervisor and the games |
 | `entities/*.toml` | entity sheets, as in the assets | the games, and the content pack |
 | `sprites/…` | the sprite sheets its sheets name | the content pack |
-| `waves/waves.toml` | waves that replace those of the assets | the games |
+| `waves/waves.toml` | waves laid over those of the assets, key by key | the supervisor and the games |
+| `server/*.luau` | scripts that register behaviours (see [Scripting in Luau](/R-Type/scripting/)) | the games, never the client |
 
 `engine::ensuredResources()` (`src/engine/Resources/EnsureLines.hpp`) reads the names of the `ensure` lines, and `engine::contentFoldersOf()` (`ContentFolders.hpp`) lays them: the assets folder first, then each resource after the resources it depends on, each once; a resource without a manifest or a circle of dependencies is refused. The supervisor reads the lines it hands to its games (`supervisorModules()`), a game process the lines of its file (`runGame()` in `src/server/main.cpp`, which keeps them out of its interpreter with `ensureLineRule()`), both before they build their modules, so the supervisor serves the content its games play.
 
-Over those folders, `game::sheetTextsInFolders()` reads the sheets of every folder, `game::contentFilesIn()` lists the sheets and the sprite sheets of the pack, and `engine::topmostContentFile()` takes the waves file of the last folder that holds one. A sheet two folders hold, or a sprite sheet two folders hold, stops the start: a resource adds, it never overrides a sheet. The games of a resource that brings a sheet or waves are not vanilla (see [Vanilla games](#vanilla-games-vanillabreaches)). `resources/crimson-drifter/` is the example the repository ships: a faster, sturdier Drifter, its sprite sheet and the waves of normal that send it.
+Over those folders, `game::sheetTextsInFolders()` reads the sheets of every folder, `game::contentFilesIn()` lists the sheets and the sprite sheets of the pack, and `engine::contentFilesOf()` lists the waves file of every folder that holds one, in their order, for `WaveCatalog::fromFiles()` to lay each over the ones before it (see [Writing the waves file](/R-Type/waves-file/#waves-of-a-resource)). A sheet two folders hold, or a sprite sheet two folders hold, stops the start: a resource adds, it never overrides a sheet. The games of a resource that brings a sheet or waves are not vanilla (see [Vanilla games](#vanilla-games-vanillabreaches)). `resources/crimson-drifter/` is the example the repository ships: a Drifter steered by a Luau script that charges the ships level with it, its sprite sheet, and a waves file that gives only the enemies of normal, so the rest of the waves stays that of the assets.
 
 ## Content pack: `ServerContentModule`, `ContentPackDesk`
 
@@ -1055,7 +1056,7 @@ Each tick of a game in progress, `GameFlow` makes the ships of away players want
 
 ## Waves file: `WaveCatalog`
 
-`WaveCatalog` (`src/server/Spawning/`, built into `rtype_server_spawning`) reads the waves of each difficulty from a TOML file, with the strict reading of `src/engine/DataFiles/` (see [Engine](/R-Type/engine/#data-files-datafilereading)), which the client also uses for the appearance of the entity sheets. Only the server links `rtype_server_spawning`, so no client target can read the levels. `gameProcessModules()` hands the games module `WAVE_FILE_IN_ASSETS` (`waves/waves.toml`) in the `assets/` folder that `locateAssetFolder()` finds next to the executable or one level above it, whatever folder the server was started in (see [Engine](/R-Type/engine/#files-next-to-the-executable-locateassetfolder)). When the games module starts, it reads the entity sheets first, then that file, takes the `WavePlan` of the difficulty of its rules (`normal` by default) and gives it to the game in its `GameSettings`, with the seed and the sheets. A `WavePlan` holds a `WaveCurve`, the names of the enemy sheets its Bydos take in turn, and the name of its boss, when the difficulty has a `boss`.
+`WaveCatalog` (`src/server/Spawning/`, built into `rtype_server_spawning`) reads the waves of each difficulty from a TOML file, with the strict reading of `src/engine/DataFiles/` (see [Engine](/R-Type/engine/#data-files-datafilereading)), which the client also uses for the appearance of the entity sheets. Only the server links `rtype_server_spawning`, so no client target can read the levels. `gameProcessModules()` hands the games module the waves files of its content folders (`wavesFilesOf()`, `src/server/Modules/GameAssetPaths.hpp`): `WAVE_FILE_IN_ASSETS` (`waves/waves.toml`) in the `assets/` folder that `locateAssetFolder()` finds next to the executable or one level above it, whatever folder the server was started in (see [Engine](/R-Type/engine/#files-next-to-the-executable-locateassetfolder)), then in each resource that holds one. When the games module starts, it reads the entity sheets first, then those files, each laid over the ones before it (see [Writing the waves file](/R-Type/waves-file/#waves-of-a-resource)), takes the `WavePlan` of the difficulty of its rules (`normal` by default) and gives it to the game in its `GameSettings`, with the seed and the sheets. A `WavePlan` holds a `WaveCurve`, the names of the enemy sheets its Bydos take in turn, and the name of its boss, when the difficulty has a `boss`.
 
 Every key, value and enemy name of every difficulty is checked: an enemy names a sheet of side `enemy`, a look item (`look_items`, optional) a sheet of side `look_item`, and a boss a sheet with a `[gameplay.boss]` table. The first error throws an `engine::EngineException` (`src/engine/Exceptions/`) for a key, a value or the syntax, or a `ServerException` (`src/server/Exceptions/`) for the list of enemies or of look items, the boss (`UnknownBossException`), a missing difficulty, a difficulty named by more than 16 bytes or more than `MAXIMUM_DIFFICULTIES` (16) of them, naming the file, the line and the column, and the dotted name of the key; the game process prints it after `game stopped:` and exits with code 1, and the supervisor writes in its journal that the game crashed. The format, the ranges, the shipped difficulties and every error are in [Writing the waves file](/R-Type/waves-file/).
 
@@ -1064,11 +1065,10 @@ const rtype::game::EntitySheets sheets =
     rtype::game::EntitySheets::fromFolder(
         rtype::engine::locateAssetFolder() /
         rtype::game::ENTITY_SHEET_FOLDER_IN_ASSETS);
+const std::array wavesFiles{rtype::engine::locateAssetFolder() /
+                             rtype::server::WAVE_FILE_IN_ASSETS};
 const rtype::server::WaveCatalog catalog =
-    rtype::server::WaveCatalog::fromFile(
-        rtype::engine::locateAssetFolder() /
-            rtype::server::WAVE_FILE_IN_ASSETS,
-        sheets);
+    rtype::server::WaveCatalog::fromFiles(wavesFiles, sheets);
 rtype::server::WavePlan waves =
     catalog.planOf(rtype::identifiers::DEFAULT_DIFFICULTY);
 ```
@@ -1315,7 +1315,7 @@ The games module judges its game once, when it starts, since the values it reads
 
 | Rule | Broken when |
 |---|---|
-| The shipped waves file | `WaveCatalog::fingerprint()`, SipHash-2-4 of the bytes of the file, is not `OFFICIAL_WAVES_FINGERPRINT`: any change of the file, a comment or a line ending included |
+| The shipped waves file | `WaveCatalog::fingerprint()`, SipHash-2-4 of the bytes of the waves files, joined by `WAVE_FILE_SEPARATOR` when a resource lays one over the assets, is not `OFFICIAL_WAVES_FINGERPRINT`: any change of the file, a comment or a line ending included, or a waves file of a resource |
 | The shipped entity sheets | `entitySheetsFingerprint()`, SipHash-2-4 of the name and the bytes of each sheet in the order of their names, is not `OFFICIAL_ENTITY_SHEETS_FINGERPRINT`: any change, addition or removal of a sheet, a comment or a line ending included (see [Writing an entity sheet](/R-Type/entity-sheets/#the-shipped-sheets-and-vanilla-games)) |
 | No seed | a seed is set, even 0, since a seed lets the Bydos of every game be known in advance |
 | The default input delay | `input-delay` is not `DEFAULT_INPUT_DELAY_TICKS` (3) |

@@ -74,7 +74,7 @@ GameLaunchSettings gameLaunchSettings(
       .folder = engine::executableFolder(),
       .gameLines = std::move(gameLines),
       .forwardedArguments = gameArgumentsOf(launchOptions),
-      .wavesFile = wavesFileOf(contentFolders),
+      .wavesFiles = wavesFilesOf(contentFolders),
       .contentFolders = std::move(contentFolders),
       .trafficCsvFile = launchOptions.trafficCsvFile()};
 }

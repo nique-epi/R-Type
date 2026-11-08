@@ -7,6 +7,7 @@
 #include "HangarScreen.hpp"
 #include "MotionPreference.hpp"
 #include "PlayerSettings.hpp"
+#include "RecordingAudioService.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingSettingsStorage.hpp"
@@ -37,6 +38,8 @@ class HangarScreenFixture : public ::testing::Test {
   [[nodiscard]] const PlayerSettings& settings() const;
   [[nodiscard]] const RecordingSettingsStorage& storage() const;
   [[nodiscard]] const RecordingNavigator& navigator() const;
+  [[nodiscard]] const RecordingSoundPlayer& sounds() const;
+  [[nodiscard]] const RecordingAudioService& audio() const;
   [[nodiscard]] const InterfaceCanvasRecord& painting() const;
 
  private:
@@ -45,6 +48,7 @@ class HangarScreenFixture : public ::testing::Test {
   SettingsService service_;
   RecordingNavigator navigator_;
   RecordingSoundPlayer sounds_;
+  RecordingAudioService audio_{sounds_};
   InterfaceCanvasRecord painting_;
   std::unique_ptr<HangarScreen> screen_;
 };
