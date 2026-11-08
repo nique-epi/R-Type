@@ -10,6 +10,7 @@
 #include "MasterRouteConstants.hpp"
 #include "ServerStatusJobConstants.hpp"
 #include "ServersController.hpp"
+#include "ServersService.hpp"
 
 namespace rtype::master {
 
@@ -24,8 +25,10 @@ std::vector<std::string> ServersModule::dependencies() const {
 
 void ServersModule::install(engine::InstallContext& context) {
   database_ = &context.require<MasterDatabase>();
+  ServersService& service = service_.emplace(*database_);
+  context.provide(service);
   ServersController& controller =
-      controller_.emplace(*database_, context.require<IProbeSender>());
+      controller_.emplace(service, context.require<IProbeSender>());
   auto& server = context.require<MasterHttpServer>();
   server.add(network::CREATE_SERVER_ROUTE,
              std::bind_front(&ServersController::createServer, &controller));

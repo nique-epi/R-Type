@@ -34,6 +34,32 @@ constexpr std::size_t PLAYERS_ON_A_FULL_BOARD = 11;
 constexpr std::uint32_t LAST_RANK_ON_A_FULL_BOARD = 11;
 constexpr int DIED_AT_ONCE_EXIT_CODE = 42;
 
+/** @brief How many games a test reads of the games the master has not
+ * answered: room for every game a test saves, or for two of three. */
+constexpr std::size_t EVERY_WAITING_GAME = 10;
+constexpr std::size_t TWO_WAITING_GAMES = 2;
+
+/** @brief When a test says the master answered a game. */
+constexpr std::chrono::sys_seconds ANSWER_DATE =
+    EVEN_LATER_DATE + std::chrono::minutes{1};
+
+/** @brief The answers a test reads back from the rows of ACE. */
+constexpr std::string_view SELECT_ANSWERS_OF_ACE =
+    "SELECT sent_at, refused_at FROM game_results WHERE nickname = 'ACE'";
+
+/** @brief A vanilla row of ACE written in a file of the first version, as a
+ * server built before the second one saved it. */
+constexpr std::string_view INSERT_VANILLA_ROW_OF_ACE = R"sql(
+INSERT INTO game_results
+  (game_id, nickname, score, deaths, played_at, difficulty, player_count,
+   vanilla)
+VALUES
+  ('0123456789abcdef0123456789abcdef', 'ACE', 300, 2, 1800000000, 'normal', 2,
+   1)
+)sql";
+constexpr std::string_view ID_OF_THE_FIRST_VERSION_GAME =
+    "0123456789abcdef0123456789abcdef";
+
 constexpr std::size_t REPLY_QUEUE_ROOM = 4;
 constexpr std::size_t FIRST_ASKER = 0;
 

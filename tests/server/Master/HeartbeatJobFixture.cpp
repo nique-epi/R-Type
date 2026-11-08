@@ -6,12 +6,14 @@
 #include <string_view>
 #include <thread>
 #include <vector>
+#include "GameResult.hpp"
 #include "HeartbeatJobParts.hpp"
 #include "HeartbeatJobTestConstants.hpp"
 #include "HeartbeatTimes.hpp"
 #include "HostedGame.hpp"
 #include "HostedGameState.hpp"
 #include "MasterAccess.hpp"
+#include "ResultsFileFixtures.hpp"
 #include "RunningMaster.hpp"
 #include "ServerIdentity.hpp"
 
@@ -49,7 +51,8 @@ void HeartbeatJobFixture::startJob(HeartbeatTimes times) {
       .games = games_,
       .probeTokens = probeTokens_,
       .measures = nullptr,
-      .times = times});
+      .times = times,
+      .resultsFile = folder_.path() / LINKED_RESULTS_FILE});
 }
 
 void HeartbeatJobFixture::publishGameOf(std::string_view pilot) {
@@ -73,6 +76,29 @@ RunningMaster& HeartbeatJobFixture::master() { return master_; }
 
 void HeartbeatJobFixture::publishProbeToken(std::uint64_t token) {
   probeTokens_.publish(token);
+}
+
+std::string HeartbeatJobFixture::saveResult(const GameResult& result) const {
+  return saveResultIn(folder_.path() / LINKED_RESULTS_FILE, result);
+}
+
+bool HeartbeatJobFixture::masterSoonKeeps(std::string_view gameId,
+                                          int players) const {
+  return holdsSoon([this, gameId, players] {
+    return master_.keptPlayersOf(gameId) == players;
+  });
+}
+
+MasterAnswers HeartbeatJobFixture::soonAnswered(std::string_view gameId) const {
+  static_cast<void>(holdsSoon([this, gameId] {
+    const MasterAnswers answers = answersOf(gameId);
+    return answers.sent || answers.refused;
+  }));
+  return answersOf(gameId);
+}
+
+MasterAnswers HeartbeatJobFixture::answersOf(std::string_view gameId) const {
+  return answersIn(folder_.path() / LINKED_RESULTS_FILE, gameId);
 }
 
 bool HeartbeatJobFixture::heartbeatSoonLacks(std::string_view text) const {

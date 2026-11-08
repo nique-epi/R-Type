@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 namespace rtype::server {
@@ -16,6 +17,10 @@ struct ServerIdentity {
   /** @brief The secret it registers with, which the probes of the master must
    * carry: drawn once by randomProbeSecret(). */
   std::uint64_t probeSecret{};
+  /** @brief The IPv4 address players reach it at, the public-address
+   * setting; nothing lets the master take the address the registration comes
+   * from. */
+  std::optional<std::string> address = std::nullopt;
 };
 
 }  // namespace rtype::server

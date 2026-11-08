@@ -8,12 +8,12 @@
 #include "ConnectionScreenFixtures.hpp"
 #include "ConnectionScreenParts.hpp"
 #include "ConnectionStatus.hpp"
-#include "KeyPress.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingServerConnection.hpp"
 #include "RecordingSoundPlayer.hpp"
+#include "ScreenInputs.hpp"
 #include "ScreenTestConstants.hpp"
 #include "WidgetConstants.hpp"
 
@@ -51,8 +51,7 @@ const InterfaceCanvasRecord& ConnectionScreenFixture::canvas() const {
 ConnectionScreen& ConnectionScreenFixture::screen() { return screen_; }
 
 void ConnectionScreenFixture::tap(sf::Keyboard::Key key) {
-  screen_.handleEvent(keyPress(key));
-  screen_.handleEvent(keyRelease(key));
+  tapKey(screen_, key);
 }
 
 void ConnectionScreenFixture::choose(sf::Keyboard::Key key) {
@@ -61,15 +60,11 @@ void ConnectionScreenFixture::choose(sf::Keyboard::Key key) {
 }
 
 void ConnectionScreenFixture::type(std::u32string_view text) {
-  for (const char32_t character : text) {
-    screen_.handleEvent(typedCharacter(character));
-  }
+  typeText(screen_, text);
 }
 
 void ConnectionScreenFixture::erase(std::size_t characters) {
-  for (std::size_t erased = 0; erased < characters; ++erased) {
-    screen_.handleEvent(keyPress(sf::Keyboard::Key::Backspace));
-  }
+  eraseCharacters(screen_, characters);
 }
 
 void ConnectionScreenFixture::show(ConnectionStatus status) {

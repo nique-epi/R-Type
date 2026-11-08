@@ -4,7 +4,9 @@
 #include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <string_view>
+#include "FinishedGame.hpp"
 #include "GameListing.hpp"
+#include "GlobalLeaderboard.hpp"
 #include "SampleListing.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerListing.hpp"
@@ -100,6 +102,30 @@ namespace rtype::network::testing {
  * empty text when it accepts it.
  */
 [[nodiscard]] std::string serverListingRefusal(std::string_view text);
+
+/** @returns The vanilla game "Paris 1" reports: "normal", two players, ACE
+ * a guest scoring FIRST_PILOT_SCORE, BYDO_HUNTER under SECOND_PILOT_ACCOUNT
+ * scoring SECOND_PILOT_SCORE, ended at FINISHED_GAME_DATE. */
+[[nodiscard]] FinishedGame parisFinishedGame();
+
+/** @returns The game of parisFinishedGame() as JSON, with @p value at
+ * @p pointer. */
+[[nodiscard]] std::string finishedGameTextWith(std::string_view pointer,
+                                               const nlohmann::json& value);
+
+/** @returns The game of parisFinishedGame() as JSON, started by
+ * PLAYERS_OF_A_FULL_GAME players, its players the first @p playerCount of
+ * FIVE_PILOTS, at most five. */
+[[nodiscard]] std::string finishedGameTextOfPlayers(std::size_t playerCount);
+
+/** @returns A page of the leaderboard of "normal" for two players: ACE first
+ * on "Paris 1" (PARIS_ID), and BYDO_HUNTER, second, as the player asked for.
+ */
+[[nodiscard]] GlobalLeaderboard parisLeaderboard();
+
+/** @returns What finishedGameFromText() says when it refuses @p text, or an
+ * empty text when it accepts it. */
+[[nodiscard]] std::string finishedGameRefusal(std::string_view text);
 
 /** @returns @p pointer between the quotes a refusal writes around it. */
 [[nodiscard]] std::string quoted(std::string_view pointer);

@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string>
 #include <string_view>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
@@ -76,6 +77,13 @@ float readCoordinate(ByteReader& reader);
  * (isPrintableUtf8()).
  */
 [[nodiscard]] bool isValidNickname(std::string_view nickname);
+
+/**
+ * @returns The form two nicknames are compared in: @p nickname with its ASCII
+ * letters in lowercase and every other byte as it is, as SQLite's NOCASE
+ * compares. ACE and ace are one player; É and é are two.
+ */
+[[nodiscard]] std::string nicknameKey(std::string_view nickname);
 
 /**
  * @returns Whether @p name is a name a game server may have: 1 to

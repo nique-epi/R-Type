@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <string_view>
 
@@ -10,6 +11,8 @@ constexpr std::string_view LINKED_SERVER_NAME = "Paris 1";
 constexpr std::uint16_t LINKED_SERVER_PORT = 4242;
 constexpr std::uint16_t LINKED_SERVER_GAMES = 8;
 constexpr std::uint64_t LINKED_SERVER_PROBE_SECRET = 0x0FED'CBA9'8765'4321;
+/** @brief The address the server declares with public-address. */
+constexpr std::string_view LINKED_SERVER_PUBLIC_ADDRESS = "203.0.113.20";
 
 /** @brief The bounds of a probe secret the master accepts: 1 to 2^63 - 1,
  * what a column INTEGER of SQLite holds. */
@@ -22,6 +25,19 @@ constexpr std::uint64_t PROBE_TOKEN_OF_A_HEARTBEAT = 0x1357'9BDF'2468'ACE0;
 /** @brief What the server announces of the protocol and of its games. */
 constexpr std::uint8_t ANNOUNCED_PROTOCOL_VERSION = 11;
 constexpr std::uint8_t ANNOUNCED_PLAYERS_PER_GAME = 4;
+
+/** @brief A game that ended: its date, difficulty and players at the start,
+ * and its two pilots with their score and deaths. */
+constexpr std::chrono::sys_seconds ENDED_GAME_DATE{
+    std::chrono::seconds{1'800'000'000}};
+constexpr std::string_view ENDED_GAME_DIFFICULTY = "hard";
+constexpr std::uint8_t ENDED_GAME_PLAYERS = 2;
+constexpr std::string_view LEADING_PILOT = "ACE";
+constexpr std::uint32_t LEADING_PILOT_SCORE = 12'000;
+constexpr std::uint32_t LEADING_PILOT_DEATHS = 1;
+constexpr std::string_view TRAILING_PILOT = "R9";
+constexpr std::uint32_t TRAILING_PILOT_SCORE = 800;
+constexpr std::uint32_t TRAILING_PILOT_DEATHS = 3;
 
 /** @brief A median tick a heartbeat carries, in milliseconds. */
 constexpr double CARRIED_MEDIAN_TICK_MILLISECONDS = 2.5;

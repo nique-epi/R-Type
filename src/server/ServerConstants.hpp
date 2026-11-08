@@ -36,6 +36,7 @@ constexpr std::string_view START_AT_BOSS_SETTING_NAME = "start-at-boss";
 constexpr std::string_view DATABASE_SETTING_NAME = "database";
 constexpr std::string_view MASTER_URL_SETTING_NAME = "master-url";
 constexpr std::string_view MASTER_KEY_SETTING_NAME = "master-key";
+constexpr std::string_view PUBLIC_ADDRESS_SETTING_NAME = "public-address";
 constexpr std::string_view SERVER_NAME_SETTING_NAME = "server-name";
 
 /**
@@ -52,7 +53,8 @@ constexpr std::array SERVER_SETTING_NAMES{
     STATE_RATE_SETTING_NAME,  STATE_ENCODING_SETTING_NAME,
     INPUT_DELAY_SETTING_NAME, START_AT_BOSS_SETTING_NAME,
     DATABASE_SETTING_NAME,    MASTER_URL_SETTING_NAME,
-    MASTER_KEY_SETTING_NAME,  SERVER_NAME_SETTING_NAME};
+    MASTER_KEY_SETTING_NAME,  PUBLIC_ADDRESS_SETTING_NAME,
+    SERVER_NAME_SETTING_NAME};
 
 /**
  * @brief The highest seed: the seed of a game is 32 bits.

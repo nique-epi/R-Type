@@ -6,6 +6,7 @@
 #include "BoundAction.hpp"
 #include "ColorMode.hpp"
 #include "DisplayMode.hpp"
+#include "Endpoint.hpp"
 #include "PlayerSettings.hpp"
 #include "SettingsText.hpp"
 #include "SettingsTextTestConstants.hpp"
@@ -17,16 +18,35 @@ using rtype::client::PlayerSettings;
 using rtype::client::readSettingsText;
 using rtype::client::settingsText;
 using rtype::client::testing::ANY_VOLUME;
+using rtype::client::testing::BARE_HEAD_FILE;
+using rtype::client::testing::CHANGED_CHAT_BACKGROUND;
+using rtype::client::testing::CHANGED_CHAT_CLOSED_LINES;
+using rtype::client::testing::CHANGED_CHAT_LETTERS;
+using rtype::client::testing::CHANGED_CHAT_OPEN_LINES;
+using rtype::client::testing::CHANGED_CHAT_SECONDS;
 using rtype::client::testing::CHANGED_EFFECTS_VOLUME;
 using rtype::client::testing::CHANGED_MUSIC_VOLUME;
+using rtype::client::testing::CHAT_LINES_PAST_THEIR_RANGES;
+using rtype::client::testing::CHAT_PAST_ITS_RANGES_FILE;
+using rtype::client::testing::CHOSEN_MASTER_ADDRESS;
+using rtype::client::testing::CHOSEN_MASTER_LINE;
+using rtype::client::testing::CHOSEN_MASTER_PORT;
+using rtype::client::testing::CROWN_AND_SHADES_FILE;
+using rtype::client::testing::CROWN_LINE;
 using rtype::client::testing::FIRST_LAUNCH_FILE;
 using rtype::client::testing::FIRST_LAUNCH_MUSIC_VOLUME;
 using rtype::client::testing::FIRST_LINE_WITHOUT_SEPARATOR;
 using rtype::client::testing::HIGHEST_VOLUME;
+using rtype::client::testing::HOST_NAME_MASTER_LINE;
 using rtype::client::testing::INVALID_FIRST_LINE;
 using rtype::client::testing::LOWEST_VOLUME;
+using rtype::client::testing::SHADES_ON_THE_HEAD_FILE;
 using rtype::client::testing::SMALLER_WINDOW;
 using rtype::client::testing::UNKNOWN_FIRST_LINE;
+using rtype::client::testing::WEARS_CROWN;
+using rtype::client::testing::WEARS_NOTHING;
+using rtype::client::testing::WEARS_SHADES;
+using rtype::network::Endpoint;
 using Scan = sf::Keyboard::Scan;
 
 /**
@@ -57,9 +77,57 @@ TEST(SettingsTextTest, EveryChangedSettingReadsBack) {
   settings.autoFire = true;
   settings.clientPrediction = false;
   settings.pilotNames = false;
+  settings.keys.bind(BoundAction::OpenChat, Scan::Y);
+  settings.chatShown = false;
+  settings.chatLetters = CHANGED_CHAT_LETTERS;
+  settings.chatClosedLines = CHANGED_CHAT_CLOSED_LINES;
+  settings.chatOpenLines = CHANGED_CHAT_OPEN_LINES;
+  settings.chatSeconds = CHANGED_CHAT_SECONDS;
+  settings.chatBackground = CHANGED_CHAT_BACKGROUND;
+  settings.master = Endpoint{.address = std::string{CHOSEN_MASTER_ADDRESS},
+                             .port = CHOSEN_MASTER_PORT};
 
   EXPECT_EQ(readSettingsText(settingsText(settings), PlayerSettings{}).settings,
             settings);
+}
+
+/**
+ * Given a file whose five chat numbers each lie one past their range
+ * When it is read over the settings of a first launch
+ * Then the chat keeps its first launch look, and the five lines are listed
+ */
+TEST(SettingsTextTest, AChatValuePastItsRangeKeepsItsDefault) {
+  const auto reading =
+      readSettingsText(CHAT_PAST_ITS_RANGES_FILE, PlayerSettings{});
+
+  EXPECT_EQ(reading.settings, PlayerSettings{});
+  EXPECT_EQ(reading.ignoredLines.size(), CHAT_LINES_PAST_THEIR_RANGES);
+}
+
+/**
+ * Given the line a chosen master is kept on
+ * When it is read over the settings of a first launch
+ * Then the master is that address and that port
+ */
+TEST(SettingsTextTest, AMasterReadsBackAsItsAddressAndPort) {
+  const auto reading = readSettingsText(CHOSEN_MASTER_LINE, PlayerSettings{});
+
+  EXPECT_EQ(reading.settings.master.value_or(Endpoint{}),
+            (Endpoint{.address = std::string{CHOSEN_MASTER_ADDRESS},
+                      .port = CHOSEN_MASTER_PORT}));
+}
+
+/**
+ * Given a master line that names a host, not an IPv4 address
+ * When it is read
+ * Then no master is taken, and the line is listed as invalid
+ */
+TEST(SettingsTextTest, AMasterWithAHostNameIsLeftOut) {
+  const auto reading =
+      readSettingsText(HOST_NAME_MASTER_LINE, PlayerSettings{});
+
+  EXPECT_FALSE(reading.settings.master.has_value());
+  EXPECT_EQ(reading.ignoredLines, std::vector<std::string>{INVALID_FIRST_LINE});
 }
 
 /**
@@ -200,4 +268,55 @@ TEST(SettingsTextTest, AnEmptyTextGivesTheDefaults) {
   const auto reading = readSettingsText("", PlayerSettings{});
   EXPECT_EQ(reading.settings, PlayerSettings{});
   EXPECT_TRUE(reading.ignoredLines.empty());
+}
+
+/**
+ * Given settings whose ship wears the crown
+ * When they are written
+ * Then the line of the head names the crown
+ */
+TEST(SettingsTextTest, AWornItemIsWrittenByItsName) {
+  PlayerSettings settings;
+  settings.shipLook.head = WEARS_CROWN;
+
+  EXPECT_NE(settingsText(settings).find(CROWN_LINE), std::string::npos);
+}
+
+/**
+ * Given a file naming the crown on the head and the shades on the eyes
+ * When it is read
+ * Then the ship wears both, each in its slot
+ */
+TEST(SettingsTextTest, AWornItemReadsBackByItsName) {
+  const PlayerSettings settings =
+      readSettingsText(CROWN_AND_SHADES_FILE, PlayerSettings{}).settings;
+
+  EXPECT_EQ(settings.shipLook.head, WEARS_CROWN);
+  EXPECT_EQ(settings.shipLook.eyes, WEARS_SHADES);
+}
+
+/**
+ * Given a file naming the shades on the head, a slot they never take
+ * When it is read
+ * Then the head keeps its default and the line is listed as invalid
+ */
+TEST(SettingsTextTest, AnItemOfAnotherSlotIsIgnored) {
+  const auto reading =
+      readSettingsText(SHADES_ON_THE_HEAD_FILE, PlayerSettings{});
+
+  EXPECT_EQ(reading.settings.shipLook.head, WEARS_NOTHING);
+  EXPECT_EQ(reading.ignoredLines, std::vector<std::string>{INVALID_FIRST_LINE});
+}
+
+/**
+ * Given defaults whose ship wears the crown
+ * When a file naming none on the head is read
+ * Then the head wears nothing
+ */
+TEST(SettingsTextTest, NoneTakesTheItemOff) {
+  PlayerSettings defaults;
+  defaults.shipLook.head = WEARS_CROWN;
+
+  EXPECT_EQ(readSettingsText(BARE_HEAD_FILE, defaults).settings.shipLook.head,
+            WEARS_NOTHING);
 }

@@ -27,7 +27,7 @@ constexpr const char* NO_SERVER_TITLE = "NO SERVER ONLINE";
 constexpr const char* NO_SERVER_DETAIL = "D: DIRECT CONNECT STILL WORKS";
 constexpr const char* MASTER_UNREACHABLE_TITLE = "MASTER UNREACHABLE";
 constexpr const char* MASTER_UNREACHABLE_DETAIL =
-    "R TO RETRY, OR D FOR DIRECT CONNECT";
+    "R TO RETRY, M FOR ANOTHER MASTER, D FOR DIRECT CONNECT";
 constexpr sf::Vector2i MESSAGE_ANCHOR{240, 120};
 constexpr int MESSAGE_LINE_PITCH = 16;
 
@@ -76,6 +76,25 @@ constexpr sf::Keyboard::Key RANKING_KEY = sf::Keyboard::Key::L;
 constexpr const char* ADDRESS_LABEL = "ADDRESS";
 constexpr const char* ADDRESS_KEY_NAME = "D";
 constexpr sf::Keyboard::Key ADDRESS_KEY = sf::Keyboard::Key::D;
+
+/** @brief The hangar star: where it stands on the whole map, close to the
+ * planet, where no server stands (servers start past the reach of the planet
+ * and its ring, 120 pixels from its centre); its size; and its bubble,
+ * whose hint names HANGAR_KEY_NAME between its start and its end. */
+constexpr sf::Vector2i HANGAR_STAR_POINT{84, 64};
+constexpr int HANGAR_STAR_RADIUS = 3;
+constexpr const char* HANGAR_STAR_DETAIL = "LOCKER AND SHIP";
+constexpr const char* HANGAR_STAR_HINT_START = "CLICK OR ";
+constexpr const char* HANGAR_STAR_HINT_END = ": OPEN";
+
+/** @brief The chip that opens the form of the master, on the right of the
+ * title, and where the master read is written under it, ending at its right
+ * edge. */
+constexpr const char* MASTER_LABEL = "MASTER";
+constexpr const char* MASTER_KEY_NAME = "M";
+constexpr sf::Keyboard::Key MASTER_KEY = sf::Keyboard::Key::M;
+constexpr int MASTER_CHIP_TOP = 20;
+constexpr sf::Vector2i MASTER_ADDRESS_ANCHOR{SERVER_MAP_CHIPS_RIGHT, 40};
 
 /** @brief The panel of the games of a server, over the map dimmed: its area,
  * its title, the count of its games, its rule, its columns, its rows, and the

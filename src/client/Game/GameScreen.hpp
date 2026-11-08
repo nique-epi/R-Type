@@ -8,6 +8,7 @@
 #include "ActionSet.hpp"
 #include "BossLook.hpp"
 #include "BossPresentation.hpp"
+#include "ChatWindow.hpp"
 #include "ComponentRegistry.hpp"
 #include "DepartureFeed.hpp"
 #include "EffectSpawner.hpp"
@@ -119,6 +120,10 @@ struct PlayerSettings;
  * of the parts, then asks for the end screen in place of every screen
  * END_SCREEN_DELAY later on the clock of the game, once; the game goes on
  * meanwhile, so the last explosion plays.
+ *
+ * The chat of the session shows over the playfield (ChatWindow), on the status
+ * picture, repainted at each update while it shows; while it is open it takes
+ * every key, the ship holds nothing, and its ESC opens no options.
  */
 class GameScreen : public IScreen {
  public:
@@ -204,8 +209,10 @@ class GameScreen : public IScreen {
   std::optional<PlayerPalette> paintedPalette_;
   DepartureFeed departures_;
   SilenceWarning silence_;
+  ChatWindow chat_;
   std::uint32_t paintedDepartures_{};
   bool paintedSilence_ = false;
+  bool paintedChat_ = false;
   BossLook paintedBoss_;
   bool worldSeen_ = false;
 };

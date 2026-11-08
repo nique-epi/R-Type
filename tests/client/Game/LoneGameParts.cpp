@@ -20,7 +20,8 @@ GameScreenParts LoneGameParts::parts() {
                          .sounds = sounds,
                          .audio = audio,
                          .entityTypes = entityTypes,
-                         .result = result};
+                         .result = result,
+                         .chat = chat};
 }
 
 std::unique_ptr<RecordingInterfaceCanvas> LoneGameParts::statusCanvasDouble() {

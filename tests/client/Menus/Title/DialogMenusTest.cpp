@@ -17,12 +17,13 @@
 
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::CLOSED_SERVER_MESSAGE;
+using rtype::client::CONNECTION_AGAIN_SCREEN;
 using rtype::client::CONNECTION_LOST_HEADING;
-using rtype::client::CONNECTION_SCREEN;
 using rtype::client::ConnectionPhase;
 using rtype::client::DIALOG_MESSAGE_OFFSET;
 using rtype::client::DIALOG_SIZE;
 using rtype::client::regularTextWidth;
+using rtype::client::SERVER_MAP_SCREEN;
 using rtype::client::SIDES_PER_AXIS;
 using rtype::client::SILENT_SERVER_MESSAGE;
 using rtype::client::TITLE_SCREEN;
@@ -129,7 +130,8 @@ TEST(DialogMenus, TheReasonsOfALostConnectionFitTheirPanel) {
 /**
  * Given the connection lost dialog just opened
  * When Enter is pressed and released, and the press lasts
- * Then RETRY answers: the dialog closes and the connection screen opens
+ * Then RETRY answers: the dialog closes, the server map opens, and the
+ * connection screen of the lost game over it
  */
 TEST_F(DialogMenusFixture, RetryIsChosenAtFirstOnALostConnection) {
   openConnectionLost(ConnectionPhase::Lost);
@@ -141,7 +143,9 @@ TEST_F(DialogMenusFixture, RetryIsChosenAtFirstOnALostConnection) {
               ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
                                         .screen = std::nullopt},
                           NavigatorCall{.request = NavigatorRequest::Push,
-                                        .screen = CONNECTION_SCREEN}));
+                                        .screen = SERVER_MAP_SCREEN},
+                          NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = CONNECTION_AGAIN_SCREEN}));
 }
 
 /**
@@ -193,15 +197,33 @@ TEST_F(DialogMenusFixture, RetryPlaysTheClick) {
 /**
  * Given the connection lost dialog over the title, in a real stack
  * When Enter activates RETRY and an event arrives
- * Then the connection screen stands on top, the title still under it
+ * Then the connection screen of the lost game stands on top
  */
-TEST_F(ConnectionLostInTheStackFixture, RetryOpensTheConnectionOverTheTitle) {
+TEST_F(ConnectionLostInTheStackFixture,
+       RetryOpensTheConnectionOverTheServerMap) {
   answerWith(sf::Keyboard::Key::Enter);
 
   sendAnEvent();
 
   EXPECT_THAT(journal(),
-              ElementsAre(JournalEntry{.screen = CONNECTION_SCREEN,
+              ElementsAre(JournalEntry{.screen = CONNECTION_AGAIN_SCREEN,
+                                       .call = ScreenCall::HandleEvent}));
+}
+
+/**
+ * Given RETRY answered over the title, in a real stack
+ * When the connection screen closes, as BACK closes it, and an event arrives
+ * Then the server map gets it: BACK from the form leads to the map
+ */
+TEST_F(ConnectionLostInTheStackFixture,
+       BackFromTheRetryFormLeavesTheServerMap) {
+  answerWith(sf::Keyboard::Key::Enter);
+  closeTheTopScreen();
+
+  sendAnEvent();
+
+  EXPECT_THAT(journal(),
+              ElementsAre(JournalEntry{.screen = SERVER_MAP_SCREEN,
                                        .call = ScreenCall::HandleEvent}));
 }
 

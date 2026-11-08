@@ -44,6 +44,12 @@ void ConnectionLostInTheStackFixture::sendAnEvent() {
   screens_.handleEvent(keyPress(sf::Keyboard::Key::A));
 }
 
+void ConnectionLostInTheStackFixture::closeTheTopScreen() {
+  screens_.pop();
+  screens_.applyPendingChanges();
+  journal_.clear();
+}
+
 const std::vector<JournalEntry>& ConnectionLostInTheStackFixture::journal()
     const {
   return journal_;

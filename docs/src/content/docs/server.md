@@ -33,7 +33,7 @@ A game process and the supervisor each run on the threads below. Only the networ
 | Network | Started by `ServerNetworkModule::start()`. Owns the socket: sorts each datagram into a queue as it arrives, and sends the outgoing queue when asked | `src/server/Network/` |
 | Simulation | Started by `ServerApplication::run()`. Runs `SIMULATION_TICKS_PER_SECOND` (60) ticks per second, and in them every module and every game | `src/server/Network/` |
 | Content pack | In the supervisor only. Started by `ServerContentModule::start()`: the `HttpServer` listens on a thread of its own and answers the downloads of the content pack on the threads of cpp-httplib (see [Content pack](#content-pack-servercontentmodule-contentpackdesk)) | `src/server/Content/`, `src/network/Http/` |
-| MasterLink | In the supervisor only. Started by `ServerMasterModule::start()` when `master-url` and `master-key` are set. Runs the `HeartbeatJob`: registers the supervisor with the master and sends its heartbeats, reading only `LatestHostedGames` and `LatestServerMeasures`, which the supervised games module publishes (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
+| MasterLink | In the supervisor only. Started by `ServerMasterModule::start()` when `master-url` and `master-key` are set. Runs the `HeartbeatJob`: registers the supervisor with the master and sends its heartbeats, reading only `LatestHostedGames` and `LatestServerMeasures`, which the supervised games module publishes, then the vanilla results the master has not answered, through a connection of its own to the file of results (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
 | AdminConsole | In the supervisor only. Started by `ServerAdminConsoleModule::start()`: reads the standard input and hands each line to the simulation thread, which runs it (see [Administration console](#administration-console-serveradminconsolemodule)) | `src/server/AdminConsole/` |
 | Signals | Started by `StopSignals`, on Linux and macOS. Waits for Ctrl-C or SIGTERM and asks for the stop; on Windows, the system runs the handler on a thread of its own | `src/server/Platform/` |
 
@@ -137,11 +137,11 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | End of a game sent to the players (`GameEnded`) | Available: when the game is won or lost, with its outcome and the score of each, until the game waits for players again | `src/server/Replication/Announcements/Milestones/`, `src/server/Rules/Match/` |
 | Metrics in the journal every 10 s: duration of the ticks, time of each system, games, players, entities, round trip of each player and traffic | Available; losses are not measured yet | `src/server/Metrics/` |
 | Results of each game kept in a SQLite file, with statistics, and a leaderboard read with `LeaderboardRequest` | Available; the leaderboard of the client reads it, and nothing in the game shows the statistics | `src/server/Results/`, `src/server/Storage/`, `src/storage/` |
-| Text chat in the waiting room and during a match (`ChatLine`, `PlayerChatLine`), one line a second per player, 127 bytes at most | Available on the server; the client sends and shows none yet | `src/server/Chat/` |
+| Text chat in the waiting room and during a match (`ChatLine`, `PlayerChatLine`), one line a second per player, 127 bytes at most | Available; the client sends and shows them (see [Client](/R-Type/client/#chat-chatchannel-chatwindow)) | `src/server/Chat/` |
 | Game statistics: a CSV row per Bydo killed and the total of each game, written by a plugin | Available, loaded by `plugin game-statistics` | `src/server/GameStatistics/` |
 | Master mode: `--mode master` runs the master instead of the supervisor | Available (see [Master](/R-Type/master/)) | `src/server/LaunchOptions/`, `src/master/` |
 | Administration console of the supervisor: the games and their pilots, closing a game, the traffic, the rejected datagrams and the measures of the games | Available; expelling and banning a player not written yet | `src/server/AdminConsole/` |
-| Master link: registration and heartbeats | Available, from the supervisor, one registration for all its games; admin orders, bans and results not yet written (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
+| Master link: registration, heartbeats and the results of vanilla games | Available, from the supervisor, one registration for all its games; admin orders and bans not yet written (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
 | Components (`Position`, `SteadyMotion`, `CollisionBox`, `Health`, `EntityType`, `EntityTypeNumber`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Entity sheets: every entity made from the sheet of its type, the sheets read at launch | Available: the ship, the Bydos, the Bydo Tyrant and their missiles (see [Writing an entity sheet](/R-Type/entity-sheets/#the-shipped-sheets)) | `assets/entities/`, `src/game/EntityTypes/`, `src/game/World.cpp` |
 | Movement, run by each game tick: every body by its `Intent`, a ship as a ship, the Bydos and the missiles at the top speed of their sheet | Available | `src/game/Systems/MovementSystem/`, `src/server/Rules/Match/` |
@@ -167,7 +167,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Launch options | `LaunchOptions` | `GameLaunchOptions` | `MasterLaunchOptions` (see [Master](/R-Type/master/)) |
 | Reads | `server.cfg`, whole; runs its own lines and keeps the lines of its games | only the file given after `--configuration`; none without it | `master.cfg` |
 | Modules | `supervisorModules()`: logger, network, content, supervised games, supervisor lobby, information, master | `gameProcessModules()`: logger, network, storage, games (one game), lobby, metrics, supervisor link, and the plugins its file loads | `masterModules()` |
-| Settings it owns | `port`, `database`, `server-name`, `master-url`, `master-key` | `seed`, `state-rate`, `state-encoding`, `input-delay`, `start-at-boss`, and those of its plugins; its `port` and `database` come from its command line | those of `master.cfg` |
+| Settings it owns | `port`, `database`, `server-name`, `master-url`, `master-key`, `public-address` | `seed`, `state-rate`, `state-encoding`, `input-delay`, `start-at-boss`, and those of its plugins; its `port` and `database` come from its command line | those of `master.cfg` |
 | Talks to the master | yes, one registration for all its games | never | |
 | Answers information requests | yes | never | |
 | Journal | `r-type_server.log` | `r-type_game_<n>.log`, n its number in the journal of the supervisor | `r-type_master.log` |
@@ -335,6 +335,7 @@ A line of the games is not run by the supervisor, in none of the three passes of
 | `set database <file>` | The SQLite file the leaderboard of this server is kept in, on a local disk; a name with a space goes in quotes. Default: empty, which keeps it in `r-type_server_<port>.db` next to the executable, with the port of `set port`. Declared by the supervised games module, which starts every game with this file. |
 | `set master-url <url>` | The master the supervisor lists this server on, `http://<host>[:<port>]`. Default: empty, and the server runs alone (see [Link with the master](#link-with-the-master-servermastermodule)). |
 | `set master-key <key>` | The key the master gave when the host created this server on it. Default: empty, and the server runs alone. Never committed: only `server.cfg.example` is, with an empty key. |
+| `set public-address <address>` | The IPv4 address players reach this server at, which the master lists. Default: empty, and the master lists the address the registration comes from, `127.0.0.1` when the master runs on the same machine. A host name is refused, and so are the addresses no player reaches the server at: `0.0.0.0`, a loopback `127.x.x.x` and `255.255.255.255`. |
 | `set server-name <name>` | The name players read in the list of servers and in the answer to an information request, 1 to 32 bytes of printable UTF-8. Declared by the information module. Default: `R-Type server`. |
 | `set game-statistics-file <file>` | For the games. Declared by the `game-statistics` plugin, so refused by each game unless a `plugin game-statistics` line loads it: the CSV file the statistics of each game are named after: each game writes it with `_<port>` before its extension, with its own port. Default: empty, which writes `r-type_statistics_<port>.csv` next to the executable (see [Game statistics](#game-statistics-servergamestatisticsmodule)). |
 
@@ -375,10 +376,10 @@ A plugin joins the end of that list when a `plugin` line of its file loads it, a
 | `logger` | as in a game, for `r-type_server.log` | `src/server/Logger/` |
 | `network` | as in a game, on the port of the supervisor | `src/server/Network/` |
 | `content` | reads the sheets and the sprite sheets of the assets folder and encodes the content pack when it installs; serves it over HTTP on the TCP port of the number of `port` when it starts (see [Content pack](#content-pack-servercontentmodule-contentpackdesk)) | `src/server/Content/` |
-| `supervised games` | declares the `database` setting, which it gives every game; writes the file of commands of the games when it starts; starts, follows and stops the game processes (`GameRegistry`); provides `IServerOccupancy`, `LatestHostedGames` and `LatestServerMeasures` | `src/server/SupervisedGames/` |
+| `supervised games` | declares the `database` setting, which it gives every game; writes the file of commands of the games when it starts; starts, follows and stops the game processes (`GameRegistry`); provides `IServerOccupancy`, `LatestHostedGames`, `LatestServerMeasures` and `IResultsFile`, the file of that setting | `src/server/SupervisedGames/` |
 | `supervisor lobby` | answers the connection requests: sends each player to a game, or starts one | `src/server/SupervisorLobby/` |
 | `information` | declares the `server-name` setting; answers the information requests with what `IServerOccupancy` counts; provides `IServerName` | `src/server/Information/` |
-| `master` | declares the `master-url` and `master-key` settings, and registers the name `IServerName` gives; keeps the master told of the games on a thread of its own, MasterLink, when both a url and a key are set | `src/server/Master/` |
+| `master` | declares the `master-url`, `master-key` and `public-address` settings, and registers the name `IServerName` gives; keeps the master told of the games, and sends the vanilla results of the file `IResultsFile` names, on a thread of its own, MasterLink, when both a url and a key are set | `src/server/Master/` |
 | `admin console` | registers `games`, `players`, `close-game`, `network` and `help` in the interpreter; reads the terminal on a thread of its own, AdminConsole, from its start to its stop, and runs the lines typed at each tick (see [Administration console](#administration-console-serveradminconsolemodule)) | `src/server/AdminConsole/` |
 
 The supervisor loads no plugin: a `plugin` line goes to its games (see [Configuration](#configuration-servercfg)).
@@ -1221,7 +1222,7 @@ Every game that ends leaves a row per player in the SQLite file of its server, a
 
 ### Vanilla games: `vanillaBreaches`
 
-A game is vanilla when it is played by the rules the game ships with, so that its scores compare with those of any other server. Only vanilla games are meant for a leaderboard that gathers every server; nothing sends results there yet, and a game that is not vanilla stays on the leaderboard of its own server like any other.
+A game is vanilla when it is played by the rules the game ships with, so that its scores compare with those of any other server. Only vanilla games reach the leaderboard of the master, which gathers every server (see [Master](/R-Type/master/#the-global-leaderboard-leaderboardmodule)): the supervisor sends them (see [Link with the master](#link-with-the-master-servermastermodule)), and a game that is not vanilla stays on the leaderboard of its own server like any other.
 
 The games module judges its game once, when it starts, since the values it reads are fixed from then on. `vanillaBreaches()` (`src/server/Games/`) gives one reason per rule broken, and an empty list for vanilla games:
 
@@ -1257,6 +1258,7 @@ erDiagram
     INTEGER player_count
     INTEGER vanilla
     INTEGER sent_at
+    INTEGER refused_at
   }
   player_statistics {
     TEXT player
@@ -1269,7 +1271,7 @@ erDiagram
   player_statistics ||--|{ game_results : "adds up"
 ```
 
-The table is `STRICT`: SQLite refuses a value it cannot store in the declared type without loss, where an ordinary table would keep it as it came. Its key is `game_id` and `nickname` together, so a game holds one row per player. The index `game_results_of_a_leaderboard`, on `difficulty` and `player_count`, finds the rows of one leaderboard.
+The table is `STRICT`: SQLite refuses a value it cannot store in the declared type without loss, where an ordinary table would keep it as it came. Its key is `game_id` and `nickname` together, so a game holds one row per player. The index `game_results_of_a_leaderboard`, on `difficulty` and `player_count`, finds the rows of one leaderboard; the partial index `game_results_not_sent` holds only the vanilla rows the master has not answered, so the reading after each heartbeat walks those rows only.
 
 | Column of `game_results` | Holds |
 |---|---|
@@ -1280,7 +1282,8 @@ The table is `STRICT`: SQLite refuses a value it cannot store in the declared ty
 | `played_at` | When the game ended, in seconds since 1970 UTC |
 | `difficulty`, `player_count` | `GameSettings::difficulty` (always `normal` for now) and the players connected at the start |
 | `vanilla` | 1 for a vanilla game, 0 otherwise (see [Vanilla games](#vanilla-games-vanillabreaches)) |
-| `sent_at` | Empty: nothing sends results to the master yet |
+| `sent_at` | When the master kept the game, in seconds since 1970 UTC; empty until then, and for a game that is not vanilla |
+| `refused_at` | When the master refused the game for good (see [Link with the master](#link-with-the-master-servermastermodule)); empty otherwise. Added by the second migration |
 
 The view `player_statistics` adds up the rows of each player, every difficulty together: `games_played`, `best_score`, `total_score` and `deaths`, under the account identifier when there is one and under the nickname otherwise. It holds no data of its own, so it cannot disagree with the rows. Nothing in the game reads it yet.
 
@@ -1293,7 +1296,7 @@ The view `player_statistics` adds up the rows of each player, every difficulty t
 
 ### The storage thread: `ResultsArchive`
 
-`ResultsArchive` (`src/server/Storage/Archive/`) owns the only connection, on a thread of its own, so a game never waits for the disk: a commit can last longer than a tick. `IResultsArchive::record()` and `ask()` push to a `BoundedQueue` and return at once. Every `STORAGE_POLL_INTERVAL` (20 ms), the thread saves the results that wait, then answers the requests that wait. It takes the requests off their queue first, so a request made after a result always reads that result.
+`ResultsArchive` (`src/server/Storage/Archive/`) owns the only connection of a game process, on a thread of its own, so a game never waits for the disk: a commit can last longer than a tick. `IResultsArchive::record()` and `ask()` push to a `BoundedQueue` and return at once. Every `STORAGE_POLL_INTERVAL` (20 ms), the thread saves the results that wait, then answers the requests that wait. It takes the requests off their queue first, so a request made after a result always reads that result.
 
 - Results and requests have a queue each, `WAITING_RESULTS_CAPACITY` and `WAITING_ASKS_CAPACITY` (64 each), so a flood of requests never pushes a result out. A full queue discards its oldest message, and the journal reports a result lost that way. These sizes and the interval are **provisional**: code must read the constants.
 - An error on one result or one request is logged under `Storage`, and the next one is handled: a full disk costs results, not games.
@@ -1354,9 +1357,20 @@ set server-name "Paris 1"
 
 The module `master` (`src/server/Master/`), a module of the supervisor, reads the name of the server from the information module (`IServerName`), then starts a `HeartbeatJob`, which runs on a thread of its own, MasterLink, the link of the server with the master; the games never wait for it:
 
-1. It registers the server with `MasterClient`: its name, the UDP port of the supervisor, `SERVER_GAME_VERSION` (the version of the CMake project), the protocol version, `MAXIMUM_RUNNING_GAMES` (8) as the most games it hosts, `MAXIMUM_PLAYERS` per game and its `probeSecret`, drawn once by `randomProbeSecret()` when the module is built. One supervisor is one registration, whatever its games; a game process never talks to the master. The journal says `registered with the master as Paris 1`.
+1. It registers the server with `MasterClient`: its name, the UDP port of the supervisor, `SERVER_GAME_VERSION` (the version of the CMake project), the protocol version, `MAXIMUM_RUNNING_GAMES` (8) as the most games it hosts, `MAXIMUM_PLAYERS` per game, its `probeSecret`, drawn once by `randomProbeSecret()` when the module is built, and the address `public-address` declares, if any; without one, the master takes the address the registration comes from. One supervisor is one registration, whatever its games; a game process never talks to the master. The journal says `registered with the master as Paris 1`.
 2. It sends a heartbeat, the state of every game with the nicknames of its players, the measures of `LatestServerMeasures` and the token of the last probe of the master when one came since the last heartbeat sent, each time the games change, at most once per `MINIMUM_NOTICE_GAP` (1 s), and every `MASTER_HEARTBEAT_INTERVAL` (5 s, `src/network/Master/Validators/MasterMessageConstants.hpp`, which the master reads to tell a silent server) when nothing changes. A heartbeat always carries the whole state, so a lost one is corrected by the next.
 3. A master that refuses the key, does not know the registration or does not answer is written in the journal once, not at each try. The job registers again every `REGISTRATION_RETRY` (5 s) until the master answers, then goes on.
+4. After each heartbeat the master took, its `ResultsCourier` sends the vanilla games the master has not answered, `MAXIMUM_RESULTS_PER_ROUND` (16) at most, the oldest first, one `PUT /api/servers/me/results/{gameId}` each, under the id the file drew for the game (see [Master](/R-Type/master/#the-global-leaderboard-leaderboardmodule)). Each player goes as a guest with its nickname and score; the deaths stay on the server.
+
+The courier reads the file `IResultsFile` names, the one every game of the supervisor writes to, through a connection of its own that MasterLink opens at the first sending and alone uses; the games write from their own processes, and SQLite keeps the connections apart (see [The file](#the-file-resultsdatabase)). A supervisor that runs alone never opens it. What the master answers decides what becomes of a game:
+
+| The master | The game |
+|---|---|
+| keeps it (204) | `sent_at` is written in one statement: it is never sent again |
+| refuses it with `FOR_GOOD_REFUSAL_STATUS` (400), a game it never keeps | `refused_at` is written, an error names the game in the journal, and it is never sent again; it stays on the leaderboard of the server |
+| refuses it otherwise, or does not answer | it waits, and the games after it wait with it, for the next heartbeat, so a master that was down gets every result once it is back, a restart of the server in between included |
+
+A game the master kept but whose answer could not be written is sent again later: the master keeps a game once, so sending it twice changes nothing. `MAXIMUM_RESULTS_PER_ROUND` is **provisional**: it keeps a backlog of days from holding the next heartbeat back.
 
 The master probes the UDP port of the supervisor after each heartbeat (see [Master](/R-Type/master/#probing-the-game-servers-masterprobemodule)). The sorter hands a datagram holding a `MasterProbe` to the probe queue, `PROBE_QUEUE_CAPACITY` (16) datagrams per tick, and in the simulation stage the `MasterProbeDesk` of the master module keeps the token of each probe whose secret is that of the registration, in a `LatestValue` the job reads; a probe with another secret is dropped and logged at the `debug` level. The job sends a token once: a heartbeat sent without a newer token carries none. The supervisor sends nothing over UDP in answer to a probe, and a game process never gets one.
 
@@ -1364,7 +1378,7 @@ The supervised games module tells the job when the games change. At each tick, o
 
 - Without `master-url` or `master-key` the server runs alone, as the journal says, and MasterLink does not start. A url that is not `http://<host>[:<port>]`, an `https://` one included, is logged as an error and the server runs alone too: `MasterClient` speaks plain HTTP only, so the key crosses the network in clear and the master stays on a local network for now.
 - A port chosen by the system (`-p 0`) is not told to the master, since the module cannot know it.
-- `module master off` turns the link off. The admin orders, the global bans, the results and a last heartbeat when the server stops are not sent yet: the master does not take them.
+- `module master off` turns the link off, and the results wait in the file until it is on again. The admin orders, the global bans and a last heartbeat when the server stops are not sent yet.
 
 ## Where to intervene
 
@@ -1395,6 +1409,7 @@ The supervised games module tells the job when the games change. At each tick, o
 | Change the rows of the game statistics, their file or how often they are written | `StatisticsSheet`, `GameTally` and `GameStatisticsConstants.hpp` in `src/server/GameStatistics/` |
 | Follow the game from a module of the program or a plugin | `IGameEvents` (`src/server/Games/IGameEvents.hpp`), required in `install()`, its bus subscribed to in `start()` |
 | Change what makes a game vanilla | `vanillaBreaches()` in `src/server/Games/VanillaBreaches.cpp`, the values it judges in `HostedRules`; its reasons, `OFFICIAL_WAVES_FINGERPRINT` and `OFFICIAL_ENTITY_SHEETS_FINGERPRINT` in `src/server/ServerConstants.hpp` |
+| Change which results go to the master, how many after a heartbeat, or what a refusal does | `ResultsCourier` and `ServerMasterConstants.hpp` in `src/server/Master/`; the games it reads, `UNSENT_GAMES_QUERY` in `src/server/Storage/Database/ResultsDatabaseConstants.hpp` |
 | Change the tables of the results, or a query | A new line of `RESULTS_MIGRATIONS` and `LEADERBOARD_QUERY` in `src/server/Storage/Database/ResultsDatabaseConstants.hpp` |
 | Change how often a player may chat, or how long a line is | `CHAT_LINE_INTERVAL` in `src/server/Chat/ChatConstants.hpp`, `MAXIMUM_CHAT_TEXT_SIZE` in `src/network/Protocol/ProtocolConstants.hpp` |
 | Change how often a player is answered | `LEADERBOARD_ANSWER_INTERVAL` in `src/server/Instances/Context/Setup/GameInstanceConstants.hpp` |
