@@ -63,6 +63,7 @@ export function RankingSection({
       tabs={[serverTab, globalTab]}
       tab={rankingTabOf(choice)}
       onTabChange={tab => goTo(rankingChoiceOfTab(choice, tab))}
+      disabledTabs={servers.length === 0 ? [0] : []}
       rows={rows}
       summary={rankingSummaryOf(choice, servers, copy, locale)}
       empty={unavailable ? copy.unavailable : copy.empty}

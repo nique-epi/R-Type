@@ -57,6 +57,8 @@ export type RankingScreenProps = {
   tabs: readonly [string, string];
   tab: number;
   onTabChange: (tab: number) => void;
+  /** The tabs that cannot be opened, such as the one of a server while the master lists none. */
+  disabledTabs?: readonly number[];
   rows: readonly RankingRow[];
   /** What the list shows, under it: "NEBULA LYON · PARTIES NORMALES, 2 PILOTES". */
   summary: React.ReactNode;
@@ -88,6 +90,7 @@ export function RankingScreen({
   tabs,
   tab,
   onTabChange,
+  disabledTabs = [],
   rows,
   summary,
   empty,
@@ -137,13 +140,19 @@ export function RankingScreen({
     { scope: root, dependencies: [rows] },
   );
 
+  function changeTab(index: number) {
+    if (!disabledTabs.includes(index)) {
+      onTabChange(index);
+    }
+  }
+
   function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (filterOpen) {
       return;
     }
     runShortcut(event, {
-      q: () => onTabChange(0),
-      e: () => onTabChange(1),
+      q: () => changeTab(0),
+      e: () => changeTab(1),
       f: () => setFilterOpen(true),
       z: fullscreen.toggle,
       escape: onBack,
@@ -194,7 +203,7 @@ export function RankingScreen({
         <button
           type="button"
           aria-label={labels.previousTab}
-          onClick={() => onTabChange(0)}
+          onClick={() => changeTab(0)}
           className="absolute top-26 left-40 cursor-pointer"
         >
           <Keycap size="sm">{labels.keys.previousTab}</Keycap>
@@ -202,7 +211,7 @@ export function RankingScreen({
         <button
           type="button"
           aria-label={labels.nextTab}
-          onClick={() => onTabChange(1)}
+          onClick={() => changeTab(1)}
           className="absolute top-26 left-193 cursor-pointer"
         >
           <Keycap size="sm">{labels.keys.nextTab}</Keycap>
@@ -216,9 +225,10 @@ export function RankingScreen({
                 type="button"
                 role="tab"
                 aria-selected={open}
-                onClick={() => onTabChange(index)}
+                disabled={disabledTabs.includes(index)}
+                onClick={() => changeTab(index)}
                 className={cn(
-                  'cut-top-8 absolute top-25 h-8 w-70 cursor-pointer bg-edge-blue',
+                  'cut-top-8 absolute top-25 h-8 w-70 cursor-pointer bg-edge-blue disabled:cursor-not-allowed disabled:opacity-40',
                   open && 'h-[34px] bg-hud-cyan',
                 )}
                 style={{ left: TAB_LEFT + index * TAB_STEP }}
