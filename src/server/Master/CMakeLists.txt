@@ -20,6 +20,7 @@ target_link_libraries(rtype_server_master_module
     rtype_engine_modules
     rtype_engine_time
     rtype_logging
+    rtype_network_http_api
     rtype_network_master_client
     rtype_network_master_messages
     rtype_network_master_probe

@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstddef>
 #include <string_view>
+#include "HttpStatusConstants.hpp"
 
 namespace rtype::server {
 
@@ -18,8 +19,8 @@ constexpr std::chrono::milliseconds REGISTRATION_RETRY{5'000};
  * @brief The statuses after which the server registers again: the master does
  * not know its key, or does not know it registered.
  */
-constexpr int UNKNOWN_KEY_STATUS = 401;
-constexpr int UNREGISTERED_SERVER_STATUS = 409;
+constexpr int UNKNOWN_KEY_STATUS = network::UNAUTHORIZED_STATUS;
+constexpr int UNREGISTERED_SERVER_STATUS = network::CONFLICT_STATUS;
 
 /**
  * @brief The waiting results MasterLink sends after a heartbeat, the oldest
@@ -34,7 +35,7 @@ constexpr std::size_t MAXIMUM_RESULTS_PER_ROUND = 16;
  * keeps, whatever the number of tries (not vanilla, or a member out of its
  * bounds). Every other refusal may not last, so the result waits.
  */
-constexpr int FOR_GOOD_REFUSAL_STATUS = 400;
+constexpr int FOR_GOOD_REFUSAL_STATUS = network::BAD_REQUEST_STATUS;
 
 /** @brief Why a datagram of the queue of probes is dropped, as its lines say.
  */
