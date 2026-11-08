@@ -247,6 +247,7 @@ std::string finishedGameTextWith(std::string_view pointer,
 
 std::string finishedGameTextOfPlayers(std::size_t playerCount) {
   FinishedGame game = parisFinishedGame();
+  game.playerCount = static_cast<std::uint8_t>(PLAYERS_OF_A_FULL_GAME);
   game.players.clear();
   for (std::size_t index = 0; index < playerCount; ++index) {
     game.players.push_back(

@@ -18,6 +18,14 @@ namespace rtype::master {
 
 namespace {
 
+/** @returns Whether @p connection keeps a row of the game of @p result. */
+bool isKept(SQLite::Database& connection, const ServerGameResult& result) {
+  SQLite::Statement query{connection, std::string{GAME_KEPT_QUERY}};
+  query.bind(std::string{SERVER_ID_PARAMETER}, result.serverId);
+  query.bind(std::string{GAME_ID_PARAMETER}, result.gameId);
+  return query.executeStep();
+}
+
 void insertRow(SQLite::Database& connection, const ServerGameResult& result,
                const network::FinishedGamePlayer& player) {
   SQLite::Statement insert{connection, std::string{INSERT_RESULT_STATEMENT}};
@@ -72,7 +80,7 @@ void fileRow(const SQLite::Statement& select,
   if (select.getColumn(IN_PAGE_COLUMN).getInt() != 0) {
     leaderboard.scores.push_back(row);
   }
-  if (select.getColumn(IS_PLAYER_COLUMN).getInt() != 0 &&
+  if (select.getColumn(NAMED_COLUMN).getInt() != 0 &&
       !leaderboard.player.has_value()) {
     leaderboard.player = row;
   }
@@ -85,6 +93,9 @@ GameResultRepository::GameResultRepository(MasterDatabase& database)
 
 void GameResultRepository::add(const ServerGameResult& result) {
   database_.transact([&result](SQLite::Database& connection) {
+    if (isKept(connection, result)) {
+      return;
+    }
     for (const network::FinishedGamePlayer& player : result.game.players) {
       insertRow(connection, result, player);
     }

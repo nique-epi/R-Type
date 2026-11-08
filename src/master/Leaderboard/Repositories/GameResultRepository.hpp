@@ -14,9 +14,10 @@ class GameResultRepository {
   explicit GameResultRepository(MasterDatabase& database);
 
   /**
-   * @brief Adds a row per player of @p result, in one transaction. A row of
-   * the same server, game and nickname already kept stays as it is, so a
-   * result sent again changes nothing.
+   * @brief Adds a row per player of @p result, in one transaction, unless the
+   * master keeps a row of that game of that server already: a game is kept
+   * whole and once, so a result sent again changes nothing, even with other
+   * players or scores.
    */
   void add(const ServerGameResult& result);
 

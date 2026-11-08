@@ -15,8 +15,8 @@ class LeaderboardService {
   explicit LeaderboardService(MasterDatabase& database);
 
   /**
-   * @brief Keeps a row per player of @p result; a row already kept stays as
-   * it is.
+   * @brief Keeps a row per player of @p result, unless its game is kept
+   * already: then nothing changes.
    * @returns false, keeping nothing, when its game was not vanilla: the
    * leaderboard compares games played with the rules of the game only, and
    * the other games stay in the leaderboard of their server.

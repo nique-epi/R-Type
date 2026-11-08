@@ -150,7 +150,8 @@ namespace rtype::network {
  * EARLIEST_PLAYED_AT to LATEST_PLAYED_AT, a difficulty or a nickname that is no
  * valid nickname, a playerCount outside MINIMUM_PLAYERS_PER_GAME to
  * MAXIMUM_PLAYERS, a vanilla that is no boolean, fewer than
- * FEWEST_FINISHED_GAME_PLAYERS or more than MAXIMUM_PLAYERS players, an
+ * FEWEST_FINISHED_GAME_PLAYERS or more than MAXIMUM_PLAYERS players, more
+ * players than its playerCount, one nickname twice (nicknameKey()), an
  * accountId that is empty, longer than MAXIMUM_ACCOUNT_ID_SIZE or not printable
  * UTF-8, a score above HIGHEST_SCORE.
  */

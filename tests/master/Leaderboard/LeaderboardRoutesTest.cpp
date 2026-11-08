@@ -69,6 +69,25 @@ TEST_F(LeaderboardRoutesFixture, AResultSentAgainAddsNoRow) {
 }
 
 /**
+ * Given a server that sent the result of a game where ACE played
+ * When it sends that game again with BYDO_HUNTER in place of ACE
+ * Then the leaderboard still lists ACE alone, since a game is kept once
+ */
+TEST_F(LeaderboardRoutesFixture, AResultSentAgainWithAnotherPlayerAddsNoRow) {
+  static_cast<void>(sendResult(
+      paris(), FIRST_GAME_ID,
+      normalGameOfTwo({guestScoring(FIRST_PILOT, FIRST_PILOT_SCORE)})));
+
+  static_cast<void>(sendResult(
+      paris(), FIRST_GAME_ID,
+      normalGameOfTwo({guestScoring(SECOND_PILOT, SECOND_PILOT_SCORE)})));
+
+  EXPECT_THAT(membersIn<std::string>(leaderboardOf(NORMAL_FOR_TWO_QUERY),
+                                     NICKNAME_MEMBER_NAME),
+              ElementsAre(FIRST_PILOT));
+}
+
+/**
  * Given a server
  * When it sends the result of a game that was not vanilla
  * Then the master answers 400, whose detail says the game was not vanilla
@@ -153,9 +172,9 @@ TEST_F(LeaderboardRoutesFixture, AResultOutOfItsBoundsNamesItsMember) {
 }
 
 /**
- * Given FIRST_PILOT in a game of "normal" and THIRD_PILOT in a game of "hard",
- * both for two When the leaderboard of "hard" is read Then it lists THIRD_PILOT
- * alone
+ * Given ACE in a game of "normal" and R9 in a game of "hard", both for two
+ * When the leaderboard of "hard" is read
+ * Then it lists R9 alone
  */
 TEST_F(LeaderboardRoutesFixture, TwoDifficultiesNeverMix) {
   static_cast<void>(sendResult(
@@ -172,9 +191,9 @@ TEST_F(LeaderboardRoutesFixture, TwoDifficultiesNeverMix) {
 }
 
 /**
- * Given FIRST_PILOT in a game for two and THIRD_PILOT in a game for one, both
- * of "normal" When the leaderboard of "normal" for one player is read Then it
- * lists THIRD_PILOT alone
+ * Given ACE in a game for two and R9 in a game for one, both of "normal"
+ * When the leaderboard of "normal" for one player is read
+ * Then it lists R9 alone
  */
 TEST_F(LeaderboardRoutesFixture, TwoNumbersOfPlayersNeverMix) {
   static_cast<void>(sendResult(
@@ -191,9 +210,9 @@ TEST_F(LeaderboardRoutesFixture, TwoNumbersOfPlayersNeverMix) {
 }
 
 /**
- * Given FIRST_PILOT on "Paris 1" and THIRD_PILOT on "Lyon 1", in the same
- * leaderboard When the leaderboard is read for every server Then it lists both,
- * each row naming its server
+ * Given ACE on "Paris 1" and R9 on "Lyon 1", in the same leaderboard
+ * When the leaderboard is read for every server
+ * Then it lists both, each row naming its server
  */
 TEST_F(LeaderboardRoutesFixture, TheGlobalLeaderboardGathersEveryServer) {
   static_cast<void>(sendResult(
@@ -209,9 +228,9 @@ TEST_F(LeaderboardRoutesFixture, TheGlobalLeaderboardGathersEveryServer) {
 }
 
 /**
- * Given FIRST_PILOT on "Paris 1" and THIRD_PILOT on "Lyon 1", in the same
- * leaderboard When the leaderboard of "Lyon 1" is read Then it lists
- * THIRD_PILOT alone
+ * Given ACE on "Paris 1" and R9 on "Lyon 1", in the same leaderboard
+ * When the leaderboard of "Lyon 1" is read
+ * Then it lists R9 alone
  */
 TEST_F(LeaderboardRoutesFixture, TheLeaderboardOfOneServerHoldsItsRowsAlone) {
   static_cast<void>(sendResult(
@@ -231,9 +250,9 @@ TEST_F(LeaderboardRoutesFixture, TheLeaderboardOfOneServerHoldsItsRowsAlone) {
 }
 
 /**
- * Given FIRST_PILOT in two games, scoring low then high
+ * Given ACE in two games, scoring low then high
  * When the leaderboard is read
- * Then FIRST_PILOT has one row, of its high score
+ * Then ACE has one row, of its high score
  */
 TEST_F(LeaderboardRoutesFixture, APlayerKeepsItsBestScoreOnly) {
   static_cast<void>(sendResult(
@@ -255,7 +274,8 @@ TEST_F(LeaderboardRoutesFixture, APlayerKeepsItsBestScoreOnly) {
 }
 
 /**
- * Given FIRST_PILOT playing under an account with one nickname, then another
+ * Given BYDO_HUNTER playing under an account, then the same account as
+ * HUNTER_2
  * When the leaderboard is read
  * Then the account has one row, of the game of its best score
  */
@@ -276,9 +296,56 @@ TEST_F(LeaderboardRoutesFixture, AnAccountIsOnePlayerUnderAnyNickname) {
 }
 
 /**
- * Given FIRST_PILOT and SECOND_PILOT with equal scores, and THIRD_PILOT below
- * them When the leaderboard is read Then the two share the first rank, and
- * THIRD_PILOT ranks third
+ * Given two accounts whose ids differ in the case of their letters only
+ * When the leaderboard is read
+ * Then each account has its own row
+ */
+TEST_F(LeaderboardRoutesFixture, TwoAccountsDifferingInCaseAreTwoPlayers) {
+  FinishedGamePlayer first = guestScoring(SECOND_PILOT, SECOND_PILOT_SCORE);
+  first.accountId = std::string{SECOND_PILOT_ACCOUNT};
+  FinishedGamePlayer second =
+      guestScoring(OTHER_NICKNAME_OF_SECOND_PILOT, FIRST_PILOT_SCORE);
+  second.accountId = std::string{SECOND_PILOT_ACCOUNT_IN_CAPITALS};
+  static_cast<void>(
+      sendResult(paris(), FIRST_GAME_ID, normalGameOfTwo({first})));
+  static_cast<void>(
+      sendResult(paris(), SECOND_GAME_ID, normalGameOfTwo({second})));
+
+  EXPECT_THAT(membersIn<std::string>(leaderboardOf(NORMAL_FOR_TWO_QUERY),
+                                     NICKNAME_MEMBER_NAME),
+              ElementsAre(OTHER_NICKNAME_OF_SECOND_PILOT, SECOND_PILOT));
+}
+
+/**
+ * Given an account that scored low as BYDO_HUNTER, then high as HUNTER_2
+ * When the leaderboard is read asking for BYDO_HUNTER
+ * Then the player is that account, under the nickname of its best score
+ */
+TEST_F(LeaderboardRoutesFixture,
+       ThePlayerAskedForIsFoundUnderAnyOfItsNicknames) {
+  FinishedGamePlayer first = guestScoring(SECOND_PILOT, SECOND_PILOT_SCORE);
+  first.accountId = std::string{SECOND_PILOT_ACCOUNT};
+  FinishedGamePlayer second =
+      guestScoring(OTHER_NICKNAME_OF_SECOND_PILOT, FIRST_PILOT_SCORE);
+  second.accountId = std::string{SECOND_PILOT_ACCOUNT};
+  static_cast<void>(
+      sendResult(paris(), FIRST_GAME_ID, normalGameOfTwo({first})));
+  static_cast<void>(
+      sendResult(paris(), SECOND_GAME_ID, normalGameOfTwo({second})));
+
+  const nlohmann::json leaderboard = leaderboardOf(ASKING_BYDO_HUNTER_QUERY);
+
+  ASSERT_TRUE(leaderboard.contains(std::string{PLAYER_MEMBER_NAME}));
+  EXPECT_EQ(leaderboard.at(std::string{PLAYER_MEMBER_NAME})
+                .at(std::string{NICKNAME_MEMBER_NAME})
+                .get<std::string>(),
+            OTHER_NICKNAME_OF_SECOND_PILOT);
+}
+
+/**
+ * Given ACE and BYDO_HUNTER with equal scores, and R9 below them
+ * When the leaderboard is read
+ * Then the two share the first rank, and R9 ranks third
  */
 TEST_F(LeaderboardRoutesFixture, EqualScoresShareARank) {
   static_cast<void>(
@@ -295,9 +362,9 @@ TEST_F(LeaderboardRoutesFixture, EqualScoresShareARank) {
 }
 
 /**
- * Given FIRST_PILOT, then SECOND_PILOT, then THIRD_PILOT, by score
- * When the first row is read, with THIRD_PILOT asked for in lowercase
- * Then the page holds FIRST_PILOT alone, and the player is THIRD_PILOT, third
+ * Given ACE, then BYDO_HUNTER, then R9, by score
+ * When the first row is read, with R9 asked for in small letters
+ * Then the page holds ACE alone, and the player is R9, third
  */
 TEST_F(LeaderboardRoutesFixture, ThePlayerAskedForComesBeyondThePage) {
   static_cast<void>(

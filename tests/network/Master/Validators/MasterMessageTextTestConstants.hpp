@@ -234,6 +234,13 @@ constexpr std::size_t PLAYERS_OF_A_FULL_GAME = 4;
 constexpr std::array<std::string_view, 5> FIVE_PILOTS{
     FIRST_PILOT, SECOND_PILOT, THIRD_PILOT, FOURTH_PILOT, FIFTH_PILOT};
 
+/** @brief A game that started with one player, and ACE written in small
+ * letters, the same nickname for a game server. */
+constexpr std::uint64_t ONE_PLAYER_AT_THE_START = 1;
+constexpr std::string_view FIRST_PILOT_IN_SMALL_LETTERS = "ace";
+constexpr std::string_view SECOND_PLAYER_NICKNAME_POINTER =
+    "/players/1/nickname";
+
 /** @brief A boolean written as text, where JSON must hold a boolean. */
 constexpr std::string_view VANILLA_AS_TEXT = "true";
 

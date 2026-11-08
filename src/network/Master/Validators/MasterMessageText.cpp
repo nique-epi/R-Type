@@ -574,6 +574,26 @@ std::vector<FinishedGamePlayer> finishedGamePlayersOf(const JsonField& game) {
   return read;
 }
 
+/**
+ * @brief Refuses a game that names more players than started it, since a game
+ * server lets nobody in once a game runs, or one nickname twice, compared as a
+ * game server compares them (nicknameKey()): the second row would be lost.
+ */
+void requirePlayersOfTheGame(const JsonField& game, const FinishedGame& read) {
+  const JsonField players = memberOf(game, PLAYERS_MEMBER);
+  if (read.players.size() > read.playerCount) {
+    refuse(players);
+  }
+  std::vector<std::string> keys;
+  for (std::size_t index = 0; index < read.players.size(); ++index) {
+    std::string key = nicknameKey(read.players[index].nickname);
+    if (std::ranges::find(keys, key) != keys.end()) {
+      refuse(memberOf(elementOf(players, index), NICKNAME_MEMBER));
+    }
+    keys.push_back(std::move(key));
+  }
+}
+
 nlohmann::json finishedGamePlayerDocument(const FinishedGamePlayer& player) {
   nlohmann::json document;
   document[NICKNAME_MEMBER] = player.nickname;
@@ -620,15 +640,16 @@ std::string finishedGameText(const FinishedGame& game) {
 FinishedGame finishedGameFromText(std::string_view text) {
   const nlohmann::json document = parsedObject(text);
   const JsonField game = wholeMessage(document);
-  return FinishedGame{
-      .playedAt = playedAtOf(game),
-      .difficulty = nicknameOf(memberOf(game, DIFFICULTY_MEMBER)),
-      .playerCount = static_cast<std::uint8_t>(
-          integerOf(memberOf(game, PLAYER_COUNT_MEMBER),
-                    IntegerBounds{.lowest = MINIMUM_PLAYERS_PER_GAME,
-                                  .highest = MAXIMUM_PLAYERS})),
-      .vanilla = booleanOf(memberOf(game, VANILLA_MEMBER)),
-      .players = finishedGamePlayersOf(game)};
+  FinishedGame read{.playedAt = playedAtOf(game),
+                    .difficulty = nicknameOf(memberOf(game, DIFFICULTY_MEMBER)),
+                    .playerCount = static_cast<std::uint8_t>(integerOf(
+                        memberOf(game, PLAYER_COUNT_MEMBER),
+                        IntegerBounds{.lowest = MINIMUM_PLAYERS_PER_GAME,
+                                      .highest = MAXIMUM_PLAYERS})),
+                    .vanilla = booleanOf(memberOf(game, VANILLA_MEMBER)),
+                    .players = finishedGamePlayersOf(game)};
+  requirePlayersOfTheGame(game, read);
+  return read;
 }
 
 std::string globalLeaderboardText(const GlobalLeaderboard& leaderboard) {

@@ -113,8 +113,9 @@ namespace rtype::network::testing {
 [[nodiscard]] std::string finishedGameTextWith(std::string_view pointer,
                                                const nlohmann::json& value);
 
-/** @returns The game of parisFinishedGame() as JSON, its players the first
- * @p playerCount of FIVE_PILOTS, at most five. */
+/** @returns The game of parisFinishedGame() as JSON, started by
+ * PLAYERS_OF_A_FULL_GAME players, its players the first @p playerCount of
+ * FIVE_PILOTS, at most five. */
 [[nodiscard]] std::string finishedGameTextOfPlayers(std::size_t playerCount);
 
 /** @returns A page of the leaderboard of "normal" for two players: ACE first

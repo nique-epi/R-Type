@@ -71,6 +71,7 @@ using rtype::network::testing::FIRST_GAME_PLAYER_COUNT_POINTER;
 using rtype::network::testing::FIRST_GAME_PLAYERS_POINTER;
 using rtype::network::testing::FIRST_GAME_STATE_POINTER;
 using rtype::network::testing::FIRST_PILOT;
+using rtype::network::testing::FIRST_PILOT_IN_SMALL_LETTERS;
 using rtype::network::testing::FIRST_PLAYER_SCORE_POINTER;
 using rtype::network::testing::FIRST_SERVER_ID_POINTER;
 using rtype::network::testing::FIRST_SERVER_PROBE_SECRET_POINTER;
@@ -111,6 +112,7 @@ using rtype::network::testing::NO_PLAYERS;
 using rtype::network::testing::NO_SERVER_ID;
 using rtype::network::testing::NOT_JSON;
 using rtype::network::testing::OFFLINE_TEXT;
+using rtype::network::testing::ONE_PLAYER_AT_THE_START;
 using rtype::network::testing::ONLINE_TEXT;
 using rtype::network::testing::PARIS_GAME_ID;
 using rtype::network::testing::PARIS_GAME_LISTING_TEXT;
@@ -152,6 +154,7 @@ using rtype::network::testing::SCORE_ABOVE_ITS_RANGE;
 using rtype::network::testing::SECOND_GAME_NUMBER_POINTER;
 using rtype::network::testing::SECOND_PILOT;
 using rtype::network::testing::SECOND_PLAYER_ACCOUNT_POINTER;
+using rtype::network::testing::SECOND_PLAYER_NICKNAME_POINTER;
 using rtype::network::testing::serverListingRefusal;
 using rtype::network::testing::serverListingTextOfServers;
 using rtype::network::testing::serverListingTextWith;
@@ -853,6 +856,29 @@ TEST(MasterMessageText, RefusesANumberOfPlayersNoGameHas) {
                     finishedGameTextWith(PLAYER_COUNT_POINTER, playerCount)),
                 HasSubstr(quoted(PLAYER_COUNT_POINTER)));
   }
+}
+
+/**
+ * Given a game of two players that started with one
+ * When it is read
+ * Then the refusal names the players, since nobody joins a running game
+ */
+TEST(MasterMessageText, RefusesMorePlayersThanStartedTheGame) {
+  EXPECT_THAT(finishedGameRefusal(finishedGameTextWith(
+                  PLAYER_COUNT_POINTER, ONE_PLAYER_AT_THE_START)),
+              HasSubstr(quoted(PLAYERS_POINTER)));
+}
+
+/**
+ * Given a game whose second player is ACE written in small letters
+ * When it is read
+ * Then the refusal names that nickname, which a game server takes for ACE
+ */
+TEST(MasterMessageText, RefusesOneNicknameTwiceInAGame) {
+  EXPECT_THAT(
+      finishedGameRefusal(finishedGameTextWith(SECOND_PLAYER_NICKNAME_POINTER,
+                                               FIRST_PILOT_IN_SMALL_LETTERS)),
+      HasSubstr(quoted(SECOND_PLAYER_NICKNAME_POINTER)));
 }
 
 /**
