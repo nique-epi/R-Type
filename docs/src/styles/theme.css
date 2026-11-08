@@ -1,0 +1,72 @@
+/*
+ * The colors of the game client and of rtype.app: a night sky, cyan for the
+ * accent. Buttons, cards and asides share one corner radius.
+ */
+:root {
+  --rtype-radius: 0.75rem;
+
+  --sl-color-accent-low: #0f3a4a;
+  --sl-color-accent: #1fa3c9;
+  --sl-color-accent-high: #7fe6ff;
+  --sl-color-white: #eef1ff;
+  --sl-color-gray-1: #dde3fb;
+  --sl-color-gray-2: #b4c0ef;
+  --sl-color-gray-3: #8fa2e6;
+  --sl-color-gray-4: #56649f;
+  --sl-color-gray-5: #2c3566;
+  --sl-color-gray-6: #151935;
+  --sl-color-black: #0b0d1f;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #cdf1fb;
+  --sl-color-accent: #0f6f8c;
+  --sl-color-accent-high: #0a3d4f;
+  --sl-color-white: #0b0d1f;
+  --sl-color-gray-1: #151935;
+  --sl-color-gray-2: #26305e;
+  --sl-color-gray-3: #4a5aa8;
+  --sl-color-gray-4: #7d89bd;
+  --sl-color-gray-5: #c3cae6;
+  --sl-color-gray-6: #eceffa;
+  --sl-color-gray-7: #f6f7fd;
+  --sl-color-black: #ffffff;
+}
+
+.sl-link-button,
+.card,
+.sl-link-card,
+.starlight-aside,
+.expressive-code .frame {
+  border-radius: var(--rtype-radius);
+}
+
+.expressive-code .frame pre {
+  border-radius: var(--rtype-radius);
+}
+
+.sl-link-button {
+  font-weight: 600;
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    color 150ms;
+}
+
+.site-title img,
+.hero img {
+  image-rendering: pixelated;
+}
+
+.hero img {
+  width: min(100%, 28rem);
+  height: auto;
+}
+
+.hero .tagline {
+  max-width: 38rem;
+}
+
+.sidebar-content a {
+  border-radius: 0.5rem;
+}

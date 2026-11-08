@@ -1,22 +1,95 @@
 ---
 title: R-Type
-description: Networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine.
+description: Developer documentation of R-Type, a networked co-op remake of the classic shoot'em up, built on a custom C++20 engine.
 template: splash
 head:
   - tag: title
-    content: R-Type
+    content: R-Type documentation
 hero:
-  tagline: A networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine.
+  title: Developer documentation
+  tagline: R-Type is a co-op shoot'em up for up to four pilots, played over the network against waves of Bydos. This site explains how to build it, run it, extend it and host it.
+  image:
+    file: ../../assets/logo.png
+    alt: R-Type
   actions:
-    - text: Architecture
-      link: /R-Type/architecture/
+    - text: Get started
+      link: /R-Type/getting-started/build/
       icon: right-arrow
-    - text: Build instructions
-      link: https://github.com/nique-epi/R-Type#readme
+    - text: Download the game
+      link: https://rtype.app/download
       icon: external
-      variant: minimal
-    - text: Contributing
-      link: https://github.com/nique-epi/R-Type/blob/main/CONTRIBUTING.md
+      variant: secondary
+    - text: Visit rtype.app
+      link: https://rtype.app
       icon: external
       variant: minimal
 ---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## The game
+
+<CardGrid>
+  <Card title="Co-op for four" icon="star">
+    Up to four pilots share one screen of the sector, each in their own color, against waves of Bydos and the Bydo Tyrant at the end of the level.
+  </Card>
+  <Card title="The server decides" icon="setting">
+    The server simulates every game at 60 ticks per second. The client predicts its own ship and draws the others from the world states it receives.
+  </Card>
+  <Card title="Many games, one host" icon="rocket">
+    One server runs up to eight games, each in its own process. The master lists the servers so players find a game from the server map.
+  </Card>
+  <Card title="Built to be modded" icon="puzzle">
+    Waves, entity sheets and Luau scripts change the game without recompiling it. A client downloads the content pack of a modded server when it joins.
+  </Card>
+</CardGrid>
+
+## Start here
+
+<CardGrid>
+  <LinkCard
+    title="Download the game"
+    description="Installers for Windows, macOS and Linux, from rtype.app."
+    href="/R-Type/getting-started/download/"
+  />
+  <LinkCard
+    title="Build from source"
+    description="Requirements, the build command and its options, on every system."
+    href="/R-Type/getting-started/build/"
+  />
+  <LinkCard
+    title="Play a game"
+    description="Start a server, join it with up to four clients, and the controls."
+    href="/R-Type/getting-started/play/"
+  />
+  <LinkCard
+    title="Test and contribute"
+    description="The test presets, formatting, clang-tidy and the documentation site."
+    href="/R-Type/getting-started/test/"
+  />
+</CardGrid>
+
+## Go further
+
+<CardGrid>
+  <LinkCard
+    title="Overview"
+    description="The layers, the threads and the path of a key press, in five diagrams."
+    href="/R-Type/overview/"
+  />
+  <LinkCard
+    title="Network protocol"
+    description="Every datagram specified byte by byte, enough to write another client."
+    href="/R-Type/protocol/"
+  />
+  <LinkCard
+    title="Scripting in Luau"
+    description="Steer enemies with scripts shipped in a resource."
+    href="/R-Type/scripting/"
+  />
+  <LinkCard
+    title="Deploying the master"
+    description="Host the server list that every client reads."
+    href="/R-Type/deploy-master/"
+  />
+</CardGrid>

@@ -7,7 +7,7 @@ sidebar:
 
 This tutorial publishes a mod: a server that plays with an entity sheet the game does not ship, which every player gets without installing anything. It writes no code. The mechanism behind it is in [Content pack](/R-Type/protocol/#content-pack) and in [Server](/R-Type/server/#content-pack-servercontentmodule-contentpackdesk).
 
-The steps were not run for this page: every line of a journal and of a screen is read from the code (`ServerContentModule.cpp`, `HandshakeAnswers.cpp`, `ConnectionScreenConstants.hpp`), with the variable parts in angle brackets. You need the project built (see the [README](https://github.com/nique-epi/R-Type#readme)).
+The steps were not run for this page: every line of a journal and of a screen is read from the code (`ServerContentModule.cpp`, `HandshakeAnswers.cpp`, `ConnectionScreenConstants.hpp`), with the variable parts in angle brackets. You need the project built (see [Build from source](/R-Type/getting-started/build/)).
 
 ## What a mod is here
 

@@ -13,7 +13,14 @@ export default defineConfig({
       title: 'R-Type',
       description:
         "Networked multiplayer remake of the R-Type shoot'em up, built on a custom C++ game engine.",
+      logo: { src: './src/assets/logo.png', alt: 'R-Type', replacesTitle: true },
+      customCss: ['./src/styles/theme.css'],
       social: [
+        {
+          icon: 'external',
+          label: 'rtype.app',
+          href: 'https://rtype.app',
+        },
         {
           icon: 'github',
           label: 'GitHub',
@@ -23,6 +30,67 @@ export default defineConfig({
       editLink: {
         baseUrl: 'https://github.com/nique-epi/R-Type/edit/main/docs/',
       },
+      sidebar: [
+        {
+          label: 'Getting started',
+          items: [
+            'getting-started/download',
+            'getting-started/build',
+            'getting-started/play',
+            'getting-started/test',
+          ],
+        },
+        {
+          label: 'Understand the project',
+          items: [
+            'overview',
+            'architecture',
+            'project-layout',
+            'technology-choices',
+            'modules',
+            'concurrency',
+          ],
+        },
+        {
+          label: 'Subsystems',
+          items: [
+            'engine',
+            'client',
+            'server',
+            'master',
+            'network',
+            'protocol',
+            'logging',
+            'accessibility',
+          ],
+        },
+        {
+          label: 'Modding and content',
+          items: [
+            'scripting',
+            'waves-file',
+            'entity-sheets',
+            'tutorial-add-an-enemy-type',
+            'tutorial-publish-a-mod',
+          ],
+        },
+        {
+          label: 'Tutorials',
+          items: [
+            'tutorial-write-a-module',
+            'tutorial-add-a-network-message',
+            'tutorial-run-several-games',
+          ],
+        },
+        {
+          label: 'Reference',
+          items: ['commands', 'measurements', 'api-reference'],
+        },
+        {
+          label: 'Operations',
+          items: ['deploy-master'],
+        },
+      ],
       head: [
         {
           // A table or a code block wider than the page scrolls; the keyboard
