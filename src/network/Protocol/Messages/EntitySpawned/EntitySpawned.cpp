@@ -22,6 +22,9 @@ void validate(const EntitySpawned& message) {
   if (message.entityType == identifiers::NO_ENTITY_TYPE) {
     throw InvalidFieldValueException(ENTITY_TYPE_FIELD, message.entityType);
   }
+  if (message.owner > MAXIMUM_PLAYERS) {
+    throw InvalidFieldValueException(OWNER_FIELD, message.owner);
+  }
   if (std::isnan(message.x) || std::isnan(message.y)) {
     throw InvalidCoordinateException();
   }
@@ -35,6 +38,8 @@ void encodePayload(ByteWriter& writer, const EntitySpawned& message) {
   writer.writeUint8(message.entityType);
   writeCoordinate(writer, message.x);
   writeCoordinate(writer, message.y);
+  writer.writeUint8(message.owner);
+  writer.writeUint32(message.firingInput);
 }
 
 EntitySpawned decodePayload(
@@ -44,7 +49,9 @@ EntitySpawned decodePayload(
   const EntitySpawned message{.entityId = reader.readUint32(),
                               .entityType = reader.readUint8(),
                               .x = readCoordinate(reader),
-                              .y = readCoordinate(reader)};
+                              .y = readCoordinate(reader),
+                              .owner = reader.readUint8(),
+                              .firingInput = reader.readUint32()};
   requireFullyRead(reader);
   validate(message);
   return message;

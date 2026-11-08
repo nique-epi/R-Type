@@ -27,3 +27,11 @@ See the core file of the same name in `.claude/rules/fix/execution/`.
 ## Update (5 November 2026) — The search was not the pattern of the rule
 
 `EntityAppearance` gained `actions`. The search used was `git grep 'EntityAppearance{'`, which found the double of the tests; `static const EntityAppearance appearance{` of `EntitySpritesFixtures.cpp` has a name between the type and the brace, so the Linux job failed on it with `-Werror=missing-field-initializers`, while the Apple clang build, the tests and clang-tidy were green. The rule already said to search `Type name{`. Homebrew GCC 16 turned out to be installed and, with the macOS sysroot and `-Wall -Wextra -Wpedantic`, reproduces the warning: it is now the local check.
+
+## Update (7 November 2026) — A member removed
+
+A simplification pass removed `BossFight::bossEntityId`, which nothing read. The search `git grep -n 'bossEntityId'` listed `tests/client/Widgets/BossBarFixtures.cpp:14`, where `fightWith()` builds a `BossFight{.bossEntityId = BAR_BOSS_ID, …}`, among a dozen hits of the network message `BossStatus`, whose member has the same name; the hit was read as one of the message. The build stopped on `field designator 'bossEntityId' does not refer to any field in type 'rtype::client::BossFight'`. The fixture lost the line and `BAR_BOSS_ID`, used nowhere else.
+
+## Update (7 November 2026) — A file outside the diff
+
+The Homebrew GCC run was fed the `.cpp` files of the branch diff. `EntitySpritesFixtures.cpp`, untouched by the branch, built an `EntityAppearance` without the `enragedIdleFrames` the branch had added, and the Linux job of PR #260 failed on it. Feeding GCC every file the pattern of the rule finds for the aggregates the branch extended (36 files) shows that warning and no other.

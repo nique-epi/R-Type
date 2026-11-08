@@ -65,4 +65,11 @@ constexpr double TICK_BETWEEN_THE_LISTINGS = 11.0;
 constexpr game::Position HALFWAY_BETWEEN_THE_POSITIONS{.x = 125.25F,
                                                        .y = 205.125F};
 
+/** @brief The player of this client in the replicator tests, and another. */
+constexpr std::uint8_t OWN_PLAYER = 1;
+constexpr std::uint8_t ANOTHER_PLAYER = 2;
+
+/** @brief The input that fired the missiles of the claim tests. */
+constexpr std::uint32_t SOME_FIRING_INPUT = 9;
+
 }  // namespace rtype::client::testing

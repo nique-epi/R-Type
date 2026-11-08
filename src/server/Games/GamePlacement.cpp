@@ -11,7 +11,7 @@ std::optional<std::size_t> firstJoinableGame(
     std::span<const GameVacancy> games) {
   for (std::size_t index = 0; index < games.size(); ++index) {
     if (games[index].state == GameState::WaitingForPlayers &&
-        !games[index].full) {
+        !games[index].full && games[index].takesAnyPlayer) {
       return index;
     }
   }

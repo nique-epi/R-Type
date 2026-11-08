@@ -1,4 +1,4 @@
-add_library(rtype_server_modules STATIC GameLineRule.cpp GameProcessModules.cpp SupervisorModules.cpp)
+add_library(rtype_server_modules STATIC GameAssetPaths.cpp GameLineRule.cpp GameProcessModules.cpp SupervisorModules.cpp)
 
 target_include_directories(rtype_server_modules PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

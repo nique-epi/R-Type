@@ -1,0 +1,5 @@
+add_library(rtype_master_leaderboard_models INTERFACE)
+
+target_include_directories(rtype_master_leaderboard_models INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_master_leaderboard_models INTERFACE rtype_master_servers_models rtype_network_master_messages)

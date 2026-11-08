@@ -1,5 +1,6 @@
 add_library(rtype_server_games_module STATIC
   FarewellSender.cpp
+  GameRuleSettings.cpp
   GamePlacement.cpp
   RunningGame.cpp
   PlayerDatagrams.cpp
@@ -28,6 +29,7 @@ target_link_libraries(rtype_server_games_module
     rtype_server_rules_module
     rtype_server_storage_module
     rtype_server_network_module
+    rtype_network_connection_request
   PRIVATE
     rtype_network_disconnection
     rtype_network_handshake_cookies

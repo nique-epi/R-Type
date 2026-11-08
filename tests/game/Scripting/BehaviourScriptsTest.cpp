@@ -187,6 +187,57 @@ TEST(BehaviourScripts, ChangesTheTopSpeedAsTheScriptAsks) {
 }
 
 /**
+ * Given a behaviour that fires while its boss enraged
+ * When an enraged boss steers with it
+ * Then it fires
+ */
+TEST(BehaviourScripts, ShowsTheScriptThatItsBossEnraged) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  scripts.run(scriptsOf(BOSS_READING_SCRIPT));
+  const BehaviourRegistry behaviours = scripts.behaviours();
+
+  const Intent intent =
+      steeringOf(behaviours, BOSS_READING_BEHAVIOUR, viewOfABoss(true));
+
+  EXPECT_TRUE(intent.shooting);
+}
+
+/**
+ * Given the same behaviour
+ * When a calm boss steers with it
+ * Then it holds its fire
+ */
+TEST(BehaviourScripts, ShowsTheScriptThatItsBossIsCalm) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  scripts.run(scriptsOf(BOSS_READING_SCRIPT));
+  const BehaviourRegistry behaviours = scripts.behaviours();
+
+  const Intent intent =
+      steeringOf(behaviours, BOSS_READING_BEHAVIOUR, viewOfABoss(false));
+
+  EXPECT_FALSE(intent.shooting);
+}
+
+/**
+ * Given a behaviour that takes as top speed the actions it ended
+ * When a body that ended three actions steers with it
+ * Then it asks for a top speed of three
+ */
+TEST(BehaviourScripts, ShowsTheScriptTheActionsItEnded) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  scripts.run(scriptsOf(BOSS_READING_SCRIPT));
+  const BehaviourRegistry behaviours = scripts.behaviours();
+
+  const Intent intent =
+      steeringOf(behaviours, BOSS_READING_BEHAVIOUR, viewOfABoss(false));
+
+  EXPECT_EQ(intent.topSpeedTo.value_or(0.0F), THREE_UNITS_PER_SECOND);
+}
+
+/**
  * Given the same behaviour with all its health
  * When it steers
  * Then it asks for no change of its body

@@ -42,6 +42,15 @@ constexpr std::string_view NICKNAME_WITH_LINE_FEED = "Ace\nBoss";
 constexpr std::array NICKNAME_WITH_NULL_BYTES{'P', 'i', 'l', 'o', 't', '\0'};
 constexpr std::string_view NICKNAME_WITH_UNIT_SEPARATOR = "Pilot\x1F";
 constexpr std::string_view NICKNAME_WITH_SPACE = "Ace Pilot";
+
+/**
+ * @brief Nicknames and the form they are compared in (nicknameKey()): the
+ * ASCII letters lowered, an accented capital left as it is.
+ */
+constexpr std::string_view MIXED_CASE_NICKNAME = "ACE_Pilot9";
+constexpr std::string_view MIXED_CASE_NICKNAME_KEY = "ace_pilot9";
+constexpr std::string_view ACCENTED_CAPITAL_NICKNAME = "\u00c9LODIE";
+constexpr std::string_view ACCENTED_CAPITAL_NICKNAME_KEY = "\u00c9lodie";
 constexpr std::string_view NICKNAME_WITH_TILDE = "Ace~Pilot";
 constexpr std::string_view NICKNAME_WITH_DELETE = "Pilot\x7F";
 
@@ -94,17 +103,17 @@ constexpr std::uint16_t SOME_SEQUENCE = 0x0A0B;
  * the transport sees and bit 3 is unknown, so no header above the transport
  * holds either.
  */
-constexpr std::uint8_t SOME_OTHER_VERSION = 11;
+constexpr std::uint8_t SOME_OTHER_VERSION = 14;
 constexpr std::uint32_t SOME_OTHER_PROTOCOL_ID = 0x52545951;
 constexpr std::uint8_t SOME_FLAGS = 0x0C;
 constexpr std::uint16_t SOME_ACKNOWLEDGED_SEQUENCE = 0x0D0E;
 constexpr std::uint32_t SOME_ACKNOWLEDGEMENT_BITS = 0x0F101112;
 
 /**
- * @brief The 22 bytes of a default header: RTYP, version 10, then zeros.
+ * @brief The 22 bytes of a default header: RTYP, version 13, then zeros.
  */
 constexpr auto DEFAULT_HEADER_BYTES = std::to_array<std::uint8_t>(
-    {0x52, 0x54, 0x59, 0x50, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    {0x52, 0x54, 0x59, 0x50, 0x0D, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
 
 /**
@@ -155,6 +164,16 @@ constexpr std::uint8_t LAST_PLAYER_NUMBER = 4;
 constexpr std::uint8_t PLAYER_NUMBER_BELOW_THE_FIRST = 0;
 constexpr std::uint8_t PLAYER_NUMBER_ABOVE_THE_LAST = 5;
 
+/** @brief The input of an example missile, 300, and the bytes the owner and
+ * the firing input take at the end of an EntitySpawned. */
+constexpr std::uint32_t SOME_FIRING_INPUT = 300;
+constexpr std::size_t OWNER_AND_INPUT_BYTE_COUNT = 5;
+
+/** @brief A tick a client shows in the example input, 300, and the bytes it
+ * takes at the end of a PlayerInput. */
+constexpr std::uint32_t SOME_SHOWN_TICK = 300;
+constexpr std::size_t SHOWN_TICK_BYTE_COUNT = 4;
+
 /**
  * @brief Type numbers of the examples of the tests, as their byte layouts
  * write them: 3 for the example entity, 1 for the example ship, 4 for an
@@ -168,10 +187,17 @@ constexpr std::uint8_t NO_TYPE_NUMBER = 0;
 constexpr std::uint8_t LARGEST_TYPE_NUMBER = 255;
 
 /**
- * @brief Refusal reasons just outside the values 1 to 6 of the protocol page.
+ * @brief Refusal reasons just outside the values 1 to 8 of the protocol page.
  */
 constexpr std::uint8_t REFUSAL_REASON_BELOW_THE_FIRST = 0;
-constexpr std::uint8_t REFUSAL_REASON_ABOVE_THE_LAST = 7;
+constexpr std::uint8_t REFUSAL_REASON_ABOVE_THE_LAST = 9;
+
+/**
+ * @brief Rules of a new game other than the default ones: the difficulty
+ * "hard", a table of the waves file every server ships, and five lives.
+ */
+constexpr std::string_view HARD_DIFFICULTY = "hard";
+constexpr std::uint8_t FIVE_LIVES = 5;
 
 /**
  * @brief The byte of AnyGame on the protocol page, and the two values just
@@ -278,12 +304,12 @@ constexpr std::uint16_t SOME_SENDER_PORT = 50000;
 /**
  * @brief Message type bytes no message has: the byte before the first type,
  * the byte after the last, and the largest byte. The byte after the last is
- * read from the name of the last message, MessageType::GameStatusAcknowledged:
+ * read from the name of the last message, MessageType::Expulsion:
  * a message added after it needs this line to follow.
  */
 constexpr std::uint8_t TYPE_BELOW_THE_FIRST = 0;
 constexpr std::uint8_t TYPE_ABOVE_THE_LAST =
-    static_cast<std::uint8_t>(MessageType::PlayerChatLine) + 1;
+    static_cast<std::uint8_t>(MessageType::Expulsion) + 1;
 constexpr std::uint8_t LARGEST_TYPE_BYTE = 255;
 
 /**
@@ -315,5 +341,8 @@ constexpr std::size_t DATAGRAM_PAYLOAD_LIMIT = 1175;
  * @brief Words of the log line about a message whose handler threw.
  */
 constexpr std::string_view FAILED_HANDLER_LINE_TEXT = "its handler threw";
+
+/** @brief A nickname an ExpulsionOrder names. */
+constexpr std::string_view ACE_IN_CAPITALS = "ACE";
 
 }  // namespace rtype::network::testing

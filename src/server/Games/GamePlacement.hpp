@@ -8,9 +8,9 @@
 namespace rtype::server {
 
 /**
- * @returns The index of the first game of @p games that waits for players and
- * is not full, or nothing when none is. What a new player gets when none is
- * left is the caller's choice.
+ * @returns The index of the first game of @p games that waits for players, is
+ * not full and takes any player, or nothing when none is. What a new player
+ * gets when none is left is the caller's choice.
  */
 [[nodiscard]] std::optional<std::size_t> firstJoinableGame(
     std::span<const GameVacancy> games);

@@ -90,6 +90,9 @@ constexpr std::chrono::seconds SOME_ARRIVAL_TIME{2};
  */
 constexpr std::chrono::milliseconds SOME_TICK_TIME{17};
 
+/** @brief The tick a client showed when it sent an input. */
+constexpr std::uint32_t CLIENT_SHOWN_TICK = 300;
+
 /**
  * @brief A stall of the server longer than the 1 s between two Heartbeats:
  * no tick ran for 3 s.

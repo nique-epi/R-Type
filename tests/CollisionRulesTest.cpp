@@ -3,6 +3,7 @@
 #include <vector>
 #include "Collision.hpp"
 #include "CollisionRules.hpp"
+#include "CollisionRulesFixtures.hpp"
 #include "CollisionScene.hpp"
 #include "CollisionSystem.hpp"
 #include "CollisionTestConstants.hpp"
@@ -12,6 +13,7 @@
 #include "ShipContact.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
+#include "ViewDelay.hpp"
 
 using rtype::engine::Collision;
 using rtype::engine::Entity;
@@ -22,47 +24,13 @@ using rtype::game::CollisionSystem;
 using rtype::game::EntityType;
 using rtype::game::MissileHit;
 using rtype::game::ShipContact;
-
-namespace {
-
-struct Recorded {
-  std::vector<MissileHit> missileHits;
-  std::vector<ShipContact> shipContacts;
-};
-
-void record(CollisionScene& scene, Recorded& recorded) {
-  scene.events.subscribe<MissileHit>([&recorded](const MissileHit& hit) {
-    recorded.missileHits.push_back(hit);
-  });
-  scene.events.subscribe<ShipContact>([&recorded](const ShipContact& contact) {
-    recorded.shipContacts.push_back(contact);
-  });
-}
-
-class CollisionRulesInAnyOrder : public ::testing::TestWithParam<bool> {
- protected:
-  [[nodiscard]] static Collision collisionOf(Entity entity, Entity other) {
-    return GetParam() ? Collision{.first = other, .second = entity}
-                      : Collision{.first = entity, .second = other};
-  }
-};
-
-void expectNoEventFor(EntityType firstType, EntityType secondType) {
-  CollisionScene scene;
-  const Entity first = scene.spawn(firstType, 0.0F, 0.0F);
-  const Entity second = scene.spawn(secondType, 0.0F, 0.0F);
-  const CollisionRules rules(scene.events, scene.components);
-  Recorded recorded;
-  record(scene, recorded);
-
-  scene.events.publish(Collision{.first = first, .second = second});
-  scene.events.dispatch();
-
-  EXPECT_TRUE(recorded.missileHits.empty());
-  EXPECT_TRUE(recorded.shipContacts.empty());
-}
-
-}  // namespace
+using rtype::game::ViewDelay;
+using rtype::game::testing::CollisionRulesInAnyOrder;
+using rtype::game::testing::expectNoEventFor;
+using rtype::game::testing::record;
+using rtype::game::testing::Recorded;
+using rtype::game::testing::spawnMissileOf;
+using rtype::game::testing::spawnShipFlownBy;
 
 /**
  * Given a player missile and an enemy
@@ -127,8 +95,106 @@ TEST_P(CollisionRulesInAnyOrder, PlayerTouchesEnemy) {
   EXPECT_TRUE(recorded.missileHits.empty());
 }
 
+/**
+ * Given friendly fire on, a missile of one player and the ship of another
+ * When a Collision names them, in either order
+ * Then one MissileHit is published, with the missile and the ship as target
+ */
+TEST_P(CollisionRulesInAnyOrder, MissileHitsAnotherPilotWithFriendlyFire) {
+  CollisionScene scene;
+  const Entity missile = spawnMissileOf(scene, FIRING_PLAYER_NUMBER);
+  const Entity ship = spawnShipFlownBy(scene, OTHER_PLAYER_NUMBER);
+  const CollisionRules rules(scene.events, scene.components, true);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(collisionOf(missile, ship));
+  scene.events.dispatch();
+
+  EXPECT_EQ(recorded.missileHits, (std::vector<MissileHit>{MissileHit{
+                                      .missile = missile, .target = ship}}));
+}
+
+/**
+ * Given a player missile that carries a ViewDelay, and an enemy
+ * When a Collision names them, in either order
+ * Then no MissileHit is published: LagCompensatedHitSystem tests that missile
+ * where its player saw the enemies
+ */
+TEST_P(CollisionRulesInAnyOrder, LeavesACompensatedMissileToTheLagSystem) {
+  CollisionScene scene;
+  const Entity missile = scene.spawn(EntityType::PlayerMissile, 0.0F, 0.0F);
+  scene.components.add(missile, ViewDelay{.ticks = 0});
+  const Entity enemy = scene.spawn(EntityType::Enemy, 0.0F, 0.0F);
+  const CollisionRules rules(scene.events, scene.components);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(collisionOf(missile, enemy));
+  scene.events.dispatch();
+
+  EXPECT_TRUE(recorded.missileHits.empty());
+}
+
 INSTANTIATE_TEST_SUITE_P(BothOrders, CollisionRulesInAnyOrder,
                          ::testing::Bool());
+
+/**
+ * Given friendly fire on, a missile of a player and the ship that player flies
+ * When a Collision names them
+ * Then nothing is published: a pilot never hits itself
+ */
+TEST(CollisionRules, MissileNeverHitsItsOwnPilot) {
+  CollisionScene scene;
+  const Entity missile = spawnMissileOf(scene, FIRING_PLAYER_NUMBER);
+  const Entity ship = spawnShipFlownBy(scene, FIRING_PLAYER_NUMBER);
+  const CollisionRules rules(scene.events, scene.components, true);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(Collision{.first = missile, .second = ship});
+  scene.events.dispatch();
+
+  EXPECT_TRUE(recorded.missileHits.empty());
+}
+
+/**
+ * Given friendly fire off, a missile of one player and the ship of another
+ * When a Collision names them
+ * Then nothing is published: the missile crosses the ship
+ */
+TEST(CollisionRules, MissileCrossesAnotherPilotWithoutFriendlyFire) {
+  CollisionScene scene;
+  const Entity missile = spawnMissileOf(scene, FIRING_PLAYER_NUMBER);
+  const Entity ship = spawnShipFlownBy(scene, OTHER_PLAYER_NUMBER);
+  const CollisionRules rules(scene.events, scene.components, false);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(Collision{.first = missile, .second = ship});
+  scene.events.dispatch();
+
+  EXPECT_TRUE(recorded.missileHits.empty());
+}
+
+/**
+ * Given friendly fire on, a player missile of no player and a ship of a pilot
+ * When a Collision names them
+ * Then nothing is published: no player fired it
+ */
+TEST(CollisionRules, MissileOfNoPlayerNeverHitsAPilot) {
+  CollisionScene scene;
+  const Entity missile = scene.spawn(EntityType::PlayerMissile, 0.0F, 0.0F);
+  const Entity ship = spawnShipFlownBy(scene, OTHER_PLAYER_NUMBER);
+  const CollisionRules rules(scene.events, scene.components, true);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(Collision{.first = missile, .second = ship});
+  scene.events.dispatch();
+
+  EXPECT_TRUE(recorded.missileHits.empty());
+}
 
 /**
  * Given a player missile and a player

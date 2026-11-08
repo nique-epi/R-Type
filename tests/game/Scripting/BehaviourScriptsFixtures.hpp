@@ -37,6 +37,10 @@ struct FailureLog {
  * left. */
 [[nodiscard]] rtype::game::BehaviourView viewWithHealth(float healthShare);
 
+/** @returns The view woundedViewAt() gives, of a boss @p enraged or not that
+ * ended THREE_ENDED_ACTIONS actions. */
+[[nodiscard]] rtype::game::BehaviourView viewOfABoss(bool enraged);
+
 /** @returns The behaviours of the example resource the repository ships. */
 [[nodiscard]] rtype::game::BehaviourRegistry exampleBehaviours(
     rtype::game::BehaviourScripts& scripts);

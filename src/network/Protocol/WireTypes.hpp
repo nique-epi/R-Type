@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string>
 #include <string_view>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
@@ -78,6 +79,13 @@ float readCoordinate(ByteReader& reader);
 [[nodiscard]] bool isValidNickname(std::string_view nickname);
 
 /**
+ * @returns The form two nicknames are compared in: @p nickname with its ASCII
+ * letters in lowercase and every other byte as it is, as SQLite's NOCASE
+ * compares. ACE and ace are one player; É and é are two.
+ */
+[[nodiscard]] std::string nicknameKey(std::string_view nickname);
+
+/**
  * @returns Whether @p name is a name a game server may have: 1 to
  * MAXIMUM_SERVER_NAME_SIZE bytes of printable UTF-8 (isPrintableUtf8()).
  */
@@ -102,6 +110,13 @@ float readCoordinate(ByteReader& reader);
  * @throws InvalidNicknameException when it is not.
  */
 void requireValidNickname(std::string_view nickname);
+
+/**
+ * @brief Checks that @p difficulty is a name of a difficulty the protocol
+ * carries: it follows the rules of a nickname (isValidNickname()).
+ * @throws InvalidDifficultyException when it does not.
+ */
+void requireValidDifficulty(std::string_view difficulty);
 
 /**
  * @brief Checks that @p playerNumber is the number of a player of a game,

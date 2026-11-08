@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <string>
@@ -8,11 +9,13 @@
 #include "GameLaunchSettings.hpp"
 #include "GameRegistry.hpp"
 #include "GameSpawner.hpp"
+#include "HostedDifficulties.hpp"
 #include "IDatagramSender.hpp"
 #include "IListeningPort.hpp"
 #include "IModule.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IProcessLauncher.hpp"
+#include "IResultsFile.hpp"
 #include "InstallContext.hpp"
 #include "Logger.hpp"
 #include "SettingValue.hpp"
@@ -31,7 +34,8 @@ namespace rtype::server {
  * listed after it, with what the games hold (see SupervisedGamesWatch): the
  * LatestHostedGames and the LatestServerMeasures the master module sends, and
  * the IServerOccupancy the information module answers. It declares the
- * database setting: the leaderboard every game writes to.
+ * database setting: the leaderboard every game writes to, which it provides
+ * as the IResultsFile the master module reads.
  *
  * In the simulation stage, each tick: the games whose process ended leave the
  * registry (and the network forgets their address); the statuses the games sent
@@ -48,7 +52,8 @@ namespace rtype::server {
  * belong to them, once, before a player can ask for a game, and every game is
  * told to read it; processes start when a player asks for one.
  */
-class ServerSupervisedGamesModule final : public engine::IModule {
+class ServerSupervisedGamesModule final : public engine::IModule,
+                                          public IResultsFile {
  public:
   /** @param settings What every game process is started with.
    * @param launcher Starts the processes; the module owns it.
@@ -70,8 +75,13 @@ class ServerSupervisedGamesModule final : public engine::IModule {
   void install(engine::InstallContext& context) override;
 
   /**
-   * @brief Writes GameLaunchSettings::gameLines to the file of
+   * @brief Reads the waves file of the games and keeps the names of its
+   * difficulties, then writes GameLaunchSettings::gameLines to the file of
    * commands of the games, replacing it.
+   * @throws ServerException, game::GameException or engine::EngineException
+   * (or a class derived from one) when the entity sheets or the waves file
+   * cannot be read: the supervisor then stops, rather than open games that
+   * could not start.
    * @throws GameConfigurationWriteException when the file cannot be written:
    * the supervisor then stops, as it does when its journal or a database
    * cannot be opened, rather than run games without the lines meant for them.
@@ -80,6 +90,10 @@ class ServerSupervisedGamesModule final : public engine::IModule {
 
   /** @brief Stops every game, then reports how each ended. */
   void stop() override;
+
+  /** @returns The file of the database setting, or, while it is empty, the
+   * file of the port of the supervisor next to the executable. */
+  [[nodiscard]] std::filesystem::path resultsFile() const override;
 
  private:
   void superviseGames(engine::Duration elapsed);
@@ -91,6 +105,7 @@ class ServerSupervisedGamesModule final : public engine::IModule {
   std::unique_ptr<IProcessLauncher> launcher_;
   StopPause pause_;
   GameRegistry registry_;
+  HostedDifficulties difficulties_;
   SupervisedGamesWatch watch_{registry_};
   std::optional<GameSpawner> spawner_;
   logging::Logger logger_;

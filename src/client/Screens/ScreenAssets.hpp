@@ -14,8 +14,8 @@ class AssetLibrary;
 
 /** @brief The assets of the title screen: its logo, and the entity sheet its
  * squadron is drawn from; with those of the screens pushed over it, so the
- * waiting room opens without loading: the HUD sheet and the professor sheet
- * its help draws. */
+ * waiting room and the hangar open without loading: the HUD sheet, the
+ * professor sheet its help draws, and the sheet of the items of the ship. */
 [[nodiscard]] AssetList titleAssets();
 
 /** @brief The assets a game needs, loaded by the loading screen when the

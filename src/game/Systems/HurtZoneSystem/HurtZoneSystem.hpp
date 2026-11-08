@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "BeamLine.hpp"
 #include "ISystem.hpp"
 #include "ShipBounds.hpp"
 #include "TimeConstants.hpp"
@@ -44,6 +45,7 @@ class HurtZoneSystem final : public engine::ISystem {
 
   engine::EventBus& events_;
   std::vector<ShipBounds> ships_;
+  std::vector<BeamLine> beamLines_;
 };
 
 }  // namespace rtype::game

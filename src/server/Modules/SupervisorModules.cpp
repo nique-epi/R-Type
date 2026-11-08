@@ -12,6 +12,7 @@
 #include "EngineException.hpp"
 #include "EnsureLines.hpp"
 #include "ExecutablePath.hpp"
+#include "GameAssetPaths.hpp"
 #include "GameLaunchSettings.hpp"
 #include "IModule.hpp"
 #include "LaunchOptions.hpp"
@@ -45,8 +46,9 @@ namespace {
  * @throws engine::UnknownExecutablePathException when the system does not tell
  * where the executable is.
  */
-GameLaunchSettings gameLaunchSettings(const LaunchOptions& launchOptions,
-                                      std::vector<std::string> gameLines) {
+GameLaunchSettings gameLaunchSettings(
+    const LaunchOptions& launchOptions, std::vector<std::string> gameLines,
+    std::vector<std::filesystem::path> contentFolders) {
   const std::optional<std::filesystem::path> program = engine::executablePath();
   if (!program.has_value()) {
     throw engine::UnknownExecutablePathException();
@@ -55,6 +57,8 @@ GameLaunchSettings gameLaunchSettings(const LaunchOptions& launchOptions,
                             .folder = engine::executableFolder(),
                             .gameLines = std::move(gameLines),
                             .forwardedArguments = launchOptions.gameArguments(),
+                            .wavesFile = wavesFileOf(contentFolders),
+                            .contentFolders = std::move(contentFolders),
                             .trafficCsvFile = launchOptions.trafficCsvFile()};
 }
 
@@ -63,17 +67,18 @@ GameLaunchSettings gameLaunchSettings(const LaunchOptions& launchOptions,
 std::vector<std::unique_ptr<engine::IModule>> supervisorModules(
     const LaunchOptions& launchOptions, StopRequest& stopRequest,
     std::vector<std::string> gameLines) {
+  const std::vector<std::filesystem::path> contentFolders =
+      engine::contentFoldersOf(engine::locateResourcePlaces(),
+                               engine::ensuredResources(gameLines));
   std::vector<std::unique_ptr<engine::IModule>> modules;
   modules.push_back(
       std::make_unique<ServerLoggerModule>(launchOptions.logOptions()));
   modules.push_back(std::make_unique<ServerNetworkModule>(
       network::DEFAULT_SERVER_PORT, stopRequest,
       launchOptions.networkConditions()));
-  modules.push_back(std::make_unique<ServerContentModule>(
-      engine::contentFoldersOf(engine::locateResourcePlaces(),
-                               engine::ensuredResources(gameLines))));
+  modules.push_back(std::make_unique<ServerContentModule>(contentFolders));
   modules.push_back(std::make_unique<ServerSupervisedGamesModule>(
-      gameLaunchSettings(launchOptions, std::move(gameLines)),
+      gameLaunchSettings(launchOptions, std::move(gameLines), contentFolders),
       std::make_unique<BoostProcessLauncher>(),
       [](engine::Duration pause) { std::this_thread::sleep_for(pause); }));
   modules.push_back(std::make_unique<ServerSupervisorLobbyModule>());

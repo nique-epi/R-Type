@@ -1,5 +1,6 @@
 #include "WaveCatalogFixtures.hpp"
 #include <gtest/gtest.h>
+#include <cstddef>
 #include <filesystem>
 #include <stdexcept>
 #include <string>
@@ -32,6 +33,23 @@ std::string calmFileWith(std::string_view key, std::string_view value) {
   }
   if (!replaced && !key.empty()) {
     text += line(key, value);
+  }
+  return text;
+}
+
+std::string calmFileNamed(std::string_view name) {
+  std::string text = calmFile();
+  text.replace(0, CALM_HEADER.size(),
+               std::string{DIFFICULTY_HEADER_START} + std::string{name} +
+                   std::string{DIFFICULTY_HEADER_END});
+  return text;
+}
+
+std::string fileOfDifficulties(std::size_t count) {
+  std::string text;
+  for (std::size_t index = 0; index < count; ++index) {
+    text += calmFileNamed(std::string{NUMBERED_DIFFICULTY_PREFIX} +
+                          std::to_string(index));
   }
   return text;
 }

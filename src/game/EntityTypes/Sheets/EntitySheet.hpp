@@ -3,7 +3,9 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 #include "ActionKey.hpp"
+#include "BossSheet.hpp"
 #include "BurstSheet.hpp"
 #include "CollisionBox.hpp"
 #include "EntityType.hpp"
@@ -11,6 +13,7 @@
 #include "HurtZone.hpp"
 #include "MotionSheet.hpp"
 #include "PilotSheet.hpp"
+#include "VolleySheet.hpp"
 
 namespace rtype::game {
 
@@ -54,6 +57,11 @@ struct EntitySheet {
   std::optional<ActionKey> fragileIn{std::nullopt};
   /** @brief How it bursts into shards; nothing for a body that does not. */
   std::optional<BurstSheet> burst{std::nullopt};
+  /** @brief The volleys it fires as it enters some of its actions, in the
+   * order of the file; empty for a body that fires none. */
+  std::vector<VolleySheet> volleys;
+  /** @brief What makes it a boss; nothing for any other body. */
+  std::optional<BossSheet> boss{std::nullopt};
 };
 
 }  // namespace rtype::game

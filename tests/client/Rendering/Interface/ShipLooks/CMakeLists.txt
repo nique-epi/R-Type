@@ -1,0 +1,3 @@
+target_sources(client_interface_tests PRIVATE ShipLooksTest.cpp)
+target_include_directories(client_interface_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(client_interface_tests PRIVATE rtype_client_ship_looks)

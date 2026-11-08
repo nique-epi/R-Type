@@ -82,6 +82,12 @@ constexpr unsigned int IPV4_ADDRESS_PART_MAXIMUM =
 constexpr char IPV4_ADDRESS_SEPARATOR = '.';
 
 /**
+ * @brief Character between the address and the port of an endpoint written
+ * as text, as in "127.0.0.1:4242".
+ */
+constexpr char ENDPOINT_PORT_SEPARATOR = ':';
+
+/**
  * @brief Logger name the network classes write their log lines under.
  */
 constexpr std::string_view NETWORK_LOGGER_NAME = "Network";

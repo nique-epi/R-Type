@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <array>
+#include "AppliedInput.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DirectionConstants.hpp"
 #include "Instances/GameInstanceTestConstants.hpp"
@@ -9,6 +10,7 @@
 #include "PlayerControllerFixture.hpp"
 #include "PlayerControllerTestConstants.hpp"
 #include "PlayerInput.hpp"
+#include "ProtocolConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "ShipInput.hpp"
 #include "ShipMotion.hpp"
@@ -16,6 +18,8 @@
 namespace rtype::server::testing {
 
 using game::FULL_STEERING;
+using rtype::network::NO_SHOWN_TICK;
+using rtype::server::AppliedInput;
 
 /**
  * Given a player with a ship that wants nothing
@@ -108,7 +112,8 @@ TEST_F(PlayerControllerFixture, SilencesTheShipOfAnAwayPlayerOnly) {
  */
 TEST_F(PlayerControllerFixture, FirstInputOfANewShipStartsNoManeuver) {
   ConnectedPlayer& player = addPlayerWithShip(FIRST_PLAYER, SESSION_TOKEN);
-  player.appliedInputNumber = FIRST_PRESS_INPUT_NUMBER - 1;
+  player.appliedInput = AppliedInput{
+      .inputNumber = FIRST_PRESS_INPUT_NUMBER - 1, .shownTick = NO_SHOWN_TICK};
   const std::array inputs = {
       inputHolding(HOLDS_RIGHT, FIRST_PRESS_INPUT_NUMBER),
       inputHolding(HOLDS_NOTHING, RELEASE_INPUT_NUMBER),

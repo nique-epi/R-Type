@@ -116,6 +116,9 @@ GameLaunchOptions GameLaunchOptions::read(
   const std::array launchOptions{
       portOption(options.values_.forcedLines),
       databaseOption(options.values_.forcedLines),
+      difficultyOption(options.values_.forcedLines),
+      livesOption(options.values_.forcedLines),
+      friendlyFireOption(options.values_.forcedLines),
       supervisorOption(options.values_),
       linkTokenOption(options.values_),
       engine::pathOption(CONFIGURATION_OPTION,
@@ -138,6 +141,7 @@ std::string GameLaunchOptions::usage() {
   text += portOptionEntry();
   text += supervisorLinkOptionEntries();
   text += databaseOptionEntry();
+  text += ruleOptionEntries();
   text += configurationOptionEntry();
   text += engine::usageEntry(network::TRAFFIC_CSV_OPTION_WITH_VALUE,
                              network::TRAFFIC_CSV_USAGE);

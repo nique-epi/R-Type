@@ -6,12 +6,16 @@
 #include <ostream>
 #include <vector>
 #include "AnimatedSprite.hpp"
+#include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectConstants.hpp"
 #include "Entity.hpp"
+#include "EntityReplicatorTestConstants.hpp"
+#include "EntitySpawned.hpp"
 #include "EntitySprites.hpp"
 #include "EntityType.hpp"
 #include "FixedEntityTypeSource.hpp"
+#include "FixedEntityTypeSourceConstants.hpp"
 #include "HitFlash.hpp"
 #include "Invulnerability.hpp"
 #include "Layer.hpp"
@@ -178,6 +182,28 @@ std::optional<game::Position> historyPositionAt(
         position = history.at(tick);
       });
   return position;
+}
+
+std::optional<game::CollisionBox> boxOfThe(
+    engine::ComponentRegistry& components, game::EntityType type) {
+  std::optional<game::CollisionBox> found;
+  components.forEach<game::CollisionBox, game::EntityType>(
+      [&found, type](engine::Entity, const game::CollisionBox& box,
+                     const game::EntityType& side) {
+        if (side == type) {
+          found = box;
+        }
+      });
+  return found;
+}
+
+network::EntitySpawned ownMissileSpawned(std::uint8_t owner) {
+  return network::EntitySpawned{.entityId = PLAYER_MISSILE_ID,
+                                .entityType = PLAYER_MISSILE_TYPE_NUMBER,
+                                .x = PLAYER_MISSILE_POSITION.x,
+                                .y = PLAYER_MISSILE_POSITION.y,
+                                .owner = owner,
+                                .firingInput = SOME_FIRING_INPUT};
 }
 
 }  // namespace rtype::client::testing

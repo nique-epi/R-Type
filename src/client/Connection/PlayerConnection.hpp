@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ChatChannel.hpp"
 #include "ContentLoading.hpp"
 #include "ContentPlaces.hpp"
 #include "DatagramRouter.hpp"
@@ -27,11 +28,12 @@ namespace rtype::client {
  * NetworkThread, a DatagramRouter in front of it, and the parts the screens
  * and the game use, the ServerSession (the attempt and the session), the
  * WaitingRoom, the EntityMessageQueue, the ServerLeaderboard, the
- * RoundTripWatch, which sends the heartbeats and measures the round trips,
- * the SessionEntityTypes, the entity types of the content the session plays
- * with, the ContentLoading of the packs of servers, and the ServerPingProbe of
- * the list of servers, on a route of its own. ClientConnectionModule holds the
- * one of the client; each load-test bot holds its own.
+ * ChatChannel, the RoundTripWatch, which sends the heartbeats and measures the
+ * round trips, the SessionEntityTypes, the entity types of the content the
+ * session plays with, the ContentLoading of the packs of servers, and the
+ * ServerPingProbe of the list of servers, on a route of its own.
+ * ClientConnectionModule holds the one of the client; each load-test bot holds
+ * its own.
  *
  * Building it opens nothing: network().open() binds the socket on every IPv4
  * interface, on a port the system picks, and starts the network thread.
@@ -70,7 +72,8 @@ class PlayerConnection {
   /**
    * @brief Provides to the modules installed after the one installing it the
    * parts of this connection: the ServerSession, the WaitingRoom, the
-   * EntityMessageQueue, the ServerLeaderboard, the RoundTripWatch as
+   * EntityMessageQueue, the ServerLeaderboard, the ChatChannel, the
+   * RoundTripWatch as
    * IPlayerRoundTrips and as IServerTicks, the IEntityTypeTable and the
    * TrafficCounters of the socket. They must outlive every module that
    * requires them. The ServerPingProbe is reached through pings(). The
@@ -105,6 +108,7 @@ class PlayerConnection {
   engine::SystemClock clock_;
   RoundTripWatch roundTrips_;
   ServerLeaderboard leaderboard_;
+  ChatChannel chat_;
   SessionEntityTypes entityTypes_;
   ContentLoading content_;
   ServerSession session_;

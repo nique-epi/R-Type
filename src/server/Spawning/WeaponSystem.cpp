@@ -1,7 +1,6 @@
 #include "WeaponSystem.hpp"
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
@@ -11,6 +10,7 @@
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
+#include "CountsDownToReady.hpp"
 #include "EngineException.hpp"
 #include "Entity.hpp"
 #include "EntityDestruction.hpp"
@@ -19,17 +19,20 @@
 #include "EntitySpawnSender.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
-#include "EntityTypeNumber.hpp"
 #include "EventBus.hpp"
 #include "Gun.hpp"
 #include "Intent.hpp"
+#include "MessageDelivery.hpp"
+#include "MessagePayload.hpp"
 #include "Muzzle.hpp"
 #include "NetworkIdentity.hpp"
 #include "PendingBurst.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "ProjectileStartPosition.hpp"
+#include "ProtocolConstants.hpp"
 #include "ShardBurst.hpp"
+#include "ShotAuthor.hpp"
 #include "WeaponShot.hpp"
 #include "WeaponSystemConstants.hpp"
 #include "WeaponSystemParts.hpp"
@@ -39,24 +42,13 @@ namespace rtype::server {
 
 namespace {
 
-/** @brief A projectile about to appear: its sheet, where it starts, and the
- * player it belongs to, for a missile of a player. */
+/** @brief A projectile about to appear: its sheet, where it starts, and who
+ * fired it. */
 struct ProjectileLaunch {
   std::reference_wrapper<const game::EntitySheet> sheet;
   game::Position start{};
-  std::optional<std::uint8_t> owner;
+  ShotAuthor author;
 };
-
-/**
- * @brief Counts one tick off @p gun, when it has some left.
- * @returns Whether @p gun is ready to fire after that tick.
- */
-bool countsDownToReady(game::Gun& gun) {
-  if (gun.ticksUntilReady > 0) {
-    --gun.ticksUntilReady;
-  }
-  return gun.ticksUntilReady == 0;
-}
 
 /**
  * @returns The shot of the body @p body of @p components whose Gun is @p gun:
@@ -93,18 +85,22 @@ std::optional<ProjectileLaunch> launchOf(const WeaponShot& shot,
   if (sheet == nullptr) {
     return std::nullopt;
   }
-  std::optional<std::uint8_t> owner;
+  ProjectileLaunch launch{
+      .sheet = *sheet,
+      .start = game::projectileStartPosition(shot.muzzle, sheet->hitbox),
+      .author = ShotAuthor{}};
   if (sheet->side == game::EntityType::PlayerMissile) {
     const ConnectedPlayer* const shooter = roster.findByShip(shot.shooterId);
     if (shooter == nullptr) {
       return std::nullopt;
     }
-    owner = shooter->playerNumber;
+    launch.author =
+        ShotAuthor{.owner = shooter->playerNumber,
+                   .firingInput = shooter->appliedInput.has_value()
+                                      ? shooter->appliedInput->inputNumber
+                                      : network::NO_FIRING_INPUT};
   }
-  return ProjectileLaunch{
-      .sheet = *sheet,
-      .start = game::projectileStartPosition(shot.muzzle, sheet->hitbox),
-      .owner = owner};
+  return launch;
 }
 
 /** @returns Where the shard @p index of @p pending appears and steers from:
@@ -148,7 +144,7 @@ void WeaponSystem::collectShots() {
   components.forEach<game::Gun, game::Intent>(
       [this, &components](engine::Entity body, game::Gun& gun,
                           const game::Intent& intent) {
-        if (!countsDownToReady(gun) || !intent.shooting) {
+        if (!game::countsDownToReady(gun) || !intent.shooting) {
           return;
         }
         const std::optional<WeaponShot> shot = shotOf(components, body, gun);
@@ -178,16 +174,20 @@ std::optional<network::EntitySpawned> WeaponSystem::spawnProjectile(
   return spawnAt(
       launch->sheet.get(),
       game::BodyPlacement{.position = launch->start, .origin = launch->start},
-      launch->owner);
+      launch->author);
 }
 
 std::optional<network::EntitySpawned> WeaponSystem::spawnAt(
     const game::EntitySheet& sheet, game::BodyPlacement placement,
-    std::optional<std::uint8_t> owner) {
+    const ShotAuthor& author) {
   try {
-    return entitySpawnedOf(world_->spawnFrom(sheet, placement, owner),
-                           game::EntityTypeNumber{.number = sheet.number},
-                           placement.position);
+    return network::EntitySpawned{
+        .entityId = world_->spawnFrom(sheet, placement, author.owner),
+        .entityType = sheet.number,
+        .x = placement.position.x,
+        .y = placement.position.y,
+        .owner = author.owner.value_or(network::NO_OWNER),
+        .firingInput = author.firingInput};
   } catch (const engine::NetworkIdExhaustedException&) {
     logger_.warn("no projectile fired: every network id was given");
     return std::nullopt;
@@ -195,6 +195,11 @@ std::optional<network::EntitySpawned> WeaponSystem::spawnAt(
 }
 
 void WeaponSystem::announce(const network::EntitySpawned& projectile) {
+  if (projectile.owner != network::NO_OWNER) {
+    guaranteeToEveryPlayer(*roster_, send_,
+                           network::encodedMessage(projectile));
+    return;
+  }
   for (ConnectedPlayer* const player : roster_->connected()) {
     sendEntitySpawned(send_, *player, projectile);
   }
@@ -246,7 +251,7 @@ std::optional<network::EntitySpawned> WeaponSystem::spawnShard(
   if (sheet == nullptr) {
     return std::nullopt;
   }
-  return spawnAt(*sheet, shardPlacementOf(pending, index), std::nullopt);
+  return spawnAt(*sheet, shardPlacementOf(pending, index), ShotAuthor{});
 }
 
 }  // namespace rtype::server

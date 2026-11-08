@@ -16,6 +16,10 @@ namespace rtype::client {
  * playfield. */
 constexpr int NOTICE_EDGE = 4;
 
+/** @brief The row the lines of the chat end on during a game: NOTICE_EDGE
+ * above the status band. */
+constexpr int GAME_CHAT_BOTTOM = STATUS_BAND_AREA.position.y - NOTICE_EDGE;
+
 /**
  * @brief The feed of departures, from DEPARTURE_FEED_TOP_LEFT: a line per
  * pilot gone, the newest at the top, DEPARTURE_FEED_LINES at most, each
@@ -45,6 +49,7 @@ constexpr sf::Vector2i DEPARTURE_PLUG_OFFSET(DEPARTURE_ICON_COLUMN -
 constexpr std::size_t DEPARTURE_NAME_LETTERS = 10;
 constexpr int DEPARTURE_WORD_GAP = 6;
 constexpr const char* LEFT_THE_GAME_TEXT = "LEFT THE GAME";
+constexpr const char* WAS_EXPELLED_TEXT = "WAS EXPELLED";
 constexpr sf::Color DEPARTURE_WORD_COLOR = GONE_TEXT_COLOR;
 
 /**

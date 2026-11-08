@@ -22,6 +22,7 @@
 #include "MasterTestConstants.hpp"
 #include "ServerCreation.hpp"
 #include "SettingLine.hpp"
+#include "StorageConstants.hpp"
 
 RunningMaster::RunningMaster() : port_(freeHttpPort()) {
   databaseFile_.close();
@@ -73,6 +74,16 @@ std::optional<std::string> RunningMaster::lastHeartbeatOf(
     return std::nullopt;
   }
   return query.getColumn(LAST_HEARTBEAT_COLUMN).getString();
+}
+
+int RunningMaster::keptPlayersOf(std::string_view gameId) const {
+  const SQLite::Database reader{
+      databaseFile_.file().string(), SQLite::OPEN_READONLY,
+      rtype::storage::DATABASE_BUSY_TIMEOUT_MILLISECONDS};
+  SQLite::Statement query{reader, std::string{KEPT_PLAYERS_OF_GAME_QUERY}};
+  query.bind(std::string{GAME_ID_PARAMETER_NAME}, std::string{gameId});
+  query.executeStep();
+  return query.getColumn(0).getInt();
 }
 
 rtype::network::CreatedServer RunningMaster::createServer(

@@ -19,7 +19,9 @@ GameSpawnerFixture::GameSpawnerFixture()
       settings_{.program = PROGRAM_FOR_TESTS,
                 .folder = FOLDER_FOR_TESTS,
                 .gameLines = {},
-                .forwardedArguments = {}},
+                .forwardedArguments = {},
+                .wavesFile = {},
+                .contentFolders = {}},
       database_(
           &configuration_.declareText(rtype::engine::TextSettingDefinition{
               .name = std::string{rtype::server::DATABASE_SETTING_NAME},

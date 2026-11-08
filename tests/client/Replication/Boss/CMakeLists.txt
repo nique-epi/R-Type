@@ -1,0 +1,3 @@
+target_sources(client_replication_tests PRIVATE BossTrackerTest.cpp BossTrackerFixtures.cpp)
+target_include_directories(client_replication_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(client_replication_tests PRIVATE rtype_client_boss)

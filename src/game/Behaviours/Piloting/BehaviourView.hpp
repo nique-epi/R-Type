@@ -44,6 +44,12 @@ struct BehaviourView {
   /** @brief The share of its health points the body has left, 0 to 1; 1 for
    * a body without Health. */
   float healthShare{1.0F};
+  /** @brief Whether the body is a Boss that enraged (see BossPhaseSystem);
+   * false for any other body. */
+  bool enraged{false};
+  /** @brief How many actions the body has ended since it appeared
+   * (CurrentAction::ended); 0 for a body without CurrentAction. */
+  std::uint32_t actionsEnded{0};
 };
 
 }  // namespace rtype::game

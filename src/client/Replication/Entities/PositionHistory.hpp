@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include "Position.hpp"
 #include "PositionHistoryConstants.hpp"
@@ -36,6 +37,9 @@ class PositionHistory {
    * position when only one sample is kept).
    */
   [[nodiscard]] std::optional<game::Position> at(double tick) const;
+
+  /** @returns The tick of the oldest sample kept; nothing without a sample. */
+  [[nodiscard]] std::optional<std::uint32_t> oldestTick() const;
 
  private:
   std::array<PositionSample, HISTORY_SAMPLES> samples_{};

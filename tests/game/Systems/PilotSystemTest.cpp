@@ -7,6 +7,7 @@
 #include "BehaviourTestConstants.hpp"
 #include "BehaviourView.hpp"
 #include "CollisionBox.hpp"
+#include "CurrentAction.hpp"
 #include "Entity.hpp"
 #include "Intent.hpp"
 #include "Pilot.hpp"
@@ -22,6 +23,7 @@ using rtype::engine::Entity;
 using rtype::engine::SIMULATION_TICK_DURATION;
 using rtype::game::BehaviourView;
 using rtype::game::CollisionBox;
+using rtype::game::CurrentAction;
 using rtype::game::Intent;
 using rtype::game::Pilot;
 using rtype::game::Position;
@@ -34,6 +36,7 @@ using rtype::game::testing::ASKED_BOX;
 using rtype::game::testing::ASKED_TOP_SPEED;
 using rtype::game::testing::BODY_START_X;
 using rtype::game::testing::DRIFTER_X_AFTER_A_SECOND;
+using rtype::game::testing::ENRAGED_BOSS;
 using rtype::game::testing::FAR_SHIP;
 using rtype::game::testing::HALF_PERIOD;
 using rtype::game::testing::HEIGHT_TOLERANCE_UNITS;
@@ -50,6 +53,7 @@ using rtype::game::testing::ROW_START;
 using rtype::game::testing::ROW_Y;
 using rtype::game::testing::STARTING_BOX;
 using rtype::game::testing::STARTING_TOP_SPEED;
+using rtype::game::testing::THREE_ENDED_ACTIONS;
 using rtype::game::testing::TICKS_IN_QUARTER_PERIOD;
 using rtype::game::testing::UNTOUCHED;
 using rtype::game::testing::ViewRecordingBehaviour;
@@ -279,6 +283,26 @@ TEST_F(PilotSystemFixture, ABodyTakesTheCollisionBoxItsBehaviourAsks) {
 }
 
 /**
+ * Given an enemy whose collision box lies off its center, and whose behaviour
+ * asks for another size
+ * When the pilots run once
+ * Then its box keeps the offset it had
+ */
+TEST_F(PilotSystemFixture, ABodyKeepsTheOffsetOfItsBoxWhenItResizes) {
+  const ActionRequestingBehaviour behaviour{
+      Intent{.steered = true, .resizesTo = ASKED_BOX}};
+  const Entity enemy = addEnemy(behaviour, WATCHING_ENEMY_NETWORK_ID);
+  components().add(enemy, STARTING_BOX);
+
+  run(SIMULATION_TICK_DURATION);
+
+  const CollisionBox* const box = components().get<CollisionBox>(enemy);
+  ASSERT_NE(box, nullptr);
+  EXPECT_EQ(box->offsetX, STARTING_BOX.offsetX);
+  EXPECT_EQ(box->offsetY, STARTING_BOX.offsetY);
+}
+
+/**
  * Given an enemy with a top speed whose behaviour asks for another one
  * When the pilots run once
  * Then the enemy has the top speed it asked for
@@ -294,4 +318,38 @@ TEST_F(PilotSystemFixture, ABodyTakesTheTopSpeedItsBehaviourAsks) {
   const SteadyMotion* const motion = components().get<SteadyMotion>(enemy);
   ASSERT_NE(motion, nullptr);
   EXPECT_EQ(motion->topSpeed, ASKED_TOP_SPEED);
+}
+
+/**
+ * Given an enemy that is a boss that enraged
+ * When the pilots run once
+ * Then its behaviour sees it enraged
+ */
+TEST_F(PilotSystemFixture, HandsAnEnragedBossItsRage) {
+  std::optional<BehaviourView> seen;
+  const ViewRecordingBehaviour behaviour{seen};
+  const Entity enemy = addEnemy(behaviour, WATCHING_ENEMY_NETWORK_ID);
+  components().add(enemy, ENRAGED_BOSS);
+
+  run(SIMULATION_TICK_DURATION);
+
+  ASSERT_TRUE(seen.has_value());
+  EXPECT_TRUE(seen.value_or(BehaviourView{}).enraged);
+}
+
+/**
+ * Given an enemy that has ended three actions
+ * When the pilots run once
+ * Then its behaviour sees the three actions it ended
+ */
+TEST_F(PilotSystemFixture, HandsTheBehaviourTheActionsItEnded) {
+  std::optional<BehaviourView> seen;
+  const ViewRecordingBehaviour behaviour{seen};
+  const Entity enemy = addEnemy(behaviour, WATCHING_ENEMY_NETWORK_ID);
+  components().get<CurrentAction>(enemy)->ended = THREE_ENDED_ACTIONS;
+
+  run(SIMULATION_TICK_DURATION);
+
+  ASSERT_TRUE(seen.has_value());
+  EXPECT_EQ(seen.value_or(BehaviourView{}).actionsEnded, THREE_ENDED_ACTIONS);
 }

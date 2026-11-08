@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <optional>
 #include <vector>
+#include "FinishedGame.hpp"
+#include "GameResult.hpp"
 #include "HostedGame.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerIdentity.hpp"
@@ -20,8 +22,8 @@ namespace rtype::server {
 /**
  * @returns The registration of the server of @p identity: its name, its port,
  * SERVER_GAME_VERSION, network::PROTOCOL_VERSION, its games,
- * network::MAXIMUM_PLAYERS per game and its probe secret. It names no address,
- * so the master takes the address the request comes from.
+ * network::MAXIMUM_PLAYERS per game, its probe secret and the address of the
+ * identity; without one, the master takes the address the request comes from.
  */
 [[nodiscard]] network::ServerRegistration registrationOf(
     const ServerIdentity& identity);
@@ -35,5 +37,12 @@ namespace rtype::server {
     std::vector<network::HostedGame> games,
     const std::optional<network::ServerMeasures>& measures,
     std::optional<std::uint64_t> probeToken);
+
+/**
+ * @returns @p result as the master keeps it: its date, its difficulty, its
+ * players when it started, whether it was vanilla, and the nickname and score
+ * of each player, a guest each; the deaths stay on this server.
+ */
+[[nodiscard]] network::FinishedGame finishedGameOf(const GameResult& result);
 
 }  // namespace rtype::server

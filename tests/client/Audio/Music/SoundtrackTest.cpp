@@ -136,3 +136,60 @@ TEST(Soundtrack, LeavingDuringTheSilenceCancelsTheMusicOfTheGame) {
 
   EXPECT_FALSE(gameMusic.playingOffset().has_value());
 }
+
+/**
+ * Given the music of a game playing
+ * When the music is silenced
+ * Then it stops at once
+ */
+TEST(Soundtrack, SilencingStopsTheMusicOfAGameAtOnce) {
+  FakeMusicPlayer theme;
+  FakeMusicPlayer gameMusic;
+  Soundtrack soundtrack(
+      SoundtrackParts{.theme = theme, .gameMusic = gameMusic});
+  soundtrack.playGameMusic();
+  soundtrack.advance(LONGER_THAN_THE_SILENCE);
+
+  soundtrack.silenceMusic();
+
+  EXPECT_FALSE(gameMusic.playingOffset().has_value());
+}
+
+/**
+ * Given the music of a game about to start, its silence running
+ * When the music is silenced, then the rest of the silence passes
+ * Then it does not start: the silence was cancelled
+ */
+TEST(Soundtrack, SilencingCancelsTheMusicAboutToStart) {
+  FakeMusicPlayer theme;
+  FakeMusicPlayer gameMusic;
+  Soundtrack soundtrack(
+      SoundtrackParts{.theme = theme, .gameMusic = gameMusic});
+  soundtrack.playGameMusic();
+  soundtrack.advance(PART_OF_THE_SILENCE);
+
+  soundtrack.silenceMusic();
+  soundtrack.advance(LONGER_THAN_THE_SILENCE);
+
+  EXPECT_FALSE(gameMusic.playingOffset().has_value());
+}
+
+/**
+ * Given the music of a game silenced
+ * When it is asked again and the whole silence passes
+ * Then it plays again
+ */
+TEST(Soundtrack, TheMusicOfAGameComesBackAfterBeingSilenced) {
+  FakeMusicPlayer theme;
+  FakeMusicPlayer gameMusic;
+  Soundtrack soundtrack(
+      SoundtrackParts{.theme = theme, .gameMusic = gameMusic});
+  soundtrack.playGameMusic();
+  soundtrack.advance(LONGER_THAN_THE_SILENCE);
+  soundtrack.silenceMusic();
+
+  soundtrack.playGameMusic();
+  soundtrack.advance(THE_WHOLE_SILENCE);
+
+  EXPECT_TRUE(gameMusic.playingOffset().has_value());
+}

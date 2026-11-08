@@ -11,7 +11,7 @@ Scripts run on the server only. They never reach the client, which draws the ene
 
 ## Where scripts live and when they run
 
-Every `.luau` file right in the `server/` folder of a content folder is a server script: in each resource started by an `ensure` line, in the order the resources are laid, each folder in the order of its file names. A game process runs each script once when its games module starts, before it reads the sheets, so a sheet may name a behaviour a script registers. A script that does not compile, fails while it runs, or calls `register` wrongly stops the game at start; the supervisor writes in its journal that the game crashed, and the journal of the game names the script and the line.
+Every `.luau` file right in the `server/` folder of a content folder is a server script: in each resource started by an `ensure` line, in the order the resources are laid, each folder in the order of its file names. The supervisor runs each script once when it starts, before it reads the sheets to list the difficulties of the waves file, and each game process runs them again when its games module starts; so a sheet may name a behaviour a script registers. A script that does not compile, fails while it runs, or calls `register` wrongly stops the supervisor at start, before any game, and its error names the script and the line.
 
 ```
 resources/crimson-drifter/
@@ -32,7 +32,7 @@ behaviours.register("crimson_charge", {
 end)
 ```
 
-`behaviours.register(name, settings, steer)` takes the name a sheet gives `pilot`, the settings the sheet must give in `[gameplay.behaviour]`, each a whole number from `lowest` to `highest` (a sheet that misses one, misspells one or gives a value out of its range is refused, as for a C++ behaviour), and the function called each tick for each body that names the behaviour. A name a behaviour already has, a built-in one included, stops the game at start. The function keeps no state between ticks, as every behaviour: one function pilots every body of that type, and it decides from the view alone.
+`behaviours.register(name, settings, steer)` takes the name a sheet gives `pilot`, the settings the sheet must give in `[gameplay.behaviour]`, each a whole number from `lowest` to `highest` (a sheet that misses one, misspells one or gives a value out of its range is refused, as for a C++ behaviour), and the function called each tick for each body that names the behaviour. A name a behaviour already has, a built-in one included, stops the supervisor at start. The function keeps no state between ticks, as every behaviour: one function pilots every body of that type, and it decides from the view alone.
 
 ## What the function reads: the view
 
@@ -49,6 +49,8 @@ end)
 | `nearest_ship` | the center of the nearest ship of a player, `{x, y}`; absent when no ship is in play |
 | `wounded` | whether it lost health points |
 | `health` | the share of its health points left, 0 to 1 |
+| `enraged` | whether it is a boss that enraged, as the keys `boss` of its [sheet](/R-Type/entity-sheets/) set; false for any other body |
+| `actions_ended` | how many actions it has ended since it appeared |
 
 ## What the function returns: the intent
 
@@ -61,7 +63,7 @@ The function returns a table; every key is optional, and a key left out, or of t
 | `starts_action` | to enter an attack and a phase, `{attack, phase}`: the client plays the animation the sheet gives that phase, and its hurt boxes apply |
 | `ends_action` | `true` to leave its action |
 | `jumps_to` | to appear at `{x, y}` without travelling there |
-| `collision_box` | to take another collision box, `{width, height}` in logical units, both positive |
+| `collision_box` | to take another size of collision box, `{width, height}` in logical units, both positive; the offset of the box from the center, which a boss sheet may give, stays |
 | `top_speed` | to take another top speed, positive, in logical units per second |
 
 The collision box and the top speed stay until a later tick asks for others. The script of the example asks for its speed every tick, so its Drifter charges only while a ship is level with it.

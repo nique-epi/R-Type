@@ -3,6 +3,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <SFML/Window/Mouse.hpp>
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -12,9 +13,11 @@
 #include <string>
 #include <utility>
 #include "BoundAction.hpp"
+#include "ChatWindow.hpp"
 #include "GameScreenIdConstants.hpp"
 #include "HangarBay.hpp"
 #include "HangarBayConstants.hpp"
+#include "HangarScreenIdConstants.hpp"
 #include "HelpWalkthrough.hpp"
 #include "HelpWalkthroughConstants.hpp"
 #include "HelpWalkthroughParts.hpp"
@@ -24,6 +27,7 @@
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
 #include "InterfaceConstants.hpp"
+#include "InterfacePixel.hpp"
 #include "KeyChipParts.hpp"
 #include "LobbyPartAreas.hpp"
 #include "LobbyPlace.hpp"
@@ -37,6 +41,7 @@
 #include "PlayfieldMapping.hpp"
 #include "ScreenConstants.hpp"
 #include "ScreenId.hpp"
+#include "ShipLook.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
@@ -120,6 +125,24 @@ sf::IntRect leaderboardChipArea() {
       helpChipArea().position.x - BUTTON_GAP);
 }
 
+/** @returns Where the room paints HANGAR, BUTTON_GAP to the left of
+ * RANKING. */
+sf::IntRect hangarChipArea() {
+  return MenuBuilder::chipArea(
+      {.label = HANGAR_LABEL, .keyName = HANGAR_KEY_NAME},
+      leaderboardChipArea().position.x - BUTTON_GAP);
+}
+
+/** @returns Whether @p event presses the left button inside @p area, read on
+ * the grid of the interface. */
+bool clicksInside(const sf::Event& event, std::optional<sf::IntRect> area,
+                  const PlayfieldMapping& playfieldPointAt) {
+  const auto* click = event.getIf<sf::Event::MouseButtonPressed>();
+  return click != nullptr && click->button == sf::Mouse::Button::Left &&
+         area.has_value() &&
+         area->contains(interfacePixelAt(playfieldPointAt(click->position)));
+}
+
 /** @returns The slot of the bay of the local player, or nothing while the
  * server lists no player with its number. */
 std::optional<int> ownSlotOf(std::span<const network::LobbyPlayer> players,
@@ -128,6 +151,27 @@ std::optional<int> ownSlotOf(std::span<const network::LobbyPlayer> players,
     return std::nullopt;
   }
   return pilotColorOfPlayerNumber(ownNumber);
+}
+
+/** @returns The bay of slot @p ownSlot among @p bays: nothing without
+ * bays or without a slot. */
+std::optional<sf::IntRect> ownBayArea(std::optional<sf::IntRect> bays,
+                                      std::optional<int> ownSlot) {
+  if (!bays.has_value() || !ownSlot.has_value()) {
+    return std::nullopt;
+  }
+  return sf::IntRect(bayTopLeft(*bays, *ownSlot), HANGAR_BAY_SIZE);
+}
+
+/** @returns The bay of the local player in the room of @p menu: nothing while
+ * the server lists no player with its number, or while the room shows no
+ * bays. */
+std::optional<sf::IntRect> ownBayAreaIn(const Menu& menu,
+                                        const IWaitingRoom& waitingRoom,
+                                        const IServerConnection& connection) {
+  return ownBayArea(
+      menu.illustrationArea(),
+      ownSlotOf(waitingRoom.lobbyPlayers(), connection.status().playerNumber));
 }
 
 /** @returns Where the room paints the parts its help explains, as
@@ -143,17 +187,14 @@ LobbyPartAreas partAreasOf(sf::IntRect bays, std::optional<int> ownSlot,
        bays.position.y + bays.size.y + SPACE_ABOVE_ROOM_BARS},
       BUTTON_SIZE);
   const int statusShown = std::max(statusWidth, BUTTON_SIZE.x);
-  return {
-      .bays = bays,
-      .ownBay = ownSlot.has_value()
-                    ? sf::IntRect(bayTopLeft(bays, *ownSlot), HANGAR_BAY_SIZE)
-                    : bays,
-      .ready = ready,
-      .status =
-          sf::IntRect({(INTERFACE_AREA.size.x - statusShown) / SIDES_PER_AXIS,
-                       ready.position.y + ready.size.y + BUTTON_GAP},
-                      {statusShown, TEXT_LINE_HEIGHT}),
-      .back = backChipArea()};
+  return {.bays = bays,
+          .ownBay = ownBayArea(bays, ownSlot).value_or(bays),
+          .ready = ready,
+          .status = sf::IntRect(
+              {(INTERFACE_AREA.size.x - statusShown) / SIDES_PER_AXIS,
+               ready.position.y + ready.size.y + BUTTON_GAP},
+              {statusShown, TEXT_LINE_HEIGHT}),
+          .back = backChipArea()};
 }
 
 }  // namespace
@@ -186,13 +227,33 @@ LobbyScreen::LobbyScreen(LobbyScreenParts parts,
                 handleEvent(sf::Event::FocusLost{});
                 navigator_->push(LEADERBOARD_SCREEN);
               },
-          .sounds = parts.sounds}) {
+          .sounds = parts.sounds}),
+      look_(&parts.look.get()),
+      hangarChip_(KeyChipParts{
+          .text = {.label = HANGAR_LABEL, .keyName = HANGAR_KEY_NAME},
+          .area = hangarChipArea(),
+          .key = HANGAR_KEY,
+          .action =
+              [this] {
+                handleEvent(sf::Event::FocusLost{});
+                navigator_->push(HANGAR_SCREEN);
+              },
+          .sounds = parts.sounds}),
+      chat_(parts.chat.get(), parts.settings.get()) {
   repaint();
 }
 
 void LobbyScreen::handleEvent(const sf::Event& event) {
-  if (help_.handleEvent(event, playfieldPointAt_)) {
+  if (!chat_.isOpen() && help_.handleEvent(event, playfieldPointAt_)) {
     leaderboardChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+    hangarChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+    return;
+  }
+  if (chat_.handleEvent(event)) {
+    readyKeyHeld_ = false;
+    leaderboardChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+    hangarChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+    menu_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
     return;
   }
   if (const auto* pressed = event.getIf<sf::Event::KeyPressed>();
@@ -209,10 +270,18 @@ void LobbyScreen::handleEvent(const sf::Event& event) {
     readyKeyHeld_ = false;
     return;
   }
-  if (event.is<sf::Event::FocusLost>()) {
-    readyKeyHeld_ = false;
+  readyKeyHeld_ = readyKeyHeld_ && !event.is<sf::Event::FocusLost>();
+  if (leaderboardChip_.handleEvent(event, playfieldPointAt_) ||
+      hangarChip_.handleEvent(event, playfieldPointAt_)) {
+    return;
   }
-  if (leaderboardChip_.handleEvent(event, playfieldPointAt_)) {
+  if (clicksInside(event, ownBayAreaIn(menu_, *waitingRoom_, *connection_),
+                   playfieldPointAt_)) {
+    readyKeyHeld_ = false;
+    leaderboardChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+    hangarChip_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+    menu_.handleEvent(sf::Event::FocusLost{}, playfieldPointAt_);
+    navigator_->push(HANGAR_SCREEN);
     return;
   }
   menu_.handleEvent(event, playfieldPointAt_);
@@ -284,8 +353,10 @@ void LobbyScreen::repaint() {
     canvas_->write(pilotCount(players.size()), PILOT_COUNT_ANCHOR,
                    PILOT_COUNT_STYLE);
     leaderboardChip_.paint(*canvas_);
+    hangarChip_.paint(*canvas_);
   }
   help_.paint(*canvas_, parts);
+  chat_.paint(*canvas_, palette_.get(), LOBBY_CHAT_BOTTOM);
   canvas_->display();
 }
 
@@ -322,7 +393,8 @@ BayPilot LobbyScreen::pilotOf(const network::LobbyPlayer& player) const {
       isLocalPlayer ? waitingRoom_->requestedReady() : std::nullopt;
   return {.nickname = player.nickname,
           .readiness = readinessOf(player, requested),
-          .isLocalPlayer = isLocalPlayer};
+          .isLocalPlayer = isLocalPlayer,
+          .look = isLocalPlayer ? *look_ : ShipLook{}};
 }
 
 }  // namespace rtype::client

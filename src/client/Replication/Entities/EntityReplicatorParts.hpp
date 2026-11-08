@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include "EntityFeedback.hpp"
 #include "IEntityTypeSource.hpp"
+#include "IOwnMissileListener.hpp"
 
 namespace rtype::engine {
 
@@ -30,6 +32,12 @@ struct EntityReplicatorParts {
   EntityFeedback feedback;
   /** @brief What the entity type number of a message means. */
   std::reference_wrapper<const IEntityTypeSource> types;
+  /** @brief The number of the player of this client, whose missiles the
+   * listener may draw instead of the replicator. */
+  std::uint8_t ownPlayerNumber{};
+  /** @brief Who draws the missiles of the player of this client; nullptr to
+   * draw them as any other entity. */
+  IOwnMissileListener* ownMissiles{nullptr};
 };
 
 }  // namespace rtype::client

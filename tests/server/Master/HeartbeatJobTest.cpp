@@ -7,6 +7,7 @@ using rtype::server::testing::FAST_TIMES;
 using rtype::server::testing::FIRST_PILOT_NAME;
 using rtype::server::testing::GAMES_MEMBER_TEXT;
 using rtype::server::testing::HeartbeatJobFixture;
+using rtype::server::testing::LINKED_DIFFICULTIES_TEXT;
 using rtype::server::testing::LINKED_PROBE_TOKEN;
 using rtype::server::testing::LINKED_PROBE_TOKEN_TEXT;
 using rtype::server::testing::MASTER_DOWN_TIME;
@@ -75,4 +76,15 @@ TEST_F(HeartbeatJobFixture, SendsATokenOnce) {
 
   EXPECT_TRUE(heartbeatSoonNames(LINKED_PROBE_TOKEN_TEXT));
   EXPECT_TRUE(heartbeatSoonLacks(PROBE_TOKEN_MEMBER_TEXT));
+}
+
+/**
+ * Given a job of a server whose games may be played at "normal"
+ * When it starts
+ * Then its heartbeat tells the master that difficulty
+ */
+TEST_F(HeartbeatJobFixture, TellsTheDifficultiesOfTheServer) {
+  startJob(FAST_TIMES);
+
+  EXPECT_TRUE(heartbeatSoonNames(LINKED_DIFFICULTIES_TEXT));
 }

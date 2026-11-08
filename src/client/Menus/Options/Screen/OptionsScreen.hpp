@@ -17,8 +17,8 @@
 namespace rtype::client {
 
 /**
- * @brief The options, in four tabs, SOUND, CONTROLS, DISPLAY and ACCESS, each
- * a panel of rows over BACK.
+ * @brief The options, in five tabs, SOUND, CONTROLS, DISPLAY, ACCESS and
+ * CHAT, each a panel of rows over BACK.
  *
  * Every row reads and writes the player's settings: a change takes effect at
  * once and is saved at the next update, once a frame at most, so a slider

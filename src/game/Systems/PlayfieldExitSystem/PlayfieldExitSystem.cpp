@@ -1,4 +1,5 @@
 #include "PlayfieldExitSystem.hpp"
+#include "Boss.hpp"
 #include "CollisionBox.hpp"
 #include "CollisionConstants.hpp"
 #include "ComponentRegistry.hpp"
@@ -100,7 +101,8 @@ void PlayfieldExitSystem::update(engine::ComponentRegistry& components,
       [this, &components](engine::Entity entity, const Position& position,
                           const EntityType& type) {
         if (!hasLeftThePlayfield(type, position,
-                                 missileExitOf(components, entity, type))) {
+                                 missileExitOf(components, entity, type)) ||
+            components.get<Boss>(entity) != nullptr) {
           return;
         }
         const NetworkIdentity* identity =

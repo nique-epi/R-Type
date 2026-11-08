@@ -2,6 +2,8 @@
 
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
+#include <memory>
+#include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
@@ -20,6 +22,10 @@ class TitleScreenFixture : public ::testing::Test {
   /** @brief Presses and releases a key, then lets the press last. */
   void choose(sf::Keyboard::Key key);
 
+  /** @brief Builds a new title in place of the one shown, PLAY leading where
+   * @p playStart says. */
+  void reopenWith(rtype::client::PlayStart playStart);
+
   /** @returns The sounds the title played. */
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
 
@@ -28,5 +34,5 @@ class TitleScreenFixture : public ::testing::Test {
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
   rtype::client::PlayerSettings settings_;
-  rtype::client::TitleScreen title_;
+  std::unique_ptr<rtype::client::TitleScreen> title_;
 };

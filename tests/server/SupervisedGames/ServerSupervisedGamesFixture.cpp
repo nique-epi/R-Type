@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -14,6 +15,7 @@
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "GameLaunchSettings.hpp"
+#include "GameRules.hpp"
 #include "GameStatus.hpp"
 #include "IModule.hpp"
 #include "IncomingDatagram.hpp"
@@ -28,6 +30,7 @@
 #include "ServerLoggerModule.hpp"
 #include "ServerSupervisedGamesModule.hpp"
 #include "ServerSupervisorLobbyModule.hpp"
+#include "ShippedEntitySheets.hpp"
 #include "SupervisedGamesFixtures.hpp"
 #include "SupervisedGamesTestConstants.hpp"
 #include "TickDatagrams.hpp"
@@ -49,10 +52,14 @@ void ServerSupervisedGamesFixture::startSupervisor(
   launcher_ = launcher.get();
   modules.push_back(
       std::make_unique<rtype::server::ServerSupervisedGamesModule>(
-          rtype::server::GameLaunchSettings{.program = PROGRAM_FOR_TESTS,
-                                            .folder = folder_.path(),
-                                            .gameLines = std::move(gameLines),
-                                            .forwardedArguments = {}},
+          rtype::server::GameLaunchSettings{
+              .program = PROGRAM_FOR_TESTS,
+              .folder = folder_.path(),
+              .gameLines = std::move(gameLines),
+              .forwardedArguments = {},
+              .wavesFile = std::filesystem::path{RTYPE_SOURCE_ASSETS_FOLDER} /
+                           rtype::server::WAVE_FILE_IN_ASSETS,
+              .contentFolders = {rtype::game::testing::shippedAssetFolder()}},
           std::move(launcher), [](rtype::engine::Duration) {}));
   modules.push_back(
       std::make_unique<rtype::server::ServerSupervisorLobbyModule>());
@@ -84,15 +91,18 @@ void ServerSupervisedGamesFixture::runFor(rtype::engine::Duration duration) {
 }
 
 void ServerSupervisedGamesFixture::askForAPlaceAs(
-    std::size_t index, const rtype::network::GameChoice& game) {
+    std::size_t index, const rtype::network::GameChoice& game,
+    const std::optional<rtype::network::GameRules>& rules) {
   const rtype::network::Endpoint player = supervisedPlayer(index);
-  runTick({}, {IncomingDatagram{.sender = player,
-                                .payload = requestDatagramFor(game, 0)}});
+  runTick({},
+          {IncomingDatagram{.sender = player,
+                            .payload = requestDatagramFor(game, 0, rules)}});
   const auto answers = sentTo(network().sender().sent(), player);
   const auto cookie =
       onlyMessageIn<rtype::network::ConnectionChallenge>(answers.back()).cookie;
-  runTick({}, {IncomingDatagram{.sender = player,
-                                .payload = requestDatagramFor(game, cookie)}});
+  runTick({}, {IncomingDatagram{
+                  .sender = player,
+                  .payload = requestDatagramFor(game, cookie, rules)}});
 }
 
 void ServerSupervisedGamesFixture::gameReports(

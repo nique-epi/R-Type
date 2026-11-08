@@ -6,6 +6,7 @@
 #include <thread>
 #include <utility>
 #include "GameListReading.hpp"
+#include "LatestValue.hpp"
 #include "MasterAccess.hpp"
 #include "MasterAsks.hpp"
 #include "MasterClient.hpp"
@@ -28,20 +29,42 @@ auto listingOrNothing(Call call) -> std::optional<decltype(call())> {
   }
 }
 
+/**
+ * @returns A client of the newest master @p access names when it is newer than
+ * revision @p seen, which then moves to that revision; @p current otherwise,
+ * and when that master is a url MasterClient refuses.
+ */
+std::unique_ptr<network::MasterClient> clientFor(
+    const concurrency::LatestValue<network::MasterAccess>& access,
+    std::uint64_t& seen, std::unique_ptr<network::MasterClient> current) {
+  const std::uint64_t revision = access.revision();
+  const std::optional<network::MasterAccess> newest = access.value();
+  if (revision <= seen || !newest.has_value()) {
+    return current;
+  }
+  seen = revision;
+  try {
+    return std::make_unique<network::MasterClient>(*newest);
+  } catch (const network::InvalidMasterUrlException&) {
+    return current;
+  }
+}
+
 }  // namespace
 
-MasterLink::MasterLink(network::MasterAccess access)
-    : access_(std::move(access)) {}
-
-void MasterLink::start() {
-  client_ = std::make_unique<network::MasterClient>(access_);
-  thread_ = std::jthread([this](const std::stop_token& stop) { run(stop); });
+void MasterLink::start(network::MasterAccess access) {
+  auto client = std::make_unique<network::MasterClient>(std::move(access));
+  thread_ = std::jthread(
+      [this, client = std::move(client)](const std::stop_token& stop) mutable {
+        run(stop, std::move(client));
+      });
 }
 
-void MasterLink::stop() {
-  thread_ = std::jthread{};
-  client_.reset();
+void MasterLink::retarget(network::MasterAccess access) {
+  access_.publish(std::move(access));
 }
+
+void MasterLink::stop() { thread_ = std::jthread{}; }
 
 std::uint64_t MasterLink::askServers() {
   ++asked_.serverAsk;
@@ -64,29 +87,34 @@ std::optional<GameListReading> MasterLink::games() const {
   return games_.value();
 }
 
-void MasterLink::run(const std::stop_token& stop) {
+void MasterLink::run(const std::stop_token& stop,
+                     std::unique_ptr<network::MasterClient> client) {
   std::uint64_t seen = 0;
+  std::uint64_t accessSeen = 0;
   MasterAsks served;
   while (!stop.stop_requested()) {
     seen = asks_.waitForNewer(seen, MASTER_ASK_WAIT, stop);
-    if (const std::optional<MasterAsks> asks = asks_.value()) {
-      serve(*asks, served);
+    client = clientFor(access_, accessSeen, std::move(client));
+    const std::optional<MasterAsks> asks = asks_.value();
+    if (asks.has_value()) {
+      serve(*client, *asks, served);
     }
   }
 }
 
-void MasterLink::serve(const MasterAsks& asks, MasterAsks& served) {
+void MasterLink::serve(network::MasterClient& client, const MasterAsks& asks,
+                       MasterAsks& served) {
   if (asks.serverAsk > served.serverAsk) {
     servers_.publish(ServerListReading{.ask = asks.serverAsk,
-                                       .listing = listingOrNothing([this] {
-                                         return client_->listServers();
+                                       .listing = listingOrNothing([&client] {
+                                         return client.listServers();
                                        })});
     served.serverAsk = asks.serverAsk;
   }
   if (asks.gameAsk > served.gameAsk) {
     games_.publish(GameListReading{
-        .ask = asks.gameAsk, .listing = listingOrNothing([this, &asks] {
-                               return client_->listGames(asks.gameServerId);
+        .ask = asks.gameAsk, .listing = listingOrNothing([&client, &asks] {
+                               return client.listGames(asks.gameServerId);
                              })});
     served.gameAsk = asks.gameAsk;
   }

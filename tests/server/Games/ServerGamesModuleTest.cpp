@@ -88,6 +88,41 @@ TEST_F(ServerGamesFixture, SaysTheGameIsVanillaWithoutASeed) {
 }
 
 /**
+ * Given the shipped waves file, no seed, and a configuration that sets the
+ * difficulty "hard", five lives and friendly fire on
+ * When the application starts
+ * Then the journal says the game plays those rules, and is not vanilla
+ */
+TEST_F(ServerGamesFixture, PlaysTheRulesTheConfigurationSets) {
+  rtype::server::GamesSettings settings = shippedWaves();
+  settings.seed = std::nullopt;
+
+  startWith(std::move(settings),
+            [](rtype::engine::CommandInterpreter& commands) {
+              static_cast<void>(commands.execute(SET_HARD_GAME_LINE));
+              static_cast<void>(commands.execute(SET_FIVE_LIVES_GAME_LINE));
+              static_cast<void>(commands.execute(SET_FRIENDLY_FIRE_GAME_LINE));
+            });
+
+  EXPECT_EQ(journal().linesHolding(RULED_GAMES_LINE).size(), 1U);
+}
+
+/**
+ * Given the shipped waves file and a configuration that sets a difficulty it
+ * has no table for
+ * When the application starts
+ * Then start() fails: the game has no waves to play
+ */
+TEST_F(ServerGamesFixture, FailsToStartOnADifficultyTheWavesFileHasNot) {
+  EXPECT_THROW(startWith(shippedWaves(),
+                         [](rtype::engine::CommandInterpreter& commands) {
+                           static_cast<void>(
+                               commands.execute(SET_UNKNOWN_DIFFICULTY_LINE));
+                         }),
+               ModuleStartFailedException);
+}
+
+/**
  * Given the shipped waves file and a seed
  * When the application starts
  * Then the journal says the seed makes the game not vanilla

@@ -9,7 +9,9 @@
 #include "ChildrenStopper.hpp"
 #include "ConfigurationRegistry.hpp"
 #include "DatagramCodec.hpp"
+#include "DifficultyNames.hpp"
 #include "Endpoint.hpp"
+#include "ErrorText.hpp"
 #include "ExitedGame.hpp"
 #include "FreeUdpPort.hpp"
 #include "GameConfigurationFile.hpp"
@@ -22,6 +24,7 @@
 #include "IListeningPort.hpp"
 #include "IPlayerAdmission.hpp"
 #include "IProcessLauncher.hpp"
+#include "IResultsFile.hpp"
 #include "IServerOccupancy.hpp"
 #include "IncomingDatagram.hpp"
 #include "InstallContext.hpp"
@@ -32,6 +35,7 @@
 #include "PathText.hpp"
 #include "ReceivedStatus.hpp"
 #include "ServerConstants.hpp"
+#include "ServerDatabaseFile.hpp"
 #include "SettingValue.hpp"
 #include "StopPause.hpp"
 #include "SupervisedGame.hpp"
@@ -94,8 +98,10 @@ void ServerSupervisedGamesModule::install(engine::InstallContext& context) {
                                     .database = *database_,
                                     .freePort = freeUdpPort});
   context.provide(registry_);
+  context.provide(difficulties_);
   context.provide(*spawner_);
   context.provide<IServerOccupancy>(watch_);
+  context.provide<IResultsFile>(*this);
   context.provide(watch_.hostedGames());
   context.provide(watch_.measures());
   context.addWork(SIMULATION_STAGE, [this](engine::Duration elapsed) {
@@ -104,6 +110,9 @@ void ServerSupervisedGamesModule::install(engine::InstallContext& context) {
 }
 
 void ServerSupervisedGamesModule::start() {
+  difficulties_.keep(difficultyNamesOf(settings_));
+  logger_.info("difficulties of the games: ",
+               engine::listText(difficulties_.names()));
   const std::filesystem::path file = gameConfigurationFileOf(
       settings_.folder, listeningPort_->listeningPort());
   writeGameConfiguration(file, settings_.gameLines);
@@ -115,6 +124,11 @@ void ServerSupervisedGamesModule::start() {
 void ServerSupervisedGamesModule::stop() {
   ChildrenStopper stopper{*sender_, pause_};
   reportExits(stopper.stopAll(registry_));
+}
+
+std::filesystem::path ServerSupervisedGamesModule::resultsFile() const {
+  return databaseFileOf(database_->text(), settings_.folder,
+                        listeningPort_->listeningPort());
 }
 
 void ServerSupervisedGamesModule::superviseGames(engine::Duration elapsed) {

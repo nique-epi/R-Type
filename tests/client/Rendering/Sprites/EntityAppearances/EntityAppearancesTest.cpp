@@ -38,6 +38,7 @@ using rtype::game::EntitySheet;
 using rtype::game::HurtBox;
 using rtype::game::HurtZone;
 using rtype::game::SpriteFrame;
+using rtype::game::testing::BYDO_TYRANT_SHEET;
 using rtype::game::testing::BYDOMANCER_SHEET;
 using rtype::game::testing::DRIFTER_SHEET;
 using rtype::game::testing::DRILLBACK_SHEET;
@@ -426,4 +427,59 @@ TEST(EntityAppearances, AFrameHoldsTheBoxesThatAlwaysHurt) {
       EXPECT_TRUE(box.activeIn.has_value() || holds(frame, box));
     }
   }
+}
+
+/**
+ * Given the sheets shipped in assets/
+ * When each enraged idle frame is laid on the sprite sheet it names
+ * Then it lies inside that sheet and shows at least one visible pixel, and
+ * the pixels just around it are all transparent, as an idle frame
+ */
+TEST(EntityAppearances, EveryShippedEnragedFrameShowsOneWholeSprite) {
+  const EntityAppearances appearances = shippedAppearances();
+  for (const std::string_view name : SHIPPED_SHEET_NAMES) {
+    const EntityAppearance* const shipped = appearances.named(name);
+    ASSERT_NE(shipped, nullptr);
+    const sf::Image sheet = shippedSheet(shipped->sheet);
+    for (const SpriteFrame& frame : shipped->enragedIdleFrames) {
+      SCOPED_TRACE(name);
+      SCOPED_TRACE(frame.left);
+
+      ASSERT_TRUE(liesInside(frame, sheet.getSize()));
+      EXPECT_TRUE(showsAVisiblePixel(sheet, frame));
+      EXPECT_FALSE(hasAVisiblePixelAround(sheet, frame));
+    }
+  }
+}
+
+/**
+ * Given the shipped sheets whose hitbox lies away from the center of the body
+ * When their idle and enraged idle frames are measured in logical units
+ * Then each holds the hitbox at its offset: the weak point is drawn
+ */
+TEST(EntityAppearances, AFrameHoldsAHitboxAwayFromTheCenter) {
+  const EntityAppearances appearances = shippedAppearances();
+  for (const EntitySheet& sheet : shippedEntitySheets().all()) {
+    if (!hitsAnOffsetBox(sheet)) {
+      continue;
+    }
+    SCOPED_TRACE(sheet.name);
+    const EntityAppearance* const look = appearances.named(sheet.name);
+    ASSERT_NE(look, nullptr);
+    for (const SpriteFrame& frame : look->idleFrames) {
+      EXPECT_TRUE(holdsTheHitbox(frame, sheet.hitbox));
+    }
+    for (const SpriteFrame& frame : look->enragedIdleFrames) {
+      EXPECT_TRUE(holdsTheHitbox(frame, sheet.hitbox));
+    }
+  }
+}
+
+/**
+ * Given the shipped sheet of the Bydo Tyrant
+ * When its hitbox is read
+ * Then it lies away from the center of its body: the test above checks it
+ */
+TEST(EntityAppearances, TheBydoTyrantIsHitAwayFromTheCenter) {
+  EXPECT_TRUE(hitsAnOffsetBox(shippedEntitySheets().named(BYDO_TYRANT_SHEET)));
 }

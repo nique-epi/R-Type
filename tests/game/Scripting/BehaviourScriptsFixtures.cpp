@@ -47,6 +47,14 @@ rtype::game::Intent steeringOf(const rtype::game::BehaviourRegistry& behaviours,
   return behaviour == nullptr ? rtype::game::Intent{} : behaviour->steer(view);
 }
 
+rtype::game::BehaviourView viewOfABoss(bool enraged) {
+  rtype::game::BehaviourView view =
+      woundedViewAt(BODY_IN_THE_MIDDLE, SHIP_BELOW);
+  view.enraged = enraged;
+  view.actionsEnded = THREE_ENDED_ACTIONS;
+  return view;
+}
+
 rtype::game::BehaviourView viewWithHealth(float healthShare) {
   rtype::game::BehaviourView view =
       woundedViewAt(BODY_IN_THE_MIDDLE, SHIP_BELOW);

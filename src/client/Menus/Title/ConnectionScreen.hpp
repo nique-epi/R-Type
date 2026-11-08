@@ -6,6 +6,7 @@
 #include "ConnectionGoal.hpp"
 #include "ConnectionScreenParts.hpp"
 #include "ConnectionStatus.hpp"
+#include "Endpoint.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
@@ -19,21 +20,27 @@
 namespace rtype::client {
 
 /**
- * @brief The screen PLAY opens over the title, and JOIN A SERVER over the
- * leaderboard, which it hides: the address, the port and the nickname to join a
- * server with, CONNECT and BACK, then a status line that tells how the attempt
- * stands.
+ * @brief The screen ADDRESS opens over the server map, a server or QUICK PLAY
+ * of the map over it, PLAY over the title for a client launched with `-h`,
+ * RETRY over the map after a lost game, and JOIN A SERVER over the
+ * leaderboard, which it hides: the address, the port and the
+ * nickname to join a server with, CONNECT and BACK, then a status line that
+ * tells how the attempt stands.
  *
- * Building it drops any earlier attempt, so it always starts from no attempt,
- * and its fields start with the values of the last attempt the player started,
- * those given at launch before any; with ConnectionStart::AtOnce it then
- * starts an attempt with them, as CONNECT would. MENU_CONFIRM_KEY on a
- * field, or CONNECT, checks the fields: an address that is not IPv4, a port
- * outside LOWEST_PORT to HIGHEST_PORT or an empty nickname is named on the
- * status line, and the attempt in progress is dropped without a new one.
- * Otherwise a new attempt replaces it. At each update the status line shows the
- * status of the connection; once the server has accepted the player for
- * ACCEPTED_STATUS_DURATION, the screen follows its ConnectionGoal, once per
+ * Building it drops any earlier attempt, so it always starts from no attempt.
+ * Its fields start with the nickname of the ServerChoice and, for
+ * ConnectionStart::OnConfirm, the server the form remembers
+ * (ServerChoice::server); otherwise with the server of the last attempt, or
+ * that same server before any. With ConnectionStart::AtOnce it then starts an
+ * attempt with them, as CONNECT would. An attempt writes its server as the
+ * last one, and only an OnConfirm screen writes it as the server the form
+ * remembers, so the server map never changes what ADDRESS offers.
+ * MENU_CONFIRM_KEY on a field, or CONNECT, checks the fields: an address that
+ * is not IPv4, a port outside LOWEST_PORT to HIGHEST_PORT or an empty nickname
+ * is named on the status line, and the attempt in progress is dropped without a
+ * new one. Otherwise a new attempt replaces it. At each update the status line
+ * shows the status of the connection; once the server has accepted the player
+ * for ACCEPTED_STATUS_DURATION, the screen follows its ConnectionGoal, once per
  * attempt: it opens the waiting room over itself, or closes. BACK, or
  * MENU_CANCEL_KEY, drops the attempt and closes the screen.
  */
@@ -56,8 +63,10 @@ class ConnectionScreen : public IScreen {
   [[nodiscard]] bool hidesScreensBelow() const override;
 
  private:
-  /** @brief Builds the form, its fields filled with the choice of server. */
-  [[nodiscard]] Menu buildMenu(ISoundPlayer& sounds);
+  /** @brief Builds the form, its fields filled with @p shown and the
+   * nickname of the choice. */
+  [[nodiscard]] Menu buildMenu(ISoundPlayer& sounds,
+                               const network::Endpoint& shown);
 
   /** @brief Starts an attempt with the values of the fields, or names the field
    * to fix. */
@@ -84,6 +93,9 @@ class ConnectionScreen : public IScreen {
   IServerConnection* connection_{};
   ServerChoice* choice_{};
   ConnectionGoal goal_;
+  /** @brief Whether an attempt writes the server the form remembers: only a
+   * screen started on ConnectionStart::OnConfirm does. */
+  bool remembersServer_{};
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   std::string_view fieldProblem_;

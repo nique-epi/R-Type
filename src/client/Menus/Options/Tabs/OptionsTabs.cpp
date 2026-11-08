@@ -83,7 +83,7 @@ Menu soundTab(const OptionsTabsParts& parts) {
 Menu controlsTab(const OptionsTabsParts& parts, OptionsRowHandles& handles) {
   SettingsService& service = parts.service.get();
   MenuBuilder builder = tabbedPanel(parts, CONTROLS_TAB);
-  for (std::size_t row = 0; row < BOUND_ACTION_COUNT; ++row) {
+  for (std::size_t row = 0; row < OPEN_CHAT_ACTION; ++row) {
     std::unique_ptr<KeySlot> slot =
         keySlot(service, parts.keyName, BOUND_ACTIONS[row]);
     handles.keySlots[row] = slot.get();
@@ -132,9 +132,38 @@ Menu accessTab(const OptionsTabsParts& parts) {
   return withBack(parts, builder);
 }
 
-/** @returns The tabs, in the order of SOUND_TAB, CONTROLS_TAB, DISPLAY_TAB and
- * ACCESS_TAB, and fills @p handles with the rows whose state the descriptions
- * follow. */
+Menu chatTab(const OptionsTabsParts& parts, OptionsRowHandles& handles) {
+  SettingsService& service = parts.service.get();
+  std::unique_ptr<KeySlot> slot =
+      keySlot(service, parts.keyName, BoundAction::OpenChat);
+  handles.keySlots[OPEN_CHAT_ACTION] = slot.get();
+  MenuBuilder builder = tabbedPanel(parts, CHAT_TAB);
+  builder
+      .row({.label = CHAT_SHOWN_LABEL, .description = CHAT_SHOWN_DESCRIPTION},
+           settingSwitch(service, CHAT_SHOWN_SETTING))
+      .row({.label = std::string(BOUND_ACTION_LABELS[OPEN_CHAT_ACTION])},
+           std::move(slot))
+      .row({.label = CHAT_LETTERS_LABEL,
+            .description = CHAT_LETTERS_DESCRIPTION},
+           chatSlider(service, CHAT_LETTERS_SETTING, CHAT_LETTERS_LOOK))
+      .row({.label = CHAT_CLOSED_LINES_LABEL,
+            .description = CHAT_CLOSED_LINES_DESCRIPTION},
+           chatSlider(service, CHAT_CLOSED_LINES_SETTING, CHAT_LINES_LOOK))
+      .row({.label = CHAT_OPEN_LINES_LABEL,
+            .description = CHAT_OPEN_LINES_DESCRIPTION},
+           chatSlider(service, CHAT_OPEN_LINES_SETTING, CHAT_LINES_LOOK))
+      .row({.label = CHAT_SECONDS_LABEL,
+            .description = CHAT_SECONDS_DESCRIPTION},
+           chatSlider(service, CHAT_SECONDS_SETTING, CHAT_SECONDS_LOOK))
+      .row({.label = CHAT_BACKGROUND_LABEL,
+            .description = CHAT_BACKGROUND_DESCRIPTION},
+           chatSlider(service, CHAT_BACKGROUND_SETTING, CHAT_BACKGROUND_LOOK));
+  return withBack(parts, builder);
+}
+
+/** @returns The tabs, in the order of SOUND_TAB, CONTROLS_TAB, DISPLAY_TAB,
+ * ACCESS_TAB and CHAT_TAB, and fills @p handles with the rows whose state the
+ * descriptions follow. */
 std::vector<Menu> buildTabs(const OptionsTabsParts& parts,
                             OptionsRowHandles& handles) {
   std::vector<Menu> tabs;
@@ -143,6 +172,7 @@ std::vector<Menu> buildTabs(const OptionsTabsParts& parts,
   tabs.push_back(controlsTab(parts, handles));
   tabs.push_back(displayTab(parts, handles));
   tabs.push_back(accessTab(parts));
+  tabs.push_back(chatTab(parts, handles));
   return tabs;
 }
 
@@ -175,8 +205,9 @@ void OptionsTabs::refreshDescriptions() {
   sound.setDescription(
       EFFECTS_ROW, volumeDescription(DEFAULT_EFFECTS_VOLUME, settings.muted));
   for (std::size_t row = 0; row < BOUND_ACTION_COUNT; ++row) {
-    tabs_[CONTROLS_TAB].setDescription(
-        FIRST_KEY_ROW + row,
+    const bool chatKey = row == OPEN_CHAT_ACTION;
+    tabs_[chatKey ? CHAT_TAB : CONTROLS_TAB].setDescription(
+        chatKey ? CHAT_KEY_ROW : FIRST_KEY_ROW + row,
         keyDescription(*handles_.keySlots[row],
                        settings.keys.otherActionWithKeyOf(BOUND_ACTIONS[row])));
   }

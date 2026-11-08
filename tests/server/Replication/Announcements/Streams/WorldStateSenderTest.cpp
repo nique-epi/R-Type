@@ -3,11 +3,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include "AppliedInput.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EntityTypeNumberTestConstants.hpp"
 #include "Invulnerable.hpp"
 #include "Lives.hpp"
 #include "NetworkConstants.hpp"
+#include "ProtocolConstants.hpp"
 #include "ServerConstants.hpp"
 #include "ServerException.hpp"
 #include "ServerLobbyTestConstants.hpp"
@@ -21,6 +23,7 @@
 using rtype::game::Invulnerable;
 using rtype::game::Lives;
 using rtype::network::EntityState;
+using rtype::network::NO_SHOWN_TICK;
 using rtype::network::PlayerState;
 using rtype::server::testing::client;
 using rtype::server::testing::DRIFTER_TYPE_NUMBER;
@@ -365,7 +368,8 @@ TEST_F(WorldStateSenderFixture, ListsTheAppliedInputNumberOfEachPlayer) {
   const rtype::server::ConnectedPlayer& silent =
       connect(SECOND_CLIENT_PORT, OTHER_SESSION_TOKEN);
   sender.newestInputNumber = RECEIVED_INPUT_NUMBER;
-  sender.appliedInputNumber = NEWEST_INPUT_NUMBER;
+  sender.appliedInput = rtype::server::AppliedInput{
+      .inputNumber = NEWEST_INPUT_NUMBER, .shownTick = NO_SHOWN_TICK};
 
   runTicks(DEFAULT_TICKS_PER_WORLD_STATE);
 

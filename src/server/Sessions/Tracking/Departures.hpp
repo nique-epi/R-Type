@@ -52,11 +52,12 @@ class Departures {
   void close(const network::Endpoint& player, game::DepartureCause cause);
 
   /**
-   * @brief Closes the session of every player not heard from for
-   * SESSION_CLOSING_TICKS ticks, and counts one
-   * more tick of silence for the others, marking away those that reach
-   * SESSION_TIMEOUT_TICKS. The players to close are listed first, then closed,
-   * so no seat is freed while the roster is being walked.
+   * @brief Closes the session of every player the host expelled, with the
+   * cause Expelled, then of every player not heard from for
+   * SESSION_CLOSING_TICKS ticks, and counts one more tick of silence for the
+   * others, marking away those that reach SESSION_TIMEOUT_TICKS. The players
+   * to close are listed first, then closed, so no seat is freed while the
+   * roster is being walked.
    */
   void closeSilentSessions();
 
@@ -67,6 +68,9 @@ class Departures {
   [[nodiscard]] std::vector<ConnectedPlayer> takeDeparted();
 
  private:
+  /** @returns The addresses of the players the host expelled. */
+  [[nodiscard]] std::vector<network::Endpoint> expelledPlayers();
+
   /** @returns The addresses of the players not heard from for
    * SESSION_CLOSING_TICKS ticks; counts one more
    * tick of silence for every other player. */
@@ -75,12 +79,12 @@ class Departures {
   /** @brief Marks @p player away, clears its input number and logs it. */
   void setAway(ConnectedPlayer& player) const;
 
-  /** @brief Logs that @p player left or timed out, as @p cause says, and
-   * publishes its PlayerDeparture. */
+  /** @brief Logs that @p player left, timed out or was expelled, as @p cause
+   * says, and publishes its PlayerDeparture. */
   void announce(const ConnectedPlayer& player, game::DepartureCause cause);
 
   /** @brief Writes the info line of a departure: the address of a player who
-   * left, or how long a player who timed out stayed silent. */
+   * left or was expelled, or how long a player who timed out stayed silent. */
   void logDeparture(const ConnectedPlayer& player,
                     game::DepartureCause cause) const;
 

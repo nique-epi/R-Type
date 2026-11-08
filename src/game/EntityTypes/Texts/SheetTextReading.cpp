@@ -6,6 +6,7 @@
 #include <string_view>
 #include <system_error>
 #include <vector>
+#include "CollisionBox.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "EntitySheetConstants.hpp"
@@ -14,10 +15,27 @@
 #include "GameException.hpp"
 #include "PathText.hpp"
 #include "SheetText.hpp"
+#include "WholeNumberRange.hpp"
 
 namespace rtype::game {
 
 namespace {
+
+/** @returns The value of @p key of @p table as a number of logical units. */
+float unitsAt(const engine::DataFileTable& table, std::string_view key,
+              engine::WholeNumberRange range) {
+  return static_cast<float>(engine::wholeNumberAt(table, key, range));
+}
+
+/** @returns The value of @p key of @p table in logical units, 0 when the
+ * table leaves it out. */
+float unitsOrZeroAt(const engine::DataFileTable& table, std::string_view key,
+                    engine::WholeNumberRange range) {
+  if (!table.table.get().contains(key)) {
+    return 0.0F;
+  }
+  return unitsAt(table, key, range);
+}
 
 /** @brief Reads the sheets @p files, adding them to @p texts. */
 void addSheetTexts(std::span<const std::filesystem::path> files,
@@ -62,6 +80,9 @@ std::vector<SheetText> sheetTextsIn(const std::filesystem::path& folder) {
 
 std::vector<SheetText> sheetTextsInFolders(
     std::span<const std::filesystem::path> contentFolders) {
+  if (contentFolders.empty()) {
+    throw NoEntitySheetException(std::string{});
+  }
   std::vector<SheetText> texts =
       sheetTextsIn(sheetFolderOf(contentFolders.front()));
   for (const std::filesystem::path& folder : contentFolders.subspan(1)) {
@@ -98,6 +119,16 @@ engine::DataFileTable sheetTableOf(const engine::DataFileTable& root,
     }
   }
   return engine::tableAt(root, key);
+}
+
+CollisionBox hitboxOf(const engine::DataFileTable& gameplay) {
+  const engine::DataFileTable hitbox = engine::tableAt(gameplay, HITBOX_KEY);
+  engine::refuseUnknownKeys(hitbox, HITBOX_KEYS);
+  return CollisionBox{
+      .width = unitsAt(hitbox, WIDTH_KEY, HITBOX_SIDE_RANGE),
+      .height = unitsAt(hitbox, HEIGHT_KEY, HITBOX_SIDE_RANGE),
+      .offsetX = unitsOrZeroAt(hitbox, OFFSET_X_KEY, HURT_BOX_OFFSET_RANGE),
+      .offsetY = unitsOrZeroAt(hitbox, OFFSET_Y_KEY, HURT_BOX_OFFSET_RANGE)};
 }
 
 }  // namespace rtype::game

@@ -14,7 +14,8 @@ namespace rtype::game {
  * `{x, y}` in logical units, times in milliseconds, the values of the settings
  * by their @p settingNames, the action as `{attack, phase}` with the phase
  * named as in PHASE_NAMES, `health` the share of its health left, 0 to 1,
- * `nearest_ship` and `action` absent when there is none.
+ * `enraged` whether it is a boss that enraged, `actions_ended` how many
+ * actions it ended, `nearest_ship` and `action` absent when there is none.
  */
 void pushBehaviourView(lua_State* state, const BehaviourView& view,
                        std::span<const std::string> settingNames);

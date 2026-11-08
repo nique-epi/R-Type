@@ -23,6 +23,7 @@
 #include "GunSheet.hpp"
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
+#include "VolleySheet.hpp"
 
 namespace rtype::game {
 
@@ -119,9 +120,26 @@ void checkProjectiles(std::span<const EntitySheet> sheets) {
   }
 }
 
+/** @throws engine::UnknownDataFileChoiceException when a volley of a sheet of
+ * @p sheets names no sheet, and InconsistentEntitySheetException when it
+ * names one that is neither an enemy nor a missile of an enemy. */
+void checkVolleys(std::span<const EntitySheet> sheets) {
+  for (const EntitySheet& sheet : sheets) {
+    for (const VolleySheet& volley : sheet.volleys) {
+      const EntityType side =
+          referencedSheet(sheets, volley.body, volley.bodyPlace).side;
+      if (side != EntityType::Enemy && side != EntityType::EnemyMissile) {
+        throw InconsistentEntitySheetException(volley.bodyPlace,
+                                               VOLLEY_BODY_SIDE_RULE);
+      }
+    }
+  }
+}
+
 /** @brief Writes in the gun of each sheet of @p sheets the number of the sheet
- * it fires, and in its burst the number of the sheet of its shards.
- * checkProjectiles() ran first, so every name is a sheet of @p sheets. */
+ * it fires, in its burst the number of the sheet of its shards, and in each
+ * of its volleys the number of the sheet of its bodies. checkProjectiles()
+ * and checkVolleys() ran first, so every name is a sheet of @p sheets. */
 void numberProjectiles(std::vector<EntitySheet>& sheets) {
   for (EntitySheet& sheet : sheets) {
     if (sheet.gun.has_value()) {
@@ -130,6 +148,9 @@ void numberProjectiles(std::vector<EntitySheet>& sheets) {
     }
     if (sheet.burst.has_value()) {
       sheet.burst->shardNumber = findNamed(sheets, sheet.burst->shard)->number;
+    }
+    for (VolleySheet& volley : sheet.volleys) {
+      volley.bodyNumber = findNamed(sheets, volley.body)->number;
     }
   }
 }
@@ -150,6 +171,7 @@ EntitySheets EntitySheets::fromTexts(std::span<const SheetText> texts,
   std::vector<SheetText> sorted = sortedByName(texts);
   std::vector<EntitySheet> sheets = numberedSheets(sorted, behaviours);
   checkProjectiles(sheets);
+  checkVolleys(sheets);
   numberProjectiles(sheets);
   return EntitySheets{std::move(sorted), std::move(behaviours),
                       std::move(sheets)};

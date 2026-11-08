@@ -2,16 +2,20 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include "AppliedInput.hpp"
 #include "ConnectedPlayer.hpp"
 #include "DeparturesFixture.hpp"
 #include "Endpoint.hpp"
 #include "PlayerDeparture.hpp"
+#include "ProtocolConstants.hpp"
 #include "SentDatagrams.hpp"
 #include "SessionConstants.hpp"
 #include "SessionsTestConstants.hpp"
 
 namespace rtype::server {
 
+using rtype::network::NO_SHOWN_TICK;
+using rtype::server::AppliedInput;
 using testing::ClosingStep;
 using testing::DeparturesFixture;
 using testing::playerEndpoint;
@@ -111,12 +115,13 @@ TEST_F(DeparturesFixture, MarksAPlayerAwayOnceTheTimeoutIsReached) {
  * Then the number of its newest applied input is cleared
  */
 TEST_F(DeparturesFixture, ClearsTheAppliedInputNumberOfAPlayerWhoIsAway) {
-  player().appliedInputNumber = SOME_INPUT_NUMBER;
+  player().appliedInput = AppliedInput{.inputNumber = SOME_INPUT_NUMBER,
+                                       .shownTick = NO_SHOWN_TICK};
   for (std::size_t tick = 0; tick < SESSION_TIMEOUT_TICKS; ++tick) {
     departures().closeSilentSessions();
   }
 
-  EXPECT_FALSE(player().appliedInputNumber.has_value());
+  EXPECT_FALSE(player().appliedInput.has_value());
 }
 
 /**
@@ -147,6 +152,22 @@ TEST_F(DeparturesFixture, RemovesTheShipBeforeAnnouncingTheDeparture) {
   EXPECT_EQ(steps(),
             (std::vector<ClosingStep>{ClosingStep::ShipRemoved,
                                       ClosingStep::DepartureAnnounced}));
+}
+
+/**
+ * Given a player the host expelled, heard from in this tick
+ * When the silent sessions are closed
+ * Then its session closes, and its departure is announced as Expelled
+ */
+TEST_F(DeparturesFixture, ClosesAnExpelledSessionAsExpelled) {
+  const network::Endpoint endpoint = player().endpoint;
+  player().expelled = true;
+
+  departures().closeSilentSessions();
+
+  EXPECT_EQ(roster().find(endpoint), nullptr);
+  ASSERT_EQ(announced().size(), 1U);
+  EXPECT_EQ(announced().front().cause, game::DepartureCause::Expelled);
 }
 
 }  // namespace rtype::server

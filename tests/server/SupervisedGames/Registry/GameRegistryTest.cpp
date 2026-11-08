@@ -3,10 +3,12 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
 #include "GameLifecycle.hpp"
+#include "GameOpening.hpp"
 #include "GamePlace.hpp"
 #include "GameRegistry.hpp"
 #include "GameStatus.hpp"
@@ -26,6 +28,7 @@ using rtype::network::GameStatusState;
 using rtype::network::NEW_GAME_CHOICE;
 using rtype::network::RefusalReason;
 using rtype::server::GameLifecycle;
+using rtype::server::GameOpening;
 using rtype::server::GamePlace;
 using rtype::server::GameRegistry;
 using rtype::server::NoFreeGameSlotException;
@@ -905,4 +908,61 @@ TEST(GameRegistry, OpensANewGameWhenSevenGamesRun) {
 
   EXPECT_EQ(registry.placeFor(seatRequestOf(0), NEW_GAME_CHOICE).kind,
             PlaceKind::Open);
+}
+
+/**
+ * Given a game opened for the new game of a player with rules it chose, waiting
+ * for players with one
+ * When another player asks for any game
+ * Then a new game must be opened: a player who takes any game is never sent to
+ * rules it did not choose
+ */
+TEST(GameRegistry, AnyGameSkipsAGameWithOtherRules) {
+  GameRegistry registry;
+  GameOpening opening = openingOf(0, std::make_shared<RecordingChildState>(),
+                                  supervisedPlayer(0));
+  opening.rules = chosenRules();
+  registry.open(std::move(opening));
+  registry.record(*registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
+                  statusWithPlayers(GameStatusState::WaitingForPlayers, 1));
+
+  EXPECT_EQ(registry.placeFor(seatRequestOf(1), ANY_GAME_CHOICE).kind,
+            PlaceKind::Open);
+}
+
+/**
+ * Given a game opened for the new game of a player with the default rules,
+ * waiting for players with one
+ * When another player asks for any game
+ * Then it is sent to that game
+ */
+TEST(GameRegistry, AnyGameJoinsANewGameWithTheDefaultRules) {
+  GameRegistry registry;
+  registry.open(openingOf(0, std::make_shared<RecordingChildState>(),
+                          supervisedPlayer(0)));
+  registry.record(*registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
+                  statusWithPlayers(GameStatusState::WaitingForPlayers, 1));
+
+  const GamePlace place = registry.placeFor(seatRequestOf(1), ANY_GAME_CHOICE);
+
+  EXPECT_EQ(place.kind, PlaceKind::Redirect);
+  EXPECT_EQ(place.port, portOfGame(0));
+}
+
+/**
+ * Given a game with rules its creator chose, waiting for players with one
+ * When another player asks for that game by its place
+ * Then it is sent to that game: a player who names a game takes its rules
+ */
+TEST(GameRegistry, ANamedGameIsJoinedWhateverItsRules) {
+  GameRegistry registry;
+  GameOpening opening = openingOf(0, std::make_shared<RecordingChildState>(),
+                                  supervisedPlayer(0));
+  opening.rules = chosenRules();
+  registry.open(std::move(opening));
+  registry.record(*registry.findByToken(tokenOfGame(0)), SEQUENCE_FIVE,
+                  statusWithPlayers(GameStatusState::WaitingForPlayers, 1));
+
+  EXPECT_EQ(registry.placeFor(seatRequestOf(1), choiceOfGame(FIRST_PLACE)).kind,
+            PlaceKind::Redirect);
 }

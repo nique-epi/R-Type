@@ -34,6 +34,11 @@ void setNumber(lua_State* state, const char* key, double value) {
   lua_setfield(state, -2, key);
 }
 
+void setFlag(lua_State* state, const char* key, bool flag) {
+  lua_pushboolean(state, flag ? 1 : 0);
+  lua_setfield(state, -2, key);
+}
+
 void setPoint(lua_State* state, const char* key, Position point) {
   lua_createtable(state, 0, 2);
   setNumber(state, POINT_X_KEY, point.x);
@@ -185,9 +190,11 @@ void pushBehaviourView(lua_State* state, const BehaviourView& view,
   if (view.nearestShip.has_value()) {
     setPoint(state, VIEW_NEAREST_SHIP_KEY, *view.nearestShip);
   }
-  lua_pushboolean(state, view.wounded ? 1 : 0);
-  lua_setfield(state, -2, VIEW_WOUNDED_KEY);
+  setFlag(state, VIEW_WOUNDED_KEY, view.wounded);
   setNumber(state, VIEW_HEALTH_KEY, view.healthShare);
+  setFlag(state, VIEW_ENRAGED_KEY, view.enraged);
+  setNumber(state, VIEW_ACTIONS_ENDED_KEY,
+            static_cast<double>(view.actionsEnded));
 }
 
 Intent intentAt(lua_State* state, int index) {

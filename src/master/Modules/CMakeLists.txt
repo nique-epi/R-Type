@@ -9,6 +9,7 @@ target_link_libraries(rtype_master_modules
     rtype_master_http_module
   PRIVATE
     rtype_engine_paths
+    rtype_master_leaderboard_module
     rtype_master_logger_module
     rtype_master_probe_module
     rtype_master_servers_module

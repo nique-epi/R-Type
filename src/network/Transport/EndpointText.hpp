@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <string_view>
+#include "Endpoint.hpp"
 
 namespace rtype::network {
 
@@ -28,5 +30,16 @@ namespace rtype::network {
  *         IPv6 address included.
  */
 [[nodiscard]] std::string ipv4AddressFromText(std::string_view text);
+
+/** @returns @p endpoint as `<address>:<port>`, the port in decimal digits. */
+[[nodiscard]] std::string endpointText(const Endpoint& endpoint);
+
+/**
+ * @returns The endpoint @p text names as `<IPv4 address>:<port>`, both read
+ *          as ipv4AddressFromText() and portFromText() read them; nothing for
+ *          any other text, a host name, a missing port or anything after the
+ *          port included.
+ */
+[[nodiscard]] std::optional<Endpoint> endpointFromText(std::string_view text);
 
 }  // namespace rtype::network

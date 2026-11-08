@@ -2,14 +2,17 @@
 #include <algorithm>
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "GameCommand.hpp"
 #include "GameLaunch.hpp"
 #include "GameLaunchOptions.hpp"
 #include "GameLaunchSettings.hpp"
+#include "GameRules.hpp"
 #include "LaunchArgumentsConstants.hpp"
 #include "LaunchOptions.hpp"
 #include "NetworkConstants.hpp"
+#include "ServerConstants.hpp"
 #include "SupervisedGamesFixtures.hpp"
 #include "SupervisedGamesTestConstants.hpp"
 
@@ -24,28 +27,67 @@ using rtype::server::LaunchOptions;
  * port 50123 under the token 99
  * When the command of the game is built
  * Then it starts the program as a game process, with its port, its supervisor,
- * its token, the leaderboard of the supervisor's port, its own journal file and
- * the file of commands the supervisor wrote for its games
+ * its token, the leaderboard of the supervisor's port, its own journal file,
+ * the file of commands the supervisor wrote for its games, then the default
+ * rules of a game
  */
 TEST(GameCommand, GivesTheGameItsPortItsSupervisorItsTokenAndItsFiles) {
   const auto command = gameCommand(
       GameLaunchSettings{.program = PROGRAM_FOR_TESTS,
                          .folder = FOLDER_FOR_TESTS,
                          .gameLines = {},
-                         .forwardedArguments = {}},
+                         .forwardedArguments = {},
+                         .wavesFile = {},
+                         .contentFolders = {}},
       GameLaunch{
           .number = 3, .port = 50123, .supervisorPort = 4242, .linkToken = 99},
       NO_DATABASE_SETTING);
 
   const std::filesystem::path folder{FOLDER_FOR_TESTS};
   EXPECT_EQ(command.program, std::filesystem::path{PROGRAM_FOR_TESTS});
-  EXPECT_EQ(command.arguments,
-            (std::vector<std::string>{
-                "--mode", "game", "-p", "50123", "--supervisor", "4242",
-                "--link-token", "99", "--database",
-                (folder / "r-type_server_4242.db").string(), "--log-file",
-                (folder / "r-type_game_3.log").string(), "--configuration",
-                (folder / "r-type_games_4242.cfg").string()}));
+  EXPECT_EQ(command.arguments, (std::vector<std::string>{
+                                   "--mode",
+                                   "game",
+                                   "-p",
+                                   "50123",
+                                   "--supervisor",
+                                   "4242",
+                                   "--link-token",
+                                   "99",
+                                   "--database",
+                                   (folder / "r-type_server_4242.db").string(),
+                                   "--log-file",
+                                   (folder / "r-type_game_3.log").string(),
+                                   "--configuration",
+                                   (folder / "r-type_games_4242.cfg").string(),
+                                   "--difficulty",
+                                   "normal",
+                                   "--lives",
+                                   "3",
+                                   "--friendly-fire",
+                                   "0"}));
+}
+
+/**
+ * Given the launch of a game whose creator chose the difficulty "hard", five
+ * lives and friendly fire
+ * When the command of the game is built
+ * Then it gives the game those rules, after the file of commands
+ */
+TEST(GameCommand, GivesTheGameTheRulesOfItsCreator) {
+  GameLaunch launch = launchOfGameThree();
+  launch.rules = chosenRules();
+
+  const auto command = gameCommand(
+      settingsOf(LaunchOptions::read(std::vector<std::string_view>{})), launch,
+      NO_DATABASE_SETTING);
+
+  EXPECT_EQ(argumentAfter(command, rtype::server::DIFFICULTY_OPTION),
+            CHOSEN_DIFFICULTY);
+  EXPECT_EQ(argumentAfter(command, rtype::server::LIVES_OPTION),
+            CHOSEN_LIVES_ARGUMENT);
+  EXPECT_EQ(argumentAfter(command, rtype::server::FRIENDLY_FIRE_OPTION),
+            FRIENDLY_FIRE_ON_ARGUMENT);
 }
 
 /**
@@ -59,7 +101,9 @@ TEST(GameCommand, GivesTheGameTheDatabaseOfTheSupervisor) {
       gameCommand(GameLaunchSettings{.program = PROGRAM_FOR_TESTS,
                                      .folder = FOLDER_FOR_TESTS,
                                      .gameLines = {},
-                                     .forwardedArguments = {}},
+                                     .forwardedArguments = {},
+                                     .wavesFile = {},
+                                     .contentFolders = {}},
                   GameLaunch{.number = 0,
                              .port = FIRST_GAME_PORT,
                              .supervisorPort = FIRST_SUPERVISED_PLAYER_PORT,
@@ -83,6 +127,8 @@ TEST(GameCommand, GivesEachGameATrafficFileOfItsOwn) {
           .folder = FOLDER_FOR_TESTS,
           .gameLines = {},
           .forwardedArguments = {},
+          .wavesFile = {},
+          .contentFolders = {},
           .trafficCsvFile =
               std::filesystem::path{TRAFFIC_FILE_OF_THE_SUPERVISOR}},
       GameLaunch{.number = GAME_THREE,

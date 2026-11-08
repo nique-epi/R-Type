@@ -92,6 +92,17 @@ constexpr float ENRAGED_WIDTH = 200.0F;
 constexpr float ENRAGED_HEIGHT = 100.0F;
 constexpr float ENRAGED_TOP_SPEED = 480.0F;
 
+/** @brief A script whose behaviour fires while its boss enraged, and takes
+ * as top speed the number of actions it ended. */
+constexpr std::string_view BOSS_READING_SCRIPT = R"(
+behaviours.register("boss_reader", {}, function(view)
+  return { shooting = view.enraged, top_speed = view.actions_ended }
+end)
+)";
+constexpr std::string_view BOSS_READING_BEHAVIOUR = "boss_reader";
+constexpr std::uint32_t THREE_ENDED_ACTIONS = 3;
+constexpr float THREE_UNITS_PER_SECOND = 3.0F;
+
 /** @brief The example resource the repository ships, the behaviour its
  * script registers, and the settings its sheet gives: within 96 units of its
  * row, cruising at 360 units per second, charging at 720. */

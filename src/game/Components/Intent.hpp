@@ -37,8 +37,9 @@ struct Intent {
    * PilotSystem moves it after the behaviour steered; nothing for a body
    * that only moves by its direction. */
   std::optional<Position> jumpsTo{std::nullopt};
-  /** @brief The collision box the body takes at this tick, which
-   * PilotSystem applies to a body that has one; nothing to keep its box. */
+  /** @brief The width and height the collision box of the body takes at
+   * this tick, which PilotSystem applies to a body that has one, keeping the
+   * offset of its box; nothing to keep its box. */
   std::optional<CollisionBox> resizesTo{std::nullopt};
   /** @brief The top speed the body takes at this tick, in logical units per
    * second, which PilotSystem applies to a body with a SteadyMotion; nothing

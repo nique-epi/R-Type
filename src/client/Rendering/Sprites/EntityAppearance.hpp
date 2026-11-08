@@ -28,6 +28,11 @@ struct EntityAppearance {
   /** @brief The animation of every attack phase the sheet describes, none for
    * an entity that does not attack. */
   std::vector<ActionAnimation> actions;
+  /** @brief The frames of the idle animation once the enemy is enraged; none
+   * when the sheet has no `[appearance.enraged_idle]`. */
+  std::vector<game::SpriteFrame> enragedIdleFrames;
+  /** @brief How long each enraged idle frame shows. */
+  engine::Duration enragedIdleFrameDuration{};
 };
 
 }  // namespace rtype::client

@@ -15,6 +15,7 @@
 #include "InstallContext.hpp"
 #include "LatestStatusMeasures.hpp"
 #include "Logger.hpp"
+#include "PlayerExpeller.hpp"
 #include "RunningGame.hpp"
 #include "StopRequest.hpp"
 #include "SupervisorLink.hpp"
@@ -33,7 +34,8 @@ namespace rtype::server {
  * LatestStatusMeasures), under the token the supervisor gave it. The metrics
  * module is optional: without it, the status carries no measure. It reads what
  * the supervisor sends back: any datagram means the supervisor is there, a
- * Disconnection asks the process to stop. It asks the program to stop (through
+ * Disconnection asks the process to stop, and an ExpulsionOrder expels the
+ * players it names (see PlayerExpeller). It asks the program to stop (through
  * the StopRequest, the way Ctrl-C does) when the supervisor orders it, or when
  * GameProcessWatch says so, so the games module says its goodbyes and the
  * process ends with the code 0.
@@ -87,6 +89,7 @@ class ServerSupervisorLinkModule final : public engine::IModule,
   IDatagramSender* sender_{nullptr};
   IPlayerAdmission* admission_{nullptr};
   TickDatagrams* tickDatagrams_{nullptr};
+  PlayerExpeller expeller_;
 };
 
 }  // namespace rtype::server

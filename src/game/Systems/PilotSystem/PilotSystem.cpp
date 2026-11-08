@@ -3,6 +3,7 @@
 #include <optional>
 #include <span>
 #include "BehaviourView.hpp"
+#include "Boss.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
@@ -16,6 +17,7 @@
 #include "Pilot.hpp"
 #include "Position.hpp"
 #include "SteadyMotion.hpp"
+#include "Summoning.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game {
@@ -71,8 +73,8 @@ float healthShareOf(const Health* health) {
 }
 
 /** @brief Applies to @p body what @p intent asks of its body: a jump to a
- * position, a collision box, a top speed; each only when asked and when the
- * body has the component. */
+ * position, the size of its collision box (its offset stays), a top speed;
+ * each only when asked and when the body has the component. */
 void reshapeAsAsked(engine::ComponentRegistry& components, engine::Entity body,
                     const Intent& intent) {
   auto* const position = components.get<Position>(body);
@@ -81,12 +83,30 @@ void reshapeAsAsked(engine::ComponentRegistry& components, engine::Entity body,
   }
   auto* const box = components.get<CollisionBox>(body);
   if (intent.resizesTo.has_value() && box != nullptr) {
-    *box = *intent.resizesTo;
+    box->width = intent.resizesTo->width;
+    box->height = intent.resizesTo->height;
   }
   auto* const motion = components.get<SteadyMotion>(body);
   if (intent.topSpeedTo.has_value() && motion != nullptr) {
     motion->topSpeed = *intent.topSpeedTo;
   }
+}
+
+/** @returns Whether @p boss enraged; false for a body that is no boss. */
+bool isEnraged(const Boss* boss) { return boss != nullptr && boss->enraged; }
+
+/** @returns @p view with what the components of @p body tell of its
+ * condition: its health, its rage and the actions it ended. */
+BehaviourView withConditionOf(BehaviourView view,
+                              engine::ComponentRegistry& components,
+                              engine::Entity body) {
+  const Health* const health = components.get<Health>(body);
+  view.wounded = isWounded(health);
+  view.healthShare = healthShareOf(health);
+  view.enraged = isEnraged(components.get<Boss>(body));
+  const CurrentAction* const current = components.get<CurrentAction>(body);
+  view.actionsEnded = current == nullptr ? 0U : current->ended;
+  return view;
 }
 
 }  // namespace
@@ -125,22 +145,26 @@ void PilotSystem::update(engine::ComponentRegistry& components,
         if (position == nullptr) {
           return;
         }
+        if (components.has<Summoning>(body)) {
+          intent = Intent{};
+          return;
+        }
         pilot.age += elapsed;
         const CurrentAction* const current =
             tickedActionOf(components, body, elapsed);
-        intent = pilot.behaviour.get().steer(BehaviourView{
-            .position = *position,
-            .origin = pilot.origin,
-            .age = pilot.age,
-            .elapsed = elapsed,
-            .topSpeed = topSpeedOf(components, body),
-            .settings = pilot.settings,
-            .action = current == nullptr ? std::nullopt : current->key,
-            .actionAge =
-                current == nullptr ? engine::Duration::zero() : current->since,
-            .nearestShip = nearestOf(ships_, *position),
-            .wounded = isWounded(components.get<Health>(body)),
-            .healthShare = healthShareOf(components.get<Health>(body))});
+        intent = pilot.behaviour.get().steer(withConditionOf(
+            BehaviourView{
+                .position = *position,
+                .origin = pilot.origin,
+                .age = pilot.age,
+                .elapsed = elapsed,
+                .topSpeed = topSpeedOf(components, body),
+                .settings = pilot.settings,
+                .action = current == nullptr ? std::nullopt : current->key,
+                .actionAge = current == nullptr ? engine::Duration::zero()
+                                                : current->since,
+                .nearestShip = nearestOf(ships_, *position)},
+            components, body));
         passOnActionOf(components, body, intent);
         reshapeAsAsked(components, body, intent);
       });

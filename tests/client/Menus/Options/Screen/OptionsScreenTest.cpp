@@ -36,16 +36,19 @@ using rtype::client::PRESS_DURATION;
 using rtype::client::regularTextWidth;
 using rtype::client::testing::ALONG_THE_TRACK;
 using rtype::client::testing::CHART_LEGEND;
+using rtype::client::testing::CHAT_TAB_PRESSES;
 using rtype::client::testing::CONTROLS_TAB;
 using rtype::client::testing::DESCRIPTION_LEFT;
 using rtype::client::testing::DESCRIPTION_RIGHT;
 using rtype::client::testing::DESKTOP_SIZE_TEXT;
 using rtype::client::testing::INDEX_OF_1280_BY_720;
 using rtype::client::testing::LARGEST_FIT;
+using rtype::client::testing::LINE_WIDTH_LABEL_TEXT;
 using rtype::client::testing::LONG_AFTER_A_FAILED_SAVE;
 using rtype::client::testing::MUSIC_DEFAULT;
 using rtype::client::testing::MUSIC_ONE_STEP_UP;
 using rtype::client::testing::MUSIC_TRACK_START;
+using rtype::client::testing::OPEN_CHAT_LABEL_TEXT;
 using rtype::client::testing::OPEN_LIST_LEFT;
 using rtype::client::testing::QUIET_MUSIC;
 using rtype::client::testing::ROWS_IN_THE_LONGEST_TAB;
@@ -464,4 +467,18 @@ TEST_F(OptionsScreenFixture, AVolumeRaisedPlaysNoClick) {
   tap(Key::Right);
 
   EXPECT_THAT(sounds().played(), IsEmpty());
+}
+
+/**
+ * Given the options
+ * When the fifth tab is opened
+ * Then it lists the key of the chat and the width of its lines
+ */
+TEST_F(OptionsScreenFixture, TheChatTabListsTheChatKeyAndItsLook) {
+  for (int tab = 0; tab < CHAT_TAB_PRESSES; ++tab) {
+    openNextTab();
+  }
+
+  EXPECT_NE(writingOf(canvas(), OPEN_CHAT_LABEL_TEXT), nullptr);
+  EXPECT_NE(writingOf(canvas(), LINE_WIDTH_LABEL_TEXT), nullptr);
 }
