@@ -13,8 +13,8 @@ set server-address 127.0.0.1
 # The UDP port the connection screen starts with, from 1 to 65535.
 set server-port 4242
 
-# The master the server map reads its servers from, as http://<host>[:<port>]. A master the player
-# chooses on the map (MASTER) is kept in settings.ini and wins over this line.
+# The master the server map reads its servers from, and the global leaderboard its rows, as
+# http://<host>[:<port>].
 set master-url http://127.0.0.1:8080
 
 # Turn a module off (it is never installed, provides no service and runs no work). Refused when a module
