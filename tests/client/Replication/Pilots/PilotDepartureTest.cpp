@@ -7,14 +7,13 @@ using rtype::client::PilotState;
 using rtype::client::PilotStatus;
 
 /**
- * Given a pilot that left, one whose signal is lost, one the host expelled and
- * one it banned
+ * Given a pilot that left, one whose signal is lost and one the host expelled
  * When each is asked whether it left the game
  * Then each has
  */
 TEST(PilotDeparture, APilotGoneByEachDepartureHasLeft) {
-  for (const PilotState state : {PilotState::Left, PilotState::SignalLost,
-                                 PilotState::Expelled, PilotState::Banned}) {
+  for (const PilotState state :
+       {PilotState::Left, PilotState::SignalLost, PilotState::Expelled}) {
     PilotStatus pilot{};
     pilot.state = state;
 

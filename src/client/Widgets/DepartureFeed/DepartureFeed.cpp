@@ -36,15 +36,13 @@ struct LinePlace {
 };
 
 /** @returns The words after the name of a pilot who left in @p state: SIGNAL
- * LOST, WAS EXPELLED, WAS BANNED, or LEFT THE GAME. */
+ * LOST, WAS EXPELLED, or LEFT THE GAME. */
 const char* departureWordsOf(PilotState state) {
   switch (state) {
     case PilotState::SignalLost:
       return SIGNAL_LOST_TEXT;
     case PilotState::Expelled:
       return WAS_EXPELLED_TEXT;
-    case PilotState::Banned:
-      return WAS_BANNED_TEXT;
     case PilotState::Left:
     case PilotState::Flying:
     case PilotState::Respawning:

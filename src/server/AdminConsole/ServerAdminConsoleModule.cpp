@@ -4,11 +4,8 @@
 #include <utility>
 #include <vector>
 #include "AdminConsoleParts.hpp"
-#include "BanBook.hpp"
-#include "BanCommandsParts.hpp"
 #include "CommandInterpreter.hpp"
 #include "CommandResult.hpp"
-#include "CurrentSecond.hpp"
 #include "GameRegistry.hpp"
 #include "IConsoleInput.hpp"
 #include "IConsoleOutput.hpp"
@@ -34,8 +31,7 @@ std::string ServerAdminConsoleModule::name() const {
 
 std::vector<std::string> ServerAdminConsoleModule::dependencies() const {
   return {std::string{LOGGER_MODULE_NAME}, std::string{NETWORK_MODULE_NAME},
-          std::string{SUPERVISED_GAMES_MODULE_NAME},
-          std::string{BANS_MODULE_NAME}};
+          std::string{SUPERVISED_GAMES_MODULE_NAME}};
 }
 
 void ServerAdminConsoleModule::install(engine::InstallContext& context) {
@@ -49,10 +45,6 @@ void ServerAdminConsoleModule::install(engine::InstallContext& context) {
                         .interpreter = interpreter,
                         .output = *output_});
   commands_->registerInto(interpreter);
-  banCommands_.emplace(BanCommandsParts{.book = context.require<BanBook>(),
-                                        .output = *output_,
-                                        .now = currentSecond});
-  banCommands_->registerInto(interpreter);
   interpreter_ = &interpreter;
   context.addWork(
       SIMULATION_STAGE,

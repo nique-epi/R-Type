@@ -16,8 +16,6 @@ namespace rtype::network {
 enum class ExpulsionReason : std::uint8_t {
   /** @brief The host of the server typed kick in its console. */
   ByTheHost = 1,
-  /** @brief The host banned the player. */
-  Banned = 2,
 };
 
 /**

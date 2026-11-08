@@ -1,2 +1,1 @@
-target_sources(server_storage_tests PRIVATE BanWatchTest.cpp ResultsArchiveTest.cpp ResultsArchiveFixture.cpp)
-target_include_directories(server_storage_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_sources(server_storage_tests PRIVATE ResultsArchiveTest.cpp ResultsArchiveFixture.cpp)

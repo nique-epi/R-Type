@@ -8,19 +8,15 @@
 #include <string>
 #include <string_view>
 #include <utility>
-#include "BanCandidate.hpp"
-#include "BanList.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectionAccepted.hpp"
 #include "ConnectionAcceptorParts.hpp"
 #include "ConnectionChallenge.hpp"
 #include "ConnectionRefused.hpp"
 #include "ConnectionRequest.hpp"
-#include "CurrentSecond.hpp"
 #include "DatagramCodec.hpp"
 #include "Endpoint.hpp"
 #include "IncomingDatagram.hpp"
-#include "LatestBans.hpp"
 #include "LobbyConstants.hpp"
 #include "OutgoingDatagram.hpp"
 #include "PacketHeader.hpp"
@@ -72,7 +68,6 @@ ConnectionAcceptor::ConnectionAcceptor(ConnectionAcceptorParts parts)
       admit_(std::move(parts.admit)),
       onPlayerJoined_(std::move(parts.onPlayerJoined)),
       content_(parts.content),
-      bans_(parts.bans),
       logger_(std::string{LOBBY_LOGGER_NAME}) {}
 
 void ConnectionAcceptor::receive(
@@ -117,10 +112,6 @@ void ConnectionAcceptor::answer(const network::Endpoint& sender,
     } else if (isAcceptanceDue(*connected, now)) {
       accept(*connected, now);
     }
-    return;
-  }
-  if (isBanned(sender, request.nickname)) {
-    refuse(sender, network::RefusalReason::Banned);
     return;
   }
   if (const std::optional<network::RefusalReason> refusal =
@@ -176,17 +167,6 @@ std::uint64_t ConnectionAcceptor::drawSessionToken() {
   std::uniform_int_distribution<std::uint64_t> tokens{
       1, std::numeric_limits<std::uint64_t>::max()};
   return tokens(random_);
-}
-
-bool ConnectionAcceptor::isBanned(const network::Endpoint& sender,
-                                  const std::string& nickname) const {
-  if (bans_ == nullptr) {
-    return false;
-  }
-  const std::optional<BanList> bans = bans_->value();
-  return bans.has_value() && bans->bars(BanCandidate{.nickname = nickname,
-                                                     .address = sender.address,
-                                                     .at = currentSecond()});
 }
 
 }  // namespace rtype::server
