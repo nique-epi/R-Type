@@ -35,3 +35,7 @@ A simplification pass removed `BossFight::bossEntityId`, which nothing read. The
 ## Update (7 November 2026) — A file outside the diff
 
 The Homebrew GCC run was fed the `.cpp` files of the branch diff. `EntitySpritesFixtures.cpp`, untouched by the branch, built an `EntityAppearance` without the `enragedIdleFrames` the branch had added, and the Linux job of PR #260 failed on it. Feeding GCC every file the pattern of the rule finds for the aggregates the branch extended (36 files) shows that warning and no other.
+
+## Update (2026-11-08) — a named variable escapes the search for `Type{`
+
+Two members were added to `EntityAppearance` (the frames of a death). The search `git grep -n 'EntityAppearance{' -- src tests` listed two constructions, both fixed; `tests/client/Rendering/Sprites/EntitySpritesFixtures.cpp` builds one as `static const EntityAppearance appearance{…}`, which the search missed. AppleClang built it without a warning; it was found by a later, wider search, before the commit. The rule now searches both shapes with `Type( [A-Za-z_]+)?\{`.
