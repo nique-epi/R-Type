@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
-#include "GameRuleConstants.hpp"
 #include "StateEncoding.hpp"
 #include "TimeConstants.hpp"
 
@@ -367,17 +366,6 @@ constexpr std::string_view FRIENDLY_FIRE_SETTING_NAME = "friendly-fire";
 constexpr std::string_view DIFFICULTY_OPTION = "--difficulty";
 constexpr std::string_view LIVES_OPTION = "--lives";
 constexpr std::string_view FRIENDLY_FIRE_OPTION = "--friendly-fire";
-
-/**
- * @brief The fewest and the most lives the creator of a game may give each
- * player. Provisional, until gameplay tunes them.
- */
-constexpr std::uint8_t LOWEST_LIVES = 1;
-constexpr std::uint8_t HIGHEST_LIVES = 9;
-
-static_assert(identifiers::DEFAULT_LIVES >= LOWEST_LIVES &&
-                  identifiers::DEFAULT_LIVES <= HIGHEST_LIVES,
-              "the default lives must be a count the rules accept");
 
 /**
  * @brief The values of FRIENDLY_FIRE_SETTING_NAME and FRIENDLY_FIRE_OPTION:

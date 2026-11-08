@@ -60,8 +60,9 @@ std::string ruleOptionEntries() {
           std::string(identifiers::DEFAULT_DIFFICULTY) + ".");
   text += engine::usageEntry(
       std::string(LIVES_OPTION) + " <count>",
-      "Lives each player starts with, from " + std::to_string(LOWEST_LIVES) +
-          " to " + std::to_string(HIGHEST_LIVES) +
+      "Lives each player starts with, from " +
+          std::to_string(identifiers::LOWEST_LIVES) + " to " +
+          std::to_string(identifiers::HIGHEST_LIVES) +
           ". Default: " + std::to_string(identifiers::DEFAULT_LIVES) + ".");
   text += engine::usageEntry(
       std::string(FRIENDLY_FIRE_OPTION) + " <0|1>",
