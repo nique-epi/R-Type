@@ -10,6 +10,7 @@ add_subdirectory(Stopping)
 add_subdirectory(Status)
 
 add_library(rtype_server_supervised_games_module STATIC
+  DifficultyNames.cpp
   HostedDifficulties.cpp
   MeasureMilliseconds.cpp
   ServerSupervisedGamesModule.cpp
@@ -43,6 +44,7 @@ target_link_libraries(rtype_server_supervised_games_module
     rtype_engine_launch_arguments
     rtype_engine_paths
     rtype_game_entity_types
+    rtype_game_scripting
     rtype_network_constants
     rtype_network_context
     rtype_network_datagram_codec

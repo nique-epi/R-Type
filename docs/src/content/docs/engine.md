@@ -23,6 +23,7 @@ This page tells you where to look when you need to change something. It describe
 | Plugins | Available: a module built as a shared library, loaded by a `plugin` line of the configuration file | `src/engine/SharedLibrary/`, `src/engine/Modules/PluginShelf/` |
 | Files next to the executable | Available; used by the server and the client | `src/engine/Paths/` |
 | Data files: strict reading of a TOML file | Available; used by the waves file and the entity sheets | `src/engine/DataFiles/` |
+| Scripts: a sandboxed Luau machine | Available; the server runs the scripts of its resources on it | `src/engine/Scripting/` |
 
 ## How the parts fit together
 
@@ -237,6 +238,10 @@ The client loads its assets from that folder, a game process of the server reads
 - `dataFilesIn(folder)` lists the `.toml` files of a folder (`DATA_FILE_EXTENSION`), sorted by name so the order is the same on every system, without its sub-folders; `dataFileContent()` reads one, and `shownPath()` gives the absolute path the errors show.
 - Each error is an engine exception (`src/engine/Exceptions/`) whose message starts with `file:line:column`: `DataFileSyntaxException`, `MissingDataFileKeyException`, `UnknownDataFileKeyException`, `DataFileTableExpectedException`, `DataFileValueOutOfRangeException`, `DataFileTextExpectedException` and `UnknownDataFileChoiceException`, which lists the values it accepts; `UnreadableDataFileException` for a file or a folder that cannot be read.
 
+## Scripts: `ScriptMachine`
+
+`ScriptMachine` (`rtype_engine_scripting`, `src/engine/Scripting/`) runs untrusted Luau scripts. The program exposes its functions first, as read-only tables (`expose(table, functions, context)`, each function finding `context` in its first upvalue); the first `run()` seals the machine with the sandbox of Luau, so the standard libraries become read-only, `io`, `require` and the file functions are gone, and each script runs with globals of its own. All scripts share `SCRIPT_MEMORY_LIMIT_BYTES` (16 MiB), counted by the allocator of the machine, and every run and every `call()` has `SCRIPT_CALL_BUDGET` (20 ms), past which the script is stopped at its next loop or call. Every failure becomes a `ScriptException` naming the script and the line. Only the libraries that need it link it, so the client does not carry Luau. What R-Type exposes to its scripts is on [Scripting in Luau](/R-Type/scripting/).
+
 ## Modules: `Application` and `IModule`
 
 `src/engine/Modules/` (`rtype_engine_modules`, `rtype_engine_application`) gives a program one place to plug in each feature it can switch on, off or replace. Such a feature is a **module**: a folder around a class implementing `IModule`, with a `name()`, its `dependencies()` (the names of the modules it needs), and three steps. `install(InstallContext&)` prepares it and keeps nothing open when it returns: it may read a file and close it, but it never binds a socket, starts a thread or subscribes to an event. Through the context it adds its work to a loop stage and provides or looks up services (below). `start()` opens what must live until `stop()` (a socket, a thread, a file kept open, an event subscription) and throws a `std::exception` when it cannot; `stop()` closes it and must not throw.
@@ -329,6 +334,7 @@ The same language is meant for the administration console and the orders of the 
 | Run something after a delay | `TimerScheduler` in `src/engine/Time/TimerScheduler/` |
 | Test whether two rectangles touch, or react to a contact | `overlaps` and `Collision` in `src/engine/Collision/`; the pairs that matter belong to `src/game/` |
 | Announce that something happened, or react to it | `EventBus` in `src/engine/Events/EventBus/`: `publish` the event, `subscribe<Event>` to it |
+| Run untrusted scripts | `ScriptMachine` in `src/engine/Scripting/`; its limits in `ScriptingConstants.hpp` |
 | Hand data from one thread to another | `BoundedQueue`, in its own library: see [Concurrency](/R-Type/concurrency/) |
 | Change how the launch options are read, or how the usage and the launch errors read | `src/engine/LaunchArguments/`; each program's own options are in its `LaunchOptions` |
 | Add a command or a setting a program can configure | `CommandInterpreter::add()` or `ConfigurationRegistry::declareInteger()` / `declareText()`, called from a module's `install()`; the module reads the setting in `start()` |

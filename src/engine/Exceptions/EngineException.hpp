@@ -368,4 +368,11 @@ class ResourceDependenciesExpectedException : public EngineException {
   explicit ResourceDependenciesExpectedException(const DataFilePlace& place);
 };
 
+/** @brief A script could not be created, compiled or run: the message is
+ * the one of Luau, with the name of the script and the line. */
+class ScriptException : public EngineException {
+ public:
+  explicit ScriptException(const std::string& message);
+};
+
 }  // namespace rtype::engine

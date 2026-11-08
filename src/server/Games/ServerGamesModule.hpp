@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "BehaviourScripts.hpp"
 #include "ConfigurationRegistry.hpp"
 #include "EntitySheets.hpp"
 #include "GameInstance.hpp"
@@ -101,6 +102,8 @@ class ServerGamesModule final : public engine::IModule {
   const engine::SettingValue* startAtBossSetting_{nullptr};
   logging::Logger logger_;
   engine::SystemClock clock_;
+  /** Declared before types_: the behaviours of the sheets call its scripts. */
+  std::unique_ptr<game::BehaviourScripts> scripts_;
   std::optional<game::EntitySheets> types_;
   RunningGame runningGame_;
   IDatagramSender* sender_{nullptr};

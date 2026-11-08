@@ -53,7 +53,7 @@ projectile = "enemy_missile"
 | Key | Unit | Accepted | What it gives the entity |
 |---|---|---|---|
 | `side` | | `player`, `enemy`, `player_missile`, `enemy_missile`, `look_item` | its `EntityType`: what it hits and what hits it (see [Collisions](/R-Type/server/#rules-collisionrules)), and the layer the client draws it in (a `look_item` is drawn in the layer of the Bydos) |
-| `pilot` | | `player`, or the name of a behaviour: `straight`, `weave`, `scatter`, `reaper`, `drillback`, `bydomancer`, `bydo_tyrant` | what writes its `Intent`: the input of its player, or that behaviour (see [Behaviours](#behaviours-and-their-settings)) |
+| `pilot` | | `player`, or the name of a behaviour: `straight`, `weave`, `scatter`, `reaper`, `drillback`, `bydomancer`, `bydo_tyrant`, or one a server script of a resource registers | what writes its `Intent`: the input of its player, or that behaviour (see [Behaviours](#behaviours-and-their-settings) and [Scripting in Luau](/R-Type/scripting/)) |
 | `hitbox.width`, `hitbox.height` | logical units | 1 to 1024 | its `CollisionBox`, centered on its position |
 | `hitbox.offset_x`, `hitbox.offset_y` | logical units | -1024 to 1024; 0 when left out | where the center of its `CollisionBox` lies from its position, y growing downwards: the box of the Bydo Tyrant covers its body, 12 units right of and 4 below its center |
 | `motion.kind` | | `ship`, `steady` | how a direction moves it: the drift, roll and dash of a ship (`ShipMotion`), or its top speed times the direction (`SteadyMotion`) |
