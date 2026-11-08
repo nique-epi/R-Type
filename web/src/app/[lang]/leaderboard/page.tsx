@@ -13,7 +13,13 @@ export async function generateMetadata({
 
 export default async function LeaderboardPage({
   params,
+  searchParams,
 }: PageProps<'/[lang]/leaderboard'>) {
   await connection();
-  return <RankingBlocks lang={await readLocale(params)} />;
+  return (
+    <RankingBlocks
+      lang={await readLocale(params)}
+      search={await searchParams}
+    />
+  );
 }

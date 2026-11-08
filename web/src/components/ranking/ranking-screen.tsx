@@ -60,8 +60,8 @@ export type RankingScreenProps = {
   rows: readonly RankingRow[];
   /** What the list shows, under it: "NEBULA LYON · PARTIES NORMALES, 2 PILOTES". */
   summary: React.ReactNode;
-  /** A note at the foot of the screen. */
-  footnote?: React.ReactNode;
+  /** What the frame says while it holds no pilot: nobody has played those games, or the master does not answer. */
+  empty: React.ReactNode;
   filters: readonly RankingFilter[];
   onApplyFilters: (indices: readonly number[]) => void;
   onBack: () => void;
@@ -90,7 +90,7 @@ export function RankingScreen({
   onTabChange,
   rows,
   summary,
-  footnote,
+  empty,
   filters,
   onApplyFilters,
   onBack,
@@ -237,9 +237,17 @@ export function RankingScreen({
         </div>
 
         <CutFrame className="absolute top-33 left-40 h-75 w-160">
+          {rows.length === 0 ? (
+            <div className="absolute inset-0 grid place-items-center px-8 text-center">
+              <GameText face="small" className="text-pale-blue">
+                {empty}
+              </GameText>
+            </div>
+          ) : null}
           {rows.map((row, index) => (
+            // A tie shares its rank, so the key adds the player and the day.
             <div
-              key={row.rank}
+              key={`${row.rank}-${row.name}-${row.date}`}
               data-ranking-row
               className="absolute left-6 grid w-148 grid-cols-[48px_minmax(0,1fr)_150px_116px] items-center gap-x-5"
               style={{ top: ROW_TOP + index * ROW_STEP }}
@@ -304,14 +312,6 @@ export function RankingScreen({
             {labels.back}
           </GameChip>
         </div>
-        {footnote ? (
-          <GameText
-            face="small"
-            className="absolute inset-x-0 top-130 text-center text-pale-blue"
-          >
-            {footnote}
-          </GameText>
-        ) : null}
 
         {filterOpen ? (
           <RankingFilterDialog

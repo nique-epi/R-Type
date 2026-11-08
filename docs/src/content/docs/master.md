@@ -18,7 +18,7 @@ This page tells you where to look when you need to change something. It describe
 | The games of a server, for the client, `GET /api/servers/{id}/games` | Available | `src/master/Servers/`, `src/network/Master/` |
 | The statuses of the servers, their list and their history, `GET /api/servers` | Available; the route that puts a server in maintenance is not written | `src/master/Servers/`, `src/network/Master/` |
 | The probe of the UDP port of each game server, module `probe` | Available | `src/master/Probe/`, `src/master/Servers/`, `src/server/Master/` |
-| The web site, a Next.js server of its own that calls the API | Available: the pages of the design in French and English (home, download, sector map, a server, leaderboard, wiki, team); the leaderboard shows example scores | `web/` |
+| The web site, a Next.js server of its own that calls the API | Available: the pages of the design in French and English (home, download, sector map, a server, leaderboard, wiki, team); the leaderboard reads `GET /api/leaderboard` | `web/` |
 | The results of the games and the global leaderboard, `PUT /api/servers/me/results/{gameId}` and `GET /api/leaderboard` | Available; a game server sends its vanilla games after its heartbeats | `src/master/Leaderboard/`, `src/network/Master/` |
 | Administration, accounts | Not yet written | |
 
@@ -100,7 +100,7 @@ The web site is a program of its own: a Next.js server, in `web/` (see [Web site
 | `/download` | the installer of the system of the reader, its steps, the other files of the release | the latest release |
 | `/servers` | the sector map, read only: a seat is taken in the game, so the map has no Join and no quick play | the list of servers, each with its games and its last ping |
 | `/servers/{id}` | the games of a server, its figures and the pilots of its last 100 samples (the master keeps one sample a second, a page of the list holds 100); a server created and not registered yet shows a waiting notice | the list, `GET /api/servers/{id}/samples` |
-| `/leaderboard` | the leaderboard screen of the game, by server or for everyone | example scores: the master keeps none yet |
+| `/leaderboard` | the leaderboard screen of the game, by server or for everyone; the scope and the filters are in the address (`?scope=server&server=7&difficulty=hard&pilots=3`) and the page reads the ten best players again at each address | the leaderboard, and the list of servers for the first tab |
 | `/wiki/{keys,enemies,accessibility,host}` | the controls, the bestiary, the pilot palettes, the guide to host a server | nothing |
 | `/team` | the four members and their GitHub | nothing |
 

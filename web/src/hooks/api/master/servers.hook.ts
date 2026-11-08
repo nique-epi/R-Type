@@ -9,6 +9,7 @@ import {
   type Sample,
 } from '@/lib/api';
 import { mapServerOf, type ServerDetails } from '@/lib/rtype/map-server';
+import type { RankingServer } from '@/lib/rtype/ranking-view';
 import { SAMPLE_SERVERS, sampleSeries } from '@/lib/rtype/sample-servers';
 import type { MapServer } from '@/lib/rtype/servers';
 
@@ -92,13 +93,17 @@ export const getMappedServerList = cache(
   async (): Promise<ServerList> => readServers(true),
 );
 
-/** The names of the servers, from the list alone: what a filter of the leaderboard offers. */
-export const getServerNames = cache(async (): Promise<string[]> => {
+/**
+ * The servers a leaderboard can read, busiest first, from the list alone.
+ * None while the master does not answer: its ids are the master's, and the
+ * examples have no leaderboard to read.
+ */
+export const getRankingServers = cache(async (): Promise<RankingServer[]> => {
   const listing = await api.servers.listServers();
 
-  return (listing.error ? SAMPLE_SERVERS : busiestFirst(listing.data)).map(
-    server => server.name,
-  );
+  return listing.error
+    ? []
+    : busiestFirst(listing.data).map(({ id, name }) => ({ id, name }));
 });
 
 /** Everything the page of one server shows. */

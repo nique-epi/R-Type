@@ -3,8 +3,8 @@ import { RELEASE_V0_1_0 } from '@/lib/github/release.fixture';
 import { answer, listedServer } from '@/test/responses';
 import {
   getMappedServerList,
+  getRankingServers,
   getServerList,
-  getServerNames,
   getServerSheet,
 } from './servers.hook';
 
@@ -116,23 +116,26 @@ describe('getServerList', () => {
   });
 });
 
-describe('getServerNames', () => {
+describe('getRankingServers', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it('gives the names of the servers, busiest first, from the list alone', async () => {
+  it('gives the id and the name of the servers, busiest first, from the list alone', async () => {
     stubNetwork(masterRoutes());
 
-    expect(await getServerNames()).toEqual(['Server 8', 'Server 7']);
+    expect(await getRankingServers()).toEqual([
+      { id: 8, name: 'Server 8' },
+      { id: 7, name: 'Server 7' },
+    ]);
     const urls = vi.mocked(fetch).mock.calls.map(call => String(call[0]));
     expect(urls.every(url => url.includes('/api/servers?'))).toBe(true);
   });
 
-  it('gives the names of the examples when the master cannot be reached', async () => {
+  it('gives no server when the master cannot be reached', async () => {
     stubNetwork({ '/api/servers?limit=100&offset=0': new TypeError('down') });
 
-    expect(await getServerNames()).toContain('Nebula Lyon');
+    expect(await getRankingServers()).toEqual([]);
   });
 });
 
