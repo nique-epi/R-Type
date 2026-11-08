@@ -10,6 +10,7 @@ target_link_libraries(rtype_game_lag_compensated_hit_system
     rtype_engine_collision
     rtype_game_components
     rtype_game_events
+    rtype_game_hurt_zone_system
 )
 
 rtype_enable_warnings(rtype_game_lag_compensated_hit_system)

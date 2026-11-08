@@ -899,7 +899,7 @@ The technique is the one described by Gabriel Gambetta in *Client-Side Predictio
 - Reconciling drops the commands before the confirmed one, then compares its predicted position with the position of the server. Within `RECONCILIATION_TOLERANCE` (two ticks at full speed, 16 units) nothing changes, so the ship does not jump for a small difference: the server can be a tick ahead, since it repeats the directions of a tick that brought no input. Beyond it, the prediction restarts from the server position with the motion kept after the confirmed command, and replays the commands after it.
 - The velocity and the maneuver of the ship are not in the state, so the client keeps its own after each command and restarts from that.
 - `placePredictedShip()` puts the predicted position on the entity of the own ship after the state was applied, so the position of the last state never shows.
-- The prediction starts from the first state that lists the ship, and starts again from a ship with another entity id: the player came back after a hit.
+- The prediction starts from the first state that lists the ship, and starts again from a ship with another entity id: the player came back after a hit. While the player has no ship it keeps the commands it sends (`KEPT_COMMANDS_BEFORE_A_SHIP`, 2 s of them), and a start plays the ones after the input the server had applied, from the position the server gave the ship: the server applies them to the new ship too, so the ship is not snapped back once they come back confirmed.
 
 The movement of the other ships is not predicted: they are interpolated (see [Other entities: interpolation](#other-entities-interpolation-interpolationclock-positionhistory)).
 

@@ -51,6 +51,7 @@
 #include "SentDatagrams.hpp"
 #include "ServerDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
+#include "ShipControl.hpp"
 #include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
 #include "ShippedEntitySheets.hpp"
@@ -61,6 +62,26 @@
 #include "WorldState.hpp"
 
 namespace rtype::server::testing {
+
+game::Position movedOneInputPerTick(game::Position start,
+                                    std::span<const game::ShipDirections> held,
+                                    std::size_t idleTicks) {
+  game::MovingShip ship{.position = start, .motion = {}};
+  game::ShipDirections before{};
+  std::uint32_t inputNumber = 0;
+  for (const game::ShipDirections& now : held) {
+    ship.motion = game::motionAfterInput(
+        ship.motion,
+        game::HeldChange{
+            .before = before, .now = now, .inputNumber = ++inputNumber});
+    ship = game::shipAfter(ship, now, engine::SIMULATION_TICK_DURATION);
+    before = now;
+  }
+  for (std::size_t tick = 0; tick < idleTicks; ++tick) {
+    ship = game::shipAfter(ship, before, engine::SIMULATION_TICK_DURATION);
+  }
+  return ship.position;
+}
 
 std::size_t heartbeatsIn(
     const std::vector<network::OutgoingDatagram>& datagrams) {
