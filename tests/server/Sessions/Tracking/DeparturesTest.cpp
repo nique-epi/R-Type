@@ -154,4 +154,20 @@ TEST_F(DeparturesFixture, RemovesTheShipBeforeAnnouncingTheDeparture) {
                                       ClosingStep::DepartureAnnounced}));
 }
 
+/**
+ * Given a player the host expelled, heard from in this tick
+ * When the silent sessions are closed
+ * Then its session closes, and its departure is announced as Expelled
+ */
+TEST_F(DeparturesFixture, ClosesAnExpelledSessionAsExpelled) {
+  const network::Endpoint endpoint = player().endpoint;
+  player().expelled = true;
+
+  departures().closeSilentSessions();
+
+  EXPECT_EQ(roster().find(endpoint), nullptr);
+  ASSERT_EQ(announced().size(), 1U);
+  EXPECT_EQ(announced().front().cause, game::DepartureCause::Expelled);
+}
+
 }  // namespace rtype::server

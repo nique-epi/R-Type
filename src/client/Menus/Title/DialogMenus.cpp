@@ -10,6 +10,32 @@
 
 namespace rtype::client {
 
+namespace {
+
+/** @returns Why the session of @p ending ended, as the dialog says it: the
+ * server shut down, the host expelled the player, or the server went silent. */
+const char* lossMessageOf(ConnectionPhase ending) {
+  switch (ending) {
+    case ConnectionPhase::Closed:
+      return CLOSED_SERVER_MESSAGE;
+    case ConnectionPhase::Expelled:
+      return EXPELLED_MESSAGE;
+    case ConnectionPhase::Idle:
+    case ConnectionPhase::Connecting:
+    case ConnectionPhase::Accepted:
+    case ConnectionPhase::Refused:
+    case ConnectionPhase::Unreachable:
+    case ConnectionPhase::Lost:
+    case ConnectionPhase::LoadingContent:
+    case ConnectionPhase::ContentDownloadFailed:
+    case ConnectionPhase::ContentRefused:
+      break;
+  }
+  return SILENT_SERVER_MESSAGE;
+}
+
+}  // namespace
+
 Menu quitConfirmationMenu(IScreenNavigator& navigator, ISoundPlayer& sounds) {
   return MenuBuilder(MenuBuilder::Frame::Dialog, &sounds)
       .heading(CONFIRM_HEADING)
@@ -23,8 +49,7 @@ Menu connectionLostMenu(IScreenNavigator& navigator, ISoundPlayer& sounds,
                         ConnectionPhase ending) {
   return MenuBuilder(MenuBuilder::Frame::Dialog, &sounds)
       .heading(CONNECTION_LOST_HEADING)
-      .message(ending == ConnectionPhase::Closed ? CLOSED_SERVER_MESSAGE
-                                                 : SILENT_SERVER_MESSAGE)
+      .message(lossMessageOf(ending))
       .button({.label = RETRY_LABEL},
               [&navigator] {
                 navigator.pop();

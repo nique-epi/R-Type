@@ -27,6 +27,10 @@ class AdminConsoleCommandsFixture : public ::testing::Test {
   /** @brief Opens game GAME_THREE, which takes place 1. */
   void openGameThree();
 
+  /** @brief Opens game GAME_THREE, which takes place 1, and has it report
+   * REPORTED_PILOT_COUNT pilots, the first of SUPERVISED_NICKNAMES. */
+  void openGameThreeWithItsPilots();
+
   /** @brief Has the ledger count two rejected datagrams. */
   void rejectTwoDatagrams();
 

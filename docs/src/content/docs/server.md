@@ -140,7 +140,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Text chat in the waiting room and during a match (`ChatLine`, `PlayerChatLine`), one line a second per player, 127 bytes at most | Available; the client sends and shows them (see [Client](/R-Type/client/#chat-chatchannel-chatwindow)) | `src/server/Chat/` |
 | Game statistics: a CSV row per Bydo killed and the total of each game, written by a plugin | Available, loaded by `plugin game-statistics` | `src/server/GameStatistics/` |
 | Master mode: `--mode master` runs the master instead of the supervisor | Available (see [Master](/R-Type/master/)) | `src/server/LaunchOptions/`, `src/master/` |
-| Administration console of the supervisor: the games and their pilots, closing a game, the traffic, the rejected datagrams and the measures of the games | Available; expelling and banning a player not written yet | `src/server/AdminConsole/` |
+| Administration console of the supervisor: the games and their pilots, closing a game, expelling a pilot, the traffic, the rejected datagrams and the measures of the games | Available; banning a player not written yet | `src/server/AdminConsole/` |
 | Master link: registration, heartbeats and the results of vanilla games | Available, from the supervisor, one registration for all its games; admin orders and bans not yet written (see [Link with the master](#link-with-the-master-servermastermodule)) | `src/server/Master/` |
 | Components (`Position`, `SteadyMotion`, `CollisionBox`, `Health`, `EntityType`, `EntityTypeNumber`, `Sprite`, `Layer`) | Available | `src/game/Components/` |
 | Entity sheets: every entity made from the sheet of its type, the sheets read at launch | Available: the ship, the Bydos, the Bydo Tyrant and their missiles (see [Writing an entity sheet](/R-Type/entity-sheets/#the-shipped-sheets)) | `assets/entities/`, `src/game/EntityTypes/`, `src/game/World.cpp` |
@@ -366,7 +366,7 @@ module lobby off
 | `games` | declares the `seed`, `state-rate`, `state-encoding`, `input-delay` and `start-at-boss` settings, and the rules of its game, `difficulty`, `lives` and `friendly-fire` (`GameRuleSettings`); the one game of the process and its `EventBus`; reads the waves file when it starts and judges whether its game is vanilla; provides `RunningGame` and `IGameEvents` (the bus of the game, for a module listed after it or a plugin) | `src/server/Games/` |
 | `lobby` | one `ConnectionAcceptor`, built on the roster of the game; reads the content of the assets folder when it installs, which every acceptance announces with the port of the supervisor | `src/server/Lobby/` |
 | `metrics` | measures the ticks and the systems of the game, and writes a report to the journal every `TICKS_PER_REPORT` ticks; writes the traffic of the socket; provides `LatestMetrics` | `src/server/Metrics/` |
-| `supervisor link` | sends the supervisor a `GameStatus` every second and when it changes, with the measures of `LatestMetrics` when the metrics module is on; asks the process to stop when the supervisor does or is gone | `src/server/SupervisorLink/` |
+| `supervisor link` | sends the supervisor a `GameStatus` every second and when it changes, with the measures of `LatestMetrics` when the metrics module is on; asks the process to stop when the supervisor does or is gone, and expels the pilots an `ExpulsionOrder` of the supervisor names (see [Expelling a pilot](#expelling-a-pilot)) | `src/server/SupervisorLink/` |
 
 A plugin joins the end of that list when a `plugin` line of its file loads it, after `supervisor link`: the server has one, `game-statistics` (see [Game statistics](#game-statistics-servergamestatisticsmodule)).
 
@@ -381,7 +381,7 @@ A plugin joins the end of that list when a `plugin` line of its file loads it, a
 | `supervisor lobby` | answers the connection requests: refuses the rules of a new game it does not accept, sends each player to a game, or starts one | `src/server/SupervisorLobby/` |
 | `information` | declares the `server-name` setting; answers the information requests with what `IServerOccupancy` counts; provides `IServerName` | `src/server/Information/` |
 | `master` | declares the `master-url`, `master-key` and `public-address` settings, and registers the name `IServerName` gives; keeps the master told of the games, and sends the vanilla results of the file `IResultsFile` names, on a thread of its own, MasterLink, when both a url and a key are set | `src/server/Master/` |
-| `admin console` | registers `games`, `players`, `close-game`, `network` and `help` in the interpreter; reads the terminal on a thread of its own, AdminConsole, from its start to its stop, and runs the lines typed at each tick (see [Administration console](#administration-console-serveradminconsolemodule)) | `src/server/AdminConsole/` |
+| `admin console` | registers `games`, `players`, `close-game`, `kick`, `network` and `help` in the interpreter; reads the terminal on a thread of its own, AdminConsole, from its start to its stop, and runs the lines typed at each tick (see [Administration console](#administration-console-serveradminconsolemodule)) | `src/server/AdminConsole/` |
 
 The supervisor loads no plugin: a `plugin` line goes to its games (see [Configuration](#configuration-servercfg)).
 
@@ -473,13 +473,14 @@ On Linux the "parent" is the thread that started the child, so the supervisor st
 
 ### Administration console: `ServerAdminConsoleModule`
 
-The supervisor reads commands from the terminal it was started in. The `admin console` module (`src/server/AdminConsole/`) registers five commands in the interpreter of the supervisor, the one `server.cfg` is read with, so a line does the same typed in the terminal or written in `server.cfg`:
+The supervisor reads commands from the terminal it was started in. The `admin console` module (`src/server/AdminConsole/`) registers six commands in the interpreter of the supervisor, the one `server.cfg` is read with, so a line does the same typed in the terminal or written in `server.cfg`:
 
 | Command | Answer |
 |---|---|
 | `games` | one line per game: its place, its number, its state, its pilots, its port, then the 95th percentile of its tick and its mean round trip once its status gave them; `no game runs` without a game |
 | `players` | the nicknames of the pilots of each game, by place |
 | `close-game <place>` | sends the game in that place the order the supervisor sends its games when it stops, `FAREWELL_COPIES` (3) copies of a `Disconnection` under its link token; the game tells its pilots and ends, and `games` lists it until its process ended. Refused when no game holds the place |
+| `kick <nickname>` | sends each game whose last status names that pilot, the case of the ASCII letters aside, `FAREWELL_COPIES` (3) copies of an `ExpulsionOrder` under its link token, and writes `<nickname> told to leave game <number> in place <place>` for each (see [Expelling a pilot](#expelling-a-pilot)). Nicknames are unique in a game, not on the server, so a pilot of that nickname in two games leaves both. Refused, sending nothing, without exactly one nickname the protocol accepts, or when no game names that pilot |
 | `network` | what crossed the socket of the supervisor since the module installed, the datagrams the network thread rejected since the start (`RejectionLedger::rejectedSinceStart()`, which takes nothing from the report of the journal), then the measures of the games the heartbeats carry to the master |
 | `help` | one line per command of the supervisor, with its arguments |
 
@@ -494,7 +495,19 @@ The commands read the registry of the games, which only the simulation thread to
 | `module "admin console" off` in `server.cfg` | is never installed: no thread, and its commands are unknown |
 | The build sets `RTYPE_MODULE_ADMIN_CONSOLE` off | is not compiled, and the supervisor lists no such module |
 
-Expelling and banning a player are not written yet. A game process that no longer reads its datagrams does not stop on `close-game`, and stays in `games`.
+#### Expelling a pilot
+
+The supervisor knows the nicknames of the pilots of a game, from its statuses, but not their addresses: the game process holds their sessions, so it expels them.
+
+| Tick | Where | What happens |
+|---|---|---|
+| N | supervisor | `kick ace` sends 3 `ExpulsionOrder` to each game whose status names `ACE` |
+| N' | game process | the supervisor link reads the orders (`holdsStopOrder()` and `expulsionIn()`, `SupervisorOrders.hpp`); `PlayerExpeller` sends each pilot of that nickname not expelled yet 3 `Expulsion` in its session, then sets `ConnectedPlayer::expelled`, so the later copies of the order find nobody left to tell |
+| N' + 1 | game process | `Departures::closeSilentSessions()` closes the sessions of the expelled pilots first, with the cause `Expelled`: the seat is free, and the others get `PlayerLeft` (`Expelled`), guaranteed |
+
+The `Expulsion` copies are queued before the mark, so they always leave under the session of the pilot, the lesson ioquake3 learnt in r1038. Until the next tick the pilot still counts for the ready rule, as a silent pilot does, for at most one tick (16.7 ms). An expulsion bans nobody: the pilot may join again at once.
+
+Banning a player is not written yet. A game process that no longer reads its datagrams does not stop on `close-game`, expels nobody on `kick`, and stays in `games`.
 
 ### Stopping: Ctrl-C and SIGTERM
 

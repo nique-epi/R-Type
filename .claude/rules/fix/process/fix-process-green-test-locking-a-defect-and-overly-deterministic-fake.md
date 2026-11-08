@@ -46,6 +46,12 @@ Why: an assertion copied from the output turns the current behavior into the spe
 2. **Before acting, wait for an observable sign that the thread reached the state under test**: its first pass written (a first server online), then the stop or the second item.
 3. **The red proof breaks the loop** (one pass only, a sleep that ignores the stop): the test must turn red on each, run several times. A variant left green means the test raced.
 
+### A check backed up by a later check is asserted through what only it says
+
+1. **Before testing a check that refuses an input, find what refuses the same input when the check is gone**: a later lookup that finds nothing, a later validation, an encoder that throws. When one does, a test that only reads `accepted` or "nothing sent" passes with or without the check.
+2. **Assert what only that check produces**: its reason, the message it writes, the exception it throws, never only the refusal both share.
+3. **The red proof removes the check alone**: a variant left green means the test reads the refusal of the backup, and is rewritten before the commit.
+
 ## Example
 
 - ❌ **Before (wrong)**:

@@ -35,6 +35,9 @@ void Departures::close(const network::Endpoint& player,
 }
 
 void Departures::closeSilentSessions() {
+  for (const network::Endpoint& player : expelledPlayers()) {
+    close(player, game::DepartureCause::Expelled);
+  }
   for (const network::Endpoint& player : countSilentTicks()) {
     close(player, game::DepartureCause::TimedOut);
   }
@@ -42,6 +45,16 @@ void Departures::closeSilentSessions() {
 
 std::vector<ConnectedPlayer> Departures::takeDeparted() {
   return std::exchange(departed_, {});
+}
+
+std::vector<network::Endpoint> Departures::expelledPlayers() {
+  std::vector<network::Endpoint> expelled;
+  for (const ConnectedPlayer* const player : roster_.connected()) {
+    if (player->expelled) {
+      expelled.push_back(player->endpoint);
+    }
+  }
+  return expelled;
 }
 
 std::vector<network::Endpoint> Departures::countSilentTicks() {
@@ -80,10 +93,17 @@ void Departures::announce(const ConnectedPlayer& player,
 void Departures::logDeparture(const ConnectedPlayer& player,
                               game::DepartureCause cause) const {
   const auto playerNumber = static_cast<unsigned int>(player.playerNumber);
-  if (cause == game::DepartureCause::Left) {
-    logger_.info("player ", playerNumber, " left from ",
-                 player.endpoint.address, " port ", player.endpoint.port);
-    return;
+  switch (cause) {
+    case game::DepartureCause::Left:
+      logger_.info("player ", playerNumber, " left from ",
+                   player.endpoint.address, " port ", player.endpoint.port);
+      return;
+    case game::DepartureCause::Expelled:
+      logger_.info("player ", playerNumber, " expelled by the host from ",
+                   player.endpoint.address, " port ", player.endpoint.port);
+      return;
+    case game::DepartureCause::TimedOut:
+      break;
   }
   logger_.info("player ", playerNumber, " timed out: nothing received from ",
                player.endpoint.address, " port ", player.endpoint.port, " for ",
