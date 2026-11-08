@@ -67,13 +67,11 @@ jobs:
           # The invocation can take a moment to exist after send-command.
           sleep 3
           aws ssm wait command-executed --command-id "$command_id" --instance-id "$INSTANCE_ID" || true
-          aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" \
-            --query StandardOutputContent --output text
-          aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" \
-            --query StandardErrorContent --output text >&2
-          status=$(aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE_ID" \
-            --query Status --output text)
-          [ "$status" = Success ]
+          invocation=$(aws ssm get-command-invocation \
+            --command-id "$command_id" --instance-id "$INSTANCE_ID" --output json)
+          printf '%s' "$invocation" | jq -r .StandardOutputContent
+          printf '%s' "$invocation" | jq -r .StandardErrorContent >&2
+          printf '%s' "$invocation" | jq -e '.Status == "Success"' > /dev/null
 
       - name: Check the master from the outside
         env:

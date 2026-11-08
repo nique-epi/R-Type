@@ -31,7 +31,7 @@ if [ ! -d "$releases/$name" ]; then
   mv "$work/$name" "$releases/$name"
 fi
 
-cat > /etc/systemd/system/rtype-master.service <<'UNIT'
+cat > /etc/systemd/system/rtype-master.service <<UNIT
 [Unit]
 Description=R-Type master
 After=network-online.target
@@ -41,7 +41,7 @@ Wants=network-online.target
 User=rtype
 Group=rtype
 WorkingDirectory=/var/lib/rtype
-ExecStart=/opt/rtype/current/bin/r-type_server --mode master -p 8080 --database /var/lib/rtype/r-type_master.db --no-log-file
+ExecStart=$current/bin/r-type_server --mode master -p $port --database /var/lib/rtype/r-type_master.db --no-log-file
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true
@@ -54,7 +54,7 @@ WantedBy=multi-user.target
 UNIT
 
 systemctl daemon-reload
-systemctl enable rtype-master > /dev/null 2>&1
+systemctl enable rtype-master
 
 ln -sfn "$releases/$name" "$current"
 systemctl restart rtype-master
