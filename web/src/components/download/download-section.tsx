@@ -74,7 +74,7 @@ export function DownloadSection({
   return (
     <>
       <div className="flex flex-wrap items-center gap-12">
-        <div className="grid min-w-0 flex-[999_1_440px] gap-5">
+        <div className="grid min-w-0 flex-[999_1_440px] gap-3">
           <DownloadPanel
             options={options}
             system={system}

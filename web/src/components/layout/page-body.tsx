@@ -9,11 +9,20 @@ import { PageMain } from '@/components/primitives/layout/page-main';
  */
 export function PageBody({
   children,
+  compact = false,
   ...reveal
-}: { children: React.ReactNode } & Pick<RevealProps, 'targets' | 'from'>) {
+}: {
+  children: React.ReactNode;
+  /** Less air between the blocks, for a page whose blocks belong together. */
+  compact?: boolean;
+} & Pick<RevealProps, 'targets' | 'from'>) {
   return (
     <PageMain>
-      <Reveal className="grid gap-14 max-md:gap-8" from={{ y: 48 }} {...reveal}>
+      <Reveal
+        className={compact ? 'grid gap-8' : 'grid gap-14 max-md:gap-8'}
+        from={{ y: 48 }}
+        {...reveal}
+      >
         {children}
       </Reveal>
     </PageMain>

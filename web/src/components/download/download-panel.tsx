@@ -63,13 +63,18 @@ export function DownloadPanel<System extends string>({
 
   useMotion(
     () => {
-      gsap.from(head.current?.children ?? [], {
-        x: -16,
-        opacity: 0,
-        duration: 0.25,
-        ease: 'steps(4)',
-        stagger: 0.05,
-      });
+      // `fromTo`, not `from`: the system detected after the first paint runs this again while the first tween is on its way, and `from` would take the invisible state it finds as the one to end on.
+      gsap.fromTo(
+        head.current?.children ?? [],
+        { x: -16, opacity: 0 },
+        {
+          x: 0,
+          opacity: 1,
+          duration: 0.25,
+          ease: 'steps(4)',
+          stagger: 0.05,
+        },
+      );
     },
     { dependencies: [system] },
   );
@@ -78,7 +83,7 @@ export function DownloadPanel<System extends string>({
     return null;
   }
   return (
-    <div data-slot="download-panel" className="grid min-w-0 gap-5">
+    <div data-slot="download-panel" className="grid min-w-0 gap-3">
       <Tabs
         aria-label={labels.systems}
         items={options.map(option => ({
@@ -88,9 +93,9 @@ export function DownloadPanel<System extends string>({
         value={chosen.system}
         onValueChange={onSystemChange}
       />
-      <div ref={head} className="grid gap-3">
+      <div ref={head} className="grid gap-1.5">
         <p className="m-0 min-h-4 small-caps text-star-white">{hint}</p>
-        <h2 className="m-0 font-pixel text-[32px] text-hud-cyan uppercase leading-10">
+        <h2 className="m-0 font-pixel text-[32px] text-hud-cyan uppercase leading-9">
           {chosen.name}
         </h2>
         <p className="m-0 small-caps text-pale-blue">{chosen.details}</p>

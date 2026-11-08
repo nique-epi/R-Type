@@ -33,7 +33,7 @@ export async function DownloadBlocks({ lang }: { lang: Locale }) {
         title={copy.title}
         lede={copy.lede}
       />
-      <PageBody>
+      <PageBody compact>
         <DownloadSection
           locale={lang}
           clients={
