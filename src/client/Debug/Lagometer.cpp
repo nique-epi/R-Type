@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdint>
 #include <deque>
+#include <optional>
 #include "LagometerConstants.hpp"
 #include "LagometerFigures.hpp"
 #include "LagometerPoint.hpp"
@@ -22,6 +23,18 @@ std::uint64_t perSecond(std::uint64_t count, engine::Duration period) {
   return ((count * ticksPerSecond) + (ticks / 2)) / ticks;
 }
 
+/** @returns @p delayTicks of the server as a duration; nothing without it. */
+std::optional<std::chrono::microseconds> displayDelayOf(
+    std::optional<double> delayTicks) {
+  if (!delayTicks.has_value()) {
+    return std::nullopt;
+  }
+  return std::chrono::round<std::chrono::microseconds>(
+      std::chrono::duration<double>(
+          *delayTicks /
+          static_cast<double>(engine::SIMULATION_TICKS_PER_SECOND)));
+}
+
 }  // namespace
 
 void Lagometer::update(const LagometerReading& reading) {
@@ -30,6 +43,7 @@ void Lagometer::update(const LagometerReading& reading) {
     arrivalsAtNewestPoint_ = reading.arrivals;
     bytesReceivedAtPeriod_ = reading.bytesReceived;
     bytesSentAtPeriod_ = reading.bytesSent;
+    pastTheNewestAtPeriod_ = reading.interpolation.pastTheNewest;
   }
   if (figures_.roundTrip != reading.figures) {
     figures_.roundTrip = reading.figures;
@@ -93,11 +107,16 @@ void Lagometer::countFrame(const LagometerReading& reading) {
       perSecond(reading.bytesReceived - bytesReceivedAtPeriod_, sincePeriod_);
   figures_.bytesSentPerSecond =
       perSecond(reading.bytesSent - bytesSentAtPeriod_, sincePeriod_);
+  figures_.pastTheNewestPerSecond =
+      perSecond(reading.interpolation.pastTheNewest - pastTheNewestAtPeriod_,
+                sincePeriod_);
+  figures_.displayDelay = displayDelayOf(reading.delayTicks);
   ++revision_;
   sincePeriod_ = engine::Duration::zero();
   framesInPeriod_ = 0;
   bytesReceivedAtPeriod_ = reading.bytesReceived;
   bytesSentAtPeriod_ = reading.bytesSent;
+  pastTheNewestAtPeriod_ = reading.interpolation.pastTheNewest;
 }
 
 std::uint64_t Lagometer::lossPercent() const {

@@ -4,6 +4,7 @@
 #include <vector>
 #include "IModule.hpp"
 #include "InstallContext.hpp"
+#include "InterpolationTally.hpp"
 
 namespace rtype::client {
 
@@ -12,9 +13,10 @@ namespace rtype::client {
  * the end screen.
  *
  * install() adds them to the ScreenRegistry under the identifiers of
- * GameScreenIdConstants.hpp. A game plays the music of a game, and loads the
- * assets of a game first when they are not. It opens nothing, so start() and
- * stop() do nothing.
+ * GameScreenIdConstants.hpp, and provides the InterpolationTally every game
+ * counts in, which a debug display reads. A game plays the music of a game, and
+ * loads the assets of a game first when they are not. It opens nothing, so
+ * start() and stop() do nothing.
  */
 class ClientGameModule final : public engine::IModule {
  public:
@@ -28,6 +30,9 @@ class ClientGameModule final : public engine::IModule {
   void install(engine::InstallContext& context) override;
   void start() override;
   void stop() override;
+
+ private:
+  InterpolationTally interpolationTally_;
 };
 
 }  // namespace rtype::client

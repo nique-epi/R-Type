@@ -12,6 +12,7 @@
 #include "ISessionArrivals.hpp"
 #include "InstallContext.hpp"
 #include "InterfaceCanvas.hpp"
+#include "InterpolationTally.hpp"
 #include "LagometerLook.hpp"
 #include "LagometerPainting.hpp"
 #include "LagometerReading.hpp"
@@ -29,7 +30,8 @@ std::string ClientDebugModule::name() const {
 
 std::vector<std::string> ClientDebugModule::dependencies() const {
   return {std::string{ASSETS_MODULE_NAME}, std::string{SETTINGS_MODULE_NAME},
-          std::string{WINDOW_MODULE_NAME}, std::string{CONNECTION_MODULE_NAME}};
+          std::string{WINDOW_MODULE_NAME}, std::string{CONNECTION_MODULE_NAME},
+          std::string{GAME_MODULE_NAME}};
 }
 
 void ClientDebugModule::install(engine::InstallContext& context) {
@@ -40,6 +42,7 @@ void ClientDebugModule::install(engine::InstallContext& context) {
   roundTrip_ = &context.require<IOwnRoundTrip>();
   arrivals_ = &context.require<ISessionArrivals>();
   traffic_ = &context.require<network::TrafficCounters>();
+  interpolation_ = &context.require<InterpolationTally>();
   context.addWork(UPDATE_STAGE, [this](engine::Duration elapsed) {
     lagometer_.update(readingOf(elapsed));
   });
@@ -65,7 +68,9 @@ LagometerReading ClientDebugModule::readingOf(engine::Duration elapsed) const {
                            .newestRoundTrip = roundTrip_->newestOwnRoundTrip(),
                            .arrivals = arrivals_->arrivals(),
                            .bytesReceived = 0,
-                           .bytesSent = 0};
+                           .bytesSent = 0,
+                           .interpolation = interpolation_->counts(),
+                           .delayTicks = interpolation_->delayTicks()};
   if (lagometer_.readsTrafficAfter(elapsed)) {
     const network::TrafficTotals traffic =
         network::trafficTotalsOf(traffic_->report());

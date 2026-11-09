@@ -24,12 +24,18 @@ using testing::FIFTY_FRAMES_PER_SECOND;
 using testing::FIRST_SAMPLE;
 using testing::frameReading;
 using testing::FRAMES_IN_A_SECOND;
+using testing::interpolationReading;
 using testing::JUST_ABOVE_THE_LOWEST_TOP;
+using testing::LATE_AFTER_A_SECOND;
+using testing::LATE_BEFORE;
 using testing::MISSED_SINCE_BEFORE;
+using testing::NINE_LATE_FRAMES_PER_SECOND;
 using testing::NINETEEN_MILLISECONDS;
 using testing::OLDEST_KEPT_ROUND_TRIP;
 using testing::ONE_PAST_THE_CURVE;
 using testing::sampleReading;
+using testing::SIX_TICKS;
+using testing::SIX_TICKS_OF_DISPLAY_DELAY;
 using testing::TEN_PERCENT_LOST;
 using testing::trafficReading;
 using testing::TWENTY_MILLISECONDS;
@@ -238,6 +244,29 @@ TEST(Lagometer, ReadsTheTrafficOfTheFirstFrame) {
   const Lagometer lagometer;
 
   EXPECT_TRUE(lagometer.readsTrafficAfter(std::chrono::milliseconds::zero()));
+}
+
+/**
+ * Given a lagometer whose first frame read 12 frames drawn past the newest
+ * state
+ * When a frame of a second ends with 21 of them, the newest frame 6 ticks
+ * behind the server
+ * Then 9 late frames were drawn in that second, and the display is 100 ms
+ * behind the server
+ */
+TEST(Lagometer, CountsTheLateFramesAndTheDelayOfEachSecond) {
+  Lagometer lagometer;
+  lagometer.update(interpolationReading(std::chrono::milliseconds::zero(),
+                                        LATE_BEFORE, SIX_TICKS));
+
+  lagometer.update(interpolationReading(std::chrono::seconds{1},
+                                        LATE_AFTER_A_SECOND, SIX_TICKS));
+
+  EXPECT_EQ(lagometer.figures().pastTheNewestPerSecond.value_or(0),
+            NINE_LATE_FRAMES_PER_SECOND);
+  EXPECT_EQ(lagometer.figures().displayDelay.value_or(
+                std::chrono::microseconds::zero()),
+            SIX_TICKS_OF_DISPLAY_DELAY);
 }
 
 }  // namespace rtype::client

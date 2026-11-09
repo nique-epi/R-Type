@@ -190,8 +190,10 @@ GameScreen::GameScreen(GameScreenParts parts,
                   parts.connection.get().status().playerNumber),
       result_(&parts.result.get()),
       playerNumber_(parts.connection.get().status().playerNumber),
+      interpolationTally_(&parts.interpolationTally.get()),
       sky_(&parts.sky.get()),
       chat_(parts.chat.get(), parts.settings.get()) {
+  interpolationTally_->startGame();
   systems_.add(std::make_unique<AnimationSystem>());
   systems_.add(std::make_unique<HitFlashSystem>());
   systems_.add(std::make_unique<SpriteEffectSystem>());
@@ -251,6 +253,8 @@ void GameScreen::update(engine::Duration elapsed) {
   boss_.advance(elapsed);
   applyEntityMessages();
   showOtherEntities(interpolationClock_, components_, feedback_);
+  interpolationTally_->countFrame(interpolationClock_.renderTick(),
+                                  serverTicks_->serverTickNow());
   if (settings_->clientPrediction) {
     prediction_.place(replicator_, components_);
   }
@@ -288,6 +292,7 @@ void GameScreen::applyWorldState(const network::WorldState& state) {
   worldSeen_ = true;
   scoreBoard_.apply(state);
   interpolationClock_.observe(state.tick);
+  interpolationTally_->observe(state.tick);
   if (const auto own = ownShipOf(state, playerNumber_)) {
     inputs_->confirmInputsUpTo(own->acknowledgedInput);
   }

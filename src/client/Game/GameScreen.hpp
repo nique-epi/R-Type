@@ -30,6 +30,7 @@
 #include "IShipLookExchange.hpp"
 #include "ISky.hpp"
 #include "InterpolationClock.hpp"
+#include "InterpolationTally.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
 #include "OwnPrediction.hpp"
@@ -201,6 +202,7 @@ class GameScreen : public IScreen {
   GameResult* result_;
   std::uint8_t playerNumber_;
   InterpolationClock interpolationClock_;
+  InterpolationTally* interpolationTally_;
   std::optional<engine::Duration> endedAt_;
   std::uint32_t paintedStatusRevision_{};
   PlayerInputPacer inputPacer_;

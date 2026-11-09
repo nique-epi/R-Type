@@ -20,6 +20,7 @@ target_link_libraries(rtype_client_debug_module
     rtype_client_connection_module
     rtype_client_interface
     rtype_client_interface_canvas
+    rtype_client_prediction_interpolation
     rtype_client_settings_values
     rtype_client_window_display
     rtype_client_window_loop

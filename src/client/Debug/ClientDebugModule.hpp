@@ -15,6 +15,7 @@
 #include "ISessionArrivals.hpp"
 #include "InstallContext.hpp"
 #include "InterfaceCanvas.hpp"
+#include "InterpolationTally.hpp"
 #include "Lagometer.hpp"
 #include "LagometerLook.hpp"
 #include "LagometerReading.hpp"
@@ -48,8 +49,8 @@ class ClientDebugModule final : public engine::IModule {
  public:
   /** @returns DEBUG_MODULE_NAME. */
   [[nodiscard]] std::string name() const override;
-  /** @returns The assets, the settings, the window and the connection, which
-   * provide what it reads and draws on. */
+  /** @returns The assets, the settings, the window, the connection and the
+   * game, which provide what it reads and draws on. */
   [[nodiscard]] std::vector<std::string> dependencies() const override;
   /** @throws MissingServiceException when a module it depends on did not
    * provide what it reads. */
@@ -80,6 +81,7 @@ class ClientDebugModule final : public engine::IModule {
   const IOwnRoundTrip* roundTrip_{nullptr};
   const ISessionArrivals* arrivals_{nullptr};
   const network::TrafficCounters* traffic_{nullptr};
+  const InterpolationTally* interpolation_{nullptr};
   std::unique_ptr<InterfaceCanvas> canvas_;
   engine::SubscriptionHandle listening_{};
   LagometerToggle toggle_;

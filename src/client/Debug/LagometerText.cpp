@@ -61,11 +61,24 @@ std::string trafficLine(const LagometerFigures& figures) {
          std::string{KILOBYTES_WORD};
 }
 
+/** @returns The line of how far behind the server the other entities are
+ * drawn, and of the frames per second drawn past the newest state. */
+std::string bufferLine(const LagometerFigures& figures) {
+  std::optional<std::uint64_t> delay;
+  if (figures.displayDelay.has_value()) {
+    delay = wholeMilliseconds(*figures.displayDelay);
+  }
+  return std::string{BUFFER_WORD} + figureText(delay) +
+         std::string{MILLISECONDS_WORD} + std::string{LATE_WORD} +
+         figureText(figures.pastTheNewestPerSecond);
+}
+
 }  // namespace
 
 std::array<std::string, LAGOMETER_TEXT_LINE_COUNT> lagometerTextLines(
     const LagometerFigures& figures) {
-  return {pingLine(figures), lossLine(figures), trafficLine(figures)};
+  return {pingLine(figures), lossLine(figures), trafficLine(figures),
+          bufferLine(figures)};
 }
 
 }  // namespace rtype::client
