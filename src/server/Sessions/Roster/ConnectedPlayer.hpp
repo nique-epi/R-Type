@@ -8,6 +8,7 @@
 #include "ArrivalLedger.hpp"
 #include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
+#include "InputPace.hpp"
 #include "LivesConstants.hpp"
 #include "RoundTripMeter.hpp"
 #include "SentStates.hpp"
@@ -115,6 +116,9 @@ struct ConnectedPlayer {
    * acceptance repeated to a player who asks again (see
    * CONNECTION_ACCEPTANCE_REPEAT_INTERVAL), and leaves with the player. */
   std::optional<engine::Duration> lastAcceptedAt;
+  /** @brief How the inputs of the player kept pace with the ticks.
+   * DelayedInputs keeps it, and the metrics report it. */
+  InputPace inputPace;
 };
 
 }  // namespace rtype::server

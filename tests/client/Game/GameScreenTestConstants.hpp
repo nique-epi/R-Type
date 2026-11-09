@@ -99,3 +99,11 @@ constexpr rtype::network::BossStatus BOSS_FIGHTING_HIT{
     .stage = rtype::network::BossStage::Fighting};
 constexpr std::string_view BOSS_NAME_ON_THE_BAR = "BYDO TYRANT";
 constexpr std::string_view WARNING_WORD_ON_SCREEN = "WARNING";
+
+/** @brief Where the server is while the tests draw a state of APPLIED_TICK:
+ * some ticks ahead of it, as during a game. */
+constexpr double SERVER_TICK_AHEAD_OF_THE_STATE = 16.0;
+
+/** @brief A state three ticks after APPLIED_TICK: the first interval measured
+ * puts the tick shown back on its target, a move of the clock. */
+constexpr std::uint32_t TICK_AFTER_THE_APPLIED_TICK = 13;

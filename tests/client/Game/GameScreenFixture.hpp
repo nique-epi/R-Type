@@ -7,6 +7,7 @@
 #include "FakeServerTicks.hpp"
 #include "FixedEntityTypeSource.hpp"
 #include "GameResult.hpp"
+#include "InterpolationTally.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingAudioService.hpp"
 #include "RecordingChatChannel.hpp"
@@ -70,5 +71,6 @@ class GameScreenFixture : public ::testing::Test {
   FixedEntityTypeSource entityTypes_;
   rtype::client::GameResult result_;
   RecordingChatChannel chat_;
+  rtype::client::InterpolationTally interpolationTally_;
   rtype::client::ScreenStack screens_;
 };

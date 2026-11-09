@@ -60,20 +60,35 @@ constexpr std::uint64_t BYTES_AT_HALF_A_KILOBYTE = 12'500;
 constexpr const char* EMPTY_PING_LINE = "PING -- MS JIT --";
 constexpr const char* EMPTY_LOSS_LINE = "LOSS 0% FPS --";
 constexpr const char* EMPTY_TRAFFIC_LINE = "IN -- OUT -- KB/S";
+constexpr const char* EMPTY_BUFFER_LINE = "BUF -- MS LATE --";
 constexpr const char* FULL_PING_LINE = "PING 42 MS JIT 3";
 constexpr const char* FULL_LOSS_LINE = "LOSS 2% FPS 60";
 constexpr const char* FULL_TRAFFIC_LINE = "IN 12 OUT 13 KB/S";
+constexpr const char* FULL_BUFFER_LINE = "BUF 123 MS LATE 9";
+
+/** @brief A display 123.4 ms behind the server, which reads 123, and 9 frames
+ * a second drawn past the newest state. */
+constexpr std::chrono::microseconds UNROUNDED_DISPLAY_DELAY{123'400};
+constexpr std::uint64_t NINE_LATE_FRAMES_PER_SECOND = 9;
+
+/** @brief A game that drew 12 frames past the newest state before the first
+ * frame of the lagometer, then 9 more within its first second, its newest
+ * frame 6 ticks behind the server: 100 ms. */
+constexpr std::uint64_t LATE_BEFORE = 12;
+constexpr std::uint64_t LATE_AFTER_A_SECOND = 21;
+constexpr double SIX_TICKS = 6.0;
+constexpr std::chrono::milliseconds SIX_TICKS_OF_DISPLAY_DELAY{100};
 
 /**
  * @brief Where the curve lies at a scale of 1, in coordinates of the
- * playfield: the panel starts 4 pixels in, the curve 4 pixels further, 36
+ * playfield: the panel starts 4 pixels in, the curve 4 pixels further, 46
  * pixels down, 80 pixels wide and 32 tall, each pixel 4 units.
  */
 constexpr float CURVE_LEFT = 32.0F;
 constexpr float CURVE_RIGHT = 352.0F;
-constexpr float CURVE_TOP = 160.0F;
-constexpr float CURVE_BOTTOM = 288.0F;
-constexpr float CURVE_MIDDLE = 224.0F;
+constexpr float CURVE_TOP = 200.0F;
+constexpr float CURVE_BOTTOM = 328.0F;
+constexpr float CURVE_MIDDLE = 264.0F;
 /** @brief One step between two points: 320 units over 59 steps. */
 constexpr float CURVE_STEP = 320.0F / 59.0F;
 /** @brief Vertices of the three lines of the scale. */

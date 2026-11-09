@@ -575,7 +575,7 @@ The `metrics` module (`src/server/Metrics/`) tells an administrator whether the 
 [INFO ] [Metrics] - round trips: no player measured
 ```
 
-Once players are measured, the third line gives each of them, in order of number, under the number of the game of the process, always 1 (`NUMBER_OF_THE_GAME`), as in `round trips: game 1 player 1 "ACE" 42.1 ms, jitter 3.2 ms; game 1 player 2 "BOB" 80 ms, jitter 12.5 ms`. The nickname is chosen by the client, so it is written between double quotes, with the quote and the backslash escaped and every byte outside the printable ASCII as `\xNN`: it can neither end the line nor pass for another field (see [Silent players](#silent-players-heartbeats-and-timeouts)).
+Once players are measured, the third line gives each of them, in order of number, under the number of the game of the process, always 1 (`NUMBER_OF_THE_GAME`), as in `round trips: game 1 player 1 "ACE" 42.1 ms, jitter 3.2 ms, ticks without input 120, catch-ups 4; game 1 player 2 "BOB" 80 ms, jitter 12.5 ms, ticks without input 0, catch-ups 0`. The nickname is chosen by the client, so it is written between double quotes, with the quote and the backslash escaped and every byte outside the printable ASCII as `\xNN`: it can neither end the line nor pass for another field (see [Silent players](#silent-players-heartbeats-and-timeouts)).
 
 | Figure | What it says |
 |---|---|
@@ -585,7 +585,7 @@ Once players are measured, the third line gives each of them, in order of number
 | Players connected | The players seated in the game, in progress or not |
 | Entities | The entities of the world of the game |
 | Average time per tick | The time of each system of the game, shared between the ticks of the report. A system runs only while the game is in progress |
-| Round trips | The smoothed round trip and the jitter of each player measured, in milliseconds, at the end of the report; a player not measured yet is left out |
+| Round trips | The smoothed round trip and the jitter of each player measured, in milliseconds, at the end of the report; a player not measured yet is left out. Then, since its first input was applied, the ticks that found none of its inputs due, so its ship kept the input before, and the ticks that applied two at once to catch up (`InputPace`, kept by `DelayedInputs`): a player whose inputs arrive later than the input delay raises both, and the others see its ship turn and stop late |
 
 The measure leaves out what `ServerApplication` does around the stages, emptying the queues of datagrams and handing over what to send, and the report itself, which runs after the measure of its tick. Whether the ticks fall behind as a whole is told by the lines of the tick loop (see [Tick loop](#tick-loop-tickloop)).
 

@@ -35,17 +35,17 @@ constexpr std::uint64_t BYTES_PER_KILOBYTE = 1000;
 /**
  * @brief Where the panel lies on the interface picture at a scale of 1, in
  * pixels: its top-left corner, its size, the margin inside its border, and
- * the rows of its three lines of text. Each is multiplied by the scale.
+ * the rows of its four lines of text. Each is multiplied by the scale.
  */
 constexpr sf::Vector2i LAGOMETER_TOP_LEFT{4, 4};
-constexpr sf::Vector2i LAGOMETER_SIZE{112, 72};
+constexpr sf::Vector2i LAGOMETER_SIZE{112, 82};
 constexpr int LAGOMETER_MARGIN = 4;
 constexpr int LAGOMETER_LINE_STEP = 10;
-constexpr int LAGOMETER_TEXT_LINE_COUNT = 3;
+constexpr int LAGOMETER_TEXT_LINE_COUNT = 4;
 
 /** @brief The curve: the rows of the panel it covers, below the text, and the
  * width the labels of the scale take on its right. */
-constexpr int LAGOMETER_CURVE_TOP = 36;
+constexpr int LAGOMETER_CURVE_TOP = 46;
 constexpr int LAGOMETER_CURVE_HEIGHT = 32;
 constexpr int LAGOMETER_SCALE_LABEL_WIDTH = 24;
 
@@ -67,8 +67,8 @@ constexpr sf::Color LAGOMETER_SCALE_LINE = PLAYER_DARK_BLUE;
 /** @brief What the lines of the panel say before their figure is known. */
 constexpr std::string_view NO_FIGURE_TEXT = "--";
 
-/** @brief The words of the three lines of the panel, around their figures:
- * PING 42 MS JIT 3, LOSS 2% FPS 60, IN 12 OUT 4 KB/S. */
+/** @brief The words of the four lines of the panel, around their figures:
+ * PING 42 MS JIT 3, LOSS 2% FPS 60, IN 12 OUT 4 KB/S, BUF 120 MS LATE 9. */
 constexpr std::string_view PING_WORD = "PING ";
 constexpr std::string_view JITTER_WORD = " JIT ";
 constexpr std::string_view MILLISECONDS_WORD = " MS";
@@ -78,5 +78,7 @@ constexpr std::string_view FRAMES_WORD = " FPS ";
 constexpr std::string_view RECEIVED_WORD = "IN ";
 constexpr std::string_view SENT_WORD = " OUT ";
 constexpr std::string_view KILOBYTES_WORD = " KB/S";
+constexpr std::string_view BUFFER_WORD = "BUF ";
+constexpr std::string_view LATE_WORD = " LATE ";
 
 }  // namespace rtype::client

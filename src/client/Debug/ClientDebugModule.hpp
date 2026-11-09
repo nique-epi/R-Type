@@ -15,10 +15,13 @@
 #include "ISessionArrivals.hpp"
 #include "InstallContext.hpp"
 #include "InterfaceCanvas.hpp"
+#include "InterpolationTally.hpp"
 #include "Lagometer.hpp"
+#include "LagometerJournal.hpp"
 #include "LagometerLook.hpp"
 #include "LagometerReading.hpp"
 #include "LagometerToggle.hpp"
+#include "Logger.hpp"
 #include "PlayerSettings.hpp"
 #include "SubscriptionHandle.hpp"
 #include "TimeConstants.hpp"
@@ -37,7 +40,9 @@ namespace rtype::client {
  * curve already holds the recent round trips when LAGOMETER_KEY shows it; the
  * traffic, whose copy takes the lock of the network thread, only when a
  * period of its figures ends. The panel is painted and the curve built again
- * only when they changed.
+ * only when they changed. Once each LAGOMETER_JOURNAL_PERIOD in which a game
+ * drew, it writes a line in the journal, under LAGOMETER_LOGGER_NAME (see
+ * LagometerJournal), shown or not.
  * It draws in RENDER_STAGE, after the screens, which it is listed after: the
  * panel on an interface picture of its own, then the curve at the resolution
  * of the window. Its listener of the window events, added in start(), hears
@@ -46,10 +51,12 @@ namespace rtype::client {
  */
 class ClientDebugModule final : public engine::IModule {
  public:
+  ClientDebugModule();
+
   /** @returns DEBUG_MODULE_NAME. */
   [[nodiscard]] std::string name() const override;
-  /** @returns The assets, the settings, the window and the connection, which
-   * provide what it reads and draws on. */
+  /** @returns The assets, the settings, the window, the connection and the
+   * game, which provide what it reads and draws on. */
   [[nodiscard]] std::vector<std::string> dependencies() const override;
   /** @throws MissingServiceException when a module it depends on did not
    * provide what it reads. */
@@ -64,6 +71,10 @@ class ClientDebugModule final : public engine::IModule {
  private:
   /** @returns What the lagometer reads this frame. */
   [[nodiscard]] LagometerReading readingOf(engine::Duration elapsed) const;
+
+  /** @brief Gives @p reading to the lagometer, and to the journal, whose
+   * line it writes when a period ends. */
+  void take(const LagometerReading& reading);
 
   /** @brief Draws the panel, then the curve, while the lagometer is shown. */
   void draw();
@@ -80,10 +91,13 @@ class ClientDebugModule final : public engine::IModule {
   const IOwnRoundTrip* roundTrip_{nullptr};
   const ISessionArrivals* arrivals_{nullptr};
   const network::TrafficCounters* traffic_{nullptr};
+  const InterpolationTally* interpolation_{nullptr};
   std::unique_ptr<InterfaceCanvas> canvas_;
   engine::SubscriptionHandle listening_{};
   LagometerToggle toggle_;
   Lagometer lagometer_;
+  LagometerJournal journal_;
+  logging::Logger logger_;
   std::optional<std::uint64_t> paintedRevision_;
   LagometerLook paintedLook_;
   sf::VertexArray curve_{sf::PrimitiveType::Lines};

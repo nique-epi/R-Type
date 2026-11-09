@@ -5,6 +5,7 @@
 #include "ConnectedPlayer.hpp"
 #include "DelayedInputs.hpp"
 #include "DelayedInputsTestConstants.hpp"
+#include "InputPace.hpp"
 #include "PlayerRoster.hpp"
 #include "ServerException.hpp"
 #include "Sessions/SessionsFixtures.hpp"
@@ -225,6 +226,70 @@ TEST(DelayedInputs, CatchesUpOnceAnInputWaitedPastTheMargin) {
   }
 
   EXPECT_EQ(released.size(), RELEASED_BY_THE_FIRST_CATCH_UP);
+}
+
+/**
+ * Given a player one input of which was applied, with no delay
+ * When the next tick finds no input of that player
+ * Then the pace of the player counts one tick without input and no catch-up
+ */
+TEST(DelayedInputs, CountsATickWithoutInputOnceAnInputWasApplied) {
+  PlayerRoster roster;
+  const ConnectedPlayer& player = addPlayer(roster);
+  std::vector<ShownInput> released;
+  DelayedInputs delayed(NO_DELAY_TICKS);
+  const auto sink = recorderOf(released);
+  delayed.push(player.playerNumber,
+               inputNumbered(FIRST_HELD_INPUT_NUMBER, FIRST_HELD_ACTIONS));
+  delayed.release(roster, sink);
+
+  delayed.release(roster, sink);
+
+  EXPECT_EQ(player.inputPace,
+            (InputPace{.ticksWithoutInput = 1, .catchUps = 0}));
+}
+
+/**
+ * Given a player that sent no input yet
+ * When two ticks find none of its inputs
+ * Then its pace counts nothing: it has not started playing
+ */
+TEST(DelayedInputs, CountsNothingBeforeTheFirstInputOfAPlayer) {
+  PlayerRoster roster;
+  const ConnectedPlayer& player = addPlayer(roster);
+  std::vector<ShownInput> released;
+  DelayedInputs delayed(NO_DELAY_TICKS);
+  const auto sink = recorderOf(released);
+
+  delayed.release(roster, sink);
+  delayed.release(roster, sink);
+
+  EXPECT_EQ(player.inputPace, InputPace{});
+}
+
+/**
+ * Given ten inputs of one player read in one tick, with no delay
+ * When the ticks run up to the first one that releases two
+ * Then the pace of the player counts one catch-up and no tick without input
+ */
+TEST(DelayedInputs, CountsEachCatchUpInThePaceOfThePlayer) {
+  PlayerRoster roster;
+  const ConnectedPlayer& player = addPlayer(roster);
+  std::vector<ShownInput> released;
+  DelayedInputs delayed(NO_DELAY_TICKS);
+  const auto sink = recorderOf(released);
+  for (std::size_t input = 1; input <= INPUTS_READ_TOGETHER; ++input) {
+    delayed.push(
+        player.playerNumber,
+        inputNumbered(static_cast<std::uint32_t>(input), FIRST_HELD_ACTIONS));
+  }
+
+  for (std::size_t tick = 0; tick < TICKS_UP_TO_THE_FIRST_CATCH_UP; ++tick) {
+    delayed.release(roster, sink);
+  }
+
+  EXPECT_EQ(player.inputPace,
+            (InputPace{.ticksWithoutInput = 0, .catchUps = 1}));
 }
 
 }  // namespace rtype::server

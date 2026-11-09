@@ -54,14 +54,18 @@ constexpr std::chrono::microseconds SECOND_MEASURED_JITTER{12'500};
 /** @brief What the journal must read for those two players, and for a report
  * that measured nobody. */
 constexpr std::string_view EXPECTED_ROUND_TRIPS_LINE =
-    "round trips: game 1 player 1 \"ACE\" 42.1 ms, jitter 3.2 ms; game 2 "
-    "player "
-    "1 \"BOB\" 80 ms, jitter 12.5 ms";
+    "round trips: game 1 player 1 \"ACE\" 42.1 ms, jitter 3.2 ms, ticks "
+    "without input 120, catch-ups 4; game 2 player 1 \"BOB\" 80 ms, jitter "
+    "12.5 ms, ticks without input 0, catch-ups 0";
+/** @brief How the inputs of ACE kept pace: 120 ticks without input, 4
+ * catch-ups. */
+constexpr std::uint64_t ACE_TICKS_WITHOUT_INPUT = 120;
+constexpr std::uint64_t ACE_CATCH_UPS = 4;
 constexpr std::string_view HOSTILE_NICKNAME = "A\xC2\x85\"B\\ 9.9 ms; game";
 constexpr std::string_view EXPECTED_HOSTILE_ROUND_TRIPS_LINE =
     "round trips: game 1 player 1 \"A\\xc2\\x85\\\"B\\\\ 9.9 ms; game\" 42.1 "
     "ms, "
-    "jitter 3.2 ms";
+    "jitter 3.2 ms, ticks without input 0, catch-ups 0";
 constexpr std::string_view EXPECTED_LINE_WITHOUT_ROUND_TRIPS =
     "round trips: no player measured";
 

@@ -1,28 +1,16 @@
 #include "LagometerText.hpp"
 #include <array>
-#include <chrono>
 #include <cstdint>
 #include <optional>
 #include <string>
 #include "LagometerConstants.hpp"
+#include "LagometerFigureText.hpp"
 #include "LagometerFigures.hpp"
 #include "RoundTripFigures.hpp"
 
 namespace rtype::client {
 
 namespace {
-
-/** @returns @p figure in decimal, or NO_FIGURE_TEXT without one. */
-std::string figureText(std::optional<std::uint64_t> figure) {
-  return figure.has_value() ? std::to_string(*figure)
-                            : std::string{NO_FIGURE_TEXT};
-}
-
-/** @returns @p duration in whole milliseconds, rounded to the nearest. */
-std::uint64_t wholeMilliseconds(std::chrono::microseconds duration) {
-  return static_cast<std::uint64_t>(
-      std::chrono::round<std::chrono::milliseconds>(duration).count());
-}
 
 /** @returns @p bytes in whole kilobytes, rounded to the nearest. */
 std::optional<std::uint64_t> kilobytes(std::optional<std::uint64_t> bytes) {
@@ -61,11 +49,24 @@ std::string trafficLine(const LagometerFigures& figures) {
          std::string{KILOBYTES_WORD};
 }
 
+/** @returns The line of how far behind the server the other entities are
+ * drawn, and of the frames per second drawn past the newest state. */
+std::string bufferLine(const LagometerFigures& figures) {
+  std::optional<std::uint64_t> delay;
+  if (figures.displayDelay.has_value()) {
+    delay = wholeMilliseconds(*figures.displayDelay);
+  }
+  return std::string{BUFFER_WORD} + figureText(delay) +
+         std::string{MILLISECONDS_WORD} + std::string{LATE_WORD} +
+         figureText(figures.pastTheNewestPerSecond);
+}
+
 }  // namespace
 
 std::array<std::string, LAGOMETER_TEXT_LINE_COUNT> lagometerTextLines(
     const LagometerFigures& figures) {
-  return {pingLine(figures), lossLine(figures), trafficLine(figures)};
+  return {pingLine(figures), lossLine(figures), trafficLine(figures),
+          bufferLine(figures)};
 }
 
 }  // namespace rtype::client

@@ -42,7 +42,8 @@ GameScreenFixture::GameScreenFixture()
                               .audio = audio_,
                               .entityTypes = entityTypes_,
                               .result = result_,
-                              .chat = chat_},
+                              .chat = chat_,
+                              .interpolationTally = interpolationTally_},
               std::make_unique<RecordingEntityLayer>(layerRecord_),
               std::make_unique<RecordingInterfaceCanvas>(statusCanvas_));
         }
