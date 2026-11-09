@@ -1187,7 +1187,7 @@ Its panel, in the top-left corner, writes four lines:
 
 A figure not known yet reads `--`. Under them, the curve draws each round trip as measured, not smoothed, one point per `Heartbeat` echoed, so two a second, over the last `LAGOMETER_POINT_COUNT` (60) points: 30 seconds. The newest point is on the right. Its scale starts at `LOWEST_LAGOMETER_SCALE_TOP` (50 ms) and doubles until no point lies above it; its top and its half are written on its right. A red line crosses the curve at each point that came with datagrams missed since the point before. The text is painted on an interface picture of its own, in the pixel font; the curve is drawn as lines at the resolution of the window, so it does not move by whole pixels of the picture.
 
-`Lagometer` (`src/client/Debug/`) keeps the points and the figures from what it reads each frame, shown or not, so the curve already holds the recent round trips when F3 shows it. It counts from its first frame, so what the session counted before is never shown. It reads the traffic only when a second of its figures ends, and the module paints the panel and builds the curve again only when the lagometer changed, or the player changed its size (LAGOMETER SIZE, 1 to 3 times, `lagometer_scale`) or the opacity of its panel (LAGOMETER FILL, `lagometer_background`, 70 % at first), in the ACCESS tab of the options.
+`Lagometer` (`src/client/Debug/Panel/`) keeps the points and the figures from what it reads each frame, shown or not, so the curve already holds the recent round trips when F3 shows it. It counts from its first frame, so what the session counted before is never shown. It reads the traffic only when a second of its figures ends, and the module paints the panel and builds the curve again only when the lagometer changed, or the player changed its size (LAGOMETER SIZE, 1 to 3 times, `lagometer_scale`) or the opacity of its panel (LAGOMETER FILL, `lagometer_background`, 70 % at first), in the ACCESS tab of the options.
 
 Every `LAGOMETER_JOURNAL_PERIOD` (10 s, the period of the traffic line) in which a game drew, the module also writes a line in the journal, under `Lagometer`, shown or not (`LagometerJournal`, `lagometerJournalLine()`):
 
@@ -1201,8 +1201,8 @@ The ping is the smoothed one at the end of the period; the other figures are cou
 
 | You want to… | Look at |
 |---|---|
-| Change what the lagometer writes or draws, its key or its place | `LagometerConstants.hpp`, `lagometerTextLines()` and `LagometerPainting.cpp` in `src/client/Debug/` |
-| Change the line the lagometer writes in the journal, or how often | `LagometerJournal`, `lagometerJournalLine()` and `LAGOMETER_JOURNAL_PERIOD` in `src/client/Debug/` |
+| Change what the lagometer writes or draws, its key or its place | `LagometerConstants.hpp`, `lagometerTextLines()` and `LagometerPainting.cpp` in `src/client/Debug/Panel/` |
+| Change the line the lagometer writes in the journal, or how often | `LagometerJournal`, `lagometerJournalLine()` and `LAGOMETER_JOURNAL_PERIOD` in `src/client/Debug/Journal/` |
 | Change the flame, the flight lines, the roll or the afterimages of a ship | `ShipFlightConstants.hpp` and `ShipFlightSystem` in `src/client/Rendering/SpriteLook/`; the `FLAME_` and `FLIGHT_LINE_` constants in `src/client/Rendering/Effects/Ground/GroundEffectConstants.hpp` |
 | Change the columns, the rows or the colors of the leaderboard | `LEADERBOARD_COLUMNS` and `LEADERBOARD_LIST` in `src/client/Menus/Leaderboard/LeaderboardScreenConstants.hpp`, and `LeaderboardPresentation` |
 | Give a tab of the leaderboard a source, such as the master | A class that implements `ILeaderboardSource`, set on its tab in `buildLeaderboardScreen()` in `src/client/Menus/ClientMenusModule.cpp` |
