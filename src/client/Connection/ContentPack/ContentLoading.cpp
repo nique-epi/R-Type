@@ -19,6 +19,7 @@
 #include "PackContentReading.hpp"
 #include "PackDownloadOutcome.hpp"
 #include "PackDownloadProgress.hpp"
+#include "PackDownloadConstants.hpp"
 #include "PackDownloadTarget.hpp"
 
 namespace rtype::client {
@@ -39,10 +40,11 @@ ContentStep ContentLoading::begin(const network::ContentAnnouncement& announced,
     return ContentStep::DownloadFailed;
   }
   download_ = std::make_unique<ContentPackDownload>(PackDownloadTarget{
-      .host = host,
-      .port = announced.port,
+      .origin = std::string{HTTP_ORIGIN_PREFIX} + host + ':' +
+                std::to_string(announced.port),
       .path = network::contentPackPathOf(announced.fingerprint),
-      .size = announced.size});
+      .size = announced.size,
+      .followsRedirects = false});
   return ContentStep::Loading;
 }
 

@@ -9,6 +9,7 @@
 #include "ContentPackDownloadTestConstants.hpp"
 #include "ContentPackTestFiles.hpp"
 #include "NetworkConstants.hpp"
+#include "PackDownloadConstants.hpp"
 #include "PackDownloadOutcome.hpp"
 #include "PackDownloadProgress.hpp"
 #include "PackDownloadTarget.hpp"
@@ -29,10 +30,13 @@ PackDownloadProgress endOf(const ContentPackDownload& download) {
 std::string lancerBody() { return network::textOf(lancerPack()); }
 
 PackDownloadTarget packAt(std::uint16_t port, std::size_t size) {
-  return PackDownloadTarget{.host = std::string{network::LOOPBACK_IPV4_ADDRESS},
-                            .port = port,
-                            .path = std::string{PACK_PATH},
-                            .size = size};
+  return PackDownloadTarget{
+      .origin = std::string{HTTP_ORIGIN_PREFIX} +
+                std::string{network::LOOPBACK_IPV4_ADDRESS} + ':' +
+                std::to_string(port),
+      .path = std::string{PACK_PATH},
+      .size = size,
+      .followsRedirects = false};
 }
 
 }  // namespace rtype::client::testing

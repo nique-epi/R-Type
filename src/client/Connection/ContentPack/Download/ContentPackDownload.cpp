@@ -55,7 +55,8 @@ void ContentPackDownload::run(const std::stop_token& stop) {
 }
 
 PackTryEnd ContentPackDownload::tryOnce(const std::stop_token& stop) {
-  httplib::Client client{target_.host, target_.port};
+  httplib::Client client{target_.origin};
+  client.set_follow_location(target_.followsRedirects);
   client.set_connection_timeout(PACK_CONNECT_TIMEOUT);
   client.set_read_timeout(PACK_TRANSFER_TIMEOUT);
   client.set_write_timeout(PACK_TRANSFER_TIMEOUT);
