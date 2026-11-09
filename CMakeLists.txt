@@ -19,6 +19,7 @@ include(FeatureSummary)
 option(RTYPE_MODULE_AUDIO "Build the sound module of the client" ON)
 option(RTYPE_MODULE_METRICS "Build the metrics modules of the client and of the game processes" ON)
 option(RTYPE_MODULE_DEBUG "Build the debug module of the client: the lagometer" ON)
+option(RTYPE_MODULE_UPDATE "Build the self-update of the client" ON)
 option(RTYPE_MODULE_MASTER_LINK "Build the module that registers the server with the master" ON)
 option(RTYPE_MODULE_ADMIN_CONSOLE "Build the administration console of the supervisor" ON)
 option(RTYPE_MODULE_CHAT "Build the chat module of the games" ON)
@@ -28,6 +29,7 @@ cmake_dependent_option(RTYPE_MODULE_GAME_STATISTICS "Build the game-statistics p
 add_feature_info(audio RTYPE_MODULE_AUDIO "the sound of the client")
 add_feature_info(metrics RTYPE_MODULE_METRICS "the metrics of the client and of the game processes")
 add_feature_info(debug RTYPE_MODULE_DEBUG "the lagometer of the client")
+add_feature_info(update RTYPE_MODULE_UPDATE "the client updating itself from the releases")
 add_feature_info(master-link RTYPE_MODULE_MASTER_LINK "the registration of the server with the master")
 add_feature_info(admin-console RTYPE_MODULE_ADMIN_CONSOLE "the administration console of the supervisor")
 add_feature_info(chat RTYPE_MODULE_CHAT "the chat of the games")
@@ -263,6 +265,11 @@ set(CPACK_NSIS_IGNORE_LICENSE_PAGE ON)
 # carries it through r-type.rc.
 set(CPACK_NSIS_MUI_ICON ${CMAKE_SOURCE_DIR}/packaging/r-type.ico)
 set(CPACK_NSIS_MUI_UNIICON ${CMAKE_SOURCE_DIR}/packaging/r-type.ico)
+# A silent install is the update of a running client (src/client/Update/):
+# wait for it to close before writing its files, then start the new version.
+set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "IfSilent 0 +2\n  Sleep 2000")
+set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
+  "IfSilent 0 +2\n  Exec '\\\"$INSTDIR\\\\bin\\\\r-type_client.exe\\\"'")
 # The packages hold no debug symbols.
 set(CPACK_STRIP_FILES ON)
 # One archive per component; each package config lists a single one.

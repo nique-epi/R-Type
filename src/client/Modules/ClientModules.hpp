@@ -13,8 +13,9 @@ namespace rtype::client {
  * @brief The modules of the client, in the order an Application installs and
  * starts them (and stops them in reverse): the logger, the assets, the
  * settings, the window, the connection, the metrics, the sound, the screens,
- * then the modules that add theirs to its registry: the menus, the lobby and
- * the game.
+ * then the modules that add theirs to its registry: the update, the menus,
+ * the lobby and the game. The update stays before the menus, whose titles ask
+ * its notice when they install.
  * This is the one place that lists them. The sound and the metrics are in
  * the list only when the build compiled them (RTYPE_MODULE_AUDIO,
  * RTYPE_MODULE_METRICS); without the sound, the screens play nothing. Listed,

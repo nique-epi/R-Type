@@ -1,0 +1,11 @@
+#pragma once
+
+#include <string_view>
+
+namespace rtype::client {
+
+/** @brief The version of this client, as project() writes it in the root
+ * CMakeLists.txt: the version a release must pass to be installed. */
+constexpr std::string_view CLIENT_RELEASE_VERSION = "@PROJECT_VERSION@";
+
+}  // namespace rtype::client
