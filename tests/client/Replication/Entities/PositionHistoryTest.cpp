@@ -7,21 +7,24 @@
 using rtype::client::PositionHistory;
 using rtype::client::PositionSample;
 using rtype::client::testing::AT_THE_EXTRAPOLATION_LIMIT;
-using rtype::client::testing::BEFORE_EVERY_SAMPLE_TICK;
 using rtype::client::testing::BEFORE_THE_FIRST_SAMPLE_TICK;
+using rtype::client::testing::BETWEEN_TWO_OLD_SAMPLES_X;
 using rtype::client::testing::FAR_AHEAD_TICK;
-using rtype::client::testing::FIFTH_TICK;
+using rtype::client::testing::FIRST_OF_THREE_TICK;
 using rtype::client::testing::FIRST_SAMPLE;
 using rtype::client::testing::HALFWAY_POSITION;
 using rtype::client::testing::HALFWAY_TICK;
 using rtype::client::testing::LATE_POSITION;
 using rtype::client::testing::LATE_TICK;
+using rtype::client::testing::NEWEST_SAMPLE_TICK;
 using rtype::client::testing::NO_POSITION;
 using rtype::client::testing::OLDEST_KEPT_TICK;
 using rtype::client::testing::ONE_AND_A_HALF_TICKS_AHEAD_POSITION;
 using rtype::client::testing::ONE_AND_A_HALF_TICKS_AHEAD_TICK;
+using rtype::client::testing::PAST_THE_SPAN_TICK;
 using rtype::client::testing::SECOND_SAMPLE;
-using rtype::client::testing::SECOND_SAMPLE_X;
+using rtype::client::testing::TICKS_BETWEEN_SAMPLES;
+using rtype::client::testing::TWELVE_TICKS_BEHIND_THE_NEWEST;
 using rtype::client::testing::UNITS_PER_SAMPLE_TICK;
 
 /**
@@ -147,23 +150,26 @@ TEST(PositionHistory, IgnoresASampleThatIsNotNewerThanTheNewest) {
 }
 
 /**
- * Given five samples recorded, at ticks 1 to 5 and 10 units further each
- * When the entity is asked for at tick 0, before every sample kept
- * Then it is where the second sample put it: the first was forgotten
+ * Given samples 3 ticks apart from tick 0 to tick 36, as 20 states a second
+ * give
+ * When the entity is asked for at tick 24.5, 12 ticks behind the newest
+ * Then it lies between the samples of ticks 24 and 27, at 245 units: the
+ * samples the clock may show are all kept
  */
-TEST(PositionHistory, OnlyKeepsTheNewestSamples) {
+TEST(PositionHistory, KeepsTheSamplesTheClockMayShow) {
   PositionHistory history;
-  for (std::uint32_t tick = 1; tick <= FIFTH_TICK; ++tick) {
+  for (std::uint32_t tick = 0; tick <= NEWEST_SAMPLE_TICK;
+       tick += TICKS_BETWEEN_SAMPLES) {
     history.record(PositionSample{
         .tick = tick,
         .position = {.x = UNITS_PER_SAMPLE_TICK * static_cast<float>(tick),
                      .y = 0.0F}});
   }
 
-  const auto position = history.at(BEFORE_EVERY_SAMPLE_TICK);
+  const auto position = history.at(TWELVE_TICKS_BEHIND_THE_NEWEST);
 
   ASSERT_TRUE(position.has_value());
-  EXPECT_FLOAT_EQ(position.value_or(NO_POSITION).x, SECOND_SAMPLE_X);
+  EXPECT_FLOAT_EQ(position.value_or(NO_POSITION).x, BETWEEN_TWO_OLD_SAMPLES_X);
 }
 
 /**
@@ -178,13 +184,15 @@ TEST(PositionHistory, HasNoOldestTickWithoutASample) {
 }
 
 /**
- * Given five samples recorded, at ticks 1 to 5
+ * Given samples at ticks 1 and 2, then one HISTORY_SPAN_TICKS past tick 3
  * When the history is asked for the tick of its oldest sample
- * Then it answers tick 2: the sample of tick 1 was forgotten
+ * Then it answers tick 2, the newest sample at or before the span: tick 1 was
+ * forgotten
  */
-TEST(PositionHistory, GivesTheTickOfTheOldestSampleKept) {
+TEST(PositionHistory, ForgetsTheSamplesPastItsSpan) {
   PositionHistory history;
-  for (std::uint32_t tick = 1; tick <= FIFTH_TICK; ++tick) {
+  for (const std::uint32_t tick :
+       {FIRST_OF_THREE_TICK, OLDEST_KEPT_TICK, PAST_THE_SPAN_TICK}) {
     history.record(PositionSample{.tick = tick, .position = {}});
   }
 
