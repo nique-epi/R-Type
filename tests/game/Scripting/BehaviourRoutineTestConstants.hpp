@@ -75,6 +75,16 @@ constexpr std::string_view BUILT_TYPE = "drifter";
 constexpr rtype::game::Position BUILT_AT{.x = 10.0F, .y = 20.0F};
 constexpr std::uint32_t GIVEN_NETWORK_ID = 42;
 
+/** @brief `striker` starts the strike of its attack 1 and waits 50 ms. */
+constexpr std::string_view STRIKER_SCRIPT = R"(
+behaviours.register("striker", {}, function(view)
+  behaviours.wait(50, { starts_action = { attack = 1, phase = "strike" } })
+  return {}
+end)
+)";
+constexpr std::string_view STRIKER_BEHAVIOUR = "striker";
+constexpr std::uint8_t STRIKER_ATTACK = 1;
+
 /** @brief `yielder` yields without behaviours.wait. */
 constexpr std::string_view YIELDER_SCRIPT = R"(
 behaviours.register("yielder", {}, function(view)

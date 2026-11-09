@@ -1,12 +1,14 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <vector>
+#include "ActionKey.hpp"
 #include "BehaviourRoutineFixture.hpp"
 #include "BehaviourRoutineTestConstants.hpp"
 #include "BehaviourScriptsTestConstants.hpp"
 #include "Intent.hpp"
 #include "RecordingScriptWorld.hpp"
 
+using rtype::game::ActionKey;
 using rtype::game::Intent;
 
 /**
@@ -45,6 +47,38 @@ TEST_F(BehaviourRoutineFixture, ResumesTheScriptOnTheTickItsWaitEnds) {
 
   EXPECT_EQ(intent.direction.x, 0.0F);
   EXPECT_EQ(intent.direction.y, FULL_DOWNWARD);
+}
+
+/**
+ * Given a body whose script starts an attack and waits
+ * When it is steered on the first tick of the wait
+ * Then it starts that attack
+ */
+TEST_F(BehaviourRoutineFixture, StartsTheActionOfAWaitOnItsFirstTick) {
+  load(STRIKER_SCRIPT);
+  SteeredBody body{.position = BODY_IN_THE_MIDDLE};
+  beginTick();
+
+  const Intent intent = steer(STRIKER_BEHAVIOUR, body);
+
+  EXPECT_EQ(intent.startsAction.value_or(ActionKey{}).attack, STRIKER_ATTACK);
+}
+
+/**
+ * Given a body whose script started an attack and waits
+ * When it is steered on the next tick of the wait
+ * Then it does not start the attack again
+ */
+TEST_F(BehaviourRoutineFixture, StartsTheActionOfAWaitOnlyOnce) {
+  load(STRIKER_SCRIPT);
+  SteeredBody body{.position = BODY_IN_THE_MIDDLE};
+  beginTick();
+  static_cast<void>(steer(STRIKER_BEHAVIOUR, body));
+
+  beginTick();
+  const Intent intent = steer(STRIKER_BEHAVIOUR, body);
+
+  EXPECT_FALSE(intent.startsAction.has_value());
 }
 
 /**

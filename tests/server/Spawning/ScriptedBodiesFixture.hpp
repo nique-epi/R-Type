@@ -6,6 +6,7 @@
 #include <optional>
 #include <string_view>
 #include <vector>
+#include "BehaviourScripts.hpp"
 #include "EntityDestruction.hpp"
 #include "EntitySpawned.hpp"
 #include "EventBus.hpp"
@@ -13,6 +14,7 @@
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
 #include "ScriptedBodies.hpp"
+#include "ScriptedBodiesParts.hpp"
 #include "World.hpp"
 
 namespace rtype::server::testing {
@@ -46,6 +48,9 @@ class ScriptedBodiesFixture : public ::testing::Test {
   /** @returns The EntitySpawned sent to the player connected @p index-th. */
   [[nodiscard]] std::vector<network::EntitySpawned> spawnsSentTo(
       std::size_t index) const;
+  /** @returns What builds a ScriptedBodies of this world attached to
+   * @p scripts, nullptr for none, as a new game does. */
+  [[nodiscard]] ScriptedBodiesParts partsFor(game::BehaviourScripts* scripts);
   /** @returns The removals published so far. */
   [[nodiscard]] const std::vector<game::EntityDestruction>& removals() const;
 

@@ -6,6 +6,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "BehaviourScripts.hpp"
 #include "Entity.hpp"
 #include "EntityDestruction.hpp"
 #include "EntitySpawned.hpp"
@@ -20,17 +21,7 @@
 
 namespace rtype::server::testing {
 
-ScriptedBodiesFixture::ScriptedBodiesFixture()
-    : bodies_(
-          ScriptedBodiesParts{.world = world_,
-                              .roster = roster_,
-                              .send =
-                                  [this](network::OutgoingDatagram datagram) {
-                                    sent_.push_back(std::move(datagram));
-                                  },
-                              .types = game::testing::shippedEntitySheets(),
-                              .events = events_,
-                              .scripts = nullptr}) {
+ScriptedBodiesFixture::ScriptedBodiesFixture() : bodies_(partsFor(nullptr)) {
   static_cast<void>(events_.subscribe<game::EntityDestruction>(
       [this](const game::EntityDestruction& removal) {
         removals_.push_back(removal);
@@ -84,6 +75,19 @@ std::vector<network::EntitySpawned> ScriptedBodiesFixture::spawnsSentTo(
     std::size_t index) const {
   return onlyMessagesIn<network::EntitySpawned>(
       sentTo(sent_, playerEndpoint(index)));
+}
+
+ScriptedBodiesParts ScriptedBodiesFixture::partsFor(
+    game::BehaviourScripts* scripts) {
+  return ScriptedBodiesParts{.world = world_,
+                             .roster = roster_,
+                             .send =
+                                 [this](network::OutgoingDatagram datagram) {
+                                   sent_.push_back(std::move(datagram));
+                                 },
+                             .types = game::testing::shippedEntitySheets(),
+                             .events = events_,
+                             .scripts = scripts};
 }
 
 const std::vector<game::EntityDestruction>& ScriptedBodiesFixture::removals()

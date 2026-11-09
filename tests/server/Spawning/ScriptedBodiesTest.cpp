@@ -2,18 +2,23 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <string>
 #include <vector>
+#include "BehaviourScripts.hpp"
 #include "EngineException.hpp"
 #include "EntityDestruction.hpp"
 #include "EntitySpawned.hpp"
 #include "Position.hpp"
+#include "ScriptedBodies.hpp"
 #include "ScriptedBodiesFixture.hpp"
 #include "ScriptedBodiesTestConstants.hpp"
 
 using rtype::engine::ScriptException;
+using rtype::game::BehaviourScripts;
 using rtype::game::DestructionCause;
 using rtype::game::Position;
 using rtype::network::EntitySpawned;
+using rtype::server::ScriptedBodies;
 using rtype::server::testing::DRIFTER_SHEET;
 using rtype::server::testing::PLAYERS_TOLD;
 using rtype::server::testing::SCRIPTED_REMOVALS_IN_A_TICK;
@@ -170,6 +175,37 @@ TEST_F(ScriptedBodiesFixture, RemovesABodyCreatedInTheSameTick) {
   endTick();
 
   EXPECT_FALSE(positionOf(networkId).has_value());
+}
+
+/**
+ * Given the scripts of a game attached to its world
+ * When the game ends and its world goes
+ * Then the scripts no longer reach any world
+ */
+TEST_F(ScriptedBodiesFixture, LetsTheScriptsGoWhenTheWorldGoes) {
+  BehaviourScripts scripts{[](const std::string&) {}};
+  std::optional<ScriptedBodies> game;
+  game.emplace(partsFor(&scripts));
+
+  game.reset();
+
+  EXPECT_EQ(scripts.world(), nullptr);
+}
+
+/**
+ * Given the scripts of a game attached to its world
+ * When a new world is built, then the old one goes, as a new game does
+ * Then the scripts reach the new world
+ */
+TEST_F(ScriptedBodiesFixture, KeepsTheNewWorldWhenTheOldOneGoes) {
+  BehaviourScripts scripts{[](const std::string&) {}};
+  std::optional<ScriptedBodies> oldGame;
+  oldGame.emplace(partsFor(&scripts));
+  const ScriptedBodies newGame{partsFor(&scripts)};
+
+  oldGame.reset();
+
+  EXPECT_EQ(scripts.world(), &newGame);
 }
 
 /**
