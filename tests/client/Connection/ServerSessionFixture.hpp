@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <optional>
 #include <vector>
+#include "ArrivalTally.hpp"
 #include "ConnectionPhase.hpp"
 #include "ConnectionRequest.hpp"
 #include "ContentLoading.hpp"
@@ -122,12 +123,14 @@ class ServerSessionFixture : public ::testing::Test {
   RoundTripWatch roundTrips_{dispatcher_, clock_};
   SessionEntityTypes entityTypes_{testLocalContent()};
   ContentLoading content_{ContentPackCache{unusedCacheFolder()}};
+  ArrivalTally arrivals_;
   ServerSession session_{ServerSessionParts{
       .link = link_,
       .dispatcher = dispatcher_,
       .gameLoaded = gameLoaded_,
       .entityTypes = entityTypes_,
       .content = content_,
+      .arrivals = arrivals_,
       .observers = {waitingRoom_, shipLooks_, entityMessages_, gameLoaded_,
                     roundTrips_}}};
 };

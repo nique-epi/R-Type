@@ -62,6 +62,7 @@ Each optional module has a CMake option, on by default. Turned off, its folder i
 |---|---|
 | `RTYPE_MODULE_AUDIO` | the sound of the client |
 | `RTYPE_MODULE_METRICS` | the metrics of the client and of each game process |
+| `RTYPE_MODULE_DEBUG` | the lagometer of the client |
 | `RTYPE_MODULE_MASTER_LINK` | the registration of the server with the master |
 | `RTYPE_MODULE_ADMIN_CONSOLE` | the administration console of the supervisor |
 | `RTYPE_MODULE_CHAT` | the chat of the games |

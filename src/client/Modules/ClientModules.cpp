@@ -21,6 +21,9 @@
 #if RTYPE_MODULE_AUDIO
 #include "ClientAudioModule.hpp"
 #endif
+#if RTYPE_MODULE_DEBUG
+#include "ClientDebugModule.hpp"
+#endif
 #if RTYPE_MODULE_METRICS
 #include "ClientMetricsModule.hpp"
 #include "SystemClock.hpp"
@@ -53,6 +56,9 @@ std::vector<std::unique_ptr<engine::IModule>> clientModules(
   modules.push_back(std::make_unique<ClientLobbyModule>());
   modules.push_back(std::make_unique<ClientHangarModule>());
   modules.push_back(std::make_unique<ClientGameModule>());
+#if RTYPE_MODULE_DEBUG
+  modules.push_back(std::make_unique<ClientDebugModule>());
+#endif
   return modules;
 }
 

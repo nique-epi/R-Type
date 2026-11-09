@@ -118,6 +118,15 @@ constexpr const char* AUTO_FIRE_LABEL = "AUTO-FIRE";
 constexpr const char* AUTO_FIRE_DESCRIPTION = "> SHOOTS WITHOUT HOLDING";
 constexpr const char* PILOT_NAMES_LABEL = "PILOT NAMES";
 constexpr const char* PILOT_NAMES_DESCRIPTION = "> NICKNAMES OVER THE SHIPS";
+constexpr const char* LAGOMETER_SCALE_LABEL = "LAGOMETER SIZE";
+constexpr const char* LAGOMETER_SCALE_DESCRIPTION = "> F3 SHOWS IT IN GAME";
+constexpr const char* LAGOMETER_BACKGROUND_LABEL = "LAGOMETER FILL";
+constexpr const char* LAGOMETER_BACKGROUND_DESCRIPTION =
+    "> DARKENS THE GAME BEHIND IT";
+constexpr const char* TIMES_UNIT = "X";
+constexpr SliderLook LAGOMETER_SCALE_LOOK{.unit = TIMES_UNIT};
+constexpr SliderLook LAGOMETER_BACKGROUND_LOOK{
+    .step = LAGOMETER_BACKGROUND_STEP, .unit = PERCENT_UNIT};
 constexpr const char* PREDICTION_LABEL = "PREDICTION";
 constexpr const char* PREDICTION_DESCRIPTION = "> SHIP MOVES BEFORE THE SERVER";
 

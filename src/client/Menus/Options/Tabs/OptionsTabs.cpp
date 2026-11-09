@@ -133,7 +133,15 @@ Menu accessTab(const OptionsTabsParts& parts) {
       .row({.label = AUTO_FIRE_LABEL, .description = AUTO_FIRE_DESCRIPTION},
            settingSwitch(service, AUTO_FIRE_SETTING))
       .row({.label = PILOT_NAMES_LABEL, .description = PILOT_NAMES_DESCRIPTION},
-           settingSwitch(service, PILOT_NAMES_SETTING));
+           settingSwitch(service, PILOT_NAMES_SETTING))
+      .row(
+          {.label = LAGOMETER_SCALE_LABEL,
+           .description = LAGOMETER_SCALE_DESCRIPTION},
+          settingSlider(service, LAGOMETER_SCALE_SETTING, LAGOMETER_SCALE_LOOK))
+      .row({.label = LAGOMETER_BACKGROUND_LABEL,
+            .description = LAGOMETER_BACKGROUND_DESCRIPTION},
+           settingSlider(service, LAGOMETER_BACKGROUND_SETTING,
+                         LAGOMETER_BACKGROUND_LOOK));
   return withBack(parts, builder);
 }
 

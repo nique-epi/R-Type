@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "ArrivalTally.hpp"
 #include "ContentAnnouncement.hpp"
 #include "ContentLoading.hpp"
 #include "ContentPackCache.hpp"
@@ -70,11 +71,13 @@ class ServerSessionContentFixture : public ::testing::Test {
   GameLoadedReminder gameLoaded_;
   SessionEntityTypes entityTypes_{testLocalContent()};
   ContentLoading content_{ContentPackCache{cacheFolder_.path()}};
+  ArrivalTally arrivals_;
   ServerSession session_{ServerSessionParts{.link = link_,
                                             .dispatcher = dispatcher_,
                                             .gameLoaded = gameLoaded_,
                                             .entityTypes = entityTypes_,
                                             .content = content_,
+                                            .arrivals = arrivals_,
                                             .observers = {gameLoaded_}}};
 };
 

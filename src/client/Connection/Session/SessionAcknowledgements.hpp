@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <optional>
+#include "ArrivalTally.hpp"
 #include "PacketHeader.hpp"
 #include "ReceivedSequences.hpp"
 #include "TimeConstants.hpp"
@@ -19,12 +20,18 @@ namespace rtype::client {
  * ends the wait. Accepting a datagram that holds guaranteed messages starts
  * the wait; another one does not start it again, so the oldest
  * acknowledgement sets when a Heartbeat is due. Outside a session nothing is
- * accepted, so nothing is acknowledged and nothing waits.
+ * accepted, so nothing is acknowledged and nothing waits. Each datagram
+ * accepted within a session is counted in an ArrivalTally, with the sequences
+ * it skipped.
  *
  * Not thread-safe: use it from one thread only.
  */
 class SessionAcknowledgements {
  public:
+  /** @param arrivals Counts the datagrams accepted; it must outlive the
+   * acknowledgements. */
+  explicit SessionAcknowledgements(ArrivalTally& arrivals);
+
   /** @brief Opens the session at its acceptance: the datagram of sequence
    * @p acceptanceSequence counts as accepted, and nothing waits. */
   void open(std::uint16_t acceptanceSequence);
@@ -36,7 +43,8 @@ class SessionAcknowledgements {
   /**
    * @brief Accepts or refuses the datagram of @p header.
    * @returns Whether its sequence is newer than the newest accepted. The
-   * wait starts when it is and the datagram holds guaranteed messages.
+   * wait starts when it is and the datagram holds guaranteed messages, and
+   * the tally counts it, with the sequences skipped since the newest one.
    */
   [[nodiscard]] bool accept(const network::PacketHeader& header);
 
@@ -52,6 +60,7 @@ class SessionAcknowledgements {
   [[nodiscard]] bool isAcknowledgementDue() const;
 
  private:
+  ArrivalTally* arrivals_;
   network::ReceivedSequences sequences_;
   std::optional<engine::Duration> wait_;
 };

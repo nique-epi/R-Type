@@ -179,7 +179,8 @@ std::optional<LineOutcome> applyNumber(PlayerSettings& settings,
                                        SettingLine setting) {
   for (const std::span<const NamedNumber> numbers :
        {std::span<const NamedNumber>(VOLUME_NUMBERS),
-        std::span<const NamedNumber>(CHAT_NUMBERS)}) {
+        std::span<const NamedNumber>(CHAT_NUMBERS),
+        std::span<const NamedNumber>(LAGOMETER_NUMBERS)}) {
     for (const NamedNumber& number : numbers) {
       if (setting.name == number.name) {
         return assign(integerIn(setting.value, number.setting->range),
@@ -392,13 +393,21 @@ std::string ignoredLine(std::size_t number, LineOutcome outcome) {
   return text;
 }
 
-/** @brief Writes the lines of the settings of the chat. */
-void writeChat(std::string& text, const PlayerSettings& settings) {
-  writeLine(text, CHAT_SHOWN_NAME, switchValue(settings.chatShown));
-  for (const NamedNumber& number : CHAT_NUMBERS) {
+/** @brief Writes a line for each of @p numbers. */
+void writeNumbers(std::string& text, const PlayerSettings& settings,
+                  std::span<const NamedNumber> numbers) {
+  for (const NamedNumber& number : numbers) {
     writeLine(text, number.name,
               std::to_string(settings.*number.setting->member));
   }
+}
+
+/** @brief Writes the lines of the settings of the chat, then those of the
+ * lagometer. */
+void writeChatAndLagometer(std::string& text, const PlayerSettings& settings) {
+  writeLine(text, CHAT_SHOWN_NAME, switchValue(settings.chatShown));
+  writeNumbers(text, settings, CHAT_NUMBERS);
+  writeNumbers(text, settings, LAGOMETER_NUMBERS);
 }
 
 }  // namespace
@@ -429,7 +438,7 @@ std::string settingsText(const PlayerSettings& settings) {
   writeLine(text, CLIENT_PREDICTION_NAME,
             switchValue(settings.clientPrediction));
   writeLine(text, PILOT_NAMES_NAME, switchValue(settings.pilotNames));
-  writeChat(text, settings);
+  writeChatAndLagometer(text, settings);
   writeLine(text, SHIP_HEAD_NAME, lookItemValue(settings.shipLook.head));
   writeLine(text, SHIP_EYES_NAME, lookItemValue(settings.shipLook.eyes));
   writeLine(text, SHIP_FACE_NAME, lookItemValue(settings.shipLook.face));

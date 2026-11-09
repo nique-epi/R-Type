@@ -5,6 +5,7 @@
 #include <vector>
 #include "Heartbeat.hpp"
 #include "IClock.hpp"
+#include "IOwnRoundTrip.hpp"
 #include "IPlayerRoundTrips.hpp"
 #include "IServerClock.hpp"
 #include "IServerTicks.hpp"
@@ -15,6 +16,7 @@
 #include "MessageOrigin.hpp"
 #include "RoundTripFigures.hpp"
 #include "RoundTripMeter.hpp"
+#include "RoundTripSample.hpp"
 #include "RoundTrips.hpp"
 #include "ServerClock.hpp"
 #include "TimeConstants.hpp"
@@ -36,13 +38,16 @@ namespace rtype::client {
  * replaces the round trips of the others. A Heartbeat of the server that
  * carries a tick and closes a measured round trip also gives the ServerClock
  * a sample: the server was at that tick half a round trip before the
- * datagram arrived. All of it is forgotten when the session closes, and what
+ * datagram arrived. Each round trip measured is kept as it was, numbered
+ * from 1 for the whole run. All of it but that number is forgotten when the
+ * session closes, and what
  * arrives without a session is ignored.
  *
  * Not thread-safe: use it from the frame loop.
  */
 class RoundTripWatch final : public ISessionObserver,
                              public IPlayerRoundTrips,
+                             public IOwnRoundTrip,
                              public IServerTicks {
  public:
   /**
@@ -64,6 +69,10 @@ class RoundTripWatch final : public ISessionObserver,
   void sessionHeld(engine::Duration elapsed) override;
   [[nodiscard]] std::optional<network::RoundTripFigures> roundTripOf(
       std::uint8_t playerNumber) const override;
+  [[nodiscard]] std::optional<network::RoundTripFigures> ownFigures()
+      const override;
+  [[nodiscard]] std::optional<RoundTripSample> newestOwnRoundTrip()
+      const override;
 
   /** @returns Which tick the server is at on the clock of this client, and
    * the instant of a tick; both empty until a Heartbeat of the server in a
@@ -94,6 +103,8 @@ class RoundTripWatch final : public ISessionObserver,
   network::RoundTripMeter meter_;
   engine::ServerClock serverClock_;
   std::vector<network::PlayerRoundTrip> reported_;
+  std::uint64_t measured_{0};
+  std::optional<RoundTripSample> newestOwn_;
 };
 
 }  // namespace rtype::client

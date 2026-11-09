@@ -36,6 +36,7 @@
         "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/build-modules-off",
         "RTYPE_MODULE_AUDIO": "OFF",
         "RTYPE_MODULE_METRICS": "OFF",
+        "RTYPE_MODULE_DEBUG": "OFF",
         "RTYPE_MODULE_MASTER_LINK": "OFF",
         "RTYPE_MODULE_ADMIN_CONSOLE": "OFF",
         "RTYPE_MODULE_CHAT": "OFF",
