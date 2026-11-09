@@ -1,3 +1,3 @@
-rtype_add_test(NAME game_scripting_tests SOURCES BehaviourScriptFilesTest.cpp BehaviourScriptsFixtures.cpp BehaviourScriptsTest.cpp LIBS rtype_game_scripting rtype_game_exceptions rtype_test_support)
-target_include_directories(game_scripting_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR})
+rtype_add_test(NAME game_scripting_tests SOURCES BehaviourScriptFilesTest.cpp BehaviourScriptsFixtures.cpp BehaviourScriptsTest.cpp BehaviourRoutineFixture.cpp BehaviourRoutineTest.cpp ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingScriptWorld.cpp LIBS rtype_game_scripting rtype_game_exceptions rtype_test_support)
+target_include_directories(game_scripting_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/doubles)
 target_compile_definitions(game_scripting_tests PRIVATE RTYPE_SOURCE_RESOURCES_FOLDER="${PROJECT_SOURCE_DIR}/resources")
