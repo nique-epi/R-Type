@@ -7,9 +7,19 @@ namespace rtype::client {
 void InterpolationTally::startGame() {
   newestTick_.reset();
   delayTicks_.reset();
+  ended_ = false;
+}
+
+void InterpolationTally::endGame() {
+  newestTick_.reset();
+  delayTicks_.reset();
+  ended_ = true;
 }
 
 void InterpolationTally::observe(std::uint32_t tick) {
+  if (ended_) {
+    return;
+  }
   if (!newestTick_.has_value() || tick > *newestTick_) {
     newestTick_ = tick;
   }

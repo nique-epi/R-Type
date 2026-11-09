@@ -268,4 +268,20 @@ TEST(Lagometer, CountsTheLateFramesAndTheDelayOfEachSecond) {
             SIX_TICKS_OF_DISPLAY_DELAY);
 }
 
+/**
+ * Given a lagometer that counted late frames during a game
+ * When a second ends while no game draws, the delay unknown
+ * Then no late frame figure is written for that second, rather than 0
+ */
+TEST(Lagometer, WritesNoLateFramesWhileNoGameDraws) {
+  Lagometer lagometer;
+  lagometer.update(
+      interpolationReading(std::chrono::milliseconds::zero(), LATE_BEFORE));
+
+  lagometer.update(frameReading(std::chrono::seconds{1}));
+
+  ASSERT_TRUE(lagometer.figures().framesPerSecond.has_value());
+  EXPECT_FALSE(lagometer.figures().pastTheNewestPerSecond.has_value());
+}
+
 }  // namespace rtype::client

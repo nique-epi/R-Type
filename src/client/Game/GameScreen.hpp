@@ -172,7 +172,8 @@ class GameScreen : public IScreen {
   void repaintStatus(const BossLook& boss);
 
   /** @brief Ranks the pilots of the board by the scores of @p ended into the
-   * result of the parts, and remembers when the game ended. */
+   * result of the parts, remembers when the game ended, and ends the game of
+   * the interpolation tally, which stops counting its frames. */
   void recordEnd(const network::GameEnded& ended);
 
   /** @brief Asks for the end screen in place of every screen once

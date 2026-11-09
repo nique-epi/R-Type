@@ -21,8 +21,13 @@ class InterpolationTally {
    * yet. The totals are kept. */
   void startGame();
 
+  /** @brief The game ended, or its screen closed: its ticks are forgotten,
+   * no delay is kept, and no state is taken until the next game starts. The
+   * totals are kept. */
+  void endGame();
+
   /** @brief Takes the tick of a state received; a tick not newer than the
-   * newest one changes nothing. */
+   * newest one, or a tick taken once the game ended, changes nothing. */
   void observe(std::uint32_t tick);
 
   /**
@@ -46,6 +51,7 @@ class InterpolationTally {
   std::uint64_t pastTheNewest_{0};
   std::optional<std::uint32_t> newestTick_;
   std::optional<double> delayTicks_;
+  bool ended_{false};
 };
 
 }  // namespace rtype::client

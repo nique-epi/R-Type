@@ -104,9 +104,13 @@ void Lagometer::countFrame(const LagometerReading& reading) {
       reading.bytesReceived - periodStart_.bytesReceived, sincePeriod_);
   figures_.bytesSentPerSecond =
       perSecond(reading.bytesSent - periodStart_.bytesSent, sincePeriod_);
-  figures_.pastTheNewestPerSecond = perSecond(
-      reading.pastTheNewest - periodStart_.pastTheNewest, sincePeriod_);
   figures_.displayDelay = displayDelayOf(reading.delayTicks);
+  figures_.pastTheNewestPerSecond =
+      figures_.displayDelay.has_value()
+          ? std::optional<std::uint64_t>{perSecond(
+                reading.pastTheNewest - periodStart_.pastTheNewest,
+                sincePeriod_)}
+          : std::nullopt;
   ++revision_;
   sincePeriod_ = engine::Duration::zero();
   framesInPeriod_ = 0;

@@ -78,4 +78,51 @@ TEST(InterpolationTally, StartsTheTicksOverWithEachGame) {
   EXPECT_EQ(tally.pastTheNewest(), 1U);
 }
 
+/**
+ * Given a tally whose newest frame drew 8.34 ticks behind the server
+ * When the game ends
+ * Then no delay is kept: no game draws any more
+ */
+TEST(InterpolationTally, KeepsNoDelayOnceTheGameEnded) {
+  InterpolationTally tally;
+  tally.observe(NEWEST_STATE_TICK);
+  tally.countFrame(DRAWN_BEFORE_THE_NEWEST, SERVER_TICK_NOW);
+
+  tally.endGame();
+
+  EXPECT_FALSE(tally.delayTicks().has_value());
+}
+
+/**
+ * Given a game that ended
+ * When a late state of tick 300 arrives, then a frame draws tick 300.33
+ * Then nothing is counted until the next game starts
+ */
+TEST(InterpolationTally, CountsNoFrameOnceTheGameEnded) {
+  InterpolationTally tally;
+  tally.endGame();
+
+  tally.observe(NEWEST_STATE_TICK);
+  tally.countFrame(DRAWN_PAST_THE_NEWEST, SERVER_TICK_NOW);
+
+  EXPECT_EQ(tally.pastTheNewest(), 0U);
+  EXPECT_FALSE(tally.delayTicks().has_value());
+}
+
+/**
+ * Given a game that ended
+ * When the next game starts, receives tick 3 and a frame draws tick 3.5
+ * Then that frame is counted again
+ */
+TEST(InterpolationTally, CountsAgainOnceTheNextGameStarts) {
+  InterpolationTally tally;
+  tally.endGame();
+  tally.startGame();
+  tally.observe(FIRST_TICK_OF_THE_NEXT_GAME);
+
+  tally.countFrame(DRAWN_IN_THE_NEXT_GAME, std::nullopt);
+
+  EXPECT_EQ(tally.pastTheNewest(), 1U);
+}
+
 }  // namespace rtype::client

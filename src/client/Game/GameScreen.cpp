@@ -205,6 +205,7 @@ GameScreen::GameScreen(GameScreenParts parts,
 }
 
 GameScreen::~GameScreen() {
+  interpolationTally_->endGame();
   sky_->setSpeedFactor(1.0F);
   sky_->setOffset({});
 }
@@ -307,6 +308,7 @@ void GameScreen::recordEnd(const network::GameEnded& ended) {
       .outcome = ended.outcome};
   worldSeen_ = true;
   endedAt_ = effects_.sinceStart();
+  interpolationTally_->endGame();
   prediction_.ceaseFire();
   silence_.stop();
   boss_.endGame();

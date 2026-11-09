@@ -1193,3 +1193,43 @@ TEST_F(GameScreenFixture, TheStatusIsNotRepaintedWhenTheBossLookDoesNotChange) {
 
   EXPECT_EQ(statusCanvas().displayCount, displays);
 }
+
+/**
+ * Given the game of player 1 drawing a state while the server runs ahead
+ * When the end of the game is received
+ * Then the tally keeps no delay: the game draws no state of the server any
+ * more, while the end screen waits
+ */
+TEST(GameScreenTallyTest, TheEndOfTheGameEndsTheTally) {
+  LoneGameParts doubles;
+  doubles.serverTicks.set(SERVER_TICK_AHEAD_OF_THE_STATE);
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  doubles.entityMessages.queue(stateWithTheShipOfTheFirstPilot(APPLIED_TICK));
+  game.update(THREE_TICKS);
+  ASSERT_TRUE(doubles.interpolationTally.delayTicks().has_value());
+
+  doubles.entityMessages.queue(rtype::network::GameEnded{});
+  game.update(THREE_TICKS);
+
+  EXPECT_FALSE(doubles.interpolationTally.delayTicks().has_value());
+}
+
+/**
+ * Given the game of player 1 drawing a state while the server runs ahead
+ * When the game screen closes before the game ended, as on a lost connection
+ * Then the tally keeps no delay
+ */
+TEST(GameScreenTallyTest, ClosingTheGameEndsTheTally) {
+  LoneGameParts doubles;
+  doubles.serverTicks.set(SERVER_TICK_AHEAD_OF_THE_STATE);
+  {
+    GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                    doubles.statusCanvasDouble());
+    doubles.entityMessages.queue(stateWithTheShipOfTheFirstPilot(APPLIED_TICK));
+    game.update(THREE_TICKS);
+    ASSERT_TRUE(doubles.interpolationTally.delayTicks().has_value());
+  }
+
+  EXPECT_FALSE(doubles.interpolationTally.delayTicks().has_value());
+}
