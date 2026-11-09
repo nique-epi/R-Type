@@ -25,14 +25,15 @@
 - `51aab177` docs: scripting.md (wait/spawn/destroy/view.id, budgets, failure, waiting bench row), engine.md (step and tick budgets), project-layout.md (ScriptedBodies).
 
 ## Next steps
-1. Nolan's decision on the failed body (below), then apply it (3 lines + change `LeavesTheBodyStillAndReportsAFailureOnce`).
+1. DONE 2026-11-10: Nolan chose to remove a failed body; commit 'feat: remove from the game a body whose script failed', test RemovesFromTheGameABodyWhoseScriptFails (red proof run).
 2. Not covered yet: ScriptedBodies server tests (appear + announce, ship untouched, limits, detach on new world); bench tests for `--waiting`; one-time requests applied once. Decide with Nolan whether they go in this PR.
 3. Reword the WIP commit `3922c8cb` before the PR (needs a force-push of this branch, ask Nolan).
 4. Gates ONCE at PR time (Nolan: credits): full Debug workflow, format-check, clang-tidy on the changed files only, clang-query ten-method count on ScriptMachine and World.
 5. `git rm --cached .context/context.md`, then PR `--base feat/game-design`, `Closes RTY-257`, English, draft, no AI mention.
 
-## Open decision for Nolan
-- A body whose script failed stays still for good (shipped behaviour kept). If it froze off-screen, the level could never end (boss stage waits for every enemy). Recommendation: remove it instead (`destroy(view.networkId)`, 3 lines, changes `LeavesTheBodyStillAndReportsAFailureOnce`).
+## Open decisions for Nolan
+- Server tests of ScriptedBodies and bench `--waiting` tests: in this PR or a separate issue.
+- Reword the WIP commit `3922c8cb` (force-push).
 
 ## Build without touching build/
 cmake -S . -B <scratch>/build-bench -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON -DVCPKG_MANIFEST_FEATURES=tests -DCMAKE_TOOLCHAIN_FILE=<main checkout>/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_INSTALLED_DIR=<main checkout>/build/vcpkg_installed -DVCPKG_MANIFEST_INSTALL=OFF -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=<scratch>/build-bench
