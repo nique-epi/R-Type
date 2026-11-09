@@ -32,7 +32,7 @@ LeaderboardScreenFixture::LeaderboardScreenFixture(MotionPreference motion)
               .connection = connection_,
               .tabs = {LeaderboardTab{.label = "SERVER", .source = &source_},
                        LeaderboardTab{.label = "GLOBAL"}},
-              .choice = LeaderboardFilterChoice{.difficulty = 1, .pilots = 1},
+              .choice = LeaderboardFilterChoice{.difficulty = 2, .pilots = 2},
               .playfieldPointAt = samePlayfieldPoint,
               .keyName = nameInTheFile,
               .motion = motion},

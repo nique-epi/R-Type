@@ -22,9 +22,12 @@ constexpr std::int64_t LAST_SECOND = 4102444799;
 constexpr std::string_view LAST_SECOND_TEXT = "31 DEC 99";
 constexpr std::string_view UNKNOWN_TEXT = "-- --- --";
 
-constexpr LeaderboardFilterChoice NORMAL_TWO_PILOTS{.difficulty = 1,
-                                                    .pilots = 1};
-constexpr LeaderboardFilterChoice HARD_ONE_PILOT{.difficulty = 2, .pilots = 0};
+/** @brief Choices of the filter, as places in its labels: ALL comes first in
+ * both rows, then EASY, NORMAL, HARD, and 1 to 4 pilots. */
+constexpr LeaderboardFilterChoice NORMAL_TWO_PILOTS{.difficulty = 2,
+                                                    .pilots = 2};
+constexpr LeaderboardFilterChoice HARD_ONE_PILOT{.difficulty = 3, .pilots = 1};
+constexpr LeaderboardFilterChoice EVERY_GAME{.difficulty = 0, .pilots = 0};
 
 /** @brief The widest row: 16 characters of 8 pixels, YOU as silkscreen.ttf
  * draws it at 8 pixels (875, 750 and 750 units of 1000), and 7 digits of 8

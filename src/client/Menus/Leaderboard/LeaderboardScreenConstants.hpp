@@ -11,10 +11,12 @@
 #include <string_view>
 #include "BackgroundColorConstants.hpp"
 #include "FireColorConstants.hpp"
+#include "GameRuleConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "ItemListColumn.hpp"
 #include "ItemListLayout.hpp"
 #include "LeaderboardFigure.hpp"
+#include "LeaderboardFilterChoice.hpp"
 #include "LeaderboardMessage.hpp"
 #include "LeaderboardSpriteConstants.hpp"
 #include "ProtocolConstants.hpp"
@@ -39,20 +41,34 @@ constexpr const char* JOIN_LABEL = "JOIN A SERVER";
 constexpr const char* PILOTS_ROW_LABEL = "PILOTS";
 constexpr const char* APPLY_LABEL = "APPLY";
 
-/** @brief The filters a player can pick: the names of the waves file, in the
- * order of their labels; no value ALL, since two difficulties never mix. */
-constexpr std::array<std::string_view, 3> LEADERBOARD_DIFFICULTY_NAMES{
-    "easy", "normal", "hard"};
-constexpr std::array<const char*, 3> LEADERBOARD_DIFFICULTY_LABELS{
-    "EASY", "NORMAL", "HARD"};
-constexpr std::array<const char*, 4> LEADERBOARD_PILOT_LABELS{"1", "2", "3",
-                                                              "4"};
-static_assert(LEADERBOARD_PILOT_LABELS.size() == network::MAXIMUM_PLAYERS,
-              "the filter offers every number of players of a game");
+/** @brief The label of the choice that asks for every value of a row. */
+constexpr const char* ALL_FILTER_LABEL = "ALL";
 
-/** @brief The filter a screen opens on, without a waiting room to read a number
- * of pilots from. */
-constexpr std::size_t DEFAULT_DIFFICULTY_CHOICE = 1;
+/** @brief The difficulties a player can pick: ALL, then the difficulties every
+ * server ships, as the waves file names them, in the order of their labels. */
+constexpr std::array<std::string_view, 4> LEADERBOARD_DIFFICULTY_NAMES{
+    network::ALL_DIFFICULTIES, identifiers::DIFFICULTY_ORDER[0],
+    identifiers::DIFFICULTY_ORDER[1], identifiers::DIFFICULTY_ORDER[2]};
+constexpr std::array<const char*, 4> LEADERBOARD_DIFFICULTY_LABELS{
+    ALL_FILTER_LABEL, "EASY", "NORMAL", "HARD"};
+static_assert(LEADERBOARD_DIFFICULTY_NAMES.size() ==
+                  identifiers::DIFFICULTY_ORDER.size() + 1,
+              "the filter offers ALL and every difficulty a server ships");
+
+/** @brief The numbers of pilots a player can pick: ALL, then each number of
+ * players of a game, so the place of a label is the number it asks for,
+ * ALL_PLAYER_COUNTS for ALL. */
+constexpr std::array<const char*, 5> LEADERBOARD_PILOT_LABELS{
+    ALL_FILTER_LABEL, "1", "2", "3", "4"};
+static_assert(LEADERBOARD_PILOT_LABELS.size() == network::MAXIMUM_PLAYERS + 1,
+              "the filter offers ALL and every number of players of a game");
+static_assert(network::ALL_PLAYER_COUNTS == 0,
+              "ALL is the first label of the pilots");
+
+/** @brief The filter every leaderboard opens on: every difficulty and every
+ * number of pilots. */
+constexpr LeaderboardFilterChoice OPENING_LEADERBOARD_CHOICE{.difficulty = 0,
+                                                             .pilots = 0};
 
 /** @brief The summary under the panel, between the difficulty and the number of
  * pilots. */

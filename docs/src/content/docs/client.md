@@ -687,7 +687,7 @@ The screen reads each tab through `ILeaderboardSource` (`src/client/Connection/L
 
 ### The filter: `LeaderboardFilterDialog`
 
-FILTER opens `LeaderboardFilterDialog` (`src/client/Menus/Leaderboard/`), a dialog holding the rows DIFFICULTY (EASY, NORMAL, HARD) and PILOTS (1 to 4), which takes every event until it closes. Its rows change a copy of the choice: APPLY asks the source for it, BACK and Escape change nothing. There is no ALL, since two difficulties never mix. The screen opens on NORMAL (`DEFAULT_DIFFICULTY_CHOICE`) and on as many pilots as the waiting room lists, one on the title and four at most (`openingChoiceOf()`). The client opens every new game at the default difficulty (`DEFAULT_DIFFICULTY`, normal), since no screen lets the player choose another, so EASY and HARD read NO SCORE IN THIS MODE YET until a game of another client was played at them.
+FILTER opens `LeaderboardFilterDialog` (`src/client/Menus/Leaderboard/`), a dialog holding the rows DIFFICULTY (ALL, EASY, NORMAL, HARD) and PILOTS (ALL, 1 to 4), which takes every event until it closes. Its rows change a copy of the choice: APPLY asks the source for it, BACK and Escape change nothing. ALL asks for every difficulty or every number of pilots (`ALL_DIFFICULTIES`, `ALL_PLAYER_COUNTS`, see [Protocol](/R-Type/protocol/)): each player then shows once, with their best score among those games. The screen opens on ALL and ALL (`OPENING_LEADERBOARD_CHOICE`), on the title as in the waiting room, and its summary reads ALL GAMES, ALL PILOTS. A new game starts at NORMAL (`DEFAULT_DIFFICULTY`) unless its creator picks another in the NEW GAME dialog, which lists EASY, NORMAL and HARD in that order (`DIFFICULTY_ORDER`).
 
 ### Banners and guards: `LEADERBOARD_FIGURES`
 
