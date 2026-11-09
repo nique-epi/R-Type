@@ -486,6 +486,14 @@ constexpr std::size_t CONNECTION_REFUSED_DATAGRAM_SIZE =
 constexpr std::size_t MAXIMUM_LEADERBOARD_ROWS = 10;
 
 /**
+ * @brief The values of a LeaderboardRequest that ask for every number of
+ * players and every difficulty: a number of players below FIRST_PLAYER_NUMBER
+ * and a difficulty shorter than any name.
+ */
+constexpr std::uint8_t ALL_PLAYER_COUNTS = 0;
+constexpr std::string_view ALL_DIFFICULTIES;
+
+/**
  * @brief The size of a row of a LeaderboardAnswer with the longest nickname:
  * rank, score, date and nickname.
  */

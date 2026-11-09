@@ -46,7 +46,8 @@ WITH best AS (
          MAX(COALESCE(nickname = :player COLLATE NOCASE, 0)) OVER pilot
            AS named
   FROM game_results
-  WHERE difficulty = :difficulty AND player_count = :player_count
+  WHERE (:difficulty IS NULL OR difficulty = :difficulty)
+    AND (:player_count IS NULL OR player_count = :player_count)
     AND (:server_id IS NULL OR server_id = :server_id)
   WINDOW pilot AS (
     PARTITION BY account_id,

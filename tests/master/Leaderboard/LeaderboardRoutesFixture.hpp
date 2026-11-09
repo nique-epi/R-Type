@@ -37,6 +37,11 @@ class LeaderboardRoutesFixture : public ::testing::Test {
    * did not answer. */
   [[nodiscard]] nlohmann::json leaderboardOf(std::string_view query) const;
 
+  /** @brief Sends, from "Paris 1", ACE in a game of "normal" and R9 in a game
+   * of "hard", both for two, and BYDO_HUNTER alone in a game of "normal":
+   * ACE scores best, then BYDO_HUNTER, then R9. */
+  void sendNormalHardAndAloneGames() const;
+
  private:
   RunningMaster master_;
   rtype::network::CreatedServer paris_;

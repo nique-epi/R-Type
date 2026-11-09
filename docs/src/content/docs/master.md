@@ -299,12 +299,12 @@ Three routes read what the master keeps, to anyone, a page at a time. `GET /api/
 
 ## The global leaderboard: `LeaderboardModule`
 
-The leaderboard module (`src/master/Leaderboard/`) gathers the results of every server, so a player can measure up to the players of all servers. A game server reports each vanilla game that ended, after its heartbeats, until the master keeps it (see [Server](/R-Type/server/#link-with-the-master-servermastermodule)), and anyone reads the leaderboard, one difficulty and one number of players at a time: two difficulties never mix.
+The leaderboard module (`src/master/Leaderboard/`) gathers the results of every server, so a player can measure up to the players of all servers. A game server reports each vanilla game that ended, after its heartbeats, until the master keeps it (see [Server](/R-Type/server/#link-with-the-master-servermastermodule)), and anyone reads the leaderboard, of one difficulty and one number of players, or of every one of them when the query names none.
 
 | Route | Does | Answers |
 |---|---|---|
 | `PUT /api/servers/me/results/{gameId}` | keeps a row per player of the game the server of the key drew `gameId` for, in table `game_results` | 204; 401 without a valid key; 400 for an id that is not 32 lowercase hexadecimal digits (`GAME_ID_SIZE`), a body out of its bounds, or a game that was not vanilla |
-| `GET /api/leaderboard?difficulty=normal&playerCount=2` | the best score of each player, by rank, a page at a time, to anyone; `server=<id>` reads one server, `player=<nickname>` adds the row of that player | 200; 400 when `difficulty` or `playerCount` is missing, or a parameter is out of its bounds |
+| `GET /api/leaderboard?difficulty=normal&playerCount=2` | the best score of each player, by rank, a page at a time, to anyone; `difficulty` and `playerCount` each filter only when given, so a query without them reads every game; `server=<id>` reads one server, `player=<nickname>` adds the row of that player | 200; 400 when a parameter given is out of its bounds, an empty `difficulty` included |
 
 ```json
 {"playedAt":1800000000,"difficulty":"normal","playerCount":2,"vanilla":true,

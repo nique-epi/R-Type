@@ -86,7 +86,8 @@ WITH best AS (
                         COALESCE(account_id, nickname) COLLATE NOCASE
            ORDER BY score DESC, played_at ASC) AS position
   FROM game_results
-  WHERE difficulty = :difficulty AND player_count = :player_count
+  WHERE (:difficulty IS NULL OR difficulty = :difficulty)
+    AND (:player_count IS NULL OR player_count = :player_count)
 ),
 ranked AS (
   SELECT nickname, score, played_at,

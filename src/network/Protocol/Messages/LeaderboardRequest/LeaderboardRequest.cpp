@@ -1,6 +1,9 @@
 #include "LeaderboardRequest.hpp"
 #include <cstddef>
+#include <cstdint>
+#include <optional>
 #include <span>
+#include <string>
 #include <type_traits>
 #include "ByteReader.hpp"
 #include "ByteWriter.hpp"
@@ -13,14 +16,33 @@ namespace rtype::network {
 namespace {
 
 void requireValid(const LeaderboardRequest& message) {
-  if (message.playerCount < FIRST_PLAYER_NUMBER ||
-      message.playerCount > MAXIMUM_PLAYERS) {
+  if (message.playerCount != ALL_PLAYER_COUNTS &&
+      (message.playerCount < FIRST_PLAYER_NUMBER ||
+       message.playerCount > MAXIMUM_PLAYERS)) {
     throw InvalidFieldValueException(PLAYER_COUNT_FIELD, message.playerCount);
   }
-  requireValidDifficulty(message.difficulty);
+  if (message.difficulty != ALL_DIFFICULTIES) {
+    requireValidDifficulty(message.difficulty);
+  }
 }
 
 }  // namespace
+
+std::optional<std::string> difficultyFilterOf(
+    const LeaderboardRequest& request) {
+  if (request.difficulty == ALL_DIFFICULTIES) {
+    return std::nullopt;
+  }
+  return request.difficulty;
+}
+
+std::optional<std::uint8_t> playerCountFilterOf(
+    const LeaderboardRequest& request) {
+  if (request.playerCount == ALL_PLAYER_COUNTS) {
+    return std::nullopt;
+  }
+  return request.playerCount;
+}
 
 void encodePayload(ByteWriter& writer, const LeaderboardRequest& message) {
   requireValid(message);
