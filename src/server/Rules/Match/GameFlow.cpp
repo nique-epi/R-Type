@@ -29,6 +29,8 @@
 #include "PlayerController.hpp"
 #include "PlayerLives.hpp"
 #include "PlayerRoster.hpp"
+#include "ScriptedBodies.hpp"
+#include "ScriptedBodiesParts.hpp"
 #include "TimeConstants.hpp"
 #include "VolleySystem.hpp"
 #include "VolleySystemParts.hpp"
@@ -235,7 +237,6 @@ void GameFlow::advanceState() {
       ++tick_;
       lookItemKeeper_->onTick();
       hitArbitration_->giveViews(world(), game_.roster.get(), tick_);
-      scriptedBodies_->beginTick();
       runWorldSystems(game_, world());
       weaponSystem_->onTick();
       volleySystem_->onTick();

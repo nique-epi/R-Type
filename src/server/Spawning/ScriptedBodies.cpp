@@ -7,6 +7,7 @@
 #include <utility>
 #include "BehaviourScripts.hpp"
 #include "BodyPlacement.hpp"
+#include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EngineException.hpp"
 #include "Entity.hpp"
@@ -55,12 +56,6 @@ ScriptedBodies::~ScriptedBodies() {
   }
 }
 
-void ScriptedBodies::beginTick() {
-  if (parts_.scripts != nullptr) {
-    parts_.scripts->machine().beginTick();
-  }
-}
-
 std::uint32_t ScriptedBodies::spawn(const game::ScriptedSpawn& spawn) {
   if (orders_.size() >= MAXIMUM_SCRIPTED_SPAWNS_PER_TICK) {
     throw engine::ScriptException("too many bodies created in one tick");
@@ -102,9 +97,12 @@ void ScriptedBodies::onTick() {
   }
   orders_.clear();
   removeAsked();
+  if (parts_.scripts != nullptr) {
+    parts_.scripts->machine().beginTick();
+  }
 }
 
-void ScriptedBodies::appear(const ScriptedBodyOrder& order) {
+void ScriptedBodies::appear(const ScriptedBodyOrder& order) const {
   const game::EntitySheet& sheet = order.sheet.get();
   parts_.world.get().spawnFrom(
       sheet, game::BodyPlacement{.position = order.position,
@@ -113,7 +111,8 @@ void ScriptedBodies::appear(const ScriptedBodyOrder& order) {
   const network::EntitySpawned spawned = entitySpawnedOf(
       order.networkId, game::EntityTypeNumber{.number = sheet.number},
       order.position);
-  for (ConnectedPlayer* const player : parts_.roster.get().connected()) {
+  PlayerRoster& roster = parts_.roster.get();
+  for (ConnectedPlayer* const player : roster.connected()) {
     sendEntitySpawned(parts_.send, *player, spawned);
   }
 }

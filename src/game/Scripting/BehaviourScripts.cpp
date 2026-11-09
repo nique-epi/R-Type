@@ -12,7 +12,6 @@
 #include <vector>
 #include "BehaviourRegistry.hpp"
 #include "BuiltInBehaviours.hpp"
-#include "EngineException.hpp"
 #include "GameScriptingConstants.hpp"
 #include "IScriptWorld.hpp"
 #include "Position.hpp"
@@ -21,6 +20,7 @@
 #include "ScriptFunction.hpp"
 #include "ScriptLimits.hpp"
 #include "ScriptSource.hpp"
+#include "ScriptWaitState.hpp"
 #include "ScriptedBehaviour.hpp"
 #include "ScriptedBehaviourParts.hpp"
 #include "ScriptedSetting.hpp"

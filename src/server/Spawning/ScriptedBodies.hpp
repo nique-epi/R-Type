@@ -36,10 +36,8 @@ class ScriptedBodies final : public game::IScriptWorld {
   ScriptedBodies& operator=(ScriptedBodies&&) = delete;
   ~ScriptedBodies() override;
 
-  /** @brief Gives the scripts the budget of a new tick. */
-  void beginTick();
-
-  /** @brief Carries out what the scripts asked since the last call. */
+  /** @brief Carries out what the scripts asked since the last call, then
+   * gives the scripts the budget of the next tick. */
   void onTick();
 
   [[nodiscard]] std::uint32_t spawn(const game::ScriptedSpawn& spawn) override;
@@ -47,7 +45,7 @@ class ScriptedBodies final : public game::IScriptWorld {
 
  private:
   void warnWhenOverBudget();
-  void appear(const ScriptedBodyOrder& order);
+  void appear(const ScriptedBodyOrder& order) const;
   void removeAsked();
 
   ScriptedBodiesParts parts_;

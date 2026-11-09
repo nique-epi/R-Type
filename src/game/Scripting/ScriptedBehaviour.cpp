@@ -1,5 +1,6 @@
 #include "ScriptedBehaviour.hpp"
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -35,6 +36,7 @@ struct StepStart {
   std::reference_wrapper<ScriptedRoutine> routine;
   std::reference_wrapper<const BehaviourView> view;
   std::span<const std::string> settingNames;
+  lua_State* thread{nullptr};
 };
 
 /** @brief What the end of a step reads, and what it found. */
@@ -47,13 +49,14 @@ struct StepResult {
 /** @brief Pushes on the thread of a routine, created at its first step, what
  * resuming it needs: a fresh view, after the function when it does not wait. */
 void pushStep(void* context) {
-  const auto& start = *static_cast<const StepStart*>(context);
+  auto& start = *static_cast<StepStart*>(context);
   ScriptedRoutine& routine = start.routine.get();
   lua_State* const machine = start.parts.get().machine.get().state();
   if (!routine.thread.has_value()) {
     routine.thread.emplace(machine);
   }
   lua_State* const thread = routine.thread->state();
+  start.thread = thread;
   if (routine.ticksLeft == 0) {
     lua_getref(machine, start.parts.get().steer);
     lua_xmove(machine, thread, 1);
@@ -71,6 +74,21 @@ void readStep(void* context) {
     result.intent = intentAt(result.machine, -1);
     lua_settop(result.thread, 0);
   }
+}
+
+/** @returns The ticks a body waits after a step that ended with @p end: 0
+ * when its function returned. @throws engine::ScriptException when it yielded
+ * without behaviours.wait. */
+std::uint32_t ticksToWaitAfter(engine::ScriptStepEnd end,
+                               const ScriptWaitState& waits) {
+  if (end == engine::ScriptStepEnd::Finished) {
+    return 0;
+  }
+  if (!waits.waitTicks.has_value()) {
+    throw engine::ScriptException(
+        "a body may only yield through behaviours.wait");
+  }
+  return *waits.waitTicks;
 }
 
 /** @returns @p intent without what applies once: an action started or ended,
@@ -107,10 +125,13 @@ Intent ScriptedBehaviour::steer(const BehaviourView& view) const {
   std::shared_ptr<IBehaviourMemory> forgotten;
   std::shared_ptr<IBehaviourMemory>& memory =
       view.memory == nullptr ? forgotten : *view.memory;
-  if (memory == nullptr) {
-    memory = std::make_shared<ScriptedRoutine>();
+  auto* found = dynamic_cast<ScriptedRoutine*>(memory.get());
+  if (found == nullptr) {
+    auto fresh = std::make_shared<ScriptedRoutine>();
+    found = fresh.get();
+    memory = std::move(fresh);
   }
-  auto& routine = static_cast<ScriptedRoutine&>(*memory);
+  ScriptedRoutine& routine = *found;
   try {
     return stepOf(routine, view);
   } catch (const engine::ScriptException& error) {
@@ -147,18 +168,13 @@ Intent ScriptedBehaviour::stepOf(ScriptedRoutine& routine,
                   .settingNames = settingNames_};
   engine::runProtected(machine.state(),
                        engine::ScriptWork{.run = pushStep, .context = &start});
-  lua_State* const thread = routine.thread->state();
+  lua_State* const thread = start.thread;
   ScriptWaitState& waits = parts_.waits.get();
   waits.stepping = thread;
   waits.waitTicks.reset();
   const engine::ScriptStepEnd end = machine.resume(thread, 1);
   waits.stepping = nullptr;
-  if (end == engine::ScriptStepEnd::Yielded && !waits.waitTicks.has_value()) {
-    throw engine::ScriptException(
-        "a body may only yield through behaviours.wait");
-  }
-  routine.ticksLeft =
-      end == engine::ScriptStepEnd::Yielded ? *waits.waitTicks : 0;
+  routine.ticksLeft = ticksToWaitAfter(end, waits);
   StepResult result{.machine = machine.state(), .thread = thread};
   engine::runProtected(machine.state(),
                        engine::ScriptWork{.run = readStep, .context = &result});

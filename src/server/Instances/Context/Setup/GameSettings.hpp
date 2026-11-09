@@ -24,6 +24,7 @@ namespace rtype::server {
  * holds each input, its rules (the name of its difficulty, the lives of each
  * player, friendly fire) and whether it is vanilla.
  */
+// NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
 struct GameSettings {
   std::uint32_t seed{};
   WavePlan waves;

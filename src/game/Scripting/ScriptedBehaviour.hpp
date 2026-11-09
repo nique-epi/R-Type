@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <span>
 #include <string>
 #include <string_view>
@@ -8,7 +7,6 @@
 #include "BehaviourSetting.hpp"
 #include "BehaviourView.hpp"
 #include "IBehaviour.hpp"
-#include "IBehaviourMemory.hpp"
 #include "Intent.hpp"
 #include "ScriptedBehaviourParts.hpp"
 #include "ScriptedRoutine.hpp"
