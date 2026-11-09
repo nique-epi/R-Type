@@ -283,6 +283,14 @@ sh tests/tools/bandwidth/campaign.sh ./r-type_server ./build/tests/load_test_bot
 
 This runs the bandwidth campaign: a server and four bots from the same seed, three runs of one minute for each scenario, and one Markdown row per scenario with what one client received and sent per second. The results and the method are in [Network measurements](https://nique-epi.github.io/R-Type/measurements/).
 
+```bash
+cmake --preset bench
+cmake --build --preset bench --target script_budget_bench
+./build-bench/tests/script_budget_bench
+```
+
+This builds the bench of the scripts in Release in `build-bench/`, then measures 300 scripted bodies and 1000 bullets over 3600 ticks, and prints the time of a tick, the median and the worst, and the share of the scripts in it; see [Scripting in Luau](https://nique-epi.github.io/R-Type/scripting/#what-a-script-costs).
+
 ## Logging
 
 The client, the server and the master write a timestamped journal, `r-type_client.log`, `r-type_server.log` or `r-type_master.log` next to their executable (the client on macOS in `~/Library/Logs`, so it never writes into the signed app), and show the same lines in the terminal; each game of the server writes its own, `r-type_game_<n>.log`, at the level given to the supervisor; the first line gives the absolute path of the journal. Installed in a folder they cannot write to, they write no journal and say so in the terminal. The level and the output are chosen at launch:
