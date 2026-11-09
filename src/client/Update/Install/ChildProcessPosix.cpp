@@ -1,4 +1,5 @@
 #include <spawn.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 #include <filesystem>
 #include <optional>
@@ -10,7 +11,8 @@
 
 /** @brief The environment of this process, which POSIX leaves to the program
  * to declare; the program started gets it. */
-extern char** environ;  // NOLINT(readability-redundant-declaration)
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables,readability-redundant-declaration)
+extern char** environ;
 
 namespace rtype::client {
 

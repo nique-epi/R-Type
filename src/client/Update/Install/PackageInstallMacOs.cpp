@@ -19,10 +19,13 @@ std::filesystem::path withSuffix(const std::filesystem::path& path,
   return result;
 }
 
-/** @returns Whether the bundle of the disk image @p package was copied to
- * @p staged; the image is detached either way. */
+/** @returns Whether the bundle of the disk image @p package was copied beside
+ * the bundle of @p place, with STAGED_BUNDLE_SUFFIX; the image is detached
+ * either way. */
 bool copyBundleOut(const std::filesystem::path& package,
-                   const std::filesystem::path& staged) {
+                   const InstallPlace& place) {
+  const std::filesystem::path staged =
+      withSuffix(place.installed, STAGED_BUNDLE_SUFFIX);
   const std::filesystem::path volume =
       package.parent_path() / DISK_IMAGE_MOUNT_FOLDER;
   if (runToEnd(LaunchCommand{
@@ -40,11 +43,13 @@ bool copyBundleOut(const std::filesystem::path& package,
   return copied;
 }
 
-/** @returns Whether @p staged now lies at @p installed, the bundle it replaces
- * kept beside it until the next start; on a failure, the installed bundle is
- * put back. */
-bool swapBundle(const std::filesystem::path& staged,
-                const std::filesystem::path& installed) {
+/** @returns Whether the bundle staged beside the bundle of @p place now lies
+ * in its place, the bundle it replaces kept beside it until the next start; on
+ * a failure, the installed bundle is put back. */
+bool swapBundle(const InstallPlace& place) {
+  const std::filesystem::path& installed = place.installed;
+  const std::filesystem::path staged =
+      withSuffix(installed, STAGED_BUNDLE_SUFFIX);
   const std::filesystem::path replaced =
       withSuffix(installed, REPLACED_BUNDLE_SUFFIX);
   std::error_code error;
@@ -70,7 +75,7 @@ std::optional<LaunchCommand> installPackage(
       withSuffix(place.installed, STAGED_BUNDLE_SUFFIX);
   std::error_code ignored;
   std::filesystem::remove_all(staged, ignored);
-  if (!copyBundleOut(package, staged) || !swapBundle(staged, place.installed)) {
+  if (!copyBundleOut(package, place) || !swapBundle(place)) {
     std::filesystem::remove_all(staged, ignored);
     return std::nullopt;
   }

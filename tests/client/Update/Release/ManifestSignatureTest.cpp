@@ -2,9 +2,11 @@
 #include <string>
 #include "ManifestSignature.hpp"
 #include "ManifestSignatureTestConstants.hpp"
+#include "SignedManifest.hpp"
 #include "SigningKey.hpp"
 
 using rtype::client::isSignedBy;
+using rtype::client::SignedManifest;
 using rtype::client::testing::CHANGED_MANIFEST;
 using rtype::client::testing::SIGNED_MANIFEST;
 
@@ -16,8 +18,9 @@ using rtype::client::testing::SIGNED_MANIFEST;
 TEST(ManifestSignature, AcceptsTheSignatureOfTheKey) {
   const SigningKey key;
 
-  EXPECT_TRUE(
-      isSignedBy(SIGNED_MANIFEST, key.sign(SIGNED_MANIFEST), key.publicKey()));
+  EXPECT_TRUE(isSignedBy(SignedManifest{.text = SIGNED_MANIFEST,
+                                        .signature = key.sign(SIGNED_MANIFEST)},
+                         key.publicKey()));
 }
 
 /**
@@ -29,7 +32,9 @@ TEST(ManifestSignature, RefusesAManifestChangedAfterItWasSigned) {
   const SigningKey key;
 
   EXPECT_FALSE(
-      isSignedBy(CHANGED_MANIFEST, key.sign(SIGNED_MANIFEST), key.publicKey()));
+      isSignedBy(SignedManifest{.text = CHANGED_MANIFEST,
+                                .signature = key.sign(SIGNED_MANIFEST)},
+                 key.publicKey()));
 }
 
 /**
@@ -41,8 +46,10 @@ TEST(ManifestSignature, RefusesTheSignatureOfAnotherKey) {
   const SigningKey key;
   const SigningKey other;
 
-  EXPECT_FALSE(isSignedBy(SIGNED_MANIFEST, other.sign(SIGNED_MANIFEST),
-                          key.publicKey()));
+  EXPECT_FALSE(
+      isSignedBy(SignedManifest{.text = SIGNED_MANIFEST,
+                                .signature = other.sign(SIGNED_MANIFEST)},
+                 key.publicKey()));
 }
 
 /**
@@ -54,8 +61,9 @@ TEST(ManifestSignature, RefusesASignatureOneByteShort) {
   const SigningKey key;
   const std::string signature = key.sign(SIGNED_MANIFEST);
 
-  EXPECT_FALSE(
-      isSignedBy(SIGNED_MANIFEST, signature.substr(1), key.publicKey()));
+  EXPECT_FALSE(isSignedBy(
+      SignedManifest{.text = SIGNED_MANIFEST, .signature = signature.substr(1)},
+      key.publicKey()));
 }
 
 /**
@@ -67,5 +75,7 @@ TEST(ManifestSignature, RefusesASignatureOneByteLong) {
   const SigningKey key;
   const std::string signature = key.sign(SIGNED_MANIFEST) + '\0';
 
-  EXPECT_FALSE(isSignedBy(SIGNED_MANIFEST, signature, key.publicKey()));
+  EXPECT_FALSE(isSignedBy(
+      SignedManifest{.text = SIGNED_MANIFEST, .signature = signature},
+      key.publicKey()));
 }

@@ -6,6 +6,7 @@
 #include <string_view>
 #include <vector>
 #include "ReleaseConstants.hpp"
+#include "SignedManifest.hpp"
 
 namespace rtype::client {
 
@@ -26,9 +27,9 @@ std::vector<unsigned char> unsignedBytesOf(std::string_view text) {
 }  // namespace
 
 bool isSignedBy(
-    std::string_view message, std::string_view signature,
+    const SignedManifest& manifest,
     std::span<const unsigned char, ED25519_PUBLIC_KEY_BYTES> publicKey) {
-  if (signature.size() != ED25519_SIGNATURE_BYTES) {
+  if (manifest.signature.size() != ED25519_SIGNATURE_BYTES) {
     return false;
   }
   const PublicKey key{
@@ -41,8 +42,10 @@ bool isSignedBy(
                            key.get()) != 1) {
     return false;
   }
-  const std::vector<unsigned char> signatureBytes = unsignedBytesOf(signature);
-  const std::vector<unsigned char> messageBytes = unsignedBytesOf(message);
+  const std::vector<unsigned char> signatureBytes =
+      unsignedBytesOf(manifest.signature);
+  const std::vector<unsigned char> messageBytes =
+      unsignedBytesOf(manifest.text);
   return EVP_DigestVerify(context.get(), signatureBytes.data(),
                           signatureBytes.size(), messageBytes.data(),
                           messageBytes.size()) == 1;

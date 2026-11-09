@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <system_error>
 #include <utility>
@@ -17,13 +18,15 @@ namespace {
  * nothing when it starts with no digit or passes std::uint32_t. */
 std::optional<std::pair<std::uint32_t, std::string_view>> numberAt(
     std::string_view text) {
+  const std::string digits{text};
   std::uint32_t number = 0;
-  const char* const end = text.data() + text.size();
-  const auto [stop, error] = std::from_chars(text.data(), end, number);
-  if (error != std::errc{} || stop == text.data()) {
+  const char* const end = digits.data() + digits.size();
+  const auto [stop, error] = std::from_chars(digits.data(), end, number);
+  if (error != std::errc{} || stop == digits.data()) {
     return std::nullopt;
   }
-  return std::pair{number, std::string_view{stop, end}};
+  return std::pair{number,
+                   text.substr(static_cast<std::size_t>(stop - digits.data()))};
 }
 
 }  // namespace

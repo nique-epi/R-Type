@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -11,6 +12,7 @@
 #include "ReleaseOffer.hpp"
 #include "ReleasePackage.hpp"
 #include "ReleaseVersion.hpp"
+#include "SignedManifest.hpp"
 
 namespace rtype::client {
 
@@ -107,9 +109,10 @@ std::optional<ReleasePackage> packageOf(const nlohmann::json& root,
 
 }  // namespace
 
-std::optional<ReleaseOffer> releaseOfferOf(std::string_view manifest,
+std::optional<ReleaseOffer> releaseOfferOf(const SignedManifest& manifest,
                                            std::string_view system) {
-  const nlohmann::json root = nlohmann::json::parse(manifest, nullptr, false);
+  const nlohmann::json root =
+      nlohmann::json::parse(manifest.text, nullptr, false);
   if (root.is_discarded() || !root.is_object()) {
     return std::nullopt;
   }

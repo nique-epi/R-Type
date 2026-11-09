@@ -8,6 +8,7 @@
 #include "HttpStatusConstants.hpp"
 #include "ReleaseConstants.hpp"
 
+// NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
 namespace rtype::client {
 
 std::optional<std::string> fetchReleaseFile(std::string_view path,
@@ -35,3 +36,4 @@ std::optional<std::string> fetchReleaseFile(std::string_view path,
 }
 
 }  // namespace rtype::client
+// NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)

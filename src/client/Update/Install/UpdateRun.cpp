@@ -24,6 +24,9 @@
 #include "ReleaseNotesFile.hpp"
 #include "ReleaseOffer.hpp"
 #include "UpdateConstants.hpp"
+#include "UpdatePhase.hpp"
+#include "UpdateProgress.hpp"
+#include "UpdateRunParts.hpp"
 
 namespace rtype::client {
 
@@ -125,7 +128,7 @@ std::optional<std::filesystem::path> UpdateRun::writePackage(
     std::span<const std::byte> bytes) const {
   std::error_code error;
   std::filesystem::create_directories(parts_.downloadFolder, error);
-  const std::filesystem::path file =
+  std::filesystem::path file =
       parts_.downloadFolder / parts_.offer.package.file;
   const std::string text = network::textOf(bytes);
   std::ofstream output{file, std::ios::binary | std::ios::trunc};

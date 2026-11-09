@@ -14,8 +14,14 @@ EVP_PKEY* keyOf(void* key) { return static_cast<EVP_PKEY*>(key); }
 
 }  // namespace
 
-SigningKey::SigningKey()
-    : key_(EVP_PKEY_Q_keygen(nullptr, nullptr, "ED25519")) {}
+SigningKey::SigningKey() : key_(nullptr) {
+  const std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)> context{
+      EVP_PKEY_CTX_new_id(EVP_PKEY_ED25519, nullptr), &EVP_PKEY_CTX_free};
+  EVP_PKEY* key = nullptr;
+  EVP_PKEY_keygen_init(context.get());
+  EVP_PKEY_keygen(context.get(), &key);
+  key_ = key;
+}
 
 SigningKey::~SigningKey() { EVP_PKEY_free(keyOf(key_)); }
 

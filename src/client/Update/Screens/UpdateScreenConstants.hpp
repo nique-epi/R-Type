@@ -3,6 +3,7 @@
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <chrono>
+#include <cstddef>
 #include <string_view>
 #include "InterfaceColorConstants.hpp"
 #include "TextStyle.hpp"

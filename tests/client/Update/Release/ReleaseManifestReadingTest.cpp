@@ -6,9 +6,11 @@
 #include "ReleaseManifestReadingFixtures.hpp"
 #include "ReleaseManifestReadingTestConstants.hpp"
 #include "ReleaseOffer.hpp"
+#include "SignedManifest.hpp"
 
 using rtype::client::ReleaseOffer;
 using rtype::client::releaseOfferOf;
+using rtype::client::SignedManifest;
 using rtype::client::testing::EMPTY_PACKAGE;
 using rtype::client::testing::GOOD_LINUX_FILE;
 using rtype::client::testing::GOOD_LINUX_PACKAGE;
@@ -34,8 +36,10 @@ using rtype::client::testing::PACKAGE_TOO_LARGE;
  * Then it is offered the version, the note and the package
  */
 TEST(ReleaseManifestReading, ReadsWhatItOffersThisSystem) {
-  const std::optional<ReleaseOffer> offer =
-      releaseOfferOf(manifestWithPackage(GOOD_LINUX_PACKAGE), "Linux");
+  const std::optional<ReleaseOffer> offer = releaseOfferOf(
+      SignedManifest{.text = manifestWithPackage(GOOD_LINUX_PACKAGE),
+                     .signature = {}},
+      "Linux");
 
   ASSERT_TRUE(offer.has_value());
   const ReleaseOffer read = offer.value_or(ReleaseOffer{});
@@ -51,7 +55,10 @@ TEST(ReleaseManifestReading, ReadsWhatItOffersThisSystem) {
  * Then it is offered nothing
  */
 TEST(ReleaseManifestReading, OffersNothingToASystemItDoesNotName) {
-  EXPECT_FALSE(releaseOfferOf(manifestWithPackage(GOOD_LINUX_PACKAGE), "win64")
+  EXPECT_FALSE(releaseOfferOf(SignedManifest{.text = manifestWithPackage(
+                                                 GOOD_LINUX_PACKAGE),
+                                             .signature = {}},
+                              "win64")
                    .has_value());
 }
 
@@ -61,12 +68,21 @@ TEST(ReleaseManifestReading, OffersNothingToASystemItDoesNotName) {
  * Then none is offered
  */
 TEST(ReleaseManifestReading, RefusesAFileNameThatLeavesItsFolder) {
-  EXPECT_FALSE(releaseOfferOf(manifestWithPackage(PACKAGE_GOING_UP), "Linux")
+  EXPECT_FALSE(releaseOfferOf(
+                   SignedManifest{.text = manifestWithPackage(PACKAGE_GOING_UP),
+                                  .signature = {}},
+                   "Linux")
                    .has_value());
-  EXPECT_FALSE(releaseOfferOf(manifestWithPackage(PACKAGE_IN_A_FOLDER), "Linux")
+  EXPECT_FALSE(releaseOfferOf(SignedManifest{.text = manifestWithPackage(
+                                                 PACKAGE_IN_A_FOLDER),
+                                             .signature = {}},
+                              "Linux")
                    .has_value());
   EXPECT_FALSE(
-      releaseOfferOf(manifestWithPackage(HIDDEN_PACKAGE), "Linux").has_value());
+      releaseOfferOf(SignedManifest{.text = manifestWithPackage(HIDDEN_PACKAGE),
+                                    .signature = {}},
+                     "Linux")
+          .has_value());
 }
 
 /**
@@ -76,12 +92,20 @@ TEST(ReleaseManifestReading, RefusesAFileNameThatLeavesItsFolder) {
  */
 TEST(ReleaseManifestReading, RefusesASizeOutOfItsBounds) {
   EXPECT_FALSE(
-      releaseOfferOf(manifestWithPackage(EMPTY_PACKAGE), "Linux").has_value());
-  EXPECT_FALSE(releaseOfferOf(manifestWithPackage(PACKAGE_TOO_LARGE), "Linux")
-                   .has_value());
-  EXPECT_FALSE(
-      releaseOfferOf(manifestWithPackage(PACKAGE_OF_NEGATIVE_SIZE), "Linux")
+      releaseOfferOf(SignedManifest{.text = manifestWithPackage(EMPTY_PACKAGE),
+                                    .signature = {}},
+                     "Linux")
           .has_value());
+  EXPECT_FALSE(releaseOfferOf(SignedManifest{.text = manifestWithPackage(
+                                                 PACKAGE_TOO_LARGE),
+                                             .signature = {}},
+                              "Linux")
+                   .has_value());
+  EXPECT_FALSE(releaseOfferOf(SignedManifest{.text = manifestWithPackage(
+                                                 PACKAGE_OF_NEGATIVE_SIZE),
+                                             .signature = {}},
+                              "Linux")
+                   .has_value());
 }
 
 /**
@@ -90,12 +114,16 @@ TEST(ReleaseManifestReading, RefusesASizeOutOfItsBounds) {
  * Then none is offered
  */
 TEST(ReleaseManifestReading, RefusesADigestOfAnotherShape) {
-  EXPECT_FALSE(
-      releaseOfferOf(manifestWithPackage(PACKAGE_OF_SHORT_DIGEST), "Linux")
-          .has_value());
-  EXPECT_FALSE(
-      releaseOfferOf(manifestWithPackage(PACKAGE_OF_UPPERCASE_DIGEST), "Linux")
-          .has_value());
+  EXPECT_FALSE(releaseOfferOf(SignedManifest{.text = manifestWithPackage(
+                                                 PACKAGE_OF_SHORT_DIGEST),
+                                             .signature = {}},
+                              "Linux")
+                   .has_value());
+  EXPECT_FALSE(releaseOfferOf(SignedManifest{.text = manifestWithPackage(
+                                                 PACKAGE_OF_UPPERCASE_DIGEST),
+                                             .signature = {}},
+                              "Linux")
+                   .has_value());
 }
 
 /**
@@ -105,9 +133,15 @@ TEST(ReleaseManifestReading, RefusesADigestOfAnotherShape) {
  */
 TEST(ReleaseManifestReading, RefusesNineNotesOrALongOne) {
   EXPECT_FALSE(
-      releaseOfferOf(manifestWithNotes(NINE_NOTES), "Linux").has_value());
+      releaseOfferOf(SignedManifest{.text = manifestWithNotes(NINE_NOTES),
+                                    .signature = {}},
+                     "Linux")
+          .has_value());
   EXPECT_FALSE(
-      releaseOfferOf(manifestWithNotes(NOTE_TOO_LONG), "Linux").has_value());
+      releaseOfferOf(SignedManifest{.text = manifestWithNotes(NOTE_TOO_LONG),
+                                    .signature = {}},
+                     "Linux")
+          .has_value());
 }
 
 /**
@@ -116,6 +150,10 @@ TEST(ReleaseManifestReading, RefusesNineNotesOrALongOne) {
  * Then none is offered
  */
 TEST(ReleaseManifestReading, RefusesWhatIsNotAJsonObject) {
-  EXPECT_FALSE(releaseOfferOf(NOT_JSON, "Linux").has_value());
-  EXPECT_FALSE(releaseOfferOf(JSON_ARRAY, "Linux").has_value());
+  EXPECT_FALSE(
+      releaseOfferOf(SignedManifest{.text = NOT_JSON, .signature = {}}, "Linux")
+          .has_value());
+  EXPECT_FALSE(releaseOfferOf(
+                   SignedManifest{.text = JSON_ARRAY, .signature = {}}, "Linux")
+                   .has_value());
 }

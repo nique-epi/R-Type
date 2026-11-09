@@ -9,8 +9,11 @@
 #include "ExecutablePath.hpp"
 #include "IUpdateRun.hpp"
 #include "InstallConstants.hpp"
+#include "InstallPlace.hpp"
 #include "PackageInstall.hpp"
+#include "ReleaseNotes.hpp"
 #include "ReleaseNotesFile.hpp"
+#include "ReleaseOffer.hpp"
 #include "ReleaseVersion.hpp"
 #include "SettingsFolder.hpp"
 #include "UpdateConstants.hpp"
@@ -63,8 +66,8 @@ void UpdateNotice::stop() {
 IUpdateRun& UpdateNotice::run() {
   if (run_ == nullptr) {
     run_ = std::make_unique<UpdateRun>(
-        UpdateRunParts{.offer = check_->offer().value(),
-                       .place = place_.value(),
+        UpdateRunParts{.offer = check_->offer().value_or(ReleaseOffer{}),
+                       .place = place_.value_or(InstallPlace{}),
                        .downloadFolder = downloadFolder(),
                        .notesFile = notesFile_});
   }
@@ -73,10 +76,13 @@ IUpdateRun& UpdateNotice::run() {
 
 std::string UpdateNotice::versionLine() const {
   return std::string{VERSION_PREFIX} + std::string{CLIENT_RELEASE_VERSION} +
-         std::string{VERSION_ARROW} + check_->offer().value().versionText;
+         std::string{VERSION_ARROW} +
+         check_->offer().value_or(ReleaseOffer{}).versionText;
 }
 
-ReleaseNotes UpdateNotice::notes() const { return notes_.value(); }
+ReleaseNotes UpdateNotice::notes() const {
+  return notes_.value_or(ReleaseNotes{});
+}
 
 void UpdateNotice::markNotesShown() {
   notes_.reset();

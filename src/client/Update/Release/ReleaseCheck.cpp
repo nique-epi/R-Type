@@ -10,6 +10,7 @@
 #include "ReleaseManifestReading.hpp"
 #include "ReleaseOffer.hpp"
 #include "ReleaseVersion.hpp"
+#include "SignedManifest.hpp"
 #include "UpdateConstants.hpp"
 
 namespace rtype::client {
@@ -51,14 +52,17 @@ std::optional<ReleaseOffer> ReleaseCheck::newerOffer(
   }
   const std::optional<std::string> signature =
       fetchReleaseFile(LATEST_SIGNATURE_PATH, ED25519_SIGNATURE_BYTES, stop);
-  if (!signature.has_value() ||
-      !isSignedBy(*manifest, *signature, UPDATE_PUBLIC_KEY)) {
+  if (!signature.has_value()) {
+    return std::nullopt;
+  }
+  const SignedManifest received{.text = *manifest, .signature = *signature};
+  if (!isSignedBy(received, UPDATE_PUBLIC_KEY)) {
     logger_.warn(
         "the manifest of the latest release is not signed by the key of the "
         "game: it is ignored");
     return std::nullopt;
   }
-  std::optional<ReleaseOffer> offer = releaseOfferOf(*manifest, system_);
+  std::optional<ReleaseOffer> offer = releaseOfferOf(received, system_);
   if (!offer.has_value() || offer->version <= current_) {
     return std::nullopt;
   }
