@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <optional>
 #include "RecordingNavigator.hpp"
 #include "UpdateScreenTestConstants.hpp"
 #include "WhatsNewScreenFixture.hpp"
@@ -33,7 +34,8 @@ TEST_F(WhatsNewScreenFixture, EnterClosesItAndMarksTheNotesRead) {
 
   EXPECT_EQ(closes_, 1);
   EXPECT_THAT(navigator_.calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop}));
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
+                                        .screen = std::nullopt}));
 }
 
 /**

@@ -8,6 +8,7 @@
 namespace rtype::client {
 
 std::optional<InstallPlace> installPlace() {
+  // NOLINTNEXTLINE(concurrency-mt-unsafe)
   const char* const appImage = std::getenv(APPIMAGE_VARIABLE);
   if (appImage == nullptr || !std::filesystem::path(appImage).is_absolute()) {
     return std::nullopt;

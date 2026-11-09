@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <optional>
 #include "RecordingNavigator.hpp"
 #include "UpdatePhase.hpp"
 #include "UpdateScreenFixture.hpp"
@@ -81,7 +82,8 @@ TEST_F(UpdateScreenFixture, LetsThePlayerGoThreeSecondsAfterAFailure) {
   runFor(PAST_THE_MESSAGE);
 
   EXPECT_THAT(navigator_.calls(),
-              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop}));
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Pop,
+                                        .screen = std::nullopt}));
 }
 
 /**
@@ -114,9 +116,9 @@ TEST_F(UpdateScreenFixture, RestartsOneSecondAfterTheInstallThenCloses) {
   runFor(PAST_THE_MESSAGE);
 
   EXPECT_EQ(run_.restartCount(), 1);
-  EXPECT_THAT(
-      navigator_.calls(),
-      ElementsAre(NavigatorCall{.request = NavigatorRequest::CloseAll}));
+  EXPECT_THAT(navigator_.calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::CloseAll,
+                                        .screen = std::nullopt}));
 }
 
 /**
