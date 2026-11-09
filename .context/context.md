@@ -27,12 +27,12 @@
 ## Next steps
 1. DONE 2026-11-10: Nolan chose to remove a failed body; commit 'feat: remove from the game a body whose script failed', test RemovesFromTheGameABodyWhoseScriptFails (red proof run).
 2. DONE 2026-11-10 (Nolan: in this PR): tests/server/Spawning/ScriptedBodiesTest.cpp (11 tests, red proofs: Player check, pilot check) and bench tests for `--waiting`. 2026-11-10: one-time requests once (2 tests) and scripts across worlds (2 tests) added, red proofs run. Left untested on purpose (theoretical, Nolan agreed): a refused removal asked again.
-3. Reword the WIP commit `3922c8cb` before the PR (needs a force-push of this branch, ask Nolan).
+3. DONE 2026-11-10 (Nolan: yes): WIP commit reworded as 56868be2 'feat: give each scripted body a coroutine of its own', branch force-pushed with lease, tree identical.
 4. Gates ONCE at PR time (Nolan: credits): full Debug workflow, format-check, clang-tidy on the changed files only, clang-query ten-method count on ScriptMachine and World.
 5. `git rm --cached .context/context.md`, then PR `--base feat/game-design`, `Closes RTY-257`, English, draft, no AI mention.
 
 ## Open decisions for Nolan
-- Reword the WIP commit `3922c8cb` (force-push).
+- None. Next: the PR gates, then the PR.
 
 ## Build without touching build/
 cmake -S . -B <scratch>/build-bench -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON -DVCPKG_MANIFEST_FEATURES=tests -DCMAKE_TOOLCHAIN_FILE=<main checkout>/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_INSTALLED_DIR=<main checkout>/build/vcpkg_installed -DVCPKG_MANIFEST_INSTALL=OFF -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=<scratch>/build-bench
