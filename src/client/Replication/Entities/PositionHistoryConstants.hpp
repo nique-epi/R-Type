@@ -1,15 +1,20 @@
 #pragma once
 
 #include <chrono>
-#include <cstddef>
+#include <cstdint>
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
-/** @brief How many of the newest samples of an entity are kept: two to
- * interpolate between, two more so that one lost state in a row still leaves
- * a pair around the tick being shown. */
-constexpr std::size_t HISTORY_SAMPLES = 4;
+/** @brief How many ticks of samples an entity keeps behind its newest one:
+ * 3 s, beyond the farthest the clock shows an entity behind its newest state,
+ * the worst lateness it accepts (2 s) plus two intervals at the slowest rate
+ * of the server, 2 states per second (1 s). Fewer, and a connection whose
+ * worst lateness runs far above its usual one shows a tick older than every
+ * sample kept: the entity then stands on its oldest sample and moves by whole
+ * states. The ticks of the samples only grow, so it keeps at most this many
+ * samples plus one. */
+constexpr std::uint32_t HISTORY_SPAN_TICKS = 180;
 
 /** @brief The longest an entity is moved on beyond its newest sample, from the
  * speed between its last two samples: no state says where it went. */
