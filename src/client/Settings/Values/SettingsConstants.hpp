@@ -94,7 +94,6 @@ constexpr std::string_view COLOR_MODE_NAME = "color_mode";
 constexpr std::string_view REDUCE_FLASHES_NAME = "reduce_flashes";
 constexpr std::string_view SOUND_CUES_NAME = "sound_cues";
 constexpr std::string_view AUTO_FIRE_NAME = "auto_fire";
-constexpr std::string_view CLIENT_PREDICTION_NAME = "client_prediction";
 constexpr std::string_view PILOT_NAMES_NAME = "pilot_names";
 constexpr std::string_view CHAT_SHOWN_NAME = "chat_shown";
 constexpr std::string_view CHAT_LETTERS_NAME = "chat_letters";

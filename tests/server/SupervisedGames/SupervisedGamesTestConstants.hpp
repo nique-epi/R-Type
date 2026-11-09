@@ -132,8 +132,8 @@ constexpr std::string_view FRIENDLY_FIRE_ON_ARGUMENT = "1";
 /** @brief The difficulties of the shipped waves file, in the order a
  * WaveCatalog lists them, the one a game plays by default, and a difficulty it
  * has no table for. */
-constexpr std::array<std::string_view, 3> SHIPPED_DIFFICULTIES{"easy", "hard",
-                                                               "normal"};
+constexpr std::array<std::string_view, 3> SHIPPED_DIFFICULTIES{"easy", "normal",
+                                                               "hard"};
 constexpr std::string_view SHIPPED_DEFAULT_DIFFICULTY = "normal";
 constexpr std::string_view UNKNOWN_DIFFICULTY = "nightmare";
 

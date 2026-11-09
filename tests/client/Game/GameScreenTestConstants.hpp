@@ -19,8 +19,10 @@ constexpr rtype::engine::Duration LONG_LOADING_WAIT = std::chrono::seconds(8);
 /** @brief How many presses the system repeats while a key is held down. */
 constexpr int KEY_REPEATS = 3;
 
-/** @brief A frame as long as three simulation ticks: with PREDICTION on, one
- * input goes out for each of them. */
+/** @brief Frames as long as one and three simulation ticks: the game predicts
+ * the ship of the player, so one input goes out for each tick. */
+constexpr rtype::engine::Duration ONE_SIMULATION_TICK =
+    rtype::engine::SIMULATION_TICK_DURATION;
 constexpr rtype::engine::Duration THREE_TICKS =
     rtype::engine::SIMULATION_TICK_DURATION * 3;
 constexpr std::size_t INPUTS_IN_THREE_TICKS = 3;

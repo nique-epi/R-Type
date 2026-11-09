@@ -73,32 +73,47 @@ std::optional<std::int64_t> numberIn(const std::optional<std::string>& text,
   return boundedNumberIn(*text, bounds);
 }
 
+/** @returns Whether @p text is absent, or a name that keeps the rules of a
+ * nickname. */
+bool isNicknameWhenGiven(const std::optional<std::string>& text) {
+  return !text.has_value() || network::isValidNickname(*text);
+}
+
+/** @returns @p count as a number of players; nothing when there is none. */
+std::optional<std::uint8_t> playerCountOf(std::optional<std::int64_t> count) {
+  if (!count.has_value()) {
+    return std::nullopt;
+  }
+  return static_cast<std::uint8_t>(*count);
+}
+
 /** @returns The leaderboard the query of @p request asks for, read a @p page
- * at a time; nothing when the difficulty or the number of players is missing,
- * or a parameter is out of its bounds. */
+ * at a time; every difficulty or number of players when the query names
+ * none; nothing when a parameter given is out of its bounds. */
 std::optional<LeaderboardQuery> queryOf(const network::ApiRequest& request,
                                         PageRequest page) {
   const std::optional<std::string> difficulty =
       queryTextOf(request, network::DIFFICULTY_QUERY_PARAMETER);
+  const std::optional<std::string> players =
+      queryTextOf(request, network::PLAYER_COUNT_QUERY_PARAMETER);
   const std::optional<std::int64_t> playerCount =
-      numberIn(queryTextOf(request, network::PLAYER_COUNT_QUERY_PARAMETER),
-               PLAYER_COUNT_BOUNDS);
+      numberIn(players, PLAYER_COUNT_BOUNDS);
   const std::optional<std::string> server =
       queryTextOf(request, network::SERVER_QUERY_PARAMETER);
   const std::optional<std::int64_t> serverId = numberIn(server, SERVER_BOUNDS);
   const std::optional<std::string> player =
       queryTextOf(request, network::PLAYER_QUERY_PARAMETER);
-  if (!difficulty.has_value() || !network::isValidNickname(*difficulty) ||
-      !playerCount.has_value() || server.has_value() != serverId.has_value() ||
-      (player.has_value() && !network::isValidNickname(*player))) {
+  if (!isNicknameWhenGiven(difficulty) ||
+      players.has_value() != playerCount.has_value() ||
+      server.has_value() != serverId.has_value() ||
+      !isNicknameWhenGiven(player)) {
     return std::nullopt;
   }
-  return LeaderboardQuery{
-      .difficulty = *difficulty,
-      .playerCount = static_cast<std::uint8_t>(*playerCount),
-      .serverId = serverId,
-      .player = player,
-      .page = page};
+  return LeaderboardQuery{.difficulty = difficulty,
+                          .playerCount = playerCountOf(playerCount),
+                          .serverId = serverId,
+                          .player = player,
+                          .page = page};
 }
 
 }  // namespace

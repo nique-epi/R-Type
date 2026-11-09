@@ -127,8 +127,6 @@ constexpr const char* TIMES_UNIT = "X";
 constexpr SliderLook LAGOMETER_SCALE_LOOK{.unit = TIMES_UNIT};
 constexpr SliderLook LAGOMETER_BACKGROUND_LOOK{
     .step = LAGOMETER_BACKGROUND_STEP, .unit = PERCENT_UNIT};
-constexpr const char* PREDICTION_LABEL = "PREDICTION";
-constexpr const char* PREDICTION_DESCRIPTION = "> SHIP MOVES BEFORE THE SERVER";
 
 /** @brief CHAT: its rows, what they say, and how each slider reads. */
 constexpr const char* CHAT_SHOWN_LABEL = "CHAT";

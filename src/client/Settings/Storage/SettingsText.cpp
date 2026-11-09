@@ -208,9 +208,6 @@ std::optional<LineOutcome> applySwitch(PlayerSettings& settings,
   if (name == AUTO_FIRE_NAME) {
     return assign(switchOf(value), settings.autoFire);
   }
-  if (name == CLIENT_PREDICTION_NAME) {
-    return assign(switchOf(value), settings.clientPrediction);
-  }
   if (name == PILOT_NAMES_NAME) {
     return assign(switchOf(value), settings.pilotNames);
   }
@@ -435,8 +432,6 @@ std::string settingsText(const PlayerSettings& settings) {
   writeLine(text, REDUCE_FLASHES_NAME, switchValue(settings.reduceFlashes));
   writeLine(text, SOUND_CUES_NAME, switchValue(settings.soundCues));
   writeLine(text, AUTO_FIRE_NAME, switchValue(settings.autoFire));
-  writeLine(text, CLIENT_PREDICTION_NAME,
-            switchValue(settings.clientPrediction));
   writeLine(text, PILOT_NAMES_NAME, switchValue(settings.pilotNames));
   writeChatAndLagometer(text, settings);
   writeLine(text, SHIP_HEAD_NAME, lookItemValue(settings.shipLook.head));

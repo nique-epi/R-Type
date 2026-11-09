@@ -13,7 +13,6 @@
 #include "InstallContext.hpp"
 #include "IntroScreen.hpp"
 #include "IntroScreenParts.hpp"
-#include "LeaderboardPresentation.hpp"
 #include "LeaderboardScreen.hpp"
 #include "LeaderboardScreenConstants.hpp"
 #include "LeaderboardScreenParts.hpp"
@@ -167,8 +166,7 @@ std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
                        .source = &context.services.leaderboard.get()},
                    LeaderboardTab{.label = GLOBAL_TAB_LABEL,
                                   .source = &global}},
-          .choice = openingChoiceOf(
-              context.services.waitingRoom.get().lobbyPlayers().size()),
+          .choice = OPENING_LEADERBOARD_CHOICE,
           .playfieldPointAt = playfieldMappingOf(context),
           .keyName = localizedKeyName,
           .motion = motionPreference()},

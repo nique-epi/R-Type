@@ -38,8 +38,8 @@ MasterLeaderboard::MasterLeaderboard(IMasterLeaderboardReads& master)
 
 void MasterLeaderboard::ask(const network::LeaderboardRequest& request) {
   asked_ = master_->askLeaderboard(network::GlobalLeaderboardQuery{
-      .difficulty = request.difficulty,
-      .playerCount = request.playerCount,
+      .difficulty = network::difficultyFilterOf(request),
+      .playerCount = network::playerCountFilterOf(request),
       .player = player_,
       .limit = static_cast<std::int64_t>(network::MAXIMUM_LEADERBOARD_ROWS)});
   enterPhase(page_, LeaderboardPhase::Asking);

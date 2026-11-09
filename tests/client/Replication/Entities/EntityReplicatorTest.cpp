@@ -934,7 +934,7 @@ TEST_F(EntityReplicatorFixture, CreatesAMissileOfAnotherPlayer) {
 }
 
 /**
- * Given a replicator whose listener does not predict, PREDICTION off
+ * Given a replicator whose listener does not predict yet
  * When an EntitySpawned announces a missile its player fired
  * Then the replicator creates it as any missile
  */

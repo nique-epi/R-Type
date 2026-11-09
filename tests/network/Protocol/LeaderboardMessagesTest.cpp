@@ -30,14 +30,11 @@ TEST(LeaderboardRequest, EncodesItsFieldsInTheOrderOfTheProtocolPage) {
 }
 
 /**
- * Given the counts on both sides of each bound
+ * Given the counts of the bounds and one past the last
  * When a request is decoded
- * Then 0 and 5 are refused, 1 and 4 are read
+ * Then 1 and 4 are read, 5 is refused
  */
-TEST(LeaderboardRequest, AcceptsOneToFourPlayersOnly) {
-  EXPECT_THROW(
-      (void)decodeMessage<LeaderboardRequest>(byteSequence({0x00, 0x01, 'n'})),
-      InvalidFieldValueException);
+TEST(LeaderboardRequest, AcceptsOneToFourPlayers) {
   EXPECT_EQ(decodeMessage<LeaderboardRequest>(byteSequence({0x01, 0x01, 'n'}))
                 .playerCount,
             1);
@@ -50,14 +47,34 @@ TEST(LeaderboardRequest, AcceptsOneToFourPlayersOnly) {
 }
 
 /**
- * Given a difficulty of 0, 16 and 17 bytes
+ * Given a request for no number of players, 0
+ * When it is decoded
+ * Then it is read: it asks for the scores of every number of players
+ */
+TEST(LeaderboardRequest, ReadsZeroPlayersAsEveryCount) {
+  EXPECT_EQ(decodeMessage<LeaderboardRequest>(byteSequence({0x00, 0x01, 'n'}))
+                .playerCount,
+            0);
+}
+
+/**
+ * Given a request with an empty difficulty
+ * When it is encoded then decoded
+ * Then it comes back the same: it asks for the scores of every difficulty
+ */
+TEST(LeaderboardRequest, CarriesAnEmptyDifficultyForEveryOne) {
+  const LeaderboardRequest everyDifficulty{.playerCount = 1, .difficulty = ""};
+
+  EXPECT_EQ(decodeMessage<LeaderboardRequest>(encodeMessage(everyDifficulty)),
+            everyDifficulty);
+}
+
+/**
+ * Given a difficulty of 16 and 17 bytes
  * When a request is encoded
- * Then the longest allowed passes, the two others are refused
+ * Then the longest allowed passes, the other is refused
  */
 TEST(LeaderboardRequest, BoundsTheSizeOfTheDifficulty) {
-  EXPECT_THROW((void)encodeMessage(
-                   LeaderboardRequest{.playerCount = 1, .difficulty = ""}),
-               InvalidDifficultyException);
   EXPECT_NO_THROW((void)encodeMessage(LeaderboardRequest{
       .playerCount = 1, .difficulty = std::string{SIXTEEN_BYTE_NICKNAME}}));
   EXPECT_THROW((void)encodeMessage(LeaderboardRequest{

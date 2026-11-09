@@ -48,9 +48,13 @@ void insertRow(SQLite::Database& connection, const ServerGameResult& result,
 /** @brief Binds the filters and the page of @p query; a filter it leaves out
  * stays null. */
 void bindQuery(SQLite::Statement& select, const LeaderboardQuery& query) {
-  select.bind(std::string{DIFFICULTY_PARAMETER}, query.difficulty);
-  select.bind(std::string{PLAYER_COUNT_PARAMETER},
-              static_cast<int>(query.playerCount));
+  if (query.difficulty.has_value()) {
+    select.bind(std::string{DIFFICULTY_PARAMETER}, *query.difficulty);
+  }
+  if (query.playerCount.has_value()) {
+    select.bind(std::string{PLAYER_COUNT_PARAMETER},
+                static_cast<int>(*query.playerCount));
+  }
   if (query.serverId.has_value()) {
     select.bind(std::string{SERVER_ID_PARAMETER}, *query.serverId);
   }

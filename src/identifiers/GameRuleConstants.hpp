@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string_view>
 
@@ -10,6 +11,14 @@ namespace rtype::identifiers {
  * one: a table of the waves file every server ships.
  */
 constexpr std::string_view DEFAULT_DIFFICULTY = "normal";
+
+/**
+ * @brief The difficulties every server ships, from the easiest: a list of
+ * difficulties shows these in this order, then any other in alphabetical
+ * order.
+ */
+constexpr std::array<std::string_view, 3> DIFFICULTY_ORDER{"easy", "normal",
+                                                           "hard"};
 
 /**
  * @brief The lives each player starts a game with unless its creator chose
