@@ -73,9 +73,7 @@ class Lagometer {
   SessionArrivals arrivalsAtNewestPoint_;
   engine::Duration sincePeriod_{};
   std::uint64_t framesInPeriod_{0};
-  std::uint64_t bytesReceivedAtPeriod_{0};
-  std::uint64_t bytesSentAtPeriod_{0};
-  std::uint64_t pastTheNewestAtPeriod_{0};
+  LagometerReading periodStart_;
 };
 
 }  // namespace rtype::client

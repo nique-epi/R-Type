@@ -2,14 +2,15 @@
 
 #include <cstdint>
 #include <optional>
-#include "InterpolationCounts.hpp"
 
 namespace rtype::client {
 
 /**
  * @brief Counts how the game showed the other entities, frame after frame:
- * how many frames drew a tick past the newest state received, and how far
- * behind the server the newest frame drew. It outlives the games, so its
+ * how many frames drew a tick past the newest state received, moving the
+ * entities on from their last two states or holding them there once
+ * MAXIMUM_EXTRAPOLATION ran out, and how far behind the server the newest
+ * frame drew. It outlives the games, so its
  * totals cover the whole run; each game starts it over on its own ticks.
  *
  * Not thread-safe: use it from the frame loop.
@@ -32,8 +33,9 @@ class InterpolationTally {
   void countFrame(std::optional<double> renderTick,
                   std::optional<double> serverTick);
 
-  /** @returns What was counted since the client started. */
-  [[nodiscard]] InterpolationCounts counts() const;
+  /** @returns The frames that drew a tick past the newest state since the
+   * client started. */
+  [[nodiscard]] std::uint64_t pastTheNewest() const;
 
   /** @returns How many ticks behind the server the newest frame drew;
    * nothing before a frame of the current game drew with the tick of the
@@ -41,7 +43,7 @@ class InterpolationTally {
   [[nodiscard]] std::optional<double> delayTicks() const;
 
  private:
-  InterpolationCounts counts_;
+  std::uint64_t pastTheNewest_{0};
   std::optional<std::uint32_t> newestTick_;
   std::optional<double> delayTicks_;
 };

@@ -25,14 +25,17 @@ std::optional<std::size_t> seatOf(std::uint8_t playerNumber) {
   return static_cast<std::size_t>(playerNumber - network::FIRST_PLAYER_NUMBER);
 }
 
+/** @returns The number of the player of @p seat, the reverse of seatOf(). */
+std::uint8_t playerNumberOfSeat(std::size_t seat) {
+  return static_cast<std::uint8_t>(network::FIRST_PLAYER_NUMBER + seat);
+}
+
 /**
- * @brief Counts in the pace of the player of @p seat a tick that releases
- * @p count of its inputs: none is a tick without input, two a catch-up. A
- * player whose first input was not applied yet counts nothing.
+ * @brief Counts in the pace of @p player a tick that releases @p count of its
+ * inputs: none is a tick without input, two a catch-up. No player, or a player
+ * whose first input was not applied yet, counts nothing.
  */
-void notePace(PlayerRoster& roster, std::size_t seat, std::size_t count) {
-  ConnectedPlayer* const player = roster.findByNumber(
-      static_cast<std::uint8_t>(network::FIRST_PLAYER_NUMBER + seat));
+void notePace(ConnectedPlayer* player, std::size_t count) {
   if (player == nullptr || !player->appliedInput.has_value()) {
     return;
   }
@@ -58,20 +61,20 @@ void DelayedInputs::push(std::uint8_t playerNumber,
   if (!seat.has_value()) {
     return;
   }
-  held_.at(*seat).push_back(HeldInput{.playerNumber = playerNumber,
-                                      .input = input,
-                                      .dueTick = currentTick_ + delayTicks_});
+  held_.at(*seat).push_back(
+      HeldInput{.input = input, .dueTick = currentTick_ + delayTicks_});
 }
 
 void DelayedInputs::release(PlayerRoster& roster, const InputSink& sink) {
   for (std::size_t seat = 0; seat < held_.size(); ++seat) {
     std::deque<HeldInput>& held = held_.at(seat);
     const std::size_t due = dueCount(held);
-    notePace(roster, seat, due);
+    ConnectedPlayer* const player =
+        roster.findByNumber(playerNumberOfSeat(seat));
+    notePace(player, due);
     for (std::size_t count = due; count > 0; --count) {
       const HeldInput next = held.front();
       held.pop_front();
-      ConnectedPlayer* const player = roster.findByNumber(next.playerNumber);
       if (player != nullptr) {
         sink(*player, next.input);
         player->appliedInput =

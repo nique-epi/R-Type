@@ -3,7 +3,6 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include "InterpolationCounts.hpp"
 #include "RoundTripSample.hpp"
 #include "SessionArrivals.hpp"
 
@@ -75,9 +74,8 @@ constexpr std::uint64_t NINE_LATE_FRAMES_PER_SECOND = 9;
 /** @brief A game that drew 12 frames past the newest state before the first
  * frame of the lagometer, then 9 more within its first second, its newest
  * frame 6 ticks behind the server: 100 ms. */
-constexpr InterpolationCounts LATE_BEFORE{.frames = 50, .pastTheNewest = 12};
-constexpr InterpolationCounts LATE_AFTER_A_SECOND{.frames = 110,
-                                                  .pastTheNewest = 21};
+constexpr std::uint64_t LATE_BEFORE = 12;
+constexpr std::uint64_t LATE_AFTER_A_SECOND = 21;
 constexpr double SIX_TICKS = 6.0;
 constexpr std::chrono::milliseconds SIX_TICKS_OF_DISPLAY_DELAY{100};
 

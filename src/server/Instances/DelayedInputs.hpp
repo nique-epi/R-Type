@@ -14,7 +14,6 @@ namespace rtype::server {
 
 /** @brief An input DelayedInputs holds, and the tick it comes due. */
 struct HeldInput {
-  std::uint8_t playerNumber{};
   network::PlayerInput input{};
   std::uint64_t dueTick{};
 };

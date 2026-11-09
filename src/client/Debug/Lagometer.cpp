@@ -30,9 +30,8 @@ std::optional<std::chrono::microseconds> displayDelayOf(
     return std::nullopt;
   }
   return std::chrono::round<std::chrono::microseconds>(
-      std::chrono::duration<double>(
-          *delayTicks /
-          static_cast<double>(engine::SIMULATION_TICKS_PER_SECOND)));
+      *delayTicks * std::chrono::duration<double, engine::Duration::period>(
+                        engine::SIMULATION_TICK_DURATION));
 }
 
 }  // namespace
@@ -41,9 +40,7 @@ void Lagometer::update(const LagometerReading& reading) {
   if (!started_) {
     started_ = true;
     arrivalsAtNewestPoint_ = reading.arrivals;
-    bytesReceivedAtPeriod_ = reading.bytesReceived;
-    bytesSentAtPeriod_ = reading.bytesSent;
-    pastTheNewestAtPeriod_ = reading.interpolation.pastTheNewest;
+    periodStart_ = reading;
   }
   if (figures_.roundTrip != reading.figures) {
     figures_.roundTrip = reading.figures;
@@ -103,20 +100,17 @@ void Lagometer::countFrame(const LagometerReading& reading) {
     return;
   }
   figures_.framesPerSecond = perSecond(framesInPeriod_, sincePeriod_);
-  figures_.bytesReceivedPerSecond =
-      perSecond(reading.bytesReceived - bytesReceivedAtPeriod_, sincePeriod_);
+  figures_.bytesReceivedPerSecond = perSecond(
+      reading.bytesReceived - periodStart_.bytesReceived, sincePeriod_);
   figures_.bytesSentPerSecond =
-      perSecond(reading.bytesSent - bytesSentAtPeriod_, sincePeriod_);
-  figures_.pastTheNewestPerSecond =
-      perSecond(reading.interpolation.pastTheNewest - pastTheNewestAtPeriod_,
-                sincePeriod_);
+      perSecond(reading.bytesSent - periodStart_.bytesSent, sincePeriod_);
+  figures_.pastTheNewestPerSecond = perSecond(
+      reading.pastTheNewest - periodStart_.pastTheNewest, sincePeriod_);
   figures_.displayDelay = displayDelayOf(reading.delayTicks);
   ++revision_;
   sincePeriod_ = engine::Duration::zero();
   framesInPeriod_ = 0;
-  bytesReceivedAtPeriod_ = reading.bytesReceived;
-  bytesSentAtPeriod_ = reading.bytesSent;
-  pastTheNewestAtPeriod_ = reading.interpolation.pastTheNewest;
+  periodStart_ = reading;
 }
 
 std::uint64_t Lagometer::lossPercent() const {

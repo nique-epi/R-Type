@@ -69,7 +69,7 @@ LagometerReading ClientDebugModule::readingOf(engine::Duration elapsed) const {
                            .arrivals = arrivals_->arrivals(),
                            .bytesReceived = 0,
                            .bytesSent = 0,
-                           .interpolation = interpolation_->counts(),
+                           .pastTheNewest = interpolation_->pastTheNewest(),
                            .delayTicks = interpolation_->delayTicks()};
   if (lagometer_.readsTrafficAfter(elapsed)) {
     const network::TrafficTotals traffic =

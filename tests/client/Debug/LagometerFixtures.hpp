@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include "InterpolationCounts.hpp"
 #include "LagometerReading.hpp"
 #include "RoundTripSample.hpp"
 #include "SessionArrivals.hpp"
@@ -22,9 +21,9 @@ namespace rtype::client::testing {
                                               std::uint64_t bytesReceived);
 
 /** @returns A frame of @p frame after which the game had drawn
- * @p interpolation, its newest frame @p delayTicks behind the server. */
+ * @p pastTheNewest frames past the newest state, its newest frame SIX_TICKS
+ * behind the server. */
 [[nodiscard]] LagometerReading interpolationReading(
-    engine::Duration frame, InterpolationCounts interpolation,
-    double delayTicks);
+    engine::Duration frame, std::uint64_t pastTheNewest);
 
 }  // namespace rtype::client::testing

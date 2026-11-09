@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <optional>
-#include "InterpolationCounts.hpp"
 #include "InterpolationTally.hpp"
 #include "InterpolationTallyTestConstants.hpp"
 
@@ -17,22 +16,23 @@ using testing::SERVER_TICK_NOW;
 
 /**
  * Given a tally of a game that received no state yet
- * When a frame draws
+ * When a frame draws tick 300.33
  * Then nothing is counted: the game shows no entity of the server
  */
 TEST(InterpolationTally, CountsNoFrameBeforeTheFirstState) {
   InterpolationTally tally;
   tally.startGame();
 
-  tally.countFrame(DRAWN_BEFORE_THE_NEWEST, SERVER_TICK_NOW);
+  tally.countFrame(DRAWN_PAST_THE_NEWEST, SERVER_TICK_NOW);
 
-  EXPECT_EQ(tally.counts(), InterpolationCounts{});
+  EXPECT_EQ(tally.pastTheNewest(), 0U);
+  EXPECT_FALSE(tally.delayTicks().has_value());
 }
 
 /**
  * Given a tally whose newest state is tick 300
  * When a frame draws tick 299.66, then a frame draws tick 300.33
- * Then two frames are counted, the second one past the newest state
+ * Then one frame is counted past the newest state: the second
  */
 TEST(InterpolationTally, CountsTheFramesPastTheNewestState) {
   InterpolationTally tally;
@@ -41,8 +41,7 @@ TEST(InterpolationTally, CountsTheFramesPastTheNewestState) {
   tally.countFrame(DRAWN_BEFORE_THE_NEWEST, SERVER_TICK_NOW);
   tally.countFrame(DRAWN_PAST_THE_NEWEST, SERVER_TICK_NOW);
 
-  EXPECT_EQ(tally.counts(),
-            (InterpolationCounts{.frames = 2, .pastTheNewest = 1}));
+  EXPECT_EQ(tally.pastTheNewest(), 1U);
 }
 
 /**
@@ -76,8 +75,7 @@ TEST(InterpolationTally, StartsTheTicksOverWithEachGame) {
 
   tally.countFrame(DRAWN_IN_THE_NEXT_GAME, std::nullopt);
 
-  EXPECT_EQ(tally.counts(),
-            (InterpolationCounts{.frames = 2, .pastTheNewest = 1}));
+  EXPECT_EQ(tally.pastTheNewest(), 1U);
 }
 
 }  // namespace rtype::client

@@ -34,7 +34,6 @@ using testing::NINETEEN_MILLISECONDS;
 using testing::OLDEST_KEPT_ROUND_TRIP;
 using testing::ONE_PAST_THE_CURVE;
 using testing::sampleReading;
-using testing::SIX_TICKS;
 using testing::SIX_TICKS_OF_DISPLAY_DELAY;
 using testing::TEN_PERCENT_LOST;
 using testing::trafficReading;
@@ -256,11 +255,11 @@ TEST(Lagometer, ReadsTheTrafficOfTheFirstFrame) {
  */
 TEST(Lagometer, CountsTheLateFramesAndTheDelayOfEachSecond) {
   Lagometer lagometer;
-  lagometer.update(interpolationReading(std::chrono::milliseconds::zero(),
-                                        LATE_BEFORE, SIX_TICKS));
+  lagometer.update(
+      interpolationReading(std::chrono::milliseconds::zero(), LATE_BEFORE));
 
-  lagometer.update(interpolationReading(std::chrono::seconds{1},
-                                        LATE_AFTER_A_SECOND, SIX_TICKS));
+  lagometer.update(
+      interpolationReading(std::chrono::seconds{1}, LATE_AFTER_A_SECOND));
 
   EXPECT_EQ(lagometer.figures().pastTheNewestPerSecond.value_or(0),
             NINE_LATE_FRAMES_PER_SECOND);

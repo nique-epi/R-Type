@@ -243,7 +243,8 @@ void GameScreen::update(engine::Duration elapsed) {
   }
   traceHeldActions(logger_, command.held, loggedActions_);
   systems_.run(components_, elapsed);
-  interpolationClock_.follow(serverTicks_->serverTickNow());
+  const std::optional<double> serverTick = serverTicks_->serverTickNow();
+  interpolationClock_.follow(serverTick);
   interpolationClock_.advance(elapsed);
   const engine::Duration sinceTheWorld =
       worldSeen_ ? elapsed : engine::Duration::zero();
@@ -253,8 +254,7 @@ void GameScreen::update(engine::Duration elapsed) {
   boss_.advance(elapsed);
   applyEntityMessages();
   showOtherEntities(interpolationClock_, components_, feedback_);
-  interpolationTally_->countFrame(interpolationClock_.renderTick(),
-                                  serverTicks_->serverTickNow());
+  interpolationTally_->countFrame(interpolationClock_.renderTick(), serverTick);
   if (settings_->clientPrediction) {
     prediction_.place(replicator_, components_);
   }

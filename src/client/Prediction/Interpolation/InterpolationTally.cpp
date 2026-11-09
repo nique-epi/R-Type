@@ -1,7 +1,6 @@
 #include "InterpolationTally.hpp"
 #include <cstdint>
 #include <optional>
-#include "InterpolationCounts.hpp"
 
 namespace rtype::client {
 
@@ -21,16 +20,17 @@ void InterpolationTally::countFrame(std::optional<double> renderTick,
   if (!renderTick.has_value() || !newestTick_.has_value()) {
     return;
   }
-  ++counts_.frames;
   if (*renderTick > static_cast<double>(*newestTick_)) {
-    ++counts_.pastTheNewest;
+    ++pastTheNewest_;
   }
   if (serverTick.has_value()) {
     delayTicks_ = *serverTick - *renderTick;
   }
 }
 
-InterpolationCounts InterpolationTally::counts() const { return counts_; }
+std::uint64_t InterpolationTally::pastTheNewest() const {
+  return pastTheNewest_;
+}
 
 std::optional<double> InterpolationTally::delayTicks() const {
   return delayTicks_;
