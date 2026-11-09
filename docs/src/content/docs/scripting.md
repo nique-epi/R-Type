@@ -79,6 +79,28 @@ The collision box and the top speed stay until a later tick asks for others. The
 
 `luau-analyze`, the analyzer of Luau, reports syntax errors and, with `--!strict` at the top of a file, the values a script uses wrongly; the example script starts with it. The project does not ship a definition of `behaviours` for it yet, so the analyzer may report `behaviours` as an unknown global: that line is expected. This check was not run for this page.
 
+## What a script costs
+
+`script_budget_bench` (`tests/tools/ScriptBudgetBench/`) measures what the scripts take of a tick, so that a level is written knowing how many scripted bodies the server holds. It keeps alive 300 bodies steered by the script of the Crimson Drifter (`--scripted <count>`), 1000 bullets flown by the built-in behaviour `straight` (`--bullets <count>`) and four ships, and computes 3600 ticks of 16.7 ms (`--ticks <count>`), one after the other with no wait. Each tick runs `PilotSystem`, `MovementSystem` and `PlayfieldExitSystem`, then replaces the bodies that left the playfield, so the load stays the same. Nothing is random, so two runs do the same work.
+
+```bash
+cmake --preset bench
+cmake --build --preset bench --target script_budget_bench
+./build-bench/tests/script_budget_bench
+```
+
+The `bench` preset is the `test` preset in Release: a build that is not optimized says so on its error output, since its figures say nothing of a server. The report gives the median, the 99th percentile and the worst tick, the same for the scripts alone, the share of the scripts in the time of all the ticks, and how many ticks passed 16.7 ms. The time of the scripts is read around each call, garbage collection included; the two clock reads of a call count in it (14 ns each, about 3 % of a call).
+
+Measured on an Apple M4 Pro with Apple clang 21 over 3600 ticks: three runs for the first row, two for the second, one for the third.
+
+| Scripted bodies, bullets | Median tick | Worst tick | Median of the scripts | Share of the scripts |
+|---|---|---|---|---|
+| 300, 1000 | 0.74 to 0.75 ms | 1.3 to 4.5 ms | 0.27 ms | 36 % |
+| 3000, 1000 | 4.3 to 4.4 ms | 6.0 to 14.2 ms | 2.7 to 2.8 ms | 63 % |
+| 6000, 1000 | 8.3 ms | 14.0 ms | 5.5 ms | 67 % |
+
+A call of the script takes 0.9 µs, and the time grows in line with the bodies from 300 to 6000. The medians repeat within 2 %; the worst tick varies from run to run, since it depends on what else the machine does. These figures hold for this script, which reads a few keys and returns one table, and for a tick without collisions, weapons or the sending of the world state: they are the cost of the scripts, not of a whole game tick.
+
 ## Where to intervene
 
 | You want to… | Look at |
