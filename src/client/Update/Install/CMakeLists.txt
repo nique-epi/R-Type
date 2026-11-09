@@ -10,7 +10,6 @@ add_library(rtype_client_update_install INTERFACE)
 
 target_link_libraries(rtype_client_update_install
   INTERFACE
-    rtype_client_update_install_constants
     rtype_client_update_install_notes
     rtype_client_update_install_platform
     rtype_client_update_install_run

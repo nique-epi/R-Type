@@ -11,7 +11,6 @@ add_library(rtype_client_update_release INTERFACE)
 target_link_libraries(rtype_client_update_release
   INTERFACE
     rtype_client_update_release_check
-    rtype_client_update_release_constants
     rtype_client_update_release_offer
     rtype_client_update_release_verification
 )
