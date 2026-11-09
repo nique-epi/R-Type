@@ -263,6 +263,12 @@ set(CPACK_NSIS_IGNORE_LICENSE_PAGE ON)
 # carries it through r-type.rc.
 set(CPACK_NSIS_MUI_ICON ${CMAKE_SOURCE_DIR}/packaging/r-type.ico)
 set(CPACK_NSIS_MUI_UNIICON ${CMAKE_SOURCE_DIR}/packaging/r-type.ico)
+# The installer is per user, as Discord and VS Code are: it asks no
+# administrator rights and installs into %LOCALAPPDATA%\Programs, so the game
+# can update itself without a UAC prompt. CPack finds the per-user copy of its
+# NSIS template, packaging/NSIS.template.in, through CMAKE_MODULE_PATH.
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/packaging)
+set(CPACK_NSIS_INSTALL_ROOT "$LOCALAPPDATA\\\\Programs")
 # The packages hold no debug symbols.
 set(CPACK_STRIP_FILES ON)
 # One archive per component; each package config lists a single one.
