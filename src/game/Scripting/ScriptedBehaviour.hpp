@@ -28,8 +28,11 @@ namespace rtype::game {
  * call returns a fresh view on the tick the wait ends. A wait costs no step.
  *
  * A step that fails (an error of the script, its memory or its time budget)
- * stops the script of that body for good, leaves the body still and is
- * reported once for the behaviour; the other bodies go on. Once the budget of
+ * stops the script of that body for good and is reported once for the
+ * behaviour; the body stays still and is removed from the game, so a body
+ * frozen out of reach cannot hold a level open. A removal the game refuses
+ * (past the removals of a tick) is asked again at the next tick. The other
+ * bodies go on. Once the budget of
  * a tick is spent, the steps due wait for the next tick, the bodies wanting
  * what they wanted. Neither copied nor moved: its settings point into its own
  * names.
@@ -50,6 +53,7 @@ class ScriptedBehaviour final : public IBehaviour {
  private:
   [[nodiscard]] Intent stepOf(ScriptedRoutine& routine,
                               const BehaviourView& view) const;
+  void removeStopped(const BehaviourView& view) const;
 
   ScriptedBehaviourParts parts_;
   std::vector<std::string> settingNames_;

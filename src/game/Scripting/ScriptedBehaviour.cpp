@@ -122,6 +122,7 @@ Intent ScriptedBehaviour::steer(const BehaviourView& view) const {
       parts_.reportFailure("the behaviour " + parts_.name +
                            " failed: " + error.what());
     }
+    removeStopped(view);
     return Intent{.steered = true};
   }
 }
@@ -129,6 +130,7 @@ Intent ScriptedBehaviour::steer(const BehaviourView& view) const {
 Intent ScriptedBehaviour::stepOf(ScriptedRoutine& routine,
                                  const BehaviourView& view) const {
   if (routine.stopped) {
+    removeStopped(view);
     return Intent{.steered = true};
   }
   if (routine.ticksLeft > 1) {
@@ -162,6 +164,17 @@ Intent ScriptedBehaviour::stepOf(ScriptedRoutine& routine,
                        engine::ScriptWork{.run = readStep, .context = &result});
   routine.held = withoutOneTimeRequests(result.intent);
   return result.intent;
+}
+
+void ScriptedBehaviour::removeStopped(const BehaviourView& view) const {
+  if (view.networkId == 0 || !parts_.removeBody) {
+    return;
+  }
+  try {
+    parts_.removeBody(view.networkId);
+  } catch (const engine::ScriptException&) {
+    return;
+  }
 }
 
 }  // namespace rtype::game

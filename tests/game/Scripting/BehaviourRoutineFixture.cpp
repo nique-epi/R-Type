@@ -27,6 +27,7 @@ rtype::game::Intent BehaviourRoutineFixture::steer(std::string_view behaviour,
                                                    SteeredBody& body) {
   rtype::game::BehaviourView view = woundedViewAt(body.position, SHIP_BELOW);
   view.memory = &body.memory;
+  view.networkId = body.networkId;
   const rtype::game::IBehaviour* const found = behaviours_.find(behaviour);
   return found == nullptr ? rtype::game::Intent{} : found->steer(view);
 }

@@ -90,6 +90,25 @@ TEST_F(BehaviourRoutineFixture, AFailingScriptStopsThatBodyOnly) {
 }
 
 /**
+ * Given a body of a game whose script fails
+ * When it is steered
+ * Then the game is asked to remove that body
+ */
+TEST_F(BehaviourRoutineFixture, RemovesFromTheGameABodyWhoseScriptFails) {
+  RecordingScriptWorld world{GIVEN_NETWORK_ID};
+  attach(world);
+  load(PICKY_SCRIPT);
+  SteeredBody failing{.position = BODY_ON_THE_LEFT,
+                      .networkId = FAILING_BODY_ID};
+  beginTick();
+
+  static_cast<void>(steer(PICKY_BEHAVIOUR, failing));
+
+  ASSERT_EQ(world.removals().size(), 1U);
+  EXPECT_EQ(world.removals().front(), FAILING_BODY_ID);
+}
+
+/**
  * Given a body whose script never ends its step
  * When it is steered, then another body of the same behaviour
  * Then the first is stopped by its step budget and the second goes on

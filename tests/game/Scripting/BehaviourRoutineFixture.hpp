@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string_view>
 #include "BehaviourRegistry.hpp"
@@ -12,10 +13,11 @@
 #include "Intent.hpp"
 #include "Position.hpp"
 
-/** @brief A body a test steers over several ticks: where it is, and what its
- * behaviour remembers of it. */
+/** @brief A body a test steers over several ticks: where it is, its network
+ * id, and what its behaviour remembers of it. */
 struct SteeredBody {
   rtype::game::Position position{};
+  std::uint32_t networkId{0};
   std::shared_ptr<rtype::game::IBehaviourMemory> memory = nullptr;
 };
 

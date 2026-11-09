@@ -45,6 +45,7 @@ behaviours.register("picky", {}, function(view)
 end)
 )";
 constexpr std::string_view PICKY_BEHAVIOUR = "picky";
+constexpr std::uint32_t FAILING_BODY_ID = 7;
 
 /** @brief `runaway` never ends a step left of x 500, and goes left
  * elsewhere. */

@@ -16,6 +16,7 @@
 #include "GameScriptingConstants.hpp"
 #include "IScriptWorld.hpp"
 #include "Position.hpp"
+#include "ScriptBodyRemoval.hpp"
 #include "ScriptFailureReport.hpp"
 #include "ScriptFunction.hpp"
 #include "ScriptLimits.hpp"
@@ -196,6 +197,17 @@ int destroyBody(lua_State* state) {
   return 0;
 }
 
+/** @returns What removes a body from the game @p scripts are attached to, and
+ * does nothing outside a game; @p scripts must outlive it. */
+ScriptBodyRemoval removalThrough(const BehaviourScripts& scripts) {
+  return [&scripts](std::uint32_t networkId) {
+    IScriptWorld* const world = scripts.world();
+    if (world != nullptr) {
+      world->destroy(networkId);
+    }
+  };
+}
+
 /** @brief `behaviours.register(name, settings, steer)`: keeps a behaviour in
  * the BehaviourScripts of its upvalue. */
 int registerBehaviour(lua_State* state) {
@@ -210,7 +222,8 @@ int registerBehaviour(lua_State* state) {
                              .settings = std::move(settings),
                              .steer = steer,
                              .reportFailure = scripts.reportFailure(),
-                             .waits = scripts.waits()});
+                             .waits = scripts.waits(),
+                             .removeBody = removalThrough(scripts)});
   return 0;
 }
 
