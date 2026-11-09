@@ -47,11 +47,6 @@ class OwnShipPredictor {
    * its entity changes nothing. */
   void apply(const network::WorldState& state);
 
-  /** @brief Forgets the prediction and the time not yet counted, as when the
-   * player turns the prediction off. Does nothing when none runs, so a game
-   * screen may call it at every update. */
-  void stop();
-
   /** @returns The entity id the server gave the ship, once a state listed it
    * and the prediction runs. */
   [[nodiscard]] std::optional<std::uint32_t> shipEntityId() const;

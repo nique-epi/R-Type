@@ -21,7 +21,7 @@ OwnPrediction::OwnPrediction(std::uint8_t playerNumber, OwnMissilesParts parts)
 
 void OwnPrediction::advance(engine::Duration elapsed, PlayerCommand command,
                             IPlayerInputLink& link) {
-  missiles_.setActive(true);
+  missiles_.activate();
   const std::vector<PredictedCommand> commands =
       ship_.advance(elapsed, command, link);
   missiles_.follow(commands, firing_ && ship_.shipEntityId().has_value());
@@ -41,11 +41,6 @@ void OwnPrediction::apply(const network::WorldState& state) {
 }
 
 void OwnPrediction::ceaseFire() { firing_ = false; }
-
-void OwnPrediction::stop() {
-  ship_.stop();
-  missiles_.setActive(false);
-}
 
 void OwnPrediction::place(const EntityReplicator& replicator,
                           engine::ComponentRegistry& components) {

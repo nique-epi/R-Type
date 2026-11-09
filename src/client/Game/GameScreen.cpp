@@ -7,7 +7,6 @@
 #include <memory>
 #include <optional>
 #include <random>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -54,7 +53,6 @@
 #include "PilotShipLooks.hpp"
 #include "PlayerAction.hpp"
 #include "PlayerCommand.hpp"
-#include "PlayerInputPacer.hpp"
 #include "PlayerLeft.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayerPreferences.hpp"
@@ -221,14 +219,7 @@ void GameScreen::handleEvent(const sf::Event& event) {
 void GameScreen::update(engine::Duration elapsed) {
   const PlayerCommand command{.held = playerActions(),
                               .shownTick = interpolationClock_.shownTick()};
-  if (settings_->clientPrediction) {
-    prediction_.advance(elapsed, command, *inputs_);
-  } else {
-    prediction_.stop();
-    if (inputPacer_.advance(elapsed)) {
-      std::ignore = inputs_->sendPlayerInput(command.held, command.shownTick);
-    }
-  }
+  prediction_.advance(elapsed, command, *inputs_);
   traceHeldActions(logger_, command.held, loggedActions_);
   systems_.run(components_, elapsed);
   interpolationClock_.follow(serverTicks_->serverTickNow());
@@ -245,9 +236,7 @@ void GameScreen::update(engine::Duration elapsed) {
   boss_.advance(elapsed);
   applyEntityMessages();
   showOtherEntities(interpolationClock_, components_, feedback_);
-  if (settings_->clientPrediction) {
-    prediction_.place(replicator_, components_);
-  }
+  prediction_.place(replicator_, components_);
   tagPilotShips(components_, scoreBoard_.pilots(), *settings_);
   dressPilotShips(components_, shipLooks_->playerLooks());
   askForTheEndWhenDue();
@@ -285,9 +274,7 @@ void GameScreen::applyWorldState(const network::WorldState& state) {
   if (const auto own = ownShipOf(state, playerNumber_)) {
     inputs_->confirmInputsUpTo(own->acknowledgedInput);
   }
-  if (settings_->clientPrediction) {
-    prediction_.apply(state);
-  }
+  prediction_.apply(state);
 }
 
 void GameScreen::recordEnd(const network::GameEnded& ended) {

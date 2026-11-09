@@ -262,13 +262,7 @@ void OwnMissiles::touchEnemies() {
   }
 }
 
-void OwnMissiles::setActive(bool active) {
-  if (!active) {
-    takeAwayIf(missiles_, parts_.components.get(),
-               [](const OwnMissile&) { return true; });
-  }
-  active_ = active;
-}
+void OwnMissiles::activate() { active_ = true; }
 
 bool OwnMissiles::predictsOwnMissiles() const {
   return active_ && parts_.types.get().shipGun().projectileType !=

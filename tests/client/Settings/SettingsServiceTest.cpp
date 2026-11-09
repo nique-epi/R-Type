@@ -220,7 +220,6 @@ TEST_F(SettingsServiceFixture, RestoringTakesTheSettingsAndTellsEveryOne) {
                                     SettingId::ReduceFlashes,
                                     SettingId::SoundCues,
                                     SettingId::AutoFire,
-                                    SettingId::ClientPrediction,
                                     SettingId::PilotNames,
                                     SettingId::ChatShown,
                                     SettingId::ChatLetters,

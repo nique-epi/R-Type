@@ -51,10 +51,6 @@ constexpr Setting<bool> SOUND_CUES_SETTING{.member = &PlayerSettings::soundCues,
 constexpr Setting<bool> AUTO_FIRE_SETTING{.member = &PlayerSettings::autoFire,
                                           .id = SettingId::AutoFire,
                                           .range = std::nullopt};
-constexpr Setting<bool> CLIENT_PREDICTION_SETTING{
-    .member = &PlayerSettings::clientPrediction,
-    .id = SettingId::ClientPrediction,
-    .range = std::nullopt};
 constexpr Setting<bool> PILOT_NAMES_SETTING{
     .member = &PlayerSettings::pilotNames,
     .id = SettingId::PilotNames,
@@ -132,7 +128,6 @@ constexpr std::array ALL_SETTING_IDS{
     SettingId::ReduceFlashes,
     SettingId::SoundCues,
     SettingId::AutoFire,
-    SettingId::ClientPrediction,
     SettingId::PilotNames,
     SettingId::ChatShown,
     SettingId::ChatLetters,

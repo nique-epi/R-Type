@@ -26,7 +26,6 @@ constexpr const char* FIRST_LAUNCH_FILE =
     "reduce_flashes=off\n"
     "sound_cues=off\n"
     "auto_fire=off\n"
-    "client_prediction=on\n"
     "pilot_names=on\n"
     "chat_shown=on\n"
     "chat_letters=33\n"
@@ -85,6 +84,10 @@ constexpr PixelSize SMALLER_WINDOW{.width = 1280, .height = 720};
 
 /** @brief The line an earlier version kept the master the player chose on. */
 constexpr const char* EARLIER_MASTER_LINE = "master=10.0.0.2:8080";
+
+/** @brief The line an earlier version kept the switch of the prediction on,
+ * which the player can no longer turn off. */
+constexpr const char* EARLIER_PREDICTION_LINE = "client_prediction=off";
 
 /** @brief The music volume of a first launch, and the lowest and the highest
  * volumes a file may hold. */

@@ -894,7 +894,7 @@ for (tick in ticks) {
 <h4>Prédiction du vaisseau et réconciliation</h4>
 <p class="pitch">Le client bouge son vaisseau immédiatement avec le même code que le serveur, puis corrige d'après ce que le serveur confirme.</p>
 <p class="refs">PR #170, #206, #266 · doc : <code>client.md</code> § Own ship prediction</p>
-<div class="block b-where"><div class="label">Où</div><p><code>src/client/Prediction/OwnShip/</code> (<code>OwnShipPredictor</code>, <code>ShipPrediction</code>) ; code de mouvement partagé : <code>shipAfter</code> (<code>src/game/ShipControl/</code>). Option PREDICTION (activée par défaut).</p></div>
+<div class="block b-where"><div class="label">Où</div><p><code>src/client/Prediction/OwnShip/</code> (<code>OwnShipPredictor</code>, <code>ShipPrediction</code>) ; code de mouvement partagé : <code>shipAfter</code> (<code>src/game/ShipControl/</code>). Toujours active : ce n'est pas un réglage du joueur.</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
 <li>Le client compte le temps en ticks entiers comme le serveur, envoie une entrée numérotée par tick et calcule la position prédite après chacune.</li>
 <li>Il garde chaque entrée non confirmée avec la position prédite.</li>
