@@ -26,13 +26,12 @@
 
 ## Next steps
 1. DONE 2026-11-10: Nolan chose to remove a failed body; commit 'feat: remove from the game a body whose script failed', test RemovesFromTheGameABodyWhoseScriptFails (red proof run).
-2. Not covered yet: ScriptedBodies server tests (appear + announce, ship untouched, limits, detach on new world); bench tests for `--waiting`; one-time requests applied once. Decide with Nolan whether they go in this PR.
+2. DONE 2026-11-10 (Nolan: in this PR): tests/server/Spawning/ScriptedBodiesTest.cpp (11 tests, red proofs: Player check, pilot check) and bench tests for `--waiting`. Still untested: one-time requests applied once, detach on a new world, a refused removal asked again.
 3. Reword the WIP commit `3922c8cb` before the PR (needs a force-push of this branch, ask Nolan).
 4. Gates ONCE at PR time (Nolan: credits): full Debug workflow, format-check, clang-tidy on the changed files only, clang-query ten-method count on ScriptMachine and World.
 5. `git rm --cached .context/context.md`, then PR `--base feat/game-design`, `Closes RTY-257`, English, draft, no AI mention.
 
 ## Open decisions for Nolan
-- Server tests of ScriptedBodies and bench `--waiting` tests: in this PR or a separate issue.
 - Reword the WIP commit `3922c8cb` (force-push).
 
 ## Build without touching build/
