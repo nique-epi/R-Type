@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <chrono>
 #include <optional>
+#include "ClockRecalibrations.hpp"
 #include "LagometerConstants.hpp"
 #include "LagometerJournalFigures.hpp"
 #include "LagometerRates.hpp"
@@ -28,6 +29,10 @@ std::optional<LagometerJournalFigures> LagometerJournal::update(
 void LagometerJournal::count(const LagometerReading& reading) {
   sincePeriod_ += reading.frame;
   ++frames_;
+  longestFrame_ = std::max(longestFrame_, reading.frame);
+  if (reading.frame > LAGOMETER_SLOW_FRAME) {
+    ++slowFrames_;
+  }
   if (!reading.delayTicks.has_value()) {
     return;
   }
@@ -54,13 +59,22 @@ std::optional<LagometerJournalFigures> LagometerJournal::figuresOf(
       .smallestDelay = displayDelayOf(smallestDelayTicks_)
                            .value_or(std::chrono::microseconds::zero()),
       .largestDelay = displayDelayOf(largestDelayTicks_)
-                          .value_or(std::chrono::microseconds::zero())};
+                          .value_or(std::chrono::microseconds::zero()),
+      .recalibrations =
+          ClockRecalibrations{.count = reading.recalibrations.count -
+                                       periodStart_.recalibrations.count,
+                              .ticks = reading.recalibrations.ticks -
+                                       periodStart_.recalibrations.ticks},
+      .longestFrame = longestFrame_,
+      .slowFrames = slowFrames_};
 }
 
 void LagometerJournal::startPeriod(const LagometerReading& reading) {
   periodStart_ = reading;
   sincePeriod_ = engine::Duration::zero();
   frames_ = 0;
+  longestFrame_ = engine::Duration::zero();
+  slowFrames_ = 0;
   smallestDelayTicks_.reset();
   largestDelayTicks_.reset();
 }

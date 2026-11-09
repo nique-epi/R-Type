@@ -1,17 +1,21 @@
 #include <gtest/gtest.h>
 #include <optional>
+#include "ClockRecalibrations.hpp"
 #include "InterpolationTally.hpp"
 #include "InterpolationTallyTestConstants.hpp"
 
 namespace rtype::client {
 
+using testing::BOTH_MOVES_TICKS;
 using testing::DELAY_BEFORE_THE_NEWEST;
 using testing::DELAY_TOLERANCE;
 using testing::DRAWN_BEFORE_THE_NEWEST;
 using testing::DRAWN_IN_THE_NEXT_GAME;
 using testing::DRAWN_PAST_THE_NEWEST;
+using testing::FIRST_MOVE_TICKS;
 using testing::FIRST_TICK_OF_THE_NEXT_GAME;
 using testing::NEWEST_STATE_TICK;
+using testing::SECOND_MOVE_TICKS;
 using testing::SERVER_TICK_NOW;
 
 /**
@@ -123,6 +127,35 @@ TEST(InterpolationTally, CountsAgainOnceTheNextGameStarts) {
   tally.countFrame(DRAWN_IN_THE_NEXT_GAME, std::nullopt);
 
   EXPECT_EQ(tally.pastTheNewest(), 1U);
+}
+
+/**
+ * Given a tally of a game
+ * When states move the tick shown by 0.25, then by 0.5 ticks
+ * Then two moves are counted, 0.75 ticks in all
+ */
+TEST(InterpolationTally, AddsUpTheMovesOfTheTickShown) {
+  InterpolationTally tally;
+
+  tally.countRecalibration(FIRST_MOVE_TICKS);
+  tally.countRecalibration(SECOND_MOVE_TICKS);
+
+  EXPECT_EQ(tally.recalibrations(),
+            (ClockRecalibrations{.count = 2, .ticks = BOTH_MOVES_TICKS}));
+}
+
+/**
+ * Given a game that ended
+ * When a late state moves the tick shown
+ * Then no move is counted
+ */
+TEST(InterpolationTally, CountsNoMoveOnceTheGameEnded) {
+  InterpolationTally tally;
+  tally.endGame();
+
+  tally.countRecalibration(FIRST_MOVE_TICKS);
+
+  EXPECT_EQ(tally.recalibrations(), ClockRecalibrations{});
 }
 
 }  // namespace rtype::client

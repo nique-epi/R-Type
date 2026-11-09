@@ -20,4 +20,9 @@ constexpr double DELAY_TOLERANCE = 1e-9;
 constexpr std::uint32_t FIRST_TICK_OF_THE_NEXT_GAME = 3;
 constexpr double DRAWN_IN_THE_NEXT_GAME = 3.5;
 
+/** @brief Two moves of the tick shown, and their size added up. */
+constexpr double FIRST_MOVE_TICKS = 0.25;
+constexpr double SECOND_MOVE_TICKS = 0.5;
+constexpr double BOTH_MOVES_TICKS = 0.75;
+
 }  // namespace rtype::client::testing

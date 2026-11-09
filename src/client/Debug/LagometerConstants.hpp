@@ -9,6 +9,7 @@
 #include <string_view>
 #include "InterfaceColorConstants.hpp"
 #include "TrafficRecordingConstants.hpp"
+#include "WindowConstants.hpp"
 
 namespace rtype::client {
 
@@ -27,6 +28,13 @@ constexpr std::chrono::seconds LAGOMETER_FIGURES_PERIOD{1};
  * the traffic, so the two lines of a period sit next to each other. */
 constexpr std::chrono::seconds LAGOMETER_JOURNAL_PERIOD =
     network::TRAFFIC_LINE_PERIOD;
+
+/** @brief A frame longer than this, a frame and a half at
+ * FRAMES_PER_SECOND_LIMIT (25 ms), shows the picture before it twice on a
+ * screen of that rate: the journal counts it as slow. */
+constexpr std::chrono::microseconds LAGOMETER_SLOW_FRAME{
+    std::chrono::microseconds{std::chrono::seconds{3}} /
+    (2 * FRAMES_PER_SECOND_LIMIT)};
 
 /** @brief Module name the lines of the lagometer go under in the journal. */
 constexpr std::string_view LAGOMETER_LOGGER_NAME = "Lagometer";
@@ -107,5 +115,12 @@ constexpr std::string_view JOURNAL_PAST_THE_NEWEST_WORD =
 constexpr std::string_view JOURNAL_DISPLAY_WORD = "/s); display ";
 constexpr std::string_view JOURNAL_TO_WORD = " to ";
 constexpr std::string_view JOURNAL_BEHIND_WORD = " ms behind the server";
+constexpr std::string_view JOURNAL_CLOCK_WORD = "; clock moved ";
+constexpr std::string_view JOURNAL_CLOCK_TIMES_WORD = " times by ";
+constexpr std::string_view JOURNAL_CLOCK_TOTAL_WORD =
+    " ms in all; longest frame ";
+constexpr std::string_view JOURNAL_SLOW_WORD = " ms, ";
+constexpr std::string_view JOURNAL_SLOW_OVER_WORD = " over ";
+constexpr std::string_view JOURNAL_SLOW_END_WORD = " ms";
 
 }  // namespace rtype::client

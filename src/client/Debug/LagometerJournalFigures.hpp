@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdint>
 #include <optional>
+#include "ClockRecalibrations.hpp"
 #include "RoundTripFigures.hpp"
 #include "SessionArrivals.hpp"
 #include "TimeConstants.hpp"
@@ -26,6 +27,13 @@ struct LagometerJournalFigures {
    * the game drew at. */
   std::chrono::microseconds smallestDelay{};
   std::chrono::microseconds largestDelay{};
+  /** @brief The states of the period that moved the tick the other entities
+   * are shown at, and how far in all, in server ticks. */
+  ClockRecalibrations recalibrations;
+  /** @brief The longest frame of the period, and the frames longer than
+   * LAGOMETER_SLOW_FRAME. */
+  engine::Duration longestFrame{};
+  std::uint64_t slowFrames{0};
 
   bool operator==(const LagometerJournalFigures&) const = default;
 };

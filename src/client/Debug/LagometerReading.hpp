@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <optional>
+#include "ClockRecalibrations.hpp"
 #include "RoundTripFigures.hpp"
 #include "RoundTripSample.hpp"
 #include "SessionArrivals.hpp"
@@ -26,6 +27,9 @@ struct LagometerReading {
    * far behind the server the newest frame drew, in ticks. */
   std::uint64_t pastTheNewest{0};
   std::optional<double> delayTicks = std::nullopt;
+  /** @brief The states that moved the tick the other entities are shown at
+   * so far, and how far in all. */
+  ClockRecalibrations recalibrations;
 };
 
 }  // namespace rtype::client

@@ -1,6 +1,7 @@
 #include "LagometerFixtures.hpp"
 #include <cstdint>
 #include <optional>
+#include "ClockRecalibrations.hpp"
 #include "LagometerReading.hpp"
 #include "LagometerTestConstants.hpp"
 #include "RoundTripSample.hpp"
@@ -17,7 +18,8 @@ LagometerReading frameReading(engine::Duration frame) {
                           .bytesReceived = 0,
                           .bytesSent = 0,
                           .pastTheNewest = 0,
-                          .delayTicks = std::nullopt};
+                          .delayTicks = std::nullopt,
+                          .recalibrations = ClockRecalibrations{}};
 }
 
 LagometerReading sampleReading(RoundTripSample sample,

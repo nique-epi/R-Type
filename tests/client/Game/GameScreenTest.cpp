@@ -1233,3 +1233,24 @@ TEST(GameScreenTallyTest, ClosingTheGameEndsTheTally) {
 
   EXPECT_FALSE(doubles.interpolationTally.delayTicks().has_value());
 }
+
+/**
+ * Given the game drawing a state of tick 10 while the server is at tick 16
+ * When a frame of three ticks passes and a state of tick 13 arrives
+ * Then the tally counts one move of the tick shown: the first interval
+ * measured puts it back three ticks, on its target
+ */
+TEST(GameScreenTallyTest, CountsTheMovesOfTheTickShown) {
+  LoneGameParts doubles;
+  doubles.serverTicks.set(SERVER_TICK_AHEAD_OF_THE_STATE);
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  doubles.entityMessages.queue(stateWithTheShipOfTheFirstPilot(APPLIED_TICK));
+  game.update(THREE_TICKS);
+
+  doubles.entityMessages.queue(
+      stateWithTheShipOfTheFirstPilot(TICK_AFTER_THE_APPLIED_TICK));
+  game.update(THREE_TICKS);
+
+  EXPECT_EQ(doubles.interpolationTally.recalibrations().count, 1U);
+}

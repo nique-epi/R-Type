@@ -1,6 +1,7 @@
 #include "InterpolationTally.hpp"
 #include <cstdint>
 #include <optional>
+#include "ClockRecalibrations.hpp"
 
 namespace rtype::client {
 
@@ -36,6 +37,18 @@ void InterpolationTally::countFrame(std::optional<double> renderTick,
   if (serverTick.has_value()) {
     delayTicks_ = *serverTick - *renderTick;
   }
+}
+
+void InterpolationTally::countRecalibration(double jumpTicks) {
+  if (ended_) {
+    return;
+  }
+  ++recalibrations_.count;
+  recalibrations_.ticks += jumpTicks;
+}
+
+ClockRecalibrations InterpolationTally::recalibrations() const {
+  return recalibrations_;
 }
 
 std::uint64_t InterpolationTally::pastTheNewest() const {

@@ -2,6 +2,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <cmath>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -44,6 +45,7 @@
 #include "IScreenNavigator.hpp"
 #include "ISky.hpp"
 #include "InterpolationClock.hpp"
+#include "InterpolationTally.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
 #include "MissionStart.hpp"
@@ -75,6 +77,19 @@
 namespace rtype::client {
 
 namespace {
+
+/** @brief Gives @p tick to the clock that shows the other entities and to
+ * @p tally, which also counts how far the state moved the tick shown. */
+void observeShownTick(InterpolationClock& clock, InterpolationTally& tally,
+                      std::uint32_t tick) {
+  const std::optional<double> before = clock.renderTick();
+  clock.observe(tick);
+  tally.observe(tick);
+  const std::optional<double> after = clock.renderTick();
+  if (before.has_value() && after.has_value() && *after != *before) {
+    tally.countRecalibration(std::abs(*after - *before));
+  }
+}
 
 /** @returns How many pixels of the canvas the sky and the entities are drawn
  * away from their place: the camera shake, (0, 0) at rest. */
@@ -292,8 +307,7 @@ void GameScreen::applyEntityMessages() {
 void GameScreen::applyWorldState(const network::WorldState& state) {
   worldSeen_ = true;
   scoreBoard_.apply(state);
-  interpolationClock_.observe(state.tick);
-  interpolationTally_->observe(state.tick);
+  observeShownTick(interpolationClock_, *interpolationTally_, state.tick);
   if (const auto own = ownShipOf(state, playerNumber_)) {
     inputs_->confirmInputsUpTo(own->acknowledgedInput);
   }

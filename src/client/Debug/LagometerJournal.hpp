@@ -42,6 +42,8 @@ class LagometerJournal {
   LagometerReading periodStart_;
   engine::Duration sincePeriod_{};
   std::uint64_t frames_{0};
+  engine::Duration longestFrame_{};
+  std::uint64_t slowFrames_{0};
   std::optional<double> smallestDelayTicks_;
   std::optional<double> largestDelayTicks_;
 };

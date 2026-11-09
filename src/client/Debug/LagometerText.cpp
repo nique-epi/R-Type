@@ -111,6 +111,23 @@ std::string journalDisplayText(const LagometerJournalFigures& figures) {
   return text.str();
 }
 
+/** @returns The part of the journal line on the moves of the clock of the
+ * other entities and on the pace of the frames. */
+std::string journalPaceText(const LagometerJournalFigures& figures) {
+  const std::chrono::microseconds moved =
+      displayDelayOf(figures.recalibrations.ticks)
+          .value_or(std::chrono::microseconds::zero());
+  std::ostringstream text;
+  text << JOURNAL_CLOCK_WORD << figures.recalibrations.count
+       << JOURNAL_CLOCK_TIMES_WORD << wholeMilliseconds(moved)
+       << JOURNAL_CLOCK_TOTAL_WORD
+       << wholeMilliseconds(std::chrono::round<std::chrono::microseconds>(
+              figures.longestFrame))
+       << JOURNAL_SLOW_WORD << figures.slowFrames << JOURNAL_SLOW_OVER_WORD
+       << wholeMilliseconds(LAGOMETER_SLOW_FRAME) << JOURNAL_SLOW_END_WORD;
+  return text.str();
+}
+
 }  // namespace
 
 std::string lagometerJournalLine(const LagometerJournalFigures& figures) {
@@ -118,7 +135,7 @@ std::string lagometerJournalLine(const LagometerJournalFigures& figures) {
   line << JOURNAL_PERIOD_WORD
        << std::chrono::duration<double>(figures.period).count()
        << JOURNAL_PING_WORD << journalLinkText(figures)
-       << journalDisplayText(figures);
+       << journalDisplayText(figures) << journalPaceText(figures);
   return line.str();
 }
 

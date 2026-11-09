@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <optional>
+#include "ClockRecalibrations.hpp"
 
 namespace rtype::client {
 
@@ -38,6 +39,14 @@ class InterpolationTally {
   void countFrame(std::optional<double> renderTick,
                   std::optional<double> serverTick);
 
+  /** @brief Counts a state that moved the tick shown by @p jumpTicks, its
+   * size without its sign; nothing once the game ended. */
+  void countRecalibration(double jumpTicks);
+
+  /** @returns The states that moved the tick shown since the client started,
+   * and how far in all. */
+  [[nodiscard]] ClockRecalibrations recalibrations() const;
+
   /** @returns The frames that drew a tick past the newest state since the
    * client started. */
   [[nodiscard]] std::uint64_t pastTheNewest() const;
@@ -49,6 +58,7 @@ class InterpolationTally {
 
  private:
   std::uint64_t pastTheNewest_{0};
+  ClockRecalibrations recalibrations_;
   std::optional<std::uint32_t> newestTick_;
   std::optional<double> delayTicks_;
   bool ended_{false};

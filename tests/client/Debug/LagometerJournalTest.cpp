@@ -9,6 +9,7 @@
 
 namespace rtype::client {
 
+using testing::AT_THE_SLOW_FRAME;
 using testing::delayedReading;
 using testing::EIGHT_POINT_FOUR_TICKS_BEHIND;
 using testing::frameReading;
@@ -18,6 +19,7 @@ using testing::JOURNAL_PERIOD_FIGURES;
 using testing::JOURNAL_PERIOD_IN_THE_TESTS;
 using testing::JUST_SHORT_OF_THE_PERIOD;
 using testing::LARGEST_DELAY_OF_THE_PERIOD;
+using testing::PAST_THE_SLOW_FRAME;
 using testing::SEVEN_TICKS_BEHIND;
 using testing::SIX_TICKS_BEHIND;
 using testing::SMALLEST_DELAY_OF_THE_PERIOD;
@@ -126,6 +128,31 @@ TEST(LagometerJournal, ForgetsTheDelaysOfTheLastPeriod) {
       journal.update(frameReading(JOURNAL_PERIOD_IN_THE_TESTS));
 
   EXPECT_FALSE(figures.has_value());
+}
+
+/**
+ * Given a period with a frame of 25 ms and a frame of 26 ms
+ * When a frame of 9.999 s ends it
+ * Then two frames are slow, the 26 ms one and the last, the 25 ms one not,
+ * and the longest is the last
+ */
+TEST(LagometerJournal, CountsTheFramesPastTheSlowFrame) {
+  LagometerJournal journal;
+  std::ignore = journal.update(
+      delayedReading(std::chrono::milliseconds::zero(), SIX_TICKS_BEHIND));
+  std::ignore =
+      journal.update(delayedReading(AT_THE_SLOW_FRAME, SIX_TICKS_BEHIND));
+  std::ignore =
+      journal.update(delayedReading(PAST_THE_SLOW_FRAME, SIX_TICKS_BEHIND));
+
+  const auto figures = journal.update(
+      delayedReading(JUST_SHORT_OF_THE_PERIOD, SIX_TICKS_BEHIND));
+
+  ASSERT_TRUE(figures.has_value());
+  const LagometerJournalFigures period =
+      figures.value_or(LagometerJournalFigures{});
+  EXPECT_EQ(period.slowFrames, 2U);
+  EXPECT_EQ(period.longestFrame, JUST_SHORT_OF_THE_PERIOD);
 }
 
 }  // namespace rtype::client
