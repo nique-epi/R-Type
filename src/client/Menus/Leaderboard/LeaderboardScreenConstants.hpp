@@ -6,7 +6,6 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <array>
 #include <chrono>
-#include <cstddef>
 #include <cstdint>
 #include <string_view>
 #include "BackgroundColorConstants.hpp"
