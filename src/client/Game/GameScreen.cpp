@@ -136,6 +136,16 @@ void routeEntityMessage(const EntityMessageRoutes& routes,
       message);
 }
 
+/** @brief Moves the effects on by @p sinceTheWorld, with the flashes, the
+ * shades and the sound cues @p settings set. */
+void advanceEffects(EffectSpawner& effects, const PlayerSettings& settings,
+                    engine::Duration sinceTheWorld) {
+  effects.advance(sinceTheWorld,
+                  EffectPreferences{.flashes = flashPreferenceOf(settings),
+                                    .shades = pilotShadesOf(settings),
+                                    .soundCues = settings.soundCues});
+}
+
 /** @brief Puts the other entities at the tick @p clock shows, then reveals
  * those that arrived (see placeInterpolatedPositions() and
  * revealArrivedEntities()). */
@@ -233,13 +243,9 @@ void GameScreen::update(engine::Duration elapsed) {
   systems_.run(components_, elapsed);
   interpolationClock_.follow(serverTicks_->serverTickNow());
   interpolationClock_.advance(elapsed);
-  const FlashPreference preference = flashPreferenceOf(*settings_);
   const engine::Duration sinceTheWorld =
       worldSeen_ ? elapsed : engine::Duration::zero();
-  effects_.advance(sinceTheWorld,
-                   EffectPreferences{.flashes = preference,
-                                     .shades = pilotShadesOf(*settings_),
-                                     .soundCues = settings_->soundCues});
+  advanceEffects(effects_, *settings_, sinceTheWorld);
   departures_.advance(elapsed);
   silence_.advance(sinceTheWorld);
   boss_.advance(elapsed);
@@ -251,7 +257,7 @@ void GameScreen::update(engine::Duration elapsed) {
   tagPilotShips(components_, scoreBoard_.pilots(), *settings_);
   dressPilotShips(components_, shipLooks_->playerLooks());
   askForTheEndWhenDue();
-  moveSky(*sky_, effects_, preference);
+  moveSky(*sky_, effects_, flashPreferenceOf(*settings_));
   entityLayer_->paint(components_, cameraOffsetOf(effects_));
   repaintStatusWhenChanged();
 }
