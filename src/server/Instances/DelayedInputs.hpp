@@ -29,7 +29,9 @@ struct HeldInput {
  * read in one tick come out in two ticks, and a tick with none applies none,
  * the ship keeping the input before. An input that waited more than
  * INPUT_CATCH_UP_TICKS past its tick comes out with the next one, so a player
- * whose inputs arrive faster than the ticks catches up. The delay counts from
+ * whose inputs arrive faster than the ticks catches up; each tick without an
+ * input of a player, and each catch-up, is counted in its InputPace. The delay
+ * counts from
  * the tick the server read the input, not from the moment the player pressed
  * the key, so it adds to the ping of each player instead of replacing it.
  *

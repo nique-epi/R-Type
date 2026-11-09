@@ -25,6 +25,24 @@ std::optional<std::size_t> seatOf(std::uint8_t playerNumber) {
   return static_cast<std::size_t>(playerNumber - network::FIRST_PLAYER_NUMBER);
 }
 
+/**
+ * @brief Counts in the pace of the player of @p seat a tick that releases
+ * @p count of its inputs: none is a tick without input, two a catch-up. A
+ * player whose first input was not applied yet counts nothing.
+ */
+void notePace(PlayerRoster& roster, std::size_t seat, std::size_t count) {
+  ConnectedPlayer* const player = roster.findByNumber(
+      static_cast<std::uint8_t>(network::FIRST_PLAYER_NUMBER + seat));
+  if (player == nullptr || !player->appliedInput.has_value()) {
+    return;
+  }
+  if (count == 0) {
+    ++player->inputPace.ticksWithoutInput;
+  } else if (count > 1) {
+    ++player->inputPace.catchUps;
+  }
+}
+
 }  // namespace
 
 DelayedInputs::DelayedInputs(std::size_t delayTicks) : delayTicks_(delayTicks) {
@@ -46,16 +64,19 @@ void DelayedInputs::push(std::uint8_t playerNumber,
 }
 
 void DelayedInputs::release(PlayerRoster& roster, const InputSink& sink) {
-  for (std::deque<HeldInput>& held : held_) {
-    for (std::size_t count = dueCount(held); count > 0; --count) {
-      const HeldInput due = held.front();
+  for (std::size_t seat = 0; seat < held_.size(); ++seat) {
+    std::deque<HeldInput>& held = held_.at(seat);
+    const std::size_t due = dueCount(held);
+    notePace(roster, seat, due);
+    for (std::size_t count = due; count > 0; --count) {
+      const HeldInput next = held.front();
       held.pop_front();
-      ConnectedPlayer* const player = roster.findByNumber(due.playerNumber);
+      ConnectedPlayer* const player = roster.findByNumber(next.playerNumber);
       if (player != nullptr) {
-        sink(*player, due.input);
+        sink(*player, next.input);
         player->appliedInput =
-            AppliedInput{.inputNumber = due.input.inputNumber,
-                         .shownTick = due.input.shownTick};
+            AppliedInput{.inputNumber = next.input.inputNumber,
+                         .shownTick = next.input.shownTick};
       }
     }
   }
