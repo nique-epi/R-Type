@@ -18,17 +18,18 @@
 - 3000 waiting bodies hit 16 MiB through uncollected garbage: `beginTick` forces a full GC above 75 % of the limit.
 - 300 waiting bodies, resumed every tick: median tick about 0.78 ms, scripts 0.28 ms, memory about 2.2 MB (1.3 MB non waiting). 3000: median 4.5 ms, 11.7 MB. 6000 fail: not enough memory (real limit of 16 MiB).
 
+## Done on 2026-11-09 (second session)
+- Last edit checked: builds with zero warnings (Apple clang 21), 422 scripting/spawning tests green.
+- Spikes: NOT reproduced. 3 runs `--waiting`: worst 1.7 to 4.9 ms; 3 runs plain: worst 1.6 to 2.9 ms (Release, M4 Pro). Cause of the earlier 17-53 ms unknown (likely before the GC/safepoint changes, or machine load); not proven.
+- `afc87bf8` test: tests/game/Scripting/BehaviourRoutineTest.cpp (8 tests: wait held, resume, memory released after destroy, failure and step budget stop one body, direct yield refused, spawn and destroy reach the world) + fixture, constants, double tests/doubles/RecordingScriptWorld. Red proofs run: hold removed -> HoldsTheIntent red; unref removed -> ReleasesTheMemory red.
+- `51aab177` docs: scripting.md (wait/spawn/destroy/view.id, budgets, failure, waiting bench row), engine.md (step and tick budgets), project-layout.md (ScriptedBodies).
+
 ## Next steps
-1. Check the last edit (below) and build.
-2. INVESTIGATE: `--waiting` runs showed worst ticks of 17 to 53 ms, non waiting 1.2 to 3.3 ms. Compare 10 runs of each; if it is inside `scripts`, suspect the GC with many threads. Not proven either way.
-3. Write tests (none yet):
-   - tests/engine/Scripting: resume after yield, step budget, tick budget and beginTick, thread dropped frees memory after full GC, runProtected turns a memory error into ScriptException.
-   - tests/game/Scripting (new BehaviourRoutineTest + constants, double `tests/doubles/RecordingScriptWorld`): wait over several ticks, held intent, one-time requests once, return restarts, failure stops one body only, direct yield and wait outside fail, `__index` not run, NaN jump refused, postponed step resumes, spawn/destroy bad inputs.
-   - tests/server/Spawning (ScriptedBodiesTest, into `server_weapon_system_tests`): body appears and is announced with the returned id, removal published, ship untouched, limits, new world detach, destruction during a wait frees the memory.
-4. Bench: decide how to show the ticks that spent the script budget. Update its tests for `--waiting`.
-5. Docs: `scripting.md` (wait, spawn, destroy, id, budgets, failure stops the body, new figures), `engine.md` (20 ms line), `project-layout.md` if needed.
-6. Gates: full Debug tests, `format-check`, clang-tidy (llvm@20 with SDK flags, `-DINFINITY=__builtin_inff()`), `clang-query` ten-method count on ScriptMachine (at 10) and World. Then PR with `--base feat/game-design`, `Closes RTY-257`, English, draft, no AI mention.
-7. Remove this file from the branch before the PR (`git rm --cached .context/context.md`): .context is ignored, it was force-added only to survive.
+1. Nolan's decision on the failed body (below), then apply it (3 lines + change `LeavesTheBodyStillAndReportsAFailureOnce`).
+2. Not covered yet: ScriptedBodies server tests (appear + announce, ship untouched, limits, detach on new world); bench tests for `--waiting`; one-time requests applied once. Decide with Nolan whether they go in this PR.
+3. Reword the WIP commit `3922c8cb` before the PR (needs a force-push of this branch, ask Nolan).
+4. Gates ONCE at PR time (Nolan: credits): full Debug workflow, format-check, clang-tidy on the changed files only, clang-query ten-method count on ScriptMachine and World.
+5. `git rm --cached .context/context.md`, then PR `--base feat/game-design`, `Closes RTY-257`, English, draft, no AI mention.
 
 ## Open decision for Nolan
 - A body whose script failed stays still for good (shipped behaviour kept). If it froze off-screen, the level could never end (boss stage waits for every enemy). Recommendation: remove it instead (`destroy(view.networkId)`, 3 lines, changes `LeavesTheBodyStillAndReportsAFailureOnce`).
