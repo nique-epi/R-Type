@@ -17,9 +17,9 @@
 #include "NetworkConstants.hpp"
 #include "PackContent.hpp"
 #include "PackContentReading.hpp"
+#include "PackDownloadConstants.hpp"
 #include "PackDownloadOutcome.hpp"
 #include "PackDownloadProgress.hpp"
-#include "PackDownloadConstants.hpp"
 #include "PackDownloadTarget.hpp"
 
 namespace rtype::client {
