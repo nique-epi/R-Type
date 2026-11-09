@@ -26,4 +26,9 @@ namespace rtype::client::testing {
 [[nodiscard]] LagometerReading interpolationReading(
     engine::Duration frame, std::uint64_t pastTheNewest);
 
+/** @returns A frame of @p frame that drew @p delayTicks behind the server,
+ * as a game does. */
+[[nodiscard]] LagometerReading delayedReading(engine::Duration frame,
+                                              double delayTicks);
+
 }  // namespace rtype::client::testing

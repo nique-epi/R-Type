@@ -7,34 +7,11 @@
 #include "LagometerConstants.hpp"
 #include "LagometerFigures.hpp"
 #include "LagometerPoint.hpp"
+#include "LagometerRates.hpp"
 #include "LagometerReading.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
-
-namespace {
-
-/** @returns @p count over @p period, per second, rounded to the nearest. */
-std::uint64_t perSecond(std::uint64_t count, engine::Duration period) {
-  const auto ticks = static_cast<std::uint64_t>(period.count());
-  const auto ticksPerSecond = static_cast<std::uint64_t>(
-      std::chrono::duration_cast<engine::Duration>(std::chrono::seconds{1})
-          .count());
-  return ((count * ticksPerSecond) + (ticks / 2)) / ticks;
-}
-
-/** @returns @p delayTicks of the server as a duration; nothing without it. */
-std::optional<std::chrono::microseconds> displayDelayOf(
-    std::optional<double> delayTicks) {
-  if (!delayTicks.has_value()) {
-    return std::nullopt;
-  }
-  return std::chrono::round<std::chrono::microseconds>(
-      *delayTicks * std::chrono::duration<double, engine::Duration::period>(
-                        engine::SIMULATION_TICK_DURATION));
-}
-
-}  // namespace
 
 void Lagometer::update(const LagometerReading& reading) {
   if (!started_) {

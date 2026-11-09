@@ -5,7 +5,9 @@ endif()
 add_library(rtype_client_debug_module STATIC
   ClientDebugModule.cpp
   Lagometer.cpp
+  LagometerJournal.cpp
   LagometerPainting.cpp
+  LagometerRates.cpp
   LagometerText.cpp
   LagometerToggle.cpp
 )
@@ -28,6 +30,7 @@ target_link_libraries(rtype_client_debug_module
     rtype_engine_install_context
     rtype_engine_modules
     rtype_engine_time
+    rtype_logging
     rtype_network_statistics
   PRIVATE
     rtype_client_background

@@ -43,4 +43,10 @@ LagometerReading interpolationReading(engine::Duration frame,
   return reading;
 }
 
+LagometerReading delayedReading(engine::Duration frame, double delayTicks) {
+  LagometerReading reading = frameReading(frame);
+  reading.delayTicks = delayTicks;
+  return reading;
+}
+
 }  // namespace rtype::client::testing

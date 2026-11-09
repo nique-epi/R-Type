@@ -2,6 +2,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 #include "AssetLibrary.hpp"
@@ -13,9 +14,12 @@
 #include "InstallContext.hpp"
 #include "InterfaceCanvas.hpp"
 #include "InterpolationTally.hpp"
+#include "LagometerConstants.hpp"
+#include "LagometerJournalFigures.hpp"
 #include "LagometerLook.hpp"
 #include "LagometerPainting.hpp"
 #include "LagometerReading.hpp"
+#include "LagometerText.hpp"
 #include "ModuleConstants.hpp"
 #include "PlayerSettings.hpp"
 #include "TimeConstants.hpp"
@@ -23,6 +27,9 @@
 #include "TrafficTotals.hpp"
 
 namespace rtype::client {
+
+ClientDebugModule::ClientDebugModule()
+    : logger_(std::string{LAGOMETER_LOGGER_NAME}) {}
 
 std::string ClientDebugModule::name() const {
   return std::string{DEBUG_MODULE_NAME};
@@ -44,7 +51,7 @@ void ClientDebugModule::install(engine::InstallContext& context) {
   traffic_ = &context.require<network::TrafficCounters>();
   interpolation_ = &context.require<InterpolationTally>();
   context.addWork(UPDATE_STAGE, [this](engine::Duration elapsed) {
-    lagometer_.update(readingOf(elapsed));
+    take(readingOf(elapsed));
   });
   context.addWork(
       RENDER_STAGE,
@@ -78,6 +85,15 @@ LagometerReading ClientDebugModule::readingOf(engine::Duration elapsed) const {
     reading.bytesSent = traffic.sent.bytes;
   }
   return reading;
+}
+
+void ClientDebugModule::take(const LagometerReading& reading) {
+  lagometer_.update(reading);
+  const std::optional<LagometerJournalFigures> period =
+      journal_.update(reading);
+  if (period.has_value()) {
+    logger_.info(lagometerJournalLine(*period));
+  }
 }
 
 void ClientDebugModule::draw() {
