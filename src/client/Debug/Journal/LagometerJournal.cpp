@@ -3,7 +3,7 @@
 #include <chrono>
 #include <optional>
 #include "ClockRecalibrations.hpp"
-#include "LagometerConstants.hpp"
+#include "LagometerJournalConstants.hpp"
 #include "LagometerJournalFigures.hpp"
 #include "LagometerRates.hpp"
 #include "LagometerReading.hpp"

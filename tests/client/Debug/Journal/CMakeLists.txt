@@ -1,0 +1,2 @@
+target_sources(client_debug_tests PRIVATE LagometerJournalTest.cpp LagometerJournalTextTest.cpp)
+target_include_directories(client_debug_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
