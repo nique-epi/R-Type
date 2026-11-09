@@ -157,6 +157,20 @@ TEST(WaveCatalog, RefusesAnEnemyAmongTheLookItems) {
 }
 
 /**
+ * Given a waves file describing calm and easy
+ * When its difficulties are listed
+ * Then easy comes first, before calm, which alphabetical order would put
+ * ahead: a difficulty every server ships leads any other
+ */
+TEST(WaveCatalog, ListsTheShippedDifficultiesBeforeTheOthers) {
+  const WaveCatalog catalog =
+      WaveCatalog::fromText(calmFile() + calmFileNamed("easy"), TEST_FILE_NAME,
+                            shippedEntitySheets());
+
+  EXPECT_EQ(catalog.difficulties(), (std::vector<std::string>{"easy", "calm"}));
+}
+
+/**
  * Given a waves file describing storm, then calm
  * When its difficulties are listed
  * Then they come in alphabetical order, since neither is a difficulty every

@@ -827,10 +827,10 @@ for (tick in ticks) {
 <h4>Entrées répétées jusqu'à confirmation</h4>
 <p class="pitch">Chaque <code>PlayerInput</code> répète les entrées que le serveur n'a pas encore confirmées.</p>
 <p class="refs">PR #88, #89, #208 · doc : <code>protocol.mdx</code> § Inputs, <code>server.md</code> § Player inputs</p>
-<div class="block b-where"><div class="label">Où</div><p>Client : <code>PlayerInputPacer</code>, <code>IPlayerInputLink</code> (<code>src/client/Input/Commands/</code>). Serveur : <code>InputKeeper</code> par partie.</p></div>
+<div class="block b-where"><div class="label">Où</div><p>Client : <code>OwnShipPredictor</code> (<code>src/client/Prediction/OwnShip/</code>), qui envoie par <code>IPlayerInputLink</code> ; <code>PlayerInputPacer</code> (<code>src/client/Input/Commands/</code>) ne cadence plus que les bots de charge. Serveur : <code>InputKeeper</code> par partie.</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
 <li>Entrée = <code>inputNumber</code> (croissant), <code>actions</code> (5 bits : haut, bas, gauche, droite, tir), jusqu'à 15 entrées précédentes, <code>shownTick</code>.</li>
-<li>Envoyée 60×/s (une par tick avec la prédiction), même sans touche.</li>
+<li>Envoyée une fois par tick de simulation (60×/s), même sans touche.</li>
 <li>Le serveur garde le plus grand numéro vu et prend, du plus vieux au plus récent, chaque entrée plus récente : une entrée perdue est récupérée dans le message suivant, une fois, dans l'ordre.</li>
 <li>Le <code>WorldState</code> renvoie <code>acknowledgedInput</code> (dernière entrée appliquée) pour arrêter la répétition.</li></ul></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt>Redondance</dt><dd>Renvoyer volontairement les mêmes données pour survivre aux pertes sans retransmission.</dd></dl></div>
@@ -1719,7 +1719,7 @@ for (tick in ticks) {
 <p class="refs">PR #78, #152, #291 · doc : <code>client.md</code> § Options, Settings</p>
 <div class="block b-where"><div class="label">Où</div><p><code>OptionsScreen</code> (<code>src/client/Menus/Options/</code>), <code>PlayerSettings</code>, <code>SettingsService</code>, <code>SettingsFile</code> (<code>src/client/Settings/</code>), <code>settingsFolder()</code> (<code>src/client/Platform/</code>). Config : <code>client.cfg</code>.</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
-<li>Onglets : affichage (mode, taille + schéma à l'échelle), son, contrôles, accessibilité, jeu (prédiction, noms des pilotes, chat…).</li>
+<li>Onglets : affichage (mode, taille + schéma à l'échelle), son, contrôles, accessibilité, jeu (noms des pilotes, chat…).</li>
 <li>Tout passe par <code>SettingsService</code> : valide la valeur, notifie les écouteurs (son, fenêtre…), marque à sauvegarder.</li>
 <li>Fichier <code>settings.ini</code> en <code>nom=valeur</code>, lisible à la main, dans le dossier utilisateur du système.</li>
 <li>Escape en jeu ouvre les options : le jeu continue, assombri (« THE GAME GOES ON »). QUIT, au bout de la rangée de BACK, ouvre la confirmation (<code>leaveGameConfirmationMenu()</code>) ; YES ferme la session (le serveur est prévenu) et revient au titre.</li></ul></div>
