@@ -45,13 +45,13 @@ engine::LaunchOption ticksOption(std::size_t& field) {
       }};
 }
 
-/** @returns `--help`, which sets @p helpRequested. */
-engine::LaunchOption helpOption(bool& helpRequested) {
+/** @returns The option @p name, with no value, which sets @p flag. */
+engine::LaunchOption flagOption(std::string_view name, bool& flag) {
   return engine::LaunchOption{
-      .name = engine::HELP_OPTION,
+      .name = name,
       .takesValue = false,
-      .record = [&helpRequested]([[maybe_unused]] std::string_view value) {
-        helpRequested = true;
+      .record = [&flag]([[maybe_unused]] std::string_view value) {
+        flag = true;
       }};
 }
 
@@ -62,7 +62,9 @@ BenchLaunch readBenchLaunch(std::span<const std::string_view> arguments) {
   const std::array options{
       countOption(SCRIPTED_BODIES_OPTION, launch.population.scriptedBodies),
       countOption(BULLETS_OPTION, launch.population.bullets),
-      ticksOption(launch.ticks), helpOption(launch.helpRequested)};
+      ticksOption(launch.ticks),
+      flagOption(WAITING_OPTION, launch.population.waiting),
+      flagOption(engine::HELP_OPTION, launch.helpRequested)};
   engine::readLaunchArguments(arguments, options);
   return launch;
 }
@@ -79,6 +81,9 @@ std::string benchUsage() {
   text += engine::usageEntry(std::string(TICKS_OPTION) + " <count>",
                              "Ticks to measure, from 1. Default: " +
                                  std::to_string(DEFAULT_BENCH_TICKS) + ".");
+  text += engine::usageEntry(
+      std::string(WAITING_OPTION),
+      "Run a script that waits and is resumed at every tick.");
   text += engine::usageEntry(engine::HELP_OPTION,
                              "Print this help and measure nothing.");
   return text;

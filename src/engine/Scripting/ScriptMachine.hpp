@@ -10,6 +10,7 @@
 #include "ScriptFunction.hpp"
 #include "ScriptLimits.hpp"
 #include "ScriptSource.hpp"
+#include "ScriptStepEnd.hpp"
 
 struct lua_State;
 
@@ -18,7 +19,8 @@ namespace rtype::engine {
 /**
  * @brief A Luau virtual machine that runs untrusted scripts: they reach no
  * file, process or library of the system, each runs with globals of its own,
- * and they share a memory limit and a time budget per call.
+ * and they share a memory limit, a time budget per call and per step, and a
+ * time budget per tick for the steps together.
  *
  * The program exposes its functions with expose() before the first run();
  * the first run() seals the machine with the sandbox of Luau: the standard
@@ -58,6 +60,21 @@ class ScriptMachine {
    * @throws ScriptException when the call fails, as run() does.
    */
   void call(int arguments, int results);
+
+  /** @brief Gives the steps of a new tick the whole of their budget, and
+   * collects the garbage at once when it fills most of the memory limit. */
+  void beginTick();
+
+  /** @returns Whether a step may start in this tick. */
+  [[nodiscard]] bool hasTickBudget() const;
+
+  /**
+   * @brief Starts or resumes @p thread with @p arguments values on its stack,
+   * within the budget of a step, which counts in the budget of the tick. What
+   * the thread returned or yielded is left on its stack.
+   * @throws ScriptException when the step fails, as run() does.
+   */
+  ScriptStepEnd resume(lua_State* thread, int arguments);
 
   /** @returns The state functions are pushed and read on, for call(). */
   [[nodiscard]] lua_State* state() const;

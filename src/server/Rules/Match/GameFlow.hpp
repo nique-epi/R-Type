@@ -14,6 +14,7 @@
 #include "LifeKeeper.hpp"
 #include "Logger.hpp"
 #include "LookItemKeeper.hpp"
+#include "ScriptedBodies.hpp"
 #include "StartBarrier.hpp"
 #include "VolleySystem.hpp"
 #include "WaveSpawner.hpp"
@@ -69,7 +70,8 @@ namespace rtype::server {
  * Intent wants to shoot, each at the interval of the gun its sheet gives, and
  * bursts every projectile whose time came into its shards (see WeaponSystem),
  * then fires the volleys of every enemy whose Intent starts an action its
- * sheet fires one on (see VolleySystem),
+ * sheet fires one on (see VolleySystem), then makes appear and removes the
+ * bodies the scripts asked for (see ScriptedBodies),
  * then lets the Bydos of the current wave appear (see WaveSpawner), then counts
  * the waits and the protections of the lives (see LifeKeeper). The ships and
  * the Bydos move and fire in no other state. Each world starts its random draws
@@ -187,6 +189,7 @@ class GameFlow final : public IGameFlow {
   std::unique_ptr<WaveSpawner> waveSpawner_;
   std::unique_ptr<WeaponSystem> weaponSystem_;
   std::unique_ptr<VolleySystem> volleySystem_;
+  std::unique_ptr<ScriptedBodies> scriptedBodies_;
   std::unique_ptr<BossStage> bossStage_;
   std::unique_ptr<game::CollisionRules> collisionRules_;
   std::unique_ptr<game::DamageRules> damageRules_;

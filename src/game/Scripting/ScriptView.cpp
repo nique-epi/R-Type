@@ -69,7 +69,7 @@ void setAction(lua_State* state, const ActionKey& action) {
 
 std::optional<double> numberAt(lua_State* state, int table, const char* key) {
   std::optional<double> number;
-  if (lua_getfield(state, table, key) == LUA_TNUMBER) {
+  if (lua_rawgetfield(state, table, key) == LUA_TNUMBER) {
     number = lua_tonumber(state, -1);
   }
   lua_pop(state, 1);
@@ -77,7 +77,7 @@ std::optional<double> numberAt(lua_State* state, int table, const char* key) {
 }
 
 bool flagAt(lua_State* state, int table, const char* key) {
-  lua_getfield(state, table, key);
+  lua_rawgetfield(state, table, key);
   const bool flag = lua_isboolean(state, -1) && lua_toboolean(state, -1) != 0;
   lua_pop(state, 1);
   return flag;
@@ -85,7 +85,7 @@ bool flagAt(lua_State* state, int table, const char* key) {
 
 std::optional<Position> pointAt(lua_State* state, int table, const char* key) {
   std::optional<Position> point;
-  if (lua_getfield(state, table, key) == LUA_TTABLE) {
+  if (lua_rawgetfield(state, table, key) == LUA_TTABLE) {
     const int found = lua_absindex(state, -1);
     const std::optional<double> across = numberAt(state, found, POINT_X_KEY);
     const std::optional<double> down = numberAt(state, found, POINT_Y_KEY);
@@ -106,6 +106,16 @@ float shareOf(double value) {
       std::clamp(value, -double{FULL_STEERING}, double{FULL_STEERING}));
 }
 
+std::optional<Position> finitePointAt(lua_State* state, int table,
+                                      const char* key) {
+  const std::optional<Position> point = pointAt(state, table, key);
+  if (point.has_value() &&
+      (!std::isfinite(point->x) || !std::isfinite(point->y))) {
+    return std::nullopt;
+  }
+  return point;
+}
+
 std::optional<EnemyPhase> phaseNamed(std::string_view name) {
   for (std::size_t index = 0; index < PHASE_NAMES.size(); ++index) {
     if (PHASE_NAMES.at(index) == name) {
@@ -117,7 +127,7 @@ std::optional<EnemyPhase> phaseNamed(std::string_view name) {
 
 std::optional<EnemyPhase> phaseAt(lua_State* state, int table) {
   std::optional<EnemyPhase> phase;
-  if (lua_getfield(state, table, ACTION_PHASE_KEY) == LUA_TSTRING) {
+  if (lua_rawgetfield(state, table, ACTION_PHASE_KEY) == LUA_TSTRING) {
     phase = phaseNamed(lua_tostring(state, -1));
   }
   lua_pop(state, 1);
@@ -126,7 +136,7 @@ std::optional<EnemyPhase> phaseAt(lua_State* state, int table) {
 
 std::optional<ActionKey> actionAt(lua_State* state, int table) {
   std::optional<ActionKey> action;
-  if (lua_getfield(state, table, INTENT_STARTS_ACTION_KEY) == LUA_TTABLE) {
+  if (lua_rawgetfield(state, table, INTENT_STARTS_ACTION_KEY) == LUA_TTABLE) {
     const int found = lua_absindex(state, -1);
     const std::optional<double> attack =
         numberAt(state, found, ACTION_ATTACK_KEY);
@@ -149,7 +159,7 @@ bool isPositiveFinite(double value) {
 
 std::optional<CollisionBox> boxAt(lua_State* state, int table) {
   std::optional<CollisionBox> box;
-  if (lua_getfield(state, table, INTENT_COLLISION_BOX_KEY) == LUA_TTABLE) {
+  if (lua_rawgetfield(state, table, INTENT_COLLISION_BOX_KEY) == LUA_TTABLE) {
     const int found = lua_absindex(state, -1);
     const std::optional<double> width = numberAt(state, found, BOX_WIDTH_KEY);
     const std::optional<double> height = numberAt(state, found, BOX_HEIGHT_KEY);
@@ -177,6 +187,7 @@ std::optional<float> topSpeedAt(lua_State* state, int table) {
 void pushBehaviourView(lua_State* state, const BehaviourView& view,
                        std::span<const std::string> settingNames) {
   lua_createtable(state, 0, 0);
+  setNumber(state, VIEW_ID_KEY, static_cast<double>(view.networkId));
   setPoint(state, VIEW_POSITION_KEY, view.position);
   setPoint(state, VIEW_ORIGIN_KEY, view.origin);
   setNumber(state, VIEW_AGE_KEY, millisecondsOf(view.age));
@@ -212,7 +223,7 @@ Intent intentAt(lua_State* state, int index) {
   intent.shooting = flagAt(state, table, INTENT_SHOOTING_KEY);
   intent.startsAction = actionAt(state, table);
   intent.endsAction = flagAt(state, table, INTENT_ENDS_ACTION_KEY);
-  intent.jumpsTo = pointAt(state, table, INTENT_JUMPS_TO_KEY);
+  intent.jumpsTo = finitePointAt(state, table, INTENT_JUMPS_TO_KEY);
   intent.resizesTo = boxAt(state, table);
   intent.topSpeedTo = topSpeedAt(state, table);
   return intent;

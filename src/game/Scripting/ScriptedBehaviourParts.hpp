@@ -5,6 +5,7 @@
 #include <vector>
 #include "ScriptFailureReport.hpp"
 #include "ScriptMachine.hpp"
+#include "ScriptWaitState.hpp"
 #include "ScriptedSetting.hpp"
 
 namespace rtype::game {
@@ -18,6 +19,7 @@ struct ScriptedBehaviourParts {
   std::vector<ScriptedSetting> settings;
   int steer{0};
   ScriptFailureReport reportFailure;
+  std::reference_wrapper<ScriptWaitState> waits;
 };
 
 }  // namespace rtype::game

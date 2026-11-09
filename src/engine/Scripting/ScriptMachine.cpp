@@ -10,7 +10,9 @@
 #include "ScriptBudget.hpp"
 #include "ScriptFunction.hpp"
 #include "ScriptLimits.hpp"
+#include "ScriptProtection.hpp"
 #include "ScriptSource.hpp"
+#include "ScriptStepEnd.hpp"
 #include "ScriptingConstants.hpp"
 #include "lua.h"
 #include "luacode.h"
@@ -19,6 +21,8 @@
 namespace rtype::engine {
 
 namespace {
+
+constexpr std::size_t WHOLE_PERCENT = 100;
 
 /**
  * @brief The allocator of a machine: it counts what its scripts hold in the
@@ -48,17 +52,20 @@ void* allocate(void* userData, void* block, std::size_t oldSize,
   return grown;
 }
 
-/** @brief Stops the call in progress once it passed its deadline; Luau calls
- * it at the loops and calls of a script, @p collectionStep negative outside a
- * collection. */
+/** @brief Stops the call in progress once it ran SCRIPT_OVERDUE_SAFEPOINTS
+ * loops and calls past its deadline; Luau calls it at the loops and calls of a
+ * script, @p collectionStep negative outside a collection. */
 void stopOverBudget(lua_State* state, int collectionStep) {
   if (collectionStep >= 0) {
     return;
   }
-  const ScriptBudget& budget =
-      *static_cast<const ScriptBudget*>(lua_callbacks(state)->userdata);
-  if (budget.callInProgress &&
-      std::chrono::steady_clock::now() > budget.deadline) {
+  ScriptBudget& budget =
+      *static_cast<ScriptBudget*>(lua_callbacks(state)->userdata);
+  if (!budget.callInProgress ||
+      std::chrono::steady_clock::now() <= budget.deadline) {
+    return;
+  }
+  if (++budget.overdueSafepoints >= SCRIPT_OVERDUE_SAFEPOINTS) {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
     luaL_errorL(state, "%s", SCRIPT_OVER_BUDGET_MESSAGE);
   }
@@ -81,14 +88,6 @@ lua_State* newState(ScriptBudget& budget) {
   return state;
 }
 
-/** @returns The error on top of the stack of @p thread, popped. */
-std::string errorOf(lua_State* thread) {
-  const char* const text = lua_tostring(thread, -1);
-  std::string message = text == nullptr ? std::string{} : std::string{text};
-  lua_pop(thread, 1);
-  return message;
-}
-
 /** @brief Compiles @p source and pushes it on @p thread as a function.
  * @throws ScriptException when it does not compile. */
 void loadChunk(lua_State* thread, const ScriptSource& source) {
@@ -99,7 +98,7 @@ void loadChunk(lua_State* thread, const ScriptSource& source) {
   const std::string chunkName =
       std::string{SCRIPT_CHUNK_NAME_PREFIX} + source.name;
   if (luau_load(thread, chunkName.c_str(), bytecode.get(), size, 0) != 0) {
-    throw ScriptException(errorOf(thread));
+    throw ScriptException(popScriptError(thread));
   }
 }
 
@@ -150,6 +149,35 @@ void ScriptMachine::call(int arguments, int results) {
   callOn(state_.get(), arguments, results);
 }
 
+void ScriptMachine::beginTick() {
+  budget_.tickSpent = std::chrono::steady_clock::duration::zero();
+  if (budget_.memoryUsed * WHOLE_PERCENT >=
+      budget_.limits.memoryBytes * SCRIPT_COLLECTION_THRESHOLD_PERCENT) {
+    lua_gc(state_.get(), LUA_GCCOLLECT, 0);
+  }
+}
+
+bool ScriptMachine::hasTickBudget() const {
+  return budget_.tickSpent < budget_.limits.tickBudget;
+}
+
+ScriptStepEnd ScriptMachine::resume(lua_State* thread, int arguments) {
+  const auto start = std::chrono::steady_clock::now();
+  budget_.deadline = start + budget_.limits.stepBudget;
+  budget_.overdueSafepoints = 0;
+  budget_.callInProgress = true;
+  const int status = lua_resume(thread, nullptr, arguments);
+  budget_.callInProgress = false;
+  budget_.tickSpent += std::chrono::steady_clock::now() - start;
+  if (status == LUA_YIELD) {
+    return ScriptStepEnd::Yielded;
+  }
+  if (status != LUA_OK) {
+    throw ScriptException(popScriptError(thread));
+  }
+  return ScriptStepEnd::Finished;
+}
+
 lua_State* ScriptMachine::state() const { return state_.get(); }
 
 std::size_t ScriptMachine::memoryUsed() const { return budget_.memoryUsed; }
@@ -164,11 +192,12 @@ void ScriptMachine::seal() {
 void ScriptMachine::callOn(lua_State* thread, int arguments, int results) {
   budget_.deadline =
       std::chrono::steady_clock::now() + budget_.limits.callBudget;
+  budget_.overdueSafepoints = 0;
   budget_.callInProgress = true;
   const int status = lua_pcall(thread, arguments, results, 0);
   budget_.callInProgress = false;
   if (status != 0) {
-    throw ScriptException(errorOf(thread));
+    throw ScriptException(popScriptError(thread));
   }
 }
 

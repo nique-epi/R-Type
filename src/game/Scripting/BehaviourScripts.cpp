@@ -1,7 +1,10 @@
 #include "BehaviourScripts.hpp"
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <exception>
+#include <limits>
 #include <memory>
 #include <span>
 #include <string>
@@ -9,7 +12,10 @@
 #include <vector>
 #include "BehaviourRegistry.hpp"
 #include "BuiltInBehaviours.hpp"
+#include "EngineException.hpp"
 #include "GameScriptingConstants.hpp"
+#include "IScriptWorld.hpp"
+#include "Position.hpp"
 #include "ScriptFailureReport.hpp"
 #include "ScriptFunction.hpp"
 #include "ScriptLimits.hpp"
@@ -17,6 +23,8 @@
 #include "ScriptedBehaviour.hpp"
 #include "ScriptedBehaviourParts.hpp"
 #include "ScriptedSetting.hpp"
+#include "ScriptedSpawn.hpp"
+#include "TimeConstants.hpp"
 #include "WholeNumberRange.hpp"
 #include "lua.h"
 #include "lualib.h"
@@ -28,6 +36,13 @@ namespace {
 constexpr int NAME_ARGUMENT = 1;
 constexpr int SETTINGS_ARGUMENT = 2;
 constexpr int STEER_ARGUMENT = 3;
+constexpr int WAIT_MILLISECONDS_ARGUMENT = 1;
+constexpr int WAIT_INTENT_ARGUMENT = 2;
+constexpr int SPAWN_TYPE_ARGUMENT = 1;
+constexpr int SPAWN_POSITION_ARGUMENT = 2;
+constexpr int DESTROY_ID_ARGUMENT = 1;
+constexpr double MILLISECONDS_PER_SECOND = 1000.0;
+constexpr int YIELDED_INTENT = 1;
 
 /** @returns The whole number @p key of the setting table on top of @p state;
  * raises an error of the script when it is not one. */
@@ -68,11 +83,123 @@ std::vector<ScriptedSetting> settingsOf(lua_State* state) {
   return settings;
 }
 
+/** @returns The BehaviourScripts in the upvalue of the running function. */
+BehaviourScripts& scriptsOf(lua_State* state) {
+  return *static_cast<BehaviourScripts*>(
+      lua_touserdata(state, lua_upvalueindex(1)));
+}
+
+/** @brief Raises @p message as an error of the script. */
+[[noreturn]] void raise(lua_State* state, const std::string& message) {
+  lua_pushlstring(state, message.data(), message.size());
+  lua_error(state);
+}
+
+/** @returns The ticks a wait of the milliseconds at its argument lasts, the
+ * nearest whole number from 1; raises an error when it is no duration. */
+std::uint32_t waitTicksOf(lua_State* state) {
+  const double milliseconds =
+      luaL_checknumber(state, WAIT_MILLISECONDS_ARGUMENT);
+  if (!std::isfinite(milliseconds) || milliseconds < 0.0) {
+    raise(state, "a wait is a finite number of milliseconds, from 0");
+  }
+  const double ticks = std::round(
+      milliseconds * static_cast<double>(engine::SIMULATION_TICKS_PER_SECOND) /
+      MILLISECONDS_PER_SECOND);
+  return static_cast<std::uint32_t>(std::clamp(
+      ticks, 1.0, double{std::numeric_limits<std::uint32_t>::max()}));
+}
+
+/** @brief `behaviours.wait(ms, intent)`: yields @p intent to the step in
+ * progress, which only the thread of a body may do. */
+int waitOfBody(lua_State* state) {
+  ScriptWaitState& waits = scriptsOf(state).waits();
+  if (waits.stepping != state) {
+    raise(state, "behaviours.wait only runs in the function of a body");
+  }
+  waits.waitTicks = waitTicksOf(state);
+  lua_settop(state, WAIT_INTENT_ARGUMENT);
+  return lua_yield(state, YIELDED_INTENT);
+}
+
+/** @returns The world of @p state; raises an error outside a game. */
+IScriptWorld& worldOf(lua_State* state) {
+  IScriptWorld* const world = scriptsOf(state).world();
+  if (world == nullptr) {
+    raise(state, "bodies are only created and destroyed during a game");
+  }
+  return *world;
+}
+
+/** @returns The point at the argument SPAWN_POSITION_ARGUMENT; raises an error
+ * when it is not a table of two finite numbers. */
+Position spawnPositionOf(lua_State* state) {
+  luaL_checktype(state, SPAWN_POSITION_ARGUMENT, LUA_TTABLE);
+  lua_rawgetfield(state, SPAWN_POSITION_ARGUMENT, POINT_X_KEY);
+  lua_rawgetfield(state, SPAWN_POSITION_ARGUMENT, POINT_Y_KEY);
+  const auto across = static_cast<float>(lua_tonumber(state, -2));
+  const auto down = static_cast<float>(lua_tonumber(state, -1));
+  if (lua_type(state, -2) != LUA_TNUMBER ||
+      lua_type(state, -1) != LUA_TNUMBER || !std::isfinite(across) ||
+      !std::isfinite(down)) {
+    raise(state, "a position is a table of two finite numbers, x and y");
+  }
+  lua_pop(state, 2);
+  return Position{.x = across, .y = down};
+}
+
+/** @brief `behaviours.spawn(type, position)`: returns the network id of the
+ * body, which appears once the bodies of this tick were steered. */
+int spawnBody(lua_State* state) {
+  IScriptWorld& world = worldOf(state);
+  const char* const type = luaL_checkstring(state, SPAWN_TYPE_ARGUMENT);
+  const Position position = spawnPositionOf(state);
+  std::uint32_t networkId = 0;
+  std::string refusal;
+  try {
+    networkId = world.spawn(ScriptedSpawn{.type = type, .position = position});
+  } catch (const std::exception& error) {
+    refusal = error.what();
+  }
+  if (!refusal.empty()) {
+    raise(state, refusal);
+  }
+  lua_pushnumber(state, static_cast<double>(networkId));
+  return 1;
+}
+
+/** @returns The network id at the argument DESTROY_ID_ARGUMENT; raises an
+ * error when it is not a whole number a network id can be. */
+std::uint32_t destroyedIdOf(lua_State* state) {
+  const double identifier = luaL_checknumber(state, DESTROY_ID_ARGUMENT);
+  if (std::floor(identifier) != identifier || identifier < 0.0 ||
+      identifier > double{std::numeric_limits<std::uint32_t>::max()}) {
+    raise(state, "the id of a body is a whole number");
+  }
+  return static_cast<std::uint32_t>(identifier);
+}
+
+/** @brief `behaviours.destroy(id)`: removes the body once the bodies of this
+ * tick were steered. */
+int destroyBody(lua_State* state) {
+  IScriptWorld& world = worldOf(state);
+  const std::uint32_t networkId = destroyedIdOf(state);
+  std::string refusal;
+  try {
+    world.destroy(networkId);
+  } catch (const std::exception& error) {
+    refusal = error.what();
+  }
+  if (!refusal.empty()) {
+    raise(state, refusal);
+  }
+  return 0;
+}
+
 /** @brief `behaviours.register(name, settings, steer)`: keeps a behaviour in
  * the BehaviourScripts of its upvalue. */
 int registerBehaviour(lua_State* state) {
-  BehaviourScripts& scripts = *static_cast<BehaviourScripts*>(
-      lua_touserdata(state, lua_upvalueindex(1)));
+  BehaviourScripts& scripts = scriptsOf(state);
   std::string name = luaL_checkstring(state, NAME_ARGUMENT);
   std::vector<ScriptedSetting> settings = settingsOf(state);
   luaL_checktype(state, STEER_ARGUMENT, LUA_TFUNCTION);
@@ -82,7 +209,8 @@ int registerBehaviour(lua_State* state) {
                              .name = std::move(name),
                              .settings = std::move(settings),
                              .steer = steer,
-                             .reportFailure = scripts.reportFailure()});
+                             .reportFailure = scripts.reportFailure(),
+                             .waits = scripts.waits()});
   return 0;
 }
 
@@ -91,8 +219,15 @@ int registerBehaviour(lua_State* state) {
 BehaviourScripts::BehaviourScripts(ScriptFailureReport reportFailure)
     : machine_(engine::ScriptLimits{}),
       reportFailure_(std::move(reportFailure)) {
-  const std::array functions{engine::ScriptFunction{
-      .name = REGISTER_FUNCTION_NAME, .function = registerBehaviour}};
+  const std::array functions{
+      engine::ScriptFunction{.name = REGISTER_FUNCTION_NAME,
+                             .function = registerBehaviour},
+      engine::ScriptFunction{.name = WAIT_FUNCTION_NAME,
+                             .function = waitOfBody},
+      engine::ScriptFunction{.name = SPAWN_FUNCTION_NAME,
+                             .function = spawnBody},
+      engine::ScriptFunction{.name = DESTROY_FUNCTION_NAME,
+                             .function = destroyBody}};
   machine_.expose(BEHAVIOURS_TABLE, functions, this);
 }
 
@@ -107,6 +242,18 @@ void BehaviourScripts::declare(ScriptedBehaviourParts parts) {
 }
 
 engine::ScriptMachine& BehaviourScripts::machine() { return machine_; }
+
+void BehaviourScripts::attachWorld(IScriptWorld& world) { world_ = &world; }
+
+void BehaviourScripts::detachWorld(const IScriptWorld& world) noexcept {
+  if (world_ == &world) {
+    world_ = nullptr;
+  }
+}
+
+IScriptWorld* BehaviourScripts::world() const { return world_; }
+
+ScriptWaitState& BehaviourScripts::waits() { return waits_; }
 
 const ScriptFailureReport& BehaviourScripts::reportFailure() const {
   return reportFailure_;

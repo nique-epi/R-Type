@@ -165,6 +165,18 @@ std::unique_ptr<VolleySystem> volleySystemFor(GameContext& game,
                         .seed = game.settings.seed});
 }
 
+/** @returns What carries out, in @p world, what the scripts of the game ask. */
+std::unique_ptr<ScriptedBodies> scriptedBodiesFor(GameContext& game,
+                                                  game::World& world) {
+  return std::make_unique<ScriptedBodies>(
+      ScriptedBodiesParts{.world = world,
+                          .roster = game.roster.get(),
+                          .send = game.send,
+                          .types = game.settings.types,
+                          .events = game.events.get(),
+                          .scripts = game.settings.scripts});
+}
+
 /** @returns Whether the boss of the level may come at this tick, after
  * moving @p waves on a tick: once the last wave is over, or at once, without
  * any wave, in a game that @p startsAtBoss. */
@@ -223,9 +235,11 @@ void GameFlow::advanceState() {
       ++tick_;
       lookItemKeeper_->onTick();
       hitArbitration_->giveViews(world(), game_.roster.get(), tick_);
+      scriptedBodies_->beginTick();
       runWorldSystems(game_, world());
       weaponSystem_->onTick();
       volleySystem_->onTick();
+      scriptedBodies_->onTick();
       bossStage_->onTick(
           advanceTheWaves(*waveSpawner_, game_.settings.startsAtBoss));
       lifeKeeper_->onTick();
@@ -274,6 +288,7 @@ void GameFlow::buildWorld() {
       waveSpawnerFor(game_, world, game_.settings.seed + worldsBuilt_);
   weaponSystem_ = weaponSystemFor(game_, world);
   volleySystem_ = volleySystemFor(game_, world);
+  scriptedBodies_ = scriptedBodiesFor(game_, world);
   bossStage_ = bossStageFor(game_, world);
   lifeKeeper_ = std::make_unique<LifeKeeper>(
       LifeKeeperParts{.events = game_.events.get(),

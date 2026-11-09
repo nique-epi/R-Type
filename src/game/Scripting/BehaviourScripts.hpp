@@ -4,9 +4,11 @@
 #include <span>
 #include <vector>
 #include "BehaviourRegistry.hpp"
+#include "IScriptWorld.hpp"
 #include "ScriptFailureReport.hpp"
 #include "ScriptMachine.hpp"
 #include "ScriptSource.hpp"
+#include "ScriptWaitState.hpp"
 #include "ScriptedBehaviour.hpp"
 #include "ScriptedBehaviourParts.hpp"
 
@@ -15,7 +17,9 @@ namespace rtype::game {
 /**
  * @brief The behaviours the server scripts of a game register: it runs the
  * scripts on a machine of its own, which exposes `behaviours.register(name,
- * settings, steer)`, and hands the behaviours over with the built-in ones.
+ * settings, steer)`, `behaviours.wait(ms, intent)`, `behaviours.spawn(type,
+ * position)` and `behaviours.destroy(id)`, and hands the behaviours over with
+ * the built-in ones.
  *
  * It must outlive the behaviours it hands over: each calls its script on its
  * machine. Neither copied nor moved: the machine reaches it by its address.
@@ -44,6 +48,18 @@ class BehaviourScripts {
   /** @returns The machine the scripts run on. */
   [[nodiscard]] engine::ScriptMachine& machine();
 
+  /** @brief Makes @p world the game the scripts create bodies in. */
+  void attachWorld(IScriptWorld& world);
+
+  /** @brief Forgets @p world, unless another one took its place. */
+  void detachWorld(const IScriptWorld& world) noexcept;
+
+  /** @returns The game the scripts create bodies in; nullptr outside one. */
+  [[nodiscard]] IScriptWorld* world() const;
+
+  /** @returns What `behaviours.wait` tells the step in progress. */
+  [[nodiscard]] ScriptWaitState& waits();
+
   /** @returns What the report of a behaviour calls. */
   [[nodiscard]] const ScriptFailureReport& reportFailure() const;
 
@@ -58,6 +74,8 @@ class BehaviourScripts {
  private:
   engine::ScriptMachine machine_;
   ScriptFailureReport reportFailure_;
+  ScriptWaitState waits_;
+  IScriptWorld* world_{nullptr};
   std::vector<std::unique_ptr<ScriptedBehaviour>> declared_;
 };
 

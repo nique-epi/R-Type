@@ -1,9 +1,11 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <span>
 #include "ActionKey.hpp"
+#include "IBehaviourMemory.hpp"
 #include "Position.hpp"
 #include "TimeConstants.hpp"
 
@@ -50,6 +52,11 @@ struct BehaviourView {
   /** @brief How many actions the body has ended since it appeared
    * (CurrentAction::ended); 0 for a body without CurrentAction. */
   std::uint32_t actionsEnded{0};
+  /** @brief The network id of the body; 0 for a body without one. */
+  std::uint32_t networkId{0};
+  /** @brief Where the behaviour keeps what it remembers of the body; nullptr
+   * when nothing outlives this call. */
+  std::shared_ptr<IBehaviourMemory>* memory{nullptr};
 };
 
 }  // namespace rtype::game

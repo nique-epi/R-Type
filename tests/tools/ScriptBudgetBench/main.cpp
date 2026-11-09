@@ -95,6 +95,8 @@ int runBench(const BenchLaunch& launch) {
               << scene.scriptFailure() << '\n';
     return 1;
   }
+  std::cout << "memory of the scripts at the end: " << scene.scriptMemory()
+            << " bytes\n";
   printReport(launch,
               rtype::tools::figuresOf(samples, SIMULATION_TICK_DURATION));
   return 0;

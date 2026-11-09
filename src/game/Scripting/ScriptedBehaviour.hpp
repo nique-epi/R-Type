@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <span>
 #include <string>
 #include <string_view>
@@ -7,21 +8,31 @@
 #include "BehaviourSetting.hpp"
 #include "BehaviourView.hpp"
 #include "IBehaviour.hpp"
+#include "IBehaviourMemory.hpp"
 #include "Intent.hpp"
 #include "ScriptedBehaviourParts.hpp"
+#include "ScriptedRoutine.hpp"
 
 namespace rtype::game {
 
 /**
- * @brief A behaviour written in Luau: steer() hands its view to the function
- * the script registered and reads the intent it returns (see
- * pushBehaviourView() and intentAt()).
+ * @brief A behaviour written in Luau: each body runs the function the script
+ * registered in a thread of its own, kept in the memory of its Pilot, which
+ * ends with the body.
  *
- * A call that fails (an error of the script, its memory or its time budget)
- * leaves the body still for that tick, and is reported once through the
- * report of its parts. It keeps no state of its own, as every behaviour: one
- * script pilots every body that names it. Neither copied nor moved: its
- * settings point into its own names.
+ * A function that returns gives the intent of that tick (see
+ * pushBehaviourView() and intentAt()), and runs again from its start at the
+ * next tick. A function that calls `behaviours.wait(ms, intent)` stops there:
+ * the body wants that intent until the wait ends, its one-time requests (an
+ * action started or ended, a jump) applying only on the first tick, and the
+ * call returns a fresh view on the tick the wait ends. A wait costs no step.
+ *
+ * A step that fails (an error of the script, its memory or its time budget)
+ * stops the script of that body for good, leaves the body still and is
+ * reported once for the behaviour; the other bodies go on. Once the budget of
+ * a tick is spent, the steps due wait for the next tick, the bodies wanting
+ * what they wanted. Neither copied nor moved: its settings point into its own
+ * names.
  */
 class ScriptedBehaviour final : public IBehaviour {
  public:
@@ -37,7 +48,8 @@ class ScriptedBehaviour final : public IBehaviour {
   [[nodiscard]] Intent steer(const BehaviourView& view) const override;
 
  private:
-  [[nodiscard]] Intent steerByScript(const BehaviourView& view) const;
+  [[nodiscard]] Intent stepOf(ScriptedRoutine& routine,
+                              const BehaviourView& view) const;
 
   ScriptedBehaviourParts parts_;
   std::vector<std::string> settingNames_;

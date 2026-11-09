@@ -9,6 +9,12 @@
 #include "StateEncoding.hpp"
 #include "WavePlan.hpp"
 
+namespace rtype::game {
+
+class BehaviourScripts;
+
+}  // namespace rtype::game
+
 namespace rtype::server {
 
 /**
@@ -39,6 +45,9 @@ struct GameSettings {
   /** @brief Whether the game skips its waves and brings its boss in at
    * once; a game started so is never vanilla. */
   bool startsAtBoss{false};
+  /** @brief The scripts its bodies run on, which outlive it; nullptr in a game
+   * built without any. */
+  game::BehaviourScripts* scripts{nullptr};
 };
 
 }  // namespace rtype::server

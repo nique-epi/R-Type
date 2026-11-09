@@ -10,8 +10,8 @@ namespace rtype::tools {
 /**
  * @returns What @p arguments ask: SCRIPTED_BODIES_OPTION <count> and
  * BULLETS_OPTION <count>, each from 0 to 4294967295, TICKS_OPTION <count> from
- * 1 to 4294967295, and HELP_OPTION. An option not given keeps the default of
- * BenchLaunch.
+ * 1 to 4294967295, WAITING_OPTION and HELP_OPTION. An option not given keeps
+ * the default of BenchLaunch.
  * @throws engine::UnknownLaunchArgumentException or
  * engine::MissingLaunchOptionValueException, as engine::readLaunchArguments()
  * does.
