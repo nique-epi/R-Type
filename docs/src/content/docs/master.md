@@ -193,7 +193,7 @@ The bodies are JSON, read and written by `rtype_network_master` (`src/network/Ma
 ```json
 {"games":[{"number":1,"name":"GAME 1","state":"waiting","difficulty":"normal","lives":3,
             "friendlyFire":false,"players":["ACE"]}],
- "difficulties":["easy","hard","normal"],
+ "difficulties":["easy","normal","hard"],
  "measures":{"tickP50Milliseconds":1.5,"tickP95Milliseconds":4.25},"probeToken":4242424242}
 ```
 
@@ -217,7 +217,7 @@ The bodies are JSON, read and written by `rtype_network_master` (`src/network/Ma
 `GET /api/servers/{id}/games` answers, to anyone, the games of the last heartbeat of a server, so a player who picked a server can choose a game in it. The `id` is the one the creation answered. A server that registered and sent no heartbeat since lists no game and no difficulty: `{"difficulties":[],"games":[]}`, since a registration forgets the last heartbeat. An `id` that is no number, or that no server has, answers 404.
 
 ```json
-{"difficulties":["easy","hard","normal"],
+{"difficulties":["easy","normal","hard"],
  "games":[{"number":1,"name":"GAME 1","state":"waiting","playerCount":1,
             "difficulty":"normal","lives":3,"friendlyFire":false},
            {"number":2,"name":"GAME 2","state":"inGame","playerCount":2,

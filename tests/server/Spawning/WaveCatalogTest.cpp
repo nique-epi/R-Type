@@ -159,9 +159,10 @@ TEST(WaveCatalog, RefusesAnEnemyAmongTheLookItems) {
 /**
  * Given a waves file describing storm, then calm
  * When its difficulties are listed
- * Then they come in alphabetical order
+ * Then they come in alphabetical order, since neither is a difficulty every
+ * server ships
  */
-TEST(WaveCatalog, ListsTheDifficultiesInAlphabeticalOrder) {
+TEST(WaveCatalog, ListsOtherDifficultiesInAlphabeticalOrder) {
   const WaveCatalog catalog =
       WaveCatalog::fromText(std::string{STORM_TABLE} + calmFile(),
                             TEST_FILE_NAME, shippedEntitySheets());
@@ -563,13 +564,14 @@ TEST(WaveCatalog, AMissingFileInANonAnsiFolderIsNamedInUtf8) {
 /**
  * Given the waves file the game ships in its assets folder
  * When the file the server reads in that folder is read
- * Then it describes easy, hard and normal, the difficulty every game plays
+ * Then it describes easy, normal and hard, from the easiest, as the new game
+ * dialog lists them
  */
 TEST(WaveCatalog, TheShippedFileDescribesEasyNormalAndHard) {
   const WaveCatalog catalog = shippedCatalog();
 
   EXPECT_EQ(catalog.difficulties(),
-            (std::vector<std::string>{"easy", "hard", "normal"}));
+            (std::vector<std::string>{"easy", "normal", "hard"}));
 }
 
 /**
