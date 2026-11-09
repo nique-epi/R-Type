@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <optional>
 #include "RoundTripFigures.hpp"
@@ -19,6 +20,12 @@ struct LagometerFigures {
   std::optional<std::uint64_t> framesPerSecond = std::nullopt;
   std::optional<std::uint64_t> bytesReceivedPerSecond = std::nullopt;
   std::optional<std::uint64_t> bytesSentPerSecond = std::nullopt;
+  /** @brief How far behind the server the game drew the other entities at
+   * the end of the last period, and how many frames per second of it drew
+   * them past the newest state received; nothing while no game draws: before
+   * the first one, and once one ended. */
+  std::optional<std::chrono::microseconds> displayDelay = std::nullopt;
+  std::optional<std::uint64_t> pastTheNewestPerSecond = std::nullopt;
 
   bool operator==(const LagometerFigures&) const = default;
 };

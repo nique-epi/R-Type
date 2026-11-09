@@ -6,6 +6,7 @@
 #include "FixedEntityTypeSource.hpp"
 #include "GameResult.hpp"
 #include "GameScreenParts.hpp"
+#include "InterpolationTally.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingAudioService.hpp"
 #include "RecordingChatChannel.hpp"
@@ -38,6 +39,7 @@ struct LoneGameParts {
   FixedEntityTypeSource entityTypes;
   rtype::client::GameResult result;
   RecordingChatChannel chat;
+  rtype::client::InterpolationTally interpolationTally;
 
   /** @returns The parts of a game screen, borrowing these doubles. */
   [[nodiscard]] rtype::client::GameScreenParts parts();

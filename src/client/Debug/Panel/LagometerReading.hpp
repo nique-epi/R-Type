@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <optional>
+#include "ClockRecalibrations.hpp"
 #include "RoundTripFigures.hpp"
 #include "RoundTripSample.hpp"
 #include "SessionArrivals.hpp"
@@ -22,6 +23,13 @@ struct LagometerReading {
   /** @brief The bytes the socket received and sent so far. */
   std::uint64_t bytesReceived{0};
   std::uint64_t bytesSent{0};
+  /** @brief The frames the game drew past the newest state so far, and how
+   * far behind the server the newest frame drew, in ticks. */
+  std::uint64_t pastTheNewest{0};
+  std::optional<double> delayTicks = std::nullopt;
+  /** @brief The states that moved the tick the other entities are shown at
+   * so far, and how far in all. */
+  ClockRecalibrations recalibrations;
 };
 
 }  // namespace rtype::client

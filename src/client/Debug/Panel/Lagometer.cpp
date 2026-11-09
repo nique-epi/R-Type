@@ -3,33 +3,21 @@
 #include <chrono>
 #include <cstdint>
 #include <deque>
+#include <optional>
 #include "LagometerConstants.hpp"
 #include "LagometerFigures.hpp"
 #include "LagometerPoint.hpp"
+#include "LagometerRates.hpp"
 #include "LagometerReading.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
-namespace {
-
-/** @returns @p count over @p period, per second, rounded to the nearest. */
-std::uint64_t perSecond(std::uint64_t count, engine::Duration period) {
-  const auto ticks = static_cast<std::uint64_t>(period.count());
-  const auto ticksPerSecond = static_cast<std::uint64_t>(
-      std::chrono::duration_cast<engine::Duration>(std::chrono::seconds{1})
-          .count());
-  return ((count * ticksPerSecond) + (ticks / 2)) / ticks;
-}
-
-}  // namespace
-
 void Lagometer::update(const LagometerReading& reading) {
   if (!started_) {
     started_ = true;
     arrivalsAtNewestPoint_ = reading.arrivals;
-    bytesReceivedAtPeriod_ = reading.bytesReceived;
-    bytesSentAtPeriod_ = reading.bytesSent;
+    periodStart_ = reading;
   }
   if (figures_.roundTrip != reading.figures) {
     figures_.roundTrip = reading.figures;
@@ -89,15 +77,21 @@ void Lagometer::countFrame(const LagometerReading& reading) {
     return;
   }
   figures_.framesPerSecond = perSecond(framesInPeriod_, sincePeriod_);
-  figures_.bytesReceivedPerSecond =
-      perSecond(reading.bytesReceived - bytesReceivedAtPeriod_, sincePeriod_);
+  figures_.bytesReceivedPerSecond = perSecond(
+      reading.bytesReceived - periodStart_.bytesReceived, sincePeriod_);
   figures_.bytesSentPerSecond =
-      perSecond(reading.bytesSent - bytesSentAtPeriod_, sincePeriod_);
+      perSecond(reading.bytesSent - periodStart_.bytesSent, sincePeriod_);
+  figures_.displayDelay = displayDelayOf(reading.delayTicks);
+  figures_.pastTheNewestPerSecond =
+      figures_.displayDelay.has_value()
+          ? std::optional<std::uint64_t>{perSecond(
+                reading.pastTheNewest - periodStart_.pastTheNewest,
+                sincePeriod_)}
+          : std::nullopt;
   ++revision_;
   sincePeriod_ = engine::Duration::zero();
   framesInPeriod_ = 0;
-  bytesReceivedAtPeriod_ = reading.bytesReceived;
-  bytesSentAtPeriod_ = reading.bytesSent;
+  periodStart_ = reading;
 }
 
 std::uint64_t Lagometer::lossPercent() const {

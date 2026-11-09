@@ -51,8 +51,9 @@ class Lagometer {
   /** @brief Adds the round trip of @p reading as a point when it is new. */
   void addPoint(const LagometerReading& reading);
 
-  /** @brief Counts the frame of @p reading, and writes the frames and the
-   * bytes per second once a period passed. */
+  /** @brief Counts the frame of @p reading, and writes the frames, the bytes
+   * and the frames drawn past the newest state per second, and the delay of
+   * the display, once a period passed. */
   void countFrame(const LagometerReading& reading);
 
   /** @returns The share of the datagrams missed over the points, in whole
@@ -72,8 +73,7 @@ class Lagometer {
   SessionArrivals arrivalsAtNewestPoint_;
   engine::Duration sincePeriod_{};
   std::uint64_t framesInPeriod_{0};
-  std::uint64_t bytesReceivedAtPeriod_{0};
-  std::uint64_t bytesSentAtPeriod_{0};
+  LagometerReading periodStart_;
 };
 
 }  // namespace rtype::client

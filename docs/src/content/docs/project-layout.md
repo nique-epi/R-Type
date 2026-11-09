@@ -215,6 +215,8 @@ src/client/
 │   └── ServerList/      the servers and games of the master, pinged
 ├── Metrics/             the metrics module: the traffic of the socket, in the journal and a file
 ├── Debug/               the debug module: the lagometer
+│   ├── Panel/           the panel shown on F3: its figures, its text and its curve
+│   └── Journal/         the line it writes in the journal every 10 s
 ├── Audio/               the sound module
 │   ├── Contract/        what other folders may use of the sound
 │   │   ├── Music/       the music, its clock and the theme

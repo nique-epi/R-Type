@@ -11,6 +11,7 @@
 #include "ConnectedPlayers.hpp"
 #include "Endpoint.hpp"
 #include "EntityIdConstants.hpp"
+#include "InputPace.hpp"
 #include "ProtocolConstants.hpp"
 #include "RoundTripMeter.hpp"
 #include "WireTypes.hpp"
@@ -112,7 +113,8 @@ ConnectedPlayer* PlayerRoster::add(const network::Endpoint& endpoint,
                           .roundTrip = network::RoundTripMeter{},
                           .unacknowledged = network::UnacknowledgedMessages{},
                           .sentStates = SentStates{},
-                          .lastAcceptedAt = std::nullopt});
+                          .lastAcceptedAt = std::nullopt,
+                          .inputPace = InputPace{}});
     }
   }
   return nullptr;

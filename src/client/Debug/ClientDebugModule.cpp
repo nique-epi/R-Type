@@ -2,6 +2,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 #include "AssetLibrary.hpp"
@@ -12,6 +13,10 @@
 #include "ISessionArrivals.hpp"
 #include "InstallContext.hpp"
 #include "InterfaceCanvas.hpp"
+#include "InterpolationTally.hpp"
+#include "LagometerJournalConstants.hpp"
+#include "LagometerJournalFigures.hpp"
+#include "LagometerJournalText.hpp"
 #include "LagometerLook.hpp"
 #include "LagometerPainting.hpp"
 #include "LagometerReading.hpp"
@@ -23,13 +28,17 @@
 
 namespace rtype::client {
 
+ClientDebugModule::ClientDebugModule()
+    : logger_(std::string{LAGOMETER_LOGGER_NAME}) {}
+
 std::string ClientDebugModule::name() const {
   return std::string{DEBUG_MODULE_NAME};
 }
 
 std::vector<std::string> ClientDebugModule::dependencies() const {
   return {std::string{ASSETS_MODULE_NAME}, std::string{SETTINGS_MODULE_NAME},
-          std::string{WINDOW_MODULE_NAME}, std::string{CONNECTION_MODULE_NAME}};
+          std::string{WINDOW_MODULE_NAME}, std::string{CONNECTION_MODULE_NAME},
+          std::string{GAME_MODULE_NAME}};
 }
 
 void ClientDebugModule::install(engine::InstallContext& context) {
@@ -40,8 +49,9 @@ void ClientDebugModule::install(engine::InstallContext& context) {
   roundTrip_ = &context.require<IOwnRoundTrip>();
   arrivals_ = &context.require<ISessionArrivals>();
   traffic_ = &context.require<network::TrafficCounters>();
+  interpolation_ = &context.require<InterpolationTally>();
   context.addWork(UPDATE_STAGE, [this](engine::Duration elapsed) {
-    lagometer_.update(readingOf(elapsed));
+    take(readingOf(elapsed));
   });
   context.addWork(
       RENDER_STAGE,
@@ -65,7 +75,10 @@ LagometerReading ClientDebugModule::readingOf(engine::Duration elapsed) const {
                            .newestRoundTrip = roundTrip_->newestOwnRoundTrip(),
                            .arrivals = arrivals_->arrivals(),
                            .bytesReceived = 0,
-                           .bytesSent = 0};
+                           .bytesSent = 0,
+                           .pastTheNewest = interpolation_->pastTheNewest(),
+                           .delayTicks = interpolation_->delayTicks(),
+                           .recalibrations = interpolation_->recalibrations()};
   if (lagometer_.readsTrafficAfter(elapsed)) {
     const network::TrafficTotals traffic =
         network::trafficTotalsOf(traffic_->report());
@@ -73,6 +86,15 @@ LagometerReading ClientDebugModule::readingOf(engine::Duration elapsed) const {
     reading.bytesSent = traffic.sent.bytes;
   }
   return reading;
+}
+
+void ClientDebugModule::take(const LagometerReading& reading) {
+  lagometer_.update(reading);
+  const std::optional<LagometerJournalFigures> period =
+      journal_.update(reading);
+  if (period.has_value()) {
+    logger_.info(lagometerJournalLine(*period));
+  }
 }
 
 void ClientDebugModule::draw() {

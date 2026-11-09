@@ -12,6 +12,7 @@
 #include "GameScreenParts.hpp"
 #include "IScreen.hpp"
 #include "InstallContext.hpp"
+#include "InterpolationTally.hpp"
 #include "ModuleConstants.hpp"
 #include "PlayerPreferences.hpp"
 #include "PlayerSettings.hpp"
@@ -33,8 +34,10 @@ AssetList gameAssetsOf(const ScreenContext& context) {
 }
 
 /** @returns The loading screen of gameAssetsOf() while some are not loaded,
- * the game screen once they all are. */
-std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context) {
+ * the game screen once they all are, which counts in @p tally how it shows
+ * the other entities. */
+std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context,
+                                         InterpolationTally& tally) {
   context.services.audio.get().playGameMusic();
   std::unique_ptr<IScreen> loading =
       loadingScreenUnlessLoaded(context, gameAssetsOf(context), GAME_SCREEN);
@@ -56,7 +59,8 @@ std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context) {
                       .audio = context.services.audio.get(),
                       .entityTypes = context.services.entityTypes.get(),
                       .result = context.gameResult.get(),
-                      .chat = context.services.chat.get()},
+                      .chat = context.services.chat.get(),
+                      .interpolationTally = tally},
       std::make_unique<EntityLayer>(context.services.assets.get()),
       interfaceCanvasOf(context));
 }
@@ -96,7 +100,10 @@ std::vector<std::string> ClientGameModule::dependencies() const {
 
 void ClientGameModule::install(engine::InstallContext& context) {
   auto& registry = context.require<ScreenRegistry>();
-  registry.add(GAME_SCREEN, buildGameScreen);
+  context.provide(interpolationTally_);
+  registry.add(GAME_SCREEN, [this](const ScreenContext& screenContext) {
+    return buildGameScreen(screenContext, interpolationTally_);
+  });
   registry.add(END_SCREEN, buildEndScreen);
 }
 
