@@ -1,2 +1,2 @@
-target_sources(client_update_tests PRIVATE ReleaseVersionTest.cpp ReleaseManifestReadingTest.cpp ReleaseManifestReadingFixtures.cpp ManifestSignatureTest.cpp SigningKey.cpp PackageDigestTest.cpp)
-target_include_directories(client_update_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+add_subdirectory(Offer)
+add_subdirectory(Verification)

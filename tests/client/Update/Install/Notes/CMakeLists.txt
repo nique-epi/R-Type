@@ -1,0 +1,1 @@
+target_sources(client_update_tests PRIVATE ReleaseNotesFileTest.cpp)
