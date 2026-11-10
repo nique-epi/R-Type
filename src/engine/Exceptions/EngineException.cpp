@@ -147,6 +147,11 @@ DataFileTextExpectedException::DataFileTextExpectedException(
     : EngineException(placeText(place) + ": " + place.key + " must be a text") {
 }
 
+DataFileTextsExpectedException::DataFileTextsExpectedException(
+    const DataFilePlace& place)
+    : EngineException(placeText(place) + ": " + place.key +
+                      " must be an array of texts") {}
+
 UnknownDataFileChoiceException::UnknownDataFileChoiceException(
     const DataFilePlace& place, const std::string& value,
     std::span<const std::string_view> choices)
