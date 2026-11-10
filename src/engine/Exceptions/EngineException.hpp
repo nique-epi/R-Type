@@ -375,4 +375,13 @@ class ScriptException : public EngineException {
   explicit ScriptException(const std::string& message);
 };
 
+/**
+ * @brief A collision grid was laid out with a cell side that is not positive,
+ * or over an area that needs more cells along an axis than a grid may hold.
+ */
+class InvalidGridLayoutException : public EngineException {
+ public:
+  explicit InvalidGridLayoutException(std::size_t maximumLines);
+};
+
 }  // namespace rtype::engine
