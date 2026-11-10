@@ -1,5 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <algorithm>
+#include <functional>
 #include <optional>
 #include <string>
 #include <utility>
@@ -44,6 +46,7 @@ using rtype::game::testing::ENEMY_MISSILE_SHEET_TEXT;
 using rtype::game::testing::enemyMissileSheets;
 using rtype::game::testing::firstShotTicksOf;
 using rtype::game::testing::intervalTicksOf;
+using rtype::game::testing::LAST_TYPE_NUMBER;
 using rtype::game::testing::MOST_SHEETS_LOADED;
 using rtype::game::testing::NAME_OF_24_BYTES;
 using rtype::game::testing::NAME_OF_25_BYTES;
@@ -284,11 +287,11 @@ TEST(EntitySheets, RefusesANameOf25Bytes) {
 }
 
 /**
- * Given 32 sheets, the most a program loads
+ * Given 255 sheets, the most a program loads
  * When they are read
- * Then all 32 are read
+ * Then all 255 are read
  */
-TEST(EntitySheets, ReadsThe32SheetsAProgramLoadsAtMost) {
+TEST(EntitySheets, ReadsTheMostSheetsAProgramLoads) {
   const std::vector<SheetText> texts = enemyMissileSheets(MOST_SHEETS_LOADED);
 
   const EntitySheets sheets = EntitySheets::fromTexts(texts);
@@ -297,11 +300,29 @@ TEST(EntitySheets, ReadsThe32SheetsAProgramLoadsAtMost) {
 }
 
 /**
- * Given 33 sheets
- * When they are read
- * Then they are refused: the table of the types fits one datagram
+ * Given 255 sheets, the most a program loads
+ * When the sheet numbered 255 is asked for
+ * Then it is the last sheet in the order of the names: the last number a
+ * byte holds names a type
  */
-TEST(EntitySheets, RefusesAThirtyThirdSheet) {
+TEST(EntitySheets, TheLastSheetTakesTheLastTypeNumber) {
+  const std::vector<SheetText> texts = enemyMissileSheets(MOST_SHEETS_LOADED);
+  const std::string lastName =
+      std::ranges::max(texts, std::less{}, &SheetText::name).name;
+  const EntitySheets sheets = EntitySheets::fromTexts(texts);
+
+  const EntitySheet* const last = sheets.numbered(LAST_TYPE_NUMBER);
+
+  ASSERT_NE(last, nullptr);
+  EXPECT_EQ(last->name, lastName);
+}
+
+/**
+ * Given 256 sheets
+ * When they are read
+ * Then they are refused: a type number is one byte, and 0 names none
+ */
+TEST(EntitySheets, RefusesOneSheetPastTheMost) {
   const std::vector<SheetText> texts = enemyMissileSheets(ONE_SHEET_TOO_MANY);
 
   EXPECT_THROW(static_cast<void>(EntitySheets::fromTexts(texts)),
