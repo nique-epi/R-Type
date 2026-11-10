@@ -4,6 +4,9 @@
 #include "AssetLibrary.hpp"
 #include "AssetList.hpp"
 #include "AssetLoadingStep.hpp"
+#include "Biome.hpp"
+#include "BiomeConstants.hpp"
+#include "BiomeLayer.hpp"
 #include "EffectConstants.hpp"
 #include "EntityAppearances.hpp"
 #include "EntitySpriteConstants.hpp"
@@ -46,6 +49,11 @@ AssetList gameAssets() {
   assets.textures.emplace_back(EFFECT_SHEET_ID);
   assets.textures.emplace_back(PLUG_ICON_ID);
   assets.textures.emplace_back(FLIGHT_LOG_SHEET_ID);
+  for (const Biome& biome : BIOMES) {
+    for (const BiomeLayer& layer : biome.layers) {
+      assets.textures.emplace_back(layer.image);
+    }
+  }
   return assets;
 }
 
