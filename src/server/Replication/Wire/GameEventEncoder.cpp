@@ -63,6 +63,28 @@ network::EnemyActionPhase toWirePhase(game::EnemyPhase phase) {
   return network::EnemyActionPhase::Signal;
 }
 
+/** @brief What a GameEvent tells: its kind, the player it concerns and the
+ * entity it concerns, each left out when the kind names none. */
+struct GameEventSubject {
+  network::GameEventKind kind;
+  std::uint8_t playerNumber{network::NO_PLAYER_NUMBER};
+  std::uint32_t entityId{identifiers::NO_ENTITY_ID};
+};
+
+/** @returns The guaranteed GameEvent of @p subject, numbered
+ * @p nextEventNumber, which moves on to the next number once the message is
+ * written. */
+EventMessage numberedGameEvent(std::uint16_t& nextEventNumber,
+                               const GameEventSubject& subject) {
+  const network::GameEvent message{.eventNumber = nextEventNumber,
+                                   .kind = subject.kind,
+                                   .playerNumber = subject.playerNumber,
+                                   .entityId = subject.entityId};
+  network::EncodedMessage encoded = network::encodedMessage(message);
+  ++nextEventNumber;
+  return EventMessage{.message = std::move(encoded), .guaranteed = true};
+}
+
 }  // namespace
 
 EventMessage GameEventEncoder::encode(const game::EntitySpawn& event) {
@@ -112,18 +134,24 @@ EventMessage GameEventEncoder::encode(const game::BossHealthChanged& event) {
 }
 
 EventMessage GameEventEncoder::encode(const game::EntityDamage& event) {
-  return encodeGameEvent(network::GameEventKind::EntityDamaged,
-                         network::NO_PLAYER_NUMBER, event.networkId);
+  return numberedGameEvent(
+      nextEventNumber_,
+      GameEventSubject{.kind = network::GameEventKind::EntityDamaged,
+                       .entityId = event.networkId});
 }
 
 EventMessage GameEventEncoder::encode(const game::PlayerHit& event) {
-  return encodeGameEvent(network::GameEventKind::PlayerHit, event.playerNumber,
-                         identifiers::NO_ENTITY_ID);
+  return numberedGameEvent(
+      nextEventNumber_,
+      GameEventSubject{.kind = network::GameEventKind::PlayerHit,
+                       .playerNumber = event.playerNumber});
 }
 
 EventMessage GameEventEncoder::encode(const game::PlayerElimination& event) {
-  return encodeGameEvent(network::GameEventKind::PlayerEliminated,
-                         event.playerNumber, identifiers::NO_ENTITY_ID);
+  return numberedGameEvent(
+      nextEventNumber_,
+      GameEventSubject{.kind = network::GameEventKind::PlayerEliminated,
+                       .playerNumber = event.playerNumber});
 }
 
 EventMessage GameEventEncoder::encode(const game::PlayerDeparture& event) {
@@ -131,18 +159,6 @@ EventMessage GameEventEncoder::encode(const game::PlayerDeparture& event) {
                                     .reason = toWireReason(event.cause)};
   return EventMessage{.message = network::encodedMessage(message),
                       .guaranteed = true};
-}
-
-EventMessage GameEventEncoder::encodeGameEvent(network::GameEventKind kind,
-                                               std::uint8_t playerNumber,
-                                               std::uint32_t entityId) {
-  const network::GameEvent message{.eventNumber = nextEventNumber_,
-                                   .kind = kind,
-                                   .playerNumber = playerNumber,
-                                   .entityId = entityId};
-  network::EncodedMessage encoded = network::encodedMessage(message);
-  ++nextEventNumber_;
-  return EventMessage{.message = std::move(encoded), .guaranteed = true};
 }
 
 }  // namespace rtype::server

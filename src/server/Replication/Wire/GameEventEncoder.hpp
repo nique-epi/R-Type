@@ -8,7 +8,6 @@
 #include "EntityDestruction.hpp"
 #include "EntitySpawn.hpp"
 #include "EventMessage.hpp"
-#include "GameEvent.hpp"
 #include "GameEventConstants.hpp"
 #include "PlayerDeparture.hpp"
 #include "PlayerElimination.hpp"
@@ -61,10 +60,6 @@ class GameEventEncoder {
       const game::BossHealthChanged& event);
 
  private:
-  [[nodiscard]] EventMessage encodeGameEvent(network::GameEventKind kind,
-                                             std::uint8_t playerNumber,
-                                             std::uint32_t entityId);
-
   std::uint16_t nextEventNumber_{FIRST_EVENT_NUMBER};
 };
 
