@@ -65,15 +65,17 @@ The function returns a table; every key is optional, and a key left out, or of t
 | `jumps_to` | to appear at `{x, y}` without travelling there |
 | `collision_box` | to take another size of collision box, `{width, height}` in logical units, both positive; the offset of the box from the center, which a boss sheet may give, stays |
 | `top_speed` | to take another top speed, positive, in logical units per second |
+| `effect` | to play once the effect its sheet names so in `[appearance.effects]`; the server announces it to every player, guaranteed |
+| `look` | to show from now on the look its sheet names so in `[appearance.looks]`, or `""` for its own idle loop; every world state carries it, so a player who joins later sees it too |
 
-The collision box and the top speed stay until a later tick asks for others. The script of the example asks for its speed every tick, so its Drifter charges only while a ship is level with it.
+The collision box, the top speed and the look stay until a later tick asks for others; an effect plays at each tick that names it. An `effect` or a `look` must be a name of the content, 1 to 24 bytes of `a` to `z`, digits and `_`, otherwise it is left out; a name the sheet of the body does not hold is left out too, silently (see [Named effects and looks](/R-Type/entity-sheets/#named-effects-and-looks)). The script of the example asks for its speed every tick, so its Drifter charges only while a ship is level with it.
 
 ## What a script cannot do
 
 - **Reach the system.** The sandbox of Luau removes `io`, `package`, `require`, `dofile`, `loadfile` and `load`, leaves `os` its clock and dates only, and makes every standard library read-only; R-Type also removes `getfenv` and `setfenv`. Each script has globals of its own: a global of one script is not seen by another.
 - **Hold the server.** All the scripts of a game share 16 MiB (`SCRIPT_MEMORY_LIMIT_BYTES`), and each run of a script and each call of a function has 20 ms (`SCRIPT_CALL_BUDGET`): past it, the script is stopped at its next loop or call. A function that fails, runs past its budget or asks for too much memory leaves its body still for that tick, and the journal of the game writes the first failure of each behaviour once.
 - **Create or remove entities.** A script steers its own body; creating a sheet next to it, a brood or a volley, is not written yet. A boss does it through its sheet: its attacks and their phases.
-- **Change what the client draws.** A new animation, sound or effect belongs to the sheet and the client, not to a script.
+- **Draw something its sheet does not.** A script names an effect or a look its sheet draws; a new animation, a sound, or an effect outside the sprite sheet of the type belongs to the sheet and the client, not to a script.
 
 ## Checking a script before a game
 
