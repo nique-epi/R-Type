@@ -26,14 +26,15 @@ constexpr std::size_t EMPTY_PACK_BYTES = 3;
 constexpr std::string_view ONE_LETTER_PATH = "a";
 constexpr std::size_t ONE_FILE_PACK_OVERHEAD = 9;
 
-/** @brief The largest pack, 8 MiB, and the most files, 64, a pack may hold,
+/** @brief The largest pack, 8 MiB, and the most files, 510, a pack may hold,
  * as the page of the protocol states them. */
 constexpr std::size_t LARGEST_PACK_BYTES = std::size_t{8} * 1024 * 1024;
-constexpr std::size_t MOST_PACK_FILES = 64;
+constexpr std::size_t MOST_PACK_FILES = 510;
 
-/** @brief What the files of filesNumbered() are: `f` and two decimal digits,
- * each holding ONE_BYTE. */
+/** @brief What the files of filesNumbered() are: `f` and three decimal
+ * digits, each holding ONE_BYTE. */
 constexpr std::string_view NUMBERED_FILE_PREFIX = "f";
+constexpr std::size_t FILE_NUMBER_DIGITS = 3;
 constexpr std::size_t DECIMAL_BASE = 10;
 constexpr char ONE_BYTE = 'x';
 

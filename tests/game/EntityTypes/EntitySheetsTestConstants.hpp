@@ -170,10 +170,12 @@ constexpr std::string_view EMPTY_NAME{};
 constexpr std::string_view NAME_OF_24_BYTES = "abcdefghijklmnopqrstuvwx";
 constexpr std::string_view NAME_OF_25_BYTES = "abcdefghijklmnopqrstuvwxy";
 
-/** @brief The most sheets a program loads, as the protocol page bounds the
- * table of the types, and one more. */
-constexpr std::size_t MOST_SHEETS_LOADED = 32;
-constexpr std::size_t ONE_SHEET_TOO_MANY = 33;
+/** @brief The most sheets a program loads, as the issue raising the cap
+ * asks: a type number is one byte and 0 names none. Then one more, and the
+ * number the last of the most sheets takes. */
+constexpr std::size_t MOST_SHEETS_LOADED = 255;
+constexpr std::size_t ONE_SHEET_TOO_MANY = 256;
+constexpr std::uint8_t LAST_TYPE_NUMBER = 255;
 
 /** @brief The numbers of three sheets given as weaver, drifter and
  * enemy_missile: their place in the order of the names, from 1. */
