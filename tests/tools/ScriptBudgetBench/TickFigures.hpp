@@ -12,9 +12,15 @@ namespace rtype::tools {
 struct TickFigures {
   DurationSpread tick;
   DurationSpread scripts;
+  DurationSpread collisions;
   /** @brief The share of the time of all the ticks spent in the scripts, from
    * 0 to 1. */
   double scriptShare{0.0};
+  /** @brief The share of the time of all the ticks spent in CollisionSystem,
+   * from 0 to 1. */
+  double collisionShare{0.0};
+  /** @brief The collisions published in all the ticks. */
+  std::size_t collisionsFound{0};
   /** @brief The ticks that took longer than the budget. */
   std::size_t ticksOverBudget{0};
 };

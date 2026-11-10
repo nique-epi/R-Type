@@ -290,7 +290,7 @@ cmake --build --preset bench --target script_budget_bench
 ./build-bench/tests/script_budget_bench
 ```
 
-This builds the bench of the scripts in Release in `build-bench/`, then measures 300 scripted bodies and 1000 bullets over 3600 ticks, and prints the time of a tick, the median and the worst, and the share of the scripts in it; see [Scripting in Luau](https://nique-epi.github.io/R-Type/scripting/#what-a-script-costs).
+This builds the bench of the scripts in Release in `build-bench/`, then measures 300 scripted bodies and 1000 bullets over 3600 ticks, and prints the time of a tick, the median and the worst, and the share of the scripts and of the collisions in it; `--cell-side <units>` sets the side of the collision cells; see [Scripting in Luau](https://nique-epi.github.io/R-Type/scripting/#what-a-script-costs).
 
 ## Logging
 

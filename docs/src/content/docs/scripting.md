@@ -175,7 +175,7 @@ What a script may rely on:
 
 ## What a script costs
 
-`script_budget_bench` (`tests/tools/ScriptBudgetBench/`) measures what the scripts take of a tick, so that a level is written knowing how many scripted bodies the server holds. It keeps alive 300 bodies steered by the script of the Crimson Drifter (`--scripted <count>`), 1000 bullets flown by the built-in behaviour `straight` (`--bullets <count>`) and four ships, and computes 3600 ticks of 16.7 ms (`--ticks <count>`), one after the other with no wait. Each tick runs `PilotSystem`, `MovementSystem` and `PlayfieldExitSystem`, then replaces the bodies that left the playfield, so the load stays the same. Nothing is random, so two runs do the same work.
+`script_budget_bench` (`tests/tools/ScriptBudgetBench/`) measures what the scripts take of a tick, so that a level is written knowing how many scripted bodies the server holds. It keeps alive 300 bodies steered by the script of the Crimson Drifter (`--scripted <count>`), 1000 bullets flown by the built-in behaviour `straight` (`--bullets <count>`) and four ships, and computes 3600 ticks of 16.7 ms (`--ticks <count>`), one after the other with no wait. Each tick runs `PilotSystem`, `MovementSystem`, `PlayfieldExitSystem` and `CollisionSystem`, in the order of a game, then replaces the bodies that left the playfield, so the load stays the same. The bodies are spread over 16 rows and the bullets over 32 rows of their own, so the bullets are not stacked against each other. Nothing is random, so two runs do the same work.
 
 ```bash
 cmake --preset bench
@@ -183,11 +183,11 @@ cmake --build --preset bench --target script_budget_bench
 ./build-bench/tests/script_budget_bench
 ```
 
-The `bench` preset is the `test` preset in Release: a build that is not optimized says so on its error output, since its figures say nothing of a server. The report gives the median, the 99th percentile and the worst tick, the same for the scripts alone, the share of the scripts in the time of all the ticks, and how many ticks passed 16.7 ms. The time of the scripts is read around each call, garbage collection included; the two clock reads of a call count in it (14 ns each, about 3 % of a call).
+The `bench` preset is the `test` preset in Release: a build that is not optimized says so on its error output, since its figures say nothing of a server. The report gives the median, the 99th percentile and the worst tick, the same for the scripts alone, the same for `CollisionSystem` alone, the share of the scripts and of the collisions in the time of all the ticks, the collisions found, and how many ticks passed 16.7 ms. The time of the scripts is read around each call, garbage collection included; the two clock reads of a call count in it (14 ns each, about 3 % of a call).
 
 `--waiting` runs the same bodies with a script that waits one tick at a time and never returns, so each tick resumes every coroutine: the most a waiting body can cost.
 
-Measured on an Apple M4 Pro with Apple clang 21 over 3600 ticks: three runs for the first row, two for the second, one for the third, three for the last.
+Measured on an Apple M4 Pro with Apple clang 21 over 3600 ticks, before the bench ran `CollisionSystem`: three runs for the first row, two for the second, one for the third, three for the last.
 
 | Scripted bodies, bullets | Median tick | Worst tick | Median of the scripts | Share of the scripts |
 |---|---|---|---|---|
@@ -197,6 +197,20 @@ Measured on an Apple M4 Pro with Apple clang 21 over 3600 ticks: three runs for 
 | 300 waiting, 1000 | 0.77 to 0.78 ms | 1.7 to 4.9 ms | 0.27 ms | 36 % |
 
 A call of the script takes 0.9 µs, and the time grows in line with the bodies from 300 to 6000. The medians repeat within 2 %; the worst tick varies from run to run, since it depends on what else the machine does. These figures hold for this script, which reads a few keys and returns one table, and for a tick without collisions, weapons or the sending of the world state: they are the cost of the scripts, not of a whole game tick.
+
+### What the collisions cost
+
+`--cell-side <units>` sets the side of the cells of the grid `CollisionSystem` sorts the boxes into (see [Detection](/R-Type/server/#detection-collisionsystem)); it defaults to the side the game uses, `COLLISION_CELL_SIDE`. A side the grid refuses, 0 or under 7.5 units, stops the bench with the error of the grid. The time of `CollisionSystem` is read by the scheduler around the system, publishing its collisions included.
+
+Measured on an Apple M3 Pro with Apple clang 21 over 3600 ticks, 300 scripted bodies and 1000 bullets, three runs for each side:
+
+| Cell side | Median of the collisions | 99th percentile of the collisions | Share of the collisions | Median tick |
+|---|---|---|---|---|
+| 60 | 0.161 to 0.164 ms | 0.20 to 0.23 ms | 14.5 % | 1.11 to 1.13 ms |
+| 120 | 0.189 to 0.193 ms | 0.23 to 0.25 ms | 16.6 to 16.7 % | 1.14 to 1.16 ms |
+| 240 | 0.254 to 0.255 ms | 0.31 to 0.32 ms | 21.0 % | 1.21 to 1.22 ms |
+
+The three sides found the same 9,457,143 collisions, about 2,600 a tick: 300 bodies of 96 by 96 cover more than the playfield, so nearly every bullet lies in a body. Cells of 60 cost 15 % less than cells of 120, far more than the 2 % the runs of one side differ by, so `COLLISION_CELL_SIDE` is 60, though a ship of 128 by 64 covers six to twelve such cells. The bench has no wall: a level with walls larger than a cell is measured again before the side is trusted for it.
 
 ## Where to intervene
 
