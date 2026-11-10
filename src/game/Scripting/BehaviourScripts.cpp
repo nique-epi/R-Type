@@ -33,17 +33,6 @@ namespace rtype::game {
 
 namespace {
 
-constexpr int NAME_ARGUMENT = 1;
-constexpr int SETTINGS_ARGUMENT = 2;
-constexpr int STEER_ARGUMENT = 3;
-constexpr int WAIT_MILLISECONDS_ARGUMENT = 1;
-constexpr int WAIT_INTENT_ARGUMENT = 2;
-constexpr int SPAWN_TYPE_ARGUMENT = 1;
-constexpr int SPAWN_POSITION_ARGUMENT = 2;
-constexpr int DESTROY_ID_ARGUMENT = 1;
-constexpr double MILLISECONDS_PER_SECOND = 1000.0;
-constexpr int YIELDED_INTENT = 1;
-
 /** @returns The whole number @p key of the setting table on top of @p state;
  * raises an error of the script when it is not one. */
 std::int64_t wholeNumberOf(lua_State* state, const char* key) {
@@ -69,13 +58,14 @@ LuauSetting settingOnTop(lua_State* state) {
                          .highest = wholeNumberOf(state, SETTING_HIGHEST_KEY)}};
 }
 
-/** @returns The settings of the array at SETTINGS_ARGUMENT, in its order. */
+/** @returns The settings of the array at REGISTER_SETTINGS_ARGUMENT, in its
+ * order. */
 std::vector<LuauSetting> settingsOf(lua_State* state) {
-  luaL_checktype(state, SETTINGS_ARGUMENT, LUA_TTABLE);
+  luaL_checktype(state, REGISTER_SETTINGS_ARGUMENT, LUA_TTABLE);
   std::vector<LuauSetting> settings;
-  const int count = lua_objlen(state, SETTINGS_ARGUMENT);
+  const int count = lua_objlen(state, REGISTER_SETTINGS_ARGUMENT);
   for (int index = 1; index <= count; ++index) {
-    lua_rawgeti(state, SETTINGS_ARGUMENT, index);
+    lua_rawgeti(state, REGISTER_SETTINGS_ARGUMENT, index);
     settings.push_back(settingOnTop(state));
     lua_pop(state, 1);
   }
@@ -104,7 +94,7 @@ std::uint32_t waitTicksOf(lua_State* state) {
   }
   const double ticks = std::round(
       milliseconds * static_cast<double>(engine::SIMULATION_TICKS_PER_SECOND) /
-      MILLISECONDS_PER_SECOND);
+      SCRIPT_MILLISECONDS_PER_SECOND);
   return static_cast<std::uint32_t>(std::clamp(
       ticks, 1.0, double{std::numeric_limits<std::uint32_t>::max()}));
 }
@@ -118,7 +108,7 @@ int waitOfBody(lua_State* state) {
   }
   context.waitTicks = waitTicksOf(state);
   lua_settop(state, WAIT_INTENT_ARGUMENT);
-  return lua_yield(state, YIELDED_INTENT);
+  return lua_yield(state, WAIT_YIELDED_VALUES);
 }
 
 /** @returns What carries out the bodies the scripts of @p state order;
@@ -200,10 +190,10 @@ int destroyBody(lua_State* state) {
  * the BehaviourScripts of its upvalue. */
 int registerBehaviour(lua_State* state) {
   BehaviourScripts& scripts = scriptsOf(state);
-  std::string name = luaL_checkstring(state, NAME_ARGUMENT);
+  std::string name = luaL_checkstring(state, REGISTER_NAME_ARGUMENT);
   std::vector<LuauSetting> settings = settingsOf(state);
-  luaL_checktype(state, STEER_ARGUMENT, LUA_TFUNCTION);
-  const int steer = lua_ref(state, STEER_ARGUMENT);
+  luaL_checktype(state, REGISTER_STEER_ARGUMENT, LUA_TFUNCTION);
+  const int steer = lua_ref(state, REGISTER_STEER_ARGUMENT);
   scripts.declare(LuauBehaviourParts{.machine = scripts.machine(),
                                      .name = std::move(name),
                                      .settings = std::move(settings),
