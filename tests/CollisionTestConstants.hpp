@@ -59,3 +59,22 @@ constexpr float FAR_DISTANCE = 100.0F;
  * three sides, so it is apart from a square on that Position.
  */
 constexpr float MOVED_BOX_OFFSET_X = 30.0F;
+
+/**
+ * @brief Side of a square box wider than two cells of the collision grid.
+ */
+constexpr float WIDE_BOX_SIDE = 300.0F;
+
+/**
+ * @brief Centers of two wide boxes 100 units apart on the x axis, both on the
+ * same y: from x 50 to 350 and from 150 to 450, they overlap and share several
+ * cells of the collision grid.
+ */
+constexpr float WIDE_BOX_CENTER_X = 200.0F;
+constexpr float OTHER_WIDE_BOX_CENTER_X = 300.0F;
+constexpr float WIDE_BOX_CENTER_Y = 200.0F;
+
+/**
+ * @brief A coordinate beyond the left and the top edges of the playfield.
+ */
+constexpr float BEYOND_THE_PLAYFIELD = -200.0F;

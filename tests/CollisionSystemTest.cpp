@@ -191,3 +191,48 @@ TEST(CollisionSystem, AMovedHitboxIsApartFromItsPosition) {
 
   EXPECT_TRUE(updateAndCollect(scene, system).empty());
 }
+
+/**
+ * Given two entities whose boxes, each wider than two cells of the collision
+ * grid, overlap and share several cells
+ * When the collision system updates and the bus dispatches
+ * Then exactly one Collision names that pair
+ */
+TEST(CollisionSystem, ReportsAPairSharingSeveralCellsOnce) {
+  CollisionScene scene;
+  const Entity first = scene.spawnWithoutCollisionBox(
+      EntityType::Player, WIDE_BOX_CENTER_X, WIDE_BOX_CENTER_Y);
+  scene.components.add(
+      first, CollisionBox{.width = WIDE_BOX_SIDE, .height = WIDE_BOX_SIDE});
+  const Entity second = scene.spawnWithoutCollisionBox(
+      EntityType::Enemy, OTHER_WIDE_BOX_CENTER_X, WIDE_BOX_CENTER_Y);
+  scene.components.add(
+      second, CollisionBox{.width = WIDE_BOX_SIDE, .height = WIDE_BOX_SIDE});
+  CollisionSystem system(scene.events);
+
+  const std::vector<Collision> received = updateAndCollect(scene, system);
+
+  ASSERT_EQ(received.size(), 1U);
+  EXPECT_TRUE(isPair(received.front(), first, second));
+}
+
+/**
+ * Given two entities beyond the left and the top edges of the playfield whose
+ * boxes overlap
+ * When the collision system updates and the bus dispatches
+ * Then exactly one Collision names that pair
+ */
+TEST(CollisionSystem, ReportsAnOverlappingPairBeyondThePlayfield) {
+  CollisionScene scene;
+  const Entity first = scene.spawn(EntityType::Player, BEYOND_THE_PLAYFIELD,
+                                   BEYOND_THE_PLAYFIELD);
+  const Entity second = scene.spawn(
+      EntityType::Enemy, BEYOND_THE_PLAYFIELD + CENTER_DISTANCE_OVERLAPPING,
+      BEYOND_THE_PLAYFIELD);
+  CollisionSystem system(scene.events);
+
+  const std::vector<Collision> received = updateAndCollect(scene, system);
+
+  ASSERT_EQ(received.size(), 1U);
+  EXPECT_TRUE(isPair(received.front(), first, second));
+}
