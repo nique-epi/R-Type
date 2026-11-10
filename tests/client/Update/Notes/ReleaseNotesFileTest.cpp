@@ -2,11 +2,12 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include "NotesTestConstants.hpp"
 #include "ReleaseNotes.hpp"
 #include "ReleaseNotesFile.hpp"
-#include "RunTestConstants.hpp"
 #include "TemporaryFolder.hpp"
 #include "UpdateConstants.hpp"
+#include "UpdateTestConstants.hpp"
 
 using rtype::client::readReleaseNotes;
 using rtype::client::RELEASE_NOTES_FILE_NAME;

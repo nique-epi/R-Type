@@ -7,9 +7,9 @@
 #include "FakeUpdateRun.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
+#include "UpdatePanelTestConstants.hpp"
 #include "UpdateScreen.hpp"
 #include "UpdateScreenParts.hpp"
-#include "UpdateScreenTestConstants.hpp"
 
 using rtype::client::UpdateScreen;
 using rtype::client::UpdateScreenParts;

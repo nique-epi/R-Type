@@ -6,9 +6,9 @@
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "ReleaseNotes.hpp"
-#include "UpdateScreenTestConstants.hpp"
 #include "WhatsNewScreen.hpp"
 #include "WhatsNewScreenParts.hpp"
+#include "WhatsNewTestConstants.hpp"
 
 using rtype::client::ReleaseNotes;
 using rtype::client::WhatsNewScreen;

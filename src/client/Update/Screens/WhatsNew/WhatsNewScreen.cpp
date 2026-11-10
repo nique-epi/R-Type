@@ -13,7 +13,7 @@
 #include "InterfaceColorConstants.hpp"
 #include "InterfaceConstants.hpp"
 #include "TimeConstants.hpp"
-#include "UpdateScreenConstants.hpp"
+#include "WhatsNewConstants.hpp"
 #include "WhatsNewScreenParts.hpp"
 #include "WidgetColors.hpp"
 #include "WidgetConstants.hpp"

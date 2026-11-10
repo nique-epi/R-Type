@@ -11,6 +11,7 @@
 #include "UpdatePhase.hpp"
 #include "UpdateRun.hpp"
 #include "UpdateRunParts.hpp"
+#include "UpdateTestConstants.hpp"
 
 namespace rtype::client::testing {
 

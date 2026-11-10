@@ -1,8 +1,4 @@
-find_package(nlohmann_json CONFIG REQUIRED)
-
 add_library(rtype_client_update_run STATIC
-  NoteLines.cpp
-  ReleaseNotesFile.cpp
   UpdateCheck.cpp
   UpdateRun.cpp
 )
@@ -14,8 +10,8 @@ target_link_libraries(rtype_client_update_run
     rtype_client_update_interfaces
     rtype_logging
   PRIVATE
-    nlohmann_json::nlohmann_json
     rtype_client_exceptions
+    rtype_client_update_notes
 )
 
 rtype_enable_warnings(rtype_client_update_run)

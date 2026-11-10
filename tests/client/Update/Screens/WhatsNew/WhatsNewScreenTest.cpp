@@ -4,8 +4,8 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <optional>
 #include "RecordingNavigator.hpp"
-#include "UpdateScreenTestConstants.hpp"
 #include "WhatsNewScreenFixture.hpp"
+#include "WhatsNewTestConstants.hpp"
 
 using rtype::client::testing::FIRST_NOTE;
 using rtype::client::testing::SECOND_NOTE;

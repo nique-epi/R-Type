@@ -14,10 +14,10 @@
 #include "ReleaseOffer.hpp"
 #include "UpdateCheck.hpp"
 #include "UpdateConstants.hpp"
+#include "UpdatePanelConstants.hpp"
 #include "UpdatePhase.hpp"
 #include "UpdateRun.hpp"
 #include "UpdateRunParts.hpp"
-#include "UpdateScreenConstants.hpp"
 
 namespace rtype::client {
 

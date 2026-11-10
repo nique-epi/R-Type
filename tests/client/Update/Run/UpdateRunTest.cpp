@@ -10,6 +10,7 @@
 #include "TemporaryFolder.hpp"
 #include "UpdatePhase.hpp"
 #include "UpdateRun.hpp"
+#include "UpdateTestConstants.hpp"
 
 using rtype::client::readReleaseNotes;
 using rtype::client::ReleaseNotes;

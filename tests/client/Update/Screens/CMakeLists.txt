@@ -1,2 +1,2 @@
-target_sources(client_update_tests PRIVATE UpdateScreenTest.cpp UpdateScreenFixture.cpp WhatsNewScreenTest.cpp WhatsNewScreenFixture.cpp)
-target_include_directories(client_update_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+add_subdirectory(UpdatePanel)
+add_subdirectory(WhatsNew)

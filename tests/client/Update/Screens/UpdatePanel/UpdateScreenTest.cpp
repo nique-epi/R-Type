@@ -4,9 +4,9 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <optional>
 #include "RecordingNavigator.hpp"
+#include "UpdatePanelTestConstants.hpp"
 #include "UpdatePhase.hpp"
 #include "UpdateScreenFixture.hpp"
-#include "UpdateScreenTestConstants.hpp"
 
 using rtype::client::UpdatePhase;
 using rtype::client::testing::A_FEW_FRAMES;

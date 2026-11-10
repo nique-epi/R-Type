@@ -12,8 +12,8 @@
 #include <utility>
 #include "IReleaseFiles.hpp"
 #include "ReleaseDownload.hpp"
+#include "ReleasesConstants.hpp"
 #include "UpdateConstants.hpp"
-#include "VelopackConstants.hpp"
 
 namespace rtype::client {
 

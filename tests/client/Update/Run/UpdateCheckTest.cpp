@@ -4,8 +4,8 @@
 #include "FakeReleaseUpdater.hpp"
 #include "ReleaseOffer.hpp"
 #include "RunFixtures.hpp"
-#include "RunTestConstants.hpp"
 #include "UpdateCheck.hpp"
+#include "UpdateTestConstants.hpp"
 
 using rtype::client::ReleaseOffer;
 using rtype::client::UpdateCheck;

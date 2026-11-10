@@ -2,7 +2,8 @@
 #include <string>
 #include <vector>
 #include "NoteLines.hpp"
-#include "RunTestConstants.hpp"
+#include "NotesTestConstants.hpp"
+#include "UpdateTestConstants.hpp"
 
 using rtype::client::noteLinesOf;
 using rtype::client::testing::ACCENTED_NOTE;
