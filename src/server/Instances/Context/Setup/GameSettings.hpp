@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <string>
 #include "EntitySheets.hpp"
 #include "GameRules.hpp"
@@ -49,9 +50,9 @@ struct GameSettings {
    * once; a game started so is never vanilla. */
   bool startsAtBoss{false};
   /** @brief The level a script directs the game through, one of
-   * `level.register`; empty for a game that plays the waves of its
+   * `level.register`; nothing for a game that plays the waves of its
    * difficulty. A game that plays a level is never vanilla. */
-  std::string level;
+  std::optional<std::string> level = std::nullopt;
   /** @brief The scripts its bodies run on, which outlive it; nullptr in a game
    * built without any. */
   game::BehaviourScripts* scripts{nullptr};

@@ -3,7 +3,6 @@
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/System/Vector2.hpp>
-#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <span>
@@ -21,8 +20,12 @@
 namespace rtype::client {
 
 std::span<const BiomeLayer> layersOfBiome(std::string_view name) {
-  const auto* const found = std::ranges::find(BIOMES, name, &Biome::name);
-  return found == BIOMES.end() ? std::span<const BiomeLayer>{} : found->layers;
+  for (const Biome& biome : BIOMES) {
+    if (biome.name == name) {
+      return biome.layers;
+    }
+  }
+  return {};
 }
 
 std::vector<int> decorTileColumns(float scrolledPixels, int tileWidth) {

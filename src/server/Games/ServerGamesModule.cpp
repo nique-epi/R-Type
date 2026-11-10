@@ -281,17 +281,18 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
                   .startsAtBoss = startsAtBoss,
                   .playsALevel = !level.empty()});
   logHowGamesPlay(logger_, rules, breaches);
-  return GameSettings{.seed = seed.has_value() ? *seed : std::random_device{}(),
-                      .waves = catalog.planOf(rules.difficulty),
-                      .types = types,
-                      .statesPerSecond = statesPerSecond,
-                      .stateEncoding = encoding,
-                      .inputDelayTicks = inputDelayTicks,
-                      .rules = rules,
-                      .vanilla = breaches.empty(),
-                      .startsAtBoss = startsAtBoss,
-                      .level = level,
-                      .scripts = scripts_.get()};
+  return GameSettings{
+      .seed = seed.has_value() ? *seed : std::random_device{}(),
+      .waves = catalog.planOf(rules.difficulty),
+      .types = types,
+      .statesPerSecond = statesPerSecond,
+      .stateEncoding = encoding,
+      .inputDelayTicks = inputDelayTicks,
+      .rules = rules,
+      .vanilla = breaches.empty(),
+      .startsAtBoss = startsAtBoss,
+      .level = level.empty() ? std::nullopt : std::optional{level},
+      .scripts = scripts_.get()};
 }
 
 void ServerGamesModule::stop() {

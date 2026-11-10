@@ -48,7 +48,7 @@ void runWorldSystems(GameContext& game, game::World& world) {
 /** @returns The boss stage of the level played in @p world; nullptr in a
  * game that plays a level a script directs. */
 std::unique_ptr<BossStage> bossStageFor(GameContext& game, game::World& world) {
-  if (!game.settings.level.empty()) {
+  if (game.settings.level.has_value()) {
     return nullptr;
   }
   return std::make_unique<BossStage>(
@@ -66,7 +66,7 @@ std::unique_ptr<BossStage> bossStageFor(GameContext& game, game::World& world) {
 std::unique_ptr<WaveSpawner> waveSpawnerFor(GameContext& game,
                                             game::World& world,
                                             std::uint32_t seed) {
-  if (!game.settings.level.empty()) {
+  if (game.settings.level.has_value()) {
     return nullptr;
   }
   return std::make_unique<WaveSpawner>(
@@ -119,17 +119,17 @@ std::unique_ptr<EntityOrders> entityOrdersFor(GameContext& game,
 std::unique_ptr<LevelDirector> levelDirectorFor(GameContext& game,
                                                 game::World& world) {
   const GameSettings& settings = game.settings;
-  if (settings.level.empty()) {
+  if (!settings.level.has_value()) {
     return nullptr;
   }
   if (settings.scripts == nullptr) {
-    throw UnknownLevelException(settings.level, {});
+    throw UnknownLevelException(*settings.level, {});
   }
   return std::make_unique<LevelDirector>(
       LevelDirectorParts{.world = world,
                          .events = game.events.get(),
                          .scripts = *settings.scripts,
-                         .level = settings.level});
+                         .level = *settings.level});
 }
 
 /** @returns Whether the boss of the level may come at this tick, after
