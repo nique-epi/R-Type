@@ -991,7 +991,7 @@ events.dispatch();
 
 ## Waves: `WaveSpawner`
 
-`WaveSpawner` (`src/server/Spawning/`) makes the enemies appear in the `World`, in waves: a `WaveDirector` says when (see [Waves of Bydos](#waves-of-bydos-wavedirector)). A `GameFlow` builds one with each world, from a `WaveSpawnerParts` holding the world, the players, the send function, the seed, the wave plan of the game and the entity sheets its enemies name, and ticks it only while the game is `InProgress`, so nothing appears while the game waits for players or is finished, and every new game starts its waves over with the first pause. With the `normal` difficulty, the first Bydo of a game appears on the 241st tick, 4 seconds in.
+`WaveSpawner` (`src/server/Spawning/`) makes the enemies appear in the `World`, in waves: a `WaveDirector` says when (see [Waves of Bydos](#waves-of-bydos-wavedirector)). `MatchSystems` builds one with each world, from a `WaveSpawnerParts` holding the world, the players, the send function, the seed, the wave plan of the game and the entity sheets its enemies name, and ticks it only while the game is `InProgress`, so nothing appears while the game waits for players or is finished, and every new game starts its waves over with the first pause. With the `normal` difficulty, the first Bydo of a game appears on the 241st tick, 4 seconds in.
 
 - `waveEntryPosition(randomUnit)` (`src/game/Spawning/`) says where: `ENEMY_SPAWN_MARGIN` (64 logical units) past the right edge of the playfield, so the Bydo is off screen, and at a height from `ENEMY_ROW_MARGIN` (112) to `PLAY_AREA_HEIGHT` (984) minus that margin, 872. The margin is `ENEMY_SPAWN_VERTICAL_MARGIN` (64), more than half of the height of a Bydo, and the room a Bydo may move on its pattern, `ENEMY_PATTERN_ROOM` (48), so even at the bottom of a wave a Bydo stays above the status band every client draws along the bottom of the playfield (see [Architecture](/R-Type/architecture/#coordinate-system)). A draw of 0 gives the highest row; a draw from 0 up to, but not including, 1 is accepted, anything else (1 included, or not a number) throws `InvalidRandomUnitException`. The margins are **provisional**: chosen before a Bydo had a size, they are wider than half of its 96 units, so a Bydo still appears and leaves off screen.
 - `World::spawn(sheet, position)` makes the Bydo from the sheet the wave plan names (see [Writing an entity sheet](/R-Type/entity-sheets/)): with the shipped sheets, a `Position`, a `SteadyMotion` of 240 units per second, a `Pilot` holding the behaviour of its sheet and its settings, `EntityType::Enemy`, its `Health`, its `ScoreValue`, its `Gun`, its `EntityTypeNumber`, a `NetworkIdentity` and a `CollisionBox` of 96 × 96 logical units, its 24 × 24 pixels of the entity sheet (a client test compares the two). The spawner gives the Bydos the sheets the wave plan lists, in turn, the turn carrying on from one wave to the next (`drifter` then `weaver` with `normal`), and draws nothing for it, so a seed still gives the same heights. A plan without enemies throws `EmptyEnemyCycleException`, and one that names a sheet the server does not have `UnknownEntityTypeException`. See [Piloted bodies](#piloted-bodies-pilotsystem-and-playfieldexitsystem).
@@ -1007,7 +1007,7 @@ The supervisor hands the seed to every game it starts, so every game of the supe
 
 ## Piloted bodies: `PilotSystem` and `PlayfieldExitSystem`
 
-Each tick of a game in progress, `GameFlow` makes the ships of away players want nothing, then runs six systems of the world, in this order, before the missiles are fired and the Bydos appear: `BossPhaseSystem`, which moves a boss to its fight or its rage (see [Boss](#boss-bossstage-and-bossphasesystem)), `PilotSystem`, which lets the behaviour of each Bydo and each missile write its `Intent`, `MovementSystem`, which moves the ships, the Bydos and the missiles by their `Intent` (see [Moving the ships](#moving-the-ships-shipcontrol)), `PlayfieldExitSystem`, then `CollisionSystem` and `HurtZoneSystem` (see [Collisions](#collisions)). It runs them with `SIMULATION_TICK_DURATION`, and the scheduler belongs to the `GameInstance`, which gives it to the modules: `RtypeRulesModule` adds the six systems when it starts (`addRtypeSystems`), so they survive the new worlds.
+Each tick of a game in progress, `MatchSystems` (`src/server/Rules/Match/`), which `GameFlow` builds with each new world and which holds the rules and spawners of that world, makes the ships of away players want nothing, then runs six systems of the world, in this order, before the missiles are fired and the Bydos appear: `BossPhaseSystem`, which moves a boss to its fight or its rage (see [Boss](#boss-bossstage-and-bossphasesystem)), `PilotSystem`, which lets the behaviour of each Bydo and each missile write its `Intent`, `MovementSystem`, which moves the ships, the Bydos and the missiles by their `Intent` (see [Moving the ships](#moving-the-ships-shipcontrol)), `PlayfieldExitSystem`, then `CollisionSystem` and `HurtZoneSystem` (see [Collisions](#collisions)). It runs them with `SIMULATION_TICK_DURATION`, and the scheduler belongs to the `GameInstance`, which gives it to the modules: `RtypeRulesModule` adds the six systems when it starts (`addRtypeSystems`), so they survive the new worlds.
 
 - A Bydo or a missile is a body piloted by a behaviour (see [Architecture](/R-Type/architecture/#pilot-and-body)). Its `Pilot` holds the behaviour, the settings its sheet gives it, the place it appeared at and its age; `PilotSystem` (`src/game/Systems/PilotSystem/`) adds the tick to the age, then asks the behaviour for the `Intent` of the body. Its `SteadyMotion` makes `MovementSystem` move it at the `top_speed` of its sheet times the direction of that `Intent` on each axis, a share beyond 1 counting as 1.
 - The behaviours live in `src/game/Behaviours/`: the contract and the registry in `Piloting/`, the built-in behaviours in `Movements/` (those that only move in `Paths/`, those that attack and their `ActionCycle` in `Attacks/`), each under a name, in the `BehaviourRegistry` that `EntitySheets` builds from `builtInBehaviours()` and owns; a sheet naming no behaviour stops the server when it reads the sheets. Each behaviour declares the settings it reads (`IBehaviour::settings()`, `BehaviourSetting`), and reads them with `settingAt()`. `straight` goes along its row, the way its `heading` setting says: -1 for the Drifter and the missile of a Bydo, 1 for the missile of a player. `weave` goes left and asks for the share that puts the Bydo at `origin.y + amplitude * sin(2 * pi * age / period)` at the end of the tick (`verticalShareTowards`), with the `amplitude` and the `period_ms` of its sheet, 48 units and 2 seconds for the Weaver, both **provisional**. The height is computed from the age, never added up tick by tick, so it does not depend on how the time is cut into steps. The amplitude may not exceed `ENEMY_PATTERN_ROOM`, the room every row keeps above and below it, which the reader of the sheets checks, so a Bydo on a wave stays in the area of play. Both want to shoot at every tick; a body without a gun fires nothing.
@@ -1050,7 +1050,7 @@ rtype::server::WavePlan waves =
 
 ## Boss: `BossStage` and `BossPhaseSystem`
 
-A difficulty that names a `boss` ends its level with it (see [Writing the waves file](/R-Type/waves-file/#the-boss)). `BossStage` (`src/server/Spawning/`) runs that end; a `GameFlow` builds one with each world and ticks it after the `WaveSpawner`, with `lastWaveFinished()`:
+A difficulty that names a `boss` ends its level with it (see [Writing the waves file](/R-Type/waves-file/#the-boss)). `BossStage` (`src/server/Spawning/`) runs that end; `MatchSystems` builds one with each world and ticks it after the `WaveSpawner`, with `lastWaveFinished()`:
 
 1. On the tick the last wave is found over, it publishes a `BossArrival` (the number of the sheet of the boss and the warning in milliseconds), which the players get as a `BossStatus` `Arriving`, and logs `the last wave is over: bydo_tyrant arrives in 4400 ms` under `BossStage`.
 2. After `BOSS_ARRIVAL_WARNING_TICKS` (264) more ticks, `BOSS_ARRIVAL_WARNING` (4400 ms: 600 ms of silence, the 3200 ms of the WARNING screen of the client and 600 ms of margin), the next tick makes the boss appear at `BOSS_ENTRY_POSITION`, 256 units past the right edge, half its 512-unit frame, on the middle row of the area of play, and every connected player is sent its `EntitySpawned`. When every network id was given, no boss appears and a warning is logged.
@@ -1072,7 +1072,7 @@ Between two attacks it drifts up or down, within `TYRANT_DRIFT_SPAN` (200 units)
 
 ## Shooting: `WeaponSystem`
 
-`WeaponSystem` (`src/server/Spawning/`) fires the missiles of the players and of the Bydos with the same code. Every body that shoots carries a `Gun` (`src/game/Components/Gun.hpp`), from the `[gameplay.gun]` of its sheet: the number of the sheet it fires (`projectileNumber`), the ticks between two shots (`intervalTicks`) and the ticks left before the next one (`ticksUntilReady`). It also carries an `Intent` (`src/game/Components/Intent.hpp`) whose `shooting` says whether its controller wants it to fire. The player controller writes `shooting` from the shoot bit of the newest input (`steerShipByInput`); the behaviour of a Bydo (`src/game/Behaviours/`, asked by `PilotSystem`, run with the systems of the world) sets it at every tick. Each tick of a game in progress, after the systems run, `GameFlow` calls `onTick()`: every `Gun` that is not ready counts one tick down, and every body whose `Intent` wants to shoot and whose `Gun` is ready fires one projectile, made by `World::spawn` from the sheet its `Gun` names, then starts counting `intervalTicks` again.
+`WeaponSystem` (`src/server/Spawning/`) fires the missiles of the players and of the Bydos with the same code. Every body that shoots carries a `Gun` (`src/game/Components/Gun.hpp`), from the `[gameplay.gun]` of its sheet: the number of the sheet it fires (`projectileNumber`), the ticks between two shots (`intervalTicks`) and the ticks left before the next one (`ticksUntilReady`). It also carries an `Intent` (`src/game/Components/Intent.hpp`) whose `shooting` says whether its controller wants it to fire. The player controller writes `shooting` from the shoot bit of the newest input (`steerShipByInput`); the behaviour of a Bydo (`src/game/Behaviours/`, asked by `PilotSystem`, run with the systems of the world) sets it at every tick. Each tick of a game in progress, after the systems run, `MatchSystems` calls `onTick()`: every `Gun` that is not ready counts one tick down, and every body whose `Intent` wants to shoot and whose `Gun` is ready fires one projectile, made by `World::spawn` from the sheet its `Gun` names, then starts counting `intervalTicks` again.
 
 | Body | Fires | Interval | First shot |
 |---|---|---|---|
@@ -1095,7 +1095,7 @@ The intervals, speeds and boxes live in the sheets, and code reads them from the
 
 ## Volleys: `VolleySystem`
 
-`VolleySystem` (`src/server/Spawning/`) fires the volleys of the enemies: the bodies the sheet of an enemy sends out at once as it enters an action, each `[[gameplay.volley]]` of its sheet (see [Writing an entity sheet](/R-Type/entity-sheets/#gameplay-key-by-key)). A `GameFlow` builds one with each world and calls `onTick()` after the `WeaponSystem`.
+`VolleySystem` (`src/server/Spawning/`) fires the volleys of the enemies: the bodies the sheet of an enemy sends out at once as it enters an action, each `[[gameplay.volley]]` of its sheet (see [Writing an entity sheet](/R-Type/entity-sheets/#gameplay-key-by-key)). `MatchSystems` builds one with each world and calls `onTick()` after the `WeaponSystem`.
 
 - An enemy fires a volley on the tick its `Intent::startsAction`, which `PilotSystem` has just recorded, is the attack and the phase of the volley. A rage that `BossPhaseSystem` starts goes through no `Intent`, so no volley follows it.
 - `volleyPlacement()` (`src/game/Spawning/VolleyPlacement.hpp`) lays each body: body `index` starts at the offset of the volley from the position of the enemy plus `index` times its step, and appears `distance` units along its heading, the `heading_deg` of the volley (left for 0) turned by an angle spread evenly from -`spread_deg` / 2 to +`spread_deg` / 2 over the volley. The bodies of the gap are left out. `World::spawnFrom()` makes each one steer from its start (`BodyPlacement`), so `scatter` flies a missile of a fan straight away from it.
@@ -1190,7 +1190,7 @@ scheduler.run(components, SIMULATION_TICK_DURATION);
 events.dispatch();
 ```
 
-The bus and the registry must outlive `CollisionRules`, and the bus must outlive `CollisionSystem`. `addRtypeSystems` adds `CollisionSystem` after `PlayfieldExitSystem` and `HurtZoneSystem` after `CollisionSystem`, and `GameFlow` builds a `CollisionRules` and a `DamageRules` with each world, on the registry of that world. The games module delivers the events in the `outputs` stage of every tick, so a collision is judged in the tick it is found, and never against the registry of a world replaced since. A ship has the `CollisionBox` of its sheet from `World::spawn`, so a ship that touches a Bydo makes a `ShipContact`, and a missile of a Bydo that touches it a `MissileHit`.
+The bus and the registry must outlive `CollisionRules`, and the bus must outlive `CollisionSystem`. `addRtypeSystems` adds `CollisionSystem` after `PlayfieldExitSystem` and `HurtZoneSystem` after `CollisionSystem`, and `MatchSystems` builds a `CollisionRules` and a `DamageRules` with each world, on the registry of that world. The games module delivers the events in the `outputs` stage of every tick, so a collision is judged in the tick it is found, and never against the registry of a world replaced since. A ship has the `CollisionBox` of its sheet from `World::spawn`, so a ship that touches a Bydo makes a `ShipContact`, and a missile of a Bydo that touches it a `MissileHit`.
 
 ### Contact by zone: `HurtZoneSystem`
 
@@ -1215,7 +1215,7 @@ A boss in any phase of its arrival attack loses nothing, and nothing but the rem
 - The ship of a player has no `Health`: a missile of a Bydo that hits it is removed here, and what that hit and a contact with a Bydo cost belongs to the lives (see [Lives](#lives-lifekeeper)).
 - Network ids are read from the `NetworkIdentity` before the entity is destroyed. A hit naming an entity that is already gone, or that has no `NetworkIdentity`, is ignored, so two missiles that reach the same Bydo in one `dispatch()` kill it once, and the second missile is left alone.
 - The bus and the registry must outlive `DamageRules`. It publishes while the bus delivers, so its events reach `GameEventBroadcaster` in the same tick.
-- `GameFlow` builds it with each world (see [Collisions](#collisions)). A missile that hits therefore vanishes with no effect of its own; the clients play the hit of the Bydo on the `EntityDamaged` of the first two hits (see [Client](/R-Type/client/#effects-effectspawner)), and its explosion on the third.
+- `MatchSystems` builds it with each world (see [Collisions](#collisions)). A missile that hits therefore vanishes with no effect of its own; the clients play the hit of the Bydo on the `EntityDamaged` of the first two hits (see [Client](/R-Type/client/#effects-effectspawner)), and its explosion on the third.
 
 ```cpp
 rtype::engine::EventBus events;
@@ -1237,19 +1237,21 @@ rtype::game::DamageRules damageRules{events, world.components()};
 - While a player has a ship, its lives are the `Lives` of the ship and its protection the `Invulnerable` of the ship. When the ship is destroyed, the player keeps the lives it had, one less, in `ConnectedPlayer::livesWithoutShip`, with the wait in `ticksUntilRespawn`, and the next ship is created with them. `livesOf(world, player)` (`src/server/Rules/Players/`) says how many a player has, whichever holds them. `onTick()` counts the protections and the waits down at each tick of a game in progress, and the world state sends `lives` and `invulnerable`.
 - The three values are **provisional** until gameplay tunes them. Code must read the constants (`DEFAULT_LIVES` in `src/identifiers/GameRuleConstants.hpp`, which `STARTING_LIVES` takes, the other two in `src/server/Rules/Players/LifeKeeperConstants.hpp`) and never repeat 3, 1 s or 2 s.
 - A hit on anything but the ship of a connected player, a Bydo hit by a missile of a player, changes nothing here.
-- `DamageRules` must subscribe before the keeper. The bus hands each `MissileHit` to its subscribers in the order they subscribed, and `DamageRules` ignores a hit whose target is already gone, so in the other order the missile would fly on past the ship. `GameFlow::buildWorld()` builds them in that order, and a test of the game checks that the hit removes the missile.
+- `DamageRules` must subscribe before the keeper. The bus hands each `MissileHit` to its subscribers in the order they subscribed, and `DamageRules` ignores a hit whose target is already gone, so in the other order the missile would fly on past the ship. The constructor of `MatchSystems` builds them in that order, its members declared in it, and a test of the game checks that the hit removes the missile.
 
 ```cpp
-lifeKeeper_ = std::make_unique<LifeKeeper>(
-    LifeKeeperParts{.events = events_.get(),
-                    .world = world,
-                    .roster = roster_.get(),
-                    .respawn = [this](ConnectedPlayer& player) {
-                      replication_.get().onPlayerJoined(player);
-                    }});
+std::unique_ptr<LifeKeeper> lifeKeeperFor(const MatchSystemsParts& parts) {
+  const GameContext& game = parts.game.get();
+  return std::make_unique<LifeKeeper>(
+      LifeKeeperParts{.events = game.events.get(),
+                      .world = parts.world.get(),
+                      .roster = game.roster.get(),
+                      .respawn = parts.respawn,
+                      .shipsNeverDie = game.settings.startsAtBoss});
+}
 ```
 
-`GameFlow` builds one with each world, in `buildWorld()`, and calls `onTick()` after the Bydos appear.
+`MatchSystems` builds one with each world, `GameFlow` handing it a `respawn` that calls `IGameReplication::onPlayerJoined`, and calls `onTick()` after the Bydos appear.
 
 ## End of a game: `GameEndAnnouncer`
 

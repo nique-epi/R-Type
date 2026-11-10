@@ -10,6 +10,9 @@ namespace rtype::game {
  * function: `behaviours.register(name, settings, steer)`. */
 constexpr std::string_view BEHAVIOURS_TABLE = "behaviours";
 constexpr std::string_view REGISTER_FUNCTION_NAME = "register";
+constexpr std::string_view WAIT_FUNCTION_NAME = "wait";
+constexpr std::string_view SPAWN_FUNCTION_NAME = "spawn";
+constexpr std::string_view DESTROY_FUNCTION_NAME = "destroy";
 
 /** @brief The folder of a content folder that holds its server scripts, and
  * their extension. */
@@ -17,6 +20,7 @@ constexpr std::string_view SCRIPT_FOLDER_IN_CONTENT = "server";
 constexpr std::string_view SCRIPT_FILE_EXTENSION = ".luau";
 
 /** @brief The keys of the view a script reads. */
+constexpr const char* VIEW_ID_KEY = "id";
 constexpr const char* VIEW_POSITION_KEY = "position";
 constexpr const char* VIEW_ORIGIN_KEY = "origin";
 constexpr const char* VIEW_AGE_KEY = "age_ms";

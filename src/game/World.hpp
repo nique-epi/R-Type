@@ -71,6 +71,13 @@ class World {
                           std::optional<std::uint8_t> owner = std::nullopt);
 
   /**
+   * @returns A network id no other body will get, for a body made later with
+   * BodyPlacement::reservedNetworkId.
+   * @throws NetworkIdExhaustedException when every network id was given.
+   */
+  [[nodiscard]] std::uint32_t reserveNetworkId();
+
+  /**
    * @brief Destroys the ship of a player, found by the network id spawn()
    * gave it.
    * @returns Whether a ship carried @p shipNetworkId. Nothing changes when

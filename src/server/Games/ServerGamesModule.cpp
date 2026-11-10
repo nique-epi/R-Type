@@ -270,7 +270,8 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
                       .inputDelayTicks = inputDelayTicks,
                       .rules = rules,
                       .vanilla = breaches.empty(),
-                      .startsAtBoss = startsAtBoss};
+                      .startsAtBoss = startsAtBoss,
+                      .scripts = scripts_.get()};
 }
 
 void ServerGamesModule::stop() {
