@@ -24,7 +24,9 @@ EntityAppearance appearanceWithAStrike() {
           .anchor = STRIKE_ANCHOR}},
       .enragedIdleFrames = {},
       .deathFrames = {},
-      .deathFramesWithoutFlash = {}};
+      .deathFramesWithoutFlash = {},
+      .effects = {},
+      .looks = {}};
 }
 
 EntityAppearance appearanceWithARage() {

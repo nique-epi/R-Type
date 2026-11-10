@@ -1,1 +1,1 @@
-target_sources(game_entity_types_tests PRIVATE ContentFilesTest.cpp NumberedEntityTypesTest.cpp)
+target_sources(game_entity_types_tests PRIVATE ContentFilesTest.cpp NumberedEntityTypesTest.cpp SheetVisualNamesTest.cpp SheetVisualNamesFixtures.cpp)
