@@ -13,6 +13,13 @@ constexpr std::string_view CAVES_LEVEL = "caves";
 constexpr std::string_view WRECK_LEVEL = "wreck";
 constexpr std::size_t STAGES_OF_CAVES = 2;
 
+/** @brief The resource of the level the repository ships, the name that
+ * level is registered under, and its stages: one, then one more after its
+ * checkpoint. */
+constexpr std::string_view SHIPPED_LEVEL_RESOURCE = "training-run";
+constexpr std::string_view SHIPPED_LEVEL = "training_run";
+constexpr std::size_t STAGES_OF_THE_SHIPPED_LEVEL = 2;
+
 /** @brief A level no script registers. */
 constexpr std::string_view UNKNOWN_LEVEL = "nowhere";
 

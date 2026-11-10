@@ -70,4 +70,7 @@ GameFlowOneStageFixture::GameFlowOneStageFixture()
 GameFlowBrokenLevelFixture::GameFlowBrokenLevelFixture()
     : GameFlowLevelFixture(BROKEN_LEVEL_NAME) {}
 
+GameFlowSendingLevelFixture::GameFlowSendingLevelFixture()
+    : GameFlowLevelFixture(LEVEL_THAT_SENDS_A_BYDO_NAME) {}
+
 }  // namespace rtype::server::testing

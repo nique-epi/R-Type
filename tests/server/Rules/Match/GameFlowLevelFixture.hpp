@@ -45,4 +45,10 @@ class GameFlowBrokenLevelFixture : public GameFlowLevelFixture {
   GameFlowBrokenLevelFixture();
 };
 
+/** @brief A game that plays `sends_a_bydo`. */
+class GameFlowSendingLevelFixture : public GameFlowLevelFixture {
+ public:
+  GameFlowSendingLevelFixture();
+};
+
 }  // namespace rtype::server::testing

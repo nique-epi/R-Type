@@ -19,6 +19,7 @@ using rtype::server::GameState;
 using rtype::server::testing::FIRST_PLAYER;
 using rtype::server::testing::GameFlowBrokenLevelFixture;
 using rtype::server::testing::GameFlowOneStageFixture;
+using rtype::server::testing::GameFlowSendingLevelFixture;
 using rtype::server::testing::GameFlowTwoStagesFixture;
 using rtype::server::testing::LIVES_OF_THE_RULES;
 using rtype::server::testing::playerEndpoint;
@@ -99,6 +100,19 @@ TEST_F(GameFlowTwoStagesFixture, RunsNoWave) {
   runTicks(TICKS_TO_THE_WHOLE_FIRST_WAVE);
 
   EXPECT_EQ(enemiesInPlay(), 0U);
+}
+
+/**
+ * Given a game that plays a level whose stage creates a Drifter
+ * When the first tick of the game runs
+ * Then the Drifter is in the world: a stage creates bodies as a behaviour does
+ */
+TEST_F(GameFlowSendingLevelFixture, BringsInTheBodiesAStageCreates) {
+  startGameWith({FIRST_PLAYER});
+
+  runTicks(1);
+
+  EXPECT_EQ(enemiesInPlay(), 1U);
 }
 
 /**

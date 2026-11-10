@@ -1,7 +1,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <array>
+#include <filesystem>
 #include <string>
 #include <vector>
+#include "BehaviourScriptFiles.hpp"
 #include "BehaviourScripts.hpp"
 #include "BehaviourScriptsFixtures.hpp"
 #include "EngineException.hpp"
@@ -28,6 +31,26 @@ TEST(LuauLevels, KeepsTheStagesOfARegisteredLevel) {
   const std::vector<int>* const stages = scripts.levels().stagesOf(CAVES_LEVEL);
   ASSERT_NE(stages, nullptr);
   EXPECT_EQ(stages->size(), STAGES_OF_CAVES);
+}
+
+/**
+ * Given the scripts of the resource training-run the repository ships
+ * When they run
+ * Then the level training_run is registered, with its two stages
+ */
+TEST(LuauLevels, ReadsTheLevelTheRepositoryShips) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  const std::array folders{
+      std::filesystem::path{RTYPE_SOURCE_RESOURCES_FOLDER} /
+      SHIPPED_LEVEL_RESOURCE};
+
+  scripts.run(rtype::game::scriptSourcesIn(folders));
+
+  const std::vector<int>* const stages =
+      scripts.levels().stagesOf(SHIPPED_LEVEL);
+  ASSERT_NE(stages, nullptr);
+  EXPECT_EQ(stages->size(), STAGES_OF_THE_SHIPPED_LEVEL);
 }
 
 /**

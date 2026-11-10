@@ -33,7 +33,7 @@ set input-delay 3
 set start-at-boss 0
 
 # [games] The level every game plays: one a script of a resource registered with
-# level.register, such as training_run of the resource crimson-drifter. The
+# level.register, such as training_run of the resource training-run. The
 # game is then never vanilla. Empty plays the waves of its difficulty, the
 # survival mode.
 set level ""
