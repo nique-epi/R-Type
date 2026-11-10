@@ -1,4 +1,5 @@
 #include "BenchScene.hpp"
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <filesystem>
@@ -9,6 +10,8 @@
 #include "BehaviourScriptFiles.hpp"
 #include "BehaviourScripts.hpp"
 #include "BenchPopulation.hpp"
+#include "Collision.hpp"
+#include "CollisionSystem.hpp"
 #include "Entity.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheets.hpp"
@@ -21,6 +24,7 @@
 #include "Position.hpp"
 #include "ScriptBudgetBenchConstants.hpp"
 #include "SheetTextReading.hpp"
+#include "SystemTime.hpp"
 #include "TickSample.hpp"
 #include "TimeConstants.hpp"
 #include "TimedBehaviour.hpp"
@@ -33,11 +37,12 @@ constexpr float HALF_A_LANE = 0.5F;
 constexpr float SHIPS_ACROSS = 200.0F;
 
 /** @returns The height of the middle of the lane of the body numbered
- * @p sequence. */
+ * @p sequence, among @p Lanes lanes of equal height. */
+template <std::size_t Lanes>
 float laneHeight(std::size_t sequence) {
-  const auto lane = static_cast<float>(sequence % BENCH_LANES);
+  const auto lane = static_cast<float>(sequence % Lanes);
   return game::PLAYFIELD_HEIGHT * (lane + HALF_A_LANE) /
-         static_cast<float>(BENCH_LANES);
+         static_cast<float>(Lanes);
 }
 
 /** @returns How far across the playfield the body @p index of @p count starts,
@@ -62,9 +67,17 @@ game::EntitySheets sheetsAfterRunning(
       game::sheetTextsInFolders(contentFolders), scripts.behaviours());
 }
 
+/** @returns The total of the system named @p name among @p times, zero when
+ * none bears that name. */
+engine::Duration timeOf(std::span<const engine::SystemTime> times,
+                        std::string_view name) {
+  const auto found = std::ranges::find(times, name, &engine::SystemTime::name);
+  return found == times.end() ? engine::Duration::zero() : found->total;
+}
+
 }  // namespace
 
-BenchScene::BenchScene(BenchPopulation population,
+BenchScene::BenchScene(BenchPopulation population, float cellSide,
                        std::span<const std::filesystem::path> contentFolders)
     : population_(population),
       scripts_(
@@ -74,10 +87,15 @@ BenchScene::BenchScene(BenchPopulation population,
           .behaviour =
               // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
           sheets_.named(scriptedTypeOf(population)).pilot.value().behaviour,
-          .spent = scriptTime_}) {
+          .spent = scriptTime_}),
+      collisionCounting_(events_.subscribe<engine::Collision>(
+          [this](const engine::Collision&) { ++collisionsFound_; })) {
   systems_.add(std::make_unique<game::PilotSystem>(events_));
   systems_.add(std::make_unique<game::MovementSystem>());
   systems_.add(std::make_unique<game::PlayfieldExitSystem>(events_));
+  systems_.add(std::make_unique<game::CollisionSystem>(events_, cellSide),
+               BENCH_COLLISION_SYSTEM_NAME);
+  systems_.measureWith(&clock_);
   placeShips();
   fill();
 }
@@ -85,9 +103,9 @@ BenchScene::BenchScene(BenchPopulation population,
 void BenchScene::placeShips() {
   const game::EntitySheet& ship = sheets_.named(BENCH_SHIP_TYPE);
   for (std::size_t index = 0; index < BENCH_SHIPS; ++index) {
-    world_.spawn(ship, game::Position{
-                           .x = SHIPS_ACROSS,
-                           .y = laneHeight(index * BENCH_LANES / BENCH_SHIPS)});
+    world_.spawn(ship, game::Position{.x = SHIPS_ACROSS,
+                                      .y = laneHeight<BENCH_LANES>(
+                                          index * BENCH_LANES / BENCH_SHIPS)});
   }
 }
 
@@ -104,12 +122,15 @@ void BenchScene::fill() {
 void BenchScene::spawnScripted(float across) {
   world_.spawn(
       sheets_.named(scriptedTypeOf(population_)),
-      game::Position{.x = across, .y = laneHeight(scriptedSpawned_++)});
+      game::Position{.x = across,
+                     .y = laneHeight<BENCH_LANES>(scriptedSpawned_++)});
 }
 
 void BenchScene::spawnBullet(float across) {
-  world_.spawn(sheets_.named(BENCH_BULLET_TYPE),
-               game::Position{.x = across, .y = laneHeight(bulletsSpawned_++)});
+  world_.spawn(
+      sheets_.named(BENCH_BULLET_TYPE),
+      game::Position{.x = across,
+                     .y = laneHeight<BENCH_BULLET_LANES>(bulletsSpawned_++)});
 }
 
 void BenchScene::timeScriptedBodies() {
@@ -144,6 +165,7 @@ void BenchScene::replaceWhatLeft() {
 
 TickSample BenchScene::runTick() {
   scriptTime_ = engine::Duration::zero();
+  collisionsFound_ = 0;
   scripts_.machine().beginTick();
   const auto start = std::chrono::steady_clock::now();
   systems_.run(world_.components(), engine::SIMULATION_TICK_DURATION);
@@ -151,7 +173,11 @@ TickSample BenchScene::runTick() {
   replaceWhatLeft();
   const auto whole = std::chrono::duration_cast<engine::Duration>(
       std::chrono::steady_clock::now() - start);
-  return TickSample{.whole = whole, .scripts = scriptTime_};
+  return TickSample{.whole = whole,
+                    .scripts = scriptTime_,
+                    .collisions = timeOf(systems_.takeSystemTimes(),
+                                         BENCH_COLLISION_SYSTEM_NAME),
+                    .collisionsFound = collisionsFound_};
 }
 
 std::size_t BenchScene::scriptMemory() {

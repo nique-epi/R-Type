@@ -9,6 +9,8 @@ using rtype::engine::Duration;
 using rtype::tools::figuresOf;
 using rtype::tools::TickFigures;
 using rtype::tools::TickSample;
+using rtype::tools::testing::COLLISION_SHARE_OF_FOUR_TICKS;
+using rtype::tools::testing::COLLISIONS_OF_FOUR_TICKS;
 using rtype::tools::testing::FOUR_MILLISECONDS;
 using rtype::tools::testing::FOUR_TICKS_OUT_OF_ORDER;
 using rtype::tools::testing::ONE_MILLISECOND;
@@ -86,4 +88,20 @@ TEST(TickFigures, EveryRankOfASingleTickIsThatTick) {
   EXPECT_EQ(figures.tick.median, ONE_MILLISECOND);
   EXPECT_EQ(figures.tick.high, ONE_MILLISECOND);
   EXPECT_EQ(figures.tick.worst, ONE_MILLISECOND);
+}
+
+/**
+ * Given four ticks whose collisions take 2 ms of 10 ms in all, and find 6
+ * When their figures are computed
+ * Then the collisions have their own spread, a share of 20 percent, and 6
+ * collisions found
+ */
+TEST(TickFigures, ReportsTheShareAndCountOfTheCollisions) {
+  const TickFigures figures =
+      figuresOf(FOUR_TICKS_OUT_OF_ORDER, FOUR_MILLISECONDS);
+
+  EXPECT_EQ(figures.collisions.worst, ONE_MILLISECOND);
+  EXPECT_NEAR(figures.collisionShare, COLLISION_SHARE_OF_FOUR_TICKS,
+              SHARE_TOLERANCE);
+  EXPECT_EQ(figures.collisionsFound, COLLISIONS_OF_FOUR_TICKS);
 }

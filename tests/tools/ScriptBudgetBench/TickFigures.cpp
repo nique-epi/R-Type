@@ -37,19 +37,28 @@ DurationSpread spreadOf(std::span<const TickSample> samples,
                         .worst = atRank(sorted, WORST_PERCENT)};
 }
 
-/** @returns The share of the time of @p samples spent in the scripts. */
-double scriptShareOf(std::span<const TickSample> samples) {
+/** @returns The share of the time of @p samples spent in @p member. */
+double shareOf(std::span<const TickSample> samples,
+               engine::Duration TickSample::* member) {
   engine::Duration whole{};
-  engine::Duration scripts{};
+  engine::Duration part{};
   for (const TickSample& sample : samples) {
     whole += sample.whole;
-    scripts += sample.scripts;
+    part += sample.*member;
   }
   if (whole == engine::Duration::zero()) {
     return 0.0;
   }
-  return static_cast<double>(scripts.count()) /
-         static_cast<double>(whole.count());
+  return static_cast<double>(part.count()) / static_cast<double>(whole.count());
+}
+
+/** @returns The collisions found in all of @p samples. */
+std::size_t collisionsIn(std::span<const TickSample> samples) {
+  std::size_t found = 0;
+  for (const TickSample& sample : samples) {
+    found += sample.collisionsFound;
+  }
+  return found;
 }
 
 }  // namespace
@@ -62,9 +71,12 @@ TickFigures figuresOf(std::span<const TickSample> samples,
   return TickFigures{
       .tick = spreadOf(samples, &TickSample::whole),
       .scripts = spreadOf(samples, &TickSample::scripts),
-      .scriptShare = scriptShareOf(samples),
-      .ticksOverBudget = static_cast<std::size_t>(
-          std::ranges::count_if(samples, [budget](const TickSample& sample) {
+      .collisions = spreadOf(samples, &TickSample::collisions),
+      .scriptShare = shareOf(samples, &TickSample::scripts),
+      .collisionShare = shareOf(samples, &TickSample::collisions),
+      .collisionsFound = collisionsIn(samples),
+      .ticksOverBudget = static_cast<std::size_t>(std::ranges::count_if(
+          samples, [budget](const TickSample& sample) noexcept {
             return sample.whole > budget;
           }))};
 }

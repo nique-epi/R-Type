@@ -1157,7 +1157,8 @@ A collision takes two steps, in two classes. The first finds what overlaps; the 
 - Each overlapping pair is published once per update. Which of the two entities comes first carries no meaning.
 - Boxes that only touch along an edge or at a corner do not overlap.
 - An entity without a `Position` or without a `CollisionBox` is never reported.
-- Every pair is tested, so the cost grows with the square of the number of boxes. The list of boxes is kept between updates, so a steady state allocates nothing.
+- The boxes are first sorted into an `engine::UniformGrid` over the playfield, of square cells of `COLLISION_CELL_SIDE` (60 logical units, 32 cells wide and 18 tall), and only the pairs that share a cell are tested, so the cost grows with the boxes that lie close to each other, not with the square of every box. A box larger than a cell is counted in every cell it covers, and a box beyond the playfield in the cells along its edge. The side was chosen on the bench of the scripts (see [What the collisions cost](/R-Type/scripting/#what-the-collisions-cost)).
+- The boxes and the grid are kept between updates, so a steady state allocates nothing.
 - `update()` only queues the events. The loop must call `EventBus::dispatch()` after the systems, and run `CollisionSystem` after `MovementSystem`, so the boxes are tested where the entities now are.
 
 ### Rules: `CollisionRules`

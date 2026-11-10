@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 #include "BenchLaunch.hpp"
+#include "CollisionSystemConstants.hpp"
 #include "EngineException.hpp"
 #include "LaunchArguments.hpp"
 #include "LaunchArgumentsConstants.hpp"
@@ -18,13 +19,15 @@ namespace rtype::tools {
 namespace {
 
 /** @returns The option @p name, whose value is a whole number written into
- * @p field. */
-engine::LaunchOption countOption(std::string_view name, std::size_t& field) {
+ * @p field: a count, or a cell side in logical units. */
+template <typename Field>
+engine::LaunchOption countOption(std::string_view name, Field& field) {
   return engine::LaunchOption{
       .name = name,
       .takesValue = true,
       .record = [name, &field](std::string_view text) {
-        field = server::wholeNumberFromText<std::uint32_t>(name, text);
+        field = static_cast<Field>(
+            server::wholeNumberFromText<std::uint32_t>(name, text));
       }};
 }
 
@@ -63,6 +66,7 @@ BenchLaunch readBenchLaunch(std::span<const std::string_view> arguments) {
       countOption(SCRIPTED_BODIES_OPTION, launch.population.scriptedBodies),
       countOption(BULLETS_OPTION, launch.population.bullets),
       ticksOption(launch.ticks),
+      countOption(CELL_SIDE_OPTION, launch.cellSide),
       flagOption(WAITING_OPTION, launch.population.waiting),
       flagOption(engine::HELP_OPTION, launch.helpRequested)};
   engine::readLaunchArguments(arguments, options);
@@ -81,6 +85,11 @@ std::string benchUsage() {
   text += engine::usageEntry(std::string(TICKS_OPTION) + " <count>",
                              "Ticks to measure, from 1. Default: " +
                                  std::to_string(DEFAULT_BENCH_TICKS) + ".");
+  text += engine::usageEntry(
+      std::string(CELL_SIDE_OPTION) + " <units>",
+      "Side of a cell of the collision grid, in logical units. Default: " +
+          std::to_string(static_cast<unsigned>(game::COLLISION_CELL_SIDE)) +
+          ".");
   text += engine::usageEntry(
       std::string(WAITING_OPTION),
       "Run a script that waits and is resumed at every tick.");

@@ -16,8 +16,8 @@
 
 namespace rtype::game {
 
-CollisionSystem::CollisionSystem(engine::EventBus& events)
-    : events_(events), grid_(COLLISION_GRID_AREA, COLLISION_CELL_SIDE) {}
+CollisionSystem::CollisionSystem(engine::EventBus& events, float cellSide)
+    : events_(events), grid_(COLLISION_GRID_AREA, cellSide) {}
 
 void CollisionSystem::update(engine::ComponentRegistry& components,
                              [[maybe_unused]] engine::Duration elapsed) {

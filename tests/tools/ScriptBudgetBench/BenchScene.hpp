@@ -8,6 +8,8 @@
 #include "BenchPopulation.hpp"
 #include "EntitySheets.hpp"
 #include "EventBus.hpp"
+#include "SubscriptionHandle.hpp"
+#include "SystemClock.hpp"
 #include "SystemScheduler.hpp"
 #include "TickSample.hpp"
 #include "TimeConstants.hpp"
@@ -24,19 +26,22 @@ namespace rtype::tools {
  * (PilotSystem, MovementSystem, PlayfieldExitSystem), and delivers their
  * events; a body that left the playfield is replaced on the right edge, so the
  * population is the same at every tick. Nothing is random, so two runs do the
- * same work. Collisions, weapons and the sending of the world state are not
- * part of a tick here. Neither copied nor moved: the scripts report through
- * its address.
+ * same work. Each tick also runs CollisionSystem after them, whose pairs
+ * nobody answers; weapons and the sending of the world state are not part of
+ * a tick here. Neither copied nor moved: the scripts and the bus report
+ * through its address.
  */
 class BenchScene {
  public:
   /**
+   * @param cellSide The side of a cell of the collision grid.
    * @param contentFolders The folders holding the sheets and the scripts.
    * @throws What BehaviourScripts::run(), EntitySheets::fromTexts() and
    * EntitySheets::named() throw; std::bad_optional_access when the sheet of
-   * the scripted bodies names no pilot.
+   * the scripted bodies names no pilot; engine::InvalidGridLayoutException
+   * when the grid refuses @p cellSide.
    */
-  BenchScene(BenchPopulation population,
+  BenchScene(BenchPopulation population, float cellSide,
              std::span<const std::filesystem::path> contentFolders);
   BenchScene(const BenchScene&) = delete;
   BenchScene& operator=(const BenchScene&) = delete;
@@ -73,9 +78,12 @@ class BenchScene {
   TimedBehaviour timedScript_;
   game::World world_;
   engine::EventBus events_;
+  engine::SystemClock clock_;
   engine::SystemScheduler systems_;
   std::size_t scriptedSpawned_{0};
   std::size_t bulletsSpawned_{0};
+  std::size_t collisionsFound_{0};
+  engine::SubscriptionHandle collisionCounting_;
 };
 
 }  // namespace rtype::tools

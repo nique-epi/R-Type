@@ -67,11 +67,15 @@ void printReport(const BenchLaunch& launch, const TickFigures& figures) {
             << launch.population.scriptedBodies << " scripted bodies, "
             << launch.population.bullets << " bullets, " << launch.ticks
             << " ticks of " << milliseconds(SIMULATION_TICK_DURATION)
-            << " ms\n";
+            << " ms, cells of " << launch.cellSide << " units\n";
   printSpread("tick", figures.tick);
   printSpread("scripts", figures.scripts);
+  printSpread("collisions", figures.collisions);
   std::cout << "share of the scripts: " << figures.scriptShare * PERCENT
-            << " %\nmedian tick: "
+            << " %\nshare of the collisions: "
+            << figures.collisionShare * PERCENT
+            << " %\ncollisions found: " << figures.collisionsFound
+            << "\nmedian tick: "
             << milliseconds(figures.tick.median) /
                    milliseconds(SIMULATION_TICK_DURATION) * PERCENT
             << " % of the budget\nticks over the budget: "
@@ -88,7 +92,7 @@ int runBench(const BenchLaunch& launch) {
   }
   const std::vector<std::filesystem::path> folders =
       rtype::tools::benchContentFolders();
-  BenchScene scene{launch.population, folders};
+  BenchScene scene{launch.population, launch.cellSide, folders};
   const std::vector<TickSample> samples = measure(launch, scene);
   if (!scene.scriptFailure().empty()) {
     std::cerr << rtype::tools::SCRIPT_BENCH_PROGRAM_NAME << ": "
