@@ -11,17 +11,21 @@
 #include "EntityOrdersFixture.hpp"
 #include "EntityOrdersTestConstants.hpp"
 #include "EntitySpawned.hpp"
+#include "LuauEventBindings.hpp"
 #include "Position.hpp"
+#include "ScriptEvent.hpp"
 
 using rtype::engine::ScriptException;
 using rtype::game::BehaviourScripts;
 using rtype::game::DestructionCause;
 using rtype::game::Position;
+using rtype::game::ScriptEvent;
 using rtype::network::EntitySpawned;
 using rtype::server::EntityOrders;
 using rtype::server::testing::DRIFTER_SHEET;
 using rtype::server::testing::EntityOrdersFixture;
 using rtype::server::testing::PLAYERS_TOLD;
+using rtype::server::testing::SCRIPT_EVENT_NAME;
 using rtype::server::testing::SCRIPTED_REMOVALS_IN_A_TICK;
 using rtype::server::testing::SCRIPTED_SPAWNS_IN_A_TICK;
 using rtype::server::testing::SHIP_SHEET;
@@ -206,6 +210,36 @@ TEST_F(EntityOrdersFixture, KeepsTheNewWorldWhenTheOldOneGoes) {
   oldGame.reset();
 
   EXPECT_EQ(scripts.orders(), &newGame);
+}
+
+/**
+ * Given the scripts of a game attached to its world
+ * When a script publishes an event
+ * Then the event is accepted: the scripts reach the bus of the game
+ */
+TEST_F(EntityOrdersFixture, GivesTheScriptsTheBusOfTheGame) {
+  BehaviourScripts scripts{[](const std::string&) {}};
+  const EntityOrders game{partsFor(&scripts)};
+
+  EXPECT_NO_THROW(scripts.eventBindings().publish(
+      ScriptEvent{.name = std::string{SCRIPT_EVENT_NAME}, .fields = {}}));
+}
+
+/**
+ * Given the scripts of a game attached to its world
+ * When the game ends and its world goes, then a script publishes an event
+ * Then the event is refused: the scripts no longer reach any bus
+ */
+TEST_F(EntityOrdersFixture, TakesTheBusFromTheScriptsWhenTheWorldGoes) {
+  BehaviourScripts scripts{[](const std::string&) {}};
+  std::optional<EntityOrders> game;
+  game.emplace(partsFor(&scripts));
+
+  game.reset();
+
+  EXPECT_THROW(scripts.eventBindings().publish(ScriptEvent{
+                   .name = std::string{SCRIPT_EVENT_NAME}, .fields = {}}),
+               ScriptException);
 }
 
 /**

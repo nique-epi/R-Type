@@ -7,6 +7,7 @@
 #include "IEntityOrders.hpp"
 #include "LuauBehaviour.hpp"
 #include "LuauBehaviourParts.hpp"
+#include "LuauEventBindings.hpp"
 #include "LuauResumeContext.hpp"
 #include "ScriptFailureReport.hpp"
 #include "ScriptMachine.hpp"
@@ -18,8 +19,8 @@ namespace rtype::game {
  * @brief The behaviours the server scripts of a game register: it runs the
  * scripts on a machine of its own, which exposes `behaviours.register(name,
  * settings, steer)`, `behaviours.wait(ms, intent)`, `behaviours.spawn(type,
- * position)` and `behaviours.destroy(id)`, and hands the behaviours over with
- * the built-in ones.
+ * position)` and `behaviours.destroy(id)`, and `bus.on` and `bus.emit` (see
+ * LuauEventBindings), and hands the behaviours over with the built-in ones.
  *
  * It must outlive the behaviours it hands over: each calls its script on its
  * machine. Neither copied nor moved: the machine reaches it by its address.
@@ -62,6 +63,9 @@ class BehaviourScripts {
    * progress. */
   [[nodiscard]] LuauResumeContext& resumeContext();
 
+  /** @returns What gives the scripts the event bus of a game. */
+  [[nodiscard]] LuauEventBindings& eventBindings();
+
   /** @returns What the report of a behaviour calls. */
   [[nodiscard]] const ScriptFailureReport& reportFailure() const;
 
@@ -77,6 +81,7 @@ class BehaviourScripts {
   engine::ScriptMachine machine_;
   ScriptFailureReport reportFailure_;
   LuauResumeContext resumeContext_;
+  LuauEventBindings eventBindings_;
   std::vector<std::unique_ptr<LuauBehaviour>> declared_;
 };
 

@@ -112,7 +112,7 @@ src/game/
 ├── World/            the state of one match
 ├── ShipControl/      applies a player's input to their ship
 ├── Behaviours/       the named behaviours that pilot the Bydos and the missiles (Piloting/, Movements/Paths/, Movements/Attacks/)
-├── Scripting/        the behaviours Luau scripts register, each running in a Luau thread of its entity
+├── Scripting/        the behaviours Luau scripts register, each running in a Luau thread of its entity; Events/, their access to the event bus
 ├── Components/       Position, SteadyMotion, CollisionBox, Health...
 ├── EntityTypes/      the gameplay of the entity sheets, read and numbered
 ├── Systems/          movement, collisions, damage, shooting, score, boss phases

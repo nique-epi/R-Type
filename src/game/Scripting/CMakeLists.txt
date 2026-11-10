@@ -1,3 +1,9 @@
+add_library(rtype_game_scripting_constants INTERFACE)
+
+target_include_directories(rtype_game_scripting_constants INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_subdirectory(Events)
+
 add_library(rtype_game_scripting STATIC
   BehaviourScriptFiles.cpp
   BehaviourScripts.cpp
@@ -13,6 +19,8 @@ target_link_libraries(rtype_game_scripting
     rtype_game_behaviours
     rtype_game_behaviours_piloting
     rtype_game_components
+    rtype_game_scripting_constants
+    rtype_game_scripting_events
     rtype_game_spawning_constants
   PRIVATE
     rtype_engine_data_files

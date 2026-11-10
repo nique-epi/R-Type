@@ -23,4 +23,7 @@ constexpr std::size_t SCRIPTED_REMOVALS_IN_A_TICK = 256;
 
 constexpr std::size_t PLAYERS_TOLD = 2;
 
+/** @brief The name of an event a script publishes. */
+constexpr std::string_view SCRIPT_EVENT_NAME = "alarm";
+
 }  // namespace rtype::server::testing

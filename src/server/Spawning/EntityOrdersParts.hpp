@@ -26,8 +26,8 @@ struct EntityOrdersParts {
   SendDatagram send;
   /** @brief The sheets the scripts name; they must outlive the object. */
   std::reference_wrapper<const game::EntitySheets> types;
-  /** @brief The bus that tells the players of a removal; it must outlive the
-   * object. */
+  /** @brief The bus that tells the players of a removal, and that the
+   * scripts subscribe to and publish on; it must outlive the object. */
   std::reference_wrapper<engine::EventBus> events;
   /** @brief The scripts of the game, nullptr in a game without any; they must
    * outlive the object. */

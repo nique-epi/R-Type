@@ -16,6 +16,7 @@
 #include "IEntityOrders.hpp"
 #include "LuauBehaviour.hpp"
 #include "LuauBehaviourParts.hpp"
+#include "LuauEventBindings.hpp"
 #include "LuauResumeContext.hpp"
 #include "LuauSetting.hpp"
 #include "Position.hpp"
@@ -208,7 +209,8 @@ int registerBehaviour(lua_State* state) {
                                      .settings = std::move(settings),
                                      .steer = steer,
                                      .reportFailure = scripts.reportFailure(),
-                                     .resumeContext = scripts.resumeContext()});
+                                     .resumeContext = scripts.resumeContext(),
+                                     .eventBindings = scripts.eventBindings()});
   return 0;
 }
 
@@ -216,7 +218,8 @@ int registerBehaviour(lua_State* state) {
 
 BehaviourScripts::BehaviourScripts(ScriptFailureReport reportFailure)
     : machine_(engine::ScriptLimits{}),
-      reportFailure_(std::move(reportFailure)) {
+      reportFailure_(std::move(reportFailure)),
+      eventBindings_(machine_) {
   const std::array functions{
       engine::ScriptFunction{.name = REGISTER_FUNCTION_NAME,
                              .function = registerBehaviour},
@@ -256,6 +259,8 @@ IEntityOrders* BehaviourScripts::orders() const {
 }
 
 LuauResumeContext& BehaviourScripts::resumeContext() { return resumeContext_; }
+
+LuauEventBindings& BehaviourScripts::eventBindings() { return eventBindings_; }
 
 const ScriptFailureReport& BehaviourScripts::reportFailure() const {
   return reportFailure_;
