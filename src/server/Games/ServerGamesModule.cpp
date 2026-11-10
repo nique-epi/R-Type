@@ -36,6 +36,7 @@
 #include "IResultsArchive.hpp"
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
+#include "LevelDirector.hpp"
 #include "Logger.hpp"
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
@@ -161,6 +162,17 @@ const engine::SettingValue& declareStartAtBoss(
       .help = "1 starts every game at its boss, without the waves"});
 }
 
+/** @returns The setting LEVEL_SETTING_NAME, declared in @p configuration:
+ * the level every game plays, or nothing (the default) to play the waves. */
+const engine::SettingValue& declareLevel(
+    engine::ConfigurationRegistry& configuration) {
+  return configuration.declareText(engine::TextSettingDefinition{
+      .name = std::string{LEVEL_SETTING_NAME},
+      .defaultValue = std::string{},
+      .help = "Level a script registered that every game plays, or nothing "
+              "to play the waves"});
+}
+
 }  // namespace
 
 ServerGamesModule::ServerGamesModule(GamesSettings settings)
@@ -223,12 +235,16 @@ void ServerGamesModule::declareSettings(
           .help = "Ticks every player's input is held before it is applied"});
   ruleSettings_.declare(configuration);
   startAtBossSetting_ = &declareStartAtBoss(configuration);
+  levelSetting_ = &declareLevel(configuration);
 }
 
 void ServerGamesModule::start() {
   scripts_ = std::make_unique<game::BehaviourScripts>(
       [this](const std::string& message) { logger_.warn(message); });
   scripts_->run(game::scriptSourcesIn(settings_.contentFolders));
+  if (!levelSetting_->text().empty()) {
+    static_cast<void>(stagesOfLevel(scripts_->levels(), levelSetting_->text()));
+  }
   const game::EntitySheets& types =
       types_.emplace(game::EntitySheets::fromTexts(
           game::sheetTextsInFolders(settings_.contentFolders),
@@ -260,7 +276,8 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
                   .seed = seed,
                   .inputDelayTicks = inputDelayTicks,
                   .gameRules = rules,
-                  .startsAtBoss = startsAtBoss});
+                  .startsAtBoss = startsAtBoss,
+                  .playsALevel = !levelSetting_->text().empty()});
   logHowGamesPlay(logger_, rules, breaches);
   return GameSettings{.seed = seed.has_value() ? *seed : std::random_device{}(),
                       .waves = catalog.planOf(rules.difficulty),
@@ -271,6 +288,7 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
                       .rules = rules,
                       .vanilla = breaches.empty(),
                       .startsAtBoss = startsAtBoss,
+                      .level = levelSetting_->text(),
                       .scripts = scripts_.get()};
 }
 

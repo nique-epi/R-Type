@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <string>
 #include "EntitySheets.hpp"
 #include "GameRules.hpp"
 #include "ServerConstants.hpp"
@@ -22,7 +23,8 @@ namespace rtype::server {
  * the waves of its difficulty, the entity sheets its entities are made from,
  * the world states it sends per second and how it writes them, the ticks it
  * holds each input, its rules (the name of its difficulty, the lives of each
- * player, friendly fire) and whether it is vanilla.
+ * player, friendly fire), whether it is vanilla, and the level it plays
+ * instead of its waves, if any.
  */
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
 struct GameSettings {
@@ -46,6 +48,10 @@ struct GameSettings {
   /** @brief Whether the game skips its waves and brings its boss in at
    * once; a game started so is never vanilla. */
   bool startsAtBoss{false};
+  /** @brief The level a script directs the game through, one of
+   * `level.register`; empty for a game that plays the waves of its
+   * difficulty. A game that plays a level is never vanilla. */
+  std::string level;
   /** @brief The scripts its bodies run on, which outlive it; nullptr in a game
    * built without any. */
   game::BehaviourScripts* scripts{nullptr};
