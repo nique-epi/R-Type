@@ -14,17 +14,20 @@ jobs:
   format-check:
     name: Format check
     runs-on: ubuntu-latest
-    container: epitechcontent/epitest-docker:latest
     steps:
       - uses: actions/checkout@v5
 
+      # The wheel of PyPI ships the same clang-format 20.1.8 as the Epitech image,
+      # without pulling that image.
       - name: Install clang-format
-        run: apt-get update && apt-get install -y clang-format-20
+        run: |
+          pipx install clang-format==20.1.8
+          clang-format --version
 
       - name: Check formatting
         run: |
           find src tests \( -name '*.cpp' -o -name '*.hpp' \) -print0 \
-            | xargs -0 clang-format-20 --dry-run -Werror
+            | xargs -0 clang-format --dry-run -Werror
 
   tidy:
     name: Clang-tidy (${{ matrix.shard }}/${{ strategy.job-total }})
