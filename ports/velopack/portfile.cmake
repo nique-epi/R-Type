@@ -41,14 +41,20 @@ endif()
 set(VELOPACK_CONFIGURATION_FOLDERS "${CURRENT_PACKAGES_DIR}" "${CURRENT_PACKAGES_DIR}/debug")
 
 if(VCPKG_TARGET_IS_WINDOWS)
-  set(VELOPACK_LIBRARY_NAME "velopack_libc_win_${VELOPACK_ARCHITECTURE}_msvc")
+  # The import library names the DLL velopack_libc.dll, whatever the
+  # architecture: the DLL is installed under that name, or no program finds it.
+  set(VELOPACK_ARCHIVE_LIBRARY "velopack_libc_win_${VELOPACK_ARCHITECTURE}_msvc")
+  set(VELOPACK_LIBRARY_NAME "velopack_libc")
   foreach(folder IN LISTS VELOPACK_CONFIGURATION_FOLDERS)
-    file(INSTALL "${SOURCE_PATH}/lib/${VELOPACK_LIBRARY_NAME}.dll" DESTINATION "${folder}/bin")
-    file(INSTALL "${SOURCE_PATH}/lib/${VELOPACK_LIBRARY_NAME}.dll.lib" DESTINATION "${folder}/lib")
+    file(MAKE_DIRECTORY "${folder}/bin" "${folder}/lib")
+    file(COPY_FILE "${SOURCE_PATH}/lib/${VELOPACK_ARCHIVE_LIBRARY}.dll"
+      "${folder}/bin/${VELOPACK_LIBRARY_NAME}.dll" INPUT_MAY_BE_RECENT)
+    file(COPY_FILE "${SOURCE_PATH}/lib/${VELOPACK_ARCHIVE_LIBRARY}.dll.lib"
+      "${folder}/lib/${VELOPACK_LIBRARY_NAME}.lib" INPUT_MAY_BE_RECENT)
   endforeach()
   set(VELOPACK_LIBRARY_KIND SHARED)
   set(VELOPACK_LOCATION "bin/${VELOPACK_LIBRARY_NAME}.dll")
-  set(VELOPACK_IMPORT_LIBRARY "lib/${VELOPACK_LIBRARY_NAME}.dll.lib")
+  set(VELOPACK_IMPORT_LIBRARY "lib/${VELOPACK_LIBRARY_NAME}.lib")
 elseif(VCPKG_TARGET_IS_OSX)
   set(VELOPACK_LIBRARY_NAME "libvelopack_libc.dylib")
   foreach(folder IN LISTS VELOPACK_CONFIGURATION_FOLDERS)
