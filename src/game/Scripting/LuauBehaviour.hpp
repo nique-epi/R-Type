@@ -10,17 +10,17 @@
 #include "IBehaviour.hpp"
 #include "Intent.hpp"
 #include "LuauBehaviourParts.hpp"
-#include "LuauBodyMemory.hpp"
+#include "LuauBehaviourState.hpp"
 
 namespace rtype::game {
 
 /**
- * @brief A behaviour written in Luau: each body follows a Routine whose steps
- * the function the script registered runs, in a Luau thread of its own, both
- * kept in the memory of its Pilot, which ends with the body.
+ * @brief A behaviour written in Luau: each body follows a HeldIntent whose
+ * steps the function the script registered runs, in a Luau thread of its own,
+ * both kept in the behaviour state of its Pilot, which ends with the body.
  *
  * A function that returns gives the intent of that tick (see
- * pushBehaviourView() and intentAt()), and runs again from its start at the
+ * pushViewTable() and intentFromTable()), and runs again from its start at the
  * next tick. A function that calls `behaviours.wait(ms, intent)` stops there:
  * the body wants that intent until the wait ends, its one-time requests (an
  * action started or ended, a jump) applying only on the first tick, and the
@@ -49,11 +49,11 @@ class LuauBehaviour final : public IBehaviour {
   [[nodiscard]] Intent steer(const BehaviourView& view) const override;
 
  private:
-  [[nodiscard]] Intent stepOf(LuauBodyMemory& memory,
-                              const BehaviourView& view) const;
-  void stopAfter(LuauBodyMemory& memory,
-                 const engine::ScriptException& error) const;
-  void removeStopped(const BehaviourView& view) const;
+  [[nodiscard]] Intent resumeOrHold(LuauBehaviourState& behaviourState,
+                                    const BehaviourView& view) const;
+  void stopOnFailure(LuauBehaviourState& behaviourState,
+                     const engine::ScriptException& error) const;
+  void removeAfterFailure(const BehaviourView& view) const;
 
   LuauBehaviourParts parts_;
   std::vector<std::string> settingNames_;

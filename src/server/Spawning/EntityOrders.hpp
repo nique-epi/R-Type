@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <string_view>
 #include <vector>
-#include "BodyOrder.hpp"
-#include "BodyOrdersParts.hpp"
-#include "IBodyOrders.hpp"
+#include "EntityOrder.hpp"
+#include "EntityOrdersParts.hpp"
+#include "IEntityOrders.hpp"
 #include "Logger.hpp"
 #include "Position.hpp"
 
@@ -29,14 +29,14 @@ namespace rtype::server {
  * lives: the game builds a new one with each new world. Not thread-safe: use
  * it from the simulation thread only.
  */
-class BodyOrders final : public game::IBodyOrders {
+class EntityOrders final : public game::IEntityOrders {
  public:
-  explicit BodyOrders(BodyOrdersParts parts);
-  BodyOrders(const BodyOrders&) = delete;
-  BodyOrders& operator=(const BodyOrders&) = delete;
-  BodyOrders(BodyOrders&&) = delete;
-  BodyOrders& operator=(BodyOrders&&) = delete;
-  ~BodyOrders() override;
+  explicit EntityOrders(EntityOrdersParts parts);
+  EntityOrders(const EntityOrders&) = delete;
+  EntityOrders& operator=(const EntityOrders&) = delete;
+  EntityOrders(EntityOrders&&) = delete;
+  EntityOrders& operator=(EntityOrders&&) = delete;
+  ~EntityOrders() override;
 
   /** @brief Carries out what the scripts asked since the last call, then
    * gives the scripts the budget of the next tick. */
@@ -48,13 +48,13 @@ class BodyOrders final : public game::IBodyOrders {
 
  private:
   void warnWhenOverBudget();
-  void appear(const BodyOrder& order) const;
+  void appear(const EntityOrder& order) const;
   void removeAsked();
 
-  BodyOrdersParts parts_;
+  EntityOrdersParts parts_;
   logging::Logger logger_;
   bool budgetWarned_{false};
-  std::vector<BodyOrder> orders_;
+  std::vector<EntityOrder> orders_;
   std::vector<std::uint32_t> removals_;
 };
 

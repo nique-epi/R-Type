@@ -5,7 +5,7 @@
 
 namespace rtype::server {
 
-constexpr std::string_view BODY_ORDERS_LOGGER_NAME = "BodyOrders";
+constexpr std::string_view ENTITY_ORDERS_LOGGER_NAME = "EntityOrders";
 
 /** @brief The bodies the scripts may create in one tick: a whole volley of a
  * boss fits, a loop that creates bodies without end does not. */

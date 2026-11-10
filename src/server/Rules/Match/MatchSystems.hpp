@@ -3,10 +3,10 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include "BodyOrders.hpp"
 #include "BossStage.hpp"
 #include "CollisionRules.hpp"
 #include "DamageRules.hpp"
+#include "EntityOrders.hpp"
 #include "GameContext.hpp"
 #include "IHitArbitration.hpp"
 #include "LifeKeeper.hpp"
@@ -54,7 +54,7 @@ class MatchSystems {
   std::unique_ptr<WaveSpawner> waveSpawner_;
   std::unique_ptr<WeaponSystem> weaponSystem_;
   std::unique_ptr<VolleySystem> volleySystem_;
-  std::unique_ptr<BodyOrders> bodyOrders_;
+  std::unique_ptr<EntityOrders> entityOrders_;
   std::unique_ptr<BossStage> bossStage_;
   std::unique_ptr<LifeKeeper> lifeKeeper_;
   std::unique_ptr<LookItemKeeper> lookItemKeeper_;

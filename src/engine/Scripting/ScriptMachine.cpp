@@ -7,12 +7,12 @@
 #include <string>
 #include <string_view>
 #include "EngineException.hpp"
+#include "LuauProtectedCall.hpp"
+#include "LuauResumeResult.hpp"
 #include "ScriptBudget.hpp"
 #include "ScriptFunction.hpp"
 #include "ScriptLimits.hpp"
-#include "ScriptProtection.hpp"
 #include "ScriptSource.hpp"
-#include "ScriptStepEnd.hpp"
 #include "ScriptingConstants.hpp"
 #include "lua.h"
 #include "luacode.h"
@@ -161,7 +161,7 @@ bool ScriptMachine::hasTickBudget() const {
   return budget_.tickSpent < budget_.limits.tickBudget;
 }
 
-ScriptStepEnd ScriptMachine::resume(lua_State* thread, int arguments) {
+LuauResumeResult ScriptMachine::resume(lua_State* thread, int arguments) {
   const auto start = std::chrono::steady_clock::now();
   budget_.deadline = start + budget_.limits.stepBudget;
   budget_.overdueSafepoints = 0;
@@ -170,12 +170,12 @@ ScriptStepEnd ScriptMachine::resume(lua_State* thread, int arguments) {
   budget_.callInProgress = false;
   budget_.tickSpent += std::chrono::steady_clock::now() - start;
   if (status == LUA_YIELD) {
-    return ScriptStepEnd::Yielded;
+    return LuauResumeResult::Yielded;
   }
   if (status != LUA_OK) {
     throw ScriptException(popScriptError(thread));
   }
-  return ScriptStepEnd::Finished;
+  return LuauResumeResult::Returned;
 }
 
 lua_State* ScriptMachine::state() const { return state_.get(); }

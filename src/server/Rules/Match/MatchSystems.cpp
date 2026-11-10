@@ -2,12 +2,12 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include "BodyOrders.hpp"
-#include "BodyOrdersParts.hpp"
 #include "BossStage.hpp"
 #include "BossStageParts.hpp"
 #include "CollisionRules.hpp"
 #include "DamageRules.hpp"
+#include "EntityOrders.hpp"
+#include "EntityOrdersParts.hpp"
 #include "GameContext.hpp"
 #include "IHitArbitration.hpp"
 #include "LifeKeeper.hpp"
@@ -86,15 +86,15 @@ std::unique_ptr<VolleySystem> volleySystemFor(GameContext& game,
 }
 
 /** @returns What carries out, in @p world, what the scripts of the game ask. */
-std::unique_ptr<BodyOrders> bodyOrdersFor(GameContext& game,
-                                          game::World& world) {
-  return std::make_unique<BodyOrders>(
-      BodyOrdersParts{.world = world,
-                      .roster = game.roster.get(),
-                      .send = game.send,
-                      .types = game.settings.types,
-                      .events = game.events.get(),
-                      .scripts = game.settings.scripts});
+std::unique_ptr<EntityOrders> entityOrdersFor(GameContext& game,
+                                              game::World& world) {
+  return std::make_unique<EntityOrders>(
+      EntityOrdersParts{.world = world,
+                        .roster = game.roster.get(),
+                        .send = game.send,
+                        .types = game.settings.types,
+                        .events = game.events.get(),
+                        .scripts = game.settings.scripts});
 }
 
 /** @returns Whether the boss of the level may come at this tick, after
@@ -142,7 +142,7 @@ MatchSystems::MatchSystems(const MatchSystemsParts& parts)
       waveSpawner_(waveSpawnerFor(game_, world_, parts.waveSeed)),
       weaponSystem_(weaponSystemFor(game_, world_)),
       volleySystem_(volleySystemFor(game_, world_)),
-      bodyOrders_(bodyOrdersFor(game_, world_)),
+      entityOrders_(entityOrdersFor(game_, world_)),
       bossStage_(bossStageFor(game_, world_)),
       lifeKeeper_(lifeKeeperFor(parts)),
       lookItemKeeper_(lookItemKeeperFor(game_, world_)) {}
@@ -154,7 +154,7 @@ void MatchSystems::onTick(IHitArbitration& arbitration, std::uint32_t tick) {
   runWorldSystems(game, world_);
   weaponSystem_->onTick();
   volleySystem_->onTick();
-  bodyOrders_->onTick();
+  entityOrders_->onTick();
   bossStage_->onTick(
       advanceTheWaves(*waveSpawner_, game.settings.startsAtBoss));
   lifeKeeper_->onTick();

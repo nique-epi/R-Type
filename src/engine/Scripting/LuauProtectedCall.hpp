@@ -8,7 +8,7 @@ namespace rtype::engine {
 
 /** @brief Work that calls the API of Luau on a machine: @p run is called with
  * @p context. */
-struct ScriptWork {
+struct LuauProtectedWork {
   void (*run)(void* context){nullptr};
   void* context{nullptr};
 };
@@ -19,7 +19,7 @@ struct ScriptWork {
  * refuses.
  * @throws ScriptException holding the error @p work raised.
  */
-void runProtected(lua_State* state, const ScriptWork& work);
+void runProtected(lua_State* state, const LuauProtectedWork& work);
 
 /** @returns The error on top of the stack of @p thread, popped. */
 [[nodiscard]] std::string popScriptError(lua_State* thread);

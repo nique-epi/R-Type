@@ -1,4 +1,4 @@
-#include "Routine.hpp"
+#include "HeldIntent.hpp"
 #include <cstdint>
 #include <optional>
 #include "Intent.hpp"
@@ -18,7 +18,7 @@ Intent withoutOneTimeRequests(Intent intent) {
 
 }  // namespace
 
-std::optional<Intent> Routine::heldThisTick() {
+std::optional<Intent> HeldIntent::heldThisTick() {
   if (stopped_) {
     return Intent{.steered = true};
   }
@@ -29,20 +29,20 @@ std::optional<Intent> Routine::heldThisTick() {
   return std::nullopt;
 }
 
-Intent Routine::held() const { return held_; }
+Intent HeldIntent::held() const { return held_; }
 
-Intent Routine::stepped(const Intent& intent, std::uint32_t waitTicks) {
+Intent HeldIntent::startHolding(const Intent& intent, std::uint32_t waitTicks) {
   ticksLeft_ = waitTicks;
   held_ = withoutOneTimeRequests(intent);
   return intent;
 }
 
-void Routine::stop() {
+void HeldIntent::stop() {
   stopped_ = true;
   ticksLeft_ = 0;
   held_ = Intent{.steered = true};
 }
 
-bool Routine::stopped() const { return stopped_; }
+bool HeldIntent::stopped() const { return stopped_; }
 
 }  // namespace rtype::game

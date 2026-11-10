@@ -18,8 +18,8 @@ namespace rtype::game {
  * `enraged` whether it is a boss that enraged, `actions_ended` how many
  * actions it ended, `nearest_ship` and `action` absent when there is none.
  */
-void pushBehaviourView(lua_State* state, const BehaviourView& view,
-                       std::span<const std::string> settingNames);
+void pushViewTable(lua_State* state, const BehaviourView& view,
+                   std::span<const std::string> settingNames);
 
 /**
  * @returns The intent the table at @p index of @p state describes, read with
@@ -30,6 +30,6 @@ void pushBehaviourView(lua_State* state, const BehaviourView& view,
  * positive finite number, as a jump to a point that is not finite; a value of
  * the wrong type counts as left out.
  */
-[[nodiscard]] Intent intentAt(lua_State* state, int index);
+[[nodiscard]] Intent intentFromTable(lua_State* state, int index);
 
 }  // namespace rtype::game

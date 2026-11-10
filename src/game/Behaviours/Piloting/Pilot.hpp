@@ -5,7 +5,7 @@
 #include <memory>
 #include <span>
 #include "IBehaviour.hpp"
-#include "IBehaviourMemory.hpp"
+#include "IBehaviourState.hpp"
 #include "Position.hpp"
 #include "TimeConstants.hpp"
 
@@ -31,7 +31,7 @@ struct Pilot {
   std::span<const std::int64_t> settings;
   /** @brief What the behaviour remembers of this body, empty for a behaviour
    * that remembers nothing; it ends with the body. */
-  std::shared_ptr<IBehaviourMemory> memory = nullptr;
+  std::shared_ptr<IBehaviourState> behaviourState = nullptr;
 };
 
 }  // namespace rtype::game

@@ -16,8 +16,8 @@ namespace rtype::server {
 
 class PlayerRoster;
 
-/** @brief What a BodyOrders is built from. */
-struct BodyOrdersParts {
+/** @brief What a EntityOrders is built from. */
+struct EntityOrdersParts {
   /** @brief The world the bodies appear in; it must outlive the object. */
   std::reference_wrapper<game::World> world;
   /** @brief The players told about each body; it must outlive the object. */

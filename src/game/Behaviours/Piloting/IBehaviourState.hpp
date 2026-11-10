@@ -7,9 +7,9 @@ namespace rtype::game {
  * of the body owns it, so it ends with the body, whichever way the body is
  * destroyed.
  */
-class IBehaviourMemory {
+class IBehaviourState {
  public:
-  virtual ~IBehaviourMemory() = default;
+  virtual ~IBehaviourState() = default;
 };
 
 }  // namespace rtype::game

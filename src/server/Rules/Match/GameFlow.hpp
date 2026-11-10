@@ -63,7 +63,7 @@ namespace rtype::server {
  * bursts every projectile whose time came into its shards (see WeaponSystem),
  * then fires the volleys of every enemy whose Intent starts an action its
  * sheet fires one on (see VolleySystem), then makes appear and removes the
- * bodies the scripts asked for (see BodyOrders),
+ * bodies the scripts asked for (see EntityOrders),
  * then lets the Bydos of the current wave appear (see WaveSpawner), then counts
  * the waits and the protections of the lives (see LifeKeeper). The ships and
  * the Bydos move and fire in no other state. Each world starts its random draws

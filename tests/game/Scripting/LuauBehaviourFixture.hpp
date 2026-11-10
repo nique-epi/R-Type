@@ -8,17 +8,17 @@
 #include "BehaviourRegistry.hpp"
 #include "BehaviourScripts.hpp"
 #include "BehaviourScriptsFixtures.hpp"
-#include "IBehaviourMemory.hpp"
-#include "IBodyOrders.hpp"
+#include "IBehaviourState.hpp"
+#include "IEntityOrders.hpp"
 #include "Intent.hpp"
 #include "Position.hpp"
 
 /** @brief A body a test steers over several ticks: where it is, its network
- * id, and what its behaviour remembers of it. */
+ * id, and the state its behaviour keeps of it. */
 struct SteeredBody {
   rtype::game::Position position{};
   std::uint32_t networkId{0};
-  std::shared_ptr<rtype::game::IBehaviourMemory> memory = nullptr;
+  std::shared_ptr<rtype::game::IBehaviourState> behaviourState = nullptr;
 };
 
 /** @brief The scripts of a test, steering bodies tick after tick as the
@@ -30,7 +30,7 @@ class LuauBehaviourFixture : public ::testing::Test {
   /** @brief Runs @p script and keeps the behaviours it registers. */
   void load(std::string_view script);
   /** @brief Makes @p orders carry out the bodies the scripts order. */
-  void attach(rtype::game::IBodyOrders& orders);
+  void attach(rtype::game::IEntityOrders& orders);
   /** @brief Gives the scripts the budget of a new tick. */
   void beginTick();
   /** @returns What @p behaviour wants for @p body in this tick. */

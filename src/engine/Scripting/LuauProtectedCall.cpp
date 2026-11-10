@@ -1,4 +1,4 @@
-#include "ScriptProtection.hpp"
+#include "LuauProtectedCall.hpp"
 #include <string>
 #include "EngineException.hpp"
 #include "lua.h"
@@ -7,17 +7,18 @@ namespace rtype::engine {
 
 namespace {
 
-/** @brief Runs the ScriptWork whose address is the first argument. */
+/** @brief Runs the LuauProtectedWork whose address is the first argument. */
 int runWork(lua_State* state) {
-  const auto& work = *static_cast<const ScriptWork*>(lua_touserdata(state, 1));
+  const auto& work =
+      *static_cast<const LuauProtectedWork*>(lua_touserdata(state, 1));
   work.run(work.context);
   return 0;
 }
 
 }  // namespace
 
-void runProtected(lua_State* state, const ScriptWork& work) {
-  ScriptWork handed = work;
+void runProtected(lua_State* state, const LuauProtectedWork& work) {
+  LuauProtectedWork handed = work;
   if (lua_cpcall(state, runWork, &handed) != 0) {
     throw ScriptException(popScriptError(state));
   }

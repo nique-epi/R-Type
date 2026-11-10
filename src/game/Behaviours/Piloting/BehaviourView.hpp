@@ -5,7 +5,7 @@
 #include <optional>
 #include <span>
 #include "ActionKey.hpp"
-#include "IBehaviourMemory.hpp"
+#include "IBehaviourState.hpp"
 #include "Position.hpp"
 #include "TimeConstants.hpp"
 
@@ -56,7 +56,7 @@ struct BehaviourView {
   std::uint32_t networkId{0};
   /** @brief Where the behaviour keeps what it remembers of the body; nullptr
    * when nothing outlives this call. */
-  std::shared_ptr<IBehaviourMemory>* memory{nullptr};
+  std::shared_ptr<IBehaviourState>* behaviourState{nullptr};
 };
 
 }  // namespace rtype::game

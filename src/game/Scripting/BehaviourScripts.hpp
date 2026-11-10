@@ -4,10 +4,10 @@
 #include <span>
 #include <vector>
 #include "BehaviourRegistry.hpp"
-#include "IBodyOrders.hpp"
+#include "IEntityOrders.hpp"
 #include "LuauBehaviour.hpp"
 #include "LuauBehaviourParts.hpp"
-#include "LuauStepState.hpp"
+#include "LuauResumeContext.hpp"
 #include "ScriptFailureReport.hpp"
 #include "ScriptMachine.hpp"
 #include "ScriptSource.hpp"
@@ -49,18 +49,18 @@ class BehaviourScripts {
   [[nodiscard]] engine::ScriptMachine& machine();
 
   /** @brief Makes @p orders carry out the bodies the scripts order. */
-  void attachOrders(IBodyOrders& orders);
+  void attachOrders(IEntityOrders& orders);
 
   /** @brief Forgets @p orders, unless others took their place. */
-  void detachOrders(const IBodyOrders& orders) noexcept;
+  void detachOrders(const IEntityOrders& orders) noexcept;
 
   /** @returns What carries out the bodies the scripts order; nullptr outside
    * a game. */
-  [[nodiscard]] IBodyOrders* orders() const;
+  [[nodiscard]] IEntityOrders* orders() const;
 
   /** @returns What the functions the scripts call know of the step in
    * progress. */
-  [[nodiscard]] LuauStepState& step();
+  [[nodiscard]] LuauResumeContext& resumeContext();
 
   /** @returns What the report of a behaviour calls. */
   [[nodiscard]] const ScriptFailureReport& reportFailure() const;
@@ -76,7 +76,7 @@ class BehaviourScripts {
  private:
   engine::ScriptMachine machine_;
   ScriptFailureReport reportFailure_;
-  LuauStepState step_;
+  LuauResumeContext resumeContext_;
   std::vector<std::unique_ptr<LuauBehaviour>> declared_;
 };
 

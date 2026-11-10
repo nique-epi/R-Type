@@ -4,7 +4,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include "IBodyOrders.hpp"
+#include "IEntityOrders.hpp"
 #include "Position.hpp"
 
 /** @brief A body a script asked for, its sheet name copied out of the
@@ -16,9 +16,9 @@ struct RecordedSpawn {
 
 /** @brief Body orders that record what the scripts order and give every body
  * the same network id. */
-class RecordingBodyOrders final : public rtype::game::IBodyOrders {
+class RecordingEntityOrders final : public rtype::game::IEntityOrders {
  public:
-  explicit RecordingBodyOrders(std::uint32_t givenId);
+  explicit RecordingEntityOrders(std::uint32_t givenId);
 
   [[nodiscard]] std::uint32_t spawn(std::string_view type,
                                     rtype::game::Position position) override;

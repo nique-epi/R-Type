@@ -13,11 +13,11 @@
 #include "BehaviourRegistry.hpp"
 #include "BuiltInBehaviours.hpp"
 #include "GameScriptingConstants.hpp"
-#include "IBodyOrders.hpp"
+#include "IEntityOrders.hpp"
 #include "LuauBehaviour.hpp"
 #include "LuauBehaviourParts.hpp"
+#include "LuauResumeContext.hpp"
 #include "LuauSetting.hpp"
-#include "LuauStepState.hpp"
 #include "Position.hpp"
 #include "ScriptFailureReport.hpp"
 #include "ScriptFunction.hpp"
@@ -111,19 +111,19 @@ std::uint32_t waitTicksOf(lua_State* state) {
 /** @brief `behaviours.wait(ms, intent)`: yields @p intent to the step in
  * progress, which only the thread of a body may do. */
 int waitOfBody(lua_State* state) {
-  LuauStepState& step = scriptsOf(state).step();
-  if (step.stepping != state) {
+  LuauResumeContext& context = scriptsOf(state).resumeContext();
+  if (context.resumedThread != state) {
     raise(state, "behaviours.wait only runs in the function of a body");
   }
-  step.waitTicks = waitTicksOf(state);
+  context.waitTicks = waitTicksOf(state);
   lua_settop(state, WAIT_INTENT_ARGUMENT);
   return lua_yield(state, YIELDED_INTENT);
 }
 
 /** @returns What carries out the bodies the scripts of @p state order;
  * raises an error outside a game. */
-IBodyOrders& ordersOf(lua_State* state) {
-  IBodyOrders* const orders = scriptsOf(state).orders();
+IEntityOrders& ordersOf(lua_State* state) {
+  IEntityOrders* const orders = scriptsOf(state).orders();
   if (orders == nullptr) {
     raise(state, "bodies are only created and destroyed during a game");
   }
@@ -150,7 +150,7 @@ Position spawnPositionOf(lua_State* state) {
 /** @brief `behaviours.spawn(type, position)`: returns the network id of the
  * body, which appears once the bodies of this tick were steered. */
 int spawnBody(lua_State* state) {
-  IBodyOrders& orders = ordersOf(state);
+  IEntityOrders& orders = ordersOf(state);
   const char* const type = luaL_checkstring(state, SPAWN_TYPE_ARGUMENT);
   const Position position = spawnPositionOf(state);
   std::uint32_t networkId = 0;
@@ -181,7 +181,7 @@ std::uint32_t destroyedIdOf(lua_State* state) {
 /** @brief `behaviours.destroy(id)`: removes the body once the bodies of this
  * tick were steered. */
 int destroyBody(lua_State* state) {
-  IBodyOrders& orders = ordersOf(state);
+  IEntityOrders& orders = ordersOf(state);
   const std::uint32_t networkId = destroyedIdOf(state);
   std::string refusal;
   try {
@@ -208,7 +208,7 @@ int registerBehaviour(lua_State* state) {
                                      .settings = std::move(settings),
                                      .steer = steer,
                                      .reportFailure = scripts.reportFailure(),
-                                     .step = scripts.step()});
+                                     .resumeContext = scripts.resumeContext()});
   return 0;
 }
 
@@ -241,19 +241,21 @@ void BehaviourScripts::declare(LuauBehaviourParts parts) {
 
 engine::ScriptMachine& BehaviourScripts::machine() { return machine_; }
 
-void BehaviourScripts::attachOrders(IBodyOrders& orders) {
-  step_.orders = &orders;
+void BehaviourScripts::attachOrders(IEntityOrders& orders) {
+  resumeContext_.orders = &orders;
 }
 
-void BehaviourScripts::detachOrders(const IBodyOrders& orders) noexcept {
-  if (step_.orders == &orders) {
-    step_.orders = nullptr;
+void BehaviourScripts::detachOrders(const IEntityOrders& orders) noexcept {
+  if (resumeContext_.orders == &orders) {
+    resumeContext_.orders = nullptr;
   }
 }
 
-IBodyOrders* BehaviourScripts::orders() const { return step_.orders; }
+IEntityOrders* BehaviourScripts::orders() const {
+  return resumeContext_.orders;
+}
 
-LuauStepState& BehaviourScripts::step() { return step_; }
+LuauResumeContext& BehaviourScripts::resumeContext() { return resumeContext_; }
 
 const ScriptFailureReport& BehaviourScripts::reportFailure() const {
   return reportFailure_;

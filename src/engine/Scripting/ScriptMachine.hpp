@@ -6,11 +6,11 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include "LuauResumeResult.hpp"
 #include "ScriptBudget.hpp"
 #include "ScriptFunction.hpp"
 #include "ScriptLimits.hpp"
 #include "ScriptSource.hpp"
-#include "ScriptStepEnd.hpp"
 
 struct lua_State;
 
@@ -74,7 +74,7 @@ class ScriptMachine {
    * the thread returned or yielded is left on its stack.
    * @throws ScriptException when the step fails, as run() does.
    */
-  ScriptStepEnd resume(lua_State* thread, int arguments);
+  LuauResumeResult resume(lua_State* thread, int arguments);
 
   /** @returns The state functions are pushed and read on, for call(). */
   [[nodiscard]] lua_State* state() const;

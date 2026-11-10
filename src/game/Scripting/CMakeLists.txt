@@ -1,7 +1,7 @@
 add_library(rtype_game_scripting STATIC
   BehaviourScriptFiles.cpp
   BehaviourScripts.cpp
-  LuauView.cpp
+  LuauBehaviourTables.cpp
   LuauBehaviour.cpp
 )
 

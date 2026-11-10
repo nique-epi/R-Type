@@ -12,9 +12,9 @@ namespace rtype::game {
  * next tick. The scripts give them through `behaviours.spawn` and
  * `behaviours.destroy`.
  */
-class IBodyOrders {
+class IEntityOrders {
  public:
-  virtual ~IBodyOrders() = default;
+  virtual ~IEntityOrders() = default;
 
   /**
    * @returns The network id the body of the sheet @p type, appearing at

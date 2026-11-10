@@ -7,9 +7,9 @@
 #include <string_view>
 #include <vector>
 #include "BehaviourScripts.hpp"
-#include "BodyOrders.hpp"
-#include "BodyOrdersParts.hpp"
 #include "EntityDestruction.hpp"
+#include "EntityOrders.hpp"
+#include "EntityOrdersParts.hpp"
 #include "EntitySpawned.hpp"
 #include "EventBus.hpp"
 #include "OutgoingDatagram.hpp"
@@ -20,13 +20,13 @@
 namespace rtype::server::testing {
 
 /**
- * @brief A world of the shipped sheets and the BodyOrders that carries
+ * @brief A world of the shipped sheets and the EntityOrders that carries
  * out what its scripts ask, called directly as the scripts would; the
  * datagrams it sends and the removals it publishes are recorded.
  */
-class BodyOrdersFixture : public ::testing::Test {
+class EntityOrdersFixture : public ::testing::Test {
  protected:
-  BodyOrdersFixture();
+  EntityOrdersFixture();
 
   /** @brief Connects @p count players, who are then told about each body. */
   void connectPlayers(std::size_t count);
@@ -48,9 +48,9 @@ class BodyOrdersFixture : public ::testing::Test {
   /** @returns The EntitySpawned sent to the player connected @p index-th. */
   [[nodiscard]] std::vector<network::EntitySpawned> spawnsSentTo(
       std::size_t index) const;
-  /** @returns What builds a BodyOrders of this world attached to
+  /** @returns What builds a EntityOrders of this world attached to
    * @p scripts, nullptr for none, as a new game does. */
-  [[nodiscard]] BodyOrdersParts partsFor(game::BehaviourScripts* scripts);
+  [[nodiscard]] EntityOrdersParts partsFor(game::BehaviourScripts* scripts);
   /** @returns The removals published so far. */
   [[nodiscard]] const std::vector<game::EntityDestruction>& removals() const;
 
@@ -60,7 +60,7 @@ class BodyOrdersFixture : public ::testing::Test {
   engine::EventBus events_;
   std::vector<network::OutgoingDatagram> sent_;
   std::vector<game::EntityDestruction> removals_;
-  BodyOrders bodies_;
+  EntityOrders bodies_;
 };
 
 }  // namespace rtype::server::testing

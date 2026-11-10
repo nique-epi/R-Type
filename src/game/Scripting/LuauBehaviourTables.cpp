@@ -1,4 +1,4 @@
-#include "LuauView.hpp"
+#include "LuauBehaviourTables.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -184,8 +184,8 @@ std::optional<float> topSpeedAt(lua_State* state, int table) {
 
 }  // namespace
 
-void pushBehaviourView(lua_State* state, const BehaviourView& view,
-                       std::span<const std::string> settingNames) {
+void pushViewTable(lua_State* state, const BehaviourView& view,
+                   std::span<const std::string> settingNames) {
   lua_createtable(state, 0, 0);
   setNumber(state, VIEW_ID_KEY, static_cast<double>(view.networkId));
   setPoint(state, VIEW_POSITION_KEY, view.position);
@@ -208,7 +208,7 @@ void pushBehaviourView(lua_State* state, const BehaviourView& view,
             static_cast<double>(view.actionsEnded));
 }
 
-Intent intentAt(lua_State* state, int index) {
+Intent intentFromTable(lua_State* state, int index) {
   Intent intent{.steered = true};
   if (!lua_istable(state, index)) {
     return intent;

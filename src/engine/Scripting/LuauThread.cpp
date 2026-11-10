@@ -1,4 +1,4 @@
-#include "ScriptThread.hpp"
+#include "LuauThread.hpp"
 #include "lua.h"
 
 namespace rtype::engine {
@@ -14,13 +14,13 @@ int anchorTop(lua_State* state) {
 
 }  // namespace
 
-ScriptThread::ScriptThread(lua_State* machine)
+LuauThread::LuauThread(lua_State* machine)
     : machine_(machine),
       state_(lua_newthread(machine)),
       reference_(anchorTop(machine)) {}
 
-ScriptThread::~ScriptThread() { lua_unref(machine_, reference_); }
+LuauThread::~LuauThread() { lua_unref(machine_, reference_); }
 
-lua_State* ScriptThread::state() const { return state_; }
+lua_State* LuauThread::state() const { return state_; }
 
 }  // namespace rtype::engine

@@ -1,6 +1,6 @@
 find_package(unofficial-luau CONFIG REQUIRED)
 
-add_library(rtype_engine_scripting STATIC ScriptMachine.cpp ScriptProtection.cpp ScriptThread.cpp)
+add_library(rtype_engine_scripting STATIC ScriptMachine.cpp LuauProtectedCall.cpp LuauThread.cpp)
 
 target_include_directories(rtype_engine_scripting PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

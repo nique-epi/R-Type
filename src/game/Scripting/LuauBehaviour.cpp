@@ -12,85 +12,85 @@
 #include "BehaviourSetting.hpp"
 #include "BehaviourView.hpp"
 #include "EngineException.hpp"
-#include "IBehaviourMemory.hpp"
-#include "IBodyOrders.hpp"
+#include "HeldIntent.hpp"
+#include "IBehaviourState.hpp"
+#include "IEntityOrders.hpp"
 #include "Intent.hpp"
 #include "LuauBehaviourParts.hpp"
-#include "LuauBodyMemory.hpp"
+#include "LuauBehaviourState.hpp"
+#include "LuauBehaviourTables.hpp"
+#include "LuauProtectedCall.hpp"
+#include "LuauResumeContext.hpp"
+#include "LuauResumeResult.hpp"
 #include "LuauSetting.hpp"
-#include "LuauStepState.hpp"
-#include "LuauView.hpp"
-#include "Routine.hpp"
+#include "LuauThread.hpp"
 #include "ScriptMachine.hpp"
-#include "ScriptProtection.hpp"
-#include "ScriptStepEnd.hpp"
-#include "ScriptThread.hpp"
 #include "lua.h"
 
 namespace rtype::game {
 
 namespace {
 
-/** @brief What the first half of a step needs. */
+/** @brief What resuming the thread of an entity needs. */
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
-struct StepStart {
+struct ResumeInputs {
   std::reference_wrapper<const LuauBehaviourParts> parts;
-  std::reference_wrapper<LuauBodyMemory> memory;
+  std::reference_wrapper<LuauBehaviourState> behaviourState;
   std::reference_wrapper<const BehaviourView> view;
   std::span<const std::string> settingNames;
   lua_State* thread{nullptr};
 };
 
-/** @brief What the end of a step reads, and what it found. */
-struct StepResult {
+/** @brief What reading the end of a resume needs, and the intent it found. */
+struct ResumeOutputs {
   lua_State* machine{nullptr};
   lua_State* thread{nullptr};
   Intent intent{.steered = true};
 };
 
-/** @brief Pushes on the thread of a body, created at its first step, what
+/** @brief Pushes on the thread of an entity, created at its first resume, what
  * resuming it needs: a fresh view, after the function when it does not wait. */
-void pushStep(void* context) {
-  auto& start = *static_cast<StepStart*>(context);
-  LuauBodyMemory& memory = start.memory.get();
+void pushResumeInputs(void* context) {
+  auto& start = *static_cast<ResumeInputs*>(context);
+  LuauBehaviourState& behaviourState = start.behaviourState.get();
   lua_State* const machine = start.parts.get().machine.get().state();
-  if (!memory.thread.has_value()) {
-    memory.thread.emplace(machine);
+  if (!behaviourState.thread.has_value()) {
+    behaviourState.thread.emplace(machine);
   }
-  lua_State* const thread = memory.thread->state();
+  lua_State* const thread = behaviourState.thread->state();
   start.thread = thread;
-  if (!memory.waiting) {
+  if (!behaviourState.waiting) {
     lua_getref(machine, start.parts.get().steer);
     lua_xmove(machine, thread, 1);
   }
-  pushBehaviourView(machine, start.view.get(), start.settingNames);
+  pushViewTable(machine, start.view.get(), start.settingNames);
   lua_xmove(machine, thread, 1);
 }
 
-/** @brief Reads the intent a step left first on the stack of its thread, and
- * empties that stack for the next step. */
-void readStep(void* context) {
-  auto& result = *static_cast<StepResult*>(context);
+/** @brief Reads the intent a resume left first on the stack of its thread, and
+ * empties that stack for the next resume. */
+void readResumeOutputs(void* context) {
+  auto& result = *static_cast<ResumeOutputs*>(context);
   if (lua_gettop(result.thread) > 0) {
     lua_xpush(result.thread, result.machine, 1);
-    result.intent = intentAt(result.machine, -1);
+    result.intent = intentFromTable(result.machine, -1);
     lua_settop(result.thread, 0);
   }
 }
 
-/** @returns The ticks a body waits after a step that ended with @p end: 0
+/** @returns The ticks an entity waits after a resume that ended with @p end: 0
  * when its function returned. @throws engine::ScriptException when it yielded
  * without behaviours.wait. */
-std::uint32_t ticksToWaitAfter(engine::ScriptStepEnd end,
-                               const LuauStepState& step) {
-  if (end == engine::ScriptStepEnd::Finished) {
+std::uint32_t ticksToWaitAfter(engine::LuauResumeResult end,
+                               const LuauResumeContext& context) {
+  if (end == engine::LuauResumeResult::Returned) {
     return 0;
   }
-  if (!step.waitTicks.has_value()) {
+  if (!context.waitTicks.has_value()) {
     throw engine::ScriptException(
         "a body may only yield through behaviours.wait");
   }
-  return *step.waitTicks;
+  return *context.waitTicks;
 }
 
 }  // namespace
@@ -115,62 +115,64 @@ std::span<const BehaviourSetting> LuauBehaviour::settings() const {
 }
 
 Intent LuauBehaviour::steer(const BehaviourView& view) const {
-  std::shared_ptr<IBehaviourMemory> forgotten;
-  std::shared_ptr<IBehaviourMemory>& memory =
-      view.memory == nullptr ? forgotten : *view.memory;
-  auto* found = dynamic_cast<LuauBodyMemory*>(memory.get());
+  std::shared_ptr<IBehaviourState> forgotten;
+  std::shared_ptr<IBehaviourState>& behaviourState =
+      view.behaviourState == nullptr ? forgotten : *view.behaviourState;
+  auto* found = dynamic_cast<LuauBehaviourState*>(behaviourState.get());
   if (found == nullptr) {
-    auto fresh = std::make_shared<LuauBodyMemory>();
+    auto fresh = std::make_shared<LuauBehaviourState>();
     found = fresh.get();
-    memory = std::move(fresh);
+    behaviourState = std::move(fresh);
   }
   try {
-    return stepOf(*found, view);
+    return resumeOrHold(*found, view);
   } catch (const engine::ScriptException& error) {
-    stopAfter(*found, error);
-    removeStopped(view);
-    return found->routine.held();
+    stopOnFailure(*found, error);
+    removeAfterFailure(view);
+    return found->heldIntent.held();
   }
 }
 
-Intent LuauBehaviour::stepOf(LuauBodyMemory& memory,
-                             const BehaviourView& view) const {
-  if (memory.routine.stopped()) {
-    removeStopped(view);
+Intent LuauBehaviour::resumeOrHold(LuauBehaviourState& behaviourState,
+                                   const BehaviourView& view) const {
+  if (behaviourState.heldIntent.stopped()) {
+    removeAfterFailure(view);
   }
-  const std::optional<Intent> held = memory.routine.heldThisTick();
+  const std::optional<Intent> held = behaviourState.heldIntent.heldThisTick();
   if (held.has_value()) {
     return *held;
   }
   engine::ScriptMachine& machine = parts_.machine.get();
   if (!machine.hasTickBudget()) {
-    return memory.routine.held();
+    return behaviourState.heldIntent.held();
   }
-  StepStart start{.parts = parts_,
-                  .memory = memory,
-                  .view = view,
-                  .settingNames = settingNames_};
-  engine::runProtected(machine.state(),
-                       engine::ScriptWork{.run = pushStep, .context = &start});
-  LuauStepState& step = parts_.step.get();
-  step.stepping = start.thread;
-  step.waitTicks.reset();
-  const engine::ScriptStepEnd end = machine.resume(start.thread, 1);
-  step.stepping = nullptr;
-  const std::uint32_t waitTicks = ticksToWaitAfter(end, step);
-  memory.waiting = end == engine::ScriptStepEnd::Yielded;
-  StepResult result{.machine = machine.state(), .thread = start.thread};
-  engine::runProtected(machine.state(),
-                       engine::ScriptWork{.run = readStep, .context = &result});
-  return memory.routine.stepped(result.intent, waitTicks);
+  ResumeInputs start{.parts = parts_,
+                     .behaviourState = behaviourState,
+                     .view = view,
+                     .settingNames = settingNames_};
+  engine::runProtected(
+      machine.state(),
+      engine::LuauProtectedWork{.run = pushResumeInputs, .context = &start});
+  LuauResumeContext& context = parts_.resumeContext.get();
+  context.resumedThread = start.thread;
+  context.waitTicks.reset();
+  const engine::LuauResumeResult end = machine.resume(start.thread, 1);
+  context.resumedThread = nullptr;
+  const std::uint32_t waitTicks = ticksToWaitAfter(end, context);
+  behaviourState.waiting = end == engine::LuauResumeResult::Yielded;
+  ResumeOutputs result{.machine = machine.state(), .thread = start.thread};
+  engine::runProtected(
+      machine.state(),
+      engine::LuauProtectedWork{.run = readResumeOutputs, .context = &result});
+  return behaviourState.heldIntent.startHolding(result.intent, waitTicks);
 }
 
-void LuauBehaviour::stopAfter(LuauBodyMemory& memory,
-                              const engine::ScriptException& error) const {
-  parts_.step.get().stepping = nullptr;
-  memory.thread.reset();
-  memory.waiting = false;
-  memory.routine.stop();
+void LuauBehaviour::stopOnFailure(LuauBehaviourState& behaviourState,
+                                  const engine::ScriptException& error) const {
+  parts_.resumeContext.get().resumedThread = nullptr;
+  behaviourState.thread.reset();
+  behaviourState.waiting = false;
+  behaviourState.heldIntent.stop();
   if (!failureReported_) {
     failureReported_ = true;
     parts_.reportFailure("the behaviour " + parts_.name +
@@ -178,8 +180,8 @@ void LuauBehaviour::stopAfter(LuauBodyMemory& memory,
   }
 }
 
-void LuauBehaviour::removeStopped(const BehaviourView& view) const {
-  IBodyOrders* const orders = parts_.step.get().orders;
+void LuauBehaviour::removeAfterFailure(const BehaviourView& view) const {
+  IEntityOrders* const orders = parts_.resumeContext.get().orders;
   if (view.networkId == 0 || orders == nullptr) {
     return;
   }

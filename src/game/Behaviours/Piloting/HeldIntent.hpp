@@ -12,7 +12,7 @@ namespace rtype::game {
  * applies the one-time requests of that step (an action started or ended, a
  * jump) on its first tick only, and stands still for good once stopped.
  */
-class Routine {
+class HeldIntent {
  public:
   /**
    * @returns What the body wants this tick without a new step: standing still
@@ -30,12 +30,12 @@ class Routine {
    * next tick.
    * @returns @p intent, what the body wants on this tick.
    */
-  Intent stepped(const Intent& intent, std::uint32_t waitTicks);
+  Intent startHolding(const Intent& intent, std::uint32_t waitTicks);
 
-  /** @brief Stops the routine for good: the body stands still. */
+  /** @brief Stops holding for good: the body stands still. */
   void stop();
 
-  /** @returns Whether the routine stopped. */
+  /** @returns Whether it stopped. */
   [[nodiscard]] bool stopped() const;
 
  private:

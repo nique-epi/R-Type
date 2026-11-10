@@ -14,15 +14,15 @@ namespace rtype::engine {
  * machine is alive. Neither copied nor moved: its destructor gives its
  * reference back once.
  */
-class ScriptThread {
+class LuauThread {
  public:
   /** @param machine The main state of the machine that owns the thread. */
-  explicit ScriptThread(lua_State* machine);
-  ScriptThread(const ScriptThread&) = delete;
-  ScriptThread& operator=(const ScriptThread&) = delete;
-  ScriptThread(ScriptThread&&) = delete;
-  ScriptThread& operator=(ScriptThread&&) = delete;
-  ~ScriptThread();
+  explicit LuauThread(lua_State* machine);
+  LuauThread(const LuauThread&) = delete;
+  LuauThread& operator=(const LuauThread&) = delete;
+  LuauThread(LuauThread&&) = delete;
+  LuauThread& operator=(LuauThread&&) = delete;
+  ~LuauThread();
 
   /** @returns The state of the thread, for ScriptMachine::resume(). */
   [[nodiscard]] lua_State* state() const;

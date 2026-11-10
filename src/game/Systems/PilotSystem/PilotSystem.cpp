@@ -167,7 +167,7 @@ void PilotSystem::update(engine::ComponentRegistry& components,
                 .actionAge = current == nullptr ? engine::Duration::zero()
                                                 : current->since,
                 .nearestShip = nearestOf(ships_, *position),
-                .memory = &pilot.memory},
+                .behaviourState = &pilot.behaviourState},
             components, body));
         passOnActionOf(components, body, intent);
         reshapeAsAsked(components, body, intent);

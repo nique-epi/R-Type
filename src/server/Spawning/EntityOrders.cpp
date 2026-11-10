@@ -1,4 +1,4 @@
-#include "BodyOrders.hpp"
+#include "EntityOrders.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <span>
@@ -6,15 +6,15 @@
 #include <string_view>
 #include <utility>
 #include "BehaviourScripts.hpp"
-#include "BodyOrder.hpp"
-#include "BodyOrdersConstants.hpp"
-#include "BodyOrdersParts.hpp"
 #include "BodyPlacement.hpp"
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
 #include "EngineException.hpp"
 #include "Entity.hpp"
 #include "EntityDestruction.hpp"
+#include "EntityOrder.hpp"
+#include "EntityOrdersConstants.hpp"
+#include "EntityOrdersParts.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySpawnSender.hpp"
 #include "EntitySpawned.hpp"
@@ -42,21 +42,22 @@ const game::EntitySheet* sheetNamed(std::span<const game::EntitySheet> sheets,
 
 }  // namespace
 
-BodyOrders::BodyOrders(BodyOrdersParts parts)
-    : parts_(std::move(parts)), logger_(std::string{BODY_ORDERS_LOGGER_NAME}) {
+EntityOrders::EntityOrders(EntityOrdersParts parts)
+    : parts_(std::move(parts)),
+      logger_(std::string{ENTITY_ORDERS_LOGGER_NAME}) {
   if (parts_.scripts != nullptr) {
     parts_.scripts->attachOrders(*this);
   }
 }
 
-BodyOrders::~BodyOrders() {
+EntityOrders::~EntityOrders() {
   if (parts_.scripts != nullptr) {
     parts_.scripts->detachOrders(*this);
   }
 }
 
-std::uint32_t BodyOrders::spawn(std::string_view type,
-                                game::Position position) {
+std::uint32_t EntityOrders::spawn(std::string_view type,
+                                  game::Position position) {
   if (orders_.size() >= MAXIMUM_SPAWN_ORDERS_PER_TICK) {
     throw engine::ScriptException("too many bodies created in one tick");
   }
@@ -69,19 +70,19 @@ std::uint32_t BodyOrders::spawn(std::string_view type,
     throw engine::ScriptException("a script cannot create a ship");
   }
   const std::uint32_t networkId = parts_.world.get().reserveNetworkId();
-  orders_.push_back(
-      BodyOrder{.sheet = *sheet, .position = position, .networkId = networkId});
+  orders_.push_back(EntityOrder{
+      .sheet = *sheet, .position = position, .networkId = networkId});
   return networkId;
 }
 
-void BodyOrders::destroy(std::uint32_t networkId) {
+void EntityOrders::destroy(std::uint32_t networkId) {
   if (removals_.size() >= MAXIMUM_REMOVAL_ORDERS_PER_TICK) {
     throw engine::ScriptException("too many bodies removed in one tick");
   }
   removals_.push_back(networkId);
 }
 
-void BodyOrders::warnWhenOverBudget() {
+void EntityOrders::warnWhenOverBudget() {
   if (!budgetWarned_ && parts_.scripts != nullptr &&
       !parts_.scripts->machine().hasTickBudget()) {
     budgetWarned_ = true;
@@ -89,9 +90,9 @@ void BodyOrders::warnWhenOverBudget() {
   }
 }
 
-void BodyOrders::onTick() {
+void EntityOrders::onTick() {
   warnWhenOverBudget();
-  for (const BodyOrder& order : orders_) {
+  for (const EntityOrder& order : orders_) {
     appear(order);
   }
   orders_.clear();
@@ -101,7 +102,7 @@ void BodyOrders::onTick() {
   }
 }
 
-void BodyOrders::appear(const BodyOrder& order) const {
+void EntityOrders::appear(const EntityOrder& order) const {
   const game::EntitySheet& sheet = order.sheet.get();
   parts_.world.get().spawnFrom(
       sheet, game::BodyPlacement{.position = order.position,
@@ -116,7 +117,7 @@ void BodyOrders::appear(const BodyOrder& order) const {
   }
 }
 
-void BodyOrders::removeAsked() {
+void EntityOrders::removeAsked() {
   if (removals_.empty()) {
     return;
   }

@@ -5,11 +5,11 @@
 #include <string>
 #include <vector>
 #include "BehaviourScripts.hpp"
-#include "BodyOrders.hpp"
-#include "BodyOrdersFixture.hpp"
-#include "BodyOrdersTestConstants.hpp"
 #include "EngineException.hpp"
 #include "EntityDestruction.hpp"
+#include "EntityOrders.hpp"
+#include "EntityOrdersFixture.hpp"
+#include "EntityOrdersTestConstants.hpp"
 #include "EntitySpawned.hpp"
 #include "Position.hpp"
 
@@ -18,9 +18,9 @@ using rtype::game::BehaviourScripts;
 using rtype::game::DestructionCause;
 using rtype::game::Position;
 using rtype::network::EntitySpawned;
-using rtype::server::BodyOrders;
-using rtype::server::testing::BodyOrdersFixture;
+using rtype::server::EntityOrders;
 using rtype::server::testing::DRIFTER_SHEET;
+using rtype::server::testing::EntityOrdersFixture;
 using rtype::server::testing::PLAYERS_TOLD;
 using rtype::server::testing::SCRIPTED_REMOVALS_IN_A_TICK;
 using rtype::server::testing::SCRIPTED_SPAWNS_IN_A_TICK;
@@ -34,7 +34,7 @@ using rtype::server::testing::WHERE_THE_SHIP_FLIES;
  * When the tick has not ended yet
  * Then no body has the id the script was given
  */
-TEST_F(BodyOrdersFixture, CreatesNothingBeforeTheEndOfTheTick) {
+TEST_F(EntityOrdersFixture, CreatesNothingBeforeTheEndOfTheTick) {
   const std::uint32_t networkId =
       spawnByScript(DRIFTER_SHEET, WHERE_A_SCRIPT_PUTS_IT);
 
@@ -46,7 +46,7 @@ TEST_F(BodyOrdersFixture, CreatesNothingBeforeTheEndOfTheTick) {
  * When the tick ends
  * Then a body with the id the script was given stands where it asked
  */
-TEST_F(BodyOrdersFixture, CreatesTheBodyWithTheIdTheScriptWasGiven) {
+TEST_F(EntityOrdersFixture, CreatesTheBodyWithTheIdTheScriptWasGiven) {
   const std::uint32_t networkId =
       spawnByScript(DRIFTER_SHEET, WHERE_A_SCRIPT_PUTS_IT);
 
@@ -64,7 +64,7 @@ TEST_F(BodyOrdersFixture, CreatesTheBodyWithTheIdTheScriptWasGiven) {
  * When the tick ends
  * Then each player is told about the body, under the id the script was given
  */
-TEST_F(BodyOrdersFixture, TellsEveryPlayerAboutTheBody) {
+TEST_F(EntityOrdersFixture, TellsEveryPlayerAboutTheBody) {
   connectPlayers(PLAYERS_TOLD);
   const std::uint32_t networkId =
       spawnByScript(DRIFTER_SHEET, WHERE_A_SCRIPT_PUTS_IT);
@@ -83,7 +83,7 @@ TEST_F(BodyOrdersFixture, TellsEveryPlayerAboutTheBody) {
  * When it asks for a body of it
  * Then the request is refused
  */
-TEST_F(BodyOrdersFixture, RefusesASheetThatDoesNotExist) {
+TEST_F(EntityOrdersFixture, RefusesASheetThatDoesNotExist) {
   EXPECT_THROW(
       static_cast<void>(spawnByScript(UNKNOWN_SHEET, WHERE_A_SCRIPT_PUTS_IT)),
       ScriptException);
@@ -94,7 +94,7 @@ TEST_F(BodyOrdersFixture, RefusesASheetThatDoesNotExist) {
  * When it asks for a body of it
  * Then the request is refused
  */
-TEST_F(BodyOrdersFixture, RefusesToCreateAShip) {
+TEST_F(EntityOrdersFixture, RefusesToCreateAShip) {
   EXPECT_THROW(
       static_cast<void>(spawnByScript(SHIP_SHEET, WHERE_A_SCRIPT_PUTS_IT)),
       ScriptException);
@@ -105,7 +105,7 @@ TEST_F(BodyOrdersFixture, RefusesToCreateAShip) {
  * When it asks for one more in the same tick
  * Then that one is refused
  */
-TEST_F(BodyOrdersFixture, RefusesABodyPastTheLimitOfATick) {
+TEST_F(EntityOrdersFixture, RefusesABodyPastTheLimitOfATick) {
   for (std::size_t body = 0; body < SCRIPTED_SPAWNS_IN_A_TICK; ++body) {
     static_cast<void>(spawnByScript(DRIFTER_SHEET, WHERE_A_SCRIPT_PUTS_IT));
   }
@@ -120,7 +120,7 @@ TEST_F(BodyOrdersFixture, RefusesABodyPastTheLimitOfATick) {
  * When the tick ends
  * Then the drifter is gone
  */
-TEST_F(BodyOrdersFixture, RemovesTheBodyAScriptNames) {
+TEST_F(EntityOrdersFixture, RemovesTheBodyAScriptNames) {
   const std::uint32_t networkId =
       placeDirectly(DRIFTER_SHEET, WHERE_A_SCRIPT_PUTS_IT);
   removeByScript(networkId);
@@ -135,7 +135,7 @@ TEST_F(BodyOrdersFixture, RemovesTheBodyAScriptNames) {
  * When the tick ends
  * Then its removal is published for the players
  */
-TEST_F(BodyOrdersFixture, PublishesTheRemoval) {
+TEST_F(EntityOrdersFixture, PublishesTheRemoval) {
   const std::uint32_t networkId =
       placeDirectly(DRIFTER_SHEET, WHERE_A_SCRIPT_PUTS_IT);
   removeByScript(networkId);
@@ -152,7 +152,7 @@ TEST_F(BodyOrdersFixture, PublishesTheRemoval) {
  * When the tick ends
  * Then the ship is still there
  */
-TEST_F(BodyOrdersFixture, NeverRemovesAShip) {
+TEST_F(EntityOrdersFixture, NeverRemovesAShip) {
   const std::uint32_t networkId =
       placeDirectly(SHIP_SHEET, WHERE_THE_SHIP_FLIES);
   removeByScript(networkId);
@@ -167,7 +167,7 @@ TEST_F(BodyOrdersFixture, NeverRemovesAShip) {
  * When the tick ends
  * Then the drifter is gone
  */
-TEST_F(BodyOrdersFixture, RemovesABodyCreatedInTheSameTick) {
+TEST_F(EntityOrdersFixture, RemovesABodyCreatedInTheSameTick) {
   const std::uint32_t networkId =
       spawnByScript(DRIFTER_SHEET, WHERE_A_SCRIPT_PUTS_IT);
   removeByScript(networkId);
@@ -182,9 +182,9 @@ TEST_F(BodyOrdersFixture, RemovesABodyCreatedInTheSameTick) {
  * When the game ends and its world goes
  * Then the scripts no longer reach any world
  */
-TEST_F(BodyOrdersFixture, LetsTheScriptsGoWhenTheWorldGoes) {
+TEST_F(EntityOrdersFixture, LetsTheScriptsGoWhenTheWorldGoes) {
   BehaviourScripts scripts{[](const std::string&) {}};
-  std::optional<BodyOrders> game;
+  std::optional<EntityOrders> game;
   game.emplace(partsFor(&scripts));
 
   game.reset();
@@ -197,11 +197,11 @@ TEST_F(BodyOrdersFixture, LetsTheScriptsGoWhenTheWorldGoes) {
  * When a new world is built, then the old one goes, as a new game does
  * Then the scripts reach the new world
  */
-TEST_F(BodyOrdersFixture, KeepsTheNewWorldWhenTheOldOneGoes) {
+TEST_F(EntityOrdersFixture, KeepsTheNewWorldWhenTheOldOneGoes) {
   BehaviourScripts scripts{[](const std::string&) {}};
-  std::optional<BodyOrders> oldGame;
+  std::optional<EntityOrders> oldGame;
   oldGame.emplace(partsFor(&scripts));
-  const BodyOrders newGame{partsFor(&scripts)};
+  const EntityOrders newGame{partsFor(&scripts)};
 
   oldGame.reset();
 
@@ -213,7 +213,7 @@ TEST_F(BodyOrdersFixture, KeepsTheNewWorldWhenTheOldOneGoes) {
  * When it asks for one more in the same tick
  * Then that one is refused
  */
-TEST_F(BodyOrdersFixture, RefusesARemovalPastTheLimitOfATick) {
+TEST_F(EntityOrdersFixture, RefusesARemovalPastTheLimitOfATick) {
   const std::uint32_t networkId =
       placeDirectly(DRIFTER_SHEET, WHERE_A_SCRIPT_PUTS_IT);
   for (std::size_t removal = 0; removal < SCRIPTED_REMOVALS_IN_A_TICK;

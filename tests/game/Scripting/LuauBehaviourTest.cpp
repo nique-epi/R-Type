@@ -6,7 +6,7 @@
 #include "Intent.hpp"
 #include "LuauBehaviourFixture.hpp"
 #include "LuauBehaviourTestConstants.hpp"
-#include "RecordingBodyOrders.hpp"
+#include "RecordingEntityOrders.hpp"
 
 using rtype::game::ActionKey;
 using rtype::game::Intent;
@@ -129,7 +129,7 @@ TEST_F(LuauBehaviourFixture, AFailingScriptStopsThatBodyOnly) {
  * Then the game is asked to remove that body
  */
 TEST_F(LuauBehaviourFixture, RemovesFromTheGameABodyWhoseScriptFails) {
-  RecordingBodyOrders world{GIVEN_NETWORK_ID};
+  RecordingEntityOrders world{GIVEN_NETWORK_ID};
   attach(world);
   load(PICKY_SCRIPT);
   SteeredBody failing{.position = BODY_ON_THE_LEFT,
@@ -184,7 +184,7 @@ TEST_F(LuauBehaviourFixture, RefusesAYieldOutsideAWait) {
  * Then the game is asked for that drifter at that place
  */
 TEST_F(LuauBehaviourFixture, AsksTheGameForTheBodyAScriptCreates) {
-  RecordingBodyOrders world{GIVEN_NETWORK_ID};
+  RecordingEntityOrders world{GIVEN_NETWORK_ID};
   attach(world);
   load(BUILDER_SCRIPT);
   SteeredBody body{.position = BODY_IN_THE_MIDDLE};
@@ -204,7 +204,7 @@ TEST_F(LuauBehaviourFixture, AsksTheGameForTheBodyAScriptCreates) {
  * Then the game is asked to remove the id it gave that body
  */
 TEST_F(LuauBehaviourFixture, RemovesTheBodyNamedByTheIdSpawnReturned) {
-  RecordingBodyOrders world{GIVEN_NETWORK_ID};
+  RecordingEntityOrders world{GIVEN_NETWORK_ID};
   attach(world);
   load(BUILDER_SCRIPT);
   SteeredBody body{.position = BODY_IN_THE_MIDDLE};

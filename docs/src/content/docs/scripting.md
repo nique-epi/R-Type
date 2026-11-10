@@ -129,10 +129,10 @@ A call of the script takes 0.9 µs, and the time grows in line with the bodies f
 
 | You want to… | Look at |
 |---|---|
-| Change what a script reads or may return | `pushBehaviourView()` and `intentAt()` in `src/game/Scripting/LuauView.cpp`, the keys in `GameScriptingConstants.hpp` |
+| Change what a script reads or may return | `pushViewTable()` and `intentFromTable()` in `src/game/Scripting/LuauBehaviourTables.cpp`, the keys in `GameScriptingConstants.hpp` |
 | Change the memory or the time a script has | `SCRIPT_MEMORY_LIMIT_BYTES`, `SCRIPT_CALL_BUDGET`, `SCRIPT_STEP_BUDGET` and `SCRIPT_TICK_BUDGET` in `src/engine/Scripting/ScriptingConstants.hpp` |
-| Change how a body waits, holds what it asked and stops | `Routine` in `src/game/Behaviours/Routines/`, which knows nothing of Luau |
-| Change how a Luau function runs the steps of a routine | `LuauBehaviour` and `LuauBodyMemory` in `src/game/Scripting/` |
-| Change how created or removed bodies reach the game | `IBodyOrders` in `src/game/Spawning/`, carried out by `BodyOrders` in `src/server/Spawning/` |
+| Change what a body holds during a wait, and when it stops | `HeldIntent` in `src/game/Behaviours/Piloting/`, which knows nothing of Luau |
+| Change how a Luau function is resumed after a wait | `LuauBehaviour` and `LuauBehaviourState` in `src/game/Scripting/` |
+| Change how created or removed bodies reach the game | `IEntityOrders` in `src/game/Spawning/`, carried out by `EntityOrders` in `src/server/Spawning/` |
 | Expose another function to the scripts | `ScriptMachine::expose()`, before the first script runs, as `BehaviourScripts` exposes `behaviours.register` |
 | Change which files are scripts | `scriptSourcesIn()` in `src/game/Scripting/BehaviourScriptFiles.cpp` |

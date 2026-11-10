@@ -3,8 +3,8 @@
 #include <functional>
 #include <string>
 #include <vector>
+#include "LuauResumeContext.hpp"
 #include "LuauSetting.hpp"
-#include "LuauStepState.hpp"
 #include "ScriptFailureReport.hpp"
 #include "ScriptMachine.hpp"
 
@@ -20,7 +20,7 @@ struct LuauBehaviourParts {
   std::vector<LuauSetting> settings;
   int steer{0};
   ScriptFailureReport reportFailure;
-  std::reference_wrapper<LuauStepState> step;
+  std::reference_wrapper<LuauResumeContext> resumeContext;
 };
 
 }  // namespace rtype::game

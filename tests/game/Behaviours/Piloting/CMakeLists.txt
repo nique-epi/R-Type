@@ -1,1 +1,1 @@
-target_sources(game_tests PRIVATE BehaviourRegistryTest.cpp BehaviourSteeringTest.cpp)
+target_sources(game_tests PRIVATE BehaviourRegistryTest.cpp BehaviourSteeringTest.cpp HeldIntentTest.cpp)
