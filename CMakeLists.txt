@@ -295,13 +295,16 @@ include(CPack)
 
 # One CPack config per program, read by the package presets "client" and
 # "server" instead of CPackConfig.cmake. The server gets a plain archive, and
-# an installer on Windows; the client gets the formats a player opens: an app
-# in a disk image on macOS, signed and notarized when the credentials are
-# given, and an AppImage next to its archive on Linux.
+# an installer on Windows. The client is packed by vpk before cpack makes its
+# package (VelopackClient.cmake), which writes what a player installs and
+# updates from: an installer on Windows, an AppImage on Linux; on macOS, the
+# app vpk signed goes in the disk image, notarized when the credentials are
+# given. Its archive on Windows and Linux stays for check-package.sh.
 foreach(RTYPE_PACKAGE_PART IN ITEMS client server)
   string(TOUPPER ${RTYPE_PACKAGE_PART} RTYPE_PACKAGE_PART_UPPER)
   set(RTYPE_PACKAGE_TITLE "R-Type Server")
   set(RTYPE_POST_BUILD_SCRIPTS "")
+  set(RTYPE_PRE_BUILD_SCRIPTS "")
   if(WIN32)
     set(RTYPE_PACKAGE_GENERATORS "ZIP;NSIS")
   else()
@@ -309,11 +312,14 @@ foreach(RTYPE_PACKAGE_PART IN ITEMS client server)
   endif()
   if(RTYPE_PACKAGE_PART STREQUAL "client")
     set(RTYPE_PACKAGE_TITLE "R-Type")
+    if(RTYPE_MODULE_UPDATE)
+      set(RTYPE_PRE_BUILD_SCRIPTS ${CMAKE_SOURCE_DIR}/packaging/VelopackClient.cmake)
+    endif()
     if(APPLE)
       set(RTYPE_PACKAGE_GENERATORS "DragNDrop")
       set(RTYPE_POST_BUILD_SCRIPTS ${CMAKE_SOURCE_DIR}/packaging/NotarizeDiskImage.cmake)
-    elseif(NOT WIN32)
-      set(RTYPE_POST_BUILD_SCRIPTS ${CMAKE_SOURCE_DIR}/packaging/AppImage.cmake)
+    elseif(WIN32)
+      set(RTYPE_PACKAGE_GENERATORS "ZIP")
     endif()
   endif()
   configure_file(packaging/CPackPartConfig.cmake.in

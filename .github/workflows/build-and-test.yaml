@@ -362,7 +362,7 @@ jobs:
       - name: Lint the scripts
         run: |
           shellcheck --version
-          shellcheck --shell=sh --external-sources tests/tools/network-conditions/*.sh tests/tools/packaging/*.sh tests/tools/bandwidth/*.sh
+          shellcheck --shell=sh --external-sources tests/tools/network-conditions/*.sh tests/tools/packaging/*.sh tests/tools/bandwidth/*.sh packaging/*.sh
 
       - name: Load netem
         run: sudo modprobe sch_netem
