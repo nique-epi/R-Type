@@ -103,6 +103,7 @@ Paths below are relative to `.claude/rules/`.
 - `code-style/code-style-private-members-trailing-underscore.md`
 - `code-style/code-style-tests-given-when-then.md`
 - `code-style/fix-format-a-constants-header-ends-in-constants.md`
+- `code-style/fix-format-a-name-says-what-it-is-at-its-level.md`
 - `code-style/fix-format-a-sum-over-a-range-is-a-loop.md`
 - `code-style/fix-format-a-test-file-holds-only-tests.md`
 - `code-style/fix-format-a-test-reads-an-optional-with-value-or.md`
