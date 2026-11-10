@@ -12,6 +12,7 @@ target_link_libraries(rtype_client_entity_messages
     rtype_engine_time
     rtype_logging
     rtype_network_boss_status
+    rtype_network_level_status
     rtype_network_enemy_action
     rtype_network_entity_destroyed
     rtype_network_entity_spawned

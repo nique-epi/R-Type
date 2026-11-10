@@ -14,6 +14,7 @@
 #include "GameEvent.hpp"
 #include "GameLoadedReminder.hpp"
 #include "ISessionOutbox.hpp"
+#include "LevelStatus.hpp"
 #include "LobbyState.hpp"
 #include "MessageDispatcher.hpp"
 #include "MessageOrigin.hpp"
@@ -45,7 +46,7 @@ EntityMessageQueue::EntityMessageQueue(network::MessageDispatcher& dispatcher,
   registerStateHandlers(dispatcher);
   keepEachOf<network::EntitySpawned, network::EntityDestroyed,
              network::PlayerLeft, network::GameEvent, network::EnemyAction,
-             network::BossStatus>(
+             network::BossStatus, network::LevelStatus>(
       dispatcher, [this](EntityMessage message) { keep(std::move(message)); });
   dispatcher.registerHandler<network::GameEnded>(
       [this](const network::MessageOrigin&, const network::GameEnded& ended) {

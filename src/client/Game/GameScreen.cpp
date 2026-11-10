@@ -45,6 +45,7 @@
 #include "ISky.hpp"
 #include "InterpolationClock.hpp"
 #include "InterpolationTally.hpp"
+#include "LevelStatus.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
 #include "MissionStart.hpp"
@@ -61,6 +62,7 @@
 #include "PositionInterpolation.hpp"
 #include "ScoreBoard.hpp"
 #include "ShipFlightSystem.hpp"
+#include "SkyLevel.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "GameScreenIdConstants.hpp"
 #include "MenuScreenIdConstants.hpp"
@@ -124,11 +126,20 @@ struct EntityMessageRoutes {
   std::reference_wrapper<BossPresentation> boss;
   std::reference_wrapper<ScoreBoard> scoreBoard;
   std::reference_wrapper<DepartureFeed> departures;
+  std::reference_wrapper<ISky> sky;
 };
+
+/** @returns What the sky shows of the level @p status tells. */
+SkyLevel skyLevelOf(const network::LevelStatus& status) {
+  return SkyLevel{.biome = status.biome,
+                  .scrollPosition = status.scrollPosition,
+                  .scrollSpeed = status.scrollSpeed};
+}
 
 /** @brief Hands an entity message to whoever it goes to: a PlayerLeft to the
  * board and the feed, an EnemyAction to the enemy it animates and to the boss,
- * a BossStatus to the boss, anything else but GameEnded to the replicator. */
+ * a BossStatus to the boss, a LevelStatus to the sky, anything else but
+ * GameEnded to the replicator. */
 void routeEntityMessage(const EntityMessageRoutes& routes,
                         const EntityMessage& message) {
   std::visit(
@@ -142,6 +153,8 @@ void routeEntityMessage(const EntityMessageRoutes& routes,
           routes.boss.get().apply(announced);
         } else if constexpr (std::is_same_v<Announced, network::BossStatus>) {
           routes.boss.get().apply(announced);
+        } else if constexpr (std::is_same_v<Announced, network::LevelStatus>) {
+          routes.sky.get().showLevel(skyLevelOf(announced));
         } else if constexpr (!std::is_same_v<Announced, network::GameEnded>) {
           routes.replicator.get().apply(announced);
         }
@@ -221,6 +234,7 @@ GameScreen::~GameScreen() {
   interpolationTally_->endGame();
   sky_->setSpeedFactor(1.0F);
   sky_->setOffset({});
+  sky_->showLevel(SkyLevel{});
 }
 
 void GameScreen::handleEvent(const sf::Event& event) {
@@ -280,7 +294,8 @@ void GameScreen::applyEntityMessages() {
                                    .enemyActions = enemyActions_,
                                    .boss = boss_,
                                    .scoreBoard = scoreBoard_,
-                                   .departures = departures_};
+                                   .departures = departures_,
+                                   .sky = *sky_};
   for (const EntityMessage& message : receivedEntityMessages_) {
     routeEntityMessage(routes, message);
     if (const auto* ended = std::get_if<network::GameEnded>(&message)) {

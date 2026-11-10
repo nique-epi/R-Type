@@ -71,8 +71,10 @@ struct PlayerSettings;
  * until then the stars keep their own speed, no banner shows and no warning
  * appears. The sky: the speed of its stars from the start of the game (see
  * warpSpeedFactorAt(), 1 when the player reduced flashes), and the shake of the
- * camera, which also shifts the entity layer, never the status band. The sky is
- * put back at its speed and place when the screen goes.
+ * camera, which also shifts the entity layer, never the status band; each
+ * LevelStatus of the server gives it the biome and the scroll of the level,
+ * whose decor it then draws. The sky is put back at its speed and place,
+ * without any decor, when the screen goes.
  *
  * The status band of the players lies over the entities: it is painted when
  * the screen is built, from the waiting room the game started from, then
