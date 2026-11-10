@@ -13,6 +13,12 @@
 #include "ScriptMachine.hpp"
 #include "ScriptSource.hpp"
 
+namespace rtype::engine {
+
+class ComponentRegistry;
+
+}  // namespace rtype::engine
+
 namespace rtype::game {
 
 /**
@@ -49,11 +55,12 @@ class BehaviourScripts {
   /** @returns The machine the scripts run on. */
   [[nodiscard]] engine::ScriptMachine& machine();
 
-  /** @brief Makes @p orders carry out the bodies the scripts order. */
-  void attachOrders(IEntityOrders& orders);
+  /** @brief Makes @p orders carry out the bodies the scripts order, and
+   * gives the handle of each body its components among @p components. */
+  void attachGame(IEntityOrders& orders, engine::ComponentRegistry& components);
 
-  /** @brief Forgets @p orders, unless others took their place. */
-  void detachOrders(const IEntityOrders& orders) noexcept;
+  /** @brief Forgets the game of @p orders, unless another took its place. */
+  void detachGame(const IEntityOrders& orders) noexcept;
 
   /** @returns What carries out the bodies the scripts order; nullptr outside
    * a game. */

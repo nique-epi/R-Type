@@ -47,7 +47,7 @@ EntityOrders::EntityOrders(EntityOrdersParts parts)
     : parts_(std::move(parts)),
       logger_(std::string{ENTITY_ORDERS_LOGGER_NAME}) {
   if (parts_.scripts != nullptr) {
-    parts_.scripts->attachOrders(*this);
+    parts_.scripts->attachGame(*this, parts_.world.get().components());
     parts_.scripts->eventBindings().attach(parts_.events.get());
   }
 }
@@ -55,7 +55,7 @@ EntityOrders::EntityOrders(EntityOrdersParts parts)
 EntityOrders::~EntityOrders() {
   if (parts_.scripts != nullptr) {
     parts_.scripts->eventBindings().detach(parts_.events.get());
-    parts_.scripts->detachOrders(*this);
+    parts_.scripts->detachGame(*this);
   }
 }
 

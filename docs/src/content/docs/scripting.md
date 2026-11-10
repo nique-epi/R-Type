@@ -5,7 +5,7 @@ sidebar:
   label: Scripting in Luau
 ---
 
-A resource (see [Resources](/R-Type/server/#resources-ensure-lines)) may steer its enemies with scripts written in [Luau](https://luau.org), the language derived from Lua 5.1 that Roblox made for untrusted code. A script registers a **behaviour**, the named piece of logic a sheet chooses with `pilot`, exactly like the behaviours written in C++ (`straight`, `reaper`, `bydomancer`): it reads the same view of its body each tick and returns the same intent. Changing a script needs no build: the next game reads it again.
+A resource (see [Resources](/R-Type/server/#resources-ensure-lines)) may steer its enemies with scripts written in [Luau](https://luau.org), the language derived from Lua 5.1 that Roblox made for untrusted code. A script registers a **behaviour**, the named piece of logic a sheet chooses with `pilot`, exactly like the behaviours written in C++ (`straight`, `reaper`, `bydomancer`): it reads the same view of its body each tick and returns the same intent, and it may also read and write some components of its body through its handle. Changing a script needs no build: the next game reads it again.
 
 Scripts run on the server only. They never reach the client, which draws the enemies from their sheets as before, so the authority of the server is unchanged. This page tells a designer what a script may read, return, hear and publish; the code is in `src/engine/Scripting/` (the machine, no R-Type word), `src/game/Scripting/` (the behaviours) and `src/game/Scripting/Events/` (their access to the event bus, which knows nothing of the behaviours).
 
@@ -34,7 +34,39 @@ end)
 
 `behaviours.register(name, settings, steer)` takes the name a sheet gives `pilot`, the settings the sheet must give in `[gameplay.behaviour]`, each a whole number from `lowest` to `highest` (a sheet that misses one, misspells one or gives a value out of its range is refused, as for a C++ behaviour), and the function that steers each body that names the behaviour. A name a behaviour already has, a built-in one included, stops the supervisor at start. Each body runs that function in a thread of its own (a Luau coroutine), which ends with the body whichever way it is destroyed: a function that returns gives the intent of that tick and starts again from its first line at the next tick, and a function that waits keeps its local variables until the wait ends (see [Waiting, creating and removing bodies](#waiting-creating-and-removing-bodies)).
 
-## What the function reads: the view
+## What the function receives: the handle `e`
+
+The function receives `e`, the handle of its body, and `behaviours.wait` returns the same handle. During the step of its body, `e` reads and writes the components of the list below, live: a value written is in the component at once, and a later read sees it. `e.data` is a table of the script's own, kept for the life of the body. Every other key reads the view of the step, below.
+
+```lua
+behaviours.register("molting", {}, function(e)
+	e.data.molts = e.data.molts or 0
+	if e.health <= e.full_health / 2 and e.data.molts == 0 then
+		e.data.molts = 1
+		e.collision_box = { width = 48, height = 48 }
+		e.health = e.full_health
+	end
+	return { direction = { x = -1, y = 0 } }
+end)
+```
+
+| Key | Component | Reads | A script may write |
+|---|---|---|---|
+| `position` | `Position` | the center of the body, `{x, y}` in logical units | two finite numbers |
+| `health` | `Health` | the health points it has left | a whole number from 1 to `full_health` |
+| `full_health` | `Health` | the points it appeared with | nothing: read only |
+| `collision_box` | `CollisionBox` | its size, `{width, height}` in logical units | two positive finite numbers; the offset of the box from the center, which a boss sheet may give, stays |
+| `top_speed` | `SteadyMotion` | its speed at a full direction, in logical units per second | a positive finite number |
+| `score` | `ScoreValue` | the points the player who destroys it earns | a whole number from 0 to 4294967295 |
+| `gun_interval` | `Gun` | the ticks between two of its shots | a whole number from 1 to 4294967295 |
+
+A component the body does not have reads `nil`. Any other write is refused with an error at the line of the script that made it, and writes nothing: a value out of the bounds of the table, a component the body does not have, `full_health`, a key off the list, or `e.data` itself (write in it instead). An error a script does not catch with `pcall` stops its body, as any failure does (see [What a script cannot do](#what-a-script-cannot-do)).
+
+The components of a body are only reached during its own step: the handle of another body, kept in a global, raises an error there. `e.data` is never sent to the clients, ends with the body, and shares the memory of the scripts of its game; the handle a script kept of a body that ended refuses every key. The list and its bounds are in `src/game/Scripting/Components/LuauComponentConstants.hpp`.
+
+### The view
+
+The view is rebuilt for each step and cannot be written. Its `position` and `top_speed` are those of the step's start; during the step, `e.position` and `e.top_speed` read the components instead, whenever the body has them.
 
 | Key | Holds |
 |---|---|
@@ -48,7 +80,7 @@ end)
 | `action_age_ms` | how long it has been in that action, or idle |
 | `nearest_ship` | the center of the nearest ship of a player, `{x, y}`; absent when no ship is in play |
 | `wounded` | whether it lost health points |
-| `health` | the share of its health points left, 0 to 1 |
+| `health_share` | the share of its health points left, 0 to 1 |
 | `enraged` | whether it is a boss that enraged, as the keys `boss` of its [sheet](/R-Type/entity-sheets/) set; false for any other body |
 | `actions_ended` | how many actions it has ended since it appeared |
 
@@ -82,10 +114,10 @@ end)
 
 | Function | Does |
 |---|---|
-| `behaviours.wait(ms, intent)` | stops the function there: the body wants `intent` on every tick of the wait, its one-time requests (`starts_action`, `ends_action`, `jumps_to`) on the first tick only, and the call returns a fresh view on the tick the wait ends. The wait lasts `ms` milliseconds rounded to the nearest tick (16.7 ms), one tick at least; a waiting body costs no call. It only runs in the function of a body; `coroutine.yield` called directly is a failure. |
+| `behaviours.wait(ms, intent)` | stops the function there: the body wants `intent` on every tick of the wait, its one-time requests (`starts_action`, `ends_action`, `jumps_to`) on the first tick only, and the call returns the handle again, holding a fresh view, on the tick the wait ends. The wait lasts `ms` milliseconds rounded to the nearest tick (16.7 ms), one tick at least; a waiting body costs no call. It only runs in the function of a body; `coroutine.yield` called directly is a failure. |
 | `behaviours.spawn(type, {x, y})` | asks for a body of the sheet `type` at `{x, y}`, and returns its network id at once. It appears at the end of the tick, after every body was steered, and every player is told. A sheet that does not exist or that ships are made from is refused, and so are more than 256 bodies in one tick (`MAXIMUM_SPAWN_ORDERS_PER_TICK`). |
 | `behaviours.destroy(id)` | removes the body of that network id at the end of the tick, after the bodies created in it; an id no body has does nothing, a ship is never removed, and more than 256 removals in one tick are refused (`MAXIMUM_REMOVAL_ORDERS_PER_TICK`). |
-| `view.id` | the network id of the body being steered, the one `spawn` returned for it. |
+| `e.id` | the network id of the body being steered, the one `spawn` returned for it. |
 
 Both `spawn` and `destroy` only run during a game: a script that calls them while it is first read fails.
 
@@ -171,6 +203,8 @@ A call of the script takes 0.9 µs, and the time grows in line with the bodies f
 | You want to… | Look at |
 |---|---|
 | Change what a script reads or may return | `pushViewTable()` and `intentFromTable()` in `src/game/Scripting/LuauBehaviourTables.cpp`, the keys in `GameScriptingConstants.hpp` |
+| Change the components a script reaches, or their bounds | `pushComponentField()` and `writeComponentField()` in `src/game/Scripting/Components/LuauComponentFields.cpp`, the keys and bounds in `LuauComponentConstants.hpp` |
+| Change what the handle `e` refuses, or what it keeps of a body | `LuauEntityHandle` in `src/game/Scripting/Components/` |
 | Change the memory or the time a script has | `SCRIPT_MEMORY_LIMIT_BYTES`, `SCRIPT_CALL_BUDGET`, `SCRIPT_STEP_BUDGET` and `SCRIPT_TICK_BUDGET` in `src/engine/Scripting/ScriptingConstants.hpp` |
 | Change what a body holds during a wait, and when it stops | `HeldIntent` in `src/game/Behaviours/Piloting/`, which knows nothing of Luau |
 | Change how a Luau function is resumed after a wait | `LuauBehaviour` and `LuauBehaviourState` in `src/game/Scripting/` |

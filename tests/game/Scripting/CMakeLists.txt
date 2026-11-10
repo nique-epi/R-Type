@@ -2,4 +2,5 @@ rtype_add_test(NAME game_scripting_tests SOURCES BehaviourScriptFilesTest.cpp Be
 target_include_directories(game_scripting_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR} ${RTYPE_TEST_SOURCE_DIR}/doubles)
 target_compile_definitions(game_scripting_tests PRIVATE RTYPE_SOURCE_RESOURCES_FOLDER="${PROJECT_SOURCE_DIR}/resources")
 
+add_subdirectory(Components)
 add_subdirectory(Events)
