@@ -10,6 +10,7 @@
 #include "IUpdateRun.hpp"
 #include "TimeConstants.hpp"
 #include "UpdatePhase.hpp"
+#include "UpdateProgress.hpp"
 #include "UpdateScreenParts.hpp"
 
 namespace rtype::client {
@@ -38,8 +39,8 @@ class UpdateScreen : public IScreen {
   /** @brief Restarts or closes once the message of the phase showed long
    * enough; once only, since the change it asks for applies after the frame. */
   void endIfDue(UpdatePhase phase);
-  void repaint();
-  [[nodiscard]] std::string statusLine() const;
+  /** @brief Paints the panel as @p progress stands. */
+  void repaint(const UpdateProgress& progress);
 
   std::unique_ptr<IInterfaceCanvas> canvas_;
   IScreenNavigator* navigator_;

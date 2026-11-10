@@ -7,10 +7,10 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include "FeedConstants.hpp"
 #include "HttpStatusConstants.hpp"
 #include "ReleaseDownload.hpp"
 #include "UpdateConstants.hpp"
+#include "VelopackConstants.hpp"
 
 // NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks)
 namespace rtype::client {

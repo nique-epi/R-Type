@@ -1204,7 +1204,7 @@ The ping is the smoothed one at the end of the period; the other figures are cou
 
 | You want to… | Look at |
 |---|---|
-| Change where the client looks for its updates or the bounds of a request | `src/client/Update/Feed/FeedConstants.hpp` |
+| Change where the client looks for its updates or the bounds of a request | `src/client/Update/Velopack/VelopackConstants.hpp` |
 | Change the update panel or WHAT'S NEW | `src/client/Update/Screens/`, `UpdateScreenConstants.hpp`; when the title shows them, `src/client/Menus/Title/` |
 | Change the version of Velopack | `ports/velopack/` (its version and the SHA-512 of its archive) and `VELOPACK_VERSION` in `.github/workflows/package.yaml`, which installs vpk |
 | Change what the lagometer writes or draws, its key or its place | `LagometerConstants.hpp`, `lagometerTextLines()` and `LagometerPainting.cpp` in `src/client/Debug/Panel/` |

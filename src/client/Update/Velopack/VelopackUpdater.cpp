@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -11,7 +10,7 @@
 #include "ClientException.hpp"
 #include "ReleaseFeedSource.hpp"
 #include "ReleaseOffer.hpp"
-#include "UpdaterConstants.hpp"
+#include "VelopackConstants.hpp"
 
 namespace rtype::client {
 
@@ -56,7 +55,6 @@ std::optional<ReleaseOffer> VelopackUpdater::newerRelease() {
   }
   ReleaseOffer offer{.versionText = update->TargetFullRelease.Version,
                      .notesMarkdown = update->TargetFullRelease.NotesMarkdown};
-  const std::scoped_lock lock{mutex_};
   found_ = std::move(update);
   return offer;
 }
@@ -84,7 +82,6 @@ void VelopackUpdater::applyOnExit() {
 void VelopackUpdater::stop() { source_->stop(); }
 
 Velopack::UpdateInfo VelopackUpdater::found() const {
-  const std::scoped_lock lock{mutex_};
   if (!found_.has_value()) {
     throw UpdateException(DOWNLOAD_STEP, NO_RELEASE_FOUND);
   }

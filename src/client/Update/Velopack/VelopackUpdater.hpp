@@ -3,7 +3,6 @@
 #include <Velopack.hpp>
 #include <functional>
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <string>
 #include "IReleaseUpdater.hpp"
@@ -15,7 +14,10 @@ namespace rtype::client {
 /**
  * @brief The updates of the client, as Velopack checks, downloads and applies
  * them, from the feeds a ReleaseFeedSource reads. Every error of Velopack,
- * which throws std::runtime_error, leaves it as an UpdateException.
+ * which throws std::runtime_error, leaves it as an UpdateException. Its calls
+ * follow one another, as IReleaseUpdater says: the check publishes what it
+ * found under the lock of UpdateCheck before the update starts, so the release
+ * newerRelease() keeps needs no lock of its own.
  */
 class VelopackUpdater final : public IReleaseUpdater {
  public:
@@ -34,7 +36,6 @@ class VelopackUpdater final : public IReleaseUpdater {
 
   ReleaseFeedSource* source_;
   std::unique_ptr<Velopack::UpdateManager> manager_;
-  mutable std::mutex mutex_;
   std::optional<Velopack::UpdateInfo> found_;
 };
 

@@ -10,10 +10,10 @@
 #include <string>
 #include <string_view>
 #include <utility>
-#include "FeedConstants.hpp"
 #include "IReleaseFiles.hpp"
 #include "ReleaseDownload.hpp"
 #include "UpdateConstants.hpp"
+#include "VelopackConstants.hpp"
 
 namespace rtype::client {
 

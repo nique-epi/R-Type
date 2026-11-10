@@ -46,6 +46,22 @@ void paintBar(IInterfaceCanvas& canvas, sf::Vector2i topLeft,
               UPDATE_BAR_FILL_COLOR);
 }
 
+/** @returns The line under the bar for @p progress. */
+std::string statusLineOf(const UpdateProgress& progress) {
+  switch (progress.phase) {
+    case UpdatePhase::Downloading:
+      return std::string{DOWNLOADING_TEXT} + std::to_string(progress.percent) +
+             std::string{PERCENT_SIGN};
+    case UpdatePhase::Installing:
+      return std::string{INSTALLING_TEXT};
+    case UpdatePhase::ReadyToRestart:
+      return std::string{RESTARTING_TEXT};
+    case UpdatePhase::Failed:
+      return std::string{UPDATE_FAILED_TEXT};
+  }
+  return {};
+}
+
 }  // namespace
 
 UpdateScreen::UpdateScreen(UpdateScreenParts parts,
@@ -54,7 +70,7 @@ UpdateScreen::UpdateScreen(UpdateScreenParts parts,
       navigator_(&parts.navigator.get()),
       run_(&parts.run.get()),
       versionLine_(std::move(parts.versionLine)) {
-  repaint();
+  repaint(run_->progress());
 }
 
 void UpdateScreen::handleEvent([[maybe_unused]] const sf::Event& event) {}
@@ -64,7 +80,7 @@ void UpdateScreen::update(engine::Duration elapsed) {
   inPhase_ = phase == shownPhase_ ? inPhase_ + elapsed : engine::Duration{};
   shownPhase_ = phase;
   endIfDue(phase);
-  repaint();
+  repaint(run_->progress());
 }
 
 void UpdateScreen::draw(sf::RenderTarget& target) const {
@@ -88,7 +104,7 @@ void UpdateScreen::endIfDue(UpdatePhase phase) {
   }
 }
 
-void UpdateScreen::repaint() {
+void UpdateScreen::repaint(const UpdateProgress& progress) {
   const sf::IntRect panel = centeredPanel(DIALOG_SIZE);
   canvas_->clear();
   canvas_->fill(INTERFACE_AREA, DIM_LAYER_COLOR);
@@ -99,26 +115,10 @@ void UpdateScreen::repaint() {
                  DIALOG_HEADING_STYLE);
   canvas_->write(versionLine_, panel.position + DIALOG_MESSAGE_OFFSET,
                  DIALOG_MESSAGE_STYLE);
-  paintBar(*canvas_, panel.position + UPDATE_BAR_OFFSET, run_->progress());
-  canvas_->write(statusLine(), panel.position + UPDATE_STATUS_OFFSET,
+  paintBar(*canvas_, panel.position + UPDATE_BAR_OFFSET, progress);
+  canvas_->write(statusLineOf(progress), panel.position + UPDATE_STATUS_OFFSET,
                  STATUS_STYLE);
   canvas_->display();
-}
-
-std::string UpdateScreen::statusLine() const {
-  const UpdateProgress progress = run_->progress();
-  switch (progress.phase) {
-    case UpdatePhase::Downloading:
-      return std::string{DOWNLOADING_TEXT} + std::to_string(progress.percent) +
-             std::string{PERCENT_SIGN};
-    case UpdatePhase::Installing:
-      return std::string{INSTALLING_TEXT};
-    case UpdatePhase::ReadyToRestart:
-      return std::string{RESTARTING_TEXT};
-    case UpdatePhase::Failed:
-      return std::string{UPDATE_FAILED_TEXT};
-  }
-  return {};
 }
 
 }  // namespace rtype::client

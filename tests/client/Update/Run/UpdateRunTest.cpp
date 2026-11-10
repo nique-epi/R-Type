@@ -5,11 +5,11 @@
 #include "FakeReleaseUpdater.hpp"
 #include "ReleaseNotes.hpp"
 #include "ReleaseNotesFile.hpp"
+#include "RunFixtures.hpp"
 #include "RunTestConstants.hpp"
 #include "TemporaryFolder.hpp"
 #include "UpdatePhase.hpp"
 #include "UpdateRun.hpp"
-#include "UpdateRunFixtures.hpp"
 
 using rtype::client::readReleaseNotes;
 using rtype::client::ReleaseNotes;

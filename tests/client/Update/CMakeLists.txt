@@ -11,7 +11,7 @@ rtype_add_test(NAME client_update_tests
     ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingNavigator.cpp
   LIBS
     rtype_client_exceptions
-    rtype_client_update_feed
+    rtype_client_update_velopack
     rtype_client_update_run
     rtype_client_update_screens
     rtype_test_support
@@ -19,6 +19,6 @@ rtype_add_test(NAME client_update_tests
 )
 target_include_directories(client_update_tests PRIVATE ${RTYPE_TEST_SOURCE_DIR}/doubles)
 
-add_subdirectory(Feed)
+add_subdirectory(Velopack)
 add_subdirectory(Run)
 add_subdirectory(Screens)
