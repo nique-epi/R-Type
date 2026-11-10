@@ -16,6 +16,8 @@
 #include "EntitySpawned.hpp"
 #include "EventMessage.hpp"
 #include "GameEvent.hpp"
+#include "LevelChange.hpp"
+#include "LevelStatus.hpp"
 #include "MessagePayload.hpp"
 #include "PlayerDeparture.hpp"
 #include "PlayerElimination.hpp"
@@ -158,6 +160,14 @@ EventMessage GameEventEncoder::encode(const game::PlayerDeparture& event) {
   const network::PlayerLeft message{.playerNumber = event.playerNumber,
                                     .reason = toWireReason(event.cause)};
   return EventMessage{.message = network::encodedMessage(message),
+                      .guaranteed = true};
+}
+
+EventMessage GameEventEncoder::encode(const game::LevelChange& event) {
+  return EventMessage{.message = network::encodedMessage(network::LevelStatus{
+                          .biome = event.biome,
+                          .scrollPosition = event.scrollPosition,
+                          .scrollSpeed = event.scrollSpeed}),
                       .guaranteed = true};
 }
 

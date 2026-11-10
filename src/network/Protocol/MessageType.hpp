@@ -46,6 +46,7 @@ enum class MessageType : std::uint8_t {
   ShipLookChoice = 35,
   PlayerLooks = 36,
   LookItemWon = 37,
+  LevelStatus = 38,
 };
 
 }  // namespace rtype::network

@@ -13,6 +13,7 @@
 #include "EventMessage.hpp"
 #include "GameEventBroadcasterParts.hpp"
 #include "GameEventConstants.hpp"
+#include "LevelChange.hpp"
 #include "NetworkException.hpp"
 #include "PlayerDeparture.hpp"
 #include "PlayerElimination.hpp"
@@ -55,6 +56,7 @@ GameEventBroadcaster::GameEventBroadcaster(GameEventBroadcasterParts parts)
   subscribeTo<game::EnemyActionStarted>(ENEMY_ACTION_STARTED_EVENT_NAME);
   subscribeTo<game::BossArrival>(BOSS_ARRIVAL_EVENT_NAME);
   subscribeTo<game::BossHealthChanged>(BOSS_HEALTH_CHANGED_EVENT_NAME);
+  subscribeTo<game::LevelChange>(LEVEL_CHANGE_EVENT_NAME);
   subscribeTo<game::PlayerHit>(PLAYER_HIT_EVENT_NAME);
   subscribeTo<game::PlayerElimination>(PLAYER_ELIMINATION_EVENT_NAME);
   subscribeTo<game::PlayerDeparture>(PLAYER_DEPARTURE_EVENT_NAME);

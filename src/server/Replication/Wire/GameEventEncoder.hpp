@@ -9,6 +9,7 @@
 #include "EntitySpawn.hpp"
 #include "EventMessage.hpp"
 #include "GameEventConstants.hpp"
+#include "LevelChange.hpp"
 #include "PlayerDeparture.hpp"
 #include "PlayerElimination.hpp"
 #include "PlayerHit.hpp"
@@ -58,6 +59,9 @@ class GameEventEncoder {
    * point left, Enraged once enraged, Fighting otherwise. */
   [[nodiscard]] static EventMessage encode(
       const game::BossHealthChanged& event);
+  /** @returns A LevelStatus of the biome and the scroll of the level,
+   * guaranteed. */
+  [[nodiscard]] static EventMessage encode(const game::LevelChange& event);
 
  private:
   std::uint16_t nextEventNumber_{FIRST_EVENT_NUMBER};

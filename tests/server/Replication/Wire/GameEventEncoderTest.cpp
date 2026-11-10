@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 #include "BossArrival.hpp"
 #include "BossHealthChanged.hpp"
@@ -19,6 +20,8 @@
 #include "GameEventConstants.hpp"
 #include "GameEventEncoder.hpp"
 #include "GameEventTestConstants.hpp"
+#include "LevelChange.hpp"
+#include "LevelStatus.hpp"
 #include "MessagePayload.hpp"
 #include "MessageType.hpp"
 #include "NetworkException.hpp"
@@ -333,6 +336,26 @@ TEST(GameEventEncoderTest, EncodesADeadBossAsDefeated) {
   EXPECT_EQ(network::decodeMessage<network::BossStatus>(message.message.payload)
                 .stage,
             network::BossStage::Defeated);
+}
+
+/**
+ * Given the biome wreck, scrolled 240 units, its scroll paused
+ * When the change of the level is encoded
+ * Then it is a guaranteed LevelStatus of that biome and that scroll
+ */
+TEST(GameEventEncoderTest, EncodesAChangeOfTheLevel) {
+  const EventMessage message = GameEventEncoder::encode(
+      game::LevelChange{.biome = std::string{LEVEL_BIOME},
+                        .scrollPosition = LEVEL_SCROLL_POSITION,
+                        .scrollSpeed = PAUSED_LEVEL_SCROLL_SPEED});
+
+  EXPECT_EQ(message.message.type, network::MessageType::LevelStatus);
+  EXPECT_TRUE(message.guaranteed);
+  EXPECT_EQ(
+      network::decodeMessage<network::LevelStatus>(message.message.payload),
+      (network::LevelStatus{.biome = std::string{LEVEL_BIOME},
+                            .scrollPosition = LEVEL_SCROLL_POSITION,
+                            .scrollSpeed = PAUSED_LEVEL_SCROLL_SPEED}));
 }
 
 }  // namespace rtype::server::testing
