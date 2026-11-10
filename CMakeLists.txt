@@ -19,6 +19,7 @@ include(FeatureSummary)
 option(RTYPE_MODULE_AUDIO "Build the sound module of the client" ON)
 option(RTYPE_MODULE_METRICS "Build the metrics modules of the client and of the game processes" ON)
 option(RTYPE_MODULE_DEBUG "Build the debug module of the client: the lagometer" ON)
+option(RTYPE_MODULE_UPDATE "Build the self-update of the client" ON)
 option(RTYPE_MODULE_MASTER_LINK "Build the module that registers the server with the master" ON)
 option(RTYPE_MODULE_ADMIN_CONSOLE "Build the administration console of the supervisor" ON)
 option(RTYPE_MODULE_CHAT "Build the chat module of the games" ON)
@@ -28,6 +29,7 @@ cmake_dependent_option(RTYPE_MODULE_GAME_STATISTICS "Build the game-statistics p
 add_feature_info(audio RTYPE_MODULE_AUDIO "the sound of the client")
 add_feature_info(metrics RTYPE_MODULE_METRICS "the metrics of the client and of the game processes")
 add_feature_info(debug RTYPE_MODULE_DEBUG "the lagometer of the client")
+add_feature_info(update RTYPE_MODULE_UPDATE "the client updating itself from the releases")
 add_feature_info(master-link RTYPE_MODULE_MASTER_LINK "the registration of the server with the master")
 add_feature_info(admin-console RTYPE_MODULE_ADMIN_CONSOLE "the administration console of the supervisor")
 add_feature_info(chat RTYPE_MODULE_CHAT "the chat of the games")
@@ -133,6 +135,10 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # folder below: a folder that finds them again gets its own copy of their
 # targets, and a program linking two copies lists libssl and libcrypto twice.
 find_package(httplib CONFIG REQUIRED)
+# Velopack, from the overlay port of ports/velopack, updates the client.
+if(RTYPE_MODULE_UPDATE)
+  find_package(velopack CONFIG REQUIRED)
+endif()
 
 add_subdirectory(src)
 
@@ -199,6 +205,17 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/waves ${CMAKE_SOURCE_DIR}/assets/entities ${CMAKE_SOURCE_DIR}/assets/sprites
   DESTINATION assets COMPONENT server
 )
+
+# The app carries the Velopack library in Contents/Frameworks, where the rpath
+# of the client points; vcpkg links it as a dylib on macOS.
+if(APPLE AND RTYPE_MODULE_UPDATE)
+  install(IMPORTED_RUNTIME_ARTIFACTS velopack::velopack
+    LIBRARY DESTINATION R-Type.app/Contents/Frameworks COMPONENT client
+  )
+  set_target_properties(r-type_client PROPERTIES
+    INSTALL_RPATH "@executable_path/../Frameworks"
+  )
+endif()
 
 # Once the bundle is complete, SignApp.cmake signs it with the hardened
 # runtime. This rule stays after every rule of the client.

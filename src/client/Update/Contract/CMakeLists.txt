@@ -1,0 +1,5 @@
+add_library(rtype_client_update_contract INTERFACE)
+
+target_include_directories(rtype_client_update_contract INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(rtype_client_update_contract INTERFACE rtype_client_application)

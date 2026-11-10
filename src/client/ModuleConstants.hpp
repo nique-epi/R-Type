@@ -15,6 +15,7 @@ constexpr std::string_view METRICS_MODULE_NAME = "metrics";
 constexpr std::string_view DEBUG_MODULE_NAME = "debug";
 constexpr std::string_view AUDIO_MODULE_NAME = "audio";
 constexpr std::string_view SCREENS_MODULE_NAME = "screens";
+constexpr std::string_view UPDATE_MODULE_NAME = "update";
 constexpr std::string_view MENUS_MODULE_NAME = "menus";
 constexpr std::string_view LOBBY_MODULE_NAME = "lobby";
 constexpr std::string_view HANGAR_MODULE_NAME = "hangar";
