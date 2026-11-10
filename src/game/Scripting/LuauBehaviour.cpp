@@ -155,9 +155,11 @@ Intent LuauBehaviour::resumeOrHold(LuauBehaviourState& behaviourState,
       engine::LuauProtectedWork{.run = pushResumeInputs, .context = &start});
   LuauResumeContext& context = parts_.resumeContext.get();
   context.resumedThread = start.thread;
+  context.resumedBehaviourState = &behaviourState;
   context.waitTicks.reset();
   const engine::LuauResumeResult end = machine.resume(start.thread, 1);
   context.resumedThread = nullptr;
+  context.resumedBehaviourState = nullptr;
   const std::uint32_t waitTicks = ticksToWaitAfter(end, context);
   behaviourState.waiting = end == engine::LuauResumeResult::Yielded;
   ResumeOutputs result{.machine = machine.state(), .thread = start.thread};
@@ -170,9 +172,8 @@ Intent LuauBehaviour::resumeOrHold(LuauBehaviourState& behaviourState,
 void LuauBehaviour::stopOnFailure(LuauBehaviourState& behaviourState,
                                   const engine::ScriptException& error) const {
   parts_.resumeContext.get().resumedThread = nullptr;
-  behaviourState.thread.reset();
-  behaviourState.waiting = false;
-  behaviourState.heldIntent.stop();
+  parts_.resumeContext.get().resumedBehaviourState = nullptr;
+  behaviourState.stopScript();
   if (!failureReported_) {
     failureReported_ = true;
     parts_.reportFailure("the behaviour " + parts_.name +

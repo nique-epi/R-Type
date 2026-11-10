@@ -20,6 +20,7 @@
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
 #include "EntityTypeNumber.hpp"
+#include "LuauEventBindings.hpp"
 #include "NetworkIdentity.hpp"
 #include "PlayerRoster.hpp"
 #include "Position.hpp"
@@ -47,11 +48,13 @@ EntityOrders::EntityOrders(EntityOrdersParts parts)
       logger_(std::string{ENTITY_ORDERS_LOGGER_NAME}) {
   if (parts_.scripts != nullptr) {
     parts_.scripts->attachOrders(*this);
+    parts_.scripts->eventBindings().attach(parts_.events.get());
   }
 }
 
 EntityOrders::~EntityOrders() {
   if (parts_.scripts != nullptr) {
+    parts_.scripts->eventBindings().detach(parts_.events.get());
     parts_.scripts->detachOrders(*this);
   }
 }

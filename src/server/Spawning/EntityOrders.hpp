@@ -25,9 +25,9 @@ namespace rtype::server {
  * The first tick whose scripts use the whole of their budget is written in the
  * journal, once per world: bodies then wait for the next tick to step.
  *
- * It works on one world, and attaches itself to the scripts for as long as it
- * lives: the game builds a new one with each new world. Not thread-safe: use
- * it from the simulation thread only.
+ * It works on one world, and attaches itself and the bus of the game to the
+ * scripts for as long as it lives: the game builds a new one with each new
+ * world. Not thread-safe: use it from the simulation thread only.
  */
 class EntityOrders final : public game::IEntityOrders {
  public:
