@@ -293,7 +293,7 @@ jobs:
         run: ${SCCACHE_PATH} --show-stats
 
       - name: Test
-        run: ctest --preset ${{ matrix.preset }}
+        run: ctest --preset ${{ matrix.preset }} --parallel
 
       - name: Stop the supervisor
         if: matrix.preset == 'sanitize' || matrix.preset == 'modules-off'
