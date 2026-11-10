@@ -7,7 +7,7 @@ sidebar:
 
 A resource (see [Resources](/R-Type/server/#resources-ensure-lines)) may steer its enemies with scripts written in [Luau](https://luau.org), the language derived from Lua 5.1 that Roblox made for untrusted code. A script registers a **behaviour**, the named piece of logic a sheet chooses with `pilot`, exactly like the behaviours written in C++ (`straight`, `reaper`, `bydomancer`): it reads the same view of its body each tick and returns the same intent. Changing a script needs no build: the next game reads it again.
 
-Scripts run on the server only. They never reach the client, which draws the enemies from their sheets as before, so the authority of the server is unchanged. This page tells a designer what a script may read and return; the code is in `src/engine/Scripting/` (the machine, no R-Type word) and `src/game/Scripting/` (the behaviours).
+Scripts run on the server only. They never reach the client, which draws the enemies from their sheets as before, so the authority of the server is unchanged. This page tells a designer what a script may read, return, hear and publish; the code is in `src/engine/Scripting/` (the machine, no R-Type word) and `src/game/Scripting/` (the behaviours).
 
 ## Where scripts live and when they run
 
@@ -89,6 +89,47 @@ end)
 
 Both `spawn` and `destroy` only run during a game: a script that calls them while it is first read fails.
 
+## Hearing and publishing events
+
+A script reaches the event bus of the game (see [Events](/R-Type/engine/#event-bus-eventbus)) through the table `bus`, so that the parts of a boss and its core talk to each other without sharing a line of code.
+
+```lua
+behaviours.register("serpent_segment", {}, function(view)
+	local head = nil
+	bus.on("serpent_head", function(event) head = event.id end)
+	bus.on("entity_destroyed", function(event)
+		if event.id == head then
+			behaviours.destroy(view.id)
+		end
+	end)
+	while true do
+		view = behaviours.wait(100, { direction = { x = -1, y = 0 } })
+	end
+end)
+```
+
+| Function | Does |
+|---|---|
+| `bus.on(name, function)` | subscribes `function` to the event `name`, for the body that steps. The function receives one table, the event, and what it returns is ignored. It only runs in the function of a body, during a game. |
+| `bus.emit(name, values)` | publishes an event under a name the script chooses, with `values`, a table of numbers, booleans and strings under string keys, 16 at most (`MAXIMUM_SCRIPT_EVENT_FIELDS`), or nothing. The values are copied: the functions that hear the event read a table of their own. It only runs during a game. |
+
+Only these events of the game are shown to the scripts; any other name is an event the scripts publish themselves, and a script cannot publish under one of these four names.
+
+| Name | Published when | The event holds |
+|---|---|---|
+| `entity_destroyed` | an entity is destroyed | `id`, its network id; `killed`, `false` when it was removed without an explosion |
+| `entity_damaged` | an entity is hit and stays alive | `id` |
+| `enemy_action_started` | an enemy enters a phase of an attack | `id`, `attack`, `phase` as in the view |
+| `boss_health_changed` | the fight of a boss starts, a hit takes points from it, or it enrages | `id`, `points` left, `full`, the points it appeared with, `enraged` |
+
+What a script may rely on:
+
+- **The order is the one of the bus.** `bus.emit` only queues the event. The game loop delivers the events at the end of the tick, in the order they were published, each to its subscribers in the order they subscribed, C++ code and script functions alike. An event published by a subscribed function is delivered in the same pass.
+- **A subscription ends with its body**, whichever way the body is destroyed, and when its script stops.
+- **Subscribe once.** A function that returns starts again at the next tick, and would subscribe again on each of them: a body keeps 16 functions at most (`MAXIMUM_SUBSCRIPTIONS_PER_ENTITY`), and one more is a failure. Subscribe before a loop that waits, as the example does. A subscribed function shares the local variables of the function that subscribed it, which is how it tells the body what it heard.
+- **A subscribed function is a step.** It has the 2 ms of a step and counts in the 8 ms of the tick. It cannot wait. One that fails, waits or runs past its budget stops the script of its body, as a failed step does; the functions subscribed after it are still called, and the journal writes the first such failure once.
+- **Once the budget of a tick is spent, the events left reach no script function** until the next tick; they are not kept. This is also what ends two functions that answer each other without end.
+
 ## What a script cannot do
 
 - **Reach the system.** The sandbox of Luau removes `io`, `package`, `require`, `dofile`, `loadfile` and `load`, leaves `os` its clock and dates only, and makes every standard library read-only; R-Type also removes `getfenv` and `setfenv`. Each script has globals of its own: a global of one script is not seen by another.
@@ -134,5 +175,8 @@ A call of the script takes 0.9 µs, and the time grows in line with the bodies f
 | Change what a body holds during a wait, and when it stops | `HeldIntent` in `src/game/Behaviours/Piloting/`, which knows nothing of Luau |
 | Change how a Luau function is resumed after a wait | `LuauBehaviour` and `LuauBehaviourState` in `src/game/Scripting/` |
 | Change how created or removed bodies reach the game | `IEntityOrders` in `src/game/Spawning/`, carried out by `EntityOrders` in `src/server/Spawning/` |
+| Show another event of the game to the scripts | `GAME_EVENT_NAMES` in `GameScriptingConstants.hpp`, then its `fieldsOf()` and its line of `subscribeNamed()` in `src/game/Scripting/LuauEventBindings.cpp` |
+| Change what a published event may carry | `ScriptEvent` and `ScriptEventField` in `src/game/Events/`, read by `publishedFields()` in `LuauEventBindings.cpp` |
+| Change when a subscription ends | `LuauEventSubscription`, kept in `LuauBehaviourState`, in `src/game/Scripting/` |
 | Expose another function to the scripts | `ScriptMachine::expose()`, before the first script runs, as `BehaviourScripts` exposes `behaviours.register` |
 | Change which files are scripts | `scriptSourcesIn()` in `src/game/Scripting/BehaviourScriptFiles.cpp` |
