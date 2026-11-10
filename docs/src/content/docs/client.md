@@ -46,7 +46,7 @@ Today it finds its assets folder, loads the assets of its interface, opens a win
 | Part | State | Where |
 |---|---|---|
 | Window | Available: windowed, or borderless over the whole screen | `src/client/Window/` |
-| Modules of the client and frame loop | Available: logger, assets, settings, window, connection, metrics, sound, screens, menus, lobby, game and debug, over five stages | `src/client/Modules/` lists them; each has a folder of its own (see [Modules and frame loop](#modules-and-frame-loop-clientmodules-frameloop)) |
+| Modules of the client and frame loop | Available: logger, assets, settings, window, connection, metrics, sound, screens, update, menus, lobby, game and debug, over five stages | `src/client/Modules/` lists them; each has a folder of its own (see [Modules and frame loop](#modules-and-frame-loop-clientmodules-frameloop)) |
 | Screen stack | Available | `src/client/Application/` |
 | Screens | Available: intro, title, server map, connection, waiting room, loading, game, end, options, leaderboard, and the dialogs of the quit confirmation, of leaving a game and of a lost connection | `src/client/Screens/`, `src/client/Menus/`, `src/client/Lobby/`, `src/client/Game/` |
 | Server map: the servers the master lists, around the planet of the player by the ping the client measures, and the games of each | Available; joining one game of a server is not written: Enter on a waiting game connects to its server, which seats the player | `src/client/Menus/ServerBrowser/`, `src/client/Connection/ServerList/`, `src/client/Widgets/SectorMap/` |
@@ -77,6 +77,7 @@ Today it finds its assets folder, loads the assets of its interface, opens a win
 | Player commands | Available; read by the game screen, which sends them to the server | `src/client/Input/` |
 | Key remapping | Available; set in the options, read by the game screen, the waiting room and its help | `src/client/Input/` |
 | Network thread | Available; opened when the connection module starts | `src/client/Connection/Transport/` |
+| Updates: the check of the latest release at launch, the blocking update panel, WHAT'S NEW after the restart | Available, through Velopack, from a client its installer or package installed; in the optional module `update` | `src/client/Update/`, `ports/velopack/`, `packaging/VelopackClient.cmake` |
 | Lagometer: the ping, its jitter, the datagrams lost, the frames per second, the traffic, and the curve of each round trip | Available; shown over every screen by F3, in the optional module `debug` | `src/client/Debug/` |
 | Ignoring an old world state | Available; used by `EntityReplicator` | `src/client/Replication/Entities/` |
 | Applying the entities the server announces | Available; used by the game screen | `src/client/Replication/Entities/` |
@@ -1163,6 +1164,17 @@ The dialog is a `DialogScreen` (`src/client/Screens/Common/`), which shows any m
 
 `gameAssets()` keeps every texture of the title, so the title is built at once: a loading screen in its place would close the dialog when it gives way. The texts are in `src/client/Screens/Common/ScreenConstants.hpp`. `client_screen_tests` checks the menu, and the dialog in a real `ScreenStack`; `client_connection_tests` checks the watch. No test builds `ClientScreens`, whose sky opens an OpenGL context, so the title and the dialog it asks for are checked on screen only.
 
+## Updates: `ClientUpdateModule`, `ReleaseFeedSource`
+
+The client updates itself from the GitHub releases of the game, through Velopack (see [Architecture](/R-Type/architecture/#updates-of-the-client) for why, and what it trusts). It lives in the optional module `update` (`src/client/Update/`, `RTYPE_MODULE_UPDATE`); the title reads it through `IUpdateNotice`, in its `Contract/`.
+
+- **At the start of `main()`**, before the arguments are read, `runClientStartupHooks()` runs Velopack: the installer and the updater start the client with arguments of their own, for which Velopack runs its hook and ends the process; an update downloaded and not applied is applied there.
+- **At its `start()`**, the module asks Velopack for the installed client. Run from a build folder, there is none: the module logs it and shows nothing. Otherwise `UpdateCheck` asks for the latest release on a thread of its own, so the intro never waits: `ReleaseFeedSource` reads the feed of the system (`releases.win.json`, `releases.osx.json`, `releases.linux.json`) from the files of the latest release and hands it to Velopack. A failed check shows nothing.
+- **Once the intro has played**, the title pushes `UPDATE_SCREEN` when a newer release was found: UPDATE AVAILABLE, `VER 1.0.0 > VER 1.1.0`, a bar and a status line, over the dimmed title, taking every input. `UpdateRun` downloads the package on its thread; Velopack refuses it unless its SHA-256 is the one of the feed. The notes of the release are then written to `update-notes.json` in the settings folder, and after RESTARTING (1 s) the updater of Velopack waits for the client to exit, replaces it and starts the new version. A failure shows UPDATE FAILED for 3 s, then lets the player play.
+- **After the restart**, the title pushes `WHATS_NEW_SCREEN` once when the notes file names the version installed: the lines of the message of the annotated tag, at most `MAXIMUM_NOTE_LINES` (8) of `MAXIMUM_NOTE_SIZE` (48) characters, their Markdown list marks dropped (`noteLinesOf()`). Closing it removes the file.
+
+Every request waits at most `RELEASE_REQUEST_TIMEOUT` (5 s) to connect and for each read, a feed is read only up to `MAXIMUM_FEED_BYTES` (256 KB) and a package up to its size in the feed. A file name of a feed is only letters, digits and `.-_`, so a forged name never leaves the folder of its release. `client_update_tests` checks the source over `FakeReleaseFiles`, the check and the update over `FakeReleaseUpdater` (`tests/doubles/`), and the two screens.
+
 ## Lagometer: `Lagometer`, `ClientDebugModule`
 
 The lagometer shows how the connection to the server behaves, over every screen: F3 (`LAGOMETER_KEY`) shows it and hides it, a key held down toggling it once (`LagometerToggle`). It lives in the optional module `debug` (`src/client/Debug/`, `RTYPE_MODULE_DEBUG`), listed after the screens, so its listener hears F3 before the screen on top and it draws over the screens.
@@ -1192,6 +1204,9 @@ The ping is the smoothed one at the end of the period; the other figures are cou
 
 | You want to… | Look at |
 |---|---|
+| Change where the client looks for its updates or the bounds of a request | `src/client/Update/Releases/ReleasesConstants.hpp` |
+| Change the update panel or WHAT'S NEW | `src/client/Update/Screens/UpdatePanel/` and `Screens/WhatsNew/`, each with its constants header; when the title shows them, `src/client/Menus/Title/` |
+| Change the version of Velopack | `ports/velopack/` (its version and the SHA-512 of its archive) and `VELOPACK_VERSION` in `.github/workflows/package.yaml`, which installs vpk |
 | Change what the lagometer writes or draws, its key or its place | `LagometerConstants.hpp`, `lagometerTextLines()` and `LagometerPainting.cpp` in `src/client/Debug/Panel/` |
 | Change the line the lagometer writes in the journal, or how often | `LagometerJournal`, `lagometerJournalLine()` and `LAGOMETER_JOURNAL_PERIOD` in `src/client/Debug/Journal/` |
 | Change the flame, the flight lines, the roll or the afterimages of a ship | `ShipFlightConstants.hpp` and `ShipFlightSystem` in `src/client/Rendering/SpriteLook/`; the `FLAME_` and `FLIGHT_LINE_` constants in `src/client/Rendering/Effects/Ground/GroundEffectConstants.hpp` |

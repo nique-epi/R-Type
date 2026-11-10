@@ -22,6 +22,7 @@
 #include "TitleScreenFixture.hpp"
 #include "TitleScreenParts.hpp"
 #include "TitleScreenTestConstants.hpp"
+#include "UpdateScreenIdConstants.hpp"
 
 using rtype::client::CLICK_SOUND_ID;
 using rtype::client::CONNECTION_TO_CHOSEN_SERVER_SCREEN;
@@ -37,10 +38,13 @@ using rtype::client::SERVER_MAP_SCREEN;
 using rtype::client::SquadronStart;
 using rtype::client::TitleScreen;
 using rtype::client::TitleScreenParts;
+using rtype::client::UPDATE_SCREEN;
+using rtype::client::WHATS_NEW_SCREEN;
 using rtype::client::testing::LOGO_TOP_LEFT;
 using rtype::client::testing::PLAY_BAR_MIDDLE;
 using rtype::client::testing::SHIP_SIZE;
 using rtype::client::testing::SHIPS_IN_PLACE_ON_THE_TITLE;
+using rtype::client::testing::TITLE_FRAME;
 using rtype::client::testing::TITLE_SEED;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
@@ -254,4 +258,67 @@ TEST_F(TitleScreenFixture, ChoosingPlayPlaysTheClick) {
   choose(sf::Keyboard::Key::Enter);
 
   EXPECT_THAT(sounds().played(), ElementsAre(CLICK_SOUND_ID));
+}
+
+/**
+ * Given a title whose update module found a newer release
+ * When two frames pass
+ * Then the title puts the update panel over itself once
+ */
+TEST_F(TitleScreenFixture, PutsTheUpdatePanelOverItselfOnceAReleaseWaits) {
+  notice().offerUpdate(true);
+  reopenAskingTheNotice();
+
+  title().update(TITLE_FRAME);
+  title().update(TITLE_FRAME);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = UPDATE_SCREEN}));
+}
+
+/**
+ * Given a title whose update module left notes and found no newer release
+ * When two frames pass
+ * Then the title puts WHAT'S NEW over itself once
+ */
+TEST_F(TitleScreenFixture, PutsWhatsNewOverItselfOnceNotesWait) {
+  notice().leaveNotes(true);
+  reopenAskingTheNotice();
+
+  title().update(TITLE_FRAME);
+  title().update(TITLE_FRAME);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = WHATS_NEW_SCREEN}));
+}
+
+/**
+ * Given a title whose update module left notes and found a newer release
+ * When one frame passes
+ * Then the title puts only the update panel over itself
+ */
+TEST_F(TitleScreenFixture, PutsTheUpdateBeforeTheNotes) {
+  notice().offerUpdate(true);
+  notice().leaveNotes(true);
+  reopenAskingTheNotice();
+
+  title().update(TITLE_FRAME);
+
+  EXPECT_THAT(navigator().calls(),
+              ElementsAre(NavigatorCall{.request = NavigatorRequest::Push,
+                                        .screen = UPDATE_SCREEN}));
+}
+
+/**
+ * Given a title built without an update module
+ * When two frames pass
+ * Then the title asks nothing of the screens
+ */
+TEST_F(TitleScreenFixture, AsksNothingWithoutAnUpdateModule) {
+  title().update(TITLE_FRAME);
+  title().update(TITLE_FRAME);
+
+  EXPECT_THAT(navigator().calls(), IsEmpty());
 }

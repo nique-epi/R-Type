@@ -24,12 +24,22 @@
 #if RTYPE_MODULE_DEBUG
 #include "ClientDebugModule.hpp"
 #endif
+#if RTYPE_MODULE_UPDATE
+#include "ClientUpdateModule.hpp"
+#include "StartupHooks.hpp"
+#endif
 #if RTYPE_MODULE_METRICS
 #include "ClientMetricsModule.hpp"
 #include "SystemClock.hpp"
 #endif
 
 namespace rtype::client {
+
+void runClientStartupHooks() {
+#if RTYPE_MODULE_UPDATE
+  runVelopackStartup();
+#endif
+}
 
 std::vector<std::unique_ptr<engine::IModule>> clientModules(
     const logging::LogLaunchOptions& logOptions,
@@ -52,6 +62,9 @@ std::vector<std::unique_ptr<engine::IModule>> clientModules(
 #endif
   modules.push_back(std::make_unique<ClientScreensModule>(
       launchOptions.serverChoice(), launchOptions.playStart()));
+#if RTYPE_MODULE_UPDATE
+  modules.push_back(std::make_unique<ClientUpdateModule>());
+#endif
   modules.push_back(std::make_unique<ClientMenusModule>());
   modules.push_back(std::make_unique<ClientLobbyModule>());
   modules.push_back(std::make_unique<ClientHangarModule>());
