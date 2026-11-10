@@ -2,7 +2,6 @@
 #include <gtest/gtest.h>
 #include <array>
 #include <filesystem>
-#include <string>
 #include <vector>
 #include "BehaviourScriptFiles.hpp"
 #include "BehaviourScripts.hpp"

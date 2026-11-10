@@ -3,11 +3,10 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
-#include <optional>
+#include <memory>
 #include <string_view>
 #include <vector>
 #include "BehaviourScripts.hpp"
-#include "EntityDestruction.hpp"
 #include "EventBus.hpp"
 #include "LevelChange.hpp"
 #include "LevelDirector.hpp"
@@ -45,7 +44,7 @@ class LevelDirectorFixture : public ::testing::Test {
   game::World world_;
   engine::EventBus events_;
   game::BehaviourScripts scripts_;
-  std::optional<LevelDirector> director_;
+  std::unique_ptr<LevelDirector> director_;
   std::vector<game::LevelChange> changes_;
   std::vector<std::uint32_t> removed_;
 };

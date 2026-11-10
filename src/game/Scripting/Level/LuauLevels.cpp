@@ -58,7 +58,7 @@ LuauLevelStep& stepOfStage(lua_State* state) {
 int stageCountOf(lua_State* state) {
   luaL_checktype(state, LEVEL_STAGES_ARGUMENT, LUA_TTABLE);
   const int count = lua_objlen(state, LEVEL_STAGES_ARGUMENT);
-  if (count < 1 || static_cast<std::size_t>(count) > MAXIMUM_LEVEL_STAGES) {
+  if (count < 1 || std::cmp_greater(count, MAXIMUM_LEVEL_STAGES)) {
     throw engine::ScriptException(WRONG_LEVEL_STAGES_MESSAGE);
   }
   for (int index = 1; index <= count; ++index) {
@@ -190,7 +190,7 @@ LuauLevels::LuauLevels(engine::ScriptMachine& machine) {
 }
 
 void LuauLevels::declare(std::string name, std::vector<int> stages) {
-  levels_.try_emplace(std::move(name), std::move(stages));
+  levels_.emplace(std::move(name), std::move(stages));
 }
 
 const std::vector<int>* LuauLevels::stagesOf(std::string_view name) const {

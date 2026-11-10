@@ -1,14 +1,13 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <cstddef>
 #include <cstdint>
 #include <string>
-#include "LevelChange.hpp"
 #include "LevelDirector.hpp"
 #include "LevelDirectorFixture.hpp"
 #include "LevelDirectorTestConstants.hpp"
 #include "ServerException.hpp"
 
-using rtype::game::LevelChange;
 using rtype::server::stagesOfLevel;
 using rtype::server::UnknownLevelException;
 using rtype::server::testing::CAVES_BIOME;

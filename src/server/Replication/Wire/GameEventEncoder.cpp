@@ -68,7 +68,7 @@ network::EnemyActionPhase toWirePhase(game::EnemyPhase phase) {
 /** @brief What a GameEvent tells: its kind, the player it concerns and the
  * entity it concerns, each left out when the kind names none. */
 struct GameEventSubject {
-  network::GameEventKind kind;
+  network::GameEventKind kind{};
   std::uint8_t playerNumber{network::NO_PLAYER_NUMBER};
   std::uint32_t entityId{identifiers::NO_ENTITY_ID};
 };

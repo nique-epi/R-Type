@@ -67,11 +67,10 @@ class LuauLevelRun {
   void fail(const std::string& reason);
 
   LuauLevelRunParts parts_;
-  /** Empty before the first step, after a restart and once failed. */
+  /** The thread of the stage that stopped in a wait, to be resumed there;
+   * empty while no stage waits: the next step starts the stage due in a new
+   * thread. */
   std::optional<engine::LuauThread> thread_;
-  /** Whether the thread stopped in a wait, to be resumed there rather than
-   * given the function of its stage again. */
-  bool waiting_{false};
   std::optional<LuauLevelWait> wait_;
   std::size_t stage_{0};
   LuauLevelRunState state_{LuauLevelRunState::Running};

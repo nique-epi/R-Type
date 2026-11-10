@@ -3,7 +3,6 @@
 #include <SFML/Window/Event.hpp>
 #include <random>
 #include <string_view>
-#include "AssetLibrary.hpp"
 #include "MenuScreenIdConstants.hpp"
 #include "OpeningScreen.hpp"
 #include "ScreenContext.hpp"

@@ -1,6 +1,7 @@
 #include "LevelDirectorFixture.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -30,10 +31,11 @@ void LevelDirectorFixture::direct(std::string_view script) {
   const std::vector<engine::ScriptSource> sources{engine::ScriptSource{
       .name = std::string{DIRECTED_LEVEL}, .text = std::string{script}}};
   scripts_.run(sources);
-  director_.emplace(LevelDirectorParts{.world = world_,
-                                       .events = events_,
-                                       .scripts = scripts_,
-                                       .level = std::string{DIRECTED_LEVEL}});
+  director_ = std::make_unique<LevelDirector>(
+      LevelDirectorParts{.world = world_,
+                         .events = events_,
+                         .scripts = scripts_,
+                         .level = std::string{DIRECTED_LEVEL}});
 }
 
 void LevelDirectorFixture::tick(std::size_t count) {
@@ -50,7 +52,7 @@ std::uint32_t LevelDirectorFixture::place(std::string_view sheet,
                       position);
 }
 
-LevelDirector& LevelDirectorFixture::director() { return director_.value(); }
+LevelDirector& LevelDirectorFixture::director() { return *director_; }
 
 game::BehaviourScripts& LevelDirectorFixture::scripts() { return scripts_; }
 

@@ -19,7 +19,6 @@
 #include "NetworkIdentity.hpp"
 #include "ServerException.hpp"
 #include "TimeConstants.hpp"
-#include "World.hpp"
 
 namespace rtype::server {
 
@@ -43,9 +42,12 @@ LevelDirector::LevelDirector(LevelDirectorParts parts)
       logger_(std::string{LEVEL_DIRECTOR_LOGGER_NAME}) {}
 
 void LevelDirector::onTick() {
+  const bool hadFailed = failed();
   run_.step();
+  if (failed() && !hadFailed) {
+    logger_.warn("the level ", parts_.level, " failed: ", run_.failure());
+  }
   progress_.scroll.advance(engine::SIMULATION_TICK_DURATION);
-  reportFailure();
   announceChange();
 }
 
@@ -71,14 +73,6 @@ bool LevelDirector::restartFromCheckpoint() {
 }
 
 const game::LevelProgress& LevelDirector::progress() const { return progress_; }
-
-void LevelDirector::reportFailure() {
-  if (failureReported_ || !failed()) {
-    return;
-  }
-  failureReported_ = true;
-  logger_.warn("the level ", parts_.level, " failed: ", run_.failure());
-}
 
 void LevelDirector::announceChange() {
   const bool moving = progress_.scroll.speed() > 0.0F;

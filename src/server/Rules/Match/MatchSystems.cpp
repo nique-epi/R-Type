@@ -45,8 +45,12 @@ void runWorldSystems(GameContext& game, game::World& world) {
   game.systems.get().run(world.components(), engine::SIMULATION_TICK_DURATION);
 }
 
-/** @returns The boss stage of the level played in @p world. */
+/** @returns The boss stage of the level played in @p world; nullptr in a
+ * game that plays a level a script directs. */
 std::unique_ptr<BossStage> bossStageFor(GameContext& game, game::World& world) {
+  if (!game.settings.level.empty()) {
+    return nullptr;
+  }
   return std::make_unique<BossStage>(
       BossStageParts{.world = world,
                      .roster = game.roster.get(),
@@ -57,10 +61,14 @@ std::unique_ptr<BossStage> bossStageFor(GameContext& game, game::World& world) {
                      .healthPercent = game.settings.waves.bossHealthPercent});
 }
 
-/** @returns The spawner of the Bydos of @p world, its draws from @p seed. */
+/** @returns The spawner of the Bydos of @p world, its draws from @p seed;
+ * nullptr in a game that plays a level a script directs. */
 std::unique_ptr<WaveSpawner> waveSpawnerFor(GameContext& game,
                                             game::World& world,
                                             std::uint32_t seed) {
+  if (!game.settings.level.empty()) {
+    return nullptr;
+  }
   return std::make_unique<WaveSpawner>(
       WaveSpawnerParts{.world = world,
                        .roster = game.roster.get(),

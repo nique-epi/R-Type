@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <cstddef>
-#include <optional>
+#include <memory>
 #include <string_view>
 #include "BehaviourScripts.hpp"
 #include "BehaviourScriptsFixtures.hpp"
@@ -35,5 +35,5 @@ class LuauLevelRunFixture : public ::testing::Test {
   rtype::engine::EntityRegistry entities_;
   rtype::engine::ComponentRegistry components_;
   rtype::game::LevelProgress progress_;
-  std::optional<rtype::game::LuauLevelRun> run_;
+  std::unique_ptr<rtype::game::LuauLevelRun> run_;
 };

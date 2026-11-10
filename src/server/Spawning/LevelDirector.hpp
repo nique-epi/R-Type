@@ -65,7 +65,6 @@ class LevelDirector {
   [[nodiscard]] const game::LevelProgress& progress() const;
 
  private:
-  void reportFailure();
   void announceChange();
   void removeEveryBodyButTheShips() const;
 
@@ -77,7 +76,6 @@ class LevelDirector {
    * and after a restart, so the next tick publishes one. */
   std::optional<std::string> announcedBiome_;
   bool announcedMoving_{false};
-  bool failureReported_{false};
 };
 
 }  // namespace rtype::server

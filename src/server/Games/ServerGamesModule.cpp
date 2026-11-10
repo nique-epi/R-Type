@@ -170,7 +170,8 @@ const engine::SettingValue& declareLevel(
       .name = std::string{LEVEL_SETTING_NAME},
       .defaultValue = std::string{},
       .help = "Level a script registered that every game plays, or nothing "
-              "to play the waves"});
+              "to play the waves",
+      .validate = {}});
 }
 
 }  // namespace
@@ -270,6 +271,7 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
       static_cast<std::size_t>(inputDelaySetting_->integer().value_or(
           static_cast<std::int64_t>(settings_.inputDelayTicks)));
   const bool startsAtBoss = startAtBossSetting_->integer().value_or(0) != 0;
+  const std::string& level = levelSetting_->text();
   const std::vector<std::string_view> breaches = vanillaBreaches(
       HostedRules{.wavesFingerprint = catalog.fingerprint(),
                   .sheetsFingerprint = entitySheetsFingerprint(types),
@@ -277,7 +279,7 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
                   .inputDelayTicks = inputDelayTicks,
                   .gameRules = rules,
                   .startsAtBoss = startsAtBoss,
-                  .playsALevel = !levelSetting_->text().empty()});
+                  .playsALevel = !level.empty()});
   logHowGamesPlay(logger_, rules, breaches);
   return GameSettings{.seed = seed.has_value() ? *seed : std::random_device{}(),
                       .waves = catalog.planOf(rules.difficulty),
@@ -288,7 +290,7 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
                       .rules = rules,
                       .vanilla = breaches.empty(),
                       .startsAtBoss = startsAtBoss,
-                      .level = levelSetting_->text(),
+                      .level = level,
                       .scripts = scripts_.get()};
 }
 

@@ -41,7 +41,7 @@ TEST(LevelStatus, DecodesWhatItEncoded) {
  * Then the decoded status equals the original
  */
 TEST(LevelStatus, CarriesALevelWithoutBiomeWhoseScrollIsPaused) {
-  const LevelStatus status{.scrollSpeed = PAUSED_SCROLL_SPEED};
+  const LevelStatus status{.biome = {}, .scrollSpeed = PAUSED_SCROLL_SPEED};
 
   EXPECT_EQ(decodeMessage<LevelStatus>(encodeMessage(status)), status);
 }
@@ -75,8 +75,8 @@ TEST(LevelStatus, RefusesToEncodeABiomeThatIsNoBiomeName) {
  * Then it is refused
  */
 TEST(LevelStatus, RefusesANegativeScrollPosition) {
-  EXPECT_THROW(static_cast<void>(encodeMessage(
-                   LevelStatus{.scrollPosition = NEGATIVE_SCROLL})),
+  EXPECT_THROW(static_cast<void>(encodeMessage(LevelStatus{
+                   .biome = {}, .scrollPosition = NEGATIVE_SCROLL})),
                InvalidFieldValueException);
 }
 
@@ -86,8 +86,8 @@ TEST(LevelStatus, RefusesANegativeScrollPosition) {
  * Then it is refused
  */
 TEST(LevelStatus, RefusesAScrollSpeedThatIsNoNumber) {
-  EXPECT_THROW(static_cast<void>(encodeMessage(
-                   LevelStatus{.scrollSpeed = SCROLL_THAT_IS_NO_NUMBER})),
+  EXPECT_THROW(static_cast<void>(encodeMessage(LevelStatus{
+                   .biome = {}, .scrollSpeed = SCROLL_THAT_IS_NO_NUMBER})),
                InvalidFieldValueException);
 }
 

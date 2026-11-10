@@ -77,7 +77,6 @@ bool LuauLevelRun::restartFromCheckpoint() {
   }
   const LevelCheckpoint& checkpoint = *progress.checkpoint;
   thread_.reset();
-  waiting_ = false;
   wait_.reset();
   stage_ = checkpoint.stage;
   state_ = LuauLevelRunState::Running;
@@ -110,8 +109,9 @@ void LuauLevelRun::resumeStage() {
   engine::ScriptMachine& machine = parts_.machine.get();
   StageStart start{.thread = thread_,
                    .machine = machine.state(),
-                   .function = waiting_ ? std::nullopt
-                                        : std::optional{parts_.stages[stage_]}};
+                   .function = thread_.has_value()
+                                   ? std::nullopt
+                                   : std::optional{parts_.stages[stage_]}};
   engine::runProtected(
       machine.state(),
       engine::LuauProtectedWork{.run = pushStage, .context = &start});
@@ -121,7 +121,7 @@ void LuauLevelRun::resumeStage() {
   const engine::LuauResumeResult end = machine.resume(start.resumed, 0);
   step.resumedThread = nullptr;
   if (end == engine::LuauResumeResult::Returned) {
-    lua_settop(start.resumed, 0);
+    thread_.reset();
     endStage();
     return;
   }
@@ -129,11 +129,9 @@ void LuauLevelRun::resumeStage() {
     throw engine::ScriptException(LEVEL_YIELD_MESSAGE);
   }
   wait_ = step.wait;
-  waiting_ = true;
 }
 
 void LuauLevelRun::endStage() {
-  waiting_ = false;
   ++stage_;
   if (stage_ >= parts_.stages.size()) {
     state_ = LuauLevelRunState::Cleared;
@@ -149,7 +147,6 @@ void LuauLevelRun::endStage() {
 void LuauLevelRun::fail(const std::string& reason) {
   parts_.levels.get().step().resumedThread = nullptr;
   thread_.reset();
-  waiting_ = false;
   wait_.reset();
   state_ = LuauLevelRunState::Failed;
   failure_ = reason;

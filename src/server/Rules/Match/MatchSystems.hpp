@@ -71,12 +71,14 @@ class MatchSystems {
   std::reference_wrapper<game::World> world_;
   std::unique_ptr<game::CollisionRules> collisionRules_;
   std::unique_ptr<game::DamageRules> damageRules_;
+  /** nullptr in a game that plays a level a script directs. */
   std::unique_ptr<WaveSpawner> waveSpawner_;
   std::unique_ptr<WeaponSystem> weaponSystem_;
   std::unique_ptr<VolleySystem> volleySystem_;
   std::unique_ptr<EntityOrders> entityOrders_;
   /** nullptr in a game that plays the waves of its difficulty. */
   std::unique_ptr<LevelDirector> levelDirector_;
+  /** nullptr in a game that plays a level a script directs. */
   std::unique_ptr<BossStage> bossStage_;
   std::unique_ptr<LifeKeeper> lifeKeeper_;
   std::unique_ptr<LookItemKeeper> lookItemKeeper_;
