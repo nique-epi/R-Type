@@ -225,13 +225,11 @@ jobs:
           - os: windows-latest
             preset: test
             # Ninja compiles every file in parallel; the Visual Studio generator does not.
-            # /Z7 puts the debug information in the object files, which sccache can cache.
+            # /Z7 puts the debug information in the object files, which ccache can cache.
             generator_arguments: >-
               -G Ninja
               -DCMAKE_CXX_SCAN_FOR_MODULES=OFF
               -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
-    env:
-      SCCACHE_GHA_ENABLED: "true"
     steps:
       - uses: actions/checkout@v5
         with:
@@ -244,14 +242,28 @@ jobs:
       - name: Install CMake 4.2
         uses: lukka/get-cmake@v4.2.3
 
-      - name: Set up sccache
-        uses: mozilla-actions/sccache-action@v0.0.11
-
       - name: Install system dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libx11-dev libxi-dev libxrandr-dev libxcursor-dev libudev-dev libgl1-mesa-dev
+
+      # One archive per job, restored and saved whole: the cache of a pull
+      # request falls back to the newest one of main. In depend mode, ccache
+      # takes the headers of an MSVC compile from /showIncludes instead of
+      # running the preprocessor.
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2.24
+        with:
+          key: ${{ matrix.os }}-${{ matrix.preset }}
+          max-size: 1G
+          evict-old-files: job
+          job-summary: ""
+
+      - name: Point ccache at depend mode
+        if: runner.os == 'Windows'
+        shell: bash
+        run: echo "CCACHE_DEPEND=true" >> "$GITHUB_ENV"
 
       - name: Point vcpkg at a local binary cache
         shell: bash
@@ -274,8 +286,8 @@ jobs:
         run: >-
           cmake --preset ${{ matrix.preset }} ${{ matrix.generator_arguments }}
           -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
-          -DCMAKE_C_COMPILER_LAUNCHER=sccache
-          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Save vcpkg binary cache
         if: steps.vcpkg-cache.outputs.cache-hit != 'true' && matrix.preset == 'test'
@@ -289,8 +301,7 @@ jobs:
 
       - name: Show the compiler cache statistics
         if: always()
-        shell: bash
-        run: ${SCCACHE_PATH} --show-stats
+        run: ccache --show-stats --verbose
 
       - name: Test
         run: ctest --preset ${{ matrix.preset }} --parallel
