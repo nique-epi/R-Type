@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 #include "ProtocolConstants.hpp"
 #include "SerializationConstants.hpp"
 
@@ -43,5 +44,11 @@ constexpr std::uint16_t PEER_PORT = 40000;
  * random bytes, which cost 8 bits or more each.
  */
 constexpr std::size_t INCOMPRESSIBLE_BODY_SIZE = 200;
+
+/**
+ * @brief A nickname of the longest size, one letter repeated, so a status
+ * naming it four times is a body zstd shortens.
+ */
+constexpr std::string_view REPEATED_NICKNAME = "AAAAAAAAAAAAAAAA";
 
 }  // namespace rtype::network::testing

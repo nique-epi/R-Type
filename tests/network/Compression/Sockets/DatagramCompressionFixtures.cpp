@@ -8,6 +8,7 @@
 #include "DatagramCompression.hpp"
 #include "DatagramCompressionTestConstants.hpp"
 #include "Endpoint.hpp"
+#include "GameStatus.hpp"
 #include "MessageType.hpp"
 #include "NetworkConstants.hpp"
 #include "PacketHeader.hpp"
@@ -28,6 +29,14 @@ std::vector<std::byte> worldStateDatagram(const PacketHeader& header) {
       body.begin() + static_cast<std::ptrdiff_t>(MESSAGE_PREFIX_SIZE),
       body.end()};
   return DatagramCodec::encode(header, MessageType::WorldState, payload);
+}
+
+std::vector<std::byte> gameStatusDatagram(const PacketHeader& header) {
+  const std::string nickname{REPEATED_NICKNAME};
+  return DatagramCodec::encode(
+      header, GameStatus{.state = GameStatusState::InProgress,
+                         .nicknames = {nickname, nickname, nickname, nickname},
+                         .measures = {}});
 }
 
 std::vector<std::byte> incompressibleDatagram(const PacketHeader& header) {

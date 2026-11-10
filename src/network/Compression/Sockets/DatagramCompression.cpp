@@ -1,10 +1,12 @@
 #include "DatagramCompression.hpp"
+#include <algorithm>
 #include <cstddef>
 #include <optional>
 #include <span>
 #include <vector>
 #include "CompressionConstants.hpp"
 #include "DatagramCodec.hpp"
+#include "MessageType.hpp"
 #include "PacketHeader.hpp"
 #include "ProtocolConstants.hpp"
 #include "ZstdCodec.hpp"
@@ -15,6 +17,22 @@ namespace {
 
 bool hasBody(std::span<const std::byte> datagram) {
   return datagram.size() > PACKET_HEADER_SIZE;
+}
+
+/**
+ * @returns Whether @p datagram holds a message of the supervisor link, or
+ * cannot be read: what cannot be read is not compressed.
+ */
+bool holdsSupervisorLinkMessage(std::span<const std::byte> datagram) {
+  const std::optional<DatagramCodec::MessageTypes> types =
+      DatagramCodec::messageTypes(datagram);
+  if (!types.has_value()) {
+    return true;
+  }
+  return std::ranges::any_of(
+      SUPERVISOR_LINK_MESSAGES, [&types](MessageType message) {
+        return types->test(static_cast<std::size_t>(message));
+      });
 }
 
 /**
@@ -44,6 +62,9 @@ std::optional<std::vector<std::byte>> compressedForm(
   const PacketHeader header = DatagramCodec::decodeHeader(datagram);
   if (header.sessionToken == NO_SESSION_TOKEN ||
       (header.flags & COMPRESSED_FLAG) != 0) {
+    return std::nullopt;
+  }
+  if (holdsSupervisorLinkMessage(datagram)) {
     return std::nullopt;
   }
   const std::span<const std::byte> body = datagram.subspan(PACKET_HEADER_SIZE);

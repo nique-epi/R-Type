@@ -25,6 +25,12 @@ PacketHeader handshakeHeader();
 std::vector<std::byte> worldStateDatagram(const PacketHeader& header);
 
 /**
+ * @returns The status of a game under @p header, naming REPEATED_NICKNAME four
+ * times, so that zstd would shorten it.
+ */
+std::vector<std::byte> gameStatusDatagram(const PacketHeader& header);
+
+/**
  * @returns A datagram under @p header whose body is random bytes, so coding
  * does not shrink it.
  */
