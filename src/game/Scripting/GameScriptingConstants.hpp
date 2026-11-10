@@ -46,7 +46,7 @@ constexpr const char* VIEW_ACTION_KEY = "action";
 constexpr const char* VIEW_ACTION_AGE_KEY = "action_age_ms";
 constexpr const char* VIEW_NEAREST_SHIP_KEY = "nearest_ship";
 constexpr const char* VIEW_WOUNDED_KEY = "wounded";
-constexpr const char* VIEW_HEALTH_KEY = "health";
+constexpr const char* VIEW_HEALTH_SHARE_KEY = "health_share";
 constexpr const char* VIEW_ENRAGED_KEY = "enraged";
 constexpr const char* VIEW_ACTIONS_ENDED_KEY = "actions_ended";
 

@@ -234,13 +234,16 @@ void BehaviourScripts::declare(LuauBehaviourParts parts) {
 
 engine::ScriptMachine& BehaviourScripts::machine() { return machine_; }
 
-void BehaviourScripts::attachOrders(IEntityOrders& orders) {
+void BehaviourScripts::attachGame(IEntityOrders& orders,
+                                  engine::ComponentRegistry& components) {
   resumeContext_.orders = &orders;
+  resumeContext_.steppedBody.components = &components;
 }
 
-void BehaviourScripts::detachOrders(const IEntityOrders& orders) noexcept {
+void BehaviourScripts::detachGame(const IEntityOrders& orders) noexcept {
   if (resumeContext_.orders == &orders) {
     resumeContext_.orders = nullptr;
+    resumeContext_.steppedBody.components = nullptr;
   }
 }
 

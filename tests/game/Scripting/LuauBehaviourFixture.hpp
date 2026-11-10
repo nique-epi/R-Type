@@ -8,6 +8,8 @@
 #include "BehaviourRegistry.hpp"
 #include "BehaviourScripts.hpp"
 #include "BehaviourScriptsFixtures.hpp"
+#include "ComponentRegistry.hpp"
+#include "EntityRegistry.hpp"
 #include "IBehaviourState.hpp"
 #include "IEntityOrders.hpp"
 #include "Intent.hpp"
@@ -45,4 +47,6 @@ class LuauBehaviourFixture : public ::testing::Test {
   FailureLog log_;
   rtype::game::BehaviourScripts scripts_;
   rtype::game::BehaviourRegistry behaviours_;
+  rtype::engine::EntityRegistry entities_;
+  rtype::engine::ComponentRegistry components_;
 };

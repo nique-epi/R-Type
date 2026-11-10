@@ -19,12 +19,15 @@ namespace rtype::game {
  * steps the function the script registered runs, in a Luau thread of its own,
  * both kept in the behaviour state of its Pilot, which ends with the body.
  *
- * A function that returns gives the intent of that tick (see
- * pushViewTable() and intentFromTable()), and runs again from its start at the
- * next tick. A function that calls `behaviours.wait(ms, intent)` stops there:
- * the body wants that intent until the wait ends, its one-time requests (an
+ * The function receives the handle `e` of its body (see LuauEntityHandle),
+ * which reads the view of the step (see pushViewTable()) and reaches the
+ * components of the body. A function that returns gives the intent of that
+ * tick (see intentFromTable()), and runs again from its start at the next
+ * tick. A function that calls `behaviours.wait(ms, intent)` stops there: the
+ * body wants that intent until the wait ends, its one-time requests (an
  * action started or ended, a jump) applying only on the first tick, and the
- * call returns a fresh view on the tick the wait ends. A wait costs no step.
+ * call returns the handle again, holding a fresh view, on the tick the wait
+ * ends. A wait costs no step.
  *
  * A step that fails (an error of the script, its memory or its time budget),
  * or a function the body subscribed to an event that failed since its last
