@@ -31,9 +31,13 @@ constexpr std::string_view SPRITE_SHEET_KEY = "sheet";
 /** @brief What separates the folders of a path inside the assets folder. */
 constexpr char ASSET_PATH_SEPARATOR = '/';
 
-/** @brief The keys of `[gameplay]`: two values, then one table each. */
+/** @brief The keys of `[gameplay]`: four values, then one table each. */
 constexpr std::string_view SIDE_KEY = "side";
 constexpr std::string_view PILOT_KEY = "pilot";
+/** @brief The collision layer a body lies in, a name the sheets choose, and
+ * the layers it hits, an array of such names the sheet may leave out. */
+constexpr std::string_view LAYER_KEY = "layer";
+constexpr std::string_view HITS_KEY = "hits";
 constexpr std::string_view HITBOX_KEY = "hitbox";
 constexpr std::string_view MOTION_KEY = "motion";
 constexpr std::string_view BEHAVIOUR_KEY = "behaviour";
@@ -48,9 +52,11 @@ constexpr std::string_view VOLLEY_KEY = "volley";
 constexpr std::string_view BOSS_KEY = "boss";
 constexpr std::string_view LOOK_ITEM_KEY = "look_item";
 constexpr std::array GAMEPLAY_KEYS{
-    SIDE_KEY,    PILOT_KEY, HITBOX_KEY, MOTION_KEY,    BEHAVIOUR_KEY,
-    HEALTH_KEY,  SCORE_KEY, GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
-    FRAGILE_KEY, BURST_KEY, VOLLEY_KEY, BOSS_KEY,      LOOK_ITEM_KEY};
+    SIDE_KEY,     PILOT_KEY,  LAYER_KEY,     HITS_KEY,
+    HITBOX_KEY,   MOTION_KEY, BEHAVIOUR_KEY, HEALTH_KEY,
+    SCORE_KEY,    GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
+    FRAGILE_KEY,  BURST_KEY,  VOLLEY_KEY,    BOSS_KEY,
+    LOOK_ITEM_KEY};
 
 /** @brief The keys of `[gameplay.hitbox]`, in logical units: its size, and
  * where its center is from the Position of the body, 0 without them. */

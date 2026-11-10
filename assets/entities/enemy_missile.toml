@@ -11,6 +11,8 @@
 
 [gameplay]
 side = "enemy_missile"
+layer = "enemy_missile"
+hits = ["player"]
 pilot = "straight"
 
 [gameplay.hitbox]

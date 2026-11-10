@@ -12,6 +12,8 @@
 
 [gameplay]
 side = "enemy"
+layer = "enemy"
+hits = ["player"]
 pilot = "reaper"
 
 [gameplay.hitbox]

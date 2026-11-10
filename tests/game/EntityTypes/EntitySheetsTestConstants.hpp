@@ -9,6 +9,7 @@ namespace rtype::game::testing {
 /** @brief Sheets the catalog tests read, with today's values. */
 constexpr std::string_view DRIFTER_SHEET_TEXT = R"([gameplay]
 side = "enemy"
+layer = "enemy"
 pilot = "straight"
 [gameplay.hitbox]
 width = 96
@@ -26,6 +27,7 @@ projectile = "enemy_missile"
 )";
 constexpr std::string_view WEAVER_SHEET_TEXT = R"([gameplay]
 side = "enemy"
+layer = "enemy"
 pilot = "weave"
 [gameplay.hitbox]
 width = 96
@@ -44,6 +46,7 @@ projectile = "enemy_missile"
 )";
 constexpr std::string_view ENEMY_MISSILE_SHEET_TEXT = R"([gameplay]
 side = "enemy_missile"
+layer = "enemy_missile"
 pilot = "straight"
 [gameplay.hitbox]
 width = 32
@@ -57,6 +60,7 @@ heading = -1
 )";
 constexpr std::string_view PLAYER_MISSILE_SHEET_TEXT = R"([gameplay]
 side = "player_missile"
+layer = "player_missile"
 pilot = "straight"
 [gameplay.hitbox]
 width = 64
@@ -74,6 +78,7 @@ constexpr std::string_view ORB_NAME_IN_TESTS = "orb";
 constexpr std::string_view SHARD_NAME_IN_TESTS = "shard";
 constexpr std::string_view ORB_SHEET_TEXT = R"([gameplay]
 side = "enemy_missile"
+layer = "enemy_missile"
 pilot = "straight"
 [gameplay.hitbox]
 width = 36
@@ -91,6 +96,7 @@ shard = "shard"
 )";
 constexpr std::string_view SHARD_SHEET_TEXT = R"([gameplay]
 side = "enemy_missile"
+layer = "enemy_missile"
 pilot = "scatter"
 [gameplay.hitbox]
 width = 20
@@ -103,6 +109,7 @@ top_speed = 300
 constexpr std::string_view ORB_BURSTING_INTO_PLAYER_MISSILES_TEXT =
     R"([gameplay]
 side = "enemy_missile"
+layer = "enemy_missile"
 pilot = "straight"
 [gameplay.hitbox]
 width = 36
@@ -120,6 +127,7 @@ shard = "player_missile"
 )";
 constexpr std::string_view DRIFTER_THAT_BURSTS_TEXT = R"([gameplay]
 side = "enemy"
+layer = "enemy"
 pilot = "straight"
 [gameplay.hitbox]
 width = 96
@@ -143,6 +151,7 @@ constexpr std::uint8_t SHARDS_PER_ORB = 4;
 
 constexpr std::string_view DRIFTER_FIRING_PLAYER_MISSILES_TEXT = R"([gameplay]
 side = "enemy"
+layer = "enemy"
 pilot = "straight"
 [gameplay.hitbox]
 width = 96

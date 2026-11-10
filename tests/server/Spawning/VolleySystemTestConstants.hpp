@@ -16,6 +16,7 @@ constexpr std::string_view BROODER_NAME_IN_TESTS = "brooder";
 constexpr std::string_view MINION_NAME_IN_TESTS = "minion";
 constexpr std::string_view BROODER_SHEET_TEXT = R"([gameplay]
 side = "enemy"
+layer = "enemy"
 pilot = "straight"
 [gameplay.hitbox]
 width = 96
@@ -37,6 +38,7 @@ step_y = 50
 )";
 constexpr std::string_view MINION_SHEET_TEXT = R"([gameplay]
 side = "enemy"
+layer = "enemy"
 pilot = "straight"
 [gameplay.hitbox]
 width = 64
