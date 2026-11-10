@@ -1,11 +1,11 @@
 #include "BehaviourScripts.hpp"
-#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
 #include <exception>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
 #include <utility>
@@ -24,7 +24,7 @@
 #include "ScriptFunction.hpp"
 #include "ScriptLimits.hpp"
 #include "ScriptSource.hpp"
-#include "TimeConstants.hpp"
+#include "ScriptWait.hpp"
 #include "WholeNumberRange.hpp"
 #include "lua.h"
 #include "lualib.h"
@@ -87,16 +87,12 @@ BehaviourScripts& scriptsOf(lua_State* state) {
 /** @returns The ticks a wait of the milliseconds at its argument lasts, the
  * nearest whole number from 1; raises an error when it is no duration. */
 std::uint32_t waitTicksOf(lua_State* state) {
-  const double milliseconds =
-      luaL_checknumber(state, WAIT_MILLISECONDS_ARGUMENT);
-  if (!std::isfinite(milliseconds) || milliseconds < 0.0) {
+  const std::optional<std::uint32_t> ticks = engine::scriptWaitTicks(
+      luaL_checknumber(state, WAIT_MILLISECONDS_ARGUMENT));
+  if (!ticks.has_value()) {
     raise(state, "a wait is a finite number of milliseconds, from 0");
   }
-  const double ticks = std::round(
-      milliseconds * static_cast<double>(engine::SIMULATION_TICKS_PER_SECOND) /
-      SCRIPT_MILLISECONDS_PER_SECOND);
-  return static_cast<std::uint32_t>(std::clamp(
-      ticks, 1.0, double{std::numeric_limits<std::uint32_t>::max()}));
+  return *ticks;
 }
 
 /** @brief `behaviours.wait(ms, intent)`: yields @p intent to the step in

@@ -1,2 +1,2 @@
-target_sources(engine_tests PRIVATE ScriptMachineFixtures.cpp ScriptMachineTest.cpp)
+target_sources(engine_tests PRIVATE ScriptMachineFixtures.cpp ScriptMachineTest.cpp ScriptWaitTest.cpp)
 target_link_libraries(engine_tests PRIVATE rtype_engine_scripting)

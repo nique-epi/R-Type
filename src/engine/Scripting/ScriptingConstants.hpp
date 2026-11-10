@@ -44,6 +44,10 @@ constexpr const char* SCRIPT_OVER_BUDGET_MESSAGE =
 constexpr std::array<std::string_view, 2> UNSAFE_SCRIPT_GLOBALS{"getfenv",
                                                                 "setfenv"};
 
+/** @brief The milliseconds of a second, to turn the wait a script asks for
+ * into ticks. */
+constexpr double SCRIPT_MILLISECONDS_PER_SECOND = 1000.0;
+
 /** @brief The mark that makes Luau show a chunk name as written. */
 constexpr std::string_view SCRIPT_CHUNK_NAME_PREFIX = "=";
 
