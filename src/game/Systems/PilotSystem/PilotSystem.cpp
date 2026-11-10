@@ -7,6 +7,7 @@
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
+#include "EffectStarted.hpp"
 #include "EnemyActionStart.hpp"
 #include "EnemyActions.hpp"
 #include "Entity.hpp"
@@ -14,11 +15,15 @@
 #include "EventBus.hpp"
 #include "Health.hpp"
 #include "Intent.hpp"
+#include "NetworkIdentity.hpp"
 #include "Pilot.hpp"
 #include "Position.hpp"
+#include "SheetVisualNames.hpp"
+#include "ShownLook.hpp"
 #include "SteadyMotion.hpp"
 #include "Summoning.hpp"
 #include "TimeConstants.hpp"
+#include "VisualNames.hpp"
 
 namespace rtype::game {
 
@@ -135,6 +140,43 @@ void PilotSystem::passOnActionOf(engine::ComponentRegistry& components,
   }
 }
 
+void PilotSystem::announceEffectOf(engine::ComponentRegistry& components,
+                                   engine::Entity body, const Intent& intent) {
+  if (!intent.playsEffect.has_value()) {
+    return;
+  }
+  const VisualNames* const visuals = components.get<VisualNames>(body);
+  const NetworkIdentity* const identity = components.get<NetworkIdentity>(body);
+  if (visuals == nullptr || visuals->names == nullptr || identity == nullptr ||
+      !namesEffect(*visuals->names, *intent.playsEffect)) {
+    return;
+  }
+  events_.get().publish(EffectStarted{.networkId = identity->networkId,
+                                      .effect = *intent.playsEffect});
+}
+
+void PilotSystem::applyLookOf(engine::ComponentRegistry& components,
+                              engine::Entity body, const Intent& intent) {
+  if (!intent.showsLook.has_value()) {
+    return;
+  }
+  const VisualNames* const visuals = components.get<VisualNames>(body);
+  auto* const shown = components.get<ShownLook>(body);
+  if (visuals == nullptr || visuals->names == nullptr || shown == nullptr) {
+    return;
+  }
+  shown->number =
+      lookNumberOf(*visuals->names, *intent.showsLook).value_or(shown->number);
+}
+
+void PilotSystem::carryOutIntentOf(engine::ComponentRegistry& components,
+                                   engine::Entity body, const Intent& intent) {
+  passOnActionOf(components, body, intent);
+  announceEffectOf(components, body, intent);
+  applyLookOf(components, body, intent);
+  reshapeAsAsked(components, body, intent);
+}
+
 void PilotSystem::update(engine::ComponentRegistry& components,
                          engine::Duration elapsed) {
   collectShips(components);
@@ -165,8 +207,7 @@ void PilotSystem::update(engine::ComponentRegistry& components,
                                                 : current->since,
                 .nearestShip = nearestOf(ships_, *position)},
             components, body));
-        passOnActionOf(components, body, intent);
-        reshapeAsAsked(components, body, intent);
+        carryOutIntentOf(components, body, intent);
       });
 }
 

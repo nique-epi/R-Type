@@ -34,6 +34,7 @@
 #include "SessionDatagram.hpp"
 #include "ShipDirections.hpp"
 #include "ShipMotion.hpp"
+#include "ShownLook.hpp"
 #include "StateDelta.hpp"
 #include "StateEncoding.hpp"
 #include "StateSending.hpp"
@@ -259,11 +260,14 @@ network::WorldState WorldStateSender::capture(
           ++leftOutCount;
           return;
         }
-        state.entities.push_back(
-            network::EntityState{.entityId = identity.networkId,
-                                 .entityType = type->number,
-                                 .x = position.x,
-                                 .y = position.y});
+        const game::ShownLook* const look =
+            components.get<game::ShownLook>(entity);
+        state.entities.push_back(network::EntityState{
+            .entityId = identity.networkId,
+            .entityType = type->number,
+            .x = position.x,
+            .y = position.y,
+            .look = look == nullptr ? std::uint8_t{0} : look->number});
       });
   return state;
 }

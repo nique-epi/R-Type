@@ -10,6 +10,7 @@
 #include "Layer.hpp"
 #include "NetworkIdentity.hpp"
 #include "Playback.hpp"
+#include "ShownLooks.hpp"
 #include "Sprite.hpp"
 #include "SpriteAnimation.hpp"
 #include "SpriteFrame.hpp"
@@ -45,6 +46,10 @@ void EnemyScene::announce(std::uint32_t entityId, std::uint8_t attack,
                           network::EnemyActionPhase phase) {
   player_.apply(network::EnemyAction{
       .entityId = entityId, .attack = attack, .phase = phase});
+}
+
+void EnemyScene::showLook(std::uint8_t look) {
+  client::showLook(components_, enemy_, look);
 }
 
 void EnemyScene::play(engine::Duration elapsed) {

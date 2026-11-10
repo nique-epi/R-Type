@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics/Rect.hpp>
 #include <cstdint>
+#include <optional>
 #include "AnimatedSprite.hpp"
 #include "Animation.hpp"
 #include "EntityAppearance.hpp"
@@ -27,6 +28,13 @@ namespace rtype::client {
  * animation when the sheet has no enraged frames. */
 [[nodiscard]] Animation enragedIdleAnimationOf(
     const EntityAppearance& appearance);
+
+/** @returns The loop of the look numbered @p look of @p appearance, in a
+ * loop: appearance.looks[look - 1]; nothing for 0, the idle of the sheet
+ * itself, and for a number past the looks of the sheet, so a number read from
+ * the wire is bounded before use. */
+[[nodiscard]] std::optional<Animation> lookAnimationOf(
+    const EntityAppearance& appearance, std::uint8_t look);
 
 /**
  * @brief What code that creates an entity gives it: the idle animation of

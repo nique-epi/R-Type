@@ -2,6 +2,7 @@
 
 #include "BossArrival.hpp"
 #include "BossHealthChanged.hpp"
+#include "EffectStarted.hpp"
 #include "EnemyActionStarted.hpp"
 #include "EntityDestruction.hpp"
 #include "EntitySpawn.hpp"
@@ -27,6 +28,9 @@ namespace rtype::server {
 /** @returns An EnemyAction, guaranteed. */
 [[nodiscard]] EventMessage eventMessageOf(
     const game::EnemyActionStarted& event);
+
+/** @returns An EffectPlayed, guaranteed. */
+[[nodiscard]] EventMessage eventMessageOf(const game::EffectStarted& event);
 
 /** @returns A PlayerLeft with the number of the player and why it left,
  * guaranteed. */

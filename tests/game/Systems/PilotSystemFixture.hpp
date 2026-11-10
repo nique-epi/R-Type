@@ -9,6 +9,7 @@
 #include "ActionKey.hpp"
 #include "BehaviourRegistry.hpp"
 #include "ComponentRegistry.hpp"
+#include "EffectStarted.hpp"
 #include "EnemyActionStarted.hpp"
 #include "Entity.hpp"
 #include "EntityRegistry.hpp"
@@ -48,6 +49,10 @@ class PilotSystemFixture : public ::testing::Test {
    * once the bus delivered them. */
   [[nodiscard]] std::vector<EnemyActionStarted> takeStartedActions();
 
+  /** @returns The EffectStarted events published since the last call, once
+   * the bus delivered them. */
+  [[nodiscard]] std::vector<EffectStarted> takeStartedEffects();
+
   /** @returns The action @p enemy is in, nothing while it is idle or has no
    * CurrentAction. */
   [[nodiscard]] std::optional<ActionKey> actionOf(engine::Entity enemy);
@@ -65,6 +70,7 @@ class PilotSystemFixture : public ::testing::Test {
   engine::ComponentRegistry components_{entities_};
   engine::EventBus events_;
   std::vector<EnemyActionStarted> startedActions_;
+  std::vector<EffectStarted> startedEffects_;
   BehaviourRegistry behaviours_;
   PilotSystem pilots_;
   MovementSystem movement_;

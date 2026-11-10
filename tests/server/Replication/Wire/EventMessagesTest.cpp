@@ -1,8 +1,11 @@
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <string>
 #include "BossArrival.hpp"
 #include "BossHealthChanged.hpp"
 #include "BossStatus.hpp"
+#include "EffectPlayed.hpp"
+#include "EffectStarted.hpp"
 #include "EnemyAction.hpp"
 #include "EnemyActionStarted.hpp"
 #include "EnemyPhase.hpp"
@@ -63,6 +66,23 @@ TEST(EventMessagesTest, EncodesAnEnemyActionGuaranteed) {
       (network::EnemyAction{.entityId = MONSTER_NETWORK_ID,
                             .attack = SOME_ATTACK_NUMBER,
                             .phase = network::EnemyActionPhase::Strike}));
+}
+
+/**
+ * Given the events that need no number
+ * When a body playing the effect spark is encoded
+ * Then the message is a guaranteed EffectPlayed with its id and the name
+ */
+TEST(EventMessagesTest, EncodesANamedEffectGuaranteed) {
+  const EventMessage message = eventMessageOf(game::EffectStarted{
+      .networkId = MONSTER_NETWORK_ID, .effect = std::string{SPARK_EFFECT}});
+
+  EXPECT_EQ(message.message.type, network::MessageType::EffectPlayed);
+  EXPECT_TRUE(message.guaranteed);
+  EXPECT_EQ(
+      network::decodeMessage<network::EffectPlayed>(message.message.payload),
+      (network::EffectPlayed{.entityId = MONSTER_NETWORK_ID,
+                             .effect = std::string{SPARK_EFFECT}}));
 }
 
 /**

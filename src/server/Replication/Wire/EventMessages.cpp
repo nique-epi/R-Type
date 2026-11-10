@@ -2,6 +2,8 @@
 #include "BossArrival.hpp"
 #include "BossHealthChanged.hpp"
 #include "BossStatus.hpp"
+#include "EffectPlayed.hpp"
+#include "EffectStarted.hpp"
 #include "EnemyAction.hpp"
 #include "EnemyActionStarted.hpp"
 #include "EnemyPhase.hpp"
@@ -98,6 +100,13 @@ EventMessage eventMessageOf(const game::BossHealthChanged& event) {
                                               .health = event.points,
                                               .fullHealth = event.full,
                                               .stage = stage}),
+                      .guaranteed = true};
+}
+
+EventMessage eventMessageOf(const game::EffectStarted& event) {
+  const network::EffectPlayed message{.entityId = event.networkId,
+                                      .effect = event.effect};
+  return EventMessage{.message = network::encodedMessage(message),
                       .guaranteed = true};
 }
 

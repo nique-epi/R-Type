@@ -6,6 +6,7 @@
 #include <vector>
 #include "BossStatus.hpp"
 #include "DeltaWorldState.hpp"
+#include "EffectPlayed.hpp"
 #include "EnemyAction.hpp"
 #include "EntityDestroyed.hpp"
 #include "EntityMessage.hpp"
@@ -45,7 +46,7 @@ EntityMessageQueue::EntityMessageQueue(network::MessageDispatcher& dispatcher,
   registerStateHandlers(dispatcher);
   keepEachOf<network::EntitySpawned, network::EntityDestroyed,
              network::PlayerLeft, network::GameEvent, network::EnemyAction,
-             network::BossStatus>(
+             network::BossStatus, network::EffectPlayed>(
       dispatcher, [this](EntityMessage message) { keep(std::move(message)); });
   dispatcher.registerHandler<network::GameEnded>(
       [this](const network::MessageOrigin&, const network::GameEnded& ended) {

@@ -118,6 +118,11 @@ DrawnEntity effectAt(game::SpriteFrame firstFrame, game::Position position);
 [[nodiscard]] std::optional<game::CollisionBox> boxOfThe(
     engine::ComponentRegistry& components, game::EntityType type);
 
+/** @returns The look the entity of network id @p networkId shows, 0 when it
+ * shows its idle; nothing when the client has no such entity. */
+[[nodiscard]] std::optional<std::uint8_t> shownLookOf(
+    engine::ComponentRegistry& components, std::uint32_t networkId);
+
 /** @returns The EntitySpawned of the player missile PLAYER_MISSILE_ID at
  * PLAYER_MISSILE_POSITION, fired by player @p owner with SOME_FIRING_INPUT. */
 [[nodiscard]] network::EntitySpawned ownMissileSpawned(std::uint8_t owner);

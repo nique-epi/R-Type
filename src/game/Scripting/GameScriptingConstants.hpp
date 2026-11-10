@@ -45,6 +45,8 @@ constexpr const char* INTENT_ENDS_ACTION_KEY = "ends_action";
 constexpr const char* INTENT_JUMPS_TO_KEY = "jumps_to";
 constexpr const char* INTENT_COLLISION_BOX_KEY = "collision_box";
 constexpr const char* INTENT_TOP_SPEED_KEY = "top_speed";
+constexpr const char* INTENT_EFFECT_KEY = "effect";
+constexpr const char* INTENT_LOOK_KEY = "look";
 
 /** @brief The keys of a collision box in the intent. */
 constexpr const char* BOX_WIDTH_KEY = "width";

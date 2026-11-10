@@ -5,6 +5,7 @@
 #include <utility>
 #include "BossArrival.hpp"
 #include "BossHealthChanged.hpp"
+#include "EffectStarted.hpp"
 #include "EnemyActionStarted.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestruction.hpp"
@@ -58,6 +59,7 @@ GameEventBroadcaster::GameEventBroadcaster(GameEventBroadcasterParts parts)
   subscribeTo<game::EntityDestruction>(ENTITY_DESTRUCTION_EVENT_NAME);
   subscribeTo<game::EntityDamage>(ENTITY_DAMAGE_EVENT_NAME);
   subscribeTo<game::EnemyActionStarted>(ENEMY_ACTION_STARTED_EVENT_NAME);
+  subscribeTo<game::EffectStarted>(EFFECT_STARTED_EVENT_NAME);
   subscribeTo<game::BossArrival>(BOSS_ARRIVAL_EVENT_NAME);
   subscribeTo<game::BossHealthChanged>(BOSS_HEALTH_CHANGED_EVENT_NAME);
   subscribeTo<game::PlayerHit>(PLAYER_HIT_EVENT_NAME);

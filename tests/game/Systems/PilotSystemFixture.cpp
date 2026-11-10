@@ -9,6 +9,7 @@
 #include "BuiltInBehaviours.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
+#include "EffectStarted.hpp"
 #include "EnemyActionStarted.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
@@ -28,6 +29,9 @@ PilotSystemFixture::PilotSystemFixture()
       [this](const EnemyActionStarted& started) {
         startedActions_.push_back(started);
       });
+  events_.subscribe<EffectStarted>([this](const EffectStarted& started) {
+    startedEffects_.push_back(started);
+  });
 }
 
 engine::Entity PilotSystemFixture::addBody(
@@ -73,6 +77,13 @@ std::vector<EnemyActionStarted> PilotSystemFixture::takeStartedActions() {
   events_.dispatch();
   std::vector<EnemyActionStarted> taken;
   taken.swap(startedActions_);
+  return taken;
+}
+
+std::vector<EffectStarted> PilotSystemFixture::takeStartedEffects() {
+  events_.dispatch();
+  std::vector<EffectStarted> taken;
+  taken.swap(startedEffects_);
   return taken;
 }
 

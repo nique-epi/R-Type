@@ -15,6 +15,7 @@ using rtype::server::testing::bytesSentTo;
 using rtype::server::testing::client;
 using rtype::server::testing::DRIFTER_TYPE_NUMBER;
 using rtype::server::testing::FIRST_CLIENT_PORT;
+using rtype::server::testing::listedEntity;
 using rtype::server::testing::longestGapInTicks;
 using rtype::server::testing::MEASURED_ENTITIES;
 using rtype::server::testing::MEASURED_PLAYERS;
@@ -39,7 +40,7 @@ using rtype::server::testing::WorldStateSenderFixture;
  */
 TEST_F(WorldStateSenderFixture, BandwidthGrowsInProportionToTheStateRate) {
   for (std::uint32_t id = 1; id <= MEASURED_ENTITIES; ++id) {
-    addNetworkedEntity(DRIFTER_TYPE_NUMBER, SHIP_POSITION, id);
+    addNetworkedEntity(listedEntity(id, DRIFTER_TYPE_NUMBER, SHIP_POSITION));
   }
   for (std::size_t player = 0; player < MEASURED_PLAYERS; ++player) {
     connect(static_cast<std::uint16_t>(FIRST_CLIENT_PORT + player),
@@ -73,7 +74,7 @@ TEST_F(WorldStateSenderFixture, BandwidthGrowsInProportionToTheStateRate) {
  */
 TEST_F(WorldStateSenderFixture, UpdateGapShrinksAsTheStateRateGrows) {
   for (std::uint32_t id = 1; id <= MEASURED_ENTITIES; ++id) {
-    addNetworkedEntity(DRIFTER_TYPE_NUMBER, SHIP_POSITION, id);
+    addNetworkedEntity(listedEntity(id, DRIFTER_TYPE_NUMBER, SHIP_POSITION));
   }
   connect(FIRST_CLIENT_PORT, SESSION_TOKEN);
   const auto lastTick = static_cast<std::uint32_t>(

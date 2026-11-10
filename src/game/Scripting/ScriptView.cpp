@@ -12,6 +12,7 @@
 #include "ActionKey.hpp"
 #include "BehaviourView.hpp"
 #include "CollisionBox.hpp"
+#include "ContentName.hpp"
 #include "Direction.hpp"
 #include "DirectionConstants.hpp"
 #include "EnemyPhase.hpp"
@@ -81,6 +82,41 @@ bool flagAt(lua_State* state, int table, const char* key) {
   const bool flag = lua_isboolean(state, -1) && lua_toboolean(state, -1) != 0;
   lua_pop(state, 1);
   return flag;
+}
+
+/** @returns The string @p key of @p table holds; nothing for any other value.
+ */
+std::optional<std::string> textAt(lua_State* state, int table,
+                                  const char* key) {
+  std::optional<std::string> text;
+  if (lua_getfield(state, table, key) == LUA_TSTRING) {
+    std::size_t length = 0;
+    const char* const read = lua_tolstring(state, -1, &length);
+    text = std::string{read, length};
+  }
+  lua_pop(state, 1);
+  return text;
+}
+
+/** @returns The effect @p table names, when it is a name of the content
+ * (isContentName()); nothing otherwise. */
+std::optional<std::string> effectAt(lua_State* state, int table) {
+  std::optional<std::string> effect = textAt(state, table, INTENT_EFFECT_KEY);
+  if (effect.has_value() && !identifiers::isContentName(*effect)) {
+    return std::nullopt;
+  }
+  return effect;
+}
+
+/** @returns The look @p table names, when it is a name of the content or the
+ * empty name, which asks for the idle loop of the sheet; nothing otherwise. */
+std::optional<std::string> lookAt(lua_State* state, int table) {
+  std::optional<std::string> look = textAt(state, table, INTENT_LOOK_KEY);
+  if (look.has_value() && !look->empty() &&
+      !identifiers::isContentName(*look)) {
+    return std::nullopt;
+  }
+  return look;
 }
 
 std::optional<Position> pointAt(lua_State* state, int table, const char* key) {
@@ -215,6 +251,8 @@ Intent intentAt(lua_State* state, int index) {
   intent.jumpsTo = pointAt(state, table, INTENT_JUMPS_TO_KEY);
   intent.resizesTo = boxAt(state, table);
   intent.topSpeedTo = topSpeedAt(state, table);
+  intent.playsEffect = effectAt(state, table);
+  intent.showsLook = lookAt(state, table);
   return intent;
 }
 

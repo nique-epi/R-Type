@@ -44,4 +44,12 @@ constexpr game::SpriteFrame SECOND_RAGE_FRAME{
 constexpr game::SpriteFrame ENRAGED_IDLE_FRAME{
     .left = 10, .top = 0, .width = 8, .height = 8};
 
+/** @brief The one look of the enemy: its number, the frame it shows, and a
+ * number past the looks of the sheet. */
+constexpr std::uint8_t CRACKED_LOOK_NUMBER = 1;
+constexpr game::SpriteFrame LOOK_FRAME{
+    .left = 20, .top = 0, .width = 8, .height = 8};
+constexpr std::uint8_t LOOK_NUMBER_PAST_THE_SHEET = 2;
+constexpr std::uint8_t BASE_LOOK_NUMBER = 0;
+
 }  // namespace rtype::client::testing
