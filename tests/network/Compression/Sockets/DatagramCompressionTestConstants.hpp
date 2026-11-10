@@ -51,4 +51,10 @@ constexpr std::size_t INCOMPRESSIBLE_BODY_SIZE = 200;
  */
 constexpr std::string_view REPEATED_NICKNAME = "AAAAAAAAAAAAAAAA";
 
+/**
+ * @brief The zero bytes of a payload zstd shortens, whatever the type of its
+ * message.
+ */
+constexpr std::size_t REPEATED_PAYLOAD_SIZE = 200;
+
 }  // namespace rtype::network::testing
