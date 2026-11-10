@@ -8,7 +8,7 @@
 #include "Health.hpp"
 #include "Intent.hpp"
 #include "LuauEntityHandleTestConstants.hpp"
-#include "LuauScriptedBodyFixture.hpp"
+#include "LuauScriptedBodies.hpp"
 #include "Position.hpp"
 
 using rtype::engine::Entity;
@@ -26,12 +26,13 @@ using testing::IsEmpty;
  * When a body steers with it twice
  * Then its second step counts 2
  */
-TEST_F(LuauScriptedBodyFixture, TheDataOfABodyLastsFromStepToStep) {
-  load(COUNTING_SCRIPT);
-  const Entity body = addBody();
-  static_cast<void>(steer(HANDLE_BEHAVIOUR, body));
+TEST(LuauEntityHandle, TheDataOfABodyLastsFromStepToStep) {
+  LuauScriptedBodies bodies;
+  bodies.load(COUNTING_SCRIPT);
+  const Entity body = bodies.addBody();
+  static_cast<void>(bodies.steer(HANDLE_BEHAVIOUR, body));
 
-  const Intent intent = steer(HANDLE_BEHAVIOUR, body);
+  const Intent intent = bodies.steer(HANDLE_BEHAVIOUR, body);
 
   EXPECT_EQ(intent.topSpeedTo.value_or(0.0F), AFTER_TWO_STEPS);
 }
@@ -41,14 +42,15 @@ TEST_F(LuauScriptedBodyFixture, TheDataOfABodyLastsFromStepToStep) {
  * When a body steers with it twice, then another body once
  * Then the other body counts 1
  */
-TEST_F(LuauScriptedBodyFixture, EachBodyHasDataOfItsOwn) {
-  load(COUNTING_SCRIPT);
-  const Entity first = addBody();
-  const Entity second = addBody();
-  static_cast<void>(steer(HANDLE_BEHAVIOUR, first));
-  static_cast<void>(steer(HANDLE_BEHAVIOUR, first));
+TEST(LuauEntityHandle, EachBodyHasDataOfItsOwn) {
+  LuauScriptedBodies bodies;
+  bodies.load(COUNTING_SCRIPT);
+  const Entity first = bodies.addBody();
+  const Entity second = bodies.addBody();
+  static_cast<void>(bodies.steer(HANDLE_BEHAVIOUR, first));
+  static_cast<void>(bodies.steer(HANDLE_BEHAVIOUR, first));
 
-  const Intent intent = steer(HANDLE_BEHAVIOUR, second);
+  const Intent intent = bodies.steer(HANDLE_BEHAVIOUR, second);
 
   EXPECT_EQ(intent.topSpeedTo.value_or(0.0F), AFTER_ONE_STEP);
 }
@@ -58,16 +60,18 @@ TEST_F(LuauScriptedBodyFixture, EachBodyHasDataOfItsOwn) {
  * When another body reads the data of that handle
  * Then the behaviour fails, saying the body is gone
  */
-TEST_F(LuauScriptedBodyFixture, TheHandleOfAnEndedBodyIsRefused) {
-  load(DATA_KEEPING_SCRIPT);
-  const Entity first = addBody();
-  const Entity second = addBody();
-  static_cast<void>(steer(HANDLE_BEHAVIOUR, first));
-  endBody(first);
+TEST(LuauEntityHandle, TheHandleOfAnEndedBodyIsRefused) {
+  LuauScriptedBodies bodies;
+  bodies.load(DATA_KEEPING_SCRIPT);
+  const Entity first = bodies.addBody();
+  const Entity second = bodies.addBody();
+  static_cast<void>(bodies.steer(HANDLE_BEHAVIOUR, first));
+  bodies.endBody(first);
 
-  static_cast<void>(steer(HANDLE_BEHAVIOUR, second));
+  static_cast<void>(bodies.steer(HANDLE_BEHAVIOUR, second));
 
-  EXPECT_THAT(failures().messages, ElementsAre(HasSubstr(GONE_BODY_FAILURE)));
+  EXPECT_THAT(bodies.failures().messages,
+              ElementsAre(HasSubstr(GONE_BODY_FAILURE)));
 }
 
 /**
@@ -75,15 +79,16 @@ TEST_F(LuauScriptedBodyFixture, TheHandleOfAnEndedBodyIsRefused) {
  * When another body reads the data of that handle
  * Then nothing fails
  */
-TEST_F(LuauScriptedBodyFixture, TheDataOfALivingBodyStaysReadable) {
-  load(DATA_KEEPING_SCRIPT);
-  const Entity first = addBody();
-  const Entity second = addBody();
-  static_cast<void>(steer(HANDLE_BEHAVIOUR, first));
+TEST(LuauEntityHandle, TheDataOfALivingBodyStaysReadable) {
+  LuauScriptedBodies bodies;
+  bodies.load(DATA_KEEPING_SCRIPT);
+  const Entity first = bodies.addBody();
+  const Entity second = bodies.addBody();
+  static_cast<void>(bodies.steer(HANDLE_BEHAVIOUR, first));
 
-  static_cast<void>(steer(HANDLE_BEHAVIOUR, second));
+  static_cast<void>(bodies.steer(HANDLE_BEHAVIOUR, second));
 
-  EXPECT_THAT(failures().messages, IsEmpty());
+  EXPECT_THAT(bodies.failures().messages, IsEmpty());
 }
 
 /**
@@ -91,16 +96,18 @@ TEST_F(LuauScriptedBodyFixture, TheDataOfALivingBodyStaysReadable) {
  * When another body reads the health of that handle
  * Then the behaviour fails, saying components are only reached in their step
  */
-TEST_F(LuauScriptedBodyFixture, TheComponentsOfAnotherBodyAreRefused) {
-  load(HEALTH_KEEPING_SCRIPT);
-  const Entity first = addBody();
-  const Entity second = addBody();
-  components().add(first, Health{.points = 1, .full = 1});
-  static_cast<void>(steer(HANDLE_BEHAVIOUR, first));
+TEST(LuauEntityHandle, TheComponentsOfAnotherBodyAreRefused) {
+  LuauScriptedBodies bodies;
+  bodies.load(HEALTH_KEEPING_SCRIPT);
+  const Entity first = bodies.addBody();
+  const Entity second = bodies.addBody();
+  bodies.components().add(first, Health{.points = 1, .full = 1});
+  static_cast<void>(bodies.steer(HANDLE_BEHAVIOUR, first));
 
-  static_cast<void>(steer(HANDLE_BEHAVIOUR, second));
+  static_cast<void>(bodies.steer(HANDLE_BEHAVIOUR, second));
 
-  EXPECT_THAT(failures().messages, ElementsAre(HasSubstr(OTHER_BODY_FAILURE)));
+  EXPECT_THAT(bodies.failures().messages,
+              ElementsAre(HasSubstr(OTHER_BODY_FAILURE)));
 }
 
 /**
@@ -108,13 +115,14 @@ TEST_F(LuauScriptedBodyFixture, TheComponentsOfAnotherBodyAreRefused) {
  * When a body steers with it
  * Then the behaviour fails, saying the data cannot be replaced
  */
-TEST_F(LuauScriptedBodyFixture, TheDataOfABodyIsNeverReplaced) {
-  load(DATA_REPLACING_SCRIPT);
-  const Entity body = addBody();
+TEST(LuauEntityHandle, TheDataOfABodyIsNeverReplaced) {
+  LuauScriptedBodies bodies;
+  bodies.load(DATA_REPLACING_SCRIPT);
+  const Entity body = bodies.addBody();
 
-  static_cast<void>(steer(HANDLE_BEHAVIOUR, body));
+  static_cast<void>(bodies.steer(HANDLE_BEHAVIOUR, body));
 
-  EXPECT_THAT(failures().messages,
+  EXPECT_THAT(bodies.failures().messages,
               ElementsAre(HasSubstr(DATA_REPLACED_FAILURE)));
 }
 
@@ -140,12 +148,13 @@ TEST(LuauEntityHandle, AWriteOutsideAGameIsRefused) {
  * When a body steers with it until its wait ends
  * Then it fires
  */
-TEST_F(LuauScriptedBodyFixture, AWaitReturnsTheSameHandle) {
-  load(WAITING_SCRIPT);
-  const Entity body = addBody();
-  static_cast<void>(steer(HANDLE_BEHAVIOUR, body));
+TEST(LuauEntityHandle, AWaitReturnsTheSameHandle) {
+  LuauScriptedBodies bodies;
+  bodies.load(WAITING_SCRIPT);
+  const Entity body = bodies.addBody();
+  static_cast<void>(bodies.steer(HANDLE_BEHAVIOUR, body));
 
-  const Intent intent = steer(HANDLE_BEHAVIOUR, body);
+  const Intent intent = bodies.steer(HANDLE_BEHAVIOUR, body);
 
   EXPECT_TRUE(intent.shooting);
 }

@@ -1,10 +1,6 @@
 #pragma once
 
-#include <cstdint>
 #include <string_view>
-
-/** @brief The network id the orders of these tests give a body. */
-constexpr std::uint32_t FIRST_ORDERED_ID = 1;
 
 /** @brief The behaviour of the scripts of these tests. */
 constexpr std::string_view HANDLE_BEHAVIOUR = "handle";

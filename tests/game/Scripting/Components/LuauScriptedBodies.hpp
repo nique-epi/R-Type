@@ -1,6 +1,5 @@
 #pragma once
 
-#include <gtest/gtest.h>
 #include <cstdint>
 #include <memory>
 #include <string_view>
@@ -17,9 +16,9 @@
 
 /** @brief The scripts of a test, steering bodies that live in components of
  * their own, as the pilots of a game do. */
-class LuauScriptedBodyFixture : public ::testing::Test {
- protected:
-  LuauScriptedBodyFixture();
+class LuauScriptedBodies {
+ public:
+  LuauScriptedBodies();
 
   /** @brief Runs @p script and keeps the behaviours it registers. */
   void load(std::string_view script);
