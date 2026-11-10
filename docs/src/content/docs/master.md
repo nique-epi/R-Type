@@ -73,7 +73,7 @@ The storage starts before the HTTP API, so a database the master cannot open sto
 `GET /api/health` answers 200 with the version of the master, `MASTER_VERSION`, the version of `project()` in the root `CMakeLists.txt`:
 
 ```json
-{"version":"1.0.0"}
+{"version":"1.1.0"}
 ```
 
 - **Errors:** an answer of 400 or more without a body gets a problem document of RFC 9457, `application/problem+json`, whose `title` is the phrase of its status, with the `detail` of the route when it gives one: `{"status":404,"title":"Not Found"}` for a path no route answers.
