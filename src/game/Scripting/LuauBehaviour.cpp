@@ -19,6 +19,7 @@
 #include "LuauBehaviourParts.hpp"
 #include "LuauBehaviourState.hpp"
 #include "LuauBehaviourTables.hpp"
+#include "LuauEventSubscriptions.hpp"
 #include "LuauProtectedCall.hpp"
 #include "LuauResumeContext.hpp"
 #include "LuauResumeResult.hpp"
@@ -93,6 +94,16 @@ std::uint32_t ticksToWaitAfter(engine::LuauResumeResult end,
   return *context.waitTicks;
 }
 
+/** @throws engine::ScriptException, holding why, when a function of
+ * @p subscriptions failed since the last step of its entity. */
+void refuseAfterAFailedSubscribedFunction(
+    const LuauEventSubscriptions& subscriptions) {
+  const std::optional<std::string>& failure = subscriptions.failure();
+  if (failure.has_value()) {
+    throw engine::ScriptException(*failure);
+  }
+}
+
 }  // namespace
 
 LuauBehaviour::LuauBehaviour(LuauBehaviourParts parts)
@@ -125,6 +136,7 @@ Intent LuauBehaviour::steer(const BehaviourView& view) const {
     behaviourState = std::move(fresh);
   }
   try {
+    refuseAfterAFailedSubscribedFunction(found->subscriptions);
     return resumeOrHold(*found, view);
   } catch (const engine::ScriptException& error) {
     stopOnFailure(*found, error);
@@ -155,11 +167,11 @@ Intent LuauBehaviour::resumeOrHold(LuauBehaviourState& behaviourState,
       engine::LuauProtectedWork{.run = pushResumeInputs, .context = &start});
   LuauResumeContext& context = parts_.resumeContext.get();
   context.resumedThread = start.thread;
-  context.resumedBehaviourState = &behaviourState;
   context.waitTicks.reset();
+  parts_.eventBindings.get().setSubscriber(&behaviourState.subscriptions);
   const engine::LuauResumeResult end = machine.resume(start.thread, 1);
   context.resumedThread = nullptr;
-  context.resumedBehaviourState = nullptr;
+  parts_.eventBindings.get().setSubscriber(nullptr);
   const std::uint32_t waitTicks = ticksToWaitAfter(end, context);
   behaviourState.waiting = end == engine::LuauResumeResult::Yielded;
   ResumeOutputs result{.machine = machine.state(), .thread = start.thread};
@@ -172,8 +184,11 @@ Intent LuauBehaviour::resumeOrHold(LuauBehaviourState& behaviourState,
 void LuauBehaviour::stopOnFailure(LuauBehaviourState& behaviourState,
                                   const engine::ScriptException& error) const {
   parts_.resumeContext.get().resumedThread = nullptr;
-  parts_.resumeContext.get().resumedBehaviourState = nullptr;
-  behaviourState.stopScript();
+  parts_.eventBindings.get().setSubscriber(nullptr);
+  behaviourState.subscriptions.clear();
+  behaviourState.thread.reset();
+  behaviourState.waiting = false;
+  behaviourState.heldIntent.stop();
   if (!failureReported_) {
     failureReported_ = true;
     parts_.reportFailure("the behaviour " + parts_.name +

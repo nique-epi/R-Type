@@ -27,14 +27,14 @@ namespace rtype::game {
  * call returns a fresh view on the tick the wait ends. A wait costs no step.
  *
  * A step that fails (an error of the script, its memory or its time budget),
- * or a function the body subscribed to an event that fails (see
- * LuauEventBindings), stops the script of that body for good and is reported
- * once for the behaviour; the body stays still and is removed from the game, so
- * a body frozen out of reach cannot hold a level open. A removal the game
- * refuses (past the removals of a tick) is asked again at the next tick. The
- * other bodies go on. Once the budget of a tick is spent, the steps due wait
- * for the next tick, the bodies wanting what they wanted. Neither copied nor
- * moved: its settings point into its own names.
+ * or a function the body subscribed to an event that failed since its last
+ * step (see LuauEventBindings), stops the script of that body for good and is
+ * reported once for the behaviour; the body stays still and is removed from the
+ * game, so a body frozen out of reach cannot hold a level open. A removal the
+ * game refuses (past the removals of a tick) is asked again at the next tick.
+ * The other bodies go on. Once the budget of a tick is spent, the steps due
+ * wait for the next tick, the bodies wanting what they wanted. Neither copied
+ * nor moved: its settings point into its own names.
  */
 class LuauBehaviour final : public IBehaviour {
  public:

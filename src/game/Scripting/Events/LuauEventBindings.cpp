@@ -18,11 +18,10 @@
 #include "EntityDestruction.hpp"
 #include "EventBus.hpp"
 #include "GameScriptingConstants.hpp"
-#include "LuauBehaviourState.hpp"
-#include "LuauEventBindingsParts.hpp"
-#include "LuauEventListener.hpp"
+#include "LuauEventConstants.hpp"
 #include "LuauEventSubscription.hpp"
 #include "LuauEventSubscriptionParts.hpp"
+#include "LuauEventSubscriptions.hpp"
 #include "LuauProtectedCall.hpp"
 #include "LuauResumeResult.hpp"
 #include "LuauThread.hpp"
@@ -161,11 +160,11 @@ std::vector<ScriptEventField> publishedFields(lua_State* state) {
 /** @returns Why @p subscriber, the entity that steps, may not subscribe one
  * more function to @p bus; nullptr when it may. */
 const char* subscriptionRefusal(const engine::EventBus* bus,
-                                const LuauBehaviourState* subscriber) {
+                                const LuauEventSubscriptions* subscriber) {
   if (bus == nullptr || subscriber == nullptr) {
     return SUBSCRIPTION_OUTSIDE_ENTITY_MESSAGE;
   }
-  if (subscriber->subscriptions.size() >= MAXIMUM_SUBSCRIPTIONS_PER_ENTITY) {
+  if (subscriber->full()) {
     return TOO_MANY_SUBSCRIPTIONS_MESSAGE;
   }
   return nullptr;
@@ -191,14 +190,14 @@ int publishEvent(lua_State* state) {
 
 }  // namespace
 
-LuauEventBindings::LuauEventBindings(LuauEventBindingsParts parts)
-    : parts_(std::move(parts)) {
+LuauEventBindings::LuauEventBindings(engine::ScriptMachine& machine)
+    : machine_(machine) {
   const std::array functions{
       engine::ScriptFunction{.name = ON_FUNCTION_NAME,
                              .function = subscribeFunction},
       engine::ScriptFunction{.name = EMIT_FUNCTION_NAME,
                              .function = publishEvent}};
-  parts_.machine.get().expose(EVENT_BUS_TABLE, functions, this);
+  machine.expose(EVENT_BUS_TABLE, functions, this);
 }
 
 void LuauEventBindings::attach(engine::EventBus& bus) { bus_ = &bus; }
@@ -209,20 +208,20 @@ void LuauEventBindings::detach(const engine::EventBus& bus) noexcept {
   }
 }
 
+void LuauEventBindings::setSubscriber(LuauEventSubscriptions* subscriber) {
+  subscriber_ = subscriber;
+}
+
 void LuauEventBindings::subscribe(const std::string& name, int function) {
-  lua_State* const machine = parts_.machine.get().state();
-  LuauBehaviourState* const subscriber =
-      parts_.resumeContext.get().resumedBehaviourState;
-  const char* const refusal = subscriptionRefusal(bus_, subscriber);
+  lua_State* const machine = machine_.get().state();
+  const char* const refusal = subscriptionRefusal(bus_, subscriber_);
   if (refusal != nullptr) {
     lua_unref(machine, function);
     throw engine::ScriptException(refusal);
   }
-  const engine::SubscriptionHandle handle = subscribeNamed(
-      name, LuauEventListener{.subscriber = *subscriber, .function = function});
-  subscriber->subscriptions.push_back(std::make_unique<LuauEventSubscription>(
+  subscriber_->add(std::make_unique<LuauEventSubscription>(
       LuauEventSubscriptionParts{.bus = *bus_,
-                                 .handle = handle,
+                                 .handle = subscribeNamed(name, function),
                                  .machine = machine,
                                  .function = function}));
 }
@@ -240,43 +239,46 @@ void LuauEventBindings::publish(ScriptEvent event) {
 
 template <typename Event>
 engine::SubscriptionHandle LuauEventBindings::subscribeTo(
-    LuauEventListener listener) {
-  return bus_->subscribe<Event>([this, listener](const Event& event) {
-    deliver(listener, fieldsOf(event));
-  });
+    LuauEventSubscriptions& subscriber, int function) {
+  return bus_->subscribe<Event>(
+      [this, &subscriber, function](const Event& event) {
+        deliver(subscriber, function, fieldsOf(event));
+      });
 }
 
 engine::SubscriptionHandle LuauEventBindings::subscribeNamed(
-    const std::string& name, LuauEventListener listener) {
+    const std::string& name, int function) {
+  LuauEventSubscriptions& subscriber = *subscriber_;
   if (name == ENTITY_DESTROYED_EVENT_NAME) {
-    return subscribeTo<EntityDestruction>(listener);
+    return subscribeTo<EntityDestruction>(subscriber, function);
   }
   if (name == ENTITY_DAMAGED_EVENT_NAME) {
-    return subscribeTo<EntityDamage>(listener);
+    return subscribeTo<EntityDamage>(subscriber, function);
   }
   if (name == ENEMY_ACTION_STARTED_EVENT_NAME) {
-    return subscribeTo<EnemyActionStarted>(listener);
+    return subscribeTo<EnemyActionStarted>(subscriber, function);
   }
   if (name == BOSS_HEALTH_CHANGED_EVENT_NAME) {
-    return subscribeTo<BossHealthChanged>(listener);
+    return subscribeTo<BossHealthChanged>(subscriber, function);
   }
   return bus_->subscribe<ScriptEvent>(
-      [this, heard = name, listener](const ScriptEvent& event) {
+      [this, heard = name, &subscriber, function](const ScriptEvent& event) {
         if (event.name == heard) {
-          deliver(listener, event.fields);
+          deliver(subscriber, function, event.fields);
         }
       });
 }
 
-void LuauEventBindings::deliver(const LuauEventListener& listener,
+void LuauEventBindings::deliver(LuauEventSubscriptions& subscriber,
+                                int function,
                                 std::span<const ScriptEventField> fields) {
-  engine::ScriptMachine& machine = parts_.machine.get();
+  engine::ScriptMachine& machine = machine_.get();
   if (!machine.hasTickBudget()) {
     return;
   }
   PendingDelivery pending{.thread = deliveryThread_,
                           .machine = machine.state(),
-                          .function = listener.function,
+                          .function = function,
                           .fields = fields};
   try {
     engine::runProtected(
@@ -284,23 +286,19 @@ void LuauEventBindings::deliver(const LuauEventListener& listener,
         engine::LuauProtectedWork{.run = pushDelivery, .context = &pending});
     if (machine.resume(pending.deliveryThread, 1) ==
         engine::LuauResumeResult::Yielded) {
-      stopSubscriber(listener.subscriber, WAIT_IN_SUBSCRIBED_FUNCTION_MESSAGE);
+      failSubscriber(subscriber, WAIT_IN_SUBSCRIBED_FUNCTION_MESSAGE);
     } else {
       lua_settop(pending.deliveryThread, 0);
     }
   } catch (const engine::ScriptException& error) {
-    stopSubscriber(listener.subscriber, error.what());
+    failSubscriber(subscriber, error.what());
   }
 }
 
-void LuauEventBindings::stopSubscriber(LuauBehaviourState& subscriber,
+void LuauEventBindings::failSubscriber(LuauEventSubscriptions& subscriber,
                                        const std::string& reason) {
   deliveryThread_.reset();
-  subscriber.stopScript();
-  if (!failureReported_) {
-    failureReported_ = true;
-    parts_.reportFailure(SUBSCRIBED_FUNCTION_FAILURE_PREFIX + reason);
-  }
+  subscriber.fail(SUBSCRIBED_FUNCTION_FAILURE_PREFIX + reason);
 }
 
 }  // namespace rtype::game

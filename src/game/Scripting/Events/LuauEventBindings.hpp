@@ -1,14 +1,15 @@
 #pragma once
 
+#include <functional>
 #include <optional>
 #include <span>
 #include <string>
 #include "EventBus.hpp"
-#include "LuauEventBindingsParts.hpp"
-#include "LuauEventListener.hpp"
+#include "LuauEventSubscriptions.hpp"
 #include "LuauThread.hpp"
 #include "ScriptEvent.hpp"
 #include "ScriptEventField.hpp"
+#include "ScriptMachine.hpp"
 #include "SubscriptionHandle.hpp"
 
 namespace rtype::game {
@@ -24,21 +25,22 @@ namespace rtype::game {
  * when the game loop dispatches. The name is one of GAME_EVENT_NAMES, whose
  * function reads a table of the event, or any other name, whose function
  * reads the values a script published under it. The subscription is kept in
- * the behaviour state of its entity and ends with it.
+ * the LuauEventSubscriptions of its entity and ends with them.
  *
  * A subscribed function costs a step of the machine, counted in the budget of
- * the tick. One that fails, waits or runs past its budget stops the script of
- * its entity as a failed step does, and is reported once; the subscribers
- * after it are still called. Once the budget of a tick is spent, an event
- * reaches no function, which also ends events that answer each other.
+ * the tick. When one fails, waits or runs past its budget, every subscription
+ * of its entity ends and keeps why (LuauEventSubscriptions::fail()), for
+ * whoever runs the script of that entity to stop it; the subscribers after it
+ * are still called. Once the budget of a tick is spent, an event reaches no
+ * function, which also ends events that answer each other.
  *
  * Neither copied nor moved: the machine reaches it by its address.
  */
 class LuauEventBindings {
  public:
-  /** @brief Exposes the table `bus` on the machine of @p parts, which must
-   * not have run a script yet. */
-  explicit LuauEventBindings(LuauEventBindingsParts parts);
+  /** @brief Exposes the table `bus` on @p machine, which must not have run a
+   * script yet and must outlive this object. */
+  explicit LuauEventBindings(engine::ScriptMachine& machine);
   LuauEventBindings(const LuauEventBindings&) = delete;
   LuauEventBindings& operator=(const LuauEventBindings&) = delete;
   LuauEventBindings(LuauEventBindings&&) = delete;
@@ -51,6 +53,10 @@ class LuauEventBindings {
 
   /** @brief Forgets @p bus, unless another took its place. */
   void detach(const engine::EventBus& bus) noexcept;
+
+  /** @brief Names the subscriptions of the entity whose script steps, the one
+   * `bus.on` subscribes for; nullptr once its step is over. */
+  void setSubscriber(LuauEventSubscriptions* subscriber);
 
   /**
    * @brief Subscribes, for the entity that steps, the function whose
@@ -71,20 +77,20 @@ class LuauEventBindings {
  private:
   template <typename Event>
   [[nodiscard]] engine::SubscriptionHandle subscribeTo(
-      LuauEventListener listener);
+      LuauEventSubscriptions& subscriber, int function);
   [[nodiscard]] engine::SubscriptionHandle subscribeNamed(
-      const std::string& name, LuauEventListener listener);
-  void deliver(const LuauEventListener& listener,
+      const std::string& name, int function);
+  void deliver(LuauEventSubscriptions& subscriber, int function,
                std::span<const ScriptEventField> fields);
-  void stopSubscriber(LuauBehaviourState& subscriber,
+  void failSubscriber(LuauEventSubscriptions& subscriber,
                       const std::string& reason);
 
-  LuauEventBindingsParts parts_;
+  std::reference_wrapper<engine::ScriptMachine> machine_;
   engine::EventBus* bus_{nullptr};
+  LuauEventSubscriptions* subscriber_{nullptr};
   /** The thread every subscribed function runs on, one at a time; empty
    * before the first one and after one that failed. */
   std::optional<engine::LuauThread> deliveryThread_;
-  bool failureReported_{false};
 };
 
 }  // namespace rtype::game

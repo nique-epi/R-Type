@@ -6,11 +6,11 @@
 #include "EngineException.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestruction.hpp"
-#include "GameScriptingConstants.hpp"
 #include "Intent.hpp"
 #include "LuauBehaviourFixture.hpp"
 #include "LuauEventBindingsFixture.hpp"
 #include "LuauEventBindingsTestConstants.hpp"
+#include "LuauEventConstants.hpp"
 #include "ScriptEvent.hpp"
 #include "ScriptEventField.hpp"
 
@@ -175,8 +175,8 @@ TEST_F(LuauEventBindingsFixture, StopsTheScriptOfAnEntityWhoseFunctionFails) {
 
 /**
  * Given a body whose subscribed function fails
- * When the event is dispatched twice
- * Then the failure is reported once: the function is no longer subscribed
+ * When the event is dispatched and the body steered, twice
+ * Then the failure is reported once, as the failure of its behaviour
  */
 TEST_F(LuauEventBindingsFixture, ReportsAFailedFunctionOnce) {
   load(DAMAGE_SCRIPT);
@@ -185,8 +185,10 @@ TEST_F(LuauEventBindingsFixture, ReportsAFailedFunctionOnce) {
 
   bus().publish(EntityDamage{.networkId = DAMAGED_ENTITY_ID});
   bus().dispatch();
+  static_cast<void>(steer(FAULTY_BEHAVIOUR, body));
   bus().publish(EntityDamage{.networkId = DAMAGED_ENTITY_ID});
   bus().dispatch();
+  static_cast<void>(steer(FAULTY_BEHAVIOUR, body));
 
   EXPECT_THAT(failures().messages,
               ElementsAre(HasSubstr(FAILED_SUBSCRIBED_FUNCTION_REPORT)));
@@ -194,7 +196,7 @@ TEST_F(LuauEventBindingsFixture, ReportsAFailedFunctionOnce) {
 
 /**
  * Given a body whose subscribed function waits
- * When the event is dispatched
+ * When the event is dispatched and the body steered
  * Then that is a failure, which says a subscribed function cannot wait
  */
 TEST_F(LuauEventBindingsFixture, RefusesASubscribedFunctionThatWaits) {
@@ -204,6 +206,7 @@ TEST_F(LuauEventBindingsFixture, RefusesASubscribedFunctionThatWaits) {
 
   bus().publish(EntityDamage{.networkId = DAMAGED_ENTITY_ID});
   bus().dispatch();
+  static_cast<void>(steer(SLEEPER_BEHAVIOUR, body));
 
   EXPECT_THAT(
       failures().messages,
