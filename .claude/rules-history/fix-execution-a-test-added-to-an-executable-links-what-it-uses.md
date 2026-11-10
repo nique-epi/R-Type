@@ -55,4 +55,4 @@ The change was checked on the executable of its test. The other executables that
 
 ### Rule
 
-List the executables that compile a fixture before adding an include to it, give each the library of the new header, and build each of them alone.
+List the executables that compile a fixture before adding an include to it, give the library of a new header of the project to each one that does not already reach it, and build each of them alone.

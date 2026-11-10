@@ -20,7 +20,7 @@ Why: `BoxCornersTest.cpp` used `UnorderedElementsAre` in `client_widget_piece_te
 
 ### A fixture is built by every executable that lists it
 
-1. **Before adding an include to a fixture `.cpp`, list the executables that compile it**: `git grep -n '<Fixture>.cpp' -- 'tests/*CMakeLists.txt'`. Each one needs the library of the new header in its `LIBS`.
+1. **Before adding an include to a fixture `.cpp`, list the executables that compile it**: `git grep -n '<Fixture>.cpp' -- 'tests/*CMakeLists.txt'`. Each one that does not already reach the library of a new header of the project gains it in its `LIBS`; a standard header or a header of the tests has no library to add, and `network_compression_tests` already reached `GameStatus.hpp` through `rtype_network_messages`.
 2. **Build each of them alone**, not only the executable of the test being written.
 
 ## Example

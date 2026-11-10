@@ -9,9 +9,9 @@ Why: the server compressed what it sent to players, and the status of a game to 
 
 ## Rule
 
-1. **Before wrapping a socket, list everything sent through it and who reads it**: `git grep -n 'queueDatagram(' -- src`.
+1. **Before wrapping a socket, changing a wrapper or sending something new through a wrapped socket, list everything sent through it and who reads it**: `git grep -n 'queueDatagram(' -- src`.
 2. **For each receiver, write what it does with the changed datagram.** A receiver that drops it silently is the defect.
-3. **Run the whole program once with real traffic**: a test of the wrapper alone sees only the peer it was written for.
+3. **Run the whole program once with real traffic that reaches each of those receivers and meets the conditions that trigger the wrapper**: a test of the wrapper alone sees only the peer it was written for, and a status that zstd does not shorten passes on the faulty code.
 
 ## Example
 
