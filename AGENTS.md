@@ -146,6 +146,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/reasoning/fix-reasoning-a-key-held-down-repeats-its-press.md`
 - `fix/reasoning/fix-reasoning-a-new-highlight-is-cleared-by-every-path-that-sets-another.md`
 - `fix/reasoning/fix-reasoning-a-screen-pushed-over-others-leaves-them-running.md`
+- `fix/reasoning/fix-reasoning-a-socket-wrapper-serves-every-sender-of-the-socket.md`
 - `fix/reasoning/fix-reasoning-a-sequence-asserts-its-starting-state.md`
 - `fix/reasoning/fix-reasoning-a-turn-is-counted-in-whole-frames.md`
 - `fix/reasoning/fix-reasoning-a-view-never-waits-on-a-message-it-can-do-without.md`
