@@ -13,18 +13,16 @@
 #include "BehaviourRegistry.hpp"
 #include "BuiltInBehaviours.hpp"
 #include "GameScriptingConstants.hpp"
-#include "IScriptWorld.hpp"
+#include "IBodyOrders.hpp"
+#include "LuauBehaviour.hpp"
+#include "LuauBehaviourParts.hpp"
+#include "LuauSetting.hpp"
+#include "LuauStepState.hpp"
 #include "Position.hpp"
-#include "ScriptBodyRemoval.hpp"
 #include "ScriptFailureReport.hpp"
 #include "ScriptFunction.hpp"
 #include "ScriptLimits.hpp"
 #include "ScriptSource.hpp"
-#include "ScriptWaitState.hpp"
-#include "ScriptedBehaviour.hpp"
-#include "ScriptedBehaviourParts.hpp"
-#include "ScriptedSetting.hpp"
-#include "ScriptedSpawn.hpp"
 #include "TimeConstants.hpp"
 #include "WholeNumberRange.hpp"
 #include "lua.h"
@@ -59,22 +57,21 @@ std::int64_t wholeNumberOf(lua_State* state, const char* key) {
 }
 
 /** @returns The setting described by the table on top of @p state. */
-ScriptedSetting settingOnTop(lua_State* state) {
+LuauSetting settingOnTop(lua_State* state) {
   luaL_checktype(state, -1, LUA_TTABLE);
   lua_getfield(state, -1, SETTING_NAME_KEY);
   std::string name = luaL_checkstring(state, -1);
   lua_pop(state, 1);
-  return ScriptedSetting{
-      .name = std::move(name),
-      .range = engine::WholeNumberRange{
-          .lowest = wholeNumberOf(state, SETTING_LOWEST_KEY),
-          .highest = wholeNumberOf(state, SETTING_HIGHEST_KEY)}};
+  return LuauSetting{.name = std::move(name),
+                     .range = engine::WholeNumberRange{
+                         .lowest = wholeNumberOf(state, SETTING_LOWEST_KEY),
+                         .highest = wholeNumberOf(state, SETTING_HIGHEST_KEY)}};
 }
 
 /** @returns The settings of the array at SETTINGS_ARGUMENT, in its order. */
-std::vector<ScriptedSetting> settingsOf(lua_State* state) {
+std::vector<LuauSetting> settingsOf(lua_State* state) {
   luaL_checktype(state, SETTINGS_ARGUMENT, LUA_TTABLE);
-  std::vector<ScriptedSetting> settings;
+  std::vector<LuauSetting> settings;
   const int count = lua_objlen(state, SETTINGS_ARGUMENT);
   for (int index = 1; index <= count; ++index) {
     lua_rawgeti(state, SETTINGS_ARGUMENT, index);
@@ -114,22 +111,23 @@ std::uint32_t waitTicksOf(lua_State* state) {
 /** @brief `behaviours.wait(ms, intent)`: yields @p intent to the step in
  * progress, which only the thread of a body may do. */
 int waitOfBody(lua_State* state) {
-  ScriptWaitState& waits = scriptsOf(state).waits();
-  if (waits.stepping != state) {
+  LuauStepState& step = scriptsOf(state).step();
+  if (step.stepping != state) {
     raise(state, "behaviours.wait only runs in the function of a body");
   }
-  waits.waitTicks = waitTicksOf(state);
+  step.waitTicks = waitTicksOf(state);
   lua_settop(state, WAIT_INTENT_ARGUMENT);
   return lua_yield(state, YIELDED_INTENT);
 }
 
-/** @returns The world of @p state; raises an error outside a game. */
-IScriptWorld& worldOf(lua_State* state) {
-  IScriptWorld* const world = scriptsOf(state).world();
-  if (world == nullptr) {
+/** @returns What carries out the bodies the scripts of @p state order;
+ * raises an error outside a game. */
+IBodyOrders& ordersOf(lua_State* state) {
+  IBodyOrders* const orders = scriptsOf(state).orders();
+  if (orders == nullptr) {
     raise(state, "bodies are only created and destroyed during a game");
   }
-  return *world;
+  return *orders;
 }
 
 /** @returns The point at the argument SPAWN_POSITION_ARGUMENT; raises an error
@@ -152,13 +150,13 @@ Position spawnPositionOf(lua_State* state) {
 /** @brief `behaviours.spawn(type, position)`: returns the network id of the
  * body, which appears once the bodies of this tick were steered. */
 int spawnBody(lua_State* state) {
-  IScriptWorld& world = worldOf(state);
+  IBodyOrders& orders = ordersOf(state);
   const char* const type = luaL_checkstring(state, SPAWN_TYPE_ARGUMENT);
   const Position position = spawnPositionOf(state);
   std::uint32_t networkId = 0;
   std::string refusal;
   try {
-    networkId = world.spawn(ScriptedSpawn{.type = type, .position = position});
+    networkId = orders.spawn(type, position);
   } catch (const std::exception& error) {
     refusal = error.what();
   }
@@ -183,11 +181,11 @@ std::uint32_t destroyedIdOf(lua_State* state) {
 /** @brief `behaviours.destroy(id)`: removes the body once the bodies of this
  * tick were steered. */
 int destroyBody(lua_State* state) {
-  IScriptWorld& world = worldOf(state);
+  IBodyOrders& orders = ordersOf(state);
   const std::uint32_t networkId = destroyedIdOf(state);
   std::string refusal;
   try {
-    world.destroy(networkId);
+    orders.destroy(networkId);
   } catch (const std::exception& error) {
     refusal = error.what();
   }
@@ -197,33 +195,20 @@ int destroyBody(lua_State* state) {
   return 0;
 }
 
-/** @returns What removes a body from the game @p scripts are attached to, and
- * does nothing outside a game; @p scripts must outlive it. */
-ScriptBodyRemoval removalThrough(const BehaviourScripts& scripts) {
-  return [&scripts](std::uint32_t networkId) {
-    IScriptWorld* const world = scripts.world();
-    if (world != nullptr) {
-      world->destroy(networkId);
-    }
-  };
-}
-
 /** @brief `behaviours.register(name, settings, steer)`: keeps a behaviour in
  * the BehaviourScripts of its upvalue. */
 int registerBehaviour(lua_State* state) {
   BehaviourScripts& scripts = scriptsOf(state);
   std::string name = luaL_checkstring(state, NAME_ARGUMENT);
-  std::vector<ScriptedSetting> settings = settingsOf(state);
+  std::vector<LuauSetting> settings = settingsOf(state);
   luaL_checktype(state, STEER_ARGUMENT, LUA_TFUNCTION);
   const int steer = lua_ref(state, STEER_ARGUMENT);
-  scripts.declare(
-      ScriptedBehaviourParts{.machine = scripts.machine(),
-                             .name = std::move(name),
-                             .settings = std::move(settings),
-                             .steer = steer,
-                             .reportFailure = scripts.reportFailure(),
-                             .waits = scripts.waits(),
-                             .removeBody = removalThrough(scripts)});
+  scripts.declare(LuauBehaviourParts{.machine = scripts.machine(),
+                                     .name = std::move(name),
+                                     .settings = std::move(settings),
+                                     .steer = steer,
+                                     .reportFailure = scripts.reportFailure(),
+                                     .step = scripts.step()});
   return 0;
 }
 
@@ -250,23 +235,25 @@ void BehaviourScripts::run(std::span<const engine::ScriptSource> sources) {
   }
 }
 
-void BehaviourScripts::declare(ScriptedBehaviourParts parts) {
-  declared_.push_back(std::make_unique<ScriptedBehaviour>(std::move(parts)));
+void BehaviourScripts::declare(LuauBehaviourParts parts) {
+  declared_.push_back(std::make_unique<LuauBehaviour>(std::move(parts)));
 }
 
 engine::ScriptMachine& BehaviourScripts::machine() { return machine_; }
 
-void BehaviourScripts::attachWorld(IScriptWorld& world) { world_ = &world; }
+void BehaviourScripts::attachOrders(IBodyOrders& orders) {
+  step_.orders = &orders;
+}
 
-void BehaviourScripts::detachWorld(const IScriptWorld& world) noexcept {
-  if (world_ == &world) {
-    world_ = nullptr;
+void BehaviourScripts::detachOrders(const IBodyOrders& orders) noexcept {
+  if (step_.orders == &orders) {
+    step_.orders = nullptr;
   }
 }
 
-IScriptWorld* BehaviourScripts::world() const { return world_; }
+IBodyOrders* BehaviourScripts::orders() const { return step_.orders; }
 
-ScriptWaitState& BehaviourScripts::waits() { return waits_; }
+LuauStepState& BehaviourScripts::step() { return step_; }
 
 const ScriptFailureReport& BehaviourScripts::reportFailure() const {
   return reportFailure_;
@@ -274,7 +261,7 @@ const ScriptFailureReport& BehaviourScripts::reportFailure() const {
 
 BehaviourRegistry BehaviourScripts::behaviours() {
   BehaviourRegistry registry = builtInBehaviours();
-  for (std::unique_ptr<ScriptedBehaviour>& behaviour : declared_) {
+  for (std::unique_ptr<LuauBehaviour>& behaviour : declared_) {
     registry.add(std::move(behaviour));
   }
   declared_.clear();

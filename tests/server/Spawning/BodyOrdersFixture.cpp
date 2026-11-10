@@ -1,4 +1,4 @@
-#include "ScriptedBodiesFixture.hpp"
+#include "BodyOrdersFixture.hpp"
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
@@ -8,28 +8,27 @@
 #include <utility>
 #include <vector>
 #include "BehaviourScripts.hpp"
+#include "BodyOrdersParts.hpp"
 #include "Entity.hpp"
 #include "EntityDestruction.hpp"
 #include "EntitySpawned.hpp"
 #include "NetworkIdentity.hpp"
 #include "OutgoingDatagram.hpp"
 #include "Position.hpp"
-#include "ScriptedBodiesParts.hpp"
-#include "ScriptedSpawn.hpp"
 #include "SentDatagrams.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "ShippedEntitySheets.hpp"
 
 namespace rtype::server::testing {
 
-ScriptedBodiesFixture::ScriptedBodiesFixture() : bodies_(partsFor(nullptr)) {
+BodyOrdersFixture::BodyOrdersFixture() : bodies_(partsFor(nullptr)) {
   static_cast<void>(events_.subscribe<game::EntityDestruction>(
       [this](const game::EntityDestruction& removal) {
         removals_.push_back(removal);
       }));
 }
 
-void ScriptedBodiesFixture::connectPlayers(std::size_t count) {
+void BodyOrdersFixture::connectPlayers(std::size_t count) {
   for (std::size_t index = 0; index < count; ++index) {
     EXPECT_NE(roster_.add(playerEndpoint(index),
                           std::string{PLAYER_NICKNAME} + std::to_string(index),
@@ -38,28 +37,27 @@ void ScriptedBodiesFixture::connectPlayers(std::size_t count) {
   }
 }
 
-std::uint32_t ScriptedBodiesFixture::spawnByScript(std::string_view sheet,
-                                                   game::Position position) {
-  return bodies_.spawn(
-      game::ScriptedSpawn{.type = sheet, .position = position});
+std::uint32_t BodyOrdersFixture::spawnByScript(std::string_view sheet,
+                                               game::Position position) {
+  return bodies_.spawn(sheet, position);
 }
 
-void ScriptedBodiesFixture::removeByScript(std::uint32_t networkId) {
+void BodyOrdersFixture::removeByScript(std::uint32_t networkId) {
   bodies_.destroy(networkId);
 }
 
-void ScriptedBodiesFixture::endTick() {
+void BodyOrdersFixture::endTick() {
   bodies_.onTick();
   events_.dispatch();
 }
 
-std::uint32_t ScriptedBodiesFixture::placeDirectly(std::string_view sheet,
-                                                   game::Position position) {
+std::uint32_t BodyOrdersFixture::placeDirectly(std::string_view sheet,
+                                               game::Position position) {
   return world_.spawn(game::testing::shippedEntitySheets().named(sheet),
                       position);
 }
 
-std::optional<game::Position> ScriptedBodiesFixture::positionOf(
+std::optional<game::Position> BodyOrdersFixture::positionOf(
     std::uint32_t networkId) {
   std::optional<game::Position> found;
   world_.components().forEach<game::NetworkIdentity, game::Position>(
@@ -72,26 +70,25 @@ std::optional<game::Position> ScriptedBodiesFixture::positionOf(
   return found;
 }
 
-std::vector<network::EntitySpawned> ScriptedBodiesFixture::spawnsSentTo(
+std::vector<network::EntitySpawned> BodyOrdersFixture::spawnsSentTo(
     std::size_t index) const {
   return onlyMessagesIn<network::EntitySpawned>(
       sentTo(sent_, playerEndpoint(index)));
 }
 
-ScriptedBodiesParts ScriptedBodiesFixture::partsFor(
-    game::BehaviourScripts* scripts) {
-  return ScriptedBodiesParts{.world = world_,
-                             .roster = roster_,
-                             .send =
-                                 [this](network::OutgoingDatagram datagram) {
-                                   sent_.push_back(std::move(datagram));
-                                 },
-                             .types = game::testing::shippedEntitySheets(),
-                             .events = events_,
-                             .scripts = scripts};
+BodyOrdersParts BodyOrdersFixture::partsFor(game::BehaviourScripts* scripts) {
+  return BodyOrdersParts{.world = world_,
+                         .roster = roster_,
+                         .send =
+                             [this](network::OutgoingDatagram datagram) {
+                               sent_.push_back(std::move(datagram));
+                             },
+                         .types = game::testing::shippedEntitySheets(),
+                         .events = events_,
+                         .scripts = scripts};
 }
 
-const std::vector<game::EntityDestruction>& ScriptedBodiesFixture::removals()
+const std::vector<game::EntityDestruction>& BodyOrdersFixture::removals()
     const {
   return removals_;
 }

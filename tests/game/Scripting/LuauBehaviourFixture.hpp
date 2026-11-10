@@ -9,7 +9,7 @@
 #include "BehaviourScripts.hpp"
 #include "BehaviourScriptsFixtures.hpp"
 #include "IBehaviourMemory.hpp"
-#include "IScriptWorld.hpp"
+#include "IBodyOrders.hpp"
 #include "Intent.hpp"
 #include "Position.hpp"
 
@@ -23,14 +23,14 @@ struct SteeredBody {
 
 /** @brief The scripts of a test, steering bodies tick after tick as the
  * pilots of a game do. */
-class BehaviourRoutineFixture : public ::testing::Test {
+class LuauBehaviourFixture : public ::testing::Test {
  protected:
-  BehaviourRoutineFixture();
+  LuauBehaviourFixture();
 
   /** @brief Runs @p script and keeps the behaviours it registers. */
   void load(std::string_view script);
-  /** @brief Makes @p world the game the scripts create bodies in. */
-  void attach(rtype::game::IScriptWorld& world);
+  /** @brief Makes @p orders carry out the bodies the scripts order. */
+  void attach(rtype::game::IBodyOrders& orders);
   /** @brief Gives the scripts the budget of a new tick. */
   void beginTick();
   /** @returns What @p behaviour wants for @p body in this tick. */

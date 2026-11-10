@@ -6,17 +6,18 @@
 #include <vector>
 #include "BehaviourSetting.hpp"
 #include "BehaviourView.hpp"
+#include "EngineException.hpp"
 #include "IBehaviour.hpp"
 #include "Intent.hpp"
-#include "ScriptedBehaviourParts.hpp"
-#include "ScriptedRoutine.hpp"
+#include "LuauBehaviourParts.hpp"
+#include "LuauBodyMemory.hpp"
 
 namespace rtype::game {
 
 /**
- * @brief A behaviour written in Luau: each body runs the function the script
- * registered in a thread of its own, kept in the memory of its Pilot, which
- * ends with the body.
+ * @brief A behaviour written in Luau: each body follows a Routine whose steps
+ * the function the script registered runs, in a Luau thread of its own, both
+ * kept in the memory of its Pilot, which ends with the body.
  *
  * A function that returns gives the intent of that tick (see
  * pushBehaviourView() and intentAt()), and runs again from its start at the
@@ -30,30 +31,31 @@ namespace rtype::game {
  * behaviour; the body stays still and is removed from the game, so a body
  * frozen out of reach cannot hold a level open. A removal the game refuses
  * (past the removals of a tick) is asked again at the next tick. The other
- * bodies go on. Once the budget of
- * a tick is spent, the steps due wait for the next tick, the bodies wanting
- * what they wanted. Neither copied nor moved: its settings point into its own
- * names.
+ * bodies go on. Once the budget of a tick is spent, the steps due wait for the
+ * next tick, the bodies wanting what they wanted. Neither copied nor moved: its
+ * settings point into its own names.
  */
-class ScriptedBehaviour final : public IBehaviour {
+class LuauBehaviour final : public IBehaviour {
  public:
-  explicit ScriptedBehaviour(ScriptedBehaviourParts parts);
-  ScriptedBehaviour(const ScriptedBehaviour&) = delete;
-  ScriptedBehaviour& operator=(const ScriptedBehaviour&) = delete;
-  ScriptedBehaviour(ScriptedBehaviour&&) = delete;
-  ScriptedBehaviour& operator=(ScriptedBehaviour&&) = delete;
-  ~ScriptedBehaviour() override = default;
+  explicit LuauBehaviour(LuauBehaviourParts parts);
+  LuauBehaviour(const LuauBehaviour&) = delete;
+  LuauBehaviour& operator=(const LuauBehaviour&) = delete;
+  LuauBehaviour(LuauBehaviour&&) = delete;
+  LuauBehaviour& operator=(LuauBehaviour&&) = delete;
+  ~LuauBehaviour() override = default;
 
   [[nodiscard]] std::string_view name() const override;
   [[nodiscard]] std::span<const BehaviourSetting> settings() const override;
   [[nodiscard]] Intent steer(const BehaviourView& view) const override;
 
  private:
-  [[nodiscard]] Intent stepOf(ScriptedRoutine& routine,
+  [[nodiscard]] Intent stepOf(LuauBodyMemory& memory,
                               const BehaviourView& view) const;
+  void stopAfter(LuauBodyMemory& memory,
+                 const engine::ScriptException& error) const;
   void removeStopped(const BehaviourView& view) const;
 
-  ScriptedBehaviourParts parts_;
+  LuauBehaviourParts parts_;
   std::vector<std::string> settingNames_;
   std::vector<BehaviourSetting> settings_;
   mutable bool failureReported_{false};

@@ -2,10 +2,10 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <vector>
-#include "IScriptWorld.hpp"
+#include "IBodyOrders.hpp"
 #include "Position.hpp"
-#include "ScriptedSpawn.hpp"
 
 /** @brief A body a script asked for, its sheet name copied out of the
  * script. */
@@ -14,14 +14,14 @@ struct RecordedSpawn {
   rtype::game::Position position{};
 };
 
-/** @brief A script world that records what the scripts ask and gives every
- * body it is asked for the same network id. */
-class RecordingScriptWorld final : public rtype::game::IScriptWorld {
+/** @brief Body orders that record what the scripts order and give every body
+ * the same network id. */
+class RecordingBodyOrders final : public rtype::game::IBodyOrders {
  public:
-  explicit RecordingScriptWorld(std::uint32_t givenId);
+  explicit RecordingBodyOrders(std::uint32_t givenId);
 
-  [[nodiscard]] std::uint32_t spawn(
-      const rtype::game::ScriptedSpawn& spawn) override;
+  [[nodiscard]] std::uint32_t spawn(std::string_view type,
+                                    rtype::game::Position position) override;
   void destroy(std::uint32_t networkId) override;
 
   /** @returns The bodies asked for, in order. */

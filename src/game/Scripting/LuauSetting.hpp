@@ -7,7 +7,7 @@ namespace rtype::game {
 
 /** @brief A setting a scripted behaviour declares: its key in the table
  * `[gameplay.behaviour]` of a sheet, and the whole numbers it accepts. */
-struct ScriptedSetting {
+struct LuauSetting {
   std::string name;
   engine::WholeNumberRange range{};
 };

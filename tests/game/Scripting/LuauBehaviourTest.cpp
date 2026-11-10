@@ -2,11 +2,11 @@
 #include <cstddef>
 #include <vector>
 #include "ActionKey.hpp"
-#include "BehaviourRoutineFixture.hpp"
-#include "BehaviourRoutineTestConstants.hpp"
 #include "BehaviourScriptsTestConstants.hpp"
 #include "Intent.hpp"
-#include "RecordingScriptWorld.hpp"
+#include "LuauBehaviourFixture.hpp"
+#include "LuauBehaviourTestConstants.hpp"
+#include "RecordingBodyOrders.hpp"
 
 using rtype::game::ActionKey;
 using rtype::game::Intent;
@@ -16,7 +16,7 @@ using rtype::game::Intent;
  * When it is steered for the ticks of that wait
  * Then it goes left on each of them
  */
-TEST_F(BehaviourRoutineFixture, HoldsTheIntentOfAWaitForEachTickOfIt) {
+TEST_F(LuauBehaviourFixture, HoldsTheIntentOfAWaitForEachTickOfIt) {
   load(PACER_SCRIPT);
   SteeredBody body{.position = BODY_IN_THE_MIDDLE};
 
@@ -34,7 +34,7 @@ TEST_F(BehaviourRoutineFixture, HoldsTheIntentOfAWaitForEachTickOfIt) {
  * When the wait is over
  * Then the script goes on after its wait, and the body goes down
  */
-TEST_F(BehaviourRoutineFixture, ResumesTheScriptOnTheTickItsWaitEnds) {
+TEST_F(LuauBehaviourFixture, ResumesTheScriptOnTheTickItsWaitEnds) {
   load(PACER_SCRIPT);
   SteeredBody body{.position = BODY_IN_THE_MIDDLE};
   for (std::size_t tick = 0; tick < TICKS_OF_THE_PACER_WAIT; ++tick) {
@@ -54,7 +54,7 @@ TEST_F(BehaviourRoutineFixture, ResumesTheScriptOnTheTickItsWaitEnds) {
  * When it is steered on the first tick of the wait
  * Then it starts that attack
  */
-TEST_F(BehaviourRoutineFixture, StartsTheActionOfAWaitOnItsFirstTick) {
+TEST_F(LuauBehaviourFixture, StartsTheActionOfAWaitOnItsFirstTick) {
   load(STRIKER_SCRIPT);
   SteeredBody body{.position = BODY_IN_THE_MIDDLE};
   beginTick();
@@ -69,7 +69,7 @@ TEST_F(BehaviourRoutineFixture, StartsTheActionOfAWaitOnItsFirstTick) {
  * When it is steered on the next tick of the wait
  * Then it does not start the attack again
  */
-TEST_F(BehaviourRoutineFixture, StartsTheActionOfAWaitOnlyOnce) {
+TEST_F(LuauBehaviourFixture, StartsTheActionOfAWaitOnlyOnce) {
   load(STRIKER_SCRIPT);
   SteeredBody body{.position = BODY_IN_THE_MIDDLE};
   beginTick();
@@ -86,7 +86,7 @@ TEST_F(BehaviourRoutineFixture, StartsTheActionOfAWaitOnlyOnce) {
  * When the bodies are destroyed during their wait
  * Then the memory of their scripts is released
  */
-TEST_F(BehaviourRoutineFixture, ReleasesTheMemoryOfABodyDestroyedDuringAWait) {
+TEST_F(LuauBehaviourFixture, ReleasesTheMemoryOfABodyDestroyedDuringAWait) {
   load(HOARDER_SCRIPT);
   std::vector<SteeredBody> bodies(HOARDING_BODIES,
                                   SteeredBody{.position = BODY_IN_THE_MIDDLE});
@@ -106,7 +106,7 @@ TEST_F(BehaviourRoutineFixture, ReleasesTheMemoryOfABodyDestroyedDuringAWait) {
  * When both are steered on the next tick
  * Then the failing body stays still and the other one goes on
  */
-TEST_F(BehaviourRoutineFixture, AFailingScriptStopsThatBodyOnly) {
+TEST_F(LuauBehaviourFixture, AFailingScriptStopsThatBodyOnly) {
   load(PICKY_SCRIPT);
   SteeredBody failing{.position = BODY_ON_THE_LEFT};
   SteeredBody healthy{.position = BODY_ON_THE_RIGHT};
@@ -128,8 +128,8 @@ TEST_F(BehaviourRoutineFixture, AFailingScriptStopsThatBodyOnly) {
  * When it is steered
  * Then the game is asked to remove that body
  */
-TEST_F(BehaviourRoutineFixture, RemovesFromTheGameABodyWhoseScriptFails) {
-  RecordingScriptWorld world{GIVEN_NETWORK_ID};
+TEST_F(LuauBehaviourFixture, RemovesFromTheGameABodyWhoseScriptFails) {
+  RecordingBodyOrders world{GIVEN_NETWORK_ID};
   attach(world);
   load(PICKY_SCRIPT);
   SteeredBody failing{.position = BODY_ON_THE_LEFT,
@@ -147,7 +147,7 @@ TEST_F(BehaviourRoutineFixture, RemovesFromTheGameABodyWhoseScriptFails) {
  * When it is steered, then another body of the same behaviour
  * Then the first is stopped by its step budget and the second goes on
  */
-TEST_F(BehaviourRoutineFixture, AStepPastItsBudgetStopsThatBodyOnly) {
+TEST_F(LuauBehaviourFixture, AStepPastItsBudgetStopsThatBodyOnly) {
   load(RUNAWAY_SCRIPT);
   SteeredBody runaway{.position = BODY_ON_THE_LEFT};
   SteeredBody healthy{.position = BODY_ON_THE_RIGHT};
@@ -167,7 +167,7 @@ TEST_F(BehaviourRoutineFixture, AStepPastItsBudgetStopsThatBodyOnly) {
  * When its body is steered
  * Then the body stays still and the failure is reported
  */
-TEST_F(BehaviourRoutineFixture, RefusesAYieldOutsideAWait) {
+TEST_F(LuauBehaviourFixture, RefusesAYieldOutsideAWait) {
   load(YIELDER_SCRIPT);
   SteeredBody body{.position = BODY_IN_THE_MIDDLE};
   beginTick();
@@ -183,8 +183,8 @@ TEST_F(BehaviourRoutineFixture, RefusesAYieldOutsideAWait) {
  * When its body is steered in a game
  * Then the game is asked for that drifter at that place
  */
-TEST_F(BehaviourRoutineFixture, AsksTheGameForTheBodyAScriptCreates) {
-  RecordingScriptWorld world{GIVEN_NETWORK_ID};
+TEST_F(LuauBehaviourFixture, AsksTheGameForTheBodyAScriptCreates) {
+  RecordingBodyOrders world{GIVEN_NETWORK_ID};
   attach(world);
   load(BUILDER_SCRIPT);
   SteeredBody body{.position = BODY_IN_THE_MIDDLE};
@@ -203,8 +203,8 @@ TEST_F(BehaviourRoutineFixture, AsksTheGameForTheBodyAScriptCreates) {
  * When its body is steered in a game
  * Then the game is asked to remove the id it gave that body
  */
-TEST_F(BehaviourRoutineFixture, RemovesTheBodyNamedByTheIdSpawnReturned) {
-  RecordingScriptWorld world{GIVEN_NETWORK_ID};
+TEST_F(LuauBehaviourFixture, RemovesTheBodyNamedByTheIdSpawnReturned) {
+  RecordingBodyOrders world{GIVEN_NETWORK_ID};
   attach(world);
   load(BUILDER_SCRIPT);
   SteeredBody body{.position = BODY_IN_THE_MIDDLE};

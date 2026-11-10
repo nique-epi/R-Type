@@ -1,4 +1,4 @@
-#include "ScriptedBehaviour.hpp"
+#include "LuauBehaviour.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -13,16 +13,18 @@
 #include "BehaviourView.hpp"
 #include "EngineException.hpp"
 #include "IBehaviourMemory.hpp"
+#include "IBodyOrders.hpp"
 #include "Intent.hpp"
+#include "LuauBehaviourParts.hpp"
+#include "LuauBodyMemory.hpp"
+#include "LuauSetting.hpp"
+#include "LuauStepState.hpp"
+#include "LuauView.hpp"
+#include "Routine.hpp"
 #include "ScriptMachine.hpp"
 #include "ScriptProtection.hpp"
 #include "ScriptStepEnd.hpp"
 #include "ScriptThread.hpp"
-#include "ScriptView.hpp"
-#include "ScriptWaitState.hpp"
-#include "ScriptedBehaviourParts.hpp"
-#include "ScriptedRoutine.hpp"
-#include "ScriptedSetting.hpp"
 #include "lua.h"
 
 namespace rtype::game {
@@ -32,8 +34,8 @@ namespace {
 /** @brief What the first half of a step needs. */
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
 struct StepStart {
-  std::reference_wrapper<const ScriptedBehaviourParts> parts;
-  std::reference_wrapper<ScriptedRoutine> routine;
+  std::reference_wrapper<const LuauBehaviourParts> parts;
+  std::reference_wrapper<LuauBodyMemory> memory;
   std::reference_wrapper<const BehaviourView> view;
   std::span<const std::string> settingNames;
   lua_State* thread{nullptr};
@@ -46,18 +48,18 @@ struct StepResult {
   Intent intent{.steered = true};
 };
 
-/** @brief Pushes on the thread of a routine, created at its first step, what
+/** @brief Pushes on the thread of a body, created at its first step, what
  * resuming it needs: a fresh view, after the function when it does not wait. */
 void pushStep(void* context) {
   auto& start = *static_cast<StepStart*>(context);
-  ScriptedRoutine& routine = start.routine.get();
+  LuauBodyMemory& memory = start.memory.get();
   lua_State* const machine = start.parts.get().machine.get().state();
-  if (!routine.thread.has_value()) {
-    routine.thread.emplace(machine);
+  if (!memory.thread.has_value()) {
+    memory.thread.emplace(machine);
   }
-  lua_State* const thread = routine.thread->state();
+  lua_State* const thread = memory.thread->state();
   start.thread = thread;
-  if (routine.ticksLeft == 0) {
+  if (!memory.waiting) {
     lua_getref(machine, start.parts.get().steer);
     lua_xmove(machine, thread, 1);
   }
@@ -80,33 +82,24 @@ void readStep(void* context) {
  * when its function returned. @throws engine::ScriptException when it yielded
  * without behaviours.wait. */
 std::uint32_t ticksToWaitAfter(engine::ScriptStepEnd end,
-                               const ScriptWaitState& waits) {
+                               const LuauStepState& step) {
   if (end == engine::ScriptStepEnd::Finished) {
     return 0;
   }
-  if (!waits.waitTicks.has_value()) {
+  if (!step.waitTicks.has_value()) {
     throw engine::ScriptException(
         "a body may only yield through behaviours.wait");
   }
-  return *waits.waitTicks;
-}
-
-/** @returns @p intent without what applies once: an action started or ended,
- * and a jump. */
-Intent withoutOneTimeRequests(Intent intent) {
-  intent.startsAction = std::nullopt;
-  intent.endsAction = false;
-  intent.jumpsTo = std::nullopt;
-  return intent;
+  return *step.waitTicks;
 }
 
 }  // namespace
 
-ScriptedBehaviour::ScriptedBehaviour(ScriptedBehaviourParts parts)
+LuauBehaviour::LuauBehaviour(LuauBehaviourParts parts)
     : parts_(std::move(parts)) {
   settingNames_.reserve(parts_.settings.size());
   settings_.reserve(parts_.settings.size());
-  for (const ScriptedSetting& setting : parts_.settings) {
+  for (const LuauSetting& setting : parts_.settings) {
     settingNames_.push_back(setting.name);
   }
   for (std::size_t index = 0; index < parts_.settings.size(); ++index) {
@@ -115,79 +108,83 @@ ScriptedBehaviour::ScriptedBehaviour(ScriptedBehaviourParts parts)
   }
 }
 
-std::string_view ScriptedBehaviour::name() const { return parts_.name; }
+std::string_view LuauBehaviour::name() const { return parts_.name; }
 
-std::span<const BehaviourSetting> ScriptedBehaviour::settings() const {
+std::span<const BehaviourSetting> LuauBehaviour::settings() const {
   return settings_;
 }
 
-Intent ScriptedBehaviour::steer(const BehaviourView& view) const {
+Intent LuauBehaviour::steer(const BehaviourView& view) const {
   std::shared_ptr<IBehaviourMemory> forgotten;
   std::shared_ptr<IBehaviourMemory>& memory =
       view.memory == nullptr ? forgotten : *view.memory;
-  auto* found = dynamic_cast<ScriptedRoutine*>(memory.get());
+  auto* found = dynamic_cast<LuauBodyMemory*>(memory.get());
   if (found == nullptr) {
-    auto fresh = std::make_shared<ScriptedRoutine>();
+    auto fresh = std::make_shared<LuauBodyMemory>();
     found = fresh.get();
     memory = std::move(fresh);
   }
-  ScriptedRoutine& routine = *found;
   try {
-    return stepOf(routine, view);
+    return stepOf(*found, view);
   } catch (const engine::ScriptException& error) {
-    parts_.waits.get().stepping = nullptr;
-    routine.thread.reset();
-    routine.stopped = true;
-    if (!failureReported_) {
-      failureReported_ = true;
-      parts_.reportFailure("the behaviour " + parts_.name +
-                           " failed: " + error.what());
-    }
+    stopAfter(*found, error);
     removeStopped(view);
-    return Intent{.steered = true};
+    return found->routine.held();
   }
 }
 
-Intent ScriptedBehaviour::stepOf(ScriptedRoutine& routine,
-                                 const BehaviourView& view) const {
-  if (routine.stopped) {
+Intent LuauBehaviour::stepOf(LuauBodyMemory& memory,
+                             const BehaviourView& view) const {
+  if (memory.routine.stopped()) {
     removeStopped(view);
-    return Intent{.steered = true};
   }
-  if (routine.ticksLeft > 1) {
-    --routine.ticksLeft;
-    return routine.held;
+  const std::optional<Intent> held = memory.routine.heldThisTick();
+  if (held.has_value()) {
+    return *held;
   }
   engine::ScriptMachine& machine = parts_.machine.get();
   if (!machine.hasTickBudget()) {
-    return routine.held;
+    return memory.routine.held();
   }
   StepStart start{.parts = parts_,
-                  .routine = routine,
+                  .memory = memory,
                   .view = view,
                   .settingNames = settingNames_};
   engine::runProtected(machine.state(),
                        engine::ScriptWork{.run = pushStep, .context = &start});
-  lua_State* const thread = start.thread;
-  ScriptWaitState& waits = parts_.waits.get();
-  waits.stepping = thread;
-  waits.waitTicks.reset();
-  const engine::ScriptStepEnd end = machine.resume(thread, 1);
-  waits.stepping = nullptr;
-  routine.ticksLeft = ticksToWaitAfter(end, waits);
-  StepResult result{.machine = machine.state(), .thread = thread};
+  LuauStepState& step = parts_.step.get();
+  step.stepping = start.thread;
+  step.waitTicks.reset();
+  const engine::ScriptStepEnd end = machine.resume(start.thread, 1);
+  step.stepping = nullptr;
+  const std::uint32_t waitTicks = ticksToWaitAfter(end, step);
+  memory.waiting = end == engine::ScriptStepEnd::Yielded;
+  StepResult result{.machine = machine.state(), .thread = start.thread};
   engine::runProtected(machine.state(),
                        engine::ScriptWork{.run = readStep, .context = &result});
-  routine.held = withoutOneTimeRequests(result.intent);
-  return result.intent;
+  return memory.routine.stepped(result.intent, waitTicks);
 }
 
-void ScriptedBehaviour::removeStopped(const BehaviourView& view) const {
-  if (view.networkId == 0 || !parts_.removeBody) {
+void LuauBehaviour::stopAfter(LuauBodyMemory& memory,
+                              const engine::ScriptException& error) const {
+  parts_.step.get().stepping = nullptr;
+  memory.thread.reset();
+  memory.waiting = false;
+  memory.routine.stop();
+  if (!failureReported_) {
+    failureReported_ = true;
+    parts_.reportFailure("the behaviour " + parts_.name +
+                         " failed: " + error.what());
+  }
+}
+
+void LuauBehaviour::removeStopped(const BehaviourView& view) const {
+  IBodyOrders* const orders = parts_.step.get().orders;
+  if (view.networkId == 0 || orders == nullptr) {
     return;
   }
   try {
-    parts_.removeBody(view.networkId);
+    orders->destroy(view.networkId);
   } catch (const engine::ScriptException&) {
     return;
   }

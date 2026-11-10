@@ -83,8 +83,8 @@ end)
 | Function | Does |
 |---|---|
 | `behaviours.wait(ms, intent)` | stops the function there: the body wants `intent` on every tick of the wait, its one-time requests (`starts_action`, `ends_action`, `jumps_to`) on the first tick only, and the call returns a fresh view on the tick the wait ends. The wait lasts `ms` milliseconds rounded to the nearest tick (16.7 ms), one tick at least; a waiting body costs no call. It only runs in the function of a body; `coroutine.yield` called directly is a failure. |
-| `behaviours.spawn(type, {x, y})` | asks for a body of the sheet `type` at `{x, y}`, and returns its network id at once. It appears at the end of the tick, after every body was steered, and every player is told. A sheet that does not exist or that ships are made from is refused, and so are more than 256 bodies in one tick (`MAXIMUM_SCRIPTED_SPAWNS_PER_TICK`). |
-| `behaviours.destroy(id)` | removes the body of that network id at the end of the tick, after the bodies created in it; an id no body has does nothing, a ship is never removed, and more than 256 removals in one tick are refused (`MAXIMUM_SCRIPTED_REMOVALS_PER_TICK`). |
+| `behaviours.spawn(type, {x, y})` | asks for a body of the sheet `type` at `{x, y}`, and returns its network id at once. It appears at the end of the tick, after every body was steered, and every player is told. A sheet that does not exist or that ships are made from is refused, and so are more than 256 bodies in one tick (`MAXIMUM_SPAWN_ORDERS_PER_TICK`). |
+| `behaviours.destroy(id)` | removes the body of that network id at the end of the tick, after the bodies created in it; an id no body has does nothing, a ship is never removed, and more than 256 removals in one tick are refused (`MAXIMUM_REMOVAL_ORDERS_PER_TICK`). |
 | `view.id` | the network id of the body being steered, the one `spawn` returned for it. |
 
 Both `spawn` and `destroy` only run during a game: a script that calls them while it is first read fails.
@@ -129,9 +129,10 @@ A call of the script takes 0.9 µs, and the time grows in line with the bodies f
 
 | You want to… | Look at |
 |---|---|
-| Change what a script reads or may return | `pushBehaviourView()` and `intentAt()` in `src/game/Scripting/ScriptView.cpp`, the keys in `GameScriptingConstants.hpp` |
+| Change what a script reads or may return | `pushBehaviourView()` and `intentAt()` in `src/game/Scripting/LuauView.cpp`, the keys in `GameScriptingConstants.hpp` |
 | Change the memory or the time a script has | `SCRIPT_MEMORY_LIMIT_BYTES`, `SCRIPT_CALL_BUDGET`, `SCRIPT_STEP_BUDGET` and `SCRIPT_TICK_BUDGET` in `src/engine/Scripting/ScriptingConstants.hpp` |
-| Change how a body waits or what it remembers | `ScriptedBehaviour::steer()` and `ScriptedRoutine` in `src/game/Scripting/` |
-| Change how created or removed bodies reach the game | `ScriptedBodies` in `src/server/Spawning/` |
+| Change how a body waits, holds what it asked and stops | `Routine` in `src/game/Behaviours/Routines/`, which knows nothing of Luau |
+| Change how a Luau function runs the steps of a routine | `LuauBehaviour` and `LuauBodyMemory` in `src/game/Scripting/` |
+| Change how created or removed bodies reach the game | `IBodyOrders` in `src/game/Spawning/`, carried out by `BodyOrders` in `src/server/Spawning/` |
 | Expose another function to the scripts | `ScriptMachine::expose()`, before the first script runs, as `BehaviourScripts` exposes `behaviours.register` |
 | Change which files are scripts | `scriptSourcesIn()` in `src/game/Scripting/BehaviourScriptFiles.cpp` |

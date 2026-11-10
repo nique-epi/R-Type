@@ -1,17 +1,19 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
 #include <vector>
-#include "IScriptWorld.hpp"
+#include "BodyOrder.hpp"
+#include "BodyOrdersParts.hpp"
+#include "IBodyOrders.hpp"
 #include "Logger.hpp"
-#include "ScriptedBodiesParts.hpp"
-#include "ScriptedBodyOrder.hpp"
-#include "ScriptedSpawn.hpp"
+#include "Position.hpp"
 
 namespace rtype::server {
 
 /**
- * @brief Carries out what the scripts of a game ask of its world.
+ * @brief Carries out the orders to create and remove bodies the scripts of a
+ * game give, in its world.
  *
  * Bodies cannot be created while PilotSystem visits them, so spawn() and
  * destroy() only take note: the body gets its network id at once, so a script
@@ -27,31 +29,32 @@ namespace rtype::server {
  * lives: the game builds a new one with each new world. Not thread-safe: use
  * it from the simulation thread only.
  */
-class ScriptedBodies final : public game::IScriptWorld {
+class BodyOrders final : public game::IBodyOrders {
  public:
-  explicit ScriptedBodies(ScriptedBodiesParts parts);
-  ScriptedBodies(const ScriptedBodies&) = delete;
-  ScriptedBodies& operator=(const ScriptedBodies&) = delete;
-  ScriptedBodies(ScriptedBodies&&) = delete;
-  ScriptedBodies& operator=(ScriptedBodies&&) = delete;
-  ~ScriptedBodies() override;
+  explicit BodyOrders(BodyOrdersParts parts);
+  BodyOrders(const BodyOrders&) = delete;
+  BodyOrders& operator=(const BodyOrders&) = delete;
+  BodyOrders(BodyOrders&&) = delete;
+  BodyOrders& operator=(BodyOrders&&) = delete;
+  ~BodyOrders() override;
 
   /** @brief Carries out what the scripts asked since the last call, then
    * gives the scripts the budget of the next tick. */
   void onTick();
 
-  [[nodiscard]] std::uint32_t spawn(const game::ScriptedSpawn& spawn) override;
+  [[nodiscard]] std::uint32_t spawn(std::string_view type,
+                                    game::Position position) override;
   void destroy(std::uint32_t networkId) override;
 
  private:
   void warnWhenOverBudget();
-  void appear(const ScriptedBodyOrder& order) const;
+  void appear(const BodyOrder& order) const;
   void removeAsked();
 
-  ScriptedBodiesParts parts_;
+  BodyOrdersParts parts_;
   logging::Logger logger_;
   bool budgetWarned_{false};
-  std::vector<ScriptedBodyOrder> orders_;
+  std::vector<BodyOrder> orders_;
   std::vector<std::uint32_t> removals_;
 };
 

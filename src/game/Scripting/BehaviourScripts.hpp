@@ -4,13 +4,13 @@
 #include <span>
 #include <vector>
 #include "BehaviourRegistry.hpp"
-#include "IScriptWorld.hpp"
+#include "IBodyOrders.hpp"
+#include "LuauBehaviour.hpp"
+#include "LuauBehaviourParts.hpp"
+#include "LuauStepState.hpp"
 #include "ScriptFailureReport.hpp"
 #include "ScriptMachine.hpp"
 #include "ScriptSource.hpp"
-#include "ScriptWaitState.hpp"
-#include "ScriptedBehaviour.hpp"
-#include "ScriptedBehaviourParts.hpp"
 
 namespace rtype::game {
 
@@ -43,22 +43,24 @@ class BehaviourScripts {
 
   /** @brief Keeps a behaviour a script registered: its machine and its report
    * are those of this object. */
-  void declare(ScriptedBehaviourParts parts);
+  void declare(LuauBehaviourParts parts);
 
   /** @returns The machine the scripts run on. */
   [[nodiscard]] engine::ScriptMachine& machine();
 
-  /** @brief Makes @p world the game the scripts create bodies in. */
-  void attachWorld(IScriptWorld& world);
+  /** @brief Makes @p orders carry out the bodies the scripts order. */
+  void attachOrders(IBodyOrders& orders);
 
-  /** @brief Forgets @p world, unless another one took its place. */
-  void detachWorld(const IScriptWorld& world) noexcept;
+  /** @brief Forgets @p orders, unless others took their place. */
+  void detachOrders(const IBodyOrders& orders) noexcept;
 
-  /** @returns The game the scripts create bodies in; nullptr outside one. */
-  [[nodiscard]] IScriptWorld* world() const;
+  /** @returns What carries out the bodies the scripts order; nullptr outside
+   * a game. */
+  [[nodiscard]] IBodyOrders* orders() const;
 
-  /** @returns What `behaviours.wait` tells the step in progress. */
-  [[nodiscard]] ScriptWaitState& waits();
+  /** @returns What the functions the scripts call know of the step in
+   * progress. */
+  [[nodiscard]] LuauStepState& step();
 
   /** @returns What the report of a behaviour calls. */
   [[nodiscard]] const ScriptFailureReport& reportFailure() const;
@@ -74,9 +76,8 @@ class BehaviourScripts {
  private:
   engine::ScriptMachine machine_;
   ScriptFailureReport reportFailure_;
-  ScriptWaitState waits_;
-  IScriptWorld* world_{nullptr};
-  std::vector<std::unique_ptr<ScriptedBehaviour>> declared_;
+  LuauStepState step_;
+  std::vector<std::unique_ptr<LuauBehaviour>> declared_;
 };
 
 }  // namespace rtype::game

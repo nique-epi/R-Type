@@ -1,4 +1,4 @@
-#include "ScriptedBodies.hpp"
+#include "BodyOrders.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <span>
@@ -6,6 +6,9 @@
 #include <string_view>
 #include <utility>
 #include "BehaviourScripts.hpp"
+#include "BodyOrder.hpp"
+#include "BodyOrdersConstants.hpp"
+#include "BodyOrdersParts.hpp"
 #include "BodyPlacement.hpp"
 #include "ComponentRegistry.hpp"
 #include "ConnectedPlayer.hpp"
@@ -19,11 +22,8 @@
 #include "EntityTypeNumber.hpp"
 #include "NetworkIdentity.hpp"
 #include "PlayerRoster.hpp"
+#include "Position.hpp"
 #include "ScriptMachine.hpp"
-#include "ScriptedBodiesConstants.hpp"
-#include "ScriptedBodiesParts.hpp"
-#include "ScriptedBodyOrder.hpp"
-#include "ScriptedSpawn.hpp"
 
 namespace rtype::server {
 
@@ -42,47 +42,46 @@ const game::EntitySheet* sheetNamed(std::span<const game::EntitySheet> sheets,
 
 }  // namespace
 
-ScriptedBodies::ScriptedBodies(ScriptedBodiesParts parts)
-    : parts_(std::move(parts)),
-      logger_(std::string{SCRIPTED_BODIES_LOGGER_NAME}) {
+BodyOrders::BodyOrders(BodyOrdersParts parts)
+    : parts_(std::move(parts)), logger_(std::string{BODY_ORDERS_LOGGER_NAME}) {
   if (parts_.scripts != nullptr) {
-    parts_.scripts->attachWorld(*this);
+    parts_.scripts->attachOrders(*this);
   }
 }
 
-ScriptedBodies::~ScriptedBodies() {
+BodyOrders::~BodyOrders() {
   if (parts_.scripts != nullptr) {
-    parts_.scripts->detachWorld(*this);
+    parts_.scripts->detachOrders(*this);
   }
 }
 
-std::uint32_t ScriptedBodies::spawn(const game::ScriptedSpawn& spawn) {
-  if (orders_.size() >= MAXIMUM_SCRIPTED_SPAWNS_PER_TICK) {
+std::uint32_t BodyOrders::spawn(std::string_view type,
+                                game::Position position) {
+  if (orders_.size() >= MAXIMUM_SPAWN_ORDERS_PER_TICK) {
     throw engine::ScriptException("too many bodies created in one tick");
   }
   const game::EntitySheet* const sheet =
-      sheetNamed(parts_.types.get().all(), spawn.type);
+      sheetNamed(parts_.types.get().all(), type);
   if (sheet == nullptr) {
-    throw engine::ScriptException("no sheet is named " +
-                                  std::string{spawn.type});
+    throw engine::ScriptException("no sheet is named " + std::string{type});
   }
   if (!sheet->pilot.has_value()) {
     throw engine::ScriptException("a script cannot create a ship");
   }
   const std::uint32_t networkId = parts_.world.get().reserveNetworkId();
-  orders_.push_back(ScriptedBodyOrder{
-      .sheet = *sheet, .position = spawn.position, .networkId = networkId});
+  orders_.push_back(
+      BodyOrder{.sheet = *sheet, .position = position, .networkId = networkId});
   return networkId;
 }
 
-void ScriptedBodies::destroy(std::uint32_t networkId) {
-  if (removals_.size() >= MAXIMUM_SCRIPTED_REMOVALS_PER_TICK) {
+void BodyOrders::destroy(std::uint32_t networkId) {
+  if (removals_.size() >= MAXIMUM_REMOVAL_ORDERS_PER_TICK) {
     throw engine::ScriptException("too many bodies removed in one tick");
   }
   removals_.push_back(networkId);
 }
 
-void ScriptedBodies::warnWhenOverBudget() {
+void BodyOrders::warnWhenOverBudget() {
   if (!budgetWarned_ && parts_.scripts != nullptr &&
       !parts_.scripts->machine().hasTickBudget()) {
     budgetWarned_ = true;
@@ -90,9 +89,9 @@ void ScriptedBodies::warnWhenOverBudget() {
   }
 }
 
-void ScriptedBodies::onTick() {
+void BodyOrders::onTick() {
   warnWhenOverBudget();
-  for (const ScriptedBodyOrder& order : orders_) {
+  for (const BodyOrder& order : orders_) {
     appear(order);
   }
   orders_.clear();
@@ -102,7 +101,7 @@ void ScriptedBodies::onTick() {
   }
 }
 
-void ScriptedBodies::appear(const ScriptedBodyOrder& order) const {
+void BodyOrders::appear(const BodyOrder& order) const {
   const game::EntitySheet& sheet = order.sheet.get();
   parts_.world.get().spawnFrom(
       sheet, game::BodyPlacement{.position = order.position,
@@ -117,7 +116,7 @@ void ScriptedBodies::appear(const ScriptedBodyOrder& order) const {
   }
 }
 
-void ScriptedBodies::removeAsked() {
+void BodyOrders::removeAsked() {
   if (removals_.empty()) {
     return;
   }
