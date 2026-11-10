@@ -1,5 +1,6 @@
 add_library(rtype_server_rules_match STATIC
   GameFlow.cpp
+  MatchSystems.cpp
   RtypeSystems.cpp
   StartBarrier.cpp
   WorldSlot.cpp

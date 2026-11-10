@@ -1,6 +1,7 @@
 add_library(rtype_game_behaviours_piloting STATIC
   BehaviourRegistry.cpp
   BehaviourSteering.cpp
+  HeldIntent.cpp
 )
 
 target_include_directories(rtype_game_behaviours_piloting PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

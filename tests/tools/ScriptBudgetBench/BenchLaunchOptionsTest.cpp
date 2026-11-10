@@ -13,6 +13,7 @@ using rtype::tools::DEFAULT_BENCH_TICKS;
 using rtype::tools::readBenchLaunch;
 using rtype::tools::SCRIPTED_BODIES_OPTION;
 using rtype::tools::TICKS_OPTION;
+using rtype::tools::WAITING_OPTION;
 using rtype::tools::testing::NO_TICK;
 using rtype::tools::testing::NOT_A_NUMBER;
 using rtype::tools::testing::SEVEN;
@@ -29,6 +30,30 @@ TEST(BenchLaunchOptions, MeasuresThreeHundredBodiesAndAThousandBullets) {
   EXPECT_EQ(launch.population.scriptedBodies, 300U);
   EXPECT_EQ(launch.population.bullets, 1000U);
   EXPECT_EQ(launch.ticks, DEFAULT_BENCH_TICKS);
+}
+
+/**
+ * Given no argument
+ * When the launch is read
+ * Then the bodies run the script that returns
+ */
+TEST(BenchLaunchOptions, RunsTheScriptThatReturnsByDefault) {
+  const BenchLaunch launch = readBenchLaunch({});
+
+  EXPECT_FALSE(launch.population.waiting);
+}
+
+/**
+ * Given the waiting flag
+ * When the launch is read
+ * Then the bodies run the script that waits
+ */
+TEST(BenchLaunchOptions, RunsTheScriptThatWaitsOnItsFlag) {
+  const std::array arguments{WAITING_OPTION};
+
+  const BenchLaunch launch = readBenchLaunch(arguments);
+
+  EXPECT_TRUE(launch.population.waiting);
 }
 
 /**

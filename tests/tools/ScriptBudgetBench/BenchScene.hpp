@@ -50,6 +50,9 @@ class BenchScene {
   /** @returns The bodies in play: the population and the ships. */
   [[nodiscard]] std::size_t bodiesInPlay() const;
 
+  /** @returns The memory the scripts hold, in bytes. */
+  [[nodiscard]] std::size_t scriptMemory();
+
   /** @returns The first failure of the script, empty while it has none: a
    * script that fails stops early, so the figures of that run are wrong. */
   [[nodiscard]] const std::string& scriptFailure() const;

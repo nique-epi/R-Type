@@ -177,7 +177,9 @@ std::uint32_t World::spawn(const EntitySheet& sheet, Position position,
 std::uint32_t World::spawnFrom(const EntitySheet& sheet,
                                BodyPlacement placement,
                                std::optional<std::uint8_t> owner) {
-  const std::uint32_t networkId = networkIds_.allocate();
+  const std::uint32_t networkId = placement.reservedNetworkId.has_value()
+                                      ? *placement.reservedNetworkId
+                                      : networkIds_.allocate();
   const BodyStart start{.body = registry_.create(),
                         .sheet = sheet,
                         .position = placement.position,
@@ -197,6 +199,8 @@ std::uint32_t World::spawnFrom(const EntitySheet& sheet,
   }
   return networkId;
 }
+
+std::uint32_t World::reserveNetworkId() { return networkIds_.allocate(); }
 
 bool World::removePlayer(std::uint32_t shipNetworkId) {
   const std::optional<engine::Entity> ship =

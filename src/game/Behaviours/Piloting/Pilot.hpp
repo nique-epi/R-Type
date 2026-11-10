@@ -2,8 +2,10 @@
 
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <span>
 #include "IBehaviour.hpp"
+#include "IBehaviourState.hpp"
 #include "Position.hpp"
 #include "TimeConstants.hpp"
 
@@ -15,7 +17,7 @@ namespace rtype::game {
  *
  * The behaviour and the values belong to whoever made the body (the
  * EntitySheets of the server), which outlives it: no body owns a copy, so
- * piloting allocates nothing.
+ * piloting by a built-in behaviour allocates nothing.
  */
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
 struct Pilot {
@@ -27,6 +29,9 @@ struct Pilot {
   /** @brief The values of the settings of the behaviour, in the order it
    * declares them; PilotSystem hands them to it in BehaviourView. */
   std::span<const std::int64_t> settings;
+  /** @brief What the behaviour remembers of this body, empty for a behaviour
+   * that remembers nothing; it ends with the body. */
+  std::shared_ptr<IBehaviourState> behaviourState = nullptr;
 };
 
 }  // namespace rtype::game

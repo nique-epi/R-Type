@@ -14,6 +14,7 @@
 #include "EventBus.hpp"
 #include "Health.hpp"
 #include "Intent.hpp"
+#include "NetworkIdentity.hpp"
 #include "Pilot.hpp"
 #include "Position.hpp"
 #include "SteadyMotion.hpp"
@@ -95,8 +96,8 @@ void reshapeAsAsked(engine::ComponentRegistry& components, engine::Entity body,
 /** @returns Whether @p boss enraged; false for a body that is no boss. */
 bool isEnraged(const Boss* boss) { return boss != nullptr && boss->enraged; }
 
-/** @returns @p view with what the components of @p body tell of its
- * condition: its health, its rage and the actions it ended. */
+/** @returns @p view with what the components of @p body tell of it: its
+ * health, its rage, the actions it ended and its network id. */
 BehaviourView withConditionOf(BehaviourView view,
                               engine::ComponentRegistry& components,
                               engine::Entity body) {
@@ -106,6 +107,8 @@ BehaviourView withConditionOf(BehaviourView view,
   view.enraged = isEnraged(components.get<Boss>(body));
   const CurrentAction* const current = components.get<CurrentAction>(body);
   view.actionsEnded = current == nullptr ? 0U : current->ended;
+  const NetworkIdentity* const identity = components.get<NetworkIdentity>(body);
+  view.networkId = identity == nullptr ? 0U : identity->networkId;
   return view;
 }
 
@@ -163,7 +166,8 @@ void PilotSystem::update(engine::ComponentRegistry& components,
                 .action = current == nullptr ? std::nullopt : current->key,
                 .actionAge = current == nullptr ? engine::Duration::zero()
                                                 : current->since,
-                .nearestShip = nearestOf(ships_, *position)},
+                .nearestShip = nearestOf(ships_, *position),
+                .behaviourState = &pilot.behaviourState},
             components, body));
         passOnActionOf(components, body, intent);
         reshapeAsAsked(components, body, intent);

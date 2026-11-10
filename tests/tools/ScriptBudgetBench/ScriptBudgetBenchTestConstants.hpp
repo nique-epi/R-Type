@@ -27,6 +27,11 @@ constexpr std::size_t FEW_SCRIPTED_BODIES = 20;
 constexpr std::size_t FEW_BULLETS = 50;
 constexpr BenchPopulation FEW_BODIES{.scriptedBodies = FEW_SCRIPTED_BODIES,
                                      .bullets = FEW_BULLETS};
+/** @brief FEW_BODIES, their script waiting a tick at a time. */
+constexpr BenchPopulation FEW_WAITING_BODIES{
+    .scriptedBodies = FEW_SCRIPTED_BODIES,
+    .bullets = FEW_BULLETS,
+    .waiting = true};
 /** @brief More ticks than a bullet needs to cross the playfield: 1920 units at
  * 360 units per second are 320 ticks. */
 constexpr std::size_t TICKS_TO_CROSS_THE_PLAYFIELD = 330;

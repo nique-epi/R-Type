@@ -5,6 +5,7 @@
 #include <memory>
 #include <span>
 #include <string>
+#include <string_view>
 #include "BehaviourScriptFiles.hpp"
 #include "BehaviourScripts.hpp"
 #include "BenchPopulation.hpp"
@@ -46,6 +47,11 @@ float spreadAcross(std::size_t index, std::size_t count) {
          static_cast<float>(count);
 }
 
+/** @returns The name of the sheet of the scripted bodies of @p population. */
+std::string_view scriptedTypeOf(const BenchPopulation& population) {
+  return population.waiting ? BENCH_WAITING_TYPE : BENCH_SCRIPTED_TYPE;
+}
+
 /** @returns The sheets of @p contentFolders, once @p scripts ran the scripts
  * of those folders, so a sheet can name the behaviour a script registers. */
 game::EntitySheets sheetsAfterRunning(
@@ -67,7 +73,7 @@ BenchScene::BenchScene(BenchPopulation population,
       timedScript_(TimedBehaviourParts{
           .behaviour =
               // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-          sheets_.named(BENCH_SCRIPTED_TYPE).pilot.value().behaviour,
+          sheets_.named(scriptedTypeOf(population)).pilot.value().behaviour,
           .spent = scriptTime_}) {
   systems_.add(std::make_unique<game::PilotSystem>(events_));
   systems_.add(std::make_unique<game::MovementSystem>());
@@ -97,7 +103,7 @@ void BenchScene::fill() {
 
 void BenchScene::spawnScripted(float across) {
   world_.spawn(
-      sheets_.named(BENCH_SCRIPTED_TYPE),
+      sheets_.named(scriptedTypeOf(population_)),
       game::Position{.x = across, .y = laneHeight(scriptedSpawned_++)});
 }
 
@@ -138,6 +144,7 @@ void BenchScene::replaceWhatLeft() {
 
 TickSample BenchScene::runTick() {
   scriptTime_ = engine::Duration::zero();
+  scripts_.machine().beginTick();
   const auto start = std::chrono::steady_clock::now();
   systems_.run(world_.components(), engine::SIMULATION_TICK_DURATION);
   events_.dispatch();
@@ -145,6 +152,10 @@ TickSample BenchScene::runTick() {
   const auto whole = std::chrono::duration_cast<engine::Duration>(
       std::chrono::steady_clock::now() - start);
   return TickSample{.whole = whole, .scripts = scriptTime_};
+}
+
+std::size_t BenchScene::scriptMemory() {
+  return scripts_.machine().memoryUsed();
 }
 
 std::size_t BenchScene::bodiesInPlay() const { return world_.entityCount(); }

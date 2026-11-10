@@ -9,6 +9,12 @@
 #include "StateEncoding.hpp"
 #include "WavePlan.hpp"
 
+namespace rtype::game {
+
+class BehaviourScripts;
+
+}  // namespace rtype::game
+
 namespace rtype::server {
 
 /**
@@ -18,6 +24,7 @@ namespace rtype::server {
  * holds each input, its rules (the name of its difficulty, the lives of each
  * player, friendly fire) and whether it is vanilla.
  */
+// NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init,hicpp-member-init)
 struct GameSettings {
   std::uint32_t seed{};
   WavePlan waves;
@@ -39,6 +46,9 @@ struct GameSettings {
   /** @brief Whether the game skips its waves and brings its boss in at
    * once; a game started so is never vanilla. */
   bool startsAtBoss{false};
+  /** @brief The scripts its bodies run on, which outlive it; nullptr in a game
+   * built without any. */
+  game::BehaviourScripts* scripts{nullptr};
 };
 
 }  // namespace rtype::server

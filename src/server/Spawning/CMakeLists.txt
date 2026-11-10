@@ -1,4 +1,4 @@
-add_library(rtype_server_spawning STATIC WaveSpawner.cpp WaveCatalog.cpp DifficultyLayers.cpp WeaponSystem.cpp VolleySystem.cpp BossStage.cpp)
+add_library(rtype_server_spawning STATIC WaveSpawner.cpp WaveCatalog.cpp DifficultyLayers.cpp WeaponSystem.cpp VolleySystem.cpp BossStage.cpp EntityOrders.cpp)
 
 target_include_directories(rtype_server_spawning PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -7,6 +7,7 @@ target_link_libraries(rtype_server_spawning
     rtype_game
     rtype_game_components
     rtype_game_entity_types
+    rtype_game_scripting
     rtype_game_spawning
     rtype_game_wave_director
     rtype_game_waves

@@ -3,21 +3,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include "BossStage.hpp"
-#include "CollisionRules.hpp"
-#include "DamageRules.hpp"
 #include "GameContext.hpp"
 #include "GameState.hpp"
 #include "IGameFlow.hpp"
 #include "IGameReplication.hpp"
 #include "IHitArbitration.hpp"
-#include "LifeKeeper.hpp"
 #include "Logger.hpp"
-#include "LookItemKeeper.hpp"
+#include "MatchSystems.hpp"
 #include "StartBarrier.hpp"
-#include "VolleySystem.hpp"
-#include "WaveSpawner.hpp"
-#include "WeaponSystem.hpp"
 #include "World.hpp"
 #include "WorldSlot.hpp"
 
@@ -69,7 +62,8 @@ namespace rtype::server {
  * Intent wants to shoot, each at the interval of the gun its sheet gives, and
  * bursts every projectile whose time came into its shards (see WeaponSystem),
  * then fires the volleys of every enemy whose Intent starts an action its
- * sheet fires one on (see VolleySystem),
+ * sheet fires one on (see VolleySystem), then makes appear and removes the
+ * bodies the scripts asked for (see EntityOrders),
  * then lets the Bydos of the current wave appear (see WaveSpawner), then counts
  * the waits and the protections of the lives (see LifeKeeper). The ships and
  * the Bydos move and fire in no other state. Each world starts its random draws
@@ -184,14 +178,7 @@ class GameFlow final : public IGameFlow {
   GameContext& game_;
   WorldSlot& worldSlot_;
   IGameReplication& replication_;
-  std::unique_ptr<WaveSpawner> waveSpawner_;
-  std::unique_ptr<WeaponSystem> weaponSystem_;
-  std::unique_ptr<VolleySystem> volleySystem_;
-  std::unique_ptr<BossStage> bossStage_;
-  std::unique_ptr<game::CollisionRules> collisionRules_;
-  std::unique_ptr<game::DamageRules> damageRules_;
-  std::unique_ptr<LifeKeeper> lifeKeeper_;
-  std::unique_ptr<LookItemKeeper> lookItemKeeper_;
+  std::unique_ptr<MatchSystems> systems_;
   StartBarrier startBarrier_;
   std::unique_ptr<IHitArbitration> hitArbitration_;
   GameState state_{GameState::WaitingForPlayers};
