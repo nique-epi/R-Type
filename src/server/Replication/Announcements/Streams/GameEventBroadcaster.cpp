@@ -11,6 +11,7 @@
 #include "EntitySpawn.hpp"
 #include "EventBus.hpp"
 #include "EventMessage.hpp"
+#include "EventMessages.hpp"
 #include "GameEventBroadcasterParts.hpp"
 #include "GameEventConstants.hpp"
 #include "NetworkException.hpp"
@@ -37,7 +38,11 @@ template <typename Event>
 std::optional<EventMessage> GameEventBroadcaster::tryEncode(
     const Event& event, std::string_view eventName) {
   try {
-    return encoder_.encode(event);
+    if constexpr (requires { encoder_.encode(event); }) {
+      return encoder_.encode(event);
+    } else {
+      return eventMessageOf(event);
+    }
   } catch (const network::NetworkException& error) {
     logger_.warn("game event ", eventName, " not sent: ", error.what());
     return std::nullopt;
