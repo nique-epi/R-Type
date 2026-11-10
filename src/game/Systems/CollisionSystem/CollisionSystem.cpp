@@ -3,6 +3,7 @@
 #include "BoundsOf.hpp"
 #include "Collision.hpp"
 #include "CollisionBox.hpp"
+#include "CollisionCandidate.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EventBus.hpp"
@@ -24,8 +25,8 @@ void CollisionSystem::update(engine::ComponentRegistry& components,
         if (components.has<Summoning>(entity)) {
           return;
         }
-        candidates_.push_back(
-            Candidate{.entity = entity, .bounds = boundsOf(position, box)});
+        candidates_.push_back(CollisionCandidate{
+            .entity = entity, .bounds = boundsOf(position, box)});
       });
   for (std::size_t first = 0; first < candidates_.size(); ++first) {
     for (std::size_t second = first + 1; second < candidates_.size();

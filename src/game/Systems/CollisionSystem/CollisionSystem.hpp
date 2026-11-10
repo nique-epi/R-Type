@@ -1,8 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "Bounds.hpp"
-#include "Entity.hpp"
+#include "CollisionCandidate.hpp"
 #include "ISystem.hpp"
 #include "TimeConstants.hpp"
 
@@ -33,13 +32,8 @@ class CollisionSystem final : public engine::ISystem {
               engine::Duration elapsed) override;
 
  private:
-  struct Candidate {
-    engine::Entity entity;
-    engine::Bounds bounds;
-  };
-
   engine::EventBus& events_;
-  std::vector<Candidate> candidates_;
+  std::vector<CollisionCandidate> candidates_;
 };
 
 }  // namespace rtype::game
