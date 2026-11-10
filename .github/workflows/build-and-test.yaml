@@ -209,27 +209,34 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # The CI never runs a debugger, so the debug builds carry no debug
+          # information: the objects, the compiler cache and the links shrink.
           - os: ubuntu-latest
             preset: test
-            generator_arguments: ""
+            debug_arguments: >-
+              -DCMAKE_C_FLAGS_DEBUG=-O0
+              -DCMAKE_CXX_FLAGS_DEBUG=-O0
+          # The sanitizers keep the line tables, so their reports name the lines.
           - os: ubuntu-latest
             preset: sanitize
             label: ", sanitizers"
-            generator_arguments: ""
+            debug_arguments: >-
+              -DCMAKE_C_FLAGS_DEBUG=-g1
+              -DCMAKE_CXX_FLAGS_DEBUG=-g1
           # Every RTYPE_MODULE_* option off: the build, the tests and the start
           # of the supervisor without the optional modules.
           - os: ubuntu-latest
             preset: modules-off
             label: ", optional modules off"
-            generator_arguments: ""
+            debug_arguments: >-
+              -DCMAKE_C_FLAGS_DEBUG=-O0
+              -DCMAKE_CXX_FLAGS_DEBUG=-O0
           - os: windows-latest
             preset: test
-            # Ninja compiles every file in parallel; the Visual Studio generator does not.
-            # /Z7 puts the debug information in the object files, which ccache can cache.
-            generator_arguments: >-
-              -G Ninja
-              -DCMAKE_CXX_SCAN_FOR_MODULES=OFF
-              -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
+            debug_arguments: >-
+              -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=
+              -DCMAKE_EXE_LINKER_FLAGS_DEBUG=/INCREMENTAL:NO
+              -DCMAKE_SHARED_LINKER_FLAGS_DEBUG=/INCREMENTAL:NO
     steps:
       - uses: actions/checkout@v5
         with:
@@ -279,12 +286,15 @@ jobs:
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
           restore-keys: vcpkg-${{ runner.os }}-
 
+      # Ninja compiles every file in parallel, on every platform.
       - name: Configure
         shell: bash
         env:
           VCPKG_SSL_REVOKE_BEST_EFFORT: ${{ runner.os == 'Windows' && '1' || '0' }}
         run: >-
-          cmake --preset ${{ matrix.preset }} ${{ matrix.generator_arguments }}
+          cmake --preset ${{ matrix.preset }} -G Ninja
+          -DCMAKE_CXX_SCAN_FOR_MODULES=OFF
+          ${{ matrix.debug_arguments }}
           -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
           -DCMAKE_C_COMPILER_LAUNCHER=ccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
