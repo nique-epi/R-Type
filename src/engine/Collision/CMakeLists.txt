@@ -1,4 +1,5 @@
 add_subdirectory(Shapes)
+add_subdirectory(Grid)
 
 add_library(rtype_engine_collision INTERFACE)
 
