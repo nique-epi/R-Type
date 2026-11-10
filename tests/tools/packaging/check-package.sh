@@ -11,7 +11,9 @@
 #      The client package must carry its sprites and must not carry the
 #      server, nor the waves file only the server reads; the server package
 #      must carry the waves and must not carry the client, nor the music only
-#      the client plays. On Linux the AppImage is unpacked to check it too.
+#      the client plays. When vpk packed the client (velopack/), its feed and
+#      full package must be there, its installer on Windows, and its AppImage
+#      on Linux, unpacked to check it too.
 #
 #   2. Does the client start?
 #      It is run with --help. If a library it needs is missing from the
@@ -29,6 +31,17 @@ set -eu
 # Made absolute, since the programs are run from another folder.
 packages_folder=$(cd "$1" && pwd)
 system=$(uname -s)
+# What vpk packed, when the build has the update module: the feed, the full
+# package, the installer on Windows and the AppImage on Linux. Without vpk the
+# folder is missing, and the checks of Velopack are skipped, as the AppImage.
+velopack_folder=""
+if [ -d "$packages_folder/velopack" ]; then
+  velopack_folder=$packages_folder/velopack
+fi
+appimage=""
+if [ "$system" = "Linux" ] && [ -n "$velopack_folder" ]; then
+  appimage=$(echo "$packages_folder"/R-Type-client-*.AppImage)
+fi
 
 # On Windows the programs end in .exe; elsewhere they have no extension.
 if [ "$system" = "Linux" ] || [ "$system" = "Darwin" ]; then
@@ -111,12 +124,25 @@ check_each_package_holds_only_its_program() {
     fail "the server package holds the music of the client"
   passed "the client and the server are packaged apart, each with its files"
 
-  if [ "$system" = "Linux" ]; then
-    appimage=$(echo "$packages_folder"/R-Type-client-*.AppImage)
+  if [ -n "$appimage" ]; then
     "$appimage" --appimage-extract > /dev/null
-    [ -d squashfs-root/usr/assets/sprites ] ||
-      fail "the AppImage has no usr/assets/sprites"
+    [ -n "$(find squashfs-root -type d -path '*/assets/sprites')" ] ||
+      fail "the AppImage has no assets/sprites"
     passed "the AppImage holds the files of the client"
+  fi
+
+  if [ "$exe" = ".exe" ] && [ -n "$velopack_folder" ]; then
+    [ -f "$(echo "$packages_folder"/R-Type-client-*.exe)" ] ||
+      fail "Velopack made no installer"
+    passed "Velopack made the installer"
+  fi
+
+  if [ -n "$velopack_folder" ]; then
+    [ -n "$(find "$velopack_folder" -name 'releases.*.json')" ] ||
+      fail "Velopack made no feed"
+    [ -n "$(find "$velopack_folder" -name 'R-Type-*-full.nupkg')" ] ||
+      fail "Velopack made no full package"
+    passed "Velopack made the feed and the full package of the update"
   fi
 
   if [ "$system" = "Darwin" ]; then
@@ -137,8 +163,7 @@ check_the_client_starts() {
   "$client_program" --help > /dev/null || fail "the client does not start"
   passed "the client starts"
 
-  if [ "$system" = "Linux" ]; then
-    appimage=$(echo "$packages_folder"/R-Type-client-*.AppImage)
+  if [ -n "$appimage" ]; then
     "$appimage" --help > /dev/null || fail "the AppImage does not start"
     passed "the AppImage starts"
   fi

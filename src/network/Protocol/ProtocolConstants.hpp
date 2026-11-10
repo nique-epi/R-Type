@@ -209,7 +209,7 @@ constexpr std::uint32_t FIRST_INPUT_NUMBER = 1;
 
 static_assert(identifiers::MAXIMUM_ENTITY_TYPES <=
                   std::numeric_limits<std::uint8_t>::max(),
-              "typeCount is one byte, and so is the number of a type");
+              "the number of a type is one byte, and 0 names none");
 
 /**
  * @brief The most inputs before the newest that one PlayerInput repeats. At

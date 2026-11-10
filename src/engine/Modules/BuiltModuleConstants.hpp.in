@@ -16,6 +16,7 @@
 #cmakedefine01 RTYPE_MODULE_AUDIO
 #cmakedefine01 RTYPE_MODULE_METRICS
 #cmakedefine01 RTYPE_MODULE_DEBUG
+#cmakedefine01 RTYPE_MODULE_UPDATE
 #cmakedefine01 RTYPE_MODULE_MASTER_LINK
 #cmakedefine01 RTYPE_MODULE_ADMIN_CONSOLE
 #cmakedefine01 RTYPE_MODULE_CHAT
@@ -31,6 +32,8 @@ constexpr bool AUDIO_MODULE_BUILT = RTYPE_MODULE_AUDIO == 1;
 constexpr bool METRICS_MODULE_BUILT = RTYPE_MODULE_METRICS == 1;
 /** @brief Whether the client holds its `debug` module, the lagometer. */
 constexpr bool DEBUG_MODULE_BUILT = RTYPE_MODULE_DEBUG == 1;
+/** @brief Whether the client holds its self-update module, `update`. */
+constexpr bool UPDATE_MODULE_BUILT = RTYPE_MODULE_UPDATE == 1;
 /** @brief Whether the supervisor holds its `master` module, which registers
  * the server with the master. */
 constexpr bool MASTER_LINK_MODULE_BUILT = RTYPE_MODULE_MASTER_LINK == 1;

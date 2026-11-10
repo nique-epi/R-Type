@@ -13,8 +13,9 @@ namespace rtype::client {
  * @brief The modules of the client, in the order an Application installs and
  * starts them (and stops them in reverse): the logger, the assets, the
  * settings, the window, the connection, the metrics, the sound, the screens,
- * then the modules that add theirs to its registry: the menus, the lobby and
- * the game.
+ * then the modules that add theirs to its registry: the update, the menus,
+ * the lobby and the game. The update stays before the menus, whose titles ask
+ * its notice when they install.
  * This is the one place that lists them. The sound and the metrics are in
  * the list only when the build compiled them (RTYPE_MODULE_AUDIO,
  * RTYPE_MODULE_METRICS); without the sound, the screens play nothing. Listed,
@@ -30,5 +31,13 @@ namespace rtype::client {
 [[nodiscard]] std::vector<std::unique_ptr<engine::IModule>> clientModules(
     const logging::LogLaunchOptions& logOptions,
     const LaunchOptions& launchOptions, FrameLoop& loop);
+
+/**
+ * @brief Runs what the modules of this build must do before main() reads its
+ * arguments: with the update module (RTYPE_MODULE_UPDATE), the start of
+ * Velopack, which ends the process when the installer or the updater started
+ * the client to run a hook. Without it, nothing.
+ */
+void runClientStartupHooks();
 
 }  // namespace rtype::client
