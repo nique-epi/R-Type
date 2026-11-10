@@ -156,6 +156,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Score: the points of the sheet of each Bydo, credited to the player who fired the missile, sent in the world state | Available | `assets/entities/`, `src/game/Systems/DamageRules/`, `src/server/Rules/Players/` |
 | Waves of Bydos that grow, read from the waves file at launch, up to the last wave of the level | Available: each game plays the difficulty its creator chose, `normal` (8 waves) by default, then the Bydo Tyrant in `normal` and `hard` (see [Boss](#boss-bossstage-and-bossphasesystem)) | `src/game/Waves/`, `src/server/Spawning/`, `assets/waves/waves.toml` |
 | The boss after the last wave: its warning, its arrival, its fight, its rage and its volleys | Available: the Bydo Tyrant, in `normal` and `hard` (see [Boss](#boss-bossstage-and-bossphasesystem)) | `src/server/Spawning/`, `src/game/Systems/BossPhaseSystem/`, `src/game/Behaviours/Movements/Attacks/` |
+| A level a Luau script directs instead of the waves: its scroll, its pauses, its biomes and its checkpoints | Available: the setting `level`, empty by default; the shipped level is `training_run` (see [Level a script directs](#level-a-script-directs-leveldirector)) | `src/server/Spawning/`, `src/game/Level/`, `src/game/Scripting/Level/` |
 | Lives: a life lost when a ship touches a Bydo or a missile of a Bydo, a new ship 1 s later that cannot be hit for 2 s, a player with no life left watching | Available | `src/server/Rules/Players/` |
 
 ## The three roles: supervisor, game and master
@@ -167,7 +168,7 @@ To change one of them, see [Where to intervene](#where-to-intervene).
 | Launch options | `LaunchOptions` | `GameLaunchOptions` | `MasterLaunchOptions` (see [Master](/R-Type/master/)) |
 | Reads | `server.cfg`, whole; runs its own lines and keeps the lines of its games | only the file given after `--configuration`; none without it | `master.cfg` |
 | Modules | `supervisorModules()`: logger, network, content, supervised games, supervisor lobby, information, master, admin console | `gameProcessModules()`: logger, network, storage, games (one game), lobby, metrics, supervisor link, and the plugins its file loads | `masterModules()` |
-| Settings it owns | `port`, `database`, `server-name`, `master-url`, `master-key`, `public-address` | `seed`, `state-rate`, `state-encoding`, `input-delay`, `start-at-boss`, and those of its plugins; its `port` and `database` come from its command line | those of `master.cfg` |
+| Settings it owns | `port`, `database`, `server-name`, `master-url`, `master-key`, `public-address` | `seed`, `state-rate`, `state-encoding`, `input-delay`, `start-at-boss`, `level`, and those of its plugins; its `port` and `database` come from its command line | those of `master.cfg` |
 | Talks to the master | yes, one registration for all its games | never | |
 | Answers information requests | yes | never | |
 | Journal | `r-type_server.log` | `r-type_game_<n>.log`, n its number in the journal of the supervisor | `r-type_master.log` |
@@ -317,7 +318,7 @@ Each line belongs to the supervisor or to its games. `gameLineRule()` (`src/serv
 
 | The line… | Belongs to |
 |---|---|
-| sets a setting of `GAME_SETTING_NAMES`: `seed`, `state-rate`, `state-encoding`, `input-delay`, `start-at-boss`, `game-statistics-file` | the games |
+| sets a setting of `GAME_SETTING_NAMES`: `seed`, `state-rate`, `state-encoding`, `input-delay`, `start-at-boss`, `level`, `game-statistics-file` | the games |
 | runs a command of `GAME_COMMAND_NAMES`: `plugin`, `plugin-folder` | the games |
 | is `module <name> on\|off` on a module the supervisor does not have, one `SUPERVISOR_MODULE_NAMES` does not name | the games |
 | anything else | the supervisor, which runs it, or refuses it when it does not know it |
@@ -333,6 +334,7 @@ A line of the games is not run by the supervisor, in none of the three passes of
 | `set state-encoding delta\|full` | For the games: how each world state is written for a player: `delta`, as the difference from the newest state it acknowledged, or with every entity when it acknowledged none or when the newest it acknowledged is more than 60 ticks older (`MAXIMUM_REFERENCE_DISTANCE`); `full`, every entity in every state. Default: `delta`. `full` is there to measure what the differences save (see [Network measurements](/R-Type/measurements/)). |
 | `set input-delay <ticks>` | For the games: the ticks every player's input is held before it is applied, from 0 to 30. Default: 3. |
 | `set start-at-boss 0\|1` | For the games: 1 starts every game at its boss, without the waves, with ships that never die, and makes the games not vanilla; 0 plays the waves. Default: 0. `--boss` sets it to 1. |
+| `set level <name>` | For the games: the level every game plays instead of the waves of its difficulty, one a script registered with `level.register` (see [Level a script directs](#level-a-script-directs-leveldirector)); it makes the games not vanilla. Default: empty, which plays the waves. |
 | `set database <file>` | The SQLite file the leaderboard of this server is kept in, on a local disk; a name with a space goes in quotes. Default: empty, which keeps it in `r-type_server_<port>.db` next to the executable, with the port of `set port`. Declared by the supervised games module, which starts every game with this file. |
 | `set master-url <url>` | The master the supervisor lists this server on, `http(s)://<host>[:<port>]`. Default: empty, and the server runs alone (see [Link with the master](#link-with-the-master-servermastermodule)). |
 | `set master-key <key>` | The key the master gave when the host created this server on it. Default: empty, and the server runs alone. Never committed: only `server.cfg.example` is, with an empty key. |
@@ -363,7 +365,7 @@ module lobby off
 | `logger` | applies the logging options when it starts, logs "server starting" and "server stopped"; provides the journal as an `ILogJournal`, so a plugin logs where the lines of the game go | `src/server/Logger/` |
 | `network` | declares the `port` setting; owns the `ServerApplication`: binds the socket and runs it on a thread when it starts, gives the port back when it stops; provides `IDatagramSender`, `IPlayerAdmission`, `TickDatagrams` (the datagrams of the tick), `IListeningPort` (the port of the `port` setting), `network::TrafficCounters` and the `RejectionLedger` | `src/server/Network/` |
 | `storage` | declares the `database` setting; opens the SQLite file and starts the thread that owns it when it starts, finishes what waits and closes the file when it stops; provides `IResultsArchive` | `src/server/Storage/` |
-| `games` | declares the `seed`, `state-rate`, `state-encoding`, `input-delay` and `start-at-boss` settings, and the rules of its game, `difficulty`, `lives` and `friendly-fire` (`GameRuleSettings`); the one game of the process and its `EventBus`; reads the waves file when it starts and judges whether its game is vanilla; provides `RunningGame` and `IGameEvents` (the bus of the game, for a module listed after it or a plugin) | `src/server/Games/` |
+| `games` | declares the `seed`, `state-rate`, `state-encoding`, `input-delay`, `start-at-boss` and `level` settings, and the rules of its game, `difficulty`, `lives` and `friendly-fire` (`GameRuleSettings`); the one game of the process and its `EventBus`; reads the waves file when it starts and judges whether its game is vanilla; provides `RunningGame` and `IGameEvents` (the bus of the game, for a module listed after it or a plugin) | `src/server/Games/` |
 | `lobby` | one `ConnectionAcceptor`, built on the roster of the game; reads the content of the assets and of the resources when it installs, which every acceptance announces with the port of the supervisor | `src/server/Lobby/` |
 | `metrics` | measures the ticks and the systems of the game, and writes a report to the journal every `TICKS_PER_REPORT` ticks; writes the traffic of the socket; provides `LatestMetrics` | `src/server/Metrics/` |
 | `supervisor link` | sends the supervisor a `GameStatus` every second and when it changes, with the measures of `LatestMetrics` when the metrics module is on; asks the process to stop when the supervisor does or is gone, and expels the pilots an `ExpulsionOrder` of the supervisor names (see [Expelling a pilot](#expelling-a-pilot)) | `src/server/SupervisorLink/` |
@@ -774,6 +776,7 @@ The ledger also counts the loss. An accepted datagram counts as received, and th
 - A `ReadyState` counts only while the game waits for players; anything else is ignored. A late copy never undoes a newer one, because `DatagramReader` already dropped it (see [Order and loss](#order-and-loss-arrivalledger)).
 - `finish()` ends the game in progress and does nothing in another state; it tells the players no result. The game ends itself the same way once no player is left in it (see [Silent players](#silent-players-heartbeats-and-timeouts)) or once no player left in it has a life (see [End of a game](#end-of-a-game-gameendannouncer)), and only then tells them the result.
 - The tick that puts the game in `Starting` sends every connected player `GameStarted`; the tick that puts it in `InProgress` sends the world state of tick 0, so `GameStarted` always leaves first and a lost one is corrected by the repeat or by that world state. The game logs `game started, players connected: <n>` at the `info` level under `Instances`.
+- A game that plays a level (the setting `level`) runs no wave: it is won once the level is cleared, lost once its script failed, and a team without a life goes back to the last checkpoint of the level instead of losing (see [Level a script directs](#level-a-script-directs-leveldirector)).
 - The end of a game goes out as a `GameEnded` (see [End of a game](#end-of-a-game-gameendannouncer)).
 - Each move from one state to another is published on the bus of the game as a `GameStateChanged`, with the state left and the state reached, once per move: the results follow it, and so does the list of games the master is told of. A player taking a place is published as a `game::PlayerArrival`, the counterpart of `game::PlayerDeparture`.
 
@@ -1070,6 +1073,27 @@ The Bydo Tyrant is the only boss shipped. Its behaviour, `bydo_tyrant` (`BydoTyr
 
 Between two attacks it drifts up or down, within `TYRANT_DRIFT_SPAN` (200 units) of the row it arrived on and at `TYRANT_DRIFT_SPEED` (240 units per second) at most, heading in turn for the row of the nearest ship and for a row drawn from its count of actions, so with four players it follows none. Before the attacks it lays out on the playfield (`TYRANT_LAID_OUT_ATTACKS`: its broods, its spores and its wall) it heads back to the row it arrived on, and during an attack it holds its row, since its attacks start from where it stands. Its charge takes it on past the left edge until its center is past `TYRANT_HIDDEN_LEFT_COLUMN` (-256 units, half its frame), so its whole body left the screen, and only then does it leap to past the right edge, on the same row.
 
+## Level a script directs: `LevelDirector`
+
+A game whose setting `level` names a level plays it instead of the waves of its difficulty. A level is a list of stages a Luau script registered with `level.register` (see [Scripting in Luau](/R-Type/scripting/#directing-a-level)). `ServerGamesModule` refuses a name no script registered when it starts, with the levels it knows: `no script registers the level nowhere; registered: training_run`. Without the setting, a game plays its waves, the survival mode.
+
+`MatchSystems` builds a `LevelDirector` (`src/server/Spawning/`) with each world of such a game and ticks it before the systems of the world, so a stage never waits behind the scripted bodies for the budget of the tick. Such a game has neither a `WaveSpawner` nor a `BossStage`. Each tick:
+
+1. It steps the stage due (`game::LuauLevelRun`, `src/game/Scripting/Level/`): the stage starts, or goes on once its wait is over.
+2. It scrolls the level by one tick (`game::LevelScroll`, `src/game/Level/`), at `LEVEL_SCROLL_SPEED` (120) logical units per second, unless a script paused the scroll. The scroll starts at 0 with the level. `LevelDirector::progress()` gives the scroll, the biome and the last checkpoint to whatever follows the level.
+3. It publishes a `game::LevelChange` on the bus of the game at the first tick, then when the biome changes, when the scroll stops or starts again, and after a restart from a checkpoint. The players get it as a guaranteed `LevelStatus` (see [Protocol](/R-Type/protocol/#level-status)).
+
+| The level… | The game… |
+|---|---|
+| returned from its last stage, and no enemy is left in the world | is won: `game finished: the level is cleared` |
+| has a stage that failed: an error of the script, its memory or its time budget | is lost: `game finished: the script of the level failed`, once the journal said why under `LevelDirector` |
+| reached a checkpoint, and no connected player has a life left | goes on from that checkpoint |
+| reached no checkpoint, and no connected player has a life left | is lost, as a game of waves is |
+
+Each stage after the first starts at a checkpoint: where the level had scrolled and the biome it showed when the stage before it returned. When no connected player has a life left, `GameFlow` asks `MatchSystems::restartFromCheckpoint()` before it ends the game. The level then goes back to that scroll and that biome, its scroll moving, and the stage runs again from its first line. Every body but the ships is removed, each with an `EntityDestruction` (`Removed`), and `LifeKeeper::reviveTheTeam()` gives every connected player the lives of the rules, and a new ship, invulnerable as a ship that comes back is, to each player without one. The scores are kept, and a team may restart from the same checkpoint any number of times.
+
+A game that plays a level is never vanilla (see [Vanilla games](#vanilla-games-vanillabreaches)).
+
 ## Shooting: `WeaponSystem`
 
 `WeaponSystem` (`src/server/Spawning/`) fires the missiles of the players and of the Bydos with the same code. Every body that shoots carries a `Gun` (`src/game/Components/Gun.hpp`), from the `[gameplay.gun]` of its sheet: the number of the sheet it fires (`projectileNumber`), the ticks between two shots (`intervalTicks`) and the ticks left before the next one (`ticksUntilReady`). It also carries an `Intent` (`src/game/Components/Intent.hpp`) whose `shooting` says whether its controller wants it to fire. The player controller writes `shooting` from the shoot bit of the newest input (`steerShipByInput`); the behaviour of a Bydo (`src/game/Behaviours/`, asked by `PilotSystem`, run with the systems of the world) sets it at every tick. Each tick of a game in progress, after the systems run, `MatchSystems` calls `onTick()`: every `Gun` that is not ready counts one tick down, and every body whose `Intent` wants to shoot and whose `Gun` is ready fires one projectile, made by `World::spawn` from the sheet its `Gun` names, then starts counting `intervalTicks` again.
@@ -1300,6 +1324,7 @@ The games module judges its game once, when it starts, since the values it reads
 | The default lives | the rules give each player other lives than `DEFAULT_LIVES` (3) |
 | No friendly fire | the rules turn friendly fire on |
 | Games played from their first wave | `start-at-boss` is 1 (`--boss`): the game has no waves and its ships never die |
+| Games that play the waves of their difficulty | `level` names a level: a script directs the game, and no wave comes |
 
 Every difficulty of the shipped waves file is vanilla: the leaderboard keeps them apart by `difficulty`.
 
@@ -1520,6 +1545,9 @@ The supervised games module tells the job when the games change. At each tick, o
 | Change when a boss enrages, or what shields it | `[gameplay.boss]` in its sheet; `BossPhaseSystem` in `src/game/Systems/BossPhaseSystem/`, `isArmored` in `src/game/Systems/DamageRules/DamageRules.cpp` |
 | Change how much health a boss has for the players, or in a difficulty | `BOSS_HEALTH_PER_EXTRA_PLAYER` in `src/server/Spawning/BossStageConstants.hpp`, `scaledBossHealth()` in `src/server/Spawning/BossStage.cpp`; `boss_health_percent` in `assets/waves/waves.toml` |
 | Test the fight of a boss without the waves | `--boss`, or `set start-at-boss 1` |
+| Play a level a script directs instead of the waves | `set level <name>`, with the `ensure` line of the resource that registers it; the shipped one is `training_run` of `resources/training-run/` |
+| Change how fast a level scrolls | `LEVEL_SCROLL_SPEED` in `src/game/Level/LevelConstants.hpp` |
+| Change when a level is cleared, or what a restart from a checkpoint removes and gives back | `LevelDirector` in `src/server/Spawning/`, `MatchSystems::restartFromCheckpoint()` in `src/server/Rules/Match/`, `LifeKeeper::reviveTheTeam()` in `src/server/Rules/Players/` |
 | Change the attacks of the Bydo Tyrant, or their order | its settings in `assets/entities/bydo_tyrant.toml`; `TYRANT_CALM_ROTATION` and `TYRANT_ENRAGED_ROTATION` in `src/game/Behaviours/Movements/Attacks/BydoTyrantBehaviourConstants.hpp` |
 | Change how the Bydo Tyrant drifts between its attacks | the `TYRANT_DRIFT_` constants and `TYRANT_LAID_OUT_ATTACKS` in `BydoTyrantBehaviourConstants.hpp` |
 | Make an enemy send several bodies at once | a `[[gameplay.volley]]` in its sheet; how it is laid, `volleyPlacement()` in `src/game/Spawning/VolleyPlacement.cpp`; when it is fired, `VolleySystem` in `src/server/Spawning/` |
