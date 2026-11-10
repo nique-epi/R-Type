@@ -4,10 +4,10 @@
 #include "CandidatePair.hpp"
 #include "Collision.hpp"
 #include "CollisionBox.hpp"
-#include "CollisionCandidate.hpp"
 #include "CollisionSystemConstants.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
+#include "EntityBounds.hpp"
 #include "EventBus.hpp"
 #include "Overlaps.hpp"
 #include "Position.hpp"
@@ -35,16 +35,15 @@ void CollisionSystem::gatherCandidates(engine::ComponentRegistry& components) {
           return;
         }
         const engine::Bounds bounds = boundsOf(position, box);
-        candidates_.push_back(
-            CollisionCandidate{.entity = entity, .bounds = bounds});
+        candidates_.push_back(EntityBounds{.entity = entity, .bounds = bounds});
         grid_.insert(bounds);
       });
 }
 
 void CollisionSystem::publishOverlaps() {
   for (const engine::CandidatePair& pair : grid_.candidatePairs()) {
-    const CollisionCandidate& first = candidates_[pair.first];
-    const CollisionCandidate& second = candidates_[pair.second];
+    const EntityBounds& first = candidates_[pair.first];
+    const EntityBounds& second = candidates_[pair.second];
     if (engine::overlaps(first.bounds, second.bounds)) {
       events_.publish(
           engine::Collision{.first = first.entity, .second = second.entity});

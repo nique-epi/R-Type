@@ -2,8 +2,8 @@
 
 #include <vector>
 #include "ActiveHurts.hpp"
+#include "EntityBounds.hpp"
 #include "ISystem.hpp"
-#include "ShipBounds.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::engine {
@@ -46,7 +46,7 @@ class HurtZoneSystem final : public engine::ISystem {
   void publishContacts(engine::ComponentRegistry& components);
 
   engine::EventBus& events_;
-  std::vector<ShipBounds> ships_;
+  std::vector<EntityBounds> ships_;
   ActiveHurts hurts_;
 };
 

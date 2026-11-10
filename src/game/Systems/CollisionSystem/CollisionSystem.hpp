@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "CollisionCandidate.hpp"
+#include "EntityBounds.hpp"
 #include "ISystem.hpp"
 #include "TimeConstants.hpp"
 #include "UniformGrid.hpp"
@@ -40,7 +40,7 @@ class CollisionSystem final : public engine::ISystem {
   void publishOverlaps();
 
   engine::EventBus& events_;
-  std::vector<CollisionCandidate> candidates_;
+  std::vector<EntityBounds> candidates_;
   engine::UniformGrid grid_;
 };
 
