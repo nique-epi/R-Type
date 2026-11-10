@@ -354,6 +354,14 @@ The subject asks that dependencies go through the package manager and that the p
 
 Alternative considered: libsodium. It is the reference, with Argon2id for passwords, but its vcpkg port builds with autotools on macOS and Linux, which every developer and the CI would have to install on the machine, against the subject.
 
+## Updates of the client
+
+The client updates itself through [Velopack](https://velopack.io), which installs the client, downloads a newer release and replaces the client once it exits, on Windows, macOS and Linux, from one C++ API. vpk, its packaging tool, writes the installer, the AppImage and the app the players get, and the feed of each system that lists the packages of a release (see [Client](/R-Type/client/#updates-clientupdatemodule-signedfeedsource)).
+
+Velopack checks the SHA-256 of a package against the feed, and nothing signs the feed: whoever could change the files of a release could change both. So the release workflow signs each feed with an Ed25519 key, the secret `UPDATE_SIGNING_KEY`, and the client hands a feed to Velopack only once its signature is the one of the public key it holds. A feed or a package altered after the release, or published without the key, is never installed.
+
+Alternative considered: an updater written for the game, a signed manifest and an installer per system. It depends on no library, but the replacement of a running program, the restart and the installer of each system are code of ours, tested on three systems, where Velopack already does them.
+
 ## Consequences
 
 - `EntityRegistry`, `ComponentRegistry`, `ISystem`, `SystemScheduler`, `EventBus` and `BoundedQueue` exist today. The game screen of the client calls a scheduler once per frame to play its animations; the tick of the server runs the stages of its `Application`: the games move on and run their systems and their timers, the connection requests are answered, and the events of the bus are delivered.
