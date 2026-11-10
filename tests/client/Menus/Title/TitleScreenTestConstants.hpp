@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SFML/System/Vector2.hpp>
+#include <chrono>
 #include <cstdint>
 #include "BackgroundConstants.hpp"
 
@@ -8,6 +9,9 @@ namespace rtype::client::testing {
 
 /** @brief Seed of the shots of the squadrons of the tests. */
 constexpr std::uint32_t TITLE_SEED = 7;
+
+/** @brief One frame of the title, at 60 frames a second. */
+constexpr std::chrono::milliseconds TITLE_FRAME{16};
 
 /** @brief Where the logo lies on the mockup of the title screen. */
 constexpr sf::Vector2i LOGO_TOP_LEFT(24, 36);

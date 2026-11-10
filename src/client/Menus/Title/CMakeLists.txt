@@ -20,6 +20,7 @@ target_link_libraries(rtype_client_title
     rtype_client_menu
     rtype_client_screens_module
     rtype_client_squadron
+    rtype_client_update_contract
     rtype_client_window_display
     rtype_logging
     rtype_network_constants

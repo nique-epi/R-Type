@@ -351,7 +351,7 @@ The pack, as fields in the encoding of this page:
 - The files come in the strict order of their paths, byte by byte, so a path appears once, and the same assets always make the same pack and the same fingerprint.
 - A path is relative to the assets folder, such as `entities/drifter.toml` or `sprites/mobs/reaper.png`: 1 to 64 characters of `a` to `z`, `0` to `9`, `_`, `.`, `/` and `-`, made of names separated by `/`, none of them empty, `.` or `..`, so a client that writes a file of a pack below a folder of its own never writes outside it.
 - A file whose path is `entities/<name>.toml` is a sheet; every other file is a sprite sheet the sheets name.
-- A pack holds at most 64 files and 8388608 bytes once encoded.
+- A pack holds at most 510 files (`MAXIMUM_CONTENT_PACK_FILES`, a sheet and a sprite sheet for each of the 255 types) and 8388608 bytes once encoded. A client built when the limit was 64 files refuses a larger pack.
 - The `sheet` of every `[appearance]` of a pack names a file of that same pack: a client refuses a pack whose sheet names any other file.
 - A reader refuses a pack larger than 8388608 bytes before reading it, and checks each count and each size against what remains before it copies a byte, so a pack never makes it read past the end or allocate more than the pack holds. It also refuses a pack of another `format`, one cut short, one with bytes after its last file, and one whose files break a rule above.
 

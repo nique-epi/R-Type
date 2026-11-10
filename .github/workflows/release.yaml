@@ -2,7 +2,9 @@ name: release
 
 # Publishes a GitHub release for every version tag: the packages of the client
 # and the server, built by the package workflow, and notes listing the pull
-# requests merged since the previous tag.
+# requests merged since the previous tag. The message of the annotated tag
+# goes into the update packages of the client, which shows it in WHAT'S NEW,
+# and at the top of the notes.
 on:
   push:
     tags:
@@ -16,6 +18,8 @@ jobs:
   version:
     name: Check the tag against the project version
     runs-on: ubuntu-latest
+    outputs:
+      notes: ${{ steps.notes.outputs.notes }}
     steps:
       - uses: actions/checkout@v5
 
@@ -30,10 +34,27 @@ jobs:
             exit 1
           fi
 
+      # actions/checkout fetches the tag as a lightweight one: fetch it again
+      # to read its message. A tag without a message gives no notes.
+      - name: Read the message of the tag
+        id: notes
+        shell: bash
+        run: |
+          git fetch --force origin "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME"
+          notes=$(git for-each-ref --format='%(contents)' "refs/tags/$GITHUB_REF_NAME")
+          delimiter="notes-$(openssl rand -hex 16)"
+          {
+            echo "notes<<$delimiter"
+            printf '%s\n' "$notes"
+            echo "$delimiter"
+          } >> "$GITHUB_OUTPUT"
+
   package:
     name: Package
     needs: version
     uses: ./.github/workflows/package.yaml
+    with:
+      release-notes: ${{ needs.version.outputs.notes }}
     secrets:
       MACOS_CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
       MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
@@ -43,7 +64,7 @@ jobs:
 
   publish:
     name: Publish the release
-    needs: package
+    needs: [version, package]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -54,15 +75,32 @@ jobs:
           merge-multiple: true
           path: packages
 
+      # The artifacts keep their folders: the feeds and the full packages of
+      # the client sit in velopack/. Every file goes to the root of the
+      # release, where the client reads the feed of its system and downloads
+      # the package the feed names; two files of one name would replace each
+      # other, so the step stops on them.
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: >-
-          gh release create "$GITHUB_REF_NAME" packages/*
-          --repo "$GITHUB_REPOSITORY"
-          --title "R-Type $GITHUB_REF_NAME"
-          --generate-notes
-          --verify-tag
+          TAG_NOTES: ${{ needs.version.outputs.notes }}
+        run: |
+          printf '%s\n' "$TAG_NOTES" > "$RUNNER_TEMP/tag-notes.md"
+          files=()
+          while IFS= read -r file; do
+            files+=("$file")
+          done < <(find packages -type f | sort)
+          repeated=$(printf '%s\n' "${files[@]}" | xargs -n 1 basename | sort | uniq -d)
+          if [ -n "$repeated" ]; then
+            echo "two packages share a name: $repeated"
+            exit 1
+          fi
+          gh release create "$GITHUB_REF_NAME" "${files[@]}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "R-Type $GITHUB_REF_NAME" \
+            --notes-file "$RUNNER_TEMP/tag-notes.md" \
+            --generate-notes \
+            --verify-tag
 
   # Waits for the approval of the "production" environment, then installs the
   # server package of the release on the master instance of AWS.

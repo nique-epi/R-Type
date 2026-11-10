@@ -79,4 +79,8 @@ InvalidGameOptionException::InvalidGameOptionException(std::string_view game)
           std::to_string(network::FIRST_HOSTED_GAME_NUMBER) + " to " +
           std::to_string(std::numeric_limits<std::uint16_t>::max())) {}
 
+UpdateException::UpdateException(std::string_view step, std::string_view reason)
+    : ClientException("The update could not " + std::string(step) + ": " +
+                      std::string(reason)) {}
+
 }  // namespace rtype::client

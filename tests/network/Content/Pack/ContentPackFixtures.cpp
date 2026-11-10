@@ -1,6 +1,7 @@
 #include "ContentPackFixtures.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <ranges>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -20,11 +21,15 @@ std::vector<identifiers::ContentFile> twoContentFiles() {
 std::vector<identifiers::ContentFile> filesNumbered(std::size_t count) {
   std::vector<identifiers::ContentFile> files;
   for (std::size_t index = 0; index < count; ++index) {
-    std::string path{NUMBERED_FILE_PREFIX};
-    path.push_back(static_cast<char>('0' + (index / DECIMAL_BASE)));
-    path.push_back(static_cast<char>('0' + (index % DECIMAL_BASE)));
+    std::string digits(FILE_NUMBER_DIGITS, '0');
+    std::size_t rest = index;
+    for (char& digit : std::views::reverse(digits)) {
+      digit = static_cast<char>('0' + (rest % DECIMAL_BASE));
+      rest /= DECIMAL_BASE;
+    }
     files.push_back(identifiers::ContentFile{
-        .path = path, .bytes = std::string(1, ONE_BYTE)});
+        .path = std::string{NUMBERED_FILE_PREFIX} + digits,
+        .bytes = std::string(1, ONE_BYTE)});
   }
   return files;
 }

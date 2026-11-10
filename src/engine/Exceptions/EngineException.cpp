@@ -211,4 +211,9 @@ ResourceDependenciesExpectedException::ResourceDependenciesExpectedException(
 ScriptException::ScriptException(const std::string& message)
     : EngineException(message) {}
 
+InvalidGridLayoutException::InvalidGridLayoutException(std::size_t maximumLines)
+    : EngineException(
+          "A collision grid needs a positive cell side and at most " +
+          std::to_string(maximumLines) + " cells along each axis") {}
+
 }  // namespace rtype::engine

@@ -103,6 +103,7 @@ Paths below are relative to `.claude/rules/`.
 - `code-style/code-style-private-members-trailing-underscore.md`
 - `code-style/code-style-tests-given-when-then.md`
 - `code-style/fix-format-a-constants-header-ends-in-constants.md`
+- `code-style/fix-format-a-name-says-what-it-is-at-its-level.md`
 - `code-style/fix-format-a-sum-over-a-range-is-a-loop.md`
 - `code-style/fix-format-a-test-file-holds-only-tests.md`
 - `code-style/fix-format-a-test-reads-an-optional-with-value-or.md`
@@ -175,6 +176,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/execution/fix-execution-a-setting-of-an-optional-module-is-tested-with-the-module-off.md`
 - `fix/execution/fix-execution-a-split-commit-carries-its-own-links.md`
 - `fix/execution/fix-execution-a-dll-exports-what-its-own-standard-compiled.md`
+- `fix/execution/fix-execution-a-downloaded-artifact-keeps-its-folders.md`
 - `fix/execution/fix-execution-a-static-library-reached-twice-on-the-link-line.md`
 - `fix/execution/fix-execution-a-test-added-to-an-executable-links-what-it-uses.md`
 - `fix/execution/fix-execution-an-edit-of-a-shared-text-checks-it-is-unchanged.md`
