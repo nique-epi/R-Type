@@ -17,6 +17,7 @@
 #include "LuauBehaviour.hpp"
 #include "LuauBehaviourParts.hpp"
 #include "LuauEventBindings.hpp"
+#include "LuauLevels.hpp"
 #include "LuauResumeContext.hpp"
 #include "LuauSetting.hpp"
 #include "Position.hpp"
@@ -110,7 +111,7 @@ int waitOfBody(lua_State* state) {
 /** @returns What carries out the bodies the scripts of @p state order;
  * raises an error outside a game. */
 IEntityOrders& ordersOf(lua_State* state) {
-  IEntityOrders* const orders = scriptsOf(state).orders();
+  IEntityOrders* const orders = scriptsOf(state).resumeContext().orders;
   if (orders == nullptr) {
     raise(state, "bodies are only created and destroyed during a game");
   }
@@ -205,7 +206,8 @@ int registerBehaviour(lua_State* state) {
 BehaviourScripts::BehaviourScripts(ScriptFailureReport reportFailure)
     : machine_(engine::ScriptLimits{}),
       reportFailure_(std::move(reportFailure)),
-      eventBindings_(machine_) {
+      eventBindings_(machine_),
+      levels_(machine_) {
   const std::array functions{
       engine::ScriptFunction{.name = REGISTER_FUNCTION_NAME,
                              .function = registerBehaviour},
@@ -243,13 +245,11 @@ void BehaviourScripts::detachGame(const IEntityOrders& orders) noexcept {
   }
 }
 
-IEntityOrders* BehaviourScripts::orders() const {
-  return resumeContext_.orders;
-}
-
 LuauResumeContext& BehaviourScripts::resumeContext() { return resumeContext_; }
 
 LuauEventBindings& BehaviourScripts::eventBindings() { return eventBindings_; }
+
+LuauLevels& BehaviourScripts::levels() { return levels_; }
 
 const ScriptFailureReport& BehaviourScripts::reportFailure() const {
   return reportFailure_;

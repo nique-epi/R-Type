@@ -4,3 +4,4 @@ target_compile_definitions(game_scripting_tests PRIVATE RTYPE_SOURCE_RESOURCES_F
 
 add_subdirectory(Components)
 add_subdirectory(Events)
+add_subdirectory(Level)
