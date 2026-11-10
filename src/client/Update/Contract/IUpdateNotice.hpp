@@ -11,9 +11,8 @@ class IUpdateNotice {
  public:
   virtual ~IUpdateNotice() = default;
 
-  /** @returns Whether a newer release, signed by the key of the game and
-   * holding a package for this system, was found, and its install has not
-   * failed. */
+  /** @returns Whether a newer release holding a package for this system was
+   * found, and its install has not failed. */
   [[nodiscard]] virtual bool updateAvailable() const = 0;
 
   /** @returns Whether this client was updated at its last start and the notes

@@ -1,4 +1,4 @@
-#include "SignedFeedSource.hpp"
+#include "ReleaseFeedSource.hpp"
 #include <Velopack.hpp>
 #include <algorithm>
 #include <cctype>
@@ -7,15 +7,12 @@
 #include <filesystem>
 #include <memory>
 #include <optional>
-#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
 #include "FeedConstants.hpp"
-#include "FeedSignature.hpp"
 #include "IReleaseFiles.hpp"
 #include "ReleaseDownload.hpp"
-#include "SignedFeed.hpp"
 #include "UpdateConstants.hpp"
 
 namespace rtype::client {
@@ -45,24 +42,20 @@ bool isDownloadable(const Velopack::VelopackAsset& asset) {
 
 }  // namespace
 
-SignedFeedSource::SignedFeedSource(
-    std::unique_ptr<IReleaseFiles> files,
-    std::span<const unsigned char, ED25519_PUBLIC_KEY_BYTES> publicKey)
-    : files_(std::move(files)),
-      publicKey_(publicKey),
-      logger_(std::string{UPDATE_LOGGER_NAME}) {}
+ReleaseFeedSource::ReleaseFeedSource(std::unique_ptr<IReleaseFiles> files)
+    : files_(std::move(files)), logger_(std::string{UPDATE_LOGGER_NAME}) {}
 
-const std::string SignedFeedSource::GetReleaseFeed(
+const std::string ReleaseFeedSource::GetReleaseFeed(
     const std::string releasesName) {
   try {
-    return trustedFeed(releasesName);
+    return latestFeed(releasesName);
   } catch (const std::exception& error) {
     logger_.warn("the feed could not be read: ", error.what());
   }
   return {};
 }
 
-bool SignedFeedSource::DownloadReleaseEntry(
+bool ReleaseFeedSource::DownloadReleaseEntry(
     const Velopack::VelopackAsset& asset, const std::string localFilePath,
     Velopack::vpkc_progress_send_t progress) {
   try {
@@ -73,35 +66,25 @@ bool SignedFeedSource::DownloadReleaseEntry(
   return false;
 }
 
-void SignedFeedSource::stop() { files_->stop(); }
+void ReleaseFeedSource::stop() { files_->stop(); }
 
-std::string SignedFeedSource::trustedFeed(const std::string& releasesName) {
+std::string ReleaseFeedSource::latestFeed(const std::string& releasesName) {
   if (!isFileName(releasesName)) {
     logger_.warn("Velopack asked for a feed of an unexpected name");
     return {};
   }
-  const std::string path = std::string{LATEST_RELEASE_PATH} + releasesName;
-  const std::optional<std::string> feed =
-      files_->text(path, MAXIMUM_FEED_BYTES);
-  const std::optional<std::string> signature = files_->text(
-      path + std::string{SIGNATURE_SUFFIX}, ED25519_SIGNATURE_BYTES);
-  if (!feed.has_value() || !signature.has_value()) {
+  const std::optional<std::string> feed = files_->text(
+      std::string{LATEST_RELEASE_PATH} + releasesName, MAXIMUM_FEED_BYTES);
+  if (!feed.has_value()) {
     logger_.info("the feed of the latest release could not be read");
-    return {};
-  }
-  if (!isSignedBy(SignedFeed{.text = *feed, .signature = *signature},
-                  publicKey_)) {
-    logger_.warn(
-        "the feed of the latest release is not signed by the key of the "
-        "game: it is ignored");
     return {};
   }
   return *feed;
 }
 
-bool SignedFeedSource::saved(const Velopack::VelopackAsset& asset,
-                             const std::string& localFilePath,
-                             const Velopack::vpkc_progress_send_t& progress) {
+bool ReleaseFeedSource::saved(const Velopack::VelopackAsset& asset,
+                              const std::string& localFilePath,
+                              const Velopack::vpkc_progress_send_t& progress) {
   if (!isDownloadable(asset)) {
     logger_.warn("the feed lists a package that cannot be downloaded");
     return false;

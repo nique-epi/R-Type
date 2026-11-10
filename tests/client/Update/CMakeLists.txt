@@ -10,7 +10,6 @@ rtype_add_test(NAME client_update_tests
     ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingInterfaceCanvas.cpp
     ${RTYPE_TEST_SOURCE_DIR}/doubles/RecordingNavigator.cpp
   LIBS
-    OpenSSL::Crypto
     rtype_client_exceptions
     rtype_client_update_feed
     rtype_client_update_run

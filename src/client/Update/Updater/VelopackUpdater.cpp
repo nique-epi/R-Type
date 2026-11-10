@@ -9,8 +9,8 @@
 #include <string>
 #include <utility>
 #include "ClientException.hpp"
+#include "ReleaseFeedSource.hpp"
 #include "ReleaseOffer.hpp"
-#include "SignedFeedSource.hpp"
 #include "UpdaterConstants.hpp"
 
 namespace rtype::client {
@@ -20,7 +20,7 @@ namespace {
 /** @returns The manager of the installed client, reading @p source.
  * @throws UpdateException when Velopack finds no installed client. */
 std::unique_ptr<Velopack::UpdateManager> managerOf(
-    std::unique_ptr<SignedFeedSource> source) {
+    std::unique_ptr<ReleaseFeedSource> source) {
   try {
     return std::make_unique<Velopack::UpdateManager>(std::move(source));
   } catch (const std::runtime_error& error) {
@@ -37,7 +37,7 @@ void reportProgress(void* userData, std::size_t progress) {
 
 }  // namespace
 
-VelopackUpdater::VelopackUpdater(std::unique_ptr<SignedFeedSource> source)
+VelopackUpdater::VelopackUpdater(std::unique_ptr<ReleaseFeedSource> source)
     : source_(source.get()), manager_(managerOf(std::move(source))) {}
 
 std::string VelopackUpdater::currentVersion() {

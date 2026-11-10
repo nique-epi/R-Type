@@ -4,9 +4,7 @@ name: release
 # and the server, built by the package workflow, and notes listing the pull
 # requests merged since the previous tag. The message of the annotated tag
 # goes into the update packages of the client, which shows it in WHAT'S NEW,
-# and at the top of the notes. Each update feed of the client is signed with
-# the secret UPDATE_SIGNING_KEY, an Ed25519 key in PEM: the client installs
-# only what a feed it can verify lists (src/client/Update/Feed/).
+# and at the top of the notes.
 on:
   push:
     tags:
@@ -71,21 +69,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
-
       - uses: actions/download-artifact@v4
         with:
           pattern: packages-*
           merge-multiple: true
           path: packages
-
-      # Signs each feed, then checks the signature against the public key the
-      # client holds, so a key that does not match it fails here rather than
-      # in every client.
-      - name: Sign the update feeds
-        env:
-          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
-        run: sh packaging/sign-update-feeds.sh packages
 
       - name: Create the release
         env:

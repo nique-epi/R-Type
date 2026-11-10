@@ -93,7 +93,7 @@ This builds in Release, then writes one set of packages for the client and one f
 Each package holds its program and the part of `assets/` it reads, so it starts from any folder.
 
 :::note[Packaging tools]
-The installer and the AppImage of the client, and the updates the client installs (see [Client](/R-Type/client/#updates-clientupdatemodule-signedfeedsource)), are made by `vpk`, the tool of Velopack, a .NET tool: `dotnet tool install -g vpk --version 1.2.161`. Without it the client package is made with no installer and no AppImage, and cannot update itself. On Windows, the installer of the server needs [NSIS](https://nsis.sourceforge.io).
+The installer and the AppImage of the client, and the updates the client installs (see [Client](/R-Type/client/#updates-clientupdatemodule-releasefeedsource)), are made by `vpk`, the tool of Velopack, a .NET tool: `dotnet tool install -g vpk --version 1.2.161`. Without it the client package is made with no installer and no AppImage, and cannot update itself. On Windows, the installer of the server needs [NSIS](https://nsis.sourceforge.io).
 :::
 
 The CI builds the packages of the three systems on every push to `main`. Pushing a tag `v<version>` that matches the version of `project()` in `CMakeLists.txt` publishes them as a GitHub release, which [rtype.app/download](https://rtype.app/download) then offers to players. Signing and notarization on macOS are described in the README of the repository.

@@ -61,7 +61,7 @@ TEST(UpdateRun, KeepsTheNotesOfTheReleaseBeforeRestarting) {
 }
 
 /**
- * Given a release whose package is not the one the feed signed
+ * Given a release whose package is not the one its feed lists
  * When its download ends
  * Then the update failed, and no notes are kept
  */

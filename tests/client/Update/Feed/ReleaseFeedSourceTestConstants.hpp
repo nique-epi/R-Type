@@ -6,12 +6,10 @@
 namespace rtype::client::testing {
 
 /** @brief The feed Velopack asks for on macOS, where the latest release
- * serves it and its signature, and what it holds. */
+ * serves it, and what it holds. */
 constexpr std::string_view FEED_NAME = "releases.osx.json";
 constexpr std::string_view FEED_PATH =
     "/nique-epi/R-Type/releases/latest/download/releases.osx.json";
-constexpr std::string_view FEED_SIGNATURE_PATH =
-    "/nique-epi/R-Type/releases/latest/download/releases.osx.json.sig";
 constexpr std::string_view FEED_TEXT =
     R"({"Assets":[{"Version":"1.1.0","FileName":"R-Type-1.1.0-osx-full.nupkg"}]})";
 
@@ -20,8 +18,6 @@ constexpr std::string_view FEED_TEXT =
 constexpr std::string_view LEAVING_FEED_NAME = "../releases.osx.json";
 constexpr std::string_view LEAVING_FEED_PATH =
     "/nique-epi/R-Type/releases/latest/download/../releases.osx.json";
-constexpr std::string_view LEAVING_FEED_SIGNATURE_PATH =
-    "/nique-epi/R-Type/releases/latest/download/../releases.osx.json.sig";
 
 /** @brief A package of release 1.1.0, where its release serves it, and what
  * it holds. */

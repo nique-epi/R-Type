@@ -8,7 +8,7 @@
 namespace rtype::client {
 
 /** @brief A file of a release to save: where it is under RELEASES_ORIGIN, the
- * file it is written to, its size as the signed feed gives it, and what
+ * file it is written to, its size as the feed gives it, and what
  * receives the share received, from 0 to FULL_DOWNLOAD_PERCENT. */
 struct ReleaseDownload {
   std::string path;

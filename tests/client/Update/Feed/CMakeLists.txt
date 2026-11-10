@@ -1,2 +1,2 @@
-target_sources(client_update_tests PRIVATE FeedSignatureTest.cpp SignedFeedSourceTest.cpp SignedFeedSourceFixture.cpp SigningKey.cpp)
+target_sources(client_update_tests PRIVATE ReleaseFeedSourceTest.cpp ReleaseFeedSourceFixture.cpp)
 target_include_directories(client_update_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

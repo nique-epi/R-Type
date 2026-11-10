@@ -22,15 +22,15 @@ class IReleaseUpdater {
   /** @returns The version installed, as Velopack writes it. */
   [[nodiscard]] virtual std::string currentVersion() = 0;
 
-  /** @returns The newer release the signed feed offers, or nothing.
-   * @throws UpdateException when the feed could not be read or trusted. */
+  /** @returns The newer release the feed offers, or nothing.
+   * @throws UpdateException when the feed could not be read. */
   [[nodiscard]] virtual std::optional<ReleaseOffer> newerRelease() = 0;
 
   /** @brief Downloads the package of the release newerRelease() found;
    * @p progress receives the share received, from 0 to
    * FULL_DOWNLOAD_PERCENT.
-   * @throws UpdateException when it was not downloaded, or is not the one the
-   * feed signed. */
+   * @throws UpdateException when it was not downloaded, or its SHA-256 is not
+   * the one of the feed. */
   virtual void download(const std::function<void(int)>& progress) = 0;
 
   /** @brief Starts the updater of Velopack, which waits for the client to

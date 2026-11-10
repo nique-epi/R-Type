@@ -1,16 +1,14 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
-#include "SignedFeedSourceFixture.hpp"
-#include "SignedFeedSourceTestConstants.hpp"
-#include "SigningKey.hpp"
+#include "ReleaseFeedSourceFixture.hpp"
+#include "ReleaseFeedSourceTestConstants.hpp"
 
 using rtype::client::testing::FEED_NAME;
 using rtype::client::testing::FEED_PATH;
 using rtype::client::testing::FEED_TEXT;
 using rtype::client::testing::LEAVING_FEED_NAME;
 using rtype::client::testing::LEAVING_FEED_PATH;
-using rtype::client::testing::LEAVING_FEED_SIGNATURE_PATH;
 using rtype::client::testing::LEAVING_PACKAGE_FILE;
 using rtype::client::testing::LEAVING_PACKAGE_PATH;
 using rtype::client::testing::PACKAGE_CONTENT;
@@ -19,48 +17,32 @@ using rtype::client::testing::PACKAGE_PATH;
 using rtype::client::testing::WHOLE_PACKAGE;
 
 /**
- * Given the latest release serving a feed signed by the key of the game
+ * Given the latest release serving a feed
  * When Velopack asks for that feed
  * Then it gets the feed
  */
-TEST_F(SignedFeedSourceFixture, HandsOverAFeedSignedByTheKey) {
-  serveFeedSignedBy(key());
+TEST_F(ReleaseFeedSourceFixture, HandsOverTheFeedOfTheLatestRelease) {
+  files().serve(std::string{FEED_PATH}, std::string{FEED_TEXT});
 
   EXPECT_EQ(source().GetReleaseFeed(std::string{FEED_NAME}), FEED_TEXT);
 }
 
 /**
- * Given the latest release serving a feed signed by another key
- * When Velopack asks for that feed
+ * Given a latest release serving no feed
+ * When Velopack asks for one
  * Then it gets an empty text, which it refuses
  */
-TEST_F(SignedFeedSourceFixture, RefusesAFeedSignedByAnotherKey) {
-  const SigningKey other;
-  serveFeedSignedBy(other);
-
+TEST_F(ReleaseFeedSourceFixture, HandsOverNothingWhenTheFeedIsMissing) {
   EXPECT_EQ(source().GetReleaseFeed(std::string{FEED_NAME}), "");
 }
 
 /**
- * Given the latest release serving a feed and no signature
- * When Velopack asks for that feed
- * Then it gets an empty text
- */
-TEST_F(SignedFeedSourceFixture, RefusesAFeedWithoutSignature) {
-  files().serve(std::string{FEED_PATH}, std::string{FEED_TEXT});
-
-  EXPECT_EQ(source().GetReleaseFeed(std::string{FEED_NAME}), "");
-}
-
-/**
- * Given a signed feed served at a path outside the latest release
+ * Given a feed served at a path outside the latest release
  * When Velopack asks for a feed whose name climbs to that path
  * Then it gets an empty text
  */
-TEST_F(SignedFeedSourceFixture, RefusesAFeedNameThatLeavesTheRelease) {
+TEST_F(ReleaseFeedSourceFixture, RefusesAFeedNameThatLeavesTheRelease) {
   files().serve(std::string{LEAVING_FEED_PATH}, std::string{FEED_TEXT});
-  files().serve(std::string{LEAVING_FEED_SIGNATURE_PATH},
-                key().sign(FEED_TEXT));
 
   EXPECT_EQ(source().GetReleaseFeed(std::string{LEAVING_FEED_NAME}), "");
 }
@@ -70,7 +52,7 @@ TEST_F(SignedFeedSourceFixture, RefusesAFeedNameThatLeavesTheRelease) {
  * When Velopack asks to download that package of version 1.1.0
  * Then it is read from the release of its version
  */
-TEST_F(SignedFeedSourceFixture, ReadsAPackageFromTheReleaseOfItsVersion) {
+TEST_F(ReleaseFeedSourceFixture, ReadsAPackageFromTheReleaseOfItsVersion) {
   files().serve(std::string{PACKAGE_PATH}, std::string{PACKAGE_CONTENT});
 
   ASSERT_TRUE(save(packageNamed(PACKAGE_FILE)));
@@ -84,7 +66,7 @@ TEST_F(SignedFeedSourceFixture, ReadsAPackageFromTheReleaseOfItsVersion) {
  * When it is downloaded
  * Then Velopack hears the whole package received
  */
-TEST_F(SignedFeedSourceFixture, ReportsTheWholePackageOnceSaved) {
+TEST_F(ReleaseFeedSourceFixture, ReportsTheWholePackageOnceSaved) {
   files().serve(std::string{PACKAGE_PATH}, std::string{PACKAGE_CONTENT});
 
   ASSERT_TRUE(save(packageNamed(PACKAGE_FILE)));
@@ -97,7 +79,7 @@ TEST_F(SignedFeedSourceFixture, ReportsTheWholePackageOnceSaved) {
  * When Velopack asks to download it
  * Then nothing is read and the download fails
  */
-TEST_F(SignedFeedSourceFixture, RefusesAPackageNameThatLeavesTheRelease) {
+TEST_F(ReleaseFeedSourceFixture, RefusesAPackageNameThatLeavesTheRelease) {
   files().serve(std::string{LEAVING_PACKAGE_PATH},
                 std::string{PACKAGE_CONTENT});
 
@@ -110,7 +92,7 @@ TEST_F(SignedFeedSourceFixture, RefusesAPackageNameThatLeavesTheRelease) {
  * When it is stopped
  * Then the files stop their requests
  */
-TEST_F(SignedFeedSourceFixture, StopsItsFiles) {
+TEST_F(ReleaseFeedSourceFixture, StopsItsFiles) {
   source().stop();
 
   EXPECT_TRUE(files().stopped());

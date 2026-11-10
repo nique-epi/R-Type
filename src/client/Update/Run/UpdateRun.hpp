@@ -12,7 +12,7 @@ namespace rtype::client {
 
 /**
  * @brief An update: building it starts the download of the release on a
- * thread of its own; once the package is the one the signed feed lists, it
+ * thread of its own; once the package is the one the feed lists, it
  * writes the notes of the release for the next start and is ready to
  * restart. restart() starts the updater of Velopack, which replaces the
  * client once it exits and starts the new version.

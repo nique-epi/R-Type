@@ -4,18 +4,17 @@
 #include <string>
 #include <vector>
 #include "ExecutablePath.hpp"
-#include "FeedConstants.hpp"
 #include "IReleaseUpdater.hpp"
 #include "IScreen.hpp"
 #include "IUpdateNotice.hpp"
 #include "InstallContext.hpp"
 #include "ModuleConstants.hpp"
+#include "ReleaseFeedSource.hpp"
 #include "ReleaseFiles.hpp"
 #include "ScreenBuilding.hpp"
 #include "ScreenContext.hpp"
 #include "ScreenRegistry.hpp"
 #include "SettingsFolder.hpp"
-#include "SignedFeedSource.hpp"
 #include "UpdateConstants.hpp"
 #include "UpdateNotice.hpp"
 #include "UpdateScreen.hpp"
@@ -29,12 +28,12 @@ namespace rtype::client {
 
 namespace {
 
-/** @returns The updater of the installed client, reading the signed feeds of
- * the releases of the game.
+/** @returns The updater of the installed client, reading the feeds of the
+ * releases of the game.
  * @throws UpdateException when the client was not installed by Velopack. */
 std::unique_ptr<IReleaseUpdater> installedClientUpdater() {
-  return std::make_unique<VelopackUpdater>(std::make_unique<SignedFeedSource>(
-      std::make_unique<ReleaseFiles>(), UPDATE_PUBLIC_KEY));
+  return std::make_unique<VelopackUpdater>(
+      std::make_unique<ReleaseFeedSource>(std::make_unique<ReleaseFiles>()));
 }
 
 /** @returns Where the notes of an update are kept: the settings folder, or

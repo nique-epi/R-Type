@@ -2,9 +2,7 @@
 
 #include <Velopack.hpp>
 #include <memory>
-#include <span>
 #include <string>
-#include "FeedConstants.hpp"
 #include "IReleaseFiles.hpp"
 #include "Logger.hpp"
 
@@ -12,31 +10,26 @@ namespace rtype::client {
 
 /**
  * @brief Where Velopack reads the releases of the game: the feed of the
- * latest release, handed over only once its Ed25519 signature is the one of
- * the key of the game, then the packages that feed lists.
+ * latest release, then the packages that feed lists, from the files of the
+ * release themselves (`releases/latest/download/`), which GitHub serves with
+ * no limit of requests, unlike its API.
  *
- * Velopack checks the SHA-256 of a package against the feed, and nothing
- * signs the feed itself: whoever could change a release could change both.
- * Checking the signature here makes the feed, and through it every package,
- * the one the release workflow signed.
+ * Velopack checks each package against the SHA-256 of the feed; the feed
+ * itself is trusted as GitHub serves it, over HTTPS.
  *
  * It derives from Velopack::IUpdateSource, an abstract class of the library
  * that registers its callbacks in its constructor: the only way the library
  * offers to give it a source. Velopack calls it from Rust, so no exception
- * leaves it: a feed refused is an empty text, which Velopack refuses in turn,
- * and a package not saved is false.
+ * leaves it: a feed not read is an empty text, which Velopack refuses, and a
+ * package not saved is false.
  */
-class SignedFeedSource final : public Velopack::IUpdateSource {
+class ReleaseFeedSource final : public Velopack::IUpdateSource {
  public:
-  /** @param files Where the files are read; the source owns it.
-   * @param publicKey Public half of the key that signs the feeds. */
-  SignedFeedSource(
-      std::unique_ptr<IReleaseFiles> files,
-      std::span<const unsigned char, ED25519_PUBLIC_KEY_BYTES> publicKey);
+  /** @param files Where the files are read; the source owns it. */
+  explicit ReleaseFeedSource(std::unique_ptr<IReleaseFiles> files);
 
   /** @returns The feed of the latest release named @p releasesName, or an
-   * empty text when it, or its signature, could not be read, or when the
-   * signature is not the one of the key. */
+   * empty text when it could not be read or its name is not a file name. */
   const std::string GetReleaseFeed(std::string releasesName) override;
 
   /** @brief Saves the package @p asset to @p localFilePath, from the release
@@ -50,13 +43,12 @@ class SignedFeedSource final : public Velopack::IUpdateSource {
   void stop();
 
  private:
-  [[nodiscard]] std::string trustedFeed(const std::string& releasesName);
+  [[nodiscard]] std::string latestFeed(const std::string& releasesName);
   [[nodiscard]] bool saved(const Velopack::VelopackAsset& asset,
                            const std::string& localFilePath,
                            const Velopack::vpkc_progress_send_t& progress);
 
   std::unique_ptr<IReleaseFiles> files_;
-  std::span<const unsigned char, ED25519_PUBLIC_KEY_BYTES> publicKey_;
   logging::Logger logger_;
 };
 
