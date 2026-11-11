@@ -1,10 +1,14 @@
 #include "BiomeDecor.hpp"
+#include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
+#include <limits>
 #include <span>
 #include <string_view>
 #include <utility>
@@ -42,10 +46,23 @@ std::vector<int> decorTileColumns(float scrolledPixels, int tileWidth) {
   return columns;
 }
 
+float arrivingShare(engine::Duration fadeLeft) {
+  const engine::Duration left =
+      std::clamp(fadeLeft, engine::Duration::zero(), BIOME_FADE_DURATION);
+  return 1.0F - (std::chrono::duration<float>(left) /
+                 std::chrono::duration<float>(BIOME_FADE_DURATION));
+}
+
 BiomeDecor::BiomeDecor(TextureLookup textureOf)
     : textureOf_(std::move(textureOf)) {}
 
-void BiomeDecor::show(const SkyLevel& level) { level_ = level; }
+void BiomeDecor::show(const SkyLevel& level) {
+  if (level.biome != level_.biome) {
+    leavingBiome_ = level_.biome;
+    fadeLeft_ = BIOME_FADE_DURATION;
+  }
+  level_ = level;
+}
 
 void BiomeDecor::advance(engine::Duration elapsed) {
   if (elapsed <= engine::Duration::zero()) {
@@ -53,15 +70,30 @@ void BiomeDecor::advance(engine::Duration elapsed) {
   }
   level_.scrollPosition +=
       level_.scrollSpeed * std::chrono::duration<float>(elapsed).count();
+  fadeLeft_ = std::max(engine::Duration::zero(), fadeLeft_ - elapsed);
 }
 
 void BiomeDecor::draw(sf::RenderTarget& canvas) const {
-  for (const BiomeLayer& layer : layersOfBiome(level_.biome)) {
+  const float shown = shownShare();
+  drawBiome(canvas, leavingBiome_, 1.0F - shown);
+  drawBiome(canvas, level_.biome, shown);
+}
+
+void BiomeDecor::drawBiome(sf::RenderTarget& canvas, std::string_view biome,
+                           float share) const {
+  if (share <= 0.0F) {
+    return;
+  }
+  sf::Color tint = sf::Color::White;
+  tint.a = static_cast<std::uint8_t>(std::lround(
+      share * static_cast<float>(std::numeric_limits<std::uint8_t>::max())));
+  for (const BiomeLayer& layer : layersOfBiome(biome)) {
     const sf::Texture* const picture = textureOf_(layer.image);
     if (picture == nullptr) {
       continue;
     }
     sf::Sprite copy(*picture);
+    copy.setColor(tint);
     const float scrolledPixels =
         level_.scrollPosition * layer.scrollFactor / BACKGROUND_PIXEL_SIZE;
     for (const int column : decorTileColumns(
@@ -73,5 +105,7 @@ void BiomeDecor::draw(sf::RenderTarget& canvas) const {
 }
 
 float BiomeDecor::scrollPosition() const { return level_.scrollPosition; }
+
+float BiomeDecor::shownShare() const { return arrivingShare(fadeLeft_); }
 
 }  // namespace rtype::client

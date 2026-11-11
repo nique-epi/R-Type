@@ -6,6 +6,7 @@
 #include "BiomeDecorTestConstants.hpp"
 #include "SkyLevel.hpp"
 
+using rtype::client::arrivingShare;
 using rtype::client::BiomeDecor;
 using rtype::client::decorTileColumns;
 using rtype::client::layersOfBiome;
@@ -163,4 +164,70 @@ TEST(BiomeDecor, DoesNotMoveBackwards) {
  */
 TEST(BiomeDecor, FindsTheLayersOfTheThirdBiome) {
   EXPECT_EQ(layersOfBiome(THIRD_BIOME).size(), LAYERS_OF_THE_KNOWN_BIOME);
+}
+
+/**
+ * Given a fade of one second between two biomes
+ * When the share of the arriving biome is read along it
+ * Then it is 0 at its start, half halfway, and whole at its end
+ */
+TEST(BiomeDecor, ShowsTheArrivingBiomeAlongTheFade) {
+  EXPECT_FLOAT_EQ(arrivingShare(WHOLE_FADE_LEFT), NOT_SHOWN_YET);
+  EXPECT_FLOAT_EQ(arrivingShare(HALF_THE_FADE), HALF_SHOWN);
+  EXPECT_FLOAT_EQ(arrivingShare(NO_FADE_LEFT), FULLY_SHOWN);
+}
+
+/**
+ * Given a time left of the fade below 0 or beyond the whole fade
+ * When the share of the arriving biome is read
+ * Then it is that of the nearest end of the fade
+ */
+TEST(BiomeDecor, CountsATimeOutsideTheFadeAsItsNearestEnd) {
+  EXPECT_FLOAT_EQ(arrivingShare(FADE_OVER_A_SECOND_AGO), FULLY_SHOWN);
+  EXPECT_FLOAT_EQ(arrivingShare(TWICE_THE_FADE_LEFT), NOT_SHOWN_YET);
+}
+
+/**
+ * Given a decor that shows a biome whole
+ * When another biome is shown
+ * Then the new biome starts hidden, is half shown halfway through the fade,
+ * and whole at its end
+ */
+TEST(BiomeDecor, FadesANewBiomeIn) {
+  BiomeDecor decor{[](std::string_view) { return nullptr; }};
+  decor.show(SkyLevel{.biome = std::string{KNOWN_BIOME},
+                      .scrollPosition = SHOWN_SCROLL_POSITION,
+                      .scrollSpeed = SHOWN_SCROLL_SPEED});
+  decor.advance(ONE_SECOND_OF_DECOR);
+
+  decor.show(SkyLevel{.biome = std::string{OTHER_KNOWN_BIOME},
+                      .scrollPosition = SHOWN_SCROLL_POSITION,
+                      .scrollSpeed = SHOWN_SCROLL_SPEED});
+  EXPECT_FLOAT_EQ(decor.shownShare(), NOT_SHOWN_YET);
+
+  decor.advance(HALF_THE_FADE);
+  EXPECT_FLOAT_EQ(decor.shownShare(), HALF_SHOWN);
+
+  decor.advance(ONE_SECOND_OF_DECOR);
+  EXPECT_FLOAT_EQ(decor.shownShare(), FULLY_SHOWN);
+}
+
+/**
+ * Given a decor that shows a biome whole
+ * When the same biome is shown again, further on
+ * Then it stays whole and takes the new scroll
+ */
+TEST(BiomeDecor, KeepsTheBiomeShownWhenTheSameComesAgain) {
+  BiomeDecor decor{[](std::string_view) { return nullptr; }};
+  decor.show(SkyLevel{.biome = std::string{KNOWN_BIOME},
+                      .scrollPosition = SHOWN_SCROLL_POSITION,
+                      .scrollSpeed = SHOWN_SCROLL_SPEED});
+  decor.advance(ONE_SECOND_OF_DECOR);
+
+  decor.show(SkyLevel{.biome = std::string{KNOWN_BIOME},
+                      .scrollPosition = LATER_SCROLL_POSITION,
+                      .scrollSpeed = SHOWN_SCROLL_SPEED});
+
+  EXPECT_FLOAT_EQ(decor.shownShare(), FULLY_SHOWN);
+  EXPECT_FLOAT_EQ(decor.scrollPosition(), LATER_SCROLL_POSITION);
 }

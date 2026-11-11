@@ -1,9 +1,11 @@
 #pragma once
 
 #include <array>
+#include <chrono>
 #include <string_view>
 #include "Biome.hpp"
 #include "BiomeLayer.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client {
 
@@ -82,5 +84,9 @@ constexpr std::array BIOMES{
     Biome{.name = DRIFT_FIELDS_BIOME_NAME, .layers = DRIFT_FIELDS_LAYERS},
     Biome{.name = EMBER_REACH_BIOME_NAME, .layers = EMBER_REACH_LAYERS},
     Biome{.name = HIVE_DEPTHS_BIOME_NAME, .layers = HIVE_DEPTHS_LAYERS}};
+
+/** @brief How long the decor of a biome takes to fade into the next one: the
+ * biome shown fades out while the new one fades in, at the same scroll. */
+constexpr engine::Duration BIOME_FADE_DURATION = std::chrono::seconds(1);
 
 }  // namespace rtype::client

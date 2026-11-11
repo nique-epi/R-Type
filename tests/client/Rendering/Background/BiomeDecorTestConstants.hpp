@@ -28,9 +28,10 @@ constexpr int SECOND_NARROW_COPY = 200;
 constexpr int THIRD_NARROW_COPY = 400;
 
 /** @brief A biome the client has a decor for, of the four layers a biome
- * has, the third biome of the levels, and a name no biome has. */
+ * has, another one, the third biome of the levels, and a name no biome has. */
 constexpr std::string_view KNOWN_BIOME = "drift_fields";
 constexpr std::size_t LAYERS_OF_THE_KNOWN_BIOME = 4;
+constexpr std::string_view OTHER_KNOWN_BIOME = "ember_reach";
 constexpr std::string_view THIRD_BIOME = "hive_depths";
 constexpr std::string_view UNKNOWN_BIOME = "nowhere";
 
@@ -44,3 +45,20 @@ constexpr float PAUSED_SCROLL = 0.0F;
 constexpr rtype::engine::Duration ONE_SECOND_OF_DECOR = std::chrono::seconds(1);
 constexpr rtype::engine::Duration ONE_SECOND_BACKWARDS_OF_DECOR =
     std::chrono::seconds(-1);
+
+/** @brief The fade from one biome to the next takes one second: the times
+ * left of it at its start, halfway, at its end, past its end and before its
+ * start, and the share of its opacity the arriving biome has at each. */
+constexpr rtype::engine::Duration WHOLE_FADE_LEFT = std::chrono::seconds(1);
+constexpr rtype::engine::Duration HALF_THE_FADE =
+    std::chrono::milliseconds(500);
+constexpr rtype::engine::Duration NO_FADE_LEFT = std::chrono::seconds(0);
+constexpr rtype::engine::Duration FADE_OVER_A_SECOND_AGO =
+    std::chrono::seconds(-1);
+constexpr rtype::engine::Duration TWICE_THE_FADE_LEFT = std::chrono::seconds(2);
+constexpr float NOT_SHOWN_YET = 0.0F;
+constexpr float HALF_SHOWN = 0.5F;
+constexpr float FULLY_SHOWN = 1.0F;
+
+/** @brief A scroll the same biome comes back with. */
+constexpr float LATER_SCROLL_POSITION = 900.0F;

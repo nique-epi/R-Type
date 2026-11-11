@@ -32,7 +32,8 @@ class ISky {
   /**
    * @brief From the next draw, the decor of the biome of @p level is drawn
    * over the stars, where the scroll of @p level puts it, and from the next
-   * advance it moves at the speed of that scroll. A level without a biome,
+   * advance it moves at the speed of that scroll. A biome other than the one
+   * shown fades in while the one shown fades out. A level without a biome,
    * or with a biome the client has no decor for, shows the stars alone.
    */
   virtual void showLevel(const SkyLevel& level) = 0;

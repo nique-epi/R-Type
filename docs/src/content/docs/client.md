@@ -71,7 +71,7 @@ Today it finds its assets folder, loads the assets of its interface, opens a win
 | Effects: explosions, impacts, muzzle flashes, hit flashes, debris, shockwaves, camera shake, figures of gains, arrivals, invulnerability | Available; played when the server says an entity was killed or hit, when a missile or a ship appears, and when a world state says a ship cannot be hit, which it does for 2 s after a ship comes back from a hit (see [Server](/R-Type/server/#lives-lifekeeper)) | `assets/sprites/effects.png`, `src/client/Rendering/Effects/`, `src/client/Rendering/SpriteLook/HitFlashSystem/` |
 | MISSION START: the warp of the stars and the banner | Available; played by the game screen at the start of each game | `src/client/Rendering/Effects/MissionStart/MissionStart.cpp`, `src/client/Widgets/MissionBanner/` |
 | Scrolling background | Available; drawn by the screens module under every screen | `src/client/Rendering/Background/` |
-| Decor of the biome of a level, in parallax layers | Available for three biomes, four layers each (see [Decor of a biome](#decor-of-a-biome-biomedecor)) | `src/client/Rendering/Background/BiomeDecor/`, `assets/backgrounds/` |
+| Decor of the biome of a level, in parallax layers | Available for three biomes, four layers each, with a fade from one biome to the next (see [Decor of a biome](#decor-of-a-biome-biomedecor)) | `src/client/Rendering/Background/BiomeDecor/`, `assets/backgrounds/` |
 | Pictures of the menus, pixel fonts | Available | `src/client/Rendering/Interface/InterfaceCanvas/`, `assets/fonts/` |
 | Squadron of the title screen | Available | `src/client/Rendering/Interface/Squadron/` |
 | Launch intro | Available; played at launch, unless the system asks for less motion | `src/client/Rendering/Intro/`, `src/client/Widgets/IntroOverlay/`, `src/client/Menus/Title/` |
@@ -417,10 +417,11 @@ In a game that plays a level, the server tells the biome and the scroll of that 
 - **Parallax.** A layer moves by its share of the scroll of the level: `HAZE_LAYER_SCROLL_FACTOR` (0.125), `FAR_LAYER_SCROLL_FACTOR` (0.25), `MIDDLE_LAYER_SCROLL_FACTOR` (0.5) and `NEAR_LAYER_SCROLL_FACTOR` (1), so the near layer moves with the level, 30 background pixels per second, and the haze eight times slower. The copies land on whole pixels.
 - **Between two messages.** The decor moves the scroll on at the speed the server told, so it needs no message per tick, and it stops while the scroll of the level is paused. The next `LevelStatus` puts it where the server says.
 - **Biomes.** `BIOMES` (`BiomeConstants.hpp`) lists the biomes the client has a decor for: `drift_fields` (blue nebulae and asteroids), `ember_reach` (embers and spires) and `hive_depths` (green haze and pods), four layers each, in `assets/backgrounds/`: a haze of nebulae, far bodies, middle rocks, and near silhouettes along the top and the bottom. A name it lacks, or a level without a biome, shows the stars alone, and so does a layer whose picture is not loaded. The game assets hold every layer, so a biome changes without loading.
+- **A change of biome fades.** When `LevelStatus` names another biome, the new decor fades in over `BIOME_FADE_DURATION` (1 s) while the one it replaces fades out, both at the scroll of the level (`arrivingShare()`); the first biome of a game fades in from the stars the same way. A status that names the biome already shown, after a pause or a restart from a checkpoint, only moves the scroll.
 - **Readable over the decor.** The layers keep to the dark shades of their biome, so the ships, the Bydos and the missiles stay the brightest things on screen, and the near silhouettes hug the edges of the sky: the decor never looks like a wall, since nothing in it collides.
 - **Pictures.** `tests/tools/biome-layers/make_biome_layers.py` draws them from seeded draws, so two runs write the same files, each 960 × 270 pixels and repeating side by side without a seam. A decor a resource brings is not read yet: the list is in the client.
 
-The decor goes when the game screen does.
+The decor goes when the game screen does: it tells the sky a level without a biome, so the decor fades out over the screen that follows.
 
 ### Sped up and shaken: `ISky`
 
