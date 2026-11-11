@@ -199,7 +199,7 @@ A phase the sheet leaves out has no animation: the enemy keeps what it plays whe
 
 ### Named effects and looks
 
-A sheet names the effects and the looks a script of the server may ask the client to draw on a body of that type, so a resource gets visual effects without any code on the client. An effect plays once, centered on the body; a look is an idle loop the body takes instead of `idle` until the script asks for another one:
+A sheet names the effects and the looks a script of the server may ask the client to draw on a body of that type, so a resource gets visual effects without any code on the client. An effect plays once, centered on the body and following it while it moves; a look is an idle loop the body takes instead of `idle` until the script asks for another one:
 
 ```toml
 [appearance.effects.spark]

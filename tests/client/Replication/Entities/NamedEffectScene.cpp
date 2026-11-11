@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include "Anchor.hpp"
 #include "AppearanceReference.hpp"
 #include "EffectPlayed.hpp"
 #include "EffectPreferences.hpp"
@@ -51,10 +52,10 @@ NamedEffectScene::NamedEffectScene()
     : appearance_(appearanceWithASpark()),
       effects_(entities_, components_, EFFECT_TEST_SEED),
       player_(effects_.tools()) {
-  const engine::Entity body = entities_.create();
-  components_.add(body, game::NetworkIdentity{EFFECT_BODY_ID});
-  components_.add(body, EFFECT_BODY_POSITION);
-  components_.add(body, AppearanceReference{&appearance_});
+  body_ = entities_.create();
+  components_.add(body_, game::NetworkIdentity{EFFECT_BODY_ID});
+  components_.add(body_, EFFECT_BODY_POSITION);
+  components_.add(body_, AppearanceReference{&appearance_});
 }
 
 void NamedEffectScene::play(std::uint32_t bodyId, std::string_view effect) {
@@ -92,6 +93,18 @@ std::optional<game::SpriteFrame> NamedEffectScene::effectFrame() {
         }
       });
   return frame;
+}
+
+bool NamedEffectScene::effectFollowsTheBody() {
+  bool follows = false;
+  components_.forEach<game::Sprite, Anchor>(
+      [this, &follows](engine::Entity, const game::Sprite& sprite,
+                       const Anchor& anchor) {
+        follows = sprite.layer == game::Layer::Effects &&
+                  anchor.entity == body_ && anchor.offset.x == 0.0F &&
+                  anchor.offset.y == 0.0F;
+      });
+  return follows;
 }
 
 SpriteAnimation NamedEffectScene::effectAnimation() {

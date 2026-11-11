@@ -33,6 +33,20 @@ TEST(EffectPlayer, PlaysTheEffectTheServerNamesOnTheBody) {
 }
 
 /**
+ * Given a body whose sheet names the effect spark
+ * When the server names spark on that body
+ * Then the effect follows the body, centered on it, so it stays on a body
+ * that moves
+ */
+TEST(EffectPlayer, TheEffectFollowsItsBody) {
+  NamedEffectScene scene;
+
+  scene.play(EFFECT_BODY_ID, SPARK);
+
+  EXPECT_TRUE(scene.effectFollowsTheBody());
+}
+
+/**
  * Given a player who reduces the flashes
  * When the server names spark on the body
  * Then the effect shows its frame without flash, in the row under it

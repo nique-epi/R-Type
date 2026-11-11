@@ -32,6 +32,7 @@ target_link_libraries(rtype_client_entities
   PRIVATE
     rtype_client_entity_sprites
     rtype_client_sheet_effects
+    rtype_client_sprite_effect_interfaces
     rtype_identifiers
 )
 

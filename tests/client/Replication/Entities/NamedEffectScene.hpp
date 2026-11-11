@@ -7,6 +7,7 @@
 #include "ComponentRegistry.hpp"
 #include "EffectPlayer.hpp"
 #include "EffectSpawner.hpp"
+#include "Entity.hpp"
 #include "EntityAppearance.hpp"
 #include "EntityRegistry.hpp"
 #include "FlashPreference.hpp"
@@ -31,6 +32,8 @@ class NamedEffectScene {
   [[nodiscard]] std::size_t effectCount();
   /** @returns The frame the only effect shows, nothing without one. */
   [[nodiscard]] std::optional<game::SpriteFrame> effectFrame();
+  /** @returns Whether the only effect follows the body, centered on it. */
+  [[nodiscard]] bool effectFollowsTheBody();
   /** @returns The animation of the only effect; the test fails without one. */
   [[nodiscard]] SpriteAnimation effectAnimation();
 
@@ -40,6 +43,7 @@ class NamedEffectScene {
   engine::ComponentRegistry components_{entities_};
   EffectSpawner effects_;
   EffectPlayer player_;
+  engine::Entity body_{};
 };
 
 }  // namespace rtype::client::testing

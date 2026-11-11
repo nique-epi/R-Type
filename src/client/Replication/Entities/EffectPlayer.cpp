@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <optional>
 #include <string>
+#include "Anchor.hpp"
 #include "AppearanceReference.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectAnimations.hpp"
@@ -61,11 +62,15 @@ void EffectPlayer::apply(const network::EffectPlayed& played) {
     return;
   }
   const EffectAnimations animations = animationsOf(*effect);
-  spawnSheetEffect(tools_, SheetEffect{.animations = &animations,
-                                       .center = *position,
-                                       .hold = {},
-                                       .flash = {},
-                                       .sheet = appearance.sheet});
+  const std::optional<engine::Entity> shown =
+      spawnSheetEffect(tools_, SheetEffect{.animations = &animations,
+                                           .center = *position,
+                                           .hold = {},
+                                           .flash = {},
+                                           .sheet = appearance.sheet});
+  if (shown.has_value()) {
+    components.add(*shown, Anchor{.entity = *body, .offset = {}});
+  }
 }
 
 }  // namespace rtype::client
