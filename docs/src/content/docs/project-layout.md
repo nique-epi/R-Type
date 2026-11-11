@@ -67,7 +67,7 @@ src/engine/
 ├── Components/       stores components by type
 ├── Systems/          runs systems in a fixed order
 ├── Events/           typed event bus
-├── Collision/        rectangle overlap test and the collision event
+├── Collision/        rectangle overlap test, the grid that sorts the boxes, collision layers and the collision event
 ├── Time/             fixed timestep, clocks, timers, the clock of the server seen from the client
 ├── NetworkIds/       entity to network id, and back
 ├── LaunchArguments/  options read at launch, usage and errors

@@ -1,8 +1,11 @@
 #include <gtest/gtest.h>
+#include "CollisionFilter.hpp"
+#include "CollisionTestConstants.hpp"
 #include "Entity.hpp"
 #include "LagCompensatedHitSystemFixture.hpp"
 #include "LagCompensatedHitSystemTestConstants.hpp"
 
+using rtype::engine::CollisionFilter;
 using rtype::engine::Entity;
 using rtype::game::testing::FAR_CLAIM_TICKS_BEHIND;
 using rtype::game::testing::FIVE_TICKS_BEHIND;
@@ -158,6 +161,22 @@ TEST_F(LagCompensatedHitSystemFixture, ANewWorldForgetsTheEnemiesOfTheOldOne) {
   startANewWorld();
   enemyAt(WHERE_THE_ENEMY_WENT);
   missileAt(WHERE_THE_PLAYER_SAW_THE_ENEMY, 1);
+
+  runTick();
+
+  EXPECT_TRUE(hits().empty());
+}
+
+/**
+ * Given an enemy that hits the ships only, and on it a missile of a player
+ * that hits nothing
+ * When the missile is tested
+ * Then it hits nothing: neither sheet names the layer of the other
+ */
+TEST_F(LagCompensatedHitSystemFixture, AMissileCrossesAnEnemyNoSheetNames) {
+  enemyAt(WHERE_THE_PLAYER_SAW_THE_ENEMY);
+  const Entity missile = missileAt(WHERE_THE_PLAYER_SAW_THE_ENEMY, 0);
+  *components().get<CollisionFilter>(missile) = HARMLESS_PLAYER_MISSILE_FILTER;
 
   runTick();
 

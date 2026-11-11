@@ -12,9 +12,12 @@
 #include "BoundsOf.hpp"
 #include "CollisionBox.hpp"
 #include "CollisionConstants.hpp"
+#include "CollisionFilter.hpp"
+#include "CollisionFiltering.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
 #include "Entity.hpp"
+#include "EntityBounds.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
 #include "HurtZone.hpp"
@@ -60,14 +63,17 @@ engine::Bounds sweptBack(engine::Bounds now, Position travel) {
                         .height = now.height + std::abs(travel.y)};
 }
 
-/** @returns The first box of @p enemies that overlaps @p bounds and whose
- * entity is still an entity of @p components; nothing when none is. */
+/** @returns The first box of @p enemies whose filter and the one of
+ * @p tester engine::mayCollide() keeps, that overlaps the box of @p tester
+ * and whose entity is still an entity of @p components; nothing when none
+ * is. */
 std::optional<PastEnemy> firstHitAmong(
-    const std::vector<PastEnemy>& enemies, const engine::Bounds& bounds,
+    const std::vector<PastEnemy>& enemies, const EntityBounds& tester,
     const engine::ComponentRegistry& components) {
   const auto hit = std::ranges::find_if(
-      enemies, [&bounds, &components](const PastEnemy& enemy) {
-        return engine::overlaps(bounds, enemy.bounds) &&
+      enemies, [&tester, &components](const PastEnemy& enemy) {
+        return engine::mayCollide(tester.filter, enemy.filter) &&
+               engine::overlaps(tester.bounds, enemy.bounds) &&
                components.has<EntityType>(enemy.entity);
       });
   if (hit == enemies.end()) {
@@ -76,15 +82,17 @@ std::optional<PastEnemy> firstHitAmong(
   return *hit;
 }
 
-/** @returns The enemy of the first beam of @p beams that overlaps @p bounds
+/** @returns The enemy of the first beam of @p beams whose filter and the one
+ * of @p tester engine::mayCollide() keeps, that overlaps the box of @p tester
  * and is still an entity of @p components, as a threat of kind HurtBeam;
  * nothing when none is. */
 std::optional<PastEnemy> firstBeamAmong(
-    const std::vector<PastBeam>& beams, const engine::Bounds& bounds,
+    const std::vector<PastBeam>& beams, const EntityBounds& tester,
     const engine::ComponentRegistry& components) {
   const auto hit =
-      std::ranges::find_if(beams, [&bounds, &components](const PastBeam& beam) {
-        return beamOverlaps(beam.line, bounds) &&
+      std::ranges::find_if(beams, [&tester, &components](const PastBeam& beam) {
+        return engine::mayCollide(tester.filter, beam.filter) &&
+               beamOverlaps(beam.line, tester.bounds) &&
                components.has<EntityType>(beam.entity);
       });
   if (hit == beams.end()) {
@@ -93,31 +101,46 @@ std::optional<PastEnemy> firstBeamAmong(
   return PastEnemy{.entity = hit->entity, .kind = ThreatKind::HurtBeam};
 }
 
-/** @returns The first threat of @p past that overlaps @p bounds, a missile or
- * a hurt box, then a beam, before a body, and is still an entity of
- * @p components; nothing when none is. */
+/** @returns The first threat of @p past that touches @p tester, as
+ * firstHitAmong() and firstBeamAmong() tell it: a missile or a hurt box, then
+ * a beam, before a body; nothing when none does. */
 std::optional<PastEnemy> firstThreatTo(
-    const PastTick& past, const engine::Bounds& bounds,
+    const PastTick& past, const EntityBounds& tester,
     const engine::ComponentRegistry& components) {
   if (std::optional<PastEnemy> threat =
-          firstHitAmong(past.threats, bounds, components)) {
+          firstHitAmong(past.threats, tester, components)) {
     return threat;
   }
   if (std::optional<PastEnemy> beam =
-          firstBeamAmong(past.beams, bounds, components)) {
+          firstBeamAmong(past.beams, tester, components)) {
     return beam;
   }
-  return firstHitAmong(past.bodies, bounds, components);
+  return firstHitAmong(past.bodies, tester, components);
+}
+
+/** @returns @p entity with the box @p bounds and its collision filter;
+ * nothing for an entity without a filter, which touches nothing. */
+std::optional<EntityBounds> testerOf(engine::ComponentRegistry& components,
+                                     engine::Entity entity,
+                                     const engine::Bounds& bounds) {
+  const auto* const filter = components.get<engine::CollisionFilter>(entity);
+  if (filter == nullptr) {
+    return std::nullopt;
+  }
+  return EntityBounds{.entity = entity, .bounds = bounds, .filter = *filter};
 }
 
 /** @brief Adds to @p tick every active box and beam of the HurtZone of each
- * enemy of @p components that is not summoning, laid through @p hurts. */
+ * enemy of @p components that has a collision filter and is not summoning,
+ * laid through @p hurts. */
 void recordHurts(engine::ComponentRegistry& components, PastTick& tick,
                  ActiveHurts& hurts) {
   components.forEach<HurtZone, Position>(
       [&components, &tick, &hurts](engine::Entity enemy, const HurtZone& zone,
                                    const Position& position) {
-        if (components.has<Summoning>(enemy)) {
+        const auto* const filter =
+            components.get<engine::CollisionFilter>(enemy);
+        if (filter == nullptr || components.has<Summoning>(enemy)) {
           return;
         }
         layActiveHurts(
@@ -126,34 +149,43 @@ void recordHurts(engine::ComponentRegistry& components, PastTick& tick,
                          .current = components.get<CurrentAction>(enemy)},
             hurts);
         for (const engine::Bounds& box : hurts.boxes) {
-          tick.threats.push_back(PastEnemy{
-              .entity = enemy, .bounds = box, .kind = ThreatKind::HurtBox});
+          tick.threats.push_back(PastEnemy{.entity = enemy,
+                                           .bounds = box,
+                                           .kind = ThreatKind::HurtBox,
+                                           .filter = *filter});
         }
         for (const BeamLine& line : hurts.beams) {
-          tick.beams.push_back(PastBeam{.entity = enemy, .line = line});
+          tick.beams.push_back(
+              PastBeam{.entity = enemy, .line = line, .filter = *filter});
         }
       });
 }
 
 /** @brief Adds to @p tick the box of every enemy that is not summoning and
- * every missile of an enemy of @p components. */
+ * every missile of an enemy of @p components, of those that have a collision
+ * filter. */
 void recordBodiesAndMissiles(engine::ComponentRegistry& components,
                              PastTick& tick) {
   components.forEach<EntityType, Position>(
       [&components, &tick](engine::Entity entity, const EntityType& side,
                            const Position& position) {
-        const auto* const box = components.get<CollisionBox>(entity);
-        if (box == nullptr) {
+        const bool isABody =
+            side == EntityType::Enemy && !components.has<Summoning>(entity);
+        if (!isABody && side != EntityType::EnemyMissile) {
           return;
         }
-        const engine::Bounds bounds = boundsOf(position, *box);
-        if (side == EntityType::Enemy && !components.has<Summoning>(entity)) {
-          tick.bodies.push_back(PastEnemy{
-              .entity = entity, .bounds = bounds, .kind = ThreatKind::Body});
-        } else if (side == EntityType::EnemyMissile) {
-          tick.threats.push_back(PastEnemy{
-              .entity = entity, .bounds = bounds, .kind = ThreatKind::Missile});
+        const auto* const box = components.get<CollisionBox>(entity);
+        const auto* const filter =
+            components.get<engine::CollisionFilter>(entity);
+        if (box == nullptr || filter == nullptr) {
+          return;
         }
+        (isABody ? tick.bodies : tick.threats)
+            .push_back(PastEnemy{
+                .entity = entity,
+                .bounds = boundsOf(position, *box),
+                .kind = isABody ? ThreatKind::Body : ThreatKind::Missile,
+                .filter = *filter});
       });
 }
 
@@ -184,10 +216,15 @@ void LagCompensatedHitSystem::testPlayerMissiles(
         *side != EntityType::PlayerMissile) {
       return;
     }
-    const engine::Bounds swept = sweptBack(
-        boundsOf(position, *box), travelOf(components, missile, elapsed));
+    const std::optional<EntityBounds> swept =
+        testerOf(components, missile,
+                 sweptBack(boundsOf(position, *box),
+                           travelOf(components, missile, elapsed)));
+    if (!swept.has_value()) {
+      return;
+    }
     if (const std::optional<PastEnemy> target =
-            firstHitAmong(enemiesAgo(delay.ticks).bodies, swept, components)) {
+            firstHitAmong(enemiesAgo(delay.ticks).bodies, *swept, components)) {
       events_->publish(
           MissileHit{.missile = missile, .target = target->entity});
     }
@@ -204,8 +241,13 @@ void LagCompensatedHitSystem::testShips(engine::ComponentRegistry& components) {
     if (box == nullptr || side == nullptr || *side != EntityType::Player) {
       return;
     }
-    const std::optional<PastEnemy> threat = firstThreatTo(
-        enemiesAgo(delay.ticks), boundsOf(position, *box), components);
+    const std::optional<EntityBounds> tester =
+        testerOf(components, ship, boundsOf(position, *box));
+    if (!tester.has_value()) {
+      return;
+    }
+    const std::optional<PastEnemy> threat =
+        firstThreatTo(enemiesAgo(delay.ticks), *tester, components);
     if (threat.has_value() && threat->kind == ThreatKind::Missile) {
       events_->publish(MissileHit{.missile = threat->entity, .target = ship});
     } else if (threat.has_value()) {

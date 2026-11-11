@@ -13,6 +13,7 @@
 
 [gameplay]
 side = "look_item"
+layer = "look_item"
 look_item = "crown"
 pilot = "straight"
 

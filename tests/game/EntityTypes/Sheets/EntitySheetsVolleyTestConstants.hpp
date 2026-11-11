@@ -12,6 +12,7 @@ constexpr std::string_view BROODER_NAME_IN_SHEET_TESTS = "brooder";
 constexpr std::string_view MINION_NAME_IN_SHEET_TESTS = "minion";
 constexpr std::string_view BROODER_OF_MINIONS_TEXT = R"([gameplay]
 side = "enemy"
+layer = "enemy"
 pilot = "straight"
 [gameplay.hitbox]
 width = 96
@@ -32,6 +33,7 @@ offset_y = 0
 )";
 constexpr std::string_view MINION_SHEET_TEXT = R"([gameplay]
 side = "enemy"
+layer = "enemy"
 pilot = "straight"
 [gameplay.hitbox]
 width = 64
@@ -45,6 +47,7 @@ heading = -1
 )";
 constexpr std::string_view BROODER_OF_PLAYER_MISSILES_TEXT = R"([gameplay]
 side = "enemy"
+layer = "enemy"
 pilot = "straight"
 [gameplay.hitbox]
 width = 96

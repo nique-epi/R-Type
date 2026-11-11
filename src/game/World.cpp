@@ -6,6 +6,7 @@
 #include "BodyPlacement.hpp"
 #include "Boss.hpp"
 #include "CollisionBox.hpp"
+#include "CollisionFilter.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
 #include "Entity.hpp"
@@ -51,12 +52,14 @@ struct BodyStart {
 };
 
 /** @brief Gives @p start what every entity of a sheet has: where it is, its
- * side, its box, the number of its sheet, and an Intent that wants nothing. */
+ * side, its box, its collision filter, the number of its sheet, and an Intent
+ * that wants nothing. */
 void addPlace(engine::ComponentRegistry& components, const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
   components.add(start.body, start.position);
   components.add(start.body, sheet.side);
   components.add(start.body, sheet.hitbox);
+  components.add(start.body, sheet.collision.filter);
   components.add(start.body, EntityTypeNumber{.number = sheet.number});
   components.add(start.body, Intent{});
 }

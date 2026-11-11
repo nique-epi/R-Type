@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include <vector>
+#include "CollisionFilter.hpp"
 #include "CollisionScene.hpp"
+#include "CollisionTestConstants.hpp"
 #include "CurrentAction.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
@@ -10,6 +12,7 @@
 #include "ShipContact.hpp"
 #include "ViewDelay.hpp"
 
+using rtype::engine::CollisionFilter;
 using rtype::engine::Entity;
 using rtype::game::CurrentAction;
 using rtype::game::EntityType;
@@ -278,6 +281,21 @@ TEST(HurtZoneSystem, LeavesACompensatedShipToTheLagSystem) {
   const Entity ship =
       scene.spawn(EntityType::Player, SHIP_INSIDE_THE_BOX_X, 0.0F);
   scene.components.add(ship, ViewDelay{.ticks = 0});
+
+  EXPECT_TRUE(contactsOf(scene).empty());
+}
+
+/**
+ * Given a ship inside a box that always hurts, of an enemy that hits nothing
+ * and that the ship does not hit
+ * When the hurt zones are tested
+ * Then the ship is not hurt: a zone hurts only what its body touches
+ */
+TEST(HurtZoneSystem, AZoneSparesAShipItsBodyDoesNotTouch) {
+  CollisionScene scene;
+  const Entity enemy = enemyWith(scene, 0.0F, {ALWAYS_HURTING_BOX});
+  *scene.components.get<CollisionFilter>(enemy) = HARMLESS_ENEMY_FILTER;
+  scene.spawn(EntityType::Player, SHIP_INSIDE_THE_BOX_X, 0.0F);
 
   EXPECT_TRUE(contactsOf(scene).empty());
 }

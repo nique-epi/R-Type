@@ -17,6 +17,7 @@
 #include "DataFileConstants.hpp"
 #include "DataFilePlace.hpp"
 #include "DataFileTable.hpp"
+#include "DataFileText.hpp"
 #include "EngineException.hpp"
 #include "PathText.hpp"
 #include "TimeConstants.hpp"
@@ -181,6 +182,26 @@ std::string textAt(const DataFileTable& table, std::string_view key) {
     throw DataFileTextExpectedException(placeOf(node.source(), table, key));
   }
   return *text;
+}
+
+std::vector<DataFileText> textsAt(const DataFileTable& table,
+                                  std::string_view key) {
+  const toml::node& node = nodeAt(table, key);
+  const toml::array* const array = node.as_array();
+  if (array == nullptr) {
+    throw DataFileTextsExpectedException(placeOf(node.source(), table, key));
+  }
+  std::vector<DataFileText> texts;
+  for (const toml::node& element : *array) {
+    const std::optional<std::string> text = element.value_exact<std::string>();
+    if (!text.has_value()) {
+      throw DataFileTextsExpectedException(
+          placeOf(element.source(), table, key));
+    }
+    texts.push_back(DataFileText{
+        .text = *text, .place = placeOf(element.source(), table, key)});
+  }
+  return texts;
 }
 
 std::size_t choiceAt(const DataFileTable& table, std::string_view key,
