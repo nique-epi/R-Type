@@ -3,6 +3,8 @@
 
 [gameplay]
 side = "enemy"
+layer = "enemy"
+hits = ["player"]
 pilot = "bench_waiting"
 
 [gameplay.hitbox]

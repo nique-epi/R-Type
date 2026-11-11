@@ -16,7 +16,7 @@ This page tells you where to look when you need to change something. It describe
 | Systems and queries | Available | `src/engine/Systems/`, `ComponentRegistry::forEach` |
 | Game loop | Server only: ticks run at a fixed rate, and the tick of a game in progress runs the systems of its world | `src/server/Network/` |
 | Event bus | Available | `src/engine/Events/` |
-| Collisions | Available: the overlap test and the event; the system that detects them is in the game | `src/engine/Collision/` |
+| Collisions | Available: the overlap test, the grid that sorts the boxes, the collision layers and the event; the system that detects them is in the game | `src/engine/Collision/` |
 | Launch arguments | Available; used by the server and the client | `src/engine/LaunchArguments/` |
 | Commands and configuration | Available; the supervisor reads `server.cfg` with it and hands the lines of its games over, a game process reads the file its supervisor wrote, the client reads `client.cfg` | `src/engine/Commands/` |
 | Modules and application | Available; the server and the client are built from modules | `src/engine/Modules/` |
@@ -183,13 +183,15 @@ The engine defines one event type, `Collision` (see below). The game defines the
 
 ## Collisions: `Bounds`, `overlaps` and `Collision`
 
-`src/engine/Collision/` holds what any game needs to tell that two things touch, and nothing about what touching means. It is headers only.
+`src/engine/Collision/` holds what any game needs to tell that two things touch, and nothing about what touching means. It is headers only, but for the grid.
 
 - `Bounds` is an axis-aligned rectangle given by its center (`centerX`, `centerY`) and its size (`width`, `height`), in the caller's units. The engine does not read `Position` or `CollisionBox`, which belong to `rtype_game`: the game builds a `Bounds` from them.
 - `overlaps(first, second)` is true when the interiors of the two rectangles intersect. Two rectangles that only touch along an edge or at a corner do not overlap, and a rectangle with no area overlaps another one only if it lies strictly inside it. The answer does not depend on the order of the arguments. The function is `constexpr`.
+- `UniformGrid` (`Grid/`) sorts rectangles into the cells of a grid laid over an area, and `candidatePairs()` gives the pairs that share a cell: the only ones worth comparing, so the cost grows with the rectangles that lie close to each other, not with the square of them all.
+- `CollisionFilter` (`Layers/`) says where an entity lies and what it hits, as two sets of collision layers, one bit per layer, 32 at most (`MAXIMUM_COLLISION_LAYERS`); `collisionLayerOf(index)` gives the set of one layer. `hitsLayerOf(striker, struck)` is true when the striker hits a layer the struck lies in, and `mayCollide(first, second)` when one of the two hits the other, whichever comes first. A layer has no name and no meaning here: the game names them and decides what a contact does. Both functions are `constexpr`.
 - `Collision` is the event `{first, second}`, two `Entity` handles. The order carries no meaning: a subscriber must accept the pair `(a, b)` as well as `(b, a)`.
 
-The engine has no system that walks the entities: it cannot read `Position` or `CollisionBox`. `CollisionSystem` in the game builds the `Bounds` and publishes `Collision`, and which pairs matter (a player missile and a Bydo, for example) is decided by the game in a subscriber, never by the engine: see [Server and game](/R-Type/server/#collisions).
+The engine has no system that walks the entities: it cannot read `Position` or `CollisionBox`. `CollisionSystem` in the game builds the `Bounds`, drops the pairs `mayCollide()` refuses and publishes `Collision`; which layers exist comes from the entity sheets of the game, and what a contact means (a player missile and a Bydo, for example) is decided by the game in a subscriber, never by the engine: see [Server and game](/R-Type/server/#collisions).
 
 ## Launch arguments: `readLaunchArguments`
 
@@ -333,6 +335,7 @@ The same language is meant for the administration console and the orders of the 
 | Change how network identifiers are given or looked up | `src/engine/NetworkIds/` |
 | Run something after a delay | `TimerScheduler` in `src/engine/Time/TimerScheduler/` |
 | Test whether two rectangles touch, or react to a contact | `overlaps` and `Collision` in `src/engine/Collision/`; the pairs that matter belong to `src/game/` |
+| Say which entities may touch each other | `CollisionFilter` and `mayCollide` in `src/engine/Collision/Layers/`; the layers of R-Type are named by its entity sheets |
 | Announce that something happened, or react to it | `EventBus` in `src/engine/Events/EventBus/`: `publish` the event, `subscribe<Event>` to it |
 | Run untrusted scripts | `ScriptMachine` in `src/engine/Scripting/`; its limits in `ScriptingConstants.hpp` |
 | Hand data from one thread to another | `BoundedQueue`, in its own library: see [Concurrency](/R-Type/concurrency/) |

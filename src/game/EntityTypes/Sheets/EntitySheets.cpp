@@ -12,7 +12,12 @@
 #include "BehaviourRegistry.hpp"
 #include "BuiltInBehaviours.hpp"
 #include "BurstSheet.hpp"
+#include "CollisionFilter.hpp"
+#include "CollisionFiltering.hpp"
+#include "CollisionLayerConstants.hpp"
+#include "CollisionSheet.hpp"
 #include "DataFilePlace.hpp"
+#include "DataFileText.hpp"
 #include "EngineException.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheetConstants.hpp"
@@ -155,6 +160,67 @@ void numberProjectiles(std::vector<EntitySheet>& sheets) {
   }
 }
 
+/** @returns The layers the sheets of @p sheets lie in, each once, in the order
+ * of their names: the place of a layer in it is its index in a
+ * CollisionFilter. The names refer to @p sheets.
+ * @throws TooManyCollisionLayersException past
+ * engine::MAXIMUM_COLLISION_LAYERS. */
+std::vector<std::string_view> collisionLayersOf(
+    std::span<const EntitySheet> sheets) {
+  std::vector<std::string_view> layers;
+  layers.reserve(sheets.size());
+  for (const EntitySheet& sheet : sheets) {
+    layers.emplace_back(sheet.collision.layer);
+  }
+  std::ranges::sort(layers);
+  const auto repeated = std::ranges::unique(layers);
+  layers.erase(repeated.begin(), repeated.end());
+  if (layers.size() > engine::MAXIMUM_COLLISION_LAYERS) {
+    throw TooManyCollisionLayersException(layers.size(),
+                                          engine::MAXIMUM_COLLISION_LAYERS);
+  }
+  return layers;
+}
+
+/** @returns The set that holds the layer of @p layers named @p name, the
+ * empty one when none is. */
+std::uint32_t layerNamed(std::span<const std::string_view> layers,
+                         std::string_view name) {
+  const auto found = std::ranges::find(layers, name);
+  return found == layers.end()
+             ? engine::NO_COLLISION_LAYER
+             : engine::collisionLayerOf(
+                   static_cast<std::size_t>(found - layers.begin()));
+}
+
+/** @returns The layer of @p collision and the layers it hits, as sets of
+ * @p layers.
+ * @throws engine::UnknownDataFileChoiceException when it hits a layer no
+ * sheet lies in; the message lists @p layers. */
+engine::CollisionFilter filterOf(const CollisionSheet& collision,
+                                 std::span<const std::string_view> layers) {
+  engine::CollisionFilter filter{.layer = layerNamed(layers, collision.layer),
+                                 .hits = engine::NO_COLLISION_LAYER};
+  for (const engine::DataFileText& hit : collision.hits) {
+    const std::uint32_t layer = layerNamed(layers, hit.text);
+    if (layer == engine::NO_COLLISION_LAYER) {
+      throw engine::UnknownDataFileChoiceException(hit.place, hit.text, layers);
+    }
+    filter.hits |= layer;
+  }
+  return filter;
+}
+
+/** @brief Writes in each sheet of @p sheets the CollisionFilter of its layer
+ * and of the layers it hits, among collisionLayersOf() them all.
+ * @throws What collisionLayersOf() and filterOf() throw. */
+void writeCollisionFilters(std::vector<EntitySheet>& sheets) {
+  const std::vector<std::string_view> layers = collisionLayersOf(sheets);
+  for (EntitySheet& sheet : sheets) {
+    sheet.collision.filter = filterOf(sheet.collision, layers);
+  }
+}
+
 }  // namespace
 
 EntitySheets EntitySheets::fromFolder(const std::filesystem::path& folder) {
@@ -173,6 +239,7 @@ EntitySheets EntitySheets::fromTexts(std::span<const SheetText> texts,
   checkProjectiles(sheets);
   checkVolleys(sheets);
   numberProjectiles(sheets);
+  writeCollisionFilters(sheets);
   return EntitySheets{std::move(sorted), std::move(behaviours),
                       std::move(sheets)};
 }

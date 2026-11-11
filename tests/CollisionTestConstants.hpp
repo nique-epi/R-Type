@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include "CollisionFilter.hpp"
+#include "CollisionFiltering.hpp"
+#include "CollisionLayerConstants.hpp"
 
 /**
  * @brief The numbers of two players, one who fires and one whose ship is
@@ -8,6 +11,57 @@
  */
 constexpr std::uint8_t FIRING_PLAYER_NUMBER = 1;
 constexpr std::uint8_t OTHER_PLAYER_NUMBER = 2;
+
+/**
+ * @brief The collision layers of the shipped sheets, one per side, numbered in
+ * the order of their names as EntitySheets numbers them, and a layer no
+ * shipped sheet lies in.
+ */
+constexpr std::uint32_t ENEMY_LAYER = rtype::engine::collisionLayerOf(0);
+constexpr std::uint32_t ENEMY_MISSILE_LAYER =
+    rtype::engine::collisionLayerOf(1);
+constexpr std::uint32_t LOOK_ITEM_LAYER = rtype::engine::collisionLayerOf(2);
+constexpr std::uint32_t PLAYER_LAYER = rtype::engine::collisionLayerOf(3);
+constexpr std::uint32_t PLAYER_MISSILE_LAYER =
+    rtype::engine::collisionLayerOf(4);
+constexpr std::uint32_t WALL_LAYER = rtype::engine::collisionLayerOf(5);
+
+/**
+ * @brief The filter the shipped sheets give a body of each side: an enemy and
+ * its missile hit the ships, a missile of a player hits the enemies and, for
+ * friendly fire, the ships, a ship hits the look items, which hit nothing.
+ */
+constexpr rtype::engine::CollisionFilter ENEMY_FILTER{.layer = ENEMY_LAYER,
+                                                      .hits = PLAYER_LAYER};
+constexpr rtype::engine::CollisionFilter ENEMY_MISSILE_FILTER{
+    .layer = ENEMY_MISSILE_LAYER, .hits = PLAYER_LAYER};
+constexpr rtype::engine::CollisionFilter LOOK_ITEM_FILTER{
+    .layer = LOOK_ITEM_LAYER, .hits = rtype::engine::NO_COLLISION_LAYER};
+constexpr rtype::engine::CollisionFilter PLAYER_FILTER{.layer = PLAYER_LAYER,
+                                                       .hits = LOOK_ITEM_LAYER};
+constexpr rtype::engine::CollisionFilter PLAYER_MISSILE_FILTER{
+    .layer = PLAYER_MISSILE_LAYER, .hits = ENEMY_LAYER | PLAYER_LAYER};
+
+/**
+ * @brief Filters no shipped sheet has: bodies that hit nothing, an enemy that
+ * stops the missiles of the players, missiles of an enemy that hit the
+ * enemies or the missiles of the players, and a ship that hits the enemies.
+ */
+constexpr rtype::engine::CollisionFilter HARMLESS_ENEMY_FILTER{
+    .layer = ENEMY_LAYER, .hits = rtype::engine::NO_COLLISION_LAYER};
+constexpr rtype::engine::CollisionFilter HARMLESS_ENEMY_MISSILE_FILTER{
+    .layer = ENEMY_MISSILE_LAYER, .hits = rtype::engine::NO_COLLISION_LAYER};
+constexpr rtype::engine::CollisionFilter HARMLESS_PLAYER_MISSILE_FILTER{
+    .layer = PLAYER_MISSILE_LAYER, .hits = rtype::engine::NO_COLLISION_LAYER};
+constexpr rtype::engine::CollisionFilter ENEMY_STOPPING_PLAYER_MISSILES_FILTER{
+    .layer = ENEMY_LAYER, .hits = PLAYER_MISSILE_LAYER};
+constexpr rtype::engine::CollisionFilter ENEMY_MISSILE_HITTING_ENEMIES_FILTER{
+    .layer = ENEMY_MISSILE_LAYER, .hits = ENEMY_LAYER};
+constexpr rtype::engine::CollisionFilter
+    ENEMY_MISSILE_HITTING_PLAYER_MISSILES_FILTER{.layer = ENEMY_MISSILE_LAYER,
+                                                 .hits = PLAYER_MISSILE_LAYER};
+constexpr rtype::engine::CollisionFilter SHIP_HITTING_ENEMIES_FILTER{
+    .layer = PLAYER_LAYER, .hits = ENEMY_LAYER};
 
 /**
  * @brief Width and height of the square every collision test starts from.

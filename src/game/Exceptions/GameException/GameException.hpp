@@ -104,6 +104,23 @@ class DuplicateEntityTypeException : public GameException {
 };
 
 /**
+ * @brief Thrown when a sheet names its collision layer with anything but 1 to
+ * @p longestName lowercase letters, digits and underscores.
+ */
+class InvalidCollisionLayerNameException : public GameException {
+ public:
+  InvalidCollisionLayerNameException(const engine::DataFilePlace& place,
+                                     std::size_t longestName);
+};
+
+/** @brief Thrown when the sheets lie in more collision layers than a filter
+ * tells apart. */
+class TooManyCollisionLayersException : public GameException {
+ public:
+  TooManyCollisionLayersException(std::size_t count, std::size_t maximum);
+};
+
+/**
  * @brief Thrown when a sheet breaks a rule that ties two of its values, or a
  * value to another sheet; the message names the file, the line, the column,
  * the key and the rule.

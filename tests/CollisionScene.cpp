@@ -1,6 +1,7 @@
 #include "CollisionScene.hpp"
 #include "Collision.hpp"
 #include "CollisionBox.hpp"
+#include "CollisionFilter.hpp"
 #include "CollisionTestConstants.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
@@ -25,7 +26,31 @@ Entity CollisionScene::spawnWithoutCollisionBox(EntityType type, float centerX,
   const Entity entity = entities.create();
   components.add(entity, Position{.x = centerX, .y = centerY});
   components.add(entity, type);
+  components.add(entity, shippedFilterOf(type));
   return entity;
+}
+
+Entity CollisionScene::spawnWith(EntityType type,
+                                 rtype::engine::CollisionFilter filter) {
+  const Entity entity = spawn(type, 0.0F, 0.0F);
+  *components.get<rtype::engine::CollisionFilter>(entity) = filter;
+  return entity;
+}
+
+rtype::engine::CollisionFilter shippedFilterOf(EntityType type) {
+  switch (type) {
+    case EntityType::Player:
+      return PLAYER_FILTER;
+    case EntityType::Enemy:
+      return ENEMY_FILTER;
+    case EntityType::PlayerMissile:
+      return PLAYER_MISSILE_FILTER;
+    case EntityType::EnemyMissile:
+      return ENEMY_MISSILE_FILTER;
+    case EntityType::LookItem:
+      return LOOK_ITEM_FILTER;
+  }
+  return rtype::engine::CollisionFilter{};
 }
 
 bool isPair(const rtype::engine::Collision& collision, Entity first,

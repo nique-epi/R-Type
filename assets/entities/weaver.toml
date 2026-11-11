@@ -11,6 +11,8 @@
 
 [gameplay]
 side = "enemy"
+layer = "enemy"
+hits = ["player"]
 pilot = "weave"
 
 [gameplay.hitbox]
