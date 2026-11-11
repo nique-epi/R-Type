@@ -26,7 +26,7 @@ constexpr std::string_view MISSING_FOLDER_NAME = "no_such_folder";
 
 /** @brief One file more than a program loads, with the extension of a sheet
  * and the first part of their names. */
-constexpr std::size_t FILES_ONE_TOO_MANY = 33;
+constexpr std::size_t FILES_ONE_TOO_MANY = 256;
 constexpr std::string_view GENERATED_FILE_PREFIX = "sheet_";
 constexpr std::string_view SHEET_EXTENSION = ".toml";
 

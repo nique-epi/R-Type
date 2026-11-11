@@ -14,17 +14,20 @@ jobs:
   format-check:
     name: Format check
     runs-on: ubuntu-latest
-    container: epitechcontent/epitest-docker:latest
     steps:
       - uses: actions/checkout@v5
 
+      # The wheel of PyPI ships the same clang-format 20.1.8 as the Epitech image,
+      # without pulling that image.
       - name: Install clang-format
-        run: apt-get update && apt-get install -y clang-format-20
+        run: |
+          pipx install clang-format==20.1.8
+          clang-format --version
 
       - name: Check formatting
         run: |
           find src tests \( -name '*.cpp' -o -name '*.hpp' \) -print0 \
-            | xargs -0 clang-format-20 --dry-run -Werror
+            | xargs -0 clang-format --dry-run -Werror
 
   tidy:
     name: Clang-tidy (${{ matrix.shard }}/${{ strategy.job-total }})
@@ -206,29 +209,34 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # The CI never runs a debugger, so the debug builds carry no debug
+          # information: the objects, the compiler cache and the links shrink.
           - os: ubuntu-latest
             preset: test
-            generator_arguments: ""
+            debug_arguments: >-
+              -DCMAKE_C_FLAGS_DEBUG=-O0
+              -DCMAKE_CXX_FLAGS_DEBUG=-O0
+          # The sanitizers keep the line tables, so their reports name the lines.
           - os: ubuntu-latest
             preset: sanitize
             label: ", sanitizers"
-            generator_arguments: ""
+            debug_arguments: >-
+              -DCMAKE_C_FLAGS_DEBUG=-g1
+              -DCMAKE_CXX_FLAGS_DEBUG=-g1
           # Every RTYPE_MODULE_* option off: the build, the tests and the start
           # of the supervisor without the optional modules.
           - os: ubuntu-latest
             preset: modules-off
             label: ", optional modules off"
-            generator_arguments: ""
+            debug_arguments: >-
+              -DCMAKE_C_FLAGS_DEBUG=-O0
+              -DCMAKE_CXX_FLAGS_DEBUG=-O0
           - os: windows-latest
             preset: test
-            # Ninja compiles every file in parallel; the Visual Studio generator does not.
-            # /Z7 puts the debug information in the object files, which sccache can cache.
-            generator_arguments: >-
-              -G Ninja
-              -DCMAKE_CXX_SCAN_FOR_MODULES=OFF
-              -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
-    env:
-      SCCACHE_GHA_ENABLED: "true"
+            debug_arguments: >-
+              -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=
+              -DCMAKE_EXE_LINKER_FLAGS_DEBUG=/INCREMENTAL:NO
+              -DCMAKE_SHARED_LINKER_FLAGS_DEBUG=/INCREMENTAL:NO
     steps:
       - uses: actions/checkout@v5
         with:
@@ -241,14 +249,28 @@ jobs:
       - name: Install CMake 4.2
         uses: lukka/get-cmake@v4.2.3
 
-      - name: Set up sccache
-        uses: mozilla-actions/sccache-action@v0.0.11
-
       - name: Install system dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libx11-dev libxi-dev libxrandr-dev libxcursor-dev libudev-dev libgl1-mesa-dev
+
+      # One archive per job, restored and saved whole: the cache of a pull
+      # request falls back to the newest one of main. In depend mode, ccache
+      # takes the headers of an MSVC compile from /showIncludes instead of
+      # running the preprocessor.
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2.24
+        with:
+          key: ${{ matrix.os }}-${{ matrix.preset }}
+          max-size: 1G
+          evict-old-files: job
+          job-summary: ""
+
+      - name: Point ccache at depend mode
+        if: runner.os == 'Windows'
+        shell: bash
+        run: echo "CCACHE_DEPEND=true" >> "$GITHUB_ENV"
 
       - name: Point vcpkg at a local binary cache
         shell: bash
@@ -264,15 +286,18 @@ jobs:
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
           restore-keys: vcpkg-${{ runner.os }}-
 
+      # Ninja compiles every file in parallel, on every platform.
       - name: Configure
         shell: bash
         env:
           VCPKG_SSL_REVOKE_BEST_EFFORT: ${{ runner.os == 'Windows' && '1' || '0' }}
         run: >-
-          cmake --preset ${{ matrix.preset }} ${{ matrix.generator_arguments }}
+          cmake --preset ${{ matrix.preset }} -G Ninja
+          -DCMAKE_CXX_SCAN_FOR_MODULES=OFF
+          ${{ matrix.debug_arguments }}
           -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
-          -DCMAKE_C_COMPILER_LAUNCHER=sccache
-          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Save vcpkg binary cache
         if: steps.vcpkg-cache.outputs.cache-hit != 'true' && matrix.preset == 'test'
@@ -286,11 +311,10 @@ jobs:
 
       - name: Show the compiler cache statistics
         if: always()
-        shell: bash
-        run: ${SCCACHE_PATH} --show-stats
+        run: ccache --show-stats --verbose
 
       - name: Test
-        run: ctest --preset ${{ matrix.preset }}
+        run: ctest --preset ${{ matrix.preset }} --parallel
 
       - name: Stop the supervisor
         if: matrix.preset == 'sanitize' || matrix.preset == 'modules-off'

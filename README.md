@@ -108,14 +108,15 @@ This builds in Release, then writes in `build/` one set of packages for the clie
 
 | System | Client | Server |
 |---|---|---|
-| Linux | `R-Type-client-<version>-Linux.tar.gz`, `R-Type-client-<version>-Linux.AppImage` | `R-Type-server-<version>-Linux.tar.gz` |
-| Windows | `R-Type-client-<version>-win64.zip`, `R-Type-client-<version>-win64.exe` (installer) | `R-Type-server-<version>-win64.zip`, `R-Type-server-<version>-win64.exe` (installer) |
+| Linux | `R-Type-client-<version>-Linux.tar.gz`, `R-Type-client-<version>-Linux.AppImage` (made by vpk) | `R-Type-server-<version>-Linux.tar.gz` |
+| Windows | `R-Type-client-<version>-win64.zip`, `R-Type-client-<version>-win64.exe` (installer made by vpk) | `R-Type-server-<version>-win64.zip`, `R-Type-server-<version>-win64.exe` (installer) |
 | macOS | `R-Type-client-<version>-Darwin.dmg`, holding `R-Type.app` | `R-Type-server-<version>-Darwin.tar.gz` |
 
 Each package holds its program and the part of `assets/` it reads, where its executable finds them (`bin/` and `assets/`; `usr/bin/` and `usr/assets/` in the AppImage; `Contents/MacOS/` and `Contents/Resources/assets/` in the app, where Apple wants every file that is not code), so it starts from any folder. The version is the one of `project()` in `CMakeLists.txt`. The files that build the packages are in `packaging/`.
 
-- Linux: the programs need X11, OpenGL and udev from the distribution, and a glibc at least as recent as the one of the machine that built them (Ubuntu 24.04 on the CI). The AppImage needs FUSE, which most desktops have. Packaging the client on Linux needs [`appimagetool`](https://github.com/AppImage/appimagetool) on the `PATH`.
-- Windows: the installer of each program puts it in its own folder (`R-Type`, `R-Type Server`) with a Start menu shortcut and an uninstaller. Packaging needs [NSIS](https://nsis.sourceforge.io).
+- Client updates: the client updates itself through [Velopack](https://velopack.io) (see the [Client](https://nique-epi.github.io/R-Type/client/#updates-clientupdatemodule-releasefeedsource) page). Before cpack makes the client package, `packaging/VelopackClient.cmake` packs the client with `vpk`, a .NET tool (`dotnet tool install -g vpk --version 1.2.161`), into `build/velopack/`: the feed of the system (`releases.<channel>.json`) and the full package of the update (`R-Type-<version>[-<channel>]-full.nupkg`). It writes the Windows installer and the Linux AppImage, and the app of the macOS disk image. Without `vpk`, the client package is made as before and cannot update itself; `RTYPE_REQUIRE_VELOPACK=1`, which the CI sets, makes its absence an error. `RTYPE_RELEASE_NOTES` names the Markdown notes vpk puts in the update, which the client shows in WHAT'S NEW.
+- Linux: the programs need X11, OpenGL and udev from the distribution, and a glibc at least as recent as the one of the machine that built them (Ubuntu 22.04 on the CI). The AppImage needs FUSE, which most desktops have; Velopack replaces it where it is when the client updates.
+- Windows: the installer of the client, made by vpk, installs it for the player alone, in `%LocalAppData%\R-Type`, with no administrator rights, a Start menu shortcut and an uninstaller. The installer of the server puts it in its own folder (`R-Type Server`) with a Start menu shortcut and an uninstaller; packaging it needs [NSIS](https://nsis.sourceforge.io).
 - macOS: the app is built for Apple Silicon only, with the hardened runtime. When `RTYPE_MACOS_SIGNING_IDENTITY` names a Developer ID Application identity of the keychain, the app and its disk image are signed with it; when `RTYPE_NOTARY_KEY` (the path of an App Store Connect API key, `.p8`), `RTYPE_NOTARY_KEY_ID` and `RTYPE_NOTARY_ISSUER` are set too, the disk image is sent to Apple's notary service and the ticket is stapled to it, so Gatekeeper opens it without a warning, even offline. Without an identity the app is signed without one, and macOS asks the player, the first time, to allow it in System Settings > Privacy & Security. The app may load plugins signed by another developer (`com.apple.security.cs.disable-library-validation`, in `packaging/r-type.entitlements`). The server archive is not signed.
 - The CI signs and notarizes the client when the repository holds the secrets `MACOS_CERTIFICATE_P12` (the Developer ID certificate and its key, as a base64 `.p12`), `MACOS_CERTIFICATE_PASSWORD`, `APPLE_API_KEY_P8` (the text of the `.p8`), `APPLE_API_KEY_ID` and `APPLE_API_ISSUER_ID`; the package check then requires Gatekeeper to accept the app. A pull request from a fork, which receives no secret, gets an app signed without an identity.
 - macOS disk image: it opens on a window drawn in the colors of the game, with the app on the left, the Applications folder on the right and an arrow between them: dragging the app onto the folder installs it. That window is two files of `packaging/disk-image/`, the background (`background.tiff`, at its normal and Retina sizes) and the `.DS_Store` that sizes the window and places the icons (`DS_Store`); `make_layout.py` draws and writes both, on macOS, with Python and the `pillow`, `ds_store` and `mac_alias` packages (`pip install pillow ds_store mac_alias`, then `python3 packaging/disk-image/make_layout.py`). The `.DS_Store` finds the background through the name of the volume, `R-Type`: changing `CPACK_DMG_VOLUME_NAME` means running the script again with the new name.
@@ -123,14 +124,14 @@ Each package holds its program and the part of `assets/` it reads, where its exe
 The CI builds the packages of the three systems on every push to `main`, and on a pull request that changes `packaging/`, `assets/`, the root `CMakeLists.txt`, the presets, vcpkg or the workflows that build them, and keeps them 7 days as artifacts of the run (`packages-Linux`, `packages-Windows`, `packages-macOS`). Pushing a tag `v<version>` that matches the version of `project()` publishes them in a GitHub release, with notes listing the pull requests merged since the previous tag:
 
 ```bash
-git tag v1.0.0
+git tag v1.1.0
 ```
 
 ```bash
-git push origin v1.0.0
+git push origin v1.1.0
 ```
 
-The release refuses a tag whose version is not the one of `project()`; change the version in a pull request first. `assets/README.md` says the licence of the Epidemic Sound files is not confirmed for a public release.
+The release refuses a tag whose version is not the one of `project()`; change the version in a pull request first. The message of an annotated tag (`git tag -a v1.1.0`, then the notes in Markdown) becomes the WHAT'S NEW of the updated clients and the top of the notes of the release. `assets/README.md` says the licence of the Epidemic Sound files is not confirmed for a public release.
 
 ## Run
 
@@ -215,7 +216,7 @@ The client and every game process write what crosses their socket to the journal
 ./r-type_server --mode master -p 8080
 ```
 
-The same binary runs the master in this mode: the program that lists the game servers for the players, with the status of each, and will take the orders of an admin. `--mode` comes before every other option. Today it answers an HTTP API under `/api` on TCP port 8080 of every IPv4 interface (`curl http://127.0.0.1:8080/api/health` answers `{"version":"1.0.0"}`), keeps its data in `r-type_master.db` next to the executable, and reads `master.cfg`, modelled by `master.cfg.example` (see [the master page](https://nique-epi.github.io/R-Type/master/)). A host creates its game server with `POST /api/servers`, which answers the key of that server once; the master keeps only a hash of it. The host writes the key in the `server.cfg` of the game server, as `master-key` next to `master-url`, and the supervisor then registers once for all its games with `PUT /api/servers/me` and sends its heartbeat with `PUT /api/servers/me/heartbeat`, through `MasterClient`; a game process never talks to the master:
+The same binary runs the master in this mode: the program that lists the game servers for the players, with the status of each, and will take the orders of an admin. `--mode` comes before every other option. Today it answers an HTTP API under `/api` on TCP port 8080 of every IPv4 interface (`curl http://127.0.0.1:8080/api/health` answers `{"version":"1.1.0"}`), keeps its data in `r-type_master.db` next to the executable, and reads `master.cfg`, modelled by `master.cfg.example` (see [the master page](https://nique-epi.github.io/R-Type/master/)). A host creates its game server with `POST /api/servers`, which answers the key of that server once; the master keeps only a hash of it. The host writes the key in the `server.cfg` of the game server, as `master-key` next to `master-url`, and the supervisor then registers once for all its games with `PUT /api/servers/me` and sends its heartbeat with `PUT /api/servers/me/heartbeat`, through `MasterClient`; a game process never talks to the master:
 
 ```bash
 curl -X POST http://127.0.0.1:8080/api/servers -d '{"name":"Paris 1"}'
@@ -289,7 +290,7 @@ cmake --build --preset bench --target script_budget_bench
 ./build-bench/tests/script_budget_bench
 ```
 
-This builds the bench of the scripts in Release in `build-bench/`, then measures 300 scripted bodies and 1000 bullets over 3600 ticks, and prints the time of a tick, the median and the worst, and the share of the scripts in it; see [Scripting in Luau](https://nique-epi.github.io/R-Type/scripting/#what-a-script-costs).
+This builds the bench of the scripts in Release in `build-bench/`, then measures 300 scripted bodies and 1000 bullets over 3600 ticks, and prints the time of a tick, the median and the worst, and the share of the scripts and of the collisions in it; `--cell-side <units>` sets the side of the collision cells; see [Scripting in Luau](https://nique-epi.github.io/R-Type/scripting/#what-a-script-costs).
 
 ## Logging
 

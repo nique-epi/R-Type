@@ -9,7 +9,8 @@
 #include "Intent.hpp"
 #include "lua.h"
 
-LuauBehaviourFixture::LuauBehaviourFixture() : scripts_(reportInto(log_)) {}
+LuauBehaviourFixture::LuauBehaviourFixture()
+    : scripts_(reportInto(log_)), components_(entities_) {}
 
 void LuauBehaviourFixture::load(std::string_view script) {
   scripts_.run(scriptsOf(script));
@@ -17,7 +18,7 @@ void LuauBehaviourFixture::load(std::string_view script) {
 }
 
 void LuauBehaviourFixture::attach(rtype::game::IEntityOrders& orders) {
-  scripts_.attachOrders(orders);
+  scripts_.attachGame(orders, components_);
 }
 
 void LuauBehaviourFixture::beginTick() { scripts_.machine().beginTick(); }

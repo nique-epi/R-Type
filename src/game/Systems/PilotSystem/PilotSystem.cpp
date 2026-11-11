@@ -101,7 +101,8 @@ void reshapeAsAsked(engine::ComponentRegistry& components, engine::Entity body,
 bool isEnraged(const Boss* boss) { return boss != nullptr && boss->enraged; }
 
 /** @returns @p view with what the components of @p body tell of it: its
- * health, its rage, the actions it ended and its network id. */
+ * health, its rage, the actions it ended and its network id, and with the
+ * body itself, for a behaviour that reaches its components. */
 BehaviourView withConditionOf(BehaviourView view,
                               engine::ComponentRegistry& components,
                               engine::Entity body) {
@@ -113,6 +114,7 @@ BehaviourView withConditionOf(BehaviourView view,
   view.actionsEnded = current == nullptr ? 0U : current->ended;
   const NetworkIdentity* const identity = components.get<NetworkIdentity>(body);
   view.networkId = identity == nullptr ? 0U : identity->networkId;
+  view.entity = body;
   return view;
 }
 

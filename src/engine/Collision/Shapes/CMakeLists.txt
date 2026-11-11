@@ -1,0 +1,3 @@
+add_library(rtype_engine_collision_shapes INTERFACE)
+
+target_include_directories(rtype_engine_collision_shapes INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})

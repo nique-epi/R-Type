@@ -102,7 +102,7 @@ constexpr std::string_view TEST_SCRIPT_NAME = "test/server/test.luau";
  * doubles its speed. */
 constexpr std::string_view ENRAGING_SCRIPT = R"(
 behaviours.register("enraging", {}, function(view)
-  if view.health < 0.5 then
+  if view.health_share < 0.5 then
     return {
       collision_box = { width = 200, height = 100 },
       top_speed = 480,

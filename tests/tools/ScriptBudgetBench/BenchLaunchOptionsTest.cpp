@@ -2,13 +2,16 @@
 #include <array>
 #include "BenchLaunch.hpp"
 #include "BenchLaunchOptions.hpp"
+#include "CollisionSystemConstants.hpp"
 #include "EngineException.hpp"
 #include "ScriptBudgetBenchConstants.hpp"
 #include "ScriptBudgetBenchTestConstants.hpp"
 
 using rtype::engine::InvalidLaunchOptionValueException;
+using rtype::game::COLLISION_CELL_SIDE;
 using rtype::tools::BenchLaunch;
 using rtype::tools::BULLETS_OPTION;
+using rtype::tools::CELL_SIDE_OPTION;
 using rtype::tools::DEFAULT_BENCH_TICKS;
 using rtype::tools::readBenchLaunch;
 using rtype::tools::SCRIPTED_BODIES_OPTION;
@@ -18,6 +21,8 @@ using rtype::tools::testing::NO_TICK;
 using rtype::tools::testing::NOT_A_NUMBER;
 using rtype::tools::testing::SEVEN;
 using rtype::tools::testing::SEVEN_BODIES;
+using rtype::tools::testing::SIXTY;
+using rtype::tools::testing::SIXTY_UNITS;
 
 /**
  * Given no argument
@@ -92,4 +97,28 @@ TEST(BenchLaunchOptions, RefusesACountThatIsNoNumber) {
 
   EXPECT_THROW((void)readBenchLaunch(arguments),
                InvalidLaunchOptionValueException);
+}
+
+/**
+ * Given no argument
+ * When the launch is read
+ * Then the grid has the cells of a game
+ */
+TEST(BenchLaunchOptions, TakesTheCellSideOfTheGameByDefault) {
+  const BenchLaunch launch = readBenchLaunch({});
+
+  EXPECT_EQ(launch.cellSide, COLLISION_CELL_SIDE);
+}
+
+/**
+ * Given a cell side of 60 units
+ * When the launch is read
+ * Then the grid has cells of 60 units
+ */
+TEST(BenchLaunchOptions, ReadsTheCellSide) {
+  const std::array arguments{CELL_SIDE_OPTION, SIXTY_UNITS};
+
+  const BenchLaunch launch = readBenchLaunch(arguments);
+
+  EXPECT_EQ(launch.cellSide, SIXTY);
 }

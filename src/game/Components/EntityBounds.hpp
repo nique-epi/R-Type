@@ -5,8 +5,9 @@
 
 namespace rtype::game {
 
-/** @brief A ship and the rectangle it occupies, in logical units. */
-struct ShipBounds {
+/** @brief An entity and the rectangle it collides with on this update, in
+ * logical units, as a system lists the entities it tests. */
+struct EntityBounds {
   engine::Entity entity;
   engine::Bounds bounds;
 };

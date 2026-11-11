@@ -238,7 +238,7 @@ void pushViewTable(lua_State* state, const BehaviourView& view,
     setPoint(state, VIEW_NEAREST_SHIP_KEY, *view.nearestShip);
   }
   setFlag(state, VIEW_WOUNDED_KEY, view.wounded);
-  setNumber(state, VIEW_HEALTH_KEY, view.healthShare);
+  setNumber(state, VIEW_HEALTH_SHARE_KEY, view.healthShare);
   setFlag(state, VIEW_ENRAGED_KEY, view.enraged);
   setNumber(state, VIEW_ACTIONS_ENDED_KEY,
             static_cast<double>(view.actionsEnded));

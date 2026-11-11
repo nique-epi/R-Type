@@ -228,7 +228,7 @@ Everything else comes from a library: the hash tables and the sort from the stan
 | Search of the earliest timer in a list | `TimerScheduler` | linear in the timers, per search | two places outside the engine schedule timers, both in `WaveDirector`, and the first of equal times in the list is the oldest, which gives creation order for free | a binary heap: logarithmic, but it needs a counter to keep that order, and cancelling stays linear |
 | Queue delivered by a scan of the subscriptions | `EventBus` | linear in the subscriptions, per event | the C++ code holds a handful of subscriptions; each function a script subscribes with `bus.on` adds one, so the scan grows with the scripted bodies that subscribe, which is not measured yet; finding the next one by identifier after each call lets a subscriber unsubscribe during a delivery | one list per event type: faster with many subscribers |
 | Ring buffer that discards the oldest | `BoundedQueue` | constant per `push()` | see [Queues between threads](#queues-between-threads) | a lock-free queue, a writer that waits |
-| Test of every pair of boxes | `CollisionSystem`, `overlaps()` | quadratic in the boxes | see below | a grid or a sweep along one axis |
+| Uniform grid, then a test of the pairs that share a cell | `UniformGrid`, `CollisionSystem`, `overlaps()` | linear in the cells the boxes cover, plus the pairs of each cell | see below | testing every pair; a sweep along one axis |
 | Serial number comparison ([RFC 1982](https://www.rfc-editor.org/rfc/rfc1982)) | `isNewerSequence()` | constant | a 16-bit counter wraps during a game: newer means ahead by 1 to 32767, and 32768 is never newer | a plain `>`, wrong after the wrap; a wider counter, larger in every datagram |
 | SipHash-2-4 and cookies kept by nobody | `sipHash()`, `CookieIssuer` | linear in the short message hashed | the cookies keep nothing before the sender proves its address, and whoever lacks the key cannot compute a cookie (the rate limit keeps one slot per address and port, in a table of fixed size); checked against the vectors of the reference implementation | a table of pending requests, which a forger fills; a cryptography library, a new dependency for one function |
 | Generic cell rate algorithm, in a table of fixed size | `spendAllowance()`, `RequestAllowances` | constant per datagram, plus the SipHash of the address for a request | one time per sender, and a silence never gives back more than a burst; the table never grows, and a row picked by a keyed hash keeps forged senders from pushing a banned one out while that row holds a sender that is not banned; a row of banned senders gives up the ban that ends first | a window that counts the datagrams of each second: twice the rate can pass across the edge of two windows; a table that refuses new senders once full, as ioquake3 does: forged addresses then lock every new player out |
@@ -243,7 +243,7 @@ The cost of testing every pair grows with the square of the boxes. It was measur
 | 1,000 | 499,500 | 336 µs | 2% |
 | 2,000 | 1,999,000 | 1.5 ms | 9% |
 
-Nystrom's chapter on [spatial partition](https://gameprogrammingpatterns.com/spatial-partition.html) gives the same rule of thumb: pairwise tests grow "with the square of the number of units", yet "if your n is small enough, it may not be worth the bother", since a partition costs memory and must follow every object that moves. Here most boxes move on every tick. A grid becomes the answer if a profile of a real game shows this loop; several games sharing one simulation thread is what would bring that day closer.
+Nystrom's chapter on [spatial partition](https://gameprogrammingpatterns.com/spatial-partition.html) gives the same rule of thumb: pairwise tests grow "with the square of the number of units", yet "if your n is small enough, it may not be worth the bother", since a partition costs memory and must follow every object that moves. Here most boxes move on every tick, so the grid is filled again on every tick rather than kept up to date. Its cell side, `COLLISION_CELL_SIDE` (60 logical units), was chosen by measuring 60, 120 and 240 on the bench of the scripts, 300 scripted bodies and 1000 bullets (see [What the collisions cost](/R-Type/scripting/#what-the-collisions-cost)).
 
 ## Coordinate system
 
@@ -353,6 +353,14 @@ A game server proves who it is with the key the master gave when its host create
 The subject asks that dependencies go through the package manager and that the project build without altering the system. libhydrogen, by the author of libsodium, builds with CMake through vcpkg and needs nothing installed. Its password hash is not Argon2id: it costs computation and no memory, and a master key, outside the database, encrypts every stored hash, so a stolen database cannot be used to test passwords.
 
 Alternative considered: libsodium. It is the reference, with Argon2id for passwords, but its vcpkg port builds with autotools on macOS and Linux, which every developer and the CI would have to install on the machine, against the subject.
+
+## Updates of the client
+
+The client updates itself through [Velopack](https://velopack.io), which installs the client, downloads a newer release and replaces the client once it exits, on Windows, macOS and Linux, from one C++ API. vpk, its packaging tool, writes the installer, the AppImage and the app the players get, and the feed of each system that lists the packages of a release (see [Client](/R-Type/client/#updates-clientupdatemodule-releasefeedsource)).
+
+Velopack checks the SHA-256 of a package against the feed of its release, and the feed is trusted as GitHub serves it, over HTTPS: whoever can publish a release of the repository can publish an update. The client reads the feed from the files of the latest release (`releases/latest/download/`), not through the API of GitHub, which allows 60 requests an hour per address without a token: a room of players behind one address would otherwise stop finding updates.
+
+Alternative considered: an updater written for the game, a signed manifest and an installer per system. It depends on no library, but the replacement of a running program, the restart and the installer of each system are code of ours, tested on three systems, where Velopack already does them.
 
 ## Consequences
 

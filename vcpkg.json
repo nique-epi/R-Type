@@ -26,6 +26,7 @@
     },
     "sqlitecpp",
     "tomlplusplus",
+    "velopack",
     "zstd"
   ],
   "features": {
@@ -35,5 +36,10 @@
         "gtest"
       ]
     }
+  },
+  "vcpkg-configuration": {
+    "overlay-ports": [
+      "./ports"
+    ]
   }
 }

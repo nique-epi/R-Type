@@ -4,7 +4,10 @@
 #include <vector>
 #include "EngineException.hpp"
 #include "EntitySheet.hpp"
+#include "EntitySheetsFixtures.hpp"
+#include "EntitySheetsTestConstants.hpp"
 #include "EntityType.hpp"
+#include "GameException.hpp"
 #include "NumberedEntityType.hpp"
 #include "NumberedEntityTypes.hpp"
 #include "NumberedEntityTypesTestConstants.hpp"
@@ -20,9 +23,13 @@ using rtype::game::NumberedEntityType;
 using rtype::game::numberedEntityTypesOf;
 using rtype::game::SheetText;
 using rtype::game::sheetTextsIn;
+using rtype::game::TooManyEntityTypesException;
+using rtype::game::testing::enemyMissileSheets;
 using rtype::game::testing::LANCER_BOX_HEIGHT;
 using rtype::game::testing::LANCER_BOX_WIDTH;
 using rtype::game::testing::LANCER_TYPE;
+using rtype::game::testing::MOST_SHEETS_LOADED;
+using rtype::game::testing::ONE_SHEET_TOO_MANY;
 using rtype::game::testing::ONE_TYPE;
 using rtype::game::testing::SHEET_OF_A_PLUGIN_PILOT;
 using rtype::game::testing::SHEET_WITHOUT_BOX;
@@ -116,4 +123,27 @@ TEST(NumberedEntityTypes, RefusesASheetWithoutBox) {
 
   EXPECT_THROW(static_cast<void>(numberedEntityTypesOf(sheets)),
                MissingDataFileKeyException);
+}
+
+/**
+ * Given 255 sheets, the most a program loads
+ * When a client numbers their types
+ * Then all 255 are numbered
+ */
+TEST(NumberedEntityTypes, NumbersTheMostTypesAProgramLoads) {
+  const std::vector<SheetText> sheets = enemyMissileSheets(MOST_SHEETS_LOADED);
+
+  EXPECT_EQ(numberedEntityTypesOf(sheets).size(), MOST_SHEETS_LOADED);
+}
+
+/**
+ * Given 256 sheets in a pack
+ * When a client numbers their types
+ * Then they are refused, as the server refuses them
+ */
+TEST(NumberedEntityTypes, RefusesOneTypePastTheMost) {
+  const std::vector<SheetText> sheets = enemyMissileSheets(ONE_SHEET_TOO_MANY);
+
+  EXPECT_THROW(static_cast<void>(numberedEntityTypesOf(sheets)),
+               TooManyEntityTypesException);
 }

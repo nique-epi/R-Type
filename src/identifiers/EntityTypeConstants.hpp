@@ -13,10 +13,9 @@ namespace rtype::identifiers {
 constexpr std::uint8_t NO_ENTITY_TYPE = 0;
 
 /**
- * @brief The most entity types a program loads and ConnectionAccepted lists.
- * The table of the types travels in one datagram, whose size the protocol
- * bounds with this number and the longest name.
+ * @brief The most entity types a program loads: a type is numbered from 1 on
+ * one byte, and NO_ENTITY_TYPE takes 0, so 255 is the last number.
  */
-constexpr std::size_t MAXIMUM_ENTITY_TYPES = 32;
+constexpr std::size_t MAXIMUM_ENTITY_TYPES = 255;
 
 }  // namespace rtype::identifiers

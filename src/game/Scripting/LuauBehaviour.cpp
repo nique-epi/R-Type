@@ -19,11 +19,13 @@
 #include "LuauBehaviourParts.hpp"
 #include "LuauBehaviourState.hpp"
 #include "LuauBehaviourTables.hpp"
+#include "LuauEntityHandle.hpp"
 #include "LuauEventSubscriptions.hpp"
 #include "LuauProtectedCall.hpp"
 #include "LuauResumeContext.hpp"
 #include "LuauResumeResult.hpp"
 #include "LuauSetting.hpp"
+#include "LuauSteppedBody.hpp"
 #include "LuauThread.hpp"
 #include "ScriptMachine.hpp"
 #include "lua.h"
@@ -49,23 +51,62 @@ struct ResumeOutputs {
   Intent intent{.steered = true};
 };
 
+/** @returns The handle of the entity of @p behaviourState, made at its first
+ * resume on @p machine. */
+const LuauEntityHandle& handleOf(LuauBehaviourState& behaviourState,
+                                 lua_State* machine,
+                                 LuauSteppedBody& steppedBody) {
+  if (!behaviourState.handle.has_value()) {
+    return behaviourState.handle.emplace(machine, steppedBody);
+  }
+  return *behaviourState.handle;
+}
+
 /** @brief Pushes on the thread of an entity, created at its first resume, what
- * resuming it needs: a fresh view, after the function when it does not wait. */
+ * resuming it needs: its handle, holding a fresh view, after the function when
+ * it does not wait. */
 void pushResumeInputs(void* context) {
   auto& start = *static_cast<ResumeInputs*>(context);
   LuauBehaviourState& behaviourState = start.behaviourState.get();
-  lua_State* const machine = start.parts.get().machine.get().state();
+  const LuauBehaviourParts& parts = start.parts.get();
+  lua_State* const machine = parts.machine.get().state();
   if (!behaviourState.thread.has_value()) {
     behaviourState.thread.emplace(machine);
   }
   lua_State* const thread = behaviourState.thread->state();
   start.thread = thread;
   if (!behaviourState.waiting) {
-    lua_getref(machine, start.parts.get().steer);
+    lua_getref(machine, parts.steer);
     lua_xmove(machine, thread, 1);
   }
   pushViewTable(machine, start.view.get(), start.settingNames);
+  handleOf(behaviourState, machine, parts.resumeContext.get().steppedBody)
+      .pushWithView();
   lua_xmove(machine, thread, 1);
+}
+
+/** @brief Tells the functions the scripts call that the entity of @p start
+ * steps: its thread, its handle and its entity, and its subscriptions. */
+void openStep(const LuauBehaviourParts& parts, const ResumeInputs& start) {
+  LuauResumeContext& context = parts.resumeContext.get();
+  LuauBehaviourState& behaviourState = start.behaviourState.get();
+  const BehaviourView& view = start.view.get();
+  context.resumedThread = start.thread;
+  context.waitTicks.reset();
+  context.steppedBody.handle = behaviourState.handle.has_value()
+                                   ? behaviourState.handle->slot()
+                                   : nullptr;
+  context.steppedBody.entity = view.entity;
+  parts.eventBindings.get().setSubscriber(&behaviourState.subscriptions);
+}
+
+/** @brief Tells the functions the scripts call that no entity steps. */
+void closeStep(const LuauBehaviourParts& parts) {
+  LuauResumeContext& context = parts.resumeContext.get();
+  context.resumedThread = nullptr;
+  context.steppedBody.handle = nullptr;
+  context.steppedBody.entity = engine::Entity{};
+  parts.eventBindings.get().setSubscriber(nullptr);
 }
 
 /** @brief Reads the intent a resume left first on the stack of its thread, and
@@ -165,14 +206,11 @@ Intent LuauBehaviour::resumeOrHold(LuauBehaviourState& behaviourState,
   engine::runProtected(
       machine.state(),
       engine::LuauProtectedWork{.run = pushResumeInputs, .context = &start});
-  LuauResumeContext& context = parts_.resumeContext.get();
-  context.resumedThread = start.thread;
-  context.waitTicks.reset();
-  parts_.eventBindings.get().setSubscriber(&behaviourState.subscriptions);
+  openStep(parts_, start);
   const engine::LuauResumeResult end = machine.resume(start.thread, 1);
-  context.resumedThread = nullptr;
-  parts_.eventBindings.get().setSubscriber(nullptr);
-  const std::uint32_t waitTicks = ticksToWaitAfter(end, context);
+  closeStep(parts_);
+  const std::uint32_t waitTicks =
+      ticksToWaitAfter(end, parts_.resumeContext.get());
   behaviourState.waiting = end == engine::LuauResumeResult::Yielded;
   ResumeOutputs result{.machine = machine.state(), .thread = start.thread};
   engine::runProtected(
@@ -183,8 +221,7 @@ Intent LuauBehaviour::resumeOrHold(LuauBehaviourState& behaviourState,
 
 void LuauBehaviour::stopOnFailure(LuauBehaviourState& behaviourState,
                                   const engine::ScriptException& error) const {
-  parts_.resumeContext.get().resumedThread = nullptr;
-  parts_.eventBindings.get().setSubscriber(nullptr);
+  closeStep(parts_);
   behaviourState.subscriptions.clear();
   behaviourState.thread.reset();
   behaviourState.waiting = false;

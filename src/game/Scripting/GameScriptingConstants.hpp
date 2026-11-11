@@ -19,6 +19,21 @@ constexpr std::string_view DESTROY_FUNCTION_NAME = "destroy";
 constexpr std::string_view SCRIPT_FOLDER_IN_CONTENT = "server";
 constexpr std::string_view SCRIPT_FILE_EXTENSION = ".luau";
 
+/** @brief Where the functions of `behaviours` take their arguments, and how
+ * many values `behaviours.wait` yields to the step in progress. */
+constexpr int REGISTER_NAME_ARGUMENT = 1;
+constexpr int REGISTER_SETTINGS_ARGUMENT = 2;
+constexpr int REGISTER_STEER_ARGUMENT = 3;
+constexpr int WAIT_MILLISECONDS_ARGUMENT = 1;
+constexpr int WAIT_INTENT_ARGUMENT = 2;
+constexpr int WAIT_YIELDED_VALUES = 1;
+constexpr int SPAWN_TYPE_ARGUMENT = 1;
+constexpr int SPAWN_POSITION_ARGUMENT = 2;
+constexpr int DESTROY_ID_ARGUMENT = 1;
+
+/** @brief The milliseconds of a second, to turn a wait into ticks. */
+constexpr double SCRIPT_MILLISECONDS_PER_SECOND = 1000.0;
+
 /** @brief The keys of the view a script reads. */
 constexpr const char* VIEW_ID_KEY = "id";
 constexpr const char* VIEW_POSITION_KEY = "position";
@@ -31,7 +46,7 @@ constexpr const char* VIEW_ACTION_KEY = "action";
 constexpr const char* VIEW_ACTION_AGE_KEY = "action_age_ms";
 constexpr const char* VIEW_NEAREST_SHIP_KEY = "nearest_ship";
 constexpr const char* VIEW_WOUNDED_KEY = "wounded";
-constexpr const char* VIEW_HEALTH_KEY = "health";
+constexpr const char* VIEW_HEALTH_SHARE_KEY = "health_share";
 constexpr const char* VIEW_ENRAGED_KEY = "enraged";
 constexpr const char* VIEW_ACTIONS_ENDED_KEY = "actions_ended";
 

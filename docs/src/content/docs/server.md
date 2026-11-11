@@ -697,7 +697,7 @@ Over those folders, `game::sheetTextsInFolders()` reads the sheets of every fold
 
 The supervisor serves the content pack of the server, so a player who lacks its sheets downloads them before it plays (see [Protocol](/R-Type/protocol/#content-pack)). The `content` module (`ServerContentModule`, `src/server/Content/`) is required, and listed after `network` in `supervisorModules()`, whose `IListeningPort` it reads.
 
-- `install()` reads the content folders once, the assets and the resources of the `ensure` lines (`game::contentFilesIn()`, the sheets of every `entities` and the sprite sheets they name, see [Resources](#resources-ensure-lines)), and encodes the pack (`network::encodeContentPack()`). A sheet whose `sheet` path breaks the rules of a pack, or more than 64 files, or a pack over 8 MiB, stops the supervisor there.
+- `install()` reads the content folders once, the assets and the resources of the `ensure` lines (`game::contentFilesIn()`, the sheets of every `entities` and the sprite sheets they name, see [Resources](#resources-ensure-lines)), and encodes the pack (`network::encodeContentPack()`). A sheet whose `sheet` path breaks the rules of a pack, or more than 510 files, or a pack over 8 MiB, stops the supervisor there.
 - `start()` listens for HTTP on every IPv4 interface (`0.0.0.0`), on the TCP port of the number of the `port` setting, with a `network::HttpServer` (see [Network](/R-Type/network/#http-server-httpserver)), and logs `content pack <fingerprint> (<n> bytes) served on TCP port <port>`. When `port` is 0, the system choosing the UDP port, it logs `the port is chosen by the system: the content pack is not served`; when another program holds the TCP port, it logs the reason followed by `: the content pack is not served`. Either way the supervisor runs on, and a player who lacks the pack is told its download failed.
 - `stop()` stops listening once the downloads in progress are answered.
 
@@ -1157,7 +1157,8 @@ A collision takes two steps, in two classes. The first finds what overlaps; the 
 - Each overlapping pair is published once per update. Which of the two entities comes first carries no meaning.
 - Boxes that only touch along an edge or at a corner do not overlap.
 - An entity without a `Position` or without a `CollisionBox` is never reported.
-- Every pair is tested, so the cost grows with the square of the number of boxes. The list of boxes is kept between updates, so a steady state allocates nothing.
+- The boxes are first sorted into an `engine::UniformGrid` over the playfield, of square cells of `COLLISION_CELL_SIDE` (60 logical units, 32 cells wide and 18 tall), and only the pairs that share a cell are tested, so the cost grows with the boxes that lie close to each other, not with the square of every box. A box larger than a cell is counted in every cell it covers, and a box beyond the playfield in the cells along its edge. The side was chosen on the bench of the scripts (see [What the collisions cost](/R-Type/scripting/#what-the-collisions-cost)).
+- The boxes and the grid are kept between updates, so a steady state allocates nothing.
 - `update()` only queues the events. The loop must call `EventBus::dispatch()` after the systems, and run `CollisionSystem` after `MovementSystem`, so the boxes are tested where the entities now are.
 
 ### Rules: `CollisionRules`

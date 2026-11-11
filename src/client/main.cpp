@@ -60,6 +60,7 @@ int runClient(const rtype::client::LaunchOptions& launchOptions) {
 
 int main(int argumentCount, char** arguments) {
   try {
+    rtype::client::runClientStartupHooks();
     const rtype::client::LaunchOptions launchOptions =
         rtype::client::LaunchOptions::read(
             rtype::engine::processArguments(argumentCount, arguments));

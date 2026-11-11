@@ -5,6 +5,7 @@
 #include <optional>
 #include <span>
 #include "ActionKey.hpp"
+#include "Entity.hpp"
 #include "IBehaviourState.hpp"
 #include "Position.hpp"
 #include "TimeConstants.hpp"
@@ -57,6 +58,9 @@ struct BehaviourView {
   /** @brief Where the behaviour keeps what it remembers of the body; nullptr
    * when nothing outlives this call. */
   std::shared_ptr<IBehaviourState>* behaviourState{nullptr};
+  /** @brief The body among the components of its game, for a behaviour that
+   * reads and writes them during its step. */
+  engine::Entity entity{};
 };
 
 }  // namespace rtype::game

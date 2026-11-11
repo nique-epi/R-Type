@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "IModule.hpp"
+#include "IOptionalDependencies.hpp"
 #include "InstallContext.hpp"
 
 namespace rtype::client {
@@ -17,12 +18,16 @@ namespace rtype::client {
  * already, and stops the music of a game, once its assets are loaded. It opens
  * nothing, so start() and stop() do nothing.
  */
-class ClientMenusModule final : public engine::IModule {
+class ClientMenusModule final : public engine::IModule,
+                                public engine::IOptionalDependencies {
  public:
   /** @returns MENUS_MODULE_NAME. */
   [[nodiscard]] std::string name() const override;
   /** @returns The module that provides the registry. */
   [[nodiscard]] std::vector<std::string> dependencies() const override;
+  /** @returns The update module, whose notice the titles ask when it is in
+   * the list. */
+  [[nodiscard]] std::vector<std::string> optionalDependencies() const override;
   /** @throws MissingServiceException if no module provides the registry.
    * @throws DuplicateScreenException if another module registered one of the
    * identifiers. */

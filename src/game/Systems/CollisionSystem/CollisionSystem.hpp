@@ -1,10 +1,11 @@
 #pragma once
 
 #include <vector>
-#include "Bounds.hpp"
-#include "Entity.hpp"
+#include "CollisionSystemConstants.hpp"
+#include "EntityBounds.hpp"
 #include "ISystem.hpp"
 #include "TimeConstants.hpp"
+#include "UniformGrid.hpp"
 
 namespace rtype::engine {
 
@@ -19,27 +20,36 @@ namespace rtype::game {
  * @brief Publishes an engine::Collision for every pair of entities whose
  * collision boxes overlap.
  *
- * Only entities with a Position and a CollisionBox are considered. Each pair
- * is published once per update, in no particular order of the two entities.
- * Every pair is tested, so the cost grows with the square of the number of
- * boxes. The events are only queued: the loop must call EventBus::dispatch()
- * after the systems. The bus must outlive the system.
+ * Only entities with a Position and a CollisionBox are considered, and an
+ * entity still Summoning is left out. Each pair is published once per update,
+ * in no particular order of the pairs or of the two entities. The boxes are
+ * first sorted into an engine::UniformGrid over the playfield, of cells of
+ * the side it was built with, and only the pairs that share a cell are tested:
+ * the cost grows with the boxes that lie close to each other, not with the
+ * square of every box. The events are only queued: the loop must call
+ * EventBus::dispatch() after the systems. The bus must outlive the system.
  */
 class CollisionSystem final : public engine::ISystem {
  public:
-  explicit CollisionSystem(engine::EventBus& events);
+  /**
+   * @param cellSide The side of a cell of the grid, in logical units.
+   * @throws engine::InvalidGridLayoutException when @p cellSide is not
+   * positive, or lays more than engine::MAXIMUM_GRID_LINES cells across the
+   * playfield: a side under 7.5 units.
+   */
+  explicit CollisionSystem(engine::EventBus& events,
+                           float cellSide = COLLISION_CELL_SIDE);
 
   void update(engine::ComponentRegistry& components,
               engine::Duration elapsed) override;
 
  private:
-  struct Candidate {
-    engine::Entity entity;
-    engine::Bounds bounds;
-  };
+  void gatherCandidates(engine::ComponentRegistry& components);
+  void publishOverlaps();
 
   engine::EventBus& events_;
-  std::vector<Candidate> candidates_;
+  std::vector<EntityBounds> candidates_;
+  engine::UniformGrid grid_;
 };
 
 }  // namespace rtype::game

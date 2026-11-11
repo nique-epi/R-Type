@@ -1,3 +1,4 @@
+add_subdirectory(Collision)
 add_subdirectory(Commands)
 add_subdirectory(DataFiles)
 add_subdirectory(Exceptions)
