@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "FixedEntityTypeSourceConstants.hpp"
 #include "Position.hpp"
 
 namespace rtype::client::testing {
@@ -43,6 +44,12 @@ constexpr std::uint32_t SERVER_FIRED_TWO_INPUTS_LATER = 3;
 
 /** @brief The newest input a server applied before it applied any. */
 constexpr std::uint32_t NOTHING_ACKNOWLEDGED = 0;
+
+/** @brief Where an enemy of TWO_BOX_ENEMY_PARTS stands to have its lower box
+ * on the missile at the muzzle: 200 units above it. */
+constexpr game::Position ENEMY_WHOSE_LOWER_BOX_IS_AT_THE_MUZZLE{
+    .x = MISSILE_AT_THE_MUZZLE.x,
+    .y = MISSILE_AT_THE_MUZZLE.y - TWO_BOX_ENEMY_PART_DISTANCE};
 
 /** @brief The player of the tests. */
 constexpr std::uint8_t SHOOTING_PLAYER = 1;

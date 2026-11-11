@@ -6,6 +6,7 @@
 #include "CollisionScene.hpp"
 #include "CollisionSystem.hpp"
 #include "CollisionSystemFixtures.hpp"
+#include "CollisionSystemTestConstants.hpp"
 #include "CollisionTestConstants.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
@@ -295,4 +296,70 @@ TEST(CollisionSystem, IgnoresAnEntityWithoutACollisionFilter) {
   const std::vector<Collision> received = updateAndCollect(scene, system);
 
   EXPECT_TRUE(received.empty());
+}
+
+/**
+ * Given an enemy of two boxes 30 units left and right of its Position, and a
+ * ship on its right box
+ * When the collision system updates and the bus dispatches
+ * Then one Collision names them: each box of the enemy collides
+ */
+TEST(CollisionSystem, CollidesWithABoxAwayFromThePosition) {
+  CollisionScene scene;
+  const Entity enemy = scene.spawnInParts(EntityType::Enemy, PARTS_APART);
+  const Entity ship =
+      scene.spawn(EntityType::Player, RIGHT_PART_CENTER_X, 0.0F);
+  CollisionSystem system(scene.events);
+
+  const std::vector<Collision> received = updateAndCollect(scene, system);
+
+  ASSERT_EQ(received.size(), 1U);
+  EXPECT_TRUE(isPair(received.front(), enemy, ship));
+}
+
+/**
+ * Given the same enemy, and a ship on its Position, between its two boxes
+ * When the collision system updates and the bus dispatches
+ * Then no Collision is delivered: the enemy collides with its boxes only, not
+ * with the rectangle that encloses them
+ */
+TEST(CollisionSystem, CollidesWithNothingBetweenTheBoxesOfABody) {
+  CollisionScene scene;
+  scene.spawnInParts(EntityType::Enemy, PARTS_APART);
+  scene.spawn(EntityType::Player, 0.0F, 0.0F);
+  CollisionSystem system(scene.events);
+
+  EXPECT_TRUE(updateAndCollect(scene, system).empty());
+}
+
+/**
+ * Given an enemy whose two boxes both cover its Position, and a ship there
+ * When the collision system updates and the bus dispatches
+ * Then exactly one Collision names them, though both boxes touch the ship
+ */
+TEST(CollisionSystem, ReportsTwoBoxesOfABodyOnOneTargetOnce) {
+  CollisionScene scene;
+  const Entity enemy = scene.spawnInParts(EntityType::Enemy, PARTS_ON_ONE_SPOT);
+  const Entity ship = scene.spawn(EntityType::Player, 0.0F, 0.0F);
+  CollisionSystem system(scene.events);
+
+  const std::vector<Collision> received = updateAndCollect(scene, system);
+
+  ASSERT_EQ(received.size(), 1U);
+  EXPECT_TRUE(isPair(received.front(), enemy, ship));
+}
+
+/**
+ * Given an enemy alone, which hits its own layer and whose two boxes overlap
+ * each other
+ * When the collision system updates and the bus dispatches
+ * Then no Collision is delivered: a body never collides with itself
+ */
+TEST(CollisionSystem, NeverCollidesABodyWithItself) {
+  CollisionScene scene;
+  const Entity enemy = scene.spawnInParts(EntityType::Enemy, PARTS_ON_ONE_SPOT);
+  *scene.components.get<CollisionFilter>(enemy) = ENEMY_HITTING_ENEMIES_FILTER;
+  CollisionSystem system(scene.events);
+
+  EXPECT_TRUE(updateAndCollect(scene, system).empty());
 }

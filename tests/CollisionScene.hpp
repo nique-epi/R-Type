@@ -1,6 +1,8 @@
 #pragma once
 
+#include <span>
 #include "Collision.hpp"
+#include "CollisionBox.hpp"
 #include "CollisionFilter.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
@@ -25,6 +27,12 @@ class CollisionScene {
    * spawn() and @p filter in place of the one of the shipped sheets. */
   rtype::engine::Entity spawnWith(rtype::game::EntityType type,
                                   rtype::engine::CollisionFilter filter);
+
+  /** @returns An entity of @p type at the origin that collides with @p parts
+   * in place of the collision box of spawn(). */
+  rtype::engine::Entity spawnInParts(
+      rtype::game::EntityType type,
+      std::span<const rtype::game::CollisionBox> parts);
 
   rtype::engine::EntityRegistry entities;
   rtype::engine::ComponentRegistry components;

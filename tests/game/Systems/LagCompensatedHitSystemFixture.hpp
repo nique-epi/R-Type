@@ -25,6 +25,9 @@ class LagCompensatedHitSystemFixture : public ::testing::Test {
   /** @returns An enemy at @p position, with the box of an enemy. */
   engine::Entity enemyAt(Position position);
 
+  /** @returns An enemy at @p position that collides with TALL_ENEMY_PARTS. */
+  engine::Entity tallEnemyAt(Position position);
+
   /** @returns A missile of a player at @p position whose player saw the
    * enemies @p ticksBehind ticks behind the present. */
   engine::Entity missileAt(Position position, std::size_t ticksBehind);

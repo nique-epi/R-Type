@@ -5,6 +5,7 @@
 #include "EntitySheet.hpp"
 #include "EntityTypesTestConstants.hpp"
 #include "Fragile.hpp"
+#include "HitboxParts.hpp"
 #include "HurtZone.hpp"
 #include "Position.hpp"
 #include "ShippedEntitySheets.hpp"
@@ -18,6 +19,7 @@
 using rtype::game::CurrentAction;
 using rtype::game::EntitySheet;
 using rtype::game::Fragile;
+using rtype::game::HitboxParts;
 using rtype::game::HurtZone;
 using rtype::game::Position;
 using rtype::game::SurvivesContact;
@@ -29,6 +31,7 @@ using rtype::game::testing::SHIP_SHEET;
 using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::SOME_X;
 using rtype::game::testing::SOME_Y;
+using rtype::game::testing::someHitboxParts;
 using rtype::game::testing::someHurtZone;
 using rtype::game::testing::STUNNED_IN_ATTACK_ZERO;
 
@@ -125,4 +128,35 @@ TEST(WorldContactParts, TheFragileActionOfTheSheetIsOnTheEntity) {
   const std::optional<Fragile> fragile = componentOf<Fragile>(world, entityId);
   ASSERT_TRUE(fragile.has_value());
   EXPECT_EQ(fragile.value_or(Fragile{}).in, STUNNED_IN_ATTACK_ZERO);
+}
+
+/**
+ * Given a sheet that lists two boxes
+ * When an entity of that sheet is spawned
+ * Then it carries those boxes as its HitboxParts
+ */
+TEST(WorldContactParts, TheBoxesOfTheSheetAreOnTheEntity) {
+  World world;
+  EntitySheet sheet = drifterWith(std::nullopt, false);
+  sheet.hitboxParts = someHitboxParts().boxes;
+
+  const std::uint32_t entityId =
+      world.spawn(sheet, Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_EQ(componentOf<HitboxParts>(world, entityId), someHitboxParts());
+}
+
+/**
+ * Given the sheet of a Drifter, of one box
+ * When an entity of that sheet is spawned
+ * Then it has no HitboxParts
+ */
+TEST(WorldContactParts, ABodyOfOneBoxHasNoHitboxParts) {
+  World world;
+
+  const std::uint32_t entityId =
+      world.spawn(shippedEntitySheets().named(DRIFTER_SHEET),
+                  Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_FALSE(componentOf<HitboxParts>(world, entityId).has_value());
 }

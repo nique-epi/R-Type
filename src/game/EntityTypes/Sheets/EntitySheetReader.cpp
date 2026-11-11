@@ -461,6 +461,16 @@ void checkShipMotion(const EntitySheet& sheet,
   }
 }
 
+/** @throws InconsistentEntitySheetException when @p sheet lists several boxes
+ * and its side is not enemy: a ship, a missile and an item keep one box. */
+void checkHitboxPartsBelongToAnEnemy(const EntitySheet& sheet,
+                                     const engine::DataFileTable& gameplay) {
+  if (!sheet.hitboxParts.empty() && sheet.side != EntityType::Enemy) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, HITBOX_KEY), HITBOX_PARTS_SIDE_RULE);
+  }
+}
+
 /** @throws InconsistentEntitySheetException when a sheet of side look_item
  * gives no item, or another side gives one. */
 void checkLookItemMatchesSide(const EntitySheet& sheet,
@@ -542,6 +552,7 @@ void checkSheetHoldsTogether(const EntitySheet& sheet,
                              const engine::DataFileTable& gameplay) {
   checkPilotMatchesSide(sheet, gameplay);
   checkShipMotion(sheet, gameplay);
+  checkHitboxPartsBelongToAnEnemy(sheet, gameplay);
   checkWhatItFires(sheet, gameplay);
   checkMissileFliesTowardsItsEdge(sheet, gameplay);
   checkContactPartsBelongToAnEnemy(sheet, gameplay);
@@ -563,6 +574,7 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .side = sideFrom(gameplay),
       .collision = collisionFrom(gameplay),
       .hitbox = hitboxOf(gameplay),
+      .hitboxParts = hitboxPartsOf(gameplay),
       .motion = motionFrom(gameplay),
       .pilot = pilotFrom(gameplay, behaviours),
       .health = pointsIn<int>(gameplay, HEALTH_KEY, HEALTH_RANGE),

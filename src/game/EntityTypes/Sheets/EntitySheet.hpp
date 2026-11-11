@@ -37,8 +37,12 @@ struct EntitySheet {
   /** @brief The collision layer it lies in and the layers it hits: which
    * contacts count. */
   CollisionSheet collision;
-  /** @brief The box it collides with, in logical units. */
+  /** @brief The box it collides with, in logical units; for a sheet that
+   * lists several boxes, the rectangle that encloses them. */
   CollisionBox hitbox{};
+  /** @brief The boxes it collides with when its sheet lists them, which
+   * become its HitboxParts; empty for a body of one box. */
+  std::vector<CollisionBox> hitboxParts;
   /** @brief How a direction of its Intent moves it. */
   MotionSheet motion{};
   /** @brief The behaviour that steers it; nothing for a body a player steers.

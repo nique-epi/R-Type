@@ -23,6 +23,7 @@
 #include "EntityTypeLook.hpp"
 #include "FlashGate.hpp"
 #include "GameEvent.hpp"
+#include "HitboxParts.hpp"
 #include "IEntityTypeSource.hpp"
 #include "ISoundPlayer.hpp"
 #include "NetworkEntityTable.hpp"
@@ -269,6 +270,11 @@ std::optional<engine::Entity> EntityReplicator::create(
       animatedSpriteOf(look->appearance.get(), look->side, announced.entityId));
   components_->add(entity, game::NetworkIdentity{announced.entityId});
   components_->add(entity, look->hitbox);
+  if (!look->hitboxParts.empty()) {
+    components_->add(entity,
+                     game::HitboxParts{.boxes = {look->hitboxParts.begin(),
+                                                 look->hitboxParts.end()}});
+  }
   components_->add(entity, AppearanceReference{&look->appearance.get()});
   entityByNetworkId_.bind(announced.entityId, entity);
   return entity;

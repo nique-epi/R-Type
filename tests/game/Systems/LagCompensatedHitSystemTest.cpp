@@ -14,6 +14,7 @@ using rtype::game::testing::LagCompensatedHitSystemFixture;
 using rtype::game::testing::PAST_THE_KEPT_TICKS_BEHIND;
 using rtype::game::testing::TICKS_GONE_AFTER;
 using rtype::game::testing::TICKS_GONE_BEFORE;
+using rtype::game::testing::WHERE_ITS_LOWER_BOX_IS;
 using rtype::game::testing::WHERE_THE_ENEMY_WENT;
 using rtype::game::testing::WHERE_THE_PLAYER_SAW_THE_ENEMY;
 
@@ -177,6 +178,36 @@ TEST_F(LagCompensatedHitSystemFixture, AMissileCrossesAnEnemyNoSheetNames) {
   enemyAt(WHERE_THE_PLAYER_SAW_THE_ENEMY);
   const Entity missile = missileAt(WHERE_THE_PLAYER_SAW_THE_ENEMY, 0);
   *components().get<CollisionFilter>(missile) = HARMLESS_PLAYER_MISSILE_FILTER;
+
+  runTick();
+
+  EXPECT_TRUE(hits().empty());
+}
+
+/**
+ * Given an enemy of two boxes, 200 units above and below its Position, and a
+ * missile on its lower box
+ * When one tick runs
+ * Then the missile hits that enemy once
+ */
+TEST_F(LagCompensatedHitSystemFixture, AMissileHitsABoxAwayFromThePosition) {
+  const Entity enemy = tallEnemyAt(WHERE_THE_PLAYER_SAW_THE_ENEMY);
+  static_cast<void>(missileAt(WHERE_ITS_LOWER_BOX_IS, 0));
+
+  runTick();
+
+  ASSERT_EQ(hits().size(), 1U);
+  EXPECT_EQ(hits().front().target, enemy);
+}
+
+/**
+ * Given the same enemy, and a missile on its Position, between its two boxes
+ * When one tick runs
+ * Then the missile hits nothing: the enemy is hit on its boxes only
+ */
+TEST_F(LagCompensatedHitSystemFixture, AMissileFliesBetweenTheBoxesOfAnEnemy) {
+  static_cast<void>(tallEnemyAt(WHERE_THE_PLAYER_SAW_THE_ENEMY));
+  static_cast<void>(missileAt(WHERE_THE_PLAYER_SAW_THE_ENEMY, 0));
 
   runTick();
 

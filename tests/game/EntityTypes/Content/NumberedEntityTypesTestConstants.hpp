@@ -30,6 +30,14 @@ constexpr std::string_view SHEET_OF_A_PLUGIN_PILOT =
     "[gameplay.behaviour]\nwindup_ms = 400\n[appearance]\n";
 constexpr float LANCER_BOX_WIDTH = 64.0F;
 constexpr float LANCER_BOX_HEIGHT = 32.0F;
+/** @brief A sheet whose hitbox lists two boxes, 40 by 40 and 100 by 60. */
+constexpr std::string_view SHEET_OF_TWO_BOXES =
+    "[gameplay]\nside = \"enemy\"\n"
+    "[[gameplay.hitbox.box]]\nwidth = 40\nheight = 40\noffset_x = -80\n"
+    "[[gameplay.hitbox.box]]\nwidth = 100\nheight = 60\n"
+    "[appearance]\n";
+constexpr std::size_t TWO_LISTED_BOXES = 2;
+constexpr float SECOND_LISTED_BOX_WIDTH = 100.0F;
 constexpr std::string_view SHEET_WITHOUT_SIDE =
     "[gameplay]\npilot = \"drifter\"\n[appearance]\n";
 constexpr std::string_view SHEET_WITHOUT_BOX =

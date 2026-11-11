@@ -65,13 +65,27 @@ void checkSheetNames(std::span<const SheetText> texts);
     const engine::DataFileTable& root, std::string_view key);
 
 /**
- * @returns The box `[gameplay.hitbox]` of @p gameplay describes, in logical
- * units. The server collides its entities with it, the client tests its own
- * missiles against it, so both read it the same way.
+ * @returns The boxes `[[gameplay.hitbox.box]]` of @p gameplay lists, in the
+ * order of the file and in logical units; none for a hitbox that gives the
+ * size of its one box. The server collides its entities with them, the client
+ * tests its own missiles against them, so both read them the same way.
  * @throws engine::MissingDataFileKeyException or
- * DataFileTableExpectedException when the table is missing or is not one;
- * UnknownDataFileKeyException for a key other than HITBOX_KEYS; and what
- * engine::wholeNumberAt() throws for a side outside HITBOX_SIDE_RANGE.
+ * DataFileTableExpectedException when `[gameplay.hitbox]` is missing or is not
+ * a table; UnknownDataFileKeyException for a key of it other than
+ * HITBOX_TABLE_KEYS, or a key of a box other than HITBOX_KEYS;
+ * InconsistentEntitySheetException when it gives a size or an offset beside
+ * its boxes, or lists none; and what engine::tablesAt() and
+ * engine::wholeNumberAt() throw for the array and for a side outside
+ * HITBOX_SIDE_RANGE.
+ */
+[[nodiscard]] std::vector<CollisionBox> hitboxPartsOf(
+    const engine::DataFileTable& gameplay);
+
+/**
+ * @returns The box `[gameplay.hitbox]` of @p gameplay describes, in logical
+ * units: its one box, or the rectangle that encloses the boxes it lists.
+ * @throws What hitboxPartsOf() throws; UnknownDataFileKeyException for a key
+ * other than HITBOX_KEYS in a hitbox of one box.
  */
 [[nodiscard]] CollisionBox hitboxOf(const engine::DataFileTable& gameplay);
 
