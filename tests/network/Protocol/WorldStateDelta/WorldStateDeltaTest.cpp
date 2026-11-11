@@ -28,6 +28,7 @@ using rtype::network::testing::MOVED_ENTITY_ID;
 using rtype::network::testing::NEW_ENTITY_ID;
 using rtype::network::testing::ONE_EIGHTH;
 using rtype::network::testing::OTHER_ENTITY_TYPE;
+using rtype::network::testing::OTHER_LOOK;
 using rtype::network::testing::SECOND_DUPLICATE_X;
 using rtype::network::testing::someEntities;
 using rtype::network::testing::VANISHED_ENTITY_ID;
@@ -84,6 +85,21 @@ TEST(WorldStateDelta, ListsAnEntityOfAnotherTypeAsChanged) {
   const std::vector<EntityState> base = someEntities(ENTITIES_IN_A_LIST);
   std::vector<EntityState> current = base;
   current.at(MOVED_ENTITY_ID - 1).entityType = OTHER_ENTITY_TYPE;
+
+  EXPECT_EQ(diffStates(base, current).changed,
+            std::vector<EntityState>{current.at(MOVED_ENTITY_ID - 1)});
+}
+
+/**
+ * Given a list and the same list where an entity shows another look at the
+ * same place
+ * When they are compared
+ * Then that entity alone is changed, as it is in the later list
+ */
+TEST(WorldStateDelta, ListsAnEntityShowingAnotherLookAsChanged) {
+  const std::vector<EntityState> base = someEntities(ENTITIES_IN_A_LIST);
+  std::vector<EntityState> current = base;
+  current.at(MOVED_ENTITY_ID - 1).look = OTHER_LOOK;
 
   EXPECT_EQ(diffStates(base, current).changed,
             std::vector<EntityState>{current.at(MOVED_ENTITY_ID - 1)});
