@@ -27,10 +27,11 @@ constexpr int SECOND_COPY_AFTER_SIX_HUNDRED_PIXELS = 360;
 constexpr int SECOND_NARROW_COPY = 200;
 constexpr int THIRD_NARROW_COPY = 400;
 
-/** @brief A biome the client has a decor for, of three layers, and a name
- * no biome has. */
+/** @brief A biome the client has a decor for, of the four layers a biome
+ * has, the third biome of the levels, and a name no biome has. */
 constexpr std::string_view KNOWN_BIOME = "drift_fields";
-constexpr std::size_t LAYERS_OF_THE_KNOWN_BIOME = 3;
+constexpr std::size_t LAYERS_OF_THE_KNOWN_BIOME = 4;
+constexpr std::string_view THIRD_BIOME = "hive_depths";
 constexpr std::string_view UNKNOWN_BIOME = "nowhere";
 
 /** @brief A level scrolled 100 logical units that scrolls 120 units per

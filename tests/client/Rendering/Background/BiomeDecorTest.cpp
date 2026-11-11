@@ -92,7 +92,7 @@ TEST(BiomeDecor, PlacesNoCopyOfAPictureWithoutWidth) {
 /**
  * Given a biome the client has a decor for
  * When its layers are asked for
- * Then it has its three layers
+ * Then it has its four layers
  */
 TEST(BiomeDecor, FindsTheLayersOfABiome) {
   EXPECT_EQ(layersOfBiome(KNOWN_BIOME).size(), LAYERS_OF_THE_KNOWN_BIOME);
@@ -154,4 +154,13 @@ TEST(BiomeDecor, DoesNotMoveBackwards) {
   decor.advance(ONE_SECOND_BACKWARDS_OF_DECOR);
 
   EXPECT_FLOAT_EQ(decor.scrollPosition(), SHOWN_SCROLL_POSITION);
+}
+
+/**
+ * Given the third biome of the levels
+ * When its layers are asked for
+ * Then it has its four layers
+ */
+TEST(BiomeDecor, FindsTheLayersOfTheThirdBiome) {
+  EXPECT_EQ(layersOfBiome(THIRD_BIOME).size(), LAYERS_OF_THE_KNOWN_BIOME);
 }

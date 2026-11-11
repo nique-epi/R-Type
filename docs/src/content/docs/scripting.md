@@ -193,7 +193,7 @@ level.register("training_run", {
 | `level.wait_scroll(position)` | stops the stage until the level scrolled `position` logical units; while the scroll is paused short of it, the stage waits. It only runs in a stage. |
 | `level.scroll()` | how far the level scrolled, in logical units. |
 | `level.pause_scroll()`, `level.resume_scroll()` | stop the scroll where it is, and let it move on. The decor of the players stops and moves with it. |
-| `level.biome(name)` | names the biome the players see from now: 1 to 24 lowercase letters, digits and underscores. A client draws the decor it has for that name (see [Client](/R-Type/client/#decor-of-a-biome-biomedecor)), and the stars alone for a name it does not know. |
+| `level.biome(name)` | names the biome the players see from now: 1 to 24 lowercase letters, digits and underscores. A client draws the decor it has for that name (see [Client](/R-Type/client/#decor-of-a-biome-biomedecor)): `drift_fields`, `ember_reach` or `hive_depths`, and the stars alone for a name it does not know. |
 | `level.enemies()` | how many enemies the world holds, the bodies of side `enemy`. |
 
 What a script may rely on:
