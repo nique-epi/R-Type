@@ -26,11 +26,11 @@ namespace rtype::server::testing {
 network::Endpoint client(std::uint16_t port);
 
 /**
- * @returns The entity the sender must list for the given parts.
+ * @returns The entity a state lists for the given parts, showing no look.
  */
-network::EntityState expectedEntity(std::uint32_t networkId,
-                                    std::uint8_t typeNumber,
-                                    game::Position position);
+network::EntityState listedEntity(std::uint32_t networkId,
+                                  std::uint8_t typeNumber,
+                                  game::Position position);
 
 /**
  * @brief A world, a roster, a sender to the players of that roster, and the
@@ -49,11 +49,11 @@ class WorldStateSenderFixture : public ::testing::Test {
   ConnectedPlayer& connect(std::uint16_t port, std::uint64_t sessionToken);
 
   /**
-   * @brief Adds an entity with a NetworkIdentity, a Position and the
-   * EntityTypeNumber @p typeNumber.
+   * @brief Adds the entity @p listed describes: a NetworkIdentity, a Position
+   * and an EntityTypeNumber, and a ShownLook when it shows a look other than
+   * 0.
    */
-  void addNetworkedEntity(std::uint8_t typeNumber, game::Position position,
-                          std::uint32_t networkId);
+  void addNetworkedEntity(const network::EntityState& listed);
 
   /**
    * @brief Adds the ship of a player: an entity under @p networkId with a

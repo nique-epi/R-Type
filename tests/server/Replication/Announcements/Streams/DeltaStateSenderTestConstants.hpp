@@ -46,11 +46,11 @@ constexpr std::size_t HALF_THE_ENTITIES = 15;
 
 /** @brief The bytes of a state of one datagram, from the protocol page: the
  * packet header and the message prefix (22 + 3), the fixed part of a
- * DeltaWorldState (10), one player (16), then 9 per entity listed. */
+ * DeltaWorldState (10), one player (16), then 10 per entity listed. */
 constexpr std::size_t HEADER_AND_PREFIX_BYTES = 25;
 constexpr std::size_t DELTA_FIXED_BYTES = 10;
 constexpr std::size_t PLAYER_BYTES = 16;
-constexpr std::size_t ENTITY_BYTES = 9;
+constexpr std::size_t ENTITY_BYTES = 10;
 constexpr std::size_t STATE_BYTES_WITHOUT_ENTITIES =
     HEADER_AND_PREFIX_BYTES + DELTA_FIXED_BYTES + PLAYER_BYTES;
 constexpr std::size_t FULL_STATE_BYTES =

@@ -20,14 +20,16 @@ constexpr std::string_view IDLE_TABLE_KEY = "idle";
 constexpr std::string_view ATTACK_TABLE_PREFIX = "attack_";
 constexpr std::array APPEARANCE_KEYS{SHEET_KEY, IDLE_TABLE_KEY};
 
-/** @brief The optional keys of `[appearance]`, each read like `idle`
- * (IDLE_KEYS): `enraged_idle`, the idle animation of an enemy once enraged,
- * and `death`, the death played instead of the Bydo explosion, whose version
- * without flash lies in the row right under it. */
+/** @brief The optional keys of `[appearance]`: `enraged_idle`, the idle
+ * animation of an enemy once enraged, and `death`, the death played instead of
+ * the Bydo explosion, whose version without flash lies in the row right under
+ * it, each read like `idle` (IDLE_KEYS); then `effects` and `looks`, a table
+ * per name (EFFECT_KEYS, IDLE_KEYS). */
 constexpr std::string_view ENRAGED_IDLE_TABLE_KEY = "enraged_idle";
 constexpr std::string_view DEATH_TABLE_KEY = "death";
-constexpr std::array OPTIONAL_APPEARANCE_KEYS{ENRAGED_IDLE_TABLE_KEY,
-                                              DEATH_TABLE_KEY};
+constexpr std::array OPTIONAL_APPEARANCE_KEYS{
+    ENRAGED_IDLE_TABLE_KEY, DEATH_TABLE_KEY, game::EFFECTS_TABLE_KEY,
+    game::LOOKS_TABLE_KEY};
 
 /**
  * @brief The keys of `[appearance.idle]`: the first frame, in pixels of the
@@ -59,6 +61,18 @@ constexpr std::array ACTION_KEYS{
     FRAME_LEFT_KEY,  FRAME_TOP_KEY,     FRAME_WIDTH_KEY, FRAME_HEIGHT_KEY,
     FRAME_COUNT_KEY, FRAME_SPACING_KEY, FRAME_TIME_KEY,  PLAYBACK_KEY,
     AFTERWARDS_KEY,  ANCHOR_X_KEY,      ANCHOR_Y_KEY};
+
+/**
+ * @brief The keys of `[appearance.effects.<name>]`: the frames as in the idle
+ * table, whose version without flash lies in the row right under them, and
+ * the two anchors, which the table may leave out. A table of
+ * `[appearance.looks]` takes the keys of the idle table (IDLE_KEYS). Any other
+ * key is refused.
+ */
+constexpr std::array EFFECT_KEYS{
+    FRAME_LEFT_KEY,   FRAME_TOP_KEY,   FRAME_WIDTH_KEY,
+    FRAME_HEIGHT_KEY, FRAME_COUNT_KEY, FRAME_SPACING_KEY,
+    FRAME_TIME_KEY,   ANCHOR_X_KEY,    ANCHOR_Y_KEY};
 
 /** @brief The names `playback` accepts, and the Playback of each, in the same
  * order. */

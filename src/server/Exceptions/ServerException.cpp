@@ -65,6 +65,11 @@ UnknownDifficultyException::UnknownDifficultyException(
           "no difficulty " + difficulty +
           " in the waves file, which describes: " + engine::listText(known)) {}
 
+UnknownLevelException::UnknownLevelException(
+    const std::string& level, const std::vector<std::string>& known)
+    : ServerException("no script registers the level " + level +
+                      "; registered: " + engine::listText(known)) {}
+
 EmptyEnemyCycleException::EmptyEnemyCycleException()
     : ServerException("A wave plan must name at least one enemy") {}
 

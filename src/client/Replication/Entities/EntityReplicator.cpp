@@ -36,6 +36,7 @@
 #include "ProtocolConstants.hpp"
 #include "Reveal.hpp"
 #include "ShipFlight.hpp"
+#include "ShownLooks.hpp"
 #include "SoundConstants.hpp"
 #include "SummonConstants.hpp"
 #include "TimeConstants.hpp"
@@ -309,10 +310,12 @@ std::vector<engine::Entity> EntityReplicator::applyEntities(
         entityByNetworkId_.find(listed.entityId);
     if (known.has_value()) {
       moveEntity(*components_, *known, sample);
+      showLook(*components_, *known, listed.look);
       lastListedTicks_.listed(listed.entityId, tick);
     } else if (const std::optional<engine::Entity> entity = create(listed);
                entity.has_value()) {
       moveEntity(*components_, *entity, sample);
+      showLook(*components_, *entity, listed.look);
       created.push_back(*entity);
       lastListedTicks_.listed(listed.entityId, tick);
     }

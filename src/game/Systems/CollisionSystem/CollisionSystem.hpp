@@ -4,6 +4,7 @@
 #include <vector>
 #include "CandidatePair.hpp"
 #include "Collision.hpp"
+#include "CollisionSystemConstants.hpp"
 #include "EntityBounds.hpp"
 #include "ISystem.hpp"
 #include "TimeConstants.hpp"
@@ -28,17 +29,24 @@ namespace rtype::game {
  * place of its CollisionBox, and never with itself. Each pair of entities is
  * published once per update, however many of their boxes overlap, in no
  * particular order of the pairs or of the two entities. The boxes are first
- * sorted into an
- * engine::UniformGrid over the playfield, of cells of COLLISION_CELL_SIDE, and
- * only the pairs that share a cell are looked at: the cost grows with the
- * boxes that lie close to each other, not with the square of every box. Of
- * those, a pair engine::mayCollide() refuses is dropped before its boxes are
- * compared. The events are only queued: the loop must call
- * EventBus::dispatch() after the systems. The bus must outlive the system.
+ * sorted into an engine::UniformGrid over the playfield, of cells of the side
+ * it was built with, and only the pairs that share a cell are looked at: the
+ * cost grows with the boxes that lie close to each other, not with the square
+ * of every box. Of those, a pair engine::mayCollide() refuses is dropped
+ * before its boxes are compared. The events are only queued: the loop must
+ * call EventBus::dispatch() after the systems. The bus must outlive the
+ * system.
  */
 class CollisionSystem final : public engine::ISystem {
  public:
-  explicit CollisionSystem(engine::EventBus& events);
+  /**
+   * @param cellSide The side of a cell of the grid, in logical units.
+   * @throws engine::InvalidGridLayoutException when @p cellSide is not
+   * positive, or lays more than engine::MAXIMUM_GRID_LINES cells across the
+   * playfield: a side under 7.5 units.
+   */
+  explicit CollisionSystem(engine::EventBus& events,
+                           float cellSide = COLLISION_CELL_SIDE);
 
   void update(engine::ComponentRegistry& components,
               engine::Duration elapsed) override;

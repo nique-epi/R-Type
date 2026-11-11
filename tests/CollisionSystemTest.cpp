@@ -8,12 +8,14 @@
 #include "CollisionSystemFixtures.hpp"
 #include "CollisionSystemTestConstants.hpp"
 #include "CollisionTestConstants.hpp"
+#include "EngineException.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
 
 using rtype::engine::Collision;
 using rtype::engine::CollisionFilter;
 using rtype::engine::Entity;
+using rtype::engine::InvalidGridLayoutException;
 using rtype::game::CollisionBox;
 using rtype::game::CollisionSystem;
 using rtype::game::EntityType;
@@ -239,6 +241,18 @@ TEST(CollisionSystem, ReportsAnOverlappingPairBeyondThePlayfield) {
 
   ASSERT_EQ(received.size(), 1U);
   EXPECT_TRUE(isPair(received.front(), first, second));
+}
+
+/**
+ * Given a cell side of zero
+ * When a collision system is built with it
+ * Then the grid refuses the layout
+ */
+TEST(CollisionSystem, RefusesACellSideOfZero) {
+  CollisionScene scene;
+
+  EXPECT_THROW(const CollisionSystem system(scene.events, 0.0F),
+               InvalidGridLayoutException);
 }
 
 /**

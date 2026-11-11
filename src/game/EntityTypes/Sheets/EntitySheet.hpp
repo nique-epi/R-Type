@@ -14,6 +14,7 @@
 #include "HurtZone.hpp"
 #include "MotionSheet.hpp"
 #include "PilotSheet.hpp"
+#include "SheetVisualNames.hpp"
 #include "VolleySheet.hpp"
 
 namespace rtype::game {
@@ -74,6 +75,9 @@ struct EntitySheet {
    * ship looks (the position of its name plus one); nothing for a body of
    * another side than look_item. */
   std::optional<std::uint8_t> lookItem{std::nullopt};
+  /** @brief The effects and the looks its `[appearance]` names, which a
+   * script of a body of this type may ask the client to draw. */
+  SheetVisualNames visualNames;
 };
 
 }  // namespace rtype::game

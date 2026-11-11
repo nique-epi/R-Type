@@ -26,6 +26,7 @@
 #include "ServerConstants.hpp"
 #include "ServerLobbyTestConstants.hpp"
 #include "ShipMotion.hpp"
+#include "ShownLook.hpp"
 #include "StateEncoding.hpp"
 #include "StateSending.hpp"
 #include "WorldState.hpp"
@@ -38,9 +39,9 @@ network::Endpoint client(std::uint16_t port) {
       .address = std::string{network::LOOPBACK_IPV4_ADDRESS}, .port = port};
 }
 
-network::EntityState expectedEntity(std::uint32_t networkId,
-                                    std::uint8_t typeNumber,
-                                    game::Position position) {
+network::EntityState listedEntity(std::uint32_t networkId,
+                                  std::uint8_t typeNumber,
+                                  game::Position position) {
   return network::EntityState{.entityId = networkId,
                               .entityType = typeNumber,
                               .x = position.x,
@@ -69,13 +70,15 @@ ConnectedPlayer& WorldStateSenderFixture::connect(std::uint16_t port,
   return *roster_.add(client(port), std::string{PLAYER_NICKNAME}, sessionToken);
 }
 
-void WorldStateSenderFixture::addNetworkedEntity(std::uint8_t typeNumber,
-                                                 game::Position position,
-                                                 std::uint32_t networkId) {
+void WorldStateSenderFixture::addNetworkedEntity(
+    const network::EntityState& listed) {
   const engine::Entity entity = entities_.create();
-  components_.add(entity, game::NetworkIdentity{.networkId = networkId});
-  components_.add(entity, position);
-  components_.add(entity, game::EntityTypeNumber{.number = typeNumber});
+  components_.add(entity, game::NetworkIdentity{.networkId = listed.entityId});
+  components_.add(entity, game::Position{.x = listed.x, .y = listed.y});
+  components_.add(entity, game::EntityTypeNumber{.number = listed.entityType});
+  if (listed.look != 0) {
+    components_.add(entity, game::ShownLook{.number = listed.look});
+  }
 }
 
 void WorldStateSenderFixture::addShip(std::uint32_t networkId,

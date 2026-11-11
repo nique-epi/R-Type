@@ -53,7 +53,8 @@ WorldState oneShipState() {
       .entities = {EntityState{.entityId = EXAMPLE_ENTITY_ID,
                                .entityType = EXAMPLE_SHIP_TYPE,
                                .x = EXAMPLE_X,
-                               .y = EXAMPLE_Y}}};
+                               .y = EXAMPLE_Y,
+                               .look = EXAMPLE_SHIP_LOOK}}};
 }
 
 std::vector<std::byte> payloadWithMotion(std::uint8_t motion) {

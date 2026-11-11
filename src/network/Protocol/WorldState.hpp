@@ -31,14 +31,19 @@ struct PlayerState {
 
 /**
  * @brief One entity of a game: its network id, the number of its type in the
- * table of the ConnectionAccepted of the session, and where its center is, in
- * logical units.
+ * table of the ConnectionAccepted of the session, where its center is, in
+ * logical units, and the look it shows.
  */
 struct EntityState {
   std::uint32_t entityId{};
   std::uint8_t entityType{};
   float x{};
   float y{};
+  /** @brief The number of the look the entity shows instead of its idle loop:
+   * the place of its name among the looks of the sheet of its type, from 1, or
+   * 0 for its own idle loop (game::lookNumberOf()). Any value is read: the
+   * receiver bounds it with the looks of the sheet it knows. */
+  std::uint8_t look{};
 
   bool operator==(const EntityState&) const = default;
 };

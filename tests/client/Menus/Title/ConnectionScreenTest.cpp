@@ -434,7 +434,7 @@ INSTANTIATE_TEST_SUITE_P(
 
 /**
  * Given an attempt a server of protocol version 16 refused as
- * IncompatibleVersion, the client speaking version 15
+ * IncompatibleVersion, the client speaking version 16
  * When a frame goes by
  * Then the status line names both versions, the client's first
  */
@@ -443,7 +443,7 @@ TEST_F(ConnectionScreenFixture, AVersionRefusalNamesBothVersions) {
         .refusal = RefusalReason::IncompatibleVersion,
         .serverVersion = NEXT_PROTOCOL_VERSION});
 
-  EXPECT_NE(writingOf(canvas(), "REFUSED: V15, SERVER V16"), nullptr);
+  EXPECT_NE(writingOf(canvas(), "REFUSED: V16, SERVER V17"), nullptr);
 }
 
 /**

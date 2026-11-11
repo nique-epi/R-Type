@@ -3,12 +3,14 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <optional>
 #include "AnimatedSprite.hpp"
 #include "Animation.hpp"
 #include "EntityAppearance.hpp"
 #include "EntitySpriteConstants.hpp"
 #include "EntityType.hpp"
 #include "Layer.hpp"
+#include "NamedLook.hpp"
 #include "Playback.hpp"
 #include "Sprite.hpp"
 #include "SpriteAnimation.hpp"
@@ -29,6 +31,17 @@ Animation enragedIdleAnimationOf(const EntityAppearance& appearance) {
   }
   return Animation{.frames = appearance.enragedIdleFrames,
                    .frameDuration = appearance.enragedIdleFrameDuration,
+                   .playback = Playback::Loop};
+}
+
+std::optional<Animation> lookAnimationOf(const EntityAppearance& appearance,
+                                         std::uint8_t look) {
+  if (look == 0 || look > appearance.looks.size()) {
+    return std::nullopt;
+  }
+  const NamedLook& shown = appearance.looks[look - 1U];
+  return Animation{.frames = shown.frames,
+                   .frameDuration = shown.frameDuration,
                    .playback = Playback::Loop};
 }
 

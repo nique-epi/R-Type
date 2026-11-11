@@ -9,11 +9,12 @@
 #include <vector>
 #include "CollisionBox.hpp"
 #include "CollisionConstants.hpp"
+#include "ContentName.hpp"
+#include "ContentNameConstants.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "EntitySheetConstants.hpp"
 #include "EntityTypeConstants.hpp"
-#include "EntityTypeName.hpp"
 #include "GameException.hpp"
 #include "PathText.hpp"
 #include "SheetText.hpp"
@@ -147,9 +148,9 @@ void checkSheetNames(std::span<const SheetText> texts) {
                                       identifiers::MAXIMUM_ENTITY_TYPES);
   }
   for (const SheetText& text : texts) {
-    if (!identifiers::isEntityTypeName(text.name)) {
+    if (!identifiers::isContentName(text.name)) {
       throw InvalidEntityTypeNameException(
-          text.source, identifiers::MAXIMUM_ENTITY_TYPE_NAME_LENGTH);
+          text.source, identifiers::MAXIMUM_CONTENT_NAME_LENGTH);
     }
   }
 }

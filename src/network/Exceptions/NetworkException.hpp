@@ -227,6 +227,17 @@ class InvalidChatTextException : public MalformedMessageException {
 };
 
 /**
+ * @brief A field naming a piece of the content, such as the effect of an
+ * EffectPlayed, that is not 1 to MAXIMUM_CONTENT_NAME_LENGTH lowercase
+ * letters, digits or underscores, read from a payload or about to be written
+ * into one. The field is named as on the protocol page.
+ */
+class InvalidContentNameException : public MalformedMessageException {
+ public:
+  InvalidContentNameException(std::string_view field, std::size_t size);
+};
+
+/**
  * @brief A server name or a game version that is empty, longer than the
  * protocol allows, not UTF-8, or holding a control character, read from a
  * ServerInformation or about to be written into one. The field is named as on

@@ -1,0 +1,5 @@
+# The resource training-run: a short level a Luau script directs, with the
+# enemies the game ships. A server starts it with the line `ensure training-run`
+# of its server.cfg, and plays it with `set level training_run`. The keys are
+# described on the page "Write a resource" of the docs.
+description = "A short level of two stages a Luau script directs, with a checkpoint and two biomes"

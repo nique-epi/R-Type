@@ -7,12 +7,12 @@ sidebar:
 
 An entity sheet, `assets/entities/<name>.toml`, describes one type of entity: the ship of a player, a Bydo, a boss, a missile. This page is for whoever adds or tunes a type: it gives the keys, what each one gives an entity, the rules between keys and between sheets, and how to read the error a program prints, without opening the C++. Why the types are data and not code is told in [Architecture](/R-Type/architecture/#entity-types).
 
-Both programs read the folder `entities` (`ENTITY_SHEET_FOLDER_IN_ASSETS`) of the `assets/` folder next to their executable, or one level above it, once, when they start; the folder they are started from plays no part. On the server, each game process reads the table `[gameplay]` of each sheet (`EntitySheets`, `src/game/EntityTypes/`) when its games module starts, so when the first player who needs that game connects; the supervisor reads no sheet, before the waves file, which names its enemies among the sheets. The client reads the table `[appearance]` (`EntityAppearances`, `src/client/Rendering/Sprites/EntityAppearances/`) when its assets module is installed, before it opens its window. Each checks that the root of a sheet holds exactly these two tables, and only the keys of its own: the server never reads `[appearance]`, the client never reads `[gameplay]`.
+Both programs read the folder `entities` (`ENTITY_SHEET_FOLDER_IN_ASSETS`) of the `assets/` folder next to their executable, or one level above it, once, when they start; the folder they are started from plays no part. On the server, each game process reads the table `[gameplay]` of each sheet (`EntitySheets`, `src/game/EntityTypes/`) when its games module starts, so when the first player who needs that game connects; the supervisor reads no sheet, before the waves file, which names its enemies among the sheets. The client reads the table `[appearance]` (`EntityAppearances`, `src/client/Rendering/Sprites/EntityAppearances/`) when its assets module is installed, before it opens its window. Each checks that the root of a sheet holds exactly these two tables, and only the keys of its own: the client never reads `[gameplay]`, and the server reads of `[appearance]` only the names of its effects and looks (see [Named effects and looks](#named-effects-and-looks)), so a script asks for one the client draws.
 
 ## The folder and the names
 
 - Every `.toml` file of the folder is a sheet; any other file, and every sub-folder, is left alone. The name of the file without `.toml` is the name of the type: `weaver.toml` is `weaver`.
-- A name is 1 to 24 bytes (`MAXIMUM_ENTITY_TYPE_NAME_LENGTH`) of lowercase letters `a` to `z`, digits and `_`, so a file has the same name on every system. A folder holds at most 255 sheets (`MAXIMUM_ENTITY_TYPES`) and at least one: a type is numbered from 1 on one byte, and 0 names no type. Both limits and the check of a name (`isEntityTypeName()`) live in `src/identifiers/`, so a name the game accepts is one the table of the types can carry.
+- A name is 1 to 24 bytes (`MAXIMUM_CONTENT_NAME_LENGTH`) of lowercase letters `a` to `z`, digits and `_`, so a file has the same name on every system. A folder holds at most 255 sheets (`MAXIMUM_ENTITY_TYPES`) and at least one: a type is numbered from 1 on one byte, and 0 names no type. Both limits and the check of a name (`isContentName()`) live in `src/identifiers/`, so a name the game accepts is one the table of the types can carry.
 - The server numbers the sheets from 1 in the order of their names. The twenty-three sheets the game ships are `bydo_tyrant` (1), `bydomancer` (2), `drifter` (3), `drillback` (4), `enemy_missile` (5), the seven look items `look_chef_toque` (6) to `look_wizard_hat` (12) in the order of their names, `orb_shard` (13), `player_missile` (14), `reaper` (15), `rune_orb` (16), `ship` (17), `tyrant_diver` (18), `tyrant_missile` (19), `tyrant_spore` (20), `tyrant_spore_shard` (21), `voltjelly` (22) and `weaver` (23). These numbers name the types on the wire for as long as the server runs, and every player learns them when it is accepted (see [Protocol](/R-Type/protocol/#entity-types)), so a new sheet whose name sorts first renumbers the others without breaking anything.
 - The server makes the ship of every player from the sheet named `ship` (`SHIP_SHEET_NAME`, `src/server/ServerConstants.hpp`): without it, it stops before its first game.
 
@@ -213,7 +213,7 @@ frame_ms = 250
 | `[appearance.enraged_idle]` | | the keys of `idle`; may be left out | the idle animation of an enemy once the server announced it enraged, which every attack that ends with `afterwards = "idle"` goes back to; the enemy keeps `idle` without it |
 | `[appearance.death]` | | the keys of `idle`; may be left out | the death the client plays once, centered where the enemy died, when the server says it was killed; its version without flash, played with REDUCE FLASHES, is the row right under it, frame for frame, `height` + `spacing` pixels lower. An enemy without it plays the Bydo explosion of `sprites/effects.png` |
 
-Every key of `idle` is required, `enraged_idle` and `death` are the only optional tables besides the attack animations, and any other key is refused. The keys and ranges live in `src/client/Rendering/Sprites/EntityAppearanceConstants.hpp`. A pixel of a sheet covers 4 × 4 logical units of the playfield, so a frame should be the hitbox divided by 4: 24 × 24 pixels for a box of 96 × 96. `EntityAppearances.EveryShippedSheetDrawsTheBoxTheServerHits` checks it for every shipped sheet whose boxes all hurt in an action only. A sheet with a box that always hurts, the Voltjelly and the Bydo Tyrant, draws a frame that holds its hitbox, offset included, and every such box instead: the Tyrant is drawn 128 × 128 pixels, 512 × 512 units, and hit on a box of 440 × 488 that covers its body (`AFrameHoldsTheBoxesThatAlwaysHurt`). The side of the sheet, never its appearance, picks the layer the entity is drawn in (see [Client](/R-Type/client/#drawing-order-layer)). Whether the sprite sheet exists is checked when the game screen loads it, like any other asset.
+Every key of `idle` is required, `enraged_idle`, `death`, `effects` and `looks` are the only optional tables besides the attack animations, and any other key is refused. The keys and ranges live in `src/client/Rendering/Sprites/EntityAppearanceConstants.hpp`. A pixel of a sheet covers 4 × 4 logical units of the playfield, so a frame should be the hitbox divided by 4: 24 × 24 pixels for a box of 96 × 96. `EntityAppearances.EveryShippedSheetDrawsTheBoxTheServerHits` checks it for every shipped sheet whose boxes all hurt in an action only. A sheet with a box that always hurts, the Voltjelly and the Bydo Tyrant, draws a frame that holds its hitbox, offset included, and every such box instead: the Tyrant is drawn 128 × 128 pixels, 512 × 512 units, and hit on a box of 440 × 488 that covers its body (`AFrameHoldsTheBoxesThatAlwaysHurt`). The side of the sheet, never its appearance, picks the layer the entity is drawn in (see [Client](/R-Type/client/#drawing-order-layer)). Whether the sprite sheet exists is checked when the game screen loads it, like any other asset.
 
 ### Attack animations
 
@@ -243,6 +243,38 @@ The frame keys are those of `idle`. The others:
 | `anchor_x`, `anchor_y` | pixels of the canvas | -256 to 256; 0 when left out | how far the frames are drawn from the center of the body, so a frame wider than the body hangs from the side it grows on |
 
 A phase the sheet leaves out has no animation: the enemy keeps what it plays when the server announces it. An attack table of another name, a phase of another name or any other key is refused. The end of an action is never announced, so the last phase of an attack plays `once` with `afterwards = "idle"` and lasts as long as the server keeps the enemy in that phase: the four 225 ms frames of the stunned Drillback last its 900 ms stun.
+
+### Named effects and looks
+
+A sheet names the effects and the looks a script of the server may ask the client to draw on a body of that type, so a resource gets visual effects without any code on the client. An effect plays once, centered on the body and following it while it moves; a look is an idle loop the body takes instead of `idle` until the script asks for another one:
+
+```toml
+[appearance.effects.spark]
+left = 0
+top = 30
+width = 16
+height = 16
+frames = 2
+spacing = 4
+frame_ms = 60
+anchor_y = -8
+
+[appearance.looks.cracked]
+left = 0
+top = 70
+width = 24
+height = 24
+frames = 3
+spacing = 2
+frame_ms = 120
+```
+
+- The name of each table is a name of the content, as the name of a sheet: 1 to 24 bytes of `a` to `z`, digits and `_` (`isContentName()`). A sheet names at most 16 effects and 16 looks (`MOST_EFFECTS`, `MOST_LOOKS`). Both programs refuse a sheet that breaks either rule.
+- An effect takes the frame keys of `idle` and the two anchors of an attack animation. Its version without flash, played with REDUCE FLASHES, is the row right under it, as for `death`.
+- A look takes the keys of `idle`. The looks are numbered from 1 in the order of their names, 0 being `idle` itself: the server sends that number in each world state, and the client finds the same look with it, since both read the same sheet. An attack that ends with `afterwards = "idle"` goes back to the look the body shows, which wins over `enraged_idle`.
+- The frames lie in the sprite sheet of `sheet`, the only image a content pack carries for a type.
+
+A script asks for them by name (see [Scripting](/R-Type/scripting/#what-the-function-returns-the-intent)). A name the sheet does not hold is dropped by the server; a client whose sheet does not hold the name, or that does not have the body, draws nothing.
 
 ## When a program refuses a sheet
 

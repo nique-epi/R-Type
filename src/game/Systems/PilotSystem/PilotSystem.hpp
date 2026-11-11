@@ -31,7 +31,9 @@ struct Intent;
  * When the Intent a behaviour wrote asks the body to jump, it moves it there.
  * When the Intent a behaviour wrote ends an action or starts one, it hands
  * that to endEnemyAction() and startEnemyAction(), which publish on the event
- * bus it was given.
+ * bus it was given. When it plays an effect of its sheet, it publishes an
+ * EffectStarted; when it asks for a look of its sheet, it writes its number in
+ * the ShownLook of the body, which every body made from a sheet has.
  */
 class PilotSystem final : public engine::ISystem {
  public:
@@ -45,9 +47,29 @@ class PilotSystem final : public engine::ISystem {
    * behaviours to see the nearest one. */
   void collectShips(engine::ComponentRegistry& components);
 
+  /** @brief Carries out what the behaviour of @p body wrote in @p intent
+   * besides moving: its action, its effect, its look, and its box and top
+   * speed. */
+  void carryOutIntentOf(engine::ComponentRegistry& components,
+                        engine::Entity body, const Intent& intent);
+
   /** @brief Records the action @p intent of @p body ends or starts. */
   void passOnActionOf(engine::ComponentRegistry& components,
                       engine::Entity body, const Intent& intent);
+
+  /** @brief Publishes an EffectStarted for the effect @p intent of @p body
+   * plays, when the sheet of the body names it (VisualNames); a name the sheet
+   * does not hold is dropped, and so is an effect asked for less than
+   * EFFECT_REST after the last one the body played, so a behaviour that names
+   * an effect at every tick cannot flood the guaranteed messages. */
+  void announceEffectOf(engine::ComponentRegistry& components,
+                        engine::Entity body, const Intent& intent);
+
+  /** @brief Writes in the ShownLook of @p body the number of the look
+   * @p intent asks for, when the sheet of the body names it; a name the sheet
+   * does not hold leaves the look as it is. */
+  static void applyLookOf(engine::ComponentRegistry& components,
+                          engine::Entity body, const Intent& intent);
 
   std::reference_wrapper<engine::EventBus> events_;
   /** @brief The ships of this tick; kept between ticks so collecting them

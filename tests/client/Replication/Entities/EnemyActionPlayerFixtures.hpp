@@ -13,4 +13,8 @@ namespace rtype::client::testing {
  * idle. */
 [[nodiscard]] EntityAppearance appearanceWithARage();
 
+/** @returns appearanceWithARage() with one look, numbered
+ * CRACKED_LOOK_NUMBER: one frame, LOOK_FRAME. */
+[[nodiscard]] EntityAppearance appearanceWithALook();
+
 }  // namespace rtype::client::testing

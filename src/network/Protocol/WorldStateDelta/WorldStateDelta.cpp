@@ -13,10 +13,13 @@ namespace rtype::network {
 
 namespace {
 
-bool placedAlike(const EntityState& base, const EntityState& current) {
+/** @returns Whether a receiver reads the same entity from @p base and from
+ * @p current: its type, its position on the wire and its look. */
+bool readAlike(const EntityState& base, const EntityState& current) {
   return base.entityType == current.entityType &&
          wireStepsOf(base.x) == wireStepsOf(current.x) &&
-         wireStepsOf(base.y) == wireStepsOf(current.y);
+         wireStepsOf(base.y) == wireStepsOf(current.y) &&
+         base.look == current.look;
 }
 
 bool byEntityId(const EntityState& left, const EntityState& right) {
@@ -45,7 +48,7 @@ StateDelta diffStates(std::span<const EntityState> base,
                current[currentIndex].entityId < base[baseIndex].entityId) {
       delta.changed.push_back(current[currentIndex++]);
     } else {
-      if (!placedAlike(base[baseIndex], current[currentIndex])) {
+      if (!readAlike(base[baseIndex], current[currentIndex])) {
         delta.changed.push_back(current[currentIndex]);
       }
       ++baseIndex;

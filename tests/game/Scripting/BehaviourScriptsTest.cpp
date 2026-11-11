@@ -1,4 +1,7 @@
 #include <gtest/gtest.h>
+#include <optional>
+#include <string>
+#include <string_view>
 #include "BehaviourRegistry.hpp"
 #include "BehaviourScripts.hpp"
 #include "BehaviourScriptsFixtures.hpp"
@@ -78,6 +81,64 @@ TEST(BehaviourScripts, FiresAndStartsTheActionTheScriptReturns) {
             CHARGE_ATTACK);
   EXPECT_EQ(intent.startsAction.value_or(rtype::game::ActionKey{}).phase,
             EnemyPhase::Strike);
+}
+
+/**
+ * Given `sparkle`, which names the effect spark and the look cracked
+ * When it steers
+ * Then its intent plays spark and shows cracked
+ */
+TEST(BehaviourScripts, KeepsTheEffectAndTheLookTheScriptNames) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  scripts.run(scriptsOf(VISUALS_SCRIPT));
+  const BehaviourRegistry behaviours = scripts.behaviours();
+
+  const Intent intent =
+      steeringOf(behaviours, SPARKLE_BEHAVIOUR,
+                 woundedViewAt(BODY_IN_THE_MIDDLE, SHIP_BELOW));
+
+  EXPECT_EQ(intent.playsEffect, std::optional{std::string{SPARK_EFFECT}});
+  EXPECT_EQ(intent.showsLook, std::optional{std::string{CRACKED_LOOK}});
+}
+
+/**
+ * Given `shout`, which names an effect with a capital letter and a look with a
+ * space, and `numbers`, which gives numbers instead of names
+ * When each steers
+ * Then neither intent plays an effect or shows a look
+ */
+TEST(BehaviourScripts, DropsAnEffectOrALookThatIsNoNameOfTheContent) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  scripts.run(scriptsOf(VISUALS_SCRIPT));
+  const BehaviourRegistry behaviours = scripts.behaviours();
+
+  for (const std::string_view name : {SHOUT_BEHAVIOUR, NUMBERS_BEHAVIOUR}) {
+    SCOPED_TRACE(name);
+    const Intent intent = steeringOf(
+        behaviours, name, woundedViewAt(BODY_IN_THE_MIDDLE, SHIP_BELOW));
+    EXPECT_FALSE(intent.playsEffect.has_value());
+    EXPECT_FALSE(intent.showsLook.has_value());
+  }
+}
+
+/**
+ * Given `plain`, which asks for the empty look
+ * When it steers
+ * Then its intent shows the empty look, the idle loop of its sheet
+ */
+TEST(BehaviourScripts, KeepsTheEmptyLook) {
+  FailureLog log;
+  BehaviourScripts scripts{reportInto(log)};
+  scripts.run(scriptsOf(VISUALS_SCRIPT));
+  const BehaviourRegistry behaviours = scripts.behaviours();
+
+  const Intent intent =
+      steeringOf(behaviours, PLAIN_BEHAVIOUR,
+                 woundedViewAt(BODY_IN_THE_MIDDLE, SHIP_BELOW));
+
+  EXPECT_EQ(intent.showsLook, std::optional{std::string{IDLE_LOOK}});
 }
 
 /**

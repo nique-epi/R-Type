@@ -10,13 +10,29 @@ namespace rtype::game {
  * function: `behaviours.register(name, settings, steer)`. */
 constexpr std::string_view BEHAVIOURS_TABLE = "behaviours";
 constexpr std::string_view REGISTER_FUNCTION_NAME = "register";
+constexpr std::string_view WAIT_FUNCTION_NAME = "wait";
+constexpr std::string_view SPAWN_FUNCTION_NAME = "spawn";
+constexpr std::string_view DESTROY_FUNCTION_NAME = "destroy";
 
 /** @brief The folder of a content folder that holds its server scripts, and
  * their extension. */
 constexpr std::string_view SCRIPT_FOLDER_IN_CONTENT = "server";
 constexpr std::string_view SCRIPT_FILE_EXTENSION = ".luau";
 
+/** @brief Where the functions of `behaviours` take their arguments, and how
+ * many values `behaviours.wait` yields to the step in progress. */
+constexpr int REGISTER_NAME_ARGUMENT = 1;
+constexpr int REGISTER_SETTINGS_ARGUMENT = 2;
+constexpr int REGISTER_STEER_ARGUMENT = 3;
+constexpr int WAIT_MILLISECONDS_ARGUMENT = 1;
+constexpr int WAIT_INTENT_ARGUMENT = 2;
+constexpr int WAIT_YIELDED_VALUES = 1;
+constexpr int SPAWN_TYPE_ARGUMENT = 1;
+constexpr int SPAWN_POSITION_ARGUMENT = 2;
+constexpr int DESTROY_ID_ARGUMENT = 1;
+
 /** @brief The keys of the view a script reads. */
+constexpr const char* VIEW_ID_KEY = "id";
 constexpr const char* VIEW_POSITION_KEY = "position";
 constexpr const char* VIEW_ORIGIN_KEY = "origin";
 constexpr const char* VIEW_AGE_KEY = "age_ms";
@@ -27,7 +43,7 @@ constexpr const char* VIEW_ACTION_KEY = "action";
 constexpr const char* VIEW_ACTION_AGE_KEY = "action_age_ms";
 constexpr const char* VIEW_NEAREST_SHIP_KEY = "nearest_ship";
 constexpr const char* VIEW_WOUNDED_KEY = "wounded";
-constexpr const char* VIEW_HEALTH_KEY = "health";
+constexpr const char* VIEW_HEALTH_SHARE_KEY = "health_share";
 constexpr const char* VIEW_ENRAGED_KEY = "enraged";
 constexpr const char* VIEW_ACTIONS_ENDED_KEY = "actions_ended";
 
@@ -45,6 +61,8 @@ constexpr const char* INTENT_ENDS_ACTION_KEY = "ends_action";
 constexpr const char* INTENT_JUMPS_TO_KEY = "jumps_to";
 constexpr const char* INTENT_COLLISION_BOX_KEY = "collision_box";
 constexpr const char* INTENT_TOP_SPEED_KEY = "top_speed";
+constexpr const char* INTENT_EFFECT_KEY = "effect";
+constexpr const char* INTENT_LOOK_KEY = "look";
 
 /** @brief The keys of a collision box in the intent. */
 constexpr const char* BOX_WIDTH_KEY = "width";

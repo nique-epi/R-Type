@@ -3,18 +3,22 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cstdint>
+#include "BiomeDecor.hpp"
 #include "GaussianBlur.hpp"
 #include "ISky.hpp"
 #include "PixelBatch.hpp"
 #include "PixelCanvas.hpp"
+#include "SkyLevel.hpp"
 #include "Starfield.hpp"
+#include "TextureLookup.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
 /**
- * @brief Draws the starfield behind the playfield, with a blurred copy added
- * on top as a halo when shaders are available.
+ * @brief Draws the starfield behind the playfield, the decor of the biome a
+ * level shows over it (see BiomeDecor), and a blurred copy of both added on
+ * top as a halo when shaders are available.
  *
  * The sky is painted on a PixelCanvas, so its pixels stay square, equal and
  * sharp at every window size. A screen may speed its stars up and shift it
@@ -24,16 +28,21 @@ namespace rtype::client {
 class ScrollingBackground : public ISky {
  public:
   /**
+   * @param seed Seed of every random draw of the sky.
+   * @param textureOf Finds the pictures of the decor of a biome; it must not
+   * be empty.
    * @throws RenderTextureNotCreatedException when the sky or the halo cannot
    * get a render texture.
    */
-  explicit ScrollingBackground(std::uint32_t seed);
+  ScrollingBackground(std::uint32_t seed, TextureLookup textureOf);
 
-  /** @brief Moves the sky, see Starfield::advance. */
+  /** @brief Moves the sky, see Starfield::advance, and the decor of the
+   * level, see BiomeDecor::advance. */
   void advance(engine::Duration elapsed);
 
   void setSpeedFactor(float factor) override;
   void setOffset(sf::Vector2i pixels) override;
+  void showLevel(const SkyLevel& level) override;
 
   /**
    * @brief Draws the sky over the whole playfield.
@@ -46,6 +55,7 @@ class ScrollingBackground : public ISky {
 
  private:
   Starfield starfield_;
+  BiomeDecor decor_;
   PixelBatch pixels_;
   PixelCanvas sky_;
   GaussianBlur halo_;

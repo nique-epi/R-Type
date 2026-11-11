@@ -28,7 +28,9 @@ EntityAppearance appearancePlaying(const Animation& animation) {
       .actions = {},
       .enragedIdleFrames = {},
       .deathFrames = {},
-      .deathFramesWithoutFlash = {}};
+      .deathFramesWithoutFlash = {},
+      .effects = {},
+      .looks = {}};
 }
 
 /** @returns The side of the type the double numbers @p number, or nothing

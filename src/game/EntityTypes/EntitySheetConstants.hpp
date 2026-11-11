@@ -28,6 +28,20 @@ constexpr std::array SHEET_ROOT_KEYS{GAMEPLAY_KEY, APPEARANCE_KEY};
  */
 constexpr std::string_view SPRITE_SHEET_KEY = "sheet";
 
+/**
+ * @brief The optional tables of `[appearance]` that name what a server may ask
+ * the client to draw: `effects`, one table per effect played once, and
+ * `looks`, one table per idle loop a body may take instead of its own. Each
+ * table is named with a name of the content (isContentName()).
+ */
+constexpr std::string_view EFFECTS_TABLE_KEY = "effects";
+constexpr std::string_view LOOKS_TABLE_KEY = "looks";
+
+/** @brief The most effects, and the most looks, one sheet names: a look is
+ * numbered on one byte, and a sheet holding more would be hard to read. */
+constexpr std::size_t MOST_EFFECTS = 16;
+constexpr std::size_t MOST_LOOKS = 16;
+
 /** @brief What separates the folders of a path inside the assets folder. */
 constexpr char ASSET_PATH_SEPARATOR = '/';
 
@@ -283,6 +297,12 @@ constexpr std::string_view VOLLEY_GAP_RULE =
     "a gap leaves at least one body of the volley: gap_count is below count";
 constexpr std::string_view VOLLEY_BODY_SIDE_RULE =
     "a volley is made of enemies or of missiles of an enemy";
+constexpr std::string_view VISUAL_NAME_RULE =
+    "an effect or a look is named with 1 to 24 lowercase letters, digits or "
+    "underscores";
+constexpr std::string_view MOST_EFFECTS_RULE =
+    "a sheet names at most 16 effects";
+constexpr std::string_view MOST_LOOKS_RULE = "a sheet names at most 16 looks";
 constexpr std::string_view SHARD_SIDE_RULE =
     "a missile bursts into missiles of its own side";
 constexpr std::string_view BEHAVIOUR_TABLE_RULE =

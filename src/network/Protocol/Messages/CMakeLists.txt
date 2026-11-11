@@ -19,12 +19,14 @@ add_subdirectory(GameStatusAcknowledged)
 add_subdirectory(Heartbeat)
 add_subdirectory(LeaderboardAnswer)
 add_subdirectory(LeaderboardRequest)
+add_subdirectory(LevelStatus)
 add_subdirectory(LobbyState)
 add_subdirectory(LookItemWon)
 add_subdirectory(MasterProbe)
 add_subdirectory(OrderedMessage)
 add_subdirectory(PlayerChatLine)
 add_subdirectory(BossStatus)
+add_subdirectory(EffectPlayed)
 add_subdirectory(PlayerInput)
 add_subdirectory(PlayerLeft)
 add_subdirectory(PlayerLooks)
@@ -46,6 +48,7 @@ target_link_libraries(rtype_network_messages
     rtype_network_connection_refused
     rtype_network_connection_request
     rtype_network_disconnection
+    rtype_network_effect_played
     rtype_network_enemy_action
     rtype_network_entity_destroyed
     rtype_network_entity_spawned
@@ -60,6 +63,7 @@ target_link_libraries(rtype_network_messages
     rtype_network_heartbeat
     rtype_network_leaderboard_answer
     rtype_network_leaderboard_request
+    rtype_network_level_status
     rtype_network_lobby_state
     rtype_network_look_item_won
     rtype_network_master_probe

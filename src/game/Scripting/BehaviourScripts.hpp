@@ -4,18 +4,31 @@
 #include <span>
 #include <vector>
 #include "BehaviourRegistry.hpp"
+#include "IEntityOrders.hpp"
+#include "LuauBehaviour.hpp"
+#include "LuauBehaviourParts.hpp"
+#include "LuauEventBindings.hpp"
+#include "LuauLevels.hpp"
+#include "LuauResumeContext.hpp"
 #include "ScriptFailureReport.hpp"
 #include "ScriptMachine.hpp"
 #include "ScriptSource.hpp"
-#include "ScriptedBehaviour.hpp"
-#include "ScriptedBehaviourParts.hpp"
+
+namespace rtype::engine {
+
+class ComponentRegistry;
+
+}  // namespace rtype::engine
 
 namespace rtype::game {
 
 /**
  * @brief The behaviours the server scripts of a game register: it runs the
  * scripts on a machine of its own, which exposes `behaviours.register(name,
- * settings, steer)`, and hands the behaviours over with the built-in ones.
+ * settings, steer)`, `behaviours.wait(ms, intent)`, `behaviours.spawn(type,
+ * position)` and `behaviours.destroy(id)`, `bus.on` and `bus.emit` (see
+ * LuauEventBindings) and the table `level` (see LuauLevels), and hands the
+ * behaviours over with the built-in ones.
  *
  * It must outlive the behaviours it hands over: each calls its script on its
  * machine. Neither copied nor moved: the machine reaches it by its address.
@@ -39,10 +52,28 @@ class BehaviourScripts {
 
   /** @brief Keeps a behaviour a script registered: its machine and its report
    * are those of this object. */
-  void declare(ScriptedBehaviourParts parts);
+  void declare(LuauBehaviourParts parts);
 
   /** @returns The machine the scripts run on. */
   [[nodiscard]] engine::ScriptMachine& machine();
+
+  /** @brief Makes @p orders carry out the bodies the scripts order, and
+   * gives the handle of each body its components among @p components. */
+  void attachGame(IEntityOrders& orders, engine::ComponentRegistry& components);
+
+  /** @brief Forgets the game of @p orders, unless another took its place. */
+  void detachGame(const IEntityOrders& orders) noexcept;
+
+  /** @returns What the functions the scripts call know of the step in
+   * progress. */
+  [[nodiscard]] LuauResumeContext& resumeContext();
+
+  /** @returns What gives the scripts the event bus of a game. */
+  [[nodiscard]] LuauEventBindings& eventBindings();
+
+  /** @returns The levels the scripts registered, and what directs the one a
+   * game plays. */
+  [[nodiscard]] LuauLevels& levels();
 
   /** @returns What the report of a behaviour calls. */
   [[nodiscard]] const ScriptFailureReport& reportFailure() const;
@@ -58,7 +89,10 @@ class BehaviourScripts {
  private:
   engine::ScriptMachine machine_;
   ScriptFailureReport reportFailure_;
-  std::vector<std::unique_ptr<ScriptedBehaviour>> declared_;
+  LuauResumeContext resumeContext_;
+  LuauEventBindings eventBindings_;
+  LuauLevels levels_;
+  std::vector<std::unique_ptr<LuauBehaviour>> declared_;
 };
 
 }  // namespace rtype::game

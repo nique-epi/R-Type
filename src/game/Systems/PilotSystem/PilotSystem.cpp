@@ -7,6 +7,7 @@
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
+#include "EffectStarted.hpp"
 #include "EnemyActionStart.hpp"
 #include "EnemyActions.hpp"
 #include "Entity.hpp"
@@ -14,11 +15,16 @@
 #include "EventBus.hpp"
 #include "Health.hpp"
 #include "Intent.hpp"
+#include "NetworkIdentity.hpp"
 #include "Pilot.hpp"
+#include "PilotConstants.hpp"
 #include "Position.hpp"
+#include "SheetVisualNames.hpp"
+#include "ShownLook.hpp"
 #include "SteadyMotion.hpp"
 #include "Summoning.hpp"
 #include "TimeConstants.hpp"
+#include "VisualNames.hpp"
 
 namespace rtype::game {
 
@@ -95,8 +101,9 @@ void reshapeAsAsked(engine::ComponentRegistry& components, engine::Entity body,
 /** @returns Whether @p boss enraged; false for a body that is no boss. */
 bool isEnraged(const Boss* boss) { return boss != nullptr && boss->enraged; }
 
-/** @returns @p view with what the components of @p body tell of its
- * condition: its health, its rage and the actions it ended. */
+/** @returns @p view with what the components of @p body tell of it: its
+ * health, its rage, the actions it ended and its network id, and with the
+ * body itself, for a behaviour that reaches its components. */
 BehaviourView withConditionOf(BehaviourView view,
                               engine::ComponentRegistry& components,
                               engine::Entity body) {
@@ -106,6 +113,9 @@ BehaviourView withConditionOf(BehaviourView view,
   view.enraged = isEnraged(components.get<Boss>(body));
   const CurrentAction* const current = components.get<CurrentAction>(body);
   view.actionsEnded = current == nullptr ? 0U : current->ended;
+  const NetworkIdentity* const identity = components.get<NetworkIdentity>(body);
+  view.networkId = identity == nullptr ? 0U : identity->networkId;
+  view.entity = body;
   return view;
 }
 
@@ -133,6 +143,46 @@ void PilotSystem::passOnActionOf(engine::ComponentRegistry& components,
         events_.get(), components,
         EnemyActionStart{.enemy = body, .action = *intent.startsAction});
   }
+}
+
+void PilotSystem::announceEffectOf(engine::ComponentRegistry& components,
+                                   engine::Entity body, const Intent& intent) {
+  if (!intent.playsEffect.has_value()) {
+    return;
+  }
+  const VisualNames* const visuals = components.get<VisualNames>(body);
+  const NetworkIdentity* const identity = components.get<NetworkIdentity>(body);
+  auto* const pilot = components.get<Pilot>(body);
+  if (visuals == nullptr || visuals->names == nullptr || identity == nullptr ||
+      pilot == nullptr || pilot->age < pilot->nextEffectAge ||
+      !namesEffect(*visuals->names, *intent.playsEffect)) {
+    return;
+  }
+  pilot->nextEffectAge = pilot->age + EFFECT_REST;
+  events_.get().publish(EffectStarted{.networkId = identity->networkId,
+                                      .effect = *intent.playsEffect});
+}
+
+void PilotSystem::applyLookOf(engine::ComponentRegistry& components,
+                              engine::Entity body, const Intent& intent) {
+  if (!intent.showsLook.has_value()) {
+    return;
+  }
+  const VisualNames* const visuals = components.get<VisualNames>(body);
+  auto* const shown = components.get<ShownLook>(body);
+  if (visuals == nullptr || visuals->names == nullptr || shown == nullptr) {
+    return;
+  }
+  shown->number =
+      lookNumberOf(*visuals->names, *intent.showsLook).value_or(shown->number);
+}
+
+void PilotSystem::carryOutIntentOf(engine::ComponentRegistry& components,
+                                   engine::Entity body, const Intent& intent) {
+  passOnActionOf(components, body, intent);
+  announceEffectOf(components, body, intent);
+  applyLookOf(components, body, intent);
+  reshapeAsAsked(components, body, intent);
 }
 
 void PilotSystem::update(engine::ComponentRegistry& components,
@@ -163,10 +213,10 @@ void PilotSystem::update(engine::ComponentRegistry& components,
                 .action = current == nullptr ? std::nullopt : current->key,
                 .actionAge = current == nullptr ? engine::Duration::zero()
                                                 : current->since,
-                .nearestShip = nearestOf(ships_, *position)},
+                .nearestShip = nearestOf(ships_, *position),
+                .behaviourState = &pilot.behaviourState},
             components, body));
-        passOnActionOf(components, body, intent);
-        reshapeAsAsked(components, body, intent);
+        carryOutIntentOf(components, body, intent);
       });
 }
 
