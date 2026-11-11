@@ -6,7 +6,6 @@
 #include <string>
 #include <string_view>
 #include <utility>
-#include "BossStage.hpp"
 #include "ConnectedPlayer.hpp"
 #include "ConnectedPlayers.hpp"
 #include "EntityIdConstants.hpp"
@@ -44,19 +43,26 @@ struct GameEnding {
   GameOutcome outcome{GameOutcome::Defeat};
 };
 
+/** @returns Whether players are connected to @p roster and none of them has
+ * a life left in @p world. */
+bool teamLostEveryLife(PlayerRoster& roster, game::World& world) {
+  const ConnectedPlayers players = roster.connected();
+  return !players.empty() &&
+         std::ranges::none_of(players, [&world](const ConnectedPlayer* player) {
+           return hasALifeLeft(world, player);
+         });
+}
+
 /**
  * @returns Why a game played by @p roster in @p world is lost: no player is
  * left in it, or no player left has a life. Nothing otherwise.
  */
 std::optional<std::string_view> reasonToLose(PlayerRoster& roster,
                                              game::World& world) {
-  const ConnectedPlayers players = roster.connected();
-  if (players.empty()) {
+  if (roster.connected().empty()) {
     return NO_PLAYER_LEFT_FINISH_REASON;
   }
-  if (std::ranges::none_of(players, [&world](const ConnectedPlayer* player) {
-        return hasALifeLeft(world, player);
-      })) {
+  if (teamLostEveryLife(roster, world)) {
     return NO_LIFE_LEFT_FINISH_REASON;
   }
   return std::nullopt;
@@ -64,22 +70,25 @@ std::optional<std::string_view> reasonToLose(PlayerRoster& roster,
 
 /**
  * @returns How the game in progress played by @p roster in @p world, whose
- * level ends as @p stage says, ends now: lost when no player is left or none
- * of them has a life, otherwise won once the level is cleared: its last wave
- * over, and its boss, if it has one, gone with every other enemy. The loss
- * comes first, so a game lost on the tick its level is cleared is lost.
- * Nothing when it goes on.
+ * level ends as @p systems say, ends now: lost when no player is left, none
+ * of them has a life, or the script of its level failed, otherwise won once
+ * the level is cleared (see MatchSystems::victoryReason()). The loss comes
+ * first, so a game lost on the tick its level is cleared is lost. Nothing
+ * when it goes on.
  */
 std::optional<GameEnding> endingOf(PlayerRoster& roster, game::World& world,
-                                   const BossStage& stage) {
+                                   const MatchSystems& systems) {
   const std::optional<std::string_view> loss = reasonToLose(roster, world);
   if (loss.has_value()) {
     return GameEnding{.reason = *loss, .outcome = GameOutcome::Defeat};
   }
-  if (stage.levelCleared()) {
-    return GameEnding{.reason = stage.hasBoss() ? BOSS_DEFEATED_FINISH_REASON
-                                                : LAST_WAVE_OVER_FINISH_REASON,
-                      .outcome = GameOutcome::Victory};
+  if (systems.levelFailed()) {
+    return GameEnding{.reason = LEVEL_FAILED_FINISH_REASON,
+                      .outcome = GameOutcome::Defeat};
+  }
+  const std::optional<std::string_view> victory = systems.victoryReason();
+  if (victory.has_value()) {
+    return GameEnding{.reason = *victory, .outcome = GameOutcome::Victory};
   }
   return std::nullopt;
 }
@@ -165,8 +174,13 @@ void GameFlow::finishIfOver() {
   if (state_ != GameState::InProgress) {
     return;
   }
+  if (teamLostEveryLife(game_.roster.get(), world()) &&
+      systems_->restartFromCheckpoint()) {
+    logger_.info("no player has a life left: back to the last checkpoint");
+    return;
+  }
   const std::optional<GameEnding> ending =
-      endingOf(game_.roster.get(), world(), systems_->bossStage());
+      endingOf(game_.roster.get(), world(), *systems_);
   if (!ending.has_value()) {
     return;
   }

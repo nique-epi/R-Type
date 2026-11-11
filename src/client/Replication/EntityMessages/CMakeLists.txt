@@ -18,6 +18,7 @@ target_link_libraries(rtype_client_entity_messages
     rtype_network_entity_spawned
     rtype_network_game_ended
     rtype_network_game_event
+    rtype_network_level_status
     rtype_network_lobby_state
     rtype_network_message_dispatcher
     rtype_network_player_left

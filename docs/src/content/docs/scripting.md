@@ -7,7 +7,7 @@ sidebar:
 
 A resource (see [Resources](/R-Type/server/#resources-ensure-lines)) may steer its enemies with scripts written in [Luau](https://luau.org), the language derived from Lua 5.1 that Roblox made for untrusted code. A script registers a **behaviour**, the named piece of logic a sheet chooses with `pilot`, exactly like the behaviours written in C++ (`straight`, `reaper`, `bydomancer`): it reads the same view of its body each tick and returns the same intent, and it may also read and write some components of its body through its handle. Changing a script needs no build: the next game reads it again.
 
-Scripts run on the server only. They never reach the client, which draws the enemies from their sheets as before, so the authority of the server is unchanged. This page tells a designer what a script may read, return, hear and publish; the code is in `src/engine/Scripting/` (the machine, no R-Type word), `src/game/Scripting/` (the behaviours) and `src/game/Scripting/Events/` (their access to the event bus, which knows nothing of the behaviours).
+Scripts run on the server only. They never reach the client, which draws the enemies from their sheets as before, so the authority of the server is unchanged. This page tells a designer what a script may read, return, hear and publish; the code is in `src/engine/Scripting/` (the machine, no R-Type word), `src/game/Scripting/` (the behaviours), `src/game/Scripting/Events/` (their access to the event bus, which knows nothing of the behaviours) and `src/game/Scripting/Level/` (the levels a script directs).
 
 ## Where scripts live and when they run
 
@@ -164,6 +164,49 @@ What a script may rely on:
 - **A subscribed function is a step.** It has the 2 ms of a step and counts in the 8 ms of the tick. It cannot wait. One that fails, waits or runs past its budget ends every subscription of its body at once, and stops the script of that body at its next tick, as a failed step does: the journal writes it as the first failure of that behaviour. The functions subscribed after it are still called.
 - **Once the budget of a tick is spent, the events left reach no script function** until the next tick; they are not kept. This is also what ends two functions that answer each other without end.
 
+## Directing a level
+
+A script may also write a level: what comes, when the decor moves and stops, which biome the players see and where a lost team starts again. A server plays it with the setting `level` (see [Server](/R-Type/server/#level-a-script-directs-leveldirector)); without it, a game plays the waves of its difficulty.
+
+```lua
+level.register("training_run", {
+	function()
+		level.biome("drift_fields")
+		level.wait_scroll(240)
+		behaviours.spawn("drifter", { x = 1984, y = 540 })
+		level.pause_scroll()
+		while level.enemies() > 0 do
+			level.wait(250)
+		end
+		level.resume_scroll()
+	end,
+	function()
+		level.biome("ember_reach")
+		level.wait_scroll(1680)
+	end,
+})
+```
+
+`level.register(name, stages)` takes the name the setting gives and a list of 1 to 64 functions (`MAXIMUM_LEVEL_STAGES`), the stages, run one after the other, each in a thread of its own. A name already registered, an empty name or a stage that is no function stops the supervisor at start. The level scrolls from 0 at 120 logical units per second (`LEVEL_SCROLL_SPEED`), and the events of a level are best hung on that scroll, so everything after a pause waits with it.
+
+| Function | Does |
+|---|---|
+| `level.wait(ms)` | stops the stage for `ms` milliseconds, rounded to the nearest tick, one tick at least, as `behaviours.wait` does. It only runs in a stage. |
+| `level.wait_scroll(position)` | stops the stage until the level scrolled `position` logical units; while the scroll is paused short of it, the stage waits. It only runs in a stage. |
+| `level.scroll()` | how far the level scrolled, in logical units. |
+| `level.pause_scroll()`, `level.resume_scroll()` | stop the scroll where it is, and let it move on. The decor of the players stops and moves with it. |
+| `level.biome(name)` | names the biome the players see from now: 1 to 24 lowercase letters, digits and underscores. A client draws the decor it has for that name (see [Client](/R-Type/client/#decor-of-a-biome-biomedecor)), and the stars alone for a name it does not know. |
+| `level.enemies()` | how many enemies the world holds, the bodies of side `enemy`. |
+
+What a script may rely on:
+
+- **A stage steps before the bodies.** Each tick, the stage due runs first, then the level scrolls, then the bodies are steered, so a body a stage creates with `behaviours.spawn` appears at the end of that tick. A stage that waits costs nothing; one that runs has the 2 ms of a step.
+- **Each stage after the first starts at a checkpoint.** When a stage returns, the next one starts at the following tick, and the place it starts from is kept: the scroll and the biome of that moment. A team that loses every life past a checkpoint starts that stage again from its first line, at that scroll and in that biome, the scroll moving, with every enemy and missile removed and the lives of the rules given back. Before the first checkpoint, the game is lost.
+- **The level is cleared once its last stage returned and no enemy is left.** The game is then won. A stage that fails, yields by itself or runs past its budget ends the game as lost, and the journal says why once.
+- **Any script may read and move the level during a game that plays one.** The behaviour of a boss may call `level.pause_scroll()` when it arrives. In a game that plays its waves, every function of `level` but `register` raises an error, which stops the body that called it. `bus.on` only runs in the function of a body, so a stage hears no event: it polls, as the example does with `level.enemies()`.
+
+The repository ships one level, `training_run`, in `resources/training-run/`: two stages, a pause of the scroll until a Reaper is destroyed, a checkpoint and two biomes. Play it with `ensure training-run` and `set level training_run` in `server.cfg`.
+
 ## What a script cannot do
 
 - **Reach the system.** The sandbox of Luau removes `io`, `package`, `require`, `dofile`, `loadfile` and `load`, leaves `os` its clock and dates only, and makes every standard library read-only; R-Type also removes `getfenv` and `setfenv`. Each script has globals of its own: a global of one script is not seen by another.
@@ -229,5 +272,7 @@ The three sides found the same 9,457,143 collisions, about 2,600 a tick: 300 bod
 | Change what a published event may carry | `ScriptEvent` and `ScriptEventField` in `src/game/Events/`, read by `publishedFields()` in `LuauEventBindings.cpp` |
 | Change when a subscription ends | `LuauEventSubscription` and `LuauEventSubscriptions`, what one body keeps subscribed, in `src/game/Scripting/Events/` |
 | Change what happens to a body whose subscribed function failed | `LuauBehaviour::steer()` in `src/game/Scripting/`, the only place that stops a script |
+| Change what a level script may call, or what it refuses | the functions of `LuauLevels` in `src/game/Scripting/Level/LuauLevels.cpp`, their names and messages in `LuauLevelConstants.hpp` |
+| Change when a stage is resumed, or what a checkpoint keeps | `LuauLevelRun` in `src/game/Scripting/Level/`, `LevelCheckpoint` in `src/game/Level/` |
 | Expose another function to the scripts | `ScriptMachine::expose()`, before the first script runs, as `BehaviourScripts` exposes `behaviours.register` |
 | Change which files are scripts | `scriptSourcesIn()` in `src/game/Scripting/BehaviourScriptFiles.cpp` |

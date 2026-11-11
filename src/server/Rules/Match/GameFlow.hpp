@@ -27,7 +27,11 @@ namespace rtype::server {
  * when finish() is called, once no player is left in it, once no player left
  * in it has a life (the game is lost), or once the level is cleared (the game
  * is won): its last wave over, and the boss its difficulty names, if any, gone
- * with every other enemy (see BossStage), and from Finished back to
+ * with every other enemy (see BossStage). A game that plays a level a script
+ * directs (GameSettings::level) runs no wave: it is won once that level is
+ * cleared, lost once its script failed, and a team that lost every life past
+ * a checkpoint of the level goes back to it with the lives of the rules
+ * instead of losing (see LevelDirector). From Finished it goes back to
  * WaitingForPlayers after FINISHED_STATE_TICKS ticks. Coming back to
  * WaitingForPlayers builds a new world: every player gets a new ship and the
  * lives of the rules back, is no longer ready, and the tick is 0. The players
@@ -160,8 +164,9 @@ class GameFlow final : public IGameFlow {
 
   /** @brief Logs why and ends the game, as finish() ends it, when it is in
    * progress with no player left in it, with no player left who has a life, or
-   * with its last wave over, then tells the replication how it ended, which
-   * tells the players the result.
+   * with its level cleared or failed, then tells the replication how it
+   * ended, which tells the players the result. A team without a life whose
+   * level reached a checkpoint restarts from it instead.
    */
   void finishIfOver();
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include "LifeKeeperParts.hpp"
 #include "Logger.hpp"
@@ -82,6 +83,14 @@ class LifeKeeper {
    * connected player without a ship, who gets a new one when its wait ends.
    */
   void onTick();
+
+  /**
+   * @brief Brings back a team that lost every life: every connected player
+   * gets @p lives lives, and one without a ship gets a new one at once,
+   * invulnerable for INVULNERABILITY_TICKS ticks, as a ship that comes back
+   * is.
+   */
+  void reviveTheTeam(std::uint8_t lives);
 
  private:
   void onShipContact(const game::ShipContact& contact);

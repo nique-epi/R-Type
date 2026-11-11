@@ -49,6 +49,7 @@ Server settings. Only the supervisor reads `server.cfg`: it runs the lines of it
 | `state-encoding` | the games | `delta` or `full` | `delta` | How each world state is written: as the difference from the newest one the player acknowledged, or with every entity. `delta` also writes a state with every entity when the player acknowledged none, or when the newest it acknowledged is more than 60 ticks older (`MAXIMUM_REFERENCE_DISTANCE`). |
 | `input-delay` | the games | 0 to 30 | 3 | The ticks every player's input is held before it is applied. |
 | `start-at-boss` | the games | 0 or 1 | 0 | 1 starts every game at its boss, without the waves, with ships that never die; the games are then not vanilla. |
+| `level` | the games | the name of a level a script registered, or nothing | nothing | The level every game plays instead of the waves of its difficulty (see [Scripting in Luau](/R-Type/scripting/#directing-a-level)); a name no script registered stops the game process when it starts. The games are then not vanilla. |
 | `database` | the supervisor | a path | empty | The SQLite file the leaderboard of the server is kept in, given to every game; empty for `r-type_server_<port>.db` next to the executable, with the port of the supervisor. |
 | `master-url` | the supervisor | `http(s)://<host>[:<port>]` | empty | The master the server is listed on; empty to run alone. |
 | `master-key` | the supervisor | a key | empty | The key the master gave when the host created the server; empty to run alone. |

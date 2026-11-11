@@ -195,6 +195,20 @@ void LifeKeeper::onTick() {
   }
 }
 
+void LifeKeeper::reviveTheTeam(std::uint8_t lives) {
+  for (ConnectedPlayer* const player : roster_.connected()) {
+    auto* const kept =
+        world_.shipComponentOf<game::Lives>(player->shipEntityId);
+    if (kept != nullptr) {
+      kept->count = lives;
+      continue;
+    }
+    player->livesWithoutShip = lives;
+    player->ticksUntilRespawn = 0;
+    respawn(*player);
+  }
+}
+
 void LifeKeeper::onShipContact(const game::ShipContact& contact) {
   const std::optional<CostlyContact> costly =
       costlyContactOf(world_, roster_, contact);

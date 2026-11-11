@@ -26,5 +26,6 @@ constexpr std::string_view PLAYER_ELIMINATION_EVENT_NAME = "PlayerElimination";
 constexpr std::string_view PLAYER_DEPARTURE_EVENT_NAME = "PlayerDeparture";
 constexpr std::string_view BOSS_ARRIVAL_EVENT_NAME = "BossArrival";
 constexpr std::string_view BOSS_HEALTH_CHANGED_EVENT_NAME = "BossHealthChanged";
+constexpr std::string_view LEVEL_CHANGE_EVENT_NAME = "LevelChange";
 
 }  // namespace rtype::server

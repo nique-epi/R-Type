@@ -12,6 +12,8 @@
 #include "EntitySpawn.hpp"
 #include "EntitySpawned.hpp"
 #include "EventMessage.hpp"
+#include "LevelChange.hpp"
+#include "LevelStatus.hpp"
 #include "MessagePayload.hpp"
 #include "PlayerDeparture.hpp"
 #include "PlayerLeft.hpp"
@@ -106,6 +108,14 @@ EventMessage eventMessageOf(const game::BossHealthChanged& event) {
 EventMessage eventMessageOf(const game::EffectStarted& event) {
   const network::EffectPlayed message{.entityId = event.networkId,
                                       .effect = event.effect};
+  return EventMessage{.message = network::encodedMessage(message),
+                      .guaranteed = true};
+}
+
+EventMessage eventMessageOf(const game::LevelChange& event) {
+  const network::LevelStatus message{.biome = event.biome,
+                                     .scrollPosition = event.scrollPosition,
+                                     .scrollSpeed = event.scrollSpeed};
   return EventMessage{.message = network::encodedMessage(message),
                       .guaranteed = true};
 }

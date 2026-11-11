@@ -632,6 +632,9 @@ constexpr std::string_view BOSS_ENTITY_ID_FIELD = "bossEntityId";
 constexpr std::string_view HEALTH_FIELD = "health";
 constexpr std::string_view FULL_HEALTH_FIELD = "fullHealth";
 constexpr std::string_view STAGE_FIELD = "stage";
+constexpr std::string_view BIOME_FIELD = "biome";
+constexpr std::string_view SCROLL_POSITION_FIELD = "scrollPosition";
+constexpr std::string_view SCROLL_SPEED_FIELD = "scrollSpeed";
 
 /**
  * @brief Wire steps in one logical unit: a coordinate is sent in eighths of a

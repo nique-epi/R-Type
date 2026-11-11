@@ -30,6 +30,9 @@ std::vector<std::string_view> vanillaBreaches(const HostedRules& rules) {
   if (rules.startsAtBoss) {
     breaches.push_back(STARTS_AT_BOSS_BREACH);
   }
+  if (rules.playsALevel) {
+    breaches.push_back(PLAYS_A_LEVEL_BREACH);
+  }
   return breaches;
 }
 

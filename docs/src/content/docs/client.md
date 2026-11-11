@@ -71,6 +71,7 @@ Today it finds its assets folder, loads the assets of its interface, opens a win
 | Effects: explosions, impacts, muzzle flashes, hit flashes, debris, shockwaves, camera shake, figures of gains, arrivals, invulnerability | Available; played when the server says an entity was killed or hit, when a missile or a ship appears, and when a world state says a ship cannot be hit, which it does for 2 s after a ship comes back from a hit (see [Server](/R-Type/server/#lives-lifekeeper)) | `assets/sprites/effects.png`, `src/client/Rendering/Effects/`, `src/client/Rendering/SpriteLook/HitFlashSystem/` |
 | MISSION START: the warp of the stars and the banner | Available; played by the game screen at the start of each game | `src/client/Rendering/Effects/MissionStart/MissionStart.cpp`, `src/client/Widgets/MissionBanner/` |
 | Scrolling background | Available; drawn by the screens module under every screen | `src/client/Rendering/Background/` |
+| Decor of the biome of a level, in parallax layers | Available for two biomes, with **provisional** pictures (see [Decor of a biome](#decor-of-a-biome-biomedecor)) | `src/client/Rendering/Background/BiomeDecor/`, `assets/backgrounds/` |
 | Pictures of the menus, pixel fonts | Available | `src/client/Rendering/Interface/InterfaceCanvas/`, `assets/fonts/` |
 | Squadron of the title screen | Available | `src/client/Rendering/Interface/Squadron/` |
 | Launch intro | Available; played at launch, unless the system asks for less motion | `src/client/Rendering/Intro/`, `src/client/Widgets/IntroOverlay/`, `src/client/Menus/Title/` |
@@ -408,6 +409,17 @@ The sky is painted on a `PixelCanvas` (`rtype_client_pixel_canvas`) of `BACKGROU
 A halo is added on top of the sky: the sky blurred by a Gaussian of `HALO_STANDARD_DEVIATION` (3 background pixels), added at 70 % opacity (`HALO_TINT`). It comes from the sky only, so the sprites get none. On a machine without shaders, or whose driver does not compile the halo shader, the sky is drawn without halo and the reason is logged once by the `Background` module. A render texture that cannot be created raises `RenderTextureNotCreatedException`.
 
 On a Retina Mac, SFML 3 renders every window at its size in points, not in screen pixels, and macOS scales the image up, so the whole client looks softer there than on other screens.
+
+### Decor of a biome: `BiomeDecor`
+
+In a game that plays a level, the server tells the biome and the scroll of that level with `LevelStatus` (see [Protocol](/R-Type/protocol/#level-status)). The game screen hands each one to the sky, `ISky::showLevel()`, and `BiomeDecor` (`src/client/Rendering/Background/BiomeDecor/`) draws the decor of that biome over the stars, under the halo: its layers, from the farthest to the nearest, each a picture as tall as the sky repeated side by side (`decorTileColumns()`).
+
+- **Parallax.** A layer moves by its share of the scroll of the level: `FAR_LAYER_SCROLL_FACTOR` (0.25), `MIDDLE_LAYER_SCROLL_FACTOR` (0.5) and `NEAR_LAYER_SCROLL_FACTOR` (1), so the near layer moves with the level, 30 background pixels per second, and the far one four times slower. The copies land on whole pixels.
+- **Between two messages.** The decor moves the scroll on at the speed the server told, so it needs no message per tick, and it stops while the scroll of the level is paused. The next `LevelStatus` puts it where the server says.
+- **Biomes.** `BIOMES` (`BiomeConstants.hpp`) lists the biomes the client has a decor for: `drift_fields` and `ember_reach`, three layers each, in `assets/backgrounds/`. A name it lacks, or a level without a biome, shows the stars alone, and so does a layer whose picture is not loaded. The game assets hold every layer, so a biome changes without loading.
+- **These pictures are provisional.** They stand in for the decor drawn for each biome: `tests/tools/biome-layers/make_biome_layers.py` writes them from the planets of `sprites/sector_map.png`, one picture per layer. A decor a resource brings is not read yet: the list is in the client.
+
+The decor goes when the game screen does.
 
 ### Sped up and shaken: `ISky`
 

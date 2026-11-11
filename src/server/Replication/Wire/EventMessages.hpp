@@ -7,6 +7,7 @@
 #include "EntityDestruction.hpp"
 #include "EntitySpawn.hpp"
 #include "EventMessage.hpp"
+#include "LevelChange.hpp"
 #include "PlayerDeparture.hpp"
 
 namespace rtype::server {
@@ -42,5 +43,9 @@ namespace rtype::server {
 /** @returns A BossStatus of the boss in play, guaranteed: Defeated with no
  * point left, Enraged once enraged, Fighting otherwise. */
 [[nodiscard]] EventMessage eventMessageOf(const game::BossHealthChanged& event);
+
+/** @returns A LevelStatus of the biome and the scroll of the level,
+ * guaranteed. */
+[[nodiscard]] EventMessage eventMessageOf(const game::LevelChange& event);
 
 }  // namespace rtype::server

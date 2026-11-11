@@ -24,6 +24,9 @@ struct HostedRules {
   network::GameRules gameRules{network::defaultGameRules()};
   /** @brief Whether every game starts at its boss (`--boss`). */
   bool startsAtBoss{false};
+  /** @brief Whether every game plays a level a script directs (the setting
+   * `level`), not the waves of its difficulty. */
+  bool playsALevel{false};
 };
 
 }  // namespace rtype::server

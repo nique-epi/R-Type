@@ -31,9 +31,6 @@ constexpr int SPAWN_TYPE_ARGUMENT = 1;
 constexpr int SPAWN_POSITION_ARGUMENT = 2;
 constexpr int DESTROY_ID_ARGUMENT = 1;
 
-/** @brief The milliseconds of a second, to turn a wait into ticks. */
-constexpr double SCRIPT_MILLISECONDS_PER_SECOND = 1000.0;
-
 /** @brief The keys of the view a script reads. */
 constexpr const char* VIEW_ID_KEY = "id";
 constexpr const char* VIEW_POSITION_KEY = "position";

@@ -32,6 +32,12 @@ set input-delay 3
 # the ships never die, and the game is never vanilla. 0 plays the waves.
 set start-at-boss 0
 
+# [games] The level every game plays: one a script of a resource registered with
+# level.register, such as training_run of the resource training-run. The
+# game is then never vanilla. Empty plays the waves of its difficulty, the
+# survival mode.
+set level ""
+
 # [supervisor] The SQLite file the leaderboard of this server is kept in, on a local disk;
 # a name with a space goes in quotes. Empty: r-type_server_<port>.db next to
 # the executable, with the port above.

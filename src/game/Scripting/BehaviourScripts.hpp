@@ -8,6 +8,7 @@
 #include "LuauBehaviour.hpp"
 #include "LuauBehaviourParts.hpp"
 #include "LuauEventBindings.hpp"
+#include "LuauLevels.hpp"
 #include "LuauResumeContext.hpp"
 #include "ScriptFailureReport.hpp"
 #include "ScriptMachine.hpp"
@@ -25,8 +26,9 @@ namespace rtype::game {
  * @brief The behaviours the server scripts of a game register: it runs the
  * scripts on a machine of its own, which exposes `behaviours.register(name,
  * settings, steer)`, `behaviours.wait(ms, intent)`, `behaviours.spawn(type,
- * position)` and `behaviours.destroy(id)`, and `bus.on` and `bus.emit` (see
- * LuauEventBindings), and hands the behaviours over with the built-in ones.
+ * position)` and `behaviours.destroy(id)`, `bus.on` and `bus.emit` (see
+ * LuauEventBindings) and the table `level` (see LuauLevels), and hands the
+ * behaviours over with the built-in ones.
  *
  * It must outlive the behaviours it hands over: each calls its script on its
  * machine. Neither copied nor moved: the machine reaches it by its address.
@@ -62,16 +64,16 @@ class BehaviourScripts {
   /** @brief Forgets the game of @p orders, unless another took its place. */
   void detachGame(const IEntityOrders& orders) noexcept;
 
-  /** @returns What carries out the bodies the scripts order; nullptr outside
-   * a game. */
-  [[nodiscard]] IEntityOrders* orders() const;
-
   /** @returns What the functions the scripts call know of the step in
    * progress. */
   [[nodiscard]] LuauResumeContext& resumeContext();
 
   /** @returns What gives the scripts the event bus of a game. */
   [[nodiscard]] LuauEventBindings& eventBindings();
+
+  /** @returns The levels the scripts registered, and what directs the one a
+   * game plays. */
+  [[nodiscard]] LuauLevels& levels();
 
   /** @returns What the report of a behaviour calls. */
   [[nodiscard]] const ScriptFailureReport& reportFailure() const;
@@ -89,6 +91,7 @@ class BehaviourScripts {
   ScriptFailureReport reportFailure_;
   LuauResumeContext resumeContext_;
   LuauEventBindings eventBindings_;
+  LuauLevels levels_;
   std::vector<std::unique_ptr<LuauBehaviour>> declared_;
 };
 

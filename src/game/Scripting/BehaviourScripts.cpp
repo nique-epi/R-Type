@@ -1,11 +1,11 @@
 #include "BehaviourScripts.hpp"
-#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
 #include <exception>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
 #include <utility>
@@ -17,6 +17,7 @@
 #include "LuauBehaviour.hpp"
 #include "LuauBehaviourParts.hpp"
 #include "LuauEventBindings.hpp"
+#include "LuauLevels.hpp"
 #include "LuauResumeContext.hpp"
 #include "LuauSetting.hpp"
 #include "Position.hpp"
@@ -24,7 +25,7 @@
 #include "ScriptFunction.hpp"
 #include "ScriptLimits.hpp"
 #include "ScriptSource.hpp"
-#include "TimeConstants.hpp"
+#include "ScriptWait.hpp"
 #include "WholeNumberRange.hpp"
 #include "lua.h"
 #include "lualib.h"
@@ -87,16 +88,12 @@ BehaviourScripts& scriptsOf(lua_State* state) {
 /** @returns The ticks a wait of the milliseconds at its argument lasts, the
  * nearest whole number from 1; raises an error when it is no duration. */
 std::uint32_t waitTicksOf(lua_State* state) {
-  const double milliseconds =
-      luaL_checknumber(state, WAIT_MILLISECONDS_ARGUMENT);
-  if (!std::isfinite(milliseconds) || milliseconds < 0.0) {
+  const std::optional<std::uint32_t> ticks = engine::scriptWaitTicks(
+      luaL_checknumber(state, WAIT_MILLISECONDS_ARGUMENT));
+  if (!ticks.has_value()) {
     raise(state, "a wait is a finite number of milliseconds, from 0");
   }
-  const double ticks = std::round(
-      milliseconds * static_cast<double>(engine::SIMULATION_TICKS_PER_SECOND) /
-      SCRIPT_MILLISECONDS_PER_SECOND);
-  return static_cast<std::uint32_t>(std::clamp(
-      ticks, 1.0, double{std::numeric_limits<std::uint32_t>::max()}));
+  return *ticks;
 }
 
 /** @brief `behaviours.wait(ms, intent)`: yields @p intent to the step in
@@ -114,7 +111,7 @@ int waitOfBody(lua_State* state) {
 /** @returns What carries out the bodies the scripts of @p state order;
  * raises an error outside a game. */
 IEntityOrders& ordersOf(lua_State* state) {
-  IEntityOrders* const orders = scriptsOf(state).orders();
+  IEntityOrders* const orders = scriptsOf(state).resumeContext().orders;
   if (orders == nullptr) {
     raise(state, "bodies are only created and destroyed during a game");
   }
@@ -209,7 +206,8 @@ int registerBehaviour(lua_State* state) {
 BehaviourScripts::BehaviourScripts(ScriptFailureReport reportFailure)
     : machine_(engine::ScriptLimits{}),
       reportFailure_(std::move(reportFailure)),
-      eventBindings_(machine_) {
+      eventBindings_(machine_),
+      levels_(machine_) {
   const std::array functions{
       engine::ScriptFunction{.name = REGISTER_FUNCTION_NAME,
                              .function = registerBehaviour},
@@ -247,13 +245,11 @@ void BehaviourScripts::detachGame(const IEntityOrders& orders) noexcept {
   }
 }
 
-IEntityOrders* BehaviourScripts::orders() const {
-  return resumeContext_.orders;
-}
-
 LuauResumeContext& BehaviourScripts::resumeContext() { return resumeContext_; }
 
 LuauEventBindings& BehaviourScripts::eventBindings() { return eventBindings_; }
+
+LuauLevels& BehaviourScripts::levels() { return levels_; }
 
 const ScriptFailureReport& BehaviourScripts::reportFailure() const {
   return reportFailure_;

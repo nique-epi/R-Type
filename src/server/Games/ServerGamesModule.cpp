@@ -36,6 +36,7 @@
 #include "IResultsArchive.hpp"
 #include "InstallContext.hpp"
 #include "IntegerSettingDefinition.hpp"
+#include "LevelDirector.hpp"
 #include "Logger.hpp"
 #include "ModuleConstants.hpp"
 #include "PathText.hpp"
@@ -161,6 +162,18 @@ const engine::SettingValue& declareStartAtBoss(
       .help = "1 starts every game at its boss, without the waves"});
 }
 
+/** @returns The setting LEVEL_SETTING_NAME, declared in @p configuration:
+ * the level every game plays, or nothing (the default) to play the waves. */
+const engine::SettingValue& declareLevel(
+    engine::ConfigurationRegistry& configuration) {
+  return configuration.declareText(engine::TextSettingDefinition{
+      .name = std::string{LEVEL_SETTING_NAME},
+      .defaultValue = std::string{},
+      .help = "Level a script registered that every game plays, or nothing "
+              "to play the waves",
+      .validate = {}});
+}
+
 }  // namespace
 
 ServerGamesModule::ServerGamesModule(GamesSettings settings)
@@ -223,12 +236,16 @@ void ServerGamesModule::declareSettings(
           .help = "Ticks every player's input is held before it is applied"});
   ruleSettings_.declare(configuration);
   startAtBossSetting_ = &declareStartAtBoss(configuration);
+  levelSetting_ = &declareLevel(configuration);
 }
 
 void ServerGamesModule::start() {
   scripts_ = std::make_unique<game::BehaviourScripts>(
       [this](const std::string& message) { logger_.warn(message); });
   scripts_->run(game::scriptSourcesIn(settings_.contentFolders));
+  if (!levelSetting_->text().empty()) {
+    static_cast<void>(stagesOfLevel(scripts_->levels(), levelSetting_->text()));
+  }
   const game::EntitySheets& types =
       types_.emplace(game::EntitySheets::fromTexts(
           game::sheetTextsInFolders(settings_.contentFolders),
@@ -254,24 +271,28 @@ GameSettings ServerGamesModule::settingsOf(const WaveCatalog& catalog,
       static_cast<std::size_t>(inputDelaySetting_->integer().value_or(
           static_cast<std::int64_t>(settings_.inputDelayTicks)));
   const bool startsAtBoss = startAtBossSetting_->integer().value_or(0) != 0;
+  const std::string& level = levelSetting_->text();
   const std::vector<std::string_view> breaches = vanillaBreaches(
       HostedRules{.wavesFingerprint = catalog.fingerprint(),
                   .sheetsFingerprint = entitySheetsFingerprint(types),
                   .seed = seed,
                   .inputDelayTicks = inputDelayTicks,
                   .gameRules = rules,
-                  .startsAtBoss = startsAtBoss});
+                  .startsAtBoss = startsAtBoss,
+                  .playsALevel = !level.empty()});
   logHowGamesPlay(logger_, rules, breaches);
-  return GameSettings{.seed = seed.has_value() ? *seed : std::random_device{}(),
-                      .waves = catalog.planOf(rules.difficulty),
-                      .types = types,
-                      .statesPerSecond = statesPerSecond,
-                      .stateEncoding = encoding,
-                      .inputDelayTicks = inputDelayTicks,
-                      .rules = rules,
-                      .vanilla = breaches.empty(),
-                      .startsAtBoss = startsAtBoss,
-                      .scripts = scripts_.get()};
+  return GameSettings{
+      .seed = seed.has_value() ? *seed : std::random_device{}(),
+      .waves = catalog.planOf(rules.difficulty),
+      .types = types,
+      .statesPerSecond = statesPerSecond,
+      .stateEncoding = encoding,
+      .inputDelayTicks = inputDelayTicks,
+      .rules = rules,
+      .vanilla = breaches.empty(),
+      .startsAtBoss = startsAtBoss,
+      .level = level.empty() ? std::nullopt : std::optional{level},
+      .scripts = scripts_.get()};
 }
 
 void ServerGamesModule::stop() {

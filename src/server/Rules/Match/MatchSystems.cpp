@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
+#include <string_view>
 #include "BossStage.hpp"
 #include "BossStageParts.hpp"
 #include "CollisionRules.hpp"
@@ -9,13 +11,18 @@
 #include "EntityOrders.hpp"
 #include "EntityOrdersParts.hpp"
 #include "GameContext.hpp"
+#include "GameInstanceConstants.hpp"
+#include "GameSettings.hpp"
 #include "IHitArbitration.hpp"
+#include "LevelDirector.hpp"
+#include "LevelDirectorParts.hpp"
 #include "LifeKeeper.hpp"
 #include "LifeKeeperParts.hpp"
 #include "LookItemKeeper.hpp"
 #include "LookItemKeeperParts.hpp"
 #include "MatchSystemsParts.hpp"
 #include "PlayerController.hpp"
+#include "ServerException.hpp"
 #include "TimeConstants.hpp"
 #include "VolleySystem.hpp"
 #include "VolleySystemParts.hpp"
@@ -38,8 +45,12 @@ void runWorldSystems(GameContext& game, game::World& world) {
   game.systems.get().run(world.components(), engine::SIMULATION_TICK_DURATION);
 }
 
-/** @returns The boss stage of the level played in @p world. */
+/** @returns The boss stage of the level played in @p world; nullptr in a
+ * game that plays a level a script directs. */
 std::unique_ptr<BossStage> bossStageFor(GameContext& game, game::World& world) {
+  if (game.settings.level.has_value()) {
+    return nullptr;
+  }
   return std::make_unique<BossStage>(
       BossStageParts{.world = world,
                      .roster = game.roster.get(),
@@ -50,10 +61,14 @@ std::unique_ptr<BossStage> bossStageFor(GameContext& game, game::World& world) {
                      .healthPercent = game.settings.waves.bossHealthPercent});
 }
 
-/** @returns The spawner of the Bydos of @p world, its draws from @p seed. */
+/** @returns The spawner of the Bydos of @p world, its draws from @p seed;
+ * nullptr in a game that plays a level a script directs. */
 std::unique_ptr<WaveSpawner> waveSpawnerFor(GameContext& game,
                                             game::World& world,
                                             std::uint32_t seed) {
+  if (game.settings.level.has_value()) {
+    return nullptr;
+  }
   return std::make_unique<WaveSpawner>(
       WaveSpawnerParts{.world = world,
                        .roster = game.roster.get(),
@@ -95,6 +110,26 @@ std::unique_ptr<EntityOrders> entityOrdersFor(GameContext& game,
                         .types = game.settings.types,
                         .events = game.events.get(),
                         .scripts = game.settings.scripts});
+}
+
+/** @returns What directs the level the game of @p game plays in @p world;
+ * nullptr for a game that plays the waves of its difficulty.
+ * @throws UnknownLevelException when no script registered that level, the
+ * game having no scripts included. */
+std::unique_ptr<LevelDirector> levelDirectorFor(GameContext& game,
+                                                game::World& world) {
+  const GameSettings& settings = game.settings;
+  if (!settings.level.has_value()) {
+    return nullptr;
+  }
+  if (settings.scripts == nullptr) {
+    throw UnknownLevelException(*settings.level, {});
+  }
+  return std::make_unique<LevelDirector>(
+      LevelDirectorParts{.world = world,
+                         .events = game.events.get(),
+                         .scripts = *settings.scripts,
+                         .level = *settings.level});
 }
 
 /** @returns Whether the boss of the level may come at this tick, after
@@ -143,6 +178,7 @@ MatchSystems::MatchSystems(const MatchSystemsParts& parts)
       weaponSystem_(weaponSystemFor(game_, world_)),
       volleySystem_(volleySystemFor(game_, world_)),
       entityOrders_(entityOrdersFor(game_, world_)),
+      levelDirector_(levelDirectorFor(game_, world_)),
       bossStage_(bossStageFor(game_, world_)),
       lifeKeeper_(lifeKeeperFor(parts)),
       lookItemKeeper_(lookItemKeeperFor(game_, world_)) {}
@@ -151,15 +187,43 @@ void MatchSystems::onTick(IHitArbitration& arbitration, std::uint32_t tick) {
   GameContext& game = game_.get();
   lookItemKeeper_->onTick();
   arbitration.giveViews(world_, game.roster.get(), tick);
+  if (levelDirector_ != nullptr) {
+    levelDirector_->onTick();
+  }
   runWorldSystems(game, world_);
   weaponSystem_->onTick();
   volleySystem_->onTick();
   entityOrders_->onTick();
-  bossStage_->onTick(
-      advanceTheWaves(*waveSpawner_, game.settings.startsAtBoss));
+  if (levelDirector_ == nullptr) {
+    bossStage_->onTick(
+        advanceTheWaves(*waveSpawner_, game.settings.startsAtBoss));
+  }
   lifeKeeper_->onTick();
 }
 
-const BossStage& MatchSystems::bossStage() const { return *bossStage_; }
+std::optional<std::string_view> MatchSystems::victoryReason() const {
+  if (levelDirector_ != nullptr) {
+    return levelDirector_->cleared()
+               ? std::optional{LEVEL_CLEARED_FINISH_REASON}
+               : std::nullopt;
+  }
+  if (!bossStage_->levelCleared()) {
+    return std::nullopt;
+  }
+  return bossStage_->hasBoss() ? BOSS_DEFEATED_FINISH_REASON
+                               : LAST_WAVE_OVER_FINISH_REASON;
+}
+
+bool MatchSystems::levelFailed() const {
+  return levelDirector_ != nullptr && levelDirector_->failed();
+}
+
+bool MatchSystems::restartFromCheckpoint() {
+  if (levelDirector_ == nullptr || !levelDirector_->restartFromCheckpoint()) {
+    return false;
+  }
+  lifeKeeper_->reviveTheTeam(game_.get().settings.rules.lives);
+  return true;
+}
 
 }  // namespace rtype::server

@@ -5,18 +5,23 @@
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <cstdint>
+#include <utility>
 #include "BackgroundColorConstants.hpp"
 #include "BackgroundConstants.hpp"
 #include "ShiftedView.hpp"
+#include "SkyLevel.hpp"
+#include "TextureLookup.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::client {
 
-ScrollingBackground::ScrollingBackground(std::uint32_t seed)
-    : starfield_(seed) {}
+ScrollingBackground::ScrollingBackground(std::uint32_t seed,
+                                         TextureLookup textureOf)
+    : starfield_(seed), decor_(std::move(textureOf)) {}
 
 void ScrollingBackground::advance(engine::Duration elapsed) {
   starfield_.advance(elapsed);
+  decor_.advance(elapsed);
 }
 
 void ScrollingBackground::setSpeedFactor(float factor) {
@@ -25,6 +30,10 @@ void ScrollingBackground::setSpeedFactor(float factor) {
 
 void ScrollingBackground::setOffset(sf::Vector2i pixels) { offset_ = pixels; }
 
+void ScrollingBackground::showLevel(const SkyLevel& level) {
+  decor_.show(level);
+}
+
 void ScrollingBackground::draw(sf::RenderTarget& target) {
   pixels_.clear();
   starfield_.paint(pixels_);
@@ -32,6 +41,7 @@ void ScrollingBackground::draw(sf::RenderTarget& target) {
   sky.clear(SKY_COLOR);
   sky.setView(shiftedBy(sky.getDefaultView(), offset_));
   sky.draw(pixels_);
+  decor_.draw(sky);
   sky.setView(sky.getDefaultView());
   sky.display();
   sky_.show(target);

@@ -99,6 +99,14 @@ class UnknownDifficultyException : public ServerException {
                              const std::vector<std::string>& known);
 };
 
+/** @brief No script registered the level the games are set to play. */
+class UnknownLevelException : public ServerException {
+ public:
+  /** @param known The levels the scripts registered, in the message. */
+  UnknownLevelException(const std::string& level,
+                        const std::vector<std::string>& known);
+};
+
 /** @brief The game of the process was asked for before the games module
  * created it. */
 class GameNotCreatedException : public ServerException {

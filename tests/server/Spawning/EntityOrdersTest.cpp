@@ -193,7 +193,7 @@ TEST_F(EntityOrdersFixture, LetsTheScriptsGoWhenTheWorldGoes) {
 
   game.reset();
 
-  EXPECT_EQ(scripts.orders(), nullptr);
+  EXPECT_EQ(scripts.resumeContext().orders, nullptr);
 }
 
 /**
@@ -209,7 +209,7 @@ TEST_F(EntityOrdersFixture, KeepsTheNewWorldWhenTheOldOneGoes) {
 
   oldGame.reset();
 
-  EXPECT_EQ(scripts.orders(), &newGame);
+  EXPECT_EQ(scripts.resumeContext().orders, &newGame);
 }
 
 /**
