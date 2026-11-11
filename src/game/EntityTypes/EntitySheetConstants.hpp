@@ -72,7 +72,7 @@ constexpr std::array GAMEPLAY_KEYS{
     FRAGILE_KEY,  BURST_KEY,  VOLLEY_KEY,    BOSS_KEY,
     LOOK_ITEM_KEY};
 
-/** @brief The keys of `[gameplay.hitbox]`, in logical units: its size, and
+/** @brief The keys of one box of a hitbox, in logical units: its size, and
  * where its center is from the Position of the body, 0 without them. */
 constexpr std::string_view WIDTH_KEY = "width";
 constexpr std::string_view HEIGHT_KEY = "height";
@@ -80,6 +80,15 @@ constexpr std::string_view OFFSET_X_KEY = "offset_x";
 constexpr std::string_view OFFSET_Y_KEY = "offset_y";
 constexpr std::array HITBOX_KEYS{WIDTH_KEY, HEIGHT_KEY, OFFSET_X_KEY,
                                  OFFSET_Y_KEY};
+
+/** @brief The key of an array of boxes: `[[gameplay.hitbox.box]]`, the boxes
+ * of a body that collides with several, and `[[gameplay.hurt_zone.box]]`. */
+constexpr std::string_view BOX_KEY = "box";
+
+/** @brief The keys of `[gameplay.hitbox]`: the keys of its one box, or the
+ * array of its boxes, never both. */
+constexpr std::array HITBOX_TABLE_KEYS{WIDTH_KEY, HEIGHT_KEY, OFFSET_X_KEY,
+                                       OFFSET_Y_KEY, BOX_KEY};
 
 /** @brief The keys of `[gameplay.motion]`: a ship has a kind only, a steady
  * body its top speed too. */
@@ -108,7 +117,6 @@ constexpr std::array BURST_KEYS{AFTER_KEY, COUNT_KEY, SHARD_KEY};
 /** @brief The keys of `[gameplay.hurt_zone]`: its boxes, an array of tables
  * `[[gameplay.hurt_zone.box]]`, and its beams, `[[gameplay.hurt_zone.beam]]`,
  * which it may leave out. */
-constexpr std::string_view BOX_KEY = "box";
 constexpr std::string_view BEAM_KEY = "beam";
 constexpr std::array HURT_ZONE_KEYS{BOX_KEY, BEAM_KEY};
 
@@ -270,6 +278,12 @@ constexpr std::string_view SHIP_MOTION_RULE =
     "a body of side player moves as a ship, and only such a body";
 constexpr std::string_view SHIP_HITBOX_RULE =
     "a ship collides with the box shipAfter() keeps on screen";
+constexpr std::string_view HITBOX_SHAPE_RULE =
+    "a hitbox gives the size of its one box or lists its boxes, never both";
+constexpr std::string_view HITBOX_BOXES_RULE =
+    "a hitbox that lists its boxes holds at least one";
+constexpr std::string_view HITBOX_PARTS_SIDE_RULE =
+    "only a body of side enemy collides with several boxes";
 constexpr std::string_view MISSILE_GUN_RULE = "a missile has no gun";
 constexpr std::string_view BURST_SIDE_RULE =
     "only a missile bursts into shards";

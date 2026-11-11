@@ -1,6 +1,7 @@
 #include "FixedEntityTypeSource.hpp"
 #include <cstdint>
 #include <optional>
+#include <span>
 #include "Animation.hpp"
 #include "CollisionBox.hpp"
 #include "EntityAppearance.hpp"
@@ -38,6 +39,7 @@ std::optional<EntityType> sideNumbered(std::uint8_t number) {
   switch (number) {
     case rtype::client::testing::DRIFTER_TYPE_NUMBER:
     case rtype::client::testing::WEAVER_TYPE_NUMBER:
+    case rtype::client::testing::TWO_BOX_ENEMY_TYPE_NUMBER:
       return EntityType::Enemy;
     case rtype::client::testing::ENEMY_MISSILE_TYPE_NUMBER:
       return EntityType::EnemyMissile;
@@ -66,6 +68,15 @@ rtype::game::CollisionBox boxOfSide(EntityType side) {
       return rtype::client::testing::BYDO_BOX;
   }
   return rtype::client::testing::BYDO_BOX;
+}
+
+/** @returns The boxes the double lists for the type numbered @p number: those
+ * of the enemy of two boxes, none for any other type. */
+std::span<const rtype::game::CollisionBox> partsNumbered(std::uint8_t number) {
+  if (number == rtype::client::testing::TWO_BOX_ENEMY_TYPE_NUMBER) {
+    return rtype::client::testing::TWO_BOX_ENEMY_PARTS;
+  }
+  return {};
 }
 
 }  // namespace
@@ -101,7 +112,8 @@ std::optional<EntityTypeLook> FixedEntityTypeSource::lookOf(
   }
   return EntityTypeLook{.side = *side,
                         .appearance = appearanceOfSide(*side),
-                        .hitbox = boxOfSide(*side)};
+                        .hitbox = boxOfSide(*side),
+                        .hitboxParts = partsNumbered(number)};
 }
 
 rtype::game::ShipGun FixedEntityTypeSource::shipGun() const {

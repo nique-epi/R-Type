@@ -10,6 +10,7 @@
 #include "BeamOverlap.hpp"
 #include "Bounds.hpp"
 #include "BoundsOf.hpp"
+#include "CollidingBoxes.hpp"
 #include "CollisionBox.hpp"
 #include "CollisionConstants.hpp"
 #include "CollisionFilter.hpp"
@@ -20,6 +21,7 @@
 #include "EntityBounds.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
+#include "HitboxParts.hpp"
 #include "HurtZone.hpp"
 #include "HurtingEnemy.hpp"
 #include "Intent.hpp"
@@ -161,9 +163,9 @@ void recordHurts(engine::ComponentRegistry& components, PastTick& tick,
       });
 }
 
-/** @brief Adds to @p tick the box of every enemy that is not summoning and
- * every missile of an enemy of @p components, of those that have a collision
- * filter. */
+/** @brief Adds to @p tick each box (collidingBoxesOf()) of every enemy that
+ * is not summoning and the box of every missile of an enemy of @p components,
+ * of those that have a collision filter. */
 void recordBodiesAndMissiles(engine::ComponentRegistry& components,
                              PastTick& tick) {
   components.forEach<EntityType, Position>(
@@ -180,12 +182,15 @@ void recordBodiesAndMissiles(engine::ComponentRegistry& components,
         if (box == nullptr || filter == nullptr) {
           return;
         }
-        (isABody ? tick.bodies : tick.threats)
-            .push_back(PastEnemy{
-                .entity = entity,
-                .bounds = boundsOf(position, *box),
-                .kind = isABody ? ThreatKind::Body : ThreatKind::Missile,
-                .filter = *filter});
+        for (const CollisionBox& part :
+             collidingBoxesOf(*box, components.get<HitboxParts>(entity))) {
+          (isABody ? tick.bodies : tick.threats)
+              .push_back(PastEnemy{
+                  .entity = entity,
+                  .bounds = boundsOf(position, part),
+                  .kind = isABody ? ThreatKind::Body : ThreatKind::Missile,
+                  .filter = *filter});
+        }
       });
 }
 

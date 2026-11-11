@@ -17,9 +17,9 @@
     rtype::game::EntityType side);
 
 /**
- * @brief The table of the five shipped sheets, numbered as
- * FixedEntityTypeSourceConstants.hpp lists them, each looking as
- * appearanceOfSide() gives its side.
+ * @brief The table of the sheets FixedEntityTypeSourceConstants.hpp lists,
+ * numbered as it numbers them, each looking as appearanceOfSide() gives its
+ * side; the enemy of two boxes lists TWO_BOX_ENEMY_PARTS.
  */
 class FixedEntityTypeSource final : public rtype::client::IEntityTypeSource {
  public:

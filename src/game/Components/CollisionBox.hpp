@@ -16,6 +16,8 @@ struct CollisionBox {
   float height{};
   float offsetX{0.0F};
   float offsetY{0.0F};
+
+  bool operator==(const CollisionBox&) const = default;
 };
 
 }  // namespace rtype::game

@@ -64,6 +64,12 @@ constexpr rtype::engine::CollisionFilter SHIP_HITTING_ENEMIES_FILTER{
     .layer = PLAYER_LAYER, .hits = ENEMY_LAYER};
 
 /**
+ * @brief An enemy that hits the enemies, its own layer.
+ */
+constexpr rtype::engine::CollisionFilter ENEMY_HITTING_ENEMIES_FILTER{
+    .layer = ENEMY_LAYER, .hits = ENEMY_LAYER};
+
+/**
  * @brief Width and height of the square every collision test starts from.
  */
 constexpr float SQUARE_SIDE = 10.0F;

@@ -1,5 +1,7 @@
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <optional>
+#include <span>
 #include "CollisionBox.hpp"
 #include "EntityType.hpp"
 #include "EntityTypeLook.hpp"
@@ -12,6 +14,7 @@ using game::EntityType;
 using testing::EntityTypeLooksFixture;
 using testing::LOOKED_UP_BOX_HEIGHT;
 using testing::LOOKED_UP_BOX_WIDTH;
+using testing::LOOKED_UP_BOXES;
 using testing::LOOKED_UP_SHIP_GUN;
 using testing::LOOKED_UP_TYPE_NAME;
 using testing::LOOKED_UP_TYPE_NUMBER;
@@ -46,6 +49,22 @@ TEST_F(EntityTypeLooksFixture, GivesTheBoxTheTableGivesTheType) {
       look.has_value() ? look->hitbox : game::CollisionBox{};
   EXPECT_FLOAT_EQ(box.width, LOOKED_UP_BOX_WIDTH);
   EXPECT_FLOAT_EQ(box.height, LOOKED_UP_BOX_HEIGHT);
+}
+
+/**
+ * Given the client's own content, whose first type lists two boxes
+ * When the look of number 1 is asked for
+ * Then it carries those two boxes
+ */
+TEST_F(EntityTypeLooksFixture, GivesTheBoxesTheTableListsForTheType) {
+  const std::optional<EntityTypeLook> look =
+      looks().lookOf(LOOKED_UP_TYPE_NUMBER);
+  ASSERT_TRUE(look.has_value());
+
+  const std::span<const game::CollisionBox> parts =
+      look.has_value() ? look->hitboxParts
+                       : std::span<const game::CollisionBox>{};
+  EXPECT_THAT(parts, ::testing::ElementsAreArray(LOOKED_UP_BOXES));
 }
 
 /**

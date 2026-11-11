@@ -9,6 +9,7 @@
 #include "AnimatedSprite.hpp"
 #include "Bounds.hpp"
 #include "BoundsOf.hpp"
+#include "CollidingBoxes.hpp"
 #include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectSpawner.hpp"
@@ -20,6 +21,7 @@
 #include "EntityType.hpp"
 #include "EntityTypeConstants.hpp"
 #include "EntityTypeLook.hpp"
+#include "HitboxParts.hpp"
 #include "IEntityTypeSource.hpp"
 #include "Muzzle.hpp"
 #include "Overlaps.hpp"
@@ -166,7 +168,8 @@ void takeAwayIf(std::vector<OwnMissile>& missiles,
   });
 }
 
-/** @brief Fills @p boxes with the box of every enemy drawn on screen. */
+/** @brief Fills @p boxes with each box (game::collidingBoxesOf()) of every
+ * enemy drawn on screen. */
 void collectEnemyBoxes(engine::ComponentRegistry& components,
                        std::vector<engine::Bounds>& boxes) {
   boxes.clear();
@@ -174,9 +177,13 @@ void collectEnemyBoxes(engine::ComponentRegistry& components,
       [&components, &boxes](engine::Entity entity, const game::EntityType& side,
                             const game::Position& position) {
         const auto* const box = components.get<game::CollisionBox>(entity);
-        if (side == game::EntityType::Enemy && box != nullptr &&
-            components.has<game::Sprite>(entity)) {
-          boxes.push_back(game::boundsOf(position, *box));
+        if (side != game::EntityType::Enemy || box == nullptr ||
+            !components.has<game::Sprite>(entity)) {
+          return;
+        }
+        for (const game::CollisionBox& part : game::collidingBoxesOf(
+                 *box, components.get<game::HitboxParts>(entity))) {
+          boxes.push_back(game::boundsOf(position, part));
         }
       });
 }

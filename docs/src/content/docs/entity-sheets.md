@@ -60,6 +60,7 @@ projectile = "enemy_missile"
 | `pilot` | | `player`, or the name of a behaviour: `straight`, `weave`, `scatter`, `reaper`, `drillback`, `bydomancer`, `bydo_tyrant`, or one a server script of a resource registers | what writes its `Intent`: the input of its player, or that behaviour (see [Behaviours](#behaviours-and-their-settings) and [Scripting in Luau](/R-Type/scripting/)) |
 | `hitbox.width`, `hitbox.height` | logical units | 1 to 1024 | its `CollisionBox`, centered on its position |
 | `hitbox.offset_x`, `hitbox.offset_y` | logical units | -1024 to 1024; 0 when left out | where the center of its `CollisionBox` lies from its position, y growing downwards: the box of the Bydo Tyrant covers its body, 12 units right of and 4 below its center |
+| `hitbox.box` | | an array of tables, `[[gameplay.hitbox.box]]`, at least one, in place of the four keys above; enemies only | its `HitboxParts`: the rectangles it collides with, each with the four keys above (see [A hitbox of several boxes](#a-hitbox-of-several-boxes-hitboxbox)) |
 | `motion.kind` | | `ship`, `steady` | how a direction moves it: the drift, roll and dash of a ship (`ShipMotion`), or its top speed times the direction (`SteadyMotion`) |
 | `motion.top_speed` | logical units per second | 1 to 4096; for `steady` only | its speed on each axis at a full direction |
 | `[gameplay.behaviour]` | | the settings its behaviour declares | the values its behaviour reads |
@@ -112,6 +113,7 @@ A sheet whose keys are each valid is refused when it does not hold together:
 
 - A `player` pilot steers a body of side `player`, and only such a body.
 - A body of side `player` moves as a `ship`, and only such a body. Its hitbox is 128 × 64 (`SHIP_WIDTH` × `SHIP_HEIGHT`, `src/game/ShipControl/ShipControlConstants.hpp`), centered on its position (no `offset_x` or `offset_y` other than 0), the box `shipAfter()` keeps on screen.
+- A hitbox gives the size of its one box (`width`, `height`, and the offsets if any) or lists its boxes (`box`), never both, and a list holds at least one box. Only a body of side `enemy` lists boxes: a ship, a missile and a look item keep one.
 - A missile, of side `player_missile` or `enemy_missile`, has no gun.
 - A missile flies towards the edge that removes it (see [Piloted bodies](/R-Type/server/#piloted-bodies-pilotsystem-and-playfieldexitsystem)): on its first tick its pilot steers a missile of side `player_missile` to the right and one of side `enemy_missile` to the left. A `straight` heading of 1 for the first, of -1 for the second; the `weave` goes left, and so does `scatter` on its first tick, still on the point it steers from, so both may pilot a missile of an enemy only. A missile flying the other way, or staying, would never be removed when it hits nothing. The check looks at the first tick only: a missile that turns later, as a shard of a burst, leaves by any edge it flies towards.
 - `[gameplay.behaviour]` stands only when the behaviour of the pilot declares settings, and then holds exactly those settings.
@@ -125,6 +127,30 @@ A sheet whose keys are each valid is refused when it does not hold together:
 - A sheet hits only layers a sheet of the folder lies in, and the sheets lie in at most 32 layers (`MAXIMUM_COLLISION_LAYERS`, `src/engine/Collision/Layers/`): a filter keeps one bit per layer.
 - A box names its `attack` and its `phase` together, or neither; a box that names neither has no `from_ms` or `until_ms`, and `until_ms` is above `from_ms`. An `attack` is a number the sheet gives its own attacks: the code knows no attack by name.
 - The waves file names enemies among the sheets of side `enemy`, and the boss of a difficulty among the sheets that have a `boss` (see [Writing the waves file](/R-Type/waves-file/#enemies)).
+
+## A hitbox of several boxes: `hitbox.box`
+
+One rectangle around a large enemy also covers the empty corners of its drawing, so a missile that flies through them hits it. A sheet of side `enemy` may list several rectangles instead, each laid from the position of the body as a hitbox of one box is:
+
+```toml
+[[gameplay.hitbox.box]]
+width = 160
+height = 120
+offset_y = -140
+
+[[gameplay.hitbox.box]]
+width = 320
+height = 200
+offset_x = 40
+offset_y = 60
+```
+
+- The body collides with each box and with nothing between them. A target two of its boxes touch on the same tick counts one contact, and the boxes of one body never collide with each other.
+- The server gives the body a `HitboxParts` (`src/game/Components/HitboxParts.hpp`) holding the boxes, in the order of the file, and reads them through `collidingBoxesOf()` (`CollidingBoxes.hpp`) in `CollisionSystem` and in `LagCompensatedHitSystem`. The client reads the same list from the sheet and tests its own missiles against it, so an impact it predicts is one the server counts.
+- Its `CollisionBox` becomes the smallest rectangle that holds every box. What needs one rectangle for the body reads that one: `PlayfieldExitSystem` to tell when it left the playfield, `WeaponSystem` to place the muzzle of its gun, and the size a script sets (`resizesTo` of its `Intent`), which changes that rectangle and leaves the boxes as they are.
+- A sheet with `width` and `height` has no `HitboxParts`, and collides with its `CollisionBox` alone, as before.
+
+No shipped sheet lists boxes yet.
 
 ## Collision layers: `layer` and `hits`
 
@@ -269,6 +295,8 @@ Each program stops on the first error and exits with code 1. A game process prin
 | a behaviour table on the ship | `…/entities/ship.toml:39:1: gameplay.behaviour: only a behaviour that declares settings has a behaviour table` |
 | a gun on a missile | `…/entities/enemy_missile.toml:38:1: gameplay.gun: a missile has no gun` |
 | a missile flying away from its edge (`heading = -1` on `player_missile`) | `…/entities/player_missile.toml:14:9: gameplay.pilot: a missile flies towards the edge that removes it: the right one for a missile of a player, the left one for a missile of an enemy` |
+| a size beside a list of boxes | `…/entities/crawler.toml:16:1: gameplay.hitbox.width: a hitbox gives the size of its one box or lists its boxes, never both` |
+| several boxes on a missile | `…/entities/enemy_missile.toml:15:1: gameplay.hitbox: only a body of side enemy collides with several boxes` |
 | a ship of another box | `…/entities/ship.toml:15:1: gameplay.hitbox: a ship collides with the box shipAfter() keeps on screen` |
 | a projectile no sheet has (`"bullet"`) | `…/entities/drifter.toml:35:14: gameplay.gun.projectile: unknown value "bullet"; known: drifter, enemy_missile, player_missile, ship, weaver` |
 | a projectile of the wrong side (`"player_missile"` on a Bydo) | `…/entities/drifter.toml:35:14: gameplay.gun.projectile: a player fires missiles of a player, an enemy missiles of an enemy` |

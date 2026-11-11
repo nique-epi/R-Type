@@ -17,6 +17,7 @@
 #include "FixedEntityTypeSource.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
 #include "HitFlash.hpp"
+#include "HitboxParts.hpp"
 #include "Invulnerability.hpp"
 #include "Layer.hpp"
 #include "Lifetime.hpp"
@@ -209,6 +210,19 @@ std::optional<game::CollisionBox> boxOfThe(
                      const game::EntityType& side) {
         if (side == type) {
           found = box;
+        }
+      });
+  return found;
+}
+
+std::optional<game::HitboxParts> partsOfThe(
+    engine::ComponentRegistry& components, game::EntityType type) {
+  std::optional<game::HitboxParts> found;
+  components.forEach<game::HitboxParts, game::EntityType>(
+      [&found, type](engine::Entity, const game::HitboxParts& parts,
+                     const game::EntityType& side) {
+        if (side == type) {
+          found = parts;
         }
       });
   return found;

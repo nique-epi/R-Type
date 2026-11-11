@@ -10,6 +10,7 @@
 #include "CollisionBox.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
+#include "HitboxParts.hpp"
 #include "Layer.hpp"
 #include "Position.hpp"
 #include "SpriteFrame.hpp"
@@ -122,6 +123,11 @@ DrawnEntity effectAt(game::SpriteFrame firstFrame, game::Position position);
  * shows its idle; nothing when the client has no such entity. */
 [[nodiscard]] std::optional<std::uint8_t> shownLookOf(
     engine::ComponentRegistry& components, std::uint32_t networkId);
+
+/** @returns The HitboxParts of the only entity of that type, nothing when it
+ * has none or there is no such entity. */
+[[nodiscard]] std::optional<game::HitboxParts> partsOfThe(
+    engine::ComponentRegistry& components, game::EntityType type);
 
 /** @returns The EntitySpawned of the player missile PLAYER_MISSILE_ID at
  * PLAYER_MISSILE_POSITION, fired by player @p owner with SOME_FIRING_INPUT. */
