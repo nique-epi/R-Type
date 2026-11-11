@@ -55,6 +55,7 @@ Paths below are relative to `.claude/rules/`.
 | Opening a PR | `fix/format/fix-format-pull-requests-in-english.md`, `fix/format/fix-format-pr-links-its-linear-issue.md`, `fix/process/fix-process-pr-always-opened-as-draft.md`, the `document-feature` skill if the feature is not documented yet |
 | Commenting on a PR, answering the user | `fix/format/fix-format-french-in-the-conversation-and-pr-comments.md` |
 | Reviewing | `core/code-review.md` |
+| Exploring the code before a change | `fix/process/fix-process-query-the-graphify-graph-before-exploring.md` |
 | Announcing a green gate | `fix/execution/fix-execution-zsh-pipestatus.md`, `fix/execution/fix-execution-zero-warnings-proven-on-a-recompiling-build.md`, `fix/execution/fix-execution-run-clang-tidy-before-push.md`, `fix/execution/fix-execution-shellcheck-a-script-before-push.md` |
 | Writing a documentation page or a diagram | `fix/format/fix-format-schematic-diagrams-and-map-level-pages.md`, `fix/format/fix-format-context-before-the-deliverable.md`, the `document-feature` skill |
 | Making a mistake | `core/errors-learning.md` — a mistake in the code produces a new rule, a mistake outside it none |
@@ -127,6 +128,7 @@ Paths below are relative to `.claude/rules/`.
 - `fix/process/fix-process-instrument-before-reasoning-docs-are-truth.md`
 - `fix/process/fix-process-no-co-author-trailer.md`
 - `fix/process/fix-process-plan-mode-writes-only-the-plan.md`
+- `fix/process/fix-process-query-the-graphify-graph-before-exploring.md`
 - `fix/process/fix-process-pr-always-opened-as-draft.md`
 - `fix/process/fix-process-read-the-project-map-before-placing-a-folder.md`
 - `fix/process/fix-process-relay-agent-report-separating-verified-facts.md`
