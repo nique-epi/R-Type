@@ -300,4 +300,17 @@ constexpr std::string_view LOOK_ITEM_HEADING_RULE =
 constexpr std::string_view PROJECTILE_SIDE_RULE =
     "a player fires missiles of a player, an enemy missiles of an enemy";
 
+/**
+ * @brief The sheets of side `enemy_missile` that a missile of a player shoots
+ * down: both disappear, the missile of the enemy in an explosion. A sheet left
+ * out, or added by a resource, flies through the missiles of the players. The
+ * sheet of a missile of a player hits the layer these lie in, so the pair
+ * reaches CollisionRules (`player_missile.toml`).
+ */
+constexpr std::array SHOOTABLE_MISSILE_SHEETS{
+    std::string_view{"enemy_missile"},      std::string_view{"orb_shard"},
+    std::string_view{"tyrant_missile"},     std::string_view{"tyrant_spore"},
+    std::string_view{"tyrant_spore_shard"},
+};
+
 }  // namespace rtype::game
