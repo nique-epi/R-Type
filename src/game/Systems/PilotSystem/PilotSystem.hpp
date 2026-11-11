@@ -59,7 +59,9 @@ class PilotSystem final : public engine::ISystem {
 
   /** @brief Publishes an EffectStarted for the effect @p intent of @p body
    * plays, when the sheet of the body names it (VisualNames); a name the sheet
-   * does not hold is dropped. */
+   * does not hold is dropped, and so is an effect asked for less than
+   * EFFECT_REST after the last one the body played, so a behaviour that names
+   * an effect at every tick cannot flood the guaranteed messages. */
   void announceEffectOf(engine::ComponentRegistry& components,
                         engine::Entity body, const Intent& intent);
 

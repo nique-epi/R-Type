@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <cstddef>
 #include <string>
 #include <vector>
 #include "ActionRequestingBehaviour.hpp"
@@ -27,6 +28,7 @@ using rtype::game::testing::IDLE_LOOK;
 using rtype::game::testing::IDLE_LOOK_NUMBER;
 using rtype::game::testing::PilotSystemFixture;
 using rtype::game::testing::SPARK_EFFECT;
+using rtype::game::testing::TICKS_OF_AN_EFFECT_REST;
 using rtype::game::testing::UNNAMED_EFFECT;
 using rtype::game::testing::UNNAMED_LOOK;
 using rtype::game::testing::VISUAL_BODY_NETWORK_ID;
@@ -51,6 +53,49 @@ TEST_F(PilotSystemFixture, AnEffectTheSheetNamesIsPublished) {
       {.networkId = VISUAL_BODY_NETWORK_ID,
        .effect = std::string{SPARK_EFFECT}}};
   EXPECT_EQ(takeStartedEffects(), expected);
+}
+
+/**
+ * Given a body whose sheet names spark, and whose behaviour plays it at every
+ * tick
+ * When the pilots run for a quarter of a second
+ * Then spark is published once, the body resting after it
+ */
+TEST_F(PilotSystemFixture, AnEffectNamedAtEveryTickIsPublishedOncePerRest) {
+  const SheetVisualNames names{.effects = {std::string{SPARK_EFFECT}},
+                               .looks = {}};
+  const ActionRequestingBehaviour behaviour{
+      Intent{.playsEffect = std::string{SPARK_EFFECT}}};
+  const Entity body = addEnemy(behaviour, VISUAL_BODY_NETWORK_ID);
+  components().add(body, VisualNames{.names = &names});
+
+  for (std::size_t tick = 0; tick < TICKS_OF_AN_EFFECT_REST; ++tick) {
+    run(SIMULATION_TICK_DURATION);
+  }
+
+  EXPECT_EQ(takeStartedEffects().size(), 1U);
+}
+
+/**
+ * Given a body that played spark and rested a quarter of a second, and whose
+ * behaviour still plays it
+ * When the pilots run once more
+ * Then spark is published a second time
+ */
+TEST_F(PilotSystemFixture, AnEffectIsPublishedAgainOnceTheRestIsOver) {
+  const SheetVisualNames names{.effects = {std::string{SPARK_EFFECT}},
+                               .looks = {}};
+  const ActionRequestingBehaviour behaviour{
+      Intent{.playsEffect = std::string{SPARK_EFFECT}}};
+  const Entity body = addEnemy(behaviour, VISUAL_BODY_NETWORK_ID);
+  components().add(body, VisualNames{.names = &names});
+  for (std::size_t tick = 0; tick < TICKS_OF_AN_EFFECT_REST; ++tick) {
+    run(SIMULATION_TICK_DURATION);
+  }
+
+  run(SIMULATION_TICK_DURATION);
+
+  EXPECT_EQ(takeStartedEffects().size(), 2U);
 }
 
 /**

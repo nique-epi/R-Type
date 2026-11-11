@@ -100,7 +100,7 @@ The function returns a table; every key is optional, and a key left out, or of t
 | `effect` | to play once the effect its sheet names so in `[appearance.effects]`; the server announces it to every player, guaranteed |
 | `look` | to show from now on the look its sheet names so in `[appearance.looks]`, or `""` for its own idle loop; every world state carries it, so a player who joins later sees it too |
 
-The collision box, the top speed and the look stay until a later tick asks for others; an effect plays at each tick that names it. An `effect` or a `look` must be a name of the content, 1 to 24 bytes of `a` to `z`, digits and `_`, otherwise it is left out; a name the sheet of the body does not hold is left out too, silently (see [Named effects and looks](/R-Type/entity-sheets/#named-effects-and-looks)). The script of the example asks for its speed every tick, so its Drifter charges only while a ship is level with it.
+The collision box, the top speed and the look stay until a later tick asks for others; an effect plays at each tick that names it, a quarter of a second (`EFFECT_REST`, 15 ticks) after the last one the body played at the earliest: an effect asked for sooner is left out, so one body announces four effects a second at most. An `effect` or a `look` must be a name of the content, 1 to 24 bytes of `a` to `z`, digits and `_`, otherwise it is left out; a name the sheet of the body does not hold is left out too, silently (see [Named effects and looks](/R-Type/entity-sheets/#named-effects-and-looks)). The script of the example asks for its speed every tick, so its Drifter charges only while a ship is level with it.
 
 ## Waiting, creating and removing bodies
 

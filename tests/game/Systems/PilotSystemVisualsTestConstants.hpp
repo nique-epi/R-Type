@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
 
@@ -7,6 +8,10 @@ namespace rtype::game::testing {
 
 /** @brief The network id of the body the visual tests pilot. */
 constexpr std::uint32_t VISUAL_BODY_NETWORK_ID = 21;
+
+/** @brief The ticks a body rests between two effects: a quarter of a second
+ * at 60 ticks a second. */
+constexpr std::size_t TICKS_OF_AN_EFFECT_REST = 15;
 
 /** @brief What the sheet of the body names: the effect spark, and the looks
  * angry and cracked, numbered 1 and 2 in the order of their names; then

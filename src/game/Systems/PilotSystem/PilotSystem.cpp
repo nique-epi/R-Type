@@ -17,6 +17,7 @@
 #include "Intent.hpp"
 #include "NetworkIdentity.hpp"
 #include "Pilot.hpp"
+#include "PilotConstants.hpp"
 #include "Position.hpp"
 #include "SheetVisualNames.hpp"
 #include "ShownLook.hpp"
@@ -151,10 +152,13 @@ void PilotSystem::announceEffectOf(engine::ComponentRegistry& components,
   }
   const VisualNames* const visuals = components.get<VisualNames>(body);
   const NetworkIdentity* const identity = components.get<NetworkIdentity>(body);
+  auto* const pilot = components.get<Pilot>(body);
   if (visuals == nullptr || visuals->names == nullptr || identity == nullptr ||
+      pilot == nullptr || pilot->age < pilot->nextEffectAge ||
       !namesEffect(*visuals->names, *intent.playsEffect)) {
     return;
   }
+  pilot->nextEffectAge = pilot->age + EFFECT_REST;
   events_.get().publish(EffectStarted{.networkId = identity->networkId,
                                       .effect = *intent.playsEffect});
 }

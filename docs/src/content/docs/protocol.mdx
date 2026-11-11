@@ -510,7 +510,7 @@ A hit during the arrival takes nothing from the boss and sends nothing. The boss
 
 A sheet names effects and looks in its `[appearance]` (see [Entity sheets](/R-Type/entity-sheets/#named-effects-and-looks)), and a script of the server asks for one on a body. Both sides read the same sheets, from the content pack, so a name means the same frames on both.
 
-- **An effect** plays once. The server sends an `EffectPlayed` with the `entityId` of the body and the name of the effect, guaranteed and ordered. The server sends only a name the sheet of the body holds. A client that does not have the body, or whose sheet of that type names no such effect, plays nothing.
+- **An effect** plays once. The server sends an `EffectPlayed` with the `entityId` of the body and the name of the effect, guaranteed and ordered. The server sends only a name the sheet of the body holds, and at most one effect per body every quarter of a second, whatever its script asks for. A client that does not have the body, or whose sheet of that type names no such effect, plays nothing.
 - **A look** lasts. It is a state, so it travels in every state message: `look` is the number of the look the body shows, its place among the looks of the sheet in the order of their names, from 1, or 0 for its own idle loop. A client that joins later, or loses a datagram, shows the right look at the next state. A client shows its idle loop for a number past the looks of the sheet.
 ### Own missiles
 
