@@ -1,5 +1,5 @@
 ---
-title: 'Network protocol: version 15'
+title: 'Network protocol: version 16'
 description: The datagrams the client and the server exchange over UDP, byte by byte, and what each side does when one is lost or cannot be read.
 sidebar:
   label: Protocol
@@ -11,7 +11,7 @@ This page is the specification of the protocol the client and the server speak: 
 
 ## Status of this document
 
-- This is version 15 of the protocol. It is the only version the code speaks. [Versions and compatibility](#versions-and-compatibility) says when the version changes and what two programs of different versions do; [Version 2](#version-2), [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11), [Version 12](#version-12), [Version 13](#version-13), [Version 14](#version-14) and [Version 15](#version-15) say what each changed from the version before, and what the rest of the second part of the project will change.
+- This is version 16 of the protocol. It is the only version the code speaks. [Versions and compatibility](#versions-and-compatibility) says when the version changes and what two programs of different versions do; [Version 2](#version-2), [Version 3](#version-3), [Version 4](#version-4), [Version 5](#version-5), [Version 6](#version-6), [Version 7](#version-7), [Version 8](#version-8), [Version 9](#version-9), [Version 10](#version-10), [Version 11](#version-11), [Version 12](#version-12), [Version 13](#version-13), [Version 14](#version-14), [Version 15](#version-15) and [Version 16](#version-16) say what each changed from the version before, and what the rest of the second part of the project will change.
 - The words MUST, MUST NOT, SHOULD and MAY are used as in RFC 2119. A MUST is a rule every implementation follows to interoperate; a SHOULD names a behavior the code of this repository has and another implementation can drop without breaking the exchange.
 - Everything on this page is checked against the code of `src/network`, `src/server` and `src/client`. [Implementation status](#implementation-status) lists the rules the programs do not apply yet, so a rule never reads as working when it does not.
 - Numbers are decimal unless written `0x`. A size is in bytes.
@@ -78,7 +78,7 @@ Both changes together save 12 bytes on the 268 of the typical state, 4.5 %, befo
 
 ## Datagram
 
-A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 15.
+A datagram is a 22-byte header followed by one or more messages. The header, byte by byte; every field is used in version 16.
 
 <ByteLayout
   label="The 22-byte header: protocolId on bytes 0 to 3, version on byte 4, flags on byte 5, sessionToken on bytes 6 to 13, sequence on bytes 14 and 15, acknowledgedSequence on bytes 16 and 17, acknowledgementBits on bytes 18 to 21."
@@ -101,10 +101,10 @@ A datagram is a 22-byte header followed by one or more messages. The header, byt
   ]}
 />
 
-| Offset | Size | Field | In version 15 |
+| Offset | Size | Field | In version 16 |
 |---|---|---|---|
 | 0 | 4 | `protocolId` | `0x52545950`, `RTYP` in ASCII |
-| 4 | 1 | `version` | 12 |
+| 4 | 1 | `version` | 16 |
 | 5 | 1 | `flags` | `ACKNOWLEDGES` 0x01, `GUARANTEED` 0x02, `COMPRESSED` 0x04, every other bit 0 |
 | 6 | 8 | `sessionToken` | 0 until the connection is accepted, then the token given by the server |
 | 14 | 2 | `sequence` | number of the datagram for its sender |
@@ -186,7 +186,7 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 20 | `DeltaWorldState` | see [Delta world state](#delta-world-state) | during a game, as many times per second as the server was told to (20 by default, from 2 to 60) |
 | 21 | `RoundTrips` | `playerCount` `u8`, then per player `playerNumber` `u8`, `roundTrip` `u32`, `jitter` `u32`, in microseconds | right after each `Heartbeat` of the server (see [Round trip](#round-trip)) |
 | 22 | `EnemyAction` | `entityId` `u32`, `attack` `u8`, `phase` `u8`: 1 `Signal`, 2 `Strike`, 3 `Recover`, 4 `Enraged` | when an enemy enters a step of one of its attacks, guaranteed and ordered (see [Ordered messages](#ordered-messages)) |
-| 23 | `OrderedMessage` | `number` `u16`, `firstKept` `u16`, `innerType` `u8`, then the payload of the carried message to the end | carries `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine`, `BossStatus`, `PlayerLooks`, `LookItemWon` and `LevelStatus` (see [Ordered messages](#ordered-messages)) |
+| 23 | `OrderedMessage` | `number` `u16`, `firstKept` `u16`, `innerType` `u8`, then the payload of the carried message to the end | carries `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine`, `BossStatus`, `PlayerLooks`, `LookItemWon`, `EffectPlayed` and `LevelStatus` (see [Ordered messages](#ordered-messages)) |
 | 25 | `ServerInformation` | `sentAt` `u32`, `heldFor` `u32`, `protocolVersion` `u8`, `gameVersion` `string`, `name` `string`, `playerCount` `u16`, `gameCount` `u16`, `freeSeatCount` `u16` | in answer to a `ServerInformationRequest`, to its sender, outside any session (see [Server information](#server-information)) |
 | 26 | `ConnectionRedirect` | `port` `u16` (1 to 65535) | from a supervisor only, in answer to a request with a valid cookie, once a game that has a place reported; the player asks again at that port of the same address (see [Supervisor](#supervisor)) |
 | 31 | `PlayerChatLine` | `lineNumber` `u16`, `text` `string` (1 to 127 bytes), `playerNumber` `u8` (1 to 4) | to every player of the game, its writer included, once for each new line the server takes, guaranteed and ordered (see [Chat](#chat)) |
@@ -194,7 +194,8 @@ The type identifies a message in both directions: `Disconnection` and `Heartbeat
 | 34 | `Expulsion` | `reason` `u8`: 1 `ByTheHost` | to a player of a game process, in its session, when the supervisor orders its expulsion: three in a row, then the session closes at the next tick (see [A peer disappears](#a-peer-disappears)) |
 | 36 | `PlayerLooks` | `playerCount` `u8` (0 to 4), then per player `playerNumber` `u8` (1 to 4), `head` `u8`, `eyes` `u8`, `face` `u8` | to every player when a player changes its look and when a player arrives, to one player alone when it sends its look unchanged, guaranteed and ordered (see [Ship looks](#ship-looks)) |
 | 37 | `LookItemWon` | `item` `u8` (1 to 10) | to the player who picked up a look item, alone, guaranteed and ordered (see [Ship looks](#ship-looks)) |
-| 38 | `LevelStatus` | `biome` `string` (0 to 24 bytes), `scrollPosition` `f32`, `scrollSpeed` `f32` | in a game that plays a level: when the level starts, when its biome changes, when its scroll stops or starts again and when it goes back to a checkpoint, guaranteed and ordered (see [Level status](#level-status)) |
+| 38 | `EffectPlayed` | `entityId` `u32`, `effect` `string` (1 to 24 bytes) | to every player, when a body plays an effect its sheet names, guaranteed and ordered (see [Named effects and looks](#named-effects-and-looks)) |
+| 39 | `LevelStatus` | `biome` `string` (0 to 24 bytes), `scrollPosition` `f32`, `scrollSpeed` `f32` | in a game that plays a level: when the level starts, when its biome changes, when its scroll stops or starts again and when it goes back to a checkpoint, guaranteed and ordered (see [Level status](#level-status)) |
 
 ### Payload rules
 
@@ -221,6 +222,7 @@ A message is accepted only when its payload has exactly the size its fields add 
 | `ChatLine`, `PlayerChatLine` | `text` is 1 to 127 bytes of valid UTF-8, no control character; `PlayerChatLine` names a `playerNumber` of 1 to 4 |
 | `ShipLookChoice`, `PlayerLooks` | each look byte is 0 or the number of an item of its slot: `head` 0 to 8, `eyes` 0 or 9, `face` 0 or 10; `PlayerLooks` has at most 4 players, each `playerNumber` 1 to 4 and listed once |
 | `LookItemWon` | `item` is 1 to 10 |
+| `EffectPlayed` | `entityId` is not 0; `effect` is a name of the content, 1 to 24 bytes of `a` to `z`, digits and `_`; whether the sheet of the body names it is for the receiver to look up |
 | `LevelStatus` | `biome` is empty or a biome name: 1 to 24 bytes among `a` to `z`, `0` to `9` and `_`; `scrollPosition` and `scrollSpeed` are finite and not negative |
 | `ServerInformation` | `gameVersion` and `name` are 1 to 32 bytes of valid UTF-8, no control character; `playerCount` is at most 4 times `gameCount`, and `playerCount` plus `freeSeatCount` too |
 | `ExpulsionOrder` | the nickname follows the rules of a nickname: 1 to 16 bytes of valid UTF-8, no control character |
@@ -389,7 +391,7 @@ The server keeps, for each player, the highest `inputNumber` it has seen. It rea
 `WorldState` lists every player and every entity of the game, in full each time. The payload of a state with one player and one entity, byte by byte:
 
 <ByteLayout
-  label="A WorldState with one player and one entity: tick on bytes 0 to 3, playerCount on byte 4, the player on bytes 5 to 20 (playerNumber, shipEntityId, lives, score, invulnerable, motion, acknowledgedInput), entityCount on byte 21, the entity on bytes 22 to 30 (entityId, entityType, x, y)."
+  label="A WorldState with one player and one entity: tick on bytes 0 to 3, playerCount on byte 4, the player on bytes 5 to 20 (playerNumber, shipEntityId, lives, score, invulnerable, motion, acknowledgedInput), entityCount on byte 21, the entity on bytes 22 to 31 (entityId, entityType, x, y, look)."
   rows={[
     {
       fields: [
@@ -418,6 +420,7 @@ The server keeps, for each player, the highest `inputNumber` it has seen. It rea
         { name: 'entityType', bytes: 1, tone: 'green' },
         { name: 'x', bytes: 2, tone: 'green' },
         { name: 'y', bytes: 2, tone: 'green' },
+        { name: 'look', bytes: 1, tone: 'green' },
       ],
       note: 'One entity, repeated entityCount times.',
     },
@@ -430,9 +433,9 @@ The server keeps, for each player, the highest `inputNumber` it has seen. It rea
 | `playerCount` | `u8` (1 to 4) |
 | each player | `playerNumber` `u8`, `shipEntityId` `u32` (0 while the player has no ship), `lives` `u8`, `score` `u32`, `invulnerable` `bool`, `motion` `u8`, `acknowledgedInput` `u32` |
 | `entityCount` | `u8` |
-| each entity | `entityId` `u32`, `entityType` `u8`, `position` |
+| each entity | `entityId` `u32`, `entityType` `u8`, `position`, `look` `u8` (see [Named effects and looks](#named-effects-and-looks)) |
 
-`motion` says what the pilot does, one bit each from bit 0: the directions its newest `PlayerInput` holds, at their bits of `actions` (0 up, 1 down, 2 left, 3 right), then 4 its ship rolls, 5 its ship dashes. Bits 6 and 7 are 0, otherwise the message is invalid. `acknowledgedInput` is the `inputNumber` of the newest `PlayerInput` the server applied to the ship of the player, 0 while it applied none (an input the server holds before applying it is not confirmed yet, so the ship it reads is never ahead of the number): a client that predicts its own ship drops the inputs up to it and replays the others on top of the position it reads (see [Client](/R-Type/client/#own-ship-prediction-ownshippredictor-shipprediction)). The field was added to version 1 without changing `PROTOCOL_VERSION`, so two builds of version 1 may misread each other's states; version 2 has it from the start, so two programs of version 2 read the same states. A player takes 16 bytes and an entity 9, so one datagram holds up to 122 entities with 4 players. When the entities do not fit, the server sends several `WorldState` with the same `tick`, each in its own datagram, each with every player and a part of the entities. The client:
+`motion` says what the pilot does, one bit each from bit 0: the directions its newest `PlayerInput` holds, at their bits of `actions` (0 up, 1 down, 2 left, 3 right), then 4 its ship rolls, 5 its ship dashes. Bits 6 and 7 are 0, otherwise the message is invalid. `acknowledgedInput` is the `inputNumber` of the newest `PlayerInput` the server applied to the ship of the player, 0 while it applied none (an input the server holds before applying it is not confirmed yet, so the ship it reads is never ahead of the number): a client that predicts its own ship drops the inputs up to it and replays the others on top of the position it reads (see [Client](/R-Type/client/#own-ship-prediction-ownshippredictor-shipprediction)). The field was added to version 1 without changing `PROTOCOL_VERSION`, so two builds of version 1 may misread each other's states; version 2 has it from the start, so two programs of version 2 read the same states. A player takes 16 bytes and an entity 10, so one datagram holds up to 110 entities with 4 players. When the entities do not fit, the server sends several `WorldState` with the same `tick`, each in its own datagram, each with every player and a part of the entities. The client:
 
 - ignores a `WorldState` whose `tick` is lower than the last one applied; an equal `tick` is another part of the same state. The `tick` is compared as a plain 32-bit integer, without wrap-around: it takes 2.27 years at 60 ticks per second to reach 2³². The sender checks come first, so a forged datagram cannot raise the last `tick` applied;
 - creates an entity it does not know, from its type, with its appearance effect (the shot sound of a missile, for instance);
@@ -444,7 +447,7 @@ Measured on October 24, 2026, before `acknowledgedInput` added 4 bytes per playe
 
 `entityId` is given by the server, unique during a game, and never 0. A `u16` would wrap after about 22 minutes at 50 new entities per second, hence 32 bits.
 
-`entityType` is the number of a sheet of the content pack of the session (see [Entity types](#entity-types)). A `WorldState` or a `DeltaWorldState` may carry any number from 1 to 255: a state is read the same in every session, and what a number names is for the client to look up. An entity of type 0, which no type has, is skipped: it is left out of the state, and the other entities of the same `WorldState` are read. An entity takes 9 bytes whatever its type, so the next one starts where it should. A new kind of entity is a new sheet, and changes nothing on this page.
+`entityType` is the number of a sheet of the content pack of the session (see [Entity types](#entity-types)). A `WorldState` or a `DeltaWorldState` may carry any number from 1 to 255: a state is read the same in every session, and what a number names is for the client to look up. An entity of type 0, which no type has, is skipped: it is left out of the state, and the other entities of the same `WorldState` are read. An entity takes 10 bytes whatever its type, so the next one starts where it should. A new kind of entity is a new sheet, and changes nothing on this page.
 
 ### Delta world state
 
@@ -456,7 +459,7 @@ Measured on October 24, 2026, before `acknowledgedInput` added 4 bytes per playe
 | `baseDistance` | `u8`, 0 to 60: how many ticks back the reference state was taken; 0 means no reference, and `changed` then lists every entity |
 | `partIndex`, `partCount` | `u8` each: this datagram is part `partIndex` (from 0) of `partCount` (1 to 16) |
 | players | `playerCount` `u8`, then each player as in a `WorldState`; every part lists them all |
-| `changed` | `changedCount` `u8`, then each entity as in a `WorldState` (9 bytes): the entities the reference lacks, or whose position, rounded to an eighth of a unit, differs from it |
+| `changed` | `changedCount` `u8`, then each entity as in a `WorldState` (10 bytes): the entities the reference lacks, or whose position, rounded to an eighth of a unit, or look differs from it |
 | `removed` | `removedCount` `u8`, then one `entityId` `u32` each: the entities the reference lists and this state does not |
 
 The server keeps, for each player, the states it sent and the datagram sequence of each part. A state is acknowledged once the datagram of every one of its parts is, which the player says in the `acknowledgedSequence` and `acknowledgementBits` of its own datagrams (see [Datagram](#datagram)); the client acknowledges every datagram it accepts, so no message is added. The server writes a state against the newest state the player acknowledged, as long as it is 1 to 60 ticks older than the one it sends (1 s), and in full, with `baseDistance` 0, otherwise: the first state of a game, and the first after a second without an acknowledged state. It sends a delta even when nothing changed, with both lists empty, so the player keeps acknowledging. A state needing more than 16 datagrams is not sent, and the server logs an error.
@@ -504,9 +507,17 @@ A `BossStatus` tells where the fight with the boss of a level stands, so a clien
 | 4 `Defeated` | a hit took its last point, before its `EntityDestroyed` | the boss, 0, its full health |
 
 A hit during the arrival takes nothing from the boss and sends nothing. The boss is an entity like any other: it moves through the states and is removed by its `EntityDestroyed`, and its attacks come as `EnemyAction`s. A client that receives a `Fighting` or an `Enraged` without an `Arriving` before it shows the fight from there. The time of the warning is not sent: a client counts it from the `Arriving` it received.
+
 ### Level status
 
 A `LevelStatus` tells what the players see of the level a game plays (see [Server](/R-Type/server/#level-a-script-directs-leveldirector)): its `biome`, empty before the level names one, how far it scrolled, `scrollPosition`, in logical units, and the speed of its scroll, `scrollSpeed`, in logical units per second, 0 while the scroll is paused. Each holds the whole state and replaces the one handed over before it. Between two of them a client moves the scroll on at `scrollSpeed`, so it draws the decor of the biome without a message per tick. A game that plays its waves sends none.
+
+### Named effects and looks
+
+A sheet names effects and looks in its `[appearance]` (see [Entity sheets](/R-Type/entity-sheets/#named-effects-and-looks)), and a script of the server asks for one on a body. Both sides read the same sheets, from the content pack, so a name means the same frames on both.
+
+- **An effect** plays once. The server sends an `EffectPlayed` with the `entityId` of the body and the name of the effect, guaranteed and ordered. The server sends only a name the sheet of the body holds, and at most one effect per body every quarter of a second, whatever its script asks for. A client that does not have the body, or whose sheet of that type names no such effect, plays nothing.
+- **A look** lasts. It is a state, so it travels in every state message: `look` is the number of the look the body shows, its place among the looks of the sheet in the order of their names, from 1, or 0 for its own idle loop. A client that joins later, or loses a datagram, shows the right look at the next state. A client shows its idle loop for a number past the looks of the sheet.
 
 ### Own missiles
 
@@ -684,7 +695,7 @@ The programs handle every case above. In a game, a `PlayerLeft` marks its pilot 
 
 ## Ordered messages
 
-`EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine`, `BossStatus`, `PlayerLooks`, `LookItemWon` and `LevelStatus` change the screen once, and no state message repeats what they show, so they are guaranteed and ordered: their sender sends them again until they are acknowledged, and their receiver handles them in the order they were given, so a player never dies on the screen before the hit that killed it. In this version only the server sends them, and only the client acknowledges them.
+`EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine`, `BossStatus`, `PlayerLooks`, `LookItemWon`, `EffectPlayed` and `LevelStatus` change the screen once, and no state message repeats what they show, so they are guaranteed and ordered: their sender sends them again until they are acknowledged, and their receiver handles them in the order they were given, so a player never dies on the screen before the hit that killed it. In this version only the server sends them, and only the client acknowledges them.
 
 - **Acknowledging.** Within a session, every datagram a side sends MUST acknowledge the datagrams it accepted from its peer, with `ACKNOWLEDGES`, `acknowledgedSequence` and `acknowledgementBits` (see [Datagram](#datagram)). A side that accepts a datagram with `GUARANTEED` set SHOULD send a `Heartbeat` to carry the acknowledgement when 40 ms (`ACKNOWLEDGEMENT_DELAY`) pass with nothing else sent; during a game the next `PlayerInput` carries it first.
 - **Numbering.** The server sends each of these messages to each player inside an `OrderedMessage` (type 23): `number` (`u16`), `firstKept` (`u16`), `innerType` (`u8`), then the payload of the message it carries, to the end of the payload. The numbers of a player start at 1 (`FIRST_ORDERED_NUMBER`) and grow by 1 for each message given to that player, wrapping from 65535 to 0. A receiver MUST refuse an `OrderedMessage` that carries an `OrderedMessage`, whose `firstKept` is later than its `number`, or whose carried payload is over 1170 bytes (`ORDERED_PAYLOAD_LIMIT`). The envelope adds 5 bytes to a message.
@@ -723,7 +734,7 @@ Only the messages of [Ordered messages](#ordered-messages) are sent again until 
 | `MasterProbe` | not corrected: the next heartbeat carries no token, and the master sends another probe after it | two lost in a row may list the server unreachable until a probe gets through |
 | `EntitySpawned` of a ship, a Bydo or a missile of an enemy | the next `WorldState` creates the entity, with its appearance effect | 50 ms at 20 per second |
 | `EntitySpawned` of a missile of a player | the next send, since it is guaranteed (see [Own missiles](#own-missiles)) | 116.7 ms |
-| `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine`, `BossStatus`, `PlayerLooks`, `LookItemWon`, `LevelStatus` | the next send | 116.7 ms |
+| `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine`, `BossStatus`, `PlayerLooks`, `LookItemWon`, `EffectPlayed`, `LevelStatus` | the next send | 116.7 ms |
 | `Disconnection`, `Expulsion`, `ExpulsionOrder` | the next copy | 50 ms for a `Disconnection`, none for the others, sent in a row |
 | all three copies of `Disconnection` | the session times out: the others get `PlayerLeft` (`TimedOut`) instead of (`Left`) | 20 s |
 | all three copies of `Expulsion` | the game still closes the session; the client keeps it until 20 s without a datagram of the server, then says the connection is lost | 20 s |
@@ -733,6 +744,7 @@ Only the messages of [Ordered messages](#ordered-messages) are sent again until 
 | every send of a `GameEvent` or a `PlayerLeft` | not corrected: the sound, effect or message on screen is missed; lives, scores and players stay right through the state messages | — |
 | every send of a `PlayerLooks` | not corrected: the look of a pilot is missed until the next `PlayerLooks`; the client sends its own look again until one shows it | — |
 | every send of a `LookItemWon` | not corrected: the item is gone from the sky and not in the locker | — |
+| every send of an `EffectPlayed` | not corrected: that effect is missed; the look of the body stays right through the state messages | — |
 | every send of a `LevelStatus` | the next `LevelStatus`, which holds the whole state: until then the client keeps the biome and the scroll speed of the last one it got | the next change of the level |
 | every send of a `PlayerChatLine` | not corrected: that player misses the line; when it is the writer, it sends the line again until it gives up after 5 s, and the server ignores those copies | — |
 | every send of a `BossStatus` | the next `BossStatus`, which holds the whole state: a lost `Arriving` shows no warning, and the fight shows from its first status that arrives; a lost `Defeated` has none after it, so the client keeps the last health until the game screen closes | the next hit, rage or death of the boss |
@@ -754,7 +766,7 @@ On the games captured while the dictionary was trained, the datagram of the serv
 
 ## Versions and compatibility
 
-A program speaks one version of the protocol, the number at offset 4 of every datagram it sends. This section says what stays the same in every version, which changes give the protocol a new number, and what two programs of different versions do when they meet. The sections after it apply these rules to each version, from version 2 to version 15.
+A program speaks one version of the protocol, the number at offset 4 of every datagram it sends. This section says what stays the same in every version, which changes give the protocol a new number, and what two programs of different versions do when they meet. The sections after it apply these rules to each version, from version 2 to version 16.
 
 ### What never changes
 
@@ -768,7 +780,7 @@ A program speaks one version of the protocol, the number at offset 4 of every da
 
 | Change | Example |
 |---|---|
-| A field added to, removed from or moved in the header or a message that already exists | `GameEnded` gains `outcome` before `playerCount` (version 3); `PlayerInput` repeats earlier inputs (version 5); `ConnectionRequest` gains `kind` and `number` (version 9); `ConnectionAccepted` announces the content pack (version 10); `EntitySpawned` gains `owner` and `firingInput`, `PlayerInput` gains `shownTick` (version 11); `ConnectionRequest` of kind `NewGame` gains `difficulty`, `lives` and `friendlyFire` (version 12) |
+| A field added to, removed from or moved in the header or a message that already exists | `GameEnded` gains `outcome` before `playerCount` (version 3); `PlayerInput` repeats earlier inputs (version 5); `ConnectionRequest` gains `kind` and `number` (version 9); `ConnectionAccepted` announces the content pack (version 10); `EntitySpawned` gains `owner` and `firingInput`, `PlayerInput` gains `shownTick` (version 11); `ConnectionRequest` of kind `NewGame` gains `difficulty`, `lives` and `friendlyFire` (version 12); each entity of `WorldState` and `DeltaWorldState` gains `look` (version 16) |
 | A field that keeps its place and changes its meaning | the acknowledgement fields of the header, written as 0 before (version 2); `entityType` read from a table (version 6) |
 | A flag or an encoding of the body a receiver of the version before cannot read | `COMPRESSED` (version 4) |
 | A message that already exists moved into an envelope | `EntityDestroyed`, `EnemyAction`, `GameEvent` and `PlayerLeft` inside `OrderedMessage` (version 7) |
@@ -840,7 +852,7 @@ Version 9 lets a player create or join a game: `ConnectionRequest` carries `kind
 
 `ShipLookChoice`, `PlayerLooks` and `LookItemWon` (types 35 to 37) did not change `version`: a peer that does not know them skips them. One consequence the version does not catch: an older client that downloads a content pack with a sheet of the side `look_item` cannot read it, so it cannot join a server that ships look items. Both programs are built from the same repository, so this is written here and not worked around.
 
-`LevelStatus` (type 38) did not change `version`: a peer that does not know it skips it, and a client without it plays the level under the sky it has.
+`LevelStatus` (type 39) did not change `version`: a peer that does not know it skips it, and a client without it plays the level under the sky it has.
 
 ## Version 10
 
@@ -870,6 +882,12 @@ Version 14 added the ban of a player: the reason `Banned` of `ConnectionRefused`
 
 Version 15 removes the ban of a player, since the project keeps no accounts and a ban of a nickname or of an address is easy to get around: the reasons `Banned` of `ConnectionRefused` (9), of `Expulsion` (2) and of `PlayerLeft` (4) are invalid again, and a receiver drops a message that holds one as out of range (see [Payload rules](#payload-rules)). A server of version 14 could still send them, so `version` became 15, and the server answers a client of version 14 with `ConnectionRefused` (`IncompatibleVersion`). The expulsion of version 13 stays. The layout of the header and of every message is the same as in version 14.
 
+## Version 16
+
+Version 16 lets the content of a server draw visual effects without code on the client (see [Named effects and looks](#named-effects-and-looks)). Each entity of `WorldState` and `DeltaWorldState` gains `look`, 1 byte after `y`, so an entity takes 10 bytes instead of 9: a receiver of version 15 would read every entity after the first one at the wrong offset, so `version` became 16. A client of version 15 also refuses a content pack whose sheets hold `[appearance.effects]` or `[appearance.looks]`, an unknown key for it.
+
+`EffectPlayed` (type 38) was added in the same version. Alone it would have kept `version`: a peer that does not know it skips it and only loses the effect.
+
 ## Implementation status
 
 The code of this repository applies the rules above, with the exceptions listed at the end of this section.
@@ -878,7 +896,7 @@ The code of this repository applies the rules above, with the exceptions listed 
 - `src/network` holds the pieces: the socket in `Transport` drops a datagram over 1200 bytes (see [Network](/R-Type/network/)), `Serialization` encodes integers and strings, and `Protocol` holds the header and every message of this page, each checked as listed here. A `WorldState` without players is accepted while the game has none (see [Network](/R-Type/network/#world-state-worldstatecodec)).
 - Both programs drop a datagram whose header is not of this protocol and version, or whose message sizes do not add up. The server drops on its network thread every datagram that is neither a connection request, an information request nor from a player it admitted, answers the requests as [Connection](#connection) and [Server information](#server-information) describe, and answers a datagram of another version from an unknown sender with `ConnectionRefused` (`IncompatibleVersion`). The client reads only the server it contacts.
 - Within a session, each side writes the session token and its next sequence into every datagram it sends: the server in its acceptances, the `EntitySpawned` of the ships, the Bydos and the missiles, `LobbyState`, `GameStarted`, `DeltaWorldState`, the game events, `GameEnded`, `LeaderboardAnswer`, `Heartbeat`, `RoundTrips` and `Disconnection`; the client in its inputs, `ReadyState`, `GameLoaded`, `LeaderboardRequest`, `Heartbeat` and `Disconnection`. Each also acknowledges there the datagrams it accepted, except the client in its `Disconnection`, sent once the session is closed.
-- The server sends `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine`, `BossStatus`, `PlayerLooks`, `LookItemWon` and `LevelStatus` as [Ordered messages](#ordered-messages) describes, and reads the acknowledgements of every datagram of a player it accepts. The client hands them over in order, and sends a `Heartbeat` 40 ms after a datagram that holds guaranteed messages when nothing else went out.
+- The server sends `EntityDestroyed`, `EnemyAction`, `GameEvent`, `PlayerLeft`, `PlayerChatLine`, `BossStatus`, `PlayerLooks`, `LookItemWon`, `EffectPlayed` and `LevelStatus` as [Ordered messages](#ordered-messages) describes, and reads the acknowledgements of every datagram of a player it accepts. The client hands them over in order, and sends a `Heartbeat` 40 ms after a datagram that holds guaranteed messages when nothing else went out.
 - The server checks the token of every datagram from the address of a player it admitted, on its network thread before any queue, and the sequence of every datagram it reads from a player, so a duplicate or a late one is dropped whatever its message. The client checks the token, then the sequence, of every datagram of the server.
 - Each side sends a `Heartbeat` every 500 ms and measures the round trip from its echo, and the server sends each player `RoundTrips` after each of its `Heartbeat`s, as [Round trip](#round-trip) describes; the `Heartbeat` of the server also carries its tick during a game, as [Clock of the server](#clock-of-the-server) describes. The server keeps the seat of a silent player for 20 s in all, as [A session](#a-session) describes, and the client closes its session after 20 s without a datagram of the server.
 

@@ -152,5 +152,7 @@ EntityAppearance appearanceWithADeath() {
       .enragedIdleFrames = {},
       .deathFrames = {MOB_DEATH_FRAME},
       .deathFramesWithoutFlash = {MOB_DEATH_WITHOUT_FLASH_FRAME},
-      .deathFrameDuration = MOB_DEATH_FRAME_TIME};
+      .deathFrameDuration = MOB_DEATH_FRAME_TIME,
+      .effects = {},
+      .looks = {}};
 }

@@ -44,8 +44,8 @@ namespace rtype::game {
 /**
  * @throws TooManyEntityTypesException when @p texts hold more than
  * MAXIMUM_ENTITY_TYPES sheets, and InvalidEntityTypeNameException, naming the
- * file, for a name other than 1 to MAXIMUM_ENTITY_TYPE_NAME_LENGTH bytes of
- * ENTITY_TYPE_NAME_CHARACTERS.
+ * file, for a name other than 1 to MAXIMUM_CONTENT_NAME_LENGTH bytes of
+ * CONTENT_NAME_CHARACTERS.
  */
 void checkSheetNames(std::span<const SheetText> texts);
 

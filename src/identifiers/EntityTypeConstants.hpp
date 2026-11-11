@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <string_view>
 
 namespace rtype::identifiers {
 
@@ -18,14 +17,5 @@ constexpr std::uint8_t NO_ENTITY_TYPE = 0;
  * one byte, and NO_ENTITY_TYPE takes 0, so 255 is the last number.
  */
 constexpr std::size_t MAXIMUM_ENTITY_TYPES = 255;
-
-/** @brief The sizes the name of an entity type may have, in bytes. */
-constexpr std::size_t MINIMUM_ENTITY_TYPE_NAME_LENGTH = 1;
-constexpr std::size_t MAXIMUM_ENTITY_TYPE_NAME_LENGTH = 24;
-
-/** @brief The bytes a type name is made of: lowercase letters, digits and
- * underscores, so the name of a file is the same on every system. */
-constexpr std::string_view ENTITY_TYPE_NAME_CHARACTERS =
-    "abcdefghijklmnopqrstuvwxyz0123456789_";
 
 }  // namespace rtype::identifiers

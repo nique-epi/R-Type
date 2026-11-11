@@ -15,7 +15,8 @@ namespace rtype::network {
 void writePlayers(ByteWriter& writer, std::span<const PlayerState> players);
 
 /**
- * @brief Writes one entity: its id, its type, then its two coordinates.
+ * @brief Writes one entity: its id, its type, its two coordinates, then its
+ * look.
  * @throws InvalidCoordinateException when a coordinate is NaN.
  */
 void writeEntity(ByteWriter& writer, const EntityState& entity);

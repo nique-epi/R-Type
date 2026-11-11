@@ -27,6 +27,11 @@ constexpr game::Position SHIP_POSITION{.x = 1.0F, .y = 2.0F};
  */
 constexpr std::uint32_t PLAYER_NETWORK_ID = 1;
 constexpr std::uint32_t ENEMY_NETWORK_ID = 2;
+
+/** @brief A look an entity shows, and the look of an entity that shows its
+ * idle. */
+constexpr std::uint8_t SHOWN_LOOK = 3;
+constexpr std::uint8_t NO_LOOK = 0;
 constexpr std::uint32_t PLAYER_MISSILE_NETWORK_ID = 3;
 constexpr std::uint32_t ENEMY_MISSILE_NETWORK_ID = 4;
 constexpr game::Position PLAYER_POSITION{.x = 10.0F, .y = 20.0F};

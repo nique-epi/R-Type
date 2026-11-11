@@ -16,8 +16,9 @@ namespace rtype::server {
 
 /**
  * @brief Hands the events of the match to the players of the game, as the
- * messages GameEventEncoder writes: once when the encoder says a later state
- * message corrects their loss, guaranteed otherwise.
+ * messages GameEventEncoder writes for a numbered GameEvent and
+ * eventMessageOf() for any other event: once when the message says a later
+ * state message corrects its loss, guaranteed otherwise.
  *
  * An event the encoder refuses (a position that is not a number, an entity id
  * of 0, a player number outside 1 to 4) is skipped and logged as a warning:

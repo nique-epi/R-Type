@@ -95,7 +95,7 @@ A name of `look_items` is the name of an entity sheet of side `look_item` (see [
 
 - Start from `normal` and change one key at a time, so the effect of each change is plain.
 - If none is killed, up to 8.5 seconds divided by the interval Bydos are on screen at once, and never more than the wave holds: the three Bydos of the first wave of `normal` are all on screen together, and at one Bydo per second, eight or nine are, once the waves hold that many.
-- A world state datagram carries 122 changed entities with four players, 127 with one, ships and missiles included (`DeltaWorldStateCodec`). A state lists only the entities that moved since the state the player acknowledged, or all of them after a second without an acknowledgement. Past that, every world state takes one more datagram per player, `--state-rate` times per second (20 by default).
+- A world state datagram carries 110 changed entities with four players, 114 with one, ships and missiles included (`DeltaWorldStateCodec`). A state lists only the entities that moved since the state the player acknowledged, or all of them after a second without an acknowledgement. Past that, every world state takes one more datagram per player, `--state-rate` times per second (20 by default).
 - `bydos_added_per_wave = 0` keeps every wave the size of the first; `shortest_spawn_interval_ms` equal to `first_spawn_interval_ms` keeps their pace.
 - Try a change by editing the file and starting the server again; nothing is rebuilt and the client does not change:
 

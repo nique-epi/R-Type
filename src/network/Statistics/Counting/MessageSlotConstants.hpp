@@ -32,7 +32,8 @@ constexpr auto MESSAGE_TYPE_NAMES = std::to_array<std::string_view>(
      "PlayerChatLine",    "BossStatus",
      "ExpulsionOrder",    "Expulsion",
      "ShipLookChoice",    "PlayerLooks",
-     "LookItemWon",       "LevelStatus"});
+     "LookItemWon",       "EffectPlayed",
+     "LevelStatus"});
 
 static_assert(FIRST_NAMED_MESSAGE_TYPE + MESSAGE_TYPE_NAMES.size() - 1 ==
                   static_cast<std::size_t>(MessageType::LevelStatus),

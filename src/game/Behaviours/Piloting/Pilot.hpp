@@ -26,6 +26,9 @@ struct Pilot {
   Position origin{};
   /** @brief How long the body has existed; PilotSystem adds each tick. */
   engine::Duration age{};
+  /** @brief The age from which the body may play another effect of its
+   * sheet; PilotSystem moves it EFFECT_REST past each effect it announces. */
+  engine::Duration nextEffectAge{};
   /** @brief The values of the settings of the behaviour, in the order it
    * declares them; PilotSystem hands them to it in BehaviourView. */
   std::span<const std::int64_t> settings;

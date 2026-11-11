@@ -38,7 +38,7 @@ TEST_F(DeltaStateSenderFixture, SendsOnlyWhatChangedSinceTheAcknowledgedState) {
   const DeltaWorldState delta = partsSentTo(FIRST_PLAYER_PORT).back();
   EXPECT_EQ(delta.baseDistance, TICKS_PER_STATE);
   EXPECT_EQ(delta.changed,
-            std::vector<EntityState>{expectedEntity(
+            std::vector<EntityState>{listedEntity(
                 MOVING_ENEMY_ID, DRIFTER_TYPE_NUMBER, MOVED_PLACE)});
   EXPECT_TRUE(delta.removed.empty());
 }

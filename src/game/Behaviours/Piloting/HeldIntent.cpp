@@ -8,11 +8,12 @@ namespace rtype::game {
 namespace {
 
 /** @returns @p intent without what applies once: an action started or ended,
- * and a jump. */
+ * a jump, and an effect played. */
 Intent withoutOneTimeRequests(Intent intent) {
   intent.startsAction = std::nullopt;
   intent.endsAction = false;
   intent.jumpsTo = std::nullopt;
+  intent.playsEffect = std::nullopt;
   return intent;
 }
 

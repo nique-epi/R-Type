@@ -20,6 +20,7 @@ constexpr std::string_view ENTITY_DESTRUCTION_EVENT_NAME = "EntityDestruction";
 constexpr std::string_view ENTITY_DAMAGE_EVENT_NAME = "EntityDamage";
 constexpr std::string_view ENEMY_ACTION_STARTED_EVENT_NAME =
     "EnemyActionStarted";
+constexpr std::string_view EFFECT_STARTED_EVENT_NAME = "EffectStarted";
 constexpr std::string_view PLAYER_HIT_EVENT_NAME = "PlayerHit";
 constexpr std::string_view PLAYER_ELIMINATION_EVENT_NAME = "PlayerElimination";
 constexpr std::string_view PLAYER_DEPARTURE_EVENT_NAME = "PlayerDeparture";

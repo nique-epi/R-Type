@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstdint>
 #include <optional>
+#include <string>
 #include "HeldIntent.hpp"
 #include "HeldIntentTestConstants.hpp"
 #include "Intent.hpp"
@@ -89,6 +90,23 @@ TEST(HeldIntent, StartsTheActionOfAStepOnlyOnce) {
 
   ASSERT_TRUE(held.has_value());
   EXPECT_FALSE(held.value_or(STRIKING).startsAction.has_value());
+}
+
+/**
+ * Given a step that played an effect, then waits
+ * When the next tick of the wait comes
+ * Then the body does not play the effect again
+ */
+TEST(HeldIntent, PlaysTheEffectOfAStepOnlyOnce) {
+  HeldIntent heldIntent;
+  const Intent sparkling{.steered = true,
+                         .playsEffect = std::string{SPARK_EFFECT}};
+  static_cast<void>(heldIntent.startHolding(sparkling, THREE_TICKS));
+
+  const std::optional<Intent> held = heldIntent.heldThisTick();
+
+  ASSERT_TRUE(held.has_value());
+  EXPECT_FALSE(held.value_or(sparkling).playsEffect.has_value());
 }
 
 /**

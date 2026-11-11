@@ -29,18 +29,18 @@ constexpr unsigned int NO_PART_COUNT = 0;
 constexpr unsigned int TWO_PARTS = 2;
 
 /** @brief Changed entities one payload holds next to four players:
- * (1175 - 10 - 4 * 16) / 9, rounded down. */
-constexpr std::size_t CHANGED_FITTING_WITH_FOUR_PLAYERS = 122;
+ * (1175 - 10 - 4 * 16) / 10, rounded down. */
+constexpr std::size_t CHANGED_FITTING_WITH_FOUR_PLAYERS = 110;
 
 /** @brief Changed entities that fill two parts with four players. */
 constexpr std::size_t CHANGED_FILLING_TWO_PARTS = 200;
 
-/** @brief What is left of those 200 for the second part: 200 - 122. */
-constexpr std::size_t CHANGED_LEFT_FOR_THE_SECOND_PART = 78;
+/** @brief What is left of those 200 for the second part: 200 - 110. */
+constexpr std::size_t CHANGED_LEFT_FOR_THE_SECOND_PART = 90;
 
 /** @brief Changed entities that need one part more than the largest count:
- * 16 * 122 + 1. */
-constexpr std::size_t CHANGED_NEEDING_TOO_MANY_PARTS = 1953;
+ * 16 * 110 + 1. */
+constexpr std::size_t CHANGED_NEEDING_TOO_MANY_PARTS = 1761;
 
 /** @brief The largest count a list of removed ids holds, and the ids that
  * overflow it by 45. */

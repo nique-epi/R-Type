@@ -1,5 +1,6 @@
 add_library(rtype_server_replication_wire STATIC
   EntitySpawnSender.cpp
+  EventMessages.cpp
   GameEventEncoder.cpp
 )
 

@@ -4,6 +4,7 @@
 #include "EnemyActionPlayerTestConstants.hpp"
 #include "EnemyPhase.hpp"
 #include "EntityAppearance.hpp"
+#include "NamedLook.hpp"
 #include "Playback.hpp"
 #include "TimeConstants.hpp"
 
@@ -24,7 +25,9 @@ EntityAppearance appearanceWithAStrike() {
           .anchor = STRIKE_ANCHOR}},
       .enragedIdleFrames = {},
       .deathFrames = {},
-      .deathFramesWithoutFlash = {}};
+      .deathFramesWithoutFlash = {},
+      .effects = {},
+      .looks = {}};
 }
 
 EntityAppearance appearanceWithARage() {
@@ -39,6 +42,13 @@ EntityAppearance appearanceWithARage() {
       .playback = Playback::Hold,
       .returnsToIdle = true,
       .anchor = STRIKE_ANCHOR});
+  return appearance;
+}
+
+EntityAppearance appearanceWithALook() {
+  EntityAppearance appearance = appearanceWithARage();
+  appearance.looks.push_back(
+      NamedLook{.frames = {LOOK_FRAME}, .frameDuration = IDLE_FRAME_TIME});
   return appearance;
 }
 
