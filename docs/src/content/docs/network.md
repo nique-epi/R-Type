@@ -493,10 +493,10 @@ Measured again on 4 November 2026 at 100 datagrams a second, with the server bui
 
 ## Load-test bots: `load_test_bots`
 
-`load_test_bots` measures how the server holds several full games. It is a test tool in `tests/tools/LoadTestBots/`, built with the `test` preset into `build/tests/` and never shipped. Each bot is a player with no window: a `Bot` drives the `PlayerConnection` of the client (`src/client/Connection/`), as the game screen does without prediction, so it sends what a client sends: the request and its cookie, the heartbeats, the `GameLoaded`, a `PlayerInput` every `PLAYER_INPUT_INTERVAL` (60 per second) and its ready state as a value. Its `BotInputSender` sends the inputs once the game started and confirms them from the world states, as the game screen does, so each input repeats only those the server has not applied yet (see [Inputs](/R-Type/protocol/#inputs)); its `BotTally` counts what the report prints; both are tested without a server, through the waiting room and the input link the game screen uses. The folder has one sub-folder per role: `Launch/` reads the options, `Play/` holds what a bot does in a game, in `Pilot/` (`BotPilot`, `BotInputSender`) and `Tally/` (`BotTally`, the `BotReport` it fills and the `BotTraffic` of its socket), and `Squad/` the bots and when they ask to be ready (`Bot`, `BotSquad`, `asksReady()`). One process runs every bot, each with its own socket and network thread, so the server sees as many players. The frames keep a fixed deadline, one `BOT_FRAME_DURATION` (a tick, 1/60 s) after the other, so a late wake-up delays the input of its own frame and none after it. A frame sends one input at most, so updates that keep lasting longer than a frame lower the rate below 60 per second; the report gives the rate each bot kept.
+`load_test_bots` measures how the server holds several full games. It is a test tool in `tests/tools/LoadTestBots/`, built with the `test` preset into `build/tests/` and never shipped. Each bot is a player with no window: a `Bot` drives the `PlayerConnection` of the client (`src/client/Connection/`), as the game screen does without prediction, so it sends what a client sends: the request and its cookie, the heartbeats, the `GameLoaded`, a `PlayerInput` every `PLAYER_INPUT_INTERVAL` (60 per second) and its ready state as a value. Its `BotInputSender` sends the inputs once the game started and confirms them from the world states, as the game screen does, so each input repeats only those the server has not applied yet (see [Inputs](/R-Type/protocol/#inputs)); its `BotTally` counts what the report prints; both are tested without a server, through the waiting room and the input link the game screen uses. The folder has one sub-folder per role: `Launch/` reads the options, `Play/` holds what a bot does in a game, in `Sight/` (`BotSight`), `Pilot/` (`IBotPilot`, its pilots, `BotInputSender`) and `Tally/` (`BotTally`, the `BotReport` it fills and the `BotTraffic` of its socket), and `Squad/` the bots and when they ask to be ready (`Bot`, `BotSquad`, `asksReady()`). One process runs every bot, each with its own socket and network thread, so the server sees as many players. The frames keep a fixed deadline, one `BOT_FRAME_DURATION` (a tick, 1/60 s) after the other, so a late wake-up delays the input of its own frame and none after it. A frame sends one input at most, so updates that keep lasting longer than a frame lower the rate below 60 per second; the report gives the rate each bot kept.
 
 - **Ready.** The server starts a game once every player connected to it is ready, from one player on, and puts a new player in the first game waiting with a free seat. No bot asks to be ready before every bot has the answer to its connection (`asksReady()`), so each game fills before it starts. When a game ends, its players stay connected and none is ready: each bot asks again, and the game starts full again.
-- **Play.** A `BotPilot` holds one action at a time, up, down, left, right or shoot, for a time drawn from `SHORTEST_HOLD` (200 ms) to `LONGEST_HOLD` (1 s). Bot n, from 0, draws from the seed plus n, so two launches with the same seed on the same machine draw the same actions in the same order, each for the same time. Each hold is counted down by the time each frame really lasted, so an action may change a frame earlier or later from one launch to the next.
+- **Play.** By default, a `BotPilot` holds one action at a time, up, down, left, right or shoot, for a time drawn from `SHORTEST_HOLD` (200 ms) to `LONGEST_HOLD` (1 s). Bot n, from 0, draws from the seed plus n, so two launches with the same seed on the same machine draw the same actions in the same order, each for the same time. Each hold is counted down by the time each frame really lasted, so an action may change a frame earlier or later from one launch to the next. The other pilots are in [What flies the bots](#what-flies-the-bots).
 
 ```bash
 ./build/tests/load_test_bots --bots 32 --seconds 60
@@ -515,6 +515,40 @@ Measured on 3 November 2026 on an Apple M4 Pro (12 cores) under macOS 27.0, the 
 | 36, 30 s | 8 of 8; 4 bots refused with `GameFull`, exit code 1 | 0.16 to 0.28 ms, 0.48 to 0.64 ms, 1.68 to 2.08 ms | 20.0 per second for the 32 in session | not taken |
 
 Every run held the budget of a tick: the 95th percentile stayed under 0.8 ms, under 5 % of the budget. The runs of 16 and 32 bots held in full; in the run of 36, the 32 bots in session received every world state, and the 4 others were the refusals of a full server the run is there to show, hence its exit code 1. Two of the three runs of 32 bots each had one tick over the budget, 34.2 ms and 24.3 ms, in a single line of 10 s, with no warning in the journal; their cause is not known. With 32 or 36 bots the server discarded 16 to 24 connection requests in the first 10 s, and the bots got in on their next request. The 32 bots used about 13 % of one core (1.4 s of user and 6.6 s of system time in 64 s), most of it in their 32 network threads.
+
+### What flies the bots
+
+Each bot is flown by an `IBotPilot` (`tests/tools/LoadTestBots/Play/Pilot/`), which says what it holds at each frame. `--rules` chooses the pilot of a launch:
+
+| Option | Pilot | What it does |
+|---|---|---|
+| none | `BotPilot` | Draws one action at a time and looks at nothing. |
+| `--rules` | `RulePilot` | Fires all the time and, at each frame, tries the nine ways to move: it keeps the one nothing touches over the next `RULE_LOOK_AHEAD_STEPS` (6 steps of 0.1 s), from the speed of each enemy and missile, then the one nearest the row of its target and `RULE_HOME_X`. Its target is the boss when there is one, otherwise the enemies ahead of its ship, shared out between the bots by their number. |
+
+The rules pilot reads a `BotSight` (`Play/Sight/`), kept from the world states the bot receives. It knows the side and the hitbox of each entity from the type table of the session, computes a velocity from two ticks, and adds up the score and the lives lost over the games of the run. A pilot chooses among `ACTION_CHOICE_COUNT` (18) ways to hold the keys: nine directions, with or without the fire. The report gives the points of each bot.
+
+### The fight with the boss
+
+After the line of a bot, the report gives one line for each game in which the boss fought: `bot 1 boss fight 1: not defeated, boss at 37 % health, bot alive 31.0 s, 3 lives lost`. A `BossTally` (`Play/Tally/`) follows the `BossStatus` messages the bot receives. A fight starts with the first status of the stage Fighting or Enraged and ends with the `GameEnded` of the game. The stage Arriving, where the boss does not attack yet, is not part of it, and a fight still running when the time is up is not reported.
+
+| Figure | What it says |
+|---|---|
+| `defeated` or `not defeated` | Whether the boss was destroyed. |
+| `boss at … % health` | The health the boss kept, in percent of its full health, rounded up so a boss still alive never reads 0 %. While no game is won, it is the figure that moves first when the bots improve. |
+| `bot alive … s` | How long the bot had a life left while the boss fought. |
+| `… lives lost` | The lives the bot lost while the boss fought, not those it lost before: a bot that came to the boss with fewer lives is out after fewer. |
+
+The health of the boss grows with the players, 25 % for each one past the first (see [Server and game](/R-Type/server/#boss-bossstage-and-bossphasesystem)), so two runs are compared with the same number of bots. `--boss` starts every game at its boss but keeps the ships invulnerable, so it tells nothing of how long a bot lives. To meet the boss with ships that can die, a resource lays a short level over `normal`, one Bydo then the Bydo Tyrant (see [Waves of a resource](/R-Type/waves-file/#waves-of-a-resource)):
+
+```toml
+# resources/boss-duel/waves/waves.toml
+[difficulty.normal]
+first_wave_bydos = 1
+wave_pause_ms = 0
+level_waves = 1
+```
+
+With `ensure boss-duel` in the `server.cfg` of the folder the server is started from, and a `resource.toml` holding a `description`, every game of that server plays this level. Its games are not vanilla: their scores stay on the leaderboard of that server (see [Vanilla games](/R-Type/server/#vanilla-games-vanillabreaches)).
 
 ## Where to intervene
 
@@ -566,6 +600,7 @@ Every run held the budget of a tick: the 95th percentile stayed under 0.8 ms, un
 | Build the bytes of a datagram in a test | `datagramOf()` and `defaultHeaderBytes()` in `tests/network/Protocol/ProtocolFixtures.hpp` |
 | Check that a change survives malformed datagrams | `malformed_datagrams` (`tests/tools/MalformedDatagrams/`), see [Malformed datagrams](#malformed-datagrams-malformed_datagrams) |
 | Measure how the server holds several full games | `load_test_bots` (`tests/tools/LoadTestBots/`), see [Load-test bots](#load-test-bots-load_test_bots) |
+| Change what flies the bots, or what they see | `tests/tools/LoadTestBots/Play/Pilot/` and `Play/Sight/`, see [What flies the bots](#what-flies-the-bots) |
 | Measure what one client receives and sends, with and without an optimization | `tests/tools/bandwidth/campaign.sh`, see [Network measurements](/R-Type/measurements/) |
 
 Each folder has its own `CMakeLists.txt` declaring one library, linked into `rtype_network` by `src/network/CMakeLists.txt`.

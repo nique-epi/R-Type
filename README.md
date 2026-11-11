@@ -276,7 +276,7 @@ Once the test preset is built, this sends the server running on port 4242 of the
 ./build/tests/load_test_bots --bots 32 --seconds 60
 ```
 
-This has 32 players with no window join the server on port 4242 of the same machine and play for one minute, then prints the world states each one received per second; the journal of each game gives the duration of its ticks every 10 s. Bots that connect at once are sent to the first game before it reports its players, so the ones it cannot seat are refused (`GameFull`) instead of filling the other games. See [Network](https://nique-epi.github.io/R-Type/network/#load-test-bots-load_test_bots).
+This has 32 players with no window join the server on port 4242 of the same machine and play for one minute, then prints the world states each one received per second; the journal of each game gives the duration of its ticks every 10 s. Bots that connect at once are sent to the first game before it reports its players, so the ones it cannot seat are refused (`GameFull`) instead of filling the other games. By default the bots press keys at random: `--rules` flies them with simple rules. See [Network](https://nique-epi.github.io/R-Type/network/#load-test-bots-load_test_bots).
 
 ```bash
 sh tests/tools/bandwidth/campaign.sh ./r-type_server ./build/tests/load_test_bots

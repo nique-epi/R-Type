@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <random>
 #include "ActionSet.hpp"
+#include "BotSight.hpp"
+#include "IBotPilot.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::tools {
@@ -13,16 +15,18 @@ namespace rtype::tools {
  * one. Two pilots built from one seed and advanced by the same times hold the
  * same actions.
  */
-class BotPilot {
+class BotPilot final : public IBotPilot {
  public:
   /** @param seed The seed the actions and their times are drawn from. */
   explicit BotPilot(std::uint32_t seed);
 
   /**
    * @returns The action held during a frame of @p elapsed: the one drawn last,
-   * until its time runs out, then a new one. The first call draws.
+   * until its time runs out, then a new one. The first call draws. This pilot
+   * looks at nothing of @p sight.
    */
-  [[nodiscard]] client::ActionSet advance(engine::Duration elapsed);
+  [[nodiscard]] client::ActionSet advance(engine::Duration elapsed,
+                                          const BotSight& sight) override;
 
  private:
   /** @brief Draws the next action and the time it is held. */

@@ -40,4 +40,6 @@ constexpr std::array<std::string_view, 4> ANOTHER_SERVER{
     client::ADDRESS_OPTION, ANOTHER_SERVER_ADDRESS, engine::PORT_OPTION,
     "5000"};
 
+constexpr std::array<std::string_view, 1> WITH_RULES{RULES_OPTION};
+
 }  // namespace rtype::tools::testing

@@ -4,13 +4,15 @@
 #include <random>
 #include "ActionSet.hpp"
 #include "BotPilotConstants.hpp"
+#include "BotSight.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::tools {
 
 BotPilot::BotPilot(std::uint32_t seed) : random_(seed) {}
 
-client::ActionSet BotPilot::advance(engine::Duration elapsed) {
+client::ActionSet BotPilot::advance(engine::Duration elapsed,
+                                    [[maybe_unused]] const BotSight& sight) {
   remaining_ -= elapsed;
   if (remaining_ <= engine::Duration::zero()) {
     drawNextAction();

@@ -41,6 +41,9 @@ constexpr std::size_t DEFAULT_BOT_COUNT =
 constexpr std::size_t MAXIMUM_BOT_COUNT =
     SERVER_SEATS + network::MAXIMUM_PLAYERS;
 
+/** @brief The options that choose what flies the bots: the last one wins. */
+constexpr std::string_view RULES_OPTION = "--rules";
+
 /** @brief How long a launch that names no duration plays. */
 constexpr std::chrono::seconds DEFAULT_RUN_DURATION{60};
 
