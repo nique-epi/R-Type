@@ -13,6 +13,9 @@
 #include "BehaviourView.hpp"
 #include "BossSheet.hpp"
 #include "BurstSheet.hpp"
+#include "CollisionSheet.hpp"
+#include "ContentName.hpp"
+#include "ContentNameConstants.hpp"
 #include "DataFileReading.hpp"
 #include "DataFileTable.hpp"
 #include "EntitySheet.hpp"
@@ -25,6 +28,7 @@
 #include "HurtWindow.hpp"
 #include "HurtZone.hpp"
 #include "IBehaviour.hpp"
+#include "IsAMissile.hpp"
 #include "MotionKind.hpp"
 #include "MotionSheet.hpp"
 #include "PilotSheet.hpp"
@@ -62,6 +66,25 @@ engine::DataFileTable gameplayTableOf(const engine::DataFileTable& root) {
 /** @returns The side `[gameplay]` names. */
 EntityType sideFrom(const engine::DataFileTable& gameplay) {
   return SIDES.at(engine::choiceAt(gameplay, SIDE_KEY, SIDE_NAMES));
+}
+
+/** @returns The layer `layer` names and the layers `hits` lists, none
+ * without the key; the filter stays empty until EntitySheets gives each layer
+ * its bit.
+ * @throws InvalidCollisionLayerNameException when the layer is not named as an
+ * entity type is. */
+CollisionSheet collisionFrom(const engine::DataFileTable& gameplay) {
+  CollisionSheet collision{
+      .layer = engine::textAt(gameplay, LAYER_KEY), .hits = {}, .filter = {}};
+  if (!identifiers::isContentName(collision.layer)) {
+    throw InvalidCollisionLayerNameException(
+        engine::placeOfKey(gameplay, LAYER_KEY),
+        identifiers::MAXIMUM_CONTENT_NAME_LENGTH);
+  }
+  if (gameplay.table.get().contains(HITS_KEY)) {
+    collision.hits = engine::textsAt(gameplay, HITS_KEY);
+  }
+  return collision;
 }
 
 /** @returns The value of @p key of @p box as a number of logical units. */
@@ -449,12 +472,6 @@ void checkLookItemMatchesSide(const EntitySheet& sheet,
   }
 }
 
-/** @returns Whether @p side is the side of a missile, of a player or of an
- * enemy. */
-bool isAMissile(EntityType side) {
-  return side == EntityType::PlayerMissile || side == EntityType::EnemyMissile;
-}
-
 /** @throws InconsistentEntitySheetException when a missile has a gun, or
  * another body bursts. */
 void checkWhatItFires(const EntitySheet& sheet,
@@ -520,6 +537,20 @@ void checkLookItemFliesLeft(const EntitySheet& sheet,
   }
 }
 
+/** @throws InconsistentEntitySheetException when the values of @p sheet, each
+ * valid, do not hold together. */
+void checkSheetHoldsTogether(const EntitySheet& sheet,
+                             const engine::DataFileTable& gameplay) {
+  checkPilotMatchesSide(sheet, gameplay);
+  checkShipMotion(sheet, gameplay);
+  checkWhatItFires(sheet, gameplay);
+  checkMissileFliesTowardsItsEdge(sheet, gameplay);
+  checkContactPartsBelongToAnEnemy(sheet, gameplay);
+  checkBossHasHealth(sheet, gameplay);
+  checkLookItemMatchesSide(sheet, gameplay);
+  checkLookItemFliesLeft(sheet, gameplay);
+}
+
 }  // namespace
 
 EntitySheet gameplayOf(const SheetText& sheet,
@@ -531,6 +562,7 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .name = sheet.name,
       .number = 0,
       .side = sideFrom(gameplay),
+      .collision = collisionFrom(gameplay),
       .hitbox = hitboxOf(gameplay),
       .motion = motionFrom(gameplay),
       .pilot = pilotFrom(gameplay, behaviours),
@@ -545,14 +577,7 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .boss = bossFrom(gameplay),
       .lookItem = lookItemFrom(gameplay),
       .visualNames = visualNamesOf(sheetTableOf(sheetRoot, APPEARANCE_KEY))};
-  checkPilotMatchesSide(read, gameplay);
-  checkShipMotion(read, gameplay);
-  checkWhatItFires(read, gameplay);
-  checkMissileFliesTowardsItsEdge(read, gameplay);
-  checkContactPartsBelongToAnEnemy(read, gameplay);
-  checkBossHasHealth(read, gameplay);
-  checkLookItemMatchesSide(read, gameplay);
-  checkLookItemFliesLeft(read, gameplay);
+  checkSheetHoldsTogether(read, gameplay);
   return read;
 }
 

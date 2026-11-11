@@ -12,6 +12,8 @@
 
 [gameplay]
 side = "enemy"
+layer = "enemy"
+hits = ["player"]
 pilot = "straight"
 
 # The bell of 24 by 24 sheet pixels: a shot through the aura hits it.

@@ -20,6 +20,7 @@ constexpr float SHIPPED_PLAYER_MISSILE_SPEED = 960.0F;
 /** @brief A ship that fires nothing. */
 constexpr std::string_view UNARMED_SHIP_SHEET_TEXT = R"([gameplay]
 side = "player"
+layer = "player"
 pilot = "player"
 [gameplay.hitbox]
 width = 128
@@ -33,6 +34,7 @@ kind = "ship"
  * knows, so its sheet does not read as EntitySheets on a client. */
 constexpr std::string_view PLUGIN_PILOT_SHEET_TEXT = R"([gameplay]
 side = "enemy"
+layer = "enemy"
 pilot = "lancer_charge"
 [gameplay.hitbox]
 width = 96

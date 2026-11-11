@@ -4,6 +4,7 @@
 #include <utility>
 #include <vector>
 #include "CollisionBox.hpp"
+#include "CollisionTestConstants.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
@@ -25,6 +26,7 @@ engine::Entity LagCompensatedHitSystemFixture::enemyAt(Position position) {
   components_->add(enemy, position);
   components_->add(enemy, EntityType::Enemy);
   components_->add(enemy, ENEMY_BOX);
+  components_->add(enemy, ENEMY_FILTER);
   return enemy;
 }
 
@@ -34,6 +36,7 @@ engine::Entity LagCompensatedHitSystemFixture::missileAt(
   components_->add(missile, position);
   components_->add(missile, EntityType::PlayerMissile);
   components_->add(missile, MISSILE_BOX);
+  components_->add(missile, PLAYER_MISSILE_FILTER);
   components_->add(missile, ViewDelay{.ticks = ticksBehind});
   return missile;
 }
