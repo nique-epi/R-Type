@@ -14,6 +14,7 @@
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
 #include "ScoreValue.hpp"
+#include "Shootable.hpp"
 
 namespace rtype::game::testing {
 
@@ -65,6 +66,14 @@ engine::Entity DamageScene::boss(Health health, Boss boss,
   const engine::Entity entity = bydo(BOSS_ID, health);
   scene.components.add(entity, boss);
   scene.components.add(entity, current);
+  return entity;
+}
+
+engine::Entity DamageScene::shootableMissile(std::uint32_t networkId) {
+  const engine::Entity entity =
+      scene.spawn(EntityType::EnemyMissile, 0.0F, 0.0F);
+  scene.components.add(entity, NetworkIdentity{.networkId = networkId});
+  scene.components.add(entity, Shootable{});
   return entity;
 }
 

@@ -31,6 +31,7 @@ using rtype::game::testing::BYDO_ID;
 using rtype::game::testing::BYDO_POINTS;
 using rtype::game::testing::CHARGING;
 using rtype::game::testing::DamageScene;
+using rtype::game::testing::ENEMY_MISSILE_ID;
 using rtype::game::testing::FIRST_PLAYER;
 using rtype::game::testing::FOUR_HEALTH_POINTS;
 using rtype::game::testing::killed;
@@ -326,4 +327,50 @@ TEST(DamageRules, AFragileEnemyOutOfItsActionLosesOnePoint) {
   ASSERT_NE(damage.scene.components.get<Health>(bydo), nullptr);
   EXPECT_EQ(damage.scene.components.get<Health>(bydo)->points,
             THREE_HEALTH_POINTS);
+}
+
+/**
+ * Given a missile of a player and a Shootable missile of an enemy, which has
+ * no health
+ * When the first hits the second
+ * Then the shot is removed and the missile of the enemy killed, in that
+ * order, both gone, and nobody earns points
+ */
+TEST(DamageRules, AShotKillsAShootableMissile) {
+  DamageScene damage;
+  const Entity playerMissile = damage.missileOf(MISSILE_ID, FIRST_PLAYER);
+  const Entity shootable = damage.shootableMissile(ENEMY_MISSILE_ID);
+
+  damage.hit(playerMissile, shootable);
+
+  const std::vector<Announcement> expected{removed(MISSILE_ID),
+                                           killed(ENEMY_MISSILE_ID)};
+  EXPECT_EQ(damage.announced, expected);
+  EXPECT_EQ(damage.scene.components.get<EntityType>(playerMissile), nullptr);
+  EXPECT_EQ(damage.scene.components.get<EntityType>(shootable), nullptr);
+  EXPECT_TRUE(damage.kills.empty());
+}
+
+/**
+ * Given a Shootable missile of an enemy and two shots that reach it in the
+ * same dispatch
+ * When both hits are handled
+ * Then the missile is killed once, and the second shot flies on
+ */
+TEST(DamageRules, ASecondShotOnTheSameMissileFliesOn) {
+  DamageScene damage;
+  const Entity firstShot = damage.missile(MISSILE_ID);
+  const Entity secondShot = damage.missile(OTHER_MISSILE_ID);
+  const Entity missile = damage.shootableMissile(ENEMY_MISSILE_ID);
+
+  damage.scene.events.publish(
+      MissileHit{.missile = firstShot, .target = missile});
+  damage.scene.events.publish(
+      MissileHit{.missile = secondShot, .target = missile});
+  damage.scene.events.dispatch();
+
+  const std::vector<Announcement> expected{removed(MISSILE_ID),
+                                           killed(ENEMY_MISSILE_ID)};
+  EXPECT_EQ(damage.announced, expected);
+  EXPECT_NE(damage.scene.components.get<EntityType>(secondShot), nullptr);
 }

@@ -27,14 +27,15 @@ struct MissileHit;
  * while it is in the action its Fragile names: it is announced
  * with an EntityDamage while it has points left, and destroyed with an
  * EntityDestruction Killed when it has none. A target without Health is not
- * hurt. A Boss in its arrival loses nothing: the missile is removed, nothing
- * else is announced. A Boss that loses points is announced with a
- * BossHealthChanged. When the missile has a MissileOwner and the target that
- * dies has a ScoreValue above 0, an EnemyKilled follows the destruction, naming
- * the owner and the points. A hit naming an entity that is gone or has no
- * NetworkIdentity is ignored, so two missiles reaching the same target in one
- * dispatch never destroy it twice. The bus and the registry must outlive this
- * object.
+ * hurt, unless it is a Shootable missile of an enemy, which is destroyed
+ * with an EntityDestruction Killed. A Boss in its arrival loses nothing: the
+ * missile is removed, nothing else is announced. A Boss that loses points is
+ * announced with a BossHealthChanged. When the missile has a MissileOwner and
+ * the target that dies has a ScoreValue above 0, an EnemyKilled follows the
+ * destruction, naming the owner and the points. A hit naming an entity that is
+ * gone or has no NetworkIdentity is ignored, so two missiles reaching the same
+ * target in one dispatch never destroy it twice. The bus and the registry must
+ * outlive this object.
  */
 class DamageRules {
  public:

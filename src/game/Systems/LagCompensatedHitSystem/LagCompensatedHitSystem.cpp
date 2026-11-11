@@ -31,6 +31,7 @@
 #include "PastTick.hpp"
 #include "Position.hpp"
 #include "ShipContact.hpp"
+#include "Shootable.hpp"
 #include "SteadyMotion.hpp"
 #include "SteadyTravel.hpp"
 #include "Summoning.hpp"
@@ -63,18 +64,35 @@ engine::Bounds sweptBack(engine::Bounds now, Position travel) {
                         .height = now.height + std::abs(travel.y)};
 }
 
+/** @returns A test that keeps a box whose entity is still an entity of
+ * @p components. */
+auto stillIn(const engine::ComponentRegistry& components) {
+  return [&components](const PastEnemy& enemy) {
+    return components.has<EntityType>(enemy.entity);
+  };
+}
+
+/** @returns A test that keeps a box of a missile of an enemy that is still
+ * an entity of @p components and is Shootable. */
+auto shootableIn(const engine::ComponentRegistry& components) {
+  return [&components](const PastEnemy& enemy) {
+    return enemy.kind == ThreatKind::Missile &&
+           components.has<Shootable>(enemy.entity);
+  };
+}
+
 /** @returns The first box of @p enemies whose filter and the one of
  * @p tester engine::mayCollide() keeps, that overlaps the box of @p tester
- * and whose entity is still an entity of @p components; nothing when none
- * is. */
-std::optional<PastEnemy> firstHitAmong(
-    const std::vector<PastEnemy>& enemies, const EntityBounds& tester,
-    const engine::ComponentRegistry& components) {
-  const auto hit = std::ranges::find_if(
-      enemies, [&tester, &components](const PastEnemy& enemy) {
+ * and that @p kept keeps (see stillIn() and shootableIn()); nothing when
+ * none is. */
+template <typename Kept>
+std::optional<PastEnemy> firstHitAmong(const std::vector<PastEnemy>& enemies,
+                                       const EntityBounds& tester,
+                                       const Kept& kept) {
+  const auto hit =
+      std::ranges::find_if(enemies, [&tester, &kept](const PastEnemy& enemy) {
         return engine::mayCollide(tester.filter, enemy.filter) &&
-               engine::overlaps(tester.bounds, enemy.bounds) &&
-               components.has<EntityType>(enemy.entity);
+               engine::overlaps(tester.bounds, enemy.bounds) && kept(enemy);
       });
   if (hit == enemies.end()) {
     return std::nullopt;
@@ -108,14 +126,14 @@ std::optional<PastEnemy> firstThreatTo(
     const PastTick& past, const EntityBounds& tester,
     const engine::ComponentRegistry& components) {
   if (std::optional<PastEnemy> threat =
-          firstHitAmong(past.threats, tester, components)) {
+          firstHitAmong(past.threats, tester, stillIn(components))) {
     return threat;
   }
   if (std::optional<PastEnemy> beam =
           firstBeamAmong(past.beams, tester, components)) {
     return beam;
   }
-  return firstHitAmong(past.bodies, tester, components);
+  return firstHitAmong(past.bodies, tester, stillIn(components));
 }
 
 /** @returns @p entity with the box @p bounds and its collision filter;
@@ -206,29 +224,34 @@ void LagCompensatedHitSystem::update(engine::ComponentRegistry& components,
 
 void LagCompensatedHitSystem::testPlayerMissiles(
     engine::ComponentRegistry& components, engine::Duration elapsed) {
-  components.forEach<ViewDelay, Position>([this, &components, elapsed](
-                                              engine::Entity missile,
-                                              const ViewDelay& delay,
-                                              const Position& position) {
-    const auto* const box = components.get<CollisionBox>(missile);
-    const auto* const side = components.get<EntityType>(missile);
-    if (box == nullptr || side == nullptr ||
-        *side != EntityType::PlayerMissile) {
-      return;
-    }
-    const std::optional<EntityBounds> swept =
-        testerOf(components, missile,
-                 sweptBack(boundsOf(position, *box),
-                           travelOf(components, missile, elapsed)));
-    if (!swept.has_value()) {
-      return;
-    }
-    if (const std::optional<PastEnemy> target =
-            firstHitAmong(enemiesAgo(delay.ticks).bodies, *swept, components)) {
-      events_->publish(
-          MissileHit{.missile = missile, .target = target->entity});
-    }
-  });
+  components.forEach<ViewDelay, Position>(
+      [this, &components, elapsed](engine::Entity missile,
+                                   const ViewDelay& delay,
+                                   const Position& position) {
+        const auto* const box = components.get<CollisionBox>(missile);
+        const auto* const side = components.get<EntityType>(missile);
+        if (box == nullptr || side == nullptr ||
+            *side != EntityType::PlayerMissile) {
+          return;
+        }
+        const std::optional<EntityBounds> swept =
+            testerOf(components, missile,
+                     sweptBack(boundsOf(position, *box),
+                               travelOf(components, missile, elapsed)));
+        if (!swept.has_value()) {
+          return;
+        }
+        const PastTick& past = enemiesAgo(delay.ticks);
+        std::optional<PastEnemy> target =
+            firstHitAmong(past.bodies, *swept, stillIn(components));
+        if (!target.has_value()) {
+          target = firstHitAmong(past.threats, *swept, shootableIn(components));
+        }
+        if (target.has_value()) {
+          events_->publish(
+              MissileHit{.missile = missile, .target = target->entity});
+        }
+      });
 }
 
 void LagCompensatedHitSystem::testShips(engine::ComponentRegistry& components) {
