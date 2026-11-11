@@ -32,14 +32,18 @@ std::optional<EntityState> readEntity(ByteReader& reader) {
   const std::uint8_t type = reader.readUint8();
   const float horizontal = readCoordinate(reader);
   const float vertical = readCoordinate(reader);
+  const std::uint8_t look = reader.readUint8();
   if (entityId == identifiers::NO_ENTITY_ID) {
     throw InvalidFieldValueException(ENTITY_ID_FIELD, entityId);
   }
   if (type == identifiers::NO_ENTITY_TYPE) {
     return std::nullopt;
   }
-  return EntityState{
-      .entityId = entityId, .entityType = type, .x = horizontal, .y = vertical};
+  return EntityState{.entityId = entityId,
+                     .entityType = type,
+                     .x = horizontal,
+                     .y = vertical,
+                     .look = look};
 }
 
 }  // namespace
@@ -62,6 +66,7 @@ void writeEntity(ByteWriter& writer, const EntityState& entity) {
   writer.writeUint8(entity.entityType);
   writeCoordinate(writer, entity.x);
   writeCoordinate(writer, entity.y);
+  writer.writeUint8(entity.look);
 }
 
 std::vector<PlayerState> readPlayers(ByteReader& reader) {

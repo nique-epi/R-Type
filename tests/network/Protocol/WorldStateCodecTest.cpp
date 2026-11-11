@@ -64,9 +64,9 @@ using rtype::network::testing::UNROUNDED_Y;
 /**
  * Given a state with one player and one entity
  * When it is encoded
- * Then the payload is the 31 bytes of the protocol page: tick, playerCount,
+ * Then the payload is the 32 bytes of the protocol page: tick, playerCount,
  * the player with the newest input number it is served up to, entityCount, the
- * entity with x and y in eighths of a unit
+ * entity with x and y in eighths of a unit, then its look
  */
 TEST(WorldStateCodec, EncodesTheLayoutOfTheProtocolPage) {
   const auto payloads = WorldStateCodec::encode(oneShipState());
@@ -76,7 +76,7 @@ TEST(WorldStateCodec, EncodesTheLayoutOfTheProtocolPage) {
             byteSequence({0x00, 0x00, 0x00, 0x03, 0x01, 0x01, 0x00, 0x00,
                           0x00, 0x07, 0x03, 0x00, 0x00, 0x00, 0x64, 0x00,
                           0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
-                          0x00, 0x09, 0x01, 0x03, 0x20, 0x01, 0x94}));
+                          0x00, 0x09, 0x01, 0x03, 0x20, 0x01, 0x94, 0x02}));
 }
 
 /**
@@ -99,7 +99,8 @@ TEST(WorldStateCodec, KeepsTheLargestValueOfEachField) {
       .entities = {EntityState{.entityId = LARGEST_U32,
                                .entityType = LARGEST_TYPE_NUMBER,
                                .x = SMALLEST_WIRE_COORDINATE,
-                               .y = LARGEST_WIRE_COORDINATE}}};
+                               .y = LARGEST_WIRE_COORDINATE,
+                               .look = LARGEST_U8}}};
 
   EXPECT_EQ(WorldStateCodec::decode(WorldStateCodec::encode(state).front()),
             state);
@@ -171,9 +172,9 @@ TEST(WorldStateCodec, ClampsAPositionToTheRangeOfTheWire) {
 }
 
 /**
- * Given four players and 122 entities, the most one datagram holds
+ * Given four players and 110 entities, the most one datagram holds
  * When the state is encoded
- * Then one payload of 1168 bytes is produced, within the 1175 a datagram
+ * Then one payload of 1170 bytes is produced, within the 1175 a datagram
  * carries
  */
 TEST(WorldStateCodec, KeepsTheLargestStateThatFitsInOnePayload) {
@@ -189,10 +190,10 @@ TEST(WorldStateCodec, KeepsTheLargestStateThatFitsInOnePayload) {
 }
 
 /**
- * Given four players and 123 entities, one more than a datagram holds
+ * Given four players and 111 entities, one more than a datagram holds
  * When the state is encoded
  * Then two payloads are produced, each with the same tick and the four
- * players, holding 122 then 1 entities in their order, and none exceeds 1175
+ * players, holding 110 then 1 entities in their order, and none exceeds 1175
  * bytes
  */
 TEST(WorldStateCodec, SplitsEntitiesThatDoNotFitIntoSeveralPayloads) {
@@ -287,10 +288,12 @@ TEST(WorldStateCodec, RefusesAnnouncedEntitiesBeyondThePayload) {
  */
 TEST(WorldStateCodec, SkipsAnEntityOfTypeZero) {
   const WorldState decoded = WorldStateCodec::decode(
-      byteSequence({0, 0, 0, 1, 0, 3, 0, 0, 0, 1,
-                    3, 0, 0, 0, 0, 0, 0, 0, 2, NO_TYPE_NUMBER_BYTE,
-                    0, 0, 0, 0, 0, 0, 0, 3, 3, 0,
-                    0, 0, 0}));
+      byteSequence({0, 0, 0, 1, 0, 3, 0,
+                    0, 0, 1, 3, 0, 0, 0,
+                    0, 0, 0, 0, 0, 2, NO_TYPE_NUMBER_BYTE,
+                    0, 0, 0, 0, 0, 0, 0,
+                    0, 3, 3, 0, 0, 0, 0,
+                    0}));
 
   ASSERT_EQ(decoded.entities.size(), 2U);
   EXPECT_EQ(decoded.entities.front().entityId, 1U);
@@ -306,7 +309,7 @@ TEST(WorldStateCodec, SkipsAnEntityOfTypeZero) {
 TEST(WorldStateCodec, ReadsTheLargestTypeNumber) {
   const WorldState decoded = WorldStateCodec::decode(
       byteSequence({0, 0, 0, 1, 0, 1, 0, 0, 0, EXAMPLE_ENTITY_ID,
-                    LARGEST_TYPE_NUMBER_BYTE, 0, 0, 0, 0}));
+                    LARGEST_TYPE_NUMBER_BYTE, 0, 0, 0, 0, 0}));
 
   ASSERT_EQ(decoded.entities.size(), 1U);
   EXPECT_EQ(decoded.entities.front().entityType, LARGEST_TYPE_NUMBER);
@@ -345,7 +348,7 @@ TEST(WorldStateCodec, RefusesABooleanThatIsNeitherZeroNorOne) {
 TEST(WorldStateCodec, RefusesAnEntityWithoutAnId) {
   EXPECT_THROW(
       (void)WorldStateCodec::decode(byteSequence(
-          {0, 0, 0, 1, 0, 1, 0, 0, 0, NO_ENTITY_ID_BYTE, 3, 0, 0, 0, 0})),
+          {0, 0, 0, 1, 0, 1, 0, 0, 0, NO_ENTITY_ID_BYTE, 3, 0, 0, 0, 0, 0})),
       MalformedMessageException);
 }
 

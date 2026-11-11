@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <string>
 #include "ActionKey.hpp"
 #include "CollisionBox.hpp"
 #include "Direction.hpp"
@@ -45,6 +46,15 @@ struct Intent {
    * second, which PilotSystem applies to a body with a SteadyMotion; nothing
    * to keep its speed. */
   std::optional<float> topSpeedTo{std::nullopt};
+  /** @brief The effect of the sheet of the body it plays once at this tick,
+   * by its name in `[appearance.effects]`; nothing for a tick that plays none.
+   * PilotSystem announces it when the sheet names it. */
+  std::optional<std::string> playsEffect{std::nullopt};
+  /** @brief The look of the sheet of the body it shows from this tick on, by
+   * its name in `[appearance.looks]`, the empty name for its own idle loop;
+   * nothing to keep the look it shows. PilotSystem applies it when the sheet
+   * names it. */
+  std::optional<std::string> showsLook{std::nullopt};
 };
 
 }  // namespace rtype::game

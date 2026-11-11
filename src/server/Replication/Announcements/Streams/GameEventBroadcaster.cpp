@@ -5,12 +5,14 @@
 #include <utility>
 #include "BossArrival.hpp"
 #include "BossHealthChanged.hpp"
+#include "EffectStarted.hpp"
 #include "EnemyActionStarted.hpp"
 #include "EntityDamage.hpp"
 #include "EntityDestruction.hpp"
 #include "EntitySpawn.hpp"
 #include "EventBus.hpp"
 #include "EventMessage.hpp"
+#include "EventMessages.hpp"
 #include "GameEventBroadcasterParts.hpp"
 #include "GameEventConstants.hpp"
 #include "NetworkException.hpp"
@@ -37,7 +39,11 @@ template <typename Event>
 std::optional<EventMessage> GameEventBroadcaster::tryEncode(
     const Event& event, std::string_view eventName) {
   try {
-    return encoder_.encode(event);
+    if constexpr (requires { encoder_.encode(event); }) {
+      return encoder_.encode(event);
+    } else {
+      return eventMessageOf(event);
+    }
   } catch (const network::NetworkException& error) {
     logger_.warn("game event ", eventName, " not sent: ", error.what());
     return std::nullopt;
@@ -53,6 +59,7 @@ GameEventBroadcaster::GameEventBroadcaster(GameEventBroadcasterParts parts)
   subscribeTo<game::EntityDestruction>(ENTITY_DESTRUCTION_EVENT_NAME);
   subscribeTo<game::EntityDamage>(ENTITY_DAMAGE_EVENT_NAME);
   subscribeTo<game::EnemyActionStarted>(ENEMY_ACTION_STARTED_EVENT_NAME);
+  subscribeTo<game::EffectStarted>(EFFECT_STARTED_EVENT_NAME);
   subscribeTo<game::BossArrival>(BOSS_ARRIVAL_EVENT_NAME);
   subscribeTo<game::BossHealthChanged>(BOSS_HEALTH_CHANGED_EVENT_NAME);
   subscribeTo<game::PlayerHit>(PLAYER_HIT_EVENT_NAME);

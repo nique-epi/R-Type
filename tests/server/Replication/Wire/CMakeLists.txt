@@ -1,1 +1,1 @@
-target_sources(server_replication_tests PRIVATE GameEventEncoderTest.cpp)
+target_sources(server_replication_tests PRIVATE EventMessagesTest.cpp GameEventEncoderTest.cpp)

@@ -10,7 +10,8 @@ namespace rtype::game {
  * @brief The rules of a body that acts in steps separated by waits, whatever
  * runs its steps: it holds what a step asked for the ticks of its wait,
  * applies the one-time requests of that step (an action started or ended, a
- * jump) on its first tick only, and stands still for good once stopped.
+ * jump, an effect played) on its first tick only, and stands still for good
+ * once stopped.
  */
 class HeldIntent {
  public:

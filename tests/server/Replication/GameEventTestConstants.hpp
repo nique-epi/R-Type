@@ -3,10 +3,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <string_view>
 
 namespace rtype::server::testing {
 
 constexpr std::uint32_t MONSTER_NETWORK_ID = 7;
+
+/** @brief An effect a sheet names. */
+constexpr std::string_view SPARK_EFFECT = "spark";
 constexpr float MONSTER_X = 100.0F;
 constexpr float MONSTER_Y = 50.0F;
 constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;

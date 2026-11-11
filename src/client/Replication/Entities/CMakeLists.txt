@@ -1,11 +1,14 @@
 add_library(rtype_client_entities STATIC
+  EffectPlayer.cpp
   EnemyActionPlayer.cpp
   EntityCues.cpp
   ClaimedMissiles.cpp
   EntityReplicator.cpp
   EntityTypeLooks.cpp
+  EntityWithAppearance.cpp
   LastListedTicks.cpp
   PositionHistory.cpp
+  ShownLooks.cpp
   WorldStateFilter.cpp
 )
 
@@ -20,6 +23,7 @@ target_link_libraries(rtype_client_entities
     rtype_engine
     rtype_engine_time
     rtype_game_components
+    rtype_network_effect_played
     rtype_network_enemy_action
     rtype_network_entity_destroyed
     rtype_network_entity_spawned
@@ -27,6 +31,8 @@ target_link_libraries(rtype_client_entities
     rtype_network_protocol
   PRIVATE
     rtype_client_entity_sprites
+    rtype_client_sheet_effects
+    rtype_client_sprite_effect_interfaces
     rtype_identifiers
 )
 

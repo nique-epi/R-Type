@@ -32,6 +32,7 @@
 #include "SheetActionReading.hpp"
 #include "SheetText.hpp"
 #include "SheetTextReading.hpp"
+#include "SheetVisualNames.hpp"
 #include "ShipControlConstants.hpp"
 #include "ShipLookConstants.hpp"
 #include "ShipLookNumbers.hpp"
@@ -524,8 +525,8 @@ void checkLookItemFliesLeft(const EntitySheet& sheet,
 EntitySheet gameplayOf(const SheetText& sheet,
                        const BehaviourRegistry& behaviours) {
   const toml::table root = engine::parseDataFile(sheet.text, sheet.source);
-  const engine::DataFileTable gameplay =
-      gameplayTableOf(engine::rootOf(root, sheet.source));
+  const engine::DataFileTable sheetRoot = engine::rootOf(root, sheet.source);
+  const engine::DataFileTable gameplay = gameplayTableOf(sheetRoot);
   EntitySheet read{
       .name = sheet.name,
       .number = 0,
@@ -542,7 +543,8 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .burst = burstFrom(gameplay),
       .volleys = volleysFrom(gameplay),
       .boss = bossFrom(gameplay),
-      .lookItem = lookItemFrom(gameplay)};
+      .lookItem = lookItemFrom(gameplay),
+      .visualNames = visualNamesOf(sheetTableOf(sheetRoot, APPEARANCE_KEY))};
   checkPilotMatchesSide(read, gameplay);
   checkShipMotion(read, gameplay);
   checkWhatItFires(read, gameplay);

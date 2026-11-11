@@ -18,7 +18,9 @@ const EntityAppearance& testAppearance() {
       .actions = {},
       .enragedIdleFrames = {},
       .deathFrames = {},
-      .deathFramesWithoutFlash = {}};
+      .deathFramesWithoutFlash = {},
+      .effects = {},
+      .looks = {}};
   return appearance;
 }
 

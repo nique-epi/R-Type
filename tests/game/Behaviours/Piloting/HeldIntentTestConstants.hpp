@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
 #include "ActionKey.hpp"
 #include "Direction.hpp"
 #include "EnemyPhase.hpp"
@@ -15,6 +16,9 @@ constexpr rtype::game::Intent STRIKING{
     .steered = true,
     .startsAction = rtype::game::ActionKey{
         .attack = 1, .phase = rtype::game::EnemyPhase::Strike}};
+
+/** @brief An effect a step plays. */
+constexpr std::string_view SPARK_EFFECT = "spark";
 
 /** @brief A wait of three ticks: the tick of the step and two more. */
 constexpr std::uint32_t THREE_TICKS = 3;

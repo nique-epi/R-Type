@@ -22,6 +22,11 @@ constexpr std::uint32_t LOOK_ITEM_ID = 13;
  * message puts it, in logical units.
  */
 constexpr game::Position FIRST_POSITION{.x = 100.0F, .y = 200.0F};
+
+/** @brief A look a WorldState names for an entity, and the look of a state
+ * older than it. */
+constexpr std::uint8_t NAMED_LOOK = 3;
+constexpr std::uint8_t OLDER_LOOK = 1;
 constexpr game::Position SECOND_POSITION{.x = 150.5F, .y = 210.25F};
 
 /**

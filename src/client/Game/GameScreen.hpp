@@ -11,6 +11,7 @@
 #include "ChatWindow.hpp"
 #include "ComponentRegistry.hpp"
 #include "DepartureFeed.hpp"
+#include "EffectPlayer.hpp"
 #include "EffectSpawner.hpp"
 #include "EnemyActionPlayer.hpp"
 #include "EntityFeedback.hpp"
@@ -189,6 +190,7 @@ class GameScreen : public IScreen {
   OwnPrediction prediction_;
   EntityReplicator replicator_;
   EnemyActionPlayer enemyActions_;
+  EffectPlayer namedEffects_;
   BossPresentation boss_;
   engine::SystemScheduler systems_;
   PlayerCommands playerCommands_;

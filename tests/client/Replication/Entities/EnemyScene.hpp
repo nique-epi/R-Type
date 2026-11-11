@@ -26,6 +26,9 @@ class EnemyScene {
    * @p entityId. */
   void announce(std::uint32_t entityId, std::uint8_t attack,
                 network::EnemyActionPhase phase);
+  /** @brief Shows the look @p look on the enemy, as a WorldState listing it
+   * does. */
+  void showLook(std::uint8_t look);
   /** @brief Runs the animation system for @p elapsed. */
   void play(engine::Duration elapsed);
   [[nodiscard]] const SpriteAnimation& playing();

@@ -27,8 +27,9 @@ void pushViewTable(lua_State* state, const BehaviourView& view,
  * left out wants nothing; a direction is cut to -1..1 on each axis; an action
  * whose attack is not 0 to HIGHEST_ATTACK_NUMBER or whose phase is not one of
  * PHASE_NAMES is left out, as a collision box or a top speed that is not a
- * positive finite number, as a jump to a point that is not finite; a value of
- * the wrong type counts as left out.
+ * positive finite number, as a jump to a point that is not finite, and an
+ * effect or a look that is no name of the content (a look may be empty); a
+ * value of the wrong type counts as left out.
  */
 [[nodiscard]] Intent intentFromTable(lua_State* state, int index);
 

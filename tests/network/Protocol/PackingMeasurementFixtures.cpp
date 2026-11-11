@@ -4,8 +4,10 @@
 #include <span>
 #include <vector>
 #include "ByteWriter.hpp"
+#include "PackingMeasurementTestConstants.hpp"
 #include "PlayerInput.hpp"
 #include "ProtocolConstants.hpp"
+#include "SerializationConstants.hpp"
 #include "WireTypes.hpp"
 #include "WorldState.hpp"
 #include "WorldStateCodec.hpp"
@@ -37,13 +39,35 @@ void writeUnpackedEntity(ByteWriter& writer, const EntityState& entity) {
   writer.writeUint8(entity.entityType);
   writer.writeFloat(entity.x);
   writer.writeFloat(entity.y);
+  writer.writeUint8(entity.look);
+}
+
+/** @returns @p payload, a WorldState of protocol version 15, with a look 0
+ * after each of its entities, as version 16 writes them. */
+std::vector<std::byte> withEntityLooks(std::span<const std::byte> payload) {
+  const auto playerCount =
+      std::to_integer<std::size_t>(payload[UINT32_WIRE_SIZE]);
+  const std::size_t countAt = UINT32_WIRE_SIZE + UINT8_WIRE_SIZE +
+                              (playerCount * PLAYER_STATE_WIRE_SIZE);
+  const auto entityCount = std::to_integer<std::size_t>(payload[countAt]);
+  std::vector<std::byte> converted;
+  const std::span<const std::byte> head = payload.first(countAt + 1);
+  converted.insert(converted.end(), head.begin(), head.end());
+  for (std::size_t entity = 0; entity < entityCount; ++entity) {
+    const std::span<const std::byte> fields =
+        payload.subspan(countAt + 1 + (entity * VERSION_15_ENTITY_BYTES),
+                        VERSION_15_ENTITY_BYTES);
+    converted.insert(converted.end(), fields.begin(), fields.end());
+    converted.push_back(std::byte{0});
+  }
+  return converted;
 }
 
 }  // namespace
 
 WorldState capturedWorldState(std::span<const std::uint8_t> body) {
   return WorldStateCodec::decode(
-      std::as_bytes(body).subspan(MESSAGE_PREFIX_SIZE));
+      withEntityLooks(std::as_bytes(body).subspan(MESSAGE_PREFIX_SIZE)));
 }
 
 std::vector<std::byte> unpackedWorldStateBytes(const WorldState& state) {

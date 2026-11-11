@@ -23,7 +23,7 @@ namespace rtype::game {
  * pilot, stay where they are. A Pilot made from a sheet may therefore keep its
  * behaviour and the span of its settings for as long as the catalog lives,
  * wherever it was moved.
- * Every name is 1 to MAXIMUM_ENTITY_TYPE_NAME_LENGTH lowercase letters, digits
+ * Every name is 1 to MAXIMUM_CONTENT_NAME_LENGTH lowercase letters, digits
  * and underscores, at most MAXIMUM_ENTITY_TYPES sheets are read, no two share a
  * name, each is read by gameplayOf(), and a gun fires a sheet that exists, of
  * the side of a missile of its shooter, whose number its GunSheet then holds.

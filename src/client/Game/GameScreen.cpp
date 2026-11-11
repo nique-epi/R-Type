@@ -21,6 +21,8 @@
 #include "BossStatus.hpp"
 #include "ChatWindow.hpp"
 #include "DepartureFeed.hpp"
+#include "EffectPlayed.hpp"
+#include "EffectPlayer.hpp"
 #include "EffectPreferences.hpp"
 #include "EffectSpawner.hpp"
 #include "EnemyAction.hpp"
@@ -121,6 +123,7 @@ void traceHeldActions(const logging::Logger& logger, const ActionSet& held,
 struct EntityMessageRoutes {
   std::reference_wrapper<EntityReplicator> replicator;
   std::reference_wrapper<EnemyActionPlayer> enemyActions;
+  std::reference_wrapper<EffectPlayer> namedEffects;
   std::reference_wrapper<BossPresentation> boss;
   std::reference_wrapper<ScoreBoard> scoreBoard;
   std::reference_wrapper<DepartureFeed> departures;
@@ -128,7 +131,8 @@ struct EntityMessageRoutes {
 
 /** @brief Hands an entity message to whoever it goes to: a PlayerLeft to the
  * board and the feed, an EnemyAction to the enemy it animates and to the boss,
- * a BossStatus to the boss, anything else but GameEnded to the replicator. */
+ * an EffectPlayed to the player of the named effects, a BossStatus to the
+ * boss, anything else but GameEnded to the replicator. */
 void routeEntityMessage(const EntityMessageRoutes& routes,
                         const EntityMessage& message) {
   std::visit(
@@ -140,6 +144,8 @@ void routeEntityMessage(const EntityMessageRoutes& routes,
         } else if constexpr (std::is_same_v<Announced, network::EnemyAction>) {
           routes.enemyActions.get().apply(announced);
           routes.boss.get().apply(announced);
+        } else if constexpr (std::is_same_v<Announced, network::EffectPlayed>) {
+          routes.namedEffects.get().apply(announced);
         } else if constexpr (std::is_same_v<Announced, network::BossStatus>) {
           routes.boss.get().apply(announced);
         } else if constexpr (!std::is_same_v<Announced, network::GameEnded>) {
@@ -193,6 +199,7 @@ GameScreen::GameScreen(GameScreenParts parts,
           .ownPlayerNumber = parts.connection.get().status().playerNumber,
           .ownMissiles = &prediction_.missiles()}),
       enemyActions_(components_),
+      namedEffects_(effects_.tools()),
       boss_(effects_.tools(), parts.sounds, parts.audio),
       playerCommands_(true, parts.settings.get().keys),
       inputs_(&parts.inputs.get()),
@@ -278,6 +285,7 @@ void GameScreen::applyEntityMessages() {
   }
   const EntityMessageRoutes routes{.replicator = replicator_,
                                    .enemyActions = enemyActions_,
+                                   .namedEffects = namedEffects_,
                                    .boss = boss_,
                                    .scoreBoard = scoreBoard_,
                                    .departures = departures_};

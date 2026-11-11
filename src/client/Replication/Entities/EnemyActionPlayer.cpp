@@ -1,6 +1,5 @@
 #include "EnemyActionPlayer.hpp"
 #include <algorithm>
-#include <cstdint>
 #include <optional>
 #include "ActionAnimation.hpp"
 #include "ActionKey.hpp"
@@ -12,8 +11,8 @@
 #include "Enraged.hpp"
 #include "Entity.hpp"
 #include "EntityAppearance.hpp"
-#include "EntitySprites.hpp"
-#include "NetworkIdentity.hpp"
+#include "EntityWithAppearance.hpp"
+#include "ShownLooks.hpp"
 #include "SpriteAnimation.hpp"
 #include "TimeConstants.hpp"
 
@@ -45,30 +44,6 @@ const ActionAnimation* actionOf(const EntityAppearance& appearance,
   return found == appearance.actions.end() ? nullptr : &*found;
 }
 
-/** @returns The entity whose network id is @p networkId and that has an
- * appearance, or nothing. */
-std::optional<engine::Entity> enemyNamed(engine::ComponentRegistry& components,
-                                         std::uint32_t networkId) {
-  std::optional<engine::Entity> found;
-  components.forEach<game::NetworkIdentity, AppearanceReference>(
-      [networkId, &found](engine::Entity entity,
-                          const game::NetworkIdentity& identity,
-                          const AppearanceReference& look) {
-        if (identity.networkId == networkId && look.appearance != nullptr) {
-          found = entity;
-        }
-      });
-  return found;
-}
-
-/** @returns The idle animation @p entity goes back to: the enraged one once
- * it is Enraged. */
-Animation idleOf(const engine::ComponentRegistry& components,
-                 engine::Entity entity, const EntityAppearance& appearance) {
-  return components.has<Enraged>(entity) ? enragedIdleAnimationOf(appearance)
-                                         : idleAnimationOf(appearance);
-}
-
 /** @returns What an enemy plays for @p action: its frames from the first,
  * then @p idle when the sheet says so. */
 SpriteAnimation playingOf(const ActionAnimation& action,
@@ -90,7 +65,7 @@ EnemyActionPlayer::EnemyActionPlayer(engine::ComponentRegistry& components)
 
 void EnemyActionPlayer::apply(const network::EnemyAction& action) {
   const std::optional<engine::Entity> enemy =
-      enemyNamed(*components_, action.entityId);
+      entityWithAppearance(*components_, action.entityId);
   if (!enemy.has_value()) {
     return;
   }
@@ -104,7 +79,7 @@ void EnemyActionPlayer::apply(const network::EnemyAction& action) {
   }
   const EntityAppearance& appearance =
       *components_->get<AppearanceReference>(*enemy)->appearance;
-  const Animation idle = idleOf(*components_, *enemy, appearance);
+  const Animation idle = restingAnimationOf(*components_, *enemy, appearance);
   const ActionAnimation* const found = actionOf(
       appearance,
       game::ActionKey{.attack = action.attack, .phase = phaseOf(action.phase)});

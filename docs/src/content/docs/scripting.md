@@ -97,8 +97,10 @@ The function returns a table; every key is optional, and a key left out, or of t
 | `jumps_to` | to appear at `{x, y}` without travelling there |
 | `collision_box` | to take another size of collision box, `{width, height}` in logical units, both positive; the offset of the box from the center, which a boss sheet may give, stays |
 | `top_speed` | to take another top speed, positive, in logical units per second |
+| `effect` | to play once the effect its sheet names so in `[appearance.effects]`; the server announces it to every player, guaranteed |
+| `look` | to show from now on the look its sheet names so in `[appearance.looks]`, or `""` for its own idle loop; every world state carries it, so a player who joins later sees it too |
 
-The collision box and the top speed stay until a later tick asks for others. The script of the example asks for its speed every tick, so its Drifter charges only while a ship is level with it.
+The collision box, the top speed and the look stay until a later tick asks for others; an effect plays at each tick that names it, a quarter of a second (`EFFECT_REST`, 15 ticks) after the last one the body played at the earliest: an effect asked for sooner is left out, so one body announces four effects a second at most. An `effect` or a `look` must be a name of the content, 1 to 24 bytes of `a` to `z`, digits and `_`, otherwise it is left out; a name the sheet of the body does not hold is left out too, silently (see [Named effects and looks](/R-Type/entity-sheets/#named-effects-and-looks)). The script of the example asks for its speed every tick, so its Drifter charges only while a ship is level with it.
 
 ## Waiting, creating and removing bodies
 
@@ -114,7 +116,7 @@ end)
 
 | Function | Does |
 |---|---|
-| `behaviours.wait(ms, intent)` | stops the function there: the body wants `intent` on every tick of the wait, its one-time requests (`starts_action`, `ends_action`, `jumps_to`) on the first tick only, and the call returns the handle again, holding a fresh view, on the tick the wait ends. The wait lasts `ms` milliseconds rounded to the nearest tick (16.7 ms), one tick at least; a waiting body costs no call. It only runs in the function of a body; `coroutine.yield` called directly is a failure. |
+| `behaviours.wait(ms, intent)` | stops the function there: the body wants `intent` on every tick of the wait, its one-time requests (`starts_action`, `ends_action`, `jumps_to`, `effect`) on the first tick only, and the call returns the handle again, holding a fresh view, on the tick the wait ends. The wait lasts `ms` milliseconds rounded to the nearest tick (16.7 ms), one tick at least; a waiting body costs no call. It only runs in the function of a body; `coroutine.yield` called directly is a failure. |
 | `behaviours.spawn(type, {x, y})` | asks for a body of the sheet `type` at `{x, y}`, and returns its network id at once. It appears at the end of the tick, after every body was steered, and every player is told. A sheet that does not exist or that ships are made from is refused, and so are more than 256 bodies in one tick (`MAXIMUM_SPAWN_ORDERS_PER_TICK`). |
 | `behaviours.destroy(id)` | removes the body of that network id at the end of the tick, after the bodies created in it; an id no body has does nothing, a ship is never removed, and more than 256 removals in one tick are refused (`MAXIMUM_REMOVAL_ORDERS_PER_TICK`). |
 | `e.id` | the network id of the body being steered, the one `spawn` returned for it. |
@@ -167,7 +169,7 @@ What a script may rely on:
 - **Reach the system.** The sandbox of Luau removes `io`, `package`, `require`, `dofile`, `loadfile` and `load`, leaves `os` its clock and dates only, and makes every standard library read-only; R-Type also removes `getfenv` and `setfenv`. Each script has globals of its own: a global of one script is not seen by another.
 - **Hold the server.** All the scripts of a game share 16 MiB (`SCRIPT_MEMORY_LIMIT_BYTES`), and the machine collects every garbage at the start of a tick once they hold 75 % of it. Reading a script has 20 ms (`SCRIPT_CALL_BUDGET`). Each step of a body, from one wait to the next, has 2 ms (`SCRIPT_STEP_BUDGET`), and the steps of one tick have 8 ms together (`SCRIPT_TICK_BUDGET`): once those are spent, the bodies still due keep what they wanted and step at the next tick, and the journal of the game says so once. A step is stopped only after 1024 loops or calls past its deadline (`SCRIPT_OVERDUE_SAFEPOINTS`), so a pause of the machine does not stop a body that did nothing wrong.
 - **Survive a failure.** A step that fails, runs past its budget or asks for too much memory stops the script of that body for good: the body is removed from the game at the end of the tick, so a body frozen out of reach cannot keep a level from ending; the other bodies go on, and the journal writes the first failure of each behaviour once.
-- **Change what the client draws.** A new animation, sound or effect belongs to the sheet and the client, not to a script.
+- **Draw something its sheet does not.** A script names an effect or a look its sheet draws; a new animation, a sound, or an effect outside the sprite sheet of the type belongs to the sheet and the client, not to a script.
 
 ## Checking a script before a game
 

@@ -26,6 +26,32 @@ behaviours.register("charge", {
 end)
 )";
 
+/** @brief Scripts that ask for an effect and a look of the sheet of their
+ * body: `sparkle` names both with names of the content, `shout` names them
+ * with a capital letter and a space, and a number, and `plain` asks for the
+ * idle loop of the sheet with the empty name. */
+constexpr std::string_view VISUALS_SCRIPT = R"(
+behaviours.register("sparkle", {}, function(view)
+  return { effect = "spark", look = "cracked" }
+end)
+behaviours.register("shout", {}, function(view)
+  return { effect = "Spark", look = "big crack" }
+end)
+behaviours.register("numbers", {}, function(view)
+  return { effect = 3, look = 4 }
+end)
+behaviours.register("plain", {}, function(view)
+  return { look = "" }
+end)
+)";
+constexpr std::string_view SPARKLE_BEHAVIOUR = "sparkle";
+constexpr std::string_view SHOUT_BEHAVIOUR = "shout";
+constexpr std::string_view NUMBERS_BEHAVIOUR = "numbers";
+constexpr std::string_view PLAIN_BEHAVIOUR = "plain";
+constexpr std::string_view SPARK_EFFECT = "spark";
+constexpr std::string_view CRACKED_LOOK = "cracked";
+constexpr std::string_view IDLE_LOOK{};
+
 /** @brief The name, setting and range `charge` declares. */
 constexpr std::string_view CHARGE_BEHAVIOUR = "charge";
 constexpr std::string_view SPEED_SHARE_SETTING = "speed_share";
