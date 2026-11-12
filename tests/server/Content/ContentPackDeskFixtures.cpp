@@ -19,6 +19,7 @@ network::ApiRequest packRequest(std::string_view address,
   return network::ApiRequest{
       .body = {},
       .remoteAddress = std::string{address},
+      .headers = {},
       .pathParameters = {{std::string{network::FINGERPRINT_PATH_PARAMETER},
                           std::string{fingerprint}}},
       .queryParameters = {}};

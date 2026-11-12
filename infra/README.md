@@ -42,7 +42,7 @@ From the root of the repository, with the tools of the list above installed and 
 infra/bootstrap.sh --domain <domain of the master> --bucket rtype-tfstate-<suffix>
 ```
 
-It asks which AWS account and repository it is about, creates the bucket, applies Terraform after you read the plan, sets the six variables, creates the environment `production` with you as its required reviewer, then waits for the A record of the domain (it prints the address to give it) and polls until it answers, for up to 30 minutes. `--deploy v0.3.0` also starts `deploy-master` for that release once the record answers, and `--yes` skips the two questions. Every step first looks at what exists, so after a failure you run the same command again. It does not publish a release, and it does not set the address in Vercel, the game servers or the client (step 6 below).
+It asks which AWS account and repository it is about, creates the bucket, applies Terraform after you read the plan, sets the six variables, creates the environment `production` with you as its required reviewer, then waits for the A record of the domain (it prints the address to give it) and polls until it answers, for up to 30 minutes. `--deploy v0.3.0` also starts `deploy-master` for that release once the record answers, and `--yes` skips the two questions. Every step first looks at what exists, so after a failure you run the same command again. It does not publish a release, and it does not set the address in Vercel, the game servers or the client (step 6 below), nor the key of the site (step 7).
 
 ## Setting it up by hand, in this order
 
@@ -148,6 +148,21 @@ Give the `master_url` output to everything that talks to the master:
 | The game servers | `master-url` in `server.cfg` | put the same address |
 | The client | `master-url`, or the master chosen in the game | put the same address |
 
+### 7. The key of the site, so each visitor has a quota of its own
+
+The master allows 5 creations of a server an hour per address, and every visitor of the site reaches it from the address of Vercel. With one secret both hold, the site names the visitor of each creation, and the master counts it under that visitor. Without it the site still works, all its visitors under one quota.
+
+```bash
+openssl rand -hex 32
+```
+
+| Where | Setting | What to do |
+|---|---|---|
+| The master | `site-key` in `/var/lib/rtype/master.cfg` | in an SSM session on the instance, write the line `set site-key <secret>` in that file, `chown rtype:rtype` and `chmod 600` it, then `systemctl restart rtype-master`; a deployment does not touch the file |
+| The web site on Vercel | `MASTER_SITE_KEY` | set it to the same value, as a sensitive variable, for Production only, then deploy the site again |
+
+Keep it out of GitHub and of Terraform, and never give it with `--set` on the command line of the service, which every user of the machine can read. Whoever holds it creates servers without limit.
+
 The players and the hosts need a release of the game that speaks HTTPS: an older client or game server refuses an `https://` address. If the Elastic IP is ever replaced, only the A record changes: everything else holds the domain.
 
 ## Day to day
@@ -177,6 +192,7 @@ The players and the hosts need a release of the game that speaks HTTPS: an older
 ## Limits
 
 - **HTTPS ends at Caddy.** Between Caddy and the master, on the machine itself, requests go in plain HTTP to 127.0.0.1:8080. The master reads the address of each client in the `X-Forwarded-For` header Caddy writes, and trusts that header only from 127.0.0.1.
+- **The key of the site is set by hand** (step 7), on the instance and in Vercel: no script writes it, and a machine made again from Terraform starts without it.
 - **One machine, one database, no backup.** A restart cuts the master for a few seconds; the games in progress go on, since no datagram of a game goes through the master.
 - **The role of the deployments runs any script on the machine**, because SSM's `AWS-RunShellScript` does. The role reaches only that machine, and only from the approved environment.
 - **The first deployment has not run yet**, and the return to the previous release when the master does not answer has not been tested end to end.

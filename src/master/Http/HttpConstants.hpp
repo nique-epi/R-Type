@@ -23,4 +23,12 @@ constexpr int TOO_MANY_REQUESTS_STATUS = network::TOO_MANY_REQUESTS_STATUS;
 constexpr std::string_view LOCATION_HEADER = "Location";
 constexpr std::string_view WWW_AUTHENTICATE_HEADER = "WWW-Authenticate";
 
+/**
+ * @brief The headers the web site sends with a creation: the secret it names
+ * itself by, and the address of the visitor it creates the server for. In
+ * lowercase, as network::ApiRequest::headers names a header.
+ */
+constexpr std::string_view SITE_KEY_HEADER = "x-site-key";
+constexpr std::string_view SITE_CLIENT_ADDRESS_HEADER = "x-site-client-address";
+
 }  // namespace rtype::master

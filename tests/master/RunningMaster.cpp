@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 #include "Application.hpp"
 #include "ConfigurationReader.hpp"
@@ -24,7 +25,8 @@
 #include "SettingLine.hpp"
 #include "StorageConstants.hpp"
 
-RunningMaster::RunningMaster() : port_(freeHttpPort()) {
+RunningMaster::RunningMaster(std::vector<std::string> settingLines)
+    : port_(freeHttpPort()), settingLines_(std::move(settingLines)) {
   databaseFile_.close();
   application_ = application();
   application_->start();
@@ -32,6 +34,12 @@ RunningMaster::RunningMaster() : port_(freeHttpPort()) {
 
 std::unique_ptr<rtype::engine::Application> RunningMaster::application() {
   const std::array<std::string_view, 1> quiet{rtype::logging::NO_STDERR_OPTION};
+  std::vector<std::string> lines{
+      rtype::engine::settingLine(rtype::master::DATABASE_SETTING_NAME,
+                                 databaseFile_.file().string()),
+      rtype::engine::settingLine(rtype::master::PORT_SETTING_NAME,
+                                 std::to_string(port_))};
+  lines.insert(lines.end(), settingLines_.begin(), settingLines_.end());
   return std::make_unique<rtype::engine::Application>(
       rtype::engine::LoopStages(rtype::master::MASTER_LOOP_STAGES),
       rtype::master::masterModules(
@@ -40,12 +48,7 @@ std::unique_ptr<rtype::engine::Application> RunningMaster::application() {
       rtype::engine::configurationStep(
           databaseFile_.file().parent_path() /
               rtype::master::MASTER_CONFIGURATION_FILE_NAME,
-          std::vector<std::string>{
-              rtype::engine::settingLine(rtype::master::DATABASE_SETTING_NAME,
-                                         databaseFile_.file().string()),
-              rtype::engine::settingLine(rtype::master::PORT_SETTING_NAME,
-                                         std::to_string(port_))},
-          report_));
+          std::move(lines), report_));
 }
 
 std::uint16_t RunningMaster::port() const { return port_; }
