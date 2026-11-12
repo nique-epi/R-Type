@@ -72,12 +72,15 @@ constexpr std::string_view DAMAGE_KEY = "damage";
 /** @brief `[gameplay.obstacle]`, required of a sheet of side obstacle and of
  * it only: what it does to a ship that touches it, in CONTACT_KEY. */
 constexpr std::string_view OBSTACLE_KEY = "obstacle";
+/** @brief The name of the hit handler of `behaviours.on_hit` a body is told
+ * of each hit of; any side but player. */
+constexpr std::string_view ON_HIT_KEY = "on_hit";
 constexpr std::array GAMEPLAY_KEYS{
     SIDE_KEY,      PILOT_KEY,  LAYER_KEY,     HITS_KEY,
     HITBOX_KEY,    MOTION_KEY, BEHAVIOUR_KEY, HEALTH_KEY,
     SCORE_KEY,     GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
     FRAGILE_KEY,   BURST_KEY,  VOLLEY_KEY,    BOSS_KEY,
-    LOOK_ITEM_KEY, DAMAGE_KEY, OBSTACLE_KEY};
+    LOOK_ITEM_KEY, DAMAGE_KEY, OBSTACLE_KEY,  ON_HIT_KEY};
 
 /** @brief The key of `[gameplay.obstacle]`, and the contacts it may name, with
  * the ObstacleContact of each, in the same order. */
@@ -353,6 +356,8 @@ constexpr std::string_view LOOK_ITEM_SIDE_RULE =
 constexpr std::string_view LOOK_ITEM_HEADING_RULE =
     "a look item flies to the left, where the playfield removes it";
 constexpr std::string_view DAMAGE_SIDE_RULE = "only a missile deals damage";
+constexpr std::string_view ON_HIT_SIDE_RULE =
+    "a ship answers a hit with its lives, never an on_hit";
 constexpr std::string_view SCROLL_MOTION_SIDE_RULE =
     "only an enemy or an obstacle follows the scroll";
 constexpr std::string_view OBSTACLE_SIDE_RULE =

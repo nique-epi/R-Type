@@ -9,6 +9,7 @@
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "Health.hpp"
+#include "RecordingHitHandler.hpp"
 #include "WorldTestConstants.hpp"
 
 using rtype::engine::Entity;
@@ -24,10 +25,12 @@ using rtype::game::testing::BOSS_HEALTH_AFTER_ONE_HIT;
 using rtype::game::testing::BOSS_ID;
 using rtype::game::testing::BYDO_ID;
 using rtype::game::testing::CALM_BOSS;
+using rtype::game::testing::CRACK_HANDLER;
 using rtype::game::testing::DamageScene;
 using rtype::game::testing::killed;
 using rtype::game::testing::MISSILE_ID;
 using rtype::game::testing::ONE_HEALTH_POINT;
+using rtype::game::testing::RecordingHitHandler;
 using rtype::game::testing::removed;
 using rtype::game::testing::THREE_HEALTH_POINTS;
 
@@ -128,4 +131,25 @@ TEST(BossDamage, ABydoAnnouncesNoBossHealth) {
   damage.hit(missile, bydo);
 
   EXPECT_TRUE(damage.bossHealths.empty());
+}
+
+/**
+ * Given a boss sliding in, the signal of its arrival, that reacts to its hits
+ * When a missile hits it
+ * Then the handler is told of a hit that took nothing and left it whole
+ */
+TEST(BossDamage, AnArrivingBossIsToldOfAHitThatTookNothing) {
+  DamageScene damage;
+  RecordingHitHandler handler{CRACK_HANDLER};
+  const Entity boss =
+      damage.boss(Health{.points = BOSS_FULL_HEALTH, .full = BOSS_FULL_HEALTH},
+                  CALM_BOSS, CurrentAction{.key = ARRIVAL_SLIDE});
+  damage.reactingTo(boss, handler);
+
+  damage.hit(damage.missile(MISSILE_ID), boss);
+
+  ASSERT_EQ(handler.told().size(), 1U);
+  EXPECT_EQ(handler.told()[0].damage, 0);
+  EXPECT_EQ(handler.told()[0].healthLeft.value_or(-1), BOSS_FULL_HEALTH);
+  EXPECT_FALSE(handler.told()[0].destroyed);
 }

@@ -10,6 +10,8 @@
 #include "EntityDestruction.hpp"
 #include "EntityType.hpp"
 #include "Health.hpp"
+#include "HitReaction.hpp"
+#include "IHitHandler.hpp"
 #include "MissileDamage.hpp"
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
@@ -83,6 +85,16 @@ engine::Entity DamageScene::shootableMissile(std::uint32_t networkId) {
   scene.components.add(entity, NetworkIdentity{.networkId = networkId});
   scene.components.add(entity, Shootable{});
   return entity;
+}
+
+engine::Entity DamageScene::steelWall(std::uint32_t networkId) {
+  const engine::Entity entity = scene.spawn(EntityType::Obstacle, 0.0F, 0.0F);
+  scene.components.add(entity, NetworkIdentity{.networkId = networkId});
+  return entity;
+}
+
+void DamageScene::reactingTo(engine::Entity body, IHitHandler& handler) {
+  scene.components.add(body, HitReaction{.handler = &handler});
 }
 
 void DamageScene::hit(engine::Entity missile, engine::Entity target) {

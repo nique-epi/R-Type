@@ -8,6 +8,9 @@
 
 namespace rtype::game::testing {
 
+/** @brief The name of the hit handler a test gives the sheet of a wall. */
+constexpr std::string_view ON_HIT_OF_THE_WALL = "crack";
+
 /** @brief The hurt zone the contact parts tests give a sheet: a box 48 units
  * ahead, 64 by 32, that hurts all the time, and a box 16 units below, 40 by
  * 24, that hurts in the strike of attack 3. */

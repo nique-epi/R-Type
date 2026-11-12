@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <optional>
+#include "AppliedHit.hpp"
 #include "Boss.hpp"
 #include "BossHealthChanged.hpp"
 #include "ComponentRegistry.hpp"
@@ -14,6 +15,8 @@
 #include "EventBus.hpp"
 #include "Fragile.hpp"
 #include "Health.hpp"
+#include "HitReaction.hpp"
+#include "IHitHandler.hpp"
 #include "MissileDamage.hpp"
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
@@ -86,6 +89,14 @@ int damageOf(engine::ComponentRegistry& components, engine::Entity target,
   return components.get<Health>(target)->points;
 }
 
+/** @returns The handler the sheet of @p target names in `on_hit`; nullptr for
+ * a target without one. */
+IHitHandler* reactionOf(engine::ComponentRegistry& components,
+                        engine::Entity target) {
+  const auto* const reaction = components.get<HitReaction>(target);
+  return reaction == nullptr ? nullptr : reaction->handler;
+}
+
 }  // namespace
 
 DamageRules::DamageRules(engine::EventBus& events,
@@ -104,27 +115,45 @@ void DamageRules::onMissileHit(const MissileHit& hit) {
   }
   const std::optional<std::uint8_t> shooter =
       shooterOf(components_, hit.missile);
-  const int dealt = missileDamageOf(components_, hit.missile);
+  IHitHandler* const reaction = reactionOf(components_, hit.target);
+  AppliedHit applied{.targetNetworkId = ids->target,
+                     .missileNetworkId = ids->missile,
+                     .damage = missileDamageOf(components_, hit.missile)};
   removeMissile(hit.missile, ids->missile);
-  if (components_.has<Shootable>(hit.target)) {
-    killTarget(hit.target, ids->target, shooter);
+  hurtTarget(hit.target, shooter, applied);
+  if (reaction != nullptr) {
+    reaction->onHit(applied);
+  }
+}
+
+void DamageRules::hurtTarget(engine::Entity target,
+                             std::optional<std::uint8_t> shooter,
+                             AppliedHit& applied) {
+  if (components_.has<Shootable>(target)) {
+    applied.damage = 0;
+    applied.destroyed = true;
+    killTarget(target, applied.targetNetworkId, shooter);
     return;
   }
-  auto* const health = components_.get<Health>(hit.target);
+  auto* const health = components_.get<Health>(target);
   if (health == nullptr) {
+    applied.damage = 0;
     return;
   }
-  const int damage = damageOf(components_, hit.target, dealt);
-  if (damage == 0) {
+  applied.damage = damageOf(components_, target, applied.damage);
+  applied.healthLeft = health->points;
+  if (applied.damage == 0) {
     return;
   }
-  health->points -= damage;
-  announceBossHealth(hit.target, ids->target, *health);
+  health->points -= applied.damage;
+  applied.healthLeft = std::max(health->points, 0);
+  announceBossHealth(target, applied.targetNetworkId, *health);
   if (health->points > 0) {
-    events_.publish(EntityDamage{.networkId = ids->target});
+    events_.publish(EntityDamage{.networkId = applied.targetNetworkId});
     return;
   }
-  killTarget(hit.target, ids->target, shooter);
+  applied.destroyed = true;
+  killTarget(target, applied.targetNetworkId, shooter);
 }
 
 void DamageRules::removeMissile(engine::Entity missile,

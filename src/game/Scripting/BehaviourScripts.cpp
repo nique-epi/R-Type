@@ -16,6 +16,7 @@
 #include "LuauBehaviourParts.hpp"
 #include "LuauDeclarations.hpp"
 #include "LuauEventBindings.hpp"
+#include "LuauHitHandlerParts.hpp"
 #include "LuauLevels.hpp"
 #include "LuauPreHit.hpp"
 #include "LuauResumeContext.hpp"
@@ -201,6 +202,20 @@ int declarePreHit(lua_State* state) {
   return 0;
 }
 
+/** @brief `behaviours.on_hit(name, function)`: keeps a hit handler a sheet may
+ * name in `on_hit`, in the BehaviourScripts of its upvalue. */
+int declareHitHandler(lua_State* state) {
+  BehaviourScripts& scripts = scriptsOf(state);
+  std::string name = luaL_checkstring(state, ON_HIT_NAME_ARGUMENT);
+  luaL_checktype(state, ON_HIT_FUNCTION_ARGUMENT, LUA_TFUNCTION);
+  scripts.declarations().hitHandler(
+      LuauHitHandlerParts{.machine = scripts.machine(),
+                          .name = std::move(name),
+                          .function = lua_ref(state, ON_HIT_FUNCTION_ARGUMENT),
+                          .reportFailure = scripts.reportFailure()});
+  return 0;
+}
+
 /** @brief `behaviours.register(name, settings, steer)`: keeps a behaviour in
  * the BehaviourScripts of its upvalue. */
 int registerBehaviour(lua_State* state) {
@@ -237,7 +252,9 @@ BehaviourScripts::BehaviourScripts(ScriptFailureReport reportFailure)
       engine::ScriptFunction{.name = DESTROY_FUNCTION_NAME,
                              .function = destroyBody},
       engine::ScriptFunction{.name = PRE_HIT_FUNCTION_NAME,
-                             .function = declarePreHit}};
+                             .function = declarePreHit},
+      engine::ScriptFunction{.name = ON_HIT_FUNCTION_NAME,
+                             .function = declareHitHandler}};
   machine_.expose(BEHAVIOURS_TABLE, functions, this);
 }
 

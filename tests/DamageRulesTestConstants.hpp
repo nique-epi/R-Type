@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
 #include "ActionKey.hpp"
 #include "EnemyPhase.hpp"
 #include "MissileOwner.hpp"
@@ -31,6 +32,14 @@ constexpr MissileOwner SECOND_PLAYER{.playerNumber = SECOND_PLAYER_NUMBER};
 constexpr int FIVE_HEALTH_POINTS = 5;
 constexpr int DAMAGE_OF_THREE = 3;
 constexpr int TWO_HEALTH_POINTS_LEFT = 2;
+
+/** @brief The name of the handler the reaction tests tell of the hits, a Bydo
+ * of two points that a missile of three destroys, and the wall of steel they
+ * hit. */
+constexpr std::string_view CRACK_HANDLER = "crack";
+constexpr int TWO_HEALTH_POINTS = 2;
+constexpr int NO_POINT_LEFT = 0;
+constexpr std::uint32_t WALL_ID = 41;
 
 /** @brief What destroying a Bydo of the tests is worth. */
 constexpr std::uint32_t BYDO_POINTS = 200;

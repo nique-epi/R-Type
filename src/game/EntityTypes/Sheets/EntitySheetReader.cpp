@@ -28,6 +28,7 @@
 #include "HurtWindow.hpp"
 #include "HurtZone.hpp"
 #include "IBehaviour.hpp"
+#include "IHitHandler.hpp"
 #include "IsAMissile.hpp"
 #include "MotionKind.hpp"
 #include "MotionSheet.hpp"
@@ -131,6 +132,20 @@ const IBehaviour* behaviourOf(const engine::DataFileTable& gameplay,
   const std::string_view pilot =
       names.at(engine::choiceAt(gameplay, PILOT_KEY, names));
   return pilot == PLAYER_PILOT_NAME ? nullptr : behaviours.find(pilot);
+}
+
+/** @returns The handler `on_hit` names among those of @p behaviours; nullptr
+ * without the key.
+ * @throws engine::UnknownDataFileChoiceException when it names none of them.
+ */
+IHitHandler* onHitFrom(const engine::DataFileTable& gameplay,
+                       const BehaviourRegistry& behaviours) {
+  if (!gameplay.table.get().contains(ON_HIT_KEY)) {
+    return nullptr;
+  }
+  const std::vector<std::string_view> names = behaviours.hitHandlerNames();
+  return behaviours.findHitHandler(
+      names.at(engine::choiceAt(gameplay, ON_HIT_KEY, names)));
 }
 
 /** @throws InconsistentEntitySheetException when @p gameplay holds a table
@@ -583,6 +598,15 @@ void checkScrollMotionSide(const EntitySheet& sheet,
   }
 }
 
+/** @throws InconsistentEntitySheetException when a ship names an on_hit. */
+void checkOnHitBelongsToABody(const EntitySheet& sheet,
+                              const engine::DataFileTable& gameplay) {
+  if (sheet.onHit != nullptr && sheet.side == EntityType::Player) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, ON_HIT_KEY), ON_HIT_SIDE_RULE);
+  }
+}
+
 /** @throws InconsistentEntitySheetException when the values of @p sheet, each
  * valid, do not hold together. */
 void checkSheetHoldsTogether(const EntitySheet& sheet,
@@ -599,6 +623,7 @@ void checkSheetHoldsTogether(const EntitySheet& sheet,
   checkDamageBelongsToAMissile(sheet, gameplay);
   checkObstacleMatchesSide(sheet, gameplay);
   checkScrollMotionSide(sheet, gameplay);
+  checkOnHitBelongsToABody(sheet, gameplay);
 }
 
 }  // namespace
@@ -629,7 +654,8 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .lookItem = lookItemFrom(gameplay),
       .visualNames = visualNamesOf(sheetTableOf(sheetRoot, APPEARANCE_KEY)),
       .damage = pointsIn<int>(gameplay, DAMAGE_KEY, DAMAGE_RANGE),
-      .obstacle = obstacleContactOf(gameplay)};
+      .obstacle = obstacleContactOf(gameplay),
+      .onHit = onHitFrom(gameplay, behaviours)};
   checkSheetHoldsTogether(read, gameplay);
   return read;
 }

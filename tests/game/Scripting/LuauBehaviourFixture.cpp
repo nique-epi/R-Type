@@ -17,6 +17,11 @@ void LuauBehaviourFixture::load(std::string_view script) {
   behaviours_ = scripts_.behaviours();
 }
 
+rtype::game::IHitHandler* LuauBehaviourFixture::hitHandler(
+    std::string_view name) {
+  return behaviours_.findHitHandler(name);
+}
+
 void LuauBehaviourFixture::attach(rtype::game::IEntityOrders& orders) {
   scripts_.attachGame(orders, components_);
 }

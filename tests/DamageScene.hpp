@@ -13,6 +13,7 @@
 #include "EntityDamage.hpp"
 #include "EntityDestruction.hpp"
 #include "Health.hpp"
+#include "IHitHandler.hpp"
 #include "MissileOwner.hpp"
 
 namespace rtype::game::testing {
@@ -46,6 +47,11 @@ struct DamageScene {
   engine::Entity boss(Health health, Boss boss, CurrentAction current);
   /** @returns A Shootable missile of an enemy. */
   engine::Entity shootableMissile(std::uint32_t networkId);
+  /** @returns An obstacle without Health, as a wall of steel is. */
+  engine::Entity steelWall(std::uint32_t networkId);
+  /** @brief Makes @p handler told of the hits applied to @p body, as the
+   * sheet of a body that names an on_hit makes it. */
+  void reactingTo(engine::Entity body, IHitHandler& handler);
   /** @brief Publishes that @p missile hit @p target, and delivers it. */
   void hit(engine::Entity missile, engine::Entity target);
 

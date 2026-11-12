@@ -56,6 +56,16 @@ class DuplicateBehaviourException : public GameException {
 };
 
 /**
+ * @brief Thrown when a hit handler is added to a BehaviourRegistry under a
+ * name a handler already has: two scripts declared `behaviours.on_hit` with
+ * the same name.
+ */
+class DuplicateHitHandlerException : public GameException {
+ public:
+  explicit DuplicateHitHandlerException(std::string_view name);
+};
+
+/**
  * @brief Thrown when a behaviour reads a setting its body was not given: a
  * Pilot made without the values of its sheet.
  */
