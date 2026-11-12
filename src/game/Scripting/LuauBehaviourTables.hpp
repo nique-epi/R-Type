@@ -3,6 +3,7 @@
 #include <span>
 #include <string>
 #include "BehaviourView.hpp"
+#include "IncomingHit.hpp"
 #include "Intent.hpp"
 
 struct lua_State;
@@ -20,6 +21,11 @@ namespace rtype::game {
  */
 void pushViewTable(lua_State* state, const BehaviourView& view,
                    std::span<const std::string> settingNames);
+
+/** @brief Pushes on @p state the table a pre_hit function reads of a hit:
+ * `missile` the network id of the missile, `offset` where it lies from the
+ * center of the body, `{x, y}` in logical units. */
+void pushHitTable(lua_State* state, const IncomingHit& hit);
 
 /**
  * @returns The intent the table at @p index of @p state describes, read with

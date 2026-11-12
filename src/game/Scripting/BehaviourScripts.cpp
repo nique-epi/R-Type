@@ -18,6 +18,7 @@
 #include "LuauBehaviourParts.hpp"
 #include "LuauEventBindings.hpp"
 #include "LuauLevels.hpp"
+#include "LuauPreHit.hpp"
 #include "LuauResumeContext.hpp"
 #include "LuauSetting.hpp"
 #include "Position.hpp"
@@ -183,6 +184,24 @@ int destroyBody(lua_State* state) {
   return 0;
 }
 
+/** @brief `behaviours.pre_hit(function)`: makes @p function judge the hits of
+ * the body that steps, in place of the one it declared before; `nil` makes
+ * every hit apply again. */
+int declarePreHit(lua_State* state) {
+  BehaviourScripts& scripts = scriptsOf(state);
+  std::optional<LuauPreHit>* const preHit = scripts.resumeContext().preHit;
+  if (scripts.resumeContext().resumedThread != state || preHit == nullptr) {
+    raise(state, std::string{PRE_HIT_OUTSIDE_BODY_MESSAGE});
+  }
+  if (lua_isnoneornil(state, PRE_HIT_FUNCTION_ARGUMENT)) {
+    preHit->reset();
+    return 0;
+  }
+  luaL_checktype(state, PRE_HIT_FUNCTION_ARGUMENT, LUA_TFUNCTION);
+  preHit->emplace(scripts.machine(), lua_ref(state, PRE_HIT_FUNCTION_ARGUMENT));
+  return 0;
+}
+
 /** @brief `behaviours.register(name, settings, steer)`: keeps a behaviour in
  * the BehaviourScripts of its upvalue. */
 int registerBehaviour(lua_State* state) {
@@ -216,7 +235,9 @@ BehaviourScripts::BehaviourScripts(ScriptFailureReport reportFailure)
       engine::ScriptFunction{.name = SPAWN_FUNCTION_NAME,
                              .function = spawnBody},
       engine::ScriptFunction{.name = DESTROY_FUNCTION_NAME,
-                             .function = destroyBody}};
+                             .function = destroyBody},
+      engine::ScriptFunction{.name = PRE_HIT_FUNCTION_NAME,
+                             .function = declarePreHit}};
   machine_.expose(BEHAVIOURS_TABLE, functions, this);
 }
 
