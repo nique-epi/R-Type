@@ -1,4 +1,4 @@
-# Infrastructure of the master
+# Infrastructure of the master and of the game servers
 
 This folder puts the master (`r-type_server --mode master`) on a small AWS machine and installs each release on it. It holds:
 
@@ -6,11 +6,16 @@ This folder puts the master (`r-type_server --mode master`) on a small AWS machi
 |---|---|
 | `terraform/` | the machine, its address, its network rules and the role the deployments use, described with Terraform |
 | `bootstrap.sh` | the script that does the whole setup below in one run, from your computer |
-| `master/deploy.sh` | the script that installs a release on the machine, goes back when the master does not answer, and puts Caddy in front of it for HTTPS |
+| `master/deploy.sh` | the script that installs a release on the machine, goes back when the master does not answer, and puts Caddy in front of it for HTTPS; it also installs the timer that restarts a master that stopped answering, and the test game server |
+| `release.sh` | what the scripts that install a release share: the check of the version and the download |
+| `run-on-instance.sh` | runs a script on an instance through SSM; the workflows call it |
+| `terraform-game/` | the game machine of a LAN, with a Terraform state of its own; the workflows `lan-open` and `lan-close` apply and destroy it |
+| `game-servers/` | the scripts of the pool of game servers: `install.sh`, the autoscaler `autoscale.sh` and its settings, `listed-servers.sh` and `create-keys.sh` |
+| `../.github/workflows/lan-open.yaml`, `lan-close.yaml` | the workflows that create and destroy the game machine, by hand |
 | `../.github/workflows/deploy-master.yaml` | the workflow that runs the script, on every release or by hand |
 | `../.github/workflows/infra.yaml` | the check of these files on a pull request |
 
-Nothing here runs by itself the first time: a member of the team sets it up once, with the steps below. How the deployment works and where to change it is told in the documentation page [Deploying the master](https://nique-epi.github.io/R-Type/deploy-master/).
+Nothing here runs by itself the first time: a member of the team sets it up once, with the steps below. How the deployment works and where to change it is told in the documentation page [Deploying the master](https://nique-epi.github.io/R-Type/deploy-master/). The game servers of a LAN, their workflows and what to prepare once are told in [Game servers for a LAN](https://nique-epi.github.io/R-Type/deploy-game-servers/).
 
 ## What you get
 
@@ -36,7 +41,7 @@ From the root of the repository, with the tools of the list above installed and 
 infra/bootstrap.sh --domain <domain of the master> --bucket rtype-tfstate-<suffix>
 ```
 
-It asks which AWS account and repository it is about, creates the bucket, applies Terraform after you read the plan, sets the four variables, creates the environment `production` with you as its required reviewer, then waits for the A record of the domain (it prints the address to give it) and polls until it answers, for up to 30 minutes. `--deploy v0.3.0` also starts `deploy-master` for that release once the record answers, and `--yes` skips the two questions. Every step first looks at what exists, so after a failure you run the same command again. It does not publish a release, and it does not set the address in Vercel, the game servers or the client (step 6 below).
+It asks which AWS account and repository it is about, creates the bucket, applies Terraform after you read the plan, sets the six variables, creates the environment `production` with you as its required reviewer, then waits for the A record of the domain (it prints the address to give it) and polls until it answers, for up to 30 minutes. `--deploy v0.3.0` also starts `deploy-master` for that release once the record answers, and `--yes` skips the two questions. Every step first looks at what exists, so after a failure you run the same command again. It does not publish a release, and it does not set the address in Vercel, the game servers or the client (step 6 below).
 
 ## Setting it up by hand, in this order
 
@@ -61,11 +66,11 @@ The bucket keeps the Terraform state, so every member of the team can apply from
 
 ```bash
 terraform init -backend-config="bucket=rtype-tfstate-<suffix>" -backend-config="region=eu-west-1"
-terraform plan -var master_domain=<domain of the master>
-terraform apply -var master_domain=<domain of the master>
+terraform plan -var master_domain=<domain of the master> -var state_bucket=rtype-tfstate-<suffix>
+terraform apply -var master_domain=<domain of the master> -var state_bucket=rtype-tfstate-<suffix>
 ```
 
-The domain can also go in a `terraform.tfvars` file next to the `.tf` files (`master_domain = "master.example.org"`), so it is not typed each time. Read the plan before the `apply`: it must only create resources (12 of them, plus the reads of the default network and of the Ubuntu image), never destroy one. Terraform creates the instance, its address, its network rules, the role of the instance, the identity provider of GitHub and the role of the deployments.
+Both can also go in a `terraform.tfvars` file next to the `.tf` files (`master_domain = "master.example.org"`, `state_bucket = "rtype-tfstate-<suffix>"`), so they are not typed each time. Read the plan before the `apply`: it must only create resources (23 of them, plus the reads of the account, of the default network and of the Ubuntu image), never destroy one. Terraform creates the instance, its address, its network rules, the role of the instance, the identity provider of GitHub and the role of the deployments; and, for the game machine of a LAN, its network rules, its role and the role of the workflows that create and destroy it. The game machine itself is not created here. On an infrastructure applied before the game machine, the plan creates those 11 resources and changes nothing else.
 
 On an infrastructure applied before HTTPS, the plan replaces the rule of port 8080 by the rules of ports 80 and 443: one resource destroyed, two created. That rule is the only one it may destroy.
 
@@ -98,12 +103,16 @@ Create them in Settings, Secrets and variables, Actions, tab **Variables** (not 
 | `AWS_DEPLOY_ROLE_ARN` | `terraform output -raw deploy_role_arn` | `deploy-master.yaml`, the role to assume | the job stops at the login step |
 | `MASTER_INSTANCE_ID` | `terraform output -raw instance_id` | `deploy-master.yaml`, the only instance the script is sent to | the job stops when it sends the script |
 | `MASTER_URL` | `terraform output -raw master_url` (`https://<master_domain>`, with no port and no path) | `deploy-master.yaml`: the domain Caddy answers for, and the check from outside after a deployment | the job stops before it sends the script |
+| `AWS_LAN_ROLE_ARN` | `terraform output -raw lan_role_arn` | `lan-open.yaml` and `lan-close.yaml`, the role to assume | the job stops at the login step |
+| `TERRAFORM_STATE_BUCKET` | `rtype-tfstate-<suffix>`, the bucket of step 1 | `lan-open.yaml` and `lan-close.yaml`, where the state of the game machine is kept | the job stops at `terraform init` |
 
 ```bash
 gh variable set AWS_REGION --body eu-west-1
 gh variable set MASTER_INSTANCE_ID --body "$(terraform output -raw instance_id)"
 gh variable set AWS_DEPLOY_ROLE_ARN --body "$(terraform output -raw deploy_role_arn)"
 gh variable set MASTER_URL --body "$(terraform output -raw master_url)"
+gh variable set AWS_LAN_ROLE_ARN --body "$(terraform output -raw lan_role_arn)"
+gh variable set TERRAFORM_STATE_BUCKET --body rtype-tfstate-<suffix>
 ```
 
 If you changed `region` in `variables.tf`, give `AWS_REGION` the same value.

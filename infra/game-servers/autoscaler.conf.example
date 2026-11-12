@@ -1,0 +1,19 @@
+# Settings of the autoscaler of the game servers. Copy it to
+# /etc/rtype-autoscaler.conf; infra/game-servers/install.sh and autoscale.sh
+# read it as a shell file.
+
+# The master the servers are listed on.
+MASTER_URL=https://master.rtype.app
+
+# The IPv4 address the master lists these servers at: the public-address of
+# their server.cfg, or the address their registrations come from.
+PUBLIC_ADDRESS=203.0.113.10
+
+# The pool: one prepared server per port, started in this order. Each port
+# has its folder /var/lib/rtype-servers/<port>/ with a server.cfg that holds
+# its own master-key.
+PORTS="4242 4243 4244 4245 4246 4247"
+
+# A new server starts when the running servers run this share of the games
+# they can run (8 each).
+SCALE_OUT_PERCENT=70
