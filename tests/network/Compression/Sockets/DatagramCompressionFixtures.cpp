@@ -8,6 +8,7 @@
 #include "DatagramCompression.hpp"
 #include "DatagramCompressionTestConstants.hpp"
 #include "Endpoint.hpp"
+#include "GameStatus.hpp"
 #include "MessageType.hpp"
 #include "NetworkConstants.hpp"
 #include "PacketHeader.hpp"
@@ -30,13 +31,24 @@ std::vector<std::byte> worldStateDatagram(const PacketHeader& header) {
   return DatagramCodec::encode(header, MessageType::WorldState, payload);
 }
 
+std::vector<std::byte> gameStatusDatagram(const PacketHeader& header) {
+  const std::string nickname{REPEATED_NICKNAME};
+  return DatagramCodec::encode(
+      header, GameStatus{.state = GameStatusState::InProgress,
+                         .nicknames = {nickname, nickname, nickname, nickname},
+                         .measures = {}});
+}
+
 std::vector<std::byte> incompressibleDatagram(const PacketHeader& header) {
-  std::vector<std::byte> datagram = DatagramCodec::encode(
-      header, MessageType::Heartbeat, std::vector<std::byte>{});
-  const std::vector<std::byte> body =
-      randomBytes(INCOMPRESSIBLE_BODY_SIZE, BYTES_SEED);
-  datagram.insert(datagram.end(), body.begin(), body.end());
-  return datagram;
+  return DatagramCodec::encode(
+      header, MessageType::Heartbeat,
+      randomBytes(INCOMPRESSIBLE_BODY_SIZE, BYTES_SEED));
+}
+
+std::vector<std::byte> repeatedBodyDatagram(const PacketHeader& header,
+                                            MessageType type) {
+  return DatagramCodec::encode(
+      header, type, std::vector<std::byte>(REPEATED_PAYLOAD_SIZE, std::byte{}));
 }
 
 std::vector<std::byte> codedSessionDatagram() {

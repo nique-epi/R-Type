@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <vector>
 #include "Endpoint.hpp"
+#include "MessageType.hpp"
 #include "PacketHeader.hpp"
 
 namespace rtype::network::testing {
@@ -23,6 +24,20 @@ PacketHeader handshakeHeader();
  * datagram the real server sent.
  */
 std::vector<std::byte> worldStateDatagram(const PacketHeader& header);
+
+/**
+ * @returns The status of a game under @p header, naming REPEATED_NICKNAME four
+ * times, so that zstd would shorten it.
+ */
+std::vector<std::byte> gameStatusDatagram(const PacketHeader& header);
+
+/**
+ * @returns A datagram under @p header holding one message of @p type, whose
+ * payload is REPEATED_PAYLOAD_SIZE zero bytes, so that zstd would shorten it
+ * whatever the type.
+ */
+std::vector<std::byte> repeatedBodyDatagram(const PacketHeader& header,
+                                            MessageType type);
 
 /**
  * @returns A datagram under @p header whose body is random bytes, so coding
