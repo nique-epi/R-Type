@@ -10,7 +10,7 @@ This folder puts the master (`r-type_server --mode master`) on a small AWS machi
 | `release.sh` | what the scripts that install a release share: the check of the version and the download |
 | `run-on-instance.sh` | runs a script on an instance through SSM; the workflows call it |
 | `terraform-game/` | the game machine of a LAN, with a Terraform state of its own; the workflows `lan-open` and `lan-close` apply and destroy it |
-| `game-servers/` | the scripts of the pool of game servers: `install.sh`, the autoscaler `autoscale.sh` and its settings, `listed-servers.sh` and `create-keys.sh` |
+| `game-servers/` | the scripts of the pool of game servers: `install.sh`, the autoscaler `autoscale.sh` and its settings, `listed-servers.sh`, `create-keys.sh`, and `prepare.sh`, which prepares the workflows of a LAN once |
 | `../.github/workflows/lan-open.yaml`, `lan-close.yaml` | the workflows that create and destroy the game machine, by hand |
 | `../.github/workflows/deploy-master.yaml` | the workflow that runs the script, on every release or by hand |
 | `../.github/workflows/infra.yaml` | the check of these files on a pull request |
