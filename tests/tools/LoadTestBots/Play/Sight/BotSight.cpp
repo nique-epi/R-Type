@@ -40,14 +40,6 @@ std::optional<EntityKind> kindOf(const game::NumberedEntityType* type) {
   return std::nullopt;
 }
 
-/** @returns @p seen with the velocity that brought it from @p before over
- * @p seconds. */
-SeenEntity movedFrom(SeenEntity seen, const SeenEntity& before, float seconds) {
-  seen.velocityX = (seen.x - before.x) / seconds;
-  seen.velocityY = (seen.y - before.y) / seconds;
-  return seen;
-}
-
 }  // namespace
 
 BotSight::BotSight(const client::IEntityTypeTable& types) : types_(&types) {}
@@ -108,7 +100,7 @@ void BotSight::addEntities(const network::WorldState& state) {
     if (!kind.has_value()) {
       continue;
     }
-    const SeenEntity seen{
+    SeenEntity seen{
         .entityId = entity.entityId,
         .kind = *kind,
         .x = entity.x,
@@ -118,8 +110,11 @@ void BotSight::addEntities(const network::WorldState& state) {
     };
     const auto before =
         std::ranges::find(previous_, entity.entityId, &SeenEntity::entityId);
-    entities_.push_back(
-        before != previous_.end() ? movedFrom(seen, *before, seconds) : seen);
+    if (before != previous_.end()) {
+      seen.velocityX = (seen.x - before->x) / seconds;
+      seen.velocityY = (seen.y - before->y) / seconds;
+    }
+    entities_.push_back(seen);
   }
 }
 
