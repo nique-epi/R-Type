@@ -1,1 +1,1 @@
-target_sources(client_connection_tests PRIVATE RoundTripWatchTest.cpp RoundTripWatchFixture.cpp SessionInboundTest.cpp SessionInboundFixture.cpp SessionAcknowledgementsTest.cpp OrderedInboxTest.cpp OrderedInboxFixture.cpp)
+target_sources(client_connection_tests PRIVATE RoundTripWatchTest.cpp RoundTripWatchFixture.cpp SessionInboundTest.cpp SessionInboundFixture.cpp SessionAcknowledgementsTest.cpp ArrivalTallyTest.cpp OrderedInboxTest.cpp OrderedInboxFixture.cpp)

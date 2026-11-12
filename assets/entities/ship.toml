@@ -11,6 +11,8 @@
 
 [gameplay]
 side = "player"
+layer = "player"
+hits = ["look_item"]
 pilot = "player"
 
 [gameplay.hitbox]

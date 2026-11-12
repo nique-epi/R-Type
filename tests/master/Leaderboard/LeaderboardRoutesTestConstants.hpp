@@ -15,6 +15,7 @@ constexpr std::string_view LYON_SERVER_NAME = "Lyon 1";
 /** @brief Ids of games as a server draws them, and an id it never draws. */
 constexpr std::string_view FIRST_GAME_ID = "00000000000000000000000000000001";
 constexpr std::string_view SECOND_GAME_ID = "00000000000000000000000000000002";
+constexpr std::string_view THIRD_GAME_ID = "00000000000000000000000000000003";
 constexpr std::string_view MALFORMED_GAME_ID = "game-1";
 
 /** @brief A difficulty beside PARIS_DIFFICULTY, and numbers of players. */
@@ -54,10 +55,16 @@ constexpr std::string_view ASKING_BYDO_HUNTER_QUERY =
 constexpr std::string_view FIRST_ROW_AND_R9_QUERY =
     "?difficulty=normal&playerCount=2&limit=1&player=r9";
 
-/** @brief Queries the master refuses: a required parameter left out, a
- * number of players or a server out of its bounds, a nickname too long. */
-constexpr std::string_view WITHOUT_DIFFICULTY_QUERY = "?playerCount=2";
-constexpr std::string_view WITHOUT_PLAYER_COUNT_QUERY = "?difficulty=normal";
+/** @brief Queries that name no difficulty, then no number of players, then
+ * neither: each reads every value of what it leaves out. */
+constexpr std::string_view EVERY_DIFFICULTY_FOR_TWO_QUERY = "?playerCount=2";
+constexpr std::string_view NORMAL_FOR_EVERY_COUNT_QUERY = "?difficulty=normal";
+constexpr std::string_view EVERY_GAME_QUERY;
+
+/** @brief Queries the master refuses: an empty difficulty, a number of players
+ * or a server out of its bounds, a nickname too long. */
+constexpr std::string_view EMPTY_DIFFICULTY_QUERY =
+    "?difficulty=&playerCount=2";
 constexpr std::string_view FIVE_PLAYERS_QUERY =
     "?difficulty=normal&playerCount=5";
 constexpr std::string_view SERVER_OF_ZERO_QUERY =

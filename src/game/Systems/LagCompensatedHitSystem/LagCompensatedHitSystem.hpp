@@ -28,11 +28,16 @@ namespace rtype::game {
  * - a missile of a player, its box stretched back over the way it moved this
  *   tick so it never jumps over an enemy, against the bodies: the first it
  *   touches gives a MissileHit, the event CollisionRules publishes for a
- *   missile without ViewDelay;
+ *   missile without ViewDelay; when it touches none, against the Shootable
+ *   missiles of the enemies: the first it touches gives a MissileHit too;
  * - a ship of a player against every box: the first it touches gives a
  *   MissileHit from the missile of the enemy, or a ShipContact with the enemy
  *   of a body or a hurt box, the events CollisionRules and HurtZoneSystem
  *   publish for a ship without ViewDelay.
+ * A box is touched only when the engine::CollisionFilter of the entity that
+ * is tested and the one of the enemy, as it was recorded, pass
+ * engine::mayCollide(), as for CollisionSystem; an entity without a filter is
+ * neither recorded nor tested.
  * An entity destroyed since is never touched: a missile never kills what is
  * already dead, and a missile already gone never hits. Which ships get a
  * ViewDelay is the choice of the game (see IHitArbitration). Run it after

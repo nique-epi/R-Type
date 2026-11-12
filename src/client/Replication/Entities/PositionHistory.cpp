@@ -2,9 +2,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <deque>
 #include <iterator>
 #include <optional>
-#include <span>
 #include "Position.hpp"
 #include "PositionHistoryConstants.hpp"
 #include "PositionSample.hpp"
@@ -34,22 +34,21 @@ double shareOf(const PositionSample& before, const PositionSample& after,
 }  // namespace
 
 void PositionHistory::record(PositionSample sample) {
-  if (count_ > 0 && sample.tick <= samples_[count_ - 1].tick) {
+  if (!samples_.empty() && sample.tick <= samples_.back().tick) {
     return;
   }
-  if (count_ == samples_.size()) {
-    std::ranges::rotate(samples_, std::next(samples_.begin()));
-    --count_;
+  samples_.push_back(sample);
+  while (samples_.size() > 2 &&
+         samples_[1].tick + HISTORY_SPAN_TICKS <= sample.tick) {
+    samples_.pop_front();
   }
-  samples_[count_] = sample;
-  ++count_;
 }
 
 std::optional<game::Position> PositionHistory::at(double tick) const {
-  if (count_ == 0) {
+  if (samples_.empty()) {
     return std::nullopt;
   }
-  const std::span<const PositionSample> kept{samples_.data(), count_};
+  const std::deque<PositionSample>& kept = samples_;
   const auto after =
       std::ranges::find_if(kept, [tick](const PositionSample& sample) {
         return static_cast<double>(sample.tick) > tick;
@@ -62,10 +61,10 @@ std::optional<game::Position> PositionHistory::at(double tick) const {
     return moved(before, *after, shareOf(before, *after, tick));
   }
   const PositionSample& newest = kept.back();
-  if (count_ == 1) {
+  if (kept.size() == 1) {
     return newest.position;
   }
-  const PositionSample& previous = kept[count_ - 2];
+  const PositionSample& previous = kept[kept.size() - 2];
   const double ahead = std::min(tick - static_cast<double>(newest.tick),
                                 MAXIMUM_EXTRAPOLATION_TICKS);
   return moved(
@@ -74,7 +73,7 @@ std::optional<game::Position> PositionHistory::at(double tick) const {
 }
 
 std::optional<std::uint32_t> PositionHistory::oldestTick() const {
-  if (count_ == 0) {
+  if (samples_.empty()) {
     return std::nullopt;
   }
   return samples_.front().tick;

@@ -11,6 +11,7 @@
 #include <vector>
 #include "DataFilePlace.hpp"
 #include "DataFileTable.hpp"
+#include "DataFileText.hpp"
 #include "TimeConstants.hpp"
 #include "WholeNumberRange.hpp"
 
@@ -135,6 +136,16 @@ void refuseUnknownKeys(const DataFileTable& table,
  */
 [[nodiscard]] std::string textAt(const DataFileTable& table,
                                  std::string_view key);
+
+/**
+ * @returns The texts of the array @p key of @p table holds, in the order of
+ * the file, each with where it is written. An empty array gives no text.
+ * @throws MissingDataFileKeyException when it holds nothing, and
+ * DataFileTextsExpectedException when it holds anything but an array of TOML
+ * strings.
+ */
+[[nodiscard]] std::vector<DataFileText> textsAt(const DataFileTable& table,
+                                                std::string_view key);
 
 /**
  * @returns The position in @p choices of the text @p key of @p table holds:

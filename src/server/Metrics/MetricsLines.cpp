@@ -91,7 +91,9 @@ std::string roundTripsLineOf(const MetricsReport& report) {
          << static_cast<unsigned int>(measure.playerNumber) << ' '
          << quotedNickname(measure.nickname) << ' '
          << engine::inMilliseconds(measure.figures.roundTrip) << " ms, jitter "
-         << engine::inMilliseconds(measure.figures.jitter) << " ms";
+         << engine::inMilliseconds(measure.figures.jitter)
+         << " ms, ticks without input " << measure.ticksWithoutInput
+         << ", catch-ups " << measure.catchUps;
     separator = "; ";
   }
   return line.str();

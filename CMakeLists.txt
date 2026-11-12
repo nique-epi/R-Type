@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 4.2)
 
-project(r-type VERSION 1.0.0 LANGUAGES CXX)
+project(r-type VERSION 1.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -18,6 +18,8 @@ include(FeatureSummary)
 # lists of modules include (see src/engine/Modules/).
 option(RTYPE_MODULE_AUDIO "Build the sound module of the client" ON)
 option(RTYPE_MODULE_METRICS "Build the metrics modules of the client and of the game processes" ON)
+option(RTYPE_MODULE_DEBUG "Build the debug module of the client: the lagometer" ON)
+option(RTYPE_MODULE_UPDATE "Build the self-update of the client" ON)
 option(RTYPE_MODULE_MASTER_LINK "Build the module that registers the server with the master" ON)
 option(RTYPE_MODULE_ADMIN_CONSOLE "Build the administration console of the supervisor" ON)
 option(RTYPE_MODULE_CHAT "Build the chat module of the games" ON)
@@ -26,6 +28,8 @@ cmake_dependent_option(RTYPE_MODULE_GAME_STATISTICS "Build the game-statistics p
 
 add_feature_info(audio RTYPE_MODULE_AUDIO "the sound of the client")
 add_feature_info(metrics RTYPE_MODULE_METRICS "the metrics of the client and of the game processes")
+add_feature_info(debug RTYPE_MODULE_DEBUG "the lagometer of the client")
+add_feature_info(update RTYPE_MODULE_UPDATE "the client updating itself from the releases")
 add_feature_info(master-link RTYPE_MODULE_MASTER_LINK "the registration of the server with the master")
 add_feature_info(admin-console RTYPE_MODULE_ADMIN_CONSOLE "the administration console of the supervisor")
 add_feature_info(chat RTYPE_MODULE_CHAT "the chat of the games")
@@ -131,6 +135,10 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # folder below: a folder that finds them again gets its own copy of their
 # targets, and a program linking two copies lists libssl and libcrypto twice.
 find_package(httplib CONFIG REQUIRED)
+# Velopack, from the overlay port of ports/velopack, updates the client.
+if(RTYPE_MODULE_UPDATE)
+  find_package(velopack CONFIG REQUIRED)
+endif()
 
 add_subdirectory(src)
 
@@ -197,6 +205,17 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/assets/waves ${CMAKE_SOURCE_DIR}/assets/entities ${CMAKE_SOURCE_DIR}/assets/sprites
   DESTINATION assets COMPONENT server
 )
+
+# The app carries the Velopack library in Contents/Frameworks, where the rpath
+# of the client points; vcpkg links it as a dylib on macOS.
+if(APPLE AND RTYPE_MODULE_UPDATE)
+  install(IMPORTED_RUNTIME_ARTIFACTS velopack::velopack
+    LIBRARY DESTINATION R-Type.app/Contents/Frameworks COMPONENT client
+  )
+  set_target_properties(r-type_client PROPERTIES
+    INSTALL_RPATH "@executable_path/../Frameworks"
+  )
+endif()
 
 # Once the bundle is complete, SignApp.cmake signs it with the hardened
 # runtime. This rule stays after every rule of the client.
@@ -276,13 +295,16 @@ include(CPack)
 
 # One CPack config per program, read by the package presets "client" and
 # "server" instead of CPackConfig.cmake. The server gets a plain archive, and
-# an installer on Windows; the client gets the formats a player opens: an app
-# in a disk image on macOS, signed and notarized when the credentials are
-# given, and an AppImage next to its archive on Linux.
+# an installer on Windows. The client is packed by vpk before cpack makes its
+# package (VelopackClient.cmake), which writes what a player installs and
+# updates from: an installer on Windows, an AppImage on Linux; on macOS, the
+# app vpk signed goes in the disk image, notarized when the credentials are
+# given. Its archive on Windows and Linux stays for check-package.sh.
 foreach(RTYPE_PACKAGE_PART IN ITEMS client server)
   string(TOUPPER ${RTYPE_PACKAGE_PART} RTYPE_PACKAGE_PART_UPPER)
   set(RTYPE_PACKAGE_TITLE "R-Type Server")
   set(RTYPE_POST_BUILD_SCRIPTS "")
+  set(RTYPE_PRE_BUILD_SCRIPTS "")
   if(WIN32)
     set(RTYPE_PACKAGE_GENERATORS "ZIP;NSIS")
   else()
@@ -290,11 +312,14 @@ foreach(RTYPE_PACKAGE_PART IN ITEMS client server)
   endif()
   if(RTYPE_PACKAGE_PART STREQUAL "client")
     set(RTYPE_PACKAGE_TITLE "R-Type")
+    if(RTYPE_MODULE_UPDATE)
+      set(RTYPE_PRE_BUILD_SCRIPTS ${CMAKE_SOURCE_DIR}/packaging/VelopackClient.cmake)
+    endif()
     if(APPLE)
       set(RTYPE_PACKAGE_GENERATORS "DragNDrop")
       set(RTYPE_POST_BUILD_SCRIPTS ${CMAKE_SOURCE_DIR}/packaging/NotarizeDiskImage.cmake)
-    elseif(NOT WIN32)
-      set(RTYPE_POST_BUILD_SCRIPTS ${CMAKE_SOURCE_DIR}/packaging/AppImage.cmake)
+    elseif(WIN32)
+      set(RTYPE_PACKAGE_GENERATORS "ZIP")
     endif()
   endif()
   configure_file(packaging/CPackPartConfig.cmake.in

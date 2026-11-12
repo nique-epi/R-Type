@@ -7,9 +7,11 @@
 #include "Endpoint.hpp"
 #include "EntityAppearances.hpp"
 #include "IEntityTypeTable.hpp"
+#include "IOwnRoundTrip.hpp"
 #include "IPlayerRoundTrips.hpp"
 #include "IServerPingProbe.hpp"
 #include "IServerTicks.hpp"
+#include "ISessionArrivals.hpp"
 #include "InstallContext.hpp"
 #include "LocalContentReading.hpp"
 #include "NetworkConditions.hpp"
@@ -48,6 +50,7 @@ PlayerConnection::PlayerConnection(const network::NetworkConditions& conditions,
           .gameLoaded = gameLoaded_,
           .entityTypes = entityTypes_,
           .content = content_,
+          .arrivals = arrivals_,
           .observers = {waitingRoom_, shipLooks_, entityMessages_, gameLoaded_,
                         roundTrips_, leaderboard_, chat_, orderedInbox_}}),
       pings_(router_.addRoute(), clock_) {}
@@ -74,6 +77,8 @@ void PlayerConnection::provideParts(engine::InstallContext& context) {
   context.provide(chat_);
   context.provide<IPlayerRoundTrips>(roundTrips_);
   context.provide<IServerTicks>(roundTrips_);
+  context.provide<IOwnRoundTrip>(roundTrips_);
+  context.provide<ISessionArrivals>(arrivals_);
   context.provide<IEntityTypeTable>(entityTypes_);
   context.provide(network_.traffic());
 }

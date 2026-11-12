@@ -14,6 +14,7 @@
 #include "ISky.hpp"
 #include "ISoundPlayer.hpp"
 #include "IWaitingRoom.hpp"
+#include "InterpolationTally.hpp"
 
 namespace rtype::client {
 
@@ -66,6 +67,9 @@ struct GameScreenParts {
   std::reference_wrapper<GameResult> result;
   /** @brief The chat of the session, which must outlive the screen. */
   std::reference_wrapper<IChatChannel> chat;
+  /** @brief Where the game counts how it showed the other entities, which
+   * must outlive the screen: the lagometer reads it. */
+  std::reference_wrapper<InterpolationTally> interpolationTally;
 };
 
 }  // namespace rtype::client

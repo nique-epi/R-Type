@@ -114,17 +114,9 @@ bool canBeFiltered(const LeaderboardPage& page) {
          page.phase != LeaderboardPhase::OutOfReach;
 }
 
-LeaderboardFilterChoice openingChoiceOf(std::size_t listedPilots) {
-  return LeaderboardFilterChoice{
-      .difficulty = DEFAULT_DIFFICULTY_CHOICE,
-      .pilots = std::clamp<std::size_t>(listedPilots, 1,
-                                        LEADERBOARD_PILOT_LABELS.size()) -
-                1};
-}
-
 network::LeaderboardRequest filterOf(LeaderboardFilterChoice choice) {
   return network::LeaderboardRequest{
-      .playerCount = static_cast<std::uint8_t>(choice.pilots + 1),
+      .playerCount = static_cast<std::uint8_t>(choice.pilots),
       .difficulty =
           std::string(LEADERBOARD_DIFFICULTY_NAMES.at(choice.difficulty))};
 }
@@ -132,7 +124,7 @@ network::LeaderboardRequest filterOf(LeaderboardFilterChoice choice) {
 std::string filterSummaryOf(LeaderboardFilterChoice choice) {
   return std::string(LEADERBOARD_DIFFICULTY_LABELS.at(choice.difficulty)) +
          SUMMARY_GAMES_TEXT + LEADERBOARD_PILOT_LABELS.at(choice.pilots) +
-         (choice.pilots == 0 ? ONE_PILOT_TEXT : SEVERAL_PILOTS_TEXT);
+         (choice.pilots == 1 ? ONE_PILOT_TEXT : SEVERAL_PILOTS_TEXT);
 }
 
 }  // namespace rtype::client

@@ -60,11 +60,13 @@ std::vector<PlayerRoundTripMeasure> roundTripsOf(GameInstance& game) {
     const std::optional<network::RoundTripFigures> figures =
         player->roundTrip.figures();
     if (figures.has_value()) {
-      measures.push_back(
-          PlayerRoundTripMeasure{.gameNumber = NUMBER_OF_THE_GAME,
-                                 .playerNumber = player->playerNumber,
-                                 .nickname = player->nickname,
-                                 .figures = *figures});
+      measures.push_back(PlayerRoundTripMeasure{
+          .gameNumber = NUMBER_OF_THE_GAME,
+          .playerNumber = player->playerNumber,
+          .nickname = player->nickname,
+          .figures = *figures,
+          .ticksWithoutInput = player->inputPace.ticksWithoutInput,
+          .catchUps = player->inputPace.catchUps});
     }
   }
   return measures;

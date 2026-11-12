@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
+#include "ArrivalTally.hpp"
 #include "PacketHeader.hpp"
 #include "Reception.hpp"
 #include "RecordingDatagramLink.hpp"
@@ -32,7 +33,8 @@ class SessionInboundFixture : public ::testing::Test {
   [[nodiscard]] Reception receive(const network::PacketHeader& header);
 
   RecordingDatagramLink link_;
-  SessionAcknowledgements acknowledgements_;
+  ArrivalTally arrivals_;
+  SessionAcknowledgements acknowledgements_{arrivals_};
   SessionInbound inbound_{link_, acknowledgements_};
 };
 

@@ -35,17 +35,21 @@ constexpr game::Position NO_POSITION{.x = -1.0e9F, .y = -1.0e9F};
 constexpr std::uint32_t LATE_TICK = 7;
 constexpr game::Position LATE_POSITION{.x = 999.0F, .y = 999.0F};
 
-constexpr std::uint32_t FIFTH_TICK = 5;
-constexpr double BEFORE_EVERY_SAMPLE_TICK = 0.0;
-/** @brief Where the second of the five samples lies: the first is forgotten. */
-constexpr float SECOND_SAMPLE_X = 2.0F * 10.0F;
+/** @brief Samples 3 ticks apart over 36 ticks, as 20 states a second give,
+ * 10 units further each tick, and a tick 12 ticks behind the newest of them,
+ * where the clock shows a connection whose worst lateness runs 6 ticks above
+ * its usual one: the entity lies between two samples, at 245 units. */
+constexpr std::uint32_t TICKS_BETWEEN_SAMPLES = 3;
+constexpr std::uint32_t NEWEST_SAMPLE_TICK = 36;
+constexpr double TWELVE_TICKS_BEHIND_THE_NEWEST = 24.5;
+constexpr float BETWEEN_TWO_OLD_SAMPLES_X = 245.0F;
 constexpr float UNITS_PER_SAMPLE_TICK = 10.0F;
-/** @brief The tick of the oldest of the five samples kept: tick 1 is
- * forgotten. */
-constexpr std::uint32_t OLDEST_KEPT_TICK = 2;
 
-static_assert(HISTORY_SAMPLES == 4,
-              "OnlyTheNewestSamplesAreKept records one sample more than are "
-              "kept");
+/** @brief Three samples: ticks 1 and 2, then one HISTORY_SPAN_TICKS past tick
+ * 3. Tick 2 is then the newest sample at or before the span, so tick 1 is
+ * forgotten. */
+constexpr std::uint32_t FIRST_OF_THREE_TICK = 1;
+constexpr std::uint32_t OLDEST_KEPT_TICK = 2;
+constexpr std::uint32_t PAST_THE_SPAN_TICK = 3 + HISTORY_SPAN_TICKS;
 
 }  // namespace rtype::client::testing

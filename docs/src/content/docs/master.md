@@ -21,6 +21,7 @@ This page tells you where to look when you need to change something. It describe
 | The web site, a Next.js server of its own that calls the API | Available: the pages of the design in French and English (home, download, sector map, a server, leaderboard, wiki, team); the leaderboard reads `GET /api/leaderboard` | `web/` |
 | The results of the games and the global leaderboard, `PUT /api/servers/me/results/{gameId}` and `GET /api/leaderboard` | Available; a game server sends its vanilla games after its heartbeats | `src/master/Leaderboard/`, `src/network/Master/` |
 | The master on AWS, installed from each release | Available; see [Deploying the master](/R-Type/deploy-master/) | `infra/`, `.github/workflows/deploy-master.yaml` |
+| A pool of game servers that grows from the list of the master, for a LAN | Available; not run yet; see [Game servers for a LAN](/R-Type/deploy-game-servers/) | `infra/game-servers/`, `infra/terraform-game/` |
 | Administration, accounts | Not yet written | |
 
 ## Starting the master
@@ -73,7 +74,7 @@ The storage starts before the HTTP API, so a database the master cannot open sto
 `GET /api/health` answers 200 with the version of the master, `MASTER_VERSION`, the version of `project()` in the root `CMakeLists.txt`:
 
 ```json
-{"version":"1.0.0"}
+{"version":"1.1.0"}
 ```
 
 - **Errors:** an answer of 400 or more without a body gets a problem document of RFC 9457, `application/problem+json`, whose `title` is the phrase of its status, with the `detail` of the route when it gives one: `{"status":404,"title":"Not Found"}` for a path no route answers.
@@ -193,7 +194,7 @@ The bodies are JSON, read and written by `rtype_network_master` (`src/network/Ma
 ```json
 {"games":[{"number":1,"name":"GAME 1","state":"waiting","difficulty":"normal","lives":3,
             "friendlyFire":false,"players":["ACE"]}],
- "difficulties":["easy","hard","normal"],
+ "difficulties":["easy","normal","hard"],
  "measures":{"tickP50Milliseconds":1.5,"tickP95Milliseconds":4.25},"probeToken":4242424242}
 ```
 
@@ -217,7 +218,7 @@ The bodies are JSON, read and written by `rtype_network_master` (`src/network/Ma
 `GET /api/servers/{id}/games` answers, to anyone, the games of the last heartbeat of a server, so a player who picked a server can choose a game in it. The `id` is the one the creation answered. A server that registered and sent no heartbeat since lists no game and no difficulty: `{"difficulties":[],"games":[]}`, since a registration forgets the last heartbeat. An `id` that is no number, or that no server has, answers 404.
 
 ```json
-{"difficulties":["easy","hard","normal"],
+{"difficulties":["easy","normal","hard"],
  "games":[{"number":1,"name":"GAME 1","state":"waiting","playerCount":1,
             "difficulty":"normal","lives":3,"friendlyFire":false},
            {"number":2,"name":"GAME 2","state":"inGame","playerCount":2,
@@ -299,12 +300,12 @@ Three routes read what the master keeps, to anyone, a page at a time. `GET /api/
 
 ## The global leaderboard: `LeaderboardModule`
 
-The leaderboard module (`src/master/Leaderboard/`) gathers the results of every server, so a player can measure up to the players of all servers. A game server reports each vanilla game that ended, after its heartbeats, until the master keeps it (see [Server](/R-Type/server/#link-with-the-master-servermastermodule)), and anyone reads the leaderboard, one difficulty and one number of players at a time: two difficulties never mix.
+The leaderboard module (`src/master/Leaderboard/`) gathers the results of every server, so a player can measure up to the players of all servers. A game server reports each vanilla game that ended, after its heartbeats, until the master keeps it (see [Server](/R-Type/server/#link-with-the-master-servermastermodule)), and anyone reads the leaderboard, of one difficulty and one number of players, or of every one of them when the query names none.
 
 | Route | Does | Answers |
 |---|---|---|
 | `PUT /api/servers/me/results/{gameId}` | keeps a row per player of the game the server of the key drew `gameId` for, in table `game_results` | 204; 401 without a valid key; 400 for an id that is not 32 lowercase hexadecimal digits (`GAME_ID_SIZE`), a body out of its bounds, or a game that was not vanilla |
-| `GET /api/leaderboard?difficulty=normal&playerCount=2` | the best score of each player, by rank, a page at a time, to anyone; `server=<id>` reads one server, `player=<nickname>` adds the row of that player | 200; 400 when `difficulty` or `playerCount` is missing, or a parameter is out of its bounds |
+| `GET /api/leaderboard?difficulty=normal&playerCount=2` | the best score of each player, by rank, a page at a time, to anyone; `difficulty` and `playerCount` each filter only when given, so a query without them reads every game; `server=<id>` reads one server, `player=<nickname>` adds the row of that player | 200; 400 when a parameter given is out of its bounds, an empty `difficulty` included |
 
 ```json
 {"playedAt":1800000000,"difficulty":"normal","playerCount":2,"vanilla":true,

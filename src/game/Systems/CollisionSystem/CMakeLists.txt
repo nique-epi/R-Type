@@ -8,6 +8,7 @@ target_link_libraries(rtype_game_collision_system
     rtype_engine_component_registry
     rtype_engine_event_bus
     rtype_engine_collision
+    rtype_engine_collision_grid
     rtype_game_components
 )
 

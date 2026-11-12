@@ -12,11 +12,12 @@ namespace rtype::tools {
 
 /**
  * @brief The hands of a bot: once its game started, it sends a PlayerInput of
- * what its BotPilot holds every PLAYER_INPUT_INTERVAL, as the game screen does
- * without client prediction. Before the game starts, and once it ended,
- * neither the pilot nor the pace move, and nothing is sent. Each input repeats
- * the ones the server has not confirmed, so the sender confirms them from the
- * world states, as the game screen does (see confirm()).
+ * what its BotPilot holds every PLAYER_INPUT_INTERVAL: a bot predicts nothing,
+ * where the game screen sends one input per simulation tick. Before the game
+ * starts, and once it ended, neither the pilot nor the pace move, and nothing
+ * is sent. Each input repeats the ones the server has not confirmed, so the
+ * sender confirms them from the world states, as the game screen does (see
+ * confirm()).
  *
  * In a bot, the link is the ServerSession of its connection, whose first input
  * of a game also sends the GameLoaded the server waits for (see

@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include "ArrivalTally.hpp"
 #include "Heartbeat.hpp"
 #include "MessageDispatcher.hpp"
 #include "MessageFrame.hpp"
@@ -68,7 +69,8 @@ class RoundTripWatchFixture : public ::testing::Test {
   SimulatedClock clock_;
   RoundTripWatch watch_{dispatcher_, clock_};
   RecordingDatagramLink link_;
-  SessionAcknowledgements acknowledgements_;
+  ArrivalTally arrivals_;
+  SessionAcknowledgements acknowledgements_{arrivals_};
   SessionOutbox outbox_{link_, acknowledgements_};
 };
 

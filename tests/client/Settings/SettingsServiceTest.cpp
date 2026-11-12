@@ -220,7 +220,6 @@ TEST_F(SettingsServiceFixture, RestoringTakesTheSettingsAndTellsEveryOne) {
                                     SettingId::ReduceFlashes,
                                     SettingId::SoundCues,
                                     SettingId::AutoFire,
-                                    SettingId::ClientPrediction,
                                     SettingId::PilotNames,
                                     SettingId::ChatShown,
                                     SettingId::ChatLetters,
@@ -228,6 +227,8 @@ TEST_F(SettingsServiceFixture, RestoringTakesTheSettingsAndTellsEveryOne) {
                                     SettingId::ChatOpenLines,
                                     SettingId::ChatSeconds,
                                     SettingId::ChatBackground,
+                                    SettingId::LagometerScale,
+                                    SettingId::LagometerBackground,
                                     SettingId::ShipLook,
                                     SettingId::ShipLocker}));
 }

@@ -1,15 +1,20 @@
 #include "CollisionRules.hpp"
+#include <optional>
+#include "CollidingEntity.hpp"
 #include "Collision.hpp"
+#include "CollisionFilter.hpp"
+#include "CollisionFiltering.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityType.hpp"
 #include "EventBus.hpp"
+#include "IsAMissile.hpp"
 #include "LookItemTouched.hpp"
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
 #include "ShipContact.hpp"
 #include "ShipPilot.hpp"
-#include "TypedEntity.hpp"
+#include "Shootable.hpp"
 #include "ViewDelay.hpp"
 
 namespace rtype::game {
@@ -28,46 +33,69 @@ CollisionRules::CollisionRules(engine::EventBus& events,
 CollisionRules::~CollisionRules() { events_.unsubscribe(subscription_); }
 
 void CollisionRules::onCollision(const engine::Collision& collision) {
-  const EntityType* firstType = components_.get<EntityType>(collision.first);
-  const EntityType* secondType = components_.get<EntityType>(collision.second);
-  if (firstType == nullptr || secondType == nullptr) {
+  const std::optional<CollidingEntity> first =
+      collidingEntityOf(collision.first);
+  const std::optional<CollidingEntity> second =
+      collidingEntityOf(collision.second);
+  if (!first.has_value() || !second.has_value() ||
+      !engine::mayCollide(first->filter, second->filter)) {
     return;
   }
-  const TypedEntity first{.entity = collision.first, .type = *firstType};
-  const TypedEntity second{.entity = collision.second, .type = *secondType};
-  publishIfRuleMatches(first, second);
-  publishIfRuleMatches(second, first);
+  publishContactOf(*first, *second);
+  publishContactOf(*second, *first);
 }
 
-void CollisionRules::publishIfRuleMatches(TypedEntity striker,
-                                          TypedEntity struck) {
-  const bool playerMissileHitsEnemy =
-      striker.type == EntityType::PlayerMissile &&
-      struck.type == EntityType::Enemy &&
-      !components_.has<ViewDelay>(striker.entity);
-  const bool enemyMissileHitsPlayer =
-      striker.type == EntityType::EnemyMissile &&
-      struck.type == EntityType::Player &&
-      !components_.has<ViewDelay>(struck.entity);
-  const bool playerMissileHitsAnotherPilot =
-      striker.type == EntityType::PlayerMissile &&
-      struck.type == EntityType::Player &&
-      hitsAnotherPilot(
-          MissileHit{.missile = striker.entity, .target = struck.entity});
-  if (playerMissileHitsEnemy || enemyMissileHitsPlayer ||
-      playerMissileHitsAnotherPilot) {
-    events_.publish(
-        MissileHit{.missile = striker.entity, .target = struck.entity});
-  } else if (striker.type == EntityType::Player &&
-             struck.type == EntityType::Enemy &&
-             !components_.has<ViewDelay>(striker.entity)) {
-    events_.publish(
-        ShipContact{.player = striker.entity, .enemy = struck.entity});
-  } else if (striker.type == EntityType::Player &&
-             struck.type == EntityType::LookItem) {
-    events_.publish(
-        LookItemTouched{.ship = striker.entity, .item = struck.entity});
+std::optional<CollidingEntity> CollisionRules::collidingEntityOf(
+    engine::Entity entity) const {
+  const auto* const type = components_.get<EntityType>(entity);
+  const auto* const filter = components_.get<engine::CollisionFilter>(entity);
+  if (type == nullptr || filter == nullptr) {
+    return std::nullopt;
   }
+  return CollidingEntity{.entity = entity, .type = *type, .filter = *filter};
+}
+
+void CollisionRules::publishContactOf(CollidingEntity one,
+                                      CollidingEntity other) {
+  if (isAMissile(one.type)) {
+    if (isAHitOf(one, other)) {
+      events_.publish(
+          MissileHit{.missile = one.entity, .target = other.entity});
+    }
+  } else if (one.type == EntityType::Player &&
+             other.type == EntityType::Enemy &&
+             !components_.has<ViewDelay>(one.entity)) {
+    events_.publish(ShipContact{.player = one.entity, .enemy = other.entity});
+  } else if (one.type == EntityType::Player &&
+             other.type == EntityType::LookItem) {
+    events_.publish(LookItemTouched{.ship = one.entity, .item = other.entity});
+  }
+}
+
+bool CollisionRules::isAHitOf(CollidingEntity missile,
+                              CollidingEntity target) const {
+  if (missile.type == EntityType::PlayerMissile &&
+      target.type == EntityType::EnemyMissile) {
+    return engine::hitsLayerOf(missile.filter, target.filter) &&
+           components_.has<Shootable>(target.entity) &&
+           !components_.has<ViewDelay>(missile.entity);
+  }
+  if (isAMissile(target.type)) {
+    return engine::hitsLayerOf(missile.filter, target.filter);
+  }
+  if (missile.type == EntityType::PlayerMissile &&
+      target.type == EntityType::Player) {
+    return hitsAnotherPilot(
+        MissileHit{.missile = missile.entity, .target = target.entity});
+  }
+  const bool testedWhereItsPlayerSaw =
+      (missile.type == EntityType::PlayerMissile &&
+       target.type == EntityType::Enemy &&
+       components_.has<ViewDelay>(missile.entity)) ||
+      (missile.type == EntityType::EnemyMissile &&
+       target.type == EntityType::Player &&
+       components_.has<ViewDelay>(target.entity));
+  return !testedWhereItsPlayerSaw;
 }
 
 bool CollisionRules::hitsAnotherPilot(const MissileHit& hit) const {

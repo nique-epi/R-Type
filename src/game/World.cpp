@@ -1,4 +1,5 @@
 #include "World.hpp"
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -6,10 +7,12 @@
 #include "BodyPlacement.hpp"
 #include "Boss.hpp"
 #include "CollisionBox.hpp"
+#include "CollisionFilter.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
 #include "Entity.hpp"
 #include "EntitySheet.hpp"
+#include "EntitySheetConstants.hpp"
 #include "EntityType.hpp"
 #include "EntityTypeNumber.hpp"
 #include "Fragile.hpp"
@@ -33,6 +36,7 @@
 #include "ShardBurst.hpp"
 #include "ShipMotion.hpp"
 #include "ShipPilot.hpp"
+#include "Shootable.hpp"
 #include "SteadyMotion.hpp"
 #include "SurvivesContact.hpp"
 #include "TimeConstants.hpp"
@@ -51,12 +55,14 @@ struct BodyStart {
 };
 
 /** @brief Gives @p start what every entity of a sheet has: where it is, its
- * side, its box, the number of its sheet, and an Intent that wants nothing. */
+ * side, its box, its collision filter, the number of its sheet, and an Intent
+ * that wants nothing. */
 void addPlace(engine::ComponentRegistry& components, const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
   components.add(start.body, start.position);
   components.add(start.body, sheet.side);
   components.add(start.body, sheet.hitbox);
+  components.add(start.body, sheet.collision.filter);
   components.add(start.body, EntityTypeNumber{.number = sheet.number});
   components.add(start.body, Intent{});
 }
@@ -108,10 +114,18 @@ void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
   }
 }
 
+/** @returns Whether @p sheet is a missile of an enemy that
+ * SHOOTABLE_MISSILE_SHEETS names. */
+bool isShootable(const EntitySheet& sheet) {
+  return sheet.side == EntityType::EnemyMissile &&
+         std::ranges::find(SHOOTABLE_MISSILE_SHEETS, sheet.name) !=
+             SHOOTABLE_MISSILE_SHEETS.end();
+}
+
 /** @brief Gives @p start the parts that decide what its contact with a ship
- * does: the CurrentAction of an enemy, then the HurtZone and the
- * SurvivesContact and the Fragile its sheet declares, and the LookItem of a
- * look item. */
+ * or a missile does: the CurrentAction of an enemy, then the HurtZone and the
+ * SurvivesContact and the Fragile its sheet declares, the Shootable of a
+ * missile SHOOTABLE_MISSILE_SHEETS names, and the LookItem of a look item. */
 void addContactParts(engine::ComponentRegistry& components,
                      const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
@@ -126,6 +140,9 @@ void addContactParts(engine::ComponentRegistry& components,
   }
   if (sheet.fragileIn.has_value()) {
     components.add(start.body, Fragile{.in = *sheet.fragileIn});
+  }
+  if (isShootable(sheet)) {
+    components.add(start.body, Shootable{});
   }
   if (sheet.lookItem.has_value()) {
     components.add(start.body, LookItem{.number = *sheet.lookItem});

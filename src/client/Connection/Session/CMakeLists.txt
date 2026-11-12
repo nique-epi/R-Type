@@ -1,4 +1,5 @@
 add_library(rtype_client_session STATIC
+  ArrivalTally.cpp
   OrderedInbox.cpp
   SessionAcknowledgements.cpp
   SessionDeparture.cpp

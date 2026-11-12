@@ -38,3 +38,21 @@ Point 1 asked for the `.cpp` of a test helper, and the helper itself was added; 
 ### Rule
 
 Read the header of a double and of its members before adding it, add every double they hold, and copy the list from an executable that already links it.
+
+## Update (2026-11-10) — a fixture is built by every executable that lists it
+
+### Context
+
+`DatagramCompressionFixtures.cpp` gained a status of a game for a test of `network_compression_tests`. `client_connection_tests` compiles the same fixture for its own tests.
+
+### Mistake
+
+The fixture included `GameStatus.hpp`; the executable of the new test reached it, and `client_connection_tests` did not. Building the test's executable alone passed, and the full workflow stopped with `'GameStatus.hpp' file not found`.
+
+### Root cause
+
+The change was checked on the executable of its test. The other executables that list the same `.cpp` were never searched.
+
+### Rule
+
+List the executables that compile a fixture before adding an include to it, give the library of a new header of the project to each one that does not already reach it, and build each of them alone.

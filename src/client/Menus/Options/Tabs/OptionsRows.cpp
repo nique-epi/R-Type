@@ -65,6 +65,17 @@ ValueBinding<Value> bindingOf(SettingsService& service,
                 &setting](Value value) { service.apply(setting, value); }};
 }
 
+/** @returns The range a slider of @p setting moves over, by the step of
+ * @p look. */
+Slider::Range sliderRangeOf(const Setting<int>& setting,
+                            const SliderLook& look) {
+  const SettingRange range = setting.range.value_or(SettingRange{});
+  return Slider::Range{.minimum = range.minimum,
+                       .maximum = range.maximum,
+                       .step = look.step,
+                       .pageSteps = CHAT_PAGE_STEPS};
+}
+
 }  // namespace
 
 std::unique_ptr<RowControl> volumeSlider(SettingsService& service,
@@ -82,14 +93,17 @@ std::unique_ptr<RowControl> settingSwitch(SettingsService& service,
 std::unique_ptr<RowControl> chatSlider(SettingsService& service,
                                        const Setting<int>& setting,
                                        const SliderLook& look) {
-  const SettingRange range = setting.range.value_or(SettingRange{});
   return std::make_unique<Slider>(
-      Slider::Range{.minimum = range.minimum,
-                    .maximum = range.maximum,
-                    .step = look.step,
-                    .pageSteps = CHAT_PAGE_STEPS},
-      bindingOf(service, setting),
+      sliderRangeOf(setting, look), bindingOf(service, setting),
       [&service] { return !service.settings().chatShown; }, look.unit);
+}
+
+std::unique_ptr<RowControl> settingSlider(SettingsService& service,
+                                          const Setting<int>& setting,
+                                          const SliderLook& look) {
+  return std::make_unique<Slider>(
+      sliderRangeOf(setting, look), bindingOf(service, setting),
+      [] { return false; }, look.unit);
 }
 
 std::unique_ptr<RowControl> colorModeSelector(SettingsService& service) {

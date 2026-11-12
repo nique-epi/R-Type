@@ -30,11 +30,11 @@
 #include "IShipLookExchange.hpp"
 #include "ISky.hpp"
 #include "InterpolationClock.hpp"
+#include "InterpolationTally.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
 #include "OwnPrediction.hpp"
 #include "PlayerCommands.hpp"
-#include "PlayerInputPacer.hpp"
 #include "PlayerPalette.hpp"
 #include "ScoreBoard.hpp"
 #include "ScreenConstants.hpp"
@@ -102,10 +102,9 @@ struct PlayerSettings;
  * what is held. The actions held are logged each time they change.
  *
  * Each update sends the actions held to the server, the first update included.
- * With PREDICTION on, one input goes out for each simulation tick that passed
- * and the own ship moves at once by the same code as the server (see
- * OwnShipPredictor); with it off, the PlayerInputPacer says when an input is
- * due and the ship stays where the last world state put it. The game goes on
+ * One input goes out for each simulation tick that passed and the own ship
+ * moves at once by the same code as the server (see OwnShipPredictor): the
+ * prediction is always on, never a setting of the player. The game goes on
  * behind the options, so it keeps sending them there, with nothing held but
  * shoot while AUTO-FIRE is on, and keeps applying what the server announces.
  *
@@ -171,7 +170,8 @@ class GameScreen : public IScreen {
   void repaintStatus(const BossLook& boss);
 
   /** @brief Ranks the pilots of the board by the scores of @p ended into the
-   * result of the parts, and remembers when the game ended. */
+   * result of the parts, remembers when the game ended, and ends the game of
+   * the interpolation tally, which stops counting its frames. */
   void recordEnd(const network::GameEnded& ended);
 
   /** @brief Asks for the end screen in place of every screen once
@@ -201,9 +201,9 @@ class GameScreen : public IScreen {
   GameResult* result_;
   std::uint8_t playerNumber_;
   InterpolationClock interpolationClock_;
+  InterpolationTally* interpolationTally_;
   std::optional<engine::Duration> endedAt_;
   std::uint32_t paintedStatusRevision_{};
-  PlayerInputPacer inputPacer_;
   logging::Logger logger_{std::string{GAME_SCREEN_LOGGER_NAME}};
   std::uint8_t loggedActions_{0};
   ISky* sky_;

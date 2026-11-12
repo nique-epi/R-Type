@@ -14,6 +14,11 @@ Why: `EXPECT_THROW(LaunchOptions::read(…), …)` discards what `read()` return
 2. **A constructor that throws needs no cast**: name the object, `EXPECT_THROW(const TrafficCsvFile opened{path}, …)`.
 3. **Read the build log of the test before its result**: a test that passes can still hold the warning that fails the CI.
 
+### A constructor of several arguments is named with parentheses
+
+1. **The preprocessor splits a macro argument at every comma outside parentheses, braces do not protect it**: `EXPECT_THROW(const UniformGrid grid{TEST_AREA, NEGATIVE_CELL_SIDE}, …)` gives the macro three arguments and fails with `too many arguments provided to function-like macro invocation`.
+2. **Name the object with parentheses when its constructor takes two arguments or more**: `EXPECT_THROW(const UniformGrid grid(TEST_AREA, NEGATIVE_CELL_SIDE), …)`. Braces stay for one argument only, as `opened{path}`.
+
 ## Example
 
 - ❌ **Before (wrong)**: `EXPECT_THROW(LaunchOptions::read(Arguments{TRAFFIC_CSV_OPTION}), MissingLaunchOptionValueException);` → `ignoring return value of function declared with 'nodiscard' attribute`.

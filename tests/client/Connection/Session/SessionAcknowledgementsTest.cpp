@@ -1,9 +1,11 @@
 #include <gtest/gtest.h>
+#include "ArrivalTally.hpp"
 #include "NetworkTestConstants.hpp"
 #include "PacketHeader.hpp"
 #include "ServerSessionFixtures.hpp"
 #include "ServerSessionTestConstants.hpp"
 #include "SessionAcknowledgements.hpp"
+#include "SessionArrivals.hpp"
 #include "TimeTestConstants.hpp"
 
 namespace rtype::client {
@@ -13,6 +15,7 @@ using testing::FIRST_SEQUENCE;
 using testing::guaranteedSessionHeader;
 using testing::SECOND_SEQUENCE;
 using testing::sessionHeader;
+using testing::THIRD_SEQUENCE;
 
 /**
  * Given acknowledgements of no session
@@ -20,7 +23,8 @@ using testing::sessionHeader;
  * Then the header is left as it was: no flag, nothing acknowledged
  */
 TEST(SessionAcknowledgements, AcknowledgeNothingBeforeTheSession) {
-  SessionAcknowledgements acknowledgements;
+  ArrivalTally arrivals;
+  SessionAcknowledgements acknowledgements{arrivals};
   network::PacketHeader header;
 
   acknowledgements.acknowledgeIn(header);
@@ -34,7 +38,8 @@ TEST(SessionAcknowledgements, AcknowledgeNothingBeforeTheSession) {
  * Then the header acknowledges the acceptance
  */
 TEST(SessionAcknowledgements, AcknowledgeTheAcceptanceOnceOpened) {
-  SessionAcknowledgements acknowledgements;
+  ArrivalTally arrivals;
+  SessionAcknowledgements acknowledgements{arrivals};
   acknowledgements.open(ACCEPTANCE_SEQUENCE);
   network::PacketHeader header;
 
@@ -50,7 +55,8 @@ TEST(SessionAcknowledgements, AcknowledgeTheAcceptanceOnceOpened) {
  * Then it is refused
  */
 TEST(SessionAcknowledgements, RefuseADatagramOlderThanTheNewest) {
-  SessionAcknowledgements acknowledgements;
+  ArrivalTally arrivals;
+  SessionAcknowledgements acknowledgements{arrivals};
   acknowledgements.open(ACCEPTANCE_SEQUENCE);
   ASSERT_TRUE(acknowledgements.accept(sessionHeader(SECOND_SEQUENCE)));
 
@@ -64,7 +70,8 @@ TEST(SessionAcknowledgements, RefuseADatagramOlderThanTheNewest) {
  * Then the acknowledgement is not due, then due
  */
 TEST(SessionAcknowledgements, AreDueTheAcknowledgementDelayAfterAGuarantee) {
-  SessionAcknowledgements acknowledgements;
+  ArrivalTally arrivals;
+  SessionAcknowledgements acknowledgements{arrivals};
   acknowledgements.open(ACCEPTANCE_SEQUENCE);
   ASSERT_TRUE(acknowledgements.accept(guaranteedSessionHeader(FIRST_SEQUENCE)));
 
@@ -82,7 +89,8 @@ TEST(SessionAcknowledgements, AreDueTheAcknowledgementDelayAfterAGuarantee) {
  * Then no acknowledgement is due: the next datagram will carry it
  */
 TEST(SessionAcknowledgements, AreNotDueForADatagramWithoutGuarantee) {
-  SessionAcknowledgements acknowledgements;
+  ArrivalTally arrivals;
+  SessionAcknowledgements acknowledgements{arrivals};
   acknowledgements.open(ACCEPTANCE_SEQUENCE);
   ASSERT_TRUE(acknowledgements.accept(sessionHeader(FIRST_SEQUENCE)));
 
@@ -98,7 +106,8 @@ TEST(SessionAcknowledgements, AreNotDueForADatagramWithoutGuarantee) {
  * Then no acknowledgement is due: a refused datagram is never acknowledged
  */
 TEST(SessionAcknowledgements, WaitForNoRefusedDatagram) {
-  SessionAcknowledgements acknowledgements;
+  ArrivalTally arrivals;
+  SessionAcknowledgements acknowledgements{arrivals};
   acknowledgements.open(ACCEPTANCE_SEQUENCE);
   ASSERT_TRUE(acknowledgements.accept(sessionHeader(SECOND_SEQUENCE)));
   ASSERT_FALSE(
@@ -115,7 +124,8 @@ TEST(SessionAcknowledgements, WaitForNoRefusedDatagram) {
  * Then no acknowledgement is due any more
  */
 TEST(SessionAcknowledgements, EndTheWaitWhenAHeaderCarriesThem) {
-  SessionAcknowledgements acknowledgements;
+  ArrivalTally arrivals;
+  SessionAcknowledgements acknowledgements{arrivals};
   acknowledgements.open(ACCEPTANCE_SEQUENCE);
   ASSERT_TRUE(acknowledgements.accept(guaranteedSessionHeader(FIRST_SEQUENCE)));
   network::PacketHeader header;
@@ -134,7 +144,8 @@ TEST(SessionAcknowledgements, EndTheWaitWhenAHeaderCarriesThem) {
  * again
  */
 TEST(SessionAcknowledgements, KeepTheWaitOfTheOldestGuarantee) {
-  SessionAcknowledgements acknowledgements;
+  ArrivalTally arrivals;
+  SessionAcknowledgements acknowledgements{arrivals};
   acknowledgements.open(ACCEPTANCE_SEQUENCE);
   ASSERT_TRUE(acknowledgements.accept(guaranteedSessionHeader(FIRST_SEQUENCE)));
   acknowledgements.advance(PROTOCOL_ACKNOWLEDGEMENT_DELAY - ONE_NANOSECOND);
@@ -152,7 +163,8 @@ TEST(SessionAcknowledgements, KeepTheWaitOfTheOldestGuarantee) {
  * Then a header acknowledges nothing
  */
 TEST(SessionAcknowledgements, ForgetTheSequencesWhenTheSessionCloses) {
-  SessionAcknowledgements acknowledgements;
+  ArrivalTally arrivals;
+  SessionAcknowledgements acknowledgements{arrivals};
   acknowledgements.open(ACCEPTANCE_SEQUENCE);
   ASSERT_TRUE(acknowledgements.accept(sessionHeader(FIRST_SEQUENCE)));
   network::PacketHeader header;
@@ -169,7 +181,8 @@ TEST(SessionAcknowledgements, ForgetTheSequencesWhenTheSessionCloses) {
  * Then no acknowledgement is due
  */
 TEST(SessionAcknowledgements, ForgetTheWaitWhenTheSessionCloses) {
-  SessionAcknowledgements acknowledgements;
+  ArrivalTally arrivals;
+  SessionAcknowledgements acknowledgements{arrivals};
   acknowledgements.open(ACCEPTANCE_SEQUENCE);
   ASSERT_TRUE(acknowledgements.accept(guaranteedSessionHeader(FIRST_SEQUENCE)));
 
@@ -177,6 +190,38 @@ TEST(SessionAcknowledgements, ForgetTheWaitWhenTheSessionCloses) {
   acknowledgements.advance(PROTOCOL_ACKNOWLEDGEMENT_DELAY);
 
   EXPECT_FALSE(acknowledgements.isAcknowledgementDue());
+}
+
+/**
+ * Given a session opened by an acceptance of ACCEPTANCE_SEQUENCE
+ * When FIRST_SEQUENCE then THIRD_SEQUENCE are accepted
+ * Then the tally counts two datagrams and SECOND_SEQUENCE missed
+ */
+TEST(SessionAcknowledgements, CountTheDatagramsAcceptedAndTheSequencesSkipped) {
+  ArrivalTally arrivals;
+  SessionAcknowledgements acknowledgements{arrivals};
+  acknowledgements.open(ACCEPTANCE_SEQUENCE);
+
+  ASSERT_TRUE(acknowledgements.accept(sessionHeader(FIRST_SEQUENCE)));
+  ASSERT_TRUE(acknowledgements.accept(sessionHeader(THIRD_SEQUENCE)));
+
+  EXPECT_EQ(arrivals.arrivals(), (SessionArrivals{.accepted = 2, .missed = 1}));
+}
+
+/**
+ * Given a session that accepted SECOND_SEQUENCE, FIRST_SEQUENCE being missed
+ * When FIRST_SEQUENCE arrives, late, and is refused
+ * Then the tally still counts one datagram and one missed
+ */
+TEST(SessionAcknowledgements, CountNothingForARefusedDatagram) {
+  ArrivalTally arrivals;
+  SessionAcknowledgements acknowledgements{arrivals};
+  acknowledgements.open(ACCEPTANCE_SEQUENCE);
+  ASSERT_TRUE(acknowledgements.accept(sessionHeader(SECOND_SEQUENCE)));
+
+  ASSERT_FALSE(acknowledgements.accept(sessionHeader(FIRST_SEQUENCE)));
+
+  EXPECT_EQ(arrivals.arrivals(), (SessionArrivals{.accepted = 1, .missed = 1}));
 }
 
 }  // namespace rtype::client

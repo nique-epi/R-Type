@@ -2,8 +2,8 @@ name: deploy-master
 
 # Deploys the server package of a release to the master instance of AWS:
 # the instance downloads the package from the release, the workflow only
-# sends it infra/master/deploy.sh through SSM, with the domain of MASTER_URL
-# that Caddy answers HTTPS for. Called by the release workflow
+# sends it infra/release.sh and infra/master/deploy.sh through SSM, with the
+# domain of MASTER_URL that Caddy answers HTTPS for. Called by the release workflow
 # on every tag, and run by hand to redeploy or to go back to an older tag.
 on:
   workflow_call:
@@ -67,22 +67,11 @@ jobs:
       - name: Run the deployment on the instance
         run: |
           version=${TAG#v}
-          { printf 'VERSION=%s\nDOMAIN=%s\n' "$version" "$DOMAIN"; cat infra/master/deploy.sh; } > "$RUNNER_TEMP/script.sh"
-          jq -n --rawfile script "$RUNNER_TEMP/script.sh" '{commands: [$script]}' > "$RUNNER_TEMP/parameters.json"
-          command_id=$(aws ssm send-command \
-            --instance-ids "$INSTANCE_ID" \
-            --document-name AWS-RunShellScript \
-            --parameters "file://$RUNNER_TEMP/parameters.json" \
-            --timeout-seconds 300 \
-            --query Command.CommandId --output text)
-          # The invocation can take a moment to exist after send-command.
-          sleep 3
-          aws ssm wait command-executed --command-id "$command_id" --instance-id "$INSTANCE_ID" || true
-          invocation=$(aws ssm get-command-invocation \
-            --command-id "$command_id" --instance-id "$INSTANCE_ID" --output json)
-          printf '%s' "$invocation" | jq -r .StandardOutputContent
-          printf '%s' "$invocation" | jq -r .StandardErrorContent >&2
-          printf '%s' "$invocation" | jq -e '.Status == "Success"' > /dev/null
+          {
+            printf 'VERSION=%s\nDOMAIN=%s\n' "$version" "$DOMAIN"
+            cat infra/release.sh infra/master/deploy.sh
+          } > "$RUNNER_TEMP/script.sh"
+          infra/run-on-instance.sh "$INSTANCE_ID" "$RUNNER_TEMP/script.sh"
 
       # The first deployment waits for Let's Encrypt to issue the certificate.
       - name: Check the master from the outside

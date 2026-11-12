@@ -26,7 +26,6 @@ constexpr const char* FIRST_LAUNCH_FILE =
     "reduce_flashes=off\n"
     "sound_cues=off\n"
     "auto_fire=off\n"
-    "client_prediction=on\n"
     "pilot_names=on\n"
     "chat_shown=on\n"
     "chat_letters=33\n"
@@ -34,6 +33,8 @@ constexpr const char* FIRST_LAUNCH_FILE =
     "chat_open_lines=8\n"
     "chat_seconds=8\n"
     "chat_background=70\n"
+    "lagometer_scale=1\n"
+    "lagometer_background=70\n"
     "ship_head=none\n"
     "ship_eyes=none\n"
     "ship_face=none\n"
@@ -67,6 +68,15 @@ constexpr const char* CHAT_PAST_ITS_RANGES_FILE =
     "chat_background=101\n";
 constexpr std::size_t CHAT_LINES_PAST_THEIR_RANGES = 5;
 
+/** @brief Lagometer settings changed from a first launch, on a step of their
+ * slider; and a file whose lagometer values each lie one past their range. */
+constexpr int CHANGED_LAGOMETER_SCALE = 2;
+constexpr int CHANGED_LAGOMETER_BACKGROUND = 35;
+constexpr const char* LAGOMETER_PAST_ITS_RANGES_FILE =
+    "lagometer_scale=4\n"
+    "lagometer_background=101\n";
+constexpr std::size_t LAGOMETER_LINES_PAST_THEIR_RANGES = 2;
+
 constexpr int ANY_VOLUME = 40;
 constexpr int CHANGED_MUSIC_VOLUME = 35;
 constexpr int CHANGED_EFFECTS_VOLUME = 5;
@@ -74,6 +84,10 @@ constexpr PixelSize SMALLER_WINDOW{.width = 1280, .height = 720};
 
 /** @brief The line an earlier version kept the master the player chose on. */
 constexpr const char* EARLIER_MASTER_LINE = "master=10.0.0.2:8080";
+
+/** @brief The line an earlier version kept the switch of the prediction on,
+ * which the player can no longer turn off. */
+constexpr const char* EARLIER_PREDICTION_LINE = "client_prediction=off";
 
 /** @brief The music volume of a first launch, and the lowest and the highest
  * volumes a file may hold. */

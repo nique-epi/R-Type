@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <vector>
+#include "ArrivalTally.hpp"
 #include "ContentLoading.hpp"
 #include "GameLoadedReminder.hpp"
 #include "IRoutedLink.hpp"
@@ -36,6 +37,9 @@ struct ServerSessionParts {
   /** @brief Loads the pack of a server whose content is not the client's;
    * the session stops it when it closes. */
   std::reference_wrapper<ContentLoading> content;
+  /** @brief Counts the datagrams the session accepts and the sequences it
+   * skips. */
+  std::reference_wrapper<ArrivalTally> arrivals;
   /** @brief The parts that follow the session, told when it opens, closes and
    * holds. */
   std::vector<std::reference_wrapper<ISessionObserver>> observers;

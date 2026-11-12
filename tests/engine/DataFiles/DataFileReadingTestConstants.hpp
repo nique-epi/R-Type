@@ -20,6 +20,7 @@ constexpr std::string_view HEALTH_KEY = "health";
 constexpr std::string_view LOWEST_KEY = "lowest";
 constexpr std::string_view HIGHEST_KEY = "highest";
 constexpr std::string_view WIDTH_KEY = "width";
+constexpr std::string_view HITS_KEY = "hits";
 
 /** @brief The dotted names the errors and keyName() give those keys. */
 constexpr std::string_view WIDTH_OF_THE_HITBOX = "gameplay.hitbox.width";
@@ -58,6 +59,20 @@ constexpr std::string_view NO_HEALTH = "[gameplay]\nhealth = 0\n";
 constexpr std::string_view ONE_HEALTH_TOO_MANY = "[gameplay]\nhealth = 1001\n";
 constexpr std::string_view HEALTH_AS_A_FLOAT = "[gameplay]\nhealth = 3.0\n";
 constexpr std::string_view SIDE_AS_A_NUMBER = "[gameplay]\nside = 2\n";
+/** @brief Arrays of texts under `hits = `: the first text starts on column 9,
+ * the second on column 19. */
+constexpr std::string_view TWO_HITS =
+    "[gameplay]\nhits = [\"player\", \"wall\"]\n";
+constexpr std::string_view NO_HIT = "[gameplay]\nhits = []\n";
+constexpr std::string_view HITS_AS_A_TEXT = "[gameplay]\nhits = \"player\"\n";
+constexpr std::string_view A_NUMBER_AMONG_THE_HITS =
+    "[gameplay]\nhits = [\"player\", 3]\n";
+constexpr std::string_view PLAYER_TEXT = "player";
+constexpr std::string_view WALL_TEXT = "wall";
+constexpr std::size_t LINE_OF_THE_HITS = 2;
+constexpr std::size_t COLUMN_OF_THE_FIRST_HIT = 9;
+constexpr std::size_t COLUMN_OF_THE_SECOND_HIT = 19;
+constexpr std::string_view NAME_OF_THE_HITS = "gameplay.hits";
 constexpr std::string_view MISSPELT_SIDE = "[gameplay]\nside = \"enmy\"\n";
 
 /** @brief Files that hold boxes, as an array of tables, as one table, as an
@@ -105,6 +120,10 @@ constexpr std::string_view HITBOX_NOT_A_TABLE_TEXT =
     "gameplay.hitbox must be a table";
 constexpr std::string_view NO_HEALTH_MESSAGE =
     "sheet.toml:2:10: gameplay.health must be an integer from 1 to 1000";
+constexpr std::string_view HITS_NOT_AN_ARRAY_MESSAGE =
+    "sheet.toml:2:8: gameplay.hits must be an array of texts";
+constexpr std::string_view NUMBER_AMONG_THE_HITS_MESSAGE =
+    "sheet.toml:2:19: gameplay.hits must be an array of texts";
 constexpr std::string_view SIDE_NOT_A_TEXT_MESSAGE =
     "sheet.toml:2:8: gameplay.side must be a text";
 constexpr std::string_view MISSPELT_SIDE_MESSAGE =

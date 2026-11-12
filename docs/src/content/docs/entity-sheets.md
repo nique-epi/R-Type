@@ -12,7 +12,7 @@ Both programs read the folder `entities` (`ENTITY_SHEET_FOLDER_IN_ASSETS`) of th
 ## The folder and the names
 
 - Every `.toml` file of the folder is a sheet; any other file, and every sub-folder, is left alone. The name of the file without `.toml` is the name of the type: `weaver.toml` is `weaver`.
-- A name is 1 to 24 bytes (`MAXIMUM_ENTITY_TYPE_NAME_LENGTH`) of lowercase letters `a` to `z`, digits and `_`, so a file has the same name on every system. A folder holds at most 32 sheets (`MAXIMUM_ENTITY_TYPES`) and at least one. Both limits and the check of a name (`isEntityTypeName()`) live in `src/identifiers/`, so a name the game accepts is one the table of the types can carry.
+- A name is 1 to 24 bytes (`MAXIMUM_ENTITY_TYPE_NAME_LENGTH`) of lowercase letters `a` to `z`, digits and `_`, so a file has the same name on every system. A folder holds at most 255 sheets (`MAXIMUM_ENTITY_TYPES`) and at least one: a type is numbered from 1 on one byte, and 0 names no type. Both limits and the check of a name (`isEntityTypeName()`) live in `src/identifiers/`, so a name the game accepts is one the table of the types can carry.
 - The server numbers the sheets from 1 in the order of their names. The twenty-three sheets the game ships are `bydo_tyrant` (1), `bydomancer` (2), `drifter` (3), `drillback` (4), `enemy_missile` (5), the seven look items `look_chef_toque` (6) to `look_wizard_hat` (12) in the order of their names, `orb_shard` (13), `player_missile` (14), `reaper` (15), `rune_orb` (16), `ship` (17), `tyrant_diver` (18), `tyrant_missile` (19), `tyrant_spore` (20), `tyrant_spore_shard` (21), `voltjelly` (22) and `weaver` (23). These numbers name the types on the wire for as long as the server runs, and every player learns them when it is accepted (see [Protocol](/R-Type/protocol/#entity-types)), so a new sheet whose name sorts first renumbers the others without breaking anything.
 - The server makes the ship of every player from the sheet named `ship` (`SHIP_SHEET_NAME`, `src/server/ServerConstants.hpp`): without it, it stops before its first game.
 
@@ -23,6 +23,8 @@ The gameplay of the Drifter, from `assets/entities/drifter.toml`:
 ```toml
 [gameplay]
 side = "enemy"
+layer = "enemy"
+hits = ["player"]
 pilot = "straight"
 
 [gameplay.hitbox]
@@ -52,7 +54,9 @@ projectile = "enemy_missile"
 
 | Key | Unit | Accepted | What it gives the entity |
 |---|---|---|---|
-| `side` | | `player`, `enemy`, `player_missile`, `enemy_missile`, `look_item` | its `EntityType`: what it hits and what hits it (see [Collisions](/R-Type/server/#rules-collisionrules)), and the layer the client draws it in (a `look_item` is drawn in the layer of the Bydos) |
+| `side` | | `player`, `enemy`, `player_missile`, `enemy_missile`, `look_item` | its `EntityType`: what a contact with it means (see [Collisions](/R-Type/server/#rules-collisionrules)), and the layer the client draws it in (a `look_item` is drawn in the layer of the Bydos) |
+| `layer` | | a name of 1 to 24 lowercase letters, digits and `_`, which the sheets choose | the collision layer it lies in (see [Collision layers](#collision-layers-layer-and-hits)) |
+| `hits` | | an array of names of layers, each one a layer some sheet lies in; nothing when left out | the layers it hits: a contact counts when one of the two bodies hits the layer of the other |
 | `pilot` | | `player`, or the name of a behaviour: `straight`, `weave`, `scatter`, `reaper`, `drillback`, `bydomancer`, `bydo_tyrant`, or one a server script of a resource registers | what writes its `Intent`: the input of its player, or that behaviour (see [Behaviours](#behaviours-and-their-settings) and [Scripting in Luau](/R-Type/scripting/)) |
 | `hitbox.width`, `hitbox.height` | logical units | 1 to 1024 | its `CollisionBox`, centered on its position |
 | `hitbox.offset_x`, `hitbox.offset_y` | logical units | -1024 to 1024; 0 when left out | where the center of its `CollisionBox` lies from its position, y growing downwards: the box of the Bydo Tyrant covers its body, 12 units right of and 4 below its center |
@@ -97,7 +101,7 @@ projectile = "enemy_missile"
 | `boss.arrival_attack` | | 0 to 255 | the attack of its arrival: while it is in any phase of it, a hit takes nothing from it |
 | `look_item` | | the name of an item of the locker: `top_hat`, `party_hat`, `crown`, `propeller_cap`, `cowboy_hat`, `viking_helmet`, `wizard_hat`, `chef_toque`, `cool_shades`, `mustache`; for side `look_item` only | its `LookItem`: the item the pilot whose ship touches the body wins for the locker of the hangar (see [Ship looks](/R-Type/server/#look-items-lookitemkeeper)) |
 
-- `side`, `pilot`, `hitbox` and `motion` are required; the tables `behaviour`, `health`, `score`, `gun`, `hurt_zone`, `survives_contact`, `fragile`, `burst`, `volley` and `boss` may be left out. The three keys of `boss` are required in it. A body without `health` takes no damage: a missile that hits it still disappears, and a ship pays a hit with a life instead (see [Lives](/R-Type/server/#lives-lifekeeper)). A body without `score` earns nothing, without `gun` fires nothing.
+- `side`, `layer`, `pilot`, `hitbox` and `motion` are required; the key `hits` and the tables `behaviour`, `health`, `score`, `gun`, `hurt_zone`, `survives_contact`, `fragile`, `burst`, `volley` and `boss` may be left out. The three keys of `boss` are required in it. A body without `health` takes no damage: a missile that hits it still disappears, and a ship pays a hit with a life instead (see [Lives](/R-Type/server/#lives-lifekeeper)). A body without `score` earns nothing, without `gun` fires nothing.
 - Any other key is refused, so a misspelt key stops the program instead of being ignored. Every number is a TOML integer: `240`, never `240.0` or `"240"`.
 - A duration of the gun becomes the nearest whole number of ticks of a sixtieth of a second: 333 ms are 20 ticks, 1500 ms are 90. The interval is at least 1 tick (`MINIMUM_GUN_INTERVAL_TICKS`), and so is the time before a burst (`MINIMUM_BURST_TICKS`).
 - The keys, the choices and the ranges live in `src/game/EntityTypes/EntitySheetConstants.hpp`.
@@ -118,8 +122,25 @@ A sheet whose keys are each valid is refused when it does not hold together:
 - A beam that sweeps, `to_deg` other than `from_deg`, names `until_ms`, the end of its sweep; a beam without `until_ms` keeps `from_deg`.
 - Only a missile has a `burst`, and it bursts into missiles of its own side, of a sheet of the folder.
 - A body of side `look_item` names its item with `look_item`, and no other side does. On its first tick the pilot of a look item steers it to the left, the edge that removes it, so an item nobody picks up does not stay for the rest of the game. Its hitbox is the size it is drawn at, as for every shipped sheet.
+- A sheet hits only layers a sheet of the folder lies in, and the sheets lie in at most 32 layers (`MAXIMUM_COLLISION_LAYERS`, `src/engine/Collision/Layers/`): a filter keeps one bit per layer.
 - A box names its `attack` and its `phase` together, or neither; a box that names neither has no `from_ms` or `until_ms`, and `until_ms` is above `from_ms`. An `attack` is a number the sheet gives its own attacks: the code knows no attack by name.
 - The waves file names enemies among the sheets of side `enemy`, and the boss of a difficulty among the sheets that have a `boss` (see [Writing the waves file](/R-Type/waves-file/#enemies)).
+
+## Collision layers: `layer` and `hits`
+
+Which bodies touch each other is written in the sheets, as the layers and masks of Godot are: `layer` says where a body lies, `hits` what it hits. The server looks at a pair of bodies only when one of the two hits the layer of the other, whichever of the two says so, and drops any other pair before it compares their boxes. The names are free: a layer exists as soon as a sheet lies in it, so a new kind of body, a wall for example, takes a layer of its own without a line of C++. A layer misspelt in `hits` stops the program, since no sheet lies in it; a misspelt `layer` makes a new layer that no sheet hits.
+
+The shipped sheets use five layers:
+
+| Sheets | `layer` | `hits` |
+|---|---|---|
+| `ship` | `player` | `look_item` |
+| the Bydos and the Bydo Tyrant | `enemy` | `player` |
+| `player_missile` | `player_missile` | `enemy`, `enemy_missile`, `player` |
+| the missiles of the Bydos, their orbs, spores and shards | `enemy_missile` | `player` |
+| the look items | `look_item` | nothing |
+
+What a kept contact means comes from the `side` of the two bodies (see [Collisions](/R-Type/server/#rules-collisionrules)): a missile disappears and hurts what it touched, a ship that touches an enemy loses a life, a ship that touches a look item picks it up. So a missile of a Bydo whose sheet adds `enemy` to its `hits` hurts the Bydos, and a Bydo whose sheet adds `player_missile` stops the missiles of the players, each with one word in one sheet. Between two missiles, each one that hits the layer of the other is the one that disappears, except a missile of a player and a missile of a Bydo: `player_missile` hits `enemy_missile` so that pair reaches the server, and the C++ list `SHOOTABLE_MISSILE_SHEETS` (`src/game/EntityTypes/EntitySheetConstants.hpp`) says which missiles of the Bydos it shoots down (see [Collisions](/R-Type/server/#rules-collisionrules)). Every missile of a Bydo the game ships is in the list today; a missile left out of it, or added by a resource, flies through the missiles of the players. A pair of two enemies, or of an enemy and a look item, means nothing yet, whatever their layers. `player_missile` hits `player` for friendly fire: the contact counts only when that rule of the game is on, and never for the ship of the player who fired. The hurt zone of an enemy hurts the ships its body touches, and the lag compensation follows the same layers (see [Lag compensation of the shots](/R-Type/server/#lag-compensation-of-the-shots)).
 
 ## Behaviours and their settings
 
@@ -207,6 +228,9 @@ Each program stops on the first error and exits with code 1. A game process prin
 | a key less (`side`) | `…/entities/drifter.toml:11:1: gameplay.side is missing`, at the line of the table |
 | a value out of its range (`points = 0` under `health`) | `…/entities/drifter.toml:27:10: gameplay.health.points must be an integer from 1 to 1000` |
 | a number that is not an integer (`1500.0`) | `…/entities/drifter.toml:33:15: gameplay.gun.interval_ms must be an integer from 1 to 60000` |
+| a layer with an uppercase letter (`"Enemy"`) | `…/entities/drifter.toml:14:9: gameplay.layer must be 1 to 24 lowercase letters, digits or underscores` |
+| a hit on a layer no sheet lies in (`"playr"`) | `…/entities/drifter.toml:15:9: gameplay.hits: unknown value "playr"; known: enemy, enemy_missile, look_item, player, player_missile` |
+| `hits` that is one text (`hits = "player"`) | `…/entities/drifter.toml:15:8: gameplay.hits must be an array of texts` |
 | a pilot no behaviour has (`"zigzag"`) | `…/entities/drifter.toml:13:9: gameplay.pilot: unknown value "zigzag"; known: player, straight, weave` |
 | a misspelt setting (`headin`) | `…/entities/drifter.toml:24:1: unknown key gameplay.behaviour.headin` |
 | a weave too deep (`amplitude = 49`) | `…/entities/weaver.toml:24:13: gameplay.behaviour.amplitude must be an integer from 0 to 48` |
@@ -271,7 +295,7 @@ The final boss, the diver it calls in and its projectiles: the Tyrant draws from
 | `burst` | | none | none | after 1100 ms, 4 `tyrant_spore_shard` | none |
 | `idle` | 128 × 128, 2 frames of 300 ms; enraged, 2 of 200 ms | 24 × 24, the idle frames of the Drillback, 2 of 120 ms | 8 × 8, 2 of 120 ms | 9 × 9, 2 of 200 ms | 8 × 8, 2 of 120 ms |
 
-The values are **provisional** until gameplay tunes them; tuning them needs no rebuild. The Drifter and the Weaver share their frames, so the client draws both as the same Bydo; the diver of the Tyrant shares the idle frames of the Drillback, at a frame time of its own. The settings of the behaviours are commented in each sheet.
+The layer and the hits of each shipped sheet are in [Collision layers](#collision-layers-layer-and-hits). The values are **provisional** until gameplay tunes them; tuning them needs no rebuild. The Drifter and the Weaver share their frames, so the client draws both as the same Bydo; the diver of the Tyrant shares the idle frames of the Drillback, at a frame time of its own. The settings of the behaviours are commented in each sheet.
 
 The seven look items are bodies of side `look_item` that float to the left, `steady` at 240 units per second, piloted by `straight` with `heading` -1, with no health, score or gun. They draw from `sprites/looks.png`, one frame each:
 
@@ -293,6 +317,6 @@ A changed or added sheet makes the games of the server not vanilla, and the jour
 
 ## A client and a server with other sheets
 
-A client draws a server with the sheets that server plays. When it accepts a player, the server announces its content pack: its sheets and the sprite sheets they name, in one file, named by its fingerprint (see [Protocol](/R-Type/protocol/#content-pack)). A client whose own `assets/` make the same pack plays with its own sheets. Any other client takes the pack from its cache, or downloads it from the supervisor while its connection screen shows `LOADING CONTENT` and a percentage, then draws the game from the sheets and sprite sheets of the pack; its own are never used in that session (see [Client](/R-Type/client/#entity-types-of-the-server-sessionentitytypes)). Of a sheet, the client reads the `side` of `[gameplay]` and the `[appearance]`; the rest of the gameplay plays no part on the client, since only the server runs it.
+A client draws a server with the sheets that server plays. When it accepts a player, the server announces its content pack: its sheets and the sprite sheets they name, in one file, named by its fingerprint (see [Protocol](/R-Type/protocol/#content-pack)). A client whose own `assets/` make the same pack plays with its own sheets. Any other client takes the pack from its cache, or downloads it from the supervisor while its connection screen shows `LOADING CONTENT` and a percentage, then draws the game from the sheets and sprite sheets of the pack; its own are never used in that session (see [Client](/R-Type/client/#entity-types-of-the-server-sessionentitytypes)). Of a sheet, the client reads the `side` of `[gameplay]` and the `[appearance]`; the rest of the gameplay plays no part on the client, since only the server runs it. So the client predicts where its own missiles burst from the `side` of the bodies (`OwnMissiles`), an enemy, and not from the layers of the sheets.
 
 So a sheet added to the server, with its sprite sheet, reaches every player without a change to the clients, as long as the host opens the TCP port of the same number as the UDP port of the supervisor (see [Tutorial: publish a mod](/R-Type/tutorial-publish-a-mod/)). The path a sheet gives in `sheet` goes into the pack as it is written: lowercase letters, digits, `_`, `.`, `-` and `/`, 64 characters at most, or the supervisor stops when it starts.

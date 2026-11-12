@@ -30,7 +30,6 @@
 #include "KeyPress.hpp"
 #include "LoneGameParts.hpp"
 #include "MenuScreenIdConstants.hpp"
-#include "PlayerCommandConstants.hpp"
 #include "PlayerPaletteTestConstants.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingEntityLayer.hpp"
@@ -58,7 +57,6 @@ using rtype::client::END_SCREEN;
 using rtype::client::GAME_OPTIONS_SCREEN;
 using rtype::client::GameScreen;
 using rtype::client::OPTIONS_KEY;
-using rtype::client::PLAYER_INPUT_INTERVAL;
 using rtype::client::PLAYER_MUZZLE_FLASH_FRAME;
 using rtype::client::PLAYER_MUZZLE_FLASH_WITHOUT_FLASH_FRAME;
 using rtype::client::PLAYER_SHOT_SOUND_ID;
@@ -476,37 +474,18 @@ TEST(GameScreenActionsTest, AKeyChangedInTheOptionsMovesTheShip) {
 
 /**
  * Given the game with up held
- * When its first frame is updated
- * Then an input holding up is sent at once
+ * When a frame as long as one simulation tick is updated
+ * Then an input holding up is sent
  */
 TEST(GameScreenInputsTest, TheFirstUpdateSendsTheActionsHeld) {
   LoneGameParts doubles;
-  doubles.settings.clientPrediction = false;
   GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
                   doubles.statusCanvasDouble());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
 
-  game.update(ONE_FRAME);
+  game.update(ONE_SIMULATION_TICK);
 
   EXPECT_THAT(doubles.inputs.sentActions(), ElementsAre(UP_BIT));
-}
-
-/**
- * Given the game after a first update of 16 ms, which sent an input
- * When an update of one nanosecond follows, still within the first interval
- * Then no other input is sent: inputs follow the time, not the updates
- */
-TEST(GameScreenInputsTest, AnUpdateWithinTheIntervalSendsNothingMore) {
-  ASSERT_LT(ONE_FRAME + ONE_TICK, PLAYER_INPUT_INTERVAL);
-  LoneGameParts doubles;
-  doubles.settings.clientPrediction = false;
-  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
-                  doubles.statusCanvasDouble());
-  game.update(ONE_FRAME);
-
-  game.update(ONE_TICK);
-
-  EXPECT_EQ(doubles.inputs.sentActions().size(), 1);
 }
 
 /**
@@ -516,23 +495,22 @@ TEST(GameScreenInputsTest, AnUpdateWithinTheIntervalSendsNothingMore) {
  */
 TEST(GameScreenInputsTest, BehindTheOptionsItSendsNothingHeld) {
   LoneGameParts doubles;
-  doubles.settings.clientPrediction = false;
   GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
                   doubles.statusCanvasDouble());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
   game.handleEvent(keyRelease(OPTIONS_KEY, sf::Keyboard::Scan::Escape));
 
-  game.update(ONE_FRAME);
+  game.update(ONE_SIMULATION_TICK);
 
   EXPECT_THAT(doubles.inputs.sentActions(), ElementsAre(NOTHING_HELD));
 }
 
 /**
- * Given the game with PREDICTION on, which it is at a first launch
+ * Given the game, which always predicts the ship of the player
  * When a frame as long as three simulation ticks is updated
  * Then three inputs are sent, one for each tick the ship was predicted
  */
-TEST(GameScreenPredictionTest, SendsOneInputPerTickWhenItIsOn) {
+TEST(GameScreenPredictionTest, SendsOneInputPerTick) {
   LoneGameParts doubles;
   GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
                   doubles.statusCanvasDouble());
@@ -543,7 +521,7 @@ TEST(GameScreenPredictionTest, SendsOneInputPerTickWhenItIsOn) {
 }
 
 /**
- * Given the game of player 1 with PREDICTION on, a state listing its ship
+ * Given the game of player 1, a state listing its ship
  * applied
  * When the player holds shoot for three ticks, the server having answered
  * nothing yet
@@ -566,7 +544,7 @@ TEST(GameScreenPredictionTest, FiresItsOwnMissileBeforeTheServerAnswers) {
 }
 
 /**
- * Given the game of player 1 with PREDICTION on, no state received yet
+ * Given the game of player 1, no state received yet
  * When the player holds shoot for three ticks
  * Then no shot plays: the ship has no place to fire from yet
  */
@@ -586,7 +564,7 @@ TEST(GameScreenPredictionTest, FiresNothingBeforeAStateListsTheShip) {
 }
 
 /**
- * Given the game of player 1 with PREDICTION on, a state listing its ship
+ * Given the game of player 1, a state listing its ship
  * applied, then the end of the game received
  * When the player holds shoot for three ticks
  * Then no shot plays: the server runs nothing once the game is over
@@ -610,34 +588,17 @@ TEST(GameScreenPredictionTest, FiresNothingOnceTheGameEnded) {
 }
 
 /**
- * Given the game with PREDICTION off
- * When a frame as long as three simulation ticks is updated
- * Then one input is sent, as the pacer says, the ship waiting for the server
- */
-TEST(GameScreenPredictionTest, SendsOneInputForTheFrameWhenItIsOff) {
-  LoneGameParts doubles;
-  doubles.settings.clientPrediction = false;
-  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
-                  doubles.statusCanvasDouble());
-
-  game.update(THREE_TICKS);
-
-  EXPECT_EQ(doubles.inputs.sentActions().size(), 1U);
-}
-
-/**
  * Given the game with AUTO-FIRE on and no key pressed
- * When its first frame is updated
+ * When a frame as long as one simulation tick is updated
  * Then the input sent holds shoot
  */
 TEST(GameScreenAutoFireTest, ShootsWithoutAKey) {
   LoneGameParts doubles;
-  doubles.settings.clientPrediction = false;
   doubles.settings.autoFire = true;
   GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
                   doubles.statusCanvasDouble());
 
-  game.update(ONE_FRAME);
+  game.update(ONE_SIMULATION_TICK);
 
   EXPECT_THAT(doubles.inputs.sentActions(), ElementsAre(SHOOT_BIT));
 }
@@ -684,31 +645,29 @@ TEST(GameScreenAutoFireTest, ReleasingTheShootKeyKeepsShooting) {
  */
 TEST(GameScreenAutoFireTest, ShootsBehindTheOptions) {
   LoneGameParts doubles;
-  doubles.settings.clientPrediction = false;
   doubles.settings.autoFire = true;
   GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
                   doubles.statusCanvasDouble());
   game.handleEvent(keyRelease(OPTIONS_KEY, sf::Keyboard::Scan::Escape));
 
-  game.update(ONE_FRAME);
+  game.update(ONE_SIMULATION_TICK);
 
   EXPECT_THAT(doubles.inputs.sentActions(), ElementsAre(SHOOT_BIT));
 }
 
 /**
  * Given the game with AUTO-FIRE on, after the window lost the focus
- * When its first frame is updated
+ * When a frame as long as one simulation tick is updated
  * Then the input sent holds shoot
  */
 TEST(GameScreenAutoFireTest, ShootsWithoutTheFocus) {
   LoneGameParts doubles;
-  doubles.settings.clientPrediction = false;
   doubles.settings.autoFire = true;
   GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
                   doubles.statusCanvasDouble());
   game.handleEvent(sf::Event{sf::Event::FocusLost{}});
 
-  game.update(ONE_FRAME);
+  game.update(ONE_SIMULATION_TICK);
 
   EXPECT_THAT(doubles.inputs.sentActions(), ElementsAre(SHOOT_BIT));
 }
@@ -720,13 +679,12 @@ TEST(GameScreenAutoFireTest, ShootsWithoutTheFocus) {
  */
 TEST(GameScreenAutoFireTest, TurningItOnDuringTheGameShootsAtTheNextInput) {
   LoneGameParts doubles;
-  doubles.settings.clientPrediction = false;
   GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
                   doubles.statusCanvasDouble());
-  game.update(ONE_FRAME);
+  game.update(ONE_SIMULATION_TICK);
 
   doubles.settings.autoFire = true;
-  game.update(PLAYER_INPUT_INTERVAL);
+  game.update(ONE_SIMULATION_TICK);
 
   EXPECT_THAT(doubles.inputs.sentActions(),
               ElementsAre(NOTHING_HELD, SHOOT_BIT));
@@ -739,14 +697,13 @@ TEST(GameScreenAutoFireTest, TurningItOnDuringTheGameShootsAtTheNextInput) {
  */
 TEST(GameScreenAutoFireTest, TurningItOffDuringTheGameStopsAtTheNextInput) {
   LoneGameParts doubles;
-  doubles.settings.clientPrediction = false;
   doubles.settings.autoFire = true;
   GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
                   doubles.statusCanvasDouble());
-  game.update(ONE_FRAME);
+  game.update(ONE_SIMULATION_TICK);
 
   doubles.settings.autoFire = false;
-  game.update(PLAYER_INPUT_INTERVAL);
+  game.update(ONE_SIMULATION_TICK);
 
   EXPECT_THAT(doubles.inputs.sentActions(),
               ElementsAre(SHOOT_BIT, NOTHING_HELD));
@@ -1099,19 +1056,18 @@ TEST_F(GameScreenFixture, NoWarningOnceTheGameEnded) {
 }
 
 /**
- * Given the game, prediction off, UP held
+ * Given the game, UP held
  * When T opens the chat and a frame goes by
  * Then the input sent holds nothing: the ship stops while the player types
  */
 TEST(GameScreenInputsTest, OpeningTheChatReleasesTheShip) {
   LoneGameParts doubles;
-  doubles.settings.clientPrediction = false;
   GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
                   doubles.statusCanvasDouble());
   game.handleEvent(keyPress(sf::Keyboard::Key::Up, sf::Keyboard::Scan::Up));
   game.handleEvent(keyPress(sf::Keyboard::Key::T, sf::Keyboard::Scan::T));
 
-  game.update(ONE_FRAME);
+  game.update(ONE_SIMULATION_TICK);
 
   EXPECT_THAT(doubles.inputs.sentActions(), ElementsAre(NOTHING_HELD));
 }
@@ -1192,4 +1148,65 @@ TEST_F(GameScreenFixture, TheStatusIsNotRepaintedWhenTheBossLookDoesNotChange) {
   screens().update(ONE_FRAME);
 
   EXPECT_EQ(statusCanvas().displayCount, displays);
+}
+
+/**
+ * Given the game of player 1 drawing a state while the server runs ahead
+ * When the end of the game is received
+ * Then the tally keeps no delay: the game draws no state of the server any
+ * more, while the end screen waits
+ */
+TEST(GameScreenTallyTest, TheEndOfTheGameEndsTheTally) {
+  LoneGameParts doubles;
+  doubles.serverTicks.set(SERVER_TICK_AHEAD_OF_THE_STATE);
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  doubles.entityMessages.queue(stateWithTheShipOfTheFirstPilot(APPLIED_TICK));
+  game.update(THREE_TICKS);
+  ASSERT_TRUE(doubles.interpolationTally.delayTicks().has_value());
+
+  doubles.entityMessages.queue(rtype::network::GameEnded{});
+  game.update(THREE_TICKS);
+
+  EXPECT_FALSE(doubles.interpolationTally.delayTicks().has_value());
+}
+
+/**
+ * Given the game of player 1 drawing a state while the server runs ahead
+ * When the game screen closes before the game ended, as on a lost connection
+ * Then the tally keeps no delay
+ */
+TEST(GameScreenTallyTest, ClosingTheGameEndsTheTally) {
+  LoneGameParts doubles;
+  doubles.serverTicks.set(SERVER_TICK_AHEAD_OF_THE_STATE);
+  {
+    GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                    doubles.statusCanvasDouble());
+    doubles.entityMessages.queue(stateWithTheShipOfTheFirstPilot(APPLIED_TICK));
+    game.update(THREE_TICKS);
+    ASSERT_TRUE(doubles.interpolationTally.delayTicks().has_value());
+  }
+
+  EXPECT_FALSE(doubles.interpolationTally.delayTicks().has_value());
+}
+
+/**
+ * Given the game drawing a state of tick 10 while the server is at tick 16
+ * When a frame of three ticks passes and a state of tick 13 arrives
+ * Then the tally counts one move of the tick shown: the first interval
+ * measured puts it back three ticks, on its target
+ */
+TEST(GameScreenTallyTest, CountsTheMovesOfTheTickShown) {
+  LoneGameParts doubles;
+  doubles.serverTicks.set(SERVER_TICK_AHEAD_OF_THE_STATE);
+  GameScreen game(doubles.parts(), std::make_unique<IgnoringEntityLayer>(),
+                  doubles.statusCanvasDouble());
+  doubles.entityMessages.queue(stateWithTheShipOfTheFirstPilot(APPLIED_TICK));
+  game.update(THREE_TICKS);
+
+  doubles.entityMessages.queue(
+      stateWithTheShipOfTheFirstPilot(TICK_AFTER_THE_APPLIED_TICK));
+  game.update(THREE_TICKS);
+
+  EXPECT_EQ(doubles.interpolationTally.recalibrations().count, 1U);
 }

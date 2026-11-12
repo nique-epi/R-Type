@@ -58,6 +58,16 @@ constexpr std::uint32_t HELD_BY_THE_SERVER = 2'000;
 constexpr std::chrono::milliseconds ECHO_ARRIVAL{4050};
 constexpr std::chrono::milliseconds OWN_ROUND_TRIP{48};
 
+/**
+ * @brief The second Heartbeat of the client, one interval after the first, at
+ * 4.5 s, whose echo, held 2 ms, arrives at 4.63 s: a round trip of 128 ms,
+ * where the smoothed round trip only moves from 48 ms to 58 ms.
+ */
+constexpr std::uint32_t SECOND_HEARTBEAT_SENT_AT = 4'500'000;
+constexpr std::chrono::milliseconds SECOND_ECHO_ARRIVAL{4630};
+constexpr std::chrono::milliseconds SECOND_OWN_ROUND_TRIP{128};
+constexpr std::uint64_t SECOND_SAMPLE_NUMBER = 2;
+
 /** @brief The tick a Heartbeat of the server in a game carries. */
 constexpr std::uint32_t SERVER_HEARTBEAT_TICK = 600;
 /** @brief Where the clock places that tick: half of the round trip of 48 ms,

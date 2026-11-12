@@ -274,6 +274,13 @@ class DataFileTextExpectedException : public EngineException {
   explicit DataFileTextExpectedException(const DataFilePlace& place);
 };
 
+/** @brief A key of a data file that must hold an array of texts holds
+ * something else, or an array with a value that is not a text. */
+class DataFileTextsExpectedException : public EngineException {
+ public:
+  explicit DataFileTextsExpectedException(const DataFilePlace& place);
+};
+
 /**
  * @brief A key of a data file holds a text that is none of the values it
  * accepts.
@@ -373,6 +380,15 @@ class ResourceDependenciesExpectedException : public EngineException {
 class ScriptException : public EngineException {
  public:
   explicit ScriptException(const std::string& message);
+};
+
+/**
+ * @brief A collision grid was laid out with a cell side that is not positive,
+ * or over an area that needs more cells along an axis than a grid may hold.
+ */
+class InvalidGridLayoutException : public EngineException {
+ public:
+  explicit InvalidGridLayoutException(std::size_t maximumLines);
 };
 
 }  // namespace rtype::engine

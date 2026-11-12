@@ -205,36 +205,6 @@ TEST(OwnShipPredictor, KeepsTheShipThroughAPartWithoutItsEntity) {
 }
 
 /**
- * Given a predictor that follows a ship
- * When it is stopped
- * Then it follows no ship
- */
-TEST(OwnShipPredictor, StopsFollowingTheShipWhenStopped) {
-  OwnShipPredictor predictor(OWN_PLAYER_NUMBER);
-  predictor.apply(stateWithShip(OWN_PLAYER_NUMBER, OWN_SHIP_ID, START, 0));
-
-  predictor.stop();
-
-  EXPECT_FALSE(predictor.shipEntityId().has_value());
-}
-
-/**
- * Given a predictor that counted half a tick it has not used yet
- * When it is stopped, then advances by half a tick
- * Then it sends nothing, since the stop forgot the first half
- */
-TEST(OwnShipPredictor, StopForgetsTheTimeNotYetCounted) {
-  OwnShipPredictor predictor(OWN_PLAYER_NUMBER);
-  RecordingPlayerInputLink link;
-  predictor.advance(HALF_A_TICK, PlayerCommand{}, link);
-
-  predictor.stop();
-  predictor.advance(HALF_A_TICK, PlayerCommand{}, link);
-
-  EXPECT_TRUE(link.sentActions().empty());
-}
-
-/**
  * Given a predictor whose ship was destroyed, which advanced three ticks
  * holding right while it had none
  * When a state lists the new ship at rest at START, the server having applied

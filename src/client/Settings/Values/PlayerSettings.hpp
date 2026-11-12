@@ -20,13 +20,14 @@ namespace rtype::client {
  * percent, MINIMUM_VOLUME to MAXIMUM_VOLUME. windowSize stays empty until the
  * player picks a size: the window then opens at the largest one that fits. The
  * window opens windowed until the player picks another display mode.
- * clientPrediction is on: the ship moves before the server answers.
  * pilotNames is on: the nickname of each pilot is written over its ship.
  * chatShown is on: the chat of the session shows, and its key opens it.
  * chatLetters, chatClosedLines, chatOpenLines: the letters of a line of the
  * chat, and its lines while closed and while open. chatSeconds: how long a
  * line shows while the chat is closed. chatBackground: the opacity of the
  * layer under the open chat, in percent.
+ * lagometerScale: how many times larger than its smallest the lagometer is
+ * drawn. lagometerBackground: the opacity of its panel, in percent.
  * shipLook wears nothing: the player dresses the ship in the hangar.
  * shipLocker holds the starter kit: the other items are won in a game.
  */
@@ -41,7 +42,6 @@ struct PlayerSettings {
   bool reduceFlashes = false;
   bool soundCues = false;
   bool autoFire = false;
-  bool clientPrediction = true;
   bool pilotNames = true;
   bool chatShown = true;
   int chatLetters = DEFAULT_CHAT_LETTERS;
@@ -49,6 +49,8 @@ struct PlayerSettings {
   int chatOpenLines = DEFAULT_CHAT_OPEN_LINES;
   int chatSeconds = DEFAULT_CHAT_SECONDS;
   int chatBackground = DEFAULT_CHAT_BACKGROUND;
+  int lagometerScale = DEFAULT_LAGOMETER_SCALE;
+  int lagometerBackground = DEFAULT_LAGOMETER_BACKGROUND;
   identifiers::ShipLook shipLook;
   ShipLocker shipLocker;
 

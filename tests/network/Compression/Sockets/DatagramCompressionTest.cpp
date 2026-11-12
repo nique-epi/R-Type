@@ -6,19 +6,23 @@
 #include "DatagramCompression.hpp"
 #include "DatagramCompressionFixtures.hpp"
 #include "DatagramCompressionTestConstants.hpp"
+#include "MessageType.hpp"
 #include "ProtocolConstants.hpp"
 
 using rtype::network::COMPRESSED_FLAG;
 using rtype::network::compressedForm;
 using rtype::network::FLAGS_OFFSET;
 using rtype::network::isCompressed;
+using rtype::network::MessageType;
 using rtype::network::PACKET_HEADER_SIZE;
 using rtype::network::plainForm;
 using rtype::network::testing::ANOTHER_VERSION;
 using rtype::network::testing::codedDatagramWithoutSession;
 using rtype::network::testing::codedSessionDatagram;
+using rtype::network::testing::gameStatusDatagram;
 using rtype::network::testing::handshakeHeader;
 using rtype::network::testing::incompressibleDatagram;
+using rtype::network::testing::repeatedBodyDatagram;
 using rtype::network::testing::sessionHeader;
 using rtype::network::testing::VERSION_OFFSET;
 using rtype::network::testing::worldStateDatagram;
@@ -67,6 +71,60 @@ TEST(DatagramCompression, ChangesNothingInTheHeaderButTheFlag) {
 TEST(DatagramCompression, LeavesAHandshakeDatagramAlone) {
   EXPECT_FALSE(
       compressedForm(worldStateDatagram(handshakeHeader())).has_value());
+}
+
+/**
+ * Given the status of a game, whose supervisor drops what is compressed
+ * When its compressed form is asked for
+ * Then there is none, so the supervisor reads it
+ */
+TEST(DatagramCompression, LeavesTheStatusOfAGameAlone) {
+  EXPECT_FALSE(compressedForm(gameStatusDatagram(sessionHeader())).has_value());
+}
+
+/**
+ * Given the answer of a supervisor to a status, with a body zstd would shorten
+ * When its compressed form is asked for
+ * Then there is none, so the game reads it
+ */
+TEST(DatagramCompression, LeavesTheAnswerToAStatusAlone) {
+  EXPECT_FALSE(
+      compressedForm(repeatedBodyDatagram(sessionHeader(),
+                                          MessageType::GameStatusAcknowledged))
+          .has_value());
+}
+
+/**
+ * Given a Disconnection, with a body zstd would shorten
+ * When its compressed form is asked for
+ * Then there is none, so a game told to stop reads it
+ */
+TEST(DatagramCompression, LeavesADisconnectionAlone) {
+  EXPECT_FALSE(compressedForm(repeatedBodyDatagram(sessionHeader(),
+                                                   MessageType::Disconnection))
+                   .has_value());
+}
+
+/**
+ * Given the order to expel a pilot, with a body zstd would shorten
+ * When its compressed form is asked for
+ * Then there is none, so the game reads it
+ */
+TEST(DatagramCompression, LeavesAnExpulsionOrderAlone) {
+  EXPECT_FALSE(compressedForm(repeatedBodyDatagram(sessionHeader(),
+                                                   MessageType::ExpulsionOrder))
+                   .has_value());
+}
+
+/**
+ * Given a datagram of a message of no link, with a body zstd shortens
+ * When its compressed form is asked for
+ * Then it is coded, so the type alone decides what stays plain
+ */
+TEST(DatagramCompression, CodesTheSameBodyInAnotherMessage) {
+  EXPECT_TRUE(compressedForm(
+                  repeatedBodyDatagram(sessionHeader(), MessageType::GameEvent))
+                  .has_value());
 }
 
 /**

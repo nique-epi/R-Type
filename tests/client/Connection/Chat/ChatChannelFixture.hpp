@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string_view>
 #include <vector>
+#include "ArrivalTally.hpp"
 #include "ChatChannel.hpp"
 #include "ChatLine.hpp"
 #include "ContentLoading.hpp"
@@ -51,11 +52,13 @@ class ChatChannelFixture : public ::testing::Test {
   ChatChannel chat_{dispatcher_, room_};
   SessionEntityTypes entityTypes_{testLocalContent()};
   ContentLoading content_{ContentPackCache{unusedCacheFolder()}};
+  ArrivalTally arrivals_;
   ServerSession session_{ServerSessionParts{.link = link_,
                                             .dispatcher = dispatcher_,
                                             .gameLoaded = gameLoaded_,
                                             .entityTypes = entityTypes_,
                                             .content = content_,
+                                            .arrivals = arrivals_,
                                             .observers = {gameLoaded_, chat_}}};
   std::uint16_t nextSequence_ = FIRST_SEQUENCE;
 };

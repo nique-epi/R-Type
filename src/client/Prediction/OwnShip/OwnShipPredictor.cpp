@@ -88,15 +88,6 @@ void OwnShipPredictor::apply(const network::WorldState& state) {
   prediction_.reconcile(own->position, own->acknowledgedInput);
 }
 
-void OwnShipPredictor::stop() {
-  if (!prediction_.isStarted() && uncounted_ == engine::Duration::zero()) {
-    return;
-  }
-  prediction_ = ShipPrediction{};
-  shipEntityId_.reset();
-  uncounted_ = engine::Duration::zero();
-}
-
 std::optional<std::uint32_t> OwnShipPredictor::shipEntityId() const {
   return shipEntityId_;
 }

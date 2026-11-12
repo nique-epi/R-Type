@@ -1,6 +1,7 @@
 #include "LagCompensatedHitSystemShipsFixture.hpp"
 #include <cstddef>
 #include <vector>
+#include "CollisionTestConstants.hpp"
 #include "ComponentRegistry.hpp"
 #include "CurrentAction.hpp"
 #include "Entity.hpp"
@@ -28,6 +29,7 @@ engine::Entity LagCompensatedHitSystemShipsFixture::shipAt(
   components_.add(ship, position);
   components_.add(ship, EntityType::Player);
   components_.add(ship, SHIP_BOX);
+  components_.add(ship, PLAYER_FILTER);
   components_.add(ship, ViewDelay{.ticks = ticksBehind});
   return ship;
 }
@@ -38,6 +40,7 @@ engine::Entity LagCompensatedHitSystemShipsFixture::enemyMissileAt(
   components_.add(missile, position);
   components_.add(missile, EntityType::EnemyMissile);
   components_.add(missile, ENEMY_MISSILE_BOX);
+  components_.add(missile, ENEMY_MISSILE_FILTER);
   return missile;
 }
 
@@ -46,6 +49,7 @@ engine::Entity LagCompensatedHitSystemShipsFixture::hurtZoneAt(
   const engine::Entity enemy = entities_.create();
   components_.add(enemy, position);
   components_.add(enemy, EntityType::Enemy);
+  components_.add(enemy, ENEMY_FILTER);
   components_.add(enemy, HurtZone{.boxes = {ALWAYS_HURTING_BOX}, .beams = {}});
   return enemy;
 }
@@ -54,6 +58,7 @@ engine::Entity LagCompensatedHitSystemShipsFixture::beamAt(Position position) {
   const engine::Entity enemy = entities_.create();
   components_.add(enemy, position);
   components_.add(enemy, EntityType::Enemy);
+  components_.add(enemy, ENEMY_FILTER);
   components_.add(enemy, HurtZone{.boxes = {}, .beams = {LEFTWARD_BEAM}});
   components_.add(enemy, CurrentAction{.key = BEAM_ATTACK_STRIKE});
   return enemy;

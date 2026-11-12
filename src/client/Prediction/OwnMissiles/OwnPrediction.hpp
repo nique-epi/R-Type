@@ -17,8 +17,8 @@ namespace rtype::client {
 /**
  * @brief What the client predicts of its own player: its ship
  * (OwnShipPredictor) and the missiles it fires (OwnMissiles), from the same
- * commands. The game screen holds one, advances it with each update while
- * PREDICTION is on, stops it while it is off, and gives it each world state.
+ * commands. The game screen holds one, advances it with each update and
+ * gives it each world state.
  */
 class OwnPrediction {
  public:
@@ -41,10 +41,6 @@ class OwnPrediction {
    * server fires nothing once a game is over; the missiles already fired fly
    * on. */
   void ceaseFire();
-
-  /** @brief Stops predicting: forgets the ship and takes every missile away,
-   * as when the player turns PREDICTION off. */
-  void stop();
 
   /** @brief Puts the ship of the player where it is predicted (see
    * placePredictedShip()), then plays the impact of every missile that

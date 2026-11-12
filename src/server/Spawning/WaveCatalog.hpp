@@ -80,7 +80,8 @@ class WaveCatalog {
    */
   [[nodiscard]] const WavePlan& planOf(std::string_view difficulty) const;
 
-  /** @returns The names of the difficulties, in alphabetical order. */
+  /** @returns The names of the difficulties, those of DIFFICULTY_ORDER first
+   * in its order, then the others in alphabetical order. */
   [[nodiscard]] std::vector<std::string> difficulties() const;
 
   /**

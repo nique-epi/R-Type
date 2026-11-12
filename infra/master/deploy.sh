@@ -2,26 +2,17 @@
 # Installs the server package of a release on the master instance and
 # restarts the master on it; goes back to the previous release when the new
 # one does not answer. Caddy answers HTTPS for DOMAIN in front of it, with a
-# certificate of Let's Encrypt it renews by itself. The workflow runs it
-# through SSM Run Command, after the lines VERSION=<x.y.z> and
-# DOMAIN=<name of the master>.
+# certificate of Let's Encrypt it renews by itself. A timer restarts a master
+# that stopped answering, and the test game server of the machine, when it
+# runs, moves to the release too. The workflow runs it through SSM Run
+# Command, after the lines VERSION=<x.y.z> and DOMAIN=<name of the master>
+# and the functions of infra/release.sh.
 set -eu
 
-repository=nique-epi/R-Type
 port=8080
 releases=/opt/rtype/releases
 current=/opt/rtype/current
-
-# The version comes from a tag: it is never used before it is checked.
-require_version() {
-  : "${VERSION:?VERSION is not set}"
-  case $VERSION in
-    '' | *[!0-9.]*)
-      echo "invalid version: $VERSION" >&2
-      exit 1
-      ;;
-  esac
-}
+test_server=/var/lib/rtype/test-server
 
 # The domain comes from a variable of the repository: it is never written in
 # the configuration of Caddy before it is checked.
@@ -52,45 +43,43 @@ CADDY
   systemctl reload-or-restart caddy
 }
 
-# Downloads and unpacks a release next to the others. A missing release stops
-# here, before anything changed on the machine.
-unpack_release() {
-  name=$1
-  if [ -d "$releases/$name" ]; then
-    return 0
-  fi
-  url=https://github.com/$repository/releases/download/v$VERSION/$name.tar.gz
-  work=$(mktemp -d)
-  trap 'rm -rf "$work"' EXIT
-  curl --fail --silent --show-error --location "$url" --output "$work/server.tar.gz"
-  tar -xzf "$work/server.tar.gz" -C "$work"
-  mv "$work/$name" "$releases/$name"
-}
-
 install_service() {
-  cat > /etc/systemd/system/rtype-master.service <<UNIT
-[Unit]
-Description=R-Type master
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-User=rtype
-Group=rtype
-WorkingDirectory=/var/lib/rtype
-ExecStart=$current/bin/r-type_server --mode master -p $port --database /var/lib/rtype/r-type_master.db --no-log-file
-Restart=on-failure
-RestartSec=5
-NoNewPrivileges=true
-ProtectSystem=strict
-ReadWritePaths=/var/lib/rtype
-PrivateTmp=true
-
-[Install]
-WantedBy=multi-user.target
-UNIT
+  write_server_unit rtype-master 'R-Type master' /var/lib/rtype \
+    "$current/bin/r-type_server --mode master -p $port --database /var/lib/rtype/r-type_master.db --no-log-file"
   systemctl daemon-reload
   systemctl enable rtype-master
+}
+
+# Restart=on-failure starts a master that stopped again, not one that still
+# runs and no longer answers. Every 30 seconds this timer asks its health
+# route, and restarts it when two requests 5 seconds apart both fail.
+install_health_check() {
+  health="curl --fail --silent --max-time 5 --output /dev/null http://127.0.0.1:$port/api/health"
+  cat > /etc/systemd/system/rtype-master-health.service <<UNIT
+[Unit]
+Description=Restarts the R-Type master when it stopped answering
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c '$health || { sleep 5; $health; } || systemctl restart rtype-master'
+UNIT
+  write_timer rtype-master-health 'Checks the R-Type master every 30 seconds' 60 30
+  systemctl daemon-reload
+  systemctl enable --now rtype-master-health.timer
+}
+
+# The game server the team tests on between two LANs. It reads server.cfg in
+# its folder, which a person writes once with its key of the master, and runs
+# from its own copy of the release (see copy_release_for). Nothing here
+# enables it: the workflow lan-close does, and lan-open stops it. A running
+# one is restarted on the new release, which ends its games.
+install_test_server() {
+  install -d -o rtype -g rtype "$test_server"
+  copy_release_for "$1" "$test_server"
+  write_server_unit rtype-test-server 'R-Type test game server' "$test_server" \
+    "$test_server/release/bin/r-type_server --database $test_server/leaderboard.db --no-log-file"
+  systemctl daemon-reload
+  systemctl try-restart rtype-test-server
 }
 
 # Runs the master on the release folder it is given.
@@ -136,7 +125,7 @@ main() {
   name=R-Type-server-$VERSION-Linux
   previous=$(readlink "$current" 2>/dev/null || true)
 
-  unpack_release "$name"
+  unpack_release "$releases" "$name"
   install_service
   run_release "$releases/$name"
 
@@ -147,6 +136,8 @@ main() {
   fi
 
   prune_releases "$releases/$name" "$previous"
+  install_health_check
+  install_test_server "$releases/$name"
   install_proxy
   echo "the master runs $VERSION behind https://$DOMAIN"
 }

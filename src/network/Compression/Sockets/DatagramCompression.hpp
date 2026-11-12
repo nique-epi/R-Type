@@ -14,11 +14,17 @@ namespace rtype::network {
  * Only a datagram of a session is coded: a datagram sent before one (a
  * ConnectionRequest, a ConnectionChallenge, a ConnectionRefused) carries the
  * token 0 and stays readable by a peer of any version, with the size the
- * handshake rules count on. A coded body that is not shorter than the original
- * is not worth sending.
+ * handshake rules count on. A datagram holding a message of
+ * SUPERVISOR_LINK_MESSAGES stays plain, because a supervisor and its games
+ * read each other through a socket that drops what is compressed; that holds
+ * for such a message sent to a player too, whose client could decode it but
+ * gains nothing on so short a body. A datagram whose messages cannot be read
+ * stays plain as well. A coded body that is not shorter than the original is
+ * not worth sending.
  *
  * @returns The coded datagram, or std::nullopt when @p datagram is to be sent
- * as it is: no body, token 0, a flag already raised, or no gain.
+ * as it is: no body, token 0, a flag already raised, a message of the
+ * supervisor link, messages that cannot be read, or no gain.
  * @throws CompressionUnavailableException when zstd cannot allocate what it
  * needs.
  */

@@ -2,8 +2,8 @@
 
 #include <vector>
 #include "ActiveHurts.hpp"
+#include "EntityBounds.hpp"
 #include "ISystem.hpp"
-#include "ShipBounds.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::engine {
@@ -23,8 +23,10 @@ namespace rtype::game {
  * CurrentAction of the enemy; an enemy with no CurrentAction, or an idle one,
  * has only its boxes that hurt all the time. At most one ShipContact per ship
  * and enemy and update, however many boxes overlap. Only ships (EntityType
- * Player with a Position and a CollisionBox) are hurt, and not a ship that
- * carries a ViewDelay: LagCompensatedHitSystem tests that one against the
+ * Player with a Position, a CollisionBox and an engine::CollisionFilter) are
+ * hurt, and only by an enemy whose filter and theirs engine::mayCollide()
+ * keeps: a zone hurts what its body touches. A ship that carries a ViewDelay
+ * is left out: LagCompensatedHitSystem tests that one against the
  * boxes and beams its player saw. What the contact costs is not decided here:
  * LifeKeeper does. The events are only queued: the loop
  * must call EventBus::dispatch() after the systems. The bus must outlive the
@@ -46,7 +48,7 @@ class HurtZoneSystem final : public engine::ISystem {
   void publishContacts(engine::ComponentRegistry& components);
 
   engine::EventBus& events_;
-  std::vector<ShipBounds> ships_;
+  std::vector<EntityBounds> ships_;
   ActiveHurts hurts_;
 };
 

@@ -5,10 +5,28 @@
 #include "GlobalLeaderboardQuery.hpp"
 #include "LeaderboardAnswer.hpp"
 #include "LeaderboardPhase.hpp"
+#include "LeaderboardRequest.hpp"
 #include "MasterLeaderboardFixture.hpp"
 #include "MasterLeaderboardTestConstants.hpp"
 
 namespace rtype::client::testing {
+
+/**
+ * Given a leaderboard of the master
+ * When the screen asks for every difficulty and every number of pilots
+ * Then the master is asked for neither, so it reads every game
+ */
+TEST_F(MasterLeaderboardFixture, AsksTheMasterForEveryGameWhenAllIsPicked) {
+  leaderboard().ask(
+      network::LeaderboardRequest{.playerCount = 0, .difficulty = ""});
+
+  EXPECT_EQ(reads().queries(),
+            (std::vector<network::GlobalLeaderboardQuery>{
+                network::GlobalLeaderboardQuery{.difficulty = std::nullopt,
+                                                .playerCount = std::nullopt,
+                                                .player = std::nullopt,
+                                                .limit = GLOBAL_ROWS_ASKED}}));
+}
 
 /**
  * Given a leaderboard of the master that named NOVA as its player
