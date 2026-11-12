@@ -16,8 +16,9 @@ import { pathOf } from '@/lib/site-paths';
 import { ServerChart } from './server-chart';
 import { ServerFigures } from './server-figures';
 import { ServerGames } from './server-games';
+import { ServerLoad } from './server-load';
 
-/** The page of one server under its hero: its figures, its games and its chart. */
+/** The page of one server under its hero: its figures, the load of its machine, its games and its chart. */
 export function ServerSheetBlocks({
   lang,
   id,
@@ -66,6 +67,14 @@ export function ServerSheetBlocks({
           <Notice tone="warning" title={copy.offlineTitle}>
             {copy.offline}
           </Notice>
+        ) : null}
+        {sheet.load ? (
+          <ServerLoad
+            lang={lang}
+            name={name}
+            load={sheet.load}
+            span={sheet.span}
+          />
         ) : null}
         {server ? <ServerGames lang={lang} server={server} /> : null}
         {sheet.pilots.length > 0 ? (

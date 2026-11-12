@@ -161,6 +161,55 @@ describe('getServerSheet', () => {
     expect(sheet?.span).toBe(30);
   });
 
+  it('reads the load of the machine in the newest sample, and its curve oldest first', async () => {
+    stubNetwork({
+      ...masterRoutes(),
+      '/api/servers/7/samples?limit=100': answer(200, {
+        samples: [
+          {
+            takenAt: 130,
+            gameCount: 1,
+            playerCount: 4,
+            measures: {
+              cpuPercent: 93.6,
+              usedMemoryBytes: 6_000_000_000,
+              totalMemoryBytes: 8_000_000_000,
+            },
+          },
+          {
+            takenAt: 100,
+            gameCount: 1,
+            playerCount: 2,
+            measures: { cpuPercent: 20 },
+          },
+        ],
+      }),
+    });
+
+    const sheet = await getServerSheet('7');
+
+    expect(sheet?.load?.cpu).toEqual({ latest: 94, history: [20, 93.6] });
+    expect(sheet?.load?.memory).toEqual({ latest: 75, history: [75] });
+    expect(sheet?.load?.memoryBytes).toEqual({
+      used: 6_000_000_000,
+      total: 8_000_000_000,
+    });
+  });
+
+  it('says the load was not measured for a server that sends none, never 0', async () => {
+    stubNetwork({
+      ...masterRoutes(),
+      '/api/servers/7/samples?limit=100': answer(200, {
+        samples: [{ takenAt: 130, gameCount: 1, playerCount: 4, measures: {} }],
+      }),
+    });
+
+    const sheet = await getServerSheet('7');
+
+    expect(sheet?.load?.cpu.latest).toBeNull();
+    expect(sheet?.load?.memory.latest).toBeNull();
+  });
+
   it('is nothing for an id that is no server of the master', async () => {
     stubNetwork(masterRoutes());
 
@@ -179,6 +228,7 @@ describe('getServerSheet', () => {
       server: null,
       pilots: [],
       span: 0,
+      load: null,
     });
   });
 
