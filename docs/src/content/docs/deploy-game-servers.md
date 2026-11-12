@@ -15,6 +15,7 @@ This page tells you how that works, how to prepare it once and where to change i
 | The script that installs the pool of game servers on a machine | Available; not run on a machine yet | `infra/game-servers/install.sh` |
 | The autoscaler | Available; its decisions are checked by the CI | `infra/game-servers/autoscale.sh`, `listed-servers.sh`, `tests/tools/infra/check-autoscaler.sh` |
 | The script that creates the keys of the master of the pool | Available; not run yet | `infra/game-servers/create-keys.sh` |
+| The script that prepares everything below once | Available; not run yet | `infra/game-servers/prepare.sh` |
 | Stopping a server that stayed empty | Not yet written | |
 | Moving the players of a server that stops | Not yet written | |
 
@@ -71,7 +72,7 @@ The autoscaler never stops a server: a stop ends the games of the server, and `l
 
 ## Preparing it once
 
-A member of the team does this once, after the master is set up (see [Deploying the master](/R-Type/deploy-master/#setting-it-up-once)):
+A member of the team does this once, after the master is set up (see [Deploying the master](/R-Type/deploy-master/#setting-it-up-once)). `infra/game-servers/prepare.sh` runs steps 1 to 3 below from a computer whose AWS CLI and GitHub CLI are logged in. It reads the region, the master and its instance from the variables of the repository, finds the bucket that holds the state of the master (`--bucket <bucket>` names it), and plans with the instance type the master runs on today. It applies nothing when the plan changes or destroys a resource, and asks before it applies (`--yes` skips the question). Run again, it skips what is done, so it is also how the sixth key is created an hour later. The steps, one by one:
 
 1. Apply `infra/terraform/` again, with `state_bucket` set to the bucket of the Terraform state: it creates the network rules and the role of the game machine, and the role `rtype-lan` of the two workflows. `infra/bootstrap.sh` does it and sets the two variables of step 2.
 2. Set the variables `AWS_LAN_ROLE_ARN` (the `lan_role_arn` output) and `TERRAFORM_STATE_BUCKET` in the repository.
