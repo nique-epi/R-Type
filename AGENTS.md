@@ -109,6 +109,7 @@ Paths below are relative to `.claude/rules/`.
 - `code-style/fix-format-a-test-file-holds-only-tests.md`
 - `code-style/fix-format-a-test-reads-an-optional-with-value-or.md`
 - `code-style/fix-format-an-expected-throw-casts-a-nodiscard-result-to-void.md`
+- `code-style/fix-format-an-integer-becomes-a-double-through-static-cast.md`
 - `code-style/fix-format-designated-initializers-for-aggregates.md`
 - `code-style/fix-format-name-after-data-not-process.md`
 - `code-style/fix-reasoning-a-date-keeps-the-standard-type-that-names-it.md`
