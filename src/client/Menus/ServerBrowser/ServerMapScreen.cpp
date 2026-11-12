@@ -5,7 +5,6 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
-#include <algorithm>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -17,6 +16,7 @@
 #include "ChosenGame.hpp"
 #include "ChosenGameConnection.hpp"
 #include "ConnectionRequest.hpp"
+#include "Endpoint.hpp"
 #include "GameRequest.hpp"
 #include "GameRow.hpp"
 #include "HangarScreenIdConstants.hpp"
@@ -115,24 +115,32 @@ std::optional<MapDirection> directionOf(sf::Keyboard::Key key) {
   }
 }
 
-/** @returns Any game of the server of this version with the lowest ping: the
- * first one of a list sorted by ping. */
-std::optional<ChosenGame> quickPlayGameOf(
-    const std::vector<ServerRow>& servers) {
-  const auto found = std::ranges::find(servers, ServerCompatibility::Compatible,
-                                       &ServerRow::compatibility);
-  if (found == servers.end()) {
-    return std::nullopt;
-  }
-  return ChosenGame{.server = found->endpoint,
-                    .request = gameRequestFor(network::ANY_GAME_CHOICE)};
+/** @returns Whether QUICK PLAY may send a player to @p server: it is of this
+ * version and the master lists fewer players on it than its games hold. The
+ * count is the one of its last heartbeat, so the server may still refuse. */
+bool takesOneMorePlayer(const ServerRow& server) noexcept {
+  return server.compatibility == ServerCompatibility::Compatible &&
+         server.playerCount < server.maximumPlayers;
 }
 
-/** @returns Whether a server of @p servers is of this version. */
-bool holdsAServerOfThisVersion(const std::vector<ServerRow>& servers) {
-  return std::ranges::any_of(servers, [](const ServerRow& server) noexcept {
-    return server.compatibility == ServerCompatibility::Compatible;
-  });
+/** @returns Any game of the server with the lowest ping that
+ * takesOneMorePlayer(): the first one of a list sorted by ping, with the
+ * others that do, in the same order, to try when it answers that it is full
+ * after all. Nothing when no server does. */
+std::optional<ChosenGame> quickPlayGameOf(
+    const std::vector<ServerRow>& servers) {
+  std::vector<network::Endpoint> open;
+  for (const ServerRow& server : servers) {
+    if (takesOneMorePlayer(server)) {
+      open.push_back(server.endpoint);
+    }
+  }
+  if (open.empty()) {
+    return std::nullopt;
+  }
+  return ChosenGame{.server = open.front(),
+                    .request = gameRequestFor(network::ANY_GAME_CHOICE),
+                    .otherServers = {open.begin() + 1, open.end()}};
 }
 
 /** @returns The rows an arrow moves the choice of a game by: one up, one
@@ -306,7 +314,7 @@ void ServerMapScreen::update(engine::Duration elapsed) {
       chosen.has_value() && map_.stage() == ServerMapStage::Games) {
     panel_.show(games_->snapshot(), chosen->name);
   }
-  quickPlayChip_.setEnabled(holdsAServerOfThisVersion(map_.servers()));
+  quickPlayChip_.setEnabled(quickPlayGameOf(map_.servers()).has_value());
   repaint();
 }
 
@@ -368,10 +376,11 @@ void ServerMapScreen::confirm() {
     navigator_->push(NEW_GAME_SCREEN);
   } else if (const std::optional<GameRow> game = panel_.joinable()) {
     heldKey_.reset();
-    openConnectionTo(
-        *choice_,
-        ChosenGame{.server = chosen->endpoint, .request = requestToJoin(*game)},
-        *navigator_);
+    openConnectionTo(*choice_,
+                     ChosenGame{.server = chosen->endpoint,
+                                .request = requestToJoin(*game),
+                                .otherServers = {}},
+                     *navigator_);
   }
 }
 

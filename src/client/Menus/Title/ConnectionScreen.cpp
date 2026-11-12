@@ -134,6 +134,23 @@ GameRequest requestOf(const ServerChoice& choice, ConnectionStart start) {
   return *choice.lastRequest;
 }
 
+/** @brief Moves the last attempt of @p choice to the next server QUICK PLAY
+ * kept, when @p status says the server of that attempt is full and the screen
+ * was started by @p start as the server map starts it.
+ * @returns Whether it moved: the attempt is then started again. */
+bool movesToTheNextServer(const ConnectionStatus& status, ServerChoice& choice,
+                          ConnectionStart start) {
+  if (start != ConnectionStart::NicknameOnConfirm ||
+      status.phase != ConnectionPhase::Refused ||
+      status.refusal != network::RefusalReason::ServerFull ||
+      choice.nextServers.empty()) {
+    return false;
+  }
+  choice.lastServer = choice.nextServers.front();
+  choice.nextServers.erase(choice.nextServers.begin());
+  return true;
+}
+
 }  // namespace
 
 ConnectionScreen::ConnectionScreen(ConnectionScreenParts parts,
@@ -160,6 +177,9 @@ void ConnectionScreen::handleEvent(const sf::Event& event) {
 
 void ConnectionScreen::update(engine::Duration elapsed) {
   menu_.advance(elapsed);
+  if (movesToTheNextServer(connection_->status(), *choice_, start_)) {
+    connect();
+  }
   const ConnectionStatus status = connection_->status();
   followConnection(status, elapsed);
   repaint(status);

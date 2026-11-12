@@ -100,11 +100,27 @@ go_to_infra() {
   cd -- "$(dirname -- "$0")"
 }
 
+# Prints what the sub claim of the GitHub tokens of the repository starts
+# with: with immutable subjects, GitHub names the owner and the repository by
+# their ids, and the trust of the deployment role must read the same.
+subject_prefix() {
+  answer=$(gh api "repos/$repository/actions/oidc/customization/sub" \
+    --jq '"\(.use_default) \(.sub_claim_prefix // "")"') ||
+    fail 'gh cannot read the OIDC subject of the repository'
+  use_default=${answer%% *}
+  prefix=${answer#* }
+  [ "$use_default" = true ] ||
+    fail 'the repository has a custom OIDC subject template, which the trust of the deployment role does not read'
+  printf '%s' "${prefix:-repo:$repository}"
+}
+
 # Terraform reads TF_VAR_<name> for every command, import included.
 export_terraform_variables() {
+  prefix=$(subject_prefix)
   export TF_VAR_master_domain="$domain"
   export TF_VAR_region="$region"
-  export TF_VAR_github_repository="$repository"
+  export TF_VAR_github_subject_prefix="$prefix"
+  export TF_VAR_state_bucket="$bucket"
 }
 
 check_accounts() {
@@ -170,10 +186,13 @@ set_repository_variables() {
   instance_id=$(terraform -chdir=terraform output -raw instance_id)
   deploy_role_arn=$(terraform -chdir=terraform output -raw deploy_role_arn)
   master_url=$(terraform -chdir=terraform output -raw master_url)
+  lan_role_arn=$(terraform -chdir=terraform output -raw lan_role_arn)
   gh variable set AWS_REGION --body "$region"
   gh variable set MASTER_INSTANCE_ID --body "$instance_id"
   gh variable set AWS_DEPLOY_ROLE_ARN --body "$deploy_role_arn"
   gh variable set MASTER_URL --body "$master_url"
+  gh variable set AWS_LAN_ROLE_ARN --body "$lan_role_arn"
+  gh variable set TERRAFORM_STATE_BUCKET --body "$bucket"
 }
 
 # The deployment waits for a required reviewer, and the AWS role trusts only

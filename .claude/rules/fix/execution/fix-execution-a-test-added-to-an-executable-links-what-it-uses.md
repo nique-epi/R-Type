@@ -18,6 +18,11 @@ Why: `BoxCornersTest.cpp` used `UnorderedElementsAre` in `client_widget_piece_te
 1. **Before adding a double's `.cpp` to the `SOURCES` of an executable, read its header and the headers of its members**: each type of `tests/doubles/` it holds or names with a `.cpp` of its own goes in the same `SOURCES` (`PluginHostModule` holds a `PluginHostState`, which holds a `RecordingJournal`, defined in `RecordingJournal.cpp`).
 2. **Copy the list from an executable that already links the double**: `git grep -n '<Double>.cpp' -- tests` shows where it is linked and what is linked next to it (`tests/doubles/CMakeLists.txt` gives `engine_tests` both `PluginHostModule.cpp` and `RecordingJournal.cpp`).
 
+### A fixture is built by every executable that lists it
+
+1. **Before adding an include to a fixture `.cpp`, list the executables that compile it**: `git grep -n '<Fixture>.cpp' -- 'tests/*CMakeLists.txt'`. Each one that does not already reach the library of a new header of the project gains it in its `LIBS`; a standard header or a header of the tests has no library to add, and `network_compression_tests` already reached `GameStatus.hpp` through `rtype_network_messages`.
+2. **Build each of them alone**, not only the executable of the test being written.
+
 ## Example
 
 - ❌ **Before (wrong)**: `client/Rendering/Interface/BoxCornersTest.cpp` added to `client_widget_piece_tests` with `rtype_client_box_corners` only → undefined gmock symbols at the link.

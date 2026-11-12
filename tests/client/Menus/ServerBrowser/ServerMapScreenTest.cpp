@@ -34,6 +34,8 @@ using rtype::client::testing::HANGAR_HOUSE_ON_THE_MAP;
 using rtype::client::testing::HANGAR_HOUSE_SOURCE;
 using rtype::client::testing::HANGAR_STAR_HINT_LINE;
 using rtype::client::testing::HANGAR_STAR_ON_THE_MAP;
+using rtype::client::testing::listWithLyonHolding;
+using rtype::client::testing::listWithNoSeatOfThisVersion;
 using rtype::client::testing::LYON_SERVER_ADDRESS;
 using rtype::client::testing::LYON_SERVER_ID;
 using rtype::client::testing::lyonGames;
@@ -41,11 +43,15 @@ using rtype::client::testing::MAP_SHEET;
 using rtype::client::testing::NEW_GAME_ROW_ON_THE_PANEL;
 using rtype::client::testing::ONE_FRAME;
 using rtype::client::testing::ONE_PLANET_TURN_FRAME;
+using rtype::client::testing::ONE_SEAT_LEFT;
+using rtype::client::testing::PARIS_SERVER_ADDRESS;
 using rtype::client::testing::PARIS_SERVER_ID;
 using rtype::client::testing::parisOnTheWholeMap;
 using rtype::client::testing::PLAYING_GAME_ROW_ON_THE_PANEL;
 using rtype::client::testing::readyList;
 using rtype::client::testing::REFRESH_INTERVAL;
+using rtype::client::testing::SERVER_GAME_PORT;
+using rtype::client::testing::SERVER_SEATS;
 using rtype::client::testing::ServerMapScreenFixture;
 using rtype::client::testing::SHORT_OF_THE_REFRESH;
 using rtype::client::testing::showsTheMiniMap;
@@ -58,6 +64,7 @@ using rtype::network::Endpoint;
 using rtype::network::GameChoice;
 using rtype::network::GameChoiceKind;
 using ::testing::ElementsAre;
+using ::testing::IsEmpty;
 
 /**
  * Given a server map being built
@@ -396,6 +403,84 @@ TEST_F(ServerMapScreenFixture, QuickPlayJoinsTheNearestServerOfThisVersion) {
 
   EXPECT_EQ(choice().lastServer.value_or(Endpoint{}).address,
             std::string{LYON_SERVER_ADDRESS});
+}
+
+/**
+ * Given Lyon at 24 ms with every seat taken, and Paris at 88 ms with seats
+ * When Q is pressed and released
+ * Then Paris is joined: the lowest ping among the servers with a free seat
+ */
+TEST_F(ServerMapScreenFixture, QuickPlaySkipsAFullServerForTheNextByPing) {
+  openOn(listWithLyonHolding(SERVER_SEATS));
+
+  press(sf::Keyboard::Key::Q);
+
+  EXPECT_EQ(choice().lastServer.value_or(Endpoint{}).address,
+            std::string{PARIS_SERVER_ADDRESS});
+}
+
+/**
+ * Given Lyon at 24 ms with one seat left of its sixteen
+ * When Q is pressed and released
+ * Then Lyon is joined: a server is full only once every seat is taken
+ */
+TEST_F(ServerMapScreenFixture, QuickPlayJoinsAServerWithOneSeatLeft) {
+  openOn(listWithLyonHolding(ONE_SEAT_LEFT));
+
+  press(sf::Keyboard::Key::Q);
+
+  EXPECT_EQ(choice().lastServer.value_or(Endpoint{}).address,
+            std::string{LYON_SERVER_ADDRESS});
+}
+
+/**
+ * Given Lyon and Paris full, and an old station of another version with seats
+ * When Q is pressed and released
+ * Then no server is joined and no screen is pushed: a connection there would
+ * be refused
+ */
+TEST_F(ServerMapScreenFixture, QuickPlayJoinsNothingWhenNoServerHasASeat) {
+  openOn(listWithNoSeatOfThisVersion());
+
+  press(sf::Keyboard::Key::Q);
+
+  EXPECT_FALSE(choice().lastServer.has_value());
+  EXPECT_THAT(navigator().calls(), IsEmpty());
+}
+
+/**
+ * Given Lyon at 24 ms and Paris at 88 ms, both with seats, and an old station
+ * When Q joins Lyon
+ * Then Paris is kept as the server to try if Lyon answers that it is full,
+ * and the old station is not
+ */
+TEST_F(ServerMapScreenFixture, QuickPlayKeepsTheOtherFreeServersToTryNext) {
+  openOn(readyList());
+
+  press(sf::Keyboard::Key::Q);
+
+  EXPECT_THAT(choice().nextServers,
+              ElementsAre(Endpoint{.address = std::string{PARIS_SERVER_ADDRESS},
+                                   .port = SERVER_GAME_PORT}));
+}
+
+/**
+ * Given Q joined Lyon and kept Paris, then the player came back to the map
+ * When a waiting game of the panel of Lyon is joined
+ * Then no server is kept: a full server named by the player is not left for
+ * another
+ */
+TEST_F(ServerMapScreenFixture, JoiningAGameOfThePanelKeepsNoOtherServer) {
+  openOn(readyList());
+  press(sf::Keyboard::Key::Q);
+  games().show(lyonGames());
+  press(sf::Keyboard::Key::Enter);
+  press(sf::Keyboard::Key::Enter);
+  press(sf::Keyboard::Key::Down);
+
+  press(sf::Keyboard::Key::Enter);
+
+  EXPECT_THAT(choice().nextServers, IsEmpty());
 }
 
 /**

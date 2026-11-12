@@ -42,10 +42,11 @@ namespace rtype::client {
  * CONNECTION_TO_MAP_SERVER_SCREEN, which asks only for the nickname, then
  * connects and opens the waiting room: a game of the panel is asked for by its
  * number, with the rules the master lists for it. The chips: QUICK PLAY joins
- * any game of the server of this version with the lowest ping, RANKING opens
- * the leaderboard, ADDRESS the connection form, BACK goes one stage back, then
- * closes the map. The hangar star of the whole map, or HANGAR_KEY, pushes
- * HANGAR_SCREEN.
+ * any game of the server with the lowest ping among those of this version
+ * that list fewer players than their games hold, and is disabled when none
+ * does; RANKING opens the leaderboard, ADDRESS the connection form, BACK goes
+ * one stage back, then closes the map. The hangar star of the whole map, or
+ * HANGAR_KEY, pushes HANGAR_SCREEN.
  *
  * The list is read when the map opens, again every
  * SERVER_LIST_REFRESH_INTERVAL, on REFRESH_KEY, and GAMES_RECHECK_DELAY after

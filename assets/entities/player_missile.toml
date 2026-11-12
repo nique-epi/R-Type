@@ -12,7 +12,7 @@
 [gameplay]
 side = "player_missile"
 layer = "player_missile"
-hits = ["enemy", "player"]
+hits = ["enemy", "enemy_missile", "player"]
 pilot = "straight"
 
 [gameplay.hitbox]

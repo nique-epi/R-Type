@@ -356,7 +356,7 @@ pre code{overflow-wrap:normal}
 <p class="refs">PR #282, #292, #295 · doc : <code>deploy-master.md</code>, <code>infra/README.md</code></p>
 <div class="block b-where"><div class="label">Où</div><p><code>infra/bootstrap.sh</code> (mise en place initiale), <code>infra/terraform/</code> (infrastructure), <code>infra/master/deploy.sh</code>, <code>.github/workflows/deploy-master.yaml</code> (appelé par <code>release.yaml</code>), <code>.github/workflows/infra.yaml</code>.</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
-<li>Terraform décrit une instance <code>t3.medium</code> Ubuntu 24.04 (sans SSH, pilotée par SSM), une Elastic IP, un security group qui n'ouvre que les ports 80 et 443 (le 8080 n'est plus ouvert), et le rôle IAM que GitHub assume via OIDC (état Terraform dans un bucket S3).</li>
+<li>Terraform décrit une instance <code>t3.small</code> (2 Gio, un type que le plan gratuit d'AWS accepte) Ubuntu 24.04 (sans SSH, pilotée par SSM), une Elastic IP, un security group qui n'ouvre que les ports 80 et 443 (le 8080 n'est plus ouvert), et le rôle IAM que GitHub assume via OIDC (état Terraform dans un bucket S3).</li>
 <li>Le workflow attend l'approbation de l'environnement GitHub <code>production</code>, assume le rôle AWS, envoie <code>deploy.sh</code> via SSM Run Command.</li>
 <li><code>deploy.sh</code> télécharge le paquet serveur de la release, l'installe, redémarre le service <code>rtype-master</code>, attend <code>GET /api/health</code> et revient à la version précédente si le master ne répond pas. Il installe ensuite <b>Caddy</b> devant le master : Caddy écoute en HTTPS avec un certificat Let's Encrypt qu'il renouvelle seul, et transmet au master qui écoute en HTTP sur <code>127.0.0.1:8080</code>.</li>
 <li>Il faut donc un nom de domaine (<code>master_domain</code> dans Terraform, un enregistrement A vers l'IP) : Let's Encrypt ne signe pas de certificat pour une IP seule. <code>MASTER_URL</code> vaut <code>https://&lt;domaine&gt;</code> ; le site web (Vercel), les serveurs et le client pointent dessus.</li>
@@ -369,7 +369,7 @@ pre code{overflow-wrap:normal}
 <dt>Reverse proxy (Caddy)</dt><dd>Serveur placé devant une application : il reçoit les connexions (ici en HTTPS) et les transmet à l'application.</dd>
 <dt>Let's Encrypt</dt><dd>Autorité de certification gratuite et automatisée.</dd>
 <dt>Idempotent (script)</dt><dd>Relancer le script ne refait pas ce qui existe déjà.</dd></dl></div>
-<div class="block b-logic"><div class="label">Logique</div><p>Coût faible (~37 $/mois estimés), aucune clé longue durée, un humain valide chaque mise en production, et un déploiement raté se répare tout seul. HTTPS sans écrire de code TLS dans le master : c'est le reverse proxy qui le porte, comme prévu dès le choix de HTTP.</p></div>
+<div class="block b-logic"><div class="label">Logique</div><p>Coût faible (~20 $/mois estimés, pris sur les crédits du compte tant qu'il est au plan gratuit, qui ferme le compte au bout de six mois ou quand les crédits sont épuisés), aucune clé longue durée, un humain valide chaque mise en production, et un déploiement raté se répare tout seul. HTTPS sans écrire de code TLS dans le master : c'est le reverse proxy qui le porte, comme prévu dès le choix de HTTP.</p></div>
 </article>
 
 <article class="feature" id="f-docsite">
