@@ -1,17 +1,19 @@
 name: infra
 
-# Checks the Terraform files and the scripts of the master instance. It needs
-# no AWS credentials: the backend is left out.
+# Checks the Terraform files and the scripts of the master instance and of
+# the game machine. It needs no AWS credentials: the backend is left out.
 on:
   push:
     branches:
       - "main"
     paths:
       - "infra/**"
+      - ".github/actions/game-machine-terraform/**"
       - ".github/workflows/infra.yaml"
   pull_request:
     paths:
       - "infra/**"
+      - ".github/actions/game-machine-terraform/**"
       - ".github/workflows/infra.yaml"
 
 permissions:
@@ -27,11 +29,24 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v4
 
-      - name: Check the format
-        run: terraform fmt -check -recursive infra/terraform
+      # Both folders use the same provider: the second init reuses the first
+      # download.
+      - name: Share the providers between the folders
+        run: |
+          mkdir -p "$RUNNER_TEMP/terraform-plugins"
+          echo "TF_PLUGIN_CACHE_DIR=$RUNNER_TEMP/terraform-plugins" >> "$GITHUB_ENV"
 
-      - name: Validate
+      - name: Check the format
+        run: terraform fmt -check -recursive infra
+
+      - name: Validate the infrastructure of the master
         working-directory: infra/terraform
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+      - name: Validate the game machine
+        working-directory: infra/terraform-game
         run: |
           terraform init -backend=false
           terraform validate
@@ -39,4 +54,4 @@ jobs:
       - name: Lint the scripts
         run: |
           shellcheck --version
-          shellcheck --shell=sh --external-sources infra/bootstrap.sh infra/master/deploy.sh infra/terraform/user-data.sh
+          shellcheck --shell=sh --external-sources infra/*.sh infra/master/*.sh infra/game-servers/*.sh infra/terraform/user-data.sh infra/terraform-game/user-data.sh

@@ -89,7 +89,7 @@ export default defineConfig({
         },
         {
           label: 'Operations',
-          items: ['deploy-master'],
+          items: ['deploy-master', 'deploy-game-servers'],
         },
       ],
       head: [

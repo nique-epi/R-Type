@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
 #include "ActionKey.hpp"
 #include "CollisionBox.hpp"
 #include "EnemyPhase.hpp"
@@ -28,5 +29,9 @@ constexpr CollisionBox LEGS_BOX{
 /** @brief The action a fragile sheet of the tests is fragile in. */
 constexpr ActionKey STUNNED_IN_ATTACK_ZERO{.attack = 0,
                                            .phase = EnemyPhase::Recover};
+
+/** @brief A name SHOOTABLE_MISSILE_SHEETS does not hold, given to a copy of
+ * the sheet of a missile of an enemy. */
+constexpr std::string_view UNLISTED_MISSILE_SHEET = "unlisted_missile";
 
 }  // namespace rtype::game::testing

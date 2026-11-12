@@ -1,4 +1,4 @@
-# Infrastructure of the master
+# Infrastructure of the master and of the game servers
 
 This folder puts the master (`r-type_server --mode master`) on a small AWS machine and installs each release on it. It holds:
 
@@ -6,15 +6,21 @@ This folder puts the master (`r-type_server --mode master`) on a small AWS machi
 |---|---|
 | `terraform/` | the machine, its address, its network rules and the role the deployments use, described with Terraform |
 | `bootstrap.sh` | the script that does the whole setup below in one run, from your computer |
-| `master/deploy.sh` | the script that installs a release on the machine, goes back when the master does not answer, and puts Caddy in front of it for HTTPS |
+| `master/deploy.sh` | the script that installs a release on the machine, goes back when the master does not answer, and puts Caddy in front of it for HTTPS; it also installs the timer that restarts a master that stopped answering, and the test game server |
+| `release.sh` | what the scripts that install a release share: the check of the version and the download |
+| `run-on-instance.sh` | runs a script on an instance through SSM; the workflows call it |
+| `terraform-game/` | the game machine of a LAN, with a Terraform state of its own; the workflows `lan-open` and `lan-close` apply and destroy it |
+| `game-servers/` | the scripts of the pool of game servers: `install.sh`, `listed-servers.sh`, `create-keys.sh`, and `prepare.sh`, which prepares the workflows of a LAN once |
+| `../.github/workflows/lan-open.yaml`, `lan-close.yaml` | the workflows that create and destroy the game machine, by hand |
 | `../.github/workflows/deploy-master.yaml` | the workflow that runs the script, on every release or by hand |
 | `../.github/workflows/infra.yaml` | the check of these files on a pull request |
 
-Nothing here runs by itself the first time: a member of the team sets it up once, with the steps below. How the deployment works and where to change it is told in the documentation page [Deploying the master](https://nique-epi.github.io/R-Type/deploy-master/).
+Nothing here runs by itself the first time: a member of the team sets it up once, with the steps below. How the deployment works and where to change it is told in the documentation page [Deploying the master](https://nique-epi.github.io/R-Type/deploy-master/). The game servers of a LAN, their workflows and what to prepare once are told in [Game servers for a LAN](https://nique-epi.github.io/R-Type/deploy-game-servers/).
 
 ## What you get
 
-- One `t3.medium` instance (x86, 2 vCPU, 4 GiB of memory, Ubuntu 24.04, 8 GiB disk) with an Elastic IP that does not change, about 37 USD a month (an estimate from public prices, not measured). Its CPU runs on credits in "standard" mode: it is slowed down when the credits are gone and never billed more.
+- One `t3.small` instance (x86, 2 vCPU, 2 GiB of memory, Ubuntu 24.04, 8 GiB disk) with an Elastic IP that does not change, about 20 USD a month (an estimate from public prices, not measured). Its CPU runs on credits in "standard" mode: it is slowed down when the credits are gone and never billed more.
+- An account on the **free plan** of AWS may only launch the instance types `aws ec2 describe-instance-types --filters Name=free-tier-eligible,Values=true` lists; `t3.small` is one of them, `t3.medium` is not. That plan ends after six months or when its credits are used up, and AWS then closes the account and the master with it: upgrade to the paid plan (Billing, Upgrade plan) to keep the master running. On the paid plan, `instance_type` can go back to `t3.medium` (4 GiB), which replaces the instance and starts the database again.
 - Two open ports: 443, the HTTPS API of the master through Caddy, and 80, which only serves the certificate challenges of Let's Encrypt and sends the rest to HTTPS. The master listens on 8080, which no rule opens: only Caddy, on the machine, reaches it. There is no SSH and no key pair: the machine is reached through AWS Systems Manager (SSM).
 - A certificate of Let's Encrypt for the domain of the master, which Caddy gets at the first deployment and renews by itself.
 - A deployment on every release (`v*` tag), after a person approves it in GitHub. No AWS key is stored in the repository or in GitHub: the workflow gets a short-lived token from GitHub (OpenID Connect) and trades it for a role.
@@ -36,7 +42,7 @@ From the root of the repository, with the tools of the list above installed and 
 infra/bootstrap.sh --domain <domain of the master> --bucket rtype-tfstate-<suffix>
 ```
 
-It asks which AWS account and repository it is about, creates the bucket, applies Terraform after you read the plan, sets the four variables, creates the environment `production` with you as its required reviewer, then waits for the A record of the domain (it prints the address to give it) and polls until it answers, for up to 30 minutes. `--deploy v0.3.0` also starts `deploy-master` for that release once the record answers, and `--yes` skips the two questions. Every step first looks at what exists, so after a failure you run the same command again. It does not publish a release, and it does not set the address in Vercel, the game servers or the client (step 6 below).
+It asks which AWS account and repository it is about, creates the bucket, applies Terraform after you read the plan, sets the six variables, creates the environment `production` with you as its required reviewer, then waits for the A record of the domain (it prints the address to give it) and polls until it answers, for up to 30 minutes. `--deploy v0.3.0` also starts `deploy-master` for that release once the record answers, and `--yes` skips the two questions. Every step first looks at what exists, so after a failure you run the same command again. It does not publish a release, and it does not set the address in Vercel, the game servers or the client (step 6 below).
 
 ## Setting it up by hand, in this order
 
@@ -61,11 +67,11 @@ The bucket keeps the Terraform state, so every member of the team can apply from
 
 ```bash
 terraform init -backend-config="bucket=rtype-tfstate-<suffix>" -backend-config="region=eu-west-1"
-terraform plan -var master_domain=<domain of the master>
-terraform apply -var master_domain=<domain of the master>
+terraform plan -var master_domain=<domain of the master> -var state_bucket=rtype-tfstate-<suffix>
+terraform apply -var master_domain=<domain of the master> -var state_bucket=rtype-tfstate-<suffix>
 ```
 
-The domain can also go in a `terraform.tfvars` file next to the `.tf` files (`master_domain = "master.example.org"`), so it is not typed each time. Read the plan before the `apply`: it must only create resources (12 of them, plus the reads of the default network and of the Ubuntu image), never destroy one. Terraform creates the instance, its address, its network rules, the role of the instance, the identity provider of GitHub and the role of the deployments.
+Both can also go in a `terraform.tfvars` file next to the `.tf` files (`master_domain = "master.example.org"`, `state_bucket = "rtype-tfstate-<suffix>"`), so they are not typed each time. Read the plan before the `apply`: it must only create resources (23 of them, plus the reads of the account, of the default network and of the Ubuntu image), never destroy one. Terraform creates the instance, its address, its network rules, the role of the instance, the identity provider of GitHub and the role of the deployments; and, for the game machine of a LAN, its network rules, its role and the role of the workflows that create and destroy it. The game machine itself is not created here. On an infrastructure applied before the game machine, the plan creates those 11 resources and changes nothing else.
 
 On an infrastructure applied before HTTPS, the plan replaces the rule of port 8080 by the rules of ports 80 and 443: one resource destroyed, two created. That rule is the only one it may destroy.
 
@@ -98,12 +104,16 @@ Create them in Settings, Secrets and variables, Actions, tab **Variables** (not 
 | `AWS_DEPLOY_ROLE_ARN` | `terraform output -raw deploy_role_arn` | `deploy-master.yaml`, the role to assume | the job stops at the login step |
 | `MASTER_INSTANCE_ID` | `terraform output -raw instance_id` | `deploy-master.yaml`, the only instance the script is sent to | the job stops when it sends the script |
 | `MASTER_URL` | `terraform output -raw master_url` (`https://<master_domain>`, with no port and no path) | `deploy-master.yaml`: the domain Caddy answers for, and the check from outside after a deployment | the job stops before it sends the script |
+| `AWS_LAN_ROLE_ARN` | `terraform output -raw lan_role_arn` | `lan-open.yaml` and `lan-close.yaml`, the role to assume | the job stops at the login step |
+| `TERRAFORM_STATE_BUCKET` | `rtype-tfstate-<suffix>`, the bucket of step 1 | `lan-open.yaml` and `lan-close.yaml`, where the state of the game machine is kept | the job stops at `terraform init` |
 
 ```bash
 gh variable set AWS_REGION --body eu-west-1
 gh variable set MASTER_INSTANCE_ID --body "$(terraform output -raw instance_id)"
 gh variable set AWS_DEPLOY_ROLE_ARN --body "$(terraform output -raw deploy_role_arn)"
 gh variable set MASTER_URL --body "$(terraform output -raw master_url)"
+gh variable set AWS_LAN_ROLE_ARN --body "$(terraform output -raw lan_role_arn)"
+gh variable set TERRAFORM_STATE_BUCKET --body rtype-tfstate-<suffix>
 ```
 
 If you changed `region` in `variables.tf`, give `AWS_REGION` the same value.
@@ -154,7 +164,7 @@ The players and the hosts need a release of the game that speaks HTTPS: an older
 
 | Symptom | Cause to look at |
 |---|---|
-| `Not authorized to perform sts:AssumeRoleWithWebIdentity` | the `production` environment does not exist or the job does not use it; or GitHub changed the `sub` claim of the token and the condition in `terraform/github.tf` no longer matches it. Print the claim of the failing job and compare |
+| `Not authorized to perform sts:AssumeRoleWithWebIdentity` | the `production` environment does not exist or the job does not use it; or the `sub` claim of the token does not start with `github_subject_prefix`. A repository with immutable subjects names its owner and itself by their ids (`repo:<owner>@<id>/<repo>@<id>`): `gh api repos/<owner>/<repo>/actions/oidc/customization/sub` prints the prefix, which `bootstrap.sh` reads and gives to Terraform |
 | The job stops at "Run the deployment on the instance" with an invalid instance | `MASTER_INSTANCE_ID` is missing or belongs to another account or region |
 | The instance is not listed by `describe-instance-information` | the SSM agent is not running on the image, or the instance has no outbound access; look at the system log of the instance in the console |
 | The script prints "the master of X does not answer" and "went back to ..." | the new release does not start: read its log with `journalctl -u rtype-master` |

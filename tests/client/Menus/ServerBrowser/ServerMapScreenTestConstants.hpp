@@ -26,6 +26,10 @@ constexpr std::chrono::milliseconds PARIS_PING{88};
 /** @brief Where Paris comes in the list of three servers, sorted by ping. */
 constexpr std::size_t PARIS_INDEX = 1;
 constexpr std::uint8_t PLAYERS_PER_GAME = 4;
+/** @brief The players a server of the tests holds at most, four games of
+ * four, and one fewer: its last seat still free. */
+constexpr std::uint16_t SERVER_SEATS = 16;
+constexpr std::uint16_t ONE_SEAT_LEFT = 15;
 
 /** @brief The games of Lyon: one waiting, one in game. */
 constexpr std::uint16_t WAITING_GAME_NUMBER = 1;

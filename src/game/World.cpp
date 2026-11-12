@@ -1,4 +1,5 @@
 #include "World.hpp"
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -11,6 +12,7 @@
 #include "CurrentAction.hpp"
 #include "Entity.hpp"
 #include "EntitySheet.hpp"
+#include "EntitySheetConstants.hpp"
 #include "EntityType.hpp"
 #include "EntityTypeNumber.hpp"
 #include "Fragile.hpp"
@@ -35,6 +37,7 @@
 #include "ShardBurst.hpp"
 #include "ShipMotion.hpp"
 #include "ShipPilot.hpp"
+#include "Shootable.hpp"
 #include "ShownLook.hpp"
 #include "SteadyMotion.hpp"
 #include "SurvivesContact.hpp"
@@ -120,10 +123,18 @@ void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
   }
 }
 
+/** @returns Whether @p sheet is a missile of an enemy that
+ * SHOOTABLE_MISSILE_SHEETS names. */
+bool isShootable(const EntitySheet& sheet) {
+  return sheet.side == EntityType::EnemyMissile &&
+         std::ranges::find(SHOOTABLE_MISSILE_SHEETS, sheet.name) !=
+             SHOOTABLE_MISSILE_SHEETS.end();
+}
+
 /** @brief Gives @p start the parts that decide what its contact with a ship
- * does: the CurrentAction of an enemy, then the HurtZone and the
- * SurvivesContact and the Fragile its sheet declares, and the LookItem of a
- * look item. */
+ * or a missile does: the CurrentAction of an enemy, then the HurtZone and the
+ * SurvivesContact and the Fragile its sheet declares, the Shootable of a
+ * missile SHOOTABLE_MISSILE_SHEETS names, and the LookItem of a look item. */
 void addContactParts(engine::ComponentRegistry& components,
                      const BodyStart& start) {
   const EntitySheet& sheet = start.sheet.get();
@@ -138,6 +149,9 @@ void addContactParts(engine::ComponentRegistry& components,
   }
   if (sheet.fragileIn.has_value()) {
     components.add(start.body, Fragile{.in = *sheet.fragileIn});
+  }
+  if (isShootable(sheet)) {
+    components.add(start.body, Shootable{});
   }
   if (sheet.lookItem.has_value()) {
     components.add(start.body, LookItem{.number = *sheet.lookItem});

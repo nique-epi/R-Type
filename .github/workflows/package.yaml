@@ -220,6 +220,11 @@ jobs:
         shell: bash
         run: sh tests/tools/packaging/check-package.sh build
 
+      - name: Install the Windows installer of the server and open its shortcut
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./tests/tools/packaging/check-installers.ps1 build
+
       - name: Delete the signing keychain
         if: always() && steps.signing.outputs.keychain != ''
         env:

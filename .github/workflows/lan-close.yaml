@@ -1,0 +1,74 @@
+name: lan-close
+
+# Closes a LAN: destroys the game machine lan-open created, then starts the
+# test game server of the master machine again. It refuses while games run on
+# the game machine, unless it is told to close anyway. Run by hand.
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Close even when games are running on the game machine
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lan
+  cancel-in-progress: false
+
+jobs:
+  close:
+    name: Close the LAN
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The AWS role only trusts this environment, which asks for an approval.
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      MASTER_INSTANCE_ID: ${{ vars.MASTER_INSTANCE_ID }}
+      MASTER_URL: ${{ vars.MASTER_URL }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/game-machine-terraform
+        with:
+          role: ${{ vars.AWS_LAN_ROLE_ARN }}
+          region: ${{ vars.AWS_REGION }}
+          state-bucket: ${{ vars.TERRAFORM_STATE_BUCKET }}
+          master-url: ${{ vars.MASTER_URL }}
+
+      # No output when no machine exists.
+      - name: Read the address of the game machine
+        working-directory: infra/terraform-game
+        run: echo "GAME_ADDRESS=$(terraform output -raw public_ip 2> /dev/null || true)" >> "$GITHUB_ENV"
+
+      # Destroying the machine ends the games of its servers.
+      - name: Refuse to end running games
+        if: ${{ !inputs.force && env.GAME_ADDRESS != '' }}
+        run: |
+          listing=$(infra/game-servers/listed-servers.sh "$MASTER_URL" "$GAME_ADDRESS")
+          games=$(printf '%s\n' "$listing" | awk '$2 != "offline" { games += $3 } END { print games + 0 }')
+          if [ "$games" -gt 0 ]; then
+            echo "$games games run on the game machine: run again with force to end them" >&2
+            exit 1
+          fi
+
+      - name: Destroy the game machine
+        working-directory: infra/terraform-game
+        run: terraform destroy -input=false -auto-approve
+
+      # A master deployed before the test server has no such service yet.
+      - name: Start the test server of the master machine
+        run: |
+          cat > "$RUNNER_TEMP/script.sh" <<'SCRIPT'
+          if systemctl cat rtype-test-server > /dev/null 2>&1; then
+            systemctl enable --now rtype-test-server
+          else
+            echo 'the master machine has no test server: deploy a release to it'
+          fi
+          SCRIPT
+          infra/run-on-instance.sh "$MASTER_INSTANCE_ID" "$RUNNER_TEMP/script.sh"

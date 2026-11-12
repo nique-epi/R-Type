@@ -27,6 +27,14 @@ namespace rtype::client::testing {
 /** @returns The list of threeServers(), ready. */
 [[nodiscard]] ServerListSnapshot readyList();
 
+/** @returns readyList() with @p players players on Lyon, of the SERVER_SEATS
+ * every server of the list holds. */
+[[nodiscard]] ServerListSnapshot listWithLyonHolding(std::uint16_t players);
+
+/** @returns readyList() with Lyon and Paris full; the old station, of another
+ * version, keeps its seats. */
+[[nodiscard]] ServerListSnapshot listWithNoSeatOfThisVersion();
+
 /** @returns Game @p number of Lyon, named @p name, in @p state. */
 [[nodiscard]] GameRow gameOf(std::uint16_t number,
                              network::ListedGameState state);

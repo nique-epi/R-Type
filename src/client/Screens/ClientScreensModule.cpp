@@ -174,7 +174,8 @@ ScreenServices ClientScreensModule::services(
       .gameCatalog = *gameCatalog_,
       .choice = ServerChoice{.server = server,
                              .nickname = nicknameSetting_->text(),
-                             .game = launch_.game},
+                             .game = launch_.game,
+                             .nextServers = {}},
       .playStart = playStart_};
 }
 

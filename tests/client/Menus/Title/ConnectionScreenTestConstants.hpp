@@ -20,6 +20,9 @@ constexpr std::u32string_view LAUNCH_PORT_TEXT = U"4243";
 /** @brief The server the server map chose, other than the launch one. */
 constexpr std::string_view MAP_ADDRESS = "203.0.113.9";
 constexpr std::uint16_t MAP_PORT = 4300;
+/** @brief The server QUICK PLAY keeps behind the one it chose. */
+constexpr std::string_view NEXT_MAP_ADDRESS = "203.0.113.10";
+constexpr std::uint16_t NEXT_MAP_PORT = 4301;
 constexpr std::string_view LAUNCH_NICKNAME = "ACE";
 
 /** @brief The game the launch options asked for: game 2 of the server. */
