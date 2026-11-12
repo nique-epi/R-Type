@@ -164,6 +164,33 @@ What a script may rely on:
 - **A subscribed function is a step.** It has the 2 ms of a step and counts in the 8 ms of the tick. It cannot wait. One that fails, waits or runs past its budget ends every subscription of its body at once, and stops the script of that body at its next tick, as a failed step does: the journal writes it as the first failure of that behaviour. The functions subscribed after it are still called.
 - **Once the budget of a tick is spent, the events left reach no script function** until the next tick; they are not kept. This is also what ends two functions that answer each other without end.
 
+## Judging a hit before it applies
+
+A body may decide, before the server announces it, whether a missile that touches it hits it: a shield, a weak point, armor that turns shots away.
+
+```lua
+behaviours.register("shielded_core", {}, function(e)
+	local shield = 3
+	behaviours.pre_hit(function(hit)
+		if shield > 0 and hit.offset.x < 0 then
+			shield = shield - 1
+			behaviours.destroy(hit.missile)
+			return false
+		end
+	end)
+	while true do
+		behaviours.wait(1000, { direction = { x = -1, y = 0 } })
+	end
+end)
+```
+
+`behaviours.pre_hit(function)` makes `function` judge every hit of a missile on the body that steps, in place of the one declared before; `behaviours.pre_hit(nil)` forgets it. It only runs in the function of a body. The function receives the hit, `missile` the network id of the missile and `offset` where the center of the missile lies from the center of the body, `{x, y}` in logical units, read in the present even for a missile the server tests where its player saw the body. Returning `false` cancels the hit: no damage, nothing announced, and the missile flies on, so a shield that should stop it removes it with `behaviours.destroy`. Any other value lets the hit apply. A cancelled missile that still touches the body is judged again at the next tick.
+
+- **A body without a `pre_hit` behaves as before**: asking it costs one lookup and no call of a script.
+- **It is a step without the handle**: it has the 2 ms of a step and counts in the 8 ms of the tick; `e` refuses every key there, as in a function subscribed to an event. It cannot wait.
+- **Once the budget of the tick is spent, the hit applies** without a call.
+- **A failure lets the hit apply**: a function that fails, waits or runs past its budget is forgotten, and stops the script of its body at its next tick, as a failed step does.
+
 ## Directing a level
 
 A script may also write a level: what comes, when the decor moves and stops, which biome the players see and where a lost team starts again. A server plays it with the setting `level` (see [Server](/R-Type/server/#level-a-script-directs-leveldirector)); without it, a game plays the waves of its difficulty.
@@ -271,6 +298,7 @@ The three sides found the same 9,457,143 collisions, about 2,600 a tick: 300 bod
 | Show another event of the game to the scripts | `GAME_EVENT_NAMES` in `LuauEventConstants.hpp`, then its `fieldsOf()` and its line of `subscribeNamed()` in `src/game/Scripting/Events/LuauEventBindings.cpp` |
 | Change what a published event may carry | `ScriptEvent` and `ScriptEventField` in `src/game/Events/`, read by `publishedFields()` in `LuauEventBindings.cpp` |
 | Change when a subscription ends | `LuauEventSubscription` and `LuauEventSubscriptions`, what one body keeps subscribed, in `src/game/Scripting/Events/` |
+| Change what a pre_hit function receives, returns, or what its failure does | `LuauPreHit` and `LuauBehaviourState` in `src/game/Scripting/`, the hit table in `pushHitTable()` of `LuauBehaviourTables.cpp`; who asks it, `targetLetsHit()` in `src/game/Systems/CollisionRules/PreHitCheck.cpp` |
 | Change what happens to a body whose subscribed function failed | `LuauBehaviour::steer()` in `src/game/Scripting/`, the only place that stops a script |
 | Change what a level script may call, or what it refuses | the functions of `LuauLevels` in `src/game/Scripting/Level/LuauLevels.cpp`, their names and messages in `LuauLevelConstants.hpp` |
 | Change when a stage is resumed, or what a checkpoint keeps | `LuauLevelRun` in `src/game/Scripting/Level/`, `LevelCheckpoint` in `src/game/Level/` |
