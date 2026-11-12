@@ -2,12 +2,12 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <cmath>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <random>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -44,6 +44,7 @@
 #include "IScreenNavigator.hpp"
 #include "ISky.hpp"
 #include "InterpolationClock.hpp"
+#include "InterpolationTally.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
 #include "MissionStart.hpp"
@@ -54,7 +55,6 @@
 #include "PilotShipLooks.hpp"
 #include "PlayerAction.hpp"
 #include "PlayerCommand.hpp"
-#include "PlayerInputPacer.hpp"
 #include "PlayerLeft.hpp"
 #include "PlayerPalette.hpp"
 #include "PlayerPreferences.hpp"
@@ -75,6 +75,19 @@
 namespace rtype::client {
 
 namespace {
+
+/** @brief Gives @p tick to the clock that shows the other entities and to
+ * @p tally, which also counts how far the state moved the tick shown. */
+void observeShownTick(InterpolationClock& clock, InterpolationTally& tally,
+                      std::uint32_t tick) {
+  const std::optional<double> before = clock.renderTick();
+  clock.observe(tick);
+  tally.observe(tick);
+  const std::optional<double> after = clock.renderTick();
+  if (before.has_value() && after.has_value() && *after != *before) {
+    tally.countRecalibration(std::abs(*after - *before));
+  }
+}
 
 /** @returns How many pixels of the canvas the sky and the entities are drawn
  * away from their place: the camera shake, (0, 0) at rest. */
@@ -136,6 +149,16 @@ void routeEntityMessage(const EntityMessageRoutes& routes,
       message);
 }
 
+/** @brief Moves the effects on by @p sinceTheWorld, with the flashes, the
+ * shades and the sound cues @p settings set. */
+void advanceEffects(EffectSpawner& effects, const PlayerSettings& settings,
+                    engine::Duration sinceTheWorld) {
+  effects.advance(sinceTheWorld,
+                  EffectPreferences{.flashes = flashPreferenceOf(settings),
+                                    .shades = pilotShadesOf(settings),
+                                    .soundCues = settings.soundCues});
+}
+
 /** @brief Puts the other entities at the tick @p clock shows, then reveals
  * those that arrived (see placeInterpolatedPositions() and
  * revealArrivedEntities()). */
@@ -180,8 +203,10 @@ GameScreen::GameScreen(GameScreenParts parts,
                   parts.connection.get().status().playerNumber),
       result_(&parts.result.get()),
       playerNumber_(parts.connection.get().status().playerNumber),
+      interpolationTally_(&parts.interpolationTally.get()),
       sky_(&parts.sky.get()),
       chat_(parts.chat.get(), parts.settings.get()) {
+  interpolationTally_->startGame();
   systems_.add(std::make_unique<AnimationSystem>());
   systems_.add(std::make_unique<HitFlashSystem>());
   systems_.add(std::make_unique<SpriteEffectSystem>());
@@ -193,6 +218,7 @@ GameScreen::GameScreen(GameScreenParts parts,
 }
 
 GameScreen::~GameScreen() {
+  interpolationTally_->endGame();
   sky_->setSpeedFactor(1.0F);
   sky_->setOffset({});
 }
@@ -221,37 +247,26 @@ void GameScreen::handleEvent(const sf::Event& event) {
 void GameScreen::update(engine::Duration elapsed) {
   const PlayerCommand command{.held = playerActions(),
                               .shownTick = interpolationClock_.shownTick()};
-  if (settings_->clientPrediction) {
-    prediction_.advance(elapsed, command, *inputs_);
-  } else {
-    prediction_.stop();
-    if (inputPacer_.advance(elapsed)) {
-      std::ignore = inputs_->sendPlayerInput(command.held, command.shownTick);
-    }
-  }
+  prediction_.advance(elapsed, command, *inputs_);
   traceHeldActions(logger_, command.held, loggedActions_);
   systems_.run(components_, elapsed);
-  interpolationClock_.follow(serverTicks_->serverTickNow());
+  const std::optional<double> serverTick = serverTicks_->serverTickNow();
+  interpolationClock_.follow(serverTick);
   interpolationClock_.advance(elapsed);
-  const FlashPreference preference = flashPreferenceOf(*settings_);
   const engine::Duration sinceTheWorld =
       worldSeen_ ? elapsed : engine::Duration::zero();
-  effects_.advance(sinceTheWorld,
-                   EffectPreferences{.flashes = preference,
-                                     .shades = pilotShadesOf(*settings_),
-                                     .soundCues = settings_->soundCues});
+  advanceEffects(effects_, *settings_, sinceTheWorld);
   departures_.advance(elapsed);
   silence_.advance(sinceTheWorld);
   boss_.advance(elapsed);
   applyEntityMessages();
   showOtherEntities(interpolationClock_, components_, feedback_);
-  if (settings_->clientPrediction) {
-    prediction_.place(replicator_, components_);
-  }
+  interpolationTally_->countFrame(interpolationClock_.renderTick(), serverTick);
+  prediction_.place(replicator_, components_);
   tagPilotShips(components_, scoreBoard_.pilots(), *settings_);
   dressPilotShips(components_, shipLooks_->playerLooks());
   askForTheEndWhenDue();
-  moveSky(*sky_, effects_, preference);
+  moveSky(*sky_, effects_, flashPreferenceOf(*settings_));
   entityLayer_->paint(components_, cameraOffsetOf(effects_));
   repaintStatusWhenChanged();
 }
@@ -281,13 +296,11 @@ void GameScreen::applyEntityMessages() {
 void GameScreen::applyWorldState(const network::WorldState& state) {
   worldSeen_ = true;
   scoreBoard_.apply(state);
-  interpolationClock_.observe(state.tick);
+  observeShownTick(interpolationClock_, *interpolationTally_, state.tick);
   if (const auto own = ownShipOf(state, playerNumber_)) {
     inputs_->confirmInputsUpTo(own->acknowledgedInput);
   }
-  if (settings_->clientPrediction) {
-    prediction_.apply(state);
-  }
+  prediction_.apply(state);
 }
 
 void GameScreen::recordEnd(const network::GameEnded& ended) {
@@ -296,6 +309,7 @@ void GameScreen::recordEnd(const network::GameEnded& ended) {
       .outcome = ended.outcome};
   worldSeen_ = true;
   endedAt_ = effects_.sinceStart();
+  interpolationTally_->endGame();
   prediction_.ceaseFire();
   silence_.stop();
   boss_.endGame();

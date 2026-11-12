@@ -209,7 +209,7 @@ constexpr std::uint32_t FIRST_INPUT_NUMBER = 1;
 
 static_assert(identifiers::MAXIMUM_ENTITY_TYPES <=
                   std::numeric_limits<std::uint8_t>::max(),
-              "typeCount is one byte, and so is the number of a type");
+              "the number of a type is one byte, and 0 names none");
 
 /**
  * @brief The most inputs before the newest that one PlayerInput repeats. At
@@ -484,6 +484,14 @@ constexpr std::size_t CONNECTION_REFUSED_DATAGRAM_SIZE =
  * @brief The rows a LeaderboardAnswer lists at most, its own row aside.
  */
 constexpr std::size_t MAXIMUM_LEADERBOARD_ROWS = 10;
+
+/**
+ * @brief The values of a LeaderboardRequest that ask for every number of
+ * players and every difficulty: a number of players below FIRST_PLAYER_NUMBER
+ * and a difficulty shorter than any name.
+ */
+constexpr std::uint8_t ALL_PLAYER_COUNTS = 0;
+constexpr std::string_view ALL_DIFFICULTIES;
 
 /**
  * @brief The size of a row of a LeaderboardAnswer with the longest nickname:

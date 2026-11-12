@@ -41,6 +41,20 @@ void bindPlayer(SQLite::Statement& insert, const PlayerResult& player) {
   insert.bind(DEATHS_PARAMETER, player.deaths);
 }
 
+/** @brief Binds the filters of @p request; one that asks for every value
+ * stays null, which the leaderboard query reads as no filter. */
+void bindFilters(SQLite::Statement& query,
+                 const network::LeaderboardRequest& request) {
+  if (const std::optional<std::string> difficulty =
+          network::difficultyFilterOf(request)) {
+    query.bind(DIFFICULTY_PARAMETER, *difficulty);
+  }
+  if (const std::optional<std::uint8_t> playerCount =
+          network::playerCountFilterOf(request)) {
+    query.bind(PLAYER_COUNT_PARAMETER, *playerCount);
+  }
+}
+
 network::LeaderboardRow rowOf(const SQLite::Statement& query) {
   return network::LeaderboardRow{
       .rank = query.getColumn(BOARD_RANK_COLUMN).getUInt(),
@@ -105,8 +119,7 @@ network::LeaderboardAnswer ResultsDatabase::leaderboard(
     const network::LeaderboardRequest& request,
     const std::string& asker) const {
   SQLite::Statement query{database_, std::string{LEADERBOARD_QUERY}};
-  query.bind(DIFFICULTY_PARAMETER, request.difficulty);
-  query.bind(PLAYER_COUNT_PARAMETER, request.playerCount);
+  bindFilters(query, request);
   query.bind(ASKER_PARAMETER, asker);
   query.bind(TOP_ROWS_PARAMETER,
              static_cast<std::int64_t>(network::MAXIMUM_LEADERBOARD_ROWS));

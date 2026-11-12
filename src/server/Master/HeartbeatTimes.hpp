@@ -11,6 +11,7 @@ struct HeartbeatTimes {
   std::chrono::milliseconds interval{network::MASTER_HEARTBEAT_INTERVAL};
   std::chrono::milliseconds noticeGap{network::MINIMUM_NOTICE_GAP};
   std::chrono::milliseconds retry{REGISTRATION_RETRY};
+  std::chrono::milliseconds maximumRetry{MAXIMUM_REGISTRATION_RETRY};
 };
 
 }  // namespace rtype::server

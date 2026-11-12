@@ -1,6 +1,7 @@
 add_library(rtype_client_prediction_interpolation STATIC
   ArrivalReveal.cpp
   InterpolationClock.cpp
+  InterpolationTally.cpp
   PositionInterpolation.cpp
 )
 

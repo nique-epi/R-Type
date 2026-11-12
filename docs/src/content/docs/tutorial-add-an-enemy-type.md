@@ -176,13 +176,15 @@ cmake --build build --parallel
 
 ## Step 2: the sheet
 
-The sheet is the whole enemy: its side, its pilot, its box, its speed, its health, its points, its gun and its look. Start from `assets/entities/weaver.toml`, which already holds a Bydo that fires, and save it as `assets/entities/zigzagger.toml`: the name of the file, `zigzagger`, is the name of the type. Change the pilot, the period and the points:
+The sheet is the whole enemy: its side, its collision layer and what it hits, its pilot, its box, its speed, its health, its points, its gun and its look. Start from `assets/entities/weaver.toml`, which already holds a Bydo that fires, and save it as `assets/entities/zigzagger.toml`: the name of the file, `zigzagger`, is the name of the type. Change the pilot, the period and the points:
 
 ```toml
 # The entity type zigzagger: a Bydo that zigzags down and up around its row.
 
 [gameplay]
 side = "enemy"
+layer = "enemy"
+hits = ["player"]
 pilot = "zigzag"
 
 [gameplay.hitbox]

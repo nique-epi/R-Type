@@ -19,8 +19,10 @@ constexpr rtype::engine::Duration LONG_LOADING_WAIT = std::chrono::seconds(8);
 /** @brief How many presses the system repeats while a key is held down. */
 constexpr int KEY_REPEATS = 3;
 
-/** @brief A frame as long as three simulation ticks: with PREDICTION on, one
- * input goes out for each of them. */
+/** @brief Frames as long as one and three simulation ticks: the game predicts
+ * the ship of the player, so one input goes out for each tick. */
+constexpr rtype::engine::Duration ONE_SIMULATION_TICK =
+    rtype::engine::SIMULATION_TICK_DURATION;
 constexpr rtype::engine::Duration THREE_TICKS =
     rtype::engine::SIMULATION_TICK_DURATION * 3;
 constexpr std::size_t INPUTS_IN_THREE_TICKS = 3;
@@ -97,3 +99,11 @@ constexpr rtype::network::BossStatus BOSS_FIGHTING_HIT{
     .stage = rtype::network::BossStage::Fighting};
 constexpr std::string_view BOSS_NAME_ON_THE_BAR = "BYDO TYRANT";
 constexpr std::string_view WARNING_WORD_ON_SCREEN = "WARNING";
+
+/** @brief Where the server is while the tests draw a state of APPLIED_TICK:
+ * some ticks ahead of it, as during a game. */
+constexpr double SERVER_TICK_AHEAD_OF_THE_STATE = 16.0;
+
+/** @brief A state three ticks after APPLIED_TICK: the first interval measured
+ * puts the tick shown back on its target, a move of the clock. */
+constexpr std::uint32_t TICK_AFTER_THE_APPLIED_TICK = 13;

@@ -16,7 +16,6 @@ enum class SettingId : std::uint8_t {
   ReduceFlashes,
   SoundCues,
   AutoFire,
-  ClientPrediction,
   PilotNames,
   ChatShown,
   ChatLetters,
@@ -24,6 +23,8 @@ enum class SettingId : std::uint8_t {
   ChatOpenLines,
   ChatSeconds,
   ChatBackground,
+  LagometerScale,
+  LagometerBackground,
   ShipLook,
   ShipLocker,
 };

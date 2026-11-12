@@ -1,11 +1,9 @@
 #pragma once
 
-#include <array>
-#include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <optional>
 #include "Position.hpp"
-#include "PositionHistoryConstants.hpp"
 #include "PositionSample.hpp"
 
 namespace rtype::client {
@@ -24,7 +22,8 @@ class PositionHistory {
    * @brief Keeps @p sample as the newest one. Nothing for a sample whose tick
    * is not newer than the newest kept: over UDP a state can arrive after a
    * newer one, and a part of a state of the same tick lists other entities.
-   * The oldest sample is dropped once HISTORY_SAMPLES are kept.
+   * A sample is dropped once the next one is HISTORY_SPAN_TICKS or more
+   * behind the newest: one sample at or before that tick is always kept.
    */
   void record(PositionSample sample);
 
@@ -42,8 +41,7 @@ class PositionHistory {
   [[nodiscard]] std::optional<std::uint32_t> oldestTick() const;
 
  private:
-  std::array<PositionSample, HISTORY_SAMPLES> samples_{};
-  std::size_t count_{0};
+  std::deque<PositionSample> samples_;
 };
 
 }  // namespace rtype::client

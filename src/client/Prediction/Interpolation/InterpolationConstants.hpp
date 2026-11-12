@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include "PositionHistoryConstants.hpp"
 
 namespace rtype::client {
 
@@ -33,6 +34,11 @@ constexpr double LONGEST_PLAUSIBLE_LATENESS_TICKS = 120.0;
  * does not count toward the lateness. A lateness below 0 inside that margin
  * counts as 0. */
 constexpr double EARLIEST_PLAUSIBLE_LATENESS_TICKS = -6.0;
+
+static_assert(static_cast<double>(HISTORY_SPAN_TICKS) >=
+                  LONGEST_PLAUSIBLE_LATENESS_TICKS +
+                      (INTERPOLATION_INTERVALS * ASSUMED_STATE_INTERVAL_TICKS),
+              "an entity keeps samples as far back as the clock can show");
 
 /** @brief The share of the error between the tick shown and the tick it should
  * be at that is taken back each time a state arrives. */

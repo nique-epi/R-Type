@@ -41,7 +41,7 @@ set database ""
 # http(s)://<host>[:<port>], and the key the master gave when the host created the
 # server on it. Either one empty: the server runs alone and is listed nowhere.
 # Never commit a real key.
-set master-url ""
+set master-url https://master.rtype.app
 set master-key ""
 
 # [supervisor] The IPv4 address players reach this server at, which the master

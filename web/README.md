@@ -55,11 +55,11 @@ echo 'MASTER_URL=http://localhost:8081' > web/.env.local
 | `bun run typecheck`               | `next typegen` (types of the routes), then `tsc --noEmit`                             |
 | `bun run test`                    | Vitest, once                                                                          |
 
-| Variable            | Default                 | Role                                                             |
-| ------------------- | ----------------------- | ---------------------------------------------------------------- |
-| `MASTER_URL`        | `http://localhost:8080` | where the Next.js server reaches the master                      |
-| `GITHUB_REPOSITORY` | `nique-epi/R-Type`      | the repository whose latest release the download page reads      |
-| `GITHUB_TOKEN`      | none                    | raises the GitHub API limit from 60 requests an hour per address |
+| Variable            | Default                    | Role                                                             |
+| ------------------- | -------------------------- | ---------------------------------------------------------------- |
+| `MASTER_URL`        | `https://master.rtype.app` | where the Next.js server reaches the master                      |
+| `GITHUB_REPOSITORY` | `nique-epi/R-Type`         | the repository whose latest release the download page reads      |
+| `GITHUB_TOKEN`      | none                       | raises the GitHub API limit from 60 requests an hour per address |
 
 The variables are read and checked once, in [`src/config/env.config.ts`](src/config/env.config.ts),
 which `next.config.ts` runs at start: a wrong value stops the site with a

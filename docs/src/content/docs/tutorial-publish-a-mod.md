@@ -74,9 +74,9 @@ ensure crimson-drifter
 
 A resource adds content, it never replaces a sheet: a sheet or a sprite sheet that the assets or another resource already hold stops the supervisor. So keep the sprite sheets of a resource in a folder named after it (`sprites/crimson-drifter/`). Every path of a pack follows the same rules, checked when the supervisor starts:
 
-- the name of a sheet, `crimson_drifter`, is lowercase letters, digits and `_`, 24 characters at most, and a server holds at most 32 sheets, its assets and resources together;
+- the name of a sheet, `crimson_drifter`, is lowercase letters, digits and `_`, 24 characters at most, and a server holds at most 255 sheets, its assets and resources together;
 - the `sheet` path is 1 to 64 characters of lowercase letters, digits, `_`, `.`, `-` and `/`, with no empty folder name, `.` or `..`;
-- the pack holds at most 64 files and 8 MiB.
+- the pack holds at most 510 files and 8 MiB.
 
 ## Step 3: start the supervisor
 
@@ -155,7 +155,7 @@ Any change to a sheet or a sprite sheet of the server, a value of `[gameplay]` i
 | The supervisor stops at start with | What it means |
 |---|---|
 | `Refused content pack: "<path>" may not name a file` | a `sheet` path holds a character a pack refuses, such as an uppercase letter or a space |
-| `Refused content pack: <n> files, more than a pack may hold` | more than 64 files: fewer sheets, or sheets that share a sprite sheet |
+| `Refused content pack: <n> files, more than a pack may hold` | more than 510 files: fewer sheets, or sheets that share a sprite sheet |
 | `Refused content pack: <n> bytes, more than a pack may hold` | the sprite sheets are too large for 8 MiB |
 | an error naming a line of `crimson_drifter.toml` | the sheet is invalid; the message names the line and the key (see [Writing an entity sheet](/R-Type/entity-sheets/#when-a-program-refuses-a-sheet)) |
 | `The resource "<name>" has no manifest in <folder>` | the `ensure` line names a folder of `resources/` that is missing or holds no `resource.toml` |

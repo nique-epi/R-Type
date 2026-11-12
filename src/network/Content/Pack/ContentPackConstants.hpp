@@ -2,7 +2,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <string_view>
+#include "EntityTypeConstants.hpp"
 #include "NetworkConstants.hpp"
 
 namespace rtype::network {
@@ -16,9 +18,18 @@ constexpr std::uint8_t CONTENT_PACK_FORMAT_VERSION = 1;
  */
 constexpr std::size_t MAXIMUM_CONTENT_PACK_BYTES = std::size_t{8} * 1024 * 1024;
 
+/** @brief The files a content pack holds at most for one entity type: its
+ * sheet and the sprite sheet it names. */
+constexpr std::size_t CONTENT_FILES_PER_ENTITY_TYPE = 2;
+
 /** @brief The most files a content pack holds: a sheet and a sprite sheet for
  * each of the MAXIMUM_ENTITY_TYPES types. */
-constexpr std::size_t MAXIMUM_CONTENT_PACK_FILES = 64;
+constexpr std::size_t MAXIMUM_CONTENT_PACK_FILES =
+    CONTENT_FILES_PER_ENTITY_TYPE * identifiers::MAXIMUM_ENTITY_TYPES;
+
+static_assert(MAXIMUM_CONTENT_PACK_FILES <=
+                  std::numeric_limits<std::uint16_t>::max(),
+              "the count of the files of a pack is sent on two bytes");
 
 /** @brief The longest path of a file of a content pack, in bytes. */
 constexpr std::size_t MAXIMUM_CONTENT_PATH_LENGTH = 64;

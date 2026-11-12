@@ -29,4 +29,8 @@ namespace rtype::game::testing {
  * gun. */
 [[nodiscard]] std::string projectileNameOf(const EntitySheet& sheet);
 
+/** @returns The names of the collision layers @p sheet hits, in the order of
+ * its file. */
+[[nodiscard]] std::vector<std::string> hitLayersOf(const EntitySheet& sheet);
+
 }  // namespace rtype::game::testing

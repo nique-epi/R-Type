@@ -10,6 +10,8 @@
 
 namespace rtype::server {
 
+using testing::ACE_CATCH_UPS;
+using testing::ACE_TICKS_WITHOUT_INPUT;
 using testing::AVERAGE_TICK;
 using testing::ENTITIES_ALIVE;
 using testing::EXPECTED_HOSTILE_ROUND_TRIPS_LINE;
@@ -105,7 +107,8 @@ TEST(MetricsLines, TheSystemsLineOfNoTickGivesZero) {
  * BOB, player 1 of game 2
  * When its line about the round trips is written
  * Then it gives the game, the number, the nickname, the round trip and the
- * jitter of each, in milliseconds
+ * jitter of each, in milliseconds, then its ticks without input and its
+ * catch-ups
  */
 TEST(MetricsLines, TheRoundTripsLineGivesEachPlayerMeasured) {
   const MetricsReport report{
@@ -118,7 +121,9 @@ TEST(MetricsLines, TheRoundTripsLineGivesEachPlayerMeasured) {
                          .playerNumber = MEASURED_PLAYER_NUMBER,
                          .nickname = std::string{FIRST_MEASURED_NICKNAME},
                          .figures = {.roundTrip = FIRST_MEASURED_ROUND_TRIP,
-                                     .jitter = FIRST_MEASURED_JITTER}},
+                                     .jitter = FIRST_MEASURED_JITTER},
+                         .ticksWithoutInput = ACE_TICKS_WITHOUT_INPUT,
+                         .catchUps = ACE_CATCH_UPS},
                      PlayerRoundTripMeasure{
                          .gameNumber = SECOND_MEASURED_GAME,
                          .playerNumber = MEASURED_PLAYER_NUMBER,

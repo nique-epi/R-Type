@@ -26,6 +26,7 @@ target_link_libraries(rtype_client_menus_leaderboard
     rtype_client_widgets
     rtype_client_window_display
     rtype_engine_time
+    rtype_identifiers
     rtype_network_leaderboard_request
     rtype_network_protocol
   PRIVATE

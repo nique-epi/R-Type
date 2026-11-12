@@ -16,6 +16,8 @@
 
 [gameplay]
 side = "enemy"
+layer = "enemy"
+hits = ["player"]
 pilot = "bydo_tyrant"
 
 # Its body, skull and legs included: the opaque pixels of its idle frame run

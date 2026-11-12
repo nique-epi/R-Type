@@ -105,6 +105,7 @@ export_terraform_variables() {
   export TF_VAR_master_domain="$domain"
   export TF_VAR_region="$region"
   export TF_VAR_github_repository="$repository"
+  export TF_VAR_state_bucket="$bucket"
 }
 
 check_accounts() {
@@ -170,10 +171,13 @@ set_repository_variables() {
   instance_id=$(terraform -chdir=terraform output -raw instance_id)
   deploy_role_arn=$(terraform -chdir=terraform output -raw deploy_role_arn)
   master_url=$(terraform -chdir=terraform output -raw master_url)
+  lan_role_arn=$(terraform -chdir=terraform output -raw lan_role_arn)
   gh variable set AWS_REGION --body "$region"
   gh variable set MASTER_INSTANCE_ID --body "$instance_id"
   gh variable set AWS_DEPLOY_ROLE_ARN --body "$deploy_role_arn"
   gh variable set MASTER_URL --body "$master_url"
+  gh variable set AWS_LAN_ROLE_ARN --body "$lan_role_arn"
+  gh variable set TERRAFORM_STATE_BUCKET --body "$bucket"
 }
 
 # The deployment waits for a required reviewer, and the AWS role trusts only

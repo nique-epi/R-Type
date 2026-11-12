@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
+#include "FakeUpdateNotice.hpp"
 #include "PlayStart.hpp"
 #include "PlayerSettings.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -26,6 +27,13 @@ class TitleScreenFixture : public ::testing::Test {
    * @p playStart says. */
   void reopenWith(rtype::client::PlayStart playStart);
 
+  /** @brief Builds a new title in place of the one shown, asking notice(). */
+  void reopenAskingTheNotice();
+
+  /** @returns The update module the title reopened by reopenAskingTheNotice()
+   * asks. */
+  FakeUpdateNotice& notice();
+
   /** @returns The sounds the title played. */
   [[nodiscard]] const RecordingSoundPlayer& sounds() const;
 
@@ -33,6 +41,7 @@ class TitleScreenFixture : public ::testing::Test {
   RecordingNavigator navigator_;
   InterfaceCanvasRecord canvas_;
   RecordingSoundPlayer sounds_;
+  FakeUpdateNotice notice_;
   rtype::client::PlayerSettings settings_;
   std::unique_ptr<rtype::client::TitleScreen> title_;
 };

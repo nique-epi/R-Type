@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string_view>
 #include <vector>
+#include "ArrivalTally.hpp"
 #include "ContentLoading.hpp"
 #include "ContentPackCache.hpp"
 #include "GameLoadedReminder.hpp"
@@ -62,12 +63,14 @@ class ServerLeaderboardFixture : public ::testing::Test {
   ServerLeaderboard leaderboard_{dispatcher_};
   SessionEntityTypes entityTypes_{testLocalContent()};
   ContentLoading content_{ContentPackCache{unusedCacheFolder()}};
+  ArrivalTally arrivals_;
   ServerSession session_{
       ServerSessionParts{.link = link_,
                          .dispatcher = dispatcher_,
                          .gameLoaded = gameLoaded_,
                          .entityTypes = entityTypes_,
                          .content = content_,
+                         .arrivals = arrivals_,
                          .observers = {gameLoaded_, leaderboard_}}};
 };
 

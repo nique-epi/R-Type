@@ -1,6 +1,7 @@
 #include "TitleScreenFixture.hpp"
 #include <SFML/Window/Keyboard.hpp>
 #include <memory>
+#include "FakeUpdateNotice.hpp"
 #include "KeyPress.hpp"
 #include "MotionPreference.hpp"
 #include "PlayStart.hpp"
@@ -33,6 +34,22 @@ void TitleScreenFixture::reopenWith(PlayStart playStart) {
                        .playStart = playStart},
       std::make_unique<RecordingInterfaceCanvas>(canvas_));
 }
+
+void TitleScreenFixture::reopenAskingTheNotice() {
+  title_.reset();
+  title_ = std::make_unique<TitleScreen>(
+      TitleScreenParts{.navigator = navigator_,
+                       .sounds = sounds_,
+                       .settings = settings_,
+                       .playfieldPointAt = samePlayfieldPoint,
+                       .motion = MotionPreference::Full,
+                       .seed = rtype::client::testing::TITLE_SEED,
+                       .playStart = PlayStart::ServerMap,
+                       .notice = &notice_},
+      std::make_unique<RecordingInterfaceCanvas>(canvas_));
+}
+
+FakeUpdateNotice& TitleScreenFixture::notice() { return notice_; }
 
 const RecordingNavigator& TitleScreenFixture::navigator() const {
   return navigator_;

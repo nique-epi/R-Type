@@ -1,8 +1,11 @@
 #include <gtest/gtest.h>
+#include "CollisionFilter.hpp"
+#include "CollisionTestConstants.hpp"
 #include "Entity.hpp"
 #include "LagCompensatedHitSystemShipsFixture.hpp"
 #include "LagCompensatedHitSystemShipsTestConstants.hpp"
 
+using rtype::engine::CollisionFilter;
 using rtype::engine::Entity;
 using rtype::game::testing::BEAM_ENEMY_AT;
 using rtype::game::testing::BEAM_ENEMY_HIGHER;
@@ -127,6 +130,37 @@ TEST_F(LagCompensatedHitSystemShipsFixture,
   runTicks(TICKS_AT_THE_SECOND_PLACE - 1);
 
   static_cast<void>(shipAt(WHERE_THE_SHIP_IS, SHIP_FIVE_TICKS_BEHIND));
+  runTicks(1);
+
+  EXPECT_TRUE(contacts().empty());
+}
+
+/**
+ * Given a ship and, on it, a missile of an enemy that hits nothing
+ * When the ship is tested
+ * Then nothing hits it: neither sheet names the layer of the other
+ */
+TEST_F(LagCompensatedHitSystemShipsFixture, AShipCrossesAMissileNoSheetNames) {
+  const Entity missile = enemyMissileAt(WHERE_THE_SHIP_IS);
+  *components().get<CollisionFilter>(missile) = HARMLESS_ENEMY_MISSILE_FILTER;
+  static_cast<void>(shipAt(WHERE_THE_SHIP_IS, 0));
+
+  runTicks(1);
+
+  EXPECT_TRUE(hits().empty());
+}
+
+/**
+ * Given a ship inside the box that always hurts of an enemy that hits nothing
+ * When the ship is tested
+ * Then nothing touches it: a zone hurts only what its body touches
+ */
+TEST_F(LagCompensatedHitSystemShipsFixture,
+       AShipCrossesAZoneWhoseBodyDoesNotTouchIt) {
+  const Entity enemy = hurtZoneAt(WHERE_THE_SHIP_IS);
+  *components().get<CollisionFilter>(enemy) = HARMLESS_ENEMY_FILTER;
+  static_cast<void>(shipAt(WHERE_THE_SHIP_IS, 0));
+
   runTicks(1);
 
   EXPECT_TRUE(contacts().empty());

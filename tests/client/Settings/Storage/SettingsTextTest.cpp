@@ -24,17 +24,22 @@ using rtype::client::testing::CHANGED_CHAT_LETTERS;
 using rtype::client::testing::CHANGED_CHAT_OPEN_LINES;
 using rtype::client::testing::CHANGED_CHAT_SECONDS;
 using rtype::client::testing::CHANGED_EFFECTS_VOLUME;
+using rtype::client::testing::CHANGED_LAGOMETER_BACKGROUND;
+using rtype::client::testing::CHANGED_LAGOMETER_SCALE;
 using rtype::client::testing::CHANGED_MUSIC_VOLUME;
 using rtype::client::testing::CHAT_LINES_PAST_THEIR_RANGES;
 using rtype::client::testing::CHAT_PAST_ITS_RANGES_FILE;
 using rtype::client::testing::CROWN_AND_SHADES_FILE;
 using rtype::client::testing::CROWN_LINE;
 using rtype::client::testing::EARLIER_MASTER_LINE;
+using rtype::client::testing::EARLIER_PREDICTION_LINE;
 using rtype::client::testing::FIRST_LAUNCH_FILE;
 using rtype::client::testing::FIRST_LAUNCH_MUSIC_VOLUME;
 using rtype::client::testing::FIRST_LINE_WITHOUT_SEPARATOR;
 using rtype::client::testing::HIGHEST_VOLUME;
 using rtype::client::testing::INVALID_FIRST_LINE;
+using rtype::client::testing::LAGOMETER_LINES_PAST_THEIR_RANGES;
+using rtype::client::testing::LAGOMETER_PAST_ITS_RANGES_FILE;
 using rtype::client::testing::LOWEST_VOLUME;
 using rtype::client::testing::SHADES_ON_THE_HEAD_FILE;
 using rtype::client::testing::SMALLER_WINDOW;
@@ -70,7 +75,6 @@ TEST(SettingsTextTest, EveryChangedSettingReadsBack) {
   settings.reduceFlashes = true;
   settings.soundCues = true;
   settings.autoFire = true;
-  settings.clientPrediction = false;
   settings.pilotNames = false;
   settings.keys.bind(BoundAction::OpenChat, Scan::Y);
   settings.chatShown = false;
@@ -98,6 +102,33 @@ TEST(SettingsTextTest, AChatValuePastItsRangeKeepsItsDefault) {
 }
 
 /**
+ * Given settings whose lagometer is twice its size over a fill of 35 percent
+ * When they are written, then read over the settings of a first launch
+ * Then the settings read are the settings written
+ */
+TEST(SettingsTextTest, TheLagometerSettingsComeBackAsWritten) {
+  PlayerSettings settings;
+  settings.lagometerScale = CHANGED_LAGOMETER_SCALE;
+  settings.lagometerBackground = CHANGED_LAGOMETER_BACKGROUND;
+
+  EXPECT_EQ(readSettingsText(settingsText(settings), PlayerSettings{}).settings,
+            settings);
+}
+
+/**
+ * Given a file whose two lagometer numbers each lie one past their range
+ * When it is read over the settings of a first launch
+ * Then the lagometer keeps its first launch look, and the two lines are listed
+ */
+TEST(SettingsTextTest, ALagometerValuePastItsRangeKeepsItsDefault) {
+  const auto reading =
+      readSettingsText(LAGOMETER_PAST_ITS_RANGES_FILE, PlayerSettings{});
+
+  EXPECT_EQ(reading.settings, PlayerSettings{});
+  EXPECT_EQ(reading.ignoredLines.size(), LAGOMETER_LINES_PAST_THEIR_RANGES);
+}
+
+/**
  * Given the line an earlier version kept the master the player chose on
  * When it is read over the settings of a first launch
  * Then the line is listed as an unknown setting: the client reads only the
@@ -111,15 +142,16 @@ TEST(SettingsTextTest, AMasterLineOfAnEarlierVersionIsUnknown) {
 }
 
 /**
- * Given a file written before the pilot names existed, prediction off
+ * Given the line an earlier version kept the prediction switched off with
  * When it is read over the settings of a first launch
- * Then prediction is off as the file says, and the pilot names are shown
+ * Then the line is listed as an unknown setting: the prediction is no setting
  */
-TEST(SettingsTextTest, AFileWithoutPilotNamesShowsThem) {
+TEST(SettingsTextTest, APredictionLineOfAnEarlierVersionIsUnknown) {
   const auto reading =
-      readSettingsText("client_prediction=off\n", PlayerSettings{});
-  EXPECT_TRUE(reading.settings.pilotNames);
-  EXPECT_FALSE(reading.settings.clientPrediction);
+      readSettingsText(EARLIER_PREDICTION_LINE, PlayerSettings{});
+
+  EXPECT_EQ(reading.settings, PlayerSettings{});
+  EXPECT_EQ(reading.ignoredLines, std::vector<std::string>{UNKNOWN_FIRST_LINE});
 }
 
 /**

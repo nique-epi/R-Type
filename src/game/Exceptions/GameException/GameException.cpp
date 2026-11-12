@@ -57,6 +57,18 @@ DuplicateEntityTypeException::DuplicateEntityTypeException(
     std::string_view name)
     : GameException("Two entity sheets are named " + std::string(name)) {}
 
+InvalidCollisionLayerNameException::InvalidCollisionLayerNameException(
+    const engine::DataFilePlace& place, std::size_t longestName)
+    : GameException(engine::placeText(place) + ": " + place.key +
+                    " must be 1 to " + std::to_string(longestName) +
+                    " lowercase letters, digits or underscores") {}
+
+TooManyCollisionLayersException::TooManyCollisionLayersException(
+    std::size_t count, std::size_t maximum)
+    : GameException(std::to_string(count) +
+                    " collision layers, more than the " +
+                    std::to_string(maximum) + " the sheets may name") {}
+
 InconsistentEntitySheetException::InconsistentEntitySheetException(
     const engine::DataFilePlace& place, std::string_view rule)
     : GameException(engine::placeText(place) + ": " + place.key + ": " +
