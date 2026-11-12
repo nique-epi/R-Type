@@ -7,14 +7,11 @@
 #include <ostream>
 #include <string>
 #include <vector>
-#include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntitySpawned.hpp"
 #include "EntityType.hpp"
-#include "HitboxParts.hpp"
 #include "Layer.hpp"
-#include "Obstacle.hpp"
 #include "Position.hpp"
 #include "SpriteFrame.hpp"
 

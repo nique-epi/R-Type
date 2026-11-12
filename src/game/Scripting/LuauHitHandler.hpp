@@ -36,7 +36,7 @@ class LuauHitHandler final : public IHitHandler {
   /** @brief Calls the function with the table of @p hit.
    * @throws engine::ScriptException when it fails, waits or runs past its
    * budget. */
-  void call(const AppliedHit& hit);
+  void call(const AppliedHit& hit) const;
   /** @brief Reports @p reason as the failure of the function, the first time
    * only. */
   void reportOnce(std::string_view reason);

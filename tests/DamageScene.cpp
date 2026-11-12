@@ -58,9 +58,9 @@ engine::Entity DamageScene::missile(std::uint32_t networkId) {
 }
 
 engine::Entity DamageScene::missileDealing(std::uint32_t networkId,
-                                           int points) {
+                                           MissileDamage damage) {
   const engine::Entity entity = missile(networkId);
-  scene.components.add(entity, MissileDamage{.points = points});
+  scene.components.add(entity, damage);
   return entity;
 }
 

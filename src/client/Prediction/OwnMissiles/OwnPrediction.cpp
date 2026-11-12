@@ -3,7 +3,6 @@
 #include <optional>
 #include <vector>
 #include "BlockingObstacles.hpp"
-#include "ComponentRegistry.hpp"
 #include "EntityReplicator.hpp"
 #include "IOwnMissileListener.hpp"
 #include "IPlayerInputLink.hpp"

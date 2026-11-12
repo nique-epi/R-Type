@@ -9,7 +9,6 @@
 #include "LuauCallArguments.hpp"
 #include "LuauHitHandlerParts.hpp"
 #include "LuauSingleCall.hpp"
-#include "ScriptMachine.hpp"
 #include "lua.h"
 
 namespace rtype::game {
@@ -43,7 +42,7 @@ void LuauHitHandler::onHit(const AppliedHit& hit) {
   }
 }
 
-void LuauHitHandler::call(const AppliedHit& hit) {
+void LuauHitHandler::call(const AppliedHit& hit) const {
   LuauSingleCall call{parts_.machine.get(), parts_.function};
   call.run(LuauCallArguments{.push = pushAppliedHit, .value = &hit},
            WAIT_IN_ON_HIT_MESSAGE);

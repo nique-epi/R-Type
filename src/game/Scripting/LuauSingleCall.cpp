@@ -21,16 +21,17 @@ struct PendingCall {
   int function{0};
   LuauCallArguments arguments{};
   std::optional<engine::LuauThread>* thread{nullptr};
+  lua_State* threadState{nullptr};
 };
 
 /** @brief Creates the thread of the call, then moves the function and its
  * argument onto it. */
 void pushCall(void* context) {
   auto& pending = *static_cast<PendingCall*>(context);
-  lua_State* const thread = pending.thread->emplace(pending.machine).state();
+  pending.threadState = pending.thread->emplace(pending.machine).state();
   lua_getref(pending.machine, pending.function);
   pending.arguments.push(pending.machine, pending.arguments.value);
-  lua_xmove(pending.machine, thread, 2);
+  lua_xmove(pending.machine, pending.threadState, 2);
 }
 
 }  // namespace
@@ -48,7 +49,7 @@ void LuauSingleCall::run(LuauCallArguments arguments,
   engine::runProtected(
       machine.state(),
       engine::LuauProtectedWork{.run = pushCall, .context = &pending});
-  if (machine.resume(thread_->state(), 1) ==
+  if (machine.resume(pending.threadState, 1) ==
       engine::LuauResumeResult::Yielded) {
     throw engine::ScriptException(std::string{waitRefusal});
   }

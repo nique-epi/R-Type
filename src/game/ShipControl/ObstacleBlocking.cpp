@@ -85,9 +85,9 @@ bool leavesAcross(engine::Bounds was, engine::Bounds obstacle, Position push) {
  * blockedByObstacles() says, judged from its box before its step, @p was. */
 MovingShip pushedOutOf(MovingShip ship, engine::Bounds was,
                        engine::Bounds obstacle) {
-  const engine::Bounds is = shipBoundsAt(ship.position);
-  const Position push{.x = pushAlong(acrossOf(is, obstacle)),
-                      .y = pushAlong(downOf(is, obstacle))};
+  const engine::Bounds now = shipBoundsAt(ship.position);
+  const Position push{.x = pushAlong(acrossOf(now, obstacle)),
+                      .y = pushAlong(downOf(now, obstacle))};
   if (leavesAcross(was, obstacle, push)) {
     ship.position.x += push.x;
     ship.motion.velocityX = 0.0F;

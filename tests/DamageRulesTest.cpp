@@ -12,6 +12,7 @@
 #include "EntityType.hpp"
 #include "Fragile.hpp"
 #include "Health.hpp"
+#include "MissileDamage.hpp"
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
@@ -25,6 +26,7 @@ using rtype::game::EntityDamage;
 using rtype::game::EntityType;
 using rtype::game::Fragile;
 using rtype::game::Health;
+using rtype::game::MissileDamage;
 using rtype::game::MissileHit;
 using rtype::game::NetworkIdentity;
 using rtype::game::testing::Announcement;
@@ -394,7 +396,8 @@ TEST(DamageRules, AMissileTakesTheDamageItsSheetNames) {
   DamageScene damage;
   const Entity bydo = damage.bydo(BYDO_ID, Health{.points = FIVE_HEALTH_POINTS,
                                                   .full = FIVE_HEALTH_POINTS});
-  const Entity missile = damage.missileDealing(MISSILE_ID, DAMAGE_OF_THREE);
+  const Entity missile = damage.missileDealing(
+      MISSILE_ID, MissileDamage{.points = DAMAGE_OF_THREE});
 
   damage.hit(missile, bydo);
 
@@ -416,7 +419,9 @@ TEST(DamageRules, AWallWithoutHealthIsToldOfAHitThatTookNothing) {
   const Entity wall = damage.steelWall(WALL_ID);
   damage.reactingTo(wall, handler);
 
-  damage.hit(damage.missileDealing(MISSILE_ID, DAMAGE_OF_THREE), wall);
+  damage.hit(damage.missileDealing(MISSILE_ID,
+                                   MissileDamage{.points = DAMAGE_OF_THREE}),
+             wall);
 
   ASSERT_EQ(handler.told().size(), 1U);
   EXPECT_EQ(handler.told()[0].targetNetworkId, WALL_ID);
@@ -439,7 +444,9 @@ TEST(DamageRules, ABydoIsToldWhatAHitTookAndWhatIsLeft) {
                                                   .full = FIVE_HEALTH_POINTS});
   damage.reactingTo(bydo, handler);
 
-  damage.hit(damage.missileDealing(MISSILE_ID, DAMAGE_OF_THREE), bydo);
+  damage.hit(damage.missileDealing(MISSILE_ID,
+                                   MissileDamage{.points = DAMAGE_OF_THREE}),
+             bydo);
 
   ASSERT_EQ(handler.told().size(), 1U);
   EXPECT_EQ(handler.told()[0].damage, DAMAGE_OF_THREE);
@@ -460,7 +467,9 @@ TEST(DamageRules, ABydoIsToldOfTheHitThatDestroyedIt) {
       BYDO_ID, Health{.points = TWO_HEALTH_POINTS, .full = TWO_HEALTH_POINTS});
   damage.reactingTo(bydo, handler);
 
-  damage.hit(damage.missileDealing(MISSILE_ID, DAMAGE_OF_THREE), bydo);
+  damage.hit(damage.missileDealing(MISSILE_ID,
+                                   MissileDamage{.points = DAMAGE_OF_THREE}),
+             bydo);
 
   ASSERT_EQ(handler.told().size(), 1U);
   EXPECT_EQ(handler.told()[0].damage, DAMAGE_OF_THREE);
@@ -476,7 +485,7 @@ TEST(DamageRules, ABydoIsToldOfTheHitThatDestroyedIt) {
  */
 TEST(DamageRules, ABodyThatNamesNoOnHitTellsNoHandler) {
   DamageScene damage;
-  RecordingHitHandler handler{CRACK_HANDLER};
+  const RecordingHitHandler handler{CRACK_HANDLER};
   const Entity bydo = damage.bydo(BYDO_ID, Health{.points = FIVE_HEALTH_POINTS,
                                                   .full = FIVE_HEALTH_POINTS});
 

@@ -6,7 +6,6 @@
 #include <ostream>
 #include <vector>
 #include "AnimatedSprite.hpp"
-#include "CollisionBox.hpp"
 #include "ComponentRegistry.hpp"
 #include "EffectConstants.hpp"
 #include "Entity.hpp"
@@ -17,12 +16,10 @@
 #include "FixedEntityTypeSource.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
 #include "HitFlash.hpp"
-#include "HitboxParts.hpp"
 #include "Invulnerability.hpp"
 #include "Layer.hpp"
 #include "Lifetime.hpp"
 #include "NetworkIdentity.hpp"
-#include "Obstacle.hpp"
 #include "PilotShip.hpp"
 #include "Position.hpp"
 #include "PositionHistory.hpp"

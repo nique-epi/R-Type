@@ -6,6 +6,7 @@
 #include "BehaviourView.hpp"
 #include "IBehaviour.hpp"
 #include "IEntityOrders.hpp"
+#include "IHitHandler.hpp"
 #include "Intent.hpp"
 #include "lua.h"
 

@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include "BehaviourRegistry.hpp"
 #include "BuiltInBehaviours.hpp"
 #include "EntitySheet.hpp"
 #include "EntitySheetOnHitTestConstants.hpp"
@@ -15,12 +16,22 @@
 
 namespace rtype::game::testing {
 
-EntitySheetOnHitFixture::EntitySheetOnHitFixture()
-    : behaviours_(builtInBehaviours()) {
-  behaviours_.addHitHandler(
+namespace {
+
+/** @returns The built-in behaviours and one hit handler, ON_HIT_HANDLER_NAME.
+ */
+BehaviourRegistry builtInsAndOneHitHandler() {
+  BehaviourRegistry behaviours = builtInBehaviours();
+  behaviours.addHitHandler(
       std::make_unique<RecordingHitHandler>(ON_HIT_HANDLER_NAME));
-  handler_ = behaviours_.findHitHandler(ON_HIT_HANDLER_NAME);
+  return behaviours;
 }
+
+}  // namespace
+
+EntitySheetOnHitFixture::EntitySheetOnHitFixture()
+    : behaviours_(builtInsAndOneHitHandler()),
+      handler_(behaviours_.findHitHandler(ON_HIT_HANDLER_NAME)) {}
 
 EntitySheet EntitySheetOnHitFixture::read(
     std::initializer_list<std::string_view> parts) const {
