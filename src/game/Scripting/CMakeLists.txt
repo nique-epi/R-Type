@@ -12,6 +12,7 @@ add_library(rtype_game_scripting STATIC
   LuauBehaviourTables.cpp
   LuauBehaviour.cpp
   LuauBehaviourState.cpp
+  LuauDeclarations.cpp
   LuauPreHit.cpp
 )
 

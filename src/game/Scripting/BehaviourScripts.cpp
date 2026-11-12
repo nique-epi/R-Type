@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <exception>
 #include <limits>
-#include <memory>
 #include <optional>
 #include <span>
 #include <string>
@@ -14,8 +13,8 @@
 #include "BuiltInBehaviours.hpp"
 #include "GameScriptingConstants.hpp"
 #include "IEntityOrders.hpp"
-#include "LuauBehaviour.hpp"
 #include "LuauBehaviourParts.hpp"
+#include "LuauDeclarations.hpp"
 #include "LuauEventBindings.hpp"
 #include "LuauLevels.hpp"
 #include "LuauPreHit.hpp"
@@ -210,13 +209,14 @@ int registerBehaviour(lua_State* state) {
   std::vector<LuauSetting> settings = settingsOf(state);
   luaL_checktype(state, REGISTER_STEER_ARGUMENT, LUA_TFUNCTION);
   const int steer = lua_ref(state, REGISTER_STEER_ARGUMENT);
-  scripts.declare(LuauBehaviourParts{.machine = scripts.machine(),
-                                     .name = std::move(name),
-                                     .settings = std::move(settings),
-                                     .steer = steer,
-                                     .reportFailure = scripts.reportFailure(),
-                                     .resumeContext = scripts.resumeContext(),
-                                     .eventBindings = scripts.eventBindings()});
+  scripts.declarations().behaviour(
+      LuauBehaviourParts{.machine = scripts.machine(),
+                         .name = std::move(name),
+                         .settings = std::move(settings),
+                         .steer = steer,
+                         .reportFailure = scripts.reportFailure(),
+                         .resumeContext = scripts.resumeContext(),
+                         .eventBindings = scripts.eventBindings()});
   return 0;
 }
 
@@ -247,9 +247,7 @@ void BehaviourScripts::run(std::span<const engine::ScriptSource> sources) {
   }
 }
 
-void BehaviourScripts::declare(LuauBehaviourParts parts) {
-  declared_.push_back(std::make_unique<LuauBehaviour>(std::move(parts)));
-}
+LuauDeclarations& BehaviourScripts::declarations() { return declarations_; }
 
 engine::ScriptMachine& BehaviourScripts::machine() { return machine_; }
 
@@ -278,10 +276,7 @@ const ScriptFailureReport& BehaviourScripts::reportFailure() const {
 
 BehaviourRegistry BehaviourScripts::behaviours() {
   BehaviourRegistry registry = builtInBehaviours();
-  for (std::unique_ptr<LuauBehaviour>& behaviour : declared_) {
-    registry.add(std::move(behaviour));
-  }
-  declared_.clear();
+  declarations_.handOverTo(registry);
   return registry;
 }
 

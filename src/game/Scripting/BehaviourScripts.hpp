@@ -1,12 +1,9 @@
 #pragma once
 
-#include <memory>
 #include <span>
-#include <vector>
 #include "BehaviourRegistry.hpp"
 #include "IEntityOrders.hpp"
-#include "LuauBehaviour.hpp"
-#include "LuauBehaviourParts.hpp"
+#include "LuauDeclarations.hpp"
 #include "LuauEventBindings.hpp"
 #include "LuauLevels.hpp"
 #include "LuauResumeContext.hpp"
@@ -51,9 +48,9 @@ class BehaviourScripts {
    */
   void run(std::span<const engine::ScriptSource> sources);
 
-  /** @brief Keeps a behaviour a script registered: its machine and its report
-   * are those of this object. */
-  void declare(LuauBehaviourParts parts);
+  /** @returns What the scripts declared so far, which behaviours() hands
+   * over. */
+  [[nodiscard]] LuauDeclarations& declarations();
 
   /** @returns The machine the scripts run on. */
   [[nodiscard]] engine::ScriptMachine& machine();
@@ -93,7 +90,7 @@ class BehaviourScripts {
   LuauResumeContext resumeContext_;
   LuauEventBindings eventBindings_;
   LuauLevels levels_;
-  std::vector<std::unique_ptr<LuauBehaviour>> declared_;
+  LuauDeclarations declarations_;
 };
 
 }  // namespace rtype::game
