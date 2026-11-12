@@ -22,6 +22,7 @@
 #include "Layer.hpp"
 #include "Lifetime.hpp"
 #include "NetworkIdentity.hpp"
+#include "Obstacle.hpp"
 #include "PilotShip.hpp"
 #include "Position.hpp"
 #include "PositionHistory.hpp"
@@ -223,6 +224,19 @@ std::optional<game::HitboxParts> partsOfThe(
                      const game::EntityType& side) {
         if (side == type) {
           found = parts;
+        }
+      });
+  return found;
+}
+
+std::optional<game::Obstacle> obstacleOfThe(
+    engine::ComponentRegistry& components, game::EntityType type) {
+  std::optional<game::Obstacle> found;
+  components.forEach<game::Obstacle, game::EntityType>(
+      [&found, type](engine::Entity, const game::Obstacle& obstacle,
+                     const game::EntityType& side) {
+        if (side == type) {
+          found = obstacle;
         }
       });
   return found;

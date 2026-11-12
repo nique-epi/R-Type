@@ -3,8 +3,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <vector>
 #include "ActionSet.hpp"
+#include "Bounds.hpp"
 #include "IPlayerInputLink.hpp"
 #include "OwnShip.hpp"
 #include "PlayerAction.hpp"
@@ -86,6 +88,10 @@ void OwnShipPredictor::apply(const network::WorldState& state) {
     return;
   }
   prediction_.reconcile(own->position, own->acknowledgedInput);
+}
+
+void OwnShipPredictor::seeObstacles(std::span<const engine::Bounds> obstacles) {
+  prediction_.seeObstacles(obstacles);
 }
 
 std::optional<std::uint32_t> OwnShipPredictor::shipEntityId() const {

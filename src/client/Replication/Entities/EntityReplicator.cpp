@@ -28,6 +28,7 @@
 #include "ISoundPlayer.hpp"
 #include "NetworkEntityTable.hpp"
 #include "NetworkIdentity.hpp"
+#include "Obstacle.hpp"
 #include "PilotShip.hpp"
 #include "PixelEffects.hpp"
 #include "Position.hpp"
@@ -275,6 +276,9 @@ std::optional<engine::Entity> EntityReplicator::create(
     components_->add(entity,
                      game::HitboxParts{.boxes = {look->hitboxParts.begin(),
                                                  look->hitboxParts.end()}});
+  }
+  if (look->obstacle.has_value()) {
+    components_->add(entity, game::Obstacle{.contact = *look->obstacle});
   }
   components_->add(entity, AppearanceReference{&look->appearance.get()});
   entityByNetworkId_.bind(announced.entityId, entity);

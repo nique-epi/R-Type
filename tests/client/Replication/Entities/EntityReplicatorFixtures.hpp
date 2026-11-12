@@ -12,6 +12,7 @@
 #include "EntityType.hpp"
 #include "HitboxParts.hpp"
 #include "Layer.hpp"
+#include "Obstacle.hpp"
 #include "Position.hpp"
 #include "SpriteFrame.hpp"
 
@@ -127,6 +128,11 @@ DrawnEntity effectAt(game::SpriteFrame firstFrame, game::Position position);
 /** @returns The HitboxParts of the only entity of that type, nothing when it
  * has none or there is no such entity. */
 [[nodiscard]] std::optional<game::HitboxParts> partsOfThe(
+    engine::ComponentRegistry& components, game::EntityType type);
+
+/** @returns The Obstacle of the only entity of that type, nothing when it has
+ * none or there is no such entity. */
+[[nodiscard]] std::optional<game::Obstacle> obstacleOfThe(
     engine::ComponentRegistry& components, game::EntityType type);
 
 /** @returns The EntitySpawned of the player missile PLAYER_MISSILE_ID at

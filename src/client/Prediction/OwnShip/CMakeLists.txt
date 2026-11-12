@@ -1,4 +1,5 @@
 add_library(rtype_client_prediction_own_ship STATIC
+  BlockingObstacles.cpp
   OwnShip.cpp
   OwnShipPredictor.cpp
   PredictedShipPlacement.cpp

@@ -15,8 +15,8 @@ namespace rtype::game {
 
 namespace {
 
-/** @returns The type @p sheet describes: its name, and the side and the box
- * its `[gameplay]` names. */
+/** @returns The type @p sheet describes: its name, and the side, the box and
+ * the contact of an obstacle its `[gameplay]` names. */
 NumberedEntityType typeOf(const SheetText& sheet) {
   const toml::table root = engine::parseDataFile(sheet.text, sheet.source);
   const engine::DataFileTable gameplay =
@@ -25,7 +25,8 @@ NumberedEntityType typeOf(const SheetText& sheet) {
       .name = sheet.name,
       .side = SIDES.at(engine::choiceAt(gameplay, SIDE_KEY, SIDE_NAMES)),
       .hitbox = hitboxOf(gameplay),
-      .hitboxParts = hitboxPartsOf(gameplay)};
+      .hitboxParts = hitboxPartsOf(gameplay),
+      .obstacle = obstacleContactOf(gameplay)};
 }
 
 }  // namespace

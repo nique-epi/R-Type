@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include "Bounds.hpp"
 #include "Position.hpp"
 #include "PredictionConstants.hpp"
 #include "ShipControlConstants.hpp"
@@ -44,5 +45,14 @@ constexpr std::size_t TICKS_OF_A_STALL = 10;
 
 /** @brief A tick of the server a client shows while it sends inputs. */
 constexpr std::uint32_t SHOWN_TICK = 300;
+
+/** @brief A blocking wall 64 by 256 centered at (600, 300), on the row of
+ * START: its left side at x 568, which a ship touches with its center at
+ * x 504 (568 - 64); and a second of commands, which take a ship holding right
+ * from START far past it. */
+constexpr engine::Bounds WALL_ON_THE_RIGHT{
+    .centerX = 600.0F, .centerY = 300.0F, .width = 64.0F, .height = 256.0F};
+constexpr float AGAINST_THE_WALL_ON_THE_RIGHT_X = 504.0F;
+constexpr std::uint32_t COMMANDS_OF_ONE_SECOND = 60;
 
 }  // namespace rtype::client::testing

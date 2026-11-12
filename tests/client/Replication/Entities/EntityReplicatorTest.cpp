@@ -20,6 +20,8 @@
 #include "HitboxParts.hpp"
 #include "LastListedTicksTestConstants.hpp"
 #include "NetworkIdentity.hpp"
+#include "Obstacle.hpp"
+#include "ObstacleContact.hpp"
 #include "PilotTestConstants.hpp"
 #include "SoundConstants.hpp"
 #include "WorldState.hpp"
@@ -40,6 +42,7 @@ using rtype::client::testing::announcedEntityCount;
 using rtype::client::testing::ANOTHER_PLAYER;
 using rtype::client::testing::APPLIED_TICK;
 using rtype::client::testing::BEFORE_THE_FIRST_PLAYER;
+using rtype::client::testing::BLOCKING_WALL_TYPE_NUMBER;
 using rtype::client::testing::boxOfThe;
 using rtype::client::testing::BYDO_BOX;
 using rtype::client::testing::BYDO_ID;
@@ -71,6 +74,7 @@ using rtype::client::testing::NAMED_LOOK;
 using rtype::client::testing::NEWER_TICK;
 using rtype::client::testing::NO_HISTORY_POSITION;
 using rtype::client::testing::NUMBER_OF_NO_TYPE;
+using rtype::client::testing::obstacleOfThe;
 using rtype::client::testing::OLDER_LOOK;
 using rtype::client::testing::OLDER_TICK;
 using rtype::client::testing::OWN_PLAYER;
@@ -108,6 +112,8 @@ using rtype::game::CollisionBox;
 using rtype::game::EntityType;
 using rtype::game::HitboxParts;
 using rtype::game::NetworkIdentity;
+using rtype::game::Obstacle;
+using rtype::game::ObstacleContact;
 using rtype::identifiers::NO_ENTITY_ID;
 using rtype::identifiers::NO_ENTITY_TYPE;
 using rtype::network::WorldState;
@@ -198,6 +204,35 @@ TEST_F(EntityReplicatorFixture, GivesAnEntityTheBoxesItsTypeLists) {
   ASSERT_TRUE(parts.has_value());
   EXPECT_THAT(parts.value_or(HitboxParts{}).boxes,
               ElementsAreArray(TWO_BOX_ENEMY_PARTS));
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When a wall whose type blocks the ships is announced
+ * Then it carries an Obstacle that blocks, which the prediction of the own
+ * ship stops it against
+ */
+TEST_F(EntityReplicatorFixture, AnObstacleIsCreatedWithItsContact) {
+  replicator().apply(
+      spawned(WALL_ID, BLOCKING_WALL_TYPE_NUMBER, BYDO_POSITION));
+
+  const std::optional<Obstacle> obstacle =
+      obstacleOfThe(components(), EntityType::Obstacle);
+  ASSERT_TRUE(obstacle.has_value());
+  EXPECT_EQ(
+      obstacle.value_or(Obstacle{.contact = ObstacleContact::Fatal}).contact,
+      ObstacleContact::Blocking);
+}
+
+/**
+ * Given a replicator that has applied nothing
+ * When a Bydo, whose type is no obstacle, is announced
+ * Then it carries no Obstacle
+ */
+TEST_F(EntityReplicatorFixture, AnEnemyIsCreatedWithoutObstacle) {
+  replicator().apply(spawned(BYDO_ID, DRIFTER_TYPE_NUMBER, BYDO_POSITION));
+
+  EXPECT_FALSE(obstacleOfThe(components(), EntityType::Enemy).has_value());
 }
 
 /**

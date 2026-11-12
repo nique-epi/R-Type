@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <optional>
 #include <vector>
+#include "BlockingObstacles.hpp"
 #include "ComponentRegistry.hpp"
 #include "EntityReplicator.hpp"
 #include "IOwnMissileListener.hpp"
@@ -17,11 +18,19 @@
 namespace rtype::client {
 
 OwnPrediction::OwnPrediction(std::uint8_t playerNumber, OwnMissilesParts parts)
-    : playerNumber_(playerNumber), ship_(playerNumber), missiles_(parts) {}
+    : playerNumber_(playerNumber),
+      ship_(playerNumber),
+      missiles_(parts),
+      components_(parts.components) {}
 
 void OwnPrediction::advance(engine::Duration elapsed, PlayerCommand command,
                             IPlayerInputLink& link) {
   missiles_.activate();
+  collectBlockingObstacles(
+      components_.get(),
+      scrollLeadOf(scrollSpeed_, command.serverTick, command.shownTick),
+      obstacles_);
+  ship_.seeObstacles(obstacles_);
   const std::vector<PredictedCommand> commands =
       ship_.advance(elapsed, command, link);
   missiles_.follow(commands, firing_ && ship_.shipEntityId().has_value());
@@ -38,6 +47,10 @@ void OwnPrediction::apply(const network::WorldState& state) {
           acknowledgedInputOf(state, playerNumber_)) {
     missiles_.acknowledge(*acknowledged);
   }
+}
+
+void OwnPrediction::followScroll(float scrollSpeed) {
+  scrollSpeed_ = scrollSpeed;
 }
 
 void OwnPrediction::ceaseFire() { firing_ = false; }

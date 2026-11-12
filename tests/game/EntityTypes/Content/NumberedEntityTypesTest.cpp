@@ -11,6 +11,7 @@
 #include "NumberedEntityType.hpp"
 #include "NumberedEntityTypes.hpp"
 #include "NumberedEntityTypesTestConstants.hpp"
+#include "ObstacleContact.hpp"
 #include "SheetText.hpp"
 #include "SheetTextFixtures.hpp"
 #include "SheetTextReading.hpp"
@@ -21,6 +22,7 @@ using rtype::game::EntitySheet;
 using rtype::game::EntityType;
 using rtype::game::NumberedEntityType;
 using rtype::game::numberedEntityTypesOf;
+using rtype::game::ObstacleContact;
 using rtype::game::SheetText;
 using rtype::game::sheetTextsIn;
 using rtype::game::TooManyEntityTypesException;
@@ -32,6 +34,7 @@ using rtype::game::testing::MOST_SHEETS_LOADED;
 using rtype::game::testing::ONE_SHEET_TOO_MANY;
 using rtype::game::testing::ONE_TYPE;
 using rtype::game::testing::SECOND_LISTED_BOX_WIDTH;
+using rtype::game::testing::SHEET_OF_A_BLOCKING_WALL;
 using rtype::game::testing::SHEET_OF_A_PLUGIN_PILOT;
 using rtype::game::testing::SHEET_OF_TWO_BOXES;
 using rtype::game::testing::SHEET_WITHOUT_BOX;
@@ -43,6 +46,7 @@ using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::shippedSheetFolder;
 using rtype::game::testing::TWO_LISTED_BOXES;
 using rtype::game::testing::TWO_TYPES;
+using rtype::game::testing::WALL_TYPE;
 using rtype::game::testing::WEAVER_TEXT;
 using rtype::game::testing::WEAVER_TYPE;
 
@@ -166,4 +170,36 @@ TEST(NumberedEntityTypes, KeepsTheBoxesAHitboxLists) {
   ASSERT_EQ(types.size(), ONE_TYPE);
   ASSERT_EQ(types[0].hitboxParts.size(), TWO_LISTED_BOXES);
   EXPECT_FLOAT_EQ(types[0].hitboxParts.back().width, SECOND_LISTED_BOX_WIDTH);
+}
+
+/**
+ * Given the sheet of a wall that blocks the ships
+ * When a client reads its type
+ * Then it is an obstacle whose contact is blocking, and the keys the client
+ * does not read, such as its on_hit, are left alone
+ */
+TEST(NumberedEntityTypes, ReadsTheContactOfAnObstacle) {
+  const std::vector<SheetText> sheets{
+      sheetText(WALL_TYPE, SHEET_OF_A_BLOCKING_WALL)};
+
+  const std::vector<NumberedEntityType> types = numberedEntityTypesOf(sheets);
+
+  ASSERT_EQ(types.size(), ONE_TYPE);
+  EXPECT_EQ(types[0].side, EntityType::Obstacle);
+  EXPECT_EQ(types[0].obstacle.value_or(ObstacleContact::Fatal),
+            ObstacleContact::Blocking);
+}
+
+/**
+ * Given the sheet of a Weaver, which is no obstacle
+ * When a client reads its type
+ * Then it names no contact
+ */
+TEST(NumberedEntityTypes, AnEnemyNamesNoContact) {
+  const std::vector<SheetText> sheets{sheetText(WEAVER_TYPE, WEAVER_TEXT)};
+
+  const std::vector<NumberedEntityType> types = numberedEntityTypesOf(sheets);
+
+  ASSERT_EQ(types.size(), ONE_TYPE);
+  EXPECT_FALSE(types[0].obstacle.has_value());
 }

@@ -9,6 +9,7 @@
 #include "EntityType.hpp"
 #include "EntityTypeLook.hpp"
 #include "FixedEntityTypeSourceConstants.hpp"
+#include "ObstacleContact.hpp"
 #include "ShipGun.hpp"
 
 using rtype::client::Animation;
@@ -82,6 +83,16 @@ std::span<const rtype::game::CollisionBox> partsNumbered(std::uint8_t number) {
   return {};
 }
 
+/** @returns What the type the double numbers @p number does to a ship: the
+ * blocking wall blocks it; nothing for any other type. */
+std::optional<rtype::game::ObstacleContact> obstacleNumbered(
+    std::uint8_t number) {
+  if (number == rtype::client::testing::BLOCKING_WALL_TYPE_NUMBER) {
+    return rtype::game::ObstacleContact::Blocking;
+  }
+  return std::nullopt;
+}
+
 }  // namespace
 
 const EntityAppearance& appearanceOfSide(EntityType side) {
@@ -117,7 +128,8 @@ std::optional<EntityTypeLook> FixedEntityTypeSource::lookOf(
   return EntityTypeLook{.side = *side,
                         .appearance = appearanceOfSide(*side),
                         .hitbox = boxOfSide(*side),
-                        .hitboxParts = partsNumbered(number)};
+                        .hitboxParts = partsNumbered(number),
+                        .obstacle = obstacleNumbered(number)};
 }
 
 rtype::game::ShipGun FixedEntityTypeSource::shipGun() const {
