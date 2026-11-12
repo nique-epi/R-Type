@@ -25,6 +25,7 @@
 #include "Lives.hpp"
 #include "LivesConstants.hpp"
 #include "LookItem.hpp"
+#include "MissileDamage.hpp"
 #include "MissileOwner.hpp"
 #include "MotionKind.hpp"
 #include "MotionSheet.hpp"
@@ -120,6 +121,9 @@ void addCombat(engine::ComponentRegistry& components, const BodyStart& start) {
                    ShardBurst{.ticksLeft = sheet.burst->afterTicks,
                               .shardNumber = sheet.burst->shardNumber,
                               .count = sheet.burst->count});
+  }
+  if (sheet.damage.has_value()) {
+    components.add(start.body, MissileDamage{.points = *sheet.damage});
   }
 }
 

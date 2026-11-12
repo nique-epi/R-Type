@@ -11,6 +11,7 @@
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityIdConstants.hpp"
+#include "EntitySheet.hpp"
 #include "EntityType.hpp"
 #include "EntityTypeNumber.hpp"
 #include "EntityTypesTestConstants.hpp"
@@ -19,6 +20,7 @@
 #include "Intent.hpp"
 #include "Lives.hpp"
 #include "LookItem.hpp"
+#include "MissileDamage.hpp"
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
 #include "Pilot.hpp"
@@ -57,6 +59,7 @@ using rtype::game::testing::REQUIRED_PLAYER_MISSILE_WIDTH;
 using rtype::game::testing::REQUIRED_RIGHT_HEADING;
 using rtype::game::testing::REQUIRED_WEAVER_POINTS;
 using rtype::game::testing::SECOND_PLAYER_NUMBER;
+using rtype::game::testing::SHEET_DAMAGE_POINTS;
 using rtype::game::testing::SHIP_SHEET;
 using rtype::game::testing::SHIP_SHOT_INTERVAL_TICKS;
 using rtype::game::testing::shippedEntitySheets;
@@ -896,4 +899,41 @@ TEST(World, ASpawnedBodyCarriesTheCollisionFilterOfItsSheet) {
       componentOf<rtype::engine::CollisionFilter>(world, drifter);
   ASSERT_TRUE(filter.has_value());
   EXPECT_EQ(filter.value_or(rtype::engine::CollisionFilter{}), ENEMY_FILTER);
+}
+
+/**
+ * Given the sheet of the missile of a player made to take 3 health points
+ * When a missile of that sheet is spawned
+ * Then it carries a MissileDamage of 3
+ */
+TEST(World, GivesAMissileTheDamageOfItsSheet) {
+  rtype::game::World world;
+  rtype::game::EntitySheet sheet =
+      shippedEntitySheets().named(PLAYER_MISSILE_SHEET);
+  sheet.damage = SHEET_DAMAGE_POINTS;
+
+  const std::uint32_t missileId =
+      world.spawn(sheet, rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  const std::optional<rtype::game::MissileDamage> damage =
+      componentOf<rtype::game::MissileDamage>(world, missileId);
+  ASSERT_TRUE(damage.has_value());
+  EXPECT_EQ(damage.value_or(rtype::game::MissileDamage{}).points,
+            SHEET_DAMAGE_POINTS);
+}
+
+/**
+ * Given the shipped sheet of the missile of a player, which names no damage
+ * When a missile of that sheet is spawned
+ * Then it carries no MissileDamage: it takes MISSILE_DAMAGE
+ */
+TEST(World, AMissileWhoseSheetNamesNoDamageCarriesNone) {
+  rtype::game::World world;
+
+  const std::uint32_t missileId =
+      world.spawn(shippedEntitySheets().named(PLAYER_MISSILE_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_FALSE(
+      componentOf<rtype::game::MissileDamage>(world, missileId).has_value());
 }

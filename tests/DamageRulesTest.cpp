@@ -30,9 +30,11 @@ using rtype::game::testing::Announcement;
 using rtype::game::testing::BYDO_ID;
 using rtype::game::testing::BYDO_POINTS;
 using rtype::game::testing::CHARGING;
+using rtype::game::testing::DAMAGE_OF_THREE;
 using rtype::game::testing::DamageScene;
 using rtype::game::testing::ENEMY_MISSILE_ID;
 using rtype::game::testing::FIRST_PLAYER;
+using rtype::game::testing::FIVE_HEALTH_POINTS;
 using rtype::game::testing::FOUR_HEALTH_POINTS;
 using rtype::game::testing::killed;
 using rtype::game::testing::MISSILE_ID;
@@ -45,6 +47,7 @@ using rtype::game::testing::SECOND_PLAYER_NUMBER;
 using rtype::game::testing::SHIP_ID;
 using rtype::game::testing::STUNNED;
 using rtype::game::testing::THREE_HEALTH_POINTS;
+using rtype::game::testing::TWO_HEALTH_POINTS_LEFT;
 
 /**
  * Given a Bydo with three health points and a missile
@@ -373,4 +376,23 @@ TEST(DamageRules, ASecondShotOnTheSameMissileFliesOn) {
                                            killed(ENEMY_MISSILE_ID)};
   EXPECT_EQ(damage.announced, expected);
   EXPECT_NE(damage.scene.components.get<EntityType>(secondShot), nullptr);
+}
+
+/**
+ * Given a Bydo of five health points and a missile whose sheet makes it take
+ * three
+ * When the missile hits it
+ * Then the Bydo has two points left
+ */
+TEST(DamageRules, AMissileTakesTheDamageItsSheetNames) {
+  DamageScene damage;
+  const Entity bydo = damage.bydo(BYDO_ID, Health{.points = FIVE_HEALTH_POINTS,
+                                                  .full = FIVE_HEALTH_POINTS});
+  const Entity missile = damage.missileDealing(MISSILE_ID, DAMAGE_OF_THREE);
+
+  damage.hit(missile, bydo);
+
+  ASSERT_NE(damage.scene.components.get<Health>(bydo), nullptr);
+  EXPECT_EQ(damage.scene.components.get<Health>(bydo)->points,
+            TWO_HEALTH_POINTS_LEFT);
 }

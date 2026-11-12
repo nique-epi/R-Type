@@ -10,6 +10,7 @@
 #include "EntityDestruction.hpp"
 #include "EntityType.hpp"
 #include "Health.hpp"
+#include "MissileDamage.hpp"
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
@@ -51,6 +52,13 @@ engine::Entity DamageScene::missile(std::uint32_t networkId) {
   const engine::Entity entity =
       scene.spawn(EntityType::PlayerMissile, 0.0F, 0.0F);
   scene.components.add(entity, NetworkIdentity{.networkId = networkId});
+  return entity;
+}
+
+engine::Entity DamageScene::missileDealing(std::uint32_t networkId,
+                                           int points) {
+  const engine::Entity entity = missile(networkId);
+  scene.components.add(entity, MissileDamage{.points = points});
   return entity;
 }
 

@@ -17,6 +17,8 @@ constexpr float OTHER_Y = 40.0F;
 
 /** @brief The health a new Bydo has, as the world tests expect it. */
 constexpr int THREE_HEALTH_POINTS = 3;
+/** @brief The damage a test gives the sheet of a missile. */
+constexpr int SHEET_DAMAGE_POINTS = 3;
 
 /** @brief The player whose missile the world tests create. */
 constexpr std::uint8_t SECOND_PLAYER_NUMBER = 2;

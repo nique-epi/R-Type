@@ -78,6 +78,9 @@ struct EntitySheet {
   /** @brief The effects and the looks its `[appearance]` names, which a
    * script of a body of this type may ask the client to draw. */
   SheetVisualNames visualNames;
+  /** @brief The health points it takes from what it hits, a missile only;
+   * nothing for a missile that takes MISSILE_DAMAGE. */
+  std::optional<int> damage{std::nullopt};
 };
 
 }  // namespace rtype::game

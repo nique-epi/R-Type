@@ -14,6 +14,7 @@
 #include "EventBus.hpp"
 #include "Fragile.hpp"
 #include "Health.hpp"
+#include "MissileDamage.hpp"
 #include "MissileHit.hpp"
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
@@ -61,20 +62,28 @@ bool isArmored(engine::ComponentRegistry& components, engine::Entity target) {
          current->key->attack == boss->arrivalAttack;
 }
 
-/** @returns What a hit takes from @p target, which has @p health: nothing
- * while it is armored, MISSILE_DAMAGE, or every point left while @p target is
- * Fragile and in the action it is fragile in. */
+/** @returns The points @p missile takes from what it hits: those of its
+ * MissileDamage, MISSILE_DAMAGE without one. */
+int missileDamageOf(engine::ComponentRegistry& components,
+                    engine::Entity missile) {
+  const auto* const damage = components.get<MissileDamage>(missile);
+  return damage == nullptr ? MISSILE_DAMAGE : damage->points;
+}
+
+/** @returns What a hit dealing @p dealt takes from @p target, which has
+ * Health: nothing while it is armored, every point left while it is Fragile
+ * and in the action it is fragile in, @p dealt otherwise. */
 int damageOf(engine::ComponentRegistry& components, engine::Entity target,
-             const Health& health) {
+             int dealt) {
   if (isArmored(components, target)) {
     return 0;
   }
   const auto* const fragile = components.get<Fragile>(target);
   const auto* const current = components.get<CurrentAction>(target);
   if (fragile == nullptr || current == nullptr || current->key != fragile->in) {
-    return MISSILE_DAMAGE;
+    return dealt;
   }
-  return health.points;
+  return components.get<Health>(target)->points;
 }
 
 }  // namespace
@@ -95,6 +104,7 @@ void DamageRules::onMissileHit(const MissileHit& hit) {
   }
   const std::optional<std::uint8_t> shooter =
       shooterOf(components_, hit.missile);
+  const int dealt = missileDamageOf(components_, hit.missile);
   removeMissile(hit.missile, ids->missile);
   if (components_.has<Shootable>(hit.target)) {
     killTarget(hit.target, ids->target, shooter);
@@ -104,7 +114,7 @@ void DamageRules::onMissileHit(const MissileHit& hit) {
   if (health == nullptr) {
     return;
   }
-  const int damage = damageOf(components_, hit.target, *health);
+  const int damage = damageOf(components_, hit.target, dealt);
   if (damage == 0) {
     return;
   }

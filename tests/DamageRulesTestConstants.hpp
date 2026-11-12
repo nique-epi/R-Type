@@ -26,6 +26,12 @@ constexpr int ONE_HEALTH_POINT = 1;
 constexpr MissileOwner FIRST_PLAYER{.playerNumber = 1};
 constexpr MissileOwner SECOND_PLAYER{.playerNumber = SECOND_PLAYER_NUMBER};
 
+/** @brief A Bydo of five health points, a missile whose sheet makes it take
+ * three, and the two points the rule leaves the Bydo. */
+constexpr int FIVE_HEALTH_POINTS = 5;
+constexpr int DAMAGE_OF_THREE = 3;
+constexpr int TWO_HEALTH_POINTS_LEFT = 2;
+
 /** @brief What destroying a Bydo of the tests is worth. */
 constexpr std::uint32_t BYDO_POINTS = 200;
 

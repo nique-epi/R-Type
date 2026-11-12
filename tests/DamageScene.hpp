@@ -36,6 +36,9 @@ struct DamageScene {
                            std::uint32_t points);
   /** @returns A missile of no player. */
   engine::Entity missile(std::uint32_t networkId);
+  /** @returns A missile of no player that takes @p points from what it hits,
+   * as a sheet naming `[gameplay.damage]` makes it. */
+  engine::Entity missileDealing(std::uint32_t networkId, int points);
   /** @returns A Bydo with @p health, worth nothing. */
   engine::Entity bydo(std::uint32_t networkId, Health health);
   /** @returns A boss with @p health, its Boss @p boss, in the action

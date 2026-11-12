@@ -65,12 +65,15 @@ constexpr std::string_view BURST_KEY = "burst";
 constexpr std::string_view VOLLEY_KEY = "volley";
 constexpr std::string_view BOSS_KEY = "boss";
 constexpr std::string_view LOOK_ITEM_KEY = "look_item";
+/** @brief `[gameplay.damage]`: the health points a missile takes from what it
+ * hits, in POINTS_KEY; MISSILE_DAMAGE without the table. */
+constexpr std::string_view DAMAGE_KEY = "damage";
 constexpr std::array GAMEPLAY_KEYS{
-    SIDE_KEY,     PILOT_KEY,  LAYER_KEY,     HITS_KEY,
-    HITBOX_KEY,   MOTION_KEY, BEHAVIOUR_KEY, HEALTH_KEY,
-    SCORE_KEY,    GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
-    FRAGILE_KEY,  BURST_KEY,  VOLLEY_KEY,    BOSS_KEY,
-    LOOK_ITEM_KEY};
+    SIDE_KEY,      PILOT_KEY,  LAYER_KEY,     HITS_KEY,
+    HITBOX_KEY,    MOTION_KEY, BEHAVIOUR_KEY, HEALTH_KEY,
+    SCORE_KEY,     GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
+    FRAGILE_KEY,   BURST_KEY,  VOLLEY_KEY,    BOSS_KEY,
+    LOOK_ITEM_KEY, DAMAGE_KEY};
 
 /** @brief The keys of one box of a hitbox, in logical units: its size, and
  * where its center is from the Position of the body, 0 without them. */
@@ -246,6 +249,7 @@ constexpr engine::WholeNumberRange TOP_SPEED_RANGE{.lowest = 1,
                                                    .highest = 4096};
 constexpr engine::WholeNumberRange HEALTH_RANGE{.lowest = 1, .highest = 1000};
 constexpr engine::WholeNumberRange SCORE_RANGE{.lowest = 0, .highest = 1000000};
+constexpr engine::WholeNumberRange DAMAGE_RANGE{.lowest = 1, .highest = 1000};
 constexpr engine::WholeNumberRange GUN_INTERVAL_RANGE{.lowest = 1,
                                                       .highest = 60000};
 constexpr engine::WholeNumberRange FIRST_SHOT_RANGE{.lowest = 0,
@@ -331,6 +335,7 @@ constexpr std::string_view LOOK_ITEM_SIDE_RULE =
     "look_item is given by a sheet of side look_item, and only by it";
 constexpr std::string_view LOOK_ITEM_HEADING_RULE =
     "a look item flies to the left, where the playfield removes it";
+constexpr std::string_view DAMAGE_SIDE_RULE = "only a missile deals damage";
 constexpr std::string_view PROJECTILE_SIDE_RULE =
     "a player fires missiles of a player, an enemy missiles of an enemy";
 
