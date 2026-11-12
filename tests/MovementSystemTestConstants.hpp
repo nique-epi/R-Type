@@ -1,7 +1,9 @@
 #pragma once
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
+#include "CollisionBox.hpp"
 #include "TimeConstants.hpp"
 
 namespace rtype::game::testing {
@@ -41,5 +43,15 @@ constexpr float TWICE_THE_FULL_STEERING = 2.0F;
  */
 constexpr float STEADY_ARRIVAL_X = -20.0F;
 constexpr float STEADY_ARRIVAL_Y = 260.0F;
+
+/** @brief A ship that starts at x 300 and holds right for a second, which
+ * takes it far past x 404, and a wall 64 by 256 centered at x 500 on its row:
+ * a ship touches its left side with its center at x 404 (468 - 64). */
+constexpr float SHIP_START_X = 300.0F;
+constexpr float WALL_ROW_Y = 400.0F;
+constexpr float WALL_X = 500.0F;
+constexpr CollisionBox WALL_BOX{.width = 64.0F, .height = 256.0F};
+constexpr float AGAINST_THE_WALL_X = 404.0F;
+constexpr std::size_t TICKS_OF_ONE_SECOND = 60;
 
 }  // namespace rtype::game::testing
