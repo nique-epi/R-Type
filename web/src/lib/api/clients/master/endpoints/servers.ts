@@ -2,6 +2,7 @@ import type { FetchSchemaRoutes } from '@better-fetch/fetch';
 import { z } from 'zod';
 
 import {
+  createdServerSchema,
   gamesSchema,
   MAXIMUM_PAGE_SIZE,
   samplesSchema,
@@ -19,6 +20,10 @@ const pageQuerySchema = z
 
 export const serversEndpointsSchema = {
   '@get/servers': { query: pageQuerySchema, output: serversPageSchema },
+  '@post/servers': {
+    input: z.object({ name: z.string() }),
+    output: createdServerSchema,
+  },
   '@get/servers/:id/games': { output: gamesSchema },
   '@get/servers/:id/samples': { query: pageQuerySchema, output: samplesSchema },
   '@get/servers/:id/statuses': {

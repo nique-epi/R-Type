@@ -1,9 +1,11 @@
+import Link from 'next/link';
 import { Reveal } from '@/components/motion/reveal';
 import { CodeBlock } from '@/components/primitives/text/code-block';
 import { Heading } from '@/components/primitives/text/typography';
 import { formatNodes } from '@/i18n/format-nodes';
 import { getDictionary } from '@/i18n/get-dictionary';
 import type { Locale } from '@/i18n/locales';
+import { pathOf } from '@/lib/site-paths';
 
 /** The lines of `server.cfg` that list a server on a master, as `server.cfg.example` writes them. */
 const CONFIG_LINES = [
@@ -25,7 +27,18 @@ export function HostGuide({ lang }: { lang: Locale }) {
         {host.title}
       </Heading>
       <ol className="m-0 grid gap-4 pl-6">
-        <li>{host.createKey}</li>
+        <li>
+          {formatNodes(host.createKey, {
+            page: (
+              <Link
+                href={pathOf(lang, 'host')}
+                className="text-hud-cyan hover:text-star-white"
+              >
+                {host.createKeyPage}
+              </Link>
+            ),
+          })}
+        </li>
         <li>
           {formatNodes(host.pasteKey, {
             file: (

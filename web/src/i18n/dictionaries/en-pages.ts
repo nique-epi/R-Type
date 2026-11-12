@@ -283,9 +283,63 @@ export const enPages: PageCopy = {
     host: {
       title: 'Host guide',
       configFile: 'server.cfg',
-      createKey: 'Create a key.',
+      createKey: 'Create the key of your server on {page}.',
+      createKeyPage: 'the Host page',
       pasteKey: 'Paste it in {file}:',
       launch: 'Start the server:',
+    },
+  },
+  hostPage: {
+    eyebrow: 'Open servers',
+    title: 'Host',
+    lede: 'Create the key of your server, with no account. It shows once: copy it before you leave the page.',
+    configFile: 'server.cfg',
+    guide: 'Read the host guide',
+    another: 'Create another server',
+    form: {
+      title: 'New server',
+      name: 'Name of the server',
+      placeholder: 'Nebula Lyon',
+      counter: '{length} / {maximum}',
+      nameRequired: 'Give the server a name',
+      nameTooLong:
+        'This name is too long: {maximum} characters at most, an accented letter counts as two',
+      shownOnceTitle: 'Only once',
+      shownOnce:
+        'The key of the server will show once, right after its creation. No account is asked for; the master limits how many servers one address creates per hour.',
+      submit: 'Create the server',
+      pending: 'Creating...',
+    },
+    problems: {
+      invalidName: {
+        title: 'Name refused',
+        text: 'Give the server a name of {maximum} characters at most.',
+      },
+      quota: {
+        title: 'Quota reached',
+        text: 'Too many servers were created from your address in the last hour. Try again later: the name you typed is kept.',
+      },
+      refused: {
+        title: 'Name refused',
+        text: 'The master does not take this name. Try another one, with no special character.',
+      },
+      unreachable: {
+        title: 'Master unreachable',
+        text: 'The master does not answer. Try again in a moment: the name you typed is kept.',
+      },
+    },
+    key: {
+      title: 'Key of the server',
+      created: 'The server {name} is created. Here is its key:',
+      shownOnceTitle: 'Only once',
+      shownOnce:
+        'This key will never show again: the site does not keep it. Copy it before you leave or reload the page.',
+      pasteIn: 'Paste these lines in the {file} of the server:',
+      copy: 'Copy the key',
+      copied: 'Copied',
+      notCopiedYet: 'The key is not copied yet.',
+      copiedLine: 'Key copied to the clipboard.',
+      copyFailed: 'The browser refused the copy: select the key by hand.',
     },
   },
   teamPage: {
