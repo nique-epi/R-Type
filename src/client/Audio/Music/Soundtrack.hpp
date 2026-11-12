@@ -11,7 +11,8 @@ namespace rtype::client {
  * @brief Which music plays: the theme outside a game, the music of a game
  * once a game starts. Entering a game stops the theme at once and starts the
  * music of the game GAME_MUSIC_SILENCE later; a title screen stops the music
- * of the game and plays the theme again.
+ * of the game and plays the theme again. A screen with a music of its own
+ * pauses the theme for as long as it shows.
  */
 class Soundtrack {
  public:
@@ -33,6 +34,12 @@ class Soundtrack {
   /** @brief Stops the music of a game at once and cancels the silence before
    * it; the theme is left as it is. */
   void silenceMusic();
+  /** @brief Pauses the theme when it plays, for a screen that plays a music
+   * of its own; playTheme() then leaves it paused. */
+  void pauseTheme();
+  /** @brief Plays the theme on from where pauseTheme() left it; nothing when
+   * it was not paused, or when a game stopped it since. */
+  void resumeTheme();
 
   /** @brief Moves the waits before the music of a game and the music of the
    * boss on by @p elapsed, and starts each music once its wait is over. */
@@ -47,6 +54,9 @@ class Soundtrack {
   IMusicPlayer* bossMusic_;
   std::optional<engine::Duration> silenceLeft_;
   std::optional<engine::Duration> alarmLeft_;
+  /** @brief Whether pauseTheme() paused a theme that played, and nothing
+   * stopped it since. */
+  bool themePaused_{false};
 };
 
 }  // namespace rtype::client

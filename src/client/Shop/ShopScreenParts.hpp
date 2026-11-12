@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include "IAudioService.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "PlayfieldMapping.hpp"
@@ -22,6 +23,9 @@ struct ShopScreenParts {
   /** @brief Plays the clicks and the sound of a purchase, which must outlive
    * the screen. */
   std::reference_wrapper<ISoundPlayer> sounds;
+  /** @brief Plays the music of the shop, or of its radio, while the shop
+   * shows; it must outlive the screen. */
+  std::reference_wrapper<IAudioService> audio;
   /** @brief Holds and saves the kopecks and the locker of the player; it
    * must outlive the screen. */
   std::reference_wrapper<SettingsService> settings;

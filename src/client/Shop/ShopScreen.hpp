@@ -8,6 +8,8 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include "AmbienceScope.hpp"
+#include "IAudioService.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
@@ -34,6 +36,10 @@ namespace rtype::client {
  * settings are saved; a ware the player owns, or cannot pay, is refused on
  * the status line. Escape or BACK closes the shop. It hides the screens
  * below.
+ *
+ * The music of the shop plays while it shows, the theme paused. A click on
+ * the radio of the counter, or SHOP_RADIO_KEY once per hold, changes it for
+ * the music of the radio, and back.
  */
 class ShopScreen final : public IScreen {
  public:
@@ -65,6 +71,10 @@ class ShopScreen final : public IScreen {
 
   IScreenNavigator* navigator_;
   ISoundPlayer* sounds_;
+  IAudioService* audio_;
+  /** @brief Plays the music of the shop for as long as the shop lives, then
+   * gives the screen below its ambience back. */
+  AmbienceScope music_;
   SettingsService* settings_;
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;

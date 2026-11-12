@@ -18,9 +18,11 @@ namespace rtype::client::testing {
 
 ShopScreenFixture::ShopScreenFixture()
     : service_(settings_, storage_),
+      audio_(sounds_),
       screen_(std::make_unique<ShopScreen>(
           ShopScreenParts{.navigator = navigator_,
                           .sounds = sounds_,
+                          .audio = audio_,
                           .settings = service_,
                           .playfieldPointAt = samePlayfieldPoint},
           std::make_unique<RecordingInterfaceCanvas>(painting_))) {}

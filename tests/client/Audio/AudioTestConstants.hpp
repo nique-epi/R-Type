@@ -66,4 +66,7 @@ constexpr engine::Duration PART_OF_THE_SILENCE = std::chrono::milliseconds(600);
 constexpr engine::Duration REST_OF_THE_SILENCE = std::chrono::milliseconds(400);
 constexpr engine::Duration LONGER_THAN_THE_SILENCE = std::chrono::seconds(2);
 
+/** @brief A position of the theme, far from its start. */
+constexpr engine::Duration WELL_INTO_THE_THEME = std::chrono::seconds(42);
+
 }  // namespace rtype::client::testing

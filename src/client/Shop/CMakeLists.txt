@@ -13,6 +13,7 @@ target_link_libraries(rtype_client_shop_module
   PUBLIC
     SFML::Graphics
     SFML::Window
+    rtype_client_audio_contract_service
     rtype_client_economy
     rtype_client_interface
     rtype_client_key_chip

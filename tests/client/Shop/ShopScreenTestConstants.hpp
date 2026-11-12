@@ -39,6 +39,12 @@ constexpr std::string_view NOT_ENOUGH_LINE = "NOT ENOUGH KOPECKS: 150 MISSING";
 constexpr sf::Vector2i SECOND_CELL_MIDDLE{68, 88};
 constexpr sf::Vector2i FIRST_STALL_MIDDLE_OF_THE_SHOP{174, 224};
 
+/** @brief Pixels of the interface: the middle of the radio of the counter,
+ * which the picture draws from (280, 161) over 42 x 21 pixels, and one on
+ * the counter just right of it. */
+constexpr sf::Vector2i RADIO_MIDDLE{301, 171};
+constexpr sf::Vector2i BESIDE_THE_RADIO{326, 171};
+
 constexpr std::string_view SHOP_SCENE_SHEET = "sprites/shop_scene.png";
 
 }  // namespace rtype::client::testing

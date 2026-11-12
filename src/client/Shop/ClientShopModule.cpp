@@ -20,6 +20,7 @@ std::unique_ptr<IScreen> buildShopScreen(const ScreenContext& context) {
   return std::make_unique<ShopScreen>(
       ShopScreenParts{.navigator = context.navigator.get(),
                       .sounds = soundsOf(context),
+                      .audio = context.services.audio.get(),
                       .settings = context.services.settingsService.get(),
                       .playfieldPointAt = playfieldMappingOf(context)},
       interfaceCanvasOf(context));

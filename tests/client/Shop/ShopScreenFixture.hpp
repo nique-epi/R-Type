@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <memory>
 #include "PlayerSettings.hpp"
+#include "RecordingAudioService.hpp"
 #include "RecordingInterfaceCanvas.hpp"
 #include "RecordingNavigator.hpp"
 #include "RecordingSettingsStorage.hpp"
@@ -16,8 +17,8 @@
 namespace rtype::client::testing {
 
 /** @brief A shop over settings saved to a recording storage, a recording
- * navigator and a recording canvas; the player starts with the starter kit
- * and no kopeck. */
+ * navigator, a recording audio service and a recording canvas; the player
+ * starts with the starter kit and no kopeck. */
 class ShopScreenFixture : public ::testing::Test {
  protected:
   ShopScreenFixture();
@@ -46,6 +47,7 @@ class ShopScreenFixture : public ::testing::Test {
   SettingsService service_;
   RecordingNavigator navigator_;
   RecordingSoundPlayer sounds_;
+  RecordingAudioService audio_;
   InterfaceCanvasRecord painting_;
   std::unique_ptr<ShopScreen> screen_;
 };

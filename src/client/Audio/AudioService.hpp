@@ -18,7 +18,8 @@ namespace rtype::client {
  * @brief The audio service of a client with sound: the bank of the sounds,
  * played on SOUND_VOICE_LIMIT voices for the whole client, the theme, the music
  * of a game and the music of the boss, the Soundtrack that switches between
- * them, and the ambiences that play under the theme. Their volumes follow the
+ * them, the ambiences that play under the theme, and the two musics of the
+ * shop, which play while the theme is paused. Their volumes follow the
  * settings service, which tells them when one changes.
  *
  * Building it reads no file: open() reads the sounds and opens the music
@@ -64,6 +65,8 @@ class AudioService final : public IAudioService {
   MusicPlayer spaceAmbience_;
   MusicPlayer hangarAmbience_;
   MusicPlayer crowdAmbience_;
+  MusicPlayer shopMusic_;
+  MusicPlayer shopRadio_;
   Ambience ambience_{Ambience::None};
   Soundtrack soundtrack_;
 };

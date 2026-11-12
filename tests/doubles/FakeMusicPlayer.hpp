@@ -17,6 +17,9 @@ class FakeMusicPlayer : public rtype::client::IMusicPlayer {
 
   /** @brief Stops the music, as MusicPlayer does. */
   void stop() override;
+  /** @brief Pauses a music that plays, as MusicPlayer does: start() then
+   * plays it on from the position it had. */
+  void pause() override;
 
   [[nodiscard]] std::optional<rtype::engine::Duration> playingOffset()
       const override;
@@ -31,4 +34,5 @@ class FakeMusicPlayer : public rtype::client::IMusicPlayer {
  private:
   FakeMusicClock clock_;
   bool fileRemoved_{};
+  std::optional<rtype::engine::Duration> pausedAt_;
 };

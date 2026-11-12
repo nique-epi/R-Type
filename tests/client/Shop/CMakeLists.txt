@@ -1,4 +1,6 @@
 target_sources(client_screen_tests PRIVATE
+  ShopMusicFixture.cpp
+  ShopMusicTest.cpp
   ShopScreenFixture.cpp
   ShopScreenTest.cpp
   ShopStatusTest.cpp

@@ -7,10 +7,22 @@ void FakeMusicPlayer::start() {
   if (fileRemoved_ || clock_.playingOffset().has_value()) {
     return;
   }
-  clock_.setPlayingOffset(-rtype::client::THEME_FIRST_BEAT);
+  clock_.setPlayingOffset(pausedAt_.value_or(-rtype::client::THEME_FIRST_BEAT));
+  pausedAt_.reset();
 }
 
-void FakeMusicPlayer::stop() { clock_.setPlayingOffset(std::nullopt); }
+void FakeMusicPlayer::stop() {
+  clock_.setPlayingOffset(std::nullopt);
+  pausedAt_.reset();
+}
+
+void FakeMusicPlayer::pause() {
+  if (!clock_.playingOffset().has_value()) {
+    return;
+  }
+  pausedAt_ = clock_.playingOffset();
+  clock_.setPlayingOffset(std::nullopt);
+}
 
 std::optional<rtype::engine::Duration> FakeMusicPlayer::playingOffset() const {
   return clock_.playingOffset();

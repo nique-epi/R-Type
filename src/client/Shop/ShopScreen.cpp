@@ -9,7 +9,9 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include "Ambience.hpp"
 #include "Button.hpp"
+#include "IAudioService.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "InterfacePixel.hpp"
 #include "KeyChipParts.hpp"
@@ -45,12 +47,21 @@ Purse purseOf(const PlayerSettings& settings) {
   return Purse{.kopecks = settings.kopecks, .locker = settings.shipLocker};
 }
 
+/** @brief Changes what the shop plays: the music of the radio instead of
+ * the music of the shop, or back. */
+void tuneRadio(IAudioService& audio) {
+  audio.setAmbience(audio.ambience() == Ambience::Shop ? Ambience::ShopRadio
+                                                       : Ambience::Shop);
+}
+
 }  // namespace
 
 ShopScreen::ShopScreen(ShopScreenParts parts,
                        std::unique_ptr<IInterfaceCanvas> canvas)
     : navigator_(&parts.navigator.get()),
       sounds_(&parts.sounds.get()),
+      audio_(&parts.audio.get()),
+      music_(parts.audio.get(), Ambience::Shop),
       settings_(&parts.settings.get()),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
@@ -101,15 +112,26 @@ void ShopScreen::keyPressed(const sf::Event::KeyPressed& key) {
     message_.reset();
     return;
   }
-  if (key.code == MENU_CONFIRM_KEY && heldKey_ != key.code) {
+  if (heldKey_ == key.code) {
+    return;
+  }
+  if (key.code == MENU_CONFIRM_KEY) {
     heldKey_ = key.code;
     buy();
+  } else if (key.code == SHOP_RADIO_KEY) {
+    heldKey_ = key.code;
+    tuneRadio(*audio_);
   }
 }
 
 void ShopScreen::pointed(sf::Vector2i position, bool clicked) {
+  const sf::Vector2i pixel = interfacePixelAt(playfieldPointAt_(position));
+  if (clicked && SHOP_RADIO_AREA.contains(pixel)) {
+    tuneRadio(*audio_);
+    return;
+  }
   const ShopSpot before = selection_.spot();
-  if (!selection_.chooseAt(interfacePixelAt(playfieldPointAt_(position)))) {
+  if (!selection_.chooseAt(pixel)) {
     return;
   }
   if (selection_.spot() != before) {
