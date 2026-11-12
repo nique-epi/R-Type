@@ -37,6 +37,8 @@ Both workflows are run by hand (Actions, Run workflow) and wait for the reviewer
 
 The game machine is billed from `lan-open` until `lan-close`. When `lan-open` fails after it created the machine, the machine still exists: run `lan-close`.
 
+`lan-open` run while a LAN is open leaves the machine as it is, with the release and the scripts it started on: the script of its first boot runs only once. Run `lan-close`, then `lan-open`, to get a machine on the latest release and the scripts of `main`; it ends the games in progress.
+
 A release published while a LAN is open still deploys the master. The game machine installs a release only when it starts, so it keeps the one it has until `lan-close`.
 
 ## What the game machine does when it starts
