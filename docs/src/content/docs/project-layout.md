@@ -169,7 +169,7 @@ src/server/
 ├── Sessions/         the players of a game and their sessions (still carries a player's ship, score and lives): Roster/, what the server knows of each one; Tracking/, what it follows of each session
 ├── Spawning/         when and where the enemies, missiles and volleys appear; the boss stage
 ├── Exceptions/       the root exception of the server, errors of the waves file
-├── Platform/         what differs between Windows, macOS and Linux, and the stop signals
+├── Platform/         what differs between Windows, macOS and Linux: the stop signals, the timer, the counters of the machine
 ├── LaunchOptions/    the options of the supervisor and of a game process: port, seed, database, link to the supervisor
 ├── Results/          the results module: what each game leaves, and the leaderboard requests
 ├── Chat/             the chat module of a game: relays the lines of its players, one a second each
