@@ -1,9 +1,11 @@
 #pragma once
 
 #include <SFML/System/Vector2.hpp>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include <utility>
 
 namespace rtype::client::testing {
 
@@ -44,6 +46,20 @@ constexpr sf::Vector2i FIRST_STALL_MIDDLE_OF_THE_SHOP{174, 224};
  * the counter just right of it. */
 constexpr sf::Vector2i RADIO_MIDDLE{301, 171};
 constexpr sf::Vector2i BESIDE_THE_RADIO{326, 171};
+
+/** @brief The shopkeeper: his sheet, where his frame is laid at rest, and
+ * where a quarter of a breath (0.75 s) later, 2 pixels lower. */
+constexpr std::string_view SHOP_KEEPER_SHEET = "sprites/shop_bydo.png";
+constexpr sf::Vector2i KEEPER_AT_REST{193, 85};
+constexpr sf::Vector2i KEEPER_AT_HIS_LOWEST{193, 87};
+constexpr std::chrono::milliseconds A_QUARTER_OF_HIS_BREATH{750};
+
+/** @brief The radio under the pointer: its line, and the corner of its
+ * frame, 2 pixels out of its area, which starts at (280, 161). */
+constexpr std::string_view RADIO_HINT_LINE =
+    "RADIO - CLICK OR R: CHANGE THE MUSIC";
+constexpr std::pair<int, int> RADIO_FRAME_CORNER{278, 159};
+constexpr sf::Vector2i FAR_FROM_THE_RADIO{400, 40};
 
 constexpr std::string_view SHOP_SCENE_SHEET = "sprites/shop_scene.png";
 

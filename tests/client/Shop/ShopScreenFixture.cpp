@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include "KeyPress.hpp"
+#include "MotionPreference.hpp"
 #include "PlayerSettings.hpp"
 #include "PointerEvents.hpp"
 #include "RecordingInterfaceCanvas.hpp"
@@ -24,7 +25,8 @@ ShopScreenFixture::ShopScreenFixture()
                           .sounds = sounds_,
                           .audio = audio_,
                           .settings = service_,
-                          .playfieldPointAt = samePlayfieldPoint},
+                          .playfieldPointAt = samePlayfieldPoint,
+                          .motion = MotionPreference::Reduced},
           std::make_unique<RecordingInterfaceCanvas>(painting_))) {}
 
 void ShopScreenFixture::press(sf::Keyboard::Key key) {

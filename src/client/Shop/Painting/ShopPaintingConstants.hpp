@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SFML/Graphics/Color.hpp>
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/System/Vector2.hpp>
 #include "InterfaceConstants.hpp"
 #include "TextStyle.hpp"
@@ -33,6 +34,18 @@ constexpr int SHOP_RIBBON_THICKNESS = 3;
 constexpr int SHOP_RIBBON_INSET = 2;
 constexpr int SHOP_RIBBON_RISE = 7;
 constexpr int SHOP_RIBBON_RUN = 10;
+
+/** @brief The shopkeeper: where his frame is laid at rest, the size of a
+ * frame of his sheet, and how far apart its frames are, one per
+ * ShopkeeperEye, in a row. */
+constexpr sf::Vector2i SHOPKEEPER_TOP_LEFT{193, 85};
+constexpr sf::Vector2i SHOPKEEPER_FRAME_SIZE{93, 104};
+constexpr int SHOPKEEPER_FRAME_PITCH = 95;
+
+/** @brief The radio of the counter, as the picture of the booth draws it: a
+ * click on it changes the music, and the frame of a choice shows around it
+ * under the pointer. */
+constexpr sf::IntRect SHOP_RADIO_AREA{{280, 161}, {42, 21}};
 
 /** @brief The balance of the player, ending in the top-right corner of the
  * shop, and the status line, centred at the bottom, both outlined in ink

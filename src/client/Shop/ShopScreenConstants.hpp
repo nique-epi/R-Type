@@ -1,6 +1,5 @@
 #pragma once
 
-#include <SFML/Graphics/Rect.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <string_view>
 #include "SoundConstants.hpp"
@@ -11,11 +10,12 @@ namespace rtype::client {
  * nearest to a coin set down among the sounds of the client. */
 constexpr const char* PURCHASE_SOUND_ID = LOGO_IMPACT_SOUND_ID;
 
-/** @brief The radio of the counter, as the picture of the booth draws it: a
- * click on it, or SHOP_RADIO_KEY, changes the music between the music of
- * the shop and the music of the radio. */
-constexpr sf::IntRect SHOP_RADIO_AREA{{280, 161}, {42, 21}};
+/** @brief The radio of the counter (SHOP_RADIO_AREA): a click on it, or
+ * SHOP_RADIO_KEY, changes the music between the music of the shop and the
+ * music of the radio; under the pointer, the status line says so. */
 constexpr sf::Keyboard::Key SHOP_RADIO_KEY = sf::Keyboard::Key::R;
+constexpr std::string_view SHOP_RADIO_HINT =
+    "RADIO - CLICK OR R: CHANGE THE MUSIC";
 
 /** @brief The status line of the shop: a ware and its price, a ware the
  * player owns, a purchase, and why one was refused. */

@@ -13,14 +13,17 @@
 #include "RecordingSoundPlayer.hpp"
 #include "SettingsService.hpp"
 #include "ShopScreen.hpp"
+#include "TimeConstants.hpp"
 
 namespace rtype::client::testing {
 
-/** @brief A shop opened over a screen that holds the space ambience, as the
- * server map does, on an audio service that records the ambience asked. */
-class ShopMusicFixture : public ::testing::Test {
+/** @brief The booth of a shop opened over a screen that holds the space
+ * ambience, as the server map does: its music on an audio service that
+ * records the ambience asked, its radio and its shopkeeper on a recording
+ * canvas. The shopkeeper may move. */
+class ShopBoothFixture : public ::testing::Test {
  protected:
-  ShopMusicFixture();
+  ShopBoothFixture();
 
   /** @brief Presses then releases @p key. */
   void press(sf::Keyboard::Key key);
@@ -29,8 +32,17 @@ class ShopMusicFixture : public ::testing::Test {
   /** @brief Presses the left button at @p pixel of the interface, at the
    * pixel of the window INTERFACE_PIXEL times as far. */
   void click(sf::Vector2i pixel);
+  /** @brief Moves the pointer to @p pixel of the interface, at the pixel of
+   * the window INTERFACE_PIXEL times as far, then runs a frame of no time. */
+  void pointAt(sf::Vector2i pixel);
+  /** @brief Runs a frame @p elapsed long. */
+  void wait(engine::Duration elapsed);
   /** @brief Closes the shop, as the screen stack does when it is popped. */
   void close();
+  /** @brief Opens the shop again for a player who asked for less motion. */
+  void reopenWithLessMotion();
+
+  [[nodiscard]] const InterfaceCanvasRecord& painting() const;
 
   /** @returns The ambience the audio service plays now. */
   [[nodiscard]] Ambience ambience() const;

@@ -28,6 +28,7 @@
 #include "ShopSpriteConstants.hpp"
 #include "ShopView.hpp"
 #include "ShopWares.hpp"
+#include "ShopkeeperPose.hpp"
 #include "TextureArea.hpp"
 #include "WidgetConstants.hpp"
 
@@ -135,15 +136,40 @@ void paintCase(IInterfaceCanvas& canvas, const ShopWares& wares,
   }
 }
 
+/** @brief Lays the picture @p assetId, as large as the interface, over the
+ * whole canvas. */
+void paintWholePicture(IInterfaceCanvas& canvas, const char* assetId) {
+  canvas.drawImage(TextureArea{.assetId = assetId, .rectangle = INTERFACE_AREA},
+                   ImagePlacement{.topLeft = INTERFACE_AREA.position},
+                   INTERFACE_AREA);
+}
+
+/** @brief Draws the shopkeeper as @p pose stands him: the frame of his eye,
+ * its drop under his place of rest. */
+void paintShopkeeper(IInterfaceCanvas& canvas, ShopkeeperPose pose) {
+  canvas.drawImage(
+      TextureArea{
+          .assetId = SHOP_KEEPER_SHEET_ID,
+          .rectangle = {{static_cast<int>(pose.eye) * SHOPKEEPER_FRAME_PITCH,
+                         0},
+                        SHOPKEEPER_FRAME_SIZE}},
+      ImagePlacement{.topLeft =
+                         SHOPKEEPER_TOP_LEFT + sf::Vector2i{0, pose.drop}},
+      INTERFACE_AREA);
+}
+
 }  // namespace
 
 void paintShop(IInterfaceCanvas& canvas, const ShopWares& wares,
                const ShopView& view) {
-  canvas.drawImage(
-      TextureArea{.assetId = SHOP_SCENE_ID, .rectangle = INTERFACE_AREA},
-      ImagePlacement{.topLeft = INTERFACE_AREA.position}, INTERFACE_AREA);
+  paintWholePicture(canvas, SHOP_SCENE_ID);
+  paintShopkeeper(canvas, view.keeper);
+  paintWholePicture(canvas, SHOP_FRONT_ID);
   paintLocker(canvas, wares, view);
   paintCase(canvas, wares, view);
+  if (view.radioPointed) {
+    paintChosenFrame(canvas, SHOP_RADIO_AREA);
+  }
   paintKopecks(canvas, KopecksLabel{.topRight = SHOP_BALANCE_TOP_RIGHT,
                                     .amount = view.kopecks,
                                     .prefix = {},

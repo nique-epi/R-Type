@@ -22,7 +22,8 @@ std::unique_ptr<IScreen> buildShopScreen(const ScreenContext& context) {
                       .sounds = soundsOf(context),
                       .audio = context.services.audio.get(),
                       .settings = context.services.settingsService.get(),
-                      .playfieldPointAt = playfieldMappingOf(context)},
+                      .playfieldPointAt = playfieldMappingOf(context),
+                      .motion = motionPreference()},
       interfaceCanvasOf(context));
 }
 

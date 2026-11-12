@@ -4,6 +4,7 @@
 #include "IAudioService.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
+#include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 #include "SettingsService.hpp"
 
@@ -31,6 +32,9 @@ struct ShopScreenParts {
   std::reference_wrapper<SettingsService> settings;
   /** @brief Gives the point of the playfield under a pixel of the window. */
   PlayfieldMapping playfieldPointAt;
+  /** @brief Whether the shopkeeper may move, or the player asked the system
+   * for less motion. */
+  MotionPreference motion{};
 };
 
 }  // namespace rtype::client

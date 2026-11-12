@@ -17,6 +17,7 @@
 #include "KeyChipParts.hpp"
 #include "LookItemPurchase.hpp"
 #include "MenuBuilder.hpp"
+#include "MotionPreference.hpp"
 #include "PlayerSettings.hpp"
 #include "Purchase.hpp"
 #include "Purse.hpp"
@@ -24,12 +25,15 @@
 #include "ShelfSizes.hpp"
 #include "ShopCatalogue.hpp"
 #include "ShopPainting.hpp"
+#include "ShopPaintingConstants.hpp"
 #include "ShopScreenConstants.hpp"
 #include "ShopScreenParts.hpp"
 #include "ShopShelf.hpp"
 #include "ShopSpot.hpp"
 #include "ShopStatus.hpp"
 #include "ShopView.hpp"
+#include "ShopkeeperMotion.hpp"
+#include "ShopkeeperMotionConstants.hpp"
 #include "SoundConstants.hpp"
 #include "TimeConstants.hpp"
 #include "WidgetConstants.hpp"
@@ -63,6 +67,7 @@ ShopScreen::ShopScreen(ShopScreenParts parts,
       audio_(&parts.audio.get()),
       music_(parts.audio.get(), Ambience::Shop),
       settings_(&parts.settings.get()),
+      motion_(parts.motion),
       canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       backChip_(KeyChipParts{.text = backText(),
@@ -97,7 +102,8 @@ void ShopScreen::handleEvent(const sf::Event& event) {
   }
 }
 
-void ShopScreen::update(engine::Duration /*elapsed*/) {
+void ShopScreen::update(engine::Duration elapsed) {
+  elapsed_ += elapsed;
   static_cast<void>(settings_->saveIfChanged());
   repaint();
 }
@@ -126,8 +132,11 @@ void ShopScreen::keyPressed(const sf::Event::KeyPressed& key) {
 
 void ShopScreen::pointed(sf::Vector2i position, bool clicked) {
   const sf::Vector2i pixel = interfacePixelAt(playfieldPointAt_(position));
-  if (clicked && SHOP_RADIO_AREA.contains(pixel)) {
-    tuneRadio(*audio_);
+  radioPointed_ = SHOP_RADIO_AREA.contains(pixel);
+  if (radioPointed_) {
+    if (clicked) {
+      tuneRadio(*audio_);
+    }
     return;
   }
   const ShopSpot before = selection_.spot();
@@ -160,14 +169,20 @@ void ShopScreen::buy() {
 
 void ShopScreen::repaint() {
   const Purse purse = purseOf(settings_->settings());
-  const std::string status = message_.value_or(wareLineOf(chosenItem(), purse));
+  const std::string status =
+      radioPointed_ ? std::string(SHOP_RADIO_HINT)
+                    : message_.value_or(wareLineOf(chosenItem(), purse));
   canvas_->clear();
   paintShop(*canvas_, wares_,
             ShopView{.chosen = selection_.spot(),
                      .rows = selection_.window(),
                      .owned = purse.locker,
                      .kopecks = purse.kopecks,
-                     .status = status});
+                     .status = status,
+                     .keeper = motion_ == MotionPreference::Full
+                                   ? shopkeeperPoseAt(elapsed_)
+                                   : SHOPKEEPER_AT_REST,
+                     .radioPointed = radioPointed_});
   backChip_.paint(*canvas_);
   canvas_->display();
 }

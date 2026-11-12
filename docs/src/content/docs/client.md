@@ -666,7 +666,7 @@ In a game, `dressPilotShips()` (`src/client/Game/PilotShipLooks.hpp`) gives the 
 
 ## Shop: `ShopScreen`, `ShopSelection`
 
-`ShopScreen` (`src/client/Shop/`) sells the items of the catalog for kopecks. The shop module adds it to the registry as `SHOP_SCREEN`; the kiosk of the server map pushes it, and it hides the screen below, which goes on running. Its scenery is one picture, `sprites/shop_scene.png`: the booth of the Bydo, its locker and its glass case empty. The code paints what changes over it (`paintShop()`, `Shop/Painting/`): the looks of the rows the locker shows, the hulls of the case, a price tag on each ware (`paintPriceTag()`, digits of 3 × 5 pixels, so the tag of 10 000 fits the stall of a hull), a red ribbon across a ware the player owns, the frame of the chosen ware, the balance in the top-right corner and a status line.
+`ShopScreen` (`src/client/Shop/`) sells the items of the catalog for kopecks. The shop module adds it to the registry as `SHOP_SCREEN`; the kiosk of the server map pushes it, and it hides the screen below, which goes on running. Its scenery is three pictures laid in this order: `sprites/shop_scene.png`, the booth with its locker and its glass case empty and no shopkeeper; a frame of `sprites/shop_bydo.png`, the shopkeeper; and `sprites/shop_front.png`, the bars, the counter and the lamp that stand in front of him. `shopkeeperPoseAt()` (`Shop/Painting/ShopkeeperMotion`) says how he stands once the shop was shown for a time, counted in whole steps of `SHOPKEEPER_STEP` (125 ms): he breathes, drawn up to 2 pixels under then above his place of rest over 3 s (`SHOPKEEPER_DROPS`), and his eye blinks and glances left then right over 8 s (`SHOPKEEPER_EYE_CUES`, one frame of the sheet per `ShopkeeperEye`). He stands still, looking ahead, when the system asks for less motion. The code paints what changes over the pictures (`paintShop()`, `Shop/Painting/`): the looks of the rows the locker shows, the hulls of the case, a price tag on each ware (`paintPriceTag()`, digits of 3 × 5 pixels, so the tag of 10 000 fits the stall of a hull), a red ribbon across a ware the player owns, the frame of the chosen ware, the balance in the top-right corner and a status line.
 
 `waresForSale()` (`Shop/Shelves/`) lists what is sold: every accessory whose price is not `NOT_FOR_SALE`, in the order of the catalog, then the hulls by rising price. `ShopSelection` holds the chosen ware and the rows the locker shows, three cells a row and four rows at a time, with the `RowWindow` of the hangar.
 
@@ -678,6 +678,7 @@ In a game, `dressPilotShips()` (`src/client/Game/PilotShipLooks.hpp`) gives the 
 | Pointer over a look shown or a hull | chooses it |
 | Mouse wheel | scrolls the locker one row a notch; the choice stays on a cell shown |
 | Enter, click on a ware | buys it; a key held down acts once |
+| Pointer over the radio of the counter | the frame of a choice shows around it, and the status line reads `RADIO - CLICK OR R: CHANGE THE MUSIC` |
 | Click on the radio of the counter, R (`SHOP_RADIO_KEY`) | changes the music; a key held down acts once |
 | Escape, BACK | close the shop |
 

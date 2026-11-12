@@ -15,6 +15,7 @@
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
 #include "KeyChip.hpp"
+#include "MotionPreference.hpp"
 #include "PlayfieldMapping.hpp"
 #include "SettingsService.hpp"
 #include "ShopScreenParts.hpp"
@@ -36,6 +37,10 @@ namespace rtype::client {
  * settings are saved; a ware the player owns, or cannot pay, is refused on
  * the status line. Escape or BACK closes the shop. It hides the screens
  * below.
+ *
+ * The shopkeeper breathes, blinks and glances around behind his counter,
+ * unless the player asked for less motion. The radio shows the frame of a
+ * choice under the pointer.
  *
  * The music of the shop plays while it shows, the theme paused. A click on
  * the radio of the counter, or SHOP_RADIO_KEY once per hold, changes it for
@@ -76,6 +81,12 @@ class ShopScreen final : public IScreen {
    * gives the screen below its ambience back. */
   AmbienceScope music_;
   SettingsService* settings_;
+  MotionPreference motion_;
+  /** @brief How long the shop was shown: where the shopkeeper is in his
+   * breath and in the cycle of his eye. */
+  engine::Duration elapsed_{};
+  /** @brief Whether the pointer is over the radio of the counter. */
+  bool radioPointed_{false};
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   KeyChip backChip_;

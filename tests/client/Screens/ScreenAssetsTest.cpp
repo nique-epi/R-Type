@@ -43,6 +43,8 @@ using rtype::client::REGULAR_FONT_ID;
 using rtype::client::SECTOR_MAP_SHEET_ID;
 using rtype::client::SHIP_HULL_SHEET_ID;
 using rtype::client::SHIP_LOOK_SHEET_ID;
+using rtype::client::SHOP_FRONT_ID;
+using rtype::client::SHOP_KEEPER_SHEET_ID;
 using rtype::client::SHOP_SCENE_ID;
 using rtype::client::SMALL_FONT_ID;
 using rtype::client::titleAssets;
@@ -197,7 +199,8 @@ TEST(ScreenAssets, TheIntroLoadsTheTitleAndTheEffectSheet) {
               UnorderedElementsAre(
                   LOGO_ID, ENTITY_SHEET_ID, HUD_SHEET_ID, PROFESSOR_SHEET_ID,
                   LEADERBOARD_SHEET_ID, SHIP_LOOK_SHEET_ID, SHIP_HULL_SHEET_ID,
-                  SECTOR_MAP_SHEET_ID, SHOP_SCENE_ID, EFFECT_SHEET_ID));
+                  SECTOR_MAP_SHEET_ID, SHOP_SCENE_ID, SHOP_KEEPER_SHEET_ID,
+                  SHOP_FRONT_ID, EFFECT_SHEET_ID));
 }
 
 /**

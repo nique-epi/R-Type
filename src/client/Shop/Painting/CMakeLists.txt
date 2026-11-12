@@ -1,6 +1,7 @@
 add_library(rtype_client_shop_painting STATIC
   PriceTag.cpp
   ShopPainting.cpp
+  ShopkeeperMotion.cpp
 )
 
 target_include_directories(rtype_client_shop_painting PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -11,6 +12,7 @@ target_link_libraries(rtype_client_shop_painting
     rtype_client_row_window
     rtype_client_settings_values
     rtype_client_shop_shelves
+    rtype_engine_time
   PRIVATE
     rtype_client_background
     rtype_client_economy

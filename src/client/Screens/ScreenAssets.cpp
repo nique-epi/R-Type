@@ -44,7 +44,8 @@ AssetList titleAssets() {
   return AssetList{.textures = {LOGO_ID, ENTITY_SHEET_ID, HUD_SHEET_ID,
                                 PROFESSOR_SHEET_ID, LEADERBOARD_SHEET_ID,
                                 SHIP_LOOK_SHEET_ID, SHIP_HULL_SHEET_ID,
-                                SECTOR_MAP_SHEET_ID, SHOP_SCENE_ID}};
+                                SECTOR_MAP_SHEET_ID, SHOP_SCENE_ID,
+                                SHOP_KEEPER_SHEET_ID, SHOP_FRONT_ID}};
 }
 
 AssetList gameAssets() {
