@@ -19,7 +19,8 @@ Nothing here runs by itself the first time: a member of the team sets it up once
 
 ## What you get
 
-- One `t3.medium` instance (x86, 2 vCPU, 4 GiB of memory, Ubuntu 24.04, 8 GiB disk) with an Elastic IP that does not change, about 37 USD a month (an estimate from public prices, not measured). Its CPU runs on credits in "standard" mode: it is slowed down when the credits are gone and never billed more.
+- One `t3.small` instance (x86, 2 vCPU, 2 GiB of memory, Ubuntu 24.04, 8 GiB disk) with an Elastic IP that does not change, about 20 USD a month (an estimate from public prices, not measured). Its CPU runs on credits in "standard" mode: it is slowed down when the credits are gone and never billed more.
+- An account on the **free plan** of AWS may only launch the instance types `aws ec2 describe-instance-types --filters Name=free-tier-eligible,Values=true` lists; `t3.small` is one of them, `t3.medium` is not. That plan ends after six months or when its credits are used up, and AWS then closes the account and the master with it: upgrade to the paid plan (Billing, Upgrade plan) to keep the master running. On the paid plan, `instance_type` can go back to `t3.medium` (4 GiB), which replaces the instance and starts the database again.
 - Two open ports: 443, the HTTPS API of the master through Caddy, and 80, which only serves the certificate challenges of Let's Encrypt and sends the rest to HTTPS. The master listens on 8080, which no rule opens: only Caddy, on the machine, reaches it. There is no SSH and no key pair: the machine is reached through AWS Systems Manager (SSM).
 - A certificate of Let's Encrypt for the domain of the master, which Caddy gets at the first deployment and renews by itself.
 - A deployment on every release (`v*` tag), after a person approves it in GitHub. No AWS key is stored in the repository or in GitHub: the workflow gets a short-lived token from GitHub (OpenID Connect) and trades it for a role.
