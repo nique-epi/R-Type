@@ -61,7 +61,14 @@ jobs:
         working-directory: infra/terraform-game
         run: terraform destroy -input=false -auto-approve
 
+      # A master deployed before the test server has no such service yet.
       - name: Start the test server of the master machine
         run: |
-          echo 'systemctl enable --now rtype-test-server' > "$RUNNER_TEMP/script.sh"
+          cat > "$RUNNER_TEMP/script.sh" <<'SCRIPT'
+          if systemctl cat rtype-test-server > /dev/null 2>&1; then
+            systemctl enable --now rtype-test-server
+          else
+            echo 'the master machine has no test server: deploy a release to it'
+          fi
+          SCRIPT
           infra/run-on-instance.sh "$MASTER_INSTANCE_ID" "$RUNNER_TEMP/script.sh"
