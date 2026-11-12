@@ -66,7 +66,9 @@ class Bot {
   /** @brief Drains the entity messages, shows them to the sight, has the
    * tally count them, the time
    * of the frame of @p elapsed and the traffic of the socket, and has the
-   * sender confirm the inputs each world state acknowledges. */
+   * sender confirm the inputs each world state acknowledges. The boss tally
+   * reads the lives lost after each message, before that message can end the
+   * fight: a life lost in the frame that ends a fight still counts in it. */
   void readReceived(engine::Duration elapsed);
 
   client::PlayerConnection connection_;

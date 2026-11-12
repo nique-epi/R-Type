@@ -22,6 +22,7 @@ using rtype::tools::testing::gameEnded;
 using rtype::tools::testing::HALF_A_SECOND;
 using rtype::tools::testing::LAST_HEALTH_POINT;
 using rtype::tools::testing::LAST_HEALTH_POINT_PERCENT;
+using rtype::tools::testing::NO_TIME;
 using rtype::tools::testing::THREE_QUARTERS_OF_THE_HEALTH;
 using rtype::tools::testing::THREE_QUARTERS_PERCENT;
 using rtype::tools::testing::TWO_FIGHTS;
@@ -74,6 +75,36 @@ TEST(BossTally, ADefeatedBossMarksItsFight) {
   ASSERT_EQ(fights.size(), 1U);
   EXPECT_TRUE(fights.front().defeated);
   EXPECT_EQ(fights.front().bossHealthLeftPercent, 0U);
+}
+
+/**
+ * Given a tally that never saw the boss fight
+ * When the boss is told defeated and the game ends
+ * Then it holds no fight
+ */
+TEST(BossTally, ADefeatedBossNeverSeenFightingIsNoFight) {
+  BossTally tally;
+  tally.count(bossDefeated());
+
+  tally.count(gameEnded());
+
+  EXPECT_TRUE(tally.fights().empty());
+}
+
+/**
+ * Given a tally of a fight, the bot with no life lost
+ * When two lives lost are read with no time passed, then the game ends
+ * Then the fight holds the two lives lost
+ */
+TEST(BossTally, LivesLostReadJustBeforeTheGameEndsAreCounted) {
+  BossTally tally;
+  tally.addTime(A_SECOND, ALIVE_NOTHING_LOST);
+  tally.count(bossFighting(FULL_BOSS_HEALTH));
+  tally.addTime(NO_TIME, ALIVE_TWO_LOST);
+
+  tally.count(gameEnded());
+
+  EXPECT_EQ(tally.fights().front().livesLost, TWO_LIVES);
 }
 
 /**

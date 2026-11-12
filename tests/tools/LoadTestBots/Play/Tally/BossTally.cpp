@@ -50,15 +50,17 @@ void BossTally::addTime(engine::Duration elapsed, const SightFigures& figures) {
 std::vector<BossFight> BossTally::fights() const { return ended_; }
 
 void BossTally::readStatus(const network::BossStatus& status) {
-  if (status.stage == network::BossStage::Arriving) {
+  const bool defeated = status.stage == network::BossStage::Defeated;
+  if (status.stage == network::BossStage::Arriving ||
+      (defeated && !current_.has_value())) {
     return;
   }
   if (!current_.has_value()) {
     current_ = BossFight{};
   }
   current_->bossHealthLeftPercent = healthPercentOf(status);
-  bossFights_ = status.stage != network::BossStage::Defeated;
-  current_->defeated = status.stage == network::BossStage::Defeated;
+  bossFights_ = !defeated;
+  current_->defeated = defeated;
 }
 
 void BossTally::endFight() {

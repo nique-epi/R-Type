@@ -18,8 +18,8 @@ namespace rtype::tools {
  *
  * A fight starts with the first BossStatus of the stage Fighting or Enraged of
  * a game and ends with its GameEnded. The Arriving stage is not a fight: the
- * boss does not attack yet. A fight still running when the report is taken is
- * not in it.
+ * boss does not attack yet, and a Defeated status of a boss never seen fighting
+ * starts none. A fight still running when the report is taken is not in it.
  */
 class BossTally {
  public:

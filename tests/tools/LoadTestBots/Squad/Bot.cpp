@@ -93,6 +93,7 @@ void Bot::readReceived(engine::Duration elapsed) {
   const std::uint8_t playerNumber = connection_.session().status().playerNumber;
   for (const client::EntityMessage& message : received_) {
     sight_.read(message, playerNumber);
+    boss_.addTime(engine::Duration{}, sight_.figures());
     tally_.count(message);
     boss_.count(message);
     inputs_.confirm(message, playerNumber);

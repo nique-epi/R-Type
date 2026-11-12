@@ -26,6 +26,9 @@ constexpr engine::Duration A_SECOND = std::chrono::seconds{1};
 constexpr engine::Duration HALF_A_SECOND = std::chrono::milliseconds{500};
 constexpr engine::Duration TWO_SECONDS = std::chrono::seconds{2};
 
+/** @brief The time of a reading taken between two messages of one frame. */
+constexpr engine::Duration NO_TIME{};
+
 /** @brief What a bot knows of its run: a life left with none lost yet, a life
  * left after two were lost, and no life left after three were lost. */
 constexpr SightFigures ALIVE_NOTHING_LOST{
