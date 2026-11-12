@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 #include "ConnectionRequest.hpp"
 #include "Endpoint.hpp"
 #include "GameRequest.hpp"
@@ -30,6 +31,11 @@ struct ServerChoice {
    * its rules when known; nothing before the first. A screen that starts with
    * lastServer asks for it, and the waiting room shows its rules. */
   std::optional<GameRequest> lastRequest = std::nullopt;
+  /** @brief The servers to try, in order, once lastServer answers that it is
+   * full: those QUICK PLAY of the server map kept behind the one it chose.
+   * Empty for any other choice of the map, which writes it each time, and
+   * read only by the screen the map opens. */
+  std::vector<network::Endpoint> nextServers;
 };
 
 }  // namespace rtype::client

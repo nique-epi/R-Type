@@ -134,7 +134,8 @@ Menu newGameMenu(NewGameMenuParts parts) {
                     ChosenGame{
                         .server = server,
                         .request = GameRequest{.game = network::NEW_GAME_CHOICE,
-                                               .rules = draft->rules}},
+                                               .rules = draft->rules},
+                        .otherServers = {}},
                     navigator);
               })
       .build();

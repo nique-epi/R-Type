@@ -53,7 +53,7 @@ Open the UDP port of the server to the players, and the TCP port of the same num
 
 ## Finding a server on the map
 
-Without `-h`, PLAY opens the server map: the servers the master lists, placed around your planet by the ping the client measures. Enter or a click joins one; Q (QUICK PLAY) joins the game with the lowest ping. The map needs the master, `https://master.rtype.app` unless `set master-url` names another: see [Master](/R-Type/master/) to run one, or [Deploying the master](/R-Type/deploy-master/) to host it.
+Without `-h`, PLAY opens the server map: the servers the master lists, placed around your planet by the ping the client measures. Enter or a click joins one; Q (QUICK PLAY) joins a game of the server with the lowest ping that still has a free seat. The map needs the master, `https://master.rtype.app` unless `set master-url` names another: see [Master](/R-Type/master/) to run one, or [Deploying the master](/R-Type/deploy-master/) to host it.
 
 :::note[No master?]
 The map then shows `MASTER UNREACHABLE`. Press D (ADDRESS) to open the connection screen, type the address and the port of a server, and press CONNECT.
