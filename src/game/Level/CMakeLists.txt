@@ -1,7 +1,13 @@
-add_library(rtype_game_level STATIC LevelScroll.cpp)
+add_library(rtype_game_level STATIC LevelScroll.cpp ScrollingBodies.cpp)
 
 target_include_directories(rtype_game_level PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(rtype_game_level PUBLIC rtype_engine_time)
+target_link_libraries(rtype_game_level
+  PUBLIC
+    rtype_engine_time
+  PRIVATE
+    rtype_engine_component_registry
+    rtype_game_components
+)
 
 rtype_enable_warnings(rtype_game_level)

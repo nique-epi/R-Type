@@ -24,11 +24,14 @@ using rtype::server::testing::SCROLL_OF_ONE_SECOND;
 using rtype::server::testing::SCROLL_OF_ONE_TICK;
 using rtype::server::testing::SCROLL_ONE_TICK_AFTER_THE_CHECKPOINT;
 using rtype::server::testing::SCROLL_TOLERANCE;
+using rtype::server::testing::SCROLLED_ONE_SECOND_X;
+using rtype::server::testing::SCROLLED_UNTIL_THE_PAUSE_X;
 using rtype::server::testing::SPEED_OF_A_SCROLLING_LEVEL;
 using rtype::server::testing::SPEED_OF_A_STOPPED_LEVEL;
 using rtype::server::testing::TICK_OF_THE_SECOND_ACT;
 using rtype::server::testing::TICKS_INTO_THE_SECOND_STAGE;
 using rtype::server::testing::TICKS_OF_ONE_SECOND;
+using rtype::server::testing::TICKS_PAST_THE_PAUSE;
 using rtype::server::testing::UNREGISTERED_LEVEL;
 using rtype::server::testing::WHERE_THE_ENEMY_IS;
 using rtype::server::testing::WHERE_THE_SHIP_IS;
@@ -227,4 +230,51 @@ TEST_F(LevelDirectorFixture, RefusesALevelNoScriptRegistered) {
   EXPECT_THROW(static_cast<void>(stagesOfLevel(
                    scripts().levels(), std::string{UNREGISTERED_LEVEL})),
                UnknownLevelException);
+}
+
+/**
+ * Given a level nothing pauses and a Bydo made to follow the scroll at x 900
+ * When one second of ticks passes
+ * Then the Bydo is 120 units further left, as far as the level scrolled
+ */
+TEST_F(LevelDirectorFixture, ABodyFollowingTheScrollMovesAsFarAsTheLevel) {
+  direct(LEVEL_THAT_WAITS);
+  const std::uint32_t wall =
+      placeFollowingTheScroll(LEVEL_ENEMY_SHEET, WHERE_THE_ENEMY_IS);
+
+  tick(TICKS_OF_ONE_SECOND);
+
+  EXPECT_NEAR(positionOf(wall).x, SCROLLED_ONE_SECOND_X, SCROLL_TOLERANCE);
+  EXPECT_FLOAT_EQ(positionOf(wall).y, WHERE_THE_ENEMY_IS.y);
+}
+
+/**
+ * Given a level that pauses its scroll at its fourth tick, and a Bydo made to
+ * follow the scroll at x 900
+ * When five ticks pass
+ * Then the Bydo moved only through the three ticks before the pause
+ */
+TEST_F(LevelDirectorFixture, ABodyFollowingTheScrollStopsWithIt) {
+  direct(LEVEL_THAT_PAUSES);
+  const std::uint32_t wall =
+      placeFollowingTheScroll(LEVEL_ENEMY_SHEET, WHERE_THE_ENEMY_IS);
+
+  tick(TICKS_PAST_THE_PAUSE);
+
+  EXPECT_NEAR(positionOf(wall).x, SCROLLED_UNTIL_THE_PAUSE_X, SCROLL_TOLERANCE);
+}
+
+/**
+ * Given a level nothing pauses and a Bydo at x 900 that does not follow the
+ * scroll
+ * When one second of ticks passes
+ * Then the director has not moved it
+ */
+TEST_F(LevelDirectorFixture, ABodyThatDoesNotFollowTheScrollStays) {
+  direct(LEVEL_THAT_WAITS);
+  const std::uint32_t bydo = place(LEVEL_ENEMY_SHEET, WHERE_THE_ENEMY_IS);
+
+  tick(TICKS_OF_ONE_SECOND);
+
+  EXPECT_FLOAT_EQ(positionOf(bydo).x, WHERE_THE_ENEMY_IS.x);
 }

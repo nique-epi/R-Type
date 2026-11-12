@@ -107,11 +107,12 @@ constexpr std::string_view BOX_KEY = "box";
 constexpr std::array HITBOX_TABLE_KEYS{WIDTH_KEY, HEIGHT_KEY, OFFSET_X_KEY,
                                        OFFSET_Y_KEY, BOX_KEY};
 
-/** @brief The keys of `[gameplay.motion]`: a ship has a kind only, a steady
- * body its top speed too. */
+/** @brief The keys of `[gameplay.motion]`: a ship and a body that follows the
+ * scroll have a kind only, a steady body its top speed too. */
 constexpr std::string_view KIND_KEY = "kind";
 constexpr std::string_view TOP_SPEED_KEY = "top_speed";
 constexpr std::array SHIP_MOTION_KEYS{KIND_KEY};
+constexpr std::array SCROLL_MOTION_KEYS{KIND_KEY};
 constexpr std::array STEADY_MOTION_KEYS{KIND_KEY, TOP_SPEED_KEY};
 
 /** @brief The key of `[gameplay.health]` and of `[gameplay.score]`. */
@@ -251,8 +252,10 @@ static_assert(SIDE_NAMES.size() == SIDES.size(), "one name per side");
 
 /** @brief The motions a sheet may name, and the MotionKind of each. */
 constexpr std::array MOTION_KIND_NAMES{std::string_view{"ship"},
-                                       std::string_view{"steady"}};
-constexpr std::array MOTION_KINDS{MotionKind::Ship, MotionKind::Steady};
+                                       std::string_view{"steady"},
+                                       std::string_view{"scroll"}};
+constexpr std::array MOTION_KINDS{MotionKind::Ship, MotionKind::Steady,
+                                  MotionKind::Scroll};
 static_assert(MOTION_KIND_NAMES.size() == MOTION_KINDS.size(),
               "one name per motion");
 
@@ -350,6 +353,8 @@ constexpr std::string_view LOOK_ITEM_SIDE_RULE =
 constexpr std::string_view LOOK_ITEM_HEADING_RULE =
     "a look item flies to the left, where the playfield removes it";
 constexpr std::string_view DAMAGE_SIDE_RULE = "only a missile deals damage";
+constexpr std::string_view SCROLL_MOTION_SIDE_RULE =
+    "only an enemy or an obstacle follows the scroll";
 constexpr std::string_view OBSTACLE_SIDE_RULE =
     "a sheet of side obstacle says what it does to a ship in "
     "[gameplay.obstacle], and only such a sheet";

@@ -36,6 +36,7 @@
 #include "PilotSheet.hpp"
 #include "Position.hpp"
 #include "ScoreValue.hpp"
+#include "ScrollMotion.hpp"
 #include "ShardBurst.hpp"
 #include "ShipMotion.hpp"
 #include "ShipPilot.hpp"
@@ -83,6 +84,10 @@ void addMotion(engine::ComponentRegistry& components, const BodyStart& start) {
   const MotionSheet& motion = start.sheet.get().motion;
   if (motion.kind == MotionKind::Ship) {
     components.add(start.body, ShipMotion{});
+    return;
+  }
+  if (motion.kind == MotionKind::Scroll) {
+    components.add(start.body, ScrollMotion{});
     return;
   }
   components.add(start.body, SteadyMotion{.topSpeed = motion.topSpeed});

@@ -18,6 +18,15 @@ constexpr std::string_view OBSTACLE_TABLE_OF_AN_UNKNOWN_CONTACT =
 constexpr std::string_view OBSTACLE_TABLE_WITH_AN_UNKNOWN_KEY =
     "[gameplay.obstacle]\ncontact = \"fatal\"\nbounce = 1\n";
 
+/** @brief A motion that follows the scroll, one that names a top speed it
+ * would not read, and the rule a missile that follows the scroll breaks. */
+constexpr std::string_view SCROLL_MOTION =
+    "[gameplay.motion]\nkind = \"scroll\"\n";
+constexpr std::string_view SCROLL_MOTION_WITH_A_TOP_SPEED =
+    "[gameplay.motion]\nkind = \"scroll\"\ntop_speed = 120\n";
+constexpr std::string_view SCROLL_MOTION_SIDE_RULE_TEXT =
+    "only an enemy or an obstacle follows the scroll";
+
 /** @brief The rule a sheet breaks when its side and its obstacle table do not
  * go together. */
 constexpr std::string_view OBSTACLE_SIDE_RULE_TEXT =

@@ -31,6 +31,12 @@ class LevelDirectorFixture : public ::testing::Test {
   void tick(std::size_t count);
   /** @returns The network id of a body of @p sheet put at @p position. */
   std::uint32_t place(std::string_view sheet, game::Position position);
+  /** @returns The network id of a body of @p sheet put at @p position, made to
+   * follow the scroll as a sheet whose motion is scroll makes it. */
+  std::uint32_t placeFollowingTheScroll(std::string_view sheet,
+                                        game::Position position);
+  /** @returns Where the body of @p networkId is; the origin when it is gone. */
+  [[nodiscard]] game::Position positionOf(std::uint32_t networkId);
   /** @returns The director of the level. */
   [[nodiscard]] LevelDirector& director();
   /** @returns The scripts of the test. */

@@ -93,4 +93,12 @@ constexpr std::string_view LEVEL_SHIP_SHEET = "ship";
 constexpr game::Position WHERE_THE_ENEMY_IS{.x = 900.0F, .y = 300.0F};
 constexpr game::Position WHERE_THE_SHIP_IS{.x = 200.0F, .y = 500.0F};
 
+/** @brief Where a body that follows the scroll is after one second of a level
+ * scrolling at 120 units a second: 120 units left of WHERE_THE_ENEMY_IS; and
+ * after the first five ticks of LEVEL_THAT_PAUSES, which scrolls three ticks
+ * of 2 units before its pause: 6 units left of it. */
+constexpr float SCROLLED_ONE_SECOND_X = 780.0F;
+constexpr float SCROLLED_UNTIL_THE_PAUSE_X = 894.0F;
+constexpr std::size_t TICKS_PAST_THE_PAUSE = 5;
+
 }  // namespace rtype::server::testing

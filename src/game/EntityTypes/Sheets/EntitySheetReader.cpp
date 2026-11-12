@@ -93,14 +93,17 @@ float unitsAt(const engine::DataFileTable& box, std::string_view key,
   return static_cast<float>(engine::wholeNumberAt(box, key, range));
 }
 
-/** @returns The motion `[gameplay.motion]` describes: a ship with its kind
- * only, a steady body with its top speed too. */
+/** @returns The motion `[gameplay.motion]` describes: a ship and a body that
+ * follows the scroll with their kind only, a steady body with its top speed
+ * too. */
 MotionSheet motionFrom(const engine::DataFileTable& gameplay) {
   const engine::DataFileTable motion = engine::tableAt(gameplay, MOTION_KEY);
   const MotionKind kind =
       MOTION_KINDS.at(engine::choiceAt(motion, KIND_KEY, MOTION_KIND_NAMES));
-  if (kind == MotionKind::Ship) {
-    engine::refuseUnknownKeys(motion, SHIP_MOTION_KEYS);
+  if (kind != MotionKind::Steady) {
+    engine::refuseUnknownKeys(motion, kind == MotionKind::Ship
+                                          ? SHIP_MOTION_KEYS
+                                          : SCROLL_MOTION_KEYS);
     return MotionSheet{.kind = kind, .topSpeed = 0.0F};
   }
   engine::refuseUnknownKeys(motion, STEADY_MOTION_KEYS);
@@ -569,6 +572,17 @@ void checkObstacleMatchesSide(const EntitySheet& sheet,
   }
 }
 
+/** @throws InconsistentEntitySheetException when a body that follows the
+ * scroll is neither an enemy nor an obstacle. */
+void checkScrollMotionSide(const EntitySheet& sheet,
+                           const engine::DataFileTable& gameplay) {
+  if (sheet.motion.kind == MotionKind::Scroll &&
+      sheet.side != EntityType::Enemy && sheet.side != EntityType::Obstacle) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, MOTION_KEY), SCROLL_MOTION_SIDE_RULE);
+  }
+}
+
 /** @throws InconsistentEntitySheetException when the values of @p sheet, each
  * valid, do not hold together. */
 void checkSheetHoldsTogether(const EntitySheet& sheet,
@@ -584,6 +598,7 @@ void checkSheetHoldsTogether(const EntitySheet& sheet,
   checkLookItemFliesLeft(sheet, gameplay);
   checkDamageBelongsToAMissile(sheet, gameplay);
   checkObstacleMatchesSide(sheet, gameplay);
+  checkScrollMotionSide(sheet, gameplay);
 }
 
 }  // namespace

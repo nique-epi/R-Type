@@ -2,17 +2,22 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
 #include "BehaviourScripts.hpp"
+#include "ComponentRegistry.hpp"
+#include "Entity.hpp"
 #include "EntityDestruction.hpp"
 #include "LevelChange.hpp"
 #include "LevelDirector.hpp"
 #include "LevelDirectorParts.hpp"
 #include "LevelDirectorTestConstants.hpp"
+#include "NetworkIdentity.hpp"
 #include "Position.hpp"
 #include "ScriptSource.hpp"
+#include "ScrollMotion.hpp"
 #include "ShippedEntitySheets.hpp"
 
 namespace rtype::server::testing {
@@ -50,6 +55,36 @@ std::uint32_t LevelDirectorFixture::place(std::string_view sheet,
                                           game::Position position) {
   return world_.spawn(game::testing::shippedEntitySheets().named(sheet),
                       position);
+}
+
+std::uint32_t LevelDirectorFixture::placeFollowingTheScroll(
+    std::string_view sheet, game::Position position) {
+  const std::uint32_t networkId = place(sheet, position);
+  std::optional<engine::Entity> placed;
+  world_.components().forEach<game::NetworkIdentity, game::Position>(
+      [networkId, &placed](engine::Entity body,
+                           const game::NetworkIdentity& identity,
+                           const game::Position&) {
+        if (identity.networkId == networkId) {
+          placed = body;
+        }
+      });
+  if (placed.has_value()) {
+    world_.components().add(*placed, game::ScrollMotion{});
+  }
+  return networkId;
+}
+
+game::Position LevelDirectorFixture::positionOf(std::uint32_t networkId) {
+  game::Position found{};
+  world_.components().forEach<game::NetworkIdentity, game::Position>(
+      [networkId, &found](engine::Entity, const game::NetworkIdentity& identity,
+                          const game::Position& position) {
+        if (identity.networkId == networkId) {
+          found = position;
+        }
+      });
+  return found;
 }
 
 LevelDirector& LevelDirectorFixture::director() { return *director_; }
