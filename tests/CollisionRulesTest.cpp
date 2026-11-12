@@ -16,6 +16,7 @@
 #include "MissileHit.hpp"
 #include "ShipContact.hpp"
 #include "ShippedEntitySheets.hpp"
+#include "Shootable.hpp"
 #include "SystemScheduler.hpp"
 #include "TimeConstants.hpp"
 #include "ViewDelay.hpp"
@@ -32,6 +33,7 @@ using rtype::game::EntityType;
 using rtype::game::LookItemTouched;
 using rtype::game::MissileHit;
 using rtype::game::ShipContact;
+using rtype::game::Shootable;
 using rtype::game::ViewDelay;
 using rtype::game::testing::CollisionRulesInAnyOrder;
 using rtype::game::testing::expectNoEventFor;
@@ -307,11 +309,12 @@ TEST(CollisionRules, AnEnemyTouchingALookItemPublishesNothing) {
 }
 
 /**
- * Given a player missile and an enemy missile
+ * Given a player missile and an enemy missile that is not Shootable, whose
+ * shipped filters keep the pair
  * When a Collision names them
- * Then nothing is published
+ * Then nothing is published: the two fly through each other
  */
-TEST(CollisionRules, MissilesDoNotHitEachOther) {
+TEST(CollisionRules, AShotFliesThroughAMissileThatIsNotShootable) {
   expectNoEventFor(EntityType::PlayerMissile, EntityType::EnemyMissile);
 }
 
@@ -462,6 +465,51 @@ TEST_P(CollisionRulesInAnyOrder, ATargetThatNamesTheMissileIsHit) {
 
   EXPECT_EQ(recorded.missileHits, (std::vector<MissileHit>{MissileHit{
                                       .missile = missile, .target = enemy}}));
+}
+
+/**
+ * Given a missile of a player and a Shootable missile of an enemy, with the
+ * filters of the shipped sheets
+ * When a Collision names them, in either order
+ * Then one MissileHit is published, the shot hitting the missile
+ */
+TEST_P(CollisionRulesInAnyOrder, AShotHitsAShootableMissile) {
+  CollisionScene scene;
+  const Entity shot = scene.spawn(EntityType::PlayerMissile, 0.0F, 0.0F);
+  const Entity missile = scene.spawn(EntityType::EnemyMissile, 0.0F, 0.0F);
+  scene.components.add(missile, Shootable{});
+  const CollisionRules rules(scene.events, scene.components);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(collisionOf(shot, missile));
+  scene.events.dispatch();
+
+  EXPECT_EQ(recorded.missileHits, (std::vector<MissileHit>{MissileHit{
+                                      .missile = shot, .target = missile}}));
+}
+
+/**
+ * Given a missile of a player that carries a ViewDelay, and a Shootable
+ * missile of an enemy
+ * When a Collision names them, in either order
+ * Then no MissileHit is published: LagCompensatedHitSystem tests that shot
+ * where its player saw the missile
+ */
+TEST_P(CollisionRulesInAnyOrder, LeavesACompensatedShotToTheLagSystem) {
+  CollisionScene scene;
+  const Entity shot = scene.spawn(EntityType::PlayerMissile, 0.0F, 0.0F);
+  scene.components.add(shot, ViewDelay{.ticks = 0});
+  const Entity missile = scene.spawn(EntityType::EnemyMissile, 0.0F, 0.0F);
+  scene.components.add(missile, Shootable{});
+  const CollisionRules rules(scene.events, scene.components);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(collisionOf(shot, missile));
+  scene.events.dispatch();
+
+  EXPECT_TRUE(recorded.missileHits.empty());
 }
 
 /**

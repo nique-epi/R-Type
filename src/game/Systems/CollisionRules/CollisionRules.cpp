@@ -14,6 +14,7 @@
 #include "MissileOwner.hpp"
 #include "ShipContact.hpp"
 #include "ShipPilot.hpp"
+#include "Shootable.hpp"
 #include "ViewDelay.hpp"
 
 namespace rtype::game {
@@ -73,6 +74,12 @@ void CollisionRules::publishContactOf(CollidingEntity one,
 
 bool CollisionRules::isAHitOf(CollidingEntity missile,
                               CollidingEntity target) const {
+  if (missile.type == EntityType::PlayerMissile &&
+      target.type == EntityType::EnemyMissile) {
+    return engine::hitsLayerOf(missile.filter, target.filter) &&
+           components_.has<Shootable>(target.entity) &&
+           !components_.has<ViewDelay>(missile.entity);
+  }
   if (isAMissile(target.type)) {
     return engine::hitsLayerOf(missile.filter, target.filter);
   }

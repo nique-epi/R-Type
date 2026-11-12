@@ -18,6 +18,7 @@
 #include "MissileOwner.hpp"
 #include "NetworkIdentity.hpp"
 #include "ScoreValue.hpp"
+#include "Shootable.hpp"
 
 namespace rtype::game {
 
@@ -95,6 +96,10 @@ void DamageRules::onMissileHit(const MissileHit& hit) {
   const std::optional<std::uint8_t> shooter =
       shooterOf(components_, hit.missile);
   removeMissile(hit.missile, ids->missile);
+  if (components_.has<Shootable>(hit.target)) {
+    killTarget(hit.target, ids->target, shooter);
+    return;
+  }
   auto* const health = components_.get<Health>(hit.target);
   if (health == nullptr) {
     return;

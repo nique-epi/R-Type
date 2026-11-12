@@ -15,6 +15,7 @@ constexpr std::uint32_t OTHER_MISSILE_ID = 8;
 constexpr std::uint32_t BYDO_ID = 21;
 constexpr std::uint32_t OTHER_BYDO_ID = 22;
 constexpr std::uint32_t SHIP_ID = 31;
+constexpr std::uint32_t ENEMY_MISSILE_ID = 41;
 
 /** @brief The health of a Bydo that takes one missile; one that takes three
  * has THREE_HEALTH_POINTS of the world tests. */

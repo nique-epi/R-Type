@@ -1,13 +1,18 @@
 #include <gtest/gtest.h>
 #include <cstdint>
 #include <optional>
+#include <string>
+#include <string_view>
 #include "CurrentAction.hpp"
 #include "EntitySheet.hpp"
+#include "EntitySheetConstants.hpp"
+#include "EntityType.hpp"
 #include "EntityTypesTestConstants.hpp"
 #include "Fragile.hpp"
 #include "HurtZone.hpp"
 #include "Position.hpp"
 #include "ShippedEntitySheets.hpp"
+#include "Shootable.hpp"
 #include "SurvivesContact.hpp"
 #include "World.hpp"
 #include "WorldContactPartsFixtures.hpp"
@@ -17,20 +22,25 @@
 
 using rtype::game::CurrentAction;
 using rtype::game::EntitySheet;
+using rtype::game::EntityType;
 using rtype::game::Fragile;
 using rtype::game::HurtZone;
 using rtype::game::Position;
+using rtype::game::Shootable;
+using rtype::game::SHOOTABLE_MISSILE_SHEETS;
 using rtype::game::SurvivesContact;
 using rtype::game::World;
 using rtype::game::testing::componentOf;
 using rtype::game::testing::DRIFTER_SHEET;
 using rtype::game::testing::drifterWith;
+using rtype::game::testing::ENEMY_MISSILE_SHEET;
 using rtype::game::testing::SHIP_SHEET;
 using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::SOME_X;
 using rtype::game::testing::SOME_Y;
 using rtype::game::testing::someHurtZone;
 using rtype::game::testing::STUNNED_IN_ATTACK_ZERO;
+using rtype::game::testing::UNLISTED_MISSILE_SHEET;
 
 /**
  * Given the sheet of a Drifter, of side enemy
@@ -125,4 +135,67 @@ TEST(WorldContactParts, TheFragileActionOfTheSheetIsOnTheEntity) {
   const std::optional<Fragile> fragile = componentOf<Fragile>(world, entityId);
   ASSERT_TRUE(fragile.has_value());
   EXPECT_EQ(fragile.value_or(Fragile{}).in, STUNNED_IN_ATTACK_ZERO);
+}
+
+/**
+ * Given the shipped sheet of the missile of a Bydo, which
+ * SHOOTABLE_MISSILE_SHEETS names
+ * When an entity of that sheet is spawned
+ * Then it carries the Shootable marker
+ */
+TEST(WorldContactParts, AMissileOfTheListIsShootable) {
+  World world;
+
+  const std::uint32_t entityId =
+      world.spawn(shippedEntitySheets().named(ENEMY_MISSILE_SHEET),
+                  Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_TRUE(componentOf<Shootable>(world, entityId).has_value());
+}
+
+/**
+ * Given the same sheet under a name SHOOTABLE_MISSILE_SHEETS does not hold
+ * When an entity of that sheet is spawned
+ * Then it carries no Shootable marker
+ */
+TEST(WorldContactParts, AMissileLeftOutOfTheListIsNotShootable) {
+  World world;
+  EntitySheet unlisted = shippedEntitySheets().named(ENEMY_MISSILE_SHEET);
+  unlisted.name = std::string{UNLISTED_MISSILE_SHEET};
+
+  const std::uint32_t entityId =
+      world.spawn(unlisted, Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_FALSE(componentOf<Shootable>(world, entityId).has_value());
+}
+
+/**
+ * Given the sheet of a Drifter, of side enemy, under a name
+ * SHOOTABLE_MISSILE_SHEETS holds
+ * When an entity of that sheet is spawned
+ * Then it carries no Shootable marker: only a missile of an enemy is shot
+ * down
+ */
+TEST(WorldContactParts, AnEnemyNamedInTheListIsNotShootable) {
+  World world;
+  EntitySheet enemy = shippedEntitySheets().named(DRIFTER_SHEET);
+  enemy.name = std::string{ENEMY_MISSILE_SHEET};
+
+  const std::uint32_t entityId =
+      world.spawn(enemy, Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_FALSE(componentOf<Shootable>(world, entityId).has_value());
+}
+
+/**
+ * Given the names SHOOTABLE_MISSILE_SHEETS holds
+ * When each is looked up among the shipped sheets
+ * Then each names a sheet of side enemy_missile, so no name of the list is
+ * misspelt
+ */
+TEST(WorldContactParts, EveryShootableNameIsAShippedMissileOfAnEnemy) {
+  for (const std::string_view name : SHOOTABLE_MISSILE_SHEETS) {
+    EXPECT_EQ(shippedEntitySheets().named(name).side, EntityType::EnemyMissile)
+        << name;
+  }
 }

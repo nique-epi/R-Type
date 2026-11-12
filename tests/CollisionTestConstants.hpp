@@ -28,8 +28,9 @@ constexpr std::uint32_t WALL_LAYER = rtype::engine::collisionLayerOf(5);
 
 /**
  * @brief The filter the shipped sheets give a body of each side: an enemy and
- * its missile hit the ships, a missile of a player hits the enemies and, for
- * friendly fire, the ships, a ship hits the look items, which hit nothing.
+ * its missile hit the ships, a missile of a player hits the enemies, their
+ * missiles and, for friendly fire, the ships, a ship hits the look items,
+ * which hit nothing.
  */
 constexpr rtype::engine::CollisionFilter ENEMY_FILTER{.layer = ENEMY_LAYER,
                                                       .hits = PLAYER_LAYER};
@@ -40,7 +41,8 @@ constexpr rtype::engine::CollisionFilter LOOK_ITEM_FILTER{
 constexpr rtype::engine::CollisionFilter PLAYER_FILTER{.layer = PLAYER_LAYER,
                                                        .hits = LOOK_ITEM_LAYER};
 constexpr rtype::engine::CollisionFilter PLAYER_MISSILE_FILTER{
-    .layer = PLAYER_MISSILE_LAYER, .hits = ENEMY_LAYER | PLAYER_LAYER};
+    .layer = PLAYER_MISSILE_LAYER,
+    .hits = ENEMY_LAYER | ENEMY_MISSILE_LAYER | PLAYER_LAYER};
 
 /**
  * @brief Filters no shipped sheet has: bodies that hit nothing, an enemy that

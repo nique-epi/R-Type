@@ -27,19 +27,21 @@ namespace rtype::game {
  * - a missile and anything but a missile become a MissileHit, the other being
  *   the target;
  * - two missiles become a MissileHit for each one that hits the layer of the
- *   other, so a missile may be stopped by one it does not stop;
+ *   other, so a missile may be stopped by one it does not stop; a missile of
+ *   a player hits a missile of an enemy only when the second is Shootable,
+ *   and the two fly through each other otherwise;
  * - a player and an enemy become a ShipContact;
  * - a player and a look item become a LookItemTouched.
  * A missile of a player and the ship of a player become a MissileHit only
  * with friendly fire on, when the MissileOwner of the missile and the
  * ShipPilot of the ship name two players: a missile of no player and a ship
  * of no pilot are left alone. A missile of a player that carries a ViewDelay
- * is not judged here against an enemy, nor a ship that carries one against an
- * enemy or the missile of an enemy: LagCompensatedHitSystem tests those where
- * their player saw the enemies. Any other pair, an entity without an
- * EntityType or without a filter and an entity that is no longer alive are
- * ignored. The two entities of a Collision may come in either order.
- * The bus and the registry must outlive this object.
+ * is not judged here against an enemy or the missile of an enemy, nor a ship
+ * that carries one against an enemy or the missile of an enemy:
+ * LagCompensatedHitSystem tests those where their player saw the enemies. Any
+ * other pair, an entity without an EntityType or without a filter and an entity
+ * that is no longer alive are ignored. The two entities of a Collision may come
+ * in either order. The bus and the registry must outlive this object.
  */
 class CollisionRules {
  public:

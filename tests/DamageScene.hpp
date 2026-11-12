@@ -41,6 +41,8 @@ struct DamageScene {
   /** @returns A boss with @p health, its Boss @p boss, in the action
    * @p current, worth nothing; its network id is BOSS_ID. */
   engine::Entity boss(Health health, Boss boss, CurrentAction current);
+  /** @returns A Shootable missile of an enemy. */
+  engine::Entity shootableMissile(std::uint32_t networkId);
   /** @brief Publishes that @p missile hit @p target, and delivers it. */
   void hit(engine::Entity missile, engine::Entity target);
 
