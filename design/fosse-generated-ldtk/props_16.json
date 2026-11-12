@@ -1,0 +1,338 @@
+[
+  {
+    "name": "arch",
+    "x": 0,
+    "y": 0,
+    "width": 48,
+    "height": 48
+  },
+  {
+    "name": "boulder_large",
+    "x": 48,
+    "y": 0,
+    "width": 48,
+    "height": 48
+  },
+  {
+    "name": "boulder_mossy",
+    "x": 96,
+    "y": 0,
+    "width": 48,
+    "height": 32
+  },
+  {
+    "name": "brick_pile",
+    "x": 144,
+    "y": 0,
+    "width": 48,
+    "height": 32
+  },
+  {
+    "name": "carved_block",
+    "x": 192,
+    "y": 0,
+    "width": 48,
+    "height": 32
+  },
+  {
+    "name": "column_fallen",
+    "x": 240,
+    "y": 0,
+    "width": 48,
+    "height": 32
+  },
+  {
+    "name": "column_short",
+    "x": 288,
+    "y": 0,
+    "width": 32,
+    "height": 48
+  },
+  {
+    "name": "column_stump",
+    "x": 320,
+    "y": 0,
+    "width": 32,
+    "height": 48
+  },
+  {
+    "name": "crystals",
+    "x": 352,
+    "y": 0,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "drip",
+    "x": 384,
+    "y": 0,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "drum_fallen",
+    "x": 416,
+    "y": 0,
+    "width": 48,
+    "height": 32
+  },
+  {
+    "name": "fern_broad",
+    "x": 464,
+    "y": 0,
+    "width": 48,
+    "height": 48
+  },
+  {
+    "name": "fern_large",
+    "x": 0,
+    "y": 48,
+    "width": 48,
+    "height": 48
+  },
+  {
+    "name": "fern_medium",
+    "x": 48,
+    "y": 48,
+    "width": 48,
+    "height": 32
+  },
+  {
+    "name": "flower_pink",
+    "x": 96,
+    "y": 48,
+    "width": 16,
+    "height": 32
+  },
+  {
+    "name": "foam",
+    "x": 112,
+    "y": 48,
+    "width": 32,
+    "height": 16
+  },
+  {
+    "name": "grass_short",
+    "x": 144,
+    "y": 48,
+    "width": 48,
+    "height": 32
+  },
+  {
+    "name": "grass_tall",
+    "x": 192,
+    "y": 48,
+    "width": 48,
+    "height": 48
+  },
+  {
+    "name": "lamp_flower",
+    "x": 240,
+    "y": 48,
+    "width": 32,
+    "height": 48
+  },
+  {
+    "name": "lantern_lit",
+    "x": 272,
+    "y": 48,
+    "width": 32,
+    "height": 48
+  },
+  {
+    "name": "lantern_unlit",
+    "x": 304,
+    "y": 48,
+    "width": 32,
+    "height": 48
+  },
+  {
+    "name": "pebbles",
+    "x": 336,
+    "y": 48,
+    "width": 48,
+    "height": 32
+  },
+  {
+    "name": "reeds",
+    "x": 384,
+    "y": 48,
+    "width": 48,
+    "height": 48
+  },
+  {
+    "name": "rock_spur",
+    "x": 432,
+    "y": 48,
+    "width": 48,
+    "height": 48
+  },
+  {
+    "name": "roots_a",
+    "x": 480,
+    "y": 48,
+    "width": 32,
+    "height": 48
+  },
+  {
+    "name": "roots_b",
+    "x": 0,
+    "y": 96,
+    "width": 32,
+    "height": 48
+  },
+  {
+    "name": "rubble",
+    "x": 32,
+    "y": 96,
+    "width": 48,
+    "height": 32
+  },
+  {
+    "name": "shroom_giant",
+    "x": 80,
+    "y": 96,
+    "width": 48,
+    "height": 48
+  },
+  {
+    "name": "shroom_pink",
+    "x": 128,
+    "y": 96,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "shroom_pink_giant",
+    "x": 160,
+    "y": 96,
+    "width": 48,
+    "height": 48
+  },
+  {
+    "name": "shroom_pink_small",
+    "x": 208,
+    "y": 96,
+    "width": 16,
+    "height": 32
+  },
+  {
+    "name": "shroom_shelf",
+    "x": 224,
+    "y": 96,
+    "width": 48,
+    "height": 32
+  },
+  {
+    "name": "shroom_slender",
+    "x": 272,
+    "y": 96,
+    "width": 16,
+    "height": 48
+  },
+  {
+    "name": "shroom_spotted",
+    "x": 288,
+    "y": 96,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "shroom_tiny",
+    "x": 320,
+    "y": 96,
+    "width": 16,
+    "height": 16
+  },
+  {
+    "name": "shroom_trio",
+    "x": 336,
+    "y": 96,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "splash",
+    "x": 368,
+    "y": 96,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "spout",
+    "x": 400,
+    "y": 96,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "sprout",
+    "x": 432,
+    "y": 96,
+    "width": 32,
+    "height": 32
+  },
+  {
+    "name": "stalactite_long",
+    "x": 464,
+    "y": 96,
+    "width": 32,
+    "height": 64
+  },
+  {
+    "name": "stalactite_trio",
+    "x": 0,
+    "y": 160,
+    "width": 32,
+    "height": 48
+  },
+  {
+    "name": "stalactite_wide",
+    "x": 32,
+    "y": 160,
+    "width": 32,
+    "height": 48
+  },
+  {
+    "name": "stalagmite",
+    "x": 64,
+    "y": 160,
+    "width": 48,
+    "height": 48
+  },
+  {
+    "name": "steps",
+    "x": 112,
+    "y": 160,
+    "width": 48,
+    "height": 32
+  },
+  {
+    "name": "vine_long",
+    "x": 160,
+    "y": 160,
+    "width": 32,
+    "height": 48
+  },
+  {
+    "name": "vine_short",
+    "x": 192,
+    "y": 160,
+    "width": 16,
+    "height": 48
+  },
+  {
+    "name": "wall_chunk",
+    "x": 208,
+    "y": 160,
+    "width": 48,
+    "height": 48
+  },
+  {
+    "name": "wall_corner",
+    "x": 256,
+    "y": 160,
+    "width": 48,
+    "height": 48
+  }
+]
