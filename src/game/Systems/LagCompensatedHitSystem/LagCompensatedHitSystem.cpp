@@ -32,6 +32,7 @@
 #include "PastEnemy.hpp"
 #include "PastTick.hpp"
 #include "Position.hpp"
+#include "PreHitCheck.hpp"
 #include "ShipContact.hpp"
 #include "SteadyMotion.hpp"
 #include "SteadyTravel.hpp"
@@ -211,29 +212,33 @@ void LagCompensatedHitSystem::update(engine::ComponentRegistry& components,
 
 void LagCompensatedHitSystem::testPlayerMissiles(
     engine::ComponentRegistry& components, engine::Duration elapsed) {
-  components.forEach<ViewDelay, Position>([this, &components, elapsed](
-                                              engine::Entity missile,
-                                              const ViewDelay& delay,
-                                              const Position& position) {
-    const auto* const box = components.get<CollisionBox>(missile);
-    const auto* const side = components.get<EntityType>(missile);
-    if (box == nullptr || side == nullptr ||
-        *side != EntityType::PlayerMissile) {
-      return;
-    }
-    const std::optional<EntityBounds> swept =
-        testerOf(components, missile,
-                 sweptBack(boundsOf(position, *box),
-                           travelOf(components, missile, elapsed)));
-    if (!swept.has_value()) {
-      return;
-    }
-    if (const std::optional<PastEnemy> target =
-            firstHitAmong(enemiesAgo(delay.ticks).bodies, *swept, components)) {
-      events_->publish(
-          MissileHit{.missile = missile, .target = target->entity});
-    }
-  });
+  components.forEach<ViewDelay, Position>(
+      [this, &components, elapsed](engine::Entity missile,
+                                   const ViewDelay& delay,
+                                   const Position& position) {
+        const auto* const box = components.get<CollisionBox>(missile);
+        const auto* const side = components.get<EntityType>(missile);
+        if (box == nullptr || side == nullptr ||
+            *side != EntityType::PlayerMissile) {
+          return;
+        }
+        const std::optional<EntityBounds> swept =
+            testerOf(components, missile,
+                     sweptBack(boundsOf(position, *box),
+                               travelOf(components, missile, elapsed)));
+        if (!swept.has_value()) {
+          return;
+        }
+        const std::optional<PastEnemy> target =
+            firstHitAmong(enemiesAgo(delay.ticks).bodies, *swept, components);
+        if (!target.has_value()) {
+          return;
+        }
+        const MissileHit hit{.missile = missile, .target = target->entity};
+        if (targetLetsHit(components, hit)) {
+          events_->publish(hit);
+        }
+      });
 }
 
 void LagCompensatedHitSystem::testShips(engine::ComponentRegistry& components) {
@@ -254,7 +259,10 @@ void LagCompensatedHitSystem::testShips(engine::ComponentRegistry& components) {
     const std::optional<PastEnemy> threat =
         firstThreatTo(enemiesAgo(delay.ticks), *tester, components);
     if (threat.has_value() && threat->kind == ThreatKind::Missile) {
-      events_->publish(MissileHit{.missile = threat->entity, .target = ship});
+      const MissileHit hit{.missile = threat->entity, .target = ship};
+      if (targetLetsHit(components, hit)) {
+        events_->publish(hit);
+      }
     } else if (threat.has_value()) {
       events_->publish(ShipContact{.player = ship, .enemy = threat->entity});
     }

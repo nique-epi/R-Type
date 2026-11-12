@@ -12,8 +12,11 @@
 #include "EntitySheet.hpp"
 #include "EntitySheets.hpp"
 #include "EntityType.hpp"
+#include "IncomingHit.hpp"
 #include "LookItemTouched.hpp"
 #include "MissileHit.hpp"
+#include "NetworkIdentity.hpp"
+#include "RecordingBehaviourState.hpp"
 #include "ShipContact.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "SystemScheduler.hpp"
@@ -29,14 +32,18 @@ using rtype::game::CollisionRules;
 using rtype::game::CollisionSystem;
 using rtype::game::EntitySheet;
 using rtype::game::EntityType;
+using rtype::game::IncomingHit;
 using rtype::game::LookItemTouched;
 using rtype::game::MissileHit;
+using rtype::game::NetworkIdentity;
 using rtype::game::ShipContact;
 using rtype::game::ViewDelay;
 using rtype::game::testing::CollisionRulesInAnyOrder;
 using rtype::game::testing::expectNoEventFor;
+using rtype::game::testing::pilotKeeping;
 using rtype::game::testing::record;
 using rtype::game::testing::Recorded;
+using rtype::game::testing::RecordingBehaviourState;
 using rtype::game::testing::shippedEntitySheets;
 using rtype::game::testing::spawnMissileOf;
 using rtype::game::testing::spawnShipFlownBy;
@@ -564,4 +571,97 @@ TEST(CollisionRules, EveryShippedSheetHasTheFilterOfItsSide) {
     EXPECT_EQ(sheet.collision.filter, shippedFilterOf(sheet.side))
         << sheet.name;
   }
+}
+
+/**
+ * Given a missile of a player and an enemy whose behaviour cancels every hit
+ * When a Collision names them
+ * Then no MissileHit is published
+ */
+TEST(CollisionRules, AHitTheTargetCancelsIsNotPublished) {
+  CollisionScene scene;
+  const Entity missile = scene.spawn(EntityType::PlayerMissile, 0.0F, 0.0F);
+  const Entity enemy = scene.spawn(EntityType::Enemy, 0.0F, 0.0F);
+  pilotKeeping(scene.components, enemy,
+               std::make_shared<RecordingBehaviourState>(CANCELS_HITS));
+  const CollisionRules rules(scene.events, scene.components);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(Collision{.first = missile, .second = enemy});
+  scene.events.dispatch();
+
+  EXPECT_TRUE(recorded.missileHits.empty());
+}
+
+/**
+ * Given a missile of a player and an enemy whose behaviour lets every hit
+ * When a Collision names them
+ * Then the MissileHit is published
+ */
+TEST(CollisionRules, AHitTheTargetLetsIsPublished) {
+  CollisionScene scene;
+  const Entity missile = scene.spawn(EntityType::PlayerMissile, 0.0F, 0.0F);
+  const Entity enemy = scene.spawn(EntityType::Enemy, 0.0F, 0.0F);
+  pilotKeeping(scene.components, enemy,
+               std::make_shared<RecordingBehaviourState>(LETS_HITS));
+  const CollisionRules rules(scene.events, scene.components);
+  Recorded recorded;
+  record(scene, recorded);
+
+  scene.events.publish(Collision{.first = missile, .second = enemy});
+  scene.events.dispatch();
+
+  EXPECT_EQ(recorded.missileHits, (std::vector<MissileHit>{MissileHit{
+                                      .missile = missile, .target = enemy}}));
+}
+
+/**
+ * Given a missile of network id 42 at (30, -10) touching a piloted enemy at
+ * (10, 10)
+ * When a Collision names them
+ * Then the behaviour of the enemy is asked about missile 42, lying 20 right of
+ * its center and 20 above it
+ */
+TEST(CollisionRules, TellsTheTargetWhichMissileHitsItAndWhere) {
+  CollisionScene scene;
+  const Entity missile = scene.spawn(EntityType::PlayerMissile,
+                                     JUDGED_MISSILE_X, JUDGED_MISSILE_Y);
+  scene.components.add(missile,
+                       NetworkIdentity{.networkId = JUDGED_MISSILE_NETWORK_ID});
+  const Entity enemy =
+      scene.spawn(EntityType::Enemy, JUDGING_ENEMY_X, JUDGING_ENEMY_Y);
+  const auto state = std::make_shared<RecordingBehaviourState>(LETS_HITS);
+  pilotKeeping(scene.components, enemy, state);
+  const CollisionRules rules(scene.events, scene.components);
+
+  scene.events.publish(Collision{.first = missile, .second = enemy});
+  scene.events.dispatch();
+
+  ASSERT_EQ(state->askedHits().size(), 1U);
+  const IncomingHit asked = state->askedHits().front();
+  EXPECT_EQ(asked.missileNetworkId, JUDGED_MISSILE_NETWORK_ID);
+  EXPECT_EQ(asked.offset.x, JUDGED_MISSILE_OFFSET_X);
+  EXPECT_EQ(asked.offset.y, JUDGED_MISSILE_OFFSET_Y);
+}
+
+/**
+ * Given a missile of a player that carries a ViewDelay and a piloted enemy
+ * When a Collision names them
+ * Then the behaviour of the enemy is not asked: the rules leave that contact
+ * to LagCompensatedHitSystem
+ */
+TEST(CollisionRules, AContactTheRulesLeaveAsksNoTarget) {
+  CollisionScene scene;
+  const Entity missile = scene.spawn(EntityType::PlayerMissile, 0.0F, 0.0F);
+  scene.components.add(missile, ViewDelay{.ticks = 0});
+  const Entity enemy = scene.spawn(EntityType::Enemy, 0.0F, 0.0F);
+  const auto state = std::make_shared<RecordingBehaviourState>(LETS_HITS);
+  pilotKeeping(scene.components, enemy, state);
+  const CollisionRules rules(scene.events, scene.components);
+
+  scene.events.publish(Collision{.first = missile, .second = enemy});
+  scene.events.dispatch();
+
+  EXPECT_TRUE(state->askedHits().empty());
 }

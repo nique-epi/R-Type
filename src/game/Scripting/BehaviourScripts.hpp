@@ -26,7 +26,8 @@ namespace rtype::game {
  * @brief The behaviours the server scripts of a game register: it runs the
  * scripts on a machine of its own, which exposes `behaviours.register(name,
  * settings, steer)`, `behaviours.wait(ms, intent)`, `behaviours.spawn(type,
- * position)` and `behaviours.destroy(id)`, `bus.on` and `bus.emit` (see
+ * position)`, `behaviours.destroy(id)` and `behaviours.pre_hit(function)` (see
+ * LuauPreHit), `bus.on` and `bus.emit` (see
  * LuauEventBindings) and the table `level` (see LuauLevels), and hands the
  * behaviours over with the built-in ones.
  *

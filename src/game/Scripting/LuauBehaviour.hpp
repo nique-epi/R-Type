@@ -30,8 +30,9 @@ namespace rtype::game {
  * ends. A wait costs no step.
  *
  * A step that fails (an error of the script, its memory or its time budget),
- * or a function the body subscribed to an event that failed since its last
- * step (see LuauEventBindings), stops the script of that body for good and is
+ * or a function the body subscribed to an event or its pre_hit function that
+ * failed since its last step (see LuauEventBindings and LuauPreHit), stops
+ * the script of that body for good, its pre_hit function with it, and is
  * reported once for the behaviour; the body stays still and is removed from the
  * game, so a body frozen out of reach cannot hold a level open. A removal the
  * game refuses (past the removals of a tick) is asked again at the next tick.

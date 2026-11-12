@@ -36,7 +36,9 @@ namespace rtype::game {
  * A box is touched only when the engine::CollisionFilter of the entity that
  * is tested and the one of the enemy, as it was recorded, pass
  * engine::mayCollide(), as for CollisionSystem; an entity without a filter is
- * neither recorded nor tested.
+ * neither recorded nor tested. A MissileHit is published only when its target
+ * lets it (targetLetsHit()), as CollisionRules publishes it: a missile whose
+ * hit was cancelled hits nothing this tick, and is tested again at the next.
  * An entity destroyed since is never touched: a missile never kills what is
  * already dead, and a missile already gone never hits. Which ships get a
  * ViewDelay is the choice of the game (see IHitArbitration). Run it after

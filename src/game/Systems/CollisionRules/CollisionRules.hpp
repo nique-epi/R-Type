@@ -36,7 +36,10 @@ namespace rtype::game {
  * of no pilot are left alone. A missile of a player that carries a ViewDelay
  * is not judged here against an enemy, nor a ship that carries one against an
  * enemy or the missile of an enemy: LagCompensatedHitSystem tests those where
- * their player saw the enemies. Any other pair, an entity without an
+ * their player saw the enemies. A MissileHit is published only when its
+ * target lets it (targetLetsHit()): the behaviour of a piloted body may
+ * cancel a hit before it is announced, and is asked again at each Collision
+ * of the same pair. Any other pair, an entity without an
  * EntityType or without a filter and an entity that is no longer alive are
  * ignored. The two entities of a Collision may come in either order.
  * The bus and the registry must outlive this object.

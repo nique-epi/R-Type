@@ -13,6 +13,7 @@ constexpr std::string_view REGISTER_FUNCTION_NAME = "register";
 constexpr std::string_view WAIT_FUNCTION_NAME = "wait";
 constexpr std::string_view SPAWN_FUNCTION_NAME = "spawn";
 constexpr std::string_view DESTROY_FUNCTION_NAME = "destroy";
+constexpr std::string_view PRE_HIT_FUNCTION_NAME = "pre_hit";
 
 /** @brief The folder of a content folder that holds its server scripts, and
  * their extension. */
@@ -30,6 +31,7 @@ constexpr int WAIT_YIELDED_VALUES = 1;
 constexpr int SPAWN_TYPE_ARGUMENT = 1;
 constexpr int SPAWN_POSITION_ARGUMENT = 2;
 constexpr int DESTROY_ID_ARGUMENT = 1;
+constexpr int PRE_HIT_FUNCTION_ARGUMENT = 1;
 
 /** @brief The keys of the view a script reads. */
 constexpr const char* VIEW_ID_KEY = "id";
@@ -67,6 +69,19 @@ constexpr const char* INTENT_LOOK_KEY = "look";
 /** @brief The keys of a collision box in the intent. */
 constexpr const char* BOX_WIDTH_KEY = "width";
 constexpr const char* BOX_HEIGHT_KEY = "height";
+
+/** @brief The keys of the hit a pre_hit function reads. */
+constexpr const char* HIT_MISSILE_KEY = "missile";
+constexpr const char* HIT_OFFSET_KEY = "offset";
+
+/** @brief Why `behaviours.pre_hit` or a pre_hit function was refused, and
+ * what starts the failure the next step of its body stops on. */
+constexpr std::string_view PRE_HIT_OUTSIDE_BODY_MESSAGE =
+    "behaviours.pre_hit only runs in the function of a body";
+constexpr std::string_view WAIT_IN_PRE_HIT_MESSAGE =
+    "a pre_hit function may not wait";
+constexpr std::string_view PRE_HIT_FAILURE_PREFIX =
+    "a pre_hit function failed: ";
 
 /** @brief The keys of a setting a script declares. */
 constexpr const char* SETTING_NAME_KEY = "name";

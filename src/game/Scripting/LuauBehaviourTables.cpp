@@ -17,6 +17,7 @@
 #include "DirectionConstants.hpp"
 #include "EnemyPhase.hpp"
 #include "GameScriptingConstants.hpp"
+#include "IncomingHit.hpp"
 #include "Intent.hpp"
 #include "Position.hpp"
 #include "TimeConstants.hpp"
@@ -242,6 +243,12 @@ void pushViewTable(lua_State* state, const BehaviourView& view,
   setFlag(state, VIEW_ENRAGED_KEY, view.enraged);
   setNumber(state, VIEW_ACTIONS_ENDED_KEY,
             static_cast<double>(view.actionsEnded));
+}
+
+void pushHitTable(lua_State* state, const IncomingHit& hit) {
+  lua_createtable(state, 0, 2);
+  setNumber(state, HIT_MISSILE_KEY, static_cast<double>(hit.missileNetworkId));
+  setPoint(state, HIT_OFFSET_KEY, hit.offset);
 }
 
 Intent intentFromTable(lua_State* state, int index) {

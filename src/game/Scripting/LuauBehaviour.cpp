@@ -97,6 +97,7 @@ void openStep(const LuauBehaviourParts& parts, const ResumeInputs& start) {
                                    ? behaviourState.handle->slot()
                                    : nullptr;
   context.steppedBody.entity = view.entity;
+  context.preHit = &behaviourState.preHit;
   parts.eventBindings.get().setSubscriber(&behaviourState.subscriptions);
 }
 
@@ -106,6 +107,7 @@ void closeStep(const LuauBehaviourParts& parts) {
   context.resumedThread = nullptr;
   context.steppedBody.handle = nullptr;
   context.steppedBody.entity = engine::Entity{};
+  context.preHit = nullptr;
   parts.eventBindings.get().setSubscriber(nullptr);
 }
 
@@ -135,11 +137,14 @@ std::uint32_t ticksToWaitAfter(engine::LuauResumeResult end,
   return *context.waitTicks;
 }
 
-/** @throws engine::ScriptException, holding why, when a function of
- * @p subscriptions failed since the last step of its entity. */
-void refuseAfterAFailedSubscribedFunction(
-    const LuauEventSubscriptions& subscriptions) {
-  const std::optional<std::string>& failure = subscriptions.failure();
+/** @throws engine::ScriptException, holding why, when a function the script
+ * of @p behaviourState subscribed to an event, or its pre_hit function, failed
+ * since the last step of its entity. */
+void refuseAfterAFailedFunction(const LuauBehaviourState& behaviourState) {
+  const std::optional<std::string>& failure =
+      behaviourState.subscriptions.failure().has_value()
+          ? behaviourState.subscriptions.failure()
+          : behaviourState.preHitFailure;
   if (failure.has_value()) {
     throw engine::ScriptException(*failure);
   }
@@ -177,7 +182,7 @@ Intent LuauBehaviour::steer(const BehaviourView& view) const {
     behaviourState = std::move(fresh);
   }
   try {
-    refuseAfterAFailedSubscribedFunction(found->subscriptions);
+    refuseAfterAFailedFunction(*found);
     return resumeOrHold(*found, view);
   } catch (const engine::ScriptException& error) {
     stopOnFailure(*found, error);
@@ -223,6 +228,8 @@ void LuauBehaviour::stopOnFailure(LuauBehaviourState& behaviourState,
                                   const engine::ScriptException& error) const {
   closeStep(parts_);
   behaviourState.subscriptions.clear();
+  behaviourState.preHit.reset();
+  behaviourState.preHitFailure.reset();
   behaviourState.thread.reset();
   behaviourState.waiting = false;
   behaviourState.heldIntent.stop();
