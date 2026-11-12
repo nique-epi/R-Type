@@ -29,13 +29,12 @@ namespace rtype::server {
     const ServerIdentity& identity);
 
 /**
- * @returns The heartbeat of @p games, with @p measures when there are some, no
- * measure otherwise, and @p probeToken when a probe came since the last
- * heartbeat sent.
+ * @returns The heartbeat of @p games, with @p measures and with @p probeToken
+ * when a probe came since the last heartbeat sent.
  */
 [[nodiscard]] network::ServerHeartbeat heartbeatOf(
     std::vector<network::HostedGame> games,
-    const std::optional<network::ServerMeasures>& measures,
+    const network::ServerMeasures& measures,
     std::optional<std::uint64_t> probeToken);
 
 /**

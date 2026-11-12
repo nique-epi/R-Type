@@ -3,12 +3,14 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 #include "HeartbeatTimes.hpp"
 #include "LatestHostedGames.hpp"
 #include "LatestServerMeasures.hpp"
 #include "LatestValue.hpp"
+#include "MachineCounters.hpp"
 #include "MasterAccess.hpp"
 #include "ServerIdentity.hpp"
 
@@ -44,6 +46,10 @@ struct HeartbeatJobParts {
   /** @brief The file of the results of the games, whose vanilla games the job
    * sends after each heartbeat (see ResultsCourier). */
   std::filesystem::path resultsFile;
+  /** @brief Reads the counters of the machine, once per heartbeat, on the
+   * MasterLink thread: countersOfThisMachine() in the server, counters of
+   * its own in a test. */
+  std::function<std::optional<MachineCounters>()> machineCounters;
 };
 
 }  // namespace rtype::server

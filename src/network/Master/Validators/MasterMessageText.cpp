@@ -407,7 +407,13 @@ ServerMeasures measuresOf(const JsonField& heartbeat) {
       .lossPercent =
           measureOf(measures, LOSS_PERCENT_MEMBER, MAXIMUM_LOSS_PERCENT),
       .averagePingMilliseconds =
-          measureOf(measures, AVERAGE_PING_MEMBER, MAXIMUM_MEASURE)};
+          measureOf(measures, AVERAGE_PING_MEMBER, MAXIMUM_MEASURE),
+      .cpuPercent =
+          measureOf(measures, CPU_PERCENT_MEMBER, MAXIMUM_CPU_PERCENT),
+      .usedMemoryBytes =
+          measureOf(measures, USED_MEMORY_MEMBER, MAXIMUM_MEASURE),
+      .totalMemoryBytes =
+          measureOf(measures, TOTAL_MEMORY_MEMBER, MAXIMUM_MEASURE)};
 }
 
 nlohmann::json gameDocument(const HostedGame& game) {
@@ -438,6 +444,9 @@ nlohmann::json measuresDocument(const ServerMeasures& measures) {
   addMeasure(document, SENT_BYTES_MEMBER, measures.sentBytesPerSecond);
   addMeasure(document, LOSS_PERCENT_MEMBER, measures.lossPercent);
   addMeasure(document, AVERAGE_PING_MEMBER, measures.averagePingMilliseconds);
+  addMeasure(document, CPU_PERCENT_MEMBER, measures.cpuPercent);
+  addMeasure(document, USED_MEMORY_MEMBER, measures.usedMemoryBytes);
+  addMeasure(document, TOTAL_MEMORY_MEMBER, measures.totalMemoryBytes);
   return document;
 }
 

@@ -39,15 +39,13 @@ network::ServerRegistration registrationOf(const ServerIdentity& identity) {
       .probeSecret = identity.probeSecret};
 }
 
-network::ServerHeartbeat heartbeatOf(
-    std::vector<network::HostedGame> games,
-    const std::optional<network::ServerMeasures>& measures,
-    std::optional<std::uint64_t> probeToken) {
-  return network::ServerHeartbeat{
-      .games = std::move(games),
-      .difficulties = {},
-      .measures = measures.value_or(network::ServerMeasures{}),
-      .probeToken = probeToken};
+network::ServerHeartbeat heartbeatOf(std::vector<network::HostedGame> games,
+                                     const network::ServerMeasures& measures,
+                                     std::optional<std::uint64_t> probeToken) {
+  return network::ServerHeartbeat{.games = std::move(games),
+                                  .difficulties = {},
+                                  .measures = measures,
+                                  .probeToken = probeToken};
 }
 
 network::FinishedGame finishedGameOf(const GameResult& result) {

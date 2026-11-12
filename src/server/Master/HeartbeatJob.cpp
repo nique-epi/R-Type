@@ -11,11 +11,15 @@
 #include "HeartbeatJobParts.hpp"
 #include "HostedGame.hpp"
 #include "InterruptibleSleep.hpp"
+#include "MachineCounterReadings.hpp"
+#include "MachineCounters.hpp"
+#include "MachineLoad.hpp"
 #include "MasterMessages.hpp"
 #include "NetworkException.hpp"
 #include "ServerConstants.hpp"
 #include "ServerHeartbeat.hpp"
 #include "ServerMasterConstants.hpp"
+#include "ServerMeasures.hpp"
 
 namespace rtype::server {
 
@@ -40,6 +44,7 @@ HeartbeatJob::HeartbeatJob(HeartbeatJobParts parts)
       difficulties_(std::move(parts.difficulties)),
       probeTokens_(parts.probeTokens),
       measures_(parts.measures),
+      machineCounters_(std::move(parts.machineCounters)),
       times_(parts.times),
       backoff_(parts.times),
       drawer_(std::random_device{}()),
@@ -88,11 +93,11 @@ bool HeartbeatJob::registerServer() {
 
 bool HeartbeatJob::sendHeartbeat() {
   const std::uint64_t tokenRevision = probeTokens_.revision();
+  const network::ServerMeasures measures = measuresNow();
   try {
     network::ServerHeartbeat heartbeat =
         heartbeatOf(games_.value().value_or(std::vector<network::HostedGame>{}),
-                    measures_ != nullptr ? measures_->value() : std::nullopt,
-                    unsentProbeToken(tokenRevision));
+                    measures, unsentProbeToken(tokenRevision));
     heartbeat.difficulties = difficulties_;
     client_.sendHeartbeat(heartbeat);
     sentTokenRevision_ = tokenRevision;
@@ -105,6 +110,17 @@ bool HeartbeatJob::sendHeartbeat() {
     problems_.tell(silence.what());
     return false;
   }
+}
+
+network::ServerMeasures HeartbeatJob::measuresNow() {
+  const std::optional<network::ServerMeasures> published =
+      measures_ != nullptr ? measures_->value() : std::nullopt;
+  const std::optional<MachineCounters> counters = machineCounters_();
+  const network::ServerMeasures measures = withMachineLoad(
+      published.value_or(network::ServerMeasures{}),
+      MachineCounterReadings{.earlier = earlierCounters_, .latest = counters});
+  earlierCounters_ = counters;
+  return measures;
 }
 
 std::optional<std::uint64_t> HeartbeatJob::unsentProbeToken(

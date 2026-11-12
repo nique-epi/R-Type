@@ -27,6 +27,21 @@ constexpr std::string_view LINKED_DIFFICULTY = "normal";
 constexpr std::string_view LINKED_DIFFICULTIES_TEXT =
     R"("difficulties":["normal"])";
 constexpr std::uint16_t LINKED_GAME_NUMBER = 1;
+
+/**
+ * @brief The machine of the linked server: between two readings 400 units of
+ * processor time pass, 100 of them idle, and 6 GB of its 8 GB are in use; and
+ * how a heartbeat writes that load.
+ */
+constexpr std::uint64_t LINKED_PROCESSOR_TIME_PER_READ = 400;
+constexpr std::uint64_t LINKED_IDLE_TIME_PER_READ = 100;
+constexpr std::uint64_t LINKED_USED_MEMORY_BYTES = 6'000'000'000;
+constexpr std::uint64_t LINKED_TOTAL_MEMORY_BYTES = 8'000'000'000;
+constexpr std::string_view LINKED_BUSY_PERCENT_TEXT = R"("cpuPercent":75.0)";
+constexpr std::string_view LINKED_USED_MEMORY_TEXT =
+    R"("usedMemoryBytes":6000000000.0)";
+constexpr std::string_view LINKED_TOTAL_MEMORY_TEXT =
+    R"("totalMemoryBytes":8000000000.0)";
 constexpr std::string_view LINKED_GAME_NAME = "GAME 1";
 
 /** @brief Two pilots of the game, the second one arriving later. */

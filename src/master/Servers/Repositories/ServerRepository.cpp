@@ -120,7 +120,10 @@ WatchedServer watchedServerIn(const SQLite::Statement& query) {
                       .sentBytesPerSecond = std::nullopt,
                       .lossPercent = measureIn(
                           query.getColumn(WATCHED_LOSS_PERCENT_COLUMN)),
-                      .averagePingMilliseconds = std::nullopt},
+                      .averagePingMilliseconds = std::nullopt,
+                      .cpuPercent = std::nullopt,
+                      .usedMemoryBytes = std::nullopt,
+                      .totalMemoryBytes = std::nullopt},
               .maintenance =
                   query.getColumn(WATCHED_MAINTENANCE_COLUMN).getInt() != 0,
               .lastProbeAnswerAt = optionalDateIn(
