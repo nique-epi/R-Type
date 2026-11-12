@@ -10,6 +10,8 @@ namespace rtype::game {
  * Attached as a component like Position or CollisionBox. A missile records the
  * side that fired it, because a player missile and an enemy missile do not
  * hit the same targets. A look item is the item of the locker a ship picks up.
+ * An obstacle is a wall or a piece of the decor: it stops what hits it, and
+ * blocks or kills a ship that touches it (Obstacle).
  */
 enum class EntityType : std::uint8_t {
   Player,
@@ -17,6 +19,7 @@ enum class EntityType : std::uint8_t {
   PlayerMissile,
   EnemyMissile,
   LookItem,
+  Obstacle,
 };
 
 }  // namespace rtype::game

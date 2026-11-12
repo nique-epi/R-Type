@@ -11,6 +11,8 @@
 #include "Fragile.hpp"
 #include "HitboxParts.hpp"
 #include "HurtZone.hpp"
+#include "Obstacle.hpp"
+#include "ObstacleContact.hpp"
 #include "Position.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "Shootable.hpp"
@@ -27,6 +29,8 @@ using rtype::game::EntityType;
 using rtype::game::Fragile;
 using rtype::game::HitboxParts;
 using rtype::game::HurtZone;
+using rtype::game::Obstacle;
+using rtype::game::ObstacleContact;
 using rtype::game::Position;
 using rtype::game::Shootable;
 using rtype::game::SHOOTABLE_MISSILE_SHEETS;
@@ -44,6 +48,7 @@ using rtype::game::testing::someHitboxParts;
 using rtype::game::testing::someHurtZone;
 using rtype::game::testing::STUNNED_IN_ATTACK_ZERO;
 using rtype::game::testing::UNLISTED_MISSILE_SHEET;
+using rtype::game::testing::wallDoing;
 
 /**
  * Given the sheet of a Drifter, of side enemy
@@ -232,4 +237,40 @@ TEST(WorldContactParts, EveryShootableNameIsAShippedMissileOfAnEnemy) {
     EXPECT_EQ(shippedEntitySheets().named(name).side, EntityType::EnemyMissile)
         << name;
   }
+}
+
+/**
+ * Given the sheet of a wall that kills the ships that touch it
+ * When an entity of that sheet is spawned
+ * Then it is an Obstacle whose contact is fatal, and it survives a contact:
+ * a ship that crashes into it leaves it standing
+ */
+TEST(WorldContactParts, AWallStandsWhenAShipTouchesIt) {
+  World world;
+
+  const std::uint32_t entityId = world.spawn(
+      wallDoing(ObstacleContact::Fatal), Position{.x = SOME_X, .y = SOME_Y});
+
+  const std::optional<Obstacle> obstacle =
+      componentOf<Obstacle>(world, entityId);
+  ASSERT_TRUE(obstacle.has_value());
+  EXPECT_EQ(
+      obstacle.value_or(Obstacle{.contact = ObstacleContact::Blocking}).contact,
+      ObstacleContact::Fatal);
+  EXPECT_TRUE(componentOf<SurvivesContact>(world, entityId).has_value());
+}
+
+/**
+ * Given the sheet of a Drifter, which is no obstacle
+ * When an entity of that sheet is spawned
+ * Then it has no Obstacle
+ */
+TEST(WorldContactParts, AnEnemyIsNoObstacle) {
+  World world;
+
+  const std::uint32_t entityId =
+      world.spawn(shippedEntitySheets().named(DRIFTER_SHEET),
+                  Position{.x = SOME_X, .y = SOME_Y});
+
+  EXPECT_FALSE(componentOf<Obstacle>(world, entityId).has_value());
 }

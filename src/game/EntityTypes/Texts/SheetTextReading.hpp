@@ -1,11 +1,13 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 #include <span>
 #include <string_view>
 #include <vector>
 #include "CollisionBox.hpp"
 #include "DataFileTable.hpp"
+#include "ObstacleContact.hpp"
 #include "SheetText.hpp"
 
 namespace rtype::game {
@@ -88,5 +90,18 @@ void checkSheetNames(std::span<const SheetText> texts);
  * other than HITBOX_KEYS in a hitbox of one box.
  */
 [[nodiscard]] CollisionBox hitboxOf(const engine::DataFileTable& gameplay);
+
+/**
+ * @returns What `[gameplay.obstacle]` of @p gameplay does to a ship that
+ * touches the body; nothing without the table. The server stops or hurts a
+ * ship with it, the client predicts its own ship against it, so both read it
+ * the same way.
+ * @throws engine::UnknownDataFileKeyException for a key of it other than
+ * OBSTACLE_KEYS; engine::DataFileTableExpectedException when it is not a
+ * table; and what engine::choiceAt() throws for a contact of none of
+ * CONTACT_NAMES.
+ */
+[[nodiscard]] std::optional<ObstacleContact> obstacleContactOf(
+    const engine::DataFileTable& gameplay);
 
 }  // namespace rtype::game

@@ -101,6 +101,7 @@ using rtype::client::testing::TICK_BETWEEN_THE_LISTINGS;
 using rtype::client::testing::TWO_BOX_ENEMY_PARTS;
 using rtype::client::testing::TWO_BOX_ENEMY_TYPE_NUMBER;
 using rtype::client::testing::UNANNOUNCED_ID;
+using rtype::client::testing::WALL_ID;
 using rtype::client::testing::WEAVER_TYPE_NUMBER;
 using rtype::engine::Entity;
 using rtype::game::CollisionBox;
@@ -152,9 +153,9 @@ TEST_F(EntityReplicatorFixture,
 /**
  * Given a replicator that has applied nothing
  * When one entity of each side is announced
- * Then the ship and the Bydo are drawn with the look of the side the table
- * gives their type, and the missiles are not drawn yet: they await the tick
- * the client shows
+ * Then the ship, the Bydo, the look item and the wall are drawn with the look
+ * of the side the table gives their type, and the missiles are not drawn yet:
+ * they await the tick the client shows
  */
 TEST_F(EntityReplicatorFixture, DrawsAShipAndABydoAndHoldsTheMissilesBack) {
   announceOneOfEachType();
@@ -163,7 +164,8 @@ TEST_F(EntityReplicatorFixture, DrawsAShipAndABydoAndHoldsTheMissilesBack) {
               UnorderedElementsAre(
                   drawnAs(EntityType::Player, SHIP_ID, SHIP_POSITION),
                   drawnAs(EntityType::Enemy, BYDO_ID, BYDO_POSITION),
-                  drawnAs(EntityType::LookItem, LOOK_ITEM_ID, BYDO_POSITION)));
+                  drawnAs(EntityType::LookItem, LOOK_ITEM_ID, BYDO_POSITION),
+                  drawnAs(EntityType::Obstacle, WALL_ID, BYDO_POSITION)));
 }
 
 /**

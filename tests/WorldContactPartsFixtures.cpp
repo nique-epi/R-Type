@@ -3,10 +3,12 @@
 #include "ActionKey.hpp"
 #include "EnemyPhase.hpp"
 #include "EntitySheet.hpp"
+#include "EntityType.hpp"
 #include "EntityTypesTestConstants.hpp"
 #include "HitboxParts.hpp"
 #include "HurtBox.hpp"
 #include "HurtZone.hpp"
+#include "ObstacleContact.hpp"
 #include "ShippedEntitySheets.hpp"
 #include "WorldContactPartsTestConstants.hpp"
 
@@ -36,6 +38,13 @@ EntitySheet drifterWith(const std::optional<HurtZone>& zone, bool survives) {
   EntitySheet sheet = shippedEntitySheets().named(DRIFTER_SHEET);
   sheet.hurtZone = zone;
   sheet.survivesContact = survives;
+  return sheet;
+}
+
+EntitySheet wallDoing(ObstacleContact contact) {
+  EntitySheet sheet = shippedEntitySheets().named(DRIFTER_SHEET);
+  sheet.side = EntityType::Obstacle;
+  sheet.obstacle = contact;
   return sheet;
 }
 

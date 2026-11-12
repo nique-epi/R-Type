@@ -559,6 +559,16 @@ void checkDamageBelongsToAMissile(const EntitySheet& sheet,
   }
 }
 
+/** @throws InconsistentEntitySheetException when a sheet of side obstacle
+ * has no obstacle table, or another sheet has one. */
+void checkObstacleMatchesSide(const EntitySheet& sheet,
+                              const engine::DataFileTable& gameplay) {
+  if (sheet.obstacle.has_value() != (sheet.side == EntityType::Obstacle)) {
+    throw InconsistentEntitySheetException(
+        engine::placeOfKey(gameplay, SIDE_KEY), OBSTACLE_SIDE_RULE);
+  }
+}
+
 /** @throws InconsistentEntitySheetException when the values of @p sheet, each
  * valid, do not hold together. */
 void checkSheetHoldsTogether(const EntitySheet& sheet,
@@ -573,6 +583,7 @@ void checkSheetHoldsTogether(const EntitySheet& sheet,
   checkLookItemMatchesSide(sheet, gameplay);
   checkLookItemFliesLeft(sheet, gameplay);
   checkDamageBelongsToAMissile(sheet, gameplay);
+  checkObstacleMatchesSide(sheet, gameplay);
 }
 
 }  // namespace
@@ -602,7 +613,8 @@ EntitySheet gameplayOf(const SheetText& sheet,
       .boss = bossFrom(gameplay),
       .lookItem = lookItemFrom(gameplay),
       .visualNames = visualNamesOf(sheetTableOf(sheetRoot, APPEARANCE_KEY)),
-      .damage = pointsIn<int>(gameplay, DAMAGE_KEY, DAMAGE_RANGE)};
+      .damage = pointsIn<int>(gameplay, DAMAGE_KEY, DAMAGE_RANGE),
+      .obstacle = obstacleContactOf(gameplay)};
   checkSheetHoldsTogether(read, gameplay);
   return read;
 }

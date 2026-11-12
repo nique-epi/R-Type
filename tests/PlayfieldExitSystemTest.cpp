@@ -24,7 +24,10 @@ using rtype::game::testing::PAST_THE_RIGHT_EDGE;
 using rtype::game::testing::PAST_THE_TOP_EDGE;
 using rtype::game::testing::PlayfieldExitSystemFixture;
 using rtype::game::testing::UP_RIGHT;
+using rtype::game::testing::WALL_SHOWING_ITS_LAST_UNIT_X;
+using rtype::game::testing::WALL_WHOLLY_PAST_THE_LEFT_EDGE_X;
 using rtype::game::testing::WHERE_ENEMIES_APPEAR_X;
+using rtype::game::testing::WIDE_WALL_BOX;
 using rtype::game::testing::WIDER_MISSILE_BOX;
 
 /**
@@ -280,4 +283,37 @@ TEST_F(PlayfieldExitSystemFixture, ABossPastTheLeftEdgeStays) {
 
   EXPECT_TRUE(entities().isAlive(boss));
   EXPECT_TRUE(received().empty());
+}
+
+/**
+ * Given a wall 400 units wide whose right edge still shows its last unit,
+ * far more than the margin of an enemy past the left edge
+ * When the system runs
+ * Then the wall stays, and nothing is announced
+ */
+TEST_F(PlayfieldExitSystemFixture, AWallStaysWhileAPartOfItShows) {
+  const Entity wall = addObstacle(WALL_SHOWING_ITS_LAST_UNIT_X, WIDE_WALL_BOX);
+
+  updateAndDispatch();
+
+  EXPECT_TRUE(entities().isAlive(wall));
+  EXPECT_TRUE(received().empty());
+}
+
+/**
+ * Given a wall 400 units wide wholly past the left edge
+ * When the system runs
+ * Then the wall is gone and its removal was announced under its network id
+ */
+TEST_F(PlayfieldExitSystemFixture, AWallWhollyPastTheLeftEdgeIsRemoved) {
+  const Entity wall =
+      addObstacle(WALL_WHOLLY_PAST_THE_LEFT_EDGE_X, WIDE_WALL_BOX);
+
+  updateAndDispatch();
+
+  EXPECT_FALSE(entities().isAlive(wall));
+  ASSERT_EQ(received().size(), 1U);
+  EXPECT_EQ(received().front(),
+            (EntityDestruction{.networkId = EXITING_NETWORK_ID,
+                               .cause = DestructionCause::Removed}));
 }

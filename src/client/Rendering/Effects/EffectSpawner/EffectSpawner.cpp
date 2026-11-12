@@ -45,6 +45,7 @@ void EffectSpawner::playExplosion(game::EntityType type, game::Position center,
                                   const EntityAppearance* appearance) {
   switch (type) {
     case game::EntityType::Enemy:
+    case game::EntityType::Obstacle:
       kills_.playKill(center, appearance);
       return;
     case game::EntityType::Player:
@@ -81,6 +82,7 @@ void EffectSpawner::playAppearance(game::EntityType type,
     case game::EntityType::Player:
     case game::EntityType::Enemy:
     case game::EntityType::LookItem:
+    case game::EntityType::Obstacle:
       return;
   }
 }

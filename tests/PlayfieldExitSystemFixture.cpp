@@ -59,6 +59,14 @@ engine::Entity PlayfieldExitSystemFixture::addSteeredMissile(
   return missile;
 }
 
+engine::Entity PlayfieldExitSystemFixture::addObstacle(float positionX,
+                                                       CollisionBox box) {
+  const engine::Entity obstacle =
+      addWithoutBox(EntityType::Obstacle, positionX);
+  components_.add(obstacle, box);
+  return obstacle;
+}
+
 engine::Entity PlayfieldExitSystemFixture::addBoss(float positionX) {
   const engine::Entity boss = add(EntityType::Enemy, positionX);
   components_.add(boss, Boss{});

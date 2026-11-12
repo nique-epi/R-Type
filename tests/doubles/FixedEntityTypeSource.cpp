@@ -49,6 +49,8 @@ std::optional<EntityType> sideNumbered(std::uint8_t number) {
       return EntityType::Player;
     case rtype::client::testing::LOOK_ITEM_TYPE_NUMBER:
       return EntityType::LookItem;
+    case rtype::client::testing::BLOCKING_WALL_TYPE_NUMBER:
+      return EntityType::Obstacle;
     default:
       return std::nullopt;
   }
@@ -65,6 +67,7 @@ rtype::game::CollisionBox boxOfSide(EntityType side) {
       return rtype::client::testing::ENEMY_MISSILE_BOX;
     case EntityType::Enemy:
     case EntityType::LookItem:
+    case EntityType::Obstacle:
       return rtype::client::testing::BYDO_BOX;
   }
   return rtype::client::testing::BYDO_BOX;
@@ -99,6 +102,7 @@ const EntityAppearance& appearanceOfSide(EntityType side) {
       return enemyMissile;
     case EntityType::Enemy:
     case EntityType::LookItem:
+    case EntityType::Obstacle:
       break;
   }
   return bydo;

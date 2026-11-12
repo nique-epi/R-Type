@@ -23,7 +23,9 @@ namespace rtype::game {
  * vertical share does; exactly half beyond is still in. A missile no pilot
  * has steered yet flies the way of its side, right for a player, left for an
  * enemy. A missile without a CollisionBox is out as soon as its Position
- * passes such an edge. An enemy, or a missile flying left, past the right
+ * passes such an edge. An obstacle is out as a missile flying left is, once
+ * more than half its CollisionBox is beyond the left edge: a wide wall stays
+ * while a part of it shows. An enemy, or a missile flying left, past the right
  * edge, where the enemies appear, is not out. Only
  * entities that have a NetworkIdentity are removed. A ship is never removed by
  * leaving. A Boss is never removed by leaving either: its charge takes it

@@ -7,6 +7,7 @@
 #include "EnemyPhase.hpp"
 #include "EntityType.hpp"
 #include "MotionKind.hpp"
+#include "ObstacleContact.hpp"
 #include "TimeConstants.hpp"
 #include "WholeNumberRange.hpp"
 
@@ -68,12 +69,25 @@ constexpr std::string_view LOOK_ITEM_KEY = "look_item";
 /** @brief `[gameplay.damage]`: the health points a missile takes from what it
  * hits, in POINTS_KEY; MISSILE_DAMAGE without the table. */
 constexpr std::string_view DAMAGE_KEY = "damage";
+/** @brief `[gameplay.obstacle]`, required of a sheet of side obstacle and of
+ * it only: what it does to a ship that touches it, in CONTACT_KEY. */
+constexpr std::string_view OBSTACLE_KEY = "obstacle";
 constexpr std::array GAMEPLAY_KEYS{
     SIDE_KEY,      PILOT_KEY,  LAYER_KEY,     HITS_KEY,
     HITBOX_KEY,    MOTION_KEY, BEHAVIOUR_KEY, HEALTH_KEY,
     SCORE_KEY,     GUN_KEY,    HURT_ZONE_KEY, SURVIVES_CONTACT_KEY,
     FRAGILE_KEY,   BURST_KEY,  VOLLEY_KEY,    BOSS_KEY,
-    LOOK_ITEM_KEY, DAMAGE_KEY};
+    LOOK_ITEM_KEY, DAMAGE_KEY, OBSTACLE_KEY};
+
+/** @brief The key of `[gameplay.obstacle]`, and the contacts it may name, with
+ * the ObstacleContact of each, in the same order. */
+constexpr std::string_view CONTACT_KEY = "contact";
+constexpr std::array OBSTACLE_KEYS{CONTACT_KEY};
+constexpr std::array CONTACT_NAMES{std::string_view{"blocking"},
+                                   std::string_view{"fatal"}};
+constexpr std::array CONTACTS{ObstacleContact::Blocking,
+                              ObstacleContact::Fatal};
+static_assert(CONTACT_NAMES.size() == CONTACTS.size(), "one name per contact");
 
 /** @brief The keys of one box of a hitbox, in logical units: its size, and
  * where its center is from the Position of the body, 0 without them. */
@@ -227,12 +241,12 @@ constexpr std::string_view PLAYER_PILOT_NAME = "player";
 /** @brief The sides a sheet may name, and the EntityType of each, in the same
  * order. */
 constexpr std::array SIDE_NAMES{
-    std::string_view{"player"}, std::string_view{"enemy"},
+    std::string_view{"player"},         std::string_view{"enemy"},
     std::string_view{"player_missile"}, std::string_view{"enemy_missile"},
-    std::string_view{"look_item"}};
-constexpr std::array SIDES{EntityType::Player, EntityType::Enemy,
+    std::string_view{"look_item"},      std::string_view{"obstacle"}};
+constexpr std::array SIDES{EntityType::Player,        EntityType::Enemy,
                            EntityType::PlayerMissile, EntityType::EnemyMissile,
-                           EntityType::LookItem};
+                           EntityType::LookItem,      EntityType::Obstacle};
 static_assert(SIDE_NAMES.size() == SIDES.size(), "one name per side");
 
 /** @brief The motions a sheet may name, and the MotionKind of each. */
@@ -336,6 +350,9 @@ constexpr std::string_view LOOK_ITEM_SIDE_RULE =
 constexpr std::string_view LOOK_ITEM_HEADING_RULE =
     "a look item flies to the left, where the playfield removes it";
 constexpr std::string_view DAMAGE_SIDE_RULE = "only a missile deals damage";
+constexpr std::string_view OBSTACLE_SIDE_RULE =
+    "a sheet of side obstacle says what it does to a ship in "
+    "[gameplay.obstacle], and only such a sheet";
 constexpr std::string_view PROJECTILE_SIDE_RULE =
     "a player fires missiles of a player, an enemy missiles of an enemy";
 

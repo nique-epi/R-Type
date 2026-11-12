@@ -13,6 +13,7 @@
 #include "GunSheet.hpp"
 #include "HurtZone.hpp"
 #include "MotionSheet.hpp"
+#include "ObstacleContact.hpp"
 #include "PilotSheet.hpp"
 #include "SheetVisualNames.hpp"
 #include "VolleySheet.hpp"
@@ -81,6 +82,9 @@ struct EntitySheet {
   /** @brief The health points it takes from what it hits, a missile only;
    * nothing for a missile that takes MISSILE_DAMAGE. */
   std::optional<int> damage{std::nullopt};
+  /** @brief What it does to a ship that touches it, a body of side obstacle
+   * only. */
+  std::optional<ObstacleContact> obstacle{std::nullopt};
 };
 
 }  // namespace rtype::game
