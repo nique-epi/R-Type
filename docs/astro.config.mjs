@@ -70,6 +70,7 @@ export default defineConfig({
             'scripting',
             'waves-file',
             'entity-sheets',
+            'procedural-biome-maps',
             'tutorial-add-an-enemy-type',
             'tutorial-publish-a-mod',
           ],
