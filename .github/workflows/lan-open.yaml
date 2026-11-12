@@ -1,8 +1,8 @@
 name: lan-open
 
 # Opens a LAN: stops the test game server of the master machine, creates the
-# game machine with Terraform (infra/terraform-game/), and waits until its
-# first server is listed online on the master. Run by hand; lan-close undoes
+# game machine with Terraform (infra/terraform-game/), and waits until every
+# server of its pool is listed online on the master. Run by hand; lan-close undoes
 # it. The game machine is billed from here until lan-close.
 on:
   workflow_dispatch:
@@ -53,18 +53,21 @@ jobs:
         run: |
           terraform apply -input=false -auto-approve
           echo "GAME_ADDRESS=$(terraform output -raw public_ip)" >> "$GITHUB_ENV"
+          echo "SERVER_COUNT=$(terraform output -raw server_count)" >> "$GITHUB_ENV"
 
-      # The machine installs its tools and the latest release, then starts
-      # its first server, which registers on the master.
-      - name: Wait for its first server on the master
+      # The machine installs the latest release, then starts every server
+      # of its pool, and each one registers on the master.
+      - name: Wait for its servers on the master
         run: |
+          online=0
           for _ in $(seq 1 90); do
-            if infra/game-servers/listed-servers.sh "$MASTER_URL" "$GAME_ADDRESS" 2> /dev/null |
-              grep -q ' online '; then
-              echo "the LAN is open: a server is online at $GAME_ADDRESS"
+            online=$(infra/game-servers/listed-servers.sh "$MASTER_URL" "$GAME_ADDRESS" 2> /dev/null |
+              grep -c ' online ' || true)
+            if [ "$online" -ge "$SERVER_COUNT" ]; then
+              echo "the LAN is open: $online servers are online at $GAME_ADDRESS"
               exit 0
             fi
             sleep 10
           done
-          echo "no server of $GAME_ADDRESS is online after 15 minutes; run lan-close to destroy the machine" >&2
+          echo "$online of $SERVER_COUNT servers of $GAME_ADDRESS are online after 15 minutes; run lan-close to destroy the machine" >&2
           exit 1
