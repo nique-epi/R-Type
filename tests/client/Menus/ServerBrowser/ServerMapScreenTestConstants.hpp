@@ -53,6 +53,15 @@ constexpr std::string_view MAP_SHEET = "sprites/sector_map.png";
 constexpr sf::IntRect HANGAR_HOUSE_SOURCE{{0, 47}, {9, 9}};
 constexpr sf::Vector2i HANGAR_HOUSE_ON_THE_MAP{80, 60};
 
+/** @brief Where the shop stands on the whole map, left of the hangar, the
+ * lines of its bubble, and the kiosk it is drawn as: 9 pixels at top 58 of
+ * the sheet, centered on (36, 62), so from (32, 58). */
+constexpr sf::Vector2i SHOP_ON_THE_MAP{36, 62};
+constexpr std::string_view SHOP_HINT_LINE = "CLICK OR S: OPEN";
+constexpr std::string_view SHOP_DETAIL_LINE = "HATS AND SHIPS";
+constexpr sf::IntRect SHOP_KIOSK_SOURCE{{0, 58}, {9, 9}};
+constexpr sf::Vector2i SHOP_KIOSK_ON_THE_MAP{32, 58};
+
 /** @brief One frame of the turn of a planet. */
 constexpr std::chrono::milliseconds ONE_PLANET_TURN_FRAME{150};
 constexpr std::chrono::seconds REFRESH_INTERVAL{15};
