@@ -191,6 +191,32 @@ end)
 - **Once the budget of the tick is spent, the hit applies** without a call.
 - **A failure lets the hit apply**: a function that fails, waits or runs past its budget is forgotten, and stops the script of its body at its next tick, as a failed step does.
 
+## Reacting to a hit once it applied
+
+The sheet of a body may name a function told of every hit of a missile on that body once the server applied it: a wall that cracks, a crate that drops a bonus, a body that changes its look below half its health.
+
+```lua
+behaviours.on_hit("crack", function(hit)
+	if hit.destroyed then
+		bus.emit("wall_broken", { id = hit.id })
+	end
+end)
+```
+
+```toml
+[gameplay]
+side = "obstacle"
+layer = "wall"
+pilot = "straight"
+on_hit = "crack"
+```
+
+`behaviours.on_hit(name, function)` declares a hit handler while the script is read, as `behaviours.register` declares a behaviour; two handlers of one name stop the supervisor at start (`DuplicateHitHandlerException`), and a sheet that names a handler no script declared is refused. The handler serves every body whose sheet names it, any side but `player`, and whatever pilots the body, a built-in behaviour included. `DamageRules` calls it after the hit applied and its announcements were published, a hit on a body without `health` included, so what the function publishes arrives after them. It receives `id` the network id of the body, `missile` that of the missile, `damage` the health points the hit took (0 for a body without `health`, or a boss arriving), `health` the points left, absent for a body without `health`, and `destroyed`. It cannot undo the hit, and may create and remove bodies.
+
+- **It is a step without the handle**: it has the 2 ms of a step and counts in the 8 ms of the tick; `e` is not given, and it cannot wait.
+- **Once the budget of the tick is spent, it is not called**: the hit still applies.
+- **A failure is reported once**, as `the on_hit function <name> failed: <reason>`; the hit stays applied, no body is stopped, and later hits still call it.
+
 ## Directing a level
 
 A script may also write a level: what comes, when the decor moves and stops, which biome the players see and where a lost team starts again. A server plays it with the setting `level` (see [Server](/R-Type/server/#level-a-script-directs-leveldirector)); without it, a game plays the waves of its difficulty.
@@ -299,6 +325,7 @@ The three sides found the same 9,457,143 collisions, about 2,600 a tick: 300 bod
 | Change what a published event may carry | `ScriptEvent` and `ScriptEventField` in `src/game/Events/`, read by `publishedFields()` in `LuauEventBindings.cpp` |
 | Change when a subscription ends | `LuauEventSubscription` and `LuauEventSubscriptions`, what one body keeps subscribed, in `src/game/Scripting/Events/` |
 | Change what a pre_hit function receives, returns, or what its failure does | `LuauPreHit` and `LuauBehaviourState` in `src/game/Scripting/`, the hit table in `pushHitTable()` of `LuauBehaviourTables.cpp`; who asks it, `targetLetsHit()` in `src/game/Systems/CollisionRules/PreHitCheck.cpp` |
+| Change what an on_hit function receives, or when it is called | `LuauHitHandler` in `src/game/Scripting/`, the hit table in `pushAppliedHitTable()` of `LuauBehaviourTables.cpp`; who calls it, `DamageRules::onMissileHit()` in `src/game/Systems/DamageRules/`; the call on a thread of its own, shared with pre_hit, in `LuauSingleCall` |
 | Change what happens to a body whose subscribed function failed | `LuauBehaviour::steer()` in `src/game/Scripting/`, the only place that stops a script |
 | Change what a level script may call, or what it refuses | the functions of `LuauLevels` in `src/game/Scripting/Level/LuauLevels.cpp`, their names and messages in `LuauLevelConstants.hpp` |
 | Change when a stage is resumed, or what a checkpoint keeps | `LuauLevelRun` in `src/game/Scripting/Level/`, `LevelCheckpoint` in `src/game/Level/` |
