@@ -75,7 +75,8 @@ WaveSpawner::WaveSpawner(WaveSpawnerParts parts)
       random_(parts.seed),
       enemies_(enemySheetsOf(parts.waves, parts.types.get())),
       lookItems_(lookItemSheetsOf(parts.waves, parts.types.get())),
-      lookItemEvery_(std::max(parts.waves.lookItemEvery, LOOK_ITEM_EVERY_WAVE)),
+      lookItemEvery_(
+          std::max(parts.waves.lookItemEvery, FEWEST_WAVES_PER_LOOK_ITEM)),
       nextLookItem_(lookItems_.empty() ? 0 : parts.seed % lookItems_.size()),
       waveDirector_(parts.waves.curve) {
   logger_.info("wave spawning starts from the seed ", parts.seed);

@@ -46,4 +46,10 @@ std::span<const game::SpriteFrame> hullFramesOf(PilotHull pilot) {
   return SHIP_HULL_ROWS.at(*row);
 }
 
+ShipSheetFrame hullItemFrameOf(std::size_t item) {
+  return pilotShipFrameOf(PilotHull{.hull = identifiers::lookNumberOf(item),
+                                    .color = HULL_ITEM_COLOR},
+                          PLAYER_SHIP_FRAME);
+}
+
 }  // namespace rtype::client

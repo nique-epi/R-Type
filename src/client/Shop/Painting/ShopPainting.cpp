@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <vector>
 #include "ColoredPixel.hpp"
-#include "EntitySpriteConstants.hpp"
 #include "EntitySprites.hpp"
 #include "IInterfaceCanvas.hpp"
 #include "ImagePlacement.hpp"
@@ -14,13 +13,11 @@
 #include "KopecksPainting.hpp"
 #include "LookItemPurchase.hpp"
 #include "Outline.hpp"
-#include "PilotHull.hpp"
 #include "PixelShapes.hpp"
 #include "PriceTag.hpp"
 #include "RenderingConstants.hpp"
 #include "ScrollMark.hpp"
 #include "ShipHulls.hpp"
-#include "ShipLookNumbers.hpp"
 #include "ShipLooks.hpp"
 #include "ShipSheetFrame.hpp"
 #include "ShopLayout.hpp"
@@ -43,6 +40,8 @@ namespace {
 void paintRibbon(IInterfaceCanvas& canvas, sf::IntRect area) {
   std::vector<ColoredPixel> ribbon;
   const int length = area.size.x - (SIDES_PER_AXIS * SHOP_RIBBON_INSET);
+  ribbon.reserve(static_cast<std::size_t>(length) *
+                 static_cast<std::size_t>(SHOP_RIBBON_THICKNESS));
   for (int step = 0; step < length; ++step) {
     const int row = area.position.y + area.size.y - SHOP_RIBBON_INSET -
                     SHOP_RIBBON_THICKNESS -
@@ -86,9 +85,7 @@ void paintLookCell(IInterfaceCanvas& canvas, sf::IntRect cell, std::size_t item,
  * owned. */
 void paintHullStall(IInterfaceCanvas& canvas, sf::IntRect stall,
                     std::size_t item, bool owned) {
-  const ShipSheetFrame ship = pilotShipFrameOf(
-      PilotHull{.hull = identifiers::lookNumberOf(item), .color = 0},
-      PLAYER_SHIP_FRAME);
+  const ShipSheetFrame ship = hullItemFrameOf(item);
   canvas.drawImage(
       TextureArea{.assetId = ship.sheet, .rectangle = rectangleOf(ship.frame)},
       ImagePlacement{.topLeft = {stall.position.x,

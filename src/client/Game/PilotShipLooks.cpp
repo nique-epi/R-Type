@@ -41,9 +41,7 @@ void showHull(engine::ComponentRegistry& components, engine::Entity ship,
   if (frames.empty() || sprite == nullptr) {
     return;
   }
-  if (sprite->assetId != SHIP_HULL_SHEET_ID) {
-    sprite->assetId = SHIP_HULL_SHEET_ID;
-  }
+  sprite->assetId = SHIP_HULL_SHEET_ID;
   sprite->frame = pilotShipFrameOf(pilot, sprite->frame).frame;
   if (auto* const animation = components.get<SpriteAnimation>(ship);
       animation != nullptr) {

@@ -34,7 +34,10 @@ int kopecksLabelWidth(const KopecksLabel& label) {
 }
 
 void paintKopecks(IInterfaceCanvas& canvas, const KopecksLabel& label) {
-  canvas.write(writtenAmountOf(label), label.topRight,
+  const std::string written = writtenAmountOf(label);
+  const int width =
+      KOPECK_FRAME.width + KOPECKS_COIN_GAP + regularTextWidth(written);
+  canvas.write(written, label.topRight,
                {.font = TextFont::Regular,
                 .color = KOPECKS_COLOR,
                 .outlined = label.outlined,
@@ -42,8 +45,7 @@ void paintKopecks(IInterfaceCanvas& canvas, const KopecksLabel& label) {
   canvas.drawImage(
       TextureArea{.assetId = HUD_SHEET_ID,
                   .rectangle = rectangleOf(KOPECK_FRAME)},
-      ImagePlacement{.topLeft = {label.topRight.x - kopecksLabelWidth(label),
-                                 label.topRight.y}},
+      ImagePlacement{.topLeft = {label.topRight.x - width, label.topRight.y}},
       INTERFACE_AREA);
 }
 
@@ -56,7 +58,10 @@ void paintKopecksBalance(IInterfaceCanvas& canvas, sf::Vector2i topRight,
       .paint(canvas);
   const sf::Vector2i amountEnd(topRight.x - KOPECKS_FRAME_PADDING.x,
                                topRight.y + KOPECKS_FRAME_PADDING.y);
-  paintKopecks(canvas, KopecksLabel{.topRight = amountEnd, .amount = balance});
+  paintKopecks(canvas, KopecksLabel{.topRight = amountEnd,
+                                    .amount = balance,
+                                    .prefix = {},
+                                    .outlined = false});
   canvas.write(
       KOPECKS_CAPTION,
       {amountEnd.x, amountEnd.y + KOPECKS_LABEL_HEIGHT + KOPECKS_CAPTION_GAP},

@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include "Kopecks.hpp"
 #include "LookItemPurchase.hpp"
 #include "PurchaseRefusal.hpp"
 #include "Purse.hpp"
@@ -16,7 +17,7 @@ std::string wareLineOf(std::size_t item, const Purse& purse) {
     return line.append(OWNED_HINT);
   }
   return line.append(BUY_HINT_START)
-      .append(std::to_string(lookItemPrice(item)))
+      .append(kopecksText(lookItemPrice(item)))
       .append(BUY_HINT_END);
 }
 
@@ -34,7 +35,7 @@ std::string refusalLineOf(PurchaseRefusal refusal, std::uint32_t missing) {
       break;
   }
   return std::string(NOT_ENOUGH_STATUS_START)
-      .append(std::to_string(missing))
+      .append(kopecksText(missing))
       .append(NOT_ENOUGH_STATUS_END);
 }
 

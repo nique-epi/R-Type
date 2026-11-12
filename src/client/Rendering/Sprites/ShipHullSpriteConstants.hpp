@@ -35,4 +35,8 @@ constexpr std::array<std::string_view, identifiers::SHIP_HULL_COUNT>
     SHIP_HULL_LABELS{"WAR SHARK", "VOSTOK", "BYDO HUSK", "GOLDEN ACE",
                      "GOLDEN BYDO"};
 
+/** @brief The pilot color a hull shows in a catalogue, where no pilot
+ * flies it yet: the first. */
+constexpr int HULL_ITEM_COLOR = 0;
+
 }  // namespace rtype::client

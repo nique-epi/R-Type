@@ -7,7 +7,6 @@
 #include "BackgroundColorConstants.hpp"
 #include "ColoredPixel.hpp"
 #include "DitherPatch.hpp"
-#include "EntitySpriteConstants.hpp"
 #include "EntitySprites.hpp"
 #include "GlassStreak.hpp"
 #include "HangarColorConstants.hpp"
@@ -22,7 +21,6 @@
 #include "MetalTexture.hpp"
 #include "MetalTextureConstants.hpp"
 #include "Outline.hpp"
-#include "PilotHull.hpp"
 #include "PixelShapes.hpp"
 #include "RenderingConstants.hpp"
 #include "ScrollMark.hpp"
@@ -152,16 +150,11 @@ void paintCellBack(IInterfaceCanvas& canvas, sf::IntRect cell) {
       DEEP_BLUE);
 }
 
-/** @brief Paints the item of @p slot when the locker holds it, its gold tag
- * when the ship wears it, and the cyan frame when it is the chosen one, held
- * or not. */
 /** @brief Draws the ship of the hull @p item, still, in the first pilot
  * color, pixel for pixel, centred in @p cell. */
 void paintHullIcon(IInterfaceCanvas& canvas, std::size_t item,
                    sf::IntRect cell) {
-  const ShipSheetFrame ship = pilotShipFrameOf(
-      PilotHull{.hull = identifiers::lookNumberOf(item), .color = 0},
-      PLAYER_SHIP_FRAME);
+  const ShipSheetFrame ship = hullItemFrameOf(item);
   const sf::Vector2i size(ship.frame.width, ship.frame.height);
   canvas.drawImage(
       TextureArea{.assetId = ship.sheet, .rectangle = rectangleOf(ship.frame)},

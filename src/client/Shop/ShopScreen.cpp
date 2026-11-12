@@ -154,7 +154,6 @@ void ShopScreen::buy() {
   }
   static_cast<void>(settings_->apply(KOPECKS_SETTING, bought.purse.kopecks));
   static_cast<void>(settings_->apply(SHIP_LOCKER_SETTING, bought.purse.locker));
-  static_cast<void>(settings_->saveIfChanged());
   sounds_->play(PURCHASE_SOUND_ID);
   message_ = boughtLineOf(item);
 }

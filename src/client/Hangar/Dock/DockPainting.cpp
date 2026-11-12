@@ -35,7 +35,6 @@
 #include "MetalTextureConstants.hpp"
 #include "MotionPreference.hpp"
 #include "Outline.hpp"
-#include "PilotHull.hpp"
 #include "PilotShipPicture.hpp"
 #include "PixelShapes.hpp"
 #include "RenderingConstants.hpp"
@@ -244,9 +243,7 @@ struct BlueprintDrawing {
  * a hull, its drawing of the item sheet at BLUEPRINT_DRAWING_SCALE else. */
 BlueprintDrawing blueprintDrawingOf(std::size_t item) {
   if (identifiers::isHullItem(item)) {
-    const ShipSheetFrame ship = pilotShipFrameOf(
-        PilotHull{.hull = identifiers::lookNumberOf(item), .color = 0},
-        PLAYER_SHIP_FRAME);
+    const ShipSheetFrame ship = hullItemFrameOf(item);
     return {.image = TextureArea{.assetId = ship.sheet,
                                  .rectangle = rectangleOf(ship.frame)},
             .scale = BLUEPRINT_HULL_SCALE};

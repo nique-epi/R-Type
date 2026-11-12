@@ -10,16 +10,16 @@
 
 namespace rtype::client {
 
-std::uint32_t lookItemPrice(std::size_t item) {
-  return SHIP_LOOK_ITEM_PRICES.at(item);
-}
+namespace {
 
+/** @returns Why @p purse cannot buy @p item, the first that holds; nothing
+ * when it can. */
 std::optional<PurchaseRefusal> purchaseRefusalOf(const Purse& purse,
                                                  std::size_t item) {
   if (purse.locker.items.test(item)) {
     return PurchaseRefusal::AlreadyOwned;
   }
-  const std::uint32_t price = lookItemPrice(item);
+  const std::uint32_t price = SHIP_LOOK_ITEM_PRICES.at(item);
   if (price == NOT_FOR_SALE) {
     return PurchaseRefusal::NotForSale;
   }
@@ -27,6 +27,12 @@ std::optional<PurchaseRefusal> purchaseRefusalOf(const Purse& purse,
     return PurchaseRefusal::TooExpensive;
   }
   return std::nullopt;
+}
+
+}  // namespace
+
+std::uint32_t lookItemPrice(std::size_t item) {
+  return SHIP_LOOK_ITEM_PRICES.at(item);
 }
 
 Purchase buyLookItem(const Purse& purse, std::size_t item) {

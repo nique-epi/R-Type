@@ -7,16 +7,16 @@
 namespace rtype::client {
 
 /** @brief A price tag: a cream label PRICE_TAG_HEIGHT tall, its bottom row
- * shaded, a small gold coin PRICE_TAG_COIN_OFFSET inside it, then the price
- * in ink from PRICE_TAG_DIGITS_OFFSET, each digit PRICE_DIGIT_WIDTH by
- * PRICE_DIGIT_HEIGHT, PRICE_DIGIT_ADVANCE apart, and PRICE_TAG_END_MARGIN
- * after the last. */
+ * shaded, a small gold coin at PRICE_TAG_COIN_LEFT and PRICE_TAG_COIN_TOP
+ * inside it, then the price in ink from PRICE_TAG_DIGITS_LEFT and
+ * PRICE_TAG_DIGITS_TOP, each digit PRICE_DIGIT_WIDTH wide and as tall as the
+ * rows of PRICE_DIGIT_PIXELS, PRICE_DIGIT_ADVANCE apart, and
+ * PRICE_TAG_END_MARGIN after the last. */
 constexpr int PRICE_TAG_HEIGHT = 7;
 constexpr int PRICE_TAG_DIGITS_LEFT = 4;
 constexpr int PRICE_TAG_DIGITS_TOP = 1;
 constexpr int PRICE_TAG_END_MARGIN = 3;
 constexpr int PRICE_DIGIT_WIDTH = 3;
-constexpr int PRICE_DIGIT_HEIGHT = 5;
 constexpr int PRICE_DIGIT_ADVANCE = PRICE_DIGIT_WIDTH + 1;
 constexpr int PRICE_TAG_COIN_LEFT = 1;
 constexpr int PRICE_TAG_COIN_TOP = 2;
