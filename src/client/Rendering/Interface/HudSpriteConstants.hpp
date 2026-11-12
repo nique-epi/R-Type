@@ -71,4 +71,15 @@ constexpr game::SpriteFrame WEAK_SIGNAL_FRAME{
     .width = 13,
     .height = 10};
 
+/**
+ * @brief The fourth row of the sheet, under the icons of the notices: the
+ * kopeck, the coin written beside every amount of the shop. It is gold with
+ * an ink outline, and no palette recolors it.
+ */
+constexpr game::SpriteFrame KOPECK_FRAME{
+    .left = 0,
+    .top = bottomOf(LEFT_GAME_FRAME) + SPRITE_SPACING,
+    .width = 9,
+    .height = 9};
+
 }  // namespace rtype::client

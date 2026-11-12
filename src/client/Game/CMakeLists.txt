@@ -4,6 +4,7 @@ add_library(rtype_client_game_module STATIC
   EndScreen.cpp
   GameScreen.cpp
   HeldKey.cpp
+  KopecksReward.cpp
   PilotNameTags.cpp
   PilotShipLooks.cpp
   PilotShips.cpp
@@ -54,6 +55,8 @@ target_link_libraries(rtype_client_game_module
     rtype_client_mission_start
     rtype_client_pilot_color
     rtype_client_pilot_name
+    rtype_client_economy
+    rtype_client_settings_module
     rtype_client_settings_values
     rtype_client_ship_hulls
     rtype_client_sprite_look

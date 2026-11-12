@@ -17,7 +17,8 @@ template <typename Value>
 struct Setting {
   Value PlayerSettings::* member = nullptr;
   SettingId id = SettingId::MusicVolume;
-  /** @brief Only an int setting reads it; empty accepts every value. */
+  /** @brief Only an int or an unsigned setting reads it; empty accepts every
+   * value. */
   std::optional<SettingRange> range;
 };
 

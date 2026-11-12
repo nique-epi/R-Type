@@ -39,7 +39,8 @@ constexpr const char* FIRST_LAUNCH_FILE =
     "ship_eyes=none\n"
     "ship_face=none\n"
     "ship_hull=none\n"
-    "ship_locker=top_hat,cool_shades,mustache\n";
+    "ship_locker=top_hat,cool_shades,mustache\n"
+    "kopecks=0\n";
 
 /** @brief The ship wearing the crown, the third item of the locker, and the
  * shades, the ninth: what a slot holds is the place of its item plus one. */
@@ -116,5 +117,13 @@ constexpr const char* FILE_WITHOUT_A_HULL =
 constexpr const char* VOSTOK_AND_CHAPKA_LOCKER = "ship_locker=chapka,vostok\n";
 constexpr std::size_t CHAPKA_ITEM = 10;
 constexpr std::size_t VOSTOK_ITEM = 26;
+
+/** @brief A balance, the line that writes it, and files whose balance is no
+ * whole number, is negative, or passes MAXIMUM_KOPECKS (999999). */
+constexpr std::uint32_t A_BALANCE = 1250;
+constexpr const char* A_BALANCE_LINE = "kopecks=1250\n";
+constexpr const char* WORDS_AS_A_BALANCE_FILE = "kopecks=abc\n";
+constexpr const char* NEGATIVE_BALANCE_FILE = "kopecks=-5\n";
+constexpr const char* BALANCE_PAST_THE_LARGEST_FILE = "kopecks=1000000\n";
 
 }  // namespace rtype::client::testing

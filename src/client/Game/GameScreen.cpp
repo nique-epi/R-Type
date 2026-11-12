@@ -11,6 +11,7 @@
 #include <type_traits>
 #include <utility>
 #include <variant>
+#include <vector>
 #include "ActionSet.hpp"
 #include "AnimationSystem.hpp"
 #include "ArrivalReveal.hpp"
@@ -31,6 +32,7 @@
 #include "EntityMessage.hpp"
 #include "EntityReplicator.hpp"
 #include "EntityReplicatorParts.hpp"
+#include "FinalPilot.hpp"
 #include "FinalRanking.hpp"
 #include "FlashPreference.hpp"
 #include "GameEnded.hpp"
@@ -47,6 +49,7 @@
 #include "ISky.hpp"
 #include "InterpolationClock.hpp"
 #include "InterpolationTally.hpp"
+#include "KopecksReward.hpp"
 #include "LevelStatus.hpp"
 #include "Logger.hpp"
 #include "MissionBanner.hpp"
@@ -197,6 +200,7 @@ GameScreen::GameScreen(GameScreenParts parts,
       entityLayer_(std::move(entityLayer)),
       statusCanvas_(std::move(statusCanvas)),
       settings_(&parts.settings.get()),
+      settingsService_(&parts.settingsService.get()),
       effects_(entities_, components_, std::random_device{}()),
       feedback_(EntityFeedback{.effects = effects_, .sounds = parts.sounds}),
       prediction_(parts.connection.get().status().playerNumber,
@@ -327,10 +331,15 @@ void GameScreen::applyWorldState(const network::WorldState& state) {
 }
 
 void GameScreen::recordEnd(const network::GameEnded& ended) {
-  *result_ = GameResult{.pilots = rankedPilots(flyingTheirHulls(
-                            finalPilotsOf(scoreBoard_.pilots(), ended),
-                            shipLooks_->playerLooks())),
-                        .outcome = ended.outcome};
+  std::vector<FinalPilot> pilots = rankedPilots(flyingTheirHulls(
+      finalPilotsOf(scoreBoard_.pilots(), ended), shipLooks_->playerLooks()));
+  if (!kopecksGained_.has_value()) {
+    kopecksGained_ = kopecksEarnedBy(pilots, ended.outcome);
+    creditKopecks(*settingsService_, kopecksGained_.value_or(0));
+  }
+  *result_ = GameResult{.pilots = std::move(pilots),
+                        .outcome = ended.outcome,
+                        .kopecksGained = kopecksGained_.value_or(0)};
   worldSeen_ = true;
   endedAt_ = effects_.sinceStart();
   interpolationTally_->endGame();

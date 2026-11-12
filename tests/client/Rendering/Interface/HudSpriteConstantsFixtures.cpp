@@ -14,5 +14,6 @@ std::vector<SpriteFrame> everyHudFrame() {
   frames.insert(frames.end(), MARKER_FRAMES.begin(), MARKER_FRAMES.end());
   frames.push_back(LEFT_GAME_FRAME);
   frames.push_back(WEAK_SIGNAL_FRAME);
+  frames.push_back(rtype::client::KOPECK_FRAME);
   return frames;
 }

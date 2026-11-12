@@ -1,7 +1,9 @@
 #include "SettingsService.hpp"
 #include <SFML/Window/Keyboard.hpp>
+#include <cstdint>
 #include <optional>
 #include <type_traits>
+#include <utility>
 #include <vector>
 #include "BoundAction.hpp"
 #include "ISettingsListener.hpp"
@@ -27,11 +29,15 @@ bool isInRange(const std::optional<SettingRange>& range, int value) {
          (value >= range->minimum && value <= range->maximum);
 }
 
-/** @returns Whether @p setting accepts @p value: only an int has a range. */
+/** @returns Whether @p setting accepts @p value: an int inside its range, an
+ * unsigned value up to the end of its range, any other value always. */
 template <typename Value>
 bool accepts(const Setting<Value>& setting, const Value& value) {
   if constexpr (std::is_same_v<Value, int>) {
     return isInRange(setting.range, value);
+  } else if constexpr (std::is_same_v<Value, std::uint32_t>) {
+    return !setting.range.has_value() ||
+           std::cmp_less_equal(value, setting.range->maximum);
   } else {
     return true;
   }
@@ -95,6 +101,8 @@ template bool SettingsService::apply<ShipLook>(const Setting<ShipLook>&,
                                                const ShipLook&);
 template bool SettingsService::apply<ShipLocker>(const Setting<ShipLocker>&,
                                                  const ShipLocker&);
+template bool SettingsService::apply<std::uint32_t>(
+    const Setting<std::uint32_t>&, const std::uint32_t&);
 
 void SettingsService::bindKey(BoundAction action, sf::Keyboard::Scancode key) {
   settings_->keys.bind(action, key);

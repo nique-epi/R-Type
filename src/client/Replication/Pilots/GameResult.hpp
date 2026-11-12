@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <vector>
 #include "FinalPilot.hpp"
 #include "GameEnded.hpp"
@@ -12,6 +13,8 @@ namespace rtype::client {
 struct GameResult {
   std::vector<FinalPilot> pilots;
   network::WireGameOutcome outcome{network::WireGameOutcome::Defeat};
+  /** @brief The kopecks the game earned the player of this client. */
+  std::uint32_t kopecksGained{};
 };
 
 }  // namespace rtype::client

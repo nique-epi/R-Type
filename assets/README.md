@@ -126,13 +126,14 @@ Without flash, the Bydo explosion starts on the Bydo in its own colors instead o
 
 ## The HUD sheet
 
-`sprites/hud.png` is 88 × 30 pixels, laid out like the entity sheet: native size, frames and rows 2 pixels apart, transparent outside the frames. One pixel of the sheet is one pixel of the interface picture.
+`sprites/hud.png` is 88 × 41 pixels, laid out like the entity sheet: native size, frames and rows 2 pixels apart, transparent outside the frames. One pixel of the sheet is one pixel of the interface picture.
 
 | Row | Frames | Frame size | Top |
 |---|---|---|---|
 | Lives: the ship of each player color, then a life lost, in the shade of the far stars | 5 | 16 × 8 | 0 |
 | Markers: triangle, square, circle and star, one per player color, so a player is never told by color alone | 4 | 7 × 7 | 10 |
 | Notices: the door a pilot left through, then the bars of a weak signal, pale and dark blue outlined in ink, so no palette recolors them | 2 | 9 × 11, 13 × 10 | 19 |
+| The kopeck: the gold coin written beside every amount of the shop, outlined in ink, so no palette recolors it | 1 | 9 × 9 | 32 |
 
 The rectangles are written once, in `src/client/Rendering/Interface/HudSpriteConstants.hpp`, with the id of the plug icon, which is drawn smoothed at the resolution of the window and tinted, not pixel for pixel. `client_rendering_tests` checks them against the shipped files: every frame lies inside the sheet, shows a visible pixel, cuts no drawing and overlaps no other, and every visible pixel of the icon is white. Both files are listed in `gameAssets()`; the HUD sheet is also listed in `titleAssets()`, for the status band the help of the waiting room paints.
 

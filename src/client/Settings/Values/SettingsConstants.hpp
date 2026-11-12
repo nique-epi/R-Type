@@ -110,6 +110,12 @@ constexpr std::string_view SHIP_FACE_NAME = "ship_face";
 constexpr std::string_view SHIP_HULL_NAME = "ship_hull";
 constexpr std::string_view SHIP_LOCKER_NAME = "ship_locker";
 
+/** @brief The kopecks, the currency of the shop: the name of their line, and
+ * the largest balance a player holds, six digits, which the frame of the
+ * title is as wide as. A first launch holds none. */
+constexpr std::string_view KOPECKS_NAME = "kopecks";
+constexpr std::uint32_t MAXIMUM_KOPECKS = 999'999;
+
 /** @brief What separates the items of the locker in the settings file, and the
  * value of a locker that holds none. */
 constexpr char LOCKER_ITEM_SEPARATOR = ',';

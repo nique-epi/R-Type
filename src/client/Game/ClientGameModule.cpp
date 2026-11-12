@@ -48,6 +48,7 @@ std::unique_ptr<IScreen> buildGameScreen(const ScreenContext& context,
   return std::make_unique<GameScreen>(
       GameScreenParts{.navigator = context.navigator.get(),
                       .settings = context.services.settings.get(),
+                      .settingsService = context.services.settingsService.get(),
                       .inputs = connection,
                       .entityMessages = context.services.entityMessages.get(),
                       .serverTicks = context.services.serverTicks.get(),

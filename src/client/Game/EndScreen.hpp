@@ -3,6 +3,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -102,6 +103,7 @@ class EndScreen : public IScreen {
   std::reference_wrapper<const PlayerPalette> palette_;
   std::vector<FinalPilot> pilots_;
   network::WireGameOutcome outcome_;
+  std::uint32_t kopecksGained_{};
   std::vector<std::string> taunt_;
   FlightLogSchedule schedule_;
   engine::Duration sinceStart_{};
