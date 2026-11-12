@@ -10,10 +10,15 @@ variable "instance_type" {
   default     = "t3.small"
 }
 
-variable "github_repository" {
-  description = "The repository whose deployments may reach the master."
+variable "github_subject_prefix" {
+  description = "What the sub claim of the GitHub tokens of the repository whose deployments may reach the master starts with: repo:<owner>/<repo>, or repo:<owner>@<id>/<repo>@<id> when the repository uses immutable subjects. gh api repos/<owner>/<repo>/actions/oidc/customization/sub prints it as sub_claim_prefix."
   type        = string
-  default     = "nique-epi/R-Type"
+  default     = "repo:nique-epi@260720952/R-Type@1392224722"
+
+  validation {
+    condition     = can(regex("^repo:[^:]+$", var.github_subject_prefix))
+    error_message = "github_subject_prefix must be repo:<owner>/<repo>, with the ids of immutable subjects when the repository uses them."
+  }
 }
 
 variable "master_port" {
