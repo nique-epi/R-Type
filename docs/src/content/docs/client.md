@@ -659,6 +659,34 @@ The thirty items (`SHIP_LOOK_ITEM_NAMES` in `src/identifiers/ShipLookConstants.h
 
 In a game, `dressPilotShips()` (`src/client/Game/PilotShipLooks.hpp`) gives the ship of each pilot a `WornLook` and keeps it equal to the look the exchange lists for that pilot; a pilot it does not list wears nothing. `RenderSystem` draws the items of a `WornLook` over the ship, in its layer, with its tone and its outline, so they blink with the ship when it is invulnerable. They are not drawn while the ship arrives or rolls, so a hat disappears for the length of a roll. `client_screen_tests` checks the choice, the saves, the fitting and the access from the map and the room. the choice, the saves, the fitting and the access from the map and the room.
 
+## Shop: `ShopScreen`, `ShopSelection`
+
+`ShopScreen` (`src/client/Shop/`) sells the items of the catalog for kopecks. The shop module adds it to the registry as `SHOP_SCREEN`; it hides the screen below, which goes on running. Its scenery is one picture, `sprites/shop_scene.png`: the booth of the Bydo, its locker and its glass case empty. The code paints what changes over it (`paintShop()`, `Shop/Painting/`): the looks of the rows the locker shows, the hulls of the case, a price tag on each ware (`paintPriceTag()`, digits of 3 × 5 pixels, so the tag of 10 000 fits the stall of a hull), a red ribbon across a ware the player owns, the frame of the chosen ware, the balance in the top-right corner and a status line.
+
+`waresForSale()` (`Shop/Shelves/`) lists what is sold: every accessory whose price is not `NOT_FOR_SALE`, in the order of the catalog, then the hulls by rising price. `ShopSelection` holds the chosen ware and the rows the locker shows, three cells a row and four rows at a time, with the `RowWindow` of the hangar.
+
+| Input | Effect |
+|---|---|
+| Arrows in the locker | the neighbouring look; the locker scrolls to keep the choice in sight |
+| Right from the right column, Down from the last row | the cheapest hull of the case |
+| Left and Right in the case | the neighbouring hull; Left on the first one, and Up, come back to the look the case was entered from |
+| Pointer over a look shown or a hull | chooses it |
+| Mouse wheel | scrolls the locker one row a notch; the choice stays on a cell shown |
+| Enter, click on a ware | buys it; a key held down acts once |
+| Escape, BACK | close the shop |
+
+A purchase goes through `buyLookItem()` (`src/client/Economy/`): the price leaves `KOPECKS_SETTING`, the item enters `SHIP_LOCKER_SETTING`, and both are saved at once (see [Settings](#settings-playersettings-settingsservice-settingsfile)). The hangar then shows the item unlocked.
+
+| Situation | Status line | Sound |
+|---|---|---|
+| A ware chosen, not owned | `PARTY HAT - ENTER: BUY FOR 150 KOPECKS` | |
+| A ware chosen, owned | `PARTY HAT - ALREADY YOURS` | |
+| Bought | `BOUGHT: PARTY HAT` | `PURCHASE_SOUND_ID` |
+| Too expensive | `NOT ENOUGH KOPECKS: 150 MISSING` | none |
+| Enter on a ware owned | `ALREADY YOURS` | none |
+
+`client_screen_tests` checks the wares, the moves of the choice, the tags and the purchases, on a window whose pixels are not those of the interface.
+
 ## Leaderboard: `LeaderboardScreen`, `ILeaderboardSource`
 
 `LeaderboardScreen` (`src/client/Menus/Leaderboard/`) shows the best scores of a server. The menus module adds it to the registry as `LEADERBOARD_SCREEN`, and RANKING pushes it from the title and from the waiting room. It hides the screen below, which goes on running: in the waiting room, the start of a game still asks `replaceAll(GAME_SCREEN)`, which removes the leaderboard with the rest, and leaving the leaderboard does not leave the server.

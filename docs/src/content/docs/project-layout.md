@@ -245,6 +245,9 @@ src/client/
 │       └── Tabs/        the tabs and their rows
 ├── Lobby/               the waiting room
 ├── Economy/             the kopecks: what a score pays, the price of each item, a purchase
+├── Shop/                the shop: the wares, the chosen one, and their painting
+│   ├── Shelves/         what is for sale, where each ware lies, the choice
+│   └── Painting/        the price tags, the cells of the locker, the glass case
 ├── Hangar/              the hangar: the ship, what it wears, and the items won
 │   ├── Locker/          the locker of the items and its metal
 │   └── Dock/            the bay, the arms and the fitting of an item
@@ -393,6 +396,7 @@ This list describes the code as it is today. A pull request that adds, removes o
 | `menus` | `ClientMenusModule` | `src/client/Menus/` | required |
 | `lobby` | `ClientLobbyModule` | `src/client/Lobby/` | required |
 | `hangar` | `ClientHangarModule` | `src/client/Hangar/` | required |
+| `shop` | `ClientShopModule` | `src/client/Shop/` | required |
 | `game` | `ClientGameModule` | `src/client/Game/` | required |
 | `update` | `ClientUpdateModule` | `src/client/Update/` | optional, `RTYPE_MODULE_UPDATE` |
 | `debug` | `ClientDebugModule` | `src/client/Debug/` | optional, `RTYPE_MODULE_DEBUG` |
