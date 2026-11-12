@@ -1,16 +1,14 @@
 #!/bin/sh
 # Installs the release VERSION for the pool of game servers of this machine,
-# with the service of each server and the autoscaler, then starts the first
-# server of the pool. It reads the pool in /etc/rtype-autoscaler.conf (see
-# autoscaler.conf.example) and stops before changing anything when a server
-# of the pool has no server.cfg with its key of the master. Run it as root;
-# run again, it installs another release and restarts the running servers,
-# which ends their games.
-# Usage: VERSION=<x.y.z> infra/game-servers/install.sh
+# one server per port of PORTS, with the service of each one, then starts
+# them all. It stops before changing anything when a server of the pool has
+# no server.cfg with its key of the master, in /var/lib/rtype-servers/<port>/.
+# Run it as root; run again, it installs another release and restarts the
+# servers, which ends their games.
+# Usage: VERSION=<x.y.z> PORTS="<port> ..." infra/game-servers/install.sh
 set -eu
 
 scripts=$(cd -- "$(dirname -- "$0")" && pwd)
-configuration=/etc/rtype-autoscaler.conf
 releases=/opt/rtype-servers/releases
 servers=/var/lib/rtype-servers
 
@@ -18,12 +16,7 @@ servers=/var/lib/rtype-servers
 . "$scripts/../release.sh"
 
 require_pool() {
-  if [ ! -r "$configuration" ]; then
-    echo "$configuration is missing: copy autoscaler.conf.example there" >&2
-    exit 1
-  fi
-  # shellcheck source=infra/game-servers/autoscaler.conf.example
-  . "$configuration"
+  : "${PORTS:?PORTS is not set}"
   for port in $PORTS; do
     if ! grep -Eq '^set master-key "?rtk_' "$servers/$port/server.cfg" 2> /dev/null; then
       echo "$servers/$port/server.cfg has no key of the master (set master-key)" >&2
@@ -33,11 +26,11 @@ require_pool() {
 }
 
 install_tools() {
-  if command -v curl > /dev/null && command -v jq > /dev/null; then
+  if command -v curl > /dev/null; then
     return 0
   fi
   apt-get update -q
-  DEBIAN_FRONTEND=noninteractive apt-get install -y -q curl jq
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -q curl
 }
 
 prepare_folders() {
@@ -61,28 +54,19 @@ install_release() {
   rm -rf "$releases"
 }
 
-# One service per server, named after its port. Only the first server of the
-# pool is enabled: the autoscaler starts the others.
-install_services() {
+# One service per server, named after its port.
+install_service() {
   write_server_unit rtype-server@ 'R-Type game server on port %i' "$servers/%i" \
     "$servers/%i/release/bin/r-type_server -p %i --database $servers/%i/leaderboard.db --no-log-file"
-  install -m 755 "$scripts/autoscale.sh" "$scripts/listed-servers.sh" /opt/rtype-servers/
-  cat > /etc/systemd/system/rtype-autoscaler.service <<UNIT
-[Unit]
-Description=One pass of the autoscaler of the R-Type game servers
-
-[Service]
-Type=oneshot
-ExecStart=/opt/rtype-servers/autoscale.sh $configuration
-UNIT
-  write_timer rtype-autoscaler 'Runs the autoscaler of the R-Type game servers every 15 seconds' 30 15
   systemctl daemon-reload
 }
 
+# A server that already runs moves to the new release; the others start.
 start_pool() {
   systemctl try-restart 'rtype-server@*.service'
-  systemctl enable --now "rtype-server@${PORTS%% *}"
-  systemctl enable --now rtype-autoscaler.timer
+  for port in $PORTS; do
+    systemctl enable --now "rtype-server@$port"
+  done
 }
 
 main() {
@@ -91,9 +75,9 @@ main() {
   install_tools
   prepare_folders
   install_release
-  install_services
+  install_service
   start_pool
-  echo "the pool runs $VERSION: server ${PORTS%% *} started, the others wait for the autoscaler"
+  echo "the pool runs $VERSION: the servers of the ports $PORTS are started"
 }
 
 main

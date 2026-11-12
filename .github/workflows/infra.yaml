@@ -8,13 +8,11 @@ on:
       - "main"
     paths:
       - "infra/**"
-      - "tests/tools/infra/**"
       - ".github/actions/game-machine-terraform/**"
       - ".github/workflows/infra.yaml"
   pull_request:
     paths:
       - "infra/**"
-      - "tests/tools/infra/**"
       - ".github/actions/game-machine-terraform/**"
       - ".github/workflows/infra.yaml"
 
@@ -56,7 +54,4 @@ jobs:
       - name: Lint the scripts
         run: |
           shellcheck --version
-          shellcheck --shell=sh --external-sources infra/*.sh infra/master/*.sh infra/game-servers/*.sh infra/terraform/user-data.sh infra/terraform-game/user-data.sh tests/tools/infra/*.sh
-
-      - name: Check the decisions of the autoscaler
-        run: sh tests/tools/infra/check-autoscaler.sh
+          shellcheck --shell=sh --external-sources infra/*.sh infra/master/*.sh infra/game-servers/*.sh infra/terraform/user-data.sh infra/terraform-game/user-data.sh

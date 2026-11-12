@@ -1,8 +1,8 @@
 #!/bin/sh
 # Prints "<port> <status> <games> <most games>" for each game server the
 # master lists at an address: the games it runs and the games it can run.
-# Fails when the master does not answer with a listing. The autoscaler and
-# the workflows that open and close a LAN read the master through it.
+# Fails when the master does not answer with a listing. The workflows that
+# open and close a LAN read the master through it.
 # Usage: listed-servers.sh <url of the master> <address>
 set -eu
 

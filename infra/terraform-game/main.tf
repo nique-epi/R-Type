@@ -90,4 +90,13 @@ resource "aws_instance" "game" {
   tags = {
     Name = "rtype-game"
   }
+
+  # The script of the first boot names the commit of the workflow, and the
+  # image is the latest of Ubuntu: both change between two runs. A machine
+  # that exists is left as it is, since its script runs only once and a new
+  # one would stop it, ending its games; lan-close then lan-open makes a
+  # machine with the new ones.
+  lifecycle {
+    ignore_changes = [ami, user_data]
+  }
 }
