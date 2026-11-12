@@ -55,7 +55,7 @@ TEST(BotLaunchOptions, AcceptsASquadOfOneBot) {
 }
 
 /**
- * Given a count of every seat of a server plus one game
+ * Given a count of the largest squad
  * When the tool reads its launch
  * Then that many bots join
  */
