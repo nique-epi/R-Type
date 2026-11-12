@@ -121,7 +121,10 @@ def choose_sequence(biome, rng, count):
         for option in order:
             left, _ = ends(option)
             names = [name for name, _ in chain]
-            if option in chain or (option[0] in names and not is_wet(option) and len(names) < len(templates)):
+            fresh = len(names) < len(templates)
+            if fresh and (option in chain or (option[0] in names and not is_wet(option))):
+                continue
+            if not fresh and chain[-1][0] == option[0] and not is_wet(option):
                 continue
             if not chain and left in wet:
                 continue

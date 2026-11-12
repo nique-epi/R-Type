@@ -114,7 +114,7 @@ A template with `"sky": True` has no ceiling: the ceiling of a neighboring zone 
 
 ## Adding a biome
 
-1. Copy `biomes/demo_ember/` and rename it. Write the palette first: every other file refers to its letters.
+1. Copy `biomes/demo_ember/` and rename it. Write the palette first: every other file refers to its letters. `python3 tools/make_palette.py --biome <name> path/to/pictures` builds it from pictures: it finds their color ramps and fills the standard letters, so the files copied from `demo_ember` keep working; `--assign stone=1,liquid=0` overrules the role a ramp got.
 2. Bring sprites in. Pictures with a transparent background, one sprite per file:
 
 ```bash
@@ -174,5 +174,4 @@ A `Walls` cell is 1 when at least half of its pixels are solid on the play plane
 - Looping parallax layers: this tool makes fixed maps.
 - A drawn sky: under `"sky": True` the backdrop is one flat color.
 - More than two planes of terrain, or platforms across the play corridor.
-- Building a palette from pictures: `palette.py` is written by hand.
 - Two biomes in one output folder: `props_16.png` has the same name for all.
