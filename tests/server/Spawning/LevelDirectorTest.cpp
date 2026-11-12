@@ -3,34 +3,47 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include "LdtkPlacementFixtures.hpp"
+#include "LdtkPlacementTestConstants.hpp"
 #include "LevelDirector.hpp"
 #include "LevelDirectorFixture.hpp"
 #include "LevelDirectorTestConstants.hpp"
 #include "ServerException.hpp"
 
-using rtype::server::stagesOfLevel;
+using rtype::server::entryOfLevel;
 using rtype::server::UnknownLevelException;
 using rtype::server::testing::CAVES_BIOME;
 using rtype::server::testing::LEVEL_ENEMY_SHEET;
 using rtype::server::testing::LEVEL_OF_ONE_BIOME;
 using rtype::server::testing::LEVEL_OF_TWO_BIOMES;
 using rtype::server::testing::LEVEL_OF_TWO_STAGES;
+using rtype::server::testing::LEVEL_OF_TWO_STAGES_THAT_SPAWNS_THE_PLACED;
 using rtype::server::testing::LEVEL_SHIP_SHEET;
 using rtype::server::testing::LEVEL_THAT_FAILS;
 using rtype::server::testing::LEVEL_THAT_PAUSES;
+using rtype::server::testing::LEVEL_THAT_SPAWNS_THE_PLACED;
 using rtype::server::testing::LEVEL_THAT_WAITS;
 using rtype::server::testing::LevelDirectorFixture;
 using rtype::server::testing::SCROLL_OF_ONE_SECOND;
 using rtype::server::testing::SCROLL_OF_ONE_TICK;
 using rtype::server::testing::SCROLL_ONE_TICK_AFTER_THE_CHECKPOINT;
 using rtype::server::testing::SCROLL_TOLERANCE;
+using rtype::server::testing::SPAWNS_AFTER_THE_RESTART;
+using rtype::server::testing::SPAWNS_BEFORE_THE_RESTART;
 using rtype::server::testing::SPEED_OF_A_SCROLLING_LEVEL;
 using rtype::server::testing::SPEED_OF_A_STOPPED_LEVEL;
 using rtype::server::testing::TICK_OF_THE_SECOND_ACT;
+using rtype::server::testing::TICKS_BEFORE_THE_DRIFTER_COMES_IN;
 using rtype::server::testing::TICKS_INTO_THE_SECOND_STAGE;
 using rtype::server::testing::TICKS_OF_ONE_SECOND;
+using rtype::server::testing::TICKS_UNTIL_BOTH_CAME_IN;
+using rtype::server::testing::TICKS_UNTIL_THE_LATE_ONE_COMES_IN_AGAIN;
 using rtype::server::testing::UNREGISTERED_LEVEL;
+using rtype::server::testing::WHERE_THE_DRIFTER_APPEARS_X;
+using rtype::server::testing::WHERE_THE_DRIFTER_IS_PLACED;
+using rtype::server::testing::WHERE_THE_EARLY_DRIFTER_IS;
 using rtype::server::testing::WHERE_THE_ENEMY_IS;
+using rtype::server::testing::WHERE_THE_LATE_DRIFTER_IS;
 using rtype::server::testing::WHERE_THE_SHIP_IS;
 using rtype::server::testing::WRECK_BIOME;
 using ::testing::ElementsAre;
@@ -224,7 +237,81 @@ TEST_F(LevelDirectorFixture, TellsTheLevelAgainAfterARestart) {
 TEST_F(LevelDirectorFixture, RefusesALevelNoScriptRegistered) {
   direct(LEVEL_OF_ONE_BIOME);
 
-  EXPECT_THROW(static_cast<void>(stagesOfLevel(
-                   scripts().levels(), std::string{UNREGISTERED_LEVEL})),
+  EXPECT_THROW(static_cast<void>(entryOfLevel(scripts().levels(),
+                                              std::string{UNREGISTERED_LEVEL})),
                UnknownLevelException);
+}
+
+/**
+ * Given a level that places a Drifter 2224 units in, whose stage asks for the
+ * placed enemies
+ * When the ticks pass until the level scrolled just short of 256 units, 128
+ * ticks of scroll
+ * Then no enemy was asked for yet
+ */
+TEST_F(LevelDirectorFixture, HoldsAPlacedEnemyUntilTheScrollBringsItIn) {
+  placeTheDrifter();
+  direct(LEVEL_THAT_SPAWNS_THE_PLACED);
+
+  tick(TICKS_BEFORE_THE_DRIFTER_COMES_IN - 1);
+
+  EXPECT_THAT(spawned(), IsEmpty());
+}
+
+/**
+ * Given the same level, ticked until the level scrolled past 256 units, 129
+ * ticks of scroll
+ * When the next tick passes
+ * Then the Drifter is asked for, its left edge on the right edge of the
+ * playfield, at x 1966
+ */
+TEST_F(LevelDirectorFixture, SpawnsAPlacedEnemyWhenTheScrollBringsItIn) {
+  placeTheDrifter();
+  direct(LEVEL_THAT_SPAWNS_THE_PLACED);
+  tick(TICKS_BEFORE_THE_DRIFTER_COMES_IN);
+
+  tick(1);
+
+  ASSERT_THAT(spawned(), SizeIs(1));
+  EXPECT_EQ(spawned().front().type, PLACED_DRIFTER_SHEET);
+  EXPECT_NEAR(spawned().front().position.x, WHERE_THE_DRIFTER_APPEARS_X,
+              SCROLL_TOLERANCE);
+  EXPECT_FLOAT_EQ(spawned().front().position.y, WHERE_THE_DRIFTER_IS_PLACED.y);
+}
+
+/**
+ * Given a level that places a Drifter, whose stage never asks for the placed
+ * enemies
+ * When the level scrolls past it
+ * Then no enemy is asked for
+ */
+TEST_F(LevelDirectorFixture, SpawnsNothingWhileNoStageAskedForThePlaced) {
+  placeTheDrifter();
+  direct(LEVEL_THAT_WAITS);
+
+  tick(TICKS_BEFORE_THE_DRIFTER_COMES_IN + 1);
+
+  EXPECT_THAT(spawned(), IsEmpty());
+}
+
+/**
+ * Given a level of two stages whose checkpoint is at 6 units of scroll, with
+ * a Drifter coming in at 4 units and another at 20, both come in
+ * When the level restarts from its checkpoint and scrolls past both again
+ * Then only the late Drifter is asked for again
+ */
+TEST_F(LevelDirectorFixture, OnlyTheEnemiesPlacedAfterTheCheckpointComeBack) {
+  placeEnemies({placedEnemyOf(PLACED_DRIFTER_SHEET, WHERE_THE_EARLY_DRIFTER_IS,
+                              PLACED_ENEMY_WIDTH),
+                placedEnemyOf(PLACED_DRIFTER_SHEET, WHERE_THE_LATE_DRIFTER_IS,
+                              PLACED_ENEMY_WIDTH)});
+  direct(LEVEL_OF_TWO_STAGES_THAT_SPAWNS_THE_PLACED);
+  tick(TICKS_UNTIL_BOTH_CAME_IN);
+  ASSERT_THAT(spawned(), SizeIs(SPAWNS_BEFORE_THE_RESTART));
+
+  ASSERT_TRUE(director().restartFromCheckpoint());
+  tick(TICKS_UNTIL_THE_LATE_ONE_COMES_IN_AGAIN);
+
+  ASSERT_THAT(spawned(), SizeIs(SPAWNS_AFTER_THE_RESTART));
+  EXPECT_FLOAT_EQ(spawned().back().position.y, WHERE_THE_LATE_DRIFTER_IS.y);
 }

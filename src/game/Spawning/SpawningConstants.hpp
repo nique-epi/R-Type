@@ -23,7 +23,6 @@ constexpr float SHIP_START_X_RATIO = 0.1F;
  * is fixed.
  */
 constexpr float ENEMY_SPAWN_MARGIN = 64.0F;
-
 /**
  * @brief How far past the left edge of the playfield the center of an enemy
  * must be before it is removed, in logical units, so the whole enemy is off
