@@ -25,6 +25,7 @@
 #include "Wave.hpp"
 #include "WaveEntryPosition.hpp"
 #include "WavePlan.hpp"
+#include "WavePlanConstants.hpp"
 #include "WaveSpawnerConstants.hpp"
 #include "WaveSpawnerParts.hpp"
 #include "World.hpp"
@@ -74,6 +75,8 @@ WaveSpawner::WaveSpawner(WaveSpawnerParts parts)
       random_(parts.seed),
       enemies_(enemySheetsOf(parts.waves, parts.types.get())),
       lookItems_(lookItemSheetsOf(parts.waves, parts.types.get())),
+      lookItemEvery_(std::max(parts.waves.lookItemEvery, LOOK_ITEM_EVERY_WAVE)),
+      nextLookItem_(lookItems_.empty() ? 0 : parts.seed % lookItems_.size()),
       waveDirector_(parts.waves.curve) {
   logger_.info("wave spawning starts from the seed ", parts.seed);
 }
@@ -81,9 +84,11 @@ WaveSpawner::WaveSpawner(WaveSpawnerParts parts)
 void WaveSpawner::onTick() {
   const std::size_t enemiesDue =
       waveDirector_.advance(engine::SIMULATION_TICK_DURATION, enemiesInPlay());
-  if (waveDirector_.waveNumber() != loggedWaveNumber_) {
+  const std::size_t wave = waveDirector_.waveNumber();
+  if (wave != loggedWaveNumber_) {
     logCurrentWave();
-    if (waveDirector_.waveNumber() >= SECOND_WAVE && !lookItems_.empty()) {
+    if (wave >= SECOND_WAVE && wave % lookItemEvery_ == 0 &&
+        !lookItems_.empty()) {
       spawnLookItem();
     }
   }
@@ -109,14 +114,14 @@ void WaveSpawner::spawnOne() {
 
 void WaveSpawner::spawnLookItem() {
   const game::EntitySheet& sheet =
-      lookItems_[lookItemsSpawned_ % lookItems_.size()];
+      lookItems_[nextLookItem_ % lookItems_.size()];
   const game::Position position =
       game::waveEntryPosition(LOOK_ITEM_ENTRY_HEIGHT);
   const std::optional<std::uint32_t> networkId = createEntity(sheet, position);
   if (!networkId.has_value()) {
     return;
   }
-  ++lookItemsSpawned_;
+  ++nextLookItem_;
   announce(sheet, *networkId, position);
 }
 

@@ -281,6 +281,17 @@ int bossHealthPercentFrom(const DataFileTable& table) {
 
 /** @returns The waves one difficulty describes, each key read from the
  * layer of @p layers that gives it, its enemies checked against @p types. */
+/** @returns How often a wave of the table of one difficulty brings a look
+ * item, DEFAULT_LOOK_ITEM_EVERY when it gives none; throws as
+ * engine::wholeNumberAt(). */
+std::size_t lookItemEveryFrom(const DataFileTable& table) {
+  if (!table.table.get().contains(LOOK_ITEM_EVERY_KEY)) {
+    return static_cast<std::size_t>(DEFAULT_LOOK_ITEM_EVERY);
+  }
+  return static_cast<std::size_t>(
+      engine::wholeNumberAt(table, LOOK_ITEM_EVERY_KEY, LOOK_ITEM_EVERY_RANGE));
+}
+
 WavePlan planFrom(const DifficultyLayers& layers,
                   const game::EntitySheets& types) {
   return WavePlan{
@@ -291,7 +302,9 @@ WavePlan planFrom(const DifficultyLayers& layers,
       .bossHealthPercent =
           bossHealthPercentFrom(layerHolding(layers, BOSS_HEALTH_PERCENT_KEY)),
       .lookItems = lookItemsFrom(EnemyList{
-          .table = layerHolding(layers, LOOK_ITEMS_KEY), .types = types})};
+          .table = layerHolding(layers, LOOK_ITEMS_KEY), .types = types}),
+      .lookItemEvery =
+          lookItemEveryFrom(layerHolding(layers, LOOK_ITEM_EVERY_KEY))};
 }
 
 /** @returns The waves of every difficulty of @p laid, their enemies checked

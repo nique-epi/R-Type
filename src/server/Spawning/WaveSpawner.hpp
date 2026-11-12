@@ -43,11 +43,12 @@ namespace rtype::server {
  * describes. When every network id was given, the enemy is skipped and a
  * warning is logged.
  *
- * From the second wave, a look item of the sheets the look items of the plan
- * name, taken in turn, enters at the middle of the right edge as the wave
- * begins, that is when its pause starts. It is not counted among the enemies of
- * the wave, so it never holds a wave open, and it draws no number from the
- * random generator.
+ * A look item of the sheets the look items of the plan name, taken in turn
+ * from a place the seed gives, enters at the middle of the right edge as a
+ * wave begins, that is when its pause starts: with each wave whose number is
+ * a multiple of the lookItemEvery of the plan, never with the first. It is
+ * not counted among the enemies of the wave, so it never holds a wave open,
+ * and it draws no number from the random generator.
  *
  * Not thread-safe: use it from the simulation thread only.
  */
@@ -102,8 +103,11 @@ class WaveSpawner {
   std::mt19937 random_;
   std::vector<std::reference_wrapper<const game::EntitySheet>> enemies_;
   std::vector<std::reference_wrapper<const game::EntitySheet>> lookItems_;
+  std::size_t lookItemEvery_;
   std::size_t spawnedCount_{0};
-  std::size_t lookItemsSpawned_{0};
+  /** @brief The place in lookItems_ of the next look item; it starts at the
+   * seed modulo their count, so two games do not bring the same ones. */
+  std::size_t nextLookItem_;
   game::WaveDirector waveDirector_;
   std::size_t loggedWaveNumber_{0};
 };
