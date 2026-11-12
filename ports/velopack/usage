@@ -1,0 +1,4 @@
+velopack provides CMake targets:
+
+  find_package(velopack CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE velopack::velopack)

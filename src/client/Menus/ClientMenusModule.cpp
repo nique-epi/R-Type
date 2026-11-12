@@ -10,10 +10,10 @@
 #include "DialogMenus.hpp"
 #include "GameListSnapshot.hpp"
 #include "IScreen.hpp"
+#include "IUpdateNotice.hpp"
 #include "InstallContext.hpp"
 #include "IntroScreen.hpp"
 #include "IntroScreenParts.hpp"
-#include "LeaderboardPresentation.hpp"
 #include "LeaderboardScreen.hpp"
 #include "LeaderboardScreenConstants.hpp"
 #include "LeaderboardScreenParts.hpp"
@@ -35,6 +35,7 @@
 #include "ServerMapScreen.hpp"
 #include "ServerMapScreenParts.hpp"
 #include "SquadronStart.hpp"
+#include "TitleOpening.hpp"
 #include "TitleScreen.hpp"
 #include "TitleScreenParts.hpp"
 
@@ -55,13 +56,13 @@ std::unique_ptr<IScreen> buildIntroScreen(const ScreenContext& context) {
 
 /** @returns The loading screen of titleAssets() while some are not loaded,
  * the title screen once they all are; its squadron is still when the system
- * asks for less motion, and starts as @p squadronStart says otherwise. */
+ * asks for less motion, and starts as @p opening says otherwise; it asks the
+ * notice of @p opening, when there is one. */
 std::unique_ptr<IScreen> buildTitleScreen(const ScreenContext& context,
-                                          ScreenId screen,
-                                          SquadronStart squadronStart) {
+                                          TitleOpening opening) {
   context.services.audio.get().playTheme();
   std::unique_ptr<IScreen> loading =
-      loadingScreenUnlessLoaded(context, titleAssets(), screen);
+      loadingScreenUnlessLoaded(context, titleAssets(), opening.screen);
   if (loading != nullptr) {
     return loading;
   }
@@ -72,8 +73,9 @@ std::unique_ptr<IScreen> buildTitleScreen(const ScreenContext& context,
                        .playfieldPointAt = playfieldMappingOf(context),
                        .motion = motionPreference(),
                        .seed = std::random_device{}(),
-                       .squadronStart = squadronStart,
-                       .playStart = context.services.playStart},
+                       .squadronStart = opening.squadronStart,
+                       .playStart = context.services.playStart,
+                       .notice = opening.notice},
       interfaceCanvasOf(context));
 }
 
@@ -167,8 +169,7 @@ std::unique_ptr<IScreen> buildLeaderboardScreen(const ScreenContext& context) {
                        .source = &context.services.leaderboard.get()},
                    LeaderboardTab{.label = GLOBAL_TAB_LABEL,
                                   .source = &global}},
-          .choice = openingChoiceOf(
-              context.services.waitingRoom.get().lobbyPlayers().size()),
+          .choice = OPENING_LEADERBOARD_CHOICE,
           .playfieldPointAt = playfieldMappingOf(context),
           .keyName = localizedKeyName,
           .motion = motionPreference()},
@@ -212,16 +213,27 @@ std::vector<std::string> ClientMenusModule::dependencies() const {
   return {std::string{SCREENS_MODULE_NAME}};
 }
 
+std::vector<std::string> ClientMenusModule::optionalDependencies() const {
+  return {std::string{UPDATE_MODULE_NAME}};
+}
+
 void ClientMenusModule::install(engine::InstallContext& context) {
   auto& registry = context.require<ScreenRegistry>();
+  const IUpdateNotice* notice = context.find<IUpdateNotice>();
   registry.add(INTRO_SCREEN, buildIntroScreen);
-  registry.add(TITLE_SCREEN, [](const ScreenContext& screens) {
-    return buildTitleScreen(screens, TITLE_SCREEN, SquadronStart::FlyingIn);
+  registry.add(TITLE_SCREEN, [notice](const ScreenContext& screens) {
+    return buildTitleScreen(
+        screens, TitleOpening{.screen = TITLE_SCREEN,
+                              .squadronStart = SquadronStart::FlyingIn,
+                              .notice = notice});
   });
-  registry.add(TITLE_AFTER_INTRO_SCREEN, [](const ScreenContext& screens) {
-    return buildTitleScreen(screens, TITLE_AFTER_INTRO_SCREEN,
-                            SquadronStart::InPlace);
-  });
+  registry.add(
+      TITLE_AFTER_INTRO_SCREEN, [notice](const ScreenContext& screens) {
+        return buildTitleScreen(
+            screens, TitleOpening{.screen = TITLE_AFTER_INTRO_SCREEN,
+                                  .squadronStart = SquadronStart::InPlace,
+                                  .notice = notice});
+      });
   registry.add(OPTIONS_SCREEN, [](const ScreenContext& screens) {
     return buildOptionsScreen(screens, OptionsPlace::OverTitle);
   });

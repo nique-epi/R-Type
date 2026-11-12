@@ -6,6 +6,8 @@
 #include "BehaviourConstants.hpp"
 #include "BodyPlacement.hpp"
 #include "CollisionBox.hpp"
+#include "CollisionFilter.hpp"
+#include "CollisionTestConstants.hpp"
 #include "ComponentRegistry.hpp"
 #include "Entity.hpp"
 #include "EntityIdConstants.hpp"
@@ -875,4 +877,23 @@ TEST(World, ABodySpawnedFromAnOriginSteersFromIt) {
             AWAY_FROM_THE_ORIGIN.x);
   EXPECT_EQ(position.value_or(rtype::game::Position{}).y,
             AWAY_FROM_THE_ORIGIN.y);
+}
+
+/**
+ * Given the sheet of the Drifter, which lies in the layer of the enemies and
+ * hits the ships
+ * When a Drifter is spawned
+ * Then it carries the collision filter of its sheet
+ */
+TEST(World, ASpawnedBodyCarriesTheCollisionFilterOfItsSheet) {
+  rtype::game::World world;
+
+  const std::uint32_t drifter =
+      world.spawn(shippedEntitySheets().named(DRIFTER_SHEET),
+                  rtype::game::Position{.x = SOME_X, .y = SOME_Y});
+
+  const std::optional<rtype::engine::CollisionFilter> filter =
+      componentOf<rtype::engine::CollisionFilter>(world, drifter);
+  ASSERT_TRUE(filter.has_value());
+  EXPECT_EQ(filter.value_or(rtype::engine::CollisionFilter{}), ENEMY_FILTER);
 }

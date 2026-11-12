@@ -341,7 +341,7 @@ pre code{overflow-wrap:normal}
 <tr><td>Linux</td><td>.tar.gz, .AppImage</td><td>.tar.gz</td></tr>
 <tr><td>Windows</td><td>.zip, installeur NSIS .exe</td><td>.zip, installeur .exe</td></tr>
 <tr><td>macOS</td><td>.dmg avec <code>R-Type.app</code> (Apple Silicon), signé et notarisé</td><td>.tar.gz</td></tr></table>
-<p>Chaque paquet embarque la partie de <code>assets/</code> qu'il lit. Le projet est en version 1.0.0 : un tag <code>v1.0.0</code> doit correspondre à <code>project(VERSION)</code> du <code>CMakeLists.txt</code> racine, sinon la release est refusée. Le master et le client lisent aussi leur version de là : CMake écrit <code>MasterVersionConstants.hpp</code> et <code>ClientVersionConstants.hpp</code> depuis leur <code>.hpp.in</code> (<code>configure_file</code>) ; <code>GET /api/health</code> répond <code>{"version":"1.0.0"}</code> et l'écran titre affiche <code>VER 1.0.0</code> ; les notes listent les PR fusionnées depuis le tag précédent. Le DMG s'ouvre sur une fenêtre dessinée aux couleurs du jeu (glisser l'app vers Applications).</p></div>
+<p>Chaque paquet embarque la partie de <code>assets/</code> qu'il lit. Le projet est en version 1.1.0 : un tag <code>v1.1.0</code> doit correspondre à <code>project(VERSION)</code> du <code>CMakeLists.txt</code> racine, sinon la release est refusée. Le master et le client lisent aussi leur version de là : CMake écrit <code>MasterVersionConstants.hpp</code> et <code>ClientVersionConstants.hpp</code> depuis leur <code>.hpp.in</code> (<code>configure_file</code>) ; <code>GET /api/health</code> répond <code>{"version":"1.1.0"}</code> et l'écran titre affiche <code>VER 1.1.0</code> ; les notes listent les PR fusionnées depuis le tag précédent. Le DMG s'ouvre sur une fenêtre dessinée aux couleurs du jeu (glisser l'app vers Applications).</p></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms">
 <dt>CPack</dt><dd>Module de CMake qui génère des archives et installeurs.</dd>
 <dt>AppImage</dt><dd>Exécutable Linux autonome qui contient l'appli et ses fichiers.</dd>
@@ -827,10 +827,10 @@ for (tick in ticks) {
 <h4>Entrées répétées jusqu'à confirmation</h4>
 <p class="pitch">Chaque <code>PlayerInput</code> répète les entrées que le serveur n'a pas encore confirmées.</p>
 <p class="refs">PR #88, #89, #208 · doc : <code>protocol.mdx</code> § Inputs, <code>server.md</code> § Player inputs</p>
-<div class="block b-where"><div class="label">Où</div><p>Client : <code>PlayerInputPacer</code>, <code>IPlayerInputLink</code> (<code>src/client/Input/Commands/</code>). Serveur : <code>InputKeeper</code> par partie.</p></div>
+<div class="block b-where"><div class="label">Où</div><p>Client : <code>OwnShipPredictor</code> (<code>src/client/Prediction/OwnShip/</code>), qui envoie par <code>IPlayerInputLink</code> ; <code>PlayerInputPacer</code> (<code>src/client/Input/Commands/</code>) ne cadence plus que les bots de charge. Serveur : <code>InputKeeper</code> par partie.</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
 <li>Entrée = <code>inputNumber</code> (croissant), <code>actions</code> (5 bits : haut, bas, gauche, droite, tir), jusqu'à 15 entrées précédentes, <code>shownTick</code>.</li>
-<li>Envoyée 60×/s (une par tick avec la prédiction), même sans touche.</li>
+<li>Envoyée une fois par tick de simulation (60×/s), même sans touche.</li>
 <li>Le serveur garde le plus grand numéro vu et prend, du plus vieux au plus récent, chaque entrée plus récente : une entrée perdue est récupérée dans le message suivant, une fois, dans l'ordre.</li>
 <li>Le <code>WorldState</code> renvoie <code>acknowledgedInput</code> (dernière entrée appliquée) pour arrêter la répétition.</li></ul></div>
 <div class="block b-terms"><div class="label">Termes</div><dl class="terms"><dt>Redondance</dt><dd>Renvoyer volontairement les mêmes données pour survivre aux pertes sans retransmission.</dd></dl></div>
@@ -894,7 +894,7 @@ for (tick in ticks) {
 <h4>Prédiction du vaisseau et réconciliation</h4>
 <p class="pitch">Le client bouge son vaisseau immédiatement avec le même code que le serveur, puis corrige d'après ce que le serveur confirme.</p>
 <p class="refs">PR #170, #206, #266 · doc : <code>client.md</code> § Own ship prediction</p>
-<div class="block b-where"><div class="label">Où</div><p><code>src/client/Prediction/OwnShip/</code> (<code>OwnShipPredictor</code>, <code>ShipPrediction</code>) ; code de mouvement partagé : <code>shipAfter</code> (<code>src/game/ShipControl/</code>). Option PREDICTION (activée par défaut).</p></div>
+<div class="block b-where"><div class="label">Où</div><p><code>src/client/Prediction/OwnShip/</code> (<code>OwnShipPredictor</code>, <code>ShipPrediction</code>) ; code de mouvement partagé : <code>shipAfter</code> (<code>src/game/ShipControl/</code>). Toujours active : ce n'est pas un réglage du joueur.</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
 <li>Le client compte le temps en ticks entiers comme le serveur, envoie une entrée numérotée par tick et calcule la position prédite après chacune.</li>
 <li>Il garde chaque entrée non confirmée avec la position prédite.</li>
@@ -1719,7 +1719,7 @@ for (tick in ticks) {
 <p class="refs">PR #78, #152, #291 · doc : <code>client.md</code> § Options, Settings</p>
 <div class="block b-where"><div class="label">Où</div><p><code>OptionsScreen</code> (<code>src/client/Menus/Options/</code>), <code>PlayerSettings</code>, <code>SettingsService</code>, <code>SettingsFile</code> (<code>src/client/Settings/</code>), <code>settingsFolder()</code> (<code>src/client/Platform/</code>). Config : <code>client.cfg</code>.</p></div>
 <div class="block b-how"><div class="label">Comment</div><ul>
-<li>Onglets : affichage (mode, taille + schéma à l'échelle), son, contrôles, accessibilité, jeu (prédiction, noms des pilotes, chat…).</li>
+<li>Onglets : affichage (mode, taille + schéma à l'échelle), son, contrôles, accessibilité, jeu (noms des pilotes, chat…).</li>
 <li>Tout passe par <code>SettingsService</code> : valide la valeur, notifie les écouteurs (son, fenêtre…), marque à sauvegarder.</li>
 <li>Fichier <code>settings.ini</code> en <code>nom=valeur</code>, lisible à la main, dans le dossier utilisateur du système.</li>
 <li>Escape en jeu ouvre les options : le jeu continue, assombri (« THE GAME GOES ON »). QUIT, au bout de la rangée de BACK, ouvre la confirmation (<code>leaveGameConfirmationMenu()</code>) ; YES ferme la session (le serveur est prévenu) et revient au titre.</li></ul></div>

@@ -65,9 +65,8 @@ class OwnMissiles final : public IOwnMissileListener {
    * screen, and takes that missile away for good. Not during a forEach. */
   void touchEnemies();
 
-  /** @brief Turns the prediction of the missiles on or off; off takes every
-   * missile away. */
-  void setActive(bool active);
+  /** @brief Starts predicting the missiles: before, no command fires one. */
+  void activate();
 
   [[nodiscard]] bool predictsOwnMissiles() const override;
 

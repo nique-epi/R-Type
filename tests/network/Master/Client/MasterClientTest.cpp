@@ -1,9 +1,11 @@
 #include <gtest/gtest.h>
+#include <optional>
 #include <string>
 #include "CreatedServer.hpp"
 #include "FinishedGame.hpp"
 #include "GameListing.hpp"
 #include "GlobalLeaderboard.hpp"
+#include "GlobalLeaderboardQuery.hpp"
 #include "HttpPortProbe.hpp"
 #include "MasterAccess.hpp"
 #include "MasterClient.hpp"
@@ -22,6 +24,7 @@ using rtype::network::CreatedServer;
 using rtype::network::FinishedGame;
 using rtype::network::GameListing;
 using rtype::network::GlobalLeaderboard;
+using rtype::network::GlobalLeaderboardQuery;
 using rtype::network::InvalidMasterUrlException;
 using rtype::network::isWellFormedServerKey;
 using rtype::network::MasterAccess;
@@ -133,6 +136,27 @@ TEST_F(MasterClientFixture, AClientReadsTheLeaderboardOfTheMaster) {
 
   const GlobalLeaderboard read =
       clientWith(std::string{}).readLeaderboard(parisGameLeaderboardQuery());
+
+  EXPECT_EQ(read, parisGameLeaderboardOf(paris));
+}
+
+/**
+ * Given a server that sent the result of a vanilla game of ACE and BYDO_HUNTER
+ * When a client reads the leaderboard naming no difficulty and no number of
+ * players
+ * Then it gets the same rows: the client leaves both out of its query, and the
+ * master reads every game
+ */
+TEST_F(MasterClientFixture, AQueryWithoutFiltersReadsEveryGame) {
+  const CreatedServer paris = createdParis();
+  clientWith(paris.key).sendResult(std::string{PARIS_GAME_ID},
+                                   parisFinishedGame());
+  GlobalLeaderboardQuery everyGame = parisGameLeaderboardQuery();
+  everyGame.difficulty = std::nullopt;
+  everyGame.playerCount = std::nullopt;
+
+  const GlobalLeaderboard read =
+      clientWith(std::string{}).readLeaderboard(everyGame);
 
   EXPECT_EQ(read, parisGameLeaderboardOf(paris));
 }

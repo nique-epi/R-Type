@@ -147,6 +147,11 @@ DataFileTextExpectedException::DataFileTextExpectedException(
     : EngineException(placeText(place) + ": " + place.key + " must be a text") {
 }
 
+DataFileTextsExpectedException::DataFileTextsExpectedException(
+    const DataFilePlace& place)
+    : EngineException(placeText(place) + ": " + place.key +
+                      " must be an array of texts") {}
+
 UnknownDataFileChoiceException::UnknownDataFileChoiceException(
     const DataFilePlace& place, const std::string& value,
     std::span<const std::string_view> choices)
@@ -210,5 +215,10 @@ ResourceDependenciesExpectedException::ResourceDependenciesExpectedException(
 
 ScriptException::ScriptException(const std::string& message)
     : EngineException(message) {}
+
+InvalidGridLayoutException::InvalidGridLayoutException(std::size_t maximumLines)
+    : EngineException(
+          "A collision grid needs a positive cell side and at most " +
+          std::to_string(maximumLines) + " cells along each axis") {}
 
 }  // namespace rtype::engine

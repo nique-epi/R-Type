@@ -13,46 +13,53 @@ constexpr std::string_view READ_SHEET_SOURCE = "/sheets/test_sheet.toml";
  * or puts a wrong one in, to see the reader refuse it. The tables of
  * `[gameplay]` come after its two values, as TOML requires. */
 constexpr std::string_view ENEMY_GAMEPLAY =
-    "[gameplay]\nside = \"enemy\"\npilot = \"straight\"\n";
+    "[gameplay]\nside = \"enemy\"\nlayer = \"enemy\"\npilot = \"straight\"\n";
 constexpr std::string_view WEAVER_GAMEPLAY =
-    "[gameplay]\nside = \"enemy\"\npilot = \"weave\"\n";
+    "[gameplay]\nside = \"enemy\"\nlayer = \"enemy\"\npilot = \"weave\"\n";
 constexpr std::string_view SHIP_GAMEPLAY =
-    "[gameplay]\nside = \"player\"\npilot = \"player\"\n";
+    "[gameplay]\nside = \"player\"\nlayer = \"player\"\npilot = \"player\"\n";
 constexpr std::string_view MISSILE_GAMEPLAY =
-    "[gameplay]\nside = \"player_missile\"\npilot = \"straight\"\n";
+    "[gameplay]\nside = \"player_missile\"\nlayer = \"player_missile\"\npilot "
+    "= \"straight\"\n";
 constexpr std::string_view ENEMY_MISSILE_GAMEPLAY =
-    "[gameplay]\nside = \"enemy_missile\"\npilot = \"straight\"\n";
+    "[gameplay]\nside = \"enemy_missile\"\nlayer = \"enemy_missile\"\npilot = "
+    "\"straight\"\n";
 constexpr std::string_view LOOK_ITEM_GAMEPLAY =
-    "[gameplay]\nside = \"look_item\"\nlook_item = \"crown\"\n"
+    "[gameplay]\nside = \"look_item\"\nlayer = \"look_item\"\nlook_item = "
+    "\"crown\"\n"
     "pilot = \"straight\"\n";
 constexpr std::string_view LOOK_ITEM_GAMEPLAY_WITHOUT_ITEM =
-    "[gameplay]\nside = \"look_item\"\npilot = \"straight\"\n";
+    "[gameplay]\nside = \"look_item\"\nlayer = \"look_item\"\npilot = "
+    "\"straight\"\n";
 constexpr std::string_view LOOK_ITEM_OF_AN_UNKNOWN_NAME =
-    "[gameplay]\nside = \"look_item\"\nlook_item = \"tiara\"\n"
+    "[gameplay]\nside = \"look_item\"\nlayer = \"look_item\"\nlook_item = "
+    "\"tiara\"\n"
     "pilot = \"straight\"\n";
 constexpr std::string_view ENEMY_GAMEPLAY_WITH_AN_ITEM =
-    "[gameplay]\nside = \"enemy\"\nlook_item = \"crown\"\n"
+    "[gameplay]\nside = \"enemy\"\nlayer = \"enemy\"\nlook_item = \"crown\"\n"
     "pilot = \"straight\"\n";
 
 /** @brief The number of the crown among the items of the locker: its place,
  * 2, plus one. */
 constexpr std::uint8_t CROWN_NUMBER = 3;
 constexpr std::string_view WEAVING_MISSILE_GAMEPLAY =
-    "[gameplay]\nside = \"player_missile\"\npilot = \"weave\"\n";
+    "[gameplay]\nside = \"player_missile\"\nlayer = \"player_missile\"\npilot "
+    "= \"weave\"\n";
 constexpr std::string_view GAMEPLAY_WITHOUT_SIDE =
     "[gameplay]\npilot = \"straight\"\n";
 constexpr std::string_view GAMEPLAY_WITHOUT_PILOT =
-    "[gameplay]\nside = \"enemy\"\n";
+    "[gameplay]\nside = \"enemy\"\nlayer = \"enemy\"\n";
 constexpr std::string_view GAMEPLAY_OF_AN_UNKNOWN_SIDE =
-    "[gameplay]\nside = \"enmy\"\npilot = \"straight\"\n";
+    "[gameplay]\nside = \"enmy\"\nlayer = \"enmy\"\npilot = \"straight\"\n";
 constexpr std::string_view GAMEPLAY_OF_AN_UNKNOWN_PILOT =
-    "[gameplay]\nside = \"enemy\"\npilot = \"zigzag\"\n";
+    "[gameplay]\nside = \"enemy\"\nlayer = \"enemy\"\npilot = \"zigzag\"\n";
 constexpr std::string_view ENEMY_PILOTED_BY_A_PLAYER =
-    "[gameplay]\nside = \"enemy\"\npilot = \"player\"\n";
+    "[gameplay]\nside = \"enemy\"\nlayer = \"enemy\"\npilot = \"player\"\n";
 constexpr std::string_view PLAYER_PILOTED_BY_A_BEHAVIOUR =
-    "[gameplay]\nside = \"player\"\npilot = \"straight\"\n";
+    "[gameplay]\nside = \"player\"\nlayer = \"player\"\npilot = \"straight\"\n";
 constexpr std::string_view GAMEPLAY_WITH_AN_UNKNOWN_KEY =
-    "[gameplay]\nside = \"enemy\"\npilot = \"straight\"\nlives = 3\n";
+    "[gameplay]\nside = \"enemy\"\nlayer = \"enemy\"\npilot = "
+    "\"straight\"\nlives = 3\n";
 constexpr std::string_view BYDO_HITBOX =
     "[gameplay.hitbox]\nwidth = 96\nheight = 96\n";
 constexpr std::string_view SHIP_HITBOX =

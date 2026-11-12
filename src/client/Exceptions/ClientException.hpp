@@ -85,4 +85,15 @@ class InvalidGameOptionException : public ClientException {
   explicit InvalidGameOptionException(std::string_view game);
 };
 
+/**
+ * @brief Velopack could not check, download or apply an update of the client,
+ * or the client was not installed by Velopack.
+ */
+class UpdateException : public ClientException {
+ public:
+  /** @param step What was being done, as "check" or "download".
+   * @param reason What Velopack answered. */
+  UpdateException(std::string_view step, std::string_view reason);
+};
+
 }  // namespace rtype::client

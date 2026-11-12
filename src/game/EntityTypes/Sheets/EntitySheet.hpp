@@ -8,6 +8,7 @@
 #include "BossSheet.hpp"
 #include "BurstSheet.hpp"
 #include "CollisionBox.hpp"
+#include "CollisionSheet.hpp"
 #include "EntityType.hpp"
 #include "GunSheet.hpp"
 #include "HurtZone.hpp"
@@ -31,8 +32,11 @@ struct EntitySheet {
   /** @brief Its place in the name order of the sheets, from 1; 0 until
    * EntitySheets numbers it. */
   std::uint8_t number{};
-  /** @brief Who it hits and who hits it. */
+  /** @brief What it is in the match: what a contact with it means. */
   EntityType side{};
+  /** @brief The collision layer it lies in and the layers it hits: which
+   * contacts count. */
+  CollisionSheet collision;
   /** @brief The box it collides with, in logical units. */
   CollisionBox hitbox{};
   /** @brief How a direction of its Intent moves it. */

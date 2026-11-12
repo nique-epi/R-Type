@@ -389,20 +389,59 @@ TEST_F(LeaderboardRoutesFixture, ThePlayerAskedForComesBeyondThePage) {
 }
 
 /**
- * Given a master
- * When the leaderboard is read without a difficulty, then without a number
- * of players
- * Then each is answered 400
+ * Given ACE in a game of "normal" and R9 in a game of "hard", both for two,
+ * and BYDO_HUNTER in a game of "normal" for one
+ * When the leaderboard is read for two players, without a difficulty
+ * Then it lists ACE and R9, best first: every difficulty, two players only
  */
-TEST_F(LeaderboardRoutesFixture, ALeaderboardNeedsADifficultyAndAPlayerCount) {
-  for (const std::string_view query :
-       {WITHOUT_DIFFICULTY_QUERY, WITHOUT_PLAYER_COUNT_QUERY}) {
-    SCOPED_TRACE(query);
-    const httplib::Result answer = readLeaderboard(query);
+TEST_F(LeaderboardRoutesFixture, NoDifficultyReadsEveryDifficulty) {
+  sendNormalHardAndAloneGames();
 
-    ASSERT_TRUE(answer);
-    EXPECT_EQ(answer->status, EXPECTED_BAD_REQUEST);
-  }
+  EXPECT_THAT(
+      membersIn<std::string>(leaderboardOf(EVERY_DIFFICULTY_FOR_TWO_QUERY),
+                             NICKNAME_MEMBER_NAME),
+      ElementsAre(FIRST_PILOT, THIRD_PILOT));
+}
+
+/**
+ * Given ACE in a game of "normal" and R9 in a game of "hard", both for two,
+ * and BYDO_HUNTER in a game of "normal" for one
+ * When the leaderboard of "normal" is read without a number of players
+ * Then it lists ACE and BYDO_HUNTER, best first: every number, "normal" only
+ */
+TEST_F(LeaderboardRoutesFixture, NoPlayerCountReadsEveryCount) {
+  sendNormalHardAndAloneGames();
+
+  EXPECT_THAT(
+      membersIn<std::string>(leaderboardOf(NORMAL_FOR_EVERY_COUNT_QUERY),
+                             NICKNAME_MEMBER_NAME),
+      ElementsAre(FIRST_PILOT, SECOND_PILOT));
+}
+
+/**
+ * Given ACE in a game of "normal" and R9 in a game of "hard", both for two,
+ * and BYDO_HUNTER in a game of "normal" for one
+ * When the leaderboard is read with no difficulty and no number of players
+ * Then it lists the three, best first
+ */
+TEST_F(LeaderboardRoutesFixture, AQueryOfNothingReadsEveryGame) {
+  sendNormalHardAndAloneGames();
+
+  EXPECT_THAT(membersIn<std::string>(leaderboardOf(EVERY_GAME_QUERY),
+                                     NICKNAME_MEMBER_NAME),
+              ElementsAre(FIRST_PILOT, SECOND_PILOT, THIRD_PILOT));
+}
+
+/**
+ * Given a master
+ * When the leaderboard is read with an empty difficulty
+ * Then it is answered 400: a difficulty given is a name
+ */
+TEST_F(LeaderboardRoutesFixture, AnEmptyDifficultyIsRefused) {
+  const httplib::Result answer = readLeaderboard(EMPTY_DIFFICULTY_QUERY);
+
+  ASSERT_TRUE(answer);
+  EXPECT_EQ(answer->status, EXPECTED_BAD_REQUEST);
 }
 
 /**

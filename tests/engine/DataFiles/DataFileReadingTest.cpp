@@ -8,6 +8,7 @@
 #include "DataFileReading.hpp"
 #include "DataFileReadingTestConstants.hpp"
 #include "DataFileTable.hpp"
+#include "DataFileText.hpp"
 #include "EngineException.hpp"
 #include "TemporaryFolder.hpp"
 
@@ -18,7 +19,9 @@ using rtype::engine::DataFileSyntaxException;
 using rtype::engine::DataFileTable;
 using rtype::engine::DataFileTableExpectedException;
 using rtype::engine::DataFileTablesExpectedException;
+using rtype::engine::DataFileText;
 using rtype::engine::DataFileTextExpectedException;
+using rtype::engine::DataFileTextsExpectedException;
 using rtype::engine::DataFileValueOutOfRangeException;
 using rtype::engine::keyName;
 using rtype::engine::millisecondsAt;
@@ -31,6 +34,7 @@ using rtype::engine::rootOf;
 using rtype::engine::tableAt;
 using rtype::engine::tablesAt;
 using rtype::engine::textAt;
+using rtype::engine::textsAt;
 using rtype::engine::UnknownDataFileChoiceException;
 using rtype::engine::UnknownDataFileKeyException;
 using rtype::engine::UnreadableDataFileException;
@@ -391,6 +395,87 @@ TEST(DataFileReading, ANumberWhereATextIsExpectedIsRefused) {
   EXPECT_THAT([&gameplay] { static_cast<void>(textAt(gameplay, SIDE_KEY)); },
               ThrowsMessage<DataFileTextExpectedException>(
                   StrEq(std::string{SIDE_NOT_A_TEXT_MESSAGE})));
+}
+
+/**
+ * Given a table gameplay whose hits are the texts "player" and "wall"
+ * When its hits are read as texts
+ * Then they are player then wall, each with the line and the column it is
+ * written at and the name of the key
+ */
+TEST(DataFileReading, AnArrayOfTextsIsReadInTheOrderOfTheFile) {
+  const toml::table root = parseDataFile(TWO_HITS, SHEET_FILE_NAME);
+  const DataFileTable gameplay =
+      tableAt(rootOf(root, SHEET_FILE_NAME), GAMEPLAY_TABLE);
+
+  const std::vector<DataFileText> hits = textsAt(gameplay, HITS_KEY);
+
+  ASSERT_EQ(hits.size(), 2U);
+  EXPECT_EQ(hits[0].text, PLAYER_TEXT);
+  EXPECT_EQ(hits[0].place.line, LINE_OF_THE_HITS);
+  EXPECT_EQ(hits[0].place.column, COLUMN_OF_THE_FIRST_HIT);
+  EXPECT_EQ(hits[1].text, WALL_TEXT);
+  EXPECT_EQ(hits[1].place.column, COLUMN_OF_THE_SECOND_HIT);
+  EXPECT_EQ(hits[1].place.key, NAME_OF_THE_HITS);
+}
+
+/**
+ * Given a table gameplay whose hits are an empty array
+ * When its hits are read as texts
+ * Then there is none
+ */
+TEST(DataFileReading, AnEmptyArrayHoldsNoText) {
+  const toml::table root = parseDataFile(NO_HIT, SHEET_FILE_NAME);
+  const DataFileTable gameplay =
+      tableAt(rootOf(root, SHEET_FILE_NAME), GAMEPLAY_TABLE);
+
+  EXPECT_TRUE(textsAt(gameplay, HITS_KEY).empty());
+}
+
+/**
+ * Given a table gameplay whose hits are one text, not an array
+ * When its hits are read as texts
+ * Then a DataFileTextsExpectedException names the file, line 2, the column of
+ * the value and the key
+ */
+TEST(DataFileReading, ASingleTextIsNotAnArrayOfTexts) {
+  const toml::table root = parseDataFile(HITS_AS_A_TEXT, SHEET_FILE_NAME);
+  const DataFileTable gameplay =
+      tableAt(rootOf(root, SHEET_FILE_NAME), GAMEPLAY_TABLE);
+
+  EXPECT_THAT([&gameplay] { static_cast<void>(textsAt(gameplay, HITS_KEY)); },
+              ThrowsMessage<DataFileTextsExpectedException>(
+                  StrEq(std::string{HITS_NOT_AN_ARRAY_MESSAGE})));
+}
+
+/**
+ * Given a table gameplay whose hits hold a text, then the number 3
+ * When its hits are read as texts
+ * Then a DataFileTextsExpectedException names the column of the number
+ */
+TEST(DataFileReading, ANumberAmongTheTextsIsRefusedAtTheNumber) {
+  const toml::table root =
+      parseDataFile(A_NUMBER_AMONG_THE_HITS, SHEET_FILE_NAME);
+  const DataFileTable gameplay =
+      tableAt(rootOf(root, SHEET_FILE_NAME), GAMEPLAY_TABLE);
+
+  EXPECT_THAT([&gameplay] { static_cast<void>(textsAt(gameplay, HITS_KEY)); },
+              ThrowsMessage<DataFileTextsExpectedException>(
+                  StrEq(std::string{NUMBER_AMONG_THE_HITS_MESSAGE})));
+}
+
+/**
+ * Given a table gameplay with no hits
+ * When its hits are read as texts
+ * Then a MissingDataFileKeyException is thrown
+ */
+TEST(DataFileReading, AnAbsentArrayOfTextsIsMissing) {
+  const toml::table root = parseDataFile(GAMEPLAY_WITH_A_SIDE, SHEET_FILE_NAME);
+  const DataFileTable gameplay =
+      tableAt(rootOf(root, SHEET_FILE_NAME), GAMEPLAY_TABLE);
+
+  EXPECT_THROW(static_cast<void>(textsAt(gameplay, HITS_KEY)),
+               MissingDataFileKeyException);
 }
 
 /**

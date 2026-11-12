@@ -12,6 +12,7 @@ constexpr std::string_view WARLORD_NAME_IN_TESTS = "warlord";
 constexpr std::string_view STAGE_MINION_NAME_IN_TESTS = "minion";
 constexpr std::string_view WARLORD_SHEET_TEXT = R"([gameplay]
 side = "enemy"
+layer = "enemy"
 pilot = "straight"
 [gameplay.hitbox]
 width = 96
@@ -31,6 +32,7 @@ arrival_attack = 0
 )";
 constexpr std::string_view STAGE_MINION_SHEET_TEXT = R"([gameplay]
 side = "enemy"
+layer = "enemy"
 pilot = "straight"
 [gameplay.hitbox]
 width = 64

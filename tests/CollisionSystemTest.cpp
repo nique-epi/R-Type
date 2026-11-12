@@ -2,6 +2,7 @@
 #include <vector>
 #include "Collision.hpp"
 #include "CollisionBox.hpp"
+#include "CollisionFilter.hpp"
 #include "CollisionScene.hpp"
 #include "CollisionSystem.hpp"
 #include "CollisionSystemFixtures.hpp"
@@ -10,6 +11,7 @@
 #include "EntityType.hpp"
 
 using rtype::engine::Collision;
+using rtype::engine::CollisionFilter;
 using rtype::engine::Entity;
 using rtype::game::CollisionBox;
 using rtype::game::CollisionSystem;
@@ -82,7 +84,8 @@ TEST(CollisionSystem, ReportsOnlyThePairThatOverlaps) {
 }
 
 /**
- * Given three entities that all overlap each other
+ * Given a ship, an enemy and a missile of a player that all overlap each
+ * other, each pair holding one that hits the layer of the other
  * When the collision system updates and the bus dispatches
  * Then three Collisions are delivered, one per pair
  */
@@ -90,7 +93,7 @@ TEST(CollisionSystem, ReportsEachPairOfThreeOverlappingEntitiesOnce) {
   CollisionScene scene;
   const Entity leftmost = scene.spawn(EntityType::Player, 0.0F, 0.0F);
   const Entity middle = scene.spawn(EntityType::Enemy, 1.0F, 0.0F);
-  const Entity rightmost = scene.spawn(EntityType::Enemy, 2.0F, 0.0F);
+  const Entity rightmost = scene.spawn(EntityType::PlayerMissile, 2.0F, 0.0F);
   CollisionSystem system(scene.events);
 
   const std::vector<Collision> received = updateAndCollect(scene, system);
@@ -190,4 +193,106 @@ TEST(CollisionSystem, AMovedHitboxIsApartFromItsPosition) {
   CollisionSystem system(scene.events);
 
   EXPECT_TRUE(updateAndCollect(scene, system).empty());
+}
+
+/**
+ * Given two entities whose boxes, each wider than two cells of the collision
+ * grid, overlap and share several cells
+ * When the collision system updates and the bus dispatches
+ * Then exactly one Collision names that pair
+ */
+TEST(CollisionSystem, ReportsAPairSharingSeveralCellsOnce) {
+  CollisionScene scene;
+  const Entity first = scene.spawnWithoutCollisionBox(
+      EntityType::Player, WIDE_BOX_CENTER_X, WIDE_BOX_CENTER_Y);
+  scene.components.add(
+      first, CollisionBox{.width = WIDE_BOX_SIDE, .height = WIDE_BOX_SIDE});
+  const Entity second = scene.spawnWithoutCollisionBox(
+      EntityType::Enemy, OTHER_WIDE_BOX_CENTER_X, WIDE_BOX_CENTER_Y);
+  scene.components.add(
+      second, CollisionBox{.width = WIDE_BOX_SIDE, .height = WIDE_BOX_SIDE});
+  CollisionSystem system(scene.events);
+
+  const std::vector<Collision> received = updateAndCollect(scene, system);
+
+  ASSERT_EQ(received.size(), 1U);
+  EXPECT_TRUE(isPair(received.front(), first, second));
+}
+
+/**
+ * Given two entities beyond the left and the top edges of the playfield whose
+ * boxes overlap
+ * When the collision system updates and the bus dispatches
+ * Then exactly one Collision names that pair
+ */
+TEST(CollisionSystem, ReportsAnOverlappingPairBeyondThePlayfield) {
+  CollisionScene scene;
+  const Entity first = scene.spawn(EntityType::Player, BEYOND_THE_PLAYFIELD,
+                                   BEYOND_THE_PLAYFIELD);
+  const Entity second = scene.spawn(
+      EntityType::Enemy, BEYOND_THE_PLAYFIELD + CENTER_DISTANCE_OVERLAPPING,
+      BEYOND_THE_PLAYFIELD);
+  CollisionSystem system(scene.events);
+
+  const std::vector<Collision> received = updateAndCollect(scene, system);
+
+  ASSERT_EQ(received.size(), 1U);
+  EXPECT_TRUE(isPair(received.front(), first, second));
+}
+
+/**
+ * Given two enemies on the same spot, neither of which hits the layer of the
+ * other
+ * When the collision system updates and the bus dispatches
+ * Then no Collision is delivered: the pair is dropped before its boxes are
+ * compared
+ */
+TEST(CollisionSystem, IgnoresAPairNeitherOfWhichHitsTheOther) {
+  CollisionScene scene;
+  scene.spawn(EntityType::Enemy, 0.0F, 0.0F);
+  scene.spawn(EntityType::Enemy, 0.0F, 0.0F);
+  CollisionSystem system(scene.events);
+
+  const std::vector<Collision> received = updateAndCollect(scene, system);
+
+  EXPECT_TRUE(received.empty());
+}
+
+/**
+ * Given a ship that hits the enemies and an enemy that hits nothing, on the
+ * same spot
+ * When the collision system updates and the bus dispatches
+ * Then one Collision names the pair: one of the two naming the other is
+ * enough
+ */
+TEST(CollisionSystem, ReportsAPairOnlyOneOfWhichHitsTheOther) {
+  CollisionScene scene;
+  const Entity ship =
+      scene.spawnWith(EntityType::Player, SHIP_HITTING_ENEMIES_FILTER);
+  const Entity enemy =
+      scene.spawnWith(EntityType::Enemy, HARMLESS_ENEMY_FILTER);
+  CollisionSystem system(scene.events);
+
+  const std::vector<Collision> received = updateAndCollect(scene, system);
+
+  ASSERT_EQ(received.size(), 1U);
+  EXPECT_TRUE(isPair(received.front(), ship, enemy));
+}
+
+/**
+ * Given a ship and an enemy on the same spot, the enemy having lost its
+ * collision filter
+ * When the collision system updates and the bus dispatches
+ * Then no Collision is delivered: an entity without a filter touches nothing
+ */
+TEST(CollisionSystem, IgnoresAnEntityWithoutACollisionFilter) {
+  CollisionScene scene;
+  scene.spawn(EntityType::Player, 0.0F, 0.0F);
+  const Entity enemy = scene.spawn(EntityType::Enemy, 0.0F, 0.0F);
+  scene.components.remove<CollisionFilter>(enemy);
+  CollisionSystem system(scene.events);
+
+  const std::vector<Collision> received = updateAndCollect(scene, system);
+
+  EXPECT_TRUE(received.empty());
 }

@@ -9,6 +9,12 @@ name: package
 # identity, as before.
 on:
   workflow_call:
+    inputs:
+      release-notes:
+        description: Markdown notes of the release, shown by the updated client
+        type: string
+        required: false
+        default: ""
     secrets:
       MACOS_CERTIFICATE_P12:
         description: Developer ID Application certificate and its key, as a base64 .p12
@@ -49,14 +55,13 @@ jobs:
           - os: macos-latest
             generator_arguments: ""
     env:
-      SCCACHE_GHA_ENABLED: "true"
-      # The runners have no FUSE: an AppImage, appimagetool included, extracts
-      # itself instead of mounting.
+      # The runners have no FUSE: an AppImage extracts itself instead of
+      # mounting.
       APPIMAGE_EXTRACT_AND_RUN: "1"
-      APPIMAGETOOL_VERSION: "1.9.1"
-      APPIMAGETOOL_SHA256: "ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
-      APPIMAGE_RUNTIME_VERSION: "20251108"
-      APPIMAGE_RUNTIME_SHA256: "2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d"
+      # vpk packs the client so it can update itself (packaging/VelopackClient.cmake);
+      # the same version as the library of ports/velopack.
+      VELOPACK_VERSION: "1.2.161"
+      RTYPE_REQUIRE_VELOPACK: "1"
     steps:
       - uses: actions/checkout@v5
         with:
@@ -69,8 +74,14 @@ jobs:
       - name: Install CMake 4.2
         uses: lukka/get-cmake@v4.2.3
 
-      - name: Set up sccache
-        uses: mozilla-actions/sccache-action@v0.0.11
+      # One archive per job, restored and saved whole (see build-and-test.yaml).
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2.24
+        with:
+          key: package-${{ matrix.os }}
+          max-size: 1G
+          evict-old-files: job
+          job-summary: ""
 
       # GCC 12, installed on the image, ships the C++ runtime of Ubuntu 22.04
       # and Debian 12; the default GCC 11 never built this project.
@@ -90,22 +101,28 @@ jobs:
         if: runner.os == 'Windows'
         run: choco install nsis --no-progress -y
 
-      # Both pinned with their checksum: appimagetool would otherwise download
-      # whatever runtime is the latest the day the package is built.
-      - name: Install appimagetool and the AppImage runtime
-        if: runner.os == 'Linux'
+      # vpk is a .NET tool.
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Install vpk
+        shell: bash
         run: |
-          tools="$RUNNER_TEMP/appimage"
-          mkdir -p "$tools"
-          curl -fsSL -o "$tools/appimagetool" \
-            "https://github.com/AppImage/appimagetool/releases/download/$APPIMAGETOOL_VERSION/appimagetool-x86_64.AppImage"
-          curl -fsSL -o "$tools/runtime-x86_64" \
-            "https://github.com/AppImage/type2-runtime/releases/download/$APPIMAGE_RUNTIME_VERSION/runtime-x86_64"
-          echo "$APPIMAGETOOL_SHA256  $tools/appimagetool" | sha256sum -c -
-          echo "$APPIMAGE_RUNTIME_SHA256  $tools/runtime-x86_64" | sha256sum -c -
-          chmod +x "$tools/appimagetool"
-          echo "$tools" >> "$GITHUB_PATH"
-          echo "APPIMAGETOOL_RUNTIME_FILE=$tools/runtime-x86_64" >> "$GITHUB_ENV"
+          dotnet tool install -g vpk --version "$VELOPACK_VERSION"
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      # Written to a file, which vpk puts in the update package; the client
+      # shows it in WHAT'S NEW once updated.
+      - name: Write the notes of the release
+        if: inputs.release-notes != ''
+        shell: bash
+        env:
+          RELEASE_NOTES: ${{ inputs.release-notes }}
+        run: |
+          printf '%s\n' "$RELEASE_NOTES" > "$RUNNER_TEMP/release-notes.md"
+          echo "RTYPE_RELEASE_NOTES=$RUNNER_TEMP/release-notes.md" >> "$GITHUB_ENV"
 
       - name: Point vcpkg at a local binary cache
         shell: bash
@@ -133,8 +150,8 @@ jobs:
           VCPKG_SSL_REVOKE_BEST_EFFORT: ${{ runner.os == 'Windows' && '1' || '0' }}
         run: >-
           cmake --preset default ${{ matrix.generator_arguments }}
-          -DCMAKE_C_COMPILER_LAUNCHER=sccache
-          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Save vcpkg binary cache
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
@@ -220,11 +237,16 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: packages-${{ runner.os }}
+          # The client is published as vpk packed it, and as a disk image on
+          # macOS; its archives, which cannot update, stay in the job.
           path: |
-            build/R-Type-*.tar.gz
-            build/R-Type-*.AppImage
-            build/R-Type-*.zip
-            build/R-Type-*.exe
-            build/R-Type-*.dmg
+            build/R-Type-server-*.tar.gz
+            build/R-Type-server-*.zip
+            build/R-Type-server-*.exe
+            build/R-Type-client-*.dmg
+            build/R-Type-client-*.exe
+            build/R-Type-client-*.AppImage
+            build/velopack/R-Type-*-full.nupkg
+            build/velopack/releases.*.json
           if-no-files-found: error
           retention-days: 7

@@ -106,7 +106,7 @@ TEST(SheetTextReading, RefusesAFileNamedWithAnUppercaseLetter) {
 }
 
 /**
- * Given a folder holding 33 sheets, one more than a program loads
+ * Given a folder holding 256 sheets, one more than a program loads
  * When its sheets are read
  * Then it is refused
  */

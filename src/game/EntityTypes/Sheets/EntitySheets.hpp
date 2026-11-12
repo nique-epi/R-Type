@@ -27,6 +27,10 @@ namespace rtype::game {
  * and underscores, at most MAXIMUM_ENTITY_TYPES sheets are read, no two share a
  * name, each is read by gameplayOf(), and a gun fires a sheet that exists, of
  * the side of a missile of its shooter, whose number its GunSheet then holds.
+ * The collision layers are the ones the sheets lie in, at most
+ * engine::MAXIMUM_COLLISION_LAYERS, numbered in the order of their names: a
+ * sheet hits only layers a sheet lies in, and its CollisionSheet then holds
+ * its filter.
  */
 class EntitySheets {
  public:
@@ -49,8 +53,10 @@ class EntitySheets {
    * @throws What checkSheetNames() throws, DuplicateEntityTypeException when
    * two share a name; what gameplayOf()
    * throws for a sheet; engine::UnknownDataFileChoiceException when a gun fires
-   * no sheet, and InconsistentEntitySheetException when it fires a sheet of
-   * the wrong side.
+   * no sheet or a sheet hits a layer no sheet lies in,
+   * InconsistentEntitySheetException when a gun fires a sheet of the wrong
+   * side, and TooManyCollisionLayersException when the sheets lie in more than
+   * engine::MAXIMUM_COLLISION_LAYERS layers.
    */
   [[nodiscard]] static EntitySheets fromTexts(std::span<const SheetText> texts);
 

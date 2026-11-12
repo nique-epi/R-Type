@@ -15,7 +15,7 @@
 namespace rtype::client::testing {
 
 OwnMissilesFixture::OwnMissilesFixture() {
-  missiles_.setActive(true);
+  missiles_.activate();
   missiles_.restart(NOTHING_ACKNOWLEDGED, SHIP_WHEN_IT_FIRES);
 }
 

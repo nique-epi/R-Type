@@ -18,6 +18,7 @@
 #include "SquadronConstants.hpp"
 #include "TimeConstants.hpp"
 #include "TitleScreenParts.hpp"
+#include "UpdateScreenIdConstants.hpp"
 
 namespace rtype::client {
 
@@ -38,6 +39,8 @@ TitleScreen::TitleScreen(TitleScreenParts parts,
     : canvas_(std::move(canvas)),
       playfieldPointAt_(std::move(parts.playfieldPointAt)),
       settings_(&parts.settings.get()),
+      navigator_(&parts.navigator.get()),
+      notice_(parts.notice),
       menu_(buildMenu(parts.navigator.get(), parts.sounds.get(),
                       parts.playStart)),
       squadron_(parts.motion, parts.seed, parts.squadronStart) {
@@ -51,6 +54,7 @@ void TitleScreen::handleEvent(const sf::Event& event) {
 void TitleScreen::update(engine::Duration elapsed) {
   menu_.advance(elapsed);
   squadron_.advance(elapsed);
+  askForNotice();
   repaint();
 }
 
@@ -79,6 +83,19 @@ Menu TitleScreen::buildMenu(IScreenNavigator& navigator, ISoundPlayer& sounds,
       .illustration(SQUADRON_BOX_SIZE)
       .footer(COPYRIGHT_TEXT)
       .build();
+}
+
+void TitleScreen::askForNotice() {
+  if (notice_ == nullptr) {
+    return;
+  }
+  if (!updateAsked_ && notice_->updateAvailable()) {
+    updateAsked_ = true;
+    navigator_->push(UPDATE_SCREEN);
+  } else if (!notesAsked_ && notice_->notesWaiting()) {
+    notesAsked_ = true;
+    navigator_->push(WHATS_NEW_SCREEN);
+  }
 }
 
 void TitleScreen::repaint() {

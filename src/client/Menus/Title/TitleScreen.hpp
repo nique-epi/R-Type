@@ -5,6 +5,7 @@
 #include "IScreen.hpp"
 #include "IScreenNavigator.hpp"
 #include "ISoundPlayer.hpp"
+#include "IUpdateNotice.hpp"
 #include "Menu.hpp"
 #include "PlayStart.hpp"
 #include "PlayfieldMapping.hpp"
@@ -28,7 +29,8 @@ struct PlayerSettings;
  * keeps its selection under those screens, and its squadron goes on moving. The
  * menu and the squadron are painted at each update and laid at each draw; they
  * are painted once when the screen is built, so its first frame already shows
- * them.
+ * them. Once the update module says a release waits, it puts the update
+ * panel over itself; once it says notes wait, WHAT'S NEW; each once.
  */
 class TitleScreen : public IScreen {
  public:
@@ -46,10 +48,17 @@ class TitleScreen : public IScreen {
                                       ISoundPlayer& sounds,
                                       PlayStart playStart);
   void repaint();
+  /** @brief Puts the update panel over the title once a release waits, or
+   * else WHAT'S NEW once notes wait; each once per title. */
+  void askForNotice();
 
   std::unique_ptr<IInterfaceCanvas> canvas_;
   PlayfieldMapping playfieldPointAt_;
   const PlayerSettings* settings_;
+  IScreenNavigator* navigator_;
+  const IUpdateNotice* notice_;
+  bool updateAsked_{};
+  bool notesAsked_{};
   Menu menu_;
   Squadron squadron_;
 };

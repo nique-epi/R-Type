@@ -9,6 +9,7 @@
 #include <vector>
 #include "GameResult.hpp"
 #include "LeaderboardAnswer.hpp"
+#include "LeaderboardRequest.hpp"
 #include "ProtocolConstants.hpp"
 #include "ResultsDatabase.hpp"
 #include "ResultsDatabaseFixture.hpp"
@@ -17,6 +18,7 @@
 namespace rtype::server::testing {
 
 using network::LeaderboardAnswer;
+using network::LeaderboardRequest;
 using network::LeaderboardRow;
 using network::MAXIMUM_LEADERBOARD_ROWS;
 
@@ -120,6 +122,50 @@ TEST_F(ResultsDatabaseFixture, NeverMixesTwoCountsOfPlayers) {
 
   ASSERT_EQ(answer.rows.size(), 1U);
   EXPECT_EQ(answer.rows.at(0).nickname, ACE);
+}
+
+/**
+ * Given a game at the normal difficulty and a game at the hard one
+ * When the leaderboard of every difficulty is read
+ * Then both scores are on it, the higher first
+ */
+TEST_F(ResultsDatabaseFixture, AllDifficultiesReadsEveryDifficulty) {
+  ResultsDatabase database{file()};
+  database.save(normalGame({playerNamed(ACE, LOW_SCORE)}, SOME_DATE));
+  GameResult hard = normalGame({playerNamed(BOB, HIGH_SCORE)}, SOME_DATE);
+  hard.difficulty = std::string{HARD};
+  database.save(hard);
+  LeaderboardRequest everyDifficulty = normalBoard();
+  everyDifficulty.difficulty = "";
+
+  const LeaderboardAnswer answer =
+      database.leaderboard(everyDifficulty, std::string{STRANGER});
+
+  ASSERT_EQ(answer.rows.size(), 2U);
+  EXPECT_EQ(answer.rows.at(0).nickname, BOB);
+  EXPECT_EQ(answer.rows.at(1).nickname, ACE);
+}
+
+/**
+ * Given a game of two players and a game of three
+ * When the leaderboard of every number of players is read
+ * Then both scores are on it, the higher first
+ */
+TEST_F(ResultsDatabaseFixture, AllPlayerCountsReadsEveryCount) {
+  ResultsDatabase database{file()};
+  database.save(normalGame({playerNamed(ACE, LOW_SCORE)}, SOME_DATE));
+  GameResult ofThree = normalGame({playerNamed(BOB, HIGH_SCORE)}, SOME_DATE);
+  ofThree.playerCount = THREE_PLAYERS;
+  database.save(ofThree);
+  LeaderboardRequest everyCount = normalBoard();
+  everyCount.playerCount = 0;
+
+  const LeaderboardAnswer answer =
+      database.leaderboard(everyCount, std::string{STRANGER});
+
+  ASSERT_EQ(answer.rows.size(), 2U);
+  EXPECT_EQ(answer.rows.at(0).nickname, BOB);
+  EXPECT_EQ(answer.rows.at(1).nickname, ACE);
 }
 
 /**

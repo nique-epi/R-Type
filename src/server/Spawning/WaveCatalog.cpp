@@ -21,6 +21,7 @@
 #include "EntitySheet.hpp"
 #include "EntitySheets.hpp"
 #include "EntityType.hpp"
+#include "GameRuleConstants.hpp"
 #include "ServerException.hpp"
 #include "SipHash.hpp"
 #include "TimeConstants.hpp"
@@ -37,6 +38,14 @@ namespace {
 
 using PlansByDifficulty = std::map<std::string, WavePlan, std::less<>>;
 using engine::DataFileTable;
+
+/** @returns Where @p name stands in DIFFICULTY_ORDER; the size of that order
+ * for a difficulty it does not name, so it comes after every one it names. */
+std::size_t rankOf(std::string_view name) {
+  return static_cast<std::size_t>(
+      std::ranges::find(identifiers::DIFFICULTY_ORDER, name) -
+      identifiers::DIFFICULTY_ORDER.begin());
+}
 
 /** @returns Whether @p count is within @p range. */
 bool countFits(std::size_t count, engine::WholeNumberRange range) {
@@ -369,6 +378,7 @@ std::vector<std::string> WaveCatalog::difficulties() const {
   for (const std::string& name : std::views::keys(plans_)) {
     names.push_back(name);
   }
+  std::ranges::stable_sort(names, std::less<>{}, rankOf);
   return names;
 }
 

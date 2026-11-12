@@ -6,7 +6,6 @@
 #include "InkTagConstants.hpp"
 #include "ItemListConstants.hpp"
 #include "ItemRow.hpp"
-#include "LeaderboardFilterChoice.hpp"
 #include "LeaderboardMessage.hpp"
 #include "LeaderboardPage.hpp"
 #include "LeaderboardPhase.hpp"
@@ -31,15 +30,15 @@ using rtype::client::LEADERBOARD_COLUMNS;
 using rtype::client::LEADERBOARD_LIST;
 using rtype::client::LEADERBOARD_OWN_ROW_COLOR;
 using rtype::client::LEADERBOARD_RANK_COLOR;
-using rtype::client::LeaderboardFilterChoice;
 using rtype::client::LeaderboardMessage;
 using rtype::client::LeaderboardPage;
 using rtype::client::LeaderboardPhase;
 using rtype::client::messageOf;
-using rtype::client::openingChoiceOf;
+using rtype::client::OPENING_LEADERBOARD_CHOICE;
 using rtype::client::pinnedNoteOf;
 using rtype::client::pinnedRowOf;
 using rtype::client::STAR_WHITE;
+using rtype::client::testing::EVERY_GAME;
 using rtype::client::testing::FIRST_SECOND;
 using rtype::client::testing::FIRST_SECOND_TEXT;
 using rtype::client::testing::HARD_ONE_PILOT;
@@ -279,40 +278,29 @@ TEST(LeaderboardPresentation, NothingToAskCannotBeFiltered) {
 }
 
 /**
- * Given a waiting room that lists nobody, as on the title
- * When the screen asks which filter it opens on
- * Then it is one pilot, on the normal difficulty
+ * Given the filter every leaderboard opens on
+ * When it is turned into a request
+ * Then it asks for every difficulty and every number of pilots
  */
-TEST(LeaderboardPresentation, NobodyListedOpensOnOnePilot) {
-  EXPECT_EQ(openingChoiceOf(0),
-            (LeaderboardFilterChoice{.difficulty = 1, .pilots = 0}));
+TEST(LeaderboardPresentation, TheOpeningFilterAsksForEveryGame) {
+  EXPECT_EQ(filterOf(OPENING_LEADERBOARD_CHOICE),
+            (LeaderboardRequest{.playerCount = 0, .difficulty = ""}));
 }
 
 /**
- * Given a waiting room that lists one pilot, then the largest room
- * When the screen asks which filter it opens on
- * Then it opens on that many pilots
+ * Given the choice of ALL in both rows
+ * When it is summed up
+ * Then it reads ALL for both
  */
-TEST(LeaderboardPresentation, TheFilterOpensOnThePilotsListed) {
-  EXPECT_EQ(openingChoiceOf(1).pilots, 0);
-  EXPECT_EQ(openingChoiceOf(4).pilots, 3);
-}
-
-/**
- * Given a server that lists more pilots than a game holds
- * When the screen asks which filter it opens on
- * Then it stays on the last choice: a server cannot make it read past its
- * labels
- */
-TEST(LeaderboardPresentation, MorePilotsThanAGameHoldsStayOnTheLastChoice) {
-  EXPECT_EQ(openingChoiceOf(5).pilots, 3);
+TEST(LeaderboardPresentation, EveryGameReadsAllForBoth) {
+  EXPECT_EQ(filterSummaryOf(EVERY_GAME), "ALL GAMES, ALL PILOTS");
 }
 
 /**
  * Given a choice of the player
  * When it is turned into a filter
- * Then it names the difficulty as the waves file does, and counts the pilots
- * from one
+ * Then it names the difficulty as the waves file does, and the number of
+ * pilots picked
  */
 TEST(LeaderboardPresentation, AChoiceNamesItsDifficultyAndItsPilots) {
   EXPECT_EQ(filterOf(NORMAL_TWO_PILOTS),

@@ -60,13 +60,19 @@ std::string serverPagePathOf(std::int64_t offset) {
 }
 
 /** @returns The query of @p query, which cpp-httplib encodes after the path:
- * `difficulty`, `playerCount`, `limit`, then `player` when it names one. */
+ * `limit`, then `difficulty`, `playerCount` and `player` when it names them.
+ */
 httplib::Params leaderboardParamsOf(const GlobalLeaderboardQuery& query) {
   httplib::Params params{
-      {std::string{DIFFICULTY_QUERY_PARAMETER}, query.difficulty},
-      {std::string{PLAYER_COUNT_QUERY_PARAMETER},
-       std::to_string(static_cast<unsigned int>(query.playerCount))},
       {std::string{LIMIT_QUERY_PARAMETER}, std::to_string(query.limit)}};
+  if (query.difficulty.has_value()) {
+    params.emplace(std::string{DIFFICULTY_QUERY_PARAMETER}, *query.difficulty);
+  }
+  if (query.playerCount.has_value()) {
+    params.emplace(
+        std::string{PLAYER_COUNT_QUERY_PARAMETER},
+        std::to_string(static_cast<unsigned int>(*query.playerCount)));
+  }
   if (query.player.has_value()) {
     params.emplace(std::string{PLAYER_QUERY_PARAMETER}, *query.player);
   }

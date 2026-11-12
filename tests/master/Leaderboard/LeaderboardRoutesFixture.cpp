@@ -8,14 +8,35 @@
 #include "LeaderboardRoutesFixtures.hpp"
 #include "LeaderboardRoutesTestConstants.hpp"
 #include "MasterMessageText.hpp"
+#include "MasterMessageTextTestConstants.hpp"
 #include "MasterTestConstants.hpp"
 #include "RouteCall.hpp"
 #include "RouteCallFixtures.hpp"
 #include "ServersRoutesTestConstants.hpp"
 
+using rtype::network::testing::FIRST_PILOT;
+using rtype::network::testing::FIRST_PILOT_SCORE;
+using rtype::network::testing::SECOND_PILOT;
+using rtype::network::testing::SECOND_PILOT_SCORE;
+using rtype::network::testing::THIRD_PILOT;
+
 LeaderboardRoutesFixture::LeaderboardRoutesFixture()
     : paris_(master_.createServer(TEST_SERVER_NAME)),
       lyon_(master_.createServer(LYON_SERVER_NAME)) {}
+
+void LeaderboardRoutesFixture::sendNormalHardAndAloneGames() const {
+  static_cast<void>(sendResult(
+      paris(), FIRST_GAME_ID,
+      normalGameOfTwo({guestScoring(FIRST_PILOT, FIRST_PILOT_SCORE)})));
+  rtype::network::FinishedGame hard =
+      normalGameOfTwo({guestScoring(THIRD_PILOT, SECOND_PILOT_SCORE)});
+  hard.difficulty = std::string{HARD_DIFFICULTY};
+  static_cast<void>(sendResult(paris(), SECOND_GAME_ID, hard));
+  rtype::network::FinishedGame alone =
+      normalGameOfTwo({guestScoring(SECOND_PILOT, MIDDLE_SCORE)});
+  alone.playerCount = ONE_PLAYER;
+  static_cast<void>(sendResult(paris(), THIRD_GAME_ID, alone));
+}
 
 const rtype::network::CreatedServer& LeaderboardRoutesFixture::paris() const {
   return paris_;
