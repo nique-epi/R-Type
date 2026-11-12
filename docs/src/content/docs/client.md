@@ -72,6 +72,7 @@ Today it finds its assets folder, loads the assets of its interface, opens a win
 | MISSION START: the warp of the stars and the banner | Available; played by the game screen at the start of each game | `src/client/Rendering/Effects/MissionStart/MissionStart.cpp`, `src/client/Widgets/MissionBanner/` |
 | Scrolling background | Available; drawn by the screens module under every screen | `src/client/Rendering/Background/` |
 | Decor of the biome of a level, in parallax layers | Available for two biomes, with **provisional** pictures (see [Decor of a biome](#decor-of-a-biome-biomedecor)) | `src/client/Rendering/Background/BiomeDecor/`, `assets/backgrounds/` |
+| Maps of a biome: fixed background maps generated from zone templates, and their LDtk project | Available as a tool, never shipped; the client does not draw them yet (see [Decor of a biome](#decor-of-a-biome-biomedecor)) | `tests/tools/biome-maps/` |
 | Pictures of the menus, pixel fonts | Available | `src/client/Rendering/Interface/InterfaceCanvas/`, `assets/fonts/` |
 | Squadron of the title screen | Available | `src/client/Rendering/Interface/Squadron/` |
 | Launch intro | Available; played at launch, unless the system asks for less motion | `src/client/Rendering/Intro/`, `src/client/Widgets/IntroOverlay/`, `src/client/Menus/Title/` |
@@ -418,6 +419,7 @@ In a game that plays a level, the server tells the biome and the scroll of that 
 - **Between two messages.** The decor moves the scroll on at the speed the server told, so it needs no message per tick, and it stops while the scroll of the level is paused. The next `LevelStatus` puts it where the server says.
 - **Biomes.** `BIOMES` (`BiomeConstants.hpp`) lists the biomes the client has a decor for: `drift_fields` and `ember_reach`, three layers each, in `assets/backgrounds/`. A name it lacks, or a level without a biome, shows the stars alone, and so does a layer whose picture is not loaded. The game assets hold every layer, so a biome changes without loading.
 - **These pictures are provisional.** They stand in for the decor drawn for each biome: `tests/tools/biome-layers/make_biome_layers.py` writes them from the planets of `sprites/sector_map.png`, one picture per layer. A decor a resource brings is not read yet: the list is in the client.
+- **Maps drawn for a biome.** `tests/tools/biome-maps/` generates fixed maps of a biome, one 480 × 272 pixel screen per zone, from zone templates written by hand. It keeps only the maps that pass its level design checks, the same seed always gives the same map, and it exports the maps as an LDtk project: a 16 pixel grid, an empty `Mobs` entity layer, a `Walls` IntGrid layer for the solid cells of the play plane, and three tile layers. Two biomes come with it: `fosse`, and `demo_ember`, which shows how a biome brings its own materials and sprites. Neither the client nor the server reads these maps yet; the README of the folder tells how to run the tool and how to add a biome.
 
 The decor goes when the game screen does.
 
