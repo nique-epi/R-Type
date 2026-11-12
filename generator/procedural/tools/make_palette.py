@@ -1,7 +1,6 @@
 """Builds the palette of a biome from pictures: finds their color ramps and fills the standard letters every biome file refers to."""
 import argparse
 import colorsys
-import importlib
 import os
 import sys
 
@@ -10,9 +9,11 @@ from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
+import biome_file  # noqa: E402
+from biome_loader import add_options  # noqa: E402
 
 ROLES = ("stone", "rock", "plant", "liquid", "stem", "accent")
-GENERATED = ("NEAR", "MID", "BACKDROP", "FAR_A", "FAR_B", "FAR_LIT_KEYS", "OUTLINE", "MID_SHARE")
+OUTLINE = {"dark_through": "1", "rim": "t"}
 MID_SHARE = 0.5
 FAR_SHARE = 0.3
 FAR_LIT_KEYS = "45tTbcdeszyoKFE"
@@ -39,12 +40,12 @@ def collect(paths):
 
 
 def find_ramps(colors):
-    """Colors grouped into ramps: one of the near-grey ones, then one per stretch of hue, heaviest first, each sorted dark to light."""
-    grey, tinted = [], []
+    """Colors grouped into ramps: one of the near-gray ones, then one per stretch of hue, heaviest first, each sorted dark to light."""
+    gray, tinted = [], []
     for color, share in colors:
         hue, saturation, _ = colorsys.rgb_to_hsv(*(color / 255.0))
-        (grey if saturation < 0.22 else tinted).append((hue * 360.0, color, share))
-    groups = [[(color, share) for _, color, share in grey]] if grey else []
+        (gray if saturation < 0.22 else tinted).append((hue * 360.0, color, share))
+    groups = [[(color, share) for _, color, share in gray]] if gray else []
     tinted.sort(key=lambda entry: entry[0])
     if tinted:
         gaps = [(tinted[(i + 1) % len(tinted)][0] - tinted[i][0]) % 360.0 for i in range(len(tinted))]
@@ -104,32 +105,24 @@ def build(ramps, roles):
     return near
 
 
-def write(file, name, near, kept, sources):
-    """Writes palette.py: the play plane, the second plane and the far tones derived from it, and the names the old file held."""
-    backdrop = tuple(int(round(channel * 0.9)) for channel in near["0"])
-    toward = lambda color, share: tuple(int(round(backdrop[c] + (color[c] - backdrop[c]) * share)) for c in range(3))
-    mid = {key: toward(color, MID_SHARE) for key, color in near.items()}
-    far_b = mid["3"]
-    rows = ["0 1 2 3 4 5", "t T", "a b c d e", "p q r s", "k K o n", "u v w x y z", "g h", "A B D E F"]
-    lines = [f'"""Colors of the biome {name}, built by tools/make_palette.py from {sources} picture(s): the standard letters, filled from their color ramps."""', "", "NEAR = {"]
-    lines += ["    " + " ".join(f'"{key}": {near[key]},' for key in row.split()) for row in rows]
-    lines += ["}", "MID = {"]
-    lines += ["    " + " ".join(f'"{key}": {mid[key]},' for key in row.split()) for row in rows]
-    lines += ["}", f"BACKDROP = {backdrop}", f"FAR_A, FAR_B = {toward(far_b, FAR_SHARE)}, {far_b}", f'FAR_LIT_KEYS = "{FAR_LIT_KEYS}"', 'OUTLINE = {"dark_through": "1", "rim": "t"}']
-    if kept:
-        lines += [""] + [f"{key} = {value!r}" for key, value in kept.items()]
-    with open(file, "w") as handle:
-        handle.write("\n".join(lines) + "\n")
+def palette_of(near, outline, tints):
+    """The palette part of a data file: the play plane, the share that darkens the second plane, the backdrop and the far tones derived from them, and the tints kept."""
+    backdrop = [int(round(channel * 0.9)) for channel in near["0"]]
+    toward = lambda color, share: [int(round(backdrop[c] + (color[c] - backdrop[c]) * share)) for c in range(3)]
+    far_b = toward(near["3"], MID_SHARE)
+    return {"near": {key: list(color) for key, color in near.items()}, "mid_share": MID_SHARE, "backdrop": backdrop, "far_a": toward(far_b, FAR_SHARE), "far_b": far_b,
+            "far_lit_keys": FAR_LIT_KEYS, "outline": outline, "tints": tints}
 
 
 def main():
     """Command line: reads pictures, prints the ramps it found and the role each one got, and writes the palette of the biome."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("paths", nargs="+", help="pictures, or folders of pictures, whose colors the biome takes")
-    parser.add_argument("--biome", required=True, help="name of the folder of biomes/ whose palette.py is written")
+    add_options(parser)
     parser.add_argument("--assign", default="", help="comma-separated role=ramp pairs that overrule the choice, for example stone=1,liquid=2; roles: " + ", ".join(ROLES))
-    parser.add_argument("--out", help="file to write instead of biomes/<biome>/palette.py")
+    parser.add_argument("--out", help="file to write the palette alone into, instead of the data file of the biome")
     arguments = parser.parse_args()
+    data = biome_file.read(arguments.biomes, arguments.biome)
     ramps = find_ramps(collect(arguments.paths))
     forced = {role: int(position) for role, position in (pair.split("=") for pair in arguments.assign.split(",") if pair)}
     unknown = [role for role, position in forced.items() if role not in ROLES or not 0 <= position < len(ramps)]
@@ -140,14 +133,15 @@ def main():
         fed = [role for role in ROLES if roles[role] == position]
         dark, light = (tuple(int(v) for v in ramp[end][0]) for end in (0, -1))
         print(f"ramp {position}: {sum(share for _, share in ramp):5.1%} of the pixels, {len(ramp):2d} colors from {dark} to {light}  ->  {', '.join(fed) or 'unused'}")
-    target = arguments.out or os.path.join(ROOT, "biomes", arguments.biome, "palette.py")
-    kept = {}
-    if os.path.exists(target) and not arguments.out:
-        old = importlib.import_module(f"biomes.{arguments.biome}.palette")
-        kept = {key: value for key, value in vars(old).items() if key.isupper() and key not in GENERATED}
-    os.makedirs(os.path.dirname(os.path.abspath(target)), exist_ok=True)
-    write(target, arguments.biome, build(ramps, roles), kept, len(arguments.paths))
-    print(f"{target} written; names kept from the old file: {', '.join(kept) or 'none'}")
+    old = data["palette"]
+    palette = palette_of(build(ramps, roles), old.get("outline", OUTLINE), old.get("tints", {}))
+    if arguments.out:
+        with open(arguments.out, "w", encoding="utf-8") as handle:
+            handle.write(biome_file.render(palette) + "\n")
+    else:
+        biome_file.write(arguments.biomes, arguments.biome, dict(data, palette=palette))
+    target = arguments.out or os.path.join(arguments.biomes, arguments.biome, biome_file.FILE)
+    print(f"palette written in {target}; tints kept from the old one: {', '.join(palette['tints']) or 'none'}")
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-from biome_loader import Biome  # noqa: E402
+from biome_loader import Biome, add_options  # noqa: E402
 from painters import PAINTERS, shared_of  # noqa: E402
 from props import PREFIX, SHAPES  # noqa: E402
 
@@ -32,10 +32,10 @@ def swatch(biome, declared, seed):
 def main():
     """Command line: writes the preview sheet of a biome, three times enlarged."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--biome", default="fosse")
+    add_options(parser)
     parser.add_argument("--out", default="preview.png")
     arguments = parser.parse_args()
-    biome = Biome(arguments.biome)
+    biome = Biome(arguments.biome, arguments.biomes)
     table = biome.lut("near")
     rows = []
     for position, (material, declared) in enumerate(biome.materials.items()):

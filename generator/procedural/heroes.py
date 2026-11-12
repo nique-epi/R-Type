@@ -26,7 +26,7 @@ def colonnade(cave, zone, x, hero):
     if lamp:
         cave.hang_lamp(columns[gap] + 24, "mid", int(rng.integers(*lamp["length"])), lamp["lamp"], lamp["radius"], lamp["power"])
     ground = int(cave.profile["mid_floor"][columns[0]:columns[-1] + 1].max())
-    record = {"name": "colonnade", "plane": "mid", "surface": "floor", "x": x, "x0": columns[0] - 12, "x1": columns[-1] + 12, "y0": min(tops), "y1": ground, "role": "hero", "cluster": None}
+    record = {"name": "colonnade", "plane": "mid", "surface": "floor", "x": x, "x0": columns[0] - 12, "x1": columns[-1] + 12, "y0": min(tops), "y1": ground, "role": "hero", "cluster": None, "structure": True}
     cave.decor.append(record)
     cave.reserve("mid", "floor", columns[0] - 12, columns[-1] + 12)
     cave.reserve("mid", "ceil", columns[0] - 12, columns[-1] + 12)
@@ -68,7 +68,7 @@ def waterfall(cave, zone, x, hero):
     cave.waterfalls.append({"x": x, "top": top, "bottom": level, "zone": zone["name"], "splash": True, "marks": marks, "one_per": hero.get("one_per", 1)})
     cave.beams.append((x - 2, top, 0.04, 12, 0.10, 0.7, hero["tint"]))
     cave.lights.append((x, level - 10, 96, hero["tint"], 0.8))
-    record = {"name": "waterfall", "plane": "mid", "surface": "ceil", "x": x, "x0": x - 8, "x1": x + 8, "y0": top, "y1": level, "role": "hero", "cluster": None}
+    record = {"name": "waterfall", "plane": "mid", "surface": "ceil", "x": x, "x0": x - 8, "x1": x + 8, "y0": top, "y1": level, "role": "hero", "cluster": None, "structure": True}
     cave.decor.append(record)
     cave.reserve("mid", "ceil", x - 8, x + 8)
     return record
@@ -84,7 +84,7 @@ def light_well(cave, zone, x, hero):
     cave.beams.append((x, top, 0.12, 9, 0.15, 1.0, hero["tint"]))
     cave.lights.append((x + 20, int(cave.profile["floor"][x + 20]) - 10, 100, hero["tint"], 0.7))
     members = cave.cluster(x + 22, hero["family"], "near", "floor", hero["lead"], "member")
-    record = {"name": "light_well", "plane": "near", "surface": "ceil", "x": x, "x0": x - 6, "x1": x + 6, "y0": 0, "y1": top + 2, "role": "hero", "cluster": None}
+    record = {"name": "light_well", "plane": "near", "surface": "ceil", "x": x, "x0": x - 6, "x1": x + 6, "y0": 0, "y1": top + 2, "role": "hero", "cluster": None, "structure": True}
     cave.decor.append(record)
     cave.reserve("near", "ceil", x - 6, x + 6)
     return record if members else None

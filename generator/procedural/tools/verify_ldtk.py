@@ -10,6 +10,8 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, ROOT)
+import biome_file  # noqa: E402
+from biome_loader import add_options  # noqa: E402
 from frame import PLAY_BOTTOM, PLAY_TOP  # noqa: E402
 
 SCHEMA_URL = "https://ldtk.io/files/JSON_SCHEMA.json"
@@ -139,13 +141,16 @@ def check_layout(project):
 def main():
     """Runs every check on the project of a biome and exits with an error when one fails."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--biome", default="fosse")
+    add_options(parser)
     parser.add_argument("--maps", default="out", help="folder of the maps the project was exported from")
     parser.add_argument("--project", default="ldtk", help="folder that holds <biome>_procgen.ldtk")
     parser.add_argument("--schema", help=f"the official JSON schema, downloaded from {SCHEMA_URL}")
     parser.add_argument("--sample", help="a project saved by LDtk, to compare field names with (optional)")
     arguments = parser.parse_args()
+    biome_file.path_of(arguments.biomes, arguments.biome)
     file = os.path.join(arguments.project, f"{arguments.biome}_procgen.ldtk")
+    if not os.path.isfile(file):
+        sys.exit(f"{file} does not exist: export the maps of {arguments.biome} with export_ldtk.py first, or name another folder with --project")
     print(f"checking {file}")
     with open(file) as handle:
         project = json.load(handle)

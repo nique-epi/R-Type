@@ -12,12 +12,15 @@ from PIL import Image, ImageDraw
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import rules  # noqa: E402
-from biome_loader import Biome  # noqa: E402
+import biome_file  # noqa: E402
+from biome_loader import Biome, add_options  # noqa: E402
 from drawing import BAYER, brick, stamp, stepped_noise  # noqa: E402
 from frame import (CEIL_LIMIT, DECOR_CLEAR, FLOOR_BOTTOM, FLOOR_LIMIT, H, HANG_LIMIT, MID_CEIL_LIMIT, MID_FLOOR_LIMIT,  # noqa: E402
                    SPIRE_HEIGHT, ZONE)
 from heroes import place_heroes  # noqa: E402
-from painters import COVERS, FAR_STRUCTURES, HANGERS, PAINTERS, shared_of  # noqa: E402
+from layouts import LAYOUTS, layout_of  # noqa: E402
+from painters import COVERS, FAR_STRUCTURES, HANGERS, PAINTERS, register, shared_of  # noqa: E402
+import field  # noqa: E402,F401
 
 LIGHT_STEP = 0.13
 PROFILE_OF = {("near", "floor"): "floor", ("near", "ceil"): "ceil", ("mid", "floor"): "mid_floor", ("mid", "ceil"): "mid_ceil"}
@@ -147,7 +150,7 @@ class CaveMap:
     """One generated map: its terrain masks, its layers, and the record of everything placed on it."""
 
     def __init__(self, biome, seed, zone_count, sequence=None):
-        """Builds the whole map from a seed: chain of zones, terrain, decor, light."""
+        """Builds the whole map from a seed: chain of zones, then the terrain and decor its layout builds, then the light."""
         self.biome = biome
         self.seed = seed
         self.forced = ["%s%s" % (name, "*" if mirrored else "") for name, mirrored in sequence] if sequence else None
@@ -162,11 +165,7 @@ class CaveMap:
         sequence = sequence or choose_sequence(biome, self.rng, zone_count)
         if not sequence:
             sys.exit(f"the templates of {biome.name} cannot be chained into {zone_count} zones: check their connectors")
-        self.zones = [instantiate(biome, name, mirrored, self.rng, self.water_y) for name, mirrored in sequence]
-        for position, zone in enumerate(self.zones):
-            zone["x0"] = position * ZONE
-        self.build_profiles()
-        self.build_masks()
+        self.layout = layout_of(biome, sequence)
         self.far = np.zeros((H, self.width, 3))
         self.far[:] = biome.backdrop
         self.fall = np.zeros((H, self.width), np.uint8)
@@ -174,13 +173,7 @@ class CaveMap:
         self.near = np.zeros((H, self.width), np.uint8)
         self.front = np.zeros((H, self.width), np.uint8)
         self.grass = {"near": np.zeros(self.width, int), "mid": np.zeros(self.width, int)}
-        self.paint_far()
-        for plane in ("mid", "near"):
-            self.paint_terrain(plane)
-            self.grow(plane)
-        self.place_seam_covers()
-        place_heroes(self)
-        self.place_clusters()
+        LAYOUTS[self.layout](self, sequence)
         self.collect_lights()
         self.image = self.compose()
 
@@ -346,7 +339,7 @@ class CaveMap:
                 x = zone["x0"] + local
                 if choice["pillars"] and position == len(spots) - 1:
                     FAR_STRUCTURES[choice["pillars"]](self, x)
-                    self.decor.append({"name": "far_pillar", "plane": "far", "surface": "floor", "x": x, "x0": x - 6, "x1": x + 6, "y0": 0, "y1": H, "role": "structure", "cluster": None})
+                    self.decor.append({"name": "far_pillar", "plane": "far", "surface": "floor", "x": x, "x0": x - 6, "x1": x + 6, "y0": 0, "y1": H, "role": "structure", "cluster": None, "structure": True})
                     continue
                 names = [name for name in choice[surface] if all(abs(x - other) >= 160 for other in used.get(name, []))]
                 if not names:
@@ -757,6 +750,23 @@ class CaveMap:
         return quantized[..., None] * (1 - share + share * hue * 1.25), steps[..., None] * hue * np.array([21.0, 21.0, 25.0])
 
 
+@register(LAYOUTS, "corridor")
+def build_corridor(cave, sequence):
+    """The corridor layout: a floor and a ceiling on two planes, read from the step profiles of the templates."""
+    cave.zones = [instantiate(cave.biome, name, mirrored, cave.rng, cave.water_y) for name, mirrored in sequence]
+    for position, zone in enumerate(cave.zones):
+        zone["x0"] = position * ZONE
+    cave.build_profiles()
+    cave.build_masks()
+    cave.paint_far()
+    for plane in ("mid", "near"):
+        cave.paint_terrain(plane)
+        cave.grow(plane)
+    cave.place_seam_covers()
+    place_heroes(cave)
+    cave.place_clusters()
+
+
 def generate(biome, seed, zones, attempts=20, sequence=None):
     """First map that passes every check, trying new seeds derived from the first one."""
     failures = []
@@ -764,9 +774,9 @@ def generate(biome, seed, zones, attempts=20, sequence=None):
         current = seed + attempt * 7919
         cave = CaveMap(biome, current, zones, sequence)
         report = rules.check(cave)
-        if all(passed for _, passed, _ in report):
+        if all(passed is not False for _, passed, _ in report):
             return cave, report, attempt + 1, failures
-        failures.append((current, [f"{name}: {detail}" for name, passed, detail in report if not passed]))
+        failures.append((current, [f"{name}: {detail}" for name, passed, detail in report if passed is False]))
     return None, None, attempts, failures
 
 
@@ -786,7 +796,7 @@ def contact_sheet(caves, path):
 def main():
     """Command line: writes the maps, the contact sheet, and prints the checks of each map."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--biome", default="fosse", help="name of a folder of biomes/")
+    add_options(parser)
     parser.add_argument("--count", type=int, default=6)
     parser.add_argument("--zones", type=int, default=3)
     parser.add_argument("--seed", type=int, default=1)
@@ -794,13 +804,16 @@ def main():
     parser.add_argument("--layers", action="store_true", help="also write the far, second and play planes of each map")
     parser.add_argument("--sequence", help="comma-separated template names to use instead of a drawn chain; a trailing * mirrors one")
     arguments = parser.parse_args()
-    biome = Biome(arguments.biome)
+    biome = Biome(arguments.biome, arguments.biomes)
     os.makedirs(arguments.out, exist_ok=True)
     kept = []
     for number in range(arguments.count):
         seed = arguments.seed + number
         sequence = [(name.rstrip("*"), name.endswith("*")) for name in arguments.sequence.split(",")] if arguments.sequence else None
-        cave, report, attempts, failures = generate(biome, seed, arguments.zones, sequence=sequence)
+        try:
+            cave, report, attempts, failures = generate(biome, seed, arguments.zones, sequence=sequence)
+        except KeyError as error:
+            biome_file.stop(f"the data of {biome.name} lacks {error}, or names something it does not hold")
         for failed_seed, reasons in failures:
             print(f"  rejected (seed {failed_seed}): " + "; ".join(reasons))
         if cave is None:
@@ -815,8 +828,8 @@ def main():
                 Image.fromarray(layer).save(os.path.join(arguments.out, f"map_{seed}_{name}.png"))
         zones = " -> ".join(zone["name"] + ("*" if zone["mirrored"] else "") for zone in cave.zones)
         print(f"map_{seed}.png  attempt {attempts}  [{zones}]")
-        for name, _, detail in report:
-            print(f"    ok  {name}: {detail}")
+        for name, passed, detail in report:
+            print(f"    {'ok ' if passed else 'n/a'} {name}: {detail}")
         kept.append(cave)
     if kept:
         contact_sheet(kept, os.path.join(arguments.out, "contact.png"))

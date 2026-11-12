@@ -1,7 +1,6 @@
 """Brings pictures into a biome as sprites: crops them, snaps every pixel to the palette of the biome, softens the lit outline, updates the index."""
 import argparse
 import hashlib
-import importlib
 import json
 import os
 import sys
@@ -11,6 +10,8 @@ from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
+import biome_file  # noqa: E402
+from biome_loader import add_options  # noqa: E402
 
 
 def runs(flags):
@@ -103,11 +104,10 @@ def sha12(file):
         return hashlib.sha256(handle.read()).hexdigest()[:12]
 
 
-def import_sheets(biome, folder, target, palette, outline):
-    """Cuts every sheet the biome describes in sheets.py, and rewrites its index, its manifest and its preview."""
-    sheets = importlib.import_module(f"biomes.{biome}.sheets")
+def import_sheets(sheets, folder, target, palette, outline):
+    """Cuts every sheet the data file of the biome describes under "sheets", and rewrites its index and the list of its sources."""
     manifest, kept, rejected, sprites = [], [], [], {}
-    for sheet, spec in sheets.SHEETS.items():
+    for sheet, spec in sheets["sheets"].items():
         file = os.path.join(folder, "raw", sheet + ".png")
         manifest.append({"asset_id": spec["asset_id"], "sha12": sha12(file), "label": spec["label"], "file": f"raw/{sheet}.png"})
         for name, cell in cells_of(np.asarray(Image.open(file).convert("RGBA")).copy(), spec["cells"]):
@@ -117,23 +117,22 @@ def import_sheets(biome, folder, target, palette, outline):
             sprites[name] = to_sprite(cell, palette, spec.get("keys_for", {}).get(name, spec["keys"]), None if spec.get("keep_outline") else outline)
             Image.fromarray(sprites[name]).save(os.path.join(target, "sprites", name + ".png"))
             kept.append(name)
-    for name, spec in sheets.TEXTURES.items():
+    for name, spec in sheets.get("textures", {}).items():
         file = os.path.join(folder, "raw", name + ".png")
         manifest.append({"asset_id": spec["asset_id"], "label": spec["label"], "sha12": sha12(file), "file": f"raw/{name}.png"})
         Image.fromarray(snap(np.asarray(Image.open(file).convert("RGB")), palette, spec["keys"])).save(os.path.join(target, "sprites", name + ".png"))
         kept.append(name)
-    for spec in sheets.REFERENCES.values():
+    for spec in sheets.get("references", {}).values():
         manifest.append({"asset_id": spec["asset_id"], "label": spec["label"], "sha12": spec["sha12"]})
-    with open(os.path.join(target, "spritecook-assets.json"), "w") as handle:
+    with open(os.path.join(target, "sources.json"), "w") as handle:
         json.dump(manifest, handle, indent=2)
     with open(os.path.join(target, "sprites.json"), "w") as handle:
         json.dump({"kept": kept, "rejected": rejected}, handle, indent=2)
     return sprites
 
 
-def render_drawn(biome, folder, palette):
-    """Writes the sprites a biome draws in palette letters in drawn.py as pictures, and returns their files."""
-    drawn = importlib.import_module(f"biomes.{biome}.drawn").DRAWN
+def render_drawn(drawn, folder, palette):
+    """Writes the sprites the data file of a biome draws in palette letters under "drawn" as pictures, and returns their files."""
     os.makedirs(os.path.join(folder, "raw", "drawn"), exist_ok=True)
     files = []
     for stem, rows in drawn.items():
@@ -179,28 +178,32 @@ def import_files(paths, arguments, target, palette, outline):
 
 
 def main():
-    """Command line: imports pictures, a sheet in a grid, the sheets of sheets.py or the letter drawings of drawn.py into a biome."""
+    """Command line: imports pictures, a sheet in a grid, or the sheets and the letter drawings the data file describes, into a biome."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("paths", nargs="*", help="pictures with a transparent background, or folders of them; the file name becomes the sprite name")
-    parser.add_argument("--biome", default="fosse")
+    add_options(parser)
     parser.add_argument("--grid", help="the picture is a sheet of COLUMNSxROWS cells separated by empty gutters, for example 4x4")
     parser.add_argument("--names", help="comma-separated names of the cells of the sheet, row by row; a name that starts with - is left out")
     parser.add_argument("--keys", help="palette letters the pixels may snap to (default: every letter)")
     parser.add_argument("--keep-outline", action="store_true", help="leave the dark outline as it is")
-    parser.add_argument("--sheets", action="store_true", help="cut the sheets the biome describes in sheets.py")
-    parser.add_argument("--drawn", action="store_true", help="render the sprites the biome draws in letters in drawn.py, then import them")
+    parser.add_argument("--sheets", action="store_true", help="cut the sheets the data file describes under \"sheets\"")
+    parser.add_argument("--drawn", action="store_true", help="render the sprites the data file draws in letters under \"drawn\", then import them")
     parser.add_argument("--out", help="folder to write into instead of the folder of the biome")
     arguments = parser.parse_args()
-    folder = os.path.join(ROOT, "biomes", arguments.biome)
+    data = biome_file.read(arguments.biomes, arguments.biome)
+    folder = os.path.join(arguments.biomes, arguments.biome)
     target = arguments.out or folder
-    palette_module = importlib.import_module(f"biomes.{arguments.biome}.palette")
-    palette, outline = palette_module.NEAR, getattr(palette_module, "OUTLINE", None)
+    palette, outline = data["palette"]["near"], data["palette"].get("outline")
     os.makedirs(os.path.join(target, "sprites"), exist_ok=True)
     if arguments.sheets:
-        sprites = import_sheets(arguments.biome, folder, target, palette, outline)
-        preview(sprites, palette_module.BACKDROP, os.path.join(target, "_preview_sprites.png"))
+        if not data.get("sheets"):
+            biome_file.stop(f"the data file of {arguments.biome} describes no sheet under \"sheets\"")
+        sprites = import_sheets(data["sheets"], folder, target, palette, outline)
+        preview(sprites, data["palette"]["backdrop"], os.path.join(target, "_preview_sprites.png"))
     else:
-        paths = list(arguments.paths) + (render_drawn(arguments.biome, folder, palette) if arguments.drawn else [])
+        if arguments.drawn and not data.get("drawn"):
+            biome_file.stop(f"the data file of {arguments.biome} draws no sprite under \"drawn\"")
+        paths = list(arguments.paths) + (render_drawn(data["drawn"], folder, palette) if arguments.drawn else [])
         if not paths:
             parser.error("give pictures or folders, or --sheets, or --drawn")
         sprites = import_files(paths, arguments, target, palette, outline)

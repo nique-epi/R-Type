@@ -1,5 +1,4 @@
-"""Loads a biome: the data folder biomes/<name>/ that holds everything a biome owns, turned into what the engine draws with."""
-import importlib
+"""Loads a biome: a folder of data kept outside this tool, read from its biome.json and its sprites, turned into what the engine draws with."""
 import os
 import sys
 
@@ -9,56 +8,64 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
+import biome_file  # noqa: E402
 from props import PREFIX, SpriteStore  # noqa: E402
 
-PARTS = ("palette", "materials", "elements", "decor", "templates")
 SIZES = ("large", "medium", "small")
 MARKS = ("glow", "hang", "hero")
 PROP_SIZES = {"large": ["wall", "pillar", "steps", "lintel"], "medium": ["pile", "pillar_broken", "drum"], "small": ["slab"]}
+MID_SHARE = 0.5
 
 
-def available():
-    """Names of the biomes found in the biomes folder."""
-    folder = os.path.join(HERE, "biomes")
-    return sorted(name for name in os.listdir(folder) if os.path.isfile(os.path.join(folder, name, "templates.py")))
+def add_options(parser):
+    """Gives a command line the two options that name a biome: the folder of biomes and the biome in it."""
+    parser.add_argument("--biomes", required=True, help="folder that holds one folder per biome; biomes are kept outside this tool")
+    parser.add_argument("--biome", required=True, help="name of a biome: a folder of the folder of biomes")
 
 
 class Biome:
     """One biome: its palette, sprites, materials, elements, decor and templates."""
 
-    def __init__(self, name):
-        """Reads the five data modules of the biome and prepares its sprites, families, lights and elements."""
-        if name not in available():
-            sys.exit(f"unknown biome '{name}': biomes/ holds {', '.join(available())}")
-        self.name = name
+    def __init__(self, name, store):
+        """Reads the data file of the biome in a folder of biomes and prepares its sprites, families, lights and elements."""
+        raw = biome_file.read(store, name)
+        self.tints = {key: tuple(value) for key, value in raw["palette"].get("tints", {}).items()}
+        data = biome_file.resolve(raw, self.tints)
+        self.name, self.store = name, store
         self.title = name[:1].upper() + name[1:]
-        self.folder = os.path.join(HERE, "biomes", name)
-        palette, materials, elements, decor, templates = (importlib.import_module(f"biomes.{name}.{part}") for part in PARTS)
-        self.near, self.mid = palette.NEAR, palette.MID
-        self.backdrop, self.far_a, self.far_b, self.far_lit_keys = palette.BACKDROP, palette.FAR_A, palette.FAR_B, palette.FAR_LIT_KEYS
+        self.folder = os.path.join(store, name)
+        palette, elements, decor = data["palette"], data["elements"], data.get("decor", {})
+        self.near, self.backdrop = palette["near"], palette["backdrop"]
+        share = palette.get("mid_share", MID_SHARE)
+        self.mid = palette.get("mid") or {key: tuple(int(round(self.backdrop[c] + (color[c] - self.backdrop[c]) * share)) for c in range(3)) for key, color in self.near.items()}
+        self.far_a, self.far_b, self.far_lit_keys = palette["far_a"], palette["far_b"], palette["far_lit_keys"]
+        self.outline = palette.get("outline")
+        self.drawn, self.sheets = data.get("drawn", {}), data.get("sheets")
         self.keys = "." + "".join(self.near)
         self.index = {key: position for position, key in enumerate(self.keys)}
-        self.materials = materials.MATERIALS
+        self.materials = data["materials"]
         self.material_id = {material: position + 1 for position, material in enumerate(self.materials)}
         self.material_name = {position: material for material, position in self.material_id.items()}
-        self.seam_material = materials.SEAM_MATERIAL
+        self.seam_material = data["seam_material"]
         self.roles = {}
-        self.sprites = SpriteStore(self, self.load_sprites(getattr(decor, "SPRITES_FROM", None)))
+        self.sprites = SpriteStore(self, self.load_sprites(decor.get("sprites_from")))
         self.families = self.deduce_families()
-        self.families.update(getattr(decor, "FAMILIES", {}))
+        self.families.update(decor.get("families", {}))
         self.emitters = self.deduce_emitters()
-        self.emitters.update(getattr(decor, "EMITTERS", {}))
+        self.emitters.update(decor.get("emitters", {}))
         self.far_sets = {"default": self.default_far_set()}
-        self.far_sets.update(getattr(decor, "FAR_SETS", {}))
-        self.column_sprites = tuple(getattr(decor, "COLUMN_SPRITES", ()))
-        self.templates = templates.TEMPLATES
-        self.wet_connectors = tuple(getattr(elements, "WET_CONNECTORS", ()))
-        self.water = self.compile_water(getattr(elements, "WATER", None))
-        self.fall = self.grid(elements.FALL) if getattr(elements, "FALL", None) else None
-        self.lamps = {lamp: dict(spec, sprite=self.grid(spec["rows"])) for lamp, spec in getattr(elements, "LAMPS", {}).items()}
-        column = getattr(elements, "COLUMN", None)
+        self.far_sets.update(decor.get("far_sets", {}))
+        self.column_sprites = tuple(decor.get("column_sprites", ()))
+        self.templates = data["templates"]
+        self.wet_connectors = tuple(elements.get("wet_connectors", ()))
+        self.water = self.compile_water(elements.get("water"))
+        self.fall = self.grid(elements["fall"]) if elements.get("fall") else None
+        self.lamps = {lamp: dict(spec, sprite=self.grid(spec["rows"])) for lamp, spec in elements.get("lamps", {}).items()}
+        column = elements.get("column")
         self.column = dict(column, sprite=self.grid(column["shaft"])) if column else None
-        self.strokes, self.specks, self.wall_key = elements.STROKES, elements.SPECKS, elements.WALL_KEY
+        self.strokes, self.specks, self.wall_key = elements["strokes"], elements["specks"], elements["wall_key"]
+        self.stars, self.haze = elements.get("stars"), elements.get("haze")
+        self.marks = {material: [self.grid(rows) for rows in stamps] for material, stamps in elements.get("marks", {}).items()}
 
     def lut(self, plane):
         """Color table of a plane, indexed like the letters of the palette."""
@@ -102,10 +109,10 @@ class Biome:
         """Sprites of the biome: those it borrows from another biome, read letter for letter, then its own, which win."""
         sprites = {}
         if borrowed:
-            source = importlib.import_module(f"biomes.{borrowed}.palette").NEAR
+            source = biome_file.read(self.store, borrowed)["palette"]["near"]
             missing = sorted(set(source) - set(self.near))
             assert not missing, f"the palette of {self.name} lacks the letters {missing} of the sprites it borrows"
-            sprites.update(self.read_folder(os.path.join(HERE, "biomes", borrowed, "sprites"), source))
+            sprites.update(self.read_folder(os.path.join(self.store, borrowed, "sprites"), source))
             self.roles.clear()
         sprites.update(self.read_folder(os.path.join(self.folder, "sprites"), self.near))
         return sprites
@@ -157,11 +164,10 @@ class Biome:
         if not water:
             return None
         tiles = {}
+        copies = {name: rows for name, rows in water["tiles"].items() if len(rows) == 2 and isinstance(rows[1], dict)}
         for name, rows in water["tiles"].items():
-            if isinstance(rows, tuple):
-                continue
-            tiles[name] = self.grid(rows)
-        for name, rows in water["tiles"].items():
-            if isinstance(rows, tuple):
-                tiles[name] = self.remap(tiles[rows[0]], rows[1])
+            if name not in copies:
+                tiles[name] = self.grid(rows)
+        for name, rows in copies.items():
+            tiles[name] = self.remap(tiles[rows[0]], rows[1])
         return dict(water, tiles=tiles)

@@ -25,6 +25,17 @@ def shift(mask, dy, dx, fill=True):
     return out
 
 
+def flood(mask, y, x):
+    """Pixels of a mask reachable from one of its pixels through its pixels, side by side."""
+    reach = np.zeros_like(mask)
+    reach[y, x] = mask[y, x]
+    count = 0
+    while int(reach.sum()) != count:
+        count = int(reach.sum())
+        reach = (reach | shift(reach, 1, 0, False) | shift(reach, -1, 0, False) | shift(reach, 0, 1, False) | shift(reach, 0, -1, False)) & mask
+    return reach
+
+
 def erosion_depth(solid, limit):
     """Distance of each solid pixel to the nearest open pixel, capped at limit + 1."""
     depth = np.zeros(solid.shape, np.int16)

@@ -15,7 +15,7 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import generate_maps  # noqa: E402
-from biome_loader import Biome  # noqa: E402
+from biome_loader import Biome, add_options  # noqa: E402
 from frame import H, ZONE  # noqa: E402
 
 LDTK_VERSION = "1.5.3"
@@ -227,11 +227,11 @@ def build_project(biome, caves, atlases, uses):
 def main():
     """Command line: reads the maps of a folder, writes the project, its three atlases and the prop atlas."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--biome", default="fosse", help="name of a folder of biomes/; it must be the biome the maps were generated with")
+    add_options(parser)
     parser.add_argument("--maps", default="out", help="folder holding map_<seed>.png and map_<seed>.json")
     parser.add_argument("--out", default="ldtk")
     arguments = parser.parse_args()
-    biome = Biome(arguments.biome)
+    biome = Biome(arguments.biome, arguments.biomes)
     os.makedirs(arguments.out, exist_ok=True)
     caves = load_maps(biome, arguments.maps)
     atlases, uses = {}, {}
