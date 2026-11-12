@@ -17,3 +17,8 @@ output "deploy_role_arn" {
   description = "The role the deployment workflow assumes."
   value       = aws_iam_role.deploy.arn
 }
+
+output "lan_role_arn" {
+  description = "The role the workflows that open and close a LAN assume."
+  value       = aws_iam_role.lan.arn
+}
